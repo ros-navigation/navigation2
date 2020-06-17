@@ -117,10 +117,12 @@ void
 StaticLayer::getParameters()
 {
   int temp_lethal_threshold = 0;
+  double temp_tf_tol = 0.0;
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("subscribe_to_updates", rclcpp::ParameterValue(false));
   declareParameter("map_subscribe_transient_local", rclcpp::ParameterValue(true));
+  declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
   node_->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
@@ -133,10 +135,13 @@ StaticLayer::getParameters()
   node_->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
   node_->get_parameter("unknown_cost_value", unknown_cost_value_);
   node_->get_parameter("trinary_costmap", trinary_costmap_);
+  node_->get_parameter("transform_tolerance", temp_tf_tol);
 
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   map_received_ = false;
+
+  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 }
 
 void
@@ -359,7 +364,9 @@ StaticLayer::updateCosts(
     // Might even be in a different frame
     geometry_msgs::msg::TransformStamped transform;
     try {
-      transform = tf_->lookupTransform(map_frame_, global_frame_, tf2::TimePointZero);
+      transform = tf_->lookupTransform(
+        map_frame_, global_frame_, tf2::TimePointZero,
+        transform_tolerance_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(node_->get_logger(), "StaticLayer: %s", ex.what());
       return;

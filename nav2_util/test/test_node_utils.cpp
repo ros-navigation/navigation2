@@ -18,6 +18,7 @@
 using nav2_util::sanitize_node_name;
 using nav2_util::generate_internal_node_name;
 using nav2_util::generate_internal_node;
+using nav2_util::add_namespaces;
 using nav2_util::time_to_string;
 
 TEST(SanitizeNodeName, SanitizeNodeName)
@@ -46,4 +47,10 @@ TEST(GenerateInternalNodeName, GenerateNodeName)
   auto defaultName = generate_internal_node_name();
   ASSERT_EQ(defaultName[0], '_');
   ASSERT_EQ(defaultName.length(), 9u);
+}
+
+TEST(AddNamespaces, AddNamespaceSlash)
+{
+  ASSERT_EQ(add_namespaces("hi", "bye"), "hi/bye");
+  ASSERT_EQ(add_namespaces("hi/", "bye"), "/hi/bye");
 }

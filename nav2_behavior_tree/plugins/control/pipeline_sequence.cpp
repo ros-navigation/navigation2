@@ -82,7 +82,7 @@ BT::NodeStatus PipelineSequence::tick()
     auto status = children_nodes_[i]->executeTick();
     switch (status) {
       case BT::NodeStatus::FAILURE:
-        haltChildren(0);
+        ControlNode::haltChildren();
         last_child_ticked_ = 0;  // reset
         return status;
         break;
@@ -106,7 +106,7 @@ BT::NodeStatus PipelineSequence::tick()
     }
   }
   // Wrap up.
-  haltChildren(0);
+  ControlNode::haltChildren();
   last_child_ticked_ = 0;  // reset
   return BT::NodeStatus::SUCCESS;
 }

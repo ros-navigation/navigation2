@@ -14,12 +14,16 @@ find_package(std_srvs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav2_msgs REQUIRED)
 
 nav2_package()
 
 include_directories(
   include
 )
+
+include(CheckSymbolExists)
+check_symbol_exists(drand48 stdlib.h HAVE_DRAND48)
 
 add_subdirectory(src/pf)
 add_subdirectory(src/map)
@@ -38,6 +42,11 @@ add_library(${library_name} SHARED
   src/amcl_node.cpp
 )
 
+target_include_directories(${library_name} PRIVATE src/include)
+if(HAVE_DRAND48)
+  target_compile_definitions(${library_name} PRIVATE "HAVE_DRAND48")
+endif()
+
 set(dependencies
   rclcpp
   rclcpp_lifecycle
@@ -50,6 +59,7 @@ set(dependencies
   tf2_ros
   tf2
   nav2_util
+  nav2_msgs
 )
 
 ament_target_dependencies(${executable_name}
@@ -68,9 +78,13 @@ target_link_libraries(${library_name}
   map_lib motions_lib sensors_lib
 )
 
-install(TARGETS ${executable_name} ${library_name}
+install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 

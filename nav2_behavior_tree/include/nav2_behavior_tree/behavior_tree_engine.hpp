@@ -44,21 +44,17 @@ public:
     const std::string & xml_string,
     BT::Blackboard::Ptr blackboard);
 
+  // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
   void haltAllActions(BT::TreeNode * root_node)
   {
-    auto visitor = [](BT::TreeNode * node) {
-        if (auto action = dynamic_cast<BT::CoroActionNode *>(node)) {
-          action->halt();
-        }
-      };
-    BT::applyRecursiveVisitor(root_node, visitor);
-  }
+    // this halt signal should propagate through the entire tree.
+    root_node->halt();
 
-  // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
-  void resetTree(BT::TreeNode * root_node)
-  {
+    // but, just in case...
     auto visitor = [](BT::TreeNode * node) {
-        node->setStatus(BT::NodeStatus::IDLE);
+        if (node->status() == BT::NodeStatus::RUNNING) {
+          node->halt();
+        }
       };
     BT::applyRecursiveVisitor(root_node, visitor);
   }

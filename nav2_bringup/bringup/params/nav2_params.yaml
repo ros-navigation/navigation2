@@ -49,6 +49,8 @@ amcl_rclcpp_node:
 bt_navigator:
   ros__parameters:
     use_sim_time: True
+    global_frame: map
+    robot_base_frame: base_link
     bt_xml_filename: "navigate_w_replanning_and_recovery.xml"
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
@@ -59,13 +61,17 @@ bt_navigator:
     - nav2_clear_costmap_service_bt_node
     - nav2_is_stuck_condition_bt_node
     - nav2_goal_reached_condition_bt_node
+    - nav2_goal_updated_condition_bt_node
     - nav2_initial_pose_received_condition_bt_node
     - nav2_reinitialize_global_localization_service_bt_node
     - nav2_rate_controller_bt_node
+    - nav2_distance_controller_bt_node
     - nav2_recovery_node_bt_node
     - nav2_pipeline_sequence_bt_node
     - nav2_round_robin_node_bt_node
     - nav2_transform_available_condition_bt_node
+    - nav2_time_expired_condition_bt_node
+    - nav2_distance_traveled_condition_bt_node
 
 bt_navigator_rclcpp_node:
   ros__parameters:
@@ -112,8 +118,10 @@ controller_server:
     FollowPath.stateful: True
     FollowPath.critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
     FollowPath.BaseObstacle.scale: 0.02
-    FollowPath.PathAlign.scale: 0.0
-    FollowPath.GoalAlign.scale: 0.0
+    FollowPath.PathAlign.scale: 32.0
+    FollowPath.GoalAlign.scale: 24.0
+    FollowPath.PathAlign.forward_point_distance: 0.1
+    FollowPath.GoalAlign.forward_point_distance: 0.1
     FollowPath.PathDist.scale: 32.0
     FollowPath.GoalDist.scale: 24.0
     FollowPath.RotateToGoal.scale: 32.0
@@ -129,9 +137,9 @@ local_costmap:
     ros__parameters:
       update_frequency: 5.0
       publish_frequency: 2.0
+      global_frame: odom
       robot_base_frame: base_link
       use_sim_time: True
-      global_frame: odom
       rolling_window: true
       width: 3
       height: 3
@@ -181,8 +189,8 @@ global_costmap:
     ros__parameters:
       update_frequency: 1.0
       publish_frequency: 1.0
-      robot_base_frame: base_link
       global_frame: map
+      robot_base_frame: base_link
       use_sim_time: True
       plugin_names: ["static_layer", "obstacle_layer", "voxel_layer", "inflation_layer"]
       plugin_types: ["nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::VoxelLayer", "nav2_costmap_2d::InflationLayer"]
@@ -229,6 +237,13 @@ map_server:
   ros__parameters:
     use_sim_time: True
     yaml_filename: "turtlebot3_world.yaml"
+
+map_saver:
+  ros__parameters:
+    use_sim_time: True
+    save_map_timeout: 5000
+    free_thresh_default: 0.25
+    occupied_thresh_default: 0.65
 
 planner_server:
   ros__parameters:
@@ -280,6 +295,22 @@ planner_server:
 planner_server_rclcpp_node:
   ros__parameters:
     use_sim_time: True
+
+recoveries_server:
+  ros__parameters:
+    costmap_topic: local_costmap/costmap_raw
+    footprint_topic: local_costmap/published_footprint
+    cycle_frequency: 10.0
+    plugin_names: ["spin", "backup", "wait"]
+    plugin_types: ["nav2_recoveries/Spin", "nav2_recoveries/BackUp", "nav2_recoveries/Wait"]
+    global_frame: odom
+    robot_base_frame: base_link
+    transform_timeout: 0.1
+    use_sim_time: true
+    simulate_ahead_time: 2.0
+    max_rotational_vel: 1.0
+    min_rotational_vel: 0.4
+    rotational_acc_lim: 3.2
 
 robot_state_publisher:
   ros__parameters:

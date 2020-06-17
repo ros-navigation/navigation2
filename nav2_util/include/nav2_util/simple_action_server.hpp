@@ -322,6 +322,7 @@ public:
   {
     if (!is_active(current_handle_)) {
       error_msg("Trying to publish feedback when the current goal handle is not active");
+      return;
     }
 
     current_handle_->publish_feedback(feedback);

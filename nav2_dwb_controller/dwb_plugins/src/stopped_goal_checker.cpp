@@ -39,6 +39,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_util/node_utils.hpp"
 
+using std::hypot;
 using std::fabs;
 
 namespace dwb_plugins
@@ -74,9 +75,9 @@ bool StoppedGoalChecker::isGoalReached(
   if (!ret) {
     return ret;
   }
+
   return fabs(velocity.angular.z) <= rot_stopped_velocity_ &&
-         fabs(velocity.linear.x) <= trans_stopped_velocity_ &&
-         fabs(velocity.linear.y) <= trans_stopped_velocity_;
+         hypot(velocity.linear.x, velocity.linear.y) <= trans_stopped_velocity_;
 }
 
 }  // namespace dwb_plugins

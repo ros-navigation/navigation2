@@ -86,13 +86,11 @@ inline BT::NodeStatus RateController::tick()
         return BT::NodeStatus::RUNNING;
 
       case BT::NodeStatus::SUCCESS:
-        child_node_->setStatus(BT::NodeStatus::IDLE);
         start_ = std::chrono::high_resolution_clock::now();  // Reset the timer
         return BT::NodeStatus::SUCCESS;
 
       case BT::NodeStatus::FAILURE:
       default:
-        child_node_->setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::FAILURE;
     }
   }

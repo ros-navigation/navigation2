@@ -2,15 +2,15 @@
 [![Build Status](https://img.shields.io/docker/pulls/rosplanning/navigation2.svg?maxAge=2592000)](https://hub.docker.com/r/rosplanning/navigation2) [![Build Status](https://img.shields.io/docker/cloud/build/rosplanning/navigation2.svg?label=docker%20build)](https://hub.docker.com/r/rosplanning/navigation2) [![codecov](https://codecov.io/gh/ros-planning/navigation2/branch/master/graph/badge.svg)](https://codecov.io/gh/ros-planning/navigation2)
 
 For detailed instructions on how to:
-- [Getting Started](https://ros-planning.github.io/navigation2/getting_started/index.html)
-- [Build](https://ros-planning.github.io/navigation2/build_instructions/index.html#build)
-- [Install](https://ros-planning.github.io/navigation2/build_instructions/index.html#install)
-- [Tutorials](https://ros-planning.github.io/navigation2/tutorials/index.html)
-- [Configure](https://ros-planning.github.io/navigation2/configuration/index.html)
-- [Navigation Plugins](https://ros-planning.github.io/navigation2/plugins/index.html)
-- [Contribute](https://ros-planning.github.io/navigation2/contribute/index.html)
+- [Getting Started](https://navigation.ros.org/getting_started/index.html)
+- [Build](https://navigation.ros.org/build_instructions/index.html#build)
+- [Install](https://navigation.ros.org/build_instructions/index.html#install)
+- [Tutorials](https://navigation.ros.org/tutorials/index.html)
+- [Configure](https://navigation.ros.org/configuration/index.html)
+- [Navigation Plugins](https://navigation.ros.org/plugins/index.html)
+- [Contribute](https://navigation.ros.org/contribute/index.html)
 
-Please visit our [documentation site](https://ros-planning.github.io/navigation2/).
+Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://navigation2.slack.com).
 
 | Service | Dashing | Eloquent | Master |
 | :---: | :---: | :---: | :---: |

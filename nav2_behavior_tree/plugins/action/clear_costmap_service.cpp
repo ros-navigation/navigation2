@@ -34,6 +34,11 @@ public:
   : BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>(service_node_name, conf)
   {
   }
+
+  void on_tick() override
+  {
+    increment_recovery_count();
+  }
 };
 
 }  // namespace nav2_behavior_tree

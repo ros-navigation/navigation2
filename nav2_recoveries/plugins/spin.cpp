@@ -18,6 +18,7 @@
 #include <thread>
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #include "spin.hpp"
 #pragma GCC diagnostic push
@@ -34,9 +35,10 @@ namespace nav2_recoveries
 {
 
 Spin::Spin()
-: Recovery<SpinAction>()
+: Recovery<SpinAction>(),
+  feedback_(std::make_shared<SpinAction::Feedback>()),
+  prev_yaw_(0.0)
 {
-  initial_yaw_ = 0.0;
 }
 
 Spin::~Spin()
@@ -69,14 +71,18 @@ void Spin::onConfigure()
 Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(current_pose, *tf_, "odom")) {
+  if (!nav2_util::getCurrentPose(
+      current_pose, *tf_, global_frame_, robot_base_frame_,
+      transform_tolerance_))
+  {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
 
-  initial_yaw_ = tf2::getYaw(current_pose.pose.orientation);
+  prev_yaw_ = tf2::getYaw(current_pose.pose.orientation);
+  relative_yaw_ = 0.0;
 
-  cmd_yaw_ = -command->target_yaw;
+  cmd_yaw_ = command->target_yaw;
   RCLCPP_INFO(
     node_->get_logger(), "Turning %0.2f for spin recovery.",
     cmd_yaw_);
@@ -86,48 +92,58 @@ Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 Status Spin::onCycleUpdate()
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(current_pose, *tf_, "odom")) {
+  if (!nav2_util::getCurrentPose(
+      current_pose, *tf_, global_frame_, robot_base_frame_,
+      transform_tolerance_))
+  {
     RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
 
   const double current_yaw = tf2::getYaw(current_pose.pose.orientation);
-  double relative_yaw = abs(current_yaw - initial_yaw_);
-  if (relative_yaw > M_PI) {
-    relative_yaw -= 2.0 * M_PI;
-  }
-  relative_yaw = abs(relative_yaw);
 
-  if (relative_yaw >= abs(cmd_yaw_)) {
+  double delta_yaw = current_yaw - prev_yaw_;
+  if (abs(delta_yaw) > M_PI) {
+    delta_yaw = copysign(2 * M_PI - abs(delta_yaw), prev_yaw_);
+  }
+
+  relative_yaw_ += delta_yaw;
+  prev_yaw_ = current_yaw;
+
+  feedback_->angular_distance_traveled = relative_yaw_;
+  action_server_->publish_feedback(feedback_);
+
+  double remaining_yaw = abs(cmd_yaw_) - abs(relative_yaw_);
+  if (remaining_yaw <= 0) {
     stopRobot();
     return Status::SUCCEEDED;
   }
 
-  double vel = sqrt(2 * rotational_acc_lim_ * relative_yaw);
+  double vel = sqrt(2 * rotational_acc_lim_ * remaining_yaw);
   vel = std::min(std::max(vel, min_rotational_vel_), max_rotational_vel_);
 
-  geometry_msgs::msg::Twist cmd_vel;
-  cmd_yaw_ < 0 ? cmd_vel.angular.z = -vel : cmd_vel.angular.z = vel;
+  auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
+  cmd_vel->angular.z = copysign(vel, cmd_yaw_);
 
   geometry_msgs::msg::Pose2D pose2d;
   pose2d.x = current_pose.pose.position.x;
   pose2d.y = current_pose.pose.position.y;
   pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
 
-  if (!isCollisionFree(relative_yaw, cmd_vel, pose2d)) {
+  if (!isCollisionFree(relative_yaw_, cmd_vel.get(), pose2d)) {
     stopRobot();
     RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin");
     return Status::SUCCEEDED;
   }
 
-  vel_pub_->publish(cmd_vel);
+  vel_pub_->publish(std::move(cmd_vel));
 
   return Status::RUNNING;
 }
 
 bool Spin::isCollisionFree(
   const double & relative_yaw,
-  const geometry_msgs::msg::Twist & cmd_vel,
+  geometry_msgs::msg::Twist * cmd_vel,
   geometry_msgs::msg::Pose2D & pose2d)
 {
   // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments
@@ -136,7 +152,7 @@ bool Spin::isCollisionFree(
   const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
 
   while (cycle_count < max_cycle_count) {
-    sim_position_change = cmd_vel.angular.z * (cycle_count / cycle_frequency_);
+    sim_position_change = cmd_vel->angular.z * (cycle_count / cycle_frequency_);
     pose2d.theta += sim_position_change;
     cycle_count++;
 

@@ -20,7 +20,10 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <set>
 
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
 #include "nav2_bt_navigator/ros_topic_logger.hpp"
 
@@ -28,7 +31,8 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator()
-: nav2_util::LifecycleNode("bt_navigator", "", true)
+: nav2_util::LifecycleNode("bt_navigator", "", false),
+  start_time_(0)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -42,17 +46,24 @@ BtNavigator::BtNavigator()
     "nav2_is_stuck_condition_bt_node",
     "nav2_goal_reached_condition_bt_node",
     "nav2_initial_pose_received_condition_bt_node",
+    "nav2_goal_updated_condition_bt_node",
     "nav2_reinitialize_global_localization_service_bt_node",
     "nav2_rate_controller_bt_node",
+    "nav2_distance_controller_bt_node",
     "nav2_recovery_node_bt_node",
     "nav2_pipeline_sequence_bt_node",
     "nav2_round_robin_node_bt_node",
-    "nav2_transform_available_condition_bt_node"
+    "nav2_transform_available_condition_bt_node",
+    "nav2_time_expired_condition_bt_node",
+    "nav2_distance_traveled_condition_bt_node"
   };
 
   // Declare this node's parameters
   declare_parameter("bt_xml_filename");
   declare_parameter("plugin_lib_names", plugin_libs);
+  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
+  declare_parameter("global_frame", std::string("map"));
+  declare_parameter("robot_base_frame", std::string("base_link"));
 }
 
 BtNavigator::~BtNavigator()
@@ -65,9 +76,10 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
+  // use suffix '_rclcpp_node' to keep parameter file consistency #1773
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args",
-      "-r", std::string("__node:=") + get_name() + "_client_node",
+      "-r", std::string("__node:=") + get_name() + "_rclcpp_node",
       "--"});
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
@@ -96,6 +108,9 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Get the libraries to pull plugins from
   plugin_lib_names_ = get_parameter("plugin_lib_names").as_string_array();
+  global_frame_ = get_parameter("global_frame").as_string();
+  robot_frame_ = get_parameter("robot_base_frame").as_string();
+  transform_tolerance_ = get_parameter("transform_tolerance").as_double();
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
@@ -109,6 +124,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
   blackboard_->set<bool>("path_updated", false);  // NOLINT
   blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
+  blackboard_->set<int>("number_recoveries", 0);  // NOLINT
 
   // Get the BT filename to use from the node parameter
   std::string bt_xml_filename;
@@ -128,6 +144,9 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   RCLCPP_DEBUG(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename.c_str());
   RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string_.c_str());
+
+  // Create the Behavior Tree from the XML input
+  tree_ = bt_->buildTreeFromText(xml_string_, blackboard_);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -159,7 +178,6 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   // TODO(orduno) Fix the race condition between the worker thread ticking the tree
   //              and the main thread resetting the resources, see #1344
-
   goal_sub_.reset();
   client_node_.reset();
   self_client_.reset();
@@ -172,6 +190,7 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   plugin_lib_names_.clear();
   xml_string_.clear();
   blackboard_.reset();
+  bt_->haltAllActions(tree_.rootNode());
   bt_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
@@ -211,11 +230,8 @@ BtNavigator::navigateToPose()
       return action_server_->is_cancel_requested();
     };
 
-
-  // Create the Behavior Tree from the XML input
-  BT::Tree tree = bt_->buildTreeFromText(xml_string_, blackboard_);
-
-  RosTopicLogger topic_logger(client_node_, tree);
+  RosTopicLogger topic_logger(client_node_, tree_);
+  std::shared_ptr<Action::Feedback> feedback_msg = std::make_shared<Action::Feedback>();
 
   auto on_loop = [&]() {
       if (action_server_->is_preempt_requested()) {
@@ -224,10 +240,30 @@ BtNavigator::navigateToPose()
         initializeGoalPose();
       }
       topic_logger.flush();
+
+      // action server feedback (pose, duration of task,
+      // number of recoveries, and distance remaining to goal)
+      nav2_util::getCurrentPose(
+        feedback_msg->current_pose, *tf_, global_frame_, robot_frame_, transform_tolerance_);
+
+      geometry_msgs::msg::PoseStamped goal_pose;
+      blackboard_->get("goal", goal_pose);
+
+      feedback_msg->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
+        feedback_msg->current_pose.pose, goal_pose.pose);
+
+      int recovery_count = 0;
+      blackboard_->get<int>("number_recoveries", recovery_count);
+      feedback_msg->number_of_recoveries = recovery_count;
+      feedback_msg->navigation_time = now() - start_time_;
+      action_server_->publish_feedback(feedback_msg);
     };
 
   // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(&tree, on_loop, is_canceling);
+  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
+  // Make sure that the Bt is not in a running state from a previous execution
+  // note: if all the ControlNodes are implemented correctly, this is not needed.
+  bt_->haltAllActions(tree_.rootNode());
 
   switch (rc) {
     case nav2_behavior_tree::BtStatus::SUCCEEDED:
@@ -258,6 +294,10 @@ BtNavigator::initializeGoalPose()
   RCLCPP_INFO(
     get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
     goal->pose.pose.position.x, goal->pose.pose.position.y);
+
+  // Reset state for new action feedback
+  start_time_ = now();
+  blackboard_->set<int>("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
   blackboard_->set("goal", goal->pose);

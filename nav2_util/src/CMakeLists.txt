@@ -21,8 +21,6 @@ ament_target_dependencies(${library_name}
   tf2_geometry_msgs
 )
 
-add_subdirectory(map_loader)
-
 add_executable(lifecycle_bringup
   lifecycle_bringup_commandline.cpp
 )
@@ -39,9 +37,13 @@ target_link_libraries(dump_params ${Boost_PROGRAM_OPTIONS_LIBRARY})
 
 install(TARGETS
   ${library_name}
-  lifecycle_bringup
-  dump_params
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(TARGETS
+  lifecycle_bringup
+  dump_params
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )

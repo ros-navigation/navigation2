@@ -77,29 +77,29 @@ unsigned int countValues(
   return count;
 }
 
-nav2_costmap_2d::StaticLayer * addStaticLayer(
+void addStaticLayer(
   nav2_costmap_2d::LayeredCostmap & layers,
-  tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node)
+  tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node,
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> & slayer)
 {
-  nav2_costmap_2d::StaticLayer * slayer = new nav2_costmap_2d::StaticLayer();
+  slayer = std::make_shared<nav2_costmap_2d::StaticLayer>();
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(slayer));
   slayer->initialize(&layers, "static", &tf, node, nullptr, nullptr /*TODO*/);
-  return slayer;
 }
 
-nav2_costmap_2d::ObstacleLayer * addObstacleLayer(
+void addObstacleLayer(
   nav2_costmap_2d::LayeredCostmap & layers,
-  tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node)
+  tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node,
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> & olayer)
 {
-  nav2_costmap_2d::ObstacleLayer * olayer = new nav2_costmap_2d::ObstacleLayer();
+  olayer = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
   olayer->initialize(&layers, "obstacles", &tf, node, nullptr, nullptr /*TODO*/);
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(olayer));
-  return olayer;
 }
 
 void addObservation(
-  nav2_costmap_2d::ObstacleLayer * olayer, double x, double y, double z = 0.0,
-  double ox = 0.0, double oy = 0.0, double oz = MAX_Z)
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer, double x, double y, double z = 0.0,
+  double ox = 0.0, double oy = 0.0, double oz = MAX_Z, bool marking = true, bool clearing = true)
 {
   sensor_msgs::msg::PointCloud2 cloud;
   sensor_msgs::PointCloud2Modifier modifier(cloud);
@@ -119,18 +119,18 @@ void addObservation(
 
   // obstacle range = raytrace range = 100.0
   nav2_costmap_2d::Observation obs(p, cloud, 100.0, 100.0);
-  olayer->addStaticObservation(obs, true, true);
+  olayer->addStaticObservation(obs, marking, clearing);
 }
 
-nav2_costmap_2d::InflationLayer * addInflationLayer(
+void addInflationLayer(
   nav2_costmap_2d::LayeredCostmap & layers,
-  tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node)
+  tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node,
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> & ilayer)
 {
-  nav2_costmap_2d::InflationLayer * ilayer = new nav2_costmap_2d::InflationLayer();
+  ilayer = std::make_shared<nav2_costmap_2d::InflationLayer>();
   ilayer->initialize(&layers, "inflation", &tf, node, nullptr, nullptr /*TODO*/);
   std::shared_ptr<nav2_costmap_2d::Layer> ipointer(ilayer);
   layers.addPlugin(ipointer);
-  return ilayer;
 }
 
 

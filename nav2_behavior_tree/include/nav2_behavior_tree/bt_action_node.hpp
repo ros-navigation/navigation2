@@ -21,19 +21,20 @@
 #include "behaviortree_cpp_v3/action_node.h"
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "nav2_behavior_tree/bt_conversions.hpp"
 
 namespace nav2_behavior_tree
 {
 
 template<class ActionT>
-class BtActionNode : public BT::CoroActionNode
+class BtActionNode : public BT::ActionNodeBase
 {
 public:
   BtActionNode(
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BT::CoroActionNode(xml_tag_name, conf), action_name_(action_name)
+  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name)
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
@@ -41,6 +42,10 @@ public:
     goal_ = typename ActionT::Goal();
     result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
 
+    std::string remapped_action_name;
+    if (getInput("server_name", remapped_action_name)) {
+      action_name_ = remapped_action_name;
+    }
     createActionClient(action_name_);
 
     // Give the derive class a chance to do any initialization
@@ -69,6 +74,7 @@ public:
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
     BT::PortsList basic = {
+      BT::InputPort<std::string>("server_name", "Action server name"),
       BT::InputPort<std::chrono::milliseconds>("server_timeout")
     };
     basic.insert(addition.begin(), addition.end());
@@ -96,17 +102,114 @@ public:
   }
 
   // Called upon successful completion of the action. A derived class can override this
-  // method to put a value on the blackboard, for example
-  virtual void on_success()
+  // method to put a value on the blackboard, for example.
+  virtual BT::NodeStatus on_success()
   {
+    return BT::NodeStatus::SUCCESS;
+  }
+
+  // Called when a the action is aborted. By default, the node will return FAILURE.
+  // The user may override it to return another value, instead.
+  virtual BT::NodeStatus on_aborted()
+  {
+    return BT::NodeStatus::FAILURE;
+  }
+
+  // Called when a the action is cancelled. By default, the node will return SUCCESS.
+  // The user may override it to return another value, instead.
+  virtual BT::NodeStatus on_cancelled()
+  {
+    return BT::NodeStatus::SUCCESS;
   }
 
   // The main override required by a BT action
   BT::NodeStatus tick() override
   {
-    on_tick();
+    // first step to be done only at the beginning of the Action
+    if (status() == BT::NodeStatus::IDLE) {
+      // setting the status to RUNNING to notify the BT Loggers (if any)
+      setStatus(BT::NodeStatus::RUNNING);
 
-new_goal_received:
+      // user defined callback
+      on_tick();
+
+      on_new_goal_received();
+    }
+
+    // The following code corresponds to the "RUNNING" loop
+    if (rclcpp::ok() && !goal_result_available_) {
+      // user defined callback. May modify the value of "goal_updated_"
+      on_wait_for_result();
+
+      auto goal_status = goal_handle_->get_status();
+      if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
+        goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
+      {
+        goal_updated_ = false;
+        on_new_goal_received();
+      }
+
+      rclcpp::spin_some(node_);
+
+      // check if, after invoking spin_some(), we finally received the result
+      if (!goal_result_available_) {
+        // Yield this Action, returning RUNNING
+        return BT::NodeStatus::RUNNING;
+      }
+    }
+
+    switch (result_.code) {
+      case rclcpp_action::ResultCode::SUCCEEDED:
+        return on_success();
+
+      case rclcpp_action::ResultCode::ABORTED:
+        return on_aborted();
+
+      case rclcpp_action::ResultCode::CANCELED:
+        return on_cancelled();
+
+      default:
+        throw std::logic_error("BtActionNode::Tick: invalid status value");
+    }
+  }
+
+  // The other (optional) override required by a BT action. In this case, we
+  // make sure to cancel the ROS2 action if it is still running.
+  void halt() override
+  {
+    if (should_cancel_goal()) {
+      auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
+      if (rclcpp::spin_until_future_complete(node_, future_cancel) !=
+        rclcpp::FutureReturnCode::SUCCESS)
+      {
+        RCLCPP_ERROR(
+          node_->get_logger(),
+          "Failed to cancel action server for %s", action_name_.c_str());
+      }
+    }
+
+    setStatus(BT::NodeStatus::IDLE);
+  }
+
+protected:
+  bool should_cancel_goal()
+  {
+    // Shut the node down if it is currently running
+    if (status() != BT::NodeStatus::RUNNING) {
+      return false;
+    }
+
+    rclcpp::spin_some(node_);
+    auto status = goal_handle_->get_status();
+
+    // Check if the goal is still executing
+    return status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
+           status == action_msgs::msg::GoalStatus::STATUS_EXECUTING;
+  }
+
+
+  void on_new_goal_received()
+  {
     goal_result_available_ = false;
     auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
     send_goal_options.result_callback =
@@ -129,83 +232,17 @@ new_goal_received:
     if (!goal_handle_) {
       throw std::runtime_error("Goal was rejected by the action server");
     }
-
-    while (rclcpp::ok() && !goal_result_available_) {
-      on_wait_for_result();
-
-      auto status = goal_handle_->get_status();
-      if (goal_updated_ && (status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
-        status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
-      {
-        goal_updated_ = false;
-        goto new_goal_received;
-      }
-
-      // Yield to any other nodes
-      setStatusRunningAndYield();
-      rclcpp::spin_some(node_);
-    }
-
-    switch (result_.code) {
-      case rclcpp_action::ResultCode::SUCCEEDED:
-        on_success();
-        setStatus(BT::NodeStatus::IDLE);
-        return BT::NodeStatus::SUCCESS;
-
-      case rclcpp_action::ResultCode::ABORTED:
-        setStatus(BT::NodeStatus::IDLE);
-        return BT::NodeStatus::FAILURE;
-
-      case rclcpp_action::ResultCode::CANCELED:
-        setStatus(BT::NodeStatus::IDLE);
-        return BT::NodeStatus::SUCCESS;
-
-      default:
-        throw std::logic_error("BtActionNode::Tick: invalid status value");
-    }
   }
 
-  // The other (optional) override required by a BT action. In this case, we
-  // make sure to cancel the ROS2 action if it is still running.
-  void halt() override
+  void increment_recovery_count()
   {
-    if (should_cancel_goal()) {
-      auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
-      if (rclcpp::spin_until_future_complete(node_, future_cancel) !=
-        rclcpp::executor::FutureReturnCode::SUCCESS)
-      {
-        RCLCPP_ERROR(
-          node_->get_logger(),
-          "Failed to cancel action server for %s", action_name_.c_str());
-      }
-    }
-
-    setStatus(BT::NodeStatus::IDLE);
-    CoroActionNode::halt();
+    int recovery_count = 0;
+    config().blackboard->get<int>("number_recoveries", recovery_count);  // NOLINT
+    recovery_count += 1;
+    config().blackboard->set<int>("number_recoveries", recovery_count);  // NOLINT
   }
 
-protected:
-  bool should_cancel_goal()
-  {
-    // Shut the node down if it is currently running
-    if (status() != BT::NodeStatus::RUNNING) {
-      return false;
-    }
-
-    rclcpp::spin_some(node_);
-    auto status = goal_handle_->get_status();
-
-    // Check if the goal is still executing
-    if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
-      status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)
-    {
-      return true;
-    }
-
-    return false;
-  }
-
-  const std::string action_name_;
+  std::string action_name_;
   typename std::shared_ptr<rclcpp_action::Client<ActionT>> action_client_;
 
   // All ROS2 actions have a goal and a result
