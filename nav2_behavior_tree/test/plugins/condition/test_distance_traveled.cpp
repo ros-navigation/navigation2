@@ -24,7 +24,7 @@
 
 #include "../../test_transform_handler.hpp"
 #include "../../test_dummy_tree_node.hpp"
-#include "nav2_behavior_tree/plugins/distance_traveled_condition.hpp"
+#include "nav2_behavior_tree/plugins/condition/distance_traveled_condition.hpp"
 
 class DistanceTraveledConditionTestFixture : public ::testing::Test
 {

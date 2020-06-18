@@ -12,23 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_behavior_tree/plugins/condition/initial_pose_received_condition.hpp"
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONTROL__ROUND_ROBIN_NODE_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__CONTROL__ROUND_ROBIN_NODE_HPP_
+
+#include <string>
+
+#include "behaviortree_cpp_v3/control_node.h"
+#include "behaviortree_cpp_v3/bt_factory.h"
 
 namespace nav2_behavior_tree
 {
 
-BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node)
+class RoundRobinNode : public BT::ControlNode
 {
-  auto initPoseReceived = tree_node.config().blackboard->get<bool>("initial_pose_received");
-  return initPoseReceived ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
-}
+public:
+  explicit RoundRobinNode(const std::string & name);
+
+  BT::NodeStatus tick() override;
+  void halt() override;
+
+private:
+  unsigned int current_child_idx_{0};
+};
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
-BT_REGISTER_NODES(factory)
-{
-  factory.registerSimpleCondition(
-    "InitialPoseReceived",
-    std::bind(&nav2_behavior_tree::initialPoseReceived, std::placeholders::_1));
-}
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONTROL__ROUND_ROBIN_NODE_HPP_

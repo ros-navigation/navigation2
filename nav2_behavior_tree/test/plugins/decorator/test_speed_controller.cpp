@@ -24,7 +24,7 @@
 
 #include "../../test_transform_handler.hpp"
 #include "../../test_dummy_tree_node.hpp"
-#include "nav2_behavior_tree/plugins/speed_controller.hpp"
+#include "nav2_behavior_tree/plugins/decorator/speed_controller.hpp"
 
 using namespace std::chrono;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT

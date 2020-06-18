@@ -23,7 +23,7 @@
 #include "nav2_util/robot_utils.hpp"
 
 #include "../../test_transform_handler.hpp"
-#include "nav2_behavior_tree/plugins/time_expired_condition.hpp"
+#include "nav2_behavior_tree/plugins/condition/time_expired_condition.hpp"
 
 using namespace std::chrono;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT

@@ -17,52 +17,36 @@
 
 #include <string>
 #include <memory>
-#include <cmath>
 
-#include "nav2_behavior_tree/bt_action_node.hpp"
-#include "nav2_msgs/action/wait.hpp"
+#include "nav2_behavior_tree/plugins/action/wait_action.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class WaitAction : public BtActionNode<nav2_msgs::action::Wait>
+WaitAction::WaitAction(
+  const std::string & xml_tag_name,
+  const std::string & action_name,
+  const BT::NodeConfiguration & conf)
+: BtActionNode<nav2_msgs::action::Wait>(xml_tag_name, action_name, conf)
 {
-public:
-  WaitAction(
-    const std::string & xml_tag_name,
-    const std::string & action_name,
-    const BT::NodeConfiguration & conf)
-  : BtActionNode<nav2_msgs::action::Wait>(xml_tag_name, action_name, conf)
-  {
-    int duration;
-    getInput("wait_duration", duration);
-    if (duration <= 0) {
-      RCLCPP_WARN(
-        node_->get_logger(), "Wait duration is negative or zero "
-        "(%i). Setting to positive.", duration);
-      duration *= -1;
-    }
-
-    goal_.time.sec = duration;
+  int duration;
+  getInput("wait_duration", duration);
+  if (duration <= 0) {
+    RCLCPP_WARN(
+      node_->get_logger(), "Wait duration is negative or zero "
+      "(%i). Setting to positive.", duration);
+    duration *= -1;
   }
 
-  void on_tick() override
-  {
-    increment_recovery_count();
-  }
+  goal_.time.sec = duration;
+}
 
-  // Any BT node that accepts parameters must provide a requiredNodeParameters method
-  static BT::PortsList providedPorts()
-  {
-    return providedBasicPorts(
-      {
-        BT::InputPort<int>("wait_duration", 1, "Wait time")
-      });
-  }
-};
+void WaitAction::on_tick()
+{
+  increment_recovery_count();
+}
 
 }  // namespace nav2_behavior_tree
-
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)

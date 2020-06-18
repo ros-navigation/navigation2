@@ -25,7 +25,7 @@
 
 #include "behaviortree_cpp_v3/decorator_node.h"
 
-#include "nav2_behavior_tree/plugins/distance_controller.hpp"
+#include "nav2_behavior_tree/plugins/decorator/distance_controller.hpp"
 
 namespace nav2_behavior_tree
 {

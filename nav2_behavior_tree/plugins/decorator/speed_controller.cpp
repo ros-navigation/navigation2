@@ -18,7 +18,7 @@
 
 #include "nav2_util/geometry_utils.hpp"
 
-#include "nav2_behavior_tree/plugins/speed_controller.hpp"
+#include "nav2_behavior_tree/plugins/decorator/speed_controller.hpp"
 
 namespace nav2_behavior_tree
 {

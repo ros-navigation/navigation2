@@ -12,24 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__CLEAR_COSTMAP_SERVICE_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__CLEAR_COSTMAP_SERVICE_HPP_
+
 #include <string>
 
-#include "nav2_behavior_tree/plugins/action/clear_costmap_service.hpp"
+#include "nav2_behavior_tree/bt_service_node.hpp"
+#include "nav2_msgs/srv/clear_entire_costmap.hpp"
 
 namespace nav2_behavior_tree
 {
 
-ClearEntireCostmapService::ClearEntireCostmapService(
-  const std::string & service_node_name,
-  const BT::NodeConfiguration & conf)
-: BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>(service_node_name, conf)
+class ClearEntireCostmapService : public BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>
 {
-}
+public:
+  ClearEntireCostmapService(
+    const std::string & service_node_name,
+    const BT::NodeConfiguration & conf);
+
+  void on_tick() override
+  {
+    increment_recovery_count();
+  }
+};
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
-BT_REGISTER_NODES(factory)
-{
-  factory.registerNodeType<nav2_behavior_tree::ClearEntireCostmapService>("ClearEntireCostmap");
-}
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__CLEAR_COSTMAP_SERVICE_HPP_
