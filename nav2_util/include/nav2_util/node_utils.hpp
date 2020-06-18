@@ -93,6 +93,17 @@ void declare_parameter_if_not_declared(
   }
 }
 
+template<typename NodeT>
+std::string get_plugin_type(
+  NodeT node,
+  const std::string & plugin_name)
+{
+  node->declare_parameter(plugin_name + ".plugin");
+  std::string plugin_type;
+  node->get_parameter(plugin_name + ".plugin", plugin_type);
+  return plugin_type;
+}
+
 }  // namespace nav2_util
 
 #endif  // NAV2_UTIL__NODE_UTILS_HPP_
