@@ -27,7 +27,7 @@
 using namespace std::chrono;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
-class GoalReachedConditionTestFixture : public nav2_behavior_tree::TestBehaviorTreeFixture
+class GoalReachedConditionTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
   void SetUp()

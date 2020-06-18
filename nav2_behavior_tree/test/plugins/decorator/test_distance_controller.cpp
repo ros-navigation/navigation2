@@ -25,7 +25,7 @@
 #include "../../test_dummy_tree_node.hpp"
 #include "nav2_behavior_tree/plugins/decorator/distance_controller.hpp"
 
-class DistanceControllerTestFixture : public nav2_behavior_tree::TestBehaviorTreeFixture
+class DistanceControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
   void SetUp()

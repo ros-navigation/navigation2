@@ -29,7 +29,7 @@
 namespace nav2_behavior_tree
 {
 
-class TestBehaviorTreeFixture : public ::testing::Test
+class BehaviorTreeTestFixture : public ::testing::Test
 {
 public:
   static void SetUpTestCase()
@@ -78,14 +78,14 @@ protected:
 
 }  // namespace nav2_behavior_tree
 
-rclcpp::Node::SharedPtr nav2_behavior_tree::TestBehaviorTreeFixture::node_ = nullptr;
+rclcpp::Node::SharedPtr nav2_behavior_tree::BehaviorTreeTestFixture::node_ = nullptr;
 
 std::shared_ptr<nav2_behavior_tree::TransformHandler>
-nav2_behavior_tree::TestBehaviorTreeFixture::transform_handler_ = nullptr;
+nav2_behavior_tree::BehaviorTreeTestFixture::transform_handler_ = nullptr;
 
-BT::NodeConfiguration * nav2_behavior_tree::TestBehaviorTreeFixture::config_ = nullptr;
+BT::NodeConfiguration * nav2_behavior_tree::BehaviorTreeTestFixture::config_ = nullptr;
 
 std::shared_ptr<BT::BehaviorTreeFactory>
-nav2_behavior_tree::TestBehaviorTreeFixture::factory_ = nullptr;
+nav2_behavior_tree::BehaviorTreeTestFixture::factory_ = nullptr;
 
 #endif  // TEST_BEHAVIOR_TREE_FIXTURE_HPP_

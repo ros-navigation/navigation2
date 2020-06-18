@@ -22,7 +22,7 @@
 #include "../../test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/distance_traveled_condition.hpp"
 
-class DistanceTraveledConditionTestFixture : public nav2_behavior_tree::TestBehaviorTreeFixture
+class DistanceTraveledConditionTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
   void SetUp()
