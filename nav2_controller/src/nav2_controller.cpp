@@ -79,7 +79,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   for (size_t i = 0; i != controller_plugins_.size(); i++) {
     try {
-      std::string controller_type = nav2_util::get_plugin_type(
+      std::string controller_type = nav2_util::get_plugin_type_param(
         shared_from_this(), controller_plugins_[i]);
       nav2_core::Controller::Ptr controller =
         lp_loader_.createUniqueInstance(controller_type);
