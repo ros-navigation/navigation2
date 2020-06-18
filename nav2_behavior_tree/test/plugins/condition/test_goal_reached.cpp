@@ -17,6 +17,7 @@
 #include <chrono>
 #include <memory>
 #include <set>
+#include <string>
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -42,12 +43,13 @@ public:
     goal.pose.position.y = 1.0;
     config_->blackboard->set("goal", goal);
 
-    std::string xml_txt = R"(
-    <root main_tree_to_execute = "MainTree" >
+    std::string xml_txt =
+      R"(
+      <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
             <GoalReached goal="{goal}" />
         </BehaviorTree>
-    </root>)";
+      </root>)";
 
     factory_->registerNodeType<nav2_behavior_tree::GoalReachedCondition>("GoalReached");
     tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
