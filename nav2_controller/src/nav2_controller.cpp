@@ -37,9 +37,7 @@ ControllerServer::ControllerServer()
   RCLCPP_INFO(get_logger(), "Creating controller server");
 
   declare_parameter("controller_frequency", 20.0);
-  std::vector<std::string> default_plugins;
-  default_plugins.emplace_back("FollowPath");
-  declare_parameter("controller_plugins", default_plugins);
+  declare_parameter("controller_plugins");
 
   declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
