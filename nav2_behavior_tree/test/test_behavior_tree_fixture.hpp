@@ -20,6 +20,7 @@
 #include <memory>
 #include <set>
 
+#include "behaviortree_cpp_v3/bt_factory.h"
 #include "rclcpp/rclcpp.hpp"
 
 #include "test_transform_handler.hpp"
@@ -35,6 +36,7 @@ public:
   {
     node_ = std::make_shared<rclcpp::Node>("test_behavior_tree_fixture");
     transform_handler_ = std::make_shared<nav2_behavior_tree::TransformHandler>(node_);
+    factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
 
@@ -64,19 +66,26 @@ public:
     config_ = nullptr;
     transform_handler_.reset();
     node_.reset();
+    factory_.reset();
   }
 
 protected:
   static rclcpp::Node::SharedPtr node_;
   static std::shared_ptr<nav2_behavior_tree::TransformHandler> transform_handler_;
   static BT::NodeConfiguration * config_;
+  static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
 };
 
 }  // namespace nav2_behavior_tree
 
 rclcpp::Node::SharedPtr nav2_behavior_tree::TestBehaviorTreeFixture::node_ = nullptr;
+
 std::shared_ptr<nav2_behavior_tree::TransformHandler>
 nav2_behavior_tree::TestBehaviorTreeFixture::transform_handler_ = nullptr;
+
 BT::NodeConfiguration * nav2_behavior_tree::TestBehaviorTreeFixture::config_ = nullptr;
+
+std::shared_ptr<BT::BehaviorTreeFactory>
+nav2_behavior_tree::TestBehaviorTreeFixture::factory_ = nullptr;
 
 #endif  // TEST_BEHAVIOR_TREE_FIXTURE_HPP_
