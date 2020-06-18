@@ -100,7 +100,7 @@ std::string get_plugin_type_param(
 {
   node->declare_parameter(plugin_name + ".plugin");
   std::string plugin_type;
-  if(!node->get_parameter(plugin_name + ".plugin", plugin_type)) {
+  if (!node->get_parameter(plugin_name + ".plugin", plugin_type)) {
     RCLCPP_FATAL(node->get_logger(), "'plugin' param not defined for %s", plugin_name.c_str());
     exit(-1);
   }
