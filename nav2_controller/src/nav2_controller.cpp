@@ -62,8 +62,13 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
 
   get_parameter("controller_plugins", controller_plugins_);
-  get_parameter("controller_frequency", controller_frequency_);
+  // Default to DWB if no controller plugin is provided
+  if (controller_plugins_.empty()) {
+    controller_plugins_.emplace_back("FollowPath");
+    declare_parameter("FollowPath.plugin", "dwb_core::DWBLocalPlanner");
+  }
 
+  get_parameter("controller_frequency", controller_frequency_);
   get_parameter("min_x_velocity_threshold", min_x_velocity_threshold_);
   get_parameter("min_y_velocity_threshold", min_y_velocity_threshold_);
   get_parameter("min_theta_velocity_threshold", min_theta_velocity_threshold_);
