@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <memory>
+#include <string>
 
 #include "nav2_util/node_utils.hpp"
 #include "gtest/gtest.h"
@@ -92,4 +93,3 @@ TEST(GetPluginTypeParam, GetPluginTypeParam)
   ASSERT_EQ(get_plugin_type_param(node, "Foo"), "bar");
   ASSERT_EXIT(get_plugin_type_param(node, "Waldo"), ::testing::ExitedWithCode(255), ".*");
 }
-

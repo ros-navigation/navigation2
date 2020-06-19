@@ -78,9 +78,6 @@ Costmap2DROS::Costmap2DROS(
     {"--ros-args", "-r", std::string("__node:=") + get_name() + "_client", "--"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
-  std::vector<std::string> plugin_names{"static_layer", "obstacle_layer", "inflation_layer"};
-  std::vector<std::string> plugin_types{"nav2_costmap_2d::StaticLayer",
-    "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"};
   std::vector<std::string> clearable_layers{"obstacle_layer"};
 
   declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
@@ -96,8 +93,7 @@ Costmap2DROS::Costmap2DROS(
   declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
   declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
   declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
-  declare_parameter("plugin_names", rclcpp::ParameterValue(plugin_names));
-  declare_parameter("plugin_types", rclcpp::ParameterValue(plugin_types));
+  declare_parameter("plugins");
   declare_parameter("publish_frequency", rclcpp::ParameterValue(1.0));
   declare_parameter("resolution", rclcpp::ParameterValue(0.1));
   declare_parameter("robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
@@ -299,8 +295,6 @@ Costmap2DROS::getParameters()
   get_parameter("height", map_height_meters_);
   get_parameter("origin_x", origin_x_);
   get_parameter("origin_y", origin_y_);
-  get_parameter("plugin_names", plugin_names_);
-  get_parameter("plugin_types", plugin_types_);
   get_parameter("publish_frequency", map_publish_frequency_);
   get_parameter("resolution", resolution_);
   get_parameter("robot_base_frame", robot_base_frame_);
@@ -311,13 +305,21 @@ Costmap2DROS::getParameters()
   get_parameter("update_frequency", map_update_frequency_);
   get_parameter("width", map_width_meters_);
 
-  // Semantic checks...
+  get_parameter("plugins", plugin_names_);
+  // Default plugins if no constmap plugin is provided
+  if (plugin_names_.empty()) {
+    plugin_names_ = std::vector<std::string>{"static_layer", "obstacle_layer", "inflation_layer"};
+    declare_parameter("static_layer.plugin", "nav2_costmap_2d::StaticLayer");
+    declare_parameter("obstacle_layer.plugin", "nav2_costmap_2d::ObstacleLayer");
+    declare_parameter("inflation_layer.plugin", "nav2_costmap_2d::InflationLayer");
+  }
 
-  // 1. There must be the same number of plugin names and plugin types
-  if (plugin_names_.size() != plugin_types_.size()) {
-    std::string plugin_error = "Size of plugin_names and plugin_type parameters do not match";
-    RCLCPP_ERROR(get_logger(), plugin_error);
-    throw std::runtime_error(plugin_error);
+  // Semantic checks...
+  auto node = shared_from_this();
+
+  // 1. All plugins must have 'plugin' param defined in their namespace to define the plugin type
+  for (auto & plugin_name : plugin_names_) {
+    plugin_types_.emplace_back(nav2_util::get_plugin_type_param(node, plugin_name));
   }
 
   // 2. The map publish frequency cannot be 0 (to avoid a divde-by-zero)
