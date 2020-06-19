@@ -37,16 +37,16 @@ using namespace std::chrono;  // NOLINT
 
 namespace nav2_behavior_tree
 {
-class TransformHandler : public rclcpp::Node
+class TransformHandler
 {
 public:
-  TransformHandler()
-  : Node("TransformHandler"),
+  explicit TransformHandler(rclcpp::Node::SharedPtr & node)
+  : node_(node),
     is_active_(false),
     base_transform_(nullptr),
     tf_broadcaster_(nullptr)
   {
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   }
 
@@ -66,7 +66,7 @@ public:
     is_active_ = true;
 
     // Launch a thread to process the messages for this node
-    spin_thread_ = std::make_unique<nav2_util::NodeThread>(this);
+    spin_thread_ = std::make_unique<nav2_util::NodeThread>(node_->get_node_base_interface());
 
     startRobotTransform();
   }
@@ -94,7 +94,7 @@ public:
       while (!tf_buffer_->canTransform("map", "base_link", rclcpp::Time(0))) {
         std::this_thread::sleep_for(100ms);
       }
-      RCLCPP_INFO(get_logger(), "Transforms are available now!");
+      RCLCPP_INFO(node_->get_logger(), "Transforms are available now!");
       return;
     }
     throw std::runtime_error("Trying to deactivate while already inactive");
@@ -116,14 +116,14 @@ public:
 private:
   void publishRobotTransform()
   {
-    base_transform_->header.stamp = now();
+    base_transform_->header.stamp = node_->now();
     tf_broadcaster_->sendTransform(*base_transform_);
   }
 
   void startRobotTransform()
   {
     // Provide the robot pose transform
-    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
 
     if (!base_transform_) {
       base_transform_ = std::make_unique<geometry_msgs::msg::TransformStamped>();
@@ -139,9 +139,11 @@ private:
     updateRobotPose(robot_pose);
 
     // Publish the transform periodically
-    transform_timer_ = create_wall_timer(
+    transform_timer_ = node_->create_wall_timer(
       100ms, std::bind(&TransformHandler::publishRobotTransform, this));
   }
+
+  rclcpp::Node::SharedPtr node_;
 
   bool is_active_;
 
