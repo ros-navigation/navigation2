@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include "nav2_util/node_utils.hpp"
 #include "nav2_recoveries/recovery_server.hpp"
 
 namespace recovery_server
@@ -33,18 +34,7 @@ RecoveryServer::RecoveryServer()
     rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
   declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
 
-  std::vector<std::string> plugin_names{std::string("spin"),
-    std::string("back_up"), std::string("wait")};
-  std::vector<std::string> plugin_types{std::string("nav2_recoveries/Spin"),
-    std::string("nav2_recoveries/BackUp"),
-    std::string("nav2_recoveries/Wait")};
-
-  declare_parameter(
-    "plugin_names",
-    rclcpp::ParameterValue(plugin_names));
-  declare_parameter(
-    "plugin_types",
-    rclcpp::ParameterValue(plugin_types));
+  declare_parameter("plugins");
 
   declare_parameter(
     "global_frame",
@@ -90,8 +80,16 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     *costmap_sub_, *footprint_sub_, *tf_, this->get_name(),
     global_frame, robot_base_frame, transform_tolerance_);
 
-  get_parameter("plugin_names", plugin_names_);
-  get_parameter("plugin_types", plugin_types_);
+  get_parameter("plugins", plugin_names_);
+  // Default to spin, backup, and wait if no recovery plugin is provided
+  if (plugin_names_.empty()) {
+    plugin_names_.emplace_back("spin");
+    plugin_names_.emplace_back("backup");
+    plugin_names_.emplace_back("wait");
+    declare_parameter("spin.plugin", "nav2_recoveries/Spin");
+    declare_parameter("backup.plugin", "nav2_recoveries/BackUp");
+    declare_parameter("wait.plugin", "nav2_recoveries/Wait");
+  }
 
   loadRecoveryPlugins();
 
@@ -103,18 +101,21 @@ void
 RecoveryServer::loadRecoveryPlugins()
 {
   auto node = shared_from_this();
+  std::string plugin_type;
 
   for (size_t i = 0; i != plugin_names_.size(); i++) {
+    plugin_type = nav2_util::get_plugin_type_param(
+      node, plugin_names_[i]);
     try {
       RCLCPP_INFO(
         get_logger(), "Creating recovery plugin %s of type %s",
-        plugin_names_[i].c_str(), plugin_types_[i].c_str());
-      recoveries_.push_back(plugin_loader_.createUniqueInstance(plugin_types_[i]));
+        plugin_names_[i].c_str(), plugin_type.c_str());
+      recoveries_.push_back(plugin_loader_.createUniqueInstance(plugin_type));
       recoveries_.back()->configure(node, plugin_names_[i], tf_, collision_checker_);
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create recovery %s of type %s."
-        " Exception: %s", plugin_names_[i].c_str(), plugin_types_[i].c_str(),
+        " Exception: %s", plugin_names_[i].c_str(), plugin_type.c_str(),
         ex.what());
       exit(-1);
     }

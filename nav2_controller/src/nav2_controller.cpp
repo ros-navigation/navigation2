@@ -37,7 +37,7 @@ ControllerServer::ControllerServer()
   RCLCPP_INFO(get_logger(), "Creating controller server");
 
   declare_parameter("controller_frequency", 20.0);
-  declare_parameter("controller_plugins");
+  declare_parameter("plugins");
 
   declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
@@ -61,10 +61,10 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
 
-  get_parameter("controller_plugins", controller_plugins_);
+  get_parameter("plugins", controller_ids_);
   // Default to DWB if no controller plugin is provided
-  if (controller_plugins_.empty()) {
-    controller_plugins_.emplace_back("FollowPath");
+  if (controller_ids_.empty()) {
+    controller_ids_.emplace_back("FollowPath");
     declare_parameter("FollowPath.plugin", "dwb_core::DWBLocalPlanner");
   }
 
@@ -79,28 +79,29 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   auto node = shared_from_this();
 
   progress_checker_ = std::make_unique<ProgressChecker>(node);
+  std::string controller_type;
 
-  for (size_t i = 0; i != controller_plugins_.size(); i++) {
+  for (size_t i = 0; i != controller_ids_.size(); i++) {
     try {
-      std::string controller_type = nav2_util::get_plugin_type_param(
-        shared_from_this(), controller_plugins_[i]);
+      controller_type = nav2_util::get_plugin_type_param(
+        node, controller_ids_[i]);
       nav2_core::Controller::Ptr controller =
         lp_loader_.createUniqueInstance(controller_type);
       RCLCPP_INFO(
         get_logger(), "Created controller : %s of type %s",
-        controller_plugins_[i].c_str(), controller_type.c_str());
+        controller_ids_[i].c_str(), controller_type.c_str());
       controller->configure(
-        node, controller_plugins_[i],
+        node, controller_ids_[i],
         costmap_ros_->getTfBuffer(), costmap_ros_);
-      controllers_.insert({controller_plugins_[i], controller});
+      controllers_.insert({controller_ids_[i], controller});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(get_logger(), "Failed to create controller. Exception: %s", ex.what());
       exit(-1);
     }
   }
 
-  for (size_t i = 0; i != controller_plugins_.size(); i++) {
-    controller_ids_concat_ += controller_plugins_[i] + std::string(" ");
+  for (size_t i = 0; i != controller_ids_.size(); i++) {
+    controller_ids_concat_ += controller_ids_[i] + std::string(" ");
   }
 
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
