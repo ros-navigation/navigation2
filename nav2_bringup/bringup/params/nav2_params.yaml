@@ -252,12 +252,13 @@ map_saver:
 
 planner_server:
   ros__parameters:
-    planner_plugin_types: ["nav2_navfn_planner/NavfnPlanner"]
-    planner_plugin_ids: ["GridBased"]
     use_sim_time: True
-    GridBased.tolerance: 0.5
-    GridBased.use_astar: false
-    GridBased.allow_unknown: true
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      tolerance: 0.5
+      use_astar: false
+      allow_unknown: true
 
 planner_server_rclcpp_node:
   ros__parameters:

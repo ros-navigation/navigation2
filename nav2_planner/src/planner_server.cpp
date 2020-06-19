@@ -42,11 +42,7 @@ PlannerServer::PlannerServer()
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare this node's parameters
-  std::vector<std::string> default_id, default_type;
-  default_id.push_back("GridBased");
-  default_type.push_back("nav2_navfn_planner/NavfnPlanner");
-  declare_parameter("planner_plugin_ids", default_id);
-  declare_parameter("planner_plugin_types", default_type);
+  declare_parameter("planner_plugins");
 
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -79,26 +75,26 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   tf_ = costmap_ros_->getTfBuffer();
 
-  get_parameter("planner_plugin_ids", plugin_ids_);
-  get_parameter("planner_plugin_types", plugin_types_);
-  auto node = shared_from_this();
-
-  if (plugin_ids_.size() != plugin_types_.size()) {
-    RCLCPP_FATAL(
-      get_logger(),
-      "Planner plugin names and types sizes do not match!");
-    exit(-1);
+  get_parameter("planner_plugins", planner_plugins_);
+  // Default to NavfnPlanner if no planner plugin is provided
+  if (planner_plugins_.empty()) {
+    planner_plugins_.emplace_back("GridBased");
+    declare_parameter("GridBased.plugin", "nav2_navfn_planner/NavfnPlanner");
   }
 
-  for (size_t i = 0; i != plugin_types_.size(); i++) {
+  auto node = shared_from_this();
+
+  for (size_t i = 0; i != planner_plugins_.size(); i++) {
     try {
+      std::string planner_type = nav2_util::get_plugin_type_param(
+        node, planner_plugins_[i]);
       nav2_core::GlobalPlanner::Ptr planner =
-        gp_loader_.createUniqueInstance(plugin_types_[i]);
+        gp_loader_.createUniqueInstance(planner_type);
       RCLCPP_INFO(
         get_logger(), "Created global planner plugin %s of type %s",
-        plugin_ids_[i].c_str(), plugin_types_[i].c_str());
-      planner->configure(node, plugin_ids_[i], tf_, costmap_ros_);
-      planners_.insert({plugin_ids_[i], planner});
+        planner_plugins_[i].c_str(), planner_type.c_str());
+      planner->configure(node, planner_plugins_[i], tf_, costmap_ros_);
+      planners_.insert({planner_plugins_[i], planner});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create global planner. Exception: %s",
@@ -107,8 +103,8 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  for (size_t i = 0; i != plugin_types_.size(); i++) {
-    planner_ids_concat_ += plugin_ids_[i] + std::string(" ");
+  for (size_t i = 0; i != planner_plugins_.size(); i++) {
+    planner_ids_concat_ += planner_plugins_[i] + std::string(" ");
   }
 
   // Initialize pubs & subs
