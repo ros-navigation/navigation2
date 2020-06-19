@@ -83,9 +83,7 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("plugins", plugin_names_);
   // Default to spin, backup, and wait if no recovery plugin is provided
   if (plugin_names_.empty()) {
-    plugin_names_.emplace_back("spin");
-    plugin_names_.emplace_back("backup");
-    plugin_names_.emplace_back("wait");
+    plugin_names_ = std::vector<std::string>{"spin", "backup", "wait"};
     declare_parameter("spin.plugin", "nav2_recoveries/Spin");
     declare_parameter("backup.plugin", "nav2_recoveries/BackUp");
     declare_parameter("wait.plugin", "nav2_recoveries/Wait");
