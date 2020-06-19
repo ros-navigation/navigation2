@@ -30,8 +30,7 @@ Namespace: /parent_ns/local_ns
 | observation_sources | [""] | List of sources of sensors, to be used if not specified in plugin specific configurations |
 | origin_x | 0.0 | X origin of the costmap relative to width (m) |
 | origin_y | 0.0 | Y origin of the costmap relative to height (m) |
-| plugin_names | {"static_layer", "obstacle_layer", "inflation_layer"} | List of mapped plugin names for parameter namespaces and names |
-| plugin_types | {"nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"} | List of registered plugins to map to names and load |
+| plugins | {"static_layer", "obstacle_layer", "inflation_layer"} | List of mapped plugin names for parameter namespaces and names |
 | publish_frequency | 1.0 | Frequency to publish costmap to topic |
 | resolution | 0.1 | Resolution of 1 pixel of the costmap, in meters |
 | robot_base_frame | "base_link" | Robot base frame |
@@ -51,6 +50,7 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
+| `<static layer>`.plugin | "nav2_costmap_2d::StaticLayer" | Costmap layer plugin type |
 | `<static layer>`.enabled | true | Whether it is enabled |
 | `<static layer>`.subscribe_to_updates | false | Subscribe to static map updates after receiving first |
 | `<static layer>`.map_subscribe_transient_local | true | QoS settings for map topic |
@@ -62,6 +62,7 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
+| `<inflation layer>`.plugin | "nav2_costmap_2d::InflationLayer" | Costmap layer plugin type |
 | `<inflation layer>`.enabled | true | Whether it is enabled |
 | `<inflation layer>`.inflation_radius | 0.55 | Radius to inflate costmap around lethal obstacles |
 | `<inflation layer>`.cost_scaling_factor | 10.0 | Exponential decay factor across inflation radius |
@@ -75,6 +76,7 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
+| `<obstacle layer>`.plugin | "nav2_costmap_2d::ObstacleLayer" | Costmap layer plugin type |
 | `<obstacle layer>`.enabled | true | Whether it is enabled |
 | `<obstacle layer>`.footprint_clearing_enabled | true | Clear any occupied cells under robot footprint |
 | `<obstacle layer>`.max_obstacle_height | 2.0 | Maximum height to add return to occupancy grid |
@@ -102,6 +104,7 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
+| `<voxel layer>`.plugin | "nav2_costmap_2d::VoxelLayer" | Costmap layer plugin type |
 | `<voxel layer>`.enabled | true | Whether it is enabled |
 | `<voxel layer>`.footprint_clearing_enabled | true | Clear any occupied cells under robot footprint |
 | `<voxel layer>`.max_obstacle_height | 2.0 | Maximum height to add return to occupancy grid |
@@ -131,8 +134,7 @@ Namespace: /parent_ns/local_ns
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | controller_frequency | 20.0 | Frequency to run controller |
-| controller_plugin_ids | ["FollowPath"] | List of mapped names for controller plugins for processing requests and parameters |
-| controller_plugin_types | ["dwb_core::DWBLocalPlanner"] | List of registered plugins to load |
+| plugins | ["FollowPath"] | List of mapped names for controller plugins for processing requests and parameters |
 | min_x_velocity_threshold | 0.0001 | Minimum X velocity to use (m/s) |
 | min_y_velocity_threshold | 0.0001 | Minimum Y velocity to use (m/s) |
 | min_theta_velocity_threshold | 0.0001 | Minimum angular velocity to use (rad/s) |
@@ -147,6 +149,7 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
+| `<dwb plugin>`.plugin | "dwb_core::DWBLocalPlanner" | Controller plugin type |
 | `<dwb plugin>`.critics | N/A | List of critic plugins to use |
 | `<dwb plugin>`.default_critic_namespaces | ["dwb_critics"] | Namespaces to load critics in |
 | `<dwb plugin>`.prune_plan | true | Whether to prune the path of old, passed points |
@@ -371,8 +374,7 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| planner_plugin_ids | ["GridBased"] | List of Mapped plugin names for parameters and processing requests |
-| planner_plugin_types | ["nav2_navfn_planner/NavfnPlanner"] | List of registered pluginlib planner types to load |
+| plugins | ["GridBased"] | List of Mapped plugin names for parameters and processing requests |
 
 # navfn_planner
 
@@ -380,6 +382,7 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
+| `<name>`.plugin  | "nav2_navfn_planner/NavfnPlanner" | Planner plugin type |
 | `<name>`.tolerance  | 0.5 | Tolerance in meters between requested goal pose and end of path |
 | `<name>`.use_astar | false | Whether to use A*, if false, uses Dijstra's expansion |
 | `<name>`.allow_unknown | true | Whether to allow planning in unknown space |
@@ -403,23 +406,36 @@ Namespace: /parent_ns/local_ns
 | transform_tolerance | 0.1 | TF transform tolerance |
 | global_frame | "odom" | Reference frame |
 | robot_base_frame | "base_link" | Robot base frame |
-| plugin_names | {"spin", "back_up", "wait"}| List of plugin names to use, also matches action server names |
-| plugin_types | {"nav2_recoveries/Spin", "nav2_recoveries/BackUp", "nav2_recoveries/Wait"} | List of registered plugin to map to names |
+| plugins | {"spin", "backup", "wait"}| List of plugin names to use, also matches action server names |
 
 ## spin plugin
 
+* `<name>`: Corresponding plugin ID for this type
+
 | Parameter | Default | Description |
 | ----------| --------| ------------|
+| `<name>`.plugin | "nav2_recoveries/Spin" | Recovery plugin type |
 | simulate_ahead_time | 2.0 | Time to look ahead for collisions (s) |
 | max_rotational_vel | 1.0 | Maximum rotational velocity (rad/s) |
 | min_rotational_vel | 0.4 | Minimum rotational velocity (rad/s) |
 | rotational_acc_lim | 3.2 | maximum rotational acceleration (rad/s^2) |
 
-## back_up plugin
+## backup plugin
+
+* `<name>`: Corresponding plugin ID for this type
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
+| `<name>`.plugin | "nav2_recoveries/BackUp" | Recovery plugin type |
 | simulate_ahead_time | 2.0 | Time to look ahead for collisions (s) |
+
+## wait plugin
+
+* `<name>`: Corresponding plugin ID for this type
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<name>`.plugin | "nav2_recoveries/Wait" | Recovery plugin type |
 
 # AMCL
 
