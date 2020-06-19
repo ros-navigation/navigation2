@@ -12,14 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
+
 #include "nav2_util/node_utils.hpp"
 #include "gtest/gtest.h"
+#include "rclcpp/rclcpp.hpp"
 
 using nav2_util::sanitize_node_name;
 using nav2_util::generate_internal_node_name;
 using nav2_util::generate_internal_node;
 using nav2_util::add_namespaces;
 using nav2_util::time_to_string;
+using nav2_util::declare_parameter_if_not_declared;
+using nav2_util::get_plugin_type_param;
+
+class RclCppFixture
+{
+public:
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
+};
+RclCppFixture g_rclcppfixture;
 
 TEST(SanitizeNodeName, SanitizeNodeName)
 {
@@ -54,3 +67,29 @@ TEST(AddNamespaces, AddNamespaceSlash)
   ASSERT_EQ(add_namespaces("hi", "bye"), "hi/bye");
   ASSERT_EQ(add_namespaces("hi/", "bye"), "/hi/bye");
 }
+
+TEST(DeclareParameterIfNotDeclared, DeclareParameterIfNotDeclared)
+{
+  auto node = std::make_shared<rclcpp::Node>("test_node");
+  std::string param;
+
+  // test declared parameter
+  node->declare_parameter("foobar", "foo");
+  declare_parameter_if_not_declared(node, "foobar", rclcpp::ParameterValue{"bar"});
+  node->get_parameter("foobar", param);
+  ASSERT_EQ(param, "foo");
+
+  // test undeclared parameter
+  declare_parameter_if_not_declared(node, "waldo", rclcpp::ParameterValue{"fred"});
+  node->get_parameter("waldo", param);
+  ASSERT_EQ(param, "fred");
+}
+
+TEST(GetPluginTypeParam, GetPluginTypeParam)
+{
+  auto node = std::make_shared<rclcpp::Node>("test_node");
+  node->declare_parameter("Foo.plugin", "bar");
+  ASSERT_EQ(get_plugin_type_param(node, "Foo"), "bar");
+  ASSERT_EXIT(get_plugin_type_param(node, "Waldo"), ::testing::ExitedWithCode(255), ".*");
+}
+
