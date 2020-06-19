@@ -47,6 +47,7 @@ PlannerServer::PlannerServer()
   default_type.push_back("nav2_navfn_planner/NavfnPlanner");
   declare_parameter("planner_plugin_ids", default_id);
   declare_parameter("planner_plugin_types", default_type);
+  declare_parameter("expected_planner_frequency", 20.0);
 
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -109,6 +110,19 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   for (size_t i = 0; i != plugin_types_.size(); i++) {
     planner_ids_concat_ += plugin_ids_[i] + std::string(" ");
+  }
+
+  double expected_planner_frequency;
+  get_parameter("expected_planner_frequency", expected_planner_frequency);
+  if (expected_planner_frequency > 0) {
+    max_planner_duration_ = 1 / expected_planner_frequency;
+  } else {
+    max_planner_duration_ = 0.0;
+
+    RCLCPP_WARN(
+      get_logger(),
+      "The expected planner frequency parameter is %.4f Hz. The value has to be greater"
+      " than 0.0 to turn on displaying warning messages", expected_planner_frequency);
   }
 
   // Initialize pubs & subs
@@ -193,6 +207,8 @@ PlannerServer::on_shutdown(const rclcpp_lifecycle::State &)
 void
 PlannerServer::computePlan()
 {
+  auto start_time = now();
+
   // Initialize the ComputePathToPose goal and result
   auto goal = action_server_->get_current_goal();
   auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
@@ -270,6 +286,15 @@ PlannerServer::computePlan()
     publishPlan(result->path);
 
     action_server_->succeeded_current(result);
+
+    auto cycle_duration = (now() - start_time).seconds();
+    if (max_planner_duration_ && cycle_duration > max_planner_duration_) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Planner loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
+        1 / max_planner_duration_, 1 / cycle_duration);
+    }
+
     return;
   } catch (std::exception & ex) {
     RCLCPP_WARN(

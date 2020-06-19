@@ -116,6 +116,7 @@ protected:
   PlannerMap planners_;
   pluginlib::ClassLoader<nav2_core::GlobalPlanner> gp_loader_;
   std::vector<std::string> plugin_ids_, plugin_types_;
+  double max_planner_duration_;
   std::string planner_ids_concat_;
 
   // TF buffer
