@@ -24,7 +24,7 @@
 using namespace std::chrono;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
-class DistanceControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+class RateControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
   void SetUp()
@@ -47,11 +47,11 @@ protected:
 };
 
 std::shared_ptr<nav2_behavior_tree::RateController>
-DistanceControllerTestFixture::bt_node_ = nullptr;
+RateControllerTestFixture::bt_node_ = nullptr;
 std::shared_ptr<nav2_behavior_tree::DummyNode>
-DistanceControllerTestFixture::dummy_node_ = nullptr;
+RateControllerTestFixture::dummy_node_ = nullptr;
 
-TEST_F(DistanceControllerTestFixture, test_behavior)
+TEST_F(RateControllerTestFixture, test_behavior)
 {
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
 
