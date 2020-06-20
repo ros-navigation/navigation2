@@ -14,7 +14,6 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <chrono>
 #include <memory>
 #include <set>
 
@@ -22,18 +21,15 @@
 #include "nav2_util/robot_utils.hpp"
 
 #include "../../test_behavior_tree_fixture.hpp"
-#include "nav2_behavior_tree/plugins/condition/time_expired_condition.hpp"
+#include "nav2_behavior_tree/plugins/condition/goal_updated_condition.hpp"
 
-using namespace std::chrono;  // NOLINT
-using namespace std::chrono_literals;  // NOLINT
-
-class TimeExpiredConditionTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+class GoalUpdatedConditionTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
   void SetUp()
   {
-    bt_node_ = std::make_shared<nav2_behavior_tree::TimeExpiredCondition>(
-      "time_expired", *config_);
+    bt_node_ = std::make_shared<nav2_behavior_tree::GoalUpdatedCondition>(
+      "goal_updated", *config_);
   }
 
   void TearDown()
@@ -42,25 +38,24 @@ public:
   }
 
 protected:
-  static std::shared_ptr<nav2_behavior_tree::TimeExpiredCondition> bt_node_;
+  static std::shared_ptr<nav2_behavior_tree::GoalUpdatedCondition> bt_node_;
 };
 
-std::shared_ptr<nav2_behavior_tree::TimeExpiredCondition>
-TimeExpiredConditionTestFixture::bt_node_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::GoalUpdatedCondition>
+GoalUpdatedConditionTestFixture::bt_node_ = nullptr;
 
-TEST_F(TimeExpiredConditionTestFixture, test_behavior)
+TEST_F(GoalUpdatedConditionTestFixture, test_behavior)
 {
+  geometry_msgs::msg::PoseStamped goal;
+  config_->blackboard->set("goal", goal);
+
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
-  for (int i = 0; i < 20; ++i) {
-    rclcpp::sleep_for(500ms);
-    if (i % 2) {
-      EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
-    } else {
-      EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
-    }
-  }
+  goal.pose.position.x = 1.0;
+  config_->blackboard->set("goal", goal);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 }
 
 int main(int argc, char ** argv)

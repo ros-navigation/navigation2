@@ -1,5 +1,4 @@
-// Copyright (c) 2020 Sarthak Mittal
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2020 Aitor Miguel Blanco
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,42 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__TIME_EXPIRED_CONDITION_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__TIME_EXPIRED_CONDITION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GOAL_UPDATED_CONDITION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GOAL_UPDATED_CONDITION_HPP_
 
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp_v3/condition_node.h"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class TimeExpiredCondition : public BT::ConditionNode
+class GoalUpdatedCondition : public BT::ConditionNode
 {
 public:
-  TimeExpiredCondition(
+  GoalUpdatedCondition(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf);
 
-  TimeExpiredCondition() = delete;
+  GoalUpdatedCondition() = delete;
 
   BT::NodeStatus tick() override;
 
-  // Any BT node that accepts parameters must provide a requiredNodeParameters method
   static BT::PortsList providedPorts()
   {
-    return {
-      BT::InputPort<double>("seconds", 1.0, "Seconds")
-    };
+    return {};
   }
 
 private:
-  rclcpp::Node::SharedPtr node_;
-  rclcpp::Time start_;
-  double period_;
+  geometry_msgs::msg::PoseStamped goal_;
 };
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__TIME_EXPIRED_CONDITION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GOAL_UPDATED_CONDITION_HPP_

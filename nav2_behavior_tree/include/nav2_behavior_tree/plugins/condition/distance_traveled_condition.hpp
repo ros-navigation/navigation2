@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__DISTANCE_TRAVELED_CONDITION_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__DISTANCE_TRAVELED_CONDITION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__DISTANCE_TRAVELED_CONDITION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__DISTANCE_TRAVELED_CONDITION_HPP_
 
 #include <string>
 #include <memory>
@@ -62,4 +62,4 @@ private:
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DISTANCE_TRAVELED_CONDITION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__DISTANCE_TRAVELED_CONDITION_HPP_

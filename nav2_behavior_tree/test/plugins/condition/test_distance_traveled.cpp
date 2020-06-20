@@ -14,81 +14,39 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <cmath>
 #include <memory>
-#include <set>
 
-#include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/robot_utils.hpp"
 
-#include "../../test_transform_handler.hpp"
-#include "../../test_dummy_tree_node.hpp"
-#include "nav2_behavior_tree/plugins/distance_traveled_condition.hpp"
+#include "../../test_behavior_tree_fixture.hpp"
+#include "nav2_behavior_tree/plugins/condition/distance_traveled_condition.hpp"
 
-class DistanceTraveledConditionTestFixture : public ::testing::Test
+class DistanceTraveledConditionTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
-  static void SetUpTestCase()
-  {
-    transform_handler_ = new nav2_behavior_tree::TransformHandler();
-
-    config_ = new BT::NodeConfiguration();
-
-    // Create the blackboard that will be shared by all of the nodes in the tree
-    config_->blackboard = BT::Blackboard::create();
-    // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
-      "node",
-      rclcpp::Node::SharedPtr(transform_handler_));
-    config_->blackboard->set<std::shared_ptr<tf2_ros::Buffer>>(
-      "tf_buffer",
-      transform_handler_->getBuffer());
-    config_->blackboard->set<std::chrono::milliseconds>(
-      "server_timeout",
-      std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("path_updated", false);
-    config_->blackboard->set<bool>("initial_pose_received", false);
-
-    transform_handler_->activate();
-    transform_handler_->waitForTransform();
-  }
-
-  static void TearDownTestCase()
-  {
-    transform_handler_->deactivate();
-    delete transform_handler_;
-    delete config_;
-    transform_handler_ = nullptr;
-    config_ = nullptr;
-  }
-
   void SetUp()
   {
-    node_ = new nav2_behavior_tree::DistanceTraveledCondition("distance_traveled", *config_);
+    bt_node_ = std::make_shared<nav2_behavior_tree::DistanceTraveledCondition>(
+      "distance_traveled", *config_);
   }
 
   void TearDown()
   {
-    node_ = nullptr;
+    bt_node_.reset();
   }
 
 protected:
-  static nav2_behavior_tree::TransformHandler * transform_handler_;
-  static BT::NodeConfiguration * config_;
-  static nav2_behavior_tree::DistanceTraveledCondition * node_;
+  static std::shared_ptr<nav2_behavior_tree::DistanceTraveledCondition> bt_node_;
 };
 
-nav2_behavior_tree::TransformHandler * DistanceTraveledConditionTestFixture::transform_handler_ =
-  nullptr;
-BT::NodeConfiguration * DistanceTraveledConditionTestFixture::config_ = nullptr;
-nav2_behavior_tree::DistanceTraveledCondition * DistanceTraveledConditionTestFixture::node_ =
-  nullptr;
+std::shared_ptr<nav2_behavior_tree::DistanceTraveledCondition>
+DistanceTraveledConditionTestFixture::bt_node_ = nullptr;
 
 TEST_F(DistanceTraveledConditionTestFixture, test_behavior)
 {
-  EXPECT_EQ(node_->status(), BT::NodeStatus::IDLE);
-  EXPECT_EQ(node_->executeTick(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
   geometry_msgs::msg::PoseStamped pose;
   pose.pose.position.x = 0;
@@ -111,9 +69,9 @@ TEST_F(DistanceTraveledConditionTestFixture, test_behavior)
     }
 
     if (i % 2) {
-      EXPECT_EQ(node_->executeTick(), BT::NodeStatus::FAILURE);
+      EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
     } else {
-      EXPECT_EQ(node_->executeTick(), BT::NodeStatus::SUCCESS);
+      EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
     }
   }
 }

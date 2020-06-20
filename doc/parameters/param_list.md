@@ -375,6 +375,7 @@ Namespace: /parent_ns/local_ns
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | planner_plugins | ["GridBased"] | List of Mapped plugin names for parameters and processing requests |
+| expected_planner_frequency | 20.0 | Expected planner frequency. If the current frequency is less than the expected frequency, display the warning message |
 
 # navfn_planner
 
