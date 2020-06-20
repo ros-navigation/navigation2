@@ -134,7 +134,7 @@ Namespace: /parent_ns/local_ns
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | controller_frequency | 20.0 | Frequency to run controller |
-| plugins | ["FollowPath"] | List of mapped names for controller plugins for processing requests and parameters |
+| controller_plugins | ["FollowPath"] | List of mapped names for controller plugins for processing requests and parameters |
 | min_x_velocity_threshold | 0.0001 | Minimum X velocity to use (m/s) |
 | min_y_velocity_threshold | 0.0001 | Minimum Y velocity to use (m/s) |
 | min_theta_velocity_threshold | 0.0001 | Minimum angular velocity to use (rad/s) |
@@ -374,7 +374,7 @@ Namespace: /parent_ns/local_ns
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| plugins | ["GridBased"] | List of Mapped plugin names for parameters and processing requests |
+| planner_plugins | ["GridBased"] | List of Mapped plugin names for parameters and processing requests |
 
 # navfn_planner
 
@@ -406,7 +406,7 @@ Namespace: /parent_ns/local_ns
 | transform_tolerance | 0.1 | TF transform tolerance |
 | global_frame | "odom" | Reference frame |
 | robot_base_frame | "base_link" | Robot base frame |
-| plugins | {"spin", "backup", "wait"}| List of plugin names to use, also matches action server names |
+| recovery_plugins | {"spin", "backup", "wait"}| List of plugin names to use, also matches action server names |
 
 ## spin plugin
 

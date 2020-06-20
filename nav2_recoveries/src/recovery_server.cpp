@@ -34,7 +34,11 @@ RecoveryServer::RecoveryServer()
     rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
   declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
 
-  declare_parameter("plugins");
+  std::vector<std::string> default_plugins{"spin", "backup", "wait"};
+  declare_parameter("recovery_plugins", default_plugins);
+  declare_parameter("spin.plugin", "nav2_recoveries/Spin");
+  declare_parameter("backup.plugin", "nav2_recoveries/BackUp");
+  declare_parameter("wait.plugin", "nav2_recoveries/Wait");
 
   declare_parameter(
     "global_frame",
@@ -80,15 +84,7 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     *costmap_sub_, *footprint_sub_, *tf_, this->get_name(),
     global_frame, robot_base_frame, transform_tolerance_);
 
-  get_parameter("plugins", plugin_names_);
-  // Default to spin, backup, and wait if no recovery plugin is provided
-  if (plugin_names_.empty()) {
-    plugin_names_ = std::vector<std::string>{"spin", "backup", "wait"};
-    declare_parameter("spin.plugin", "nav2_recoveries/Spin");
-    declare_parameter("backup.plugin", "nav2_recoveries/BackUp");
-    declare_parameter("wait.plugin", "nav2_recoveries/Wait");
-  }
-
+  get_parameter("recovery_plugins", plugin_names_);
   loadRecoveryPlugins();
 
   return nav2_util::CallbackReturn::SUCCESS;

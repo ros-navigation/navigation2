@@ -37,7 +37,10 @@ ControllerServer::ControllerServer()
   RCLCPP_INFO(get_logger(), "Creating controller server");
 
   declare_parameter("controller_frequency", 20.0);
-  declare_parameter("plugins");
+
+  std::vector<std::string> default_plugins{"FollowPath"};
+  declare_parameter("controller_plugins", default_plugins);
+  declare_parameter("FollowPath.plugin", "dwb_core::DWBLocalPlanner");
 
   declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
@@ -61,13 +64,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
 
-  get_parameter("plugins", controller_ids_);
-  // Default to DWB if no controller plugin is provided
-  if (controller_ids_.empty()) {
-    controller_ids_.emplace_back("FollowPath");
-    declare_parameter("FollowPath.plugin", "dwb_core::DWBLocalPlanner");
-  }
-
+  get_parameter("controller_plugins", controller_ids_);
   get_parameter("controller_frequency", controller_frequency_);
   get_parameter("min_x_velocity_threshold", min_x_velocity_threshold_);
   get_parameter("min_y_velocity_threshold", min_y_velocity_threshold_);

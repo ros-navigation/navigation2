@@ -85,7 +85,7 @@ controller_server:
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
-    plugins: ["FollowPath"]
+    controller_plugins: ["FollowPath"]
 
     # DWB parameters
     FollowPath:
@@ -195,7 +195,7 @@ map_server:
 planner_server:
   ros__parameters:
     use_sim_time: True
-    plugins: ["GridBased"]
+    planner_plugins: ["GridBased"]
     GridBased:
       plugin: "nav2_navfn_planner/NavfnPlanner"
       tolerance: 0.5
@@ -211,10 +211,13 @@ recoveries_server:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
-    plugins: ["spin", "back_up", "wait"]
-    spin.plugin: "nav2_recoveries/Spin"
-    backup.plugin: "nav2_recoveries/BackUp"
-    wait.plugin: "nav2_recoveries/Wait"
+    recovery_plugins: ["spin", "back_up", "wait"]
+    spin:
+      plugin: "nav2_recoveries/Spin"
+    backup:
+      plugin: "nav2_recoveries/BackUp"
+    wait:
+      plugin: "nav2_recoveries/Wait"
     global_frame: odom
     robot_base_frame: base_link
     transform_timeout: 0.1

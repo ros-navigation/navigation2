@@ -42,7 +42,9 @@ PlannerServer::PlannerServer()
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare this node's parameters
-  declare_parameter("plugins");
+  std::vector<std::string> default_plugins{"GridBased"};
+  declare_parameter("planner_plugins", default_plugins);
+  declare_parameter("GridBased.plugin", "nav2_navfn_planner/NavfnPlanner");
 
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -75,12 +77,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   tf_ = costmap_ros_->getTfBuffer();
 
-  get_parameter("plugins", planner_ids_);
-  // Default to NavfnPlanner if no planner plugin is provided
-  if (planner_ids_.empty()) {
-    planner_ids_.emplace_back("GridBased");
-    declare_parameter("GridBased.plugin", "nav2_navfn_planner/NavfnPlanner");
-  }
+  get_parameter("planner_plugins", planner_ids_);
 
   auto node = shared_from_this();
 
