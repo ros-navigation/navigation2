@@ -1,0 +1,3 @@
+ament_add_gtest(test_control_recovery_node test_recovery_node.cpp)
+target_link_libraries(test_control_recovery_node nav2_recovery_node_bt_node)
+ament_target_dependencies(test_control_recovery_node ${dependencies})
