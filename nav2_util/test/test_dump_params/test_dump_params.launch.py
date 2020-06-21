@@ -23,7 +23,6 @@ from launch.actions import ExecuteProcess
 import launch_testing
 import launch_testing.actions
 import launch_testing.asserts
-from launch_testing.asserts import assertInStdout
 import launch_testing.util
 import launch_testing_ros
 
@@ -76,6 +75,10 @@ def generate_test_description():
         ExecuteProcess(
             cmd=[os.getenv('TEST_EXECUTABLE'), '-n', 'test_dump_params,test_dump_params_copy'],
             name='test_dump_params_multiple',
+            output='screen'),
+        ExecuteProcess(
+            cmd=[os.getenv('TEST_EXECUTABLE'), '-n', 'test_dump_params_error'],
+            name='test_dump_params_error',
             output='screen')
     ]
     for process in processes_to_test:
@@ -116,12 +119,18 @@ class TestDumpParams(unittest.TestCase):
                         'dump_params_yaml_verbose',
                         'dump_params_md_verbose',
                         'dump_params_yaml',
-                        'dump_params_multiple']
+                        'dump_params_multiple',
+                        'dump_params_error']
         ]
-        for process, output_file in zip(processes_to_test, output_files):
-            assertInStdout(
+        for process, output_file in zip(processes_to_test[:-1], output_files[:-1]):
+            launch_testing.asserts.assertInStdout(
                 proc_output,
                 expected_output=launch_testing.tools.expected_output_from_file(
                     path=output_file),
                 process=process, output_filter=output_filter
             )
+        launch_testing.asserts.assertInStderr(
+            proc_output,
+            expected_output=launch_testing.tools.expected_output_from_file(path=output_files[-1]),
+            process=processes_to_test[-1],
+            output_filter=output_filter)
