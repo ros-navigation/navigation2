@@ -30,7 +30,7 @@ class TestDumpParamsNode(Node):
         self.declare_parameter('param_int_array',  [1, 2, 3])
         self.declare_parameter('param_double_array', [1.50000, 23.50120, 123.0010])
         self.declare_parameter('param_string_array', ['foo', 'bar'])
-        self.declare_parameter('param_byte_array', [0x52, 0x4f, 0x53, 0x32])
+        self.declare_parameter('param_byte_array', [b'\x01', b'\x02', b'\x03', b'\x04'])
 
 
 def main(args=None):
