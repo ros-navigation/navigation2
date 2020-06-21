@@ -4,7 +4,7 @@
 |use_sim_time|False|
 |param_not_set|NOT_SET|
 |param_bool|True|
-|param_int|123456|
+|param_int|1234|
 |param_double|3.14|
 |param_string|"foobar"|
 |param_bool_array|[True, False]|
