@@ -36,7 +36,7 @@ test_dump_params:
     # Additional constraints:       
     # Read-only:                    False
 
-    param_bool_array:               []
+    param_bool_array:               [True, False]
     # Range:                        N/A
     # Description:                  
     # Additional constraints:       

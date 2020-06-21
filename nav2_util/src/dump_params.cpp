@@ -169,9 +169,12 @@ static std::string to_string(const rcl_interfaces::msg::ParameterValue & param_v
       {
         std::stringstream stream;
         stream << "[";
-        auto num_items = param_value.string_array_value.size();
+        auto num_items = param_value.bool_array_value.size();
         for (unsigned i = 0; i < num_items; i++) {
-          stream << (param_value.bool_value ? "True" : "False");
+          stream << (param_value.bool_array_value[i] ? "True" : "False");
+          if (i != num_items - 1) {
+            stream << ", ";
+          }
         }
         stream << "]";
         return stream.str();
