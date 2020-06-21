@@ -1,0 +1,69 @@
+test_dump_params:
+  ros__parameters:
+    use_sim_time:                   False
+    # Range:                        N/A
+    # Description:                  
+    # Additional constraints:       
+    # Read-only:                    False
+
+    param_not_set:                  NOT_SET
+    # Range:                        N/A
+    # Description:                  
+    # Additional constraints:       
+    # Read-only:                    False
+
+    param_bool:                     True
+    # Range:                        N/A
+    # Description:                  
+    # Additional constraints:       
+    # Read-only:                    False
+
+    param_int:                      123456
+    # Range:                        N/A
+    # Description:                  
+    # Additional constraints:       
+    # Read-only:                    False
+
+    param_double:                   3.14
+    # Range:                        N/A
+    # Description:                  
+    # Additional constraints:       
+    # Read-only:                    False
+
+    param_string:                   "foobar"
+    # Range:                        N/A
+    # Description:                  
+    # Additional constraints:       
+    # Read-only:                    False
+
+    param_bool_array:               [True, False]
+    # Range:                        N/A
+    # Description:                  
+    # Additional constraints:       
+    # Read-only:                    False
+
+    param_int_array:                [1, 2, 3]
+    # Range:                        N/A
+    # Description:                  
+    # Additional constraints:       
+    # Read-only:                    False
+
+    param_double_array:             [1.5, 23.5012, 123.001]
+    # Range:                        N/A
+    # Description:                  
+    # Additional constraints:       
+    # Read-only:                    False
+
+    param_string_array:             ["foo", "bar"]
+    # Range:                        N/A
+    # Description:                  
+    # Additional constraints:       
+    # Read-only:                    False
+
+    param_byte_array:               [82, 79, 83, 50]
+    # Range:                        N/A
+    # Description:                  
+    # Additional constraints:       
+    # Read-only:                    False
+
+

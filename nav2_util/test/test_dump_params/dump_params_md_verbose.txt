@@ -1,0 +1,15 @@
+## test_dump_params Parameters
+|Parameter|Default Value|Range|Description|Additional Constraints|Read-Only|
+|---|---|---|---|---|---|
+|use_sim_time|False|N/A|||False|
+|param_not_set|NOT_SET|N/A|||False|
+|param_bool|True|N/A|||False|
+|param_int|123456|N/A|||False|
+|param_double|3.14|N/A|||False|
+|param_string|"foobar"|N/A|||False|
+|param_bool_array|[True, False]|N/A|||False|
+|param_int_array|[1, 2, 3]|N/A|||False|
+|param_double_array|[1.5, 23.5012, 123.001]|N/A|||False|
+|param_string_array|["foo", "bar"]|N/A|||False|
+|param_byte_array|[82, 79, 83, 50]|N/A|||False|
+

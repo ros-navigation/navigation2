@@ -44,8 +44,16 @@ def generate_test_description():
             name='test_dump_params_yaml',
             output='screen'),
         ExecuteProcess(
-            cmd=[os.getenv('TEST_EXECUTABLE'), '-f', 'markdown', '-n', 'test_dump_params'],
+            cmd=[os.getenv('TEST_EXECUTABLE'), '-f', 'md', '-n', 'test_dump_params'],
             name='test_dump_params_markdown',
+            output='screen'),
+        ExecuteProcess(
+            cmd=[os.getenv('TEST_EXECUTABLE'), '-n', 'test_dump_params', '-v'],
+            name='test_dump_params_yaml_verbose',
+            output='screen'),
+        ExecuteProcess(
+            cmd=[os.getenv('TEST_EXECUTABLE'), '-f', 'md', '-n', 'test_dump_params', '-v'],
+            name='test_dump_params_markdown_verbose',
             output='screen')
     ]
     for process in processes_to_test:
@@ -79,7 +87,10 @@ class TestDumpParams(unittest.TestCase):
         )
         output_files = [
             os.path.join(os.path.dirname(__file__), out)
-            for out in ['dump_params_yaml', 'dump_params_md']
+            for out in ['dump_params_yaml',
+                        'dump_params_md',
+                        'dump_params_yaml_verbose',
+                        'dump_params_md_verbose']
         ]
         for process, output_file in zip(processes_to_test, output_files):
             assertInStdout(
