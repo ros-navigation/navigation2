@@ -55,7 +55,7 @@ get_param_names_for_node(rclcpp::Node::SharedPtr node, std::string node_name)
   auto result_future = client->async_send_request(request);
 
   if (rclcpp::spin_until_future_complete(node, result_future, 1s) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     throw std::runtime_error(std::string("service call to \"") + node_name + "\" failed");
   }
@@ -87,7 +87,7 @@ get_param_values_for_node(
   auto result_future = client->async_send_request(request);
 
   if (rclcpp::spin_until_future_complete(node, result_future, 1s) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     throw std::runtime_error(std::string("service call to \"") + node_name + "\" failed");
   }
@@ -119,7 +119,7 @@ get_param_descriptors_for_node(
   auto result_future = client->async_send_request(request);
 
   if (rclcpp::spin_until_future_complete(node, result_future, 1s) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     throw std::runtime_error(std::string("service call to \"") + node_name + "\" failed");
   }
@@ -128,12 +128,105 @@ get_param_descriptors_for_node(
 }
 
 // A local version to avoid trailing zeros
-template<typename T>
-static std::string to_string(const T a_value)
+static std::string to_string(const rcl_interfaces::msg::ParameterValue & param_value)
 {
-  std::ostringstream out;
-  out << a_value;
-  return out.str();
+  switch (param_value.type) {
+    case rcl_interfaces::msg::ParameterType::PARAMETER_NOT_SET:
+      return "NOT_SET";
+
+    case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL:
+      return param_value.bool_value ? "True" : "False";
+
+    case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER:
+      return std::to_string(param_value.integer_value);
+
+    case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE:
+      {
+        std::ostringstream out;
+        out << param_value.double_value;
+        return out.str();
+      }
+
+    case rcl_interfaces::msg::ParameterType::PARAMETER_STRING:
+      return std::string("\"") + param_value.string_value + std::string("\"");
+
+    case rcl_interfaces::msg::ParameterType::PARAMETER_BYTE_ARRAY:
+      {
+        std::stringstream stream;
+        stream << "[";
+        auto num_items = param_value.byte_array_value.size();
+        for (unsigned i = 0; i < num_items; i++) {
+          stream << param_value.byte_array_value[i];
+          if (i != num_items - 1) {
+            stream << ", ";
+          }
+        }
+        stream << "]";
+        return stream.str();
+      }
+
+    case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL_ARRAY:
+      {
+        std::stringstream stream;
+        stream << "[";
+        auto num_items = param_value.bool_array_value.size();
+        for (unsigned i = 0; i < num_items; i++) {
+          stream << (param_value.bool_array_value[i] ? "True" : "False");
+          if (i != num_items - 1) {
+            stream << ", ";
+          }
+        }
+        stream << "]";
+        return stream.str();
+      }
+
+    case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER_ARRAY:
+      {
+        std::stringstream stream;
+        stream << "[";
+        auto num_items = param_value.integer_array_value.size();
+        for (unsigned i = 0; i < num_items; i++) {
+          stream << std::to_string(param_value.integer_array_value[i]);
+          if (i != num_items - 1) {
+            stream << ", ";
+          }
+        }
+        stream << "]";
+        return stream.str();
+      }
+
+    case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE_ARRAY:
+      {
+        std::stringstream stream;
+        stream << "[";
+        auto num_items = param_value.double_array_value.size();
+        for (unsigned i = 0; i < num_items; i++) {
+          stream << param_value.double_array_value[i];
+          if (i != num_items - 1) {
+            stream << ", ";
+          }
+        }
+        stream << "]";
+        return stream.str();
+      }
+
+    case rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY:
+      {
+        std::stringstream stream;
+        stream << "[";
+        auto num_items = param_value.string_array_value.size();
+        for (unsigned i = 0; i < num_items; i++) {
+          stream << "\"" << param_value.string_array_value[i] << "\"";
+          if (i != num_items - 1) {
+            stream << ", ";
+          }
+        }
+        stream << "]";
+        return stream.str();
+      };
+
+    default: {return "";}
+  }
 }
 
 static void
@@ -146,76 +239,16 @@ print_yaml(
   std::cout << "  ros__parameters:" << std::endl;
 
   for (unsigned i = 0; i < param_names.size(); i++) {
-    std::function<std::string(void)> pf;
-
-    switch (param_values[i].type) {
-      case rcl_interfaces::msg::ParameterType::PARAMETER_NOT_SET:
-        pf = []() {return "NOT_SET";};
-        break;
-
-      case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL:
-        pf = [param_values, i]() {return param_values[i].bool_value ? "True" : "False";};
-        break;
-
-      case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER:
-        pf = [param_values, i]() {return std::to_string(param_values[i].integer_value);};
-        break;
-
-      case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE:
-        pf = [param_values, i]() {return to_string(param_values[i].double_value);};
-        break;
-
-      case rcl_interfaces::msg::ParameterType::PARAMETER_STRING:
-        pf = [param_values, i]() {
-            return std::string("\"") + param_values[i].string_value + std::string("\"");
-          };
-        break;
-
-      case rcl_interfaces::msg::ParameterType::PARAMETER_BYTE_ARRAY:
-      case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL_ARRAY:
-      case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER_ARRAY:
-      case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE_ARRAY:
-      case rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY:
-        pf = [param_values, i]() {
-            std::stringstream stream;
-            stream << "[";
-            auto num_items = param_values[i].string_array_value.size();
-            for (unsigned j = 0; j < num_items; j++) {
-              switch (param_values[i].type) {
-                case rcl_interfaces::msg::ParameterType::PARAMETER_BYTE_ARRAY:
-                  stream << param_values[i].byte_array_value[j];
-                  break;
-                case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL_ARRAY:
-                  stream << (param_values[i].bool_array_value[j] ? "True" : "False");
-                  break;
-                case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER_ARRAY:
-                  stream << param_values[i].integer_array_value[j];
-                  break;
-                case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE_ARRAY:
-                  stream << param_values[i].double_array_value[j];
-                  break;
-                case rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY:
-                  stream << "\"" << param_values[i].string_array_value[j] << "\"";
-                  break;
-              }
-
-              if (j != num_items - 1) {
-                stream << ", ";
-              }
-            }
-            stream << "]";
-            return stream.str();
-          };
-        break;
-    }
+    auto param_str = to_string(param_values[i]);
 
     // Use a field width wide enough for all of the headers
     auto fw = 30;
 
     if (verbose) {
-      std::cout << "    " << std::left << std::setw(fw + 2) << param_names[i] + ":" << pf() << "\n";
+      std::cout << "    " << std::left << std::setw(fw + 2) <<
+        param_names[i] + ":" << param_str << "\n";
     } else {
-      std::cout << "    " << param_names[i] << ": " << pf() << "\n";
+      std::cout << "    " << param_names[i] << ": " << param_str << "\n";
     }
 
     if (verbose) {
@@ -267,70 +300,9 @@ print_markdown(
   }
 
   for (unsigned i = 0; i < param_names.size(); i++) {
-    std::function<std::string(void)> pf;
+    auto param_str = to_string(param_values[i]);
 
-    switch (param_values[i].type) {
-      case rcl_interfaces::msg::ParameterType::PARAMETER_NOT_SET:
-        pf = []() {return "NOT_SET";};
-        break;
-
-      case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL:
-        pf = [param_values, i]() {return param_values[i].bool_value ? "True" : "False";};
-        break;
-
-      case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER:
-        pf = [param_values, i]() {return std::to_string(param_values[i].integer_value);};
-        break;
-
-      case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE:
-        pf = [param_values, i]() {return to_string(param_values[i].double_value);};
-        break;
-
-      case rcl_interfaces::msg::ParameterType::PARAMETER_STRING:
-        pf = [param_values, i]() {
-            return std::string("\"") + param_values[i].string_value + std::string("\"");
-          };
-        break;
-
-      case rcl_interfaces::msg::ParameterType::PARAMETER_BYTE_ARRAY:
-      case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL_ARRAY:
-      case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER_ARRAY:
-      case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE_ARRAY:
-      case rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY:
-        pf = [param_values, i]() {
-            std::stringstream stream;
-            stream << "[";
-            auto num_items = param_values[i].string_array_value.size();
-            for (unsigned j = 0; j < num_items; j++) {
-              switch (param_values[i].type) {
-                case rcl_interfaces::msg::ParameterType::PARAMETER_BYTE_ARRAY:
-                  stream << param_values[i].byte_array_value[j];
-                  break;
-                case rcl_interfaces::msg::ParameterType::PARAMETER_BOOL_ARRAY:
-                  stream << (param_values[i].bool_array_value[j] ? "True" : "False");
-                  break;
-                case rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER_ARRAY:
-                  stream << param_values[i].integer_array_value[j];
-                  break;
-                case rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE_ARRAY:
-                  stream << param_values[i].double_array_value[j];
-                  break;
-                case rcl_interfaces::msg::ParameterType::PARAMETER_STRING_ARRAY:
-                  stream << "\"" << param_values[i].string_array_value[j] << "\"";
-                  break;
-              }
-
-              if (j != num_items - 1) {
-                stream << ", ";
-              }
-            }
-            stream << "]";
-            return stream.str();
-          };
-        break;
-    }
-
-    std::cout << "|" << param_names[i] << "|" << pf();
+    std::cout << "|" << param_names[i] << "|" << param_str;
 
     if (verbose) {
       if (param_descriptors[i].floating_point_range.size()) {
