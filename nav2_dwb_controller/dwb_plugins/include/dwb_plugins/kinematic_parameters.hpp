@@ -41,40 +41,38 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-namespace dwb_plugins
-{
+namespace dwb_plugins {
 
 /**
  * @struct KinematicParameters
  * @brief A struct containing one representation of the robot's kinematics
  */
-struct KinematicParameters
-{
+struct KinematicParameters {
   friend class KinematicsHandler;
 
-  inline double getMinX() {return min_vel_x_;}
-  inline double getMaxX() {return max_vel_x_;}
-  inline double getAccX() {return acc_lim_x_;}
-  inline double getDecelX() {return decel_lim_x_;}
+  inline double getMinX() { return min_vel_x_; }
+  inline double getMaxX() { return max_vel_x_; }
+  inline double getAccX() { return acc_lim_x_; }
+  inline double getDecelX() { return decel_lim_x_; }
 
-  inline double getMinY() {return min_vel_y_;}
-  inline double getMaxY() {return max_vel_y_;}
-  inline double getAccY() {return acc_lim_y_;}
-  inline double getDecelY() {return decel_lim_y_;}
+  inline double getMinY() { return min_vel_y_; }
+  inline double getMaxY() { return max_vel_y_; }
+  inline double getAccY() { return acc_lim_y_; }
+  inline double getDecelY() { return decel_lim_y_; }
 
-  inline double getMinSpeedXY() {return min_speed_xy_;}
-  inline double getMaxSpeedXY() {return max_speed_xy_;}
+  inline double getMinSpeedXY() { return min_speed_xy_; }
+  inline double getMaxSpeedXY() { return max_speed_xy_; }
 
-  inline double getMinTheta() {return -max_vel_theta_;}
-  inline double getMaxTheta() {return max_vel_theta_;}
-  inline double getAccTheta() {return acc_lim_theta_;}
-  inline double getDecelTheta() {return decel_lim_theta_;}
-  inline double getMinSpeedTheta() {return min_speed_theta_;}
+  inline double getMinTheta() { return -max_vel_theta_; }
+  inline double getMaxTheta() { return max_vel_theta_; }
+  inline double getAccTheta() { return acc_lim_theta_; }
+  inline double getDecelTheta() { return decel_lim_theta_; }
+  inline double getMinSpeedTheta() { return min_speed_theta_; }
 
-  inline double getMinSpeedXY_SQ() {return min_speed_xy_sq_;}
-  inline double getMaxSpeedXY_SQ() {return max_speed_xy_sq_;}
+  inline double getMinSpeedXY_SQ() { return min_speed_xy_sq_; }
+  inline double getMaxSpeedXY_SQ() { return max_speed_xy_sq_; }
 
-protected:
+ protected:
   // For parameter descriptions, see cfg/KinematicParams.cfg
   double min_vel_x_{0};
   double min_vel_y_{0};
@@ -100,28 +98,26 @@ protected:
  * @class KinematicsHandler
  * @brief A class managing the representation of the robot's kinematics
  */
-class KinematicsHandler
-{
-public:
+class KinematicsHandler {
+ public:
   KinematicsHandler();
   ~KinematicsHandler();
-  void initialize(
-    const nav2_util::LifecycleNode::SharedPtr & nh,
-    const std::string & plugin_name);
+  void initialize(const nav2_util::LifecycleNode::SharedPtr &nh,
+                  const std::string &plugin_name);
 
-  inline KinematicParameters getKinematics() {return *kinematics_.load();}
+  inline KinematicParameters getKinematics() { return *kinematics_.load(); }
 
   using Ptr = std::shared_ptr<KinematicsHandler>;
 
-protected:
+ protected:
   std::atomic<KinematicParameters *> kinematics_;
 
   // Subscription for parameter change
   rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr
-    parameter_event_sub_;
+      parameter_event_sub_;
   void on_parameter_event_callback(
-    const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+      const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
   void update_kinematics(KinematicParameters kinematics);
   std::string plugin_name_;
 };

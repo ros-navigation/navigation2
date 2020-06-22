@@ -45,37 +45,34 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-namespace dwb_plugins
-{
+namespace dwb_plugins {
 
 /**
  * @class StandardTrajectoryGenerator
  * @brief Standard DWA-like trajectory generator.
  */
-class StandardTrajectoryGenerator : public dwb_core::TrajectoryGenerator
-{
-public:
+class StandardTrajectoryGenerator : public dwb_core::TrajectoryGenerator {
+ public:
   // Standard TrajectoryGenerator interface
-  void initialize(
-    const nav2_util::LifecycleNode::SharedPtr & nh,
-    const std::string & plugin_name) override;
+  void initialize(const nav2_util::LifecycleNode::SharedPtr& nh,
+                  const std::string& plugin_name) override;
   void startNewIteration(
-    const nav_2d_msgs::msg::Twist2D & current_velocity) override;
+      const nav_2d_msgs::msg::Twist2D& current_velocity) override;
   bool hasMoreTwists() override;
   nav_2d_msgs::msg::Twist2D nextTwist() override;
 
   dwb_msgs::msg::Trajectory2D generateTrajectory(
-    const geometry_msgs::msg::Pose2D & start_pose,
-    const nav_2d_msgs::msg::Twist2D & start_vel,
-    const nav_2d_msgs::msg::Twist2D & cmd_vel) override;
+      const geometry_msgs::msg::Pose2D& start_pose,
+      const nav_2d_msgs::msg::Twist2D& start_vel,
+      const nav_2d_msgs::msg::Twist2D& cmd_vel) override;
 
-protected:
+ protected:
   /**
    * @brief Initialize the VelocityIterator pointer. Put in its own function for
    * easy overriding
    */
   virtual void initializeIterator(
-    const nav2_util::LifecycleNode::SharedPtr & nh);
+      const nav2_util::LifecycleNode::SharedPtr& nh);
 
   /**
    * @brief Calculate the velocity after a set period of time, given the desired
@@ -87,8 +84,8 @@ protected:
    * @return new velocity after dt seconds
    */
   virtual nav_2d_msgs::msg::Twist2D computeNewVelocity(
-    const nav_2d_msgs::msg::Twist2D & cmd_vel,
-    const nav_2d_msgs::msg::Twist2D & start_vel, const double dt);
+      const nav_2d_msgs::msg::Twist2D& cmd_vel,
+      const nav_2d_msgs::msg::Twist2D& start_vel, const double dt);
 
   /**
    * @brief Use the robot's kinematic model to predict new positions for the
@@ -100,8 +97,8 @@ protected:
    * @return New pose after dt seconds
    */
   virtual geometry_msgs::msg::Pose2D computeNewPosition(
-    const geometry_msgs::msg::Pose2D start_pose,
-    const nav_2d_msgs::msg::Twist2D & vel, const double dt);
+      const geometry_msgs::msg::Pose2D start_pose,
+      const nav_2d_msgs::msg::Twist2D& vel, const double dt);
 
   /**
    * @brief Compute an array of time deltas between the points in the generated
@@ -119,7 +116,7 @@ protected:
    * method could be overridden to allow for dynamic spacing
    */
   virtual std::vector<double> getTimeSteps(
-    const nav_2d_msgs::msg::Twist2D & cmd_vel);
+      const nav_2d_msgs::msg::Twist2D& cmd_vel);
 
   KinematicsHandler::Ptr kinematics_handler_;
   std::shared_ptr<VelocityIterator> velocity_iterator_;

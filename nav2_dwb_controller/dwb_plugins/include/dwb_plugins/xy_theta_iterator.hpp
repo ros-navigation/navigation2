@@ -42,27 +42,23 @@
 #include "dwb_plugins/velocity_iterator.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
-namespace dwb_plugins
-{
-class XYThetaIterator : public VelocityIterator
-{
-public:
+namespace dwb_plugins {
+class XYThetaIterator : public VelocityIterator {
+ public:
   XYThetaIterator()
-  : kinematics_handler_(nullptr),
-    x_it_(nullptr),
-    y_it_(nullptr),
-    th_it_(nullptr) {}
-  void initialize(
-    const nav2_util::LifecycleNode::SharedPtr & nh,
-    KinematicsHandler::Ptr kinematics,
-    const std::string & plugin_name) override;
-  void startNewIteration(
-    const nav_2d_msgs::msg::Twist2D & current_velocity,
-    double dt) override;
+      : kinematics_handler_(nullptr),
+        x_it_(nullptr),
+        y_it_(nullptr),
+        th_it_(nullptr) {}
+  void initialize(const nav2_util::LifecycleNode::SharedPtr& nh,
+                  KinematicsHandler::Ptr kinematics,
+                  const std::string& plugin_name) override;
+  void startNewIteration(const nav_2d_msgs::msg::Twist2D& current_velocity,
+                         double dt) override;
   bool hasMoreTwists() override;
   nav_2d_msgs::msg::Twist2D nextTwist() override;
 
-protected:
+ protected:
   /**
    * @brief Check to see whether the combined x/y/theta velocities are valid
    * @return True if the magnitude hypot(x,y) and theta are within the robot's
