@@ -21,7 +21,10 @@ namespace nav2_behavior_tree
 RecoveryNode::RecoveryNode(
   const std::string & name,
   const BT::NodeConfiguration & conf)
-: BT::ControlNode::ControlNode(name, conf), current_child_idx_(0), retry_count_(0)
+: BT::ControlNode::ControlNode(name, conf),
+  current_child_idx_(0),
+  number_of_retries_(1),
+  retry_count_(0)
 {
   getInput("number_of_retries", number_of_retries_);
 }
@@ -68,6 +71,8 @@ BT::NodeStatus RecoveryNode::tick()
 
         default:
           {
+            halt();
+            return BT::NodeStatus::FAILURE;
           }
       }  // end switch
 
@@ -96,6 +101,8 @@ BT::NodeStatus RecoveryNode::tick()
 
         default:
           {
+            halt();
+            return BT::NodeStatus::FAILURE;
           }
       }  // end switch
     }
