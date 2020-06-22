@@ -32,14 +32,15 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_plugins/one_d_velocity_iterator.hpp"
 #include "gtest/gtest.h"
+#include "dwb_plugins/one_d_velocity_iterator.hpp"
 
 using dwb_plugins::OneDVelocityIterator;
 
 const double EPSILON = 1e-3;
 
-TEST(VelocityIterator, basics) {
+TEST(VelocityIterator, basics)
+{
   OneDVelocityIterator it(2.0, 0.0, 5.0, 1.0, -1.0, 1.0, 2);
   EXPECT_FALSE(it.isFinished());
   EXPECT_NEAR(it.getVelocity(), 1.0, EPSILON);
@@ -55,28 +56,33 @@ TEST(VelocityIterator, basics) {
   EXPECT_NEAR(it.getVelocity(), 1.0, EPSILON);
 }
 
-TEST(VelocityIterator, limits) {
+TEST(VelocityIterator, limits)
+{
   OneDVelocityIterator it(2.0, 1.5, 2.5, 1.0, -1.0, 1.0, 2);
   EXPECT_NEAR(it.getVelocity(), 1.5, EPSILON);
   ++it;
   EXPECT_NEAR(it.getVelocity(), 2.5, EPSILON);
 }
 
-TEST(VelocityIterator, acceleration) {
+TEST(VelocityIterator, acceleration)
+{
   OneDVelocityIterator it(2.0, 0.0, 5.0, 0.5, -0.5, 1.0, 2);
   EXPECT_NEAR(it.getVelocity(), 1.5, EPSILON);
   ++it;
   EXPECT_NEAR(it.getVelocity(), 2.5, EPSILON);
 }
 
-TEST(VelocityIterator, time) {
+
+TEST(VelocityIterator, time)
+{
   OneDVelocityIterator it(2.0, 0.0, 5.0, 1.0, -1.0, 0.5, 2);
   EXPECT_NEAR(it.getVelocity(), 1.5, EPSILON);
   ++it;
   EXPECT_NEAR(it.getVelocity(), 2.5, EPSILON);
 }
 
-TEST(VelocityIterator, samples) {
+TEST(VelocityIterator, samples)
+{
   OneDVelocityIterator it(2.0, 0.0, 5.0, 1.0, -1.0, 1.0, 3);
   EXPECT_NEAR(it.getVelocity(), 1.0, EPSILON);
   ++it;
@@ -87,7 +93,9 @@ TEST(VelocityIterator, samples) {
   EXPECT_TRUE(it.isFinished());
 }
 
-TEST(VelocityIterator, samples2) {
+
+TEST(VelocityIterator, samples2)
+{
   OneDVelocityIterator it(2.0, 0.0, 5.0, 1.0, -1.0, 1.0, 5);
   EXPECT_NEAR(it.getVelocity(), 1.0, EPSILON);
   ++it;
@@ -102,7 +110,8 @@ TEST(VelocityIterator, samples2) {
   EXPECT_TRUE(it.isFinished());
 }
 
-TEST(VelocityIterator, around_zero) {
+TEST(VelocityIterator, around_zero)
+{
   OneDVelocityIterator it(0.0, -5.0, 5.0, 1.0, -1.0, 1.0, 2);
   EXPECT_NEAR(it.getVelocity(), -1.0, EPSILON);
   ++it;
@@ -112,7 +121,8 @@ TEST(VelocityIterator, around_zero) {
   ++it;
 }
 
-TEST(VelocityIterator, around_zero2) {
+TEST(VelocityIterator, around_zero2)
+{
   OneDVelocityIterator it(0.0, -5.0, 5.0, 1.0, -1.0, 1.0, 4);
   EXPECT_NEAR(it.getVelocity(), -1.0, EPSILON);
   ++it;
@@ -126,7 +136,8 @@ TEST(VelocityIterator, around_zero2) {
   ++it;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char ** argv)
+{
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

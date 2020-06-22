@@ -32,35 +32,42 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dwb_plugins/simple_goal_checker.hpp"
 #include <memory>
 #include <string>
+#include "dwb_plugins/simple_goal_checker.hpp"
+#include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
 #include "nav2_util/node_utils.hpp"
-#include "pluginlib/class_list_macros.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 
-namespace dwb_plugins {
+namespace dwb_plugins
+{
 
 SimpleGoalChecker::SimpleGoalChecker()
-    : xy_goal_tolerance_(0.25),
-      yaw_goal_tolerance_(0.25),
-      stateful_(true),
-      check_xy_(true),
-      xy_goal_tolerance_sq_(0.0625) {}
+: xy_goal_tolerance_(0.25),
+  yaw_goal_tolerance_(0.25),
+  stateful_(true),
+  check_xy_(true),
+  xy_goal_tolerance_sq_(0.0625)
+{
+}
 
 void SimpleGoalChecker::initialize(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr &nh,
-    const std::string &plugin_name) {
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
+  const std::string & plugin_name)
+{
   nav2_util::declare_parameter_if_not_declared(
-      nh, plugin_name + ".xy_goal_tolerance", rclcpp::ParameterValue(0.25));
+    nh,
+    plugin_name + ".xy_goal_tolerance", rclcpp::ParameterValue(0.25));
   nav2_util::declare_parameter_if_not_declared(
-      nh, plugin_name + ".yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
-  nav2_util::declare_parameter_if_not_declared(nh, plugin_name + ".stateful",
-                                               rclcpp::ParameterValue(true));
+    nh,
+    plugin_name + ".yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
+    plugin_name + ".stateful", rclcpp::ParameterValue(true));
 
   nh->get_parameter(plugin_name + ".xy_goal_tolerance", xy_goal_tolerance_);
   nh->get_parameter(plugin_name + ".yaw_goal_tolerance", yaw_goal_tolerance_);
@@ -69,15 +76,18 @@ void SimpleGoalChecker::initialize(
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 }
 
-void SimpleGoalChecker::reset() { check_xy_ = true; }
+void SimpleGoalChecker::reset()
+{
+  check_xy_ = true;
+}
 
 bool SimpleGoalChecker::isGoalReached(
-    const geometry_msgs::msg::Pose &query_pose,
-    const geometry_msgs::msg::Pose &goal_pose,
-    const geometry_msgs::msg::Twist &) {
+  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+  const geometry_msgs::msg::Twist &)
+{
   if (check_xy_) {
     double dx = query_pose.position.x - goal_pose.position.x,
-           dy = query_pose.position.y - goal_pose.position.y;
+      dy = query_pose.position.y - goal_pose.position.y;
     if (dx * dx + dy * dy > xy_goal_tolerance_sq_) {
       return false;
     }
@@ -88,7 +98,8 @@ bool SimpleGoalChecker::isGoalReached(
     }
   }
   double dyaw = angles::shortest_angular_distance(
-      tf2::getYaw(query_pose.orientation), tf2::getYaw(goal_pose.orientation));
+    tf2::getYaw(query_pose.orientation),
+    tf2::getYaw(goal_pose.orientation));
   return fabs(dyaw) < yaw_goal_tolerance_;
 }
 

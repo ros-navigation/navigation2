@@ -33,19 +33,21 @@
  */
 
 #include "dwb_plugins/limited_accel_generator.hpp"
+#include <vector>
 #include <memory>
 #include <string>
-#include <vector>
-#include "dwb_core/exceptions.hpp"
-#include "nav2_util/node_utils.hpp"
 #include "nav_2d_utils/parameters.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "dwb_core/exceptions.hpp"
+#include "nav2_util/node_utils.hpp"
 
-namespace dwb_plugins {
+namespace dwb_plugins
+{
 
 void LimitedAccelGenerator::initialize(
-    const nav2_util::LifecycleNode::SharedPtr& nh,
-    const std::string& plugin_name) {
+  const nav2_util::LifecycleNode::SharedPtr & nh,
+  const std::string & plugin_name)
+{
   plugin_name_ = plugin_name;
   StandardTrajectoryGenerator::initialize(nh, plugin_name_);
 
@@ -53,33 +55,34 @@ void LimitedAccelGenerator::initialize(
 
   if (nh->get_parameter(plugin_name + ".sim_period", acceleration_time_)) {
   } else {
-    double controller_frequency =
-        nav_2d_utils::searchAndGetParam(nh, "controller_frequency", 20.0);
+    double controller_frequency = nav_2d_utils::searchAndGetParam(
+      nh, "controller_frequency", 20.0);
     if (controller_frequency > 0) {
       acceleration_time_ = 1.0 / controller_frequency;
     } else {
       RCLCPP_WARN(
-          rclcpp::get_logger("LimitedAccelGenerator"),
-          "A controller_frequency less than or equal to 0 has been set. "
-          "Ignoring the parameter, assuming a rate of 20Hz");
+        rclcpp::get_logger("LimitedAccelGenerator"),
+        "A controller_frequency less than or equal to 0 has been set. "
+        "Ignoring the parameter, assuming a rate of 20Hz");
       acceleration_time_ = 0.05;
     }
   }
 }
 
-void LimitedAccelGenerator::startNewIteration(
-    const nav_2d_msgs::msg::Twist2D& current_velocity) {
+void LimitedAccelGenerator::startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity)
+{
   // Limit our search space to just those within the limited acceleration_time
   velocity_iterator_->startNewIteration(current_velocity, acceleration_time_);
 }
 
 nav_2d_msgs::msg::Twist2D LimitedAccelGenerator::computeNewVelocity(
-    const nav_2d_msgs::msg::Twist2D& cmd_vel,
-    const nav_2d_msgs::msg::Twist2D& /*start_vel*/, const double /*dt*/) {
+  const nav_2d_msgs::msg::Twist2D & cmd_vel,
+  const nav_2d_msgs::msg::Twist2D & /*start_vel*/,
+  const double /*dt*/)
+{
   return cmd_vel;
 }
 
 }  // namespace dwb_plugins
 
-PLUGINLIB_EXPORT_CLASS(dwb_plugins::LimitedAccelGenerator,
-                       dwb_core::TrajectoryGenerator)
+PLUGINLIB_EXPORT_CLASS(dwb_plugins::LimitedAccelGenerator, dwb_core::TrajectoryGenerator)
