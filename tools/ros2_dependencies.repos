@@ -22,4 +22,4 @@ repositories:
   SteveMacenski/slam_toolbox:
     type: git
     url: https://github.com/SteveMacenski/slam_toolbox.git
-    version: ros2
+    version: foxy-devel
