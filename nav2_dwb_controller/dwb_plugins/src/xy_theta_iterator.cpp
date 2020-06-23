@@ -104,7 +104,9 @@ bool XYThetaIterator::isValidSpeed(double x, double y, double theta)
   {
     return false;
   }
-  if (vmag_sq == 0.0 && th_it_->getVelocity() == 0.0) {return false;}
+  if (vmag_sq == 0.0 && th_it_->getVelocity() == 0.0) {
+    return false;
+  }
   return true;
 }
 

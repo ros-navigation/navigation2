@@ -68,11 +68,6 @@ protected:
    *  AND
    *  2) min_speed_xy is negative or min_speed_theta is negative or
    *     hypot(x,y) is greater than min_speed_xy or fabs(theta) is greater than min_speed_theta.
-   *
-   * In English, it makes sure the diagonal motion is not too fast,
-   * and that the velocity is moving in some meaningful direction.
-   *
-   * In Latin, quod si motus sit signum quaerit et movere ieiunium et significantissime comprehendite.
    */
   bool isValidSpeed(double x, double y, double theta);
   virtual bool isValidVelocity();
