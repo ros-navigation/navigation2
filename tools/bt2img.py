@@ -58,6 +58,9 @@ condition_nodes = [
     "GoalReached",
     "initialPoseReceived",
     "GoalUpdated",
+    "DistanceTraveled",
+    "TimeExpired",
+    "TransformAvailable",
     "Condition",
     ]
 decorator_nodes = [
