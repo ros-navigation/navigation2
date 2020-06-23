@@ -36,10 +36,9 @@ control_nodes = [
     "Repeat",
     "Subtree",
     "Timeout",
-    "RateController",
     "RecoveryNode",
     "PipelineSequence",
-    "RoundRobin"
+    "RoundRobin",
     ]
 action_nodes = [
     "AlwaysFailure",
@@ -52,16 +51,20 @@ action_nodes = [
     "Wait",
     "ClearEntireCostmap",
     "ReinitializeGlobalLocalization",
-    "Action"
+    "Action",
     ]
 condition_nodes = [
     "IsStuck",
     "GoalReached",
     "initialPoseReceived",
-    "Condition"
+    "GoalUpdated",
+    "Condition",
     ]
 decorator_nodes = [
     "Decorator",
+    "RateController",
+    "DistanceController",
+    "SpeedController",
 ]
 subtree_nodes = [
     "SubTree",
