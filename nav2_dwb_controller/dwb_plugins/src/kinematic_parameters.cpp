@@ -34,16 +34,12 @@
 
 #include "dwb_plugins/kinematic_parameters.hpp"
 
-#include <cmath>
 #include <memory>
 #include <string>
 
 #include "nav_2d_utils/parameters.hpp"
 #include "nav2_util/node_utils.hpp"
 
-#define EPSILON 1E-5
-
-using std::fabs;
 using nav2_util::declare_parameter_if_not_declared;
 using nav_2d_utils::moveDeprecatedParameter;
 using rcl_interfaces::msg::ParameterType;
