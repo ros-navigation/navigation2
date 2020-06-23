@@ -14,65 +14,76 @@
 
 #include <string>
 
-#include "behaviortree_cpp_v3/control_node.h"
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "nav2_behavior_tree/plugins/control/round_robin_node.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class RoundRobinNode : public BT::ControlNode
+RoundRobinNode::RoundRobinNode(const std::string & name)
+: BT::ControlNode::ControlNode(name, {})
 {
-public:
-  explicit RoundRobinNode(const std::string & name)
-  : BT::ControlNode::ControlNode(name, {})
-  {
-    setRegistrationID("RoundRobin");
-  }
+}
 
-  BT::NodeStatus tick() override
-  {
-    const unsigned num_children = children_nodes_.size();
+RoundRobinNode::RoundRobinNode(
+  const std::string & name,
+  const BT::NodeConfiguration & config)
+: BT::ControlNode(name, config)
+{
+}
 
-    setStatus(BT::NodeStatus::RUNNING);
+BT::NodeStatus RoundRobinNode::tick()
+{
+  const auto num_children = children_nodes_.size();
 
+  setStatus(BT::NodeStatus::RUNNING);
+
+  while (num_failed_children_ < num_children) {
     TreeNode * child_node = children_nodes_[current_child_idx_];
     const BT::NodeStatus child_status = child_node->executeTick();
 
     switch (child_status) {
       case BT::NodeStatus::SUCCESS:
-        // Wrap around to the first child
-        if (++current_child_idx_ == num_children) {
-          // TODO(mjeronimo): halt this child (not all children)
-          current_child_idx_ = 0;
+        {
+          // Wrap around to the first child
+          if (++current_child_idx_ >= num_children) {
+            current_child_idx_ = 0;
+          }
+          num_failed_children_ = 0;
+          ControlNode::haltChildren();
+          return BT::NodeStatus::SUCCESS;
         }
 
-        ControlNode::haltChildren();
-        return BT::NodeStatus::SUCCESS;
-
       case BT::NodeStatus::FAILURE:
-        ControlNode::haltChildren();
-        return BT::NodeStatus::FAILURE;
+        {
+          if (++current_child_idx_ >= num_children) {
+            current_child_idx_ = 0;
+          }
+          num_failed_children_++;
+          break;
+        }
 
       case BT::NodeStatus::RUNNING:
-        break;
+        {
+          return BT::NodeStatus::RUNNING;
+        }
 
       default:
-        throw BT::LogicError("Invalid status return from BT node");
-        break;
+        {
+          throw BT::LogicError("Invalid status return from BT node");
+        }
     }
-
-    return BT::NodeStatus::RUNNING;
   }
 
-  void halt() override
-  {
-    ControlNode::halt();
-    current_child_idx_ = 0;
-  }
+  halt();
+  return BT::NodeStatus::FAILURE;
+}
 
-private:
-  unsigned int current_child_idx_{0};
-};
+void RoundRobinNode::halt()
+{
+  ControlNode::halt();
+  current_child_idx_ = 0;
+  num_failed_children_ = 0;
+}
 
 }  // namespace nav2_behavior_tree
 
