@@ -79,6 +79,7 @@ Costmap2DROS::Costmap2DROS(
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   std::vector<std::string> clearable_layers{"obstacle_layer"};
+  std::vector<std::string> default_plugins{"static_layer", "obstacle_layer", "inflation_layer"};
 
   declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
   declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
@@ -93,7 +94,13 @@ Costmap2DROS::Costmap2DROS(
   declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
   declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
   declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
-  declare_parameter("plugins");
+  declare_parameter("plugins", rclcpp::ParameterValue(default_plugins));
+  declare_parameter(
+    "static_layer.plugin", rclcpp::ParameterValue("nav2_costmap_2d::StaticLayer"));
+  declare_parameter(
+    "obstacle_layer.plugin", rclcpp::ParameterValue("nav2_costmap_2d::ObstacleLayer"));
+  declare_parameter(
+    "inflation_layer.plugin", rclcpp::ParameterValue("nav2_costmap_2d::InflationLayer"));
   declare_parameter("publish_frequency", rclcpp::ParameterValue(1.0));
   declare_parameter("resolution", rclcpp::ParameterValue(0.1));
   declare_parameter("robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
@@ -304,15 +311,7 @@ Costmap2DROS::getParameters()
   get_parameter("transform_tolerance", transform_tolerance_);
   get_parameter("update_frequency", map_update_frequency_);
   get_parameter("width", map_width_meters_);
-
   get_parameter("plugins", plugin_names_);
-  // Default plugins if no constmap plugin is provided
-  if (plugin_names_.empty()) {
-    plugin_names_ = std::vector<std::string>{"static_layer", "obstacle_layer", "inflation_layer"};
-    declare_parameter("static_layer.plugin", "nav2_costmap_2d::StaticLayer");
-    declare_parameter("obstacle_layer.plugin", "nav2_costmap_2d::ObstacleLayer");
-    declare_parameter("inflation_layer.plugin", "nav2_costmap_2d::InflationLayer");
-  }
 
   // Semantic checks...
   auto node = shared_from_this();
