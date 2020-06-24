@@ -289,6 +289,8 @@ protected:
   int map_width_meters_{0};
   double origin_x_{0};
   double origin_y_{0};
+  std::vector<std::string> default_plugins_;
+  std::vector<std::string> default_types_;
   std::vector<std::string> plugin_names_;
   std::vector<std::string> plugin_types_;
   double resolution_{0};
