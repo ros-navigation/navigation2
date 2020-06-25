@@ -232,6 +232,27 @@ TEST_F(RecoveryTest, testingSequentialFailures)
   SUCCEED();
 }
 
+TEST_F(RecoveryTest, testingTotalElapsedTimeIsGratherThanZeroIfStarted)
+{
+  ASSERT_TRUE(sendCommand("Testing success"));
+  EXPECT_GT(getResult().result->total_elapsed_time.sec, 0.0);
+  SUCCEED();
+}
+
+TEST_F(RecoveryTest, testingTotalElapsedTimeIsZeroIfFailureOnInit)
+{
+  ASSERT_TRUE(sendCommand("Testing failure on init"));
+  EXPECT_EQ(getResult().result->total_elapsed_time.sec, 0.0);
+  SUCCEED();
+}
+
+TEST_F(RecoveryTest, testingTotalElapsedTimeIsZeroIfFailureOnRun)
+{
+  ASSERT_TRUE(sendCommand("Testing failure on run"));
+  EXPECT_EQ(getResult().result->total_elapsed_time.sec, 0.0);
+  SUCCEED();
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

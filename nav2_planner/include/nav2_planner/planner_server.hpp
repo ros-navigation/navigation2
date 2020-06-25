@@ -119,6 +119,9 @@ protected:
   double max_planner_duration_;
   std::string planner_ids_concat_;
 
+  // Clock
+  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
+
   // TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
