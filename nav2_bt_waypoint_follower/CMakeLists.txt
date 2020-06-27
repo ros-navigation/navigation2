@@ -50,6 +50,17 @@ set(dependencies
   tf2_ros
 )
 
+add_library(nav2_all_goals_achieved_condition_bt_node SHARED plugins/condition/all_goals_achieved_condition.cpp)
+list(APPEND plugin_libs nav2_all_goals_achieved_condition_bt_node)
+
+add_library(nav2_get_next_goal_action_bt_node SHARED plugins/action/get_next_goal_action.cpp)
+list(APPEND plugin_libs nav2_get_next_goal_action_bt_node)
+
+foreach(bt_plugin ${plugin_libs})
+  ament_target_dependencies(${bt_plugin} ${dependencies})
+  target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
+endforeach()
+
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
@@ -61,6 +72,7 @@ ament_target_dependencies(${library_name}
 )
 
 install(TARGETS ${library_name}
+                ${plugin_libs}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -82,5 +94,9 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
+
+ament_export_libraries(
+  ${plugin_libs}
+)
 
 ament_package()

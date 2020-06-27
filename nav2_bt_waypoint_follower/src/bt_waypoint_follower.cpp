@@ -54,7 +54,10 @@ BtWaypointFollower::BtWaypointFollower()
     "nav2_round_robin_node_bt_node",
     "nav2_transform_available_condition_bt_node",
     "nav2_time_expired_condition_bt_node",
-    "nav2_distance_traveled_condition_bt_node"
+    "nav2_distance_traveled_condition_bt_node",
+    "nav2_navigate_to_pose_action_bt_node",
+    "nav2_all_goals_achieved_condition_bt_node",
+    "nav2_get_next_goal_action_bt_node",
   };
 
   // Declare this node's parameters
@@ -253,7 +256,8 @@ BtWaypointFollower::initializeBlackboard()
   // Update the goals on the blackboard
   blackboard_->set("goals", goal->poses);
   blackboard_->set("current_waypoint_idx", 0);
-  blackboard_->set("max_waypoint_idx", goal->poses.size() - 1);
+  blackboard_->set("num_waypoints", goal->poses.size());
+  blackboard_->set("goal", goal->poses[0]);
 }
 
 }  // namespace nav2_bt_waypoint_follower
