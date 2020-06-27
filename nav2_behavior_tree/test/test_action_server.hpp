@@ -43,11 +43,17 @@ public:
       std::bind(&TestActionServer::handle_accepted, this, _1));
   }
 
+  std::shared_ptr<const typename ActionT::Goal> getCurrentGoal() const
+  {
+    return current_goal_;
+  }
+
 protected:
   virtual rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID &,
-    std::shared_ptr<const typename ActionT::Goal>)
+    std::shared_ptr<const typename ActionT::Goal> goal)
   {
+    current_goal_ = goal;
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
   }
 
@@ -70,6 +76,7 @@ protected:
 
 private:
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
+  std::shared_ptr<const typename ActionT::Goal> current_goal_;
 };
 
 #endif  // TEST_ACTION_SERVER_HPP_

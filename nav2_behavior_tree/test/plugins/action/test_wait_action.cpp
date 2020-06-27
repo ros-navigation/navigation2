@@ -21,29 +21,30 @@
 #include "behaviortree_cpp_v3/bt_factory.h"
 
 #include "../../test_action_server.hpp"
-#include "nav2_behavior_tree/plugins/action/spin_action.hpp"
+#include "nav2_behavior_tree/plugins/action/wait_action.hpp"
 
-class SpinActionServer : public TestActionServer<nav2_msgs::action::Spin>
+class WaitActionServer : public TestActionServer<nav2_msgs::action::Wait>
 {
 public:
-  SpinActionServer()
-  : TestActionServer("spin")
+  WaitActionServer()
+  : TestActionServer("wait")
   {}
 
 protected:
   void execute(
-    const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::Spin>>)
+    const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::Wait>>)
   override
   {}
 };
 
-class SpinActionTestFixture : public ::testing::Test
+class WaitActionTestFixture : public ::testing::Test
 {
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("spin_action_test_fixture");
+    node_ = std::make_shared<rclcpp::Node>("wait_action_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
+
     config_ = new BT::NodeConfiguration();
 
     // Create the blackboard that will be shared by all of the nodes in the tree
@@ -62,11 +63,11 @@ public:
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
       {
-        return std::make_unique<nav2_behavior_tree::SpinAction>(
-          name, "spin", config);
+        return std::make_unique<nav2_behavior_tree::WaitAction>(
+          name, "wait", config);
       };
 
-    factory_->registerBuilder<nav2_behavior_tree::SpinAction>("Spin", builder);
+    factory_->registerBuilder<nav2_behavior_tree::WaitAction>("Wait", builder);
   }
 
   static void TearDownTestCase()
@@ -88,7 +89,7 @@ public:
     tree_.reset();
   }
 
-  static std::shared_ptr<SpinActionServer> action_server_;
+  static std::shared_ptr<WaitActionServer> action_server_;
 
 protected:
   static rclcpp::Node::SharedPtr node_;
@@ -97,44 +98,44 @@ protected:
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr SpinActionTestFixture::node_ = nullptr;
-std::shared_ptr<SpinActionServer> SpinActionTestFixture::action_server_ = nullptr;
-BT::NodeConfiguration * SpinActionTestFixture::config_ = nullptr;
-std::shared_ptr<BT::BehaviorTreeFactory> SpinActionTestFixture::factory_ = nullptr;
-std::shared_ptr<BT::Tree> SpinActionTestFixture::tree_ = nullptr;
+rclcpp::Node::SharedPtr WaitActionTestFixture::node_ = nullptr;
+std::shared_ptr<WaitActionServer> WaitActionTestFixture::action_server_ = nullptr;
+BT::NodeConfiguration * WaitActionTestFixture::config_ = nullptr;
+std::shared_ptr<BT::BehaviorTreeFactory> WaitActionTestFixture::factory_ = nullptr;
+std::shared_ptr<BT::Tree> WaitActionTestFixture::tree_ = nullptr;
 
-TEST_F(SpinActionTestFixture, test_ports)
+TEST_F(WaitActionTestFixture, test_ports)
 {
   std::string xml_txt =
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <Spin />
+            <Wait />
         </BehaviorTree>
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<double>("spin_dist"), 1.57);
+  EXPECT_EQ(tree_->rootNode()->getInput<int>("wait_duration"), 1);
 
   xml_txt =
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <Spin spin_dist="3.14" />
+            <Wait wait_duration="10" />
         </BehaviorTree>
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<double>("spin_dist"), 3.14);
+  EXPECT_EQ(tree_->rootNode()->getInput<int>("wait_duration"), 10);
 }
 
-TEST_F(SpinActionTestFixture, test_tick)
+TEST_F(WaitActionTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <Spin spin_dist="3.14" />
+            <Wait wait_duration="-5"/>
         </BehaviorTree>
       </root>)";
 
@@ -142,7 +143,7 @@ TEST_F(SpinActionTestFixture, test_tick)
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
-  EXPECT_EQ(action_server_->getCurrentGoal()->target_yaw, 3.14f);
+  EXPECT_EQ(rclcpp::Duration(action_server_->getCurrentGoal()->time).seconds(), 5.0);
 }
 
 int main(int argc, char ** argv)
@@ -153,9 +154,9 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
 
   // initialize action server and spin on new thread
-  SpinActionTestFixture::action_server_ = std::make_shared<SpinActionServer>();
+  WaitActionTestFixture::action_server_ = std::make_shared<WaitActionServer>();
   std::thread server_thread([]() {
-      rclcpp::spin(SpinActionTestFixture::action_server_);
+      rclcpp::spin(WaitActionTestFixture::action_server_);
     });
 
   int all_successful = RUN_ALL_TESTS();
