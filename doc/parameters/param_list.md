@@ -30,10 +30,6 @@ Namespace: /parent_ns/local_ns
 | observation_sources | [""] | List of sources of sensors, to be used if not specified in plugin specific configurations |
 | origin_x | 0.0 | X origin of the costmap relative to width (m) |
 | origin_y | 0.0 | Y origin of the costmap relative to height (m) |
-| plugins | {"static_layer", "obstacle_layer", "inflation_layer"} | List of mapped plugin names for parameter namespaces and names |
-| static_layer.plugin | "nav2_costmap_2d::StaticLayer" | Default static layer plugin |
-| obstacle_layer.plugin | "nav2_costmap_2d::ObstacleLayer" | Default obstacle layer plugin |
-| inflation_layer.plugin | "nav2_costmap_2d::InflationLayer" | Default inflation layer plugin |
 | publish_frequency | 1.0 | Frequency to publish costmap to topic |
 | resolution | 0.1 | Resolution of 1 pixel of the costmap, in meters |
 | robot_base_frame | "base_link" | Robot base frame |
@@ -45,7 +41,16 @@ Namespace: /parent_ns/local_ns
 | unknown_cost_value | 255 | Cost of unknown space if tracking it |
 | update_frequency | 5.0 | Costmap update frequency |
 | use_maximum | false | whether when combining costmaps to use the maximum cost or override |
+| plugins | {"static_layer", "obstacle_layer", "inflation_layer"} | List of mapped plugin names for parameter namespaces and names |
 | clearable_layers | ["obstacle_layer"] | Layers that may be cleared using the clearing service |
+
+When `plugins` parameter is not overridden, the following default plugins are loaded:
+
+| Namespace | Plugin |
+| ----------| --------|
+| "static_layer" | "nav2_costmap_2d::StaticLayer" |
+| "obstacle_layer" | "nav2_costmap_2d::ObstacleLayer" |
+| "inflation_layer" | "nav2_costmap_2d::InflationLayer" |
 
 ## static_layer plugin
 
@@ -134,12 +139,17 @@ Namespace: /parent_ns/local_ns
 | ----------| --------| ------------|
 | controller_frequency | 20.0 | Frequency to run controller |
 | controller_plugins | ["FollowPath"] | List of mapped names for controller plugins for processing requests and parameters |
-| FollowPath.plugin | "dwb_core::DWBLocalPlanner" | Default controller plugin |
 | min_x_velocity_threshold | 0.0001 | Minimum X velocity to use (m/s) |
 | min_y_velocity_threshold | 0.0001 | Minimum Y velocity to use (m/s) |
 | min_theta_velocity_threshold | 0.0001 | Minimum angular velocity to use (rad/s) |
 | required_movement_radius | 0.5 | Minimum amount a robot must move to be progressing to goal (m) |
 | movement_time_allowance | 10.0 | Maximum amount of time a robot has to move the minimum radius (s) |
+
+When `controller_plugins` parameter is not overridden, the following default plugins are loaded:
+
+| Namespace | Plugin |
+| ----------| --------|
+| "FollowPath" | "dwb_core::DWBLocalPlanner" |
 
 # dwb_controller
 
@@ -374,8 +384,13 @@ Namespace: /parent_ns/local_ns
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | planner_plugins | ["GridBased"] | List of Mapped plugin names for parameters and processing requests |
-| GridBased.plugin  | "nav2_navfn_planner/NavfnPlanner" | Default planner plugin |
 | expected_planner_frequency | 20.0 | Expected planner frequency. If the current frequency is less than the expected frequency, display the warning message |
+
+When `planner_plugins` parameter is not overridden, the following default plugins are loaded:
+
+| Namespace | Plugin |
+| ----------| --------|
+| "GridBased" | "nav2_navfn_planner/NavfnPlanner" |
 
 # navfn_planner
 
@@ -407,9 +422,14 @@ Namespace: /parent_ns/local_ns
 | global_frame | "odom" | Reference frame |
 | robot_base_frame | "base_link" | Robot base frame |
 | recovery_plugins | {"spin", "backup", "wait"}| List of plugin names to use, also matches action server names |
-| spin.plugin | "nav2_recoveries/Spin" | Default spin recovery plugin |
-| backup.plugin | "nav2_recoveries/BackUp" | Default backup recovery plugin |
-| wait.plugin | "nav2_recoveries/Wait" | Default wait recovery plugin |
+
+When `recovery_plugins` parameter is not overridden, the following default plugins are loaded:
+
+| Namespace | Plugin |
+| ----------| --------|
+| "spin" | "nav2_recoveries/Spin" |
+| "backup" | "nav2_recoveries/BackUp" |
+| "wait" | "nav2_recoveries/Wait" |
 
 ## spin plugin
 
