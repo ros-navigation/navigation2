@@ -9,3 +9,7 @@ ament_target_dependencies(test_action_back_up_action ${dependencies})
 ament_add_gtest(test_action_wait_action test_wait_action.cpp)
 target_link_libraries(test_action_wait_action nav2_wait_action_bt_node)
 ament_target_dependencies(test_action_wait_action ${dependencies})
+
+ament_add_gtest(test_action_compute_path_to_pose_action test_compute_path_to_pose_action.cpp)
+target_link_libraries(test_action_compute_path_to_pose_action nav2_compute_path_to_pose_action_bt_node)
+ament_target_dependencies(test_action_compute_path_to_pose_action ${dependencies})
