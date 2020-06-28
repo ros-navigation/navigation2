@@ -4,26 +4,17 @@
 -->
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
-    <ReactiveSequence name="FollowWaypoints">
-      <RecoveryNode number_of_retries="3" name="NavigateToPoseWithWaypointSkipRecovery">
-        <Sequence>
-          <!-- set current goal to goals[current_waypoint_idx] -->
-          <SetCurrentGoal goals="{goals}" current_waypoint_idx="{current_waypoint_idx}" goal="{goal}" />
-          <NavigateToPose goal="{goal}" />
-        </Sequence>
-        <!-- Skip up to three times for every time you fail to reach the goal -->
-        <AddInt in_value_A="{current_waypoint_idx}" in_value_B="1" out_value="{current_waypoint_idx}" />
-      </RecoveryNode>
-      <!-- Return success if all goals are achieved, or update the `goal_updated` and `goal`, and then make it Running -->
-      <ReactiveFallback name="CheckAndUpdateWaypointIndex">
-        <BlackboardCheckInt value_A="{current_waypoint_idx}" value_B="{max_waypoint_idx}" />
-        <Sequence>
-          <AddInt in_value_A="{current_waypoint_idx}" in_value_B="1" out_value="{current_waypoint_idx}" />
-          <KeepRunningUntilFailure name="AlwaysRunning">
-            <AlwaysSuccess />
-          </KeepRunningUntilFailure>
-        </Sequence>
-      </ReactiveFallback>
-    </ReactiveSequence>
+    <ReactiveFallback name="FollowWaypoints">
+      <AllGoalsAchieved goal_achieved="{goal_achieved}"/>
+      <KeepRunningUntilFailure>
+        <ReactiveSequence>
+          <GetNextGoal goals="{goals}" goal="{goal}" goal_achieved="{goal_achieved}"/>
+          <ForceSuccess>
+            <NavigateToPose goal="{goal}"/>
+          </ForceSuccess>
+          <SetBlackboard output_key="goal_achieved" value="true"/>
+        </ReactiveSequence>
+      </KeepRunningUntilFailure>
+    </ReactiveFallback>
   </BehaviorTree>
 </root>
