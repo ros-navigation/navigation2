@@ -26,7 +26,6 @@ set(executable_name bt_waypoint_follower)
 
 add_executable(${executable_name}
   src/main.cpp
-  src/ros_topic_logger.cpp
 )
 
 set(library_name ${executable_name}_core)

@@ -25,7 +25,6 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
-#include "nav2_bt_waypoint_follower/ros_topic_logger.hpp"
 
 namespace nav2_bt_waypoint_follower
 {
@@ -204,7 +203,6 @@ BtWaypointFollower::followWaypoints()
       return action_server_->is_cancel_requested();
     };
 
-  nav2_bt_navigator::RosTopicLogger topic_logger(client_node_, tree_);
   std::shared_ptr<Action::Feedback> feedback_msg = std::make_shared<Action::Feedback>();
 
   auto on_loop = [&]() {
@@ -213,7 +211,6 @@ BtWaypointFollower::followWaypoints()
         action_server_->accept_pending_goal();
         initializeBlackboard();
       }
-      topic_logger.flush();
 
       int current_waypoint_idx = 0;
       blackboard_->get<int>("current_waypoint_idx", current_waypoint_idx);
