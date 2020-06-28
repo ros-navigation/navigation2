@@ -50,7 +50,9 @@ COPY --from=cacher /tmp/$UNDERLAY_WS ./
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
-      --skip-keys slam_toolbox \
+      --skip-keys " \
+      slam_toolbox \
+      " \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
