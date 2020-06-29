@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="2">
   <name>nav2_turtlebot3_rl</name>
-  <version>0.3.4</version>
+  <version>0.3.5</version>
   <description>This package enables Reinfocement Learning with Gazebo and Turtlebot3</description>
 
   <maintainer email="mohammad.haghighipanah@intel.com">Mohammad Haghighipanah</maintainer>
