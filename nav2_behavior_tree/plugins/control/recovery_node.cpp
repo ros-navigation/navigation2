@@ -88,7 +88,7 @@ private:
                 current_child_idx_++;
                 break;
               } else {
-                haltChildren(0);
+                ControlNode::haltChildren();
                 return BT::NodeStatus::FAILURE;
               }
             }
@@ -111,7 +111,7 @@ private:
             {
               retry_count_++;
               current_child_idx_--;
-              haltChildren(1);
+              ControlNode::haltChildren();
             }
             break;
 
