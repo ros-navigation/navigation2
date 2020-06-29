@@ -54,15 +54,6 @@ public:
     BT::applyRecursiveVisitor(root_node, visitor);
   }
 
-  // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
-  void resetTree(BT::TreeNode * root_node)
-  {
-    auto visitor = [](BT::TreeNode * node) {
-        node->setStatus(BT::NodeStatus::IDLE);
-      };
-    BT::applyRecursiveVisitor(root_node, visitor);
-  }
-
 protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
