@@ -47,11 +47,11 @@ BehaviorTreeEngine::run(
   // Loop until something happens with ROS or the node completes
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
     if (cancelRequested()) {
-      tree->rootNode->halt();
+      tree->rootNode.halt();
       return BtStatus::CANCELED;
     }
 
-    result = tree->rootNode->executeTick();
+    result = tree->rootNode.executeTick();
 
     onLoop();
 
