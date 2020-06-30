@@ -329,7 +329,7 @@ executors:
       <<: *common_environment
       CACHE_NONCE: "Debug"
       OVERLAY_BUILD_MIXINS: "debug ccache coverage-gcc"
-      OVERLAY_TEST_MIXINS: "coverage-gcc"
+      OVERLAY_TEST_MIXINS: ""
       UNDERLAY_MIXINS: "release ccache"
   release_exec:
     docker:
