@@ -136,8 +136,6 @@ references:
       parameters:
         workspace:
           type: string
-        mixins:
-          type: string
       steps:
         - run:
             name: Test Workspace | << parameters.workspace >>
@@ -154,11 +152,9 @@ references:
               set -o xtrace
               colcon test \
                 --packages-select ${TEST_PACKAGES} \
-                --mixin << parameters.mixins >>
               colcon test \
                 --packages-select ${TEST_PACKAGES} \
                 --packages-select-test-failures \
-                --mixin << parameters.mixins >> \
                 --retest-until-pass ${RETEST_UNTIL_PASS} \
                 --ctest-args --test-regex "test_.*"
               colcon test-result \
@@ -248,7 +244,7 @@ references:
       key: overlay_ws
       underlay: /opt/underlay_ws
       workspace: /opt/overlay_ws
-      mixins: ${OVERLAY_BUILD_MIXINS}
+      mixins: ${OVERLAY_MIXINS}
   restore_overlay_workspace: &restore_overlay_workspace
     setup_workspace:
       <<: *setup_workspace_overlay
@@ -265,7 +261,6 @@ references:
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
       workspace: /opt/overlay_ws
-      mixins: ${OVERLAY_TEST_MIXINS}
   collect_overlay_coverage: &collect_overlay_coverage
     run:
       name: Collect Code Coverage
@@ -328,8 +323,7 @@ executors:
     environment:
       <<: *common_environment
       CACHE_NONCE: "Debug"
-      OVERLAY_BUILD_MIXINS: "debug ccache coverage-gcc"
-      OVERLAY_TEST_MIXINS: ""
+      OVERLAY_MIXINS: "debug ccache coverage-gcc"
       UNDERLAY_MIXINS: "release ccache"
   release_exec:
     docker:
@@ -338,8 +332,7 @@ executors:
     environment:
       <<: *common_environment
       CACHE_NONCE: "Release"
-      OVERLAY_BUILD_MIXINS: "release ccache"
-      OVERLAY_TEST_MIXINS: ""
+      OVERLAY_MIXINS: "release ccache"
       UNDERLAY_MIXINS: "release ccache"
 
 jobs:
