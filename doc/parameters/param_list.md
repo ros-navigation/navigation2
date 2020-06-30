@@ -44,6 +44,22 @@ Namespace: /parent_ns/local_ns
 | plugins | {"static_layer", "obstacle_layer", "inflation_layer"} | List of mapped plugin names for parameter namespaces and names |
 | clearable_layers | ["obstacle_layer"] | Layers that may be cleared using the clearing service |
 
+**NOTE:** When `plugins` parameter is overridden, each plugin namespace defined in the list needs to have a `plugin` parameter defining the type of plugin to be loaded in the namespace.
+
+For example:
+
+```yaml
+local_costmap:
+  ros__parameters:
+    plugins: ["obstacle_layer", "voxel_layer", "inflation_layer"]
+    obstacle_layer:
+      plugin: "nav2_costmap_2d::ObstacleLayer"
+    voxel_layer:
+      plugin: "nav2_costmap_2d::VoxelLayer"
+    inflation_layer:
+      plugin: "nav2_costmap_2d::InflationLayer"
+```
+
 When `plugins` parameter is not overridden, the following default plugins are loaded:
 
 | Namespace | Plugin |
@@ -144,6 +160,18 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | min_theta_velocity_threshold | 0.0001 | Minimum angular velocity to use (rad/s) |
 | required_movement_radius | 0.5 | Minimum amount a robot must move to be progressing to goal (m) |
 | movement_time_allowance | 10.0 | Maximum amount of time a robot has to move the minimum radius (s) |
+
+**NOTE:** When `controller_plugins` parameter is overridden, each plugin namespace defined in the list needs to have a `plugin` parameter defining the type of plugin to be loaded in the namespace.
+
+For example:
+
+```yaml
+controller_server:
+  ros__parameters:
+    controller_plugins: ["FollowPath"]
+    FollowPath:
+      plugin: "dwb_core::DWBLocalPlanner"
+```
 
 When `controller_plugins` parameter is not overridden, the following default plugins are loaded:
 
@@ -386,6 +414,18 @@ When `controller_plugins` parameter is not overridden, the following default plu
 | planner_plugins | ["GridBased"] | List of Mapped plugin names for parameters and processing requests |
 | expected_planner_frequency | 20.0 | Expected planner frequency. If the current frequency is less than the expected frequency, display the warning message |
 
+**NOTE:** When `planner_plugins` parameter is overridden, each plugin namespace defined in the list needs to have a `plugin` parameter defining the type of plugin to be loaded in the namespace.
+
+For example:
+
+```yaml
+planner_server:
+  ros__parameters:
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+```
+
 When `planner_plugins` parameter is not overridden, the following default plugins are loaded:
 
 | Namespace | Plugin |
@@ -422,6 +462,22 @@ When `planner_plugins` parameter is not overridden, the following default plugin
 | global_frame | "odom" | Reference frame |
 | robot_base_frame | "base_link" | Robot base frame |
 | recovery_plugins | {"spin", "backup", "wait"}| List of plugin names to use, also matches action server names |
+
+**NOTE:** When `recovery_plugins` parameter is overridden, each plugin namespace defined in the list needs to have a `plugin` parameter defining the type of plugin to be loaded in the namespace.
+
+For example:
+
+```yaml
+recoveries_server:
+  ros__parameters:
+    recovery_plugins: ["spin", "backup", "wait"]
+    spin:
+      plugin: "nav2_recoveries/Spin"
+    backup:
+      plugin: "nav2_recoveries/BackUp"
+    wait:
+      plugin: "nav2_recoveries/Wait"
+```
 
 When `recovery_plugins` parameter is not overridden, the following default plugins are loaded:
 
