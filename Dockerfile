@@ -51,8 +51,8 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
       --skip-keys " \
-      slam_toolbox \
-      " \
+        slam_toolbox \
+        " \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
@@ -78,7 +78,9 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
         $UNDERLAY_WS/src \
-      --skip-keys slam_toolbox \
+      --skip-keys " \
+        slam_toolbox \
+        "\
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 

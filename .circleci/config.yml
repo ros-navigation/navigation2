@@ -76,8 +76,8 @@ references:
                   --from-paths src \
                   --ignore-src \
                   --skip-keys " \
-                  slam_toolbox \
-                  " \
+                    slam_toolbox \
+                    " \
                   --verbose | \
                 awk '$1 ~ /^resolution\:/' | \
                 awk -F'[][]' '{print $2}' | \
