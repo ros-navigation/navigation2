@@ -100,7 +100,7 @@ RecoveryServer::loadRecoveryPlugins()
   auto node = shared_from_this();
 
   for (size_t i = 0; i != recovery_ids_.size(); i++) {
-    recovery_types_[i] = nav2_util::get_plugin_type_param( node, recovery_ids_[i]);
+    recovery_types_[i] = nav2_util::get_plugin_type_param(node, recovery_ids_[i]);
     try {
       RCLCPP_INFO(
         get_logger(), "Creating recovery plugin %s of type %s",
