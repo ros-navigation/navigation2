@@ -248,7 +248,7 @@ references:
       key: overlay_ws
       underlay: /opt/underlay_ws
       workspace: /opt/overlay_ws
-      mixins: ${OVERLAY_MIXINS}
+      mixins: ${OVERLAY_BUILD_MIXINS}
   restore_overlay_workspace: &restore_overlay_workspace
     setup_workspace:
       <<: *setup_workspace_overlay
@@ -265,7 +265,7 @@ references:
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
       workspace: /opt/overlay_ws
-      mixins: ${OVERLAY_MIXINS}
+      mixins: ${OVERLAY_TEST_MIXINS}
   collect_overlay_coverage: &collect_overlay_coverage
     run:
       name: Collect Code Coverage
@@ -328,7 +328,8 @@ executors:
     environment:
       <<: *common_environment
       CACHE_NONCE: "Debug"
-      OVERLAY_MIXINS: "debug ccache coverage-gcc"
+      OVERLAY_BUILD_MIXINS: "debug ccache coverage-gcc"
+      OVERLAY_TEST_MIXINS: "ccache coverage-gcc"
       UNDERLAY_MIXINS: "release ccache"
   release_exec:
     docker:
@@ -337,7 +338,8 @@ executors:
     environment:
       <<: *common_environment
       CACHE_NONCE: "Release"
-      OVERLAY_MIXINS: "release ccache"
+      OVERLAY_BUILD_MIXINS: "release ccache"
+      OVERLAY_TEST_MIXINS: "ccache"
       UNDERLAY_MIXINS: "release ccache"
 
 jobs:
