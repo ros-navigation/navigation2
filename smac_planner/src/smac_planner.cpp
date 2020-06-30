@@ -135,13 +135,13 @@ void SmacPlanner::configure(
   Neighborhood neighborhood;
   if (neighborhood_for_search == std::string("MOORE")) {
     neighborhood = Neighborhood::MOORE;
-  } else if (neighborhood_for_search == std::string("VAN_NEUMANN")) {
-    neighborhood = Neighborhood::VAN_NEUMANN;
+  } else if (neighborhood_for_search == std::string("VON_NEUMANN")) {
+    neighborhood = Neighborhood::VON_NEUMANN;
   } else {
     neighborhood = Neighborhood::MOORE;
     RCLCPP_WARN(_node->get_logger(),
       "Unable to get Neighborhood search type. Given '%s', "
-      "valid options are MOORE and VAN_NEUMANN. Using MOORE as default",
+      "valid options are MOORE and VON_NEUMANN. Using MOORE as default",
       neighborhood_for_search.c_str());
   }
 
@@ -168,7 +168,7 @@ void SmacPlanner::configure(
     _upsampling_ratio = 2;
   }
 
-  _a_star = std::make_unique<AStarAlgorithm>(neighborhood);
+  _a_star = std::make_unique<AStarAlgorithm<Node>>(neighborhood);
   _a_star->initialize(
     travel_cost_scale,
     allow_unknown,
@@ -434,8 +434,8 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point b = steady_clock::now();
   duration<double> time_span = duration_cast<duration<double> >(b-a);
-  cout << "It took " << time_span.count() <<
-    " seconds with " << num_iterations << " iterations." <<  endl;
+  cout << "It took " << time_span.count() * 1000 <<
+    " milliseconds with " << num_iterations << " iterations." <<  endl;
 #endif
 
   return plan;
