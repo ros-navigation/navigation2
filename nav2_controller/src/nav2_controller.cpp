@@ -32,17 +32,15 @@ namespace nav2_controller
 
 ControllerServer::ControllerServer()
 : LifecycleNode("controller_server", "", true),
-  lp_loader_("nav2_core", "nav2_core::Controller")
+  lp_loader_("nav2_core", "nav2_core::Controller"),
+  default_ids_{"FollowPath"},
+  default_types_{"dwb_core::DWBLocalPlanner"}
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
 
   declare_parameter("controller_frequency", 20.0);
-  std::vector<std::string> default_id, default_type;
-  default_type.emplace_back("dwb_core::DWBLocalPlanner");
-  default_id.emplace_back("FollowPath");
-  declare_parameter("controller_plugin_ids", default_id);
-  declare_parameter("controller_plugin_types", default_type);
 
+  declare_parameter("controller_plugins", default_ids_);
   declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
@@ -65,10 +63,15 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
 
-  get_parameter("controller_plugin_ids", controller_ids_);
-  get_parameter("controller_plugin_types", controller_types_);
-  get_parameter("controller_frequency", controller_frequency_);
+  get_parameter("controller_plugins", controller_ids_);
+  if (controller_ids_ == default_ids_) {
+    for (size_t i = 0; i < default_ids_.size(); ++i) {
+      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
+    }
+  }
+  controller_types_.resize(controller_ids_.size());
 
+  get_parameter("controller_frequency", controller_frequency_);
   get_parameter("min_x_velocity_threshold", min_x_velocity_threshold_);
   get_parameter("min_y_velocity_threshold", min_y_velocity_threshold_);
   get_parameter("min_theta_velocity_threshold", min_theta_velocity_threshold_);
@@ -80,17 +83,9 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   progress_checker_ = std::make_unique<ProgressChecker>(node);
 
-  if (controller_types_.size() != controller_ids_.size()) {
-    RCLCPP_FATAL(
-      get_logger(), "Size of controller names (%i) and "
-      "controller types (%i) are not the same!",
-      static_cast<int>(controller_types_.size()),
-      static_cast<int>(controller_ids_.size()));
-    exit(-1);
-  }
-
-  for (size_t i = 0; i != controller_types_.size(); i++) {
+  for (size_t i = 0; i != controller_ids_.size(); i++) {
     try {
+      controller_types_[i] = nav2_util::get_plugin_type_param(node, controller_ids_[i]);
       nav2_core::Controller::Ptr controller =
         lp_loader_.createUniqueInstance(controller_types_[i]);
       RCLCPP_INFO(

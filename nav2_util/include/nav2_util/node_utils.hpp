@@ -93,6 +93,20 @@ void declare_parameter_if_not_declared(
   }
 }
 
+template<typename NodeT>
+std::string get_plugin_type_param(
+  NodeT node,
+  const std::string & plugin_name)
+{
+  declare_parameter_if_not_declared(node, plugin_name + ".plugin");
+  std::string plugin_type;
+  if (!node->get_parameter(plugin_name + ".plugin", plugin_type)) {
+    RCLCPP_FATAL(node->get_logger(), "'plugin' param not defined for %s", plugin_name.c_str());
+    exit(-1);
+  }
+  return plugin_type;
+}
+
 }  // namespace nav2_util
 
 #endif  // NAV2_UTIL__NODE_UTILS_HPP_
