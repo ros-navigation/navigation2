@@ -111,6 +111,8 @@ private:
   bool trinary_costmap_;
   bool map_received_{false};
   tf2::Duration transform_tolerance_;
+  bool map_updated_{false};
+  nav_msgs::msg::OccupancyGrid::SharedPtr map_buffer_;
 };
 
 }  // namespace nav2_costmap_2d
