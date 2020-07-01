@@ -207,7 +207,7 @@ PlannerServer::on_shutdown(const rclcpp_lifecycle::State &)
 void
 PlannerServer::computePlan()
 {
-  auto start_time = now();
+  auto start_time = steady_clock_.now();
 
   // Initialize the ComputePathToPose goal and result
   auto goal = action_server_->get_current_goal();
@@ -285,15 +285,17 @@ PlannerServer::computePlan()
     RCLCPP_DEBUG(get_logger(), "Publishing the valid path");
     publishPlan(result->path);
 
-    action_server_->succeeded_current(result);
+    auto cycle_duration = steady_clock_.now() - start_time;
+    result->planning_time = cycle_duration;
 
-    auto cycle_duration = (now() - start_time).seconds();
-    if (max_planner_duration_ && cycle_duration > max_planner_duration_) {
+    if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
       RCLCPP_WARN(
         get_logger(),
         "Planner loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
-        1 / max_planner_duration_, 1 / cycle_duration);
+        1 / max_planner_duration_, 1 / cycle_duration.seconds());
     }
+
+    action_server_->succeeded_current(result);
 
     return;
   } catch (std::exception & ex) {
