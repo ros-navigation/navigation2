@@ -136,8 +136,6 @@ references:
       parameters:
         workspace:
           type: string
-        mixins:
-          type: string
       steps:
         - run:
             name: Test Workspace | << parameters.workspace >>
@@ -153,12 +151,10 @@ references:
                   xargs)
               set -o xtrace
               colcon test \
-                --packages-select ${TEST_PACKAGES} \
-                --mixin << parameters.mixins >>
+                --packages-select ${TEST_PACKAGES}
               colcon test \
                 --packages-select ${TEST_PACKAGES} \
                 --packages-select-test-failures \
-                --mixin << parameters.mixins >> \
                 --retest-until-pass ${RETEST_UNTIL_PASS} \
                 --ctest-args --test-regex "test_.*"
               colcon test-result \
@@ -265,7 +261,6 @@ references:
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
       workspace: /opt/overlay_ws
-      mixins: ${OVERLAY_MIXINS}
   collect_overlay_coverage: &collect_overlay_coverage
     run:
       name: Collect Code Coverage
