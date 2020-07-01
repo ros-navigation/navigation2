@@ -65,7 +65,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   get_parameter("controller_plugins", controller_ids_);
   if (controller_ids_ == default_ids_) {
-    for (size_t i = 0; i < default_ids_.size() ; ++i) {
+    for (size_t i = 0; i < default_ids_.size(); ++i) {
       declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
     }
   }
