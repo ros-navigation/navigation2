@@ -34,16 +34,12 @@
 
 #include "dwb_plugins/kinematic_parameters.hpp"
 
-#include <cmath>
 #include <memory>
 #include <string>
 
 #include "nav_2d_utils/parameters.hpp"
 #include "nav2_util/node_utils.hpp"
 
-#define EPSILON 1E-5
-
-using std::fabs;
 using nav2_util::declare_parameter_if_not_declared;
 using nav_2d_utils::moveDeprecatedParameter;
 using rcl_interfaces::msg::ParameterType;
@@ -51,16 +47,6 @@ using std::placeholders::_1;
 
 namespace dwb_plugins
 {
-
-bool KinematicParameters::isValidSpeed(double x, double y, double theta)
-{
-  double vmag_sq = x * x + y * y;
-  if (max_speed_xy_ >= 0.0 && vmag_sq > max_speed_xy_sq_ + EPSILON) {return false;}
-  if (min_speed_xy_ >= 0.0 && vmag_sq + EPSILON < min_speed_xy_sq_ &&
-    min_speed_theta_ >= 0.0 && fabs(theta) + EPSILON < min_speed_theta_) {return false;}
-  if (vmag_sq == 0.0 && theta == 0.0) {return false;}
-  return true;
-}
 
 KinematicsHandler::KinematicsHandler()
 {
@@ -143,10 +129,6 @@ void KinematicsHandler::initialize(
   update_kinematics(kinematics);
 }
 
-bool KinematicsHandler::isValidSpeed(double x, double y, double theta)
-{
-  return kinematics_.load()->isValidSpeed(x, y, theta);
-}
 
 void
 KinematicsHandler::on_parameter_event_callback(

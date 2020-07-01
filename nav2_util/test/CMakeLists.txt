@@ -40,3 +40,10 @@ target_link_libraries(test_odometry_utils ${library_name})
 ament_add_gtest(test_robot_utils test_robot_utils.cpp)
 ament_target_dependencies(test_robot_utils geometry_msgs)
 target_link_libraries(test_robot_utils ${library_name})
+
+add_launch_test(
+  "test_dump_params/test_dump_params.launch.py"
+  TIMEOUT 30
+  ENV
+    TEST_EXECUTABLE=$<TARGET_FILE:dump_params>
+)
