@@ -88,8 +88,9 @@ namespace lazy_theta_star_b {
             const geometry_msgs::msg::PoseStamped &goal) {
 
 
-        RCLCPP_INFO(
-                node_->get_logger(), "Path Search Begins");
+           RCLCPP_INFO(
+                node_->get_logger(), "GOT THE SOURCE AND DESTINATION ------ (%f, %f) && (%f, %f)",
+               start.pose.position.x, start.pose.position.y, goal.pose.position.x, goal.pose.position.y);
 
         costmap_->worldToMap(start.pose.position.x, start.pose.position.y, reinterpret_cast<unsigned int &>(src.x),
                              reinterpret_cast<unsigned int &>(src.y));
@@ -122,14 +123,9 @@ namespace lazy_theta_star_b {
 
         clearRobotCell(src.x, src.y);
 
-        RCLCPP_INFO(
-                node_->get_logger(), "GOT THE SOURCE AND DESTINATION ------ %i, %i && %i, %i",
-                src.x, src.y, dst.x, dst.y);
-
-
-        if (!isSafe(src.x, src.y) || !isSafe(dst.x, dst.y) || !withinLimits(src.x, src.y) ||
+         if (!isSafe(src.x, src.y) || !isSafe(dst.x, dst.y) || !withinLimits(src.x, src.y) ||
             !withinLimits(dst.x, dst.y)) {
-            RCLCPP_INFO(node_->get_logger(), "NO PATH POSSIBLE!!!!!!");
+            RCLCPP_INFO(node_->get_logger(), "THE SOURCE OR DESTINATION IS EITHER NOT WITHIN THE SIZE MAP OR IS OBSTRUCTED");
             global_path.poses.clear();
             return global_path;
 
@@ -160,23 +156,7 @@ namespace lazy_theta_star_b {
 
                 data[curr_id].counter++;
                
-                //          The condition if current point is the destination
-                if (cx == dst.x && cy == dst.y) {
-                    if (los_check(cx, cy, data[data[last_id].parentId].x, data[data[last_id].parentId].y)) {
-                        data[curr_id].parentId = data[last_id].parentId;
-                        data[curr_id].g = data[data[last_id].parentId].g;
-                        data[curr_id].f = data[data[last_id].parentId].f;
-                        break;
-                    } else {
-                        data[curr_id].parentId = last_id;
-                        data[curr_id].g = data[last_id].g;
-                        data[curr_id].f = data[last_id].f;
-                        break;
-                    }
-                }
-
-                //generates the child nodes location
-                int moves[8][2] = {{cx,     cy + 1},
+                 int moves[8][2] = {{cx,     cy + 1},
                                    {cx + 1, cy},
                                    {cx,     cy - 1},
                                    {cx - 1, cy},
@@ -192,6 +172,32 @@ namespace lazy_theta_star_b {
                 int mx, my;
                 id m_id;
                 id curr_par = (data[curr_id].parentId);
+
+                //          The condition if current point is the destination
+                if (cx == dst.x && cy == dst.y) {
+                    if (!(los_check(cx, cy, data[curr_par].x, data[curr_par].y))) {
+                        float min_dist = INF_COST;
+                        int min_dist_id = curr_par;
+
+                        for (int i = 0; i < how_many_corners; i++) {
+                            mx = moves[i][0];
+                            my = moves[i][1];
+                            if (withinLimits(mx, my)) {
+                                m_id = getIndex(mx, my);
+                                if (m_id != 0) {
+                                    if (data[m_id].f < min_dist) {
+                                        min_dist = data[m_id].f;
+                                        min_dist_id = m_id;
+                                    }
+                                }
+                            }
+                            data[curr_id].parentId = min_dist_id;
+                            data[curr_id].g = data[min_dist_id].g + dist(cx, cy, data[min_dist_id].x, data[min_dist_id].y);
+                            data[curr_id].f = data[curr_id].g + data[curr_id].h;
+                        }
+                    }
+                    break;
+                }
                 
                 //lazy checking for the parent
                 if (!(los_check(cx, cy, data[curr_par].x, data[curr_par].y)) && isSafe(cx, cy) &&
@@ -265,9 +271,13 @@ namespace lazy_theta_star_b {
                 data[curr_id].closed = -1;
 
             }
+            
+            if(pq.size() == 1){
+                RCLCPP_INFO(node_->get_logger(), "NO PATH POSSIBLE");
+            }
 
         } else {
-            RCLCPP_INFO(node_->get_logger(), "Straight Path");
+            RCLCPP_INFO(node_->get_logger(), "STRAIGHT LINE PATH");
             data.push_back({(dst.x), (dst.y), dist(cx, cy, src.x, src.y), 0, 0});
             curr_id = 1;
         }
