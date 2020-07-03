@@ -73,7 +73,7 @@ inline double projectVelocity(double v0, double accel, double decel, double dt, 
  * given our current velocity. However, there is some fancy logic around zero velocities and
  * the min/max velocities
  *
- * If the current velocity is 2 m/s, and the acceleration limit is 1 m/ss and the acc_time is 1 s,
+ * If the current velocity is 2 m/s, and the acceleration limit is 1 m/ss and the dt is 1 s,
  * this class would provide velocities between 1 m/s and 3 m/s.
  *
  *
@@ -90,10 +90,11 @@ public:
    * @param max Maximum velocity allowable
    * @param acc_limit Acceleration Limit
    * @param decel_limit Deceleration Limit
+   * @param dt Time step used for velocity projection
    * @param num_samples The number of samples to return
    */
   OneDVelocityIterator(
-    double current, double min, double max, double acc_limit, double decel_limit, double acc_time,
+    double current, double min, double max, double acc_limit, double decel_limit, double dt,
     int num_samples)
   {
     if (current < min) {
@@ -101,8 +102,8 @@ public:
     } else if (current > max) {
       current = max;
     }
-    max_vel_ = projectVelocity(current, acc_limit, decel_limit, acc_time, max);
-    min_vel_ = projectVelocity(current, acc_limit, decel_limit, acc_time, min);
+    max_vel_ = projectVelocity(current, acc_limit, decel_limit, dt, max);
+    min_vel_ = projectVelocity(current, acc_limit, decel_limit, dt, min);
     reset();
 
     if (fabs(min_vel_ - max_vel_) < EPSILON) {
