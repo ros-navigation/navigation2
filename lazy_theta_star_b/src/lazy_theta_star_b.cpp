@@ -333,13 +333,6 @@ void LazyThetaStarB::backtrace(std::vector<id> * waypt, id curr_id)
   do {
     wayptRev.push_back(curr_id);
       curr_id = data[curr_id].parentId;
-    if (data[curr_id].got_here == 1) {
-          std::cout
-                  << "------------------------------------------------------>  got the same error   <-------------------------------------------------------"
-                  << '\n';
-          break;
-    }
-    data[curr_id].got_here = 1;
   } while (curr_id != 0);
   wayptRev.push_back(0);
 
