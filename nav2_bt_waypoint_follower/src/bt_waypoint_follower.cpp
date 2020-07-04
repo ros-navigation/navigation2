@@ -255,6 +255,7 @@ BtWaypointFollower::initializeBlackboard()
   blackboard_->set("current_waypoint_idx", 0);
   blackboard_->set("num_waypoints", goal->poses.size());
   blackboard_->set("goal", goal->poses[0]);
+  blackboard_->set("goal_achieved", false);
 }
 
 }  // namespace nav2_bt_waypoint_follower
