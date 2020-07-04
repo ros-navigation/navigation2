@@ -102,7 +102,7 @@ Status BackUp::onCycleUpdate()
   if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
     stopRobot();
     RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting BackUp");
-    return Status::SUCCEEDED;
+    return Status::FAILED;
   }
 
   vel_pub_->publish(std::move(cmd_vel));

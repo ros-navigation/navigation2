@@ -133,7 +133,7 @@ Status Spin::onCycleUpdate()
   if (!isCollisionFree(relative_yaw_, cmd_vel.get(), pose2d)) {
     stopRobot();
     RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin");
-    return Status::SUCCEEDED;
+    return Status::FAILED;
   }
 
   vel_pub_->publish(std::move(cmd_vel));
