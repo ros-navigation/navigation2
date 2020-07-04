@@ -49,7 +49,7 @@ def generate_launch_description():
     # On this example all robots are launched with the same settings
     map_yaml_file = LaunchConfiguration('map')
 
-    bt_xml_file = LaunchConfiguration('bt_xml_file')
+    default_bt_xml_filename = LaunchConfiguration('default_bt_xml_filename')
     autostart = LaunchConfiguration('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
@@ -83,7 +83,7 @@ def generate_launch_description():
         description='Full path to the ROS2 parameters file to use for robot2 launched nodes')
 
     declare_bt_xml_cmd = DeclareLaunchArgument(
-        'bt_xml_file',
+        'default_bt_xml_filename',
         default_value=os.path.join(
             get_package_share_directory('nav2_bt_navigator'),
             'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
@@ -152,7 +152,7 @@ def generate_launch_description():
                                   'map': map_yaml_file,
                                   'use_sim_time': 'True',
                                   'params_file': params_file,
-                                  'bt_xml_file': bt_xml_file,
+                                  'default_bt_xml_filename': default_bt_xml_filename,
                                   'autostart': autostart,
                                   'use_rviz': 'False',
                                   'use_simulator': 'False',
@@ -170,7 +170,7 @@ def generate_launch_description():
                 msg=[robot['name'], ' params yaml: ', params_file]),
             LogInfo(
                 condition=IfCondition(log_settings),
-                msg=[robot['name'], ' behavior tree xml: ', bt_xml_file]),
+                msg=[robot['name'], ' behavior tree xml: ', default_bt_xml_filename]),
             LogInfo(
                 condition=IfCondition(log_settings),
                 msg=[robot['name'], ' rviz config file: ', rviz_config_file]),

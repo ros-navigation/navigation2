@@ -12,53 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__GOAL_UPDATED_CONDITION_HPP_
-#define NAV2_BEHAVIOR_TREE__GOAL_UPDATED_CONDITION_HPP_
-
 #include <string>
 
-#include "behaviortree_cpp_v3/condition_node.h"
-#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_behavior_tree/plugins/condition/goal_updated_condition.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class GoalUpdatedCondition : public BT::ConditionNode
+GoalUpdatedCondition::GoalUpdatedCondition(
+  const std::string & condition_name,
+  const BT::NodeConfiguration & conf)
+: BT::ConditionNode(condition_name, conf)
 {
-public:
-  GoalUpdatedCondition(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf)
-  : BT::ConditionNode(condition_name, conf)
-  {
-  }
+}
 
-  GoalUpdatedCondition() = delete;
-
-  BT::NodeStatus tick() override
-  {
-    if (status() == BT::NodeStatus::IDLE) {
-      goal_ = config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal");
-      return BT::NodeStatus::FAILURE;
-    }
-
-    auto current_goal = config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal");
-    if (goal_ != current_goal) {
-      goal_ = current_goal;
-      return BT::NodeStatus::SUCCESS;
-    }
-
+BT::NodeStatus GoalUpdatedCondition::tick()
+{
+  if (status() == BT::NodeStatus::IDLE) {
+    goal_ = config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal");
     return BT::NodeStatus::FAILURE;
   }
 
-  static BT::PortsList providedPorts()
-  {
-    return {};
+  auto current_goal = config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal");
+  if (goal_ != current_goal) {
+    goal_ = current_goal;
+    return BT::NodeStatus::SUCCESS;
   }
 
-private:
-  geometry_msgs::msg::PoseStamped goal_;
-};
+  return BT::NodeStatus::FAILURE;
+}
 
 }  // namespace nav2_behavior_tree
 
@@ -67,5 +49,3 @@ BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::GoalUpdatedCondition>("GoalUpdated");
 }
-
-#endif  // NAV2_BEHAVIOR_TREE__GOAL_UPDATED_CONDITION_HPP_

@@ -147,6 +147,9 @@ protected:
   std::string robot_base_frame_;
   double transform_tolerance_;
 
+  // Clock
+  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
+
   void execute()
   {
     RCLCPP_INFO(node_->get_logger(), "Attempting %s", recovery_name_.c_str());
@@ -167,13 +170,19 @@ protected:
       1s,
       [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", recovery_name_.c_str());});
 
+    auto start_time = steady_clock_.now();
+
+    // Initialize the ActionT result
+    auto result = std::make_shared<typename ActionT::Result>();
+
     rclcpp::Rate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(node_->get_logger(), "Canceling %s", recovery_name_.c_str());
         stopRobot();
-        action_server_->terminate_all();
+        result->total_elapsed_time = steady_clock_.now() - start_time;
+        action_server_->terminate_all(result);
         return;
       }
 
@@ -184,19 +193,22 @@ protected:
           " however feature is currently not implemented. Aborting and stopping.",
           recovery_name_.c_str());
         stopRobot();
-        action_server_->terminate_current();
+        result->total_elapsed_time = steady_clock_.now() - start_time;
+        action_server_->terminate_current(result);
         return;
       }
 
       switch (onCycleUpdate()) {
         case Status::SUCCEEDED:
           RCLCPP_INFO(node_->get_logger(), "%s completed successfully", recovery_name_.c_str());
-          action_server_->succeeded_current();
+          result->total_elapsed_time = steady_clock_.now() - start_time;
+          action_server_->succeeded_current(result);
           return;
 
         case Status::FAILED:
           RCLCPP_WARN(node_->get_logger(), "%s failed", recovery_name_.c_str());
-          action_server_->terminate_current();
+          result->total_elapsed_time = steady_clock_.now() - start_time;
+          action_server_->terminate_current(result);
           return;
 
         case Status::RUNNING:

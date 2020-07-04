@@ -37,16 +37,16 @@ namespace nav2_planner
 
 PlannerServer::PlannerServer()
 : nav2_util::LifecycleNode("nav2_planner", "", true),
-  gp_loader_("nav2_core", "nav2_core::GlobalPlanner"), costmap_(nullptr)
+  gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
+  default_ids_{"GridBased"},
+  default_types_{"nav2_navfn_planner/NavfnPlanner"},
+  costmap_(nullptr)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare this node's parameters
-  std::vector<std::string> default_id, default_type;
-  default_id.push_back("GridBased");
-  default_type.push_back("nav2_navfn_planner/NavfnPlanner");
-  declare_parameter("planner_plugin_ids", default_id);
-  declare_parameter("planner_plugin_types", default_type);
+  declare_parameter("planner_plugins", default_ids_);
+  declare_parameter("expected_planner_frequency", 20.0);
 
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -79,26 +79,27 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   tf_ = costmap_ros_->getTfBuffer();
 
-  get_parameter("planner_plugin_ids", plugin_ids_);
-  get_parameter("planner_plugin_types", plugin_types_);
+  get_parameter("planner_plugins", planner_ids_);
+  if (planner_ids_ == default_ids_) {
+    for (size_t i = 0; i < default_ids_.size(); ++i) {
+      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
+    }
+  }
+  planner_types_.resize(planner_ids_.size());
+
   auto node = shared_from_this();
 
-  if (plugin_ids_.size() != plugin_types_.size()) {
-    RCLCPP_FATAL(
-      get_logger(),
-      "Planner plugin names and types sizes do not match!");
-    exit(-1);
-  }
-
-  for (size_t i = 0; i != plugin_types_.size(); i++) {
+  for (size_t i = 0; i != planner_ids_.size(); i++) {
     try {
+      planner_types_[i] = nav2_util::get_plugin_type_param(
+        node, planner_ids_[i]);
       nav2_core::GlobalPlanner::Ptr planner =
-        gp_loader_.createUniqueInstance(plugin_types_[i]);
+        gp_loader_.createUniqueInstance(planner_types_[i]);
       RCLCPP_INFO(
         get_logger(), "Created global planner plugin %s of type %s",
-        plugin_ids_[i].c_str(), plugin_types_[i].c_str());
-      planner->configure(node, plugin_ids_[i], tf_, costmap_ros_);
-      planners_.insert({plugin_ids_[i], planner});
+        planner_ids_[i].c_str(), planner_types_[i].c_str());
+      planner->configure(node, planner_ids_[i], tf_, costmap_ros_);
+      planners_.insert({planner_ids_[i], planner});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create global planner. Exception: %s",
@@ -107,8 +108,21 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  for (size_t i = 0; i != plugin_types_.size(); i++) {
-    planner_ids_concat_ += plugin_ids_[i] + std::string(" ");
+  for (size_t i = 0; i != planner_ids_.size(); i++) {
+    planner_ids_concat_ += planner_ids_[i] + std::string(" ");
+  }
+
+  double expected_planner_frequency;
+  get_parameter("expected_planner_frequency", expected_planner_frequency);
+  if (expected_planner_frequency > 0) {
+    max_planner_duration_ = 1 / expected_planner_frequency;
+  } else {
+    max_planner_duration_ = 0.0;
+
+    RCLCPP_WARN(
+      get_logger(),
+      "The expected planner frequency parameter is %.4f Hz. The value has to be greater"
+      " than 0.0 to turn on displaying warning messages", expected_planner_frequency);
   }
 
   // Initialize pubs & subs
@@ -193,6 +207,8 @@ PlannerServer::on_shutdown(const rclcpp_lifecycle::State &)
 void
 PlannerServer::computePlan()
 {
+  auto start_time = steady_clock_.now();
+
   // Initialize the ComputePathToPose goal and result
   auto goal = action_server_->get_current_goal();
   auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
@@ -269,7 +285,18 @@ PlannerServer::computePlan()
     RCLCPP_DEBUG(get_logger(), "Publishing the valid path");
     publishPlan(result->path);
 
+    auto cycle_duration = steady_clock_.now() - start_time;
+    result->planning_time = cycle_duration;
+
+    if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Planner loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
+        1 / max_planner_duration_, 1 / cycle_duration.seconds());
+    }
+
     action_server_->succeeded_current(result);
+
     return;
   } catch (std::exception & ex) {
     RCLCPP_WARN(

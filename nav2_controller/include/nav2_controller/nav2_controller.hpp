@@ -204,7 +204,10 @@ protected:
   // Controller Plugins
   pluginlib::ClassLoader<nav2_core::Controller> lp_loader_;
   ControllerMap controllers_;
-  std::vector<std::string> controller_ids_, controller_types_;
+  std::vector<std::string> default_ids_;
+  std::vector<std::string> default_types_;
+  std::vector<std::string> controller_ids_;
+  std::vector<std::string> controller_types_;
   std::string controller_ids_concat_, current_controller_;
 
   std::unique_ptr<ProgressChecker> progress_checker_;

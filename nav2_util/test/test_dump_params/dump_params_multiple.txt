@@ -1,0 +1,28 @@
+test_dump_params:
+  ros__parameters:
+    use_sim_time: False
+    param_not_set: NOT_SET
+    param_bool: True
+    param_int: 1234
+    param_double: 3.14
+    param_string: "foobar"
+    param_bool_array: [True, False]
+    param_int_array: [1, 2, 3]
+    param_double_array: [1.5, 23.5012, 123.001]
+    param_string_array: ["foo", "bar"]
+    param_byte_array: [0x1, 0x2, 0x3, 0x4]
+
+test_dump_params_copy:
+  ros__parameters:
+    use_sim_time: False
+    param_not_set: NOT_SET
+    param_bool: True
+    param_int: 1234
+    param_double: 3.14
+    param_string: "foobar"
+    param_bool_array: [True, False]
+    param_int_array: [1, 2, 3]
+    param_double_array: [1.5, 23.5012, 123.001]
+    param_string_array: ["foo", "bar"]
+    param_byte_array: [0x1, 0x2, 0x3, 0x4]
+

@@ -13,16 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__DISTANCE_TRAVELED_CONDITION_HPP_
-#define NAV2_BEHAVIOR_TREE__DISTANCE_TRAVELED_CONDITION_HPP_
-
 #include <string>
 #include <memory>
 
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
-#include "nav2_behavior_tree/plugins/distance_traveled_condition.hpp"
+#include "nav2_behavior_tree/plugins/condition/distance_traveled_condition.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -87,5 +84,3 @@ BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::DistanceTraveledCondition>("DistanceTraveled");
 }
-
-#endif  // NAV2_BEHAVIOR_TREE__DISTANCE_TRAVELED_CONDITION_HPP_

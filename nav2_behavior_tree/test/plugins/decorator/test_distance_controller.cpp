@@ -18,82 +18,46 @@
 #include <memory>
 #include <set>
 
-#include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/robot_utils.hpp"
 
-#include "../../test_transform_handler.hpp"
+#include "../../test_behavior_tree_fixture.hpp"
 #include "../../test_dummy_tree_node.hpp"
-#include "nav2_behavior_tree/plugins/distance_controller.hpp"
+#include "nav2_behavior_tree/plugins/decorator/distance_controller.hpp"
 
-class DistanceControllerTestFixture : public ::testing::Test
+class DistanceControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
-  static void SetUpTestCase()
-  {
-    transform_handler_ = new nav2_behavior_tree::TransformHandler();
-    config_ = new BT::NodeConfiguration();
-    dummy_node_ = new nav2_behavior_tree::DummyNode();
-
-    // Create the blackboard that will be shared by all of the nodes in the tree
-    config_->blackboard = BT::Blackboard::create();
-    // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
-      "node",
-      rclcpp::Node::SharedPtr(transform_handler_));
-    config_->blackboard->set<std::shared_ptr<tf2_ros::Buffer>>(
-      "tf_buffer",
-      transform_handler_->getBuffer());
-    config_->blackboard->set<std::chrono::milliseconds>(
-      "server_timeout",
-      std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("path_updated", false);
-    config_->blackboard->set<bool>("initial_pose_received", false);
-
-    transform_handler_->activate();
-    transform_handler_->waitForTransform();
-  }
-
-  static void TearDownTestCase()
-  {
-    transform_handler_->deactivate();
-    delete transform_handler_;
-    delete config_;
-    delete dummy_node_;
-    transform_handler_ = nullptr;
-    config_ = nullptr;
-    dummy_node_ = nullptr;
-  }
-
   void SetUp()
   {
-    node_ = new nav2_behavior_tree::DistanceController("distance_controller", *config_);
-    node_->setChild(dummy_node_);
+    bt_node_ = std::make_shared<nav2_behavior_tree::DistanceController>(
+      "distance_controller", *config_);
+    dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();
+    bt_node_->setChild(dummy_node_.get());
   }
 
   void TearDown()
   {
-    node_ = nullptr;
+    dummy_node_.reset();
+    bt_node_.reset();
   }
 
 protected:
-  static nav2_behavior_tree::TransformHandler * transform_handler_;
-  static BT::NodeConfiguration * config_;
-  static nav2_behavior_tree::DistanceController * node_;
-  static nav2_behavior_tree::DummyNode * dummy_node_;
+  static std::shared_ptr<nav2_behavior_tree::DistanceController> bt_node_;
+  static std::shared_ptr<nav2_behavior_tree::DummyNode> dummy_node_;
 };
 
-nav2_behavior_tree::TransformHandler * DistanceControllerTestFixture::transform_handler_ = nullptr;
-BT::NodeConfiguration * DistanceControllerTestFixture::config_ = nullptr;
-nav2_behavior_tree::DistanceController * DistanceControllerTestFixture::node_ = nullptr;
-nav2_behavior_tree::DummyNode * DistanceControllerTestFixture::dummy_node_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::DistanceController>
+DistanceControllerTestFixture::bt_node_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::DummyNode>
+DistanceControllerTestFixture::dummy_node_ = nullptr;
 
 TEST_F(DistanceControllerTestFixture, test_behavior)
 {
-  EXPECT_EQ(node_->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
 
   dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(node_->executeTick(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(dummy_node_->status(), BT::NodeStatus::IDLE);
 
   geometry_msgs::msg::PoseStamped pose;
@@ -121,9 +85,9 @@ TEST_F(DistanceControllerTestFixture, test_behavior)
     dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
 
     if (i % 2) {
-      EXPECT_EQ(node_->executeTick(), BT::NodeStatus::RUNNING);
+      EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
     } else {
-      EXPECT_EQ(node_->executeTick(), BT::NodeStatus::SUCCESS);
+      EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
       EXPECT_EQ(dummy_node_->status(), BT::NodeStatus::IDLE);
     }
   }

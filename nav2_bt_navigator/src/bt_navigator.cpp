@@ -50,6 +50,7 @@ BtNavigator::BtNavigator()
     "nav2_reinitialize_global_localization_service_bt_node",
     "nav2_rate_controller_bt_node",
     "nav2_distance_controller_bt_node",
+    "nav2_speed_controller_bt_node",
     "nav2_recovery_node_bt_node",
     "nav2_pipeline_sequence_bt_node",
     "nav2_round_robin_node_bt_node",
@@ -59,11 +60,12 @@ BtNavigator::BtNavigator()
   };
 
   // Declare this node's parameters
-  declare_parameter("bt_xml_filename");
+  declare_parameter("default_bt_xml_filename");
   declare_parameter("plugin_lib_names", plugin_libs);
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
+  declare_parameter("odom_topic", std::string("odom"));
 }
 
 BtNavigator::~BtNavigator()
@@ -127,28 +129,44 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   blackboard_->set<int>("number_recoveries", 0);  // NOLINT
 
   // Get the BT filename to use from the node parameter
-  std::string bt_xml_filename;
-  get_parameter("bt_xml_filename", bt_xml_filename);
+  get_parameter("default_bt_xml_filename", default_bt_xml_filename_);
+
+  if (!loadBehaviorTree(default_bt_xml_filename_)) {
+    RCLCPP_ERROR(get_logger(), "Error loading XML file: %s", default_bt_xml_filename_.c_str());
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
+bool
+BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
+{
+  // Use previous BT if it is the existing one
+  if (current_bt_xml_filename_ == bt_xml_filename) {
+    return true;
+  }
 
   // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(bt_xml_filename);
 
   if (!xml_file.good()) {
     RCLCPP_ERROR(get_logger(), "Couldn't open input XML file: %s", bt_xml_filename.c_str());
-    return nav2_util::CallbackReturn::FAILURE;
+    return false;
   }
 
-  xml_string_ = std::string(
+  auto xml_string = std::string(
     std::istreambuf_iterator<char>(xml_file),
     std::istreambuf_iterator<char>());
 
   RCLCPP_DEBUG(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename.c_str());
-  RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string_.c_str());
+  RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string.c_str());
 
   // Create the Behavior Tree from the XML input
-  tree_ = bt_->buildTreeFromText(xml_string_, blackboard_);
+  tree_ = bt_->buildTreeFromText(xml_string, blackboard_);
+  current_bt_xml_filename_ = bt_xml_filename;
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return true;
 }
 
 nav2_util::CallbackReturn
@@ -188,7 +206,6 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   action_server_.reset();
   plugin_lib_names_.clear();
-  xml_string_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_.rootNode());
   bt_.reset();
@@ -258,6 +275,19 @@ BtNavigator::navigateToPose()
       feedback_msg->navigation_time = now() - start_time_;
       action_server_->publish_feedback(feedback_msg);
     };
+
+  auto bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
+
+  // Empty id in request is default for backward compatibility
+  bt_xml_filename = bt_xml_filename == "" ? default_bt_xml_filename_ : bt_xml_filename;
+
+  if (!loadBehaviorTree(bt_xml_filename)) {
+    RCLCPP_ERROR(
+      get_logger(), "BT file not found: %s. Navigation canceled",
+      bt_xml_filename.c_str(), current_bt_xml_filename_.c_str());
+    action_server_->terminate_current();
+    return;
+  }
 
   // Execute the BT that was previously created in the configure step
   nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);

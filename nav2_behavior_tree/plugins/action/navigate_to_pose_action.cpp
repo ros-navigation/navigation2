@@ -12,50 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__NAVIGATE_TO_POSE_ACTION_HPP_
-#define NAV2_BEHAVIOR_TREE__NAVIGATE_TO_POSE_ACTION_HPP_
-
 #include <memory>
 #include <string>
 
-#include "geometry_msgs/msg/point.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
-#include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "nav2_behavior_tree/bt_action_node.hpp"
+#include "nav2_behavior_tree/plugins/action/navigate_to_pose_action.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class NavigateToPoseAction : public BtActionNode<nav2_msgs::action::NavigateToPose>
+NavigateToPoseAction::NavigateToPoseAction(
+  const std::string & xml_tag_name,
+  const std::string & action_name,
+  const BT::NodeConfiguration & conf)
+: BtActionNode<nav2_msgs::action::NavigateToPose>(xml_tag_name, action_name, conf)
 {
-public:
-  NavigateToPoseAction(
-    const std::string & xml_tag_name,
-    const std::string & action_name,
-    const BT::NodeConfiguration & conf)
-  : BtActionNode<nav2_msgs::action::NavigateToPose>(xml_tag_name, action_name, conf)
-  {
-  }
+}
 
-  void on_tick() override
-  {
-    if (!getInput("goal", goal_.pose)) {
-      RCLCPP_ERROR(
-        node_->get_logger(),
-        "NavigateToPoseAction: goal not provided");
-      return;
-    }
+void NavigateToPoseAction::on_tick()
+{
+  if (!getInput("goal", goal_.pose)) {
+    RCLCPP_ERROR(
+      node_->get_logger(),
+      "NavigateToPoseAction: goal not provided");
+    return;
   }
-
-  // Any BT node that accepts parameters must provide a requiredNodeParameters method
-  static BT::PortsList providedPorts()
-  {
-    return providedBasicPorts(
-      {
-        BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
-      });
-  }
-};
+}
 
 }  // namespace nav2_behavior_tree
 
@@ -72,5 +53,3 @@ BT_REGISTER_NODES(factory)
   factory.registerBuilder<nav2_behavior_tree::NavigateToPoseAction>(
     "NavigateToPose", builder);
 }
-
-#endif  // NAV2_BEHAVIOR_TREE__NAVIGATE_TO_POSE_ACTION_HPP_

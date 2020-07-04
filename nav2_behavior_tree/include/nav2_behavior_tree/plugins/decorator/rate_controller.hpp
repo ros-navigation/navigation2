@@ -1,5 +1,4 @@
-// Copyright (c) 2020 Sarthak Mittal
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,42 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__TIME_EXPIRED_CONDITION_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__TIME_EXPIRED_CONDITION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__RATE_CONTROLLER_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__RATE_CONTROLLER_HPP_
 
+#include <chrono>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp_v3/condition_node.h"
+#include "behaviortree_cpp_v3/decorator_node.h"
 
 namespace nav2_behavior_tree
 {
 
-class TimeExpiredCondition : public BT::ConditionNode
+class RateController : public BT::DecoratorNode
 {
 public:
-  TimeExpiredCondition(
-    const std::string & condition_name,
+  RateController(
+    const std::string & name,
     const BT::NodeConfiguration & conf);
-
-  TimeExpiredCondition() = delete;
-
-  BT::NodeStatus tick() override;
 
   // Any BT node that accepts parameters must provide a requiredNodeParameters method
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("seconds", 1.0, "Seconds")
+      BT::InputPort<double>("hz", 10.0, "Rate")
     };
   }
 
 private:
-  rclcpp::Node::SharedPtr node_;
-  rclcpp::Time start_;
+  BT::NodeStatus tick() override;
+
+  std::chrono::time_point<std::chrono::high_resolution_clock> start_;
   double period_;
+  bool first_time_;
 };
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__TIME_EXPIRED_CONDITION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__RATE_CONTROLLER_HPP_

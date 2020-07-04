@@ -1,5 +1,4 @@
-// Copyright (c) 2020 Sarthak Mittal
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2020 Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,38 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__DISTANCE_TRAVELED_CONDITION_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__DISTANCE_TRAVELED_CONDITION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__TRANSFORM_AVAILABLE_CONDITION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__TRANSFORM_AVAILABLE_CONDITION_HPP_
 
 #include <string>
+#include <atomic>
 #include <memory>
 
-#include "behaviortree_cpp_v3/condition_node.h"
-
 #include "rclcpp/rclcpp.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "behaviortree_cpp_v3/condition_node.h"
 #include "tf2_ros/buffer.h"
 
 namespace nav2_behavior_tree
 {
 
-class DistanceTraveledCondition : public BT::ConditionNode
+class TransformAvailableCondition : public BT::ConditionNode
 {
 public:
-  DistanceTraveledCondition(
+  TransformAvailableCondition(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf);
 
-  DistanceTraveledCondition() = delete;
+  TransformAvailableCondition() = delete;
+
+  ~TransformAvailableCondition();
 
   BT::NodeStatus tick() override;
 
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("distance", 1.0, "Distance"),
-      BT::InputPort<std::string>("global_frame", std::string("map"), "Global frame"),
-      BT::InputPort<std::string>("robot_base_frame", std::string("base_link"), "Robot base frame")
+      BT::InputPort<std::string>("child", std::string(), "Child frame for transform"),
+      BT::InputPort<std::string>("parent", std::string(), "parent frame for transform")
     };
   }
 
@@ -52,14 +51,12 @@ private:
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
-  geometry_msgs::msg::PoseStamped start_pose_;
+  std::atomic<bool> was_found_;
 
-  double distance_;
-  double transform_tolerance_;
-  std::string global_frame_;
-  std::string robot_base_frame_;
+  std::string child_frame_;
+  std::string parent_frame_;
 };
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DISTANCE_TRAVELED_CONDITION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__TRANSFORM_AVAILABLE_CONDITION_HPP_
