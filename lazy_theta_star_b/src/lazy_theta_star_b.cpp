@@ -48,9 +48,6 @@ void LazyThetaStarB::makePlan(std::vector<float> & x_path, std::vector<float> & 
   if (!isSafe(src.x, src.y) || !isSafe(dst.x, dst.y) || !withinLimits(src.x, src.y) ||
     !withinLimits(dst.x, dst.y))
   {
-//    std::cout << !isSafe(src.x, src.y) << '\t' << !isSafe(dst.x, dst.y) << '\t' << !withinLimits(
-//      src.x, src.y) << '\t' <<
-//      !withinLimits(dst.x, dst.y) << '\n';
     RCLCPP_INFO(node_->get_logger(), "NO PATH POSSIBLE!!!!!!");
   }
 
@@ -86,13 +83,12 @@ void LazyThetaStarB::makePlan(std::vector<float> & x_path, std::vector<float> & 
   if (!losCheck(src.x, src.y, dst.x, dst.y)) {
 
     while (pq.size() > 1) {
-      
       int mx, my;
       id m_id;
       id curr_par = (data[curr_id].parentId);
       std::cout << "THE CURRENT POINT IS : " << cx << '\t' << cy << '\n';
 
-      // The condition if current point is the destination
+      //          The condition if current point is the destination
       if (cx == dst.x && cy == dst.y) {
           std::cout<<"Got IT!!!!!!!!!"<<'\n';
           if (!(losCheck(cx, cy, data[curr_par].x, data[curr_par].y))) {

@@ -76,8 +76,6 @@ nav_msgs::msg::Path planner::createPlan(
 {
   nav_msgs::msg::Path global_path;
 
-  RCLCPP_INFO(node_->get_logger(), "STARTED!!!");
-
   planner_->costmap_->worldToMap(start.pose.position.x, start.pose.position.y,
     reinterpret_cast<unsigned int &>(planner_->src.x),
     reinterpret_cast<unsigned int &>(planner_->src.y));
@@ -89,9 +87,7 @@ nav_msgs::msg::Path planner::createPlan(
   planner_->node_ = node_;
 //  planner_->costmap_ = costmap_;
   planner_->how_many_corners = how_many_corners_;
-  RCLCPP_INFO(node_->get_logger(), "STOPPED APPARENTLY!!!");
   planner_->makePlan(x, y);
-  RCLCPP_INFO(node_->get_logger(), "NOT REALLY THOUGH!!!");
 
   global_path = linearInterpolation(interpolation_dist_);
   x.clear();
