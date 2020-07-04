@@ -11,7 +11,7 @@
           <GetNextGoal goals="{goals}" goal="{goal}" goal_achieved="{goal_achieved}"/>
           <RecoveryNode number_of_retries="1">
             <NavigateToPose goal="{goal}"/>
-            <Wait duration="5"/>
+            <Wait wait_duration="5"/>
           </RecoveryNode>
           <SetBlackboard output_key="goal_achieved" value="true"/>
         </ReactiveSequence>
