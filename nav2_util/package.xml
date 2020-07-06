@@ -24,6 +24,8 @@
   <depend>rclcpp_action</depend>
   <depend>test_msgs</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
 
   <exec_depend>libboost-program-options</exec_depend>
 
