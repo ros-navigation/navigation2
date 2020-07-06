@@ -25,7 +25,7 @@
   <depend>test_msgs</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>launch</depend>
-  <depend>launch_ros</depend>
+  <depend>launch_testing_ament_cmake</depend>
 
   <exec_depend>libboost-program-options</exec_depend>
 
@@ -33,7 +33,7 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>launch</test_depend>
-  <test_depend>launch_ros</test_depend>
+  <test_depend>launch_testing_ament_cmake</test_depend>
   <test_depend>std_srvs</test_depend>
 
   <export>
