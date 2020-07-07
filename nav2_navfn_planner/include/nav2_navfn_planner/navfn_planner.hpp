@@ -88,8 +88,8 @@ protected:
   // Check for a valid potential value at a given point in the world
   // - must call computePotential first
   // - currently unused
-  bool validPointPotential(const geometry_msgs::msg::Point & world_point);
-  bool validPointPotential(const geometry_msgs::msg::Point & world_point, double tolerance);
+  // bool validPointPotential(const geometry_msgs::msg::Point & world_point);
+  // bool validPointPotential(const geometry_msgs::msg::Point & world_point, double tolerance);
 
   // Compute the squared distance between two points
   inline double squared_distance(
