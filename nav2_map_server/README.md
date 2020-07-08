@@ -92,6 +92,6 @@ NEW in ROS2 Eloquent, map_server also now provides a "load_map" service. See nav
 
 Example:
 ```
-$ ros2 service call /load_map nav2_msgs/srv/LoadMap "{type: 0, map_id: /ros/maps/map.yaml}
+$ ros2 service call /load_map nav2_msgs/srv/LoadMap "{map_url: /ros/maps/map.yaml}
 ```
 
