@@ -36,7 +36,7 @@ public:
   void initialize(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
     const std::string & plugin_name) override;
-  void check(geometry_msgs::msg::PoseStamped & current_pose) override;
+  bool check(geometry_msgs::msg::PoseStamped & current_pose) override;
   void reset() override;
 
 protected:

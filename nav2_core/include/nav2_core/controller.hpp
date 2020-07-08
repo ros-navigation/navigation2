@@ -112,7 +112,6 @@ public:
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity) = 0;
-
 };
 
 }  // namespace nav2_core

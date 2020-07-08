@@ -15,6 +15,9 @@
 #ifndef NAV2_CORE__PROGRESS_CHECKER_HPP_
 #define NAV2_CORE__PROGRESS_CHECKER_HPP_
 
+#include <memory>
+#include <string>
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -37,20 +40,19 @@ public:
    * @param node Node pointer
    */
   virtual void initialize(
-          const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
-          const std::string & plugin_name) = 0;
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    const std::string & plugin_name) = 0;
   /**
    * @brief Checks if the robot has moved compare to previous
    * pose
    * @param current_pose Current pose of the robot
-   * @throw nav2_core::PlannerException when failed to make progress
+   * @return True if progress is made
    */
-  virtual void check(geometry_msgs::msg::PoseStamped & current_pose) = 0;
+  virtual bool check(geometry_msgs::msg::PoseStamped & current_pose) = 0;
   /**
    * @brief Reset class state upon calling
    */
   virtual void reset() {}
-
 };
 }  // namespace nav2_core
 

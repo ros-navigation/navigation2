@@ -42,7 +42,7 @@ void SimpleProgressChecker::initialize(
   time_allowance_ = rclcpp::Duration::from_seconds(time_allowance_param);
 }
 
-void SimpleProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
+bool SimpleProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
 {
   // relies on short circuit evaluation to not call is_robot_moved_enough if
   // baseline_pose is not set.
@@ -51,11 +51,12 @@ void SimpleProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose
 
   if ((!baseline_pose_set_) || (is_robot_moved_enough(current_pose2d))) {
     reset_baseline_pose(current_pose2d);
-    return;
+    return true;
   }
   if ((nh_->now() - baseline_time_) > time_allowance_) {
-    throw nav2_core::PlannerException("Failed to make progress");
+    return false;
   }
+  return true;
 }
 
 void SimpleProgressChecker::reset()

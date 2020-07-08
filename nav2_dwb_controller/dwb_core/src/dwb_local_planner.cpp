@@ -263,7 +263,6 @@ DWBLocalPlanner::setPlan(const nav_msgs::msg::Path & path)
   }
 
   traj_generator_->reset();
-  //goal_checker_->reset();
 
   pub_->publishGlobalPlan(path2d);
   global_plan_ = path2d;

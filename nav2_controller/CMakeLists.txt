@@ -99,9 +99,6 @@ install(TARGETS ${executable_name}
 install(DIRECTORY include/
   DESTINATION include/
 )
-install(FILES plugins.xml
-        DESTINATION share/${PROJECT_NAME}
-)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -109,10 +106,10 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(simple_progress_checker)
-ament_export_libraries(simple_goal_checker)
-ament_export_libraries(stopped_goal_checker)
-ament_export_libraries(${library_name})
+ament_export_libraries(simple_progress_checker
+  simple_goal_checker
+  stopped_goal_checker
+  ${library_name})
 pluginlib_export_plugin_description_file(nav2_core plugins.xml)
 
 ament_package()
