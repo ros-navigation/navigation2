@@ -12,23 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__TRUNCATE_PATH_CONTROLLER_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__TRUNCATE_PATH_CONTROLLER_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__UPDATE_GOAL_CONTROLLER_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__UPDATE_GOAL_CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
 
-#include "nav_msgs/msg/path.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "behaviortree_cpp_v3/decorator_node.h"
+
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class TruncatePath : public BT::DecoratorNode
+class UpdateGoal : public BT::DecoratorNode
 {
 public:
-  TruncatePath(
+  UpdateGoal(
     const std::string & xml_tag_name,
     const BT::NodeConfiguration & conf);
 
@@ -36,18 +38,24 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<nav_msgs::msg::Path>("input_path", "Original Path"),
-      BT::OutputPort<nav_msgs::msg::Path>("output_path", "Path truncated to a certain distance"),
-      BT::InputPort<double>("distance", 1.0, "distance"),
+      BT::InputPort<geometry_msgs::msg::PoseStamped>("input_goal", "Original Goal"),
+      BT::OutputPort<geometry_msgs::msg::PoseStamped>(
+        "output_goal",
+        "Received Goal by subscription"),
     };
   }
 
 private:
   BT::NodeStatus tick() override;
 
-  double distance_;
+  void callback_updated_goal(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+
+  geometry_msgs::msg::PoseStamped last_goal_received_;
 };
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__TRUNCATE_PATH_CONTROLLER_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__UPDATE_GOAL_CONTROLLER_HPP_

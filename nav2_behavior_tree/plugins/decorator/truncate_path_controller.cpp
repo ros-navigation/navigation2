@@ -41,7 +41,7 @@ inline BT::NodeStatus TruncatePath::tick()
 
   nav_msgs::msg::Path input_path;
   nav_msgs::msg::Path output_path;
-  
+
   getInput("input_path", input_path);
 
   output_path.header = input_path.header;
@@ -50,17 +50,19 @@ inline BT::NodeStatus TruncatePath::tick()
 
   double distance_to_goal;
   do {
-    distance_to_goal = nav2_util::geometry_utils::euclidean_distance(input_path.poses.front(), final_pose);
- 
+    distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
+      input_path.poses.front(), final_pose);
+
     output_path.poses.push_back(input_path.poses.front());
     input_path.poses.erase(input_path.poses.begin());
-
   } while (distance_to_goal > distance_);
 
-  double final_angle = atan2(final_pose.pose.position.y - input_path.poses.back().pose.position.y, 
-    final_pose.pose.position.x - input_path.poses.back().pose.position.x);
+  double final_angle = atan2(
+    final_pose.pose.position.y - output_path.poses.back().pose.position.y,
+    final_pose.pose.position.x - output_path.poses.back().pose.position.x);
 
-  input_path.poses.back().pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(final_angle);
+  output_path.poses.back().pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+    final_angle);
 
   setOutput("output_path", output_path);
 
