@@ -101,11 +101,11 @@ list(APPEND plugin_libs nav2_distance_controller_bt_node)
 add_library(nav2_speed_controller_bt_node SHARED plugins/decorator/speed_controller.cpp)
 list(APPEND plugin_libs nav2_speed_controller_bt_node)
 
-add_library(nav2_truncate_path_controller_bt_node SHARED plugins/decorator/truncate_path_controller.cpp)
-list(APPEND plugin_libs nav2_truncate_path_controller_bt_node)
+add_library(nav2_truncate_path_node_bt_node SHARED plugins/decorator/truncate_path_node.cpp)
+list(APPEND plugin_libs nav2_truncate_path_node_bt_node)
 
-add_library(nav2_update_goal_controller_bt_node SHARED plugins/decorator/update_goal_controller.cpp)
-list(APPEND plugin_libs nav2_update_goal_controller_bt_node)
+add_library(nav2_change_goal_node_bt_node SHARED plugins/decorator/change_goal_node.cpp)
+list(APPEND plugin_libs nav2_change_goal_node_bt_node)
 
 add_library(nav2_recovery_node_bt_node SHARED plugins/control/recovery_node.cpp)
 list(APPEND plugin_libs nav2_recovery_node_bt_node)

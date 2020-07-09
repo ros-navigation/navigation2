@@ -1,5 +1,5 @@
 // Copyright (c) 2018 Intel Corporation
-// Copyright (c) 2020 Sarthak Mittal
+// Copyright (c) 2020 Francisco Martin Rico
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "behaviortree_cpp_v3/decorator_node.h"
 
-#include "nav2_behavior_tree/plugins/decorator/truncate_path_controller.hpp"
+#include "nav2_behavior_tree/plugins/decorator/truncate_path_node.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -38,6 +38,8 @@ TruncatePath::TruncatePath(
 inline BT::NodeStatus TruncatePath::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
+
+  BT::NodeStatus ret_status = child_node_->executeTick();
 
   nav_msgs::msg::Path input_path;
   nav_msgs::msg::Path output_path;
@@ -57,6 +59,7 @@ inline BT::NodeStatus TruncatePath::tick()
     input_path.poses.erase(input_path.poses.begin());
   } while (distance_to_goal > distance_);
 
+
   double final_angle = atan2(
     final_pose.pose.position.y - output_path.poses.back().pose.position.y,
     final_pose.pose.position.x - output_path.poses.back().pose.position.x);
@@ -66,7 +69,7 @@ inline BT::NodeStatus TruncatePath::tick()
 
   setOutput("output_path", output_path);
 
-  return child_node_->executeTick();
+  return ret_status;
 }
 
 }  // namespace nav2_behavior_tree

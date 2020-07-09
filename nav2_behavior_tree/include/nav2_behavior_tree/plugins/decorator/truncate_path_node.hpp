@@ -1,4 +1,5 @@
 // Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2020 Francisco Martin Rico
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__TRUNCATE_PATH_CONTROLLER_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__TRUNCATE_PATH_CONTROLLER_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__TRUNCATE_PATH_NODE_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__TRUNCATE_PATH_NODE_HPP_
 
 #include <memory>
 #include <string>
@@ -50,4 +51,4 @@ private:
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__TRUNCATE_PATH_CONTROLLER_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__TRUNCATE_PATH_NODE_HPP_
