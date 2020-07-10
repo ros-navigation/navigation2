@@ -154,6 +154,8 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | controller_frequency | 20.0 | Frequency to run controller |
+| progress_checker_plugin | ["progress_checker"] | Check the progress of the robot |
+| goal_checker_plugin | ["goal_checker"] | Check if the goal has been reached |
 | controller_plugins | ["FollowPath"] | List of mapped names for controller plugins for processing requests and parameters |
 | min_x_velocity_threshold | 0.0001 | Minimum X velocity to use (m/s) |
 | min_y_velocity_threshold | 0.0001 | Minimum Y velocity to use (m/s) |
@@ -173,11 +175,36 @@ controller_server:
       plugin: "dwb_core::DWBLocalPlanner"
 ```
 
-When `controller_plugins` parameter is not overridden, the following default plugins are loaded:
+When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parameters are not overridden, the following default plugins are loaded:
 
 | Namespace | Plugin |
 | ----------| --------|
 | "FollowPath" | "dwb_core::DWBLocalPlanner" |
+| "progress_checker" | "nav2_controller::SimpleProgressChecker" |
+| "goal_checker" | "nav2_controller::SimpleGoalChecker" |
+
+## simple_progress_checker plugin
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<nav2_controller plugin>`.required_movement_radius | 0.5 | Minimum distance to count as progress (m) |
+| `<nav2_controller plugin>`.movement_time_allowance | 10.0 | Maximum time allowence for progress to happen (s) |
+
+
+## simple_goal_checker plugin
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<nav2_controller plugin>`.xy_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (m) |
+| `<nav2_controller plugin>`.yaw_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (rad) |
+| `<nav2_controller plugin>`.stateful | true | Whether to check for XY position tolerance after rotating to goal orientation in case of minor localization changes |
+
+## stopped_goal_checker plugin
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<nav2_controller plugin>`.rot_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (rad/s) |
+| `<nav2_controller plugin>`.trans_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (m/s) |
 
 # dwb_controller
 
@@ -350,14 +377,6 @@ When `controller_plugins` parameter is not overridden, the following default plu
 | `<dwb plugin>`.lookahead_time | -1 | If > 0, amount of time to look forward for a collision for. |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
 
-## simple_goal_checker plugin
-
-| Parameter | Default | Description |
-| ----------| --------| ------------|
-| `<dwb plugin>`.xy_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (m) |
-| `<dwb plugin>`.yaw_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (rad) |
-| `<dwb plugin>`.stateful | true | Whether to check for XY position tolerance after rotating to goal orientation in case of minor localization changes |
-
 ## standard_traj_generator plugin
 
 | Parameter | Default | Description |
@@ -374,13 +393,6 @@ When `controller_plugins` parameter is not overridden, the following default plu
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | `<dwb plugin>`.sim_time | N/A | Time to simulate ahead by (s) |
-
-## stopped_goal_checker plugin
-
-| Parameter | Default | Description |
-| ----------| --------| ------------|
-| `<dwb plugin>`.rot_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (rad/s) |
-| `<dwb plugin>`.trans_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (m/s) |
 
 # lifecycle_manager
 

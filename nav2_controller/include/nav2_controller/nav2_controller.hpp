@@ -203,12 +203,23 @@ protected:
   std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
 
-  // Controller Plugins
+  // Progress Checker Plugin
   pluginlib::ClassLoader<nav2_core::ProgressChecker> progress_checker_loader_;
   nav2_core::ProgressChecker::Ptr progress_checker_;
+  std::string default_progress_checker_id_;
+  std::string default_progress_checker_type_;
+  std::string progress_checker_id_;
+  std::string progress_checker_type_;
+
+  // Goal Checker Plugin
   pluginlib::ClassLoader<nav2_core::GoalChecker> goal_checker_loader_;
   nav2_core::GoalChecker::Ptr goal_checker_;
+  std::string default_goal_checker_id_;
+  std::string default_goal_checker_type_;
+  std::string goal_checker_id_;
+  std::string goal_checker_type_;
 
+  // Controller Plugins
   pluginlib::ClassLoader<nav2_core::Controller> lp_loader_;
   ControllerMap controllers_;
   std::vector<std::string> default_ids_;

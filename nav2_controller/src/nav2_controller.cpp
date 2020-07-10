@@ -23,8 +23,6 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_controller/nav2_controller.hpp"
-#include "nav2_controller/plugins/simple_progress_checker.hpp"
-#include "nav2_controller/plugins/simple_goal_checker.hpp"
 
 using namespace std::chrono_literals;
 
@@ -34,7 +32,11 @@ namespace nav2_controller
 ControllerServer::ControllerServer()
 : LifecycleNode("controller_server", "", true),
   progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
+  default_progress_checker_id_{"progress_checker"},
+  default_progress_checker_type_{"nav2_controller::SimpleProgressChecker"},
   goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
+  default_goal_checker_id_{"goal_checker"},
+  default_goal_checker_type_{"nav2_controller::SimpleGoalChecker"},
   lp_loader_("nav2_core", "nav2_core::Controller"),
   default_ids_{"FollowPath"},
   default_types_{"dwb_core::DWBLocalPlanner"}
@@ -43,13 +45,9 @@ ControllerServer::ControllerServer()
 
   declare_parameter("controller_frequency", 20.0);
 
+  declare_parameter("progress_checker_plugin", default_progress_checker_id_);
+  declare_parameter("goal_checker_plugin", default_goal_checker_id_);
   declare_parameter("controller_plugins", default_ids_);
-  declare_parameter(
-    "progress_checker_name",
-    rclcpp::ParameterValue(std::string("nav2_controller::SimpleProgressChecker")));
-  declare_parameter(
-    "goal_checker_name",
-    rclcpp::ParameterValue(std::string("nav2_controller::SimpleGoalChecker")));
   declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
@@ -71,8 +69,15 @@ nav2_util::CallbackReturn
 ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
-  std::string progress_checker_name;
-  std::string goal_checker_name;
+
+  get_parameter("progress_checker_plugin", progress_checker_id_);
+  if (progress_checker_id_ == default_progress_checker_id_) {
+    declare_parameter(default_progress_checker_id_ + ".plugin", default_progress_checker_type_);
+  }
+  get_parameter("goal_checker_plugin", goal_checker_id_);
+  if (goal_checker_id_ == default_goal_checker_id_) {
+    declare_parameter(default_goal_checker_id_ + ".plugin", default_goal_checker_type_);
+  }
 
   get_parameter("controller_plugins", controller_ids_);
   if (controller_ids_ == default_ids_) {
@@ -83,8 +88,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   controller_types_.resize(controller_ids_.size());
 
   get_parameter("controller_frequency", controller_frequency_);
-  get_parameter("progress_checker_name", progress_checker_name);
-  get_parameter("goal_checker_name", goal_checker_name);
   get_parameter("min_x_velocity_threshold", min_x_velocity_threshold_);
   get_parameter("min_y_velocity_threshold", min_y_velocity_threshold_);
   get_parameter("min_theta_velocity_threshold", min_theta_velocity_threshold_);
@@ -94,10 +97,28 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
 
-  progress_checker_ = progress_checker_loader_.createUniqueInstance(progress_checker_name);
-  progress_checker_->initialize(node, progress_checker_name);
-  goal_checker_ = goal_checker_loader_.createUniqueInstance(goal_checker_name);
-  goal_checker_->initialize(node, goal_checker_name);
+  try {
+    progress_checker_type_ = nav2_util::get_plugin_type_param(node, progress_checker_id_);
+    progress_checker_ = progress_checker_loader_.createUniqueInstance(progress_checker_type_);
+    RCLCPP_INFO(
+      get_logger(), "Created progress_checker : %s of type %s",
+      progress_checker_id_.c_str(), progress_checker_type_.c_str());
+    progress_checker_->initialize(node, progress_checker_id_);
+  } catch (const pluginlib::PluginlibException & ex) {
+    RCLCPP_FATAL(get_logger(), "Failed to create controller. Exception: %s", ex.what());
+    exit(-1);
+  }
+  try {
+    goal_checker_type_ = nav2_util::get_plugin_type_param(node, goal_checker_id_);
+    goal_checker_ = goal_checker_loader_.createUniqueInstance(goal_checker_type_);
+    RCLCPP_INFO(
+      get_logger(), "Created goal_checker : %s of type %s",
+      goal_checker_id_.c_str(), goal_checker_type_.c_str());
+    goal_checker_->initialize(node, goal_checker_id_);
+  } catch (const pluginlib::PluginlibException & ex) {
+    RCLCPP_FATAL(get_logger(), "Failed to create controller. Exception: %s", ex.what());
+    exit(-1);
+  }
 
   for (size_t i = 0; i != controller_ids_.size(); i++) {
     try {
