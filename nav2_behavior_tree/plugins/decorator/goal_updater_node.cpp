@@ -19,7 +19,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "behaviortree_cpp_v3/decorator_node.h"
 
-#include "nav2_behavior_tree/plugins/decorator/change_goal_node.hpp"
+#include "nav2_behavior_tree/plugins/decorator/goal_updater_node.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -28,21 +28,21 @@ namespace nav2_behavior_tree
 
 using std::placeholders::_1;
 
-ChangeGoal::ChangeGoal(
+GoalUpdater::GoalUpdater(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
-  std::string change_goal_topic;
-  node_->get_parameter_or<std::string>("change_goal_topic", change_goal_topic, "goal_update");
+  std::string goal_updater_topic;
+  node_->get_parameter_or<std::string>("goal_updater_topic", goal_updater_topic, "goal_update");
 
   goal_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-    change_goal_topic, 10, std::bind(&ChangeGoal::callback_updated_goal, this, _1));
+    goal_updater_topic, 10, std::bind(&GoalUpdater::callback_updated_goal, this, _1));
 }
 
-inline BT::NodeStatus ChangeGoal::tick()
+inline BT::NodeStatus GoalUpdater::tick()
 {
   geometry_msgs::msg::PoseStamped goal;
 
@@ -57,7 +57,7 @@ inline BT::NodeStatus ChangeGoal::tick()
 }
 
 void
-ChangeGoal::callback_updated_goal(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
+GoalUpdater::callback_updated_goal(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
 {
   last_goal_received_ = *msg;
 }
@@ -67,5 +67,5 @@ ChangeGoal::callback_updated_goal(const geometry_msgs::msg::PoseStamped::SharedP
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::ChangeGoal>("ChangeGoal");
+  factory.registerNodeType<nav2_behavior_tree::GoalUpdater>("GoalUpdater");
 }

@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__CHANGE_GOAL_NODE_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__CHANGE_GOAL_NODE_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__GOAL_UPDATER_NODE_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__GOAL_UPDATER_NODE_HPP_
 
 #include <memory>
 #include <string>
@@ -28,10 +28,10 @@
 namespace nav2_behavior_tree
 {
 
-class ChangeGoal : public BT::DecoratorNode
+class GoalUpdater : public BT::DecoratorNode
 {
 public:
-  ChangeGoal(
+  GoalUpdater(
     const std::string & xml_tag_name,
     const BT::NodeConfiguration & conf);
 
@@ -59,4 +59,4 @@ private:
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__CHANGE_GOAL_NODE_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__GOAL_UPDATER_NODE_HPP_

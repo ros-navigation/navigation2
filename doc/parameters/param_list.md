@@ -683,7 +683,7 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 | output_path |  | Path truncated |
 | distance | 1.0 | Distance (m) to cut from last pose |
 
-### BT Node ChangeGoal
+### BT Node GoalUpdater
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |

@@ -24,15 +24,15 @@
 #include "behaviortree_cpp_v3/bt_factory.h"
 
 #include "../../test_action_server.hpp"
-#include "nav2_behavior_tree/plugins/decorator/change_goal_node.hpp"
+#include "nav2_behavior_tree/plugins/decorator/goal_updater_node.hpp"
 
 
-class ChangeGoalTestFixture : public ::testing::Test
+class GoalUpdaterTestFixture : public ::testing::Test
 {
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("change_goal_test_fixture");
+    node_ = std::make_shared<rclcpp::Node>("goal_updater_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -47,12 +47,12 @@ public:
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
       {
-        return std::make_unique<nav2_behavior_tree::ChangeGoal>(
+        return std::make_unique<nav2_behavior_tree::GoalUpdater>(
           name, config);
       };
 
-    factory_->registerBuilder<nav2_behavior_tree::ChangeGoal>(
-      "ChangeGoal", builder);
+    factory_->registerBuilder<nav2_behavior_tree::GoalUpdater>(
+      "GoalUpdater", builder);
   }
 
   static void TearDownTestCase()
@@ -75,22 +75,22 @@ protected:
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr ChangeGoalTestFixture::node_ = nullptr;
+rclcpp::Node::SharedPtr GoalUpdaterTestFixture::node_ = nullptr;
 
-BT::NodeConfiguration * ChangeGoalTestFixture::config_ = nullptr;
-std::shared_ptr<BT::BehaviorTreeFactory> ChangeGoalTestFixture::factory_ = nullptr;
-std::shared_ptr<BT::Tree> ChangeGoalTestFixture::tree_ = nullptr;
+BT::NodeConfiguration * GoalUpdaterTestFixture::config_ = nullptr;
+std::shared_ptr<BT::BehaviorTreeFactory> GoalUpdaterTestFixture::factory_ = nullptr;
+std::shared_ptr<BT::Tree> GoalUpdaterTestFixture::tree_ = nullptr;
 
-TEST_F(ChangeGoalTestFixture, test_tick)
+TEST_F(GoalUpdaterTestFixture, test_tick)
 {
   // create tree
   std::string xml_txt =
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-          <ChangeGoal input_goal="{goal}" output_goal="{updated_goal}">
+          <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">
             <AlwaysSuccess/>
-          </ChangeGoal>
+          </GoalUpdater>
         </BehaviorTree>
       </root>)";
 
@@ -116,13 +116,13 @@ TEST_F(ChangeGoalTestFixture, test_tick)
   goal_to_update.header.stamp = node_->now();
   goal_to_update.pose.position.x = 2.0;
 
-  auto change_goal_pub =
+  auto goal_updater_pub =
     node_->create_publisher<geometry_msgs::msg::PoseStamped>("goal_update", 10);
 
   auto start = node_->now();
   while ((node_->now() - start).seconds() < 0.5) {
     tree_->rootNode()->executeTick();
-    change_goal_pub->publish(goal_to_update);
+    goal_updater_pub->publish(goal_to_update);
 
     rclcpp::spin_some(node_);
   }

@@ -15,6 +15,7 @@
 
 #include <string>
 #include <memory>
+#include <limits>
 
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -48,6 +49,11 @@ inline BT::NodeStatus TruncatePath::tick()
 
   output_path.header = input_path.header;
 
+  if (input_path.poses.empty()) {
+    setOutput("output_path", input_path);
+    return ret_status;
+  }
+
   geometry_msgs::msg::PoseStamped final_pose = input_path.poses.back();
 
   double distance_to_goal;
@@ -59,10 +65,15 @@ inline BT::NodeStatus TruncatePath::tick()
     input_path.poses.erase(input_path.poses.begin());
   } while (distance_to_goal > distance_);
 
+  double dx = final_pose.pose.position.x - output_path.poses.back().pose.position.x;
+  double dy = final_pose.pose.position.y - output_path.poses.back().pose.position.y;
 
-  double final_angle = atan2(
-    final_pose.pose.position.y - output_path.poses.back().pose.position.y,
-    final_pose.pose.position.x - output_path.poses.back().pose.position.x);
+  double final_angle = 0.0;
+  if (fabs(dx) > std::numeric_limits<double>::min() &&
+    fabs(dy) > std::numeric_limits<double>::min())
+  {
+    final_angle = atan2(dy, dx);
+  }
 
   output_path.poses.back().pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
     final_angle);
