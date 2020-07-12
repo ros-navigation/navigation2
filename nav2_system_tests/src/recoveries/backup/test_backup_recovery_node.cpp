@@ -72,9 +72,8 @@ TEST_P(BackupRecoveryTestFixture, testBackupRecovery)
   success = backup_recovery_tester->defaultBackupRecoveryTest(target_dist, tolerance);
 
   // if intentionally backing into an obstacle, should fail.
-  // TODO(stevemacenski): uncomment this once note below completed.
   if (target_dist < -1.0) {
-   success = !success;
+    success = !success;
   }
 
   EXPECT_EQ(true, success);
