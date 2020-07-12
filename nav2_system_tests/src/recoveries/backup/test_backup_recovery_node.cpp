@@ -73,9 +73,9 @@ TEST_P(BackupRecoveryTestFixture, testBackupRecovery)
 
   // if intentionally backing into an obstacle, should fail.
   // TODO(stevemacenski): uncomment this once note below completed.
-  // if (target_dist < -1.0) {
-  //   success = !success;
-  // }
+  if (target_dist < -1.0) {
+   success = !success;
+  }
 
   EXPECT_EQ(true, success);
 }
