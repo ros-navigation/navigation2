@@ -10,6 +10,7 @@ find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util)
 find_package(nav2_voxel_grid REQUIRED)
+find_package(nav2_map_server REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -62,6 +63,7 @@ set(dependencies
   nav2_msgs
   nav2_util
   nav2_voxel_grid
+  nav2_map_server
   nav_msgs
   pluginlib
   rclcpp
@@ -92,6 +94,17 @@ ament_target_dependencies(layers
   ${dependencies}
 )
 target_link_libraries(layers
+  nav2_costmap_2d_core
+)
+
+add_library(filters SHARED
+  plugins/costmap_filters/costmap_filter.cpp
+  plugins/costmap_filters/keepout_filter.cpp
+)
+ament_target_dependencies(filters
+  ${dependencies}
+)
+target_link_libraries(filters
   nav2_costmap_2d_core
 )
 
@@ -131,11 +144,13 @@ ament_target_dependencies(nav2_costmap_2d
 target_link_libraries(nav2_costmap_2d
   nav2_costmap_2d_core
   layers
+  filters
 )
 
 install(TARGETS
   nav2_costmap_2d_core
   layers
+  filters
   nav2_costmap_2d_client
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -169,7 +184,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(layers nav2_costmap_2d_core nav2_costmap_2d_client)
+ament_export_libraries(layers filters nav2_costmap_2d_core nav2_costmap_2d_client)
 ament_export_dependencies(${dependencies})
 pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_package()

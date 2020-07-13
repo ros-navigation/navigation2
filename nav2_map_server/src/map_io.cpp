@@ -213,20 +213,20 @@ void loadMapFromFile(
       switch (load_parameters.mode) {
         case MapMode::Trinary:
           if (load_parameters.occupied_thresh < occ) {
-            map_cell = 100;
+            map_cell = OCC_GRID_OCCUPIED;
           } else if (occ < load_parameters.free_thresh) {
-            map_cell = 0;
+            map_cell = OCC_GRID_FREE;
           } else {
-            map_cell = -1;
+            map_cell = OCC_GRID_UNKNOWN;
           }
           break;
         case MapMode::Scale:
           if (pixel.alphaQuantum() != OpaqueOpacity) {
-            map_cell = -1;
+            map_cell = OCC_GRID_UNKNOWN;
           } else if (load_parameters.occupied_thresh < occ) {
-            map_cell = 100;
+            map_cell = OCC_GRID_OCCUPIED;
           } else if (occ < load_parameters.free_thresh) {
-            map_cell = 0;
+            map_cell = OCC_GRID_FREE;
           } else {
             map_cell = std::rint(
               (occ - load_parameters.free_thresh) /
@@ -235,10 +235,10 @@ void loadMapFromFile(
           break;
         case MapMode::Raw: {
             double occ_percent = std::round(shade * 255);
-            if (0 <= occ_percent && occ_percent <= 100) {
+            if (OCC_GRID_FREE <= occ_percent && occ_percent <= OCC_GRID_OCCUPIED) {
               map_cell = static_cast<int8_t>(occ_percent);
             } else {
-              map_cell = -1;
+              map_cell = OCC_GRID_UNKNOWN;
             }
             break;
           }
