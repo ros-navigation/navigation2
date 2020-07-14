@@ -40,3 +40,20 @@ Please visit our [documentation site](https://navigation.ros.org/). [Please visi
 | nav2_system_tests | [![Build Status](http://build.ros2.org/job/Dsrc_uB__nav2_system_tests__ubuntu_bionic__source/badge/icon)](http://build.ros2.org/job/Dsrc_uB__nav2_system_tests__ubuntu_bionic__source/) | [![Build Status](http://build.ros2.org/job/Dbin_uB64__nav2_system_tests__ubuntu_bionic_amd64__binary/badge/icon)](http://build.ros2.org/job/Dbin_uB64__nav2_system_tests__ubuntu_bionic_amd64__binary/) | [![Build Status](http://build.ros2.org/job/Esrc_uB__nav2_system_tests__ubuntu_bionic__source/badge/icon)](http://build.ros2.org/job/Esrc_uB__nav2_system_tests__ubuntu_bionic__source/) | [![Build Status](http://build.ros2.org/job/Ebin_uB64__nav2_system_tests__ubuntu_bionic_amd64__binary/badge/icon)](http://build.ros2.org/job/Ebin_uB64__nav2_system_tests__ubuntu_bionic_amd64__binary/) | [![Build Status](http://build.ros2.org/job/Fsrc_uF__nav2_system_tests__ubuntu_focal__source/badge/icon)](http://build.ros2.org/job/Fsrc_uF__nav2_system_tests__ubuntu_focal__source/) | [![Build Status](http://build.ros2.org/job/Fbin_uF64__nav2_system_tests__ubuntu_focal_amd64__binary/badge/icon)](http://build.ros2.org/job/Fbin_uF64__nav2_system_tests__ubuntu_focal_amd64__binary/) |
 | nav2_util | [![Build Status](http://build.ros2.org/job/Dsrc_uB__nav2_util__ubuntu_bionic__source/badge/icon)](http://build.ros2.org/job/Dsrc_uB__nav2_util__ubuntu_bionic__source/) | [![Build Status](http://build.ros2.org/job/Dbin_uB64__nav2_util__ubuntu_bionic_amd64__binary/badge/icon)](http://build.ros2.org/job/Dbin_uB64__nav2_util__ubuntu_bionic_amd64__binary/) | [![Build Status](http://build.ros2.org/job/Esrc_uB__nav2_util__ubuntu_bionic__source/badge/icon)](http://build.ros2.org/job/Esrc_uB__nav2_util__ubuntu_bionic__source/) | [![Build Status](http://build.ros2.org/job/Ebin_uB64__nav2_util__ubuntu_bionic_amd64__binary/badge/icon)](http://build.ros2.org/job/Ebin_uB64__nav2_util__ubuntu_bionic_amd64__binary/) | [![Build Status](http://build.ros2.org/job/Fsrc_uF__nav2_util__ubuntu_focal__source/badge/icon)](http://build.ros2.org/job/Fsrc_uF__nav2_util__ubuntu_focal__source/) | [![Build Status](http://build.ros2.org/job/Fbin_uF64__nav2_util__ubuntu_focal_amd64__binary/badge/icon)](http://build.ros2.org/job/Fbin_uF64__nav2_util__ubuntu_focal_amd64__binary/) |
 | nav2_waypoint_follower | N/A | N/A | [![Build Status](http://build.ros2.org/job/Esrc_uB__nav2_waypoint_follower__ubuntu_bionic__source/badge/icon)](http://build.ros2.org/job/Esrc_uB__nav2_waypoint_follower__ubuntu_bionic__source/) | [![Build Status](http://build.ros2.org/job/Ebin_uB64__nav2_waypoint_follower__ubuntu_bionic_amd64__binary/badge/icon)](http://build.ros2.org/job/Ebin_uB64__nav2_waypoint_follower__ubuntu_bionic_amd64__binary/) | [![Build Status](http://build.ros2.org/job/Fsrc_uF__nav2_waypoint_follower__ubuntu_focal__source/badge/icon)](http://build.ros2.org/job/Fsrc_uF__nav2_waypoint_follower__ubuntu_focal__source/) | [![Build Status](http://build.ros2.org/job/Fbin_uF64__nav2_waypoint_follower__ubuntu_focal_amd64__binary/badge/icon)](http://build.ros2.org/job/Fbin_uF64__nav2_waypoint_follower__ubuntu_focal_amd64__binary/) |
+
+## Citation
+If you use the navigation framework, an algorithm from this repository, or ideas from it
+please cite this work in your papers!
+
+ - S. Macenski, F. Martín, R. White, J. Clavero. [**The Marathon 2: A Navigation System**](https://arxiv.org/abs/2003.00368). IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2020.
+ 
+ ```bibtex
+ @InProceedings{macenski2020marathon2,
+   title = {The Marathon 2: A Navigation System},
+   author = {Macenski, Steve and Martín, Francisco and White, Ruffin and Ginés Clavero, Jonatan},
+   year = {2020},
+   booktitle = {2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+   url = {https://github.com/ros-planning/navigation2},
+   pdf = {https://arxiv.org/abs/2003.00368}
+ }
+```
