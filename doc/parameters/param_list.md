@@ -154,14 +154,12 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | controller_frequency | 20.0 | Frequency to run controller |
-| progress_checker_plugin | ["progress_checker"] | Check the progress of the robot |
-| goal_checker_plugin | ["goal_checker"] | Check if the goal has been reached |
+| progress_checker_plugin | "progress_checker" | Check the progress of the robot |
+| goal_checker_plugin | "goal_checker" | Check if the goal has been reached |
 | controller_plugins | ["FollowPath"] | List of mapped names for controller plugins for processing requests and parameters |
 | min_x_velocity_threshold | 0.0001 | Minimum X velocity to use (m/s) |
 | min_y_velocity_threshold | 0.0001 | Minimum Y velocity to use (m/s) |
 | min_theta_velocity_threshold | 0.0001 | Minimum angular velocity to use (rad/s) |
-| required_movement_radius | 0.5 | Minimum amount a robot must move to be progressing to goal (m) |
-| movement_time_allowance | 10.0 | Maximum amount of time a robot has to move the minimum radius (s) |
 
 **NOTE:** When `controller_plugins` parameter is overridden, each plugin namespace defined in the list needs to have a `plugin` parameter defining the type of plugin to be loaded in the namespace.
 
