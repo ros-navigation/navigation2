@@ -37,7 +37,7 @@ amcl:
     z_max: 0.05
     z_rand: 0.5
     z_short: 0.05
-    topic: scan
+    scan_topic: scan
 
 amcl_map_client:
   ros__parameters:

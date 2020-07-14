@@ -214,7 +214,8 @@ AmclNode::AmclNode()
     "(with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the"
     "last known pose to initialize");
 
-  add_parameter("topic", rclcpp::ParameterValue("scan"));
+  add_parameter("scan_topic", rclcpp::ParameterValue("scan"),
+    "Topic to subscribe to in order to receive the laser scan for localization");
 
 }
 
@@ -1101,7 +1102,7 @@ AmclNode::initParameters()
   get_parameter("z_short", z_short_);
   get_parameter("first_map_only_", first_map_only_);
   get_parameter("always_reset_initial_pose", always_reset_initial_pose_);
-  get_parameter("topic", scan_topic_);
+  get_parameter("scan_topic", scan_topic_);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
