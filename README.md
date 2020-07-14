@@ -12,8 +12,8 @@ For detailed instructions on how to:
 
 Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://navigation2.slack.com).
 
-
 ## Citation
+
 If you use the navigation framework, an algorithm from this repository, or ideas from it
 please cite this work in your papers!
 
@@ -29,6 +29,7 @@ please cite this work in your papers!
    pdf = {https://arxiv.org/abs/2003.00368}
  }
 ```
+
 ## Build Status
 
 | Service | Dashing | Eloquent | Foxy | Master |
