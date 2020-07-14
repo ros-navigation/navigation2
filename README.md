@@ -12,6 +12,26 @@ For detailed instructions on how to:
 
 Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://navigation2.slack.com).
 
+## Citation
+
+If you use the navigation framework, an algorithm from this repository, or ideas from it
+please cite this work in your papers!
+
+ - S. Macenski, F. Martín, R. White, J. Clavero. [**The Marathon 2: A Navigation System**](https://arxiv.org/abs/2003.00368). IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2020.
+ 
+ ```bibtex
+ @InProceedings{macenski2020marathon2,
+   title = {The Marathon 2: A Navigation System},
+   author = {Macenski, Steve and Martín, Francisco and White, Ruffin and Ginés Clavero, Jonatan},
+   year = {2020},
+   booktitle = {2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+   url = {https://github.com/ros-planning/navigation2},
+   pdf = {https://arxiv.org/abs/2003.00368}
+ }
+```
+
+## Build Status
+
 | Service | Dashing | Eloquent | Foxy | Master |
 | :---: | :---: | :---: | :---: | :---: |
 | ROS Build Farm | [![Build Status](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/) | [![Build Status](http://build.ros2.org/job/Edev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Edev__navigation2__ubuntu_bionic_amd64/) | [![Build Status](http://build.ros2.org/job/Fdev__navigation2__ubuntu_focal_amd64/badge/icon)](http://build.ros2.org/job/Fdev__navigation2__ubuntu_focal_amd64/) | N/A |
