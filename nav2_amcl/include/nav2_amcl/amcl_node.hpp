@@ -167,7 +167,6 @@ protected:
 
   // Laser scan related
   void initLaserScan();
-  const char * scan_topic_{"scan"};
   nav2_amcl::Laser * createLaserObject();
   int scan_error_count_{0};
   std::vector<nav2_amcl::Laser *> lasers_;
@@ -250,6 +249,7 @@ protected:
   double z_max_;
   double z_short_;
   double z_rand_;
+  std::string scan_topic_{"scan"};
 };
 
 }  // namespace nav2_amcl
