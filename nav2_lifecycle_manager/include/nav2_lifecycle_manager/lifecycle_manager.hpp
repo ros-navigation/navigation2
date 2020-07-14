@@ -26,6 +26,7 @@
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
 #include "std_srvs/srv/trigger.hpp"
+#include "bondcpp/bond.hpp"
 
 namespace nav2_lifecycle_manager
 {
@@ -121,6 +122,25 @@ protected:
    */
   void destroyLifecycleServiceClients();
 
+  // Support function for creating bond connections
+  /**
+   * @brief Support function for creating bond connections
+   */
+  void createBondConnections();
+
+  // Support function for killing bond connections
+  /**
+   * @brief Support function for killing bond connections
+   */
+  void destroyBondConnections();
+
+  // Support function for checking on bond connections
+  /**
+   * @ brief Support function for checking on bond connections
+   * will take down system if there's something non-responsive
+   */
+  void checkBondConnections();
+
   /**
    * @brief For a node, transition to the new target state
    */
@@ -139,6 +159,12 @@ protected:
 
   // A map of all nodes to be controlled
   std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map_;
+
+  // A map of all nodes to check bond connection
+  std::map<std::string, std::shared_ptr<bond::Bond>> bond_map_;
+
+  // Timer thread to look at bond connections
+  rclcpp::TimerBase::SharedPtr bond_timer_;
 
   std::map<std::uint8_t, std::string> transition_label_map_;
 

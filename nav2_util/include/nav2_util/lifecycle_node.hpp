@@ -22,6 +22,7 @@
 #include "nav2_util/node_thread.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "bondcpp/bond.hpp"
 
 namespace nav2_util
 {
@@ -40,7 +41,8 @@ public:
     const std::string & node_name,
     const std::string & namespace_ = "",
     bool use_rclcpp_node = false,
-    const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+    const rclcpp::NodeOptions & options = rclcpp::NodeOptions(),
+    bool use_bond = true);
   virtual ~LifecycleNode();
 
   typedef struct
@@ -124,6 +126,10 @@ public:
 protected:
   void print_lifecycle_node_notification();
 
+  void bondFormed();
+
+  void bondBroken();
+
   // Whether or not to create a local rclcpp::Node which can be used for ROS2 classes that don't
   // yet support lifecycle nodes
   bool use_rclcpp_node_;
@@ -133,6 +139,9 @@ protected:
 
   // When creating a local node, this class will launch a separate thread created to spin the node
   std::unique_ptr<NodeThread> rclcpp_thread_;
+
+  // Connection to tell that server is still up
+  std::unique_ptr<bond::Bond> bond_{nullptr};
 };
 
 }  // namespace nav2_util

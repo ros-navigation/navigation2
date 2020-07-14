@@ -43,7 +43,8 @@ namespace nav2_util
 LifecycleNode::LifecycleNode(
   const std::string & node_name,
   const std::string & namespace_, bool use_rclcpp_node,
-  const rclcpp::NodeOptions & options)
+  const rclcpp::NodeOptions & options,
+  bool use_bond)
 : rclcpp_lifecycle::LifecycleNode(node_name, namespace_, options),
   use_rclcpp_node_(use_rclcpp_node)
 {
@@ -58,10 +59,26 @@ LifecycleNode::LifecycleNode(
     rclcpp_thread_ = std::make_unique<NodeThread>(rclcpp_node_);
   }
   print_lifecycle_node_notification();
+
+  // Setup bond connection with unique name
+  // TODO shared from this will fail.
+  if (use_bond) {
+    bond_ = std::make_unique<bond::Bond>(
+      "bond",
+      node_name,
+      shared_from_this(),
+      std::bind(&LifecycleNode::bondBroken, this),
+      std::bind(&LifecycleNode::bondFormed, this));
+    bond_->start();
+  }
 }
 
 LifecycleNode::~LifecycleNode()
 {
+  if (bond_) {
+    bond_->breakBond();
+  }
+
   // In case this lifecycle node wasn't properly shut down, do it here
   if (get_current_state().id() ==
     lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
@@ -69,6 +86,16 @@ LifecycleNode::~LifecycleNode()
     on_deactivate(get_current_state());
     on_cleanup(get_current_state());
   }
+}
+
+void LifecycleNode::bondFormed()
+{
+  RCLCPP_INFO(get_logger(), "Bond formed to lifecycle manager.");
+}
+
+void LifecycleNode::bondBroken()
+{
+  RCLCPP_INFO(get_logger(), "Bond broken by lifecycle manager!");
 }
 
 void LifecycleNode::print_lifecycle_node_notification()

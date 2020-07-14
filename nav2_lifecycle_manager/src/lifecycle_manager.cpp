@@ -75,6 +75,12 @@ LifecycleManager::LifecycleManager()
   if (autostart_) {
     startup();
   }
+
+  createBondConnections();
+
+  bond_timer_ = this->create_wall_timer(
+    100ms,
+    std::bind(&LifecycleManager::checkBondConnections, this));
 }
 
 LifecycleManager::~LifecycleManager()
@@ -202,6 +208,7 @@ LifecycleManager::shutdown()
   shutdownAllNodes();
   destroyLifecycleServiceClients();
   message("Managed nodes have been shut down");
+  destroyBondConnections();
   system_active_ = false;
   return true;
 }
@@ -246,6 +253,46 @@ LifecycleManager::resume()
   message("Managed nodes are active");
   system_active_ = true;
   return true;
+}
+
+void
+LifecycleManager::createBondConnections()
+{
+  message("Creating bond connections...");
+
+  for (auto & node_name : node_names_) {
+    bond_map_[node_name] =
+      std::make_shared<bond::Bond>("bond", node_name, shared_from_this());
+    bond_map_[node_name]->start();
+  }
+}
+
+void
+LifecycleManager::destroyBondConnections()
+{
+  message("Terminating bond connections...");
+
+  for (auto & node_name : node_names_) {
+    bond_map_[node_name]->breakBond();
+  }
+}
+
+void
+LifecycleManager::checkBondConnections()
+{
+  for (auto & node_name : node_names_) {
+    if (bond_map_[node_name]->isBroken()) {
+      message(std::string("Have not received a heartbeat from %s!", node_name.c_str()));
+      // Then the client of this has N iterations before shuts it all down
+      // if still down, destroy
+      RCLCPP_FATAL(
+        get_logger(),
+        "CRITICAL FAILURE: SERVER %s IS DOWN."
+        " Shutting down related nodes.",
+        node_name.c_str());
+      shutdown();
+    }
+  }
 }
 
 // TODO(mjeronimo): This is used to emphasize the major events during system bring-up and
