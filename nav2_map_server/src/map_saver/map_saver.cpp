@@ -50,7 +50,7 @@ MapSaver::MapSaver()
 
   free_thresh_default_ = declare_parameter("free_thresh_default", 0.25),
   occupied_thresh_default_ = declare_parameter("occupied_thresh_default", 0.65);
-  map_subscribe_transient_local_ = declare_parameter("map_subscribe_transient_local", false);
+  map_subscribe_transient_local_ = declare_parameter("map_subscribe_transient_local", true);
 
 }
 
