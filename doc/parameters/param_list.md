@@ -547,6 +547,7 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 | z_rand | 0.5 | Mixture weight for z_rand part of model, sum of all used z weight must be 1. Beam uses all 4, likelihood model uses z_hit and z_rand. |
 | z_short | 0.05 | Mixture weight for z_short part of model, sum of all used z weight must be 1. Beam uses all 4, likelihood model uses z_hit and z_rand. |
 | always_reset_initial_pose | false | Requires that AMCL is provided an initial pose either via topic or initial_pose* parameter (with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the last known pose to initialize |
+| scan_topic | scan | Topic to subscribe to in order to receive the laser scan for localization |
 
 ---
 
