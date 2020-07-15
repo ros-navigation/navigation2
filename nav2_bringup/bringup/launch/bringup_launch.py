@@ -41,7 +41,7 @@ def generate_launch_description():
     autostart = LaunchConfiguration('autostart')
 
     stdout_linebuf_envvar = SetEnvironmentVariable(
-        'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
+        'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
 
     declare_namespace_cmd = DeclareLaunchArgument(
         'namespace',
