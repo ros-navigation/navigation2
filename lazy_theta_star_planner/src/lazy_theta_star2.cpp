@@ -43,9 +43,7 @@ bool LazyThetaStar::getPath(std::vector<coords<world_pts>> & raw_path)
   id curr_id = 0;
 
   if (!losCheck(src.x, src.y, dst.x, dst.y)) {
-
     while (pq.size() > 0) {
-
       map_pts cx = data[curr_id].x;
       map_pts cy = data[curr_id].y;
       id curr_par = data[curr_id].parent_id;
@@ -325,14 +323,14 @@ void LazyThetaStar::getNextNode(id & curr_id)
 }
 
 
-//void LazyThetaStar::tfMapToWorld(
-//  map_pts & mx,
-//  map_pts & my,
-//  world_pts & wx,
-//  world_pts & wy);
-//{
-//wx = costmap_->getOriginX() + (mx) * costmap_->getResolution();
-//wy = costmap_->getOriginY() + (my) * costmap_->getResolution();
-//}
+// void LazyThetaStar::tfMapToWorld(
+//   map_pts & mx,
+//   map_pts & my,
+//   world_pts & wx,
+//   world_pts & wy);
+// {
+// wx = costmap_->getOriginX() + (mx) * costmap_->getResolution();
+// wy = costmap_->getOriginY() + (my) * costmap_->getResolution();
+// }
 
-} //  namespace lazyThetaStar
+}   // namespace lazyThetaStar
