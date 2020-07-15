@@ -93,8 +93,16 @@ void KeepoutFilter::mapFilterCallback(
       data = map_filter_->data[it];
       if (data == nav2_map_server::OCC_GRID_OCCUPIED) {
         costmap_filter_->setCost(mx, my, LETHAL_OBSTACLE);
-      } else {
+      } else if (
+        data == nav2_map_server::OCC_GRID_FREE ||
+        data == nav2_map_server::OCC_GRID_UNKNOWN)
+      {
         costmap_filter_->setCost(mx, my, NO_INFORMATION);
+      } else {
+        unsigned char cost = std::round(
+          data * (LETHAL_OBSTACLE - FREE_SPACE) / \
+          (nav2_map_server::OCC_GRID_OCCUPIED - nav2_map_server::OCC_GRID_FREE));
+        costmap_filter_->setCost(mx, my, cost);
       }
     }
   }
@@ -115,10 +123,12 @@ void KeepoutFilter::process(
   unsigned int mx, my;  // costmap_ coordinates
 
   unsigned char * costmap_filter_charmap = costmap_filter_->getCharMap();
+  unsigned char cost;
 
   for (i = 0; i < costmap_filter_->getSizeInCellsX(); i++) {
     for (j = 0; j < costmap_filter_->getSizeInCellsY(); j++) {
-      if (costmap_filter_charmap[costmap_filter_->getIndex(i, j)] == LETHAL_OBSTACLE) {
+      cost = costmap_filter_charmap[costmap_filter_->getIndex(i, j)];
+      if (cost != NO_INFORMATION) {
         // Converting each point on costmap_filter to world coordinates
         costmap_filter_->mapToWorld(i, j, wx, wy);
         // Getting coordinates of costmap_ (if any) corresponding to given
@@ -130,7 +140,7 @@ void KeepoutFilter::process(
           mx >= (unsigned int)min_i && mx < (unsigned int)max_i &&
           my >= (unsigned int)min_j && my < (unsigned int)max_j)
         {
-          costmap_[master_grid.getIndex(mx, my)] = LETHAL_OBSTACLE;
+          costmap_[master_grid.getIndex(mx, my)] = cost;
         }
       }
     }
