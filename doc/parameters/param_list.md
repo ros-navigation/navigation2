@@ -218,7 +218,6 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 | `<dwb plugin>`.prune_distance | 1.0 | Distance (m) to prune backward until |
 | `<dwb plugin>`.debug_trajectory_details | false | Publish debug information |
 | `<dwb plugin>`.trajectory_generator_name | "dwb_plugins::StandardTrajectoryGenerator" | Trajectory generator plugin name |
-| `<dwb plugin>`.goal_checker_name | "dwb_plugins::SimpleGoalChecker" | Goal checker plugin name |
 | `<dwb plugin>`.transform_tolerance | 0.1 | TF transform tolerance |
 | `<dwb plugin>`.short_circuit_trajectory_evaluation | true | Stop evaluating scores after best score is found |
 | `<dwb plugin>`.path_distance_bias | N/A | Old version of `PathAlign.scale`, use that instead |
