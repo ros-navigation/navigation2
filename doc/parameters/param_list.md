@@ -155,8 +155,11 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | ----------| --------| ------------|
 | controller_frequency | 20.0 | Frequency to run controller |
 | progress_checker_plugin | "progress_checker" | Check the progress of the robot |
+| progress_checker.plugin | "nav2_controller::SimpleProgressChecker" | Default plugin |
 | goal_checker_plugin | "goal_checker" | Check if the goal has been reached |
+| goal_checker.plugin | "nav2_controller::SimpleGoalChecker" | Default plugin |
 | controller_plugins | ["FollowPath"] | List of mapped names for controller plugins for processing requests and parameters |
+| FollowPath.plugin | "dwb_core::DWBLocalPlanner" | Default plugin |
 | min_x_velocity_threshold | 0.0001 | Minimum X velocity to use (m/s) |
 | min_y_velocity_threshold | 0.0001 | Minimum Y velocity to use (m/s) |
 | min_theta_velocity_threshold | 0.0001 | Minimum angular velocity to use (rad/s) |
