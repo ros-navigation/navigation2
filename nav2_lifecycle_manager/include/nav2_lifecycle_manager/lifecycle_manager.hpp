@@ -170,7 +170,7 @@ protected:
   std::map<std::string, std::shared_ptr<bond::Bond>> bond_map_;
 
   // Timer thread to look at bond connections
-  rclcpp::TimerBase::SharedPtr bond_timer_;
+  std::shared_ptr<rclcpp::TimerBase> bond_timer_;
   std::chrono::milliseconds bond_timeout_;
 
   std::map<std::uint8_t, std::string> transition_label_map_;

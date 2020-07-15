@@ -259,7 +259,7 @@ LifecycleManager::resume()
 void
 LifecycleManager::createBondTimer()
 {
-  if (bond_timeout_.count() <= 0 || bond_timer_) {
+  if (bond_timeout_.count() <= 0) {
     return;
   }
 
@@ -273,12 +273,6 @@ LifecycleManager::createBondTimer()
 void
 LifecycleManager::destroyBondConnections()
 {
-  if (!bond_timer_) {
-    return;
-  }
-
-  bond_timer_->cancel();
-  bond_timer_->reset();
   bond_timer_.reset();
 
   if (bond_map_.empty()) {
@@ -297,20 +291,21 @@ LifecycleManager::destroyBondConnections()
 void
 LifecycleManager::createBondConnections()
 {
-  const double timeout =
-    std::chrono::duration_cast<std::chrono::seconds>(bond_timeout_).count(); // TODO 0.00?
+  const double timeout_ns =
+    std::chrono::duration_cast<std::chrono::nanoseconds>(bond_timeout_).count(); // TODO 0.00?
+  const double timeout_s = timeout_ns / 1e9;
 
   for (auto & node_name : node_names_) {
     bond_map_[node_name] =
       std::make_shared<bond::Bond>("bond", node_name, shared_from_this());
-    bond_map_[node_name]->setHeartbeatTimeout(timeout);
+    bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
     bond_map_[node_name]->start();
-    if (!bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout, 0.0))) {
+    if (!bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout_ns))) {
       RCLCPP_ERROR(
         get_logger(),
         "Server %s was unable to be reached after %0.2fs. "
         "This server may be misconfigured.",
-        node_name.c_str(), timeout, node_name.c_str());
+        node_name.c_str(), timeout_s, node_name.c_str());
     }
   }
 }
