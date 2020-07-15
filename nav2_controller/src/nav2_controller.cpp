@@ -45,6 +45,13 @@ ControllerServer::ControllerServer()
   declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
 
+  get_parameter("controller_plugins", controller_ids_);
+  if (controller_ids_ == default_ids_) {
+    for (size_t i = 0; i < default_ids_.size(); ++i) {
+      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
+    }
+  }
+
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()}, "local_costmap");
@@ -63,12 +70,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
 
-  get_parameter("controller_plugins", controller_ids_);
-  if (controller_ids_ == default_ids_) {
-    for (size_t i = 0; i < default_ids_.size(); ++i) {
-      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
-    }
-  }
   controller_types_.resize(controller_ids_.size());
 
   get_parameter("controller_frequency", controller_frequency_);

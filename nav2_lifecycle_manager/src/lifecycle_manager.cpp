@@ -44,9 +44,9 @@ LifecycleManager::LifecycleManager()
 
   node_names_ = get_parameter("node_names").as_string_array();
   get_parameter("autostart", autostart_);
-  int bond_timeout_double;
-  get_parameter("bond_timeout_ms", bond_timeout_double);
-  bond_timeout_ = std::chrono::milliseconds(bond_timeout_double);
+  int bond_timeout_int;
+  get_parameter("bond_timeout_ms", bond_timeout_int);
+  bond_timeout_ = std::chrono::milliseconds(bond_timeout_int);
 
   manager_srv_ = create_service<ManageLifecycleNodes>(
     get_name() + std::string("/manage_nodes"),
@@ -79,8 +79,6 @@ LifecycleManager::LifecycleManager()
   if (autostart_) {
     startup();
   }
-
-  createBondTimer();
 }
 
 LifecycleManager::~LifecycleManager()
@@ -198,6 +196,7 @@ LifecycleManager::startup()
   }
   message("Managed nodes are active");
   system_active_ = true;
+  createBondTimer();
   return true;
 }
 
@@ -205,11 +204,11 @@ bool
 LifecycleManager::shutdown()
 {
   message("Shutting down managed nodes...");
-  destroyBondConnections();
   shutdownAllNodes();
   destroyLifecycleServiceClients();
   message("Managed nodes have been shut down");
   system_active_ = false;
+  destroyBondConnections();
   return true;
 }
 
@@ -226,6 +225,8 @@ LifecycleManager::reset()
   }
   message("Managed nodes have been reset");
   system_active_ = false;
+  destroyBondConnections();
+
   return true;
 }
 
@@ -258,7 +259,7 @@ LifecycleManager::resume()
 void
 LifecycleManager::createBondTimer()
 {
-  if (bond_timeout_.count() <= 0) {
+  if (bond_timeout_.count() <= 0 || bond_timer_) {
     return;
   }
 
@@ -276,9 +277,15 @@ LifecycleManager::destroyBondConnections()
     return;
   }
 
-  message("Terminating bond connections...");
   bond_timer_->cancel();
+  bond_timer_->reset();
   bond_timer_.reset();
+
+  if (bond_map_.empty()) {
+    return;
+  }
+
+  message("Terminating bond connections...");
 
   for (auto & node_name : node_names_) {
     bond_map_[node_name]->breakBond();
@@ -291,19 +298,19 @@ void
 LifecycleManager::createBondConnections()
 {
   const double timeout =
-    std::chrono::duration_cast<std::chrono::seconds>(bond_timeout_).count();
+    std::chrono::duration_cast<std::chrono::seconds>(bond_timeout_).count(); // TODO 0.00?
 
   for (auto & node_name : node_names_) {
     bond_map_[node_name] =
       std::make_shared<bond::Bond>("bond", node_name, shared_from_this());
-    bond_map_[node_name]->start();
     bond_map_[node_name]->setHeartbeatTimeout(timeout);
+    bond_map_[node_name]->start();
     if (!bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout, 0.0))) {
       RCLCPP_ERROR(
         get_logger(),
         "Server %s was unable to be reached after %0.2fs. "
-        "Disabling %s's bond connection watchdog. This server may be misconfigured.",
-        node_name.c_str(), timeout);
+        "This server may be misconfigured.",
+        node_name.c_str(), timeout, node_name.c_str());
     }
   }
 }
@@ -320,11 +327,10 @@ LifecycleManager::checkBondConnections()
   }
 
   for (auto & node_name : node_names_) {
-    if (bond_map_[node_name] && bond_map_[node_name]->isBroken()) {
+    if (bond_map_[node_name]->isBroken()) {
       message(
         std::string(
-        "Have not received a heartbeat from " + node_name + " (in %0.2f ms)!",
-        static_cast<double>(bond_timeout_.count())));
+        "Have not received a heartbeat from " + node_name + "."));
 
       // if down, destroy
       RCLCPP_ERROR(
@@ -332,7 +338,8 @@ LifecycleManager::checkBondConnections()
         "CRITICAL FAILURE: SERVER %s IS DOWN."
         " Shutting down related nodes.",
         node_name.c_str());
-      shutdown();
+      reset();
+      return;
     }
   }
 }
