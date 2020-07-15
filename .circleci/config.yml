@@ -321,7 +321,7 @@ commands:
 executors:
   debug_exec:
     docker:
-      - image: rosplanning/navigation2:master.debug
+      - image: rosplanning/navigation2:main.debug
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
@@ -330,7 +330,7 @@ executors:
       UNDERLAY_MIXINS: "release ccache"
   release_exec:
     docker:
-      - image: rosplanning/navigation2:master.release
+      - image: rosplanning/navigation2:main.release
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
@@ -408,4 +408,4 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - main
