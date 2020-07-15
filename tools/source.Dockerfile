@@ -2,7 +2,7 @@
 #
 # Example build command:
 # This determines which version of the ROS2 code base to pull
-# export ROS2_BRANCH=master
+# export ROS2_BRANCH=main
 # docker build \
 #   --no-cache \
 #   --tag nav2:full_ros_build \
@@ -49,7 +49,7 @@ RUN apt-get update && apt-get install -q -y \
       wget \
     && rm -rf /var/lib/apt/lists/*
 
-ARG ROS2_BRANCH=master
+ARG ROS2_BRANCH=main
 ENV ROS2_BRANCH=$ROS2_BRANCH
 ENV ROS_VERSION=2 \
     ROS_PYTHON_VERSION=3
