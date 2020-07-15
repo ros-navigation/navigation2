@@ -96,14 +96,7 @@ nav_msgs::msg::Path LazyThetaStarPlanner::createPlan(
   planner_->getPath(path);
   planner_->clearStuff();
 
-  RCLCPP_INFO(node_->get_logger(), "RECEIVED THE PATH");
-
   if (path.size() > 1) {
-
-    for (int i = 0; i < path.size(); i++) {
-      std::cout << path[i].x << '\t' << path[i].y << '\n';
-    }
-
     global_path = linearInterpolation(path, 0.1);
   } else {
     global_path.poses.clear();
@@ -117,7 +110,7 @@ nav_msgs::msg::Path LazyThetaStarPlanner::createPlan(
 }
 
 nav_msgs::msg::Path LazyThetaStarPlanner::linearInterpolation(
-  std::vector<coords<world_pts>> & raw_path,
+  std::vector<coords<world_pts> > & raw_path,
   double dist_bw_points)
 {
   nav_msgs::msg::Path pa;
@@ -147,5 +140,4 @@ nav_msgs::msg::Path LazyThetaStarPlanner::linearInterpolation(
 }  // namespace lazyThetaStarPlanner
 
 #include "pluginlib/class_list_macros.hpp"
-
 PLUGINLIB_EXPORT_CLASS(lazyThetaStarPlanner::LazyThetaStarPlanner, nav2_core::GlobalPlanner)
