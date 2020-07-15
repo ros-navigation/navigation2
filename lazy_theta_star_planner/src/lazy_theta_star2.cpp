@@ -41,7 +41,6 @@ bool LazyThetaStar::getPath(std::vector<coords<world_pts>> & raw_path)
 
   id_gen++;
   id curr_id = 0;
-//  map_pts cx = src.x, cy = src.y;
 
   if (!losCheck(src.x, src.y, dst.x, dst.y)) {
 
@@ -49,8 +48,6 @@ bool LazyThetaStar::getPath(std::vector<coords<world_pts>> & raw_path)
 
       map_pts cx = data[curr_id].x;
       map_pts cy = data[curr_id].y;
-      std::cout << "the current point is : \t\t\t" << cx << '\t' << cy << '\t' << data[curr_id].f <<
-        '\n';
       id curr_par = data[curr_id].parent_id;
 
       if (isGoal(cx, cy)) {
@@ -60,8 +57,6 @@ bool LazyThetaStar::getPath(std::vector<coords<world_pts>> & raw_path)
         break;
       }
 
-      std::cout << "ITS PARENTS WERE : " << data[curr_par].x << '\t' << data[curr_par].y << '\t' <<
-        curr_par << '\n';
       if (!(losCheck(cx, cy, data[curr_par].x, data[curr_par].y))) {
         resetParent(cx, cy, curr_id);
       }
@@ -87,8 +82,7 @@ bool LazyThetaStar::getPath(std::vector<coords<world_pts>> & raw_path)
   RCLCPP_INFO(node_->get_logger(), "REACHED DEST  %i,   %i", data[curr_id].x, data[curr_id].y);
 
   backtrace(raw_path, curr_id);
-
-  RCLCPP_INFO(node_->get_logger(), "Out of it with path_length %i", raw_path.size());
+  
   return true;
 }
 
@@ -162,48 +156,48 @@ bool LazyThetaStar::losCheck(map_pts & x0, map_pts & y0, map_pts & x1, map_pts &
 
 void LazyThetaStar::binaryHeapDelMin()
 {
-  pop_heap(pq.begin() + 1, pq.end(), comp);
-  pq.pop_back();
-//  int hole = 1;
-//  int succ = 2, size = pq.size() - 1, sz = size;
-//  // the main bottom up part where it compares and assigns the smallest value to the hole
-//  // remember that for this part the heap starts at index 1
-//
-//  while (succ < sz) {
-//    double k1 = *(pq[succ].f);
-//    double k2 = *(pq[succ + 1].f);
-//    // std::cout<<k1<<'\t'<<k2<<'\n';
-//    if (k1 > k2) {
-//      // std::cout<<"came 1"<<'\n';
-//      succ++;
-//      // data[hole].key = k2;
-//      pq[hole] = pq[succ];
-//    } else {
-//      // std::cout<<"came 2"<<'\n';
-//      //  data[hole].key = k1;
-//      pq[hole] = pq[succ];
-//    }
-//    hole = succ;
-//    succ <<= 1;
-//  }
-//
-//  // this part checks if the value to be used to fill the last row's hole is small or not
-//  // if not small then it slides the small value up till it reaches the apt position
-//  double bubble = *(pq[sz].f);
-//  int pred = hole >> 1;
-//  //  std::cout<<"HERE"<<'\t'<<data[pred].f<<'\t'<<bubble<<'\n';
-//  while (*(pq[pred].f) > bubble) {
-//    //    std::cout<<"HERE"<<'\t'<<hole<<'\n';
-//    pq[hole] = pq[pred];
-//    hole = pred;
-//    pred >>= 1;
-//  }
-//  // std::cout<<"HERE AT:"<<'\t'<<hole<<'\n';
-//
-//  // this part simply assigns the last value in the haep to the hole after checking it
-//  // for maintaining the heap data structure
-//  pq[hole] = pq[sz];
-//  pq.pop_back();
+//   pop_heap(pq.begin() + 1, pq.end(), comp);
+//   pq.pop_back();
+ int hole = 1;
+ int succ = 2, size = pq.size() - 1, sz = size;
+ // the main bottom up part where it compares and assigns the smallest value to the hole
+ // remember that for this part the heap starts at index 1
+
+ while (succ < sz) {
+   double k1 = *(pq[succ].f);
+   double k2 = *(pq[succ + 1].f);
+   // std::cout<<k1<<'\t'<<k2<<'\n';
+   if (k1 > k2) {
+     // std::cout<<"came 1"<<'\n';
+     succ++;
+     // data[hole].key = k2;
+     pq[hole] = pq[succ];
+   } else {
+     // std::cout<<"came 2"<<'\n';
+     //  data[hole].key = k1;
+     pq[hole] = pq[succ];
+   }
+   hole = succ;
+   succ <<= 1;
+ }
+
+ // this part checks if the value to be used to fill the last row's hole is small or not
+ // if not small then it slides the small value up till it reaches the apt position
+ double bubble = *(pq[sz].f);
+ int pred = hole >> 1;
+ //  std::cout<<"HERE"<<'\t'<<data[pred].f<<'\t'<<bubble<<'\n';
+ while (*(pq[pred].f) > bubble) {
+   //    std::cout<<"HERE"<<'\t'<<hole<<'\n';
+   pq[hole] = pq[pred];
+   hole = pred;
+   pred >>= 1;
+ }
+ // std::cout<<"HERE AT:"<<'\t'<<hole<<'\n';
+
+ // this part simply assigns the last value in the haep to the hole after checking it
+ // for maintaining the heap data structure
+ pq[hole] = pq[sz];
+ pq.pop_back();
 }
 
 void LazyThetaStar::pushToPq(id id_this)
@@ -219,25 +213,12 @@ void LazyThetaStar::backtrace(std::vector<coords<world_pts>> & raw_points, id & 
     coords<world_pts> world;
     costmap_->mapToWorld(data[curr_id].x, data[curr_id].y, world.x, world.y);
     path_rev.push_back({world.x, world.y});
-    RCLCPP_INFO(
-      node_->get_logger(), "%i,   %i  ---> %f, %f", data[curr_id].x, data[curr_id].y, world.x,
-      world.y);
-    if (data[curr_id].got_here == 1) {
-      std::cout <<
-        "------------------------------------------------------>  got the same error   <-------------------------------------------------------"
-                <<
-        '\n';
-      break;
-    }
-    data[curr_id].got_here = 1;
     curr_id = data[curr_id].parent_id;
   } while (curr_id != 0);
   coords<world_pts> w;
   costmap_->mapToWorld(data[curr_id].x, data[curr_id].y, w.x, w.y);
   path_rev.push_back({w.x, w.y});
-  RCLCPP_INFO(
-    node_->get_logger(), "%i,   %i  ---> %f, %f", data[curr_id].x, data[curr_id].y, w.x, w.y);
-
+  
   for (int i = path_rev.size() - 1; i >= 0; i--) {
     raw_points.push_back(path_rev[i]);
   }
@@ -276,8 +257,6 @@ bool LazyThetaStar::isGoal(map_pts & cx, map_pts & cy)
 void LazyThetaStar::setNeighbors(map_pts & cx, map_pts & cy, id & curr_id)
 {
   id curr_par = data[curr_id].parent_id;
-  std::cout << "ITS PARENTS ARE : " << data[curr_par].x << '\t' << data[curr_par].y << '\t' <<
-    curr_par << '\n';
   map_pts px = data[curr_par].x, py = data[curr_par].y;
   cost g_cost_par = data[curr_par].g;
 
@@ -300,8 +279,6 @@ void LazyThetaStar::setNeighbors(map_pts & cx, map_pts & cy, id & curr_id)
         cal_cost = g_cost + h_cost;
         data.push_back({mx, my, g_cost, h_cost, curr_par, -1, cal_cost});
         pushToPq(id_gen);
-        std::cout << "ADDED INDEX 1:" << data[id_gen].x << '\t' << data[id_gen].y << '\t' <<
-          data[id_gen].f << '\n';
         addIndex(mx, my, id_gen);
         id_gen++;
         continue;
@@ -315,9 +292,7 @@ void LazyThetaStar::setNeighbors(map_pts & cx, map_pts & cy, id & curr_id)
           curr_node.parent_id = curr_par;
           if (curr_node.closed == 1) {
             curr_node.closed = -1;
-            pushToPq(m_id);
-            std::cout << "ADDED INDEX  2:" << data[m_id].x << '\t' << data[m_id].y << '\t' <<
-              data[m_id].f << '\n';
+            pushToPq(m_id);     
           }
         }
         continue;
@@ -330,8 +305,7 @@ void LazyThetaStar::initializeStuff()
 {
   id_gen = 0;
   sizeX = costmap_->getSizeInCellsX();
-  sizeY = costmap_->getSizeInCellsY();
-  std::cout << sizeX << '\t' << sizeY << '\n';
+  sizeY = costmap_->getSizeInCellsY(); 
   initializePosn();
   data.reserve(static_cast<int>(sizeX * sizeY * 0.05));
 }
