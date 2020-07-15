@@ -40,9 +40,13 @@ LifecycleManager::LifecycleManager()
   // of nodes
   declare_parameter("node_names");
   declare_parameter("autostart", rclcpp::ParameterValue(false));
+  declare_parameter("bond_timeout_ms", 100);
 
   node_names_ = get_parameter("node_names").as_string_array();
   get_parameter("autostart", autostart_);
+  int bond_timeout_double;
+  get_parameter("bond_timeout_ms", bond_timeout_double);
+  bond_timeout_ = std::chrono::milliseconds(bond_timeout_double);
 
   manager_srv_ = create_service<ManageLifecycleNodes>(
     get_name() + std::string("/manage_nodes"),
@@ -76,11 +80,7 @@ LifecycleManager::LifecycleManager()
     startup();
   }
 
-  createBondConnections();
-
-  bond_timer_ = this->create_wall_timer(
-    100ms,
-    std::bind(&LifecycleManager::checkBondConnections, this));
+  createBondTimer();
 }
 
 LifecycleManager::~LifecycleManager()
@@ -205,10 +205,10 @@ bool
 LifecycleManager::shutdown()
 {
   message("Shutting down managed nodes...");
+  destroyBondConnections();
   shutdownAllNodes();
   destroyLifecycleServiceClients();
   message("Managed nodes have been shut down");
-  destroyBondConnections();
   system_active_ = false;
   return true;
 }
@@ -256,36 +256,78 @@ LifecycleManager::resume()
 }
 
 void
-LifecycleManager::createBondConnections()
+LifecycleManager::createBondTimer()
 {
-  message("Creating bond connections...");
-
-  for (auto & node_name : node_names_) {
-    bond_map_[node_name] =
-      std::make_shared<bond::Bond>("bond", node_name, shared_from_this());
-    bond_map_[node_name]->start();
+  if (bond_timeout_.count() <= 0) {
+    return;
   }
+
+  message("Creating bond timer...");
+
+  bond_timer_ = this->create_wall_timer(
+    100ms,
+    std::bind(&LifecycleManager::checkBondConnections, this));
 }
 
 void
 LifecycleManager::destroyBondConnections()
 {
+  if (!bond_timer_) {
+    return;
+  }
+
   message("Terminating bond connections...");
+  bond_timer_->cancel();
+  bond_timer_.reset();
 
   for (auto & node_name : node_names_) {
     bond_map_[node_name]->breakBond();
+  }
+
+  bond_map_.clear();
+}
+
+void
+LifecycleManager::createBondConnections()
+{
+  const double timeout =
+    std::chrono::duration_cast<std::chrono::seconds>(bond_timeout_).count();
+
+  for (auto & node_name : node_names_) {
+    bond_map_[node_name] =
+      std::make_shared<bond::Bond>("bond", node_name, shared_from_this());
+    bond_map_[node_name]->start();
+    bond_map_[node_name]->setHeartbeatTimeout(timeout);
+    if (!bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout, 0.0))) {
+      RCLCPP_ERROR(
+        get_logger(),
+        "Server %s was unable to be reached after %0.2fs. "
+        "Disabling %s's bond connection watchdog. This server may be misconfigured.",
+        node_name.c_str(), timeout);
+    }
   }
 }
 
 void
 LifecycleManager::checkBondConnections()
 {
+  if (!system_active_) {
+    return;
+  }
+
+  if (bond_map_.empty()) {
+    createBondConnections();
+  }
+
   for (auto & node_name : node_names_) {
-    if (bond_map_[node_name]->isBroken()) {
-      message(std::string("Have not received a heartbeat from %s!", node_name.c_str()));
-      // Then the client of this has N iterations before shuts it all down
-      // if still down, destroy
-      RCLCPP_FATAL(
+    if (bond_map_[node_name] && bond_map_[node_name]->isBroken()) {
+      message(
+        std::string(
+        "Have not received a heartbeat from " + node_name + " (in %0.2f ms)!",
+        static_cast<double>(bond_timeout_.count())));
+
+      // if down, destroy
+      RCLCPP_ERROR(
         get_logger(),
         "CRITICAL FAILURE: SERVER %s IS DOWN."
         " Shutting down related nodes.",
@@ -294,10 +336,6 @@ LifecycleManager::checkBondConnections()
     }
   }
 }
-
-// TODO(mjeronimo): This is used to emphasize the major events during system bring-up and
-// shutdown so that the messgaes can be easily seen among the log output. We should replace
-// this with a ROS2-supported way of highlighting console output, if possible.
 
 #define ANSI_COLOR_RESET    "\x1b[0m"
 #define ANSI_COLOR_BLUE     "\x1b[34m"

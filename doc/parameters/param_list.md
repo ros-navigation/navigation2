@@ -388,6 +388,7 @@ When `controller_plugins` parameter is not overridden, the following default plu
 | ----------| --------| ------------|
 | node_names | N/A | Ordered list of node names to bringup through lifecycle transition |
 | autostart | false | Whether to transition nodes to active state on startup |
+| bond_timeout_ms | 100 | Timeout for bond to fail if no connection can be found in milliseconds. If set to 0, it will be disabled. |
 
 # map_server
 

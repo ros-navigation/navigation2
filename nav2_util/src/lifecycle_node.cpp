@@ -43,8 +43,7 @@ namespace nav2_util
 LifecycleNode::LifecycleNode(
   const std::string & node_name,
   const std::string & namespace_, bool use_rclcpp_node,
-  const rclcpp::NodeOptions & options,
-  bool use_bond)
+  const rclcpp::NodeOptions & options)
 : rclcpp_lifecycle::LifecycleNode(node_name, namespace_, options),
   use_rclcpp_node_(use_rclcpp_node)
 {
@@ -58,19 +57,18 @@ LifecycleNode::LifecycleNode(
       "_", namespace_, rclcpp::NodeOptions(options).arguments(new_args));
     rclcpp_thread_ = std::make_unique<NodeThread>(rclcpp_node_);
   }
+
   print_lifecycle_node_notification();
 
   // Setup bond connection with unique name
   // TODO shared from this will fail.
-  if (use_bond) {
-    bond_ = std::make_unique<bond::Bond>(
-      "bond",
-      node_name,
-      shared_from_this(),
-      std::bind(&LifecycleNode::bondBroken, this),
-      std::bind(&LifecycleNode::bondFormed, this));
-    bond_->start();
-  }
+  bond_ = std::make_unique<bond::Bond>(
+    "bond",
+    node_name,
+    shared_from_this(),
+    std::bind(&LifecycleNode::bondBroken, this),
+    std::bind(&LifecycleNode::bondFormed, this));
+  bond_->start();
 }
 
 LifecycleNode::~LifecycleNode()

@@ -122,6 +122,12 @@ protected:
    */
   void destroyLifecycleServiceClients();
 
+  // Support function for creating bond timer
+  /**
+   * @brief Support function for creating bond timer
+   */
+  void createBondTimer();
+
   // Support function for creating bond connections
   /**
    * @brief Support function for creating bond connections
@@ -165,6 +171,7 @@ protected:
 
   // Timer thread to look at bond connections
   rclcpp::TimerBase::SharedPtr bond_timer_;
+  std::chrono::milliseconds bond_timeout_;
 
   std::map<std::uint8_t, std::string> transition_label_map_;
 

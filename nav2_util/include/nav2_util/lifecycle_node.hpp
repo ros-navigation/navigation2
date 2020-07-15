@@ -41,8 +41,7 @@ public:
     const std::string & node_name,
     const std::string & namespace_ = "",
     bool use_rclcpp_node = false,
-    const rclcpp::NodeOptions & options = rclcpp::NodeOptions(),
-    bool use_bond = true);
+    const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   virtual ~LifecycleNode();
 
   typedef struct
