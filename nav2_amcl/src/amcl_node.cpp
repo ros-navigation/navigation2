@@ -214,9 +214,9 @@ AmclNode::AmclNode()
     "(with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the"
     "last known pose to initialize");
 
-  add_parameter("scan_topic", rclcpp::ParameterValue("scan"),
+  add_parameter(
+    "scan_topic", rclcpp::ParameterValue("scan"),
     "Topic to subscribe to in order to receive the laser scan for localization");
-
 }
 
 AmclNode::~AmclNode()
