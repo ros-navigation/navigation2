@@ -35,6 +35,9 @@ class ProgressChecker
 {
 public:
   typedef std::shared_ptr<nav2_core::ProgressChecker> Ptr;
+
+  virtual ~ProgressChecker() {}
+
   /**
    * @brief Initialize parameters for ProgressChecker
    * @param node Node pointer

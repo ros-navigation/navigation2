@@ -68,21 +68,29 @@ ControllerServer::~ControllerServer()
 nav2_util::CallbackReturn
 ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
+  auto node = shared_from_this();
+
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
 
   get_parameter("progress_checker_plugin", progress_checker_id_);
   if (progress_checker_id_ == default_progress_checker_id_) {
-    declare_parameter(default_progress_checker_id_ + ".plugin", default_progress_checker_type_);
+    nav2_util::declare_parameter_if_not_declared(
+      node, default_progress_checker_id_ + ".plugin",
+      rclcpp::ParameterValue(default_progress_checker_type_));
   }
   get_parameter("goal_checker_plugin", goal_checker_id_);
   if (goal_checker_id_ == default_goal_checker_id_) {
-    declare_parameter(default_goal_checker_id_ + ".plugin", default_goal_checker_type_);
+    nav2_util::declare_parameter_if_not_declared(
+      node, default_goal_checker_id_ + ".plugin",
+      rclcpp::ParameterValue(default_goal_checker_type_));
   }
 
   get_parameter("controller_plugins", controller_ids_);
   if (controller_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
-      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
+      nav2_util::declare_parameter_if_not_declared(
+        node, default_ids_[i] + ".plugin",
+        rclcpp::ParameterValue(default_types_[i]));
     }
   }
   controller_types_.resize(controller_ids_.size());
@@ -94,8 +102,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
   costmap_ros_->on_configure(state);
-
-  auto node = shared_from_this();
 
   try {
     progress_checker_type_ = nav2_util::get_plugin_type_param(node, progress_checker_id_);
