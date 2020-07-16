@@ -234,7 +234,7 @@ void ObservationBuffer::purgeStaleObservations()
       Observation & obs = *obs_it;
       // check if the observation is out of date... and if it is,
       // remove it and those that follow from the list
-      if ((last_updated_ - obs.cloud_->header.stamp) > observation_keep_time_) {
+      if ((nh_->now() - obs.cloud_->header.stamp) > observation_keep_time_) {
         observation_list_.erase(obs_it, observation_list_.end());
         return;
       }
