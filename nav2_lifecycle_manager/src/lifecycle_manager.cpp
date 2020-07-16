@@ -292,14 +292,15 @@ void
 LifecycleManager::createBondConnections()
 {
   const double timeout_ns =
-    std::chrono::duration_cast<std::chrono::nanoseconds>(bond_timeout_).count(); // TODO 0.00?
+    std::chrono::duration_cast<std::chrono::nanoseconds>(bond_timeout_).count();
   const double timeout_s = timeout_ns / 1e9;
 
   for (auto & node_name : node_names_) {
     bond_map_[node_name] =
-      std::make_shared<bond::Bond>("bond", node_name, shared_from_this());
+      std::make_shared<bond::Bond>("bond", node_name, service_client_node_);
     bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
     bond_map_[node_name]->start();
+
     if (!bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout_ns))) {
       RCLCPP_ERROR(
         get_logger(),
@@ -317,6 +318,7 @@ LifecycleManager::checkBondConnections()
     return;
   }
 
+  // populate the bond connections
   if (bond_map_.empty()) {
     createBondConnections();
   }
@@ -330,9 +332,9 @@ LifecycleManager::checkBondConnections()
       // if down, destroy
       RCLCPP_ERROR(
         get_logger(),
-        "CRITICAL FAILURE: SERVER %s IS DOWN."
+        "CRITICAL FAILURE: SERVER %s IS DOWN after not receiving a heartbeat for %i ms."
         " Shutting down related nodes.",
-        node_name.c_str());
+        node_name.c_str(), static_cast<int>(bond_timeout_.count()));
       reset();
       return;
     }
