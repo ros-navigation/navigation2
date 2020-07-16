@@ -243,6 +243,7 @@ map_saver:
     save_map_timeout: 5000
     free_thresh_default: 0.25
     occupied_thresh_default: 0.65
+    map_subscribe_transient_local: True
 
 planner_server:
   ros__parameters:
