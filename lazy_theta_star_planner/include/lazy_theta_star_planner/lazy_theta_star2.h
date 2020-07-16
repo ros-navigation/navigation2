@@ -51,10 +51,15 @@ struct tree_node
   id parent_id;
   int closed = 0;
   cost f = INF_COST;
-//  int counter = 0;
-  int got_here = 0;
 };
 
+struct comp
+{
+  bool operator()(pos & p1, pos & p2)
+  {
+    return *(p1.f) > *(p2.f);
+  }
+};
 namespace lazyThetaStar
 {
 class LazyThetaStar
@@ -65,7 +70,7 @@ public:
 
   std::vector<id> posn;
   std::vector<tree_node> data;
-  std::vector<pos> pq;
+  std::priority_queue<pos, std::vector<pos>, comp> pq;
   int sizeX, sizeY;
   int how_many_corners;
   id id_gen;
@@ -85,7 +90,6 @@ public:
 
   bool getPath(std::vector<coords<world_pts>> & raw_path);
 
-
   bool losCheck(map_pts & x0, map_pts & y0, map_pts & x1, map_pts & y1) const;
 
   cost dist(map_pts & ax, map_pts & ay, map_pts & bx, map_pts & by)
@@ -93,7 +97,7 @@ public:
     return sqrt(pow(ax - bx, 2) + pow(ay - by, 2));
   }
 
-  // TODO : FIND A WAY TO ADD REFERENCES TO THIS FUNCTION
+  // TODO (Anshu-man567) : FIND A WAY TO ADD REFERENCES TO THIS FUNCTION THAT IS IF POSSIBLE
   bool isSafe(map_pts cx, map_pts cy) const
   {
     return costmap_->getCost(cx, cy) < lethal_cost;
@@ -115,30 +119,18 @@ public:
   }
   void initializePosn();
 
-  void binaryHeapDelMin();
-
-  void pushToPq(id id_this);
-
-  static bool comp(pos & p1, pos & p2)
-  {
-    return *(p1.f) > *(p2.f);
-  }
-
   void backtrace(std::vector<coords<world_pts>> & raw_points, id & curr_id);
 
-  void resetParent(map_pts & cx, map_pts & cy, id & curr_id);
-
   bool isGoal(map_pts & cx, map_pts & cy);
-
-  void setNeighbors(map_pts & cx, map_pts & cy, id & curr_id);
 
   void initializeStuff();
 
   void clearStuff();
 
-  void getNextNode(id & curr_id);
+  void resetParent(tree_node & curr_data);
 
+  void setNeighbors(tree_node & curr_data);
 };
 }   // namespace lazyThetaStar
 
-#endif //LAZY_THETA_STAR_B_LAZY_THETA_STAR_H
+#endif   // LAZY_THETA_STAR_B_LAZY_THETA_STAR_H_

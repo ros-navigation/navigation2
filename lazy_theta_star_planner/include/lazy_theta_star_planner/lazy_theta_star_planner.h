@@ -31,7 +31,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "lazy_theta_star2.h"
+#include "lazy_theta_star_planner/lazy_theta_star2.h"
 
 namespace lazyThetaStarPlanner
 {
@@ -46,8 +46,8 @@ public:
   std::string globalFrame_, name_;
   int how_many_corners_;
   double interpolation_dist_;
+  int lethal_cost_;
   std::unique_ptr<lazyThetaStar::LazyThetaStar> planner_;
-
 
   unsigned int src_[2], dst_[2];
 
@@ -69,9 +69,7 @@ public:
   nav_msgs::msg::Path linearInterpolation(
     std::vector<coords<world_pts>> & raw_path,
     double dist_bw_points);
-
 };
+}   // namespace lazyThetaStarPlanner
 
-}   // namespace planner
-
-#endif //LAZY_THETA_STAR_PLANNER__LAZY_THETA_STAR_PLANNER_H_
+#endif  // LAZY_THETA_STAR_PLANNER__LAZY_THETA_STAR_PLANNER_H_
