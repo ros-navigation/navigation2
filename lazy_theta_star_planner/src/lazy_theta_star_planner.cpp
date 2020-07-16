@@ -18,7 +18,6 @@
 #include "lazy_theta_star_planner/lazy_theta_star_planner.h"
 #include "lazy_theta_star_planner/lazy_theta_star2.h"
 
-
 namespace lazyThetaStarPlanner
 {
 void LazyThetaStarPlanner::configure(
@@ -48,6 +47,11 @@ void LazyThetaStarPlanner::configure(
 
   node_->get_parameter(name_ + ".interpolation_dist", interpolation_dist_);
 
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name_ + ".lethal_cost", rclcpp::ParameterValue(
+      127));
+
+  node_->get_parameter(name_ + ".lethal_cost", lethal_cost_);
 }
 
 void LazyThetaStarPlanner::cleanup()
@@ -85,18 +89,23 @@ nav_msgs::msg::Path LazyThetaStarPlanner::createPlan(
   planner_->dst = {static_cast<int>(dst_[0]), static_cast<int>(dst_[1])};
 
   RCLCPP_INFO(
-    node_->get_logger(), "Got the src and dst... (%i, %i) && (%i, %i)", planner_->src.x, planner_->src.y,
-    planner_->dst.x, planner_->dst.y);
+    node_->get_logger(), "Got the src and dst... (%i, %i) && (%i, %i)",
+    planner_->src.x, planner_->src.y, planner_->dst.x, planner_->dst.y);
 
   planner_->node_ = node_;
   planner_->how_many_corners = how_many_corners_;
-  planner_->lethal_cost = LETHAL_COST;
 
   planner_->initializeStuff();
   planner_->getPath(path);
   planner_->clearStuff();
 
+  RCLCPP_INFO(node_->get_logger(), "RECEIVED THE PATH");
+
   if (path.size() > 1) {
+    for (int i = 0; i < path.size(); i++) {
+      std::cout << path[i].x << '\t' << path[i].y << '\n';
+    }
+
     global_path = linearInterpolation(path, 0.1);
   } else {
     global_path.poses.clear();
@@ -110,7 +119,7 @@ nav_msgs::msg::Path LazyThetaStarPlanner::createPlan(
 }
 
 nav_msgs::msg::Path LazyThetaStarPlanner::linearInterpolation(
-  std::vector<coords<world_pts> > & raw_path,
+  std::vector<coords<world_pts>> & raw_path,
   double dist_bw_points)
 {
   nav_msgs::msg::Path pa;
@@ -140,4 +149,5 @@ nav_msgs::msg::Path LazyThetaStarPlanner::linearInterpolation(
 }  // namespace lazyThetaStarPlanner
 
 #include "pluginlib/class_list_macros.hpp"
+
 PLUGINLIB_EXPORT_CLASS(lazyThetaStarPlanner::LazyThetaStarPlanner, nav2_core::GlobalPlanner)
