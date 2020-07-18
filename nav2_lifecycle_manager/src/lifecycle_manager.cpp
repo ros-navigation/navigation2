@@ -298,15 +298,20 @@ LifecycleManager::createBondConnections()
   for (auto & node_name : node_names_) {
     bond_map_[node_name] =
       std::make_shared<bond::Bond>("bond", node_name, service_client_node_);
-    bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
-    bond_map_[node_name]->start();
+    auto & node_bond = bond_map_[node_name];
+    node_bond->setHeartbeatTimeout(timeout_s);
+    node_bond->start();
 
-    if (!bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout_ns))) {
+    RCLCPP_INFO(get_logger(), "Server %s trying to connect....", node_name.c_str());
+    node_bond->waitUntilFormed(rclcpp::Duration(timeout_ns));
+    if (node_bond->isBroken()) {
       RCLCPP_ERROR(
         get_logger(),
         "Server %s was unable to be reached after %0.2fs. "
         "This server may be misconfigured.",
         node_name.c_str(), timeout_s, node_name.c_str());
+    } else {
+      RCLCPP_INFO(get_logger(), "Server %s connected!", node_name.c_str());
     }
   }
 }

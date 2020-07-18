@@ -116,6 +116,9 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     service_prefix + std::string(load_map_service_name_),
     std::bind(&MapServer::loadMapCallback, this, _1, _2, _3));
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 

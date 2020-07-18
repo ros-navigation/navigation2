@@ -59,16 +59,6 @@ LifecycleNode::LifecycleNode(
   }
 
   print_lifecycle_node_notification();
-
-  // Setup bond connection with unique name
-  // TODO shared from this will fail.
-  bond_ = std::make_unique<bond::Bond>(
-    "bond",
-    node_name,
-    shared_from_this(),
-    std::bind(&LifecycleNode::bondBroken, this),
-    std::bind(&LifecycleNode::bondFormed, this));
-  bond_->start();
 }
 
 LifecycleNode::~LifecycleNode()
@@ -84,6 +74,20 @@ LifecycleNode::~LifecycleNode()
     on_deactivate(get_current_state());
     on_cleanup(get_current_state());
   }
+}
+
+void LifecycleNode::createBond()
+{
+  RCLCPP_INFO(get_logger(), "Creating bond to lifecycle manager.");
+
+  bond_ = std::make_unique<bond::Bond>(
+    "bond",
+    "controller_server",
+    shared_from_this(),
+    std::bind(&LifecycleNode::bondBroken, this),
+    std::bind(&LifecycleNode::bondFormed, this));
+
+  bond_->start();
 }
 
 void LifecycleNode::bondFormed()

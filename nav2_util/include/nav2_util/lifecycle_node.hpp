@@ -122,12 +122,17 @@ public:
       rclcpp_lifecycle::LifecycleNode::shared_from_this());
   }
 
+  // Handle bond formed signal, may be overriden for specific actions
+  virtual void bondFormed();
+
+  // Handle bond broken signal, may be overriden for specific actions
+  virtual void bondBroken();
+
+  // Create bond connection to lifecycle manager
+  void createBond();
+
 protected:
   void print_lifecycle_node_notification();
-
-  void bondFormed();
-
-  void bondBroken();
 
   // Whether or not to create a local rclcpp::Node which can be used for ROS2 classes that don't
   // yet support lifecycle nodes

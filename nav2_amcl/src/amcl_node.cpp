@@ -234,6 +234,9 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   initParticleFilter();
   initLaserScan();
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 

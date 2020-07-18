@@ -114,6 +114,9 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     rclcpp_node_, "follow_path",
     std::bind(&ControllerServer::computeControl, this));
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
