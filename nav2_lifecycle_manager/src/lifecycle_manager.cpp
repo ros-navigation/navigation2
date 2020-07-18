@@ -302,16 +302,16 @@ LifecycleManager::createBondConnections()
     node_bond->setHeartbeatTimeout(timeout_s);
     node_bond->start();
 
-    RCLCPP_INFO(get_logger(), "Server %s trying to connect....", node_name.c_str());
+    RCLCPP_INFO(get_logger(), "Server %s trying to connect to bond....", node_name.c_str());
     node_bond->waitUntilFormed(rclcpp::Duration(timeout_ns));
     if (node_bond->isBroken()) {
       RCLCPP_ERROR(
         get_logger(),
-        "Server %s was unable to be reached after %0.2fs. "
+        "Server %s was unable to be reached after %0.2fs by bond. "
         "This server may be misconfigured.",
         node_name.c_str(), timeout_s, node_name.c_str());
     } else {
-      RCLCPP_INFO(get_logger(), "Server %s connected!", node_name.c_str());
+      RCLCPP_INFO(get_logger(), "Server %s connected to bond!", node_name.c_str());
     }
   }
 }
