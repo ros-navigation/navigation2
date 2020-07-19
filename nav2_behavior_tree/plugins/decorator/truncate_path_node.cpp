@@ -43,11 +43,8 @@ inline BT::NodeStatus TruncatePath::tick()
   BT::NodeStatus ret_status = child_node_->executeTick();
 
   nav_msgs::msg::Path input_path;
-  nav_msgs::msg::Path output_path;
 
   getInput("input_path", input_path);
-
-  output_path.header = input_path.header;
 
   if (input_path.poses.empty()) {
     setOutput("output_path", input_path);
@@ -56,29 +53,31 @@ inline BT::NodeStatus TruncatePath::tick()
 
   geometry_msgs::msg::PoseStamped final_pose = input_path.poses.back();
 
-  double distance_to_goal;
-  do {
+  double distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
+    input_path.poses.back(), final_pose);
+
+  while (distance_to_goal < distance_) {
+    input_path.poses.pop_back();
     distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
-      input_path.poses.front(), final_pose);
-
-    output_path.poses.push_back(input_path.poses.front());
-    input_path.poses.erase(input_path.poses.begin());
-  } while (distance_to_goal > distance_);
-
-  double dx = final_pose.pose.position.x - output_path.poses.back().pose.position.x;
-  double dy = final_pose.pose.position.y - output_path.poses.back().pose.position.y;
-
-  double final_angle = 0.0;
-  if (fabs(dx) > std::numeric_limits<double>::min() &&
-    fabs(dy) > std::numeric_limits<double>::min())
-  {
-    final_angle = atan2(dy, dx);
+      input_path.poses.back(), final_pose);
   }
 
-  output_path.poses.back().pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+  double dx = final_pose.pose.position.x - input_path.poses.back().pose.position.x;
+  double dy = final_pose.pose.position.y - input_path.poses.back().pose.position.y;
+
+  double final_angle = atan2(dy, dx);
+
+  if (std::isnan(final_angle) || std::isinf(final_angle)) {
+    RCLCPP_WARN(
+      config().blackboard->get<rclcpp::Node::SharedPtr>("node")->get_logger(),
+      "Final angle is not valid while truncating path. Setting to 0.0");
+    final_angle = 0.0;
+  }
+
+  input_path.poses.back().pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
     final_angle);
 
-  setOutput("output_path", output_path);
+  setOutput("output_path", input_path);
 
   return ret_status;
 }

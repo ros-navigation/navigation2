@@ -679,13 +679,13 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
-| input_path |  | Path to be truncated |
-| output_path |  | Path truncated |
+| input_path | N/A | Path to be truncated |
+| output_path | N/A | Path truncated |
 | distance | 1.0 | Distance (m) to cut from last pose |
 
 ### BT Node GoalUpdater
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
-| input_goal |  | The reference goal |
-| output_goal |  | The reference goal, or a newer goal received by subscription |
+| input_goal | N/A | The reference goal |
+| output_goal | N/A | The reference goal, or a newer goal received by subscription |

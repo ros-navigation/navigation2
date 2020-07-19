@@ -33,12 +33,12 @@ GoalUpdater::GoalUpdater(
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf)
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
   std::string goal_updater_topic;
-  node_->get_parameter_or<std::string>("goal_updater_topic", goal_updater_topic, "goal_update");
+  node->get_parameter_or<std::string>("goal_updater_topic", goal_updater_topic, "goal_update");
 
-  goal_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+  goal_sub_ = node->create_subscription<geometry_msgs::msg::PoseStamped>(
     goal_updater_topic, 10, std::bind(&GoalUpdater::callback_updated_goal, this, _1));
 }
 

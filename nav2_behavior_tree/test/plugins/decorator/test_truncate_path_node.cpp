@@ -132,14 +132,14 @@ TEST_F(TruncatePathTestFixture, test_tick)
   config_->blackboard->get("truncated_path", truncated_path);
 
   EXPECT_NE(path, truncated_path);
-  EXPECT_EQ(truncated_path.poses.size(), 3u);
+  EXPECT_EQ(truncated_path.poses.size(), 2u);
 
   double r, p, y;
   tf2::Quaternion q;
   tf2::fromMsg(truncated_path.poses.back().pose.orientation, q);
   tf2::Matrix3x3(q).getRPY(r, p, y);
 
-  EXPECT_NEAR(y, 0.694738, 0.0001);
+  EXPECT_NEAR(y, 0.463, 0.001);
 }
 
 int main(int argc, char ** argv)

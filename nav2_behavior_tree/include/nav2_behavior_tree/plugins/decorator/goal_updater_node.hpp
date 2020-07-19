@@ -51,7 +51,6 @@ private:
 
   void callback_updated_goal(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
-  rclcpp::Node::SharedPtr node_;
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
 
   geometry_msgs::msg::PoseStamped last_goal_received_;
