@@ -40,8 +40,7 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<geometry_msgs::msg::Point>("position", "Position"),
-        BT::InputPort<geometry_msgs::msg::Quaternion>("orientation", "Orientation")
+        BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
       });
   }
 };

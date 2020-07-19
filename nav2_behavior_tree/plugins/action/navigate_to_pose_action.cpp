@@ -30,19 +30,12 @@ NavigateToPoseAction::NavigateToPoseAction(
 
 void NavigateToPoseAction::on_tick()
 {
-  // Use the position and orientation fields from the XML attributes to initialize the goal
-  geometry_msgs::msg::Point position;
-  geometry_msgs::msg::Quaternion orientation;
-
-  if (!getInput("position", position) || !getInput("orientation", orientation)) {
+  if (!getInput("goal", goal_.pose)) {
     RCLCPP_ERROR(
       node_->get_logger(),
-      "NavigateToPoseAction: position or orientation not provided");
+      "NavigateToPoseAction: goal not provided");
     return;
   }
-
-  goal_.pose.pose.position = position;
-  goal_.pose.pose.orientation = orientation;
 }
 
 }  // namespace nav2_behavior_tree
