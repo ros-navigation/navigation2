@@ -27,19 +27,6 @@ include_directories(
   include
 )
 
-add_library(simple_goal_checker SHARED src/simple_goal_checker.cpp)
-ament_target_dependencies(simple_goal_checker ${dependencies})
-# prevent pluginlib from using boost
-target_compile_definitions(simple_goal_checker PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
-
-add_library(stopped_goal_checker SHARED src/stopped_goal_checker.cpp)
-target_link_libraries(stopped_goal_checker simple_goal_checker)
-ament_target_dependencies(stopped_goal_checker ${dependencies})
-# prevent pluginlib from using boost
-target_compile_definitions(stopped_goal_checker PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
-
 add_library(standard_traj_generator SHARED
             src/standard_traj_generator.cpp
             src/limited_accel_generator.cpp
@@ -60,7 +47,7 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-install(TARGETS simple_goal_checker stopped_goal_checker standard_traj_generator
+install(TARGETS standard_traj_generator
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
@@ -73,8 +60,6 @@ install(FILES plugins.xml
 )
 
 ament_export_include_directories(include)
-ament_export_libraries(simple_goal_checker)
-ament_export_libraries(stopped_goal_checker)
 ament_export_libraries(standard_traj_generator)
 pluginlib_export_plugin_description_file(dwb_core plugins.xml)
 
