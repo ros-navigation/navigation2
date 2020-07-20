@@ -84,6 +84,7 @@ LifecycleManager::LifecycleManager()
 LifecycleManager::~LifecycleManager()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
+  bond_timer_.reset();
 }
 
 void
@@ -319,7 +320,7 @@ LifecycleManager::createBondConnections()
 void
 LifecycleManager::checkBondConnections()
 {
-  if (!system_active_) {
+  if (!system_active_ || !rclcpp::ok()) {
     return;
   }
 

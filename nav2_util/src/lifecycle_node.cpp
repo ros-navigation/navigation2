@@ -83,21 +83,9 @@ void LifecycleNode::createBond()
   bond_ = std::make_unique<bond::Bond>(
     "bond",
     this->get_name(),
-    shared_from_this(),
-    std::bind(&LifecycleNode::bondBroken, this),
-    std::bind(&LifecycleNode::bondFormed, this));
+    shared_from_this());
 
   bond_->start();
-}
-
-void LifecycleNode::bondFormed()
-{
-  RCLCPP_INFO(get_logger(), "Bond formed to lifecycle manager.");
-}
-
-void LifecycleNode::bondBroken()
-{
-  RCLCPP_INFO(get_logger(), "Bond broken by lifecycle manager!");
 }
 
 void LifecycleNode::print_lifecycle_node_notification()

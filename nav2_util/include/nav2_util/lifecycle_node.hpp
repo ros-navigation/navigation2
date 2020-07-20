@@ -122,12 +122,6 @@ public:
       rclcpp_lifecycle::LifecycleNode::shared_from_this());
   }
 
-  // Handle bond formed signal, may be overriden for specific actions
-  virtual void bondFormed();
-
-  // Handle bond broken signal, may be overriden for specific actions
-  virtual void bondBroken();
-
   // Create bond connection to lifecycle manager
   void createBond();
 
