@@ -2,20 +2,20 @@ repositories:
   BehaviorTree.CPP:
     type: git
     url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
-    version: ros2-3.1.1
+    version: 3.5.1
   angles:
     type: git
     url: https://github.com/ros/angles.git
-    version: ros2
+    version: 1.12.3
   gazebo_ros_pkgs:
     type: git
     url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
-    version: ros2
+    version: eloquent
   image_common:
     type: git
     url: https://github.com/ros-perception/image_common.git
-    version: ros2
+    version: eloquent
   vision_opencv:
     type: git
     url: https://github.com/ros-perception/vision_opencv.git
-    version: ros2
+    version: eloquent
