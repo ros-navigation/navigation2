@@ -36,66 +36,12 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "dwb_plugins/simple_goal_checker.hpp"
-#include "dwb_plugins/stopped_goal_checker.hpp"
+#include "nav2_controller/plugins/simple_progress_checker.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
-using dwb_plugins::SimpleGoalChecker;
-using dwb_plugins::StoppedGoalChecker;
+using nav2_controller::SimpleProgressChecker;
 
-void checkMacro(
-  nav2_core::GoalChecker & gc,
-  double x0, double y0, double theta0,
-  double x1, double y1, double theta1,
-  double xv, double yv, double thetav,
-  bool expected_result)
-{
-  gc.reset();
-  geometry_msgs::msg::Pose2D pose0, pose1;
-  pose0.x = x0;
-  pose0.y = y0;
-  pose0.theta = theta0;
-  pose1.x = x1;
-  pose1.y = y1;
-  pose1.theta = theta1;
-  nav_2d_msgs::msg::Twist2D v;
-  v.x = xv;
-  v.y = yv;
-  v.theta = thetav;
-  if (expected_result) {
-    EXPECT_TRUE(
-      gc.isGoalReached(
-        nav_2d_utils::pose2DToPose(pose0),
-        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
-  } else {
-    EXPECT_FALSE(
-      gc.isGoalReached(
-        nav_2d_utils::pose2DToPose(pose0),
-        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
-  }
-}
-
-void sameResult(
-  nav2_core::GoalChecker & gc0, nav2_core::GoalChecker & gc1,
-  double x0, double y0, double theta0,
-  double x1, double y1, double theta1,
-  double xv, double yv, double thetav,
-  bool expected_result)
-{
-  checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, expected_result);
-  checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, expected_result);
-}
-
-void trueFalse(
-  nav2_core::GoalChecker & gc0, nav2_core::GoalChecker & gc1,
-  double x0, double y0, double theta0,
-  double x1, double y1, double theta1,
-  double xv, double yv, double thetav)
-{
-  checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, true);
-  checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, false);
-}
 class TestLifecycleNode : public nav2_util::LifecycleNode
 {
 public:
@@ -135,33 +81,50 @@ public:
   }
 };
 
-TEST(VelocityIterator, goal_checker_reset)
+void checkMacro(
+  nav2_core::ProgressChecker & pc,
+  double x0, double y0,
+  double x1, double y1,
+  int delay,
+  bool expected_result)
 {
-  auto x = std::make_shared<TestLifecycleNode>("goal_checker");
+  pc.reset();
+  geometry_msgs::msg::PoseStamped pose0, pose1;
+  pose0.pose.position.x = x0;
+  pose0.pose.position.y = y0;
+  pose1.pose.position.x = x1;
+  pose1.pose.position.y = y1;
+  EXPECT_TRUE(pc.check(pose0));
+  rclcpp::sleep_for(std::chrono::seconds(delay));
+  if (expected_result) {
+    EXPECT_TRUE(pc.check(pose1));
+  } else {
+    EXPECT_FALSE(pc.check(pose1));
+  }
+}
 
-  nav2_core::GoalChecker * gc = new SimpleGoalChecker;
-  gc->reset();
-  delete gc;
+TEST(SimpleProgressChecker, progress_checker_reset)
+{
+  auto x = std::make_shared<TestLifecycleNode>("progress_checker");
+
+  nav2_core::ProgressChecker * pc = new SimpleProgressChecker;
+  pc->reset();
+  delete pc;
   EXPECT_TRUE(true);
 }
 
-TEST(VelocityIterator, two_checks)
+TEST(SimpleProgressChecker, unit_tests)
 {
-  auto x = std::make_shared<TestLifecycleNode>("goal_checker");
+  auto x = std::make_shared<TestLifecycleNode>("progress_checker");
 
-  SimpleGoalChecker gc;
-  StoppedGoalChecker sgc;
-  gc.initialize(x, "dwb");
-  sgc.initialize(x, "dwb");
-  sameResult(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, true);
-  sameResult(gc, sgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, false);
-  sameResult(gc, sgc, 0, 0, 0, 0, 1, 0, 0, 0, 0, false);
-  sameResult(gc, sgc, 0, 0, 0, 0, 0, 1, 0, 0, 0, false);
-  sameResult(gc, sgc, 0, 0, 3.14, 0, 0, -3.14, 0, 0, 0, true);
-  trueFalse(gc, sgc, 0, 0, 3.14, 0, 0, -3.14, 1, 0, 0);
-  trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 1, 0, 0);
-  trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 1, 0);
-  trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+  SimpleProgressChecker pc;
+  pc.initialize(x, "nav2_controller");
+  checkMacro(pc, 0, 0, 0, 0, 1, true);
+  checkMacro(pc, 0, 0, 1, 0, 1, true);
+  checkMacro(pc, 0, 0, 0, 1, 1, true);
+  checkMacro(pc, 0, 0, 1, 0, 11, true);
+  checkMacro(pc, 0, 0, 0, 1, 11, true);
+  checkMacro(pc, 0, 0, 0, 0, 11, false);
 }
 
 int main(int argc, char ** argv)
