@@ -78,11 +78,11 @@ LifecycleNode::~LifecycleNode()
 
 void LifecycleNode::createBond()
 {
-  RCLCPP_INFO(get_logger(), "Creating bond to lifecycle manager.");
+  RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", this->get_name().c_str());
 
   bond_ = std::make_unique<bond::Bond>(
     "bond",
-    "controller_server",
+    this->get_name(),
     shared_from_this(),
     std::bind(&LifecycleNode::bondBroken, this),
     std::bind(&LifecycleNode::bondFormed, this));
