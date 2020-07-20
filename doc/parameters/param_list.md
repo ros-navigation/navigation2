@@ -154,12 +154,15 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | controller_frequency | 20.0 | Frequency to run controller |
+| progress_checker_plugin | "progress_checker" | Plugin used by the controller to check whether the robot has at least covered a set distance/displacement in a set amount of time, thus checking the progress of the robot. |
+| `<progress_checker_plugin>.plugin` | "nav2_controller::SimpleProgressChecker" | Default plugin |
+| goal_checker_plugin | "goal_checker" | Check if the goal has been reached |
+| `<goal_checker_plugin>.plugin` | "nav2_controller::SimpleGoalChecker" | Default plugin |
 | controller_plugins | ["FollowPath"] | List of mapped names for controller plugins for processing requests and parameters |
+| `<controller_plugins>.plugin` | "dwb_core::DWBLocalPlanner" | Default plugin |
 | min_x_velocity_threshold | 0.0001 | Minimum X velocity to use (m/s) |
 | min_y_velocity_threshold | 0.0001 | Minimum Y velocity to use (m/s) |
 | min_theta_velocity_threshold | 0.0001 | Minimum angular velocity to use (rad/s) |
-| required_movement_radius | 0.5 | Minimum amount a robot must move to be progressing to goal (m) |
-| movement_time_allowance | 10.0 | Maximum amount of time a robot has to move the minimum radius (s) |
 
 **NOTE:** When `controller_plugins` parameter is overridden, each plugin namespace defined in the list needs to have a `plugin` parameter defining the type of plugin to be loaded in the namespace.
 
@@ -173,11 +176,36 @@ controller_server:
       plugin: "dwb_core::DWBLocalPlanner"
 ```
 
-When `controller_plugins` parameter is not overridden, the following default plugins are loaded:
+When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parameters are not overridden, the following default plugins are loaded:
 
 | Namespace | Plugin |
 | ----------| --------|
 | "FollowPath" | "dwb_core::DWBLocalPlanner" |
+| "progress_checker" | "nav2_controller::SimpleProgressChecker" |
+| "goal_checker" | "nav2_controller::SimpleGoalChecker" |
+
+## simple_progress_checker plugin
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<nav2_controller plugin>`.required_movement_radius | 0.5 | Minimum distance to count as progress (m) |
+| `<nav2_controller plugin>`.movement_time_allowance | 10.0 | Maximum time allowence for progress to happen (s) |
+
+
+## simple_goal_checker plugin
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<nav2_controller plugin>`.xy_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (m) |
+| `<nav2_controller plugin>`.yaw_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (rad) |
+| `<nav2_controller plugin>`.stateful | true | Whether to check for XY position tolerance after rotating to goal orientation in case of minor localization changes |
+
+## stopped_goal_checker plugin
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<nav2_controller plugin>`.rot_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (rad/s) |
+| `<nav2_controller plugin>`.trans_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (m/s) |
 
 # dwb_controller
 
@@ -193,7 +221,6 @@ When `controller_plugins` parameter is not overridden, the following default plu
 | `<dwb plugin>`.prune_distance | 1.0 | Distance (m) to prune backward until |
 | `<dwb plugin>`.debug_trajectory_details | false | Publish debug information |
 | `<dwb plugin>`.trajectory_generator_name | "dwb_plugins::StandardTrajectoryGenerator" | Trajectory generator plugin name |
-| `<dwb plugin>`.goal_checker_name | "dwb_plugins::SimpleGoalChecker" | Goal checker plugin name |
 | `<dwb plugin>`.transform_tolerance | 0.1 | TF transform tolerance |
 | `<dwb plugin>`.short_circuit_trajectory_evaluation | true | Stop evaluating scores after best score is found |
 | `<dwb plugin>`.path_distance_bias | N/A | Old version of `PathAlign.scale`, use that instead |
@@ -350,14 +377,6 @@ When `controller_plugins` parameter is not overridden, the following default plu
 | `<dwb plugin>`.lookahead_time | -1 | If > 0, amount of time to look forward for a collision for. |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
 
-## simple_goal_checker plugin
-
-| Parameter | Default | Description |
-| ----------| --------| ------------|
-| `<dwb plugin>`.xy_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (m) |
-| `<dwb plugin>`.yaw_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (rad) |
-| `<dwb plugin>`.stateful | true | Whether to check for XY position tolerance after rotating to goal orientation in case of minor localization changes |
-
 ## standard_traj_generator plugin
 
 | Parameter | Default | Description |
@@ -374,13 +393,6 @@ When `controller_plugins` parameter is not overridden, the following default plu
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | `<dwb plugin>`.sim_time | N/A | Time to simulate ahead by (s) |
-
-## stopped_goal_checker plugin
-
-| Parameter | Default | Description |
-| ----------| --------| ------------|
-| `<dwb plugin>`.rot_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (rad/s) |
-| `<dwb plugin>`.trans_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (m/s) |
 
 # lifecycle_manager
 
