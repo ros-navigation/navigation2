@@ -333,7 +333,7 @@ LifecycleManager::checkBondConnections()
     if (bond_map_[node_name]->isBroken()) {
       message(
         std::string(
-        "Have not received a heartbeat from " + node_name + "."));
+          "Have not received a heartbeat from " + node_name + "."));
 
       // if down, destroy
       RCLCPP_ERROR(
