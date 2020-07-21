@@ -24,8 +24,9 @@ A Behavior Tree consists of control flow nodes, such as fallback, sequence, para
 
 ## Navigation Behavior Trees
 
-The BT Navigator package has three sample XML-based descriptions of BTs.  
-These trees are [navigate_w_replanning_time.xml](behavior_trees/navigate_w_replanning_time.xml), [navigate_w_replanning_distance.xml](behavior_trees/navigate_w_replanning_distance.xml) and [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml).  
+The BT Navigator package has thfourree sample XML-based descriptions of BTs.  
+These trees are [navigate_w_replanning_time.xml](behavior_trees/navigate_w_replanning_time.xml), [navigate_w_replanning_distance.xml](behavior_trees/navigate_w_replanning_distance.xml), [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml) and 
+[followpoint.xml](behavior_trees/followpoint.xml).  
 The user may use any of these sample trees or develop a more complex tree which could better suit the user's needs.
 
 ### Navigate with Replanning (time-based)
@@ -65,6 +66,10 @@ returns FAILURE, all nodes are halted and this node returns FAILURE.
 * DistanceController: A custom control flow node, which controls the tick rate based on the distance traveled.  This custom node has only one child. The user can set the distance after which the planner should replan a new path.  This node returns RUNNING when it is not ticking its child. Currently, in navigation, the `DistanceController` is used to tick the  `ComputePathToPose` and `GoalReached` node after every 0.5 meters.
 
 * SpeedController: A custom control flow node, which controls the tick rate based on the current speed.  This decorator offers the most flexibility as the user can set the minimum/maximum tick rate which is adjusted according to the current speed.
+
+* GoalUpdater: A custom control node, which updates the goal pose. It subscribes to a topic in which it can receive an updated goal pose to use instead of the one commanded in action.
+
+* TruncatePath: A custom control node, which modifies a path making it shorter. It removes the last part of the pose in the base of a distance to the original goal pose. The resulting last pose of the path orientates the robot to the original goal pose.
 
 #### Condition Nodes
 * GoalReached: Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, which in that case the `ComputePathToPose` action node will not get ticked.
@@ -117,6 +122,13 @@ In the navigation stack, multi-scope recovery actions are implemented for each m
 </p>
 
 This tree currently is not our default tree in the stack. The xml file is located here: [navigate_w_replanning_and_round_robin_recovery.xml](behavior_trees/navigate_w_replanning_and_round_robin_recovery.xml).
+
+### Navigate following a dynamic point to a certain distance
+This tree is an example of how behavior trees can be used to make the robot do more than navigate the current position to the desired pose. In this case, the robot will follow a point that changes dynamically during the execution of the action. The robot will stop its advance and will be oriented towards the target position when it reaches a distance to the target established in the tree. The UpdateGoal decorator node will be used to update the target position. The TruncatePath node will modify the generated path by removing the end part of this path, to maintain a distance from the target, and changes the orientation of the last position. This tree never returns that the action has finished successfully, but must be canceled when you want to stop following the target position.
+
+![Navigate following a dynamic point to a certain distance](./doc/follow_point.png)
+
+This tree currently is not our default tree in the stack. The xml file is located here: [follow_point.xml](behavior_trees/follow_point.xml).
 
 <br/>
 
