@@ -140,7 +140,7 @@ StaticLayer::getParameters()
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   map_received_ = false;
-  map_updated_ = false;
+  processing_layer_.store(false);
 
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 }
@@ -254,9 +254,12 @@ StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map)
   if (!map_received_) {
     map_received_ = true;
     processMap(*new_map);
-  } else {
+  }
+  if (processing_layer_.load()) {
     map_buffer_ = new_map;
-    map_updated_ = true;
+  } else {
+    processMap(*new_map);
+    map_buffer_ = nullptr;
   }
 }
 
@@ -316,10 +319,12 @@ StaticLayer::updateBounds(
   }
 
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  processing_layer_.store(true);
 
-  if (map_updated_) {
+  // If there is a new available map, load it.
+  if (map_buffer_ != nullptr) {
     processMap(*map_buffer_);
-    map_updated_ = false;
+    map_buffer_ = nullptr;
   }
 
   if (!layered_costmap_->isRolling() ) {
@@ -349,6 +354,7 @@ StaticLayer::updateCosts(
   int min_i, int min_j, int max_i, int max_j)
 {
   if (!enabled_) {
+    processing_layer_.store(false);
     return;
   }
   if (!map_received_) {
@@ -358,6 +364,7 @@ StaticLayer::updateCosts(
       RCLCPP_WARN(node_->get_logger(), "Can't update static costmap layer, no map received");
       count = 0;
     }
+    processing_layer_.store(false);
     return;
   }
 
@@ -380,6 +387,7 @@ StaticLayer::updateCosts(
         transform_tolerance_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(node_->get_logger(), "StaticLayer: %s", ex.what());
+      processing_layer_.store(false);
       return;
     }
     // Copy map data given proper transformations
@@ -404,6 +412,7 @@ StaticLayer::updateCosts(
       }
     }
   }
+  processing_layer_.store(false);
 }
 
 }  // namespace nav2_costmap_2d
