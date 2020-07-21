@@ -25,7 +25,7 @@
           <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
           <Spin spin_dist="1.57"/>
           <Wait wait_duration="5"/>
-          <BackUp backup_dist="-.15" backup_speed=".025" />
+          <BackUp backup_dist="-0.15" backup_speed=".025" />
         </RoundRobin>
       </ReactiveFallback>
     </RecoveryNode>
