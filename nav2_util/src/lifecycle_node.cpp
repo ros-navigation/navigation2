@@ -63,10 +63,6 @@ LifecycleNode::LifecycleNode(
 
 LifecycleNode::~LifecycleNode()
 {
-  if (bond_) {
-    bond_->breakBond();
-  }
-
   // In case this lifecycle node wasn't properly shut down, do it here
   if (get_current_state().id() ==
     lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)

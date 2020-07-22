@@ -163,15 +163,15 @@ protected:
    */
   void message(const std::string & msg);
 
-  // A map of all nodes to be controlled
-  std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map_;
+  // Timer thread to look at bond connections
+  rclcpp::TimerBase::SharedPtr bond_timer_;
+  std::chrono::milliseconds bond_timeout_;
 
   // A map of all nodes to check bond connection
   std::map<std::string, std::shared_ptr<bond::Bond>> bond_map_;
 
-  // Timer thread to look at bond connections
-  std::shared_ptr<rclcpp::TimerBase> bond_timer_;
-  std::chrono::milliseconds bond_timeout_;
+  // A map of all nodes to be controlled
+  std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map_;
 
   std::map<std::uint8_t, std::string> transition_label_map_;
 

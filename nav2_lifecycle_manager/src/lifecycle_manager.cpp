@@ -274,19 +274,9 @@ LifecycleManager::createBondTimer()
 void
 LifecycleManager::destroyBondConnections()
 {
+  message("Terminating bond timer...");
+  bond_timer_->cancel();
   bond_timer_.reset();
-
-  if (bond_map_.empty()) {
-    return;
-  }
-
-  message("Terminating bond connections...");
-
-  for (auto & node_name : node_names_) {
-    bond_map_[node_name]->breakBond();
-  }
-
-  bond_map_.clear();
 }
 
 void
@@ -299,13 +289,12 @@ LifecycleManager::createBondConnections()
   for (auto & node_name : node_names_) {
     bond_map_[node_name] =
       std::make_shared<bond::Bond>("bond", node_name, service_client_node_);
-    auto & node_bond = bond_map_[node_name];
-    node_bond->setHeartbeatTimeout(timeout_s);
-    node_bond->start();
+    bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
+    bond_map_[node_name]->start();
 
     RCLCPP_INFO(get_logger(), "Server %s trying to connect to bond....", node_name.c_str());
-    node_bond->waitUntilFormed(rclcpp::Duration(timeout_ns));
-    if (node_bond->isBroken()) {
+    bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout_ns));
+    if (bond_map_[node_name]->isBroken()) {
       RCLCPP_ERROR(
         get_logger(),
         "Server %s was unable to be reached after %0.2fs by bond. "
@@ -330,6 +319,11 @@ LifecycleManager::checkBondConnections()
   }
 
   for (auto & node_name : node_names_) {
+
+    if (!rclcpp::ok()) {
+      return;
+    }
+
     if (bond_map_[node_name]->isBroken()) {
       message(
         std::string(
