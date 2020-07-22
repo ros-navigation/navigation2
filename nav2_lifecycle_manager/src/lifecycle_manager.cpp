@@ -40,7 +40,7 @@ LifecycleManager::LifecycleManager()
   // of nodes
   declare_parameter("node_names");
   declare_parameter("autostart", rclcpp::ParameterValue(false));
-  declare_parameter("bond_timeout_ms", 100);
+  declare_parameter("bond_timeout_ms", 4000);
 
   node_names_ = get_parameter("node_names").as_string_array();
   get_parameter("autostart", autostart_);
@@ -216,6 +216,9 @@ LifecycleManager::shutdown()
 bool
 LifecycleManager::reset()
 {
+  system_active_ = false;
+  destroyBondConnections();
+
   message("Resetting managed nodes...");
   // Should transition in reverse order
   if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE) ||
@@ -224,9 +227,8 @@ LifecycleManager::reset()
     RCLCPP_ERROR(get_logger(), "Failed to reset nodes: aborting reset");
     return false;
   }
+
   message("Managed nodes have been reset");
-  system_active_ = false;
-  destroyBondConnections();
 
   return true;
 }
@@ -267,16 +269,18 @@ LifecycleManager::createBondTimer()
   message("Creating bond timer...");
 
   bond_timer_ = this->create_wall_timer(
-    100ms,
+    200ms,
     std::bind(&LifecycleManager::checkBondConnections, this));
 }
 
 void
 LifecycleManager::destroyBondConnections()
 {
-  message("Terminating bond timer...");
-  bond_timer_->cancel();
-  bond_timer_.reset();
+  if (bond_timer_) {
+    message("Terminating bond timer...");
+    bond_timer_->cancel();
+    bond_timer_.reset();
+  }
 }
 
 void
@@ -290,11 +294,11 @@ LifecycleManager::createBondConnections()
     bond_map_[node_name] =
       std::make_shared<bond::Bond>("bond", node_name, service_client_node_);
     bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
+    bond_map_[node_name]->setHeartbeatPeriod(1.0);
     bond_map_[node_name]->start();
 
     RCLCPP_INFO(get_logger(), "Server %s trying to connect to bond....", node_name.c_str());
-    bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout_ns));
-    if (bond_map_[node_name]->isBroken()) {
+    if (!bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout_ns))) {
       RCLCPP_ERROR(
         get_logger(),
         "Server %s was unable to be reached after %0.2fs by bond. "
@@ -317,6 +321,8 @@ LifecycleManager::checkBondConnections()
   if (bond_map_.empty()) {
     createBondConnections();
   }
+
+  rclcpp::spin_some(service_client_node_);
 
   for (auto & node_name : node_names_) {
 
