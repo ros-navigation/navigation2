@@ -67,7 +67,7 @@ returns FAILURE, all nodes are halted and this node returns FAILURE.
 
 * SpeedController: A custom control flow node, which controls the tick rate based on the current speed.  This decorator offers the most flexibility as the user can set the minimum/maximum tick rate which is adjusted according to the current speed.
 
-* GoalUpdater: A custom control node, which updates the goal pose. It subscribes to a topic in which it can receive an updated goal pose to use instead of the one commanded in action.
+* GoalUpdater: A custom control node, which updates the goal pose. It subscribes to a topic in which it can receive an updated goal pose to use instead of the one commanded in action. It is useful for dynamic object following tasks.
 
 * TruncatePath: A custom control node, which modifies a path making it shorter. It removes the last part of the pose in the base of a distance to the original goal pose. The resulting last pose of the path orientates the robot to the original goal pose.
 
