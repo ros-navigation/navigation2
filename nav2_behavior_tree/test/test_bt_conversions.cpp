@@ -20,6 +20,7 @@
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 #include "nav2_behavior_tree/bt_conversions.hpp"
@@ -159,6 +160,75 @@ TEST(QuaternionPortTest, test_correct_syntax)
   EXPECT_EQ(value.y, 0.0);
   EXPECT_EQ(value.z, 0.0);
   EXPECT_EQ(value.w, 0.7);
+}
+
+TEST(PoseStampedPortTest, test_wrong_syntax)
+{
+  std::string xml_txt =
+    R"(
+      <root main_tree_to_execute = "MainTree" >
+        <BehaviorTree ID="MainTree">
+            <PoseStampedPort test="1.0;2.0;3.0;4.0;5.0;6.0;7.0;8.0" />
+        </BehaviorTree>
+      </root>)";
+
+  BT::BehaviorTreeFactory factory;
+  factory.registerNodeType<TestNode<geometry_msgs::msg::PoseStamped>>("PoseStampedPort");
+  auto tree = factory.createTreeFromText(xml_txt);
+
+  geometry_msgs::msg::PoseStamped value;
+  tree.rootNode()->getInput("test", value);
+  EXPECT_EQ(value.pose.position.x, 0.0);
+  EXPECT_EQ(value.pose.position.y, 0.0);
+  EXPECT_EQ(value.pose.position.z, 0.0);
+  EXPECT_EQ(value.pose.orientation.x, 0.0);
+  EXPECT_EQ(value.pose.orientation.y, 0.0);
+  EXPECT_EQ(value.pose.orientation.z, 0.0);
+  EXPECT_EQ(value.pose.orientation.w, 1.0);
+
+  xml_txt =
+    R"(
+      <root main_tree_to_execute = "MainTree" >
+        <BehaviorTree ID="MainTree">
+            <PoseStampedPort test="1.0;2.0;3.0;4.0;5.0;6.0" />
+        </BehaviorTree>
+      </root>)";
+
+  tree = factory.createTreeFromText(xml_txt);
+  tree.rootNode()->getInput("test", value);
+  EXPECT_EQ(value.pose.position.x, 0.0);
+  EXPECT_EQ(value.pose.position.y, 0.0);
+  EXPECT_EQ(value.pose.position.z, 0.0);
+  EXPECT_EQ(value.pose.orientation.x, 0.0);
+  EXPECT_EQ(value.pose.orientation.y, 0.0);
+  EXPECT_EQ(value.pose.orientation.z, 0.0);
+  EXPECT_EQ(value.pose.orientation.w, 1.0);
+}
+
+TEST(PoseStampedPortTest, test_correct_syntax)
+{
+  std::string xml_txt =
+    R"(
+      <root main_tree_to_execute = "MainTree" >
+        <BehaviorTree ID="MainTree">
+            <PoseStampedPort test="1.0;2.0;3.0;4.0;5.0;6.0;7.0" />
+        </BehaviorTree>
+      </root>)";
+
+  BT::BehaviorTreeFactory factory;
+  factory.registerNodeType<TestNode<geometry_msgs::msg::PoseStamped>>("PoseStampedPort");
+  auto tree = factory.createTreeFromText(xml_txt);
+
+  tree = factory.createTreeFromText(xml_txt);
+  geometry_msgs::msg::PoseStamped value;
+  tree.rootNode()->getInput("test", value);
+  EXPECT_EQ(value.pose.position.x, 1.0);
+  EXPECT_EQ(value.pose.position.y, 2.0);
+  EXPECT_EQ(value.pose.position.z, 3.0);
+  EXPECT_EQ(value.pose.orientation.x, 4.0);
+  EXPECT_EQ(value.pose.orientation.y, 5.0);
+  EXPECT_EQ(value.pose.orientation.z, 6.0);
+  EXPECT_EQ(value.pose.orientation.w, 7.0);
 }
 
 TEST(MillisecondsPortTest, test_correct_syntax)
