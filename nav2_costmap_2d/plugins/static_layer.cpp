@@ -58,6 +58,7 @@ namespace nav2_costmap_2d
 {
 
 StaticLayer::StaticLayer()
+: map_buffer_(nullptr)
 {
 }
 
@@ -140,6 +141,7 @@ StaticLayer::getParameters()
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   map_received_ = false;
+  update_in_progress_.store(false);
 
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 }
@@ -193,6 +195,9 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 
   unsigned int index = 0;
 
+  // we have a new map, update full size of map
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+
   // initialize the costmap with static data
   for (unsigned int i = 0; i < size_y; ++i) {
     for (unsigned int j = 0; j < size_x; ++j) {
@@ -204,8 +209,6 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 
   map_frame_ = new_map.header.frame_id;
 
-  // we have a new map, update full size of map
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   x_ = y_ = 0;
   width_ = size_x_;
   height_ = size_y_;
@@ -249,9 +252,15 @@ void
 StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  processMap(*new_map);
   if (!map_received_) {
     map_received_ = true;
+    processMap(*new_map);
+  }
+  if (update_in_progress_.load()) {
+    map_buffer_ = new_map;
+  } else {
+    processMap(*new_map);
+    map_buffer_ = nullptr;
   }
 }
 
@@ -311,6 +320,14 @@ StaticLayer::updateBounds(
   }
 
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  update_in_progress_.store(true);
+
+  // If there is a new available map, load it.
+  if (map_buffer_) {
+    processMap(*map_buffer_);
+    map_buffer_ = nullptr;
+  }
+
   if (!layered_costmap_->isRolling() ) {
     if (!(has_updated_data_ || has_extra_bounds_)) {
       return;
@@ -338,6 +355,7 @@ StaticLayer::updateCosts(
   int min_i, int min_j, int max_i, int max_j)
 {
   if (!enabled_) {
+    update_in_progress_.store(false);
     return;
   }
   if (!map_received_) {
@@ -347,6 +365,7 @@ StaticLayer::updateCosts(
       RCLCPP_WARN(node_->get_logger(), "Can't update static costmap layer, no map received");
       count = 0;
     }
+    update_in_progress_.store(false);
     return;
   }
 
@@ -369,6 +388,7 @@ StaticLayer::updateCosts(
         transform_tolerance_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(node_->get_logger(), "StaticLayer: %s", ex.what());
+      update_in_progress_.store(false);
       return;
     }
     // Copy map data given proper transformations
@@ -393,6 +413,7 @@ StaticLayer::updateCosts(
       }
     }
   }
+  update_in_progress_.store(false);
 }
 
 }  // namespace nav2_costmap_2d
