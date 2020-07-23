@@ -98,7 +98,7 @@ public:
     auto future_result = client_->async_send_request(request);
 
     if (rclcpp::spin_until_future_complete(node_, future_result) !=
-        rclcpp::FutureReturnCode::SUCCESS)
+      rclcpp::FutureReturnCode::SUCCESS)
     {
       return false;
     }
