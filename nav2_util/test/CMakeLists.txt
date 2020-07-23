@@ -41,13 +41,9 @@ ament_add_gtest(test_robot_utils test_robot_utils.cpp)
 ament_target_dependencies(test_robot_utils geometry_msgs)
 target_link_libraries(test_robot_utils ${library_name})
 
-# This test is disabled due to failing services
-# https://github.com/ros-planning/navigation2/issues/1836
-
-# add_launch_test(
-#   "test_dump_params/test_dump_params.test.py"
-#   TARGET "test_dump_params"
-#   TIMEOUT 30
-#   ENV
-#     TEST_EXECUTABLE=$<TARGET_FILE:dump_params>
-# )
+add_launch_test(
+  "test_dump_params/test_dump_params.launch.py"
+  TIMEOUT 30
+  ENV
+    TEST_EXECUTABLE=$<TARGET_FILE:dump_params>
+)
