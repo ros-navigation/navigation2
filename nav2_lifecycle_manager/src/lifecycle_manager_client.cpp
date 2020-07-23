@@ -88,7 +88,7 @@ LifecycleManagerClient::is_active(const std::chrono::nanoseconds timeout)
   auto future_result = is_active_client_->async_send_request(request);
 
   if (rclcpp::spin_until_future_complete(node_, future_result, timeout) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     return SystemStatus::TIMEOUT;
   }
