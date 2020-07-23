@@ -24,7 +24,7 @@ A Behavior Tree consists of control flow nodes, such as fallback, sequence, para
 
 ## Navigation Behavior Trees
 
-The BT Navigator package has thfourree sample XML-based descriptions of BTs.  
+The BT Navigator package has four sample XML-based descriptions of BTs.  
 These trees are [navigate_w_replanning_time.xml](behavior_trees/navigate_w_replanning_time.xml), [navigate_w_replanning_distance.xml](behavior_trees/navigate_w_replanning_distance.xml), [navigate_w_replanning_and_recovery.xml](behavior_trees/navigate_w_replanning_and_recovery.xml) and 
 [followpoint.xml](behavior_trees/followpoint.xml).  
 The user may use any of these sample trees or develop a more complex tree which could better suit the user's needs.
