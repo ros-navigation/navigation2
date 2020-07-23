@@ -9,3 +9,7 @@ ament_target_dependencies(test_decorator_speed_controller ${dependencies})
 ament_add_gtest(test_decorator_rate_controller test_rate_controller.cpp)
 target_link_libraries(test_decorator_rate_controller nav2_rate_controller_bt_node)
 ament_target_dependencies(test_decorator_rate_controller ${dependencies})
+
+ament_add_gtest(test_goal_updater_node test_goal_updater_node.cpp)
+target_link_libraries(test_goal_updater_node nav2_goal_updater_node_bt_node)
+ament_target_dependencies(test_goal_updater_node ${dependencies})
