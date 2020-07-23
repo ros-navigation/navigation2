@@ -637,6 +637,14 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 | server_name | N/A | Action server name |
 | server_timeout | 10 | Action server timeout (ms) |
 
+### BT Node TruncatePath
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| input_path | N/A | Path to be truncated |
+| output_path | N/A | Path truncated |
+| distance | 1.0 | Distance (m) to cut from last pose |
+
 ## Conditions
 
 ### BT Node GoalReached
@@ -687,3 +695,10 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 | min_speed | 0.0 | Minimum speed (m/s) |
 | max_speed | 0.5 | Maximum speed (m/s) |
 | filter_duration | 0.3 | Duration (secs) for velocity smoothing filter |
+
+### BT Node GoalUpdater
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| input_goal | N/A | The reference goal |
+| output_goal | N/A | The reference goal, or a newer goal received by subscription |
