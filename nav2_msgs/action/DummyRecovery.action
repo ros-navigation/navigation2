@@ -2,6 +2,6 @@
 std_msgs/String command
 ---
 #result definition
-std_msgs/Empty result
+builtin_interfaces/Duration total_elapsed_time
 ---
 #feedback

@@ -37,6 +37,7 @@ amcl:
     z_max: 0.05
     z_rand: 0.5
     z_short: 0.05
+    scan_topic: scan
 
 amcl_map_client:
   ros__parameters:
@@ -83,52 +84,66 @@ controller_server:
   ros__parameters:
     use_sim_time: True
     controller_frequency: 20.0
-    controller_plugin_types: ["dwb_core::DWBLocalPlanner"]
-    controller_plugin_ids: ["FollowPath"]
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugin: "goal_checker"
+    controller_plugins: ["FollowPath"]
 
+    # Progress checker parameters
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.5
+      movement_time_allowance: 10.0
+    # Goal checker parameters
+    goal_checker:
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.25
+      yaw_goal_tolerance: 0.25
+      stateful: True
     # DWB parameters
-    FollowPath.debug_trajectory_details: True
-    FollowPath.min_vel_x: 0.0
-    FollowPath.min_vel_y: 0.0
-    FollowPath.max_vel_x: 0.26
-    FollowPath.max_vel_y: 0.0
-    FollowPath.max_vel_theta: 1.0
-    FollowPath.min_speed_xy: 0.0
-    FollowPath.max_speed_xy: 0.26
-    FollowPath.min_speed_theta: 0.0
-    # Add high threshold velocity for turtlebot 3 issue.
-    # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
-    FollowPath.acc_lim_x: 2.5
-    FollowPath.acc_lim_y: 0.0
-    FollowPath.acc_lim_theta: 3.2
-    FollowPath.decel_lim_x: -2.5
-    FollowPath.decel_lim_y: 0.0
-    FollowPath.decel_lim_theta: -3.2
-    FollowPath.vx_samples: 20
-    FollowPath.vy_samples: 5
-    FollowPath.vtheta_samples: 20
-    FollowPath.sim_time: 1.7
-    FollowPath.linear_granularity: 0.05
-    FollowPath.angular_granularity: 0.025
-    FollowPath.transform_tolerance: 0.2
-    FollowPath.xy_goal_tolerance: 0.25
-    FollowPath.trans_stopped_velocity: 0.25
-    FollowPath.short_circuit_trajectory_evaluation: True
-    FollowPath.stateful: True
-    FollowPath.critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-    FollowPath.BaseObstacle.scale: 0.02
-    FollowPath.PathAlign.scale: 32.0
-    FollowPath.GoalAlign.scale: 24.0
-    FollowPath.PathAlign.forward_point_distance: 0.1
-    FollowPath.GoalAlign.forward_point_distance: 0.1
-    FollowPath.PathDist.scale: 32.0
-    FollowPath.GoalDist.scale: 24.0
-    FollowPath.RotateToGoal.scale: 32.0
-    FollowPath.RotateToGoal.slowing_factor: 5.0
-    FollowPath.RotateToGoal.lookahead_time: -1.0
+    FollowPath:
+      plugin: "dwb_core::DWBLocalPlanner"
+      debug_trajectory_details: True
+      min_vel_x: 0.0
+      min_vel_y: 0.0
+      max_vel_x: 0.26
+      max_vel_y: 0.0
+      max_vel_theta: 1.0
+      min_speed_xy: 0.0
+      max_speed_xy: 0.26
+      min_speed_theta: 0.0
+      # Add high threshold velocity for turtlebot 3 issue.
+      # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
+      acc_lim_x: 2.5
+      acc_lim_y: 0.0
+      acc_lim_theta: 3.2
+      decel_lim_x: -2.5
+      decel_lim_y: 0.0
+      decel_lim_theta: -3.2
+      vx_samples: 20
+      vy_samples: 5
+      vtheta_samples: 20
+      sim_time: 1.7
+      linear_granularity: 0.05
+      angular_granularity: 0.025
+      transform_tolerance: 0.2
+      xy_goal_tolerance: 0.25
+      trans_stopped_velocity: 0.25
+      short_circuit_trajectory_evaluation: True
+      stateful: True
+      critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+      BaseObstacle.scale: 0.02
+      PathAlign.scale: 32.0
+      PathAlign.forward_point_distance: 0.1
+      GoalAlign.scale: 24.0
+      GoalAlign.forward_point_distance: 0.1
+      PathDist.scale: 32.0
+      GoalDist.scale: 24.0
+      RotateToGoal.scale: 32.0
+      RotateToGoal.slowing_factor: 5.0
+      RotateToGoal.lookahead_time: -1.0
 
 controller_server_rclcpp_node:
   ros__parameters:
@@ -146,12 +161,13 @@ local_costmap:
       width: 3
       height: 3
       resolution: 0.05
-      plugin_names: ["obstacle_layer", "voxel_layer", "inflation_layer"]
-      plugin_types: ["nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::VoxelLayer", "nav2_costmap_2d::InflationLayer"]
       robot_radius: 0.22
+      plugins: ["obstacle_layer", "voxel_layer", "inflation_layer"]
       inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
       obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
         observation_sources: scan
         scan:
@@ -161,6 +177,7 @@ local_costmap:
           marking: True
           data_type: "LaserScan"
       voxel_layer:
+        plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
         publish_voxel_map: True
         origin_z: 0.0
@@ -193,11 +210,11 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_link
       use_sim_time: True
-      plugin_names: ["static_layer", "obstacle_layer", "voxel_layer", "inflation_layer"]
-      plugin_types: ["nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::VoxelLayer", "nav2_costmap_2d::InflationLayer"]
       robot_radius: 0.22
       resolution: 0.05
+      plugins: ["static_layer", "obstacle_layer", "voxel_layer", "inflation_layer"]
       obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
         observation_sources: scan
         scan:
@@ -207,6 +224,7 @@ global_costmap:
           marking: True
           data_type: "LaserScan"
       voxel_layer:
+        plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
         publish_voxel_map: True
         origin_z: 0.0
@@ -222,7 +240,10 @@ global_costmap:
           marking: True
           data_type: "PointCloud2"
       static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
       always_send_full_costmap: True
   global_costmap_client:
     ros__parameters:
@@ -242,16 +263,18 @@ map_saver:
     save_map_timeout: 5000
     free_thresh_default: 0.25
     occupied_thresh_default: 0.65
+    map_subscribe_transient_local: True
 
 planner_server:
   ros__parameters:
-    planner_plugin_types: ["nav2_navfn_planner/NavfnPlanner"]
-    planner_plugin_ids: ["GridBased"]
     expected_planner_frequency: 20.0
     use_sim_time: True
-    GridBased.tolerance: 0.5
-    GridBased.use_astar: false
-    GridBased.allow_unknown: true
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      tolerance: 0.5
+      use_astar: false
+      allow_unknown: true
 
 planner_server_rclcpp_node:
   ros__parameters:
@@ -262,8 +285,13 @@ recoveries_server:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
-    plugin_names: ["spin", "backup", "wait"]
-    plugin_types: ["nav2_recoveries/Spin", "nav2_recoveries/BackUp", "nav2_recoveries/Wait"]
+    recovery_plugins: ["spin", "backup", "wait"]
+    spin:
+      plugin: "nav2_recoveries/Spin"
+    backup:
+      plugin: "nav2_recoveries/BackUp"
+    wait:
+      plugin: "nav2_recoveries/Wait"
     global_frame: odom
     robot_base_frame: base_link
     transform_timeout: 0.1

@@ -34,7 +34,7 @@
 
 #include <memory>
 #include <string>
-#include "dwb_plugins/simple_goal_checker.hpp"
+#include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
 #include "nav2_util/node_utils.hpp"
@@ -43,7 +43,7 @@
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 
-namespace dwb_plugins
+namespace nav2_controller
 {
 
 SimpleGoalChecker::SimpleGoalChecker()
@@ -103,6 +103,6 @@ bool SimpleGoalChecker::isGoalReached(
   return fabs(dyaw) < yaw_goal_tolerance_;
 }
 
-}  // namespace dwb_plugins
+}  // namespace nav2_controller
 
-PLUGINLIB_EXPORT_CLASS(dwb_plugins::SimpleGoalChecker, nav2_core::GoalChecker)
+PLUGINLIB_EXPORT_CLASS(nav2_controller::SimpleGoalChecker, nav2_core::GoalChecker)

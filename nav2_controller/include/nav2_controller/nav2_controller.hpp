@@ -22,6 +22,8 @@
 #include <vector>
 
 #include "nav2_core/controller.hpp"
+#include "nav2_core/progress_checker.hpp"
+#include "nav2_core/goal_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "nav2_msgs/action/follow_path.hpp"
@@ -201,13 +203,30 @@ protected:
   std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
 
+  // Progress Checker Plugin
+  pluginlib::ClassLoader<nav2_core::ProgressChecker> progress_checker_loader_;
+  nav2_core::ProgressChecker::Ptr progress_checker_;
+  std::string default_progress_checker_id_;
+  std::string default_progress_checker_type_;
+  std::string progress_checker_id_;
+  std::string progress_checker_type_;
+
+  // Goal Checker Plugin
+  pluginlib::ClassLoader<nav2_core::GoalChecker> goal_checker_loader_;
+  nav2_core::GoalChecker::Ptr goal_checker_;
+  std::string default_goal_checker_id_;
+  std::string default_goal_checker_type_;
+  std::string goal_checker_id_;
+  std::string goal_checker_type_;
+
   // Controller Plugins
   pluginlib::ClassLoader<nav2_core::Controller> lp_loader_;
   ControllerMap controllers_;
-  std::vector<std::string> controller_ids_, controller_types_;
+  std::vector<std::string> default_ids_;
+  std::vector<std::string> default_types_;
+  std::vector<std::string> controller_ids_;
+  std::vector<std::string> controller_types_;
   std::string controller_ids_concat_, current_controller_;
-
-  std::unique_ptr<ProgressChecker> progress_checker_;
 
   double controller_frequency_;
   double min_x_velocity_threshold_;

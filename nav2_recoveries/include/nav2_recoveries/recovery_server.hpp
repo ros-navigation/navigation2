@@ -54,7 +54,10 @@ protected:
   // Plugins
   std::vector<pluginlib::UniquePtr<nav2_core::Recovery>> recoveries_;
   pluginlib::ClassLoader<nav2_core::Recovery> plugin_loader_;
-  std::vector<std::string> plugin_names_, plugin_types_;
+  std::vector<std::string> default_ids_;
+  std::vector<std::string> default_types_;
+  std::vector<std::string> recovery_ids_;
+  std::vector<std::string> recovery_types_;
 
   // Utilities
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;

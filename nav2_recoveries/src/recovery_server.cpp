@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include "nav2_util/node_utils.hpp"
 #include "nav2_recoveries/recovery_server.hpp"
 
 namespace recovery_server
@@ -23,7 +24,9 @@ namespace recovery_server
 
 RecoveryServer::RecoveryServer()
 : LifecycleNode("recoveries_server", "", true),
-  plugin_loader_("nav2_core", "nav2_core::Recovery")
+  plugin_loader_("nav2_core", "nav2_core::Recovery"),
+  default_ids_{"spin", "backup", "wait"},
+  default_types_{"nav2_recoveries/Spin", "nav2_recoveries/BackUp", "nav2_recoveries/Wait"}
 {
   declare_parameter(
     "costmap_topic",
@@ -32,19 +35,7 @@ RecoveryServer::RecoveryServer()
     "footprint_topic",
     rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
   declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
-
-  std::vector<std::string> plugin_names{std::string("spin"),
-    std::string("back_up"), std::string("wait")};
-  std::vector<std::string> plugin_types{std::string("nav2_recoveries/Spin"),
-    std::string("nav2_recoveries/BackUp"),
-    std::string("nav2_recoveries/Wait")};
-
-  declare_parameter(
-    "plugin_names",
-    rclcpp::ParameterValue(plugin_names));
-  declare_parameter(
-    "plugin_types",
-    rclcpp::ParameterValue(plugin_types));
+  declare_parameter("recovery_plugins", default_ids_);
 
   declare_parameter(
     "global_frame",
@@ -90,9 +81,13 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     *costmap_sub_, *footprint_sub_, *tf_, this->get_name(),
     global_frame, robot_base_frame, transform_tolerance_);
 
-  get_parameter("plugin_names", plugin_names_);
-  get_parameter("plugin_types", plugin_types_);
-
+  get_parameter("recovery_plugins", recovery_ids_);
+  if (recovery_ids_ == default_ids_) {
+    for (size_t i = 0; i < default_ids_.size(); ++i) {
+      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
+    }
+  }
+  recovery_types_.resize(recovery_ids_.size());
   loadRecoveryPlugins();
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -104,17 +99,18 @@ RecoveryServer::loadRecoveryPlugins()
 {
   auto node = shared_from_this();
 
-  for (size_t i = 0; i != plugin_names_.size(); i++) {
+  for (size_t i = 0; i != recovery_ids_.size(); i++) {
+    recovery_types_[i] = nav2_util::get_plugin_type_param(node, recovery_ids_[i]);
     try {
       RCLCPP_INFO(
         get_logger(), "Creating recovery plugin %s of type %s",
-        plugin_names_[i].c_str(), plugin_types_[i].c_str());
-      recoveries_.push_back(plugin_loader_.createUniqueInstance(plugin_types_[i]));
-      recoveries_.back()->configure(node, plugin_names_[i], tf_, collision_checker_);
+        recovery_ids_[i].c_str(), recovery_types_[i].c_str());
+      recoveries_.push_back(plugin_loader_.createUniqueInstance(recovery_types_[i]));
+      recoveries_.back()->configure(node, recovery_ids_[i], tf_, collision_checker_);
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create recovery %s of type %s."
-        " Exception: %s", plugin_names_[i].c_str(), plugin_types_[i].c_str(),
+        " Exception: %s", recovery_ids_[i].c_str(), recovery_types_[i].c_str(),
         ex.what());
       exit(-1);
     }

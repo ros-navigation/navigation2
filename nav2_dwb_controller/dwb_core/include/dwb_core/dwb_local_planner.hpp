@@ -100,20 +100,6 @@ public:
     const geometry_msgs::msg::Twist & velocity) override;
 
   /**
-   * @brief nav2_core isGoalReached - Check whether the robot has reached its goal, given the current pose & velocity.
-   *
-   * The pose that it checks against is the last pose in the current global plan.
-   * The calculation is delegated to the goal_checker plugin.
-   *
-   * @param pose Current pose
-   * @param velocity Current velocity
-   * @return True if the robot should be considered as having reached the goal.
-   */
-  bool isGoalReached(
-    const geometry_msgs::msg::PoseStamped & pose,
-    const geometry_msgs::msg::Twist & velocity) override;
-
-  /**
    * @brief Score a given command. Can be used for testing.
    *
    * Given a trajectory, calculate the score where lower scores are better.
@@ -209,9 +195,6 @@ protected:
   // Plugin handling
   pluginlib::ClassLoader<TrajectoryGenerator> traj_gen_loader_;
   TrajectoryGenerator::Ptr traj_generator_;
-
-  pluginlib::ClassLoader<nav2_core::GoalChecker> goal_checker_loader_;
-  nav2_core::GoalChecker::Ptr goal_checker_;
 
   pluginlib::ClassLoader<TrajectoryCritic> critic_loader_;
   std::vector<TrajectoryCritic::Ptr> critics_;

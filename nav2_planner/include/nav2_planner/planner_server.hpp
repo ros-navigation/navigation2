@@ -115,9 +115,15 @@ protected:
   // Planner
   PlannerMap planners_;
   pluginlib::ClassLoader<nav2_core::GlobalPlanner> gp_loader_;
-  std::vector<std::string> plugin_ids_, plugin_types_;
+  std::vector<std::string> default_ids_;
+  std::vector<std::string> default_types_;
+  std::vector<std::string> planner_ids_;
+  std::vector<std::string> planner_types_;
   double max_planner_duration_;
   std::string planner_ids_concat_;
+
+  // Clock
+  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
 
   // TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_;
