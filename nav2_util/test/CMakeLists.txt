@@ -44,10 +44,34 @@ target_link_libraries(test_robot_utils ${library_name})
 # This test is disabled due to failing services
 # https://github.com/ros-planning/navigation2/issues/1836
 
-# add_launch_test(
-#   "test_dump_params/test_dump_params.test.py"
-#   TARGET "test_dump_params"
-#   TIMEOUT 30
-#   ENV
-#     TEST_EXECUTABLE=$<TARGET_FILE:dump_params>
-# )
+add_launch_test(
+  "test_dump_params/test_dump_params_default.test.py"
+  TARGET "test_dump_params_default"
+  TIMEOUT 10
+  ENV
+    TEST_EXECUTABLE=$<TARGET_FILE:dump_params>
+)
+
+add_launch_test(
+  "test_dump_params/test_dump_params_yaml.test.py"
+  TARGET "test_dump_params_yaml"
+  TIMEOUT 10
+  ENV
+    TEST_EXECUTABLE=$<TARGET_FILE:dump_params>
+)
+
+add_launch_test(
+  "test_dump_params/test_dump_params_md.test.py"
+  TARGET "test_dump_params_md"
+  TIMEOUT 10
+  ENV
+    TEST_EXECUTABLE=$<TARGET_FILE:dump_params>
+)
+
+add_launch_test(
+  "test_dump_params/test_dump_params_multiple.test.py"
+  TARGET "test_dump_params_multiple"
+  TIMEOUT 10
+  ENV
+    TEST_EXECUTABLE=$<TARGET_FILE:dump_params>
+)
