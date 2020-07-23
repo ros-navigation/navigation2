@@ -13,20 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__TRUNCATE_PATH_NODE_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__TRUNCATE_PATH_NODE_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__TRUNCATE_PATH_ACTION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__TRUNCATE_PATH_ACTION_HPP_
 
 #include <memory>
 #include <string>
 
 #include "nav_msgs/msg/path.hpp"
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp_v3/action_node.h"
 
 namespace nav2_behavior_tree
 {
 
-class TruncatePath : public BT::DecoratorNode
+class TruncatePath : public BT::ActionNodeBase
 {
 public:
   TruncatePath(
@@ -44,6 +44,7 @@ public:
   }
 
 private:
+  void halt() override {}
   BT::NodeStatus tick() override;
 
   double distance_;
@@ -51,4 +52,4 @@ private:
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__TRUNCATE_PATH_NODE_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__TRUNCATE_PATH_ACTION_HPP_

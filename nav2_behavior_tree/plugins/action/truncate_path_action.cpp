@@ -22,7 +22,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "behaviortree_cpp_v3/decorator_node.h"
 
-#include "nav2_behavior_tree/plugins/decorator/truncate_path_node.hpp"
+#include "nav2_behavior_tree/plugins/action/truncate_path_action.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -30,7 +30,7 @@ namespace nav2_behavior_tree
 TruncatePath::TruncatePath(
   const std::string & name,
   const BT::NodeConfiguration & conf)
-: BT::DecoratorNode(name, conf),
+: BT::ActionNodeBase(name, conf),
   distance_(1.0)
 {
   getInput("distance", distance_);
@@ -40,15 +40,13 @@ inline BT::NodeStatus TruncatePath::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
 
-  BT::NodeStatus ret_status = child_node_->executeTick();
-
   nav_msgs::msg::Path input_path;
 
   getInput("input_path", input_path);
 
   if (input_path.poses.empty()) {
     setOutput("output_path", input_path);
-    return ret_status;
+    return BT::NodeStatus::SUCCESS;
   }
 
   geometry_msgs::msg::PoseStamped final_pose = input_path.poses.back();
@@ -56,7 +54,7 @@ inline BT::NodeStatus TruncatePath::tick()
   double distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
     input_path.poses.back(), final_pose);
 
-  while (distance_to_goal < distance_) {
+  while (distance_to_goal < distance_ && input_path.poses.size() > 2) {
     input_path.poses.pop_back();
     distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
       input_path.poses.back(), final_pose);
@@ -79,7 +77,7 @@ inline BT::NodeStatus TruncatePath::tick()
 
   setOutput("output_path", input_path);
 
-  return ret_status;
+  return BT::NodeStatus::SUCCESS;
 }
 
 }  // namespace nav2_behavior_tree

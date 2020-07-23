@@ -25,7 +25,7 @@
 #include "behaviortree_cpp_v3/bt_factory.h"
 
 #include "../../test_action_server.hpp"
-#include "nav2_behavior_tree/plugins/decorator/truncate_path_node.hpp"
+#include "nav2_behavior_tree/plugins/action/truncate_path_action.hpp"
 
 
 class TruncatePathTestFixture : public ::testing::Test
@@ -89,9 +89,7 @@ TEST_F(TruncatePathTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-          <TruncatePath distance="1.0" input_path="{path}" output_path="{truncated_path}">
-            <AlwaysSuccess/>
-          </TruncatePath>
+          <TruncatePath distance="1.0" input_path="{path}" output_path="{truncated_path}"/>
         </BehaviorTree>
       </root>)";
 

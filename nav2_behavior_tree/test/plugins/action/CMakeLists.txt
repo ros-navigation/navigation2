@@ -29,3 +29,7 @@ ament_target_dependencies(test_action_follow_path_action ${dependencies})
 ament_add_gtest(test_action_navigate_to_pose_action test_navigate_to_pose_action.cpp)
 target_link_libraries(test_action_navigate_to_pose_action nav2_navigate_to_pose_action_bt_node)
 ament_target_dependencies(test_action_navigate_to_pose_action ${dependencies})
+
+ament_add_gtest(test_truncate_path_action test_truncate_path_action.cpp)
+target_link_libraries(test_truncate_path_action nav2_truncate_path_action_bt_node)
+ament_target_dependencies(test_truncate_path_action ${dependencies})

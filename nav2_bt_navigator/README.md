@@ -69,7 +69,6 @@ returns FAILURE, all nodes are halted and this node returns FAILURE.
 
 * GoalUpdater: A custom control node, which updates the goal pose. It subscribes to a topic in which it can receive an updated goal pose to use instead of the one commanded in action. It is useful for dynamic object following tasks.
 
-* TruncatePath: A custom control node, which modifies a path making it shorter. It removes parts of the path closer than a distance to the goal pose. The resulting last pose of the path orientates the robot to the original goal pose.
 
 #### Condition Nodes
 * GoalReached: Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, which in that case the `ComputePathToPose` action node will not get ticked.
@@ -85,6 +84,9 @@ The graphical version of this Behavior Tree:
 <br/>
 
 The navigate with replanning BT first ticks the `RateController` node which specifies how frequently the `GoalReached` and `ComputePathToPose` should be invoked. Then the `GoalReached` nodes check the distance to the goal to determine if the `ComputePathToPose` should be ticked or not. The `ComputePathToPose` gets the incoming goal pose from the blackboard, computes the path and puts the result back on the blackboard, where `FollowPath` picks it up. Each time a new path is computed, the blackboard gets updated and then `FollowPath` picks up the new goal to compute a control effort for. `controller_id` will specify the type of control effort you'd like to compute such as `FollowPath` `FollowPathSlow` `FollowPathExactly`, etc.
+
+
+* TruncatePath: A custom control node, which modifies a path making it shorter. It removes parts of the path closer than a distance to the goal pose. The resulting last pose of the path orientates the robot to the original goal pose.
 
 ### Navigate with replanning and simple recovery actions
 

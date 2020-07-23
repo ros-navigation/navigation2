@@ -51,7 +51,7 @@ BtNavigator::BtNavigator()
     "nav2_rate_controller_bt_node",
     "nav2_distance_controller_bt_node",
     "nav2_speed_controller_bt_node",
-    "nav2_truncate_path_node_bt_node",
+    "nav2_truncate_path_action_bt_node",
     "nav2_change_goal_node_bt_node",
     "nav2_recovery_node_bt_node",
     "nav2_pipeline_sequence_bt_node",
