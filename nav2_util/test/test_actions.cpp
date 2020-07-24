@@ -135,15 +135,17 @@ class RclCppFixture
 public:
   RclCppFixture()
   {
-    rclcpp::init(0, nullptr);
-    server_thread_ =
-      std::make_shared<std::thread>(std::bind(&RclCppFixture::server_thread_func, this));
   }
 
   ~RclCppFixture()
   {
-    rclcpp::shutdown();
     server_thread_->join();
+  }
+
+  void setup()
+  {
+    server_thread_ =
+      std::make_shared<std::thread>(std::bind(&RclCppFixture::server_thread_func, this));
   }
 
   void server_thread_func()
@@ -420,6 +422,7 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
   auto goal_handle = future_goal_handle.get();
 
   // Wait for the result of initial goal
+  std::cout << "async_get_result" << std::endl;
   auto future_result = node_->action_client_->async_get_result(goal_handle);
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
     rclcpp::executor::FutureReturnCode::SUCCESS);
@@ -434,21 +437,27 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
     sum += number;
   }
 
+  std::cout << "Check the sum" << std::endl;
   EXPECT_EQ(sum, 17710);
 
   // Now get the preemption result
+  std::cout << "Get preemption result" << std::endl;
   goal_handle = future_preempt_handle.get();
 
   // Wait for the result of initial goal
+  std::cout << "Wait for result" << std::endl;
   future_result = node_->action_client_->async_get_result(goal_handle);
+  std::cout << "Spin until complete" << std::endl;
   EXPECT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
     rclcpp::executor::FutureReturnCode::SUCCESS);
 
   // The final result
+  std::cout << "Get the final result" << std::endl;
   result = future_result.get();
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
 
   // Sum all of the values in the requested fibonacci series
+  std::cout << "Check the sum #2" << std::endl;
   sum = 0;
   for (auto number : result.result->sequence) {
     sum += number;
@@ -456,4 +465,15 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
 
   EXPECT_EQ(sum, 1);
   SUCCEED();
+}
+
+int main(int argc, char ** argv)
+{
+  rclcpp::init(argc, argv);
+  g_rclcppfixture.setup();
+  ::testing::InitGoogleTest(&argc, argv);
+  auto result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  rclcpp::Rate(1).sleep();
+  return result;
 }
