@@ -409,7 +409,7 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
 
   // Send the goal
   auto future_goal_handle = node_->action_client_->async_send_goal(goal);
-  EXPECT_EQ(rclcpp::spin_until_future_complete(node_,
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node_,
     future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
 
   node_->omit_server_preemptions();
@@ -445,15 +445,17 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
   goal_handle = future_preempt_handle.get();
 
   // Wait for the result of initial goal
-  std::cout << "Wait for result" << std::endl;
+  std::cout << "Wait for result" << goal_handle << std::endl;
   future_result = node_->action_client_->async_get_result(goal_handle);
   std::cout << "Spin until complete" << std::endl;
-  EXPECT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node_, future_result),
     rclcpp::executor::FutureReturnCode::SUCCESS);
 
   // The final result
   std::cout << "Get the final result" << std::endl;
   result = future_result.get();
+  std::cout << "Got the final result" << std::endl;
+
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
 
   // Sum all of the values in the requested fibonacci series
@@ -464,7 +466,6 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
   }
 
   EXPECT_EQ(sum, 1);
-  SUCCEED();
 }
 
 int main(int argc, char ** argv)

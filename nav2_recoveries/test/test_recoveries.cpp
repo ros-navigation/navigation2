@@ -144,7 +144,7 @@ protected:
 
   bool sendCommand(const std::string & command)
   {
-    std::cout << "sendCommand..." << std::endl;
+    std::cout << "sendCommand... " << command << std::endl;
     if (!client_->wait_for_action_server(4s)) {
       std::cout << "Server not up" << std::endl;
       return false;
