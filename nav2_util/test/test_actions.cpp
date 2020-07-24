@@ -455,4 +455,5 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
   }
 
   EXPECT_EQ(sum, 1);
+  SUCCEED();
 }
