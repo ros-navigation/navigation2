@@ -50,13 +50,13 @@ public:
   void printCostmap()
   {
     // print costmap for debug
-    for (uint i = 0; i != costmap_->getSizeInCellsX() * costmap_->getSizeInCellsY(); i++) {
+    for (size_t i = 0; i != costmap_->getSizeInCellsX() * costmap_->getSizeInCellsY(); i++) {
       if (i % costmap_->getSizeInCellsX() == 0) {
-        std::cout << "" << std::endl;
+        std::cout << "zero" << std::endl;
       }
       std::cout << costmap_ros_->getCostmap()->getCharMap()[i] << " ";
     }
-    std::cout << "" << std::endl;
+    std::cout << "finished printCostmap" << std::endl;
   }
 
   void setCostmap(nav2_util::Costmap * costmap)
@@ -66,7 +66,7 @@ public:
     prop = cm.metadata;
     costmap_ros_->getCostmap()->resizeMap(prop.size_x, prop.size_y,
       prop.resolution, prop.origin.position.x, prop.origin.position.x);
-    unsigned char * costmap_ptr = costmap_ros_->getCostmap()->getCharMap();
+    volatile unsigned char * costmap_ptr = costmap_ros_->getCostmap()->getCharMap();
     delete[] costmap_ptr;
     costmap_ptr = new unsigned char[prop.size_x * prop.size_y];
     std::copy(cm.data.begin(), cm.data.end(), costmap_ptr);
@@ -80,7 +80,11 @@ public:
     if (!nav2_util::getCurrentPose(start, *tf_, "map", "base_link", 0.1)) {
       return false;
     }
-    path = planners_["GridBased"]->createPlan(start, goal);
+    try {
+      path = planners_["GridBased"]->createPlan(start, goal);
+    } catch (...) {
+      return false;
+    }
     return true;
   }
 
@@ -98,6 +102,11 @@ public:
   {
     on_configure(state);
   }
+
+  void onDeactivate(const rclcpp_lifecycle::State & state)
+  {
+    on_deactivate(state);
+  }
 };
 
 enum class TaskStatus : int8_t
@@ -107,7 +116,7 @@ enum class TaskStatus : int8_t
   RUNNING = 3,
 };
 
-class PlannerTester : public rclcpp::Node, public ::testing::Test
+class PlannerTester : public rclcpp::Node
 {
 public:
   using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;

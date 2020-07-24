@@ -29,17 +29,11 @@ using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;
 using ComputePathToPoseResult = nav_msgs::msg::Path;
 
 // rclcpp::init can only be called once per process, so this needs to be a global variable
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
 
-RclCppFixture g_rclcppfixture;
-
-TEST_F(PlannerTester, testSimpleCostmaps)
+TEST(testSimpleCostmaps, testSimpleCostmaps)
 {
+  auto obj = std::make_shared<PlannerTester>();
+
   std::vector<TestCostmap> costmaps = {
     TestCostmap::open_space,
     TestCostmap::bounded,
@@ -51,10 +45,25 @@ TEST_F(PlannerTester, testSimpleCostmaps)
 
   ComputePathToPoseResult result;
 
-  activate();
+  obj->activate();
 
   for (auto costmap : costmaps) {
-    loadSimpleCostmap(costmap);
-    EXPECT_EQ(true, defaultPlannerTest(result));
+    obj->loadSimpleCostmap(costmap);
+    EXPECT_EQ(true, obj->defaultPlannerTest(result));
   }
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  // initialize ROS
+  rclcpp::init(argc, argv);
+
+  bool all_successful = RUN_ALL_TESTS();
+
+  // shutdown ROS
+  rclcpp::shutdown();
+
+  return all_successful;
 }
