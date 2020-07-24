@@ -35,7 +35,7 @@ TEST(testWithHundredRandomEndPoints, testWithHundredRandomEndPoints)
   obj->loadDefaultMap();
 
   bool success = false;
-  int num_tries = 5;
+  int num_tries = 5; // Check to see how often it fails.
   for (int i = 0; i != num_tries; i++) {
     success = success || obj->defaultPlannerRandomTests(100, 0.1);
     if (success) {
