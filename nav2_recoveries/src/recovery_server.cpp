@@ -91,9 +91,6 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   recovery_types_.resize(recovery_ids_.size());
   loadRecoveryPlugins();
 
-  // create bond connection
-  createBond();
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -129,6 +126,9 @@ RecoveryServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
     (*iter)->activate();
   }
+
+  // create bond connection
+  createBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

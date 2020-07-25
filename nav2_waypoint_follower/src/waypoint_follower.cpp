@@ -61,9 +61,6 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_waitables_interface(),
     "FollowWaypoints", std::bind(&WaypointFollower::followWaypoints, this), false);
 
-  // create bond connection
-  createBond();
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -73,6 +70,9 @@ WaypointFollower::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
 
   action_server_->activate();
+
+  // create bond connection
+  createBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

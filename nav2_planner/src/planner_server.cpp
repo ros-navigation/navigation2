@@ -135,9 +135,6 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     "compute_path_to_pose",
     std::bind(&PlannerServer::computePlan, this));
 
-  // create bond connection
-  createBond();
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -154,6 +151,9 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->activate();
   }
+
+  // create bond connection
+  createBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

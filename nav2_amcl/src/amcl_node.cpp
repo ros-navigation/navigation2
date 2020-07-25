@@ -234,9 +234,6 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   initParticleFilter();
   initLaserScan();
 
-  // create bond connection
-  createBond();
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -298,6 +295,9 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   } else if (init_pose_received_on_inactive) {
     handleInitialPose(last_published_pose_);
   }
+
+  // create bond connection
+  createBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

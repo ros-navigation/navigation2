@@ -335,7 +335,7 @@ LifecycleManager::checkBondConnections()
         std::string(
           "Have not received a heartbeat from " + node_name + "."));
 
-      // if down, destroy
+      // if one is down, bring them all down
       RCLCPP_ERROR(
         get_logger(),
         "CRITICAL FAILURE: SERVER %s IS DOWN after not receiving a heartbeat for %i ms."

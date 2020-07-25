@@ -116,9 +116,6 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     service_prefix + std::string(load_map_service_name_),
     std::bind(&MapServer::loadMapCallback, this, _1, _2, _3));
 
-  // create bond connection
-  createBond();
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -131,6 +128,9 @@ MapServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   occ_pub_->on_activate();
   auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
   occ_pub_->publish(std::move(occ_grid));
+
+  // create bond connection
+  createBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

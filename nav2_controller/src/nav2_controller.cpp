@@ -114,9 +114,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     rclcpp_node_, "follow_path",
     std::bind(&ControllerServer::computeControl, this));
 
-  // create bond connection
-  createBond();
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -132,6 +129,9 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & state)
   }
   vel_publisher_->on_activate();
   action_server_->activate();
+
+  // create bond connection
+  createBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
