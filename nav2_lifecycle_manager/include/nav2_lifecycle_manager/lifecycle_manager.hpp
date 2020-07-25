@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "nav2_util/lifecycle_service_client.hpp"
+#include "nav2_util/node_thread.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
@@ -53,6 +54,8 @@ public:
 protected:
   // The ROS node to use when calling lifecycle services
   rclcpp::Node::SharedPtr service_client_node_;
+  rclcpp::Node::SharedPtr bond_client_node_;
+  std::unique_ptr<nav2_util::NodeThread> bond_node_thread_;
 
   // The services provided by this node
   rclcpp::Service<ManageLifecycleNodes>::SharedPtr manager_srv_;

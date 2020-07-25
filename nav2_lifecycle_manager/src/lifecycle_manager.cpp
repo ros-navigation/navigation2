@@ -56,9 +56,13 @@ LifecycleManager::LifecycleManager()
     get_name() + std::string("/is_active"),
     std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3));
 
-  auto options = rclcpp::NodeOptions().arguments(
+  auto service_options = rclcpp::NodeOptions().arguments(
     {"--ros-args", "-r", std::string("__node:=") + get_name() + "_service_client", "--"});
-  service_client_node_ = std::make_shared<rclcpp::Node>("_", options);
+  auto bond_options = rclcpp::NodeOptions().arguments(
+    {"--ros-args", "-r", std::string("__node:=") + get_name() + "_bond_client", "--"});
+  service_client_node_ = std::make_shared<rclcpp::Node>("_", service_options);
+  bond_client_node_ = std::make_shared<rclcpp::Node>("_", bond_options);
+  bond_node_thread_ = std::make_unique<nav2_util::NodeThread>(bond_client_node_);
 
   transition_state_map_[Transition::TRANSITION_CONFIGURE] = State::PRIMARY_STATE_INACTIVE;
   transition_state_map_[Transition::TRANSITION_CLEANUP] = State::PRIMARY_STATE_UNCONFIGURED;
@@ -292,21 +296,22 @@ LifecycleManager::createBondConnections()
 
   for (auto & node_name : node_names_) {
     bond_map_[node_name] =
-      std::make_shared<bond::Bond>("bond", node_name, service_client_node_);
+      std::make_shared<bond::Bond>("bond", node_name, bond_client_node_);
     bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
-    bond_map_[node_name]->setHeartbeatPeriod(1.0);
+    bond_map_[node_name]->setHeartbeatPeriod(0.10);
     bond_map_[node_name]->start();
 
     RCLCPP_INFO(get_logger(), "Server %s trying to connect to bond....", node_name.c_str());
-    if (!bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout_ns))) {
-      RCLCPP_ERROR(
-        get_logger(),
-        "Server %s was unable to be reached after %0.2fs by bond. "
-        "This server may be misconfigured.",
-        node_name.c_str(), timeout_s);
-    } else {
-      RCLCPP_INFO(get_logger(), "Server %s connected to bond!", node_name.c_str());
-    }
+    // TODO commented out while doing the 2nd node w/ thread spinning. Wait calls spin crash
+    // if (!bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout_ns))) {
+    //   RCLCPP_ERROR(
+    //     get_logger(),
+    //     "Server %s was unable to be reached after %0.2fs by bond. "
+    //     "This server may be misconfigured.",
+    //     node_name.c_str(), timeout_s);
+    // } else {
+    //   RCLCPP_INFO(get_logger(), "Server %s connected to bond!", node_name.c_str());
+    // }
   }
 }
 
@@ -321,8 +326,6 @@ LifecycleManager::checkBondConnections()
   if (bond_map_.empty()) {
     createBondConnections();
   }
-
-  rclcpp::spin_some(service_client_node_);
 
   for (auto & node_name : node_names_) {
 
