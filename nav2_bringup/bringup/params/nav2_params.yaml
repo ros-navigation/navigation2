@@ -37,6 +37,7 @@ amcl:
     z_max: 0.05
     z_rand: 0.5
     z_short: 0.05
+    scan_topic: scan
 
 amcl_map_client:
   ros__parameters:
@@ -68,6 +69,8 @@ bt_navigator:
     - nav2_rate_controller_bt_node
     - nav2_distance_controller_bt_node
     - nav2_speed_controller_bt_node
+    - nav2_truncate_path_action_bt_node
+    - nav2_goal_updater_node_bt_node
     - nav2_recovery_node_bt_node
     - nav2_pipeline_sequence_bt_node
     - nav2_round_robin_node_bt_node
@@ -86,8 +89,21 @@ controller_server:
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugin: "goal_checker"
     controller_plugins: ["FollowPath"]
 
+    # Progress checker parameters
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.5
+      movement_time_allowance: 10.0
+    # Goal checker parameters
+    goal_checker:
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.25
+      yaw_goal_tolerance: 0.25
+      stateful: True
     # DWB parameters
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
@@ -249,6 +265,7 @@ map_saver:
     save_map_timeout: 5000
     free_thresh_default: 0.25
     occupied_thresh_default: 0.65
+    map_subscribe_transient_local: True
 
 planner_server:
   ros__parameters:
