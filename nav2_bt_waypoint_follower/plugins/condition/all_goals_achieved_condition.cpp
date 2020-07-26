@@ -1,45 +1,34 @@
 #include <string>
 
-#include "behaviortree_cpp_v3/condition_node.h"
+#include "nav2_bt_waypoint_follower/plugins/condition/all_goals_achieved_condition.hpp"
 
 namespace nav2_bt_waypoint_follower
 {
 
-class AllGoalsAchievedCondition : public BT::ConditionNode
+AllGoalsAchievedCondition::AllGoalsAchievedCondition(
+  const std::string & condition_name,
+  const BT::NodeConfiguration & conf)
+: BT::ConditionNode(condition_name, conf)
 {
-public:
-  AllGoalsAchievedCondition(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf)
-  : BT::ConditionNode(condition_name, conf)
-  {
-  }
+}
 
-  AllGoalsAchievedCondition() = delete;
+BT::NodeStatus AllGoalsAchievedCondition::tick()
+{
+  int64_t current_waypoint_idx = config().blackboard->get<int64_t>("current_waypoint_idx");
+  int64_t num_waypoints = config().blackboard->get<int64_t>("num_waypoints");
 
-  BT::NodeStatus tick() override
-  {
-    int64_t current_waypoint_idx = config().blackboard->get<int64_t>("current_waypoint_idx");
-    int64_t num_waypoints = config().blackboard->get<int64_t>("num_waypoints");
-
-    if (current_waypoint_idx >= num_waypoints - 1) {
-      bool goal_achieved;
-      if (!getInput("goal_achieved", goal_achieved)) {
-        goal_achieved = false;
-      }
-      if (goal_achieved) {
-        return BT::NodeStatus::SUCCESS;
-      }
+  if (current_waypoint_idx >= num_waypoints - 1) {
+    bool goal_achieved;
+    if (!getInput("goal_achieved", goal_achieved)) {
+      goal_achieved = false;
     }
-
-    return BT::NodeStatus::FAILURE;
+    if (goal_achieved) {
+      return BT::NodeStatus::SUCCESS;
+    }
   }
 
-  static BT::PortsList providedPorts()
-  {
-    return {BT::InputPort<bool>("goal_achieved", "Has the goal been achieved?"),};
-  }
-};
+  return BT::NodeStatus::FAILURE;
+}
 
 }  // namespace nav2_bt_waypoint_follower
 
