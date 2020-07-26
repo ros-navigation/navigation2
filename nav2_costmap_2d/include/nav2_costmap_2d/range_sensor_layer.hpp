@@ -95,6 +95,6 @@ private:
   {
     return (Bx - Ax) * (Cy - Ay) - (By - Ay) * (Cx - Ax);
   }
-}
+};
 }  // namespace nav2_costmap_2d
 #endif  // NAV2_COSTMAP_2D__RANGE_SENSOR_LAYER_HPP_
