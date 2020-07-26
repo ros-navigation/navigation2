@@ -1,6 +1,7 @@
 // Copyright 2018 David V. Lu!!
-#ifndef RANGE_SENSOR_LAYER_RANGE_SENSOR_LAYER_H_
-#define RANGE_SENSOR_LAYER_RANGE_SENSOR_LAYER_H_
+// Ported to ROS2 by Michael Equi
+#ifndef NAV2_COSTMAP_2D__RANGE_SENSOR_LAYER_HPP_
+#define NAV2_COSTMAP_2D__RANGE_SENSOR_LAYER_HPP_
 
 #include <list>
 #include <string>
@@ -32,29 +33,31 @@ public:
   RangeSensorLayer();
 
   virtual void onInitialize();
-  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw,
-                            double* min_x, double* min_y, double* max_x, double* max_y);
-  virtual void updateCosts(nav2_costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j);
+  virtual void updateBounds(
+    double robot_x, double robot_y, double robot_yaw,
+    double * min_x, double * min_y, double * max_x, double * max_y);
+  virtual void updateCosts( \
+    nav2_costmap_2d::Costmap2D & master_grid, int min_i,
+    int min_j, int max_i, int max_j);
   virtual void reset();
   virtual void deactivate();
   virtual void activate();
 
 private:
-
   void bufferIncomingRangeMsg(const sensor_msgs::msg::Range::SharedPtr range_message);
-  void processRangeMsg(sensor_msgs::msg::Range&  range_message);
-  void processFixedRangeMsg(sensor_msgs::msg::Range&  range_message);
-  void processVariableRangeMsg(sensor_msgs::msg::Range&  range_message);
+  void processRangeMsg(sensor_msgs::msg::Range & range_message);
+  void processFixedRangeMsg(sensor_msgs::msg::Range & range_message);
+  void processVariableRangeMsg(sensor_msgs::msg::Range & range_message);
 
   void resetRange();
   void updateCostmap();
-  void updateCostmap(sensor_msgs::msg::Range&  range_message, bool clear_sensor_cone);
+  void updateCostmap(sensor_msgs::msg::Range & range_message, bool clear_sensor_cone);
 
   double gamma(double theta);
   double delta(double phi);
   double sensor_model(double r, double phi, double theta);
 
-  void get_deltas(double angle, double *dx, double *dy);
+  void get_deltas(double angle, double * dx, double * dy);
   void update_cell(double ox, double oy, double ot, double r, double nx, double ny, bool clear);
 
   double to_prob(unsigned char c)
@@ -66,7 +69,7 @@ private:
     return static_cast<unsigned char>(p * nav2_costmap_2d::LETHAL_OBSTACLE);
   }
 
-  std::function<void(sensor_msgs::msg::Range& range_message)> processRangeMessageFunc_;
+  std::function<void(sensor_msgs::msg::Range & range_message)> processRangeMessageFunc_;
   std::mutex range_message_mutex_;
   std::list<sensor_msgs::msg::Range> range_msgs_buffer_;
 
@@ -86,12 +89,12 @@ private:
   float area(int x1, int y1, int x2, int y2, int x3, int y3)
   {
     return fabs((x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2.0);
-  };
+  }
 
   int orient2d(int Ax, int Ay, int Bx, int By, int Cx, int Cy)
   {
     return (Bx - Ax) * (Cy - Ay) - (By - Ay) * (Cx - Ax);
-  };
-};
-}  // namespace range_sensor_layer
-#endif  // RANGE_SENSOR_LAYER_RANGE_SENSOR_LAYER_H
+  }
+}
+}  // namespace nav2_costmap_2d
+#endif  // NAV2_COSTMAP_2D__RANGE_SENSOR_LAYER_HPP_
