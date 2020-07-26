@@ -51,11 +51,13 @@ For example:
 ```yaml
 local_costmap:
   ros__parameters:
-    plugins: ["obstacle_layer", "voxel_layer", "inflation_layer"]
+    plugins: ["obstacle_layer", "voxel_layer", "sonar_layer", "inflation_layer"]
     obstacle_layer:
       plugin: "nav2_costmap_2d::ObstacleLayer"
     voxel_layer:
       plugin: "nav2_costmap_2d::VoxelLayer"
+    sonar_layer:
+      plugin: "nav2_costmap_2d::RangeSensorLayer"
     inflation_layer:
       plugin: "nav2_costmap_2d::InflationLayer"
 ```
@@ -114,7 +116,22 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | `<data source>`.marking | true | Whether source should mark in costmap |
 | `<data source>`.clearing | false | Whether source should raytrace clear in costmap |
 | `<data source>`.obstacle_range | 2.5 | Maximum range to mark obstacles in costmap |
-| `<data source>`.raytrace_range | 3.0 | Maximum range to raytrace clear obstacles from costmap | 
+| `<data source>`.raytrace_range | 3.0 | Maximum range to raytrace clear obstacles from costmap |
+
+## range_sensor_layer plugin
+
+* `<range layer>`: Name corresponding to the `nav2_costmap_2d::RangeSensorLayer` plugin. This name gets defined in `plugin_names`.
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<range layer>`.enabled | true | Whether it is enabled |
+| `<range layer>`.topics | [""] | Range topics to subscribe to |
+| `<range layer>`.phi | 1.2 | Phi value |
+| `<range layer>`.inflate_cone | 1.0 | Inflate the triangular area covered by the sensor (percentage) |
+| `<range layer>`.no_readings_timeout | 0.0 | No Readings Timeout |
+| `<range layer>`.clear_threshold | 0.2 | Probability below which cells are marked as free |
+| `<range layer>`.mark_threshold | 0.8 | Probability above which cells are marked as occupied |
+| `<range layer>`.clear_on_max_reading | false | Clear on max reading |
 
 ## voxel_layer plugin
 
