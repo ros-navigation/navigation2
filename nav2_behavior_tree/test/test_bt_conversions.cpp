@@ -168,7 +168,7 @@ TEST(PoseStampedPortTest, test_wrong_syntax)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <PoseStampedPort test="1.0;2.0;3.0;4.0;5.0;6.0;7.0;8.0" />
+            <PoseStampedPort test="0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;8.0" />
         </BehaviorTree>
       </root>)";
 
@@ -178,6 +178,8 @@ TEST(PoseStampedPortTest, test_wrong_syntax)
 
   geometry_msgs::msg::PoseStamped value;
   tree.rootNode()->getInput("test", value);
+  EXPECT_EQ(rclcpp::Time(value.header.stamp).nanoseconds(), 0);
+  EXPECT_EQ(value.header.frame_id, "");
   EXPECT_EQ(value.pose.position.x, 0.0);
   EXPECT_EQ(value.pose.position.y, 0.0);
   EXPECT_EQ(value.pose.position.z, 0.0);
@@ -190,12 +192,14 @@ TEST(PoseStampedPortTest, test_wrong_syntax)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <PoseStampedPort test="1.0;2.0;3.0;4.0;5.0;6.0" />
+            <PoseStampedPort test="0;map;1.0;2.0;3.0;4.0;5.0;6.0" />
         </BehaviorTree>
       </root>)";
 
   tree = factory.createTreeFromText(xml_txt);
   tree.rootNode()->getInput("test", value);
+  EXPECT_EQ(rclcpp::Time(value.header.stamp).nanoseconds(), 0);
+  EXPECT_EQ(value.header.frame_id, "");
   EXPECT_EQ(value.pose.position.x, 0.0);
   EXPECT_EQ(value.pose.position.y, 0.0);
   EXPECT_EQ(value.pose.position.z, 0.0);
@@ -211,7 +215,7 @@ TEST(PoseStampedPortTest, test_correct_syntax)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <PoseStampedPort test="1.0;2.0;3.0;4.0;5.0;6.0;7.0" />
+            <PoseStampedPort test="0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0" />
         </BehaviorTree>
       </root>)";
 
@@ -222,6 +226,8 @@ TEST(PoseStampedPortTest, test_correct_syntax)
   tree = factory.createTreeFromText(xml_txt);
   geometry_msgs::msg::PoseStamped value;
   tree.rootNode()->getInput("test", value);
+  EXPECT_EQ(rclcpp::Time(value.header.stamp).nanoseconds(), 0);
+  EXPECT_EQ(value.header.frame_id, "map");
   EXPECT_EQ(value.pose.position.x, 1.0);
   EXPECT_EQ(value.pose.position.y, 2.0);
   EXPECT_EQ(value.pose.position.z, 3.0);
