@@ -84,6 +84,7 @@ add_library(layers SHARED
   plugins/obstacle_layer.cpp
   src/observation_buffer.cpp
   plugins/voxel_layer.cpp
+  plugins/range_sensor_layer.cpp
 )
 ament_target_dependencies(layers
   ${dependencies}
