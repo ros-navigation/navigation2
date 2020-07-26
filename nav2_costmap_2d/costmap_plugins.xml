@@ -12,7 +12,7 @@
     <class type="nav2_costmap_2d::VoxelLayer"     base_class_type="nav2_costmap_2d::Layer">
       <description>Similar to obstacle costmap, but uses 3D voxel grid to store data.</description>
     </class>
-    <class type="range_sensor_layer::RangeSensorLayer" base_class_type="costmap_2d::Layer">
+    <class type="nav2_costmap_2d::RangeSensorLayer" base_class_type="nav2_costmap_2d::Layer">
       <description>A range-sensor (sonar, IR) based obstacle layer for costmap_2d</description>
     </class>
   </library>

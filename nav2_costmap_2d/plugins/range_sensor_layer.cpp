@@ -4,7 +4,6 @@
 #include <list>
 #include <limits>
 #include <string>
-#include<sstream>
 #include<iostream>
 
 #include "pluginlib/class_list_macros.hpp"
@@ -33,9 +32,24 @@ void RangeSensorLayer::onInitialize()
   matchSize();
   resetRange();
 
-  std::string topic_names_str;
-  declareParameter("topics", rclcpp::ParameterValue(""));
-  node_->get_parameter(name_ + "." + "topics", topic_names_str);
+  declareParameter("enabled", rclcpp::ParameterValue(true));
+  node_->get_parameter(name_ + "." + "enabled", enabled_);
+  declareParameter("phi", rclcpp::ParameterValue(1.2));
+  node_->get_parameter(name_ + "." + "phi", phi_v_);
+  declareParameter("inflate_cone", rclcpp::ParameterValue(1.0));
+  node_->get_parameter(name_ + "." + "phi", phi_v_);
+  declareParameter("no_readings_timeout", rclcpp::ParameterValue(0.0));
+  node_->get_parameter(name_ + "." + "no_readings_timeout", no_readings_timeout_);
+  declareParameter("clear_threshold", rclcpp::ParameterValue(0.2));
+  node_->get_parameter(name_ + "." + "clear_threshold", clear_threshold_);
+  declareParameter("mark_threshold", rclcpp::ParameterValue(0.8));
+  node_->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
+  declareParameter("clear_on_max_reading", rclcpp::ParameterValue(false));
+  node_->get_parameter(name_ + "." + "clear_on_max_reading", clear_on_max_reading_);
+
+  std::vector<std::string> topic_names{""};
+  declareParameter("topics", rclcpp::ParameterValue(topic_names));
+  node_->get_parameter(name_ + "." + "topics", topic_names);
 
   InputSensorType input_sensor_type = ALL;
   std::string sensor_type_name;
@@ -57,15 +71,7 @@ void RangeSensorLayer::onInitialize()
   }
 
   // Validate topic names list: it must be a (normally non-empty) list of strings
-  std::vector<std::string> topic_names;
-  std::stringstream ss(topic_names_str);
-  while (ss.good()) {
-    std::string substr;
-    getline(ss, substr, ',');
-    topic_names.push_back(substr);
-  }
-
-    if (topic_names.empty())
+  if (topic_names.empty())
   {
     RCLCPP_ERROR(node_->get_logger(), "Invalid topic names list: it must be a non-empty list of strings");
     return;
@@ -174,10 +180,6 @@ void RangeSensorLayer::processFixedRangeMsg(sensor_msgs::msg::Range& range_messa
 {
   if (!std::isinf(range_message.range))
   {
-//    RCLCPP_ERROR_THROTTLE(node_->get_logger(), node_->get_clock(), rclcpp::Duration(1.0),
-//                       "Fixed distance ranger (min_range == max_range) in frame %s sent invalid value. "
-//                       "Only -Inf (== object detected) and Inf (== no object detected) are valid.",
-//                       range_message.header.frame_id.c_str());
     RCLCPP_ERROR(node_->get_logger(),
                 "Fixed distance ranger (min_range == max_range) in frame %s sent invalid value. "
                 "Only -Inf (== object detected) and Inf (== no object detected) are valid.",
@@ -223,9 +225,6 @@ void RangeSensorLayer::updateCostmap(sensor_msgs::msg::Range& range_message, boo
 
   if (!tf_->canTransform(global_frame_, in.header.frame_id, in.header.stamp, rclcpp::Duration(1e8)))
   {
-//    ROS_ERROR_THROTTLE(1.0, "Range sensor layer can't transform from %s to %s at %f",
-//                       global_frame_.c_str(), in.header.frame_id.c_str(),
-//                       in.header.stamp.toSec());
       RCLCPP_ERROR(node_->get_logger(), "Range sensor layer can't transform from %s to %s at %f",
                    global_frame_.c_str(), in.header.frame_id.c_str(),
                    in.header.stamp.sec);
@@ -313,7 +312,7 @@ void RangeSensorLayer::updateCostmap(sensor_msgs::msg::Range& range_message, boo
         int w2 = orient2d(Ox, Oy, Ax, Ay, x, y);
 
         // Barycentric coordinates inside area threshold; this is not mathematically sound at all, but it works!
-        float bcciath = -inflate_cone_ * area(Ax, Ay, Bx, By, Ox, Oy);
+        float bcciath = -static_cast<float>(inflate_cone_) * area(Ax, Ay, Bx, By, Ox, Oy);
         update_xy_cell = w0 >= bcciath && w1 >= bcciath && w2 >= bcciath;
       }
 
@@ -363,7 +362,7 @@ void RangeSensorLayer::resetRange()
 void RangeSensorLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
                                     double* min_x, double* min_y, double* max_x, double* max_y)
 {
-    std::cout << robot_yaw << std::endl;
+  robot_yaw = 0 + robot_yaw; // Avoid error if variable not in use
   if (layered_costmap_->isRolling())
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
 
