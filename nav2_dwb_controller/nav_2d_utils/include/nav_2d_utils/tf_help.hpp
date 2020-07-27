@@ -45,41 +45,41 @@
 
 namespace nav_2d_utils
 {
-  /**
-   * @brief Transform a PoseStamped from one frame to another while catching exceptions
-   *
-   * Also returns immediately if the frames are equal.
-   * @param tf Smart pointer to TFListener
-   * @param frame Frame to transform the pose into
-   * @param in_pose Pose to transform
-   * @param out_pose Place to store the resulting transformed pose
-   * @return True if successful transform
-   */
-  bool transformPose(
-    const std::shared_ptr<tf2_ros::Buffer> tf,
-    const std::string frame,
-    const geometry_msgs::msg::PoseStamped & in_pose,
-    geometry_msgs::msg::PoseStamped & out_pose,
-    rclcpp::Duration & transform_tolerance
-  );
+/**
+ * @brief Transform a PoseStamped from one frame to another while catching exceptions
+ *
+ * Also returns immediately if the frames are equal.
+ * @param tf Smart pointer to TFListener
+ * @param frame Frame to transform the pose into
+ * @param in_pose Pose to transform
+ * @param out_pose Place to store the resulting transformed pose
+ * @return True if successful transform
+ */
+bool transformPose(
+  const std::shared_ptr<tf2_ros::Buffer> tf,
+  const std::string frame,
+  const geometry_msgs::msg::PoseStamped & in_pose,
+  geometry_msgs::msg::PoseStamped & out_pose,
+  rclcpp::Duration & transform_tolerance
+);
 
-  /**
-   * @brief Transform a Pose2DStamped from one frame to another while catching exceptions
-   *
-   * Also returns immediately if the frames are equal.
-   * @param tf Smart pointer to TFListener
-   * @param frame Frame to transform the pose into
-   * @param in_pose Pose to transform
-   * @param out_pose Place to store the resulting transformed pose
-   * @return True if successful transform
-   */
-  bool transformPose(
-    const std::shared_ptr<tf2_ros::Buffer> tf,
-    const std::string frame,
-    const nav_2d_msgs::msg::Pose2DStamped & in_pose,
-    nav_2d_msgs::msg::Pose2DStamped & out_pose,
-    rclcpp::Duration & transform_tolerance
-  );
+/**
+ * @brief Transform a Pose2DStamped from one frame to another while catching exceptions
+ *
+ * Also returns immediately if the frames are equal.
+ * @param tf Smart pointer to TFListener
+ * @param frame Frame to transform the pose into
+ * @param in_pose Pose to transform
+ * @param out_pose Place to store the resulting transformed pose
+ * @return True if successful transform
+ */
+bool transformPose(
+  const std::shared_ptr<tf2_ros::Buffer> tf,
+  const std::string frame,
+  const nav_2d_msgs::msg::Pose2DStamped & in_pose,
+  nav_2d_msgs::msg::Pose2DStamped & out_pose,
+  rclcpp::Duration & transform_tolerance
+);
 
 }  // namespace nav_2d_utils
 
