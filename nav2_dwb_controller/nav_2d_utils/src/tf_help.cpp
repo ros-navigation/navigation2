@@ -63,8 +63,7 @@ bool transformPose(
     );
     if (
       (rclcpp::Time(in_pose.header.stamp) - rclcpp::Time(transform.header.stamp)) >
-      transform_tolerance
-    )
+      transform_tolerance)
     {
       RCLCPP_ERROR(
         rclcpp::get_logger("tf_help"),
