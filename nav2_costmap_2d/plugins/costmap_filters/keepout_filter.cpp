@@ -31,39 +31,51 @@
  *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Author: Alexey Merzlyakov
  *********************************************************************/
 
 #include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
-
-#include "nav2_map_server/map_mode.hpp"
 
 namespace nav2_costmap_2d
 {
 
 KeepoutFilter::KeepoutFilter()
-: semantic_info_sub_(nullptr), map_filter_sub_(nullptr), map_filter_(nullptr)
+: costmap_filter_info_sub_(nullptr), map_filter_sub_(nullptr), map_filter_(nullptr)
 {
 }
 
-void KeepoutFilter::loadFilter(
-  const std::string semantic_info_topic)
+void KeepoutFilter::initializeFilter(
+  const std::string costmap_filter_info_topic)
 {
-  // Setting new semantic info for costmap filter subscriber
-  semantic_info_sub_ = node_->create_subscription<nav2_msgs::msg::CostmapFilterSemanticInfo>(
-    semantic_info_topic, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&KeepoutFilter::semanticInfoCallback, this, std::placeholders::_1));
+  // Setting new costmap filter info subscriber
+  RCLCPP_INFO(
+    node_->get_logger(),
+    "Setting a subscriber to %s costmap filter info",
+    costmap_filter_info_topic.c_str());
+  costmap_filter_info_sub_ = node_->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
+    costmap_filter_info_topic, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+    std::bind(&KeepoutFilter::costmapFilterInfoCallback, this, std::placeholders::_1));
+
+  curr_time_ = node_->now();
+  prev_time_ = curr_time_;
 }
 
-void KeepoutFilter::semanticInfoCallback(
-  const nav2_msgs::msg::CostmapFilterSemanticInfo::SharedPtr msg)
+void KeepoutFilter::costmapFilterInfoCallback(
+  const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
 {
-  // Resetting previous subscriber each time when new semantic information arrives
+  // Resetting previous subscriber each time when new costmap filter information arrives
   if (map_filter_sub_) {
+    RCLCPP_WARN(node_->get_logger(), "New map filter info arrived. Replacing old one.");
     map_filter_sub_.reset();
   }
-  map_filter_ = nullptr;
+  map_filter_.reset();
 
   // Setting new map filter subscriber
+  RCLCPP_INFO(
+    node_->get_logger(),
+    "Setting a subscriber to %s map filter",
+    msg->map_filter_topic.c_str());
   map_filter_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
     msg->map_filter_topic, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&KeepoutFilter::mapFilterCallback, this, std::placeholders::_1));
@@ -72,40 +84,11 @@ void KeepoutFilter::semanticInfoCallback(
 void KeepoutFilter::mapFilterCallback(
   const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
-  map_filter_ = msg;
-
-  // Updating costmap_filter_
-  unsigned int filter_cell_sz_x = map_filter_->info.width;
-  unsigned int filter_cell_sz_y = map_filter_->info.height;
-  double filter_map_res = map_filter_->info.resolution;
-  double filter_origin_x = map_filter_->info.origin.position.x;
-  double filter_origin_y = map_filter_->info.origin.position.y;
-  // ToDo - current Costmap2D does not support orientation
-  costmap_filter_ = std::make_unique<Costmap2D>(
-    filter_cell_sz_x, filter_cell_sz_y, filter_map_res, filter_origin_x, filter_origin_y);
-
-  // Fill the costmap_filter_ with values from map_filter_
-  unsigned int mx, my, it;
-  int8_t data;
-  for (mx = 0; mx < filter_cell_sz_x; mx++) {
-    for (my = 0; my < filter_cell_sz_y; my++) {
-      it = costmap_filter_->getIndex(mx, my);
-      data = map_filter_->data[it];
-      if (data == nav2_map_server::OCC_GRID_OCCUPIED) {
-        costmap_filter_->setCost(mx, my, LETHAL_OBSTACLE);
-      } else if (
-        data == nav2_map_server::OCC_GRID_FREE ||
-        data == nav2_map_server::OCC_GRID_UNKNOWN)
-      {
-        costmap_filter_->setCost(mx, my, NO_INFORMATION);
-      } else {
-        unsigned char cost = std::round(
-          data * (LETHAL_OBSTACLE - FREE_SPACE) / \
-          (nav2_map_server::OCC_GRID_OCCUPIED - nav2_map_server::OCC_GRID_FREE));
-        costmap_filter_->setCost(mx, my, cost);
-      }
-    }
+  if (map_filter_) {
+    RCLCPP_WARN(node_->get_logger(), "New map filter arrived. Replacing old one.");
+    map_filter_.reset();
   }
+  map_filter_ = std::make_unique<nav2_util::OccupancyGrid>(*msg);
 }
 
 void KeepoutFilter::process(
@@ -114,33 +97,74 @@ void KeepoutFilter::process(
   double /*robot_x*/, double /*robot_y*/, double /*robot_yaw*/)
 {
   if (!map_filter_) {
-    RCLCPP_WARN(node_->get_logger(), "Map filter was not received");
+    curr_time_ = node_->now();
+    // Show warning message every 2 seconds to not litter an output
+    if (curr_time_ - prev_time_ >= rclcpp::Duration(std::chrono::milliseconds(2000))) {
+      RCLCPP_WARN(node_->get_logger(), "Map filter was not received");
+      prev_time_ = curr_time_;
+    }
     return;
   }
 
-  unsigned int i, j;  // costmap_filter_ iterators
+  unsigned int min_i_u, min_j_u, max_i_u, max_j_u;  // Unsigned versions of window bounds
   double wx, wy;  // world coordinates
+
+  // unsigned<-signed conversions.
+  // All map bounds are positive, so this will be safe.
+  min_i_u = (unsigned int)min_i;
+  min_j_u = (unsigned int)min_j;
+  max_i_u = (unsigned int)max_i;
+  max_j_u = (unsigned int)max_j;
+
+  // Optimization: iterate only by map-filter window bounds corresponding to
+  // (min_i, min_j)..(max_i, max_j) window.
+  // ToDo: after costmap rotation will be added, this should be re-worked.
+  int mf_tmp_x, mf_tmp_y;  // Temp signed map_filter_ coordinates using in calculations
+  unsigned int mf_min_x_u, mf_min_y_u, mf_max_x_u, mf_max_y_u;  // map_filter_ bounds
+
+  // Calculating map_filter_ bounds corresponding to (min_i, min_j) corner
+  mapToWorld(min_i_u, min_j_u, wx, wy);
+  map_filter_->worldToMapNoBounds(wx, wy, mf_tmp_x, mf_tmp_y);
+  mf_tmp_x = std::max(mf_tmp_x, 0);
+  mf_tmp_y = std::max(mf_tmp_y, 0);
+  mf_min_x_u = (unsigned int)mf_tmp_x;  // unsigned<-signed conversion
+  mf_min_y_u = (unsigned int)mf_tmp_y;  // unsigned<-signed conversion
+  // Checking that mf_min_x_u/mf_min_y_u are not out of map_filter_ bounds
+  if (mf_min_x_u > map_filter_->getSizeInCellsX() || mf_min_y_u > map_filter_->getSizeInCellsY()) {
+    return;
+  }
+
+  // Calculating map_filter_ bounds corresponding to (max_i, max_j) corner
+  mapToWorld(max_i_u, max_j_u, wx, wy);
+  map_filter_->worldToMapNoBounds(wx, wy, mf_tmp_x, mf_tmp_y);
+  // Checking that max_x/max_y are not out of map_filter_ bounds
+  if (mf_tmp_x < 0 || mf_tmp_y < 0) {
+    return;
+  }
+  mf_max_x_u = (unsigned int)mf_tmp_x;  // unsigned<-signed conversion
+  mf_max_y_u = (unsigned int)mf_tmp_y;  // unsigned<-signed conversion
+  mf_max_x_u = std::min(mf_max_x_u, map_filter_->getSizeInCellsX());
+  mf_max_y_u = std::min(mf_max_y_u, map_filter_->getSizeInCellsY());
+
+  unsigned int i, j;  // map_filter_ iterators
   unsigned int mx, my;  // costmap_ coordinates
+  unsigned char data;  // map_filter_ element data
 
-  unsigned char * costmap_filter_charmap = costmap_filter_->getCharMap();
-  unsigned char cost;
-
-  for (i = 0; i < costmap_filter_->getSizeInCellsX(); i++) {
-    for (j = 0; j < costmap_filter_->getSizeInCellsY(); j++) {
-      cost = costmap_filter_charmap[costmap_filter_->getIndex(i, j)];
-      if (cost != NO_INFORMATION) {
-        // Converting each point on costmap_filter to world coordinates
-        costmap_filter_->mapToWorld(i, j, wx, wy);
-        // Getting coordinates of costmap_ (if any) corresponding to given
-        // world coordinates
-        bool on_costmap = master_grid.worldToMap(wx, wy, mx, my);
-        // If these coordinates are belonging to costmap bounds put LETHAL_OBSTACLE
-        // on layer
-        if (on_costmap &&
-          mx >= (unsigned int)min_i && mx < (unsigned int)max_i &&
-          my >= (unsigned int)min_j && my < (unsigned int)max_j)
-        {
-          costmap_[master_grid.getIndex(mx, my)] = cost;
+  for (i = mf_min_x_u; i < mf_max_x_u; i++) {
+    for (j = mf_min_y_u; j < mf_max_y_u; j++) {
+      data = (*map_filter_)[map_filter_->getIndex(i, j)];
+      if (data != nav2_util::OCC_GRID_UNKNOWN) {
+        // Converting each point on map_filter to world coordinates
+        map_filter_->mapToWorld(i, j, wx, wy);
+        // Getting coordinates of costmap_ (if any) corresponding to given world coordinates
+        bool on_costmap = worldToMap(wx, wy, mx, my);
+        // If these coordinates are belonging to costmap bounds put data on layer
+        if (on_costmap && mx >= min_i_u && mx < max_i_u && my >= min_j_u && my < max_j_u) {
+          // Linear conversion from OccupancyGrid data range [OCC_GRID_FREE..OCC_GRID_OCCUPIED]
+          // to costmap data range [FREE_SPACE..LETHAL_OBSTACLE]
+          costmap_[getIndex(mx, my)] = std::round(
+            data * (LETHAL_OBSTACLE - FREE_SPACE) /
+            (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE));
         }
       }
     }
@@ -149,15 +173,11 @@ void KeepoutFilter::process(
   updateWithMax(master_grid, min_i, min_j, max_i, max_j);
 }
 
-void KeepoutFilter::unloadFilter()
+void KeepoutFilter::resetFilter()
 {
-  if (semantic_info_sub_) {
-    semantic_info_sub_.reset();
-  }
-  if (map_filter_sub_) {
-    map_filter_sub_.reset();
-  }
-  map_filter_ = nullptr;
+  costmap_filter_info_sub_.reset();
+  map_filter_sub_.reset();
+  map_filter_.reset();
 }
 
 }  // namespace nav2_costmap_2d

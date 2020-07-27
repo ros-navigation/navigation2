@@ -52,13 +52,6 @@ enum class MapMode
 };
 
 /**
-  * @brief OccupancyGrid data constants
-  */
-static constexpr int8_t OCC_GRID_UNKNOWN = -1;
-static constexpr int8_t OCC_GRID_FREE = 0;
-static constexpr int8_t OCC_GRID_OCCUPIED = 100;
-
-/**
  * @brief Convert a MapMode enum to the name of the map mode
  * @param map_mode Mode for the map
  * @return String identifier of the given map mode

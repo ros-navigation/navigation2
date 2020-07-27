@@ -31,6 +31,8 @@
  *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Author: Alexey Merzlyakov
  *********************************************************************/
 
 #ifndef NAV2_COSTMAP_2D__COSTMAP_FILTER_HPP_
@@ -52,26 +54,25 @@ public:
   ~CostmapFilter();
 
   /** Layer API **/
-  virtual void onInitialize();
+  virtual void onInitialize() final;
   virtual void updateBounds(
     double robot_x, double robot_y, double robot_yaw,
-    double * min_x, double * min_y, double * max_x, double * max_y);
+    double * min_x, double * min_y, double * max_x, double * max_y) final;
   virtual void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid,
-    int min_i, int min_j, int max_i, int max_j);
-  virtual void matchSize();
+    int min_i, int min_j, int max_i, int max_j) final;
 
-  virtual void activate();
-  virtual void deactivate();
-  virtual void reset();
+  virtual void activate() final;
+  virtual void deactivate() final;
+  virtual void reset() final;
 
   /** CostmapFilter API **/
   /**
-   * @brief: Loads map filter. Creates subscriptions to a map filter related topics
-   * @param: Name of semantic info topic for map filter
+   * @brief: Initializes map filter. Creates subscriptions to a map filter related topics
+   * @param: Name of costmap filter info topic for map filter
    */
-  virtual void loadFilter(
-    const std::string semantic_info_topic) = 0;
+  virtual void initializeFilter(
+    const std::string costmap_filter_info_topic) = 0;
 
   /**
    * @brief: An algorithm for how to use that map's information. Fills the Costmap2D with
@@ -91,43 +92,25 @@ public:
     double robot_x, double robot_y, double robot_yaw) = 0;
 
   /**
-   * @brief: Unloads map filter. Stops all subscriptions
+   * @brief: Resets map filter. Stops all subscriptions
    */
-  virtual void unloadFilter() = 0;
+  virtual void resetFilter() = 0;
 
 private:
   /**
-   * @brief: Name of semantic info topic
+   * @brief: Rolling window indicator
    */
-  std::string semantic_info_topic_;
+  bool is_rolling_;
 
   /**
-   * @brief: (Re)allocates a costmap_ member (inherited from Costmap2D and required for
-   *         updating costmaps) when it is not allocated yet or master_grid size was changed
-   * @param: Reference to a master costmap2d
+   * @brief: Name of costmap filter info topic
    */
-  void reAllocateCostmap(
-    const nav2_costmap_2d::Costmap2D & master_grid);
-
-  /**
-   * @brief: Sets NO_INFORMATION value to costmap_ within given bounds
-   * @param: Low window map boundary OX
-   * @param: Low window map boundary OY
-   * @param: High window map boundary OX
-   * @param: High window map boundary OY
-   */
-  void clearCostmap(
-    int min_i, int min_j, int max_i, int max_j);
+  std::string costmap_filter_info_topic_;
 
   /**
    * @brief: Latest robot position
    */
   double latest_robot_x, latest_robot_y, latest_robot_yaw;
-
-  /**
-   * @brief: Sizes of costmap_
-   */
-  int costmap_size_x, costmap_size_y;
 };
 
 }  // namespace nav2_costmap_2d

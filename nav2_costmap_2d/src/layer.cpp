@@ -89,6 +89,14 @@ Layer::declareParameter(
     node, getFullName(param_name), value);
 }
 
+void
+Layer::declareParameter(
+  const std::string & param_name)
+{
+  local_params_.insert(param_name);
+  nav2_util::declare_parameter_if_not_declared(node_, getFullName(param_name));
+}
+
 bool
 Layer::hasParameter(const std::string & param_name)
 {

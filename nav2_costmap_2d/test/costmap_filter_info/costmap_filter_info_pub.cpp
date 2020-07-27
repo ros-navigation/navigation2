@@ -15,21 +15,19 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_msgs/msg/costmap_filter_semantic_info.hpp"
+#include "nav2_msgs/msg/costmap_filter_info.hpp"
 
-using namespace std::chrono_literals;
-
-class DummySemanticMapServer : public rclcpp::Node
+class CostmapFilterInfoPublisher : public rclcpp::Node
 {
 public:
-  DummySemanticMapServer()
-  : Node("semantic_map_server")
+  CostmapFilterInfoPublisher()
+  : Node("costmap_filter_info_pub")
   {
-    publisher_ = this->create_publisher<nav2_msgs::msg::CostmapFilterSemanticInfo>(
-        "/semantic_info", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    publisher_ = this->create_publisher<nav2_msgs::msg::CostmapFilterInfo>(
+      "/costmap_filter_info", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
-    std::unique_ptr<nav2_msgs::msg::CostmapFilterSemanticInfo> msg =
-      std::make_unique<nav2_msgs::msg::CostmapFilterSemanticInfo>();
+    std::unique_ptr<nav2_msgs::msg::CostmapFilterInfo> msg =
+      std::make_unique<nav2_msgs::msg::CostmapFilterInfo>();
     msg->type = 0;
     msg->map_filter_topic = "/map_filter";
     msg->base = 0.0;
@@ -39,15 +37,15 @@ public:
   }
 
 private:
-  rclcpp::Publisher<nav2_msgs::msg::CostmapFilterSemanticInfo>::SharedPtr publisher_;
-};  // DummySemanticMapServer
+  rclcpp::Publisher<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr publisher_;
+};  // CostmapFilterInfoPublisher
 
 int main(int argc, char * argv[])
 {
-  printf("This is dummy semantic map server\n");
+  printf("This is dummy costmap filter info publisher\n");
 
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<DummySemanticMapServer>());
+  rclcpp::spin(std::make_shared<CostmapFilterInfoPublisher>());
   rclcpp::shutdown();
 
   return 0;

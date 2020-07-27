@@ -10,7 +10,6 @@ find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util)
 find_package(nav2_voxel_grid REQUIRED)
-find_package(nav2_map_server REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -50,6 +49,7 @@ add_library(nav2_costmap_2d_core SHARED
   src/observation_buffer.cpp
   src/clear_costmap_service.cpp
   src/footprint_collision_checker.cpp
+  plugins/costmap_filters/costmap_filter.cpp
 )
 
 # prevent pluginlib from using boost
@@ -63,7 +63,6 @@ set(dependencies
   nav2_msgs
   nav2_util
   nav2_voxel_grid
-  nav2_map_server
   nav_msgs
   pluginlib
   rclcpp
@@ -98,7 +97,6 @@ target_link_libraries(layers
 )
 
 add_library(filters SHARED
-  plugins/costmap_filters/costmap_filter.cpp
   plugins/costmap_filters/keepout_filter.cpp
 )
 ament_target_dependencies(filters

@@ -26,7 +26,6 @@
   <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
   <depend>nav2_voxel_grid</depend>
-  <depend>nav2_map_server</depend>
   <depend>nav_msgs</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>

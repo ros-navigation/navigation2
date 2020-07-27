@@ -31,6 +31,8 @@
  *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Author: Alexey Merzlyakov
  *********************************************************************/
 
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
@@ -41,7 +43,7 @@ namespace nav2_costmap_2d
 {
 
 CostmapFilter::CostmapFilter()
-: semantic_info_topic_("/semantic_info")
+: is_rolling_(true), costmap_filter_info_topic_("/costmap_filter_info")
 {
 }
 
@@ -51,45 +53,52 @@ CostmapFilter::~CostmapFilter()
 
 void CostmapFilter::onInitialize()
 {
-  costmap_ = nullptr;
-  costmap_size_x = 0;
-  costmap_size_y = 0;
-
   // Get parameters
   declareParameter("enabled", rclcpp::ParameterValue(true));
-  declareParameter("semantic_info_topic", rclcpp::ParameterValue("/semantic_info"));
+  declareParameter("costmap_filter_info_topic");
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
-  node_->get_parameter(name_ + "." + "semantic_info_topic", semantic_info_topic_);
+  if (
+    node_->get_parameter(name_ + "." + "costmap_filter_info_topic", costmap_filter_info_topic_) ==
+    rclcpp::ParameterType::PARAMETER_NOT_SET)
+  {
+    RCLCPP_ERROR(node_->get_logger(), "costmap_filter_info_topic parameter is not set");
+    throw std::runtime_error("Parameter is not set");
+  }
+
+  // Allocate and set the costmap of current layer
+  matchSize();
+  // Ask if costmap window is rolling
+  is_rolling_ = layered_costmap_->isRolling();
 }
 
 void CostmapFilter::activate()
 {
-  loadFilter(semantic_info_topic_);
+  initializeFilter(costmap_filter_info_topic_);
 }
 
 void CostmapFilter::deactivate()
 {
-  unloadFilter();
+  resetFilter();
 }
 
 void CostmapFilter::reset()
 {
-  if (costmap_) {
-    delete[] costmap_;
-  }
-  costmap_ = nullptr;
-  costmap_size_x = 0;
-  costmap_size_y = 0;
-
-  unloadFilter();
-  loadFilter(semantic_info_topic_);
+  resetMaps();
+  resetFilter();
+  initializeFilter(costmap_filter_info_topic_);
 }
 
 void CostmapFilter::updateBounds(
   double robot_x, double robot_y, double robot_yaw,
   double * /*min_x*/, double * /*min_y*/, double * /*max_x*/, double * /*max_y*/)
 {
+  // If window is rolling, it is required to dynamically update costmap origin of
+  // current layer
+  if (is_rolling_) {
+    updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
+  }
+
   latest_robot_x = robot_x;
   latest_robot_y = robot_y;
   latest_robot_yaw = robot_yaw;
@@ -99,55 +108,12 @@ void CostmapFilter::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int min_i, int min_j, int max_i, int max_j)
 {
-  // (Re)Allocate costmap_ for using in costmap filters
-  reAllocateCostmap(master_grid);
-
   // Clear costmap_ for process()
-  clearCostmap(min_i, min_j, max_i, max_j);
+  resetMap(min_i, min_j, max_i, max_j);
 
   process(
     master_grid, min_i, min_j, max_i, max_j,
     latest_robot_x, latest_robot_y, latest_robot_yaw);
-}
-
-void CostmapFilter::reAllocateCostmap(
-  const nav2_costmap_2d::Costmap2D & master_grid)
-{
-  int new_costmap_size_x = master_grid.getSizeInCellsX();
-  int new_costmap_size_y = master_grid.getSizeInCellsY();
-
-  // (Re)allocate costmap if it does not exist of its size was changed
-  if (!costmap_ || new_costmap_size_x != costmap_size_x || new_costmap_size_y != costmap_size_y) {
-    try {
-      delete[] costmap_;
-      size_t costmap_size = new_costmap_size_x * new_costmap_size_y * sizeof(unsigned char);
-      costmap_ = new unsigned char[costmap_size];
-    } catch (std::exception & ex) {
-      RCLCPP_ERROR(node_->get_logger(), "Can not (re)allocate costmap: %s", ex.what());
-      throw;
-    }
-    costmap_size_x = new_costmap_size_x;
-    costmap_size_y = new_costmap_size_y;
-  }
-}
-
-void CostmapFilter::clearCostmap(
-  int min_i, int min_j, int max_i, int max_j)
-{
-  int len_x = max_i - min_i;
-  for (int it = min_j * costmap_size_x + min_i;
-    it < max_j * costmap_size_x + min_i;
-    it += costmap_size_x)
-  {
-    memset(costmap_ + it, NO_INFORMATION, len_x * sizeof(unsigned char));
-  }
-}
-
-void CostmapFilter::matchSize()
-{
-  // When map size was changed it is required to re-allocate costmap layer
-  Costmap2D * master_grid = layered_costmap_->getCostmap();
-  reAllocateCostmap(*master_grid);
 }
 
 }  // namespace nav2_costmap_2d

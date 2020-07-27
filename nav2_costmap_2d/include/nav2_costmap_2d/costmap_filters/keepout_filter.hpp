@@ -31,6 +31,8 @@
  *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Author: Alexey Merzlyakov
  *********************************************************************/
 
 #ifndef NAV2_COSTMAP_2D__KEEPOUT_FILTER_HPP_
@@ -38,7 +40,9 @@
 
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 
-#include "nav2_msgs/msg/costmap_filter_semantic_info.hpp"
+#include "nav2_util/occupancy_grid.hpp"
+
+#include "nav2_msgs/msg/costmap_filter_info.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
 #include <memory>
@@ -51,26 +55,26 @@ class KeepoutFilter : public CostmapFilter
 public:
   KeepoutFilter();
 
-  void loadFilter(
-    const std::string semantic_info_topic);
+  void initializeFilter(
+    const std::string costmap_filter_info_topic);
 
   void process(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j,
     double robot_x, double robot_y, double robot_yaw);
 
-  void unloadFilter();
+  void resetFilter();
 
 private:
-  void semanticInfoCallback(const nav2_msgs::msg::CostmapFilterSemanticInfo::SharedPtr msg);
+  void costmapFilterInfoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg);
   void mapFilterCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
 
-  rclcpp::Subscription<nav2_msgs::msg::CostmapFilterSemanticInfo>::SharedPtr semantic_info_sub_;
+  rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr costmap_filter_info_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_filter_sub_;
 
-  nav_msgs::msg::OccupancyGrid::SharedPtr map_filter_;
+  std::unique_ptr<nav2_util::OccupancyGrid> map_filter_;
 
-  std::unique_ptr<Costmap2D> costmap_filter_;
+  rclcpp::Time curr_time_, prev_time_;
 };
 
 }  // namespace nav2_costmap_2d

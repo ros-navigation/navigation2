@@ -15,7 +15,7 @@ nav2_package()
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Costmap.msg"
   "msg/CostmapMetaData.msg"
-  "msg/CostmapFilterSemanticInfo.msg"
+  "msg/CostmapFilterInfo.msg"
   "msg/VoxelGrid.msg"
   "msg/BehaviorTreeStatusChange.msg"
   "msg/BehaviorTreeLog.msg"
