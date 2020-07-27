@@ -32,15 +32,17 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <memory>
+#include <string>
 #include "nav_2d_utils/tf_help.hpp"
 
 namespace nav_2d_utils
 {
 
   bool transformPose(
-    const std::shared_ptr<tf2_ros::Buffer> tf, 
+    const std::shared_ptr<tf2_ros::Buffer> tf,
     const std::string frame,
-    const geometry_msgs::msg::PoseStamped & in_pose, 
+    const geometry_msgs::msg::PoseStamped & in_pose,
     geometry_msgs::msg::PoseStamped & out_pose,
     rclcpp::Duration & transform_tolerance
   )
@@ -55,8 +57,8 @@ namespace nav_2d_utils
       return true;
     } catch (tf2::ExtrapolationException & ex) {
       auto transform = tf->lookupTransform(
-        frame, 
-        in_pose.header.frame_id, 
+        frame,
+        in_pose.header.frame_id,
         tf2::TimePointZero
       );
       if (
@@ -73,9 +75,9 @@ namespace nav_2d_utils
         RCLCPP_ERROR(
           rclcpp::get_logger("tf_help"),
           "Data time: %ds %uns, Transform time: %ds %uns",
-          in_pose.header.stamp.sec, 
+          in_pose.header.stamp.sec,
           in_pose.header.stamp.nanosec,
-          transform.header.stamp.sec, 
+          transform.header.stamp.sec,
           transform.header.stamp.nanosec
         );
         return false;
@@ -86,7 +88,7 @@ namespace nav_2d_utils
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(
         rclcpp::get_logger("tf_help"),
-        "Exception in transformPose: %s", 
+        "Exception in transformPose: %s",
         ex.what()
       );
       return false;
@@ -95,9 +97,9 @@ namespace nav_2d_utils
   }
 
   bool transformPose(
-    const std::shared_ptr<tf2_ros::Buffer> tf, 
+    const std::shared_ptr<tf2_ros::Buffer> tf,
     const std::string frame,
-    const nav_2d_msgs::msg::Pose2DStamped & in_pose, 
+    const nav_2d_msgs::msg::Pose2DStamped & in_pose,
     nav_2d_msgs::msg::Pose2DStamped & out_pose,
     rclcpp::Duration & transform_tolerance
   )
@@ -111,4 +113,4 @@ namespace nav_2d_utils
     }
     return ret;
   }
-}
+}  // namespace nav_2d_utils

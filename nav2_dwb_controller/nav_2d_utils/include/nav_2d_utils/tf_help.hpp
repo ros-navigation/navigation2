@@ -56,9 +56,9 @@ namespace nav_2d_utils
    * @return True if successful transform
    */
   bool transformPose(
-    const std::shared_ptr<tf2_ros::Buffer> tf, 
+    const std::shared_ptr<tf2_ros::Buffer> tf,
     const std::string frame,
-    const geometry_msgs::msg::PoseStamped & in_pose, 
+    const geometry_msgs::msg::PoseStamped & in_pose,
     geometry_msgs::msg::PoseStamped & out_pose,
     rclcpp::Duration & transform_tolerance
   );
@@ -74,9 +74,9 @@ namespace nav_2d_utils
    * @return True if successful transform
    */
   bool transformPose(
-    const std::shared_ptr<tf2_ros::Buffer> tf, 
+    const std::shared_ptr<tf2_ros::Buffer> tf,
     const std::string frame,
-    const nav_2d_msgs::msg::Pose2DStamped & in_pose, 
+    const nav_2d_msgs::msg::Pose2DStamped & in_pose,
     nav_2d_msgs::msg::Pose2DStamped & out_pose,
     rclcpp::Duration & transform_tolerance
   );
