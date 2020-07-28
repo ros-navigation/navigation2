@@ -15,6 +15,8 @@
 #ifndef NAV2_BEHAVIOR_TREE__BT_CONVERSIONS_HPP_
 #define NAV2_BEHAVIOR_TREE__BT_CONVERSIONS_HPP_
 
+#include <string>
+
 #include "rclcpp/time.hpp"
 #include "behaviortree_cpp_v3/behavior_tree.h"
 #include "geometry_msgs/msg/point.hpp"
