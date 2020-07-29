@@ -80,7 +80,7 @@ void RangeSensorLayer::onInitialize()
   declareParameter("clear_on_max_reading", rclcpp::ParameterValue(false));
   node_->get_parameter(name_ + "." + "clear_on_max_reading", clear_on_max_reading_);
 
-  std::vector<std::string> topic_names{""};
+  std::vector<std::string> topic_names{};
   declareParameter("topics", rclcpp::ParameterValue(topic_names));
   node_->get_parameter(name_ + "." + "topics", topic_names);
 
