@@ -50,6 +50,8 @@ using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
 using nav2_costmap_2d::NO_INFORMATION;
 
+using namespace std::literals::chrono_literals;
+
 namespace nav2_costmap_2d
 {
 
@@ -282,7 +284,7 @@ void RangeSensorLayer::updateCostmap(
 
   if (!tf_->canTransform(
       global_frame_, in.header.frame_id, in.header.stamp,
-      rclcpp::Duration(1e8)))
+      rclcpp::Duration(0.1s)))
   {
     RCLCPP_ERROR(
       node_->get_logger(), "Range sensor layer can't transform from %s to %s at %f",
