@@ -144,9 +144,37 @@ LifecycleManager::destroyLifecycleServiceClients()
 }
 
 bool
+LifecycleManager::createBondConnection(const std::string & node_name)
+{
+  const double timeout_ns =
+    std::chrono::duration_cast<std::chrono::nanoseconds>(bond_timeout_).count();
+  const double timeout_s = timeout_ns / 1e9;
+
+  if (bond_map_.find(node_name) == bond_map_.end() && bond_timeout_.count() > 0.0) {
+    bond_map_[node_name] =
+      std::make_shared<bond::Bond>("bond", node_name, bond_client_node_);
+    bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
+    bond_map_[node_name]->setHeartbeatPeriod(0.10);
+    bond_map_[node_name]->start();
+    if (!bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout_ns))) {
+      RCLCPP_ERROR(
+        get_logger(),
+        "Server %s was unable to be reached after %0.2fs by bond. "
+        "This server may be misconfigured.",
+        node_name.c_str(), timeout_s);
+      return false;
+    }
+    RCLCPP_INFO(get_logger(), "Server %s connected with bond.", node_name.c_str());
+  }
+
+  return true;
+}
+
+bool
 LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t transition)
 {
   message(transition_label_map_[transition] + node_name);
+
   if (!node_map_[node_name]->change_state(transition) ||
     !(node_map_[node_name]->get_state() == transition_state_map_[transition]))
   {
