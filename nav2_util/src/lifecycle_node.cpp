@@ -47,6 +47,12 @@ LifecycleNode::LifecycleNode(
 : rclcpp_lifecycle::LifecycleNode(node_name, namespace_, options),
   use_rclcpp_node_(use_rclcpp_node)
 {
+  // server side never times out from lifecycle manager
+  this->declare_parameter(bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true);
+  this->set_parameter(
+    rclcpp::Parameter(
+      bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true));
+
   if (use_rclcpp_node_) {
     std::vector<std::string> new_args = options.arguments();
     new_args.push_back("--ros-args");

@@ -23,6 +23,7 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "bondcpp/bond.hpp"
+#include "bond/msg/constants.hpp"
 
 namespace nav2_util
 {
