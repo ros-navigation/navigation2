@@ -59,7 +59,7 @@ void RangeSensorLayer::onInitialize()
 {
   current_ = true;
   buffered_readings_ = 0;
-  last_reading_time_ = node_->get_clock()->now();
+  last_reading_time_ = node_->now();
   default_value_ = to_cost(0.5);
 
   matchSize();
@@ -383,7 +383,7 @@ void RangeSensorLayer::updateCostmap(
   }
 
   buffered_readings_++;
-  last_reading_time_ = node_->get_clock()->now();
+  last_reading_time_ = node_->now();
 }
 
 void RangeSensorLayer::update_cell(
@@ -444,12 +444,12 @@ void RangeSensorLayer::updateBounds(
 
   if (buffered_readings_ == 0) {
     if (no_readings_timeout_ > 0.0 &&
-      (node_->get_clock()->now() - last_reading_time_).seconds() > no_readings_timeout_)
+      (node_->now() - last_reading_time_).seconds() > no_readings_timeout_)
     {
       RCLCPP_WARN(
         node_->get_logger(), "No range readings received for %.2f seconds, " \
         "while expected at least every %.2f seconds.",
-        (node_->get_clock()->now() - last_reading_time_).seconds(),
+        (node_->now() - last_reading_time_).seconds(),
         no_readings_timeout_);
       current_ = false;
     }
