@@ -132,6 +132,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | `<range layer>`.clear_threshold | 0.2 | Probability below which cells are marked as free |
 | `<range layer>`.mark_threshold | 0.8 | Probability above which cells are marked as occupied |
 | `<range layer>`.clear_on_max_reading | false | Clear on max reading |
+| `<range layer>`.input_sensor_type | ALL | Input sensor type either ALL (automatic selection), VARIABLE (min range != max range), or FIXED (min range == max range) |
 
 ## voxel_layer plugin
 
