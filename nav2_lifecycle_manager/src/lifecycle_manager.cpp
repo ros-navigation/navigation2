@@ -87,8 +87,7 @@ LifecycleManager::LifecycleManager()
 
 LifecycleManager::~LifecycleManager()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
-  bond_timer_.reset();
+  RCLCPP_INFO(get_logger(), "Destroying %s", get_name());
 }
 
 void
@@ -155,6 +154,12 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
     return false;
   }
 
+  if (transition == Transition::TRANSITION_ACTIVATE) {
+    return createBondConnection(node_name);
+  } else if (transition == Transition::TRANSITION_DEACTIVATE) {
+    bond_map_.erase(node_name);
+  }
+
   return true;
 }
 
@@ -208,12 +213,13 @@ LifecycleManager::startup()
 bool
 LifecycleManager::shutdown()
 {
+  system_active_ = false;
+  destroyBondTimer();
+
   message("Shutting down managed nodes...");
   shutdownAllNodes();
   destroyLifecycleServiceClients();
   message("Managed nodes have been shut down");
-  system_active_ = false;
-  destroyBondConnections();
   return true;
 }
 
@@ -221,7 +227,7 @@ bool
 LifecycleManager::reset()
 {
   system_active_ = false;
-  destroyBondConnections();
+  destroyBondTimer();
 
   message("Resetting managed nodes...");
   // Should transition in reverse order
@@ -240,13 +246,16 @@ LifecycleManager::reset()
 bool
 LifecycleManager::pause()
 {
+  system_active_ = false;
+  destroyBondTimer();
+
   message("Pausing managed nodes...");
   if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE)) {
     RCLCPP_ERROR(get_logger(), "Failed to pause nodes: aborting pause");
     return false;
   }
   message("Managed nodes have been paused");
-  system_active_ = false;
+
   return true;
 }
 
@@ -260,6 +269,7 @@ LifecycleManager::resume()
   }
   message("Managed nodes are active");
   system_active_ = true;
+  createBondTimer();
   return true;
 }
 
@@ -278,7 +288,7 @@ LifecycleManager::createBondTimer()
 }
 
 void
-LifecycleManager::destroyBondConnections()
+LifecycleManager::destroyBondTimer()
 {
   if (bond_timer_) {
     message("Terminating bond timer...");
@@ -288,43 +298,10 @@ LifecycleManager::destroyBondConnections()
 }
 
 void
-LifecycleManager::createBondConnections()
-{
-  const double timeout_ns =
-    std::chrono::duration_cast<std::chrono::nanoseconds>(bond_timeout_).count();
-  const double timeout_s = timeout_ns / 1e9;
-
-  for (auto & node_name : node_names_) {
-    bond_map_[node_name] =
-      std::make_shared<bond::Bond>("bond", node_name, bond_client_node_);
-    bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
-    bond_map_[node_name]->setHeartbeatPeriod(0.10);
-    bond_map_[node_name]->start();
-
-    RCLCPP_INFO(get_logger(), "Server %s trying to connect to bond....", node_name.c_str());
-    // TODO commented out while doing the 2nd node w/ thread spinning. Wait calls spin crash
-    // if (!bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout_ns))) {
-    //   RCLCPP_ERROR(
-    //     get_logger(),
-    //     "Server %s was unable to be reached after %0.2fs by bond. "
-    //     "This server may be misconfigured.",
-    //     node_name.c_str(), timeout_s);
-    // } else {
-    //   RCLCPP_INFO(get_logger(), "Server %s connected to bond!", node_name.c_str());
-    // }
-  }
-}
-
-void
 LifecycleManager::checkBondConnections()
 {
-  if (!system_active_ || !rclcpp::ok()) {
+  if (!system_active_ || !rclcpp::ok() || bond_map_.empty()) {
     return;
-  }
-
-  // populate the bond connections
-  if (bond_map_.empty()) {
-    createBondConnections();
   }
 
   for (auto & node_name : node_names_) {

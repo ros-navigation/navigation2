@@ -122,8 +122,9 @@ public:
       rclcpp_lifecycle::LifecycleNode::shared_from_this());
   }
 
-  // Create bond connection to lifecycle manager
+  // bond connection to lifecycle manager
   void createBond();
+  void destroyBond();
 
 protected:
   void print_lifecycle_node_notification();

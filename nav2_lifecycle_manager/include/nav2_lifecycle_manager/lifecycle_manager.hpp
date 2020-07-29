@@ -131,17 +131,17 @@ protected:
    */
   void createBondTimer();
 
-  // Support function for creating bond connections
+  // Support function for creating bond connection
   /**
    * @brief Support function for creating bond connections
    */
-  void createBondConnections();
+  bool createBondConnection(const std::string & node_name);
 
   // Support function for killing bond connections
   /**
    * @brief Support function for killing bond connections
    */
-  void destroyBondConnections();
+  void destroyBondTimer();
 
   // Support function for checking on bond connections
   /**
@@ -153,7 +153,9 @@ protected:
   /**
    * @brief For a node, transition to the new target state
    */
-  bool changeStateForNode(const std::string & node_name, std::uint8_t transition);
+  bool changeStateForNode(
+    const std::string & node_name,
+    std::uint8_t transition);
 
   /**
    * @brief For each node in the map, transition to the new target state

@@ -172,6 +172,9 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & state)
     it->second->deactivate();
   }
 
+  // destroy bond connection
+  destroyBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 

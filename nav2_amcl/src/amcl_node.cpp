@@ -314,6 +314,9 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   particlecloud_pub_->on_deactivate();
   particle_cloud_pub_->on_deactivate();
 
+  // destroy bond connection
+  destroyBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 

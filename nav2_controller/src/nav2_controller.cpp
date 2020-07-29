@@ -151,6 +151,9 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & state)
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
 
+  // destroy bond connection
+  destroyBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 

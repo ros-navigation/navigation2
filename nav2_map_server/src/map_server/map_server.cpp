@@ -142,6 +142,9 @@ MapServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   occ_pub_->on_deactivate();
 
+  // destroy bond connection
+  destroyBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 

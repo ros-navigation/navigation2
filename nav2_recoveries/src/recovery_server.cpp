@@ -143,6 +143,9 @@ RecoveryServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
     (*iter)->deactivate();
   }
 
+  // destroy bond connection
+  destroyBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
