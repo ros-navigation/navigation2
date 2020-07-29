@@ -86,18 +86,20 @@ private:
   void updateCostmap();
   void updateCostmap(sensor_msgs::msg::Range & range_message, bool clear_sensor_cone);
 
-  double gamma(double theta);
-  double delta(double phi);
-  double sensor_model(double r, double phi, double theta);
+  inline double gamma(double theta);
+  inline double delta(double phi);
+  inline double sensor_model(double r, double phi, double theta);
 
-  void get_deltas(double angle, double * dx, double * dy);
-  void update_cell(double ox, double oy, double ot, double r, double nx, double ny, bool clear);
+  inline void get_deltas(double angle, double * dx, double * dy);
+  inline void update_cell(
+    double ox, double oy, double ot,
+    double r, double nx, double ny, bool clear);
 
-  double to_prob(unsigned char c)
+  inline double to_prob(unsigned char c)
   {
     return static_cast<double>(c) / nav2_costmap_2d::LETHAL_OBSTACLE;
   }
-  unsigned char to_cost(double p)
+  inline unsigned char to_cost(double p)
   {
     return static_cast<unsigned char>(p * nav2_costmap_2d::LETHAL_OBSTACLE);
   }
