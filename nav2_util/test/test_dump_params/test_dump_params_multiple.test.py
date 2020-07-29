@@ -45,40 +45,12 @@ def generate_test_description():
     )
     processes_to_test = [
         ExecuteProcess(
-            cmd=[os.getenv('TEST_EXECUTABLE'), '-h'],
-            name='test_dump_params_help',
-            output='screen'),
-        ExecuteProcess(
-            cmd=[os.getenv('TEST_EXECUTABLE')],
-            name='test_dump_params_default',
-            output='screen'),
-        ExecuteProcess(
-            cmd=[os.getenv('TEST_EXECUTABLE'), '-n', 'test_dump_params'],
-            name='test_dump_params_yaml',
-            output='screen'),
-        ExecuteProcess(
-            cmd=[os.getenv('TEST_EXECUTABLE'), '-f', 'md', '-n', 'test_dump_params'],
-            name='test_dump_params_markdown',
-            output='screen'),
-        ExecuteProcess(
-            cmd=[os.getenv('TEST_EXECUTABLE'), '-n', 'test_dump_params', '-v'],
-            name='test_dump_params_yaml_verbose',
-            output='screen'),
-        ExecuteProcess(
-            cmd=[os.getenv('TEST_EXECUTABLE'), '-f', 'md', '-n', 'test_dump_params', '-v'],
-            name='test_dump_params_markdown_verbose',
-            output='screen'),
-        ExecuteProcess(
             cmd=[os.getenv('TEST_EXECUTABLE'), '-f', 'error', '-n', 'test_dump_params'],
             name='test_dump_params_bad_format',
             output='screen'),
         ExecuteProcess(
             cmd=[os.getenv('TEST_EXECUTABLE'), '-n', 'test_dump_params,test_dump_params_copy'],
             name='test_dump_params_multiple',
-            output='screen'),
-        ExecuteProcess(
-            cmd=[os.getenv('TEST_EXECUTABLE'), '-n', 'test_dump_params_error'],
-            name='test_dump_params_error',
             output='screen')
     ]
     for process in processes_to_test:
@@ -112,15 +84,8 @@ class TestDumpParams(unittest.TestCase):
         )
         output_files = [
             os.path.join(os.path.dirname(__file__), out)
-            for out in ['dump_params_help',
-                        'dump_params_default',
-                        'dump_params_yaml',
-                        'dump_params_md',
-                        'dump_params_yaml_verbose',
-                        'dump_params_md_verbose',
-                        'dump_params_yaml',
-                        'dump_params_multiple',
-                        'dump_params_error']
+            for out in ['dump_params_yaml',
+                        'dump_params_multiple']
         ]
         for process, output_file in zip(processes_to_test[:-1], output_files[:-1]):
             launch_testing.asserts.assertInStdout(
@@ -129,8 +94,3 @@ class TestDumpParams(unittest.TestCase):
                     path=output_file),
                 process=process, output_filter=output_filter
             )
-        launch_testing.asserts.assertInStderr(
-            proc_output,
-            expected_output=launch_testing.tools.expected_output_from_file(path=output_files[-1]),
-            process=processes_to_test[-1],
-            output_filter=output_filter)

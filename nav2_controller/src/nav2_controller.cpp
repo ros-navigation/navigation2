@@ -22,7 +22,6 @@
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_controller/progress_checker.hpp"
 #include "nav2_controller/nav2_controller.hpp"
 
 using namespace std::chrono_literals;
@@ -32,6 +31,12 @@ namespace nav2_controller
 
 ControllerServer::ControllerServer()
 : LifecycleNode("controller_server", "", true),
+  progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
+  default_progress_checker_id_{"progress_checker"},
+  default_progress_checker_type_{"nav2_controller::SimpleProgressChecker"},
+  goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
+  default_goal_checker_id_{"goal_checker"},
+  default_goal_checker_type_{"nav2_controller::SimpleGoalChecker"},
   lp_loader_("nav2_core", "nav2_core::Controller"),
   default_ids_{"FollowPath"},
   default_types_{"dwb_core::DWBLocalPlanner"}
@@ -40,17 +45,12 @@ ControllerServer::ControllerServer()
 
   declare_parameter("controller_frequency", 20.0);
 
+  declare_parameter("progress_checker_plugin", default_progress_checker_id_);
+  declare_parameter("goal_checker_plugin", default_goal_checker_id_);
   declare_parameter("controller_plugins", default_ids_);
   declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
-
-  get_parameter("controller_plugins", controller_ids_);
-  if (controller_ids_ == default_ids_) {
-    for (size_t i = 0; i < default_ids_.size(); ++i) {
-      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
-    }
-  }
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -68,7 +68,32 @@ ControllerServer::~ControllerServer()
 nav2_util::CallbackReturn
 ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
+  auto node = shared_from_this();
+
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
+
+
+  get_parameter("progress_checker_plugin", progress_checker_id_);
+  if (progress_checker_id_ == default_progress_checker_id_) {
+    nav2_util::declare_parameter_if_not_declared(
+      node, default_progress_checker_id_ + ".plugin",
+      rclcpp::ParameterValue(default_progress_checker_type_));
+  }
+  get_parameter("goal_checker_plugin", goal_checker_id_);
+  if (goal_checker_id_ == default_goal_checker_id_) {
+    nav2_util::declare_parameter_if_not_declared(
+      node, default_goal_checker_id_ + ".plugin",
+      rclcpp::ParameterValue(default_goal_checker_type_));
+  }
+
+  get_parameter("controller_plugins", controller_ids_);
+  if (controller_ids_ == default_ids_) {
+    for (size_t i = 0; i < default_ids_.size(); ++i) {
+      nav2_util::declare_parameter_if_not_declared(
+        node, default_ids_[i] + ".plugin",
+        rclcpp::ParameterValue(default_types_[i]));
+    }
+  }
 
   controller_types_.resize(controller_ids_.size());
 
@@ -80,9 +105,28 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   costmap_ros_->on_configure(state);
 
-  auto node = shared_from_this();
-
-  progress_checker_ = std::make_unique<ProgressChecker>(node);
+  try {
+    progress_checker_type_ = nav2_util::get_plugin_type_param(node, progress_checker_id_);
+    progress_checker_ = progress_checker_loader_.createUniqueInstance(progress_checker_type_);
+    RCLCPP_INFO(
+      get_logger(), "Created progress_checker : %s of type %s",
+      progress_checker_id_.c_str(), progress_checker_type_.c_str());
+    progress_checker_->initialize(node, progress_checker_id_);
+  } catch (const pluginlib::PluginlibException & ex) {
+    RCLCPP_FATAL(get_logger(), "Failed to create controller. Exception: %s", ex.what());
+    exit(-1);
+  }
+  try {
+    goal_checker_type_ = nav2_util::get_plugin_type_param(node, goal_checker_id_);
+    goal_checker_ = goal_checker_loader_.createUniqueInstance(goal_checker_type_);
+    RCLCPP_INFO(
+      get_logger(), "Created goal_checker : %s of type %s",
+      goal_checker_id_.c_str(), goal_checker_type_.c_str());
+    goal_checker_->initialize(node, goal_checker_id_);
+  } catch (const pluginlib::PluginlibException & ex) {
+    RCLCPP_FATAL(get_logger(), "Failed to create controller. Exception: %s", ex.what());
+    exit(-1);
+  }
 
   for (size_t i = 0; i != controller_ids_.size(); i++) {
     try {
@@ -179,6 +223,7 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
 
   vel_publisher_.reset();
   action_server_.reset();
+  goal_checker_->reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -302,6 +347,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   controllers_[current_controller_]->setPlan(path);
 
   auto end_pose = *(path.poses.end() - 1);
+  goal_checker_->reset();
 
   RCLCPP_DEBUG(
     get_logger(), "Path end point is (%.2f, %.2f)",
@@ -317,7 +363,9 @@ void ControllerServer::computeAndPublishVelocity()
     throw nav2_core::PlannerException("Failed to obtain robot pose");
   }
 
-  progress_checker_->check(pose);
+  if (!progress_checker_->check(pose)) {
+    throw nav2_core::PlannerException("Failed to make progress");
+  }
 
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
 
@@ -382,7 +430,7 @@ bool ControllerServer::isGoalReached()
 
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
   geometry_msgs::msg::Twist velocity = nav_2d_utils::twist2Dto3D(twist);
-  return controllers_[current_controller_]->isGoalReached(pose, velocity);
+  return goal_checker_->isGoalReached(pose.pose, end_pose_, velocity);
 }
 
 bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)
