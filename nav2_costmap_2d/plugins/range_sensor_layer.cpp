@@ -82,6 +82,11 @@ void RangeSensorLayer::onInitialize()
   declareParameter("clear_on_max_reading", rclcpp::ParameterValue(false));
   node_->get_parameter(name_ + "." + "clear_on_max_reading", clear_on_max_reading_);
 
+  double temp_tf_tol = 0.0;
+  declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
+  node_->get_parameter("transform_tolerance", temp_tf_tol);
+  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
+
   std::vector<std::string> topic_names{};
   declareParameter("topics", rclcpp::ParameterValue(topic_names));
   node_->get_parameter(name_ + "." + "topics", topic_names);
@@ -146,7 +151,7 @@ void RangeSensorLayer::onInitialize()
           std::placeholders::_1)));
 
     RCLCPP_INFO(
-      node_->get_logger(), "RangeSensorLayer: subscribed to" \
+      node_->get_logger(), "RangeSensorLayer: subscribed to " \
       "topic %s", range_subs_.back()->get_topic_name());
   }
   global_frame_ = layered_costmap_->getGlobalFrameID();
@@ -282,10 +287,11 @@ void RangeSensorLayer::updateCostmap(
   in.header.stamp = range_message.header.stamp;
   in.header.frame_id = range_message.header.frame_id;
 
-  if (!tf_->canTransform(
-      global_frame_, in.header.frame_id, in.header.stamp,
-      rclcpp::Duration(0.1s)))
-  {
+  try {
+    tf_->lookupTransform(
+      global_frame_, in.header.frame_id, tf2::TimePointZero,
+      transform_tolerance_);
+  } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(
       node_->get_logger(), "Range sensor layer can't transform from %s to %s at %f",
       global_frame_.c_str(), in.header.frame_id.c_str(),

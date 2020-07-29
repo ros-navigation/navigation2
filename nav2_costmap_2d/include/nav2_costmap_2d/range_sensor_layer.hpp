@@ -76,15 +76,17 @@ public:
   virtual void deactivate();
   virtual void activate();
 
-private:
   void bufferIncomingRangeMsg(const sensor_msgs::msg::Range::SharedPtr range_message);
+
+private:
+  void updateCostmap();
+  void updateCostmap(sensor_msgs::msg::Range & range_message, bool clear_sensor_cone);
+
   void processRangeMsg(sensor_msgs::msg::Range & range_message);
   void processFixedRangeMsg(sensor_msgs::msg::Range & range_message);
   void processVariableRangeMsg(sensor_msgs::msg::Range & range_message);
 
   void resetRange();
-  void updateCostmap();
-  void updateCostmap(sensor_msgs::msg::Range & range_message, bool clear_sensor_cone);
 
   inline double gamma(double theta);
   inline double delta(double phi);
@@ -115,6 +117,7 @@ private:
   double clear_threshold_, mark_threshold_;
   bool clear_on_max_reading_;
 
+  tf2::Duration transform_tolerance_;
   double no_readings_timeout_;
   rclcpp::Time last_reading_time_;
   unsigned int buffered_readings_;
