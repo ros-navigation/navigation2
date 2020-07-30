@@ -41,7 +41,7 @@ const unsigned int g_valid_image_width = 10;
 const unsigned int g_valid_image_height = 10;
 // Note that the image content is given in row-major order, with the
 // lower-left pixel first.  This is different from a graphics coordinate
-// system, which starts with the upper-left pixel.  The loadMapFromFile
+// system, which starts with the upper-left pixel.  The LoadMapFromFile
 // call converts from the latter to the former when it loads the image, and
 // we want to compare against the result of that conversion.
 const char g_valid_image_content[] = {
@@ -63,8 +63,12 @@ const char * g_valid_bmp_file = "testmap.bmp";
 const char * g_valid_pgm_file = "testmap.pgm";
 const char * g_valid_yaml_file = "testmap.yaml";
 const char * g_tmp_dir = "/tmp";
+const char * g_valid_pcd_map_name = "testpcdmap";
+const char * g_valid_pcd_file = "Hokuyo_0.pcd";
+const char * g_valid_pcd_yaml_file = "testpcd.yaml";
 
 const double g_valid_image_res = 0.1;
 const std::vector<double> g_valid_origin{2.0, 3.0, 1.0};
+const std::vector<float> g_valid_view_point{0, 0, 0, 1, 0, 0, 0};
 const double g_default_free_thresh = 0.196;
 const double g_default_occupied_thresh = 0.65;

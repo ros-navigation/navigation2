@@ -119,9 +119,9 @@ $ ros2 run nav2_map_server map_saver_cli [arguments] [--ros-args ROS remapping a
 OccupancyGrid maps:
 
 - loadMapYaml(): Load and parse the given YAML file
-- loadMapFromFile(): Load the image from map file and generate an OccupancyGrid
-- loadMapFromYaml(): Load the map YAML, image from map file and generate an OccupancyGrid
-- saveMapToFile(): Write OccupancyGrid map to file
+- LoadMapFromFile(): Load the image from map file and generate an OccupancyGrid
+- LoadMapFromYaml(): Load the map YAML, image from map file and generate an OccupancyGrid
+- SaveMapToFile(): Write OccupancyGrid map to file
 
 ## Services
 

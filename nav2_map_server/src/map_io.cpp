@@ -92,22 +92,6 @@ using nav2_util::geometry_utils::orientationAroundZAxis;
 
 // === Map input part ===
 
-/// Get the given subnode value.
-/// The only reason this function exists is to wrap the exceptions in slightly nicer error messages,
-/// including the name of the failed key
-/// @throw YAML::Exception
-template<typename T>
-T yaml_get_value(const YAML::Node & node, const std::string & key)
-{
-  try {
-    return node[key].as<T>();
-  } catch (YAML::Exception & e) {
-    std::stringstream ss;
-    ss << "Failed to parse YAML tag '" << key << "' for reason: " << e.msg;
-    throw YAML::Exception(e.mark, ss.str());
-  }
-}
-
 LoadParameters loadMapYaml(const std::string & yaml_filename)
 {
   YAML::Node doc = YAML::LoadFile(yaml_filename);

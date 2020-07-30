@@ -5,3 +5,5 @@ occupied_thresh: 0.65
 free_thresh: 0.196
 negate: 0
 mode: "trinary"
+pcd: "Hokuyo_0.pcd"
+view_point: [0, 0, 0, 1, 0, 0]

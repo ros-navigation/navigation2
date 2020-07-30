@@ -39,7 +39,7 @@ add_executable(test_map_saver_publisher
 )
 
 target_link_libraries(test_map_saver_publisher
-  ${map_io_library_name}
+  ${map_io_library_name} ${map_io_3D_library_name}
   stdc++fs
 )
 

@@ -22,9 +22,11 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/srv/save_map.hpp"
+#include "nav2_msgs/srv/save_map3_d.hpp"
 
 #include "map_io.hpp"
-
+#include "nav2_map_server_3D/map_io_3D.hpp"
+//#include ""
 namespace nav2_map_server
 {
 
@@ -37,13 +39,14 @@ class MapSaver : public nav2_util::LifecycleNode
 public:
   /**
    * @brief Constructor for the nav2_map_server::MapSaver
+   * @param is_pcd Bool for distinguishing b/w pcd and image, false by default
    */
   MapSaver();
 
   /**
    * @brief Destructor for the nav2_map_server::MapServer
    */
-  ~MapSaver();
+  ~MapSaver() override;
 
   /**
    * @brief Read a message from incoming map topic and save map to a file
@@ -54,6 +57,10 @@ public:
   bool saveMapTopicToFile(
     const std::string & map_topic,
     const SaveParameters & save_parameters);
+
+  bool saveMapTopicToFile(
+      const std::string & map_topic,
+      const nav2_map_server_3D::SaveParameters & save_parameters);
 
 protected:
   /**
@@ -98,6 +105,11 @@ protected:
     const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
     std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response);
 
+  void saveMapCallback(
+      const std::shared_ptr<rmw_request_id_t> request_header,
+      const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
+      std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response);
+
   // The timeout for saving the map in service
   std::shared_ptr<rclcpp::Duration> save_map_timeout_;
   // Default values for map thresholds
@@ -108,8 +120,12 @@ protected:
 
   // The name of the service for saving a map from topic
   const std::string save_map_service_name_{"save_map"};
+
   // A service to save the map to a file at run time (SaveMap)
   rclcpp::Service<nav2_msgs::srv::SaveMap>::SharedPtr save_map_service_;
+
+  // A service to save PointCloud2 data to a file at runtime (SaveMap)
+  rclcpp::Service<nav2_msgs::srv::SaveMap3D>::SharedPtr pcd_save_map_service_;
 };
 
 }  // namespace nav2_map_server

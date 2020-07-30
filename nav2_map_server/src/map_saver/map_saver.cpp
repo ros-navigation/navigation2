@@ -35,18 +35,17 @@
 #include <memory>
 #include <stdexcept>
 #include <functional>
+#include "nav2_msgs/msg/pcd2.hpp"
 
 using namespace std::placeholders;
 
-namespace nav2_map_server
-{
+namespace nav2_map_server {
 MapSaver::MapSaver()
-: nav2_util::LifecycleNode("map_saver", "", true)
-{
+    : nav2_util::LifecycleNode("map_saver", "", true) {
   RCLCPP_INFO(get_logger(), "Creating");
 
   save_map_timeout_ = std::make_shared<rclcpp::Duration>(
-    std::chrono::milliseconds(declare_parameter("save_map_timeout", 2000)));
+      std::chrono::milliseconds(declare_parameter("save_map_timeout", 2000)));
 
   free_thresh_default_ = declare_parameter("free_thresh_default", 0.25),
   occupied_thresh_default_ = declare_parameter("occupied_thresh_default", 0.65);
@@ -58,24 +57,42 @@ MapSaver::~MapSaver()
 }
 
 nav2_util::CallbackReturn
-MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/)
-{
+MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/) {
   RCLCPP_INFO(get_logger(), "Configuring");
 
   // Make name prefix for services
   const std::string service_prefix = get_name() + std::string("/");
 
-  // Create a service that saves the occupancy grid from map topic to a file
-  save_map_service_ = create_service<nav2_msgs::srv::SaveMap>(
-    service_prefix + save_map_service_name_,
-    std::bind(&MapSaver::saveMapCallback, this, _1, _2, _3));
+  // Create a service that saves the occupancy grid or PointCloud2 from map topic to a file
+//  if (get_parameter("is_pcd").as_bool()) {
+    auto save_map_call_back_lambda_3D = [this](
+        const std::shared_ptr<rmw_request_id_t> request_header,
+        const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
+        std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response) {
+      saveMapCallback(request_header, request, response);
+    };
+
+    pcd_save_map_service_ = create_service<nav2_msgs::srv::SaveMap3D>(
+        service_prefix + save_map_service_name_ + "3D",
+        save_map_call_back_lambda_3D);
+//  } else {
+    auto save_map_call_back_lambda = [this](
+        const std::shared_ptr<rmw_request_id_t> request_header,
+        const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
+        std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response) {
+      saveMapCallback(request_header, request, response);
+    };
+
+    save_map_service_ = create_service<nav2_msgs::srv::SaveMap>(
+        service_prefix + save_map_service_name_,
+        save_map_call_back_lambda);
+//  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-MapSaver::on_activate(const rclcpp_lifecycle::State & /*state*/)
-{
+MapSaver::on_activate(const rclcpp_lifecycle::State & /*state*/) {
   RCLCPP_INFO(get_logger(), "Activating");
 
   // create bond connection
@@ -85,8 +102,7 @@ MapSaver::on_activate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-MapSaver::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
-{
+MapSaver::on_deactivate(const rclcpp_lifecycle::State & /*state*/) {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   // destroy bond connection
@@ -96,8 +112,7 @@ MapSaver::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-MapSaver::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
-{
+MapSaver::on_cleanup(const rclcpp_lifecycle::State & /*state*/) {
   RCLCPP_INFO(get_logger(), "Cleaning up");
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -110,10 +125,9 @@ MapSaver::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 void MapSaver::saveMapCallback(
-  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
-  std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response)
-{
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
+    std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response) {
   // Set input arguments and call saveMapTopicToFile()
   SaveParameters save_parameters;
   save_parameters.map_file_name = request->map_url;
@@ -125,24 +139,48 @@ void MapSaver::saveMapCallback(
   } catch (std::invalid_argument &) {
     save_parameters.mode = MapMode::Trinary;
     RCLCPP_WARN(
-      get_logger(), "Map mode parameter not recognized: '%s', using default value (trinary)",
-      request->map_mode.c_str());
+        get_logger(), "Map mode parameter not recognized: '%s', using default value (trinary)",
+        request->map_mode.c_str());
   }
 
   response->result = saveMapTopicToFile(request->map_topic, save_parameters);
 }
 
+void MapSaver::saveMapCallback(
+    const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+    const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
+    std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response) {
+
+  nav2_map_server_3D::SaveParameters save_parameters;
+  save_parameters.map_file_name = request->map_url;
+
+  // Set view_point translation(origin)
+  save_parameters.view_point[0] = request->view_point.translation.x;
+  save_parameters.view_point[1] = request->view_point.translation.y;
+  save_parameters.view_point[2] = request->view_point.translation.z;
+
+  // Set view_point orientation
+  save_parameters.view_point[3] = request->view_point.rotation.w;
+  save_parameters.view_point[4] = request->view_point.rotation.x;
+  save_parameters.view_point[5] = request->view_point.rotation.y;
+  save_parameters.view_point[6] = request->view_point.rotation.z;
+
+  save_parameters.as_binary = request->as_binary;
+  save_parameters.format = request->file_format;
+
+  response->result = saveMapTopicToFile(request->map_topic, save_parameters);
+}
+
 bool MapSaver::saveMapTopicToFile(
-  const std::string & map_topic,
-  const SaveParameters & save_parameters)
-{
+    const std::string &map_topic,
+    const SaveParameters &save_parameters) {
   // Local copies of map_topic and save_parameters that could be changed
   std::string map_topic_loc = map_topic;
   SaveParameters save_parameters_loc = save_parameters;
 
   RCLCPP_INFO(
-    get_logger(), "Saving map from \'%s\' topic to \'%s\' file",
-    map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
+      get_logger(), "Saving map from \'%s\' topic to \'%s\' file",
+      map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
 
   try {
     // Pointer to map message received in the subscription callback
@@ -152,31 +190,31 @@ bool MapSaver::saveMapTopicToFile(
     if (map_topic_loc == "") {
       map_topic_loc = "map";
       RCLCPP_WARN(
-        get_logger(), "Map topic unspecified. Map messages will be read from \'%s\' topic",
-        map_topic_loc.c_str());
+          get_logger(), "Map topic unspecified. Map messages will be read from \'%s\' topic",
+          map_topic_loc.c_str());
     }
 
     // Set default for MapSaver node thresholds parameters
     if (save_parameters_loc.free_thresh == 0.0) {
       RCLCPP_WARN(
-        get_logger(),
-        "Free threshold unspecified. Setting it to default value: %f",
-        free_thresh_default_);
+          get_logger(),
+          "Free threshold unspecified. Setting it to default value: %f",
+          free_thresh_default_);
       save_parameters_loc.free_thresh = free_thresh_default_;
     }
     if (save_parameters_loc.occupied_thresh == 0.0) {
       RCLCPP_WARN(
-        get_logger(),
-        "Occupied threshold unspecified. Setting it to default value: %f",
-        occupied_thresh_default_);
+          get_logger(),
+          "Occupied threshold unspecified. Setting it to default value: %f",
+          occupied_thresh_default_);
       save_parameters_loc.occupied_thresh = occupied_thresh_default_;
     }
 
     // A callback function that receives map message from subscribed topic
     auto mapCallback = [&map_msg](
-      const nav_msgs::msg::OccupancyGrid::SharedPtr msg) -> void {
-        map_msg = msg;
-      };
+        const nav_msgs::msg::OccupancyGrid::SharedPtr msg) -> void {
+      map_msg = msg;
+    };
 
     // Add new subscription for incoming map topic.
     // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode
@@ -210,7 +248,72 @@ bool MapSaver::saveMapTopicToFile(
 
       rclcpp::sleep_for(std::chrono::milliseconds(100));
     }
-  } catch (std::exception & e) {
+  } catch (std::exception &e) {
+    RCLCPP_ERROR(get_logger(), "Failed to save the map: %s", e.what());
+    return false;
+  }
+
+  RCLCPP_ERROR(get_logger(), "This situation should never appear");
+  return false;
+}
+
+bool MapSaver::saveMapTopicToFile(
+    const std::string &map_topic,
+    const nav2_map_server_3D::SaveParameters &save_parameters) {
+  // Local copies of map_topic and save_parameters that could be changed
+  std::string map_topic_loc = map_topic;
+  nav2_map_server_3D::SaveParameters save_parameters_loc = save_parameters;
+
+  RCLCPP_INFO(
+      get_logger(), "Saving map from \'%s\' topic to \'%s\' file",
+      map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
+
+  try {
+    // Pointer to map message received in the subscription callback
+    nav2_msgs::msg::PCD2::SharedPtr pcd_map_msg = nullptr;
+
+    // Correct map_topic_loc if necessary
+    if (map_topic_loc.empty()) {
+      map_topic_loc = "map3D";
+      RCLCPP_WARN(
+          get_logger(), "Map topic unspecified. Map messages will be read from \'%s\' topic",
+          map_topic_loc.c_str());
+    }
+
+    // A callback function that receives map message from subscribed topic
+    auto map_callback = [&pcd_map_msg](
+        const nav2_msgs::msg::PCD2::SharedPtr msg) -> void {
+      pcd_map_msg = msg;
+    };
+
+    // Add new subscription for incoming map topic.
+    // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode
+    // as a map listener.
+    auto map_sub = rclcpp_node_->create_subscription<nav2_msgs::msg::PCD2>(
+        map_topic_loc, rclcpp::SystemDefaultsQoS(), map_callback);
+
+    rclcpp::Time start_time = now();
+    while (rclcpp::ok()) {
+      if ((now() - start_time) > *save_map_timeout_) {
+        RCLCPP_ERROR(get_logger(), "Failed to save the map: timeout");
+        return false;
+      }
+
+      if (pcd_map_msg) {
+        // Map message received. Saving it to file
+        if (nav2_map_server_3D::SaveMapToFile(pcd_map_msg->map, save_parameters_loc)) {
+          RCLCPP_INFO(get_logger(), "Map saved successfully");
+          return true;
+        } else {
+          RCLCPP_ERROR(get_logger(), "Failed to save the map");
+          return false;
+        }
+
+      }
+
+      rclcpp::sleep_for(std::chrono::milliseconds(100));
+    }
+  } catch (std::exception &e) {
     RCLCPP_ERROR(get_logger(), "Failed to save the map: %s", e.what());
     return false;
   }
