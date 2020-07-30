@@ -146,7 +146,7 @@ TEST_F(BackUpActionTestFixture, test_tick)
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
 
   auto goal = action_server_->getCurrentGoal();
-  EXPECT_EQ(goal->target.x, 2.0);
+  EXPECT_EQ(goal->target.x, -2.0);
   EXPECT_EQ(goal->speed, 0.26f);
 }
 
