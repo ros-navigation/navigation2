@@ -293,20 +293,18 @@ void RangeSensorLayer::updateCostmap(
       transform_tolerance_, &tf_error))
   {
     RCLCPP_ERROR(
-      node_->get_logger(), "Range sensor layer can't transform from %s to %s at %f with "
-      "tolerance %.2f with error: %s",
-      global_frame_.c_str(), in.header.frame_id.c_str(), in.header.stamp.sec,
-      transform_tolerance_.count(), tf_error.c_str());
+      node_->get_logger(), "Range sensor layer can't transform from %s to %s",
+      global_frame_.c_str(), in.header.frame_id.c_str());
     return;
   }
 
-  tf_->transform(in, out, global_frame_);
+  tf_->transform(in, out, global_frame_, transform_tolerance_);
 
   double ox = out.point.x, oy = out.point.y;
 
   in.point.x = range_message.range;
 
-  tf_->transform(in, out, global_frame_);
+  tf_->transform(in, out, global_frame_, transform_tolerance_);
 
   double tx = out.point.x, ty = out.point.y;
 
