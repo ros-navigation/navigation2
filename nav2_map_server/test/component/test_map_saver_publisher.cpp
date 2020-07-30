@@ -18,7 +18,10 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_map_server/map_io.hpp"
+#include "nav2_map_server_3D/map_io_3D.hpp"
+#include "nav2_msgs/msg/pcd2.hpp"
 #include "test_constants/test_constants.h"
+#include "sensor_msgs/msg/point_cloud2.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -49,7 +52,7 @@ protected:
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
 };
 
-int main(int argc, char ** argv)
+int main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
   auto pub_node = std::make_shared<TestPublisher>();

@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "yaml-cpp/yaml.h"
 #include "nav2_map_server/map_mode.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
@@ -46,6 +47,22 @@ typedef enum
   INVALID_MAP_METADATA,
   INVALID_MAP_DATA
 } LOAD_MAP_STATUS;
+
+/// Get the given subnode value.
+/// The only reason this function exists is to wrap the exceptions in slightly nicer error messages,
+/// including the name of the failed key
+/// @throw YAML::Exception
+template<typename T>
+T yaml_get_value(const YAML::Node & node, const std::string & key)
+{
+  try {
+    return node[key].as<T>();
+  } catch (YAML::Exception & e) {
+    std::stringstream ss;
+    ss << "Failed to parse YAML tag '" << key << "' for reason: " << e.msg;
+    throw YAML::Exception(e.mark, ss.str());
+  }
+}
 
 /**
  * @brief Load and parse the given YAML file

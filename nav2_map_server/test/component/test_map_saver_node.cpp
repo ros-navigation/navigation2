@@ -22,7 +22,11 @@
 #include "test_constants/test_constants.h"
 #include "nav2_map_server/map_saver.hpp"
 #include "nav2_util/lifecycle_service_client.hpp"
+
 #include "nav2_msgs/srv/save_map.hpp"
+#include "nav2_msgs/srv/save_map3_d.hpp"
+#include "nav2_msgs/msg/pcd2.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -32,7 +36,7 @@ using namespace nav2_map_server;  // NOLINT
 
 class RclCppFixture
 {
-public:
+ public:
   RclCppFixture() {rclcpp::init(0, nullptr);}
   ~RclCppFixture() {rclcpp::shutdown();}
 };
@@ -83,7 +87,7 @@ public:
 protected:
   // Check that map_msg corresponds to reference pattern
   // Input: map_msg
-  void verifyMapMsg(const nav_msgs::msg::OccupancyGrid & map_msg)
+  static void verifyMapMsg(const nav_msgs::msg::OccupancyGrid & map_msg)
   {
     ASSERT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
     ASSERT_EQ(map_msg.info.width, g_valid_image_width);
@@ -93,10 +97,28 @@ protected:
     }
   }
 
+  static void verifyMapMsg(const nav2_msgs::msg::PCD2 & map_msg)
+  {
+    std::vector<float> origin;
+    origin.push_back(map_msg.origin.x);
+    origin.push_back(map_msg.origin.y);
+    origin.push_back(map_msg.origin.z);
+
+    std::vector<float> orientation;
+    orientation.push_back(map_msg.orientation.w);
+    orientation.push_back(map_msg.orientation.x);
+    orientation.push_back(map_msg.orientation.y);
+    orientation.push_back(map_msg.orientation.z);
+    ASSERT_EQ(origin, g_valid_origin_pcd);
+    ASSERT_EQ(orientation, g_valid_orientation_pcd);
+
+    ASSERT_EQ(map_msg.map.width, g_valid_pcd_width);
+    ASSERT_EQ(map_msg.map.data.size(), g_valid_pcd_data_size);
+  }
+
   static rclcpp::Node::SharedPtr node_;
   static std::shared_ptr<nav2_util::LifecycleServiceClient> lifecycle_client_;
 };
-
 
 rclcpp::Node::SharedPtr MapSaverTestFixture::node_ = nullptr;
 std::shared_ptr<nav2_util::LifecycleServiceClient> MapSaverTestFixture::lifecycle_client_ =
@@ -114,7 +136,7 @@ TEST_F(MapSaverTestFixture, SaveMap)
   RCLCPP_INFO(node_->get_logger(), "Waiting for save_map service");
   ASSERT_TRUE(client->wait_for_service());
 
-  // 1. Send valid save_map serivce request
+  // 1. Send valid save_map service request
   req->map_topic = "map";
   req->map_url = path(g_tmp_dir) / path(g_valid_map_name);
   req->image_format = "png";
@@ -128,6 +150,50 @@ TEST_F(MapSaverTestFixture, SaveMap)
   nav_msgs::msg::OccupancyGrid map_msg;
   LOAD_MAP_STATUS status = loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, LOAD_MAP_SUCCESS);
+  verifyMapMsg(map_msg);
+}
+
+// Send map(pcd) saving service request.
+// Load saved map and verify obtained OccupancyGrid.
+TEST_F(MapSaverTestFixture, SaveMap3D)
+{
+  RCLCPP_INFO(node_->get_logger(), "Testing SaveMap service");
+  auto req = std::make_shared<nav2_msgs::srv::SaveMap3D::Request>();
+  auto client = node_->create_client<nav2_msgs::srv::SaveMap3D>(
+    "/map_saver/save_map3D");
+
+  RCLCPP_INFO(node_->get_logger(), "Waiting for save_map3D service");
+  ASSERT_TRUE(client->wait_for_service());
+
+  // 1. Send valid save_map service request
+  req->map_topic = "map3D";
+  req->map_url = path(g_tmp_dir) / path(g_valid_pcd_map_name);
+
+  // set view point translation
+  req->origin.x = g_valid_origin_pcd[0];
+  req->origin.y = g_valid_origin_pcd[1];
+  req->origin.z = g_valid_origin_pcd[2];
+
+  // set view point rotation
+  req->orientation.w = g_valid_orientation_pcd[0];
+  req->orientation.x = g_valid_orientation_pcd[1];
+  req->orientation.y = g_valid_orientation_pcd[2];
+  req->orientation.z = g_valid_orientation_pcd[3];
+
+  req->file_format = "pcd";
+  req->as_binary = false;
+
+  auto resp = send_request<nav2_msgs::srv::SaveMap3D>(node_, client, req);
+  ASSERT_EQ(resp->result, true);
+
+  // 2. Load saved map and verify it
+  nav2_msgs::msg::PCD2 map_msg;
+  nav2_map_server_3D::LOAD_MAP_STATUS status =
+    nav2_map_server_3D::loadMapFromYaml(
+      path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
+      map_msg);
+
+  ASSERT_EQ(status, nav2_map_server_3D::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 }
 
@@ -157,6 +223,50 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters)
   nav_msgs::msg::OccupancyGrid map_msg;
   LOAD_MAP_STATUS status = loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, LOAD_MAP_SUCCESS);
+  verifyMapMsg(map_msg);
+}
+
+// Send map(pcd) saving service request with default parameters.
+// Load saved map(pcd) and verify obtained PointCloud.
+TEST_F(MapSaverTestFixture, SaveMapDefaultParameters3D)
+{
+  RCLCPP_INFO(node_->get_logger(), "Testing SaveMap service");
+  auto req = std::make_shared<nav2_msgs::srv::SaveMap3D::Request>();
+  auto client = node_->create_client<nav2_msgs::srv::SaveMap3D>(
+    "/map_saver/save_map3D");
+
+  RCLCPP_INFO(node_->get_logger(), "Waiting for save_map3D service");
+  ASSERT_TRUE(client->wait_for_service());
+
+  // 1. Send save_map service request with default parameters
+  req->map_topic = "";
+  req->map_url = path(g_tmp_dir) / path(g_valid_pcd_map_name);
+
+  // set view point translation
+  req->origin.x = g_valid_origin_pcd[0];
+  req->origin.y = g_valid_origin_pcd[1];
+  req->origin.z = g_valid_origin_pcd[2];
+
+  // set view point rotation
+  req->orientation.w = g_valid_orientation_pcd[0];
+  req->orientation.x = g_valid_orientation_pcd[1];
+  req->orientation.y = g_valid_orientation_pcd[2];
+  req->orientation.z = g_valid_orientation_pcd[3];
+
+  req->file_format = "";
+  req->as_binary = false;
+
+  auto resp = send_request<nav2_msgs::srv::SaveMap3D>(node_, client, req);
+  ASSERT_EQ(resp->result, true);
+
+  // 2. Load saved map and verify it
+  nav2_msgs::msg::PCD2 map_msg;
+  nav2_map_server_3D::LOAD_MAP_STATUS status =
+    nav2_map_server_3D::loadMapFromYaml(
+      path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
+      map_msg);
+
+  ASSERT_EQ(status, nav2_map_server_3D::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 }
 

@@ -77,7 +77,7 @@ protected:
     load_parameters.free_thresh = g_default_free_thresh;
     load_parameters.occupied_thresh = g_default_occupied_thresh;
     load_parameters.mode = MapMode::Trinary;
-    load_parameters.negate = 0;
+    load_parameters.negate = false;
   }
 
   // Fill SaveParameters with standard for testing values

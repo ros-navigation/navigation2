@@ -21,6 +21,8 @@ import launch_ros.actions
 
 
 def generate_launch_description():
+
+    ld = LaunchDescription()
     return LaunchDescription([
         launch_ros.actions.Node(
             package='nav2_map_server',

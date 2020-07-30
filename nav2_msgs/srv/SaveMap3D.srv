@@ -1,0 +1,12 @@
+# URL of map resource
+# Can be an absolute path to a file: file:///path/to/maps/floor1.yaml
+# Or, relative to a ROS package: package://my_ros_package/maps/floor2.yaml
+string map_topic
+string map_url
+geometry_msgs/Vector3 origin
+geometry_msgs/Quaternion orientation
+bool as_binary
+# Constants for image_format. Supported formats: pcd, ply
+string file_format
+---
+bool result

@@ -63,8 +63,15 @@ const char * g_valid_bmp_file = "testmap.bmp";
 const char * g_valid_pgm_file = "testmap.pgm";
 const char * g_valid_yaml_file = "testmap.yaml";
 const char * g_tmp_dir = "/tmp";
+const char * g_valid_pcd_map_name = "testpcd";
+const char * g_valid_pcd_file = "Hokuyo_0.pcd";
+const char * g_valid_pcd_yaml_file = "testpcd.yaml";
 
 const double g_valid_image_res = 0.1;
+const size_t g_valid_pcd_width = 370277;
+const size_t g_valid_pcd_data_size = 4443324;
 const std::vector<double> g_valid_origin{2.0, 3.0, 1.0};
+const std::vector<float> g_valid_origin_pcd{0, 0, 0};
+const std::vector<float> g_valid_orientation_pcd{1, 0, 0, 0};
 const double g_default_free_thresh = 0.196;
 const double g_default_occupied_thresh = 0.65;
