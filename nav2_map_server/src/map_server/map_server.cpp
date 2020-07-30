@@ -129,6 +129,9 @@ MapServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
   occ_pub_->publish(std::move(occ_grid));
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -138,6 +141,9 @@ MapServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   occ_pub_->on_deactivate();
+
+  // destroy bond connection
+  destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
