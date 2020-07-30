@@ -36,6 +36,7 @@
 #include <string>
 #include <algorithm>
 #include <utility>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -146,7 +147,6 @@ protected:
 
 // Simple test with single point range model
 TEST_F(TestNode, testProbabalisticModel) {
-
   geometry_msgs::msg::TransformStamped transform;
   transform.header.stamp = node_->now();
   transform.header.frame_id = "frame";
@@ -168,7 +168,7 @@ TEST_F(TestNode, testProbabalisticModel) {
   msg.header.stamp = node_->now();
   msg.header.frame_id = "base_link";
   msg.radiation_type = msg.ULTRASOUND;
-  msg.field_of_view = 0.174533; // 10 deg
+  msg.field_of_view = 0.174533;  // 10 deg
 
   rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
 

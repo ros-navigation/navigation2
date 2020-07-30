@@ -91,7 +91,7 @@ void RangeSensorLayer::onInitialize()
   declareParameter("topics", rclcpp::ParameterValue(topic_names));
   node_->get_parameter(name_ + "." + "topics", topic_names);
 
-  InputSensorType input_sensor_type = ALL;
+  InputSensorType input_sensor_type = InputSensorType::ALL;
   std::string sensor_type_name;
   declareParameter("input_sensor_type", rclcpp::ParameterValue("ALL"));
   node_->get_parameter(name_ + "." + "input_sensor_type", sensor_type_name);
@@ -104,43 +104,43 @@ void RangeSensorLayer::onInitialize()
     name_.c_str(), sensor_type_name.c_str());
 
   if (sensor_type_name == "VARIABLE") {
-    input_sensor_type = VARIABLE;
+    input_sensor_type = InputSensorType::VARIABLE;
   } else if (sensor_type_name == "FIXED") {
-    input_sensor_type = FIXED;
+    input_sensor_type = InputSensorType::FIXED;
   } else if (sensor_type_name == "ALL") {
-    input_sensor_type = ALL;
+    input_sensor_type = InputSensorType::ALL;
   } else {
     RCLCPP_ERROR(
-      node_->get_logger(), "%s: Invalid input sensor type: %s",
+      node_->get_logger(), "%s: Invalid input sensor type: %s. Defaulting to ALL.",
       name_.c_str(), sensor_type_name.c_str());
   }
 
   // Validate topic names list: it must be a (normally non-empty) list of strings
   if (topic_names.empty()) {
-    RCLCPP_ERROR(
-      node_->get_logger(), "Invalid topic names list: it must" \
+    RCLCPP_FATAL(
+      node_->get_logger(), "Invalid topic names list: it must"
       "be a non-empty list of strings");
     return;
   }
 
   // Traverse the topic names list subscribing to all of them with the same callback method
   for (auto & topic_name : topic_names) {
-    if (input_sensor_type == VARIABLE) {
+    if (input_sensor_type == InputSensorType::VARIABLE) {
       processRangeMessageFunc_ = std::bind(
         &RangeSensorLayer::processVariableRangeMsg, this,
         std::placeholders::_1);
-    } else if (input_sensor_type == FIXED) {
+    } else if (input_sensor_type == InputSensorType::FIXED) {
       processRangeMessageFunc_ = std::bind(
         &RangeSensorLayer::processFixedRangeMsg, this,
         std::placeholders::_1);
-    } else if (input_sensor_type == ALL) {
+    } else if (input_sensor_type == InputSensorType::ALL) {
       processRangeMessageFunc_ = std::bind(
         &RangeSensorLayer::processRangeMsg, this,
         std::placeholders::_1);
     } else {
       RCLCPP_ERROR(
         node_->get_logger(),
-        "%s: Invalid input sensor type: %s. Did you make a new type" \
+        "%s: Invalid input sensor type: %s. Did you make a new type"
         "and forgot to choose the subscriber for it?",
         name_.c_str(), sensor_type_name.c_str());
     }
@@ -151,7 +151,7 @@ void RangeSensorLayer::onInitialize()
           std::placeholders::_1)));
 
     RCLCPP_INFO(
-      node_->get_logger(), "RangeSensorLayer: subscribed to " \
+      node_->get_logger(), "RangeSensorLayer: subscribed to "
       "topic %s", range_subs_.back()->get_topic_name());
   }
   global_frame_ = layered_costmap_->getGlobalFrameID();
@@ -287,15 +287,16 @@ void RangeSensorLayer::updateCostmap(
   in.header.stamp = range_message.header.stamp;
   in.header.frame_id = range_message.header.frame_id;
 
-  try {
-    tf_->lookupTransform(
-      global_frame_, in.header.frame_id, tf2::TimePointZero,
-      transform_tolerance_);
-  } catch (tf2::TransformException & ex) {
+  std::string tf_error;
+  if (!tf_->canTransform(
+      in.header.frame_id, global_frame_, tf2_ros::fromMsg(in.header.stamp),
+      transform_tolerance_, &tf_error))
+  {
     RCLCPP_ERROR(
-      node_->get_logger(), "Range sensor layer can't transform from %s to %s at %f",
-      global_frame_.c_str(), in.header.frame_id.c_str(),
-      in.header.stamp.sec);
+      node_->get_logger(), "Range sensor layer can't transform from %s to %s at %f with "
+      "tolerance %.2f with error: %s",
+      global_frame_.c_str(), in.header.frame_id.c_str(), in.header.stamp.sec,
+      transform_tolerance_.count(), tf_error.c_str());
     return;
   }
 
@@ -455,7 +456,7 @@ void RangeSensorLayer::updateBounds(
       (node_->now() - last_reading_time_).seconds() > no_readings_timeout_)
     {
       RCLCPP_WARN(
-        node_->get_logger(), "No range readings received for %.2f seconds, " \
+        node_->get_logger(), "No range readings received for %.2f seconds, "
         "while expected at least every %.2f seconds.",
         (node_->now() - last_reading_time_).seconds(),
         no_readings_timeout_);
