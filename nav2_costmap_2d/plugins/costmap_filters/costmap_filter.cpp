@@ -91,12 +91,6 @@ void CostmapFilter::updateBounds(
     return;
   }
 
-  // If window is rolling, it is required to dynamically update costmap origin of
-  // current layer
-  if (layered_costmap_->isRolling()) {
-    updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
-  }
-
   latest_pose_.x = robot_x;
   latest_pose_.y = robot_y;
   latest_pose_.theta = robot_yaw;

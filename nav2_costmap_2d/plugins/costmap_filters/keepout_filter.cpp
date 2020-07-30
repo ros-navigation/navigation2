@@ -71,7 +71,7 @@ void KeepoutFilter::filterInfoCallback(
   if (mask_sub_) {
     RCLCPP_WARN(
       node_->get_logger(),
-      "New costmap filter info arrived from %s topic. Updating old filter info and map mask.",
+      "New costmap filter info arrived from %s topic. Updating old filter info.",
       filter_info_topic_.c_str());
     mask_sub_.reset();
   }
