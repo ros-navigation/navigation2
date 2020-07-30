@@ -177,10 +177,10 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
   }
 
   action_server_->activate();
-  
+
   // create bond connection
   createBond();
-  
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
