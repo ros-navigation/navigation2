@@ -41,143 +41,175 @@ namespace nav2_costmap_2d
 {
 
 KeepoutFilter::KeepoutFilter()
-: costmap_filter_info_sub_(nullptr), map_filter_sub_(nullptr), map_filter_(nullptr)
+: filter_info_topic_(""), mask_topic_(""), filter_info_sub_(nullptr), mask_sub_(nullptr),
+  mask_costmap_(nullptr)
 {
 }
 
 void KeepoutFilter::initializeFilter(
-  const std::string costmap_filter_info_topic)
+  const std::string & filter_info_topic)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+
+  filter_info_topic_ = filter_info_topic;
   // Setting new costmap filter info subscriber
   RCLCPP_INFO(
     node_->get_logger(),
-    "Setting a subscriber to %s costmap filter info",
-    costmap_filter_info_topic.c_str());
-  costmap_filter_info_sub_ = node_->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
-    costmap_filter_info_topic, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&KeepoutFilter::costmapFilterInfoCallback, this, std::placeholders::_1));
-
-  curr_time_ = node_->now();
-  prev_time_ = curr_time_;
+    "Subscribing to %s for filter info...",
+    filter_info_topic.c_str());
+  filter_info_sub_ = node_->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
+    filter_info_topic, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+    std::bind(&KeepoutFilter::filterInfoCallback, this, std::placeholders::_1));
 }
 
-void KeepoutFilter::costmapFilterInfoCallback(
+void KeepoutFilter::filterInfoCallback(
   const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
 {
-  // Resetting previous subscriber each time when new costmap filter information arrives
-  if (map_filter_sub_) {
-    RCLCPP_WARN(node_->get_logger(), "New map filter info arrived. Replacing old one.");
-    map_filter_sub_.reset();
-  }
-  map_filter_.reset();
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
-  // Setting new map filter subscriber
+  // Resetting previous subscriber each time when new costmap filter information arrives
+  if (mask_sub_) {
+    RCLCPP_WARN(
+      node_->get_logger(),
+      "New costmap filter info arrived from %s topic. Updating old filter info and map mask.",
+      filter_info_topic_.c_str());
+    mask_sub_.reset();
+  }
+  mask_topic_ = msg->map_mask_topic;
+
+  // Setting new map mask subscriber
   RCLCPP_INFO(
     node_->get_logger(),
-    "Setting a subscriber to %s map filter",
-    msg->map_filter_topic.c_str());
-  map_filter_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
-    msg->map_filter_topic, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&KeepoutFilter::mapFilterCallback, this, std::placeholders::_1));
+    "Subscribing to %s for map mask...",
+    msg->map_mask_topic.c_str());
+  mask_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
+    mask_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+    std::bind(&KeepoutFilter::maskCallback, this, std::placeholders::_1));
 }
 
-void KeepoutFilter::mapFilterCallback(
+void KeepoutFilter::maskCallback(
   const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
-  if (map_filter_) {
-    RCLCPP_WARN(node_->get_logger(), "New map filter arrived. Replacing old one.");
-    map_filter_.reset();
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+
+  if (mask_costmap_) {
+    RCLCPP_WARN(
+      node_->get_logger(),
+      "New map mask arrived from %s topic. Updating old map mask.",
+      mask_topic_.c_str());
+    mask_costmap_.reset();
   }
-  map_filter_ = std::make_unique<nav2_util::OccupancyGrid>(*msg);
+
+  // Making a new mask_costmap_
+  mask_costmap_ = std::make_unique<Costmap2D>(*msg);
 }
 
 void KeepoutFilter::process(
   nav2_costmap_2d::Costmap2D & master_grid,
   int min_i, int min_j, int max_i, int max_j,
-  double /*robot_x*/, double /*robot_y*/, double /*robot_yaw*/)
+  const geometry_msgs::msg::Pose2D & /*pose*/)
 {
-  if (!map_filter_) {
-    curr_time_ = node_->now();
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+
+  if (!mask_costmap_) {
     // Show warning message every 2 seconds to not litter an output
-    if (curr_time_ - prev_time_ >= rclcpp::Duration(std::chrono::milliseconds(2000))) {
-      RCLCPP_WARN(node_->get_logger(), "Map filter was not received");
-      prev_time_ = curr_time_;
-    }
+    RCLCPP_WARN_THROTTLE(
+      node_->get_logger(), *(node_->get_clock()), 2000,
+      "Map filter was not received");
     return;
   }
 
-  unsigned int min_i_u, min_j_u, max_i_u, max_j_u;  // Unsigned versions of window bounds
   double wx, wy;  // world coordinates
 
-  // unsigned<-signed conversions.
-  // All map bounds are positive, so this will be safe.
-  min_i_u = (unsigned int)min_i;
-  min_j_u = (unsigned int)min_j;
-  max_i_u = (unsigned int)max_i;
-  max_j_u = (unsigned int)max_j;
-
-  // Optimization: iterate only by map-filter window bounds corresponding to
-  // (min_i, min_j)..(max_i, max_j) window.
+  // Optimization: iterate only in overlapped
+  // (min_i, min_j)..(max_i, max_j) & mask_costmap_ area.
+  //
+  //           mask_costmap_
+  //       *----------------------------*
+  //       |                            |
+  //       |                            |
+  //       |      (2)                   |
+  // *-----+-------*                    |
+  // |     |///////|<- overlapped area  |
+  // |     |///////|   to iterate in    |
+  // |     *-------+--------------------*
+  // |    (1)      |
+  // |             |
+  // *-------------*
+  //  master_grid (min_i, min_j)..(max_i, max_j) window
+  //
   // ToDo: after costmap rotation will be added, this should be re-worked.
-  int mf_tmp_x, mf_tmp_y;  // Temp signed map_filter_ coordinates using in calculations
-  unsigned int mf_min_x_u, mf_min_y_u, mf_max_x_u, mf_max_y_u;  // map_filter_ bounds
 
-  // Calculating map_filter_ bounds corresponding to (min_i, min_j) corner
-  mapToWorld(min_i_u, min_j_u, wx, wy);
-  map_filter_->worldToMapNoBounds(wx, wy, mf_tmp_x, mf_tmp_y);
-  mf_tmp_x = std::max(mf_tmp_x, 0);
-  mf_tmp_y = std::max(mf_tmp_y, 0);
-  mf_min_x_u = (unsigned int)mf_tmp_x;  // unsigned<-signed conversion
-  mf_min_y_u = (unsigned int)mf_tmp_y;  // unsigned<-signed conversion
-  // Checking that mf_min_x_u/mf_min_y_u are not out of map_filter_ bounds
-  if (mf_min_x_u > map_filter_->getSizeInCellsX() || mf_min_y_u > map_filter_->getSizeInCellsY()) {
+  // Calculating bounds corresponding to bottom-left overlapping (1) corner
+  int mg_min_x, mg_min_y;  // masger_grid indexes of bottom-left (1) corner
+  // mask_costmap_ -> master_grid intexes conversion
+  const double half_cell_size = 0.5 * mask_costmap_->getResolution();
+  wx = mask_costmap_->getOriginX() + half_cell_size;
+  wy = mask_costmap_->getOriginY() + half_cell_size;
+  master_grid.worldToMapNoBounds(wx, wy, mg_min_x, mg_min_y);
+  // Calculation of (1) corner bounds
+  if (mg_min_x >= max_i || mg_min_y >= max_j) {
+    // There is no overlapping. Do nothing.
     return;
   }
+  mg_min_x = std::max(min_i, mg_min_x);
+  mg_min_y = std::max(min_j, mg_min_y);
 
-  // Calculating map_filter_ bounds corresponding to (max_i, max_j) corner
-  mapToWorld(max_i_u, max_j_u, wx, wy);
-  map_filter_->worldToMapNoBounds(wx, wy, mf_tmp_x, mf_tmp_y);
-  // Checking that max_x/max_y are not out of map_filter_ bounds
-  if (mf_tmp_x < 0 || mf_tmp_y < 0) {
+  // Calculating bounds corresponding to top-right window (2) corner
+  int mg_max_x, mg_max_y;  // masger_grid indexes of top-right (2) corner
+  // mask_costmap_ -> master_grid intexes conversion
+  wx = mask_costmap_->getOriginX() + mask_costmap_->getSizeInMetersX();
+  wy = mask_costmap_->getOriginY() + mask_costmap_->getSizeInMetersY();
+  master_grid.worldToMapNoBounds(wx, wy, mg_max_x, mg_max_y);
+  // Calculation of (2) corner bounds
+  if (mg_max_x < min_i || mg_max_y < min_j) {
+    // There is no overlapping. Do nothing.
     return;
   }
-  mf_max_x_u = (unsigned int)mf_tmp_x;  // unsigned<-signed conversion
-  mf_max_y_u = (unsigned int)mf_tmp_y;  // unsigned<-signed conversion
-  mf_max_x_u = std::min(mf_max_x_u, map_filter_->getSizeInCellsX());
-  mf_max_y_u = std::min(mf_max_y_u, map_filter_->getSizeInCellsY());
+  mg_max_x = std::min(max_i, mg_max_x);
+  mg_max_y = std::min(max_j, mg_max_y);
 
-  unsigned int i, j;  // map_filter_ iterators
-  unsigned int mx, my;  // costmap_ coordinates
-  unsigned char data;  // map_filter_ element data
+  // unsigned<-signed conversions.
+  unsigned const int mg_min_x_u = static_cast<unsigned int>(mg_min_x);
+  unsigned const int mg_min_y_u = static_cast<unsigned int>(mg_min_y);
+  unsigned const int mg_max_x_u = static_cast<unsigned int>(mg_max_x);
+  unsigned const int mg_max_y_u = static_cast<unsigned int>(mg_max_y);
 
-  for (i = mf_min_x_u; i < mf_max_x_u; i++) {
-    for (j = mf_min_y_u; j < mf_max_y_u; j++) {
-      data = (*map_filter_)[map_filter_->getIndex(i, j)];
-      if (data != nav2_util::OCC_GRID_UNKNOWN) {
-        // Converting each point on map_filter to world coordinates
-        map_filter_->mapToWorld(i, j, wx, wy);
-        // Getting coordinates of costmap_ (if any) corresponding to given world coordinates
-        bool on_costmap = worldToMap(wx, wy, mx, my);
-        // If these coordinates are belonging to costmap bounds put data on layer
-        if (on_costmap && mx >= min_i_u && mx < max_i_u && my >= min_j_u && my < max_j_u) {
-          // Linear conversion from OccupancyGrid data range [OCC_GRID_FREE..OCC_GRID_OCCUPIED]
-          // to costmap data range [FREE_SPACE..LETHAL_OBSTACLE]
-          costmap_[getIndex(mx, my)] = std::round(
-            data * (LETHAL_OBSTACLE - FREE_SPACE) /
-            (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE));
+  unsigned int i, j;  // master_grid iterators
+  unsigned int index;  // corresponding index of master_grid
+  unsigned int mx, my;  // mask_costmap_ coordinates
+  unsigned char data, old_data;  // master_grid element data
+
+  // Main master_grid updating loop
+  // Iterate in overlapped window by master_grid indexes
+  unsigned char * master_array = master_grid.getCharMap();
+  for (i = mg_min_x_u; i < mg_max_x_u; i++) {
+    for (j = mg_min_y_u; j < mg_max_y_u; j++) {
+      index = master_grid.getIndex(i, j);
+      old_data = master_array[index];
+      // Calculating corresponding to (i, j) point at mask_costmap_
+      master_grid.mapToWorld(i, j, wx, wy);
+      if (mask_costmap_->worldToMap(wx, wy, mx, my)) {
+        data = mask_costmap_->getCost(mx, my);
+        // Update if mask_ data is valid and greater than existing master_grid's one
+        if (data == NO_INFORMATION) {
+          continue;
+        }
+        if (data > old_data || old_data == NO_INFORMATION) {
+          master_array[index] = data;
         }
       }
     }
   }
-
-  updateWithMax(master_grid, min_i, min_j, max_i, max_j);
 }
 
 void KeepoutFilter::resetFilter()
 {
-  costmap_filter_info_sub_.reset();
-  map_filter_sub_.reset();
-  map_filter_.reset();
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+
+  filter_info_sub_.reset();
+  mask_sub_.reset();
+  mask_costmap_.reset();
 }
 
 }  // namespace nav2_costmap_2d

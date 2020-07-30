@@ -29,7 +29,7 @@ public:
     std::unique_ptr<nav2_msgs::msg::CostmapFilterInfo> msg =
       std::make_unique<nav2_msgs::msg::CostmapFilterInfo>();
     msg->type = 0;
-    msg->map_filter_topic = "/map_filter";
+    msg->map_mask_topic = "/map_mask";
     msg->base = 0.0;
     msg->multiplier = 1.0;
 

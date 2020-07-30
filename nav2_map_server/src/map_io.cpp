@@ -46,7 +46,7 @@
 #include "yaml-cpp/yaml.h"
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2/LinearMath/Quaternion.h"
-#include "nav2_util/occupancy_grid.hpp"
+#include "nav2_util/occ_grid_values.hpp"
 
 #ifdef _WIN32
 // https://github.com/rtv/Stage/blob/master/replace/dirname.c

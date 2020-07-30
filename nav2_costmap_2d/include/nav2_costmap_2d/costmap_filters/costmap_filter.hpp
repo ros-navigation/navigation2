@@ -38,10 +38,9 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_FILTER_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_FILTER_HPP_
 
-#include "rclcpp/rclcpp.hpp"
-
 #include <string>
 
+#include "geometry_msgs/msg/pose2_d.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 
 namespace nav2_costmap_2d
@@ -68,11 +67,11 @@ public:
 
   /** CostmapFilter API **/
   /**
-   * @brief: Initializes map filter. Creates subscriptions to a map filter related topics
-   * @param: Name of costmap filter info topic for map filter
+   * @brief: Initializes costmap filter. Creates subscriptions to filter-related topics
+   * @param: Name of costmap filter info topic
    */
   virtual void initializeFilter(
-    const std::string costmap_filter_info_topic) = 0;
+    const std::string & filter_info_topic) = 0;
 
   /**
    * @brief: An algorithm for how to use that map's information. Fills the Costmap2D with
@@ -82,35 +81,28 @@ public:
    * @param: Low window map boundary OY
    * @param: High window map boundary OX
    * @param: High window map boundary OY
-   * @param: Robot position x
-   * @param: Robot position y
-   * @param: Robot orientation
+   * @param: Robot 2D-pose
    */
   virtual void process(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j,
-    double robot_x, double robot_y, double robot_yaw) = 0;
+    const geometry_msgs::msg::Pose2D & pose) = 0;
 
   /**
-   * @brief: Resets map filter. Stops all subscriptions
+   * @brief: Resets costmap filter. Stops all subscriptions
    */
   virtual void resetFilter() = 0;
 
 private:
   /**
-   * @brief: Rolling window indicator
-   */
-  bool is_rolling_;
-
-  /**
    * @brief: Name of costmap filter info topic
    */
-  std::string costmap_filter_info_topic_;
+  std::string filter_info_topic_;
 
   /**
    * @brief: Latest robot position
    */
-  double latest_robot_x, latest_robot_y, latest_robot_yaw;
+  geometry_msgs::msg::Pose2D latest_pose_;
 };
 
 }  // namespace nav2_costmap_2d

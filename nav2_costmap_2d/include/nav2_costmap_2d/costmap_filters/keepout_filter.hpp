@@ -40,12 +40,13 @@
 
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 
-#include "nav2_util/occupancy_grid.hpp"
-
-#include "nav2_msgs/msg/costmap_filter_info.hpp"
-#include "nav_msgs/msg/occupancy_grid.hpp"
-
+#include <string>
 #include <memory>
+#include <mutex>
+
+#include "rclcpp/rclcpp.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav2_msgs/msg/costmap_filter_info.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -56,25 +57,25 @@ public:
   KeepoutFilter();
 
   void initializeFilter(
-    const std::string costmap_filter_info_topic);
+    const std::string & filter_info_topic);
 
   void process(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j,
-    double robot_x, double robot_y, double robot_yaw);
+    const geometry_msgs::msg::Pose2D & pose);
 
   void resetFilter();
 
 private:
-  void costmapFilterInfoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg);
-  void mapFilterCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+  void filterInfoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg);
+  void maskCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
 
-  rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr costmap_filter_info_sub_;
-  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_filter_sub_;
+  std::string filter_info_topic_, mask_topic_;
 
-  std::unique_ptr<nav2_util::OccupancyGrid> map_filter_;
+  rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
+  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
 
-  rclcpp::Time curr_time_, prev_time_;
+  std::unique_ptr<Costmap2D> mask_costmap_;
 };
 
 }  // namespace nav2_costmap_2d

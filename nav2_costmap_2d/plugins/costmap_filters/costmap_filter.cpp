@@ -43,7 +43,7 @@ namespace nav2_costmap_2d
 {
 
 CostmapFilter::CostmapFilter()
-: is_rolling_(true), costmap_filter_info_topic_("/costmap_filter_info")
+: filter_info_topic_("")
 {
 }
 
@@ -53,28 +53,23 @@ CostmapFilter::~CostmapFilter()
 
 void CostmapFilter::onInitialize()
 {
-  // Get parameters
+  // Declare parameters
   declareParameter("enabled", rclcpp::ParameterValue(true));
-  declareParameter("costmap_filter_info_topic");
+  declareParameter("filter_info_topic");
 
+  // Get parameters
   node_->get_parameter(name_ + "." + "enabled", enabled_);
-  if (
-    node_->get_parameter(name_ + "." + "costmap_filter_info_topic", costmap_filter_info_topic_) ==
-    rclcpp::ParameterType::PARAMETER_NOT_SET)
-  {
-    RCLCPP_ERROR(node_->get_logger(), "costmap_filter_info_topic parameter is not set");
-    throw std::runtime_error("Parameter is not set");
+  try {
+    filter_info_topic_ = node_->get_parameter(name_ + "." + "filter_info_topic").as_string();
+  } catch (rclcpp::exceptions::ParameterNotDeclaredException & ex) {
+    RCLCPP_ERROR(node_->get_logger(), "filter_info_topic parameter is not set");
+    throw ex;
   }
-
-  // Allocate and set the costmap of current layer
-  matchSize();
-  // Ask if costmap window is rolling
-  is_rolling_ = layered_costmap_->isRolling();
 }
 
 void CostmapFilter::activate()
 {
-  initializeFilter(costmap_filter_info_topic_);
+  initializeFilter(filter_info_topic_);
 }
 
 void CostmapFilter::deactivate()
@@ -84,36 +79,38 @@ void CostmapFilter::deactivate()
 
 void CostmapFilter::reset()
 {
-  resetMaps();
   resetFilter();
-  initializeFilter(costmap_filter_info_topic_);
+  initializeFilter(filter_info_topic_);
 }
 
 void CostmapFilter::updateBounds(
   double robot_x, double robot_y, double robot_yaw,
   double * /*min_x*/, double * /*min_y*/, double * /*max_x*/, double * /*max_y*/)
 {
+  if (!enabled_) {
+    return;
+  }
+
   // If window is rolling, it is required to dynamically update costmap origin of
   // current layer
-  if (is_rolling_) {
+  if (layered_costmap_->isRolling()) {
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
   }
 
-  latest_robot_x = robot_x;
-  latest_robot_y = robot_y;
-  latest_robot_yaw = robot_yaw;
+  latest_pose_.x = robot_x;
+  latest_pose_.y = robot_y;
+  latest_pose_.theta = robot_yaw;
 }
 
 void CostmapFilter::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int min_i, int min_j, int max_i, int max_j)
 {
-  // Clear costmap_ for process()
-  resetMap(min_i, min_j, max_i, max_j);
+  if (!enabled_) {
+    return;
+  }
 
-  process(
-    master_grid, min_i, min_j, max_i, max_j,
-    latest_robot_x, latest_robot_y, latest_robot_yaw);
+  process(master_grid, min_i, min_j, max_i, max_j, latest_pose_);
 }
 
 }  // namespace nav2_costmap_2d

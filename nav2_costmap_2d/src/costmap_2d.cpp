@@ -41,6 +41,8 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_util/occ_grid_values.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -55,6 +57,38 @@ Costmap2D::Costmap2D(
   // create the costmap
   initMaps(size_x_, size_y_);
   resetMaps();
+}
+
+Costmap2D::Costmap2D(const nav_msgs::msg::OccupancyGrid & map)
+: default_value_(FREE_SPACE)
+{
+  access_ = new mutex_t();
+  std::unique_lock<mutex_t> lock(*access_);
+
+  // fill local variables
+  size_x_ = map.info.width;
+  size_y_ = map.info.height;
+  resolution_ = map.info.resolution;
+  origin_x_ = map.info.origin.position.x;
+  origin_y_ = map.info.origin.position.y;
+
+  // create the costmap
+  costmap_ = new unsigned char[size_x_ * size_y_];
+
+  // fill the costmap with a data
+  int8_t data;
+  for (unsigned int it = 0; it < size_x_ * size_y_; it++) {
+    data = map.data[it];
+    if (data == nav2_util::OCC_GRID_UNKNOWN) {
+      costmap_[it] = NO_INFORMATION;
+    } else {
+      // Linear conversion from OccupancyGrid data range [OCC_GRID_FREE..OCC_GRID_OCCUPIED]
+      // to costmap data range [FREE_SPACE..LETHAL_OBSTACLE]
+      costmap_[it] = std::round(
+        data * (LETHAL_OBSTACLE - FREE_SPACE) /
+        (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE));
+    }
+  }
 }
 
 void Costmap2D::deleteMaps()

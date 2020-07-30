@@ -10,3 +10,8 @@ set(costmap_filter_info_pub_deps
 
 ament_target_dependencies(${costmap_filter_info_pub_executable}
   ${costmap_filter_info_pub_deps})
+
+install(TARGETS
+  ${costmap_filter_info_pub_executable}
+  RUNTIME DESTINATION lib/test
+)
