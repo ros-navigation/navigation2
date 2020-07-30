@@ -22,8 +22,6 @@
 #include "nav2_lifecycle_manager/lifecycle_manager.hpp"
 #include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
 
-// no heartbeat timeout test
-
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 // minimal lifecycle node implementing bond as in rest of navigation servers
