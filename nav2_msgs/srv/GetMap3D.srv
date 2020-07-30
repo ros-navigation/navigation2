@@ -1,0 +1,5 @@
+# Get the map as a sensor_msgs/PointCloud2
+---
+# The current map hosted by this map service.
+sensor_msgs/PointCloud2 map
+geometry_msgs/Transform view_point

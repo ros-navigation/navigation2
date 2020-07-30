@@ -46,3 +46,8 @@ __pycache__/
 *.py[cod]
 
 sphinx_doc/_build
+
+# clion project files
+cmake-build-debug/
+.idea
+
