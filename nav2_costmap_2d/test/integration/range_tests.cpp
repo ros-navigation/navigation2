@@ -146,7 +146,7 @@ protected:
 };
 
 // Simple test with single point range model
-TEST_F(TestNode, testProbabalisticModel) {
+TEST_F(TestNode, testProbabalisticModelPoint) {
   geometry_msgs::msg::TransformStamped transform;
   transform.header.stamp = node_->now();
   transform.header.frame_id = "frame";
@@ -177,4 +177,107 @@ TEST_F(TestNode, testProbabalisticModel) {
   int lethal_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE);
 
   ASSERT_EQ(lethal_count, 1);
+}
+
+// Testing fixed scan with robot forward motion
+TEST_F(TestNode, testProbabalisticModelForward) {
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.stamp = node_->now();
+  transform.header.frame_id = "frame";
+  transform.child_frame_id = "base_link";
+  transform.transform.translation.y = 5;
+  transform.transform.translation.x = 2;
+  tf_.setTransform(transform, "default_authority", true);
+
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> rlayer{nullptr};
+  addRangeLayer(layers, tf_, node_, rlayer);
+
+  sensor_msgs::msg::Range msg;
+  msg.min_range = 1.0;
+  msg.max_range = 10.0;
+  msg.range = 3.0;
+  msg.header.stamp = node_->now();
+  msg.header.frame_id = "base_link";
+  msg.radiation_type = msg.ULTRASOUND;
+  msg.field_of_view = 0.174533;  // 10 deg
+  rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
+
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+  printMap(*(layers.getCostmap()));
+
+  rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
+  transform.transform.translation.y = 5;
+  transform.transform.translation.x = 4;
+  tf_.setTransform(transform, "default_authority", true);
+
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+  printMap(*(layers.getCostmap()));
+
+  rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
+
+  transform.transform.translation.y = 5;
+  transform.transform.translation.x = 6;
+  tf_.setTransform(transform, "default_authority", true);
+
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+  printMap(*(layers.getCostmap()));
+
+  int lethal_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  ASSERT_EQ(lethal_count, 3);
+}
+
+// Testing fixed motion with downward movement
+TEST_F(TestNode, testProbabalisticModelDownward) {
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.stamp = node_->now();
+  transform.header.frame_id = "frame";
+  transform.child_frame_id = "base_link";
+  transform.transform.translation.y = 3;
+  transform.transform.translation.x = 2;
+  tf_.setTransform(transform, "default_authority", true);
+
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> rlayer{nullptr};
+  addRangeLayer(layers, tf_, node_, rlayer);
+
+  sensor_msgs::msg::Range msg;
+  msg.min_range = 1.0;
+  msg.max_range = 10.0;
+  msg.range = 1.0;
+  msg.header.stamp = node_->now();
+  msg.header.frame_id = "base_link";
+  msg.radiation_type = msg.ULTRASOUND;
+  msg.field_of_view = 0.174533;  // 10 deg
+  rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
+
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+  printMap(*(layers.getCostmap()));
+
+  rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
+
+  transform.transform.translation.y = 5;
+  transform.transform.translation.x = 2;
+  tf_.setTransform(transform, "default_authority", true);
+
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+  printMap(*(layers.getCostmap()));
+
+  rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
+
+  transform.transform.translation.y = 7;
+  transform.transform.translation.x = 2;
+  tf_.setTransform(transform, "default_authority", true);
+
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+  printMap(*(layers.getCostmap()));
+
+  int lethal_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  ASSERT_EQ(lethal_count, 3);
 }
