@@ -24,22 +24,25 @@ import launch_ros.actions
 
 def generate_launch_description():
     # Parameters
+    namespace = '/local_costmap'
+    lifecycle_nodes = ['map_mask_server']
+    mask_topic = 'map_mask'
+    use_sim_time = True
+    autostart = True
+
+    # Paths
     launch_dir = os.path.dirname(os.path.realpath(__file__))
     yaml_dir = os.path.join(os.path.split(launch_dir)[0], 'map')
     yaml_filename = os.path.join(yaml_dir, 'keepout_mask.yaml')
     info_pub_dir = os.path.join(get_package_prefix('nav2_costmap_2d'), 'lib', 'test')
     info_pub_bin = os.path.join(info_pub_dir, 'costmap_filter_info_pub')
 
-    lifecycle_nodes = ['map_mask_server']
-    use_sim_time = True
-    autostart = True
-    mask_topic = 'map_mask'
-
     # Nodes launching commands
     start_map_server_cmd = launch_ros.actions.Node(
             package='nav2_map_server',
             executable='map_server',
             name='map_mask_server',
+            namespace=namespace,
             output='screen',
             emulate_tty=True,  # https://github.com/ros2/launch/issues/188
             parameters=[{'use_sim_time': use_sim_time},
@@ -50,6 +53,7 @@ def generate_launch_description():
             package='nav2_lifecycle_manager',
             executable='lifecycle_manager',
             name='lifecycle_manager',
+            namespace=namespace,
             output='screen',
             emulate_tty=True,  # https://github.com/ros2/launch/issues/188
             parameters=[{'use_sim_time': use_sim_time},
@@ -57,10 +61,10 @@ def generate_launch_description():
                         {'node_names': lifecycle_nodes}])
 
     start_costmap_filter_info_pub_cmd = ExecuteProcess(
-           cmd=[info_pub_bin],
+           cmd=[info_pub_bin, '--ros-args', '--remap', '__ns:=' + namespace],
            cwd=[info_pub_dir],
            output='screen',
-           emulate_tty=True,  # https://github.com/ros2/launch/issues/188
+           emulate_tty=True  # https://github.com/ros2/launch/issues/188
     )
 
     ld = LaunchDescription()

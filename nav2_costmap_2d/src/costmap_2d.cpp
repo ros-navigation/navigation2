@@ -63,7 +63,6 @@ Costmap2D::Costmap2D(const nav_msgs::msg::OccupancyGrid & map)
 : default_value_(FREE_SPACE)
 {
   access_ = new mutex_t();
-  std::unique_lock<mutex_t> lock(*access_);
 
   // fill local variables
   size_x_ = map.info.width;
@@ -85,7 +84,7 @@ Costmap2D::Costmap2D(const nav_msgs::msg::OccupancyGrid & map)
       // Linear conversion from OccupancyGrid data range [OCC_GRID_FREE..OCC_GRID_OCCUPIED]
       // to costmap data range [FREE_SPACE..LETHAL_OBSTACLE]
       costmap_[it] = std::round(
-        data * (LETHAL_OBSTACLE - FREE_SPACE) /
+        1.0 * data * (LETHAL_OBSTACLE - FREE_SPACE) /
         (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE));
     }
   }

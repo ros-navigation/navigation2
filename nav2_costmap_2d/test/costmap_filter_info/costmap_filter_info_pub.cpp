@@ -24,12 +24,12 @@ public:
   : Node("costmap_filter_info_pub")
   {
     publisher_ = this->create_publisher<nav2_msgs::msg::CostmapFilterInfo>(
-      "/costmap_filter_info", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+      "costmap_filter_info", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
     std::unique_ptr<nav2_msgs::msg::CostmapFilterInfo> msg =
       std::make_unique<nav2_msgs::msg::CostmapFilterInfo>();
     msg->type = 0;
-    msg->map_mask_topic = "/map_mask";
+    msg->map_mask_topic = "map_mask";
     msg->base = 0.0;
     msg->multiplier = 1.0;
 

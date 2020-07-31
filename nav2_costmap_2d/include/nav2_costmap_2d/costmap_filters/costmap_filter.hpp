@@ -93,12 +93,18 @@ public:
    */
   virtual void resetFilter() = 0;
 
-private:
+protected:
   /**
    * @brief: Name of costmap filter info topic
    */
   std::string filter_info_topic_;
 
+  /**
+   * @brief: Name of map mask topic
+   */
+  std::string mask_topic_;
+
+private:
   /**
    * @brief: Latest robot position
    */

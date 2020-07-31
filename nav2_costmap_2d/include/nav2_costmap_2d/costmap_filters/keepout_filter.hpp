@@ -70,8 +70,6 @@ private:
   void filterInfoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg);
   void maskCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
 
-  std::string filter_info_topic_, mask_topic_;
-
   rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
 

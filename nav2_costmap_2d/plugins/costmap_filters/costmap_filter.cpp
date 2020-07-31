@@ -43,7 +43,7 @@ namespace nav2_costmap_2d
 {
 
 CostmapFilter::CostmapFilter()
-: filter_info_topic_("")
+: filter_info_topic_(""), mask_topic_("")
 {
 }
 
