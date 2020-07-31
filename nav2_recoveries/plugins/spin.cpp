@@ -47,35 +47,39 @@ Spin::~Spin()
 
 void Spin::onConfigure()
 {
+  auto node = node_.lock();
+
   nav2_util::declare_parameter_if_not_declared(
-    node_,
+    node,
     "simulate_ahead_time", rclcpp::ParameterValue(2.0));
-  node_->get_parameter("simulate_ahead_time", simulate_ahead_time_);
+  node->get_parameter("simulate_ahead_time", simulate_ahead_time_);
 
   nav2_util::declare_parameter_if_not_declared(
-    node_,
+    node,
     "max_rotational_vel", rclcpp::ParameterValue(1.0));
-  node_->get_parameter("max_rotational_vel", max_rotational_vel_);
+  node->get_parameter("max_rotational_vel", max_rotational_vel_);
 
   nav2_util::declare_parameter_if_not_declared(
-    node_,
+    node,
     "min_rotational_vel", rclcpp::ParameterValue(0.4));
-  node_->get_parameter("min_rotational_vel", min_rotational_vel_);
+  node->get_parameter("min_rotational_vel", min_rotational_vel_);
 
   nav2_util::declare_parameter_if_not_declared(
-    node_,
+    node,
     "rotational_acc_lim", rclcpp::ParameterValue(3.2));
-  node_->get_parameter("rotational_acc_lim", rotational_acc_lim_);
+  node->get_parameter("rotational_acc_lim", rotational_acc_lim_);
 }
 
 Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 {
+  auto node = node_.lock();
+
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+    RCLCPP_ERROR(node->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -84,19 +88,21 @@ Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 
   cmd_yaw_ = command->target_yaw;
   RCLCPP_INFO(
-    node_->get_logger(), "Turning %0.2f for spin recovery.",
+    node->get_logger(), "Turning %0.2f for spin recovery.",
     cmd_yaw_);
   return Status::SUCCEEDED;
 }
 
 Status Spin::onCycleUpdate()
 {
+  auto node = node_.lock();
+
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+    RCLCPP_ERROR(node->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -132,7 +138,7 @@ Status Spin::onCycleUpdate()
 
   if (!isCollisionFree(relative_yaw_, cmd_vel.get(), pose2d)) {
     stopRobot();
-    RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting Spin");
+    RCLCPP_WARN(node->get_logger(), "Collision Ahead - Exiting Spin");
     return Status::SUCCEEDED;
   }
 

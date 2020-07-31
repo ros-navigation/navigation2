@@ -58,6 +58,7 @@ RecoveryServer::RecoveryServer()
 
 RecoveryServer::~RecoveryServer()
 {
+  recoveries_.clear();
 }
 
 nav2_util::CallbackReturn

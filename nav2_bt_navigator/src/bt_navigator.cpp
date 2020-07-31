@@ -72,7 +72,6 @@ BtNavigator::BtNavigator()
 
 BtNavigator::~BtNavigator()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn
