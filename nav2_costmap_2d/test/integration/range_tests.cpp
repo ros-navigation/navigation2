@@ -169,7 +169,6 @@ TEST_F(TestNode, testProbabalisticModel) {
   msg.header.frame_id = "base_link";
   msg.radiation_type = msg.ULTRASOUND;
   msg.field_of_view = 0.174533;  // 10 deg
-
   rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
