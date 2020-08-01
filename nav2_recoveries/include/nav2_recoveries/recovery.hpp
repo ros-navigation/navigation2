@@ -124,12 +124,14 @@ public:
     RCLCPP_INFO(node_->get_logger(), "Activating %s", recovery_name_.c_str());
 
     vel_pub_->on_activate();
+    action_server_->activate();
     enabled_ = true;
   }
 
   void deactivate() override
   {
     vel_pub_->on_deactivate();
+    action_server_->deactivate();
     enabled_ = false;
   }
 

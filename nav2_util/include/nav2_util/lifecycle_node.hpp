@@ -22,6 +22,8 @@
 #include "nav2_util/node_thread.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "bondcpp/bond.hpp"
+#include "bond/msg/constants.hpp"
 
 namespace nav2_util
 {
@@ -121,6 +123,10 @@ public:
       rclcpp_lifecycle::LifecycleNode::shared_from_this());
   }
 
+  // bond connection to lifecycle manager
+  void createBond();
+  void destroyBond();
+
 protected:
   void print_lifecycle_node_notification();
 
@@ -133,6 +139,9 @@ protected:
 
   // When creating a local node, this class will launch a separate thread created to spin the node
   std::unique_ptr<NodeThread> rclcpp_thread_;
+
+  // Connection to tell that server is still up
+  std::unique_ptr<bond::Bond> bond_{nullptr};
 };
 
 }  // namespace nav2_util
