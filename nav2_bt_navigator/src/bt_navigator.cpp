@@ -214,6 +214,7 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   action_server_.reset();
   plugin_lib_names_.clear();
+  current_bt_xml_filename_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_.rootNode());
   bt_.reset();
