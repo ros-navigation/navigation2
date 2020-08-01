@@ -135,7 +135,7 @@ public:
       rclcpp::ParameterValue(
         std::vector<std::string>{"/range/topic"}));
     node_->declare_parameter("range.phi", rclcpp::ParameterValue(1.2));
-    node_->declare_parameter("range.transform_tolerance", rclcpp::ParameterValue(0.1));
+    node_->declare_parameter("range.clear_on_max_reading", rclcpp::ParameterValue(true));
   }
 
   ~TestNode() {}
@@ -145,8 +145,48 @@ protected:
   tf2_ros::Buffer tf_;
 };
 
-// Simple test with single point range model
-TEST_F(TestNode, testProbabalisticModelPoint) {
+// Test clearing at max range
+TEST_F(TestNode, testClearingAtMaxRange) {
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.stamp = node_->now();
+  transform.header.frame_id = "frame";
+  transform.child_frame_id = "base_link";
+  transform.transform.translation.y = 5;
+  transform.transform.translation.x = 2;
+  tf_.setTransform(transform, "default_authority", true);
+
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> rlayer{nullptr};
+  addRangeLayer(layers, tf_, node_, rlayer);
+
+  sensor_msgs::msg::Range msg;
+  msg.min_range = 1.0;
+  msg.max_range = 7.0;
+  msg.range = 2.0;
+  msg.header.stamp = node_->now();
+  msg.header.frame_id = "base_link";
+  msg.radiation_type = msg.ULTRASOUND;
+  msg.field_of_view = 0.174533;  // 10 deg
+  rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
+
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+//  printMap(*(layers.getCostmap()));
+
+  ASSERT_EQ(layers.getCostmap()->getCost(4, 5), 254);
+
+  msg.range = 7.0;
+  msg.header.stamp = node_->now();
+  rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+//  printMap(*(layers.getCostmap()));
+
+  ASSERT_EQ(layers.getCostmap()->getCost(4, 5), 0);
+}
+
+// Test clearing in general case
+TEST_F(TestNode, testGeneralClearing) {
   geometry_msgs::msg::TransformStamped transform;
   transform.header.stamp = node_->now();
   transform.header.frame_id = "frame";
@@ -164,19 +204,25 @@ TEST_F(TestNode, testProbabalisticModelPoint) {
   sensor_msgs::msg::Range msg;
   msg.min_range = 1.0;
   msg.max_range = 10.0;
-  msg.range = 1.0;
+  msg.range = 2.0;
   msg.header.stamp = node_->now();
   msg.header.frame_id = "base_link";
   msg.radiation_type = msg.ULTRASOUND;
-  msg.field_of_view = 0.174533;  // 10 deg
+  msg.field_of_view = 1.59;
   rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
   printMap(*(layers.getCostmap()));
 
-  int lethal_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE);
+  ASSERT_EQ(layers.getCostmap()->getCost(4, 5), 254);
 
-  ASSERT_EQ(lethal_count, 1);
+  msg.range = 7.0;
+  msg.header.stamp = node_->now();
+  rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+  printMap(*(layers.getCostmap()));
+
+  ASSERT_EQ(layers.getCostmap()->getCost(4, 5), 0);
 }
 
 // Testing fixed scan with robot forward motion
@@ -206,7 +252,7 @@ TEST_F(TestNode, testProbabalisticModelForward) {
   rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
-  printMap(*(layers.getCostmap()));
+//  printMap(*(layers.getCostmap()));
 
   rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
   transform.transform.translation.y = 5;
@@ -214,7 +260,7 @@ TEST_F(TestNode, testProbabalisticModelForward) {
   tf_.setTransform(transform, "default_authority", true);
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
-  printMap(*(layers.getCostmap()));
+//  printMap(*(layers.getCostmap()));
 
   rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
 
@@ -223,11 +269,13 @@ TEST_F(TestNode, testProbabalisticModelForward) {
   tf_.setTransform(transform, "default_authority", true);
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
-  printMap(*(layers.getCostmap()));
+//  printMap(*(layers.getCostmap()));
 
-  int lethal_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE);
-
-  ASSERT_EQ(lethal_count, 3);
+  ASSERT_EQ(layers.getCostmap()->getCost(5, 5), 254);
+  ASSERT_EQ(layers.getCostmap()->getCost(6, 5), 0);
+  ASSERT_EQ(layers.getCostmap()->getCost(7, 5), 254);
+  ASSERT_EQ(layers.getCostmap()->getCost(8, 5), 0);
+  ASSERT_EQ(layers.getCostmap()->getCost(9, 5), 254);
 }
 
 // Testing fixed motion with downward movement
@@ -257,7 +305,7 @@ TEST_F(TestNode, testProbabalisticModelDownward) {
   rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
-  printMap(*(layers.getCostmap()));
+//  printMap(*(layers.getCostmap()));
 
   rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
 
@@ -266,7 +314,7 @@ TEST_F(TestNode, testProbabalisticModelDownward) {
   tf_.setTransform(transform, "default_authority", true);
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
-  printMap(*(layers.getCostmap()));
+//  printMap(*(layers.getCostmap()));
 
   rlayer->bufferIncomingRangeMsg(std::make_shared<sensor_msgs::msg::Range>(msg));
 
@@ -275,9 +323,11 @@ TEST_F(TestNode, testProbabalisticModelDownward) {
   tf_.setTransform(transform, "default_authority", true);
 
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
-  printMap(*(layers.getCostmap()));
+//  printMap(*(layers.getCostmap()));
 
-  int lethal_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE);
-
-  ASSERT_EQ(lethal_count, 3);
+  ASSERT_EQ(layers.getCostmap()->getCost(3, 3), 254);
+  ASSERT_EQ(layers.getCostmap()->getCost(3, 4), 0);
+  ASSERT_EQ(layers.getCostmap()->getCost(3, 5), 254);
+  ASSERT_EQ(layers.getCostmap()->getCost(3, 6), 0);
+  ASSERT_EQ(layers.getCostmap()->getCost(3, 7), 254);
 }

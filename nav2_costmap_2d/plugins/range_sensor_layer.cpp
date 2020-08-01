@@ -269,7 +269,7 @@ void RangeSensorLayer::processVariableRangeMsg(sensor_msgs::msg::Range & range_m
 
   bool clear_sensor_cone = false;
 
-  if (range_message.range == range_message.max_range && clear_on_max_reading_) {
+  if (range_message.range >= range_message.max_range && clear_on_max_reading_) {
     clear_sensor_cone = true;
   }
 
@@ -289,7 +289,7 @@ void RangeSensorLayer::updateCostmap(
   if (!tf_->canTransform(
       in.header.frame_id, global_frame_, tf2_ros::fromMsg(in.header.stamp)))
   {
-    RCLCPP_ERROR(
+    RCLCPP_INFO(
       node_->get_logger(), "Range sensor layer can't transform from %s to %s",
       global_frame_.c_str(), in.header.frame_id.c_str());
     return;
