@@ -24,7 +24,7 @@
 #include "nav2_msgs/srv/save_map.hpp"
 #include "nav2_msgs/srv/save_map3_d.hpp"
 
-#include "map_io.hpp"
+#include "nav2_map_server/map_io.hpp"
 #include "nav2_map_server_3D/map_io_3D.hpp"
 
 namespace nav2_map_server

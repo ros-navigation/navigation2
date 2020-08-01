@@ -15,18 +15,18 @@
 using namespace nav2_map_server;  // NOLINT
 
 const char * USAGE_STRING{
-    "Usage:\n"
-    "  map_saver_cli_3D [arguments] [--ros-args ROS remapping args]\n"
-    "\n"
-    "Arguments:\n"
-    "  -h/--help\n"
-    "  -t <map_topic>\n"
-    "  -f <mapname>\n"
-    "  --fmt <file_format>\n"
-    "  --as_bin Give the flag to save map with binary encodings\n"
-    "  --origin-orientation <[size 7 vector of floats]>"
-    "\n"
-    "NOTE: --ros-args should be passed at the end of command line"};
+  "Usage:\n"
+  "  map_saver_cli_3D [arguments] [--ros-args ROS remapping args]\n"
+  "\n"
+  "Arguments:\n"
+  "  -h/--help\n"
+  "  -t <map_topic>\n"
+  "  -f <mapname>\n"
+  "  --fmt <file_format>\n"
+  "  --as_bin Give the flag to save map with binary encodings\n"
+  "  --origin-orientation <[size 7 vector of floats]>"
+  "\n"
+  "NOTE: --ros-args should be passed at the end of command line"};
 
 typedef enum
 {
@@ -54,8 +54,8 @@ typedef enum
 // Input parameters: logger, argc, argv
 // Output parameters: map_topic, save_parameters
 ARGUMENTS_STATUS parse_arguments(
-    const rclcpp::Logger & logger, int argc, char ** argv,
-    std::string & map_topic, nav2_map_server_3D::SaveParameters & save_parameters)
+  const rclcpp::Logger & logger, int argc, char ** argv,
+  std::string & map_topic, nav2_map_server_3D::SaveParameters & save_parameters)
 {
   const struct cmd_struct commands[] = {
     {"-t", COMMAND_MAP_TOPIC},
@@ -81,7 +81,7 @@ ARGUMENTS_STATUS parse_arguments(
     }
     for (i = 0; i < cmd_size; i++) {
       if (commands[i].cmd == *it) {
-        if ((it + 1) == arguments.end()) {
+        if ((it + 1) == arguments.end() && *it != "--as_bin") {
           RCLCPP_ERROR(logger, "Wrong argument: %s should be followed by a value.", it->c_str());
           return ARGUMENTS_INVALID;
         }
@@ -101,17 +101,24 @@ ARGUMENTS_STATUS parse_arguments(
             save_parameters.as_binary = true;
             break;
           case COMMAND_VIEW_POINT:
-            for (int k = 0; k < 7; ++k) {
-              std::string param_val = *it;
-              if (param_val[0] == '['){
-                save_parameters.view_point.push_back(std::stof(param_val.substr(1, param_val.size()-1)));
-              }
-              if (param_val[param_val.size()-1] == ']'){
-                save_parameters.view_point.push_back(std::stof(param_val.substr(0, param_val.size()-1)));
+            for (int k = 0; k < 9; ++k) {
+              std::string tmp = *it;
+              if (tmp == "["){
+                it++;
+                continue;
+              } else if (tmp == "]"){
                 break;
+              }
+              if (k<4){
+                save_parameters.origin.push_back(std::stof(tmp.substr(0, tmp.size()-1)));
+              } else if(k<7) {
+                save_parameters.orientation.push_back(std::stof(tmp.substr(0, tmp.size()-1)));
+              } else if(k==7) {
+                save_parameters.orientation.push_back(std::stof(tmp));
               }
               it++;
             }
+            break;
         }
         break;
       }

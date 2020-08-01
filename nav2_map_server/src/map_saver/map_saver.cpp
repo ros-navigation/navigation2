@@ -37,6 +37,8 @@
 #include <functional>
 
 #include "nav2_msgs/msg/pcd2.hpp"
+#include "nav2_map_server_3D/map_io_3D.hpp"
+#include "nav2_map_server/map_io.hpp"
 
 using namespace std::placeholders;
 
@@ -76,8 +78,8 @@ MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/)
     };
 
     pcd_save_map_service_ = create_service<nav2_msgs::srv::SaveMap3D>(
-        service_prefix + save_map_service_name_ + "3D",
-        save_map_call_back_lambda_3D);
+      service_prefix + save_map_service_name_ + "3D",
+      save_map_call_back_lambda_3D);
 //  } else {
     auto save_map_call_back_lambda = [this](
         const std::shared_ptr<rmw_request_id_t> request_header,
@@ -87,8 +89,8 @@ MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/)
     };
 
     save_map_service_ = create_service<nav2_msgs::srv::SaveMap>(
-        service_prefix + save_map_service_name_,
-        save_map_call_back_lambda);
+      service_prefix + save_map_service_name_,
+      save_map_call_back_lambda);
 //  }
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -141,6 +143,7 @@ void MapSaver::saveMapCallback(
   save_parameters.image_format = request->image_format;
   save_parameters.free_thresh = request->free_thresh;
   save_parameters.occupied_thresh = request->occupied_thresh;
+
   try {
     save_parameters.mode = map_mode_from_string(request->map_mode);
   } catch (std::invalid_argument &) {
