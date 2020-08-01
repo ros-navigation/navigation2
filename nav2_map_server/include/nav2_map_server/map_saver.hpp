@@ -59,8 +59,8 @@ public:
     const SaveParameters & save_parameters);
 
   bool saveMapTopicToFile(
-      const std::string & map_topic,
-      const nav2_map_server_3D::SaveParameters & save_parameters);
+    const std::string & map_topic,
+    const nav2_map_server_3D::SaveParameters & save_parameters);
 
 protected:
   /**
@@ -106,9 +106,9 @@ protected:
     std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response);
 
   void saveMapCallback(
-      const std::shared_ptr<rmw_request_id_t> request_header,
-      const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
-      std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response);
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
+    std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response);
 
   // The timeout for saving the map in service
   std::shared_ptr<rclcpp::Duration> save_map_timeout_;

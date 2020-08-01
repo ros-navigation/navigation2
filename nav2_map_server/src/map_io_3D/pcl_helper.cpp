@@ -15,7 +15,10 @@
 namespace nav2_map_server {
 namespace nav2_map_server_3D {
 
-void ModifyMsgFields(sensor_msgs::msg::PointCloud2 &msg, const std::vector<pcl::PCLPointField> &fields) {
+void modifyMsgFields(
+  sensor_msgs::msg::PointCloud2 &msg,
+  const std::vector<pcl::PCLPointField> &fields)
+{
   msg.fields.clear();
   for(auto & field : fields){
     sensor_msgs::msg::PointField new_field;
@@ -27,9 +30,12 @@ void ModifyMsgFields(sensor_msgs::msg::PointCloud2 &msg, const std::vector<pcl::
   }
 }
 
-void PclToMsg(sensor_msgs::msg::PointCloud2 &msg, const std::shared_ptr<pcl::PCLPointCloud2>& cloud){
+void pclToMsg(
+  sensor_msgs::msg::PointCloud2 &msg,
+  const std::shared_ptr<pcl::PCLPointCloud2>& cloud)
+{
   msg.data.clear();
-  ModifyMsgFields(msg, cloud->fields);
+  modifyMsgFields(msg, cloud->fields);
   msg.data = cloud->data;
   msg.point_step = cloud->point_step;
   msg.row_step = cloud->row_step;
@@ -40,7 +46,10 @@ void PclToMsg(sensor_msgs::msg::PointCloud2 &msg, const std::shared_ptr<pcl::PCL
   msg.header = pcl_conversions::fromPCL(cloud->header);
 }
 
-void ModifyPclFields(std::vector<pcl::PCLPointField> &fields, const sensor_msgs::msg::PointCloud2 &msg) {
+void modifyPclFields(
+  std::vector<pcl::PCLPointField> &fields,
+  const sensor_msgs::msg::PointCloud2 &msg)
+{
   fields.clear();
   for(auto & field : msg.fields){
     pcl::PCLPointField new_field;
@@ -51,9 +60,13 @@ void ModifyPclFields(std::vector<pcl::PCLPointField> &fields, const sensor_msgs:
     fields.push_back(new_field);
   }
 }
-void MsgToPcl(std::shared_ptr<pcl::PCLPointCloud2> &cloud, const sensor_msgs::msg::PointCloud2 &msg) {
+
+void msgToPcl(
+  std::shared_ptr<pcl::PCLPointCloud2> &cloud,
+  const sensor_msgs::msg::PointCloud2 &msg)
+{
   cloud->data.clear();
-  ModifyPclFields(cloud->fields, msg);
+  modifyPclFields(cloud->fields, msg);
   cloud->data = msg.data;
   cloud->point_step = msg.point_step;
   cloud->row_step = msg.row_step;

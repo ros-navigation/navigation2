@@ -58,11 +58,11 @@ ARGUMENTS_STATUS parse_arguments(
     std::string & map_topic, nav2_map_server_3D::SaveParameters & save_parameters)
 {
   const struct cmd_struct commands[] = {
-      {"-t", COMMAND_MAP_TOPIC},
-      {"-f", COMMAND_MAP_FILE_NAME},
-      {"--fmt", COMMAND_FILE_FORMAT},
-      {"--as_bin", COMMAND_ENCODING},
-      {"--view_point", COMMAND_VIEW_POINT}
+    {"-t", COMMAND_MAP_TOPIC},
+    {"-f", COMMAND_MAP_FILE_NAME},
+    {"--fmt", COMMAND_FILE_FORMAT},
+    {"--as_bin", COMMAND_ENCODING},
+    {"--view_point", COMMAND_VIEW_POINT}
   };
 
   std::vector<std::string> arguments(argv + 1, argv + argc);

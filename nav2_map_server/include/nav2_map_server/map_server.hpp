@@ -50,7 +50,7 @@ class MapServer : public nav2_util::LifecycleNode {
 
  private:
 
-  bool enable_pcd, enable_image;
+  bool enable_pcd_, enable_image_;
   void CheckForFunctionalitiesToEnable(const std::string &yaml_filename);
 
  protected:
@@ -95,12 +95,12 @@ class MapServer : public nav2_util::LifecycleNode {
    * @return true or false
    */
   bool loadMapResponseFromYaml(
-      const std::string &yaml_file,
-      std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
+    const std::string &yaml_file,
+    std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
 
   bool loadMapResponseFromYaml(
-      const std::string &yaml_file,
-      std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response);
+    const std::string &yaml_file,
+    std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response);
 
   /**
    * @brief Method correcting msg_ header when it belongs to instantiated object
@@ -114,14 +114,14 @@ class MapServer : public nav2_util::LifecycleNode {
    * @param response Service response
    */
   void getMapCallback(
-      const std::shared_ptr<rmw_request_id_t> request_header,
-      const std::shared_ptr<nav_msgs::srv::GetMap::Request> request,
-      std::shared_ptr<nav_msgs::srv::GetMap::Response> response);
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav_msgs::srv::GetMap::Request> request,
+    std::shared_ptr<nav_msgs::srv::GetMap::Response> response);
 
   void getMapCallback(
-      const std::shared_ptr<rmw_request_id_t> request_header,
-      const std::shared_ptr<nav2_msgs::srv::GetMap3D::Request> request,
-      std::shared_ptr<nav2_msgs::srv::GetMap3D::Response> response);
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::GetMap3D::Request> request,
+    std::shared_ptr<nav2_msgs::srv::GetMap3D::Response> response);
 
   /**
    * @brief Map loading service callback
@@ -130,14 +130,14 @@ class MapServer : public nav2_util::LifecycleNode {
    * @param response Service response
    */
   void loadMapCallback(
-      const std::shared_ptr<rmw_request_id_t> request_header,
-      const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
-      std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
+    std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
 
   void loadMapCallback(
-      const std::shared_ptr<rmw_request_id_t> request_header,
-      const std::shared_ptr<nav2_msgs::srv::LoadMap3D::Request> request,
-      std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response);
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::LoadMap3D::Request> request,
+    std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response);
 
 
   // The name of the service for getting a map

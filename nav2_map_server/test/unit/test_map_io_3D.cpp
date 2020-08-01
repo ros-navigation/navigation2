@@ -72,7 +72,7 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
 
   sensor_msgs::msg::PointCloud2 map_msg;
   geometry_msgs::msg::Transform view_point_msg;
-  ASSERT_NO_THROW(nav2_map_server_3D::LoadMapFromFile(loadParameters, map_msg, view_point_msg));
+  ASSERT_NO_THROW(nav2_map_server_3D::loadMapFromFile(loadParameters, map_msg, view_point_msg));
 
   //  verifyMapMsg(map_msg); TODO: varification for pcd file
 
@@ -94,10 +94,10 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
 
   fillSaveParameters(path(g_tmp_dir) / path(g_valid_pcd_map_name), view_point, "pcd", false,saveParameters);
 
-  ASSERT_TRUE(nav2_map_server_3D::SaveMapToFile(map_msg, saveParameters));
+  ASSERT_TRUE(nav2_map_server_3D::saveMapToFile(map_msg, saveParameters));
 
   // 3. Load saved map and verify it
-  nav2_map_server_3D::LOAD_MAP_STATUS status = nav2_map_server_3D::LoadMapFromYaml(path(g_tmp_dir) / path
+  nav2_map_server_3D::LOAD_MAP_STATUS status = nav2_map_server_3D::loadMapFromYaml(path(g_tmp_dir) / path
       (g_valid_pcd_yaml_file), map_msg, view_point_msg);
   ASSERT_EQ(status, nav2_map_server_3D::LOAD_MAP_SUCCESS);
 
@@ -108,7 +108,7 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
 TEST_F(MapIO3DTester, loadValidYAML)
 {
   nav2_map_server_3D::LoadParameters_3D loadParameters;
-  ASSERT_NO_THROW(loadParameters = nav2_map_server_3D::LoadMapYaml(path(TEST_DIR) / path(g_valid_pcd_yaml_file)));
+  ASSERT_NO_THROW(loadParameters = nav2_map_server_3D::loadMapYaml(path(TEST_DIR) / path(g_valid_pcd_yaml_file)));
 
   nav2_map_server_3D::LoadParameters_3D refLoadParameters;
   fillLoadParameters(path(TEST_DIR) / path(g_valid_pcd_file), refLoadParameters);
@@ -118,5 +118,5 @@ TEST_F(MapIO3DTester, loadValidYAML)
 TEST_F(MapIO3DTester, loadInvalidYAML)
 {
   nav2_map_server_3D::LoadParameters_3D loadParameters;
-  ASSERT_ANY_THROW(loadParameters = nav2_map_server_3D::LoadMapYaml(path(TEST_DIR) / path("invalid_file.yaml")));
+  ASSERT_ANY_THROW(loadParameters = nav2_map_server_3D::loadMapYaml(path(TEST_DIR) / path("invalid_file.yaml")));
 }

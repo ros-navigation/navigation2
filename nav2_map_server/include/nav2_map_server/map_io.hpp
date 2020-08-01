@@ -20,9 +20,9 @@
 #include <string>
 #include <vector>
 
+#include "yaml-cpp/yaml.h"
 #include "nav2_map_server/map_mode.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
-#include <yaml-cpp/yaml.h>
 
 /* Map input part */
 

@@ -87,7 +87,7 @@ T YamlGetValue(const YAML::Node &node, const std::string &key) {
   }
 }
 
-LoadParameters_3D LoadMapYaml(const std::string &yaml_filename) {
+LoadParameters_3D loadMapYaml(const std::string &yaml_filename) {
   YAML::Node doc = YAML::LoadFile(yaml_filename);
   LoadParameters_3D load_parameters_3D;
 
@@ -116,7 +116,7 @@ LoadParameters_3D LoadMapYaml(const std::string &yaml_filename) {
   return load_parameters_3D;
 }
 
-void LoadMapFromFile(
+void loadMapFromFile(
     const LoadParameters_3D &load_parameters_3D,
     sensor_msgs::msg::PointCloud2 &map,
     geometry_msgs::msg::Transform &view_point_msg) {
@@ -173,7 +173,7 @@ void LoadMapFromFile(
   }
 
   //  update message data
-  PclToMsg(msg, cloud);
+  pclToMsg(msg, cloud);
 
   std::cout << "[INFO] [map_io_3D]: Loaded point cloud: " << load_parameters_3D.pcd_file_name << std::endl;
 
@@ -181,7 +181,7 @@ void LoadMapFromFile(
   view_point_msg = tr_msg;
 }
 
-LOAD_MAP_STATUS LoadMapFromYaml(
+LOAD_MAP_STATUS loadMapFromYaml(
     const std::string &yaml_file,
     sensor_msgs::msg::PointCloud2 &map,
     geometry_msgs::msg::Transform &view_point_msg) {
@@ -195,7 +195,7 @@ LOAD_MAP_STATUS LoadMapFromYaml(
   LoadParameters_3D load_parameters_3D;
 
   try {
-    load_parameters_3D = LoadMapYaml(yaml_file);
+    load_parameters_3D = loadMapYaml(yaml_file);
   } catch (YAML::Exception &e) {
     std::cerr << "[ERROR] [map_io_3D]: Failed processing YAML file " << yaml_file << " at position (" <<
               e.mark.line << ":" << e.mark.column << ") for reason: " << e.what() << std::endl;
@@ -208,7 +208,7 @@ LOAD_MAP_STATUS LoadMapFromYaml(
   }
 
   try {
-    LoadMapFromFile(load_parameters_3D, map, view_point_msg);
+    loadMapFromFile(load_parameters_3D, map, view_point_msg);
   } catch (std::exception &e) {
     std::cerr <<
               "[ERROR] [map_io]: Failed to load image file " << load_parameters_3D.pcd_file_name <<
@@ -263,7 +263,7 @@ void TryWriteMapToFile(
   }
 
   std::shared_ptr<pcl::PCLPointCloud2> cloud_2 = std::make_shared<pcl::PCLPointCloud2>();
-  MsgToPcl(cloud_2, map);
+  msgToPcl(cloud_2, map);
 
   pcl::PCDWriter writer;
 
@@ -312,7 +312,7 @@ void TryWriteMapToFile(
   }
 }
 
-bool SaveMapToFile(
+bool saveMapToFile(
     const sensor_msgs::msg::PointCloud2 &map,
     const SaveParameters &save_parameters) {
 

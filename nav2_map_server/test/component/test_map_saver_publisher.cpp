@@ -29,7 +29,8 @@ using namespace std::chrono_literals;
 using namespace nav2_map_server;  // NOLINT
 using std::experimental::filesystem::path;
 
-class TestPublisher : public rclcpp::Node {
+class TestPublisher : public rclcpp::Node
+{
  public:
   TestPublisher()
       : Node("map_publisher") {
@@ -38,7 +39,7 @@ class TestPublisher : public rclcpp::Node {
     LOAD_MAP_STATUS status = loadMapFromYaml(pub_map_file, msg_);
 
     nav2_map_server_3D::LOAD_MAP_STATUS status_3_d =
-        nav2_map_server_3D::LoadMapFromYaml(pub_map_file, pcd_msg_.map,pcd_msg_.view_point);
+        nav2_map_server_3D::loadMapFromYaml(pub_map_file, pcd_msg_.map, pcd_msg_.view_point);
 
     if (!(status_3_d == nav2_map_server_3D::LOAD_MAP_SUCCESS || status == LOAD_MAP_SUCCESS)) {
       RCLCPP_ERROR(get_logger(), "Can not load %s map file", pub_map_file.c_str());

@@ -39,7 +39,7 @@ typedef enum {
  * @return Map loading parameters obtained from YAML file
  * @throw YAML::Exception
  */
-LoadParameters_3D LoadMapYaml(const std::string &yaml_filename);
+LoadParameters_3D loadMapYaml(const std::string &yaml_filename);
 
 /**
  * @brief Load the point cloud from map file and generate an OccupancyGrid
@@ -47,10 +47,10 @@ LoadParameters_3D LoadMapYaml(const std::string &yaml_filename);
  * @param map Output loaded map
  * @throw std::exception
  */
-void LoadMapFromFile(
-    const LoadParameters_3D &load_parameters,
-    sensor_msgs::msg::PointCloud2 &map,
-    geometry_msgs::msg::Transform &view_point_msg);
+void loadMapFromFile(
+  const LoadParameters_3D &load_parameters,
+  sensor_msgs::msg::PointCloud2 &map,
+  geometry_msgs::msg::Transform &view_point_msg);
 
 /**
  * @brief Load the map YAML, image from map file and
@@ -59,10 +59,10 @@ void LoadMapFromFile(
  * @param map Output loaded map
  * @return status of map loaded
  */
-LOAD_MAP_STATUS LoadMapFromYaml(
-    const std::string &yaml_file,
-    sensor_msgs::msg::PointCloud2 &map,
-    geometry_msgs::msg::Transform &view_point_msg);
+LOAD_MAP_STATUS loadMapFromYaml(
+  const std::string &yaml_file,
+  sensor_msgs::msg::PointCloud2 &map,
+  geometry_msgs::msg::Transform &view_point_msg);
 
 struct SaveParameters {
   std::string map_file_name;
@@ -77,9 +77,9 @@ struct SaveParameters {
  * @param save_parameters Map saving parameters.
  * @return true or false
  */
-bool SaveMapToFile(
-    const sensor_msgs::msg::PointCloud2 &map,
-    const SaveParameters &save_parameters);
+bool saveMapToFile(
+  const sensor_msgs::msg::PointCloud2 &map,
+  const SaveParameters &save_parameters);
 
 } // namespace nav2_map_server_3D
 } // namespace nav2_map_server

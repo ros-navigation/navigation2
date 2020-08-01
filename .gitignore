@@ -51,3 +51,6 @@ sphinx_doc/_build
 cmake-build-debug/
 .idea
 
+# pcd files can be 
+#larger, excluding them
+*.pcd

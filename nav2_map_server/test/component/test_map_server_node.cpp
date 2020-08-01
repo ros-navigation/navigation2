@@ -96,7 +96,8 @@ protected:
     }
   }
 
-  static void verifyMapMsg(const nav2_msgs::msg::PCD2 &map_msg) {
+  static void verifyMapMsg(const nav2_msgs::msg::PCD2 &map_msg)
+  {
     std::vector<float> vp;
     vp.push_back(map_msg.view_point.translation.x);
     vp.push_back(map_msg.view_point.translation.y);

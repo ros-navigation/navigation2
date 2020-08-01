@@ -41,7 +41,7 @@ const unsigned int g_valid_image_width = 10;
 const unsigned int g_valid_image_height = 10;
 // Note that the image content is given in row-major order, with the
 // lower-left pixel first.  This is different from a graphics coordinate
-// system, which starts with the upper-left pixel.  The LoadMapFromFile
+// system, which starts with the upper-left pixel.  The loadMapFromFile
 // call converts from the latter to the former when it loads the image, and
 // we want to compare against the result of that conversion.
 const char g_valid_image_content[] = {
