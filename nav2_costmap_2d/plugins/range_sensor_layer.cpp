@@ -83,7 +83,6 @@ void RangeSensorLayer::onInitialize()
   node_->get_parameter(name_ + "." + "clear_on_max_reading", clear_on_max_reading_);
 
   double temp_tf_tol = 0.0;
-  declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
   node_->get_parameter("transform_tolerance", temp_tf_tol);
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 
