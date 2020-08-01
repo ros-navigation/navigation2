@@ -123,7 +123,8 @@ bool BackUp::isCollisionFree(
 
   while (cycle_count < max_cycle_count) {
     sim_position_change = cmd_vel->linear.x * (cycle_count / cycle_frequency_);
-    pose2d.x += sim_position_change;
+    pose2d.x += sim_position_change * cos(pose2d.theta);
+    pose2d.y += sim_position_change * sin(pose2d.theta);
     cycle_count++;
 
     if (diff_dist - abs(sim_position_change) <= 0.) {

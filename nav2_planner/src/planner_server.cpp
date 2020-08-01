@@ -48,6 +48,13 @@ PlannerServer::PlannerServer()
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 20.0);
 
+  get_parameter("planner_plugins", planner_ids_);
+  if (planner_ids_ == default_ids_) {
+    for (size_t i = 0; i < default_ids_.size(); ++i) {
+      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
+    }
+  }
+
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "global_costmap", std::string{get_namespace()}, "global_costmap");
@@ -79,12 +86,6 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   tf_ = costmap_ros_->getTfBuffer();
 
-  get_parameter("planner_plugins", planner_ids_);
-  if (planner_ids_ == default_ids_) {
-    for (size_t i = 0; i < default_ids_.size(); ++i) {
-      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
-    }
-  }
   planner_types_.resize(planner_ids_.size());
 
   auto node = shared_from_this();
@@ -151,6 +152,9 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
     it->second->activate();
   }
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -167,6 +171,9 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & state)
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->deactivate();
   }
+
+  // destroy bond connection
+  destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

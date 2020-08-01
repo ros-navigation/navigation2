@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Copyright (c) 2020 Shivang Patel
+# Copyright (c) 2020 Samsung Research America
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,8 +32,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': False},
                         {'autostart': False},
-                        {'bond_timeout_ms': 0},
-                        {'node_names': ['lifecycle_node_test']}]),
+                        {'node_names': ['bond_tester']}]),
     ])
 
 
@@ -44,7 +43,7 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
-        name='test_lifecycle_node_gtest',
+        name='test_bond_gtest',
         output='screen')
 
     lts = LaunchTestService()

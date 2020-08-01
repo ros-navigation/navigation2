@@ -72,6 +72,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
 
+
   get_parameter("progress_checker_plugin", progress_checker_id_);
   if (progress_checker_id_ == default_progress_checker_id_) {
     nav2_util::declare_parameter_if_not_declared(
@@ -93,6 +94,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
         rclcpp::ParameterValue(default_types_[i]));
     }
   }
+
   controller_types_.resize(controller_ids_.size());
 
   get_parameter("controller_frequency", controller_frequency_);
@@ -172,6 +174,9 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & state)
   vel_publisher_->on_activate();
   action_server_->activate();
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -189,6 +194,9 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & state)
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
+
+  // destroy bond connection
+  destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

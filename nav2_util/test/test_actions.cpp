@@ -236,6 +236,8 @@ protected:
 
 TEST_F(ActionTest, test_simple_action)
 {
+  node_->activate_server();
+
   // The goal for this invocation
   auto goal = Fibonacci::Goal();
   goal.order = 12;
