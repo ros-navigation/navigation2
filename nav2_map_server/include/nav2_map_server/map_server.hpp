@@ -98,6 +98,14 @@ class MapServer : public nav2_util::LifecycleNode {
     const std::string &yaml_file,
     std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
 
+  /**
+   * @brief Load the map YAML, image from map file name and
+   * generate output response containing a PointCloud2.
+   * Update pcd_msg_ class variable.
+   * @param yaml_file name of input YAML file
+   * @param response Output response with loaded PointCloud2 map
+   * @return true or false
+   */
   bool loadMapResponseFromYaml(
     const std::string &yaml_file,
     std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response);
@@ -108,7 +116,7 @@ class MapServer : public nav2_util::LifecycleNode {
   void updateMsgHeader();
 
   /**
-   * @brief Map getting service callback
+   * @brief Map getting service callback for image
    * @param request_header Service request header
    * @param request Service request
    * @param response Service response
@@ -118,13 +126,19 @@ class MapServer : public nav2_util::LifecycleNode {
     const std::shared_ptr<nav_msgs::srv::GetMap::Request> request,
     std::shared_ptr<nav_msgs::srv::GetMap::Response> response);
 
+  /**
+   * @brief Map getting service callback for pcd
+   * @param request_header Service request header
+   * @param request Service request
+   * @param response Service response
+   */
   void getMapCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::GetMap3D::Request> request,
     std::shared_ptr<nav2_msgs::srv::GetMap3D::Response> response);
 
   /**
-   * @brief Map loading service callback
+   * @brief Map loading service callback for image
    * @param request_header Service request header
    * @param request Service request
    * @param response Service response
@@ -134,6 +148,12 @@ class MapServer : public nav2_util::LifecycleNode {
     const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
     std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
 
+  /**
+   * @brief Map loading service callback for pcd
+   * @param request_header Service request header
+   * @param request Service request
+   * @param response Service response
+   */
   void loadMapCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::LoadMap3D::Request> request,

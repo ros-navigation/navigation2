@@ -24,7 +24,7 @@ const char * USAGE_STRING{
     "  -f <mapname>\n"
     "  --fmt <file_format>\n"
     "  --as_bin Give the flag to save map with binary encodings\n"
-    "  --view_point <[size 7 vector of floats]>"
+    "  --origin-orientation <[size 7 vector of floats]>"
     "\n"
     "NOTE: --ros-args should be passed at the end of command line"};
 
@@ -62,7 +62,7 @@ ARGUMENTS_STATUS parse_arguments(
     {"-f", COMMAND_MAP_FILE_NAME},
     {"--fmt", COMMAND_FILE_FORMAT},
     {"--as_bin", COMMAND_ENCODING},
-    {"--view_point", COMMAND_VIEW_POINT}
+    {"--origin-orientation", COMMAND_VIEW_POINT}
   };
 
   std::vector<std::string> arguments(argv + 1, argv + argc);
@@ -129,7 +129,7 @@ int main(int argc, char ** argv)
 {
   // ROS2 init
   rclcpp::init(argc, argv);
-  auto logger = rclcpp::get_logger("map_saver_cli");
+  auto logger = rclcpp::get_logger("map_saver_cli_3D");
 
   // Parse CLI-arguments
   nav2_map_server_3D::SaveParameters save_parameters;

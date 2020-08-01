@@ -104,9 +104,12 @@ LoadParameters_3D loadMapYaml(const std::string &yaml_filename) {
   // If not provided by YAML, if it provided by both YAML and PCD then
   // a warning will be issued if they are not equal and PCD  will take precedence
   try {
-    std::vector<float> vp = YamlGetValue<std::vector<float>>(doc, "view_point");
-    if (vp.size() == 7) {
-      load_parameters_3D.view_point = vp;
+    std::vector<float> pcd_origin = YamlGetValue<std::vector<float>>(doc, "pcd_origin");
+    std::vector<float> pcd_orientation = YamlGetValue<std::vector<float>>(doc, "pcd_orientation");
+
+    if (pcd_origin.size() == 3 && pcd_orientation.size() == 4) {
+      load_parameters_3D.origin = pcd_origin;
+      load_parameters_3D.orientation = pcd_orientation;
     }
   } catch (YAML::Exception &e) {
     std::cout << "[WARNING] [map_io_3D]: Couldn't load view_point from yaml file: If not provided it "
@@ -117,12 +120,11 @@ LoadParameters_3D loadMapYaml(const std::string &yaml_filename) {
 }
 
 void loadMapFromFile(
-    const LoadParameters_3D &load_parameters_3D,
-    sensor_msgs::msg::PointCloud2 &map,
-    geometry_msgs::msg::Transform &view_point_msg) {
+  const LoadParameters_3D &load_parameters_3D,
+  nav2_msgs::msg::PCD2 &map_msg)
+{
 
-  sensor_msgs::msg::PointCloud2 msg;
-  geometry_msgs::msg::Transform tr_msg;
+  nav2_msgs::msg::PCD2 msg;
 
   std::cout << "[INFO] [map_io_3D]: Loading pcd_file: " <<
             load_parameters_3D.pcd_file_name << std::endl;
@@ -142,49 +144,48 @@ void loadMapFromFile(
     PCL_ERROR (error_msg.c_str());
   }
 
-  if (!load_parameters_3D.view_point.empty()) {
+  if (!(load_parameters_3D.origin.empty() || load_parameters_3D.orientation.empty())) {
     std::cout << "[WARNING] [map_io_3D]: View Point(centre and orientation provided by YAML will be used" << std::endl;
 
     // Update translation of transformation
-    tr_msg.translation.x = load_parameters_3D.view_point[0];
-    tr_msg.translation.y = load_parameters_3D.view_point[1];
-    tr_msg.translation.z = load_parameters_3D.view_point[2];
+    msg.origin.x = load_parameters_3D.origin[0];
+    msg.origin.y = load_parameters_3D.origin[1];
+    msg.origin.z = load_parameters_3D.origin[2];
 
     // Update rotation of transformation
-    tr_msg.rotation.w = load_parameters_3D.view_point[3];
-    tr_msg.rotation.x = load_parameters_3D.view_point[4];
-    tr_msg.rotation.y = load_parameters_3D.view_point[5];
-    tr_msg.rotation.z = load_parameters_3D.view_point[6];
+    msg.orientation.w = load_parameters_3D.orientation[3];
+    msg.orientation.x = load_parameters_3D.orientation[4];
+    msg.orientation.y = load_parameters_3D.orientation[5];
+    msg.orientation.z = load_parameters_3D.orientation[6];
   } else {
 
     std::cout << "[WARNING] [map_io_3D]: View Point(centre and orientation not provided by YAML now will be using "
                  "view_point defined by pcd reader" << std::endl;
 
     // Update translation of transformation
-    tr_msg.translation.x = origin[0];
-    tr_msg.translation.y = origin[1];
-    tr_msg.translation.z = origin[2];
+    msg.origin.x = origin[0];
+    msg.origin.y = origin[1];
+    msg.origin.z = origin[2];
 
     // Update rotation of transformation
-    tr_msg.rotation.w = orientation.w();
-    tr_msg.rotation.x = orientation.x();
-    tr_msg.rotation.y = orientation.y();
-    tr_msg.rotation.z = orientation.z();
+    msg.orientation.w = orientation.w();
+    msg.orientation.x = orientation.x();
+    msg.orientation.y = orientation.y();
+    msg.orientation.z = orientation.z();
   }
 
   //  update message data
-  pclToMsg(msg, cloud);
+  pclToMsg(msg.map, cloud);
 
   std::cout << "[INFO] [map_io_3D]: Loaded point cloud: " << load_parameters_3D.pcd_file_name << std::endl;
 
-  map = msg;
-  view_point_msg = tr_msg;
+  map_msg = msg;
 }
 
 LOAD_MAP_STATUS loadMapFromYaml(
-    const std::string &yaml_file,
-    sensor_msgs::msg::PointCloud2 &map,
-    geometry_msgs::msg::Transform &view_point_msg) {
+  const std::string &yaml_file,
+  nav2_msgs::msg::PCD2 map_msg)
+{
 
   if (yaml_file.empty()) {
     std::cerr << "[ERROR] [map_io_3D]: YAML fiel name is empty, can't load!" << std::endl;
@@ -208,7 +209,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
   }
 
   try {
-    loadMapFromFile(load_parameters_3D, map, view_point_msg);
+    loadMapFromFile(load_parameters_3D, map_msg);
   } catch (std::exception &e) {
     std::cerr <<
               "[ERROR] [map_io]: Failed to load image file " << load_parameters_3D.pcd_file_name <<
@@ -219,7 +220,8 @@ LOAD_MAP_STATUS loadMapFromYaml(
   return LOAD_MAP_SUCCESS;
 }
 
-void CheckSaveParameters(SaveParameters &save_parameters) {
+void CheckSaveParameters(SaveParameters &save_parameters)
+{
   if (save_parameters.map_file_name.empty()) {
     rclcpp::Clock clock(RCL_SYSTEM_TIME);
     save_parameters.map_file_name = "map_" + std::to_string(static_cast<int>(clock.now().seconds()));
@@ -243,17 +245,18 @@ void CheckSaveParameters(SaveParameters &save_parameters) {
     std::cout << "[WARN] [map_io_3D]: ply support is not implemented, Falling back to pcd file format" << std::endl;
   }
 
-  if (save_parameters.view_point.size() != 7) {
-    save_parameters.view_point = {0, 0, 0, 1, 0, 0, 0};
+  if (save_parameters.origin.size() != 3 && save_parameters.orientation.size() != 4) {
+    save_parameters.origin = {0, 0, 0};
+    save_parameters.orientation = {1, 0, 0, 0};
     std::cout << "[WARN] [map_io_3D]: view_point provided must have a length of 7 falling back to identity "
                  "transform[0, 0, 0, 1, 0, 0, 0]" << std::endl;
   }
 }
 
 void TryWriteMapToFile(
-    const sensor_msgs::msg::PointCloud2 &map,
-    const SaveParameters &save_parameters) {
-
+  const sensor_msgs::msg::PointCloud2 &map,
+  const SaveParameters &save_parameters)
+{
   std::string file_name(save_parameters.map_file_name);
 
   if (save_parameters.format == "pcd") {
@@ -269,16 +272,16 @@ void TryWriteMapToFile(
 
   // Initialize origin
   Eigen::Vector4f origin = Eigen::Vector4f::Zero();
-  origin[0] = save_parameters.view_point[0];
-  origin[1] = save_parameters.view_point[1];
-  origin[2] = save_parameters.view_point[2];
+  origin[0] = save_parameters.origin[0];
+  origin[1] = save_parameters.origin[1];
+  origin[2] = save_parameters.origin[2];
 
   // Initialize orientation
   Eigen::Quaternionf orientation = Eigen::Quaternionf::Identity();
-  orientation.w() = save_parameters.view_point[3];
-  orientation.x() = save_parameters.view_point[4];
-  orientation.y() = save_parameters.view_point[5];
-  orientation.z() = save_parameters.view_point[6];
+  orientation.w() = save_parameters.orientation[0];
+  orientation.x() = save_parameters.orientation[1];
+  orientation.y() = save_parameters.orientation[2];
+  orientation.z() = save_parameters.orientation[3];
 
   if (writer.write(file_name, cloud_2, origin,
                    orientation, save_parameters.as_binary) == -1) {
@@ -295,9 +298,13 @@ void TryWriteMapToFile(
     emitter << YAML::Precision(3);
     emitter << YAML::BeginMap;
     emitter << YAML::Key << "pcd" << YAML::Value << file_name;
-    emitter << YAML::Key << "view_point" << YAML::Flow << YAML::BeginSeq << save_parameters.view_point[0]
-            << save_parameters.view_point[1] << save_parameters.view_point[2] << save_parameters.view_point[3]
-            << save_parameters.view_point[4] << save_parameters.view_point[5] << save_parameters.view_point[6];
+
+    emitter << YAML::Key << "view_point" << YAML::Flow << YAML::BeginSeq <<
+      save_parameters.origin[0] << save_parameters.origin[1] <<
+      save_parameters.origin[2] << save_parameters.orientation[0] <<
+      save_parameters.orientation[1] << save_parameters.orientation[2] <<
+      save_parameters.orientation[3];
+
     emitter << YAML::Key << "as_binary" << YAML::Value << save_parameters.as_binary;
     emitter << YAML::Key << "file_format" << YAML::Value << save_parameters.format;
 
@@ -313,9 +320,9 @@ void TryWriteMapToFile(
 }
 
 bool saveMapToFile(
-    const sensor_msgs::msg::PointCloud2 &map,
-    const SaveParameters &save_parameters) {
-
+  const sensor_msgs::msg::PointCloud2 &map,
+  const SaveParameters &save_parameters)
+{
   // Local copy of SaveParameters
   SaveParameters save_parameters_loc = save_parameters;
 

@@ -10,6 +10,7 @@
 #include "nav2_map_server_3D/map_io_3D.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "test_constants/test_constants.h"
+#include "nav2_msgs/msg/pcd2.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -33,25 +34,28 @@ class MapIO3DTester : public ::testing::Test
   // Input: pcd_file_name
   // Output: load_parameters
   void fillLoadParameters(
-      const std::string & pcd_file_name,
-      nav2_map_server_3D::LoadParameters_3D & load_parameters)
+    const std::string & pcd_file_name,
+    nav2_map_server_3D::LoadParameters_3D & load_parameters)
   {
     load_parameters.pcd_file_name =pcd_file_name;
-    load_parameters.view_point = g_valid_view_point;
+    load_parameters.origin = g_valid_origin_pcd;
+    load_parameters.orientation = g_valid_orientation_pcd;
   }
 
   // Fill SaveParameters with standard for testing values
   // Input: map_file_name, format
   // Output: save_parameters
   void fillSaveParameters(
-      const std::string & map_file_name,
-      const std::vector<float>& view_point,
-      const std::string & format,
-      bool as_binary,
-      nav2_map_server_3D::SaveParameters & save_parameters)
+    const std::string & map_file_name,
+    const std::vector<float>& origin,
+    const std::vector<float>& orientation,
+    const std::string & format,
+    bool as_binary,
+    nav2_map_server_3D::SaveParameters & save_parameters)
   {
     save_parameters.map_file_name = map_file_name;
-    save_parameters.view_point = view_point;
+    save_parameters.origin = origin;
+    save_parameters.orientation = orientation;
     save_parameters.as_binary = as_binary;
     save_parameters.format = format;
   }
@@ -70,35 +74,36 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
   nav2_map_server_3D::LoadParameters_3D loadParameters;
   fillLoadParameters(path(TEST_DIR) / path(g_valid_pcd_file), loadParameters);
 
-  sensor_msgs::msg::PointCloud2 map_msg;
-  geometry_msgs::msg::Transform view_point_msg;
-  ASSERT_NO_THROW(nav2_map_server_3D::loadMapFromFile(loadParameters, map_msg, view_point_msg));
+  nav2_msgs::msg::PCD2 map_msg;
+  ASSERT_NO_THROW(nav2_map_server_3D::loadMapFromFile(loadParameters, map_msg));
 
   //  verifyMapMsg(map_msg); TODO: varification for pcd file
 
   // 2. Save OccupancyGrid into a tmp file
   nav2_map_server_3D::SaveParameters saveParameters;
-  std::vector<float> view_point(7);
+  std::vector<float> origin(3);
+  std::vector<float> orientation(4);
   // Set view_point translation(origin)
-  view_point[0] = view_point_msg.translation.x;
-  view_point[1] = view_point_msg.translation.y;
-  view_point[2] = view_point_msg.translation.z;
+  origin[0] = map_msg.origin.x;
+  origin[1] = map_msg.origin.y;
+  origin[2] = map_msg.origin.z;
 
   // Set view_point orientation
-  view_point[3] = view_point_msg.rotation.w;
-  view_point[4] = view_point_msg.rotation.x;
-  view_point[5] = view_point_msg.rotation.y;
-  view_point[6] = view_point_msg.rotation.z;
+  orientation[3] = map_msg.orientation.w;
+  orientation[4] = map_msg.orientation.x;
+  orientation[5] = map_msg.orientation.y;
+  orientation[6] = map_msg.orientation.z;
 
-  ASSERT_EQ(view_point, g_valid_view_point);
+  ASSERT_EQ(origin, g_valid_origin_pcd);
+  ASSERT_EQ(orientation, g_valid_orientation_pcd);
 
-  fillSaveParameters(path(g_tmp_dir) / path(g_valid_pcd_map_name), view_point, "pcd", false,saveParameters);
+  fillSaveParameters(path(g_tmp_dir) / path(g_valid_pcd_map_name), origin, orientation, "pcd", false,saveParameters);
 
-  ASSERT_TRUE(nav2_map_server_3D::saveMapToFile(map_msg, saveParameters));
+  ASSERT_TRUE(nav2_map_server_3D::saveMapToFile(map_msg.map, saveParameters));
 
   // 3. Load saved map and verify it
   nav2_map_server_3D::LOAD_MAP_STATUS status = nav2_map_server_3D::loadMapFromYaml(path(g_tmp_dir) / path
-      (g_valid_pcd_yaml_file), map_msg, view_point_msg);
+      (g_valid_pcd_yaml_file), map_msg);
   ASSERT_EQ(status, nav2_map_server_3D::LOAD_MAP_SUCCESS);
 
   //  verifyMapMsg(map_msg); TODO: verify msg data

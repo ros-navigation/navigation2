@@ -17,7 +17,7 @@ find_package(GRAPHICSMAGICKCPP REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-find_package(PCL 1.10 REQUIRED common io visualization)
+find_package(PCL 1.10 REQUIRED common io)
 
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
@@ -25,13 +25,6 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost COMPONENTS regex system filesystem REQUIRED)
 
 nav2_package()
-
-message(STATUS "using c++ standard:- ${CMAKE_CXX_STANDARD}")
-
-if (NOT (${CMAKE_CXX_STANDARD} GREATER_EQUAL 14))
-  message(FATAL_ERROR "Something wrong with setting c++ standard >14 please check if some other package is stting c++
-   standards to < 14")
-endif ()
 
 include_directories(include ${PCL_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
 
@@ -46,16 +39,16 @@ set(map_saver_server_executable map_saver_server)
 set(costmap_filter_info_server_executable costmap_filter_info_server)
 
 add_executable(${map_server_executable}
-    src/map_server/main.cpp)
+  src/map_server/main.cpp)
 
 add_executable(${map_saver_cli_executable}
-    src/map_saver/main_cli.cpp)
+  src/map_saver/main_cli.cpp)
 
 add_executable(${map_saver_cli_3D_executable}
-    src/map_saver/main_cli_3D.cpp)
+  src/map_saver/main_cli_3D.cpp)
 
 add_executable(${map_saver_server_executable}
-    src/map_saver/main_server.cpp)
+  src/map_saver/main_server.cpp)
 
 add_executable(${costmap_filter_info_server_executable}
   src/costmap_filter_info/main.cpp)
@@ -67,12 +60,12 @@ set(map_io_3D_library_name map_io_3D)
 set(library_name ${map_server_executable}_core)
 
 add_library(${map_io_library_name} SHARED
-    src/map_mode.cpp
-    src/map_io.cpp)
+  src/map_mode.cpp
+  src/map_io.cpp)
 
 add_library(${map_io_3D_library_name} SHARED
-    src/map_io_3D/map_io_3D.cpp
-    src/map_io_3D/pcl_helper.cpp)
+  src/map_io_3D/map_io_3D.cpp
+  src/map_io_3D/pcl_helper.cpp)
 
 add_library(${library_name} SHARED
   src/map_server/map_server.cpp
@@ -80,26 +73,26 @@ add_library(${library_name} SHARED
   src/costmap_filter_info/costmap_filter_info_server.cpp)
 
 set(map_io_dependencies
-    yaml_cpp_vendor
-    nav_msgs
-    nav2_util
-    tf2)
+  yaml_cpp_vendor
+  nav_msgs
+  nav2_util
+  tf2)
 
 set(map_io_3D_dependencies
-    ${map_io_dependencies}
-    sensor_msgs
-    geometry_msgs
-    pcl_conversions)
+  ${map_io_dependencies}
+  sensor_msgs
+  geometry_msgs
+  pcl_conversions)
 
 set(map_server_dependencies
-    rclcpp
-    rclcpp_lifecycle
-    nav_msgs
-    nav2_msgs
-    geometry_msgs
-    yaml_cpp_vendor
-    std_msgs
-    nav2_util)
+  rclcpp
+  rclcpp_lifecycle
+  nav_msgs
+  nav2_msgs
+  geometry_msgs
+  yaml_cpp_vendor
+  std_msgs
+  nav2_util)
 
 set(map_saver_dependencies
   rclcpp
@@ -110,48 +103,48 @@ set(map_saver_dependencies
   geometry_msgs)
 
 ament_target_dependencies(${map_server_executable}
-    ${map_server_dependencies})
+  ${map_server_dependencies})
 
 ament_target_dependencies(${map_saver_cli_executable}
-    ${map_saver_dependencies})
+  ${map_saver_dependencies})
 
 ament_target_dependencies(${map_saver_cli_3D_executable}
-    ${map_saver_dependencies})
+  ${map_saver_dependencies})
 
 ament_target_dependencies(${map_saver_server_executable}
-    ${map_saver_dependencies})
+  ${map_saver_dependencies})
 
 ament_target_dependencies(${costmap_filter_info_server_executable}
   ${map_saver_dependencies})
 
 ament_target_dependencies(${library_name}
-    ${map_server_dependencies})
+  ${map_server_dependencies})
 
 ament_target_dependencies(${map_io_library_name}
-    ${map_io_dependencies})
+  ${map_io_dependencies})
 
 ament_target_dependencies(${map_io_3D_library_name}
-    ${map_io_3D_dependencies})
+  ${map_io_3D_dependencies})
 
 # linking boost to nav2_io_library
 target_link_libraries(${map_io_3D_library_name}
-    ${Boost_FILESYSTEM_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
-    ${Boost_REGEX_LIBRARY}
-    ${PCL_LIBRARIES}
-    Eigen3::Eigen)
+  ${Boost_FILESYSTEM_LIBRARY}
+  ${Boost_SYSTEM_LIBRARY}
+  ${Boost_REGEX_LIBRARY}
+  ${PCL_LIBRARIES}
+  Eigen3::Eigen)
 
 # interlinking libraries within package
 target_link_libraries(${library_name}
-    ${map_io_library_name}
-    ${map_io_3D_library_name}
-    ${Boost_FILESYSTEM_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
-    ${Boost_REGEX_LIBRARY}
-    ${PCL_LIBRARIES})
+  ${map_io_library_name}
+  ${map_io_3D_library_name}
+  ${Boost_FILESYSTEM_LIBRARY}
+  ${Boost_SYSTEM_LIBRARY}
+  ${Boost_REGEX_LIBRARY}
+  ${PCL_LIBRARIES})
 
 target_link_libraries(${map_server_executable}
-    ${library_name})
+  ${library_name})
 
 if (WIN32)
   target_compile_definitions(${map_server_executable} PRIVATE
@@ -159,22 +152,22 @@ if (WIN32)
 endif ()
 
 target_link_libraries(${map_saver_cli_executable}
-    ${library_name})
+  ${library_name})
 
 target_link_libraries(${map_saver_cli_3D_executable}
-    ${library_name})
+  ${library_name})
 
 target_link_libraries(${map_saver_server_executable}
-    ${library_name})
+  ${library_name})
 
 target_link_libraries(${costmap_filter_info_server_executable}
   ${library_name})
 
 target_include_directories(${map_io_library_name} SYSTEM PRIVATE
-    ${GRAPHICSMAGICKCPP_INCLUDE_DIRS})
+  ${GRAPHICSMAGICKCPP_INCLUDE_DIRS})
 
 target_link_libraries(${map_io_library_name}
-    ${GRAPHICSMAGICKCPP_LIBRARIES})
+  ${GRAPHICSMAGICKCPP_LIBRARIES})
 
 if (WIN32)
   target_compile_definitions(${map_io_library_name} PRIVATE
@@ -183,9 +176,9 @@ endif ()
 
 install(TARGETS
     ${library_name} ${map_io_library_name} ${map_io_3D_library_name}
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin)
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
 
 install(TARGETS
     ${map_server_executable} ${map_saver_cli_executable}
@@ -194,7 +187,7 @@ install(TARGETS
     RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/
-    DESTINATION include/)
+  DESTINATION include/)
 
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
@@ -210,7 +203,8 @@ endif ()
 
 ament_export_include_directories(include)
 ament_export_libraries(
-    ${library_name}
-    ${map_io_library_name}
+  ${library_name}
+  ${map_io_library_name}
+  ${map_io_3D_library_name}
 )
 ament_package()

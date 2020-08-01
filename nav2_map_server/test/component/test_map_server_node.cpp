@@ -98,16 +98,18 @@ protected:
 
   static void verifyMapMsg(const nav2_msgs::msg::PCD2 &map_msg)
   {
-    std::vector<float> vp;
-    vp.push_back(map_msg.view_point.translation.x);
-    vp.push_back(map_msg.view_point.translation.y);
-    vp.push_back(map_msg.view_point.translation.z);
+    std::vector<float> origin;
+    origin.push_back(map_msg.origin.x);
+    origin.push_back(map_msg.origin.y);
+    origin.push_back(map_msg.origin.z);
 
-    vp.push_back(map_msg.view_point.rotation.w);
-    vp.push_back(map_msg.view_point.rotation.x);
-    vp.push_back(map_msg.view_point.rotation.y);
-    vp.push_back(map_msg.view_point.rotation.z);
-    ASSERT_EQ(vp, g_valid_view_point);
+    std::vector<float> orientation;
+    orientation.push_back(map_msg.orientation.w);
+    orientation.push_back(map_msg.orientation.x);
+    orientation.push_back(map_msg.orientation.y);
+    orientation.push_back(map_msg.orientation.z);
+    ASSERT_EQ(origin, g_valid_origin_pcd);
+    ASSERT_EQ(orientation, g_valid_orientation_pcd);
 
 //    TODO: add additional test
   }
@@ -144,7 +146,7 @@ TEST_F(MapServerTestFixture, GetMap3D)
   RCLCPP_INFO(node_->get_logger(), "Testing GetMap service");
   auto req = std::make_shared<nav2_msgs::srv::GetMap3D::Request>();
   auto client = node_->create_client<nav2_msgs::srv::GetMap3D>(
-      "/map_server/map3D");
+    "/map_server/map3D");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -153,7 +155,8 @@ TEST_F(MapServerTestFixture, GetMap3D)
 
   nav2_msgs::msg::PCD2 map_msg;
   map_msg.map = resp->map;
-  map_msg.view_point = resp->view_point;
+  map_msg.origin = resp->origin;
+  map_msg.orientation = resp->orientation;
   verifyMapMsg(map_msg);
 }
 
@@ -181,7 +184,7 @@ TEST_F(MapServerTestFixture, LoadMap3D)
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap3D::Request>();
   auto client = node_->create_client<nav2_msgs::srv::LoadMap3D>(
-      "/map_server/load_map3D");
+    "/map_server/load_map3D");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -193,7 +196,8 @@ TEST_F(MapServerTestFixture, LoadMap3D)
 
   nav2_msgs::msg::PCD2 map_msg;
   map_msg.map = resp->map;
-  map_msg.view_point = resp->view_point;
+  map_msg.origin = resp->origin;
+  map_msg.orientation = resp->orientation;
   verifyMapMsg(map_msg);
 }
 
@@ -221,7 +225,7 @@ TEST_F(MapServerTestFixture, LoadMapNull3D)
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap3D::Request>();
   auto client = node_->create_client<nav2_msgs::srv::LoadMap3D>(
-      "/map_server/load_map3D");
+    "/map_server/load_map3D");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -234,7 +238,8 @@ TEST_F(MapServerTestFixture, LoadMapNull3D)
 
   nav2_msgs::msg::PCD2 map_msg;
   map_msg.map = resp->map;
-  map_msg.view_point = resp->view_point;
+  map_msg.origin = resp->origin;
+  map_msg.orientation = resp->orientation;
   verifyMapMsg(map_msg);
 }
 

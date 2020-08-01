@@ -162,15 +162,15 @@ void MapSaver::saveMapCallback(
   save_parameters.map_file_name = request->map_url;
 
   // Set view_point translation(origin)
-  save_parameters.view_point[0] = request->view_point.translation.x;
-  save_parameters.view_point[1] = request->view_point.translation.y;
-  save_parameters.view_point[2] = request->view_point.translation.z;
+  save_parameters.origin[0] = request->origin.x;
+  save_parameters.origin[1] = request->origin.y;
+  save_parameters.origin[2] = request->origin.z;
 
   // Set view_point orientation
-  save_parameters.view_point[3] = request->view_point.rotation.w;
-  save_parameters.view_point[4] = request->view_point.rotation.x;
-  save_parameters.view_point[5] = request->view_point.rotation.y;
-  save_parameters.view_point[6] = request->view_point.rotation.z;
+  save_parameters.orientation[0] = request->orientation.w;
+  save_parameters.orientation[1] = request->orientation.x;
+  save_parameters.orientation[2] = request->orientation.y;
+  save_parameters.orientation[3] = request->orientation.z;
 
   save_parameters.as_binary = request->as_binary;
   save_parameters.format = request->file_format;
@@ -210,6 +210,7 @@ bool MapSaver::saveMapTopicToFile(
           free_thresh_default_);
       save_parameters_loc.free_thresh = free_thresh_default_;
     }
+
     if (save_parameters_loc.occupied_thresh == 0.0) {
       RCLCPP_WARN(
           get_logger(),
