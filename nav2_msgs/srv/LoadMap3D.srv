@@ -12,5 +12,6 @@ uint8 RESULT_UNDEFINED_FAILURE=255
 
 # Returned map is only valid if result equals RESULT_SUCCESS
 sensor_msgs/PointCloud2 map
-geometry_msgs/Transform view_point
+geometry_msgs/Vector3 origin
+geometry_msgs/Quaternion orientation
 uint8 result
