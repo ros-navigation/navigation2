@@ -103,7 +103,7 @@ protected:
   /**
    * @brief Initialize blackboard
    */
-  void initializeBlackboard();
+  void initializeBlackboard(std::shared_ptr<const Action::Goal> goal);
 
   BT::Tree tree_;
 

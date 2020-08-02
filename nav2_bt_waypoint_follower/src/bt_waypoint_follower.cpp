@@ -187,7 +187,13 @@ BtWaypointFollower::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 void
 BtWaypointFollower::followWaypoints()
 {
-  initializeBlackboard();
+  auto goal = action_server_->get_current_goal();
+  if (goal->poses.size() == 0) {
+    RCLCPP_ERROR(get_logger(), "Goal has no pose. Terminating current goal.");
+    action_server_->terminate_current();
+    return;
+  }
+  initializeBlackboard(goal);
 
   auto is_canceling = [this]() {
       if (action_server_ == nullptr) {
@@ -209,7 +215,14 @@ BtWaypointFollower::followWaypoints()
       if (action_server_->is_preempt_requested()) {
         RCLCPP_INFO(get_logger(), "Received goal preemption request");
         action_server_->accept_pending_goal();
-        initializeBlackboard();
+        auto goal = action_server_->get_current_goal();
+        if (goal->poses.size() == 0) {
+          RCLCPP_ERROR(get_logger(), "Goal has no pose. Terminating current goal.");
+          action_server_->terminate_current();
+        }
+        else {
+          initializeBlackboard(goal);
+        }
       }
 
       int current_waypoint_idx = 0;
@@ -246,10 +259,8 @@ BtWaypointFollower::followWaypoints()
 }
 
 void
-BtWaypointFollower::initializeBlackboard()
+BtWaypointFollower::initializeBlackboard(std::shared_ptr<const Action::Goal> goal)
 {
-  auto goal = action_server_->get_current_goal();
-
   // Update the goals on the blackboard
   blackboard_->set("goals", goal->poses);
   blackboard_->set("current_waypoint_idx", 0);
