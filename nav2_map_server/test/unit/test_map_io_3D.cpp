@@ -11,6 +11,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "test_constants/test_constants.h"
 #include "nav2_msgs/msg/pcd2.hpp"
+#include "boost/filesystem.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -60,7 +61,23 @@ class MapIO3DTester : public ::testing::Test
     save_parameters.format = format;
   }
 
-  // TODO: verify PCD data
+  static void verifyMapMsg(const nav2_msgs::msg::PCD2 &map_msg)
+  {
+    std::vector<float> origin;
+    origin.push_back(map_msg.origin.x);
+    origin.push_back(map_msg.origin.y);
+    origin.push_back(map_msg.origin.z);
+
+    std::vector<float> orientation;
+    orientation.push_back(map_msg.orientation.w);
+    orientation.push_back(map_msg.orientation.x);
+    orientation.push_back(map_msg.orientation.y);
+    orientation.push_back(map_msg.orientation.z);
+    ASSERT_EQ(origin, g_valid_origin_pcd);
+    ASSERT_EQ(orientation, g_valid_orientation_pcd);
+
+    //  TODO: add additional test
+  }
 };
 
 // Load a valid reference PCD file. Check obtained PointCloud2 message for consistency:
@@ -77,8 +94,6 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
   nav2_msgs::msg::PCD2 map_msg;
   ASSERT_NO_THROW(nav2_map_server_3D::loadMapFromFile(loadParameters, map_msg));
 
-  //  verifyMapMsg(map_msg); TODO: varification for pcd file
-
   // 2. Save OccupancyGrid into a tmp file
   nav2_map_server_3D::SaveParameters saveParameters;
   std::vector<float> origin(3);
@@ -89,24 +104,25 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
   origin[2] = map_msg.origin.z;
 
   // Set view_point orientation
-  orientation[3] = map_msg.orientation.w;
-  orientation[4] = map_msg.orientation.x;
-  orientation[5] = map_msg.orientation.y;
-  orientation[6] = map_msg.orientation.z;
+  orientation[0] = map_msg.orientation.w;
+  orientation[1] = map_msg.orientation.x;
+  orientation[2] = map_msg.orientation.y;
+  orientation[3] = map_msg.orientation.z;
 
   ASSERT_EQ(origin, g_valid_origin_pcd);
   ASSERT_EQ(orientation, g_valid_orientation_pcd);
 
-  fillSaveParameters(path(g_tmp_dir) / path(g_valid_pcd_map_name), origin, orientation, "pcd", false,saveParameters);
+  fillSaveParameters(path(g_tmp_dir) / path(g_valid_pcd_map_name),
+                     origin, orientation, "pcd", false,saveParameters);
 
   ASSERT_TRUE(nav2_map_server_3D::saveMapToFile(map_msg.map, saveParameters));
 
   // 3. Load saved map and verify it
-  nav2_map_server_3D::LOAD_MAP_STATUS status = nav2_map_server_3D::loadMapFromYaml(path(g_tmp_dir) / path
-      (g_valid_pcd_yaml_file), map_msg);
+  nav2_map_server_3D::LOAD_MAP_STATUS status =
+    nav2_map_server_3D::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_pcd_yaml_file), map_msg);
   ASSERT_EQ(status, nav2_map_server_3D::LOAD_MAP_SUCCESS);
 
-  //  verifyMapMsg(map_msg); TODO: verify msg data
+  verifyMapMsg(map_msg);
 }
 
 // Load valid YAML file and check for consistency
@@ -117,7 +133,11 @@ TEST_F(MapIO3DTester, loadValidYAML)
 
   nav2_map_server_3D::LoadParameters_3D refLoadParameters;
   fillLoadParameters(path(TEST_DIR) / path(g_valid_pcd_file), refLoadParameters);
-  ASSERT_EQ(loadParameters.pcd_file_name, refLoadParameters.pcd_file_name);
+
+  boost::filesystem::path ldParam(loadParameters.pcd_file_name);
+  boost::filesystem::path refParam(refLoadParameters.pcd_file_name);
+
+  ASSERT_EQ(ldParam.stem(), refParam.stem());
 }
 
 TEST_F(MapIO3DTester, loadInvalidYAML)

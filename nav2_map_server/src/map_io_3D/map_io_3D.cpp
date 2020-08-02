@@ -128,6 +128,7 @@ void loadMapFromFile(
 
   std::cout << "[INFO] [map_io_3D]: Loading pcd_file: " <<
             load_parameters_3D.pcd_file_name << std::endl;
+
   pcl::PCLPointCloud2::Ptr cloud = std::make_shared<pcl::PCLPointCloud2>();
 
   //  create a pcd reader for PointCloud2 data
@@ -144,8 +145,7 @@ void loadMapFromFile(
     PCL_ERROR (error_msg.c_str());
   }
 
-  if (!(load_parameters_3D.origin.empty() || load_parameters_3D.orientation.empty())) {
-    std::cout << "[WARNING] [map_io_3D]: View Point(centre and orientation provided by YAML will be used" << std::endl;
+  if (load_parameters_3D.origin.size() == 3 && load_parameters_3D.orientation.size() == 4) {
 
     // Update translation of transformation
     msg.origin.x = load_parameters_3D.origin[0];
@@ -153,13 +153,13 @@ void loadMapFromFile(
     msg.origin.z = load_parameters_3D.origin[2];
 
     // Update rotation of transformation
-    msg.orientation.w = load_parameters_3D.orientation[3];
-    msg.orientation.x = load_parameters_3D.orientation[4];
-    msg.orientation.y = load_parameters_3D.orientation[5];
-    msg.orientation.z = load_parameters_3D.orientation[6];
+    msg.orientation.w = load_parameters_3D.orientation[0];
+    msg.orientation.x = load_parameters_3D.orientation[1];
+    msg.orientation.y = load_parameters_3D.orientation[2];
+    msg.orientation.z = load_parameters_3D.orientation[3];
   } else {
 
-    std::cout << "[WARNING] [map_io_3D]: View Point(centre and orientation not provided by YAML now will be using "
+    std::cout << "[WARNING] [map_io_3D]: View Point(centre and orientation) not provided by YAML now will be using"
                  "view_point defined by pcd reader" << std::endl;
 
     // Update translation of transformation
@@ -177,7 +177,7 @@ void loadMapFromFile(
   //  update message data
   pclToMsg(msg.map, cloud);
 
-  std::cout << "[INFO] [map_io_3D]: Loaded point cloud: " << load_parameters_3D.pcd_file_name << std::endl;
+  std::cout << "[INFO] [map_io_3D]: Loaded point cloud: "<< std::endl;
 
   map_msg = msg;
 }
@@ -299,11 +299,12 @@ void TryWriteMapToFile(
     emitter << YAML::BeginMap;
     emitter << YAML::Key << "pcd" << YAML::Value << file_name;
 
-    emitter << YAML::Key << "view_point" << YAML::Flow << YAML::BeginSeq <<
+    emitter << YAML::Key << "pcd_origin" << YAML::Flow << YAML::BeginSeq <<
       save_parameters.origin[0] << save_parameters.origin[1] <<
-      save_parameters.origin[2] << save_parameters.orientation[0] <<
-      save_parameters.orientation[1] << save_parameters.orientation[2] <<
-      save_parameters.orientation[3];
+      save_parameters.origin[2] << YAML::EndSeq;
+    emitter << YAML::Key << "pcd_orientation" << YAML::Flow << YAML::BeginSeq <<
+      save_parameters.orientation[0] << save_parameters.orientation[1] <<
+      save_parameters.orientation[2] << save_parameters.orientation[3] << YAML::EndSeq;
 
     emitter << YAML::Key << "as_binary" << YAML::Value << save_parameters.as_binary;
     emitter << YAML::Key << "file_format" << YAML::Value << save_parameters.format;
