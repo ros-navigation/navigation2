@@ -2,6 +2,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/action/follow_waypoints.hpp"

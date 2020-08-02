@@ -35,5 +35,6 @@ BT::NodeStatus AllGoalsAchievedCondition::tick()
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_bt_waypoint_follower::AllGoalsAchievedCondition>("AllGoalsAchieved");
+  factory.registerNodeType<nav2_bt_waypoint_follower::AllGoalsAchievedCondition>(
+    "AllGoalsAchieved");
 }

@@ -1,4 +1,5 @@
 #include <string>
+#include <vector>
 
 #include "nav2_bt_waypoint_follower/plugins/action/get_next_goal_action.hpp"
 

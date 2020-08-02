@@ -36,7 +36,8 @@ public:
           name, config);
       };
 
-    factory_->registerBuilder<nav2_bt_waypoint_follower::AllGoalsAchievedCondition>("AllGoalAchieved", builder);
+    factory_->registerBuilder<nav2_bt_waypoint_follower::AllGoalsAchievedCondition>(
+      "AllGoalAchieved", builder);
   }
 
   static void TearDownTestCase()

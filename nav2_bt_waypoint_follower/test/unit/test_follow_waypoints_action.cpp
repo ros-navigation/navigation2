@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "gtest/gtest.h"
 #include "nav2_bt_waypoint_follower/bt_waypoint_follower.hpp"
@@ -12,15 +13,21 @@ using namespace std::chrono_literals;
 TEST(xml_loading, valid_action)
 {
   auto node = std::make_shared<nav2_bt_waypoint_follower::BtWaypointFollower>();
-  std::string package_share_directory = ament_index_cpp::get_package_share_directory("nav2_bt_waypoint_follower");
-  node->set_parameter(rclcpp::Parameter("bt_xml_filename", package_share_directory + "/behavior_trees/unit_test_follow_waypoints.xml"));
+  std::string package_share_directory = ament_index_cpp::get_package_share_directory(
+    "nav2_bt_waypoint_follower");
+  node->set_parameter(
+    rclcpp::Parameter(
+      "bt_xml_filename",
+      package_share_directory + "/behavior_trees/unit_test_follow_waypoints.xml"));
   nav2_util::CallbackReturn ret;
   node->configure(ret);
   EXPECT_EQ(ret, nav2_util::CallbackReturn::SUCCESS);
   node->activate(ret);
   EXPECT_EQ(ret, nav2_util::CallbackReturn::SUCCESS);
 
-  auto client = rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(node, "FollowWaypoints");
+  auto client = rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(
+    node,
+    "FollowWaypoints");
   while (!client->wait_for_action_server(1s)) {}
 
   nav2_msgs::action::FollowWaypoints::Goal goal;
@@ -45,15 +52,21 @@ TEST(xml_loading, valid_action)
 TEST(xml_loading, no_pose)
 {
   auto node = std::make_shared<nav2_bt_waypoint_follower::BtWaypointFollower>();
-  std::string package_share_directory = ament_index_cpp::get_package_share_directory("nav2_bt_waypoint_follower");
-  node->set_parameter(rclcpp::Parameter("bt_xml_filename", package_share_directory + "/behavior_trees/unit_test_follow_waypoints.xml"));
+  std::string package_share_directory = ament_index_cpp::get_package_share_directory(
+    "nav2_bt_waypoint_follower");
+  node->set_parameter(
+    rclcpp::Parameter(
+      "bt_xml_filename",
+      package_share_directory + "/behavior_trees/unit_test_follow_waypoints.xml"));
   nav2_util::CallbackReturn ret;
   node->configure(ret);
   EXPECT_EQ(ret, nav2_util::CallbackReturn::SUCCESS);
   node->activate(ret);
   EXPECT_EQ(ret, nav2_util::CallbackReturn::SUCCESS);
 
-  auto client = rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(node, "FollowWaypoints");
+  auto client = rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(
+    node,
+    "FollowWaypoints");
   while (!client->wait_for_action_server(1s)) {}
 
   nav2_msgs::action::FollowWaypoints::Goal goal;

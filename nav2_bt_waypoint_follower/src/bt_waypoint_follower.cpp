@@ -219,8 +219,7 @@ BtWaypointFollower::followWaypoints()
         if (goal->poses.size() == 0) {
           RCLCPP_ERROR(get_logger(), "Goal has no pose. Terminating current goal.");
           action_server_->terminate_current();
-        }
-        else {
+        } else {
           initializeBlackboard(goal);
         }
       }

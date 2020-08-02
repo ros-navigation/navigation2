@@ -1,5 +1,5 @@
-#ifndef NAV2_WAYPOINT_FOLLOWER__PLUGINS__ACTION__GET_NEXT_GOAL_ACTION_HPP_
-#define NAV2_WAYPOINT_FOLLOWER__PLUGINS__ACTION__GET_NEXT_GOAL_ACTION_HPP_
+#ifndef NAV2_BT_WAYPOINT_FOLLOWER__PLUGINS__CONDITION__ALL_GOALS_ACHIEVED_CONDITION_HPP_
+#define NAV2_BT_WAYPOINT_FOLLOWER__PLUGINS__CONDITION__ALL_GOALS_ACHIEVED_CONDITION_HPP_
 
 #include <string>
 
@@ -21,10 +21,10 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return {BT::InputPort<bool>("goal_achieved", "Has the goal been achieved?"),};
+    return {BT::InputPort<bool>("goal_achieved", "Has the goal been achieved?"), };
   }
 };
 
 }  // namespace nav2_bt_waypoint_follower
 
-#endif  // NAV2_WAYPOINT_FOLLOWER__PLUGINS__ACTION__GET_NEXT_GOAL_ACTION_HPP_
+#endif  // NAV2_BT_WAYPOINT_FOLLOWER__PLUGINS__CONDITION__ALL_GOALS_ACHIEVED_CONDITION_HPP_
