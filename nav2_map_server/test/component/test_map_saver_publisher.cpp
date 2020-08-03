@@ -40,7 +40,7 @@ class TestPublisher : public rclcpp::Node
     LOAD_MAP_STATUS status = loadMapFromYaml(pub_map_file, msg_);
 
     nav2_map_server_3D::LOAD_MAP_STATUS status_3_d =
-        nav2_map_server_3D::loadMapFromYaml(pub_map_file, pcd_msg_);
+      nav2_map_server_3D::loadMapFromYaml(pub_map_file, pcd_msg_);
 
     if (!(status_3_d == nav2_map_server_3D::LOAD_MAP_SUCCESS || status == LOAD_MAP_SUCCESS)) {
       RCLCPP_ERROR(get_logger(), "Can not load %s map file", pub_map_file.c_str());

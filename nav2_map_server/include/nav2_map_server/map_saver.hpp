@@ -133,6 +133,7 @@ protected:
 
   // The name of the service for saving a map from topic
   const std::string save_map_service_name_{"save_map"};
+  const std::string save_map_3D_service_name_{"save_map3D"};
 
   // A service to save the map to a file at run time (SaveMap)
   rclcpp::Service<nav2_msgs::srv::SaveMap>::SharedPtr save_map_service_;

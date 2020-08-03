@@ -78,7 +78,7 @@ MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/)
     };
 
     pcd_save_map_service_ = create_service<nav2_msgs::srv::SaveMap3D>(
-      service_prefix + save_map_service_name_ + "3D",
+      service_prefix + save_map_3D_service_name_,
       save_map_call_back_lambda_3D);
 //  } else {
     auto save_map_call_back_lambda = [this](

@@ -159,7 +159,7 @@ TEST_F(MapSaverTestFixture, SaveMap3D)
   auto client = node_->create_client<nav2_msgs::srv::SaveMap3D>(
     "/map_saver/save_map3D");
 
-  RCLCPP_INFO(node_->get_logger(), "Waiting for save_map service");
+  RCLCPP_INFO(node_->get_logger(), "Waiting for save_map3D service");
   ASSERT_TRUE(client->wait_for_service());
 
   // 1. Send valid save_map service request

@@ -96,8 +96,14 @@ LoadParameters_3D loadMapYaml(const std::string &yaml_filename) {
     throw YAML::Exception(doc["pcd"].Mark(),
                           "The pcd file is invalid please pass a file name with extension .pcd");
   }
-
-  load_parameters_3D.pcd_file_name = pcd_file_name.string();
+  if (pcd_file_name.string()[0] != '/') {
+    // dirname takes a mutable char *, so we copy into a vector
+    std::vector<char> fname_copy(yaml_filename.begin(), yaml_filename.end());
+    fname_copy.push_back('\0');
+    load_parameters_3D.pcd_file_name = std::string(dirname(fname_copy.data())) + '/' + pcd_file_name.string();
+  } else {
+    load_parameters_3D.pcd_file_name = pcd_file_name.string();
+  }
 
   // Get view point as center and orientation
   // view point will be loaded from pcd file while reading
