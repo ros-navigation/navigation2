@@ -1,3 +1,9 @@
-ament_add_gtest(test_condition_all_goals_achieved_condition test_all_goals_achieved_condition.cpp)
-target_link_libraries(test_condition_all_goals_achieved_condition nav2_all_goals_achieved_condition_bt_node)
-ament_target_dependencies(test_condition_all_goals_achieved_condition ${dependencies})
+ament_add_gtest(test_condition_all_goals_achieved_condition
+  test_all_goals_achieved_condition.cpp
+)
+target_link_libraries(test_condition_all_goals_achieved_condition
+  nav2_all_goals_achieved_condition_bt_node
+)
+ament_target_dependencies(test_condition_all_goals_achieved_condition
+  ${dependencies}
+)
