@@ -2,7 +2,7 @@ repositories:
   BehaviorTree.CPP:
     type: git
     url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
-    version: ros2-3.1.1
+    version: 3.5.1
   angles:
     type: git
     url: https://github.com/ros/angles.git
