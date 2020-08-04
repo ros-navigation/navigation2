@@ -42,7 +42,7 @@ RclCppFixture g_rclcppfixture;
 
 class MapServer3DTestFixture : public ::testing::Test
 {
- public:
+public:
   static void SetUpTestCase()
   {
     node_ = rclcpp::Node::make_shared("map_client_test");
@@ -64,9 +64,9 @@ class MapServer3DTestFixture : public ::testing::Test
 
   template<class T>
   typename T::Response::SharedPtr send_request(
-      rclcpp::Node::SharedPtr node,
-      typename rclcpp::Client<T>::SharedPtr client,
-      typename T::Request::SharedPtr request)
+    rclcpp::Node::SharedPtr node,
+    typename rclcpp::Client<T>::SharedPtr client,
+    typename T::Request::SharedPtr request)
   {
     auto result = client->async_send_request(request);
 
@@ -78,7 +78,7 @@ class MapServer3DTestFixture : public ::testing::Test
     }
   }
 
- protected:
+protected:
   // Check that map_msg corresponds to reference pattern
   // Input: map_msg
   static void verifyMapMsg(const nav2_msgs::msg::PCD2 & map_msg)
@@ -116,7 +116,7 @@ TEST_F(MapServer3DTestFixture, GetMap3D)
   RCLCPP_INFO(node_->get_logger(), "Testing GetMap service");
   auto req = std::make_shared<nav2_msgs::srv::GetMap3D::Request>();
   auto client = node_->create_client<nav2_msgs::srv::GetMap3D>(
-      "/map_server/map");
+    "/map_server/map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -136,7 +136,7 @@ TEST_F(MapServer3DTestFixture, LoadMap3D)
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap3D::Request>();
   auto client = node_->create_client<nav2_msgs::srv::LoadMap3D>(
-      "/map_server/load_map");
+    "/map_server/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -159,7 +159,7 @@ TEST_F(MapServer3DTestFixture, LoadMapNull3D)
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap3D::Request>();
   auto client = node_->create_client<nav2_msgs::srv::LoadMap3D>(
-      "/map_server/load_map");
+    "/map_server/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());

@@ -32,7 +32,7 @@ using std::experimental::filesystem::path;
 
 class TestPublisher : public rclcpp::Node
 {
- public:
+public:
   TestPublisher()
   : Node("map_publisher")
   {
@@ -60,7 +60,7 @@ class TestPublisher : public rclcpp::Node
     timer_ = create_wall_timer(300ms, std::bind(&TestPublisher::mapPublishCallback, this));
   }
 
- protected:
+protected:
   void mapPublishCallback()
   {
     map_pub_->publish(msg_);

@@ -224,9 +224,9 @@ bool MapSaver::saveMapTopicToFile(
 
     // A callback function that receives map message from subscribed topic
     auto mapCallback = [&map_msg](
-        const nav_msgs::msg::OccupancyGrid::SharedPtr msg) -> void {
-      map_msg = msg;
-    };
+      const nav_msgs::msg::OccupancyGrid::SharedPtr msg) -> void {
+        map_msg = msg;
+      };
 
     // Add new subscription for incoming map topic.
     // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode

@@ -37,15 +37,15 @@ using namespace nav2_map_server;  // NOLINT
 class RclCppFixture
 {
  public:
-  RclCppFixture() { rclcpp::init(0, nullptr); }
-  ~RclCppFixture() { rclcpp::shutdown(); }
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
 };
 
 RclCppFixture g_rclcppfixture;
 
 class MapSaverTestFixture : public ::testing::Test
 {
- public:
+public:
   static void SetUpTestCase()
   {
     node_ = rclcpp::Node::make_shared("map_client_test");
@@ -82,7 +82,7 @@ class MapSaverTestFixture : public ::testing::Test
     }
   }
 
- protected:
+protected:
   // Check that map_msg corresponds to reference pattern
   // Input: map_msg
   static void verifyMapMsg(const nav_msgs::msg::OccupancyGrid & map_msg)
