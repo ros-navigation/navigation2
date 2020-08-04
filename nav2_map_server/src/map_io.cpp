@@ -42,6 +42,7 @@
 
 #include "Magick++.h"
 #include "nav2_util/geometry_utils.hpp"
+#include "boost/filesystem.hpp"
 
 #include "yaml-cpp/yaml.h"
 #include "tf2/LinearMath/Matrix3x3.h"
@@ -107,6 +108,15 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
     fname_copy.push_back('\0');
     image_file_name = std::string(dirname(fname_copy.data())) + '/' + image_file_name;
   }
+
+  {
+    boost::filesystem::path p(image_file_name);
+    if (p.extension() != ".bmp" && p.extension() != ".pgm" && p.extension() != ".png") {
+      throw YAML::Exception(doc["image"].Mark(),
+                            "The pcd file is invalid please pass a file name with extension .bmp/.pgm/.png");
+    }
+  }
+
   load_parameters.image_file_name = image_file_name;
 
   load_parameters.resolution = yaml_get_value<double>(doc, "resolution");

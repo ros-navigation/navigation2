@@ -49,6 +49,8 @@ extern const char * g_valid_pcd_file;
 extern const char * g_valid_pcd_yaml_file;
 
 extern const double g_valid_image_res;
+extern const size_t g_valid_pcd_width;
+extern const size_t g_valid_pcd_data_size;
 // *INDENT-OFF*
 // Uncrustify may incorrectly guide to add extra spaces in < double > during CI tests
 extern const std::vector<double> g_valid_origin;

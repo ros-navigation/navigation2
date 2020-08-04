@@ -1,3 +1,3 @@
-pcd: Hokuyo_0.pcd
-pcd_origin: [0, 0, 0]
-pcd_orientation: [1, 0, 0, 0]
+image: Hokuyo_0.pcd
+origin: [0, 0, 0]
+orientation: [1, 0, 0, 0]

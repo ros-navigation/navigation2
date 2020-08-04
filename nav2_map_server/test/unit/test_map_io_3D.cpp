@@ -76,7 +76,8 @@ class MapIO3DTester : public ::testing::Test
     ASSERT_EQ(origin, g_valid_origin_pcd);
     ASSERT_EQ(orientation, g_valid_orientation_pcd);
 
-    //  TODO: add additional test
+    ASSERT_EQ(map_msg.map.width, g_valid_pcd_width);
+    ASSERT_EQ(map_msg.map.data.size(), g_valid_pcd_data_size);
   }
 };
 

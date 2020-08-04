@@ -91,11 +91,12 @@ LoadParameters_3D loadMapYaml(const std::string &yaml_filename) {
   YAML::Node doc = YAML::LoadFile(yaml_filename);
   LoadParameters_3D load_parameters_3D;
 
-  boost::filesystem::path pcd_file_name(YamlGetValue<std::string>(doc, "pcd"));
+  boost::filesystem::path pcd_file_name(YamlGetValue<std::string>(doc, "image"));
   if (pcd_file_name.extension() != ".pcd") {
-    throw YAML::Exception(doc["pcd"].Mark(),
+    throw YAML::Exception(doc["image"].Mark(),
                           "The pcd file is invalid please pass a file name with extension .pcd");
   }
+
   if (pcd_file_name.string()[0] != '/') {
     // dirname takes a mutable char *, so we copy into a vector
     std::vector<char> fname_copy(yaml_filename.begin(), yaml_filename.end());
@@ -110,8 +111,8 @@ LoadParameters_3D loadMapYaml(const std::string &yaml_filename) {
   // If not provided by YAML, if it provided by both YAML and PCD then
   // a warning will be issued if they are not equal and PCD  will take precedence
   try {
-    std::vector<float> pcd_origin = YamlGetValue<std::vector<float>>(doc, "pcd_origin");
-    std::vector<float> pcd_orientation = YamlGetValue<std::vector<float>>(doc, "pcd_orientation");
+    std::vector<float> pcd_origin = YamlGetValue<std::vector<float>>(doc, "origin");
+    std::vector<float> pcd_orientation = YamlGetValue<std::vector<float>>(doc, "orientation");
 
     if (pcd_origin.size() == 3 && pcd_orientation.size() == 4) {
       load_parameters_3D.origin = pcd_origin;
@@ -183,14 +184,12 @@ void loadMapFromFile(
   //  update message data
   pclToMsg(msg.map, cloud);
 
-  std::cout << "[INFO] [map_io_3D]: Loaded point cloud: "<< std::endl;
-
   map_msg = msg;
 }
 
 LOAD_MAP_STATUS loadMapFromYaml(
   const std::string &yaml_file,
-  nav2_msgs::msg::PCD2 map_msg)
+  nav2_msgs::msg::PCD2 &map_msg)
 {
 
   if (yaml_file.empty()) {
@@ -209,7 +208,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
     return INVALID_MAP_METADATA;
   } catch (std::exception &e) {
     std::cerr <<
-              "[ERROR] [map_io]: Failed to parse map YAML loaded from file " << yaml_file <<
+              "[ERROR] [map_io_3D]: Failed to parse map YAML loaded from file " << yaml_file <<
               " for reason: " << e.what() << std::endl;
     return INVALID_MAP_METADATA;
   }
@@ -218,7 +217,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
     loadMapFromFile(load_parameters_3D, map_msg);
   } catch (std::exception &e) {
     std::cerr <<
-              "[ERROR] [map_io]: Failed to load image file " << load_parameters_3D.pcd_file_name <<
+              "[ERROR] [map_io_3D]: Failed to load image file " << load_parameters_3D.pcd_file_name <<
               " for reason: " << e.what() << std::endl;
     return INVALID_MAP_DATA;
   }
@@ -254,8 +253,8 @@ void CheckSaveParameters(SaveParameters &save_parameters)
   if (save_parameters.origin.size() != 3 && save_parameters.orientation.size() != 4) {
     save_parameters.origin = {0, 0, 0};
     save_parameters.orientation = {1, 0, 0, 0};
-    std::cout << "[WARN] [map_io_3D]: view_point provided must have a length of 7 falling back to identity "
-                 "transform[0, 0, 0, 1, 0, 0, 0]" << std::endl;
+    std::cout << "[WARN] [map_io_3D]: origin and orientation provided must have a length of 3 and 4 respectively "
+                 "falling back to identity transform[0, 0, 0] ,[1, 0, 0, 0]" << std::endl;
   }
 }
 
@@ -303,12 +302,12 @@ void TryWriteMapToFile(
     YAML::Emitter emitter;
     emitter << YAML::Precision(3);
     emitter << YAML::BeginMap;
-    emitter << YAML::Key << "pcd" << YAML::Value << file_name;
+    emitter << YAML::Key << "image" << YAML::Value << file_name;
 
-    emitter << YAML::Key << "pcd_origin" << YAML::Flow << YAML::BeginSeq <<
+    emitter << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq <<
       save_parameters.origin[0] << save_parameters.origin[1] <<
       save_parameters.origin[2] << YAML::EndSeq;
-    emitter << YAML::Key << "pcd_orientation" << YAML::Flow << YAML::BeginSeq <<
+    emitter << YAML::Key << "orientation" << YAML::Flow << YAML::BeginSeq <<
       save_parameters.orientation[0] << save_parameters.orientation[1] <<
       save_parameters.orientation[2] << save_parameters.orientation[3] << YAML::EndSeq;
 

@@ -64,7 +64,7 @@ void loadMapFromFile(
  */
 LOAD_MAP_STATUS loadMapFromYaml(
   const std::string &yaml_file,
-  nav2_msgs::msg::PCD2 map_msg);
+  nav2_msgs::msg::PCD2 &map_msg);
 
 struct SaveParameters {
   std::string map_file_name;

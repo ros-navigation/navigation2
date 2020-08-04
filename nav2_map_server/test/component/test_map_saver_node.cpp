@@ -110,7 +110,8 @@ class MapSaverTestFixture : public ::testing::Test
     ASSERT_EQ(origin, g_valid_origin_pcd);
     ASSERT_EQ(orientation, g_valid_orientation_pcd);
 
-//    TODO: add additional test
+    ASSERT_EQ(map_msg.map.width, g_valid_pcd_width);
+    ASSERT_EQ(map_msg.map.data.size(), g_valid_pcd_data_size);
   }
 
   static rclcpp::Node::SharedPtr node_;
@@ -187,7 +188,7 @@ TEST_F(MapSaverTestFixture, SaveMap3D)
   nav2_msgs::msg::PCD2 map_msg;
   nav2_map_server_3D::LOAD_MAP_STATUS status =
     nav2_map_server_3D::loadMapFromYaml(
-      path(g_tmp_dir) / path(g_valid_yaml_file),
+      path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
       map_msg);
 
   ASSERT_EQ(status, nav2_map_server_3D::LOAD_MAP_SUCCESS);
@@ -232,7 +233,7 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters3D)
   auto client = node_->create_client<nav2_msgs::srv::SaveMap3D>(
     "/map_saver/save_map3D");
 
-  RCLCPP_INFO(node_->get_logger(), "Waiting for save_map service");
+  RCLCPP_INFO(node_->get_logger(), "Waiting for save_map3D service");
   ASSERT_TRUE(client->wait_for_service());
 
   // 1. Send save_map service request with default parameters
@@ -260,7 +261,7 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters3D)
   nav2_msgs::msg::PCD2 map_msg;
   nav2_map_server_3D::LOAD_MAP_STATUS status =
     nav2_map_server_3D::loadMapFromYaml(
-      path(g_tmp_dir) / path(g_valid_yaml_file),
+      path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
       map_msg);
 
   ASSERT_EQ(status, nav2_map_server_3D::LOAD_MAP_SUCCESS);

@@ -19,15 +19,11 @@
 #include <memory>
 
 #include "test_constants/test_constants.h"
-#include "nav2_map_server/map_server.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_util/lifecycle_service_client.hpp"
 #include "nav2_msgs/srv/load_map.hpp"
 
 #include "nav_msgs/srv/get_map.hpp"
-#include "nav2_msgs/srv/get_map3_d.hpp"
-#include "nav2_msgs/srv/load_map3_d.hpp"
-#include "nav2_msgs/msg/pcd2.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -96,24 +92,6 @@ protected:
     }
   }
 
-  static void verifyMapMsg(const nav2_msgs::msg::PCD2 &map_msg)
-  {
-    std::vector<float> origin;
-    origin.push_back(map_msg.origin.x);
-    origin.push_back(map_msg.origin.y);
-    origin.push_back(map_msg.origin.z);
-
-    std::vector<float> orientation;
-    orientation.push_back(map_msg.orientation.w);
-    orientation.push_back(map_msg.orientation.x);
-    orientation.push_back(map_msg.orientation.y);
-    orientation.push_back(map_msg.orientation.z);
-    ASSERT_EQ(origin, g_valid_origin_pcd);
-    ASSERT_EQ(orientation, g_valid_orientation_pcd);
-
-//    TODO: add additional test
-  }
-
   static rclcpp::Node::SharedPtr node_;
   static std::shared_ptr<nav2_util::LifecycleServiceClient> lifecycle_client_;
 };
@@ -140,26 +118,6 @@ TEST_F(MapServerTestFixture, GetMap)
   verifyMapMsg(resp->map);
 }
 
-// Send map getting service request and verify obtained PointCloud
-TEST_F(MapServerTestFixture, GetMap3D)
-{
-  RCLCPP_INFO(node_->get_logger(), "Testing GetMap service");
-  auto req = std::make_shared<nav2_msgs::srv::GetMap3D::Request>();
-  auto client = node_->create_client<nav2_msgs::srv::GetMap3D>(
-    "/map_server/map3D");
-
-  RCLCPP_INFO(node_->get_logger(), "Waiting for map service");
-  ASSERT_TRUE(client->wait_for_service());
-
-  auto resp = send_request<nav2_msgs::srv::GetMap3D>(node_, client, req);
-
-  nav2_msgs::msg::PCD2 map_msg;
-  map_msg.map = resp->map;
-  map_msg.origin = resp->origin;
-  map_msg.orientation = resp->orientation;
-  verifyMapMsg(map_msg);
-}
-
 // Send map loading service request and verify obtained OccupancyGrid
 TEST_F(MapServerTestFixture, LoadMap)
 {
@@ -178,29 +136,6 @@ TEST_F(MapServerTestFixture, LoadMap)
   verifyMapMsg(resp->map);
 }
 
-// Send map loading service request and verify obtained PointCloud
-TEST_F(MapServerTestFixture, LoadMap3D)
-{
-  RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
-  auto req = std::make_shared<nav2_msgs::srv::LoadMap3D::Request>();
-  auto client = node_->create_client<nav2_msgs::srv::LoadMap3D>(
-    "/map_server/load_map3D");
-
-  RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
-  ASSERT_TRUE(client->wait_for_service());
-
-  req->map_url = path(TEST_DIR) / path(g_valid_yaml_file);
-  auto resp = send_request<nav2_msgs::srv::LoadMap3D>(node_, client, req);
-
-  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap3D::Response::RESULT_SUCCESS);
-
-  nav2_msgs::msg::PCD2 map_msg;
-  map_msg.map = resp->map;
-  map_msg.origin = resp->origin;
-  map_msg.orientation = resp->orientation;
-  verifyMapMsg(map_msg);
-}
-
 // Send map loading service request without specifying which map to load
 TEST_F(MapServerTestFixture, LoadMapNull)
 {
@@ -217,30 +152,6 @@ TEST_F(MapServerTestFixture, LoadMapNull)
   auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
 
   ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST);
-}
-
-// Send map loading service request without specifying which map to load
-TEST_F(MapServerTestFixture, LoadMapNull3D)
-{
-  RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
-  auto req = std::make_shared<nav2_msgs::srv::LoadMap3D::Request>();
-  auto client = node_->create_client<nav2_msgs::srv::LoadMap3D>(
-    "/map_server/load_map3D");
-
-  RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
-  ASSERT_TRUE(client->wait_for_service());
-
-  req->map_url = "";
-  RCLCPP_INFO(node_->get_logger(), "Sending load_map request with null file name");
-  auto resp = send_request<nav2_msgs::srv::LoadMap3D>(node_, client, req);
-
-  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap3D::Response::RESULT_MAP_DOES_NOT_EXIST);
-
-  nav2_msgs::msg::PCD2 map_msg;
-  map_msg.map = resp->map;
-  map_msg.origin = resp->origin;
-  map_msg.orientation = resp->orientation;
-  verifyMapMsg(map_msg);
 }
 
 // Send map loading service request with non-existing yaml file

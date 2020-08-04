@@ -127,6 +127,12 @@ ament_target_dependencies(${map_io_3D_library_name}
   ${map_io_3D_dependencies})
 
 # linking boost to nav2_io_library
+target_link_libraries(${map_io_library_name}
+  ${Boost_FILESYSTEM_LIBRARY}
+  ${Boost_SYSTEM_LIBRARY}
+  ${Boost_REGEX_LIBRARY})
+
+# linking boost|pcl|eigen to nav2_io_3D_library
 target_link_libraries(${map_io_3D_library_name}
   ${Boost_FILESYSTEM_LIBRARY}
   ${Boost_SYSTEM_LIBRARY}

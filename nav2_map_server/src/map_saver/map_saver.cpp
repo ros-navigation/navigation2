@@ -70,27 +70,37 @@ MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create a service that saves the occupancy grid or PointCloud2 from map topic to a file
 //  if (get_parameter("is_pcd").as_bool()) {
-    auto save_map_call_back_lambda_3D = [this](
-        const std::shared_ptr<rmw_request_id_t> request_header,
-        const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
-        std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response) {
-      saveMapCallback(request_header, request, response);
-    };
+//    auto save_map_call_back_lambda_3D = [this](
+//        const std::shared_ptr<rmw_request_id_t> request_header,
+//        const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
+//        std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response) {
+//      saveMapCallback(request_header, request, response);
+//    };
 
     pcd_save_map_service_ = create_service<nav2_msgs::srv::SaveMap3D>(
       service_prefix + save_map_3D_service_name_,
-      save_map_call_back_lambda_3D);
+      [this](
+          const std::shared_ptr<rmw_request_id_t> request_header,
+          const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
+          std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response) {
+        saveMapCallback(request_header, request, response);
+      });
 //  } else {
-    auto save_map_call_back_lambda = [this](
-        const std::shared_ptr<rmw_request_id_t> request_header,
-        const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
-        std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response) {
-      saveMapCallback(request_header, request, response);
-    };
+//    auto save_map_call_back_lambda = [this](
+//        const std::shared_ptr<rmw_request_id_t> request_header,
+//        const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
+//        std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response) {
+//      saveMapCallback(request_header, request, response);
+//    };
 
     save_map_service_ = create_service<nav2_msgs::srv::SaveMap>(
       service_prefix + save_map_service_name_,
-      save_map_call_back_lambda);
+      [this](
+          const std::shared_ptr<rmw_request_id_t> request_header,
+          const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
+          std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response) {
+        saveMapCallback(request_header, request, response);
+      });
 //  }
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -122,6 +132,8 @@ nav2_util::CallbackReturn
 MapSaver::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
+  pcd_save_map_service_.reset();
+  save_map_service_.reset();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -165,11 +177,13 @@ void MapSaver::saveMapCallback(
   save_parameters.map_file_name = request->map_url;
 
   // Set view_point translation(origin)
+  save_parameters.origin.resize(3);
   save_parameters.origin[0] = request->origin.x;
   save_parameters.origin[1] = request->origin.y;
   save_parameters.origin[2] = request->origin.z;
 
   // Set view_point orientation
+  save_parameters.orientation.resize(4);
   save_parameters.orientation[0] = request->orientation.w;
   save_parameters.orientation[1] = request->orientation.x;
   save_parameters.orientation[2] = request->orientation.y;
@@ -283,7 +297,7 @@ bool MapSaver::saveMapTopicToFile(
 
   try {
     // Pointer to map message received in the subscription callback
-    nav2_msgs::msg::PCD2::SharedPtr pcd_map_msg = nullptr;
+    sensor_msgs::msg::PointCloud2::SharedPtr pcd_map_msg = nullptr;
 
     // Correct map_topic_loc if necessary
     if (map_topic_loc.empty()) {
@@ -295,14 +309,14 @@ bool MapSaver::saveMapTopicToFile(
 
     // A callback function that receives map message from subscribed topic
     auto map_callback = [&pcd_map_msg](
-        const nav2_msgs::msg::PCD2::SharedPtr msg) -> void {
+        const sensor_msgs::msg::PointCloud2::SharedPtr msg) -> void {
       pcd_map_msg = msg;
     };
 
     // Add new subscription for incoming map topic.
     // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode
     // as a map listener.
-    auto map_sub = rclcpp_node_->create_subscription<nav2_msgs::msg::PCD2>(
+    auto map_sub = rclcpp_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
         map_topic_loc, rclcpp::SystemDefaultsQoS(), map_callback);
 
     rclcpp::Time start_time = now();
@@ -314,7 +328,9 @@ bool MapSaver::saveMapTopicToFile(
 
       if (pcd_map_msg) {
         // Map message received. Saving it to file
-        if (nav2_map_server_3D::saveMapToFile(pcd_map_msg->map, save_parameters_loc)) {
+        std::cout<< "data "<< pcd_map_msg->width << std::endl;
+
+        if (nav2_map_server_3D::saveMapToFile(*pcd_map_msg, save_parameters_loc)) {
           RCLCPP_INFO(get_logger(), "Map saved successfully");
           return true;
         } else {

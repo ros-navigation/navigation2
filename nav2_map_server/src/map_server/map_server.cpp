@@ -51,9 +51,9 @@
 #include <fstream>
 #include <stdexcept>
 #include <utility>
-#include <boost/filesystem.hpp>
-#include "yaml-cpp/yaml.h"
+#include <yaml-cpp/yaml.h>
 
+#include "boost/filesystem.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_map_server/map_io.hpp"
 #include "nav2_map_server_3D/map_io_3D.hpp"
@@ -90,49 +90,34 @@ void MapServer::CheckForFunctionalitiesToEnable(const std::string &yaml_filename
 
   YAML::Node doc = YAML::LoadFile(yaml_filename);
   std::string input_filename;
-  enable_pcd_ = false, enable_image_ = false;
-
-  try {
-    input_filename = yaml_get_value<std::string>(doc, "pcd");
-
-    //  check for file extension
-    boost::filesystem::path p(input_filename);
-    if (p.empty()) {
-      throw YAML::Exception(doc["pcd"].Mark(), "The 'pcd' tag is empty.");
-    }
-
-    if (p.extension() == ".pcd") {
-      enable_pcd_ = true;
-    }
-
-  } catch (YAML::Exception &e) {
-    std::cout << "[WARNING] [map_server]: could not find 'pcd' tag in yaml file, will try to parse 'image' tag "
-                 "further" << std::endl;
-  }
 
   // Check for image files
-  try {
-    input_filename = yaml_get_value<std::string>(doc, "image");
+  input_filename = yaml_get_value<std::string>(doc, "image");
 
-    //  check for file extension
-    boost::filesystem::path p(input_filename);
-    if (p.empty()) {
-      throw YAML::Exception(doc["pcd"].Mark(), "The 'pcd' tag is empty.");
-    }
-
-    if (p.extension() == ".bmp" || p.extension() == ".pgm" || p.extension() == ".png") {
-      enable_image_ = true;
-    }
-
-  } catch (YAML::Exception &e) {
-    std::cout << "[WARNING] [map_server]: could not find 'image' tag in yaml file" << std::endl;
+  //  check for file extension
+  boost::filesystem::path p(input_filename);
+  if (p.empty()) {
+    throw YAML::Exception(doc["image"].Mark(), "The 'image' tag is empty.");
   }
 
-  if (!(enable_image_ || enable_pcd_)) {
-    throw std::invalid_argument("yaml file neither contains 'pcd' tag with(.pcd extension) nor 'image' tag with("
-                                ".pgm/.bmp/.png extension) please provide one of them to enable server");
+  if (p.extension() == ".bmp" || p.extension() == ".pgm" || p.extension() == ".png") {
+    if (enable_pcd_){
+      throw std::runtime_error("The 'image' tag is trying to change "
+        "server configuration from 3D to 2D which is invalid");
+    }
+    enable_image_ = true;
+    enable_pcd_ = false;
+  } else if (p.extension() == ".pcd") {
+    if (enable_image_){
+      throw std::runtime_error("The 'image' tag is trying to change "
+        "server configuration from 2D to 3D which is invalid");
+    }
+    enable_pcd_ = true;
+    enable_image_ = false;
+  } else{
+    throw std::runtime_error("The 'image' tag in yaml_file has not "
+      "a valid extension , it should be one of .bmp/.pgm/.png/.pcd");
   }
-
 }
 
 nav2_util::CallbackReturn
@@ -150,10 +135,11 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // in order to avoid null-pointer dereference
   MapServer::CheckForFunctionalitiesToEnable(yaml_filename);
 
+  std::cout << enable_image_ << " " << enable_pcd_ << std::endl;
   if (enable_pcd_) {
 
     std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> rsp =
-        std::make_shared<nav2_msgs::srv::LoadMap3D::Response>();
+      std::make_shared<nav2_msgs::srv::LoadMap3D::Response>();
 
     if (!loadMapResponseFromYaml(yaml_filename, rsp)) {
       throw std::runtime_error("Failed to load map yaml file: " + yaml_filename);
@@ -171,13 +157,13 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     };
 
     pcd_service_ = create_service<nav2_msgs::srv::GetMap3D>(
-        service_prefix + std::string(service_name_) + "3D",
-        get_map_callback_lambda);
+      service_prefix + std::string(service_name_),
+      get_map_callback_lambda);
 
     // Create a publisher using the QoS settings to emulate a ROS1 latched topic
     pcd_pub_ = create_publisher<nav2_msgs::msg::PCD2>(
-        topic_name + "3D",
-        rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+      topic_name,
+      rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
     // Create a service that loads the PointCloud2 from a file
     auto load_map_callback_lambda = [this](
@@ -188,10 +174,10 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     };
 
     pcd_load_map_service_ = create_service<nav2_msgs::srv::LoadMap3D>(
-        service_prefix + std::string(load_map_service_name_) + "3D", load_map_callback_lambda);
+      service_prefix + std::string(load_map_service_name_), load_map_callback_lambda);
 
-  }
-  if (enable_image_) {
+    std::cout << "enabled: pcd" << std::endl;
+  } else if (enable_image_) {
 
     std::shared_ptr<nav2_msgs::srv::LoadMap::Response> rsp = std::make_shared<nav2_msgs::srv::LoadMap::Response>();
     if (!loadMapResponseFromYaml(yaml_filename, rsp)) {
@@ -210,12 +196,12 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     };
 
     occ_service_ = create_service<nav_msgs::srv::GetMap>(
-        service_prefix + std::string(service_name_), get_map_callback_lambda);
+      service_prefix + std::string(service_name_), get_map_callback_lambda);
 
     // Create a publisher using the QoS settings to emulate a ROS1 latched topic
     occ_pub_ = create_publisher<nav_msgs::msg::OccupancyGrid>(
-        topic_name,
-        rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+      topic_name,
+      rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
     // Create a service that loads the occupancy grid from a file
     auto load_map_callback_lambda = [this](
@@ -226,7 +212,8 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     };
 
     load_map_service_ = create_service<nav2_msgs::srv::LoadMap>(
-        service_prefix + std::string(load_map_service_name_), load_map_callback_lambda);
+      service_prefix + std::string(load_map_service_name_), load_map_callback_lambda);
+    std::cout << "enabled: image" << std::endl;
   }
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -367,8 +354,8 @@ void MapServer::loadMapCallback(
   // if not in ACTIVE state, ignore request
   if (get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     RCLCPP_WARN(
-        get_logger(),
-        "Received LoadMap request but not in ACTIVE state, ignoring!");
+      get_logger(),
+      "Received LoadMap request but not in ACTIVE state, ignoring!");
     return;
   }
 
