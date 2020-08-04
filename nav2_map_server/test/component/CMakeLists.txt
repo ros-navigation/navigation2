@@ -23,13 +23,13 @@ ament_add_test(test_map_server_node
 
 # map_server_3D component test
 ament_add_gtest_executable(test_map_server_3D_node
-    test_map_server_3D_node.cpp
-    ${PROJECT_SOURCE_DIR}/test/test_constants.cpp
+  test_map_server_3D_node.cpp
+  ${PROJECT_SOURCE_DIR}/test/test_constants.cpp
 )
 ament_target_dependencies(test_map_server_3D_node rclcpp nav2_msgs nav2_util)
 target_link_libraries(test_map_server_3D_node
-    ${library_name}
-    stdc++fs
+  ${library_name}
+  stdc++fs
 )
 
 ament_add_test(test_map_server_3D_node

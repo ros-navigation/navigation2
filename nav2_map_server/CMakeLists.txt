@@ -152,10 +152,10 @@ target_link_libraries(${library_name}
 target_link_libraries(${map_server_executable}
   ${library_name})
 
-if (WIN32)
+if(WIN32)
   target_compile_definitions(${map_server_executable} PRIVATE
-      YAML_CPP_DLL)
-endif ()
+    YAML_CPP_DLL)
+endif()
 
 target_link_libraries(${map_saver_cli_executable}
   ${library_name})
@@ -175,10 +175,10 @@ target_include_directories(${map_io_library_name} SYSTEM PRIVATE
 target_link_libraries(${map_io_library_name}
   ${GRAPHICSMAGICKCPP_LIBRARIES})
 
-if (WIN32)
+if(WIN32)
   target_compile_definitions(${map_io_library_name} PRIVATE
-      YAML_CPP_DLL)
-endif ()
+    YAML_CPP_DLL)
+endif()
 
 install(TARGETS
     ${library_name} ${map_io_library_name} ${map_io_3D_library_name}
@@ -197,7 +197,7 @@ install(DIRECTORY include/
 
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
-if (BUILD_TESTING)
+if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
   set(ament_cmake_copyright_FOUND TRUE)
@@ -205,7 +205,7 @@ if (BUILD_TESTING)
 
   find_package(ament_cmake_gtest REQUIRED)
   add_subdirectory(test)
-endif ()
+endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(

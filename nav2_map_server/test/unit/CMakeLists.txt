@@ -25,5 +25,5 @@ target_link_libraries(test_costmap_filter_info_server
 )
 
 target_link_libraries(test_map_io_3D
-    ${map_io_3D_library_name}
-    stdc++fs)
+  ${map_io_3D_library_name}
+  stdc++fs)
