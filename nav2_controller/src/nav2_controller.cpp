@@ -216,22 +216,11 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
 
   // Release any allocated resources
   action_server_.reset();
-  for (it = controllers_.begin(); it != controllers_.end(); ++it) {
-    it->second.reset();
-  }
   odom_sub_.reset();
-
   vel_publisher_.reset();
   action_server_.reset();
   goal_checker_->reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-ControllerServer::on_error(const rclcpp_lifecycle::State &)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 

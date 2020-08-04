@@ -109,7 +109,7 @@ TEST_F(SpinActionTestFixture, test_ports)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <Spin />
+            <Spin server_name="spin"/>
         </BehaviorTree>
       </root>)";
 
