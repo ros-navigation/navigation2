@@ -35,9 +35,8 @@ namespace nav2_map_server {
  * @brief Parses the map yaml file and creates a service and a publisher that
  * provides occupancy grid
  */
-//template <typename T = nav_msgs::msg::OccupancyGrid>
 class MapServer : public nav2_util::LifecycleNode {
- public:
+public:
   /**
    * @brief A constructor for nav2_map_server::MapServer
    */
@@ -48,37 +47,37 @@ class MapServer : public nav2_util::LifecycleNode {
    */
   ~MapServer();
 
- private:
+private:
 
   bool enable_pcd_, enable_image_;
-  void CheckForFunctionalitiesToEnable(const std::string &yaml_filename);
+  void CheckForFunctionalitiesToEnable(const std::string & yaml_filename);
 
- protected:
+protected:
 
   /**
    * @brief Sets up required params and services. Loads map and its parameters from the file
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State &state) override;
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Start publishing the map using the latched topic
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State &state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Stops publishing the latched topic
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Resets the member variables
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called when in Shutdown state
    * @param state Lifecycle Node's state
@@ -95,7 +94,7 @@ class MapServer : public nav2_util::LifecycleNode {
    * @return true or false
    */
   bool loadMapResponseFromYaml(
-    const std::string &yaml_file,
+    const std::string & yaml_file,
     std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
 
   /**
@@ -107,7 +106,7 @@ class MapServer : public nav2_util::LifecycleNode {
    * @return true or false
    */
   bool loadMapResponseFromYaml(
-    const std::string &yaml_file,
+    const std::string & yaml_file,
     std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response);
 
   /**

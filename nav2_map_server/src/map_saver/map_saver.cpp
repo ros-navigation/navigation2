@@ -182,8 +182,8 @@ void MapSaver::saveMapCallback(
 }
 
 bool MapSaver::saveMapTopicToFile(
-  const std::string &map_topic,
-  const SaveParameters &save_parameters)
+  const std::string & map_topic,
+  const SaveParameters & save_parameters)
 {
   // Local copies of map_topic and save_parameters that could be changed
   std::string map_topic_loc = map_topic;
@@ -270,8 +270,8 @@ bool MapSaver::saveMapTopicToFile(
 }
 
 bool MapSaver::saveMapTopicToFile(
-  const std::string &map_topic,
-  const nav2_map_server_3D::SaveParameters &save_parameters)
+  const std::string & map_topic,
+  const nav2_map_server_3D::SaveParameters & save_parameters)
 {
   // Local copies of map_topic and save_parameters that could be changed
   std::string map_topic_loc = map_topic;

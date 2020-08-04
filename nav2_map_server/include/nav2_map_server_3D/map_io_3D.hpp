@@ -43,7 +43,7 @@ typedef enum {
  * @return Map loading parameters obtained from YAML file
  * @throw YAML::Exception
  */
-LoadParameters_3D loadMapYaml(const std::string &yaml_filename);
+LoadParameters_3D loadMapYaml(const std::string & yaml_filename);
 
 /**
  * @brief Load the point cloud from map file and generate a PointCloud2(PCD2)
@@ -52,8 +52,8 @@ LoadParameters_3D loadMapYaml(const std::string &yaml_filename);
  * @throw std::exception
  */
 void loadMapFromFile(
-  const LoadParameters_3D &load_parameters,
-  nav2_msgs::msg::PCD2 &map_msg);
+  const LoadParameters_3D & load_parameters,
+  nav2_msgs::msg::PCD2 & map_msg);
 
 /**
  * @brief Load the map YAML, image from map file and
@@ -63,8 +63,8 @@ void loadMapFromFile(
  * @return status of map loaded
  */
 LOAD_MAP_STATUS loadMapFromYaml(
-  const std::string &yaml_file,
-  nav2_msgs::msg::PCD2 &map_msg);
+  const std::string & yaml_file,
+  nav2_msgs::msg::PCD2 & map_msg);
 
 struct SaveParameters {
   std::string map_file_name;
@@ -81,8 +81,8 @@ struct SaveParameters {
  * @return true or false
  */
 bool saveMapToFile(
-  const sensor_msgs::msg::PointCloud2 &map,
-  const SaveParameters &save_parameters);
+  const sensor_msgs::msg::PointCloud2 & map,
+  const SaveParameters & save_parameters);
 
 } // namespace nav2_map_server_3D
 } // namespace nav2_map_server

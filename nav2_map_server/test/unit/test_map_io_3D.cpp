@@ -30,7 +30,7 @@ RclCppFixture g_rclcppfixture;
 
 class MapIO3DTester : public ::testing::Test
 {
- protected:
+protected:
   // Fill LoadParameters with standard for testing values
   // Input: pcd_file_name
   // Output: load_parameters
@@ -48,8 +48,8 @@ class MapIO3DTester : public ::testing::Test
   // Output: save_parameters
   void fillSaveParameters(
     const std::string & map_file_name,
-    const std::vector<float>& origin,
-    const std::vector<float>& orientation,
+    const std::vector<float> & origin,
+    const std::vector<float> & orientation,
     const std::string & format,
     bool as_binary,
     nav2_map_server_3D::SaveParameters & save_parameters)
@@ -61,7 +61,7 @@ class MapIO3DTester : public ::testing::Test
     save_parameters.format = format;
   }
 
-  static void verifyMapMsg(const nav2_msgs::msg::PCD2 &map_msg)
+  static void verifyMapMsg(const nav2_msgs::msg::PCD2 & map_msg)
   {
     std::vector<float> origin;
     origin.push_back(map_msg.origin.x);

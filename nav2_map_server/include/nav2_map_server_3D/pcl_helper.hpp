@@ -19,20 +19,20 @@ namespace nav2_map_server_3D
 {
 
 void modifyMsgFields(
-  sensor_msgs::msg::PointCloud2 &msg,
-  const std::vector<pcl::PCLPointField> &fields);
+  sensor_msgs::msg::PointCloud2 & msg,
+  const std::vector<pcl::PCLPointField> & fields);
 
 void pclToMsg(
-  sensor_msgs::msg::PointCloud2 &msg,
-  const std::shared_ptr<pcl::PCLPointCloud2> &cloud);
+  sensor_msgs::msg::PointCloud2 & msg,
+  const std::shared_ptr<pcl::PCLPointCloud2> & cloud);
 
 void modifyPclFields(
-  std::vector<pcl::PCLPointField> &fields,
-  const sensor_msgs::msg::PointCloud2 &msg);
+  std::vector<pcl::PCLPointField> & fields,
+  const sensor_msgs::msg::PointCloud2 & msg);
 
 void msgToPcl(
-  std::shared_ptr<pcl::PCLPointCloud2> &cloud,
-  const sensor_msgs::msg::PointCloud2 &msg);
+  std::shared_ptr<pcl::PCLPointCloud2> & cloud,
+  const sensor_msgs::msg::PointCloud2 & msg);
 
 } // namespace nav2_map_server_3D
 } // namespace nav2_map_server

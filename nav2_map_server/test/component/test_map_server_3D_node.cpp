@@ -47,7 +47,7 @@ class MapServer3DTestFixture : public ::testing::Test
   {
     node_ = rclcpp::Node::make_shared("map_client_test");
     lifecycle_client_ =
-        std::make_shared<nav2_util::LifecycleServiceClient>("map_server", node_);
+      std::make_shared<nav2_util::LifecycleServiceClient>("map_server", node_);
     RCLCPP_INFO(node_->get_logger(), "Creating Test Node");
 
     std::this_thread::sleep_for(std::chrono::seconds(5));  // allow node to start up
@@ -81,7 +81,7 @@ class MapServer3DTestFixture : public ::testing::Test
  protected:
   // Check that map_msg corresponds to reference pattern
   // Input: map_msg
-  static void verifyMapMsg(const nav2_msgs::msg::PCD2 &map_msg)
+  static void verifyMapMsg(const nav2_msgs::msg::PCD2 & map_msg)
   {
     std::vector<float> origin;
     origin.push_back(map_msg.origin.x);

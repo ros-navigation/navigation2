@@ -73,17 +73,17 @@ using nav2_util::geometry_utils::orientationAroundZAxis;
 /// including the name of the failed key
 /// @throw YAML::Exception
 template<typename T>
-T YamlGetValue(const YAML::Node &node, const std::string &key) {
+T YamlGetValue(const YAML::Node & node, const std::string & key) {
   try {
     return node[key].as<T>();
-  } catch (YAML::Exception &e) {
+  } catch (YAML::Exception & e) {
     std::stringstream ss;
     ss << "Failed to parse YAML tag '" << key << "' for reason: " << e.msg;
     throw YAML::Exception(e.mark, ss.str());
   }
 }
 
-LoadParameters_3D loadMapYaml(const std::string &yaml_filename)
+LoadParameters_3D loadMapYaml(const std::string & yaml_filename)
 {
   YAML::Node doc = YAML::LoadFile(yaml_filename);
   LoadParameters_3D load_parameters_3D;
@@ -124,8 +124,8 @@ LoadParameters_3D loadMapYaml(const std::string &yaml_filename)
 }
 
 void loadMapFromFile(
-  const LoadParameters_3D &load_parameters_3D,
-  nav2_msgs::msg::PCD2 &map_msg)
+  const LoadParameters_3D & load_parameters_3D,
+  nav2_msgs::msg::PCD2 & map_msg)
 {
 
   nav2_msgs::msg::PCD2 msg;
@@ -185,8 +185,8 @@ void loadMapFromFile(
 }
 
 LOAD_MAP_STATUS loadMapFromYaml(
-  const std::string &yaml_file,
-  nav2_msgs::msg::PCD2 &map_msg)
+  const std::string & yaml_file,
+  nav2_msgs::msg::PCD2 & map_msg)
 {
 
   if (yaml_file.empty()) {
@@ -199,11 +199,11 @@ LOAD_MAP_STATUS loadMapFromYaml(
 
   try {
     load_parameters_3D = loadMapYaml(yaml_file);
-  } catch (YAML::Exception &e) {
+  } catch (YAML::Exception & e) {
     std::cerr << "[ERROR] [map_io_3D]: Failed processing YAML file " << yaml_file << " at position (" <<
               e.mark.line << ":" << e.mark.column << ") for reason: " << e.what() << std::endl;
     return INVALID_MAP_METADATA;
-  } catch (std::exception &e) {
+  } catch (std::exception & e) {
     std::cerr <<
               "[ERROR] [map_io_3D]: Failed to parse map YAML loaded from file " << yaml_file <<
               " for reason: " << e.what() << std::endl;
@@ -212,7 +212,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
 
   try {
     loadMapFromFile(load_parameters_3D, map_msg);
-  } catch (std::exception &e) {
+  } catch (std::exception & e) {
     std::cerr <<
               "[ERROR] [map_io_3D]: Failed to load image file " << load_parameters_3D.pcd_file_name <<
               " for reason: " << e.what() << std::endl;
@@ -222,7 +222,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
   return LOAD_MAP_SUCCESS;
 }
 
-void CheckSaveParameters(SaveParameters &save_parameters)
+void CheckSaveParameters(SaveParameters & save_parameters)
 {
   if (save_parameters.map_file_name.empty()) {
     rclcpp::Clock clock(RCL_SYSTEM_TIME);
@@ -261,8 +261,8 @@ void CheckSaveParameters(SaveParameters &save_parameters)
 }
 
 void TryWriteMapToFile(
-  const sensor_msgs::msg::PointCloud2 &map,
-  const SaveParameters &save_parameters)
+  const sensor_msgs::msg::PointCloud2 & map,
+  const SaveParameters & save_parameters)
 {
   std::string file_name(save_parameters.map_file_name);
 
@@ -327,8 +327,8 @@ void TryWriteMapToFile(
 }
 
 bool saveMapToFile(
-  const sensor_msgs::msg::PointCloud2 &map,
-  const SaveParameters &save_parameters)
+  const sensor_msgs::msg::PointCloud2 & map,
+  const SaveParameters & save_parameters)
 {
   // Local copy of SaveParameters
   SaveParameters save_parameters_loc = save_parameters;

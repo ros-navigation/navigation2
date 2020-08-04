@@ -85,7 +85,7 @@ class MapSaverTestFixture : public ::testing::Test
  protected:
   // Check that map_msg corresponds to reference pattern
   // Input: map_msg
-  static void verifyMapMsg(const nav_msgs::msg::OccupancyGrid &map_msg)
+  static void verifyMapMsg(const nav_msgs::msg::OccupancyGrid & map_msg)
   {
     ASSERT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
     ASSERT_EQ(map_msg.info.width, g_valid_image_width);
@@ -95,7 +95,7 @@ class MapSaverTestFixture : public ::testing::Test
     }
   }
 
-  static void verifyMapMsg(const nav2_msgs::msg::PCD2 &map_msg)
+  static void verifyMapMsg(const nav2_msgs::msg::PCD2 & map_msg)
   {
     std::vector<float> origin;
     origin.push_back(map_msg.origin.x);

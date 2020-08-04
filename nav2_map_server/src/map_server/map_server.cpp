@@ -104,20 +104,20 @@ void MapServer::CheckForFunctionalitiesToEnable(const std::string &yaml_filename
   if (p.extension() == ".bmp" || p.extension() == ".pgm" || p.extension() == ".png") {
     if (enable_pcd_){
       throw std::runtime_error("The 'image' tag is trying to change "
-        "server configuration from 3D to 2D which is invalid");
+                               "server configuration from 3D to 2D which is invalid");
     }
     enable_image_ = true;
     enable_pcd_ = false;
   } else if (p.extension() == ".pcd") {
     if (enable_image_){
       throw std::runtime_error("The 'image' tag is trying to change "
-        "server configuration from 2D to 3D which is invalid");
+                               "server configuration from 2D to 3D which is invalid");
     }
     enable_pcd_ = true;
     enable_image_ = false;
   } else{
     throw std::runtime_error("The 'image' tag in yaml_file has not "
-      "a valid extension , it should be one of .bmp/.pgm/.png/.pcd");
+                             "a valid extension , it should be one of .bmp/.pgm/.png/.pcd");
   }
 }
 
@@ -367,7 +367,7 @@ void MapServer::loadMapCallback(
 }
 
 bool MapServer::loadMapResponseFromYaml(
-  const std::string &yaml_file,
+  const std::string & yaml_file,
   std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response)
 {
   switch (loadMapFromYaml(yaml_file, msg_)) {
@@ -389,7 +389,7 @@ bool MapServer::loadMapResponseFromYaml(
 }
 
 bool MapServer::loadMapResponseFromYaml(
-  const std::string &yaml_file,
+  const std::string & yaml_file,
   std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response)
 {
   switch (nav2_map_server_3D::loadMapFromYaml(yaml_file, pcd_msg_)) {
