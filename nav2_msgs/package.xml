@@ -17,6 +17,7 @@
   <depend>builtin_interfaces</depend>
   <depend>rosidl_default_generators</depend>
   <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
   <depend>action_msgs</depend>
   <depend>nav_msgs</depend>
 

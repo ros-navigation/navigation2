@@ -26,7 +26,7 @@ ament_add_gtest_executable(test_map_server_3D_node
   test_map_server_3D_node.cpp
   ${PROJECT_SOURCE_DIR}/test/test_constants.cpp
 )
-ament_target_dependencies(test_map_server_3D_node rclcpp nav2_msgs nav2_util)
+ament_target_dependencies(test_map_server_3D_node rclcpp nav2_msgs nav2_util sensor_msgs)
 target_link_libraries(test_map_server_3D_node
   ${library_name}
   stdc++fs
