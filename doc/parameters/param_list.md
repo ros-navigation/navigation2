@@ -78,6 +78,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | `<static layer>`.subscribe_to_updates | false | Subscribe to static map updates after receiving first |
 | `<static layer>`.map_subscribe_transient_local | true | QoS settings for map topic |
 | `<static layer>`.transform_tolerance | 0.0 | TF tolerance |
+| `<static layer>`.map_topic | "" | Name of the map topic to subscribe to (empty means use the map_topic defined by `costmap_2d_ros`) |
 
 ## inflation_layer plugin
 
@@ -561,6 +562,7 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 | z_short | 0.05 | Mixture weight for z_short part of model, sum of all used z weight must be 1. Beam uses all 4, likelihood model uses z_hit and z_rand. |
 | always_reset_initial_pose | false | Requires that AMCL is provided an initial pose either via topic or initial_pose* parameter (with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the last known pose to initialize |
 | scan_topic | scan | Topic to subscribe to in order to receive the laser scan for localization |
+| map_topic | map | Topic to subscribe to in order to receive the map for localization |
 
 ---
 
