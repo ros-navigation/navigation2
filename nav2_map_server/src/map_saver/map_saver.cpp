@@ -208,7 +208,6 @@ bool MapSaver::saveMapTopicToFile(
     return false;
   }
 
-  RCLCPP_ERROR(get_logger(), "This situation should never appear");
   return false;
 }
 
