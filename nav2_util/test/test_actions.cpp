@@ -516,6 +516,31 @@ TEST_F(ActionTest, test_handle_goal_deactivated)
   SUCCEED();
 }
 
+TEST_F(ActionTest, test_handle_cancel)
+{
+  auto goal = Fibonacci::Goal();
+  goal.order = 14000000;
+
+  // Send the goal
+  auto future_goal_handle = node_->action_client_->async_send_goal(goal);
+  EXPECT_EQ(
+    rclcpp::spin_until_future_complete(
+      node_,
+      future_goal_handle), rclcpp::FutureReturnCode::SUCCESS);
+
+  // Cancel the goal
+  auto cancel_response = node_->action_client_->async_cancel_goal(future_goal_handle.get());
+  EXPECT_EQ(
+    rclcpp::spin_until_future_complete(
+      node_,
+      cancel_response), rclcpp::FutureReturnCode::SUCCESS);
+
+  // Check cancelled
+  EXPECT_EQ(future_goal_handle.get()->get_status(), rclcpp_action::GoalStatus::STATUS_CANCELING);
+
+  SUCCEED();
+}
+
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);

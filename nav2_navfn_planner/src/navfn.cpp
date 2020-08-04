@@ -55,6 +55,8 @@ namespace nav2_navfn_planner
 //   if the size of the environment does not change
 //
 
+// Example usage:
+/*
 int
 create_nav_plan_astar(
   COSTTYPE * costmap, int nx, int ny,
@@ -100,7 +102,7 @@ create_nav_plan_astar(
 
   return len;
 }
-
+*/
 
 //
 // create nav fn buffers

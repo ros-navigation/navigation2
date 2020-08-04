@@ -214,18 +214,12 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   action_server_.reset();
   plugin_lib_names_.clear();
+  current_bt_xml_filename_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_.rootNode());
   bt_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-BtNavigator::on_error(const rclcpp_lifecycle::State & /*state*/)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 

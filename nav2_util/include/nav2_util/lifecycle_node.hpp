@@ -123,6 +123,14 @@ public:
       rclcpp_lifecycle::LifecycleNode::shared_from_this());
   }
 
+  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & /*state*/)
+  {
+    RCLCPP_FATAL(
+      get_logger(),
+      "Lifecycle node %s does not have error state implemented", get_name());
+    return nav2_util::CallbackReturn::SUCCESS;
+  }
+
   // bond connection to lifecycle manager
   void createBond();
   void destroyBond();

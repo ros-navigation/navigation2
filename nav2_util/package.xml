@@ -28,6 +28,7 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>launch</depend>
   <depend>launch_testing_ament_cmake</depend>
+  <depend>action_msgs</depend>
 
   <exec_depend>libboost-program-options</exec_depend>
 
@@ -37,6 +38,7 @@
   <test_depend>launch</test_depend>
   <test_depend>launch_testing_ament_cmake</test_depend>
   <test_depend>std_srvs</test_depend>
+  <test_depend>action_msgs</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

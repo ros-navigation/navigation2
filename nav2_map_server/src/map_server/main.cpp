@@ -23,15 +23,8 @@ int main(int argc, char ** argv)
 {
   std::string node_name("map_server");
 
-  try {
-    rclcpp::init(argc, argv);
-    auto node = std::make_shared<nav2_map_server::MapServer>();
-    rclcpp::spin(node->get_node_base_interface());
-    rclcpp::shutdown();
-    return 0;
-  } catch (std::exception & ex) {
-    RCLCPP_ERROR(rclcpp::get_logger(node_name.c_str()), ex.what());
-    RCLCPP_ERROR(rclcpp::get_logger(node_name.c_str()), "Exiting");
-    return -1;
-  }
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<nav2_map_server::MapServer>();
+  rclcpp::spin(node->get_node_base_interface());
+  rclcpp::shutdown();
 }
