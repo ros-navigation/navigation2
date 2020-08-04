@@ -36,7 +36,7 @@ BackUpAction::BackUpAction(
   dist = std::fabs(dist);
 
   // Populate the input message
-  goal_.target.x = -dist;
+  goal_.target.x = dist;
   goal_.target.y = 0.0;
   goal_.target.z = 0.0;
   goal_.speed = speed;
