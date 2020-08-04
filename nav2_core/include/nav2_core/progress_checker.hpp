@@ -55,7 +55,7 @@ public:
   /**
    * @brief Reset class state upon calling
    */
-  virtual void reset() {}
+  virtual void reset() = 0;
 };
 }  // namespace nav2_core
 
