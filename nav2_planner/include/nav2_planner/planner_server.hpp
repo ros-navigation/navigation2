@@ -90,6 +90,8 @@ protected:
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
+  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePathToPose>;
+
   // Our action server implements the ComputePathToPose action
   std::unique_ptr<ActionServer> action_server_;
 
