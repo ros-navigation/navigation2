@@ -89,14 +89,6 @@ protected:
    * @return SUCCESS or FAILURE
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when in error state
-   * @param state Reference to LifeCycle node state
-   * @return SUCCESS or FAILURE
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
-
-  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePathToPose>;
 
   // Our action server implements the ComputePathToPose action
   std::unique_ptr<ActionServer> action_server_;
