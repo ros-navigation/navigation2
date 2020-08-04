@@ -6,7 +6,7 @@ ament_add_gtest(test_map_io_3D test_map_io_3D.cpp ${PROJECT_SOURCE_DIR}/test/tes
 
 ament_target_dependencies(test_map_io rclcpp nav_msgs)
 ament_target_dependencies(test_map_io_3D rclcpp nav_msgs
-    sensor_msgs geometry_msgs)
+  nav2_msgs)
 
 target_link_libraries(test_map_io
   ${map_io_library_name}

@@ -10,21 +10,15 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <stdexcept>
 #include <boost/filesystem.hpp>
-//#include <tic.h>
 #include <memory>
-#include <algorithm>
 
 #include "nav2_util/geometry_utils.hpp"
 
 #include "yaml-cpp/yaml.h"
-#include "sensor_msgs/msg/point_cloud2.hpp"
-#include "geometry_msgs/msg/transform.hpp"
-#include "pcl/io/pcd_io.h"
-#include "pcl/features/normal_3d.h"
 #include "nav2_map_server_3D/pcl_helper.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "pcl/io/pcd_io.h"
 #include "Eigen/Core"
 
 #ifdef _WIN32
@@ -65,8 +59,10 @@ char * dirname(char * path)
 }
 #endif
 
-namespace nav2_map_server {
-namespace nav2_map_server_3D {
+namespace nav2_map_server
+{
+namespace nav2_map_server_3D
+{
 
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
@@ -87,7 +83,8 @@ T YamlGetValue(const YAML::Node &node, const std::string &key) {
   }
 }
 
-LoadParameters_3D loadMapYaml(const std::string &yaml_filename) {
+LoadParameters_3D loadMapYaml(const std::string &yaml_filename)
+{
   YAML::Node doc = YAML::LoadFile(yaml_filename);
   LoadParameters_3D load_parameters_3D;
 
@@ -244,6 +241,11 @@ void CheckSaveParameters(SaveParameters &save_parameters)
     std::cout << "[WARN] [map_io_3D]: No map format is specifies we will be using pcd format" << std::endl;
   }
 
+  if (save_parameters.format != "ply" || save_parameters.format != "pcd"){
+    save_parameters.format = "pcd";
+    std::cout << "[WARN] [map_io_3D]: " << save_parameters.format<< " support is not implemented, Falling back to pcd"
+                                                                    "file format" << std::endl;
+  }
   if (save_parameters.format == "ply") {
     // TODO: add ply support
     save_parameters.format = "pcd";
@@ -315,9 +317,8 @@ void TryWriteMapToFile(
     emitter << YAML::Key << "file_format" << YAML::Value << save_parameters.format;
 
     if (!emitter.good()) {
-      std::cout <<
-                "[WARN] [map_io_3D]: YAML writer failed with an error " << emitter.GetLastError() <<
-                ". The map metadata may be invalid." << std::endl;
+      std::cout <<"[WARN] [map_io_3D]: YAML writer failed with an error " << emitter.GetLastError() <<
+                  ". The map metadata may be invalid." << std::endl;
     }
 
     std::cout << "[INFO] [map_io]: Writing map metadata to " << mapmetadatafile << std::endl;

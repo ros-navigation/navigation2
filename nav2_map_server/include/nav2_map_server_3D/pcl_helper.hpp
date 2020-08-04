@@ -13,8 +13,10 @@
 #include "pcl/PCLPointField.h"
 #include "pcl_conversions/pcl_conversions.h"
 
-namespace nav2_map_server {
-namespace nav2_map_server_3D {
+namespace nav2_map_server
+{
+namespace nav2_map_server_3D
+{
 
 void modifyMsgFields(
   sensor_msgs::msg::PointCloud2 &msg,

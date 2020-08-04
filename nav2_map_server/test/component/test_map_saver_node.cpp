@@ -325,5 +325,3 @@ TEST_F(MapSaverTestFixture, SaveMapInvalidParameters)
   resp = send_request<nav2_msgs::srv::SaveMap>(node_, client, req);
   ASSERT_EQ(resp->result, false);
 }
-
-// TODO: Add more tests

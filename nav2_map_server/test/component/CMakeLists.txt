@@ -25,22 +25,22 @@ ament_add_test(test_map_server_node
 ament_add_gtest_executable(test_map_server_3D_node
     test_map_server_3D_node.cpp
     ${PROJECT_SOURCE_DIR}/test/test_constants.cpp
-    )
+)
 ament_target_dependencies(test_map_server_3D_node rclcpp nav2_msgs nav2_util)
 target_link_libraries(test_map_server_3D_node
     ${library_name}
     stdc++fs
-    )
+)
 
 ament_add_test(test_map_server_3D_node
-    GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-    COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_map_server_3D_launch.py"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-    ENV
+  GENERATE_RESULT_FOR_RETURN_CODE_ZERO
+  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_map_server_3D_launch.py"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+  ENV
     TEST_DIR=${TEST_DIR}
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
     TEST_EXECUTABLE=$<TARGET_FILE:test_map_server_node>
-    )
+)
 
 # map_saver component test
 ament_add_gtest_executable(test_map_saver_node

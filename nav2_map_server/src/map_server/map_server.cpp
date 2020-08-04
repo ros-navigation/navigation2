@@ -62,7 +62,8 @@
 using namespace std::chrono_literals;
 using namespace std::placeholders;
 
-namespace nav2_map_server {
+namespace nav2_map_server
+{
 
 MapServer::MapServer()
 : nav2_util::LifecycleNode("map_server")
@@ -135,7 +136,6 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // in order to avoid null-pointer dereference
   MapServer::CheckForFunctionalitiesToEnable(yaml_filename);
 
-  std::cout << enable_image_ << " " << enable_pcd_ << std::endl;
   if (enable_pcd_) {
 
     std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> rsp =
@@ -176,7 +176,6 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     pcd_load_map_service_ = create_service<nav2_msgs::srv::LoadMap3D>(
       service_prefix + std::string(load_map_service_name_), load_map_callback_lambda);
 
-    std::cout << "enabled: pcd" << std::endl;
   } else if (enable_image_) {
 
     std::shared_ptr<nav2_msgs::srv::LoadMap::Response> rsp = std::make_shared<nav2_msgs::srv::LoadMap::Response>();
@@ -213,7 +212,6 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     load_map_service_ = create_service<nav2_msgs::srv::LoadMap>(
       service_prefix + std::string(load_map_service_name_), load_map_callback_lambda);
-    std::cout << "enabled: image" << std::endl;
   }
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -298,8 +296,8 @@ void MapServer::getMapCallback(
   // if not in ACTIVE state, ignore request
   if (get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     RCLCPP_WARN(
-        get_logger(),
-        "Received GetMap request but not in ACTIVE state, ignoring!");
+      get_logger(),
+      "Received GetMap request but not in ACTIVE state, ignoring!");
     return;
   }
   RCLCPP_INFO(get_logger(), "Handling GetMap request");
@@ -314,8 +312,8 @@ void MapServer::getMapCallback(
   // if not in ACTIVE state, ignore request
   if (get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     RCLCPP_WARN(
-        get_logger(),
-        "Received GetMap request but not in ACTIVE state, ignoring!");
+      get_logger(),
+      "Received GetMap request but not in ACTIVE state, ignoring!");
     return;
   }
   RCLCPP_INFO(get_logger(), "Handling GetMap request");
@@ -332,8 +330,8 @@ void MapServer::loadMapCallback(
   // if not in ACTIVE state, ignore request
   if (get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     RCLCPP_WARN(
-        get_logger(),
-        "Received LoadMap request but not in ACTIVE state, ignoring!");
+      get_logger(),
+      "Received LoadMap request but not in ACTIVE state, ignoring!");
     return;
   }
 
@@ -354,8 +352,8 @@ void MapServer::loadMapCallback(
   // if not in ACTIVE state, ignore request
   if (get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     RCLCPP_WARN(
-      get_logger(),
-      "Received LoadMap request but not in ACTIVE state, ignoring!");
+    get_logger(),
+    "Received LoadMap request but not in ACTIVE state, ignoring!");
     return;
   }
 

@@ -14,13 +14,13 @@
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav2_msgs/msg/pcd2.hpp"
 
-namespace nav2_map_server {
-
+namespace nav2_map_server
+{
 /**
  * @brief nav2_map_server_3D namespace containing the utilities to use point cloud mapss
  */
-namespace nav2_map_server_3D {
-
+namespace nav2_map_server_3D
+{
 /**
  * @brief parameters that will be populated while reading a YAML file
  */
