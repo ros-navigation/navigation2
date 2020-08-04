@@ -174,12 +174,16 @@ NavfnPlanner::makePlan(
   // clear the starting cell within the costmap because we know it can't be an obstacle
   clearRobotCell(mx, my);
 
+  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
+
   // make sure to resize the underlying array that Navfn uses
   planner_->setNavArr(
     costmap_->getSizeInCellsX(),
     costmap_->getSizeInCellsY());
 
   planner_->setCostmap(costmap_->getCharMap(), true, allow_unknown_);
+
+  lock.unlock();
 
   int map_start[2];
   map_start[0] = mx;
