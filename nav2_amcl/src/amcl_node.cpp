@@ -217,6 +217,10 @@ AmclNode::AmclNode()
   add_parameter(
     "scan_topic", rclcpp::ParameterValue("scan"),
     "Topic to subscribe to in order to receive the laser scan for localization");
+
+  add_parameter(
+    "map_topic", rclcpp::ParameterValue("map"),
+    "Topic to subscribe to in order to receive the map to localize on");
 }
 
 AmclNode::~AmclNode()
@@ -1096,6 +1100,7 @@ AmclNode::initParameters()
   get_parameter("first_map_only_", first_map_only_);
   get_parameter("always_reset_initial_pose", always_reset_initial_pose_);
   get_parameter("scan_topic", scan_topic_);
+  get_parameter("map_topic", map_topic_);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -1271,7 +1276,7 @@ AmclNode::initPubSub()
     std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
 
   map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
-    "map", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+    map_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
 
   RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
