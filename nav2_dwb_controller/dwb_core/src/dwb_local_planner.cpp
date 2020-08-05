@@ -325,6 +325,9 @@ DWBLocalPlanner::computeVelocityCommands(
 
   prepareGlobalPlan(pose, transformed_plan, goal_pose);
 
+  nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
+  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
+
   for (TrajectoryCritic::Ptr critic : critics_) {
     if (critic->prepare(pose.pose, velocity, goal_pose.pose, transformed_plan) == false) {
       RCLCPP_WARN(rclcpp::get_logger("DWBLocalPlanner"), "A scoring function failed to prepare");
@@ -344,6 +347,8 @@ DWBLocalPlanner::computeVelocityCommands(
       critic->debrief(cmd_vel.velocity);
     }
 
+    lock.unlock();
+
     pub_->publishLocalPlan(pose.header, best.traj);
     pub_->publishCostGrid(costmap_ros_, critics_);
 
@@ -355,6 +360,9 @@ DWBLocalPlanner::computeVelocityCommands(
     for (TrajectoryCritic::Ptr critic : critics_) {
       critic->debrief(empty_cmd);
     }
+
+    lock.unlock();
+
     pub_->publishLocalPlan(pose.header, empty_traj);
     pub_->publishCostGrid(costmap_ros_, critics_);
 
