@@ -31,10 +31,6 @@ BackUpAction::BackUpAction(
   double speed;
   getInput("backup_speed", speed);
 
-  // Silently ensure, that speed and distance are positive values
-  speed = std::fabs(speed);
-  dist = std::fabs(dist);
-
   // Populate the input message
   goal_.target.x = dist;
   goal_.target.y = 0.0;
