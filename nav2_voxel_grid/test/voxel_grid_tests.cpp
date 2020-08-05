@@ -147,6 +147,45 @@ TEST(voxel_grid, InvalidSize) {
   EXPECT_TRUE(vg.getVoxelColumn(50, 11, 0, 0) == nav2_voxel_grid::VoxelStatus::UNKNOWN);
 }
 
+TEST(voxel_grid, MarkAndClear) {
+  int size_x = 10, size_y = 10, size_z = 10;
+  nav2_voxel_grid::VoxelGrid vg(size_x, size_y, size_z);
+  vg.markVoxelInMap(5, 5, 5, 0);
+  EXPECT_EQ(vg.getVoxel(5, 5, 5), nav2_voxel_grid::MARKED);
+  vg.clearVoxelColumn(55);
+  EXPECT_EQ(vg.getVoxel(5, 5, 5), nav2_voxel_grid::FREE);
+}
+
+TEST(voxel_grid, clearVoxelLineInMap) {
+  int size_x = 10, size_y = 10, size_z = 10;
+  nav2_voxel_grid::VoxelGrid vg(size_x, size_y, size_z);
+  vg.markVoxelInMap(0, 0, 5, 0);
+  EXPECT_EQ(vg.getVoxel(0, 0, 5), nav2_voxel_grid::MARKED);
+
+  unsigned char * map_2d = new unsigned char[100];
+  map_2d[0] = 254;
+
+  vg.clearVoxelLineInMap(0, 0, 0, 0, 0, 9, map_2d, 16, 0);
+
+  EXPECT_EQ(map_2d[0], 0);
+
+  vg.markVoxelInMap(0, 0, 5, 0);
+  vg.clearVoxelLineInMap(0, 0, 0, 0, 0, 9, nullptr, 16, 0);
+  EXPECT_EQ(vg.getVoxel(0, 0, 5), nav2_voxel_grid::FREE);
+  delete[] map_2d;
+}
+
+TEST(voxel_grid, GetVoxelData) {
+  uint32_t * data = new uint32_t[9];
+  data[4] = 255;
+  data[0] = 0;
+  EXPECT_EQ(
+    nav2_voxel_grid::VoxelGrid::getVoxel(1, 1, 1, 3, 3, 3, data), nav2_voxel_grid::UNKNOWN);
+  EXPECT_EQ(
+    nav2_voxel_grid::VoxelGrid::getVoxel(0, 0, 0, 3, 3, 3, data), nav2_voxel_grid::FREE);
+  delete[] data;
+}
+
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);

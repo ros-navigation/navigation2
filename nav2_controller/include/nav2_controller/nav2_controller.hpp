@@ -189,6 +189,12 @@ protected:
     return twist_thresh;
   }
 
+  void pluginFailed(const std::string & name, const pluginlib::PluginlibException & ex)
+  {
+    RCLCPP_FATAL(get_logger(), "Failed to create %s. Exception: %s", name.c_str(), ex.what());
+    exit(-1);
+  }
+
   // The controller needs a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::unique_ptr<nav2_util::NodeThread> costmap_thread_;
