@@ -59,10 +59,7 @@ PlannerServer::PlannerServer()
 PlannerServer::~PlannerServer()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
-  PlannerMap::iterator it;
-  for (it = planners_.begin(); it != planners_.end(); ++it) {
-    it->second.reset();
-  }
+  planners_.clear();
 }
 
 nav2_util::CallbackReturn

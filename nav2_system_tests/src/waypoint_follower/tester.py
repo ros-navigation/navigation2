@@ -37,6 +37,7 @@ class WaypointFollowerTest(Node):
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
                                                       'initialpose', 10)
         self.initial_pose_received = False
+        self.goal_handle = None
 
         pose_qos = QoSProfile(
           durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
@@ -71,7 +72,7 @@ class WaypointFollowerTest(Node):
             msg.pose.orientation.w = 1.0
             self.waypoints.append(msg)
 
-    def run(self):
+    def run(self, block):
         if not self.waypoints:
             rclpy.error_msg('Did not set valid waypoints before running test!')
             return False
@@ -86,16 +87,19 @@ class WaypointFollowerTest(Node):
         send_goal_future = self.action_client.send_goal_async(action_request)
         try:
             rclpy.spin_until_future_complete(self, send_goal_future)
-            goal_handle = send_goal_future.result()
+            self.goal_handle = send_goal_future.result()
         except Exception as e:
             self.error_msg('Service call failed %r' % (e,))
 
-        if not goal_handle.accepted:
+        if not self.goal_handle.accepted:
             self.error_msg('Goal rejected')
             return False
 
         self.info_msg('Goal accepted')
-        get_result_future = goal_handle.get_result_async()
+        if not block:
+            return True
+
+        get_result_future = self.goal_handle.get_result_async()
 
         self.info_msg("Waiting for 'FollowWaypoints' action to complete")
         try:
@@ -148,14 +152,18 @@ class WaypointFollowerTest(Node):
         except Exception as e:
             self.error_msg('Service call failed %r' % (e,))
 
+    def cancel_goal(self):
+        cancel_future = self.goal_handle.cancel_goal_async()
+        rclpy.spin_until_future_complete(self, cancel_future)
+
     def info_msg(self, msg: str):
-        self.get_logger().info('\033[1;37;44m' + msg + '\033[0m')
+        self.get_logger().info(msg)
 
     def warn_msg(self, msg: str):
-        self.get_logger().warn('\033[1;37;43m' + msg + '\033[0m')
+        self.get_logger().warn(msg)
 
     def error_msg(self, msg: str):
-        self.get_logger().error('\033[1;37;41m' + msg + '\033[0m')
+        self.get_logger().error(msg)
 
 
 def main(argv=sys.argv[1:]):
@@ -179,7 +187,19 @@ def main(argv=sys.argv[1:]):
         test.info_msg('Waiting for amcl_pose to be received')
         rclpy.spin_once(test, timeout_sec=1.0)  # wait for poseCallback
 
-    result = test.run()
+    result = test.run(True)
+
+    # preempt with new point
+    test.setWaypoints([starting_pose])
+    result = test.run(False)
+    time.sleep(2)
+    test.setWaypoints([wps[1]])
+    result = test.run(False)
+
+    # cancel
+    time.sleep(2)
+    test.cancel_goal()
+
     test.shutdown()
     test.info_msg('Done Shutting Down.')
 

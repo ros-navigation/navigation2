@@ -228,12 +228,8 @@ def run_all_tests(robot_tester):
         robot_tester.wait_for_node_active('bt_navigator')
         result = robot_tester.runNavigateAction()
 
-    # TODO(orduno) Test sending the navigation request through the topic interface.
-    #              Need to update tester to receive multiple goal poses.
-    #              Need to fix bug with shutting down while bt_navigator
-    #              is still running.
-    # if (result):
-        # result = test_RobotMovesToGoal(robot_tester)
+    if (result):
+        result = test_RobotMovesToGoal(robot_tester)
 
     # Add more tests here if desired
 
