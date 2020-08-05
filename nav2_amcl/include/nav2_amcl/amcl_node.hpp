@@ -249,6 +249,7 @@ protected:
   double z_short_;
   double z_rand_;
   std::string scan_topic_{"scan"};
+  std::string map_topic_{"map"};
 };
 
 }  // namespace nav2_amcl
