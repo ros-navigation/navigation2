@@ -128,6 +128,8 @@ WaypointFollower::followWaypoints()
     if (action_server_->is_cancel_requested()) {
       auto cancel_future = nav_to_pose_client_->async_cancel_all_goals();
       rclcpp::spin_until_future_complete(client_node_, cancel_future);
+      // for result callback processing
+      spin_some(client_node_);
       action_server_->terminate_all();
       return;
     }
