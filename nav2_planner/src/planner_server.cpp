@@ -211,13 +211,8 @@ PlannerServer::computePlan()
   auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
 
   try {
-    if (action_server_ == nullptr) {
-      RCLCPP_DEBUG(get_logger(), "Action server unavailable. Stopping.");
-      return;
-    }
-
-    if (!action_server_->is_server_active()) {
-      RCLCPP_DEBUG(get_logger(), "Action server is inactive. Stopping.");
+    if (action_server_ == nullptr || !action_server_->is_server_active()) {
+      RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
       return;
     }
 
