@@ -292,15 +292,6 @@ PlannerServer::computePlan()
     //               for example: couldn't get costmap update
     action_server_->terminate_current();
     return;
-  } catch (...) {
-    RCLCPP_WARN(
-      get_logger(), "Plan calculation failed, "
-      "An unexpected error has occurred. The planner server"
-      " may not be able to continue operating correctly.");
-    // TODO(orduno): provide information about fail error to parent task,
-    //               for example: couldn't get costmap update
-    action_server_->terminate_current();
-    return;
   }
 }
 

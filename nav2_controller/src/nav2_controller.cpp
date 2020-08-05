@@ -111,8 +111,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       progress_checker_id_.c_str(), progress_checker_type_.c_str());
     progress_checker_->initialize(node, progress_checker_id_);
   } catch (const pluginlib::PluginlibException & ex) {
-    RCLCPP_FATAL(get_logger(), "Failed to create controller. Exception: %s", ex.what());
-    exit(-1);
+    pluginFailed("progress_checker", ex);
   }
   try {
     goal_checker_type_ = nav2_util::get_plugin_type_param(node, goal_checker_id_);
@@ -122,8 +121,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       goal_checker_id_.c_str(), goal_checker_type_.c_str());
     goal_checker_->initialize(node, goal_checker_id_);
   } catch (const pluginlib::PluginlibException & ex) {
-    RCLCPP_FATAL(get_logger(), "Failed to create controller. Exception: %s", ex.what());
-    exit(-1);
+    pluginFailed("goal_checker", ex);
   }
 
   for (size_t i = 0; i != controller_ids_.size(); i++) {
@@ -139,8 +137,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
         costmap_ros_->getTfBuffer(), costmap_ros_);
       controllers_.insert({controller_ids_[i], controller});
     } catch (const pluginlib::PluginlibException & ex) {
-      RCLCPP_FATAL(get_logger(), "Failed to create controller. Exception: %s", ex.what());
-      exit(-1);
+      pluginFailed("controller", ex);
     }
   }
 
