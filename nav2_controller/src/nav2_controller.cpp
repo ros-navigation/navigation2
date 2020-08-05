@@ -278,13 +278,8 @@ void ControllerServer::computeControl()
 
     rclcpp::Rate loop_rate(controller_frequency_);
     while (rclcpp::ok()) {
-      if (action_server_ == nullptr) {
-        RCLCPP_DEBUG(get_logger(), "Action server unavailable. Stopping.");
-        return;
-      }
-
-      if (!action_server_->is_server_active()) {
-        RCLCPP_DEBUG(get_logger(), "Action server is inactive. Stopping.");
+      if (action_server_ == nullptr || !action_server_->is_server_active()) {
+        RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
         return;
       }
 
