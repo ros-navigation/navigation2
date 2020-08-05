@@ -306,9 +306,6 @@ BtNavigator::navigateToPose()
       RCLCPP_INFO(get_logger(), "Navigation canceled");
       action_server_->terminate_all();
       break;
-
-    default:
-      throw std::logic_error("Invalid status return from BT");
   }
 }
 
