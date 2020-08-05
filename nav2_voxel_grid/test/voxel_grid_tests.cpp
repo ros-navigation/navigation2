@@ -181,6 +181,7 @@ TEST(voxel_grid, GetVoxelData) {
   data[0] = 0;
   EXPECT_EQ(
     nav2_voxel_grid::VoxelGrid::getVoxel(1, 1, 1, 3, 3, 3, data), nav2_voxel_grid::UNKNOWN);
+
   EXPECT_EQ(
     nav2_voxel_grid::VoxelGrid::getVoxel(0, 0, 0, 3, 3, 3, data), nav2_voxel_grid::FREE);
   delete[] data;
