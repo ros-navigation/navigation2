@@ -202,6 +202,7 @@ def main(argv=sys.argv[1:]):
     test.cancel_goal()
 
     # a failure case
+    time.sleep(2)
     test.setWaypoints([[100.0, 100.0]])
     result = test.run(True)
     assert not result
