@@ -305,15 +305,15 @@ Costmap2DROS::getParameters()
   get_parameter("width", map_width_meters_);
   get_parameter("plugins", plugin_names_);
 
+  auto node = shared_from_this();
+
   if (plugin_names_ == default_plugins_) {
     for (size_t i = 0; i < default_plugins_.size(); ++i) {
-      declare_parameter(default_plugins_[i] + ".plugin", default_types_[i]);
+      nav2_util::declare_parameter_if_not_declared(
+        node, default_plugins_[i] + ".plugin", default_types_[i]);
     }
   }
   plugin_types_.resize(plugin_names_.size());
-
-  // Semantic checks...
-  auto node = shared_from_this();
 
   // 1. All plugins must have 'plugin' param defined in their namespace to define the plugin type
   for (size_t i = 0; i < plugin_names_.size(); ++i) {
