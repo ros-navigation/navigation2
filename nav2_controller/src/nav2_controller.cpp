@@ -63,6 +63,8 @@ ControllerServer::ControllerServer()
 ControllerServer::~ControllerServer()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
+  controllers_.clear();
+  costmap_thread_.reset();
 }
 
 nav2_util::CallbackReturn
@@ -144,6 +146,10 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   for (size_t i = 0; i != controller_ids_.size(); i++) {
     controller_ids_concat_ += controller_ids_[i] + std::string(" ");
   }
+
+  RCLCPP_INFO(
+    get_logger(),
+    "Controller Server has %s controllers available.", controller_ids_concat_.c_str());
 
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
@@ -301,7 +307,7 @@ void ControllerServer::computeControl()
     return;
   }
 
-  RCLCPP_DEBUG(get_logger(), "DWB succeeded, setting result");
+  RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
 
   publishZeroVelocity();
 
@@ -319,7 +325,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   }
   controllers_[current_controller_]->setPlan(path);
 
-  auto end_pose = *(path.poses.end() - 1);
+  auto end_pose = path.poses.back();
   goal_checker_->reset();
 
   RCLCPP_DEBUG(

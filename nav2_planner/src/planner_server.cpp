@@ -60,6 +60,7 @@ PlannerServer::~PlannerServer()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
   planners_.clear();
+  costmap_thread_.reset();
 }
 
 nav2_util::CallbackReturn
@@ -108,6 +109,10 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   for (size_t i = 0; i != planner_ids_.size(); i++) {
     planner_ids_concat_ += planner_ids_[i] + std::string(" ");
   }
+
+  RCLCPP_INFO(
+    get_logger(),
+    "Planner Server has %s planners available.", planner_ids_concat_.c_str());
 
   double expected_planner_frequency;
   get_parameter("expected_planner_frequency", expected_planner_frequency);
@@ -183,6 +188,7 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & state)
     it->second->cleanup();
   }
   planners_.clear();
+  costmap_ = nullptr;
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -218,6 +224,7 @@ PlannerServer::computePlan()
     geometry_msgs::msg::PoseStamped start;
     if (!costmap_ros_->getRobotPose(start)) {
       RCLCPP_ERROR(this->get_logger(), "Could not get robot pose");
+      action_server_->terminate_current();
       return;
     }
 
@@ -274,10 +281,12 @@ PlannerServer::computePlan()
     result->planning_time = cycle_duration;
 
     if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
+      auto planner_period = 1 / max_planner_duration_;
+      auto cycle_period = 1 / cycle_duration.seconds();
       RCLCPP_WARN(
         get_logger(),
         "Planner loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
-        1 / max_planner_duration_, 1 / cycle_duration.seconds());
+        planner_period, cycle_period);
     }
 
     action_server_->succeeded_current(result);
