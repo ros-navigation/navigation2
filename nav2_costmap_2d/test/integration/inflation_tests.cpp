@@ -44,7 +44,7 @@
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
-#include "nav2_costmap_2d/testing_helper.hpp"
+#include "../testing_helper.hpp"
 #include "nav2_util/node_utils.hpp"
 
 using geometry_msgs::msg::Point;
