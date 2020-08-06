@@ -63,7 +63,7 @@ ControllerServer::ControllerServer()
 ControllerServer::~ControllerServer()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
-  controllers_.reset();
+  controllers_.clear();
   costmap_thread_.reset();
 }
 
