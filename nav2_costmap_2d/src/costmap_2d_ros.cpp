@@ -310,7 +310,7 @@ Costmap2DROS::getParameters()
   if (plugin_names_ == default_plugins_) {
     for (size_t i = 0; i < default_plugins_.size(); ++i) {
       nav2_util::declare_parameter_if_not_declared(
-        node, default_plugins_[i] + ".plugin", default_types_[i]);
+        node, default_plugins_[i] + ".plugin", rclcpp::ParameterValue(default_types_[i]));
     }
   }
   plugin_types_.resize(plugin_names_.size());
