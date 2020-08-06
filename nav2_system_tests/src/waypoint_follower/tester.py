@@ -188,6 +188,7 @@ def main(argv=sys.argv[1:]):
         rclpy.spin_once(test, timeout_sec=1.0)  # wait for poseCallback
 
     result = test.run(True)
+    assert result
 
     # preempt with new point
     test.setWaypoints([starting_pose])
@@ -199,6 +200,12 @@ def main(argv=sys.argv[1:]):
     # cancel
     time.sleep(2)
     test.cancel_goal()
+
+    # a failure case
+    test.setWaypoints([[100.0, 100.0]])
+    result = test.run(True)
+    assert not result
+    result = not result
 
     test.shutdown()
     test.info_msg('Done Shutting Down.')
