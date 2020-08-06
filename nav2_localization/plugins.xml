@@ -1,0 +1,7 @@
+<class_libraries>
+    <library path="sample_motion_model">
+        <class type="nav2_localization_plugins::DummyMotionSampler" base_class_type="nav2_localization_base::SampleMotionModel">
+            <description>A dummy sample motion model</description>
+        </class>
+    </library>
+</class_libraries>
