@@ -43,6 +43,7 @@ RUN mkdir -p /tmp/opt && \
 
 # multi-stage for building
 FROM $FROM_IMAGE AS builder
+ARG DEBIAN_FRONTEND=noninteractive
 
 # edit apt for caching
 RUN cp /etc/apt/apt.conf.d/docker-clean /etc/apt/ && \

@@ -321,6 +321,7 @@ _environments:
     MAKEFLAGS: "-j 1 -l 2"
     RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED: "0"
     RETEST_UNTIL_PASS: "2"
+    DEBIAN_FRONTEND: "noninteractive"
 
 executors:
   debug_exec:
