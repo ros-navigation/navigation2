@@ -92,11 +92,6 @@ protected:
    * @return SUCCESS or FAILURE
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when in error state
-   * @param state Reference to LifeCycle node state
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Action server callbacks
@@ -120,6 +115,7 @@ protected:
   std::unique_ptr<ActionServer> action_server_;
   ActionClient::SharedPtr nav_to_pose_client_;
   rclcpp::Node::SharedPtr client_node_;
+  std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future_goal_handle_;
   bool stop_on_failure_;
   ActionStatus current_goal_status_;
   int loop_rate_;

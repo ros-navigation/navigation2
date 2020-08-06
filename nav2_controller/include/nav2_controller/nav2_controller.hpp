@@ -102,12 +102,6 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when in Error state
-   * @param state LifeCycle Node's state
-   * @return Success or Failure
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   using Action = nav2_msgs::action::FollowPath;
   using ActionServer = nav2_util::SimpleActionServer<Action>;
@@ -193,6 +187,12 @@ protected:
     twist_thresh.y = getThresholdedVelocity(twist.y, min_y_velocity_threshold_);
     twist_thresh.theta = getThresholdedVelocity(twist.theta, min_theta_velocity_threshold_);
     return twist_thresh;
+  }
+
+  void pluginFailed(const std::string & name, const pluginlib::PluginlibException & ex)
+  {
+    RCLCPP_FATAL(get_logger(), "Failed to create %s. Exception: %s", name.c_str(), ex.what());
+    exit(-1);
   }
 
   // The controller needs a costmap node

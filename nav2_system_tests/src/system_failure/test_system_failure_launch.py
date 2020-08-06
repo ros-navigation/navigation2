@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2020 Samsung Research America
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,7 +43,7 @@ def generate_launch_description():
 
     # Replace the `use_astar` setting on the params file
     param_substitutions = {
-        'planner_server.ros__parameters.GridBased.use_astar': os.getenv('ASTAR')}
+        'planner_server.ros__parameters.GridBased.use_astar': 'False'}
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key='',
@@ -90,7 +91,7 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
-             '-r', '-2.0', '-0.5', '0.0', '2.0'],
+             '-r', '-2.0', '-0.5', '100.0', '100.0'],
         name='tester_node',
         output='screen')
 

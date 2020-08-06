@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 # Copyright 2018 Intel Corporation.
+# Copyright 2020 Samsung Research America
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -114,11 +115,11 @@ class NavTester(Node):
         self.info_msg("Waiting for 'NavigateToPose' action to complete")
         rclpy.spin_until_future_complete(self, get_result_future)
         status = get_result_future.result().status
-        if status != GoalStatus.STATUS_SUCCEEDED:
+        if status != GoalStatus.STATUS_ABORTED:
             self.info_msg('Goal failed with status code: {0}'.format(status))
             return False
 
-        self.info_msg('Goal succeeded!')
+        self.info_msg('Goal failed, as expected!')
         return True
 
     def poseCallback(self, msg):
@@ -212,13 +213,6 @@ class NavTester(Node):
             rclpy.spin_once(self, timeout_sec=1)
 
 
-def test_RobotMovesToGoal(robot_tester):
-    robot_tester.info_msg('Setting goal pose')
-    robot_tester.publishGoalPose()
-    robot_tester.info_msg('Waiting 60 seconds for robot to reach goal')
-    return robot_tester.reachesGoal(timeout=60, distance=0.5)
-
-
 def run_all_tests(robot_tester):
     # set transforms to use_sim_time
     result = True
@@ -227,9 +221,6 @@ def run_all_tests(robot_tester):
         robot_tester.wait_for_initial_pose()
         robot_tester.wait_for_node_active('bt_navigator')
         result = robot_tester.runNavigateAction()
-
-    if (result):
-        result = test_RobotMovesToGoal(robot_tester)
 
     # Add more tests here if desired
 
@@ -268,18 +259,6 @@ def get_testers(args):
         testers.append(tester)
         return testers
 
-    # Requested tester for multiple robots
-    for robot in args.robots:
-        namespace, init_x, init_y, final_x, final_y = robot
-        tester = NavTester(
-            namespace=namespace,
-            initial_pose=fwd_pose(float(init_x), float(init_y)),
-            goal_pose=fwd_pose(float(final_x), float(final_y)))
-        tester.info_msg(
-            'Starting tester for ' + namespace +
-            ' going from ' + init_x + ', ' + init_y +
-            ' to ' + final_x + ', ' + final_y)
-        testers.append(tester)
     return testers
 
 

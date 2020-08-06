@@ -114,7 +114,7 @@ TEST_F(BackUpActionTestFixture, test_ports)
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<double>("backup_dist"), -0.15);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("backup_dist"), 0.15);
   EXPECT_EQ(tree_->rootNode()->getInput<double>("backup_speed"), 0.025);
 
   xml_txt =
@@ -136,7 +136,7 @@ TEST_F(BackUpActionTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <BackUp backup_dist="2" backup_speed="-0.26" />
+            <BackUp backup_dist="2" backup_speed="0.26" />
         </BehaviorTree>
       </root>)";
 

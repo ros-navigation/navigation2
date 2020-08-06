@@ -124,10 +124,18 @@ StaticLayer::getParameters()
   declareParameter("subscribe_to_updates", rclcpp::ParameterValue(false));
   declareParameter("map_subscribe_transient_local", rclcpp::ParameterValue(true));
   declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
+  declareParameter("map_topic", rclcpp::ParameterValue(""));
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
   node_->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
-  node_->get_parameter("map_topic", map_topic_);
+  std::string private_map_topic, global_map_topic;
+  node_->get_parameter(name_ + "." + "map_topic", private_map_topic);
+  node_->get_parameter("map_topic", global_map_topic);
+  if (!private_map_topic.empty()) {
+    map_topic_ = private_map_topic;
+  } else {
+    map_topic_ = global_map_topic;
+  }
   node_->get_parameter(
     name_ + "." + "map_subscribe_transient_local",
     map_subscribe_transient_local_);

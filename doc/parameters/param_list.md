@@ -80,6 +80,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | `<static layer>`.subscribe_to_updates | false | Subscribe to static map updates after receiving first |
 | `<static layer>`.map_subscribe_transient_local | true | QoS settings for map topic |
 | `<static layer>`.transform_tolerance | 0.0 | TF tolerance |
+| `<static layer>`.map_topic | "" | Name of the map topic to subscribe to (empty means use the map_topic defined by `costmap_2d_ros`) |
 
 ## inflation_layer plugin
 
@@ -418,6 +419,7 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 | ----------| --------| ------------|
 | node_names | N/A | Ordered list of node names to bringup through lifecycle transition |
 | autostart | false | Whether to transition nodes to active state on startup |
+| bond_timeout_ms | 4000 | Timeout for bond to fail if no heartbeat can be found, in milliseconds. If set to 0, it will be disabled. Must be larger than 300ms for stable bringup. |
 
 # map_server
 
@@ -578,6 +580,7 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 | z_short | 0.05 | Mixture weight for z_short part of model, sum of all used z weight must be 1. Beam uses all 4, likelihood model uses z_hit and z_rand. |
 | always_reset_initial_pose | false | Requires that AMCL is provided an initial pose either via topic or initial_pose* parameter (with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the last known pose to initialize |
 | scan_topic | scan | Topic to subscribe to in order to receive the laser scan for localization |
+| map_topic | map | Topic to subscribe to in order to receive the map for localization |
 
 ---
 
