@@ -424,7 +424,6 @@ bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)
 {
   geometry_msgs::msg::PoseStamped current_pose;
   if (!costmap_ros_->getRobotPose(current_pose)) {
-    RCLCPP_ERROR(this->get_logger(), "Could not get robot pose");
     return false;
   }
   pose = current_pose;
