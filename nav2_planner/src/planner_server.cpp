@@ -48,6 +48,13 @@ PlannerServer::PlannerServer()
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 20.0);
 
+  get_parameter("planner_plugins", planner_ids_);
+  if (planner_ids_ == default_ids_) {
+    for (size_t i = 0; i < default_ids_.size(); ++i) {
+      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
+    }
+  }
+
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "global_costmap", std::string{get_namespace()}, "global_costmap");
@@ -59,10 +66,8 @@ PlannerServer::PlannerServer()
 PlannerServer::~PlannerServer()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
-  PlannerMap::iterator it;
-  for (it = planners_.begin(); it != planners_.end(); ++it) {
-    it->second.reset();
-  }
+  planners_.clear();
+  costmap_thread_.reset();
 }
 
 nav2_util::CallbackReturn
@@ -79,12 +84,6 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   tf_ = costmap_ros_->getTfBuffer();
 
-  get_parameter("planner_plugins", planner_ids_);
-  if (planner_ids_ == default_ids_) {
-    for (size_t i = 0; i < default_ids_.size(); ++i) {
-      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
-    }
-  }
   planner_types_.resize(planner_ids_.size());
 
   auto node = shared_from_this();
@@ -111,6 +110,10 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   for (size_t i = 0; i != planner_ids_.size(); i++) {
     planner_ids_concat_ += planner_ids_[i] + std::string(" ");
   }
+
+  RCLCPP_INFO(
+    get_logger(),
+    "Planner Server has %s planners available.", planner_ids_concat_.c_str());
 
   double expected_planner_frequency;
   get_parameter("expected_planner_frequency", expected_planner_frequency);
@@ -151,6 +154,9 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
     it->second->activate();
   }
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -167,6 +173,9 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & state)
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->deactivate();
   }
+
+  // destroy bond connection
+  destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -186,14 +195,8 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & state)
     it->second->cleanup();
   }
   planners_.clear();
+  costmap_ = nullptr;
 
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-PlannerServer::on_error(const rclcpp_lifecycle::State &)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -214,13 +217,8 @@ PlannerServer::computePlan()
   auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
 
   try {
-    if (action_server_ == nullptr) {
-      RCLCPP_DEBUG(get_logger(), "Action server unavailable. Stopping.");
-      return;
-    }
-
-    if (!action_server_->is_server_active()) {
-      RCLCPP_DEBUG(get_logger(), "Action server is inactive. Stopping.");
+    if (action_server_ == nullptr || !action_server_->is_server_active()) {
+      RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
       return;
     }
 
@@ -233,6 +231,7 @@ PlannerServer::computePlan()
     geometry_msgs::msg::PoseStamped start;
     if (!costmap_ros_->getRobotPose(start)) {
       RCLCPP_ERROR(this->get_logger(), "Could not get robot pose");
+      action_server_->terminate_current();
       return;
     }
 
@@ -303,15 +302,6 @@ PlannerServer::computePlan()
       get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
       goal->planner_id.c_str(), goal->pose.pose.position.x,
       goal->pose.pose.position.y, ex.what());
-    // TODO(orduno): provide information about fail error to parent task,
-    //               for example: couldn't get costmap update
-    action_server_->terminate_current();
-    return;
-  } catch (...) {
-    RCLCPP_WARN(
-      get_logger(), "Plan calculation failed, "
-      "An unexpected error has occurred. The planner server"
-      " may not be able to continue operating correctly.");
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
     action_server_->terminate_current();
