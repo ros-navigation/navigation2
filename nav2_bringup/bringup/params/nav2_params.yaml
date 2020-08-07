@@ -254,6 +254,8 @@ planner_server:
 
     GridBased:
       tolerance: 0.5                    # tolerance for planning if unable to reach exact pose, in meters
+      downsample_costmap: false         # whether or not to downsample the map to the specified resolution
+      downsampling_factor: 3            # multiplier for the resolution of the costmap layer
       allow_unknown: false              # allow traveling in unknown space
       travel_cost_scale: 0.8            # [0,1] metric for how much you value staying out of higher-cost spaces (higher more adverse)
       max_iterations: -1                # maximum total iterations to search for before returning
@@ -270,8 +272,8 @@ planner_server:
           w_curve: 30.0 #3.0 # range 0 - 50
           w_dist: 0.0 #300 w/0 cost
           w_smooth: 15000.0 #15000
-          w_cost: 0.025
-          max_curve: 2.0         # translates to |delta angle| / |delta distance|, where distance is ~2x costmap resolution
+          w_cost: 0.025         # Use higher value when using the costmap downsampler (e.g. use 2.5 for downsampling_factor = 3)
+          max_curve: 2.0        # translates to |delta angle| / |delta distance|, where distance is ~2x costmap resolution
           cost_scaling_factor: 1.0 # this should match the inflation layer's parameter
           # 7.8 in 5cm resolution (45 deg / 10cm)
           # 4.0 in 10cm resolution (45 deg / 20 cm)
