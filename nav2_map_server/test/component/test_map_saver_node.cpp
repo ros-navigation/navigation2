@@ -18,6 +18,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "test_constants/test_constants.h"
 #include "nav2_map_server/map_saver.hpp"
@@ -36,7 +37,7 @@ using namespace nav2_map_server;  // NOLINT
 
 class RclCppFixture
 {
- public:
+public:
   RclCppFixture() {rclcpp::init(0, nullptr);}
   ~RclCppFixture() {rclcpp::shutdown();}
 };
@@ -188,8 +189,8 @@ TEST_F(MapSaverTestFixture, SaveMap3D)
   nav2_msgs::msg::PCD2 map_msg;
   nav2_map_server_3d::LOAD_MAP_STATUS status =
     nav2_map_server_3d::loadMapFromYaml(
-      path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
-      map_msg);
+    path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
+    map_msg);
 
   ASSERT_EQ(status, nav2_map_server_3d::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
@@ -261,8 +262,8 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters3D)
   nav2_msgs::msg::PCD2 map_msg;
   nav2_map_server_3d::LOAD_MAP_STATUS status =
     nav2_map_server_3d::loadMapFromYaml(
-      path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
-      map_msg);
+    path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
+    map_msg);
 
   ASSERT_EQ(status, nav2_map_server_3d::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);

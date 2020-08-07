@@ -1,3 +1,16 @@
+// Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 // Created by shivam on 7/10/20.
 //
@@ -22,7 +35,7 @@ void modifyMsgFields(
   const std::vector<pcl::PCLPointField> & fields)
 {
   msg.fields.clear();
-  for(auto & field : fields){
+  for (auto & field : fields) {
     sensor_msgs::msg::PointField new_field;
     new_field.datatype = field.datatype;
     new_field.name = field.name;
@@ -53,7 +66,7 @@ void modifyPclFields(
   const sensor_msgs::msg::PointCloud2 & msg)
 {
   fields.clear();
-  for(auto & field : msg.fields){
+  for (auto & field : msg.fields) {
     pcl::PCLPointField new_field;
     new_field.datatype = field.datatype;
     new_field.name = field.name;
@@ -79,5 +92,5 @@ void msgToPcl(
   cloud->header = pcl_conversions::toPCL(msg.header);
 }
 
-} // namespace nav2_map_server_3d
-} // namespace nav2_map_server
+}  // namespace nav2_map_server_3d
+}  // namespace nav2_map_server

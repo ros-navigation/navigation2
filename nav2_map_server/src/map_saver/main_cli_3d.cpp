@@ -1,3 +1,16 @@
+// Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 // Created by shivam on 7/23/20.
 //
@@ -97,23 +110,23 @@ ARGUMENTS_STATUS parse_arguments(
             save_parameters.format = *it;
             break;
           case COMMAND_ENCODING:
-            it--; // as this one is a simple flag that puts binary format to on
+            it--;  // as this one is a simple flag that puts binary format to on
             save_parameters.as_binary = true;
             break;
           case COMMAND_VIEW_POINT:
             for (int k = 0; k < 9; ++k) {
               std::string tmp = *it;
-              if (tmp == "["){
+              if (tmp == "[") {
                 it++;
                 continue;
-              } else if (tmp == "]"){
+              } else if (tmp == "]") {
                 break;
               }
-              if (k<4){
-                save_parameters.origin.push_back(std::stof(tmp.substr(0, tmp.size()-1)));
-              } else if(k<7) {
-                save_parameters.orientation.push_back(std::stof(tmp.substr(0, tmp.size()-1)));
-              } else if(k==7) {
+              if (k < 4) {
+                save_parameters.origin.push_back(std::stof(tmp.substr(0, tmp.size() - 1)));
+              } else if (k < 7) {
+                save_parameters.orientation.push_back(std::stof(tmp.substr(0, tmp.size() - 1)));
+              } else if (k == 7) {
                 save_parameters.orientation.push_back(std::stof(tmp));
               }
               it++;

@@ -17,6 +17,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "test_constants/test_constants.h"
 #include "nav2_util/lifecycle_service_client.hpp"
@@ -33,7 +34,7 @@ using lifecycle_msgs::msg::Transition;
 
 class RclCppFixture
 {
- public:
+public:
   RclCppFixture() {rclcpp::init(0, nullptr);}
   ~RclCppFixture() {rclcpp::shutdown();}
 };
@@ -107,7 +108,7 @@ protected:
 
 rclcpp::Node::SharedPtr MapServer3DTestFixture::node_ = nullptr;
 std::shared_ptr<nav2_util::LifecycleServiceClient> MapServer3DTestFixture::lifecycle_client_ =
-    nullptr;
+  nullptr;
 
 
 // Send map getting service request and verify obtained PointCloud

@@ -75,7 +75,7 @@ protected:
   nav2_msgs::msg::PCD2 pcd_msg_;
 };
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   auto pub_node = std::make_shared<TestPublisher>();

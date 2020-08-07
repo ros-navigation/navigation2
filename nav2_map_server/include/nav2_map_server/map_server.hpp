@@ -28,14 +28,15 @@
 #include "nav2_msgs/srv/load_map3_d.hpp"
 #include "nav2_msgs/msg/pcd2.hpp"
 
-namespace nav2_map_server {
-
+namespace nav2_map_server
+{
 /**
  * @class nav2_map_server::MapServer
  * @brief Parses the map yaml file and creates a service and a publisher that
  * provides occupancy grid
  */
-class MapServer : public nav2_util::LifecycleNode {
+class MapServer : public nav2_util::LifecycleNode
+{
 public:
   /**
    * @brief A constructor for nav2_map_server::MapServer
@@ -48,12 +49,10 @@ public:
   ~MapServer() override;
 
 private:
-
   bool enable_pcd_, enable_image_;
   void CheckForFunctionalitiesToEnable(const std::string & yaml_filename);
 
 protected:
-
   /**
    * @brief Sets up required params and services. Loads map and its parameters from the file
    * @param state Lifecycle Node's state

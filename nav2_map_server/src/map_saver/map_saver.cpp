@@ -74,18 +74,18 @@ MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/)
   pcd_save_map_service_ = create_service<nav2_msgs::srv::SaveMap3D>(
     service_prefix + save_map_3d_service_name_,
     [this](
-        const std::shared_ptr<rmw_request_id_t> request_header,
-        const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
-        std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response) {
+      const std::shared_ptr<rmw_request_id_t> request_header,
+      const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
+      std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response) {
       saveMapCallback(request_header, request, response);
     });
 
   save_map_service_ = create_service<nav2_msgs::srv::SaveMap>(
     service_prefix + save_map_service_name_,
     [this](
-        const std::shared_ptr<rmw_request_id_t> request_header,
-        const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
-        std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response) {
+      const std::shared_ptr<rmw_request_id_t> request_header,
+      const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
+      std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response) {
       saveMapCallback(request_header, request, response);
     });
 
@@ -155,7 +155,7 @@ void MapSaver::saveMapCallback(
 }
 
 void MapSaver::saveMapCallback(
-  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
   std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response)
 {
@@ -260,7 +260,7 @@ bool MapSaver::saveMapTopicToFile(
 
       rclcpp::sleep_for(std::chrono::milliseconds(100));
     }
-  } catch (std::exception &e) {
+  } catch (std::exception & e) {
     RCLCPP_ERROR(get_logger(), "Failed to save the map: %s", e.what());
     return false;
   }
@@ -295,9 +295,9 @@ bool MapSaver::saveMapTopicToFile(
 
     // A callback function that receives map message from subscribed topic
     auto map_callback = [&pcd_map_msg](
-        const sensor_msgs::msg::PointCloud2::SharedPtr msg) -> void {
-      pcd_map_msg = msg;
-    };
+      const sensor_msgs::msg::PointCloud2::SharedPtr msg) -> void {
+        pcd_map_msg = msg;
+      };
 
     // Add new subscription for incoming map topic.
     // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode
@@ -314,7 +314,7 @@ bool MapSaver::saveMapTopicToFile(
 
       if (pcd_map_msg) {
         // Map message received. Saving it to file
-        std::cout<< "data "<< pcd_map_msg->width << std::endl;
+        std::cout << "data " << pcd_map_msg->width << std::endl;
 
         if (nav2_map_server_3d::saveMapToFile(*pcd_map_msg, save_parameters_loc)) {
           RCLCPP_INFO(get_logger(), "Map saved successfully");
@@ -323,12 +323,11 @@ bool MapSaver::saveMapTopicToFile(
           RCLCPP_ERROR(get_logger(), "Failed to save the map");
           return false;
         }
-
       }
 
       rclcpp::sleep_for(std::chrono::milliseconds(100));
     }
-  } catch (std::exception &e) {
+  } catch (std::exception & e) {
     RCLCPP_ERROR(get_logger(), "Failed to save the map: %s", e.what());
     return false;
   }

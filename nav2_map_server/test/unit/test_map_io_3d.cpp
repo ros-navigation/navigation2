@@ -1,3 +1,16 @@
+// Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 // Created by shivam on 7/28/20.
 //
@@ -21,7 +34,7 @@ using std::experimental::filesystem::path;
 
 class RclCppFixture
 {
- public:
+public:
   RclCppFixture() {rclcpp::init(0, nullptr);}
   ~RclCppFixture() {rclcpp::shutdown();}
 };
@@ -38,7 +51,7 @@ protected:
     const std::string & pcd_file_name,
     nav2_map_server_3d::LoadParameters & load_parameters)
   {
-    load_parameters.pcd_file_name =pcd_file_name;
+    load_parameters.pcd_file_name = pcd_file_name;
     load_parameters.origin = g_valid_origin_pcd;
     load_parameters.orientation = g_valid_orientation_pcd;
   }
@@ -113,8 +126,9 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
   ASSERT_EQ(origin, g_valid_origin_pcd);
   ASSERT_EQ(orientation, g_valid_orientation_pcd);
 
-  fillSaveParameters(path(g_tmp_dir) / path(g_valid_pcd_map_name),
-                     origin, orientation, "pcd", false,saveParameters);
+  fillSaveParameters(
+    path(g_tmp_dir) / path(g_valid_pcd_map_name),
+    origin, orientation, "pcd", false, saveParameters);
 
   ASSERT_TRUE(nav2_map_server_3d::saveMapToFile(map_msg.map, saveParameters));
 
@@ -130,7 +144,9 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
 TEST_F(MapIO3DTester, loadValidYAML)
 {
   nav2_map_server_3d::LoadParameters loadParameters;
-  ASSERT_NO_THROW(loadParameters = nav2_map_server_3d::loadMapYaml(path(TEST_DIR) / path(g_valid_pcd_yaml_file)));
+  ASSERT_NO_THROW(
+    loadParameters =
+    nav2_map_server_3d::loadMapYaml(path(TEST_DIR) / path(g_valid_pcd_yaml_file)));
 
   nav2_map_server_3d::LoadParameters refLoadParameters;
   fillLoadParameters(path(TEST_DIR) / path(g_valid_pcd_file), refLoadParameters);
@@ -144,5 +160,7 @@ TEST_F(MapIO3DTester, loadValidYAML)
 TEST_F(MapIO3DTester, loadInvalidYAML)
 {
   nav2_map_server_3d::LoadParameters loadParameters;
-  ASSERT_ANY_THROW(loadParameters = nav2_map_server_3d::loadMapYaml(path(TEST_DIR) / path("invalid_file.yaml")));
+  ASSERT_ANY_THROW(
+    loadParameters =
+    nav2_map_server_3d::loadMapYaml(path(TEST_DIR) / path("invalid_file.yaml")));
 }

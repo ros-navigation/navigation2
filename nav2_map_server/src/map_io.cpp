@@ -112,8 +112,10 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   {
     boost::filesystem::path p(image_file_name);
     if (p.extension() != ".bmp" && p.extension() != ".pgm" && p.extension() != ".png") {
-      throw YAML::Exception(doc["image"].Mark(),
-                            "The pcd file is invalid please pass a file name with extension .bmp/.pgm/.png");
+      throw YAML::Exception(
+              doc["image"].Mark(),
+              "The pcd file is invalid please pass a file "
+              "name with extension .bmp/.pgm/.png");
     }
   }
 
