@@ -1,8 +1,12 @@
 #ifndef NAV2_LOCALIZATION__NAV2_LOCALIZATION_HPP_
 #define NAV2_LOCALIZATION__NAV2_LOCALIZATION_HPP_
 
+#include <string>
+
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
+#include "pluginlib/class_loader.hpp"
+#include "nav2_localization/interfaces/sample_motion_model_base.hpp"
 
 namespace nav2_localization
 {
@@ -68,6 +72,17 @@ protected:
 
     // Publishers and subscribers
     std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
+
+    // Sample Motion Model Plugin
+    pluginlib::ClassLoader<nav2_localization_base::SampleMotionModel> sample_motion_model_loader_;
+    nav2_localization_base::SampleMotionModel::Ptr sample_motion_model_;
+    std::string default_sample_motion_model_id_;
+    std::string sample_motion_model_id_;
+    std::string sample_motion_model_type_;
+    // Matcher Plugin
+    // TODO
+
+    // std::vector<std::string> default_ids_;
 };
 
 }

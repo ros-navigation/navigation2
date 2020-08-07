@@ -14,6 +14,8 @@ namespace nav2_localization_base
 class SampleMotionModel
 {   
 public:
+    using Ptr = std::shared_ptr<nav2_localization_base::SampleMotionModel>;
+
     /**
      * @brief calculates the most likely change in pose based on the change in odometry
      * @param prev_odom The odometry at the previous time step
