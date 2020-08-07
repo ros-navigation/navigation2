@@ -1,7 +1,7 @@
 #ifndef NAV2_LOCALIZATION__SAMPLE_MOTION_MODEL_PLUGINS_HPP_
 #define NAV2_LOCALIZATION__SAMPLE_MOTION_MODEL_PLUGINS_HPP_
 
-#include "interfaces/sample_motion_model_base.hpp"
+#include "nav2_localization/interfaces/sample_motion_model_base.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 
@@ -17,7 +17,8 @@ public:
         const nav_msgs::msg::Odometry& curr_odom,
         const geometry_msgs::msg::Pose prev_pose)
     {
-        
+        geometry_msgs::msg::Pose dummy_pose{};
+        return dummy_pose;
     }
 };
 // // Implements a Bicycle motion model

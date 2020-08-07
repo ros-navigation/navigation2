@@ -21,6 +21,8 @@ include_directories(
 
 add_library(sample_motion_model src/sample_motion_model.cpp)
 
+ament_target_dependencies(sample_motion_model ${dependencies})
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
