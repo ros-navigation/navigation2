@@ -22,6 +22,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(angles REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
@@ -72,6 +73,7 @@ set(dependencies
   tf2_ros
   tf2_sensor_msgs
   visualization_msgs
+  angles
 )
 
 ament_target_dependencies(nav2_costmap_2d_core
@@ -84,6 +86,7 @@ add_library(layers SHARED
   plugins/obstacle_layer.cpp
   src/observation_buffer.cpp
   plugins/voxel_layer.cpp
+  plugins/range_sensor_layer.cpp
 )
 ament_target_dependencies(layers
   ${dependencies}
