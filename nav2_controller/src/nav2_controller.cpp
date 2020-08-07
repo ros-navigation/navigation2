@@ -111,7 +111,9 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       progress_checker_id_.c_str(), progress_checker_type_.c_str());
     progress_checker_->initialize(node, progress_checker_id_);
   } catch (const pluginlib::PluginlibException & ex) {
-    pluginFailed("progress_checker", ex);
+    RCLCPP_FATAL(
+      get_logger(),
+      "Failed to create progress_checker. Exception: %s", ex.what());
   }
   try {
     goal_checker_type_ = nav2_util::get_plugin_type_param(node, goal_checker_id_);
@@ -121,7 +123,9 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       goal_checker_id_.c_str(), goal_checker_type_.c_str());
     goal_checker_->initialize(node, goal_checker_id_);
   } catch (const pluginlib::PluginlibException & ex) {
-    pluginFailed("goal_checker", ex);
+    RCLCPP_FATAL(
+      get_logger(),
+      "Failed to create goal_checker. Exception: %s", ex.what());
   }
 
   for (size_t i = 0; i != controller_ids_.size(); i++) {
@@ -137,7 +141,9 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
         costmap_ros_->getTfBuffer(), costmap_ros_);
       controllers_.insert({controller_ids_[i], controller});
     } catch (const pluginlib::PluginlibException & ex) {
-      pluginFailed("controller", ex);
+      RCLCPP_FATAL(
+        get_logger(),
+        "Failed to create controller. Exception: %s", ex.what());
     }
   }
 
@@ -230,13 +236,10 @@ bool ControllerServer::findControllerId(
 {
   if (controllers_.find(c_name) == controllers_.end()) {
     if (controllers_.size() == 1 && c_name.empty()) {
-      if (!single_controller_warning_given_) {
-        RCLCPP_WARN(
-          get_logger(), "No controller was specified in action call."
-          " Server will use only plugin loaded %s. "
-          "This warning will appear once.", controller_ids_concat_.c_str());
-        single_controller_warning_given_ = true;
-      }
+      RCLCPP_WARN_ONCE(
+        get_logger(), "No controller was specified in action call."
+        " Server will use only plugin loaded %s. "
+        "This warning will appear once.", controller_ids_concat_.c_str());
       current_controller = controllers_.begin()->first;
     } else {
       RCLCPP_ERROR(
@@ -246,6 +249,7 @@ bool ControllerServer::findControllerId(
       return false;
     }
   } else {
+    RCLCPP_DEBUG(get_logger(), "Selected controller: %s.", c_name.c_str());
     current_controller = c_name;
   }
 
@@ -382,7 +386,12 @@ void ControllerServer::updateGlobalPath()
 void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)
 {
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>(velocity.twist);
-  vel_publisher_->publish(std::move(cmd_vel));
+  if (
+    vel_publisher_->is_activated() &&
+    this->count_subscribers(vel_publisher_->get_topic_name()) > 0)
+  {
+    vel_publisher_->publish(std::move(cmd_vel));
+  }
 }
 
 void ControllerServer::publishZeroVelocity()
