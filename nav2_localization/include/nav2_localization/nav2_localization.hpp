@@ -7,6 +7,7 @@
 #include "nav_2d_utils/odom_subscriber.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 namespace nav2_localization
 {
@@ -70,6 +71,13 @@ protected:
      */
     nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
+    // Map
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
+    void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+    bool first_map_only_{true};
+    bool first_map_received_{false};
+    nav_msgs::msg::OccupancyGrid map_;
+
     // Publishers and subscribers
     std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
 
@@ -79,10 +87,10 @@ protected:
     std::string default_sample_motion_model_id_;
     std::string sample_motion_model_id_;
     std::string sample_motion_model_type_;
+
     // Matcher Plugin
     // TODO
 
-    // std::vector<std::string> default_ids_;
 };
 
 }

@@ -11,6 +11,7 @@ LocalizationServer::LocalizationServer()
     RCLCPP_INFO(get_logger(), "Creating localization server");
 
     declare_parameter("sample_motion_model_id", default_sample_motion_model_id_);
+    declare_parameter("first_map_only", true);
 }
 
 LocalizationServer::~LocalizationServer()
@@ -23,10 +24,14 @@ LocalizationServer::on_configure(const rclcpp_lifecycle::State & state)
 {
     RCLCPP_INFO(get_logger(), "Configuring localization interface");
 
+    map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
+        "map", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+        std::bind(&LocalizationServer::mapReceived, this, std::placeholders::_1));
+
     get_parameter("sample_motion_model_id", sample_motion_model_id_);
+    get_parameter("first_map_only", first_map_only_);
 
     // TODO: Add matcher
-    // TODO: load map
 
     auto node = shared_from_this();
 
@@ -63,6 +68,17 @@ LocalizationServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
     RCLCPP_INFO(get_logger(), "Shutting down");
     return nav2_util::CallbackReturn::SUCCESS;
+}
+
+void
+LocalizationServer::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+{
+    RCLCPP_DEBUG(get_logger(), "A new map was received.");
+    if (first_map_only_ && first_map_received_) {
+        return;
+    }
+    map_ = *msg;
+    first_map_received_ = true;
 }
 
 } //nav2_localiztion
