@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <vector>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "planner_tester.hpp"
@@ -33,7 +34,6 @@ TEST(testPluginMap, Failures)
   auto obj = std::make_shared<nav2_system_tests::NavFnPlannerTester>();
   rclcpp_lifecycle::State state;
   obj->onConfigure(state);
-  obj->onActivate(state);
 
   geometry_msgs::msg::PoseStamped start;
   geometry_msgs::msg::PoseStamped goal;
@@ -45,7 +45,6 @@ TEST(testPluginMap, Failures)
   path = obj->getPlan(start, goal, plugin_fake);
   EXPECT_EQ(path.poses.size(), 0ul);
 
-  obj->onDeactivate(state);
   obj->onCleanup(state);
 }
 
