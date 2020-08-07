@@ -612,8 +612,7 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
-| position | N/A | Position |
-| orientation | N/A | Orientation |
+| goal | N/A | Goal |
 | server_name | N/A | Action server name |
 | server_timeout | 10 | Action server timeout (ms) |
 
