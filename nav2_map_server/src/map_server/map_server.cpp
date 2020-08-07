@@ -58,7 +58,7 @@
 
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_map_server/map_io.hpp"
-#include "nav2_map_server_3D/map_io_3D.hpp"
+#include "nav2_map_server_3d/map_io_3d.hpp"
 #include "nav2_msgs/msg/pcd2.hpp"
 
 using namespace std::chrono_literals;
@@ -84,11 +84,10 @@ MapServer::~MapServer()
 {
 }
 
-void MapServer::CheckForFunctionalitiesToEnable(const std::string &yaml_filename)
+void MapServer::CheckForFunctionalitiesToEnable(const std::string & yaml_filename)
 {
-
   if (yaml_filename.empty()) {
-    throw std::runtime_error("yaml file either not provided or is empty """);
+    throw std::runtime_error("yaml file either not provided or is empty " "");
   }
 
   YAML::Node doc = YAML::LoadFile(yaml_filename);
@@ -104,22 +103,25 @@ void MapServer::CheckForFunctionalitiesToEnable(const std::string &yaml_filename
   }
 
   if (p.extension() == ".bmp" || p.extension() == ".pgm" || p.extension() == ".png") {
-    if (enable_pcd_){
-      throw std::runtime_error("The 'image' tag is trying to change "
-                               "server configuration from 3D to 2D which is invalid");
+    if (enable_pcd_) {
+      throw std::runtime_error(
+              "The 'image' tag is trying to change "
+              "server configuration from 3D to 2D which is invalid");
     }
     enable_image_ = true;
     enable_pcd_ = false;
   } else if (p.extension() == ".pcd") {
-    if (enable_image_){
-      throw std::runtime_error("The 'image' tag is trying to change "
-                               "server configuration from 2D to 3D which is invalid");
+    if (enable_image_) {
+      throw std::runtime_error(
+              "The 'image' tag is trying to change "
+              "server configuration from 2D to 3D which is invalid");
     }
     enable_pcd_ = true;
     enable_image_ = false;
-  } else{
-    throw std::runtime_error("The 'image' tag in yaml_file has not "
-                             "a valid extension , it should be one of .bmp/.pgm/.png/.pcd");
+  } else {
+    throw std::runtime_error(
+            "The 'image' tag in yaml_file has not "
+            "a valid extension , it should be one of .bmp/.pgm/.png/.pcd");
   }
 }
 
@@ -139,7 +141,6 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   MapServer::CheckForFunctionalitiesToEnable(yaml_filename);
 
   if (enable_pcd_) {
-
     std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> rsp =
       std::make_shared<nav2_msgs::srv::LoadMap3D::Response>();
 
@@ -152,11 +153,11 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     // Create a service that provides the PointCloud2
     auto get_map_callback_lambda = [this](
-        const std::shared_ptr<rmw_request_id_t> request_header,
-        const std::shared_ptr<nav2_msgs::srv::GetMap3D::Request> request,
-        std::shared_ptr<nav2_msgs::srv::GetMap3D::Response> response) {
-      getMapCallback(request_header, request, response);
-    };
+      const std::shared_ptr<rmw_request_id_t> request_header,
+      const std::shared_ptr<nav2_msgs::srv::GetMap3D::Request> request,
+      std::shared_ptr<nav2_msgs::srv::GetMap3D::Response> response) {
+        getMapCallback(request_header, request, response);
+      };
 
     pcd_service_ = create_service<nav2_msgs::srv::GetMap3D>(
       service_prefix + std::string(service_name_),
@@ -169,18 +170,18 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     // Create a service that loads the PointCloud2 from a file
     auto load_map_callback_lambda = [this](
-        const std::shared_ptr<rmw_request_id_t> request_header,
-        const std::shared_ptr<nav2_msgs::srv::LoadMap3D::Request> request,
-        std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response) {
-      loadMapCallback(request_header, request, response);
-    };
+      const std::shared_ptr<rmw_request_id_t> request_header,
+      const std::shared_ptr<nav2_msgs::srv::LoadMap3D::Request> request,
+      std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response) {
+        loadMapCallback(request_header, request, response);
+      };
 
     pcd_load_map_service_ = create_service<nav2_msgs::srv::LoadMap3D>(
       service_prefix + std::string(load_map_service_name_), load_map_callback_lambda);
 
   } else if (enable_image_) {
-
-    std::shared_ptr<nav2_msgs::srv::LoadMap::Response> rsp = std::make_shared<nav2_msgs::srv::LoadMap::Response>();
+    std::shared_ptr<nav2_msgs::srv::LoadMap::Response> rsp =
+      std::make_shared<nav2_msgs::srv::LoadMap::Response>();
     if (!loadMapResponseFromYaml(yaml_filename, rsp)) {
       throw std::runtime_error("Failed to load map yaml file: " + yaml_filename);
     }
@@ -190,11 +191,11 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     // Create a service that provides the occupancy grid
     auto get_map_callback_lambda = [this](
-        const std::shared_ptr<rmw_request_id_t> request_header,
-        const std::shared_ptr<nav_msgs::srv::GetMap::Request> request,
-        std::shared_ptr<nav_msgs::srv::GetMap::Response> response) {
-      getMapCallback(request_header, request, response);
-    };
+      const std::shared_ptr<rmw_request_id_t> request_header,
+      const std::shared_ptr<nav_msgs::srv::GetMap::Request> request,
+      std::shared_ptr<nav_msgs::srv::GetMap::Response> response) {
+        getMapCallback(request_header, request, response);
+      };
 
     occ_service_ = create_service<nav_msgs::srv::GetMap>(
       service_prefix + std::string(service_name_), get_map_callback_lambda);
@@ -206,11 +207,11 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     // Create a service that loads the occupancy grid from a file
     auto load_map_callback_lambda = [this](
-        const std::shared_ptr<rmw_request_id_t> request_header,
-        const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
-        std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response) {
-      loadMapCallback(request_header, request, response);
-    };
+      const std::shared_ptr<rmw_request_id_t> request_header,
+      const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
+      std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response) {
+        loadMapCallback(request_header, request, response);
+      };
 
     load_map_service_ = create_service<nav2_msgs::srv::LoadMap>(
       service_prefix + std::string(load_map_service_name_), load_map_callback_lambda);
@@ -307,8 +308,8 @@ void MapServer::getMapCallback(
 }
 
 void MapServer::getMapCallback(
-  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
-  const std::shared_ptr<nav2_msgs::srv::GetMap3D::Request> /*request*/,
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<nav2_msgs::srv::GetMap3D::Request>/*request*/,
   std::shared_ptr<nav2_msgs::srv::GetMap3D::Response> response)
 {
   // if not in ACTIVE state, ignore request
@@ -347,15 +348,15 @@ void MapServer::loadMapCallback(
 }
 
 void MapServer::loadMapCallback(
-  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::LoadMap3D::Request> request,
   std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response)
 {
   // if not in ACTIVE state, ignore request
   if (get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     RCLCPP_WARN(
-    get_logger(),
-    "Received LoadMap request but not in ACTIVE state, ignoring!");
+      get_logger(),
+      "Received LoadMap request but not in ACTIVE state, ignoring!");
     return;
   }
 
@@ -373,11 +374,14 @@ bool MapServer::loadMapResponseFromYaml(
   std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response)
 {
   switch (loadMapFromYaml(yaml_file, msg_)) {
-    case MAP_DOES_NOT_EXIST:response->result = nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
+    case MAP_DOES_NOT_EXIST: response->result =
+        nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
       return false;
-    case INVALID_MAP_METADATA:response->result = nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA;
+    case INVALID_MAP_METADATA: response->result =
+        nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA;
       return false;
-    case INVALID_MAP_DATA:response->result = nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA;
+    case INVALID_MAP_DATA: response->result =
+        nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA;
       return false;
     case LOAD_MAP_SUCCESS:
       // Correcting msg_ header when it belongs to specific node
@@ -394,17 +398,17 @@ bool MapServer::loadMapResponseFromYaml(
   const std::string & yaml_file,
   std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response)
 {
-  switch (nav2_map_server_3D::loadMapFromYaml(yaml_file, pcd_msg_)) {
-    case nav2_map_server_3D::MAP_DOES_NOT_EXIST :
+  switch (nav2_map_server_3d::loadMapFromYaml(yaml_file, pcd_msg_)) {
+    case nav2_map_server_3d::MAP_DOES_NOT_EXIST:
       response->result = nav2_msgs::srv::LoadMap3D::Response::RESULT_MAP_DOES_NOT_EXIST;
       return false;
-    case nav2_map_server_3D::INVALID_MAP_METADATA:
+    case nav2_map_server_3d::INVALID_MAP_METADATA:
       response->result = nav2_msgs::srv::LoadMap3D::Response::RESULT_INVALID_MAP_METADATA;
       return false;
-    case nav2_map_server_3D::INVALID_MAP_DATA:
+    case nav2_map_server_3d::INVALID_MAP_DATA:
       response->result = nav2_msgs::srv::LoadMap3D::Response::RESULT_INVALID_MAP_DATA;
       return false;
-    case nav2_map_server_3D::LOAD_MAP_SUCCESS:response->map = pcd_msg_.map;
+    case nav2_map_server_3d::LOAD_MAP_SUCCESS: response->map = pcd_msg_.map;
       response->origin = pcd_msg_.origin;
       response->orientation = pcd_msg_.orientation;
       response->result = nav2_msgs::srv::LoadMap3D::Response::RESULT_SUCCESS;

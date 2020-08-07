@@ -21,20 +21,20 @@ ament_add_test(test_map_server_node
     TEST_EXECUTABLE=$<TARGET_FILE:test_map_server_node>
 )
 
-# map_server_3D component test
-ament_add_gtest_executable(test_map_server_3D_node
-  test_map_server_3D_node.cpp
+# map_server_3d component test
+ament_add_gtest_executable(test_map_server_3d_node
+  test_map_server_3d_node.cpp
   ${PROJECT_SOURCE_DIR}/test/test_constants.cpp
 )
-ament_target_dependencies(test_map_server_3D_node rclcpp nav2_msgs nav2_util sensor_msgs)
-target_link_libraries(test_map_server_3D_node
+ament_target_dependencies(test_map_server_3d_node rclcpp nav2_msgs nav2_util sensor_msgs)
+target_link_libraries(test_map_server_3d_node
   ${library_name}
   stdc++fs
 )
 
-ament_add_test(test_map_server_3D_node
+ament_add_test(test_map_server_3d_node
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_map_server_3D_launch.py"
+  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_map_server_3d_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
     TEST_DIR=${TEST_DIR}
@@ -60,7 +60,8 @@ add_executable(test_map_saver_publisher
 )
 
 target_link_libraries(test_map_saver_publisher
-  ${map_io_library_name} ${map_io_3D_library_name}
+  ${map_io_library_name}
+  ${map_io_3d_library_name}
   stdc++fs
 )
 
