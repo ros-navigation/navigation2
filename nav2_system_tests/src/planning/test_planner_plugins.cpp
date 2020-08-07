@@ -44,6 +44,9 @@ TEST(testPluginMap, Failures)
 
   path = obj->getPlan(start, goal, plugin_fake);
   EXPECT_EQ(path.poses.size(), 0ul);
+
+  obj->onDeactivate(state);
+  obj->onCleanup(state);
 }
 
 int main(int argc, char ** argv)
