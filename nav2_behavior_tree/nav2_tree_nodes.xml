@@ -28,8 +28,7 @@
     </Action>
 
     <Action ID="NavigateToPose">
-        <input_port name="orientation">Orientation</input_port>
-        <input_port name="position">Position</input_port>
+        <input_port name="goal">Goal</input_port>
     </Action>
 
     <Action ID="RandomCrawl"/>
