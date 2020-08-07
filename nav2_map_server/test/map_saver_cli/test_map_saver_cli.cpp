@@ -47,6 +47,10 @@ TEST(MapSaverCLI, CLITest)
   msg->info.origin.position.y = 0.0;
   msg->info.origin.orientation.w = 1.0;
   msg->data.resize(9);
+  msg->data[0] = 0;
+  msg->data[2] = 100;
+  msg->data[1] = 101;
+  msg->data[3] = 50;
 
   RCLCPP_INFO(node->get_logger(), "Publishing occupancy grid...");
 
@@ -105,12 +109,16 @@ TEST(MapSaverCLI, CLITest)
   return_code = system(command.c_str());
   EXPECT_EQ(return_code, 0);
 
+  rclcpp::Rate(0.5).sleep();
+
   RCLCPP_INFO(node->get_logger(), "Testing invalid mode...");
   command =
     std::string(
     "ros2 run nav2_map_server map_saver_cli --mode fake_mode");
   return_code = system(command.c_str());
   EXPECT_EQ(return_code, 0);
+
+  rclcpp::Rate(0.5).sleep();
 
   RCLCPP_INFO(node->get_logger(), "Testing missing argument...");
   command =
@@ -119,10 +127,20 @@ TEST(MapSaverCLI, CLITest)
   return_code = system(command.c_str());
   EXPECT_EQ(return_code, 65280);
 
+  rclcpp::Rate(0.5).sleep();
+
   RCLCPP_INFO(node->get_logger(), "Testing wrong argument...");
   command =
     std::string(
     "ros2 run nav2_map_server map_saver_cli --free 0 0");
   return_code = system(command.c_str());
   EXPECT_EQ(return_code, 65280);
+
+  rclcpp::Rate(0.5).sleep();
+
+  command =
+    std::string(
+    "ros2 run nav2_map_server map_saver_cli --ros-args -r __node:=map_saver_test_node");
+  return_code = system(command.c_str());
+  EXPECT_EQ(return_code, 0);
 }

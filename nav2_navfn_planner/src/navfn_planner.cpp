@@ -152,6 +152,9 @@ NavfnPlanner::makePlan(
   // clear the plan, just in case
   plan.poses.clear();
 
+  plan.header.stamp = node_->now();
+  plan.header.frame_id = global_frame_;
+
   // TODO(orduno): add checks for start and goal reference frame -- should be in global frame
 
   double wx = start.position.x;
@@ -326,9 +329,6 @@ NavfnPlanner::getPlanFromPotential(
   float * x = planner_->getPathX();
   float * y = planner_->getPathY();
   int len = planner_->getPathLen();
-
-  plan.header.stamp = node_->now();
-  plan.header.frame_id = global_frame_;
 
   for (int i = len - 1; i >= 0; --i) {
     // convert the plan to world coordinates
