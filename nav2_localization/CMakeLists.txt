@@ -7,12 +7,16 @@ find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(nav2_util REQUIRED)
+find_package(nav_2d_utils REQUIRED)
 
 set(dependencies
   rclcpp
   nav_msgs
   geometry_msgs
   pluginlib
+  nav2_util
+  nav_2d_utils
 )
 
 include_directories(
