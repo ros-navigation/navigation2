@@ -87,13 +87,42 @@ TEST(MapSaverCLI, CLITest)
   command =
     std::string(
     "ros2 run nav2_map_server map_saver_cli "
-    "-t map_failure --occ 100 --free 2 --mode trinary --fmt png -f ") + file_path;
+    "-t map_failure --occ 100 --free 2 --mode trinary --fmt png -f ") + file_path +
+    std::string("--ros-args __node:=map_saver_test_node");
   return_code = system(command.c_str());
-  EXPECT_EQ(return_code, 256);
+  EXPECT_EQ(return_code, 65280);
 
   rclcpp::Rate(0.25).sleep();
 
   RCLCPP_INFO(node->get_logger(), "Checking on file...");
 
   EXPECT_FALSE(std::experimental::filesystem::exists(file_path + ".yaml"));
+
+  RCLCPP_INFO(node->get_logger(), "Testing help...");
+  command =
+    std::string(
+    "ros2 run nav2_map_server map_saver_cli -h");
+  return_code = system(command.c_str());
+  EXPECT_EQ(return_code, 0);
+
+  RCLCPP_INFO(node->get_logger(), "Testing invalid mode...");
+  command =
+    std::string(
+    "ros2 run nav2_map_server map_saver_cli --mode fake_mode");
+  return_code = system(command.c_str());
+  EXPECT_EQ(return_code, 0);
+
+  RCLCPP_INFO(node->get_logger(), "Testing missing argument...");
+  command =
+    std::string(
+    "ros2 run nav2_map_server map_saver_cli --mode");
+  return_code = system(command.c_str());
+  EXPECT_EQ(return_code, 65280);
+
+  RCLCPP_INFO(node->get_logger(), "Testing wrong argument...");
+  command =
+    std::string(
+    "ros2 run nav2_map_server map_saver_cli --free 0 0");
+  return_code = system(command.c_str());
+  EXPECT_EQ(return_code, 65280);
 }
