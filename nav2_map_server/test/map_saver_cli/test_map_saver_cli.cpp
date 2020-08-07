@@ -47,6 +47,10 @@ TEST(MapSaverCLI, CLITest)
   msg->info.origin.position.y = 0.0;
   msg->info.origin.orientation.w = 1.0;
   msg->data.resize(9);
+  msg->data[0] = 0;
+  msg->data[2] = 100;
+  msg->data[1] = 101;
+  msg->data[3] = 50;
 
   RCLCPP_INFO(node->get_logger(), "Publishing occupancy grid...");
 

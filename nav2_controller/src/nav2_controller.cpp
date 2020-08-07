@@ -63,8 +63,6 @@ ControllerServer::ControllerServer()
 ControllerServer::~ControllerServer()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
-  controllers_.clear();
-  costmap_thread_.reset();
 }
 
 nav2_util::CallbackReturn
@@ -404,6 +402,8 @@ void ControllerServer::publishZeroVelocity()
   velocity.twist.linear.x = 0;
   velocity.twist.linear.y = 0;
   velocity.twist.linear.z = 0;
+  velocity.header.frame_id = costmap_ros_->getBaseFrameID();
+  velocity.header.stamp = now();
   publishVelocity(velocity);
 }
 
