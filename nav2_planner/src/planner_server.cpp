@@ -119,12 +119,11 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   if (expected_planner_frequency > 0) {
     max_planner_duration_ = 1 / expected_planner_frequency;
   } else {
-    max_planner_duration_ = 0.0;
-
     RCLCPP_WARN(
       get_logger(),
-      "The expected planner frequency parameter is %.4f Hz. The value has to be greater"
-      " than 0.0 to turn on displaying warning messages", expected_planner_frequency);
+      "The expected planner frequency parameter is %.4f Hz. The value should to be greater"
+      " than 0.0 to turn on duration overrrun warning messages", expected_planner_frequency);
+    max_planner_duration_ = 0.0;
   }
 
   // Initialize pubs & subs
@@ -223,7 +222,6 @@ PlannerServer::computePlan()
 
     geometry_msgs::msg::PoseStamped start;
     if (!costmap_ros_->getRobotPose(start)) {
-      RCLCPP_ERROR(this->get_logger(), "Could not get robot pose");
       action_server_->terminate_current();
       return;
     }
@@ -233,30 +231,7 @@ PlannerServer::computePlan()
       goal = action_server_->accept_pending_goal();
     }
 
-    RCLCPP_DEBUG(
-      get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-      "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
-      goal->pose.pose.position.x, goal->pose.pose.position.y);
-
-    if (planners_.find(goal->planner_id) != planners_.end()) {
-      result->path = planners_[goal->planner_id]->createPlan(start, goal->pose);
-    } else {
-      if (planners_.size() == 1 && goal->planner_id.empty()) {
-        if (!single_planner_warning_given_) {
-          single_planner_warning_given_ = true;
-          RCLCPP_WARN(
-            get_logger(), "No planners specified in action call. "
-            "Server will use only plugin %s in server."
-            " This warning will appear once.", planner_ids_concat_.c_str());
-        }
-        result->path = planners_[planners_.begin()->first]->createPlan(start, goal->pose);
-      } else {
-        RCLCPP_ERROR(
-          get_logger(), "planner %s is not a valid planner. "
-          "Planner names are: %s", goal->planner_id.c_str(),
-          planner_ids_concat_.c_str());
-      }
-    }
+    result->path = getPlan(start, goal->pose, goal->planner_id);
 
     if (result->path.poses.size() == 0) {
       RCLCPP_WARN(
@@ -274,7 +249,6 @@ PlannerServer::computePlan()
       goal->pose.pose.position.y);
 
     // Publish the plan for visualization purposes
-    RCLCPP_DEBUG(get_logger(), "Publishing the valid path");
     publishPlan(result->path);
 
     auto cycle_duration = steady_clock_.now() - start_time;
@@ -288,8 +262,6 @@ PlannerServer::computePlan()
     }
 
     action_server_->succeeded_current(result);
-
-    return;
   } catch (std::exception & ex) {
     RCLCPP_WARN(
       get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
@@ -298,15 +270,50 @@ PlannerServer::computePlan()
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
     action_server_->terminate_current();
-    return;
   }
+}
+
+nav_msgs::msg::Path
+PlannerServer::getPlan(
+  const geometry_msgs::msg::PoseStamped & start,
+  const geometry_msgs::msg::PoseStamped & goal,
+  const std::string & planner_id)
+{
+  RCLCPP_DEBUG(
+    get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
+    "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
+    goal.pose.position.x, goal.pose.position.y);
+
+  if (planners_.find(planner_id) != planners_.end()) {
+    return planners_[planner_id]->createPlan(start, goal);
+  } else {
+    if (planners_.size() == 1 && planner_id.empty()) {
+      RCLCPP_WARN_ONCE(
+        get_logger(), "No planners specified in action call. "
+        "Server will use only plugin %s in server."
+        " This warning will appear once.", planner_ids_concat_.c_str());
+      return planners_[planners_.begin()->first]->createPlan(start, goal);
+    } else {
+      RCLCPP_ERROR(
+        get_logger(), "planner %s is not a valid planner. "
+        "Planner names are: %s", planner_id.c_str(),
+        planner_ids_concat_.c_str());
+    }
+  }
+
+  return nav_msgs::msg::Path();
 }
 
 void
 PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
 {
   auto msg = std::make_unique<nav_msgs::msg::Path>(path);
-  plan_publisher_->publish(std::move(msg));
+  if (
+    plan_publisher_->is_activated() &&
+    this->count_subscribers(plan_publisher_->get_topic_name()) > 0)
+  {
+    plan_publisher_->publish(std::move(msg));
+  }
 }
 
 }  // namespace nav2_planner
