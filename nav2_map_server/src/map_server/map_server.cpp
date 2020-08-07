@@ -58,7 +58,7 @@
 
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_map_server/map_io.hpp"
-#include "nav2_map_server_3D/map_io_3D.hpp"
+#include "nav2_map_server_3d/map_io_3d.hpp"
 #include "nav2_msgs/msg/pcd2.hpp"
 
 using namespace std::chrono_literals;
@@ -394,17 +394,17 @@ bool MapServer::loadMapResponseFromYaml(
   const std::string & yaml_file,
   std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response)
 {
-  switch (nav2_map_server_3D::loadMapFromYaml(yaml_file, pcd_msg_)) {
-    case nav2_map_server_3D::MAP_DOES_NOT_EXIST :
+  switch (nav2_map_server_3d::loadMapFromYaml(yaml_file, pcd_msg_)) {
+    case nav2_map_server_3d::MAP_DOES_NOT_EXIST :
       response->result = nav2_msgs::srv::LoadMap3D::Response::RESULT_MAP_DOES_NOT_EXIST;
       return false;
-    case nav2_map_server_3D::INVALID_MAP_METADATA:
+    case nav2_map_server_3d::INVALID_MAP_METADATA:
       response->result = nav2_msgs::srv::LoadMap3D::Response::RESULT_INVALID_MAP_METADATA;
       return false;
-    case nav2_map_server_3D::INVALID_MAP_DATA:
+    case nav2_map_server_3d::INVALID_MAP_DATA:
       response->result = nav2_msgs::srv::LoadMap3D::Response::RESULT_INVALID_MAP_DATA;
       return false;
-    case nav2_map_server_3D::LOAD_MAP_SUCCESS:response->map = pcd_msg_.map;
+    case nav2_map_server_3d::LOAD_MAP_SUCCESS:response->map = pcd_msg_.map;
       response->origin = pcd_msg_.origin;
       response->orientation = pcd_msg_.orientation;
       response->result = nav2_msgs::srv::LoadMap3D::Response::RESULT_SUCCESS;

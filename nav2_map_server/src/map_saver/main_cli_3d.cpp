@@ -10,7 +10,7 @@
 #include "nav2_map_server/map_saver.hpp"
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_map_server_3D/map_io_3D.hpp"
+#include "nav2_map_server_3d/map_io_3d.hpp"
 
 using namespace nav2_map_server;  // NOLINT
 
@@ -55,7 +55,7 @@ typedef enum
 // Output parameters: map_topic, save_parameters
 ARGUMENTS_STATUS parse_arguments(
   const rclcpp::Logger & logger, int argc, char ** argv,
-  std::string & map_topic, nav2_map_server_3D::SaveParameters & save_parameters)
+  std::string & map_topic, nav2_map_server_3d::SaveParameters & save_parameters)
 {
   const struct cmd_struct commands[] = {
     {"-t", COMMAND_MAP_TOPIC},
@@ -139,7 +139,7 @@ int main(int argc, char ** argv)
   auto logger = rclcpp::get_logger("map_saver_cli_3D");
 
   // Parse CLI-arguments
-  nav2_map_server_3D::SaveParameters save_parameters;
+  nav2_map_server_3d::SaveParameters save_parameters;
   std::string map_topic = "map";
   switch (parse_arguments(logger, argc, argv, map_topic, save_parameters)) {
     case ARGUMENTS_INVALID:

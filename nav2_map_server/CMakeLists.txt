@@ -33,7 +33,7 @@ set(map_server_executable map_server)
 
 set(map_saver_cli_executable map_saver_cli)
 
-set(map_saver_cli_3D_executable map_saver_cli_3D)
+set(map_saver_cli_3d_executable map_saver_cli_3d)
 
 set(map_saver_server_executable map_saver_server)
 
@@ -45,8 +45,8 @@ add_executable(${map_server_executable}
 add_executable(${map_saver_cli_executable}
   src/map_saver/main_cli.cpp)
 
-add_executable(${map_saver_cli_3D_executable}
-  src/map_saver/main_cli_3D.cpp)
+add_executable(${map_saver_cli_3d_executable}
+  src/map_saver/main_cli_3d.cpp)
 
 add_executable(${map_saver_server_executable}
   src/map_saver/main_server.cpp)
@@ -56,7 +56,7 @@ add_executable(${costmap_filter_info_server_executable}
 
 set(map_io_library_name map_io)
 
-set(map_io_3D_library_name map_io_3D)
+set(map_io_3d_library_name map_io_3d)
 
 set(library_name ${map_server_executable}_core)
 
@@ -64,9 +64,9 @@ add_library(${map_io_library_name} SHARED
   src/map_mode.cpp
   src/map_io.cpp)
 
-add_library(${map_io_3D_library_name} SHARED
-  src/map_io_3D/map_io_3D.cpp
-  src/map_io_3D/pcl_helper.cpp)
+add_library(${map_io_3d_library_name} SHARED
+    src/map_io_3d/map_io_3d.cpp
+    src/map_io_3d/pcl_helper.cpp)
 
 add_library(${library_name} SHARED
   src/map_server/map_server.cpp
@@ -79,7 +79,7 @@ set(map_io_dependencies
   nav2_util
   tf2)
 
-set(map_io_3D_dependencies
+set(map_io_3d_dependencies
   ${map_io_dependencies}
   sensor_msgs
   geometry_msgs
@@ -109,7 +109,7 @@ ament_target_dependencies(${map_server_executable}
 ament_target_dependencies(${map_saver_cli_executable}
   ${map_saver_dependencies})
 
-ament_target_dependencies(${map_saver_cli_3D_executable}
+ament_target_dependencies(${map_saver_cli_3d_executable}
   ${map_saver_dependencies})
 
 ament_target_dependencies(${map_saver_server_executable}
@@ -124,8 +124,8 @@ ament_target_dependencies(${library_name}
 ament_target_dependencies(${map_io_library_name}
   ${map_io_dependencies})
 
-ament_target_dependencies(${map_io_3D_library_name}
-  ${map_io_3D_dependencies})
+ament_target_dependencies(${map_io_3d_library_name}
+  ${map_io_3d_dependencies})
 
 # linking boost to nav2_io_library
 target_link_libraries(${map_io_library_name}
@@ -133,8 +133,8 @@ target_link_libraries(${map_io_library_name}
   ${Boost_SYSTEM_LIBRARY}
   ${Boost_REGEX_LIBRARY})
 
-# linking boost|pcl|eigen to nav2_io_3D_library
-target_link_libraries(${map_io_3D_library_name}
+# linking boost|pcl|eigen to nav2_io_3d_library
+target_link_libraries(${map_io_3d_library_name}
   ${Boost_FILESYSTEM_LIBRARY}
   ${Boost_SYSTEM_LIBRARY}
   ${Boost_REGEX_LIBRARY}
@@ -144,7 +144,7 @@ target_link_libraries(${map_io_3D_library_name}
 # interlinking libraries within package
 target_link_libraries(${library_name}
   ${map_io_library_name}
-  ${map_io_3D_library_name}
+  ${map_io_3d_library_name}
   ${Boost_FILESYSTEM_LIBRARY}
   ${Boost_SYSTEM_LIBRARY}
   ${Boost_REGEX_LIBRARY}
@@ -161,7 +161,7 @@ endif()
 target_link_libraries(${map_saver_cli_executable}
   ${library_name})
 
-target_link_libraries(${map_saver_cli_3D_executable}
+target_link_libraries(${map_saver_cli_3d_executable}
   ${library_name})
 
 target_link_libraries(${map_saver_server_executable}
@@ -182,7 +182,7 @@ if(WIN32)
 endif()
 
 install(TARGETS
-    ${library_name} ${map_io_library_name} ${map_io_3D_library_name}
+    ${library_name} ${map_io_library_name} ${map_io_3d_library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
@@ -212,6 +212,6 @@ ament_export_include_directories(include)
 ament_export_libraries(
   ${library_name}
   ${map_io_library_name}
-  ${map_io_3D_library_name}
+  ${map_io_3d_library_name}
 )
 ament_package()

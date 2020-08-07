@@ -37,7 +37,7 @@
 #include <functional>
 
 #include "nav2_msgs/msg/pcd2.hpp"
-#include "nav2_map_server_3D/map_io_3D.hpp"
+#include "nav2_map_server_3d/map_io_3d.hpp"
 #include "nav2_map_server/map_io.hpp"
 
 using namespace std::placeholders;
@@ -72,7 +72,7 @@ MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create a service that saves the occupancy grid or PointCloud2 from map topic to a file
   pcd_save_map_service_ = create_service<nav2_msgs::srv::SaveMap3D>(
-    service_prefix + save_map_3D_service_name_,
+    service_prefix + save_map_3d_service_name_,
     [this](
         const std::shared_ptr<rmw_request_id_t> request_header,
         const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
@@ -159,7 +159,7 @@ void MapSaver::saveMapCallback(
   const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
   std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response)
 {
-  nav2_map_server_3D::SaveParameters save_parameters;
+  nav2_map_server_3d::SaveParameters save_parameters;
   save_parameters.map_file_name = request->map_url;
 
   // Set view_point translation(origin)
@@ -271,11 +271,11 @@ bool MapSaver::saveMapTopicToFile(
 
 bool MapSaver::saveMapTopicToFile(
   const std::string & map_topic,
-  const nav2_map_server_3D::SaveParameters & save_parameters)
+  const nav2_map_server_3d::SaveParameters & save_parameters)
 {
   // Local copies of map_topic and save_parameters that could be changed
   std::string map_topic_loc = map_topic;
-  nav2_map_server_3D::SaveParameters save_parameters_loc = save_parameters;
+  nav2_map_server_3d::SaveParameters save_parameters_loc = save_parameters;
 
   RCLCPP_INFO(
     get_logger(), "Saving map from \'%s\' topic to \'%s\' file",
@@ -316,7 +316,7 @@ bool MapSaver::saveMapTopicToFile(
         // Map message received. Saving it to file
         std::cout<< "data "<< pcd_map_msg->width << std::endl;
 
-        if (nav2_map_server_3D::saveMapToFile(*pcd_map_msg, save_parameters_loc)) {
+        if (nav2_map_server_3d::saveMapToFile(*pcd_map_msg, save_parameters_loc)) {
           RCLCPP_INFO(get_logger(), "Map saved successfully");
           return true;
         } else {

@@ -2,7 +2,7 @@
 // Created by shivam on 7/10/20.
 //
 
-#include "nav2_map_server_3D/pcl_helper.hpp"
+#include "nav2_map_server_3d/pcl_helper.hpp"
 
 #include <vector>
 #include <memory>
@@ -14,7 +14,7 @@
 
 namespace nav2_map_server
 {
-namespace nav2_map_server_3D
+namespace nav2_map_server_3d
 {
 
 void modifyMsgFields(
@@ -79,5 +79,5 @@ void msgToPcl(
   cloud->header = pcl_conversions::toPCL(msg.header);
 }
 
-} // namespace nav2_map_server_3D
+} // namespace nav2_map_server_3d
 } // namespace nav2_map_server

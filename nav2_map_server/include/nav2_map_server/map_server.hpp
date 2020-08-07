@@ -45,7 +45,7 @@ public:
   /**
    * @brief A Destructor for nav2_map_server::MapServer
    */
-  ~MapServer();
+  ~MapServer() override;
 
 private:
 

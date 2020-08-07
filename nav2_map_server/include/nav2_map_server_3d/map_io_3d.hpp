@@ -17,20 +17,22 @@
 namespace nav2_map_server
 {
 /**
- * @brief nav2_map_server_3D namespace containing the utilities to use point cloud mapss
+ * @brief nav2_map_server_3d namespace containing the utilities to use point cloud mapss
  */
-namespace nav2_map_server_3D
+namespace nav2_map_server_3d
 {
 /**
  * @brief parameters that will be populated while reading a YAML file
  */
-struct LoadParameters_3D {
+struct LoadParameters
+{
   std::string pcd_file_name;
   std::vector<float> origin;
   std::vector<float> orientation;
 };
 
-typedef enum {
+typedef enum
+{
   LOAD_MAP_SUCCESS,
   MAP_DOES_NOT_EXIST,
   INVALID_MAP_METADATA,
@@ -43,7 +45,7 @@ typedef enum {
  * @return Map loading parameters obtained from YAML file
  * @throw YAML::Exception
  */
-LoadParameters_3D loadMapYaml(const std::string & yaml_filename);
+LoadParameters loadMapYaml(const std::string & yaml_filename);
 
 /**
  * @brief Load the point cloud from map file and generate a PointCloud2(PCD2)
@@ -52,7 +54,7 @@ LoadParameters_3D loadMapYaml(const std::string & yaml_filename);
  * @throw std::exception
  */
 void loadMapFromFile(
-  const LoadParameters_3D & load_parameters,
+  const LoadParameters & load_parameters,
   nav2_msgs::msg::PCD2 & map_msg);
 
 /**
@@ -66,7 +68,8 @@ LOAD_MAP_STATUS loadMapFromYaml(
   const std::string & yaml_file,
   nav2_msgs::msg::PCD2 & map_msg);
 
-struct SaveParameters {
+struct SaveParameters
+{
   std::string map_file_name;
   std::vector<float> origin;
   std::vector<float> orientation;
@@ -84,6 +87,6 @@ bool saveMapToFile(
   const sensor_msgs::msg::PointCloud2 & map,
   const SaveParameters & save_parameters);
 
-} // namespace nav2_map_server_3D
+} // namespace nav2_map_server_3d
 } // namespace nav2_map_server
 #endif //NAV2_MAP_SERVER_SRC_MAP_IO_3D_HPP_

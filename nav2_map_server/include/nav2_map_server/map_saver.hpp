@@ -25,7 +25,7 @@
 #include "nav2_msgs/srv/save_map3_d.hpp"
 
 #include "nav2_map_server/map_io.hpp"
-#include "nav2_map_server_3D/map_io_3D.hpp"
+#include "nav2_map_server_3d/map_io_3d.hpp"
 
 namespace nav2_map_server
 {
@@ -66,7 +66,7 @@ public:
    */
   bool saveMapTopicToFile(
     const std::string & map_topic,
-    const nav2_map_server_3D::SaveParameters & save_parameters);
+    const nav2_map_server_3d::SaveParameters & save_parameters);
 
 protected:
   /**
@@ -133,7 +133,7 @@ protected:
 
   // The name of the service for saving a map from topic
   const std::string save_map_service_name_{"save_map"};
-  const std::string save_map_3D_service_name_{"save_map3D"};
+  const std::string save_map_3d_service_name_{"save_map3D"};
 
   // A service to save the map to a file at run time (SaveMap)
   rclcpp::Service<nav2_msgs::srv::SaveMap>::SharedPtr save_map_service_;

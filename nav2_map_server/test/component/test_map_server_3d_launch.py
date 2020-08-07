@@ -11,14 +11,14 @@ from launch_testing.legacy import LaunchTestService
 
 
 def main(argv=sys.argv[1:]):
-    launchFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'map_server_3D_node.launch.py')
+    launchFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'map_server_3d_node.launch.py')
     testExecutable = os.getenv('TEST_EXECUTABLE')
     ld = LaunchDescription([
         IncludeLaunchDescription(PythonLaunchDescriptionSource([launchFile])),
     ])
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
-        name='test_map_server_3D_node',
+        name='test_map_server_3d_node',
     )
     lts = LaunchTestService()
     lts.add_test_action(ld, test1_action)

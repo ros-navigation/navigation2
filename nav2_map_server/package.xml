@@ -25,10 +25,11 @@
   <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
   <depend>graphicsmagick</depend>
-  <depend>perception_pcl</depend>
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>eigen</depend>
+  <depend>pcl_conversions</depend>
+  <depend>libpcl-all-dev</depend>
   <depend>boost</depend>
 
   <test_depend>ament_lint_common</test_depend>

@@ -15,7 +15,7 @@
 
 namespace nav2_map_server
 {
-namespace nav2_map_server_3D
+namespace nav2_map_server_3d
 {
 
 void modifyMsgFields(
@@ -34,6 +34,6 @@ void msgToPcl(
   std::shared_ptr<pcl::PCLPointCloud2> & cloud,
   const sensor_msgs::msg::PointCloud2 & msg);
 
-} // namespace nav2_map_server_3D
+} // namespace nav2_map_server_3d
 } // namespace nav2_map_server
 #endif //NAV2_MAP_SERVER_INCLUDE_NAV2_MAP_SERVER_PCL_HELPER_HPP_

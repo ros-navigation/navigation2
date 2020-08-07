@@ -186,12 +186,12 @@ TEST_F(MapSaverTestFixture, SaveMap3D)
 
   // 2. Load saved map and verify it
   nav2_msgs::msg::PCD2 map_msg;
-  nav2_map_server_3D::LOAD_MAP_STATUS status =
-    nav2_map_server_3D::loadMapFromYaml(
+  nav2_map_server_3d::LOAD_MAP_STATUS status =
+    nav2_map_server_3d::loadMapFromYaml(
       path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
       map_msg);
 
-  ASSERT_EQ(status, nav2_map_server_3D::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, nav2_map_server_3d::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 }
 
@@ -259,12 +259,12 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters3D)
 
   // 2. Load saved map and verify it
   nav2_msgs::msg::PCD2 map_msg;
-  nav2_map_server_3D::LOAD_MAP_STATUS status =
-    nav2_map_server_3D::loadMapFromYaml(
+  nav2_map_server_3d::LOAD_MAP_STATUS status =
+    nav2_map_server_3d::loadMapFromYaml(
       path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
       map_msg);
 
-  ASSERT_EQ(status, nav2_map_server_3D::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, nav2_map_server_3d::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 }
 
