@@ -15,11 +15,7 @@ public:
     geometry_msgs::msg::Pose getMostLikelyPose(
         const nav_msgs::msg::Odometry& prev_odom,
         const nav_msgs::msg::Odometry& curr_odom,
-        const geometry_msgs::msg::Pose prev_pose)
-    {
-        geometry_msgs::msg::Pose dummy_pose{};
-        return dummy_pose;
-    }
+        const geometry_msgs::msg::Pose prev_pose);
 };
 // // Implements a Bicycle motion model
 // class Bicycle : public nav2_localization_base::SampleMotionModel
