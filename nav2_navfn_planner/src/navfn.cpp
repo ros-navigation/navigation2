@@ -131,8 +131,8 @@ NavFn::NavFn(int xs, int ys)
   start[0] = start[1] = 0;
 
   // display function
-  displayFn = NULL;
-  displayInt = 0;
+  // displayFn = NULL;
+  // displayInt = 0;
 
   // path buffers
   npathbuf = npath = 0;
@@ -607,9 +607,9 @@ NavFn::propNavFnDijkstra(int cycles, bool atStart)
       updateCell(*pb++);
     }
 
-    if (displayInt > 0 && (cycle % displayInt) == 0) {
-      displayFn(this);
-    }
+    // if (displayInt > 0 && (cycle % displayInt) == 0) {
+    //   displayFn(this);
+    // }
 
     // swap priority blocks curP <=> nextP
     curPe = nextPe;
@@ -693,9 +693,9 @@ NavFn::propNavFnAstar(int cycles)
       updateCellAstar(*pb++);
     }
 
-    if (displayInt > 0 && (cycle % displayInt) == 0) {
-      displayFn(this);
-    }
+    // if (displayInt > 0 && (cycle % displayInt) == 0) {
+    //   displayFn(this);
+    // }
 
     // swap priority blocks curP <=> nextP
     curPe = nextPe;
@@ -985,12 +985,12 @@ NavFn::gradCell(int n)
 // <n> is the number of cycles to wait before displaying,
 //     use 0 to turn it off
 
-void
-NavFn::display(void fn(NavFn * nav), int n)
-{
-  displayFn = fn;
-  displayInt = n;
-}
+// void
+// NavFn::display(void fn(NavFn * nav), int n)
+// {
+//   displayFn = fn;
+//   displayInt = n;
+// }
 
 
 //
@@ -998,35 +998,35 @@ NavFn::display(void fn(NavFn * nav), int n)
 // saves costmap and start/goal
 //
 
-void
-NavFn::savemap(const char * fname)
-{
-  char fn[4096];
+// void
+// NavFn::savemap(const char * fname)
+// {
+//   char fn[4096];
 
-  RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Saving costmap and start/goal points");
-  // write start and goal points
-  snprintf(fn, sizeof(fn), "%s.txt", fname);
-  FILE * fp = fopen(fn, "w");
-  if (!fp) {
-    RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Can't open file %s", fn);
-    return;
-  }
-  fprintf(fp, "Goal: %d %d\nStart: %d %d\n", goal[0], goal[1], start[0], start[1]);
-  fclose(fp);
+//   RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Saving costmap and start/goal points");
+//   // write start and goal points
+//   snprintf(fn, sizeof(fn), "%s.txt", fname);
+//   FILE * fp = fopen(fn, "w");
+//   if (!fp) {
+//     RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Can't open file %s", fn);
+//     return;
+//   }
+//   fprintf(fp, "Goal: %d %d\nStart: %d %d\n", goal[0], goal[1], start[0], start[1]);
+//   fclose(fp);
 
-  // write cost array
-  if (!costarr) {
-    return;
-  }
-  snprintf(fn, sizeof(fn), "%s.pgm", fname);
-  fp = fopen(fn, "wb");
-  if (!fp) {
-    RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Can't open file %s", fn);
-    return;
-  }
-  fprintf(fp, "P5\n%d\n%d\n%d\n", nx, ny, 0xff);
-  fwrite(costarr, 1, nx * ny, fp);
-  fclose(fp);
-}
+//   // write cost array
+//   if (!costarr) {
+//     return;
+//   }
+//   snprintf(fn, sizeof(fn), "%s.pgm", fname);
+//   fp = fopen(fn, "wb");
+//   if (!fp) {
+//     RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Can't open file %s", fn);
+//     return;
+//   }
+//   fprintf(fp, "P5\n%d\n%d\n%d\n", nx, ny, 0xff);
+//   fwrite(costarr, 1, nx * ny, fp);
+//   fclose(fp);
+// }
 
 }  // namespace nav2_navfn_planner
