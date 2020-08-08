@@ -23,9 +23,7 @@ public:
 	geometry_msgs::msg::PoseWithCovariance localize(
 		const nav2_localization_base::SampleMotionModel& motionSampler,
 		const nav2_localization_base::Matcher2d& matcher,
-		const nav_msgs::msg::Odometry& prev_odom,
 		const nav_msgs::msg::Odometry& curr_odom,
-		const geometry_msgs::msg::Pose& prev_pose,
 		const sensor_msgs::msg::LaserScan& scan,
 		const nav_msgs::msg::OccupancyGrid& map);
 };
