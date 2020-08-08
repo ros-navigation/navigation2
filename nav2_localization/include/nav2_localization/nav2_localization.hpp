@@ -8,6 +8,9 @@
 #include "pluginlib/class_loader.hpp"
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "message_filters/subscriber.h"
+#include "sensor_msgs/msg/laser_scan.hpp"
+#include "tf2_ros/message_filter.h"
 
 namespace nav2_localization
 {
@@ -78,8 +81,22 @@ protected:
     bool first_map_received_{false};
     nav_msgs::msg::OccupancyGrid map_;
 
-    // Publishers and subscribers
+    // Laser scan
+    std::string scan_topic_;
+    void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
+
+    // Transforms
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+
+    // Odometry
+    std::string odom_frame_id_;
     std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
+    
+    // Message filters
+    void initMessageFilters();
+    std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
+    std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
+    message_filters::Connection laser_scan_connection_;
 
     // Sample Motion Model Plugin
     pluginlib::ClassLoader<nav2_localization_base::SampleMotionModel> sample_motion_model_loader_;

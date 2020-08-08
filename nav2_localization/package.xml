@@ -16,6 +16,9 @@
   <depend>pluginlib</depend>
   <depend>nav2_util</depend>
   <depend>nav_2d_utils</depend>
+  <depend>message_filters</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2_ros</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
