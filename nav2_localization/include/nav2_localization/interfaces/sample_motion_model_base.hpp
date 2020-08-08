@@ -9,7 +9,7 @@ namespace nav2_localization_base
 
 /**
  * @class SampleMotionModel
- * @brief Abstracrt interface for sample motion model to adhere to with pluginlib
+ * @brief Abstract interface for sample motion model to adhere to with pluginlib
  */
 class SampleMotionModel
 {   
@@ -26,7 +26,7 @@ public:
     virtual geometry_msgs::msg::Pose getMostLikelyPose(
         const nav_msgs::msg::Odometry& prev_odom,
         const nav_msgs::msg::Odometry& curr_odom,
-        const geometry_msgs::msg::Pose prev_pose) = 0;
+        const geometry_msgs::msg::Pose& prev_pose) = 0;
 
 protected:
     SampleMotionModel(){}

@@ -8,7 +8,7 @@ namespace nav2_localization_plugins
 geometry_msgs::msg::Pose DummyMotionSampler::getMostLikelyPose(
         const nav_msgs::msg::Odometry& prev_odom,
         const nav_msgs::msg::Odometry& curr_odom,
-        const geometry_msgs::msg::Pose prev_pose)
+        const geometry_msgs::msg::Pose& prev_pose)
 {
     geometry_msgs::msg::Pose dummy_pose{};
     return dummy_pose;
