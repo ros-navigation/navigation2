@@ -2,8 +2,8 @@
 #define NAV2_LOCALIZATION__SOLVER_BASE_HPP_
 
 // Other Interfaces
-#include "interfaces/motion_model_base.hpp"
-#include "interfaces/matcher2d_base.hpp"
+#include "nav2_localization/interfaces/motion_model_base.hpp"
+#include "nav2_localization/interfaces/matcher2d_base.hpp"
 
 // Types
 #include "geometry_msgs/msg/poseWithCovariance.hpp"
@@ -35,14 +35,14 @@ public:
      * @param map Map of the environment where the robot is
      * @return Estimation of the current position
      */
-	virtual PoseWithCovariance localize(
+	virtual geometry_msgs::PoseWithCovariance localize(
 		const SampleMotionModel& motionSampler,
 		const Matcher2d& matcher,
 		const nav_msgs::msg::Odometry& prev_odom,
 		const nav_msgs::msg::Odometry& curr_odom,
 		const geometry_msgs::msg::Pose& prev_pose,
-		const sensor_msgs::LaserScan& scan,
-		const nav_msgs::OccupancyGrid& map) = 0;
+		const sensor_msgs::msg::LaserScan& scan,
+		const nav_msgs::msg::OccupancyGrid& map) = 0;
 
 protected:
 	Solver(){}

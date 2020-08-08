@@ -11,9 +11,9 @@ public:
 	DummyMatcher2d(){}
 
 	float getLikelihood(
-		const sensor_msgs::LaserScan& scan,
+		const sensor_msgs::msg::LaserScan& scan,
 		const geometry_msgs::msg::Pose& pose,
-		const nav_msgs::OccupancyGrid& map);
+		const nav_msgs::msg::OccupancyGrid& map);
 };  
 } // nav2_localization_base
 

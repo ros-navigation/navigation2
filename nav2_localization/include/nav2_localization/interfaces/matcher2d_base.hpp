@@ -25,9 +25,9 @@ public:
      * @return Score of how likely is it to perceive the inputted measurement assuming that the robot is in the given pose inside the provided map
      */
 	virtual float getLikelihood(
-		const sensor_msgs::LaserScan& scan,
+		const sensor_msgs::msg::LaserScan& scan,
 		const geometry_msgs::msg::Pose& pose,
-		const nav_msgs::OccupancyGrid& map) = -1;
+		const nav_msgs::msg::OccupancyGrid& map) = 0;
 
 protected:
     Matcher2d(){}
