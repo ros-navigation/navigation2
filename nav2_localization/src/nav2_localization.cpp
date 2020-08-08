@@ -1,4 +1,5 @@
 #include "nav2_localization/nav2_localization.hpp"
+#include "nav2_util/string_utils.hpp"
 
 namespace nav2_localization
 {
@@ -12,6 +13,8 @@ LocalizationServer::LocalizationServer()
 
     declare_parameter("sample_motion_model_id", default_sample_motion_model_id_);
     declare_parameter("first_map_only", true);
+    declare_parameter("laser_scan_topic_", "scan");
+    declare_parameter("odom_frame_id", "odom");
 }
 
 LocalizationServer::~LocalizationServer()
@@ -23,17 +26,21 @@ nav2_util::CallbackReturn
 LocalizationServer::on_configure(const rclcpp_lifecycle::State & state)
 {
     RCLCPP_INFO(get_logger(), "Configuring localization interface");
+    
+    auto node = shared_from_this();
 
+    get_parameter("sample_motion_model_id", sample_motion_model_id_);
+    get_parameter("first_map_only", first_map_only_);
+    get_parameter("laser_scan_topic", scan_topic_);
+    get_parameter("odom_frame_id", odom_frame_id_);
+    
+    odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
+    
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
         "map", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
         std::bind(&LocalizationServer::mapReceived, this, std::placeholders::_1));
 
-    get_parameter("sample_motion_model_id", sample_motion_model_id_);
-    get_parameter("first_map_only", first_map_only_);
-
     // TODO: Add matcher
-
-    auto node = shared_from_this();
 
     try {
         sample_motion_model_type_ = nav2_util::get_plugin_type_param(node, sample_motion_model_id_);
@@ -52,6 +59,9 @@ nav2_util::CallbackReturn
 LocalizationServer::on_cleanup(const rclcpp_lifecycle::State & state)
 {
     odom_sub_.reset();
+    laser_scan_connection_.disconnect();
+    laser_scan_filter_.reset();
+    laser_scan_sub_.reset();
 
     return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -79,6 +89,21 @@ LocalizationServer::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr ms
     }
     map_ = *msg;
     first_map_received_ = true;
+}
+
+void
+LocalizationServer::initMessageFilters()
+{
+    laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
+        rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
+
+    laser_scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
+        *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_);
+
+    laser_scan_connection_ = laser_scan_filter_->registerCallback(
+        std::bind(
+            &LocalizationServer::laserReceived,
+            this, std::placeholders::_1));
 }
 
 } //nav2_localiztion

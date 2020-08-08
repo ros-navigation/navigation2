@@ -9,6 +9,9 @@ find_package(geometry_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav_2d_utils REQUIRED)
+find_package(message_filters REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 set(dependencies
   rclcpp
@@ -17,6 +20,9 @@ set(dependencies
   pluginlib
   nav2_util
   nav_2d_utils
+  message_filters
+  sensor_msgs
+  tf2_ros
 )
 
 include_directories(
