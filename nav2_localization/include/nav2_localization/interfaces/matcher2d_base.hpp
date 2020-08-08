@@ -2,8 +2,8 @@
 #define NAV2_LOCALIZATION__MATCHER2D_BASE_HPP_
 
 #include "geometry_msgs/msg/pose.hpp"
-#include "sensor_msgs/msg/LaserScan.hpp"
-#include "nav_msgs/msg/OccupancyGrid.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 namespace nav2_localization_base
 {
@@ -22,12 +22,12 @@ public:
      * @param scan 2D laser-like measurement
      * @param pose Hypothesis on the robot's pose
      * @param map 2D occupancy grid map of the environment where the robot is
-     * @return Score of how likely is it to perceive the inputted measurement assuming that the robot is in the given pose inside the provided map
+     * @return Probability of how likely is it to perceive the inputted measurement assuming that the robot is in the given pose inside the provided map
      */
 	virtual float getLikelihood(
-		const sensor_msgs::LaserScan& scan,
+		const sensor_msgs::msg::LaserScan& scan,
 		const geometry_msgs::msg::Pose& pose,
-		const nav_msgs::OccupancyGrid& map) = -1;
+		const nav_msgs::msg::OccupancyGrid& map) = 0;
 
 protected:
     Matcher2d(){}

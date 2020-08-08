@@ -1,0 +1,21 @@
+#include "pluginlib/class_list_macros.hpp"
+#include "nav2_localization/interfaces/solver_base.hpp"
+#include "nav2_localization/plugins/solver_plugins.hpp"
+
+namespace nav2_localization_plugins
+{
+
+geometry_msgs::msg::PoseWithCovariance DummySolver2d::localize(
+	const nav2_localization_base::SampleMotionModel& motionSampler,
+	const nav2_localization_base::Matcher2d& matcher,
+	const nav_msgs::msg::Odometry& curr_odom,
+	const sensor_msgs::msg::LaserScan& scan,
+	const nav_msgs::msg::OccupancyGrid& map)
+{
+    geometry_msgs::msg::PoseWithCovariance dummy_pose{};
+    return dummy_pose;
+}
+
+} // nav2_localization_plugins
+
+PLUGINLIB_EXPORT_CLASS(nav2_localization_plugins::DummySolver2d, nav2_localization_base::Solver)
