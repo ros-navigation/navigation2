@@ -40,6 +40,8 @@
 #include <limits>
 #include <map>
 #include <vector>
+#include <algorithm>
+#include <utility>
 
 #include "nav2_costmap_2d/costmap_math.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
@@ -163,7 +165,7 @@ InflationLayer::updateCosts(
   }
 
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)
-  for (auto & dist:inflation_cells_) {
+  for (auto & dist : inflation_cells_) {
     RCLCPP_FATAL_EXPRESSION(
       rclcpp::get_logger("nav2_costmap_2d"),
       !dist.empty(), "The inflation list must be empty at the beginning of inflation");
@@ -215,9 +217,10 @@ InflationLayer::updateCosts(
   // Process cells by increasing distance; new cells are appended to the
   // corresponding distance bin, so they
   // can overtake previously inserted but farther away cells
-  for (const auto & dist_bin: inflation_cells_) {
+  for (const auto & dist_bin : inflation_cells_) {
     for (std::size_t i = 0; i < dist_bin.size(); ++i) {
-      // Do not use iterator or for-range based loops to iterate though dist_bin, since it's size might
+      // Do not use iterator or for-range based loops to
+      // iterate though dist_bin, since it's size might
       // change when a new cell is enqueued, invalidating all iterators
       unsigned int index = dist_bin[i].index_;
 
@@ -260,7 +263,7 @@ InflationLayer::updateCosts(
     }
   }
 
-  for (auto & dist:inflation_cells_) {
+  for (auto & dist : inflation_cells_) {
     dist.clear();
     dist.reserve(200);
   }
