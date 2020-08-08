@@ -7,6 +7,8 @@
 #include "nav_2d_utils/odom_subscriber.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
+#include "nav2_localization/interfaces/matcher2d_base.hpp"
+#include "nav2_localization/interfaces/solver_base.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "message_filters/subscriber.h"
 #include "sensor_msgs/msg/laser_scan.hpp"
@@ -106,6 +108,8 @@ protected:
     std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
     message_filters::Connection laser_scan_connection_;
 
+    void initPlugins();
+
     // Sample Motion Model Plugin
     pluginlib::ClassLoader<nav2_localization_base::SampleMotionModel> sample_motion_model_loader_;
     nav2_localization_base::SampleMotionModel::Ptr sample_motion_model_;
@@ -114,7 +118,18 @@ protected:
     std::string sample_motion_model_type_;
 
     // Matcher Plugin
-    // TODO
+    pluginlib::ClassLoader<nav2_localization_base::Matcher2d> matcher2d_loader_;
+    nav2_localization_base::Matcher2d::Ptr matcher2d_;
+    std::string default_matcher2d_id_;
+    std::string matcher2d_id_;
+    std::string matcher2d_type_;
+
+    // Solver Plugin
+    pluginlib::ClassLoader<nav2_localization_base::Solver> solver_loader_;
+    nav2_localization_base::Solver::Ptr solver_;
+    std::string default_solver_id_;
+    std::string solver_id_;
+    std::string solver_type_;
 
 };
 
