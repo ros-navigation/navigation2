@@ -37,7 +37,7 @@ TEST(testPluginMap, Failures)
 {
   auto obj = std::make_shared<nav2_system_tests::NavFnPlannerTester>();
   rclcpp_lifecycle::State state;
-  obj->set_parameter(rclcpp::Parameter("expected_planner_frequency", 0.0001));
+  obj->set_parameter(rclcpp::Parameter("expected_planner_frequency", 100000.0));
   obj->onConfigure(state);
   obj->create_subscription<nav_msgs::msg::Path>(
     "plan", rclcpp::SystemDefaultsQoS(), callback);

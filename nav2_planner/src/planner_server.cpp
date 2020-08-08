@@ -233,7 +233,6 @@ PlannerServer::computePlan()
     }
 
     if (action_server_->is_preempt_requested()) {
-      RCLCPP_INFO(get_logger(), "Preempting the goal pose.");
       goal = action_server_->accept_pending_goal();
     }
 

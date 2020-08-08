@@ -319,11 +319,11 @@ NavfnPlanner::getPlanFromPotential(
 
   int path_len = planner_->calcPath(costmap_->getSizeInCellsX() * 4);
   if (path_len == 0) {
-    RCLCPP_DEBUG(node_->get_logger(), "No path found\n");
     return false;
   }
 
-  RCLCPP_DEBUG(node_->get_logger(), "Path found, %d steps\n", path_len);
+  auto cost = planner_->getLastPathCost();
+  RCLCPP_DEBUG(node_->get_logger(), "Path found, %d steps, %f cost\n", path_len, cost);
 
   // extract the plan
   float * x = planner_->getPathX();
@@ -402,10 +402,6 @@ bool
 NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
 {
   if (wx < costmap_->getOriginX() || wy < costmap_->getOriginY()) {
-    RCLCPP_ERROR(
-      node_->get_logger(), "worldToMap failed: wx,wy: %f,%f, "
-      "size_x,size_y: %d,%d", wx, wy,
-      costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
     return false;
   }
 

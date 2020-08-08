@@ -258,13 +258,13 @@ public:
 
   /** display callback */
   /**< <n> is the number of cycles between updates  */
-  void display(void fn(NavFn * nav), int n = 100);
-  int displayInt;  /**< save second argument of display() above */
-  void (* displayFn)(NavFn * nav);  /**< display function itself */
+  // void display(void fn(NavFn * nav), int n = 100);
+  // int displayInt;  /**< save second argument of display() above */
+  // void (* displayFn)(NavFn * nav);  /**< display function itself */
 
   /** save costmap */
   /**< write out costmap and start/goal states as fname.pgm and fname.txt */
-  void savemap(const char * fname);
+  // void savemap(const char * fname);
 };
 
 }  // namespace nav2_navfn_planner
