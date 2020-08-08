@@ -1,5 +1,6 @@
 #include "nav2_localization/nav2_localization.hpp"
 #include "nav2_util/string_utils.hpp"
+#include "tf2_ros/create_timer_ros.h"
 
 namespace nav2_localization
 {
@@ -29,18 +30,17 @@ LocalizationServer::on_configure(const rclcpp_lifecycle::State & state)
     
     auto node = shared_from_this();
 
-    get_parameter("sample_motion_model_id", sample_motion_model_id_);
-    get_parameter("first_map_only", first_map_only_);
-    get_parameter("laser_scan_topic", scan_topic_);
-    get_parameter("odom_frame_id", odom_frame_id_);
+    initParameters();
+    initTransforms();
+    initMessageFilters();
+    initPubSub();
     
-    odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
     
-    map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
-        "map", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-        std::bind(&LocalizationServer::mapReceived, this, std::placeholders::_1));
+    
+    
 
     // TODO: Add matcher
+
 
     try {
         sample_motion_model_type_ = nav2_util::get_plugin_type_param(node, sample_motion_model_id_);
@@ -50,7 +50,9 @@ LocalizationServer::on_configure(const rclcpp_lifecycle::State & state)
         exit(-1);
     }
 
+    // IS THIS ACTUALLY NEEDED?
     odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
+
 
     return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -81,6 +83,17 @@ LocalizationServer::on_shutdown(const rclcpp_lifecycle::State &)
 }
 
 void
+LocalizationServer::initParameters()
+{
+    get_parameter("sample_motion_model_id", sample_motion_model_id_);
+    get_parameter("first_map_only", first_map_only_);
+    get_parameter("laser_scan_topic", scan_topic_);
+    get_parameter("odom_frame_id", odom_frame_id_);
+
+    odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
+}
+
+void
 LocalizationServer::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
     RCLCPP_DEBUG(get_logger(), "A new map was received.");
@@ -104,6 +117,33 @@ LocalizationServer::initMessageFilters()
         std::bind(
             &LocalizationServer::laserReceived,
             this, std::placeholders::_1));
+}
+
+void
+LocalizationServer::initTransforms()
+{
+    // Initilize transform listener and broadcaster
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(rclcpp_node_->get_clock());
+    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+        rclcpp_node_->get_node_base_interface(),
+        rclcpp_node_->get_node_timers_interface());
+    tf_buffer_->setCreateTimerInterface(timer_interface);
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(rclcpp_node_);
+}
+
+void
+LocalizationServer::initPubSub()
+{
+    map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
+        "map", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+        std::bind(&LocalizationServer::mapReceived, this, std::placeholders::_1));
+}
+
+void
+LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
+{
+
 }
 
 } //nav2_localiztion
