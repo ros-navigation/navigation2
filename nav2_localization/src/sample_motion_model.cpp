@@ -8,10 +8,24 @@ namespace nav2_localization_plugins
 geometry_msgs::msg::Pose DummyMotionSampler::getMostLikelyPose(
         const nav_msgs::msg::Odometry& prev_odom,
         const nav_msgs::msg::Odometry& curr_odom,
-        const geometry_msgs::msg::Pose prev_pose)
+        const geometry_msgs::msg::Pose& prev_pose)
 {
     geometry_msgs::msg::Pose dummy_pose{};
     return dummy_pose;
+}
+
+void DummyMotionSampler::configure(
+        const double& alpha1,
+        const double& alpha2,
+        const double& alpha3,
+        const double& alpha4,
+        const double& alpha5)
+{
+    alpha1_ = alpha1;
+    alpha2_ = alpha2;
+    alpha3_ = alpha3;
+    alpha4_ = alpha4;
+    alpha5_ = alpha5;
 }
 
 } // nav2_localization_plugins

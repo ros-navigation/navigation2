@@ -7,10 +7,14 @@
 #include "nav_2d_utils/odom_subscriber.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
+#include "nav2_localization/interfaces/matcher2d_base.hpp"
+#include "nav2_localization/interfaces/solver_base.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "message_filters/subscriber.h"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "tf2_ros/message_filter.h"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_listener.h"
 
 namespace nav2_localization
 {
@@ -74,6 +78,9 @@ protected:
      */
     nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
+    void initParameters();
+    void initPubSub();
+
     // Map
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
     void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
@@ -86,11 +93,13 @@ protected:
     void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
 
     // Transforms
+    void initTransforms();
+    std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 
     // Odometry
     std::string odom_frame_id_;
-    std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
     
     // Message filters
     void initMessageFilters();
@@ -98,15 +107,33 @@ protected:
     std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
     message_filters::Connection laser_scan_connection_;
 
+    void initPlugins();
+
     // Sample Motion Model Plugin
     pluginlib::ClassLoader<nav2_localization_base::SampleMotionModel> sample_motion_model_loader_;
     nav2_localization_base::SampleMotionModel::Ptr sample_motion_model_;
     std::string default_sample_motion_model_id_;
     std::string sample_motion_model_id_;
     std::string sample_motion_model_type_;
+    double alpha1_;
+    double alpha2_;
+    double alpha3_;
+    double alpha4_;
+    double alpha5_;
 
     // Matcher Plugin
-    // TODO
+    pluginlib::ClassLoader<nav2_localization_base::Matcher2d> matcher2d_loader_;
+    nav2_localization_base::Matcher2d::Ptr matcher2d_;
+    std::string default_matcher2d_id_;
+    std::string matcher2d_id_;
+    std::string matcher2d_type_;
+
+    // Solver Plugin
+    pluginlib::ClassLoader<nav2_localization_base::Solver> solver_loader_;
+    nav2_localization_base::Solver::Ptr solver_;
+    std::string default_solver_id_;
+    std::string solver_id_;
+    std::string solver_type_;
 
 };
 
