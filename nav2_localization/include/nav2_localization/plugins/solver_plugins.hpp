@@ -26,6 +26,10 @@ public:
 		const nav_msgs::msg::Odometry& curr_odom,
 		const sensor_msgs::msg::LaserScan& scan,
 		const nav_msgs::msg::OccupancyGrid& map);
+
+	void configure(
+		const nav_msgs::msg::Odometry& init_odom=nav_msgs::msg::Odometry{},
+		const geometry_msgs::msg::Pose& init_pose=geometry_msgs::msg::Pose{});
 };
 } // nav2_localization_plugins
 

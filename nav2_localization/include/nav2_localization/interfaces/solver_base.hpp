@@ -40,12 +40,16 @@ public:
 		const sensor_msgs::msg::LaserScan& scan,
 		const nav_msgs::msg::OccupancyGrid& map) = 0;
 
+	virtual void configure(
+		const nav_msgs::msg::Odometry& init_odom=nav_msgs::msg::Odometry{},
+		const geometry_msgs::msg::Pose& init_pose=geometry_msgs::msg::Pose{}) = 0;
+
 protected:
 	Solver(){}
 
 private:
-	const nav_msgs::msg::Odometry& prev_odom, // Previous pose odometry-based estimation
-	const geometry_msgs::msg::Pose& prev_pose, // Previous pose estimation
+	nav_msgs::msg::Odometry prev_odom; // Previous pose odometry-based estimation
+	geometry_msgs::msg::Pose prev_pose; // Previous pose estimation
 	
 };
 } // nav2_localization_base
