@@ -1,6 +1,10 @@
+#include <chrono>
+
 #include "nav2_localization/nav2_localization.hpp"
 #include "nav2_util/string_utils.hpp"
 #include "tf2_ros/create_timer_ros.h"
+
+using namespace std::chrono_literals;
 
 namespace nav2_localization
 {
@@ -51,6 +55,8 @@ LocalizationServer::on_configure(const rclcpp_lifecycle::State & state)
 nav2_util::CallbackReturn
 LocalizationServer::on_cleanup(const rclcpp_lifecycle::State & state)
 {
+    initial_pose_sub_.reset();
+
     // Laser Scan
     laser_scan_connection_.disconnect();
     laser_scan_filter_.reset();
@@ -60,6 +66,16 @@ LocalizationServer::on_cleanup(const rclcpp_lifecycle::State & state)
     tf_broadcaster_.reset();
     tf_listener_.reset();
     tf_buffer_.reset();
+
+    return nav2_util::CallbackReturn::SUCCESS;
+}
+
+nav2_util::CallbackReturn
+LocalizationServer::on_activate(const rclcpp_lifecycle::State & state)
+{
+    // Keep track of whether we're in the active state. We won't
+    // process incoming callbacks until we are
+    active_ = true;
 
     return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -95,6 +111,8 @@ LocalizationServer::initParameters()
     get_parameter("alpha1", alpha5_);
 
     odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
+
+    last_time_printed_msg_ = now();
 }
 
 void
@@ -142,6 +160,10 @@ LocalizationServer::initPubSub()
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
         "map", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
         std::bind(&LocalizationServer::mapReceived, this, std::placeholders::_1));
+
+    initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+        "initialpose", rclcpp::SystemDefaultsQoS(),
+        std::bind(&LocalizationServer::initialPoseReceived, this, std::placeholders::_1));
 }
 
 void
@@ -168,7 +190,7 @@ LocalizationServer::initPlugins()
     }
 
     // TODO
-    matcher2d_id_->configure();
+    // matcher2d__->configure();
 
     try {
         solver_type_ = nav2_util::get_plugin_type_param(node, solver_id_);
@@ -178,14 +200,43 @@ LocalizationServer::initPlugins()
         exit(-1);
     }
 
+    solver_->configure();
+}
+
+void
+LocalizationServer::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+{
     // TODO
-    solver_->confgiure();
+}
+
+bool
+LocalizationServer::checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time last_time)
+{
+    rclcpp::Duration elapsed_time = now() - last_time;
+    if (elapsed_time.nanoseconds() * 1e-9 > check_interval.count()) {
+        return true;
+    }
+    return false;
 }
 
 void
 LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
+    // Since the sensor data is continually being published by the simulator or robot,
+    // we don't want our callbacks to fire until we're in the active state
+    if (!active_) {return;}
+    if (!first_map_received_) {
+        if (checkElapsedTime(2s, last_time_printed_msg_)) {
+            RCLCPP_WARN(get_logger(), "Waiting for map....");
+            last_time_printed_msg_ = now();
+        }
+        return;
+    }
 
+    std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
+    last_laser_received_ts_ = now();
+    int laser_index = -1;
+    geometry_msgs::msg::PoseStamped laser_pose; 
 }
 
 } //nav2_localiztion
