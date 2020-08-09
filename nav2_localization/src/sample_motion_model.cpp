@@ -14,6 +14,20 @@ geometry_msgs::msg::Pose DummyMotionSampler::getMostLikelyPose(
     return dummy_pose;
 }
 
+void DummyMotionSampler::configure(
+        const double& alpha1,
+        const double& alpha2,
+        const double& alpha3,
+        const double& alpha4,
+        const double& alpha5)
+{
+    alpha1_ = alpha1;
+    alpha2_ = alpha2;
+    alpha3_ = alpha3;
+    alpha4_ = alpha4;
+    alpha5_ = alpha5;
+}
+
 } // nav2_localization_plugins
 
 PLUGINLIB_EXPORT_CLASS(nav2_localization_plugins::DummyMotionSampler, nav2_localization_base::SampleMotionModel)

@@ -100,7 +100,6 @@ protected:
 
     // Odometry
     std::string odom_frame_id_;
-    std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
     
     // Message filters
     void initMessageFilters();
@@ -116,6 +115,11 @@ protected:
     std::string default_sample_motion_model_id_;
     std::string sample_motion_model_id_;
     std::string sample_motion_model_type_;
+    double alpha1_;
+    double alpha2_;
+    double alpha3_;
+    double alpha4_;
+    double alpha5_;
 
     // Matcher Plugin
     pluginlib::ClassLoader<nav2_localization_base::Matcher2d> matcher2d_loader_;

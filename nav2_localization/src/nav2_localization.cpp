@@ -22,6 +22,11 @@ LocalizationServer::LocalizationServer()
     declare_parameter("first_map_only", true);
     declare_parameter("laser_scan_topic_", "scan");
     declare_parameter("odom_frame_id", "odom");
+    declare_parameter("alpha1", 0.2);
+    declare_parameter("alpha2", 0.2);
+    declare_parameter("alpha3", 0.2);
+    declare_parameter("alpha4", 0.2);
+    declare_parameter("alpha5", 0.2);
 }
 
 LocalizationServer::~LocalizationServer()
@@ -40,17 +45,12 @@ LocalizationServer::on_configure(const rclcpp_lifecycle::State & state)
     initPubSub();
     initPlugins();
 
-    // IS THIS ACTUALLY NEEDED?
-    odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
-
     return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
 LocalizationServer::on_cleanup(const rclcpp_lifecycle::State & state)
 {
-    odom_sub_.reset();
-
     // Laser Scan
     laser_scan_connection_.disconnect();
     laser_scan_filter_.reset();
@@ -87,6 +87,12 @@ LocalizationServer::initParameters()
     get_parameter("first_map_only", first_map_only_);
     get_parameter("laser_scan_topic", scan_topic_);
     get_parameter("odom_frame_id", odom_frame_id_);
+
+    get_parameter("alpha1", alpha1_);
+    get_parameter("alpha1", alpha2_);
+    get_parameter("alpha1", alpha3_);
+    get_parameter("alpha1", alpha4_);
+    get_parameter("alpha1", alpha5_);
 
     odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
 }
@@ -151,6 +157,8 @@ LocalizationServer::initPlugins()
         exit(-1);
     }
 
+    sample_motion_model_->configure(alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
+
     try {
         matcher2d_type_ = nav2_util::get_plugin_type_param(node, matcher2d_id_);
         matcher2d_ = matcher2d_loader_.createUniqueInstance(sample_motion_model_type_);
@@ -159,6 +167,9 @@ LocalizationServer::initPlugins()
         exit(-1);
     }
 
+    // TODO
+    matcher2d_id_->configure();
+
     try {
         solver_type_ = nav2_util::get_plugin_type_param(node, solver_id_);
         solver_ = solver_loader_.createUniqueInstance(solver_type_);
@@ -166,6 +177,9 @@ LocalizationServer::initPlugins()
         RCLCPP_FATAL(get_logger(), "Failed to create solver. Exception: %s", ex.what());
         exit(-1);
     }
+
+    // TODO
+    solver_->confgiure();
 }
 
 void

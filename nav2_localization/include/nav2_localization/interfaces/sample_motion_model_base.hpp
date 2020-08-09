@@ -28,8 +28,22 @@ public:
         const nav_msgs::msg::Odometry& curr_odom,
         const geometry_msgs::msg::Pose& prev_pose) = 0;
 
+    virtual void configure(
+        const double& alpha1,
+        const double& alpha2,
+        const double& alpha3,
+        const double& alpha4,
+        const double& alpha5) = 0;
+
 protected:
     SampleMotionModel(){}
+
+    // Noise parameters
+    double alpha1_;
+    double alpha2_;
+    double alpha3_;
+    double alpha4_;
+    double alpha5_;
 };  
 } // nav2_localization_base
 
