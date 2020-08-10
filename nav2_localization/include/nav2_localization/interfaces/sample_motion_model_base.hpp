@@ -14,6 +14,8 @@ namespace nav2_localization
 class SampleMotionModel
 {   
 public:
+    SampleMotionModel(){}
+
     using Ptr = std::shared_ptr<nav2_localization::SampleMotionModel>;
 
     /**
@@ -36,8 +38,6 @@ public:
         const double& alpha5) = 0;
 
 protected:
-    SampleMotionModel(){}
-
     // Noise parameters
     double alpha1_;
     double alpha2_;

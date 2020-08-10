@@ -15,6 +15,8 @@ namespace nav2_localization
 class Matcher2d
 {
 public:
+    Matcher2d(){}
+
 	using Ptr = std::shared_ptr<nav2_localization::Matcher2d>;
 
     /**
@@ -28,9 +30,6 @@ public:
 		const sensor_msgs::msg::LaserScan& scan,
 		const geometry_msgs::msg::Pose& pose,
 		const nav_msgs::msg::OccupancyGrid& map) = 0;
-
-protected:
-    Matcher2d(){}
 };  
 } // nav2_localization
 

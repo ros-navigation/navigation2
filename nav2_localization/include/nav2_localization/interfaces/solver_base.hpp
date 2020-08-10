@@ -22,6 +22,8 @@ namespace nav2_localization
 class Solver
 {
 public:
+	Solver(){}
+
 	using Ptr = std::shared_ptr<nav2_localization::Solver>;
 
 	/**
@@ -43,9 +45,6 @@ public:
 	virtual void configure(
 		const nav_msgs::msg::Odometry& init_odom=nav_msgs::msg::Odometry{},
 		const geometry_msgs::msg::Pose& init_pose=geometry_msgs::msg::Pose{}) = 0;
-
-protected:
-	Solver(){}
 
 private:
 	nav_msgs::msg::Odometry prev_odom; // Previous pose odometry-based estimation
