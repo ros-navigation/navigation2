@@ -15,6 +15,8 @@
 #include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_localization
 {
@@ -91,6 +93,8 @@ protected:
     // Laser scan
     std::string scan_topic_;
     void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
+    std::map<std::string, int> frame_to_laser_;
+    rclcpp::Time last_laser_received_ts_;
 
     // Transforms
     void initTransforms();
@@ -135,6 +139,15 @@ protected:
     std::string solver_id_;
     std::string solver_type_;
 
+    // Publishers and Subscribers
+    rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
+    initial_pose_sub_;
+    void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+
+    bool checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time last_time);
+    rclcpp::Time last_time_printed_msg_;
+
+    std::atomic<bool> active_{false};
 };
 
 }

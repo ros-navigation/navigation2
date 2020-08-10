@@ -2,14 +2,14 @@
 #define NAV2_LOCALIZATION__SOLVER_BASE_HPP_
 
 // Other Interfaces
-#include "nav2_localization/interfaces/motion_model_base.hpp"
+#include "nav2_localization/interfaces/sample_motion_model_base.hpp"
 #include "nav2_localization/interfaces/matcher2d_base.hpp"
 
 // Types
 #include "geometry_msgs/msg/pose_with_covariance.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose.hpp"
-#include "sensor_msgs/msg/laser_Scan.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
 namespace nav2_localization
