@@ -123,8 +123,11 @@ public:
   const std::vector<geometry_msgs::msg::Point> & getFootprint() const;
 
   /** @brief Convenience functions for declaring ROS parameters */
-  void declareParameter(const std::string & param_name, const rclcpp::ParameterValue & value);
-  bool hasParameter(const std::string & param_name);
+  void declareParameter(
+    const std::string & param_name,
+    const rclcpp::ParameterValue & value);
+  bool hasParameter(
+    const std::string & param_name);
   void undeclareAllParameters();
   std::string getFullName(const std::string & param_name);
 
@@ -132,16 +135,19 @@ protected:
   LayeredCostmap * layered_costmap_;
   std::string name_;
   tf2_ros::Buffer * tf_;
-  nav2_util::LifecycleNode::SharedPtr node_;
   rclcpp::Node::SharedPtr client_node_;
   rclcpp::Node::SharedPtr rclcpp_node_;
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
+  rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface_;
+  rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph_interface_;
+  rclcpp::node_interfaces::NodeParametersInterface::SharedPtr node_parameters_interface_;
 
   /** @brief This is called at the end of initialize().  Override to
    * implement subclass-specific initialization.
    *
    * tf_, name_, and layered_costmap_ will all be set already when this is called.
    */
-  virtual void onInitialize() {}
+  virtual void onInitialize(const nav2_util::LifecycleNode::SharedPtr /*node*/) {}
 
   bool current_;
   // Currently this var is managed by subclasses.

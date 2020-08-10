@@ -116,7 +116,8 @@ Costmap2DROS::Costmap2DROS(
 
 Costmap2DROS::~Costmap2DROS()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
+  delete layered_costmap_;
+  layered_costmap_ = nullptr;
 }
 
 nav2_util::CallbackReturn
@@ -166,7 +167,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   footprint_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
     "published_footprint", rclcpp::SystemDefaultsQoS());
 
-  costmap_publisher_ = new Costmap2DPublisher(
+  costmap_publisher_ = std::make_shared<Costmap2DPublisher>(
     shared_from_this(),
     layered_costmap_->getCostmap(), global_frame_,
     "costmap", always_send_full_costmap_);
@@ -264,11 +265,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   footprint_sub_.reset();
   footprint_pub_.reset();
 
-  if (costmap_publisher_ != nullptr) {
-    delete costmap_publisher_;
-    costmap_publisher_ = nullptr;
-  }
-
+  costmap_publisher_.reset();
   clear_costmap_service_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;

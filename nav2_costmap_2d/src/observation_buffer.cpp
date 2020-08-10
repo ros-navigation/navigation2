@@ -47,15 +47,21 @@
 namespace nav2_costmap_2d
 {
 ObservationBuffer::ObservationBuffer(
-  nav2_util::LifecycleNode::SharedPtr nh, std::string topic_name, double observation_keep_time,
+  const nav2_util::LifecycleNode::SharedPtr node,
+  std::string topic_name,
+  double observation_keep_time,
   double expected_update_rate,
   double min_obstacle_height, double max_obstacle_height, double obstacle_range,
   double raytrace_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
   std::string sensor_frame, double tf_tolerance)
-: tf2_buffer_(tf2_buffer),
+: node_logging_interface_(node->get_node_logging_interface()),
+  node_clock_interface_(node->get_node_clock_interface()),
+  tf2_buffer_(tf2_buffer),
   observation_keep_time_(rclcpp::Duration::from_seconds(observation_keep_time)),
-  expected_update_rate_(rclcpp::Duration::from_seconds(expected_update_rate)), nh_(nh),
-  last_updated_(nh->now()), global_frame_(global_frame), sensor_frame_(sensor_frame),
+  expected_update_rate_(rclcpp::Duration::from_seconds(expected_update_rate)),
+  last_updated_(node->now()),
+  global_frame_(global_frame),
+  sensor_frame_(sensor_frame),
   topic_name_(topic_name),
   min_obstacle_height_(min_obstacle_height), max_obstacle_height_(max_obstacle_height),
   obstacle_range_(obstacle_range), raytrace_range_(raytrace_range), tf_tolerance_(tf_tolerance)
@@ -68,7 +74,7 @@ ObservationBuffer::~ObservationBuffer()
 
 bool ObservationBuffer::setGlobalFrame(const std::string new_global_frame)
 {
-  rclcpp::Time transform_time = nh_->now();
+  rclcpp::Time transform_time = node_clock_interface_->get_clock()->now();
   std::string tf_error;
 
   geometry_msgs::msg::TransformStamped transformStamped;
@@ -200,7 +206,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
   }
 
   // if the update was successful, we want to update the last updated time
-  last_updated_ = nh_->now();
+  last_updated_ = node_clock_interface_->get_clock()->now();
 
   // we'll also remove any stale observations from the list
   purgeStaleObservations();
@@ -234,7 +240,9 @@ void ObservationBuffer::purgeStaleObservations()
       Observation & obs = *obs_it;
       // check if the observation is out of date... and if it is,
       // remove it and those that follow from the list
-      if ((nh_->now() - obs.cloud_->header.stamp) > observation_keep_time_) {
+      if ((node_clock_interface_->get_clock()->now() - obs.cloud_->header.stamp) >
+        observation_keep_time_)
+      {
         observation_list_.erase(obs_it, observation_list_.end());
         return;
       }
@@ -248,20 +256,22 @@ bool ObservationBuffer::isCurrent() const
     return true;
   }
 
-  bool current = (nh_->now() - last_updated_) <= expected_update_rate_;
+  bool current = (node_clock_interface_->get_clock()->now() - last_updated_) <=
+    expected_update_rate_;
   if (!current) {
     RCLCPP_WARN(
       rclcpp::get_logger(
         "nav2_costmap_2d"),
       "The %s observation buffer has not been updated for %.2f seconds, and it should be updated every %.2f seconds.", //NOLINT
       topic_name_.c_str(),
-      (nh_->now() - last_updated_).seconds(), expected_update_rate_.seconds());
+      (node_clock_interface_->get_clock()->now() - last_updated_).seconds(),
+      expected_update_rate_.seconds());
   }
   return current;
 }
 
 void ObservationBuffer::resetLastUpdated()
 {
-  last_updated_ = nh_->now();
+  last_updated_ = node_clock_interface_->get_clock()->now();
 }
 }  // namespace nav2_costmap_2d

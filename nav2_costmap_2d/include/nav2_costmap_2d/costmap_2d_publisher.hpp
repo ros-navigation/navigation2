@@ -67,7 +67,7 @@ public:
    * @brief  Constructor for the Costmap2DPublisher
    */
   Costmap2DPublisher(
-    nav2_util::LifecycleNode::SharedPtr ros_node,
+    const nav2_util::LifecycleNode::SharedPtr node,
     Costmap2D * costmap,
     std::string global_frame,
     std::string topic_name,
@@ -130,7 +130,10 @@ private:
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response);
 
-  nav2_util::LifecycleNode::SharedPtr node_;
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
+  rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface_;
+  rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph_interface_;
+
   Costmap2D * costmap_;
   std::string global_frame_;
   std::string topic_name_;

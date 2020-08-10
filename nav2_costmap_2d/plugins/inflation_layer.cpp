@@ -74,7 +74,7 @@ InflationLayer::InflationLayer()
 }
 
 void
-InflationLayer::onInitialize()
+InflationLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr node)
 {
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("inflation_radius", rclcpp::ParameterValue(0.55));
@@ -82,11 +82,11 @@ InflationLayer::onInitialize()
   declareParameter("inflate_unknown", rclcpp::ParameterValue(false));
   declareParameter("inflate_around_unknown", rclcpp::ParameterValue(false));
 
-  node_->get_parameter(name_ + "." + "enabled", enabled_);
-  node_->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
-  node_->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
-  node_->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
-  node_->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
+  node->get_parameter(name_ + "." + "enabled", enabled_);
+  node->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
+  node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
+  node->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
+  node->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
 
   current_ = true;
   seen_.clear();

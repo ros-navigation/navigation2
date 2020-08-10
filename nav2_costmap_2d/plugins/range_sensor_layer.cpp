@@ -57,49 +57,49 @@ namespace nav2_costmap_2d
 
 RangeSensorLayer::RangeSensorLayer() {}
 
-void RangeSensorLayer::onInitialize()
+void RangeSensorLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr node)
 {
   current_ = true;
   buffered_readings_ = 0;
-  last_reading_time_ = node_->now();
+  last_reading_time_ = node->now();
   default_value_ = to_cost(0.5);
 
   matchSize();
   resetRange();
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
-  node_->get_parameter(name_ + "." + "enabled", enabled_);
+  node->get_parameter(name_ + "." + "enabled", enabled_);
   declareParameter("phi", rclcpp::ParameterValue(1.2));
-  node_->get_parameter(name_ + "." + "phi", phi_v_);
+  node->get_parameter(name_ + "." + "phi", phi_v_);
   declareParameter("inflate_cone", rclcpp::ParameterValue(1.0));
-  node_->get_parameter(name_ + "." + "phi", phi_v_);
+  node->get_parameter(name_ + "." + "phi", phi_v_);
   declareParameter("no_readings_timeout", rclcpp::ParameterValue(0.0));
-  node_->get_parameter(name_ + "." + "no_readings_timeout", no_readings_timeout_);
+  node->get_parameter(name_ + "." + "no_readings_timeout", no_readings_timeout_);
   declareParameter("clear_threshold", rclcpp::ParameterValue(0.2));
-  node_->get_parameter(name_ + "." + "clear_threshold", clear_threshold_);
+  node->get_parameter(name_ + "." + "clear_threshold", clear_threshold_);
   declareParameter("mark_threshold", rclcpp::ParameterValue(0.8));
-  node_->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
+  node->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
   declareParameter("clear_on_max_reading", rclcpp::ParameterValue(false));
-  node_->get_parameter(name_ + "." + "clear_on_max_reading", clear_on_max_reading_);
+  node->get_parameter(name_ + "." + "clear_on_max_reading", clear_on_max_reading_);
 
   double temp_tf_tol = 0.0;
-  node_->get_parameter("transform_tolerance", temp_tf_tol);
+  node->get_parameter("transform_tolerance", temp_tf_tol);
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 
   std::vector<std::string> topic_names{};
   declareParameter("topics", rclcpp::ParameterValue(topic_names));
-  node_->get_parameter(name_ + "." + "topics", topic_names);
+  node->get_parameter(name_ + "." + "topics", topic_names);
 
   InputSensorType input_sensor_type = InputSensorType::ALL;
   std::string sensor_type_name;
   declareParameter("input_sensor_type", rclcpp::ParameterValue("ALL"));
-  node_->get_parameter(name_ + "." + "input_sensor_type", sensor_type_name);
+  node->get_parameter(name_ + "." + "input_sensor_type", sensor_type_name);
 
   std::transform(
     sensor_type_name.begin(), sensor_type_name.end(),
     sensor_type_name.begin(), ::toupper);
   RCLCPP_INFO(
-    node_->get_logger(), "%s: %s as input_sensor_type given",
+    node->get_logger(), "%s: %s as input_sensor_type given",
     name_.c_str(), sensor_type_name.c_str());
 
   if (sensor_type_name == "VARIABLE") {
@@ -110,14 +110,14 @@ void RangeSensorLayer::onInitialize()
     input_sensor_type = InputSensorType::ALL;
   } else {
     RCLCPP_ERROR(
-      node_->get_logger(), "%s: Invalid input sensor type: %s. Defaulting to ALL.",
+      node->get_logger(), "%s: Invalid input sensor type: %s. Defaulting to ALL.",
       name_.c_str(), sensor_type_name.c_str());
   }
 
   // Validate topic names list: it must be a (normally non-empty) list of strings
   if (topic_names.empty()) {
     RCLCPP_FATAL(
-      node_->get_logger(), "Invalid topic names list: it must"
+      node->get_logger(), "Invalid topic names list: it must"
       "be a non-empty list of strings");
     return;
   }
@@ -138,19 +138,19 @@ void RangeSensorLayer::onInitialize()
         std::placeholders::_1);
     } else {
       RCLCPP_ERROR(
-        node_->get_logger(),
+        node->get_logger(),
         "%s: Invalid input sensor type: %s. Did you make a new type"
         "and forgot to choose the subscriber for it?",
         name_.c_str(), sensor_type_name.c_str());
     }
     range_subs_.push_back(
-      node_->create_subscription<sensor_msgs::msg::Range>(
+      node->create_subscription<sensor_msgs::msg::Range>(
         topic_name, rclcpp::SensorDataQoS(), std::bind(
           &RangeSensorLayer::bufferIncomingRangeMsg, this,
           std::placeholders::_1)));
 
     RCLCPP_INFO(
-      node_->get_logger(), "RangeSensorLayer: subscribed to "
+      node->get_logger(), "RangeSensorLayer: subscribed to "
       "topic %s", range_subs_.back()->get_topic_name());
   }
   global_frame_ = layered_costmap_->getGlobalFrameID();
@@ -238,7 +238,7 @@ void RangeSensorLayer::processFixedRangeMsg(sensor_msgs::msg::Range & range_mess
 {
   if (!std::isinf(range_message.range)) {
     RCLCPP_ERROR(
-      node_->get_logger(),
+      node_logging_interface_->get_logger(),
       "Fixed distance ranger (min_range == max_range) in frame %s sent invalid value. "
       "Only -Inf (== object detected) and Inf (== no object detected) are valid.",
       range_message.header.frame_id.c_str());
@@ -290,7 +290,7 @@ void RangeSensorLayer::updateCostmap(
       in.header.frame_id, global_frame_, tf2_ros::fromMsg(in.header.stamp)))
   {
     RCLCPP_INFO(
-      node_->get_logger(), "Range sensor layer can't transform from %s to %s",
+      node_logging_interface_->get_logger(), "Range sensor layer can't transform from %s to %s",
       global_frame_.c_str(), in.header.frame_id.c_str());
     return;
   }
@@ -387,7 +387,7 @@ void RangeSensorLayer::updateCostmap(
   }
 
   buffered_readings_++;
-  last_reading_time_ = node_->now();
+  last_reading_time_ = node_clock_interface_->get_clock()->now();
 }
 
 void RangeSensorLayer::update_cell(
@@ -409,8 +409,12 @@ void RangeSensorLayer::update_cell(
     double prob_not = (1 - sensor) * (1 - prior);
     double new_prob = prob_occ / (prob_occ + prob_not);
 
-    RCLCPP_DEBUG(node_->get_logger(), "%f %f | %f %f = %f", dx, dy, theta, phi, sensor);
-    RCLCPP_DEBUG(node_->get_logger(), "%f | %f %f | %f", prior, prob_occ, prob_not, new_prob);
+    RCLCPP_DEBUG(
+      node_logging_interface_->get_logger(),
+      "%f %f | %f %f = %f", dx, dy, theta, phi, sensor);
+    RCLCPP_DEBUG(
+      node_logging_interface_->get_logger(),
+      "%f | %f %f | %f", prior, prob_occ, prob_not, new_prob);
     unsigned char c = to_cost(new_prob);
     setCost(x, y, c);
   }
@@ -448,12 +452,13 @@ void RangeSensorLayer::updateBounds(
 
   if (buffered_readings_ == 0) {
     if (no_readings_timeout_ > 0.0 &&
-      (node_->now() - last_reading_time_).seconds() > no_readings_timeout_)
+      (node_clock_interface_->get_clock()->now() - last_reading_time_).seconds() >
+      no_readings_timeout_)
     {
       RCLCPP_WARN(
-        node_->get_logger(), "No range readings received for %.2f seconds, "
-        "while expected at least every %.2f seconds.",
-        (node_->now() - last_reading_time_).seconds(),
+        node_logging_interface_->get_logger(),
+        "No range readings received for %.2f seconds, while expected at least every %.2f seconds.",
+        (node_clock_interface_->get_clock()->now() - last_reading_time_).seconds(),
         no_readings_timeout_);
       current_ = false;
     }
@@ -504,7 +509,7 @@ void RangeSensorLayer::updateCosts(
 
 void RangeSensorLayer::reset()
 {
-  RCLCPP_DEBUG(node_->get_logger(), "Reseting range sensor layer...");
+  RCLCPP_DEBUG(node_logging_interface_->get_logger(), "Reseting range sensor layer...");
   deactivate();
   resetMaps();
   current_ = true;

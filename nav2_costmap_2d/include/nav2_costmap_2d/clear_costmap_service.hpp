@@ -34,7 +34,7 @@ class Costmap2DROS;
 class ClearCostmapService
 {
 public:
-  ClearCostmapService(nav2_util::LifecycleNode::SharedPtr node, Costmap2DROS & costmap);
+  ClearCostmapService(const nav2_util::LifecycleNode::SharedPtr node, Costmap2DROS & costmap);
 
   ClearCostmapService() = delete;
 
@@ -48,8 +48,8 @@ public:
   void clearEntirely();
 
 private:
-  // The ROS node to use for getting parameters, creating the service and logging
-  nav2_util::LifecycleNode::SharedPtr node_;
+  // The ROS node interface to use for logging
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
 
   // The costmap to clear
   Costmap2DROS & costmap_;

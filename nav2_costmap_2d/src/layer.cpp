@@ -46,7 +46,9 @@ Layer::Layer()
 
 void
 Layer::initialize(
-  LayeredCostmap * parent, std::string name, tf2_ros::Buffer * tf,
+  LayeredCostmap * parent,
+  std::string name,
+  tf2_ros::Buffer * tf,
   nav2_util::LifecycleNode::SharedPtr node,
   rclcpp::Node::SharedPtr client_node,
   rclcpp::Node::SharedPtr rclcpp_node)
@@ -54,11 +56,14 @@ Layer::initialize(
   layered_costmap_ = parent;
   name_ = name;
   tf_ = tf;
-  node_ = node;
   client_node_ = client_node;
   rclcpp_node_ = rclcpp_node;
+  node_logging_interface_ = node->get_node_logging_interface();
+  node_clock_interface_ = node->get_node_clock_interface();
+  node_graph_interface_ = node->get_node_graph_interface();
+  node_parameters_interface_ = node->get_node_parameters_interface();
 
-  onInitialize();
+  onInitialize(node);
 }
 
 const std::vector<geometry_msgs::msg::Point> &
@@ -69,23 +74,25 @@ Layer::getFootprint() const
 
 void
 Layer::declareParameter(
-  const std::string & param_name, const rclcpp::ParameterValue & value)
+  const std::string & param_name,
+  const rclcpp::ParameterValue & value)
 {
   local_params_.insert(param_name);
-  nav2_util::declare_parameter_if_not_declared(node_, getFullName(param_name), value);
+  nav2_util::declare_parameter_if_not_declared(
+    node_parameters_interface_, getFullName(param_name), value);
 }
 
 bool
 Layer::hasParameter(const std::string & param_name)
 {
-  return node_->has_parameter(getFullName(param_name));
+  return node_parameters_interface_->has_parameter(getFullName(param_name));
 }
 
 void
 Layer::undeclareAllParameters()
 {
   for (auto & param_name : local_params_) {
-    node_->undeclare_parameter(getFullName(param_name));
+    node_parameters_interface_->undeclare_parameter(getFullName(param_name));
   }
   local_params_.clear();
 }
