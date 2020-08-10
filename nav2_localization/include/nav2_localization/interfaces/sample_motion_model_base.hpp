@@ -4,7 +4,7 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 
-namespace nav2_localization_base
+namespace nav2_localization
 {
 
 /**
@@ -14,7 +14,7 @@ namespace nav2_localization_base
 class SampleMotionModel
 {   
 public:
-    using Ptr = std::shared_ptr<nav2_localization_base::SampleMotionModel>;
+    using Ptr = std::shared_ptr<nav2_localization::SampleMotionModel>;
 
     /**
      * @brief calculates the most likely change in pose based on the change in odometry
@@ -45,6 +45,6 @@ protected:
     double alpha4_;
     double alpha5_;
 };  
-} // nav2_localization_base
+} // nav2_localization
 
 #endif // NAV2_LOCALIZATION__SAMPLE_MOTION_MODEL_BASE_HPP_

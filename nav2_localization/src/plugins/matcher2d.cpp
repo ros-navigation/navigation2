@@ -2,7 +2,7 @@
 #include "nav2_localization/interfaces/matcher2d_base.hpp"
 #include "nav2_localization/plugins/matcher2d_plugins.hpp"
 
-namespace nav2_localization_plugins
+namespace nav2_localization
 {
 
 float DummyMatcher2d::getLikelihood(
@@ -14,6 +14,6 @@ float DummyMatcher2d::getLikelihood(
 	return probability;
 }
 
-} // nav2_localization_plugins
+} // nav2_localization
 
-PLUGINLIB_EXPORT_CLASS(nav2_localization_plugins::DummyMatcher2d, nav2_localization_base::Matcher2d)
+PLUGINLIB_EXPORT_CLASS(nav2_localization::DummyMatcher2d, nav2_localization::Matcher2d)

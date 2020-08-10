@@ -12,7 +12,7 @@
 #include "sensor_msgs/msg/laser_Scan.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
-namespace nav2_localization_base
+namespace nav2_localization
 {
 
 /**
@@ -22,7 +22,7 @@ namespace nav2_localization_base
 class Solver
 {
 public:
-	using Ptr = std::shared_ptr<nav2_localization_base::Solver>;
+	using Ptr = std::shared_ptr<nav2_localization::Solver>;
 
 	/**
      * @brief Estimates a pose fusing odometry and sensor information
@@ -52,6 +52,6 @@ private:
 	geometry_msgs::msg::Pose prev_pose; // Previous pose estimation
 	
 };
-} // nav2_localization_base
+} // nav2_localization
 
 #endif // NAV2_LOCALIZATION__SOLVER_BASE_HPP_

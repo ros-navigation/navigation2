@@ -110,8 +110,8 @@ protected:
     void initPlugins();
 
     // Sample Motion Model Plugin
-    pluginlib::ClassLoader<nav2_localization_base::SampleMotionModel> sample_motion_model_loader_;
-    nav2_localization_base::SampleMotionModel::Ptr sample_motion_model_;
+    pluginlib::ClassLoader<nav2_localization::SampleMotionModel> sample_motion_model_loader_;
+    nav2_localization::SampleMotionModel::Ptr sample_motion_model_;
     std::string default_sample_motion_model_id_;
     std::string sample_motion_model_id_;
     std::string sample_motion_model_type_;
@@ -122,15 +122,15 @@ protected:
     double alpha5_;
 
     // Matcher Plugin
-    pluginlib::ClassLoader<nav2_localization_base::Matcher2d> matcher2d_loader_;
-    nav2_localization_base::Matcher2d::Ptr matcher2d_;
+    pluginlib::ClassLoader<nav2_localization::Matcher2d> matcher2d_loader_;
+    nav2_localization::Matcher2d::Ptr matcher2d_;
     std::string default_matcher2d_id_;
     std::string matcher2d_id_;
     std::string matcher2d_type_;
 
     // Solver Plugin
-    pluginlib::ClassLoader<nav2_localization_base::Solver> solver_loader_;
-    nav2_localization_base::Solver::Ptr solver_;
+    pluginlib::ClassLoader<nav2_localization::Solver> solver_loader_;
+    nav2_localization::Solver::Ptr solver_;
     std::string default_solver_id_;
     std::string solver_id_;
     std::string solver_type_;

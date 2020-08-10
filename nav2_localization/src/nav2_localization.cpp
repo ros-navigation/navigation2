@@ -7,11 +7,11 @@ namespace nav2_localization
 
 LocalizationServer::LocalizationServer()
 : LifecycleNode("localization_server", "", true),
-  sample_motion_model_loader_("nav2_localization", "nav2_localization_base::SampleMotionModel"),
+  sample_motion_model_loader_("nav2_localization", "nav2_localization::SampleMotionModel"),
   default_sample_motion_model_id_("DummyMotionSampler"),
-  matcher2d_loader_("nav2_localization", "nav2_localization_base::Matcher2D"),
+  matcher2d_loader_("nav2_localization", "nav2_localization::Matcher2D"),
   default_matcher2d_id_("DummyMatcher2D"),
-  solver_loader_("nav2_localization", "nav2_localization_base::Solver"),
+  solver_loader_("nav2_localization", "nav2_localization::Solver"),
   default_solver_id_("DummySolver")
 {
     RCLCPP_INFO(get_logger(), "Creating localization server");

@@ -3,9 +3,9 @@
 
 #include <nav2_localization/interfaces/matcher2D_base.hpp>
 
-namespace nav2_localization_plugins
+namespace nav2_localization
 {
-class DummyMatcher2d : public nav2_localization_base::Matcher2d
+class DummyMatcher2d : public nav2_localization::Matcher2d
 {
 public:
 	DummyMatcher2d(){}
@@ -15,6 +15,6 @@ public:
 		const geometry_msgs::msg::Pose& pose,
 		const nav_msgs::msg::OccupancyGrid& map);
 };  
-} // nav2_localization_base
+} // nav2_localization
 
 #endif // NAV2_LOCALIZATION__MATCHER2D_PLUGINS_HPP_

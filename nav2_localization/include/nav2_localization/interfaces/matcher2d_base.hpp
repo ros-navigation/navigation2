@@ -5,7 +5,7 @@
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
-namespace nav2_localization_base
+namespace nav2_localization
 {
 
 /**
@@ -15,7 +15,7 @@ namespace nav2_localization_base
 class Matcher2d
 {
 public:
-	using Ptr = std::shared_ptr<nav2_localization_base::Matcher2d>;
+	using Ptr = std::shared_ptr<nav2_localization::Matcher2d>;
 
     /**
      * @brief Computes how likely is it to read a measurement given a position in a map
@@ -32,6 +32,6 @@ public:
 protected:
     Matcher2d(){}
 };  
-} // nav2_localization_base
+} // nav2_localization
 
 #endif // NAV2_LOCALIZATION__MATCHER2D_BASE_HPP_

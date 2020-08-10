@@ -13,16 +13,16 @@
 #include "sensor_msgs/msg/LaserScan.hpp"
 #include "nav_msgs/msg/OccupancyGrid.hpp"
 
-namespace nav2_localization_plugins
+namespace nav2_localization
 {
-class DummySolver2d : public nav2_localization_base::Solver
+class DummySolver2d : public nav2_localization::Solver
 {
 public:
 	DummySolver2d(){}
 
 	geometry_msgs::msg::PoseWithCovariance localize(
-		const nav2_localization_base::SampleMotionModel& motionSampler,
-		const nav2_localization_base::Matcher2d& matcher,
+		const SampleMotionModel& motionSampler,
+		const Matcher2d& matcher,
 		const nav_msgs::msg::Odometry& curr_odom,
 		const sensor_msgs::msg::LaserScan& scan,
 		const nav_msgs::msg::OccupancyGrid& map);
@@ -31,6 +31,6 @@ public:
 		const nav_msgs::msg::Odometry& init_odom=nav_msgs::msg::Odometry{},
 		const geometry_msgs::msg::Pose& init_pose=geometry_msgs::msg::Pose{});
 };
-} // nav2_localization_plugins
+} // nav2_localization
 
 #endif // NAV2_LOCALIZATION__SOLVER_PLUGINS_HPP_

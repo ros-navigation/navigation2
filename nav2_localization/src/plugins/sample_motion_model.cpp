@@ -2,7 +2,7 @@
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
 #include "nav2_localization/plugins/sample_motion_model_plugins.hpp"
 
-namespace nav2_localization_plugins
+namespace nav2_localization
 {
 
 geometry_msgs::msg::Pose DummyMotionSampler::getMostLikelyPose(
@@ -28,6 +28,6 @@ void DummyMotionSampler::configure(
     alpha5_ = alpha5;
 }
 
-} // nav2_localization_plugins
+} // nav2_localization
 
-PLUGINLIB_EXPORT_CLASS(nav2_localization_plugins::DummyMotionSampler, nav2_localization_base::SampleMotionModel)
+PLUGINLIB_EXPORT_CLASS(nav2_localization::DummyMotionSampler, nav2_localization::SampleMotionModel)
