@@ -50,7 +50,7 @@ NavfnPlanner::NavfnPlanner()
 NavfnPlanner::~NavfnPlanner()
 {
   RCLCPP_INFO(
-    node_->get_logger(), "Destroying plugin %s of type NavfnPlanner",
+    node_logging_interface_->get_logger(), "Destroying plugin %s of type NavfnPlanner",
     name_.c_str());
 }
 
@@ -60,24 +60,25 @@ NavfnPlanner::configure(
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
-  node_ = parent;
+  node_logging_interface_ = parent->get_node_logging_interface();
+  node_clock_interface_ = parent->get_node_clock_interface();
   tf_ = tf;
   name_ = name;
   costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();
 
   RCLCPP_INFO(
-    node_->get_logger(), "Configuring plugin %s of type NavfnPlanner",
+    parent->get_logger(), "Configuring plugin %s of type NavfnPlanner",
     name_.c_str());
 
   // Initialize parameters
   // Declare this plugin's parameters
-  declare_parameter_if_not_declared(node_, name + ".tolerance", rclcpp::ParameterValue(0.5));
-  node_->get_parameter(name + ".tolerance", tolerance_);
-  declare_parameter_if_not_declared(node_, name + ".use_astar", rclcpp::ParameterValue(false));
-  node_->get_parameter(name + ".use_astar", use_astar_);
-  declare_parameter_if_not_declared(node_, name + ".allow_unknown", rclcpp::ParameterValue(true));
-  node_->get_parameter(name + ".allow_unknown", allow_unknown_);
+  declare_parameter_if_not_declared(parent, name + ".tolerance", rclcpp::ParameterValue(0.5));
+  parent->get_parameter(name + ".tolerance", tolerance_);
+  declare_parameter_if_not_declared(parent, name + ".use_astar", rclcpp::ParameterValue(false));
+  parent->get_parameter(name + ".use_astar", use_astar_);
+  declare_parameter_if_not_declared(parent, name + ".allow_unknown", rclcpp::ParameterValue(true));
+  parent->get_parameter(name + ".allow_unknown", allow_unknown_);
 
   // Create a planner based on the new costmap size
   planner_ = std::make_unique<NavFn>(
@@ -89,7 +90,7 @@ void
 NavfnPlanner::activate()
 {
   RCLCPP_INFO(
-    node_->get_logger(), "Activating plugin %s of type NavfnPlanner",
+    node_logging_interface_->get_logger(), "Activating plugin %s of type NavfnPlanner",
     name_.c_str());
 }
 
@@ -97,7 +98,7 @@ void
 NavfnPlanner::deactivate()
 {
   RCLCPP_INFO(
-    node_->get_logger(), "Deactivating plugin %s of type NavfnPlanner",
+    node_logging_interface_->get_logger(), "Deactivating plugin %s of type NavfnPlanner",
     name_.c_str());
 }
 
@@ -105,7 +106,7 @@ void
 NavfnPlanner::cleanup()
 {
   RCLCPP_INFO(
-    node_->get_logger(), "Cleaning up plugin %s of type NavfnPlanner",
+    node_logging_interface_->get_logger(), "Cleaning up plugin %s of type NavfnPlanner",
     name_.c_str());
   planner_.reset();
 }
@@ -125,7 +126,7 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 
   if (!makePlan(start.pose, goal.pose, tolerance_, path)) {
     RCLCPP_WARN(
-      node_->get_logger(), "%s: failed to create plan with "
+      node_logging_interface_->get_logger(), "%s: failed to create plan with "
       "tolerance %.2f.", name_.c_str(), tolerance_);
   }
   return path;
@@ -134,13 +135,9 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 bool
 NavfnPlanner::isPlannerOutOfDate()
 {
-  if (!planner_.get() ||
+  return !(planner_ ||
     planner_->nx != static_cast<int>(costmap_->getSizeInCellsX()) ||
-    planner_->ny != static_cast<int>(costmap_->getSizeInCellsY()))
-  {
-    return true;
-  }
-  return false;
+    planner_->ny != static_cast<int>(costmap_->getSizeInCellsY()));
 }
 
 bool
@@ -152,7 +149,7 @@ NavfnPlanner::makePlan(
   // clear the plan, just in case
   plan.poses.clear();
 
-  plan.header.stamp = node_->now();
+  plan.header.stamp = node_clock_interface_->get_clock()->now();
   plan.header.frame_id = global_frame_;
 
   // TODO(orduno): add checks for start and goal reference frame -- should be in global frame
@@ -161,13 +158,13 @@ NavfnPlanner::makePlan(
   double wy = start.position.y;
 
   RCLCPP_DEBUG(
-    node_->get_logger(), "Making plan from (%.2f,%.2f) to (%.2f,%.2f)",
+    node_logging_interface_->get_logger(), "Making plan from (%.2f,%.2f) to (%.2f,%.2f)",
     start.position.x, start.position.y, goal.position.x, goal.position.y);
 
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {
     RCLCPP_WARN(
-      node_->get_logger(),
+      node_logging_interface_->get_logger(),
       "Cannot create a plan: the robot's start position is off the global"
       " costmap. Planning will always fail, are you sure"
       " the robot has been properly localized?");
@@ -197,7 +194,7 @@ NavfnPlanner::makePlan(
 
   if (!worldToMap(wx, wy, mx, my)) {
     RCLCPP_WARN(
-      node_->get_logger(),
+      node_logging_interface_->get_logger(),
       "The goal sent to the planner is off the global costmap."
       " Planning will always fail to this goal.");
     return false;
@@ -257,7 +254,7 @@ NavfnPlanner::makePlan(
       smoothApproachToGoal(best_pose, plan);
     } else {
       RCLCPP_ERROR(
-        node_->get_logger(),
+        node_logging_interface_->get_logger(),
         "Failed to create a plan from potential when a legal"
         " potential was found. This shouldn't happen.");
     }
@@ -305,7 +302,7 @@ NavfnPlanner::getPlanFromPotential(
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {
     RCLCPP_WARN(
-      node_->get_logger(),
+      node_logging_interface_->get_logger(),
       "The goal sent to the navfn planner is off the global costmap."
       " Planning will always fail to this goal.");
     return false;
@@ -323,7 +320,9 @@ NavfnPlanner::getPlanFromPotential(
   }
 
   auto cost = planner_->getLastPathCost();
-  RCLCPP_DEBUG(node_->get_logger(), "Path found, %d steps, %f cost\n", path_len, cost);
+  RCLCPP_DEBUG(
+    node_logging_interface_->get_logger(),
+    "Path found, %d steps, %f cost\n", path_len, cost);
 
   // extract the plan
   float * x = planner_->getPathX();
@@ -415,7 +414,8 @@ NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int &
   }
 
   RCLCPP_ERROR(
-    node_->get_logger(), "worldToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
+    node_logging_interface_->get_logger(),
+    "worldToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
     costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
 
   return false;

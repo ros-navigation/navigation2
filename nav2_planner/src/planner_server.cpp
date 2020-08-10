@@ -65,7 +65,6 @@ PlannerServer::PlannerServer()
 
 PlannerServer::~PlannerServer()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
   planners_.clear();
   costmap_thread_.reset();
 }

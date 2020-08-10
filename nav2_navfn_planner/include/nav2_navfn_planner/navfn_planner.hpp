@@ -120,7 +120,9 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
   // node ptr
-  nav2_util::LifecycleNode::SharedPtr node_;
+//  nav2_util::LifecycleNode::SharedPtr node_;
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
+  rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface_;
 
   // Global Costmap
   nav2_costmap_2d::Costmap2D * costmap_;
