@@ -51,7 +51,7 @@ namespace dwb_critics
 class TwirlingCritic : public dwb_core::TrajectoryCritic
 {
 public:
-  void onInit() override;
+  void onInit(const nav2_util::LifecycleNode::SharedPtr & nh) override;
   double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
 };
 }  // namespace dwb_critics

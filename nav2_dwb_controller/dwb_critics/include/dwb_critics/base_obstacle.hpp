@@ -53,7 +53,7 @@ namespace dwb_critics
 class BaseObstacleCritic : public dwb_core::TrajectoryCritic
 {
 public:
-  void onInit() override;
+  void onInit(const nav2_util::LifecycleNode::SharedPtr & nh) override;
   double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
   void addCriticVisualization(sensor_msgs::msg::PointCloud & pc) override;
 

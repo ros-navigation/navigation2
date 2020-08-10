@@ -70,7 +70,7 @@ namespace dwb_critics
 class RotateToGoalCritic : public dwb_core::TrajectoryCritic
 {
 public:
-  void onInit() override;
+  void onInit(const nav2_util::LifecycleNode::SharedPtr & nh) override;
   void reset() override;
   bool prepare(
     const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,

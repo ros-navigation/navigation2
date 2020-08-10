@@ -59,7 +59,7 @@ class MapGridCritic : public dwb_core::TrajectoryCritic
 {
 public:
   // Standard TrajectoryCritic Interface
-  void onInit() override;
+  void onInit(const nav2_util::LifecycleNode::SharedPtr & nh) override;
   double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
   void addCriticVisualization(sensor_msgs::msg::PointCloud & pc) override;
   double getScale() const override {return costmap_->getResolution() * 0.5 * scale_;}

@@ -42,12 +42,12 @@
 namespace dwb_critics
 {
 
-void PathAlignCritic::onInit()
+void PathAlignCritic::onInit(const nav2_util::LifecycleNode::SharedPtr & nh)
 {
-  PathDistCritic::onInit();
+  PathDistCritic::onInit(nh);
   stop_on_failure_ = false;
   forward_point_distance_ = nav_2d_utils::searchAndGetParam(
-    nh_,
+    nh,
     dwb_plugin_name_ + "." + name_ + ".forward_point_distance", 0.325);
 }
 

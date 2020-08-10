@@ -51,21 +51,21 @@ inline double hypot_sq(double dx, double dy)
   return dx * dx + dy * dy;
 }
 
-void RotateToGoalCritic::onInit()
+void RotateToGoalCritic::onInit(const nav2_util::LifecycleNode::SharedPtr & nh)
 {
   xy_goal_tolerance_ = nav_2d_utils::searchAndGetParam(
-    nh_,
+    nh,
     dwb_plugin_name_ + ".xy_goal_tolerance", 0.25);
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
   double stopped_xy_velocity = nav_2d_utils::searchAndGetParam(
-    nh_,
+    nh,
     dwb_plugin_name_ + ".trans_stopped_velocity", 0.25);
   stopped_xy_velocity_sq_ = stopped_xy_velocity * stopped_xy_velocity;
   slowing_factor_ = nav_2d_utils::searchAndGetParam(
-    nh_,
+    nh,
     dwb_plugin_name_ + "." + name_ + ".slowing_factor", 5.0);
   lookahead_time_ = nav_2d_utils::searchAndGetParam(
-    nh_,
+    nh,
     dwb_plugin_name_ + "." + name_ + ".lookahead_time", -1.0);
   reset();
 }

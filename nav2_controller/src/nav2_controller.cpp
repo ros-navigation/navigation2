@@ -62,7 +62,9 @@ ControllerServer::ControllerServer()
 
 ControllerServer::~ControllerServer()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
+  progress_checker_.reset();
+  goal_checker_.reset();
+  controllers_.clear();
 }
 
 nav2_util::CallbackReturn
@@ -71,7 +73,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   auto node = shared_from_this();
 
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
-
 
   get_parameter("progress_checker_plugin", progress_checker_id_);
   if (progress_checker_id_ == default_progress_checker_id_) {

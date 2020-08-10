@@ -43,14 +43,14 @@ PLUGINLIB_EXPORT_CLASS(dwb_critics::BaseObstacleCritic, dwb_core::TrajectoryCrit
 namespace dwb_critics
 {
 
-void BaseObstacleCritic::onInit()
+void BaseObstacleCritic::onInit(const nav2_util::LifecycleNode::SharedPtr & nh)
 {
   costmap_ = costmap_ros_->getCostmap();
 
   nav2_util::declare_parameter_if_not_declared(
-    nh_,
+    nh,
     dwb_plugin_name_ + "." + name_ + ".sum_scores", rclcpp::ParameterValue(false));
-  nh_->get_parameter(dwb_plugin_name_ + "." + name_ + ".sum_scores", sum_scores_);
+  nh->get_parameter(dwb_plugin_name_ + "." + name_ + ".sum_scores", sum_scores_);
 }
 
 double BaseObstacleCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)

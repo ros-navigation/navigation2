@@ -181,11 +181,10 @@ protected:
    * @brief Load the critic parameters from the namespace
    * @param name The namespace of this planner.
    */
-  virtual void loadCritics();
+  virtual void loadCritics(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node);
+  void loadBackwardsCompatibleParameters(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node);
 
-  void loadBackwardsCompatibleParameters();
-
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  rclcpp::Clock::SharedPtr clock_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
 

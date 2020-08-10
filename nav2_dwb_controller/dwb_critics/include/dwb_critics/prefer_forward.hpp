@@ -55,7 +55,7 @@ class PreferForwardCritic : public dwb_core::TrajectoryCritic
 public:
   PreferForwardCritic()
   : penalty_(1.0), strafe_x_(0.1), strafe_theta_(0.2), theta_scale_(10.0) {}
-  void onInit() override;
+  void onInit(const nav2_util::LifecycleNode::SharedPtr & nh) override;
   double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
 
 private:

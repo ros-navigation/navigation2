@@ -81,7 +81,7 @@ class OscillationCritic : public dwb_core::TrajectoryCritic
 public:
   OscillationCritic()
   : oscillation_reset_time_(0) {}
-  void onInit() override;
+  void onInit(const nav2_util::LifecycleNode::SharedPtr & nh) override;
   bool prepare(
     const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
     const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
@@ -152,6 +152,7 @@ private:
   geometry_msgs::msg::Pose2D pose_, prev_stationary_pose_;
   // Saved timestamp
   rclcpp::Time prev_reset_time_;
+  rclcpp::Clock::SharedPtr clock_;
 };
 
 }  // namespace dwb_critics

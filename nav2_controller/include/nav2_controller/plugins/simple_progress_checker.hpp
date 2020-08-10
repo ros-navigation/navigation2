@@ -52,7 +52,7 @@ protected:
    */
   void reset_baseline_pose(const geometry_msgs::msg::Pose2D & pose);
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr nh_;
+  rclcpp::Clock::SharedPtr clock_;
 
   double radius_;
   rclcpp::Duration time_allowance_{0, 0};
