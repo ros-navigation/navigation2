@@ -35,9 +35,8 @@ BackUp::~BackUp()
 {
 }
 
-void BackUp::onConfigure()
+void BackUp::onConfigure(const rclcpp_lifecycle::LifecycleNode::SharedPtr node)
 {
-  auto node = node_.lock();
   nav2_util::declare_parameter_if_not_declared(
     node,
     "simulate_ahead_time", rclcpp::ParameterValue(2.0));
@@ -46,11 +45,10 @@ void BackUp::onConfigure()
 
 Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 {
-  auto node = node_.lock();
   if (command->target.y != 0.0 || command->target.z != 0.0) {
     RCLCPP_INFO(
-      node->get_logger(), "Backing up in Y and Z not supported, "
-      "will only move in X.");
+      node_logging_interface_->get_logger(),
+      "Backing up in Y and Z not supported, will only move in X.");
   }
 
   // Silently ensure that both the speed and direction are positive.
@@ -61,7 +59,7 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
       initial_pose_, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR(node->get_logger(), "Initial robot pose is not available.");
+    RCLCPP_ERROR(node_logging_interface_->get_logger(), "Initial robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -70,13 +68,12 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 
 Status BackUp::onCycleUpdate()
 {
-  auto node = node_.lock();
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR(node->get_logger(), "Current robot pose is not available.");
+    RCLCPP_ERROR(node_logging_interface_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -105,7 +102,7 @@ Status BackUp::onCycleUpdate()
 
   if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
     stopRobot();
-    RCLCPP_WARN(node->get_logger(), "Collision Ahead - Exiting BackUp");
+    RCLCPP_WARN(node_logging_interface_->get_logger(), "Collision Ahead - Exiting BackUp");
     return Status::SUCCEEDED;
   }
 

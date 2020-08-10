@@ -75,7 +75,7 @@ public:
 
   // an opportunity for derived classes to do something on configuration
   // if they chose
-  virtual void onConfigure()
+  virtual void onConfigure(const rclcpp_lifecycle::LifecycleNode::SharedPtr /*node*/)
   {
   }
 
@@ -86,14 +86,16 @@ public:
   }
 
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr parent,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker) override
   {
-    auto node = parent.lock();
     RCLCPP_INFO(node->get_logger(), "Configuring %s", name.c_str());
 
-    node_ = parent;
+    node_base_interface_ = node->get_node_base_interface();
+    node_logging_interface_ = node->get_node_logging_interface();
+    node_timers_interface_ = node->get_node_timers_interface();
+
     recovery_name_ = name;
     tf_ = tf;
 
@@ -110,7 +112,7 @@ public:
 
     vel_pub_ = node->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
-    onConfigure();
+    onConfigure(node);
   }
 
   void cleanup() override
@@ -122,8 +124,7 @@ public:
 
   void activate() override
   {
-    auto node = node_.lock();
-    RCLCPP_INFO(node->get_logger(), "Activating %s", recovery_name_.c_str());
+    RCLCPP_INFO(node_logging_interface_->get_logger(), "Activating %s", recovery_name_.c_str());
 
     vel_pub_->on_activate();
     action_server_->activate();
@@ -138,7 +139,10 @@ public:
   }
 
 protected:
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface_;
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
+  rclcpp::node_interfaces::NodeTimersInterface::SharedPtr node_timers_interface_;
+
   std::string recovery_name_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
   std::shared_ptr<ActionServer> action_server_;
@@ -156,24 +160,34 @@ protected:
 
   void execute()
   {
-    auto node = node_.lock();
-    RCLCPP_INFO(node->get_logger(), "Attempting %s", recovery_name_.c_str());
+    RCLCPP_INFO(node_logging_interface_->get_logger(), "Attempting %s", recovery_name_.c_str());
 
     if (!enabled_) {
-      RCLCPP_WARN(node->get_logger(), "Called while inactive, ignoring request.");
+      RCLCPP_WARN(
+        node_logging_interface_->get_logger(),
+        "Called while inactive, ignoring request.");
       return;
     }
 
     if (onRun(action_server_->get_current_goal()) != Status::SUCCEEDED) {
-      RCLCPP_INFO(node->get_logger(), "Initial checks failed for %s", recovery_name_.c_str());
+      RCLCPP_INFO(
+        node_logging_interface_->get_logger(),
+        "Initial checks failed for %s", recovery_name_.c_str());
       action_server_->terminate_current();
       return;
     }
 
     // Log a message every second
-    auto timer = node->create_wall_timer(
+    auto timer = rclcpp::create_wall_timer(
       1s,
-      [&]() {RCLCPP_INFO(node->get_logger(), "%s running...", recovery_name_.c_str());});
+      [&]() {
+        RCLCPP_INFO(
+          node_logging_interface_->get_logger(),
+          "%s running...", recovery_name_.c_str());
+        },
+      nullptr,
+      node_base_interface_.get(),
+      node_timers_interface_.get());
 
     auto start_time = steady_clock_.now();
 
@@ -184,7 +198,7 @@ protected:
 
     while (rclcpp::ok()) {
       if (action_server_->is_cancel_requested()) {
-        RCLCPP_INFO(node->get_logger(), "Canceling %s", recovery_name_.c_str());
+        RCLCPP_INFO(node_logging_interface_->get_logger(), "Canceling %s", recovery_name_.c_str());
         stopRobot();
         result->total_elapsed_time = steady_clock_.now() - start_time;
         action_server_->terminate_all(result);
@@ -194,7 +208,7 @@ protected:
       // TODO(orduno) #868 Enable preempting a Recovery on-the-fly without stopping
       if (action_server_->is_preempt_requested()) {
         RCLCPP_ERROR(
-          node->get_logger(), "Received a preemption request for %s,"
+          node_logging_interface_->get_logger(), "Received a preemption request for %s,"
           " however feature is currently not implemented. Aborting and stopping.",
           recovery_name_.c_str());
         stopRobot();
@@ -205,13 +219,15 @@ protected:
 
       switch (onCycleUpdate()) {
         case Status::SUCCEEDED:
-          RCLCPP_INFO(node->get_logger(), "%s completed successfully", recovery_name_.c_str());
+          RCLCPP_INFO(
+            node_logging_interface_->get_logger(),
+            "%s completed successfully", recovery_name_.c_str());
           result->total_elapsed_time = steady_clock_.now() - start_time;
           action_server_->succeeded_current(result);
           return;
 
         case Status::FAILED:
-          RCLCPP_WARN(node->get_logger(), "%s failed", recovery_name_.c_str());
+          RCLCPP_WARN(node_logging_interface_->get_logger(), "%s failed", recovery_name_.c_str());
           result->total_elapsed_time = steady_clock_.now() - start_time;
           action_server_->terminate_current(result);
           return;

@@ -45,10 +45,8 @@ Spin::~Spin()
 {
 }
 
-void Spin::onConfigure()
+void Spin::onConfigure(const rclcpp_lifecycle::LifecycleNode::SharedPtr node)
 {
-  auto node = node_.lock();
-
   nav2_util::declare_parameter_if_not_declared(
     node,
     "simulate_ahead_time", rclcpp::ParameterValue(2.0));
@@ -72,14 +70,12 @@ void Spin::onConfigure()
 
 Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 {
-  auto node = node_.lock();
-
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR(node->get_logger(), "Current robot pose is not available.");
+    RCLCPP_ERROR(node_logging_interface_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -88,21 +84,19 @@ Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 
   cmd_yaw_ = command->target_yaw;
   RCLCPP_INFO(
-    node->get_logger(), "Turning %0.2f for spin recovery.",
+    node_logging_interface_->get_logger(), "Turning %0.2f for spin recovery.",
     cmd_yaw_);
   return Status::SUCCEEDED;
 }
 
 Status Spin::onCycleUpdate()
 {
-  auto node = node_.lock();
-
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR(node->get_logger(), "Current robot pose is not available.");
+    RCLCPP_ERROR(node_logging_interface_->get_logger(), "Current robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -138,7 +132,7 @@ Status Spin::onCycleUpdate()
 
   if (!isCollisionFree(relative_yaw_, cmd_vel.get(), pose2d)) {
     stopRobot();
-    RCLCPP_WARN(node->get_logger(), "Collision Ahead - Exiting Spin");
+    RCLCPP_WARN(node_logging_interface_->get_logger(), "Collision Ahead - Exiting Spin");
     return Status::SUCCEEDED;
   }
 
