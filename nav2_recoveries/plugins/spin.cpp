@@ -45,7 +45,7 @@ Spin::~Spin()
 {
 }
 
-void Spin::onConfigure(const rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+void Spin::onConfigure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
 {
   nav2_util::declare_parameter_if_not_declared(
     node,

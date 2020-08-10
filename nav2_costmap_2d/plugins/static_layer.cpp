@@ -65,7 +65,7 @@ StaticLayer::~StaticLayer()
 }
 
 void
-StaticLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr node)
+StaticLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & node)
 {
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
@@ -113,7 +113,7 @@ StaticLayer::reset()
 }
 
 void
-StaticLayer::getParameters(const nav2_util::LifecycleNode::SharedPtr node)
+StaticLayer::getParameters(const nav2_util::LifecycleNode::SharedPtr & node)
 {
   int temp_lethal_threshold = 0;
   double temp_tf_tol = 0.0;

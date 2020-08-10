@@ -21,7 +21,7 @@ namespace nav2_costmap_2d
 {
 
 CostmapSubscriber::CostmapSubscriber(
-  nav2_util::LifecycleNode::SharedPtr node,
+  const nav2_util::LifecycleNode::SharedPtr & node,
   const std::string & topic_name)
 : CostmapSubscriber(node->get_node_base_interface(),
     node->get_node_topics_interface(),
@@ -30,7 +30,7 @@ CostmapSubscriber::CostmapSubscriber(
 {}
 
 CostmapSubscriber::CostmapSubscriber(
-  rclcpp::Node::SharedPtr node,
+  const rclcpp::Node::SharedPtr & node,
   const std::string & topic_name)
 : CostmapSubscriber(node->get_node_base_interface(),
     node->get_node_topics_interface(),

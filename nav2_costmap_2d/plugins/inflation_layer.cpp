@@ -74,7 +74,7 @@ InflationLayer::InflationLayer()
 }
 
 void
-InflationLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr node)
+InflationLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & node)
 {
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("inflation_radius", rclcpp::ParameterValue(0.55));

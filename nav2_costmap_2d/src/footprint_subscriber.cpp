@@ -22,7 +22,7 @@ namespace nav2_costmap_2d
 {
 
 FootprintSubscriber::FootprintSubscriber(
-  nav2_util::LifecycleNode::SharedPtr node,
+  const nav2_util::LifecycleNode::SharedPtr & node,
   const std::string & topic_name,
   const double & footprint_timeout)
 : FootprintSubscriber(node->get_node_base_interface(),
@@ -33,7 +33,7 @@ FootprintSubscriber::FootprintSubscriber(
 {}
 
 FootprintSubscriber::FootprintSubscriber(
-  rclcpp::Node::SharedPtr node,
+  const rclcpp::Node::SharedPtr & node,
   const std::string & topic_name,
   const double & footprint_timeout)
 : FootprintSubscriber(node->get_node_base_interface(),

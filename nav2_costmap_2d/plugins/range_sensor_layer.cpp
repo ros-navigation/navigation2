@@ -57,7 +57,7 @@ namespace nav2_costmap_2d
 
 RangeSensorLayer::RangeSensorLayer() {}
 
-void RangeSensorLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr node)
+void RangeSensorLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & node)
 {
   current_ = true;
   buffered_readings_ = 0;

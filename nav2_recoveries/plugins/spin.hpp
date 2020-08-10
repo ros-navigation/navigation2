@@ -34,7 +34,7 @@ public:
   ~Spin();
 
   Status onRun(const std::shared_ptr<const SpinAction::Goal> command) override;
-  void onConfigure(const rclcpp_lifecycle::LifecycleNode::SharedPtr node) override;
+  void onConfigure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) override;
   Status onCycleUpdate() override;
 
 protected:

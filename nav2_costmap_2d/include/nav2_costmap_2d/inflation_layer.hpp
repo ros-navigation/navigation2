@@ -79,7 +79,7 @@ public:
 
   ~InflationLayer() override = default;
 
-  void onInitialize(const nav2_util::LifecycleNode::SharedPtr node) override;
+  void onInitialize(const nav2_util::LifecycleNode::SharedPtr & node) override;
   void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
     double * min_y,

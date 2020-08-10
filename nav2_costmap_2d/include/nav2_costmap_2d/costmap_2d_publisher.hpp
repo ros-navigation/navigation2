@@ -67,7 +67,7 @@ public:
    * @brief  Constructor for the Costmap2DPublisher
    */
   Costmap2DPublisher(
-    const nav2_util::LifecycleNode::SharedPtr node,
+    const nav2_util::LifecycleNode::SharedPtr & node,
     Costmap2D * costmap,
     std::string global_frame,
     std::string topic_name,

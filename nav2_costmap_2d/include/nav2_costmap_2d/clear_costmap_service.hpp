@@ -34,7 +34,7 @@ class Costmap2DROS;
 class ClearCostmapService
 {
 public:
-  ClearCostmapService(const nav2_util::LifecycleNode::SharedPtr node, Costmap2DROS & costmap);
+  ClearCostmapService(const nav2_util::LifecycleNode::SharedPtr & node, Costmap2DROS & costmap);
 
   ClearCostmapService() = delete;
 

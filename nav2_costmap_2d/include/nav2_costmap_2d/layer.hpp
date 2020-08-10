@@ -62,7 +62,7 @@ public:
     LayeredCostmap * parent,
     std::string name,
     tf2_ros::Buffer * tf,
-    nav2_util::LifecycleNode::SharedPtr node,
+    const nav2_util::LifecycleNode::SharedPtr & node,
     rclcpp::Node::SharedPtr client_node,
     rclcpp::Node::SharedPtr rclcpp_node);
   virtual void deactivate() {} /** @brief Stop publishers. */
@@ -147,7 +147,7 @@ protected:
    *
    * tf_, name_, and layered_costmap_ will all be set already when this is called.
    */
-  virtual void onInitialize(const nav2_util::LifecycleNode::SharedPtr /*node*/) {}
+  virtual void onInitialize(const nav2_util::LifecycleNode::SharedPtr &/*node*/) {}
 
   bool current_;
   // Currently this var is managed by subclasses.

@@ -75,7 +75,7 @@ public:
 
   // an opportunity for derived classes to do something on configuration
   // if they chose
-  virtual void onConfigure(const rclcpp_lifecycle::LifecycleNode::SharedPtr /*node*/)
+  virtual void onConfigure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &/*node*/)
   {
   }
 
@@ -86,7 +86,7 @@ public:
   }
 
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker) override
   {

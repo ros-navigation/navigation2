@@ -30,11 +30,11 @@ class CostmapSubscriber
 {
 public:
   CostmapSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    const nav2_util::LifecycleNode::SharedPtr & node,
     const std::string & topic_name);
 
   CostmapSubscriber(
-    rclcpp::Node::SharedPtr node,
+    const rclcpp::Node::SharedPtr & node,
     const std::string & topic_name);
 
   CostmapSubscriber(

@@ -66,7 +66,7 @@ ObstacleLayer::~ObstacleLayer()
   }
 }
 
-void ObstacleLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr node)
+void ObstacleLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & node)
 {
   bool track_unknown_space;
   double transform_tolerance;

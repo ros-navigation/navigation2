@@ -57,7 +57,7 @@ using nav2_costmap_2d::FREE_SPACE;
 namespace nav2_costmap_2d
 {
 
-void VoxelLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr node)
+void VoxelLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & node)
 {
   ObstacleLayer::onInitialize(node);
 

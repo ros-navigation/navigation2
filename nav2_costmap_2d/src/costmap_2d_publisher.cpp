@@ -50,7 +50,7 @@ namespace nav2_costmap_2d
 char * Costmap2DPublisher::cost_translation_table_ = NULL;
 
 Costmap2DPublisher::Costmap2DPublisher(
-  const nav2_util::LifecycleNode::SharedPtr node,
+  const nav2_util::LifecycleNode::SharedPtr & node,
   Costmap2D * costmap,
   std::string global_frame,
   std::string topic_name,

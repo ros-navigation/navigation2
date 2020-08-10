@@ -47,7 +47,7 @@
 namespace nav2_costmap_2d
 {
 ObservationBuffer::ObservationBuffer(
-  const nav2_util::LifecycleNode::SharedPtr node,
+  const nav2_util::LifecycleNode::SharedPtr & node,
   std::string topic_name,
   double observation_keep_time,
   double expected_update_rate,
