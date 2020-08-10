@@ -2,10 +2,11 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_localization</name>
-  <version>0.4.1</version>
+  <version>0.0.1</version>
   <description>A localization framework</description>
-  <maintainer email="josemigueltorrescamara@gmail.com">José Miguel Torres Cámara</maintainer>
-  <maintainer email="khaledsoultan63@gmail.com">Khaled Saad</maintainer>
+  <maintainer email="josemigueltorrescamara@gmail.com">Jose Miguel TORRES CAMARA</maintainer>
+  <maintainer email="khaledsoultan63@gmail.com">Khaled SAAD</maintainer>
+  <maintainer email="stevenmacenski@gmail.com">Steve MACENSKI</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
