@@ -38,7 +38,8 @@ public:
   void flush() override;
 
 protected:
-  rclcpp::Node::SharedPtr ros_node_;
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
   rclcpp::Publisher<nav2_msgs::msg::BehaviorTreeLog>::SharedPtr log_pub_;
   std::vector<nav2_msgs::msg::BehaviorTreeStatusChange> event_log_;
 };

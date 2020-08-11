@@ -48,9 +48,9 @@ public:
    * @param odom_topic Topic on which odometry should be received
    */
   explicit OdomSmoother(
-    rclcpp::Node::SharedPtr nh,
+    const rclcpp::Node::SharedPtr & node,
     double filter_duration = 0.3,
-    std::string odom_topic = "odom");
+    const std::string & odom_topic = "odom");
 
   inline geometry_msgs::msg::Twist getTwist() {return vel_smooth_.twist;}
   inline geometry_msgs::msg::TwistStamped getTwistStamped() {return vel_smooth_;}
@@ -58,8 +58,6 @@ public:
 protected:
   void odomCallback(nav_msgs::msg::Odometry::SharedPtr msg);
   void updateState();
-
-  rclcpp::Node::SharedPtr node_;
 
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   nav_msgs::msg::Odometry odom_cumulate_;
