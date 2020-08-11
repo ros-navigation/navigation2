@@ -347,14 +347,14 @@ jobs:
     <<: *debug_build
   debug_test:
     executor: debug_exec
-    parallelism: 2
+    parallelism: 1
     steps:
       - restore_build
       - test_build
       - report_coverage
   release_test: &release_test
     executor: release_exec
-    parallelism: 2
+    parallelism: 1
     steps:
       - restore_build
       - test_build
