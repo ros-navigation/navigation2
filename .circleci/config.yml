@@ -10,7 +10,7 @@ references:
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
     MAKEFLAGS: "-j 1 -l 2"
-    RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED: "1"
+    RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED: "0"
     RETEST_UNTIL_PASS: "2"
   common_commands: &common_commands
     restore_from_cache:
@@ -347,14 +347,14 @@ jobs:
     <<: *debug_build
   debug_test:
     executor: debug_exec
-    parallelism: 1
+    parallelism: 2
     steps:
       - restore_build
       - test_build
       - report_coverage
   release_test: &release_test
     executor: release_exec
-    parallelism: 1
+    parallelism: 2
     steps:
       - restore_build
       - test_build
