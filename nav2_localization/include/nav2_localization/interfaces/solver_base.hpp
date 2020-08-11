@@ -28,25 +28,23 @@ public:
 
 	/**
      * @brief Estimates a pose fusing odometry and sensor information
-     * @param motionSampler The way to carry uncertainty from the odometry to the pose estimation
-     * @param matcher The technique that will be used to compute how likely it is to be in a cerain pose given the obtained measurement
      * @param curr_odom Current pose odometry-based estimation
      * @param scan Current measurement
-     * @param map Map of the environment where the robot is
      * @return Estimation of the current position
      */
-	virtual geometry_msgs::PoseWithCovariance localize(
-		const SampleMotionModel& motionSampler,
-		const Matcher2d& matcher,
+	virtual geometry_msgs::PoseWithCovariance solve(
 		const nav_msgs::msg::Odometry& curr_odom,
-		const sensor_msgs::msg::LaserScan& scan,
-		const nav_msgs::msg::OccupancyGrid& map) = 0;
+		const sensor_msgs::msg::LaserScan& scan) = 0;
 
 	virtual void configure(
-		const nav_msgs::msg::Odometry& init_odom=nav_msgs::msg::Odometry{},
-		const geometry_msgs::msg::Pose& init_pose=geometry_msgs::msg::Pose{}) = 0;
+		SampleMotionModel* motionSampler,
+		Matcher2d* matcher,
+		nav_msgs::msg::Odometry init_odom,
+		geometry_msgs::msg::Pose init_pose) = 0;
 
 private:
+	SampleMotionModel* motionSampler, // Pointer to the MotionSampler (will be used to carry uncertainty from the odom to the pose estimation)
+	Matcher2d* matcher, // Pointer to the Matcher (Will be used to compute how likely it is to be in a certain pose given the obtained measurement)
 	nav_msgs::msg::Odometry prev_odom; // Previous pose odometry-based estimation
 	geometry_msgs::msg::Pose prev_pose; // Previous pose estimation
 	

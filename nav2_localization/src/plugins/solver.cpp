@@ -5,23 +5,22 @@
 namespace nav2_localization
 {
 
-geometry_msgs::msg::PoseWithCovariance DummySolver2d::localize(
-	const nav2_localization::SampleMotionModel& motionSampler,
-	const nav2_localization::Matcher2d& matcher,
+geometry_msgs::msg::PoseWithCovariance DummySolver2d::solve(
 	const nav_msgs::msg::Odometry& curr_odom,
-	const sensor_msgs::msg::LaserScan& scan,
-	const nav_msgs::msg::OccupancyGrid& map)
+	const sensor_msgs::msg::LaserScan& scan)
 {
     geometry_msgs::msg::PoseWithCovariance dummy_pose{};
     return dummy_pose;
 }
 
 void DummySolver2d::configure(
-	const nav_msgs::msg::Odometry& init_odom=nav_msgs::msg::Odometry{},
-	const geometry_msgs::msg::Pose& init_pose=geometry_msgs::msg::Pose{})
+	SampleMotionModel* init_motionSampler,
+	Matcher2d* init_matcher,
+	nav_msgs::msg::Odometry init_odom,
+	geometry_msgs::msg::Pose init_pose)
 {
-	// Initialize member variables
-	// Default odometry and pose constructors are used by default
+	motionSampler = init_motionSampler;
+	matcher = init_matcher
 	prev_odom = init_odom;
 	prev_pose = init_pose;
 	return

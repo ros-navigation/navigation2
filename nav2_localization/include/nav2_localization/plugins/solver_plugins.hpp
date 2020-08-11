@@ -20,16 +20,15 @@ class DummySolver2d : public nav2_localization::Solver
 public:
 	DummySolver2d(){}
 
-	geometry_msgs::msg::PoseWithCovariance localize(
-		const SampleMotionModel& motionSampler,
-		const Matcher2d& matcher,
+	geometry_msgs::msg::PoseWithCovariance solve(
 		const nav_msgs::msg::Odometry& curr_odom,
-		const sensor_msgs::msg::LaserScan& scan,
-		const nav_msgs::msg::OccupancyGrid& map);
+		const sensor_msgs::msg::LaserScan& scan);
 
 	void configure(
-		const nav_msgs::msg::Odometry& init_odom=nav_msgs::msg::Odometry{},
-		const geometry_msgs::msg::Pose& init_pose=geometry_msgs::msg::Pose{});
+		SampleMotionModel* motionSampler,
+		Matcher2d* matcher,
+		nav_msgs::msg::Odometry init_odom,
+		geometry_msgs::msg::Pose init_pose);
 };
 } // nav2_localization
 
