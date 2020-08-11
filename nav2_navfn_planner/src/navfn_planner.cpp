@@ -135,7 +135,8 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 bool
 NavfnPlanner::isPlannerOutOfDate()
 {
-  return !(planner_ ||
+  return !(
+    planner_ ||
     planner_->nx != static_cast<int>(costmap_->getSizeInCellsX()) ||
     planner_->ny != static_cast<int>(costmap_->getSizeInCellsY()));
 }

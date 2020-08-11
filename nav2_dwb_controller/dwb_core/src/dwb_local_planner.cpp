@@ -212,14 +212,14 @@ DWBLocalPlanner::loadBackwardsCompatibleParameters(
   critic_names.emplace_back("RotateToGoal");      // discards trajectories that move forward when
                                                   //   already at goal
   critic_names.emplace_back("Oscillation");       // discards oscillating motions (assisgns cost -1)
-  critic_names.emplace_back("ObstacleFootprint"); // discards trajectories that move into obstacles
-  critic_names.emplace_back("GoalAlign");         // prefers trajectories that make the
-                                                  //   nose go towards (local) nose goal
-  critic_names.emplace_back("PathAlign");         // prefers trajectories that keep the
-                                                  //   robot nose on nose path
-  critic_names.emplace_back("PathDist");          // prefers trajectories on global path
-  critic_names.emplace_back("GoalDist");          // prefers trajectories that go towards
-                                                  //   (local) goal, based on wave propagation
+  critic_names.emplace_back("ObstacleFootprint");  // discards trajectories that move into obstacles
+  critic_names.emplace_back("GoalAlign");          // prefers trajectories that make the
+                                                   //   nose go towards (local) nose goal
+  critic_names.emplace_back("PathAlign");          // prefers trajectories that keep the
+                                                   //   robot nose on nose path
+  critic_names.emplace_back("PathDist");           // prefers trajectories on global path
+  critic_names.emplace_back("GoalDist");           // prefers trajectories that go towards
+                                                   //   (local) goal, based on wave propagation
   node->set_parameters({rclcpp::Parameter(dwb_plugin_name_ + ".critics", critic_names)});
 
   declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".path_distance_bias");

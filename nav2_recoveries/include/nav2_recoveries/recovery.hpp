@@ -75,7 +75,7 @@ public:
 
   // an opportunity for derived classes to do something on configuration
   // if they chose
-  virtual void onConfigure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &/*node*/)
+  virtual void onConfigure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & /*node*/)
   {
   }
 
@@ -184,7 +184,7 @@ protected:
         RCLCPP_INFO(
           node_logging_interface_->get_logger(),
           "%s running...", recovery_name_.c_str());
-        },
+      },
       nullptr,
       node_base_interface_.get(),
       node_timers_interface_.get());

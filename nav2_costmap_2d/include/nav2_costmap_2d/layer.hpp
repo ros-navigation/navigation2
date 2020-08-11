@@ -147,7 +147,7 @@ protected:
    *
    * tf_, name_, and layered_costmap_ will all be set already when this is called.
    */
-  virtual void onInitialize(const nav2_util::LifecycleNode::SharedPtr &/*node*/) {}
+  virtual void onInitialize(const nav2_util::LifecycleNode::SharedPtr & /*node*/) {}
 
   bool current_;
   // Currently this var is managed by subclasses.
