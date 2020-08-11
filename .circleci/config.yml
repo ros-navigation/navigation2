@@ -348,30 +348,30 @@ jobs:
     executor: release_exec
     <<: *debug_build
   debug_test:
+    parameters:
+      rmw:
+        default: "rmw_fastrtps_cpp"
+        type: string
     executor: debug_exec
     parallelism: 1
     steps:
       - restore_build
       - test_build
       - report_coverage
+    environment:
+      RMW_IMPLEMENTATION: << parameters.rmw >>
   release_test: &release_test
+    parameters:
+      rmw:
+        default: "rmw_fastrtps_cpp"
+        type: string
     executor: release_exec
     parallelism: 1
     steps:
       - restore_build
       - test_build
-  test_rmw_connext_cpp:
-    <<: *release_test
     environment:
-      RMW_IMPLEMENTATION: "rmw_connext_cpp"
-  test_rmw_cyclonedds_cpp:
-    <<: *release_test
-    environment:
-      RMW_IMPLEMENTATION: "rmw_cyclonedds_cpp"
-  test_rmw_fastrtps_cpp:
-    <<: *release_test
-    environment:
-      RMW_IMPLEMENTATION: "rmw_fastrtps_cpp"
+      RMW_IMPLEMENTATION: << parameters.rmw >>
 
 workflows:
   version: 2
@@ -392,15 +392,15 @@ workflows:
           requires:
             - debug_build
       - release_build
-      # - test_rmw_connext_cpp:
-      #     requires:
-      #       - release_build
-      - test_rmw_cyclonedds_cpp:
+      - release_test:
           requires:
             - release_build
-      - test_rmw_fastrtps_cpp:
-          requires:
-            - release_build
+          matrix:
+            parameters:
+              rmw:
+                # - rmw_connext_cpp
+                - rmw_cyclonedds_cpp
+                - rmw_fastrtps_cpp
     triggers:
       - schedule:
           cron: "0 0 * * *"
