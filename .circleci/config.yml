@@ -154,10 +154,7 @@ references:
                   xargs)
               set -o xtrace
               colcon test \
-                --packages-select ${TEST_PACKAGES}
-              colcon test \
                 --packages-select ${TEST_PACKAGES} \
-                --packages-select-test-failures \
                 --retest-until-pass ${RETEST_UNTIL_PASS} \
                 --ctest-args --test-regex "test_.*"
               colcon test-result \
