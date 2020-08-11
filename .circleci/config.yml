@@ -2,7 +2,7 @@ version: 2.1
 orbs:
   codecov: codecov/codecov@1.0.5
 
-references:
+_command_references:
   common_commands: &common_commands
     restore_from_cache:
       description: "Restore From Cache"
@@ -168,6 +168,8 @@ references:
             path: << parameters.workspace >>/test_results
         - store_artifacts:
             path: << parameters.workspace >>/test_results
+
+_step_references:
   pre_checkout: &pre_checkout
     run:
       name: Pre Checkout
