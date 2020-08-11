@@ -46,7 +46,6 @@ protected:
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;

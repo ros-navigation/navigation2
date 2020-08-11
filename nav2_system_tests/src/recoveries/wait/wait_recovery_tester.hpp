@@ -52,6 +52,8 @@ public:
   bool recoveryTest(
     float time);
 
+  bool recoveryTestCancel(float time);
+
   void activate();
 
   void deactivate();

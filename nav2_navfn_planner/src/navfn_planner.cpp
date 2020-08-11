@@ -152,6 +152,9 @@ NavfnPlanner::makePlan(
   // clear the plan, just in case
   plan.poses.clear();
 
+  plan.header.stamp = node_->now();
+  plan.header.frame_id = global_frame_;
+
   // TODO(orduno): add checks for start and goal reference frame -- should be in global frame
 
   double wx = start.position.x;
@@ -174,12 +177,16 @@ NavfnPlanner::makePlan(
   // clear the starting cell within the costmap because we know it can't be an obstacle
   clearRobotCell(mx, my);
 
+  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
+
   // make sure to resize the underlying array that Navfn uses
   planner_->setNavArr(
     costmap_->getSizeInCellsX(),
     costmap_->getSizeInCellsY());
 
   planner_->setCostmap(costmap_->getCharMap(), true, allow_unknown_);
+
+  lock.unlock();
 
   int map_start[2];
   map_start[0] = mx;
@@ -312,19 +319,16 @@ NavfnPlanner::getPlanFromPotential(
 
   int path_len = planner_->calcPath(costmap_->getSizeInCellsX() * 4);
   if (path_len == 0) {
-    RCLCPP_DEBUG(node_->get_logger(), "No path found\n");
     return false;
   }
 
-  RCLCPP_DEBUG(node_->get_logger(), "Path found, %d steps\n", path_len);
+  auto cost = planner_->getLastPathCost();
+  RCLCPP_DEBUG(node_->get_logger(), "Path found, %d steps, %f cost\n", path_len, cost);
 
   // extract the plan
   float * x = planner_->getPathX();
   float * y = planner_->getPathY();
   int len = planner_->getPathLen();
-
-  plan.header.stamp = node_->now();
-  plan.header.frame_id = global_frame_;
 
   for (int i = len - 1; i >= 0; --i) {
     // convert the plan to world coordinates
@@ -357,51 +361,47 @@ NavfnPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point)
   return planner_->potarr[index];
 }
 
-bool
-NavfnPlanner::validPointPotential(const geometry_msgs::msg::Point & world_point)
-{
-  return validPointPotential(world_point, tolerance_);
-}
+// bool
+// NavfnPlanner::validPointPotential(const geometry_msgs::msg::Point & world_point)
+// {
+//   return validPointPotential(world_point, tolerance_);
+// }
 
-bool
-NavfnPlanner::validPointPotential(
-  const geometry_msgs::msg::Point & world_point, double tolerance)
-{
-  const double resolution = costmap_->getResolution();
+// bool
+// NavfnPlanner::validPointPotential(
+//   const geometry_msgs::msg::Point & world_point, double tolerance)
+// {
+//   const double resolution = costmap_->getResolution();
 
-  geometry_msgs::msg::Point p = world_point;
-  double potential = getPointPotential(p);
-  if (potential < POT_HIGH) {
-    // world_point is reachable by itself
-    return true;
-  } else {
-    // world_point, is not reachable. Trying to find any
-    // reachable point within its tolerance region
-    p.y = world_point.y - tolerance;
-    while (p.y <= world_point.y + tolerance) {
-      p.x = world_point.x - tolerance;
-      while (p.x <= world_point.x + tolerance) {
-        potential = getPointPotential(p);
-        if (potential < POT_HIGH) {
-          return true;
-        }
-        p.x += resolution;
-      }
-      p.y += resolution;
-    }
-  }
+//   geometry_msgs::msg::Point p = world_point;
+//   double potential = getPointPotential(p);
+//   if (potential < POT_HIGH) {
+//     // world_point is reachable by itself
+//     return true;
+//   } else {
+//     // world_point, is not reachable. Trying to find any
+//     // reachable point within its tolerance region
+//     p.y = world_point.y - tolerance;
+//     while (p.y <= world_point.y + tolerance) {
+//       p.x = world_point.x - tolerance;
+//       while (p.x <= world_point.x + tolerance) {
+//         potential = getPointPotential(p);
+//         if (potential < POT_HIGH) {
+//           return true;
+//         }
+//         p.x += resolution;
+//       }
+//       p.y += resolution;
+//     }
+//   }
 
-  return false;
-}
+//   return false;
+// }
 
 bool
 NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
 {
   if (wx < costmap_->getOriginX() || wy < costmap_->getOriginY()) {
-    RCLCPP_ERROR(
-      node_->get_logger(), "worldToMap failed: wx,wy: %f,%f, "
-      "size_x,size_y: %d,%d", wx, wy,
-      costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
     return false;
   }
 
