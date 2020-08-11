@@ -3,16 +3,6 @@ orbs:
   codecov: codecov/codecov@1.0.5
 
 references:
-  common_environment: &common_environment
-    ROS_WS: "/opt/ros_ws"
-    UNDERLAY_WS: "/opt/underlay_ws"
-    OVERLAY_WS: "/opt/overlay_ws"
-    CCACHE_DIR: "/mnt/ramdisk/.ccache"
-    CCACHE_LOGFILE: "/tmp/ccache.log"
-    CCACHE_MAXSIZE: "200M"
-    MAKEFLAGS: "-j 1 -l 2"
-    RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED: "0"
-    RETEST_UNTIL_PASS: "2"
   common_commands: &common_commands
     restore_from_cache:
       description: "Restore From Cache"
@@ -316,6 +306,18 @@ commands:
     steps:
       - *collect_overlay_coverage
       - *upload_overlay_coverage
+
+_environment_references:
+  common_environment: &common_environment
+    ROS_WS: "/opt/ros_ws"
+    UNDERLAY_WS: "/opt/underlay_ws"
+    OVERLAY_WS: "/opt/overlay_ws"
+    CCACHE_DIR: "/mnt/ramdisk/.ccache"
+    CCACHE_LOGFILE: "/tmp/ccache.log"
+    CCACHE_MAXSIZE: "200M"
+    MAKEFLAGS: "-j 1 -l 2"
+    RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED: "0"
+    RETEST_UNTIL_PASS: "2"
 
 executors:
   debug_exec:
