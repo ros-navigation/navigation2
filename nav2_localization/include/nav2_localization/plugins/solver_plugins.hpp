@@ -25,8 +25,8 @@ public:
 		const sensor_msgs::msg::LaserScan& scan);
 
 	void configure(
-		SampleMotionModel* motionSampler,
-		Matcher2d* matcher,
+		SampleMotionModel* init_motionSampler,
+		Matcher2d* init_matcher,
 		nav_msgs::msg::Odometry init_odom,
 		geometry_msgs::msg::Pose init_pose);
 };

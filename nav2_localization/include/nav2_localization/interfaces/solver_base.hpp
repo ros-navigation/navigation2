@@ -37,14 +37,14 @@ public:
 		const sensor_msgs::msg::LaserScan& scan) = 0;
 
 	virtual void configure(
-		SampleMotionModel* motionSampler,
-		Matcher2d* matcher,
+		SampleMotionModel* init_motionSampler,
+		Matcher2d* init_matcher,
 		nav_msgs::msg::Odometry init_odom,
 		geometry_msgs::msg::Pose init_pose) = 0;
 
 private:
-	SampleMotionModel* motionSampler, // Pointer to the MotionSampler (will be used to carry uncertainty from the odom to the pose estimation)
-	Matcher2d* matcher, // Pointer to the Matcher (Will be used to compute how likely it is to be in a certain pose given the obtained measurement)
+	SampleMotionModel* motionSampler; // Pointer to the MotionSampler (will be used to carry uncertainty from the odom to the pose estimation)
+	Matcher2d* matcher; // Pointer to the Matcher (Will be used to compute how likely it is to be in a certain pose given the obtained measurement)
 	nav_msgs::msg::Odometry prev_odom; // Previous pose odometry-based estimation
 	geometry_msgs::msg::Pose prev_pose; // Previous pose estimation
 	

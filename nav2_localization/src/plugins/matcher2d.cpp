@@ -5,14 +5,20 @@
 namespace nav2_localization
 {
 
-float DummyMatcher2d::getLikelihood(
+float DummyMatcher2d::match(
 	const sensor_msgs::msg::LaserScan& scan,
-	const geometry_msgs::msg::Pose& pose,
-	const nav_msgs::msg::OccupancyGrid& map)
+	const geometry_msgs::msg::Pose& pose)
 {
 	float probability = 0.5;
 	return probability;
 }
+
+void DummyMatcher2d::configure(
+	nav_msgs::msg::OccupancyGrid* init_map)
+{
+	map = init_map;
+}
+	
 
 } // nav2_localization
 

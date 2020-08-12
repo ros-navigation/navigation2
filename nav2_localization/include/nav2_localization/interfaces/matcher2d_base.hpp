@@ -23,13 +23,17 @@ public:
      * @brief Computes how likely is it to read a measurement given a position in a map
      * @param scan 2D laser-like measurement
      * @param pose Hypothesis on the robot's pose
-     * @param map 2D occupancy grid map of the environment where the robot is
      * @return Probability of how likely is it to perceive the inputted measurement assuming that the robot is in the given pose inside the provided map
      */
-	virtual float getLikelihood(
+	virtual float match(
 		const sensor_msgs::msg::LaserScan& scan,
-		const geometry_msgs::msg::Pose& pose,
-		const nav_msgs::msg::OccupancyGrid& map) = 0;
+		const geometry_msgs::msg::Pose& pose) = 0;
+
+	virtual void configure(
+		nav_msgs::msg::OccupancyGrid* init_map) = 0;
+
+protected:
+	nav_msgs::msg::OccupancyGrid* map; // 2D occupancy grid map of the environment where the robot is
 };  
 } // nav2_localization
 
