@@ -70,11 +70,8 @@ BehaviorTreeEngine::createTreeFromText(
   const std::string & xml_string,
   BT::Blackboard::Ptr blackboard)
 {
-  BT::XMLParser p(factory_);
-  p.loadFromText(xml_string);
-  auto tree = p.instantiateTree(blackboard); 
-  tree.manifests = factory_.manifests();
-  return tree;
+  return factory_.createTreeFromText(xml_string, blackboard);
 }
+
 
 }  // namespace nav2_behavior_tree
