@@ -44,6 +44,10 @@ public:
     const std::string & xml_string,
     BT::Blackboard::Ptr blackboard);
 
+  BT::Tree createTreeFromFile(
+    const std::string &file_path,
+    Blackboard::Ptr blackboard);
+
   // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
   void haltAllActions(BT::TreeNode * root_node)
   {

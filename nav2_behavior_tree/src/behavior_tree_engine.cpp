@@ -73,5 +73,12 @@ BehaviorTreeEngine::createTreeFromText(
   return factory_.createTreeFromText(xml_string, blackboard);
 }
 
+BT::Tree
+BehaviorTreeEngine::createTreeFromFile(
+  const std::string &file_path,
+  Blackboard::Ptr blackboard)
+{
+  return factory_.createTreeFromFile(file_path, blackboard);
+}
 
 }  // namespace nav2_behavior_tree
