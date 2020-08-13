@@ -1,3 +1,4 @@
+// Copyright (c) 2020 Samsung Research America
 // Copyright (c) 2020 ymd-stella
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
