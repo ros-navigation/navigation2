@@ -46,6 +46,14 @@
 
 // NOTES 
 // way to do collision checking on oriented footprint https://github.com/windelbouwman/move-base-ompl/blob/master/src/ompl_global_planner.cpp#L133 (but doesnt cache)
+// https://github.com/ompl/ompl/blob/master/demos/GeometricCarPlanning.cpp for reeds/dublin hybrid. There's also a 2D point to point demo that could be helpful.
+// optimization flags -03
+
+// In fact, I use that smoother in the A* implementation to make it "smooth" so its not grid-blocky. 
+// Its actually how I tested the smoother since that's the nuclear case with tons of sharp random angles.
+// People are used to these smooth paths from Navigation Function approaches and I'm not sure anyone would be 
+// happy if I just gave them a A* without it. Its stil quite fast but its much faster than NavFn without the smoother. 
+// If you have a half decent controller though, its largely unneeded (I tested, its fine, its just not visually appealing).
 
 #include <string>
 #include <memory>
