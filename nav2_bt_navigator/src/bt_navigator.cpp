@@ -157,7 +157,7 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
   RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string.c_str());
 
   // Create the Behavior Tree from the XML input
-  tree_ = bt_->buildTreeFromText(xml_string, blackboard_);
+  tree_ = bt_->createTreeFromText(xml_string, blackboard_);
   current_bt_xml_filename_ = bt_xml_filename;
 
   return true;

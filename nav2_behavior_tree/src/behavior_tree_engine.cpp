@@ -66,7 +66,7 @@ BehaviorTreeEngine::run(
 }
 
 BT::Tree
-BehaviorTreeEngine::buildTreeFromText(
+BehaviorTreeEngine::createTreeFromText(
   const std::string & xml_string,
   BT::Blackboard::Ptr blackboard)
 {
