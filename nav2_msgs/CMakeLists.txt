@@ -18,12 +18,15 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/VoxelGrid.msg"
   "msg/BehaviorTreeStatusChange.msg"
   "msg/BehaviorTreeLog.msg"
+  "msg/Particle.msg"
+  "msg/ParticleCloud.msg"
   "srv/GetCostmap.srv"
   "srv/ClearCostmapExceptRegion.srv"
   "srv/ClearCostmapAroundRobot.srv"
   "srv/ClearEntireCostmap.srv"
   "srv/ManageLifecycleNodes.srv"
   "srv/LoadMap.srv"
+  "srv/SaveMap.srv"
   "action/BackUp.action"
   "action/ComputePathToPose.action"
   "action/FollowPath.action"
@@ -31,7 +34,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/Wait.action"
   "action/Spin.action"
   "action/DummyRecovery.action"
-  "action/RandomCrawl.action"
   "action/FollowWaypoints.action"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs
 )

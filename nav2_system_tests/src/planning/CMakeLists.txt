@@ -1,20 +1,30 @@
-ament_add_gtest_executable(test_planner_costmaps_node
+set(test_planner_costmaps_exec test_planner_costmaps_node)
+
+ament_add_gtest_executable(${test_planner_costmaps_exec}
   test_planner_costmaps_node.cpp
   planner_tester.cpp
 )
 
-ament_target_dependencies(test_planner_costmaps_node
+target_link_libraries(${test_planner_costmaps_exec}
+  ${nav2_map_server_LIBRARIES})
+
+ament_target_dependencies(${test_planner_costmaps_exec}
   ${dependencies}
 )
 
-ament_add_gtest_executable(test_planner_random_node
+set(test_planner_random_exec test_planner_random_node)
+
+ament_add_gtest_executable(${test_planner_random_exec}
   test_planner_random_node.cpp
   planner_tester.cpp
 )
 
-ament_target_dependencies(test_planner_random_node
+ament_target_dependencies(${test_planner_random_exec}
   ${dependencies}
 )
+
+target_link_libraries(${test_planner_random_exec}
+  ${nav2_map_server_LIBRARIES})
 
 ament_add_test(test_planner_costmaps
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
@@ -22,7 +32,7 @@ ament_add_test(test_planner_costmaps
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
-    TEST_EXECUTABLE=$<TARGET_FILE:test_planner_costmaps_node>
+    TEST_EXECUTABLE=$<TARGET_FILE:${test_planner_costmaps_exec}>
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map.pgm
 )
 
@@ -32,6 +42,6 @@ ament_add_test(test_planner_random
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
-    TEST_EXECUTABLE=$<TARGET_FILE:test_planner_random_node>
+    TEST_EXECUTABLE=$<TARGET_FILE:${test_planner_random_exec}>
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map.pgm
 )

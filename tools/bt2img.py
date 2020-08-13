@@ -37,6 +37,7 @@ control_nodes = [
     "Subtree",
     "Timeout",
     "RateController",
+    "DistanceController",
     "RecoveryNode",
     "PipelineSequence",
     "RoundRobin"
@@ -57,6 +58,7 @@ condition_nodes = [
     "IsStuck",
     "GoalReached",
     "initialPoseReceived",
+    "GoalUpdated",
     ]
 
 def main():

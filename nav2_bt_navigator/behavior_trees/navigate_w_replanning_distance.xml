@@ -1,0 +1,14 @@
+<!--
+  This Behavior Tree replans the global path after every 1m.
+-->
+
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <PipelineSequence name="NavigateWithReplanning">
+      <DistanceController distance="1.0">
+        <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+      </DistanceController>
+      <FollowPath path="{path}"  controller_id="FollowPath"/>
+    </PipelineSequence>
+  </BehaviorTree>
+</root>

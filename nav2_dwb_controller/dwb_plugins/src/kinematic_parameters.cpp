@@ -52,11 +52,27 @@ using std::placeholders::_1;
 namespace dwb_plugins
 {
 
-KinematicParameters::KinematicParameters()
+bool KinematicParameters::isValidSpeed(double x, double y, double theta)
 {
+  double vmag_sq = x * x + y * y;
+  if (max_speed_xy_ >= 0.0 && vmag_sq > max_speed_xy_sq_ + EPSILON) {return false;}
+  if (min_speed_xy_ >= 0.0 && vmag_sq + EPSILON < min_speed_xy_sq_ &&
+    min_speed_theta_ >= 0.0 && fabs(theta) + EPSILON < min_speed_theta_) {return false;}
+  if (vmag_sq == 0.0 && theta == 0.0) {return false;}
+  return true;
 }
 
-void KinematicParameters::initialize(
+KinematicsHandler::KinematicsHandler()
+{
+  kinematics_.store(new KinematicParameters);
+}
+
+KinematicsHandler::~KinematicsHandler()
+{
+  delete kinematics_.load();
+}
+
+void KinematicsHandler::initialize(
   const nav2_util::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
@@ -94,20 +110,22 @@ void KinematicParameters::initialize(
     nh, plugin_name + ".decel_lim_theta",
     rclcpp::ParameterValue(0.0));
 
-  nh->get_parameter(plugin_name + ".min_vel_x", min_vel_x_);
-  nh->get_parameter(plugin_name + ".min_vel_y", min_vel_y_);
-  nh->get_parameter(plugin_name + ".max_vel_x", max_vel_x_);
-  nh->get_parameter(plugin_name + ".max_vel_y", max_vel_y_);
-  nh->get_parameter(plugin_name + ".max_vel_theta", max_vel_theta_);
-  nh->get_parameter(plugin_name + ".min_speed_xy", min_speed_xy_);
-  nh->get_parameter(plugin_name + ".max_speed_xy", max_speed_xy_);
-  nh->get_parameter(plugin_name + ".min_speed_theta", min_speed_theta_);
-  nh->get_parameter(plugin_name + ".acc_lim_x", acc_lim_x_);
-  nh->get_parameter(plugin_name + ".acc_lim_y", acc_lim_y_);
-  nh->get_parameter(plugin_name + ".acc_lim_theta", acc_lim_theta_);
-  nh->get_parameter(plugin_name + ".decel_lim_x", decel_lim_x_);
-  nh->get_parameter(plugin_name + ".decel_lim_y", decel_lim_y_);
-  nh->get_parameter(plugin_name + ".decel_lim_theta", decel_lim_theta_);
+  KinematicParameters kinematics;
+
+  nh->get_parameter(plugin_name + ".min_vel_x", kinematics.min_vel_x_);
+  nh->get_parameter(plugin_name + ".min_vel_y", kinematics.min_vel_y_);
+  nh->get_parameter(plugin_name + ".max_vel_x", kinematics.max_vel_x_);
+  nh->get_parameter(plugin_name + ".max_vel_y", kinematics.max_vel_y_);
+  nh->get_parameter(plugin_name + ".max_vel_theta", kinematics.max_vel_theta_);
+  nh->get_parameter(plugin_name + ".min_speed_xy", kinematics.min_speed_xy_);
+  nh->get_parameter(plugin_name + ".max_speed_xy", kinematics.max_speed_xy_);
+  nh->get_parameter(plugin_name + ".min_speed_theta", kinematics.min_speed_theta_);
+  nh->get_parameter(plugin_name + ".acc_lim_x", kinematics.acc_lim_x_);
+  nh->get_parameter(plugin_name + ".acc_lim_y", kinematics.acc_lim_y_);
+  nh->get_parameter(plugin_name + ".acc_lim_theta", kinematics.acc_lim_theta_);
+  nh->get_parameter(plugin_name + ".decel_lim_x", kinematics.decel_lim_x_);
+  nh->get_parameter(plugin_name + ".decel_lim_y", kinematics.decel_lim_y_);
+  nh->get_parameter(plugin_name + ".decel_lim_theta", kinematics.decel_lim_theta_);
 
   // Setup callback for changes to parameters.
   parameters_client_ = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -117,26 +135,25 @@ void KinematicParameters::initialize(
     nh->get_node_services_interface());
 
   parameter_event_sub_ = parameters_client_->on_parameter_event(
-    std::bind(&KinematicParameters::on_parameter_event_callback, this, _1));
+    std::bind(&KinematicsHandler::on_parameter_event_callback, this, _1));
 
-  min_speed_xy_sq_ = min_speed_xy_ * min_speed_xy_;
-  max_speed_xy_sq_ = max_speed_xy_ * max_speed_xy_;
+  kinematics.min_speed_xy_sq_ = kinematics.min_speed_xy_ * kinematics.min_speed_xy_;
+  kinematics.max_speed_xy_sq_ = kinematics.max_speed_xy_ * kinematics.max_speed_xy_;
+
+  update_kinematics(kinematics);
 }
 
-bool KinematicParameters::isValidSpeed(double x, double y, double theta)
+bool KinematicsHandler::isValidSpeed(double x, double y, double theta)
 {
-  double vmag_sq = x * x + y * y;
-  if (max_speed_xy_ >= 0.0 && vmag_sq > max_speed_xy_sq_ + EPSILON) {return false;}
-  if (min_speed_xy_ >= 0.0 && vmag_sq + EPSILON < min_speed_xy_sq_ &&
-    min_speed_theta_ >= 0.0 && fabs(theta) + EPSILON < min_speed_theta_) {return false;}
-  if (vmag_sq == 0.0 && theta == 0.0) {return false;}
-  return true;
+  return kinematics_.load()->isValidSpeed(x, y, theta);
 }
 
 void
-KinematicParameters::on_parameter_event_callback(
+KinematicsHandler::on_parameter_event_callback(
   const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
 {
+  KinematicParameters kinematics(*kinematics_.load());
+
   for (auto & changed_parameter : event->changed_parameters) {
     const auto & type = changed_parameter.value.type;
     const auto & name = changed_parameter.name;
@@ -144,36 +161,45 @@ KinematicParameters::on_parameter_event_callback(
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == plugin_name_ + ".min_vel_x") {
-        min_vel_x_ = value.double_value;
+        kinematics.min_vel_x_ = value.double_value;
       } else if (name == plugin_name_ + ".min_vel_y") {
-        min_vel_y_ = value.double_value;
+        kinematics.min_vel_y_ = value.double_value;
       } else if (name == plugin_name_ + ".max_vel_x") {
-        max_vel_x_ = value.double_value;
+        kinematics.max_vel_x_ = value.double_value;
       } else if (name == plugin_name_ + ".max_vel_y") {
-        max_vel_y_ = value.double_value;
+        kinematics.max_vel_y_ = value.double_value;
       } else if (name == plugin_name_ + ".max_vel_theta") {
-        max_vel_theta_ = value.double_value;
+        kinematics.max_vel_theta_ = value.double_value;
       } else if (name == plugin_name_ + ".min_speed_xy") {
-        min_speed_xy_ = value.double_value;
+        kinematics.min_speed_xy_ = value.double_value;
+        kinematics.min_speed_xy_sq_ = kinematics.min_speed_xy_ * kinematics.min_speed_xy_;
       } else if (name == plugin_name_ + ".max_speed_xy") {
-        max_speed_xy_ = value.double_value;
+        kinematics.max_speed_xy_ = value.double_value;
       } else if (name == plugin_name_ + ".min_speed_theta") {
-        min_speed_theta_ = value.double_value;
+        kinematics.min_speed_theta_ = value.double_value;
+        kinematics.max_speed_xy_sq_ = kinematics.max_speed_xy_ * kinematics.max_speed_xy_;
       } else if (name == plugin_name_ + ".acc_lim_x") {
-        acc_lim_x_ = value.double_value;
+        kinematics.acc_lim_x_ = value.double_value;
       } else if (name == plugin_name_ + ".acc_lim_y") {
-        acc_lim_y_ = value.double_value;
+        kinematics.acc_lim_y_ = value.double_value;
       } else if (name == plugin_name_ + ".acc_lim_theta") {
-        acc_lim_theta_ = value.double_value;
+        kinematics.acc_lim_theta_ = value.double_value;
       } else if (name == plugin_name_ + ".decel_lim_x") {
-        decel_lim_x_ = value.double_value;
+        kinematics.decel_lim_x_ = value.double_value;
       } else if (name == plugin_name_ + ".decel_lim_y") {
-        decel_lim_y_ = value.double_value;
+        kinematics.decel_lim_y_ = value.double_value;
       } else if (name == plugin_name_ + ".decel_lim_theta") {
-        decel_lim_theta_ = value.double_value;
+        kinematics.decel_lim_theta_ = value.double_value;
       }
     }
   }
+  update_kinematics(kinematics);
+}
+
+void KinematicsHandler::update_kinematics(KinematicParameters kinematics)
+{
+  delete kinematics_.load();
+  kinematics_.store(new KinematicParameters(kinematics));
 }
 
 }  // namespace dwb_plugins

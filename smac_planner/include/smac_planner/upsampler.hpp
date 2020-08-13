@@ -67,18 +67,17 @@ public:
     _options.nonlinear_conjugate_gradient_type = ceres::POLAK_RIBIERE;
     _options.line_search_interpolation_type = ceres::CUBIC;
 
-    _options.max_num_iterations = params.max_iterations;
-    _options.max_solver_time_in_seconds = params.max_time;
+    _options.max_num_iterations = params.max_iterations; //5000
+    _options.max_solver_time_in_seconds = params.max_time; //5.0; // TODO
 
     _options.function_tolerance = params.fn_tol;
     _options.gradient_tolerance = params.gradient_tol;
-    _options.parameter_tolerance = params.param_tol;
+    _options.parameter_tolerance = params.param_tol;//1e-20;
 
-    _options.min_line_search_step_size = params.advanced.min_line_search_step_size;
+    _options.min_line_search_step_size = params.advanced.min_line_search_step_size;//1e-30;
     _options.max_num_line_search_step_size_iterations =
       params.advanced.max_num_line_search_step_size_iterations;
-    _options.line_search_sufficient_function_decrease =
-      params.advanced.line_search_sufficient_function_decrease;
+    _options.line_search_sufficient_function_decrease = params.advanced.line_search_sufficient_function_decrease;//1e-30;
     _options.max_line_search_step_contraction = params.advanced.max_line_search_step_contraction;
     _options.min_line_search_step_contraction = params.advanced.min_line_search_step_contraction;
     _options.max_num_line_search_direction_restarts =

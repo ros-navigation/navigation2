@@ -20,6 +20,8 @@
 #include <queue>
 #include <limits>
 
+#include "smac_planner/constants.hpp"
+
 namespace smac_planner
 {
 
@@ -36,10 +38,10 @@ public:
    * @param index The index of this node for self-reference
    */
   explicit Node(unsigned char & cost_in, const unsigned int index)
-  : last_node(nullptr),
+  : parent(nullptr),
     _cell_cost(static_cast<float>(cost_in)),
     _accumulated_cost(std::numeric_limits<float>::max()),
-    _i(index),
+    _index(index),
     _was_visited(false),
     _is_queued(false)
   {
@@ -50,7 +52,7 @@ public:
    */
   ~Node()
   {
-    last_node = nullptr;
+    parent = nullptr;
   }
 
   /**
@@ -60,7 +62,7 @@ public:
    */
   bool operator==(const Node & rhs)
   {
-    return this->_i == rhs._i;
+    return this->_index == rhs._index;
   }
 
   /**
@@ -70,10 +72,10 @@ public:
    */
   void reset(const unsigned char & cost, const unsigned int index)
   {
-    last_node = nullptr;
+    parent = nullptr;
     _cell_cost = static_cast<float>(cost);
     _accumulated_cost = std::numeric_limits<float>::max();
-    _i = index;
+    _index = index;
     _was_visited = false;
     _is_queued = false;
   }
@@ -146,15 +148,43 @@ public:
    */
   unsigned int & getIndex()
   {
-    return _i;
+    return _index;
   }
 
-  Node * last_node;
+  /**
+   * @brief Check if this node is valid
+   * @param traverse_unknown If we can explore unknown nodes on the graph
+   * @return whether this node is valid and collision free
+   */
+  bool isNodeValid(const bool & traverse_unknown) {
+    // NOTE(stevemacenski): Right now, we do not check if the node has wrapped around
+    // the regular grid (e.g. your node is on the edge of the costmap and i+1
+    // goes to the other side). This check would add compute time and my assertion is
+    // that if you do wrap around, the heuristic will be so high it'll be added far
+    // in the queue that it will never be called if a valid path exists.
+    // This is intentionally un-included to increase speed, but be aware. If this causes
+    // trouble, please file a ticket and we can address it then.
+
+    // occupied node
+    auto & cost = this->getCost();
+    if (cost == OCCUPIED || cost == INSCRIBED) {
+      return false;
+    }
+
+    // unknown node
+    if (cost == UNKNOWN && ! traverse_unknown) {
+      return false;
+    }
+
+    return true;
+  }
+
+  Node * parent;
 
 private:
   float _cell_cost;
   float _accumulated_cost;
-  unsigned int _i;
+  unsigned int _index;
   bool _was_visited;
   bool _is_queued;
 };

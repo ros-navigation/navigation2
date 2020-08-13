@@ -48,6 +48,8 @@
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 
+#include "portable_utils.h"
+
 using namespace std::placeholders;
 using namespace std::chrono_literals;
 
@@ -245,7 +247,7 @@ AmclNode::waitForTransforms()
   while (rclcpp::ok() &&
     !tf_buffer_->canTransform(
       global_frame_id_, odom_frame_id_, tf2::TimePointZero,
-      tf2::durationFromSec(1.0), &tf_error))
+      transform_tolerance_, &tf_error))
   {
     RCLCPP_INFO(
       get_logger(), "Timed out waiting for transform from %s to %s"
@@ -266,6 +268,12 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Lifecycle publishers must be explicitly activated
   pose_pub_->on_activate();
   particlecloud_pub_->on_activate();
+  particle_cloud_pub_->on_activate();
+
+  RCLCPP_WARN(
+    get_logger(),
+    "Publishing the particle cloud as geometry_msgs/PoseArray msg is deprecated, "
+    "will be published as nav2_msgs/ParticleCloud in the future");
 
   first_pose_sent_ = false;
 
@@ -301,6 +309,7 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // Lifecycle publishers must be explicitly deactivated
   pose_pub_->on_deactivate();
   particlecloud_pub_->on_deactivate();
+  particle_cloud_pub_->on_deactivate();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -333,6 +342,7 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   // PubSub
   pose_pub_.reset();
   particlecloud_pub_.reset();
+  particle_cloud_pub_.reset();
 
   // Odometry
   motion_model_.reset();
@@ -741,7 +751,7 @@ bool AmclNode::addNewScanner(
   ident.header.stamp = rclcpp::Time();
   tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
   try {
-    tf_buffer_->transform(ident, laser_pose, base_frame_id_);
+    tf_buffer_->transform(ident, laser_pose, base_frame_id_, transform_tolerance_);
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(
       get_logger(), "Couldn't transform from %s to %s, "
@@ -852,17 +862,25 @@ AmclNode::publishParticleCloud(const pf_sample_set_t * set)
 {
   // If initial pose is not known, AMCL does not know the current pose
   if (!initial_pose_is_known_) {return;}
-  geometry_msgs::msg::PoseArray cloud_msg;
-  cloud_msg.header.stamp = this->now();
-  cloud_msg.header.frame_id = global_frame_id_;
-  cloud_msg.poses.resize(set->sample_count);
+  auto cloud_with_weights_msg = std::make_unique<nav2_msgs::msg::ParticleCloud>();
+  cloud_with_weights_msg->header.stamp = this->now();
+  cloud_with_weights_msg->header.frame_id = global_frame_id_;
+  cloud_with_weights_msg->particles.resize(set->sample_count);
+
+  auto cloud_msg = std::make_unique<geometry_msgs::msg::PoseArray>();
+  cloud_msg->header.stamp = this->now();
+  cloud_msg->header.frame_id = global_frame_id_;
+  cloud_msg->poses.resize(set->sample_count);
   for (int i = 0; i < set->sample_count; i++) {
-    cloud_msg.poses[i].position.x = set->samples[i].pose.v[0];
-    cloud_msg.poses[i].position.y = set->samples[i].pose.v[1];
-    cloud_msg.poses[i].position.z = 0;
-    cloud_msg.poses[i].orientation = orientationAroundZAxis(set->samples[i].pose.v[2]);
+    cloud_msg->poses[i].position.x = set->samples[i].pose.v[0];
+    cloud_msg->poses[i].position.y = set->samples[i].pose.v[1];
+    cloud_msg->poses[i].position.z = 0;
+    cloud_msg->poses[i].orientation = orientationAroundZAxis(set->samples[i].pose.v[2]);
+    cloud_with_weights_msg->particles[i].pose = (*cloud_msg).poses[i];
+    cloud_with_weights_msg->particles[i].weight = set->samples[i].weight;
   }
-  particlecloud_pub_->publish(cloud_msg);
+  particlecloud_pub_->publish(std::move(cloud_msg));
+  particle_cloud_pub_->publish(std::move(cloud_with_weights_msg));
 }
 
 bool
@@ -923,35 +941,35 @@ AmclNode::publishAmclPose(
     return;
   }
 
-  geometry_msgs::msg::PoseWithCovarianceStamped p;
+  auto p = std::make_unique<geometry_msgs::msg::PoseWithCovarianceStamped>();
   // Fill in the header
-  p.header.frame_id = global_frame_id_;
-  p.header.stamp = laser_scan->header.stamp;
+  p->header.frame_id = global_frame_id_;
+  p->header.stamp = laser_scan->header.stamp;
   // Copy in the pose
-  p.pose.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
-  p.pose.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
-  p.pose.pose.orientation = orientationAroundZAxis(hyps[max_weight_hyp].pf_pose_mean.v[2]);
+  p->pose.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
+  p->pose.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
+  p->pose.pose.orientation = orientationAroundZAxis(hyps[max_weight_hyp].pf_pose_mean.v[2]);
   // Copy in the covariance, converting from 3-D to 6-D
   pf_sample_set_t * set = pf_->sets + pf_->current_set;
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 2; j++) {
       // Report the overall filter covariance, rather than the
       // covariance for the highest-weight cluster
-      // p.covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
-      p.pose.covariance[6 * i + j] = set->cov.m[i][j];
+      // p->covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
+      p->pose.covariance[6 * i + j] = set->cov.m[i][j];
     }
   }
-  p.pose.covariance[6 * 5 + 5] = set->cov.m[2][2];
+  p->pose.covariance[6 * 5 + 5] = set->cov.m[2][2];
   float temp = 0.0;
-  for (auto covariance_value : p.pose.covariance) {
+  for (auto covariance_value : p->pose.covariance) {
     temp += covariance_value;
   }
-  temp += p.pose.pose.position.x + p.pose.pose.position.y;
+  temp += p->pose.pose.position.x + p->pose.pose.position.y;
   if (!std::isnan(temp)) {
     RCLCPP_DEBUG(get_logger(), "Publishing pose");
-    pose_pub_->publish(p);
+    last_published_pose_ = *p;
     first_pose_sent_ = true;
-    last_published_pose_ = p;
+    pose_pub_->publish(std::move(p));
   } else {
     RCLCPP_WARN(
       get_logger(), "AMCL covariance or pose is NaN, likely due to an invalid "
@@ -1240,6 +1258,10 @@ AmclNode::initPubSub()
 
   particlecloud_pub_ = create_publisher<geometry_msgs::msg::PoseArray>(
     "particlecloud",
+    rclcpp::SensorDataQoS());
+
+  particle_cloud_pub_ = create_publisher<nav2_msgs::msg::ParticleCloud>(
+    "particle_cloud",
     rclcpp::SensorDataQoS());
 
   pose_pub_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(

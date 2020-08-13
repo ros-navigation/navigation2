@@ -56,8 +56,8 @@ def generate_launch_description():
     start_rviz_cmd = Node(
         condition=UnlessCondition(use_namespace),
         package='rviz2',
-        node_executable='rviz2',
-        node_name='rviz2',
+        executable='rviz2',
+        name='rviz2',
         arguments=['-d', rviz_config_file],
         output='screen')
 
@@ -68,9 +68,9 @@ def generate_launch_description():
     start_namespaced_rviz_cmd = Node(
         condition=IfCondition(use_namespace),
         package='rviz2',
-        node_executable='rviz2',
-        node_name='rviz2',
-        node_namespace=namespace,
+        executable='rviz2',
+        name='rviz2',
+        namespace=namespace,
         arguments=['-d', namespaced_rviz_config_file],
         output='screen',
         remappings=[('/tf', 'tf'),

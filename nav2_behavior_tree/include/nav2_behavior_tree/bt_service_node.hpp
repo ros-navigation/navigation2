@@ -21,18 +21,19 @@
 #include "behaviortree_cpp_v3/action_node.h"
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_behavior_tree/bt_conversions.hpp"
 
 namespace nav2_behavior_tree
 {
 
 template<class ServiceT>
-class BtServiceNode : public BT::CoroActionNode
+class BtServiceNode : public BT::SyncActionNode
 {
 public:
   BtServiceNode(
     const std::string & service_node_name,
     const BT::NodeConfiguration & conf)
-  : BT::CoroActionNode(service_node_name, conf), service_node_name_(service_node_name)
+  : BT::SyncActionNode(service_node_name, conf), service_node_name_(service_node_name)
   {
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
@@ -44,6 +45,9 @@ public:
     // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
     service_client_ = node_->create_client<ServiceT>(service_name_);
+
+    // Make a request for the service without parameter
+    request_ = std::make_shared<typename ServiceT::Request>();
 
     // Make sure the server is actually there before continuing
     RCLCPP_INFO(
@@ -85,26 +89,31 @@ public:
   {
     on_tick();
     auto future_result = service_client_->async_send_request(request_);
+    return check_future(future_result);
+  }
 
-    rclcpp::executor::FutureReturnCode rc;
+  // Fill in service request with information if necessary
+  virtual void on_tick()
+  {
+  }
+
+  // Check the future and decide the status of Behaviortree
+  virtual BT::NodeStatus check_future(
+    std::shared_future<typename ServiceT::Response::SharedPtr> future_result)
+  {
+    rclcpp::FutureReturnCode rc;
     rc = rclcpp::spin_until_future_complete(
       node_,
       future_result, server_timeout_);
-    if (rc == rclcpp::executor::FutureReturnCode::SUCCESS) {
+    if (rc == rclcpp::FutureReturnCode::SUCCESS) {
       return BT::NodeStatus::SUCCESS;
-    } else if (rc == rclcpp::executor::FutureReturnCode::TIMEOUT) {
+    } else if (rc == rclcpp::FutureReturnCode::TIMEOUT) {
       RCLCPP_WARN(
         node_->get_logger(),
         "Node timed out while executing service call to %s.", service_name_.c_str());
       on_wait_for_result();
     }
     return BT::NodeStatus::FAILURE;
-  }
-
-  // Fill in service request with information if necessary
-  virtual void on_tick()
-  {
-    request_ = std::make_shared<typename ServiceT::Request>();
   }
 
   // An opportunity to do something after
@@ -114,6 +123,14 @@ public:
   }
 
 protected:
+  void increment_recovery_count()
+  {
+    int recovery_count = 0;
+    config().blackboard->get<int>("number_recoveries", recovery_count);  // NOLINT
+    recovery_count += 1;
+    config().blackboard->set<int>("number_recoveries", recovery_count);  // NOLINT
+  }
+
   std::string service_name_, service_node_name_;
   typename std::shared_ptr<rclcpp::Client<ServiceT>> service_client_;
   std::shared_ptr<typename ServiceT::Request> request_;

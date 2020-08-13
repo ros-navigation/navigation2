@@ -51,7 +51,7 @@ public:
   virtual ~VelocityIterator() {}
   virtual void initialize(
     const nav2_util::LifecycleNode::SharedPtr & nh,
-    KinematicParameters::Ptr kinematics,
+    KinematicsHandler::Ptr kinematics,
     const std::string & plugin_name) = 0;
   virtual void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity, double dt) = 0;
   virtual bool hasMoreTwists() = 0;

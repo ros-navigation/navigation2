@@ -37,7 +37,8 @@ public:
   Status onCycleUpdate() override;
 
 protected:
-  builtin_interfaces::msg::Duration duration_;
+  std::chrono::time_point<std::chrono::steady_clock> wait_end_;
+  WaitAction::Feedback::SharedPtr feedback_;
 };
 
 }  // namespace nav2_recoveries

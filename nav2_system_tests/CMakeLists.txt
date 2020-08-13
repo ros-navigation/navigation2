@@ -6,6 +6,7 @@ find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav2_map_server REQUIRED)
 find_package(nav2_bringup REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -20,12 +21,14 @@ find_package(rclpy REQUIRED)
 find_package(nav2_navfn_planner REQUIRED)
 find_package(nav2_planner REQUIRED)
 find_package(navigation2)
+find_package(angles REQUIRED)
 
 nav2_package()
 
 set(dependencies
   rclcpp
   nav2_util
+  nav2_map_server
   nav2_bringup
   nav2_msgs
   nav_msgs
@@ -39,6 +42,7 @@ set(dependencies
   rclpy
   nav2_planner
   nav2_navfn_planner
+  angles
 )
 
 if(BUILD_TESTING)
@@ -53,6 +57,9 @@ if(BUILD_TESTING)
   add_subdirectory(src/system)
   add_subdirectory(src/updown)
   add_subdirectory(src/waypoint_follower)
+  add_subdirectory(src/recoveries/spin)
+  add_subdirectory(src/recoveries/wait)
+  add_subdirectory(src/recoveries/backup)
   install(DIRECTORY maps DESTINATION share/${PROJECT_NAME})
 
 endif()

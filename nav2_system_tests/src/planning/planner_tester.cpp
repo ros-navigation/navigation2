@@ -16,6 +16,7 @@
 #include <random>
 #include <tuple>
 #include <utility>
+#include <vector>
 #include <memory>
 #include <iostream>
 #include <chrono>
@@ -24,7 +25,8 @@
 
 #include "planner_tester.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "nav2_util/map_loader/map_loader.hpp"
+#include "nav2_map_server/map_mode.hpp"
+#include "nav2_map_server/map_io.hpp"
 #include "nav2_msgs/msg/costmap_meta_data.hpp"
 
 using namespace std::chrono_literals;
@@ -84,6 +86,7 @@ void PlannerTester::deactivate()
   spin_thread_.reset();
 
   auto state = rclcpp_lifecycle::State();
+  planner_tester_->onDeactivate(state);
   planner_tester_->onCleanup(state);
 
   map_timer_.reset();
@@ -148,15 +151,9 @@ void PlannerTester::loadDefaultMap()
   double free_threshold = 0.196;
 
   // Define origin offset
-  geometry_msgs::msg::Twist origin;
-  origin.linear.x = 0.0;
-  origin.linear.y = 0.0;
-  origin.linear.z = 0.0;
-  origin.angular.x = 0.0;
-  origin.angular.y = 0.0;
-  origin.angular.z = 0.0;
+  std::vector<double> origin = {0.0, 0.0, 0.0};
 
-  MapMode mode = TRINARY;
+  nav2_map_server::MapMode mode = nav2_map_server::MapMode::Trinary;
 
   std::string file_path = "";
   char const * path = getenv("TEST_MAP");
@@ -171,11 +168,17 @@ void PlannerTester::loadDefaultMap()
   RCLCPP_INFO(this->get_logger(), "Loading map with file_path: %s", file_path.c_str());
 
   try {
-    map_ =
-      std::make_shared<nav_msgs::msg::OccupancyGrid>(
-      map_loader::loadMapFromFile(
-        file_path, resolution, negate,
-        occupancy_threshold, free_threshold, origin, mode));
+    map_ = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+
+    nav2_map_server::LoadParameters load_parameters;
+    load_parameters.image_file_name = file_path;
+    load_parameters.resolution = resolution;
+    load_parameters.origin = origin;
+    load_parameters.free_thresh = free_threshold;
+    load_parameters.occupied_thresh = occupancy_threshold;
+    load_parameters.mode = mode;
+    load_parameters.negate = negate;
+    loadMapFromFile(load_parameters, *map_);
   } catch (...) {
     RCLCPP_ERROR(
       this->get_logger(),

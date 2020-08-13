@@ -57,10 +57,14 @@ ament_target_dependencies(lifecycle_manager
 )
 
 install(TARGETS
-  lifecycle_manager
   ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(TARGETS
+  lifecycle_manager
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -69,6 +73,11 @@ install(DIRECTORY include/ DESTINATION include/)
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_pytest REQUIRED)
+
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

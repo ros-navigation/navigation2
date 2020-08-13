@@ -21,7 +21,7 @@ from launch.actions import (DeclareLaunchArgument, GroupAction,
                             IncludeLaunchDescription, SetEnvironmentVariable)
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import PushRosNamespace
 
 
@@ -33,6 +33,7 @@ def generate_launch_description():
     # Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
+    slam = LaunchConfiguration('slam')
     map_yaml_file = LaunchConfiguration('map')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
@@ -51,6 +52,11 @@ def generate_launch_description():
         'use_namespace',
         default_value='false',
         description='Whether to apply a namespace to the navigation stack')
+
+    declare_slam_cmd = DeclareLaunchArgument(
+        'slam',
+        default_value='False',
+        description='Whether run a SLAM')
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
@@ -84,8 +90,17 @@ def generate_launch_description():
             namespace=namespace),
 
         IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(launch_dir, 'slam_launch.py')),
+            condition=IfCondition(slam),
+            launch_arguments={'namespace': namespace,
+                              'use_sim_time': use_sim_time,
+                              'autostart': autostart,
+                              'params_file': params_file}.items()),
+
+        IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(launch_dir,
                                                        'localization_launch.py')),
+            condition=IfCondition(PythonExpression(['not ', slam])),
             launch_arguments={'namespace': namespace,
                               'map': map_yaml_file,
                               'use_sim_time': use_sim_time,
@@ -113,6 +128,7 @@ def generate_launch_description():
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_use_namespace_cmd)
+    ld.add_action(declare_slam_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)

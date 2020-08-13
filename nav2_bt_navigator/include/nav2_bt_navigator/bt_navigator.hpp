@@ -88,7 +88,9 @@ protected:
    */
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>;
+  using Action = nav2_msgs::action::NavigateToPose;
+
+  using ActionServer = nav2_util::SimpleActionServer<Action>;
 
   // Our action server implements the NavigateToPose action
   std::unique_ptr<ActionServer> action_server_;
@@ -110,6 +112,8 @@ protected:
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
 
+  BT::Tree tree_;
+
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
 
@@ -123,7 +127,7 @@ protected:
   std::vector<std::string> plugin_lib_names_;
 
   // A client that we'll use to send a command message to our own task server
-  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr self_client_;
+  rclcpp_action::Client<Action>::SharedPtr self_client_;
 
   // A regular, non-spinning ROS node that we can use for calls to the action client
   rclcpp::Node::SharedPtr client_node_;
@@ -131,6 +135,12 @@ protected:
   // Spinning transform that can be used by the BT nodes
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+  // Metrics for feedback
+  rclcpp::Time start_time_;
+  std::string robot_frame_;
+  std::string global_frame_;
+  double transform_tolerance_;
 };
 
 }  // namespace nav2_bt_navigator

@@ -35,6 +35,8 @@
 #include "nav2_amcl/pf/pf_pdf.hpp"
 #include "nav2_amcl/pf/pf_kdtree.hpp"
 
+#include "portable_utils.h"
+
 
 // Compute the required number of samples, given that there are k bins
 // with samples in them.

@@ -82,7 +82,8 @@ SmacPlanner::SmacPlanner()
   _smoother(nullptr),
   _upsampler(nullptr),
   _node(nullptr),
-  _costmap(nullptr)
+  _costmap(nullptr),
+  _costmap_downsampler(nullptr)
 {
 }
 
@@ -116,6 +117,12 @@ void SmacPlanner::configure(
     _node, name + ".tolerance", rclcpp::ParameterValue(0.125));
   _tolerance = static_cast<float>(_node->get_parameter(name + ".tolerance").as_double());
   nav2_util::declare_parameter_if_not_declared(
+          _node, name + ".downsample_costmap", rclcpp::ParameterValue(true));
+  _node->get_parameter(name + ".downsample_costmap", _downsample_costmap);
+  nav2_util::declare_parameter_if_not_declared(
+          _node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
+  _node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
+  nav2_util::declare_parameter_if_not_declared(
     _node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   _node->get_parameter(name + ".allow_unknown", allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
@@ -143,13 +150,13 @@ void SmacPlanner::configure(
   Neighborhood neighborhood;
   if (neighborhood_for_search == std::string("MOORE")) {
     neighborhood = Neighborhood::MOORE;
-  } else if (neighborhood_for_search == std::string("VAN_NEUMANN")) {
-    neighborhood = Neighborhood::VAN_NEUMANN;
+  } else if (neighborhood_for_search == std::string("VON_NEUMANN")) {
+    neighborhood = Neighborhood::VON_NEUMANN;
   } else {
     neighborhood = Neighborhood::MOORE;
     RCLCPP_WARN(_node->get_logger(),
       "Unable to get Neighborhood search type. Given '%s', "
-      "valid options are MOORE and VAN_NEUMANN. Using MOORE as default",
+      "valid options are MOORE and VON_NEUMANN. Using MOORE as default",
       neighborhood_for_search.c_str());
   }
 
@@ -176,7 +183,7 @@ void SmacPlanner::configure(
     _upsampling_ratio = 2;
   }
 
-  _a_star = std::make_unique<AStarAlgorithm>(neighborhood);
+  _a_star = std::make_unique<AStarAlgorithm<Node>>(neighborhood);
   _a_star->initialize(
     travel_cost_scale,
     allow_unknown,
@@ -195,10 +202,16 @@ void SmacPlanner::configure(
     }
   }
 
+  if (_downsample_costmap && _downsampling_factor > 1) {
+    std::string topic_name = "downsampled_costmap";
+    _costmap_downsampler = std::make_unique<CostmapDownsampler>(_node);
+    _costmap_downsampler->initialize(_global_frame, topic_name, _costmap, _downsampling_factor);
+  }
+
   _raw_plan_publisher = _node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
-  smoother_debug1_pub_= _node->create_publisher<nav_msgs::msg::Path>("debug1", 1);
-  smoother_debug2_pub_= _node->create_publisher<nav_msgs::msg::Path>("debug2", 1);
-  smoother_debug3_pub_= _node->create_publisher<nav_msgs::msg::Path>("debug3", 1);
+  _smoother_debug1_pub= _node->create_publisher<nav_msgs::msg::Path>("debug1", 1);
+  _smoother_debug2_pub= _node->create_publisher<nav_msgs::msg::Path>("debug2", 1);
+  _smoother_debug3_pub= _node->create_publisher<nav_msgs::msg::Path>("debug3", 1);
 
   RCLCPP_INFO(
     _node->get_logger(), "Configured plugin %s of type SmacPlanner with "
@@ -215,9 +228,12 @@ void SmacPlanner::activate()
     _node->get_logger(), "Activating plugin %s of type SmacPlanner",
     _name.c_str());
   _raw_plan_publisher->on_activate();
-  smoother_debug1_pub_->on_activate();
-  smoother_debug2_pub_->on_activate();
-  smoother_debug3_pub_->on_activate();
+  _smoother_debug1_pub->on_activate();
+  _smoother_debug2_pub->on_activate();
+  _smoother_debug3_pub->on_activate();
+  if (_costmap_downsampler) {
+    _costmap_downsampler->activatePublisher();
+  }
 }
 
 void SmacPlanner::deactivate()
@@ -226,6 +242,9 @@ void SmacPlanner::deactivate()
     _node->get_logger(), "Deactivating plugin %s of type SmacPlanner",
     _name.c_str());
   _raw_plan_publisher->on_deactivate();
+  if (_costmap_downsampler) {
+    _costmap_downsampler->deactivatePublisher();
+  }
 }
 
 void SmacPlanner::cleanup()
@@ -236,7 +255,8 @@ void SmacPlanner::cleanup()
   _a_star.reset();
   _smoother.reset();
   _upsampler.reset();
-  _raw_plan_publisher.reset(); 
+  _costmap_downsampler.reset();
+  _raw_plan_publisher.reset();
 }
 
 nav_msgs::msg::Path SmacPlanner::createPlan(
@@ -247,22 +267,28 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   steady_clock::time_point a = steady_clock::now();
 #endif
 
+  // Choose which costmap to use for the planning
+  nav2_costmap_2d::Costmap2D * costmap = _costmap;
+  if (_costmap_downsampler) {
+    costmap = _costmap_downsampler->downsample(_downsampling_factor);
+  }
+
   // Set Costmap
-  unsigned char * char_costmap = _costmap->getCharMap();
+  unsigned char * char_costmap = costmap->getCharMap();
   _a_star->setCosts(
-    _costmap->getSizeInCellsX(),
-    _costmap->getSizeInCellsY(),
+    costmap->getSizeInCellsX(),
+    costmap->getSizeInCellsY(),
     char_costmap);
 
   // Set starting point
   unsigned int mx, my, index;
-  _costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
-  index = _costmap->getIndex(mx, my);
+  costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
+  index = costmap->getIndex(mx, my);
   _a_star->setStart(index);
 
   // Set goal point
-  _costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
-  index = _costmap->getIndex(mx, my);
+  costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
+  index = costmap->getIndex(mx, my);
   _a_star->setGoal(index);
 
   // Setup message
@@ -283,7 +309,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   std::string error;
   try {
     if (!_a_star->createPath(
-      path, num_iterations, _tolerance / static_cast<float>(_costmap->getResolution())))
+      path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution())))
     {
       if (num_iterations < _a_star->getMaxIterations()) {
         error = std::string("no valid path found.");
@@ -317,8 +343,8 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
     }
     unsigned int index_x, index_y;
     double world_x, world_y;
-    _costmap->indexToCells(path[i], index_x, index_y);
-    _costmap->mapToWorld(index_x, index_y, world_x, world_y);
+    costmap->indexToCells(path[i], index_x, index_y);
+    costmap->mapToWorld(index_x, index_y, world_x, world_y);
     path_world.push_back(Eigen::Vector2d(world_x, world_y));
     pose.pose.position.x = world_x;
     pose.pose.position.y = world_y;
@@ -332,9 +358,9 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 
   // Smooth plan
   if (_smoother && path_world.size() > 4) {
-    MinimalCostmap mcmap(char_costmap, _costmap->getSizeInCellsX(),
-      _costmap->getSizeInCellsY(), _costmap->getOriginX(), _costmap->getOriginY(),
-      _costmap->getResolution());
+    MinimalCostmap mcmap(char_costmap, costmap->getSizeInCellsX(),
+      costmap->getSizeInCellsY(), costmap->getOriginX(), costmap->getOriginY(),
+      costmap->getResolution());
     if (!_smoother->smooth(path_world, & mcmap, _smoother_params)) {
       RCLCPP_WARN(
         _node->get_logger(),
@@ -351,7 +377,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
       pose.pose.position.y = path_world[i][1];
       plan.poses[i] = pose;
     }
-    smoother_debug1_pub_->publish(plan);
+    _smoother_debug1_pub->publish(plan);
 ///////////////////////////////// DEBUG/////////////////////////////////
 
     // Upsample path
@@ -442,8 +468,8 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point b = steady_clock::now();
   duration<double> time_span = duration_cast<duration<double> >(b-a);
-  cout << "It took " << time_span.count() <<
-    " seconds with " << num_iterations << " iterations." <<  endl;
+  cout << "It took " << time_span.count() * 1000 <<
+    " milliseconds with " << num_iterations << " iterations." <<  endl;
 #endif
 
   return plan;

@@ -113,7 +113,7 @@ protected:
    */
   virtual std::vector<double> getTimeSteps(const nav_2d_msgs::msg::Twist2D & cmd_vel);
 
-  KinematicParameters::Ptr kinematics_;
+  KinematicsHandler::Ptr kinematics_handler_;
   std::shared_ptr<VelocityIterator> velocity_iterator_;
 
   double sim_time_;

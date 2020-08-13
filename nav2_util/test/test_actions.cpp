@@ -74,6 +74,13 @@ public:
 
   void on_term()
   {
+    // when nothing's running make sure everything's dead.
+    const std::shared_ptr<const Fibonacci::Goal> a = action_server_->accept_pending_goal();
+    const std::shared_ptr<const Fibonacci::Goal> b = action_server_->get_current_goal();
+    assert(a == b);
+    assert(action_server_->is_cancel_requested() == false);
+    auto feedback = std::make_shared<Fibonacci::Feedback>();
+    action_server_->publish_feedback(feedback);
     action_server_.reset();
   }
 
@@ -486,6 +493,24 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
   }
 
   EXPECT_EQ(sum, 1);
+  SUCCEED();
+}
+
+TEST_F(ActionTest, test_handle_goal_deactivated)
+{
+  node_->deactivate_server();
+  auto goal = Fibonacci::Goal();
+  goal.order = 12;
+
+  // Send the goal
+  auto future_goal_handle = node_->action_client_->async_send_goal(goal);
+  EXPECT_EQ(
+    rclcpp::spin_until_future_complete(
+      node_,
+      future_goal_handle), rclcpp::executor::FutureReturnCode::SUCCESS);
+
+  node_->activate_server();
+
   SUCCEED();
 }
 

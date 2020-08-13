@@ -53,8 +53,8 @@ void StandardTrajectoryGenerator::initialize(
   const std::string & plugin_name)
 {
   plugin_name_ = plugin_name;
-  kinematics_ = std::make_shared<KinematicParameters>();
-  kinematics_->initialize(nh, plugin_name_);
+  kinematics_handler_ = std::make_shared<KinematicsHandler>();
+  kinematics_handler_->initialize(nh, plugin_name_);
   initializeIterator(nh);
 
   nav2_util::declare_parameter_if_not_declared(
@@ -97,7 +97,7 @@ void StandardTrajectoryGenerator::initializeIterator(
   const nav2_util::LifecycleNode::SharedPtr & nh)
 {
   velocity_iterator_ = std::make_shared<XYThetaIterator>();
-  velocity_iterator_->initialize(nh, kinematics_, plugin_name_);
+  velocity_iterator_->initialize(nh, kinematics_handler_, plugin_name_);
 }
 
 void StandardTrajectoryGenerator::startNewIteration(
@@ -185,16 +185,17 @@ nav_2d_msgs::msg::Twist2D StandardTrajectoryGenerator::computeNewVelocity(
   const nav_2d_msgs::msg::Twist2D & cmd_vel,
   const nav_2d_msgs::msg::Twist2D & start_vel, const double dt)
 {
+  KinematicParameters kinematics = kinematics_handler_->getKinematics();
   nav_2d_msgs::msg::Twist2D new_vel;
   new_vel.x = projectVelocity(
-    start_vel.x, kinematics_->getAccX(),
-    kinematics_->getDecelX(), dt, cmd_vel.x);
+    start_vel.x, kinematics.getAccX(),
+    kinematics.getDecelX(), dt, cmd_vel.x);
   new_vel.y = projectVelocity(
-    start_vel.y, kinematics_->getAccY(),
-    kinematics_->getDecelY(), dt, cmd_vel.y);
+    start_vel.y, kinematics.getAccY(),
+    kinematics.getDecelY(), dt, cmd_vel.y);
   new_vel.theta = projectVelocity(
     start_vel.theta,
-    kinematics_->getAccTheta(), kinematics_->getDecelTheta(),
+    kinematics.getAccTheta(), kinematics.getDecelTheta(),
     dt, cmd_vel.theta);
   return new_vel;
 }

@@ -24,17 +24,35 @@
 
 #include "smac_planner/node.hpp"
 #include "smac_planner/types.hpp"
+#include "smac_planner/constants.hpp"
 
 namespace smac_planner
 {
 
 /**
  * @class smac_planner::AStarAlgorithm
- * @brief An A* implementation for planning in a costmap
+ * @brief An A* implementation for planning in a costmap. Templated based on the Node type.
  */
+template<typename NodeT>
 class AStarAlgorithm
 {
 public:
+  typedef NodeT * NodePtr;
+  typedef std::vector<NodeT> Graph;
+  typedef std::vector<NodePtr> NodeVector;
+  typedef std::pair<float, NodePtr> NodeElement;
+  typedef std::pair<float, unsigned int> NodeHeuristicPair;
+
+  struct NodeComparator
+  {
+    bool operator()(const NodeElement & a, const NodeElement & b) const
+    {
+      return a.first > b.first;
+    }
+  };
+
+  typedef std::priority_queue<NodeElement, std::vector<NodeElement>, NodeComparator> NodeQueue;
+
   /**
    * @brief A constructor for smac_planner::PlannerServer
    * @param neighborhood The type of neighborhood to use for search (4 or 8 connected)
@@ -99,7 +117,7 @@ public:
    * @param path Reference to a vector of indicies of generated path
    * @return whether the path was able to be backtraced
    */
-  bool backtracePath(Node * & node, IndexPath & path);
+  bool backtracePath(NodePtr & node, IndexPath & path);
 
   /**
    * @brief Get maximum number of iterations to plan
@@ -112,60 +130,56 @@ private:
    * @brief Get pointer reference to starting node
    * @return Node pointer reference to starting node
    */
-  inline Node * & getStart();
+  inline NodePtr & getStart();
 
   /**
    * @brief Get pointer reference to goal node
    * @return Node pointer reference to goal node
    */
-  inline Node * & getGoal();
+  inline NodePtr & getGoal();
 
   /**
    * @brief Get pointer to next goal in open set
    * @return Node pointer reference to next heuristically scored node
    */
-  inline Node * getNode();
+  inline NodePtr getNode();
 
   /**
    * @brief Get pointer to next goal in open set
    * @param cost The cost to sort into the open set of the node
    * @param node Node pointer reference to add to open set
    */
-  inline void addNode(const float cost, Node * & node);
+  inline void addNode(const float cost, NodePtr & node);
+
+  /**
+   * @brief Retrieve all valid neighbors of a node.
+   * @param node Pointer to the node we are currently exploring in A*
+   * @param neighbors Vector of neighbors to be filled
+   */
+  inline void getNeighbors(NodePtr & node, NodeVector & neighbors);
+
+  /**
+   * @brief Initialize the neighborhood to be used in A*
+   * For now we support 4-connect (VON_NEUMANN) and 8-connect (MOORE)
+   * @param x_size The size of the underlying grid
+   * @param neighborhood The desired neighborhood type
+   */
+  inline void initNeighborhoods(const int & x_size, const Neighborhood & neighborhood);
 
   /**
    * @brief Check if this node is the goal node
    * @param node Node pointer to check if its the goal node
    * @return if node is goal
    */
-  inline bool isGoal(Node * & node);
-
-  /**
-   * @brief Check if this node is valid
-   * @param i Node index
-   * @param node_it Iterator reference of the node
-   * @return whether this node is valid and collision free
-   */
-  inline bool isNodeValid(const unsigned int & i, Node * & node_it);
-
-  /**
-   * @brief Get a vector of valid node pointers from relative locations
-   * @param lookup_table Lookup table of values around node to query
-   * @param node Node index
-   * @param neighbors Vector of node pointers to valid node
-   */
-  inline void getValidNodes(
-    const std::vector<int> & lookup_table,
-    const int & i,
-    NodeVector & neighbors);
+  inline bool isGoal(NodePtr & node);
 
   /**
    * @brief Get cost of traversal between nodes
-   * @param node Node index current
-   * @param node Node index of new
+   * @param current_node Pointer to current node
+   * @param new_node Pointer to new node
    * @return Reference traversal cost between the nodes
    */
-  inline float getTraversalCost(Node * & lastNode, Node * & node);
+  inline float getTraversalCost(NodePtr & current_node, NodePtr & new_node);
 
   /**
    * @brief Get cost of heuristic of node
@@ -174,13 +188,6 @@ private:
    * @return Heuristic cost between the nodes
    */
   inline float getHeuristicCost(const unsigned int & node);
-
-  /**
-   * @brief Get a vector of neighbors around node
-   * @param node Node index
-   * @param neighbors Vector of node pointers to neighbors
-   */
-  inline void getNeighbors(const unsigned int & node, NodeVector & neighbors);
 
   /**
    * @brief Check if inputs to planner are valid
@@ -234,16 +241,14 @@ private:
   unsigned int _y_size;
 
   Coordinates _goal_coordinates;
-  Node * _start;
-  Node * _goal;
+  NodePtr _start;
+  NodePtr _goal;
 
   std::unique_ptr<Graph> _graph;
   std::unique_ptr<NodeQueue> _queue;
 
   Neighborhood _neighborhood;
-  std::vector<int> _van_neumann_neighborhood;
-  std::vector<int> _moore_neighborhood;
-
+  std::vector<int> _neighbors_grid_offsets;
   NodeHeuristicPair _best_heuristic_node;
 };
 

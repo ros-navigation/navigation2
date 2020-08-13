@@ -1,21 +1,21 @@
 repositories:
-  BehaviorTree.CPP:
+  BehaviorTree/BehaviorTree.CPP:
     type: git
     url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
-    version: ros2-3.1.1
-  angles:
+    version: master
+  ros/angles:
     type: git
     url: https://github.com/ros/angles.git
     version: ros2
-  gazebo_ros_pkgs:
+  ros-simulation/gazebo_ros_pkgs:
     type: git
     url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
     version: ros2
-  image_common:
+  ros-perception/image_common:
     type: git
     url: https://github.com/ros-perception/image_common.git
     version: ros2
-  vision_opencv:
+  ros-perception/vision_opencv:
     type: git
     url: https://github.com/ros-perception/vision_opencv.git
     version: ros2
