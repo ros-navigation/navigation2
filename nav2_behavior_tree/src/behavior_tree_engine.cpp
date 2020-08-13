@@ -72,7 +72,9 @@ BehaviorTreeEngine::buildTreeFromText(
 {
   BT::XMLParser p(factory_);
   p.loadFromText(xml_string);
-  return p.instantiateTree(blackboard);
+  auto tree = p.instantiateTree(blackboard); 
+  tree.manifests = factory_.manifests();
+  return tree;
 }
 
 }  // namespace nav2_behavior_tree
