@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  codecov: codecov/codecov@1.0.5
+  codecov: codecov/codecov@1.1.1
 
 _commands:
   common_commands: &common_commands
@@ -103,16 +103,17 @@ _commands:
                   name: Build Workspace | << parameters.workspace >>
                   working_directory: << parameters.workspace >>
                   command: |
-                    if [ -d install ] && [ ! -f build_failed ]
+                    BUILD_UNFINISHED=$(colcon list --packages-skip-build-finished)
+                    BUILD_FAILED=$(colcon list --packages-select-build-failed)
+                    if [ -n "$BUILD_UNFINISHED" ] || [ -n "$BUILD_FAILED" ]
                     then
-                      echo "Skipping Build"
-                    else
                       . << parameters.underlay >>/install/setup.sh
                       rm -rf build install log
                       colcon build \
                         --symlink-install \
                         --mixin << parameters.mixins >>
-                      rm -f build_failed
+                    else
+                      echo "Skipping Build"
                     fi
               - save_to_cache:
                   key: << parameters.key >>
@@ -192,16 +193,16 @@ _steps:
       name: Post Checkout
       command: |
         if ! cmp \
-          $OVERLAY_WS/src/navigation2/tools/ros2_dependencies.repos \
-          $UNDERLAY_WS/ros2_dependencies.repos >/dev/null 2>&1
+          $OVERLAY_WS/src/navigation2/tools/underlay.repos \
+          $UNDERLAY_WS/underlay.repos >/dev/null 2>&1
         then
           echo "Cleaning Underlay"
           rm -rf $UNDERLAY_WS/*
-          cp $OVERLAY_WS/src/navigation2/tools/ros2_dependencies.repos \
-            $UNDERLAY_WS/ros2_dependencies.repos
+          cp $OVERLAY_WS/src/navigation2/tools/underlay.repos \
+            $UNDERLAY_WS/underlay.repos
           mkdir -p $UNDERLAY_WS/src
           vcs import $UNDERLAY_WS/src \
-            < $UNDERLAY_WS/ros2_dependencies.repos
+            < $UNDERLAY_WS/underlay.repos
         fi
   install_underlay_dependencies: &install_underlay_dependencies
     install_dependencies:
@@ -320,6 +321,7 @@ _environments:
     MAKEFLAGS: "-j 1 -l 2"
     RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED: "0"
     RETEST_UNTIL_PASS: "2"
+    DEBIAN_FRONTEND: "noninteractive"
 
 executors:
   debug_exec:
