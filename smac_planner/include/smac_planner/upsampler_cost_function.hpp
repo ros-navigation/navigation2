@@ -35,10 +35,13 @@ namespace smac_planner
 {
 
 // TODO reduce code duplication. there's very litle change here.
-
+// https://github.com/OrebroUniversity/navigation_oru-release
+  // bspline smoother, mpc, planner
 // upsampler params TODO
 
 // curvature minimization ? TODO
+
+  // TODO why so much slower or less functional when fast? tuning?
 
 /**
  * @struct smac_planner::UpsamplerCostFunction
@@ -135,8 +138,8 @@ public:
       // TODO from deep copy to make sure no feedback _path
       xi_p1 = _path.at(i + 1);
       xi_m1 = _path.at(i - 1);
-      //xi_p1 = Eigen::Vector2d(parameters[x_index + 2], parameters[y_index + 2]); //_path.at( i + 1);
-      //xi_m1 = Eigen::Vector2d(parameters[x_index - 2], parameters[y_index - 2]); //_path.at( i - 1);
+      //xi_p1 = Eigen::Vector2d(parameters[x_index + 2], parameters[y_index + 2]);
+      //xi_m1 = Eigen::Vector2d(parameters[x_index - 2], parameters[y_index - 2]);
 
       // compute cost
       addSmoothingResidual(15000, xi, xi_p1, xi_m1, cost_raw);  // TODO params

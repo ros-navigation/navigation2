@@ -34,6 +34,7 @@ namespace smac_planner
 {
 
 // TODO reduce code duplication. there's very litle change here., maybe put smoother and upsampler together in an object?
+// TODO why so much variance here? sometimes barely adds, sometimes 20hz -> 2hz or even 5-10 seconds
 
 /**
  * @class smac_planner::Upsampler
@@ -114,6 +115,7 @@ public:
     const int total_size = 2 * (path.size() * upsample_ratio - upsample_ratio + 1);
     double parameters[total_size];
 
+    // 20-4hz regularly, but dosnt work in faster cases
     // Linearly distribute initial poses for optimization
     // TODO generalize for 2x and 4x
     unsigned int next_pt;
@@ -148,6 +150,7 @@ public:
       path[i][1] = parameters[2 * i + 1];
     }
 
+    // 10-15 hz, regularly
     // std::vector<Eigen::Vector2d> path_double_sampled;
     // for (int i = 0; i != path.size() - 1; i++) {  // last term should not be upsampled
     //   path_double_sampled.push_back(path[i]); 
@@ -179,16 +182,6 @@ public:
     //   }
 
     //   ceres::Solve(_options, problem2.get(), &summary);
-
-    //   ////////// TODO value of 3rd optimization? //////////
-    //   std::unique_ptr<ceres::Problem> problem3 = std::make_unique<ceres::Problem>(); 
-    //   for (uint i = 1; i != path_quad_sampled.size() - 1; i++) {
-    //     ceres::CostFunction * cost_fn = new UpsamplerConstrainedCostFunction(path_quad_sampled, params, 4, i);
-    //     problem3->AddResidualBlock(cost_fn, nullptr, &path_quad_sampled[i][0], &path_quad_sampled[i][1]);
-    //   }
-
-    //   ceres::Solve(_options, problem3.get(), &summary);
-    //   ////////// TODO value of 3rd optimization? //////////
 
     //   path = path_quad_sampled;
     // } else {

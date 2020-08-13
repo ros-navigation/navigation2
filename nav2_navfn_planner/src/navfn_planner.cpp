@@ -19,6 +19,8 @@
 // the Global Dynamic Window Approach. IEEE.
 // https://cs.stanford.edu/group/manips/publications/pdfs/Brock_1999_ICRA.pdf
 
+#define BENCHMARK_TESTING
+
 #include "nav2_navfn_planner/navfn_planner.hpp"
 
 #include <chrono>
@@ -114,6 +116,10 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
+#ifdef BENCHMARK_TESTING
+  std::chrono::steady_clock::time_point a = std::chrono::steady_clock::now();
+#endif
+
   // Update planner based on the new costmap size
   if (isPlannerOutOfDate()) {
     planner_->setNavArr(
@@ -128,6 +134,14 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
       node_->get_logger(), "%s: failed to create plan with "
       "tolerance %.2f.", name_.c_str(), tolerance_);
   }
+
+#ifdef BENCHMARK_TESTING
+  std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
+  std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double> >(b-a);
+  std::cout << "It took " << time_span.count() <<
+    " seconds." << std::endl;
+#endif
+
   return path;
 }
 
