@@ -23,6 +23,7 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/static_layer.hpp"
+#include "nav2_costmap_2d/range_sensor_layer.hpp"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -95,6 +96,16 @@ void addObstacleLayer(
   olayer = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
   olayer->initialize(&layers, "obstacles", &tf, node, nullptr, nullptr /*TODO*/);
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(olayer));
+}
+
+void addRangeLayer(
+  nav2_costmap_2d::LayeredCostmap & layers,
+  tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node,
+  std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> & rlayer)
+{
+  rlayer = std::make_shared<nav2_costmap_2d::RangeSensorLayer>();
+  rlayer->initialize(&layers, "range", &tf, node, nullptr, nullptr /*TODO*/);
+  layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(rlayer));
 }
 
 void addObservation(

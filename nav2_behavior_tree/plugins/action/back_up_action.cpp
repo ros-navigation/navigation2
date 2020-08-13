@@ -31,11 +31,6 @@ BackUpAction::BackUpAction(
   double speed;
   getInput("backup_speed", speed);
 
-  // silently fix, vector direction determined by distance sign
-  if (speed < 0.0) {
-    speed *= -1.0;
-  }
-
   // Populate the input message
   goal_.target.x = dist;
   goal_.target.y = 0.0;

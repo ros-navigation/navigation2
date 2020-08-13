@@ -1,3 +1,6 @@
+# NOTE: The ASTAR=True does not work currently due to remapping not functioning
+# All set to false, A* testing of NavFn happens in the planning test portion
+
 ament_add_test(test_bt_navigator
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
@@ -9,7 +12,7 @@ ament_add_test(test_bt_navigator
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/turtlebot3_ros2_demo.world
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
-    ASTAR=True
+    ASTAR=False
 )
 
 ament_add_test(test_bt_navigator_with_dijkstra
@@ -37,7 +40,7 @@ ament_add_test(test_dynamic_obstacle
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/turtlebot3_ros2_demo_obstacle.world
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
-    ASTAR=True
+    ASTAR=False
 )
 
 # ament_add_test(test_multi_robot

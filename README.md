@@ -1,5 +1,5 @@
 # Navigation 2
-[![Build Status](https://img.shields.io/docker/pulls/rosplanning/navigation2.svg?maxAge=2592000)](https://hub.docker.com/r/rosplanning/navigation2) [![Build Status](https://img.shields.io/docker/cloud/build/rosplanning/navigation2.svg?label=docker%20build)](https://hub.docker.com/r/rosplanning/navigation2) [![codecov](https://codecov.io/gh/ros-planning/navigation2/branch/master/graph/badge.svg)](https://codecov.io/gh/ros-planning/navigation2)
+[![Build Status](https://img.shields.io/docker/pulls/rosplanning/navigation2.svg?maxAge=2592000)](https://hub.docker.com/r/rosplanning/navigation2) [![Build Status](https://img.shields.io/docker/cloud/build/rosplanning/navigation2.svg?label=docker%20build)](https://hub.docker.com/r/rosplanning/navigation2) [![codecov](https://codecov.io/gh/ros-planning/navigation2/branch/main/graph/badge.svg)](https://codecov.io/gh/ros-planning/navigation2)
 
 For detailed instructions on how to:
 - [Getting Started](https://navigation.ros.org/getting_started/index.html)
@@ -12,10 +12,30 @@ For detailed instructions on how to:
 
 Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://navigation2.slack.com).
 
-| Service | Dashing | Eloquent | Foxy | Master |
+## Citation
+
+If you use the navigation framework, an algorithm from this repository, or ideas from it
+please cite this work in your papers!
+
+ - S. Macenski, F. Martín, R. White, J. Clavero. [**The Marathon 2: A Navigation System**](https://arxiv.org/abs/2003.00368). IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2020.
+ 
+ ```bibtex
+ @InProceedings{macenski2020marathon2,
+   title = {The Marathon 2: A Navigation System},
+   author = {Macenski, Steve and Martín, Francisco and White, Ruffin and Ginés Clavero, Jonatan},
+   year = {2020},
+   booktitle = {2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+   url = {https://github.com/ros-planning/navigation2},
+   pdf = {https://arxiv.org/abs/2003.00368}
+ }
+```
+
+## Build Status
+
+| Service | Dashing | Eloquent | Foxy | Main |
 | :---: | :---: | :---: | :---: | :---: |
 | ROS Build Farm | [![Build Status](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/) | [![Build Status](http://build.ros2.org/job/Edev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Edev__navigation2__ubuntu_bionic_amd64/) | [![Build Status](http://build.ros2.org/job/Fdev__navigation2__ubuntu_focal_amd64/badge/icon)](http://build.ros2.org/job/Fdev__navigation2__ubuntu_focal_amd64/) | N/A |
-| Circle CI | N/A | N/A | N/A | [![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/master.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/master) |
+| Circle CI | N/A | N/A | N/A | [![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/main.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/main) |
 
 
 | Package     | Dashing Source | Dashing Debian | Eloquent Source | Eloquent Debian | Foxy Source | Foxy Debian |

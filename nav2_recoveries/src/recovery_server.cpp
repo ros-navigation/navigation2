@@ -37,6 +37,13 @@ RecoveryServer::RecoveryServer()
   declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
   declare_parameter("recovery_plugins", default_ids_);
 
+  get_parameter("recovery_plugins", recovery_ids_);
+  if (recovery_ids_ == default_ids_) {
+    for (size_t i = 0; i < default_ids_.size(); ++i) {
+      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
+    }
+  }
+
   declare_parameter(
     "global_frame",
     rclcpp::ParameterValue(std::string("odom")));
@@ -81,12 +88,6 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     *costmap_sub_, *footprint_sub_, *tf_, this->get_name(),
     global_frame, robot_base_frame, transform_tolerance_);
 
-  get_parameter("recovery_plugins", recovery_ids_);
-  if (recovery_ids_ == default_ids_) {
-    for (size_t i = 0; i < default_ids_.size(); ++i) {
-      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
-    }
-  }
   recovery_types_.resize(recovery_ids_.size());
   loadRecoveryPlugins();
 
@@ -126,6 +127,9 @@ RecoveryServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
     (*iter)->activate();
   }
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -138,6 +142,9 @@ RecoveryServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
     (*iter)->deactivate();
   }
+
+  // destroy bond connection
+  destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -159,13 +166,6 @@ RecoveryServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   costmap_sub_.reset();
   collision_checker_.reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-RecoveryServer::on_error(const rclcpp_lifecycle::State & /*state*/)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 

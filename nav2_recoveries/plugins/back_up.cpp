@@ -51,8 +51,9 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
       "will only move in X.");
   }
 
-  command_x_ = command->target.x;
-  command_speed_ = command->speed;
+  // Silently ensure that both the speed and direction are positive.
+  command_x_ = std::fabs(command->target.x);
+  command_speed_ = std::fabs(command->speed);
 
   if (!nav2_util::getCurrentPose(
       initial_pose_, *tf_, global_frame_, robot_base_frame_,
@@ -83,7 +84,7 @@ Status BackUp::onCycleUpdate()
   feedback_->distance_traveled = distance;
   action_server_->publish_feedback(feedback_);
 
-  if (distance >= abs(command_x_)) {
+  if (distance >= command_x_) {
     stopRobot();
     return Status::SUCCEEDED;
   }
@@ -92,7 +93,7 @@ Status BackUp::onCycleUpdate()
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
   cmd_vel->linear.y = 0.0;
   cmd_vel->angular.z = 0.0;
-  command_x_ < 0 ? cmd_vel->linear.x = -command_speed_ : cmd_vel->linear.x = command_speed_;
+  cmd_vel->linear.x = -command_speed_;
 
   geometry_msgs::msg::Pose2D pose2d;
   pose2d.x = current_pose.pose.position.x;
@@ -123,7 +124,8 @@ bool BackUp::isCollisionFree(
 
   while (cycle_count < max_cycle_count) {
     sim_position_change = cmd_vel->linear.x * (cycle_count / cycle_frequency_);
-    pose2d.x += sim_position_change;
+    pose2d.x += sim_position_change * cos(pose2d.theta);
+    pose2d.y += sim_position_change * sin(pose2d.theta);
     cycle_count++;
 
     if (diff_dist - abs(sim_position_change) <= 0.) {

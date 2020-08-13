@@ -1,0 +1,21 @@
+<!--
+  This Behavior Tree follows a dynamic pose to a certain distance
+-->
+
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <PipelineSequence name="NavigateWithReplanning">
+      <RateController hz="1.0">
+        <Sequence>
+          <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">
+            <ComputePathToPose goal="{updated_goal}" path="{path}" planner_id="GridBased"/>
+          </GoalUpdater>
+         <TruncatePath distance="1.0" input_path="{path}" output_path="{truncated_path}"/>
+        </Sequence>
+      </RateController>
+      <KeepRunningUntilFailure>
+        <FollowPath path="{truncated_path}" controller_id="FollowPath"/>
+      </KeepRunningUntilFailure>
+    </PipelineSequence>
+  </BehaviorTree>
+</root>

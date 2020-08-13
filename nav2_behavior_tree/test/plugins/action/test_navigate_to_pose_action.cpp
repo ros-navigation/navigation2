@@ -116,7 +116,7 @@ TEST_F(NavigateToPoseActionTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <NavigateToPose position="{position}" orientation="{orientation}" />
+            <NavigateToPose goal="{goal}" />
         </BehaviorTree>
       </root>)";
 
@@ -141,8 +141,7 @@ TEST_F(NavigateToPoseActionTestFixture, test_tick)
   // set new goal
   pose.pose.position.x = -2.5;
   pose.pose.orientation.x = 1.0;
-  config_->blackboard->set<geometry_msgs::msg::Point>("position", pose.pose.position);
-  config_->blackboard->set<geometry_msgs::msg::Quaternion>("orientation", pose.pose.orientation);
+  config_->blackboard->set<geometry_msgs::msg::PoseStamped>("goal", pose);
 
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
   EXPECT_EQ(action_server_->getCurrentGoal()->pose, pose);

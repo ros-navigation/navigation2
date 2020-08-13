@@ -48,6 +48,13 @@ PlannerServer::PlannerServer()
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 20.0);
 
+  get_parameter("planner_plugins", planner_ids_);
+  if (planner_ids_ == default_ids_) {
+    for (size_t i = 0; i < default_ids_.size(); ++i) {
+      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
+    }
+  }
+
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "global_costmap", std::string{get_namespace()}, "global_costmap");
@@ -59,10 +66,8 @@ PlannerServer::PlannerServer()
 PlannerServer::~PlannerServer()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
-  PlannerMap::iterator it;
-  for (it = planners_.begin(); it != planners_.end(); ++it) {
-    it->second.reset();
-  }
+  planners_.clear();
+  costmap_thread_.reset();
 }
 
 nav2_util::CallbackReturn
@@ -79,12 +84,6 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   tf_ = costmap_ros_->getTfBuffer();
 
-  get_parameter("planner_plugins", planner_ids_);
-  if (planner_ids_ == default_ids_) {
-    for (size_t i = 0; i < default_ids_.size(); ++i) {
-      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
-    }
-  }
   planner_types_.resize(planner_ids_.size());
 
   auto node = shared_from_this();
@@ -104,7 +103,6 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_FATAL(
         get_logger(), "Failed to create global planner. Exception: %s",
         ex.what());
-      exit(-1);
     }
   }
 
@@ -112,17 +110,20 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     planner_ids_concat_ += planner_ids_[i] + std::string(" ");
   }
 
+  RCLCPP_INFO(
+    get_logger(),
+    "Planner Server has %s planners available.", planner_ids_concat_.c_str());
+
   double expected_planner_frequency;
   get_parameter("expected_planner_frequency", expected_planner_frequency);
   if (expected_planner_frequency > 0) {
     max_planner_duration_ = 1 / expected_planner_frequency;
   } else {
-    max_planner_duration_ = 0.0;
-
     RCLCPP_WARN(
       get_logger(),
-      "The expected planner frequency parameter is %.4f Hz. The value has to be greater"
-      " than 0.0 to turn on displaying warning messages", expected_planner_frequency);
+      "The expected planner frequency parameter is %.4f Hz. The value should to be greater"
+      " than 0.0 to turn on duration overrrun warning messages", expected_planner_frequency);
+    max_planner_duration_ = 0.0;
   }
 
   // Initialize pubs & subs
@@ -151,6 +152,9 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
     it->second->activate();
   }
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -167,6 +171,9 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & state)
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->deactivate();
   }
+
+  // destroy bond connection
+  destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -186,14 +193,8 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & state)
     it->second->cleanup();
   }
   planners_.clear();
+  costmap_ = nullptr;
 
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-PlannerServer::on_error(const rclcpp_lifecycle::State &)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -214,13 +215,8 @@ PlannerServer::computePlan()
   auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
 
   try {
-    if (action_server_ == nullptr) {
-      RCLCPP_DEBUG(get_logger(), "Action server unavailable. Stopping.");
-      return;
-    }
-
-    if (!action_server_->is_server_active()) {
-      RCLCPP_DEBUG(get_logger(), "Action server is inactive. Stopping.");
+    if (action_server_ == nullptr || !action_server_->is_server_active()) {
+      RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
       return;
     }
 
@@ -232,39 +228,15 @@ PlannerServer::computePlan()
 
     geometry_msgs::msg::PoseStamped start;
     if (!costmap_ros_->getRobotPose(start)) {
-      RCLCPP_ERROR(this->get_logger(), "Could not get robot pose");
+      action_server_->terminate_current();
       return;
     }
 
     if (action_server_->is_preempt_requested()) {
-      RCLCPP_INFO(get_logger(), "Preempting the goal pose.");
       goal = action_server_->accept_pending_goal();
     }
 
-    RCLCPP_DEBUG(
-      get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-      "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
-      goal->pose.pose.position.x, goal->pose.pose.position.y);
-
-    if (planners_.find(goal->planner_id) != planners_.end()) {
-      result->path = planners_[goal->planner_id]->createPlan(start, goal->pose);
-    } else {
-      if (planners_.size() == 1 && goal->planner_id.empty()) {
-        if (!single_planner_warning_given_) {
-          single_planner_warning_given_ = true;
-          RCLCPP_WARN(
-            get_logger(), "No planners specified in action call. "
-            "Server will use only plugin %s in server."
-            " This warning will appear once.", planner_ids_concat_.c_str());
-        }
-        result->path = planners_[planners_.begin()->first]->createPlan(start, goal->pose);
-      } else {
-        RCLCPP_ERROR(
-          get_logger(), "planner %s is not a valid planner. "
-          "Planner names are: %s", goal->planner_id.c_str(),
-          planner_ids_concat_.c_str());
-      }
-    }
+    result->path = getPlan(start, goal->pose, goal->planner_id);
 
     if (result->path.poses.size() == 0) {
       RCLCPP_WARN(
@@ -282,7 +254,6 @@ PlannerServer::computePlan()
       goal->pose.pose.position.y);
 
     // Publish the plan for visualization purposes
-    RCLCPP_DEBUG(get_logger(), "Publishing the valid path");
     publishPlan(result->path);
 
     auto cycle_duration = steady_clock_.now() - start_time;
@@ -296,8 +267,6 @@ PlannerServer::computePlan()
     }
 
     action_server_->succeeded_current(result);
-
-    return;
   } catch (std::exception & ex) {
     RCLCPP_WARN(
       get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
@@ -306,24 +275,50 @@ PlannerServer::computePlan()
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
     action_server_->terminate_current();
-    return;
-  } catch (...) {
-    RCLCPP_WARN(
-      get_logger(), "Plan calculation failed, "
-      "An unexpected error has occurred. The planner server"
-      " may not be able to continue operating correctly.");
-    // TODO(orduno): provide information about fail error to parent task,
-    //               for example: couldn't get costmap update
-    action_server_->terminate_current();
-    return;
   }
+}
+
+nav_msgs::msg::Path
+PlannerServer::getPlan(
+  const geometry_msgs::msg::PoseStamped & start,
+  const geometry_msgs::msg::PoseStamped & goal,
+  const std::string & planner_id)
+{
+  RCLCPP_DEBUG(
+    get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
+    "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
+    goal.pose.position.x, goal.pose.position.y);
+
+  if (planners_.find(planner_id) != planners_.end()) {
+    return planners_[planner_id]->createPlan(start, goal);
+  } else {
+    if (planners_.size() == 1 && planner_id.empty()) {
+      RCLCPP_WARN_ONCE(
+        get_logger(), "No planners specified in action call. "
+        "Server will use only plugin %s in server."
+        " This warning will appear once.", planner_ids_concat_.c_str());
+      return planners_[planners_.begin()->first]->createPlan(start, goal);
+    } else {
+      RCLCPP_ERROR(
+        get_logger(), "planner %s is not a valid planner. "
+        "Planner names are: %s", planner_id.c_str(),
+        planner_ids_concat_.c_str());
+    }
+  }
+
+  return nav_msgs::msg::Path();
 }
 
 void
 PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
 {
   auto msg = std::make_unique<nav_msgs::msg::Path>(path);
-  plan_publisher_->publish(std::move(msg));
+  if (
+    plan_publisher_->is_activated() &&
+    this->count_subscribers(plan_publisher_->get_topic_name()) > 0)
+  {
+    plan_publisher_->publish(std::move(msg));
+  }
 }
 
 }  // namespace nav2_planner

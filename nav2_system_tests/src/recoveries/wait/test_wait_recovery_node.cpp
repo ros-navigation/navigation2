@@ -62,11 +62,16 @@ WaitRecoveryTester * WaitRecoveryTestFixture::wait_recovery_tester = nullptr;
 TEST_P(WaitRecoveryTestFixture, testSWaitRecovery)
 {
   float wait_time = std::get<0>(GetParam());
+  float cancel = std::get<1>(GetParam());
 
   bool success = false;
   int num_tries = 3;
   for (int i = 0; i != num_tries; i++) {
-    success = success || wait_recovery_tester->recoveryTest(wait_time);
+    if (cancel == 1.0) {
+      success = success || wait_recovery_tester->recoveryTestCancel(wait_time);
+    } else {
+      success = success || wait_recovery_tester->recoveryTest(wait_time);
+    }
     if (success) {
       break;
     }
@@ -81,7 +86,8 @@ INSTANTIATE_TEST_CASE_P(
   ::testing::Values(
     std::make_tuple(1.0, 0.0),
     std::make_tuple(2.0, 0.0),
-    std::make_tuple(5.0, 0.0)),
+    std::make_tuple(5.0, 0.0),
+    std::make_tuple(10.0, 1.0)),
   testNameGenerator);
 
 int main(int argc, char ** argv)

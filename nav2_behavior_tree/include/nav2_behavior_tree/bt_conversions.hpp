@@ -15,9 +15,13 @@
 #ifndef NAV2_BEHAVIOR_TREE__BT_CONVERSIONS_HPP_
 #define NAV2_BEHAVIOR_TREE__BT_CONVERSIONS_HPP_
 
+#include <string>
+
+#include "rclcpp/time.hpp"
 #include "behaviortree_cpp_v3/behavior_tree.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace BT
 {
@@ -45,7 +49,7 @@ inline geometry_msgs::msg::Point convertFromString(const StringView key)
 template<>
 inline geometry_msgs::msg::Quaternion convertFromString(const StringView key)
 {
-  // three real numbers separated by semicolons
+  // four real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() != 4) {
     throw std::runtime_error("invalid number of fields for orientation attribute)");
@@ -56,6 +60,28 @@ inline geometry_msgs::msg::Quaternion convertFromString(const StringView key)
     orientation.z = BT::convertFromString<double>(parts[2]);
     orientation.w = BT::convertFromString<double>(parts[3]);
     return orientation;
+  }
+}
+
+template<>
+inline geometry_msgs::msg::PoseStamped convertFromString(const StringView key)
+{
+  // 7 real numbers separated by semicolons
+  auto parts = BT::splitString(key, ';');
+  if (parts.size() != 9) {
+    throw std::runtime_error("invalid number of fields for PoseStamped attribute)");
+  } else {
+    geometry_msgs::msg::PoseStamped pose_stamped;
+    pose_stamped.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[0]));
+    pose_stamped.header.frame_id = BT::convertFromString<std::string>(parts[1]);
+    pose_stamped.pose.position.x = BT::convertFromString<double>(parts[2]);
+    pose_stamped.pose.position.y = BT::convertFromString<double>(parts[3]);
+    pose_stamped.pose.position.z = BT::convertFromString<double>(parts[4]);
+    pose_stamped.pose.orientation.x = BT::convertFromString<double>(parts[5]);
+    pose_stamped.pose.orientation.y = BT::convertFromString<double>(parts[6]);
+    pose_stamped.pose.orientation.z = BT::convertFromString<double>(parts[7]);
+    pose_stamped.pose.orientation.w = BT::convertFromString<double>(parts[8]);
+    return pose_stamped;
   }
 }
 

@@ -51,11 +51,13 @@ For example:
 ```yaml
 local_costmap:
   ros__parameters:
-    plugins: ["obstacle_layer", "voxel_layer", "inflation_layer"]
+    plugins: ["obstacle_layer", "voxel_layer", "sonar_layer", "inflation_layer"]
     obstacle_layer:
       plugin: "nav2_costmap_2d::ObstacleLayer"
     voxel_layer:
       plugin: "nav2_costmap_2d::VoxelLayer"
+    sonar_layer:
+      plugin: "nav2_costmap_2d::RangeSensorLayer"
     inflation_layer:
       plugin: "nav2_costmap_2d::InflationLayer"
 ```
@@ -78,6 +80,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | `<static layer>`.subscribe_to_updates | false | Subscribe to static map updates after receiving first |
 | `<static layer>`.map_subscribe_transient_local | true | QoS settings for map topic |
 | `<static layer>`.transform_tolerance | 0.0 | TF tolerance |
+| `<static layer>`.map_topic | "" | Name of the map topic to subscribe to (empty means use the map_topic defined by `costmap_2d_ros`) |
 
 ## inflation_layer plugin
 
@@ -114,7 +117,23 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | `<data source>`.marking | true | Whether source should mark in costmap |
 | `<data source>`.clearing | false | Whether source should raytrace clear in costmap |
 | `<data source>`.obstacle_range | 2.5 | Maximum range to mark obstacles in costmap |
-| `<data source>`.raytrace_range | 3.0 | Maximum range to raytrace clear obstacles from costmap | 
+| `<data source>`.raytrace_range | 3.0 | Maximum range to raytrace clear obstacles from costmap |
+
+## range_sensor_layer plugin
+
+* `<range layer>`: Name corresponding to the `nav2_costmap_2d::RangeSensorLayer` plugin. This name gets defined in `plugin_names`.
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<range layer>`.enabled | true | Whether it is enabled |
+| `<range layer>`.topics | [""] | Range topics to subscribe to |
+| `<range layer>`.phi | 1.2 | Phi value |
+| `<range layer>`.inflate_cone | 1.0 | Inflate the triangular area covered by the sensor (percentage) |
+| `<range layer>`.no_readings_timeout | 0.0 | No Readings Timeout |
+| `<range layer>`.clear_threshold | 0.2 | Probability below which cells are marked as free |
+| `<range layer>`.mark_threshold | 0.8 | Probability above which cells are marked as occupied |
+| `<range layer>`.clear_on_max_reading | false | Clear on max reading |
+| `<range layer>`.input_sensor_type | ALL | Input sensor type either ALL (automatic selection), VARIABLE (min range != max range), or FIXED (min range == max range) |
 
 ## voxel_layer plugin
 
@@ -154,12 +173,15 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | controller_frequency | 20.0 | Frequency to run controller |
+| progress_checker_plugin | "progress_checker" | Plugin used by the controller to check whether the robot has at least covered a set distance/displacement in a set amount of time, thus checking the progress of the robot. |
+| `<progress_checker_plugin>.plugin` | "nav2_controller::SimpleProgressChecker" | Default plugin |
+| goal_checker_plugin | "goal_checker" | Check if the goal has been reached |
+| `<goal_checker_plugin>.plugin` | "nav2_controller::SimpleGoalChecker" | Default plugin |
 | controller_plugins | ["FollowPath"] | List of mapped names for controller plugins for processing requests and parameters |
+| `<controller_plugins>.plugin` | "dwb_core::DWBLocalPlanner" | Default plugin |
 | min_x_velocity_threshold | 0.0001 | Minimum X velocity to use (m/s) |
 | min_y_velocity_threshold | 0.0001 | Minimum Y velocity to use (m/s) |
 | min_theta_velocity_threshold | 0.0001 | Minimum angular velocity to use (rad/s) |
-| required_movement_radius | 0.5 | Minimum amount a robot must move to be progressing to goal (m) |
-| movement_time_allowance | 10.0 | Maximum amount of time a robot has to move the minimum radius (s) |
 
 **NOTE:** When `controller_plugins` parameter is overridden, each plugin namespace defined in the list needs to have a `plugin` parameter defining the type of plugin to be loaded in the namespace.
 
@@ -173,11 +195,36 @@ controller_server:
       plugin: "dwb_core::DWBLocalPlanner"
 ```
 
-When `controller_plugins` parameter is not overridden, the following default plugins are loaded:
+When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parameters are not overridden, the following default plugins are loaded:
 
 | Namespace | Plugin |
 | ----------| --------|
 | "FollowPath" | "dwb_core::DWBLocalPlanner" |
+| "progress_checker" | "nav2_controller::SimpleProgressChecker" |
+| "goal_checker" | "nav2_controller::SimpleGoalChecker" |
+
+## simple_progress_checker plugin
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<nav2_controller plugin>`.required_movement_radius | 0.5 | Minimum distance to count as progress (m) |
+| `<nav2_controller plugin>`.movement_time_allowance | 10.0 | Maximum time allowence for progress to happen (s) |
+
+
+## simple_goal_checker plugin
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<nav2_controller plugin>`.xy_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (m) |
+| `<nav2_controller plugin>`.yaw_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (rad) |
+| `<nav2_controller plugin>`.stateful | true | Whether to check for XY position tolerance after rotating to goal orientation in case of minor localization changes |
+
+## stopped_goal_checker plugin
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<nav2_controller plugin>`.rot_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (rad/s) |
+| `<nav2_controller plugin>`.trans_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (m/s) |
 
 # dwb_controller
 
@@ -193,7 +240,6 @@ When `controller_plugins` parameter is not overridden, the following default plu
 | `<dwb plugin>`.prune_distance | 1.0 | Distance (m) to prune backward until |
 | `<dwb plugin>`.debug_trajectory_details | false | Publish debug information |
 | `<dwb plugin>`.trajectory_generator_name | "dwb_plugins::StandardTrajectoryGenerator" | Trajectory generator plugin name |
-| `<dwb plugin>`.goal_checker_name | "dwb_plugins::SimpleGoalChecker" | Goal checker plugin name |
 | `<dwb plugin>`.transform_tolerance | 0.1 | TF transform tolerance |
 | `<dwb plugin>`.short_circuit_trajectory_evaluation | true | Stop evaluating scores after best score is found |
 | `<dwb plugin>`.path_distance_bias | N/A | Old version of `PathAlign.scale`, use that instead |
@@ -350,14 +396,6 @@ When `controller_plugins` parameter is not overridden, the following default plu
 | `<dwb plugin>`.lookahead_time | -1 | If > 0, amount of time to look forward for a collision for. |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | Weight scale |
 
-## simple_goal_checker plugin
-
-| Parameter | Default | Description |
-| ----------| --------| ------------|
-| `<dwb plugin>`.xy_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (m) |
-| `<dwb plugin>`.yaw_goal_tolerance | 0.25 | Tolerance to meet goal completion criteria (rad) |
-| `<dwb plugin>`.stateful | true | Whether to check for XY position tolerance after rotating to goal orientation in case of minor localization changes |
-
 ## standard_traj_generator plugin
 
 | Parameter | Default | Description |
@@ -375,19 +413,13 @@ When `controller_plugins` parameter is not overridden, the following default plu
 | ----------| --------| ------------|
 | `<dwb plugin>`.sim_time | N/A | Time to simulate ahead by (s) |
 
-## stopped_goal_checker plugin
-
-| Parameter | Default | Description |
-| ----------| --------| ------------|
-| `<dwb plugin>`.rot_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (rad/s) |
-| `<dwb plugin>`.trans_stopped_velocity | 0.25 | Velocity below is considered to be stopped at tolerance met (m/s) |
-
 # lifecycle_manager
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | node_names | N/A | Ordered list of node names to bringup through lifecycle transition |
 | autostart | false | Whether to transition nodes to active state on startup |
+| bond_timeout_ms | 4000 | Timeout for bond to fail if no heartbeat can be found, in milliseconds. If set to 0, it will be disabled. Must be larger than 300ms for stable bringup. |
 
 # map_server
 
@@ -547,6 +579,8 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 | z_rand | 0.5 | Mixture weight for z_rand part of model, sum of all used z weight must be 1. Beam uses all 4, likelihood model uses z_hit and z_rand. |
 | z_short | 0.05 | Mixture weight for z_short part of model, sum of all used z weight must be 1. Beam uses all 4, likelihood model uses z_hit and z_rand. |
 | always_reset_initial_pose | false | Requires that AMCL is provided an initial pose either via topic or initial_pose* parameter (with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the last known pose to initialize |
+| scan_topic | scan | Topic to subscribe to in order to receive the laser scan for localization |
+| map_topic | map | Topic to subscribe to in order to receive the map for localization |
 
 ---
 
@@ -596,8 +630,7 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
-| position | N/A | Position |
-| orientation | N/A | Orientation |
+| goal | N/A | Goal |
 | server_name | N/A | Action server name |
 | server_timeout | 10 | Action server timeout (ms) |
 
@@ -623,6 +656,14 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 | wait_duration | 1 | Wait time (s) |
 | server_name | N/A | Action server name |
 | server_timeout | 10 | Action server timeout (ms) |
+
+### BT Node TruncatePath
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| input_path | N/A | Path to be truncated |
+| output_path | N/A | Path truncated |
+| distance | 1.0 | Distance (m) to cut from last pose |
 
 ## Conditions
 
@@ -674,3 +715,10 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 | min_speed | 0.0 | Minimum speed (m/s) |
 | max_speed | 0.5 | Maximum speed (m/s) |
 | filter_duration | 0.3 | Duration (secs) for velocity smoothing filter |
+
+### BT Node GoalUpdater
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| input_goal | N/A | The reference goal |
+| output_goal | N/A | The reference goal, or a newer goal received by subscription |
