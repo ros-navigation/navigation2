@@ -267,6 +267,8 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   steady_clock::time_point a = steady_clock::now();
 #endif
 
+  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
+
   // Choose which costmap to use for the planning
   nav2_costmap_2d::Costmap2D * costmap = _costmap;
   if (_costmap_downsampler) {
