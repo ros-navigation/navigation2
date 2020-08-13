@@ -1,0 +1,21 @@
+
+<!--
+  This Behavior Tree processes each of the given waypoints with NavigateToPose and wait if NavigateToPose is failed.
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <ReactiveFallback name="FollowWaypoints">
+      <AllGoalsAchieved goal_achieved="{goal_achieved}"/>
+      <KeepRunningUntilFailure>
+        <ReactiveSequence>
+          <GetNextGoal goals="{goals}" goal="{goal}" goal_achieved="{goal_achieved}"/>
+          <RecoveryNode number_of_retries="1">
+            <NavigateToPose goal="{goal}"/>
+            <Wait wait_duration="5"/>
+          </RecoveryNode>
+          <SetBlackboard output_key="goal_achieved" value="true"/>
+        </ReactiveSequence>
+      </KeepRunningUntilFailure>
+    </ReactiveFallback>
+  </BehaviorTree>
+</root>

@@ -1,0 +1,7 @@
+
+ament_add_gtest(test_follow_waypoints_action_with_bt_node
+  test_follow_waypoints_action_with_bt_node.cpp
+)
+target_link_libraries(test_follow_waypoints_action_with_bt_node
+  bt_waypoint_follower_core
+)

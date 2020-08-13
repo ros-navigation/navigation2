@@ -15,6 +15,7 @@
   <!-- nav2_bringup doesn't belong for recursive dependencies -->
   <exec_depend>nav2_amcl</exec_depend>
   <exec_depend>nav2_bt_navigator</exec_depend>
+  <exec_depend>nav2_bt_waypoint_follower</exec_depend>
   <exec_depend>nav2_costmap_2d</exec_depend>
   <exec_depend>nav2_core</exec_depend>
   <exec_depend>nav2_dwb_controller</exec_depend>
@@ -29,7 +30,6 @@
   <exec_depend>nav2_util</exec_depend>
   <exec_depend>nav2_voxel_grid</exec_depend>
   <exec_depend>nav2_controller</exec_depend>
-  <exec_depend>nav2_waypoint_follower</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

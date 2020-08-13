@@ -1,0 +1,11 @@
+
+<!--
+  This Behavior Tree processes each of the given waypoints with NavigateToPose.
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <ReactiveFallback name="FollowWaypoints">
+      <AlwaysSuccess/>
+    </ReactiveFallback>
+  </BehaviorTree>
+</root>

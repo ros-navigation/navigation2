@@ -1,0 +1,20 @@
+
+<!--
+  This Behavior Tree processes each of the given waypoints with NavigateToPose and skip to next waypoint if NavigateToPose is failed.
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <ReactiveFallback name="FollowWaypoints">
+      <AllGoalsAchieved goal_achieved="{goal_achieved}"/>
+      <KeepRunningUntilFailure>
+        <ReactiveSequence>
+          <GetNextGoal goals="{goals}" goal="{goal}" goal_achieved="{goal_achieved}"/>
+          <ForceSuccess>
+            <NavigateToPose goal="{goal}"/>
+          </ForceSuccess>
+          <SetBlackboard output_key="goal_achieved" value="true"/>
+        </ReactiveSequence>
+      </KeepRunningUntilFailure>
+    </ReactiveFallback>
+  </BehaviorTree>
+</root>
