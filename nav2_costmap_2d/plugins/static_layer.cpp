@@ -65,11 +65,11 @@ StaticLayer::~StaticLayer()
 }
 
 void
-StaticLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & node)
+StaticLayer::onInitialize()
 {
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
-  getParameters(node);
+  getParameters();
 
   rclcpp::QoS map_qos(10);  // initialize to default
   if (map_subscribe_transient_local_) {
@@ -79,16 +79,19 @@ StaticLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & node)
   }
 
   RCLCPP_INFO(
-    node->get_logger(),
+    logger_,
     "Subscribing to the map topic (%s) with %s durability",
     map_topic_.c_str(),
     map_subscribe_transient_local_ ? "transient local" : "volatile");
+
+  auto node = node_.lock();
+
   map_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
     map_topic_, map_qos,
     std::bind(&StaticLayer::incomingMap, this, std::placeholders::_1));
 
   if (subscribe_to_updates_) {
-    RCLCPP_INFO(node->get_logger(), "Subscribing to updates");
+    RCLCPP_INFO(logger_, "Subscribing to updates");
     map_update_sub_ = node->create_subscription<map_msgs::msg::OccupancyGridUpdate>(
       map_topic_ + "_updates",
       rclcpp::SystemDefaultsQoS(),
@@ -113,7 +116,7 @@ StaticLayer::reset()
 }
 
 void
-StaticLayer::getParameters(const nav2_util::LifecycleNode::SharedPtr & node)
+StaticLayer::getParameters()
 {
   int temp_lethal_threshold = 0;
   double temp_tf_tol = 0.0;
@@ -123,6 +126,8 @@ StaticLayer::getParameters(const nav2_util::LifecycleNode::SharedPtr & node)
   declareParameter("map_subscribe_transient_local", rclcpp::ParameterValue(true));
   declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
   declareParameter("map_topic", rclcpp::ParameterValue(""));
+
+  auto node = node_.lock();
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
@@ -155,13 +160,13 @@ StaticLayer::getParameters(const nav2_util::LifecycleNode::SharedPtr & node)
 void
 StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 {
-  RCLCPP_DEBUG(node_logging_interface_->get_logger(), "StaticLayer: Process map");
+  RCLCPP_DEBUG(logger_, "StaticLayer: Process map");
 
   unsigned int size_x = new_map.info.width;
   unsigned int size_y = new_map.info.height;
 
   RCLCPP_DEBUG(
-    node_logging_interface_->get_logger(),
+    logger_,
     "StaticLayer: Received a %d X %d map at %f m/pix", size_x, size_y,
     new_map.info.resolution);
 
@@ -176,7 +181,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
   {
     // Update the size of the layered costmap (and all layers, including this one)
     RCLCPP_INFO(
-      node_logging_interface_->get_logger(),
+      logger_,
       "StaticLayer: Resizing costmap to %d X %d at %f m/pix", size_x, size_y,
       new_map.info.resolution);
     layered_costmap_->resizeMap(
@@ -191,7 +196,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
   {
     // only update the size of the costmap stored locally in this layer
     RCLCPP_INFO(
-      node_logging_interface_->get_logger(),
+      logger_,
       "StaticLayer: Resizing static layer to %d X %d at %f m/pix", size_x, size_y,
       new_map.info.resolution);
     resizeMap(
@@ -280,7 +285,7 @@ StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr u
     x_ + width_ < update->x + update->width)
   {
     RCLCPP_WARN(
-      node_logging_interface_->get_logger(),
+      logger_,
       "StaticLayer: Map update ignored. Exceeds bounds of static layer.\n"
       "Static layer origin: %d, %d   bounds: %d X %d\n"
       "Update origin: %d, %d   bounds: %d X %d",
@@ -291,7 +296,7 @@ StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr u
 
   if (update->header.frame_id != map_frame_) {
     RCLCPP_WARN(
-      node_logging_interface_->get_logger(),
+      logger_,
       "StaticLayer: Map update ignored. Current map is in frame %s "
       "but update was in frame %s",
       map_frame_.c_str(), update->header.frame_id.c_str());
@@ -369,7 +374,7 @@ StaticLayer::updateCosts(
     // throttle warning down to only 1/10 message rate
     if (++count == 10) {
       RCLCPP_WARN(
-        node_logging_interface_->get_logger(),
+        logger_,
         "Can't update static costmap layer, no map received");
       count = 0;
     }
@@ -396,7 +401,7 @@ StaticLayer::updateCosts(
         transform_tolerance_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(
-        node_logging_interface_->get_logger(),
+        logger_,
         "StaticLayer: %s", ex.what());
       update_in_progress_.store(false);
       return;

@@ -66,7 +66,7 @@ ObstacleLayer::~ObstacleLayer()
   }
 }
 
-void ObstacleLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & node)
+void ObstacleLayer::onInitialize()
 {
   bool track_unknown_space;
   double transform_tolerance;
@@ -81,6 +81,8 @@ void ObstacleLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & nod
   declareParameter("combination_method", rclcpp::ParameterValue(1));
   declareParameter("observation_sources", rclcpp::ParameterValue(std::string("")));
 
+  auto node = node_.lock();
+
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
   node->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
@@ -90,7 +92,7 @@ void ObstacleLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & nod
   node->get_parameter(name_ + "." + "observation_sources", topics_string);
 
   RCLCPP_INFO(
-    node->get_logger(),
+    logger_,
     "Subscribed to Topics: %s", topics_string.c_str());
 
   rolling_window_ = layered_costmap_->isRolling();
@@ -146,7 +148,7 @@ void ObstacleLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & nod
 
     if (!(data_type == "PointCloud2" || data_type == "LaserScan")) {
       RCLCPP_FATAL(
-        node->get_logger(),
+        logger_,
         "Only topics that use point cloud2s or laser scans are currently supported");
       throw std::runtime_error(
               "Only topics that use point cloud2s or laser scans are currently supported");
@@ -161,7 +163,7 @@ void ObstacleLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & nod
     node->get_parameter(name_ + "." + source + "." + "raytrace_range", raytrace_range);
 
     RCLCPP_DEBUG(
-      node->get_logger(),
+      logger_,
       "Creating an observation buffer for source %s, topic %s, frame %s",
       source.c_str(), topic.c_str(),
       sensor_frame.c_str());
@@ -187,7 +189,7 @@ void ObstacleLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & nod
     }
 
     RCLCPP_DEBUG(
-      node->get_logger(),
+      logger_,
       "Created an observation buffer for source %s, topic %s, global frame: %s, "
       "expected update rate: %.2f, observation persistence: %.2f",
       source.c_str(), topic.c_str(),
@@ -233,7 +235,7 @@ void ObstacleLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & nod
 
       if (inf_is_valid) {
         RCLCPP_WARN(
-          node->get_logger(),
+          logger_,
           "obstacle_layer: inf_is_valid option is not applicable to PointCloud observations.");
       }
 
@@ -273,7 +275,7 @@ ObstacleLayer::laserScanCallback(
     projector_.transformLaserScanToPointCloud(message->header.frame_id, *message, cloud, *tf_);
   } catch (tf2::TransformException & ex) {
     RCLCPP_WARN(
-      node_logging_interface_->get_logger(),
+      logger_,
       "High fidelity enabled, but TF returned a transform exception to frame %s: %s",
       global_frame_.c_str(),
       ex.what());
@@ -310,7 +312,7 @@ ObstacleLayer::laserScanValidInfCallback(
     projector_.transformLaserScanToPointCloud(message.header.frame_id, message, cloud, *tf_);
   } catch (tf2::TransformException & ex) {
     RCLCPP_WARN(
-      node_logging_interface_->get_logger(),
+      logger_,
       "High fidelity enabled, but TF returned a transform exception to frame %s: %s",
       global_frame_.c_str(), ex.what());
     projector_.projectLaser(message, cloud);
@@ -382,7 +384,7 @@ ObstacleLayer::updateBounds(
 
       // if the obstacle is too high or too far away from the robot we won't add it
       if (pz > max_obstacle_height_) {
-        RCLCPP_DEBUG(node_logging_interface_->get_logger(), "The point is too high");
+        RCLCPP_DEBUG(logger_, "The point is too high");
         continue;
       }
 
@@ -394,14 +396,14 @@ ObstacleLayer::updateBounds(
 
       // if the point is far enough away... we won't consider it
       if (sq_dist >= sq_obstacle_range) {
-        RCLCPP_DEBUG(node_logging_interface_->get_logger(), "The point is too far away");
+        RCLCPP_DEBUG(logger_, "The point is too far away");
         continue;
       }
 
       // now we need to compute the map coordinates for the observation
       unsigned int mx, my;
       if (!worldToMap(px, py, mx, my)) {
-        RCLCPP_DEBUG(node_logging_interface_->get_logger(), "Computing map coords failed");
+        RCLCPP_DEBUG(logger_, "Computing map coords failed");
         continue;
       }
 
@@ -528,7 +530,7 @@ ObstacleLayer::raytraceFreespace(
   unsigned int x0, y0;
   if (!worldToMap(ox, oy, x0, y0)) {
     RCLCPP_WARN(
-      node_logging_interface_->get_logger(),
+      logger_,
       "Sensor origin at (%.2f, %.2f) is out of map bounds. The costmap cannot raytrace for it.",
       ox, oy);
     return;

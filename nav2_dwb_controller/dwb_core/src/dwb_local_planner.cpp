@@ -64,10 +64,14 @@ DWBLocalPlanner::DWBLocalPlanner()
 }
 
 void DWBLocalPlanner::configure(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
 {
+  node_ = parent;
+  auto node = node_.lock();
+
+  logger_ = node->get_logger();
   clock_ = node->get_clock();
   costmap_ros_ = costmap_ros;
   tf_ = tf;
@@ -98,7 +102,7 @@ void DWBLocalPlanner::configure(
   double transform_tolerance;
   node->get_parameter(dwb_plugin_name_ + ".transform_tolerance", transform_tolerance);
   transform_tolerance_ = rclcpp::Duration::from_seconds(transform_tolerance);
-  RCLCPP_INFO(node->get_logger(), "Setting transform_tolerance to %f", transform_tolerance);
+  RCLCPP_INFO(logger_, "Setting transform_tolerance to %f", transform_tolerance);
 
   node->get_parameter(dwb_plugin_name_ + ".prune_plan", prune_plan_);
   node->get_parameter(dwb_plugin_name_ + ".prune_distance", prune_distance_);
@@ -108,17 +112,17 @@ void DWBLocalPlanner::configure(
     dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
     short_circuit_trajectory_evaluation_);
 
-  pub_ = std::make_unique<DWBPublisher>(dwb_plugin_name_);
-  pub_->on_configure(node);
+  pub_ = std::make_unique<DWBPublisher>(node, dwb_plugin_name_);
+  pub_->on_configure();
 
   traj_generator_ = traj_gen_loader_.createUniqueInstance(traj_generator_name);
 
   traj_generator_->initialize(node, dwb_plugin_name_);
 
   try {
-    loadCritics(node);
+    loadCritics();
   } catch (const std::exception & e) {
-    RCLCPP_ERROR(node->get_logger(), "Couldn't load critics! Caught exception: %s", e.what());
+    RCLCPP_ERROR(logger_, "Couldn't load critics! Caught exception: %s", e.what());
     throw;
   }
 }
@@ -162,8 +166,10 @@ DWBLocalPlanner::resolveCriticClassName(std::string base_name)
 }
 
 void
-DWBLocalPlanner::loadCritics(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
+DWBLocalPlanner::loadCritics()
 {
+  auto node = node_.lock();
+
   node->get_parameter(dwb_plugin_name_ + ".default_critic_namespaces", default_critic_namespaces_);
   if (default_critic_namespaces_.empty()) {
     default_critic_namespaces_.emplace_back("dwb_critics");
@@ -171,7 +177,7 @@ DWBLocalPlanner::loadCritics(const rclcpp_lifecycle::LifecycleNode::SharedPtr & 
 
   std::vector<std::string> critic_names;
   if (!node->get_parameter(dwb_plugin_name_ + ".critics", critic_names)) {
-    loadBackwardsCompatibleParameters(node);
+    loadBackwardsCompatibleParameters();
   }
 
   node->get_parameter(dwb_plugin_name_ + ".critics", critic_names);
@@ -188,26 +194,25 @@ DWBLocalPlanner::loadCritics(const rclcpp_lifecycle::LifecycleNode::SharedPtr & 
 
     TrajectoryCritic::Ptr plugin = critic_loader_.createUniqueInstance(plugin_class);
     RCLCPP_INFO(
-      node->get_logger(),
+      logger_,
       "Using critic \"%s\" (%s)", critic_plugin_name.c_str(), plugin_class.c_str());
     critics_.push_back(plugin);
     try {
       plugin->initialize(node, critic_plugin_name, dwb_plugin_name_, costmap_ros_);
     } catch (const std::exception & e) {
-      RCLCPP_ERROR(node->get_logger(), "Couldn't initialize critic plugin!");
+      RCLCPP_ERROR(logger_, "Couldn't initialize critic plugin!");
       throw;
     }
-    RCLCPP_INFO(node->get_logger(), "Critic plugin initialized");
+    RCLCPP_INFO(logger_, "Critic plugin initialized");
   }
 }
 
 void
-DWBLocalPlanner::loadBackwardsCompatibleParameters(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
+DWBLocalPlanner::loadBackwardsCompatibleParameters()
 {
   std::vector<std::string> critic_names;
   RCLCPP_INFO(
-    node->get_logger(),
+    logger_,
     "DWBLocalPlanner", "No critics configured! Using the default set.");
   critic_names.emplace_back("RotateToGoal");      // discards trajectories that move forward when
                                                   //   already at goal
@@ -220,6 +225,9 @@ DWBLocalPlanner::loadBackwardsCompatibleParameters(
   critic_names.emplace_back("PathDist");           // prefers trajectories on global path
   critic_names.emplace_back("GoalDist");           // prefers trajectories that go towards
                                                    //   (local) goal, based on wave propagation
+
+  auto node = node_.lock();
+
   node->set_parameters({rclcpp::Parameter(dwb_plugin_name_ + ".critics", critic_names)});
 
   declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".path_distance_bias");

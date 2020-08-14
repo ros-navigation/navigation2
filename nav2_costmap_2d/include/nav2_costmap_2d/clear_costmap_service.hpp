@@ -48,8 +48,8 @@ public:
   void clearEntirely();
 
 private:
-  // The ROS node interface to use for logging
-  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
+  // The Logger object for logging
+  rclcpp::Logger logger_;
 
   // The costmap to clear
   Costmap2DROS & costmap_;

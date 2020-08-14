@@ -54,7 +54,7 @@ class GoalAlignCritic : public GoalDistCritic
 public:
   GoalAlignCritic()
   : forward_point_distance_(0.0) {}
-  void onInit(const nav2_util::LifecycleNode::SharedPtr & nh) override;
+  void onInit() override;
   bool prepare(
     const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
     const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;

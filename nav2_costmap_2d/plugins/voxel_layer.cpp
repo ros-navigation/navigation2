@@ -57,9 +57,9 @@ using nav2_costmap_2d::FREE_SPACE;
 namespace nav2_costmap_2d
 {
 
-void VoxelLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & node)
+void VoxelLayer::onInitialize()
 {
-  ObstacleLayer::onInitialize(node);
+  ObstacleLayer::onInitialize();
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(true));
@@ -71,6 +71,8 @@ void VoxelLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & node)
   declareParameter("mark_threshold", rclcpp::ParameterValue(0));
   declareParameter("combination_method", rclcpp::ParameterValue(1));
   declareParameter("publish_voxel_map", rclcpp::ParameterValue(false));
+
+  auto node = node_.lock();
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
@@ -225,7 +227,7 @@ void VoxelLayer::updateBounds(
     grid_msg->resolutions.y = resolution_;
     grid_msg->resolutions.z = z_resolution_;
     grid_msg->header.frame_id = global_frame_;
-    grid_msg->header.stamp = node_clock_interface_->get_clock()->now();
+    grid_msg->header.stamp = clock_->now();
 
     voxel_pub_->publish(std::move(grid_msg));
   }
@@ -307,14 +309,19 @@ void VoxelLayer::raytraceFreespace(
 
   if (!worldToMap3DFloat(ox, oy, oz, sensor_x, sensor_y, sensor_z)) {
     RCLCPP_WARN(
-      node_logging_interface_->get_logger(),
+      logger_,
       "Sensor origin: (%.2f, %.2f, %.2f), out of map bounds. The costmap can't raytrace for it.",
       ox, oy, oz);
     return;
   }
 
-  bool publish_clearing_points =
-    (node_graph_interface_->count_subscribers("clearing_endpoints") > 0);
+  bool publish_clearing_points;
+
+  {
+    auto node = node_.lock();
+    publish_clearing_points = (node->count_subscribers("clearing_endpoints") > 0);
+  }
+
   if (publish_clearing_points) {
     clearing_endpoints_->points.clear();
     clearing_endpoints_->points.reserve(clearing_observation_cloud_size);

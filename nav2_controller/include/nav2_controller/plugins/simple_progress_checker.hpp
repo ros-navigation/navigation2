@@ -34,7 +34,7 @@ class SimpleProgressChecker : public nav2_core::ProgressChecker
 {
 public:
   void initialize(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name) override;
   bool check(geometry_msgs::msg::PoseStamped & current_pose) override;
   void reset() override;

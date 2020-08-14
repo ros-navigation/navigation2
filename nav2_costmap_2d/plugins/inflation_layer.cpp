@@ -74,7 +74,7 @@ InflationLayer::InflationLayer()
 }
 
 void
-InflationLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & node)
+InflationLayer::onInitialize()
 {
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("inflation_radius", rclcpp::ParameterValue(0.55));
@@ -82,11 +82,14 @@ InflationLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & node)
   declareParameter("inflate_unknown", rclcpp::ParameterValue(false));
   declareParameter("inflate_around_unknown", rclcpp::ParameterValue(false));
 
-  node->get_parameter(name_ + "." + "enabled", enabled_);
-  node->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
-  node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
-  node->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
-  node->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
+  {
+    auto node = node_.lock();
+    node->get_parameter(name_ + "." + "enabled", enabled_);
+    node->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
+    node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
+    node->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
+    node->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
+  }
 
   current_ = true;
   seen_.clear();
@@ -148,8 +151,7 @@ InflationLayer::onFootprintChanged()
   need_reinflation_ = true;
 
   RCLCPP_DEBUG(
-    rclcpp::get_logger(
-      "nav2_costmap_2d"), "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
+    logger_, "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
     " inscribed_radius_ = %.3f, inflation_radius_ = %.3f",
     layered_costmap_->getFootprint().size(), inscribed_radius_, inflation_radius_);
 }
@@ -167,7 +169,7 @@ InflationLayer::updateCosts(
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)
   for (auto & dist : inflation_cells_) {
     RCLCPP_FATAL_EXPRESSION(
-      rclcpp::get_logger("nav2_costmap_2d"),
+      logger_,
       !dist.empty(), "The inflation list must be empty at the beginning of inflation");
   }
 
@@ -176,8 +178,7 @@ InflationLayer::updateCosts(
 
   if (seen_.size() != size_x * size_y) {
     RCLCPP_WARN(
-      rclcpp::get_logger(
-        "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ vector size is wrong");
+      logger_, "InflationLayer::updateCosts(): seen_ vector size is wrong");
     seen_ = std::vector<bool>(size_x * size_y, false);
   }
 

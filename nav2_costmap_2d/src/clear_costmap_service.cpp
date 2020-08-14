@@ -34,7 +34,7 @@ using ClearEntirely = nav2_msgs::srv::ClearEntireCostmap;
 ClearCostmapService::ClearCostmapService(
   const nav2_util::LifecycleNode::SharedPtr & node,
   Costmap2DROS & costmap)
-: node_logging_interface_(node->get_node_logging_interface()),
+: logger_(node->get_logger()),
   costmap_(costmap)
 {
   reset_value_ = costmap_.getCostmap()->getDefaultValue();
@@ -66,7 +66,7 @@ void ClearCostmapService::clearExceptRegionCallback(
   const shared_ptr<ClearExceptRegion::Response>/*response*/)
 {
   RCLCPP_INFO(
-    node_logging_interface_->get_logger(),
+    logger_,
     "Received request to clear except a region the " + costmap_.getName());
 
   clearExceptRegion(request->reset_distance);
@@ -78,7 +78,7 @@ void ClearCostmapService::clearAroundRobotCallback(
   const shared_ptr<ClearAroundRobot::Response>/*response*/)
 {
   RCLCPP_INFO(
-    node_logging_interface_->get_logger(),
+    logger_,
     "Received request to clear around robot the " + costmap_.getName());
 
   if ((request->window_size_x == 0) || (request->window_size_y == 0)) {
@@ -95,7 +95,7 @@ void ClearCostmapService::clearEntireCallback(
   const std::shared_ptr<ClearEntirely::Response>/*response*/)
 {
   RCLCPP_INFO(
-    node_logging_interface_->get_logger(),
+    logger_,
     "Received request to clear entirely the " + costmap_.getName());
 
   clearEntirely();
@@ -107,7 +107,7 @@ void ClearCostmapService::clearExceptRegion(const double reset_distance)
 
   if (!getPosition(x, y)) {
     RCLCPP_ERROR(
-      node_logging_interface_->get_logger(),
+      logger_,
       "Cannot clear map because robot pose cannot be retrieved.");
     return;
   }
@@ -128,7 +128,7 @@ void ClearCostmapService::clearAroundRobot(double window_size_x, double window_s
 
   if (!getPosition(pose_x, pose_y)) {
     RCLCPP_ERROR(
-      node_logging_interface_->get_logger(),
+      logger_,
       "Cannot clear map because robot pose cannot be retrieved.");
     return;
   }

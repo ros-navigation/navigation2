@@ -57,7 +57,7 @@ public:
   StaticLayer();
   virtual ~StaticLayer();
 
-  virtual void onInitialize(const nav2_util::LifecycleNode::SharedPtr & node);
+  virtual void onInitialize();
   virtual void activate();
   virtual void deactivate();
   virtual void reset();
@@ -73,7 +73,7 @@ public:
   virtual void matchSize();
 
 private:
-  void getParameters(const nav2_util::LifecycleNode::SharedPtr & node);
+  void getParameters();
   void processMap(const nav_msgs::msg::OccupancyGrid & new_map);
 
   /**

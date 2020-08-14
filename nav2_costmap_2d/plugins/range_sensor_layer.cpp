@@ -57,15 +57,17 @@ namespace nav2_costmap_2d
 
 RangeSensorLayer::RangeSensorLayer() {}
 
-void RangeSensorLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & node)
+void RangeSensorLayer::onInitialize()
 {
   current_ = true;
   buffered_readings_ = 0;
-  last_reading_time_ = node->now();
+  last_reading_time_ = clock_->now();
   default_value_ = to_cost(0.5);
 
   matchSize();
   resetRange();
+
+  auto node = node_.lock();
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
   node->get_parameter(name_ + "." + "enabled", enabled_);
@@ -99,7 +101,7 @@ void RangeSensorLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & 
     sensor_type_name.begin(), sensor_type_name.end(),
     sensor_type_name.begin(), ::toupper);
   RCLCPP_INFO(
-    node->get_logger(), "%s: %s as input_sensor_type given",
+    logger_, "%s: %s as input_sensor_type given",
     name_.c_str(), sensor_type_name.c_str());
 
   if (sensor_type_name == "VARIABLE") {
@@ -110,14 +112,14 @@ void RangeSensorLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & 
     input_sensor_type = InputSensorType::ALL;
   } else {
     RCLCPP_ERROR(
-      node->get_logger(), "%s: Invalid input sensor type: %s. Defaulting to ALL.",
+      logger_, "%s: Invalid input sensor type: %s. Defaulting to ALL.",
       name_.c_str(), sensor_type_name.c_str());
   }
 
   // Validate topic names list: it must be a (normally non-empty) list of strings
   if (topic_names.empty()) {
     RCLCPP_FATAL(
-      node->get_logger(), "Invalid topic names list: it must"
+      logger_, "Invalid topic names list: it must"
       "be a non-empty list of strings");
     return;
   }
@@ -138,7 +140,7 @@ void RangeSensorLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & 
         std::placeholders::_1);
     } else {
       RCLCPP_ERROR(
-        node->get_logger(),
+        logger_,
         "%s: Invalid input sensor type: %s. Did you make a new type"
         "and forgot to choose the subscriber for it?",
         name_.c_str(), sensor_type_name.c_str());
@@ -150,7 +152,7 @@ void RangeSensorLayer::onInitialize(const nav2_util::LifecycleNode::SharedPtr & 
           std::placeholders::_1)));
 
     RCLCPP_INFO(
-      node->get_logger(), "RangeSensorLayer: subscribed to "
+      logger_, "RangeSensorLayer: subscribed to "
       "topic %s", range_subs_.back()->get_topic_name());
   }
   global_frame_ = layered_costmap_->getGlobalFrameID();
@@ -238,7 +240,7 @@ void RangeSensorLayer::processFixedRangeMsg(sensor_msgs::msg::Range & range_mess
 {
   if (!std::isinf(range_message.range)) {
     RCLCPP_ERROR(
-      node_logging_interface_->get_logger(),
+      logger_,
       "Fixed distance ranger (min_range == max_range) in frame %s sent invalid value. "
       "Only -Inf (== object detected) and Inf (== no object detected) are valid.",
       range_message.header.frame_id.c_str());
@@ -290,7 +292,7 @@ void RangeSensorLayer::updateCostmap(
       in.header.frame_id, global_frame_, tf2_ros::fromMsg(in.header.stamp)))
   {
     RCLCPP_INFO(
-      node_logging_interface_->get_logger(), "Range sensor layer can't transform from %s to %s",
+      logger_, "Range sensor layer can't transform from %s to %s",
       global_frame_.c_str(), in.header.frame_id.c_str());
     return;
   }
@@ -387,7 +389,7 @@ void RangeSensorLayer::updateCostmap(
   }
 
   buffered_readings_++;
-  last_reading_time_ = node_clock_interface_->get_clock()->now();
+  last_reading_time_ = clock_->now();
 }
 
 void RangeSensorLayer::update_cell(
@@ -410,10 +412,10 @@ void RangeSensorLayer::update_cell(
     double new_prob = prob_occ / (prob_occ + prob_not);
 
     RCLCPP_DEBUG(
-      node_logging_interface_->get_logger(),
+      logger_,
       "%f %f | %f %f = %f", dx, dy, theta, phi, sensor);
     RCLCPP_DEBUG(
-      node_logging_interface_->get_logger(),
+      logger_,
       "%f | %f %f | %f", prior, prob_occ, prob_not, new_prob);
     unsigned char c = to_cost(new_prob);
     setCost(x, y, c);
@@ -452,13 +454,13 @@ void RangeSensorLayer::updateBounds(
 
   if (buffered_readings_ == 0) {
     if (no_readings_timeout_ > 0.0 &&
-      (node_clock_interface_->get_clock()->now() - last_reading_time_).seconds() >
+      (clock_->now() - last_reading_time_).seconds() >
       no_readings_timeout_)
     {
       RCLCPP_WARN(
-        node_logging_interface_->get_logger(),
+        logger_,
         "No range readings received for %.2f seconds, while expected at least every %.2f seconds.",
-        (node_clock_interface_->get_clock()->now() - last_reading_time_).seconds(),
+        (clock_->now() - last_reading_time_).seconds(),
         no_readings_timeout_);
       current_ = false;
     }
@@ -509,7 +511,7 @@ void RangeSensorLayer::updateCosts(
 
 void RangeSensorLayer::reset()
 {
-  RCLCPP_DEBUG(node_logging_interface_->get_logger(), "Reseting range sensor layer...");
+  RCLCPP_DEBUG(logger_, "Reseting range sensor layer...");
   deactivate();
   resetMaps();
   current_ = true;

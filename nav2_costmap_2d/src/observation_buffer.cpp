@@ -54,8 +54,8 @@ ObservationBuffer::ObservationBuffer(
   double min_obstacle_height, double max_obstacle_height, double obstacle_range,
   double raytrace_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
   std::string sensor_frame, double tf_tolerance)
-: node_logging_interface_(node->get_node_logging_interface()),
-  node_clock_interface_(node->get_node_clock_interface()),
+: clock_(node->get_clock()),
+  logger_(node->get_logger()),
   tf2_buffer_(tf2_buffer),
   observation_keep_time_(rclcpp::Duration::from_seconds(observation_keep_time)),
   expected_update_rate_(rclcpp::Duration::from_seconds(expected_update_rate)),
@@ -74,7 +74,7 @@ ObservationBuffer::~ObservationBuffer()
 
 bool ObservationBuffer::setGlobalFrame(const std::string new_global_frame)
 {
-  rclcpp::Time transform_time = node_clock_interface_->get_clock()->now();
+  rclcpp::Time transform_time = clock_->now();
   std::string tf_error;
 
   geometry_msgs::msg::TransformStamped transformStamped;
@@ -83,8 +83,7 @@ bool ObservationBuffer::setGlobalFrame(const std::string new_global_frame)
       tf2::durationFromSec(tf_tolerance_), &tf_error))
   {
     RCLCPP_ERROR(
-      rclcpp::get_logger(
-        "nav2_costmap_2d"), "Transform between %s and %s with tolerance %.2f failed: %s.",
+      logger_, "Transform between %s and %s with tolerance %.2f failed: %s.",
       new_global_frame.c_str(),
       global_frame_.c_str(), tf_tolerance_, tf_error.c_str());
     return false;
@@ -109,8 +108,7 @@ bool ObservationBuffer::setGlobalFrame(const std::string new_global_frame)
         *(obs.cloud_), *(obs.cloud_), new_global_frame, tf2::durationFromSec(tf_tolerance_));
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(
-        rclcpp::get_logger(
-          "nav2_costmap_2d"), "TF Error attempting to transform an observation from %s to %s: %s",
+        logger_, "TF Error attempting to transform an observation from %s to %s: %s",
         global_frame_.c_str(),
         new_global_frame.c_str(), ex.what());
       return false;
@@ -197,8 +195,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
     // if an exception occurs, we need to remove the empty observation from the list
     observation_list_.pop_front();
     RCLCPP_ERROR(
-      rclcpp::get_logger(
-        "nav2_costmap_2d"),
+      logger_,
       "TF Exception that should never happen for sensor frame: %s, cloud frame: %s, %s",
       sensor_frame_.c_str(),
       cloud.header.frame_id.c_str(), ex.what());
@@ -206,7 +203,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
   }
 
   // if the update was successful, we want to update the last updated time
-  last_updated_ = node_clock_interface_->get_clock()->now();
+  last_updated_ = clock_->now();
 
   // we'll also remove any stale observations from the list
   purgeStaleObservations();
@@ -240,7 +237,7 @@ void ObservationBuffer::purgeStaleObservations()
       Observation & obs = *obs_it;
       // check if the observation is out of date... and if it is,
       // remove it and those that follow from the list
-      if ((node_clock_interface_->get_clock()->now() - obs.cloud_->header.stamp) >
+      if ((clock_->now() - obs.cloud_->header.stamp) >
         observation_keep_time_)
       {
         observation_list_.erase(obs_it, observation_list_.end());
@@ -256,15 +253,15 @@ bool ObservationBuffer::isCurrent() const
     return true;
   }
 
-  bool current = (node_clock_interface_->get_clock()->now() - last_updated_) <=
+  bool current = (clock_->now() - last_updated_) <=
     expected_update_rate_;
   if (!current) {
     RCLCPP_WARN(
-      rclcpp::get_logger(
-        "nav2_costmap_2d"),
-      "The %s observation buffer has not been updated for %.2f seconds, and it should be updated every %.2f seconds.", //NOLINT
+      logger_,
+      "The %s observation buffer has not been updated for %.2f seconds, "
+      "and it should be updated every %.2f seconds.",
       topic_name_.c_str(),
-      (node_clock_interface_->get_clock()->now() - last_updated_).seconds(),
+      (clock_->now() - last_updated_).seconds(),
       expected_update_rate_.seconds());
   }
   return current;
@@ -272,6 +269,6 @@ bool ObservationBuffer::isCurrent() const
 
 void ObservationBuffer::resetLastUpdated()
 {
-  last_updated_ = node_clock_interface_->get_clock()->now();
+  last_updated_ = clock_->now();
 }
 }  // namespace nav2_costmap_2d

@@ -35,8 +35,9 @@ BackUp::~BackUp()
 {
 }
 
-void BackUp::onConfigure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
+void BackUp::onConfigure()
 {
+  auto node = node_.lock();
   nav2_util::declare_parameter_if_not_declared(
     node,
     "simulate_ahead_time", rclcpp::ParameterValue(2.0));
@@ -47,7 +48,7 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 {
   if (command->target.y != 0.0 || command->target.z != 0.0) {
     RCLCPP_INFO(
-      node_logging_interface_->get_logger(),
+      logger_,
       "Backing up in Y and Z not supported, will only move in X.");
   }
 
@@ -59,7 +60,7 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
       initial_pose_, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR(node_logging_interface_->get_logger(), "Initial robot pose is not available.");
+    RCLCPP_ERROR(logger_, "Initial robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -73,7 +74,7 @@ Status BackUp::onCycleUpdate()
       current_pose, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR(node_logging_interface_->get_logger(), "Current robot pose is not available.");
+    RCLCPP_ERROR(logger_, "Current robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -102,7 +103,7 @@ Status BackUp::onCycleUpdate()
 
   if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
     stopRobot();
-    RCLCPP_WARN(node_logging_interface_->get_logger(), "Collision Ahead - Exiting BackUp");
+    RCLCPP_WARN(logger_, "Collision Ahead - Exiting BackUp");
     return Status::SUCCEEDED;
   }
 

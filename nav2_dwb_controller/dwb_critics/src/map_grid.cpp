@@ -53,7 +53,7 @@ bool MapGridCritic::MapGridQueue::validCellToQueue(const costmap_queue::CellData
   return true;
 }
 
-void MapGridCritic::onInit(const nav2_util::LifecycleNode::SharedPtr & nh)
+void MapGridCritic::onInit()
 {
   costmap_ = costmap_ros_->getCostmap();
   queue_ = std::make_shared<MapGridQueue>(*costmap_, *this);
@@ -61,13 +61,15 @@ void MapGridCritic::onInit(const nav2_util::LifecycleNode::SharedPtr & nh)
   // Always set to true, but can be overriden by subclasses
   stop_on_failure_ = true;
 
+  auto node = node_.lock();
+
   nav2_util::declare_parameter_if_not_declared(
-    nh,
+    node,
     dwb_plugin_name_ + "." + name_ + ".aggregation_type",
     rclcpp::ParameterValue(std::string("last")));
 
   std::string aggro_str;
-  nh->get_parameter(dwb_plugin_name_ + "." + name_ + ".aggregation_type", aggro_str);
+  node->get_parameter(dwb_plugin_name_ + "." + name_ + ".aggregation_type", aggro_str);
   std::transform(aggro_str.begin(), aggro_str.end(), aggro_str.begin(), ::tolower);
   if (aggro_str == "last") {
     aggregationType_ = ScoreAggregationType::Last;

@@ -142,8 +142,8 @@ private:
    */
   void purgeStaleObservations();
 
-  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
-  rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface_;
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Logger logger_;
   tf2_ros::Buffer & tf2_buffer_;
   const rclcpp::Duration observation_keep_time_;
   const rclcpp::Duration expected_update_rate_;

@@ -41,7 +41,7 @@ protected:
     geometry_msgs::msg::Twist * cmd_vel,
     geometry_msgs::msg::Pose2D & pose2d);
 
-  void onConfigure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) override;
+  void onConfigure() override;
 
   double min_linear_vel_;
   double max_linear_vel_;

@@ -62,7 +62,7 @@ public:
     LayeredCostmap * parent,
     std::string name,
     tf2_ros::Buffer * tf,
-    const nav2_util::LifecycleNode::SharedPtr & node,
+    const nav2_util::LifecycleNode::WeakPtr & node,
     rclcpp::Node::SharedPtr client_node,
     rclcpp::Node::SharedPtr rclcpp_node);
   virtual void deactivate() {} /** @brief Stop publishers. */
@@ -137,17 +137,16 @@ protected:
   tf2_ros::Buffer * tf_;
   rclcpp::Node::SharedPtr client_node_;
   rclcpp::Node::SharedPtr rclcpp_node_;
-  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
-  rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface_;
-  rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph_interface_;
-  rclcpp::node_interfaces::NodeParametersInterface::SharedPtr node_parameters_interface_;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Logger logger_{rclcpp::get_logger("")};
 
   /** @brief This is called at the end of initialize().  Override to
    * implement subclass-specific initialization.
    *
    * tf_, name_, and layered_costmap_ will all be set already when this is called.
    */
-  virtual void onInitialize(const nav2_util::LifecycleNode::SharedPtr & /*node*/) {}
+  virtual void onInitialize() {}
 
   bool current_;
   // Currently this var is managed by subclasses.

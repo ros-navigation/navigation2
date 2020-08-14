@@ -55,9 +55,9 @@ Costmap2DPublisher::Costmap2DPublisher(
   std::string global_frame,
   std::string topic_name,
   bool always_send_full_costmap)
-: node_logging_interface_(node->get_node_logging_interface()),
-  node_clock_interface_(node->get_node_clock_interface()),
-  node_graph_interface_(node->get_node_graph_interface()),
+: node_(node),
+  clock_(node->get_clock()),
+  logger_(node->get_logger()),
   costmap_(costmap),
   global_frame_(global_frame),
   topic_name_(topic_name),
@@ -157,7 +157,7 @@ void Costmap2DPublisher::prepareCostmap()
   costmap_raw_ = std::make_unique<nav2_msgs::msg::Costmap>();
 
   costmap_raw_->header.frame_id = global_frame_;
-  costmap_raw_->header.stamp = node_clock_interface_->get_clock()->now();
+  costmap_raw_->header.stamp = clock_->now();
 
   costmap_raw_->metadata.layer = "master";
   costmap_raw_->metadata.resolution = resolution;
@@ -182,7 +182,9 @@ void Costmap2DPublisher::prepareCostmap()
 
 void Costmap2DPublisher::publishCostmap()
 {
-  if (node_graph_interface_->count_subscribers(costmap_raw_pub_->get_topic_name()) > 0) {
+  auto node = node_.lock();
+
+  if (node->count_subscribers(costmap_raw_pub_->get_topic_name()) > 0) {
     prepareCostmap();
     costmap_raw_pub_->publish(std::move(costmap_raw_));
   }
@@ -194,12 +196,12 @@ void Costmap2DPublisher::publishCostmap()
     saved_origin_x_ != costmap_->getOriginX() ||
     saved_origin_y_ != costmap_->getOriginY())
   {
-    if (node_graph_interface_->count_subscribers(costmap_pub_->get_topic_name()) > 0) {
+    if (node->count_subscribers(costmap_pub_->get_topic_name()) > 0) {
       prepareGrid();
       costmap_pub_->publish(std::move(grid_));
     }
   } else if (x0_ < xn_) {
-    if (node_graph_interface_->count_subscribers(costmap_update_pub_->get_topic_name()) > 0) {
+    if (node->count_subscribers(costmap_update_pub_->get_topic_name()) > 0) {
       std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
       // Publish Just an Update
       auto update = std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
@@ -232,7 +234,7 @@ Costmap2DPublisher::costmap_service_callback(
   const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request>/*request*/,
   const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response)
 {
-  RCLCPP_DEBUG(node_logging_interface_->get_logger(), "Received costmap service request");
+  RCLCPP_DEBUG(logger_, "Received costmap service request");
 
   // TODO(bpwilcox): Grab correct orientation information
   tf2::Quaternion quaternion;
@@ -242,7 +244,7 @@ Costmap2DPublisher::costmap_service_callback(
   auto size_y = costmap_->getSizeInCellsY();
   auto data_length = size_x * size_y;
   unsigned char * data = costmap_->getCharMap();
-  auto current_time = node_clock_interface_->get_clock()->now();
+  auto current_time = clock_->now();
 
   response->map.header.stamp = current_time;
   response->map.header.frame_id = global_frame_;

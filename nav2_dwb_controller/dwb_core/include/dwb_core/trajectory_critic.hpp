@@ -97,6 +97,7 @@ public:
     std::string & ns,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
   {
+    node_ = nh;
     name_ = name;
     costmap_ros_ = costmap_ros;
     dwb_plugin_name_ = ns;
@@ -106,9 +107,9 @@ public:
         rclcpp::ParameterValue(1.0));
     }
     nh->get_parameter(dwb_plugin_name_ + "." + name_ + ".scale", scale_);
-    onInit(nh);
+    onInit();
   }
-  virtual void onInit(const nav2_util::LifecycleNode::SharedPtr & /*nh*/) {}
+  virtual void onInit() {}
 
   /**
    * @brief Reset the state of the critic
@@ -180,6 +181,7 @@ protected:
   std::string dwb_plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   double scale_;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
 };
 
 }  // namespace dwb_core

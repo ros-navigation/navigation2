@@ -27,9 +27,11 @@ namespace nav2_controller
 static double pose_distance(const geometry_msgs::msg::Pose2D &, const geometry_msgs::msg::Pose2D &);
 
 void SimpleProgressChecker::initialize(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
 {
+  auto node = parent.lock();
+
   clock_ = node->get_clock();
 
   nav2_util::declare_parameter_if_not_declared(
