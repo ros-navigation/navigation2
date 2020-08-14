@@ -37,12 +37,6 @@ void ComputePathToPoseAction::on_tick()
 BT::NodeStatus ComputePathToPoseAction::on_success()
 {
   setOutput("path", result_.result->path);
-
-  if (first_time_) {
-    first_time_ = false;
-  } else {
-    config().blackboard->set("path_updated", true);
-  }
   return BT::NodeStatus::SUCCESS;
 }
 
