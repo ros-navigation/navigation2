@@ -158,7 +158,7 @@ protected:
   rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
 
   // Logger
-  rclcpp::Logger logger_{rclcpp::get_logger("")};
+  rclcpp::Logger logger_{rclcpp::get_logger("recovery.plugin")};
 
   void execute()
   {

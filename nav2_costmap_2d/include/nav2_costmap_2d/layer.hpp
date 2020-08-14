@@ -139,7 +139,7 @@ protected:
   rclcpp::Node::SharedPtr rclcpp_node_;
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   rclcpp::Clock::SharedPtr clock_;
-  rclcpp::Logger logger_{rclcpp::get_logger("")};
+  rclcpp::Logger logger_{rclcpp::get_logger("costmap.layer")};
 
   /** @brief This is called at the end of initialize().  Override to
    * implement subclass-specific initialization.

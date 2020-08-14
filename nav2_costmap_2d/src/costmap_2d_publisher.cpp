@@ -50,20 +50,22 @@ namespace nav2_costmap_2d
 char * Costmap2DPublisher::cost_translation_table_ = NULL;
 
 Costmap2DPublisher::Costmap2DPublisher(
-  const nav2_util::LifecycleNode::SharedPtr & node,
+  const nav2_util::LifecycleNode::WeakPtr & parent,
   Costmap2D * costmap,
   std::string global_frame,
   std::string topic_name,
   bool always_send_full_costmap)
-: node_(node),
-  clock_(node->get_clock()),
-  logger_(node->get_logger()),
+: node_(parent),
   costmap_(costmap),
   global_frame_(global_frame),
   topic_name_(topic_name),
   active_(false),
   always_send_full_costmap_(always_send_full_costmap)
 {
+  auto node = node_.lock();
+  clock_ = node->get_clock();
+  logger_ = node->get_logger();
+
   auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 
   // TODO(bpwilcox): port onNewSubscription functionality for publisher

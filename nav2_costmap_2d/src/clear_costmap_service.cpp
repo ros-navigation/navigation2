@@ -32,11 +32,12 @@ using ClearAroundRobot = nav2_msgs::srv::ClearCostmapAroundRobot;
 using ClearEntirely = nav2_msgs::srv::ClearEntireCostmap;
 
 ClearCostmapService::ClearCostmapService(
-  const nav2_util::LifecycleNode::SharedPtr & node,
+  const nav2_util::LifecycleNode::WeakPtr & parent,
   Costmap2DROS & costmap)
-: logger_(node->get_logger()),
-  costmap_(costmap)
+: costmap_(costmap)
 {
+  auto node = parent.lock();
+  logger_ = node->get_logger();
   reset_value_ = costmap_.getCostmap()->getDefaultValue();
 
   node->get_parameter("clearable_layers", clearable_layers_);

@@ -24,11 +24,12 @@ namespace nav2_util
 {
 
 OdomSmoother::OdomSmoother(
-  const rclcpp::Node::SharedPtr & node,
+  const rclcpp::Node::WeakPtr & parent,
   double filter_duration,
   const std::string & odom_topic)
 : odom_history_duration_(rclcpp::Duration::from_seconds(filter_duration))
 {
+  auto node = parent.lock();
   odom_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
     odom_topic,
     rclcpp::SystemDefaultsQoS(),

@@ -43,12 +43,12 @@ class OdomSmoother
 public:
   /**
    * @brief Constructor that subscribes to an Odometry topic
-   * @param nh NodeHandle for creating subscriber
+   * @param parent NodeHandle for creating subscriber
    * @param filter_duration Duration for odom history (seconds)
    * @param odom_topic Topic on which odometry should be received
    */
   explicit OdomSmoother(
-    const rclcpp::Node::SharedPtr & node,
+    const rclcpp::Node::WeakPtr & parent,
     double filter_duration = 0.3,
     const std::string & odom_topic = "odom");
 

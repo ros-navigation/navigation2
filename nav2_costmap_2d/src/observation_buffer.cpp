@@ -47,25 +47,26 @@
 namespace nav2_costmap_2d
 {
 ObservationBuffer::ObservationBuffer(
-  const nav2_util::LifecycleNode::SharedPtr & node,
+  const nav2_util::LifecycleNode::WeakPtr & parent,
   std::string topic_name,
   double observation_keep_time,
   double expected_update_rate,
   double min_obstacle_height, double max_obstacle_height, double obstacle_range,
   double raytrace_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
   std::string sensor_frame, double tf_tolerance)
-: clock_(node->get_clock()),
-  logger_(node->get_logger()),
-  tf2_buffer_(tf2_buffer),
+: tf2_buffer_(tf2_buffer),
   observation_keep_time_(rclcpp::Duration::from_seconds(observation_keep_time)),
   expected_update_rate_(rclcpp::Duration::from_seconds(expected_update_rate)),
-  last_updated_(node->now()),
   global_frame_(global_frame),
   sensor_frame_(sensor_frame),
   topic_name_(topic_name),
   min_obstacle_height_(min_obstacle_height), max_obstacle_height_(max_obstacle_height),
   obstacle_range_(obstacle_range), raytrace_range_(raytrace_range), tf_tolerance_(tf_tolerance)
 {
+  auto node = parent.lock();
+  clock_ = node->get_clock();
+  logger_ = node->get_logger();
+  last_updated_ = node->now();
 }
 
 ObservationBuffer::~ObservationBuffer()

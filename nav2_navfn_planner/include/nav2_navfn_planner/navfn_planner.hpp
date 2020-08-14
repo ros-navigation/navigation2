@@ -126,7 +126,7 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
 
   // Logger
-  rclcpp::Logger logger_{rclcpp::get_logger("")};
+  rclcpp::Logger logger_{rclcpp::get_logger("NavfnPlanner")};
 
   // Global Costmap
   nav2_costmap_2d::Costmap2D * costmap_;

@@ -54,12 +54,13 @@ namespace dwb_core
 {
 
 DWBPublisher::DWBPublisher(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
-: node_(node),
-  clock_(node->get_clock()),
+: node_(parent),
   plugin_name_(plugin_name)
 {
+  auto node = node_.lock();
+  clock_ = node->get_clock();
 }
 
 nav2_util::CallbackReturn

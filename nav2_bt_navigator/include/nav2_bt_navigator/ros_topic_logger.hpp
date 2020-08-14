@@ -27,7 +27,7 @@ namespace nav2_bt_navigator
 class RosTopicLogger : public BT::StatusChangeLogger
 {
 public:
-  RosTopicLogger(const rclcpp::Node::SharedPtr & ros_node, const BT::Tree & tree);
+  RosTopicLogger(const rclcpp::Node::WeakPtr & ros_node, const BT::Tree & tree);
 
   void callback(
     BT::Duration timestamp,
@@ -39,7 +39,7 @@ public:
 
 protected:
   rclcpp::Clock::SharedPtr clock_;
-  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
+  rclcpp::Logger logger_{rclcpp::get_logger("bt_navigator")};
   rclcpp::Publisher<nav2_msgs::msg::BehaviorTreeLog>::SharedPtr log_pub_;
   std::vector<nav2_msgs::msg::BehaviorTreeStatusChange> event_log_;
 };

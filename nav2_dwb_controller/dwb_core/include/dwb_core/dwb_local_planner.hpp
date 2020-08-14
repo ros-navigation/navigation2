@@ -186,7 +186,7 @@ protected:
 
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   rclcpp::Clock::SharedPtr clock_;
-  rclcpp::Logger logger_{rclcpp::get_logger("")};
+  rclcpp::Logger logger_{rclcpp::get_logger("DWBLocalPlanner")};
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;

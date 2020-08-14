@@ -67,7 +67,7 @@ public:
    * @brief  Constructor for the Costmap2DPublisher
    */
   Costmap2DPublisher(
-    const nav2_util::LifecycleNode::SharedPtr & node,
+    const nav2_util::LifecycleNode::WeakPtr & parent,
     Costmap2D * costmap,
     std::string global_frame,
     std::string topic_name,
@@ -132,7 +132,7 @@ private:
 
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   rclcpp::Clock::SharedPtr clock_;
-  rclcpp::Logger logger_;
+  rclcpp::Logger logger_{rclcpp::get_logger("costmap")};
 
   Costmap2D * costmap_;
   std::string global_frame_;

@@ -70,7 +70,7 @@ class DWBPublisher
 {
 public:
   explicit DWBPublisher(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name);
 
   nav2_util::CallbackReturn on_configure();

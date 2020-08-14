@@ -21,12 +21,13 @@ namespace nav2_bt_navigator
 {
 
 RosTopicLogger::RosTopicLogger(
-  const rclcpp::Node::SharedPtr & ros_node, const BT::Tree & tree)
-: StatusChangeLogger(tree.rootNode()),
-  clock_(ros_node->get_clock()),
-  node_logging_interface_(ros_node->get_node_logging_interface())
+  const rclcpp::Node::WeakPtr & ros_node, const BT::Tree & tree)
+: StatusChangeLogger(tree.rootNode())
 {
-  log_pub_ = ros_node->create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
+  auto node = ros_node.lock();
+  clock_ = node->get_clock();
+  logger_ = node->get_logger();
+  log_pub_ = node->create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
     "behavior_tree_log",
     rclcpp::QoS(10));
 }
@@ -53,7 +54,7 @@ void RosTopicLogger::callback(
   event_log_.push_back(std::move(event));
 
   RCLCPP_DEBUG(
-    node_logging_interface_->get_logger(), "[%.3f]: %25s %s -> %s",
+    logger_, "[%.3f]: %25s %s -> %s",
     std::chrono::duration<double>(timestamp).count(),
     node.name().c_str(),
     toStr(prev_status, true).c_str(),

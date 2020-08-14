@@ -34,7 +34,7 @@ class Costmap2DROS;
 class ClearCostmapService
 {
 public:
-  ClearCostmapService(const nav2_util::LifecycleNode::SharedPtr & node, Costmap2DROS & costmap);
+  ClearCostmapService(const nav2_util::LifecycleNode::WeakPtr & parent, Costmap2DROS & costmap);
 
   ClearCostmapService() = delete;
 
@@ -49,7 +49,7 @@ public:
 
 private:
   // The Logger object for logging
-  rclcpp::Logger logger_;
+  rclcpp::Logger logger_{rclcpp::get_logger("costmap")};
 
   // The costmap to clear
   Costmap2DROS & costmap_;
