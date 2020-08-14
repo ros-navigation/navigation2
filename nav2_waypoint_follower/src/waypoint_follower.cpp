@@ -19,6 +19,7 @@
 #include <streambuf>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace nav2_waypoint_follower
 {
