@@ -3,6 +3,7 @@
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 namespace nav2_localization
 {
@@ -30,12 +31,13 @@ public:
         const nav_msgs::msg::Odometry& curr_odom,
         const geometry_msgs::msg::Pose& prev_pose) = 0;
 
-    virtual void configure(
-        const double& alpha1,
-        const double& alpha2,
-        const double& alpha3,
-        const double& alpha4,
-        const double& alpha5) = 0;
+    virtual void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) = 0;
+
+    virtual void activate() = 0;
+
+    virtual void deactivate() = 0;
+
+    virtual void cleanup() = 0;
 
 protected:
     // Noise parameters
