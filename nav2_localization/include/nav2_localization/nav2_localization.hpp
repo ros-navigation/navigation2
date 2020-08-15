@@ -73,14 +73,7 @@ protected:
      * @return Success or Failure
      */
     nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-    /**
-     * @brief Called when in Error state
-     * @param state LifeCycle Node's state
-     * @return Success or Failure
-     */
-    nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-    void initParameters();
     void initPubSub();
 
     // Map
@@ -119,11 +112,6 @@ protected:
     std::string default_sample_motion_model_id_;
     std::string sample_motion_model_id_;
     std::string sample_motion_model_type_;
-    double alpha1_;
-    double alpha2_;
-    double alpha3_;
-    double alpha4_;
-    double alpha5_;
 
     // Matcher Plugin
     pluginlib::ClassLoader<nav2_localization::Matcher2d> matcher2d_loader_;
@@ -146,8 +134,6 @@ protected:
 
     bool checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time last_time);
     rclcpp::Time last_time_printed_msg_;
-
-    std::atomic<bool> active_{false};
 };
 
 }
