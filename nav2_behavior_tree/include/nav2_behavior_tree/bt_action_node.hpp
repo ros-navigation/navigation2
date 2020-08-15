@@ -134,6 +134,10 @@ public:
       on_tick();
 
       on_new_goal_received();
+
+      rclcpp::spin_some(node_);
+
+      return BT::NodeStatus::RUNNING;
     }
 
     // The following code corresponds to the "RUNNING" loop
