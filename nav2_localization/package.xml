@@ -26,5 +26,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <nav2_localization plugin="${prefix}/plugins.xml" />
   </export>
 </package>

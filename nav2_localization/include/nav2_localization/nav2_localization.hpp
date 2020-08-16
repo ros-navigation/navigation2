@@ -75,36 +75,36 @@ protected:
     nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
     void initPubSub();
+    void initTransforms();
+    void initMessageFilters();
+    void initPlugins();
+    void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+    void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
+    void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 
     // Map
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
-    void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
-    bool first_map_only_{true};
-    bool first_map_received_{false};
     nav_msgs::msg::OccupancyGrid map_;
+    // bool first_map_only_{true};
+    // bool first_map_received_{false};
 
     // Laser scan
     std::string scan_topic_;
-    void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
     std::map<std::string, int> frame_to_laser_;
-    rclcpp::Time last_laser_received_ts_;
+    // rclcpp::Time last_laser_received_ts_;
 
     // Transforms
-    void initTransforms();
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-
-    // Odometry
     std::string odom_frame_id_;
-    
-    // Message filters
-    void initMessageFilters();
-    std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
-    std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
-    message_filters::Connection laser_scan_connection_;
+    std::string base_frame_id_;
+    tf2::Duration transform_tolerance_;
 
-    void initPlugins();
+    // Message filters
+    std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
+    std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
+    message_filters::Connection laser_scan_connection_;
 
     // Sample Motion Model Plugin
     pluginlib::ClassLoader<nav2_localization::SampleMotionModel> sample_motion_model_loader_;
@@ -130,10 +130,6 @@ protected:
     // Publishers and Subscribers
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
     initial_pose_sub_;
-    void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
-
-    bool checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time last_time);
-    rclcpp::Time last_time_printed_msg_;
 };
 
 }
