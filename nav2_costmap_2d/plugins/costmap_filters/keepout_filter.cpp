@@ -48,7 +48,7 @@ KeepoutFilter::KeepoutFilter()
 void KeepoutFilter::initializeFilter(
   const std::string & filter_info_topic)
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
   filter_info_topic_ = filter_info_topic;
   // Setting new costmap filter info subscriber
@@ -64,7 +64,7 @@ void KeepoutFilter::initializeFilter(
 void KeepoutFilter::filterInfoCallback(
   const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
   // Resetting previous subscriber each time when new costmap filter information arrives
   if (mask_sub_) {
@@ -89,7 +89,7 @@ void KeepoutFilter::filterInfoCallback(
 void KeepoutFilter::maskCallback(
   const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
   if (mask_costmap_) {
     RCLCPP_WARN(
@@ -108,7 +108,7 @@ void KeepoutFilter::process(
   int min_i, int min_j, int max_i, int max_j,
   const geometry_msgs::msg::Pose2D & /*pose*/)
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
   if (!mask_costmap_) {
     // Show warning message every 2 seconds to not litter an output
@@ -204,7 +204,7 @@ void KeepoutFilter::process(
 
 void KeepoutFilter::resetFilter()
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
   filter_info_sub_.reset();
   mask_sub_.reset();

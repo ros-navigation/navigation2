@@ -41,16 +41,32 @@
 #include <string>
 
 #include "geometry_msgs/msg/pose2_d.hpp"
-#include "nav2_costmap_2d/costmap_layer.hpp"
+#include "nav2_costmap_2d/layer.hpp"
 
 namespace nav2_costmap_2d
 {
 
-class CostmapFilter : public CostmapLayer
+/**
+ * @brief: CostmapFilter basic class. It is inherited from Layer in order to avoid
+ * hidden problems when the shared handling of costmap_ resource (PR #1936)
+ */
+class CostmapFilter : public Layer
 {
 public:
   CostmapFilter();
   ~CostmapFilter();
+
+  /**
+   * @brief: Provide a typedef to ease future code maintenance
+   */
+  typedef std::recursive_mutex mutex_t;
+  /**
+   * @brief: returns pointer to a mutex
+   */
+  mutex_t * getMutex()
+  {
+    return access_;
+  }
 
   /** Layer API **/
   virtual void onInitialize() final;
@@ -109,6 +125,11 @@ private:
    * @brief: Latest robot position
    */
   geometry_msgs::msg::Pose2D latest_pose_;
+
+  /**
+   * @brief: Mutex for locking filter's resources
+   */
+  mutex_t * access_;
 };
 
 }  // namespace nav2_costmap_2d

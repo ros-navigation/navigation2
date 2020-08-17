@@ -38,6 +38,7 @@
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 
 #include <exception>
+#include <mutex>
 
 namespace nav2_costmap_2d
 {
@@ -45,10 +46,12 @@ namespace nav2_costmap_2d
 CostmapFilter::CostmapFilter()
 : filter_info_topic_(""), mask_topic_("")
 {
+  access_ = new mutex_t();
 }
 
 CostmapFilter::~CostmapFilter()
 {
+  delete access_;
 }
 
 void CostmapFilter::onInitialize()
