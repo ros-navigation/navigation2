@@ -16,8 +16,8 @@ public:
 		const geometry_msgs::msg::Pose& pose);
 
 	void configure(
-		const rclcpp_lifecycle::LifecycleNode::SharedPtr& init_node,
-		nav_msgs::msg::OccupancyGrid* init_map);
+		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
+		nav_msgs::msg::OccupancyGrid* map);
 };  
 } // nav2_localization
 

@@ -14,11 +14,12 @@ float DummyMatcher2d::match(
 }
 
 void DummyMatcher2d::configure(
-	const rclcpp_lifecycle::LifecycleNode::SharedPtr& init_node,
-	nav_msgs::msg::OccupancyGrid* init_map)
+	const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
+	nav_msgs::msg::OccupancyGrid* map)
 {
-	node = init_node;
-	map = init_map;
+	node_ = node;
+	map_ = map;
+	return;
 }
 	
 

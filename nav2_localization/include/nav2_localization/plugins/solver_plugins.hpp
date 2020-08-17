@@ -28,11 +28,11 @@ public:
 		const sensor_msgs::msg::LaserScan& scan);
 
 	void configure(
-		const rclcpp_lifecycle::LifecycleNode::SharedPtr& init_node,
-		SampleMotionModel* init_motionSampler,
-		Matcher2d* init_matcher,
-		nav_msgs::msg::Odometry init_odom,
-		geometry_msgs::msg::Pose init_pose);
+		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
+		SampleMotionModel* motionSampler,
+		Matcher2d* matcher,
+		nav_msgs::msg::Odometry odom,
+		geometry_msgs::msg::Pose pose);
 };
 } // nav2_localization
 

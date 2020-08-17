@@ -14,18 +14,18 @@ geometry_msgs::msg::PoseWithCovariance DummySolver2d::solve(
 }
 
 void DummySolver2d::configure(
-	const rclcpp_lifecycle::LifecycleNode::SharedPtr& init_node,
-	SampleMotionModel* init_motionSampler,
-	Matcher2d* init_matcher,
-	nav_msgs::msg::Odometry init_odom,
-	geometry_msgs::msg::Pose init_pose)
+	const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
+	SampleMotionModel* motionSampler,
+	Matcher2d* matcher,
+	nav_msgs::msg::Odometry odom,
+	geometry_msgs::msg::Pose pose)
 {
-	node = init_node;
-	motionSampler = init_motionSampler;
-	matcher = init_matcher
-	prev_odom = init_odom;
-	prev_pose = init_pose;
-	return
+	node_ = node;
+	motionSampler_ = motionSampler;
+	matcher_ = matcher
+	prev_odom_ = odom;
+	prev_pose_ = pose;
+	return;
 }
 
 } // nav2_localization

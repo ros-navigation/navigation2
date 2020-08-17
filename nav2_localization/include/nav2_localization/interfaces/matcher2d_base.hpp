@@ -31,8 +31,8 @@ public:
 		const geometry_msgs::msg::Pose& pose) = 0;
 
 	virtual void configure(
-		const rclcpp_lifecycle::LifecycleNode::SharedPtr& init_node,
-		nav_msgs::msg::OccupancyGrid* init_map) = 0;
+		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
+		nav_msgs::msg::OccupancyGrid* map) = 0;
 
 	virtual void activate() = 0;
 
@@ -41,8 +41,8 @@ public:
 	virtual void cleanup() = 0;
 
 protected:
-	rclcpp_lifecycle::LifecycleNode::SharedPtr node;
-	nav_msgs::msg::OccupancyGrid* map; // 2D occupancy grid map of the environment where the robot is
+	rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+	nav_msgs::msg::OccupancyGrid* map_; // 2D occupancy grid map of the environment where the robot is
 };  
 } // nav2_localization
 
