@@ -4,6 +4,7 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 namespace nav2_localization
 {
@@ -30,9 +31,17 @@ public:
 		const geometry_msgs::msg::Pose& pose) = 0;
 
 	virtual void configure(
+		const rclcpp_lifecycle::LifecycleNode::SharedPtr& init_node,
 		nav_msgs::msg::OccupancyGrid* init_map) = 0;
 
+	virtual void activate() = 0;
+
+	virtual void deactivate() = 0;
+
+	virtual void cleanup() = 0;
+
 protected:
+	rclcpp_lifecycle::LifecycleNode::SharedPtr node;
 	nav_msgs::msg::OccupancyGrid* map; // 2D occupancy grid map of the environment where the robot is
 };  
 } // nav2_localization

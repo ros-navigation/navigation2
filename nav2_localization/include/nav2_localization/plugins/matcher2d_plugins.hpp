@@ -2,6 +2,7 @@
 #define NAV2_LOCALIZATION__MATCHER2D_PLUGINS_HPP_
 
 #include <nav2_localization/interfaces/matcher2D_base.hpp>
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 namespace nav2_localization
 {
@@ -15,6 +16,7 @@ public:
 		const geometry_msgs::msg::Pose& pose);
 
 	void configure(
+		const rclcpp_lifecycle::LifecycleNode::SharedPtr& init_node,
 		nav_msgs::msg::OccupancyGrid* init_map);
 };  
 } // nav2_localization

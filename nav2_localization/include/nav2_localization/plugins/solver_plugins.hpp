@@ -13,6 +13,9 @@
 #include "sensor_msgs/msg/LaserScan.hpp"
 #include "nav_msgs/msg/OccupancyGrid.hpp"
 
+// Others
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+
 namespace nav2_localization
 {
 class DummySolver2d : public nav2_localization::Solver
@@ -25,6 +28,7 @@ public:
 		const sensor_msgs::msg::LaserScan& scan);
 
 	void configure(
+		const rclcpp_lifecycle::LifecycleNode::SharedPtr& init_node,
 		SampleMotionModel* init_motionSampler,
 		Matcher2d* init_matcher,
 		nav_msgs::msg::Odometry init_odom,
