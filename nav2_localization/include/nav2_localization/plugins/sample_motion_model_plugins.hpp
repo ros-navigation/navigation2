@@ -4,6 +4,7 @@
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 namespace nav2_localization
 {
@@ -17,12 +18,7 @@ public:
         const nav_msgs::msg::Odometry& curr_odom,
         const geometry_msgs::msg::Pose& prev_pose);
 
-    void configure(
-        const double& alpha1,
-        const double& alpha2,
-        const double& alpha3,
-        const double& alpha4,
-        const double& alpha5);
+    void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 };
 } // nav2_localization
 
