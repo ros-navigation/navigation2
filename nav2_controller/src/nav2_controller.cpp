@@ -20,6 +20,7 @@
 
 #include "nav2_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
+#include "nav_2d_utils/tf_help.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_controller/nav2_controller.hpp"
@@ -328,6 +329,11 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   controllers_[current_controller_]->setPlan(path);
 
   auto end_pose = path.poses.back();
+  end_pose.header.frame_id = path.header.frame_id;
+  rclcpp::Duration tolerance(costmap_ros_->getTransformTolerance() * 1e9);
+  nav_2d_utils::transformPose(
+    costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
+    end_pose, end_pose, tolerance);
   goal_checker_->reset();
 
   RCLCPP_DEBUG(
