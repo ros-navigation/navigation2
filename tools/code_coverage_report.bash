@@ -80,6 +80,8 @@ lcov \
     "${PWD}/*/nav_2d_msgs/*" \
   --remove ${LCOVDIR}/workspace_coverage.info \
     "${PWD}/*/nav2_system_tests/*" \
+  --remove ${LCOVDIR}/workspace_coverage.info \
+    "${PWD}/*/nav2_rviz_plugins/*" \
   --output-file ${LCOVDIR}/project_coverage.info \
   --rc lcov_branch_coverage=0
 
