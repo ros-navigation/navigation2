@@ -432,7 +432,7 @@ workflows:
             branches:
               only:
                 - main
-  daily:
+  dockerhub:
     jobs:
       - trigger_dockerhub
     triggers:
