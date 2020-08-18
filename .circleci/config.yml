@@ -364,6 +364,9 @@ executors:
       CACHE_NONCE: "Release"
       OVERLAY_MIXINS: "release ccache"
       UNDERLAY_MIXINS: "release ccache"
+  python_exec:
+    docker:
+      - image: circleci/python
 
 _jobs:
   job_test: &job_test
@@ -399,7 +402,7 @@ jobs:
       - restore_build
       - test_build
   rebuild_dockerhub:
-    executor: circleci/python
+    executor: python_exec
     steps:
       - trigger_dockerhub
 
