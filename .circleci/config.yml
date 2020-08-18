@@ -370,7 +370,7 @@ jobs:
       - restore_build
       - test_build
       - report_coverage
-  release_test: &release_test
+  release_test:
     <<: *job_test
     executor: release_exec
     steps:
