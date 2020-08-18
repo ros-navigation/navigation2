@@ -84,7 +84,7 @@ Costmap2D::Costmap2D(const nav_msgs::msg::OccupancyGrid & map)
       // Linear conversion from OccupancyGrid data range [OCC_GRID_FREE..OCC_GRID_OCCUPIED]
       // to costmap data range [FREE_SPACE..LETHAL_OBSTACLE]
       costmap_[it] = std::round(
-        1.0 * data * (LETHAL_OBSTACLE - FREE_SPACE) /
+        static_cast<double>(data) * (LETHAL_OBSTACLE - FREE_SPACE) /
         (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE));
     }
   }
