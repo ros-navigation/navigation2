@@ -67,6 +67,7 @@ BtNavigator::BtNavigator()
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
   declare_parameter("odom_topic", std::string("odom"));
+  declare_parameter("bt_activate_groot_monitoring", true);
 }
 
 BtNavigator::~BtNavigator()
@@ -140,6 +141,8 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
   if (current_bt_xml_filename_ == bt_xml_filename) {
     return true;
   }
+  //if a new tree is created, than the ZMQ Publisher must be destroyed
+  bt_->resetZMQGrootMonitor();
 
   // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(bt_xml_filename);
@@ -160,6 +163,10 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
   tree_ = bt_->createTreeFromText(xml_string, blackboard_);
   current_bt_xml_filename_ = bt_xml_filename;
 
+  //get parameter for monitoring with Groot via ZMQ Publisher
+  if (get_parameter("bt_activate_groot_monitoring").as_bool())
+    bt_->addZMQGrootMonitoring(&tree_);
+   
   return true;
 }
 
@@ -214,6 +221,7 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   current_bt_xml_filename_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_.rootNode());
+  bt_->resetZMQGrootMonitor();
   bt_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
