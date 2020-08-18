@@ -169,6 +169,17 @@ _commands:
             path: << parameters.workspace >>/test_results
         - store_artifacts:
             path: << parameters.workspace >>/test_results
+    trigger_dockerhub_build:
+      description: "Trigger Dockerhub Build"
+      parameters:
+        data:
+          type: string
+      steps:
+        - run:
+            command: |
+              curl -H "Content-Type: application/json" \
+                --data '<< parameters.data >>' \
+                -X POST ${DOCKERHUB_TRIGGER_URL}
 
 _steps:
   pre_checkout: &pre_checkout
@@ -376,6 +387,15 @@ jobs:
     steps:
       - restore_build
       - test_build
+  trigger_dockerhub:
+    executor: circleci/python
+    steps:
+      - trigger_dockerhub_build:
+          data: |
+            {
+              "source_type": "Branch",
+              "source_name": "main"
+            }
 
 workflows:
   version: 2
@@ -407,7 +427,17 @@ workflows:
                 - rmw_fastrtps_cpp
     triggers:
       - schedule:
-          cron: "0 0 * * *"
+          cron: "0 18 * * *"
+          filters:
+            branches:
+              only:
+                - main
+  daily:
+    jobs:
+      - trigger_dockerhub
+    triggers:
+      - schedule:
+          cron: "0 16 * * *"
           filters:
             branches:
               only:
