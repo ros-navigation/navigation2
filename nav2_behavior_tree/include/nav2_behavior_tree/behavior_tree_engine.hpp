@@ -22,6 +22,8 @@
 #include "behaviortree_cpp_v3/behavior_tree.h"
 #include "behaviortree_cpp_v3/bt_factory.h"
 #include "behaviortree_cpp_v3/xml_parsing.h"
+#include "behaviortree_cpp_v3/loggers/bt_zmq_publisher.h"
+
 
 namespace nav2_behavior_tree
 {
@@ -48,6 +50,9 @@ public:
     const std::string &file_path,
     BT::Blackboard::Ptr blackboard);
 
+  void addZMQGrootMonitoring(BT::Tree * tree);
+  void resetZMQGrootMonitor();
+
   // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
   void haltAllActions(BT::TreeNode * root_node)
   {
@@ -66,6 +71,7 @@ public:
 protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
+  std::unique_ptr<BT::PublisherZMQ> publisher_zmq_;
 };
 
 }  // namespace nav2_behavior_tree

@@ -21,7 +21,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp_v3/utils/shared_library.h"
-#include "behaviortree_cpp_v3/loggers/bt_zmq_publisher.h"
 
 using namespace std::chrono_literals;
 
@@ -45,9 +44,6 @@ BehaviorTreeEngine::run(
 {
   rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
-
-  // This logger publish status changes using ZeroMQ. Used by Groot
-  BT::PublisherZMQ publisher_zmq(*tree);
 
   // Loop until something happens with ROS or the node completes
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
@@ -80,6 +76,21 @@ BehaviorTreeEngine::createTreeFromFile(
   BT::Blackboard::Ptr blackboard)
 {
   return factory_.createTreeFromFile(file_path, blackboard);
+}
+
+void
+BehaviorTreeEngine::addZMQGrootMonitoring(BT::Tree * tree)
+{
+  // This logger publish status changes using ZeroMQ. Used by Groot
+  publisher_zmq_ = std::make_unique<BT::PublisherZMQ>(*tree);
+  return;
+}
+
+void
+BehaviorTreeEngine::resetZMQGrootMonitor()
+{
+  publisher_zmq_.reset();
+  return;
 }
 
 }  // namespace nav2_behavior_tree
