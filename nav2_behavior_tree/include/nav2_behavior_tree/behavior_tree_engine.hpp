@@ -54,20 +54,8 @@ public:
   void resetZMQGrootMonitor();
 
   // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
-  void haltAllActions(BT::TreeNode * root_node)
-  {
-    // this halt signal should propagate through the entire tree.
-    root_node->halt();
-
-    // but, just in case...
-    auto visitor = [](BT::TreeNode * node) {
-        if (node->status() == BT::NodeStatus::RUNNING) {
-          node->halt();
-        }
-      };
-    BT::applyRecursiveVisitor(root_node, visitor);
-  }
-
+  void haltAllActions(BT::TreeNode * root_node);
+  
 protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;

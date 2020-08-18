@@ -93,4 +93,20 @@ BehaviorTreeEngine::resetZMQGrootMonitor()
   return;
 }
 
+// In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
+void 
+BehaviorTreeEngine::haltAllActions(BT::TreeNode * root_node)
+{
+  // this halt signal should propagate through the entire tree.
+  root_node->halt();
+
+  // but, just in case...
+  auto visitor = [](BT::TreeNode * node) {
+      if (node->status() == BT::NodeStatus::RUNNING) {
+        node->halt();
+      }
+    };
+  BT::applyRecursiveVisitor(root_node, visitor);
+}
+
 }  // namespace nav2_behavior_tree
