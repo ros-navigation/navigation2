@@ -169,6 +169,17 @@ _commands:
             path: << parameters.workspace >>/test_results
         - store_artifacts:
             path: << parameters.workspace >>/test_results
+    trigger_dockerhub_url:
+      description: "Trigger Dockerhub URL"
+      parameters:
+        data:
+          type: string
+      steps:
+        - run:
+            command: |
+              curl -H "Content-Type: application/json" \
+                --data '<< parameters.data >>' \
+                -X POST ${DOCKERHUB_TRIGGER_URL}
 
 _steps:
   pre_checkout: &pre_checkout
@@ -267,6 +278,13 @@ _steps:
       file: lcov/project_coverage.info
       flags: project
       when: always
+  trigger_dockerhub_build: &trigger_dockerhub_build
+    trigger_dockerhub_url:
+        data: |
+          {
+            "source_type": "Branch",
+            "source_name": "main"
+          }
 
 commands:
   <<: *common_commands
@@ -309,6 +327,10 @@ commands:
     steps:
       - *collect_overlay_coverage
       - *upload_overlay_coverage
+  trigger_dockerhub:
+    description: "Trigger DockerHub"
+    steps:
+      - *trigger_dockerhub_build
 
 _environments:
   common_environment: &common_environment
@@ -342,6 +364,9 @@ executors:
       CACHE_NONCE: "Release"
       OVERLAY_MIXINS: "release ccache"
       UNDERLAY_MIXINS: "release ccache"
+  python_exec:
+    docker:
+      - image: circleci/python
 
 _jobs:
   job_test: &job_test
@@ -370,12 +395,16 @@ jobs:
       - restore_build
       - test_build
       - report_coverage
-  release_test: &release_test
+  release_test:
     <<: *job_test
     executor: release_exec
     steps:
       - restore_build
       - test_build
+  rebuild_dockerhub:
+    executor: python_exec
+    steps:
+      - trigger_dockerhub
 
 workflows:
   version: 2
@@ -407,7 +436,17 @@ workflows:
                 - rmw_fastrtps_cpp
     triggers:
       - schedule:
-          cron: "0 0 * * *"
+          cron: "0 13 * * *"
+          filters:
+            branches:
+              only:
+                - main
+  dockerhub:
+    jobs:
+      - rebuild_dockerhub
+    triggers:
+      - schedule:
+          cron: "0 7 * * *"
           filters:
             branches:
               only:
