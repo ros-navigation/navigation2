@@ -169,8 +169,8 @@ _commands:
             path: << parameters.workspace >>/test_results
         - store_artifacts:
             path: << parameters.workspace >>/test_results
-    trigger_dockerhub_build:
-      description: "Trigger Dockerhub Build"
+    trigger_dockerhub_url:
+      description: "Trigger Dockerhub URL"
       parameters:
         data:
           type: string
@@ -278,6 +278,13 @@ _steps:
       file: lcov/project_coverage.info
       flags: project
       when: always
+  trigger_dockerhub_build: &trigger_dockerhub_build
+    trigger_dockerhub_url:
+        data: |
+          {
+            "source_type": "Branch",
+            "source_name": "main"
+          }
 
 commands:
   <<: *common_commands
@@ -320,6 +327,10 @@ commands:
     steps:
       - *collect_overlay_coverage
       - *upload_overlay_coverage
+  trigger_dockerhub:
+    description: "Trigger DockerHub"
+    steps:
+      - *trigger_dockerhub_build
 
 _environments:
   common_environment: &common_environment
@@ -387,15 +398,10 @@ jobs:
     steps:
       - restore_build
       - test_build
-  trigger_dockerhub:
+  rebuild_dockerhub:
     executor: circleci/python
     steps:
-      - trigger_dockerhub_build:
-          data: |
-            {
-              "source_type": "Branch",
-              "source_name": "main"
-            }
+      - trigger_dockerhub
 
 workflows:
   version: 2
@@ -434,7 +440,7 @@ workflows:
                 - main
   dockerhub:
     jobs:
-      - trigger_dockerhub
+      - rebuild_dockerhub
     triggers:
       - schedule:
           cron: "0 7 * * *"
