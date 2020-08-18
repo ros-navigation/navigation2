@@ -427,7 +427,7 @@ workflows:
                 - rmw_fastrtps_cpp
     triggers:
       - schedule:
-          cron: "0 18 * * *"
+          cron: "0 13 * * *"
           filters:
             branches:
               only:
@@ -437,7 +437,7 @@ workflows:
       - trigger_dockerhub
     triggers:
       - schedule:
-          cron: "0 16 * * *"
+          cron: "0 7 * * *"
           filters:
             branches:
               only:
