@@ -69,6 +69,7 @@ lcov \
 # Remove files in the build subdirectory.
 # Those are generated files (like messages, services, etc)
 # And system tests, which are themselves all test artifacts
+# And rviz plugins, which are not used for real navigation
 lcov \
   --remove ${LCOVDIR}/workspace_coverage.info \
     "${PWD}/build/*" \
