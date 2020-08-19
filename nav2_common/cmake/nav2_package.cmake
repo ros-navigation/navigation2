@@ -53,5 +53,11 @@ macro(nav2_package)
     add_compile_definitions(
       _USE_MATH_DEFINES
     )
+
+    # Ack std::experimental::filesystem deprecation messages
+    # To be removed once we target C++17.
+    add_compile_definitions(
+      _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+    )
   endif()
 endmacro()

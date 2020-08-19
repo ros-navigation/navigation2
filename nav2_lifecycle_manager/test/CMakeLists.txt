@@ -12,7 +12,7 @@ ament_target_dependencies(test_lifecycle_gtest
 
 ament_add_test(test_lifecycle
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/launch_lifecycle_test.py"
+  COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/launch_lifecycle_test.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   TIMEOUT 20
   ENV

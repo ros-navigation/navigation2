@@ -363,7 +363,8 @@ bool PlannerTester::plannerTest(
 
   // First make available the current robot position for the planner to take as starting point
   updateRobotPosition(robot_position);
-  sleep(0.05);
+  rclcpp::Rate r(0.05);
+  r.sleep();
 
   // Then request to compute a path
   TaskStatus status = createPlan(goal, path);

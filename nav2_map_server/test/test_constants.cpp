@@ -36,6 +36,7 @@
 #include "test_constants/test_constants.h"
 
 #include <vector>
+#include <experimental/filesystem>
 
 const unsigned int g_valid_image_width = 10;
 const unsigned int g_valid_image_height = 10;
@@ -68,3 +69,13 @@ const double g_valid_image_res = 0.1;
 const std::vector<double> g_valid_origin{2.0, 3.0, 1.0};
 const double g_default_free_thresh = 0.196;
 const double g_default_occupied_thresh = 0.65;
+
+using std::experimental::filesystem::path;
+
+std::string makePreferredPath(const char * directory, const char * filename)
+{
+  auto valid_yaml = path(directory) / path(filename);
+  auto str_valid_yaml = valid_yaml.string();
+  std::replace( str_valid_yaml.begin(), str_valid_yaml.end(), '\\', '/' );
+  return str_valid_yaml;
+}

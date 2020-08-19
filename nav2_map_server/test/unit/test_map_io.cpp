@@ -117,7 +117,7 @@ TEST_F(MapIOTester, loadSaveValidPGM)
 {
   // 1. Load reference map file and verify obtained OccupancyGrid
   LoadParameters loadParameters;
-  fillLoadParameters(path(TEST_DIR) / path(g_valid_pgm_file), loadParameters);
+  fillLoadParameters(makePreferredPath(TEST_DIR, g_valid_pgm_file), loadParameters);
 
   nav_msgs::msg::OccupancyGrid map_msg;
   ASSERT_NO_THROW(loadMapFromFile(loadParameters, map_msg));
@@ -126,12 +126,12 @@ TEST_F(MapIOTester, loadSaveValidPGM)
 
   // 2. Save OccupancyGrid into a tmp file
   SaveParameters saveParameters;
-  fillSaveParameters(path(g_tmp_dir) / path(g_valid_map_name), "pgm", saveParameters);
+  fillSaveParameters(makePreferredPath(g_tmp_dir, g_valid_map_name), "pgm", saveParameters);
 
   ASSERT_TRUE(saveMapToFile(map_msg, saveParameters));
 
   // 3. Load saved map and verify it
-  LOAD_MAP_STATUS status = loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
+  LOAD_MAP_STATUS status = loadMapFromYaml(makePreferredPath(g_tmp_dir, g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, LOAD_MAP_SUCCESS);
 
   verifyMapMsg(map_msg);
@@ -146,7 +146,7 @@ TEST_F(MapIOTester, loadSaveValidPNG)
 {
   // 1. Load reference map file and verify obtained OccupancyGrid
   LoadParameters loadParameters;
-  fillLoadParameters(path(TEST_DIR) / path(g_valid_png_file), loadParameters);
+  fillLoadParameters(makePreferredPath(TEST_DIR, g_valid_png_file), loadParameters);
 
   nav_msgs::msg::OccupancyGrid map_msg;
   ASSERT_NO_THROW(loadMapFromFile(loadParameters, map_msg));
@@ -155,12 +155,12 @@ TEST_F(MapIOTester, loadSaveValidPNG)
 
   // 2. Save OccupancyGrid into a tmp file
   SaveParameters saveParameters;
-  fillSaveParameters(path(g_tmp_dir) / path(g_valid_map_name), "png", saveParameters);
+  fillSaveParameters(makePreferredPath(g_tmp_dir, g_valid_map_name), "png", saveParameters);
 
   ASSERT_TRUE(saveMapToFile(map_msg, saveParameters));
 
   // 3. Load saved map and verify it
-  LOAD_MAP_STATUS status = loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
+  LOAD_MAP_STATUS status = loadMapFromYaml(makePreferredPath(g_tmp_dir, g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, LOAD_MAP_SUCCESS);
 
   verifyMapMsg(map_msg);
@@ -174,7 +174,7 @@ TEST_F(MapIOTester, loadSaveValidPNG)
 TEST_F(MapIOTester, loadSaveValidBMP)
 {
   // 1. Load reference map file and verify obtained OccupancyGrid
-  auto test_bmp = path(TEST_DIR) / path(g_valid_bmp_file);
+  auto test_bmp = makePreferredPath(TEST_DIR, g_valid_bmp_file);
 
   LoadParameters loadParameters;
   fillLoadParameters(test_bmp, loadParameters);
@@ -186,12 +186,12 @@ TEST_F(MapIOTester, loadSaveValidBMP)
 
   // 2. Save OccupancyGrid into a tmp file
   SaveParameters saveParameters;
-  fillSaveParameters(path(g_tmp_dir) / path(g_valid_map_name), "bmp", saveParameters);
+  fillSaveParameters(makePreferredPath(g_tmp_dir, g_valid_map_name), "bmp", saveParameters);
 
   ASSERT_TRUE(saveMapToFile(map_msg, saveParameters));
 
   // 3. Load saved map and verify it
-  LOAD_MAP_STATUS status = loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
+  LOAD_MAP_STATUS status = loadMapFromYaml(makePreferredPath(g_tmp_dir, g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, LOAD_MAP_SUCCESS);
 
   verifyMapMsg(map_msg);
@@ -203,19 +203,19 @@ TEST_F(MapIOTester, loadSaveMapModes)
 {
   // 1. Load map from YAML file
   nav_msgs::msg::OccupancyGrid map_msg;
-  LOAD_MAP_STATUS status = loadMapFromYaml(path(TEST_DIR) / path(g_valid_yaml_file), map_msg);
+  LOAD_MAP_STATUS status = loadMapFromYaml(makePreferredPath(TEST_DIR, g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, LOAD_MAP_SUCCESS);
 
   // No need to check Trinary mode. This already verified in previous testcases.
   // 2. Save map in Scale mode.
   SaveParameters saveParameters;
-  fillSaveParameters(path(g_tmp_dir) / path(g_valid_map_name), "png", saveParameters);
+  fillSaveParameters(makePreferredPath(g_tmp_dir, g_valid_map_name), "png", saveParameters);
   saveParameters.mode = MapMode::Scale;
 
   ASSERT_TRUE(saveMapToFile(map_msg, saveParameters));
 
   // 3. Load saved map and verify it
-  status = loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
+  status = loadMapFromYaml(makePreferredPath(g_tmp_dir, g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, LOAD_MAP_SUCCESS);
 
   verifyMapMsg(map_msg);
@@ -226,7 +226,7 @@ TEST_F(MapIOTester, loadSaveMapModes)
   ASSERT_TRUE(saveMapToFile(map_msg, saveParameters));
 
   // 5. Load saved map and verify it
-  status = loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
+  status = loadMapFromYaml(makePreferredPath(g_tmp_dir, g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, LOAD_MAP_SUCCESS);
 
   verifyMapMsg(map_msg);
@@ -237,7 +237,7 @@ TEST_F(MapIOTester, loadSaveMapModes)
 TEST_F(MapIOTester, loadInvalidFile)
 {
   // 1. Trying to load incorrect map by loadMapFromFile()
-  auto test_invalid = path(TEST_DIR) / path("foo");
+  auto test_invalid = makePreferredPath(TEST_DIR, "foo");
 
   LoadParameters loadParameters;
   fillLoadParameters(test_invalid, loadParameters);
@@ -259,13 +259,13 @@ TEST_F(MapIOTester, saveInvalidParameters)
 {
   // 1. Load map from YAML file
   nav_msgs::msg::OccupancyGrid map_msg;
-  LOAD_MAP_STATUS status = loadMapFromYaml(path(TEST_DIR) / path(g_valid_yaml_file), map_msg);
+  LOAD_MAP_STATUS status = loadMapFromYaml(makePreferredPath(TEST_DIR, g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, LOAD_MAP_SUCCESS);
 
   // 2. Trying to save map with different sets of parameters
   SaveParameters saveParameters;
 
-  saveParameters.map_file_name = path(g_tmp_dir) / path(g_valid_map_name);
+  saveParameters.map_file_name = makePreferredPath(g_tmp_dir, g_valid_map_name);
   saveParameters.image_format = "";
   saveParameters.free_thresh = 2.0;
   saveParameters.occupied_thresh = 2.0;
@@ -284,7 +284,7 @@ TEST_F(MapIOTester, saveInvalidParameters)
   saveParameters.occupied_thresh = 0.0;
   ASSERT_TRUE(saveMapToFile(map_msg, saveParameters));
 
-  saveParameters.map_file_name = path("/invalid_path") / path(g_valid_map_name);
+  saveParameters.map_file_name = makePreferredPath("/invalid_path", g_valid_map_name);
   ASSERT_FALSE(saveMapToFile(map_msg, saveParameters));
 }
 
@@ -292,10 +292,10 @@ TEST_F(MapIOTester, saveInvalidParameters)
 TEST_F(MapIOTester, loadValidYAML)
 {
   LoadParameters loadParameters;
-  ASSERT_NO_THROW(loadParameters = loadMapYaml(path(TEST_DIR) / path(g_valid_yaml_file)));
+  ASSERT_NO_THROW(loadParameters = loadMapYaml(makePreferredPath(TEST_DIR, g_valid_yaml_file)));
 
   LoadParameters refLoadParameters;
-  fillLoadParameters(path(TEST_DIR) / path(g_valid_png_file), refLoadParameters);
+  fillLoadParameters(makePreferredPath(TEST_DIR, g_valid_png_file), refLoadParameters);
   ASSERT_EQ(loadParameters.image_file_name, refLoadParameters.image_file_name);
   ASSERT_FLOAT_EQ(loadParameters.resolution, refLoadParameters.resolution);
   ASSERT_EQ(loadParameters.origin, refLoadParameters.origin);
@@ -309,5 +309,5 @@ TEST_F(MapIOTester, loadValidYAML)
 TEST_F(MapIOTester, loadInvalidYAML)
 {
   LoadParameters loadParameters;
-  ASSERT_ANY_THROW(loadParameters = loadMapYaml(path(TEST_DIR) / path("invalid_file.yaml")));
+  ASSERT_ANY_THROW(loadParameters = loadMapYaml(makePreferredPath(TEST_DIR, "invalid_file.yaml")));
 }

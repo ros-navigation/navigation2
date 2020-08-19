@@ -126,7 +126,7 @@ def main(argv=sys.argv[1:]):
 
     # TODO(orduno) remove duplicated definition of robots on `generate_launch_description`
     test1_action = ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
+        cmd=[sys.executable, os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
              '-rs', 'robot1', '0.0', '0.5', '1.0', '0.5',
              '-rs', 'robot2', '0.0', '-0.5', '1.0', '-0.5'],
         name='tester_node',

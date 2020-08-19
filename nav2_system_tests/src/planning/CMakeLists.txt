@@ -28,7 +28,7 @@ target_link_libraries(${test_planner_random_exec}
 
 ament_add_test(test_planner_costmaps
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_planner_costmaps_launch.py"
+  COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_planner_costmaps_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
@@ -38,7 +38,7 @@ ament_add_test(test_planner_costmaps
 
 ament_add_test(test_planner_random
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_planner_random_launch.py"
+  COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_planner_random_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
@@ -52,5 +52,5 @@ ament_add_gtest(test_planner_plugin_failures
 
 ament_target_dependencies(test_planner_plugin_failures rclcpp geometry_msgs nav2_msgs ${dependencies})
 target_link_libraries(test_planner_plugin_failures
-  stdc++fs
+  $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:stdc++fs>
 )

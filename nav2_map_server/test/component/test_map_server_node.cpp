@@ -127,7 +127,7 @@ TEST_F(MapServerTestFixture, LoadMap)
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
 
-  req->map_url = path(TEST_DIR) / path(g_valid_yaml_file);
+  req->map_url = makePreferredPath(TEST_DIR, g_valid_yaml_file);
   auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
 
   ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS);
@@ -181,7 +181,7 @@ TEST_F(MapServerTestFixture, LoadMapInvalidImage)
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
 
-  req->map_url = path(TEST_DIR) / "invalid_image.yaml";
+  req->map_url = makePreferredPath(TEST_DIR, "invalid_image.yaml");
   RCLCPP_INFO(node_->get_logger(), "Sending load_map request with invalid image file name");
   auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
 

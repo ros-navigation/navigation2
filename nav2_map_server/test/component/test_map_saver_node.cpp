@@ -114,7 +114,7 @@ TEST_F(MapSaverTestFixture, SaveMap)
 
   // 1. Send valid save_map serivce request
   req->map_topic = "map";
-  req->map_url = path(g_tmp_dir) / path(g_valid_map_name);
+  req->map_url = makePreferredPath(g_tmp_dir, g_valid_map_name);
   req->image_format = "png";
   req->map_mode = "trinary";
   req->free_thresh = g_default_free_thresh;
@@ -124,7 +124,7 @@ TEST_F(MapSaverTestFixture, SaveMap)
 
   // 2. Load saved map and verify it
   nav_msgs::msg::OccupancyGrid map_msg;
-  LOAD_MAP_STATUS status = loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
+  LOAD_MAP_STATUS status = loadMapFromYaml(makePreferredPath(g_tmp_dir, g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 }
@@ -143,7 +143,7 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters)
 
   // 1. Send save_map serivce request with default parameters
   req->map_topic = "";
-  req->map_url = path(g_tmp_dir) / path(g_valid_map_name);
+  req->map_url = makePreferredPath(g_tmp_dir, g_valid_map_name);
   req->image_format = "";
   req->map_mode = "";
   req->free_thresh = 0.0;
@@ -153,7 +153,7 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters)
 
   // 2. Load saved map and verify it
   nav_msgs::msg::OccupancyGrid map_msg;
-  LOAD_MAP_STATUS status = loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
+  LOAD_MAP_STATUS status = loadMapFromYaml(makePreferredPath(g_tmp_dir, g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 }
@@ -174,7 +174,7 @@ TEST_F(MapSaverTestFixture, SaveMapInvalidParameters)
   // 1. Trying to send save_map serivce request with different sets of parameters
   // In case of map is expected to be saved correctly, verify it
   req->map_topic = "invalid_map";
-  req->map_url = path(g_tmp_dir) / path(g_valid_map_name);
+  req->map_url = makePreferredPath(g_tmp_dir, g_valid_map_name);
   req->image_format = "png";
   req->map_mode = "trinary";
   req->free_thresh = g_default_free_thresh;
@@ -187,7 +187,7 @@ TEST_F(MapSaverTestFixture, SaveMapInvalidParameters)
   resp = send_request<nav2_msgs::srv::SaveMap>(node_, client, req);
   ASSERT_EQ(resp->result, true);
   nav_msgs::msg::OccupancyGrid map_msg;
-  LOAD_MAP_STATUS status = loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
+  LOAD_MAP_STATUS status = loadMapFromYaml(makePreferredPath(g_tmp_dir, g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 
@@ -195,7 +195,7 @@ TEST_F(MapSaverTestFixture, SaveMapInvalidParameters)
   req->map_mode = "invalid_mode";
   resp = send_request<nav2_msgs::srv::SaveMap>(node_, client, req);
   ASSERT_EQ(resp->result, true);
-  status = loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
+  status = loadMapFromYaml(makePreferredPath(g_tmp_dir, g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 

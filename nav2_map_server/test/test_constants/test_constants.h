@@ -34,6 +34,7 @@
 /* This file externs global constants shared among tests */
 
 #include <vector>
+#include <string>
 
 extern const unsigned int g_valid_image_width;
 extern const unsigned int g_valid_image_height;
@@ -52,5 +53,7 @@ extern const std::vector<double> g_valid_origin;
 // *INDENT-ON*
 extern const double g_default_free_thresh;
 extern const double g_default_occupied_thresh;
+
+std::string makePreferredPath(const char * directory, const char * filename);
 
 #endif  // TEST_CONSTANTS__TEST_CONSTANTS_H_

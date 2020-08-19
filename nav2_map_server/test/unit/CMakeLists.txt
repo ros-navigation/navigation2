@@ -7,5 +7,5 @@ ament_target_dependencies(test_map_io rclcpp nav_msgs)
 
 target_link_libraries(test_map_io
   ${map_io_library_name}
-  stdc++fs
+  $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:stdc++fs>
 )

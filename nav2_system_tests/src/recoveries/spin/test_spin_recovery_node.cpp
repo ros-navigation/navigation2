@@ -80,13 +80,13 @@ INSTANTIATE_TEST_CASE_P(
   SpinRecoveryTests,
   SpinRecoveryTestFixture,
   ::testing::Values(
-    std::make_tuple(-M_PIf32 / 6.0, 0.1),
-    std::make_tuple(M_PI_4f32, 0.1),
-    std::make_tuple(-M_PI_2f32, 0.1),
-    std::make_tuple(M_PIf32, 0.1),
-    std::make_tuple(3.0 * M_PIf32 / 2.0, 0.15),
-    std::make_tuple(-2.0 * M_PIf32, 0.1),
-    std::make_tuple(4.0 * M_PIf32, 0.15)),
+    std::make_tuple(-M_PI / 6.0, 0.1),
+    std::make_tuple(M_PI_4, 0.1),
+    std::make_tuple(-M_PI_2, 0.1),
+    std::make_tuple(M_PI, 0.1),
+    std::make_tuple(3.0 * M_PI / 2.0, 0.15),
+    std::make_tuple(-2.0 * M_PI, 0.1),
+    std::make_tuple(4.0 * M_PI, 0.15)),
   testNameGenerator);
 
 int main(int argc, char ** argv)

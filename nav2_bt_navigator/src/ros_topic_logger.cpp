@@ -46,7 +46,7 @@ void RosTopicLogger::callback(
   event.timestamp =
     tf2_ros::toMsg(std::chrono::time_point<std::chrono::high_resolution_clock>(timestamp));
 #else
-  event.timestamp = tf2_ros::toMsg(timestamp);
+  event.timestamp = tf2_ros::toMsg(tf2::TimePoint(timestamp));
 #endif
   event.node_name = node.name();
   event.previous_status = toStr(prev_status, false);

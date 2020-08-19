@@ -11,7 +11,7 @@ ament_target_dependencies(${test_backup_recovery_exec}
 
 ament_add_test(test_backup_recovery
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_backup_recovery_launch.py"
+  COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_backup_recovery_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   TIMEOUT 180
   ENV

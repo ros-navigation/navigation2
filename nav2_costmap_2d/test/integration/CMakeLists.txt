@@ -56,7 +56,7 @@ target_link_libraries(range_tests_exec
 
 ament_add_test(test_collision_checker
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
+  COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
@@ -66,7 +66,7 @@ ament_add_test(test_collision_checker
 
 ament_add_test(footprint_tests
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
+  COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
@@ -76,7 +76,7 @@ ament_add_test(footprint_tests
 
 ament_add_test(inflation_tests
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
+  COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
@@ -86,7 +86,7 @@ ament_add_test(inflation_tests
 
 ament_add_test(obstacle_tests
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
+  COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
@@ -96,7 +96,7 @@ ament_add_test(obstacle_tests
 
 ament_add_test(range_tests
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
-  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
+  COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml

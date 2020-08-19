@@ -22,6 +22,8 @@ find_package(nav2_planner REQUIRED)
 find_package(navigation2)
 find_package(angles REQUIRED)
 
+add_compile_definitions(PLUGINLIB__DISABLE_BOOST_FUNCTIONS)
+
 nav2_package()
 
 set(dependencies

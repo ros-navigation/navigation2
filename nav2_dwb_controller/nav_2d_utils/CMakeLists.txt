@@ -47,6 +47,10 @@ add_library(tf_help SHARED
   src/tf_help.cpp
 )
 
+target_link_libraries(tf_help
+  conversions
+)
+
 ament_target_dependencies(tf_help
   ${dependencies}
 )
