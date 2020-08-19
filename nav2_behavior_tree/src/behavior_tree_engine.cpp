@@ -72,7 +72,7 @@ BehaviorTreeEngine::createTreeFromText(
 
 BT::Tree
 BehaviorTreeEngine::createTreeFromFile(
-  const std::string &file_path,
+  const std::string & file_path,
   BT::Blackboard::Ptr blackboard)
 {
   return factory_.createTreeFromFile(file_path, blackboard);
@@ -83,18 +83,16 @@ BehaviorTreeEngine::addZMQGrootMonitoring(BT::Tree * tree)
 {
   // This logger publish status changes using ZeroMQ. Used by Groot
   publisher_zmq_ = std::make_unique<BT::PublisherZMQ>(*tree);
-  return;
 }
 
 void
 BehaviorTreeEngine::resetZMQGrootMonitor()
 {
   publisher_zmq_.reset();
-  return;
 }
 
 // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
-void 
+void
 BehaviorTreeEngine::haltAllActions(BT::TreeNode * root_node)
 {
   // this halt signal should propagate through the entire tree.

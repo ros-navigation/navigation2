@@ -141,7 +141,7 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
   if (current_bt_xml_filename_ == bt_xml_filename) {
     return true;
   }
-  //if a new tree is created, than the ZMQ Publisher must be destroyed
+  // if a new tree is created, than the ZMQ Publisher must be destroyed
   bt_->resetZMQGrootMonitor();
 
   // Read the input BT XML from the specified file into a string
@@ -163,10 +163,10 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
   tree_ = bt_->createTreeFromText(xml_string, blackboard_);
   current_bt_xml_filename_ = bt_xml_filename;
 
-  //get parameter for monitoring with Groot via ZMQ Publisher
-  if (get_parameter("bt_activate_groot_monitoring").as_bool())
+  // get parameter for monitoring with Groot via ZMQ Publisher
+  if (get_parameter("bt_activate_groot_monitoring").as_bool()) {
     bt_->addZMQGrootMonitoring(&tree_);
-   
+  }
   return true;
 }
 

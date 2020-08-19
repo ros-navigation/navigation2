@@ -48,7 +48,7 @@ public:
     BT::Blackboard::Ptr blackboard);
 
   BT::Tree createTreeFromFile(
-    const std::string &file_path,
+    const std::string & file_path,
     BT::Blackboard::Ptr blackboard);
 
   void addZMQGrootMonitoring(BT::Tree * tree);
@@ -56,7 +56,7 @@ public:
 
   // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
   void haltAllActions(BT::TreeNode * root_node);
-  
+
 protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
