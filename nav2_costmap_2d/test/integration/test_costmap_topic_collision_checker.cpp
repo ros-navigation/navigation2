@@ -326,7 +326,7 @@ TEST_F(TestNode, FreeSpace)
   ASSERT_EQ(collision_checker_->testPose(2, 8.5, 0), true);
 
   // Partially in inscribed space
-  ASSERT_EQ(collision_checker_->testPose(2.5, 7, 0), true);
+  ASSERT_EQ(collision_checker_->testPose(2.5, 7, 0), false);
 }
 
 TEST_F(TestNode, CollisionSpace)
