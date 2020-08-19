@@ -19,6 +19,9 @@ public:
         const geometry_msgs::msg::Pose& prev_pose);
 
     void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
+    void activate();
+    void deactivate();
+    void cleanup();
 };
 } // nav2_localization
 

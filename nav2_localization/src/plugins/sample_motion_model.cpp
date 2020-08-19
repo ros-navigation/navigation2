@@ -14,18 +14,24 @@ geometry_msgs::msg::Pose DummyMotionSampler::getMostLikelyPose(
     return dummy_pose;
 }
 
-void DummyMotionSampler::configure(
-        const double& alpha1,
-        const double& alpha2,
-        const double& alpha3,
-        const double& alpha4,
-        const double& alpha5)
+void DummyMotionSampler::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
 {
-    alpha1_ = alpha1;
-    alpha2_ = alpha2;
-    alpha3_ = alpha3;
-    alpha4_ = alpha4;
-    alpha5_ = alpha5;
+    node_ = node;
+}
+
+void DummyMotionSampler::activate()
+{
+
+}
+
+void DummyMotionSampler::deactivate()
+{
+
+}
+
+void DummyMotionSampler::cleanup()
+{
+    
 }
 
 } // nav2_localization

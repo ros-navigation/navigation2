@@ -46,6 +46,7 @@ protected:
     double alpha3_;
     double alpha4_;
     double alpha5_;
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 };  
 } // nav2_localization
 
