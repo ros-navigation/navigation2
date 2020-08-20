@@ -217,12 +217,12 @@ protected:
   double alpha3_;
   double alpha4_;
   double alpha5_;
-  std::string base_frame_id_;
+  std::string base_frame_;
   double beam_skip_distance_;
   double beam_skip_error_threshold_;
   double beam_skip_threshold_;
   bool do_beamskip_;
-  std::string global_frame_id_;
+  std::string global_frame_;
   double lambda_short_;
   double laser_likelihood_max_dist_;
   double laser_max_range_;
@@ -231,7 +231,7 @@ protected:
   int max_beams_;
   int max_particles_;
   int min_particles_;
-  std::string odom_frame_id_;
+  std::string odom_frame_;
   double pf_err_;
   double pf_z_;
   double alpha_fast_;
