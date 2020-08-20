@@ -83,7 +83,7 @@ AmclNode::AmclNode()
     "This is the alpha5 parameter", "These are additional constraints for alpha5");
 
   add_parameter(
-    "base_frame_id", rclcpp::ParameterValue(std::string("base_footprint")),
+    "base_frame", rclcpp::ParameterValue(std::string("base_footprint")),
     "Which frame to use for the robot base");
 
   add_parameter("beam_skip_distance", rclcpp::ParameterValue(0.5));
@@ -92,7 +92,7 @@ AmclNode::AmclNode()
   add_parameter("do_beamskip", rclcpp::ParameterValue(false));
 
   add_parameter(
-    "global_frame_id", rclcpp::ParameterValue(std::string("map")),
+    "global_frame", rclcpp::ParameterValue(std::string("map")),
     "The name of the coordinate frame published by the localization system");
 
   add_parameter(
@@ -152,7 +152,7 @@ AmclNode::AmclNode()
     "Maximum allowed number of particles");
 
   add_parameter(
-    "odom_frame_id", rclcpp::ParameterValue(std::string("odom")),
+    "odom_frame", rclcpp::ParameterValue(std::string("odom")),
     "Which frame to use for odometry");
 
   add_parameter("pf_err", rclcpp::ParameterValue(0.05));
