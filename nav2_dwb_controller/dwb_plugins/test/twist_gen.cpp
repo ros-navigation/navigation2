@@ -180,7 +180,8 @@ TEST(VelocityIterator, min_theta)
 
 TEST(VelocityIterator, no_limits)
 {
-  auto nh = makeTestNode("no_limits", {
+  auto nh = makeTestNode(
+    "no_limits", {
     rclcpp::Parameter("dwb.max_speed_xy", -1.0),
     rclcpp::Parameter("dwb.min_speed_xy", -1.0),
     rclcpp::Parameter("dwb.min_speed_theta", -1.0)});
@@ -195,7 +196,8 @@ TEST(VelocityIterator, no_limits)
 TEST(VelocityIterator, no_limits_samples)
 {
   const int x_samples = 10, y_samples = 3, theta_samples = 5;
-  auto nh = makeTestNode("no_limits_samples", {
+  auto nh = makeTestNode(
+    "no_limits_samples", {
     rclcpp::Parameter("dwb.max_speed_xy", -1.0),
     rclcpp::Parameter("dwb.min_speed_xy", -1.0),
     rclcpp::Parameter("dwb.min_speed_theta", -1.0),
@@ -288,7 +290,8 @@ TEST(TrajectoryGenerator, basic)
 
 TEST(TrajectoryGenerator, basic_no_last_point)
 {
-  auto nh = makeTestNode("basic_no_last_point", {
+  auto nh = makeTestNode(
+    "basic_no_last_point", {
     rclcpp::Parameter("dwb.include_last_point", false),
     rclcpp::Parameter("dwb.linear_granularity", 0.5)});
   StandardTrajectoryGenerator gen;
@@ -342,7 +345,8 @@ TEST(TrajectoryGenerator, holonomic)
 
 TEST(TrajectoryGenerator, twisty)
 {
-  auto nh = makeTestNode("twisty", {
+  auto nh = makeTestNode(
+    "twisty", {
     rclcpp::Parameter("dwb.linear_granularity", 0.5),
     rclcpp::Parameter("dwb.angular_granularity", 0.025)});
   StandardTrajectoryGenerator gen;
@@ -367,7 +371,8 @@ TEST(TrajectoryGenerator, twisty)
 TEST(TrajectoryGenerator, sim_time)
 {
   const double sim_time = 2.5;
-  auto nh = makeTestNode("sim_time", {
+  auto nh = makeTestNode(
+    "sim_time", {
     rclcpp::Parameter("dwb.sim_time", sim_time),
     rclcpp::Parameter("dwb.linear_granularity", 0.5)});
   StandardTrajectoryGenerator gen;
@@ -385,7 +390,8 @@ TEST(TrajectoryGenerator, sim_time)
 
 TEST(TrajectoryGenerator, accel)
 {
-  auto nh = makeTestNode("accel", {
+  auto nh = makeTestNode(
+    "accel", {
     rclcpp::Parameter("dwb.sim_time", 5.0),
     rclcpp::Parameter("dwb.discretize_by_time", true),
     rclcpp::Parameter("dwb.sim_granularity", 1.0),
@@ -408,7 +414,8 @@ TEST(TrajectoryGenerator, accel)
 
 TEST(TrajectoryGenerator, dwa)
 {
-  auto nh = makeTestNode("dwa", {
+  auto nh = makeTestNode(
+    "dwa", {
     rclcpp::Parameter("dwb.sim_period", 1.0),
     rclcpp::Parameter("dwb.sim_time", 5.0),
     rclcpp::Parameter("dwb.discretize_by_time", true),
