@@ -474,6 +474,13 @@ When `planner_plugins` parameter is not overridden, the following default plugin
 | `<name>`.use_astar | false | Whether to use A*, if false, uses Dijstra's expansion |
 | `<name>`.allow_unknown | true | Whether to allow planning in unknown space |
 
+# waypoint_follower
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| stop_on_failure | true | Whether to fail action task if a single waypoint fails. If false, will continue to next waypoint. |
+| loop_rate | 20 | Rate to check for results from current navigation task |
+
 # bt_waypoint_follower
 
 | Parameter | Default | Description |
