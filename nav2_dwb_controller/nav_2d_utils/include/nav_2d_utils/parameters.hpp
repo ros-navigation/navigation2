@@ -104,7 +104,8 @@ param_t loadParameterWithDeprecation(
   nh->get_parameter(old_name, old_name_value);
 
   if (old_name_value != current_name_value && old_name_value != default_value) {
-    RCLCPP_WARN(nh->get_logger(),
+    RCLCPP_WARN(
+      nh->get_logger(),
       "Parameter %s is deprecated. Please use the name %s instead.",
       old_name.c_str(), current_name.c_str());
     // set both parameters to the same value
