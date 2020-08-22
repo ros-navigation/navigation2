@@ -170,7 +170,7 @@ LocalizationServer::initPlugins()
         exit(-1);
     }
 
-    matcher2d_->configure(node);
+    matcher2d_->configure(node, &map_);
 
     try {
         solver_type_ = nav2_util::get_plugin_type_param(node, solver_id_);
@@ -180,7 +180,7 @@ LocalizationServer::initPlugins()
         exit(-1);
     }
 
-    solver_->configure(sample_motion_model_, matcher2d_id_, );
+    solver_->configure(node, sample_motion_model_, matcher2d_, nav_msgs::msg::Odometry(), geometry_msgs::msg::Pose());
 }
 
 void
@@ -210,9 +210,9 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
         return;
     }
 
-    nav_msgs::msg::Odometry
+    nav_msgs::msg::Odometry odometry;
     
-    solver_->solve()
+    solver_->solve(&odometry, &laser_scan);
 
     std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
     last_laser_received_ts_ = now();
