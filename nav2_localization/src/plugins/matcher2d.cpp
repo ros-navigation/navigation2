@@ -21,7 +21,21 @@ void DummyMatcher2d::configure(
 	map_ = map;
 	return;
 }
-	
+
+void DummyMatcher2d::activate()
+{
+
+}
+
+void DummyMatcher2d::deactivate()
+{
+
+}
+
+void DummyMatcher2d::cleanup()
+{
+
+}
 
 } // nav2_localization
 

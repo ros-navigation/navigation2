@@ -28,6 +28,21 @@ void DummySolver2d::configure(
 	return;
 }
 
+void DummySolver2d::activate()
+{
+
+}
+
+void DummySolver2d::deactivate()
+{
+
+}
+
+void DummySolver2d::cleanup()
+{
+
+}
+
 } // nav2_localization
 
 PLUGINLIB_EXPORT_CLASS(nav2_localization::DummySolver2d, nav2_localization::Solver)
