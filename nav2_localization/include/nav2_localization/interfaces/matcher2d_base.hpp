@@ -32,7 +32,7 @@ public:
 
 	virtual void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-		nav_msgs::msg::OccupancyGrid* map) = 0;
+		nav_msgs::msg::OccupancyGrid& map) = 0;
 
 	virtual void activate() = 0;
 
@@ -42,7 +42,7 @@ public:
 
 protected:
 	rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
-	nav_msgs::msg::OccupancyGrid* map_; // 2D occupancy grid map of the environment where the robot is
+	nav_msgs::msg::OccupancyGrid& map_; // Reference to the 2D occupancy grid map of the environment where the robot is
 };  
 } // nav2_localization
 

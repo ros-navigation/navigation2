@@ -29,10 +29,10 @@ public:
 
 	void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-		SampleMotionModel* motionSampler,
-		Matcher2d* matcher,
-		nav_msgs::msg::Odometry odom,
-		geometry_msgs::msg::Pose pose);
+		SampleMotionModel& motionSampler,
+		Matcher2d& matcher,
+		const nav_msgs::msg::Odometry& odom,
+		const geometry_msgs::msg::Pose& pose);
 };
 } // nav2_localization
 

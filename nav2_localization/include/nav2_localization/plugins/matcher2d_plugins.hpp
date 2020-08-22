@@ -17,7 +17,7 @@ public:
 
 	void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-		nav_msgs::msg::OccupancyGrid* map);
+		nav_msgs::msg::OccupancyGrid& map);
 };  
 } // nav2_localization
 

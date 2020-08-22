@@ -170,7 +170,7 @@ LocalizationServer::initPlugins()
         exit(-1);
     }
 
-    matcher2d_->configure(node, &map_);
+    matcher2d_->configure(node, map_);
 
     try {
         solver_type_ = nav2_util::get_plugin_type_param(node, solver_id_);
@@ -212,7 +212,7 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
 
     nav_msgs::msg::Odometry odometry;
     
-    solver_->solve(&odometry, &laser_scan);
+    solver_->solve(odometry, laser_scan);
 
     std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
     last_laser_received_ts_ = now();
