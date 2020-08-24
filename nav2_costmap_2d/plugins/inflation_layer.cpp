@@ -71,6 +71,12 @@ InflationLayer::InflationLayer()
   last_max_x_(std::numeric_limits<double>::max()),
   last_max_y_(std::numeric_limits<double>::max())
 {
+  access_ = new mutex_t();
+}
+
+InflationLayer::~InflationLayer()
+{
+  delete access_;
 }
 
 void
@@ -160,6 +166,7 @@ InflationLayer::updateCosts(
   int max_i,
   int max_j)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!enabled_ || (cell_inflation_radius_ == 0)) {
     return;
   }
@@ -305,6 +312,7 @@ InflationLayer::enqueue(
 void
 InflationLayer::computeCaches()
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (cell_inflation_radius_ == 0) {
     return;
   }
