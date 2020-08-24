@@ -130,9 +130,8 @@ private:
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response);
 
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   rclcpp::Clock::SharedPtr clock_;
-  rclcpp::Logger logger_{rclcpp::get_logger("costmap")};
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
 
   Costmap2D * costmap_;
   std::string global_frame_;

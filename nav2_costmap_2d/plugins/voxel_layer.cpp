@@ -73,6 +73,9 @@ void VoxelLayer::onInitialize()
   declareParameter("publish_voxel_map", rclcpp::ParameterValue(false));
 
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
@@ -319,6 +322,9 @@ void VoxelLayer::raytraceFreespace(
 
   {
     auto node = node_.lock();
+    if (!node) {
+      throw std::runtime_error{"Failed to lock node"};
+    }
     publish_clearing_points = (node->count_subscribers("clearing_endpoints") > 0);
   }
 

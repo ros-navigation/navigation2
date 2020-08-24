@@ -62,6 +62,9 @@ void MapGridCritic::onInit()
   stop_on_failure_ = true;
 
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
 
   nav2_util::declare_parameter_if_not_declared(
     node,

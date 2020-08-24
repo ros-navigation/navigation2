@@ -67,6 +67,9 @@ nav2_util::CallbackReturn
 DWBPublisher::on_configure()
 {
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
 
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".publish_evaluation",
@@ -153,10 +156,7 @@ DWBPublisher::on_cleanup()
 void
 DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results)
 {
-  {
-    auto node = node_.lock();
-    if (node->count_subscribers(eval_pub_->get_topic_name()) < 1) {return;}
-  }
+  if (eval_pub_->get_subscription_count() < 1) {return;}
 
   if (results == nullptr) {return;}
 
@@ -171,10 +171,7 @@ DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluati
 void
 DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & results)
 {
-  {
-    auto node = node_.lock();
-    if (node->count_subscribers(marker_pub_->get_topic_name()) < 1) {return;}
-  }
+  if (marker_pub_->get_subscription_count() < 1) {return;}
 
   if (!publish_trajectories_) {return;}
   auto ma = std::make_unique<visualization_msgs::msg::MarkerArray>();
@@ -248,11 +245,8 @@ DWBPublisher::publishLocalPlan(
       traj.poses, header.frame_id,
       header.stamp));
 
-  {
-    auto node = node_.lock();
-    if (node->count_subscribers(local_pub_->get_topic_name()) > 0) {
-      local_pub_->publish(std::move(path));
-    }
+  if (local_pub_->get_subscription_count() > 0) {
+    local_pub_->publish(std::move(path));
   }
 }
 
@@ -261,10 +255,7 @@ DWBPublisher::publishCostGrid(
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
   const std::vector<TrajectoryCritic::Ptr> critics)
 {
-  {
-    auto node = node_.lock();
-    if (node->count_subscribers(cost_grid_pc_pub_->get_topic_name()) < 1) {return;}
-  }
+  if (cost_grid_pc_pub_->get_subscription_count() < 1) {return;}
 
   if (!publish_cost_grid_pc_) {return;}
 
@@ -334,10 +325,7 @@ DWBPublisher::publishGenericPlan(
   const nav_2d_msgs::msg::Path2D plan,
   rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag)
 {
-  {
-    auto node = node_.lock();
-    if (node->count_subscribers(pub.get_topic_name()) < 1) {return;}
-  }
+  if (pub.get_subscription_count() < 1) {return;}
   if (!flag) {return;}
   auto path = std::make_unique<nav_msgs::msg::Path>(nav_2d_utils::pathToPath(plan));
   pub.publish(std::move(path));

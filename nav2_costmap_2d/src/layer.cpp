@@ -81,6 +81,9 @@ Layer::declareParameter(
   const rclcpp::ParameterValue & value)
 {
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
   local_params_.insert(param_name);
   nav2_util::declare_parameter_if_not_declared(
     node, getFullName(param_name), value);
@@ -90,6 +93,9 @@ bool
 Layer::hasParameter(const std::string & param_name)
 {
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
   return node->has_parameter(getFullName(param_name));
 }
 
@@ -97,6 +103,9 @@ void
 Layer::undeclareAllParameters()
 {
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
   for (auto & param_name : local_params_) {
     node->undeclare_parameter(getFullName(param_name));
   }

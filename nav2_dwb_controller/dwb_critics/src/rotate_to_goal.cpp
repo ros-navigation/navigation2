@@ -54,6 +54,9 @@ inline double hypot_sq(double dx, double dy)
 void RotateToGoalCritic::onInit()
 {
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
 
   xy_goal_tolerance_ = nav_2d_utils::searchAndGetParam(
     node,

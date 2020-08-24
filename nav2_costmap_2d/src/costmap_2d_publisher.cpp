@@ -55,14 +55,13 @@ Costmap2DPublisher::Costmap2DPublisher(
   std::string global_frame,
   std::string topic_name,
   bool always_send_full_costmap)
-: node_(parent),
-  costmap_(costmap),
+: costmap_(costmap),
   global_frame_(global_frame),
   topic_name_(topic_name),
   active_(false),
   always_send_full_costmap_(always_send_full_costmap)
 {
-  auto node = node_.lock();
+  auto node = parent.lock();
   clock_ = node->get_clock();
   logger_ = node->get_logger();
 
@@ -184,9 +183,7 @@ void Costmap2DPublisher::prepareCostmap()
 
 void Costmap2DPublisher::publishCostmap()
 {
-  auto node = node_.lock();
-
-  if (node->count_subscribers(costmap_raw_pub_->get_topic_name()) > 0) {
+  if (costmap_raw_pub_->get_subscription_count() > 0) {
     prepareCostmap();
     costmap_raw_pub_->publish(std::move(costmap_raw_));
   }
@@ -198,12 +195,12 @@ void Costmap2DPublisher::publishCostmap()
     saved_origin_x_ != costmap_->getOriginX() ||
     saved_origin_y_ != costmap_->getOriginY())
   {
-    if (node->count_subscribers(costmap_pub_->get_topic_name()) > 0) {
+    if (costmap_pub_->get_subscription_count() > 0) {
       prepareGrid();
       costmap_pub_->publish(std::move(grid_));
     }
   } else if (x0_ < xn_) {
-    if (node->count_subscribers(costmap_update_pub_->get_topic_name()) > 0) {
+    if (costmap_update_pub_->get_subscription_count() > 0) {
       std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
       // Publish Just an Update
       auto update = std::make_unique<map_msgs::msg::OccupancyGridUpdate>();

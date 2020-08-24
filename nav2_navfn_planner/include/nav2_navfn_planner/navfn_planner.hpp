@@ -119,9 +119,6 @@ protected:
   // TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
-  // Node
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
-
   // Clock
   rclcpp::Clock::SharedPtr clock_;
 

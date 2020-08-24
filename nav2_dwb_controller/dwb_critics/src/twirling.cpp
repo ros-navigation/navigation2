@@ -40,6 +40,9 @@ namespace dwb_critics
 void TwirlingCritic::onInit()
 {
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
   // Scale is set to 0 by default, so if it was not set otherwise, set to 0
   node->get_parameter(dwb_plugin_name_ + "." + name_ + ".scale", scale_);
 }

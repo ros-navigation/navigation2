@@ -85,6 +85,9 @@ StaticLayer::onInitialize()
     map_subscribe_transient_local_ ? "transient local" : "volatile");
 
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
 
   map_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
     map_topic_, map_qos,
@@ -128,6 +131,9 @@ StaticLayer::getParameters()
   declareParameter("map_topic", rclcpp::ParameterValue(""));
 
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
@@ -373,9 +379,7 @@ StaticLayer::updateCosts(
     static int count = 0;
     // throttle warning down to only 1/10 message rate
     if (++count == 10) {
-      RCLCPP_WARN(
-        logger_,
-        "Can't update static costmap layer, no map received");
+      RCLCPP_WARN(logger_, "Can't update static costmap layer, no map received");
       count = 0;
     }
     update_in_progress_.store(false);
@@ -400,9 +404,7 @@ StaticLayer::updateCosts(
         map_frame_, global_frame_, tf2::TimePointZero,
         transform_tolerance_);
     } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR(
-        logger_,
-        "StaticLayer: %s", ex.what());
+      RCLCPP_ERROR(logger_, "StaticLayer: %s", ex.what());
       update_in_progress_.store(false);
       return;
     }

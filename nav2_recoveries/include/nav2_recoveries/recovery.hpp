@@ -158,7 +158,7 @@ protected:
   rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
 
   // Logger
-  rclcpp::Logger logger_{rclcpp::get_logger("recovery.plugin")};
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_recoveries")};
 
   void execute()
   {
@@ -182,6 +182,10 @@ protected:
     // Log a message every second
     {
       auto node = node_.lock();
+      if (!node) {
+        throw std::runtime_error{"Failed to lock node"};
+      }
+
       auto timer = node->create_wall_timer(
         1s,
         [&]()

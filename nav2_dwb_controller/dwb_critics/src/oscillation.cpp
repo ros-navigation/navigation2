@@ -92,6 +92,10 @@ bool OscillationCritic::CommandTrend::hasSignFlipped()
 void OscillationCritic::onInit()
 {
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   clock_ = node->get_clock();
 
   oscillation_reset_dist_ = nav_2d_utils::searchAndGetParam(

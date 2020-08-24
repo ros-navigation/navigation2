@@ -169,6 +169,9 @@ void
 DWBLocalPlanner::loadCritics()
 {
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
 
   node->get_parameter(dwb_plugin_name_ + ".default_critic_namespaces", default_critic_namespaces_);
   if (default_critic_namespaces_.empty()) {
@@ -227,6 +230,9 @@ DWBLocalPlanner::loadBackwardsCompatibleParameters()
                                                    //   (local) goal, based on wave propagation
 
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
 
   node->set_parameters({rclcpp::Parameter(dwb_plugin_name_ + ".critics", critic_names)});
 

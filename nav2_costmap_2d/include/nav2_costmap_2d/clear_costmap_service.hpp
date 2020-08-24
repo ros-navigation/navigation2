@@ -49,7 +49,7 @@ public:
 
 private:
   // The Logger object for logging
-  rclcpp::Logger logger_{rclcpp::get_logger("costmap")};
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
 
   // The costmap to clear
   Costmap2DROS & costmap_;

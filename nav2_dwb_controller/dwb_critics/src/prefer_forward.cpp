@@ -47,6 +47,9 @@ namespace dwb_critics
 void PreferForwardCritic::onInit()
 {
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
 
   declare_parameter_if_not_declared(
     node,

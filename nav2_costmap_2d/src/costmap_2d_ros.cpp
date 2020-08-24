@@ -116,8 +116,6 @@ Costmap2DROS::Costmap2DROS(
 
 Costmap2DROS::~Costmap2DROS()
 {
-  delete layered_costmap_;
-  layered_costmap_ = nullptr;
 }
 
 nav2_util::CallbackReturn
@@ -127,7 +125,8 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   getParameters();
 
   // Create the costmap itself
-  layered_costmap_ = new LayeredCostmap(global_frame_, rolling_window_, track_unknown_space_);
+  layered_costmap_ = std::make_unique<LayeredCostmap>(
+    global_frame_, rolling_window_, track_unknown_space_);
 
   if (!layered_costmap_->isSizeLocked()) {
     layered_costmap_->resizeMap(
@@ -152,7 +151,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     // TODO(mjeronimo): instead of get(), use a shared ptr
     plugin->initialize(
-      layered_costmap_, plugin_names_[i], tf_buffer_.get(),
+      layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
       shared_from_this(), client_node_, rclcpp_node_);
 
     RCLCPP_INFO(get_logger(), "Initialized plugin \"%s\"", plugin_names_[i].c_str());
@@ -256,8 +255,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  delete layered_costmap_;
-  layered_costmap_ = nullptr;
+  layered_costmap_.reset();
 
   tf_listener_.reset();
   tf_buffer_.reset();

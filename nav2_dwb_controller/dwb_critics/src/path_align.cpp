@@ -46,7 +46,12 @@ void PathAlignCritic::onInit()
 {
   PathDistCritic::onInit();
   stop_on_failure_ = false;
+
   auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   forward_point_distance_ = nav_2d_utils::searchAndGetParam(
     node,
     dwb_plugin_name_ + "." + name_ + ".forward_point_distance", 0.325);

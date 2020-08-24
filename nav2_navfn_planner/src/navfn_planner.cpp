@@ -60,13 +60,12 @@ NavfnPlanner::configure(
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
-  node_ = parent;
   tf_ = tf;
   name_ = name;
   costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();
 
-  auto node = node_.lock();
+  auto node = parent.lock();
   clock_ = node->get_clock();
   logger_ = node->get_logger();
 

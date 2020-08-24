@@ -312,10 +312,7 @@ void
 PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
 {
   auto msg = std::make_unique<nav_msgs::msg::Path>(path);
-  if (
-    plan_publisher_->is_activated() &&
-    this->count_subscribers(plan_publisher_->get_topic_name()) > 0)
-  {
+  if (plan_publisher_->is_activated() && plan_publisher_->get_subscription_count() > 0) {
     plan_publisher_->publish(std::move(msg));
   }
 }

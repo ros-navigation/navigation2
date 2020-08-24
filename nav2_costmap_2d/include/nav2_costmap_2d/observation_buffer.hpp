@@ -143,7 +143,7 @@ private:
   void purgeStaleObservations();
 
   rclcpp::Clock::SharedPtr clock_;
-  rclcpp::Logger logger_{rclcpp::get_logger("costmap")};
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
   tf2_ros::Buffer & tf2_buffer_;
   const rclcpp::Duration observation_keep_time_;
   const rclcpp::Duration expected_update_rate_;

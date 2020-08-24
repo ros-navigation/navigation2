@@ -126,8 +126,7 @@ public:
   void declareParameter(
     const std::string & param_name,
     const rclcpp::ParameterValue & value);
-  bool hasParameter(
-    const std::string & param_name);
+  bool hasParameter(const std::string & param_name);
   void undeclareAllParameters();
   std::string getFullName(const std::string & param_name);
 
@@ -139,7 +138,7 @@ protected:
   rclcpp::Node::SharedPtr rclcpp_node_;
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   rclcpp::Clock::SharedPtr clock_;
-  rclcpp::Logger logger_{rclcpp::get_logger("costmap.layer")};
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
 
   /** @brief This is called at the end of initialize().  Override to
    * implement subclass-specific initialization.
