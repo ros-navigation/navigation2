@@ -81,6 +81,7 @@ protected:
     void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
     void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+    nav_msgs::msg::Odometry transformStampedToOdom(const geometry_msgs::msg::TransformStamped &tf);
 
     // Map
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;

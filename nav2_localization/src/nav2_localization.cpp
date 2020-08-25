@@ -196,10 +196,10 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
     // we don't want our callbacks to fire until we're in the active state
     if (!get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {return;}
 
-    geometry_msgs::msg::TransformStamped odom_transform;
+    geometry_msgs::msg::TransformStamped odom_to_base_transform;
     try
     {
-        odom_transform = tf_buffer_->lookupTransform(odom_frame_id_,
+        odom_to_base_transform = tf_buffer_->lookupTransform(odom_frame_id_,
                                     base_frame_id_,
                                     laser_scan->header.stamp,
                                     transform_tolerance_);
@@ -210,14 +210,26 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
         return;
     }
 
-    nav_msgs::msg::Odometry odometry;
-    
-    solver_->solve(odometry, laser_scan);
+    // Change the stamped tf into an odom msg for the solver to use
+    nav_msgs::msg::Odometry current_odom = transformStampedToOdom(odom_to_base_transform);
+    // The estimated robot's pose in the global frame
+    geometry_msgs::msg::PoseWithCovariance current_pose = solver_->solve(current_odom, *laser_scan);
 
-    std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
-    last_laser_received_ts_ = now();
-    int laser_index = -1;
-    geometry_msgs::msg::PoseStamped laser_pose; 
+    geometry_msgs::msg::TransformStamped map_to_odom_transform;
+    map_to_odom_transform = tf_buffer_->transform(odom_to_base_transform, odom_frame_id_);
+
+    tf_broadcaster_->sendTransform(map_to_odom_transform);
+}
+
+nav_msgs::msg::Odometry
+LocalizationServer::transformStampedToOdom(const geometry_msgs::msg::TransformStamped &tf)
+{
+    nav_msgs::msg::Odometry odom;
+    odom.header = tf.header;
+    odom.pose.pose.position.x = tf.transform.translation.x;
+    odom.pose.pose.position.y = tf.transform.translation.y;
+    odom.pose.pose.position.z = tf.transform.translation.z;
+    odom.pose.pose.orientation = tf.transform.rotation;
 }
 
 } //nav2_localiztion
