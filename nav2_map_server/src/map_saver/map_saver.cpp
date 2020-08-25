@@ -54,7 +54,6 @@ MapSaver::MapSaver()
 
 MapSaver::~MapSaver()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn

@@ -152,6 +152,7 @@ private:
   geometry_msgs::msg::Pose2D pose_, prev_stationary_pose_;
   // Saved timestamp
   rclcpp::Time prev_reset_time_;
+  rclcpp::Clock::SharedPtr clock_;
 };
 
 }  // namespace dwb_critics

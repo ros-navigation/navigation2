@@ -67,7 +67,7 @@ public:
   DWBLocalPlanner();
 
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros) override;
 
@@ -182,10 +182,12 @@ protected:
    * @param name The namespace of this planner.
    */
   virtual void loadCritics();
-
   void loadBackwardsCompatibleParameters();
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Logger logger_{rclcpp::get_logger("DWBLocalPlanner")};
+
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
 

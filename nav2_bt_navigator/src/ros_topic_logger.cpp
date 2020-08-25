@@ -21,10 +21,13 @@ namespace nav2_bt_navigator
 {
 
 RosTopicLogger::RosTopicLogger(
-  const rclcpp::Node::SharedPtr & ros_node, const BT::Tree & tree)
-: StatusChangeLogger(tree.rootNode()), ros_node_(ros_node)
+  const rclcpp::Node::WeakPtr & ros_node, const BT::Tree & tree)
+: StatusChangeLogger(tree.rootNode())
 {
-  log_pub_ = ros_node_->create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
+  auto node = ros_node.lock();
+  clock_ = node->get_clock();
+  logger_ = node->get_logger();
+  log_pub_ = node->create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
     "behavior_tree_log",
     rclcpp::QoS(10));
 }
@@ -51,7 +54,7 @@ void RosTopicLogger::callback(
   event_log_.push_back(std::move(event));
 
   RCLCPP_DEBUG(
-    ros_node_->get_logger(), "[%.3f]: %25s %s -> %s",
+    logger_, "[%.3f]: %25s %s -> %s",
     std::chrono::duration<double>(timestamp).count(),
     node.name().c_str(),
     toStr(prev_status, true).c_str(),
@@ -60,9 +63,9 @@ void RosTopicLogger::callback(
 
 void RosTopicLogger::flush()
 {
-  if (event_log_.size() > 0) {
+  if (!event_log_.empty()) {
     auto log_msg = std::make_unique<nav2_msgs::msg::BehaviorTreeLog>();
-    log_msg->timestamp = ros_node_->now();
+    log_msg->timestamp = clock_->now();
     log_msg->event_log = event_log_;
     log_pub_->publish(std::move(log_msg));
     event_log_.clear();

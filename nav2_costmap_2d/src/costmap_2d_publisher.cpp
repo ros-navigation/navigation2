@@ -50,27 +50,35 @@ namespace nav2_costmap_2d
 char * Costmap2DPublisher::cost_translation_table_ = NULL;
 
 Costmap2DPublisher::Costmap2DPublisher(
-  nav2_util::LifecycleNode::SharedPtr ros_node, Costmap2D * costmap,
+  const nav2_util::LifecycleNode::WeakPtr & parent,
+  Costmap2D * costmap,
   std::string global_frame,
   std::string topic_name,
   bool always_send_full_costmap)
-: node_(ros_node), costmap_(costmap), global_frame_(global_frame), topic_name_(topic_name),
-  active_(false), always_send_full_costmap_(always_send_full_costmap)
+: costmap_(costmap),
+  global_frame_(global_frame),
+  topic_name_(topic_name),
+  active_(false),
+  always_send_full_costmap_(always_send_full_costmap)
 {
+  auto node = parent.lock();
+  clock_ = node->get_clock();
+  logger_ = node->get_logger();
+
   auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 
   // TODO(bpwilcox): port onNewSubscription functionality for publisher
-  costmap_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
+  costmap_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
     topic_name,
     custom_qos);
-  costmap_raw_pub_ = node_->create_publisher<nav2_msgs::msg::Costmap>(
+  costmap_raw_pub_ = node->create_publisher<nav2_msgs::msg::Costmap>(
     topic_name + "_raw",
     custom_qos);
-  costmap_update_pub_ = node_->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
+  costmap_update_pub_ = node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
     topic_name + "_updates", custom_qos);
 
   // Create a service that will use the callback function to handle requests.
-  costmap_service_ = node_->create_service<nav2_msgs::srv::GetCostmap>(
+  costmap_service_ = node->create_service<nav2_msgs::srv::GetCostmap>(
     "get_costmap", std::bind(
       &Costmap2DPublisher::costmap_service_callback,
       this, std::placeholders::_1, std::placeholders::_2,
@@ -150,7 +158,7 @@ void Costmap2DPublisher::prepareCostmap()
   costmap_raw_ = std::make_unique<nav2_msgs::msg::Costmap>();
 
   costmap_raw_->header.frame_id = global_frame_;
-  costmap_raw_->header.stamp = node_->now();
+  costmap_raw_->header.stamp = clock_->now();
 
   costmap_raw_->metadata.layer = "master";
   costmap_raw_->metadata.resolution = resolution;
@@ -175,7 +183,7 @@ void Costmap2DPublisher::prepareCostmap()
 
 void Costmap2DPublisher::publishCostmap()
 {
-  if (node_->count_subscribers(costmap_raw_pub_->get_topic_name()) > 0) {
+  if (costmap_raw_pub_->get_subscription_count() > 0) {
     prepareCostmap();
     costmap_raw_pub_->publish(std::move(costmap_raw_));
   }
@@ -187,12 +195,12 @@ void Costmap2DPublisher::publishCostmap()
     saved_origin_x_ != costmap_->getOriginX() ||
     saved_origin_y_ != costmap_->getOriginY())
   {
-    if (node_->count_subscribers(costmap_pub_->get_topic_name()) > 0) {
+    if (costmap_pub_->get_subscription_count() > 0) {
       prepareGrid();
       costmap_pub_->publish(std::move(grid_));
     }
   } else if (x0_ < xn_) {
-    if (node_->count_subscribers(costmap_update_pub_->get_topic_name()) > 0) {
+    if (costmap_update_pub_->get_subscription_count() > 0) {
       std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
       // Publish Just an Update
       auto update = std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
@@ -225,7 +233,7 @@ Costmap2DPublisher::costmap_service_callback(
   const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request>/*request*/,
   const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response)
 {
-  RCLCPP_DEBUG(node_->get_logger(), "Received costmap service request");
+  RCLCPP_DEBUG(logger_, "Received costmap service request");
 
   // TODO(bpwilcox): Grab correct orientation information
   tf2::Quaternion quaternion;
@@ -235,7 +243,7 @@ Costmap2DPublisher::costmap_service_callback(
   auto size_y = costmap_->getSizeInCellsY();
   auto data_length = size_x * size_y;
   unsigned char * data = costmap_->getCharMap();
-  auto current_time = node_->now();
+  auto current_time = clock_->now();
 
   response->map.header.stamp = current_time;
   response->map.header.frame_id = global_frame_;

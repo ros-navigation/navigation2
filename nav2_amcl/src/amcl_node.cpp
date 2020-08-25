@@ -225,7 +225,6 @@ AmclNode::AmclNode()
 
 AmclNode::~AmclNode()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn
