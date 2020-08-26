@@ -27,6 +27,7 @@ LocalizationServer::LocalizationServer()
     declare_parameter("laser_scan_topic_", "scan");
     declare_parameter("odom_frame_id", "odom");
     declare_parameter("base_frame_id", "base_link");
+    declare_parameter("map_frame_id", "map");
     declare_parameter("tansform_tolerance", 0.0);
 }
 
@@ -46,6 +47,7 @@ LocalizationServer::on_configure(const rclcpp_lifecycle::State & state)
     get_parameter("laser_scan_topic", scan_topic_);
     get_parameter("odom_frame_id", odom_frame_id_);
     get_parameter("base_frame_id", base_frame_id_);
+    get_parameter("map_frame_id", map_frame_id_);
     get_parameter("transform_tolerance", transform_tolerance_);
 
     initTransforms();
@@ -215,8 +217,13 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
     // The estimated robot's pose in the global frame
     geometry_msgs::msg::PoseWithCovariance current_pose = solver_->solve(current_odom, *laser_scan);
 
+    geometry_msgs::msg::TransformStamped map_to_base_transform = poseToTransformStamped(current_pose);
+    map_to_base_transform.header.stamp = laser_scan->header.stamp;
+    map_to_base_transform.header.frame_id = map_frame_id_;
+    map_to_base_transform.child_frame_id = base_frame_id_;
+
     geometry_msgs::msg::TransformStamped map_to_odom_transform;
-    map_to_odom_transform = tf_buffer_->transform(odom_to_base_transform, odom_frame_id_);
+    map_to_odom_transform = tf_buffer_->transform(map_to_base_transform, odom_frame_id_);
 
     tf_broadcaster_->sendTransform(map_to_odom_transform);
 }
@@ -230,6 +237,18 @@ LocalizationServer::transformStampedToOdom(const geometry_msgs::msg::TransformSt
     odom.pose.pose.position.y = tf.transform.translation.y;
     odom.pose.pose.position.z = tf.transform.translation.z;
     odom.pose.pose.orientation = tf.transform.rotation;
+    return odom;
+}
+
+geometry_msgs::msg::TransformStamped
+LocalizationServer::poseToTransformStamped(const geometry_msgs::msg::PoseWithCovariance &pose)
+{
+    geometry_msgs::msg::TransformStamped tf;
+    tf.transform.translation.x = pose.pose.position.x;
+    tf.transform.translation.y = pose.pose.position.y;
+    tf.transform.translation.z = pose.pose.position.z;
+    tf.transform.rotation = pose.pose.orientation;
+    return tf;
 }
 
 } //nav2_localiztion

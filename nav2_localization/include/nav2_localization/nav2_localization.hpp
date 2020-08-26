@@ -100,6 +100,7 @@ protected:
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::string odom_frame_id_;
     std::string base_frame_id_;
+    std::string map_frame_id_;
     tf2::Duration transform_tolerance_;
 
     // Message filters
