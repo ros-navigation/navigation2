@@ -65,6 +65,7 @@ InflationLayer::InflationLayer()
   inflate_around_unknown_(false),
   cell_inflation_radius_(0),
   cached_cell_inflation_radius_(0),
+  resolution_(0),
   cache_length_(0),
   last_min_x_(std::numeric_limits<double>::lowest()),
   last_min_y_(std::numeric_limits<double>::lowest()),
