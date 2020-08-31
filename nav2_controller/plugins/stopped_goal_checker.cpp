@@ -51,20 +51,22 @@ StoppedGoalChecker::StoppedGoalChecker()
 }
 
 void StoppedGoalChecker::initialize(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
+  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
 {
-  SimpleGoalChecker::initialize(nh, plugin_name);
+  SimpleGoalChecker::initialize(parent, plugin_name);
+
+  auto node = parent.lock();
 
   nav2_util::declare_parameter_if_not_declared(
-    nh,
+    node,
     plugin_name + ".rot_stopped_velocity", rclcpp::ParameterValue(0.25));
   nav2_util::declare_parameter_if_not_declared(
-    nh,
+    node,
     plugin_name + ".trans_stopped_velocity", rclcpp::ParameterValue(0.25));
 
-  nh->get_parameter(plugin_name + ".rot_stopped_velocity", rot_stopped_velocity_);
-  nh->get_parameter(plugin_name + ".trans_stopped_velocity", trans_stopped_velocity_);
+  node->get_parameter(plugin_name + ".rot_stopped_velocity", rot_stopped_velocity_);
+  node->get_parameter(plugin_name + ".trans_stopped_velocity", trans_stopped_velocity_);
 }
 
 bool StoppedGoalChecker::isGoalReached(

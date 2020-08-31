@@ -58,7 +58,7 @@ public:
   SimpleGoalChecker();
   // Standard GoalChecker Interface
   void initialize(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name) override;
   void reset() override;
   bool isGoalReached(

@@ -42,7 +42,7 @@ Namespace: /parent_ns/local_ns
 | update_frequency | 5.0 | Costmap update frequency |
 | use_maximum | false | whether when combining costmaps to use the maximum cost or override |
 | plugins | {"static_layer", "obstacle_layer", "inflation_layer"} | List of mapped plugin names for parameter namespaces and names |
-| clearable_layers | ["obstacle_layer"] | Layers that may be cleared using the clearing service |
+| clearable_layers | ["obstacle_layer", "voxel_layer", "range_layer"] | Layers that may be cleared using the clearing service |
 
 **NOTE:** When `plugins` parameter is overridden, each plugin namespace defined in the list needs to have a `plugin` parameter defining the type of plugin to be loaded in the namespace.
 

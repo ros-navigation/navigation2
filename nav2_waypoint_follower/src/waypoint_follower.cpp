@@ -19,8 +19,7 @@
 #include <streambuf>
 #include <string>
 #include <utility>
-
-// TODO(stevemacenski): Add capability for reading in yaml file and executing
+#include <vector>
 
 namespace nav2_waypoint_follower
 {
@@ -36,7 +35,6 @@ WaypointFollower::WaypointFollower()
 
 WaypointFollower::~WaypointFollower()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn
@@ -47,9 +45,13 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
   stop_on_failure_ = get_parameter("stop_on_failure").as_bool();
   loop_rate_ = get_parameter("loop_rate").as_int();
 
-  // use suffix '_rclcpp_node' to keep parameter file consistency #1773
+  std::vector<std::string> new_args = rclcpp::NodeOptions().arguments();
+  new_args.push_back("--ros-args");
+  new_args.push_back("-r");
+  new_args.push_back(std::string("__node:=") + this->get_name() + "_rclcpp_node");
+  new_args.push_back("--");
   client_node_ = std::make_shared<rclcpp::Node>(
-    std::string(get_name()) + std::string("_rclcpp_node"));
+    "_", "", rclcpp::NodeOptions().arguments(new_args));
 
   nav_to_pose_client_ = rclcpp_action::create_client<ClientT>(
     client_node_, "navigate_to_pose");

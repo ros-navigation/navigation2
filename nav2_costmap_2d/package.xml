@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format ="3">
   <name>nav2_costmap_2d</name>
-  <version>0.4.1</version>
+  <version>0.4.3</version>
   <description>
     This package provides an implementation of a 2D costmap that takes in sensor
     data from the world, builds a 2D or 3D occupancy grid of the data (depending
@@ -37,6 +37,7 @@
   <depend>tf2_ros</depend>
   <depend>tf2_sensor_msgs</depend>
   <depend>visualization_msgs</depend>
+  <depend>angles</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

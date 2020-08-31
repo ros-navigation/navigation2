@@ -182,7 +182,7 @@ public:
 
   LayeredCostmap * getLayeredCostmap()
   {
-    return layered_costmap_;
+    return layered_costmap_.get();
   }
 
   /** @brief Returns the current padded footprint as a geometry_msgs::msg::Polygon. */
@@ -254,7 +254,7 @@ protected:
   // Publishers and subscribers
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
     footprint_pub_;
-  Costmap2DPublisher * costmap_publisher_{nullptr};
+  std::unique_ptr<Costmap2DPublisher> costmap_publisher_{nullptr};
 
   rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
@@ -263,7 +263,7 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-  LayeredCostmap * layered_costmap_{nullptr};
+  std::unique_ptr<LayeredCostmap> layered_costmap_{nullptr};
   std::string name_;
   std::string parent_namespace_;
   void mapUpdateLoop(double frequency);

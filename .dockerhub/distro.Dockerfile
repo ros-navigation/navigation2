@@ -6,14 +6,14 @@
 #
 # Example build command:
 # export DOCKER_BUILDKIT=1
-# export FROM_IMAGE="ros:eloquent"
+# export FROM_IMAGE="ros:foxy"
 # export OVERLAY_MIXINS="release ccache"
-# docker build -t nav2:release_branch \
+# docker build -t nav2:foxy \
 #   --build-arg FROM_IMAGE \
 #   --build-arg OVERLAY_MIXINS \
-#   -f release_branch.Dockerfile ./
+#   -f distro.Dockerfile ../
 
-ARG FROM_IMAGE=ros:eloquent
+ARG FROM_IMAGE=ros:foxy
 ARG OVERLAY_WS=/opt/overlay_ws
 
 # multi-stage for caching
@@ -43,6 +43,7 @@ RUN mkdir -p /tmp/opt && \
 
 # multi-stage for building
 FROM $FROM_IMAGE AS builder
+ARG DEBIAN_FRONTEND=noninteractive
 
 # edit apt for caching
 RUN cp /etc/apt/apt.conf.d/docker-clean /etc/apt/ && \
@@ -88,15 +89,13 @@ RUN sed --in-place \
       's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
       /ros_entrypoint.sh
 
-# ARG RUN_TESTS
-# ARG FAIL_ON_TEST_FAILURE
-# RUN if [ -z "$RUN_TESTS" ]; then \
-#         colcon test \
-#           --mixin $OVERLAY_MIXINS \
-#           --ctest-args --test-regex "test_.*"; \
-#         if [ -z "$FAIL_ON_TEST_FAILURE" ]; then \
-#             colcon test-result; \
-#         else \
-#             colcon test-result || true; \
-#         fi \
-#     fi
+# test overlay build
+ARG RUN_TESTS
+ARG FAIL_ON_TEST_FAILURE=Ture
+RUN if [ -n "$RUN_TESTS" ]; then \
+        . $OVERLAY_WS/install/setup.sh && \
+        colcon test \
+          --mixin $OVERLAY_MIXINS \
+        && colcon test-result \
+          || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
+    fi

@@ -22,7 +22,7 @@ The `nav2_bringup` package is an example bringup system for Navigation2 applicat
 
     ```sudo apt-get install ros-<ros2-distro>-gazebo*```
 * A Gazebo world for simulating the robot ([Gazebo tutorials](http://gazebosim.org/tutorials?tut=quick_start))
-* A map of that world saved to a map.pgm and map.yaml ([ROS Navigation Tutorials](https://github.com/ros-planning/navigation2/tree/master/doc/use_cases))
+* A map of that world saved to a map.pgm and map.yaml ([ROS Navigation Tutorials](https://github.com/ros-planning/navigation2/tree/main/doc/use_cases))
 
 ### Terminal 1: Launch Gazebo
 
@@ -109,7 +109,7 @@ ros2 launch nav2_bringup multi_tb3_simulation_launch.py <settings>
 
 * Learn more about how to use Navigation 2 with SLAM to create maps;
 
-    - [Navigation 2 with SLAM](https://github.com/ros-planning/navigation2/blob/master/doc/use_cases/navigation_with_slam.md)
+    - [Navigation 2 with SLAM](https://github.com/ros-planning/navigation2/blob/main/doc/use_cases/navigation_with_slam.md)
 
 * _Please note that currently, nav2_bringup works if you provide a map file. However, providing a map is not required to use Navigation2. Navigation2 can be configured to use the costmaps to navigate in an area without using a map file_
 
