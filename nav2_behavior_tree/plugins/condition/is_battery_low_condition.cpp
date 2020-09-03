@@ -26,10 +26,12 @@ IsBatteryLowCondition::IsBatteryLowCondition(
 : BT::ConditionNode(condition_name, conf),
   battery_topic_("/battery_status"),
   min_battery_(0.0),
+  is_percentage_(false),
   is_battery_low_(false)
 {
   getInput("min_battery", min_battery_);
   getInput("battery_topic", battery_topic_);
+  getInput("is_percentage", is_percentage_);
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   battery_sub_ = node_->create_subscription<sensor_msgs::msg::BatteryState>(
     battery_topic_,
@@ -49,7 +51,11 @@ BT::NodeStatus IsBatteryLowCondition::tick()
 void IsBatteryLowCondition::batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(mutex_);
-  is_battery_low_ = msg->percentage <= min_battery_;
+  if (is_percentage_) {
+    is_battery_low_ = msg->percentage <= min_battery_;
+  } else {
+    is_battery_low_ = msg->voltage <= min_battery_;
+  }
 }
 
 }  // namespace nav2_behavior_tree
