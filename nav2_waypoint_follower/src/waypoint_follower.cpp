@@ -127,7 +127,8 @@ WaypointFollower::followWaypoints()
     get_logger(), "Received follow waypoint request with %i waypoints.",
     static_cast<int>(goal->poses.size()));
 
-  if (goal->poses.size()) {
+  if (goal->poses.size() == 0) {
+    action_server_->terminate_all();
     return;
   }
 
