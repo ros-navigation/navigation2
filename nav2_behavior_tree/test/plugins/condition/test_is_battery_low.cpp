@@ -43,7 +43,7 @@ public:
     factory_->registerNodeType<nav2_behavior_tree::IsBatteryLowCondition>("IsBatteryLow");
 
     battery_pub_ = node_->create_publisher<std_msgs::msg::Float64>(
-      "/battery",
+      "/battery_status",
       rclcpp::SystemDefaultsQoS());
   }
 
@@ -75,29 +75,29 @@ TEST_F(IsBatteryLowConditionTestFixture, test_behavior)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <IsBatteryLow min_battery="3.0" battery_topic="/battery"/>
+            <IsBatteryLow min_battery="50.0" battery_topic="/battery_status"/>
         </BehaviorTree>
       </root>)";
 
   auto tree = factory_->createTreeFromText(xml_txt, config_->blackboard);
 
   std_msgs::msg::Float64 battery_msg;
-  battery_msg.data = 5.0;
+  battery_msg.data = 100.0;
   battery_pub_->publish(battery_msg);
   rclcpp::spin_some(node_);
   EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::FAILURE);
 
-  battery_msg.data = 3.0;
+  battery_msg.data = 50.0;
   battery_pub_->publish(battery_msg);
   rclcpp::spin_some(node_);
   EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::SUCCESS);
 
-  battery_msg.data = 2.0;
+  battery_msg.data = 51.0;
   battery_pub_->publish(battery_msg);
   rclcpp::spin_some(node_);
   EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::SUCCESS);
 
-  battery_msg.data = 4.0;
+  battery_msg.data = 0.0;
   battery_pub_->publish(battery_msg);
   rclcpp::spin_some(node_);
   EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::FAILURE);

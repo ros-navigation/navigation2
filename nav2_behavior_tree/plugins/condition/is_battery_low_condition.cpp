@@ -24,7 +24,7 @@ IsBatteryLowCondition::IsBatteryLowCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  battery_topic_("/battery"),
+  battery_topic_("/battery_status"),
   min_battery_(0.0),
   is_battery_low_(false)
 {

@@ -40,9 +40,9 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("min_battery", "Minimum battery voltage"),
+      BT::InputPort<double>("min_battery", "Minimum battery percentage"),
       BT::InputPort<std::string>(
-        "battery_topic", std::string("/battery"), "Battery topic")
+        "battery_topic", std::string("/battery_status"), "Battery topic")
     };
   }
 
