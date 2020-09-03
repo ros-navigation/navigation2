@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO(AlexeyMerzlyakov): This dummy info publisher should be moved
+// to nav2_system_tests/src/costmap_filters after Semantic Map Server
+// having the same functionality will be developed.
+
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
