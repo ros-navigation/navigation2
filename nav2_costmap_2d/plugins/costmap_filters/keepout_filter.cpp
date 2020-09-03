@@ -74,6 +74,15 @@ void KeepoutFilter::filterInfoCallback(
       filter_info_topic_.c_str());
     mask_sub_.reset();
   }
+
+  // Checking that base and multiplier are set to their default values
+  if (msg->base != BASE_DEFAULT or msg->multiplier != MULTIPLIER_DEFAULT) {
+    RCLCPP_ERROR(
+      node_->get_logger(),
+      "base and multiplier in ConstmapFilterInfo should be set to their default values (%d and %d)",
+      BASE_DEFAULT, MULTIPLIER_DEFAULT);
+  }
+
   mask_topic_ = msg->map_mask_topic;
 
   // Setting new map mask subscriber
