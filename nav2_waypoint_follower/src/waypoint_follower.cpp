@@ -128,7 +128,7 @@ WaypointFollower::followWaypoints()
     static_cast<int>(goal->poses.size()));
 
   if (goal->poses.size() == 0) {
-    action_server_->terminate_all();
+    action_server_->succeeded_current(result);
     return;
   }
 
