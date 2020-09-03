@@ -17,8 +17,9 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <chrono>
 
-#include "std_msgs/msg/float64.hpp"
+#include "sensor_msgs/msg/battery_state.hpp"
 
 #include "../../test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/is_battery_low_condition.hpp"
@@ -42,7 +43,7 @@ public:
 
     factory_->registerNodeType<nav2_behavior_tree::IsBatteryLowCondition>("IsBatteryLow");
 
-    battery_pub_ = node_->create_publisher<std_msgs::msg::Float64>(
+    battery_pub_ = node_->create_publisher<sensor_msgs::msg::BatteryState>(
       "/battery_status",
       rclcpp::SystemDefaultsQoS());
   }
@@ -60,13 +61,13 @@ protected:
   static rclcpp::Node::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
-  static rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr battery_pub_;
+  static rclcpp::Publisher<sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
 };
 
 rclcpp::Node::SharedPtr IsBatteryLowConditionTestFixture::node_ = nullptr;
 BT::NodeConfiguration * IsBatteryLowConditionTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> IsBatteryLowConditionTestFixture::factory_ = nullptr;
-rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr
+rclcpp::Publisher<sensor_msgs::msg::BatteryState>::SharedPtr
 IsBatteryLowConditionTestFixture::battery_pub_ = nullptr;
 
 TEST_F(IsBatteryLowConditionTestFixture, test_behavior)
@@ -75,30 +76,34 @@ TEST_F(IsBatteryLowConditionTestFixture, test_behavior)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <IsBatteryLow min_battery="50.0" battery_topic="/battery_status"/>
+            <IsBatteryLow min_battery="0.5" battery_topic="/battery_status"/>
         </BehaviorTree>
       </root>)";
 
   auto tree = factory_->createTreeFromText(xml_txt, config_->blackboard);
 
-  std_msgs::msg::Float64 battery_msg;
-  battery_msg.data = 100.0;
+  sensor_msgs::msg::BatteryState battery_msg;
+  battery_msg.percentage = 1.0;
   battery_pub_->publish(battery_msg);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
   rclcpp::spin_some(node_);
   EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::FAILURE);
 
-  battery_msg.data = 50.0;
+  battery_msg.percentage = 0.49;
   battery_pub_->publish(battery_msg);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
   rclcpp::spin_some(node_);
   EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::SUCCESS);
 
-  battery_msg.data = 51.0;
+  battery_msg.percentage = 0.51;
   battery_pub_->publish(battery_msg);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
   rclcpp::spin_some(node_);
   EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::FAILURE);
 
-  battery_msg.data = 0.0;
+  battery_msg.percentage = 0.0;
   battery_pub_->publish(battery_msg);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
   rclcpp::spin_some(node_);
   EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::SUCCESS);
 }

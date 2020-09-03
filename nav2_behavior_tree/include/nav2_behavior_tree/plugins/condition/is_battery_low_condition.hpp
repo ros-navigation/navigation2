@@ -18,9 +18,10 @@
 
 #include <string>
 #include <memory>
+#include <mutex>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/float64.hpp"
+#include "sensor_msgs/msg/battery_state.hpp"
 #include "behaviortree_cpp_v3/condition_node.h"
 
 namespace nav2_behavior_tree
@@ -40,20 +41,21 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("min_battery", "Minimum battery percentage"),
+      BT::InputPort<double>("min_battery", "Minimum battery percentage on 0 to 1 range"),
       BT::InputPort<std::string>(
         "battery_topic", std::string("/battery_status"), "Battery topic")
     };
   }
 
 private:
-  void batteryCallback(std_msgs::msg::Float64::SharedPtr msg);
+  void batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg);
 
   rclcpp::Node::SharedPtr node_;
-  rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr battery_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
   std::string battery_topic_;
   double min_battery_;
   bool is_battery_low_;
+  std::mutex mutex_;
 };
 
 }  // namespace nav2_behavior_tree
