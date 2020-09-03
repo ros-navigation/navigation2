@@ -122,6 +122,11 @@ WaypointFollower::followWaypoints()
     get_logger(), "Received follow waypoint request with %i waypoints.",
     static_cast<int>(goal->poses.size()));
 
+  if (goal->poses.size() == 0) {
+    action_server_->succeeded_current(result);
+    return;
+  }
+
   rclcpp::Rate r(loop_rate_);
   uint32_t goal_index = 0;
   bool new_goal = true;
