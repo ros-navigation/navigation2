@@ -95,12 +95,12 @@ TEST_F(IsBatteryLowConditionTestFixture, test_behavior)
   battery_msg.data = 51.0;
   battery_pub_->publish(battery_msg);
   rclcpp::spin_some(node_);
-  EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::FAILURE);
 
   battery_msg.data = 0.0;
   battery_pub_->publish(battery_msg);
   rclcpp::spin_some(node_);
-  EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::SUCCESS);
 }
 
 int main(int argc, char ** argv)
