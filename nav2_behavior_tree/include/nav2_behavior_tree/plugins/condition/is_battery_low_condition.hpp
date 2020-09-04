@@ -41,11 +41,11 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("min_battery", "Minimum battery voltage/percentage"),
+      BT::InputPort<double>("min_battery", "Minimum battery percentage/voltage"),
       BT::InputPort<std::string>(
         "battery_topic", std::string("/battery_status"), "Battery topic"),
       BT::InputPort<bool>(
-        "is_percentage", false, "If specified minimum battery value is a percentage"),
+        "is_voltage", false, "If true voltage will be used to check for low battery"),
     };
   }
 
@@ -56,7 +56,7 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
   std::string battery_topic_;
   double min_battery_;
-  bool is_percentage_;
+  bool is_voltage_;
   bool is_battery_low_;
   std::mutex mutex_;
 };
