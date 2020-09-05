@@ -667,6 +667,14 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 
 ## Conditions
 
+### BT Node DistanceTraveled
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| distance | 1.0 | Distance in meters after which the node should return success |
+| global_frame | "map" | Reference frame |
+| robot_base_frame | "base_link" | Robot base frame |
+
 ### BT Node GoalReached
 
 | Input Port | Default | Description |
@@ -675,7 +683,21 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 | global_frame | "map" | Reference frame |
 | robot_base_frame | "base_link" | Robot base frame |
 
-### BT Node TransformAvailable (condition)
+### BT Node IsBatteryLow
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| min_battery | N/A | Minimum battery percentage/voltage |
+| battery_topic | "/battery_status" | Battery topic |
+| is_voltage | false | If true voltage will be used to check for low battery |
+
+### BT Node TimeExpired
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| seconds | 1.0 | Number of seconds after which node returns success |
+
+### BT Node TransformAvailable
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
