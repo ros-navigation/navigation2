@@ -24,6 +24,9 @@ import launch_ros.actions
 
 def generate_launch_description():
     # Parameters
+    # TODO(AlexeyMerzlyakov): pass it as LaunchConfiguration and convert its value
+    # to a string for unitilizing in ExecuteProcess()
+    # https://answers.ros.org/question/340705/access-launch-argument-in-launchfile-ros2/
     namespace = '/local_costmap'
     lifecycle_nodes = ['map_mask_server']
     mask_topic = 'map_mask'
