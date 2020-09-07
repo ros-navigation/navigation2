@@ -12,3 +12,8 @@ ament_add_gtest(costmap_convesion_test costmap_conversion_test.cpp)
 target_link_libraries(costmap_convesion_test
   nav2_costmap_2d_core
 )
+
+ament_add_gtest(declare_parameter_test declare_parameter_test.cpp)
+target_link_libraries(declare_parameter_test
+  nav2_costmap_2d_core
+)
