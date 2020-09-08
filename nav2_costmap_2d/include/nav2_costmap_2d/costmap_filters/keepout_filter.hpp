@@ -65,6 +65,8 @@ public:
 
   void resetFilter();
 
+  bool isActive();
+
 private:
   void filterInfoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg);
   void maskCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);

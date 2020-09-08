@@ -221,6 +221,15 @@ void KeepoutFilter::resetFilter()
   mask_sub_.reset();
 }
 
+bool KeepoutFilter::isActive()
+{
+  std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
+  if (mask_costmap_) {
+    return true;
+  }
+  return false;
+}
+
 }  // namespace nav2_costmap_2d
 
 #include "pluginlib/class_list_macros.hpp"
