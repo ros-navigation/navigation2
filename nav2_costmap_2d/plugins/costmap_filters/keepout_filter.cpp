@@ -166,11 +166,13 @@ void KeepoutFilter::process(
   // Calculating bounds corresponding to top-right window (2) corner
   int mg_max_x, mg_max_y;  // masger_grid indexes of top-right (2) corner
   // mask_costmap_ -> master_grid intexes conversion
-  wx = mask_costmap_->getOriginX() + mask_costmap_->getSizeInMetersX();
-  wy = mask_costmap_->getOriginY() + mask_costmap_->getSizeInMetersY();
+  wx = mask_costmap_->getOriginX() +
+    mask_costmap_->getSizeInCellsX() * mask_costmap_->getResolution() + half_cell_size;
+  wy = mask_costmap_->getOriginY() +
+    mask_costmap_->getSizeInCellsY() * mask_costmap_->getResolution() + half_cell_size;
   master_grid.worldToMapNoBounds(wx, wy, mg_max_x, mg_max_y);
   // Calculation of (2) corner bounds
-  if (mg_max_x < min_i || mg_max_y < min_j) {
+  if (mg_max_x <= min_i || mg_max_y <= min_j) {
     // There is no overlapping. Do nothing.
     return;
   }
