@@ -20,6 +20,8 @@
 #include <memory>
 #include <iomanip>
 
+#include "nav2_costmap_2d/cost_values.hpp"
+
 using namespace std::chrono_literals;
 
 namespace nav2_system_tests
@@ -206,6 +208,10 @@ bool FiltersTester::testPlan(
         // Goal is not reached, continue moving
         // printPath(path);
         pose = path.poses[1];
+        if (isInKeepout(pose.pose.position)) {
+          // Fail case: robot enters keepout area
+          return false;
+        }
         updateRobotPosition(pose.pose.position);
       } else {
         // Goal was sucessfully reached
@@ -217,6 +223,27 @@ bool FiltersTester::testPlan(
   } while (result);
 
   // Fail case: can not produce the path to the goal
+  return false;
+}
+
+bool FiltersTester::isInKeepout(const geometry_msgs::msg::Point & position)
+{
+  const double & x = position.x;
+  const double & y = position.y;
+
+  // Check Bar No.1 on keepout_mask.pgm:
+  if (isInBar(x, y, -4.0, 0.0, -1.7, 1.0)) {
+    RCLCPP_ERROR(get_logger(), "Position (%f,%f) belongs to keepout area no.1", x, y);
+    return true;
+  }
+
+  // Check Bar No.2 on keepout_mask.pgm:
+  if (isInBar(x, y, -1.7, -5.0, 5.0, 1.0)) {
+    RCLCPP_ERROR(get_logger(), "Position (%f,%f) belongs to keepout area no.2", x, y);
+    return true;
+  }
+
+  // Robot is not in the keepout area
   return false;
 }
 

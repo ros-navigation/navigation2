@@ -29,6 +29,9 @@
 namespace nav2_system_tests
 {
 
+// Zone tolerance parameter which is qeual to one cell size
+static constexpr double ZONE_TOLERANCE = 0.1;
+
 class FiltersTester : public nav2_util::LifecycleNode
 {
 public:
@@ -68,6 +71,22 @@ private:
   void startRobotTransform();
   void updateRobotPosition(const geometry_msgs::msg::Point & position);
   void publishRobotTransform();
+
+  // Returns true if (x, y) belongs to (x1, y1, x2, y2) bar, otherwise returns false
+  inline bool isInBar(
+    const double & x, const double & y,
+    const double & x1, const double & y1, const double & x2, const double & y2)
+  {
+    if (x > x1 + ZONE_TOLERANCE && y > y1 + ZONE_TOLERANCE &&
+      x < x2 - ZONE_TOLERANCE && y < y2 - ZONE_TOLERANCE)
+    {
+      return true;
+    }
+    return false;
+  }
+
+  // Returns true if position is inside keepout zone
+  bool isInKeepout(const geometry_msgs::msg::Point & position);
 
   // Check that planner could make a plan from start to end point
   bool checkPlan(
