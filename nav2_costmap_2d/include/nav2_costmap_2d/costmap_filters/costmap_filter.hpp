@@ -39,6 +39,7 @@
 #define NAV2_COSTMAP_2D__COSTMAP_FILTER_HPP_
 
 #include <string>
+#include <mutex>
 
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "nav2_costmap_2d/layer.hpp"

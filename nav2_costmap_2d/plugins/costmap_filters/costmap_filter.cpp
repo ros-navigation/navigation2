@@ -38,7 +38,6 @@
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 
 #include <exception>
-#include <mutex>
 
 namespace nav2_costmap_2d
 {
