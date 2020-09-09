@@ -50,13 +50,18 @@ void KeepoutFilter::initializeFilter(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   filter_info_topic_ = filter_info_topic;
   // Setting new costmap filter info subscriber
   RCLCPP_INFO(
-    node_->get_logger(),
+    node->get_logger(),
     "Subscribing to \"%s\" topic for filter info...",
     filter_info_topic.c_str());
-  filter_info_sub_ = node_->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
+  filter_info_sub_ = node->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
     filter_info_topic, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&KeepoutFilter::filterInfoCallback, this, std::placeholders::_1));
 }
@@ -66,10 +71,15 @@ void KeepoutFilter::filterInfoCallback(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   // Resetting previous subscriber each time when new costmap filter information arrives
   if (mask_sub_) {
     RCLCPP_WARN(
-      node_->get_logger(),
+      node->get_logger(),
       "New costmap filter info arrived from %s topic. Updating old filter info.",
       filter_info_topic_.c_str());
     mask_sub_.reset();
@@ -78,7 +88,7 @@ void KeepoutFilter::filterInfoCallback(
   // Checking that base and multiplier are set to their default values
   if (msg->base != BASE_DEFAULT or msg->multiplier != MULTIPLIER_DEFAULT) {
     RCLCPP_ERROR(
-      node_->get_logger(),
+      node->get_logger(),
       "base and multiplier in ConstmapFilterInfo should be set to their default values (%d and %d)",
       BASE_DEFAULT, MULTIPLIER_DEFAULT);
   }
@@ -87,10 +97,10 @@ void KeepoutFilter::filterInfoCallback(
 
   // Setting new map mask subscriber
   RCLCPP_INFO(
-    node_->get_logger(),
+    node->get_logger(),
     "Subscribing to \"%s\" topic for map mask...",
     msg->map_mask_topic.c_str());
-  mask_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
+  mask_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
     mask_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&KeepoutFilter::maskCallback, this, std::placeholders::_1));
 }
@@ -100,9 +110,14 @@ void KeepoutFilter::maskCallback(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   if (mask_costmap_) {
     RCLCPP_WARN(
-      node_->get_logger(),
+      node->get_logger(),
       "New map mask arrived from %s topic. Updating old map mask.",
       mask_topic_.c_str());
     mask_costmap_.reset();
@@ -119,10 +134,15 @@ void KeepoutFilter::process(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   if (!mask_costmap_) {
     // Show warning message every 2 seconds to not litter an output
     RCLCPP_WARN_THROTTLE(
-      node_->get_logger(), *(node_->get_clock()), 2000,
+      node->get_logger(), *(node->get_clock()), 2000,
       "Map mask was not received");
     return;
   }

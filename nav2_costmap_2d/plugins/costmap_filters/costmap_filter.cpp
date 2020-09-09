@@ -55,16 +55,21 @@ CostmapFilter::~CostmapFilter()
 
 void CostmapFilter::onInitialize()
 {
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   // Declare parameters
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("filter_info_topic");
 
   // Get parameters
-  node_->get_parameter(name_ + "." + "enabled", enabled_);
+  node->get_parameter(name_ + "." + "enabled", enabled_);
   try {
-    filter_info_topic_ = node_->get_parameter(name_ + "." + "filter_info_topic").as_string();
+    filter_info_topic_ = node->get_parameter(name_ + "." + "filter_info_topic").as_string();
   } catch (rclcpp::exceptions::ParameterNotDeclaredException & ex) {
-    RCLCPP_ERROR(node_->get_logger(), "filter_info_topic parameter is not set");
+    RCLCPP_ERROR(node->get_logger(), "filter_info_topic parameter is not set");
     throw ex;
   }
 }
