@@ -5,35 +5,33 @@
 namespace nav2_localization
 {
 
-geometry_msgs::msg::Pose DummyMotionSampler::getMostLikelyPose(
-        const nav_msgs::msg::Odometry& prev_odom,
-        const nav_msgs::msg::Odometry& curr_odom,
-        const geometry_msgs::msg::Pose& prev_pose)
+bool DiffDriveOdomMotionModel::SampleFrom(Sample<geometry_msgs::msg::TransformStamped>& one_sample, 
+    const SampleMthd method,
+    void * args) const
 {
-    geometry_msgs::msg::Pose dummy_pose{};
-    return dummy_pose;
+    return true;
 }
 
-void DummyMotionSampler::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
+void DiffDriveOdomMotionModel::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
 {
     node_ = node;
 }
 
-void DummyMotionSampler::activate()
+void DiffDriveOdomMotionModel::activate()
 {
 
 }
 
-void DummyMotionSampler::deactivate()
+void DiffDriveOdomMotionModel::deactivate()
 {
 
 }
 
-void DummyMotionSampler::cleanup()
+void DummyMotionDiffDriveOdomMotionModelSampler::cleanup()
 {
     
 }
 
 } // nav2_localization
 
-PLUGINLIB_EXPORT_CLASS(nav2_localization::DummyMotionSampler, nav2_localization::SampleMotionModel)
+PLUGINLIB_EXPORT_CLASS(nav2_localization::DiffDriveOdomMotionModel, nav2_localization::SampleMotionModel)

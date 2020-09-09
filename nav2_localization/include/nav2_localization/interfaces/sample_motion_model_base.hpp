@@ -4,6 +4,10 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include <pdf/conditionalpdf.h>
+
+#define SYSMODEL_NUMCONDARGUMENTS_MOBILE 3
+#define SYSMODEL_DIMENSION_MOBILE        3
 
 namespace nav2_localization
 {
@@ -12,7 +16,8 @@ namespace nav2_localization
  * @class SampleMotionModel
  * @brief Abstract interface for sample motion model to adhere to with pluginlib
  */
-class SampleMotionModel
+class SampleMotionModel : public BFL::ConditionalPdf
+    <geometry_msgs::msg::TransformStamped, geometry_msgs::msg::Pose>(SYSMODEL_DIMENSION_MOBILE,SYSMODEL_NUMCONDARGUMENTS_MOBILE)
 {   
 public:
     SampleMotionModel(){}
@@ -26,10 +31,10 @@ public:
      * @param prev_pose The pose at the previous time step
      * @return most likely current pose
      */
-    virtual geometry_msgs::msg::Pose getMostLikelyPose(
-        const nav_msgs::msg::Odometry& prev_odom,
-        const nav_msgs::msg::Odometry& curr_odom,
-        const geometry_msgs::msg::Pose& prev_pose) = 0;
+    // virtual geometry_msgs::msg::Pose getMostLikelyPose(
+    //     const nav_msgs::msg::Odometry& prev_odom,
+    //     const nav_msgs::msg::Odometry& curr_odom,
+    //     const geometry_msgs::msg::Pose& prev_pose) = 0;
 
     virtual void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) = 0;
 

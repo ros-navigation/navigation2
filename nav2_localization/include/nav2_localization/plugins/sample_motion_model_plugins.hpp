@@ -8,15 +8,14 @@
 
 namespace nav2_localization
 {
-class DummyMotionSampler : public nav2_localization::SampleMotionModel
+class DiffDriveOdomMotionModel : public nav2_localization::SampleMotionModel
 {
 public:
-    DummyMotionSampler(){}
+    DiffDriveOdomMotionModel(){}
 
-    geometry_msgs::msg::Pose getMostLikelyPose(
-        const nav_msgs::msg::Odometry& prev_odom,
-        const nav_msgs::msg::Odometry& curr_odom,
-        const geometry_msgs::msg::Pose& prev_pose);
+    bool SampleFrom(Sample<geometry_msgs::msg::TransformStamped>& one_sample,
+        const SampleMthd method = SampleMthd::DEFAULT,
+        void * args = NULL) const;
 
     void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
     void activate();
