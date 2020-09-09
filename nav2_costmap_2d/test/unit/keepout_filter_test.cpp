@@ -159,18 +159,20 @@ public:
   ~TestNode() {}
 
 protected:
-  void createMaps();
+  void createMaps(unsigned char master_value, int8_t mask_value);
   void publishMaps();
   void createKeepoutFilter();
   void reset();
-  void verifyMasterGrid();
+  void testKeepoutFilter(unsigned char free_value, unsigned char keepout_value);
 
   std::shared_ptr<nav2_costmap_2d::KeepoutFilter> keepout_filter_;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> master_grid_;
 
-  std::vector<Point> lethal_points_;
+  std::vector<Point> keepout_points_;
 
 private:
+  void verifyMasterGrid(unsigned char free_value, unsigned char keepout_value);
+
   nav2_util::LifecycleNode::SharedPtr node_;
 
   std::shared_ptr<nav_msgs::msg::OccupancyGrid> mask_;
@@ -179,7 +181,7 @@ private:
   std::shared_ptr<MaskPublisher> mask_publisher_;
 };
 
-void TestNode::createMaps()
+void TestNode::createMaps(unsigned char master_value, int8_t mask_value)
 {
   // Make map and mask overlapping as follows:
   //
@@ -199,7 +201,7 @@ void TestNode::createMaps()
 
   // Create master_grid_
   master_grid_ = std::make_shared<nav2_costmap_2d::Costmap2D>(
-    width, height, resolution, 0.0, 0.0, nav2_costmap_2d::FREE_SPACE);
+    width, height, resolution, 0.0, 0.0, master_value);
 
   // Create mask_
   mask_ = std::make_shared<nav_msgs::msg::OccupancyGrid>();
@@ -213,7 +215,7 @@ void TestNode::createMaps()
   mask_->info.origin.orientation.y = 0.0;
   mask_->info.origin.orientation.z = 0.0;
   mask_->info.origin.orientation.w = 1.0;
-  mask_->data.resize(width * height, nav2_util::OCC_GRID_OCCUPIED);
+  mask_->data.resize(width * height, mask_value);
 }
 
 void TestNode::publishMaps()
@@ -239,10 +241,10 @@ void TestNode::reset()
   mask_publisher_.reset();
   keepout_filter_.reset();
   node_.reset();
-  lethal_points_.clear();
+  keepout_points_.clear();
 }
 
-void TestNode::verifyMasterGrid()
+void TestNode::verifyMasterGrid(unsigned char free_value, unsigned char keepout_value)
 {
   unsigned int x, y;
   bool is_checked;
@@ -250,17 +252,17 @@ void TestNode::verifyMasterGrid()
   for (y = 0; y < master_grid_->getSizeInCellsY(); y++) {
     for (x = 0; x < master_grid_->getSizeInCellsX(); x++) {
       is_checked = false;
-      for (std::vector<Point>::iterator it = lethal_points_.begin();
-        it != lethal_points_.end(); it++)
+      for (std::vector<Point>::iterator it = keepout_points_.begin();
+        it != keepout_points_.end(); it++)
       {
         if (x == it->x && y == it->y) {
-          EXPECT_EQ(master_grid_->getCost(x, y), nav2_costmap_2d::LETHAL_OBSTACLE);
+          EXPECT_EQ(master_grid_->getCost(x, y), keepout_value);
           is_checked = true;
           break;
         }
       }
       if (!is_checked) {
-        EXPECT_EQ(master_grid_->getCost(x, y), nav2_costmap_2d::FREE_SPACE);
+        EXPECT_EQ(master_grid_->getCost(x, y), free_value);
       }
     }
   }
@@ -288,32 +290,57 @@ void TestNode::createKeepoutFilter()
   }
 }
 
-TEST_F(TestNode, testDifferentWindows)
+void TestNode::testKeepoutFilter(unsigned char free_value, unsigned char keepout_value)
 {
-  // Initilize test system
-  createMaps();
-  publishMaps();
-  createKeepoutFilter();
-
   geometry_msgs::msg::Pose2D pose;
   // Intersection window: added 4 points
   keepout_filter_->process(*master_grid_, 1, 3, 3, 6, pose);
-  lethal_points_.push_back(Point{1, 3});
-  lethal_points_.push_back(Point{2, 3});
-  lethal_points_.push_back(Point{1, 4});
-  lethal_points_.push_back(Point{2, 4});
-  verifyMasterGrid();
+  keepout_points_.push_back(Point{1, 3});
+  keepout_points_.push_back(Point{2, 3});
+  keepout_points_.push_back(Point{1, 4});
+  keepout_points_.push_back(Point{2, 4});
+  verifyMasterGrid(free_value, keepout_value);
   // Two windows outside on the horisontal/vertical edge: no new points added
   keepout_filter_->process(*master_grid_, 1, 5, 3, 6, pose);
   keepout_filter_->process(*master_grid_, 5, 1, 6, 3, pose);
-  verifyMasterGrid();
+  verifyMasterGrid(free_value, keepout_value);
   // Corner window: added 1 point
   keepout_filter_->process(*master_grid_, 4, 4, 5, 5, pose);
-  lethal_points_.push_back(Point{4, 4});
-  verifyMasterGrid();
+  keepout_points_.push_back(Point{4, 4});
+  verifyMasterGrid(free_value, keepout_value);
   // Outside window: no new points added
   keepout_filter_->process(*master_grid_, 7, 7, 9, 9, pose);
-  verifyMasterGrid();
+  verifyMasterGrid(free_value, keepout_value);
+}
+
+TEST_F(TestNode, testFreeMasterLethalKeepout)
+{
+  // Initilize test system
+  createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_OCCUPIED);
+  publishMaps();
+  createKeepoutFilter();
+
+  // Test KeepoutFilter
+  testKeepoutFilter(nav2_costmap_2d::FREE_SPACE, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // Clean-up
+  keepout_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testUnknownMasterNonLethalKeepout)
+{
+  // Initilize test system
+  createMaps(
+    nav2_costmap_2d::NO_INFORMATION,
+    (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE) / 2);
+  publishMaps();
+  createKeepoutFilter();
+
+  // Test KeepoutFilter
+  testKeepoutFilter(
+    nav2_costmap_2d::NO_INFORMATION,
+    (nav2_costmap_2d::LETHAL_OBSTACLE - nav2_costmap_2d::FREE_SPACE) / 2);
 
   // Clean-up
   keepout_filter_->resetFilter();
