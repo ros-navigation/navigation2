@@ -5,13 +5,14 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include <random>
 
 namespace nav2_localization
 {
 class DiffDriveOdomMotionModel : public nav2_localization::SampleMotionModel
 {
 public:
-    DiffDriveOdomMotionModel(){}
+    DiffDriveOdomMotionModel() {}
 
     bool SampleFrom(Sample<geometry_msgs::msg::TransformStamped>& one_sample,
         const SampleMthd method = SampleMthd::DEFAULT,
@@ -21,6 +22,14 @@ public:
     void activate();
     void deactivate();
     void cleanup();
+
+private:
+    // Noise parameters
+    double alpha1_;
+    double alpha2_;
+    double alpha3_;
+    double alpha4_;
+    std::default_random_engine generator_;
 };
 } // nav2_localization
 

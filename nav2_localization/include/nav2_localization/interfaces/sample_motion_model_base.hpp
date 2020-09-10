@@ -1,13 +1,14 @@
 #ifndef NAV2_LOCALIZATION__SAMPLE_MOTION_MODEL_BASE_HPP_
 #define NAV2_LOCALIZATION__SAMPLE_MOTION_MODEL_BASE_HPP_
 
-#include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_localization/action.hpp"
 #include <pdf/conditionalpdf.h>
 
-#define SYSMODEL_NUMCONDARGUMENTS_MOBILE 3
-#define SYSMODEL_DIMENSION_MOBILE        3
+#define SYSMODEL_NUMCONDARGUMENTS_MOBILE 1
+#define SYSMODEL_DIMENSION_MOBILE        2
 
 namespace nav2_localization
 {
@@ -17,7 +18,7 @@ namespace nav2_localization
  * @brief Abstract interface for sample motion model to adhere to with pluginlib
  */
 class SampleMotionModel : public BFL::ConditionalPdf
-    <geometry_msgs::msg::TransformStamped, geometry_msgs::msg::Pose>(SYSMODEL_DIMENSION_MOBILE,SYSMODEL_NUMCONDARGUMENTS_MOBILE)
+    <nav2_localization::Action, geometry_msgs::msg::TransformStamped>(SYSMODEL_DIMENSION_MOBILE,SYSMODEL_NUMCONDARGUMENTS_MOBILE)
 {   
 public:
     SampleMotionModel(){}
@@ -45,12 +46,6 @@ public:
     virtual void cleanup() = 0;
 
 protected:
-    // Noise parameters
-    double alpha1_;
-    double alpha2_;
-    double alpha3_;
-    double alpha4_;
-    double alpha5_;
     rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 };  
 } // nav2_localization
