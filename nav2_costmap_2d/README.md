@@ -13,7 +13,7 @@ general ROS2 community. A proposal temporary replacement has been submitted as a
 ## How to configure using Voxel Layer plugin:
 By default, the navigation stack uses the _Obstacle Layer_ to avoid obstacles in 2D. The _Voxel Layer_ allows for detecting obstacles in 3D using Pointcloud2 data. It requires Pointcloud2 data being published on some topic. For simulation, a Gazebo model of the robot with depth camera enabled will publish a pointcloud topic.
 
-The Voxel Layer plugin can be used to update the local costmap, glocal costmap or both, depending on how you define it in the `nav2_params.yaml` file in the nav2_bringup directory. The voxel layer plugin has to be added to the list of ```plugin_names``` and ```plugin_types``` in the global/local costmap scopes in the param file. If these are not defined in the param file, the default plugins set in nav2_costmap_2d will be used.
+The Voxel Layer plugin can be used to update the local costmap, glocal costmap or both, depending on how you define it in the `nav2_params.yaml` file in the nav2_bringup directory. The voxel layer plugin has to be added to the list of ```plugins``` and its ```plugin``` type should be correctly specified in the global/local costmap scopes in the param file. If these are not defined in the param file, the default plugins set in nav2_costmap_2d will be used.
 
 Inside each costmap layer (voxel, obstacle, etc) define `observation_sources` param. Here you can define multiple sources to be used with the layer. The param configuration example below shows the way you can configure costmaps to use voxel layer.
 
@@ -24,9 +24,9 @@ Example param configuration snippet for enabling voxel layer in local costmap is
 local_costmap:
   local_costmap:
     ros__parameters:
-      plugin_names: ["obstacle_layer", "voxel_layer", "inflation_layer"]
-      plugin_types: ["nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::VoxelLayer", "nav2_costmap_2d::InflationLayer"]
+      plugins: ["obstacle_layer", "voxel_layer", "inflation_layer"]
       obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
         observation_sources: scan
         scan:
@@ -36,6 +36,7 @@ local_costmap:
           marking: True
           data_type: "LaserScan"
       voxel_layer:
+        plugin: nav2_costmap_2d::VoxelLayer
         enabled: True
         publish_voxel_map: True
         origin_z: 0.0
@@ -74,9 +75,9 @@ For example, to add laser scan and pointcloud as two different sources of inputs
 local_costmap:
   local_costmap:
     ros__parameters:
-      plugin_names: ["obstacle_layer", "inflation_layer"]
-      plugin_types: ["nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"]
+      plugins: ["obstacle_layer", "inflation_layer"]
       obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
         observation_sources: scan pointcloud
         scan:
@@ -87,6 +88,60 @@ local_costmap:
           data_type: "PointCloud2"
 ```
 In order to add multiple sources to the global costmap, follow the same procedure shown in the example above, but now adding the sources and their specific params under the `global_costmap` scope.
+
+## Costmap Filters
+
+### Overview
+
+Costmap Filters - is a costmap layer-based instrument which provides an ability to apply on map spatial-dependent raster objects drawn on map-masks. These objects are used in algorithms when filling costmaps in order to allow robots to change their trajectory, behavior or speed when them (robots) enters/leaves an area marked in a map masks. Costmap Filters consists from `CostmapFilter` class which is a basis for its inherited filter plugins:
+
+- `KeepoutFilter`: keep-out/safety zones filter plugin.
+- `SpeedFilter`: slow/speed-restricted areas filter.
+- Preferred lanes in industries. This plugin is covered by `KeepoutFilter` (see discussion in https://github.com/ros-planning/navigation2/issues/1522 for more details).
+
+`CostmapFilter` is incorporating much common of these plugins in order to avoid boilerplate work on these plugins and further filters development.
+
+Each costmap filter subscribes to the following topics: `nav2_msgs/msg/CostmapFilterInfo` having the necessary information for loaded costmap filter connected with it `nav_msgs/msg/OccupancyGrid` filter map topic. Additionally, `SpeedFilter` publishes `nav2_msgs/msg/MaxSpeed` messages for local planner restricting the speed of robot when it is necessary.
+
+### How to use Costmap Filters
+
+1. Prepare map mask in the same way as any other PGM/PNG/BMP map made. For `KeepoutFilter` the passibility is proportional to color intesity (darker color means more impassable in the area). Black color means keep-out zone where robot will never enter or pass throuh. Note, that map itself and map mask might have different sizes, origin and resolution.
+
+2. CostmapFilters are Costamp2D plugins. Add `KeepoutFilter` or `SpeedFilter` plugin in params of local and/or global costmap.
+
+For the `KeepoutFilter` it could be:
+```
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      ...
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer", "keepout_filter"]
+      ...
+```
+
+Also, `keepout_filter` should have the following parameters defined:
+- `plugin`: type of plugin
+- `filter_info_topic`: filter info topic name
+```
+      ...
+      keepout_filter:
+        plugin: "nav2_costmap_2d::KeepoutFilter"
+        enabled: True
+        filter_info_topic: "costmap_filter_info"
+```
+
+NOTE: Enabling `KeepoutFilter` for `global_costmap` only will prevent path planner to build path plan bypassing keepout zones. Enabling `KeepoutFilter` for `local_costmap` only will cause robot won't go into keepout zones even if path planner makes the path through keepout zones. So, the best practive is to enable `KeepoutFilter` for both global and local costmaps.
+
+3. Filter info topic should be published by Semantic Map Server. Until this server will be developed, dummy filter info publisher was made (placed in `nav2_costmap_2d/test/costmap_filter_info/` directory). Open its `costmap_filter_info.launch.py` file and ensure that proper `namespace` is set. Then launch dummy info publisher:
+```
+ros2 launch src/navigation2/nav2_costmap_2d/test/test_launch_files/costmap_filter_info.launch.py
+```
+It will launch dummy info publisher and map server set to mask publishing.
+
+4. Then run navigation2 stack as usual and check the filter is working:
+```
+ros2 launch nav2_bringup tb3_simulation_launch.py
+```
 
 ## Future Plans
 - Conceptually, the costmap_2d model acts as a world model of what is known from the map, sensor, robot pose, etc. We'd like

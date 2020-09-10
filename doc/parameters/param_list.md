@@ -72,7 +72,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## static_layer plugin
 
-* `<static layer>`: Name corresponding to the `nav2_costmap_2d::StaticLayer` plugin. This name gets defined in `plugin_names`, default value is `static_layer`
+* `<static layer>`: Name corresponding to the `nav2_costmap_2d::StaticLayer` plugin. This name gets defined in `plugins`, default value is `static_layer`
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -84,7 +84,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## inflation_layer plugin
 
-* `<inflation layer>`: Name corresponding to the `nav2_costmap_2d::InflationLayer` plugin. This name gets defined in `plugin_names`, default value is `inflation_layer`
+* `<inflation layer>`: Name corresponding to the `nav2_costmap_2d::InflationLayer` plugin. This name gets defined in `plugins`, default value is `inflation_layer`
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -96,7 +96,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## obstacle_layer plugin
 
-* `<obstacle layer>`: Name corresponding to the `nav2_costmap_2d::ObstacleLayer` plugin. This name gets defined in `plugin_names`, default value is `obstacle_layer`
+* `<obstacle layer>`: Name corresponding to the `nav2_costmap_2d::ObstacleLayer` plugin. This name gets defined in `plugins`, default value is `obstacle_layer`
 * `<data source>`: Name of a source provided in ``<obstacle layer>`.observation_sources`
 
 | Parameter | Default | Description |
@@ -121,7 +121,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## range_sensor_layer plugin
 
-* `<range layer>`: Name corresponding to the `nav2_costmap_2d::RangeSensorLayer` plugin. This name gets defined in `plugin_names`.
+* `<range layer>`: Name corresponding to the `nav2_costmap_2d::RangeSensorLayer` plugin. This name gets defined in `plugins`.
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -137,10 +137,10 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## voxel_layer plugin
 
-* `<voxel layer>`: Name corresponding to the `nav2_costmap_2d::VoxelLayer` plugin. This name gets defined in `plugin_names`
+* `<voxel layer>`: Name corresponding to the `nav2_costmap_2d::VoxelLayer` plugin. This name gets defined in `plugins`
 * `<data source>`: Name of a source provided in `<voxel layer>`.observation_sources`
 
-*Note*: These parameters will only get declared if a `<voxel layer>` name such as `voxel_layer` is appended to `plugin_names` parameter and `"nav2_costmap_2d::VoxelLayer"` is appended to `plugin_types` parameter.
+*Note*: These parameters will only get declared if a `<voxel layer>` name such as `voxel_layer` is appended to `plugins` parameter and `"nav2_costmap_2d::VoxelLayer"` is appended to its `plugin` name parameter.
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -167,6 +167,17 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | `<data source>`.clearing | false | Whether source should raytrace clear in costmap |
 | `<data source>`.obstacle_range | 2.5 | Maximum range to mark obstacles in costmap |
 | `<data source>`.raytrace_range | 3.0 | Maximum range to raytrace clear obstacles from costmap | 
+
+## costmap filters plugins
+
+* `<filter name>`: Name corresponding to the `nav2_costmap_2d::KeepoutFilter` plugin. This name gets defined in `plugins`.
+
+There are following parameters common for all costmap filters plugins:
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<filter name>`.enabled | true | Whether it is enabled |
+| `<filter name>`.filter_info_topic | N/A | Name of the CostmapFilterInfo topic having filter-related information |
 
 # controller_server
 
@@ -423,13 +434,14 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 
 # map_server
 
-## map_server
+## map_saver
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | save_map_timeout | 2000 | Timeout to attempt to save map with (ms) |
 | free_thresh_default | 0.25 | Free space maximum threshold for occupancy grid |
 | occupied_thresh_default | 0.65 | Occupied space minimum threshhold for occupancy grid |
+| map_subscribe_transient_local | true | Use transient local QoS profile for incoming map subscription |
 
 ## map_server
 
