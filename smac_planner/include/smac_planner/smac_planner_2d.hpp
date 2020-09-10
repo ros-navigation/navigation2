@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef SMAC_PLANNER__SMAC_PLANNER_HPP_
-#define SMAC_PLANNER__SMAC_PLANNER_HPP_
+#ifndef SMAC_PLANNER__SMAC_PLANNER_2D_HPP_
+#define SMAC_PLANNER__SMAC_PLANNER_2D_HPP_
 
 #include <memory>
 #include <vector>
@@ -36,18 +36,18 @@
 namespace smac_planner
 {
 
-class SmacPlanner : public nav2_core::GlobalPlanner
+class SmacPlanner2D : public nav2_core::GlobalPlanner
 {
 public:
   /**
    * @brief constructor
    */
-  SmacPlanner();
+  SmacPlanner2D();
 
   /**
    * @brief destructor
    */
-  ~SmacPlanner();
+  ~SmacPlanner2D();
 
   /**
    * @brief Configuring plugin
@@ -97,20 +97,13 @@ public:
     const float & mx, const float & my, const nav2_costmap_2d::Costmap2D * costmap);
 
   /**
-   * @brief Create quaternion from A* coord bins
-   * @param theta continuous bin coordinates angle
-   * @return quaternion orientation in map frame
-   */
-  geometry_msgs::msg::Quaternion getWorldOrientation(const float & theta);
-
-  /**
    * @brief Remove hooking at end of paths
    * @param path Path to remove hooking from
    */
   void removeHook(std::vector<Eigen::Vector2d> & path);
 
 protected:
-  std::unique_ptr<AStarAlgorithm<NodeSE2>> _a_star;
+  std::unique_ptr<AStarAlgorithm<Node2D>> _a_star;
   std::unique_ptr<Smoother> _smoother;
   std::unique_ptr<Upsampler> _upsampler;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
@@ -119,8 +112,6 @@ protected:
   std::string _global_frame, _name;
   float _tolerance;
   int _downsampling_factor;
-  unsigned int _angle_quantizations;
-  double _angle_bin_size;
   bool _downsample_costmap;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _smoothed_plan_publisher;
@@ -131,4 +122,4 @@ protected:
 
 }  // namespace smac_planner
 
-#endif  // SMAC_PLANNER__SMAC_PLANNER_HPP_
+#endif  // SMAC_PLANNER__SMAC_PLANNER_2D_HPP_

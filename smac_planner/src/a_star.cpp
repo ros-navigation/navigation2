@@ -17,14 +17,22 @@
 #include <memory>
 #include <algorithm>
 #include <limits>
+#include <type_traits>
 
 #include "smac_planner/a_star.hpp"
+
+// TODO optimization: should we be constructing full SE2 graph at start?
+// or only construct as we get in contact to expand!
+// doesnt matter as much for 2D planner, but really will matter here
+// might speed things up a bit. Reserve graph (full, 20%, whatever) but dont fill in.
 
 namespace smac_planner
 {
 
 template<typename NodeT>
-AStarAlgorithm<NodeT>::AStarAlgorithm(const Neighborhood & neighborhood)
+AStarAlgorithm<NodeT>::AStarAlgorithm(
+  const MotionModel & motion_model,
+  const float & min_turning_radius)
 : _travel_cost_scale(0.0),
   _neutral_cost(0.0),
   _traverse_unknown(true),
@@ -36,7 +44,8 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(const Neighborhood & neighborhood)
   _goal(nullptr),
   _graph(nullptr),
   _queue(nullptr),
-  _neighborhood(neighborhood)
+  _motion_model(motion_model),
+  _min_turning_radius(min_turning_radius)
 {
 }
 
@@ -73,61 +82,134 @@ void AStarAlgorithm<NodeT>::initialize(
   _max_on_approach_iterations = max_on_approach_iterations;
 }
 
-template<typename NodeT>
-void AStarAlgorithm<NodeT>::setCosts(
-  const unsigned int & x,
-  const unsigned int & y,
+template<>
+void AStarAlgorithm<Node2D>::createGraph(
+  const unsigned int & x_size,
+  const unsigned int & y_size,
+  const unsigned int & dim_3_size,
   unsigned char * & costs)
 {
-  if (getSizeX() != x || getSizeY() != y) {
-    _x_size = x;
-    _y_size = y;
-    int x_size_int = static_cast<int>(_x_size);
-    initNeighborhoods(x_size_int, _neighborhood);
+  if (dim_3_size != 1) {
+    throw std::runtime_error("Node type Node2D cannot be given non-1 dim 3 quantization.");
+  }
+
+  _dim3_size = dim_3_size;  // 2D search MUST be 2D, not 3D or SE2.
+
+  if (getSizeX() != x_size || getSizeY() != y_size) {
+    _x_size = x_size;
+    _y_size = y_size;
+    Node2D::initNeighborhood(_x_size, _motion_model);
     _graph->clear();
-    _graph->reserve(x * y);
-    for (unsigned int i = 0; i != x * y; i++) {
+    _graph->reserve(x_size * y_size);
+    for (unsigned int i = 0; i != x_size * y_size; i++) {
       _graph->emplace_back(costs[i], i);
     }
   } else {
-    for (unsigned int i = 0; i != x * y; i++) {
+    for (unsigned int i = 0; i != x_size * y_size; i++) {
       // Optimization: operator[] is used over at() for performance (no bound checking)
       _graph->operator[](i).reset(costs[i], i);
     }
   }
 }
 
-template <typename NodeT>
-void AStarAlgorithm<NodeT>::initNeighborhoods(
-  const int & x_size,
-  const Neighborhood & neighborhood)
+// Population order dim_3, X, Y to match getIndex expected structure
+template<>
+void AStarAlgorithm<NodeSE2>::createGraph(
+  const unsigned int & x_size,
+  const unsigned int & y_size,
+  const unsigned int & dim_3_size,
+  unsigned char * & costs)
 {
-  switch (neighborhood) {
-    case Neighborhood::UNKNOWN:
-      throw std::runtime_error("Unknown neighborhood type selected.");
-    case Neighborhood::VON_NEUMANN:
-      _neighbors_grid_offsets = {-1, +1, -x_size, +x_size};
-      break;
-    case Neighborhood::MOORE:
-      _neighbors_grid_offsets = {-1, +1, -x_size, +x_size, -x_size - 1,
-                                 -x_size + 1, +x_size - 1, +x_size + 1};
-      break;
-    default:
-      throw std::runtime_error("Invalid neighborhood type selected.");
+  _dim3_size = dim_3_size;
+  unsigned int index;
+
+  if (getSizeX() != x_size || getSizeY() != y_size) {
+    _x_size = x_size;
+    _y_size = y_size;
+    NodeSE2::initMotionModel(_motion_model, _x_size, _dim3_size, _min_turning_radius);
+    _graph->clear();
+    _graph->reserve(x_size * y_size * _dim3_size);
+
+    for (unsigned int j = 0; j != y_size; j++) {
+      for (unsigned int i = 0; i != x_size; i++) {
+        for (unsigned int k = 0; k != _dim3_size; k++) {
+          index = NodeSE2::getIndex(i, j, k, _x_size, _dim3_size);
+          _graph->emplace_back(
+            costs[i + _x_size * j],
+            index);
+        }
+      }
+    }
+  } else {
+    for (unsigned int j = 0; j != y_size; j++) {
+      for (unsigned int i = 0; i != x_size; i++) {
+        for (unsigned int k = 0; k != _dim3_size; k++) {
+          // Optimization: operator[] is used over at() for performance (no bound checking)
+          index = NodeSE2::getIndex(i, j, k, _x_size, _dim3_size);
+          _graph->operator[](index).reset(
+            costs[i + _x_size * j],
+            index);
+        }
+      }
+    }
   }
 }
 
-template<typename NodeT>
-void AStarAlgorithm<NodeT>::setStart(const unsigned int & value)
+template<>
+void AStarAlgorithm<Node2D>::setStart(
+  const unsigned int & mx,
+  const unsigned int & my,
+  const unsigned int & dim_3)
 {
-  _start = & _graph->operator[](value);
+  if (dim_3 != 0) {
+    throw std::runtime_error("Node type Node2D cannot be given non-zero starting dim 3.");
+  }
+  unsigned int index = Node2D::getIndex(mx, my, getSizeX());
+  _start = &_graph->operator[](index);
 }
 
-template<typename NodeT>
-void AStarAlgorithm<NodeT>::setGoal(const unsigned int & value)
+template<>
+void AStarAlgorithm<NodeSE2>::setStart(
+  const unsigned int & mx,
+  const unsigned int & my,
+  const unsigned int & dim_3)
 {
-  _goal = & _graph->operator[](value);
-  _goal_coordinates = getCoords(_goal->getIndex());
+  unsigned int index = NodeSE2::getIndex(mx, my, dim_3, getSizeX(), getSizeDim3());
+  _start = &_graph->operator[](index);
+  _start->setPose(
+    Coordinates(
+      static_cast<float>(mx),
+      static_cast<float>(my),
+      static_cast<float>(dim_3)));
+}
+
+template<>
+void AStarAlgorithm<Node2D>::setGoal(
+  const unsigned int & mx,
+  const unsigned int & my,
+  const unsigned int & dim_3)
+{
+  if (dim_3 != 0) {
+    throw std::runtime_error("Node type Node2D cannot be given non-zero goal dim 3.");
+  }
+
+  unsigned int index = Node2D::getIndex(mx, my, getSizeX());
+  _goal = &_graph->operator[](index);
+  _goal_coordinates = Node2D::Coordinates(mx, my);
+}
+
+template<>
+void AStarAlgorithm<NodeSE2>::setGoal(
+  const unsigned int & mx,
+  const unsigned int & my,
+  const unsigned int & dim_3)
+{
+  unsigned int index = NodeSE2::getIndex(mx, my, dim_3, getSizeX(), getSizeDim3());
+  _goal = &_graph->operator[](index);
+  _goal_coordinates = NodeSE2::Coordinates(
+    static_cast<float>(mx),
+    static_cast<float>(my),
+    static_cast<float>(dim_3));
 }
 
 template<typename NodeT>
@@ -162,8 +244,10 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
 }
 
 template<typename NodeT>
-bool AStarAlgorithm<NodeT>::createPath(IndexPath & path, int & iterations, const float & tolerance)
-{  
+bool AStarAlgorithm<NodeT>::createPath(
+  CoordinateVector & path, int & iterations,
+  const float & tolerance)
+{
   if (!areInputsValid()) {
     return false;
   }
@@ -182,6 +266,23 @@ bool AStarAlgorithm<NodeT>::createPath(IndexPath & path, int & iterations, const
   NodeVector neighbors;
   int approach_iterations = 0;
   typename NodeVector::iterator neighbor_iterator;
+
+  // Given an index, return a node ptr reference if its collision-free and valid
+  const unsigned int max_index = getSizeX() * getSizeY() * getSizeDim3();
+  std::function<bool(const unsigned int &, NodeT * &)> node_validity_checker =
+    [&, this](const unsigned int & index, NodePtr & neighbor) -> bool
+    {
+      if (index < 0 || index >= max_index) {
+        return false;
+      }
+
+      neighbor = &_graph->operator[](index);
+      if (neighbor->isNodeValid(_traverse_unknown)) {
+        return true;
+      }
+
+      return false;
+    };
 
   while (iterations < getMaxIterations() && !_queue->empty()) {
 
@@ -202,26 +303,25 @@ bool AStarAlgorithm<NodeT>::createPath(IndexPath & path, int & iterations, const
     // 3) Check if we're at the goal, backtrace if required
     if (isGoal(current_node)) {
       return backtracePath(current_node, path);
-    }
-    else if (_best_heuristic_node.first < getToleranceHeuristic()) {
+    } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
       approach_iterations++;
       if (approach_iterations > getOnApproachMaxIterations() ||
         iterations + 1 == getMaxIterations())
       {
-        NodePtr node = & _graph->operator[](_best_heuristic_node.second);
+        NodePtr node = &_graph->operator[](_best_heuristic_node.second);
         return backtracePath(node, path);
       }
     }
 
     // 4) Expand neighbors of Nbest not visited
     neighbors.clear();
-    getNeighbors(current_node, neighbors);
+    NodeT::getNeighbors(current_node, node_validity_checker, neighbors);
 
     for (neighbor_iterator = neighbors.begin();
       neighbor_iterator != neighbors.end(); ++neighbor_iterator)
     {
-      NodePtr & neighbor = * neighbor_iterator;
+      NodePtr & neighbor = *neighbor_iterator;
 
       // 4.1) Compute the cost to go to this node
       g_cost = current_node->getAccumulatedCost() +
@@ -233,9 +333,10 @@ bool AStarAlgorithm<NodeT>::createPath(IndexPath & path, int & iterations, const
         neighbor->parent = current_node;
 
         // 4.3) If not in queue or visited, add it
-        if (!neighbor->wasVisited()) {
+        // TODO(stevemacenski): should this always be true?
+        if (true /*!neighbor->wasVisited()*/) {
           neighbor->queued();
-          addNode(g_cost + getHeuristicCost(neighbor->getIndex()), neighbor);
+          addNode(g_cost + getHeuristicCost(neighbor), neighbor);
         }
       }
     }
@@ -244,46 +345,14 @@ bool AStarAlgorithm<NodeT>::createPath(IndexPath & path, int & iterations, const
   return false;
 }
 
-// Specialized method getNeighbors for 2D nodes
-template <>
-void AStarAlgorithm<Node>::getNeighbors(NodePtr & node, NodeVector & neighbors)
-{
-  // NOTE(stevemacenski): Irritatingly, the order here matters. If you start in free
-  // space and then expand 8-connected, the first set of neighbors will be all cost
-  // _neutral_cost. Then its expansion will all be 2 * _neutral_cost but now multiple
-  // nodes are touching that node so the last cell to update the back pointer wins.
-  // Thusly, the ordering ends with the cardinal directions for both sets such that
-  // behavior is consistent in large free spaces between them.
-  // 100  50   0
-  // 100  50  50
-  // 100 100 100   where lower-middle '100' is visited with same cost by both bottom '50' nodes
-  // Therefore, it is valuable to have some low-potential across the entire map
-  // rather than a small inflation around the obstacles
-  int index;
-  NodePtr neighbor;
-  int node_i = node->getIndex();
-
-  for(unsigned int i = 0; i != _neighbors_grid_offsets.size(); ++i) {
-    index = node_i + _neighbors_grid_offsets[i];
-    if (index > 0)
-    {
-      neighbor = & _graph->operator[](index);
-      if (neighbor->isNodeValid(_traverse_unknown))
-      {
-        neighbors.push_back(neighbor);
-      }
-    }
-  }
-}
-
 template<typename NodeT>
 bool AStarAlgorithm<NodeT>::isGoal(NodePtr & node)
 {
   return node == getGoal();
 }
 
-template<typename NodeT>
-bool AStarAlgorithm<NodeT>::backtracePath(NodePtr & node, IndexPath & path)
+template<>
+bool AStarAlgorithm<Node2D>::backtracePath(NodePtr & node, CoordinateVector & path)
 {
   if (!node->parent) {
     return false;
@@ -292,7 +361,26 @@ bool AStarAlgorithm<NodeT>::backtracePath(NodePtr & node, IndexPath & path)
   NodePtr current_node = node;
 
   while (current_node->parent) {
-    path.push_back(current_node->getIndex());
+    path.push_back(
+      Node2D::getCoords(
+        current_node->getIndex(), getSizeX(), getSizeDim3()));
+    current_node = current_node->parent;
+  }
+
+  return path.size() > 1;
+}
+
+template<>
+bool AStarAlgorithm<NodeSE2>::backtracePath(NodePtr & node, CoordinateVector & path)
+{
+  if (!node->parent) {
+    return false;
+  }
+
+  NodePtr current_node = node;
+
+  while (current_node->parent) {
+    path.push_back(current_node->pose);
     current_node = current_node->parent;
   }
 
@@ -325,6 +413,10 @@ void AStarAlgorithm<NodeT>::addNode(const float cost, NodePtr & node)
   _queue->emplace(cost, node);
 }
 
+// TODO does this need to change for SE3 Node? Perhaps be footprint cost now?
+// Might need a new NodeT::getTravelCost() so each can have their own to get cost
+// TODO g cost include change direction + forward / back penalties.
+// https://github.com/karlkurzer/path_planner/blob/master/src/node3d.cpp#L73-L102
 template<typename NodeT>
 float AStarAlgorithm<NodeT>::getTraversalCost(
   NodePtr & current_node,
@@ -338,20 +430,20 @@ float AStarAlgorithm<NodeT>::getTraversalCost(
 }
 
 template<typename NodeT>
-float AStarAlgorithm<NodeT>::getHeuristicCost(const unsigned int & node)
+float AStarAlgorithm<NodeT>::getHeuristicCost(const NodePtr & node)
 {
-  Coordinates node_coords = getCoords(node);
-  float heuristic = hypotf(
-    _goal_coordinates.first - node_coords.first,
-    _goal_coordinates.second - node_coords.second) * _neutral_cost;
-  
+  const Coordinates node_coords =
+    NodeT::getCoords(node->getIndex(), getSizeX(), getSizeDim3());
+  float heuristic = NodeT::getHeuristicCost(
+    node_coords, _goal_coordinates) * _neutral_cost;
+
   // If we're far from goal, we want to ensure we can speed it along
   if (heuristic > getToleranceHeuristic()) {
     heuristic *= _neutral_cost;
   }
 
   if (heuristic < _best_heuristic_node.first) {
-    _best_heuristic_node = {heuristic, node};
+    _best_heuristic_node = {heuristic, node->getIndex()};
   }
 
   return heuristic;
@@ -363,14 +455,6 @@ void AStarAlgorithm<NodeT>::clearQueue()
   while (!_queue->empty()) {
     _queue->pop();
   }
-}
-
-template<typename NodeT>
-Coordinates AStarAlgorithm<NodeT>::getCoords(const unsigned int & index)
-{
-  return Coordinates(
-    static_cast<float>(index % getSizeX()),
-    static_cast<float>(index / getSizeX()));
 }
 
 template<typename NodeT>
@@ -403,8 +487,14 @@ unsigned int & AStarAlgorithm<NodeT>::getSizeY()
   return _y_size;
 }
 
-// Instantiate AStartAlgorithm for the supported template type parameters
-// This is needed to prevent "undefined symbol" errors at runtime.
-template class AStarAlgorithm<Node>;
+template<typename NodeT>
+unsigned int & AStarAlgorithm<NodeT>::getSizeDim3()
+{
+  return _dim3_size;
+}
+
+// Instantiate algorithm for the supported template types
+template class AStarAlgorithm<Node2D>;
+template class AStarAlgorithm<NodeSE2>;
 
 }  // namespace smac_planner

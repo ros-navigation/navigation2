@@ -12,57 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-// benefits list:
-//  - for tolerance, only search once (max iterations on appraoch meeting tolerance), if set tol low and iterations low then can use to actually compute to a scale before target
-//      e.g. compute for the next ~N meters only on way towards something
-//  - Against NavFns: we have inflation + dynamic processing: cached gradiant map not used. reusibility, cannot be built on for nonholonomic, no looping or weird artifacts
-//  - common building blocks for use in all planners to maximize reliability, stress test, and reduce likelihood of bugs
-//  - not searching then backtracing with grad descent for 2x go through
-//  - lower memory (?) and faster (?)
-//  - modern data structures & carefully optimized & generic for use in other planning problems
-//  - generic smoother that has applications to anything
-//  - smoother costmap aware (vs bezier, splines, b-splines, etc)
-//  - caching paths rather than recomputing needlessly if they're still good
-//  - network planner & arbitrary nonholonomic including ackermann
-//  - non-circular footprints, diff/omni/ackermann, covering all classes of ground robots. circl diff/omni A*, ackerman hybrid, arbitrary diff/omni A* if relatively small, hybrid is large
-//  - dials for Astar quality (can be quick and dirty or slow and smooth) then dials for the optimizer to suit (quick once over, or really smooth out a jazzed path)
-//  - disable max iterations / tolerance with 0 / -1
-//  - max time for soft gaurentees on planning and smoothing times, time tracking
-//  - Do low potential field in all areas -- this should be the new defacto-default (really should have been already but ppl ignore it). Footprint + inflation important
-//  - describe why and when on the 4 vs 8 connected
-//  - plots of pts that violate over iterations (curve, dist > thresh, smooth > dist, cost > thresh)
-// - Need to boil down statements about why I did this, clear benefits, and drawbacks of current approaches / solutions
-//  - Identified 3 math errors of Thrun
-//  - show and explain derivations on smoother / upsampler. Show and explain hybrid stuff
-// Lets look at what we ahve here:
-//   We have A* path smoothed to kinematic paramrters. Even without explicit modelling of ackermann or limited curvature kinematics, you can get it here. In fact, while a little hand wavey, if you plan in a full potential field with default settings, it steers intentionally in the center of spaces. If that space is built for a robot or vehicle (eg road, or aisle, or open space, or office) then you’re pseduo-promised that the curvature can be valid for your vehicle. Now the then the boundry conditions (initial and final state) are not. For alot of cases thats sufficient bc of an intelligent local planner based on dubin curves or something, but if not, we have a full hybrid A* as well.
-//   Ex of robot to limit curvature: industrial for max speed without dumping load, ackermann, legged to prop forward to minimize slow down for off acis motion, diff to not whip around
-//  Show path, no map -- Show term smoothing, lovely, no map -- Then map, welp, thats useless
-
-// astar timeout, max duration, optimizer gets rest or until its set maximum. Test time before/after A* but not in it, that would slow down. if over, send log warning like DWB
-
-// if collision in smoothed path, anchor that point and then re-run until successful (helpful in narrow spaces).
-
-// NOTES
-// way to do collision checking on oriented footprint https://github.com/windelbouwman/move-base-ompl/blob/master/src/ompl_global_planner.cpp#L133 (but doesnt cache)
-// https://github.com/ompl/ompl/blob/master/demos/GeometricCarPlanning.cpp for reeds/dubin hybrid. There's also a 2D point to point demo that could be helpful.
-// optimization flags -03
-// max iterations on approach only for 2D, not for SE2
-
-// In fact, I use that smoother in the A* implementation to make it "smooth" so its not grid-blocky.
-// Its actually how I tested the smoother since that's the nuclear case with tons of sharp random angles.
-// People are used to these smooth paths from Navigation Function approaches and I'm not sure anyone would be
-// happy if I just gave them a A* without it. Its stil quite fast but its much faster than NavFn without the smoother.
-// If you have a half decent controller though, its largely unneeded (I tested, its fine, its just not visually appealing).
-
-
-// TODO seperate createPlan into a few functions
-
 #include <string>
 #include <memory>
 #include <vector>
-#include "Eigen/Core"
-#include "smac_planner/smac_planner.hpp"
+#include "smac_planner/smac_planner_2d.hpp"
 
 #define BENCHMARK_TESTING
 
@@ -71,7 +24,7 @@ namespace smac_planner
 using namespace std::chrono;
 using namespace std;
 
-SmacPlanner::SmacPlanner()
+SmacPlanner2D::SmacPlanner2D()
 : _a_star(nullptr),
   _smoother(nullptr),
   _upsampler(nullptr),
@@ -81,14 +34,14 @@ SmacPlanner::SmacPlanner()
 {
 }
 
-SmacPlanner::~SmacPlanner()
+SmacPlanner2D::~SmacPlanner2D()
 {
   RCLCPP_INFO(
-    _node->get_logger(), "Destroying plugin %s of type SmacPlanner",
+    _node->get_logger(), "Destroying plugin %s of type SmacPlanner2D",
     _name.c_str());
 }
 
-void SmacPlanner::configure(
+void SmacPlanner2D::configure(
   rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
@@ -100,10 +53,8 @@ void SmacPlanner::configure(
 
   bool allow_unknown;
   int max_iterations;
-  int max_on_approach_iterations = std::numeric_limits<int>::max();
-  int angle_quantizations;
+  int max_on_approach_iterations;
   float travel_cost_scale;
-  float minimum_turning_radius;
   bool smooth_path;
   bool upsample_path;
   std::string motion_model_for_search;
@@ -120,12 +71,6 @@ void SmacPlanner::configure(
   _node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
 
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".angle_quantization_bins", rclcpp::ParameterValue(1));
-  _node->get_parameter(name + ".angle_quantization_bins", angle_quantizations);
-  _angle_bin_size = 2.0 * M_PI / angle_quantizations;
-  _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
-
-  nav2_util::declare_parameter_if_not_declared(
     _node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   _node->get_parameter(name + ".allow_unknown", allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
@@ -135,6 +80,9 @@ void SmacPlanner::configure(
     _node, name + ".travel_cost_scale", rclcpp::ParameterValue(0.8));
   _node->get_parameter(name + ".travel_cost_scale", travel_cost_scale);
   nav2_util::declare_parameter_if_not_declared(
+    _node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
+  _node->get_parameter(name + ".max_on_approach_iterations", max_on_approach_iterations);
+  nav2_util::declare_parameter_if_not_declared(
     _node, name + ".smooth_path", rclcpp::ParameterValue(true));
   _node->get_parameter(name + ".smooth_path", smooth_path);
   nav2_util::declare_parameter_if_not_declared(
@@ -143,10 +91,6 @@ void SmacPlanner::configure(
   nav2_util::declare_parameter_if_not_declared(
     _node, name + ".smoother.upsampling_ratio", rclcpp::ParameterValue(2));
   _node->get_parameter(name + ".smoother.upsampling_ratio", _upsampling_ratio);
-
-  nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".minimum_turning_radius", rclcpp::ParameterValue(1.0));
-  _node->get_parameter(name + ".minimum_turning_radius", minimum_turning_radius);
 
   nav2_util::declare_parameter_if_not_declared(
     _node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("MOORE")));
@@ -185,10 +129,9 @@ void SmacPlanner::configure(
       "Upsample ratio set to %i, only 2 and 4 are valid. Defaulting to 2.", _upsampling_ratio);
     _upsampling_ratio = 2;
   }
-
-  float grid_coord_min_turning_rad =
-    minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
-  _a_star = std::make_unique<AStarAlgorithm<NodeSE2>>(motion_model, grid_coord_min_turning_rad);
+  std::cout << "hi" << std::endl;
+  _a_star = std::make_unique<AStarAlgorithm<Node2D>>(motion_model, 0.0f);
+  std::cout << "hi2" << std::endl;
   _a_star->initialize(
     travel_cost_scale,
     allow_unknown,
@@ -217,7 +160,7 @@ void SmacPlanner::configure(
   _smoothed_plan_publisher = _node->create_publisher<nav_msgs::msg::Path>("smoothed_plan", 1);
 
   RCLCPP_INFO(
-    _node->get_logger(), "Configured plugin %s of type SmacPlanner with "
+    _node->get_logger(), "Configured plugin %s of type SmacPlanner2D with "
     "travel cost %.2f, tolerance %.2f, maximum iterations %i, "
     "max on approach iterations %i, and %s. Using motion model: %s.",
     _name.c_str(), travel_cost_scale, _tolerance, max_iterations, max_on_approach_iterations,
@@ -225,10 +168,10 @@ void SmacPlanner::configure(
     toString(motion_model).c_str());
 }
 
-void SmacPlanner::activate()
+void SmacPlanner2D::activate()
 {
   RCLCPP_INFO(
-    _node->get_logger(), "Activating plugin %s of type SmacPlanner",
+    _node->get_logger(), "Activating plugin %s of type SmacPlanner2D",
     _name.c_str());
   _raw_plan_publisher->on_activate();
   _smoothed_plan_publisher->on_activate();
@@ -237,10 +180,10 @@ void SmacPlanner::activate()
   }
 }
 
-void SmacPlanner::deactivate()
+void SmacPlanner2D::deactivate()
 {
   RCLCPP_INFO(
-    _node->get_logger(), "Deactivating plugin %s of type SmacPlanner",
+    _node->get_logger(), "Deactivating plugin %s of type SmacPlanner2D",
     _name.c_str());
   _raw_plan_publisher->on_deactivate();
   _smoothed_plan_publisher->on_deactivate();
@@ -249,10 +192,10 @@ void SmacPlanner::deactivate()
   }
 }
 
-void SmacPlanner::cleanup()
+void SmacPlanner2D::cleanup()
 {
   RCLCPP_INFO(
-    _node->get_logger(), "Cleaning up plugin %s of type SmacPlanner",
+    _node->get_logger(), "Cleaning up plugin %s of type SmacPlanner2D",
     _name.c_str());
   _a_star.reset();
   _smoother.reset();
@@ -262,7 +205,7 @@ void SmacPlanner::cleanup()
   _smoothed_plan_publisher.reset();
 }
 
-nav_msgs::msg::Path SmacPlanner::createPlan(
+nav_msgs::msg::Path SmacPlanner2D::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
@@ -283,27 +226,19 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   _a_star->createGraph(
     costmap->getSizeInCellsX(),
     costmap->getSizeInCellsY(),
-    _angle_quantizations,
+    1,
     char_costmap);
 
-  // Set starting point, in A* bin search coordinates
+  // Set starting point
   unsigned int mx, my;
   costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
-  double orientation_bin = tf2::getYaw(start.pose.orientation) / _angle_bin_size;
-  while (orientation_bin < 0.0) {
-    orientation_bin += static_cast<float>(_angle_quantizations);
-  }
-  unsigned int orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setStart(mx, my, orientation_bin_id);
+  double orientation = tf2::getYaw(start.pose.orientation);
+  _a_star->setStart(mx, my, 0);
 
-  // Set goal point, in A* bin search coordinates
+  // Set goal point
   costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
-  orientation_bin = tf2::getYaw(goal.pose.orientation) / _angle_bin_size;
-  while (orientation_bin < 0.0) {
-    orientation_bin += static_cast<float>(_angle_quantizations);
-  }
-  orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setGoal(mx, my, orientation_bin_id);
+  orientation = tf2::getYaw(start.pose.orientation);
+  _a_star->setGoal(mx, my, 0);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -318,7 +253,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   pose.pose.orientation.w = 1.0;
 
   // Compute plan
-  NodeSE2::CoordinateVector path;
+  Node2D::CoordinateVector path;
   int num_iterations = 0;
   std::string error;
   try {
@@ -359,7 +294,6 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
     path_world.push_back(getWorldCoords(path[i].x, path[i].y, costmap));
     pose.pose.position.x = path_world.back().x();
     pose.pose.position.y = path_world.back().y();
-    pose.pose.orientation = getWorldOrientation(path[i].theta);
     plan.poses.push_back(pose);
   }
 
@@ -403,7 +337,6 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
       pose.pose.position.x = path_world[i][0];
       pose.pose.position.y = path_world[i][1];
       plan.poses[i] = pose;
-      // TODO(stevemacenski): Add orientation from tangent of path
     }
     _smoothed_plan_publisher->publish(plan);
   }
@@ -424,13 +357,12 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
     pose.pose.position.x = path_world[i][0];
     pose.pose.position.y = path_world[i][1];
     plan.poses[i] = pose;
-    // TODO(stevemacenski): Add orientation from tangent of path
   }
 
   return plan;
 }
 
-void SmacPlanner::removeHook(std::vector<Eigen::Vector2d> & path)
+void SmacPlanner2D::removeHook(std::vector<Eigen::Vector2d> & path)
 {
   // Removes the end "hooking" since goal is locked in place
   Eigen::Vector2d interpolated_second_to_last_point;
@@ -443,26 +375,17 @@ void SmacPlanner::removeHook(std::vector<Eigen::Vector2d> & path)
   }
 }
 
-Eigen::Vector2d SmacPlanner::getWorldCoords(
+Eigen::Vector2d SmacPlanner2D::getWorldCoords(
   const float & mx, const float & my, const nav2_costmap_2d::Costmap2D * costmap)
 {
-  // mx, my are in continuous grid coordinates, must convert to world coordinates
-  double world_x =
-    static_cast<double>(costmap->getOriginX()) + (mx + 0.5) * costmap->getResolution();
-  double world_y =
-    static_cast<double>(costmap->getOriginY()) + (my + 0.5) * costmap->getResolution();
+  float world_x =
+    static_cast<float>(costmap->getOriginX()) + (mx + 0.5) * costmap->getResolution();
+  float world_y =
+    static_cast<float>(costmap->getOriginY()) + (my + 0.5) * costmap->getResolution();
   return Eigen::Vector2d(world_x, world_y);
-}
-
-geometry_msgs::msg::Quaternion SmacPlanner::getWorldOrientation(const float & theta)
-{
-  // theta is in continuous bin coordinates, must convert to world orientation
-  tf2::Quaternion q;
-  q.setEuler(0.0, 0.0, theta * static_cast<double>(_angle_bin_size));
-  return tf2::toMsg(q);
 }
 
 }  // namespace smac_planner
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(smac_planner::SmacPlanner, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(smac_planner::SmacPlanner2D, nav2_core::GlobalPlanner)

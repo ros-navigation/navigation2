@@ -29,19 +29,19 @@
 #include "smac_planner/minimal_costmap.hpp"
 #include "smac_planner/options.hpp"
 
-#define EPSILON 0.0001  
+#define EPSILON 0.0001
 
 namespace smac_planner
 {
 
 // TODO reduce code duplication. there's very litle change here.
 // https://github.com/OrebroUniversity/navigation_oru-release
-  // bspline smoother, mpc, planner
+// bspline smoother, mpc, planner
 // upsampler params TODO
 
 // curvature minimization ? TODO
 
-  // TODO why so much slower or less functional when fast? tuning?
+// TODO why so much slower or less functional when fast? tuning?
 
 /**
  * @struct smac_planner::UpsamplerCostFunction
@@ -70,12 +70,13 @@ public:
    * @struct CurvatureComputations
    * @brief Cache common computations between the curvature terms to minimize recomputations
    */
-  struct CurvatureComputations 
+  struct CurvatureComputations
   {
     /**
      * @brief A constructor for smac_planner::CurvatureComputations
      */
-    CurvatureComputations() {
+    CurvatureComputations()
+    {
       valid = false;
     }
 
@@ -84,12 +85,13 @@ public:
      * @brief Check if result is valid for penalty
      * @return is valid (non-nan, non-inf, and turning angle > max)
      */
-    bool isValid() {
+    bool isValid()
+    {
       return valid;
     }
 
-    Eigen::Vector2d delta_xi{0,0};
-    Eigen::Vector2d delta_xi_p{0,0};
+    Eigen::Vector2d delta_xi{0, 0};
+    Eigen::Vector2d delta_xi_p{0, 0};
     double delta_xi_norm{0};
     double delta_xi_p_norm{0};
     double delta_phi_i{0};
@@ -99,14 +101,16 @@ public:
 
   /**
    * @brief Smoother cost function evaluation
-   * @param parameters X,Y pairs of points 
+   * @param parameters X,Y pairs of points
    * @param cost total cost of path
    * @param gradient of path at each X,Y pair from cost function derived analytically
    * @return if successful in computing values
    */
-  virtual bool Evaluate(const double * parameters,
-                        double * cost,
-                        double * gradient) const {
+  virtual bool Evaluate(
+    const double * parameters,
+    double * cost,
+    double * gradient) const
+  {
     Eigen::Vector2d xi;
     Eigen::Vector2d xi_p1;
     Eigen::Vector2d xi_m1;
@@ -125,7 +129,7 @@ public:
       gradient[x_index] = 0.0;
       gradient[y_index] = 0.0;
       if (i < 1 || i >= NumParameters() / 2 - 1) {
-        continue; 
+        continue;
       }
 
       // if original point's neighbors TODO
@@ -145,7 +149,7 @@ public:
       addSmoothingResidual(15000, xi, xi_p1, xi_m1, cost_raw);  // TODO params
       addCurvatureResidual(60.0, xi, xi_p1, xi_m1, curvature_params, cost_raw);
 
-    if (gradient != NULL) {
+      if (gradient != NULL) {
 
         // compute gradient
         addSmoothingJacobian(15000, xi, xi_p1, xi_m1, grad_x_raw, grad_y_raw);
@@ -164,7 +168,7 @@ public:
    * @brief Get number of parameter blocks
    * @return Number of parameters in cost function
    */
-  virtual int NumParameters() const { return _num_params; }
+  virtual int NumParameters() const {return _num_params;}
 
 protected:
   /**
@@ -183,12 +187,12 @@ protected:
     double & r) const
   {
     r += weight * (
-      pt_p.dot(pt_p)
-      - 4 * pt_p.dot(pt)
-      + 2 * pt_p.dot(pt_m)
-      + 4 * pt.dot(pt)
-      - 4 * pt.dot(pt_m)
-      + pt_m.dot(pt_m));  // objective function value
+      pt_p.dot(pt_p) -
+      4 * pt_p.dot(pt) +
+      2 * pt_p.dot(pt_m) +
+      4 * pt.dot(pt) -
+      4 * pt.dot(pt_m) +
+      pt_m.dot(pt_m));    // objective function value
   }
 
   /**
@@ -209,9 +213,9 @@ protected:
     double & j1) const
   {
     j0 += weight *
-      (- 4 * pt_m[0] + 8 * pt[0] - 4 * pt_p[0]);  // xi x component of partial-derivative
+      (-4 * pt_m[0] + 8 * pt[0] - 4 * pt_p[0]);   // xi x component of partial-derivative
     j1 += weight *
-      (- 4 * pt_m[1] + 8 * pt[1] - 4 * pt_p[1]);  // xi y component of partial-derivative
+      (-4 * pt_m[1] + 8 * pt[1] - 4 * pt_p[1]);   // xi y component of partial-derivative
   }
 
   /**
@@ -229,13 +233,14 @@ protected:
   {
     curvature_params.valid = true;
     curvature_params.delta_xi = Eigen::Vector2d(pt[0] - pt_m[0], pt[1] - pt_m[1]);
-    curvature_params.delta_xi_p = Eigen::Vector2d(pt_p[0] - pt[0], pt_p[1] - pt[1]); 
+    curvature_params.delta_xi_p = Eigen::Vector2d(pt_p[0] - pt[0], pt_p[1] - pt[1]);
     curvature_params.delta_xi_norm = curvature_params.delta_xi.norm();
     curvature_params.delta_xi_p_norm = curvature_params.delta_xi_p.norm();
 
     if (curvature_params.delta_xi_norm < EPSILON || curvature_params.delta_xi_p_norm < EPSILON ||
       std::isnan(curvature_params.delta_xi_p_norm) || std::isnan(curvature_params.delta_xi_norm) ||
-      std::isinf(curvature_params.delta_xi_p_norm) || std::isinf(curvature_params.delta_xi_norm)) {
+      std::isinf(curvature_params.delta_xi_p_norm) || std::isinf(curvature_params.delta_xi_norm))
+    {
       // ensure we have non-nan values returned
       curvature_params.valid = false;
       return;
@@ -252,12 +257,13 @@ protected:
     curvature_params.delta_phi_i = std::acos(projection);
     curvature_params.turning_rad = curvature_params.delta_phi_i / curvature_params.delta_xi_norm;
 
-    curvature_params.ki_minus_kmax = curvature_params.turning_rad - _upsample_ratio * _params.max_curvature;
+    curvature_params.ki_minus_kmax = curvature_params.turning_rad - _upsample_ratio *
+      _params.max_curvature;
     // TODO is use of upsample_ratio correct here? small number?
     // TODO can remove the subtraction with a lower weight value, does have direction issue, maybe just tuning?
 
     if (curvature_params.ki_minus_kmax <= EPSILON) {
-      // Quadratic penalty need not apply  
+      // Quadratic penalty need not apply
       curvature_params.valid = false;
     }
   }
@@ -281,7 +287,7 @@ protected:
   {
     getCurvatureParams(pt, pt_p, pt_m, curvature_params);
 
-    if (!curvature_params.isValid()) { 
+    if (!curvature_params.isValid()) {
       return;
     }
 
@@ -326,10 +332,13 @@ protected:
       (1 / curvature_params.delta_xi_norm) * partial_delta_phi_i_wrt_cost_delta_phi_i;
     const double & common_suffix = curvature_params.delta_phi_i /
       (curvature_params.delta_xi_norm * curvature_params.delta_xi_norm);
-    const Eigen::Vector2d & d_delta_xi_d_xi = curvature_params.delta_xi / curvature_params.delta_xi_norm;
+    const Eigen::Vector2d & d_delta_xi_d_xi = curvature_params.delta_xi /
+      curvature_params.delta_xi_norm;
 
-    const Eigen::Vector2d jacobian =  u * (common_prefix * (-p1 - p2) - (common_suffix * d_delta_xi_d_xi));
-    const Eigen::Vector2d jacobian_im1 = u * (common_prefix * p2 + (common_suffix * d_delta_xi_d_xi));
+    const Eigen::Vector2d jacobian = u *
+      (common_prefix * (-p1 - p2) - (common_suffix * d_delta_xi_d_xi));
+    const Eigen::Vector2d jacobian_im1 = u *
+      (common_prefix * p2 + (common_suffix * d_delta_xi_d_xi));
     const Eigen::Vector2d jacobian_ip1 = u * (common_prefix * p1);
     // j0 += weight * jacobian[0]; // TODO try with the prior xi-1 and xi+1s
     // j1 += weight * jacobian[1];

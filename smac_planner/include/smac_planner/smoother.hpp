@@ -51,7 +51,8 @@ public:
   /**
    * @brief Initialization of the smoother
    */
-  void initialize(const OptimizerParams params) {
+  void initialize(const OptimizerParams params)
+  {
     _debug = params.debug;
 
     // General Params
@@ -107,7 +108,7 @@ public:
     }
 
     ceres::GradientProblemSolver::Summary summary;
-    ceres::GradientProblem problem(new UnconstrainedSmootherCostFunction(& path, costmap, params));
+    ceres::GradientProblem problem(new UnconstrainedSmootherCostFunction(&path, costmap, params));
     ceres::Solve(_options, problem, parameters, &summary);
 
     if (_debug) {

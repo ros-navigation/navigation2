@@ -101,7 +101,7 @@ struct SmootherParams
  * @struct smac_planner::OptimizerParams
  * @brief Parameters for the ceres optimizer
  */
-struct OptimizerParams    
+struct OptimizerParams
 {
   OptimizerParams()
   : debug(false),
@@ -138,33 +138,38 @@ struct OptimizerParams
      */
     void get(rclcpp_lifecycle::LifecycleNode * node, const std::string & name)
     {
-    std::string local_name = name + std::string(".smoother.optimizer.advanced.");
+      std::string local_name = name + std::string(".smoother.optimizer.advanced.");
 
       // Optimizer advanced params
       nav2_util::declare_parameter_if_not_declared(
         node, local_name + "min_line_search_step_size",
         rclcpp::ParameterValue(1e-20));
-      node->get_parameter(local_name + "min_line_search_step_size",
+      node->get_parameter(
+        local_name + "min_line_search_step_size",
         min_line_search_step_size);
       nav2_util::declare_parameter_if_not_declared(
         node, local_name + "max_num_line_search_step_size_iterations",
         rclcpp::ParameterValue(50));
-      node->get_parameter(local_name + "max_num_line_search_step_size_iterations",
+      node->get_parameter(
+        local_name + "max_num_line_search_step_size_iterations",
         max_num_line_search_step_size_iterations);
       nav2_util::declare_parameter_if_not_declared(
         node, local_name + "line_search_sufficient_function_decrease",
         rclcpp::ParameterValue(1e-20));
-      node->get_parameter(local_name + "line_search_sufficient_function_decrease",
+      node->get_parameter(
+        local_name + "line_search_sufficient_function_decrease",
         line_search_sufficient_function_decrease);
       nav2_util::declare_parameter_if_not_declared(
         node, local_name + "max_num_line_search_direction_restarts",
         rclcpp::ParameterValue(10));
-      node->get_parameter(local_name + "max_num_line_search_direction_restarts",
+      node->get_parameter(
+        local_name + "max_num_line_search_direction_restarts",
         max_num_line_search_direction_restarts);
       nav2_util::declare_parameter_if_not_declared(
         node, local_name + "max_line_search_step_expansion",
         rclcpp::ParameterValue(50));
-      node->get_parameter(local_name + "max_line_search_step_expansion",
+      node->get_parameter(
+        local_name + "max_line_search_step_expansion",
         max_line_search_step_expansion);
     }
 

@@ -49,23 +49,44 @@ set(dependencies
   eigen3_cmake_module
 )
 
+# SE2 plugin
 add_library(${library_name} SHARED
-  src/a_star.cpp
   src/smac_planner.cpp
+  src/a_star.cpp
+  src/node_se2.cpp
+  src/costmap_downsampler.cpp
+  src/node_2d.cpp
 )
+
+target_link_libraries(${library_name} ${CERES_LIBRARIES})
+target_include_directories(${library_name} PUBLIC ${Eigen3_INCLUDE_DIRS})
 
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-target_include_directories(${library_name} PUBLIC ${Eigen3_INCLUDE_DIRS})
-target_link_libraries(${library_name} ${CERES_LIBRARIES})
+# 2D plugin
+add_library(${library_name}_2d SHARED
+  src/smac_planner_2d.cpp
+  src/a_star.cpp
+  src/node_se2.cpp
+  src/costmap_downsampler.cpp
+  src/node_2d.cpp
+)
+
+target_link_libraries(${library_name}_2d ${CERES_LIBRARIES})
+target_include_directories(${library_name}_2d PUBLIC ${Eigen3_INCLUDE_DIRS})
+
+ament_target_dependencies(${library_name}_2d
+  ${dependencies}
+)
 
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_compile_definitions(${library_name}_2d PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 pluginlib_export_plugin_description_file(nav2_core ${plugin_xml})
 
-install(TARGETS ${library_name}
+install(TARGETS ${library_name} ${library_name}_2d
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -81,6 +102,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name})
-ament_export_dependencies(${dependencies} Eigen3)
+ament_export_libraries(${library_name} ${library_name}_2d)
+ament_export_dependencies(${dependencies})
 ament_package()

@@ -16,14 +16,12 @@
 #define SMAC_PLANNER__TYPES_HPP_
 
 #include <vector>
+#include <utility>
 
 namespace smac_planner
 {
-typedef std::vector<unsigned int> IndexPath;
 
-typedef std::pair<float, float> Coordinates;
-
-typedef std::pair<double, double> DoubleCoordinates;
+typedef std::pair<float, unsigned int> NodeHeuristicPair;
 
 }  // namespace smac_planner
 

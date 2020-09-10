@@ -45,7 +45,7 @@ public:
   MinimalCostmap(
     unsigned char * & char_costmap,
     const unsigned int & size_x,
-    const unsigned int & size_y, 
+    const unsigned int & size_y,
     const double & origin_x,
     const double & origin_y,
     const double & resolution)
@@ -77,7 +77,9 @@ public:
    * @param wy Double world coords Y
    * @return if successful
    */
-  inline bool worldToMap(const double & wx, const double & wy, unsigned int & mx, unsigned int & my) const
+  inline bool worldToMap(
+    const double & wx, const double & wy, unsigned int & mx,
+    unsigned int & my) const
   {
     if (wx < _origin_x || wy < _origin_y) {
       return false;

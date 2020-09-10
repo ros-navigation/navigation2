@@ -17,30 +17,56 @@
 
 namespace smac_planner
 {
-  enum class Neighborhood
-  {
-    UNKNOWN = 0,
-    VON_NEUMANN = 1,
-    MOORE = 2
-  };
+enum class MotionModel
+{
+  UNKNOWN = 0,
+  VON_NEUMANN = 1,
+  MOORE = 2,
+  DUBIN = 3,
+  REEDS_SHEPP = 4,
+  // BALKCOM_MASON = 5,
+};
 
-  inline std::string toString(const Neighborhood & n)
-  {
-    switch (n) {
-      case Neighborhood::VON_NEUMANN:
-        return "Von Neumann";
-      case Neighborhood::MOORE:
-        return "Moore";
-      default:
-        return "Unknown";
-    }
+inline std::string toString(const MotionModel & n)
+{
+  switch (n) {
+    case MotionModel::VON_NEUMANN:
+      return "Von Neumann";
+    case MotionModel::MOORE:
+      return "Moore";
+    case MotionModel::DUBIN:
+      return "Dubin";
+    case MotionModel::REEDS_SHEPP:
+      return "Reeds-Shepp";
+    // case MotionModel::BALKCOM_MASON:
+    //   return "Balkcom-Mason";
+    default:
+      return "Unknown";
   }
+}
 
-  const float UNKNOWN = 255;
-  const float OCCUPIED = 254;
-  const float INSCRIBED = 253;
-  const float MAX_NON_OBSTACLE = 252;
-  const float FREE = 0;
+inline MotionModel fromString(const std::string & n)
+{
+  if (n == "VON_NEUMANN") {
+    return MotionModel::VON_NEUMANN;
+  } else if (n == "MOORE") {
+    return MotionModel::MOORE;
+  } else if (n == "DUBIN") {
+    return MotionModel::DUBIN;
+  } else if (n == "REEDS_SHEPP") {
+    return MotionModel::REEDS_SHEPP;
+    // } else if (n == "BALKCOM_MASON") {
+    //   return MotionModel::BALKCOM_MASON;
+  } else {
+    return MotionModel::UNKNOWN;
+  }
+}
+
+const float UNKNOWN = 255;
+const float OCCUPIED = 254;
+const float INSCRIBED = 253;
+const float MAX_NON_OBSTACLE = 252;
+const float FREE = 0;
 
 }  // namespace smac_planner
 

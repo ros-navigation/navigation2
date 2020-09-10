@@ -21,13 +21,24 @@
 #include <memory>
 #include <queue>
 #include <utility>
+#include "Eigen/Core"
 
-#include "smac_planner/node.hpp"
+#include "smac_planner/node_2d.hpp"
+#include "smac_planner/node_se2.hpp"
 #include "smac_planner/types.hpp"
 #include "smac_planner/constants.hpp"
 
 namespace smac_planner
 {
+
+inline double squaredDistance(
+  const Eigen::Vector2d & p1,
+  const Eigen::Vector2d & p2)
+{
+  const double & dx = p1[0] - p2[0];
+  const double & dy = p1[1] - p2[1];
+  return hypot(dx, dy);
+}
 
 /**
  * @class smac_planner::AStarAlgorithm
@@ -41,7 +52,8 @@ public:
   typedef std::vector<NodeT> Graph;
   typedef std::vector<NodePtr> NodeVector;
   typedef std::pair<float, NodePtr> NodeElement;
-  typedef std::pair<float, unsigned int> NodeHeuristicPair;
+  typedef typename NodeT::Coordinates Coordinates;
+  typedef typename NodeT::CoordinateVector CoordinateVector;
 
   struct NodeComparator
   {
@@ -57,7 +69,7 @@ public:
    * @brief A constructor for smac_planner::PlannerServer
    * @param neighborhood The type of neighborhood to use for search (4 or 8 connected)
    */
-  explicit AStarAlgorithm(const Neighborhood & neighborhood);
+  explicit AStarAlgorithm(const MotionModel & motion_model, const float & min_turning_radius);
 
   /**
    * @brief A destructor for smac_planner::AStarAlgorithm
@@ -86,30 +98,38 @@ public:
    * @param tolerance Reference to tolerance in costmap nodes
    * @return if plan was successful
    */
-  bool createPath(IndexPath & path, int & num_iterations, const float & tolerance);
+  bool createPath(CoordinateVector & path, int & num_iterations, const float & tolerance);
 
   /**
-   * @brief Set the costs of the graph
+   * @brief Create the graph based on the node type. For 2D nodes, a cost grid.
+   *   For 3D nodes, a SE2 grid without cost info as needs collision detector for footprint.
    * @param x The total number of nodes in the X direction
    * @param y The total number of nodes in the X direction
    * @param costs unsigned char * to the costs in the graph
    */
-  void setCosts(
+  void createGraph(
     const unsigned int & x,
     const unsigned int & y,
+    const unsigned int & dim_3,
     unsigned char * & costs);
 
   /**
    * @brief Set the goal for planning, as a node index
    * @param value The node index of the goal
    */
-  void setGoal(const unsigned int & value);
+  void setGoal(
+    const unsigned int & mx,
+    const unsigned int & my,
+    const unsigned int & dim_3);
 
   /**
    * @brief Set the starting pose for planning, as a node index
    * @param value The node index of the start
    */
-  void setStart(const unsigned int & value);
+  void setStart(
+    const unsigned int & mx,
+    const unsigned int & my,
+    const unsigned int & dim_3);
 
   /**
    * @brief Set the starting pose for planning, as a node index
@@ -117,7 +137,7 @@ public:
    * @param path Reference to a vector of indicies of generated path
    * @return whether the path was able to be backtraced
    */
-  bool backtracePath(NodePtr & node, IndexPath & path);
+  bool backtracePath(NodePtr & node, CoordinateVector & path);
 
   /**
    * @brief Get maximum number of iterations to plan
@@ -152,21 +172,6 @@ private:
   inline void addNode(const float cost, NodePtr & node);
 
   /**
-   * @brief Retrieve all valid neighbors of a node.
-   * @param node Pointer to the node we are currently exploring in A*
-   * @param neighbors Vector of neighbors to be filled
-   */
-  inline void getNeighbors(NodePtr & node, NodeVector & neighbors);
-
-  /**
-   * @brief Initialize the neighborhood to be used in A*
-   * For now we support 4-connect (VON_NEUMANN) and 8-connect (MOORE)
-   * @param x_size The size of the underlying grid
-   * @param neighborhood The desired neighborhood type
-   */
-  inline void initNeighborhoods(const int & x_size, const Neighborhood & neighborhood);
-
-  /**
    * @brief Check if this node is the goal node
    * @param node Node pointer to check if its the goal node
    * @return if node is goal
@@ -187,7 +192,7 @@ private:
    * @param node Node index of new
    * @return Heuristic cost between the nodes
    */
-  inline float getHeuristicCost(const unsigned int & node);
+  inline float getHeuristicCost(const NodePtr & node);
 
   /**
    * @brief Check if inputs to planner are valid
@@ -196,7 +201,7 @@ private:
   inline bool areInputsValid();
 
   /**
-   * @brief Get maximum number of on-approach iterations after within threshold 
+   * @brief Get maximum number of on-approach iterations after within threshold
    * @return Reference to Maximum on-appraoch iterations parameter
    */
   inline int & getOnApproachMaxIterations();
@@ -220,11 +225,10 @@ private:
   inline unsigned int & getSizeY();
 
   /**
-   * @brief Get node coordinates from index
-   * @param index Index of node
-   * @return pair of XY coordinates
+   * @brief Get number of angle quantization bins (SE2) or Z coordinate  (XYZ)
+   * @return Number of angle bins / Z dimension
    */
-  inline Coordinates getCoords(const unsigned int & index);
+  inline unsigned int & getSizeDim3();
 
   /**
    * @brief Clear hueristic queue of nodes to search
@@ -239,6 +243,8 @@ private:
   float _tolerance;
   unsigned int _x_size;
   unsigned int _y_size;
+  unsigned int _dim3_size;
+  float _min_turning_radius;
 
   Coordinates _goal_coordinates;
   NodePtr _start;
@@ -247,8 +253,7 @@ private:
   std::unique_ptr<Graph> _graph;
   std::unique_ptr<NodeQueue> _queue;
 
-  Neighborhood _neighborhood;
-  std::vector<int> _neighbors_grid_offsets;
+  MotionModel _motion_model;
   NodeHeuristicPair _best_heuristic_node;
 };
 

@@ -56,7 +56,8 @@ public:
   /**
    * @brief Initialization of the Upsampler
    */
-  void initialize(const OptimizerParams params) {
+  void initialize(const OptimizerParams params)
+  {
     _debug = params.debug;
 
     // General Params
@@ -77,7 +78,8 @@ public:
     _options.min_line_search_step_size = params.advanced.min_line_search_step_size;//1e-30;
     _options.max_num_line_search_step_size_iterations =
       params.advanced.max_num_line_search_step_size_iterations;
-    _options.line_search_sufficient_function_decrease = params.advanced.line_search_sufficient_function_decrease;//1e-30;
+    _options.line_search_sufficient_function_decrease =
+      params.advanced.line_search_sufficient_function_decrease;                                                  //1e-30;
     _options.max_line_search_step_contraction = params.advanced.max_line_search_step_contraction;
     _options.min_line_search_step_contraction = params.advanced.min_line_search_step_contraction;
     _options.max_num_line_search_direction_restarts =
@@ -129,7 +131,7 @@ public:
       temp_path.push_back(path[pt]);
 
       parameters[param_ratio * pt + 2] = interpolated[0];
-      parameters[param_ratio * pt + 3] = interpolated[1];  
+      parameters[param_ratio * pt + 3] = interpolated[1];
       temp_path.push_back(interpolated);
     }
 
@@ -152,11 +154,11 @@ public:
     // 10-15 hz, regularly
     // std::vector<Eigen::Vector2d> path_double_sampled;
     // for (int i = 0; i != path.size() - 1; i++) {  // last term should not be upsampled
-    //   path_double_sampled.push_back(path[i]); 
+    //   path_double_sampled.push_back(path[i]);
     //   path_double_sampled.push_back((path[i+1] + path[i]) / 2);
     // }
 
-    // std::unique_ptr<ceres::Problem> problem = std::make_unique<ceres::Problem>(); 
+    // std::unique_ptr<ceres::Problem> problem = std::make_unique<ceres::Problem>();
     // for (uint i = 1; i != path_double_sampled.size() - 1; i++) {
     //   ceres::CostFunction * cost_fn = new UpsamplerConstrainedCostFunction(path_double_sampled, params, 2, i);
     //   problem->AddResidualBlock(cost_fn, nullptr, &path_double_sampled[i][0], &path_double_sampled[i][1]);
@@ -170,11 +172,11 @@ public:
     // if (upsample_ratio == 4) {
     //   std::vector<Eigen::Vector2d> path_quad_sampled;
     //   for (int i = 0; i != path_double_sampled.size() - 1; i++) {
-    //     path_quad_sampled.push_back(path_double_sampled[i]); 
+    //     path_quad_sampled.push_back(path_double_sampled[i]);
     //     path_quad_sampled.push_back((path_double_sampled[i+1] + path_double_sampled[i]) / 2.0);
     //   }
 
-    //   std::unique_ptr<ceres::Problem> problem2 = std::make_unique<ceres::Problem>(); 
+    //   std::unique_ptr<ceres::Problem> problem2 = std::make_unique<ceres::Problem>();
     //   for (uint i = 1; i != path_quad_sampled.size() - 1; i++) {
     //     ceres::CostFunction * cost_fn = new UpsamplerConstrainedCostFunction(path_quad_sampled, params, 4, i);
     //     problem2->AddResidualBlock(cost_fn, nullptr, &path_quad_sampled[i][0], &path_quad_sampled[i][1]);
