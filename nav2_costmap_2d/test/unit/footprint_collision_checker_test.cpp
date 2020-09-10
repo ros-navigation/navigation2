@@ -18,6 +18,7 @@
 
 #include "gtest/gtest.h"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
+#include "nav2_costmap_2d/footprint.hpp"
 
 TEST(collision_footprint, test_basic)
 {
@@ -150,4 +151,22 @@ TEST(collision_footprint, test_point_and_line_cost)
 
   auto right_value = collision_checker.footprintCostAtPose(5.2, 5.0, 0.0, footprint);
   EXPECT_NEAR(right_value, 254.0, 0.001);
+}
+
+TEST(collition_foorprint, not_enough_points)
+{
+  geometry_msgs::msg::Point p1;
+  p1.x = 2.0;
+  p1.y = 2.0;
+
+  geometry_msgs::msg::Point p2;
+  p2.x = -2.0;
+  p2.y = -2.0;
+  std::vector<geometry_msgs::msg::Point> footprint = {p1, p2};
+  double min_dist = 0.0;
+  double max_dist = 0.0;
+
+  nav2_costmap_2d::calculateMinAndMaxDistances(footprint, min_dist, max_dist);
+  EXPECT_EQ(min_dist, std::numeric_limits<double>::max());
+  EXPECT_EQ(max_dist, 0.0f);
 }
