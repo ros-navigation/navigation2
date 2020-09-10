@@ -153,7 +153,7 @@ TEST(collision_footprint, test_point_and_line_cost)
   EXPECT_NEAR(right_value, 254.0, 0.001);
 }
 
-TEST(collition_foorprint, not_enough_points)
+TEST(collition_footprint, not_enough_points)
 {
   geometry_msgs::msg::Point p1;
   p1.x = 2.0;
@@ -162,6 +162,7 @@ TEST(collition_foorprint, not_enough_points)
   geometry_msgs::msg::Point p2;
   p2.x = -2.0;
   p2.y = -2.0;
+
   std::vector<geometry_msgs::msg::Point> footprint = {p1, p2};
   double min_dist = 0.0;
   double max_dist = 0.0;
@@ -169,4 +170,41 @@ TEST(collition_foorprint, not_enough_points)
   nav2_costmap_2d::calculateMinAndMaxDistances(footprint, min_dist, max_dist);
   EXPECT_EQ(min_dist, std::numeric_limits<double>::max());
   EXPECT_EQ(max_dist, 0.0f);
+}
+
+TEST(collition_footprint, to_point_32) {
+  geometry_msgs::msg::Point p;
+  p.x = 123.0;
+  p.y = 456.0;
+  p.z = 789.0;
+
+  geometry_msgs::msg::Point32 p32;
+  p32 = nav2_costmap_2d::toPoint32(p);
+  EXPECT_NEAR(p.x, p32.x, 1e-5);
+  EXPECT_NEAR(p.y, p32.y, 1e-5);
+  EXPECT_NEAR(p.z, p32.z, 1e-5);
+}
+
+TEST(collition_footprint, to_polygon) {
+  geometry_msgs::msg::Point p1;
+  p1.x = 1.2;
+  p1.y = 3.4;
+  p1.z = 5.1;
+
+  geometry_msgs::msg::Point p2;
+  p2.x = -5.6;
+  p2.y = -7.8;
+  p2.z = -9.1;
+  std::vector<geometry_msgs::msg::Point> pts = {p1, p2};
+
+  geometry_msgs::msg::Polygon poly;
+  poly = nav2_costmap_2d::toPolygon(pts);
+
+  EXPECT_EQ(2u, sizeof(poly.points) / sizeof(poly.points[0]));
+  EXPECT_NEAR(poly.points[0].x, p1.x, 1e-5);
+  EXPECT_NEAR(poly.points[0].y, p1.y, 1e-5);
+  EXPECT_NEAR(poly.points[0].z, p1.z, 1e-5);
+  EXPECT_NEAR(poly.points[1].x, p2.x, 1e-5);
+  EXPECT_NEAR(poly.points[1].y, p2.y, 1e-5);
+  EXPECT_NEAR(poly.points[1].z, p2.z, 1e-5);
 }
