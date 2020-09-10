@@ -84,7 +84,7 @@ protected:
 
     // Map
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
-    nav_msgs::msg::OccupancyGrid map_;
+    std::shared_ptr<nav_msgs::msg::OccupancyGrid> map_;
     // bool first_map_only_{true};
     // bool first_map_received_{false};
 

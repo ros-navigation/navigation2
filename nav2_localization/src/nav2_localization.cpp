@@ -105,7 +105,7 @@ LocalizationServer::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr ms
     if (first_map_only_ && first_map_received_) {
         return;
     }
-    map_ = *msg;
+    map_ = msg;
     first_map_received_ = true;
 }
 
