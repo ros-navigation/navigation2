@@ -153,7 +153,7 @@ TEST(collision_footprint, test_point_and_line_cost)
   EXPECT_NEAR(right_value, 254.0, 0.001);
 }
 
-TEST(collition_footprint, not_enough_points)
+TEST(collision_footprint, not_enough_points)
 {
   geometry_msgs::msg::Point p1;
   p1.x = 2.0;
@@ -172,7 +172,7 @@ TEST(collition_footprint, not_enough_points)
   EXPECT_EQ(max_dist, 0.0f);
 }
 
-TEST(collition_footprint, to_point_32) {
+TEST(collision_footprint, to_point_32) {
   geometry_msgs::msg::Point p;
   p.x = 123.0;
   p.y = 456.0;
@@ -185,7 +185,7 @@ TEST(collition_footprint, to_point_32) {
   EXPECT_NEAR(p.z, p32.z, 1e-5);
 }
 
-TEST(collition_footprint, to_polygon) {
+TEST(collision_footprint, to_polygon) {
   geometry_msgs::msg::Point p1;
   p1.x = 1.2;
   p1.y = 3.4;
@@ -207,4 +207,41 @@ TEST(collition_footprint, to_polygon) {
   EXPECT_NEAR(poly.points[1].x, p2.x, 1e-5);
   EXPECT_NEAR(poly.points[1].y, p2.y, 1e-5);
   EXPECT_NEAR(poly.points[1].z, p2.z, 1e-5);
+}
+
+TEST(collision_footprint, make_footprint_from_string) {
+  std::vector<geometry_msgs::msg::Point> footprint;
+  bool result = nav2_costmap_2d::makeFootprintFromString(
+    "[[1, 2.2], [.3, -4e4], [-.3, -4e4], [-1, 2.2]]", footprint);
+  EXPECT_EQ(result, true);
+  EXPECT_EQ(4u, footprint.size());
+  EXPECT_NEAR(footprint[0].x, 1.0, 1e-5);
+  EXPECT_NEAR(footprint[0].y, 2.2, 1e-5);
+  EXPECT_NEAR(footprint[1].x, 0.3, 1e-5);
+  EXPECT_NEAR(footprint[1].y, -4e4, 1e-5);
+  EXPECT_NEAR(footprint[2].x, -0.3, 1e-5);
+  EXPECT_NEAR(footprint[2].y, -4e4, 1e-5);
+  EXPECT_NEAR(footprint[3].x, -1.0, 1e-5);
+  EXPECT_NEAR(footprint[3].y, 2.2, 1e-5);
+}
+
+TEST(collision_footprint, make_footprint_from_string_parse_error) {
+  std::vector<geometry_msgs::msg::Point> footprint;
+  bool result = nav2_costmap_2d::makeFootprintFromString(
+    "[[bad_string", footprint);
+  EXPECT_EQ(result, false);
+}
+
+TEST(collision_footprint, make_footprint_from_string_two_points_error) {
+  std::vector<geometry_msgs::msg::Point> footprint;
+  bool result = nav2_costmap_2d::makeFootprintFromString(
+    "[[1, 2.2], [.3, -4e4]", footprint);
+  EXPECT_EQ(result, false);
+}
+
+TEST(collision_footprint, make_footprint_from_string_not_pairs) {
+  std::vector<geometry_msgs::msg::Point> footprint;
+  bool result = nav2_costmap_2d::makeFootprintFromString(
+    "[[1, 2.2], [.3, -4e4], [-.3, -4e4], [-1, 2.2, 5.6]]", footprint);
+  EXPECT_EQ(result, false);
 }
