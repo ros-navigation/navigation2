@@ -130,7 +130,7 @@ Also, `keepout_filter` should have the following parameters defined:
         filter_info_topic: "costmap_filter_info"
 ```
 
-NOTE: Enabling `KeepoutFilter` for `global_costmap` only will prevent path planner to build path plan bypassing keepout zones. Enabling `KeepoutFilter` for `local_costmap` only will cause robot won't go into keepout zones even if path planner makes the path through keepout zones. So, the best practive is to enable `KeepoutFilter` for both global and local costmaps.
+NOTE: Enabling `KeepoutFilter` for `global_costmap` only will cause path planner to build path plan bypassing keepout zones. Enabling `KeepoutFilter` for `local_costmap` only will cause robot won't go into keepout zones even if path planner makes the path through keepout zones. So, the best practive is to enable `KeepoutFilter` for both global and local costmaps.
 
 3. Filter info topic should be published by Semantic Map Server. Until this server will be developed, dummy filter info publisher was made (placed in `nav2_costmap_2d/test/costmap_filter_info/` directory). Open its `costmap_filter_info.launch.py` file and ensure that proper `namespace` is set. Then launch dummy info publisher:
 ```
