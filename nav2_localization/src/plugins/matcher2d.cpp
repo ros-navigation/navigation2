@@ -37,6 +37,16 @@ void LikelihoodFieldMatcher2d::setMap(const nav_msgs::msg::OccupancyGrid& map)
 	map_ = map;
 }
 
+void LikelihoodFieldMatcher2d::setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan)
+{
+	laser_scan_ = laser_scan;
+}
+
+sensor_msgs::msg::LaserScan::ConstSharedPtr LikelihoodFieldMatcher2d::getLaserScan()
+{
+	return laser_scan_;
+}
+
 } // nav2_localization
 
 PLUGINLIB_EXPORT_CLASS(nav2_localization::LikelihoodFieldMatcher2d, nav2_localization::Matcher2d)

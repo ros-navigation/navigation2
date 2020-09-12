@@ -36,8 +36,7 @@ public:
      * @return Estimation of the current position
      */
 	virtual geometry_msgs::PoseWithCovariance solve(
-		const nav_msgs::msg::Odometry& curr_odom,
-		const sensor_msgs::msg::LaserScan& scan) = 0;
+		const nav_msgs::msg::Odometry& curr_odom) = 0;
 
 	virtual void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,

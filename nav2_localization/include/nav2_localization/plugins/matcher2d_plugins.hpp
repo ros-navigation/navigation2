@@ -16,6 +16,10 @@ public:
 	void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node);
 
 	void setMap(const nav_msgs::msg::OccupancyGrid& map);
+
+	void setLaserScan()
+
+	sensor_msgs::msg::LaserScan::ConstSharedPtr getLaserScan();
 };  
 } // nav2_localization
 

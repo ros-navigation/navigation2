@@ -213,9 +213,9 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
     }
 
     // The estimated robot's pose in the global frame
-    geometry_msgs::msg::TransformStamped current_pose = solver_->solve(odom_to_base_transform, *laser_scan);
+    geometry_msgs::msg::TransformStamped current_pose = solver_->solve(odom_to_base_transform);
 
-    current_pose.stamp = laser_scan->header.stamp;
+    current_pose.header.stamp = laser_scan->header.stamp;
     current_pose.header.frame_id = map_frame_id_;
     current_pose.child_frame_id = base_frame_id_;
 

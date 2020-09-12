@@ -24,8 +24,7 @@ public:
 	DummySolver2d(){}
 
 	geometry_msgs::msg::PoseWithCovariance solve(
-		const nav_msgs::msg::Odometry& curr_odom,
-		const sensor_msgs::msg::LaserScan& scan);
+		const nav_msgs::msg::Odometry& curr_odom);
 
 	void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,

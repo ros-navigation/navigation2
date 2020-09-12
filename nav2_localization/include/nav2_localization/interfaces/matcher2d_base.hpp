@@ -7,9 +7,6 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include <pdf/conditionalpdf.h>
 
-#define MEASMODEL_NUMCONDARGUMENTS_MOBILE 1
-#define MEASMODEL_DIMENSION_MOBILE        1
-
 namespace nav2_localization
 {
 
@@ -18,14 +15,14 @@ namespace nav2_localization
  * @brief Abstract interface for a 2D matcher for localization purposes to adhere to with pluginlib
  */
 class Matcher2d : public BFL::ConditionalPdf
-	<double, geometry_msgs::msg::TransformStamped>(MEASMODEL_DIMENSION_MOBILE,MEASMODEL_NUMCONDARGUMENTS_MOBILE)
+	<double, geometry_msgs::msg::TransformStamped>
 {
 public:
     Matcher2d(){}
 
 	using Ptr = std::shared_ptr<nav2_localization::Matcher2d>;
 
-	virtual void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node) = 0;
+	virtual void configure(const nav2_util::LifecycleNode::SharedPtr& node) = 0;
 
 	virtual void activate() = 0;
 
@@ -33,11 +30,16 @@ public:
 
 	virtual void cleanup() = 0;
 
-	virtual void setMap(const nav_msgs::msg::OccupancyGrid& map) = 0;
+	virtual void setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr& map) = 0;
+
+	virtual void setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr) = 0;
+
+	virtual sensor_msgs::msg::LaserScan::ConstSharedPtr getLaserScan() = 0;
 
 protected:
-	rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
-	nav_msgs::msg::OccupancyGrid& map_; // Reference to the 2D occupancy grid map of the environment where the robot is
+	nav2_util::LifecycleNode::SharedPtr node_;
+	nav_msgs::msg::OccupancyGrid::SharedPtr map_; // Reference to the 2D occupancy grid map of the environment where the robot is
+	sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan_;
 };  
 } // nav2_localization
 

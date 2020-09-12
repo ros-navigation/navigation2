@@ -6,8 +6,7 @@ namespace nav2_localization
 {
 
 geometry_msgs::msg::PoseWithCovariance DummySolver2d::solve(
-	const nav_msgs::msg::Odometry& curr_odom,
-	const sensor_msgs::msg::LaserScan& scan)
+	const nav_msgs::msg::Odometry& curr_odom)
 {
 	// STEP 1 - Motion update
 	for(unsigned int i=0; i<pf.n_particles; i++)
