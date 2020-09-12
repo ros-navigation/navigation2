@@ -86,7 +86,7 @@ BehaviorTreeEngine::addZMQGrootMonitoring(BT::Tree * tree)
 }
 
 void
-BehaviorTreeEngine::resetZMQGrootMonitor()
+BehaviorTreeEngine::resetGrootMonitor()
 {
   publisher_zmq_.reset();
 }

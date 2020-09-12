@@ -142,7 +142,7 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
     return true;
   }
   // if a new tree is created, than the ZMQ Publisher must be destroyed
-  bt_->resetZMQGrootMonitor();
+  bt_->resetGrootMonitor();
 
   // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(bt_xml_filename);
@@ -221,7 +221,7 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   current_bt_xml_filename_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_.rootNode());
-  bt_->resetZMQGrootMonitor();
+  bt_->resetGrootMonitor();
   bt_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");

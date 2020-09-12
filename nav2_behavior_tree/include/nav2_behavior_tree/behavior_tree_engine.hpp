@@ -52,7 +52,7 @@ public:
     BT::Blackboard::Ptr blackboard);
 
   void addZMQGrootMonitoring(BT::Tree * tree);
-  void resetZMQGrootMonitor();
+  void resetGrootMonitor();
 
   // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
   void haltAllActions(BT::TreeNode * root_node);
