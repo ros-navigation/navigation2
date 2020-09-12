@@ -67,7 +67,7 @@ BtNavigator::BtNavigator()
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
   declare_parameter("odom_topic", std::string("odom"));
-  declare_parameter("bt_activate_groot_monitoring", true);
+  declare_parameter("enable_groot_monitoring", false);
 }
 
 BtNavigator::~BtNavigator()
@@ -164,7 +164,7 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
   current_bt_xml_filename_ = bt_xml_filename;
 
   // get parameter for monitoring with Groot via ZMQ Publisher
-  if (get_parameter("bt_activate_groot_monitoring").as_bool()) {
+  if (get_parameter("enable_groot_monitoring").as_bool()) {
     bt_->addZMQGrootMonitoring(&tree_);
   }
   return true;
