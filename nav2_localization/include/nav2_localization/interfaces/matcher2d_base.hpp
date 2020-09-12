@@ -25,15 +25,15 @@ public:
 
 	using Ptr = std::shared_ptr<nav2_localization::Matcher2d>;
 
-	virtual void configure(
-		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-		nav_msgs::msg::OccupancyGrid& map) = 0;
+	virtual void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node) = 0;
 
 	virtual void activate() = 0;
 
 	virtual void deactivate() = 0;
 
 	virtual void cleanup() = 0;
+
+	virtual void setMap(const nav_msgs::msg::OccupancyGrid& map) = 0;
 
 protected:
 	rclcpp_lifecycle::LifecycleNode::SharedPtr node_;

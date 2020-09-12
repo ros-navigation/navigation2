@@ -13,9 +13,9 @@ public:
 
 	BFL::Probability ProbabilityGet(const sensor_msgs::msg::LaserScan &measurement) const;
 
-	void configure(
-		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-		nav_msgs::msg::OccupancyGrid& map);
+	void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node);
+
+	void setMap(const nav_msgs::msg::OccupancyGrid& map);
 };  
 } // nav2_localization
 

@@ -85,13 +85,10 @@ protected:
     // Map
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
     std::shared_ptr<nav_msgs::msg::OccupancyGrid> map_;
-    // bool first_map_only_{true};
-    // bool first_map_received_{false};
+    bool first_map_received_{false};
 
     // Laser scan
     std::string scan_topic_;
-    std::map<std::string, int> frame_to_laser_;
-    // rclcpp::Time last_laser_received_ts_;
 
     // Transforms
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;

@@ -102,11 +102,11 @@ void
 LocalizationServer::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
     RCLCPP_DEBUG(get_logger(), "A new map was received.");
-    if (first_map_only_ && first_map_received_) {
-        return;
+    if (!first_map_received_)
+    {
+        matcher2d_->setMap(msg);
+        first_map_received_ = true;
     }
-    map_ = msg;
-    first_map_received_ = true;
 }
 
 void
@@ -172,7 +172,7 @@ LocalizationServer::initPlugins()
         exit(-1);
     }
 
-    matcher2d_->configure(node, map_);
+    matcher2d_->configure(node);
 
     try {
         solver_type_ = nav2_util::get_plugin_type_param(node, solver_id_);

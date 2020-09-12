@@ -5,12 +5,9 @@
 namespace nav2_localization
 {
 
-void DummyMatcher2d::configure(
-	const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-	nav_msgs::msg::OccupancyGrid& map)
+void DummyMatcher2d::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node)
 {
 	node_ = node;
-	map_ = map;
 	return;
 }
 
@@ -33,6 +30,11 @@ void DummyMatcher2d::deactivate()
 void DummyMatcher2d::cleanup()
 {
 
+}
+
+void DummyMatcher2d::setMap(const nav_msgs::msg::OccupancyGrid& map)
+{
+	map_ = map;
 }
 
 } // nav2_localization
