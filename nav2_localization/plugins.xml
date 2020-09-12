@@ -1,7 +1,12 @@
 <class_libraries>
-    <library path="sample_motion_model">
-        <class type="nav2_localization_plugins::DiffDriveOdomMotionModel" base_class_type="nav2_localization_base::SampleMotionModel">
-            <description>A dummy sample motion model</description>
+    <library path="src/plugins/sample_motion_model">
+        <class type="nav2_localization::DiffDriveOdomMotionModel" base_class_type="nav2_localization::SampleMotionModel">
+            <description>Differential drive odometry motion model</description>
         </class>
+    </library>
+    <library path="src/plugins/matcher2d">
+        <class type="nav2_localization::LikelihoodFieldMatcher2d" base_class_type="nav2_localization::Matcher2d">
+            <description>Likelihood Field model 2d matcher</description>
+        </class>                      
     </library>
 </class_libraries>

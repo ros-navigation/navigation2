@@ -4,11 +4,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "nav2_localization/action.hpp"
 #include <pdf/conditionalpdf.h>
-
-#define SYSMODEL_NUMCONDARGUMENTS_MOBILE 1
-#define SYSMODEL_DIMENSION_MOBILE        2
 
 namespace nav2_localization
 {
@@ -18,7 +14,7 @@ namespace nav2_localization
  * @brief Abstract interface for sample motion model to adhere to with pluginlib
  */
 class SampleMotionModel : public BFL::ConditionalPdf
-    <nav2_localization::Action, geometry_msgs::msg::TransformStamped>(SYSMODEL_DIMENSION_MOBILE,SYSMODEL_NUMCONDARGUMENTS_MOBILE)
+    <geometry_msgs::msg::TransformStamped, geometry_msgs::msg::TransformStamped>
 {   
 public:
     SampleMotionModel(){}

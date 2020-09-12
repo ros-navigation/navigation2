@@ -5,17 +5,16 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include <random>
 
 namespace nav2_localization
 {
-class DiffDriveOdomMotionModel : public nav2_localization::SampleMotionModel
+class DiffDriveOdomMotionModel : public SampleMotionModel
 {
 public:
     DiffDriveOdomMotionModel() {}
 
-    bool SampleFrom(Sample<geometry_msgs::msg::TransformStamped>& one_sample,
-        const SampleMthd method = SampleMthd::DEFAULT,
+    bool SampleFrom(BFL::Sample<geometry_msgs::msg::TransformStamped>& one_sample,
+        const int method = DEFAULT,
         void * args = NULL) const;
 
     void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
@@ -29,7 +28,6 @@ private:
     double alpha2_;
     double alpha3_;
     double alpha4_;
-    std::default_random_engine generator_;
 };
 } // nav2_localization
 

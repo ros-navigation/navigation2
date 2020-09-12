@@ -6,10 +6,10 @@
 
 namespace nav2_localization
 {
-class DummyMatcher2d : public nav2_localization::Matcher2d
+class LikelihoodFieldMatcher2d : public nav2_localization::Matcher2d
 {
 public:
-	DummyMatcher2d(){}
+	LikelihoodFieldMatcher2d(){}
 
 	BFL::Probability ProbabilityGet(const sensor_msgs::msg::LaserScan &measurement) const;
 

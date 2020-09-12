@@ -15,7 +15,7 @@ LocalizationServer::LocalizationServer()
   sample_motion_model_loader_("nav2_localization", "nav2_localization::SampleMotionModel"),
   default_sample_motion_model_id_("DiffDriveOdomMotionModel"),
   matcher2d_loader_("nav2_localization", "nav2_localization::Matcher2D"),
-  default_matcher2d_id_("DummyMatcher2D"),
+  default_matcher2d_id_("LikelihoodFieldMatcher2D"),
   solver_loader_("nav2_localization", "nav2_localization::Solver"),
   default_solver_id_("DummySolver")
 {

@@ -84,7 +84,6 @@ protected:
 
     // Map
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
-    std::shared_ptr<nav_msgs::msg::OccupancyGrid> map_;
     bool first_map_received_{false};
 
     // Laser scan

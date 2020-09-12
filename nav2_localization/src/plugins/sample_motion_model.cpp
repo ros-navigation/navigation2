@@ -1,30 +1,32 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
 #include "nav2_localization/plugins/sample_motion_model_plugins.hpp"
-#include "nav2_localization/action.hpp"
 #include "tf2/convert.h"
 #include "tf2/LinearMath/Quaternion.h"
-#include <tf2/impl/utils.h>
+#include "tf2/utils.h"
 #include <cmath>
+#include <random>
 
 namespace nav2_localization
 {
+
 bool DiffDriveOdomMotionModel::SampleFrom(
-    Sample<geometry_msgs::msg::TransformStamped>& one_sample, 
-    const SampleMthd method,
+    BFL::Sample<geometry_msgs::msg::TransformStamped>& one_sample, 
+    const int method,
     void * args) const
 {
-    nav2_localization::Action action = ConditionalArgumentGet(0);
-    geometry_msgs::msg::TransformStamped prev_pose = ConditionalArgumentGet(1);
+    geometry_msgs::msg::TransformStamped prev_odom = ConditionalArgumentGet(0);
+    geometry_msgs::msg::TransformStamped curr_odom = ConditionalArgumentGet(1);
+    geometry_msgs::msg::TransformStamped prev_pose = ConditionalArgumentGet(2);
     geometry_msgs::msg::TransformStamped most_likely_pose;
 
-    double x_bar_prime = action.curr_odom.transform.translation.x;
-    double y_bar_prime = action.curr_odom.transform.translation.y;
-    double theta_bar_prime = tf2::getYaw(action.curr_odom.transform.rotation);
+    double x_bar_prime = curr_odom.transform.translation.x;
+    double y_bar_prime = curr_odom.transform.translation.y;
+    double theta_bar_prime = tf2::getYaw(curr_odom.transform.rotation);
     
-    double x_bar = action.prev_odom.transform.x;
-    double y_bar = action.prev_odom.transform.y;
-    double theta_bar = tf2::getYaw(action.prev_odom.transform.rotation);
+    double x_bar = prev_odom.transform.translation.x;
+    double y_bar = prev_odom.transform.translation.y;
+    double theta_bar = tf2::getYaw(prev_odom.transform.rotation);
 
     double x = prev_pose.transform.translation.x;
     double y = prev_pose.transform.translation.y;
@@ -36,16 +38,19 @@ bool DiffDriveOdomMotionModel::SampleFrom(
         RCLCPP_ERROR(node_->get_logger(), "deltta_rot_1 is NAN or INF");
         delta_rot_1 = 0.0; // TODO: consider a different value
     }
-    double delta_trans = sqrt((x_bar_prime-x_bar)*(x_bar_prime-x_bar) + (y_bar_prime-y_bar)*(y_bar_prime-y_bar));
+    double delta_trans = hypot(x_bar_prime-x_bar, y_bar_prime-y_bar);
     double delta_rot_2 = theta_bar_prime - theta_bar - delta_rot_1;
 
-    std::normal_distribution<double> delta_rot_1_noise_dist(0.0, hypot(alpha1_*delta_rot_1 + alpha2_*delta_trans));
+    std::random_device device_;
+    std::mt19937 generator_(device_());
+
+    std::normal_distribution<double> delta_rot_1_noise_dist(0.0, sqrt(alpha1_*delta_rot_1 + alpha2_*delta_trans));
     double delta_rot_1_hat = delta_rot_1 - delta_rot_1_noise_dist(generator_);
 
-    std::normal_distribution<double> delta_trans_noise_dist(0.0, hypot(alpha3_*delta_trans + alpha4_*(delta_rot_1+delta_rot_2)));
+    std::normal_distribution<double> delta_trans_noise_dist(0.0, sqrt(alpha3_*delta_trans + alpha4_*(delta_rot_1+delta_rot_2)));
     double delta_trans_hat = delta_trans - delta_trans_noise_dist(generator_);
 
-    std::normal_distribution<double> delta_rot_2_noise_dist(0.0, hypot(alpha1_*delta_rot_2 + alpha2_*delta_trans));
+    std::normal_distribution<double> delta_rot_2_noise_dist(0.0, sqrt(alpha1_*delta_rot_2 + alpha2_*delta_trans));
     double delta_rot_2_hat = delta_rot_2 - delta_rot_2_noise_dist(generator_);
 
     most_likely_pose.transform.translation.x = x + delta_trans_hat*cos(theta + delta_rot_1_hat);
@@ -57,7 +62,7 @@ bool DiffDriveOdomMotionModel::SampleFrom(
 
     most_likely_pose.transform.rotation = tf2::toMsg(theta_prime_quat);
 
-    one_sample = most_likely_pose;
+    one_sample.ValueSet(most_likely_pose);
 
     return true;
 }
@@ -83,7 +88,7 @@ void DiffDriveOdomMotionModel::deactivate()
 
 }
 
-void DummyMotionDiffDriveOdomMotionModelSampler::cleanup()
+void DiffDriveOdomMotionModel::cleanup()
 {
     
 }

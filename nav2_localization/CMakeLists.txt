@@ -12,6 +12,9 @@ find_package(nav_2d_utils REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(BFL REQUIRED orocos-bfl)
 
 set(dependencies
   rclcpp
@@ -27,9 +30,12 @@ set(dependencies
 
 include_directories(
   include
+  ${BFL_INCLUDE_DIRS}
 )
 
-add_library(sample_motion_model src/sample_motion_model.cpp)
+link_directories(${BFL_LIBRARY_DIRS})
+
+add_library(sample_motion_model src/plugins/sample_motion_model.cpp)
 
 ament_target_dependencies(sample_motion_model ${dependencies})
 
