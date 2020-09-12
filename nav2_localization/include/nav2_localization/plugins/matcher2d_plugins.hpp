@@ -11,9 +11,7 @@ class DummyMatcher2d : public nav2_localization::Matcher2d
 public:
 	DummyMatcher2d(){}
 
-	float match(
-		const sensor_msgs::msg::LaserScan& scan,
-		const geometry_msgs::msg::Pose& pose);
+	BFL::Probability ProbabilityGet(const sensor_msgs::msg::LaserScan &measurement) const;
 
 	void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,

@@ -5,14 +5,6 @@
 namespace nav2_localization
 {
 
-float DummyMatcher2d::match(
-	const sensor_msgs::msg::LaserScan& scan,
-	const geometry_msgs::msg::Pose& pose)
-{
-	float probability = 0.5;
-	return probability;
-}
-
 void DummyMatcher2d::configure(
 	const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
 	nav_msgs::msg::OccupancyGrid& map)
@@ -20,6 +12,12 @@ void DummyMatcher2d::configure(
 	node_ = node;
 	map_ = map;
 	return;
+}
+
+BFL::Probability DummyMatcher2d::ProbabilityGet(
+	const sensor_msgs::msg::LaserScan &measurement) const
+{
+	// TODO: main logic goes here!
 }
 
 void DummyMatcher2d::activate()
