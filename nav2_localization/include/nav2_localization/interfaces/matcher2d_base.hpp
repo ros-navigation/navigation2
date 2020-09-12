@@ -18,7 +18,7 @@ namespace nav2_localization
  * @brief Abstract interface for a 2D matcher for localization purposes to adhere to with pluginlib
  */
 class Matcher2d : public BFL::ConditionalPdf
-	<sensor_msgs::msg::LaserScan, geometry_msgs::msg::TransformStamped>(MEASMODEL_DIMENSION_MOBILE,MEASMODEL_NUMCONDARGUMENTS_MOBILE)
+	<double, geometry_msgs::msg::TransformStamped>(MEASMODEL_DIMENSION_MOBILE,MEASMODEL_NUMCONDARGUMENTS_MOBILE)
 {
 public:
     Matcher2d(){}
