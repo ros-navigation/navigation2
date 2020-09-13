@@ -201,16 +201,32 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
     geometry_msgs::msg::TransformStamped odom_to_base_transform;
     try
     {
-        odom_to_base_transform = tf_buffer_->lookupTransform(odom_frame_id_,
-                                    base_frame_id_,
-                                    laser_scan->header.stamp,
-                                    transform_tolerance_);
+        odom_to_base_transform = tf_buffer_->lookupTransform(base_frame_id_,
+                                                            odom_frame_id_,
+                                                            laser_scan->header.stamp,
+                                                            transform_tolerance_);
     }
     catch(const tf2::TransformException& e)
     {
         RCLCPP_ERROR(get_logger(), "%s", e.what());
         return;
     }
+
+    // TODO: should this run only once?
+    geometry_msgs::msg::TransformStamped laser_pose;
+    try
+    {
+        laser_pose = tf_buffer_->lookupTransform(laser_scan->header.frame_id,
+                                                base_frame_id_,                 
+                                                laser_scan->header.stamp,
+                                                transform_tolerance_);
+    }
+    catch(const tf2::TransformException& e)
+    {
+        RCLCPP_ERROR(get_logger(), "%s", e.what());
+        return;
+    }
+    matcher2d_->setLaserPose(laser_pose);
 
     // The estimated robot's pose in the global frame
     geometry_msgs::msg::TransformStamped current_pose = solver_->solve(odom_to_base_transform);
