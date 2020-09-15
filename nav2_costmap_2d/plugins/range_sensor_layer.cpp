@@ -63,6 +63,7 @@ void RangeSensorLayer::onInitialize()
   buffered_readings_ = 0;
   last_reading_time_ = clock_->now();
   default_value_ = to_cost(0.5);
+  inflate_cone_ = 1.0;
 
   matchSize();
   resetRange();
