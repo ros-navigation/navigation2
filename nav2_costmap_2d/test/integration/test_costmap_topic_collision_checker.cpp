@@ -183,7 +183,7 @@ public:
     setPose(x, y, theta);
     publishFootprint();
     publishCostmap();
-    rclcpp::sleep_for(std::chrono::milliseconds(50));
+    rclcpp::sleep_for(std::chrono::milliseconds(1000));
     return collision_checker_->isCollisionFree(pose);
   }
 
