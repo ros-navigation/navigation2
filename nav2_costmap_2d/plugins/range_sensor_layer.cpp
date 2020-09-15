@@ -63,7 +63,6 @@ void RangeSensorLayer::onInitialize()
   buffered_readings_ = 0;
   last_reading_time_ = clock_->now();
   default_value_ = to_cost(0.5);
-  inflate_cone_ = 1.0;
 
   matchSize();
   resetRange();
@@ -78,7 +77,7 @@ void RangeSensorLayer::onInitialize()
   declareParameter("phi", rclcpp::ParameterValue(1.2));
   node->get_parameter(name_ + "." + "phi", phi_v_);
   declareParameter("inflate_cone", rclcpp::ParameterValue(1.0));
-  node->get_parameter(name_ + "." + "phi", phi_v_);
+  node->get_parameter(name_ + "." + "inflate_cone", inflate_cone_);
   declareParameter("no_readings_timeout", rclcpp::ParameterValue(0.0));
   node->get_parameter(name_ + "." + "no_readings_timeout", no_readings_timeout_);
   declareParameter("clear_threshold", rclcpp::ParameterValue(0.2));
