@@ -16,6 +16,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Costmap.msg"
   "msg/CostmapMetaData.msg"
   "msg/CostmapFilterInfo.msg"
+  "msg/SpeedLimit.msg"
   "msg/VoxelGrid.msg"
   "msg/BehaviorTreeStatusChange.msg"
   "msg/BehaviorTreeLog.msg"

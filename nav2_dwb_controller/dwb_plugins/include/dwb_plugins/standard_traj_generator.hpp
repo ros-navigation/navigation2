@@ -68,6 +68,20 @@ public:
     const nav_2d_msgs::msg::Twist2D & start_vel,
     const nav_2d_msgs::msg::Twist2D & cmd_vel) override;
 
+  /**
+   * @brief Limits the maximum linear speed of the robot.
+   * @param percentage Setting speed limit in percentage if true
+   * or in absolute values in false case.
+   * @param speed_limit expressed in absolute value (in m/s)
+   * or in percentage from maximum robot speed.
+   */
+  void setSpeedLimit(const bool & percentage, const double & speed_limit) override
+  {
+    if (kinematics_handler_) {
+      kinematics_handler_->setSpeedLimit(percentage, speed_limit);
+    }
+  }
+
 protected:
   /**
    * @brief Initialize the VelocityIterator pointer. Put in its own function for easy overriding

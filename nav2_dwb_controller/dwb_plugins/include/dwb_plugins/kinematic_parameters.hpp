@@ -40,6 +40,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_msgs/msg/speed_limit.hpp"
 
 namespace dwb_plugins
 {
@@ -80,9 +81,13 @@ protected:
   double min_vel_y_{0};
   double max_vel_x_{0};
   double max_vel_y_{0};
+  double max_vel_x_default_{0};
+  double max_vel_y_default_{0};
   double max_vel_theta_{0};
+  double max_vel_theta_default_{0};
   double min_speed_xy_{0};
   double max_speed_xy_{0};
+  double max_speed_xy_default_{0};
   double min_speed_theta_{0};
   double acc_lim_x_{0};
   double acc_lim_y_{0};
@@ -108,6 +113,8 @@ public:
   void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & plugin_name);
 
   inline KinematicParameters getKinematics() {return *kinematics_.load();}
+
+  void setSpeedLimit(const bool & percentage, const double & speed_limit);
 
   using Ptr = std::shared_ptr<KinematicsHandler>;
 

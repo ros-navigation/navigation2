@@ -175,7 +175,18 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | `<filter name>`.enabled | true | Whether it is enabled |
-| `<filter name>`.filter_info_topic | N/A | Name of the CostmapFilterInfo topic having filter-related information |
+| `<filter name>`.filter_info_topic | N/A | Name of the intput CostmapFilterInfo topic having filter-related information |
+| `<filter name>`.transform_tolerance | 0.0 | TF tolerance |
+
+## speed filter
+
+* `<filter name>`: Name corresponding to the `nav2_costmap_2d::SpeedFilter` plugin. This name gets defined in `plugins`.
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<filter name>`.enabled | true | Whether it is enabled |
+| `<filter name>`.filter_info_topic | N/A | Name of the input CostmapFilterInfo topic having filter-related information |
+| `<filter name>`.speed_limit_topic | "speed_limit" | Name of the output speed limiting topic |
 | `<filter name>`.transform_tolerance | 0.0 | TF tolerance |
 
 # controller_server
@@ -192,6 +203,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | min_x_velocity_threshold | 0.0001 | Minimum X velocity to use (m/s) |
 | min_y_velocity_threshold | 0.0001 | Minimum Y velocity to use (m/s) |
 | min_theta_velocity_threshold | 0.0001 | Minimum angular velocity to use (rad/s) |
+| speed_limit_topic | "speed_limit" | Name of the input speed limiting topic |
 
 **NOTE:** When `controller_plugins` parameter is overridden, each plugin namespace defined in the list needs to have a `plugin` parameter defining the type of plugin to be loaded in the namespace.
 
