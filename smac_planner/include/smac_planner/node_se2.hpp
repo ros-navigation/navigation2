@@ -25,6 +25,8 @@
 #include <utility>
 #include <limits>
 
+#include <ompl/base/StateSpace.h>
+
 #include "smac_planner/constants.hpp"
 
 namespace smac_planner
@@ -72,6 +74,7 @@ struct MotionTable
   unsigned int num_angle_quantization;
   float num_angle_quantization_float;
   float bin_size;
+  ompl::base::StateSpacePtr state_space;
 };
 
 /**

@@ -13,6 +13,11 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+
+#include <ompl/base/ScopedState.h>
+#include <ompl/base/spaces/DubinsStateSpace.h>
+#include <ompl/base/spaces/ReedsSheppStateSpace.h>
+
 #include "smac_planner/node_se2.hpp"
 
 namespace smac_planner
@@ -76,6 +81,9 @@ void MotionTable::initDubin(
   projections.emplace_back(hypotf(delta_x, delta_y), 0.0, 0.0);  // Forward
   projections.emplace_back(delta_x, delta_y, increments);  // Left
   projections.emplace_back(delta_x, -delta_y, -increments);  // Right
+
+  // Create the correct OMPL state space
+  state_space = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius);
 }
 
 // http://planning.cs.uiuc.edu/node822.html
@@ -111,6 +119,9 @@ void MotionTable::initReedsShepp(
   projections.emplace_back(-hypotf(delta_x, delta_y), 0.0, 0.0);  // Backward
   projections.emplace_back(-delta_x, delta_y, -increments);  // Backward + Left
   projections.emplace_back(-delta_x, -delta_y, increments);  // Backward + Right
+
+  // Create the correct OMPL state space
+  state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(min_turning_radius);
 }
 
 // http://planning.cs.uiuc.edu/node823.html
@@ -232,11 +243,18 @@ bool NodeSE2::isNodeValid(const bool & traverse_unknown)
 
 float NodeSE2::getHeuristicCost(
   const Coordinates & node_coords,
-  const Coordinates & goal_coordinates)
+  const Coordinates & goal_coords)
 {
-  return hypotf(
-    goal_coordinates.x - node_coords.x,
-    goal_coordinates.y - node_coords.y);
+  // Create OMPL states for checking
+  ompl::base::ScopedState<> from(_motion_model.state_space), to(_motion_model.state_space);
+  from[0] = node_coords.x;
+  from[1] = node_coords.y;
+  from[2] = node_coords.theta * _motion_model.bin_size;
+  to[0] = goal_coords.x;
+  to[1] = goal_coords.y;
+  to[2] = goal_coords.theta * _motion_model.bin_size;
+
+  return _motion_model.state_space->distance(from(), to());
 }
 
 void NodeSE2::initMotionModel(

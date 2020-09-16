@@ -22,10 +22,12 @@ find_package(pluginlib REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(ompl REQUIRED)
 
 include_directories(
   include
   ${CERES_INCLUDES}
+  ${OMPL_INCLUDE_DIRS}
 )
 
 set(library_name smac_planner)
@@ -58,7 +60,7 @@ add_library(${library_name} SHARED
   src/node_2d.cpp
 )
 
-target_link_libraries(${library_name} ${CERES_LIBRARIES})
+target_link_libraries(${library_name} ${CERES_LIBRARIES} ${OMPL_LIBRARIES})
 target_include_directories(${library_name} PUBLIC ${Eigen3_INCLUDE_DIRS})
 
 ament_target_dependencies(${library_name}
