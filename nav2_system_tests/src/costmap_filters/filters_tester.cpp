@@ -21,6 +21,7 @@
 #include <iomanip>
 
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_map_server/map_io.hpp"
 
 using namespace std::chrono_literals;
 
@@ -94,6 +95,15 @@ FiltersTester::on_activate(const rclcpp_lifecycle::State & state)
 
   costmap_ros_->on_activate(state);
   planner_->activate();
+
+  // Loading map mask
+  nav_msgs::msg::OccupancyGrid mask_msg;
+  char * test_mask = std::getenv("TEST_MASK");
+  nav2_map_server::LOAD_MAP_STATUS status = nav2_map_server::loadMapFromYaml(test_mask, mask_msg);
+  if (status != nav2_map_server::LOAD_MAP_SUCCESS) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+  mask_costmap_ = std::make_unique<nav2_costmap_2d::Costmap2D>(mask_msg);
 
   is_active_ = true;
 
@@ -237,16 +247,46 @@ bool FiltersTester::isInKeepout(const geometry_msgs::msg::Point & position)
 {
   const double & x = position.x;
   const double & y = position.y;
+  unsigned int mx, my;
 
-  // Check Bar No.1 on keepout_mask.pgm:
-  if (isInBar(x, y, -4.0, 0.0, -1.7, 1.0)) {
-    RCLCPP_ERROR(get_logger(), "Position (%f,%f) belongs to keepout area no.1", x, y);
+  if (!mask_costmap_) {
+    RCLCPP_ERROR(get_logger(), "Map mask was not loaded");
     return true;
   }
 
-  // Check Bar No.2 on keepout_mask.pgm:
-  if (isInBar(x, y, -1.7, -5.0, 5.0, 1.0)) {
-    RCLCPP_ERROR(get_logger(), "Position (%f,%f) belongs to keepout area no.2", x, y);
+  if (!mask_costmap_->worldToMap(x, y, mx, my)) {
+    RCLCPP_ERROR(get_logger(), "Robot is out of world");
+    return true;
+  }
+
+  if (mask_costmap_->getCost(mx, my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+    // Checking neighboring pixels whether the path lies on keepout zone's boundary
+    if (
+      mx >= 1 &&
+      mask_costmap_->getCost(mx - 1, my) != nav2_costmap_2d::LETHAL_OBSTACLE)
+    {
+      return false;
+    }
+    if (
+      mx + 1 < mask_costmap_->getSizeInCellsX() &&
+      mask_costmap_->getCost(mx + 1, my) != nav2_costmap_2d::LETHAL_OBSTACLE)
+    {
+      return false;
+    }
+    if (
+      my >= 1 &&
+      mask_costmap_->getCost(mx, my + 1) != nav2_costmap_2d::LETHAL_OBSTACLE)
+    {
+      return false;
+    }
+    if (
+      my + 1 < mask_costmap_->getSizeInCellsY() &&
+      mask_costmap_->getCost(mx, my + 1) != nav2_costmap_2d::LETHAL_OBSTACLE)
+    {
+      return false;
+    }
+
+    RCLCPP_ERROR(get_logger(), "Position (%f,%f) belongs to keepout area (%i,%i)", x, y, mx, my);
     return true;
   }
 
