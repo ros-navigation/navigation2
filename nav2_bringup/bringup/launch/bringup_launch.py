@@ -77,6 +77,7 @@ def generate_launch_description():
 
     declare_mask_yaml_cmd = DeclareLaunchArgument(
         'mask',
+        default_value=os.path.join(bringup_dir, 'maps', 'keepout_mask.yaml'),
         description='Full path to map mask yaml file to load')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
