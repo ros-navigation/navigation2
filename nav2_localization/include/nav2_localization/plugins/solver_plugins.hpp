@@ -21,7 +21,7 @@ namespace nav2_localization
 class DummySolver2d : public nav2_localization::Solver
 {
 public:
-	DummySolver2d(){}
+	DummySolver2d();
 
 	geometry_msgs::msg::PoseWithCovariance solve(
 		const nav_msgs::msg::Odometry& curr_odom);
@@ -32,6 +32,9 @@ public:
 		Matcher2d& matcher,
 		const nav_msgs::msg::Odometry& odom,
 		const geometry_msgs::msg::Pose& pose);
+
+private:
+	CustomParticleFilter pf_;
 };
 } // nav2_localization
 
