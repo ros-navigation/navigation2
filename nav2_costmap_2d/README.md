@@ -93,55 +93,7 @@ In order to add multiple sources to the global costmap, follow the same procedur
 
 ### Overview
 
-Costmap Filters - is a costmap layer-based instrument which provides an ability to apply on map spatial-dependent raster objects drawn on map-masks. These objects are used in algorithms when filling costmaps in order to allow robots to change their trajectory, behavior or speed when them (robots) enters/leaves an area marked in a map masks. Costmap Filters consists from `CostmapFilter` class which is a basis for its inherited filter plugins:
-
-- `KeepoutFilter`: keep-out/safety zones filter plugin.
-- `SpeedFilter`: slow/speed-restricted areas filter.
-- Preferred lanes in industries. This plugin is covered by `KeepoutFilter` (see discussion in https://github.com/ros-planning/navigation2/issues/1522 for more details).
-
-`CostmapFilter` is incorporating much common of these plugins in order to avoid boilerplate work on these plugins and further filters development.
-
-Each costmap filter subscribes to the following topics: `nav2_msgs/msg/CostmapFilterInfo` having the necessary information for loaded costmap filter connected with it `nav_msgs/msg/OccupancyGrid` filter map topic. Additionally, `SpeedFilter` publishes `nav2_msgs/msg/MaxSpeed` messages for local planner restricting the speed of robot when it is necessary.
-
-### How to use Costmap Filters
-
-1. Prepare map mask in the same way as any other PGM/PNG/BMP map made. For `KeepoutFilter` the passibility is proportional to color intesity (darker color means more impassable in the area). Black color means keep-out zone where robot will never enter or pass throuh. Note, that map itself and map mask might have different sizes, origin and resolution.
-
-2. CostmapFilters are Costamp2D plugins. Add `KeepoutFilter` or `SpeedFilter` plugin in params of local and/or global costmap.
-
-For the `KeepoutFilter` it could be:
-```
-global_costmap:
-  global_costmap:
-    ros__parameters:
-      ...
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer", "keepout_filter"]
-      ...
-```
-
-Also, `keepout_filter` should have the following parameters defined:
-- `plugin`: type of plugin
-- `filter_info_topic`: filter info topic name
-```
-      ...
-      keepout_filter:
-        plugin: "nav2_costmap_2d::KeepoutFilter"
-        enabled: True
-        filter_info_topic: "costmap_filter_info"
-```
-
-NOTE: Enabling `KeepoutFilter` for `global_costmap` only will cause path planner to build path plan bypassing keepout zones. Enabling `KeepoutFilter` for `local_costmap` only will cause robot won't go into keepout zones even if path planner makes the path through keepout zones. So, the best practive is to enable `KeepoutFilter` for both global and local costmaps.
-
-3. Filter info topic should be published by Semantic Map Server. Until this server will be developed, dummy filter info publisher was made (placed in `nav2_costmap_2d/test/costmap_filter_info/` directory). Open its `costmap_filter_info.launch.py` file and ensure that proper `namespace` is set. Then launch dummy info publisher:
-```
-ros2 launch src/navigation2/nav2_costmap_2d/test/test_launch_files/costmap_filter_info.launch.py
-```
-It will launch dummy info publisher and map server set to mask publishing.
-
-4. Then run navigation2 stack as usual and check the filter is working:
-```
-ros2 launch nav2_bringup tb3_simulation_launch.py
-```
+Costmap Filters - is a costmap layer-based instrument which provides an ability to apply to map spatial-dependent raster features marked at map-masks. These features are used in plugin algorithms when filling costmaps in order to allow robots to change their trajectory, behavior or speed when them (robots) enters/leaves an area marked in a map masks. More information about design, architecture of the feature and how it works could be found on navigation2 web-site: https://navigation.ros.org.
 
 ## Future Plans
 - Conceptually, the costmap_2d model acts as a world model of what is known from the map, sensor, robot pose, etc. We'd like

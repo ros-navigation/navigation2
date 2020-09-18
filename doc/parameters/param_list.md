@@ -168,11 +168,9 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | `<data source>`.obstacle_range | 2.5 | Maximum range to mark obstacles in costmap |
 | `<data source>`.raytrace_range | 3.0 | Maximum range to raytrace clear obstacles from costmap | 
 
-## costmap filters plugins
+## keepout filter
 
 * `<filter name>`: Name corresponding to the `nav2_costmap_2d::KeepoutFilter` plugin. This name gets defined in `plugins`.
-
-There are following parameters common for all costmap filters plugins:
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
