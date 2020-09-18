@@ -146,7 +146,7 @@ public:
 
 
     path.resize(total_size / 2);
-    for (uint i = 0; i != total_size / 2; i++) {
+    for (int i = 0; i != total_size / 2; i++) {
       path[i][0] = parameters[2 * i];
       path[i][1] = parameters[2 * i + 1];
     }

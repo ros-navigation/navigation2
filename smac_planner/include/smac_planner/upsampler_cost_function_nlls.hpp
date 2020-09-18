@@ -26,7 +26,6 @@
 #include "ceres/ceres.h"
 #include "Eigen/Core"
 #include "smac_planner/types.hpp"
-#include "smac_planner/minimal_costmap.hpp"
 #include "smac_planner/options.hpp"
 
 #define EPSILON 0.0001
@@ -277,7 +276,7 @@ protected:
     const double & weight,
     const Eigen::Vector2d & pt,
     const Eigen::Vector2d & pt_p,
-    const Eigen::Vector2d & pt_m,
+    const Eigen::Vector2d & /*pt_m*/,
     CurvatureComputations & curvature_params,
     double & j0,
     double & j1) const
@@ -288,7 +287,7 @@ protected:
 
     const double & partial_delta_phi_i_wrt_cost_delta_phi_i =
       -1 / std::sqrt(1 - std::pow(std::cos(curvature_params.delta_phi_i), 2));
-    const Eigen::Vector2d ones = Eigen::Vector2d(1.0, 1.0);
+    // const Eigen::Vector2d ones = Eigen::Vector2d(1.0, 1.0);
     auto neg_pt_plus = -1 * pt_p;
     Eigen::Vector2d p1 = normalizedOrthogonalComplement(
       pt, neg_pt_plus, curvature_params.delta_xi_norm, curvature_params.delta_xi_p_norm);
@@ -332,9 +331,9 @@ protected:
     return (a - (a.dot(b) * b / b.squaredNorm())) / (a_norm * b_norm);
   }
 
+  std::vector<Eigen::Vector2d> _path;
   SmootherParams _params;
   int _upsample_ratio;
-  std::vector<Eigen::Vector2d> _path;
   int index;
 };
 

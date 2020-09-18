@@ -39,13 +39,13 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   _max_iterations(0),
   _x_size(0),
   _y_size(0),
+  _min_turning_radius(min_turning_radius),
   _goal_coordinates(Coordinates()),
   _start(nullptr),
   _goal(nullptr),
   _graph(nullptr),
   _queue(nullptr),
-  _motion_model(motion_model),
-  _min_turning_radius(min_turning_radius)
+  _motion_model(motion_model)
 {
 }
 
@@ -87,11 +87,13 @@ void AStarAlgorithm<Node2D>::createGraph(
   const unsigned int & x_size,
   const unsigned int & y_size,
   const unsigned int & dim_3_size,
-  unsigned char * & costs)
+  nav2_costmap_2d::Costmap2D * & costmap)
 {
   if (dim_3_size != 1) {
     throw std::runtime_error("Node type Node2D cannot be given non-1 dim 3 quantization.");
   }
+
+  unsigned char * costs = costmap->getCharMap();
 
   _dim3_size = dim_3_size;  // 2D search MUST be 2D, not 3D or SE2.
 
@@ -118,10 +120,16 @@ void AStarAlgorithm<NodeSE2>::createGraph(
   const unsigned int & x_size,
   const unsigned int & y_size,
   const unsigned int & dim_3_size,
-  unsigned char * & costs)
+  nav2_costmap_2d::Costmap2D * & costmap)
 {
   _dim3_size = dim_3_size;
   unsigned int index;
+
+  if (!_collision_checker) {
+    _collision_checker = std::make_unique<GridCollisionChecker>(costmap);
+  }
+
+  _collision_checker->setFootprint(_footprint, _is_radius_footprint);
 
   if (getSizeX() != x_size || getSizeY() != y_size) {
     _x_size = x_size;
@@ -134,9 +142,7 @@ void AStarAlgorithm<NodeSE2>::createGraph(
       for (unsigned int i = 0; i != x_size; i++) {
         for (unsigned int k = 0; k != _dim3_size; k++) {
           index = NodeSE2::getIndex(i, j, k, _x_size, _dim3_size);
-          _graph->emplace_back(
-            costs[i + _x_size * j],
-            index);
+          _graph->emplace_back(_collision_checker.get(), index);
         }
       }
     }
@@ -146,13 +152,19 @@ void AStarAlgorithm<NodeSE2>::createGraph(
         for (unsigned int k = 0; k != _dim3_size; k++) {
           // Optimization: operator[] is used over at() for performance (no bound checking)
           index = NodeSE2::getIndex(i, j, k, _x_size, _dim3_size);
-          _graph->operator[](index).reset(
-            costs[i + _x_size * j],
-            index);
+          _graph->operator[](index).reset(_collision_checker.get(), index);
         }
       }
     }
   }
+
+}
+
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::setFootprint(nav2_costmap_2d::Footprint footprint, bool use_radius)
+{
+  _footprint = footprint;
+  _is_radius_footprint = use_radius;
 }
 
 template<>
@@ -210,6 +222,11 @@ void AStarAlgorithm<NodeSE2>::setGoal(
     static_cast<float>(mx),
     static_cast<float>(my),
     static_cast<float>(dim_3));
+  _goal->setPose(
+    Coordinates(
+      static_cast<float>(mx),
+      static_cast<float>(my),
+      static_cast<float>(dim_3)));
 }
 
 template<typename NodeT>
@@ -269,7 +286,7 @@ bool AStarAlgorithm<NodeT>::createPath(
 
   // Given an index, return a node ptr reference if its collision-free and valid
   const unsigned int max_index = getSizeX() * getSizeY() * getSizeDim3();
-  std::function<bool(const unsigned int &, NodeT * &)> node_validity_checker =
+  std::function<bool(const unsigned int &, NodeT * &)> neighbor_getter =
     [&, this](const unsigned int & index, NodePtr & neighbor) -> bool
     {
       if (index < 0 || index >= max_index) {
@@ -277,11 +294,7 @@ bool AStarAlgorithm<NodeT>::createPath(
       }
 
       neighbor = &_graph->operator[](index);
-      if (neighbor->isNodeValid(_traverse_unknown)) {
-        return true;
-      }
-
-      return false;
+      return true;
     };
 
   while (iterations < getMaxIterations() && !_queue->empty()) {
@@ -316,7 +329,7 @@ bool AStarAlgorithm<NodeT>::createPath(
 
     // 4) Expand neighbors of Nbest not visited
     neighbors.clear();
-    NodeT::getNeighbors(current_node, node_validity_checker, neighbors);
+    NodeT::getNeighbors(current_node, neighbor_getter, _traverse_unknown, neighbors);
 
     for (neighbor_iterator = neighbors.begin();
       neighbor_iterator != neighbors.end(); ++neighbor_iterator)
@@ -413,20 +426,16 @@ void AStarAlgorithm<NodeT>::addNode(const float cost, NodePtr & node)
   _queue->emplace(cost, node);
 }
 
-// TODO does this need to change for SE3 Node? Perhaps be footprint cost now?
-// Might need a new NodeT::getTravelCost() so each can have their own to get cost
-// TODO g cost include change direction + forward / back penalties.
-// https://github.com/karlkurzer/path_planner/blob/master/src/node3d.cpp#L73-L102
 template<typename NodeT>
 float AStarAlgorithm<NodeT>::getTraversalCost(
   NodePtr & current_node,
   NodePtr & new_node)
 {
-  float & node_cost = new_node->getCost();
+  const float move_cost = current_node->getTraversalCost(new_node);
 
   // rescale cost quadratically, makes search more convex
   // Higher the scale, the less cost for lengthwise expansion
-  return _neutral_cost + _travel_cost_scale * node_cost * node_cost;
+  return _neutral_cost + _travel_cost_scale * move_cost * move_cost;
 }
 
 template<typename NodeT>

@@ -106,9 +106,9 @@ protected:
   std::unique_ptr<AStarAlgorithm<Node2D>> _a_star;
   std::unique_ptr<Smoother> _smoother;
   std::unique_ptr<Upsampler> _upsampler;
+  nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
   nav2_util::LifecycleNode::SharedPtr _node;
-  nav2_costmap_2d::Costmap2D * _costmap;
   std::string _global_frame, _name;
   float _tolerance;
   int _downsampling_factor;

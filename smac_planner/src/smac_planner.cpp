@@ -90,7 +90,7 @@ SmacPlanner::~SmacPlanner()
 
 void SmacPlanner::configure(
   rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
-  std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+  std::string name, std::shared_ptr<tf2_ros::Buffer> /*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   _node = parent;
@@ -194,6 +194,7 @@ void SmacPlanner::configure(
     allow_unknown,
     max_iterations,
     max_on_approach_iterations);
+  _a_star->setFootprint(costmap_ros->getRobotFootprint(), costmap_ros->getUseRadius());
 
   if (smooth_path) {
     _smoother = std::make_unique<Smoother>();
@@ -279,12 +280,11 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   }
 
   // Set Costmap
-  unsigned char * char_costmap = costmap->getCharMap();
   _a_star->createGraph(
     costmap->getSizeInCellsX(),
     costmap->getSizeInCellsY(),
     _angle_quantizations,
-    char_costmap);
+    costmap);
 
   // Set starting point, in A* bin search coordinates
   unsigned int mx, my;
@@ -384,10 +384,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   }
 
   // Smooth plan
-  MinimalCostmap mcmap(char_costmap, costmap->getSizeInCellsX(),
-    costmap->getSizeInCellsY(), costmap->getOriginX(), costmap->getOriginY(),
-    costmap->getResolution());
-  if (!_smoother->smooth(path_world, &mcmap, _smoother_params)) {
+  if (!_smoother->smooth(path_world, costmap, _smoother_params)) {
     RCLCPP_WARN(
       _node->get_logger(),
       "%s: failed to smooth plan, Ceres could not find a usable solution to optimize.",
@@ -399,7 +396,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 
   // Publish smoothed path for debug
   if (_node->count_subscribers(_smoothed_plan_publisher->get_topic_name()) > 0) {
-    for (int i = 0; i != path_world.size(); i++) {
+    for (uint i = 0; i != path_world.size(); i++) {
       pose.pose.position.x = path_world[i][0];
       pose.pose.position.y = path_world[i][1];
       plan.poses[i] = pose;
@@ -420,7 +417,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
     }
   }
 
-  for (int i = 0; i != plan.poses.size(); i++) {
+  for (uint i = 0; i != plan.poses.size(); i++) {
     pose.pose.position.x = path_world[i][0];
     pose.pose.position.y = path_world[i][1];
     plan.poses[i] = pose;

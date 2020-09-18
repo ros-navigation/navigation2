@@ -19,10 +19,10 @@ namespace smac_planner
 {
 
 CostmapDownsampler::CostmapDownsampler(const nav2_util::LifecycleNode::SharedPtr & node)
-: _costmap(nullptr),
+: _node(node),
+  _costmap(nullptr),
   _downsampled_costmap(nullptr),
-  _downsampled_costmap_pub(nullptr),
-  _node(node)
+  _downsampled_costmap_pub(nullptr)
 {
 }
 
@@ -64,8 +64,8 @@ nav2_costmap_2d::Costmap2D * CostmapDownsampler::downsample(
   }
 
   // Assign costs
-  for (int i = 0; i < _downsampled_size_x; ++i) {
-    for (int j = 0; j < _downsampled_size_y; ++j) {
+  for (uint i = 0; i < _downsampled_size_x; ++i) {
+    for (uint j = 0; j < _downsampled_size_y; ++j) {
       setCostOfCell(i, j);
     }
   }
@@ -105,12 +105,12 @@ void CostmapDownsampler::setCostOfCell(
   unsigned int x_offset = new_mx * _downsampling_factor;
   unsigned int y_offset = new_my * _downsampling_factor;
 
-  for (int i = 0; i < _downsampling_factor; ++i) {
+  for (uint i = 0; i < _downsampling_factor; ++i) {
     mx = x_offset + i;
     if (mx >= _size_x) {
       continue;
     }
-    for (int j = 0; j < _downsampling_factor; ++j) {
+    for (uint j = 0; j < _downsampling_factor; ++j) {
       my = y_offset + j;
       if (my >= _size_y) {
         continue;

@@ -98,7 +98,7 @@ public:
    * @return If smoothing was successful
    */
   bool smooth(
-    std::vector<Eigen::Vector2d> & path, MinimalCostmap * costmap,
+    std::vector<Eigen::Vector2d> & path, nav2_costmap_2d::Costmap2D * costmap,
     const SmootherParams & params)
   {
     double parameters[path.size() * 2];

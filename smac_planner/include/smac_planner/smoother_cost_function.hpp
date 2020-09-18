@@ -26,7 +26,7 @@
 #include "ceres/ceres.h"
 #include "Eigen/Core"
 #include "smac_planner/types.hpp"
-#include "smac_planner/minimal_costmap.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
 #include "smac_planner/options.hpp"
 
 #define EPSILON 0.0001
@@ -49,7 +49,7 @@ public:
    */
   UnconstrainedSmootherCostFunction(
     std::vector<Eigen::Vector2d> * original_path,
-    MinimalCostmap * costmap,
+    nav2_costmap_2d::Costmap2D * costmap,
     const SmootherParams & params)
   : _original_path(original_path),
     _num_params(2 * original_path->size()),
@@ -118,7 +118,7 @@ public:
     // cache some computations between the residual and jacobian
     CurvatureComputations curvature_params;
 
-    for (uint i = 0; i != NumParameters() / 2; i++) {
+    for (int i = 0; i != NumParameters() / 2; i++) {
       x_index = 2 * i;
       y_index = 2 * i + 1;
       gradient[x_index] = 0.0;
@@ -290,7 +290,7 @@ protected:
     const double & weight,
     const Eigen::Vector2d & pt,
     const Eigen::Vector2d & pt_p,
-    const Eigen::Vector2d & pt_m,
+    const Eigen::Vector2d & /*pt_m*/,
     CurvatureComputations & curvature_params,
     double & j0,
     double & j1) const
@@ -301,7 +301,7 @@ protected:
 
     const double & partial_delta_phi_i_wrt_cost_delta_phi_i =
       -1 / std::sqrt(1 - std::pow(std::cos(curvature_params.delta_phi_i), 2));
-    const Eigen::Vector2d ones = Eigen::Vector2d(1.0, 1.0);
+    // const Eigen::Vector2d ones = Eigen::Vector2d(1.0, 1.0);
     auto neg_pt_plus = -1 * pt_p;
     Eigen::Vector2d p1 = normalizedOrthogonalComplement(
       pt, neg_pt_plus, curvature_params.delta_xi_norm, curvature_params.delta_xi_p_norm);
@@ -436,46 +436,46 @@ protected:
     double r_2 = 0.0;
     double r_3 = 0.0;
 
-    if (mx < _costmap->sizeX()) {
-      r_1 = _costmap->getCost(mx + 1, my);
+    if (mx < _costmap->getSizeInCellsX()) {
+      r_1 = static_cast<double>(_costmap->getCost(mx + 1, my));
     }
-    if (mx + 1 < _costmap->sizeX()) {
-      r_2 = _costmap->getCost(mx + 2, my);
+    if (mx + 1 < _costmap->getSizeInCellsX()) {
+      r_2 = static_cast<double>(_costmap->getCost(mx + 2, my));
     }
-    if (mx + 2 < _costmap->sizeX()) {
-      r_3 = _costmap->getCost(mx + 3, my);
+    if (mx + 2 < _costmap->getSizeInCellsX()) {
+      r_3 = static_cast<double>(_costmap->getCost(mx + 3, my));
     }
 
     if (mx > 0) {
-      l_1 = _costmap->getCost(mx - 1, my);
+      l_1 = static_cast<double>(_costmap->getCost(mx - 1, my));
     }
     if (mx - 1 > 0) {
-      l_2 = _costmap->getCost(mx - 2, my);
+      l_2 = static_cast<double>(_costmap->getCost(mx - 2, my));
     }
     if (mx - 2 > 0) {
-      l_3 = _costmap->getCost(mx - 3, my);
+      l_3 = static_cast<double>(_costmap->getCost(mx - 3, my));
     }
 
     gradient[1] = (45 * r_1 - 9 * r_2 + r_3 - 45 * l_1 + 9 * l_2 - l_3) / 60;
 
-    if (my < _costmap->sizeY()) {
-      r_1 = _costmap->getCost(mx, my + 1);
+    if (my < _costmap->getSizeInCellsY()) {
+      r_1 = static_cast<double>(_costmap->getCost(mx, my + 1));
     }
-    if (my + 1 < _costmap->sizeY()) {
-      r_2 = _costmap->getCost(mx, my + 2);
+    if (my + 1 < _costmap->getSizeInCellsY()) {
+      r_2 = static_cast<double>(_costmap->getCost(mx, my + 2));
     }
-    if (my + 2 < _costmap->sizeY()) {
-      r_3 = _costmap->getCost(mx, my + 3);
+    if (my + 2 < _costmap->getSizeInCellsY()) {
+      r_3 = static_cast<double>(_costmap->getCost(mx, my + 3));
     }
 
     if (my > 0) {
-      l_1 = _costmap->getCost(mx, my - 1);
+      l_1 = static_cast<double>(_costmap->getCost(mx, my - 1));
     }
     if (my - 1 > 0) {
-      l_2 = _costmap->getCost(mx, my - 2);
+      l_2 = static_cast<double>(_costmap->getCost(mx, my - 2));
     }
     if (my - 2 > 0) {
-      l_3 = _costmap->getCost(mx, my - 3);
+      l_3 = static_cast<double>(_costmap->getCost(mx, my - 3));
     }
 
     gradient[0] = (45 * r_1 - 9 * r_2 + r_3 - 45 * l_1 + 9 * l_2 - l_3) / 60;
@@ -501,9 +501,9 @@ protected:
     return (a - (a.dot(b) * b / b.squaredNorm())) / (a_norm * b_norm);
   }
 
-  int _num_params;
-  MinimalCostmap * _costmap{nullptr};
   std::vector<Eigen::Vector2d> * _original_path{nullptr};
+  int _num_params;
+  nav2_costmap_2d::Costmap2D * _costmap{nullptr};
   SmootherParams _params;
 };
 

@@ -191,13 +191,15 @@ MotionPose MotionTable::getProjection(NodeSE2 * & node, const unsigned int & mot
   return MotionPose(delta_x + node->pose.x, delta_y + node->pose.y, new_heading);
 }
 
-NodeSE2::NodeSE2(unsigned char & cost_in, const unsigned int index)
+NodeSE2::NodeSE2(GridCollisionChecker * collision_checker, const unsigned int index)
 : parent(nullptr),
-  _cell_cost(static_cast<float>(cost_in)),
+  pose(0.0f, 0.0f, 0.0f),
+  _cell_cost(std::numeric_limits<float>::quiet_NaN()),
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
   _was_visited(false),
-  _is_queued(false)
+  _is_queued(false),
+  _collision_checker(collision_checker)
 {
 }
 
@@ -206,39 +208,39 @@ NodeSE2::~NodeSE2()
   parent = nullptr;
 }
 
-void NodeSE2::reset(const unsigned char & cost, const unsigned int index)
+void NodeSE2::reset(GridCollisionChecker * collision_checker, const unsigned int index)
 {
   parent = nullptr;
-  _cell_cost = static_cast<float>(cost);
+  _cell_cost = std::numeric_limits<float>::quiet_NaN();
   _accumulated_cost = std::numeric_limits<float>::max();
   _index = index;
   _was_visited = false;
   _is_queued = false;
+  _collision_checker = collision_checker;
 }
 
 bool NodeSE2::isNodeValid(const bool & traverse_unknown)
 {
-  // NOTE(stevemacenski): Right now, we do not check if the node has wrapped around
-  // the regular grid (e.g. your node is on the edge of the costmap and i+1
-  // goes to the other side). This check would add compute time and my assertion is
-  // that if you do wrap around, the heuristic will be so high it'll be added far
-  // in the queue that it will never be called if a valid path exists.
-  // This is intentionally un-included to increase speed, but be aware. If this causes
-  // trouble, please file a ticket and we can address it then.
-
-  float & cost = this->getCost();
-
-  // occupied node
-  if (cost == OCCUPIED || cost == INSCRIBED) {
+  const float angle_in_rad = this->pose.theta * _motion_model.bin_size;
+  if (_collision_checker->inCollision(
+    this->pose.x, this->pose.y, angle_in_rad, traverse_unknown))
+  {
     return false;
   }
 
-  // unknown node
-  if (cost == UNKNOWN && !traverse_unknown) {
-    return false;
-  }
-
+  _cell_cost = _collision_checker->getCost();
   return true;
+}
+
+float NodeSE2::getTraversalCost(const NodePtr & child)
+{
+  float & cost = child->getCost();
+  if (std::isnan(cost)) {
+    throw std::runtime_error("Node attempted to get traversal "
+      "cost without a known SE2 collision cost!");
+  }
+
+  return child->getCost();
 }
 
 float NodeSE2::getHeuristicCost(
@@ -285,12 +287,14 @@ void NodeSE2::initMotionModel(
 
 void NodeSE2::getNeighbors(
   NodePtr & node,
-  std::function<bool(const unsigned int &, smac_planner::NodeSE2 * &)> & validityCheckerFunctor,
+  std::function<bool(const unsigned int &, smac_planner::NodeSE2 * &)> & NeighborGetter,
+  const bool & traverse_unknown,
   NodeVector & neighbors)
 {
   unsigned int index;
   NodePtr neighbor = nullptr;
   const MotionPoses motion_projections = _motion_model.getProjections(node);
+  Coordinates initial_node_coords;
 
   for (unsigned int i = 0; i != motion_projections.size(); i++) {
     index = NodeSE2::getIndex(
@@ -298,13 +302,21 @@ void NodeSE2::getNeighbors(
       static_cast<unsigned int>(motion_projections[i]._y),
       static_cast<unsigned int>(motion_projections[i]._theta),
       _motion_model.size_x, _motion_model.num_angle_quantization);
-    if (validityCheckerFunctor(index, neighbor) && !neighbor->wasVisited()) {
+
+    if (NeighborGetter(index, neighbor)) {
+      // Cache the initial pose in case it was visited but valid
+      // don't want to disrupt continuous coordinate expansion
+      initial_node_coords = neighbor->pose;
       neighbor->setPose(
         Coordinates(
           motion_projections[i]._x,
           motion_projections[i]._y,
           motion_projections[i]._theta));
-      neighbors.push_back(neighbor);
+      if (neighbor->isNodeValid(traverse_unknown) && !neighbor->wasVisited()) {
+        neighbors.push_back(neighbor);
+      } else {
+        neighbor->setPose(initial_node_coords);
+      }
     }
   }
 }

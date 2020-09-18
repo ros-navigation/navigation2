@@ -70,6 +70,12 @@ bool Node2D::isNodeValid(const bool & traverse_unknown)
   return true;
 }
 
+float Node2D::getTraversalCost(const NodePtr & child)
+{
+  // cost to travel will be the cost of the cell's code
+  return child->getCost();
+}
+
 float Node2D::getHeuristicCost(
   const Coordinates & node_coords,
   const Coordinates & goal_coordinates)
@@ -103,7 +109,8 @@ void Node2D::initNeighborhood(
 
 void Node2D::getNeighbors(
   NodePtr & node,
-  std::function<bool(const unsigned int &, smac_planner::Node2D * &)> & validityCheckerFunctor,
+  std::function<bool(const unsigned int &, smac_planner::Node2D * &)> & NeighborGetter,
+  const bool & traverse_unknown,
   NodeVector & neighbors)
 {
   // NOTE(stevemacenski): Irritatingly, the order here matters. If you start in free
@@ -123,8 +130,10 @@ void Node2D::getNeighbors(
 
   for (unsigned int i = 0; i != _neighbors_grid_offsets.size(); ++i) {
     index = node_i + _neighbors_grid_offsets[i];
-    if (validityCheckerFunctor(index, neighbor)) {
-      neighbors.push_back(neighbor);
+    if (NeighborGetter(index, neighbor)) {
+      if (neighbor->isNodeValid(traverse_unknown) && !neighbor->wasVisited()) {
+        neighbors.push_back(neighbor);
+      }
     }
   }
 }

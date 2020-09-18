@@ -23,6 +23,8 @@
 #include <utility>
 #include "Eigen/Core"
 
+#include "nav2_costmap_2d/costmap_2d.hpp"
+
 #include "smac_planner/node_2d.hpp"
 #include "smac_planner/node_se2.hpp"
 #include "smac_planner/types.hpp"
@@ -105,13 +107,13 @@ public:
    *   For 3D nodes, a SE2 grid without cost info as needs collision detector for footprint.
    * @param x The total number of nodes in the X direction
    * @param y The total number of nodes in the X direction
-   * @param costs unsigned char * to the costs in the graph
+   * @param costmap Costmap to convert into the graph
    */
   void createGraph(
     const unsigned int & x,
     const unsigned int & y,
     const unsigned int & dim_3,
-    unsigned char * & costs);
+    nav2_costmap_2d::Costmap2D * & costmap);
 
   /**
    * @brief Set the goal for planning, as a node index
@@ -130,6 +132,8 @@ public:
     const unsigned int & mx,
     const unsigned int & my,
     const unsigned int & dim_3);
+
+  void setFootprint(nav2_costmap_2d::Footprint footprint, bool use_radius);
 
   /**
    * @brief Set the starting pose for planning, as a node index
@@ -255,6 +259,10 @@ private:
 
   MotionModel _motion_model;
   NodeHeuristicPair _best_heuristic_node;
+
+  std::unique_ptr<GridCollisionChecker> _collision_checker;
+  nav2_costmap_2d::Footprint _footprint;
+  bool _is_radius_footprint;
 };
 
 }  // namespace smac_planner

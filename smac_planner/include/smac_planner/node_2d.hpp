@@ -161,6 +161,8 @@ public:
    */
   bool isNodeValid(const bool & traverse_unknown);
 
+  float getTraversalCost(const NodePtr & child);
+
   static inline unsigned int getIndex(
     const unsigned int & x, const unsigned int & y, const unsigned int & width)
   {
@@ -205,6 +207,7 @@ public:
   static void getNeighbors(
     NodePtr & node,
     std::function<bool(const unsigned int &, smac_planner::Node2D * &)> & validity_checker,
+    const bool & traverse_unknown,
     NodeVector & neighbors);
 
   Node2D * parent;
