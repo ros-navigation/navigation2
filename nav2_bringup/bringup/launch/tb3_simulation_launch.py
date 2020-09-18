@@ -36,6 +36,9 @@ def generate_launch_description():
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
     map_yaml_file = LaunchConfiguration('map')
+    costmap_filters = LaunchConfiguration('costmap_filters')
+    filter_namespace = LaunchConfiguration('filter_namespace')
+    mask_yaml_file = LaunchConfiguration('mask')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
     default_bt_xml_filename = LaunchConfiguration('default_bt_xml_filename')
@@ -78,6 +81,21 @@ def generate_launch_description():
         'map',
         default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
+
+    declare_costmap_filters_cmd = DeclareLaunchArgument(
+        'costmap_filters',
+        default_value='False',
+        description='Whether use Costmap Filters feature')
+
+    declare_filter_namespace_cmd = DeclareLaunchArgument(
+        'filter_namespace',
+        default_value='global_costmap',
+        description='Costmap filter namespace: global_costmap or local_costmap')
+
+    declare_mask_yaml_cmd = DeclareLaunchArgument(
+        'mask',
+        default_value=os.path.join(bringup_dir, 'maps', 'keepout_mask.yaml'),
+        description='Full path to map mask file to load')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
@@ -171,6 +189,9 @@ def generate_launch_description():
                           'use_namespace': use_namespace,
                           'slam': slam,
                           'map': map_yaml_file,
+                          'costmap_filters': costmap_filters,
+                          'filter_namespace': filter_namespace,
+                          'mask': mask_yaml_file,
                           'use_sim_time': use_sim_time,
                           'params_file': params_file,
                           'default_bt_xml_filename': default_bt_xml_filename,
@@ -184,6 +205,9 @@ def generate_launch_description():
     ld.add_action(declare_use_namespace_cmd)
     ld.add_action(declare_slam_cmd)
     ld.add_action(declare_map_yaml_cmd)
+    ld.add_action(declare_costmap_filters_cmd)
+    ld.add_action(declare_filter_namespace_cmd)
+    ld.add_action(declare_mask_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_bt_xml_cmd)

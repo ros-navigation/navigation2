@@ -34,6 +34,7 @@ def generate_launch_description():
 
     # Parameters
     namespace = LaunchConfiguration('namespace')
+    filter_namespace = LaunchConfiguration('filter_namespace')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
@@ -42,8 +43,13 @@ def generate_launch_description():
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
         'namespace',
-        default_value='global_costmap',
+        default_value='',
         description='Top-level namespace')
+
+    declare_filter_namespace_cmd = DeclareLaunchArgument(
+        'filter_namespace',
+        default_value='global_costmap',
+        description='Costmap filter namespace: global_costmap or local_costmap')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
@@ -56,7 +62,7 @@ def generate_launch_description():
 
     declare_params_file_cmd = DeclareLaunchArgument(
             'params_file',
-            default_value=os.path.join(bringup_dir, 'params', 'keepout_filter_params.yaml'),
+            default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
             description='Full path to the ROS2 parameters file to use')
 
     declare_mask_yaml_file_cmd = DeclareLaunchArgument(
@@ -80,7 +86,7 @@ def generate_launch_description():
             package='nav2_lifecycle_manager',
             executable='lifecycle_manager',
             name='lifecycle_manager_costmap_filters',
-            namespace=namespace,
+            namespace=[namespace, '/', filter_namespace],
             output='screen',
             emulate_tty=True,  # https://github.com/ros2/launch/issues/188
             parameters=[{'use_sim_time': use_sim_time},
@@ -91,7 +97,7 @@ def generate_launch_description():
             package='nav2_map_server',
             executable='map_server',
             name='map_mask_server',
-            namespace=namespace,
+            namespace=[namespace, '/', filter_namespace],
             output='screen',
             emulate_tty=True,  # https://github.com/ros2/launch/issues/188
             parameters=[configured_params])
@@ -100,7 +106,7 @@ def generate_launch_description():
             package='nav2_map_server',
             executable='costmap_filter_info_server',
             name='costmap_filter_info_server',
-            namespace=namespace,
+            namespace=[namespace, '/', filter_namespace],
             output='screen',
             emulate_tty=True,  # https://github.com/ros2/launch/issues/188
             parameters=[configured_params])
@@ -108,6 +114,7 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     ld.add_action(declare_namespace_cmd)
+    ld.add_action(declare_filter_namespace_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_params_file_cmd)

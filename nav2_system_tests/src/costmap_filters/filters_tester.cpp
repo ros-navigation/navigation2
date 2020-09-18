@@ -31,7 +31,8 @@ FiltersTester::FiltersTester()
 : nav2_util::LifecycleNode("filters_tester"), is_active_(false)
 {
   RCLCPP_INFO(get_logger(), "Creating");
-  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("costmap_2d_ros", "/", "");
+  costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "costmap_2d_ros", "/", "global_costmap");
   costmap_ros_->set_parameter(rclcpp::Parameter("always_send_full_costmap", true));
   costmap_ros_->set_parameter(rclcpp::Parameter("resolution", 0.1));
   costmap_ros_->set_parameter(rclcpp::Parameter("publish_frequency", 5.0));
@@ -96,6 +97,9 @@ FiltersTester::on_activate(const rclcpp_lifecycle::State & state)
 
   is_active_ = true;
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -111,6 +115,9 @@ FiltersTester::on_deactivate(const rclcpp_lifecycle::State & state)
 
   costmap_ros_->on_deactivate(state);
   planner_->deactivate();
+
+  // destroy bond connection
+  destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
