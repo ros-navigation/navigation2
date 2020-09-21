@@ -13,10 +13,6 @@ class DiffDriveOdomMotionModel : public SampleMotionModel
 public:
     DiffDriveOdomMotionModel() {}
 
-    bool SampleFrom(BFL::Sample<geometry_msgs::msg::TransformStamped>& one_sample,
-        const int method = DEFAULT,
-        void * args = NULL) const;
-
     void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
     void activate();
     void deactivate();

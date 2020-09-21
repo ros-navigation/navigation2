@@ -4,34 +4,20 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include <pdf/conditionalpdf.h>
+#include <model/systemmodel.h>
 
 namespace nav2_localization
 {
-
 /**
  * @class SampleMotionModel
  * @brief Abstract interface for sample motion model to adhere to with pluginlib
  */
-class SampleMotionModel : public BFL::ConditionalPdf
-    <geometry_msgs::msg::TransformStamped, geometry_msgs::msg::TransformStamped>
+class SampleMotionModel : public BFL::SystemModel<geometry_msgs::msg::TransformStamped>
 {   
 public:
     SampleMotionModel(){}
 
     using Ptr = std::shared_ptr<nav2_localization::SampleMotionModel>;
-
-    /**
-     * @brief calculates the most likely change in pose based on the change in odometry
-     * @param prev_odom The odometry at the previous time step
-     * @param curr_odom The odometry at the current time step
-     * @param prev_pose The pose at the previous time step
-     * @return most likely current pose
-     */
-    // virtual geometry_msgs::msg::Pose getMostLikelyPose(
-    //     const nav_msgs::msg::Odometry& prev_odom,
-    //     const nav_msgs::msg::Odometry& curr_odom,
-    //     const geometry_msgs::msg::Pose& prev_pose) = 0;
 
     virtual void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) = 0;
 
