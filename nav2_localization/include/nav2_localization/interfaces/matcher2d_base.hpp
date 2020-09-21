@@ -6,7 +6,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include <pdf/conditionalpdf.h>
+#include <model/measurementmodel.h>
 
 namespace nav2_localization
 {
@@ -15,7 +15,7 @@ namespace nav2_localization
  * @class Matcher2d
  * @brief Abstract interface for a 2D matcher for localization purposes to adhere to with pluginlib
  */
-class Matcher2d : public BFL::ConditionalPdf
+class Matcher2d : public BFL::MeasurementModel
 	<double, geometry_msgs::msg::TransformStamped>
 {
 public:

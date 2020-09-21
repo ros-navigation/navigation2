@@ -3,7 +3,6 @@
 
 #include "nav2_localization/interfaces/matcher2d_base.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include <unordered_map>
 
 namespace nav2_localization
 {
@@ -16,8 +15,6 @@ public:
 	void deactivate();
 	void cleanup();
 
-	BFL::Probability ProbabilityGet(const sensor_msgs::msg::LaserScan &measurement) const;
-
 	void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node);
 
 	void setMap(nav_msgs::msg::OccupancyGrid::SharedPtr& map);
@@ -29,7 +26,6 @@ public:
 	void setLaserPose(const geometry_msgs::msg::TransformStamped& laser_pose);
 
 private:
-	std::unordered_map<int8_t, double>	pre_computed_likelihood_field_;
 	int max_number_of_beams_;
 	double max_likelihood_distace_; // the distance beyond which the likelihood is 0
 	double sigma_hit_;
@@ -37,9 +33,6 @@ private:
 	double z_min_;
 	double z_hit_;
 	double z_rand_;
-
-	void preComputeLikelihoodField();
-	void DFS(const int &index_curr, const int &index_of_obstacle, std::vector<bool> &visited);
 };  
 } // nav2_localization
 
