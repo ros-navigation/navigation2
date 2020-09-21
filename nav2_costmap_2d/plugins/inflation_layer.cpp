@@ -40,6 +40,8 @@
 #include <limits>
 #include <map>
 #include <vector>
+#include <algorithm>
+#include <utility>
 
 #include "nav2_costmap_2d/costmap_math.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
@@ -69,6 +71,12 @@ InflationLayer::InflationLayer()
   last_max_x_(std::numeric_limits<double>::max()),
   last_max_y_(std::numeric_limits<double>::max())
 {
+  access_ = new mutex_t();
+}
+
+InflationLayer::~InflationLayer()
+{
+  delete access_;
 }
 
 void
@@ -158,12 +166,13 @@ InflationLayer::updateCosts(
   int max_i,
   int max_j)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!enabled_ || (cell_inflation_radius_ == 0)) {
     return;
   }
 
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)
-  for (auto & dist:inflation_cells_) {
+  for (auto & dist : inflation_cells_) {
     RCLCPP_FATAL_EXPRESSION(
       rclcpp::get_logger("nav2_costmap_2d"),
       !dist.empty(), "The inflation list must be empty at the beginning of inflation");
@@ -215,9 +224,10 @@ InflationLayer::updateCosts(
   // Process cells by increasing distance; new cells are appended to the
   // corresponding distance bin, so they
   // can overtake previously inserted but farther away cells
-  for (const auto & dist_bin: inflation_cells_) {
+  for (const auto & dist_bin : inflation_cells_) {
     for (std::size_t i = 0; i < dist_bin.size(); ++i) {
-      // Do not use iterator or for-range based loops to iterate though dist_bin, since it's size might
+      // Do not use iterator or for-range based loops to
+      // iterate though dist_bin, since it's size might
       // change when a new cell is enqueued, invalidating all iterators
       unsigned int index = dist_bin[i].index_;
 
@@ -260,7 +270,7 @@ InflationLayer::updateCosts(
     }
   }
 
-  for (auto & dist:inflation_cells_) {
+  for (auto & dist : inflation_cells_) {
     dist.clear();
     dist.reserve(200);
   }
@@ -302,6 +312,7 @@ InflationLayer::enqueue(
 void
 InflationLayer::computeCaches()
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (cell_inflation_radius_ == 0) {
     return;
   }

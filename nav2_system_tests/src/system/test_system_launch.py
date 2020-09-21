@@ -41,7 +41,8 @@ def generate_launch_description():
     params_file = os.path.join(bringup_dir, 'params', 'nav2_params.yaml')
 
     # Replace the `use_astar` setting on the params file
-    param_substitutions = {'GridBased.use_astar': os.getenv('ASTAR')}
+    param_substitutions = {
+        'planner_server.ros__parameters.GridBased.use_astar': os.getenv('ASTAR')}
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key='',

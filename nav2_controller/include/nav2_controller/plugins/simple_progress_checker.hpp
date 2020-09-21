@@ -12,40 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CONTROLLER__PROGRESS_CHECKER_HPP_
-#define NAV2_CONTROLLER__PROGRESS_CHECKER_HPP_
+#ifndef NAV2_CONTROLLER__PLUGINS__SIMPLE_PROGRESS_CHECKER_HPP_
+#define NAV2_CONTROLLER__PLUGINS__SIMPLE_PROGRESS_CHECKER_HPP_
 
+#include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_core/progress_checker.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 
 namespace nav2_controller
 {
 /**
- * @class nav2_controller::ProgressChecker
- * @brief This class is used to check the position of the robot to make sure
- * that it is actually progressing towards a goal.
- */
-class ProgressChecker
+* @class SimpleProgressChecker
+* @brief This plugin is used to check the position of the robot to make sure
+* that it is actually progressing towards a goal.
+*/
+
+class SimpleProgressChecker : public nav2_core::ProgressChecker
 {
 public:
-  /**
-   * @brief Constructor of ProgressChecker
-   * @param node Node pointer
-   */
-  explicit ProgressChecker(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node);
-  /**
-   * @brief Checks if the robot has moved compare to previous
-   * pose
-   * @param current_pose Current pose of the robot
-   * @throw nav2_core::PlannerException when failed to make progress
-   */
-  void check(geometry_msgs::msg::PoseStamped & current_pose);
-  /**
-   * @brief Reset class state upon calling
-   */
-  void reset() {baseline_pose_set_ = false;}
+  void initialize(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    const std::string & plugin_name) override;
+  bool check(geometry_msgs::msg::PoseStamped & current_pose) override;
+  void reset() override;
 
 protected:
   /**
@@ -72,4 +64,4 @@ protected:
 };
 }  // namespace nav2_controller
 
-#endif  // NAV2_CONTROLLER__PROGRESS_CHECKER_HPP_
+#endif  // NAV2_CONTROLLER__PLUGINS__SIMPLE_PROGRESS_CHECKER_HPP_

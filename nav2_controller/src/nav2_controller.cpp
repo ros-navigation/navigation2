@@ -20,9 +20,9 @@
 
 #include "nav2_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
+#include "nav_2d_utils/tf_help.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_controller/progress_checker.hpp"
 #include "nav2_controller/nav2_controller.hpp"
 
 using namespace std::chrono_literals;
@@ -32,6 +32,12 @@ namespace nav2_controller
 
 ControllerServer::ControllerServer()
 : LifecycleNode("controller_server", "", true),
+  progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
+  default_progress_checker_id_{"progress_checker"},
+  default_progress_checker_type_{"nav2_controller::SimpleProgressChecker"},
+  goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
+  default_goal_checker_id_{"goal_checker"},
+  default_goal_checker_type_{"nav2_controller::SimpleGoalChecker"},
   lp_loader_("nav2_core", "nav2_core::Controller"),
   default_ids_{"FollowPath"},
   default_types_{"dwb_core::DWBLocalPlanner"}
@@ -40,6 +46,8 @@ ControllerServer::ControllerServer()
 
   declare_parameter("controller_frequency", 20.0);
 
+  declare_parameter("progress_checker_plugin", default_progress_checker_id_);
+  declare_parameter("goal_checker_plugin", default_goal_checker_id_);
   declare_parameter("controller_plugins", default_ids_);
   declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
@@ -61,12 +69,29 @@ ControllerServer::~ControllerServer()
 nav2_util::CallbackReturn
 ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
+  auto node = shared_from_this();
+
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
+
+  get_parameter("progress_checker_plugin", progress_checker_id_);
+  if (progress_checker_id_ == default_progress_checker_id_) {
+    nav2_util::declare_parameter_if_not_declared(
+      node, default_progress_checker_id_ + ".plugin",
+      rclcpp::ParameterValue(default_progress_checker_type_));
+  }
+  get_parameter("goal_checker_plugin", goal_checker_id_);
+  if (goal_checker_id_ == default_goal_checker_id_) {
+    nav2_util::declare_parameter_if_not_declared(
+      node, default_goal_checker_id_ + ".plugin",
+      rclcpp::ParameterValue(default_goal_checker_type_));
+  }
 
   get_parameter("controller_plugins", controller_ids_);
   if (controller_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
-      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
+      nav2_util::declare_parameter_if_not_declared(
+        node, default_ids_[i] + ".plugin",
+        rclcpp::ParameterValue(default_types_[i]));
     }
   }
   controller_types_.resize(controller_ids_.size());
@@ -79,9 +104,30 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   costmap_ros_->on_configure(state);
 
-  auto node = shared_from_this();
-
-  progress_checker_ = std::make_unique<ProgressChecker>(node);
+  try {
+    progress_checker_type_ = nav2_util::get_plugin_type_param(node, progress_checker_id_);
+    progress_checker_ = progress_checker_loader_.createUniqueInstance(progress_checker_type_);
+    RCLCPP_INFO(
+      get_logger(), "Created progress_checker : %s of type %s",
+      progress_checker_id_.c_str(), progress_checker_type_.c_str());
+    progress_checker_->initialize(node, progress_checker_id_);
+  } catch (const pluginlib::PluginlibException & ex) {
+    RCLCPP_FATAL(
+      get_logger(),
+      "Failed to create progress_checker. Exception: %s", ex.what());
+  }
+  try {
+    goal_checker_type_ = nav2_util::get_plugin_type_param(node, goal_checker_id_);
+    goal_checker_ = goal_checker_loader_.createUniqueInstance(goal_checker_type_);
+    RCLCPP_INFO(
+      get_logger(), "Created goal_checker : %s of type %s",
+      goal_checker_id_.c_str(), goal_checker_type_.c_str());
+    goal_checker_->initialize(node, goal_checker_id_);
+  } catch (const pluginlib::PluginlibException & ex) {
+    RCLCPP_FATAL(
+      get_logger(),
+      "Failed to create goal_checker. Exception: %s", ex.what());
+  }
 
   for (size_t i = 0; i != controller_ids_.size(); i++) {
     try {
@@ -96,14 +142,19 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
         costmap_ros_->getTfBuffer(), costmap_ros_);
       controllers_.insert({controller_ids_[i], controller});
     } catch (const pluginlib::PluginlibException & ex) {
-      RCLCPP_FATAL(get_logger(), "Failed to create controller. Exception: %s", ex.what());
-      exit(-1);
+      RCLCPP_FATAL(
+        get_logger(),
+        "Failed to create controller. Exception: %s", ex.what());
     }
   }
 
   for (size_t i = 0; i != controller_ids_.size(); i++) {
     controller_ids_concat_ += controller_ids_[i] + std::string(" ");
   }
+
+  RCLCPP_INFO(
+    get_logger(),
+    "Controller Server has %s controllers available.", controller_ids_concat_.c_str());
 
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
@@ -165,21 +216,11 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
 
   // Release any allocated resources
   action_server_.reset();
-  for (it = controllers_.begin(); it != controllers_.end(); ++it) {
-    it->second.reset();
-  }
   odom_sub_.reset();
-
   vel_publisher_.reset();
   action_server_.reset();
+  goal_checker_->reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-ControllerServer::on_error(const rclcpp_lifecycle::State &)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -196,13 +237,10 @@ bool ControllerServer::findControllerId(
 {
   if (controllers_.find(c_name) == controllers_.end()) {
     if (controllers_.size() == 1 && c_name.empty()) {
-      if (!single_controller_warning_given_) {
-        RCLCPP_WARN(
-          get_logger(), "No controller was specified in action call."
-          " Server will use only plugin loaded %s. "
-          "This warning will appear once.", controller_ids_concat_.c_str());
-        single_controller_warning_given_ = true;
-      }
+      RCLCPP_WARN_ONCE(
+        get_logger(), "No controller was specified in action call."
+        " Server will use only plugin loaded %s. "
+        "This warning will appear once.", controller_ids_concat_.c_str());
       current_controller = controllers_.begin()->first;
     } else {
       RCLCPP_ERROR(
@@ -212,6 +250,7 @@ bool ControllerServer::findControllerId(
       return false;
     }
   } else {
+    RCLCPP_DEBUG(get_logger(), "Selected controller: %s.", c_name.c_str());
     current_controller = c_name;
   }
 
@@ -237,13 +276,8 @@ void ControllerServer::computeControl()
 
     rclcpp::Rate loop_rate(controller_frequency_);
     while (rclcpp::ok()) {
-      if (action_server_ == nullptr) {
-        RCLCPP_DEBUG(get_logger(), "Action server unavailable. Stopping.");
-        return;
-      }
-
-      if (!action_server_->is_server_active()) {
-        RCLCPP_DEBUG(get_logger(), "Action server is inactive. Stopping.");
+      if (action_server_ == nullptr || !action_server_->is_server_active()) {
+        RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
         return;
       }
 
@@ -276,7 +310,7 @@ void ControllerServer::computeControl()
     return;
   }
 
-  RCLCPP_DEBUG(get_logger(), "DWB succeeded, setting result");
+  RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
 
   publishZeroVelocity();
 
@@ -294,7 +328,13 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   }
   controllers_[current_controller_]->setPlan(path);
 
-  auto end_pose = *(path.poses.end() - 1);
+  auto end_pose = path.poses.back();
+  end_pose.header.frame_id = path.header.frame_id;
+  rclcpp::Duration tolerance(costmap_ros_->getTransformTolerance() * 1e9);
+  nav_2d_utils::transformPose(
+    costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
+    end_pose, end_pose, tolerance);
+  goal_checker_->reset();
 
   RCLCPP_DEBUG(
     get_logger(), "Path end point is (%.2f, %.2f)",
@@ -310,7 +350,9 @@ void ControllerServer::computeAndPublishVelocity()
     throw nav2_core::PlannerException("Failed to obtain robot pose");
   }
 
-  progress_checker_->check(pose);
+  if (!progress_checker_->check(pose)) {
+    throw nav2_core::PlannerException("Failed to make progress");
+  }
 
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
 
@@ -350,7 +392,12 @@ void ControllerServer::updateGlobalPath()
 void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)
 {
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>(velocity.twist);
-  vel_publisher_->publish(std::move(cmd_vel));
+  if (
+    vel_publisher_->is_activated() &&
+    this->count_subscribers(vel_publisher_->get_topic_name()) > 0)
+  {
+    vel_publisher_->publish(std::move(cmd_vel));
+  }
 }
 
 void ControllerServer::publishZeroVelocity()
@@ -362,6 +409,8 @@ void ControllerServer::publishZeroVelocity()
   velocity.twist.linear.x = 0;
   velocity.twist.linear.y = 0;
   velocity.twist.linear.z = 0;
+  velocity.header.frame_id = costmap_ros_->getBaseFrameID();
+  velocity.header.stamp = now();
   publishVelocity(velocity);
 }
 
@@ -375,14 +424,13 @@ bool ControllerServer::isGoalReached()
 
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
   geometry_msgs::msg::Twist velocity = nav_2d_utils::twist2Dto3D(twist);
-  return controllers_[current_controller_]->isGoalReached(pose, velocity);
+  return goal_checker_->isGoalReached(pose.pose, end_pose_, velocity);
 }
 
 bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)
 {
   geometry_msgs::msg::PoseStamped current_pose;
   if (!costmap_ros_->getRobotPose(current_pose)) {
-    RCLCPP_ERROR(this->get_logger(), "Could not get robot pose");
     return false;
   }
   pose = current_pose;

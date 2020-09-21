@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_util</name>
-  <version>0.4.1</version>
+  <version>0.4.3</version>
   <description>TODO</description>
   <maintainer email="michael.jeronimo@intel.com">Michael Jeronimo</maintainer>
   <maintainer email="mohammad.haghighipanah@intel.com">Mohammad Haghighipanah</maintainer>
@@ -26,6 +26,7 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>launch</depend>
   <depend>launch_testing_ament_cmake</depend>
+  <depend>action_msgs</depend>
 
   <exec_depend>libboost-program-options</exec_depend>
 
@@ -35,6 +36,7 @@
   <test_depend>launch</test_depend>
   <test_depend>launch_testing_ament_cmake</test_depend>
   <test_depend>std_srvs</test_depend>
+  <test_depend>action_msgs</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

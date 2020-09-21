@@ -51,6 +51,8 @@ BtNavigator::BtNavigator()
     "nav2_rate_controller_bt_node",
     "nav2_distance_controller_bt_node",
     "nav2_speed_controller_bt_node",
+    "nav2_truncate_path_action_bt_node",
+    "nav2_change_goal_node_bt_node",
     "nav2_recovery_node_bt_node",
     "nav2_pipeline_sequence_bt_node",
     "nav2_round_robin_node_bt_node",
@@ -206,18 +208,12 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   action_server_.reset();
   plugin_lib_names_.clear();
+  current_bt_xml_filename_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_.rootNode());
   bt_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-BtNavigator::on_error(const rclcpp_lifecycle::State & /*state*/)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -246,6 +242,19 @@ BtNavigator::navigateToPose()
 
       return action_server_->is_cancel_requested();
     };
+
+  auto bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
+
+  // Empty id in request is default for backward compatibility
+  bt_xml_filename = bt_xml_filename == "" ? default_bt_xml_filename_ : bt_xml_filename;
+
+  if (!loadBehaviorTree(bt_xml_filename)) {
+    RCLCPP_ERROR(
+      get_logger(), "BT file not found: %s. Navigation canceled",
+      bt_xml_filename.c_str(), current_bt_xml_filename_.c_str());
+    action_server_->terminate_current();
+    return;
+  }
 
   RosTopicLogger topic_logger(client_node_, tree_);
   std::shared_ptr<Action::Feedback> feedback_msg = std::make_shared<Action::Feedback>();
@@ -276,19 +285,6 @@ BtNavigator::navigateToPose()
       action_server_->publish_feedback(feedback_msg);
     };
 
-  auto bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
-
-  // Empty id in request is default for backward compatibility
-  bt_xml_filename = bt_xml_filename == "" ? default_bt_xml_filename_ : bt_xml_filename;
-
-  if (!loadBehaviorTree(bt_xml_filename)) {
-    RCLCPP_ERROR(
-      get_logger(), "BT file not found: %s. Navigation canceled",
-      bt_xml_filename.c_str(), current_bt_xml_filename_.c_str());
-    action_server_->terminate_current();
-    return;
-  }
-
   // Execute the BT that was previously created in the configure step
   nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
   // Make sure that the Bt is not in a running state from a previous execution
@@ -310,9 +306,6 @@ BtNavigator::navigateToPose()
       RCLCPP_INFO(get_logger(), "Navigation canceled");
       action_server_->terminate_all();
       break;
-
-    default:
-      throw std::logic_error("Invalid status return from BT");
   }
 }
 
