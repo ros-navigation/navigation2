@@ -91,11 +91,10 @@ RUN sed --in-place \
 
 # test overlay build
 ARG RUN_TESTS
-ARG FAIL_ON_TEST_FAILURE=Ture
+ARG FAIL_ON_TEST_FAILURE=True
 RUN if [ -n "$RUN_TESTS" ]; then \
-        . $OVERLAY_WS/install/setup.sh && \
-        colcon test \
-          --mixin $OVERLAY_MIXINS \
-        && colcon test-result \
+        . install/setup.sh && \
+        colcon test && \
+        colcon test-result \
           || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
     fi
