@@ -12,7 +12,10 @@
 #   --tag nav2:source \
 #   --file source.Dockerfile ../
 #
-# Omit the `--no-cache` if you know you don't need to break the cache.
+# Use `--no-cache` to break the local docker build cache.
+# Use `--pull` to pull the latest parent image from the remote registry.
+# Use `--target=<stage_name>` to build stages not used for final stage.
+# 
 # We're only building on top of a ros2 devel image to get the basics
 # prerequisites installed such as the apt source, rosdep, etc. We don't want to
 # actually use any of the ros release packages. Instead we are going to build
