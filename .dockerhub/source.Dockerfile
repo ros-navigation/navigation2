@@ -110,11 +110,9 @@ RUN --mount=type=cache,target=/root/.ccache \
 
 # multi-stage for underlay dependencies
 FROM ros2_depender AS underlay_depender
-ARG DEBIAN_FRONTEND
 
 # copy manifests for caching
-WORKDIR $ROS2_WS
-COPY --from=cacher /tmp/$ROS2_WS ./
+COPY --from=cacher /tmp/$ROS2_WS $ROS2_WS
 
 # install underlay dependencies
 ARG UNDERLAY_WS
@@ -134,11 +132,9 @@ RUN --mount=type=cache,target=/var/cache/apt \
 FROM underlay_depender AS underlay_builder
 
 # copy workspace for caching
-WORKDIR $ROS2_WS
-COPY --from=ros2_builder $ROS2_WS ./
+COPY --from=ros2_builder $ROS2_WS $ROS2_WS
 
 # build underlay source
-WORKDIR $UNDERLAY_WS
 COPY --from=cacher $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache"
 RUN --mount=type=cache,target=/root/.ccache \
@@ -149,13 +145,10 @@ RUN --mount=type=cache,target=/root/.ccache \
 
 # multi-stage for overlay dependencies
 FROM underlay_depender AS overlay_depender
-ARG DEBIAN_FRONTEND
 
 # copy manifests for caching
-WORKDIR $ROS2_WS
-COPY --from=cacher /tmp/$ROS2_WS ./
-WORKDIR $UNDERLAY_WS
-COPY --from=cacher /tmp/$UNDERLAY_WS ./
+COPY --from=cacher /tmp/$ROS2_WS $ROS2_WS
+COPY --from=cacher /tmp/$UNDERLAY_WS $UNDERLAY_WS
 
 # install overlay dependencies
 ARG OVERLAY_WS
@@ -176,13 +169,10 @@ RUN --mount=type=cache,target=/var/cache/apt \
 FROM overlay_depender AS overlay_builder
 
 # copy workspace for caching
-WORKDIR $ROS2_WS
-COPY --from=ros2_builder $ROS2_WS ./
-WORKDIR $UNDERLAY_WS
-COPY --from=underlay_builder $UNDERLAY_WS ./
+COPY --from=ros2_builder $ROS2_WS $ROS2_WS
+COPY --from=underlay_builder $UNDERLAY_WS $UNDERLAY_WS
 
 # build overlay source
-WORKDIR $OVERLAY_WS
 COPY --from=cacher $OVERLAY_WS ./
 ARG OVERLAY_MIXINS="release ccache"
 RUN --mount=type=cache,target=/root/.ccache \
