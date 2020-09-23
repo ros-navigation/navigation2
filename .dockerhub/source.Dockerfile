@@ -63,8 +63,8 @@ RUN mkdir -p /tmp/opt && \
     find ./ -name "package.xml" | \
       xargs cp --parents -t /tmp/opt
 
-# multi-stage for building
-FROM $FROM_IMAGE AS builder
+# multi-stage for installing ros2
+FROM $FROM_IMAGE AS ros2_installer
 ARG DEBIAN_FRONTEND=noninteractive
 
 # edit apt for caching
@@ -97,6 +97,9 @@ RUN --mount=type=cache,target=/var/cache/apt \
         $(cat /tmp/skip_keys.txt | xargs) \
         "
 
+# multi-stage for building ros2
+FROM ros2_installer AS ros2_builder
+
 # build ros2 source
 COPY --from=cacher $ROS2_WS ./
 ARG ROS2_MIXINS="release ccache"
@@ -105,13 +108,20 @@ RUN --mount=type=cache,target=/root/.ccache \
       --symlink-install \
       --mixin $ROS2_MIXINS
 
+# multi-stage for installing underlay
+FROM ros2_installer AS underlay_installer
+ARG DEBIAN_FRONTEND
+
+# copy manifests for caching
+WORKDIR $ROS2_WS
+COPY --from=cacher /tmp/$ROS2_WS ./
+
 # install underlay dependencies
 ARG UNDERLAY_WS
 WORKDIR $UNDERLAY_WS
 COPY --from=cacher /tmp/$UNDERLAY_WS ./
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
-    . $ROS2_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
         $ROS2_WS/src \
@@ -119,6 +129,13 @@ RUN --mount=type=cache,target=/var/cache/apt \
       --skip-keys " \
         $(cat /tmp/skip_keys.txt | xargs) \
       "
+
+# multi-stage for building underlay
+FROM underlay_installer AS underlay_builder
+
+# copy workspace for caching
+WORKDIR $ROS2_WS
+COPY --from=ros2_builder $ROS2_WS ./
 
 # build underlay source
 COPY --from=cacher $UNDERLAY_WS ./
@@ -129,13 +146,23 @@ RUN --mount=type=cache,target=/root/.ccache \
       --symlink-install \
       --mixin $UNDERLAY_MIXINS
 
+# multi-stage for installing overlay
+FROM underlay_installer AS overlay_installer
+ARG DEBIAN_FRONTEND
+
+# copy manifests for caching
+WORKDIR $ROS2_WS
+COPY --from=cacher /tmp/$ROS2_WS ./
+ARG UNDERLAY_WS
+WORKDIR $UNDERLAY_WS
+COPY --from=cacher /tmp/$UNDERLAY_WS ./
+
 # install overlay dependencies
 ARG OVERLAY_WS
 WORKDIR $OVERLAY_WS
 COPY --from=cacher /tmp/$OVERLAY_WS ./
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
-    . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
         $ROS2_WS/src \
@@ -144,6 +171,16 @@ RUN --mount=type=cache,target=/var/cache/apt \
       --skip-keys " \
         $(cat /tmp/skip_keys.txt | xargs) \
       "
+
+# multi-stage for building overlay
+FROM overlay_installer AS overlay_builder
+
+# copy workspace for caching
+WORKDIR $ROS2_WS
+COPY --from=ros2_builder $ROS2_WS ./
+ARG UNDERLAY_WS
+WORKDIR $UNDERLAY_WS
+COPY --from=underlay_builder $UNDERLAY_WS ./
 
 # build overlay source
 COPY --from=cacher $OVERLAY_WS ./
