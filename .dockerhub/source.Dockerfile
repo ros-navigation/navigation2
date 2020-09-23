@@ -44,7 +44,7 @@ RUN vcs import ./ < ../underlay.repos && \
 ARG OVERLAY_WS
 WORKDIR $OVERLAY_WS/src
 COPY ./ ./ros-planning/navigation2
-RUN colcon list --names-only | cat > ../packages.txt
+RUN colcon list --names-only | cat >> /opt/packages.txt
 
 # remove skiped packages
 WORKDIR /opt
@@ -55,7 +55,7 @@ RUN find ./ \
       | xargs dirname | xargs rm -rf || true && \
     colcon list --paths-only \
       --packages-skip-up-to  \
-        $(cat $OVERLAY_WS/packages.txt | xargs) \
+        $(cat packages.txt | xargs) \
       | xargs rm -rf
 
 # copy manifests for caching
