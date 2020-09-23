@@ -108,6 +108,19 @@ RUN --mount=type=cache,target=/root/.ccache \
       --symlink-install \
       --mixin $ROS2_MIXINS
 
+# multi-stage for testing ros2
+FROM ros2_builder AS ros2_tester
+
+# test overlay build
+ARG RUN_TESTS
+ARG FAIL_ON_TEST_FAILURE=True
+RUN if [ -n "$RUN_TESTS" ]; then \
+        . install/setup.sh && \
+        colcon test && \
+        colcon test-result \
+          || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
+    fi
+
 # multi-stage for underlay dependencies
 FROM ros2_depender AS underlay_depender
 
@@ -142,6 +155,19 @@ RUN --mount=type=cache,target=/root/.ccache \
     colcon build \
       --symlink-install \
       --mixin $UNDERLAY_MIXINS
+
+# multi-stage for testing underlay
+FROM underlay_builder AS underlay_tester
+
+# test overlay build
+ARG RUN_TESTS
+ARG FAIL_ON_TEST_FAILURE=True
+RUN if [ -n "$RUN_TESTS" ]; then \
+        . install/setup.sh && \
+        colcon test && \
+        colcon test-result \
+          || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
+    fi
 
 # multi-stage for overlay dependencies
 FROM underlay_depender AS overlay_depender
@@ -181,16 +207,8 @@ RUN --mount=type=cache,target=/root/.ccache \
       --symlink-install \
       --mixin $OVERLAY_MIXINS
 
-# restore apt for docker
-RUN mv /etc/apt/docker-clean /etc/apt/apt.conf.d/ && \
-    rm -rf /var/lib/apt/lists/
-
-# source overlay from entrypoint
-ENV UNDERLAY_WS $UNDERLAY_WS
-ENV OVERLAY_WS $OVERLAY_WS
-RUN sed --in-place \
-      's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
-      /ros_entrypoint.sh
+# multi-stage for testing overlay
+FROM overlay_builder AS overlay_tester
 
 # test overlay build
 ARG RUN_TESTS
@@ -201,3 +219,17 @@ RUN if [ -n "$RUN_TESTS" ]; then \
         colcon test-result \
           || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
     fi
+
+# multi-stage for shipping overlay
+FROM overlay_builder AS overlay_shipper
+
+# restore apt for docker
+RUN mv /etc/apt/docker-clean /etc/apt/apt.conf.d/ && \
+    rm -rf /var/lib/apt/lists/
+
+# source overlay from entrypoint
+ENV UNDERLAY_WS $UNDERLAY_WS
+ENV OVERLAY_WS $OVERLAY_WS
+RUN sed --in-place \
+      's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
+      /ros_entrypoint.sh
