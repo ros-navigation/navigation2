@@ -63,8 +63,8 @@ RUN mkdir -p /tmp/opt && \
     find ./ -name "package.xml" | \
       xargs cp --parents -t /tmp/opt
 
-# multi-stage for installing ros2
-FROM $FROM_IMAGE AS ros2_installer
+# multi-stage for ros2 dependencies
+FROM $FROM_IMAGE AS ros2_depender
 ARG DEBIAN_FRONTEND=noninteractive
 
 # edit apt for caching
@@ -98,7 +98,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
         "
 
 # multi-stage for building ros2
-FROM ros2_installer AS ros2_builder
+FROM ros2_depender AS ros2_builder
 
 # build ros2 source
 COPY --from=cacher $ROS2_WS ./
@@ -108,8 +108,8 @@ RUN --mount=type=cache,target=/root/.ccache \
       --symlink-install \
       --mixin $ROS2_MIXINS
 
-# multi-stage for installing underlay
-FROM ros2_installer AS underlay_installer
+# multi-stage for underlay dependencies
+FROM ros2_depender AS underlay_depender
 ARG DEBIAN_FRONTEND
 
 # copy manifests for caching
@@ -131,7 +131,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
       "
 
 # multi-stage for building underlay
-FROM underlay_installer AS underlay_builder
+FROM underlay_depender AS underlay_builder
 
 # copy workspace for caching
 WORKDIR $ROS2_WS
@@ -146,8 +146,8 @@ RUN --mount=type=cache,target=/root/.ccache \
       --symlink-install \
       --mixin $UNDERLAY_MIXINS
 
-# multi-stage for installing overlay
-FROM underlay_installer AS overlay_installer
+# multi-stage for overlay dependencies
+FROM underlay_depender AS overlay_depender
 ARG DEBIAN_FRONTEND
 
 # copy manifests for caching
@@ -173,7 +173,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
       "
 
 # multi-stage for building overlay
-FROM overlay_installer AS overlay_builder
+FROM overlay_depender AS overlay_builder
 
 # copy workspace for caching
 WORKDIR $ROS2_WS
