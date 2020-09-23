@@ -119,6 +119,7 @@ protected:
   bool stop_on_failure_;
   ActionStatus current_goal_status_;
   int loop_rate_;
+  int sleep_time_inbetween_waypoints_;
   std::vector<int> failed_ids_;
 };
 
