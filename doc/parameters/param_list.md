@@ -480,6 +480,7 @@ When `planner_plugins` parameter is not overridden, the following default plugin
 | ----------| --------| ------------|
 | stop_on_failure | true | Whether to fail action task if a single waypoint fails. If false, will continue to next waypoint. |
 | loop_rate | 20 | Rate to check for results from current navigation task |
+| sleep_time_inbetween_waypoints | 0 | Amount of time in milliseconds for robot to sleep/wait after each waypoint is reached. If zero, robot will directly continue to next waypoint. |
 
 # recoveries
 
