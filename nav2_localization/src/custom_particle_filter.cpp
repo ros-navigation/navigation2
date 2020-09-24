@@ -3,18 +3,18 @@
 namespace  nav1_localization
 {
 	CustomParticleFilter::CustomParticleFilter(
-		BFL::MCPdf<MatrixWrapper::ColumnVector> *prior,
+		BFL::MCPdf<geometry_msgs::msg::TransformStamped> *prior,
 		int resampleperiod,
 		double resamplethreshold,
 		int resamplescheme):
-		BFL::BootstrapFilter<MatrixWrapper::ColumnVector, MatrixWrapper::ColumnVector>(
+		BFL::BootstrapFilter<geometry_msgs::msg::TransformStamped, double>(
 			prior,
 			resampleperiod,
 			resamplethreshold,
 			resamplescheme)
 	{}
 
-	vector<BFL::WeightedSample<MatrixWrapper::ColumnVector>> CustomParticleFilter::getNewSamples()
+	vector<BFL::WeightedSample<geometry_msgs::msg::TransformStamped>> CustomParticleFilter::getNewSamples()
 	{
 		return _new_samples;
 	}

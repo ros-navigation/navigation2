@@ -7,7 +7,7 @@
 #include "nav2_localization/interfaces/matcher2d_base.hpp"
 
 // Types
-#include "geometry_msgs/msg/poseWithCovariance.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "sensor_msgs/msg/LaserScan.hpp"
@@ -15,6 +15,7 @@
 
 // Others
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_localization/custom_particle_filter.hpp"
 
 namespace nav2_localization
 {
@@ -23,7 +24,7 @@ class DummySolver2d : public nav2_localization::Solver
 public:
 	DummySolver2d();
 
-	geometry_msgs::msg::PoseWithCovariance solve(
+	geometry_msgs::msg::TransformStamped solve(
 		const nav_msgs::msg::Odometry& curr_odom);
 
 	void configure(
@@ -34,7 +35,7 @@ public:
 		const geometry_msgs::msg::Pose& pose);
 
 private:
-	CustomParticleFilter pf_;
+	CustomParticleFilter* pf_;
 };
 } // nav2_localization
 

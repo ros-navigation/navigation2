@@ -5,113 +5,62 @@
 #include <model/systemmodel.h>
 #include <model/measurementmodel.h>
 
+// TODO - Get config parameters
+// STATE_SIZE
+// PRIOR_MU_X
+// PRIOR_MU_Y
+// PRIOR_MU_THETA
+// PRIOR_COV_X
+// PRIOR_COV_Y
+// PRIOR_COV_THETA
+// NUM_SAMPLES
+// CHOLESKY
+
 namespace nav2_localization
 {
-void CreateSystemModel()
-{
-	/****************************************
-	 * NonLinear system model (MotionModel) *
-	 ****************************************/
-	
-	// create gaussian
-	MatrixWrapper::ColumnVector sys_noise_Mu(BFL::STATE_SIZE);
-	sys_noise_Mu(1) = BFL::MU_SYSTEM_NOISE_X;
-	sys_noise_Mu(2) = BFL::MU_SYSTEM_NOISE_Y;
-	sys_noise_Mu(3) = BFL::MU_SYSTEM_NOISE_THETA;
-	
-	MatrixWrapper::SymmetricMatrix sys_noise_Cov(BFL::STATE_SIZE);
-	sys_noise_Cov = 0.0;
-	sys_noise_Cov(1,1) = BFL::SIGMA_SYSTEM_NOISE_X;
-	sys_noise_Cov(1,2) = 0.0;
-	sys_noise_Cov(1,3) = 0.0;
-	sys_noise_Cov(2,1) = 0.0;
-	sys_noise_Cov(2,2) = BFL::SIGMA_SYSTEM_NOISE_Y;
-	sys_noise_Cov(2,3) = 0.0;
-	sys_noise_Cov(3,1) = 0.0;
-	sys_noise_Cov(3,2) = 0.0;
-	sys_noise_Cov(3,3) = BFL::SIGMA_SYSTEM_NOISE_THETA;
-	
-	BFL::Gaussian system_Uncertainty(sys_noise_Mu, sys_noise_Cov);
-	
-	// create the nonlinear system model
-	sys_pdf = new NonlinearSystemPdf(system_Uncertainty); //TODO - Create the motion model instead (check args)
-	sys_model = new SystemModel<MatrixWrapper::ColumnVector> (sys_pdf);
-
-	return sys_model;
-}	
-	
-void CreateMeasurementModel()
-{
-	/*****************************************
-	 * NonLinear Measurement model (Matcher) *
-	 *****************************************/
-	
-	// Construct the measurement noise (a scalar in this case)
-	MatrixWrapper::ColumnVector meas_noise_Mu(BFL::MEAS_SIZE);
-	meas_noise_Mu(1) = MU_MEAS_NOISE;
-	meas_noise_Mu(2) = MU_MEAS_NOISE;
-	meas_noise_Mu(3) = MU_MEAS_NOISE;
-	MatrixWrapper::SymmetricMatrix meas_noise_Cov(BFL::MEAS_SIZE);
-	meas_noise_Cov(1,1) = BFL::SIGMA_MEAS_NOISE;
-	meas_noise_Cov(1,2) = 0.0;
-	meas_noise_Cov(1,3) = 0.0;
-	meas_noise_Cov(2,1) = 0.0;
-	meas_noise_Cov(2,2) = BFL::SIGMA_MEAS_NOISE;
-	meas_noise_Cov(2,3) = 0.0;
-	meas_noise_Cov(3,1) = 0.0;
-	meas_noise_Cov(3,2) = 0.0;
-	meas_noise_Cov(3,3) = BFL::SIGMA_MEAS_NOISE;
-	
-	BFL::Gaussian measurement_Uncertainty(meas_noise_Mu, meas_noise_Cov);
-	
-	// create the nonlinear measurement model
-	meas_pdf = new NonlinearMeasurementPdf(measurement_Uncertainty, map_); //TODO - Create the matcher instead (check args)
-	meas_model = new MeasurementModel<MatrixWrapper::ColumnVector,MatrixWrapper::ColumnVector>(meas_pdf);
-
-	return meas_model;
-	
 void CreateParticleFilter()
 {
 	/****************************
 	 * Linear prior DENSITY     *
 	 ***************************/
 	// Continuous Gaussian prior (for Kalman filters)
-	MatrixWrapper::ColumnVector prior_Mu(BFL::STATE_SIZE);
-	prior_Mu(1) = BFL::PRIOR_MU_X;
-	prior_Mu(2) = BFL::PRIOR_MU_Y;
-	prior_Mu(3) = BFL::PRIOR_MU_THETA;
-	MatrixWrapper::SymmetricMatrix prior_Cov(BFL::STATE_SIZE);
-	prior_Cov(1,1) = BFL::PRIOR_COV_X;
+	// TODO - Use TransformStamped as prior and get the initialization
+	MatrixWrapper::ColumnVector prior_Mu(STATE_SIZE);
+	prior_Mu(1) = PRIOR_MU_X;
+	prior_Mu(2) = PRIOR_MU_Y;
+	prior_Mu(3) = PRIOR_MU_THETA;
+	MatrixWrapper::SymmetricMatrix prior_Cov(STATE_SIZE);
+	prior_Cov(1,1) = PRIOR_COV_X;
 	prior_Cov(1,2) = 0.0;
 	prior_Cov(1,3) = 0.0;
 	prior_Cov(2,1) = 0.0;
-	prior_Cov(2,2) = BFL::PRIOR_COV_Y;
+	prior_Cov(2,2) = PRIOR_COV_Y;
 	prior_Cov(2,3) = 0.0;
 	prior_Cov(3,1) = 0.0;
 	prior_Cov(3,2) = 0.0;
-	prior_Cov(3,3) = BFL::PRIOR_COV_THETA;
+	prior_Cov(3,3) = PRIOR_COV_THETA;
 	BFL::Gaussian prior_cont(prior_Mu, prior_Cov);
 	
 	// Discrete prior for Particle filter (using the continuous Gaussian prior)
-	vector<Sample<MatrixWrapper::ColumnVector> > prior_samples(BFL::NUM_SAMPLES);
-	prior_discr = new BFL::MCPdf<MatrixWrapper::ColumnVector>(BFL::NUM_SAMPLES, BFL::STATE_SIZE);
-	prior_cont.SampleFrom(prior_samples, BFL::NUM_SAMPLES, BFL::CHOLESKY, NULL);
+	vector<BFL::Sample<geometry_msgs::msg::TransformStamped>> prior_samples(NUM_SAMPLES);
+	prior_discr = new BFL::MCPdf<geometry_msgs::msg::TransformStamped>(NUM_SAMPLES, STATE_SIZE);
+	prior_cont.SampleFrom(prior_samples, NUM_SAMPLES, CHOLESKY, NULL);
 	prior_discr->ListOfSamplesSet(prior_samples);
 	
 	/******************************
 	 * Construction of the Filter *
 	 ******************************/
-	//filter = new CustomParticleFilter(prior_discr, 0.5, BFLNUM_SAMPLES/4.0);
-	filter = CustomParticleFilter(prior_discr, 0.5, BFLNUM_SAMPLES/4.0);
+	filter = new CustomParticleFilter(prior_discr, 0.5, NUM_SAMPLES/4.0);
 
 	return filter;
 }
 
 DummySolver2d::DummySolver2d() {}
 
-geometry_msgs::msg::PoseWithCovariance DummySolver2d::solve(
+geometry_msgs::msg::TransformStamped DummySolver2d::solve(
 	const nav_msgs::msg::Odometry& curr_odom)
 {
+	/*
 	// STEP 1 - Motion update
 	for(unsigned int i=0; i<pf.n_particles; i++)
 	{
@@ -147,8 +96,24 @@ geometry_msgs::msg::PoseWithCovariance DummySolver2d::solve(
 			best_particle_idx = i;
 		}
 	}
+	*/
 
-    return pf.particles[best_particle_idx];
+	// TODO - What is the input? Change in X and Y? Build a transformStamped from curr_odom?
+	pf_->Update(motionSampler_, input);
+
+	// TODO - What is the measurement? We use double, shouldnt it be a scan msg?
+	// Should the solver get the measurement as input then?
+	pf_->Update(matcher_, measurement);
+
+	// Get new particles (in case we want to publish them)
+	samples = pf_->getNewSamples();
+
+	// Returns an estimated pose using all the information contained in the particle filter.
+    BFL::Pdf<geometry_msgs::msg::TransformStamped>* posterior = pf_->PostGet();
+    geometry_msgs::msg::TransformStamped pose = posterior->ExpectedValueGet();
+    SymmetricMatrix pose_cov = posterior->CovarianceGet();
+
+    return pose;
 }
 
 void DummySolver2d::configure(
