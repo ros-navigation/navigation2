@@ -68,6 +68,8 @@ BtNavigator::BtNavigator()
   declare_parameter("robot_base_frame", std::string("base_link"));
   declare_parameter("odom_topic", std::string("odom"));
   declare_parameter("enable_groot_monitoring", false);
+  declare_parameter("groot_zmq_publisher_port", 1666);
+  declare_parameter("groot_zmq_server_port", 1667);
 }
 
 BtNavigator::~BtNavigator()
@@ -165,7 +167,10 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
 
   // get parameter for monitoring with Groot via ZMQ Publisher
   if (get_parameter("enable_groot_monitoring").as_bool()) {
-    bt_->addZMQGrootMonitoring(&tree_);
+    unsigned zmq_publisher_port = get_parameter("groot_zmq_publisher_port").as_int();
+    unsigned zmq_server_port = get_parameter("groot_zmq_server_port").as_int();
+    //optionally add max_msg_per_second = 25 (default) here
+    bt_->addZMQGrootMonitoring(&tree_, zmq_publisher_port, zmq_server_port);
   }
   return true;
 }

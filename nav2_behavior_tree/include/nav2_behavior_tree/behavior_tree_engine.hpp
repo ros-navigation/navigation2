@@ -51,7 +51,11 @@ public:
     const std::string & file_path,
     BT::Blackboard::Ptr blackboard);
 
-  void addZMQGrootMonitoring(BT::Tree * tree);
+  void addZMQGrootMonitoring(BT::Tree * tree,
+    unsigned publisher_port = 1666,
+    unsigned server_port = 1667,
+    unsigned max_msg_per_second = 25);
+
   void resetGrootMonitor();
 
   // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state

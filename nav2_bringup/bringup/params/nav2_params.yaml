@@ -54,6 +54,8 @@ bt_navigator:
     robot_base_frame: base_link
     odom_topic: /odom
     enable_groot_monitoring: False
+    groot_zmq_publisher_port: 1666
+    groot_zmq_server_port: 1667
     default_bt_xml_filename: "navigate_w_replanning_and_recovery.xml"
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
