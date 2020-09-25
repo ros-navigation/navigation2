@@ -1,0 +1,7 @@
+costmap_filter_info_server:
+  ros__parameters:
+    filter_info_topic: "costmap_filter_info"
+    type: 0
+    mask_topic: "filter_mask"
+    base: 0.1
+    multiploer: 0.2

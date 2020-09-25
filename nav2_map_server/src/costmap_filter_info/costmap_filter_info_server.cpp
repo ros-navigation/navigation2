@@ -29,7 +29,7 @@ CostmapFilterInfoServer::CostmapFilterInfoServer()
 {
   declare_parameter("filter_info_topic", "costmap_filter_info");
   declare_parameter("type", 0);
-  declare_parameter("mask_topic", "map_mask");
+  declare_parameter("mask_topic", "filter_mask");
   declare_parameter("base", 0.0);
   declare_parameter("multiplier", 1.0);
 }
@@ -50,7 +50,7 @@ CostmapFilterInfoServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   msg_ = std::make_unique<nav2_msgs::msg::CostmapFilterInfo>();
   msg_->type = get_parameter("type").as_int();
-  msg_->map_mask_topic = get_parameter("mask_topic").as_string();
+  msg_->filter_mask_topic = get_parameter("mask_topic").as_string();
   msg_->base = get_parameter("base").as_double();
   msg_->multiplier = get_parameter("multiplier").as_double();
 

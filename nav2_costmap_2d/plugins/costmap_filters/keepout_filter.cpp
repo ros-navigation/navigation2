@@ -89,17 +89,18 @@ void KeepoutFilter::filterInfoCallback(
   if (msg->base != BASE_DEFAULT or msg->multiplier != MULTIPLIER_DEFAULT) {
     RCLCPP_ERROR(
       node->get_logger(),
-      "base and multiplier in ConstmapFilterInfo should be set to their default values (%d and %d)",
+      "For proper use of keepout filter base and multiplier in ConstmapFilterInfo "
+      "should be set to their default values (%f and %f)",
       BASE_DEFAULT, MULTIPLIER_DEFAULT);
   }
 
-  mask_topic_ = msg->map_mask_topic;
+  mask_topic_ = msg->filter_mask_topic;
 
-  // Setting new map mask subscriber
+  // Setting new filter mask subscriber
   RCLCPP_INFO(
     node->get_logger(),
-    "Subscribing to \"%s\" topic for map mask...",
-    msg->map_mask_topic.c_str());
+    "Subscribing to \"%s\" topic for filter mask...",
+    msg->filter_mask_topic.c_str());
   mask_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
     mask_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&KeepoutFilter::maskCallback, this, std::placeholders::_1));
@@ -118,7 +119,7 @@ void KeepoutFilter::maskCallback(
   if (mask_costmap_) {
     RCLCPP_WARN(
       node->get_logger(),
-      "New map mask arrived from %s topic. Updating old map mask.",
+      "New filter mask arrived from %s topic. Updating old filter mask.",
       mask_topic_.c_str());
     mask_costmap_.reset();
   }
@@ -143,7 +144,7 @@ void KeepoutFilter::process(
     // Show warning message every 2 seconds to not litter an output
     RCLCPP_WARN_THROTTLE(
       node->get_logger(), *(node->get_clock()), 2000,
-      "Map mask was not received");
+      "Filter mask was not received");
     return;
   }
 

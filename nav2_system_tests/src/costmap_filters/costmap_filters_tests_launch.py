@@ -17,12 +17,9 @@
 import os
 import sys
 
-from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch import LaunchService
-from launch.actions import ExecuteProcess, IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import ExecuteProcess
 import launch_ros.actions
 from launch_testing.legacy import LaunchTestService
 
@@ -33,7 +30,8 @@ def main(argv=sys.argv[1:]):
         executable='lifecycle_manager',
         name='lifecycle_manager',
         output='screen',
-        parameters=[{'node_names': ['map_server', 'filters_tester']},
+        parameters=[{'node_names': ['map_server', 'map_mask_server',
+                                    'costmap_filter_info_server', 'filters_tester']},
                     {'autostart': True}])
 
     map_file = os.getenv('TEST_MAP')
@@ -44,17 +42,22 @@ def main(argv=sys.argv[1:]):
             output='screen',
             parameters=[{'yaml_filename': map_file}])
 
-    bringup_dir = get_package_share_directory('nav2_bringup')
-    costmap_filter_info_launch_file = os.path.join(
-        bringup_dir, 'launch', 'costmap_filter_info.launch.py')
-    params_file = os.path.join(bringup_dir, 'params', 'nav2_params.yaml')
-    map_mask_file = os.getenv('TEST_MASK')
-    costmap_filter_info_server_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(costmap_filter_info_launch_file),
-        launch_arguments={'filter_namespace': 'global_costmap',
-                          'autostart': 'True',
-                          'params_file': params_file,
-                          'mask': map_mask_file}.items())
+    mapMaskFile = os.getenv('TEST_MASK')
+    map_mask_server_cmd = launch_ros.actions.Node(
+            package='nav2_map_server',
+            executable='map_server',
+            name='map_mask_server',
+            output='screen',
+            parameters=[{'yaml_filename': mapMaskFile},
+                        {'topic_name': 'filter_mask'}])
+
+    filterParamsFile = os.getenv('FILTER_PARAMS')
+    costmap_filter_info_server_cmd = launch_ros.actions.Node(
+            package='nav2_map_server',
+            executable='costmap_filter_info_server',
+            name='costmap_filter_info_server',
+            output='screen',
+            parameters=[filterParamsFile])
 
     testExecutable = os.getenv('TEST_EXECUTABLE')
     test_action = ExecuteProcess(
@@ -68,6 +71,7 @@ def main(argv=sys.argv[1:]):
     # Add map server running
     ld.add_action(lifecycle_manager_cmd)
     ld.add_action(map_server_cmd)
+    ld.add_action(map_mask_server_cmd)
     ld.add_action(costmap_filter_info_server_cmd)
 
     lts = LaunchTestService()

@@ -1,8 +1,8 @@
 std_msgs/Header header
 # Type of plugin used (keepout filter, speed limit in m/s, speed limit in percent, etc...)
 uint8 type
-# Name of map mask topic
-string map_mask_topic
+# Name of filter mask topic
+string filter_mask_topic
 # Multiplier base offset and multiplier coefficient for conversion of OccGrid.
 # Used to convert OccupancyGrid data values to filter space values.
 # data -> into some other number space:

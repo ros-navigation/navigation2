@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <chrono>
 #include <iomanip>
 
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -33,14 +34,14 @@ FiltersTester::FiltersTester()
 {
   RCLCPP_INFO(get_logger(), "Creating");
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "costmap_2d_ros", "/", "global_costmap");
+    "costmap_2d_ros", "/", "");
   costmap_ros_->set_parameter(rclcpp::Parameter("always_send_full_costmap", true));
   costmap_ros_->set_parameter(rclcpp::Parameter("resolution", 0.1));
   costmap_ros_->set_parameter(rclcpp::Parameter("publish_frequency", 5.0));
   costmap_ros_->set_parameter(rclcpp::Parameter("update_frequency", 5.0));
   costmap_ros_->set_parameter(rclcpp::Parameter("robot_radius", 0.2));
 
-  std::vector<std::string> plugins_list{"static_layer", "obstacle_layer", "keepout_layer"};
+  std::vector<std::string> plugins_list{"static_layer", "keepout_layer", "inflation_layer"};
   costmap_ros_->set_parameter(rclcpp::Parameter("plugins", plugins_list));
   // Since plugins are not initialized yet, plugins' parameters are not declared as well.
   // We need to declare them before setting.
@@ -50,11 +51,6 @@ FiltersTester::FiltersTester()
     rclcpp::Parameter(
       "static_layer.plugin", "nav2_costmap_2d::StaticLayer"));
   costmap_ros_->declare_parameter(
-    "obstacle_layer.plugin", rclcpp::ParameterValue("nav2_costmap_2d::ObstacleLayer"));
-  costmap_ros_->set_parameter(
-    rclcpp::Parameter(
-      "obstacle_layer.plugin", "nav2_costmap_2d::ObstacleLayer"));
-  costmap_ros_->declare_parameter(
     "keepout_layer.plugin", rclcpp::ParameterValue("nav2_costmap_2d::KeepoutFilter"));
   costmap_ros_->set_parameter(
     rclcpp::Parameter(
@@ -63,6 +59,11 @@ FiltersTester::FiltersTester()
     "keepout_layer.filter_info_topic", rclcpp::ParameterValue("costmap_filter_info"));
   costmap_ros_->set_parameter(
     rclcpp::Parameter("keepout_layer.filter_info_topic", "costmap_filter_info"));
+  costmap_ros_->declare_parameter(
+    "inflation_layer.plugin", rclcpp::ParameterValue("nav2_costmap_2d::InflationLayer"));
+  costmap_ros_->set_parameter(
+    rclcpp::Parameter(
+      "inflation_layer.plugin", "nav2_costmap_2d::InflationLayer"));
 
   planner_ = std::make_shared<nav2_navfn_planner::NavfnPlanner>();
 }
@@ -96,7 +97,7 @@ FiltersTester::on_activate(const rclcpp_lifecycle::State & state)
   costmap_ros_->on_activate(state);
   planner_->activate();
 
-  // Loading map mask
+  // Loading filter mask
   nav_msgs::msg::OccupancyGrid mask_msg;
   char * test_mask = std::getenv("TEST_MASK");
   nav2_map_server::LOAD_MAP_STATUS status = nav2_map_server::loadMapFromYaml(test_mask, mask_msg);
@@ -208,39 +209,38 @@ void FiltersTester::spinTester()
   }
 }
 
-bool FiltersTester::testPlan(
+void FiltersTester::waitSome(const std::chrono::nanoseconds & duration)
+{
+  rclcpp::Time start_time = this->now();
+  while (this->now() - start_time <= rclcpp::Duration(duration)) {
+    spinTester();
+    std::this_thread::sleep_for(100ms);
+  }
+}
+
+TestStatus FiltersTester::testPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & end)
 {
   geometry_msgs::msg::PoseStamped pose = start;
   nav_msgs::msg::Path path;
-  bool result;
 
-  do {
-    spinTester();
+  // Allow keepout_filter to receive CostmapFilterInfo and filter mask
+  waitSome(1000ms);
 
-    result = checkPlan(pose, end, path);
-    if (result) {
-      if (path.poses.size() > 2) {
-        // Goal is not reached, continue moving
-        // printPath(path);
-        pose = path.poses[1];
-        if (isInKeepout(pose.pose.position)) {
-          // Fail case: robot enters keepout area
-          return false;
-        }
-        updateRobotPosition(pose.pose.position);
-      } else {
-        // Goal was sucessfully reached
-        return true;
-      }
-      // Sleep for some time to let costmap to be updated
-      std::this_thread::sleep_for(100ms);
+  if (!checkPlan(pose, end, path)) {
+    // Fail case: can not produce the path to the goal
+    return NO_PATH;
+  }
+  // printPath(path);
+  for (unsigned int i = 0; i < path.poses.size(); i++) {
+    if (isInKeepout(path.poses[i].pose.position)) {
+      // Fail case: robot enters keepout area
+      return IN_KEEPOUT;
     }
-  } while (result);
+  }
 
-  // Fail case: can not produce the path to the goal
-  return false;
+  return SUCCESS;
 }
 
 bool FiltersTester::isInKeepout(const geometry_msgs::msg::Point & position)
@@ -250,7 +250,7 @@ bool FiltersTester::isInKeepout(const geometry_msgs::msg::Point & position)
   unsigned int mx, my;
 
   if (!mask_costmap_) {
-    RCLCPP_ERROR(get_logger(), "Map mask was not loaded");
+    RCLCPP_ERROR(get_logger(), "Filter mask was not loaded");
     return true;
   }
 
@@ -260,32 +260,6 @@ bool FiltersTester::isInKeepout(const geometry_msgs::msg::Point & position)
   }
 
   if (mask_costmap_->getCost(mx, my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-    // Checking neighboring pixels whether the path lies on keepout zone's boundary
-    if (
-      mx >= 1 &&
-      mask_costmap_->getCost(mx - 1, my) != nav2_costmap_2d::LETHAL_OBSTACLE)
-    {
-      return false;
-    }
-    if (
-      mx + 1 < mask_costmap_->getSizeInCellsX() &&
-      mask_costmap_->getCost(mx + 1, my) != nav2_costmap_2d::LETHAL_OBSTACLE)
-    {
-      return false;
-    }
-    if (
-      my >= 1 &&
-      mask_costmap_->getCost(mx, my + 1) != nav2_costmap_2d::LETHAL_OBSTACLE)
-    {
-      return false;
-    }
-    if (
-      my + 1 < mask_costmap_->getSizeInCellsY() &&
-      mask_costmap_->getCost(mx, my + 1) != nav2_costmap_2d::LETHAL_OBSTACLE)
-    {
-      return false;
-    }
-
     RCLCPP_ERROR(get_logger(), "Position (%f,%f) belongs to keepout area (%i,%i)", x, y, mx, my);
     return true;
   }

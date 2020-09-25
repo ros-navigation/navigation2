@@ -16,9 +16,9 @@
 
 #include <string>
 #include <memory>
+#include <chrono>
 #include <vector>
 #include <functional>
-#include <mutex>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/occ_grid_values.hpp"
@@ -30,8 +30,6 @@
 
 using namespace std::chrono_literals;
 
-typedef std::recursive_mutex mutex_t;
-
 static const std::string FILTER_NAME = "keepout_filter";
 static const std::string INFO_TOPIC = "costmap_filter_info";
 static const std::string MASK_TOPIC = "mask";
@@ -39,111 +37,51 @@ static const std::string MASK_TOPIC = "mask";
 class InfoPublisher : public rclcpp::Node
 {
 public:
-  InfoPublisher()
-  : Node("costmap_filter_info_pub"), is_published_(false)
+  InfoPublisher(double base, double multiplier)
+  : Node("costmap_filter_info_pub")
   {
-    access_ = new mutex_t();
-
     publisher_ = this->create_publisher<nav2_msgs::msg::CostmapFilterInfo>(
       INFO_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
     std::unique_ptr<nav2_msgs::msg::CostmapFilterInfo> msg =
       std::make_unique<nav2_msgs::msg::CostmapFilterInfo>();
     msg->type = 0;
-    msg->map_mask_topic = MASK_TOPIC;
-    msg->base = 0.0;
-    msg->multiplier = 1.0;
+    msg->filter_mask_topic = MASK_TOPIC;
+    msg->base = base;
+    msg->multiplier = multiplier;
 
     publisher_->publish(std::move(msg));
-
-    subscription_ = this->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
-      INFO_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-      std::bind(&InfoPublisher::infoCallback, this, std::placeholders::_1));
   }
 
   ~InfoPublisher()
   {
-    subscription_.reset();
     publisher_.reset();
-    delete access_;
-  }
-
-  bool isPublished()
-  {
-    std::lock_guard<mutex_t> guard(*getMutex());
-    return is_published_;
-  }
-
-  mutex_t * getMutex()
-  {
-    return access_;
   }
 
 private:
   rclcpp::Publisher<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr publisher_;
-  rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr subscription_;
-
-  void infoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr)
-  {
-    std::lock_guard<mutex_t> guard(*getMutex());
-    is_published_ = true;
-  }
-
-  bool is_published_;
-
-  mutex_t * access_;
 };  // InfoPublisher
 
 class MaskPublisher : public rclcpp::Node
 {
 public:
   MaskPublisher(const nav_msgs::msg::OccupancyGrid & mask)
-  : Node("mask_pub"), is_published_(false)
+  : Node("mask_pub")
   {
-    access_ = new mutex_t();
-
     publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
       MASK_TOPIC,
       rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
     publisher_->publish(mask);
-
-    subscription_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
-      MASK_TOPIC,
-      rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-      std::bind(&MaskPublisher::mapCallback, this, std::placeholders::_1));
   }
 
   ~MaskPublisher()
   {
-    subscription_.reset();
     publisher_.reset();
-    delete access_;
-  }
-
-  bool isPublished()
-  {
-    std::lock_guard<mutex_t> guard(*getMutex());
-    return is_published_;
-  }
-
-  mutex_t * getMutex()
-  {
-    return access_;
   }
 
 private:
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr publisher_;
-  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr subscription_;
-
-  void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr)
-  {
-    is_published_ = true;
-  }
-
-  bool is_published_;
-
-  mutex_t * access_;
 };  // MaskPublisher
 
 struct Point
@@ -161,9 +99,13 @@ public:
 protected:
   void createMaps(unsigned char master_value, int8_t mask_value);
   void publishMaps();
+  void rePublishInfo(double base, double multiplier);
+  void rePublishMask();
+  void waitSome(const std::chrono::nanoseconds & duration);
   void createKeepoutFilter();
+  void verifyMasterGrid(unsigned char free_value, unsigned char keepout_value);
+  void testStandardScenario(unsigned char free_value, unsigned char keepout_value);
   void reset();
-  void testKeepoutFilter(unsigned char free_value, unsigned char keepout_value);
 
   std::shared_ptr<nav2_costmap_2d::KeepoutFilter> keepout_filter_;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> master_grid_;
@@ -171,8 +113,6 @@ protected:
   std::vector<Point> keepout_points_;
 
 private:
-  void verifyMasterGrid(unsigned char free_value, unsigned char keepout_value);
-
   nav2_util::LifecycleNode::SharedPtr node_;
 
   std::shared_ptr<nav_msgs::msg::OccupancyGrid> mask_;
@@ -183,33 +123,36 @@ private:
 
 void TestNode::createMaps(unsigned char master_value, int8_t mask_value)
 {
-  // Make map and mask overlapping as follows:
+  // Make map and mask put as follows:
   //
-  //        map     (10,10)
-  //         *---------*
-  //   mask  |  (5,5)  |
-  //    *----+----*    |
-  //    *////|////*    |
-  //    *////*----*----*
-  //    */////////*
-  //    *---------*
-  // (-5,-5)
+  //  map             (10,10)
+  //   *----------------*
+  //   |   mask (6,6)   |
+  //   |    *-----*     |
+  //   |    |/////|     |
+  //   |    |/////|     |
+  //   |    *-----*     |
+  //   |  (3,3)         |
+  //   *----------------*
+  // (0,0)
 
-  const unsigned int width = 10;
-  const unsigned int height = 10;
   const double resolution = 1.0;
 
   // Create master_grid_
+  unsigned int width = 10;
+  unsigned int height = 10;
   master_grid_ = std::make_shared<nav2_costmap_2d::Costmap2D>(
     width, height, resolution, 0.0, 0.0, master_value);
 
   // Create mask_
+  width = 3;
+  height = 3;
   mask_ = std::make_shared<nav_msgs::msg::OccupancyGrid>();
   mask_->info.resolution = resolution;
   mask_->info.width = width;
   mask_->info.height = height;
-  mask_->info.origin.position.x = -5.0;
-  mask_->info.origin.position.y = -5.0;
+  mask_->info.origin.position.x = 3.0;
+  mask_->info.origin.position.y = 3.0;
   mask_->info.origin.position.z = 0.0;
   mask_->info.origin.orientation.x = 0.0;
   mask_->info.origin.orientation.y = 0.0;
@@ -220,28 +163,56 @@ void TestNode::createMaps(unsigned char master_value, int8_t mask_value)
 
 void TestNode::publishMaps()
 {
-  info_publisher_ = std::make_shared<InfoPublisher>();
-  while (!info_publisher_->isPublished()) {
-    rclcpp::spin_some(info_publisher_);
-    std::this_thread::sleep_for(100ms);
-  }
-
+  info_publisher_ = std::make_shared<InfoPublisher>(0.0, 1.0);
   mask_publisher_ = std::make_shared<MaskPublisher>(*mask_);
-  while (!mask_publisher_->isPublished()) {
-    rclcpp::spin_some(mask_publisher_);
+}
+
+void TestNode::rePublishInfo(double base, double multiplier)
+{
+  info_publisher_.reset();
+  info_publisher_ = std::make_shared<InfoPublisher>(base, multiplier);
+  // Allow both CostmapFilterInfo and filter mask subscribers
+  // to receive a new message
+  waitSome(500ms);
+}
+
+void TestNode::rePublishMask()
+{
+  mask_publisher_.reset();
+  mask_publisher_ = std::make_shared<MaskPublisher>(*mask_);
+  // Allow filter mask subscriber to receive a new message
+  waitSome(500ms);
+}
+
+void TestNode::waitSome(const std::chrono::nanoseconds & duration)
+{
+  rclcpp::Time start_time = node_->now();
+  while (rclcpp::ok() && node_->now() - start_time <= rclcpp::Duration(duration)) {
+    rclcpp::spin_some(node_->get_node_base_interface());
     std::this_thread::sleep_for(100ms);
   }
 }
 
-void TestNode::reset()
+void TestNode::createKeepoutFilter()
 {
-  mask_.reset();
-  master_grid_.reset();
-  info_publisher_.reset();
-  mask_publisher_.reset();
-  keepout_filter_.reset();
-  node_.reset();
-  keepout_points_.clear();
+  node_ = std::make_shared<nav2_util::LifecycleNode>("test_node");
+  tf2_ros::Buffer tf(node_->get_clock());
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+
+  node_->declare_parameter(
+    FILTER_NAME + ".filter_info_topic", rclcpp::ParameterValue(INFO_TOPIC));
+  node_->set_parameter(
+    rclcpp::Parameter(FILTER_NAME + ".filter_info_topic", INFO_TOPIC));
+
+  keepout_filter_ = std::make_shared<nav2_costmap_2d::KeepoutFilter>();
+  keepout_filter_->initialize(&layers, FILTER_NAME, &tf, node_, nullptr, nullptr);
+  keepout_filter_->initializeFilter(INFO_TOPIC);
+
+  // Wait until mask will be received by KeepoutFilter
+  while (!keepout_filter_->isActive()) {
+    rclcpp::spin_some(node_->get_node_base_interface());
+    std::this_thread::sleep_for(100ms);
+  }
 }
 
 void TestNode::verifyMasterGrid(unsigned char free_value, unsigned char keepout_value)
@@ -268,49 +239,41 @@ void TestNode::verifyMasterGrid(unsigned char free_value, unsigned char keepout_
   }
 }
 
-void TestNode::createKeepoutFilter()
-{
-  node_ = std::make_shared<nav2_util::LifecycleNode>("test_node");
-  tf2_ros::Buffer tf(node_->get_clock());
-  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
-
-  node_->declare_parameter(
-    FILTER_NAME + ".filter_info_topic", rclcpp::ParameterValue(INFO_TOPIC));
-  node_->set_parameter(
-    rclcpp::Parameter(FILTER_NAME + ".filter_info_topic", INFO_TOPIC));
-
-  keepout_filter_ = std::make_shared<nav2_costmap_2d::KeepoutFilter>();
-  keepout_filter_->initialize(&layers, FILTER_NAME, &tf, node_, nullptr, nullptr);
-  keepout_filter_->initializeFilter(INFO_TOPIC);
-
-  // Wait until mask will be received by KeepoutFilter
-  while (!keepout_filter_->isActive()) {
-    rclcpp::spin_some(node_->get_node_base_interface());
-    std::this_thread::sleep_for(100ms);
-  }
-}
-
-void TestNode::testKeepoutFilter(unsigned char free_value, unsigned char keepout_value)
+void TestNode::testStandardScenario(unsigned char free_value, unsigned char keepout_value)
 {
   geometry_msgs::msg::Pose2D pose;
   // Intersection window: added 4 points
-  keepout_filter_->process(*master_grid_, 1, 3, 3, 6, pose);
-  keepout_points_.push_back(Point{1, 3});
-  keepout_points_.push_back(Point{2, 3});
-  keepout_points_.push_back(Point{1, 4});
-  keepout_points_.push_back(Point{2, 4});
-  verifyMasterGrid(free_value, keepout_value);
-  // Two windows outside on the horisontal/vertical edge: no new points added
-  keepout_filter_->process(*master_grid_, 1, 5, 3, 6, pose);
-  keepout_filter_->process(*master_grid_, 5, 1, 6, 3, pose);
-  verifyMasterGrid(free_value, keepout_value);
-  // Corner window: added 1 point
-  keepout_filter_->process(*master_grid_, 4, 4, 5, 5, pose);
+  keepout_filter_->process(*master_grid_, 2, 2, 5, 5, pose);
+  keepout_points_.push_back(Point{3, 3});
+  keepout_points_.push_back(Point{3, 4});
+  keepout_points_.push_back(Point{4, 3});
   keepout_points_.push_back(Point{4, 4});
   verifyMasterGrid(free_value, keepout_value);
-  // Outside window: no new points added
+  // Two windows outside on the horisontal/vertical edge: no new points added
+  keepout_filter_->process(*master_grid_, 3, 6, 5, 7, pose);
+  keepout_filter_->process(*master_grid_, 6, 3, 7, 5, pose);
+  verifyMasterGrid(free_value, keepout_value);
+  // Corner window: added 1 point
+  keepout_filter_->process(*master_grid_, 5, 5, 6, 6, pose);
+  keepout_points_.push_back(Point{5, 5});
+  verifyMasterGrid(free_value, keepout_value);
+  // Outside windows: no new points added
+  keepout_filter_->process(*master_grid_, 0, 0, 2, 2, pose);
+  keepout_filter_->process(*master_grid_, 0, 7, 2, 9, pose);
+  keepout_filter_->process(*master_grid_, 7, 0, 9, 2, pose);
   keepout_filter_->process(*master_grid_, 7, 7, 9, 9, pose);
   verifyMasterGrid(free_value, keepout_value);
+}
+
+void TestNode::reset()
+{
+  mask_.reset();
+  master_grid_.reset();
+  info_publisher_.reset();
+  mask_publisher_.reset();
+  keepout_filter_.reset();
+  node_.reset();
+  keepout_points_.clear();
 }
 
 TEST_F(TestNode, testFreeMasterLethalKeepout)
@@ -321,7 +284,7 @@ TEST_F(TestNode, testFreeMasterLethalKeepout)
   createKeepoutFilter();
 
   // Test KeepoutFilter
-  testKeepoutFilter(nav2_costmap_2d::FREE_SPACE, nav2_costmap_2d::LETHAL_OBSTACLE);
+  testStandardScenario(nav2_costmap_2d::FREE_SPACE, nav2_costmap_2d::LETHAL_OBSTACLE);
 
   // Clean-up
   keepout_filter_->resetFilter();
@@ -338,9 +301,84 @@ TEST_F(TestNode, testUnknownMasterNonLethalKeepout)
   createKeepoutFilter();
 
   // Test KeepoutFilter
-  testKeepoutFilter(
+  testStandardScenario(
     nav2_costmap_2d::NO_INFORMATION,
     (nav2_costmap_2d::LETHAL_OBSTACLE - nav2_costmap_2d::FREE_SPACE) / 2);
+
+  // Clean-up
+  keepout_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testFreeKeepout)
+{
+  // Initilize test system
+  createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_FREE);
+  publishMaps();
+  createKeepoutFilter();
+
+  // Test KeepoutFilter
+  geometry_msgs::msg::Pose2D pose;
+  // Check whole area window
+  keepout_filter_->process(*master_grid_, 0, 0, 10, 10, pose);
+  // There should be no one point appeared on master_grid_ after process()
+  verifyMasterGrid(nav2_costmap_2d::FREE_SPACE, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // Clean-up
+  keepout_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testUnknownKeepout)
+{
+  // Initilize test system
+  createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_UNKNOWN);
+  publishMaps();
+  createKeepoutFilter();
+
+  // Test KeepoutFilter
+  geometry_msgs::msg::Pose2D pose;
+  // Check whole area window
+  keepout_filter_->process(*master_grid_, 0, 0, 10, 10, pose);
+  // There should be no one point appeared on master_grid_ after process()
+  verifyMasterGrid(nav2_costmap_2d::FREE_SPACE, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // Clean-up
+  keepout_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testInfoRePublish)
+{
+  // Initilize test system
+  createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_OCCUPIED);
+  publishMaps();
+  createKeepoutFilter();
+
+  // Re-publish filter info (with incorrect base and multiplier)
+  // and test that everything is working after
+  rePublishInfo(0.1, 0.2);
+
+  // Test KeepoutFilter
+  testStandardScenario(nav2_costmap_2d::FREE_SPACE, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // Clean-up
+  keepout_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testMaskRePublish)
+{
+  // Initilize test system
+  createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_OCCUPIED);
+  publishMaps();
+  createKeepoutFilter();
+
+  // Re-publish filter mask and test that everything is working after
+  rePublishMask();
+
+  // Test KeepoutFilter
+  testStandardScenario(nav2_costmap_2d::FREE_SPACE, nav2_costmap_2d::LETHAL_OBSTACLE);
 
   // Clean-up
   keepout_filter_->resetFilter();

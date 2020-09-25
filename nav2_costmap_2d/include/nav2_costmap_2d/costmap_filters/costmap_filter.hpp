@@ -120,7 +120,7 @@ protected:
   std::string filter_info_topic_;
 
   /**
-   * @brief: Name of map mask topic
+   * @brief: Name of filter mask topic
    */
   std::string mask_topic_;
 

@@ -18,6 +18,7 @@ ament_add_test(test_keepout_filter
   ENV
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/filters_room.yaml
     TEST_MASK=${PROJECT_SOURCE_DIR}/maps/keepout_mask.yaml
+    FILTER_PARAMS=${PROJECT_SOURCE_DIR}/params/keepout_params.yaml
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
     TEST_EXECUTABLE=$<TARGET_FILE:${test_keepout_filter_exec}>
 )

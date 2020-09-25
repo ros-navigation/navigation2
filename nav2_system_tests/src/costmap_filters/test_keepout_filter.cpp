@@ -34,8 +34,8 @@ TEST(TestKeepoutFilter, testValidPlan)
   end.pose.position.x = 4.0;
   end.pose.position.y = 4.0;
 
-  bool test_result = filters_tester->testPlan(start, end);
-  EXPECT_EQ(true, test_result);
+  nav2_system_tests::TestStatus test_result = filters_tester->testPlan(start, end);
+  EXPECT_EQ(nav2_system_tests::SUCCESS, test_result);
 }
 
 // Checks that robot will fail to go inside a keepout area
@@ -48,8 +48,8 @@ TEST(TestKeepoutFilter, testInvalidPlan)
   end.pose.position.x = 4.0;
   end.pose.position.y = -4.0;
 
-  bool test_result = filters_tester->testPlan(start, end);
-  EXPECT_EQ(false, test_result);
+  nav2_system_tests::TestStatus test_result = filters_tester->testPlan(start, end);
+  EXPECT_EQ(nav2_system_tests::NO_PATH, test_result);
 }
 
 int main(int argc, char ** argv)

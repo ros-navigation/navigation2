@@ -16,6 +16,7 @@
 
 #include <vector>
 #include <cmath>
+#include <limits>
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"

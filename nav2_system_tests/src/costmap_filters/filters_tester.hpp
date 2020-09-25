@@ -29,6 +29,8 @@
 namespace nav2_system_tests
 {
 
+enum TestStatus {SUCCESS, NO_PATH, IN_KEEPOUT};
+
 class FiltersTester : public nav2_util::LifecycleNode
 {
 public:
@@ -36,12 +38,14 @@ public:
   ~FiltersTester();
 
   // Test that planner can produce a path from start to end point
-  bool testPlan(
+  TestStatus testPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & end);
 
   // FiltersTester spinner
   void spinTester();
+  // Spin FilterTester for some time
+  void waitSome(const std::chrono::nanoseconds & duration);
 
   // Returns true if FiltersTester was activated
   inline bool isActive() const
