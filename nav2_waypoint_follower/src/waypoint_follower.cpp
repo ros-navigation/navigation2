@@ -31,7 +31,7 @@ WaypointFollower::WaypointFollower()
 
   declare_parameter("stop_on_failure", true);
   declare_parameter("loop_rate", 20);
-  declare_parameter("sleep_time_inbetween_waypoints", 5);
+  declare_parameter("sleep_time_inbetween_waypoints", 0);
 }
 
 WaypointFollower::~WaypointFollower()
@@ -184,17 +184,17 @@ WaypointFollower::followWaypoints()
           " moving to next.", goal_index);
       }
     } else if (current_goal_status_ == ActionStatus::SUCCEEDED) {
-        if (sleep_time_inbetween_waypoints_){
-          RCLCPP_INFO(
-            get_logger(), "Succeeded processing waypoint %i, "
-            "sleeping for %i seconds before moving to next.", goal_index, sleep_time_inbetween_waypoints_);  
-          rclcpp::sleep_for(std::chrono::seconds(sleep_time_inbetween_waypoints_));
-        }
-        else {
-          RCLCPP_INFO(
-            get_logger(), "Succeeded processing waypoint %i, "
-            "moving to next.", goal_index);      
-          }
+      if (sleep_time_inbetween_waypoints_) {
+        RCLCPP_INFO(
+          get_logger(), "Succeeded processing waypoint %i, "
+          "sleeping for %i milliseconds before moving to next.", goal_index,
+          sleep_time_inbetween_waypoints_);
+        rclcpp::sleep_for(std::chrono::milliseconds(sleep_time_inbetween_waypoints_));
+      } else {
+        RCLCPP_INFO(
+          get_logger(), "Succeeded processing waypoint %i, "
+          "moving to next.", goal_index);
+      }
     }
 
     if (current_goal_status_ != ActionStatus::PROCESSING &&

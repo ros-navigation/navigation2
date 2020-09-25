@@ -284,4 +284,4 @@ waypoint_follower:
   ros__parameters:
     loop_rate: 20
     stop_on_failure: false   
-    sleep_time_inbetween_waypoints: 5    
+    sleep_time_inbetween_waypoints: 0    
