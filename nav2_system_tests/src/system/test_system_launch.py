@@ -28,6 +28,8 @@ from launch_testing.legacy import LaunchTestService
 
 from nav2_common.launch import RewrittenYaml
 
+from launch.launch_context import LaunchContext
+import yaml
 
 def generate_launch_description():
     map_yaml_file = os.getenv('TEST_MAP')
@@ -40,15 +42,33 @@ def generate_launch_description():
     bringup_dir = get_package_share_directory('nav2_bringup')
     params_file = os.path.join(bringup_dir, 'params', 'nav2_params.yaml')
 
-    # Replace the `use_astar` setting on the params file
-    param_substitutions = {
-        'planner_server.ros__parameters.GridBased.use_astar': os.getenv('ASTAR')}
+    #Replace the default parameter values for testing special features without having multiple params_files inside the nav2 stack
+    context = LaunchContext()
+    param_substitutions = {}
+
+    if (os.getenv('ASTAR') == "True"):
+        param_substitutions.update({'use_astar': "True"})
+        print ("ASTAR set True")
+
+    if (os.getenv('GROOT_MONITORING') == "True"):
+        param_substitutions.update({'enable_groot_monitoring': "True"})
+        print ("GROOT_MONITORING set True")
+
+    if (os.getenv('GROOT_ZMQ_PUB_PORT')):
+        param_substitutions.update({'groot_zmq_publisher_port': os.getenv('GROOT_ZMQ_PUB_PORT')})
+        print ("GROOT_ZMQ_PUB_PORT set " + os.getenv('GROOT_ZMQ_PUB_PORT'))
+
+    if (os.getenv('GROOT_ZMQ_SERVER_PORT')):
+        param_substitutions.update({'groot_zmq_server_port': os.getenv('GROOT_ZMQ_SERVER_PORT')})
+        print ("GROOT_ZMQ_SERVER_PORT set " + os.getenv('GROOT_ZMQ_SERVER_PORT'))
+        
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key='',
         param_rewrites=param_substitutions,
         convert_types=True)
 
+    new_yaml = configured_params.perform(context)
     return LaunchDescription([
         SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
 
@@ -79,7 +99,7 @@ def generate_launch_description():
                               'use_namespace': 'False',
                               'map': map_yaml_file,
                               'use_sim_time': 'True',
-                              'params_file': configured_params,
+                              'params_file': new_yaml,
                               'bt_xml_file': bt_navigator_xml,
                               'autostart': 'True'}.items()),
     ])

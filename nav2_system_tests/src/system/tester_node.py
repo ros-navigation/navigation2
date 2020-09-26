@@ -34,6 +34,8 @@ from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.qos import QoSProfile
 
+import os
+import zmq
 
 class NavTester(Node):
 
@@ -94,6 +96,12 @@ class NavTester(Node):
         while not self.action_client.wait_for_server(timeout_sec=1.0):
             self.info_msg("'NavigateToPose' action server not available, waiting...")
 
+        if (os.getenv('GROOT_MONITORING') == "True"):
+            if self.grootMonitoringGetStatus():
+                self.error_msg("Behavior Tree must not be setup already, but ZMQ received status.. Are you running multiple tests..?")
+                return False
+            self.info_msg("This Error above MUST Fail and is o.k.!")
+
         self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
         goal_msg = NavigateToPose.Goal()
         goal_msg.pose = self.getStampedPoseMsg(self.goal_pose)
@@ -110,6 +118,19 @@ class NavTester(Node):
 
         self.info_msg('Goal accepted')
         get_result_future = goal_handle.get_result_async()
+        
+        future_return = True
+        if (os.getenv('GROOT_MONITORING') == "True"):
+            try:
+                if not self.grootMonitoringReloadTree():
+                    self.error_msg("Failed GROOT_BT - Reload Tree from ZMQ Server")
+                    future_return = False
+                if not self.grootMonitoringGetStatus():
+                    self.error_msg("Failed GROOT_BT - Get Status from ZMQ Publisher")
+                    future_return = False
+            except Exception as e:
+                self.error_msg("Failed GROOT_BT - ZMQ Tests: " + e.__doc__ + e.message)
+                future_return = False
 
         self.info_msg("Waiting for 'NavigateToPose' action to complete")
         rclpy.spin_until_future_complete(self, get_result_future)
@@ -118,7 +139,79 @@ class NavTester(Node):
             self.info_msg('Goal failed with status code: {0}'.format(status))
             return False
 
+        if not future_return:
+            return False
+
         self.info_msg('Goal succeeded!')
+        return True
+
+    def grootMonitoringReloadTree(self):
+        # ZeroMQ Context
+        context = zmq.Context()
+
+        sock = context.socket(zmq.REQ)
+        port = os.getenv('GROOT_ZMQ_SERVER_PORT', default=1667)
+        # # Set a Timeout so we do not spin till infinity
+        sock.setsockopt(zmq.RCVTIMEO, 1000) 
+        # sock.setsockopt(zmq.LINGER, 0)
+
+        sock.connect("tcp://localhost:" + str(port))
+        self.info_msg('ZMQ Server Port: ' + str(port))
+
+        #this should fail
+        try:
+            sock.recv()
+            self.error_msg("ZMQ Reload Tree Test 1/3 - This should have failed! Tree should only be loadable if ZMQ server on port " 
+                            + str(port) + " received a request")
+            sock.close()
+            return False
+        except zmq.error.ZMQError as e:
+            self.info_msg("ZMQ Reload Tree Test 1/3: Check")
+        try:
+            #request tree from server
+            sock.send_string("")
+            #receive tree from server as flat_buffer
+            message = sock.recv()
+            self.info_msg("ZMQ Reload Tree Test 2/3: Check")
+        except zmq.error.Again as e:
+            self.info_msg("ZMQ Reload Tree Test 2/3 - Failed to load tree")
+            sock.close()
+            return False
+
+        #this should fail
+        try:
+            sock.recv()
+            self.error_msg("ZMQ Reload Tree Test 3/3 - This should have failed! Tree should only be loadable ONCE after ZMQ server on port " 
+                            + str(port) + " received a request")
+            sock.close()
+            return False
+        except zmq.error.ZMQError as e:
+            self.info_msg("ZMQ Reload Tree Test 3/3: Check")
+        
+        return True
+
+    def grootMonitoringGetStatus(self):
+        # ZeroMQ Context
+        context = zmq.Context()
+        # Define the socket using the "Context"
+        sock = context.socket(zmq.SUB)
+        # Set a Timeout so we do not spin till infinity
+        sock.setsockopt(zmq.RCVTIMEO, 2000) 
+        #sock.setsockopt(zmq.LINGER, 0)
+
+        # Define subscription and messages with prefix to accept.
+        sock.setsockopt_string(zmq.SUBSCRIBE, "")
+        port = os.getenv('GROOT_ZMQ_PUB_PORT', default=1666)
+        sock.connect("tcp://127.0.0.1:" + str(port))
+
+        for request in range(3):
+            try:
+                message = sock.recv()
+            except zmq.error.Again as e:
+                self.error_msg("ZMQ - Did not receive any status")
+                sock.close()
+                return False
+        self.info_msg("ZMQ - Did receive status")
         return True
 
     def poseCallback(self, msg):
