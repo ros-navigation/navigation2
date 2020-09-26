@@ -37,6 +37,7 @@ from rclpy.qos import QoSProfile
 import os
 import zmq
 
+
 class NavTester(Node):
 
     def __init__(
@@ -98,7 +99,8 @@ class NavTester(Node):
 
         if (os.getenv('GROOT_MONITORING') == "True"):
             if self.grootMonitoringGetStatus():
-                self.error_msg("Behavior Tree must not be setup already, but ZMQ received status.. Are you running multiple tests..?")
+                self.error_msg("Behavior Tree must not be running already!")
+                self.error_msg("Are you running multiple goals/bts..?")
                 return False
             self.info_msg("This Error above MUST Fail and is o.k.!")
 
@@ -118,7 +120,7 @@ class NavTester(Node):
 
         self.info_msg('Goal accepted')
         get_result_future = goal_handle.get_result_async()
-        
+
         future_return = True
         if (os.getenv('GROOT_MONITORING') == "True"):
             try:
@@ -152,42 +154,42 @@ class NavTester(Node):
         sock = context.socket(zmq.REQ)
         port = os.getenv('GROOT_ZMQ_SERVER_PORT', default=1667)
         # # Set a Timeout so we do not spin till infinity
-        sock.setsockopt(zmq.RCVTIMEO, 1000) 
+        sock.setsockopt(zmq.RCVTIMEO, 1000)
         # sock.setsockopt(zmq.LINGER, 0)
 
         sock.connect("tcp://localhost:" + str(port))
         self.info_msg('ZMQ Server Port: ' + str(port))
 
-        #this should fail
+        # this should fail
         try:
             sock.recv()
-            self.error_msg("ZMQ Reload Tree Test 1/3 - This should have failed! Tree should only be loadable if ZMQ server on port " 
-                            + str(port) + " received a request")
+            self.error_msg("ZMQ Reload Tree Test 1/3 - This should have failed!")
+            # Only works when ZMQ server receives a request first
             sock.close()
             return False
-        except zmq.error.ZMQError as e:
+        except zmq.error.ZMQError:
             self.info_msg("ZMQ Reload Tree Test 1/3: Check")
         try:
-            #request tree from server
+            # request tree from server
             sock.send_string("")
-            #receive tree from server as flat_buffer
-            message = sock.recv()
+            # receive tree from server as flat_buffer
+            sock.recv()
             self.info_msg("ZMQ Reload Tree Test 2/3: Check")
-        except zmq.error.Again as e:
+        except zmq.error.Again:
             self.info_msg("ZMQ Reload Tree Test 2/3 - Failed to load tree")
             sock.close()
             return False
 
-        #this should fail
+        # this should fail
         try:
             sock.recv()
-            self.error_msg("ZMQ Reload Tree Test 3/3 - This should have failed! Tree should only be loadable ONCE after ZMQ server on port " 
-                            + str(port) + " received a request")
+            self.error_msg("ZMQ Reload Tree Test 3/3 - This should have failed!")
+            # Tree should only be loadable ONCE after ZMQ server received a request
             sock.close()
             return False
-        except zmq.error.ZMQError as e:
+        except zmq.error.ZMQError:
             self.info_msg("ZMQ Reload Tree Test 3/3: Check")
-        
+
         return True
 
     def grootMonitoringGetStatus(self):
@@ -196,8 +198,8 @@ class NavTester(Node):
         # Define the socket using the "Context"
         sock = context.socket(zmq.SUB)
         # Set a Timeout so we do not spin till infinity
-        sock.setsockopt(zmq.RCVTIMEO, 2000) 
-        #sock.setsockopt(zmq.LINGER, 0)
+        sock.setsockopt(zmq.RCVTIMEO, 2000)
+        # sock.setsockopt(zmq.LINGER, 0)
 
         # Define subscription and messages with prefix to accept.
         sock.setsockopt_string(zmq.SUBSCRIBE, "")
@@ -206,8 +208,8 @@ class NavTester(Node):
 
         for request in range(3):
             try:
-                message = sock.recv()
-            except zmq.error.Again as e:
+                sock.recv()
+            except zmq.error.Again:
                 self.error_msg("ZMQ - Did not receive any status")
                 sock.close()
                 return False

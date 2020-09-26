@@ -31,6 +31,7 @@ from nav2_common.launch import RewrittenYaml
 from launch.launch_context import LaunchContext
 import yaml
 
+
 def generate_launch_description():
     map_yaml_file = os.getenv('TEST_MAP')
     world = os.getenv('TEST_WORLD')
@@ -42,26 +43,28 @@ def generate_launch_description():
     bringup_dir = get_package_share_directory('nav2_bringup')
     params_file = os.path.join(bringup_dir, 'params', 'nav2_params.yaml')
 
-    #Replace the default parameter values for testing special features without having multiple params_files inside the nav2 stack
+    # Replace the default parameter values for testing special features
+    # without having multiple params_files inside the nav2 stack
     context = LaunchContext()
     param_substitutions = {}
 
     if (os.getenv('ASTAR') == "True"):
         param_substitutions.update({'use_astar': "True"})
-        print ("ASTAR set True")
+        print("ASTAR set True")
 
     if (os.getenv('GROOT_MONITORING') == "True"):
         param_substitutions.update({'enable_groot_monitoring': "True"})
-        print ("GROOT_MONITORING set True")
+        print("GROOT_MONITORING set True")
 
     if (os.getenv('GROOT_ZMQ_PUB_PORT')):
         param_substitutions.update({'groot_zmq_publisher_port': os.getenv('GROOT_ZMQ_PUB_PORT')})
-        print ("GROOT_ZMQ_PUB_PORT set " + os.getenv('GROOT_ZMQ_PUB_PORT'))
+        print("GROOT_ZMQ_PUB_PORT set " + os.getenv('GROOT_ZMQ_PUB_PORT'))
 
     if (os.getenv('GROOT_ZMQ_SERVER_PORT')):
         param_substitutions.update({'groot_zmq_server_port': os.getenv('GROOT_ZMQ_SERVER_PORT')})
-        print ("GROOT_ZMQ_SERVER_PORT set " + os.getenv('GROOT_ZMQ_SERVER_PORT'))
-        
+        print("GROOT_ZMQ_SERVER_PORT set " + os.getenv('GROOT_ZMQ_SERVER_PORT'))
+
+    print
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key='',
