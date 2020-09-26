@@ -147,6 +147,9 @@ _commands:
             name: Test Workspace | << parameters.workspace >>
             working_directory: << parameters.workspace >>
             command: |
+              apk --no-cache add python3
+              python3 -m ensurepip
+              pip3 install pyzmq==19.0.2
               . install/setup.sh
               TEST_PACKAGES=$(
                 colcon list --names-only | \
