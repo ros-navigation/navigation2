@@ -129,15 +129,15 @@ class RewrittenYaml(launch.Substitution):
 
   def convert(self, text_value):
     if self.__convert_types:
-      # try converting to float
-      try:
-        return float(text_value)
-      except ValueError:
-        pass
-
       # try converting to int
       try:
         return int(text_value)
+      except ValueError:
+        pass
+
+      # try converting to float
+      try:
+        return float(text_value)
       except ValueError:
         pass
 
