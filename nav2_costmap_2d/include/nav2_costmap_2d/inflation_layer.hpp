@@ -40,6 +40,7 @@
 
 #include <map>
 #include <vector>
+#include <mutex>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
@@ -77,7 +78,7 @@ class InflationLayer : public Layer
 public:
   InflationLayer();
 
-  ~InflationLayer() override = default;
+  ~InflationLayer();
 
   void onInitialize() override;
   void updateBounds(
@@ -113,6 +114,13 @@ public:
       cost = static_cast<unsigned char>((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
     }
     return cost;
+  }
+
+  // Provide a typedef to ease future code maintenance
+  typedef std::recursive_mutex mutex_t;
+  mutex_t * getMutex()
+  {
+    return access_;
   }
 
 protected:
@@ -184,6 +192,7 @@ private:
 
   // Indicates that the entire costmap should be reinflated next time around.
   bool need_reinflation_;
+  mutex_t * access_;
 };
 
 }  // namespace nav2_costmap_2d

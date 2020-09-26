@@ -45,9 +45,6 @@ public:
         BT::InputPort<std::string>("planner_id", ""),
       });
   }
-
-private:
-  bool first_time_{true};
 };
 
 }  // namespace nav2_behavior_tree

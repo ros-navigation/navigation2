@@ -20,6 +20,7 @@
 
 #include "nav2_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
+#include "nav_2d_utils/tf_help.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_controller/nav2_controller.hpp"
@@ -62,7 +63,9 @@ ControllerServer::ControllerServer()
 
 ControllerServer::~ControllerServer()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
+  progress_checker_.reset();
+  goal_checker_.reset();
+  controllers_.clear();
 }
 
 nav2_util::CallbackReturn
@@ -71,7 +74,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   auto node = shared_from_this();
 
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
-
 
   get_parameter("progress_checker_plugin", progress_checker_id_);
   if (progress_checker_id_ == default_progress_checker_id_) {
@@ -336,6 +338,11 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   controllers_[current_controller_]->setPlan(path);
 
   auto end_pose = path.poses.back();
+  end_pose.header.frame_id = path.header.frame_id;
+  rclcpp::Duration tolerance(costmap_ros_->getTransformTolerance() * 1e9);
+  nav_2d_utils::transformPose(
+    costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
+    end_pose, end_pose, tolerance);
   goal_checker_->reset();
 
   RCLCPP_DEBUG(
@@ -394,10 +401,7 @@ void ControllerServer::updateGlobalPath()
 void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)
 {
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>(velocity.twist);
-  if (
-    vel_publisher_->is_activated() &&
-    this->count_subscribers(vel_publisher_->get_topic_name()) > 0)
-  {
+  if (vel_publisher_->is_activated() && vel_publisher_->get_subscription_count() > 0) {
     vel_publisher_->publish(std::move(cmd_vel));
   }
 }

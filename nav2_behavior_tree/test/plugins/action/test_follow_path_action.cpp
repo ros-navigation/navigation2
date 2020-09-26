@@ -64,7 +64,6 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "server_timeout",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("path_updated", false);
     config_->blackboard->set<bool>("initial_pose_received", false);
 
     BT::NodeBuilder builder =
@@ -119,9 +118,7 @@ TEST_F(FollowPathActionTestFixture, test_tick)
         </BehaviorTree>
       </root>)";
 
-  config_->blackboard->set<bool>("path_updated", true);
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(config_->blackboard->get<bool>("path_updated"), false);
 
   // set new path on blackboard
   nav_msgs::msg::Path path;
@@ -153,14 +150,10 @@ TEST_F(FollowPathActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
   EXPECT_EQ(action_server_->getCurrentGoal()->path.poses.size(), 1u);
   EXPECT_EQ(action_server_->getCurrentGoal()->path.poses[0].pose.position.x, -2.5);
-  config_->blackboard->set<bool>("path_updated", true);
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
-
-  // path is updated on new goal
-  EXPECT_EQ(config_->blackboard->get<bool>("path_updated"), false);
 }
 
 int main(int argc, char ** argv)

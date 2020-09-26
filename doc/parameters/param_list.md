@@ -42,7 +42,7 @@ Namespace: /parent_ns/local_ns
 | update_frequency | 5.0 | Costmap update frequency |
 | use_maximum | false | whether when combining costmaps to use the maximum cost or override |
 | plugins | {"static_layer", "obstacle_layer", "inflation_layer"} | List of mapped plugin names for parameter namespaces and names |
-| clearable_layers | ["obstacle_layer"] | Layers that may be cleared using the clearing service |
+| clearable_layers | ["obstacle_layer", "voxel_layer", "range_layer"] | Layers that may be cleared using the clearing service |
 
 **NOTE:** When `plugins` parameter is overridden, each plugin namespace defined in the list needs to have a `plugin` parameter defining the type of plugin to be loaded in the namespace.
 
@@ -667,6 +667,14 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 
 ## Conditions
 
+### BT Node DistanceTraveled
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| distance | 1.0 | Distance in meters after which the node should return success |
+| global_frame | "map" | Reference frame |
+| robot_base_frame | "base_link" | Robot base frame |
+
 ### BT Node GoalReached
 
 | Input Port | Default | Description |
@@ -675,7 +683,21 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 | global_frame | "map" | Reference frame |
 | robot_base_frame | "base_link" | Robot base frame |
 
-### BT Node TransformAvailable (condition)
+### BT Node IsBatteryLow
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| min_battery | N/A | Minimum battery percentage/voltage |
+| battery_topic | "/battery_status" | Battery topic |
+| is_voltage | false | If true voltage will be used to check for low battery |
+
+### BT Node TimeExpired
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| seconds | 1.0 | Number of seconds after which node returns success |
+
+### BT Node TransformAvailable
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |

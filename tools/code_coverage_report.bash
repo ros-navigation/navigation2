@@ -69,6 +69,7 @@ lcov \
 # Remove files in the build subdirectory.
 # Those are generated files (like messages, services, etc)
 # And system tests, which are themselves all test artifacts
+# And rviz plugins, which are not used for real navigation
 lcov \
   --remove ${LCOVDIR}/workspace_coverage.info \
     "${PWD}/build/*" \
@@ -80,6 +81,8 @@ lcov \
     "${PWD}/*/nav_2d_msgs/*" \
   --remove ${LCOVDIR}/workspace_coverage.info \
     "${PWD}/*/nav2_system_tests/*" \
+  --remove ${LCOVDIR}/workspace_coverage.info \
+    "${PWD}/*/nav2_rviz_plugins/*" \
   --output-file ${LCOVDIR}/project_coverage.info \
   --rc lcov_branch_coverage=0
 
