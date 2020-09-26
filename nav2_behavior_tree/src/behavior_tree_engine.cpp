@@ -79,13 +79,16 @@ BehaviorTreeEngine::createTreeFromFile(
 }
 
 void
-BehaviorTreeEngine::addZMQGrootMonitoring(BT::Tree * tree,
+BehaviorTreeEngine::addZMQGrootMonitoring(
+  BT::Tree * tree,
   unsigned publisher_port,
   unsigned server_port,
   unsigned max_msg_per_second)
 {
   // This logger publish status changes using ZeroMQ. Used by Groot
-  publisher_zmq_ = std::make_unique<BT::PublisherZMQ>(*tree, max_msg_per_second, publisher_port, server_port);
+  publisher_zmq_ = std::make_unique<BT::PublisherZMQ>(
+    *tree, max_msg_per_second, publisher_port,
+    server_port);
 }
 
 void

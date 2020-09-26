@@ -51,7 +51,8 @@ public:
     const std::string & file_path,
     BT::Blackboard::Ptr blackboard);
 
-  void addZMQGrootMonitoring(BT::Tree * tree,
+  void addZMQGrootMonitoring(
+    BT::Tree * tree,
     unsigned publisher_port = 1666,
     unsigned server_port = 1667,
     unsigned max_msg_per_second = 25);

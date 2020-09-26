@@ -169,7 +169,7 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
   if (get_parameter("enable_groot_monitoring").as_bool()) {
     unsigned zmq_publisher_port = get_parameter("groot_zmq_publisher_port").as_int();
     unsigned zmq_server_port = get_parameter("groot_zmq_server_port").as_int();
-    //optionally add max_msg_per_second = 25 (default) here
+    // optionally add max_msg_per_second = 25 (default) here
     bt_->addZMQGrootMonitoring(&tree_, zmq_publisher_port, zmq_server_port);
   }
   return true;
