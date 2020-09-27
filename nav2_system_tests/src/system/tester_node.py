@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
+
 # Copyright 2018 Intel Corporation.
+# Copyright 2020 Florian Gramss
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
