@@ -257,14 +257,18 @@ planner_server:
       downsample_costmap: false         # whether or not to downsample the map to the specified resolution
       downsampling_factor: 1            # multiplier for the resolution of the costmap layer
       allow_unknown: false              # allow traveling in unknown space
-      travel_cost_scale: 0.7   #0.8? 2D         # [0,1] metric for how much you value staying out of higher-cost spaces (higher more adverse)
       max_iterations: -1                # maximum total iterations to search for before returning
       max_on_approach_iterations: 1000  # maximum number of iterations to attempt to reach goal once in tolerance, 2D only
       smooth_path: false                # Whether to smooth searched path
       upsample_path: false              # Whether to upsample path after smoothing, recommend off unless controller requires
       motion_model_for_search: "DUBIN"  # Moore, Van Neumann; Dubin, Redds-Shepp, Balkcom-Mason
-      angle_quantization_bins: 72       # Number of angle bins for search, must be 1 for 2D node (no angle search)
-      minimum_turning_radius: 0.20      # minimum turning radius in m of your vehicle
+      angle_quantization_bins: 72       # For SE2 node: Number of angle bins for search, must be 1 for 2D node (no angle search)
+      minimum_turning_radius: 0.20      # For SE2 node: minimum turning radius in m of your vehicle
+      # To turn off penalty, set to 1 (except change_penalty to 0)
+      reverse_penalty: 2.1              # For SE2 node: penalty to apply if motion is reversing, must be => 1
+      change_penalty: 0.60              # For SE2 node: penalty to apply if motion is changing directions
+      non_straight_penalty: 1.15        # For SE2 node: penalty to apply if motion is non-straight, must be => 1
+      cost_penalty: 1.1                 # For SE2 node: penalty to apply to higher cost zones
 
       smoother:
         upsampling_ratio: 4

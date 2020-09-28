@@ -71,7 +71,7 @@ public:
    * @brief A constructor for smac_planner::PlannerServer
    * @param neighborhood The type of neighborhood to use for search (4 or 8 connected)
    */
-  explicit AStarAlgorithm(const MotionModel & motion_model, const float & min_turning_radius);
+  explicit AStarAlgorithm(const MotionModel & motion_model, const SearchInfo & search_info);
 
   /**
    * @brief A destructor for smac_planner::AStarAlgorithm
@@ -80,7 +80,6 @@ public:
 
   /**
    * @brief Initialization of the planner with defaults
-   * @param travel_cost_scale Cost to travel from adjacent nodes to another
    * @param allow_unknown Allow search in unknown space, good for navigation while mapping
    * @param max_iterations Maximum number of iterations to use while expanding search
    * @param max_on_approach_iterations Maximum number of iterations before returning a valid
@@ -88,7 +87,6 @@ public:
    * comes at more compute time but smoother paths.
    */
   void initialize(
-    const float & travel_cost_scale,
     const bool & allow_unknown,
     int & max_iterations,
     const int & max_on_approach_iterations);
@@ -191,6 +189,13 @@ private:
   inline float getTraversalCost(NodePtr & current_node, NodePtr & new_node);
 
   /**
+   * @brief Get total cost of traversal for a node
+   * @param node Pointer to current node
+   * @return Reference accumulated cost between the nodes
+   */
+  inline float getAccumulatedCost(NodePtr & node);
+
+  /**
    * @brief Get cost of heuristic of node
    * @param node Node index current
    * @param node Node index of new
@@ -239,8 +244,6 @@ private:
    */
   inline void clearQueue();
 
-  float _travel_cost_scale;
-  float _neutral_cost;
   bool _traverse_unknown;
   int _max_iterations;
   int _max_on_approach_iterations;
@@ -248,7 +251,7 @@ private:
   unsigned int _x_size;
   unsigned int _y_size;
   unsigned int _dim3_size;
-  float _min_turning_radius;
+  SearchInfo _search_info;
 
   Coordinates _goal_coordinates;
   NodePtr _start;

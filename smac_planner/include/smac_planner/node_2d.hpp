@@ -211,6 +211,7 @@ public:
     NodeVector & neighbors);
 
   Node2D * parent;
+  static double neutral_cost;
 
 private:
   float _cell_cost;

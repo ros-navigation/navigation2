@@ -18,13 +18,12 @@
 #include <algorithm>
 #include <limits>
 #include <type_traits>
+#include <chrono>
+#include <omp.h>
+#include <thread>
 
 #include "smac_planner/a_star.hpp"
-
-// TODO optimization: should we be constructing full SE2 graph at start?
-// or only construct as we get in contact to expand!
-// doesnt matter as much for 2D planner, but really will matter here
-// might speed things up a bit. Reserve graph (full, 20%, whatever) but dont fill in.
+using namespace std::chrono;
 
 namespace smac_planner
 {
@@ -32,14 +31,12 @@ namespace smac_planner
 template<typename NodeT>
 AStarAlgorithm<NodeT>::AStarAlgorithm(
   const MotionModel & motion_model,
-  const float & min_turning_radius)
-: _travel_cost_scale(0.0),
-  _neutral_cost(0.0),
-  _traverse_unknown(true),
+  const SearchInfo & search_info)
+: _traverse_unknown(true),
   _max_iterations(0),
   _x_size(0),
   _y_size(0),
-  _min_turning_radius(min_turning_radius),
+  _search_info(search_info),
   _goal_coordinates(Coordinates()),
   _start(nullptr),
   _goal(nullptr),
@@ -60,7 +57,6 @@ AStarAlgorithm<NodeT>::~AStarAlgorithm()
 
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::initialize(
-  const float & travel_cost_scale,
   const bool & allow_unknown,
   int & max_iterations,
   const int & max_on_approach_iterations)
@@ -75,8 +71,6 @@ void AStarAlgorithm<NodeT>::initialize(
 
   _graph = std::make_unique<Graph>();
   _queue = std::make_unique<NodeQueue>();
-  _travel_cost_scale = travel_cost_scale;
-  _neutral_cost = 253.0 * (1.0 - _travel_cost_scale);
   _traverse_unknown = allow_unknown;
   _max_iterations = max_iterations;
   _max_on_approach_iterations = max_on_approach_iterations;
@@ -134,7 +128,7 @@ void AStarAlgorithm<NodeSE2>::createGraph(
   if (getSizeX() != x_size || getSizeY() != y_size) {
     _x_size = x_size;
     _y_size = y_size;
-    NodeSE2::initMotionModel(_motion_model, _x_size, _dim3_size, _min_turning_radius);
+    NodeSE2::initMotionModel(_motion_model, _x_size, _dim3_size, _search_info);
     _graph->clear();
     _graph->reserve(x_size * y_size * _dim3_size);
 
@@ -147,17 +141,11 @@ void AStarAlgorithm<NodeSE2>::createGraph(
       }
     }
   } else {
-    for (unsigned int j = 0; j != y_size; j++) {
-      for (unsigned int i = 0; i != x_size; i++) {
-        for (unsigned int k = 0; k != _dim3_size; k++) {
-          // Optimization: operator[] is used over at() for performance (no bound checking)
-          index = NodeSE2::getIndex(i, j, k, _x_size, _dim3_size);
-          _graph->operator[](index).reset(_collision_checker.get(), index);
-        }
-      }
+    // #pragma omp parallel for schedule(static)
+    for (unsigned int i = 0; i < _graph->size(); i++) {
+      _graph->operator[](i).reset(_collision_checker.get());
     }
   }
-
 }
 
 template<typename NodeT>
@@ -269,7 +257,7 @@ bool AStarAlgorithm<NodeT>::createPath(
     return false;
   }
 
-  _tolerance = _neutral_cost * tolerance;
+  _tolerance = tolerance * NodeT::neutral_cost;
   _best_heuristic_node = {std::numeric_limits<float>::max(), 0};
   clearQueue();
 
@@ -278,22 +266,23 @@ bool AStarAlgorithm<NodeT>::createPath(
   getStart()->setAccumulatedCost(0.0);
 
   // Optimization: preallocate all variables
-  NodePtr current_node;
-  float g_cost;
+  NodePtr current_node = nullptr;
+  NodePtr neighbor = nullptr;
+  float g_cost = 0.0;
   NodeVector neighbors;
   int approach_iterations = 0;
   typename NodeVector::iterator neighbor_iterator;
 
   // Given an index, return a node ptr reference if its collision-free and valid
   const unsigned int max_index = getSizeX() * getSizeY() * getSizeDim3();
-  std::function<bool(const unsigned int &, NodeT * &)> neighbor_getter =
-    [&, this](const unsigned int & index, NodePtr & neighbor) -> bool
+  std::function<bool(const unsigned int &, NodeT * &)> neighborGetter =
+    [&, this](const unsigned int & index, NodePtr & neighbor_rtn) -> bool
     {
       if (index < 0 || index >= max_index) {
         return false;
       }
 
-      neighbor = &_graph->operator[](index);
+      neighbor_rtn = &_graph->operator[](index);
       return true;
     };
 
@@ -329,28 +318,24 @@ bool AStarAlgorithm<NodeT>::createPath(
 
     // 4) Expand neighbors of Nbest not visited
     neighbors.clear();
-    NodeT::getNeighbors(current_node, neighbor_getter, _traverse_unknown, neighbors);
+    NodeT::getNeighbors(current_node, neighborGetter, _traverse_unknown, neighbors);
 
     for (neighbor_iterator = neighbors.begin();
       neighbor_iterator != neighbors.end(); ++neighbor_iterator)
     {
-      NodePtr & neighbor = *neighbor_iterator;
+      neighbor = *neighbor_iterator;
 
       // 4.1) Compute the cost to go to this node
-      g_cost = current_node->getAccumulatedCost() +
-        getTraversalCost(current_node, neighbor);
+      g_cost = getAccumulatedCost(current_node) + getTraversalCost(current_node, neighbor);
 
       // 4.2) If this is a lower cost than prior, we set this as the new cost and new approach
-      if (g_cost < neighbor->getAccumulatedCost()) {
+      if (g_cost < getAccumulatedCost(neighbor)) {
         neighbor->setAccumulatedCost(g_cost);
         neighbor->parent = current_node;
 
-        // 4.3) If not in queue or visited, add it
-        // TODO(stevemacenski): should this always be true?
-        if (true /*!neighbor->wasVisited()*/) {
-          neighbor->queued();
-          addNode(g_cost + getHeuristicCost(neighbor), neighbor);
-        }
+        // 4.3) If not in queue or visited, add it, `getNeighbors()` handles
+        neighbor->queued();
+        addNode(g_cost + getHeuristicCost(neighbor), neighbor);
       }
     }
   }
@@ -431,11 +416,13 @@ float AStarAlgorithm<NodeT>::getTraversalCost(
   NodePtr & current_node,
   NodePtr & new_node)
 {
-  const float move_cost = current_node->getTraversalCost(new_node);
+  return current_node->getTraversalCost(new_node);
+}
 
-  // rescale cost quadratically, makes search more convex
-  // Higher the scale, the less cost for lengthwise expansion
-  return _neutral_cost + _travel_cost_scale * move_cost * move_cost;
+template<typename NodeT>
+float AStarAlgorithm<NodeT>::getAccumulatedCost(NodePtr & node)
+{
+  return node->getAccumulatedCost();
 }
 
 template<typename NodeT>
@@ -444,12 +431,7 @@ float AStarAlgorithm<NodeT>::getHeuristicCost(const NodePtr & node)
   const Coordinates node_coords =
     NodeT::getCoords(node->getIndex(), getSizeX(), getSizeDim3());
   float heuristic = NodeT::getHeuristicCost(
-    node_coords, _goal_coordinates) * _neutral_cost;
-
-  // If we're far from goal, we want to ensure we can speed it along
-  if (heuristic > getToleranceHeuristic()) {
-    heuristic *= _neutral_cost;
-  }
+    node_coords, _goal_coordinates);
 
   if (heuristic < _best_heuristic_node.first) {
     _best_heuristic_node = {heuristic, node->getIndex()};

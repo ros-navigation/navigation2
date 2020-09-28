@@ -43,20 +43,13 @@
 
 // if collision in smoothed path, anchor that point and then re-run until successful (helpful in narrow spaces).
 
-// NOTES
-// way to do collision checking on oriented footprint https://github.com/windelbouwman/move-base-ompl/blob/master/src/ompl_global_planner.cpp#L133 (but doesnt cache)
-// https://github.com/ompl/ompl/blob/master/demos/GeometricCarPlanning.cpp for reeds/dubin hybrid. There's also a 2D point to point demo that could be helpful.
-// optimization flags -03
-// max iterations on approach only for 2D, not for SE2
-
 // In fact, I use that smoother in the A* implementation to make it "smooth" so its not grid-blocky.
 // Its actually how I tested the smoother since that's the nuclear case with tons of sharp random angles.
 // People are used to these smooth paths from Navigation Function approaches and I'm not sure anyone would be
 // happy if I just gave them a A* without it. Its stil quite fast but its much faster than NavFn without the smoother.
 // If you have a half decent controller though, its largely unneeded (I tested, its fine, its just not visually appealing).
 
-
-// TODO seperate createPlan into a few functions
+// seperate createPlan into a few functions
 
 #include <string>
 #include <memory>
@@ -90,7 +83,7 @@ SmacPlanner::~SmacPlanner()
 
 void SmacPlanner::configure(
   rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
-  std::string name, std::shared_ptr<tf2_ros::Buffer> /*tf*/,
+  std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   _node = parent;
@@ -102,8 +95,7 @@ void SmacPlanner::configure(
   int max_iterations;
   int max_on_approach_iterations = std::numeric_limits<int>::max();
   int angle_quantizations;
-  float travel_cost_scale;
-  float minimum_turning_radius;
+  SearchInfo search_info;
   bool smooth_path;
   bool upsample_path;
   std::string motion_model_for_search;
@@ -132,9 +124,6 @@ void SmacPlanner::configure(
     _node, name + ".max_iterations", rclcpp::ParameterValue(-1));
   _node->get_parameter(name + ".max_iterations", max_iterations);
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".travel_cost_scale", rclcpp::ParameterValue(0.8));
-  _node->get_parameter(name + ".travel_cost_scale", travel_cost_scale);
-  nav2_util::declare_parameter_if_not_declared(
     _node, name + ".smooth_path", rclcpp::ParameterValue(true));
   _node->get_parameter(name + ".smooth_path", smooth_path);
   nav2_util::declare_parameter_if_not_declared(
@@ -146,7 +135,20 @@ void SmacPlanner::configure(
 
   nav2_util::declare_parameter_if_not_declared(
     _node, name + ".minimum_turning_radius", rclcpp::ParameterValue(1.0));
-  _node->get_parameter(name + ".minimum_turning_radius", minimum_turning_radius);
+  _node->get_parameter(name + ".minimum_turning_radius", search_info.minimum_turning_radius);
+
+  nav2_util::declare_parameter_if_not_declared(
+    _node, name + ".reverse_penalty", rclcpp::ParameterValue(2.0));
+  _node->get_parameter(name + ".reverse_penalty", search_info.reverse_penalty);
+  nav2_util::declare_parameter_if_not_declared(
+    _node, name + ".change_penalty", rclcpp::ParameterValue(0.5));
+  _node->get_parameter(name + ".change_penalty", search_info.change_penalty);
+  nav2_util::declare_parameter_if_not_declared(
+    _node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.1));
+  _node->get_parameter(name + ".non_straight_penalty", search_info.non_straight_penalty);
+  nav2_util::declare_parameter_if_not_declared(
+    _node, name + ".cost_penalty", rclcpp::ParameterValue(1.2));
+  _node->get_parameter(name + ".cost_penalty", search_info.cost_penalty);
 
   nav2_util::declare_parameter_if_not_declared(
     _node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("MOORE")));
@@ -174,11 +176,6 @@ void SmacPlanner::configure(
     max_iterations = std::numeric_limits<int>::max();
   }
 
-  if (travel_cost_scale > 1.0 || travel_cost_scale < 0.0) {
-    RCLCPP_FATAL(_node->get_logger(), "Travel cost scale must be between 0 and 1, exiting.");
-    exit(-1);
-  }
-
   if (_upsampling_ratio != 2 && _upsampling_ratio != 4) {
     RCLCPP_WARN(
       _node->get_logger(),
@@ -186,11 +183,12 @@ void SmacPlanner::configure(
     _upsampling_ratio = 2;
   }
 
-  float grid_coord_min_turning_rad =
-    minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
-  _a_star = std::make_unique<AStarAlgorithm<NodeSE2>>(motion_model, grid_coord_min_turning_rad);
+  // convert to grid coordinates
+  search_info.minimum_turning_radius =
+    search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
+
+  _a_star = std::make_unique<AStarAlgorithm<NodeSE2>>(motion_model, search_info);
   _a_star->initialize(
-    travel_cost_scale,
     allow_unknown,
     max_iterations,
     max_on_approach_iterations);
@@ -219,9 +217,9 @@ void SmacPlanner::configure(
 
   RCLCPP_INFO(
     _node->get_logger(), "Configured plugin %s of type SmacPlanner with "
-    "travel cost %.2f, tolerance %.2f, maximum iterations %i, "
+    "tolerance %.2f, maximum iterations %i, "
     "max on approach iterations %i, and %s. Using motion model: %s.",
-    _name.c_str(), travel_cost_scale, _tolerance, max_iterations, max_on_approach_iterations,
+    _name.c_str(), _tolerance, max_iterations, max_on_approach_iterations,
     allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
     toString(motion_model).c_str());
 }

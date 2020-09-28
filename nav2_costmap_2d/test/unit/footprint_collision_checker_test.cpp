@@ -41,7 +41,8 @@ TEST(collision_footprint, test_basic)
 
   nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
 
-  auto collision_checker = FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>(costmap_);
+  auto collision_checker = FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>(
+    costmap_);
 
   auto value = collision_checker.footprintCostAtPose(5.0, 5.0, 0.0, footprint);
 
@@ -53,7 +54,8 @@ TEST(collision_footprint, test_point_cost)
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ =
     std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, 0, 0, 0);
 
-  auto collision_checker = FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>(costmap_);
+  auto collision_checker = FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>(
+    costmap_);
 
   auto value = collision_checker.pointCost(50, 50);
 
@@ -65,7 +67,8 @@ TEST(collision_footprint, test_world_to_map)
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ =
     std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, 0, 0, 0);
 
-  auto collision_checker = FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>(costmap_);
+  auto collision_checker = FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>(
+    costmap_);
 
   unsigned int x, y;
 
@@ -107,7 +110,8 @@ TEST(collision_footprint, test_footprint_at_pose_with_movement)
 
   nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
 
-  auto collision_checker = FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>(costmap_);
+  auto collision_checker = FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>(
+    costmap_);
 
   auto value = collision_checker.footprintCostAtPose(5.0, 5.0, 0.0, footprint);
   EXPECT_NEAR(value, 0.0, 0.001);
@@ -142,7 +146,8 @@ TEST(collision_footprint, test_point_and_line_cost)
 
   nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
 
-  auto collision_checker = FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>(costmap_);
+  auto collision_checker = FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>(
+    costmap_);
 
   auto value = collision_checker.footprintCostAtPose(5.0, 5.0, 0.0, footprint);
   EXPECT_NEAR(value, 0.0, 0.001);

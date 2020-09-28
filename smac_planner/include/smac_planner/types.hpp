@@ -23,6 +23,15 @@ namespace smac_planner
 
 typedef std::pair<float, unsigned int> NodeHeuristicPair;
 
+struct SearchInfo
+{
+  float minimum_turning_radius;
+  float non_straight_penalty;
+  float change_penalty;
+  float reverse_penalty;
+  float cost_penalty;
+};
+
 }  // namespace smac_planner
 
 #endif  // SMAC_PLANNER__TYPES_HPP_

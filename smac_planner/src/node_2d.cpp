@@ -19,6 +19,7 @@ namespace smac_planner
 
 // defining static member for all instance to share
 std::vector<int> Node2D::_neighbors_grid_offsets;
+double Node2D::neutral_cost = 50.0;
 
 Node2D::Node2D(unsigned char & cost_in, const unsigned int index)
 : parent(nullptr),
@@ -73,7 +74,10 @@ bool Node2D::isNodeValid(const bool & traverse_unknown)
 float Node2D::getTraversalCost(const NodePtr & child)
 {
   // cost to travel will be the cost of the cell's code
-  return child->getCost();
+
+  // neutral_cost is neutral cost for cost just to travel anywhere (50)
+  // 0.8 is a scale factor to remap costs [0, 252] evenly from [50, 252]
+  return Node2D::neutral_cost + 0.8 * child->getCost();
 }
 
 float Node2D::getHeuristicCost(
@@ -82,7 +86,7 @@ float Node2D::getHeuristicCost(
 {
   return hypotf(
     goal_coordinates.x - node_coords.x,
-    goal_coordinates.y - node_coords.y);
+    goal_coordinates.y - node_coords.y) * Node2D::neutral_cost;
 }
 
 void Node2D::initNeighborhood(

@@ -28,6 +28,7 @@
 #include <ompl/base/StateSpace.h>
 
 #include "smac_planner/constants.hpp"
+#include "smac_planner/types.hpp"
 #include "smac_planner/collision_checker.hpp"
 
 namespace smac_planner
@@ -58,23 +59,24 @@ struct MotionTable
   void initDubin(
     unsigned int & size_x_in,
     unsigned int & angle_quantization_in,
-    float & min_turning_radius);
+    SearchInfo & search_info);
   void initReedsShepp(
     unsigned int & size_x_in,
     unsigned int & angle_quantization_in,
-    float & min_turning_radius);
-  // void initBalkcomMason(
-  //   unsigned int & size_x_in,
-  //   unsigned int & angle_quantization_in);
+    SearchInfo & search_info);
 
-  MotionPoses getProjections(NodeSE2 * & node);
-  MotionPose getProjection(NodeSE2 * & node, const unsigned int & motion_index);
+  MotionPoses getProjections(const NodeSE2 * node);
+  MotionPose getProjection(const NodeSE2 * node, const unsigned int & motion_index);
 
   MotionPoses projections;
   unsigned int size_x;
   unsigned int num_angle_quantization;
   float num_angle_quantization_float;
   float bin_size;
+  float change_penalty;
+  float non_straight_penalty;
+  float cost_penalty;
+  float reverse_penalty;
   ompl::base::StateSpacePtr state_space;
 };
 
@@ -140,7 +142,7 @@ public:
    * @param cost_in The costmap cost at this node
    * @param index The index of this node for self-reference
    */
-  void reset(GridCollisionChecker * collision_checker, const unsigned int index);
+  void reset(GridCollisionChecker * collision_checker);
 
   /**
    * @brief Gets the accumulated cost at this node
@@ -158,6 +160,24 @@ public:
   inline void setAccumulatedCost(const float cost_in)
   {
     _accumulated_cost = cost_in;
+  }
+
+  /**
+   * @brief Sets the motion primitive index used to achieve node in search
+   * @param reference to motion primitive idx
+   */
+  inline void setMotionPrimitiveIndex(const unsigned int & idx)
+  {
+    _motion_primitive_index = idx;
+  }
+
+  /**
+   * @brief Gets the motion primitive index used to achieve node in search
+   * @return reference to motion primitive idx
+   */
+  inline unsigned int & getMotionPrimitiveIndex()
+  {
+    return _motion_primitive_index;
   }
 
   /**
@@ -253,7 +273,7 @@ public:
     const MotionModel & motion_model,
     unsigned int & size_x,
     unsigned int & angle_quantization,
-    float min_turning_radius);
+    SearchInfo & search_info);
 
   /**
    * @brief Retrieve all valid neighbors of a node.
@@ -262,13 +282,14 @@ public:
    * @param neighbors Vector of neighbors to be filled
    */
   static void getNeighbors(
-    NodePtr & node,
+    const NodePtr & node,
     std::function<bool(const unsigned int &, smac_planner::NodeSE2 * &)> & validity_checker,
     const bool & traverse_unknown,
     NodeVector & neighbors);
 
   NodeSE2 * parent;
   Coordinates pose;
+  static double neutral_cost;
 
 private:
   float _cell_cost;
@@ -277,6 +298,7 @@ private:
   bool _was_visited;
   bool _is_queued;
   GridCollisionChecker * _collision_checker;
+  unsigned int _motion_primitive_index;
   static MotionTable _motion_model;
 };
 

@@ -23,10 +23,13 @@ find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(ompl REQUIRED)
+find_package(OpenMP REQUIRED)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
 endif()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
 add_compile_options(-O3 -Wextra -Wdeprecated -fPIC)
 
@@ -34,7 +37,10 @@ include_directories(
   include
   ${CERES_INCLUDES}
   ${OMPL_INCLUDE_DIRS}
+  ${OpenMP_INCLUDE_DIRS}
 )
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 
 set(library_name smac_planner)
 set(plugin_xml global_planner_plugin.xml)
@@ -66,7 +72,7 @@ add_library(${library_name} SHARED
   src/node_2d.cpp
 )
 
-target_link_libraries(${library_name} ${CERES_LIBRARIES} ${OMPL_LIBRARIES})
+target_link_libraries(${library_name} ${CERES_LIBRARIES} ${OMPL_LIBRARIES} ${OpenMP_LIBRARIES}  OpenMP::OpenMP_CXX)
 target_include_directories(${library_name} PUBLIC ${Eigen3_INCLUDE_DIRS})
 
 ament_target_dependencies(${library_name}
@@ -82,7 +88,7 @@ add_library(${library_name}_2d SHARED
   src/node_2d.cpp
 )
 
-target_link_libraries(${library_name}_2d ${CERES_LIBRARIES})
+target_link_libraries(${library_name}_2d ${CERES_LIBRARIES} ${OMPL_LIBRARIES})
 target_include_directories(${library_name}_2d PUBLIC ${Eigen3_INCLUDE_DIRS})
 
 ament_target_dependencies(${library_name}_2d
