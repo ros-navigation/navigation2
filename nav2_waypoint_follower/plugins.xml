@@ -1,0 +1,7 @@
+<class_libraries>
+  <library path="simple_waypoint_task_executor">
+    <class type="nav2_waypoint_follower::WaitAtWaypointArrival" base_class_type="nav2_core::TaskExecutorAtWaypointArrival">
+      <description>Lets robot sleep for a specified amount of time at waypoint arrival</description>
+    </class>
+  </library>
+</class_libraries>

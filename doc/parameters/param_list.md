@@ -479,7 +479,13 @@ When `planner_plugins` parameter is not overridden, the following default plugin
 | ----------| --------| ------------|
 | stop_on_failure | true | Whether to fail action task if a single waypoint fails. If false, will continue to next waypoint. |
 | loop_rate | 20 | Rate to check for results from current navigation task |
-| sleep_time_inbetween_waypoints | 0 | Amount of time in milliseconds, for robot to sleep/wait after each waypoint is reached. If zero, robot will directly continue to next waypoint. |
+
+## task_executor_at_waypoint plugin
+
+* `<task executor at waypoint>`: Name corresponding to the `nav2_waypoint_follower::WaitAtWaypointArrival` plugin. 
+ 
+| `<task executor at waypoint>`.enabled | false | Whether it is enabled |
+| `<task executor at waypoint>`.waypoint_pause_duration | 0 | Amount of time in milliseconds, for robot to sleep/wait after each waypoint is reached. If zero, robot will directly continue to next waypoint. |
 
 # recoveries
 
