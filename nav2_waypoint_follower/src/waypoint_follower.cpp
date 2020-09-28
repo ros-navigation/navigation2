@@ -246,10 +246,9 @@ WaypointFollower::resultCallback(
 
 void
 WaypointFollower::goalResponseCallback(
-  std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future)
+  const rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr & goal)
 {
-  auto goal_handle = future.get();
-  if (!goal_handle) {
+  if (!goal) {
     RCLCPP_ERROR(
       get_logger(),
       "navigate_to_pose action client failed to send goal to server.");
