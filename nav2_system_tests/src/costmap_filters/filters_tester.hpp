@@ -29,7 +29,7 @@
 namespace nav2_system_tests
 {
 
-enum TestStatus {SUCCESS, NO_PATH, IN_KEEPOUT};
+enum TestStatus {SUCCESS, NO_PATH, IN_KEEPOUT, NOT_ACTIVE};
 
 class FiltersTester : public nav2_util::LifecycleNode
 {

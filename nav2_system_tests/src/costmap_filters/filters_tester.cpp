@@ -41,7 +41,7 @@ FiltersTester::FiltersTester()
   costmap_ros_->set_parameter(rclcpp::Parameter("update_frequency", 5.0));
   costmap_ros_->set_parameter(rclcpp::Parameter("robot_radius", 0.2));
 
-  std::vector<std::string> plugins_list{"static_layer", "keepout_layer", "inflation_layer"};
+  std::vector<std::string> plugins_list{"static_layer", "inflation_layer", "keepout_filter"};
   costmap_ros_->set_parameter(rclcpp::Parameter("plugins", plugins_list));
   // Since plugins are not initialized yet, plugins' parameters are not declared as well.
   // We need to declare them before setting.
@@ -51,19 +51,19 @@ FiltersTester::FiltersTester()
     rclcpp::Parameter(
       "static_layer.plugin", "nav2_costmap_2d::StaticLayer"));
   costmap_ros_->declare_parameter(
-    "keepout_layer.plugin", rclcpp::ParameterValue("nav2_costmap_2d::KeepoutFilter"));
-  costmap_ros_->set_parameter(
-    rclcpp::Parameter(
-      "keepout_layer.plugin", "nav2_costmap_2d::KeepoutFilter"));
-  costmap_ros_->declare_parameter(
-    "keepout_layer.filter_info_topic", rclcpp::ParameterValue("costmap_filter_info"));
-  costmap_ros_->set_parameter(
-    rclcpp::Parameter("keepout_layer.filter_info_topic", "costmap_filter_info"));
-  costmap_ros_->declare_parameter(
     "inflation_layer.plugin", rclcpp::ParameterValue("nav2_costmap_2d::InflationLayer"));
   costmap_ros_->set_parameter(
     rclcpp::Parameter(
       "inflation_layer.plugin", "nav2_costmap_2d::InflationLayer"));
+  costmap_ros_->declare_parameter(
+    "keepout_filter.plugin", rclcpp::ParameterValue("nav2_costmap_2d::KeepoutFilter"));
+  costmap_ros_->set_parameter(
+    rclcpp::Parameter(
+      "keepout_filter.plugin", "nav2_costmap_2d::KeepoutFilter"));
+  costmap_ros_->declare_parameter(
+    "keepout_filter.filter_info_topic", rclcpp::ParameterValue("costmap_filter_info"));
+  costmap_ros_->set_parameter(
+    rclcpp::Parameter("keepout_filter.filter_info_topic", "costmap_filter_info"));
 
   planner_ = std::make_shared<nav2_navfn_planner::NavfnPlanner>();
 }
@@ -222,13 +222,20 @@ TestStatus FiltersTester::testPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & end)
 {
-  geometry_msgs::msg::PoseStamped pose = start;
   nav_msgs::msg::Path path;
+
+  if (!is_active_) {
+    RCLCPP_WARN(get_logger(), "FiltersTester node is not activated yet");
+    return NOT_ACTIVE;
+  }
 
   // Allow keepout_filter to receive CostmapFilterInfo and filter mask
   waitSome(1000ms);
+  // After keepout_filter received the mask, force static layer to update bounds
+  costmap_ros_->resetLayers();
+  waitSome(1000ms);
 
-  if (!checkPlan(pose, end, path)) {
+  if (!checkPlan(start, end, path)) {
     // Fail case: can not produce the path to the goal
     return NO_PATH;
   }
@@ -273,11 +280,6 @@ bool FiltersTester::checkPlan(
   const geometry_msgs::msg::PoseStamped & end,
   nav_msgs::msg::Path & path) const
 {
-  if (!is_active_) {
-    RCLCPP_WARN(get_logger(), "FiltersTester node is not activated yet");
-    return false;
-  }
-
   try {
     path = planner_->createPlan(start, end);
     if (!path.poses.size()) {
