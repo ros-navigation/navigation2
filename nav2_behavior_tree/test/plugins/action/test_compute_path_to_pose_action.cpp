@@ -128,16 +128,16 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick)
   goal.pose.position.x = 1.0;
   config_->blackboard->set("goal", goal);
 
-  // first tick should send the goal to our server
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
-  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
-  EXPECT_EQ(action_server_->getCurrentGoal()->pose.pose.position.x, 1.0);
-  EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
-
   // tick until node succeeds
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
+
+  // the goal should have reached our server
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
+  EXPECT_EQ(action_server_->getCurrentGoal()->pose.pose.position.x, 1.0);
+  EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
 
   // check if returned path is correct
   nav_msgs::msg::Path path;
@@ -153,12 +153,12 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick)
   goal.pose.position.x = -2.5;
   config_->blackboard->set("goal", goal);
 
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
-  EXPECT_EQ(action_server_->getCurrentGoal()->pose.pose.position.x, -2.5);
-
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(action_server_->getCurrentGoal()->pose.pose.position.x, -2.5);
 
   config_->blackboard->get<nav_msgs::msg::Path>("path", path);
   EXPECT_EQ(path.poses.size(), 1u);

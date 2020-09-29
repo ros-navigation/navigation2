@@ -126,18 +126,17 @@ TEST_F(FollowPathActionTestFixture, test_tick)
   path.poses[0].pose.position.x = 1.0;
   config_->blackboard->set<nav_msgs::msg::Path>("path", path);
 
-  // first tick should send the goal to our server
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
-  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("controller_id"), std::string("FollowPath"));
-  EXPECT_EQ(action_server_->getCurrentGoal()->path.poses.size(), 1u);
-  EXPECT_EQ(action_server_->getCurrentGoal()->path.poses[0].pose.position.x, 1.0);
-  EXPECT_EQ(action_server_->getCurrentGoal()->controller_id, std::string("FollowPath"));
-
   // tick until node succeeds
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
+
+  // the goal should have reached our server
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("controller_id"), std::string("FollowPath"));
+  EXPECT_EQ(action_server_->getCurrentGoal()->path.poses.size(), 1u);
+  EXPECT_EQ(action_server_->getCurrentGoal()->path.poses[0].pose.position.x, 1.0);
+  EXPECT_EQ(action_server_->getCurrentGoal()->controller_id, std::string("FollowPath"));
 
   // halt node so another goal can be sent
   tree_->rootNode()->halt();
@@ -147,13 +146,13 @@ TEST_F(FollowPathActionTestFixture, test_tick)
   path.poses[0].pose.position.x = -2.5;
   config_->blackboard->set<nav_msgs::msg::Path>("path", path);
 
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
-  EXPECT_EQ(action_server_->getCurrentGoal()->path.poses.size(), 1u);
-  EXPECT_EQ(action_server_->getCurrentGoal()->path.poses[0].pose.position.x, -2.5);
-
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(action_server_->getCurrentGoal()->path.poses.size(), 1u);
+  EXPECT_EQ(action_server_->getCurrentGoal()->path.poses[0].pose.position.x, -2.5);
 }
 
 int main(int argc, char ** argv)
