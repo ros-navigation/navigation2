@@ -123,15 +123,14 @@ TEST_F(NavigateToPoseActionTestFixture, test_tick)
 
   geometry_msgs::msg::PoseStamped pose;
 
-  // first tick should send the goal to our server
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
-  EXPECT_EQ(action_server_->getCurrentGoal()->pose, pose);
-
   // tick until node succeeds
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
+
+  // goal should have reached our server
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(action_server_->getCurrentGoal()->pose, pose);
 
   // halt node so another goal can be sent
   tree_->rootNode()->halt();
@@ -142,13 +141,11 @@ TEST_F(NavigateToPoseActionTestFixture, test_tick)
   pose.pose.orientation.x = 1.0;
   config_->blackboard->set<geometry_msgs::msg::PoseStamped>("goal", pose);
 
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
-  EXPECT_EQ(action_server_->getCurrentGoal()->pose, pose);
-
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
 
+  EXPECT_EQ(action_server_->getCurrentGoal()->pose, pose);
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 }
 
