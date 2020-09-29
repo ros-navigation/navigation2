@@ -84,6 +84,9 @@ private:
   // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
 
+  // Timeout value when waiting for action servers to respnd
+  std::chrono::milliseconds server_timeout_;
+
   // A timer used to check on the completion status of the action
   QBasicTimer timer_;
 
