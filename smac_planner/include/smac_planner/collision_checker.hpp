@@ -31,7 +31,7 @@ public:
 
   void setFootprint(const nav2_costmap_2d::Footprint & footprint, const bool & radius)
   {
-    footprint_ = footprint;
+    unoriented_footprint_ = footprint;
     footprint_is_radius_ = radius;
   }
 
@@ -48,14 +48,10 @@ public:
     if (!footprint_is_radius_) {
       // if footprint, then we check for the footprint's points
       footprint_cost_ = footprintCostAtPose(
-        wx, wy, static_cast<double>(theta), footprint_);
-
+        wx, wy, static_cast<double>(theta), unoriented_footprint_);
       if (footprint_cost_ == UNKNOWN && traverse_unknown) {
         return false;
       }
-
-      // center_cost_ = costmap_->getCost(
-      //   static_cast<unsigned int>(x), static_cast<unsigned int>(y));
 
       // if occupied or unknown and not to traverse unknown space
       return footprint_cost_ >= OCCUPIED;
@@ -63,8 +59,6 @@ public:
       // if radius, then we can check the center of the cost assuming inflation is used
       footprint_cost_ = costmap_->getCost(
         static_cast<unsigned int>(x), static_cast<unsigned int>(y));
-
-      // center_cost_ = footprint_cost_;
 
       if (footprint_cost_ == UNKNOWN && traverse_unknown) {
         return false;
@@ -82,9 +76,8 @@ public:
   }
 
 protected:
-  nav2_costmap_2d::Footprint footprint_;
+  nav2_costmap_2d::Footprint unoriented_footprint_;
   double footprint_cost_;
-  // double center_cost_;
   bool footprint_is_radius_;
 };
 

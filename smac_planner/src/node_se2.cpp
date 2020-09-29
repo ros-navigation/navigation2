@@ -38,6 +38,7 @@ double NodeSE2::neutral_cost = sqrt(2);
 // Model for ackermann style vehicle with minimum radius restriction
 void MotionTable::initDubin(
   unsigned int & size_x_in,
+  unsigned int & /*size_y_in*/,
   unsigned int & num_angle_quantization_in,
   SearchInfo & search_info)
 {
@@ -97,6 +98,7 @@ void MotionTable::initDubin(
 // See notes in Dubin for explanation
 void MotionTable::initReedsShepp(
   unsigned int & size_x_in,
+  unsigned int & /*size_y_in*/,
   unsigned int & num_angle_quantization_in,
   SearchInfo & search_info)
 {
@@ -169,7 +171,7 @@ MotionPose MotionTable::getProjection(const NodeSE2 * node, const unsigned int &
   return MotionPose(delta_x + node->pose.x, delta_y + node->pose.y, new_heading);
 }
 
-NodeSE2::NodeSE2(GridCollisionChecker * collision_checker, const unsigned int index)
+NodeSE2::NodeSE2(const unsigned int index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),
   _cell_cost(std::numeric_limits<float>::quiet_NaN()),
@@ -177,7 +179,6 @@ NodeSE2::NodeSE2(GridCollisionChecker * collision_checker, const unsigned int in
   _index(index),
   _was_visited(false),
   _is_queued(false),
-  _collision_checker(collision_checker),
   _motion_primitive_index(std::numeric_limits<unsigned int>::max())
 {
 }
@@ -187,30 +188,28 @@ NodeSE2::~NodeSE2()
   parent = nullptr;
 }
 
-void NodeSE2::reset(GridCollisionChecker * collision_checker)
+void NodeSE2::reset()
 {
   parent = nullptr;
   _cell_cost = std::numeric_limits<float>::quiet_NaN();
   _accumulated_cost = std::numeric_limits<float>::max();
   _was_visited = false;
   _is_queued = false;
-  _collision_checker = collision_checker;
   _motion_primitive_index = std::numeric_limits<unsigned int>::max();
   pose.x = 0.0f;
   pose.y = 0.0f;
   pose.theta = 0.0f;
 }
 
-bool NodeSE2::isNodeValid(const bool & traverse_unknown)
+bool NodeSE2::isNodeValid(const bool & traverse_unknown, GridCollisionChecker collision_checker)
 {
-  const float angle_in_rad = this->pose.theta * _motion_model.bin_size;
-  if (_collision_checker->inCollision(
-      this->pose.x, this->pose.y, angle_in_rad, traverse_unknown))
+  if (collision_checker.inCollision(
+      this->pose.x, this->pose.y, this->pose.theta * _motion_model.bin_size, traverse_unknown))
   {
     return false;
   }
 
-  _cell_cost = _collision_checker->getCost();
+  _cell_cost = collision_checker.getCost();
   return true;
 }
 
@@ -271,29 +270,30 @@ float NodeSE2::getHeuristicCost(
 void NodeSE2::initMotionModel(
   const MotionModel & motion_model,
   unsigned int & size_x,
+  unsigned int & size_y,
   unsigned int & num_angle_quantization,
   SearchInfo & search_info)
 {
   // find the motion model selected
   switch (motion_model) {
     case MotionModel::DUBIN:
-      _motion_model.initDubin(size_x, num_angle_quantization, search_info);
+      _motion_model.initDubin(size_x, size_y, num_angle_quantization, search_info);
       break;
     case MotionModel::REEDS_SHEPP:
-      _motion_model.initReedsShepp(size_x, num_angle_quantization, search_info);
+      _motion_model.initReedsShepp(size_x, size_y, num_angle_quantization, search_info);
       break;
     default:
       throw std::runtime_error(
               "Invalid motion model for SE2 node. Please select between"
               " Dubin (Ackermann forward only),"
-              " Reeds-Shepp (Ackermann forward and back),"
-              " or Balkcom-Mason (Differential drive and omnidirectional) models.");
+              " Reeds-Shepp (Ackermann forward and back).");
   }
 }
 
 void NodeSE2::getNeighbors(
   const NodePtr & node,
   std::function<bool(const unsigned int &, smac_planner::NodeSE2 * &)> & NeighborGetter,
+  GridCollisionChecker collision_checker,
   const bool & traverse_unknown,
   NodeVector & neighbors)
 {
@@ -309,7 +309,7 @@ void NodeSE2::getNeighbors(
       static_cast<unsigned int>(motion_projections[i]._theta),
       _motion_model.size_x, _motion_model.num_angle_quantization);
 
-    if (NeighborGetter(index, neighbor) && !neighbor->wasVisited() && !neighbor->isQueued()) {
+    if (NeighborGetter(index, neighbor) && !neighbor->wasVisited()) {
       // Cache the initial pose in case it was visited but valid
       // don't want to disrupt continuous coordinate expansion
       initial_node_coords = neighbor->pose;
@@ -318,7 +318,7 @@ void NodeSE2::getNeighbors(
           motion_projections[i]._x,
           motion_projections[i]._y,
           motion_projections[i]._theta));
-      if (neighbor->isNodeValid(traverse_unknown)) {
+      if (neighbor->isNodeValid(traverse_unknown, collision_checker)) {
         neighbor->setMotionPrimitiveIndex(i);
         neighbors.push_back(neighbor);
       } else {

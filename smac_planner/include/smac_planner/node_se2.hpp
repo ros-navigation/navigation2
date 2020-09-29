@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef SMAC_PLANNER__NODE_3D_HPP_
-#define SMAC_PLANNER__NODE_3D_HPP_
+#ifndef SMAC_PLANNER__NODE_SE2_HPP_
+#define SMAC_PLANNER__NODE_SE2_HPP_
 
 #include <math.h>
 #include <vector>
@@ -58,10 +58,12 @@ struct MotionTable
 
   void initDubin(
     unsigned int & size_x_in,
+    unsigned int & size_y_in,
     unsigned int & angle_quantization_in,
     SearchInfo & search_info);
   void initReedsShepp(
     unsigned int & size_x_in,
+    unsigned int & size_y_in,
     unsigned int & angle_quantization_in,
     SearchInfo & search_info);
 
@@ -111,7 +113,7 @@ public:
    * @param cost_in The costmap cost at this node
    * @param index The index of this node for self-reference
    */
-  explicit NodeSE2(GridCollisionChecker * collision_checker, const unsigned int index);
+  explicit NodeSE2(const unsigned int index);
 
   /**
    * @brief A destructor for smac_planner::NodeSE2
@@ -142,7 +144,7 @@ public:
    * @param cost_in The costmap cost at this node
    * @param index The index of this node for self-reference
    */
-  void reset(GridCollisionChecker * collision_checker);
+  void reset();
 
   /**
    * @brief Gets the accumulated cost at this node
@@ -238,7 +240,7 @@ public:
    * @param traverse_unknown If we can explore unknown nodes on the graph
    * @return whether this node is valid and collision free
    */
-  bool isNodeValid(const bool & traverse_unknown);
+  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker collision_checker);
 
   float getTraversalCost(const NodePtr & child);
 
@@ -272,6 +274,7 @@ public:
   static void initMotionModel(
     const MotionModel & motion_model,
     unsigned int & size_x,
+    unsigned int & size_y,
     unsigned int & angle_quantization,
     SearchInfo & search_info);
 
@@ -284,6 +287,7 @@ public:
   static void getNeighbors(
     const NodePtr & node,
     std::function<bool(const unsigned int &, smac_planner::NodeSE2 * &)> & validity_checker,
+    GridCollisionChecker collision_checker,
     const bool & traverse_unknown,
     NodeVector & neighbors);
 
@@ -297,11 +301,10 @@ private:
   unsigned int _index;
   bool _was_visited;
   bool _is_queued;
-  GridCollisionChecker * _collision_checker;
   unsigned int _motion_primitive_index;
   static MotionTable _motion_model;
 };
 
 }  // namespace smac_planner
 
-#endif  // SMAC_PLANNER__NODE_3D_HPP_
+#endif  // SMAC_PLANNER__NODE_SE2_HPP_

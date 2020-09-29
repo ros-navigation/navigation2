@@ -27,6 +27,7 @@
 
 #include "smac_planner/node_2d.hpp"
 #include "smac_planner/node_se2.hpp"
+#include "smac_planner/node_basic.hpp"
 #include "smac_planner/types.hpp"
 #include "smac_planner/constants.hpp"
 
@@ -51,11 +52,12 @@ class AStarAlgorithm
 {
 public:
   typedef NodeT * NodePtr;
-  typedef std::vector<NodeT> Graph;
+  typedef std::unordered_map<unsigned int, NodeT> Graph;
   typedef std::vector<NodePtr> NodeVector;
-  typedef std::pair<float, NodePtr> NodeElement;
+  typedef std::pair<float, NodeBasic<NodeT>> NodeElement;
   typedef typename NodeT::Coordinates Coordinates;
   typedef typename NodeT::CoordinateVector CoordinateVector;
+  typedef typename NodeVector::iterator NeighborIterator;
 
   struct NodeComparator
   {
@@ -164,7 +166,7 @@ private:
    * @brief Get pointer to next goal in open set
    * @return Node pointer reference to next heuristically scored node
    */
-  inline NodePtr getNode();
+  inline NodePtr getNextNode();
 
   /**
    * @brief Get pointer to next goal in open set
@@ -172,6 +174,13 @@ private:
    * @param node Node pointer reference to add to open set
    */
   inline void addNode(const float cost, NodePtr & node);
+
+  /**
+   * @brief Adds node to graph
+   * @param cost The cost to sort into the open set of the node
+   * @param node Node pointer reference to add to open set
+   */
+  inline NodePtr addToGraph(const unsigned int & index);
 
   /**
    * @brief Check if this node is the goal node
@@ -193,7 +202,7 @@ private:
    * @param node Pointer to current node
    * @return Reference accumulated cost between the nodes
    */
-  inline float getAccumulatedCost(NodePtr & node);
+  inline float & getAccumulatedCost(NodePtr & node);
 
   /**
    * @brief Get cost of heuristic of node
@@ -244,6 +253,11 @@ private:
    */
   inline void clearQueue();
 
+  /**
+   * @brief Clear graph of nodes searched
+   */
+  inline void clearGraph();
+
   bool _traverse_unknown;
   int _max_iterations;
   int _max_on_approach_iterations;
@@ -257,15 +271,16 @@ private:
   NodePtr _start;
   NodePtr _goal;
 
-  std::unique_ptr<Graph> _graph;
-  std::unique_ptr<NodeQueue> _queue;
+  Graph _graph;
+  NodeQueue _queue;
 
   MotionModel _motion_model;
   NodeHeuristicPair _best_heuristic_node;
 
-  std::unique_ptr<GridCollisionChecker> _collision_checker;
+  GridCollisionChecker _collision_checker;
   nav2_costmap_2d::Footprint _footprint;
   bool _is_radius_footprint;
+  nav2_costmap_2d::Costmap2D * _costmap;
 };
 
 }  // namespace smac_planner

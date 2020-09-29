@@ -25,6 +25,7 @@
 #include <functional>
 
 #include "smac_planner/constants.hpp"
+#include "smac_planner/collision_checker.hpp"
 
 namespace smac_planner
 {
@@ -80,9 +81,8 @@ public:
   /**
    * @brief Reset method for new search
    * @param cost_in The costmap cost at this node
-   * @param index The index of this node for self-reference
    */
-  void reset(const unsigned char & cost, const unsigned int index);
+  void reset(const unsigned char & cost);
   /**
    * @brief Gets the accumulated cost at this node
    * @return accumulated cost
@@ -157,9 +157,10 @@ public:
   /**
    * @brief Check if this node is valid
    * @param traverse_unknown If we can explore unknown nodes on the graph
+   * @param collision_checker Pointer to collision checker object
    * @return whether this node is valid and collision free
    */
-  bool isNodeValid(const bool & traverse_unknown);
+  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker collision_checker);
 
   float getTraversalCost(const NodePtr & child);
 
@@ -207,6 +208,7 @@ public:
   static void getNeighbors(
     NodePtr & node,
     std::function<bool(const unsigned int &, smac_planner::Node2D * &)> & validity_checker,
+    GridCollisionChecker collision_checker,
     const bool & traverse_unknown,
     NodeVector & neighbors);
 

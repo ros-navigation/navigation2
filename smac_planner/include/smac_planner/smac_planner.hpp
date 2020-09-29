@@ -127,6 +127,7 @@ protected:
   SmootherParams _smoother_params;
   OptimizerParams _optimizer_params;
   int _upsampling_ratio;
+  double _max_planning_time;
 };
 
 }  // namespace smac_planner

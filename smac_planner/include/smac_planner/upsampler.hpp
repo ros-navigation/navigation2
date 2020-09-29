@@ -107,6 +107,8 @@ public:
     const SmootherParams & params,
     const int & upsample_ratio)
   {
+    _options.max_solver_time_in_seconds = params.max_time;
+
     if (upsample_ratio != 2 && upsample_ratio != 4) {
       // invalid inputs
       return false;

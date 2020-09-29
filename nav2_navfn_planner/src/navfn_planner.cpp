@@ -138,8 +138,8 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 #ifdef BENCHMARK_TESTING
   std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
   std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double> >(b-a);
-  std::cout << "It took " << time_span.count() <<
-    " seconds." << std::endl;
+  std::cout << "It took " << time_span.count() * 1000 <<
+    " milliseconds." << std::endl;
 #endif
 
   return path;

@@ -151,6 +151,10 @@ void SmacPlanner::configure(
   _node->get_parameter(name + ".cost_penalty", search_info.cost_penalty);
 
   nav2_util::declare_parameter_if_not_declared(
+    _node, name + ".max_planning_time_ms", rclcpp::ParameterValue(5000.0));
+  _node->get_parameter(name + ".max_planning_time_ms", _max_planning_time);
+
+  nav2_util::declare_parameter_if_not_declared(
     _node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("MOORE")));
   _node->get_parameter(name + ".motion_model_for_search", motion_model_for_search);
   MotionModel motion_model = fromString(motion_model_for_search);
@@ -265,9 +269,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
-#ifdef BENCHMARK_TESTING
   steady_clock::time_point a = steady_clock::now();
-#endif
 
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
 
@@ -350,6 +352,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   plan.poses.reserve(_smoother ? path.size() / downsample_ratio : path.size());
 
   for (int i = path.size() - 1; i >= 0; --i) {
+    // TODO probably isn't necessary
     if (_smoother && i % downsample_ratio != 0) {
       continue;
     }
@@ -381,6 +384,12 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
     return plan;
   }
 
+  // Find how much time we have left to do upsampling
+  steady_clock::time_point b = steady_clock::now();
+  duration<double> time_span = duration_cast<duration<double>>(b - a);
+  double time_remaining = _max_planning_time - static_cast<double>(time_span.count());
+  _smoother_params.max_time = std::min(time_remaining, _optimizer_params.max_time);
+
   // Smooth plan
   if (!_smoother->smooth(path_world, costmap, _smoother_params)) {
     RCLCPP_WARN(
@@ -402,6 +411,12 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
     }
     _smoothed_plan_publisher->publish(plan);
   }
+
+  // Find how much time we have left to do upsampling
+  b = steady_clock::now();
+  time_span = duration_cast<duration<double>>(b - a);
+  time_remaining = _max_planning_time - static_cast<double>(time_span.count());
+  _smoother_params.max_time = std::min(time_remaining, _optimizer_params.max_time);
 
   // Upsample path
   if (_upsampler) {

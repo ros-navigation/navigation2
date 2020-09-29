@@ -98,9 +98,12 @@ public:
    * @return If smoothing was successful
    */
   bool smooth(
-    std::vector<Eigen::Vector2d> & path, nav2_costmap_2d::Costmap2D * costmap,
+    std::vector<Eigen::Vector2d> & path,
+    nav2_costmap_2d::Costmap2D * costmap,
     const SmootherParams & params)
   {
+    _options.max_solver_time_in_seconds = params.max_time;
+
     double parameters[path.size() * 2];
     for (uint i = 0; i != path.size(); i++) {
       parameters[2 * i] = path[i][0];

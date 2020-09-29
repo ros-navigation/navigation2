@@ -95,6 +95,7 @@ struct SmootherParams
   double curvature_weight{0.0};
   double max_curvature{0.0};
   double costmap_factor{0.0};
+  double max_time;
 };
 
 /**

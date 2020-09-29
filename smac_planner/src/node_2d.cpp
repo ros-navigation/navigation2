@@ -36,17 +36,18 @@ Node2D::~Node2D()
   parent = nullptr;
 }
 
-void Node2D::reset(const unsigned char & cost, const unsigned int index)
+void Node2D::reset(const unsigned char & cost)
 {
   parent = nullptr;
   _cell_cost = static_cast<float>(cost);
   _accumulated_cost = std::numeric_limits<float>::max();
-  _index = index;
   _was_visited = false;
   _is_queued = false;
 }
 
-bool Node2D::isNodeValid(const bool & traverse_unknown)
+bool Node2D::isNodeValid(
+  const bool & traverse_unknown,
+  GridCollisionChecker /*collision_checker*/)
 {
   // NOTE(stevemacenski): Right now, we do not check if the node has wrapped around
   // the regular grid (e.g. your node is on the edge of the costmap and i+1
@@ -114,6 +115,7 @@ void Node2D::initNeighborhood(
 void Node2D::getNeighbors(
   NodePtr & node,
   std::function<bool(const unsigned int &, smac_planner::Node2D * &)> & NeighborGetter,
+  GridCollisionChecker collision_checker,
   const bool & traverse_unknown,
   NodeVector & neighbors)
 {
@@ -135,7 +137,7 @@ void Node2D::getNeighbors(
   for (unsigned int i = 0; i != _neighbors_grid_offsets.size(); ++i) {
     index = node_i + _neighbors_grid_offsets[i];
     if (NeighborGetter(index, neighbor)) {
-      if (neighbor->isNodeValid(traverse_unknown) && !neighbor->wasVisited()) {
+      if (neighbor->isNodeValid(traverse_unknown, collision_checker) && !neighbor->wasVisited()) {
         neighbors.push_back(neighbor);
       }
     }
