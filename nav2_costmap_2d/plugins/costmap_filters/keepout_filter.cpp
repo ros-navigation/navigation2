@@ -89,7 +89,7 @@ void KeepoutFilter::filterInfoCallback(
   if (msg->base != BASE_DEFAULT or msg->multiplier != MULTIPLIER_DEFAULT) {
     RCLCPP_ERROR(
       node->get_logger(),
-      "For proper use of keepout filter base and multiplier in CostmapFilterInfo "
+      "For proper use of keepout filter base and multiplier in CostmapFilterInfo message "
       "should be set to their default values (%f and %f)",
       BASE_DEFAULT, MULTIPLIER_DEFAULT);
   }
