@@ -27,7 +27,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 
 #include "nav2_util/node_utils.hpp"
-#include "nav2_core/task_executor_at_waypoint_arrival.hpp"
+#include "nav2_core/waypoint_task_executor.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 namespace nav2_waypoint_follower
@@ -126,14 +126,12 @@ protected:
   std::vector<int> failed_ids_;
 
   // Task Execution At Waypoint Plugin
-  pluginlib::ClassLoader<nav2_core::TaskExecutorAtWaypointArrival>
-  task_executor_at_waypoint_loader_;
-  std::shared_ptr<nav2_core::TaskExecutorAtWaypointArrival>
-  task_executor_at_waypoint_;
-  std::string default_task_executor_at_waypoint_id_;
-  std::string default_task_executor_at_waypoint_type_;
-  std::string task_executor_at_waypoint_id_;
-  std::string task_executor_at_waypoint_type_;
+  pluginlib::ClassLoader<nav2_core::WaypointTaskExecutor>
+  waypoint_task_executor_loader_;
+  pluginlib::UniquePtr<nav2_core::WaypointTaskExecutor>
+  waypoint_task_executor_;
+  std::string waypoint_task_executor_id_;
+  std::string waypoint_task_executor_type_;
 };
 
 }  // namespace nav2_waypoint_follower

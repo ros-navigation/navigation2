@@ -53,7 +53,7 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-add_library(simple_waypoint_task_executor SHARED plugins/wait_at_waypoint_arrival.cpp)
+add_library(simple_waypoint_task_executor SHARED plugins/wait_at_waypoint.cpp)
 ament_target_dependencies(simple_waypoint_task_executor ${dependencies})
 # prevent pluginlib from using boost
 target_compile_definitions(simple_waypoint_task_executor PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")

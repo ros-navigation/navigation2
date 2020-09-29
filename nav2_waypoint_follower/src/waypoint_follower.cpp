@@ -25,16 +25,18 @@ namespace nav2_waypoint_follower
 {
 WaypointFollower::WaypointFollower()
 : nav2_util::LifecycleNode("WaypointFollower", "", false),
-  task_executor_at_waypoint_loader_("nav2_waypoint_follower",
-    "nav2_core::TaskExecutorAtWaypointArrival"),
-  default_task_executor_at_waypoint_id_{"task_executor_at_waypoint"},
-  default_task_executor_at_waypoint_type_{"nav2_waypoint_follower::WaitAtWaypointArrival"}
+  waypoint_task_executor_loader_("nav2_waypoint_follower",
+    "nav2_core::WaypointTaskExecutor")
 {
   RCLCPP_INFO(get_logger(), "Creating");
-
-  declare_parameter("stop_on_failure", true);
-  declare_parameter("loop_rate", 20);
-  declare_parameter("task_executor_at_waypoint_plugin", default_task_executor_at_waypoint_id_);
+  declare_parameter("stop_on_failure", rclcpp::ParameterValue(true));
+  declare_parameter("loop_rate", rclcpp::ParameterValue(20));
+  declare_parameter(
+    "waypoint_task_executor_plugin",
+    rclcpp::ParameterValue(std::string("waypoint_task_executor")));
+  declare_parameter(
+    "waypoint_task_executor.plugin",
+    rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));
 }
 
 WaypointFollower::~WaypointFollower()
@@ -50,7 +52,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
   auto node = shared_from_this();
   stop_on_failure_ = get_parameter("stop_on_failure").as_bool();
   loop_rate_ = get_parameter("loop_rate").as_int();
-  task_executor_at_waypoint_id_ = get_parameter("task_executor_at_waypoint_plugin").as_string();
+  waypoint_task_executor_id_ = get_parameter("waypoint_task_executor_plugin").as_string();
 
   std::vector<std::string> new_args = rclcpp::NodeOptions().arguments();
   new_args.push_back("--ros-args");
@@ -70,26 +72,23 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_waitables_interface(),
     "FollowWaypoints", std::bind(&WaypointFollower::followWaypoints, this), false);
 
-  if (task_executor_at_waypoint_id_ == default_task_executor_at_waypoint_id_) {
-    nav2_util::declare_parameter_if_not_declared(
-      this, default_task_executor_at_waypoint_id_ + ".plugin",
-      rclcpp::ParameterValue(default_task_executor_at_waypoint_type_));
-  }
-
+  nav2_util::declare_parameter_if_not_declared(
+    this, std::string("waypoint_task_executor_plugin.plugin"),
+    rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));
   try {
-    task_executor_at_waypoint_type_ = nav2_util::get_plugin_type_param(
+    waypoint_task_executor_type_ = nav2_util::get_plugin_type_param(
       this,
-      task_executor_at_waypoint_id_);
-    task_executor_at_waypoint_ = task_executor_at_waypoint_loader_.createUniqueInstance(
-      task_executor_at_waypoint_type_);
+      waypoint_task_executor_id_);
+    waypoint_task_executor_ = waypoint_task_executor_loader_.createUniqueInstance(
+      waypoint_task_executor_type_);
     RCLCPP_INFO(
-      get_logger(), "Created task_executor_at_waypoint : %s of type %s",
-      task_executor_at_waypoint_id_.c_str(), task_executor_at_waypoint_type_.c_str());
-    task_executor_at_waypoint_->initialize(node, task_executor_at_waypoint_id_);
+      get_logger(), "Created waypoint_task_executor : %s of type %s",
+      waypoint_task_executor_id_.c_str(), waypoint_task_executor_type_.c_str());
+    waypoint_task_executor_->initialize(node, waypoint_task_executor_id_);
   } catch (const pluginlib::PluginlibException & ex) {
     RCLCPP_FATAL(
       get_logger(),
-      "Failed to create task_executor_at_waypoint. Exception: %s", ex.what());
+      "Failed to create waypoint_task_executor. Exception: %s", ex.what());
   }
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -214,7 +213,7 @@ WaypointFollower::followWaypoints()
         get_logger(), "Succeeded processing waypoint %i, processing waypoint task execution",
         goal_index);
       auto node = shared_from_this();
-      task_executor_at_waypoint_->processAtWaypoint(node, goal->poses[goal_index], goal_index);
+      waypoint_task_executor_->processAtWaypoint(goal->poses[goal_index], goal_index);
       RCLCPP_INFO(
         get_logger(), "Processed task execution at waypoint %i, moving to the next", goal_index);
     }
