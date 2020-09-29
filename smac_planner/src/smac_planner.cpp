@@ -62,7 +62,6 @@
 namespace smac_planner
 {
 using namespace std::chrono;
-using namespace std;
 
 SmacPlanner::SmacPlanner()
 : _a_star(nullptr),
@@ -373,8 +372,8 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 #ifdef BENCHMARK_TESTING
     steady_clock::time_point b = steady_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(b - a);
-    cout << "It took " << time_span.count() * 1000 <<
-      " milliseconds with " << num_iterations << " iterations." << endl;
+    std::cout << "It took " << time_span.count() * 1000 <<
+      " milliseconds with " << num_iterations << " iterations." << std::endl;
 #endif
     return plan;
   }

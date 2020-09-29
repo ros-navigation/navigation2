@@ -278,6 +278,11 @@ public:
     unsigned int & angle_quantization,
     SearchInfo & search_info);
 
+  static void computeWavefrontHeuristic(
+    nav2_costmap_2d::Costmap2D * & costmap,
+    const unsigned int & start_x, const unsigned int & start_y,
+    const unsigned int & goal_x, const unsigned int & goal_y);
+
   /**
    * @brief Retrieve all valid neighbors of a node.
    * @param node Pointer to the node we are currently exploring in A*
@@ -303,6 +308,7 @@ private:
   bool _is_queued;
   unsigned int _motion_primitive_index;
   static MotionTable _motion_model;
+  static std::vector<unsigned int> _wavefront_heuristic;
 };
 
 }  // namespace smac_planner

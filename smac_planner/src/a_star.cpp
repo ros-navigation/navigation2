@@ -90,6 +90,7 @@ void AStarAlgorithm<NodeSE2>::createGraph(
   const unsigned int & dim_3_size,
   nav2_costmap_2d::Costmap2D * & costmap)
 {
+  _costmap = costmap;
   _collision_checker = GridCollisionChecker(costmap);
   _collision_checker.setFootprint(_footprint, _is_radius_footprint);
 
@@ -177,6 +178,12 @@ void AStarAlgorithm<NodeSE2>::setGoal(
     static_cast<float>(my),
     static_cast<float>(dim_3));
   _goal->setPose(_goal_coordinates);
+
+  NodeSE2::computeWavefrontHeuristic(
+    _costmap,
+    static_cast<unsigned int>(getStart()->pose.x),
+    static_cast<unsigned int>(getStart()->pose.y),
+    mx, my);
 }
 
 template<typename NodeT>

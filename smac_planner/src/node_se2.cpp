@@ -13,6 +13,7 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <chrono>
 
 #include <ompl/base/ScopedState.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
@@ -20,11 +21,14 @@
 
 #include "smac_planner/node_se2.hpp"
 
+using namespace std::chrono;
+
 namespace smac_planner
 {
 
 // defining static member for all instance to share
 MotionTable NodeSE2::_motion_model;
+std::vector<unsigned int> NodeSE2::_wavefront_heuristic;
 double NodeSE2::neutral_cost = sqrt(2);
 
 // Each of these tables are the projected motion models through
@@ -264,7 +268,21 @@ float NodeSE2::getHeuristicCost(
   to[0] = goal_coords.x;
   to[1] = goal_coords.y;
   to[2] = goal_coords.theta * _motion_model.bin_size;
-  return NodeSE2::neutral_cost * _motion_model.state_space->distance(from(), to());
+
+  const float motion_heuristic = _motion_model.state_space->distance(from(), to());
+
+  const unsigned int & wavefront_idx = static_cast<unsigned int>(node_coords.y) * _motion_model.size_x + static_cast<unsigned int>(node_coords.x);
+  const unsigned int & wavefront_value = _wavefront_heuristic[wavefront_idx];
+
+  // if lethal or didn't visit, use the motion heuristic instead.
+  if (wavefront_value == 0) {
+    return NodeSE2::neutral_cost * motion_heuristic;
+  }
+
+  // -2 because wavefront starts at 2
+  const float wavefront_heuristic = static_cast<float>(wavefront_value - 2);
+
+  return NodeSE2::neutral_cost * std::max(wavefront_heuristic, motion_heuristic);
 }
 
 void NodeSE2::initMotionModel(
@@ -287,6 +305,79 @@ void NodeSE2::initMotionModel(
               "Invalid motion model for SE2 node. Please select between"
               " Dubin (Ackermann forward only),"
               " Reeds-Shepp (Ackermann forward and back).");
+  }
+}
+
+void NodeSE2::computeWavefrontHeuristic(
+  nav2_costmap_2d::Costmap2D * & costmap,
+  const unsigned int & start_x, const unsigned int & start_y,
+  const unsigned int & goal_x, const unsigned int & goal_y)
+{
+  unsigned int size = costmap->getSizeInCellsX() * costmap->getSizeInCellsY();
+  if (_wavefront_heuristic.size() == size) {
+    // must reset all values
+    for (unsigned int i = 0; i != _wavefront_heuristic.size(); i++) {
+      _wavefront_heuristic[i] = 0;
+    }
+  } else {
+    unsigned int wavefront_size = _wavefront_heuristic.size();
+    _wavefront_heuristic.resize(size, 0);
+    // must reset values for non-constructed indices
+    for (unsigned int i = 0; i != wavefront_size; i++) {
+      _wavefront_heuristic[i] = 0;
+    }
+  }
+
+  const unsigned int & size_x = _motion_model.size_x;
+  const int size_x_int = static_cast<int>(size_x);
+  const unsigned int size_y = costmap->getSizeInCellsY();
+  const unsigned int goal_index = goal_y * size_x + goal_x;
+  const unsigned int start_index = start_y * size_x + start_x;
+  unsigned int mx, my, mx_idx, my_idx;
+
+  std::queue<unsigned int> q;
+  q.emplace(goal_index);
+  
+  unsigned int idx = goal_index;
+  _wavefront_heuristic[idx] = 2;
+
+  static const std::vector<int> neighborhood = {1, -1,  // left right
+    size_x_int, -size_x_int,  // up down
+    size_x_int + 1, size_x_int - 1,  // upper diagonals
+    -size_x_int + 1, -size_x_int - 1};  // lower diagonals
+
+  while (!q.empty() || idx == start_index) {
+    // get next one
+    idx = q.front();
+    q.pop();
+
+    my_idx = idx / size_x;
+    mx_idx = idx - (my_idx * size_x);
+
+    // find neighbors
+    for (unsigned int i = 0; i != neighborhood.size(); i++) {
+      unsigned int new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
+      unsigned int last_wave_cost = _wavefront_heuristic[idx];
+
+      // if neighbor is unvisited and non-lethal, set N and add to queue
+      if (new_idx > 0 && new_idx < size_x * size_y &&
+          _wavefront_heuristic[new_idx] == 0 &&
+          static_cast<float>(costmap->getCost(idx)) < INSCRIBED)
+      {
+        my = new_idx / size_x;
+        mx = new_idx - (my * size_x);
+
+        if (mx == 0 && mx_idx >= size_x - 1 || mx >= size_x - 1 && mx_idx == 0) {
+          continue;
+        }
+        if (my == 0 && my_idx >= size_y - 1 || my >= size_y - 1 && my_idx == 0) {
+          continue;
+        }
+
+        _wavefront_heuristic[new_idx] = last_wave_cost + 1;
+        q.emplace(idx + neighborhood[i]);
+      }
+    }
   }
 }
 
