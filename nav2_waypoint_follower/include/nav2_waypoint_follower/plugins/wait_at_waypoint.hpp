@@ -33,12 +33,6 @@ namespace nav2_waypoint_follower
  */
 class WaitAtWaypoint : public nav2_core::WaypointTaskExecutor
 {
-private:
-  // the robot will sleep waypoint_pause_duration_ milliseconds
-  int waypoint_pause_duration_;
-  bool is_enabled_;
-  rclcpp::Logger logger_{rclcpp::get_logger("nav2_waypoint_follower")};
-
 public:
 /**
  * @brief Construct a new Wait At Waypoint Arrival object
@@ -68,9 +62,17 @@ public:
    *
    * @param curr_pose current pose of the robot
    * @param curr_waypoint_index current waypoint, that robot just arrived
+   * @return true if task execution was successful
+   * @return false if task execution failed
    */
-  void processAtWaypoint(
+  bool processAtWaypoint(
     const geometry_msgs::msg::PoseStamped & curr_pose, const int & curr_waypoint_index);
+
+protected:
+  // the robot will sleep waypoint_pause_duration_ milliseconds
+  int waypoint_pause_duration_;
+  bool is_enabled_;
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_waypoint_follower")};
 };
 
 }  // namespace nav2_waypoint_follower

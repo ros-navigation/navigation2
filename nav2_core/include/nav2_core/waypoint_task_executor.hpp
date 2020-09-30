@@ -59,8 +59,10 @@ public:
    *
    * @param curr_pose current pose of the robot
    * @param curr_waypoint_index current waypoint, that robot just arrived
+   * @return true if task execution was successful
+   * @return false if task execution failed
    */
-  virtual void processAtWaypoint(
+  virtual bool processAtWaypoint(
     const geometry_msgs::msg::PoseStamped & curr_pose, const int & curr_waypoint_index) = 0;
 };
 }  // namespace nav2_core

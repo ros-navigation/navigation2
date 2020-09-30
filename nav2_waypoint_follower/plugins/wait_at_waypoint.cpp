@@ -47,39 +47,36 @@ void WaitAtWaypoint::initialize(
   nav2_util::declare_parameter_if_not_declared(
     node,
     plugin_name + ".enabled",
-    rclcpp::ParameterValue(false));
+    rclcpp::ParameterValue(true));
   node->get_parameter(
     plugin_name + ".waypoint_pause_duration",
     waypoint_pause_duration_);
   node->get_parameter(
     plugin_name + ".enabled",
     is_enabled_);
-  if (!waypoint_pause_duration_) {
+  if (waypoint_pause_duration_ == 0) {
     is_enabled_ = false;
     RCLCPP_INFO(
-      node->get_logger(),
+      logger_,
       "Waypoint pause duration is set to zero, disabling task executor plugin.");
-  }
-  if (!is_enabled_) {
+  } else if (!is_enabled_) {
     RCLCPP_INFO(
-      node->get_logger(), "Waypoint task executor plugin is disabled.");
+      logger_, "Waypoint task executor plugin is disabled.");
   }
 }
 
-void WaitAtWaypoint::processAtWaypoint(
-  const geometry_msgs::msg::PoseStamped & curr_pose, const int & curr_waypoint_index)
+bool WaitAtWaypoint::processAtWaypoint(
+  const geometry_msgs::msg::PoseStamped & /*curr_pose*/, const int & curr_waypoint_index)
 {
   if (!is_enabled_) {
-    return;
+    return false;
   }
   RCLCPP_INFO(
     logger_, "Arrived at %i'th waypoint, sleeping for %i milliseconds",
     curr_waypoint_index,
     waypoint_pause_duration_);
-  RCLCPP_INFO(
-    logger_, "current Pose: x %.2f , y %.2f", curr_pose.pose.position.x,
-    curr_pose.pose.position.y);
   rclcpp::sleep_for(std::chrono::milliseconds(waypoint_pause_duration_));
+  return true;
 }
 }  // namespace nav2_waypoint_follower
 PLUGINLIB_EXPORT_CLASS(

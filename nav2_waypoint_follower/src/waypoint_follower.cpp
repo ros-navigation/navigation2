@@ -31,11 +31,11 @@ WaypointFollower::WaypointFollower()
   RCLCPP_INFO(get_logger(), "Creating");
   declare_parameter("stop_on_failure", rclcpp::ParameterValue(true));
   declare_parameter("loop_rate", rclcpp::ParameterValue(20));
-  declare_parameter(
-    "waypoint_task_executor_plugin",
+  nav2_util::declare_parameter_if_not_declared(
+    this, std::string("waypoint_task_executor_plugin"),
     rclcpp::ParameterValue(std::string("waypoint_task_executor")));
-  declare_parameter(
-    "waypoint_task_executor.plugin",
+  nav2_util::declare_parameter_if_not_declared(
+    this, std::string("waypoint_task_executor_plugin.plugin"),
     rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));
 }
 
@@ -72,9 +72,6 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_waitables_interface(),
     "FollowWaypoints", std::bind(&WaypointFollower::followWaypoints, this), false);
 
-  nav2_util::declare_parameter_if_not_declared(
-    this, std::string("waypoint_task_executor_plugin.plugin"),
-    rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));
   try {
     waypoint_task_executor_type_ = nav2_util::get_plugin_type_param(
       this,
@@ -213,9 +210,11 @@ WaypointFollower::followWaypoints()
         get_logger(), "Succeeded processing waypoint %i, processing waypoint task execution",
         goal_index);
       auto node = shared_from_this();
-      waypoint_task_executor_->processAtWaypoint(goal->poses[goal_index], goal_index);
+      bool is_task_executed = waypoint_task_executor_->processAtWaypoint(
+        goal->poses[goal_index], goal_index);
       RCLCPP_INFO(
-        get_logger(), "Processed task execution at waypoint %i, moving to the next", goal_index);
+        get_logger(), "Task execution at waypoint %i %s", goal_index,
+        is_task_executed ? "succeeded" : "failed!", "moving to the next");
     }
 
     if (current_goal_status_ != ActionStatus::PROCESSING &&
