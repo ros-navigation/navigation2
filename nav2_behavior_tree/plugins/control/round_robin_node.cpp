@@ -44,10 +44,8 @@ BT::NodeStatus RoundRobinNode::tick()
     switch (child_status) {
       case BT::NodeStatus::SUCCESS:
         {
-          // Wrap around to the first child
-          if (++current_child_idx_ >= num_children) {
-            current_child_idx_ = 0;
-          }
+          // current child index is not reset so round robin
+          // continues from this child when it is ticked again
           num_failed_children_ = 0;
           ControlNode::haltChildren();
           return BT::NodeStatus::SUCCESS;
@@ -55,6 +53,7 @@ BT::NodeStatus RoundRobinNode::tick()
 
       case BT::NodeStatus::FAILURE:
         {
+          // Wrap around to the first child
           if (++current_child_idx_ >= num_children) {
             current_child_idx_ = 0;
           }
@@ -74,7 +73,11 @@ BT::NodeStatus RoundRobinNode::tick()
     }
   }
 
-  halt();
+  // reset
+  ControlNode::haltChildren();
+  current_child_idx_ = 0;
+  num_failed_children_ = 0;
+
   return BT::NodeStatus::FAILURE;
 }
 

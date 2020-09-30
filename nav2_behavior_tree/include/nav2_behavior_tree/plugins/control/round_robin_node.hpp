@@ -30,7 +30,8 @@ namespace nav2_behavior_tree
  *  RoundRobin           |    Tick Next Child    | Return Running
  *
  * If the current child return failure, the next child is ticked and if the last child returns
- * failure, the first child is ticked and the cycle continues until a child returns success
+ * failure, the first child is ticked and the cycle continues until a child returns success.
+ * On the next tick, continue the cycle from the last successful child.
  *
  * As an example, let's say this node has 3 children: A, B and C. At the start,
  * they are all IDLE.
@@ -42,8 +43,9 @@ namespace nav2_behavior_tree
  * | FAILURE | RUNNING |  IDLE   |  - A returns FAILURE so B gets ticked and returns RUNNING
  *                                  - RoundRobin returns RUNNING and C is not ticked yet
  * | FAILURE | SUCCESS |  IDLE   |  - B returns SUCCESS, so RoundRobin halts all children and
- *                                  - returns SUCCESS, next iteration will tick C.
- * | RUNNING |  IDLE   | FAILURE |  - C returns FAILURE, so RoundRobin circles and ticks A.
+ *                                  - returns SUCCESS, next iteration will tick B again.
+ * | RUNNING | FAILURE | FAILURE |  - B returns FAILURE, so RoundRobin ticks C.
+ *                                  - C returns FAILURE, so RoundRobin circles and ticks A.
  *                                  - A returns RUNNING, so RoundRobin returns RUNNING.
  *
  * If all children return FAILURE, RoundRobin will return FAILURE
