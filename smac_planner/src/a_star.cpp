@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <omp.h>
+
 #include <cmath>
 #include <stdexcept>
 #include <memory>
@@ -19,11 +21,11 @@
 #include <limits>
 #include <type_traits>
 #include <chrono>
-#include <omp.h>
 #include <thread>
+#include <utility>
 
 #include "smac_planner/a_star.hpp"
-using namespace std::chrono;
+using namespace std::chrono;  // NOLINT
 
 namespace smac_planner
 {
@@ -200,7 +202,9 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
   }
 
   // Check if ending point is valid
-  if (getToleranceHeuristic() < 0.001 && !_goal->isNodeValid(_traverse_unknown, _collision_checker)) {
+  if (getToleranceHeuristic() < 0.001 &&
+    !_goal->isNodeValid(_traverse_unknown, _collision_checker))
+  {
     throw std::runtime_error("Failed to compute path, goal is occupied with no tolerance.");
   }
 
@@ -251,7 +255,6 @@ bool AStarAlgorithm<NodeT>::createPath(
     };
 
   while (iterations < getMaxIterations() && !_queue.empty()) {
-
     // 1) Pick Nbest from O s.t. min(f(Nbest)), remove from queue
     current_node = getNextNode();
 
@@ -370,7 +373,7 @@ typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::getNextNode()
   return node.graph_node_ptr;
 }
 
-template <>
+template<>
 typename AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getNextNode()
 {
   NodeBasic<NodeSE2> node = _queue.top().second;

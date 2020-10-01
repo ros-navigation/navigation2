@@ -25,7 +25,7 @@
 #include <utility>
 #include <limits>
 
-#include <ompl/base/StateSpace.h>
+#include "ompl/base/StateSpace.h"
 
 #include "smac_planner/constants.hpp"
 #include "smac_planner/types.hpp"
@@ -299,6 +299,7 @@ public:
   NodeSE2 * parent;
   Coordinates pose;
   static double neutral_cost;
+  static MotionTable _motion_model;
 
 private:
   float _cell_cost;
@@ -307,7 +308,6 @@ private:
   bool _was_visited;
   bool _is_queued;
   unsigned int _motion_primitive_index;
-  static MotionTable _motion_model;
   static std::vector<unsigned int> _wavefront_heuristic;
 };
 

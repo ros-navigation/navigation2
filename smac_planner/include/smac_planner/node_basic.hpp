@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef SMAC_PLANNER__NODE_3D_HPP_
-#define SMAC_PLANNER__NODE_3D_HPP_
+#ifndef SMAC_PLANNER__NODE_BASIC_HPP_
+#define SMAC_PLANNER__NODE_BASIC_HPP_
 
 #include <math.h>
 #include <vector>
@@ -25,10 +25,11 @@
 #include <utility>
 #include <limits>
 
-#include <ompl/base/StateSpace.h>
+#include "ompl/base/StateSpace.h"
 
 #include "smac_planner/constants.hpp"
 #include "smac_planner/node_se2.hpp"
+#include "smac_planner/node_2d.hpp"
 #include "smac_planner/types.hpp"
 #include "smac_planner/collision_checker.hpp"
 
@@ -49,7 +50,8 @@ public:
    * @param index The index of this node for self-reference
    */
   explicit NodeBasic(const unsigned int index)
-  : _index(index)
+  : _index(index),
+    graph_node_ptr(nullptr)
   {}
 
   /**
@@ -78,4 +80,4 @@ template class NodeBasic<NodeSE2>;
 
 }  // namespace smac_planner
 
-#endif  // SMAC_PLANNER__NODE_3D_HPP_
+#endif  // SMAC_PLANNER__NODE_BASIC_HPP_

@@ -14,14 +14,19 @@
 
 #include <math.h>
 #include <chrono>
+#include <vector>
+#include <memory>
+#include <algorithm>
+#include <queue>
+#include <limits>
 
-#include <ompl/base/ScopedState.h>
-#include <ompl/base/spaces/DubinsStateSpace.h>
-#include <ompl/base/spaces/ReedsSheppStateSpace.h>
+#include "ompl/base/ScopedState.h"
+#include "ompl/base/spaces/DubinsStateSpace.h"
+#include "ompl/base/spaces/ReedsSheppStateSpace.h"
 
 #include "smac_planner/node_se2.hpp"
 
-using namespace std::chrono;
+using namespace std::chrono;  // NOLINT
 
 namespace smac_planner
 {
@@ -234,7 +239,7 @@ float NodeSE2::getTraversalCost(const NodePtr & child)
   float travel_cost = 0.0;
   float travel_cost_raw = NodeSE2::neutral_cost + _motion_model.cost_penalty * normalized_cost;
 
-  if (getMotionPrimitiveIndex() == 0 || getMotionPrimitiveIndex() == 3) {
+  if (child->getMotionPrimitiveIndex() == 0 || child->getMotionPrimitiveIndex() == 3) {
     // straight motion, no additional costs to be applied
     travel_cost = travel_cost_raw;
   } else {
@@ -271,7 +276,8 @@ float NodeSE2::getHeuristicCost(
 
   const float motion_heuristic = _motion_model.state_space->distance(from(), to());
 
-  const unsigned int & wavefront_idx = static_cast<unsigned int>(node_coords.y) * _motion_model.size_x + static_cast<unsigned int>(node_coords.x);
+  const unsigned int & wavefront_idx = static_cast<unsigned int>(node_coords.y) *
+    _motion_model.size_x + static_cast<unsigned int>(node_coords.x);
   const unsigned int & wavefront_value = _wavefront_heuristic[wavefront_idx];
 
   // if lethal or didn't visit, use the motion heuristic instead.
@@ -337,7 +343,7 @@ void NodeSE2::computeWavefrontHeuristic(
 
   std::queue<unsigned int> q;
   q.emplace(goal_index);
-  
+
   unsigned int idx = goal_index;
   _wavefront_heuristic[idx] = 2;
 
@@ -361,8 +367,8 @@ void NodeSE2::computeWavefrontHeuristic(
 
       // if neighbor is unvisited and non-lethal, set N and add to queue
       if (new_idx > 0 && new_idx < size_x * size_y &&
-          _wavefront_heuristic[new_idx] == 0 &&
-          static_cast<float>(costmap->getCost(idx)) < INSCRIBED)
+        _wavefront_heuristic[new_idx] == 0 &&
+        static_cast<float>(costmap->getCost(idx)) < INSCRIBED)
       {
         my = new_idx / size_x;
         mx = new_idx - (my * size_x);

@@ -15,14 +15,16 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <limits>
+#include <algorithm>
+
 #include "smac_planner/smac_planner_2d.hpp"
 
 #define BENCHMARK_TESTING
 
 namespace smac_planner
 {
-using namespace std::chrono;
-using namespace std;
+using namespace std::chrono;  // NOLINT
 
 SmacPlanner2D::SmacPlanner2D()
 : _a_star(nullptr),
@@ -133,8 +135,8 @@ void SmacPlanner2D::configure(
 
   if (smooth_path) {
     _smoother = std::make_unique<Smoother>();
-    _optimizer_params.get(_node.get(), name);  // Get optimizer params TODO per-run with time left over
-    _smoother_params.get(_node.get(), name);  // Get weights
+    _optimizer_params.get(_node.get(), name);
+    _smoother_params.get(_node.get(), name);
     _smoother->initialize(_optimizer_params);
 
     if (upsample_path && _upsampling_ratio > 0) {
@@ -294,8 +296,8 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 #ifdef BENCHMARK_TESTING
     steady_clock::time_point b = steady_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(b - a);
-    cout << "It took " << time_span.count() * 1000 <<
-      " milliseconds with " << num_iterations << " iterations." << endl;
+    std::cout << "It took " << time_span.count() * 1000 <<
+      " milliseconds with " << num_iterations << " iterations." << std::endl;
 #endif
     return plan;
   }

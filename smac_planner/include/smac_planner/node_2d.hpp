@@ -214,6 +214,7 @@ public:
 
   Node2D * parent;
   static double neutral_cost;
+  static std::vector<int> _neighbors_grid_offsets;
 
 private:
   float _cell_cost;
@@ -221,7 +222,6 @@ private:
   unsigned int _index;
   bool _was_visited;
   bool _is_queued;
-  static std::vector<int> _neighbors_grid_offsets;
 };
 
 }  // namespace smac_planner

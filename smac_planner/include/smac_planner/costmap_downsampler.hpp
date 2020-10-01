@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef SMAC_PLANNER__DOWNSAMPLER_HPP_
-#define SMAC_PLANNER__DOWNSAMPLER_HPP_
+#ifndef SMAC_PLANNER__COSTMAP_DOWNSAMPLER_HPP_
+#define SMAC_PLANNER__COSTMAP_DOWNSAMPLER_HPP_
 
 #include <algorithm>
+#include <string>
+#include <memory>
+
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "smac_planner/constants.hpp"
 
@@ -109,4 +112,4 @@ private:
 
 }  // namespace smac_planner
 
-#endif // SMAC_PLANNER__DOWNSAMPLER_HPP_
+#endif  // SMAC_PLANNER__COSTMAP_DOWNSAMPLER_HPP_

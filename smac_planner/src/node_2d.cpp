@@ -14,6 +14,9 @@
 
 #include "smac_planner/node_2d.hpp"
 
+#include <vector>
+#include <limits>
+
 namespace smac_planner
 {
 

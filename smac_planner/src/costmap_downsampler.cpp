@@ -15,6 +15,10 @@
 
 #include "smac_planner/costmap_downsampler.hpp"
 
+#include <string>
+#include <memory>
+#include <algorithm>
+
 namespace smac_planner
 {
 

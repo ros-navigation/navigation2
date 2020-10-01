@@ -15,6 +15,8 @@
 #ifndef SMAC_PLANNER__CONSTANTS_HPP_
 #define SMAC_PLANNER__CONSTANTS_HPP_
 
+#include <string>
+
 namespace smac_planner
 {
 enum class MotionModel
