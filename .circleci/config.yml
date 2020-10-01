@@ -278,6 +278,7 @@ _steps:
       command: |
         curl -s https://codecov.io/bash | bash -s -- \
           -f "lcov/project_coverage.info" \
+          -R "src/navigation2" \
           -t "${CODECOV_TOKEN}" \
           -n "${CIRCLE_BUILD_NUM}" \
           -F "project" \
