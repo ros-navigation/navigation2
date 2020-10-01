@@ -74,7 +74,6 @@ BT::NodeStatus RoundRobinNode::tick()
     }
   }
 
-  // reset
   halt();
   return BT::NodeStatus::FAILURE;
 }
