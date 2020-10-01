@@ -1,6 +1,4 @@
 version: 2.1
-orbs:
-  codecov: codecov/codecov@1.1.1
 
 _commands:
   common_commands: &common_commands
@@ -274,9 +272,16 @@ _steps:
       command: src/navigation2/tools/code_coverage_report.bash ci
       when: always
   upload_overlay_coverage: &upload_overlay_coverage
-    codecov/upload:
-      file: lcov/project_coverage.info
-      flags: project
+    run:
+      name: Upload Code Coverage
+      working_directory: /opt/overlay_ws
+      command: |
+        curl -s https://codecov.io/bash | bash -s -- \
+          -f "lcov/project_coverage.info" \
+          -t "${CODECOV_TOKEN}" \
+          -n "${CIRCLE_BUILD_NUM}" \
+          -F "project" \
+          -Z || echo 'Codecov upload failed'
       when: always
   trigger_dockerhub_build: &trigger_dockerhub_build
     trigger_dockerhub_url:
