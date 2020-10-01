@@ -23,7 +23,7 @@ class Matcher2dPDF : public BFL::ConditionalPdf<sensor_msgs::msg::LaserScan, geo
 {
 public:
     Matcher2dPDF(int dim, int num_of_cond_args)
-		: BFL::ConditionalPdf<sensor_msgs::msg::LaserScan, geometry_msgs::msg::TransformStamped>(dim, num_of_cond_args);
+		: BFL::ConditionalPdf<sensor_msgs::msg::LaserScan, geometry_msgs::msg::TransformStamped>(dim, num_of_cond_args) {}
 
 	using Ptr = std::shared_ptr<nav2_localization::Matcher2dPDF>;
 

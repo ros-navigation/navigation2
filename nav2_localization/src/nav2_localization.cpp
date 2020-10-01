@@ -1,11 +1,9 @@
-#include <chrono>
-
 #include "nav2_localization/nav2_localization.hpp"
 #include "nav2_util/string_utils.hpp"
+#include "tf2_ros/buffer.h"
 #include "tf2_ros/create_timer_ros.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "lifecycle_msgs/msg/state.hpp"
-
-using namespace std::chrono_literals;
 
 namespace nav2_localization
 {
@@ -41,6 +39,8 @@ LocalizationServer::on_configure(const rclcpp_lifecycle::State & state)
 {
     RCLCPP_INFO(get_logger(), "Configuring localization interface");
 
+    double temp;
+
     get_parameter("sample_motion_model_id", sample_motion_model_id_);
     get_parameter("matcher2d_id", matcher2d_id_);
     get_parameter("solver_id", solver_id_);
@@ -48,7 +48,8 @@ LocalizationServer::on_configure(const rclcpp_lifecycle::State & state)
     get_parameter("odom_frame_id", odom_frame_id_);
     get_parameter("base_frame_id", base_frame_id_);
     get_parameter("map_frame_id", map_frame_id_);
-    get_parameter("transform_tolerance", transform_tolerance_);
+    get_parameter("transform_tolerance", temp);
+    transform_tolerance_ = tf2::durationFromSec(temp);
 
     initTransforms();
     initMessageFilters();
@@ -65,6 +66,13 @@ LocalizationServer::on_activate(const rclcpp_lifecycle::State & state)
     matcher2d_->activate();
     solver_->activate();
 
+    return nav2_util::CallbackReturn::SUCCESS;
+}
+
+nav2_util::CallbackReturn
+LocalizationServer::on_deactivate(const rclcpp_lifecycle::State & state)
+{
+    RCLCPP_INFO(get_logger(), "Deactivating");
     return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -182,7 +190,7 @@ LocalizationServer::initPlugins()
         exit(-1);
     }
 
-    solver_->configure(node, sample_motion_model_, matcher2d_, nav_msgs::msg::Odometry(), geometry_msgs::msg::Pose());
+    solver_->configure(node, sample_motion_model_, matcher2d_, geometry_msgs::msg::TransformStamped(), geometry_msgs::msg::Pose());
 }
 
 void

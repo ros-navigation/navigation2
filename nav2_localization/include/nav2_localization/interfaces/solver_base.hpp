@@ -55,8 +55,8 @@ public:
 
 private:
 	rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
-	BFL::SystemModel<geometry_msgs::msg::TransformStamped>& motionSampler_; // Reference to the MotionSampler (will be used to carry uncertainty from the odom to the pose estimation)
-	BFL::MeasurementModel<sensor_msgs::msg::LaserScan, geometry_msgs::msg::TransformStamped>& matcher_; // Reference to the Matcher (Will be used to compute how likely it is to be in a certain pose given the obtained measurement)
+	BFL::SystemModel<geometry_msgs::msg::TransformStamped> motionSampler_; // Reference to the MotionSampler (will be used to carry uncertainty from the odom to the pose estimation)
+	BFL::MeasurementModel<sensor_msgs::msg::LaserScan, geometry_msgs::msg::TransformStamped> matcher_; // Reference to the Matcher (Will be used to compute how likely it is to be in a certain pose given the obtained measurement)
 	geometry_msgs::msg::TransformStamped prev_odom_; // Previous pose odometry-based estimation
 	geometry_msgs::msg::Pose prev_pose_; // Previous pose estimation
 	
