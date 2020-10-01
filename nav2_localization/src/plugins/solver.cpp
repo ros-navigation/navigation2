@@ -5,26 +5,15 @@
 #include <model/systemmodel.h>
 #include <model/measurementmodel.h>
 
-// TODO - Get config parameters
-// STATE_SIZE
-// PRIOR_MU_X
-// PRIOR_MU_Y
-// PRIOR_MU_THETA
-// PRIOR_COV_X
-// PRIOR_COV_Y
-// PRIOR_COV_THETA
-// NUM_SAMPLES
-// CHOLESKY
-
 namespace nav2_localization
 {
-void CreateParticleFilter()
+void CreateParticleFilter(unsigned int NUM_SAMPLES, unsigned int STATE_SIZE, float PRIOR_MU_X, float PRIOR_MU_Y, float PRIOR_MU_THETA, float PRIOR_COV_X, float PRIOR_COV_Y, float PRIOR_COV_THETA)
 {
 	/****************************
 	 * Linear prior DENSITY     *
 	 ***************************/
 	// Continuous Gaussian prior (for Kalman filters)
-	// TODO - Use TransformStamped as prior and get the initialization
+	//// ColumnVector and SymmetricMatrix are used because they are what BFL::Gaussian requires
 	MatrixWrapper::ColumnVector prior_Mu(STATE_SIZE);
 	prior_Mu(1) = PRIOR_MU_X;
 	prior_Mu(2) = PRIOR_MU_Y;
@@ -44,7 +33,8 @@ void CreateParticleFilter()
 	// Discrete prior for Particle filter (using the continuous Gaussian prior)
 	vector<BFL::Sample<geometry_msgs::msg::TransformStamped>> prior_samples(NUM_SAMPLES);
 	prior_discr = new BFL::MCPdf<geometry_msgs::msg::TransformStamped>(NUM_SAMPLES, STATE_SIZE);
-	prior_cont.SampleFrom(prior_samples, NUM_SAMPLES, CHOLESKY, NULL);
+	//prior_cont.SampleFrom(prior_samples, NUM_SAMPLES, CHOLESKY, NULL);
+	prior_cont.SampleFrom(prior_samples, NUM_SAMPLES); // Use default values for "method" and "args" arguments
 	prior_discr->ListOfSamplesSet(prior_samples);
 	
 	/******************************
@@ -123,9 +113,27 @@ void DummySolver2d::configure(
 	const nav_msgs::msg::Odometry& odom,
 	const geometry_msgs::msg::Pose& pose)
 {
-	// TODO - Generate particle filter, sample the map randomly or use initial pose?
 	node_ = node;
-	pf_ = CreateParticleFilter();
+
+	// Get configuration and generate PF
+	unsigned int NUM_SAMPLES;
+	unsigned int STATE_SIZE;
+	float PRIOR_MU_X;
+	float PRIOR_MU_Y;
+	float PRIOR_MU_THETA;
+	float PRIOR_COV_X;
+	float PRIOR_COV_Y;
+	float PRIOR_COV_THETA;
+	node_->get_parameter("num_particles", NUM_SAMPLES);
+	node_->get_parameter("num_dimensions", STATE_SIZE); // TODO - Can we fix it to 3? (or other, depending on plugin)
+	node_->get_parameter("prior_mu_x", PRIOR_MU_X);
+	node_->get_parameter("prior_mu_y", PRIOR_MU_Y);
+	node_->get_parameter("prior_mu_theta", PRIOR_MU_THETA);
+	node_->get_parameter("prior_cov_x", PRIOR_COV_X);
+	node_->get_parameter("prior_cov_y", PRIOR_COV_Y);
+	node_->get_parameter("prior_cov_theta", PRIOR_COV_THETA);
+	pf_ = CreateParticleFilter(NUM_SAMPLES, STATE_SIZE, PRIOR_MU_X, PRIOR_MU_Y, PRIOR_MU_THETA, PRIOR_COV_X, PRIOR_COV_Y, PRIOR_COV_THETA);
+
 	motionSampler_.SystemPdfSet(motionSamplerPDF.get());
 	matcher_.MeasurementPdfSet(matcherPDF.get());
 	prev_odom_ = odom;
