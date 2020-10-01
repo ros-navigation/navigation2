@@ -48,9 +48,7 @@ BT::NodeStatus RecoveryNode::tick()
         case BT::NodeStatus::SUCCESS:
           {
             // reset node and return success when first child returns success
-            ControlNode::haltChildren();
-            retry_count_ = 0;
-            current_child_idx_ = 0;
+            halt();
             return BT::NodeStatus::SUCCESS;
           }
 
@@ -63,9 +61,7 @@ BT::NodeStatus RecoveryNode::tick()
               break;
             } else {
               // reset node and return failure when max retries has been exceeded
-              ControlNode::haltChildren();
-              retry_count_ = 0;
-              current_child_idx_ = 0;
+              halt();
               return BT::NodeStatus::FAILURE;
             }
           }
@@ -95,9 +91,7 @@ BT::NodeStatus RecoveryNode::tick()
         case BT::NodeStatus::FAILURE:
           {
             // reset node and return failure if second child fails
-            ControlNode::haltChildren();
-            retry_count_ = 0;
-            current_child_idx_ = 0;
+            halt();
             return BT::NodeStatus::FAILURE;
           }
 
@@ -115,9 +109,7 @@ BT::NodeStatus RecoveryNode::tick()
   }  // end while loop
 
   // reset node and return failure
-  ControlNode::haltChildren();
-  retry_count_ = 0;
-  current_child_idx_ = 0;
+  halt();
   return BT::NodeStatus::FAILURE;
 }
 
