@@ -96,12 +96,7 @@ TEST_F(RoundRobinNodeTestFixture, test_behavior)
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 
   first_child_->changeStatus(BT::NodeStatus::IDLE);
-  second_child_->changeStatus(BT::NodeStatus::RUNNING);
-  third_child_->changeStatus(BT::NodeStatus::IDLE);
-  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
-
-  first_child_->changeStatus(BT::NodeStatus::IDLE);
-  second_child_->changeStatus(BT::NodeStatus::FAILURE);
+  second_child_->changeStatus(BT::NodeStatus::IDLE);
   third_child_->changeStatus(BT::NodeStatus::RUNNING);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
 
@@ -113,7 +108,7 @@ TEST_F(RoundRobinNodeTestFixture, test_behavior)
   first_child_->changeStatus(BT::NodeStatus::FAILURE);
   second_child_->changeStatus(BT::NodeStatus::SUCCESS);
   third_child_->changeStatus(BT::NodeStatus::FAILURE);
-  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(first_child_->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(third_child_->status(), BT::NodeStatus::IDLE);
