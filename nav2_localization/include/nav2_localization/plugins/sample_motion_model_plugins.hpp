@@ -8,10 +8,17 @@
 
 namespace nav2_localization
 {
-class DiffDriveOdomMotionModel : public SampleMotionModel
+class DiffDriveOdomMotionModel : public SampleMotionModelPDF
 {
 public:
-    DiffDriveOdomMotionModel() {}
+    // x_t is made up of x, y adn theta, hence dim = 3
+    // There are 3 conditional arguments: the previous pose, the previous odom and the current odom
+    DiffDriveOdomMotionModel() : SampleMotionModelPDF(3, 3) {}
+
+    // Use default sampling method
+    bool SampleFrom(BFL::Sample<geometry_msgs::msg::TransformStamped>& one_sample,	
+        const int method = DEFAULT,	
+        void * args = NULL) const;
 
     void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
     void activate();

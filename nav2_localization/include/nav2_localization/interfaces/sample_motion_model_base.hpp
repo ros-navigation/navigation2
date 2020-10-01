@@ -4,20 +4,25 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include <model/systemmodel.h>
+#include <pdf/conditionalpdf.h>
 
 namespace nav2_localization
 {
 /**
- * @class SampleMotionModel
+ * @class SampleMotionModelPDF
  * @brief Abstract interface for sample motion model to adhere to with pluginlib
  */
-class SampleMotionModel : public BFL::SystemModel<geometry_msgs::msg::TransformStamped>
+
+// ConditionalPdf template paramteres:
+// - Var: the most likely pose (x_t)
+// - CondArg: the previous pose (x_t-1), the current odom (x_bar_t) and the previous pose
+class SampleMotionModelPDF : public BFL::ConditionalPdf<geometry_msgs::msg::TransformStamped, geometry_msgs::msg::TransformStamped>
 {   
 public:
-    SampleMotionModel(){}
+    SampleMotionModelPDF(int dim, int num_of_cond_args) 
+        : BFL::ConditionalPdf<geometry_msgs::msg::TransformStamped, geometry_msgs::msg::TransformStamped>(dim, num_of_cond_args) {}
 
-    using Ptr = std::shared_ptr<nav2_localization::SampleMotionModel>;
+    using Ptr = std::shared_ptr<nav2_localization::SampleMotionModelPDF>;
 
     virtual void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) = 0;
 

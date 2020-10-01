@@ -118,7 +118,7 @@ geometry_msgs::msg::TransformStamped DummySolver2d::solve(
 
 void DummySolver2d::configure(
 	const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-	SampleMotionModel& motionSampler,
+	SampleMotionModelPDF& motionSamplerPDF,
 	Matcher2d& matcher,
 	const nav_msgs::msg::Odometry& odom,
 	const geometry_msgs::msg::Pose& pose)
@@ -126,7 +126,7 @@ void DummySolver2d::configure(
 	// TODO - Generate particle filter, sample the map randomly or use initial pose?
 	node_ = node;
 	pf_ = CreateParticleFilter();
-	motionSampler_ = motionSampler;
+	motionSampler_.SystemPdfSet(motionSampler);
 	matcher_ = matcher;
 	prev_odom_ = odom;
 	prev_pose_ = pose;

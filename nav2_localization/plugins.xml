@@ -1,6 +1,6 @@
 <class_libraries>
     <library path="src/plugins/sample_motion_model">
-        <class type="nav2_localization::DiffDriveOdomMotionModel" base_class_type="nav2_localization::SampleMotionModel">
+        <class type="nav2_localization::DiffDriveOdomMotionModel" base_class_type="nav2_localization::SampleMotionModelPDF">
             <description>Differential drive odometry motion model</description>
         </class>
     </library>

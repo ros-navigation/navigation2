@@ -104,8 +104,8 @@ protected:
     message_filters::Connection laser_scan_connection_;
 
     // Sample Motion Model Plugin
-    pluginlib::ClassLoader<nav2_localization::SampleMotionModel> sample_motion_model_loader_;
-    nav2_localization::SampleMotionModel::Ptr sample_motion_model_;
+    pluginlib::ClassLoader<nav2_localization::SampleMotionModelPDF> sample_motion_model_loader_;
+    nav2_localization::SampleMotionModelPDF::Ptr sample_motion_model_;
     std::string default_sample_motion_model_id_;
     std::string sample_motion_model_id_;
     std::string sample_motion_model_type_;

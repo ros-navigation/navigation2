@@ -29,7 +29,7 @@ public:
 
 	void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-		SampleMotionModel& motionSampler,
+		SampleMotionModelPDF& motionSamplerPDF,
 		Matcher2d& matcher,
 		const nav_msgs::msg::Odometry& odom,
 		const geometry_msgs::msg::Pose& pose);
