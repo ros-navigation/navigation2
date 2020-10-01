@@ -64,10 +64,24 @@ target_link_libraries(test_a_star
   ${library_name}
 )
 
-# Test smoother (?)
+# Test SMAC SE2
+ament_add_gtest(test_smac_se2
+  test_smac_se2.cpp
+)
+ament_target_dependencies(test_smac_se2
+  ${dependencies}
+)
+target_link_libraries(test_smac_se2
+  ${library_name}
+)
 
-# Test upsampler (?)
-
-# Test SMAC SE2 : Create instance, give it known costmap, plan
-
-# Test SMAC 2D : Create instance, give it known costmap, plan
+# Test SMAC 2D
+ament_add_gtest(test_smac_2d
+  test_smac_2d.cpp
+)
+ament_target_dependencies(test_smac_2d
+  ${dependencies}
+)
+target_link_libraries(test_smac_2d
+  ${library_name}_2d
+)

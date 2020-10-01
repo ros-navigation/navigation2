@@ -158,7 +158,7 @@ void SmacPlanner::configure(
   _node->get_parameter(name + ".max_planning_time_ms", _max_planning_time);
 
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("MOORE")));
+    _node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
   _node->get_parameter(name + ".motion_model_for_search", motion_model_for_search);
   MotionModel motion_model = fromString(motion_model_for_search);
   if (motion_model == MotionModel::UNKNOWN) {
