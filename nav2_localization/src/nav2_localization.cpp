@@ -13,9 +13,9 @@ namespace nav2_localization
 LocalizationServer::LocalizationServer()
 : LifecycleNode("localization_server", "", true),
   sample_motion_model_loader_("nav2_localization", "nav2_localization::SampleMotionModelPDF"),
-  default_sample_motion_model_id_("DiffDriveOdomMotionModel"),
-  matcher2d_loader_("nav2_localization", "nav2_localization::Matcher2D"),
-  default_matcher2d_id_("LikelihoodFieldMatcher2D"),
+  default_sample_motion_model_id_("DiffDriveOdomMotionModelPDF"),
+  matcher2d_loader_("nav2_localization", "nav2_localization::Matcher2dPDF"),
+  default_matcher2d_id_("LikelihoodFieldMatcher2dPDF"),
   solver_loader_("nav2_localization", "nav2_localization::Solver"),
   default_solver_id_("DummySolver")
 {

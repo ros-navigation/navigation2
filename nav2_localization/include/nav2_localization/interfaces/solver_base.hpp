@@ -12,6 +12,7 @@
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "model/systemmodel.h"
+#include "model/measurementmodel.h"
 
 // Others
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -37,13 +38,13 @@ public:
      * @return Estimation of the current position
      */
 	virtual geometry_msgs::msg::TransformStamped solve(
-		const nav_msgs::msg::Odometry& curr_odom) = 0;
+		const geometry_msgs::msg::TransformStamped& curr_odom) = 0;
 
 	virtual void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-		SampleMotionModelPDF& motionSamplerPDF,
-		Matcher2d& matcher,
-		const nav_msgs::msg::Odometry& odom,
+		SampleMotionModelPDF::Ptr& motionSamplerPDF,
+		Matcher2dPDF::Ptr& matcher,
+		const geometry_msgs::msg::TransformStamped& odom,
 		const geometry_msgs::msg::Pose& pose) = 0;
 
 	virtual void activate() = 0;
@@ -55,8 +56,8 @@ public:
 private:
 	rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 	BFL::SystemModel<geometry_msgs::msg::TransformStamped>& motionSampler_; // Reference to the MotionSampler (will be used to carry uncertainty from the odom to the pose estimation)
-	Matcher2d& matcher_; // Reference to the Matcher (Will be used to compute how likely it is to be in a certain pose given the obtained measurement)
-	nav_msgs::msg::Odometry prev_odom_; // Previous pose odometry-based estimation
+	BFL::MeasurementModel<sensor_msgs::msg::LaserScan, geometry_msgs::msg::TransformStamped>& matcher_; // Reference to the Matcher (Will be used to compute how likely it is to be in a certain pose given the obtained measurement)
+	geometry_msgs::msg::TransformStamped prev_odom_; // Previous pose odometry-based estimation
 	geometry_msgs::msg::Pose prev_pose_; // Previous pose estimation
 	
 };

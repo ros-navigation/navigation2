@@ -58,7 +58,7 @@ void CreateParticleFilter()
 DummySolver2d::DummySolver2d() {}
 
 geometry_msgs::msg::TransformStamped DummySolver2d::solve(
-	const nav_msgs::msg::Odometry& curr_odom)
+	const geometry_msgs::msg::TransformStamped& curr_odom)
 {
 	/*
 	// STEP 1 - Motion update
@@ -118,16 +118,16 @@ geometry_msgs::msg::TransformStamped DummySolver2d::solve(
 
 void DummySolver2d::configure(
 	const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-	SampleMotionModelPDF& motionSamplerPDF,
-	Matcher2d& matcher,
+	SampleMotionModelPDF::Ptr& motionSamplerPDF,
+	Matcher2dPDF::Ptr& matcherPDF,
 	const nav_msgs::msg::Odometry& odom,
 	const geometry_msgs::msg::Pose& pose)
 {
 	// TODO - Generate particle filter, sample the map randomly or use initial pose?
 	node_ = node;
 	pf_ = CreateParticleFilter();
-	motionSampler_.SystemPdfSet(motionSampler);
-	matcher_ = matcher;
+	motionSampler_.SystemPdfSet(motionSamplerPDF.get());
+	matcher_.MeasurementPdfSet(matcherPDF.get());
 	prev_odom_ = odom;
 	prev_pose_ = pose;
 	return;

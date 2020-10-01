@@ -25,13 +25,13 @@ public:
 	DummySolver2d();
 
 	geometry_msgs::msg::TransformStamped solve(
-		const nav_msgs::msg::Odometry& curr_odom);
+		const geometry_msgs::msg::TransformStamped& curr_odom);
 
 	void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-		SampleMotionModelPDF& motionSamplerPDF,
-		Matcher2d& matcher,
-		const nav_msgs::msg::Odometry& odom,
+		SampleMotionModelPDF::Ptr& motionSamplerPDF,
+		Matcher2dPDF::Ptr& matcherPDF,
+		const geometry_msgs::msg::TransformStamped& odom,
 		const geometry_msgs::msg::Pose& pose);
 
 private:

@@ -111,8 +111,8 @@ protected:
     std::string sample_motion_model_type_;
 
     // Matcher Plugin
-    pluginlib::ClassLoader<nav2_localization::Matcher2d> matcher2d_loader_;
-    nav2_localization::Matcher2d::Ptr matcher2d_;
+    pluginlib::ClassLoader<nav2_localization::Matcher2dPDF> matcher2d_loader_;
+    nav2_localization::Matcher2dPDF::Ptr matcher2d_;
     std::string default_matcher2d_id_;
     std::string matcher2d_id_;
     std::string matcher2d_type_;

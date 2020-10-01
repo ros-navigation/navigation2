@@ -10,7 +10,7 @@
 namespace nav2_localization
 {
 
-bool DiffDriveOdomMotionModel::SampleFrom(	
+bool DiffDriveOdomMotionModelPDF::SampleFrom(	
     BFL::Sample<geometry_msgs::msg::TransformStamped>& one_sample, 	
     const int method,	
     void * args) const	
@@ -68,7 +68,7 @@ bool DiffDriveOdomMotionModel::SampleFrom(
     return true;	
 }
 
-void DiffDriveOdomMotionModel::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
+void DiffDriveOdomMotionModelPDF::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
 {
     node_ = node;
 
@@ -79,21 +79,21 @@ void DiffDriveOdomMotionModel::configure(const rclcpp_lifecycle::LifecycleNode::
     node_->get_parameter("alpha4", alpha4_);
 }
 
-void DiffDriveOdomMotionModel::activate()
+void DiffDriveOdomMotionModelPDF::activate()
 {
 
 }
 
-void DiffDriveOdomMotionModel::deactivate()
+void DiffDriveOdomMotionModelPDF::deactivate()
 {
 
 }
 
-void DiffDriveOdomMotionModel::cleanup()
+void DiffDriveOdomMotionModelPDF::cleanup()
 {
     
 }
 
 } // nav2_localization
 
-PLUGINLIB_EXPORT_CLASS(nav2_localization::DiffDriveOdomMotionModel, nav2_localization::SampleMotionModelPDF)
+PLUGINLIB_EXPORT_CLASS(nav2_localization::DiffDriveOdomMotionModelPDF, nav2_localization::SampleMotionModelPDF)
