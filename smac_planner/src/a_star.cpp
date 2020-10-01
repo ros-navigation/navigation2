@@ -221,13 +221,13 @@ bool AStarAlgorithm<NodeT>::createPath(
   CoordinateVector & path, int & iterations,
   const float & tolerance)
 {
-  if (!areInputsValid()) {
-    return false;
-  }
-
   _tolerance = tolerance * NodeT::neutral_cost;
   _best_heuristic_node = {std::numeric_limits<float>::max(), 0};
   clearQueue();
+
+  if (!areInputsValid()) {
+    return false;
+  }
 
   // 0) Add starting point to the open set
   addNode(0.0, getStart());

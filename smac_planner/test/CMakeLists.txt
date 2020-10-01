@@ -53,13 +53,16 @@ target_link_libraries(test_collision_checker
   ${library_name}
 )
 
-
-
-
-
-
-
-# A*
+# Test A*
+ament_add_gtest(test_a_star
+  test_a_star.cpp
+)
+ament_target_dependencies(test_a_star
+  ${dependencies}
+)
+target_link_libraries(test_a_star
+  ${library_name}
+)
 
 # Test smoother (?)
 
@@ -68,5 +71,3 @@ target_link_libraries(test_collision_checker
 # Test SMAC SE2 : Create instance, give it known costmap, plan
 
 # Test SMAC 2D : Create instance, give it known costmap, plan
-
-# create planning server
