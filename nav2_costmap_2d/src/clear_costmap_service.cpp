@@ -121,6 +121,8 @@ void ClearCostmapService::clearExceptRegion(const double reset_distance)
       clearLayerExceptRegion(costmap_layer, x, y, reset_distance);
     }
   }
+
+  costmap_.updateMap();
 }
 
 void ClearCostmapService::clearAroundRobot(double window_size_x, double window_size_y)
@@ -154,12 +156,14 @@ void ClearCostmapService::clearAroundRobot(double window_size_x, double window_s
   clear_poly.push_back(pt);
 
   costmap_.getCostmap()->setConvexPolygonCost(clear_poly, reset_value_);
+  costmap_.updateMap();
 }
 
 void ClearCostmapService::clearEntirely()
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
   costmap_.resetLayers();
+  costmap_.updateMap();
 }
 
 bool ClearCostmapService::isClearable(const string & layer_name) const
