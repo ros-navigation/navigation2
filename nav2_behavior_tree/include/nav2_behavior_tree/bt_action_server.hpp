@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <set>
 #include <exception>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
