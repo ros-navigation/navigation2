@@ -50,55 +50,17 @@ DummySolver2d::DummySolver2d() {}
 geometry_msgs::msg::TransformStamped DummySolver2d::solve(
 	const geometry_msgs::msg::TransformStamped& curr_odom)
 {
-	/*
-	// STEP 1 - Motion update
-	for(unsigned int i=0; i<pf.n_particles; i++)
-	{
-		pf.particles[i].pose = motionSampler_.getMostLikelyPose(prev_odom, curr_odom, pf.particles[i].pose); // TODO - Substitute 2 odoms for the transformation
-		// NOTE: The motion sampler (for MCL-based localizations) will get each particle's pose. No need to store "previous pose"?
-	}
+	// Motion update with motion sampler and current odometry
+	pf_->Update(motionSampler_, curr_odom);
 
-	// STEP 2 - Weight calculation
-	for(unsigned int i=0; i<pf.n_particles; i++)
-	{
-		pf.particles[i].weight = matcher_.match(scan, pf.particles[i].pose);
-		// NOTE: Send only scan and use scan+map to return most likely pose and compute the weight here??
-		// NOTE: As Steve said, to delegate as much as possible, the weight/score/likelihood could be computed in "match()" and, if needed, refined here
-		// NOTE: Will the weight/score/likelihood work for graph or KF based approaches?
-	}
-
-	// STEP 3 - Resample (using the already updated weights)
-	pf.resample();
-
-	// STEP 4 - Return a most likely pose
-	// TODO - Decide how
-	//   - Pose of particle with best score -> Chosen for now for simplicity
-	//   - Weighted mean of X best scores
-	//   - ???
-
-	float max_weight = 0;
-	int best_particle_idx = -1;	
-	for(unsigned int i=0; i<pf.n_particles; i++)
-	{
-		if(pf.particles[i].weight > max_weight)
-		{
-			max_weight = pf.particles[i].weight;
-			best_particle_idx = i;
-		}
-	}
-	*/
-
-	// TODO - What is the input? Change in X and Y? Build a transformStamped from curr_odom?
-	pf_->Update(motionSampler_, input);
-
-	// TODO - What is the measurement? We use double, shouldnt it be a scan msg?
-	// Should the solver get the measurement as input then?
-	pf_->Update(matcher_, measurement);
+	// Weigths calculation with matcher and measurement
+	pf_->Update(matcher_, matcher_->getLaserScan());
 
 	// Get new particles (in case we want to publish them)
 	samples = pf_->getNewSamples();
 
 	// Returns an estimated pose using all the information contained in the particle filter.
+	// TODO - Add covariance to TransformStamped msg
     BFL::Pdf<geometry_msgs::msg::TransformStamped>* posterior = pf_->PostGet();
     geometry_msgs::msg::TransformStamped pose = posterior->ExpectedValueGet();
     SymmetricMatrix pose_cov = posterior->CovarianceGet();
