@@ -34,6 +34,16 @@ public:
 		const geometry_msgs::msg::TransformStamped& odom,
 		const geometry_msgs::msg::Pose& pose);
 
+	void CreateParticleFilter(
+		unsigned int NUM_SAMPLES,
+		unsigned int STATE_SIZE,
+		float PRIOR_MU_X,
+		float PRIOR_MU_Y,
+		float PRIOR_MU_THETA,
+		float PRIOR_COV_X,
+		float PRIOR_COV_Y,
+		float PRIOR_COV_THETA);
+
 private:
 	CustomParticleFilter* pf_;
 };
