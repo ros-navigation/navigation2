@@ -7,7 +7,7 @@
 
 namespace nav2_localization
 {
-void CreateParticleFilter(unsigned int NUM_SAMPLES, unsigned int STATE_SIZE, float PRIOR_MU_X, float PRIOR_MU_Y, float PRIOR_MU_THETA, float PRIOR_COV_X, float PRIOR_COV_Y, float PRIOR_COV_THETA)
+void DummySolver2d::CreateParticleFilter(unsigned int NUM_SAMPLES, unsigned int STATE_SIZE, float PRIOR_MU_X, float PRIOR_MU_Y, float PRIOR_MU_THETA, float PRIOR_COV_X, float PRIOR_COV_Y, float PRIOR_COV_THETA)
 {
 	/****************************
 	 * Linear prior DENSITY     *
@@ -40,9 +40,7 @@ void CreateParticleFilter(unsigned int NUM_SAMPLES, unsigned int STATE_SIZE, flo
 	/******************************
 	 * Construction of the Filter *
 	 ******************************/
-	filter = new CustomParticleFilter(prior_discr, 0.5, NUM_SAMPLES/4.0);
-
-	return filter;
+	pf_ = new CustomParticleFilter(prior_discr, 0.5, NUM_SAMPLES/4.0);
 }
 
 DummySolver2d::DummySolver2d() {}
