@@ -24,9 +24,9 @@ public:
 
 	void setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr& map);
 
-	void setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan);
+	void setLaserScan(const sensor_msgs::msg::LaserScan::SharedPtr& laser_scan);
 
-	sensor_msgs::msg::LaserScan::ConstSharedPtr getLaserScan();
+	sensor_msgs::msg::LaserScan::SharedPtr getLaserScan();
 
 	void setLaserPose(const geometry_msgs::msg::TransformStamped& laser_pose);
 

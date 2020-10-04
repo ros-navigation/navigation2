@@ -16,6 +16,7 @@
 // Others
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_localization/custom_particle_filter.hpp"
+#include <pdf/mcpdf.h>
 
 namespace nav2_localization
 {
@@ -34,6 +35,10 @@ public:
 		const geometry_msgs::msg::TransformStamped& odom,
 		const geometry_msgs::msg::Pose& pose);
 
+	void activate();
+	void deactivate();
+	void cleanup();
+
 	void CreateParticleFilter(
 		unsigned int NUM_SAMPLES,
 		unsigned int STATE_SIZE,
@@ -46,6 +51,7 @@ public:
 
 private:
 	CustomParticleFilter* pf_;
+	std::shared_ptr<BFL::MCPdf<geometry_msgs::msg::TransformStamped>> prior_discr_;
 };
 } // nav2_localization
 

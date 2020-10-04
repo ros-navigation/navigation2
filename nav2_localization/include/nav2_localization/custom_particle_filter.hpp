@@ -3,11 +3,12 @@
 
 #include <filter/bootstrapfilter.h>
 #include "geometry_msgs/msg/transform_stamped.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
 #include <vector>
 
 namespace nav2_localization
 {
-class CustomParticleFilter : public BFL::BootstrapFilter<geometry_msgs::msg::TransformStamped, double>
+class CustomParticleFilter : public BFL::BootstrapFilter<geometry_msgs::msg::TransformStamped, sensor_msgs::msg::LaserScan>
 {
 public:
 	CustomParticleFilter(

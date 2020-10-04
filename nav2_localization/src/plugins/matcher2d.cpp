@@ -70,13 +70,13 @@ void LikelihoodFieldMatcher2dPDF::setMap(const nav_msgs::msg::OccupancyGrid::Sha
 	map_ = map;
 }
 
-void LikelihoodFieldMatcher2dPDF::setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan)
+void LikelihoodFieldMatcher2dPDF::setLaserScan(const sensor_msgs::msg::LaserScan::SharedPtr& laser_scan)
 {
 	laser_scan_ = laser_scan;
 	preComputeLikelihoodField();	// TODO: is this the best place for this?
 }
 
-sensor_msgs::msg::LaserScan::ConstSharedPtr LikelihoodFieldMatcher2dPDF::getLaserScan()
+sensor_msgs::msg::LaserScan::SharedPtr LikelihoodFieldMatcher2dPDF::getLaserScan()
 {
 	return laser_scan_;
 }
