@@ -15,7 +15,8 @@ LocalizationServer::LocalizationServer()
   matcher2d_loader_("nav2_localization", "nav2_localization::Matcher2dPDF"),
   default_matcher2d_id_("LikelihoodFieldMatcher2dPDF"),
   solver_loader_("nav2_localization", "nav2_localization::Solver"),
-  default_solver_id_("DummySolver")
+  default_solver_id_("DummySolver"),
+  default_types_{"nav2_localization::DiffDriveOdomMotionModelPDF", "nav2_localization::LikelihoodFieldMatcher2dPDF", "nav2_localization::DummySolver"}
 {
     RCLCPP_INFO(get_logger(), "Creating localization server");
 
@@ -27,6 +28,7 @@ LocalizationServer::LocalizationServer()
     declare_parameter("base_frame_id", "base_link");
     declare_parameter("map_frame_id", "map");
     declare_parameter("tansform_tolerance", 0.0);
+    declare_parameter("localization_plugins", default_ids_);
 }
 
 LocalizationServer::~LocalizationServer()
@@ -162,6 +164,13 @@ LocalizationServer::initPlugins()
 {
     auto node = shared_from_this();
 
+    get_parameter("localization_plugins", localization_ids_);
+    if (localization_ids_ == default_ids_) {
+        for (size_t i = 0; i < default_ids_.size(); ++i) {
+            declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
+        }
+    }
+
     try {
         sample_motion_model_type_ = nav2_util::get_plugin_type_param(node, sample_motion_model_id_);
         sample_motion_model_ = sample_motion_model_loader_.createUniqueInstance(sample_motion_model_type_);
@@ -174,7 +183,7 @@ LocalizationServer::initPlugins()
 
     try {
         matcher2d_type_ = nav2_util::get_plugin_type_param(node, matcher2d_id_);
-        matcher2d_ = matcher2d_loader_.createUniqueInstance(sample_motion_model_type_);
+        matcher2d_ = matcher2d_loader_.createUniqueInstance(matcher2d_type_);
     } catch (const pluginlib::PluginlibException & ex) {
         RCLCPP_FATAL(get_logger(), "Failed to create matcher2d. Exception: %s", ex.what());
         exit(-1);

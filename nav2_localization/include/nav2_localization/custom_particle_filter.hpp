@@ -3,6 +3,7 @@
 
 #include <filter/bootstrapfilter.h>
 #include "geometry_msgs/msg/transform_stamped.hpp"
+#include <vector>
 
 namespace nav2_localization
 {
@@ -15,7 +16,7 @@ public:
 		double resamplethreshold = 0,
 		int resamplescheme = DEFAULT_RS);
 
-	vector<WeightedSample<geometry_msgs::msg::TransformStamped>> getNewSamples();
+	std::vector<BFL::WeightedSample<geometry_msgs::msg::TransformStamped>> getNewSamples();
 
 };
 } // nav2_localization

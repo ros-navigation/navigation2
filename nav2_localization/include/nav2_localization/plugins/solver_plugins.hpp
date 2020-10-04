@@ -3,15 +3,15 @@
 
 // Interfaces
 #include "nav2_localization/interfaces/solver_base.hpp"
-#include "nav2_localization/interfaces/motion_model_base.hpp"
+#include "nav2_localization/interfaces/sample_motion_model_base.hpp"
 #include "nav2_localization/interfaces/matcher2d_base.hpp"
 
 // Types
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose.hpp"
-#include "sensor_msgs/msg/LaserScan.hpp"
-#include "nav_msgs/msg/OccupancyGrid.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 // Others
 #include "rclcpp_lifecycle/lifecycle_node.hpp"

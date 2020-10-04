@@ -66,11 +66,32 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
+add_library(sample_motion_model SHARED src/plugins/sample_motion_model.cpp)
+ament_target_dependencies(sample_motion_model ${dependencies})
+
+add_library(matcher2d SHARED src/plugins/matcher2d.cpp)
+ament_target_dependencies(matcher2d ${dependencies})
+
+add_library(solver SHARED src/plugins/solver.cpp)
+ament_target_dependencies(solver ${dependencies})
+
 link_directories(${BFL_LIBRARY_DIRS})
 
-add_library(sample_motion_model src/plugins/sample_motion_model.cpp)
+install(TARGETS sample_motion_model matcher2d #solver
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin
+)
 
-ament_target_dependencies(sample_motion_model ${dependencies})
+install(
+  TARGETS ${executable_name}
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  FILES plugins.xml
+  DESTINATION share/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -82,16 +103,6 @@ if(BUILD_TESTING)
   #set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
-
-install(
-  TARGETS ${executable_name}
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
-  FILES plugins.xml
-  DESTINATION share/${PROJECT_NAME}
-)
 
 ament_export_include_directories(include)
 ament_export_dependencies(${dependencies})

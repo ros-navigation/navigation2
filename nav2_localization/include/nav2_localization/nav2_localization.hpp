@@ -124,6 +124,10 @@ protected:
     std::string solver_id_;
     std::string solver_type_;
 
+    std::vector<std::string> default_ids_;
+    std::vector<std::string> default_types_;
+    std::vector<std::string> localization_ids_;
+
     // Publishers and Subscribers
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
     initial_pose_sub_;

@@ -65,7 +65,7 @@ void LikelihoodFieldMatcher2dPDF::cleanup()
 
 }
 
-void LikelihoodFieldMatcher2dPDF::setMap(nav_msgs::msg::OccupancyGrid::SharedPtr& map)
+void LikelihoodFieldMatcher2dPDF::setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr& map)
 {
 	map_ = map;
 }

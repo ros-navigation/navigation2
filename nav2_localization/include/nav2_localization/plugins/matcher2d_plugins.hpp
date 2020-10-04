@@ -22,7 +22,7 @@ public:
 
 	void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node);
 
-	void setMap(nav_msgs::msg::OccupancyGrid::SharedPtr& map);
+	void setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr& map);
 
 	void setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan);
 
