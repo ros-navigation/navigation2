@@ -132,7 +132,7 @@ WaypointFollower::followWaypoints()
     return;
   }
 
-  rclcpp::GenericRate<std::chrono::steady_clock> r(loop_rate_);
+  rclcpp::WallRate r(loop_rate_);
   uint32_t goal_index = 0;
   bool new_goal = true;
 

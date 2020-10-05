@@ -197,7 +197,7 @@ protected:
     // Initialize the ActionT result
     auto result = std::make_shared<typename ActionT::Result>();
 
-    rclcpp::GenericRate<std::chrono::steady_clock> loop_rate(cycle_frequency_);
+    rclcpp::WallRate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
       if (action_server_->is_cancel_requested()) {
