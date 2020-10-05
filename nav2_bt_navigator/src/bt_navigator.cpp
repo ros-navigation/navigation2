@@ -16,7 +16,6 @@
 
 #include <fstream>
 #include <memory>
-#include <streambuf>
 #include <string>
 #include <utility>
 #include <vector>
@@ -52,7 +51,7 @@ BtNavigator::BtNavigator()
     "nav2_distance_controller_bt_node",
     "nav2_speed_controller_bt_node",
     "nav2_truncate_path_action_bt_node",
-    "nav2_change_goal_node_bt_node",
+    "nav2_goal_updater_node_bt_node",
     "nav2_recovery_node_bt_node",
     "nav2_pipeline_sequence_bt_node",
     "nav2_round_robin_node_bt_node",
@@ -72,7 +71,6 @@ BtNavigator::BtNavigator()
 
 BtNavigator::~BtNavigator()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn
@@ -108,7 +106,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_clock_interface(),
     get_node_logging_interface(),
     get_node_waitables_interface(),
-    "navigate_to_pose", std::bind(&BtNavigator::navigateToPose, this), false);
+    "navigate_to_pose", std::bind(&BtNavigator::navigateToPose, this));
 
   // Get the libraries to pull plugins from
   plugin_lib_names_ = get_parameter("plugin_lib_names").as_string_array();
@@ -126,17 +124,11 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
-  blackboard_->set<bool>("path_updated", false);  // NOLINT
   blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
   blackboard_->set<int>("number_recoveries", 0);  // NOLINT
 
   // Get the BT filename to use from the node parameter
   get_parameter("default_bt_xml_filename", default_bt_xml_filename_);
-
-  if (!loadBehaviorTree(default_bt_xml_filename_)) {
-    RCLCPP_ERROR(get_logger(), "Error loading XML file: %s", default_bt_xml_filename_.c_str());
-    return nav2_util::CallbackReturn::FAILURE;
-  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -176,7 +168,15 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
+  if (!loadBehaviorTree(default_bt_xml_filename_)) {
+    RCLCPP_ERROR(get_logger(), "Error loading XML file: %s", default_bt_xml_filename_.c_str());
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
   action_server_->activate();
+
+  // create bond connection
+  createBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -187,6 +187,9 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   action_server_->deactivate();
+
+  // destroy bond connection
+  destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -246,7 +249,7 @@ BtNavigator::navigateToPose()
   auto bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
 
   // Empty id in request is default for backward compatibility
-  bt_xml_filename = bt_xml_filename == "" ? default_bt_xml_filename_ : bt_xml_filename;
+  bt_xml_filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
 
   if (!loadBehaviorTree(bt_xml_filename)) {
     RCLCPP_ERROR(
@@ -323,7 +326,7 @@ BtNavigator::initializeGoalPose()
   blackboard_->set<int>("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard_->set("goal", goal->pose);
+  blackboard_->set<geometry_msgs::msg::PoseStamped>("goal", goal->pose);
 }
 
 void

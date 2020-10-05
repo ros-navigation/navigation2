@@ -63,7 +63,9 @@ ControllerServer::ControllerServer()
 
 ControllerServer::~ControllerServer()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
+  progress_checker_.reset();
+  goal_checker_.reset();
+  controllers_.clear();
 }
 
 nav2_util::CallbackReturn
@@ -94,6 +96,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
         rclcpp::ParameterValue(default_types_[i]));
     }
   }
+
   controller_types_.resize(controller_ids_.size());
 
   get_parameter("controller_frequency", controller_frequency_);
@@ -180,6 +183,9 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & state)
   vel_publisher_->on_activate();
   action_server_->activate();
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -197,6 +203,9 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & state)
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
+
+  // destroy bond connection
+  destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -392,10 +401,7 @@ void ControllerServer::updateGlobalPath()
 void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)
 {
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>(velocity.twist);
-  if (
-    vel_publisher_->is_activated() &&
-    this->count_subscribers(vel_publisher_->get_topic_name()) > 0)
-  {
+  if (vel_publisher_->is_activated() && vel_publisher_->get_subscription_count() > 0) {
     vel_publisher_->publish(std::move(cmd_vel));
   }
 }

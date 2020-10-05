@@ -59,6 +59,7 @@ if(BUILD_TESTING)
   add_subdirectory(src/recoveries/spin)
   add_subdirectory(src/recoveries/wait)
   add_subdirectory(src/recoveries/backup)
+  add_subdirectory(src/costmap_filters)
   install(DIRECTORY maps DESTINATION share/${PROJECT_NAME})
 
 endif()

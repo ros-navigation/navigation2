@@ -47,6 +47,12 @@ LifecycleNode::LifecycleNode(
 : rclcpp_lifecycle::LifecycleNode(node_name, namespace_, options),
   use_rclcpp_node_(use_rclcpp_node)
 {
+  // server side never times out from lifecycle manager
+  this->declare_parameter(bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true);
+  this->set_parameter(
+    rclcpp::Parameter(
+      bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true));
+
   if (use_rclcpp_node_) {
     std::vector<std::string> new_args = options.arguments();
     new_args.push_back("--ros-args");
@@ -57,17 +63,42 @@ LifecycleNode::LifecycleNode(
       "_", namespace_, rclcpp::NodeOptions(options).arguments(new_args));
     rclcpp_thread_ = std::make_unique<NodeThread>(rclcpp_node_);
   }
+
   print_lifecycle_node_notification();
 }
 
 LifecycleNode::~LifecycleNode()
 {
+  RCLCPP_INFO(get_logger(), "Destroying");
   // In case this lifecycle node wasn't properly shut down, do it here
   if (get_current_state().id() ==
     lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
     on_deactivate(get_current_state());
     on_cleanup(get_current_state());
+  }
+}
+
+void LifecycleNode::createBond()
+{
+  RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", this->get_name());
+
+  bond_ = std::make_unique<bond::Bond>(
+    std::string("bond"),
+    this->get_name(),
+    shared_from_this());
+
+  bond_->setHeartbeatPeriod(0.10);
+  bond_->setHeartbeatTimeout(4.0);
+  bond_->start();
+}
+
+void LifecycleNode::destroyBond()
+{
+  RCLCPP_INFO(get_logger(), "Destroying bond (%s) to lifecycle manager.", this->get_name());
+
+  if (bond_) {
+    bond_.reset();
   }
 }
 

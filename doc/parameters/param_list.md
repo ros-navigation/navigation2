@@ -42,7 +42,7 @@ Namespace: /parent_ns/local_ns
 | update_frequency | 5.0 | Costmap update frequency |
 | use_maximum | false | whether when combining costmaps to use the maximum cost or override |
 | plugins | {"static_layer", "obstacle_layer", "inflation_layer"} | List of mapped plugin names for parameter namespaces and names |
-| clearable_layers | ["obstacle_layer"] | Layers that may be cleared using the clearing service |
+| clearable_layers | ["obstacle_layer", "voxel_layer", "range_layer"] | Layers that may be cleared using the clearing service |
 
 **NOTE:** When `plugins` parameter is overridden, each plugin namespace defined in the list needs to have a `plugin` parameter defining the type of plugin to be loaded in the namespace.
 
@@ -72,7 +72,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## static_layer plugin
 
-* `<static layer>`: Name corresponding to the `nav2_costmap_2d::StaticLayer` plugin. This name gets defined in `plugin_names`, default value is `static_layer`
+* `<static layer>`: Name corresponding to the `nav2_costmap_2d::StaticLayer` plugin. This name gets defined in `plugins`, default value is `static_layer`
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -84,7 +84,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## inflation_layer plugin
 
-* `<inflation layer>`: Name corresponding to the `nav2_costmap_2d::InflationLayer` plugin. This name gets defined in `plugin_names`, default value is `inflation_layer`
+* `<inflation layer>`: Name corresponding to the `nav2_costmap_2d::InflationLayer` plugin. This name gets defined in `plugins`, default value is `inflation_layer`
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -96,7 +96,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## obstacle_layer plugin
 
-* `<obstacle layer>`: Name corresponding to the `nav2_costmap_2d::ObstacleLayer` plugin. This name gets defined in `plugin_names`, default value is `obstacle_layer`
+* `<obstacle layer>`: Name corresponding to the `nav2_costmap_2d::ObstacleLayer` plugin. This name gets defined in `plugins`, default value is `obstacle_layer`
 * `<data source>`: Name of a source provided in ``<obstacle layer>`.observation_sources`
 
 | Parameter | Default | Description |
@@ -121,7 +121,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## range_sensor_layer plugin
 
-* `<range layer>`: Name corresponding to the `nav2_costmap_2d::RangeSensorLayer` plugin. This name gets defined in `plugin_names`.
+* `<range layer>`: Name corresponding to the `nav2_costmap_2d::RangeSensorLayer` plugin. This name gets defined in `plugins`.
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -137,10 +137,10 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## voxel_layer plugin
 
-* `<voxel layer>`: Name corresponding to the `nav2_costmap_2d::VoxelLayer` plugin. This name gets defined in `plugin_names`
+* `<voxel layer>`: Name corresponding to the `nav2_costmap_2d::VoxelLayer` plugin. This name gets defined in `plugins`
 * `<data source>`: Name of a source provided in `<voxel layer>`.observation_sources`
 
-*Note*: These parameters will only get declared if a `<voxel layer>` name such as `voxel_layer` is appended to `plugin_names` parameter and `"nav2_costmap_2d::VoxelLayer"` is appended to `plugin_types` parameter.
+*Note*: These parameters will only get declared if a `<voxel layer>` name such as `voxel_layer` is appended to `plugins` parameter and `"nav2_costmap_2d::VoxelLayer"` is appended to its `plugin` name parameter.
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -167,6 +167,15 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | `<data source>`.clearing | false | Whether source should raytrace clear in costmap |
 | `<data source>`.obstacle_range | 2.5 | Maximum range to mark obstacles in costmap |
 | `<data source>`.raytrace_range | 3.0 | Maximum range to raytrace clear obstacles from costmap | 
+
+## keepout filter
+
+* `<filter name>`: Name corresponding to the `nav2_costmap_2d::KeepoutFilter` plugin. This name gets defined in `plugins`.
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<filter name>`.enabled | true | Whether it is enabled |
+| `<filter name>`.filter_info_topic | N/A | Name of the CostmapFilterInfo topic having filter-related information |
 
 # controller_server
 
@@ -419,16 +428,18 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 | ----------| --------| ------------|
 | node_names | N/A | Ordered list of node names to bringup through lifecycle transition |
 | autostart | false | Whether to transition nodes to active state on startup |
+| bond_timeout_ms | 4000 | Timeout for bond to fail if no heartbeat can be found, in milliseconds. If set to 0, it will be disabled. Must be larger than 300ms for stable bringup. |
 
 # map_server
 
-## map_server
+## map_saver
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | save_map_timeout | 2000 | Timeout to attempt to save map with (ms) |
 | free_thresh_default | 0.25 | Free space maximum threshold for occupancy grid |
 | occupied_thresh_default | 0.65 | Occupied space minimum threshhold for occupancy grid |
+| map_subscribe_transient_local | true | Use transient local QoS profile for incoming map subscription |
 
 ## map_server
 
@@ -479,16 +490,6 @@ When `planner_plugins` parameter is not overridden, the following default plugin
 | ----------| --------| ------------|
 | stop_on_failure | true | Whether to fail action task if a single waypoint fails. If false, will continue to next waypoint. |
 | loop_rate | 20 | Rate to check for results from current navigation task |
-| waypoint_task_executor_plugin | `WaitAtWaypoint` | Name of plugin to be loaded for executing waypoint tasks.|
-
-## waypoint_task_executor plugin
-
-* `<waypoint task executor>`: Name corresponding to the `nav2_waypoint_follower::WaitAtWaypoint` plugin. 
-
-| Parameter | Default | Description |
-| ----------| --------| ------------|
-| `<waypoint task executor>`.enabled | true | Whether it is enabled |
-| `<waypoint task executor>`.waypoint_pause_duration | 0 | Amount of time in milliseconds, for robot to sleep/wait after each waypoint is reached. If zero, robot will directly continue to next waypoint. |
 
 # recoveries
 
@@ -639,8 +640,7 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |
-| position | N/A | Position |
-| orientation | N/A | Orientation |
+| goal | N/A | Goal |
 | server_name | N/A | Action server name |
 | server_timeout | 10 | Action server timeout (ms) |
 
@@ -677,6 +677,14 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 
 ## Conditions
 
+### BT Node DistanceTraveled
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| distance | 1.0 | Distance in meters after which the node should return success |
+| global_frame | "map" | Reference frame |
+| robot_base_frame | "base_link" | Robot base frame |
+
 ### BT Node GoalReached
 
 | Input Port | Default | Description |
@@ -685,7 +693,21 @@ When `recovery_plugins` parameter is not overridden, the following default plugi
 | global_frame | "map" | Reference frame |
 | robot_base_frame | "base_link" | Robot base frame |
 
-### BT Node TransformAvailable (condition)
+### BT Node IsBatteryLow
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| min_battery | N/A | Minimum battery percentage/voltage |
+| battery_topic | "/battery_status" | Battery topic |
+| is_voltage | false | If true voltage will be used to check for low battery |
+
+### BT Node TimeExpired
+
+| Input Port | Default | Description |
+| ---------- | ------- | ----------- |
+| seconds | 1.0 | Number of seconds after which node returns success |
+
+### BT Node TransformAvailable
 
 | Input Port | Default | Description |
 | ---------- | ------- | ----------- |

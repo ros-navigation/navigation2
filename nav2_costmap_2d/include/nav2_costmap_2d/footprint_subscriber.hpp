@@ -29,20 +29,12 @@ class FootprintSubscriber
 {
 public:
   FootprintSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    const nav2_util::LifecycleNode::WeakPtr & parent,
     const std::string & topic_name,
     const double & footprint_timeout);
 
   FootprintSubscriber(
-    rclcpp::Node::SharedPtr node,
-    const std::string & topic_name,
-    const double & footprint_timeout);
-
-  FootprintSubscriber(
-    const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
-    const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
-    const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
-    const rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock,
+    const rclcpp::Node::WeakPtr & parent,
     const std::string & topic_name,
     const double & footprint_timeout);
 
@@ -61,11 +53,7 @@ public:
     rclcpp::Time & stamp, rclcpp::Duration valid_footprint_timeout);
 
 protected:
-  // Interfaces used for logging and creating publishers and subscribers
-  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_;
-  rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics_;
-  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_;
-  rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_;
+  rclcpp::Clock::SharedPtr clock_;
 
   void footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg);
 

@@ -17,13 +17,11 @@
   <depend>nav_msgs</depend>
   <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
-  <depend>nav2_core</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
-    <nav2_waypoint_follower plugin="${prefix}/plugins.xml" />
   </export>
 </package>

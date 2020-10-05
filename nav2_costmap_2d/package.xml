@@ -19,7 +19,6 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
 
-  <depend>angles</depend>
   <depend>geometry_msgs</depend>
   <depend>laser_geometry</depend>
   <depend>map_msgs</depend>
@@ -38,6 +37,7 @@
   <depend>tf2_ros</depend>
   <depend>tf2_sensor_msgs</depend>
   <depend>visualization_msgs</depend>
+  <depend>angles</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

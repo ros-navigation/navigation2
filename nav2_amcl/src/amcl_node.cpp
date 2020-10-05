@@ -225,7 +225,6 @@ AmclNode::AmclNode()
 
 AmclNode::~AmclNode()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn
@@ -304,6 +303,9 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
     handleInitialPose(last_published_pose_);
   }
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -318,6 +320,9 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   pose_pub_->on_deactivate();
   particlecloud_pub_->on_deactivate();
   particle_cloud_pub_->on_deactivate();
+
+  // destroy bond connection
+  destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

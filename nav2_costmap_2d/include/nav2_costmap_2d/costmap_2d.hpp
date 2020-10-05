@@ -48,6 +48,7 @@
 #include <queue>
 #include <mutex>
 #include "geometry_msgs/msg/point.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -86,6 +87,12 @@ public:
    * @param map The costmap to copy
    */
   Costmap2D(const Costmap2D & map);
+
+  /**
+   * @brief  Constructor for a costmap from an OccupancyGrid map
+   * @param  map The OccupancyGrid map to create costmap from
+   */
+  Costmap2D(const nav_msgs::msg::OccupancyGrid & map);
 
   /**
    * @brief  Overloaded assignment operator

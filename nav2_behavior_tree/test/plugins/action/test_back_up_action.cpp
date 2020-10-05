@@ -55,7 +55,6 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "server_timeout",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("path_updated", false);
     config_->blackboard->set<bool>("initial_pose_received", false);
     config_->blackboard->set<int>("number_recoveries", 0);
 
@@ -142,7 +141,12 @@ TEST_F(BackUpActionTestFixture, test_tick)
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
+
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
+    tree_->rootNode()->executeTick();
+  }
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
 
   auto goal = action_server_->getCurrentGoal();

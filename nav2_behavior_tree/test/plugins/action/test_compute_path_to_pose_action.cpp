@@ -66,7 +66,6 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "server_timeout",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("path_updated", false);
     config_->blackboard->set<bool>("initial_pose_received", false);
 
     BT::NodeBuilder builder =
@@ -129,20 +128,16 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick)
   goal.pose.position.x = 1.0;
   config_->blackboard->set("goal", goal);
 
-  // first tick should send the goal to our server
-  EXPECT_EQ(config_->blackboard->get<bool>("path_updated"), false);
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
-  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
-  EXPECT_EQ(action_server_->getCurrentGoal()->pose.pose.position.x, 1.0);
-  EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
-
   // tick until node succeeds
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
 
-  // not set to true after the first goal
-  EXPECT_EQ(config_->blackboard->get<bool>("path_updated"), false);
+  // the goal should have reached our server
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
+  EXPECT_EQ(action_server_->getCurrentGoal()->pose.pose.position.x, 1.0);
+  EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
 
   // check if returned path is correct
   nav_msgs::msg::Path path;
@@ -158,15 +153,12 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick)
   goal.pose.position.x = -2.5;
   config_->blackboard->set("goal", goal);
 
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
-  EXPECT_EQ(action_server_->getCurrentGoal()->pose.pose.position.x, -2.5);
-
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
 
-  // path is updated on new goal
-  EXPECT_EQ(config_->blackboard->get<bool>("path_updated"), true);
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(action_server_->getCurrentGoal()->pose.pose.position.x, -2.5);
 
   config_->blackboard->get<nav_msgs::msg::Path>("path", path);
   EXPECT_EQ(path.poses.size(), 1u);
