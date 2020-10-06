@@ -1,0 +1,2 @@
+ament_add_gtest(2d_utils_test 2d_utils_test.cpp)
+target_link_libraries(2d_utils_test conversions)
