@@ -159,7 +159,7 @@ WaypointFollower::followWaypoints()
     return;
   }
 
-  rclcpp::Rate r(loop_rate_);
+  rclcpp::WallRate r(loop_rate_);
   uint32_t goal_index = 0;
   bool new_goal = true;
 
