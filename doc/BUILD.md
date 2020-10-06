@@ -64,12 +64,14 @@ e.g- ros2-distro-name = dashing
 $ colcon build --symlink-install
 ```
 
-### 2.4 Quick test
+### 2.5 Quick test
+```console
 $ source ~/navigation2_ws/install/setup.bash
 $ source ~/turtlebot3_ws/install/setup.bash
 $ export TURTLEBOT3_MODEL=waffle
 $ export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/models
 $ ros2 launch nav2_bringup nav2_tb3_simulation_launch.py 
+```
 
 ## 3. Conclusion
 After installation of **Navigation2** and required dependencies, test **Navigation2** by following steps in [nav2_bringup README](../nav2_bringup/bringup/README.md)
