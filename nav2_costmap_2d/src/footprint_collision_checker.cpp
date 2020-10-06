@@ -39,7 +39,7 @@ FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker()
 
 template<typename CostmapT>
 FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker(
-  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap)
+  CostmapT costmap)
 : costmap_(costmap)
 {
 }
@@ -114,7 +114,7 @@ double FootprintCollisionChecker<CostmapT>::pointCost(int x, int y) const
 }
 
 template<typename CostmapT>
-void FootprintCollisionChecker<CostmapT>::setCostmap(std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap)
+void FootprintCollisionChecker<CostmapT>::setCostmap(CostmapT costmap)
 {
   costmap_ = costmap;
 }
