@@ -37,7 +37,7 @@ void WaitAtWaypoint::initialize(
 {
   auto node = parent.lock();
   if (!node) {
-    throw std::runtime_error{"Failed to lock node  in wait at waypoint plugin!"};
+    throw std::runtime_error{"Failed to lock node in wait at waypoint plugin!"};
   }
   logger_ = node->get_logger();
   nav2_util::declare_parameter_if_not_declared(
@@ -69,7 +69,7 @@ bool WaitAtWaypoint::processAtWaypoint(
   const geometry_msgs::msg::PoseStamped & /*curr_pose*/, const int & curr_waypoint_index)
 {
   if (!is_enabled_) {
-    return false;
+    return true;
   }
   RCLCPP_INFO(
     logger_, "Arrived at %i'th waypoint, sleeping for %i milliseconds",

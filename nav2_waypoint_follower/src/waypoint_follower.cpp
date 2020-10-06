@@ -227,7 +227,22 @@ WaypointFollower::followWaypoints()
         goal->poses[goal_index], goal_index);
       RCLCPP_INFO(
         get_logger(), "Task execution at waypoint %i %s", goal_index,
-        is_task_executed ? "succeeded" : "failed!", "moving to the next");
+        is_task_executed ? "succeeded" : "failed!");
+      // if task execution was failed and stop_on_failure_ is on , terminate action
+      if ((is_task_executed == false) && (stop_on_failure_ == true)) {
+        RCLCPP_WARN(
+          get_logger(), "Failed to execute task at waypoint %i "
+          " stop on failure is enabled."
+          " Terminating action.", goal_index);
+        result->missed_waypoints = failed_ids_;
+        action_server_->terminate_current(result);
+        failed_ids_.clear();
+        return;
+      } else {
+        RCLCPP_INFO(
+          get_logger(), "Handled task execution on waypoint %i,"
+          " moving to next.", goal_index);
+      }
     }
 
     if (current_goal_status_ != ActionStatus::PROCESSING &&
