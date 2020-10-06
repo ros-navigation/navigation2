@@ -31,18 +31,21 @@ using namespace std::chrono_literals;
 namespace nav2_costmap_2d
 {
 
-FootprintCollisionChecker::FootprintCollisionChecker()
+template<typename CostmapT>
+FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker()
 : costmap_(nullptr)
 {
 }
 
-FootprintCollisionChecker::FootprintCollisionChecker(
+template<typename CostmapT>
+FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker(
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap)
 : costmap_(costmap)
 {
 }
 
-double FootprintCollisionChecker::footprintCost(const Footprint footprint)
+template<typename CostmapT>
+double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint footprint)
 {
   // now we really have to lay down the footprint in the costmap_ grid
   unsigned int x0, x1, y0, y1;
@@ -80,7 +83,8 @@ double FootprintCollisionChecker::footprintCost(const Footprint footprint)
   return footprint_cost;
 }
 
-double FootprintCollisionChecker::lineCost(int x0, int x1, int y0, int y1) const
+template<typename CostmapT>
+double FootprintCollisionChecker<CostmapT>::lineCost(int x0, int x1, int y0, int y1) const
 {
   double line_cost = 0.0;
   double point_cost = -1.0;
@@ -96,23 +100,27 @@ double FootprintCollisionChecker::lineCost(int x0, int x1, int y0, int y1) const
   return line_cost;
 }
 
-bool FootprintCollisionChecker::worldToMap(
+template<typename CostmapT>
+bool FootprintCollisionChecker<CostmapT>::worldToMap(
   double wx, double wy, unsigned int & mx, unsigned int & my)
 {
   return costmap_->worldToMap(wx, wy, mx, my);
 }
 
-double FootprintCollisionChecker::pointCost(int x, int y) const
+template<typename CostmapT>
+double FootprintCollisionChecker<CostmapT>::pointCost(int x, int y) const
 {
   return costmap_->getCost(x, y);
 }
 
-void FootprintCollisionChecker::setCostmap(std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap)
+template<typename CostmapT>
+void FootprintCollisionChecker<CostmapT>::setCostmap(std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap)
 {
   costmap_ = costmap;
 }
 
-double FootprintCollisionChecker::footprintCostAtPose(
+template<typename CostmapT>
+double FootprintCollisionChecker<CostmapT>::footprintCostAtPose(
   double x, double y, double theta, const Footprint footprint)
 {
   double cos_th = cos(theta);
@@ -127,5 +135,9 @@ double FootprintCollisionChecker::footprintCostAtPose(
 
   return footprintCost(oriented_footprint);
 }
+
+// declare our valid template parameters
+template class FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>;
+template class FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>;
 
 }  // namespace nav2_costmap_2d

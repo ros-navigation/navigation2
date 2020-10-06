@@ -133,6 +133,14 @@ public:
   unsigned char getCost(unsigned int mx, unsigned int my) const;
 
   /**
+   * @brief  Get the cost of a cell in the costmap
+   * @param mx The x coordinate of the cell
+   * @param my The y coordinate of the cell
+   * @return The cost of the cell
+   */
+  unsigned char getCost(unsigned int index) const;
+
+  /**
    * @brief  Set the cost of a cell in the costmap
    * @param mx The x coordinate of the cell
    * @param my The y coordinate of the cell

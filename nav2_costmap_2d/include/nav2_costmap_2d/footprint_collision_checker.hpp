@@ -32,6 +32,7 @@ namespace nav2_costmap_2d
 {
 typedef std::vector<geometry_msgs::msg::Point> Footprint;
 
+ template<typename CostmapT>
 class FootprintCollisionChecker
 {
 public:
@@ -45,7 +46,7 @@ public:
   void setCostmap(std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap);
 
 private:
-  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
+  CostmapT costmap_;
 };
 
 }  // namespace nav2_costmap_2d

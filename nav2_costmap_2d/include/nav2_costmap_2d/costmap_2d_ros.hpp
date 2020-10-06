@@ -248,6 +248,8 @@ public:
 
   std::shared_ptr<tf2_ros::Buffer> getTfBuffer() {return tf_buffer_;}
 
+  bool getUseRadius() {return use_radius_;}
+
 protected:
   rclcpp::Node::SharedPtr client_node_;
 
