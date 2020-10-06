@@ -112,19 +112,6 @@ Layer::hasParameter(const std::string & param_name)
   return node->has_parameter(getFullName(param_name));
 }
 
-void
-Layer::undeclareAllParameters()
-{
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-  for (auto & param_name : local_params_) {
-    node->undeclare_parameter(getFullName(param_name));
-  }
-  local_params_.clear();
-}
-
 std::string
 Layer::getFullName(const std::string & param_name)
 {

@@ -73,54 +73,6 @@ ObservationBuffer::~ObservationBuffer()
 {
 }
 
-bool ObservationBuffer::setGlobalFrame(const std::string new_global_frame)
-{
-  rclcpp::Time transform_time = clock_->now();
-  std::string tf_error;
-
-  geometry_msgs::msg::TransformStamped transformStamped;
-  if (!tf2_buffer_.canTransform(
-      new_global_frame, global_frame_, tf2_ros::fromMsg(transform_time),
-      tf2::durationFromSec(tf_tolerance_), &tf_error))
-  {
-    RCLCPP_ERROR(
-      logger_, "Transform between %s and %s with tolerance %.2f failed: %s.",
-      new_global_frame.c_str(),
-      global_frame_.c_str(), tf_tolerance_, tf_error.c_str());
-    return false;
-  }
-
-  std::list<Observation>::iterator obs_it;
-  for (obs_it = observation_list_.begin(); obs_it != observation_list_.end(); ++obs_it) {
-    try {
-      Observation & obs = *obs_it;
-
-      geometry_msgs::msg::PointStamped origin;
-      origin.header.frame_id = global_frame_;
-      origin.header.stamp = transform_time;
-      origin.point = obs.origin_;
-
-      // we need to transform the origin of the observation to the new global frame
-      tf2_buffer_.transform(origin, origin, new_global_frame, tf2::durationFromSec(tf_tolerance_));
-      obs.origin_ = origin.point;
-
-      // we also need to transform the cloud of the observation to the new global frame
-      tf2_buffer_.transform(
-        *(obs.cloud_), *(obs.cloud_), new_global_frame, tf2::durationFromSec(tf_tolerance_));
-    } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR(
-        logger_, "TF Error attempting to transform an observation from %s to %s: %s",
-        global_frame_.c_str(),
-        new_global_frame.c_str(), ex.what());
-      return false;
-    }
-  }
-
-  // now we need to update our global_frame member
-  global_frame_ = new_global_frame;
-  return true;
-}
-
 void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
 {
   geometry_msgs::msg::PointStamped global_origin;
