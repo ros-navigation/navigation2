@@ -222,7 +222,6 @@ WaypointFollower::followWaypoints()
       RCLCPP_INFO(
         get_logger(), "Succeeded processing waypoint %i, processing waypoint task execution",
         goal_index);
-      auto node = shared_from_this();
       bool is_task_executed = waypoint_task_executor_->processAtWaypoint(
         goal->poses[goal_index], goal_index);
       RCLCPP_INFO(
