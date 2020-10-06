@@ -320,7 +320,9 @@ NavfnPlanner::getPlanFromPotential(
 
   planner_->setStart(map_goal);
 
-  int path_len = planner_->calcPath((costmap_->getSizeInCellsX() >= costmap_->getSizeInCellsY()) ? (costmap_->getSizeInCellsX() * 4) : (costmap_->getSizeInCellsY() * 4));
+  const int& max_cycles = (costmap_->getSizeInCellsX() >= costmap_->getSizeInCellsY()) ? (costmap_->getSizeInCellsX() * 4) : (costmap_->getSizeInCellsY() * 4);
+
+  int path_len = planner_->calcPath(max_cycles);
   if (path_len == 0) {
     return false;
   }
