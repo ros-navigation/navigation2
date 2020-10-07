@@ -166,7 +166,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | `<data source>`.marking | true | Whether source should mark in costmap |
 | `<data source>`.clearing | false | Whether source should raytrace clear in costmap |
 | `<data source>`.obstacle_range | 2.5 | Maximum range to mark obstacles in costmap |
-| `<data source>`.raytrace_range | 3.0 | Maximum range to raytrace clear obstacles from costmap | 
+| `<data source>`.raytrace_range | 3.0 | Maximum range to raytrace clear obstacles from costmap |
 
 ## keepout filter
 
@@ -285,7 +285,7 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 | `<dwb plugin>`.`<name>`.x_only_threshold | 0.05 | Threshold to check in the X velocity direction |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | Weighed scale for critic |
 
-## kinematic_parameters 
+## kinematic_parameters
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -304,7 +304,7 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 | `<dwb plugin>`.decel_lim_y | 0.0 | Maximum deceleration Y (m/s^2) |
 | `<dwb plugin>`.decel_lim_theta | 0.0 | Maximum deceleration rotation (rad/s^2) |
 
-## xy_theta_iterator 
+## xy_theta_iterator
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -505,6 +505,7 @@ When `planner_plugins` parameter is not overridden, the following default plugin
 | `<name>`.change_penalty | 0.5 | Penalty to apply to SE2 node if changing direction |
 | `<name>`.non_straight_penalty | 1.1 | Penalty to apply to SE2 node if non-straight direction |
 | `<name>`.cost_penalty | 1.2 | Penalty to apply to SE2 node for cost at pose |
+| `<name>`.analytic_expansion_ratio | 2.0 | For SE2 nodes the planner will attempt an analytic path expansion every N iterations, where N = closest_distance_to_goal / analytic_expansion_ratio. Higher ratios result in more frequent expansions |
 | `<name>`.smoother.smoother.w_curve | 1.5 | Smoother weight on curvature of path |
 | `<name>`.smoother.smoother.w_dist | 0.0 | Smoother weight on distance from original path |
 | `<name>`.smoother.smoother.w_smooth | 15000 | Smoother weight on distance between nodes |

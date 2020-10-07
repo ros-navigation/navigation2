@@ -1,4 +1,5 @@
 // Copyright (c) 2020, Samsung Research America
+// Copyright (c) 2020, Applied Electric Vehicles Pty Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +15,10 @@
 
 #include <omp.h>
 
+#include <ompl/base/ScopedState.h>
+#include <ompl/base/spaces/DubinsStateSpace.h>
+#include <ompl/base/spaces/ReedsSheppStateSpace.h>
+
 #include <cmath>
 #include <stdexcept>
 #include <memory>
@@ -23,6 +28,7 @@
 #include <chrono>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include "smac_planner/a_star.hpp"
 using namespace std::chrono;  // NOLINT
@@ -240,10 +246,12 @@ bool AStarAlgorithm<NodeT>::createPath(
   NodeVector neighbors;
   int approach_iterations = 0;
   NeighborIterator neighbor_iterator;
+  int analytic_iterations = 0;
+  int closest_distance = std::numeric_limits<int>::max();
 
   // Given an index, return a node ptr reference if its collision-free and valid
   const unsigned int max_index = getSizeX() * getSizeY() * getSizeDim3();
-  std::function<bool(const unsigned int &, NodeT * &)> neighborGetter =
+  NodeGetter neighborGetter =
     [&, this](const unsigned int & index, NodePtr & neighbor_rtn) -> bool
     {
       if (index < 0 || index >= max_index) {
@@ -268,6 +276,15 @@ bool AStarAlgorithm<NodeT>::createPath(
 
     // 2) Mark Nbest as visited
     current_node->visited();
+
+    // 2.a) Use an analytic expansion (if available) to generate a path
+    // to the goal.
+    NodePtr result = tryAnalyticExpansion(
+      current_node, neighborGetter, analytic_iterations,
+      closest_distance);
+    if (result != nullptr) {
+      current_node = result;
+    }
 
     // 3) Check if we're at the goal, backtrace if required
     if (isGoal(current_node)) {
@@ -315,6 +332,98 @@ template<typename NodeT>
 bool AStarAlgorithm<NodeT>::isGoal(NodePtr & node)
 {
   return node == getGoal();
+}
+
+template<>
+AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getAnalyticPath(
+  const NodePtr & node,
+  const NodeGetter & node_getter)
+{
+  ompl::base::ScopedState<> from(node->motion_table.state_space), to(
+    node->motion_table.state_space), s(node->motion_table.state_space);
+  const NodeSE2::Coordinates & node_coords = node->pose;
+  from[0] = node_coords.x;
+  from[1] = node_coords.y;
+  from[2] = node_coords.theta * node->motion_table.bin_size;
+  to[0] = _goal_coordinates.x;
+  to[1] = _goal_coordinates.y;
+  to[2] = _goal_coordinates.theta * node->motion_table.bin_size;
+
+  float d = node->motion_table.state_space->distance(from(), to());
+  NodePtr prev(node);
+  // A move of sqrt(2) is guaranteed to be in a new cell
+  constexpr float sqrt_2 = std::sqrt(2.);
+  unsigned int num_intervals = std::floor(d / sqrt_2);
+
+  using PossibleNode = std::pair<NodePtr, Coordinates>;
+  std::vector<PossibleNode> possible_nodes;
+  possible_nodes.reserve(num_intervals - 1);  // We won't store this node or the goal
+  std::vector<double> reals;
+  // Pre-allocate
+  unsigned int index = 0;
+  NodePtr next(nullptr);
+  float angle = 0.0;
+  Coordinates proposed_coordinates;
+  // Don't generate the first point because we are already there!
+  // And the last point is the goal, so ignore it too!
+  for (float i = 1; i < num_intervals; i++) {
+    node->motion_table.state_space->interpolate(from(), to(), i / num_intervals, s());
+    reals = s.reals();
+    angle = reals[2] / node->motion_table.bin_size;
+    while (angle >= node->motion_table.num_angle_quantization_float) {
+      angle -= node->motion_table.num_angle_quantization_float;
+    }
+    while (angle < 0.0) {
+      angle += node->motion_table.num_angle_quantization_float;
+    }
+    // Turn the pose into a node, and check if it is valid
+    index = NodeSE2::getIndex(
+      static_cast<unsigned int>(reals[0]),
+      static_cast<unsigned int>(reals[1]),
+      static_cast<unsigned int>(angle));
+    // Get the node from the graph
+    if (node_getter(index, next)) {
+      Coordinates initial_node_coords = next->pose;
+      proposed_coordinates = {static_cast<float>(reals[0]), static_cast<float>(reals[1]), angle};
+      next->setPose(proposed_coordinates);
+      if (next->isNodeValid(_traverse_unknown, _collision_checker) && next != prev) {
+        // Save the node, and its previous coordinates in case we need to abort
+        possible_nodes.emplace_back(next, initial_node_coords);
+        prev = next;
+      } else {
+        next->setPose(initial_node_coords);
+        for (const auto & node_pose : possible_nodes) {
+          const auto & n = node_pose.first;
+          n->setPose(node_pose.second);
+        }
+        return NodePtr(nullptr);
+      }
+    } else {
+      // Abort
+      for (const auto & node_pose : possible_nodes) {
+        const auto & n = node_pose.first;
+        n->setPose(node_pose.second);
+      }
+      return NodePtr(nullptr);
+    }
+  }
+  // Legitimate path - set the parent relationships - poses already set
+  prev = node;
+  for (const auto & node_pose : possible_nodes) {
+    const auto & n = node_pose.first;
+    n->parent = prev;
+    prev = n;
+  }
+  _goal->parent = prev;
+  return _goal;
+}
+
+template<typename NodeT>
+typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::getAnalyticPath(
+  const NodePtr & node,
+  const NodeGetter & node_getter)
+{
+  return NodePtr(nullptr);
 }
 
 template<>
@@ -481,6 +590,48 @@ template<typename NodeT>
 unsigned int & AStarAlgorithm<NodeT>::getSizeDim3()
 {
   return _dim3_size;
+}
+
+template<typename NodeT>
+typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::tryAnalyticExpansion(
+  const NodePtr & current_node, const NodeGetter & getter, int & analytic_iterations,
+  int & closest_distance)
+{
+  if (_motion_model == MotionModel::DUBIN || _motion_model == MotionModel::REEDS_SHEPP) {
+    // This must be a NodeSE2 node if we are using these motion models
+
+    // See if we are closer and should be expanding more often
+    const Coordinates node_coords =
+      NodeT::getCoords(current_node->getIndex(), getSizeX(), getSizeDim3());
+    closest_distance =
+      std::min(
+      closest_distance,
+      static_cast<int>(NodeT::getHeuristicCost(
+        node_coords,
+        _goal_coordinates) / NodeT::neutral_cost)
+      );
+    // We want to expand at a rate of d/expansion_ratio,
+    // but check to see if we are so close that we would be expanding every iteration
+    // If so, limit it to the expansion ratio (rounded up)
+    int desired_iterations = std::max(
+      static_cast<int>(closest_distance / _search_info.analytic_expansion_ratio),
+      static_cast<int>(std::ceil(_search_info.analytic_expansion_ratio))
+    );
+    // If we are closer now, we should update the target number of iterations to go
+    analytic_iterations =
+      std::min(analytic_iterations, desired_iterations);
+
+    // Always run the expansion on the first run in case there is a
+    // trivial path to be found
+    if (analytic_iterations <= 0) {
+      // Reset the counter, and try the analytic path expansion
+      analytic_iterations = desired_iterations;
+      return getAnalyticPath(current_node, getter);
+    }
+    analytic_iterations--;
+  }
+  // No valid motion model - return nullptr
+  return NodePtr(nullptr);
 }
 
 // Instantiate algorithm for the supported template types

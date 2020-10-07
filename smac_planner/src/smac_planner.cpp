@@ -106,6 +106,9 @@ void SmacPlanner::configure(
   nav2_util::declare_parameter_if_not_declared(
     _node, name + ".cost_penalty", rclcpp::ParameterValue(1.2));
   _node->get_parameter(name + ".cost_penalty", search_info.cost_penalty);
+  nav2_util::declare_parameter_if_not_declared(
+    _node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(2.0));
+  _node->get_parameter(name + ".analytic_expansion_ratio", search_info.analytic_expansion_ratio);
 
   nav2_util::declare_parameter_if_not_declared(
     _node, name + ".max_planning_time_ms", rclcpp::ParameterValue(5000.0));

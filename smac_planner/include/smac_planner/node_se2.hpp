@@ -321,6 +321,21 @@ public:
   }
 
   /**
+   * @brief Get index at coordinates
+   * @param x X coordinate of point
+   * @param y Y coordinate of point
+   * @param angle Theta coordinate of point
+   * @return Index
+   */
+  static inline unsigned int getIndex(
+    const unsigned int & x, const unsigned int & y, const unsigned int & angle)
+  {
+    return getIndex(
+      x, y, angle, motion_table.size_x,
+      motion_table.num_angle_quantization);
+  }
+
+  /**
    * @brief Get coordinates at index
    * @param index Index of point
    * @param width Width of costmap
@@ -391,7 +406,7 @@ public:
   NodeSE2 * parent;
   Coordinates pose;
   static double neutral_cost;
-  static MotionTable _motion_model;
+  static MotionTable motion_table;
 
 private:
   float _cell_cost;

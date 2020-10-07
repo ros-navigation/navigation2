@@ -1,4 +1,5 @@
 // Copyright (c) 2020, Samsung Research America
+// Copyright (c) 2020, Applied Electric Vehicles Pty Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,6 +59,7 @@ public:
   typedef typename NodeT::Coordinates Coordinates;
   typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef typename NodeVector::iterator NeighborIterator;
+  typedef std::function<bool (const unsigned int &, NodeT * &)> NodeGetter;
 
   /**
    * @struct smac_planner::NodeComparator
@@ -148,6 +150,14 @@ public:
    * @param use_radius Whether this footprint is a circle with radius
    */
   void setFootprint(nav2_costmap_2d::Footprint footprint, bool use_radius);
+
+  /**
+   * @brief Perform an analytic path expansion to the goal
+   * @param node The node to start the analytic path from
+   * @param getter The function object that gets valid nodes from the graph
+   * @return Node pointer to goal node if successful, else return nullptr
+   */
+  NodePtr getAnalyticPath(const NodePtr & node, const NodeGetter & getter);
 
   /**
    * @brief Set the starting pose for planning, as a node index
@@ -271,6 +281,15 @@ private:
    * @brief Clear graph of nodes searched
    */
   inline void clearGraph();
+
+  /**
+   * @brief Attempt an analytic path completion
+   * @return Node pointer reference to goal node if successful, else
+   * return nullptr
+   */
+  inline NodePtr tryAnalyticExpansion(
+    const NodePtr & current_node,
+    const NodeGetter & getter, int & iterations, int & best_cost);
 
   bool _traverse_unknown;
   int _max_iterations;

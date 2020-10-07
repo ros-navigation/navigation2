@@ -34,6 +34,7 @@ struct SearchInfo
   float change_penalty;
   float reverse_penalty;
   float cost_penalty;
+  float analytic_expansion_ratio;
 };
 
 }  // namespace smac_planner
