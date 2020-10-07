@@ -81,7 +81,7 @@ void MotionTable::initDubin(
   } else {
     // Search dimensions are clean multiples of quantization - this prevents
     // paths with loops in them
-    increments = floor(angle / bin_size);
+    increments = ceil(angle / bin_size);
   }
   angle = increments * bin_size;
 
@@ -128,7 +128,7 @@ void MotionTable::initReedsShepp(
   if (angle < bin_size) {
     increments = 1.0f;
   } else {
-    increments = floor(angle / bin_size);
+    increments = ceil(angle / bin_size);
   }
   angle = increments * bin_size;
 

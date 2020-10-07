@@ -46,10 +46,10 @@ The 2D A\* implementation also does not have any of the weird artifacts introduc
 
 The original Hybrid-A\* implementation boasted planning times of 50-300ms for planning across 102,400 cell maps with 72 angular bins. We see much faster results in our evaluations:
 
-- **2-60ms** for planning across 147,456 (1.4x larger) cell maps with 72 angular bins.
-- **50-180ms** for planning across 344,128 (3.3x larger) cell map with 72 angular bins.
+- **2-20ms** for planning across 147,456 (1.4x larger) cell maps with 72 angular bins.
+- **30-120ms** for planning across 344,128 (3.3x larger) cell map with 72 angular bins.
 
-For example, the following path (roughly 85 meters) path took 73ms to compute.
+For example, the following path (roughly 85 meters) path took 33ms to compute.
 
 ![alt text](test/path.png)
 
@@ -88,7 +88,7 @@ planner_server:
       minimum_turning_radius: 0.20      # For SE2 node & smoother: minimum turning radius in m of path / vehicle
       reverse_penalty: 2.1              # For Reeds-Shepp model: penalty to apply if motion is reversing, must be => 1
       change_penalty: 0.20              # For SE2 node: penalty to apply if motion is changing directions, must be >= 0
-      non_straight_penalty: 1.10        # For SE2 node: penalty to apply if motion is non-straight, must be => 1
+      non_straight_penalty: 1.05        # For SE2 node: penalty to apply if motion is non-straight, must be => 1
       cost_penalty: 1.3                 # For SE2 node: penalty to apply to higher cost zones
 
       smoother:

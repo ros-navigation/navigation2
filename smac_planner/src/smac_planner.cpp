@@ -101,7 +101,7 @@ void SmacPlanner::configure(
     _node, name + ".change_penalty", rclcpp::ParameterValue(0.5));
   _node->get_parameter(name + ".change_penalty", search_info.change_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.1));
+    _node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.05));
   _node->get_parameter(name + ".non_straight_penalty", search_info.non_straight_penalty);
   nav2_util::declare_parameter_if_not_declared(
     _node, name + ".cost_penalty", rclcpp::ParameterValue(1.2));
