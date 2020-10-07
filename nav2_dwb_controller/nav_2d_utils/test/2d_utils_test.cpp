@@ -69,6 +69,7 @@ TEST(nav_2d_utils, PosesToPathNonEmpty)
   pose1.pose.orientation.y = quat1.y();
   pose1.pose.orientation.z = quat1.z();
   pose1.header.stamp = time1;
+  pose1.header.frame_id = "frame1_id";
 
   geometry_msgs::msg::PoseStamped pose2;
   pose2.pose.position.x = 4.0;
@@ -81,6 +82,7 @@ TEST(nav_2d_utils, PosesToPathNonEmpty)
 
   time2 = node->now();
   pose2.header.stamp = time2;
+  pose2.header.frame_id = "frame2_id";
 
   poses.push_back(pose1);
   poses.push_back(pose2);
@@ -91,8 +93,11 @@ TEST(nav_2d_utils, PosesToPathNonEmpty)
   EXPECT_EQ(path.poses[0].pose.position.x, 1.0);
   EXPECT_EQ(path.poses[0].pose.position.y, 2.0);
   EXPECT_EQ(path.poses[0].header.stamp, time1);
+  EXPECT_EQ(path.poses[0].header.frame_id, "frame1_id");
   EXPECT_EQ(path.poses[1].pose.position.x, 4.0);
   EXPECT_EQ(path.poses[1].pose.position.y, 5.0);
+  EXPECT_EQ(path.poses[1].header.frame_id, "frame2_id");
+
   EXPECT_EQ(path.header.stamp, time1);
 }
 
