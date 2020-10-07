@@ -91,7 +91,7 @@ TEST(SmootherTest, test_smoother)
   smoother.smooth(path, costmap, smoother_params);
 
   // kept at the right size
-  EXPECT_EQ(path.size(), 90u);
+  EXPECT_EQ(path.size(), 80u);
 
   for (unsigned int i = 1; i != path.size() - 1; i++) {
     // check no collisions

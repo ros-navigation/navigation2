@@ -139,10 +139,10 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
   }
 
 #ifdef BENCHMARK_TESTING
-    steady_clock::time_point b = steady_clock::now();
-    duration<double> time_span = duration_cast<duration<double>>(b - a);
-    std::cout << "It took " << time_span.count() * 1000 <<
-      " milliseconds with " << num_iterations << " iterations." << std::endl;
+  steady_clock::time_point b = steady_clock::now();
+  duration<double> time_span = duration_cast<duration<double>>(b - a);
+  std::cout << "It took " << time_span.count() * 1000 <<
+    " milliseconds with " << num_iterations << " iterations." << std::endl;
 #endif
 
   return path;

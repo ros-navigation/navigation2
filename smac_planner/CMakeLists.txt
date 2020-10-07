@@ -43,7 +43,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 
 set(library_name smac_planner)
-set(plugin_xml global_planner_plugin.xml)
 
 set(dependencies
   rclcpp
@@ -98,7 +97,8 @@ ament_target_dependencies(${library_name}_2d
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 target_compile_definitions(${library_name}_2d PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
-pluginlib_export_plugin_description_file(nav2_core ${plugin_xml})
+pluginlib_export_plugin_description_file(nav2_core smac_plugin.xml)
+pluginlib_export_plugin_description_file(nav2_core smac_plugin_2d.xml)
 
 install(TARGETS ${library_name} ${library_name}_2d
   ARCHIVE DESTINATION lib
