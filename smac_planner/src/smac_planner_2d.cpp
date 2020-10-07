@@ -20,7 +20,7 @@
 
 #include "smac_planner/smac_planner_2d.hpp"
 
-#define BENCHMARK_TESTING
+// #define BENCHMARK_TESTING
 
 namespace smac_planner
 {

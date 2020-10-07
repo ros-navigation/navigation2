@@ -36,12 +36,22 @@ We further improve on the Hybrid-A\* work in the following ways:
 - Time monitoring of planning to dynamically scale the maximum CG smoothing time based on remaining planning duration requested. 
 - High unit and integration test coverage, doxygen documentation.
 - Uses modern C++14 language features and individual components are easily reusable.
+- Speed optimizations: Fast approximation of shortest paths with wavefront hueristic, no data structure graph lookups in main loop, near-zero copy main loop, Voronoi field approximation, et al.
 
 All of these features (multi-resolution, models, smoother, etc) are also available in the 2D `SmacPlanner2D` plugin.
 
 The 2D A\* implementation also does not have any of the weird artifacts introduced by the gradient wavefront-based 2D A\* implementation in the NavFn Planner. While this 2D A\* planner is slightly slower, I believe it's well worth the increased quality in paths. Though the `SmacPlanner2D` is grid-based, any reasonable local trajectory planner - including those supported by Navigation2 - will not have any issue with grid-based plans.
 
-TODO(stevemacenski) Run-time metrics, show gif(s) or images
+## Metrics
+
+The original Hybrid-A\* implementation boasted planning times of 50-300ms for planning across 102,400 cell maps with 72 angular bins. We see much faster results in our evaluations:
+
+- **2-60ms** for planning across 147,456 (1.4x larger) cell maps with 72 angular bins.
+- **50-180ms** for planning across 344,128 (3.3x larger) cell map with 72 angular bins.
+
+For example, the following path (roughly 85 meters) path took 73ms to compute.
+
+![alt text](test/path.png)
 
 ## Design
 
@@ -138,7 +148,7 @@ The 2D planner provides a 4-connected or 8-connected neighborhood path. This pat
 
 The smoothing is more "pleasing" to human eyes, but you don't want to be owning additional compute when it doesn't largely impact the output. However, if you have a more sensitive local trajectory planner like a carrot follower (e.g. pure pursuit), then you will want to smooth out the paths in order to have something more easily followable.
 
-Take this advise into account.
+Take this advise into account. Some good numbers to potentially start with would be `cost_scaling_factor: 10.0` and `inflation_radius: 5.5`.
 
 ### Costmap Resolutions
 

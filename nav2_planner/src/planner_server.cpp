@@ -46,7 +46,7 @@ PlannerServer::PlannerServer()
 
   // Declare this node's parameters
   declare_parameter("planner_plugins", default_ids_);
-  declare_parameter("expected_planner_frequency", 20.0);
+  declare_parameter("expected_planner_frequency", 1.0);
 
   get_parameter("planner_plugins", planner_ids_);
   if (planner_ids_ == default_ids_) {
