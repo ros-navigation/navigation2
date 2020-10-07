@@ -36,11 +36,11 @@
 
 #include "gtest/gtest.h"
 #include "nav_2d_utils/conversions.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/time.hpp"
 
 using nav_2d_utils::posesToPath;
 using nav_2d_utils::pathToPath;
-
-// geometry_msgs::msg::Pose2D origin;
 
 TEST(nav_2d_utils, PosesToPathEmpty)
 {
@@ -55,13 +55,34 @@ TEST(nav_2d_utils, PosesToPathNonEmpty)
 {
   std::vector<geometry_msgs::msg::PoseStamped> poses;
   geometry_msgs::msg::PoseStamped pose1;
+  rclcpp::Time time1, time2;
+  auto node = rclcpp::Node::make_shared("2d_utils_test_node");
+  time1 = node->now();
+
+  pose1.pose.position.x = 1.0;
+  pose1.pose.position.y = 2.0;
+  pose1.header.stamp = time1;
+
   geometry_msgs::msg::PoseStamped pose2;
+  pose2.pose.position.x = 4.0;
+  pose2.pose.position.y = 5.0;
+
+  time2 = node->now();
+  pose2.header.stamp = time2;
+
   poses.push_back(pose1);
   poses.push_back(pose2);
 
   nav_msgs::msg::Path path = posesToPath(poses);
 
   EXPECT_EQ(path.poses.size(), 2ul);
+  EXPECT_EQ(path.poses[0].pose.position.x, 1.0);
+  EXPECT_EQ(path.poses[0].pose.position.y, 2.0);
+  EXPECT_EQ(path.header.stamp, time1);
+  EXPECT_EQ(path.poses[0].header.stamp, time1);
+  EXPECT_EQ(path.poses[1].pose.position.x, 3.0);
+  EXPECT_EQ(path.poses[1].pose.position.y, 4.0);
+  EXPECT_EQ(path.header.stamp, time2);
 }
 
 TEST(nav_2d_utils, PathToPathEmpty)
@@ -81,4 +102,19 @@ TEST(nav_2d_utils, PathToPathNoNEmpty)
 
   nav_msgs::msg::Path path = pathToPath(path2d);
   EXPECT_EQ(path.poses.size(), 2ul);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  // initialize ROS
+  rclcpp::init(argc, argv);
+
+  bool all_successful = RUN_ALL_TESTS();
+
+  // shutdown ROS
+  rclcpp::shutdown();
+
+  return all_successful;
 }

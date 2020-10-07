@@ -4,6 +4,7 @@ project(nav_2d_utils)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -18,6 +19,7 @@ set(dependencies
   geometry_msgs
   nav_2d_msgs
   nav_msgs
+  std_msgs
   rclcpp
   tf2
   tf2_geometry_msgs
