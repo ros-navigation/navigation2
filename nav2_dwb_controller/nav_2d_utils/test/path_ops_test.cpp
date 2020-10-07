@@ -62,7 +62,10 @@ TEST(path_ops_test, AdjustResolutionSimple)
   in.poses.push_back(pose2);
 
   nav_2d_msgs::msg::Path2D out = adjustPlanResolution(in, RESOLUTION);
-  EXPECT_EQ(out.poses.size() > 2, true);
+  float length = 100;
+  ulong number_of_points = ceil(length / (2 * RESOLUTION));
+  EXPECT_EQ(out.poses.size(), number_of_points);
+  float max_length = length / (number_of_points - 1);
 
   for (unsigned int i = 1; i < out.poses.size(); i++) {
     pose1 = out.poses[i - 1];
@@ -70,9 +73,8 @@ TEST(path_ops_test, AdjustResolutionSimple)
 
     double sq_dist = (pose1.x - pose2.x) * (pose1.x - pose2.x) +
       (pose1.y - pose2.y) * (pose1.y - pose2.y);
-    // TODO(wilcobonestroo): remove next line
-    std::cout << "Distance is " << sqrt(sq_dist) << " max: " <<
-      sqrt(RESOLUTION * RESOLUTION * 4.0) << std::endl;
-    EXPECT_EQ(sqrt(sq_dist) <= sqrt(RESOLUTION * RESOLUTION * 4.0), true);
+
+    EXPECT_EQ(sqrt(sq_dist) <= max_length, true);
   }
+  std::cout << "number of points " << out.poses.size();
 }
