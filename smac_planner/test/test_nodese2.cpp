@@ -43,12 +43,14 @@ TEST(NodeSE2Test, test_node_se2)
   unsigned int size_x = 10;
   unsigned int size_y = 10;
   unsigned int size_theta = 72;
+
   smac_planner::NodeSE2::initMotionModel(
     smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
 
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     10, 10, 0.05, 0.0, 0.0, 0);
   smac_planner::GridCollisionChecker checker(costmapA);
+  checker.setFootprint(nav2_costmap_2d::Footprint(), true);
 
   // test construction
   smac_planner::NodeSE2 testA(49);
@@ -56,6 +58,9 @@ TEST(NodeSE2Test, test_node_se2)
   EXPECT_TRUE(std::isnan(testA.getCost()));
 
   // test node valid and cost
+  testA.pose.x = 5;
+  testA.pose.y = 5;
+  testA.pose.theta = 0;
   EXPECT_EQ(testA.isNodeValid(true, checker), true);
   EXPECT_EQ(testA.isNodeValid(false, checker), true);
   EXPECT_EQ(testA.getCost(), 0.0f);

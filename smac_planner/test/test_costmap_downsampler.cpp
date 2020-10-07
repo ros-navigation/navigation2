@@ -58,7 +58,9 @@ TEST(CostmapDownsampler, costmap_downsample_test)
 
   // downsample it
   downsampler.initialize("map", "unused_topic", &costmapB, 4);
+  downsampler.activatePublisher();
   nav2_costmap_2d::Costmap2D * downsampledCostmapB = downsampler.downsample(4);
+  downsampler.deactivatePublisher();
 
   // validate size
   EXPECT_EQ(downsampledCostmapB->getSizeInCellsX(), 1u);
