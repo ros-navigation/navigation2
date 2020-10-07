@@ -94,11 +94,6 @@ TEST(SmootherTest, test_smoother)
   EXPECT_EQ(path.size(), 73u);
 
   for (unsigned int i = 1; i != path.size() - 1; i++) {
-    // check no collisions
-    unsigned int mx, my;
-    costmap->worldToMap(path[i][0], path[i][1], mx, my);
-    EXPECT_TRUE(static_cast<int>(costmap->getCost(mx, my)) <= 253);
-
     // check distance between points is in a good range
     EXPECT_NEAR(
       hypot(path[i][0] - path[i + 1][0], path[i][1] - path[i + 1][1]), 1.407170, 0.5);
