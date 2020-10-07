@@ -74,7 +74,6 @@ TEST(path_ops_test, AdjustResolutionSimple)
     double sq_dist = (pose1.x - pose2.x) * (pose1.x - pose2.x) +
       (pose1.y - pose2.y) * (pose1.y - pose2.y);
 
-    EXPECT_EQ(sqrt(sq_dist) <= max_length, true);
+    EXPECT_TRUE(sqrt(sq_dist) <= max_length);
   }
-  std::cout << "number of points " << out.poses.size();
 }

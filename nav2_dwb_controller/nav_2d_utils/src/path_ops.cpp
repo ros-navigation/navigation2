@@ -52,14 +52,14 @@ nav_2d_msgs::msg::Path2D adjustPlanResolution(
   global_plan_out.poses.push_back(last);
 
   // we can take "holes" in the plan smaller than 2 grid cells (squared = 4)
-  double max_sq_resolution = resolution * resolution * 4.0;
+  double min_sq_resolution = resolution * resolution * 4.0;
 
   for (unsigned int i = 1; i < global_plan_in.poses.size(); ++i) {
     geometry_msgs::msg::Pose2D loop = global_plan_in.poses[i];
     double sq_dist = (loop.x - last.x) * (loop.x - last.x) + (loop.y - last.y) * (loop.y - last.y);
-    if (sq_dist > max_sq_resolution) {
+    if (sq_dist > min_sq_resolution) {
       // add points in-between
-      double diff = sqrt(sq_dist) - sqrt(max_sq_resolution);
+      double diff = sqrt(sq_dist) - sqrt(min_sq_resolution);
       int steps = static_cast<int>(diff / resolution) - 1;
       double steps_double = static_cast<double>(steps);
 
