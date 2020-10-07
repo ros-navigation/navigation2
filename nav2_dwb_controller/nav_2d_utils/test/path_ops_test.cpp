@@ -49,7 +49,7 @@ TEST(path_ops_test, AdjustResolutionEmpty)
 TEST(path_ops_test, AdjustResolutionSimple)
 {
   nav_2d_msgs::msg::Path2D in;
-  const float RESOLUTION = 15.0;
+  const float RESOLUTION = 20.0;
 
   geometry_msgs::msg::Pose2D pose1;
   pose1.x = 0.0;
@@ -70,8 +70,9 @@ TEST(path_ops_test, AdjustResolutionSimple)
 
     double sq_dist = (pose1.x - pose2.x) * (pose1.x - pose2.x) +
       (pose1.y - pose2.y) * (pose1.y - pose2.y);
-    std::cout << "Distance is " << sqrt(sq_dist) << std::endl;
-    // todo: What should be the expected behavior of resolution?
-    // EXPECT_EQ(sqrt(sq_dist) <= RESOLUTION, true);
+    // TODO(wilcobonestroo): remove next line
+    std::cout << "Distance is " << sqrt(sq_dist) << " max: " <<
+      sqrt(RESOLUTION * RESOLUTION * 4.0) << std::endl;
+    EXPECT_EQ(sqrt(sq_dist) <= sqrt(RESOLUTION * RESOLUTION * 4.0), true);
   }
 }
