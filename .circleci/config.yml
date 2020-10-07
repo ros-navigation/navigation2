@@ -60,9 +60,22 @@ _commands:
               sha256sum $PWD/checksum.txt >> checksum.txt
               apt-get update
               rosdep update
+              
+              # workarround for OMPL and rosdep
+              # https://github.com/ompl/ompl/issues/753
+              # Prevent searching $ROS_WS/install given it's too big for rosdep
+
+              if [ "$ROS_WS" == "<< parameters.underlay >>" ]; then
+                underlay_ws=""
+              else
+                underlay_ws=<< parameters.underlay >>/src
+              fi
+              echo underlay_ws = $underlay_ws
+
               dependencies=$(
                 rosdep install -q -y \
                   --from-paths src \
+                    $underlay_ws \
                   --ignore-src \
                   --skip-keys " \
                     slam_toolbox \
