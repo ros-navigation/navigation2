@@ -101,7 +101,7 @@ TEST(SmootherTest, test_smoother)
 
     // check distance between points is in a good range
     EXPECT_NEAR(
-      hypot(path[i][0] - path[i + 1][0], path[i][1] - path[i + 1][1]), 1.7315, 0.01);
+      hypot(path[i][0] - path[i + 1][0], path[i][1] - path[i + 1][1]), 1.407170, 0.5);
   }
 
   delete costmap;
