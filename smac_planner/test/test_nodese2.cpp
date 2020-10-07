@@ -134,7 +134,7 @@ TEST(NodeSE2Test, test_node_se2)
   delete costmapA;
 }
 
-TEST(Node2DTest, test_node_2d_neighbors)
+TEST(NodeSE2Test, test_node_2d_neighbors)
 {
   smac_planner::SearchInfo info;
   info.change_penalty = 1.2;
