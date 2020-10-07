@@ -51,15 +51,22 @@ TEST(SmacTest, test_smac_2d)
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
   geometry_msgs::msg::PoseStamped start, goal;
-
-  smac_planner::SmacPlanner2D * planner_2d = new smac_planner::SmacPlanner2D();
+  start.pose.position.x = 0.0;
+  start.pose.position.y = 0.0;
+  start.pose.orientation.w = 1.0;
+  goal = start;
+  auto planner_2d = std::make_unique<smac_planner::SmacPlanner2D>();
   planner_2d->configure(node2D, "test", nullptr, costmap_ros);
   planner_2d->activate();
-  planner_2d->createPlan(start, goal);
+  try {
+    planner_2d->createPlan(start, goal);
+  } catch (...) {
+  }
+
   planner_2d->deactivate();
   planner_2d->cleanup();
-  delete planner_2d;
 
+  planner_2d.reset();
   costmap_ros->on_cleanup(rclcpp_lifecycle::State());
   node2D.reset();
   costmap_ros.reset();

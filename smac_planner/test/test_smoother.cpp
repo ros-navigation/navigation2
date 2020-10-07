@@ -91,7 +91,7 @@ TEST(SmootherTest, test_smoother)
   smoother.smooth(path, costmap, smoother_params);
 
   // kept at the right size
-  EXPECT_EQ(path.size(), 80u);
+  EXPECT_EQ(path.size(), 73u);
 
   for (unsigned int i = 1; i != path.size() - 1; i++) {
     // check no collisions
@@ -101,7 +101,7 @@ TEST(SmootherTest, test_smoother)
 
     // check distance between points is in a good range
     EXPECT_NEAR(
-      hypot(path[i][0] - path[i + 1][0], path[i][1] - path[i + 1][1]), sqrt(2), 0.01);
+      hypot(path[i][0] - path[i + 1][0], path[i][1] - path[i + 1][1]), 1.7315, 0.01);
   }
 
   delete costmap;

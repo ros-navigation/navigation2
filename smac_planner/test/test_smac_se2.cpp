@@ -54,15 +54,24 @@ TEST(SmacTest, test_smac_se2)
   nodeSE2->set_parameter(rclcpp::Parameter("test.smooth_path", true));
 
   geometry_msgs::msg::PoseStamped start, goal;
-  smac_planner::SmacPlanner * planner = new smac_planner::SmacPlanner();
+  start.pose.position.x = 0.0;
+  start.pose.position.y = 0.0;
+  start.pose.orientation.w = 1.0;
+  goal = start;
+  auto planner = std::make_unique<smac_planner::SmacPlanner>();
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
-  planner->createPlan(start, goal);
+
+  try {
+    planner->createPlan(start, goal);
+  } catch (...) {
+  }
+
   planner->deactivate();
   planner->cleanup();
-  delete planner;
 
+  planner.reset();
   costmap_ros->on_cleanup(rclcpp_lifecycle::State());
-  nodeSE2.reset();
   costmap_ros.reset();
+  nodeSE2.reset();
 }

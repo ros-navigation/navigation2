@@ -37,7 +37,6 @@ SmacPlanner2D::SmacPlanner2D()
 
 SmacPlanner2D::~SmacPlanner2D()
 {
-  _node.reset();
   RCLCPP_INFO(
     _node->get_logger(), "Destroying plugin %s of type SmacPlanner2D",
     _name.c_str());

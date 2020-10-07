@@ -150,45 +150,45 @@ TEST(NodeSE2Test, test_node_2d_neighbors)
 
   // test neighborhood computation
   EXPECT_EQ(smac_planner::NodeSE2::motion_table.projections.size(), 3u);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[0]._x, 1.41421, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[0]._x, 1.731517, 0.01);
   EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[0]._y, 0, 0.01);
   EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[0]._theta, 0, 0.01);
 
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[1]._x, 1.39194, 0.01);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[1]._y, 0.25, 0.01);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[1]._theta, 4.07283, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[1]._x, 1.69047, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[1]._y, 0.3747, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[1]._theta, 5, 0.01);
 
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[2]._x, 1.39194, 0.01);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[2]._y, -0.25, 0.01);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[2]._theta, -4.07283, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[2]._x, 1.69047, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[2]._y, -0.3747, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[2]._theta, -5, 0.01);
 
   smac_planner::NodeSE2::initMotionModel(
     smac_planner::MotionModel::REEDS_SHEPP, size_x, size_y, size_theta, info);
 
   EXPECT_EQ(smac_planner::NodeSE2::motion_table.projections.size(), 6u);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[0]._x, 1.41421, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[0]._x, 1.731517, 0.01);
   EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[0]._y, 0, 0.01);
   EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[0]._theta, 0, 0.01);
 
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[1]._x, 1.39194, 0.01);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[1]._y, 0.25, 0.01);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[1]._theta, 4.07283, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[1]._x, 1.69047, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[1]._y, 0.3747, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[1]._theta, 5, 0.01);
 
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[2]._x, 1.39194, 0.01);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[2]._y, -0.25, 0.01);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[2]._theta, -4.07283, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[2]._x, 1.69047, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[2]._y, -0.3747, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[2]._theta, -5, 0.01);
 
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[3]._x, -1.41421, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[3]._x, -1.731517, 0.01);
   EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[3]._y, 0, 0.01);
   EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[3]._theta, 0, 0.01);
 
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[4]._x, -1.39194, 0.01);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[4]._y, 0.25, 0.01);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[4]._theta, -4.07283, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[4]._x, -1.69047, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[4]._y, 0.3747, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[4]._theta, -5, 0.01);
 
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[5]._x, -1.39194, 0.01);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[5]._y, -0.25, 0.01);
-  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[5]._theta, 4.07283, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[5]._x, -1.69047, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[5]._y, -0.3747, 0.01);
+  EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[5]._theta, 5, 0.01);
 
   nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
   smac_planner::GridCollisionChecker checker(&costmapA);
