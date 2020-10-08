@@ -248,6 +248,12 @@ public:
 
   std::shared_ptr<tf2_ros::Buffer> getTfBuffer() {return tf_buffer_;}
 
+  /**
+   * @brief  Get the costmap's use_radius_ parameter, corresponding to
+   * whether the footprint for the robot is a circle with radius robot_radius_
+   * or an arbitrarily defined footprint in footprint_.
+   * @return  use_radius_
+   */
   bool getUseRadius() {return use_radius_;}
 
 protected:
