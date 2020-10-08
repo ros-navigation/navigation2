@@ -115,6 +115,7 @@ class WaypointFollowerTest(Node):
         if len(result.missed_waypoints) > 0:
             self.info_msg('Goal failed to process all waypoints,'
                           ' missed {0} wps.'.format(len(result.missed_waypoints)))
+            return False
 
         self.info_msg('Goal succeeded!')
         return True

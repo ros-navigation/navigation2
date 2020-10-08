@@ -25,12 +25,20 @@ namespace nav2_waypoint_follower
 {
 
 WaypointFollower::WaypointFollower()
-: nav2_util::LifecycleNode("WaypointFollower", "", false)
+: nav2_util::LifecycleNode("WaypointFollower", "", false),
+  waypoint_task_executor_loader_("nav2_waypoint_follower",
+    "nav2_core::WaypointTaskExecutor")
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
   declare_parameter("stop_on_failure", true);
   declare_parameter("loop_rate", 20);
+  nav2_util::declare_parameter_if_not_declared(
+    this, std::string("waypoint_task_executor_plugin"),
+    rclcpp::ParameterValue(std::string("waypoint_task_executor")));
+  nav2_util::declare_parameter_if_not_declared(
+    this, std::string("waypoint_task_executor_plugin.plugin"),
+    rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));
 }
 
 WaypointFollower::~WaypointFollower()
@@ -42,8 +50,11 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
+  auto node = shared_from_this();
+
   stop_on_failure_ = get_parameter("stop_on_failure").as_bool();
   loop_rate_ = get_parameter("loop_rate").as_int();
+  waypoint_task_executor_id_ = get_parameter("waypoint_task_executor_plugin").as_string();
 
   std::vector<std::string> new_args = rclcpp::NodeOptions().arguments();
   new_args.push_back("--ros-args");
@@ -62,6 +73,22 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_logging_interface(),
     get_node_waitables_interface(),
     "FollowWaypoints", std::bind(&WaypointFollower::followWaypoints, this));
+
+  try {
+    waypoint_task_executor_type_ = nav2_util::get_plugin_type_param(
+      this,
+      waypoint_task_executor_id_);
+    waypoint_task_executor_ = waypoint_task_executor_loader_.createUniqueInstance(
+      waypoint_task_executor_type_);
+    RCLCPP_INFO(
+      get_logger(), "Created waypoint_task_executor : %s of type %s",
+      waypoint_task_executor_id_.c_str(), waypoint_task_executor_type_.c_str());
+    waypoint_task_executor_->initialize(node, waypoint_task_executor_id_);
+  } catch (const pluginlib::PluginlibException & ex) {
+    RCLCPP_FATAL(
+      get_logger(),
+      "Failed to create waypoint_task_executor. Exception: %s", ex.what());
+  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -193,8 +220,29 @@ WaypointFollower::followWaypoints()
       }
     } else if (current_goal_status_ == ActionStatus::SUCCEEDED) {
       RCLCPP_INFO(
-        get_logger(), "Succeeded processing waypoint %i, "
-        "moving to next.", goal_index);
+        get_logger(), "Succeeded processing waypoint %i, processing waypoint task execution",
+        goal_index);
+      bool is_task_executed = waypoint_task_executor_->processAtWaypoint(
+        goal->poses[goal_index], goal_index);
+      RCLCPP_INFO(
+        get_logger(), "Task execution at waypoint %i %s", goal_index,
+        is_task_executed ? "succeeded" : "failed!");
+      // if task execution was failed and stop_on_failure_ is on , terminate action
+      if (!is_task_executed && stop_on_failure_) {
+        failed_ids_.push_back(goal_index);
+        RCLCPP_WARN(
+          get_logger(), "Failed to execute task at waypoint %i "
+          " stop on failure is enabled."
+          " Terminating action.", goal_index);
+        result->missed_waypoints = failed_ids_;
+        action_server_->terminate_current(result);
+        failed_ids_.clear();
+        return;
+      } else {
+        RCLCPP_INFO(
+          get_logger(), "Handled task execution on waypoint %i,"
+          " moving to next.", goal_index);
+      }
     }
 
     if (current_goal_status_ != ActionStatus::PROCESSING &&
