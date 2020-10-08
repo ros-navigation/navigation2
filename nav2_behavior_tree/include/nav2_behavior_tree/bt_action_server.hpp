@@ -27,6 +27,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 
@@ -185,8 +186,6 @@ protected:
     blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
     blackboard_->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
     blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
-    blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
-    blackboard_->set<int>("number_recoveries", 0);  // NOLINT
 
     // Get the BT filename to use from the node parameter
     get_parameter("default_bt_xml_filename", default_bt_xml_filename_);
