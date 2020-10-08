@@ -48,6 +48,7 @@ We further improve on the Hybrid-A\* work in the following ways:
 - High unit and integration test coverage, doxygen documentation.
 - Uses modern C++14 language features and individual components are easily reusable.
 - Speed optimizations: Fast approximation of shortest paths with wavefront hueristic, no data structure graph lookups in main loop, near-zero copy main loop, Voronoi field approximation, et al.
+- Templated Nodes and A\* implementation to support additional robot extensions.
 
 All of these features (multi-resolution, models, smoother, etc) are also available in the 2D `SmacPlanner2D` plugin.
 
@@ -69,6 +70,8 @@ For example, the following path (roughly 85 meters) path took 33ms to compute.
 The basic design centralizes a templated A\* implementation that handles the search of a graph of nodes. The implementation is templated by the nodes, `NodeT`, which contain the methods needed to compute the hueristics, travel costs, and search neighborhoods. The outcome of this design is then a standard A\* implementation that can be used to traverse any type of graph as long as a node template can be created for it.
 
 We provide by default a 2D node template (`Node2D`) which does 2D grid-search with either 4 or 8-connected neighborhoods, but the smoother can be used to smooth it out. We also provide a SE2 node template (`NodeSE2`) which does SE2 (X, Y, theta) search and collision checking on Dubin or Reeds-Shepp motion models. Additional templates could be easily made and included for 3D grid search and non-grid base searching like routing.
+
+Additional node templates could be added into the future to better support other types of robot path planning, such as including a state lattice motion primitive node and 3D path planning. Pull requests or discussions aroudn this point is encouraged.
 
 In the ROS2 facing plugin, we take in the global goals and pre-process the data to feed into the templated A\* used. This includes processing any requests to downsample the costmap to another resolution to speed up search and smoothing the resulting A\* path. For the SE2 and `SmacPlanner` plugins, the path is promised to be kinematically feasible due to the kinematically valid models used in branching search. The 2D A\* is also promised to be feasible for differential and omni-directional robots.
 
