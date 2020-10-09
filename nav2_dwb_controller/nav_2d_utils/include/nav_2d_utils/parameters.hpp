@@ -80,38 +80,6 @@ param_t searchAndGetParam(
   return value;
 }
 
-/**
- * @brief Move a parameter from one place to another
- *
- * For use loading old parameter structures into new places.
- *
- * If the new name already has a value, don't move the old value there.
- *
- * @param nh NodeHandle for loading/saving params
- * @param old_name Parameter name to move/remove
- * @param current_name Destination parameter name
- * @param default_value Value to save in the new name if old parameter is not found.
- * @param should_delete If true, whether to delete the parameter from the old name
- */
-template<class param_t>
-void moveParameter(
-  const nav2_util::LifecycleNode::SharedPtr & nh, std::string old_name,
-  std::string current_name, param_t default_value, bool should_delete = true)
-{
-  param_t value = 0;
-  if (nh->get_parameter(current_name, value)) {
-    if (should_delete) {nh->undeclare_parameter(old_name);}
-    return;
-  }
-  if (nh->get_parameter(old_name, value)) {
-    if (should_delete) {nh->undeclare_parameter(old_name);}
-  } else {
-    value = default_value;
-  }
-  nh->set_parameter(rclcpp::Parameter(current_name, value));
-}
-
-
 }  // namespace nav_2d_utils
 #pragma GCC diagnostic pop
 
