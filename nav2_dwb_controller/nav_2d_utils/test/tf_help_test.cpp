@@ -38,7 +38,7 @@
 #include "gtest/gtest.h"
 #include "nav_2d_utils/tf_help.hpp"
 
-TEST(TF_Help, TransformToItself) {
+TEST(TF_Help, TransformToSelf) {
   bool result;
 
   std::shared_ptr<tf2_ros::Buffer> tf;
@@ -89,7 +89,7 @@ TEST(TF_Help, EmptyBuffer) {
   in_pose.pose.orientation.z = qt.z();
 
   geometry_msgs::msg::PoseStamped out_pose;
-  rclcpp::Duration transform_tolerance(0,0);
+  rclcpp::Duration transform_tolerance(0, 500);
 
   bool result;
   result = nav_2d_utils::transformPose(buffer, frame, in_pose, out_pose, transform_tolerance);
