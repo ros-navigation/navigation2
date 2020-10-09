@@ -4,36 +4,21 @@
 #include "nav2_localization/custom_particle_filter.hpp"
 #include <model/systemmodel.h>
 #include <model/measurementmodel.h>
+#include <pdf/gaussian.h>
+#include <vector>
 
 namespace nav2_localization
 {
 void DummySolver2d::CreateParticleFilter(unsigned int NUM_SAMPLES, unsigned int STATE_SIZE, float PRIOR_MU_X, float PRIOR_MU_Y, float PRIOR_MU_THETA, float PRIOR_COV_X, float PRIOR_COV_Y, float PRIOR_COV_THETA)
 {
-	/****************************
-	 * Linear prior DENSITY     *
-	 ***************************/
-	// Continuous Gaussian prior (for Kalman filters)
-	//// ColumnVector and SymmetricMatrix are used because they are what BFL::Gaussian requires
-	MatrixWrapper::ColumnVector prior_Mu(STATE_SIZE);
-	prior_Mu(1) = PRIOR_MU_X;
-	prior_Mu(2) = PRIOR_MU_Y;
-	prior_Mu(3) = PRIOR_MU_THETA;
-	MatrixWrapper::SymmetricMatrix prior_Cov(STATE_SIZE);
-	prior_Cov(1,1) = PRIOR_COV_X;
-	prior_Cov(1,2) = 0.0;
-	prior_Cov(1,3) = 0.0;
-	prior_Cov(2,1) = 0.0;
-	prior_Cov(2,2) = PRIOR_COV_Y;
-	prior_Cov(2,3) = 0.0;
-	prior_Cov(3,1) = 0.0;
-	prior_Cov(3,2) = 0.0;
-	prior_Cov(3,3) = PRIOR_COV_THETA;
-	BFL::Gaussian prior_cont(prior_Mu, prior_Cov);
-	
-	// Discrete prior for Particle filter (using the continuous Gaussian prior)
-	vector<BFL::Sample<geometry_msgs::msg::TransformStamped>> prior_samples(NUM_SAMPLES);
+	geometry_msgs::msg::TransformStamped default_pose;
+	default_pose.transform.translation.x = 0.0;
+	default_pose.transform.translation.y = 0.0;
+
+	std::vector<BFL::Sample<geometry_msgs::msg::TransformStamped>> prior_samples(NUM_SAMPLES);
+	for(int i=0; i<NUM_SAMPLES; i++)
 		prior_samples[i].ValueSet(default_pose); //sets all particles at (0.0, 0.0)
-	//prior_cont.SampleFrom(prior_samples, NUM_SAMPLES, CHOLESKY, NULL);
+
 	prior_discr_ = std::make_unique<BFL::MCPdf<geometry_msgs::msg::TransformStamped>>(NUM_SAMPLES, STATE_SIZE);
 	prior_discr_->ListOfSamplesSet(prior_samples);
 	
