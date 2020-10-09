@@ -182,7 +182,6 @@ protected:
    * @param name The namespace of this planner.
    */
   virtual void loadCritics();
-  void loadBackwardsCompatibleParameters();
 
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   rclcpp::Clock::SharedPtr clock_;
