@@ -32,20 +32,21 @@ namespace nav2_costmap_2d
 {
 typedef std::vector<geometry_msgs::msg::Point> Footprint;
 
+template<typename CostmapT>
 class FootprintCollisionChecker
 {
 public:
   FootprintCollisionChecker();
-  explicit FootprintCollisionChecker(std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap);
+  explicit FootprintCollisionChecker(CostmapT costmap);
   double footprintCost(const Footprint footprint);
   double footprintCostAtPose(double x, double y, double theta, const Footprint footprint);
   double lineCost(int x0, int x1, int y0, int y1) const;
   bool worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my);
   double pointCost(int x, int y) const;
-  void setCostmap(std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap);
+  void setCostmap(CostmapT costmap);
 
-private:
-  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
+protected:
+  CostmapT costmap_;
 };
 
 }  // namespace nav2_costmap_2d

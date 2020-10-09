@@ -46,7 +46,7 @@ PlannerServer::PlannerServer()
 
   // Declare this node's parameters
   declare_parameter("planner_plugins", default_ids_);
-  declare_parameter("expected_planner_frequency", 20.0);
+  declare_parameter("expected_planner_frequency", 1.0);
 
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
