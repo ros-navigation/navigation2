@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2020 Samsung Research Russia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,6 +32,7 @@ from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     map_yaml_file = os.getenv('TEST_MAP')
+    filter_mask_file = os.getenv('TEST_MASK')
     world = os.getenv('TEST_WORLD')
 
     bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
@@ -38,11 +40,14 @@ def generate_launch_description():
                                     os.getenv('BT_NAVIGATOR_XML'))
 
     bringup_dir = get_package_share_directory('nav2_bringup')
-    params_file = os.path.join(bringup_dir, 'params', 'nav2_params.yaml')
+    system_tests_dir = get_package_share_directory('nav2_system_tests')
+    params_file = os.path.join(system_tests_dir, 'params', 'keepout_params.yaml')
 
     # Replace the `use_astar` setting on the params file
     param_substitutions = {
-        'planner_server.ros__parameters.GridBased.use_astar': os.getenv('ASTAR')}
+        'planner_server.ros__parameters.GridBased.use_astar': os.getenv('ASTAR'),
+        'filter_mask_server.ros__parameters.yaml_filename': filter_mask_file,
+        'yaml_filename': filter_mask_file}
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key='',
@@ -71,6 +76,29 @@ def generate_launch_description():
             executable='static_transform_publisher',
             output='screen',
             arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan']),
+
+        Node(
+            package='nav2_lifecycle_manager',
+            executable='lifecycle_manager',
+            name='lifecycle_manager_filters',
+            output='screen',
+            parameters=[{'node_names': ['filter_mask_server', 'costmap_filter_info_server']},
+                        {'autostart': True}]),
+
+        # Nodes required for Costmap Filters configuration
+        Node(
+            package='nav2_map_server',
+            executable='map_server',
+            name='filter_mask_server',
+            output='screen',
+            parameters=[configured_params]),
+
+        Node(
+            package='nav2_map_server',
+            executable='costmap_filter_info_server',
+            name='costmap_filter_info_server',
+            output='screen',
+            parameters=[configured_params]),
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(

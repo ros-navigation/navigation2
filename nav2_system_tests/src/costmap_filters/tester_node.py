@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
-# Copyright 2018 Intel Corporation.
+
+# Copyright (c) 2018 Intel Corporation.
+# Copyright (c) 2020 Samsung Research Russia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,6 +28,8 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import NavigateToPose
 from nav2_msgs.srv import ManageLifecycleNodes
+from nav_msgs.msg import OccupancyGrid
+from nav_msgs.msg import Path
 
 import rclpy
 
@@ -33,6 +37,41 @@ from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.qos import QoSProfile
+
+
+class FilterMask():
+
+    def __init__(
+        self,
+        filter_mask: OccupancyGrid
+    ):
+        self.filter_mask = filter_mask
+
+    # Converts world coordinates into filter mask map coordinate.
+    # Returns filter mask map coordinates or (-1, -1) in case
+    # if world coordinates are out of mask bounds.
+    def worldToMap(self, wx: float, wy: float):
+        origin_x = self.filter_mask.info.origin.position.x
+        origin_y = self.filter_mask.info.origin.position.y
+        size_x = self.filter_mask.info.width
+        size_y = self.filter_mask.info.height
+        resolution = self.filter_mask.info.resolution
+
+        if wx < origin_x or wy < origin_y:
+            return -1, -1
+
+        mx = int((wx - origin_x) / resolution)
+        my = int((wy - origin_y) / resolution)
+
+        if mx < size_x and my < size_y:
+            return mx, my
+
+        return -1, -1
+
+    # Gets filter_mask[mx, my] value
+    def getValue(self, mx, my):
+        size_x = self.filter_mask.info.width
+        return self.filter_mask.data[mx + my * size_x]
 
 
 class NavTester(Node):
@@ -54,8 +93,23 @@ class NavTester(Node):
           history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
           depth=1)
 
+        path_qos = QoSProfile(
+          durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_VOLATILE,
+          reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
+          history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+          depth=1)
+
         self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
                                                        'amcl_pose', self.poseCallback, pose_qos)
+
+        self.filter_test_result = True
+        self.plan_sub = self.create_subscription(Path, 'plan',
+                                                 self.planCallback, path_qos)
+
+        self.mask_received = False
+        self.mask_sub = self.create_subscription(OccupancyGrid, 'filter_mask',
+                                                 self.maskCallback, pose_qos)
+
         self.initial_pose_received = False
         self.initial_pose = initial_pose
         self.goal_pose = goal_pose
@@ -121,10 +175,52 @@ class NavTester(Node):
         self.info_msg('Goal succeeded!')
         return True
 
+    def isInKeepout(self, x, y):
+        mx, my = self.filter_mask.worldToMap(x, y)
+        if mx == -1 and my == -1:  # Out of mask's area
+            return False
+        if self.filter_mask.getValue(mx, my) == 100:  # Occupied
+            return True
+        return False
+
+    def checkKeepout(self, x, y):
+        if not self.mask_received:
+            self.warn_msg('Filter mask was not received')
+        elif self.isInKeepout(x, y):
+            self.filter_test_result = False
+            self.error_msg('Pose (' + str(x) + ', ' + str(y) + ') belongs to keepout zone')
+            return False
+        return True
+
     def poseCallback(self, msg):
         self.info_msg('Received amcl_pose')
         self.current_pose = msg.pose.pose
         self.initial_pose_received = True
+        if not self.checkKeepout(msg.pose.pose.position.x, msg.pose.pose.position.y):
+            self.error_msg('Robot goes into keepout zone')
+
+    def planCallback(self, msg):
+        self.info_msg('Received plan')
+        for pose in msg.poses:
+            if not self.checkKeepout(pose.pose.position.x, pose.pose.position.y):
+                self.error_msg('Path plan intersects with keepout zone')
+                return
+
+    def maskCallback(self, msg):
+        self.info_msg('Received filter mask')
+        self.filter_mask = FilterMask(msg)
+        self.mask_received = True
+
+    def wait_for_filter_mask(self, timeout):
+        start_time = time.time()
+
+        while not self.mask_received:
+            self.info_msg('Waiting for filter mask to be received ...')
+            rclpy.spin_once(self, timeout_sec=1)
+            if (time.time() - start_time) > timeout:
+                self.error_msg('Time out to waiting filter mask')
+                return False
+        return True
 
     def reachesGoal(self, timeout, distance):
         goalReached = False
@@ -226,10 +322,16 @@ def run_all_tests(robot_tester):
         robot_tester.wait_for_node_active('amcl')
         robot_tester.wait_for_initial_pose()
         robot_tester.wait_for_node_active('bt_navigator')
+        result = robot_tester.wait_for_filter_mask(10)
+
+    if (result):
         result = robot_tester.runNavigateAction()
 
     if (result):
         result = test_RobotMovesToGoal(robot_tester)
+
+    if (result):
+        result = robot_tester.filter_test_result
 
     # Add more tests here if desired
 
@@ -253,34 +355,17 @@ def fwd_pose(x=0.0, y=0.0, z=0.01):
     return initial_pose
 
 
-def get_testers(args):
-    testers = []
+def get_tester(args):
 
-    if args.robot:
-        # Requested tester for one robot
-        init_x, init_y, final_x, final_y = args.robot[0]
-        tester = NavTester(
-            initial_pose=fwd_pose(float(init_x), float(init_y)),
-            goal_pose=fwd_pose(float(final_x), float(final_y)))
-        tester.info_msg(
-            'Starting tester, robot going from ' + init_x + ', ' + init_y +
-            ' to ' + final_x + ', ' + final_y + '.')
-        testers.append(tester)
-        return testers
-
-    # Requested tester for multiple robots
-    for robot in args.robots:
-        namespace, init_x, init_y, final_x, final_y = robot
-        tester = NavTester(
-            namespace=namespace,
-            initial_pose=fwd_pose(float(init_x), float(init_y)),
-            goal_pose=fwd_pose(float(final_x), float(final_y)))
-        tester.info_msg(
-            'Starting tester for ' + namespace +
-            ' going from ' + init_x + ', ' + init_y +
-            ' to ' + final_x + ', ' + final_y)
-        testers.append(tester)
-    return testers
+    # Requested tester for one robot
+    init_x, init_y, final_x, final_y = args.robot[0]
+    tester = NavTester(
+        initial_pose=fwd_pose(float(init_x), float(init_y)),
+        goal_pose=fwd_pose(float(final_x), float(final_y)))
+    tester.info_msg(
+        'Starting tester, robot going from ' + init_x + ', ' + init_y +
+        ' to ' + final_x + ', ' + final_y + '.')
+    return tester
 
 
 def main(argv=sys.argv[1:]):
@@ -290,37 +375,28 @@ def main(argv=sys.argv[1:]):
     group.add_argument('-r', '--robot', action='append', nargs=4,
                        metavar=('init_x', 'init_y', 'final_x', 'final_y'),
                        help='The robot starting and final positions.')
-    group.add_argument('-rs', '--robots', action='append', nargs=5,
-                       metavar=('name', 'init_x', 'init_y', 'final_x', 'final_y'),
-                       help="The robot's namespace and starting and final positions. " +
-                            'Repeating the argument for multiple robots is supported.')
 
     args, unknown = parser.parse_known_args()
 
     rclpy.init()
 
-    # Create testers for each robot
-    testers = get_testers(args)
+    # Create tester for the robot
+    tester = get_tester(args)
 
     # wait a few seconds to make sure entire stacks are up
     time.sleep(10)
 
-    for tester in testers:
-        passed = run_all_tests(tester)
-        if not passed:
-            break
+    passed = run_all_tests(tester)
 
-    for tester in testers:
-        # stop and shutdown the nav stack to exit cleanly
-        tester.shutdown()
-
-    testers[0].info_msg('Done Shutting Down.')
+    # stop and shutdown the nav stack to exit cleanly
+    tester.shutdown()
+    tester.info_msg('Done Shutting Down.')
 
     if not passed:
-        testers[0].info_msg('Exiting failed')
+        tester.info_msg('Exiting failed')
         exit(1)
     else:
-        testers[0].info_msg('Exiting passed')
+        tester.info_msg('Exiting passed')
         exit(0)
 
 
