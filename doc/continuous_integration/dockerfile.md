@@ -13,7 +13,7 @@ The Dockerfiles for this project are built upon parent images from upstream repo
   * GitHub repo for OSRF Dockerfiles
 * [Official Images on Docker Hub](https://docs.docker.com/docker-hub/official_images)
 
-While the main [`Dockerfile`](/Dockerfile) at the root of the repo is used for development and continuous integration, the [`.dockerhub/`](/.dockerhub) directory contains additional Dockerfiles that can be used for building the project entirely from scratch, include the minimal spanning set of recursive ROS2 dependencies from source, or building the project from a released ROS2 distro using available pre-built binary dependencies. We'll walk through the main Dockerfile here, although all of them follow the same basic pattern.
+While the main [`Dockerfile`](/Dockerfile) at the root of the repo is used for development and continuous integration, the [`.dockerhub/`](/.dockerhub) directory contains additional Dockerfiles that can be used for building the project entirely from scratch, include the minimal spanning set of recursive ROS2 dependencies from source, or building the project from a released ROS2 distro using available pre-built binary dependencies. These are particularly helpful when needing to build/test the project using a custom branch of ROS2 or rolling distro release. We'll walk through the main Dockerfile here, although all of them follow the same basic pattern.
 
 ## Global Arguments
 
@@ -91,3 +91,30 @@ The [`distro.Dockerfile`](/.dockerhub/distro.Dockerfile) provides once such exam
 
 * [cache apt packages](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md#example-cache-apt-packages)
   * avoid unnecessarily re-downloading the same packages over the network, even if the docker image layer cache for that `RUN` directive in the Dockerfile is busted
+
+### Advanced Optimizations
+
+With Buildkit's concurrent dependency resolution, multistage builds become parallelizable, assisting in shorter over all image build times. Granular expansion of the Directed Acyclic Graph (DAG) of workspace build steps into septate stages can be used to exploit this parallelism further, as well to maximize caching. This is exemplified in  [`source.Dockerfile`](/.dockerhub/source.Dockerfile). The figure bellow depicts how the multiple stages are composed to exploit the DAG of workspaces.
+
+![pipeline](figs/multistage.svg)
+
+This composition of stages follows a few basic principles:
+
+* Enforce Determinism
+  * Filter workspace source files down to what's essential
+  * E.g. `cacher` stage prunes underlay packages irrelevant for overlays
+* Maximize Caching
+  * Leverage dependency build order when forming DAG
+  * E.g. prevent `builder` stages from invalidating `depender` stages
+* Optimize Layers
+  * Lazily COPY and build FROM other stages as by-need
+  * E.g. Avoid dependencies between `tester` stages to build in parallel
+
+The table below is compares the finish build times between sequential (one stage one at a time) and multistage (many stages at once) builds, with and without caching (a warm and valid cache available).
+
+|   | w/o Caching | w/ Caching |
+|---|---|---|
+| Sequential Build | 1h:22m:38s | 0h:49m:30s |
+| Multistage Build | 0h:53m:49s | 0h:27m:44s |
+
+For reference, Sequential Build without Caching is equivalent to building a dockerfile without the use of multistages nor Buildkit.
