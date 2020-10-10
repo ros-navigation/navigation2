@@ -1,11 +1,11 @@
 # Dockerfile Documentation
 
-Dockerfiles, denoted via the `(<name>.)Dockerfile` file name extension, provide repeatable and reproducible means to build and test the project. Further references on writing and building Dockerfiles, such as syntax and tooling can be found here:
+Dockerfiles, denoted via the `(<name>.)Dockerfile` file name extension, provide repeatable and reproducible means to build and test the project, as well as pre configured environment for container based services further downstream the CI pipeline. Further references on writing and building Dockerfiles, such as syntax and tooling can be found here:
 
 * [Dockerfile reference](https://docs.docker.com/engine/reference/builder)
 * [Best practices for writing Dockerfiles](https://docs.docker.com/develop/develop-images/dockerfile_best-practices)
 
-The Dockerfiles for this project are built upon parent images from upstream repos on DockerHub, thus abbreviating environmental setup and build time, yet written in a parameterized style to remain ROS2 distro agnostic. This keeps them easily generalizable for future ROS2 releases or for switching between custom parent images. Given the use of multiple build stages, they're consequently best approached by reading from top to bottom in the order in which image layers are appended. More info on upstream repos on DockerHub can be found here:
+The Dockerfiles for this project are built upon parent images from upstream repos on DockerHub, thus abbreviating environmental setup and build time, yet written in a parameterized style to remain ROS2 distro agnostic. This keeps them easily generalizable for future ROS2 releases or for switching between custom parent images. When choosing the parent image, a tradeoff may persist between choosing a larger tag with more than what you need pre-installed, saving time building the image locally, vs. choosing a smaller tag without anything you don't need, saving time pulling or pushing the image remotely. Given the use of multiple build stages, they're consequently best approached by reading from top to bottom in the order in which image layers are appended. More info on upstream repos on DockerHub can be found here:
 
 * [ROS Docker Images](https://hub.docker.com/_/ros)
   * DockerHub repo for official images
