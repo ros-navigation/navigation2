@@ -61,6 +61,7 @@ if(BUILD_TESTING)
   add_subdirectory(src/recoveries/backup)
   add_subdirectory(src/costmap_filters)
   install(DIRECTORY maps DESTINATION share/${PROJECT_NAME})
+  install(DIRECTORY params DESTINATION share/${PROJECT_NAME})
 
 endif()
 
