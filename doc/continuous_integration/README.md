@@ -4,7 +4,7 @@ Documentation on the existing CI for the project is resides here.
 ## Overview
 The existing CI is composed of multiple integration services that together help provide maintainers a fast and scalable testing environment. To help detect upstream breakages quickly as well, the existing CI allows for changes to be evaluated using the latest development dependencies. In light of the large dependency footprint a high-level ROS2 navigation stack necessitates, the use of each integration service is optimized to maximize caching of environmental setup and increase workflow throughput. As these optimizations add complexity to the CI configuration, this documentation provides further explanations and reasoning behind each configuration.
 
-![pipeline](figs/pipeline.png)
+![pipeline](figs/pipeline.svg)
 
 The figure above is a high level diagram on how the integration services described below are composed.
 
