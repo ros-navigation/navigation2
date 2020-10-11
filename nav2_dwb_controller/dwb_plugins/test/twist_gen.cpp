@@ -51,6 +51,14 @@ geometry_msgs::msg::Pose2D origin;
 nav_2d_msgs::msg::Twist2D zero;
 nav_2d_msgs::msg::Twist2D forward;
 
+class LimitedAccelGeneratorTest : public dwb_plugins::LimitedAccelGenerator
+{
+public:
+  double getAccelerationTime() {
+    return acceleration_time_;
+  }
+};
+
 std::vector<rclcpp::Parameter> getDefaultKinematicParameters()
 {
   std::vector<rclcpp::Parameter> parameters;
@@ -220,6 +228,16 @@ TEST(VelocityIterator, dwa_gen)
   // Same as no-limits since everything is within our velocity limits
   EXPECT_EQ(twists.size(), 20u * 20u * 5u + 100u - 1u);
   checkLimits(twists, 0.0, 0.125, -0.1, 0.1, -0.16, 0.16, hypot(0.125, 0.1), 0.0, 0.1);
+}
+
+TEST(VelocityIterator, dwa_gen_zero_frequency)
+{
+  auto nh = makeTestNode("dwa_gen");
+  nh->declare_parameter("controller_frequency", 0.0);
+  LimitedAccelGeneratorTest gen;
+  gen.initialize(nh, "dwb");
+  // Default value should be 0.05
+  EXPECT_EQ(gen.getAccelerationTime(), 0.05);
 }
 
 TEST(VelocityIterator, nonzero)
