@@ -180,7 +180,7 @@ DWBLocalPlanner::loadCritics()
 
   std::vector<std::string> critic_names;
   if (!node->get_parameter(dwb_plugin_name_ + ".critics", critic_names)) {
-    loadBackwardsCompatibleParameters();
+    throw std::runtime_error("No critics defined for " + dwb_plugin_name_);
   }
 
   node->get_parameter(dwb_plugin_name_ + ".critics", critic_names);
@@ -208,64 +208,6 @@ DWBLocalPlanner::loadCritics()
     }
     RCLCPP_INFO(logger_, "Critic plugin initialized");
   }
-}
-
-void
-DWBLocalPlanner::loadBackwardsCompatibleParameters()
-{
-  std::vector<std::string> critic_names;
-  RCLCPP_INFO(
-    logger_,
-    "DWBLocalPlanner", "No critics configured! Using the default set.");
-  critic_names.emplace_back("RotateToGoal");      // discards trajectories that move forward when
-                                                  //   already at goal
-  critic_names.emplace_back("Oscillation");       // discards oscillating motions (assisgns cost -1)
-  critic_names.emplace_back("ObstacleFootprint");  // discards trajectories that move into obstacles
-  critic_names.emplace_back("GoalAlign");          // prefers trajectories that make the
-                                                   //   nose go towards (local) nose goal
-  critic_names.emplace_back("PathAlign");          // prefers trajectories that keep the
-                                                   //   robot nose on nose path
-  critic_names.emplace_back("PathDist");           // prefers trajectories on global path
-  critic_names.emplace_back("GoalDist");           // prefers trajectories that go towards
-                                                   //   (local) goal, based on wave propagation
-
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  node->set_parameters({rclcpp::Parameter(dwb_plugin_name_ + ".critics", critic_names)});
-
-  declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".path_distance_bias");
-  declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".goal_distance_bias");
-  declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".occdist_scale");
-  declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".max_scaling_factor");
-  declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".scaling_speed");
-  declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".PathAlign.scale");
-  declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".GoalAlign.scale");
-  declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".PathDist.scale");
-  declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".GoalDist.scale");
-  declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".ObstacleFootprint.scale");
-  declare_parameter_if_not_declared(
-    node, dwb_plugin_name_ + ".ObstacleFootprint.max_scaling_factor");
-  declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".ObstacleFootprint.scaling_speed");
-
-  /* *INDENT-OFF* */
-  nav_2d_utils::moveParameter(node, dwb_plugin_name_ + ".path_distance_bias",
-    dwb_plugin_name_ + ".PathAlign.scale", 32.0, false);
-  nav_2d_utils::moveParameter(node, dwb_plugin_name_ + ".goal_distance_bias",
-    dwb_plugin_name_ + ".GoalAlign.scale", 24.0, false);
-  nav_2d_utils::moveParameter(node, dwb_plugin_name_ + ".path_distance_bias",
-    dwb_plugin_name_ + ".PathDist.scale", 32.0);
-  nav_2d_utils::moveParameter(node, dwb_plugin_name_ + ".goal_distance_bias",
-    dwb_plugin_name_ + ".GoalDist.scale", 24.0);
-  nav_2d_utils::moveParameter(node, dwb_plugin_name_ + ".occdist_scale",
-    dwb_plugin_name_ + ".ObstacleFootprint.scale", 0.01);
-  nav_2d_utils::moveParameter(node, dwb_plugin_name_ + ".max_scaling_factor",
-    dwb_plugin_name_ + ".ObstacleFootprint.max_scaling_factor", 0.2);
-  nav_2d_utils::moveParameter(node, dwb_plugin_name_ + ".scaling_speed",
-    dwb_plugin_name_ + ".ObstacleFootprint.scaling_speed", 0.25);
-  /* *INDENT-ON* */
 }
 
 void

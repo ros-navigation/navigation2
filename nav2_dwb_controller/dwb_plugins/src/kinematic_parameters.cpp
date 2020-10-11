@@ -41,7 +41,6 @@
 #include "nav2_util/node_utils.hpp"
 
 using nav2_util::declare_parameter_if_not_declared;
-using nav_2d_utils::moveDeprecatedParameter;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
@@ -63,11 +62,6 @@ void KinematicsHandler::initialize(
   const std::string & plugin_name)
 {
   plugin_name_ = plugin_name;
-  // Special handling for renamed parameters
-  moveDeprecatedParameter<double>(nh, plugin_name + ".max_vel_theta", "max_rot_vel");
-  moveDeprecatedParameter<double>(nh, plugin_name + ".min_speed_xy", "min_trans_vel");
-  moveDeprecatedParameter<double>(nh, plugin_name + ".max_speed_xy", "max_trans_vel");
-  moveDeprecatedParameter<double>(nh, plugin_name + ".min_speed_theta", "min_rot_vel");
 
   declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_x", rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_y", rclcpp::ParameterValue(0.0));

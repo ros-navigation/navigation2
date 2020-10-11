@@ -156,16 +156,13 @@ DWBPublisher::on_cleanup()
 void
 DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results)
 {
-  if (eval_pub_->get_subscription_count() < 1) {return;}
-
-  if (results == nullptr) {return;}
-
-  if (publish_evaluation_) {
-    auto msg = std::make_unique<dwb_msgs::msg::LocalPlanEvaluation>(*results);
-    eval_pub_->publish(std::move(msg));
+  if (results) {
+    if (publish_evaluation_ && eval_pub_->get_subscription_count() > 0) {
+      auto msg = std::make_unique<dwb_msgs::msg::LocalPlanEvaluation>(*results);
+      eval_pub_->publish(std::move(msg));
+    }
+    publishTrajectories(*results);
   }
-
-  publishTrajectories(*results);
 }
 
 void

@@ -283,7 +283,7 @@ void ControllerServer::computeControl()
     setPlannerPath(action_server_->get_current_goal()->path);
     progress_checker_->reset();
 
-    rclcpp::Rate loop_rate(controller_frequency_);
+    rclcpp::WallRate loop_rate(controller_frequency_);
     while (rclcpp::ok()) {
       if (action_server_ == nullptr || !action_server_->is_server_active()) {
         RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");

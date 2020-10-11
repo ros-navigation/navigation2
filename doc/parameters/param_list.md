@@ -72,7 +72,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## static_layer plugin
 
-* `<static layer>`: Name corresponding to the `nav2_costmap_2d::StaticLayer` plugin. This name gets defined in `plugin_names`, default value is `static_layer`
+* `<static layer>`: Name corresponding to the `nav2_costmap_2d::StaticLayer` plugin. This name gets defined in `plugins`, default value is `static_layer`
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -84,7 +84,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## inflation_layer plugin
 
-* `<inflation layer>`: Name corresponding to the `nav2_costmap_2d::InflationLayer` plugin. This name gets defined in `plugin_names`, default value is `inflation_layer`
+* `<inflation layer>`: Name corresponding to the `nav2_costmap_2d::InflationLayer` plugin. This name gets defined in `plugins`, default value is `inflation_layer`
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -96,7 +96,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## obstacle_layer plugin
 
-* `<obstacle layer>`: Name corresponding to the `nav2_costmap_2d::ObstacleLayer` plugin. This name gets defined in `plugin_names`, default value is `obstacle_layer`
+* `<obstacle layer>`: Name corresponding to the `nav2_costmap_2d::ObstacleLayer` plugin. This name gets defined in `plugins`, default value is `obstacle_layer`
 * `<data source>`: Name of a source provided in ``<obstacle layer>`.observation_sources`
 
 | Parameter | Default | Description |
@@ -121,7 +121,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## range_sensor_layer plugin
 
-* `<range layer>`: Name corresponding to the `nav2_costmap_2d::RangeSensorLayer` plugin. This name gets defined in `plugin_names`.
+* `<range layer>`: Name corresponding to the `nav2_costmap_2d::RangeSensorLayer` plugin. This name gets defined in `plugins`.
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -137,10 +137,10 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 
 ## voxel_layer plugin
 
-* `<voxel layer>`: Name corresponding to the `nav2_costmap_2d::VoxelLayer` plugin. This name gets defined in `plugin_names`
+* `<voxel layer>`: Name corresponding to the `nav2_costmap_2d::VoxelLayer` plugin. This name gets defined in `plugins`
 * `<data source>`: Name of a source provided in `<voxel layer>`.observation_sources`
 
-*Note*: These parameters will only get declared if a `<voxel layer>` name such as `voxel_layer` is appended to `plugin_names` parameter and `"nav2_costmap_2d::VoxelLayer"` is appended to `plugin_types` parameter.
+*Note*: These parameters will only get declared if a `<voxel layer>` name such as `voxel_layer` is appended to `plugins` parameter and `"nav2_costmap_2d::VoxelLayer"` is appended to its `plugin` name parameter.
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -166,7 +166,16 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | `<data source>`.marking | true | Whether source should mark in costmap |
 | `<data source>`.clearing | false | Whether source should raytrace clear in costmap |
 | `<data source>`.obstacle_range | 2.5 | Maximum range to mark obstacles in costmap |
-| `<data source>`.raytrace_range | 3.0 | Maximum range to raytrace clear obstacles from costmap | 
+| `<data source>`.raytrace_range | 3.0 | Maximum range to raytrace clear obstacles from costmap |
+
+## keepout filter
+
+* `<filter name>`: Name corresponding to the `nav2_costmap_2d::KeepoutFilter` plugin. This name gets defined in `plugins`.
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<filter name>`.enabled | true | Whether it is enabled |
+| `<filter name>`.filter_info_topic | N/A | Name of the CostmapFilterInfo topic having filter-related information |
 
 # controller_server
 
@@ -276,7 +285,7 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 | `<dwb plugin>`.`<name>`.x_only_threshold | 0.05 | Threshold to check in the X velocity direction |
 | `<dwb plugin>`.`<name>`.scale | 1.0 | Weighed scale for critic |
 
-## kinematic_parameters 
+## kinematic_parameters
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -295,7 +304,7 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 | `<dwb plugin>`.decel_lim_y | 0.0 | Maximum deceleration Y (m/s^2) |
 | `<dwb plugin>`.decel_lim_theta | 0.0 | Maximum deceleration rotation (rad/s^2) |
 
-## xy_theta_iterator 
+## xy_theta_iterator
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
@@ -423,13 +432,14 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 
 # map_server
 
-## map_server
+## map_saver
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | save_map_timeout | 2000 | Timeout to attempt to save map with (ms) |
 | free_thresh_default | 0.25 | Free space maximum threshold for occupancy grid |
 | occupied_thresh_default | 0.65 | Occupied space minimum threshhold for occupancy grid |
+| map_subscribe_transient_local | true | Use transient local QoS profile for incoming map subscription |
 
 ## map_server
 
@@ -474,12 +484,62 @@ When `planner_plugins` parameter is not overridden, the following default plugin
 | `<name>`.use_astar | false | Whether to use A*, if false, uses Dijstra's expansion |
 | `<name>`.allow_unknown | true | Whether to allow planning in unknown space |
 
+# smac_planner
+
+* `<name>`: Corresponding planner plugin ID for this type
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<name>`.tolerance  | 0.5 | Tolerance in meters between requested goal pose and end of path |
+| `<name>`.downsample_costmap | false | Whether to downsample costmap |
+| `<name>`.downsampling_factor | 1 | Factor to downsample costmap by |
+| `<name>`.allow_unknown | true | whether to allow traversing in unknown space |
+| `<name>`.max_iterations | -1 | Number of iterations before failing, disabled by -1 |
+| `<name>`.max_on_approach_iterations | 1000 | Iterations after within threshold before returning approximate path with best heuristic |
+| `<name>`.max_planning_time_ms | 5000 | Maximum planning time in ms |
+| `<name>`.smooth_path | false | Whether to smooth path with CG smoother |
+| `<name>`.motion_model_for_search | DUBIN | Motion model to search with. Options for SE2: DUBIN, REEDS_SHEPP. 2D: MOORE, VON_NEUMANN |
+| `<name>`.angle_quantization_bins | 1 | Number of angle quantization bins for SE2 node |
+| `<name>`.minimum_turning_radius | 0.20 | Minimum turning radius in m of vehicle or desired path |
+| `<name>`.reverse_penalty | 2.0 | Penalty to apply to SE2 node if in reverse direction |
+| `<name>`.change_penalty | 0.5 | Penalty to apply to SE2 node if changing direction |
+| `<name>`.non_straight_penalty | 1.1 | Penalty to apply to SE2 node if non-straight direction |
+| `<name>`.cost_penalty | 1.2 | Penalty to apply to SE2 node for cost at pose |
+| `<name>`.analytic_expansion_ratio | 2.0 | For SE2 nodes the planner will attempt an analytic path expansion every N iterations, where N = closest_distance_to_goal / analytic_expansion_ratio. Higher ratios result in more frequent expansions |
+| `<name>`.smoother.smoother.w_curve | 1.5 | Smoother weight on curvature of path |
+| `<name>`.smoother.smoother.w_dist | 0.0 | Smoother weight on distance from original path |
+| `<name>`.smoother.smoother.w_smooth | 15000 | Smoother weight on distance between nodes |
+| `<name>`.smoother.smoother.w_cost | 1.5 | Smoother weight on costmap cost |
+| `<name>`.smoother.smoother.cost_scaling_factor | 10.0 | Inflation layer's scale factor |
+| `<name>`.smoother.optimizer.max_time | 0.10 | Maximum time to spend smoothing, in seconds |
+| `<name>`.smoother.optimizer.max_iterations | 500 | Maximum number of iterations to spend smoothing |
+| `<name>`.smoother.optimizer.debug_optimizer | false | Whether to print debug info from Ceres |
+| `<name>`.smoother.optimizer.gradient_tol | 1e-10 | Minimum change in gradient to terminate smoothing |
+| `<name>`.smoother.optimizer.fn_tol | 1e-7 | Minimum change in function to terminate smoothing |
+| `<name>`.smoother.optimizer.param_tol | 1e-15 | Minimum change in parameter block to terminate smoothing |
+
+| `<name>`.smoother.optimizer.advanced.min_line_search_step_size | 1e-20 | Terminate smoothing iteration if change in parameter block less than this |
+| `<name>`.smoother.optimizer.advanced.max_num_line_search_step_size_iterations | 50 | Maximum iterations for line search |
+| `<name>`.smoother.optimizer.advanced.line_search_sufficient_function_decrease | 1e-20 | Function decrease amount to terminate current line search iteration |
+| `<name>`.smoother.optimizer.advanced.max_num_line_search_direction_restarts | 10 | Maximum umber of restarts of line search when over-estimating |
+| `<name>`.smoother.optimizer.advanced.max_line_search_step_expansion | 50 | Step size multiplier at each iteration of line search |
+
 # waypoint_follower
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | stop_on_failure | true | Whether to fail action task if a single waypoint fails. If false, will continue to next waypoint. |
 | loop_rate | 20 | Rate to check for results from current navigation task |
+| waypoint_task_executor_plugin | `waypoint_task_executor` | Name of plugin to be loaded for executing waypoint tasks.|
+
+## WaitAtWaypoint plugin
+
+* `<waypoint task executor>`: Name corresponding to the `nav2_waypoint_follower::WaitAtWaypoint` plugin. 
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<waypoint task executor>`.enabled | true | Whether it is enabled |
+| `<waypoint task executor>`.waypoint_pause_duration | 0 | Amount of time in milliseconds, for robot to sleep/wait after each waypoint is reached. If zero, robot will directly continue to next waypoint. |
 
 # recoveries
 

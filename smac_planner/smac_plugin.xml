@@ -1,0 +1,5 @@
+<library path="smac_planner">
+	<class name="smac_planner/SmacPlanner" type="smac_planner::SmacPlanner" base_class_type="nav2_core::GlobalPlanner">
+	  <description>SE2 version of the SMAC planner</description>
+	</class>
+</library>
