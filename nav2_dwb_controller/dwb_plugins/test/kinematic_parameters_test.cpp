@@ -52,15 +52,14 @@ public:
   }
 };
 
-TEST(A, B) {
+TEST(KinematicParameters, SetAllParameters) {
   std::string nodeName = "test_node";
   auto node = nav2_util::LifecycleNode::make_shared(nodeName);
   KinematicsHandlerTest kh;
   kh.initialize(node, nodeName);
 
   rcl_interfaces::msg::ParameterEvent event;
-  Parameter p_minX, p_maxX, p_minY, p_maxY,
-    p_accX, p_decelX, p_accY, p_decelY, p_minSpeedXY,
+  Parameter p_minX, p_maxX, p_minY, p_maxY, p_accX, p_decelX, p_accY, p_decelY, p_minSpeedXY,
     p_maxSpeedXY, p_maxTheta, p_accTheta, p_decelTheta, p_minSpeedTheta;
 
   p_minX.name = nodeName + ".min_vel_x";
