@@ -27,16 +27,16 @@ using namespace std::chrono_literals;
 
 using nav2_system_tests::SpinRecoveryTester;
 
-std::string testNameGenerator(const testing::TestParamInfo<std::tuple<float, float>> & param)
+std::string testNameGenerator(const testing::TestParamInfo<std::tuple<float, float, bool>> & param)
 {
   std::string name = std::to_string(std::abs(std::get<0>(param.param))) + "_" + std::to_string(
-    std::get<1>(param.param));
+    std::get<1>(param.param)) + "_" + std::to_string(std::get<2>(param.param));
   name.erase(std::remove(name.begin(), name.end(), '.'), name.end());
   return name;
 }
 
 class SpinRecoveryTestFixture
-  : public ::testing::TestWithParam<std::tuple<float, float>>
+  : public ::testing::TestWithParam<std::tuple<float, float, bool>>
 {
 public:
   static void SetUpTestCase()
@@ -63,14 +63,20 @@ TEST_P(SpinRecoveryTestFixture, testSpinRecovery)
 {
   float target_yaw = std::get<0>(GetParam());
   float tolerance = std::get<1>(GetParam());
+  bool should_fake_costmap = std::get<2>(GetParam());
 
   bool success = false;
-  int num_tries = 3;
-  for (int i = 0; i != num_tries; i++) {
-    success = success || spin_recovery_tester->defaultSpinRecoveryTest(target_yaw, tolerance);
-    if (success) {
-      break;
+  if (!should_fake_costmap){
+    int num_tries = 3;
+    for (int i = 0; i != num_tries; i++) {
+      success = success || spin_recovery_tester->defaultSpinRecoveryTest(target_yaw, tolerance);
+      if (success) {
+        break;
+      }
     }
+  }
+  else{
+    success = true; //temporary, to see if this will build
   }
 
   EXPECT_EQ(true, success);
@@ -80,13 +86,14 @@ INSTANTIATE_TEST_CASE_P(
   SpinRecoveryTests,
   SpinRecoveryTestFixture,
   ::testing::Values(
-    std::make_tuple(-M_PIf32 / 6.0, 0.1),
-    std::make_tuple(M_PI_4f32, 0.1),
-    std::make_tuple(-M_PI_2f32, 0.1),
-    std::make_tuple(M_PIf32, 0.1),
-    std::make_tuple(3.0 * M_PIf32 / 2.0, 0.15),
-    std::make_tuple(-2.0 * M_PIf32, 0.1),
-    std::make_tuple(4.0 * M_PIf32, 0.15)),
+    std::make_tuple(-M_PIf32 / 6.0, 0.1, false),
+    std::make_tuple(M_PI_4f32, 0.1, false),
+    std::make_tuple(-M_PI_2f32, 0.1, false),
+    std::make_tuple(M_PIf32, 0.1, false ),
+    std::make_tuple(3.0 * M_PIf32 / 2.0, 0.15, false),
+    std::make_tuple(-2.0 * M_PIf32, 0.1, false),
+    std::make_tuple(4.0 * M_PIf32, 0.15, false),
+    std::make_tuple(-M_PIf32 / 6.0, 0.1, true)),
   testNameGenerator);
 
 int main(int argc, char ** argv)
