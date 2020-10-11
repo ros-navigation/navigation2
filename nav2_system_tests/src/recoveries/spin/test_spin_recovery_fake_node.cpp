@@ -21,7 +21,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "spin_recovery_tester.hpp"
+#include "spin_recovery_fake_tester.hpp"
 
 using namespace std::chrono_literals;
 

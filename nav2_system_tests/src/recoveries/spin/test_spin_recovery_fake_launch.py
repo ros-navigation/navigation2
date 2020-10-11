@@ -49,12 +49,6 @@ def generate_launch_description():
     return LaunchDescription([
         SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
 
-        # # Launch gazebo server for simulation
-        # ExecuteProcess(
-        #     cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
-        #          '--minimal_comms', world],
-        #     output='screen'),
-
         # TODO(orduno) Launch the robot state publisher instead
         #              using a local copy of TB3 urdf file
         Node(
@@ -71,13 +65,7 @@ def generate_launch_description():
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                os.path.join(bringup_dir, 'launch', 'bringup_launch.py')),
-            launch_arguments={
-                              'map': map_yaml_file,
-                              'use_sim_time': 'True',
-                              'params_file': configured_params,
-                              'bt_xml_file': bt_navigator_xml,
-                              'autostart': 'True'}.items()),
+                os.path.join(bringup_dir, 'launch', 'navigation_launch.py'))),
     ])
 
 
@@ -88,7 +76,7 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
-        name='test_spin_recovery_node',
+        name='test_spin_recovery_fake_node',
         output='screen')
 
     lts = LaunchTestService()
