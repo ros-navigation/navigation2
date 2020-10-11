@@ -36,8 +36,17 @@ SpinRecoveryTester::SpinRecoveryTester()
 {
   node_ = rclcpp::Node::make_shared("spin_recovery_test");
 
+
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  
+  const char* env_p = std::getenv("MAKE_FAKE_COSTMAP");
+  if(env_p[0] == 't'){
+    make_fake_costmap_ = true;
+  }
+  else{
+    make_fake_costmap_ = false;
+  }
 
   client_ptr_ = rclcpp_action::create_client<Spin>(
     node_->get_node_base_interface(),
@@ -67,12 +76,16 @@ void SpinRecoveryTester::activate()
     throw std::runtime_error("Trying to activate while already active");
     return;
   }
-
-  while (!initial_pose_received_) {
-    RCLCPP_WARN(node_->get_logger(), "Initial pose not received");
-    sendInitialPose();
-    std::this_thread::sleep_for(100ms);
-    rclcpp::spin_some(node_);
+  if(!make_fake_costmap_){
+    while (!initial_pose_received_) {
+      RCLCPP_WARN(node_->get_logger(), "Initial pose not received");
+      sendInitialPose();
+      std::this_thread::sleep_for(100ms);
+      rclcpp::spin_some(node_);
+    }
+  }
+  else {
+    RCLCPP_WARN(node_->get_logger(), "Fake Cost Map");
   }
 
   // Wait for lifecycle_manager_navigation to activate recoveries_server

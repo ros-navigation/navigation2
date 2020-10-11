@@ -63,6 +63,9 @@ TEST_P(SpinRecoveryTestFixture, testSpinRecovery)
 {
   float target_yaw = std::get<0>(GetParam());
   float tolerance = std::get<1>(GetParam());
+  
+  if(const char* env_p = std::getenv("MAKE_FAKE_COSTMAP"))
+        std::cout << "Your PATH is: " << env_p << '\n';
 
   bool success = false;
   int num_tries = 3;

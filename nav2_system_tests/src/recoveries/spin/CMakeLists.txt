@@ -9,15 +9,6 @@ ament_target_dependencies(${test_spin_recovery_exec}
   ${dependencies}
 )
 
-ament_add_gtest_executable(${test_spin_recovery_fake_exec}
-  test_spin_recovery_fake__node.cpp
-  spin_recovery_fake_tester.cpp
-)
-
-ament_target_dependencies(${test_spin_recovery_fake_exec}
-  ${dependencies}
-)
-
 ament_add_test(test_spin_recovery
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_spin_recovery_launch.py"
@@ -29,6 +20,7 @@ ament_add_test(test_spin_recovery
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/turtlebot3_ros2_demo.world
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
+    MAKE_FAKE_COSTMAP=false
 )
 
 ament_add_test(test_spin_recovery_fake
@@ -42,4 +34,5 @@ ament_add_test(test_spin_recovery_fake
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/turtlebot3_ros2_demo.world
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
+    MAKE_FAKE_COSTMAP=true
 )
