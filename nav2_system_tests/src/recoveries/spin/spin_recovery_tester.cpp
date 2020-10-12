@@ -83,6 +83,7 @@ void SpinRecoveryTester::activate()
   }
   if(!make_fake_costmap_){
     while (!initial_pose_received_) {
+      RCLCPP_INFO(node_->get_logger(), "Foo");
       RCLCPP_WARN(node_->get_logger(), "Initial pose not received");
       sendInitialPose();
       std::this_thread::sleep_for(100ms);
@@ -90,6 +91,7 @@ void SpinRecoveryTester::activate()
     }
   }
   else {
+      RCLCPP_INFO(node_->get_logger(), "FooBar");
       sendFakeFootprint();
       sendFakeCostmap();
       sendFakeOdom(0.0);
@@ -296,6 +298,7 @@ void SpinRecoveryTester::sendFakeOdom(float angle){
   transformStamped.transform.rotation.w = q.w();
 
   tf_broadcaster_->sendTransform(transformStamped);
+  RCLCPP_INFO(node_->get_logger(), "Sent odom fake");
 }
 void SpinRecoveryTester::amclPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
