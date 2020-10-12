@@ -35,15 +35,15 @@ The executors also differ by a few environment variables. These include appropri
 
 ## Commands
 
-To reuse sequences of steps across multiple jobs, a number of [commands](https://circleci.com/docs/2.0/configuration-reference/#commands-requires-version-21) are defined. In addition to a few common commands for abstracting lower level tasks as a function, a number of higher level commands are also recursively composed of smaller formulaic steps.
+To reuse sequences of steps across multiple jobs, a number of [commands](https://circleci.com/docs/2.0/configuration-reference/#commands-requires-version-21) are defined.
 
 When checking our source code from the repo, additional pre and post checkout steps are performed to prepare the file system. When setting up dependencies, the build is prepared much the same way as in the project Dockerfile, by first setting up the underlay and then the overlay workspace. Additional steps are included for restoring and resetting previous ccache files and statistics, including a few diagnostic steps that can be used for debugging the CI itself, e.g. investigating as to why the hit rate for ccache may be abnormally low. Once the overlay setup is finished, more ccache diagnostics and files are saved for inspection or later restoration. A restore build command is also defined for test jobs, operating under the condition that a workspace with the same checksum can be restored from a previous build job in the workflow. Additional commands are also defined for steps in testing the overlay workspace and reporting coverage results.
 
-## References
+# References
 
 Per the YAML syntax, a reference must proceed any anchor that it links back to. Stylistically, any root level keys declared that only include references are denoted with an underscore (`_`) prefixed to help distinguish them from keys expected by the CircleCI config schema.
 
-### Common Environment
+## Common Environment
 
 For environment variables common among the executors, workspace paths and specific config options are listed here. While the workspace paths are parameterized to avoid hardcoding paths in common command functions, they may also be hardcoded as fields among a few high level steps given a limitation of the config syntax. The additional config options help optimize our project build given CI resource limits:
 
@@ -51,29 +51,9 @@ For environment variables common among the executors, workspace paths and specif
 * Limiting parallel make and linker jobs as to avoid exhausting container's RAM
 * Further adjustments for changing test behavior and sequential test stdout.
 
-### Common Commands
+## Steps
 
-Common commands for low level, repeated, and formulaic tasks are defined for saving and restoring CI caches, as well as for installing, building, and testing workspaces.
-
-#### Caching
-
-Multiple forms of [caching](https://circleci.com/docs/2.0/caching/) is done over the completion of a single workflow. To appropriately save and restore caches in a deterministic manner, these steps are abstracted as commands. Although CircleCI does provide an explicit step for persisting temporary files across jobs in the same workflow, i.e. a [workspace](https://circleci.com/docs/2.0/configuration-reference/#persist_to_workspace), caches are used instead for a few reasons. First there is only one workspace per workflow, thus avoiding cross talk between executors or release/debug job types is not as easily achievable. Secondly, unlike workspaces, caches can persist across workflows, permitting repeated workflows for the same PR to pull from the cache of prior runs; e.g. in order to keep the ccache as fresh as possible for that specific PR. 
-
-For this project, caching is done with respect to a given workspace. As such, a specified string and checksum from the workspace are combined with workflow specifics to ensure the [restored cache](https://circleci.com/docs/2.0/configuration-reference/#restore_cache) is uniquely identifiable and won't collide with other concurrent PRs.
-
-For saving a cache, the command is similar, aside from specifying the path to directory or file to be stored in the [saved cache](https://circleci.com/docs/2.0/configuration-reference/#save_cache). Given CI cache are conventionally read only, meaning a cache key can not be reused or updated to point to a newer cache, the current unix epoch is appended to the cache key to ensure key uniqueness. Because CircleCI key lookup behavior for cache restoration is performed via the most recent longest matching prefix, the latest matching cache is always restored.
-
-These workspace checksums are uploaded as [stored artifacts](https://circleci.com/docs/2.0/configuration-reference/#store_artifacts) throughout other commands to help introspect to debug caching behavior when needed.
-
-#### Building
-
-For installing and building workspaces, the process resembles that within the project Dockerfile. Additional bookkeeping is performed to update the workspace checksum file by piping stdout that deterministically describes the state of the build environment. This is done by seeding from the checksum of the underlay workspace and then appending info about source code checked out into the overlay workspace, as well as the list of required dependencies installed. When setting up the workspace, this checksum will first be used to check if the workspace can be restored from a prior workflow build. If the source code or required dependencies change, resulting in a missed cache hit, the unfinished workspace is then built. If the workspace build is successful then it will be cached. Regardless however, the build logs are always uploaded as stored artifacts for review or debugging. The odd shuffling of symbolic directories is done as a workaround given a limitation of the S3 SDK: 
-
-* [Failing to upload artifacts from symbolic link directories](https://discuss.circleci.com/t/failing-to-upload-artifacts-from-symbolic-link-directories/28000)
-
-#### Testing
-
-For testing workspaces, the list of packages within the workspace are [tested in parallel](https://circleci.com/docs/2.0/parallelism-faster-jobs/) across the number of replicated containers for the given test job as denoted by the `parallelism` option. Here packages are split by anticipated test timing; the heuristic derived from the reported duration and classname of prior recent test results. The logs and results from the tests are then always [reported](https://circleci.com/docs/2.0/configuration-reference/#store_test_results) and uploaded.
+Low level steps, defined prior to the job commands where they are used, are recursively defined from more functional common commands.
 
 ### Checkout
 
@@ -83,7 +63,31 @@ Checking out code consists of three stages, including pre and post checkout step
 
 The overlay workspace is then cleaned prior to checking out the project. The post checkout step simply checks to see if the underlay has changed to determine whether it should also be cleaned, recloned, and thus rebuilt as well.
 
-### Workspaces
+## Common Commands
+
+Common commands for low level, repeated, and formulaic tasks are defined for saving and restoring CI caches, as well as for installing, building, and testing workspaces.
+
+### Caching
+
+Multiple forms of [caching](https://circleci.com/docs/2.0/caching/) is done over the completion of a single workflow. To appropriately save and restore caches in a deterministic manner, these steps are abstracted as commands. Although CircleCI does provide an explicit step for persisting temporary files across jobs in the same workflow, i.e. a [workspace](https://circleci.com/docs/2.0/configuration-reference/#persist_to_workspace), caches are used instead for a few reasons. First there is only one workspace per workflow, thus avoiding cross talk between executors or release/debug job types is not as easily achievable. Secondly, unlike workspaces, caches can persist across workflows, permitting repeated workflows for the same PR to pull from the cache of prior runs; e.g. in order to keep the ccache as fresh as possible for that specific PR. 
+
+For this project, caching is done with respect to a given workspace. As such, a specified string and checksum from the workspace are combined with workflow specifics to ensure the [restored cache](https://circleci.com/docs/2.0/configuration-reference/#restore_cache) is uniquely identifiable and won't collide with other concurrent PRs.
+
+For saving a cache, the command is similar, aside from specifying the path to directory or file to be stored in the [saved cache](https://circleci.com/docs/2.0/configuration-reference/#save_cache). Given CI cache are conventionally read only, meaning a cache key can not be reused or updated to point to a newer cache, the current unix epoch is appended to the cache key to ensure key uniqueness. Because CircleCI key lookup behavior for cache restoration is performed via the most recent longest matching prefix, the latest matching cache is always restored.
+
+These workspace checksums are uploaded as [stored artifacts](https://circleci.com/docs/2.0/configuration-reference/#store_artifacts) throughout other commands to help introspect to debug caching behavior when needed.
+
+### Building
+
+For installing and building workspaces, the process resembles that within the project Dockerfile. Additional bookkeeping is performed to update the workspace checksum file by piping stdout that deterministically describes the state of the build environment. This is done by seeding from the checksum of the underlay workspace and then appending info about source code checked out into the overlay workspace, as well as the list of required dependencies installed. When setting up the workspace, this checksum will first be used to check if the workspace can be restored from a prior workflow build. If the source code or required dependencies change, resulting in a missed cache hit, the unfinished workspace is then built. If the workspace build is successful then it will be cached. Regardless however, the build logs are always uploaded as stored artifacts for review or debugging. The odd shuffling of symbolic directories is done as a workaround given a limitation of the S3 SDK: 
+
+* [Failing to upload artifacts from symbolic link directories](https://discuss.circleci.com/t/failing-to-upload-artifacts-from-symbolic-link-directories/28000)
+
+### Testing
+
+For testing workspaces, the list of packages within the workspace are [tested in parallel](https://circleci.com/docs/2.0/parallelism-faster-jobs/) across the number of replicated containers for the given test job as denoted by the `parallelism` option. Here packages are split by anticipated test timing; the heuristic derived from the reported duration and classname of prior recent test results. The logs and results from the tests are then always [reported](https://circleci.com/docs/2.0/configuration-reference/#store_test_results) and uploaded.
+
+## Workspaces
 
 The rest of the high level commands serve as references to repeatedly define workspace specific commands, such as install, building and testing either the underlay or overlay workspace. Some points of note however include: 
 
@@ -94,6 +98,6 @@ The rest of the high level commands serve as references to repeatedly define wor
 * Restore workspace command intentionally sets the `build` parameter to `false`
   * to avoid unnecessary duplication of the same workspace cache and build logs
 
-### Code Coverage
+## Code Coverage
 
 A custom script within the repo is reused to collect and post process the generated code coverage results from debug test jobs. This always runs regardless if the tests fail so that failed code coverage reports may still be reviewed. The final report is uploaded to CodeCov.
