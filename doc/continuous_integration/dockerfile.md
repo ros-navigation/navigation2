@@ -1,6 +1,6 @@
 # Dockerfile Documentation
 
-Dockerfiles, denoted via the `(<name>.)Dockerfile` file name extension, provide repeatable and reproducible means to build and test the project, as well as pre configured environment for container based services further downstream the CI pipeline. Further references on writing and building Dockerfiles, such as syntax and tooling can be found here:
+Dockerfiles, denoted via the `(<name>.)Dockerfile` file name extension, provides repeatable and reproducible means to build and test the project, as well as build images for running container based CI services. Further references on writing and building Dockerfiles, such as syntax and tooling can be found here:
 
 * [Dockerfile reference](https://docs.docker.com/engine/reference/builder)
 * [Best practices for writing Dockerfiles](https://docs.docker.com/develop/develop-images/dockerfile_best-practices)
