@@ -76,6 +76,7 @@ TEST(SmootherTest, test_smoother)
   }
 
   smac_planner::OptimizerParams params;
+  params.debug = true;
   params.get(node2D.get(), "test");
 
   smac_planner::SmootherParams smoother_params;

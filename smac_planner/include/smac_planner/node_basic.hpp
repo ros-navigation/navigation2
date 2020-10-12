@@ -70,9 +70,7 @@ public:
 
   typename NodeT::Coordinates pose;  // Used by NodeSE2
   NodeT * graph_node_ptr;
-
-protected:
-  unsigned int _index;
+  unsigned int index;
 };
 
 template class NodeBasic<Node2D>;

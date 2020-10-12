@@ -92,6 +92,7 @@ TEST(Node2DTest, test_node_2d)
   EXPECT_EQ(smac_planner::Node2D::getIndex(6u, 43u, 10u), 436u);
   EXPECT_EQ(smac_planner::Node2D::getCoords(436u, 10u, 1u).x, 6u);
   EXPECT_EQ(smac_planner::Node2D::getCoords(436u, 10u, 1u).y, 43u);
+  EXPECT_THROW(smac_planner::Node2D::getCoords(436u, 10u, 10u), std::runtime_error);
 }
 
 TEST(Node2DTest, test_node_2d_neighbors)
