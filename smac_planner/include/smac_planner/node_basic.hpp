@@ -54,20 +54,6 @@ public:
     graph_node_ptr(nullptr)
   {}
 
-  /**
-   * @brief A destructor for smac_planner::NodeBasic
-   */
-  ~NodeBasic() {}
-
-  /**
-   * @brief Gets cell index
-   * @return Reference to cell index
-   */
-  inline unsigned int & getIndex()
-  {
-    return index;
-  }
-
   typename NodeT::Coordinates pose;  // Used by NodeSE2
   NodeT * graph_node_ptr;
   unsigned int index;
