@@ -63,6 +63,17 @@ Checking out code consists of three stages, including pre and post checkout step
 
 The overlay workspace is then cleaned prior to checking out the project. The post checkout step simply checks to see if the underlay has changed to determine whether it should also be cleaned, recloned, and thus rebuilt as well.
 
+## Workspaces
+
+The rest of the steps are references to repeatedly define workspace specific commands, such as install, building and testing either the underlay or overlay workspace. Some points of note however include: 
+
+* The CI cache for ccache is intentionally linked with the underlay rather than the overlay workspace
+  * so that consecutive commits to the same PR are more likely to retain a warm and recent ccache
+* CCache Stats is intentionally used to zero stats before building a workspace
+  * so the next consecutive run of the CCache Stats reflects only upon that given workspace
+* Restore workspace command intentionally sets the `build` parameter to `false`
+  * to avoid unnecessary duplication of the same workspace cache and build logs
+
 ## Common Commands
 
 Common commands for low level, repeated, and formulaic tasks are defined for saving and restoring CI caches, as well as for installing, building, and testing workspaces.
@@ -86,17 +97,6 @@ For installing and building workspaces, the process resembles that within the pr
 ### Testing
 
 For testing workspaces, the list of packages within the workspace are [tested in parallel](https://circleci.com/docs/2.0/parallelism-faster-jobs/) across the number of replicated containers for the given test job as denoted by the `parallelism` option. Here packages are split by anticipated test timing; the heuristic derived from the reported duration and classname of prior recent test results. The logs and results from the tests are then always [reported](https://circleci.com/docs/2.0/configuration-reference/#store_test_results) and uploaded.
-
-## Workspaces
-
-The rest of the high level commands serve as references to repeatedly define workspace specific commands, such as install, building and testing either the underlay or overlay workspace. Some points of note however include: 
-
-* The CI cache for ccache is intentionally linked with the underlay rather than the overlay workspace
-  * so that consecutive commits to the same PR are more likely to retain a warm and recent ccache
-* CCache Stats is intentionally used to zero stats before building a workspace
-  * so the next consecutive run of the CCache Stats reflects only upon that given workspace
-* Restore workspace command intentionally sets the `build` parameter to `false`
-  * to avoid unnecessary duplication of the same workspace cache and build logs
 
 ## Code Coverage
 
