@@ -39,6 +39,7 @@ SpinRecoveryTester::SpinRecoveryTester()
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
   
   const char* env_p = std::getenv("MAKE_FAKE_COSTMAP");
   if(env_p[0] == 't'){
@@ -90,6 +91,8 @@ void SpinRecoveryTester::activate()
   }
   else {
       sendFakeFootprint();
+      sendFakeCostmap();
+      sendFakeOdom(0.0);
   }
 
   // Wait for lifecycle_manager_navigation to activate recoveries_server
@@ -225,8 +228,32 @@ void SpinRecoveryTester::sendFakeFootprint()
 
   fake_polygon.header.frame_id = "odom";
   fake_polygon.header.stamp = rclcpp::Time();
+
   fake_footprint_publisher_->publish(fake_polygon);
   RCLCPP_INFO(node_->get_logger(), "Sent fake footprint");
+}
+
+void SpinRecoveryTester::sendFakeCostmap()
+{
+  nav2_msgs::msg::Costmap fake_costmap;
+
+  fake_costmap.header.frame_id = "odom";
+  fake_costmap.header.stamp = rclcpp::Time();
+  
+  fake_costmap.metadata.layer = "master";
+  fake_costmap.metadata.resolution = 1.0;
+  fake_costmap.metadata.size_x = 10;
+  fake_costmap.metadata.size_y = 10;
+  fake_costmap.metadata.origin.position.x = 0;
+  fake_costmap.metadata.origin.position.y = 0;
+  fake_costmap.metadata.origin.orientation.w = 1.0;
+  for(int ix = 0; ix < fake_costmap.metadata.origin.position.x; ix++){
+    for(int iy = 0; iy < fake_costmap.metadata.origin.position.y; iy++){
+      fake_costmap.data.push_back(255);
+    }
+  }
+  fake_costmap_publisher_->publish(fake_costmap);
+  RCLCPP_INFO(node_->get_logger(), "Sent fake costmap");
 }
 
 void SpinRecoveryTester::sendInitialPose()
@@ -252,6 +279,24 @@ void SpinRecoveryTester::sendInitialPose()
   RCLCPP_INFO(node_->get_logger(), "Sent initial pose");
 }
 
+void SpinRecoveryTester::sendFakeOdom(float angle){
+  geometry_msgs::msg::TransformStamped transformStamped;
+  
+  transformStamped.header.stamp = rclcpp::Time();
+  transformStamped.header.frame_id = "map";
+  transformStamped.child_frame_id = "odom";
+  transformStamped.transform.translation.x = 0.0;
+  transformStamped.transform.translation.y = 0.0;
+  transformStamped.transform.translation.z = 0.0;
+  tf2::Quaternion q;
+  q.setRPY(0, 0, angle);
+  transformStamped.transform.rotation.x = q.x();
+  transformStamped.transform.rotation.y = q.y();
+  transformStamped.transform.rotation.z = q.z();
+  transformStamped.transform.rotation.w = q.w();
+
+  tf_broadcaster_->sendTransform(transformStamped);
+}
 void SpinRecoveryTester::amclPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
 {
