@@ -74,6 +74,10 @@ The rest of the steps are references to repeatedly define workspace specific com
 * Restore workspace command intentionally sets the `build` parameter to `false`
   * to avoid unnecessary duplication of the same workspace cache and build logs
 
+## Code Coverage
+
+The last few steps invoke a custom script to collect and post process the generated code coverage results from debug test jobs. This always runs regardless if the tests fail so that failed code coverage reports may still be reviewed. The final report is uploaded to CodeCov.
+
 ## Common Commands
 
 Common commands for low level, repeated, and formulaic tasks are defined for saving and restoring CI caches, as well as for installing, building, and testing workspaces.
@@ -97,7 +101,3 @@ For installing and building workspaces, the process resembles that within the pr
 ### Testing
 
 For testing workspaces, the list of packages within the workspace are [tested in parallel](https://circleci.com/docs/2.0/parallelism-faster-jobs/) across the number of replicated containers for the given test job as denoted by the `parallelism` option. Here packages are split by anticipated test timing; the heuristic derived from the reported duration and classname of prior recent test results. The logs and results from the tests are then always [reported](https://circleci.com/docs/2.0/configuration-reference/#store_test_results) and uploaded.
-
-## Code Coverage
-
-A custom script within the repo is reused to collect and post process the generated code coverage results from debug test jobs. This always runs regardless if the tests fail so that failed code coverage reports may still be reviewed. The final report is uploaded to CodeCov.
