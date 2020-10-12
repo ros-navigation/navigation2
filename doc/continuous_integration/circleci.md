@@ -47,7 +47,8 @@ Per the YAML syntax, a reference must proceed any anchor that it links back to. 
 
 For environment variables common among the executors, workspace paths and specific config options are listed here. While the workspace paths are parameterized to avoid hardcoding paths in common command functions, they may also be hardcoded as fields among a few high level steps given a limitation of the config syntax. The additional config options help optimize our project build given CI resource limits:
 
-* Capping ccache size/location given CI storage limits, speeding up cache restoration
+* Capping ccache size given CI storage limits, speeding up cache restoration
+* Setting ccache location to use RAM disk to improve file IO performance
 * Limiting parallel make and linker jobs as to avoid exhausting container's RAM
 * Further adjustments for changing test behavior and sequential test stdout.
 
