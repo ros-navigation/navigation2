@@ -50,7 +50,7 @@ public:
    * @param index The index of this node for self-reference
    */
   explicit NodeBasic(const unsigned int index)
-  : _index(index),
+  : index(index),
     graph_node_ptr(nullptr)
   {}
 
@@ -65,7 +65,7 @@ public:
    */
   inline unsigned int & getIndex()
   {
-    return _index;
+    return index;
   }
 
   typename NodeT::Coordinates pose;  // Used by NodeSE2

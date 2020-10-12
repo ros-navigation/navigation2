@@ -66,5 +66,5 @@ TEST(CostmapDownsampler, costmap_downsample_test)
   EXPECT_EQ(downsampledCostmapB->getSizeInCellsX(), 1u);
   EXPECT_EQ(downsampledCostmapB->getSizeInCellsY(), 1u);
 
-  downsampledCostmapB->resizeCostmap();
+  downsampler.resizeCostmap();
 }
