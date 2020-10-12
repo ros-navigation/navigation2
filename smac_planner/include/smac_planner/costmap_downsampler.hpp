@@ -79,15 +79,17 @@ public:
    */
   nav2_costmap_2d::Costmap2D * downsample(const unsigned int & downsampling_factor);
 
-private:
-  /**
-   * @brief Update the sizes X-Y of the costmap and its downsampled version
-   */
-  void updateCostmapSize();
   /**
    * @brief Resize the downsampled costmap. Used in case the costmap changes and we need to update the downsampled version
    */
   void resizeCostmap();
+
+protected:
+  /**
+   * @brief Update the sizes X-Y of the costmap and its downsampled version
+   */
+  void updateCostmapSize();
+
   /**
    * @brief Explore all subcells of the original costmap and assign the max cost to the new (downsampled) cell
    * @param new_mx The X-coordinate of the cell in the new costmap
