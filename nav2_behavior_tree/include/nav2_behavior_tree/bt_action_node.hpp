@@ -191,6 +191,16 @@ public:
           node_->get_logger(),
           "Failed to cancel action server for %s", action_name_.c_str());
       }
+
+      auto result_future = action_client_->async_get_result(goal_handle_);
+      if (rclcpp::spin_until_future_complete(node_, result_future) !=
+        rclcpp::FutureReturnCode::SUCCESS)
+      {
+        RCLCPP_ERROR(
+          node_->get_logger(),
+          "Failed to result from action server %s", action_name_.c_str());
+      }
+
     }
 
     setStatus(BT::NodeStatus::IDLE);
