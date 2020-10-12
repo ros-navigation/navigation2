@@ -21,6 +21,7 @@
 #include <vector>
 #include <set>
 
+#include "tf2_ros/buffer.h"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
