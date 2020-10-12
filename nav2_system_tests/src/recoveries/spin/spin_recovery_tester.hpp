@@ -26,8 +26,11 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "angles/angles.h"
 #include "nav2_msgs/action/spin.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/node_thread.hpp"
+#include "geometry_msgs/msg/point32.hpp"
+#include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
@@ -64,6 +67,8 @@ public:
 private:
   void sendInitialPose();
 
+  void sendFakeFootprint();
+
   void amclPoseCallback(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr);
 
   bool is_active_;
@@ -77,6 +82,12 @@ private:
 
   // Publisher to publish initial pose
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr publisher_;
+
+  // Publisher to publish fake costmap raw
+  rclcpp::Publisher<nav2_msgs::msg::Costmap>::SharedPtr fake_costmap_publisher_;
+
+  // Publisher to publish fake costmap footprint
+  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr fake_footprint_publisher_;
 
   // Subscriber for amcl pose
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;

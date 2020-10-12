@@ -30,11 +30,6 @@ from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     map_yaml_file = os.getenv('TEST_MAP')
-    world = os.getenv('TEST_WORLD')
-
-    bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
-                                    'behavior_trees',
-                                    os.getenv('BT_NAVIGATOR_XML'))
 
     bringup_dir = get_package_share_directory('nav2_bringup')
     params_file = os.path.join(bringup_dir, 'params/nav2_params.yaml')
@@ -55,8 +50,12 @@ def generate_launch_description():
             package='tf2_ros',
             executable='static_transform_publisher',
             output='screen',
+            arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_footprint']),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            output='screen',
             arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link']),
-
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
@@ -72,15 +71,15 @@ def generate_launch_description():
 def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
-    testExecutable = os.getenv('TEST_EXECUTABLE')
+    # testExecutable = os.getenv('TEST_EXECUTABLE')
 
-    test1_action = ExecuteProcess(
-        cmd=[testExecutable],
-        name='test_spin_recovery_fake_node',
-        output='screen')
+    # test1_action = ExecuteProcess(
+    #     cmd=[testExecutable],
+    #     name='test_spin_recovery_fake_node',
+    #     output='screen')
 
     lts = LaunchTestService()
-    lts.add_test_action(ld, test1_action)
+    # lts.add_test_action(ld, test1_action)
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
     return lts.run(ls)

@@ -57,6 +57,10 @@ SpinRecoveryTester::SpinRecoveryTester()
 
   publisher_ =
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
+  fake_costmap_publisher_ =
+      node_->create_publisher<nav2_msgs::msg::Costmap>("local_costmap/costmap_raw",10);
+  fake_footprint_publisher_ =
+      node_->create_publisher<geometry_msgs::msg::PolygonStamped>("local_costmap/published_footprint",10);
 
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
@@ -85,7 +89,7 @@ void SpinRecoveryTester::activate()
     }
   }
   else {
-    RCLCPP_WARN(node_->get_logger(), "Fake Cost Map");
+      sendFakeFootprint();
   }
 
   // Wait for lifecycle_manager_navigation to activate recoveries_server
@@ -203,6 +207,26 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   }
 
   return true;
+}
+
+void SpinRecoveryTester::sendFakeFootprint()
+{
+  geometry_msgs::msg::PolygonStamped fake_polygon;
+  geometry_msgs::msg::Point32 pt1,pt2,pt3;
+  pt1.x = -1;
+  pt1.y = 0;
+  fake_polygon.polygon.points.push_back(pt1);
+  pt2.x = 1;
+  pt2.y = 0;
+  fake_polygon.polygon.points.push_back(pt2);
+  pt3.x = 0;
+  pt3.y = 1;
+  fake_polygon.polygon.points.push_back(pt3);
+
+  fake_polygon.header.frame_id = "odom";
+  fake_polygon.header.stamp = rclcpp::Time();
+  fake_footprint_publisher_->publish(fake_polygon);
+  RCLCPP_INFO(node_->get_logger(), "Sent fake footprint");
 }
 
 void SpinRecoveryTester::sendInitialPose()
