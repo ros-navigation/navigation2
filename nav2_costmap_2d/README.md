@@ -13,7 +13,7 @@ general ROS2 community. A proposal temporary replacement has been submitted as a
 ## How to configure using Voxel Layer plugin:
 By default, the navigation stack uses the _Obstacle Layer_ to avoid obstacles in 2D. The _Voxel Layer_ allows for detecting obstacles in 3D using Pointcloud2 data. It requires Pointcloud2 data being published on some topic. For simulation, a Gazebo model of the robot with depth camera enabled will publish a pointcloud topic.
 
-The Voxel Layer plugin can be used to update the local costmap, glocal costmap or both, depending on how you define it in the `nav2_params.yaml` file in the nav2_bringup directory. The voxel layer plugin has to be added to the list of ```plugin_names``` and ```plugin_types``` in the global/local costmap scopes in the param file. If these are not defined in the param file, the default plugins set in nav2_costmap_2d will be used.
+The Voxel Layer plugin can be used to update the local costmap, glocal costmap or both, depending on how you define it in the `nav2_params.yaml` file in the nav2_bringup directory. The voxel layer plugin has to be added to the list of ```plugins``` and its ```plugin``` type should be correctly specified in the global/local costmap scopes in the param file. If these are not defined in the param file, the default plugins set in nav2_costmap_2d will be used.
 
 Inside each costmap layer (voxel, obstacle, etc) define `observation_sources` param. Here you can define multiple sources to be used with the layer. The param configuration example below shows the way you can configure costmaps to use voxel layer.
 
@@ -24,9 +24,9 @@ Example param configuration snippet for enabling voxel layer in local costmap is
 local_costmap:
   local_costmap:
     ros__parameters:
-      plugin_names: ["obstacle_layer", "voxel_layer", "inflation_layer"]
-      plugin_types: ["nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::VoxelLayer", "nav2_costmap_2d::InflationLayer"]
+      plugins: ["obstacle_layer", "voxel_layer", "inflation_layer"]
       obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
         observation_sources: scan
         scan:
@@ -36,6 +36,7 @@ local_costmap:
           marking: True
           data_type: "LaserScan"
       voxel_layer:
+        plugin: nav2_costmap_2d::VoxelLayer
         enabled: True
         publish_voxel_map: True
         origin_z: 0.0
@@ -74,9 +75,9 @@ For example, to add laser scan and pointcloud as two different sources of inputs
 local_costmap:
   local_costmap:
     ros__parameters:
-      plugin_names: ["obstacle_layer", "inflation_layer"]
-      plugin_types: ["nav2_costmap_2d::ObstacleLayer", "nav2_costmap_2d::InflationLayer"]
+      plugins: ["obstacle_layer", "inflation_layer"]
       obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
         observation_sources: scan pointcloud
         scan:
@@ -87,6 +88,12 @@ local_costmap:
           data_type: "PointCloud2"
 ```
 In order to add multiple sources to the global costmap, follow the same procedure shown in the example above, but now adding the sources and their specific params under the `global_costmap` scope.
+
+## Costmap Filters
+
+### Overview
+
+Costmap Filters - is a costmap layer-based instrument which provides an ability to apply to map spatial-dependent raster features named as filter-masks. These features are used in plugin algorithms when filling costmaps in order to allow robots to change their trajectory, behavior or speed when a robot enters/leaves an area marked in a filter masks. Examples of costmap filters include keep-out/safety zones where robots will never enter, speed restriction areas, preferred lanes for robots moving in industries and warehouses. More information about design, architecture of the feature and how it works could be found on navigation2 web-site: https://navigation.ros.org.
 
 ## Future Plans
 - Conceptually, the costmap_2d model acts as a world model of what is known from the map, sensor, robot pose, etc. We'd like
