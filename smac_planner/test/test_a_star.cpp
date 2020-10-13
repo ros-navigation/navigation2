@@ -115,14 +115,6 @@ TEST(AStarTest, test_a_star_2d)
   EXPECT_EQ(a_star_2.getOnApproachMaxIterations(), 10);
 
   delete costmapA;
-
-  Eigen::Vector2d p1;
-  p1[0] = 0.0;
-  p1[1] = 0.0;
-  Eigen::Vector2d p2;
-  p2[0] = 0.0;
-  p2[1] = 1.0;
-  EXPECT_NEAR(smac_planner::squaredDistance(p1, p2), 1.0, 0.001);
 }
 
 TEST(AStarTest, test_a_star_se2)
@@ -168,4 +160,24 @@ TEST(AStarTest, test_a_star_se2)
   }
 
   delete costmapA;
+}
+
+TEST(AStarTest, test_constants)
+{
+  smac_planner::MotionModel mm = smac_planner::MotionModel::UNKNOWN;  // unknown
+  EXPECT_EQ(smac_planner::toString(mm), std::string("Unknown"));
+  mm = smac_planner::MotionModel::VON_NEUMANN;  // vonneumann
+  EXPECT_EQ(smac_planner::toString(mm), std::string("Von Neumann"));
+  mm = smac_planner::MotionModel::MOORE;  // moore
+  EXPECT_EQ(smac_planner::toString(mm), std::string("Moore"));
+  mm = smac_planner::MotionModel::DUBIN;  // dubin
+  EXPECT_EQ(smac_planner::toString(mm), std::string("Dubin"));
+  mm = smac_planner::MotionModel::REEDS_SHEPP;  // reeds-shepp
+  EXPECT_EQ(smac_planner::toString(mm), std::string("Reeds-Shepp"));
+
+  EXPECT_EQ(smac_planner::fromString("VON_NEUMANN"), smac_planner::MotionModel::VON_NEUMANN);
+  EXPECT_EQ(smac_planner::fromString("MOORE"), smac_planner::MotionModel::MOORE);
+  EXPECT_EQ(smac_planner::fromString("DUBIN"), smac_planner::MotionModel::DUBIN);
+  EXPECT_EQ(smac_planner::fromString("REEDS_SHEPP"), smac_planner::MotionModel::REEDS_SHEPP);
+  EXPECT_EQ(smac_planner::fromString("NONE"), smac_planner::MotionModel::UNKNOWN);
 }
