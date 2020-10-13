@@ -30,7 +30,6 @@ from launch_testing.legacy import LaunchTestService
 from nav2_common.launch import RewrittenYaml
 
 from launch.launch_context import LaunchContext
-import yaml
 
 
 def generate_launch_description():
