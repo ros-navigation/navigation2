@@ -52,7 +52,8 @@ public:
   explicit NodeBasic(const unsigned int index)
   : index(index),
     graph_node_ptr(nullptr)
-  {}
+  {
+  }
 
   typename NodeT::Coordinates pose;  // Used by NodeSE2
   NodeT * graph_node_ptr;

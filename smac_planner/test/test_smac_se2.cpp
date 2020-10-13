@@ -52,6 +52,10 @@ TEST(SmacTest, test_smac_se2)
 
   nodeSE2->declare_parameter("test.smooth_path", true);
   nodeSE2->set_parameter(rclcpp::Parameter("test.smooth_path", true));
+  nodeSE2->declare_parameter("test.downsample_costmap", true);
+  nodeSE2->set_parameter(rclcpp::Parameter("test.downsample_costmap", true));
+  nodeSE2->declare_parameter("test.downsampling_factor", 2);
+  nodeSE2->set_parameter(rclcpp::Parameter("test.downsampling_factor", 2));
 
   geometry_msgs::msg::PoseStamped start, goal;
   start.pose.position.x = 0.0;
@@ -74,4 +78,15 @@ TEST(SmacTest, test_smac_se2)
   costmap_ros->on_cleanup(rclcpp_lifecycle::State());
   costmap_ros.reset();
   nodeSE2.reset();
+}
+
+TEST(SmacTestSE2, test_dist)
+{
+  Eigen::Vector2d p1;
+  p1[0] = 0.0;
+  p1[1] = 0.0;
+  Eigen::Vector2d p2;
+  p2[0] = 0.0;
+  p2[1] = 1.0;
+  EXPECT_NEAR(smac_planner::squaredDistance(p1, p2), 1.0, 0.001);
 }
