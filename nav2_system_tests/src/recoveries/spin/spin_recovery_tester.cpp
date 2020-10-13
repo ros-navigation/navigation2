@@ -36,8 +36,18 @@ SpinRecoveryTester::SpinRecoveryTester()
 {
   node_ = rclcpp::Node::make_shared("spin_recovery_test");
 
+
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
+  
+  const char* env_p = std::getenv("MAKE_FAKE_COSTMAP");
+  if(env_p[0] == 't'){
+    make_fake_costmap_ = true;
+  }
+  else{
+    make_fake_costmap_ = false;
+  }
 
   client_ptr_ = rclcpp_action::create_client<Spin>(
     node_->get_node_base_interface(),
@@ -48,6 +58,10 @@ SpinRecoveryTester::SpinRecoveryTester()
 
   publisher_ =
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
+  fake_costmap_publisher_ =
+      node_->create_publisher<nav2_msgs::msg::Costmap>("local_costmap/costmap_raw",10);
+  fake_footprint_publisher_ =
+      node_->create_publisher<geometry_msgs::msg::PolygonStamped>("local_costmap/published_footprint",10);
 
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
@@ -67,12 +81,20 @@ void SpinRecoveryTester::activate()
     throw std::runtime_error("Trying to activate while already active");
     return;
   }
-
-  while (!initial_pose_received_) {
-    RCLCPP_WARN(node_->get_logger(), "Initial pose not received");
-    sendInitialPose();
-    std::this_thread::sleep_for(100ms);
-    rclcpp::spin_some(node_);
+  if(!make_fake_costmap_){
+    while (!initial_pose_received_) {
+      RCLCPP_INFO(node_->get_logger(), "Foo");
+      RCLCPP_WARN(node_->get_logger(), "Initial pose not received");
+      sendInitialPose();
+      std::this_thread::sleep_for(100ms);
+      rclcpp::spin_some(node_);
+    }
+  }
+  else {
+      RCLCPP_INFO(node_->get_logger(), "FooBar");
+      sendFakeFootprint();
+      sendFakeCostmap();
+      sendFakeOdom(0.0);
   }
 
   // Wait for lifecycle_manager_navigation to activate recoveries_server
@@ -192,6 +214,50 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   return true;
 }
 
+void SpinRecoveryTester::sendFakeFootprint()
+{
+  geometry_msgs::msg::PolygonStamped fake_polygon;
+  geometry_msgs::msg::Point32 pt1,pt2,pt3;
+  pt1.x = -1;
+  pt1.y = 0;
+  fake_polygon.polygon.points.push_back(pt1);
+  pt2.x = 1;
+  pt2.y = 0;
+  fake_polygon.polygon.points.push_back(pt2);
+  pt3.x = 0;
+  pt3.y = 1;
+  fake_polygon.polygon.points.push_back(pt3);
+
+  fake_polygon.header.frame_id = "odom";
+  fake_polygon.header.stamp = rclcpp::Time();
+
+  fake_footprint_publisher_->publish(fake_polygon);
+  RCLCPP_INFO(node_->get_logger(), "Sent fake footprint");
+}
+
+void SpinRecoveryTester::sendFakeCostmap()
+{
+  nav2_msgs::msg::Costmap fake_costmap;
+
+  fake_costmap.header.frame_id = "odom";
+  fake_costmap.header.stamp = rclcpp::Time();
+  
+  fake_costmap.metadata.layer = "master";
+  fake_costmap.metadata.resolution = 1.0;
+  fake_costmap.metadata.size_x = 10;
+  fake_costmap.metadata.size_y = 10;
+  fake_costmap.metadata.origin.position.x = 0;
+  fake_costmap.metadata.origin.position.y = 0;
+  fake_costmap.metadata.origin.orientation.w = 1.0;
+  for(int ix = 0; ix < fake_costmap.metadata.origin.position.x; ix++){
+    for(int iy = 0; iy < fake_costmap.metadata.origin.position.y; iy++){
+      fake_costmap.data.push_back(0);
+    }
+  }
+  fake_costmap_publisher_->publish(fake_costmap);
+  RCLCPP_INFO(node_->get_logger(), "Sent fake costmap");
+}
+
 void SpinRecoveryTester::sendInitialPose()
 {
   geometry_msgs::msg::PoseWithCovarianceStamped pose;
@@ -215,6 +281,25 @@ void SpinRecoveryTester::sendInitialPose()
   RCLCPP_INFO(node_->get_logger(), "Sent initial pose");
 }
 
+void SpinRecoveryTester::sendFakeOdom(float angle){
+  geometry_msgs::msg::TransformStamped transformStamped;
+  
+  transformStamped.header.stamp = rclcpp::Time();
+  transformStamped.header.frame_id = "map";
+  transformStamped.child_frame_id = "odom";
+  transformStamped.transform.translation.x = 0.0;
+  transformStamped.transform.translation.y = 0.0;
+  transformStamped.transform.translation.z = 0.0;
+  tf2::Quaternion q;
+  q.setRPY(0, 0, angle);
+  transformStamped.transform.rotation.x = q.x();
+  transformStamped.transform.rotation.y = q.y();
+  transformStamped.transform.rotation.z = q.z();
+  transformStamped.transform.rotation.w = q.w();
+
+  tf_broadcaster_->sendTransform(transformStamped);
+  RCLCPP_INFO(node_->get_logger(), "Sent odom fake");
+}
 void SpinRecoveryTester::amclPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
 {
