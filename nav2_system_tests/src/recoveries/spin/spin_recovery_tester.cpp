@@ -251,7 +251,7 @@ void SpinRecoveryTester::sendFakeCostmap()
   fake_costmap.metadata.origin.orientation.w = 1.0;
   for(int ix = 0; ix < fake_costmap.metadata.origin.position.x; ix++){
     for(int iy = 0; iy < fake_costmap.metadata.origin.position.y; iy++){
-      fake_costmap.data.push_back(255);
+      fake_costmap.data.push_back(0);
     }
   }
   fake_costmap_publisher_->publish(fake_costmap);
