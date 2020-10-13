@@ -240,6 +240,42 @@ TEST(VelocityIterator, dwa_gen_zero_frequency)
   EXPECT_EQ(gen.getAccelerationTime(), 0.05);
 }
 
+TEST(VelocityIterator, dwa_gen_one_frequency)
+{
+  auto nh = makeTestNode("dwa_gen");
+  nh->declare_parameter("controller_frequency", 1.0);
+  LimitedAccelGeneratorTest gen;
+  gen.initialize(nh, "dwb");
+  EXPECT_EQ(gen.getAccelerationTime(), 1.0);
+}
+
+TEST(VelocityIterator, dwa_gen_ten_frequency)
+{
+  auto nh = makeTestNode("dwa_gen");
+  nh->declare_parameter("controller_frequency", 10.0);
+  LimitedAccelGeneratorTest gen;
+  gen.initialize(nh, "dwb");
+  EXPECT_EQ(gen.getAccelerationTime(), 0.1);
+}
+
+TEST(VelocityIterator, dwa_gen_fifty_frequency)
+{
+  auto nh = makeTestNode("dwa_gen");
+  nh->declare_parameter("controller_frequency", 50.0);
+  LimitedAccelGeneratorTest gen;
+  gen.initialize(nh, "dwb");
+  EXPECT_EQ(gen.getAccelerationTime(), 0.02);
+}
+
+TEST(VelocityIterator, dwa_gen_hundred_frequency)
+{
+  auto nh = makeTestNode("dwa_gen");
+  nh->declare_parameter("controller_frequency", 100.0);
+  LimitedAccelGeneratorTest gen;
+  gen.initialize(nh, "dwb");
+  EXPECT_EQ(gen.getAccelerationTime(), 0.01);
+}
+
 TEST(VelocityIterator, nonzero)
 {
   auto nh = makeTestNode("nonzero", {rclcpp::Parameter("dwb.min_speed_theta", -1.0)});
