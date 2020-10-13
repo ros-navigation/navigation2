@@ -10,7 +10,7 @@
         </class>                      
     </library>
     <library path="solver">
-        <class type="nav2_localization::Solver" base_class_type="nav2_localization::Solver">
+        <class type="nav2_localization::DummySolver2d" base_class_type="nav2_localization::Solver">
             <description>Solver</description>
         </class>                      
     </library>

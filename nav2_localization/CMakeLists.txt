@@ -77,7 +77,7 @@ ament_target_dependencies(solver ${dependencies})
 
 link_directories(${BFL_LIBRARY_DIRS})
 
-install(TARGETS sample_motion_model matcher2d #solver
+install(TARGETS sample_motion_model matcher2d solver
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin

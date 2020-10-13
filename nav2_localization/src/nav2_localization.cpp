@@ -15,7 +15,7 @@ LocalizationServer::LocalizationServer()
   matcher2d_loader_("nav2_localization", "nav2_localization::Matcher2dPDF"),
   default_matcher2d_id_("LikelihoodFieldMatcher2dPDF"),
   solver_loader_("nav2_localization", "nav2_localization::Solver"),
-  default_solver_id_("DummySolver"),
+  default_solver_id_("DummySolver2d"),
   default_types_{"nav2_localization::DiffDriveOdomMotionModelPDF", "nav2_localization::LikelihoodFieldMatcher2dPDF", "nav2_localization::DummySolver"}
 {
     RCLCPP_INFO(get_logger(), "Creating localization server");
