@@ -136,6 +136,10 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   // Sleep to let recovery server be ready for serving in multiple runs
   std::this_thread::sleep_for(5s);
 
+  if(make_fake_costmap_){
+    sendFakeOdom(0.0);
+  }
+
   auto goal_msg = Spin::Goal();
   goal_msg.target_yaw = target_yaw;
 
@@ -149,6 +153,10 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   RCLCPP_INFO(node_->get_logger(), "Found current robot pose");
 
   auto goal_handle_future = client_ptr_->async_send_goal(goal_msg);
+
+  if(make_fake_costmap_){ //if we are faking the costmap, we will fake success.
+    sendFakeOdom(target_yaw);
+  }
 
   if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
     rclcpp::FutureReturnCode::SUCCESS)
