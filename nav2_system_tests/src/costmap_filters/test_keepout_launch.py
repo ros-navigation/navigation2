@@ -40,8 +40,8 @@ def generate_launch_description():
                                     os.getenv('BT_NAVIGATOR_XML'))
 
     bringup_dir = get_package_share_directory('nav2_bringup')
-    system_tests_dir = get_package_share_directory('nav2_system_tests')
-    params_file = os.path.join(system_tests_dir, 'params', 'keepout_params.yaml')
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    params_file = os.path.join(script_dir, 'keepout_params.yaml')
 
     # Replace the `use_astar` setting on the params file
     param_substitutions = {
