@@ -54,7 +54,8 @@ nav_2d_msgs::msg::Twist2D forward;
 class LimitedAccelGeneratorTest : public dwb_plugins::LimitedAccelGenerator
 {
 public:
-  double getAccelerationTime() {
+  double getAccelerationTime()
+  {
     return acceleration_time_;
   }
 };
