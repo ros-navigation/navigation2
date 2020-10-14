@@ -56,14 +56,6 @@ def generate_launch_description():
         param_substitutions.update({'enable_groot_monitoring': "True"})
         print("GROOT_MONITORING set True")
 
-    if (os.getenv('GROOT_ZMQ_PUB_PORT')):
-        param_substitutions.update({'groot_zmq_publisher_port': os.getenv('GROOT_ZMQ_PUB_PORT')})
-        print("GROOT_ZMQ_PUB_PORT set " + os.getenv('GROOT_ZMQ_PUB_PORT'))
-
-    if (os.getenv('GROOT_ZMQ_SERVER_PORT')):
-        param_substitutions.update({'groot_zmq_server_port': os.getenv('GROOT_ZMQ_SERVER_PORT')})
-        print("GROOT_ZMQ_SERVER_PORT set " + os.getenv('GROOT_ZMQ_SERVER_PORT'))
-
     print
     configured_params = RewrittenYaml(
         source_file=params_file,
