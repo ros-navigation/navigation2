@@ -75,6 +75,7 @@ public:
   virtual void reset();
   virtual void deactivate();
   virtual void activate();
+  virtual bool isClearable() {return true;};
 
   void bufferIncomingRangeMsg(const sensor_msgs::msg::Range::SharedPtr range_message);
 

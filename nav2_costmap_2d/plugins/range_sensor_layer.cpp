@@ -517,7 +517,7 @@ void RangeSensorLayer::reset()
   RCLCPP_DEBUG(logger_, "Reseting range sensor layer...");
   deactivate();
   resetMaps();
-  current_ = true;
+  current_ = false;
   activate();
 }
 

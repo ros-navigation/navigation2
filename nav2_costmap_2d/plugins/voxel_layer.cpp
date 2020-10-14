@@ -236,6 +236,8 @@ void VoxelLayer::updateBounds(
   }
 
   updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+
+  current_ = true;
 }
 
 void VoxelLayer::clearNonLethal(

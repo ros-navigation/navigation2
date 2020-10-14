@@ -39,10 +39,7 @@ public:
   ClearCostmapService() = delete;
 
   // Clears the region outside of a user-specified area reverting to the static map
-  void clearExceptRegion(double reset_distance = 3.0);
-
-  // Clears within a window around the robot
-  void clearAroundRobot(double window_size_x, double window_size_y);
+  void clearRegion(double reset_distance, bool invert);
 
   // Clears all layers
   void clearEntirely();
@@ -77,14 +74,10 @@ private:
     const std::shared_ptr<nav2_msgs::srv::ClearEntireCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::ClearEntireCostmap::Response> response);
 
-  void clearLayerExceptRegion(
-    std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance);
-
-  bool isClearable(const std::string & layer_name) const;
+  void clearLayerRegion(
+    std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance, bool invert);
 
   bool getPosition(double & x, double & y) const;
-
-  std::string getLayerName(const Layer & layer) const;
 };
 
 }  // namespace nav2_costmap_2d

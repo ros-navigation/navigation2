@@ -297,6 +297,12 @@ void ControllerServer::computeControl()
         return;
       }
 
+      // Don't compute a trajectory until costmap is valid (after clear costmap)
+      rclcpp::Rate r(100);
+      while (!costmap_ros_->isCurrent()) {
+        r.sleep();
+      }
+
       updateGlobalPath();
 
       computeAndPublishVelocity();

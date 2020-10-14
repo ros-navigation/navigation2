@@ -91,10 +91,12 @@ public:
     int min_i, int min_j, int max_i, int max_j) override;
 
   void matchSize() override;
+  virtual bool isClearable() {return false;};
 
   void reset() override
   {
     matchSize();
+    current_ = false;
   }
 
   /** @brief  Given a distance, compute a cost.
