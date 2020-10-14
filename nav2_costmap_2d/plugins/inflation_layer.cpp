@@ -279,6 +279,8 @@ InflationLayer::updateCosts(
     dist.clear();
     dist.reserve(200);
   }
+
+  current_ = true;
 }
 
 /**

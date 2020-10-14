@@ -84,6 +84,7 @@ public:
   virtual void activate() final;
   virtual void deactivate() final;
   virtual void reset() final;
+  virtual bool isClearable() {return false;};
 
   /** CostmapFilter API **/
   /**

@@ -444,6 +444,8 @@ ObstacleLayer::updateCosts(
     return;
   }
 
+  current_ = true;
+
   if (footprint_clearing_enabled_) {
     setConvexPolygonCost(transformed_footprint_, nav2_costmap_2d::FREE_SPACE);
   }
@@ -647,7 +649,7 @@ ObstacleLayer::reset()
 {
   resetMaps();
   resetBuffersLastUpdated();
-  current_ = true;
+  current_ = false;
 }
 
 void
