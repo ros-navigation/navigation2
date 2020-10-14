@@ -1,7 +1,13 @@
 <class_libraries>
-  <library path="simple_waypoint_task_executor">
+  <library path="simple_wait_at_waypoint">
     <class type="nav2_waypoint_follower::WaitAtWaypoint" base_class_type="nav2_core::WaypointTaskExecutor">
       <description>Lets robot sleep for a specified amount of time at waypoint arrival</description>
+    </class>
+  </library>
+  <library path="simple_photo_at_waypoint">
+    <class type="nav2_waypoint_follower::PhotoAtWaypoint" base_class_type="nav2_core::WaypointTaskExecutor">
+      <description>Run-time plugin that takes photos at waypoint arrivals when using waypoint follower node. 
+        Saves the taken photos to specified directory.</description>
     </class>
   </library>
 </class_libraries>

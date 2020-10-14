@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_waypoint_follower)
 
+# Try for OpenCV 4.X, but settle for whatever is installed
+find_package(OpenCV 4 QUIET)
+if (NOT OpenCV_FOUND)
+  find_package(OpenCV REQUIRED)
+endif ()
+message(STATUS "Found OpenCV version ${OpenCV_VERSION}")
+
+find_package(image_transport REQUIRED)
+find_package(cv_bridge REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -41,6 +50,9 @@ set(dependencies
   tf2_ros
   nav2_core
   pluginlib
+  image_transport
+  cv_bridge
+  OpenCV
 )
 
 ament_target_dependencies(${executable_name}
@@ -53,12 +65,20 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-add_library(simple_waypoint_task_executor SHARED plugins/wait_at_waypoint.cpp)
-ament_target_dependencies(simple_waypoint_task_executor ${dependencies})
-# prevent pluginlib from using boost
-target_compile_definitions(simple_waypoint_task_executor PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+add_library(simple_wait_at_waypoint SHARED plugins/wait_at_waypoint.cpp)
+ament_target_dependencies(simple_wait_at_waypoint ${dependencies})
+#prevent pluginlib from using boost
+target_compile_definitions(simple_wait_at_waypoint PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
-install(TARGETS ${library_name} simple_waypoint_task_executor
+
+add_library(simple_photo_at_waypoint SHARED plugins/common.cpp 
+                                            plugins/photo_at_waypoint.cpp)
+ament_target_dependencies(simple_photo_at_waypoint ${dependencies})
+#prevent pluginlib from using boost
+target_compile_definitions(simple_photo_at_waypoint PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
+
+install(TARGETS ${library_name} simple_wait_at_waypoint simple_photo_at_waypoint 
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -78,7 +98,8 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(simple_waypoint_task_executor)
+ament_export_libraries(simple_wait_at_waypoint)
+ament_export_libraries(simple_photo_at_waypoint)
 
 pluginlib_export_plugin_description_file(nav2_waypoint_follower plugins.xml)
 

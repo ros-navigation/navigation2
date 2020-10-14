@@ -541,6 +541,18 @@ When `planner_plugins` parameter is not overridden, the following default plugin
 | `<waypoint task executor>`.enabled | true | Whether it is enabled |
 | `<waypoint task executor>`.waypoint_pause_duration | 0 | Amount of time in milliseconds, for robot to sleep/wait after each waypoint is reached. If zero, robot will directly continue to next waypoint. |
 
+## PhotoAtWaypoint plugin
+
+* `<waypoint task executor>`: Name corresponding to the `nav2_waypoint_follower::PhotoAtWaypoint` plugin. 
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<waypoint task executor>`.enabled | true | Whether it is enabled |
+| `<waypoint task executor>`.camera_image_topic_name | "/camera/color/image_raw" | Camera image topic name to susbcribe |
+| `<waypoint task executor>`.save_images_dir | "/home/username/" | Path to directory to save taken photos |
+| `<waypoint task executor>`.image_format | ".png" | Desired image format |
+
+
 # recoveries
 
 ## recovery_server
