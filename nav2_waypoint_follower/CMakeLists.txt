@@ -3,9 +3,9 @@ project(nav2_waypoint_follower)
 
 # Try for OpenCV 4.X, but settle for whatever is installed
 find_package(OpenCV 4 QUIET)
-if (NOT OpenCV_FOUND)
+if(NOT OpenCV_FOUND)
   find_package(OpenCV REQUIRED)
-endif ()
+endif()
 message(STATUS "Found OpenCV version ${OpenCV_VERSION}")
 
 find_package(image_transport REQUIRED)
@@ -71,14 +71,14 @@ ament_target_dependencies(simple_wait_at_waypoint ${dependencies})
 target_compile_definitions(simple_wait_at_waypoint PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 
-add_library(simple_photo_at_waypoint SHARED plugins/common.cpp 
+add_library(simple_photo_at_waypoint SHARED plugins/common.cpp
                                             plugins/photo_at_waypoint.cpp)
 ament_target_dependencies(simple_photo_at_waypoint ${dependencies})
 #prevent pluginlib from using boost
 target_compile_definitions(simple_photo_at_waypoint PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 
-install(TARGETS ${library_name} simple_wait_at_waypoint simple_photo_at_waypoint 
+install(TARGETS ${library_name} simple_wait_at_waypoint simple_photo_at_waypoint
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
