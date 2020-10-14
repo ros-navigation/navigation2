@@ -5,6 +5,9 @@
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | default_bt_xml_filename | N/A | path to the default behavior tree XML description |
+| enable_groot_monitoring | False | enable Groot live monitoring of the behavior tree |
+| groot_zmq_publisher_port | 1666 | change port of the zmq publisher needed for groot |
+| groot_zmq_server_port | 1667 | change port of the zmq server needed for groot |
 | plugin_lib_names | ["nav2_compute_path_to_pose_action_bt_node", "nav2_follow_path_action_bt_node", "nav2_back_up_action_bt_node", "nav2_spin_action_bt_node", "nav2_wait_action_bt_node", "nav2_clear_costmap_service_bt_node", "nav2_is_stuck_condition_bt_node", "nav2_goal_reached_condition_bt_node", "nav2_initial_pose_received_condition_bt_node", "nav2_goal_updated_condition_bt_node", "nav2_reinitialize_global_localization_service_bt_node", "nav2_rate_controller_bt_node", "nav2_distance_controller_bt_node", "nav2_recovery_node_bt_node", "nav2_pipeline_sequence_bt_node", "nav2_round_robin_node_bt_node", "nav2_transform_available_condition_bt_node"] | list of behavior tree node shared libraries |
 | transform_tolerance | 0.1 | TF transform tolerance |
 | global_frame | "map" | Reference frame |
