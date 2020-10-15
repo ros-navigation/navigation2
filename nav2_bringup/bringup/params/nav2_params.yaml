@@ -289,17 +289,8 @@ waypoint_follower:
   ros__parameters:
     loop_rate: 20
     stop_on_failure: false
-    # Choose a plugin from provided ones; 
-    # photo_at_waypoint or photo_at_waypoint ?
-    waypoint_task_executor_plugin: "photo_at_waypoint"   
+    waypoint_task_executor_plugin: "wait_at_waypoint"   
     wait_at_waypoint:
       plugin: "nav2_waypoint_follower::WaitAtWaypoint"
       enabled: True
       waypoint_pause_duration: 200
-    photo_at_waypoint:
-      plugin: "nav2_waypoint_follower::PhotoAtWaypoint"
-      enabled: True
-      camera_image_topic_name: "/camera/color/image_raw"
-      save_images_dir: "/home/username/"
-      image_format: ".png"
-

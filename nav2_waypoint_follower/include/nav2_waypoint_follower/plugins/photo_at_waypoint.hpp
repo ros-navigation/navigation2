@@ -15,11 +15,10 @@
 #ifndef NAV2_WAYPOINT_FOLLOWER__PLUGINS__PHOTO_AT_WAYPOINT_HPP_
 #define NAV2_WAYPOINT_FOLLOWER__PLUGINS__PHOTO_AT_WAYPOINT_HPP_
 
+#include <experimental/filesystem>
 #include <mutex>
 #include <string>
 #include <exception>
-
-#include "nav2_waypoint_follower/plugins/common.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
@@ -27,6 +26,7 @@
 #include "sensor_msgs/msg/image.hpp"
 #include "nav2_core/waypoint_task_executor.hpp"
 #include "opencv4/opencv2/core.hpp"
+#include "opencv4/opencv2/opencv.hpp"
 #include "cv_bridge/cv_bridge.h"
 #include "image_transport/image_transport.hpp"
 
@@ -78,6 +78,31 @@ public:
    */
   void imageCallback(const sensor_msgs::msg::Image::SharedPtr msg);
 
+
+  /**
+   * @brief given a shared pointer to sensor::msg::Image type, make a deep copy to inputted cv Mat
+   *
+   * @param msg
+   * @param mat
+   */
+  void deepCopyMsg2Mat(const sensor_msgs::msg::Image::SharedPtr & msg, cv::Mat & mat);
+
+  /**
+ * @brief given encoding string , determine corresponding CV format
+ *
+ * @param encoding
+ * @return int
+ */
+  static int encoding2mat_type(const std::string & encoding);
+
+/**
+ * @brief given CV type encoding return corresponding sensor_msgs::msg::Image::Encoding string
+ *
+ * @param mat_type
+ * @return std::string
+ */
+  static std::string mat_type2encoding(int mat_type);
+
 protected:
   // to ensure safety when accessing global var curr_frame_
   std::mutex global_mutex_;
@@ -86,11 +111,11 @@ protected:
   // .png ? .jpg ? or some other well known format
   std::string image_format_;
   // the topic to subscribe in order capture a frame
-  std::string camera_image_topic_name_;
+  std::string image_topic_;
   // whether plugin is enabled
   bool is_enabled_;
   // current frame;
-  cv::Mat curr_frame_;
+  sensor_msgs::msg::Image curr_frame_msg_;
   // global logger
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_waypoint_follower")};
   // ros susbcriber to get camera image

@@ -548,9 +548,9 @@ When `planner_plugins` parameter is not overridden, the following default plugin
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | `<waypoint task executor>`.enabled | true | Whether it is enabled |
-| `<waypoint task executor>`.camera_image_topic_name | "/camera/color/image_raw" | Camera image topic name to susbcribe |
-| `<waypoint task executor>`.save_images_dir | "/home/username/" | Path to directory to save taken photos |
-| `<waypoint task executor>`.image_format | ".png" | Desired image format |
+| `<waypoint task executor>`.image_topic | "/camera/color/image_raw" | Camera image topic name to susbcribe |
+| `<waypoint task executor>`.save_dir | "/home/username/" | Path to directory to save taken photos |
+| `<waypoint task executor>`.image_format | ".png" | Desired image format A few other options; ".jpeg" , ".jpg", ".pgm", ".tiff" |
 
 
 # recoveries

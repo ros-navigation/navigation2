@@ -16,6 +16,7 @@
 #include <pluginlib/class_list_macros.hpp>
 
 #include <string>
+#include <memory>
 
 
 namespace nav2_waypoint_follower
@@ -36,22 +37,15 @@ void PhotoAtWaypoint::initialize(
 
   node->declare_parameter(plugin_name + ".enabled", rclcpp::ParameterValue(true));
   node->declare_parameter(
-    plugin_name + ".camera_image_topic_name",
-    rclcpp::ParameterValue("/fake_realsense_camera/image_raw"));
-  node->declare_parameter(plugin_name + ".save_images_dir", rclcpp::ParameterValue("/home/atas/"));
+    plugin_name + ".image_topic",
+    rclcpp::ParameterValue("/camera/color/image_raw"));
+  node->declare_parameter(plugin_name + ".save_dir", rclcpp::ParameterValue("/home/username/"));
   node->declare_parameter(plugin_name + ".image_format", rclcpp::ParameterValue(".png"));
 
   node->get_parameter(plugin_name + ".enabled", is_enabled_);
-  node->get_parameter(plugin_name + ".camera_image_topic_name", camera_image_topic_name_);
-  node->get_parameter(plugin_name + ".save_images_dir", directory_to_save_images_);
+  node->get_parameter(plugin_name + ".image_topic", image_topic_);
+  node->get_parameter(plugin_name + ".save_dir", directory_to_save_images_);
   node->get_parameter(plugin_name + ".image_format", image_format_);
-
-  auto qos = rclcpp::QoS(
-    rclcpp::QoSInitialization(
-      rmw_qos_profile_default.history,
-      rmw_qos_profile_default.depth
-  ));
-  qos.reliability(rmw_qos_profile_default.reliability);
 
   if (!is_enabled_) {
     RCLCPP_INFO(
@@ -59,9 +53,9 @@ void PhotoAtWaypoint::initialize(
   } else {
     RCLCPP_INFO(
       logger_, "Initializing photo at waypoint plugin, subscribing to camera topic named; %s",
-      camera_image_topic_name_.c_str());
+      image_topic_.c_str());
     camera_image_subscriber_ = node->create_subscription<sensor_msgs::msg::Image>(
-      camera_image_topic_name_, qos,
+      image_topic_, rclcpp::SystemDefaultsQoS(),
       std::bind(&PhotoAtWaypoint::imageCallback, this, std::placeholders::_1));
   }
 }
@@ -77,24 +71,35 @@ bool PhotoAtWaypoint::processAtWaypoint(
     return true;
   }
   try {
-    global_mutex_.lock();
-    std::string stamped_name_for_curr_frame = directory_to_save_images_ + std::to_string(
+    std::experimental::filesystem::path save_dir = directory_to_save_images_;
+    std::experimental::filesystem::path file_name = std::to_string(
       curr_waypoint_index) + "_" +
       std::to_string(curr_pose.header.stamp.sec) + image_format_;
-    cv::imwrite(stamped_name_for_curr_frame, curr_frame_);
+
+    std::experimental::filesystem::path full_path_image_path = save_dir / file_name;
+
+
+    global_mutex_.lock();
+    cv::Mat curr_frame_mat;
+    auto curr_frame_msg_as_shared_ptr = std::make_shared<sensor_msgs::msg::Image>(curr_frame_msg_);
+    deepCopyMsg2Mat(curr_frame_msg_as_shared_ptr, curr_frame_mat);
+    cv::imwrite(full_path_image_path.c_str(), curr_frame_mat);
+    global_mutex_.unlock();
     RCLCPP_INFO(
       logger_,
       "Photo has been taken sucessfully at waypoint %i", curr_waypoint_index);
-    global_mutex_.unlock();
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(
+      logger_, "Couldn't take photo at waypoint %i! Caught exception: %s",
+      curr_waypoint_index, e.what());
+    return false;
   } catch (...) {
     RCLCPP_ERROR(
       logger_,
-      "Photo at waypoint plugin caught an exception while trying taking a photo at waypoint %i.",
-      curr_waypoint_index);
-    RCLCPP_ERROR(
-      logger_,
-      "Not going to take a photo!, Make sure that the image topic named: %s is valid and active!",
-      camera_image_topic_name_.c_str());
+      "An unknown execption caught while taking photo at waypoint %i!"
+      "Make sure that the image topic named: %s is valid and active!",
+      curr_waypoint_index,
+      image_topic_.c_str());
     return false;
   }
   return true;
@@ -102,15 +107,56 @@ bool PhotoAtWaypoint::processAtWaypoint(
 
 void PhotoAtWaypoint::imageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
+  global_mutex_.lock();
+  curr_frame_msg_ = *msg;
+  global_mutex_.unlock();
+}
+
+int PhotoAtWaypoint::encoding2mat_type(const std::string & encoding)
+{
+  if (encoding == "mono8") {
+    return CV_8UC1;
+  } else if (encoding == "bgr8") {
+    return CV_8UC3;
+  } else if (encoding == "mono16") {
+    return CV_16SC1;
+  } else if (encoding == "rgba8") {
+    return CV_8UC4;
+  } else if (encoding == "rgb8") {
+    return CV_8UC3;
+  } else {
+    throw std::runtime_error("Unsupported mat type");
+  }
+}
+
+std::string PhotoAtWaypoint::mat_type2encoding(int mat_type)
+{
+  switch (mat_type) {
+    case CV_8UC1:
+      return "mono8";
+    case CV_8UC3:
+      return "bgr8";
+    case CV_16SC1:
+      return "mono16";
+    case CV_8UC4:
+      return "rgba8";
+    default:
+      throw std::runtime_error("Unsupported encoding type");
+  }
+}
+
+void PhotoAtWaypoint::deepCopyMsg2Mat(
+  const sensor_msgs::msg::Image::SharedPtr & msg,
+  cv::Mat & mat)
+{
   cv_bridge::CvImageConstPtr cv_bridge_ptr = cv_bridge::toCvShare(msg, msg->encoding);
   cv::Mat frame = cv_bridge_ptr->image;
   if (msg->encoding == "rgb8") {
     cv::cvtColor(frame, frame, cv::COLOR_RGB2BGR);
   }
-  global_mutex_.lock();
-  frame.copyTo(curr_frame_);
-  global_mutex_.unlock();
+  frame.copyTo(mat);
 }
+
 }      // namespace nav2_waypoint_follower
 PLUGINLIB_EXPORT_CLASS(
   nav2_waypoint_follower::PhotoAtWaypoint,

@@ -70,9 +70,7 @@ ament_target_dependencies(simple_wait_at_waypoint ${dependencies})
 #prevent pluginlib from using boost
 target_compile_definitions(simple_wait_at_waypoint PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
-
-add_library(simple_photo_at_waypoint SHARED plugins/common.cpp
-                                            plugins/photo_at_waypoint.cpp)
+add_library(simple_photo_at_waypoint SHARED plugins/photo_at_waypoint.cpp)
 ament_target_dependencies(simple_photo_at_waypoint ${dependencies})
 #prevent pluginlib from using boost
 target_compile_definitions(simple_photo_at_waypoint PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
@@ -98,8 +96,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(simple_wait_at_waypoint)
-ament_export_libraries(simple_photo_at_waypoint)
+ament_export_libraries(simple_wait_at_waypoint simple_photo_at_waypoint)
 
 pluginlib_export_plugin_description_file(nav2_waypoint_follower plugins.xml)
 
