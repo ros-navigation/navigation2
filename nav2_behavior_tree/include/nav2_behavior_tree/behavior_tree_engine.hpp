@@ -53,9 +53,9 @@ public:
 
   void addZMQGrootMonitoring(
     BT::Tree * tree,
-    unsigned publisher_port = 1666,
-    unsigned server_port = 1667,
-    unsigned max_msg_per_second = 25);
+    uint16_t publisher_port = 1666,
+    uint16_t server_port = 1667,
+    uint16_t max_msg_per_second = 25);
 
   void resetGrootMonitor();
 

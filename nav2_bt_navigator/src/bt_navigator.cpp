@@ -145,7 +145,7 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
     RCLCPP_DEBUG(get_logger(), "BT will not be reloaded as the given xml is already loaded");
     return true;
   }
-  
+
   // if a new tree is created, than the ZMQ Publisher must be destroyed
   bt_->resetGrootMonitor();
 
@@ -170,8 +170,8 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
 
   // get parameter for monitoring with Groot via ZMQ Publisher
   if (get_parameter("enable_groot_monitoring").as_bool()) {
-    unsigned zmq_publisher_port = get_parameter("groot_zmq_publisher_port").as_int();
-    unsigned zmq_server_port = get_parameter("groot_zmq_server_port").as_int();
+    uint16_t zmq_publisher_port = get_parameter("groot_zmq_publisher_port").as_int();
+    uint16_t zmq_server_port = get_parameter("groot_zmq_server_port").as_int();
     // optionally add max_msg_per_second = 25 (default) here
     try{
       bt_->addZMQGrootMonitoring(&tree_, zmq_publisher_port, zmq_server_port);
