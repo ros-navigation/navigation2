@@ -145,6 +145,7 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
     RCLCPP_DEBUG(get_logger(), "BT will not be reloaded as the given xml is already loaded");
     return true;
   }
+  
   // if a new tree is created, than the ZMQ Publisher must be destroyed
   bt_->resetGrootMonitor();
 
