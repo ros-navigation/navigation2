@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 #include <set>
+#include <exception>
 
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -141,6 +142,7 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
 {
   // Use previous BT if it is the existing one
   if (current_bt_xml_filename_ == bt_xml_filename) {
+    RCLCPP_DEBUG(get_logger(), "BT will not be reloaded as the given xml is already loaded");
     return true;
   }
   // if a new tree is created, than the ZMQ Publisher must be destroyed
@@ -170,8 +172,15 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
     unsigned zmq_publisher_port = get_parameter("groot_zmq_publisher_port").as_int();
     unsigned zmq_server_port = get_parameter("groot_zmq_server_port").as_int();
     // optionally add max_msg_per_second = 25 (default) here
-    bt_->addZMQGrootMonitoring(&tree_, zmq_publisher_port, zmq_server_port);
+    try{
+      bt_->addZMQGrootMonitoring(&tree_, zmq_publisher_port, zmq_server_port);
+    }
+    catch (const std::logic_error& e) {
+      RCLCPP_ERROR(get_logger(), "ZMQ already enabled, Error: %s", e.what());
+    }
+    
   }
+    
   return true;
 }
 
@@ -259,14 +268,15 @@ BtNavigator::navigateToPose()
       return action_server_->is_cancel_requested();
     };
 
-  auto bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
+  std::string bt_xml_filename = action_server_->get_current_goal()->behavior_tree.c_str();
 
   // Empty id in request is default for backward compatibility
   bt_xml_filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
+  RCLCPP_DEBUG(get_logger(), "Check if we need to load BT: %s", bt_xml_filename.c_str());
 
   if (!loadBehaviorTree(bt_xml_filename)) {
     RCLCPP_ERROR(
-      get_logger(), "BT file not found: %s. Navigation canceled",
+      get_logger(), "BT file not found: %s. Navigation canceled. Current bt: %s",
       bt_xml_filename.c_str(), current_bt_xml_filename_.c_str());
     action_server_->terminate_current();
     return;
