@@ -78,29 +78,28 @@ public:
    */
   void imageCallback(const sensor_msgs::msg::Image::SharedPtr msg);
 
-
   /**
    * @brief given a shared pointer to sensor::msg::Image type, make a deep copy to inputted cv Mat
    *
    * @param msg
    * @param mat
    */
-  void deepCopyMsg2Mat(const sensor_msgs::msg::Image::SharedPtr & msg, cv::Mat & mat);
+  static void deepCopyMsg2Mat(const sensor_msgs::msg::Image::SharedPtr & msg, cv::Mat & mat);
 
   /**
- * @brief given encoding string , determine corresponding CV format
- *
- * @param encoding
- * @return int
- */
+   * @brief given encoding string , determine corresponding CV format
+   *
+   * @param encoding
+   * @return int
+   */
   static int encoding2mat_type(const std::string & encoding);
 
-/**
- * @brief given CV type encoding return corresponding sensor_msgs::msg::Image::Encoding string
- *
- * @param mat_type
- * @return std::string
- */
+  /**
+   * @brief given CV type encoding return corresponding sensor_msgs::msg::Image::Encoding string
+   *
+   * @param mat_type
+   * @return std::string
+   */
   static std::string mat_type2encoding(int mat_type);
 
 protected:
