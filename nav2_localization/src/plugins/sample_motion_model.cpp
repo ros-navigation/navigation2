@@ -12,7 +12,7 @@ namespace nav2_localization
 
 bool DiffDriveOdomMotionModelPDF::SampleFrom(	
     BFL::Sample<geometry_msgs::msg::TransformStamped>& one_sample, 	
-    const int method,	
+    const BFL::SampleMthd method,	
     void * args) const	
 {
     // Get conditional arguments	

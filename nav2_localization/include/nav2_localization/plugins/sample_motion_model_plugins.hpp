@@ -17,7 +17,7 @@ public:
 
     // Use default sampling method
     bool SampleFrom(BFL::Sample<geometry_msgs::msg::TransformStamped>& one_sample,	
-        const int method = DEFAULT,	
+        const BFL::SampleMthd method = BFL::SampleMthd::DEFAULT,	
         void * args = NULL) const;
 
     void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);

@@ -38,7 +38,7 @@ set(dependencies
 
 include_directories(
   include
-  ${BFL_INCLUDE_DIRS}
+  ${BFL_INCLUDE_DIRS}/bfl
 )
 
 set(executable_name nav2_localization)
