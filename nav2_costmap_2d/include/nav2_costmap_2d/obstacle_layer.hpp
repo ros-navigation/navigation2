@@ -83,7 +83,7 @@ public:
   virtual void activate();
   virtual void deactivate();
   virtual void reset();
-  virtual bool isClearable() {return true;};
+  virtual bool isClearable() {return true;}
 
   /**
    * @brief triggers the update of observations buffer

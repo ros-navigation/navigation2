@@ -115,7 +115,8 @@ void ClearCostmapService::clearRegion(const double reset_distance, bool invert)
 }
 
 void ClearCostmapService::clearLayerRegion(
-  shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance, bool invert)
+  shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance,
+  bool invert)
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 

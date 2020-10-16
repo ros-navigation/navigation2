@@ -80,7 +80,7 @@ public:
   }
   virtual void matchSize();
   virtual void reset();
-  virtual bool isClearable() {return true;};
+  virtual bool isClearable() {return true;}
 
 protected:
   virtual void resetMaps();
