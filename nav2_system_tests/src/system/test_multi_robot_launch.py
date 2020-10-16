@@ -41,9 +41,9 @@ def generate_launch_description():
 
     bringup_dir = get_package_share_directory('nav2_bringup')
     robot1_params_file = os.path.join(bringup_dir,  # noqa: F841
-        'params/nav2_multirobot_params_1.yaml')
+                                      'params/nav2_multirobot_params_1.yaml')
     robot2_params_file = os.path.join(bringup_dir,  # noqa: F841
-        'params/nav2_multirobot_params_2.yaml')
+                                      'params/nav2_multirobot_params_2.yaml')
 
     # Names and poses of the robots
     robots = [
@@ -62,7 +62,7 @@ def generate_launch_description():
         spawn_robots_cmds.append(
             Node(
                 package='nav2_gazebo_spawner',
-                node_executable='nav2_gazebo_spawner',
+                executable='nav2_gazebo_spawner',
                 output='screen',
                 arguments=[
                     '--robot_name', TextSubstitution(text=robot['name']),
@@ -79,8 +79,8 @@ def generate_launch_description():
         robot_state_pubs_cmds.append(
             Node(
                 package='robot_state_publisher',
-                node_executable='robot_state_publisher',
-                node_namespace=TextSubstitution(text=robot['name']),
+                executable='robot_state_publisher',
+                namespace=TextSubstitution(text=robot['name']),
                 output='screen',
                 parameters=[{'use_sim_time': 'True'}],
                 remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')],

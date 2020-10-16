@@ -12,59 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__NAVIGATE_TO_POSE_ACTION_HPP_
-#define NAV2_BEHAVIOR_TREE__NAVIGATE_TO_POSE_ACTION_HPP_
-
 #include <memory>
 #include <string>
 
-#include "geometry_msgs/msg/point.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
-#include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "nav2_behavior_tree/bt_action_node.hpp"
-#include "nav2_behavior_tree/bt_conversions.hpp"
+#include "nav2_behavior_tree/plugins/action/navigate_to_pose_action.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class NavigateToPoseAction : public BtActionNode<nav2_msgs::action::NavigateToPose>
+NavigateToPoseAction::NavigateToPoseAction(
+  const std::string & xml_tag_name,
+  const std::string & action_name,
+  const BT::NodeConfiguration & conf)
+: BtActionNode<nav2_msgs::action::NavigateToPose>(xml_tag_name, action_name, conf)
 {
-public:
-  NavigateToPoseAction(
-    const std::string & xml_tag_name,
-    const std::string & action_name,
-    const BT::NodeConfiguration & conf)
-  : BtActionNode<nav2_msgs::action::NavigateToPose>(xml_tag_name, action_name, conf)
-  {
+}
+
+void NavigateToPoseAction::on_tick()
+{
+  // Use the position and orientation fields from the XML attributes to initialize the goal
+  geometry_msgs::msg::Point position;
+  geometry_msgs::msg::Quaternion orientation;
+
+  if (!getInput("position", position) || !getInput("orientation", orientation)) {
+    RCLCPP_ERROR(
+      node_->get_logger(),
+      "NavigateToPoseAction: position or orientation not provided");
+    return;
   }
 
-  void on_tick() override
-  {
-    // Use the position and orientation fields from the XML attributes to initialize the goal
-    geometry_msgs::msg::Point position;
-    geometry_msgs::msg::Quaternion orientation;
-
-    if (!getInput("position", position) || !getInput("orientation", orientation)) {
-      RCLCPP_ERROR(
-        node_->get_logger(),
-        "NavigateToPoseAction: position or orientation not provided");
-      return;
-    }
-
-    goal_.pose.pose.position = position;
-    goal_.pose.pose.orientation = orientation;
-  }
-
-  // Any BT node that accepts parameters must provide a requiredNodeParameters method
-  static BT::PortsList providedPorts()
-  {
-    return providedBasicPorts(
-      {
-        BT::InputPort<geometry_msgs::msg::Point>("position", "Position"),
-        BT::InputPort<geometry_msgs::msg::Quaternion>("orientation", "Orientation")
-      });
-  }
-};
+  goal_.pose.pose.position = position;
+  goal_.pose.pose.orientation = orientation;
+}
 
 }  // namespace nav2_behavior_tree
 
@@ -81,5 +60,3 @@ BT_REGISTER_NODES(factory)
   factory.registerBuilder<nav2_behavior_tree::NavigateToPoseAction>(
     "NavigateToPose", builder);
 }
-
-#endif  // NAV2_BEHAVIOR_TREE__NAVIGATE_TO_POSE_ACTION_HPP_

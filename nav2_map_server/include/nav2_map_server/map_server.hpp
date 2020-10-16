@@ -77,12 +77,6 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when Error is raised
-   * @param state Lifecycle Node's state
-   * @return Success or Failure
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Load the map YAML, image from map file name and
@@ -142,7 +136,7 @@ protected:
   std::string frame_id_;
 
   // The message to publish on the occupancy grid topic
-  std::unique_ptr<nav_msgs::msg::OccupancyGrid> msg_;
+  nav_msgs::msg::OccupancyGrid msg_;
 };
 
 }  // namespace nav2_map_server

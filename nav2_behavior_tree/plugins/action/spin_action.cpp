@@ -42,6 +42,11 @@ public:
     goal_.target_yaw = dist;
   }
 
+  void on_tick() override
+  {
+    increment_recovery_count();
+  }
+
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts(

@@ -97,7 +97,6 @@ public:
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief  Subscribes to sensor topics if necessary and starts costmap
@@ -289,6 +288,8 @@ protected:
   int map_width_meters_{0};
   double origin_x_{0};
   double origin_y_{0};
+  std::vector<std::string> default_plugins_;
+  std::vector<std::string> default_types_;
   std::vector<std::string> plugin_names_;
   std::vector<std::string> plugin_types_;
   double resolution_{0};

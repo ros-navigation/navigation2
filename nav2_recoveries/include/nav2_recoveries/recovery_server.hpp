@@ -46,7 +46,6 @@ protected:
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
@@ -54,12 +53,17 @@ protected:
   // Plugins
   std::vector<pluginlib::UniquePtr<nav2_core::Recovery>> recoveries_;
   pluginlib::ClassLoader<nav2_core::Recovery> plugin_loader_;
-  std::vector<std::string> plugin_names_, plugin_types_;
+  std::vector<std::string> default_ids_;
+  std::vector<std::string> default_types_;
+  std::vector<std::string> recovery_ids_;
+  std::vector<std::string> recovery_types_;
 
   // Utilities
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
-  std::shared_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
+  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
+
+  double transform_tolerance_;
 };
 
 }  // namespace recovery_server

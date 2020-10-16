@@ -58,6 +58,7 @@ namespace nav2_costmap_2d
 {
 
 StaticLayer::StaticLayer()
+: map_buffer_(nullptr)
 {
 }
 
@@ -117,14 +118,24 @@ void
 StaticLayer::getParameters()
 {
   int temp_lethal_threshold = 0;
+  double temp_tf_tol = 0.0;
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("subscribe_to_updates", rclcpp::ParameterValue(false));
   declareParameter("map_subscribe_transient_local", rclcpp::ParameterValue(true));
+  declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
+  declareParameter("map_topic", rclcpp::ParameterValue(""));
 
   node_->get_parameter(name_ + "." + "enabled", enabled_);
   node_->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
-  node_->get_parameter("map_topic", map_topic_);
+  std::string private_map_topic, global_map_topic;
+  node_->get_parameter(name_ + "." + "map_topic", private_map_topic);
+  node_->get_parameter("map_topic", global_map_topic);
+  if (!private_map_topic.empty()) {
+    map_topic_ = private_map_topic;
+  } else {
+    map_topic_ = global_map_topic;
+  }
   node_->get_parameter(
     name_ + "." + "map_subscribe_transient_local",
     map_subscribe_transient_local_);
@@ -133,10 +144,14 @@ StaticLayer::getParameters()
   node_->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
   node_->get_parameter("unknown_cost_value", unknown_cost_value_);
   node_->get_parameter("trinary_costmap", trinary_costmap_);
+  node_->get_parameter("transform_tolerance", temp_tf_tol);
 
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   map_received_ = false;
+  update_in_progress_.store(false);
+
+  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 }
 
 void
@@ -188,6 +203,9 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 
   unsigned int index = 0;
 
+  // we have a new map, update full size of map
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+
   // initialize the costmap with static data
   for (unsigned int i = 0; i < size_y; ++i) {
     for (unsigned int j = 0; j < size_x; ++j) {
@@ -199,8 +217,6 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 
   map_frame_ = new_map.header.frame_id;
 
-  // we have a new map, update full size of map
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   x_ = y_ = 0;
   width_ = size_x_;
   height_ = size_y_;
@@ -244,9 +260,15 @@ void
 StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  processMap(*new_map);
   if (!map_received_) {
     map_received_ = true;
+    processMap(*new_map);
+  }
+  if (update_in_progress_.load()) {
+    map_buffer_ = new_map;
+  } else {
+    processMap(*new_map);
+    map_buffer_ = nullptr;
   }
 }
 
@@ -306,6 +328,14 @@ StaticLayer::updateBounds(
   }
 
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  update_in_progress_.store(true);
+
+  // If there is a new available map, load it.
+  if (map_buffer_) {
+    processMap(*map_buffer_);
+    map_buffer_ = nullptr;
+  }
+
   if (!layered_costmap_->isRolling() ) {
     if (!(has_updated_data_ || has_extra_bounds_)) {
       return;
@@ -333,6 +363,7 @@ StaticLayer::updateCosts(
   int min_i, int min_j, int max_i, int max_j)
 {
   if (!enabled_) {
+    update_in_progress_.store(false);
     return;
   }
   if (!map_received_) {
@@ -342,6 +373,7 @@ StaticLayer::updateCosts(
       RCLCPP_WARN(node_->get_logger(), "Can't update static costmap layer, no map received");
       count = 0;
     }
+    update_in_progress_.store(false);
     return;
   }
 
@@ -359,9 +391,12 @@ StaticLayer::updateCosts(
     // Might even be in a different frame
     geometry_msgs::msg::TransformStamped transform;
     try {
-      transform = tf_->lookupTransform(map_frame_, global_frame_, tf2::TimePointZero);
+      transform = tf_->lookupTransform(
+        map_frame_, global_frame_, tf2::TimePointZero,
+        transform_tolerance_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(node_->get_logger(), "StaticLayer: %s", ex.what());
+      update_in_progress_.store(false);
       return;
     }
     // Copy map data given proper transformations
@@ -386,6 +421,7 @@ StaticLayer::updateCosts(
       }
     }
   }
+  update_in_progress_.store(false);
 }
 
 }  // namespace nav2_costmap_2d

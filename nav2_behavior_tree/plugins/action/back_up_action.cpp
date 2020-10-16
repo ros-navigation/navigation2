@@ -51,6 +51,11 @@ public:
     goal_.speed = speed;
   }
 
+  void on_tick() override
+  {
+    increment_recovery_count();
+  }
+
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts(

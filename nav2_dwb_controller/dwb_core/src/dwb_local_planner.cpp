@@ -59,7 +59,6 @@ namespace dwb_core
 
 DWBLocalPlanner::DWBLocalPlanner()
 : traj_gen_loader_("dwb_core", "dwb_core::TrajectoryGenerator"),
-  goal_checker_loader_("dwb_core", "nav2_core::GoalChecker"),
   critic_loader_("dwb_core", "dwb_core::TrajectoryCritic")
 {
 }
@@ -74,6 +73,7 @@ void DWBLocalPlanner::configure(
   tf_ = tf;
   dwb_plugin_name_ = name;
   declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".critics");
+  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".default_critic_namespaces");
   declare_parameter_if_not_declared(
     node_, dwb_plugin_name_ + ".prune_plan",
     rclcpp::ParameterValue(true));
@@ -87,9 +87,6 @@ void DWBLocalPlanner::configure(
     node_, dwb_plugin_name_ + ".trajectory_generator_name",
     rclcpp::ParameterValue(std::string("dwb_plugins::StandardTrajectoryGenerator")));
   declare_parameter_if_not_declared(
-    node_, dwb_plugin_name_ + ".goal_checker_name",
-    rclcpp::ParameterValue(std::string("dwb_plugins::SimpleGoalChecker")));
-  declare_parameter_if_not_declared(
     node_, dwb_plugin_name_ + ".transform_tolerance",
     rclcpp::ParameterValue(0.1));
   declare_parameter_if_not_declared(
@@ -97,7 +94,6 @@ void DWBLocalPlanner::configure(
     rclcpp::ParameterValue(true));
 
   std::string traj_generator_name;
-  std::string goal_checker_name;
 
   double transform_tolerance;
   node_->get_parameter(dwb_plugin_name_ + ".transform_tolerance", transform_tolerance);
@@ -108,7 +104,6 @@ void DWBLocalPlanner::configure(
   node_->get_parameter(dwb_plugin_name_ + ".prune_distance", prune_distance_);
   node_->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
   node_->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
-  node_->get_parameter(dwb_plugin_name_ + ".goal_checker_name", goal_checker_name);
   node_->get_parameter(
     dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
     short_circuit_trajectory_evaluation_);
@@ -117,10 +112,8 @@ void DWBLocalPlanner::configure(
   pub_->on_configure();
 
   traj_generator_ = traj_gen_loader_.createUniqueInstance(traj_generator_name);
-  goal_checker_ = goal_checker_loader_.createUniqueInstance(goal_checker_name);
 
   traj_generator_->initialize(node_, dwb_plugin_name_);
-  goal_checker_->initialize(node_, dwb_plugin_name_);
 
   try {
     loadCritics();
@@ -148,7 +141,6 @@ DWBLocalPlanner::cleanup()
   pub_->on_cleanup();
 
   traj_generator_.reset();
-  goal_checker_.reset();
 }
 
 std::string
@@ -262,42 +254,6 @@ DWBLocalPlanner::loadBackwardsCompatibleParameters()
   /* *INDENT-ON* */
 }
 
-bool
-DWBLocalPlanner::isGoalReached(
-  const geometry_msgs::msg::PoseStamped & pose,
-  const geometry_msgs::msg::Twist & velocity)
-{
-  if (global_plan_.poses.size() == 0) {
-    RCLCPP_WARN(
-      rclcpp::get_logger(
-        "DWBLocalPlanner"), "Cannot check if the goal is reached without the goal being set!");
-    return false;
-  }
-  nav_2d_msgs::msg::Pose2DStamped local_start_pose2d, goal_pose2d, local_goal_pose2d;
-
-  nav_2d_utils::transformPose(
-    tf_, costmap_ros_->getGlobalFrameID(),
-    nav_2d_utils::poseStampedToPose2D(pose),
-    local_start_pose2d, transform_tolerance_);
-
-  goal_pose2d.header.frame_id = global_plan_.header.frame_id;
-  goal_pose2d.pose = global_plan_.poses.back();
-
-  nav_2d_utils::transformPose(
-    tf_, costmap_ros_->getGlobalFrameID(), goal_pose2d,
-    local_goal_pose2d, transform_tolerance_);
-
-  geometry_msgs::msg::PoseStamped local_start_pose, local_goal_pose;
-  local_start_pose = nav_2d_utils::pose2DToPoseStamped(local_start_pose2d);
-  local_goal_pose = nav_2d_utils::pose2DToPoseStamped(local_goal_pose2d);
-
-  bool ret = goal_checker_->isGoalReached(local_start_pose.pose, local_goal_pose.pose, velocity);
-  if (ret) {
-    RCLCPP_INFO(rclcpp::get_logger("DWBLocalPlanner"), "Goal reached!");
-  }
-  return ret;
-}
-
 void
 DWBLocalPlanner::setPlan(const nav_msgs::msg::Path & path)
 {
@@ -307,7 +263,6 @@ DWBLocalPlanner::setPlan(const nav_msgs::msg::Path & path)
   }
 
   traj_generator_->reset();
-  goal_checker_->reset();
 
   pub_->publishGlobalPlan(path2d);
   global_plan_ = path2d;
@@ -370,6 +325,9 @@ DWBLocalPlanner::computeVelocityCommands(
 
   prepareGlobalPlan(pose, transformed_plan, goal_pose);
 
+  nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
+  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
+
   for (TrajectoryCritic::Ptr critic : critics_) {
     if (critic->prepare(pose.pose, velocity, goal_pose.pose, transformed_plan) == false) {
       RCLCPP_WARN(rclcpp::get_logger("DWBLocalPlanner"), "A scoring function failed to prepare");
@@ -389,6 +347,8 @@ DWBLocalPlanner::computeVelocityCommands(
       critic->debrief(cmd_vel.velocity);
     }
 
+    lock.unlock();
+
     pub_->publishLocalPlan(pose.header, best.traj);
     pub_->publishCostGrid(costmap_ros_, critics_);
 
@@ -400,6 +360,9 @@ DWBLocalPlanner::computeVelocityCommands(
     for (TrajectoryCritic::Ptr critic : critics_) {
       critic->debrief(empty_cmd);
     }
+
+    lock.unlock();
+
     pub_->publishLocalPlan(pose.header, empty_traj);
     pub_->publishCostGrid(costmap_ros_, critics_);
 

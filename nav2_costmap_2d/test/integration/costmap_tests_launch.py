@@ -32,8 +32,8 @@ def main(argv=sys.argv[1:]):
 
     lifecycle_manager = launch_ros.actions.Node(
         package='nav2_lifecycle_manager',
-        node_executable='lifecycle_manager',
-        node_name='lifecycle_manager',
+        executable='lifecycle_manager',
+        name='lifecycle_manager',
         output='screen',
         parameters=[{'node_names': ['map_server']}, {'autostart': True}])
 

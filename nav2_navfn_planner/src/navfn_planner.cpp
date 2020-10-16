@@ -72,7 +72,7 @@ NavfnPlanner::configure(
 
   // Initialize parameters
   // Declare this plugin's parameters
-  declare_parameter_if_not_declared(node_, name + ".tolerance", rclcpp::ParameterValue(2.0));
+  declare_parameter_if_not_declared(node_, name + ".tolerance", rclcpp::ParameterValue(0.5));
   node_->get_parameter(name + ".tolerance", tolerance_);
   declare_parameter_if_not_declared(node_, name + ".use_astar", rclcpp::ParameterValue(false));
   node_->get_parameter(name + ".use_astar", use_astar_);
@@ -152,6 +152,9 @@ NavfnPlanner::makePlan(
   // clear the plan, just in case
   plan.poses.clear();
 
+  plan.header.stamp = node_->now();
+  plan.header.frame_id = global_frame_;
+
   // TODO(orduno): add checks for start and goal reference frame -- should be in global frame
 
   double wx = start.position.x;
@@ -174,12 +177,16 @@ NavfnPlanner::makePlan(
   // clear the starting cell within the costmap because we know it can't be an obstacle
   clearRobotCell(mx, my);
 
+  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
+
   // make sure to resize the underlying array that Navfn uses
   planner_->setNavArr(
     costmap_->getSizeInCellsX(),
     costmap_->getSizeInCellsY());
 
   planner_->setCostmap(costmap_->getCharMap(), true, allow_unknown_);
+
+  lock.unlock();
 
   int map_start[2];
   map_start[0] = mx;
@@ -213,26 +220,35 @@ NavfnPlanner::makePlan(
 
   double resolution = costmap_->getResolution();
   geometry_msgs::msg::Pose p, best_pose;
-  p = goal;
 
   bool found_legal = false;
-  double best_sdist = std::numeric_limits<double>::max();
 
-  p.position.y = goal.position.y - tolerance;
+  p = goal;
+  double potential = getPointPotential(p.position);
+  if (potential < POT_HIGH) {
+    // Goal is reachable by itself
+    best_pose = p;
+    found_legal = true;
+  } else {
+    // Goal is not reachable. Trying to find nearest to the goal
+    // reachable point within its tolerance region
+    double best_sdist = std::numeric_limits<double>::max();
 
-  while (p.position.y <= goal.position.y + tolerance) {
-    p.position.x = goal.position.x - tolerance;
-    while (p.position.x <= goal.position.x + tolerance) {
-      double potential = getPointPotential(p.position);
-      double sdist = squared_distance(p, goal);
-      if (potential < POT_HIGH && sdist < best_sdist) {
-        best_sdist = sdist;
-        best_pose = p;
-        found_legal = true;
+    p.position.y = goal.position.y - tolerance;
+    while (p.position.y <= goal.position.y + tolerance) {
+      p.position.x = goal.position.x - tolerance;
+      while (p.position.x <= goal.position.x + tolerance) {
+        potential = getPointPotential(p.position);
+        double sdist = squared_distance(p, goal);
+        if (potential < POT_HIGH && sdist < best_sdist) {
+          best_sdist = sdist;
+          best_pose = p;
+          found_legal = true;
+        }
+        p.position.x += resolution;
       }
-      p.position.x += resolution;
+      p.position.y += resolution;
     }
-    p.position.y += resolution;
   }
 
   if (found_legal) {
@@ -274,39 +290,6 @@ NavfnPlanner::smoothApproachToGoal(
 }
 
 bool
-NavfnPlanner::computePotential(const geometry_msgs::msg::Point & world_point)
-{
-  // make sure to resize the underlying array that Navfn uses
-  planner_->setNavArr(
-    costmap_->getSizeInCellsX(),
-    costmap_->getSizeInCellsY());
-
-  planner_->setCostmap(costmap_->getCharMap(), true, allow_unknown_);
-
-  unsigned int mx, my;
-  if (!worldToMap(world_point.x, world_point.y, mx, my)) {
-    return false;
-  }
-
-  int map_start[2];
-  map_start[0] = 0;
-  map_start[1] = 0;
-
-  int map_goal[2];
-  map_goal[0] = mx;
-  map_goal[1] = my;
-
-  planner_->setStart(map_start);
-  planner_->setGoal(map_goal);
-
-  if (use_astar_) {
-    return planner_->calcNavFnAstar();
-  }
-
-  return planner_->calcNavFnDijkstra();
-}
-
-bool
 NavfnPlanner::getPlanFromPotential(
   const geometry_msgs::msg::Pose & goal,
   nav_msgs::msg::Path & plan)
@@ -336,19 +319,16 @@ NavfnPlanner::getPlanFromPotential(
 
   int path_len = planner_->calcPath(costmap_->getSizeInCellsX() * 4);
   if (path_len == 0) {
-    RCLCPP_DEBUG(node_->get_logger(), "No path found\n");
     return false;
   }
 
-  RCLCPP_DEBUG(node_->get_logger(), "Path found, %d steps\n", path_len);
+  auto cost = planner_->getLastPathCost();
+  RCLCPP_DEBUG(node_->get_logger(), "Path found, %d steps, %f cost\n", path_len, cost);
 
   // extract the plan
   float * x = planner_->getPathX();
   float * y = planner_->getPathY();
   int len = planner_->getPathLen();
-
-  plan.header.stamp = node_->now();
-  plan.header.frame_id = global_frame_;
 
   for (int i = len - 1; i >= 0; --i) {
     // convert the plan to world coordinates
@@ -381,44 +361,47 @@ NavfnPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point)
   return planner_->potarr[index];
 }
 
-bool
-NavfnPlanner::validPointPotential(const geometry_msgs::msg::Point & world_point)
-{
-  return validPointPotential(world_point, tolerance_);
-}
+// bool
+// NavfnPlanner::validPointPotential(const geometry_msgs::msg::Point & world_point)
+// {
+//   return validPointPotential(world_point, tolerance_);
+// }
 
-bool
-NavfnPlanner::validPointPotential(
-  const geometry_msgs::msg::Point & world_point, double tolerance)
-{
-  const double resolution = costmap_->getResolution();
+// bool
+// NavfnPlanner::validPointPotential(
+//   const geometry_msgs::msg::Point & world_point, double tolerance)
+// {
+//   const double resolution = costmap_->getResolution();
 
-  geometry_msgs::msg::Point p = world_point;
-  p.y = world_point.y - tolerance;
+//   geometry_msgs::msg::Point p = world_point;
+//   double potential = getPointPotential(p);
+//   if (potential < POT_HIGH) {
+//     // world_point is reachable by itself
+//     return true;
+//   } else {
+//     // world_point, is not reachable. Trying to find any
+//     // reachable point within its tolerance region
+//     p.y = world_point.y - tolerance;
+//     while (p.y <= world_point.y + tolerance) {
+//       p.x = world_point.x - tolerance;
+//       while (p.x <= world_point.x + tolerance) {
+//         potential = getPointPotential(p);
+//         if (potential < POT_HIGH) {
+//           return true;
+//         }
+//         p.x += resolution;
+//       }
+//       p.y += resolution;
+//     }
+//   }
 
-  while (p.y <= world_point.y + tolerance) {
-    p.x = world_point.x - tolerance;
-    while (p.x <= world_point.x + tolerance) {
-      double potential = getPointPotential(p);
-      if (potential < POT_HIGH) {
-        return true;
-      }
-      p.x += resolution;
-    }
-    p.y += resolution;
-  }
-
-  return false;
-}
+//   return false;
+// }
 
 bool
 NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
 {
   if (wx < costmap_->getOriginX() || wy < costmap_->getOriginY()) {
-    RCLCPP_ERROR(
-      node_->get_logger(), "worldToMap failed: wx,wy: %f,%f, "
-      "size_x,size_y: %d,%d", wx, wy,
-      costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
     return false;
   }
 

@@ -38,33 +38,31 @@ public:
 
 RclCppFixture g_rclcppfixture;
 
-class TestNode : public ::testing::Test
+class MapServerTestFixture : public ::testing::Test
 {
 public:
-  TestNode()
+  static void SetUpTestCase()
   {
     node_ = rclcpp::Node::make_shared("map_client_test");
-    map_server_node_name_ = "map_server";
     lifecycle_client_ =
-      std::make_shared<nav2_util::LifecycleServiceClient>(map_server_node_name_, node_);
+      std::make_shared<nav2_util::LifecycleServiceClient>("map_server", node_);
     RCLCPP_INFO(node_->get_logger(), "Creating Test Node");
 
-
-    std::this_thread::sleep_for(std::chrono::seconds(1));  // allow node to start up
+    std::this_thread::sleep_for(std::chrono::seconds(5));  // allow node to start up
     const std::chrono::seconds timeout(5);
     lifecycle_client_->change_state(Transition::TRANSITION_CONFIGURE, timeout);
     lifecycle_client_->change_state(Transition::TRANSITION_ACTIVATE, timeout);
   }
 
-  ~TestNode()
+  static void TearDownTestCase()
   {
     lifecycle_client_->change_state(Transition::TRANSITION_DEACTIVATE);
     lifecycle_client_->change_state(Transition::TRANSITION_CLEANUP);
+    lifecycle_client_->change_state(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
   }
 
   template<class T>
   typename T::Response::SharedPtr send_request(
-
     rclcpp::Node::SharedPtr node,
     typename rclcpp::Client<T>::SharedPtr client,
     typename T::Request::SharedPtr request)
@@ -72,10 +70,7 @@ public:
     auto result = client->async_send_request(request);
 
     // Wait for the result
-    if (
-      rclcpp::spin_until_future_complete(node, result) ==
-      rclcpp::executor::FutureReturnCode::SUCCESS)
-    {
+    if (rclcpp::spin_until_future_complete(node, result) == rclcpp::FutureReturnCode::SUCCESS) {
       return result.get();
     } else {
       return nullptr;
@@ -95,18 +90,23 @@ protected:
     }
   }
 
-  std::string map_server_node_name_;
-  rclcpp::Node::SharedPtr node_;
-  std::shared_ptr<nav2_util::LifecycleServiceClient> lifecycle_client_;
+  static rclcpp::Node::SharedPtr node_;
+  static std::shared_ptr<nav2_util::LifecycleServiceClient> lifecycle_client_;
 };
 
+
+rclcpp::Node::SharedPtr MapServerTestFixture::node_ = nullptr;
+std::shared_ptr<nav2_util::LifecycleServiceClient> MapServerTestFixture::lifecycle_client_ =
+  nullptr;
+
+
 // Send map getting service request and verify obtained OccupancyGrid
-TEST_F(TestNode, GetMap)
+TEST_F(MapServerTestFixture, GetMap)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing GetMap service");
   auto req = std::make_shared<nav_msgs::srv::GetMap::Request>();
   auto client = node_->create_client<nav_msgs::srv::GetMap>(
-    "/" + map_server_node_name_ + "/map");
+    "/map_server/map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -117,12 +117,12 @@ TEST_F(TestNode, GetMap)
 }
 
 // Send map loading service request and verify obtained OccupancyGrid
-TEST_F(TestNode, LoadMap)
+TEST_F(MapServerTestFixture, LoadMap)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
   auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
-    "/" + map_server_node_name_ + "/load_map");
+    "/map_server/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -135,12 +135,12 @@ TEST_F(TestNode, LoadMap)
 }
 
 // Send map loading service request without specifying which map to load
-TEST_F(TestNode, LoadMapNull)
+TEST_F(MapServerTestFixture, LoadMapNull)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
   auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
-    "/" + map_server_node_name_ + "/load_map");
+    "/map_server/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -153,12 +153,12 @@ TEST_F(TestNode, LoadMapNull)
 }
 
 // Send map loading service request with non-existing yaml file
-TEST_F(TestNode, LoadMapInvalidYaml)
+TEST_F(MapServerTestFixture, LoadMapInvalidYaml)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
   auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
-    "/" + map_server_node_name_ + "/load_map");
+    "/map_server/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -171,12 +171,12 @@ TEST_F(TestNode, LoadMapInvalidYaml)
 }
 
 // Send map loading service request with yaml file containing non-existing map
-TEST_F(TestNode, LoadMapInvalidImage)
+TEST_F(MapServerTestFixture, LoadMapInvalidImage)
 {
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service");
   auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
   auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
-    "/" + map_server_node_name_ + "/load_map");
+    "/map_server/load_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());

@@ -43,10 +43,22 @@ ament_target_dependencies(path_ops
   ${dependencies}
 )
 
-install(TARGETS conversions path_ops
+add_library(tf_help SHARED
+  src/tf_help.cpp
+)
+
+target_link_libraries(tf_help
+  conversions
+)
+
+ament_target_dependencies(tf_help
+  ${dependencies}
+)
+
+install(TARGETS conversions path_ops tf_help
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
-        RUNTIME DESTINATION lib/${PROJECT_NAME}
+        RUNTIME DESTINATION bin
 )
 install(DIRECTORY include/
         DESTINATION include/
@@ -60,7 +72,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(conversions path_ops)
+ament_export_libraries(conversions path_ops tf_help)
 ament_export_dependencies(${dependencies})
 
 ament_package()

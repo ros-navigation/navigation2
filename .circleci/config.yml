@@ -70,10 +70,14 @@ references:
                 (echo vcs_export && cat) >> checksum.txt
               sha256sum $PWD/checksum.txt >> checksum.txt
               apt-get update
+              rosdep update
               dependencies=$(
                 rosdep install -q -y \
                   --from-paths src \
                   --ignore-src \
+                  --skip-keys " \
+                    slam_toolbox \
+                    " \
                   --verbose | \
                 awk '$1 ~ /^resolution\:/' | \
                 awk -F'[][]' '{print $2}' | \
@@ -135,8 +139,6 @@ references:
       parameters:
         workspace:
           type: string
-        mixins:
-          type: string
       steps:
         - run:
             name: Test Workspace | << parameters.workspace >>
@@ -152,12 +154,10 @@ references:
                   xargs)
               set -o xtrace
               colcon test \
-                --packages-select ${TEST_PACKAGES} \
-                --mixin << parameters.mixins >>
+                --packages-select ${TEST_PACKAGES}
               colcon test \
                 --packages-select ${TEST_PACKAGES} \
                 --packages-select-test-failures \
-                --mixin << parameters.mixins >> \
                 --retest-until-pass ${RETEST_UNTIL_PASS} \
                 --ctest-args --test-regex "test_.*"
               colcon test-result \
@@ -264,7 +264,6 @@ references:
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
       workspace: /opt/overlay_ws
-      mixins: ${OVERLAY_MIXINS}
   collect_overlay_coverage: &collect_overlay_coverage
     run:
       name: Collect Code Coverage
@@ -276,37 +275,6 @@ references:
       file: lcov/project_coverage.info
       flags: project
       when: always
-  setup_doc_dependencies: &setup_doc_dependencies
-    run:
-      name: Install Doc Dependencies
-      command: |
-        apk --no-cache add python3
-        python3 -m ensurepip
-        pip3 install sphinx==1.7.5 docutils==0.14 sphinx_rtd_theme breathe==4.9.1 sphinxcontrib-plantuml
-        apk --no-cache add make
-        apk --no-cache add doxygen
-        apk --no-cache add graphviz
-        apk --no-cache add ttf-dejavu
-        apk --no-cache add openjdk8-jre
-        apk --no-cache add bash git openssh
-  make_docs: &make_docs
-    run:
-      command: |
-        cd src/navigation2/sphinx_doc
-        make html
-  store_docs: &store_docs
-    store_artifacts:
-        path: /opt/overlay_ws/src/navigation2/sphinx_doc/_build/html
-        destination: html
-  publish_docs: &publish_docs
-    run:
-      command: |
-        cd src/navigation2/sphinx_doc
-        make publish
-  install_deployment_key: &install_deployment_key
-    add_ssh_keys:
-      fingerprints:
-        - "0e:8e:90:bf:3d:a9:04:d9:04:b4:62:38:a5:3b:90:7d"
 
 commands:
   <<: *common_commands
@@ -349,19 +317,6 @@ commands:
     steps:
       - *collect_overlay_coverage
       - *upload_overlay_coverage
-  install_doc_dependencies:
-    description: "Install documentation dependencies"
-    steps:
-      - *setup_doc_dependencies
-  build_docs:
-    description: "Build docs"
-    steps:
-      - *make_docs
-      - *store_docs
-  publish_docs_to_gh_pages_branch:
-    description: "Commit newly built docs to gh-pages branch"
-    steps:
-      - *publish_docs
 
 executors:
   debug_exec:
@@ -382,12 +337,6 @@ executors:
       CACHE_NONCE: "Release"
       OVERLAY_MIXINS: "release ccache"
       UNDERLAY_MIXINS: "release ccache"
-  docs_exec:
-    docker:
-      - image: alpine:latest
-    working_directory: /opt/overlay_ws
-    environment:
-      <<: *common_environment
 
 jobs:
   debug_build: &debug_build
@@ -424,25 +373,6 @@ jobs:
     <<: *release_test
     environment:
       RMW_IMPLEMENTATION: "rmw_fastrtps_cpp"
-  docs_build:
-    executor: docs_exec
-    steps:
-      - install_doc_dependencies
-      - *on_checkout
-      - build_docs
-      - persist_to_workspace:
-          root: src/navigation2
-          paths:
-            - sphinx_doc
-  docs_publish:
-    executor: docs_exec
-    steps:
-      - install_doc_dependencies
-      - *on_checkout
-      - *install_deployment_key
-      - attach_workspace:
-          at: src/navigation2
-      - publish_docs_to_gh_pages_branch
 
 workflows:
   version: 2
@@ -456,15 +386,6 @@ workflows:
       - release_test:
           requires:
             - release_build
-  build_and_publish_docs:
-    jobs:
-      - docs_build
-      - docs_publish:
-          requires:
-            - docs_build
-          filters:
-            branches:
-              only: master
   nightly:
     jobs:
       - debug_build
@@ -472,9 +393,9 @@ workflows:
           requires:
             - debug_build
       - release_build
-      - test_rmw_connext_cpp:
-          requires:
-            - release_build
+      # - test_rmw_connext_cpp:
+      #     requires:
+      #       - release_build
       - test_rmw_cyclonedds_cpp:
           requires:
             - release_build

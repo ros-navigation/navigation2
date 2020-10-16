@@ -12,96 +12,65 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__TRANSFORM_AVAILABLE_CONDITION_HPP_
-#define NAV2_BEHAVIOR_TREE__TRANSFORM_AVAILABLE_CONDITION_HPP_
-
 #include <string>
 #include <chrono>
-#include <cmath>
-#include <atomic>
 #include <memory>
-#include <deque>
 
-#include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp_v3/condition_node.h"
-#include "tf2_ros/buffer.h"
+#include "nav2_behavior_tree/plugins/condition/transform_available_condition.hpp"
 
 using namespace std::chrono_literals; // NOLINT
 
 namespace nav2_behavior_tree
 {
 
-class TransformAvailableCondition : public BT::ConditionNode
+TransformAvailableCondition::TransformAvailableCondition(
+  const std::string & condition_name,
+  const BT::NodeConfiguration & conf)
+: BT::ConditionNode(condition_name, conf),
+  was_found_(false)
 {
-public:
-  TransformAvailableCondition(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf)
-  : BT::ConditionNode(condition_name, conf),
-    was_found_(false)
-  {
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-    tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 
-    getInput("child", child_frame_);
-    getInput("parent", parent_frame_);
+  getInput("child", child_frame_);
+  getInput("parent", parent_frame_);
 
-    if (child_frame_.empty() || parent_frame_.empty()) {
-      RCLCPP_FATAL(
-        node_->get_logger(), "Child frame (%s) or parent frame (%s) were empty.",
-        child_frame_.c_str(), parent_frame_.c_str());
-      exit(-1);
-    }
-
-    RCLCPP_DEBUG(node_->get_logger(), "Initialized an TransformAvailableCondition BT node");
+  if (child_frame_.empty() || parent_frame_.empty()) {
+    RCLCPP_FATAL(
+      node_->get_logger(), "Child frame (%s) or parent frame (%s) were empty.",
+      child_frame_.c_str(), parent_frame_.c_str());
+    exit(-1);
   }
 
-  TransformAvailableCondition() = delete;
+  RCLCPP_DEBUG(node_->get_logger(), "Initialized an TransformAvailableCondition BT node");
+}
 
-  ~TransformAvailableCondition()
-  {
-    RCLCPP_DEBUG(node_->get_logger(), "Shutting down TransformAvailableCondition BT node");
+TransformAvailableCondition::~TransformAvailableCondition()
+{
+  RCLCPP_DEBUG(node_->get_logger(), "Shutting down TransformAvailableCondition BT node");
+}
+
+BT::NodeStatus TransformAvailableCondition::tick()
+{
+  if (was_found_) {
+    return BT::NodeStatus::SUCCESS;
   }
 
-  BT::NodeStatus tick() override
-  {
-    if (was_found_) {
-      return BT::NodeStatus::SUCCESS;
-    }
+  std::string tf_error;
+  bool found = tf_->canTransform(
+    child_frame_, parent_frame_, tf2::TimePointZero, &tf_error);
 
-    std::string tf_error;
-    bool found = tf_->canTransform(
-      child_frame_, parent_frame_, tf2::TimePointZero, &tf_error);
-
-    if (found) {
-      was_found_ = true;
-      return BT::NodeStatus::SUCCESS;
-    }
-
-    RCLCPP_INFO(
-      node_->get_logger(), "Transform from %s to %s was not found, tf error: %s",
-      child_frame_.c_str(), parent_frame_.c_str(), tf_error.c_str());
-
-    return BT::NodeStatus::FAILURE;
+  if (found) {
+    was_found_ = true;
+    return BT::NodeStatus::SUCCESS;
   }
 
-  static BT::PortsList providedPorts()
-  {
-    return {
-      BT::InputPort<std::string>("child", std::string(), "Child frame for transform"),
-      BT::InputPort<std::string>("parent", std::string(), "parent frame for transform")
-    };
-  }
+  RCLCPP_INFO(
+    node_->get_logger(), "Transform from %s to %s was not found, tf error: %s",
+    child_frame_.c_str(), parent_frame_.c_str(), tf_error.c_str());
 
-private:
-  rclcpp::Node::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-
-  std::atomic<bool> was_found_;
-
-  std::string child_frame_;
-  std::string parent_frame_;
-};
+  return BT::NodeStatus::FAILURE;
+}
 
 }  // namespace nav2_behavior_tree
 
@@ -110,5 +79,3 @@ BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::TransformAvailableCondition>("TransformAvailable");
 }
-
-#endif  // NAV2_BEHAVIOR_TREE__TRANSFORM_AVAILABLE_CONDITION_HPP_

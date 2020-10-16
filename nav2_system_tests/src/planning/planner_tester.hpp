@@ -50,7 +50,7 @@ public:
   void printCostmap()
   {
     // print costmap for debug
-    for (uint i = 0; i != costmap_->getSizeInCellsX() * costmap_->getSizeInCellsY(); i++) {
+    for (size_t i = 0; i != costmap_->getSizeInCellsX() * costmap_->getSizeInCellsY(); i++) {
       if (i % costmap_->getSizeInCellsX() == 0) {
         std::cout << "" << std::endl;
       }
@@ -67,7 +67,8 @@ public:
     costmap_ros_->getCostmap()->resizeMap(
       prop.size_x, prop.size_y,
       prop.resolution, prop.origin.position.x, prop.origin.position.x);
-    unsigned char * costmap_ptr = costmap_ros_->getCostmap()->getCharMap();
+    // Volatile prevents compiler from treating costmap_ptr as unused or changing its address
+    volatile unsigned char * costmap_ptr = costmap_ros_->getCostmap()->getCharMap();
     delete[] costmap_ptr;
     costmap_ptr = new unsigned char[prop.size_x * prop.size_y];
     std::copy(cm.data.begin(), cm.data.end(), costmap_ptr);
@@ -103,6 +104,11 @@ public:
   void onActivate(const rclcpp_lifecycle::State & state)
   {
     on_activate(state);
+  }
+
+  void onDeactivate(const rclcpp_lifecycle::State & state)
+  {
+    on_deactivate(state);
   }
 
   void onConfigure(const rclcpp_lifecycle::State & state)

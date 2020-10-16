@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <vector>
+#include <utility>
 
 #include "nav2_rviz_plugins/goal_common.hpp"
 #include "rviz_common/display_context.hpp"
@@ -409,7 +410,7 @@ Nav2Panel::onCancelButtonPressed()
       waypoint_follower_action_client_->async_cancel_goal(waypoint_follower_goal_handle_);
 
     if (rclcpp::spin_until_future_complete(client_node_, future_cancel) !=
-      rclcpp::executor::FutureReturnCode::SUCCESS)
+      rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel waypoint follower");
       return;
@@ -418,7 +419,7 @@ Nav2Panel::onCancelButtonPressed()
     auto future_cancel = navigation_action_client_->async_cancel_goal(navigation_goal_handle_);
 
     if (rclcpp::spin_until_future_complete(client_node_, future_cancel) !=
-      rclcpp::executor::FutureReturnCode::SUCCESS)
+      rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel goal");
       return;
@@ -522,7 +523,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
   auto future_goal_handle =
     waypoint_follower_action_client_->async_send_goal(waypoint_follower_goal_, send_goal_options);
   if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
     return;
@@ -562,7 +563,7 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
   auto future_goal_handle =
     navigation_action_client_->async_send_goal(navigation_goal_, send_goal_options);
   if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
     return;
@@ -609,7 +610,7 @@ Nav2Panel::updateWpNavigationMarkers()
 {
   resetUniqueId();
 
-  visualization_msgs::msg::MarkerArray marker_array;
+  auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
 
   for (size_t i = 0; i < acummulated_poses_.size(); i++) {
     // Draw a green arrow at the waypoint pose
@@ -628,7 +629,7 @@ Nav2Panel::updateWpNavigationMarkers()
     arrow_marker.color.a = 1.0f;
     arrow_marker.lifetime = rclcpp::Duration(0);
     arrow_marker.frame_locked = false;
-    marker_array.markers.push_back(arrow_marker);
+    marker_array->markers.push_back(arrow_marker);
 
     // Draw a red circle at the waypoint pose
     visualization_msgs::msg::Marker circle_marker;
@@ -646,7 +647,7 @@ Nav2Panel::updateWpNavigationMarkers()
     circle_marker.color.a = 1.0f;
     circle_marker.lifetime = rclcpp::Duration(0);
     circle_marker.frame_locked = false;
-    marker_array.markers.push_back(circle_marker);
+    marker_array->markers.push_back(circle_marker);
 
     // Draw the waypoint number
     visualization_msgs::msg::Marker marker_text;
@@ -666,16 +667,16 @@ Nav2Panel::updateWpNavigationMarkers()
     marker_text.lifetime = rclcpp::Duration(0);
     marker_text.frame_locked = false;
     marker_text.text = "wp_" + std::to_string(i + 1);
-    marker_array.markers.push_back(marker_text);
+    marker_array->markers.push_back(marker_text);
   }
 
-  if (marker_array.markers.empty()) {
+  if (marker_array->markers.empty()) {
     visualization_msgs::msg::Marker clear_all_marker;
     clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
-    marker_array.markers.push_back(clear_all_marker);
+    marker_array->markers.push_back(clear_all_marker);
   }
 
-  wp_navigation_markers_pub_->publish(marker_array);
+  wp_navigation_markers_pub_->publish(std::move(marker_array));
 }
 
 }  // namespace nav2_rviz_plugins

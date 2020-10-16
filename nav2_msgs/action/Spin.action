@@ -2,6 +2,6 @@
 float32 target_yaw
 ---
 #result definition
-std_msgs/Empty result
+builtin_interfaces/Duration total_elapsed_time
 ---
-#feedback
+float32 angular_distance_traveled

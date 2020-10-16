@@ -6,7 +6,7 @@
 # docker build -t nav2:latest \
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./
-ARG FROM_IMAGE=osrf/ros2:nightly
+ARG FROM_IMAGE=ros:foxy-ros-base
 
 # multi-stage for caching
 FROM $FROM_IMAGE AS cache

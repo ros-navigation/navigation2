@@ -58,7 +58,7 @@ ament_target_dependencies(dwb_core
 install(TARGETS dwb_core
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/

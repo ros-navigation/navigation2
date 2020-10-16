@@ -34,6 +34,8 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_amcl/motion_model/motion_model.hpp"
 #include "nav2_amcl/sensors/laser/laser.hpp"
+#include "nav2_msgs/msg/particle.hpp"
+#include "nav2_msgs/msg/particle_cloud.hpp"
 #include "nav_msgs/srv/set_map.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "std_srvs/srv/empty.hpp"
@@ -64,7 +66,6 @@ protected:
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   // Since the sensor data from gazebo or the robot is not lifecycle enabled, we won't
   // respond until we're in the active state
@@ -117,6 +118,8 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     pose_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr particlecloud_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::ParticleCloud>::SharedPtr
+    particle_cloud_pub_;
   void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
   void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
 
@@ -163,7 +166,6 @@ protected:
 
   // Laser scan related
   void initLaserScan();
-  const char * scan_topic_{"scan"};
   nav2_amcl::Laser * createLaserObject();
   int scan_error_count_{0};
   std::vector<nav2_amcl::Laser *> lasers_;
@@ -246,6 +248,8 @@ protected:
   double z_max_;
   double z_short_;
   double z_rand_;
+  std::string scan_topic_{"scan"};
+  std::string map_topic_{"map"};
 };
 
 }  // namespace nav2_amcl

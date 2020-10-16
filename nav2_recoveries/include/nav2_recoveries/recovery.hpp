@@ -21,6 +21,7 @@
 #include <chrono>
 #include <ctime>
 #include <thread>
+#include <utility>
 
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_ros/transform_listener.h"
@@ -87,7 +88,7 @@ public:
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
-    std::shared_ptr<nav2_costmap_2d::CollisionChecker> collision_checker) override
+    std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker) override
   {
     RCLCPP_INFO(parent->get_logger(), "Configuring %s", name.c_str());
 
@@ -96,6 +97,9 @@ public:
     tf_ = tf;
 
     node_->get_parameter("cycle_frequency", cycle_frequency_);
+    node_->get_parameter("global_frame", global_frame_);
+    node_->get_parameter("robot_base_frame", robot_base_frame_);
+    node_->get_parameter("transform_tolerance", transform_tolerance_);
 
     action_server_ = std::make_shared<ActionServer>(
       node_, recovery_name_,
@@ -134,11 +138,17 @@ protected:
   std::string recovery_name_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
   std::shared_ptr<ActionServer> action_server_;
-  std::shared_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
+  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
   double cycle_frequency_;
   double enabled_;
+  std::string global_frame_;
+  std::string robot_base_frame_;
+  double transform_tolerance_;
+
+  // Clock
+  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
 
   void execute()
   {
@@ -160,13 +170,19 @@ protected:
       1s,
       [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", recovery_name_.c_str());});
 
+    auto start_time = steady_clock_.now();
+
+    // Initialize the ActionT result
+    auto result = std::make_shared<typename ActionT::Result>();
+
     rclcpp::Rate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(node_->get_logger(), "Canceling %s", recovery_name_.c_str());
         stopRobot();
-        action_server_->terminate_all();
+        result->total_elapsed_time = steady_clock_.now() - start_time;
+        action_server_->terminate_all(result);
         return;
       }
 
@@ -177,19 +193,22 @@ protected:
           " however feature is currently not implemented. Aborting and stopping.",
           recovery_name_.c_str());
         stopRobot();
-        action_server_->terminate_current();
+        result->total_elapsed_time = steady_clock_.now() - start_time;
+        action_server_->terminate_current(result);
         return;
       }
 
       switch (onCycleUpdate()) {
         case Status::SUCCEEDED:
           RCLCPP_INFO(node_->get_logger(), "%s completed successfully", recovery_name_.c_str());
-          action_server_->succeeded_current();
+          result->total_elapsed_time = steady_clock_.now() - start_time;
+          action_server_->succeeded_current(result);
           return;
 
         case Status::FAILED:
           RCLCPP_WARN(node_->get_logger(), "%s failed", recovery_name_.c_str());
-          action_server_->terminate_current();
+          result->total_elapsed_time = steady_clock_.now() - start_time;
+          action_server_->terminate_current(result);
           return;
 
         case Status::RUNNING:
@@ -203,12 +222,12 @@ protected:
 
   void stopRobot()
   {
-    geometry_msgs::msg::Twist cmd_vel;
-    cmd_vel.linear.x = 0.0;
-    cmd_vel.linear.y = 0.0;
-    cmd_vel.angular.z = 0.0;
+    auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
+    cmd_vel->linear.x = 0.0;
+    cmd_vel->linear.y = 0.0;
+    cmd_vel->angular.z = 0.0;
 
-    vel_pub_->publish(cmd_vel);
+    vel_pub_->publish(std::move(cmd_vel));
   }
 };
 

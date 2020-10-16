@@ -95,11 +95,12 @@ bool ObservationBuffer::setGlobalFrame(const std::string new_global_frame)
       origin.point = obs.origin_;
 
       // we need to transform the origin of the observation to the new global frame
-      tf2_buffer_.transform(origin, origin, new_global_frame);
+      tf2_buffer_.transform(origin, origin, new_global_frame, tf2::durationFromSec(tf_tolerance_));
       obs.origin_ = origin.point;
 
       // we also need to transform the cloud of the observation to the new global frame
-      tf2_buffer_.transform(*(obs.cloud_), *(obs.cloud_), new_global_frame);
+      tf2_buffer_.transform(
+        *(obs.cloud_), *(obs.cloud_), new_global_frame, tf2::durationFromSec(tf_tolerance_));
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(
         rclcpp::get_logger(

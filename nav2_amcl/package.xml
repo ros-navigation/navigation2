@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_amcl</name>
-  <version>0.3.4</version>
+  <version>0.4.3</version>
   <description>
     <p>
       amcl is a probabilistic localization system for a robot moving in
@@ -32,6 +32,7 @@
   <depend>tf2_ros</depend>
   <depend>tf2</depend>
   <depend>nav2_util</depend>
+  <depend>nav2_msgs</depend>
   <depend>launch_ros</depend>
   <depend>launch_testing</depend>
 

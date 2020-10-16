@@ -50,6 +50,7 @@
 #include <memory>
 #include <fstream>
 #include <stdexcept>
+#include <utility>
 
 #include "yaml-cpp/yaml.h"
 #include "lifecycle_msgs/msg/state.hpp"
@@ -88,8 +89,6 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   std::string topic_name = get_parameter("topic_name").as_string();
   frame_id_ = get_parameter("frame_id").as_string();
 
-  // initialize Occupancy Grid msg - needed by loadMapResponseFromYaml()
-  msg_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
   // Shared pointer to LoadMap::Response is also should be initialized
   // in order to avoid null-pointer dereference
   std::shared_ptr<nav2_msgs::srv::LoadMap::Response> rsp =
@@ -127,7 +126,8 @@ MapServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Publish the map using the latched topic
   occ_pub_->on_activate();
-  occ_pub_->publish(*msg_);
+  auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
+  occ_pub_->publish(std::move(occ_grid));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -150,15 +150,7 @@ MapServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   occ_pub_.reset();
   occ_service_.reset();
   load_map_service_.reset();
-  msg_.reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-MapServer::on_error(const rclcpp_lifecycle::State & /*state*/)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -182,7 +174,7 @@ void MapServer::getMapCallback(
     return;
   }
   RCLCPP_INFO(get_logger(), "Handling GetMap request");
-  response->map = *msg_;
+  response->map = msg_;
 }
 
 void MapServer::loadMapCallback(
@@ -200,7 +192,8 @@ void MapServer::loadMapCallback(
   RCLCPP_INFO(get_logger(), "Handling LoadMap request");
   // Load from file
   if (loadMapResponseFromYaml(request->map_url, response)) {
-    occ_pub_->publish(*msg_);  // publish new map
+    auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
+    occ_pub_->publish(std::move(occ_grid));  // publish new map
   }
 }
 
@@ -208,7 +201,7 @@ bool MapServer::loadMapResponseFromYaml(
   const std::string & yaml_file,
   std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response)
 {
-  switch (loadMapFromYaml(yaml_file, *msg_)) {
+  switch (loadMapFromYaml(yaml_file, msg_)) {
     case MAP_DOES_NOT_EXIST:
       response->result = nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
       return false;
@@ -222,7 +215,7 @@ bool MapServer::loadMapResponseFromYaml(
       // Correcting msg_ header when it belongs to spiecific node
       updateMsgHeader();
 
-      response->map = *msg_;
+      response->map = msg_;
       response->result = nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS;
   }
 
@@ -231,9 +224,9 @@ bool MapServer::loadMapResponseFromYaml(
 
 void MapServer::updateMsgHeader()
 {
-  msg_->info.map_load_time = now();
-  msg_->header.frame_id = frame_id_;
-  msg_->header.stamp = now();
+  msg_.info.map_load_time = now();
+  msg_.header.frame_id = frame_id_;
+  msg_.header.stamp = now();
 }
 
 }  // namespace nav2_map_server
