@@ -91,7 +91,7 @@ public:
     int min_i, int min_j, int max_i, int max_j) override;
 
   void matchSize() override;
-  virtual bool isClearable() {return false;};
+  virtual bool isClearable() {return false;}
 
   void reset() override
   {

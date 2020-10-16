@@ -75,7 +75,8 @@ private:
     const std::shared_ptr<nav2_msgs::srv::ClearEntireCostmap::Response> response);
 
   void clearLayerRegion(
-    std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance, bool invert);
+    std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance,
+    bool invert);
 
   bool getPosition(double & x, double & y) const;
 };
