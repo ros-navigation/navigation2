@@ -50,8 +50,8 @@ class WaypointFollowerTest(Node):
 
     def setInitialPose(self, pose):
         self.init_pose = PoseWithCovarianceStamped()
-        self.init_pose.pose.pose.position.x = -2.0
-        self.init_pose.pose.pose.position.y = -0.5
+        self.init_pose.pose.pose.position.x = pose[0]
+        self.init_pose.pose.pose.position.y = pose[1]
         self.init_pose.header.frame_id = 'map'
         self.publishInitialPose()
         time.sleep(5)
@@ -61,9 +61,7 @@ class WaypointFollowerTest(Node):
         self.initial_pose_received = True
 
     def setWaypoints(self, waypoints):
-        if not self.waypoints:
-            self.waypoints = []
-
+        self.waypoints = []
         for wp in waypoints:
             msg = PoseStamped()
             msg.header.frame_id = 'map'
@@ -123,36 +121,6 @@ class WaypointFollowerTest(Node):
     def publishInitialPose(self):
         self.initial_pose_pub.publish(self.init_pose)
 
-    def shutdown(self):
-        self.info_msg('Shutting down')
-        transition_service = 'lifecycle_manager_navigation/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
-        while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(transition_service + ' service not available, waiting...')
-
-        req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
-        future = mgr_client.call_async(req)
-        try:
-            rclpy.spin_until_future_complete(self, future)
-            future.result()
-        except Exception as e:
-            self.error_msg('Service call failed %r' % (e,))
-
-        transition_service = 'lifecycle_manager_localization/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
-        while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(transition_service + ' service not available, waiting...')
-
-        req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
-        future = mgr_client.call_async(req)
-        try:
-            rclpy.spin_until_future_complete(self, future)
-            future.result()
-        except Exception as e:
-            self.error_msg('Service call failed %r' % (e,))
-
     def cancel_goal(self):
         cancel_future = self.goal_handle.cancel_goal_async()
         rclpy.spin_until_future_complete(self, cancel_future)
@@ -208,9 +176,6 @@ def main(argv=sys.argv[1:]):
     result = test.run(True)
     assert not result
     result = not result
-
-    test.shutdown()
-    test.info_msg('Done Shutting Down.')
 
     if not result:
         test.info_msg('Exiting failed')
