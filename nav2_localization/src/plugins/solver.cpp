@@ -15,20 +15,18 @@ void DummySolver2d::CreateParticleFilter(unsigned int NUM_SAMPLES, unsigned int 
 	default_pose.transform.translation.x = 0.0;
 	default_pose.transform.translation.y = 0.0;
 
-	std::vector<BFL::Sample<geometry_msgs::msg::TransformStamped>> prior_samples(NUM_SAMPLES);
+	prior_samples_ = std::make_shared<std::vector<BFL::Sample<geometry_msgs::msg::TransformStamped>>>(NUM_SAMPLES);
 	for(int i=0; i<NUM_SAMPLES; i++)
-		prior_samples[i].ValueSet(default_pose); //sets all particles at (0.0, 0.0)
+		prior_samples_->at(i).ValueSet(default_pose); //sets all particles at (0.0, 0.0)
 
-	prior_discr_ = std::make_unique<BFL::MCPdf<geometry_msgs::msg::TransformStamped>>(NUM_SAMPLES, STATE_SIZE);
-	prior_discr_->ListOfSamplesSet(prior_samples);
+    prior_discr_ = std::make_unique<BFL::MCPdf<geometry_msgs::msg::TransformStamped>>(NUM_SAMPLES, STATE_SIZE);
+	prior_discr_->ListOfSamplesSet(*prior_samples_);
 	
 	/******************************
 	 * Construction of the Filter *
 	 ******************************/
 	pf_ = new CustomParticleFilter(prior_discr_.get(), 0.5, NUM_SAMPLES/4.0);
 }
-
-DummySolver2d::DummySolver2d() {}
 
 geometry_msgs::msg::TransformStamped DummySolver2d::solve(
 	const geometry_msgs::msg::TransformStamped& curr_odom)
@@ -59,6 +57,15 @@ void DummySolver2d::configure(
 	const geometry_msgs::msg::Pose& pose)
 {
 	node_ = node;
+
+	node_->declare_parameter("num_particles", 1000);
+	node_->declare_parameter("num_dimensions", 3);
+	node_->declare_parameter("prior_mu_x", 0.0);
+	node_->declare_parameter("prior_mu_y", 0.0);
+	node_->declare_parameter("prior_mu_theta", 0.0);
+	node_->declare_parameter("prior_cov_x", 0.0);
+	node_->declare_parameter("prior_cov_y", 0.0);
+	node_->declare_parameter("prior_cov_theta", 0.0);
 
 	motionSamplerPDF_ = motionSamplerPDF;
 	matcherPDF_ = matcherPDF;

@@ -23,7 +23,7 @@ namespace nav2_localization
 class DummySolver2d : public nav2_localization::Solver
 {
 public:
-	DummySolver2d();
+	DummySolver2d() {};
 
 	geometry_msgs::msg::TransformStamped solve(
 		const geometry_msgs::msg::TransformStamped& curr_odom);
@@ -52,6 +52,7 @@ public:
 private:
 	CustomParticleFilter* pf_;
 	std::shared_ptr<BFL::MCPdf<geometry_msgs::msg::TransformStamped>> prior_discr_;
+	std::shared_ptr<std::vector<BFL::Sample<geometry_msgs::msg::TransformStamped>>> prior_samples_;
 };
 } // nav2_localization
 

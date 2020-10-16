@@ -41,6 +41,16 @@ include_directories(
   ${BFL_INCLUDE_DIRS}/bfl
 )
 
+add_library(sample_motion_model SHARED src/plugins/sample_motion_model.cpp)
+ament_target_dependencies(sample_motion_model ${dependencies})
+
+add_library(matcher2d SHARED src/plugins/matcher2d.cpp)
+ament_target_dependencies(matcher2d ${dependencies})
+
+add_library(solver SHARED src/plugins/solver.cpp)
+ament_target_dependencies(solver ${dependencies})
+target_link_libraries(solver orocos-bfl)
+
 set(executable_name nav2_localization)
 add_executable(${executable_name}
   src/main.cpp
@@ -66,16 +76,7 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-add_library(sample_motion_model SHARED src/plugins/sample_motion_model.cpp)
-ament_target_dependencies(sample_motion_model ${dependencies})
-
-add_library(matcher2d SHARED src/plugins/matcher2d.cpp)
-ament_target_dependencies(matcher2d ${dependencies})
-
-add_library(solver SHARED src/plugins/solver.cpp)
-ament_target_dependencies(solver ${dependencies})
-
-link_directories(${BFL_LIBRARY_DIRS})
+target_link_directories(solver PUBLIC ${BFL_LIBRARY_DIRS})
 
 install(TARGETS sample_motion_model matcher2d solver
         ARCHIVE DESTINATION lib
