@@ -82,7 +82,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(simple_waypoint_task_executor)
+ament_export_libraries(simple_waypoint_task_executor input_at_waypoint)
 
 pluginlib_export_plugin_description_file(nav2_waypoint_follower plugins.xml)
 
