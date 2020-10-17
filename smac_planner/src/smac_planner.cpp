@@ -163,7 +163,7 @@ void SmacPlanner::configure(
   if (_downsample_costmap && _downsampling_factor > 1) {
     std::string topic_name = "downsampled_costmap";
     _costmap_downsampler = std::make_unique<CostmapDownsampler>();
-    _costmap_downsampler->initialize(
+    _costmap_downsampler->on_configure(
       node, _global_frame, topic_name, _costmap, _downsampling_factor);
   }
 
@@ -185,7 +185,7 @@ void SmacPlanner::activate()
     _name.c_str());
   _raw_plan_publisher->on_activate();
   if (_costmap_downsampler) {
-    _costmap_downsampler->activatePublisher();
+    _costmap_downsampler->on_activate();
   }
 }
 
@@ -196,7 +196,7 @@ void SmacPlanner::deactivate()
     _name.c_str());
   _raw_plan_publisher->on_deactivate();
   if (_costmap_downsampler) {
-    _costmap_downsampler->deactivatePublisher();
+    _costmap_downsampler->on_deactivate();
   }
 }
 
@@ -207,6 +207,7 @@ void SmacPlanner::cleanup()
     _name.c_str());
   _a_star.reset();
   _smoother.reset();
+  _costmap_downsampler->on_cleanup();
   _costmap_downsampler.reset();
   _raw_plan_publisher.reset();
 }

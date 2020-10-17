@@ -33,14 +33,13 @@ CostmapDownsampler::~CostmapDownsampler()
 {
 }
 
-void CostmapDownsampler::initialize(
+void CostmapDownsampler::on_configure(
   const nav2_util::LifecycleNode::WeakPtr & node,
   const std::string & global_frame,
   const std::string & topic_name,
   nav2_costmap_2d::Costmap2D * const costmap,
   const unsigned int & downsampling_factor)
 {
-  _topic_name = topic_name;
   _costmap = costmap;
   _downsampling_factor = downsampling_factor;
   updateCostmapSize();
@@ -50,7 +49,24 @@ void CostmapDownsampler::initialize(
     _costmap->getOriginX(), _costmap->getOriginY(), UNKNOWN);
 
   _downsampled_costmap_pub = std::make_unique<nav2_costmap_2d::Costmap2DPublisher>(
-    node, _downsampled_costmap.get(), global_frame, _topic_name, false);
+    node, _downsampled_costmap.get(), global_frame, topic_name, false);
+}
+
+void CostmapDownsampler::on_activate()
+{
+  _downsampled_costmap_pub->on_activate();
+}
+
+void CostmapDownsampler::on_deactivate()
+{
+  _downsampled_costmap_pub->on_deactivate();
+}
+
+void CostmapDownsampler::on_cleanup()
+{
+  _costmap = nullptr;
+  _downsampled_costmap.reset();
+  _downsampled_costmap_pub.reset();
 }
 
 nav2_costmap_2d::Costmap2D * CostmapDownsampler::downsample(
