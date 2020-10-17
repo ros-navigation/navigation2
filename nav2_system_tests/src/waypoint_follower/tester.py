@@ -121,6 +121,44 @@ class WaypointFollowerTest(Node):
     def publishInitialPose(self):
         self.initial_pose_pub.publish(self.init_pose)
 
+    def shutdown(self):
+        self.info_msg('Shutting down')
+
+        self.action_client.destroy()
+        self.info_msg('Destroyed FollowWaypoints action client')
+
+        transition_service = 'lifecycle_manager_navigation/manage_nodes'
+        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        while not mgr_client.wait_for_service(timeout_sec=1.0):
+            self.info_msg(transition_service + ' service not available, waiting...')
+
+        req = ManageLifecycleNodes.Request()
+        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        future = mgr_client.call_async(req)
+        try:
+            rclpy.spin_until_future_complete(self, future)
+            future.result()
+        except Exception as e:
+            self.error_msg('%s service call failed %r' % (transition_service, e,))
+
+        self.info_msg('{} finished'.format(transition_service))
+
+        transition_service = 'lifecycle_manager_localization/manage_nodes'
+        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        while not mgr_client.wait_for_service(timeout_sec=1.0):
+            self.info_msg(transition_service + ' service not available, waiting...')
+
+        req = ManageLifecycleNodes.Request()
+        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        future = mgr_client.call_async(req)
+        try:
+            rclpy.spin_until_future_complete(self, future)
+            future.result()
+        except Exception as e:
+            self.error_msg('%s service call failed %r' % (transition_service, e,))
+
+        self.info_msg('{} finished'.format(transition_service))
+
     def cancel_goal(self):
         cancel_future = self.goal_handle.cancel_goal_async()
         rclpy.spin_until_future_complete(self, cancel_future)
@@ -176,6 +214,9 @@ def main(argv=sys.argv[1:]):
     result = test.run(True)
     assert not result
     result = not result
+
+    test.shutdown()
+    test.info_msg('Done Shutting Down.')
 
     if not result:
         test.info_msg('Exiting failed')
