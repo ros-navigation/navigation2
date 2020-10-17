@@ -35,7 +35,7 @@ TEST(CostmapDownsampler, costmap_downsample_test)
 {
   nav2_util::LifecycleNode::SharedPtr node = std::make_shared<nav2_util::LifecycleNode>(
     "CostmapDownsamplerTest");
-  smac_planner::CostmapDownsampler downsampler(node);
+  smac_planner::CostmapDownsampler downsampler{};
   auto map_sub = nav2_costmap_2d::CostmapSubscriber(node, "unused_topic");
 
   // create basic costmap
@@ -44,7 +44,7 @@ TEST(CostmapDownsampler, costmap_downsample_test)
   costmapA.setCost(5, 5, 50);
 
   // downsample it
-  downsampler.initialize("map", "unused_topic", &costmapA, 2);
+  downsampler.initialize(node, "map", "unused_topic", &costmapA, 2);
   nav2_costmap_2d::Costmap2D * downsampledCostmapA = downsampler.downsample(2);
 
   // validate it
@@ -57,7 +57,7 @@ TEST(CostmapDownsampler, costmap_downsample_test)
   nav2_costmap_2d::Costmap2D costmapB(4, 4, 0.10, 0.0, 0.0, 0);
 
   // downsample it
-  downsampler.initialize("map", "unused_topic", &costmapB, 4);
+  downsampler.initialize(node, "map", "unused_topic", &costmapB, 4);
   downsampler.activatePublisher();
   nav2_costmap_2d::Costmap2D * downsampledCostmapB = downsampler.downsample(4);
   downsampler.deactivatePublisher();

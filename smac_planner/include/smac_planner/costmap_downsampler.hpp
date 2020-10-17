@@ -34,9 +34,8 @@ class CostmapDownsampler
 public:
   /**
    * @brief A constructor for CostmapDownsampler
-   * @param node Lifecycle node pointer
    */
-  explicit CostmapDownsampler(const nav2_util::LifecycleNode::SharedPtr & node);
+  CostmapDownsampler();
 
   /**
    * @brief A destructor for CostmapDownsampler
@@ -45,12 +44,14 @@ public:
 
   /**
    * @brief Initialize the downsampled costmap object and the ROS publisher
+   * @param node Lifecycle node pointer
    * @param global_frame The ID of the global frame used by the costmap
    * @param topic_name The name of the topic to publish the downsampled costmap
    * @param costmap The costmap we want to downsample
    * @param downsampling_factor Multiplier for the costmap resolution
    */
   void initialize(
+    const nav2_util::LifecycleNode::WeakPtr & node,
     const std::string & global_frame,
     const std::string & topic_name,
     nav2_costmap_2d::Costmap2D * const costmap,
@@ -106,7 +107,6 @@ protected:
   unsigned int _downsampling_factor;
   float _downsampled_resolution;
   std::string _topic_name;
-  nav2_util::LifecycleNode::SharedPtr _node;
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<nav2_costmap_2d::Costmap2D> _downsampled_costmap;
   std::unique_ptr<nav2_costmap_2d::Costmap2DPublisher> _downsampled_costmap_pub;

@@ -111,7 +111,8 @@ public:
 protected:
   std::unique_ptr<AStarAlgorithm<NodeSE2>> _a_star;
   std::unique_ptr<Smoother> _smoother;
-  nav2_util::LifecycleNode::SharedPtr _node;
+  rclcpp::Clock::SharedPtr _clock;
+  rclcpp::Logger _logger{rclcpp::get_logger("SmacPlanner")};
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
   std::string _global_frame, _name;
