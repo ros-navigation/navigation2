@@ -40,7 +40,7 @@ void PhotoAtWaypoint::initialize(
     plugin_name + ".image_topic",
     rclcpp::ParameterValue("/camera/color/image_raw"));
   node->declare_parameter(plugin_name + ".save_dir", rclcpp::ParameterValue("/home/username/"));
-  node->declare_parameter(plugin_name + ".image_format", rclcpp::ParameterValue(".png"));
+  node->declare_parameter(plugin_name + ".image_format", rclcpp::ParameterValue("png"));
 
   node->get_parameter(plugin_name + ".enabled", is_enabled_);
   node->get_parameter(plugin_name + ".image_topic", image_topic_);
@@ -71,35 +71,45 @@ bool PhotoAtWaypoint::processAtWaypoint(
     return true;
   }
   try {
+    // get inputted save directory and make sure it exists, if not log and create  it
     std::experimental::filesystem::path save_dir = directory_to_save_images_;
+    if (!std::experimental::filesystem::exists(save_dir)) {
+      RCLCPP_WARN(
+        logger_,
+        "Provided save directory for photo at waypoint plugin does not exist,"
+        "providied directory is: %s directory will be created automatically.",
+        save_dir.c_str()
+      );
+      if (!std::experimental::filesystem::create_directory(save_dir)) {
+        RCLCPP_ERROR(
+          logger_,
+          "Failed to create directory!: %s required by photo at waypoint plugin, "
+          "exiting the plugin with failure!",
+          save_dir.c_str()
+        );
+      }
+    }
+    // construct the full path to image filename
     std::experimental::filesystem::path file_name = std::to_string(
       curr_waypoint_index) + "_" +
-      std::to_string(curr_pose.header.stamp.sec) + image_format_;
-
+      std::to_string(curr_pose.header.stamp.sec) + "." + image_format_;
     std::experimental::filesystem::path full_path_image_path = save_dir / file_name;
 
-
-    global_mutex_.lock();
+    // save the taken photo at this waypoint to given directory
+    std::lock_guard<std::mutex> guard(global_mutex_);
     cv::Mat curr_frame_mat;
-    auto curr_frame_msg_as_shared_ptr = std::make_shared<sensor_msgs::msg::Image>(curr_frame_msg_);
-    deepCopyMsg2Mat(curr_frame_msg_as_shared_ptr, curr_frame_mat);
+    deepCopyMsg2Mat(curr_frame_msg_, curr_frame_mat);
     cv::imwrite(full_path_image_path.c_str(), curr_frame_mat);
-    global_mutex_.unlock();
     RCLCPP_INFO(
       logger_,
       "Photo has been taken sucessfully at waypoint %i", curr_waypoint_index);
-  } catch (const std::exception & e) {
-    RCLCPP_ERROR(
-      logger_, "Couldn't take photo at waypoint %i! Caught exception: %s",
-      curr_waypoint_index, e.what());
-    return false;
-  } catch (...) {
+  } catch (const cv::Exception & e) {
     RCLCPP_ERROR(
       logger_,
-      "An unknown execption caught while taking photo at waypoint %i!"
+      "Couldn't take photo at waypoint %i! Caught exception: %s \n"
       "Make sure that the image topic named: %s is valid and active!",
       curr_waypoint_index,
-      image_topic_.c_str());
+      e.what(), image_topic_.c_str());
     return false;
   }
   return true;
@@ -107,9 +117,8 @@ bool PhotoAtWaypoint::processAtWaypoint(
 
 void PhotoAtWaypoint::imageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
-  global_mutex_.lock();
-  curr_frame_msg_ = *msg;
-  global_mutex_.unlock();
+  std::lock_guard<std::mutex> guard(global_mutex_);
+  curr_frame_msg_ = msg;
 }
 
 int PhotoAtWaypoint::encoding2mat_type(const std::string & encoding)
@@ -126,22 +135,6 @@ int PhotoAtWaypoint::encoding2mat_type(const std::string & encoding)
     return CV_8UC3;
   } else {
     throw std::runtime_error("Unsupported mat type");
-  }
-}
-
-std::string PhotoAtWaypoint::mat_type2encoding(int mat_type)
-{
-  switch (mat_type) {
-    case CV_8UC1:
-      return "mono8";
-    case CV_8UC3:
-      return "bgr8";
-    case CV_16SC1:
-      return "mono16";
-    case CV_8UC4:
-      return "rgba8";
-    default:
-      throw std::runtime_error("Unsupported encoding type");
   }
 }
 

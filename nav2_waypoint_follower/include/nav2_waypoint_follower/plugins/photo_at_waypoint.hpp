@@ -94,14 +94,6 @@ public:
    */
   static int encoding2mat_type(const std::string & encoding);
 
-  /**
-   * @brief given CV type encoding return corresponding sensor_msgs::msg::Image::Encoding string
-   *
-   * @param mat_type
-   * @return std::string
-   */
-  static std::string mat_type2encoding(int mat_type);
-
 protected:
   // to ensure safety when accessing global var curr_frame_
   std::mutex global_mutex_;
@@ -114,7 +106,7 @@ protected:
   // whether plugin is enabled
   bool is_enabled_;
   // current frame;
-  sensor_msgs::msg::Image curr_frame_msg_;
+  sensor_msgs::msg::Image::SharedPtr curr_frame_msg_;
   // global logger
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_waypoint_follower")};
   // ros susbcriber to get camera image
