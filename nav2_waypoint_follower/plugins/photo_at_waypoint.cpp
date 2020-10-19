@@ -39,7 +39,9 @@ void PhotoAtWaypoint::initialize(
   node->declare_parameter(
     plugin_name + ".image_topic",
     rclcpp::ParameterValue("/camera/color/image_raw"));
-  node->declare_parameter(plugin_name + ".save_dir", rclcpp::ParameterValue("/home/username/"));
+  node->declare_parameter(
+    plugin_name + ".save_dir",
+    rclcpp::ParameterValue("/tmp/waypoint_images"));
   node->declare_parameter(plugin_name + ".image_format", rclcpp::ParameterValue("png"));
 
   node->get_parameter(plugin_name + ".enabled", is_enabled_);
