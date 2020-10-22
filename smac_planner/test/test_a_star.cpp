@@ -106,6 +106,14 @@ TEST(AStarTest, test_a_star_2d)
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }
 
+  EXPECT_TRUE(a_star_2.getStart() != nullptr);
+  EXPECT_TRUE(a_star_2.getGoal() != nullptr);
+  EXPECT_EQ(a_star_2.getSizeX(), 100u);
+  EXPECT_EQ(a_star_2.getSizeY(), 100u);
+  EXPECT_EQ(a_star_2.getSizeDim3(), 1u);
+  EXPECT_EQ(a_star_2.getToleranceHeuristic(), 1000.0);
+  EXPECT_EQ(a_star_2.getOnApproachMaxIterations(), 10);
+
   delete costmapA;
 }
 
@@ -152,4 +160,24 @@ TEST(AStarTest, test_a_star_se2)
   }
 
   delete costmapA;
+}
+
+TEST(AStarTest, test_constants)
+{
+  smac_planner::MotionModel mm = smac_planner::MotionModel::UNKNOWN;  // unknown
+  EXPECT_EQ(smac_planner::toString(mm), std::string("Unknown"));
+  mm = smac_planner::MotionModel::VON_NEUMANN;  // vonneumann
+  EXPECT_EQ(smac_planner::toString(mm), std::string("Von Neumann"));
+  mm = smac_planner::MotionModel::MOORE;  // moore
+  EXPECT_EQ(smac_planner::toString(mm), std::string("Moore"));
+  mm = smac_planner::MotionModel::DUBIN;  // dubin
+  EXPECT_EQ(smac_planner::toString(mm), std::string("Dubin"));
+  mm = smac_planner::MotionModel::REEDS_SHEPP;  // reeds-shepp
+  EXPECT_EQ(smac_planner::toString(mm), std::string("Reeds-Shepp"));
+
+  EXPECT_EQ(smac_planner::fromString("VON_NEUMANN"), smac_planner::MotionModel::VON_NEUMANN);
+  EXPECT_EQ(smac_planner::fromString("MOORE"), smac_planner::MotionModel::MOORE);
+  EXPECT_EQ(smac_planner::fromString("DUBIN"), smac_planner::MotionModel::DUBIN);
+  EXPECT_EQ(smac_planner::fromString("REEDS_SHEPP"), smac_planner::MotionModel::REEDS_SHEPP);
+  EXPECT_EQ(smac_planner::fromString("NONE"), smac_planner::MotionModel::UNKNOWN);
 }

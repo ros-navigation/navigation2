@@ -54,7 +54,7 @@ TEST(CostmapDownsampler, costmap_downsample_test)
   EXPECT_EQ(downsampledCostmapA->getSizeInCellsY(), 5u);
 
   // give it another costmap of another size
-  nav2_costmap_2d::Costmap2D costmapB(4, 4, 0.05, 0.0, 0.0, 0);
+  nav2_costmap_2d::Costmap2D costmapB(4, 4, 0.10, 0.0, 0.0, 0);
 
   // downsample it
   downsampler.initialize("map", "unused_topic", &costmapB, 4);
@@ -65,4 +65,6 @@ TEST(CostmapDownsampler, costmap_downsample_test)
   // validate size
   EXPECT_EQ(downsampledCostmapB->getSizeInCellsX(), 1u);
   EXPECT_EQ(downsampledCostmapB->getSizeInCellsY(), 1u);
+
+  downsampler.resizeCostmap();
 }

@@ -50,29 +50,14 @@ public:
    * @param index The index of this node for self-reference
    */
   explicit NodeBasic(const unsigned int index)
-  : _index(index),
+  : index(index),
     graph_node_ptr(nullptr)
-  {}
-
-  /**
-   * @brief A destructor for smac_planner::NodeBasic
-   */
-  ~NodeBasic() {}
-
-  /**
-   * @brief Gets cell index
-   * @return Reference to cell index
-   */
-  inline unsigned int & getIndex()
   {
-    return _index;
   }
 
   typename NodeT::Coordinates pose;  // Used by NodeSE2
   NodeT * graph_node_ptr;
-
-protected:
-  unsigned int _index;
+  unsigned int index;
 };
 
 template class NodeBasic<Node2D>;

@@ -173,19 +173,49 @@ public:
    */
   int & getMaxIterations();
 
-private:
   /**
    * @brief Get pointer reference to starting node
    * @return Node pointer reference to starting node
    */
-  inline NodePtr & getStart();
+  NodePtr & getStart();
 
   /**
    * @brief Get pointer reference to goal node
    * @return Node pointer reference to goal node
    */
-  inline NodePtr & getGoal();
+  NodePtr & getGoal();
 
+  /**
+   * @brief Get maximum number of on-approach iterations after within threshold
+   * @return Reference to Maximum on-appraoch iterations parameter
+   */
+  int & getOnApproachMaxIterations();
+
+  /**
+   * @brief Get tolerance, in node nodes
+   * @return Reference to tolerance parameter
+   */
+  float & getToleranceHeuristic();
+
+  /**
+   * @brief Get size of graph in X
+   * @return Size in X
+   */
+  unsigned int & getSizeX();
+
+  /**
+   * @brief Get size of graph in Y
+   * @return Size in Y
+   */
+  unsigned int & getSizeY();
+
+  /**
+   * @brief Get number of angle quantization bins (SE2) or Z coordinate  (XYZ)
+   * @return Number of angle bins / Z dimension
+   */
+  unsigned int & getSizeDim3();
+
+protected:
   /**
    * @brief Get pointer to next goal in open set
    * @return Node pointer reference to next heuristically scored node
@@ -241,36 +271,6 @@ private:
    * @return Are valid
    */
   inline bool areInputsValid();
-
-  /**
-   * @brief Get maximum number of on-approach iterations after within threshold
-   * @return Reference to Maximum on-appraoch iterations parameter
-   */
-  inline int & getOnApproachMaxIterations();
-
-  /**
-   * @brief Get tolerance, in node nodes
-   * @return Reference to tolerance parameter
-   */
-  inline float & getToleranceHeuristic();
-
-  /**
-   * @brief Get size of graph in X
-   * @return Size in X
-   */
-  inline unsigned int & getSizeX();
-
-  /**
-   * @brief Get size of graph in Y
-   * @return Size in Y
-   */
-  inline unsigned int & getSizeY();
-
-  /**
-   * @brief Get number of angle quantization bins (SE2) or Z coordinate  (XYZ)
-   * @return Number of angle bins / Z dimension
-   */
-  inline unsigned int & getSizeDim3();
 
   /**
    * @brief Clear hueristic queue of nodes to search
