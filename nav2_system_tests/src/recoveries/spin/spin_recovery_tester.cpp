@@ -138,12 +138,19 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
 
   if(make_fake_costmap_){
     sendFakeOdom(0.0);
+    sendFakeFootprint();
+    sendFakeCostmap();
   }
 
   auto goal_msg = Spin::Goal();
   goal_msg.target_yaw = target_yaw;
 
-  RCLCPP_INFO(this->node_->get_logger(), "Sending goal");
+  //
+  if(make_fake_costmap_){
+    sendFakeOdom(0.0);
+    sendFakeFootprint();
+    sendFakeCostmap();
+  }
 
   geometry_msgs::msg::PoseStamped initial_pose;
   if (!nav2_util::getCurrentPose(initial_pose, *tf_buffer_, "odom")) {
@@ -151,12 +158,11 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     return false;
   }
   RCLCPP_INFO(node_->get_logger(), "Found current robot pose");
-
+  RCLCPP_INFO(node_->get_logger(),
+      "Init Yaw is %lf",
+      fabs(tf2::getYaw(initial_pose.pose.orientation)));
+  RCLCPP_INFO(node_->get_logger(), "Before sending goal");
   auto goal_handle_future = client_ptr_->async_send_goal(goal_msg);
-
-  if(make_fake_costmap_){ //if we are faking the costmap, we will fake success.
-    sendFakeOdom(target_yaw);
-  }
 
   if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
     rclcpp::FutureReturnCode::SUCCESS)
@@ -175,6 +181,17 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   auto result_future = client_ptr_->async_get_result(goal_handle);
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for result");
+  
+  rclcpp::sleep_for(std::chrono::milliseconds(1000));
+
+  if(make_fake_costmap_){ //if we are faking the costmap, we will fake success.
+    RCLCPP_INFO(node_->get_logger(), "target_yaw %lf",target_yaw);
+    sendFakeOdom(target_yaw);
+    sendFakeFootprint();
+    sendFakeCostmap();
+    RCLCPP_INFO(node_->get_logger(), "After sending goal");
+  }
+  
   if (rclcpp::spin_until_future_complete(node_, result_future) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
@@ -212,6 +229,14 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     goal_yaw, tf2::getYaw(current_pose.pose.orientation));
 
   if (fabs(dyaw) > tolerance) {
+    RCLCPP_ERROR(
+      node_->get_logger(),
+      "Init Yaw is %lf (tolerance %lf)",
+      fabs(tf2::getYaw(initial_pose.pose.orientation)), tolerance);
+        RCLCPP_ERROR(
+    node_->get_logger(),
+      "Current Yaw is %lf (tolerance %lf)",
+      fabs(tf2::getYaw(current_pose.pose.orientation)), tolerance);
     RCLCPP_ERROR(
       node_->get_logger(),
       "Angular distance from goal is %lf (tolerance %lf)",
@@ -257,9 +282,16 @@ void SpinRecoveryTester::sendFakeCostmap()
   fake_costmap.metadata.origin.position.x = 0;
   fake_costmap.metadata.origin.position.y = 0;
   fake_costmap.metadata.origin.orientation.w = 1.0;
+  float costmap_val = 0;
   for(int ix = 0; ix < fake_costmap.metadata.origin.position.x; ix++){
+    if(ix >= fake_costmap.metadata.size_x / fake_costmap.metadata.resolution / 2.0){
+      costmap_val = 100;
+    }
+    else{
+      costmap_val = 0;
+    }
     for(int iy = 0; iy < fake_costmap.metadata.origin.position.y; iy++){
-      fake_costmap.data.push_back(0);
+      fake_costmap.data.push_back(costmap_val);
     }
   }
   fake_costmap_publisher_->publish(fake_costmap);
@@ -293,8 +325,8 @@ void SpinRecoveryTester::sendFakeOdom(float angle){
   geometry_msgs::msg::TransformStamped transformStamped;
   
   transformStamped.header.stamp = rclcpp::Time();
-  transformStamped.header.frame_id = "map";
-  transformStamped.child_frame_id = "odom";
+  transformStamped.header.frame_id = "odom"; // TODO(vinny) make these params
+  transformStamped.child_frame_id = "base_link";
   transformStamped.transform.translation.x = 0.0;
   transformStamped.transform.translation.y = 0.0;
   transformStamped.transform.translation.z = 0.0;
@@ -306,7 +338,7 @@ void SpinRecoveryTester::sendFakeOdom(float angle){
   transformStamped.transform.rotation.w = q.w();
 
   tf_broadcaster_->sendTransform(transformStamped);
-  RCLCPP_INFO(node_->get_logger(), "Sent odom fake");
+  RCLCPP_INFO(node_->get_logger(), "Sent odom fake %lf",angle);
 }
 void SpinRecoveryTester::amclPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
