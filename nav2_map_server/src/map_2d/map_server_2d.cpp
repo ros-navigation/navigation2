@@ -1,6 +1,32 @@
-//
-// Created by shivam on 9/10/20.
-//
+/* Copyright (c) 2020 Samsung Research Russia
+ * Copyright 2019 Rover Robotics
+ * Copyright (c) 2008, Willow Garage, Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <ORGANIZATION> nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include <string>
 #include <memory>
@@ -8,8 +34,8 @@
 #include <stdexcept>
 #include <utility>
 
-#include "map_2d/map_2d.hpp"
-#include "map_2d/map_io.hpp"
+#include "nav2_map_server/map_2d/map_server_2d.hpp"
+#include "nav2_map_server/map_2d/map_io_2d.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 
 using namespace std::chrono_literals;
@@ -32,7 +58,7 @@ MapServer<nav_msgs::msg::OccupancyGrid>::~MapServer() {
 }
 
 nav2_util::CallbackReturn MapServer<nav_msgs::msg::OccupancyGrid>
-::on_configure(const rclcpp_lifecycle::State &state) {
+::on_configure(const rclcpp_lifecycle::State &/*state*/) {
 
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -72,9 +98,52 @@ nav2_util::CallbackReturn MapServer<nav_msgs::msg::OccupancyGrid>
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
+nav2_util::CallbackReturn
+MapServer<nav_msgs::msg::OccupancyGrid>::on_activate(const rclcpp_lifecycle::State & /*state*/) {
+  RCLCPP_INFO(get_logger(), "Activating");
+
+  occ_pub_->on_activate();
+  auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
+  occ_pub_->publish(std::move(occ_grid));
+
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
+nav2_util::CallbackReturn
+MapServer<nav_msgs::msg::OccupancyGrid>::on_deactivate(const rclcpp_lifecycle::State & /*state*/) {
+  RCLCPP_INFO(get_logger(), "Deactivating");
+
+  occ_pub_->on_deactivate();
+
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
+nav2_util::CallbackReturn
+MapServer<nav_msgs::msg::OccupancyGrid>::on_cleanup(const rclcpp_lifecycle::State & /*state*/) {
+  RCLCPP_INFO(get_logger(), "Cleaning up");
+  occ_pub_.reset();
+  occ_service_.reset();
+  load_map_service_.reset();
+
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
+nav2_util::CallbackReturn
+MapServer<nav_msgs::msg::OccupancyGrid>::on_error(const rclcpp_lifecycle::State & /*state*/) {
+  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
+nav2_util::CallbackReturn
+MapServer<nav_msgs::msg::OccupancyGrid>::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(get_logger(), "Shutting down");
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
 void MapServer<nav_msgs::msg::OccupancyGrid>
-::getMapCallback(const std::shared_ptr<rmw_request_id_t> request_header,
-                 const std::shared_ptr<nav_msgs::srv::GetMap::Request> request,
+::getMapCallback(const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+                 const std::shared_ptr<nav_msgs::srv::GetMap::Request> /*request*/,
                  std::shared_ptr<nav_msgs::srv::GetMap::Response> response) {
   // if not in ACTIVE state, ignore request
   if (get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
@@ -88,7 +157,7 @@ void MapServer<nav_msgs::msg::OccupancyGrid>
 }
 
 void MapServer<nav_msgs::msg::OccupancyGrid>
-::loadMapCallback(const std::shared_ptr<rmw_request_id_t> request_header,
+::loadMapCallback(const std::shared_ptr<rmw_request_id_t> /*request_header*/,
                   const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
                   std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response) {
   // if not in ACTIVE state, ignore request

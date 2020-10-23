@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "map_2d/map_io_2d.hpp"
+#include "nav2_map_server/map_2d/map_io_2d.hpp"
 
 #ifndef _WIN32
 #include <libgen.h>
@@ -89,7 +89,7 @@ char * dirname(char * path)
 namespace nav2_map_server
 {
 
-namespace map_io {
+namespace map_2d {
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
 // === Map input part ===
@@ -519,5 +519,5 @@ bool saveMapToFile(
   return true;
 }
 
-}  // map_io
+}  // namespace map_2d
 }  // namespace nav2_map_server

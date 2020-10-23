@@ -34,6 +34,11 @@ namespace map_3d {
 struct Origin {
   std::vector<float> center;
   std::vector<float> orientation;
+
+  void resize(){
+    center.resize(3);
+    orientation.resize(4);
+  }
 };
 
 /**

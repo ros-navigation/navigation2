@@ -18,11 +18,8 @@
 #include <chrono>
 
 #include "rclcpp/rclcpp.hpp"
-#include "map_2d/map_io_2d.hpp"
-#include "nav2_map_server_3d/map_io_3d.hpp"
-#include "nav2_msgs/msg/pcd2.hpp"
+#include "nav2_map_server/map_2d/map_io_2d.hpp"
 #include "test_constants/test_constants.h"
-#include "sensor_msgs/msg/point_cloud2.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -39,22 +36,16 @@ public:
     std::string pub_map_file = path(TEST_DIR) / path(g_valid_yaml_file);
     std::string pub_map_pcd_file = path(TEST_DIR) / path(g_valid_pcd_yaml_file);
 
-    LOAD_MAP_STATUS status = loadMapFromYaml(pub_map_file, msg_);
+    map_2d::LOAD_MAP_STATUS status = map_2d::loadMapFromYaml(pub_map_file, msg_);
 
-    nav2_map_server_3d::LOAD_MAP_STATUS status_3_d =
-      nav2_map_server_3d::loadMapFromYaml(pub_map_pcd_file, pcd_msg_);
 
-    if (status_3_d != nav2_map_server_3d::LOAD_MAP_SUCCESS || status != LOAD_MAP_SUCCESS) {
+    if (status != map_2d::LOAD_MAP_SUCCESS) {
       RCLCPP_ERROR(get_logger(), "Can not load %s map file", pub_map_file.c_str());
       return;
     }
 
     map_pub_ = create_publisher<nav_msgs::msg::OccupancyGrid>(
       "map",
-      rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
-
-    pcd_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>(
-      "map3D",
       rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
     timer_ = create_wall_timer(300ms, std::bind(&TestPublisher::mapPublishCallback, this));
@@ -64,15 +55,11 @@ protected:
   void mapPublishCallback()
   {
     map_pub_->publish(msg_);
-    pcd_pub_->publish(pcd_msg_.map);
   }
 
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
   nav_msgs::msg::OccupancyGrid msg_;
-
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pcd_pub_;
-  nav2_msgs::msg::PCD2 pcd_msg_;
 };
 
 int main(int argc, char ** argv)

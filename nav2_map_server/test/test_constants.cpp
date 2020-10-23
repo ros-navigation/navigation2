@@ -71,7 +71,7 @@ const double g_valid_image_res = 0.1;
 const size_t g_valid_pcd_width = 370277;
 const size_t g_valid_pcd_data_size = 4443324;
 const std::vector<double> g_valid_origin{2.0, 3.0, 1.0};
-const std::vector<float> g_valid_origin_pcd{0, 0, 0};
+const std::vector<float> g_valid_center_pcd{0, 0, 0};
 const std::vector<float> g_valid_orientation_pcd{1, 0, 0, 0};
 const double g_default_free_thresh = 0.196;
 const double g_default_occupied_thresh = 0.65;

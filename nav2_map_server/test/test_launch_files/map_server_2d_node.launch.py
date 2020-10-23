@@ -29,5 +29,5 @@ def generate_launch_description():
             executable='map_server_2d',
             output='screen',
             parameters=[os.path.join(os.getenv('TEST_DIR'),
-                        'map_server_params.yaml')])
+                        'map_server_2d_params.yaml')])
     ])
