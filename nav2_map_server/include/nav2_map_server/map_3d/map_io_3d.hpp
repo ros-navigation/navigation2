@@ -25,27 +25,26 @@
 #include "geometry_msgs/msg/transform.hpp"
 #include "geometry_msgs/msg/vector3.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
-#include "nav2_msgs/msg/pcd2.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 
 namespace nav2_map_server
 {
-/**
- * @brief nav2_map_server_3d namespace containing the utilities to use point cloud mapss
- */
-namespace nav2_map_server_3d
-{
-/**
- * @brief parameters that will be populated while reading a YAML file
- */
-struct LoadParameters
-{
-  std::string pcd_file_name;
-  std::vector<float> origin;
+
+namespace map_3d {
+struct Origin {
+  std::vector<float> center;
   std::vector<float> orientation;
 };
 
-typedef enum
-{
+/**
+ * @brief parameters that will be populated while reading a YAML file
+ */
+struct LoadParameters {
+  std::string pcd_file_name;
+  Origin origin;
+};
+
+typedef enum {
   LOAD_MAP_SUCCESS,
   MAP_DOES_NOT_EXIST,
   INVALID_MAP_METADATA,
@@ -58,7 +57,7 @@ typedef enum
  * @return Map loading parameters obtained from YAML file
  * @throw YAML::Exception
  */
-LoadParameters loadMapYaml(const std::string & yaml_filename);
+LoadParameters loadMapYaml(const std::string &yaml_filename);
 
 /**
  * @brief Load the point cloud from map file and generate a PointCloud2(PCD2)
@@ -66,9 +65,9 @@ LoadParameters loadMapYaml(const std::string & yaml_filename);
  * @param map Output loaded map
  * @throw std::exception
  */
-void loadMapFromFile(
-  const LoadParameters & load_parameters,
-  nav2_msgs::msg::PCD2 & map_msg);
+void loadMapFromFile(const LoadParameters &load_parameters,
+                     sensor_msgs::msg::PointCloud2 &map_msg,
+                     geometry_msgs::msg::Pose &origin_msg);
 
 /**
  * @brief Load the map YAML, image from map file and
@@ -77,17 +76,15 @@ void loadMapFromFile(
  * @param map_msg Output loaded map
  * @return status of map loaded
  */
-LOAD_MAP_STATUS loadMapFromYaml(
-  const std::string & yaml_file,
-  nav2_msgs::msg::PCD2 & map_msg);
+LOAD_MAP_STATUS loadMapFromYaml(const std::string &yaml_file,
+                                sensor_msgs::msg::PointCloud2 &map_msg,
+                                geometry_msgs::msg::Pose &origin_msg);
 
-struct SaveParameters
-{
+struct SaveParameters {
   std::string map_file_name;
-  std::vector<float> origin;
-  std::vector<float> orientation;
-  bool as_binary = false;
   std::string format{"pcd"};
+  Origin origin;
+  bool as_binary = false;
 };
 
 /**
@@ -97,9 +94,9 @@ struct SaveParameters
  * @return true or false
  */
 bool saveMapToFile(
-  const sensor_msgs::msg::PointCloud2 & map,
-  const SaveParameters & save_parameters);
+    const sensor_msgs::msg::PointCloud2 &map,
+    const SaveParameters &save_parameters);
 
-}  // namespace nav2_map_server_3d
+}  // map_3d
 }  // namespace nav2_map_server
 #endif  // NAV2_MAP_SERVER_3D__MAP_IO_3D_HPP_

@@ -367,5 +367,5 @@ bool saveMapToFile(
   return true;
 }
 
-}  // namespace nav2_map_server_3d
+}  // namespace map_3d
 }  // namespace nav2_map_server

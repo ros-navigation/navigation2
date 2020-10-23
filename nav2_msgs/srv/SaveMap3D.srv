@@ -3,8 +3,7 @@
 # Or, relative to a ROS package: package://my_ros_package/maps/floor2.yaml
 string map_topic
 string map_url
-geometry_msgs/Vector3 origin
-geometry_msgs/Quaternion orientation
+geometry_msgs/Pose origin
 bool as_binary
 # Constants for image_format. Supported formats: pcd, ply
 string file_format

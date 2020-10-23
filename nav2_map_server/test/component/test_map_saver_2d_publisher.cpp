@@ -18,7 +18,7 @@
 #include <chrono>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_map_server/map_io.hpp"
+#include "map_2d/map_io_2d.hpp"
 #include "nav2_map_server_3d/map_io_3d.hpp"
 #include "nav2_msgs/msg/pcd2.hpp"
 #include "test_constants/test_constants.h"

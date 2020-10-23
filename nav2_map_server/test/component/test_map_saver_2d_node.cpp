@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "test_constants/test_constants.h"
-#include "nav2_map_server/map_saver.hpp"
+#include "nav2_map_server/map_saver_core.hpp"
 #include "nav2_util/lifecycle_service_client.hpp"
 
 #include "nav2_msgs/srv/save_map.hpp"
@@ -108,7 +108,7 @@ protected:
     orientation.push_back(map_msg.orientation.x);
     orientation.push_back(map_msg.orientation.y);
     orientation.push_back(map_msg.orientation.z);
-    ASSERT_EQ(origin, g_valid_origin_pcd);
+    ASSERT_EQ(origin, g_valid_center_pcd);
     ASSERT_EQ(orientation, g_valid_orientation_pcd);
 
     ASSERT_EQ(map_msg.map.width, g_valid_pcd_width);
@@ -147,8 +147,8 @@ TEST_F(MapSaverTestFixture, SaveMap)
 
   // 2. Load saved map and verify it
   nav_msgs::msg::OccupancyGrid map_msg;
-  LOAD_MAP_STATUS status = loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
-  ASSERT_EQ(status, LOAD_MAP_SUCCESS);
+  map_2d::LOAD_MAP_STATUS status = loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 }
 
@@ -169,9 +169,9 @@ TEST_F(MapSaverTestFixture, SaveMap3D)
   req->map_url = path(g_tmp_dir) / path(g_valid_pcd_map_name);
 
   // set view point translation
-  req->origin.x = g_valid_origin_pcd[0];
-  req->origin.y = g_valid_origin_pcd[1];
-  req->origin.z = g_valid_origin_pcd[2];
+  req->origin.x = g_valid_center_pcd[0];
+  req->origin.y = g_valid_center_pcd[1];
+  req->origin.z = g_valid_center_pcd[2];
 
   // set view point rotation
   req->orientation.w = g_valid_orientation_pcd[0];
@@ -242,9 +242,9 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters3D)
   req->map_url = path(g_tmp_dir) / path(g_valid_pcd_map_name);
 
   // set view point translation
-  req->origin.x = g_valid_origin_pcd[0];
-  req->origin.y = g_valid_origin_pcd[1];
-  req->origin.z = g_valid_origin_pcd[2];
+  req->origin.x = g_valid_center_pcd[0];
+  req->origin.y = g_valid_center_pcd[1];
+  req->origin.z = g_valid_center_pcd[2];
 
   // set view point rotation
   req->orientation.w = g_valid_orientation_pcd[0];

@@ -41,8 +41,8 @@
 #include <fstream>
 
 #include "yaml-cpp/yaml.h"
-#include "nav2_map_server/map_io.hpp"
-#include "nav2_map_server/map_server.hpp"
+#include "map_2d/map_io_2d.hpp"
+#include "nav2_map_server/map_server_core.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "test_constants/test_constants.h"
 
