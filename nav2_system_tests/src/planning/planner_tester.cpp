@@ -25,8 +25,8 @@
 
 #include "planner_tester.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "nav2_map_server/map_mode.hpp"
-#include "nav2_map_server/map_io.hpp"
+#include "nav2_map_server/map_2d/map_mode.hpp"
+#include "nav2_map_server/map_2d/map_io_2d.hpp"
 #include "nav2_msgs/msg/costmap_meta_data.hpp"
 
 using namespace std::chrono_literals;
@@ -159,7 +159,7 @@ void PlannerTester::loadDefaultMap()
   // Define origin offset
   std::vector<double> origin = {0.0, 0.0, 0.0};
 
-  nav2_map_server::MapMode mode = nav2_map_server::MapMode::Trinary;
+  nav2_map_server::map_2d::MapMode mode = nav2_map_server::map_2d::MapMode::Trinary;
 
   std::string file_path = "";
   char const * path = getenv("TEST_MAP");
@@ -176,7 +176,7 @@ void PlannerTester::loadDefaultMap()
   try {
     map_ = std::make_shared<nav_msgs::msg::OccupancyGrid>();
 
-    nav2_map_server::LoadParameters load_parameters;
+    nav2_map_server::map_2d::LoadParameters load_parameters;
     load_parameters.image_file_name = file_path;
     load_parameters.resolution = resolution;
     load_parameters.origin = origin;

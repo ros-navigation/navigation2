@@ -22,13 +22,13 @@ import launch_ros.actions
 
 
 def generate_launch_description():
-    map_publisher = f"{os.path.dirname(os.getenv('TEST_EXECUTABLE'))}/test_map_saver_publisher"
+    map_publisher = f"{os.path.dirname(os.getenv('TEST_EXECUTABLE'))}/test_map_saver_2d_publisher"
 
     ld = LaunchDescription()
 
     map_saver_server_cmd = launch_ros.actions.Node(
         package='nav2_map_server',
-        executable='map_saver_server',
+        executable='map_saver_server_2d',
         output='screen',
         parameters=[os.path.join(os.getenv('TEST_DIR'),
                     'map_saver_2d_params.yaml')])

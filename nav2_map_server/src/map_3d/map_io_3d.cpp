@@ -15,7 +15,7 @@
 // Created by shivam on 7/5/20.
 //
 
-#include "nav2_map_server_3d/map_io_3d.hpp"
+#include "nav2_map_server/map_3d/map_io_3d.hpp"
 
 #ifndef _WIN32
 #include <libgen.h>
@@ -28,10 +28,9 @@
 #include "nav2_util/geometry_utils.hpp"
 
 #include "yaml-cpp/yaml.h"
-#include "nav2_map_server_3d/pcl_helper.hpp"
+#include "nav2_map_server/map_3d/pcl_helper.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "pcl/io/pcd_io.h"
-#include "boost/filesystem.hpp"
 #include "Eigen/Core"
 
 #ifdef _WIN32
@@ -74,9 +73,8 @@ char * dirname(char * path)
 
 namespace nav2_map_server
 {
-namespace nav2_map_server_3d
+namespace map_3d
 {
-
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
 // === Map input part ===
@@ -99,40 +97,50 @@ T YamlGetValue(const YAML::Node & node, const std::string & key)
 
 LoadParameters loadMapYaml(const std::string & yaml_filename)
 {
+  std::cout << "loading the yaml file";
+
   YAML::Node doc = YAML::LoadFile(yaml_filename);
   LoadParameters load_parameters;
+  load_parameters.origin.resize();
 
-  boost::filesystem::path pcd_file_name(YamlGetValue<std::string>(doc, "image"));
-  if (pcd_file_name.extension() != ".pcd") {
+  std::string pcd_file_name(YamlGetValue<std::string>(doc, "image"));
+  if (!ends_with(pcd_file_name, ".pcd")) {
     throw YAML::Exception(
             doc["image"].Mark(),
             "The pcd file is invalid please pass a file name with extension .pcd");
   }
+  std::cout << "file written";
 
-  if (pcd_file_name.string()[0] != '/') {
+  if (pcd_file_name[0] != '/') {
     // dirname takes a mutable char *, so we copy into a vector
     std::vector<char> fname_copy(yaml_filename.begin(), yaml_filename.end());
     fname_copy.push_back('\0');
     load_parameters.pcd_file_name =
-      std::string(dirname(fname_copy.data())) + '/' + pcd_file_name.string();
+      std::string(dirname(fname_copy.data())) + '/' + pcd_file_name;
   } else {
-    load_parameters.pcd_file_name = pcd_file_name.string();
+    load_parameters.pcd_file_name = pcd_file_name;
   }
+  std::cout << "setting the origin";
 
   // Get view point as center and orientation
   // view point will be loaded from pcd file while reading
   // If not provided by YAML, if it provided by both YAML and PCD then
   // a warning will be issued if they are not equal and PCD  will take precedence
   try {
+    // Load origin form yaml_file
     std::vector<float> pcd_origin = YamlGetValue<std::vector<float>>(doc, "origin");
-    std::vector<float> pcd_orientation = YamlGetValue<std::vector<float>>(doc, "orientation");
 
-    if (pcd_origin.size() == 3 && pcd_orientation.size() == 4) {
-      load_parameters.origin = pcd_origin;
-      load_parameters.orientation = pcd_orientation;
+    if (pcd_origin.size() == 7) {
+      for (int i = 0; i < 7; ++i) {
+        if (i < 3) {
+          load_parameters.origin.center[i] = pcd_origin[i];
+        } else {
+          load_parameters.origin.orientation[i - 3] = pcd_origin[i];
+        }
+      }
     }
   } catch (YAML::Exception & e) {
-    std::cout << "[WARNING] [map_io_3d]: Couldn't load view_point from yaml file: "
+    std::cout << "[WARNING] [map_3d]: Couldn't load view_point from yaml file: "
       "If not provided it we will try to load from pcd file" << std::endl;
   }
 
@@ -141,11 +149,13 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
 
 void loadMapFromFile(
   const LoadParameters & load_parameters,
-  nav2_msgs::msg::PCD2 & map_msg)
+  sensor_msgs::msg::PointCloud2 & map_msg,
+  geometry_msgs::msg::Pose & origin_msg)
 {
-  nav2_msgs::msg::PCD2 msg;
+  sensor_msgs::msg::PointCloud2 map;
+  geometry_msgs::msg::Pose map_origin;
 
-  std::cout << "[INFO] [map_io_3d]: Loading pcd_file: " <<
+  std::cout << "[INFO] [map_3d]: Loading pcd_file: " <<
     load_parameters.pcd_file_name << std::endl;
 
   pcl::PCLPointCloud2::Ptr cloud = std::make_shared<pcl::PCLPointCloud2>();
@@ -153,84 +163,102 @@ void loadMapFromFile(
   //  create a pcd reader for PointCloud2 data
   pcl::PCDReader reader;
 
-  Eigen::Vector4f origin;
+  Eigen::Vector4f center;
   Eigen::Quaternionf orientation;
   int pcd_version = 0;
 
+  std::cout << "[debug] [map_3d]" << "feeding pcd filename to reader" << std::endl;
+
   if (reader.read(
       load_parameters.pcd_file_name, *cloud,
-      origin, orientation, pcd_version) == -1)              //* load the file
+      center, orientation, pcd_version) == -1)              //* load the file
   {
     std::string error_msg{"Couldn't read "};
     error_msg += load_parameters.pcd_file_name + "\n";
     PCL_ERROR(error_msg.c_str());
   }
+  std::cout << "[debug] [map_3d]" << "pcd file is loaded" << std::endl;
 
-  if (load_parameters.origin.size() == 3 && load_parameters.orientation.size() == 4) {
+  if (load_parameters.origin.center.size() == 3 &&
+    load_parameters.origin.orientation.size() == 4)
+  {
     // Update translation of transformation
-    msg.origin.x = load_parameters.origin[0];
-    msg.origin.y = load_parameters.origin[1];
-    msg.origin.z = load_parameters.origin[2];
+    origin_msg.position.x = load_parameters.origin.center[0];
+    origin_msg.position.y = load_parameters.origin.center[1];
+    origin_msg.position.z = load_parameters.origin.center[2];
 
     // Update rotation of transformation
-    msg.orientation.w = load_parameters.orientation[0];
-    msg.orientation.x = load_parameters.orientation[1];
-    msg.orientation.y = load_parameters.orientation[2];
-    msg.orientation.z = load_parameters.orientation[3];
+    origin_msg.orientation.w = load_parameters.origin.orientation[0];
+    origin_msg.orientation.x = load_parameters.origin.orientation[1];
+    origin_msg.orientation.y = load_parameters.origin.orientation[2];
+    origin_msg.orientation.z = load_parameters.origin.orientation[3];
   } else {
-    std::cout << "[WARNING] [map_io_3d]: View Point(centre and orientation) not provided by "
+    std::cout << "[WARNING] [map_3d]: View Point(center and orientation) not provided by "
       "YAML now will be using view_point defined by pcd reader" << std::endl;
 
     // Update translation of transformation
-    msg.origin.x = origin[0];
-    msg.origin.y = origin[1];
-    msg.origin.z = origin[2];
+    origin_msg.position.x = center[0];
+    origin_msg.position.y = center[1];
+    origin_msg.position.z = center[2];
 
     // Update rotation of transformation
-    msg.orientation.w = orientation.w();
-    msg.orientation.x = orientation.x();
-    msg.orientation.y = orientation.y();
-    msg.orientation.z = orientation.z();
+    origin_msg.orientation.w = orientation.w();
+    origin_msg.orientation.x = orientation.x();
+    origin_msg.orientation.y = orientation.y();
+    origin_msg.orientation.z = orientation.z();
   }
+  std::cout << "[debug] [map_3d]" << "converting pcd to message" << std::endl;
 
   //  update message data
-  pclToMsg(msg.map, cloud);
+  pclToMsg(map, cloud);
 
-  map_msg = msg;
+  std::cout << "[debug] [map_3d]" << "message conversion is done" << std::endl;
+
+  map_msg = map;
 }
 
 LOAD_MAP_STATUS loadMapFromYaml(
   const std::string & yaml_file,
-  nav2_msgs::msg::PCD2 & map_msg)
+  sensor_msgs::msg::PointCloud2 & map_msg,
+  geometry_msgs::msg::Pose & origin_msg)
 {
   if (yaml_file.empty()) {
-    std::cerr << "[ERROR] [map_io_3d]: YAML fiel name is empty, can't load!" << std::endl;
+    std::cerr << "[ERROR] [map_3d]: YAML file name is empty, can't load!" << std::endl;
     return MAP_DOES_NOT_EXIST;
   }
 
-  std::cout << "[INFO] [map_io_3d]: Loading yaml file: " << yaml_file << std::endl;
+  std::cout << "[INFO] [map_3d]: Loading yaml file: " << yaml_file << std::endl;
   LoadParameters load_parameters;
+  std::cout << "load parameters created";
+
+  load_parameters.origin.resize();
+  std::cout << "resize done";
 
   try {
+    std::cout << "initiating load_parameters";
+
     load_parameters = loadMapYaml(yaml_file);
   } catch (YAML::Exception & e) {
-    std::cerr << "[ERROR] [map_io_3d]: Failed processing YAML file " << yaml_file <<
+    std::cerr << "[ERROR] [map_3d]: Failed processing YAML file " << yaml_file <<
       " at position (" << e.mark.line << ":" << e.mark.column << ") for reason: " <<
       e.what() << std::endl;
 
     return INVALID_MAP_METADATA;
-  } catch (std::exception & e) {
-    std::cerr << "[ERROR] [map_io_3d]: Failed to parse map YAML loaded from file " << yaml_file <<
-      " for reason: " << e.what() << std::endl;
-
-    return INVALID_MAP_METADATA;
   }
+//  catch (std::exception & e) {
+//    std::cerr << "[ERROR] [map_3d]: Failed to parse map YAML loaded from file " << yaml_file <<
+//      " for reason: " << e.what() << std::endl;
+//
+//    return INVALID_MAP_METADATA;
+//  }
+
+  std::cout << "load parameters  are done to be completed";
 
   try {
-    loadMapFromFile(load_parameters, map_msg);
+    loadMapFromFile(load_parameters, map_msg, origin_msg);
   } catch (std::exception & e) {
     std::cerr <<
-      "[ERROR] [map_io_3d]: Failed to load image file " << load_parameters.pcd_file_name <<
+      "[ERROR] [map_3d]: Failed to load image file " << load_parameters.pcd_file_name <<
       " for reason: " << e.what() << std::endl;
 
     return INVALID_MAP_DATA;
@@ -245,37 +273,37 @@ void CheckSaveParameters(SaveParameters & save_parameters)
     rclcpp::Clock clock(RCL_SYSTEM_TIME);
     save_parameters.map_file_name =
       "map_" + std::to_string(static_cast<int>(clock.now().seconds()));
-    std::cout << "[WARN] [map_io_3d]: Map file unspecified. Map will be saved to " <<
+    std::cout << "[WARN] [map_3d]: Map file unspecified. Map will be saved to " <<
       save_parameters.map_file_name << " file" << std::endl;
   }
 
   if (save_parameters.as_binary) {
-    std::cout << "[WARN] [map_io_3d]: Map will be saved in binary form to " <<
+    std::cout << "[WARN] [map_3d]: Map will be saved in binary form to " <<
       save_parameters.map_file_name << " file" << std::endl;
   }
 
   if (save_parameters.format.empty()) {
     save_parameters.format = "pcd";
-    std::cout << "[WARN] [map_io_3d]: No map format is "
+    std::cout << "[WARN] [map_3d]: No map format is "
       "specifies we will be using pcd format" << std::endl;
   }
 
   if (save_parameters.format != "ply" || save_parameters.format != "pcd") {
     save_parameters.format = "pcd";
-    std::cout << "[WARN] [map_io_3d]: " << save_parameters.format <<
+    std::cout << "[WARN] [map_3d]: " << save_parameters.format <<
       " support is not implemented, Falling back to pcd file format" << std::endl;
   }
   if (save_parameters.format == "ply") {
     // TODO(Shivam Pandey): add ply support
     save_parameters.format = "pcd";
-    std::cout << "[WARN] [map_io_3d]: ply support is not implemented, "
+    std::cout << "[WARN] [map_3d]: ply support is not implemented, "
       "Falling back to pcd file format" << std::endl;
   }
 
-  if (save_parameters.origin.size() != 3 && save_parameters.orientation.size() != 4) {
-    save_parameters.origin = {0, 0, 0};
-    save_parameters.orientation = {1, 0, 0, 0};
-    std::cout << "[WARN] [map_io_3d]: "
+  if (save_parameters.origin.center.size() != 3 && save_parameters.origin.orientation.size() != 4) {
+    save_parameters.origin.center = {0, 0, 0};
+    save_parameters.origin.orientation = {1, 0, 0, 0};
+    std::cout << "[WARN] [map_3d]: "
       "origin and orientation provided must have a length of 3 and 4 respectively, "
       "Falling back to identity transform[0, 0, 0] ,[1, 0, 0, 0]" << std::endl;
   }
@@ -289,7 +317,7 @@ void TryWriteMapToFile(
 
   if (save_parameters.format == "pcd") {
     file_name += ".pcd";
-  } else {
+  } else if (save_parameters.format == "ply") {
     file_name += ".ply";
   }
 
@@ -299,20 +327,20 @@ void TryWriteMapToFile(
   pcl::PCDWriter writer;
 
   // Initialize origin
-  Eigen::Vector4f origin = Eigen::Vector4f::Zero();
-  origin[0] = save_parameters.origin[0];
-  origin[1] = save_parameters.origin[1];
-  origin[2] = save_parameters.origin[2];
+  Eigen::Vector4f center = Eigen::Vector4f::Zero();
+  center[0] = save_parameters.origin.center[0];
+  center[1] = save_parameters.origin.center[1];
+  center[2] = save_parameters.origin.center[2];
 
   // Initialize orientation
   Eigen::Quaternionf orientation = Eigen::Quaternionf::Identity();
-  orientation.w() = save_parameters.orientation[0];
-  orientation.x() = save_parameters.orientation[1];
-  orientation.y() = save_parameters.orientation[2];
-  orientation.z() = save_parameters.orientation[3];
+  orientation.w() = save_parameters.origin.orientation[0];
+  orientation.x() = save_parameters.origin.orientation[1];
+  orientation.y() = save_parameters.origin.orientation[2];
+  orientation.z() = save_parameters.origin.orientation[3];
 
   if (writer.write(
-      file_name, cloud_2, origin,
+      file_name, cloud_2, center,
       orientation, save_parameters.as_binary) == -1)
   {
     std::string error_msg{"Couldn't write "};
@@ -330,17 +358,16 @@ void TryWriteMapToFile(
     emitter << YAML::Key << "image" << YAML::Value << file_name;
 
     emitter << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq <<
-      save_parameters.origin[0] << save_parameters.origin[1] <<
-      save_parameters.origin[2] << YAML::EndSeq;
-    emitter << YAML::Key << "orientation" << YAML::Flow << YAML::BeginSeq <<
-      save_parameters.orientation[0] << save_parameters.orientation[1] <<
-      save_parameters.orientation[2] << save_parameters.orientation[3] << YAML::EndSeq;
+      save_parameters.origin.center[0] << save_parameters.origin.center[1] <<
+      save_parameters.origin.center[2] << save_parameters.origin.orientation[0] <<
+      save_parameters.origin.orientation[1] << save_parameters.origin.orientation[2] <<
+      save_parameters.origin.orientation[3] << YAML::EndSeq;
 
-    emitter << YAML::Key << "as_binary" << YAML::Value << save_parameters.as_binary;
     emitter << YAML::Key << "file_format" << YAML::Value << save_parameters.format;
+    emitter << YAML::Key << "as_binary" << YAML::Value << save_parameters.as_binary;
 
     if (!emitter.good()) {
-      std::cout << "[WARN] [map_io_3d]: YAML writer failed with an error " <<
+      std::cout << "[WARN] [map_3d]: YAML writer failed with an error " <<
         emitter.GetLastError() << ". The map metadata may be invalid." << std::endl;
     }
 

@@ -1,8 +1,31 @@
+// Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+// Copyright (c) 2020 Samsung Research Russia
+// Copyright (c) 2018 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 //
 // Created by shivam on 9/10/20.
 //
+
+#ifndef NAV2_MAP_SERVER__MAP_2D__MAP_SERVER_2D_HPP_
+#define NAV2_MAP_SERVER__MAP_2D__MAP_SERVER_2D_HPP_
+
+#include <string>
+#include <memory>
+
 #include "nav2_map_server/map_server_core.hpp"
-#include "map_2d/map_io_2d.hpp"
+#include "nav2_map_server/map_2d/map_io_2d.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -10,15 +33,13 @@
 #include "nav_msgs/srv/get_map.hpp"
 #include "nav2_msgs/srv/load_map.hpp"
 
-#ifndef NAV2_MAP_SERVER_SRC_MAP_2D_MAP_2_D_HPP_
-#define NAV2_MAP_SERVER_SRC_MAP_2D_MAP_2_D_HPP_
-
-namespace nav2_map_server{
-
-template <>
-class MapServer <nav_msgs::msg::OccupancyGrid> : public nav2_util::LifecycleNode
+namespace nav2_map_server
 {
- public:
+
+template<>
+class MapServer<nav_msgs::msg::OccupancyGrid>: public nav2_util::LifecycleNode
+{
+public:
   /**
    * @brief A constructor for nav2_map_server::MapServer
    */
@@ -29,7 +50,7 @@ class MapServer <nav_msgs::msg::OccupancyGrid> : public nav2_util::LifecycleNode
    */
   ~MapServer() override;
 
- protected:
+protected:
   /**
    * @brief Sets up required params and services. Loads map and its parameters from the file
    * @param state Lifecycle Node's state
@@ -76,8 +97,8 @@ class MapServer <nav_msgs::msg::OccupancyGrid> : public nav2_util::LifecycleNode
    * @return true or false
    */
   bool loadMapResponseFromYaml(
-      const std::string & yaml_file,
-      std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
+    const std::string & yaml_file,
+    std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
 
   /**
    * @brief Method correcting msg_ header when it belongs to instantiated object
@@ -91,9 +112,9 @@ class MapServer <nav_msgs::msg::OccupancyGrid> : public nav2_util::LifecycleNode
    * @param response Service response
    */
   void getMapCallback(
-      const std::shared_ptr<rmw_request_id_t> request_header,
-      const std::shared_ptr<nav_msgs::srv::GetMap::Request> request,
-      std::shared_ptr<nav_msgs::srv::GetMap::Response> response);
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav_msgs::srv::GetMap::Request> request,
+    std::shared_ptr<nav_msgs::srv::GetMap::Response> response);
 
   /**
    * @brief Map loading service callback for image
@@ -102,9 +123,9 @@ class MapServer <nav_msgs::msg::OccupancyGrid> : public nav2_util::LifecycleNode
    * @param response Service response
    */
   void loadMapCallback(
-      const std::shared_ptr<rmw_request_id_t> request_header,
-      const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
-      std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
+    std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
 
 
   // The name of the service for getting a map
@@ -128,7 +149,6 @@ class MapServer <nav_msgs::msg::OccupancyGrid> : public nav2_util::LifecycleNode
   // The message to publish on the occupancy grid topic
   nav_msgs::msg::OccupancyGrid msg_;
 };
-
 }  // namespace nav2_map_server
 
-#endif //NAV2_MAP_SERVER_SRC_MAP_2D_MAP_2_D_HPP_
+#endif  // NAV2_MAP_SERVER__MAP_2D__MAP_SERVER_2D_HPP_

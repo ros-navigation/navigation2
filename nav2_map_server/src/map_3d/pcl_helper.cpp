@@ -15,10 +15,11 @@
 // Created by shivam on 7/10/20.
 //
 
-#include "nav2_map_server_3d/pcl_helper.hpp"
+#include "nav2_map_server/map_3d/pcl_helper.hpp"
 
 #include <vector>
 #include <memory>
+#include <string>
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
 
@@ -27,9 +28,8 @@
 
 namespace nav2_map_server
 {
-namespace nav2_map_server_3d
+namespace map_3d
 {
-
 void modifyMsgFields(
   sensor_msgs::msg::PointCloud2 & msg,
   const std::vector<pcl::PCLPointField> & fields)
@@ -92,5 +92,10 @@ void msgToPcl(
   cloud->header = pcl_conversions::toPCL(msg.header);
 }
 
+bool ends_with(std::string const & value, std::string const & ending)
+{
+  if (ending.size() > value.size()) {return false;}
+  return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
 }  // namespace map_3d
 }  // namespace nav2_map_server

@@ -1,3 +1,18 @@
+// Copyright 2020 Shivam Pandey pandeyshvivamm2017robotics@gmail.com
+// Copyright 2019 Rover Robotics
+// Copyright (c) 2008, Willow Garage, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 // Created by shivam on 10/3/20.
 //
@@ -7,7 +22,7 @@
 #include <vector>
 #include <stdexcept>
 
-#include "map_2d/map_mode.hpp"
+#include "nav2_map_server/map_2d/map_mode.hpp"
 #include "nav2_map_server/map_saver.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -16,21 +31,21 @@
 using namespace nav2_map_server;  // NOLINT
 
 const char * USAGE_STRING{
-    "Usage:\n"
-    "  map_saver_cli [arguments] [--ros-args ROS remapping args]\n"
-    "\n"
-    "Arguments:\n"
-    "  -h/--help\n"
-    "  -t <map_topic>\n"
-    "  -f <mapname>\n"
-    "  --occ <threshold_occupied>\n"
-    "  --free <threshold_free>\n"
-    "  --fmt <map_format>\n"
-    "  --as_bin (for pointClouds)Give the flag to save map with binary encodings\n"
-    "  --origin <[size 7 vector of floats]>\n"
-    "  --mode trinary(default)/scale/raw\n"
-    "\n"
-    "NOTE: --ros-args should be passed at the end of command line"};
+  "Usage:\n"
+  "  map_saver_cli [arguments] [--ros-args ROS remapping args]\n"
+  "\n"
+  "Arguments:\n"
+  "  -h/--help\n"
+  "  -t <map_topic>\n"
+  "  -f <mapname>\n"
+  "  --occ <threshold_occupied>\n"
+  "  --free <threshold_free>\n"
+  "  --fmt <map_format>\n"
+  "  --as_bin (for pointClouds)Give the flag to save map with binary encodings\n"
+  "  --origin <[size 7 vector of floats]>\n"
+  "  --mode trinary(default)/scale/raw\n"
+  "\n"
+  "NOTE: --ros-args should be passed at the end of command line"};
 
 typedef enum
 {
@@ -57,7 +72,8 @@ typedef enum
   HELP_MESSAGE
 } ARGUMENTS_STATUS;
 
-struct SaveParamList{
+struct SaveParamList
+{
   map_2d::SaveParameters save_parameters_2d;
   map_3d::SaveParameters save_parameters_3d;
 };
@@ -66,18 +82,18 @@ struct SaveParamList{
 // Input parameters: logger, argc, argv
 // Output parameters: map_topic, save_parameters
 ARGUMENTS_STATUS parse_arguments(
-    const rclcpp::Logger & logger, int argc, char ** argv,
-    std::string & map_topic, SaveParamList & save_parameters)
+  const rclcpp::Logger & logger, int argc, char ** argv,
+  std::string & map_topic, SaveParamList & save_parameters)
 {
   const struct cmd_struct commands[] = {
-      {"-t", COMMAND_MAP_TOPIC},
-      {"-f", COMMAND_MAP_FILE_NAME},
-      {"--occ", COMMAND_OCCUPIED_THRESH},
-      {"--free", COMMAND_FREE_THRESH},
-      {"--mode", COMMAND_MODE},
-      {"--as_bin", COMMAND_ENCODING},
-      {"--origin", COMMAND_VIEW_POINT},
-      {"--fmt", COMMAND_IMAGE_FORMAT}
+    {"-t", COMMAND_MAP_TOPIC},
+    {"-f", COMMAND_MAP_FILE_NAME},
+    {"--occ", COMMAND_OCCUPIED_THRESH},
+    {"--free", COMMAND_FREE_THRESH},
+    {"--mode", COMMAND_MODE},
+    {"--as_bin", COMMAND_ENCODING},
+    {"--origin", COMMAND_VIEW_POINT},
+    {"--fmt", COMMAND_IMAGE_FORMAT}
   };
 
   std::vector<std::string> arguments(argv + 1, argv + argc);
@@ -125,9 +141,9 @@ ARGUMENTS_STATUS parse_arguments(
             } catch (std::invalid_argument &) {
               save_parameters.save_parameters_2d.mode = map_2d::MapMode::Trinary;
               RCLCPP_WARN(
-                  logger,
-                  "Map mode parameter not recognized: %s, using default value (trinary)",
-                  it->c_str());
+                logger,
+                "Map mode parameter not recognized: %s, using default value (trinary)",
+                it->c_str());
             }
             break;
           case COMMAND_VIEW_POINT:
@@ -141,10 +157,10 @@ ARGUMENTS_STATUS parse_arguments(
               }
               if (k < 4) {
                 save_parameters.save_parameters_3d.origin.center.push_back(
-                    std::stof(tmp.substr(0, tmp.size() - 1)));
+                  std::stof(tmp.substr(0, tmp.size() - 1)));
               } else if (k < 7) {
                 save_parameters.save_parameters_3d.origin.orientation.push_back(
-                    std::stof(tmp.substr(0, tmp.size() - 1)));
+                  std::stof(tmp.substr(0, tmp.size() - 1)));
               } else if (k == 7) {
                 save_parameters.save_parameters_3d.origin.orientation.push_back(std::stof(tmp));
               }
@@ -192,7 +208,6 @@ int main(int argc, char ** argv)
   int retcode;
   try {
     if (save_parameters.save_parameters_3d.format == "pcd") {
-
       auto map_saver = std::make_shared<nav2_map_server::MapSaver<sensor_msgs::msg::PointCloud2>>();
       if (map_saver->saveMapTopicToFile(map_topic, save_parameters.save_parameters_3d)) {
         retcode = 0;
@@ -217,4 +232,3 @@ int main(int argc, char ** argv)
   rclcpp::shutdown();
   return retcode;
 }
-

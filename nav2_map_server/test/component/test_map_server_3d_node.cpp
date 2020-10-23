@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@
 
 #include "nav2_msgs/srv/get_map3_d.hpp"
 #include "nav2_msgs/srv/load_map3_d.hpp"
-#include "nav2_msgs/msg/pcd2.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -82,23 +83,25 @@ public:
 protected:
   // Check that map_msg corresponds to reference pattern
   // Input: map_msg
-  static void verifyMapMsg(const nav2_msgs::msg::PCD2 & map_msg)
+  static void verifyMapMsg(
+    const sensor_msgs::msg::PointCloud2 & map_msg,
+    const geometry_msgs::msg::Pose & origin)
   {
-    std::vector<float> origin;
-    origin.push_back(map_msg.origin.x);
-    origin.push_back(map_msg.origin.y);
-    origin.push_back(map_msg.origin.z);
+    std::vector<float> center;
+    center.push_back(origin.position.x);
+    center.push_back(origin.position.y);
+    center.push_back(origin.position.z);
 
     std::vector<float> orientation;
-    orientation.push_back(map_msg.orientation.w);
-    orientation.push_back(map_msg.orientation.x);
-    orientation.push_back(map_msg.orientation.y);
-    orientation.push_back(map_msg.orientation.z);
-    ASSERT_EQ(origin, g_valid_origin_pcd);
+    orientation.push_back(origin.orientation.w);
+    orientation.push_back(origin.orientation.x);
+    orientation.push_back(origin.orientation.y);
+    orientation.push_back(origin.orientation.z);
+    ASSERT_EQ(center, g_valid_center_pcd);
     ASSERT_EQ(orientation, g_valid_orientation_pcd);
 
-    ASSERT_EQ(map_msg.map.width, g_valid_pcd_width);
-    ASSERT_EQ(map_msg.map.data.size(), g_valid_pcd_data_size);
+    ASSERT_EQ(map_msg.width, g_valid_pcd_width);
+    ASSERT_EQ(map_msg.data.size(), g_valid_pcd_data_size);
   }
 
   static rclcpp::Node::SharedPtr node_;
@@ -124,11 +127,12 @@ TEST_F(MapServer3DTestFixture, GetMap3D)
 
   auto resp = send_request<nav2_msgs::srv::GetMap3D>(node_, client, req);
 
-  nav2_msgs::msg::PCD2 map_msg;
-  map_msg.map = resp->map;
-  map_msg.origin = resp->origin;
-  map_msg.orientation = resp->orientation;
-  verifyMapMsg(map_msg);
+  sensor_msgs::msg::PointCloud2 map_msg;
+  geometry_msgs::msg::Pose pose_msg;
+  map_msg = resp->map;
+  pose_msg = resp->origin;
+
+  verifyMapMsg(map_msg, pose_msg);
 }
 
 // Send map loading service request and verify obtained PointCloud
@@ -147,11 +151,12 @@ TEST_F(MapServer3DTestFixture, LoadMap3D)
 
   ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap3D::Response::RESULT_SUCCESS);
 
-  nav2_msgs::msg::PCD2 map_msg;
-  map_msg.map = resp->map;
-  map_msg.origin = resp->origin;
-  map_msg.orientation = resp->orientation;
-  verifyMapMsg(map_msg);
+  sensor_msgs::msg::PointCloud2 map_msg;
+  geometry_msgs::msg::Pose pose_msg;
+  map_msg = resp->map;
+  pose_msg = resp->origin;
+
+  verifyMapMsg(map_msg, pose_msg);
 }
 
 // Send map loading service request without specifying which map to load

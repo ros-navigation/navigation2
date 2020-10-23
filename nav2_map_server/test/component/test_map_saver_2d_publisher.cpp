@@ -17,11 +17,8 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "map_2d/map_io_2d.hpp"
-#include "nav2_map_server_3d/map_io_3d.hpp"
-#include "nav2_msgs/msg/pcd2.hpp"
+#include "nav2_map_server/map_2d/map_io_2d.hpp"
 #include "test_constants/test_constants.h"
-#include "sensor_msgs/msg/point_cloud2.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 

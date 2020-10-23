@@ -1,9 +1,24 @@
+// Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+// Copyright (c) 2018 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 //
 // Created by shivam on 9/15/20.
 //
 
-#ifndef NAV2_MAP_SERVER_INCLUDE_NAV2_MAP_SERVER_MAP_SERVER_CORE_HPP_
-#define NAV2_MAP_SERVER_INCLUDE_NAV2_MAP_SERVER_MAP_SERVER_CORE_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_SERVER_CORE_HPP_
+#define NAV2_MAP_SERVER__MAP_SERVER_CORE_HPP_
 
 #include <string>
 #include <memory>
@@ -12,12 +27,13 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
-namespace nav2_map_server{
+namespace nav2_map_server
+{
 
-template <class mapT>
+template<class mapT>
 class MapServer : public nav2_util::LifecycleNode
 {
- public:
+public:
   /**
    * @brief A constructor for nav2_map_server::MapServer
    */
@@ -28,7 +44,7 @@ class MapServer : public nav2_util::LifecycleNode
    */
   ~MapServer() override;
 
- protected:
+protected:
   /**
    * @brief Sets up required params and services. Loads map and its parameters from the file
    * @param state Lifecycle Node's state
@@ -65,8 +81,7 @@ class MapServer : public nav2_util::LifecycleNode
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
-
 };
-
 }  // namespace nav2_map_server
-#endif //NAV2_MAP_SERVER_INCLUDE_NAV2_MAP_SERVER_MAP_SERVER_CORE_HPP_
+
+#endif  // NAV2_MAP_SERVER__MAP_SERVER_CORE_HPP_

@@ -15,8 +15,8 @@
 // Created by shivam on 7/10/20.
 //
 
-#ifndef NAV2_MAP_SERVER_3D__PCL_HELPER_HPP_
-#define NAV2_MAP_SERVER_3D__PCL_HELPER_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_3D__PCL_HELPER_HPP_
+#define NAV2_MAP_SERVER__MAP_3D__PCL_HELPER_HPP_
 
 #include <vector>
 #include <memory>
@@ -29,25 +29,26 @@
 
 namespace nav2_map_server
 {
-namespace  map_3d {
+namespace  map_3d
+{
 void modifyMsgFields(
-    sensor_msgs::msg::PointCloud2 &msg,
-    const std::vector<pcl::PCLPointField> &fields);
+  sensor_msgs::msg::PointCloud2 & msg,
+  const std::vector<pcl::PCLPointField> & fields);
 
 void pclToMsg(
-    sensor_msgs::msg::PointCloud2 &msg,
-    const std::shared_ptr<pcl::PCLPointCloud2> &cloud);
+  sensor_msgs::msg::PointCloud2 & msg,
+  const std::shared_ptr<pcl::PCLPointCloud2> & cloud);
 
 void modifyPclFields(
-    std::vector<pcl::PCLPointField> &fields,
-    const sensor_msgs::msg::PointCloud2 &msg);
+  std::vector<pcl::PCLPointField> & fields,
+  const sensor_msgs::msg::PointCloud2 & msg);
 
 void msgToPcl(
-    std::shared_ptr<pcl::PCLPointCloud2> &cloud,
-    const sensor_msgs::msg::PointCloud2 &msg);
+  std::shared_ptr<pcl::PCLPointCloud2> & cloud,
+  const sensor_msgs::msg::PointCloud2 & msg);
 
-bool ends_with(std::string const &value, std::string const &ending);
-
-}  // map_3d
+bool ends_with(std::string const & value, std::string const & ending);
+}  // namespace map_3d
 }  // namespace nav2_map_server
-#endif  // NAV2_MAP_SERVER_3D__PCL_HELPER_HPP_
+
+#endif  // NAV2_MAP_SERVER__MAP_3D__PCL_HELPER_HPP_
