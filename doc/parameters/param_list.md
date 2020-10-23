@@ -176,6 +176,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | ----------| --------| ------------|
 | `<filter name>`.enabled | true | Whether it is enabled |
 | `<filter name>`.filter_info_topic | N/A | Name of the CostmapFilterInfo topic having filter-related information |
+| `<filter name>`.transform_tolerance | 0.0 | TF tolerance |
 
 # controller_server
 
