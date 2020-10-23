@@ -84,8 +84,8 @@ protected:
   // Check that map_msg corresponds to reference pattern
   // Input: map_msg
   static void verifyMapMsg(
-      const sensor_msgs::msg::PointCloud2 & map_msg,
-      const geometry_msgs::msg::Pose & origin)
+    const sensor_msgs::msg::PointCloud2 & map_msg,
+    const geometry_msgs::msg::Pose & origin)
   {
     std::vector<float> center;
     center.push_back(origin.position.x);

@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MAP_SERVER_INCLUDE_NAV2_MAP_SERVER_MAP_SAVER_CORE_HPP_
-#define NAV2_MAP_SERVER_INCLUDE_NAV2_MAP_SERVER_MAP_SAVER_CORE_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_SAVER_CORE_HPP_
+#define NAV2_MAP_SERVER__MAP_SAVER_CORE_HPP_
 
 #include <string>
 #include <memory>
@@ -24,12 +24,13 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
-namespace nav2_map_server{
+namespace nav2_map_server
+{
 
-template <class mapT>
+template<class mapT>
 class MapSaver : public nav2_util::LifecycleNode
 {
- public:
+public:
   /**
    * @brief A constructor for nav2_map_server::MapServer
    */
@@ -40,7 +41,7 @@ class MapSaver : public nav2_util::LifecycleNode
    */
   ~MapSaver() override;
 
- protected:
+protected:
   /**
    * @brief Sets up required params and services. Loads map and its parameters from the file
    * @param state Lifecycle Node's state
@@ -77,7 +78,6 @@ class MapSaver : public nav2_util::LifecycleNode
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
-
 };
 }  // namespace nav2_map_server
-#endif //NAV2_MAP_SERVER_INCLUDE_NAV2_MAP_SERVER_MAP_SAVER_CORE_HPP_
+#endif  // NAV2_MAP_SERVER__MAP_SAVER_CORE_HPP_

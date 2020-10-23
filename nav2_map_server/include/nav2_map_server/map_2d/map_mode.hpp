@@ -12,21 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MAP_SERVER__MAP_MODE_HPP_
-#define NAV2_MAP_SERVER__MAP_MODE_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_2D__MAP_MODE_HPP_
+#define NAV2_MAP_SERVER__MAP_2D__MAP_MODE_HPP_
 
 #include <string>
 #include <vector>
 namespace nav2_map_server
 {
-namespace map_2d {
+namespace map_2d
+{
 /**
  * @enum nav2_map_server::MapMode
  * @brief Describes the relation between image pixel values and map occupancy
  * status (0-100; -1). Lightness refers to the mean of a given pixel's RGB
  * channels on a scale from 0 to 255.
  */
-enum class MapMode {
+enum class MapMode
+{
   /**
    * Together with associated threshold values (occupied and free):
    *   lightness >= occupied threshold - Occupied (100)
@@ -57,7 +59,7 @@ enum class MapMode {
  * @return String identifier of the given map mode
  * @throw std::invalid_argument if the given value is not a defined map mode
  */
-const char *map_mode_to_string(MapMode map_mode);
+const char * map_mode_to_string(MapMode map_mode);
 
 /**
  * @brief Convert the name of a map mode to a MapMode enum
@@ -66,7 +68,7 @@ const char *map_mode_to_string(MapMode map_mode);
  * @return map mode corresponding to the string
  */
 MapMode map_mode_from_string(std::string map_mode_name);
-
-}  // map_2d
+}  // namespace map_2d
 }  // namespace nav2_map_server
-#endif  // NAV2_MAP_SERVER__MAP_MODE_HPP_
+
+#endif  // NAV2_MAP_SERVER__MAP_2D__MAP_MODE_HPP_

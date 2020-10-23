@@ -16,8 +16,8 @@
 // Created by shivam on 9/24/20.
 //
 
-#ifndef NAV2_MAP_SERVER_INCLUDE_MAP_3D_MAP_SAVER_3D_HPP_
-#define NAV2_MAP_SERVER_INCLUDE_MAP_3D_MAP_SAVER_3D_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_3D__MAP_SAVER_3D_HPP_
+#define NAV2_MAP_SERVER__MAP_3D__MAP_SAVER_3D_HPP_
 #include <string>
 #include <memory>
 
@@ -36,10 +36,10 @@ namespace nav2_map_server
  * @class nav2_map_server::MapSaver
  * @brief A class that provides map saving methods and services
  */
-template <>
-class MapSaver<sensor_msgs::msg::PointCloud2> : public nav2_util::LifecycleNode
+template<>
+class MapSaver<sensor_msgs::msg::PointCloud2>: public nav2_util::LifecycleNode
 {
- public:
+public:
   /**
    * @brief Constructor for the nav2_map_server::MapSaver
    * @param is_pcd Bool for distinguishing b/w pcd and image, false by default
@@ -58,10 +58,10 @@ class MapSaver<sensor_msgs::msg::PointCloud2> : public nav2_util::LifecycleNode
    * @return true of false
    */
   bool saveMapTopicToFile(
-      const std::string & map_topic,
-      const map_3d::SaveParameters & save_parameters);
+    const std::string & map_topic,
+    const map_3d::SaveParameters & save_parameters);
 
- protected:
+protected:
   /**
    * @brief Sets up map saving service
    * @param state Lifecycle Node's state
@@ -106,9 +106,9 @@ class MapSaver<sensor_msgs::msg::PointCloud2> : public nav2_util::LifecycleNode
    * @param response Service response
    */
   void saveMapCallback(
-      const std::shared_ptr<rmw_request_id_t> request_header,
-      const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
-      std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response);
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
+    std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response);
 
   // The timeout for saving the map in service
   std::shared_ptr<rclcpp::Duration> save_map_timeout_;
@@ -118,6 +118,6 @@ class MapSaver<sensor_msgs::msg::PointCloud2> : public nav2_util::LifecycleNode
   // A service to save PointCloud2 data to a file at runtime (SaveMap)
   rclcpp::Service<nav2_msgs::srv::SaveMap3D>::SharedPtr save_map_service_;
 };
-
 }  // namespace nav2_map_server
-#endif //NAV2_MAP_SERVER_INCLUDE_MAP_3D_MAP_SAVER_3D_HPP_
+
+#endif  // NAV2_MAP_SERVER__MAP_3D__MAP_SAVER_3D_HPP_

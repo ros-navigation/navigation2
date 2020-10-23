@@ -34,12 +34,12 @@ namespace nav2_map_server
 {
 
 MapSaver<sensor_msgs::msg::PointCloud2>::MapSaver()
-    : nav2_util::LifecycleNode("map_saver", "", true)
+: nav2_util::LifecycleNode("map_saver", "", true)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
   save_map_timeout_ = std::make_shared<rclcpp::Duration>(
-      std::chrono::milliseconds(declare_parameter("save_map_timeout", 2000)));
+    std::chrono::milliseconds(declare_parameter("save_map_timeout", 2000)));
 }
 
 MapSaver<sensor_msgs::msg::PointCloud2>::~MapSaver()
@@ -57,13 +57,13 @@ MapSaver<sensor_msgs::msg::PointCloud2>::on_configure(const rclcpp_lifecycle::St
 
   // Create a service that saves the occupancy grid or PointCloud2 from map topic to a file
   save_map_service_ = create_service<nav2_msgs::srv::SaveMap3D>(
-      service_prefix + save_map_service_name_,
-      [this](
-          const std::shared_ptr<rmw_request_id_t> request_header,
-          const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
-          std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response) {
-        saveMapCallback(request_header, request, response);
-      });
+    service_prefix + save_map_service_name_,
+    [this](
+      const std::shared_ptr<rmw_request_id_t> request_header,
+      const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
+      std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response) {
+      saveMapCallback(request_header, request, response);
+    });
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -106,9 +106,9 @@ MapSaver<sensor_msgs::msg::PointCloud2>::on_shutdown(const rclcpp_lifecycle::Sta
 
 
 void MapSaver<sensor_msgs::msg::PointCloud2>::saveMapCallback(
-    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
-    std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response)
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
+  std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response)
 {
   map_3d::SaveParameters save_parameters;
   save_parameters.origin.resize();
@@ -135,16 +135,16 @@ void MapSaver<sensor_msgs::msg::PointCloud2>::saveMapCallback(
 
 
 bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
-    const std::string & map_topic,
-    const map_3d::SaveParameters & save_parameters)
+  const std::string & map_topic,
+  const map_3d::SaveParameters & save_parameters)
 {
   // Local copies of map_topic and save_parameters that could be changed
   std::string map_topic_loc = map_topic;
   map_3d::SaveParameters save_parameters_loc = save_parameters;
 
   RCLCPP_INFO(
-      get_logger(), "Saving map from \'%s\' topic to \'%s\' file",
-      map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
+    get_logger(), "Saving map from \'%s\' topic to \'%s\' file",
+    map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
 
   try {
     // Pointer to map message received in the subscription callback
@@ -154,21 +154,21 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
     if (map_topic_loc.empty()) {
       map_topic_loc = "map";
       RCLCPP_WARN(
-          get_logger(), "Map topic unspecified. Map messages will be read from \'%s\' topic",
-          map_topic_loc.c_str());
+        get_logger(), "Map topic unspecified. Map messages will be read from \'%s\' topic",
+        map_topic_loc.c_str());
     }
 
     // A callback function that receives map message from subscribed topic
     auto map_callback = [&pcd_map_msg](
-        const sensor_msgs::msg::PointCloud2::SharedPtr msg) -> void {
-      pcd_map_msg = msg;
-    };
+      const sensor_msgs::msg::PointCloud2::SharedPtr msg) -> void {
+        pcd_map_msg = msg;
+      };
 
     // Add new subscription for incoming map topic.
     // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode
     // as a map listener.
     auto map_sub = rclcpp_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
-        map_topic_loc, rclcpp::SystemDefaultsQoS(), map_callback);
+      map_topic_loc, rclcpp::SystemDefaultsQoS(), map_callback);
 
     rclcpp::Time start_time = now();
     while (rclcpp::ok()) {

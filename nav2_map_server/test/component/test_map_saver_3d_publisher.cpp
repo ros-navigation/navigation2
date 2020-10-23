@@ -36,15 +36,15 @@ using std::experimental::filesystem::path;
 
 class TestPublisher : public rclcpp::Node
 {
- public:
+public:
   TestPublisher()
-      : Node("map_publisher")
+  : Node("map_publisher")
   {
     std::string pub_map_pcd_file = path(TEST_DIR) / path(g_valid_pcd_yaml_file);
 
 
     map_3d::LOAD_MAP_STATUS status_3_d =
-        map_3d::loadMapFromYaml(pub_map_pcd_file, pcd_msg_, origin_msg_);
+      map_3d::loadMapFromYaml(pub_map_pcd_file, pcd_msg_, origin_msg_);
 
     if (status_3_d != map_3d::LOAD_MAP_SUCCESS) {
       RCLCPP_ERROR(get_logger(), "Can not load %s map file", pub_map_pcd_file.c_str());
@@ -52,13 +52,13 @@ class TestPublisher : public rclcpp::Node
     }
 
     pcd_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>(
-        "map",
-        rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+      "map",
+      rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
     timer_ = create_wall_timer(300ms, std::bind(&TestPublisher::mapPublishCallback, this));
   }
 
- protected:
+protected:
   void mapPublishCallback()
   {
     pcd_pub_->publish(pcd_msg_);

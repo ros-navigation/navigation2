@@ -73,7 +73,8 @@ char * dirname(char * path)
 
 namespace nav2_map_server
 {
-namespace map_3d{
+namespace map_3d
+{
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
 // === Map input part ===
@@ -146,9 +147,10 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   return load_parameters;
 }
 
-void loadMapFromFile(const LoadParameters & load_parameters,
-                     sensor_msgs::msg::PointCloud2 & map_msg,
-                     geometry_msgs::msg::Pose & origin_msg)
+void loadMapFromFile(
+  const LoadParameters & load_parameters,
+  sensor_msgs::msg::PointCloud2 & map_msg,
+  geometry_msgs::msg::Pose & origin_msg)
 {
   sensor_msgs::msg::PointCloud2 map;
   geometry_msgs::msg::Pose map_origin;
@@ -177,8 +179,9 @@ void loadMapFromFile(const LoadParameters & load_parameters,
   }
   std::cout << "[debug] [map_3d]" << "pcd file is loaded" << std::endl;
 
-  if (load_parameters.origin.center.size() == 3
-      && load_parameters.origin.orientation.size() == 4) {
+  if (load_parameters.origin.center.size() == 3 &&
+    load_parameters.origin.orientation.size() == 4)
+  {
     // Update translation of transformation
     origin_msg.position.x = load_parameters.origin.center[0];
     origin_msg.position.y = load_parameters.origin.center[1];
@@ -214,9 +217,10 @@ void loadMapFromFile(const LoadParameters & load_parameters,
   map_msg = map;
 }
 
-LOAD_MAP_STATUS loadMapFromYaml(const std::string & yaml_file,
-                                sensor_msgs::msg::PointCloud2 & map_msg,
-                                geometry_msgs::msg::Pose & origin_msg)
+LOAD_MAP_STATUS loadMapFromYaml(
+  const std::string & yaml_file,
+  sensor_msgs::msg::PointCloud2 & map_msg,
+  geometry_msgs::msg::Pose & origin_msg)
 {
   if (yaml_file.empty()) {
     std::cerr << "[ERROR] [map_3d]: YAML file name is empty, can't load!" << std::endl;
@@ -313,9 +317,7 @@ void TryWriteMapToFile(
 
   if (save_parameters.format == "pcd") {
     file_name += ".pcd";
-  }
-  else if(save_parameters.format == "ply")
-  {
+  } else if (save_parameters.format == "ply") {
     file_name += ".ply";
   }
 
@@ -356,10 +358,10 @@ void TryWriteMapToFile(
     emitter << YAML::Key << "image" << YAML::Value << file_name;
 
     emitter << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq <<
-            save_parameters.origin.center[0] << save_parameters.origin.center[1] <<
-            save_parameters.origin.center[2] << save_parameters.origin.orientation[0] <<
-            save_parameters.origin.orientation[1] << save_parameters.origin.orientation[2] <<
-      save_parameters.origin.orientation[3]<< YAML::EndSeq;
+      save_parameters.origin.center[0] << save_parameters.origin.center[1] <<
+      save_parameters.origin.center[2] << save_parameters.origin.orientation[0] <<
+      save_parameters.origin.orientation[1] << save_parameters.origin.orientation[2] <<
+      save_parameters.origin.orientation[3] << YAML::EndSeq;
 
     emitter << YAML::Key << "file_format" << YAML::Value << save_parameters.format;
     emitter << YAML::Key << "as_binary" << YAML::Value << save_parameters.as_binary;

@@ -41,7 +41,7 @@ using namespace nav2_map_server;  // NOLINT
 
 class RclCppFixture
 {
- public:
+public:
   RclCppFixture() {rclcpp::init(0, nullptr);}
   ~RclCppFixture() {rclcpp::shutdown();}
 };
@@ -50,12 +50,12 @@ RclCppFixture g_rclcppfixture;
 
 class MapSaverTestFixture : public ::testing::Test
 {
- public:
+public:
   static void SetUpTestCase()
   {
     node_ = rclcpp::Node::make_shared("map_client_test");
     lifecycle_client_ =
-        std::make_shared<nav2_util::LifecycleServiceClient>("map_saver", node_);
+      std::make_shared<nav2_util::LifecycleServiceClient>("map_saver", node_);
     RCLCPP_INFO(node_->get_logger(), "Creating Test Node");
 
     std::this_thread::sleep_for(std::chrono::seconds(5));  // allow node to start up
@@ -73,9 +73,9 @@ class MapSaverTestFixture : public ::testing::Test
   template<class T>
   typename T::Response::SharedPtr send_request(
 
-      rclcpp::Node::SharedPtr node,
-      typename rclcpp::Client<T>::SharedPtr client,
-      typename T::Request::SharedPtr request)
+    rclcpp::Node::SharedPtr node,
+    typename rclcpp::Client<T>::SharedPtr client,
+    typename T::Request::SharedPtr request)
   {
     auto result = client->async_send_request(request);
 
@@ -87,11 +87,10 @@ class MapSaverTestFixture : public ::testing::Test
     }
   }
 
- protected:
-
+protected:
   static void verifyMapMsg(
-      const sensor_msgs::msg::PointCloud2 & map_msg,
-      const geometry_msgs::msg::Pose & origin)
+    const sensor_msgs::msg::PointCloud2 & map_msg,
+    const geometry_msgs::msg::Pose & origin)
   {
     std::vector<float> center;
     center.push_back(origin.position.x);
@@ -116,7 +115,7 @@ class MapSaverTestFixture : public ::testing::Test
 
 rclcpp::Node::SharedPtr MapSaverTestFixture::node_ = nullptr;
 std::shared_ptr<nav2_util::LifecycleServiceClient> MapSaverTestFixture::lifecycle_client_ =
-    nullptr;
+  nullptr;
 
 // Send map(pcd) saving service request.
 // Load saved map and verify obtained OccupancyGrid.
@@ -125,7 +124,7 @@ TEST_F(MapSaverTestFixture, SaveMap3D)
   RCLCPP_INFO(node_->get_logger(), "Testing SaveMap service");
   auto req = std::make_shared<nav2_msgs::srv::SaveMap3D::Request>();
   auto client = node_->create_client<nav2_msgs::srv::SaveMap3D>(
-      "/map_saver/save_map");
+    "/map_saver/save_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for save_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -156,9 +155,9 @@ TEST_F(MapSaverTestFixture, SaveMap3D)
   geometry_msgs::msg::Pose pose_msg;
 
   map_3d::LOAD_MAP_STATUS status =
-      map_3d::loadMapFromYaml(
-          path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
-          map_msg, pose_msg);
+    map_3d::loadMapFromYaml(
+    path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
+    map_msg, pose_msg);
 
   ASSERT_EQ(status, map_3d::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg, pose_msg);
@@ -171,7 +170,7 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters3D)
   RCLCPP_INFO(node_->get_logger(), "Testing SaveMap service");
   auto req = std::make_shared<nav2_msgs::srv::SaveMap3D::Request>();
   auto client = node_->create_client<nav2_msgs::srv::SaveMap3D>(
-      "/map_saver/save_map");
+    "/map_saver/save_map");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for save_map service");
   ASSERT_TRUE(client->wait_for_service());
@@ -201,9 +200,9 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters3D)
   sensor_msgs::msg::PointCloud2 map_msg;
   geometry_msgs::msg::Pose pose_msg;
   map_3d::LOAD_MAP_STATUS status =
-      map_3d::loadMapFromYaml(
-          path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
-          map_msg, pose_msg);
+    map_3d::loadMapFromYaml(
+    path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
+    map_msg, pose_msg);
 
   ASSERT_EQ(status, map_3d::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg, pose_msg);

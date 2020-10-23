@@ -17,8 +17,8 @@
 // Created by shivam on 9/15/20.
 //
 
-#ifndef NAV2_MAP_SERVER_INCLUDE_NAV2_MAP_SERVER_MAP_SERVER_CORE_HPP_
-#define NAV2_MAP_SERVER_INCLUDE_NAV2_MAP_SERVER_MAP_SERVER_CORE_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_SERVER_CORE_HPP_
+#define NAV2_MAP_SERVER__MAP_SERVER_CORE_HPP_
 
 #include <string>
 #include <memory>
@@ -27,12 +27,13 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
-namespace nav2_map_server{
+namespace nav2_map_server
+{
 
-template <class mapT>
+template<class mapT>
 class MapServer : public nav2_util::LifecycleNode
 {
- public:
+public:
   /**
    * @brief A constructor for nav2_map_server::MapServer
    */
@@ -43,7 +44,7 @@ class MapServer : public nav2_util::LifecycleNode
    */
   ~MapServer() override;
 
- protected:
+protected:
   /**
    * @brief Sets up required params and services. Loads map and its parameters from the file
    * @param state Lifecycle Node's state
@@ -80,8 +81,7 @@ class MapServer : public nav2_util::LifecycleNode
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
-
 };
-
 }  // namespace nav2_map_server
-#endif //NAV2_MAP_SERVER_INCLUDE_NAV2_MAP_SERVER_MAP_SERVER_CORE_HPP_
+
+#endif  // NAV2_MAP_SERVER__MAP_SERVER_CORE_HPP_

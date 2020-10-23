@@ -126,7 +126,8 @@ TEST_F(MapSaverTestFixture, SaveMap)
 
   // 2. Load saved map and verify it
   nav_msgs::msg::OccupancyGrid map_msg;
-  map_2d::LOAD_MAP_STATUS status = map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
+  map_2d::LOAD_MAP_STATUS status =
+    map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 }
@@ -156,7 +157,8 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters)
 
   // 2. Load saved map and verify it
   nav_msgs::msg::OccupancyGrid map_msg;
-  map_2d::LOAD_MAP_STATUS status = map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
+  map_2d::LOAD_MAP_STATUS status =
+    map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 }
@@ -190,7 +192,8 @@ TEST_F(MapSaverTestFixture, SaveMapInvalidParameters)
   resp = send_request<nav2_msgs::srv::SaveMap>(node_, client, req);
   ASSERT_EQ(resp->result, true);
   nav_msgs::msg::OccupancyGrid map_msg;
-  map_2d::LOAD_MAP_STATUS status = map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
+  map_2d::LOAD_MAP_STATUS status =
+    map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
   ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 

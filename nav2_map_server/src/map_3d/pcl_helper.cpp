@@ -28,12 +28,14 @@
 
 namespace nav2_map_server
 {
-namespace map_3d {
+namespace map_3d
+{
 void modifyMsgFields(
-    sensor_msgs::msg::PointCloud2 &msg,
-    const std::vector<pcl::PCLPointField> &fields) {
+  sensor_msgs::msg::PointCloud2 & msg,
+  const std::vector<pcl::PCLPointField> & fields)
+{
   msg.fields.clear();
-  for (auto &field : fields) {
+  for (auto & field : fields) {
     sensor_msgs::msg::PointField new_field;
     new_field.datatype = field.datatype;
     new_field.name = field.name;
@@ -44,8 +46,9 @@ void modifyMsgFields(
 }
 
 void pclToMsg(
-    sensor_msgs::msg::PointCloud2 &msg,
-    const std::shared_ptr<pcl::PCLPointCloud2> &cloud) {
+  sensor_msgs::msg::PointCloud2 & msg,
+  const std::shared_ptr<pcl::PCLPointCloud2> & cloud)
+{
   msg.data.clear();
   modifyMsgFields(msg, cloud->fields);
   msg.data = cloud->data;
@@ -59,10 +62,11 @@ void pclToMsg(
 }
 
 void modifyPclFields(
-    std::vector<pcl::PCLPointField> &fields,
-    const sensor_msgs::msg::PointCloud2 &msg) {
+  std::vector<pcl::PCLPointField> & fields,
+  const sensor_msgs::msg::PointCloud2 & msg)
+{
   fields.clear();
-  for (auto &field : msg.fields) {
+  for (auto & field : msg.fields) {
     pcl::PCLPointField new_field;
     new_field.datatype = field.datatype;
     new_field.name = field.name;
@@ -73,8 +77,9 @@ void modifyPclFields(
 }
 
 void msgToPcl(
-    std::shared_ptr<pcl::PCLPointCloud2> &cloud,
-    const sensor_msgs::msg::PointCloud2 &msg) {
+  std::shared_ptr<pcl::PCLPointCloud2> & cloud,
+  const sensor_msgs::msg::PointCloud2 & msg)
+{
   cloud->data.clear();
   modifyPclFields(cloud->fields, msg);
   cloud->data = msg.data;
@@ -87,8 +92,9 @@ void msgToPcl(
   cloud->header = pcl_conversions::toPCL(msg.header);
 }
 
-bool ends_with(std::string const &value, std::string const &ending) {
-  if (ending.size() > value.size()) return false;
+bool ends_with(std::string const & value, std::string const & ending)
+{
+  if (ending.size() > value.size()) {return false;}
   return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 }  // namespace map_3d

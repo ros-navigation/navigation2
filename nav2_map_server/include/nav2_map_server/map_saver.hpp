@@ -16,11 +16,11 @@
 // Created by shivam on 10/3/20.
 //
 
-#ifndef NAV2_MAP_SERVER_INCLUDE_NAV2_MAP_SERVER_MAP_SAVER_HPP_
-#define NAV2_MAP_SERVER_INCLUDE_NAV2_MAP_SERVER_MAP_SAVER_HPP_
+#ifndef NAV2_MAP_SERVER__MAP_SAVER_HPP_
+#define NAV2_MAP_SERVER__MAP_SAVER_HPP_
 
 #include "nav2_map_server/map_saver_core.hpp"
 #include "nav2_map_server/map_3d/map_saver_3d.hpp"
 #include "nav2_map_server/map_2d/map_saver_2d.hpp"
 
-#endif //NAV2_MAP_SERVER_INCLUDE_NAV2_MAP_SERVER_MAP_SAVER_HPP_
+#endif  // NAV2_MAP_SERVER__MAP_SAVER_HPP_
