@@ -11,7 +11,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 
-namespace nav2_3d_static_layer  // TODO rename ns to nav2_costmap_2d
+namespace nav2_costmap_2d  // TODO rename ns to nav2_costmap_2d
 {
 // TODO remove the leading indentation inside ns
 // TODO 3D static layer now inherits from obstacle layer
@@ -45,7 +45,7 @@ namespace nav2_3d_static_layer  // TODO rename ns to nav2_costmap_2d
 // TODO Confirm: sensor_msgs::msg::PointCloud2 looks like a complex structure
 // TODO There are many different ways passing arguments here: ref, pointer, shared_ptr, dedicated ConstSharedPtr
 // TODO If the type name is too long, use typedef or using instead
-        virtual void convertTo2d(sensor_msgs::msg::PointCloud2 cloud);
+        virtual void fillCostMapFromPointCloud(sensor_msgs::msg::PointCloud2 cloud);
     private:
 // TODO putting _ after var name to indicate private member, is this a new fashion?
         nav2_costmap_2d::Costmap2D map_2d_;

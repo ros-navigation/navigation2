@@ -2,7 +2,7 @@
 // Created by sun on 2020/10/10.
 //
 
-#include "nav2_3d_static_layer/nav2_3d_static_layer.hpp"
+#include "nav2_costmap_2d/nav2_3d_static_layer.hpp"
 
 #include "octomap/octomap.h"
 #include "pcl/compression/octree_pointcloud_compression.h"
@@ -17,13 +17,12 @@ using nav2_costmap_2d::NO_INFORMATION;
 using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::FREE_SPACE;
 
-namespace nav2_3d_static_layer
+namespace nav2_costmap_2d
 {
     Nav23dStaticLayer::Nav23dStaticLayer() {
         map_2d_ = nav2_costmap_2d::Costmap2D();
     }
-// TODO What 'noexcept' means in CPP?
-    Nav23dStaticLayer::~Nav23dStaticLayer() noexcept {}
+    Nav23dStaticLayer::~Nav23dStaticLayer(){}
 
     void
     Nav23dStaticLayer::onInitialize()
@@ -73,7 +72,7 @@ namespace nav2_3d_static_layer
     void
     Nav23dStaticLayer::readPC(std::shared_ptr<sensor_msgs::msg::PointCloud2> cloud_pc2)
     {
-        std::string file_path = "pcdfilepath/origin.pcd";
+        std::string file_path = "/home/sun/navigation2/src/navigation2/simple_bringup/origin.pcd";
         pcl::PCLPointCloud2::Ptr cloud_file (new pcl::PCLPointCloud2 ());
         pcl::PCDReader reader;
         reader.read(
@@ -107,13 +106,13 @@ namespace nav2_3d_static_layer
                 map_size_x_, map_size_y_, resolution_, origin_x_, origin_y_
                 );
 
-        convertTo2d(*pointcloud);
+        fillCostMapFromPointCloud(*pointcloud);
         // TODO fillCostMapFromPointCloud(*pointcloud)
 
     }
 
     void
-    Nav23dStaticLayer::convertTo2d(sensor_msgs::msg::PointCloud2 cloud)
+    Nav23dStaticLayer::fillCostMapFromPointCloud(sensor_msgs::msg::PointCloud2 cloud)
     {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::PCLPointCloud2::Ptr cloud_pcl(new pcl::PCLPointCloud2);
@@ -225,4 +224,4 @@ namespace nav2_3d_static_layer
     }
 }
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_3d_static_layer::Nav23dStaticLayer, nav2_costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::Nav23dStaticLayer, nav2_costmap_2d::Layer)
