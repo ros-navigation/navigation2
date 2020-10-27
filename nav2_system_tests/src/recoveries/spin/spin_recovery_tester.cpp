@@ -83,7 +83,6 @@ void SpinRecoveryTester::activate()
   }
   if(!make_fake_costmap_){
     while (!initial_pose_received_) {
-      RCLCPP_INFO(node_->get_logger(), "Foo");
       RCLCPP_WARN(node_->get_logger(), "Initial pose not received");
       sendInitialPose();
       std::this_thread::sleep_for(100ms);
@@ -91,7 +90,6 @@ void SpinRecoveryTester::activate()
     }
   }
   else {
-      RCLCPP_INFO(node_->get_logger(), "FooBar");
       sendFakeFootprint();
       sendFakeCostmap();
       sendFakeOdom(0.0);
@@ -185,10 +183,13 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   rclcpp::sleep_for(std::chrono::milliseconds(1000));
 
   if(make_fake_costmap_){ //if we are faking the costmap, we will fake success.
+    sendFakeOdom(0.0);
     RCLCPP_INFO(node_->get_logger(), "target_yaw %lf",target_yaw);
-    sendFakeOdom(target_yaw);
     sendFakeFootprint();
     sendFakeCostmap();
+    sendFakeOdom(target_yaw);
+    rclcpp::sleep_for(std::chrono::milliseconds(1000));
+    sendFakeOdom(target_yaw);
     RCLCPP_INFO(node_->get_logger(), "After sending goal");
   }
   
@@ -323,9 +324,10 @@ void SpinRecoveryTester::sendInitialPose()
 
 void SpinRecoveryTester::sendFakeOdom(float angle){
   geometry_msgs::msg::TransformStamped transformStamped;
-  
+  // Wrap around to number btwn 0 and 2pi, apparently this matters
+  // angle = ((angle / (2.0 * M_PIf32)) - floor(angle / (2.0 * M_PIf32))) * 2 * M_PIf32;
   transformStamped.header.stamp = rclcpp::Time();
-  transformStamped.header.frame_id = "odom"; // TODO(vinny) make these params
+  transformStamped.header.frame_id = "odom"; // TODO make these params
   transformStamped.child_frame_id = "base_link";
   transformStamped.transform.translation.x = 0.0;
   transformStamped.transform.translation.y = 0.0;
