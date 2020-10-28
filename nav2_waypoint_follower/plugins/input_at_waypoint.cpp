@@ -16,7 +16,7 @@
 #include <exception>
 
 #include "nav2_util/node_utils.hpp"
-#include "nav2_waypoint_follower/plugins/wait_at_waypoint.hpp"
+#include "nav2_waypoint_follower/plugins/input_at_waypoint.hpp"
 
 namespace nav2_waypoint_follower
 {
@@ -25,7 +25,8 @@ using std::placeholders::_1;
 
 InputAtWaypoint::InputAtWaypoint()
 : input_received_(false),
-  is_enabled_(true)
+  is_enabled_(true),
+  timeout_(10.0, 0.0)
 {
 }
 
@@ -46,9 +47,10 @@ void InputAtWaypoint::initialize(
   logger_ = node->get_logger();
   clock_ = node->get_clock();
 
+  double timeout;
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name + ".timeout",
-    rclcpp::ParameterValue(10));
+    rclcpp::ParameterValue(10.0));
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name + ".enabled",
     rclcpp::ParameterValue(true));
@@ -61,7 +63,7 @@ void InputAtWaypoint::initialize(
     "input_at_waypoint/input", 1, std::bind(&InputAtWaypoint::Cb, this, _1));
 }
 
-void Cb(const std_msgs::msg::Empty::SharedPtr msg) const
+void InputAtWaypoint::Cb(const std_msgs::msg::Empty::SharedPtr msg) const
 {
   {
     std::lock_guard<std::mutex> lock(mutex_);
