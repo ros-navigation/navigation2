@@ -48,19 +48,26 @@ void InputAtWaypoint::initialize(
   clock_ = node->get_clock();
 
   double timeout;
+  std::string input_topic;
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name + ".timeout",
     rclcpp::ParameterValue(10.0));
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name + ".enabled",
     rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name + ".input_topic",
+    rclcpp::ParameterValue("input_at_waypoint/input"));
   node->get_parameter(plugin_name + ".timeout", timeout);
   node->get_parameter(plugin_name + ".enabled", is_enabled_);
+  node->get_parameter(plugin_name + ".input_topic", input_topic);
 
   timeout_ = rclcpp::Duration(timeout, 0.0);
 
+  RCLCPP_INFO(
+    logger_, "InputAtWaypoint: Subscribing to input topic %s.", input_topic.c_str());
   subscription_ = node->create_subscription<std::msg::Empty>(
-    "input_at_waypoint/input", 1, std::bind(&InputAtWaypoint::Cb, this, _1));
+    input_topic, 1, std::bind(&InputAtWaypoint::Cb, this, _1));
 }
 
 void InputAtWaypoint::Cb(const std_msgs::msg::Empty::SharedPtr msg) const
