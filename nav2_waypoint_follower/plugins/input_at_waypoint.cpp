@@ -66,16 +66,14 @@ void InputAtWaypoint::initialize(
 
   RCLCPP_INFO(
     logger_, "InputAtWaypoint: Subscribing to input topic %s.", input_topic.c_str());
-  subscription_ = node->create_subscription<std::msg::Empty>(
+  subscription_ = node->create_subscription<std_msgs::msg::Empty>(
     input_topic, 1, std::bind(&InputAtWaypoint::Cb, this, _1));
 }
 
-void InputAtWaypoint::Cb(const std_msgs::msg::Empty::SharedPtr msg) const
+void InputAtWaypoint::Cb(const std_msgs::msg::Empty::SharedPtr /*msg*/)
 {
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    input_received_ = true;
-  }
+  std::lock_guard<std::mutex> lock(mutex_);
+  input_received_ = true;
 }
 
 bool InputAtWaypoint::processAtWaypoint(
@@ -86,8 +84,11 @@ bool InputAtWaypoint::processAtWaypoint(
     return true;
   }
 
+  input_received_ = false;
+
   rclcpp::Time start = clock_->now();
   rclcpp::Rate r(50);
+  bool input_received = false;
   while (clock_->now() - start < timeout_) {
     {
       std::lock_guard<std::mutex> lock(mutex_);
@@ -108,5 +109,6 @@ bool InputAtWaypoint::processAtWaypoint(
 
 }  // namespace nav2_waypoint_follower
 
-PLUGINLIB_EXPORT_CLASS(nav2_waypoint_follower::InputAtWaypoint,
+PLUGINLIB_EXPORT_CLASS(
+  nav2_waypoint_follower::InputAtWaypoint,
   nav2_core::WaypointTaskExecutor)
