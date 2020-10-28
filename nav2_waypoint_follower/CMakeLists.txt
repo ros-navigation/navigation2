@@ -58,7 +58,11 @@ ament_target_dependencies(simple_waypoint_task_executor ${dependencies})
 # prevent pluginlib from using boost
 target_compile_definitions(simple_waypoint_task_executor PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
-install(TARGETS ${library_name} simple_waypoint_task_executor
+add_library(input_at_waypoint SHARED plugins/input_at_waypoint.cpp)
+ament_target_dependencies(input_at_waypoint ${dependencies})
+target_compile_definitions(input_at_waypoint PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
+install(TARGETS ${library_name} simple_waypoint_task_executor input_at_waypoint
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -78,7 +82,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(simple_waypoint_task_executor)
+ament_export_libraries(simple_waypoint_task_executor input_at_waypoint)
 
 pluginlib_export_plugin_description_file(nav2_waypoint_follower plugins.xml)
 
