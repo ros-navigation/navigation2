@@ -35,6 +35,8 @@ void PhotoAtWaypoint::initialize(
 {
   auto node = parent.lock();
 
+  curr_frame_msg_ = std::make_shared<sensor_msgs::msg::Image>();
+
   node->declare_parameter(plugin_name + ".enabled", rclcpp::ParameterValue(true));
   node->declare_parameter(
     plugin_name + ".image_topic",
@@ -44,14 +46,35 @@ void PhotoAtWaypoint::initialize(
     rclcpp::ParameterValue("/tmp/waypoint_images"));
   node->declare_parameter(plugin_name + ".image_format", rclcpp::ParameterValue("png"));
 
+  std::string save_dir_as_string;
   node->get_parameter(plugin_name + ".enabled", is_enabled_);
   node->get_parameter(plugin_name + ".image_topic", image_topic_);
-  node->get_parameter(plugin_name + ".save_dir", directory_to_save_images_);
+  node->get_parameter(plugin_name + ".save_dir", save_dir_as_string);
   node->get_parameter(plugin_name + ".image_format", image_format_);
+
+  // get inputted save directory and make sure it exists, if not log and create  it
+  save_dir_ = save_dir_as_string;
+  if (!std::experimental::filesystem::exists(save_dir_)) {
+    RCLCPP_WARN(
+      logger_,
+      "Provided save directory for photo at waypoint plugin does not exist,"
+      "provided directory is: %s, the directory will be created automatically.",
+      save_dir_.c_str()
+    );
+    if (!std::experimental::filesystem::create_directory(save_dir_)) {
+      RCLCPP_ERROR(
+        logger_,
+        "Failed to create directory!: %s required by photo at waypoint plugin, "
+        "exiting the plugin with failure!",
+        save_dir_.c_str()
+      );
+      is_enabled_ = false;
+    }
+  }
 
   if (!is_enabled_) {
     RCLCPP_INFO(
-      logger_, "Waypoint task executor plugin is disabled.");
+      logger_, "Photo at waypoint plugin is disabled.");
   } else {
     RCLCPP_INFO(
       logger_, "Initializing photo at waypoint plugin, subscribing to camera topic named; %s",
@@ -73,29 +96,11 @@ bool PhotoAtWaypoint::processAtWaypoint(
     return true;
   }
   try {
-    // get inputted save directory and make sure it exists, if not log and create  it
-    std::experimental::filesystem::path save_dir = directory_to_save_images_;
-    if (!std::experimental::filesystem::exists(save_dir)) {
-      RCLCPP_WARN(
-        logger_,
-        "Provided save directory for photo at waypoint plugin does not exist,"
-        "providied directory is: %s directory will be created automatically.",
-        save_dir.c_str()
-      );
-      if (!std::experimental::filesystem::create_directory(save_dir)) {
-        RCLCPP_ERROR(
-          logger_,
-          "Failed to create directory!: %s required by photo at waypoint plugin, "
-          "exiting the plugin with failure!",
-          save_dir.c_str()
-        );
-      }
-    }
     // construct the full path to image filename
     std::experimental::filesystem::path file_name = std::to_string(
       curr_waypoint_index) + "_" +
       std::to_string(curr_pose.header.stamp.sec) + "." + image_format_;
-    std::experimental::filesystem::path full_path_image_path = save_dir / file_name;
+    std::experimental::filesystem::path full_path_image_path = save_dir_ / file_name;
 
     // save the taken photo at this waypoint to given directory
     std::lock_guard<std::mutex> guard(global_mutex_);
@@ -105,7 +110,7 @@ bool PhotoAtWaypoint::processAtWaypoint(
     RCLCPP_INFO(
       logger_,
       "Photo has been taken sucessfully at waypoint %i", curr_waypoint_index);
-  } catch (const cv::Exception & e) {
+  } catch (const std::exception & e) {
     RCLCPP_ERROR(
       logger_,
       "Couldn't take photo at waypoint %i! Caught exception: %s \n"
@@ -121,23 +126,6 @@ void PhotoAtWaypoint::imageCallback(const sensor_msgs::msg::Image::SharedPtr msg
 {
   std::lock_guard<std::mutex> guard(global_mutex_);
   curr_frame_msg_ = msg;
-}
-
-int PhotoAtWaypoint::encoding2mat_type(const std::string & encoding)
-{
-  if (encoding == "mono8") {
-    return CV_8UC1;
-  } else if (encoding == "bgr8") {
-    return CV_8UC3;
-  } else if (encoding == "mono16") {
-    return CV_16SC1;
-  } else if (encoding == "rgba8") {
-    return CV_8UC4;
-  } else if (encoding == "rgb8") {
-    return CV_8UC3;
-  } else {
-    throw std::runtime_error("Unsupported mat type");
-  }
 }
 
 void PhotoAtWaypoint::deepCopyMsg2Mat(

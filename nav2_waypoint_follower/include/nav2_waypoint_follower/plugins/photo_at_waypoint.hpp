@@ -86,19 +86,11 @@ public:
    */
   static void deepCopyMsg2Mat(const sensor_msgs::msg::Image::SharedPtr & msg, cv::Mat & mat);
 
-  /**
-   * @brief given encoding string , determine corresponding CV format
-   *
-   * @param encoding
-   * @return int
-   */
-  static int encoding2mat_type(const std::string & encoding);
-
 protected:
   // to ensure safety when accessing global var curr_frame_
   std::mutex global_mutex_;
   // the taken photos will be saved under this directory
-  std::string directory_to_save_images_;
+  std::experimental::filesystem::path save_dir_;
   // .png ? .jpg ? or some other well known format
   std::string image_format_;
   // the topic to subscribe in order capture a frame
