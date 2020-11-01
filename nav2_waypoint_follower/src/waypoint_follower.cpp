@@ -35,7 +35,7 @@ WaypointFollower::WaypointFollower()
   declare_parameter("loop_rate", 20);
   nav2_util::declare_parameter_if_not_declared(
     this, std::string("waypoint_task_executor_plugin"),
-    rclcpp::ParameterValue(std::string("waypoint_task_executor")));
+    rclcpp::ParameterValue(std::string("wait_at_waypoint")));
   nav2_util::declare_parameter_if_not_declared(
     this, std::string("waypoint_task_executor_plugin.plugin"),
     rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));

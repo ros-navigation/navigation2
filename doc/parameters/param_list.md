@@ -541,6 +541,26 @@ When `planner_plugins` parameter is not overridden, the following default plugin
 | `<waypoint task executor>`.enabled | true | Whether it is enabled |
 | `<waypoint task executor>`.waypoint_pause_duration | 0 | Amount of time in milliseconds, for robot to sleep/wait after each waypoint is reached. If zero, robot will directly continue to next waypoint. |
 
+## PhotoAtWaypoint plugin
+
+* `<waypoint task executor>`: Name corresponding to the `nav2_waypoint_follower::PhotoAtWaypoint` plugin. 
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<waypoint task executor>`.enabled | true | Whether it is enabled |
+| `<waypoint task executor>`.image_topic | "/camera/color/image_raw" | Camera image topic name to susbcribe |
+| `<waypoint task executor>`.save_dir | "/tmp/waypoint_images" | Path to directory to save taken photos |
+| `<waypoint task executor>`.image_format | "png" | Desired image format A few other options; "jpeg" , "jpg", "pgm", "tiff" |
+
+## InputAtWaypoint plugin
+
+* `<waypoint task executor>`: Name corresponding to the `nav2_waypoint_follower::InputAtWaypoint` plugin. 
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<waypoint task executor>`.timeout | 10.0 | Amount of time in seconds to wait for user input before moving on to the next waypoint. |
+| `<waypoint task executor>`.input_topic | "input_at_waypoint/input" | Topic input is published to to indicate to move to the next waypoint, in `std_msgs/Empty`. |
+
 # recoveries
 
 ## recovery_server
