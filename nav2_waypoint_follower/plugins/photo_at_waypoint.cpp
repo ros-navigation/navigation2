@@ -73,7 +73,10 @@ void PhotoAtWaypoint::initialize(
       }
     }
   } catch (const std::exception & e) {
-    std::cerr << e.what() << '\n';
+    RCLCPP_ERROR(
+      logger_, "Exception (%s) thrown while attempting to create image capture directory."
+      " This task executor is being disabled as it cannot save images.");
+    is_enabled_ = false;
   }
 
   if (!is_enabled_) {
