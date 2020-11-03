@@ -1,6 +1,10 @@
 # Navigation 2
 [![Build Status](https://img.shields.io/docker/pulls/rosplanning/navigation2.svg?maxAge=2592000)](https://hub.docker.com/r/rosplanning/navigation2) [![Build Status](https://img.shields.io/docker/cloud/build/rosplanning/navigation2.svg?label=docker%20build)](https://hub.docker.com/r/rosplanning/navigation2) [![codecov](https://codecov.io/gh/ros-planning/navigation2/branch/main/graph/badge.svg)](https://codecov.io/gh/ros-planning/navigation2)
 
+<p align="center">
+  <img src="doc/nav2_logo.png" />
+</p>
+
 For detailed instructions on how to:
 - [Getting Started](https://navigation.ros.org/getting_started/index.html)
 - [Build](https://navigation.ros.org/build_instructions/index.html#build)
