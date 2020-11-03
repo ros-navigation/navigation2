@@ -157,6 +157,7 @@ void KeepoutFilter::process(
   }
 
   tf2::Transform tf2_transform;
+  tf2_transform.setIdentity();  // initialize by identical transform
   int mg_min_x, mg_min_y;  // masger_grid indexes of bottom-left window corner
   int mg_max_x, mg_max_y;  // masger_grid indexes of top-right window corner
 
