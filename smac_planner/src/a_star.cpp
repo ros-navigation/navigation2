@@ -386,7 +386,7 @@ AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getAnalyticPath(
       Coordinates initial_node_coords = next->pose;
       proposed_coordinates = {static_cast<float>(reals[0]), static_cast<float>(reals[1]), angle};
       next->setPose(proposed_coordinates);
-      if (next->isNodeValid(_traverse_unknown, _collision_checker) && next != prev) {
+      if (next->isNodeValid(_traverse_unknown, _collision_checker) && next != prev && !next->wasVisited()) {
         // Save the node, and its previous coordinates in case we need to abort
         possible_nodes.emplace_back(next, initial_node_coords);
         prev = next;
