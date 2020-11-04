@@ -45,11 +45,11 @@ SmacPlanner::~SmacPlanner()
 }
 
 void SmacPlanner::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
-  _node = parent.lock();
+  _node = parent;
   _costmap = costmap_ros->getCostmap();
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
