@@ -414,7 +414,9 @@ AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getAnalyticPath(
     n->parent = prev;
     prev = n;
   }
-  _goal->parent = prev;
+  if (_goal != prev) {
+    _goal->parent = prev;
+  }
   return _goal;
 }
 
