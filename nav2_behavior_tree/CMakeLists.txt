@@ -6,9 +6,9 @@ find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
@@ -31,6 +31,7 @@ set(dependencies
   rclcpp_action
   rclcpp_lifecycle
   geometry_msgs
+  sensor_msgs
   nav2_msgs
   nav_msgs
   behaviortree_cpp_v3
@@ -88,6 +89,9 @@ list(APPEND plugin_libs nav2_distance_traveled_condition_bt_node)
 
 add_library(nav2_initial_pose_received_condition_bt_node SHARED plugins/condition/initial_pose_received_condition.cpp)
 list(APPEND plugin_libs nav2_initial_pose_received_condition_bt_node)
+
+add_library(nav2_is_battery_low_condition_bt_node SHARED plugins/condition/is_battery_low_condition.cpp)
+list(APPEND plugin_libs nav2_is_battery_low_condition_bt_node)
 
 add_library(nav2_reinitialize_global_localization_service_bt_node SHARED plugins/action/reinitialize_global_localization_service.cpp)
 list(APPEND plugin_libs nav2_reinitialize_global_localization_service_bt_node)
