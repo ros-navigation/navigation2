@@ -412,10 +412,12 @@ AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getAnalyticPath(
   for (const auto & node_pose : possible_nodes) {
     const auto & n = node_pose.first;
     n->parent = prev;
+    n->visited();
     prev = n;
   }
   if (_goal != prev) {
     _goal->parent = prev;
+    _goal->visited();
   }
   return _goal;
 }
