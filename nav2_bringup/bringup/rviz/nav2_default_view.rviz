@@ -249,6 +249,20 @@ Visualization Manager:
             Value: /global_costmap/costmap
           Use Timestamp: false
           Value: true
+        - Alpha: 0.3
+          Class: rviz_default_plugins/Map
+          Color Scheme: costmap
+          Draw Behind: false
+          Enabled: true
+          Name: Downsampled Costmap
+          Topic:
+            Depth: 1
+            Durability Policy: Transient Local
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /downsampled_costmap
+          Use Timestamp: false
+          Value: true
         - Alpha: 1
           Buffer Length: 1
           Class: rviz_default_plugins/Path
