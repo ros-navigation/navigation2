@@ -16,6 +16,7 @@
 
 #include <fstream>
 #include <memory>
+#include <streambuf>
 #include <string>
 #include <utility>
 #include <vector>
@@ -51,7 +52,7 @@ BtNavigator::BtNavigator()
     "nav2_distance_controller_bt_node",
     "nav2_speed_controller_bt_node",
     "nav2_truncate_path_action_bt_node",
-    "nav2_goal_updater_node_bt_node",
+    "nav2_change_goal_node_bt_node",
     "nav2_recovery_node_bt_node",
     "nav2_pipeline_sequence_bt_node",
     "nav2_round_robin_node_bt_node",
@@ -71,6 +72,7 @@ BtNavigator::BtNavigator()
 
 BtNavigator::~BtNavigator()
 {
+  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn
@@ -244,7 +246,7 @@ BtNavigator::navigateToPose()
   auto bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
 
   // Empty id in request is default for backward compatibility
-  bt_xml_filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
+  bt_xml_filename = bt_xml_filename == "" ? default_bt_xml_filename_ : bt_xml_filename;
 
   if (!loadBehaviorTree(bt_xml_filename)) {
     RCLCPP_ERROR(

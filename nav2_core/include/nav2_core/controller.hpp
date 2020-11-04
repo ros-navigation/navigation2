@@ -72,7 +72,7 @@ public:
    * @param  costmap_ros A pointer to the costmap
    */
   virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr &,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr &,
     std::string name, const std::shared_ptr<tf2_ros::Buffer> &,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> &) = 0;
 

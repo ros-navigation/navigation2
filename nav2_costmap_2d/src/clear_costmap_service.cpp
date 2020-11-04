@@ -32,29 +32,27 @@ using ClearAroundRobot = nav2_msgs::srv::ClearCostmapAroundRobot;
 using ClearEntirely = nav2_msgs::srv::ClearEntireCostmap;
 
 ClearCostmapService::ClearCostmapService(
-  const nav2_util::LifecycleNode::WeakPtr & parent,
+  nav2_util::LifecycleNode::SharedPtr node,
   Costmap2DROS & costmap)
-: costmap_(costmap)
+: node_(node), costmap_(costmap)
 {
-  auto node = parent.lock();
-  logger_ = node->get_logger();
   reset_value_ = costmap_.getCostmap()->getDefaultValue();
 
-  node->get_parameter("clearable_layers", clearable_layers_);
+  node_->get_parameter("clearable_layers", clearable_layers_);
 
-  clear_except_service_ = node->create_service<ClearExceptRegion>(
+  clear_except_service_ = node_->create_service<ClearExceptRegion>(
     "clear_except_" + costmap_.getName(),
     std::bind(
       &ClearCostmapService::clearExceptRegionCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  clear_around_service_ = node->create_service<ClearAroundRobot>(
+  clear_around_service_ = node_->create_service<ClearAroundRobot>(
     "clear_around_" + costmap.getName(),
     std::bind(
       &ClearCostmapService::clearAroundRobotCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  clear_entire_service_ = node->create_service<ClearEntirely>(
+  clear_entire_service_ = node_->create_service<ClearEntirely>(
     "clear_entirely_" + costmap_.getName(),
     std::bind(
       &ClearCostmapService::clearEntireCallback, this,
@@ -67,7 +65,7 @@ void ClearCostmapService::clearExceptRegionCallback(
   const shared_ptr<ClearExceptRegion::Response>/*response*/)
 {
   RCLCPP_INFO(
-    logger_,
+    node_->get_logger(),
     "Received request to clear except a region the " + costmap_.getName());
 
   clearExceptRegion(request->reset_distance);
@@ -79,7 +77,7 @@ void ClearCostmapService::clearAroundRobotCallback(
   const shared_ptr<ClearAroundRobot::Response>/*response*/)
 {
   RCLCPP_INFO(
-    logger_,
+    node_->get_logger(),
     "Received request to clear around robot the " + costmap_.getName());
 
   if ((request->window_size_x == 0) || (request->window_size_y == 0)) {
@@ -95,9 +93,7 @@ void ClearCostmapService::clearEntireCallback(
   const std::shared_ptr<ClearEntirely::Request>/*request*/,
   const std::shared_ptr<ClearEntirely::Response>/*response*/)
 {
-  RCLCPP_INFO(
-    logger_,
-    "Received request to clear entirely the " + costmap_.getName());
+  RCLCPP_INFO(node_->get_logger(), "Received request to clear entirely the " + costmap_.getName());
 
   clearEntirely();
 }
@@ -107,9 +103,7 @@ void ClearCostmapService::clearExceptRegion(const double reset_distance)
   double x, y;
 
   if (!getPosition(x, y)) {
-    RCLCPP_ERROR(
-      logger_,
-      "Cannot clear map because robot pose cannot be retrieved.");
+    RCLCPP_ERROR(node_->get_logger(), "Cannot clear map because robot pose cannot be retrieved.");
     return;
   }
 
@@ -128,9 +122,7 @@ void ClearCostmapService::clearAroundRobot(double window_size_x, double window_s
   double pose_x, pose_y;
 
   if (!getPosition(pose_x, pose_y)) {
-    RCLCPP_ERROR(
-      logger_,
-      "Cannot clear map because robot pose cannot be retrieved.");
+    RCLCPP_ERROR(node_->get_logger(), "Cannot clear map because robot pose cannot be retrieved.");
     return;
   }
 

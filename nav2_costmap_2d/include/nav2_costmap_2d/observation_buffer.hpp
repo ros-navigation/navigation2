@@ -73,7 +73,7 @@ public:
    * @param  tf_tolerance The amount of time to wait for a transform to be available when setting a new global frame
    */
   ObservationBuffer(
-    const nav2_util::LifecycleNode::WeakPtr & parent,
+    nav2_util::LifecycleNode::SharedPtr nh,
     std::string topic_name,
     double observation_keep_time,
     double expected_update_rate,
@@ -142,11 +142,10 @@ private:
    */
   void purgeStaleObservations();
 
-  rclcpp::Clock::SharedPtr clock_;
-  rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
   tf2_ros::Buffer & tf2_buffer_;
   const rclcpp::Duration observation_keep_time_;
   const rclcpp::Duration expected_update_rate_;
+  nav2_util::LifecycleNode::SharedPtr nh_;
   rclcpp::Time last_updated_;
   std::string global_frame_;
   std::string sensor_frame_;

@@ -40,10 +40,10 @@ public:
 
   /**
    * @brief Initialize parameters for ProgressChecker
-   * @param parent Node pointer
+   * @param node Node pointer
    */
   virtual void initialize(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
     const std::string & plugin_name) = 0;
   /**
    * @brief Checks if the robot has moved compare to previous

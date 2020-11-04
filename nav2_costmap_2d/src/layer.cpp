@@ -46,25 +46,17 @@ Layer::Layer()
 
 void
 Layer::initialize(
-  LayeredCostmap * parent,
-  std::string name,
-  tf2_ros::Buffer * tf,
-  const nav2_util::LifecycleNode::WeakPtr & node,
+  LayeredCostmap * parent, std::string name, tf2_ros::Buffer * tf,
+  nav2_util::LifecycleNode::SharedPtr node,
   rclcpp::Node::SharedPtr client_node,
   rclcpp::Node::SharedPtr rclcpp_node)
 {
   layered_costmap_ = parent;
   name_ = name;
   tf_ = tf;
+  node_ = node;
   client_node_ = client_node;
   rclcpp_node_ = rclcpp_node;
-  node_ = node;
-
-  {
-    auto node_shared_ptr = node_.lock();
-    logger_ = node_shared_ptr->get_logger();
-    clock_ = node_shared_ptr->get_clock();
-  }
 
   onInitialize();
 }
@@ -77,37 +69,23 @@ Layer::getFootprint() const
 
 void
 Layer::declareParameter(
-  const std::string & param_name,
-  const rclcpp::ParameterValue & value)
+  const std::string & param_name, const rclcpp::ParameterValue & value)
 {
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
   local_params_.insert(param_name);
-  nav2_util::declare_parameter_if_not_declared(
-    node, getFullName(param_name), value);
+  nav2_util::declare_parameter_if_not_declared(node_, getFullName(param_name), value);
 }
 
 bool
 Layer::hasParameter(const std::string & param_name)
 {
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-  return node->has_parameter(getFullName(param_name));
+  return node_->has_parameter(getFullName(param_name));
 }
 
 void
 Layer::undeclareAllParameters()
 {
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
   for (auto & param_name : local_params_) {
-    node->undeclare_parameter(getFullName(param_name));
+    node_->undeclare_parameter(getFullName(param_name));
   }
   local_params_.clear();
 }

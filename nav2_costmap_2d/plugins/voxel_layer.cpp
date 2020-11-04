@@ -72,32 +72,27 @@ void VoxelLayer::onInitialize()
   declareParameter("combination_method", rclcpp::ParameterValue(1));
   declareParameter("publish_voxel_map", rclcpp::ParameterValue(false));
 
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  node->get_parameter(name_ + "." + "enabled", enabled_);
-  node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
-  node->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
-  node->get_parameter(name_ + "." + "z_voxels", size_z_);
-  node->get_parameter(name_ + "." + "origin_z", origin_z_);
-  node->get_parameter(name_ + "." + "z_resolution", z_resolution_);
-  node->get_parameter(name_ + "." + "unknown_threshold", unknown_threshold_);
-  node->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
-  node->get_parameter(name_ + "." + "combination_method", combination_method_);
-  node->get_parameter(name_ + "." + "publish_voxel_map", publish_voxel_);
+  node_->get_parameter(name_ + "." + "enabled", enabled_);
+  node_->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  node_->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
+  node_->get_parameter(name_ + "." + "z_voxels", size_z_);
+  node_->get_parameter(name_ + "." + "origin_z", origin_z_);
+  node_->get_parameter(name_ + "." + "z_resolution", z_resolution_);
+  node_->get_parameter(name_ + "." + "unknown_threshold", unknown_threshold_);
+  node_->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
+  node_->get_parameter(name_ + "." + "combination_method", combination_method_);
+  node_->get_parameter(name_ + "." + "publish_voxel_map", publish_voxel_);
 
   auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 
   if (publish_voxel_) {
-    voxel_pub_ = node->create_publisher<nav2_msgs::msg::VoxelGrid>(
+    voxel_pub_ = node_->create_publisher<nav2_msgs::msg::VoxelGrid>(
       "voxel_grid", custom_qos);
   }
 
   voxel_pub_->on_activate();
 
-  clearing_endpoints_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud>(
+  clearing_endpoints_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud>(
     "clearing_endpoints", custom_qos);
 
   unknown_threshold_ += (VOXEL_BITS - size_z_);
@@ -230,7 +225,7 @@ void VoxelLayer::updateBounds(
     grid_msg->resolutions.y = resolution_;
     grid_msg->resolutions.z = z_resolution_;
     grid_msg->header.frame_id = global_frame_;
-    grid_msg->header.stamp = clock_->now();
+    grid_msg->header.stamp = node_->now();
 
     voxel_pub_->publish(std::move(grid_msg));
   }
@@ -312,22 +307,13 @@ void VoxelLayer::raytraceFreespace(
 
   if (!worldToMap3DFloat(ox, oy, oz, sensor_x, sensor_y, sensor_z)) {
     RCLCPP_WARN(
-      logger_,
+      node_->get_logger(),
       "Sensor origin: (%.2f, %.2f, %.2f), out of map bounds. The costmap can't raytrace for it.",
       ox, oy, oz);
     return;
   }
 
-  bool publish_clearing_points;
-
-  {
-    auto node = node_.lock();
-    if (!node) {
-      throw std::runtime_error{"Failed to lock node"};
-    }
-    publish_clearing_points = (node->count_subscribers("clearing_endpoints") > 0);
-  }
-
+  bool publish_clearing_points = (node_->count_subscribers("clearing_endpoints") > 0);
   if (publish_clearing_points) {
     clearing_endpoints_->points.clear();
     clearing_endpoints_->points.reserve(clearing_observation_cloud_size);

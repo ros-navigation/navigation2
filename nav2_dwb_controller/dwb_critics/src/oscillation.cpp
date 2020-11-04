@@ -91,27 +91,20 @@ bool OscillationCritic::CommandTrend::hasSignFlipped()
 
 void OscillationCritic::onInit()
 {
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  clock_ = node->get_clock();
-
   oscillation_reset_dist_ = nav_2d_utils::searchAndGetParam(
-    node,
+    nh_,
     dwb_plugin_name_ + "." + name_ + ".oscillation_reset_dist", 0.05);
   oscillation_reset_dist_sq_ = oscillation_reset_dist_ * oscillation_reset_dist_;
   oscillation_reset_angle_ = nav_2d_utils::searchAndGetParam(
-    node,
+    nh_,
     dwb_plugin_name_ + "." + name_ + ".oscillation_reset_angle", 0.2);
   oscillation_reset_time_ = rclcpp::Duration::from_seconds(
     nav_2d_utils::searchAndGetParam(
-      node,
+      nh_,
       dwb_plugin_name_ + "." + name_ + ".oscillation_reset_time", -1.0));
 
   nav2_util::declare_parameter_if_not_declared(
-    node,
+    nh_,
     dwb_plugin_name_ + "." + name_ + ".x_only_threshold", rclcpp::ParameterValue(0.05));
 
   /**
@@ -121,23 +114,23 @@ void OscillationCritic::onInit()
    * If min_trans_vel is set in the namespace, as it used to be used for trajectory generation, complain then use that.
    * Otherwise, set x_only_threshold_ to 0.05
    */
-  node->get_parameter(dwb_plugin_name_ + "." + name_ + ".x_only_threshold", x_only_threshold_);
+  nh_->get_parameter(dwb_plugin_name_ + "." + name_ + ".x_only_threshold", x_only_threshold_);
   // TODO(crdelsey): How to handle searchParam?
   // std::string resolved_name;
-  // if (node->hasParam("x_only_threshold"))
+  // if (nh_->hasParam("x_only_threshold"))
   // {
-  //   node->param("x_only_threshold", x_only_threshold_);
+  //   nh_->param("x_only_threshold", x_only_threshold_);
   // }
-  // else if (node->searchParam("min_speed_xy", resolved_name))
+  // else if (nh_->searchParam("min_speed_xy", resolved_name))
   // {
-  //   node->param(resolved_name, x_only_threshold_);
+  //   nh_->param(resolved_name, x_only_threshold_);
   // }
-  // else if (node->searchParam("min_trans_vel", resolved_name))
+  // else if (nh_->searchParam("min_trans_vel", resolved_name))
   // {
   //   ROS_WARN_NAMED("OscillationCritic",
   //     "Parameter min_trans_vel is deprecated. "
   //     "Please use the name min_speed_xy or x_only_threshold instead.");
-  //   node->param(resolved_name, x_only_threshold_);
+  //   nh_->param(resolved_name, x_only_threshold_);
   // }
   // else
   // {
@@ -161,7 +154,7 @@ void OscillationCritic::debrief(const nav_2d_msgs::msg::Twist2D & cmd_vel)
 {
   if (setOscillationFlags(cmd_vel)) {
     prev_stationary_pose_ = pose_;
-    prev_reset_time_ = clock_->now();
+    prev_reset_time_ = nh_->now();
   }
 
   // if we've got restrictions... check if we can reset any oscillation flags
@@ -190,7 +183,7 @@ bool OscillationCritic::resetAvailable()
     }
   }
   if (oscillation_reset_time_ >= rclcpp::Duration::from_seconds(0.0)) {
-    auto t_diff = (clock_->now() - prev_reset_time_);
+    auto t_diff = (nh_->now() - prev_reset_time_);
     if (t_diff > oscillation_reset_time_) {
       return true;
     }

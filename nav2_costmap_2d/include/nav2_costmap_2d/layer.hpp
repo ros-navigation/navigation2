@@ -62,7 +62,7 @@ public:
     LayeredCostmap * parent,
     std::string name,
     tf2_ros::Buffer * tf,
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    nav2_util::LifecycleNode::SharedPtr node,
     rclcpp::Node::SharedPtr client_node,
     rclcpp::Node::SharedPtr rclcpp_node);
   virtual void deactivate() {} /** @brief Stop publishers. */
@@ -123,9 +123,7 @@ public:
   const std::vector<geometry_msgs::msg::Point> & getFootprint() const;
 
   /** @brief Convenience functions for declaring ROS parameters */
-  void declareParameter(
-    const std::string & param_name,
-    const rclcpp::ParameterValue & value);
+  void declareParameter(const std::string & param_name, const rclcpp::ParameterValue & value);
   bool hasParameter(const std::string & param_name);
   void undeclareAllParameters();
   std::string getFullName(const std::string & param_name);
@@ -134,11 +132,9 @@ protected:
   LayeredCostmap * layered_costmap_;
   std::string name_;
   tf2_ros::Buffer * tf_;
+  nav2_util::LifecycleNode::SharedPtr node_;
   rclcpp::Node::SharedPtr client_node_;
   rclcpp::Node::SharedPtr rclcpp_node_;
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
-  rclcpp::Clock::SharedPtr clock_;
-  rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
 
   /** @brief This is called at the end of initialize().  Override to
    * implement subclass-specific initialization.

@@ -21,25 +21,35 @@ namespace nav2_costmap_2d
 {
 
 CostmapSubscriber::CostmapSubscriber(
-  const nav2_util::LifecycleNode::WeakPtr & parent,
+  nav2_util::LifecycleNode::SharedPtr node,
   const std::string & topic_name)
-: topic_name_(topic_name)
-{
-  auto node = parent.lock();
-  costmap_sub_ = node->create_subscription<nav2_msgs::msg::Costmap>(
-    topic_name_,
-    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1));
-}
+: CostmapSubscriber(node->get_node_base_interface(),
+    node->get_node_topics_interface(),
+    node->get_node_logging_interface(),
+    topic_name)
+{}
 
 CostmapSubscriber::CostmapSubscriber(
-  const rclcpp::Node::WeakPtr & parent,
+  rclcpp::Node::SharedPtr node,
   const std::string & topic_name)
-: topic_name_(topic_name)
+: CostmapSubscriber(node->get_node_base_interface(),
+    node->get_node_topics_interface(),
+    node->get_node_logging_interface(),
+    topic_name)
+{}
+
+CostmapSubscriber::CostmapSubscriber(
+  const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
+  const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
+  const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
+  const std::string & topic_name)
+: node_base_(node_base),
+  node_topics_(node_topics),
+  node_logging_(node_logging),
+  topic_name_(topic_name)
 {
-  auto node = parent.lock();
-  costmap_sub_ = node->create_subscription<nav2_msgs::msg::Costmap>(
-    topic_name_,
+  costmap_sub_ = rclcpp::create_subscription<nav2_msgs::msg::Costmap>(
+    node_topics_, topic_name_,
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1));
 }

@@ -88,17 +88,11 @@ InflationLayer::onInitialize()
   declareParameter("inflate_unknown", rclcpp::ParameterValue(false));
   declareParameter("inflate_around_unknown", rclcpp::ParameterValue(false));
 
-  {
-    auto node = node_.lock();
-    if (!node) {
-      throw std::runtime_error{"Failed to lock node"};
-    }
-    node->get_parameter(name_ + "." + "enabled", enabled_);
-    node->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
-    node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
-    node->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
-    node->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
-  }
+  node_->get_parameter(name_ + "." + "enabled", enabled_);
+  node_->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
+  node_->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
+  node_->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
+  node_->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
 
   current_ = true;
   seen_.clear();
@@ -160,7 +154,8 @@ InflationLayer::onFootprintChanged()
   need_reinflation_ = true;
 
   RCLCPP_DEBUG(
-    logger_, "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
+    rclcpp::get_logger(
+      "nav2_costmap_2d"), "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
     " inscribed_radius_ = %.3f, inflation_radius_ = %.3f",
     layered_costmap_->getFootprint().size(), inscribed_radius_, inflation_radius_);
 }
@@ -179,7 +174,7 @@ InflationLayer::updateCosts(
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)
   for (auto & dist : inflation_cells_) {
     RCLCPP_FATAL_EXPRESSION(
-      logger_,
+      rclcpp::get_logger("nav2_costmap_2d"),
       !dist.empty(), "The inflation list must be empty at the beginning of inflation");
   }
 
@@ -188,7 +183,8 @@ InflationLayer::updateCosts(
 
   if (seen_.size() != size_x * size_y) {
     RCLCPP_WARN(
-      logger_, "InflationLayer::updateCosts(): seen_ vector size is wrong");
+      rclcpp::get_logger(
+        "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ vector size is wrong");
     seen_ = std::vector<bool>(size_x * size_y, false);
   }
 

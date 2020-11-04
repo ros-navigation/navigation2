@@ -35,6 +35,7 @@ WaypointFollower::WaypointFollower()
 
 WaypointFollower::~WaypointFollower()
 {
+  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn
