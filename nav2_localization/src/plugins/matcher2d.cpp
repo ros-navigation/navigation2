@@ -98,9 +98,11 @@ void LikelihoodFieldMatcher2dPDF::preComputeLikelihoodField()
 	}
 
 	// Depth first search for other cells
-	std::vector<bool> visited(map_->info.width*map_->info.height, false);
 	for(auto index : occupied_cells)
+	{
+		std::vector<bool> visited(map_->info.width*map_->info.height, false);
 		DFS(index, index, visited);
+	}
 
 	// Apply zero-mean norrmal distribution
 	for(auto index=0; index < map_->info.width*map_->info.height; index++)
