@@ -12,8 +12,8 @@ class DiffDriveOdomMotionModelPDF : public SampleMotionModelPDF
 {
 public:
     // x_t is made up of x, y adn theta, hence dim = 3
-    // There are 3 conditional arguments: the previous pose, the previous odom and the current odom
-    DiffDriveOdomMotionModelPDF() : SampleMotionModelPDF(3, 3) {}
+    // There are 2 conditional arguments: the previous pose and the change in odom
+    DiffDriveOdomMotionModelPDF() : SampleMotionModelPDF(3, 2) {}
 
     // Use default sampling method
     bool SampleFrom(BFL::Sample<geometry_msgs::msg::TransformStamped>& one_sample,	

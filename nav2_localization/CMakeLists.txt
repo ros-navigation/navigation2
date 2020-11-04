@@ -47,7 +47,7 @@ ament_target_dependencies(sample_motion_model ${dependencies})
 add_library(matcher2d SHARED src/plugins/matcher2d.cpp)
 ament_target_dependencies(matcher2d ${dependencies})
 
-add_library(solver SHARED src/plugins/solver.cpp)
+add_library(solver SHARED src/plugins/solver.cpp src/custom_particle_filter.cpp)
 ament_target_dependencies(solver ${dependencies})
 target_link_libraries(solver orocos-bfl)
 

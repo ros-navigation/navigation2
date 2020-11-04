@@ -25,7 +25,8 @@ void DummySolver2d::CreateParticleFilter(unsigned int NUM_SAMPLES, unsigned int 
 	/******************************
 	 * Construction of the Filter *
 	 ******************************/
-	pf_ = new CustomParticleFilter(prior_discr_.get(), 0.5, NUM_SAMPLES/4.0);
+
+	pf_ = new CustomParticleFilter(prior_discr_.get(), 0, NUM_SAMPLES/4.0);
 }
 
 geometry_msgs::msg::TransformStamped DummySolver2d::solve(

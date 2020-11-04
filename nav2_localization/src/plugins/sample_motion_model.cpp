@@ -16,30 +16,24 @@ bool DiffDriveOdomMotionModelPDF::SampleFrom(
     void * args) const	
 {
     // Get conditional arguments	
-    geometry_msgs::msg::TransformStamped prev_odom = ConditionalArgumentGet(0);	
-    geometry_msgs::msg::TransformStamped curr_odom = ConditionalArgumentGet(1);	
-    geometry_msgs::msg::TransformStamped prev_pose = ConditionalArgumentGet(2);	
+    geometry_msgs::msg::TransformStamped delta_odom = ConditionalArgumentGet(0);	
+    geometry_msgs::msg::TransformStamped prev_pose = ConditionalArgumentGet(1);
 
-    double x_bar_prime = curr_odom.transform.translation.x;	
-    double y_bar_prime = curr_odom.transform.translation.y;	
-    double theta_bar_prime = tf2::getYaw(curr_odom.transform.rotation);	
-
-    double x_bar = prev_odom.transform.translation.x;	
-    double y_bar = prev_odom.transform.translation.y;	
-    double theta_bar = tf2::getYaw(prev_odom.transform.rotation);	
+    // TODO: double check the maths here, this was taken from AMCL
+    double theta_bar = tf2::getYaw(prev_pose.transform.rotation) - tf2::getYaw(delta_odom.transform.rotation);
 
     double x = prev_pose.transform.translation.x;	
     double y = prev_pose.transform.translation.y;	
     double theta = tf2::getYaw(prev_pose.transform.rotation);	
 
-    double delta_rot_1 = atan2(y_bar_prime-y_bar, x_bar_prime-x_bar) - theta_bar;	
+    double delta_rot_1 = atan2(delta_odom.transform.translation.y, delta_odom.transform.translation.x) - theta_bar;	
     if(isnan(delta_rot_1) || isinf(delta_rot_1))	
     {	
         RCLCPP_ERROR(node_->get_logger(), "deltta_rot_1 is NAN or INF");	
         delta_rot_1 = 0.0; // TODO: consider a different value	
     }	
-    double delta_trans = hypot(x_bar_prime-x_bar, y_bar_prime-y_bar);	
-    double delta_rot_2 = theta_bar_prime - theta_bar - delta_rot_1;	
+    double delta_trans = hypot(delta_odom.transform.translation.x, delta_odom.transform.translation.y);	
+    double delta_rot_2 = tf2::getYaw(delta_odom.transform.rotation) - delta_rot_1;	
 
     std::random_device device_;	
     std::mt19937 generator_(device_());	
