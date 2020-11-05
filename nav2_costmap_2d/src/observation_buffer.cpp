@@ -40,9 +40,11 @@
 #include <list>
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include "tf2/convert.h"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
+using namespace std::chrono_literals;
 
 namespace nav2_costmap_2d
 {
@@ -180,7 +182,7 @@ void ObservationBuffer::purgeStaleObservations()
   if (!observation_list_.empty()) {
     std::list<Observation>::iterator obs_it = observation_list_.begin();
     // if we're keeping observations for no time... then we'll only keep one observation
-    if (observation_keep_time_ == rclcpp::Duration(0.0)) {
+    if (observation_keep_time_ == rclcpp::Duration(0.0s)) {
       observation_list_.erase(++obs_it, observation_list_.end());
       return;
     }
@@ -202,7 +204,7 @@ void ObservationBuffer::purgeStaleObservations()
 
 bool ObservationBuffer::isCurrent() const
 {
-  if (expected_update_rate_ == rclcpp::Duration(0.0)) {
+  if (expected_update_rate_ == rclcpp::Duration(0.0s)) {
     return true;
   }
 

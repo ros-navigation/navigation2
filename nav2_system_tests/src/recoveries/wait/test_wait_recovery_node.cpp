@@ -80,7 +80,7 @@ TEST_P(WaitRecoveryTestFixture, testSWaitRecovery)
   EXPECT_EQ(true, success);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
   WaitRecoveryTests,
   WaitRecoveryTestFixture,
   ::testing::Values(

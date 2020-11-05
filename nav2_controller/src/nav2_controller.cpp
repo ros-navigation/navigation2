@@ -339,7 +339,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
 
   auto end_pose = path.poses.back();
   end_pose.header.frame_id = path.header.frame_id;
-  rclcpp::Duration tolerance(costmap_ros_->getTransformTolerance() * 1e9);
+  rclcpp::Duration tolerance(rclcpp::Duration::from_seconds(costmap_ros_->getTransformTolerance()));
   nav_2d_utils::transformPose(
     costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
     end_pose, end_pose, tolerance);
