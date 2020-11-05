@@ -76,8 +76,6 @@ void PhotoAtWaypoint::initialize(
     RCLCPP_ERROR(
       logger_, "Exception (%s) thrown while attempting to create image capture directory."
       " This task executor is being disabled as it cannot save images.", e.what());
-      logger_, "Exception (%s) thrown while attempting to create image capture directory."
-      " This task executor is being disabled as it cannot save images.");
     is_enabled_ = false;
   }
 
