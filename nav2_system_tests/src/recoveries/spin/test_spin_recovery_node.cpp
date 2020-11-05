@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <gtest/gtest.h>
 #include <cmath>
 #include <tuple>
 #include <string>
@@ -76,7 +75,7 @@ TEST_P(SpinRecoveryTestFixture, testSpinRecovery)
   EXPECT_EQ(true, success);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
   SpinRecoveryTests,
   SpinRecoveryTestFixture,
   ::testing::Values(

@@ -39,7 +39,7 @@ void InputAtWaypoint::initialize(
   const std::string & plugin_name)
 {
   auto node = parent.lock();
-  
+
   if (!node) {
     throw std::runtime_error{"Failed to lock node in input at waypoint plugin!"};
   }

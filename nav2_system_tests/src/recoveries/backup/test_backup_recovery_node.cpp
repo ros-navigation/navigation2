@@ -85,7 +85,7 @@ TEST_P(BackupRecoveryTestFixture, testBackupRecovery)
 // remain as a reminder to update this to a `false` case once the
 // recovery server returns true values.
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
   BackupRecoveryTests,
   BackupRecoveryTestFixture,
   ::testing::Values(
