@@ -88,7 +88,7 @@ INSTANTIATE_TEST_CASE_P(
     std::make_tuple(2.0, 0.0),
     std::make_tuple(5.0, 0.0),
     std::make_tuple(10.0, 1.0)),
-  testNameGenerator);
+  testNameGenerator,);
 
 int main(int argc, char ** argv)
 {
