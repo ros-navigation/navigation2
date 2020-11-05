@@ -39,6 +39,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 #include <memory>
+#include <chrono>
 #include <string>
 #include <vector>
 #include <utility>
@@ -319,7 +320,7 @@ Costmap2DROS::getParameters()
   if (map_publish_frequency_ > 0) {
     publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);
   } else {
-    publish_cycle_ = rclcpp::Duration(-1);
+    publish_cycle_ = rclcpp::Duration(-1s);
   }
 
   // 3. If the footprint has been specified, it must be in the correct format
@@ -393,7 +394,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
     timer.end();
 
     RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
-    if (publish_cycle_ > rclcpp::Duration(0) && layered_costmap_->isInitialized()) {
+    if (publish_cycle_ > rclcpp::Duration(0s) && layered_costmap_->isInitialized()) {
       unsigned int x0, y0, xn, yn;
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
       costmap_publisher_->updateBounds(x0, xn, y0, yn);

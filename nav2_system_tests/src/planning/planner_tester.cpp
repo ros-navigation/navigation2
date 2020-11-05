@@ -133,7 +133,7 @@ void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & positi
   }
   std::cout << now().nanoseconds() << std::endl;
 
-  base_transform_->header.stamp = now() + rclcpp::Duration(250000000);
+  base_transform_->header.stamp = now() + rclcpp::Duration(0.25s);
   base_transform_->transform.translation.x = position.x;
   base_transform_->transform.translation.y = position.y;
   base_transform_->transform.rotation.w = 1.0;

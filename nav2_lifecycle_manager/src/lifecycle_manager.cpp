@@ -156,7 +156,10 @@ LifecycleManager::createBondConnection(const std::string & node_name)
     bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
     bond_map_[node_name]->setHeartbeatPeriod(0.10);
     bond_map_[node_name]->start();
-    if (!bond_map_[node_name]->waitUntilFormed(rclcpp::Duration(timeout_ns / 2))) {
+    if (
+      !bond_map_[node_name]->waitUntilFormed(
+        rclcpp::Duration(rclcpp::Duration::from_nanoseconds(timeout_ns / 2))))
+    {
       RCLCPP_ERROR(
         get_logger(),
         "Server %s was unable to be reached after %0.2fs by bond. "
