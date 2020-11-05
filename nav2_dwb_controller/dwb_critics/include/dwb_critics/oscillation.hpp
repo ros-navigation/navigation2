@@ -40,7 +40,7 @@
 #include <chrono>
 #include "dwb_core/trajectory_critic.hpp"
 
-using namespace std::chrono_literals;
+using namespace std::chrono_literals;  // NOLINT
 
 namespace dwb_critics
 {
