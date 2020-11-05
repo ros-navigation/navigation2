@@ -386,7 +386,7 @@ AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getAnalyticPath(
       Coordinates initial_node_coords = next->pose;
       proposed_coordinates = {static_cast<float>(reals[0]), static_cast<float>(reals[1]), angle};
       next->setPose(proposed_coordinates);
-      if (next->isNodeValid(_traverse_unknown, _collision_checker) && next != prev && !next->wasVisited()) {
+      if (next->isNodeValid(_traverse_unknown, _collision_checker) && next != prev) {
         // Save the node, and its previous coordinates in case we need to abort
         possible_nodes.emplace_back(next, initial_node_coords);
         prev = next;
@@ -411,9 +411,15 @@ AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getAnalyticPath(
   prev = node;
   for (const auto & node_pose : possible_nodes) {
     const auto & n = node_pose.first;
-    n->parent = prev;
-    n->visited();
-    prev = n;
+    if (!n->wasVisited()) {
+      // Make sure this node has not been visited by the regular algorithm.
+      // If it has been, there is the (slight) chance that it is in the path we are expanding
+      // from, so we should skip it.
+      // Skipping to the next node will still create a kinematically feasible path.
+      n->parent = prev;
+      n->visited();
+      prev = n;
+    }
   }
   if (_goal != prev) {
     _goal->parent = prev;
