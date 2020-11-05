@@ -20,6 +20,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <chrono>
 
 #include "nav2_rviz_plugins/goal_common.hpp"
 #include "rviz_common/display_context.hpp"
@@ -629,7 +630,7 @@ Nav2Panel::updateWpNavigationMarkers()
     arrow_marker.color.g = 255;
     arrow_marker.color.b = 0;
     arrow_marker.color.a = 1.0f;
-    arrow_marker.lifetime = rclcpp::Duration(0);
+    arrow_marker.lifetime = rclcpp::Duration(0s);
     arrow_marker.frame_locked = false;
     marker_array->markers.push_back(arrow_marker);
 
@@ -647,7 +648,7 @@ Nav2Panel::updateWpNavigationMarkers()
     circle_marker.color.g = 0;
     circle_marker.color.b = 0;
     circle_marker.color.a = 1.0f;
-    circle_marker.lifetime = rclcpp::Duration(0);
+    circle_marker.lifetime = rclcpp::Duration(0s);
     circle_marker.frame_locked = false;
     marker_array->markers.push_back(circle_marker);
 
@@ -666,7 +667,7 @@ Nav2Panel::updateWpNavigationMarkers()
     marker_text.color.g = 255;
     marker_text.color.b = 0;
     marker_text.color.a = 1.0f;
-    marker_text.lifetime = rclcpp::Duration(0);
+    marker_text.lifetime = rclcpp::Duration(0s);
     marker_text.frame_locked = false;
     marker_text.text = "wp_" + std::to_string(i + 1);
     marker_array->markers.push_back(marker_text);
