@@ -54,22 +54,29 @@ void PhotoAtWaypoint::initialize(
 
   // get inputted save directory and make sure it exists, if not log and create  it
   save_dir_ = save_dir_as_string;
-  if (!std::experimental::filesystem::exists(save_dir_)) {
-    RCLCPP_WARN(
-      logger_,
-      "Provided save directory for photo at waypoint plugin does not exist,"
-      "provided directory is: %s, the directory will be created automatically.",
-      save_dir_.c_str()
-    );
-    if (!std::experimental::filesystem::create_directory(save_dir_)) {
-      RCLCPP_ERROR(
+  try {
+    if (!std::experimental::filesystem::exists(save_dir_)) {
+      RCLCPP_WARN(
         logger_,
-        "Failed to create directory!: %s required by photo at waypoint plugin, "
-        "exiting the plugin with failure!",
+        "Provided save directory for photo at waypoint plugin does not exist,"
+        "provided directory is: %s, the directory will be created automatically.",
         save_dir_.c_str()
       );
-      is_enabled_ = false;
+      if (!std::experimental::filesystem::create_directory(save_dir_)) {
+        RCLCPP_ERROR(
+          logger_,
+          "Failed to create directory!: %s required by photo at waypoint plugin, "
+          "exiting the plugin with failure!",
+          save_dir_.c_str()
+        );
+        is_enabled_ = false;
+      }
     }
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(
+      logger_, "Exception (%s) thrown while attempting to create image capture directory."
+      " This task executor is being disabled as it cannot save images.", e.what());
+    is_enabled_ = false;
   }
 
   if (!is_enabled_) {
