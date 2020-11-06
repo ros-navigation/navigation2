@@ -37,11 +37,16 @@
 
 #include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
 
+#include "tf2/convert.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_ros/transform_broadcaster.h"
+
 namespace nav2_costmap_2d
 {
 
 KeepoutFilter::KeepoutFilter()
-: filter_info_sub_(nullptr), mask_sub_(nullptr), mask_costmap_(nullptr)
+: filter_info_sub_(nullptr), mask_sub_(nullptr), mask_costmap_(nullptr),
+  mask_frame_(""), global_frame_("")
 {
 }
 
@@ -64,6 +69,8 @@ void KeepoutFilter::initializeFilter(
   filter_info_sub_ = node->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
     filter_info_topic, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&KeepoutFilter::filterInfoCallback, this, std::placeholders::_1));
+
+  global_frame_ = layered_costmap_->getGlobalFrameID();
 }
 
 void KeepoutFilter::filterInfoCallback(
@@ -126,6 +133,7 @@ void KeepoutFilter::maskCallback(
 
   // Making a new mask_costmap_
   mask_costmap_ = std::make_unique<Costmap2D>(*msg);
+  mask_frame_ = msg->header.frame_id;
 }
 
 void KeepoutFilter::process(
@@ -148,57 +156,85 @@ void KeepoutFilter::process(
     return;
   }
 
-  double wx, wy;  // world coordinates
+  tf2::Transform tf2_transform;
+  tf2_transform.setIdentity();  // initialize by identical transform
+  int mg_min_x, mg_min_y;  // masger_grid indexes of bottom-left window corner
+  int mg_max_x, mg_max_y;  // masger_grid indexes of top-right window corner
 
-  // Optimization: iterate only in overlapped
-  // (min_i, min_j)..(max_i, max_j) & mask_costmap_ area.
-  //
-  //           mask_costmap_
-  //       *----------------------------*
-  //       |                            |
-  //       |                            |
-  //       |      (2)                   |
-  // *-----+-------*                    |
-  // |     |///////|<- overlapped area  |
-  // |     |///////|   to iterate in    |
-  // |     *-------+--------------------*
-  // |    (1)      |
-  // |             |
-  // *-------------*
-  //  master_grid (min_i, min_j)..(max_i, max_j) window
-  //
-  // ToDo: after costmap rotation will be added, this should be re-worked.
+  if (mask_frame_ != global_frame_) {
+    // Filter mask and current layer are in different frames:
+    // prepare frame transformation if mask_frame_ != global_frame_
+    geometry_msgs::msg::TransformStamped transform;
+    try {
+      transform = tf_->lookupTransform(
+        mask_frame_, global_frame_, tf2::TimePointZero,
+        transform_tolerance_);
+    } catch (tf2::TransformException & ex) {
+      RCLCPP_ERROR(
+        node->get_logger(),
+        "KeepoutFilter: failed to get costmap frame (%s) "
+        "transformation to mask frame (%s) with error: %s",
+        global_frame_.c_str(), mask_frame_.c_str(), ex.what());
+      return;
+    }
+    tf2::fromMsg(transform.transform, tf2_transform);
 
-  // Calculating bounds corresponding to bottom-left overlapping (1) corner
-  int mg_min_x, mg_min_y;  // masger_grid indexes of bottom-left (1) corner
-  // mask_costmap_ -> master_grid intexes conversion
-  const double half_cell_size = 0.5 * mask_costmap_->getResolution();
-  wx = mask_costmap_->getOriginX() + half_cell_size;
-  wy = mask_costmap_->getOriginY() + half_cell_size;
-  master_grid.worldToMapNoBounds(wx, wy, mg_min_x, mg_min_y);
-  // Calculation of (1) corner bounds
-  if (mg_min_x >= max_i || mg_min_y >= max_j) {
-    // There is no overlapping. Do nothing.
-    return;
+    mg_min_x = min_i;
+    mg_min_y = min_j;
+    mg_max_x = max_i;
+    mg_max_y = max_j;
+  } else {
+    // Filter mask and current layer are in the same frame:
+    // apply the following optimization - iterate only in overlapped
+    // (min_i, min_j)..(max_i, max_j) & mask_costmap_ area.
+    //
+    //           mask_costmap_
+    //       *----------------------------*
+    //       |                            |
+    //       |                            |
+    //       |      (2)                   |
+    // *-----+-------*                    |
+    // |     |///////|<- overlapped area  |
+    // |     |///////|   to iterate in    |
+    // |     *-------+--------------------*
+    // |    (1)      |
+    // |             |
+    // *-------------*
+    //  master_grid (min_i, min_j)..(max_i, max_j) window
+    //
+    // ToDo: after costmap rotation will be added, this should be re-worked.
+
+    double wx, wy;  // world coordinates
+
+    // Calculating bounds corresponding to bottom-left overlapping (1) corner
+    // mask_costmap_ -> master_grid intexes conversion
+    const double half_cell_size = 0.5 * mask_costmap_->getResolution();
+    wx = mask_costmap_->getOriginX() + half_cell_size;
+    wy = mask_costmap_->getOriginY() + half_cell_size;
+    master_grid.worldToMapNoBounds(wx, wy, mg_min_x, mg_min_y);
+    // Calculation of (1) corner bounds
+    if (mg_min_x >= max_i || mg_min_y >= max_j) {
+      // There is no overlapping. Do nothing.
+      return;
+    }
+    mg_min_x = std::max(min_i, mg_min_x);
+    mg_min_y = std::max(min_j, mg_min_y);
+
+    // Calculating bounds corresponding to top-right window (2) corner
+    // mask_costmap_ -> master_grid intexes conversion
+    wx = mask_costmap_->getOriginX() +
+      mask_costmap_->getSizeInCellsX() * mask_costmap_->getResolution() + half_cell_size;
+    wy = mask_costmap_->getOriginY() +
+      mask_costmap_->getSizeInCellsY() * mask_costmap_->getResolution() + half_cell_size;
+    master_grid.worldToMapNoBounds(wx, wy, mg_max_x, mg_max_y);
+    // Calculation of (2) corner bounds
+    if (mg_max_x <= min_i || mg_max_y <= min_j) {
+      // There is no overlapping. Do nothing.
+      return;
+    }
+    mg_max_x = std::min(max_i, mg_max_x);
+    mg_max_y = std::min(max_j, mg_max_y);
   }
-  mg_min_x = std::max(min_i, mg_min_x);
-  mg_min_y = std::max(min_j, mg_min_y);
-
-  // Calculating bounds corresponding to top-right window (2) corner
-  int mg_max_x, mg_max_y;  // masger_grid indexes of top-right (2) corner
-  // mask_costmap_ -> master_grid intexes conversion
-  wx = mask_costmap_->getOriginX() +
-    mask_costmap_->getSizeInCellsX() * mask_costmap_->getResolution() + half_cell_size;
-  wy = mask_costmap_->getOriginY() +
-    mask_costmap_->getSizeInCellsY() * mask_costmap_->getResolution() + half_cell_size;
-  master_grid.worldToMapNoBounds(wx, wy, mg_max_x, mg_max_y);
-  // Calculation of (2) corner bounds
-  if (mg_max_x <= min_i || mg_max_y <= min_j) {
-    // There is no overlapping. Do nothing.
-    return;
-  }
-  mg_max_x = std::min(max_i, mg_max_x);
-  mg_max_y = std::min(max_j, mg_max_y);
 
   // unsigned<-signed conversions.
   unsigned const int mg_min_x_u = static_cast<unsigned int>(mg_min_x);
@@ -208,19 +244,34 @@ void KeepoutFilter::process(
 
   unsigned int i, j;  // master_grid iterators
   unsigned int index;  // corresponding index of master_grid
+  double gl_wx, gl_wy;  // world coordinates in a global_frame_
+  double msk_wx, msk_wy;  // world coordinates in a mask_frame_
   unsigned int mx, my;  // mask_costmap_ coordinates
   unsigned char data, old_data;  // master_grid element data
 
   // Main master_grid updating loop
-  // Iterate in overlapped window by master_grid indexes
+  // Iterate in costmap window by master_grid indexes
   unsigned char * master_array = master_grid.getCharMap();
   for (i = mg_min_x_u; i < mg_max_x_u; i++) {
     for (j = mg_min_y_u; j < mg_max_y_u; j++) {
       index = master_grid.getIndex(i, j);
       old_data = master_array[index];
-      // Calculating corresponding to (i, j) point at mask_costmap_
-      master_grid.mapToWorld(i, j, wx, wy);
-      if (mask_costmap_->worldToMap(wx, wy, mx, my)) {
+      // Calculating corresponding to (i, j) point at mask_costmap_:
+      // Get world coordinates in global_frame_
+      master_grid.mapToWorld(i, j, gl_wx, gl_wy);
+      if (mask_frame_ != global_frame_) {
+        // Transform (i, j) point from global_frame_ to mask_frame_
+        tf2::Vector3 point(gl_wx, gl_wy, 0);
+        point = tf2_transform * point;
+        msk_wx = point.x();
+        msk_wy = point.y();
+      } else {
+        // In this case master_grid and filter-mask are in the same frame
+        msk_wx = gl_wx;
+        msk_wy = gl_wy;
+      }
+      // Get mask coordinates corresponding to (i, j) point at mask_costmap_
+      if (mask_costmap_->worldToMap(msk_wx, msk_wy, mx, my)) {
         data = mask_costmap_->getCost(mx, my);
         // Update if mask_ data is valid and greater than existing master_grid's one
         if (data == NO_INFORMATION) {
