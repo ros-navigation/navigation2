@@ -124,6 +124,11 @@ protected:
    */
   std::string mask_topic_;
 
+  /**
+   * @brief: mask_frame_->global_frame_ transform tolerance
+   */
+  tf2::Duration transform_tolerance_;
+
 private:
   /**
    * @brief: Latest robot position
