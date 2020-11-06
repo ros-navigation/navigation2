@@ -59,6 +59,8 @@ public:
     lifecycle_client_->change_state(Transition::TRANSITION_DEACTIVATE);
     lifecycle_client_->change_state(Transition::TRANSITION_CLEANUP);
     lifecycle_client_->change_state(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+    lifecycle_client_.reset();
+    node_.reset();
   }
 
   template<class T>
