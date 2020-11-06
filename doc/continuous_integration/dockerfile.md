@@ -94,7 +94,7 @@ The [`distro.Dockerfile`](/.dockerhub/distro.Dockerfile) provides once such exam
 
 ### Advanced Optimizations
 
-With Buildkit's concurrent dependency resolution, multistage builds become parallelizable, assisting in shorter over all image build times. Granular expansion of the Directed Acyclic Graph (DAG) of workspace build steps into septate stages can be used to exploit this parallelism further, as well to maximize caching. This is exemplified in  [`source.Dockerfile`](/.dockerhub/source.Dockerfile). The figure bellow depicts how the multiple stages are composed to exploit the DAG of workspaces.
+With Buildkit's concurrent dependency resolution, multistage builds become parallelizable, assisting in shorter over all image build times. Granular expansion of the Directed Acyclic Graph (DAG) of workspace build steps into separate stages can be used to exploit this parallelism further, as well to maximize caching. This is exemplified in  [`source.Dockerfile`](/.dockerhub/source.Dockerfile). The figure bellow depicts how the multiple stages are composed to exploit the DAG of workspaces.
 
 ![pipeline](figs/multistage.svg)
 
