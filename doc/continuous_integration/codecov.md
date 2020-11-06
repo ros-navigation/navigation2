@@ -5,11 +5,10 @@ Codecov is a service used to aggregate and monitor code coverage results, render
 * [Codecov](https://codecov.io/)
 * [Navigation2 on Codecov](https://codecov.io/gh/ros-planning/navigation2)
 
-Codecov is configured 
+Codecov is configured via the [`codecov.yml`](/codecov.yml) file. More info on this can be found here:
 
 * [About the Codecov yaml](https://docs.codecov.io/docs/codecov-yaml)
 * [codecov.yml Reference](https://docs.codecov.io/docs/codecovyml-reference)
-* [codecov.yml](/codecov.yml)
 
 A custom script within the repo is reused to collect and post process the generated code coverage results from debug test jobs. This scrip simply invokes lcov on the overlay workspace to output `full_coverage.info`, and then filter this down to `workspace_coverage.info` by removing and irrelevant subdirectories, e.g. for message or test packages.
 
