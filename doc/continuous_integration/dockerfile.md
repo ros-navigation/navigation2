@@ -83,7 +83,7 @@ The default entrypoint `ros_entrypoint.sh` inherited from the parent image is th
 
 ### Testing Overlay
 
-The overlay may then be optionaly tested using the same additional mixins. The results of the test may also be used to optionaly fail the entire build; useful if the return code from `docker build` command itself is used as a primitive form of CI, or demonstrating to new contributors on how to locally test pull requests by invoking the colcon CLI.
+The overlay may then be optionally tested using the same additional mixins. The results of the test may also be used to optionally fail the entire build; useful if the return code from `docker build` command itself is used as a primitive form of CI, or demonstrating to new contributors on how to locally test pull requests by invoking the colcon CLI. In other terms, failing on test failure may be good for a production system, but practically speaking, CI may be broken on occasionally and these images will still be required for fixing those issues so they must still be deployed.
 
 ## Buildkit
 
