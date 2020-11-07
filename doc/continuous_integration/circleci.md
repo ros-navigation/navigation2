@@ -5,7 +5,7 @@ CircleCI is a service used to build and test the project's codebase to catch reg
 * [CircleCI](https://circleci.com/)
 * [Navigation2 on CircleCI](https://circleci.com/gh/ros-planning/navigation2)
 
-For this particular CI, Docker is used to build and test the project within containers derived from images pulled from DockerHub, bootstrapping the CI with a development environment including pre configured dependencies and warm workspace build caches. View the accompanying DockerFile and DockerHub documentation for more info on this accompanying CI setup.
+For this particular CI, Docker is used to build and test the project within containers derived from images pulled from DockerHub, bootstrapping the CI with a development environment including pre-configured dependencies and warm workspace build caches. View the accompanying DockerFile and DockerHub documentation for more info on this accompanying CI setup.
 
 * [Dockerfile](dockerfile.md)
 * [DockerHub](dockerhub.md)
