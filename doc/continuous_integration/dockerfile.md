@@ -39,7 +39,7 @@ Finally the `cacher` stage copies all manifest related files in place within the
 
 ## Builder Stage
 
-A `builder` stage is then started to install external dependencies and compile the respective workspaces. Static CI dependencies are first installed before any later potential cache busting directives. These include:
+A `builder` stage is then started to install external dependencies and compile the respective workspaces. Static CI dependencies are first installed before any later potential cache busting directives to optimize rebuilds. These include:
 
 * [ccache](https://ccache.dev)
   * Compiler cache for speeding up recompilation
