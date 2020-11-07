@@ -10,7 +10,7 @@ For this particular CI, Docker is used to build and test the project within cont
 * [Dockerfile](dockerfile.md)
 * [DockerHub](dockerhub.md)
 
-CircleCI is configured via the [config.yml](/.circleci/config.yml) yaml file within the `.circleci/` folder at the root of the GitHub repo.  The config file for this project is self-contained and thus densely structured, yet written in a functional style to remain DRY and modular. This keeps it easily generalizable for other ROS packages or for adjusting overlayed workspaces. Despite the anchors and references in yaml, the config file is best approached in reverse, from bottom to top in order of abstraction hierarchy, while reading this accompanied document. Further references on CircleCI configurations, such as syntax and structure can be found here:
+CircleCI is configured via the [config.yml](/.circleci/config.yml) yaml file within the `.circleci/` folder at the root of the GitHub repo.  The config file for this project is self-contained and thus densely structured, yet written in a functional style to remain DRY and modular. This keeps it easily generalizable for other ROS packages or for adjusting overlayed workspaces. Despite the anchors and references in yaml, the config file is best understood read in reverse, from bottom to top, in order of abstraction hierarchy, while reading this accompanied document. Further references on CircleCI configurations, such as syntax and structure can be found here:
 
 * [Writing YAML](https://circleci.com/docs/2.0/writing-yaml)
 * [Configuring CircleCI](https://circleci.com/docs/2.0/configuration-reference)
