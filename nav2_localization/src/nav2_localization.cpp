@@ -9,7 +9,7 @@ namespace nav2_localization
 {
 
 LocalizationServer::LocalizationServer()
-: LifecycleNode("localization_server", "", true),
+: nav2_util::LifecycleNode("localization_server", "", true),
   sample_motion_model_loader_("nav2_localization", "nav2_localization::SampleMotionModelPDF"),
   default_sample_motion_model_id_("DiffDriveOdomMotionModelPDF"),
   matcher2d_loader_("nav2_localization", "nav2_localization::Matcher2dPDF"),
@@ -23,7 +23,7 @@ LocalizationServer::LocalizationServer()
     declare_parameter("sample_motion_model_id", default_sample_motion_model_id_);
     declare_parameter("matcher2d_id", default_matcher2d_id_);
     declare_parameter("solver_id", default_solver_id_);
-    declare_parameter("laser_scan_topic_", "scan");
+    declare_parameter("laser_scan_topic", "scan");
     declare_parameter("odom_frame_id", "odom");
     declare_parameter("base_frame_id", "base_link");
     declare_parameter("map_frame_id", "map");

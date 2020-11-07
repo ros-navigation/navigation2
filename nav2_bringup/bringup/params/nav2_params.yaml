@@ -1,50 +1,35 @@
-amcl:
+localization_server:
   ros__parameters:
     use_sim_time: True
+    laser_scan_topic: "scan"
+    transform_tolerance: 1.0
     alpha1: 0.2
     alpha2: 0.2
     alpha3: 0.2
     alpha4: 0.2
-    alpha5: 0.2
-    base_frame_id: "base_footprint"
-    beam_skip_distance: 0.5
-    beam_skip_error_threshold: 0.9
-    beam_skip_threshold: 0.3
-    do_beamskip: false
-    global_frame_id: "map"
-    lambda_short: 0.1
-    laser_likelihood_max_dist: 2.0
-    laser_max_range: 100.0
-    laser_min_range: -1.0
-    laser_model_type: "likelihood_field"
-    max_beams: 60
-    max_particles: 2000
-    min_particles: 500
-    odom_frame_id: "odom"
-    pf_err: 0.05
-    pf_z: 0.99
-    recovery_alpha_fast: 0.0
-    recovery_alpha_slow: 0.0
-    resample_interval: 1
-    robot_model_type: "differential"
-    save_pose_rate: 0.5
+    max_likelihood_distace: 2.0
     sigma_hit: 0.2
-    tf_broadcast: true
-    transform_tolerance: 1.0
-    update_min_a: 0.2
-    update_min_d: 0.25
-    z_hit: 0.5
+    max_number_of_beams: 60
     z_max: 0.05
+    z_min: 0.0
+    z_hit: 0.5
     z_rand: 0.5
-    z_short: 0.05
+    prior_mu_x: 0.0
+    prior_mu_y: 0.0
+    num_particles: 2000
+    num_dimensions: 3
+    localization_plugins: ["DiffDriveOdomMotionModelPDF", "LikelihoodFieldMatcher2dPDF", "DummySolver2d"]
+    DiffDriveOdomMotionModelPDF:
+      plugin: "nav2_localization::DiffDriveOdomMotionModelPDF"
+    LikelihoodFieldMatcher2dPDF:
+      plugin: "nav2_localization::LikelihoodFieldMatcher2dPDF"
+    DummySolver2d:
+      plugin: "nav2_localization::DummySolver2d"
 
-amcl_map_client:
+localization_server_rclcpp_node:
   ros__parameters:
     use_sim_time: True
-
-amcl_rclcpp_node:
-  ros__parameters:
-    use_sim_time: True
+    
 
 bt_navigator:
   ros__parameters:
