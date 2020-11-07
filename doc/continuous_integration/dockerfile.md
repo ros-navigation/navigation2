@@ -70,7 +70,7 @@ The addition of the `ccache` mixin is used to pre-bake a warm ccache directory i
 
 ## Overlay Workspace
 
-The overlay workspace is then set up in a similar manner where the same steps are repeated, only now sourcing the underlay setup file, and by building within the overlay directory. The separation of underlay vs overlay workspace helps split caching of compilation across the two major points of change; that of external dependencies that change infrequently upon new releases vs local project source files that perpetually change during development. The overlay mixins are parameterized via `ARG` as well to allow the underlay and overlay to be independently configured by CI or local developers. This pattern can be repeated to chain together workspaces in one or multiple Dockerfiles; practically useful when working with a stack of related projects with deep recursive dependencies.
+The overlay workspace is then set up in a similar manner where the same steps are repeated, only now sourcing the underlay setup file, and by building the overlay directory. The separation of underlay vs overlay workspace helps split caching of compilation across the two major points of change; that of external dependencies that change infrequently upon new releases vs local project source files that perpetually change during development. The overlay mixins are parameterized via `ARG` as well to allow the underlay and overlay to be independently configured by CI or local developers. This pattern can be repeated to chain together workspaces in one or multiple Dockerfiles; practically useful when working with a stack of related projects with deep recursive dependencies.
 
 ### Setup Entrypoint
 
