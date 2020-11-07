@@ -36,8 +36,8 @@ geometry_msgs::msg::TransformStamped DummySolver2d::solve(
 	pf_->Update(motionSampler_.get(), curr_odom);
 
 	// Weigths calculation with matcher and measurement
-	pf_->Update(matcher_.get(), *matcherPDF_->getLaserScan());
-
+	pf_->Update(matcher_.get(), *(matcherPDF_->getLaserScan()));
+    
 	// Get new particles (in case we want to publish them)
 	// samples = pf_->getNewSamples();
 

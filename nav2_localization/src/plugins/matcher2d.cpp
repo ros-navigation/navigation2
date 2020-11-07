@@ -10,13 +10,22 @@ namespace nav2_localization
 void LikelihoodFieldMatcher2dPDF::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node)
 {
 	node_ = node;
+
+	node_->declare_parameter("max_likelihood_distance", 2.0);
+	node_->declare_parameter("sigma_hit", 0.2);
+	node_->declare_parameter("max_number_of_beams", 60);
+	node_->declare_parameter("z_max", 0.05);
+	node_->declare_parameter("z_min", 0.0);
+	node_->declare_parameter("z_hit", 0.5);
+	node_->declare_parameter("z_rand", 0.5);
+
 	node_->get_parameter("max_likelihood_distance", max_likelihood_distace_);
-	node_->get_parameter("sigma_hit", sigma_hit_);
+    node_->get_parameter("sigma_hit", sigma_hit_);
 	node_->get_parameter("max_number_of_beams", max_number_of_beams_);
 	node_->get_parameter("z_max", z_max_);
 	node_->get_parameter("z_min", z_min_);
-	node_->get_parameter("z_min", z_hit_);
-	node_->get_parameter("z_min", z_rand_);
+	node_->get_parameter("z_hit", z_hit_);
+	node_->get_parameter("z_rand", z_rand_);
 }
 
 BFL::Probability LikelihoodFieldMatcher2dPDF::ProbabilityGet(
@@ -68,15 +77,15 @@ void LikelihoodFieldMatcher2dPDF::cleanup()
 void LikelihoodFieldMatcher2dPDF::setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr& map)
 {
 	map_ = map;
-}
-
-void LikelihoodFieldMatcher2dPDF::setLaserScan(const sensor_msgs::msg::LaserScan::SharedPtr& laser_scan)
-{
-	laser_scan_ = laser_scan;
 	preComputeLikelihoodField();	// TODO: is this the best place for this?
 }
 
-sensor_msgs::msg::LaserScan::SharedPtr LikelihoodFieldMatcher2dPDF::getLaserScan()
+void LikelihoodFieldMatcher2dPDF::setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan)
+{
+	laser_scan_ = laser_scan;
+}
+
+sensor_msgs::msg::LaserScan::ConstSharedPtr LikelihoodFieldMatcher2dPDF::getLaserScan()
 {
 	return laser_scan_;
 }
@@ -84,6 +93,8 @@ sensor_msgs::msg::LaserScan::SharedPtr LikelihoodFieldMatcher2dPDF::getLaserScan
 void LikelihoodFieldMatcher2dPDF::preComputeLikelihoodField()
 {
 	std::vector<int> occupied_cells;
+
+    RCLCPP_ERROR(node_->get_logger(), "1");
 
 	// Identify all the occupied cells
 	for(auto index=0; index < map_->info.width*map_->info.height; index++)
@@ -97,6 +108,8 @@ void LikelihoodFieldMatcher2dPDF::preComputeLikelihoodField()
 			pre_computed_likelihood_field_[index] = max_likelihood_distace_;
 	}
 
+    RCLCPP_ERROR(node_->get_logger(), "2");
+
 	// Depth first search for other cells
 	for(auto index : occupied_cells)
 	{
@@ -104,9 +117,12 @@ void LikelihoodFieldMatcher2dPDF::preComputeLikelihoodField()
 		DFS(index, index, visited);
 	}
 
+    RCLCPP_ERROR(node_->get_logger(), "3");
+	
 	// Apply zero-mean norrmal distribution
 	for(auto index=0; index < map_->info.width*map_->info.height; index++)
 		pre_computed_likelihood_field_[index] = (1.0/(sqrt(2*M_PI)*sigma_hit_))*exp(-0.5*((pre_computed_likelihood_field_[index]*pre_computed_likelihood_field_[index])/(sigma_hit_*sigma_hit_)));
+    RCLCPP_ERROR(node_->get_logger(), "4");
 }
 
 void LikelihoodFieldMatcher2dPDF::DFS(const int &index_curr, const int &index_of_obstacle, std::vector<bool> &visited)
@@ -121,7 +137,7 @@ void LikelihoodFieldMatcher2dPDF::DFS(const int &index_curr, const int &index_of
 		double distance_to_obstacle = MapUtils::distance_between_two_points(coord_curr.first, coord_curr.second, coord_obs.first, coord_obs.second)*map_->info.resolution;
 
 		// Getting far from the obstacle
-		if(distance_to_obstacle >= max_likelihood_distace_)
+		if(distance_to_obstacle > max_likelihood_distace_)
 			return;
 
 		// Found a closer obstacle

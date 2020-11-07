@@ -24,9 +24,9 @@ public:
 
 	void setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr& map);
 
-	void setLaserScan(const sensor_msgs::msg::LaserScan::SharedPtr& laser_scan);
+	void setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan);
 
-	sensor_msgs::msg::LaserScan::SharedPtr getLaserScan();
+	sensor_msgs::msg::LaserScan::ConstSharedPtr getLaserScan();
 
 	void setLaserPose(const geometry_msgs::msg::TransformStamped& laser_pose);
 
@@ -34,7 +34,7 @@ private:
 	void preComputeLikelihoodField();	
 	void DFS(const int &index_curr, const int &index_of_obstacle, std::vector<bool> &visited);
 
-	std::unordered_map<int8_t, double>	pre_computed_likelihood_field_;
+	std::unordered_map<int, double>	pre_computed_likelihood_field_;
 	int max_number_of_beams_;
 	double max_likelihood_distace_; // the distance beyond which the likelihood is 0
 	double sigma_hit_;
