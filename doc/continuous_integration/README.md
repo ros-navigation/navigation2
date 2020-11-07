@@ -12,7 +12,7 @@ The figure above is a high level diagram on how the integration services describ
 
 The following links document each integration and are best approached in the same order presented.
 
-### [GitHub](github.md)
+### GitHub
 
 GitHub is used for hosting the source repo, tickets and PRs, as well for managing the OAuth and configs for the rest of the other integration services in the CI pipeline.
 
