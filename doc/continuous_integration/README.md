@@ -22,7 +22,7 @@ Dockerfiles are used for generating the docker images for building and testing t
 
 ### [DockerHub](dockerhub.md)
 
-DockerHub is used to build and host the repo of tagged docker images, so that downstream services in the CI pipeline can quickly download and bootstrap the latest up-to-date development environment.
+DockerHub is used to build and host the regestry of tagged docker images, so that downstream services in the CI pipeline can quickly download and bootstrap the latest up-to-date development environment.
 
 ### [CircleCI](circleci.md)
 
