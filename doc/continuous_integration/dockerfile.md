@@ -22,7 +22,7 @@ While the main [`Dockerfile`](/Dockerfile) at the root of the repo is used for d
 
 ## Global Arguments
 
-The Dockerfile first declares a number of optional `ARG` values and respective defaults to specify the parent image to build `FROM` and workspace paths. Here the Dockerfiles assume all workspaces are nested within the `/opt` directory. These `ARG`s can be accessed similarly to `ENV`s, but must be declared in a stage's scope before they can be used, and unlike `ENV` only exist at build time of that stage and do not persist in the resulting image. For multi-stage builds, the last stage is what is tagged as the final image. More info on multi-stage builds can be found here: 
+The Dockerfile first declares a number of optional `ARG` values and respective defaults to specify the parent image to build `FROM` and workspace paths. Here the Dockerfiles assume all workspaces are nested within the `/opt` directory. These `ARG`s can be accessed similarly to `ENV`s, but must be declared in a stage's scope before they can be used, and unlike `ENV` only exist at build time of that stage and do not persist in the resulting image. Despite this scope behavior, we can keep the Dockerfile DRY by specifying default values of `ARG`s only where the are first declared. For multi-stage builds, the last stage is what is tagged as the final image. More info on multi-stage builds can be found here: 
 
 * [Use multi-stage builds](https://docs.docker.com/develop/develop-images/multistage-build)
   * Optimize while keeping Dockerfiles readable and maintainable
@@ -83,7 +83,7 @@ The default entrypoint `ros_entrypoint.sh` inherited from the parent image is th
 
 ### Testing Overlay
 
-The overlay may then be optionally tested using the same additional mixins. The results of the test may also be used to optionally fail the entire build; useful if the return code from `docker build` command itself is used as a primitive form of CI, or demonstrating to new contributors on how to locally test pull requests by invoking the colcon CLI. In other terms, failing on test failure may be good for a production system, but practically speaking, CI may be broken on occasionally and these images will still be required for fixing those issues so they must still be deployed.
+The overlay may then be optionally tested using the test related `ARG`s. The results of the test may also be used to optionally fail the entire build; useful if the return code from `docker build` command itself is used as a primitive form of CI, or demonstrating to new contributors on how to locally test pull requests by invoking the colcon CLI. In other terms, failing on test failure may be good for a production system, but practically speaking, CI may be broken on occasionally and these images will still be required for fixing those issues so they must still be deployed.
 
 ## Buildkit
 
