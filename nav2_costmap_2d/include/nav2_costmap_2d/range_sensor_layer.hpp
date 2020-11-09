@@ -117,6 +117,7 @@ private:
 
   double clear_threshold_, mark_threshold_;
   bool clear_on_max_reading_;
+  bool was_reset_;
 
   tf2::Duration transform_tolerance_;
   double no_readings_timeout_;
