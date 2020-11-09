@@ -48,11 +48,13 @@ public:
     return current_goal_;
   }
 
-  void setReturnSuccess(bool return_success){
+  void setReturnSuccess(bool return_success)
+  {
     return_success_ = return_success;
   }
 
-  bool getReturnSuccess(void){
+  bool getReturnSuccess(void)
+  {
     return return_success_;
   }
 

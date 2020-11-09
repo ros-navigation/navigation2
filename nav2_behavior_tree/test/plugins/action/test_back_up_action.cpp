@@ -35,7 +35,8 @@ protected:
     const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::BackUp>> goal_handle)
   override
   {
-    nav2_msgs::action::BackUp::Result::SharedPtr result = std::make_shared<nav2_msgs::action::BackUp::Result>();
+    nav2_msgs::action::BackUp::Result::SharedPtr result =
+      std::make_shared<nav2_msgs::action::BackUp::Result>();
     bool return_success = getReturnSuccess();
     if (return_success) {
       goal_handle->succeed(result);
@@ -176,7 +177,9 @@ TEST_F(BackUpActionTestFixture, test_failure)
   action_server_->setReturnSuccess(false);
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
 
-  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE) {
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS &&
+    tree_->rootNode()->status() != BT::NodeStatus::FAILURE)
+  {
     tree_->rootNode()->executeTick();
   }
 

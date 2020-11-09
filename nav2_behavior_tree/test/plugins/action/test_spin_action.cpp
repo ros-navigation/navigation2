@@ -35,7 +35,8 @@ protected:
     const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::Spin>> goal_handle)
   override
   {
-    nav2_msgs::action::Spin::Result::SharedPtr result = std::make_shared<nav2_msgs::action::Spin::Result>();
+    nav2_msgs::action::Spin::Result::SharedPtr result =
+      std::make_shared<nav2_msgs::action::Spin::Result>();
     bool return_success = getReturnSuccess();
     if (return_success) {
       goal_handle->succeed(result);
@@ -171,7 +172,9 @@ TEST_F(SpinActionTestFixture, test_failure)
   action_server_->setReturnSuccess(false);
 
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
-  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE ) {
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS &&
+    tree_->rootNode()->status() != BT::NodeStatus::FAILURE)
+  {
     tree_->rootNode()->executeTick();
   }
 
