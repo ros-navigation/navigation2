@@ -187,6 +187,7 @@ protected:
   std::vector<nav2_costmap_2d::Observation> static_marking_observations_;
 
   bool rolling_window_;
+  bool was_reset_;
   int combination_method_;
 };
 
