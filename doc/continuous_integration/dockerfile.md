@@ -31,7 +31,9 @@ Here the parent image to build `FROM` is set to `osrf/ros2:nightly` by default, 
 
 ## Cacher Stage
 
-A `cacher` stage is then started to gather together the necessary source files to eventually build. A directory for the underlay workspace is then created and populated using `vcs` with the respective `.repos` file that defines the relevant repositories to pull and particular versions to checkout into the source directory. More info on vcstool can be found here: 
+A `cacher` stage is then declared to gather together the necessary source files to eventually build. This stage  deterministically pre-processes input source files to help preserve the docker image layer build cache for subsequent stages. This is achieved by strategically filtering and splitting input artifacts with different degrees of volatility so they may be independently copied from bit-for-bit.
+
+A directory for the underlay workspace is then created and populated using `vcs` with the respective `.repos` file that defines the relevant repositories to pull and particular versions to checkout into the source directory. More info on vcstool can be found here:
 
 * [vcstool](https://github.com/dirk-thomas/vcstool)
   * CLI for working with multiple repositories easier
@@ -44,7 +46,7 @@ Finally the `cacher` stage copies all manifest related files in place within the
 
 ## Builder Stage
 
-A `builder` stage is then started to install external dependencies and compile the respective workspaces. Static CI dependencies are first installed before any later potential cache busting directives to optimize rebuilds. These include:
+A `builder` stage is then declared to install external dependencies and compile the respective workspaces. Static CI dependencies are first installed before any later potential cache busting directives to optimize rebuilds. These include:
 
 * [ccache](https://ccache.dev)
   * Compiler cache for speeding up recompilation
