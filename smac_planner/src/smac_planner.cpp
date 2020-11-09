@@ -31,7 +31,6 @@ using namespace std::chrono;  // NOLINT
 SmacPlanner::SmacPlanner()
 : _a_star(nullptr),
   _smoother(nullptr),
-  _node(nullptr),
   _costmap(nullptr),
   _costmap_downsampler(nullptr)
 {
@@ -40,7 +39,7 @@ SmacPlanner::SmacPlanner()
 SmacPlanner::~SmacPlanner()
 {
   RCLCPP_INFO(
-    _node->get_logger(), "Destroying plugin %s of type SmacPlanner",
+    _logger, "Destroying plugin %s of type SmacPlanner",
     _name.c_str());
 }
 
@@ -50,6 +49,8 @@ void SmacPlanner::configure(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   _node = parent;
+  _logger = node->get_logger();
+  _clock = node->get_clock();
   _costmap = costmap_ros->getCostmap();
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
@@ -64,62 +65,62 @@ void SmacPlanner::configure(
 
   // General planner params
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".tolerance", rclcpp::ParameterValue(0.125));
-  _tolerance = static_cast<float>(_node->get_parameter(name + ".tolerance").as_double());
+    node, name + ".tolerance", rclcpp::ParameterValue(0.125));
+  _tolerance = static_cast<float>(node->get_parameter(name + ".tolerance").as_double());
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".downsample_costmap", rclcpp::ParameterValue(true));
-  _node->get_parameter(name + ".downsample_costmap", _downsample_costmap);
+    node, name + ".downsample_costmap", rclcpp::ParameterValue(true));
+  node->get_parameter(name + ".downsample_costmap", _downsample_costmap);
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
-  _node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
+    node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
+  node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
 
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".angle_quantization_bins", rclcpp::ParameterValue(1));
-  _node->get_parameter(name + ".angle_quantization_bins", angle_quantizations);
+    node, name + ".angle_quantization_bins", rclcpp::ParameterValue(1));
+  node->get_parameter(name + ".angle_quantization_bins", angle_quantizations);
   _angle_bin_size = 2.0 * M_PI / angle_quantizations;
   _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
 
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".allow_unknown", rclcpp::ParameterValue(true));
-  _node->get_parameter(name + ".allow_unknown", allow_unknown);
+    node, name + ".allow_unknown", rclcpp::ParameterValue(true));
+  node->get_parameter(name + ".allow_unknown", allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".max_iterations", rclcpp::ParameterValue(-1));
-  _node->get_parameter(name + ".max_iterations", max_iterations);
+    node, name + ".max_iterations", rclcpp::ParameterValue(-1));
+  node->get_parameter(name + ".max_iterations", max_iterations);
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".smooth_path", rclcpp::ParameterValue(false));
-  _node->get_parameter(name + ".smooth_path", smooth_path);
+    node, name + ".smooth_path", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".smooth_path", smooth_path);
 
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.2));
-  _node->get_parameter(name + ".minimum_turning_radius", search_info.minimum_turning_radius);
+    node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.2));
+  node->get_parameter(name + ".minimum_turning_radius", search_info.minimum_turning_radius);
 
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".reverse_penalty", rclcpp::ParameterValue(2.0));
-  _node->get_parameter(name + ".reverse_penalty", search_info.reverse_penalty);
+    node, name + ".reverse_penalty", rclcpp::ParameterValue(2.0));
+  node->get_parameter(name + ".reverse_penalty", search_info.reverse_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".change_penalty", rclcpp::ParameterValue(0.5));
-  _node->get_parameter(name + ".change_penalty", search_info.change_penalty);
+    node, name + ".change_penalty", rclcpp::ParameterValue(0.5));
+  node->get_parameter(name + ".change_penalty", search_info.change_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.05));
-  _node->get_parameter(name + ".non_straight_penalty", search_info.non_straight_penalty);
+    node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.05));
+  node->get_parameter(name + ".non_straight_penalty", search_info.non_straight_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".cost_penalty", rclcpp::ParameterValue(1.2));
-  _node->get_parameter(name + ".cost_penalty", search_info.cost_penalty);
+    node, name + ".cost_penalty", rclcpp::ParameterValue(1.2));
+  node->get_parameter(name + ".cost_penalty", search_info.cost_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(2.0));
-  _node->get_parameter(name + ".analytic_expansion_ratio", search_info.analytic_expansion_ratio);
+    node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(2.0));
+  node->get_parameter(name + ".analytic_expansion_ratio", search_info.analytic_expansion_ratio);
 
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".max_planning_time_ms", rclcpp::ParameterValue(5000.0));
-  _node->get_parameter(name + ".max_planning_time_ms", _max_planning_time);
+    node, name + ".max_planning_time_ms", rclcpp::ParameterValue(5000.0));
+  node->get_parameter(name + ".max_planning_time_ms", _max_planning_time);
 
   nav2_util::declare_parameter_if_not_declared(
-    _node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
-  _node->get_parameter(name + ".motion_model_for_search", motion_model_for_search);
+    node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
+  node->get_parameter(name + ".motion_model_for_search", motion_model_for_search);
   MotionModel motion_model = fromString(motion_model_for_search);
   if (motion_model == MotionModel::UNKNOWN) {
     RCLCPP_WARN(
-      _node->get_logger(),
+      _logger,
       "Unable to get MotionModel search type. Given '%s', "
       "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
       motion_model_for_search.c_str());
@@ -127,14 +128,14 @@ void SmacPlanner::configure(
 
   if (max_on_approach_iterations <= 0) {
     RCLCPP_INFO(
-      _node->get_logger(), "On approach iteration selected as <= 0, "
+      _logger, "On approach iteration selected as <= 0, "
       "disabling tolerance and on approach iterations.");
     max_on_approach_iterations = std::numeric_limits<int>::max();
   }
 
   if (max_iterations <= 0) {
     RCLCPP_INFO(
-      _node->get_logger(), "maximum iteration selected as <= 0, "
+      _logger, "maximum iteration selected as <= 0, "
       "disabling maximum iterations.");
     max_iterations = std::numeric_limits<int>::max();
   }
@@ -153,22 +154,23 @@ void SmacPlanner::configure(
 
   if (smooth_path) {
     _smoother = std::make_unique<Smoother>();
-    _optimizer_params.get(_node.get(), name);
-    _smoother_params.get(_node.get(), name);
+    _optimizer_params.get(node.get(), name);
+    _smoother_params.get(node.get(), name);
     _smoother_params.max_curvature = 1.0f / minimum_turning_radius_global_coords;
     _smoother->initialize(_optimizer_params);
   }
 
   if (_downsample_costmap && _downsampling_factor > 1) {
     std::string topic_name = "downsampled_costmap";
-    _costmap_downsampler = std::make_unique<CostmapDownsampler>(_node);
-    _costmap_downsampler->initialize(_global_frame, topic_name, _costmap, _downsampling_factor);
+    _costmap_downsampler = std::make_unique<CostmapDownsampler>();
+    _costmap_downsampler->on_configure(
+      node, _global_frame, topic_name, _costmap, _downsampling_factor);
   }
 
-  _raw_plan_publisher = _node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
+  _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
   RCLCPP_INFO(
-    _node->get_logger(), "Configured plugin %s of type SmacPlanner with "
+    _logger, "Configured plugin %s of type SmacPlanner with "
     "tolerance %.2f, maximum iterations %i, "
     "max on approach iterations %i, and %s. Using motion model: %s.",
     _name.c_str(), _tolerance, max_iterations, max_on_approach_iterations,
@@ -179,32 +181,33 @@ void SmacPlanner::configure(
 void SmacPlanner::activate()
 {
   RCLCPP_INFO(
-    _node->get_logger(), "Activating plugin %s of type SmacPlanner",
+    _logger, "Activating plugin %s of type SmacPlanner",
     _name.c_str());
   _raw_plan_publisher->on_activate();
   if (_costmap_downsampler) {
-    _costmap_downsampler->activatePublisher();
+    _costmap_downsampler->on_activate();
   }
 }
 
 void SmacPlanner::deactivate()
 {
   RCLCPP_INFO(
-    _node->get_logger(), "Deactivating plugin %s of type SmacPlanner",
+    _logger, "Deactivating plugin %s of type SmacPlanner",
     _name.c_str());
   _raw_plan_publisher->on_deactivate();
   if (_costmap_downsampler) {
-    _costmap_downsampler->deactivatePublisher();
+    _costmap_downsampler->on_deactivate();
   }
 }
 
 void SmacPlanner::cleanup()
 {
   RCLCPP_INFO(
-    _node->get_logger(), "Cleaning up plugin %s of type SmacPlanner",
+    _logger, "Cleaning up plugin %s of type SmacPlanner",
     _name.c_str());
   _a_star.reset();
   _smoother.reset();
+  _costmap_downsampler->on_cleanup();
   _costmap_downsampler.reset();
   _raw_plan_publisher.reset();
 }
@@ -251,7 +254,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 
   // Setup message
   nav_msgs::msg::Path plan;
-  plan.header.stamp = _node->now();
+  plan.header.stamp = _clock->now();
   plan.header.frame_id = _global_frame;
   geometry_msgs::msg::PoseStamped pose;
   pose.header = plan.header;
@@ -282,7 +285,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 
   if (!error.empty()) {
     RCLCPP_WARN(
-      _node->get_logger(),
+      _logger,
       "%s: failed to create plan, %s.",
       _name.c_str(), error.c_str());
     return plan;
@@ -304,7 +307,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   }
 
   // Publish raw path for debug
-  if (_node->count_subscribers(_raw_plan_publisher->get_topic_name()) > 0) {
+  if (_raw_plan_publisher->get_subscription_count() > 0) {
     _raw_plan_publisher->publish(plan);
   }
 
@@ -328,7 +331,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   // Smooth plan
   if (!_smoother->smooth(path_world, costmap, _smoother_params)) {
     RCLCPP_WARN(
-      _node->get_logger(),
+      _logger,
       "%s: failed to smooth plan, Ceres could not find a usable solution to optimize.",
       _name.c_str());
     return plan;
