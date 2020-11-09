@@ -115,6 +115,8 @@ With Buildkit's concurrent dependency resolution, multistage builds become paral
 
 ![pipeline](figs/multistage.svg)
 
+Note that stages independent of one another within the DAG represent opportunities where each may be executed in parallel; the colors of which simply denote it's functional purpose, wether it be for installing dependencies, building, or testing a given workspace. Depending upon the build `ARG`s provided or target stage selected when running docker build, the parent image the `cacher` stage builds from can be swapped out, and testing stages can be executed or bypassed as desired.
+
 This composition of stages follows a few basic principles:
 
 * Enforce Determinism
