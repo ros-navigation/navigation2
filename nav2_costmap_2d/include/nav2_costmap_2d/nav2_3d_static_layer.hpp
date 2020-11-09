@@ -15,14 +15,14 @@ namespace nav2_costmap_2d  // TODO rename ns to nav2_costmap_2d
 {
 // TODO 3D static layer now inherits from obstacle layer
 // TODO but we have to discuss the overall design of 2D/3D data input and processing
-class Nav23dStaticLayer : public nav2_costmap_2d::ObstacleLayer
+class StaticLayer3D : public nav2_costmap_2d::ObstacleLayer
 {
     /*
      *
      */
 public:
-    Nav23dStaticLayer(); // TODO a bit weird
-    virtual ~Nav23dStaticLayer();
+    StaticLayer3D(); // TODO a bit weird
+    virtual ~StaticLayer3D();
 
 // TODO Confirm: Is the 3 methods declaration necessary here?
 // TODO Should 'override' keyword be placed here?
@@ -45,6 +45,7 @@ public:
     virtual void fillCostMapFromPointCloud(sensor_msgs::msg::PointCloud2::ConstSharedPtr cloud);
 private:
     nav2_costmap_2d::Costmap2D _map_2d;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr _subscription;
     unsigned int _map_size_x;
     unsigned int _map_size_y;
     double _map_resolution;
@@ -54,7 +55,7 @@ private:
     /*
      *  mark_threshold_ : >> ?? <<
      */
-    unsigned char _lethal_threshold;
+    double _lethal_threshold;
     std::string _topic_name;
 
     /*

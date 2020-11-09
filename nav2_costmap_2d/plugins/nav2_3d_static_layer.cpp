@@ -19,13 +19,13 @@ using nav2_costmap_2d::FREE_SPACE;
 
 namespace nav2_costmap_2d
 {
-Nav23dStaticLayer::Nav23dStaticLayer() {
+    StaticLayer3D::StaticLayer3D() {
     _map_2d = nav2_costmap_2d::Costmap2D();
 }
-Nav23dStaticLayer::~Nav23dStaticLayer(){}
+    StaticLayer3D::~StaticLayer3D(){}
 
 void
-Nav23dStaticLayer::onInitialize()
+StaticLayer3D::onInitialize()
 {
     nav2_costmap_2d::ObstacleLayer::onInitialize();
     RCLCPP_INFO(
@@ -66,11 +66,14 @@ Nav23dStaticLayer::onInitialize()
      * read PC:
      * reading from pcd file and covert it into pc2 as the replacement of map server.
      */
-    readPC(cloud_pc2);
-    cloudCallback(cloud_pc2);
+//    readPC(cloud_pc2);
+//    cloudCallback(cloud_pc2);
+    _subscription = node->create_subscription<sensor_msgs::msg::PointCloud2>(
+            _topic_name, map_qos,
+            std::bind(&StaticLayer3D::cloudCallback, this, std::placeholders::_1));
 }
 void
-Nav23dStaticLayer::readPC(std::shared_ptr<sensor_msgs::msg::PointCloud2> cloud_pc2)
+StaticLayer3D::readPC(std::shared_ptr<sensor_msgs::msg::PointCloud2> cloud_pc2)
 {
     std::string file_path = "filepath/origin.pcd";
     pcl::PCLPointCloud2::Ptr cloud_file (new pcl::PCLPointCloud2 ());
@@ -83,7 +86,7 @@ Nav23dStaticLayer::readPC(std::shared_ptr<sensor_msgs::msg::PointCloud2> cloud_p
 }
 
 void
-Nav23dStaticLayer::cloudCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr pointcloud)
+StaticLayer3D::cloudCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr pointcloud)
 {
     /*
      *TODO: add observation part
@@ -111,7 +114,7 @@ Nav23dStaticLayer::cloudCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr p
 }
 
 void
-Nav23dStaticLayer::fillCostMapFromPointCloud(sensor_msgs::msg::PointCloud2::ConstSharedPtr cloud)
+StaticLayer3D::fillCostMapFromPointCloud(sensor_msgs::msg::PointCloud2::ConstSharedPtr cloud)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PCLPointCloud2::Ptr cloud_pcl(new pcl::PCLPointCloud2);
@@ -175,7 +178,7 @@ Nav23dStaticLayer::fillCostMapFromPointCloud(sensor_msgs::msg::PointCloud2::Cons
     }
 }
 void
-Nav23dStaticLayer::updateBounds(
+StaticLayer3D::updateBounds(
         double robot_x, double robot_y, double /*robot_yaw*/,
         double * min_x, double * min_y, double * max_x, double * max_y) {
     RCLCPP_INFO(
@@ -200,7 +203,7 @@ Nav23dStaticLayer::updateBounds(
 }
 
 void
-Nav23dStaticLayer::updateCosts(
+StaticLayer3D::updateCosts(
         nav2_costmap_2d::Costmap2D & master_grid,
         int min_i, int min_j, int max_i, int max_j)
 {
