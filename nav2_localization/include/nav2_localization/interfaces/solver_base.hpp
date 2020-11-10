@@ -9,6 +9,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include <model/systemmodel.h>
@@ -39,6 +40,8 @@ public:
      */
 	virtual geometry_msgs::msg::TransformStamped solve(
 		const geometry_msgs::msg::TransformStamped& curr_odom) = 0;
+
+	virtual void init_filter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &p) = 0;
 
 	virtual void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,

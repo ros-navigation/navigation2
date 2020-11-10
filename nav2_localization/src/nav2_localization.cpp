@@ -205,7 +205,7 @@ LocalizationServer::initPlugins()
 void
 LocalizationServer::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-    // TODO
+    solver_->init_filter(msg);
 }
 
 void
