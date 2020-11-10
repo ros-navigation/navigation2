@@ -40,8 +40,8 @@ SpinRecoveryTester::SpinRecoveryTester()
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
-  const char * env_p = std::getenv("MAKE_FAKE_COSTMAP");
-  if (env_p[0] == 't') {
+  if (std::getenv("MAKE_FAKE_COSTMAP") != NULL) {
+    // if this variable is set, make a fake costmap
     make_fake_costmap_ = true;
   } else {
     make_fake_costmap_ = false;
@@ -186,8 +186,16 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     RCLCPP_INFO(node_->get_logger(), "target_yaw %lf", target_yaw);
     sendFakeFootprint();
     sendFakeCostmap();
-    sendFakeOdom(target_yaw);
-    rclcpp::sleep_for(std::chrono::milliseconds(1000));
+    // Slowly increment command yaw by increment to simulate the robot slowly spinning into place
+    float step_size = target_yaw / 100; 
+    for (float command_yaw = 0.0;
+      abs(command_yaw) <= abs(target_yaw);
+        command_yaw = command_yaw + step_size) {
+        sendFakeOdom(command_yaw);
+        // sendFakeFootprint();
+        // sendFakeCostmap();
+        rclcpp::sleep_for(std::chrono::milliseconds(100));
+    }
     sendFakeOdom(target_yaw);
     RCLCPP_INFO(node_->get_logger(), "After sending goal");
   }

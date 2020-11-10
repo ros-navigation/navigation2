@@ -20,7 +20,6 @@ ament_add_test(test_spin_recovery
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/turtlebot3_ros2_demo.world
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
-    MAKE_FAKE_COSTMAP=false
 )
 
 ament_add_test(test_spin_recovery_fake
