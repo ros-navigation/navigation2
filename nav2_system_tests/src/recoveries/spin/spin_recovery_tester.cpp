@@ -39,7 +39,7 @@ SpinRecoveryTester::SpinRecoveryTester()
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);  
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
   const char * env_p = std::getenv("MAKE_FAKE_COSTMAP");
   if (env_p[0] == 't') {
     make_fake_costmap_ = true;
@@ -89,9 +89,9 @@ void SpinRecoveryTester::activate()
       rclcpp::spin_some(node_);
     }
   } else {
-      sendFakeFootprint();
-      sendFakeCostmap();
-      sendFakeOdom(0.0);
+    sendFakeFootprint();
+    sendFakeCostmap();
+    sendFakeOdom(0.0);
   }
 
   // Wait for lifecycle_manager_navigation to activate recoveries_server
@@ -178,8 +178,7 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   // Wait for the server to be done with the goal
   auto result_future = client_ptr_->async_get_result(goal_handle);
 
-  RCLCPP_INFO(node_->get_logger(), "Waiting for result");
-  
+  RCLCPP_INFO(node_->get_logger(), "Waiting for result");  
   rclcpp::sleep_for(std::chrono::milliseconds(1000));
 
   if (make_fake_costmap_) {  // if we are faking the costmap, we will fake success.
@@ -191,7 +190,7 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     rclcpp::sleep_for(std::chrono::milliseconds(1000));
     sendFakeOdom(target_yaw);
     RCLCPP_INFO(node_->get_logger(), "After sending goal");
-  }  
+  }
   if (rclcpp::spin_until_future_complete(node_, result_future) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
@@ -233,9 +232,9 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
       node_->get_logger(),
       "Init Yaw is %lf (tolerance %lf)",
       fabs(tf2::getYaw(initial_pose.pose.orientation)), tolerance);
-      RCLCPP_ERROR(
-        node_->get_logger(),
-        "Current Yaw is %lf (tolerance %lf)",
+    RCLCPP_ERROR(
+      node_->get_logger(),
+      "Current Yaw is %lf (tolerance %lf)",
       fabs(tf2::getYaw(current_pose.pose.orientation)), tolerance);
     RCLCPP_ERROR(
       node_->get_logger(),
