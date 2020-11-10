@@ -88,7 +88,7 @@ INSTANTIATE_TEST_SUITE_P(
   BackupRecoveryTests,
   BackupRecoveryTestFixture,
   ::testing::Values(
-    std::make_tuple(-1.0, 0.1),
+    std::make_tuple(-0.05, 0.1),
     std::make_tuple(-0.2, 0.1),
     std::make_tuple(-2.0, 0.1)),
   testNameGenerator);
