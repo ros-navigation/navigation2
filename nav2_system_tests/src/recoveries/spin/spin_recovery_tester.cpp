@@ -39,9 +39,8 @@ SpinRecoveryTester::SpinRecoveryTester()
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
-  
-  const char* env_p = std::getenv("MAKE_FAKE_COSTMAP");
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);  
+  const char * env_p = std::getenv("MAKE_FAKE_COSTMAP");
   if (env_p[0] == 't') {
     make_fake_costmap_ = true;
   } else {
@@ -58,7 +57,7 @@ SpinRecoveryTester::SpinRecoveryTester()
   publisher_ =
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
   fake_costmap_publisher_ =
-    node_->create_publisher<nav2_msgs::msg::Costmap>("local_costmap/costmap_raw",10);
+    node_->create_publisher<nav2_msgs::msg::Costmap>("local_costmap/costmap_raw", 10);
   fake_footprint_publisher_ =
     node_->create_publisher<geometry_msgs::msg::PolygonStamped>(
     "local_costmap/published_footprint",
@@ -183,7 +182,7 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   
   rclcpp::sleep_for(std::chrono::milliseconds(1000));
 
-  if (make_fake_costmap_) { //if we are faking the costmap, we will fake success.
+  if (make_fake_costmap_) {  // if we are faking the costmap, we will fake success.
     sendFakeOdom(0.0);
     RCLCPP_INFO(node_->get_logger(), "target_yaw %lf", target_yaw);
     sendFakeFootprint();
@@ -192,8 +191,7 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     rclcpp::sleep_for(std::chrono::milliseconds(1000));
     sendFakeOdom(target_yaw);
     RCLCPP_INFO(node_->get_logger(), "After sending goal");
-  }
-  
+  }  
   if (rclcpp::spin_until_future_complete(node_, result_future) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
@@ -235,9 +233,9 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
       node_->get_logger(),
       "Init Yaw is %lf (tolerance %lf)",
       fabs(tf2::getYaw(initial_pose.pose.orientation)), tolerance);
-        RCLCPP_ERROR(
-          node_->get_logger(),
-          "Current Yaw is %lf (tolerance %lf)",
+      RCLCPP_ERROR(
+        node_->get_logger(),
+        "Current Yaw is %lf (tolerance %lf)",
       fabs(tf2::getYaw(current_pose.pose.orientation)), tolerance);
     RCLCPP_ERROR(
       node_->get_logger(),
@@ -276,7 +274,6 @@ void SpinRecoveryTester::sendFakeCostmap()
 
   fake_costmap.header.frame_id = "odom";
   fake_costmap.header.stamp = rclcpp::Time();
-  
   fake_costmap.metadata.layer = "master";
   fake_costmap.metadata.resolution = 1.0;
   fake_costmap.metadata.size_x = 10;
@@ -328,7 +325,7 @@ void SpinRecoveryTester::sendFakeOdom(float angle)
   // Wrap around to number btwn 0 and 2pi, apparently this matters
   // angle = ((angle / (2.0 * M_PIf32)) - floor(angle / (2.0 * M_PIf32))) * 2 * M_PIf32;
   transformStamped.header.stamp = rclcpp::Time();
-  transformStamped.header.frame_id = "odom"; // TODO make these params
+  transformStamped.header.frame_id = "odom"; // TODO(vinnnyr) make these parameters
   transformStamped.child_frame_id = "base_link";
   transformStamped.transform.translation.x = 0.0;
   transformStamped.transform.translation.y = 0.0;
