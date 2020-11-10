@@ -32,7 +32,8 @@ public:
 
 protected:
   void execute(
-    const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::Spin>> goal_handle)
+    const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::Spin>> 
+    goal_handle)
   override
   {
     nav2_msgs::action::Spin::Result::SharedPtr result =

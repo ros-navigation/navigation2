@@ -178,7 +178,7 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   // Wait for the server to be done with the goal
   auto result_future = client_ptr_->async_get_result(goal_handle);
 
-  RCLCPP_INFO(node_->get_logger(), "Waiting for result");  
+  RCLCPP_INFO(node_->get_logger(), "Waiting for result");
   rclcpp::sleep_for(std::chrono::milliseconds(1000));
 
   if (make_fake_costmap_) {  // if we are faking the costmap, we will fake success.
@@ -187,14 +187,13 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     sendFakeFootprint();
     sendFakeCostmap();
     // Slowly increment command yaw by increment to simulate the robot slowly spinning into place
-    float step_size = target_yaw / 100; 
+    float step_size = target_yaw / 100;
     for (float command_yaw = 0.0;
       abs(command_yaw) <= abs(target_yaw);
-        command_yaw = command_yaw + step_size) {
-        sendFakeOdom(command_yaw);
-        // sendFakeFootprint();
-        // sendFakeCostmap();
-        rclcpp::sleep_for(std::chrono::milliseconds(100));
+      command_yaw = command_yaw + step_size)
+    {
+      sendFakeOdom(command_yaw);
+      rclcpp::sleep_for(std::chrono::milliseconds(100));
     }
     sendFakeOdom(target_yaw);
     RCLCPP_INFO(node_->get_logger(), "After sending goal");
@@ -332,7 +331,7 @@ void SpinRecoveryTester::sendFakeOdom(float angle)
   // Wrap around to number btwn 0 and 2pi, apparently this matters
   // angle = ((angle / (2.0 * M_PIf32)) - floor(angle / (2.0 * M_PIf32))) * 2 * M_PIf32;
   transformStamped.header.stamp = rclcpp::Time();
-  transformStamped.header.frame_id = "odom"; // TODO(vinnnyr) make these parameters
+  transformStamped.header.frame_id = "odom";  // TODO(vinnnyr) make these parameters
   transformStamped.child_frame_id = "base_link";
   transformStamped.transform.translation.x = 0.0;
   transformStamped.transform.translation.y = 0.0;

@@ -25,21 +25,10 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 
-from nav2_common.launch import RewrittenYaml
-
 
 def generate_launch_description():
-    map_yaml_file = os.getenv('TEST_MAP')
 
     bringup_dir = get_package_share_directory('nav2_bringup')
-    params_file = os.path.join(bringup_dir, 'params/nav2_params.yaml')
-
-    # Replace the `use_astar` setting on the params file
-    configured_params = RewrittenYaml(
-        source_file=params_file,
-        root_key='',
-        param_rewrites='',
-        convert_types=True)
 
     return LaunchDescription([
         SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
