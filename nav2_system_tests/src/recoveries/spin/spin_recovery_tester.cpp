@@ -193,7 +193,7 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
       command_yaw = command_yaw + step_size)
     {
       sendFakeOdom(command_yaw);
-      rclcpp::sleep_for(std::chrono::milliseconds(100));
+      rclcpp::sleep_for(std::chrono::milliseconds(10));
     }
     sendFakeOdom(target_yaw);
     RCLCPP_INFO(node_->get_logger(), "After sending goal");
@@ -288,13 +288,13 @@ void SpinRecoveryTester::sendFakeCostmap()
   fake_costmap.metadata.origin.position.y = 0;
   fake_costmap.metadata.origin.orientation.w = 1.0;
   float costmap_val = 0;
-  for (int ix = 0; ix < fake_costmap.metadata.origin.position.x; ix++) {
-    if (ix >= fake_costmap.metadata.size_x / fake_costmap.metadata.resolution / 2.0) {
-      costmap_val = 100;
+  for (int ix = 0; ix < fake_costmap.metadata.size_x / fake_costmap.metadata.resolution; ix++) {
+    if (ix >= fake_costmap.metadata.origin.position.x) {
+      costmap_val = 0;
     } else {
       costmap_val = 0;
     }
-    for (int iy = 0; iy < fake_costmap.metadata.origin.position.y; iy++) {
+    for (int iy = 0; iy < fake_costmap.metadata.size_y / fake_costmap.metadata.resolution; iy++) {
       fake_costmap.data.push_back(costmap_val);
     }
   }
@@ -328,10 +328,9 @@ void SpinRecoveryTester::sendInitialPose()
 void SpinRecoveryTester::sendFakeOdom(float angle)
 {
   geometry_msgs::msg::TransformStamped transformStamped;
-  // Wrap around to number btwn 0 and 2pi, apparently this matters
-  // angle = ((angle / (2.0 * M_PIf32)) - floor(angle / (2.0 * M_PIf32))) * 2 * M_PIf32;
+
   transformStamped.header.stamp = rclcpp::Time();
-  transformStamped.header.frame_id = "odom";  // TODO(vinnnyr) make these parameters
+  transformStamped.header.frame_id = "odom";
   transformStamped.child_frame_id = "base_link";
   transformStamped.transform.translation.x = 0.0;
   transformStamped.transform.translation.y = 0.0;
