@@ -122,11 +122,10 @@ Status Spin::onCycleUpdate()
   if (remaining_yaw < 1e-6) {
     stopRobot();
     return Status::SUCCEEDED;
-  }
-  else{
+  } else {
     RCLCPP_INFO(
-    logger_, "Remaining Yaw: %lf",
-    remaining_yaw);
+      logger_, "Remaining Yaw: %lf",
+      remaining_yaw);
   }
 
   double vel = sqrt(2 * rotational_acc_lim_ * remaining_yaw);
