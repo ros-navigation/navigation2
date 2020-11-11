@@ -9,13 +9,12 @@
 // Types
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "geometry_msgs/msg/pose.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
 // Others
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "nav2_localization/custom_particle_filter.hpp"
+#include "nav2_localization/dummy_particle_filter.hpp"
 
 namespace nav2_localization
 {
@@ -27,30 +26,21 @@ public:
 	geometry_msgs::msg::TransformStamped solve(
 		const geometry_msgs::msg::TransformStamped& curr_odom);
 
+	void init_filter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose);
+
 	void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
 		SampleMotionModel::Ptr& motionSampler,
 		Matcher2d::Ptr& matcher,
 		const geometry_msgs::msg::TransformStamped& odom,
-		const geometry_msgs::msg::Pose& pose);
+		const geometry_msgs::msg::TransformStamped& pose);
 
 	void activate();
 	void deactivate();
 	void cleanup();
 
-	void CreateParticleFilter(
-		unsigned int NUM_SAMPLES,
-		unsigned int STATE_SIZE,
-		float PRIOR_MU_X,
-		float PRIOR_MU_Y,
-		float PRIOR_MU_THETA,
-		float PRIOR_COV_X,
-		float PRIOR_COV_Y,
-		float PRIOR_COV_THETA);
-
 private:
-	CustomParticleFilter* pf_;
-	std::make_shared<std::vector<geometry_msgs::msg::TransformStamped>> prior_samples_;
+	std::shared_ptr<DummyParticleFilter> pf_;
 };
 } // nav2_localization
 

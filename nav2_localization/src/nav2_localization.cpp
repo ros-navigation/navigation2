@@ -10,13 +10,13 @@ namespace nav2_localization
 
 LocalizationServer::LocalizationServer()
 : nav2_util::LifecycleNode("localization_server", "", true),
-  sample_motion_model_loader_("nav2_localization", "nav2_localization::SampleMotionModelPDF"),
-  default_sample_motion_model_id_("DiffDriveOdomMotionModelPDF"),
-  matcher2d_loader_("nav2_localization", "nav2_localization::Matcher2dPDF"),
-  default_matcher2d_id_("LikelihoodFieldMatcher2dPDF"),
+  sample_motion_model_loader_("nav2_localization", "nav2_localization::SampleMotionModel"),
+  default_sample_motion_model_id_("DiffDriveOdomMotionModel"),
+  matcher2d_loader_("nav2_localization", "nav2_localization::Matcher2d"),
+  default_matcher2d_id_("LikelihoodFieldMatcher2d"),
   solver_loader_("nav2_localization", "nav2_localization::Solver"),
   default_solver_id_("DummySolver2d"),
-  default_types_{"nav2_localization::DiffDriveOdomMotionModelPDF", "nav2_localization::LikelihoodFieldMatcher2dPDF", "nav2_localization::DummySolver"}
+  default_types_{"nav2_localization::DiffDriveOdomMotionModel", "nav2_localization::LikelihoodFieldMatcher2d", "nav2_localization::DummySolver"}
 {
     RCLCPP_INFO(get_logger(), "Creating localization server");
 
@@ -199,7 +199,7 @@ LocalizationServer::initPlugins()
         exit(-1);
     }
 
-    solver_->configure(node, sample_motion_model_, matcher2d_, geometry_msgs::msg::TransformStamped(), geometry_msgs::msg::Pose());
+    solver_->configure(node, sample_motion_model_, matcher2d_, geometry_msgs::msg::TransformStamped(), geometry_msgs::msg::TransformStamped());
 }
 
 void

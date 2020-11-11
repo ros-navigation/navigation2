@@ -8,13 +8,9 @@
 namespace nav2_localization
 {
 /**
- * @class SampleMotionModelPDF
+ * @class SampleMotionModel
  * @brief Abstract interface for sample motion model to adhere to with pluginlib
  */
-
-// ConditionalPdf template paramteres:
-// - Var: the most likely pose (x_t)
-// - CondArg: the previous pose (x_t-1), the current odom (x_bar_t) and the previous pose
 class SampleMotionModel
 {   
 public:
@@ -23,7 +19,7 @@ public:
     virtual geometry_msgs::msg::TransformStamped getMostLikelyPose(
         const geometry_msgs::msg::TransformStamped& prev_odom,
         const geometry_msgs::msg::TransformStamped& curr_odom,
-        const geometry_msgs::msg::TransformStamped& prev_pose);
+        const geometry_msgs::msg::TransformStamped& prev_pose) = 0;
 
     virtual void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) = 0;
 

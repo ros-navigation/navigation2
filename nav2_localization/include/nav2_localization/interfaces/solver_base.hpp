@@ -8,7 +8,6 @@
 // Types
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -39,14 +38,14 @@ public:
 	virtual geometry_msgs::msg::TransformStamped solve(
 		const geometry_msgs::msg::TransformStamped& curr_odom) = 0;
 
-	virtual void init_filter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &p) = 0;
+	virtual void init_filter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose) = 0;
 
 	virtual void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
 		SampleMotionModel::Ptr& motionSampler,
 		Matcher2d::Ptr& matcher,
 		const geometry_msgs::msg::TransformStamped& odom,
-		const geometry_msgs::msg::Pose& pose) = 0;
+		const geometry_msgs::msg::TransformStamped& pose) = 0;
 
 	virtual void activate() = 0;
 
@@ -59,7 +58,7 @@ protected:
 	SampleMotionModel::Ptr motionSampler_;
 	Matcher2d::Ptr matcher_;
 	geometry_msgs::msg::TransformStamped prev_odom_; // Previous pose odometry-based estimation
-	geometry_msgs::msg::Pose prev_pose_; // Previous pose estimation
+	geometry_msgs::msg::TransformStamped prev_pose_; // Previous pose estimation
 };
 } // nav2_localization
 
