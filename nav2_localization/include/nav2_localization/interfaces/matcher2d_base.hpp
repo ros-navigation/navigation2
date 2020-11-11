@@ -15,12 +15,12 @@ namespace nav2_localization
  * @brief Abstract interface for a 2D matcher for localization purposes to adhere to with pluginlib
  */
 
-class Matcher2dPDF
+class Matcher2d
 {
 public:
-    Matcher2dPDF(){}
+    Matcher2d(){}
 
-	using Ptr = std::shared_ptr<nav2_localization::Matcher2dPDF>;
+	using Ptr = std::shared_ptr<nav2_localization::Matcher2d>;
 
 	virtual void configure(const nav2_util::LifecycleNode::SharedPtr& node) = 0;
 

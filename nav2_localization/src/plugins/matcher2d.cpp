@@ -7,7 +7,7 @@
 namespace nav2_localization
 {
 
-void LikelihoodFieldMatcher2dPDF::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node)
+void LikelihoodFieldMatcher2d::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node)
 {
 	node_ = node;
 
@@ -28,7 +28,7 @@ void LikelihoodFieldMatcher2dPDF::configure(const rclcpp_lifecycle::LifecycleNod
 	node_->get_parameter("z_rand", z_rand_);
 }
 
-double LikelihoodFieldMatcher2dPDF::probabilityGet(
+double LikelihoodFieldMatcher2d::probabilityGet(
 	const sensor_msgs::msg::LaserScan & measurement,
 	const geometry_msgs::msg::TransformStamped & curr_pose) const
 {
@@ -59,38 +59,38 @@ double LikelihoodFieldMatcher2dPDF::probabilityGet(
 	return q;
 }
 
-void LikelihoodFieldMatcher2dPDF::activate()
+void LikelihoodFieldMatcher2d::activate()
 {
 
 }
 
-void LikelihoodFieldMatcher2dPDF::deactivate()
+void LikelihoodFieldMatcher2d::deactivate()
 {
 
 }
 
-void LikelihoodFieldMatcher2dPDF::cleanup()
+void LikelihoodFieldMatcher2d::cleanup()
 {
 
 }
 
-void LikelihoodFieldMatcher2dPDF::setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr& map)
+void LikelihoodFieldMatcher2d::setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr& map)
 {
 	map_ = map;
 	preComputeLikelihoodField();	// TODO: is this the best place for this?
 }
 
-void LikelihoodFieldMatcher2dPDF::setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan)
+void LikelihoodFieldMatcher2d::setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan)
 {
 	laser_scan_ = laser_scan;
 }
 
-sensor_msgs::msg::LaserScan::ConstSharedPtr LikelihoodFieldMatcher2dPDF::getLaserScan()
+sensor_msgs::msg::LaserScan::ConstSharedPtr LikelihoodFieldMatcher2d::getLaserScan()
 {
 	return laser_scan_;
 }
 
-void LikelihoodFieldMatcher2dPDF::preComputeLikelihoodField()
+void LikelihoodFieldMatcher2d::preComputeLikelihoodField()
 {
 	std::vector<int> occupied_cells;
 
@@ -125,7 +125,7 @@ void LikelihoodFieldMatcher2dPDF::preComputeLikelihoodField()
     RCLCPP_ERROR(node_->get_logger(), "4");
 }
 
-void LikelihoodFieldMatcher2dPDF::DFS(const int &index_curr, const int &index_of_obstacle, std::vector<bool> &visited)
+void LikelihoodFieldMatcher2d::DFS(const int &index_curr, const int &index_of_obstacle, std::vector<bool> &visited)
 {
 	visited[index_curr] = true;
 	std::pair<uint32_t, uint32_t> coord_curr = MapUtils::index_to_coordinates(index_curr, map_->info.width);
@@ -178,10 +178,10 @@ void LikelihoodFieldMatcher2dPDF::DFS(const int &index_curr, const int &index_of
 	}
 }
 
-void LikelihoodFieldMatcher2dPDF::setLaserPose(const geometry_msgs::msg::TransformStamped& laser_pose)
+void LikelihoodFieldMatcher2d::setLaserPose(const geometry_msgs::msg::TransformStamped& laser_pose)
 {
 	laser_pose_ = laser_pose;
 }
 } // nav2_localization
 
-PLUGINLIB_EXPORT_CLASS(nav2_localization::LikelihoodFieldMatcher2dPDF, nav2_localization::Matcher2dPDF)
+PLUGINLIB_EXPORT_CLASS(nav2_localization::LikelihoodFieldMatcher2d, nav2_localization::Matcher2d)

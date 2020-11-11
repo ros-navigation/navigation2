@@ -7,10 +7,10 @@
 
 namespace nav2_localization
 {
-class LikelihoodFieldMatcher2dPDF : public Matcher2dPDF
+class LikelihoodFieldMatcher2d : public Matcher2d
 {
 public:
-	LikelihoodFieldMatcher2dPDF() : Matcher2dPDF(){}
+	LikelihoodFieldMatcher2d() : Matcher2d(){}
 
 	void activate();
 	void deactivate();

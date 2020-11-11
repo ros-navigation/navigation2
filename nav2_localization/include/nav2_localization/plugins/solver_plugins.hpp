@@ -29,8 +29,8 @@ public:
 
 	void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-		SampleMotionModelPDF::Ptr& motionSampler,
-		Matcher2dPDF::Ptr& matcher,
+		SampleMotionModel::Ptr& motionSampler,
+		Matcher2d::Ptr& matcher,
 		const geometry_msgs::msg::TransformStamped& odom,
 		const geometry_msgs::msg::Pose& pose);
 
