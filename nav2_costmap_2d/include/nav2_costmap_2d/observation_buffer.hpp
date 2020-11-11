@@ -49,6 +49,12 @@
 #include "nav2_costmap_2d/observation.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
+/**
+ * private field 'tf_tolerance_' is not yet used which causes compilation failure
+ * when using flag -Werror with Clang 12
+ */
+#pragma GCC diagnostic ignored "-Wunused-private-field"
+
 namespace nav2_costmap_2d
 {
 /**

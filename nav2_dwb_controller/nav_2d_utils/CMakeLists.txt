@@ -25,6 +25,7 @@ set(dependencies
   tf2_geometry_msgs
   nav2_msgs
   nav2_util
+  nav_2d_msgs
 )
 
 include_directories(
@@ -52,6 +53,8 @@ add_library(tf_help SHARED
 ament_target_dependencies(tf_help
   ${dependencies}
 )
+
+target_link_libraries(tf_help conversions)
 
 install(TARGETS conversions path_ops tf_help
         ARCHIVE DESTINATION lib

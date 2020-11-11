@@ -31,6 +31,13 @@
 #include "image_transport/image_transport.hpp"
 
 
+/**
+ * While C++17 isn't the project standard. We have to force LLVM/CLang
+ * to ignore deprecated declarations
+ */
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+
 namespace nav2_waypoint_follower
 {
 
