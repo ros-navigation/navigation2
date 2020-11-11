@@ -6,7 +6,6 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "pdf/conditionalpdf.h"
 
 namespace nav2_localization
 {
@@ -16,14 +15,10 @@ namespace nav2_localization
  * @brief Abstract interface for a 2D matcher for localization purposes to adhere to with pluginlib
  */
 
-// ConditionalPdf template paramteres:
-// - Var: the laser measurement
-// - CondArg: the current pose (x_t)
-class Matcher2dPDF : public BFL::ConditionalPdf<sensor_msgs::msg::LaserScan, geometry_msgs::msg::TransformStamped>
+class Matcher2dPDF
 {
 public:
-    Matcher2dPDF(int dim, int num_of_cond_args)
-		: BFL::ConditionalPdf<sensor_msgs::msg::LaserScan, geometry_msgs::msg::TransformStamped>(dim, num_of_cond_args) {}
+    Matcher2dPDF(){}
 
 	using Ptr = std::shared_ptr<nav2_localization::Matcher2dPDF>;
 

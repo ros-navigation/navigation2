@@ -28,8 +28,9 @@ void LikelihoodFieldMatcher2dPDF::configure(const rclcpp_lifecycle::LifecycleNod
 	node_->get_parameter("z_rand", z_rand_);
 }
 
-BFL::Probability LikelihoodFieldMatcher2dPDF::ProbabilityGet(
-	const sensor_msgs::msg::LaserScan &measurement) const
+double LikelihoodFieldMatcher2dPDF::probabilityGet(
+	const sensor_msgs::msg::LaserScan & measurement,
+	const geometry_msgs::msg::TransformStamped & curr_pose) const
 {
 	double q = 1;
 
@@ -39,7 +40,6 @@ BFL::Probability LikelihoodFieldMatcher2dPDF::ProbabilityGet(
 	{
 		if(laser_scan_->ranges[i]<z_max_ || laser_scan_->ranges[i]>z_min_) // within sensor range
 		{
-			geometry_msgs::msg::TransformStamped curr_pose = ConditionalArgumentGet(0);
 			double x_z_kt = curr_pose.transform.translation.x +
 							laser_pose_.transform.translation.x * cos(tf2::getYaw(curr_pose.transform.rotation)) -
 							laser_pose_.transform.translation.y * sin(tf2::getYaw(curr_pose.transform.rotation)) +
@@ -56,7 +56,7 @@ BFL::Probability LikelihoodFieldMatcher2dPDF::ProbabilityGet(
 			q *= z_hit_* dist_prob + (z_rand_/z_max_);
 		}
 	}
-	return BFL::Probability(q);
+	return q;
 }
 
 void LikelihoodFieldMatcher2dPDF::activate()
