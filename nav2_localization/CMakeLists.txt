@@ -16,9 +16,6 @@ find_package(message_filters REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
-find_package(PkgConfig REQUIRED)
-
-pkg_check_modules(BFL REQUIRED orocos-bfl)
 
 set(dependencies
   rclcpp
@@ -36,12 +33,7 @@ set(dependencies
   nav2_msgs
 )
 
-include_directories(
-  include
-  ${BFL_INCLUDE_DIRS}/bfl
-)
-
-add_library(sample_motion_model SHARED src/plugins/sample_motion_model.cpp)
+add_library(sample_motion_model SHARED src/plugins/sample_motion_model.cpp src/angle_utils.cpp)
 ament_target_dependencies(sample_motion_model ${dependencies})
 
 add_library(matcher2d SHARED src/plugins/matcher2d.cpp src/map_utils.cpp)
@@ -49,7 +41,6 @@ ament_target_dependencies(matcher2d ${dependencies})
 
 add_library(solver SHARED src/plugins/solver.cpp src/custom_particle_filter.cpp)
 ament_target_dependencies(solver ${dependencies})
-target_link_libraries(solver orocos-bfl)
 
 set(executable_name nav2_localization)
 add_executable(${executable_name}
@@ -75,8 +66,6 @@ target_link_libraries(${executable_name}
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
-
-target_link_directories(solver PUBLIC ${BFL_LIBRARY_DIRS})
 
 install(TARGETS sample_motion_model matcher2d solver
         ARCHIVE DESTINATION lib

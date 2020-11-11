@@ -104,15 +104,15 @@ protected:
     message_filters::Connection laser_scan_connection_;
 
     // Sample Motion Model Plugin
-    pluginlib::ClassLoader<nav2_localization::SampleMotionModelPDF> sample_motion_model_loader_;
-    nav2_localization::SampleMotionModelPDF::Ptr sample_motion_model_;
+    pluginlib::ClassLoader<nav2_localization::SampleMotionModel> sample_motion_model_loader_;
+    nav2_localization::SampleMotionModel::Ptr sample_motion_model_;
     std::string default_sample_motion_model_id_;
     std::string sample_motion_model_id_;
     std::string sample_motion_model_type_;
 
     // Matcher Plugin
-    pluginlib::ClassLoader<nav2_localization::Matcher2dPDF> matcher2d_loader_;
-    nav2_localization::Matcher2dPDF::Ptr matcher2d_;
+    pluginlib::ClassLoader<nav2_localization::Matcher2d> matcher2d_loader_;
+    nav2_localization::Matcher2d::Ptr matcher2d_;
     std::string default_matcher2d_id_;
     std::string matcher2d_id_;
     std::string matcher2d_type_;
