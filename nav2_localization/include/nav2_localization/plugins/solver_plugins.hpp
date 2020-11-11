@@ -16,7 +16,6 @@
 // Others
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_localization/custom_particle_filter.hpp"
-#include <pdf/mcpdf.h>
 
 namespace nav2_localization
 {
@@ -30,8 +29,8 @@ public:
 
 	void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-		SampleMotionModelPDF::Ptr& motionSamplerPDF,
-		Matcher2dPDF::Ptr& matcherPDF,
+		SampleMotionModelPDF::Ptr& motionSampler,
+		Matcher2dPDF::Ptr& matcher,
 		const geometry_msgs::msg::TransformStamped& odom,
 		const geometry_msgs::msg::Pose& pose);
 
@@ -51,8 +50,7 @@ public:
 
 private:
 	CustomParticleFilter* pf_;
-	std::shared_ptr<BFL::MCPdf<geometry_msgs::msg::TransformStamped>> prior_discr_;
-	std::shared_ptr<std::vector<BFL::Sample<geometry_msgs::msg::TransformStamped>>> prior_samples_;
+	std::make_shared<std::vector<geometry_msgs::msg::TransformStamped>> prior_samples_;
 };
 } // nav2_localization
 

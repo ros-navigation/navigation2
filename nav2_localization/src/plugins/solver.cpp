@@ -2,58 +2,81 @@
 #include "nav2_localization/interfaces/solver_base.hpp"
 #include "nav2_localization/plugins/solver_plugins.hpp"
 #include "nav2_localization/custom_particle_filter.hpp"
-#include <model/systemmodel.h>
-#include <model/measurementmodel.h>
-#include <pdf/gaussian.h>
 #include <vector>
 
 namespace nav2_localization
 {
-void DummySolver2d::CreateParticleFilter(unsigned int NUM_SAMPLES, unsigned int STATE_SIZE, float PRIOR_MU_X, float PRIOR_MU_Y, float PRIOR_MU_THETA, float PRIOR_COV_X, float PRIOR_COV_Y, float PRIOR_COV_THETA)
+void DummySolver2d::CreateParticleFilter(
+	unsigned int NUM_SAMPLES,
+	unsigned int STATE_SIZE,
+	float PRIOR_MU_X,
+	float PRIOR_MU_Y,
+	float PRIOR_MU_THETA,
+	float PRIOR_COV_X,
+	float PRIOR_COV_Y,
+	float PRIOR_COV_THETA)
 {
+	// Convert orientation from Euler Angles to Quaternion
+	float roll = 0.0, pitch = 0.0, yaw = PRIOR_MU_THETA;
+	float cy = cos(yaw * 0.5);
+    float sy = sin(yaw * 0.5);
+    float cp = cos(pitch * 0.5);
+    float sp = sin(pitch * 0.5);
+    float cr = cos(roll * 0.5);
+    float sr = sin(roll * 0.5);
+
+    float q_x = cr * cp * cy + sr * sp * sy;
+    float q_y = sr * cp * cy - cr * sp * sy;
+    float q_z = cr * sp * cy + sr * cp * sy;
+    float q_w = cr * cp * sy - sr * sp * cy;
+
+	// Generate a particle for initialization
 	geometry_msgs::msg::TransformStamped default_pose;
-	default_pose.transform.translation.x = 0.0;
-	default_pose.transform.translation.y = 0.0;
+	default_pose.transform.translation.x = PRIOR_MU_X;
+	default_pose.transform.translation.y = PRIOR_MU_Y;
+	default_pose.transform.translation.z = 0.0;
+	default_pose.transform.rotation.x = q_x;
+	default_pose.transform.rotation.y = q_y;
+	default_pose.transform.rotation.z = q_z;
+	default_pose.transform.rotation.w = q_w;
 
-	prior_samples_ = std::make_shared<std::vector<BFL::Sample<geometry_msgs::msg::TransformStamped>>>(NUM_SAMPLES);
+	// Create vector of particles
+	// TODO - Add noise to each particle using covariance
+	prior_samples_ = std::make_shared<std::vector<geometry_msgs::msg::TransformStamped>>;
 	for(int i=0; i<NUM_SAMPLES; i++)
-		prior_samples_->at(i).ValueSet(default_pose); //sets all particles at (0.0, 0.0)
+		prior_samples_->push_back(default_pose);
 
-    prior_discr_ = std::make_unique<BFL::MCPdf<geometry_msgs::msg::TransformStamped>>(NUM_SAMPLES, STATE_SIZE);
-	prior_discr_->ListOfSamplesSet(*prior_samples_);
-	
-	/******************************
-	 * Construction of the Filter *
-	 ******************************/
-
-	pf_ = new CustomParticleFilter(prior_discr_.get(), 0, NUM_SAMPLES/4.0);
+	// Create particle filter
+	pf_ = new CustomParticleFilter(prior=prior_samples_, resampleperiod=0, resample_threshold=NUM_SAMPLES/4.0);
 }
 
 geometry_msgs::msg::TransformStamped DummySolver2d::solve(
 	const geometry_msgs::msg::TransformStamped& curr_odom)
 {
 	// Motion update with motion sampler and current odometry
-	pf_->Update(motionSampler_.get(), curr_odom);
+	pf_->updateParticles(motionSampler_, curr_odom);
 
 	// Weigths calculation with matcher and measurement
-	pf_->Update(matcher_.get(), *(matcherPDF_->getLaserScan()));
+	pf_->computeWeights(matcher_, *(matcher_->getLaserScan()));
     
+
+	// Resample - Future TODO - How to choose resampling method? One per function, argument...?
+	pf_->resample();
+
 	// Get new particles (in case we want to publish them)
-	// samples = pf_->getNewSamples();
+	// samples = pf_->getParticles();
 
 	// Returns an estimated pose using all the information contained in the particle filter.
 	// TODO - Add covariance to TransformStamped msg
-    BFL::Pdf<geometry_msgs::msg::TransformStamped>* posterior = pf_->PostGet();
-    geometry_msgs::msg::TransformStamped pose = posterior->ExpectedValueGet();
-    // SymmetricMatrix pose_cov = posterior->CovarianceGet();
+    geometry_msgs::msg::TransformStamped* pose = pf_->getPosterior();
 
     return pose;
 }
 
 void DummySolver2d::configure(
 	const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-	SampleMotionModelPDF::Ptr& motionSamplerPDF,
-	Matcher2dPDF::Ptr& matcherPDF,
+	SampleMotionModelPDF::Ptr& motionSampler,
+	Matcher2dPDF::Ptr& matcher,
 	const geometry_msgs::msg::TransformStamped& odom,
 	const geometry_msgs::msg::Pose& pose)
 {
@@ -68,8 +91,8 @@ void DummySolver2d::configure(
 	node_->declare_parameter("prior_cov_y", 0.0);
 	node_->declare_parameter("prior_cov_theta", 0.0);
 
-	motionSamplerPDF_ = motionSamplerPDF;
-	matcherPDF_ = matcherPDF;
+	motionSampler_ = motionSampler;
+	matcher_ = matcher;
 
 	// Get configuration and generate PF
 	int NUM_SAMPLES;
@@ -90,8 +113,6 @@ void DummySolver2d::configure(
 	node_->get_parameter("prior_cov_theta", PRIOR_COV_THETA);
 	CreateParticleFilter(NUM_SAMPLES, STATE_SIZE, PRIOR_MU_X, PRIOR_MU_Y, PRIOR_MU_THETA, PRIOR_COV_X, PRIOR_COV_Y, PRIOR_COV_THETA);
 
-	motionSampler_ = std::make_shared<BFL::SystemModel<geometry_msgs::msg::TransformStamped>>(motionSamplerPDF.get());
-	matcher_ = std::make_shared<BFL::MeasurementModel<sensor_msgs::msg::LaserScan, geometry_msgs::msg::TransformStamped>>(matcherPDF.get());
 	prev_odom_ = odom;
 	prev_pose_ = pose;
 	return;
