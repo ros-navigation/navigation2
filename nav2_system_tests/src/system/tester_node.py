@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-
 # Copyright 2018 Intel Corporation.
 # Copyright 2020 Florian Gramss
 #
