@@ -53,8 +53,8 @@ public:
 
   void addGrootMonitoring(
     BT::Tree * tree,
-    uint16_t publisher_port = 1666,
-    uint16_t server_port = 1667,
+    uint16_t publisher_port,
+    uint16_t server_port,
     uint16_t max_msg_per_second = 25);
 
   void resetGrootMonitor();
