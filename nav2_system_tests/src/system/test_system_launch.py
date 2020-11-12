@@ -50,13 +50,10 @@ def generate_launch_description():
 
     if (os.getenv('ASTAR') == "True"):
         param_substitutions.update({'use_astar': "True"})
-        print("ASTAR set True")
 
     if (os.getenv('GROOT_MONITORING') == "True"):
         param_substitutions.update({'enable_groot_monitoring': "True"})
-        print("GROOT_MONITORING set True")
 
-    print
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key='',
