@@ -51,7 +51,7 @@ public:
     const std::string & file_path,
     BT::Blackboard::Ptr blackboard);
 
-  void addZMQGrootMonitoring(
+  void addGrootMonitoring(
     BT::Tree * tree,
     uint16_t publisher_port = 1666,
     uint16_t server_port = 1667,
@@ -65,7 +65,7 @@ public:
 protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
-  std::unique_ptr<BT::PublisherZMQ> publisher_zmq_;
+  std::unique_ptr<BT::PublisherZMQ> groot_monitor_;
 };
 
 }  // namespace nav2_behavior_tree
