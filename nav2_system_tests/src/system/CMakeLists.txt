@@ -57,8 +57,6 @@ ament_add_test(test_bt_navigator_with_groot_monitoring_and_zmq_ports
     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
     ASTAR=False
     GROOT_MONITORING=True
-    GROOT_ZMQ_PUB_PORT=1500
-    GROOT_ZMQ_SERVER_PORT=1337
 )
 
 ament_add_test(test_dynamic_obstacle

@@ -153,7 +153,7 @@ class NavTester(Node):
         context = zmq.Context()
 
         sock = context.socket(zmq.REQ)
-        port = os.getenv('GROOT_ZMQ_SERVER_PORT', default=1667)
+        port = 1667 # default server port for groot monitoring
         # # Set a Timeout so we do not spin till infinity
         sock.setsockopt(zmq.RCVTIMEO, 1000)
         # sock.setsockopt(zmq.LINGER, 0)
@@ -204,7 +204,7 @@ class NavTester(Node):
 
         # Define subscription and messages with prefix to accept.
         sock.setsockopt_string(zmq.SUBSCRIBE, "")
-        port = os.getenv('GROOT_ZMQ_PUB_PORT', default=1666)
+        port = 1666 # default publishing port for groot monitoring
         sock.connect("tcp://127.0.0.1:" + str(port))
 
         for request in range(3):
