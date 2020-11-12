@@ -15,6 +15,13 @@
 #ifndef NAV2_WAYPOINT_FOLLOWER__PLUGINS__PHOTO_AT_WAYPOINT_HPP_
 #define NAV2_WAYPOINT_FOLLOWER__PLUGINS__PHOTO_AT_WAYPOINT_HPP_
 
+/**
+ * While C++17 isn't the project standard. We have to force LLVM/CLang
+ * to ignore deprecated declarations
+ */
+#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
+
+
 #include <experimental/filesystem>
 #include <mutex>
 #include <string>
@@ -29,13 +36,6 @@
 #include "opencv4/opencv2/opencv.hpp"
 #include "cv_bridge/cv_bridge.h"
 #include "image_transport/image_transport.hpp"
-
-
-/**
- * While C++17 isn't the project standard. We have to force LLVM/CLang
- * to ignore deprecated declarations
- */
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 
 namespace nav2_waypoint_follower

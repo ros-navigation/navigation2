@@ -55,7 +55,7 @@ ObservationBuffer::ObservationBuffer(
   double expected_update_rate,
   double min_obstacle_height, double max_obstacle_height, double obstacle_range,
   double raytrace_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
-  std::string sensor_frame, double tf_tolerance)
+  std::string sensor_frame, tf2::Duration tf_tolerance)
 : tf2_buffer_(tf2_buffer),
   observation_keep_time_(rclcpp::Duration::from_seconds(observation_keep_time)),
   expected_update_rate_(rclcpp::Duration::from_seconds(expected_update_rate)),
@@ -95,7 +95,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
     local_origin.point.x = 0;
     local_origin.point.y = 0;
     local_origin.point.z = 0;
-    tf2_buffer_.transform(local_origin, global_origin, global_frame_);
+    tf2_buffer_.transform(local_origin, global_origin, global_frame_, tf_tolerance_);
     tf2::convert(global_origin.point, observation_list_.front().origin_);
 
     // make sure to pass on the raytrace/obstacle range
@@ -106,7 +106,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
     sensor_msgs::msg::PointCloud2 global_frame_cloud;
 
     // transform the point cloud
-    tf2_buffer_.transform(cloud, global_frame_cloud, global_frame_);
+    tf2_buffer_.transform(cloud, global_frame_cloud, global_frame_, tf_tolerance_);
     global_frame_cloud.header.stamp = cloud.header.stamp;
 
     // now we need to remove observations from the cloud that are below

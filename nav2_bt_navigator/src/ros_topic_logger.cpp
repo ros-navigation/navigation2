@@ -42,16 +42,7 @@ void RosTopicLogger::callback(
 
   // BT timestamps are a duration since the epoch. Need to convert to a time_point
   // before converting to a msg.
-#if defined(__linux__)
-  event.timestamp =
-    tf2_ros::toMsg(std::chrono::time_point<std::chrono::high_resolution_clock>(timestamp));
-#elif defined(__APPLE__)
   event.timestamp = tf2_ros::toMsg(tf2::TimePoint(timestamp));
-#elif defined(_WIN32)
-  event.timestamp = tf2_ros::toMsg(timestamp);
-#else
-#error "Not implemented"
-#endif
   event.node_name = node.name();
   event.previous_status = toStr(prev_status, false);
   event.current_status = toStr(status, false);
