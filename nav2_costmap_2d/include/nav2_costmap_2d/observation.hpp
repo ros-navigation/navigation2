@@ -60,6 +60,11 @@ public:
   }
 
   /**
+    * @brief  Explicitly define copy assignment operator for Observation as it has a user-declared destructor
+    */
+  Observation & operator=(const Observation &) = default;
+
+  /**
    * @brief  Creates an observation from an origin point and a point cloud
    * @param origin The origin point of the observation
    * @param cloud The point cloud of the observation

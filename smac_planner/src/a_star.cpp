@@ -352,7 +352,7 @@ AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getAnalyticPath(
   float d = node->motion_table.state_space->distance(from(), to());
   NodePtr prev(node);
   // A move of sqrt(2) is guaranteed to be in a new cell
-  constexpr float sqrt_2 = std::sqrt(2.);
+  static const float sqrt_2 = std::sqrt(2.);
   unsigned int num_intervals = std::floor(d / sqrt_2);
 
   using PossibleNode = std::pair<NodePtr, Coordinates>;
