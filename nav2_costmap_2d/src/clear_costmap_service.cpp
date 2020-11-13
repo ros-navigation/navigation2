@@ -70,7 +70,7 @@ void ClearCostmapService::clearExceptRegionCallback(
     logger_,
     "Received request to clear except a region the " + costmap_.getName());
 
-  clearExceptRegion(request->reset_distance);
+  clearRegion(request->reset_distance, true);
 }
 
 void ClearCostmapService::clearAroundRobotCallback(
@@ -78,16 +78,7 @@ void ClearCostmapService::clearAroundRobotCallback(
   const shared_ptr<ClearAroundRobot::Request> request,
   const shared_ptr<ClearAroundRobot::Response>/*response*/)
 {
-  RCLCPP_INFO(
-    logger_,
-    "Received request to clear around robot the " + costmap_.getName());
-
-  if ((request->window_size_x == 0) || (request->window_size_y == 0)) {
-    clearEntirely();
-    return;
-  }
-
-  clearAroundRobot(request->window_size_x, request->window_size_y);
+  clearRegion(request->reset_distance, false);
 }
 
 void ClearCostmapService::clearEntireCallback(
@@ -102,7 +93,7 @@ void ClearCostmapService::clearEntireCallback(
   clearEntirely();
 }
 
-void ClearCostmapService::clearExceptRegion(const double reset_distance)
+void ClearCostmapService::clearRegion(const double reset_distance, bool invert)
 {
   double x, y;
 
@@ -116,59 +107,16 @@ void ClearCostmapService::clearExceptRegion(const double reset_distance)
   auto layers = costmap_.getLayeredCostmap()->getPlugins();
 
   for (auto & layer : *layers) {
-    if (isClearable(getLayerName(*layer))) {
+    if (layer->isClearable()) {
       auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
-      clearLayerExceptRegion(costmap_layer, x, y, reset_distance);
+      clearLayerRegion(costmap_layer, x, y, reset_distance, invert);
     }
   }
 }
 
-void ClearCostmapService::clearAroundRobot(double window_size_x, double window_size_y)
-{
-  double pose_x, pose_y;
-
-  if (!getPosition(pose_x, pose_y)) {
-    RCLCPP_ERROR(
-      logger_,
-      "Cannot clear map because robot pose cannot be retrieved.");
-    return;
-  }
-
-  std::vector<geometry_msgs::msg::Point> clear_poly;
-  geometry_msgs::msg::Point pt;
-
-  pt.x = pose_x - window_size_x / 2;
-  pt.y = pose_y - window_size_y / 2;
-  clear_poly.push_back(pt);
-
-  pt.x = pose_x + window_size_x / 2;
-  pt.y = pose_y - window_size_y / 2;
-  clear_poly.push_back(pt);
-
-  pt.x = pose_x + window_size_x / 2;
-  pt.y = pose_y + window_size_y / 2;
-  clear_poly.push_back(pt);
-
-  pt.x = pose_x - window_size_x / 2;
-  pt.y = pose_y + window_size_y / 2;
-  clear_poly.push_back(pt);
-
-  costmap_.getCostmap()->setConvexPolygonCost(clear_poly, reset_value_);
-}
-
-void ClearCostmapService::clearEntirely()
-{
-  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
-  costmap_.resetLayers();
-}
-
-bool ClearCostmapService::isClearable(const string & layer_name) const
-{
-  return count(begin(clearable_layers_), end(clearable_layers_), layer_name) != 0;
-}
-
-void ClearCostmapService::clearLayerExceptRegion(
-  shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance)
+void ClearCostmapService::clearLayerRegion(
+  shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance,
+  bool invert)
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
@@ -181,22 +129,17 @@ void ClearCostmapService::clearLayerExceptRegion(
   costmap->worldToMapNoBounds(start_point_x, start_point_y, start_x, start_y);
   costmap->worldToMapNoBounds(end_point_x, end_point_y, end_x, end_y);
 
-  unsigned int size_x = costmap->getSizeInCellsX();
-  unsigned int size_y = costmap->getSizeInCellsY();
-
-  // Clearing the four rectangular regions around the one we want to keep
-  // top region
-  costmap->resetMapToValue(0, 0, size_x, start_y, reset_value_);
-  // left region
-  costmap->resetMapToValue(0, start_y, start_x, end_y, reset_value_);
-  // right region
-  costmap->resetMapToValue(end_x, start_y, size_x, end_y, reset_value_);
-  // bottom region
-  costmap->resetMapToValue(0, end_y, size_x, size_y, reset_value_);
+  costmap->clearArea(start_x, start_y, end_x, end_y, invert);
 
   double ox = costmap->getOriginX(), oy = costmap->getOriginY();
   double width = costmap->getSizeInMetersX(), height = costmap->getSizeInMetersY();
   costmap->addExtraBounds(ox, oy, ox + width, oy + height);
+}
+
+void ClearCostmapService::clearEntirely()
+{
+  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
+  costmap_.resetLayers();
 }
 
 bool ClearCostmapService::getPosition(double & x, double & y) const
@@ -210,19 +153,6 @@ bool ClearCostmapService::getPosition(double & x, double & y) const
   y = pose.pose.position.y;
 
   return true;
-}
-
-string ClearCostmapService::getLayerName(const Layer & layer) const
-{
-  string name = layer.getName();
-
-  size_t slash = name.rfind('/');
-
-  if (slash != std::string::npos) {
-    name = name.substr(slash + 1);
-  }
-
-  return name;
 }
 
 }  // namespace nav2_costmap_2d

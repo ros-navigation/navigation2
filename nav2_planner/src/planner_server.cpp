@@ -225,6 +225,12 @@ PlannerServer::computePlan()
       return;
     }
 
+    // Don't compute a plan until costmap is valid (after clear costmap)
+    rclcpp::Rate r(100);
+    while (!costmap_ros_->isCurrent()) {
+      r.sleep();
+    }
+
     geometry_msgs::msg::PoseStamped start;
     if (!costmap_ros_->getRobotPose(start)) {
       action_server_->terminate_current();
