@@ -30,7 +30,7 @@
   <exec_depend>nav2_voxel_grid</exec_depend>
   <exec_depend>nav2_controller</exec_depend>
   <exec_depend>nav2_waypoint_follower</exec_depend>
-  <exec_depend>smac_planner</exec_depend>
+  <exec_depend>nav2_smac_planner</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
