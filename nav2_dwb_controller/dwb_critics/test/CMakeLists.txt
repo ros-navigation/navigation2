@@ -1,0 +1,2 @@
+ament_add_gtest(prefer_forward_tests prefer_forward_test.cpp)
+target_link_libraries(prefer_forward_tests dwb_critics)
