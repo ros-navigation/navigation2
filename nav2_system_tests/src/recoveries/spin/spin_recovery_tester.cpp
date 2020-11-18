@@ -187,13 +187,13 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     sendFakeFootprint();
     sendFakeCostmap();
     // Slowly increment command yaw by increment to simulate the robot slowly spinning into place
-    float step_size = target_yaw / 60;
+    float step_size = target_yaw / 360;
     for (float command_yaw = 0.0;
       abs(command_yaw) <= abs(target_yaw);
       command_yaw = command_yaw + step_size)
     {
       sendFakeOdom(command_yaw);
-      rclcpp::sleep_for(std::chrono::milliseconds(100));
+      rclcpp::sleep_for(std::chrono::milliseconds(10));
     }
     sendFakeOdom(target_yaw);
     RCLCPP_INFO(node_->get_logger(), "After sending goal");
@@ -257,17 +257,17 @@ void SpinRecoveryTester::sendFakeFootprint()
 {
   geometry_msgs::msg::PolygonStamped fake_polygon;
   geometry_msgs::msg::Point32 pt1, pt2, pt3, pt4;
-  pt1.x = -0.5;
-  pt1.y = 0.0;
+  pt1.x = -1.0;
+  pt1.y = 1.0;
   fake_polygon.polygon.points.push_back(pt1);
-  pt2.x = 0.0;
-  pt2.y = 0.5;
+  pt2.x = 1.0;
+  pt2.y = 1.0;
   fake_polygon.polygon.points.push_back(pt2);
-  pt3.x = 0.5;
-  pt3.y = 0.0;
+  pt3.x = 1.0;
+  pt3.y = -1.0;
   fake_polygon.polygon.points.push_back(pt3);
-  pt4.x = 0.0;
-  pt4.y = -0.5;
+  pt4.x = -1.0;
+  pt4.y = -1.0;
   fake_polygon.polygon.points.push_back(pt4);
 
   fake_polygon.header.frame_id = "odom";
@@ -285,15 +285,15 @@ void SpinRecoveryTester::sendFakeCostmap()
   fake_costmap.header.stamp = rclcpp::Time();
   fake_costmap.metadata.layer = "master";
   fake_costmap.metadata.resolution = 0.1;
-  fake_costmap.metadata.size_x = 100;
-  fake_costmap.metadata.size_y = 100;
+  fake_costmap.metadata.size_x = 10;
+  fake_costmap.metadata.size_y = 10;
   fake_costmap.metadata.origin.position.x = 0;
   fake_costmap.metadata.origin.position.y = 0;
   fake_costmap.metadata.origin.orientation.w = 1.0;
   float costmap_val = 0;
-  for (int ix = 0; ix < fake_costmap.metadata.size_x / fake_costmap.metadata.resolution; ix++) {
+  for (int ix = -50; ix <= 50; ix++) {
     if (ix >= fake_costmap.metadata.origin.position.x) {
-      costmap_val = 0;
+      costmap_val = 100;
     } else {
       costmap_val = 0;
     }
@@ -346,7 +346,6 @@ void SpinRecoveryTester::sendFakeOdom(float angle)
   transformStamped.transform.rotation.w = q.w();
 
   tf_broadcaster_->sendTransform(transformStamped);
-  RCLCPP_INFO(node_->get_logger(), "Sent odom fake %lf", angle);
 }
 void SpinRecoveryTester::amclPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
