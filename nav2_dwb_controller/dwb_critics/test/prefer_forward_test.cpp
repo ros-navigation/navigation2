@@ -37,6 +37,7 @@
 
 #include <memory>
 #include <string>
+#include <limits>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -49,15 +50,14 @@ TEST(PreferForward, StartNode)
   auto critic = std::make_shared<dwb_critics::PreferForwardCritic>();
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
   auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  node->configure();
   node->activate();
   // rclcpp::spin_some(node->get_node_base_interface());
-
 
   std::string name = "test";
   std::string ns = "ns";
   critic->initialize(node, name, ns, costmap_ros);
   // rclcpp::spin_some(node->get_node_base_interface());
-
 
   critic->onInit();
 
@@ -67,6 +67,75 @@ TEST(PreferForward, StartNode)
   EXPECT_EQ(node->get_parameter(ns + "." + name + ".strafe_x").as_double(), 0.1);
   EXPECT_EQ(node->get_parameter(ns + "." + name + ".strafe_theta").as_double(), 0.2);
   EXPECT_EQ(node->get_parameter(ns + "." + name + ".theta_scale").as_double(), 10.0);
+}
+
+TEST(PreferForward, NegativeVelocityX)
+{
+  auto critic = std::make_shared<dwb_critics::PreferForwardCritic>();
+  dwb_msgs::msg::Trajectory2D trajectory;
+
+  // score must be equal to the penalty (1.0) for any negative x velocity
+  trajectory.velocity.x = -1.0;
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 1.0);
+
+  trajectory.velocity.x = -0.00001;
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 1.0);
+
+  trajectory.velocity.x = -0.1;
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 1.0);
+
+  trajectory.velocity.x = std::numeric_limits<double>::lowest();
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 1.0);
+
+  trajectory.velocity.x = -std::numeric_limits<double>::min();
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 1.0);
+}
+
+TEST(PreferForward, Strafe)
+{
+  auto critic = std::make_shared<dwb_critics::PreferForwardCritic>();
+  dwb_msgs::msg::Trajectory2D trajectory;
+
+  // score must be equal to the penalty (1.0) when x vel is lower than 0.1
+  // and theta is between -0.2 and 0.2
+  trajectory.velocity.x = 0.05;
+  trajectory.velocity.theta = -0.1;
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 1.0);
+
+  trajectory.velocity.x = 0.0999999;
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 1.0);
+
+  trajectory.velocity.x = 0.000001;
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 1.0);
+
+  trajectory.velocity.theta = -0.19;
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 1.0);
+
+  trajectory.velocity.theta = 0.19;
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 1.0);
+}
+
+TEST(PreferForward, Normal)
+{
+  auto critic = std::make_shared<dwb_critics::PreferForwardCritic>();
+  dwb_msgs::msg::Trajectory2D trajectory;
+
+  // score must be equal to the theta * scaling factor (10.0)
+  trajectory.velocity.x = 0.2;
+  trajectory.velocity.theta = -0.1;
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 0.1 * 10.0);
+
+  trajectory.velocity.theta = 0.1;
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 0.1 * 10.0);
+
+  trajectory.velocity.theta = -0.2;
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 0.2 * 10.0);
+
+  trajectory.velocity.theta = 0.2;
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 0.2 * 10.0);
+
+  trajectory.velocity.theta = 1.5;
+  EXPECT_EQ(critic->scoreTrajectory(trajectory), 1.5 * 10.0);
 }
 
 int main(int argc, char ** argv)
