@@ -187,13 +187,13 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     sendFakeFootprint();
     sendFakeCostmap();
     // Slowly increment command yaw by increment to simulate the robot slowly spinning into place
-    float step_size = target_yaw / 100;
+    float step_size = target_yaw / 60;
     for (float command_yaw = 0.0;
       abs(command_yaw) <= abs(target_yaw);
       command_yaw = command_yaw + step_size)
     {
       sendFakeOdom(command_yaw);
-      rclcpp::sleep_for(std::chrono::milliseconds(10));
+      rclcpp::sleep_for(std::chrono::milliseconds(100));
     }
     sendFakeOdom(target_yaw);
     RCLCPP_INFO(node_->get_logger(), "After sending goal");
@@ -256,16 +256,19 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
 void SpinRecoveryTester::sendFakeFootprint()
 {
   geometry_msgs::msg::PolygonStamped fake_polygon;
-  geometry_msgs::msg::Point32 pt1, pt2, pt3;
-  pt1.x = -1;
-  pt1.y = 0;
+  geometry_msgs::msg::Point32 pt1, pt2, pt3, pt4;
+  pt1.x = -0.5;
+  pt1.y = 0.0;
   fake_polygon.polygon.points.push_back(pt1);
-  pt2.x = 1;
-  pt2.y = 0;
+  pt2.x = 0.0;
+  pt2.y = 0.5;
   fake_polygon.polygon.points.push_back(pt2);
-  pt3.x = 0;
-  pt3.y = 1;
+  pt3.x = 0.5;
+  pt3.y = 0.0;
   fake_polygon.polygon.points.push_back(pt3);
+  pt4.x = 0.0;
+  pt4.y = -0.5;
+  fake_polygon.polygon.points.push_back(pt4);
 
   fake_polygon.header.frame_id = "odom";
   fake_polygon.header.stamp = rclcpp::Time();
@@ -281,9 +284,9 @@ void SpinRecoveryTester::sendFakeCostmap()
   fake_costmap.header.frame_id = "odom";
   fake_costmap.header.stamp = rclcpp::Time();
   fake_costmap.metadata.layer = "master";
-  fake_costmap.metadata.resolution = 1.0;
-  fake_costmap.metadata.size_x = 10;
-  fake_costmap.metadata.size_y = 10;
+  fake_costmap.metadata.resolution = 0.1;
+  fake_costmap.metadata.size_x = 100;
+  fake_costmap.metadata.size_y = 100;
   fake_costmap.metadata.origin.position.x = 0;
   fake_costmap.metadata.origin.position.y = 0;
   fake_costmap.metadata.origin.orientation.w = 1.0;
