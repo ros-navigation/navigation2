@@ -58,16 +58,10 @@ TEST(PreferForward, StartNode)
   auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
   node->configure();
   node->activate();
-  // rclcpp::spin_some(node->get_node_base_interface());
 
   std::string name = "test";
   std::string ns = "ns";
   critic->initialize(node, name, ns, costmap_ros);
-  // rclcpp::spin_some(node->get_node_base_interface());
-
-  critic->onInit();
-
-  // rclcpp::spin_some(node->get_node_base_interface());
 
   EXPECT_EQ(node->get_parameter(ns + "." + name + ".penalty").as_double(), default_penalty);
   EXPECT_EQ(node->get_parameter(ns + "." + name + ".strafe_x").as_double(), default_strafe_x);
@@ -160,6 +154,7 @@ TEST(PreferForward, NoneDefaultValues)
 
   std::string name = "test";
   std::string ns = "ns";
+
   nav2_util::declare_parameter_if_not_declared(
     node, ns + "." + name + ".penalty",
     rclcpp::ParameterValue(penalty));
@@ -174,7 +169,6 @@ TEST(PreferForward, NoneDefaultValues)
     rclcpp::ParameterValue(theta_scale));
 
   critic->initialize(node, name, ns, costmap_ros);
-  // rclcpp::spin_some(node->get_node_base_interface());
   critic->onInit();
 
   dwb_msgs::msg::Trajectory2D trajectory;
