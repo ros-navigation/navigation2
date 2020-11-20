@@ -11,7 +11,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 
-namespace nav2_costmap_2d  // TODO rename ns to nav2_costmap_2d
+namespace nav2_costmap_2d
 {
 // TODO 3D static layer now inherits from obstacle layer
 // TODO but we have to discuss the overall design of 2D/3D data input and processing
