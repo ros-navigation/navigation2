@@ -37,8 +37,7 @@ public:
             nav2_costmap_2d::Costmap2D & master_grid,
             int min_i, int min_j, int max_i, int max_j);
 
-    virtual void readPC(std::shared_ptr<sensor_msgs::msg::PointCloud2> cloud_pc2);
-
+    virtual bool receivedMap();
     virtual void cloudCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr pointcloud);
 
 // TODO If the type name is too long, use typedef or using instead
@@ -64,6 +63,9 @@ private:
     float _voxel_leafsize;  // TODO Should voxel_leafsize_ be double?
     double _min_z_height;
     double _max_z_height;
+
+    bool map_received_;
+
 };
 
 }

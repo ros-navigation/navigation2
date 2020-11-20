@@ -35,7 +35,6 @@ StaticLayer3D::onInitialize()
     declareParameter("enabled", rclcpp::ParameterValue(true));
     declareParameter("topic_name", rclcpp::ParameterValue("pc2_map"));
     declareParameter("lethal_threshold", rclcpp::ParameterValue(0.5));
-    declareParameter("map_resolution", rclcpp::ParameterValue(0.05));
     declareParameter("voxel_leafsize", rclcpp::ParameterValue(0.2));
     declareParameter("min_z_height", rclcpp::ParameterValue(0.0));
     declareParameter("max_z_height", rclcpp::ParameterValue(3.0));
@@ -48,7 +47,6 @@ StaticLayer3D::onInitialize()
     node ->get_parameter(name_ + "." + "enabled", enabled_);
     node ->get_parameter(name_ + "." + "topic_name", _topic_name);
     node ->get_parameter(name_ + "." + "lethal_threshold", _lethal_threshold);
-    node ->get_parameter(name_ + "." + "map_resolution", _map_resolution);
     node ->get_parameter(name_ + "." + "voxel_leafsize", _voxel_leafsize);
     node ->get_parameter(name_ + "." + "min_z_height", _min_z_height);
     node ->get_parameter(name_ + "." + "max_z_height", _max_z_height);
@@ -61,29 +59,16 @@ StaticLayer3D::onInitialize()
      * the observation function could be test when map server ready
      */
     rclcpp::QoS map_qos(10);
+    map_qos.transient_local();
+    map_qos.reliable();
+    map_qos.keep_last(1);
     std::shared_ptr<sensor_msgs::msg::PointCloud2> cloud_pc2(new sensor_msgs::msg::PointCloud2());
-    /*
-     * read PC:
-     * reading from pcd file and covert it into pc2 as the replacement of map server.
-     */
-//    readPC(cloud_pc2);
-//    cloudCallback(cloud_pc2);
+
     _subscription = node->create_subscription<sensor_msgs::msg::PointCloud2>(
             _topic_name, map_qos,
             std::bind(&StaticLayer3D::cloudCallback, this, std::placeholders::_1));
 }
-void
-StaticLayer3D::readPC(std::shared_ptr<sensor_msgs::msg::PointCloud2> cloud_pc2)
-{
-    std::string file_path = "filepath/origin.pcd";
-    pcl::PCLPointCloud2::Ptr cloud_file (new pcl::PCLPointCloud2 ());
-    pcl::PCDReader reader;
-    reader.read(
-            file_path,
-            * cloud_file
-    );
-    pcl_conversions::fromPCL(*cloud_file, *cloud_pc2);
-}
+
 
 void
 StaticLayer3D::cloudCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr pointcloud)
@@ -92,21 +77,21 @@ StaticLayer3D::cloudCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr point
      *TODO: add observation part
      */
     Costmap2D * master = layered_costmap_->getCostmap();
-    resolution_ = master->getResolution();
-    _map_size_x = master->getSizeInMetersX()/resolution_;
-    _map_size_y = master->getSizeInMetersY()/resolution_;
+    _map_resolution = master->getResolution();
+    _map_size_x = master->getSizeInMetersX()/_map_resolution;
+    _map_size_y = master->getSizeInMetersY()/_map_resolution;
     _origin_x = master->getOriginX();
     _origin_y = master->getOriginY();
 
     _map_2d = nav2_costmap_2d::Costmap2D(_map_size_x,
                                          _map_size_y,
-                                         resolution_,
+                                         _map_resolution,
                                          _origin_x,
                                          _origin_y);
     RCLCPP_INFO(
             logger_,
             "<<<<humuhumunukunukuapuaa>>>>created 2d map with size: %d X %d, resolution: %lf, origin: (%lf, %lf)",
-            _map_size_x, _map_size_y, resolution_, origin_x_, origin_y_
+            _map_size_x, _map_size_y, _map_resolution, origin_x_, origin_y_
             );
 
     fillCostMapFromPointCloud(pointcloud);
@@ -130,7 +115,7 @@ StaticLayer3D::fillCostMapFromPointCloud(sensor_msgs::msg::PointCloud2::ConstSha
     sor_voxelgrid.setFilterLimitsNegative(false);
     sor_voxelgrid.filter(*filtered_cloud);
 
-    octomap::OcTree octotree (resolution_);
+    octomap::OcTree octotree (_map_resolution);
 
     for (auto p:filtered_cloud->points)
     {
@@ -149,8 +134,8 @@ StaticLayer3D::fillCostMapFromPointCloud(sensor_msgs::msg::PointCloud2::ConstSha
             // TODO Be aware of the implicit accuracy loss
             // TODO Make it clear why the forum is like this:
             // Ref: https://github.com/ros-planning/navigation2/blob/main/nav2_costmap_2d/src/costmap_2d.cpp#L264
-            int point_x = (int) (coord.x() - (origin_x_ - 0.5) / resolution_);
-            int point_y = (int) (-(origin_y_ - 0.5) / resolution_ - coord.y());
+            int point_x = (int) (coord.x() - (origin_x_ - 0.5) / _map_resolution);
+            int point_y = (int) (-(origin_y_ - 0.5) / _map_resolution - coord.y());
             int point_z = (int) coord.z();
 
             // TODO What does the implicit conversion means?
@@ -177,6 +162,25 @@ StaticLayer3D::fillCostMapFromPointCloud(sensor_msgs::msg::PointCloud2::ConstSha
         }
     }
 }
+
+bool
+StaticLayer3D::receivedMap(){
+    if(map_received_){
+        RCLCPP_INFO(
+                logger_,
+                "map has received"
+        );
+        return true;
+    }
+    else{
+        RCLCPP_INFO(
+                logger_,
+                "NOT received"
+        );
+        return false;
+    }
+}
+
 void
 StaticLayer3D::updateBounds(
         double robot_x, double robot_y, double /*robot_yaw*/,
@@ -194,10 +198,10 @@ StaticLayer3D::updateBounds(
     /*
      *
      */
-    *min_x = - (size_x_ * resolution_);
-    *min_y = - (size_y_ * resolution_);
-    *max_x = size_x_ * resolution_;
-    *max_y = size_y_ * resolution_;
+    *min_x = - (size_x_ * _map_resolution);
+    *min_y = - (size_y_ * _map_resolution);
+    *max_x = size_x_ * _map_resolution;
+    *max_y = size_y_ * _map_resolution;
 
 
 }
@@ -226,4 +230,4 @@ StaticLayer3D::updateCosts(
 }
 }
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::Nav23dStaticLayer, nav2_costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::StaticLayer3D, nav2_costmap_2d::Layer)
