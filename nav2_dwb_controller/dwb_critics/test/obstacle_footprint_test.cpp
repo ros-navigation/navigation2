@@ -172,7 +172,7 @@ TEST(ObstacleFootprint, Prepare)
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 }
 
-// todo: wilcobonestroo
+// todo: wilcobonestroo Add tests for other footprint shapes and costmaps.
 
 TEST(ObstacleFootprint, PointCost)
 {
