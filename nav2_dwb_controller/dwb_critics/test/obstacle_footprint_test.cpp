@@ -41,6 +41,20 @@
 #include "dwb_critics/obstacle_footprint.hpp"
 #include "dwb_core/exceptions.hpp"
 
+class OpenObstacleFootprintCritic : public dwb_critics::ObstacleFootprintCritic
+{
+public:
+  double pointCost(int x, int y)
+  {
+    return dwb_critics::ObstacleFootprintCritic::pointCost(x, y);
+  }
+
+  double lineCost(int x0, int x1, int y0, int y1)
+  {
+    return dwb_critics::ObstacleFootprintCritic::lineCost(x0, x1, y0, y1);
+  }
+};
+
 geometry_msgs::msg::Point rotate_origin(geometry_msgs::msg::Point p, double angle)
 {
   double s = sin(angle);
@@ -64,6 +78,7 @@ geometry_msgs::msg::Point p(double x, double y)
   return p;
 }
 
+// Variables
 double footprint_size_x_half = 1.8;
 double footprint_size_y_half = 1.6;
 
@@ -92,6 +107,14 @@ TEST(ObstacleFootprint, GetOrientedFootprint)
   for (i = 0; i < footprint_before.size(); i++) {
     ASSERT_EQ(rotate_origin(footprint_before[i], theta), footprint_after[i]);
   }
+
+  theta = 5.123;
+  pose.theta = theta;
+  footprint_after = dwb_critics::getOrientedFootprint(pose, footprint_before);
+
+  for (unsigned int i = 0; i < footprint_before.size(); i++) {
+    ASSERT_EQ(rotate_origin(footprint_before[i], theta), footprint_after[i]);
+  }
 }
 
 TEST(ObstacleFootprint, Prepare)
@@ -104,9 +127,8 @@ TEST(ObstacleFootprint, Prepare)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
   // costmap_ros->activate();
   costmap_ros->configure();
-  std::string name = "test";
-  std::string ns = "ns";
-  critic->initialize(node, name, ns, costmap_ros);
+
+  critic->initialize(node, "name", "ns", costmap_ros);
 
   geometry_msgs::msg::Pose2D pose;
   nav_2d_msgs::msg::Twist2D vel;
@@ -142,79 +164,79 @@ TEST(ObstacleFootprint, Prepare)
   pose.x = footprint_size_x_half + epsilon;
   pose.y = footprint_size_y_half + epsilon;
   ASSERT_EQ(critic->scorePose(pose), 0.0);
-
-  std::cout << "Origin x " << costmap_ros->getCostmap()->getOriginX() << std::endl;
-  std::cout << "Origin y " << costmap_ros->getCostmap()->getOriginY() << std::endl;
-  std::cout << "Resolution " << costmap_ros->getCostmap()->getResolution() << std::endl;
-  std::cout << "Size in meters x " << costmap_ros->getCostmap()->getSizeInMetersX() << std::endl;
-  std::cout << "Size in meters y " << costmap_ros->getCostmap()->getSizeInMetersY() << std::endl;
-  std::cout << "Size in cells x " << costmap_ros->getCostmap()->getSizeInCellsX() << std::endl;
-  std::cout << "Size in cells y " << costmap_ros->getCostmap()->getSizeInCellsY() << std::endl;
 
   for (unsigned int i = 1; i < costmap_ros->getCostmap()->getSizeInCellsX(); i++) {
     costmap_ros->getCostmap()->setCost(i, 10, nav2_costmap_2d::LETHAL_OBSTACLE);
   }
   // It should now hit an obstacle (throw an expection)
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
-
-  /*
-
-  // costmap_ros->shutdown();
-  // costmap_ros->cleanup();
-  node->shutdown();
-  node->cleanup();
-  */
-  // costmap_ros->shutdown();
 }
 
-TEST(ObstacleFootprint, Prepare2)
+// todo: wilcobonestroo
+
+TEST(ObstacleFootprint, PointCost)
 {
-  std::shared_ptr<dwb_critics::ObstacleFootprintCritic> critic =
-    std::make_shared<dwb_critics::ObstacleFootprintCritic>();
+  std::shared_ptr<OpenObstacleFootprintCritic> critic =
+    std::make_shared<OpenObstacleFootprintCritic>();
 
   auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
 
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
-  // costmap_ros->activate();
   costmap_ros->configure();
-  std::string name = "test";
-  std::string ns = "ns";
-  critic->initialize(node, name, ns, costmap_ros);
 
-  geometry_msgs::msg::Pose2D pose;
-  nav_2d_msgs::msg::Twist2D vel;
-  geometry_msgs::msg::Pose2D goal;
-  nav_2d_msgs::msg::Path2D global_plan;
+  critic->initialize(node, "name", "ns", costmap_ros);
 
-  // no footprint set in the costmap. Prepare should return false;
-  std::vector<geometry_msgs::msg::Point> footprint;
-  costmap_ros->setRobotFootprint(footprint);
-  ASSERT_FALSE(critic->prepare(pose, vel, goal, global_plan));
+  costmap_ros->getCostmap()->setCost(0, 0, nav2_costmap_2d::LETHAL_OBSTACLE);
+  costmap_ros->getCostmap()->setCost(0, 1, nav2_costmap_2d::NO_INFORMATION);
+  costmap_ros->getCostmap()->setCost(0, 2, 128);
 
-  costmap_ros->setRobotFootprint(getFootprint());
-  ASSERT_TRUE(critic->prepare(pose, vel, goal, global_plan));
+  ASSERT_THROW(critic->pointCost(0, 0), dwb_core::IllegalTrajectoryException);
+  ASSERT_THROW(critic->pointCost(0, 1), dwb_core::IllegalTrajectoryException);
+  ASSERT_EQ(critic->pointCost(0, 2), 128);
+}
 
-  double epsilon = 0.01;
-  // If the robot footprint goes of the map, it should trow an exception
-  pose.x = footprint_size_x_half;  // This gives an error
-  pose.y = footprint_size_y_half + epsilon;
-  ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
+TEST(ObstacleFootprint, LineCost)
+{
+  std::shared_ptr<OpenObstacleFootprintCritic> critic =
+    std::make_shared<OpenObstacleFootprintCritic>();
 
-  pose.x = footprint_size_x_half + epsilon;
-  pose.y = footprint_size_y_half;  // error
-  ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
+  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
 
-  pose.x = costmap_ros->getCostmap()->getSizeInMetersX() - footprint_size_x_half;  // error
-  pose.y = costmap_ros->getCostmap()->getSizeInMetersY() + footprint_size_y_half - epsilon;
-  ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
+  costmap_ros->configure();
 
-  pose.x = costmap_ros->getCostmap()->getSizeInMetersX() - footprint_size_x_half - epsilon;
-  pose.y = costmap_ros->getCostmap()->getSizeInMetersY() + footprint_size_y_half;  // error
-  ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
+  critic->initialize(node, "name", "ns", costmap_ros);
 
-  pose.x = footprint_size_x_half + epsilon;
-  pose.y = footprint_size_y_half + epsilon;
-  ASSERT_EQ(critic->scorePose(pose), 0.0);
+  costmap_ros->getCostmap()->setCost(3, 3, nav2_costmap_2d::LETHAL_OBSTACLE);
+  costmap_ros->getCostmap()->setCost(3, 4, nav2_costmap_2d::LETHAL_OBSTACLE);
+  costmap_ros->getCostmap()->setCost(4, 3, nav2_costmap_2d::LETHAL_OBSTACLE);
+  costmap_ros->getCostmap()->setCost(4, 4, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  ASSERT_THROW(critic->lineCost(0, 5, 2, 6), dwb_core::IllegalTrajectoryException);
+  ASSERT_THROW(critic->lineCost(5, 0, 6, 2), dwb_core::IllegalTrajectoryException);
+
+  ASSERT_THROW(critic->lineCost(2, 4, 0, 10), dwb_core::IllegalTrajectoryException);
+  ASSERT_THROW(critic->lineCost(4, 2, 10, 0), dwb_core::IllegalTrajectoryException);
+
+  // These all miss the obstacle
+  ASSERT_EQ(critic->lineCost(2, 2, 0, 10), 0.0);
+  ASSERT_EQ(critic->lineCost(2, 2, 10, 0), 0.0);
+  ASSERT_EQ(critic->lineCost(5, 5, 0, 10), 0.0);
+  ASSERT_EQ(critic->lineCost(5, 5, 10, 0), 0.0);
+  ASSERT_EQ(critic->lineCost(0, 50, 2, 2), 0.0);
+  ASSERT_EQ(critic->lineCost(50, 0, 2, 2), 0.0);
+  ASSERT_EQ(critic->lineCost(0, 50, 5, 5), 0.0);
+  ASSERT_EQ(critic->lineCost(50, 0, 5, 5), 0.0);
+
+  // Use valid costs
+  costmap_ros->getCostmap()->setCost(3, 3, 50);
+  costmap_ros->getCostmap()->setCost(3, 4, 50);
+  costmap_ros->getCostmap()->setCost(4, 3, 100);
+  costmap_ros->getCostmap()->setCost(4, 4, 100);
+
+  ASSERT_EQ(critic->lineCost(3, 3, 0, 50), 50);   // all 50
+  ASSERT_EQ(critic->lineCost(4, 4, 0, 10), 100);  // all 100
+  ASSERT_EQ(critic->lineCost(0, 50, 3, 3), 100);  // pass 50 and 100
 }
 
 int main(int argc, char ** argv)
