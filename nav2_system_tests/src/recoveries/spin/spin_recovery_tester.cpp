@@ -260,10 +260,10 @@ void SpinRecoveryTester::sendFakeFootprint()
   geometry_msgs::msg::PolygonStamped fake_polygon;
   geometry_msgs::msg::Point32 pt1, pt2, pt3, pt4;
   pt1.x = -1.0;
-  pt1.y = 2.0;
+  pt1.y = 1.0;
   fake_polygon.polygon.points.push_back(pt1);
   pt2.x = 1.0;
-  pt2.y = 2.0;
+  pt2.y = 1.0;
   fake_polygon.polygon.points.push_back(pt2);
   pt3.x = 1.0;
   pt3.y = -1.0;
@@ -285,17 +285,17 @@ void SpinRecoveryTester::sendFakeCostmap()
   fake_costmap.header.frame_id = "odom";
   fake_costmap.header.stamp = rclcpp::Clock().now();
   fake_costmap.metadata.layer = "master";
-  fake_costmap.metadata.resolution = 1;
+  fake_costmap.metadata.resolution = .1;
   fake_costmap.metadata.size_x = 10;
   fake_costmap.metadata.size_y = 10;
   fake_costmap.metadata.origin.position.x = 0;
   fake_costmap.metadata.origin.position.y = 0;
   fake_costmap.metadata.origin.orientation.w = 1.0;
   float costmap_val = 0;
-  for (int ix = 5; ix >= -5; ix--) {
-    for (int iy = 5; iy >= -5; iy--) {
-      if (iy <= -1) {
-        costmap_val = 100;
+  for (int ix = 50; ix >= -50; ix--) {
+    for (int iy = 50; iy >= -50; iy--) {
+      if (iy <= 0 && ix <= 0) {
+        costmap_val = 255;
       }
       else {
         costmap_val = 0;
