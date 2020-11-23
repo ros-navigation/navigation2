@@ -294,7 +294,7 @@ void SpinRecoveryTester::sendFakeCostmap()
   float costmap_val = 0;
   for (int ix = 0; ix < 100; ix++) {
     for (int iy = 0; iy < 100; iy++) {
-      if (iy >= 50 && ix >= 50){
+      if (iy >= 50 && ix >= 50) {
         costmap_val = 95.0;
       }
       fake_costmap.data.push_back(costmap_val);
