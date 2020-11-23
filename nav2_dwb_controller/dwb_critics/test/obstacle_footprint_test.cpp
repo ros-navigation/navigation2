@@ -55,6 +55,7 @@ public:
   }
 };
 
+// Rotate the given point for angle radians around the origin.
 geometry_msgs::msg::Point rotate_origin(geometry_msgs::msg::Point p, double angle)
 {
   double s = sin(angle);
@@ -70,7 +71,8 @@ geometry_msgs::msg::Point rotate_origin(geometry_msgs::msg::Point p, double angl
   return p;
 }
 
-geometry_msgs::msg::Point p(double x, double y)
+// Auxilary function to create a Point with given x and y values.
+geometry_msgs::msg::Point getPoint(double x, double y)
 {
   geometry_msgs::msg::Point p;
   p.x = x;
@@ -85,10 +87,10 @@ double footprint_size_y_half = 1.6;
 std::vector<geometry_msgs::msg::Point> getFootprint()
 {
   std::vector<geometry_msgs::msg::Point> footprint;
-  footprint.push_back(p(footprint_size_x_half, footprint_size_y_half));
-  footprint.push_back(p(footprint_size_x_half, -footprint_size_y_half));
-  footprint.push_back(p(-footprint_size_x_half, -footprint_size_y_half));
-  footprint.push_back(p(-footprint_size_x_half, footprint_size_y_half));
+  footprint.push_back(getPoint(footprint_size_x_half, footprint_size_y_half));
+  footprint.push_back(getPoint(footprint_size_x_half, -footprint_size_y_half));
+  footprint.push_back(getPoint(-footprint_size_x_half, -footprint_size_y_half));
+  footprint.push_back(getPoint(-footprint_size_x_half, footprint_size_y_half));
   return footprint;
 }
 
@@ -125,7 +127,6 @@ TEST(ObstacleFootprint, Prepare)
   auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
 
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
-  // costmap_ros->activate();
   costmap_ros->configure();
 
   critic->initialize(node, "name", "ns", costmap_ros);
@@ -144,7 +145,9 @@ TEST(ObstacleFootprint, Prepare)
   ASSERT_TRUE(critic->prepare(pose, vel, goal, global_plan));
 
   double epsilon = 0.01;
-  // If the robot footprint goes of the map, it should trow an exception
+  // If the robot footprint goes of the map, it should throw an exception
+  // The following cases put the robot over the edge of the map on the left, bottom, right and top
+
   pose.x = footprint_size_x_half;  // This gives an error
   pose.y = footprint_size_y_half + epsilon;
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
