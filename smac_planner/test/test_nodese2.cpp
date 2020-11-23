@@ -13,23 +13,24 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "smac_planner/node_se2.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "smac_planner/collision_checker.hpp"
+#include "smac_planner/node_se2.hpp"
 
 class RclCppFixture
 {
 public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
+  RclCppFixture() { rclcpp::init(0, nullptr); }
+  ~RclCppFixture() { rclcpp::shutdown(); }
 };
 RclCppFixture g_rclcppfixture;
 
@@ -47,8 +48,7 @@ TEST(NodeSE2Test, test_node_se2)
   smac_planner::NodeSE2::initMotionModel(
     smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
 
-  nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
-    10, 10, 0.05, 0.0, 0.0, 0);
+  nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(10, 10, 0.05, 0.0, 0.0, 0);
   smac_planner::GridCollisionChecker checker(costmapA);
   checker.setFootprint(nav2_costmap_2d::Footprint(), true);
 
@@ -97,10 +97,7 @@ TEST(NodeSE2Test, test_node_se2)
 
   // check heuristic cost computation
   smac_planner::NodeSE2::computeWavefrontHeuristic(
-    costmapA,
-    static_cast<unsigned int>(10.0),
-    static_cast<unsigned int>(5.0),
-    0.0, 0.0);
+    costmapA, static_cast<unsigned int>(10.0), static_cast<unsigned int>(5.0), 0.0, 0.0);
   smac_planner::NodeSE2::Coordinates A(0.0, 0.0, 4.2);
   smac_planner::NodeSE2::Coordinates B(10.0, 5.0, 54.1);
   EXPECT_NEAR(testB.getHeuristicCost(B, A), 16.723, 0.01);
@@ -152,7 +149,6 @@ TEST(NodeSE2Test, test_node_2d_neighbors)
   smac_planner::NodeSE2::initMotionModel(
     smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
 
-
   // test neighborhood computation
   EXPECT_EQ(smac_planner::NodeSE2::motion_table.projections.size(), 3u);
   EXPECT_NEAR(smac_planner::NodeSE2::motion_table.projections[0]._x, 1.731517, 0.01);
@@ -198,12 +194,11 @@ TEST(NodeSE2Test, test_node_2d_neighbors)
   nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
   smac_planner::GridCollisionChecker checker(&costmapA);
   smac_planner::NodeSE2 * node = new smac_planner::NodeSE2(49);
-  std::function<bool(const unsigned int &, smac_planner::NodeSE2 * &)> neighborGetter =
-    [&, this](const unsigned int & index, smac_planner::NodeSE2 * & neighbor_rtn) -> bool
-    {
-      // because we don't return a real object
-      return false;
-    };
+  std::function<bool(const unsigned int &, smac_planner::NodeSE2 *&)> neighborGetter =
+    [&, this](const unsigned int & index, smac_planner::NodeSE2 *& neighbor_rtn) -> bool {
+    // because we don't return a real object
+    return false;
+  };
 
   smac_planner::NodeSE2::NodeVector neighbors;
   smac_planner::NodeSE2::getNeighbors(node, neighborGetter, checker, false, neighbors);

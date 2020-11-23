@@ -15,12 +15,11 @@
 #ifndef SMAC_PLANNER__TYPES_HPP_
 #define SMAC_PLANNER__TYPES_HPP_
 
-#include <vector>
 #include <utility>
+#include <vector>
 
 namespace smac_planner
 {
-
 typedef std::pair<float, unsigned int> NodeHeuristicPair;
 
 /**

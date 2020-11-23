@@ -13,22 +13,23 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "smac_planner/a_star.hpp"
 #include "smac_planner/smoother.hpp"
 
 class RclCppFixture
 {
 public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
+  RclCppFixture() { rclcpp::init(0, nullptr); }
+  ~RclCppFixture() { rclcpp::shutdown(); }
 };
 RclCppFixture g_rclcppfixture;
 
@@ -96,8 +97,7 @@ TEST(SmootherTest, test_smoother)
 
   for (unsigned int i = 1; i != path.size() - 1; i++) {
     // check distance between points is in a good range
-    EXPECT_NEAR(
-      hypot(path[i][0] - path[i + 1][0], path[i][1] - path[i + 1][1]), 1.407170, 0.5);
+    EXPECT_NEAR(hypot(path[i][0] - path[i + 1][0], path[i][1] - path[i + 1][1]), 1.407170, 0.5);
   }
 
   delete costmap;

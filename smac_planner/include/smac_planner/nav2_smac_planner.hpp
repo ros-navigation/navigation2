@@ -15,34 +15,26 @@
 #ifndef SMAC_PLANNER__SMAC_PLANNER_HPP_
 #define SMAC_PLANNER__SMAC_PLANNER_HPP_
 
-#include <costmap_2d/costmap_2d.h>
-#include <costmap_2d/costmap_2d_ros.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <nav_core/base_global_planner.h>
-
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "nav_2d_msgs/Path2D.h"
-//#include "nav2_util/node_utils.hpp"
-#include <nav_msgs/OccupancyGrid.h>
-#include <nav_msgs/Path.h>
-
-#include "costmap_2d/footprint_collision_checker.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_core/global_planner.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/node_utils.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "smac_planner/a_star.hpp"
-#include "smac_planner/collision_checker.hpp"
-#include "smac_planner/constants.hpp"
 #include "smac_planner/costmap_downsampler.hpp"
-#include "smac_planner/node_2d.hpp"
-#include "smac_planner/node_se2.hpp"
 #include "smac_planner/smoother.hpp"
-#include "smac_planner/types.hpp"
 #include "tf2/utils.h"
 
 namespace smac_planner
 {
-class SmacPlanner : public nav_core::BaseGlobalPlanner
+class SmacPlanner : public nav2_core::GlobalPlanner
 {
 public:
   /**
@@ -60,24 +52,27 @@ public:
    * @param parent Lifecycle node pointer
    * @param name Name of plugin map
    * @param tf Shared ptr of TF2 buffer
-   * @param costmap_ros CostmapPtr
+   * @param costmap_ros Costmap2DROS object
    */
-  void initialize(std::string name, costmap_2d::Costmap2DROS * costmap_ros) override;
+  void configure(
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent, std::string name,
+    std::shared_ptr<tf2_ros::Buffer> tf,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   /**
    * @brief Cleanup lifecycle node
    */
-  void cleanup();
+  void cleanup() override;
 
   /**
    * @brief Activate lifecycle node
    */
-  void activate();
+  void activate() override;
 
   /**
    * @brief Deactivate lifecycle node
    */
-  void deactivate();
+  void deactivate() override;
 
   /**
    * @brief Creating a plan from start and goal poses
@@ -85,9 +80,9 @@ public:
    * @param goal Goal pose
    * @return nav2_msgs::Path of the generated path
    */
-  bool makePlan(
-    const geometry_msgs::PoseStamped & start, const geometry_msgs::PoseStamped & goal,
-    std::vector<geometry_msgs::PoseStamped> & planVector) override;
+  nav_msgs::msg::Path createPlan(
+    const geometry_msgs::msg::PoseStamped & start,
+    const geometry_msgs::msg::PoseStamped & goal) override;
 
   /**
    * @brief Create an Eigen Vector2D of world poses from continuous map coords
@@ -97,14 +92,14 @@ public:
    * @return Eigen::Vector2d eigen vector of the generated path
    */
   Eigen::Vector2d getWorldCoords(
-    const float & mx, const float & my, const costmap_2d::Costmap2D * costmap);
+    const float & mx, const float & my, const nav2_costmap_2d::Costmap2D * costmap);
 
   /**
    * @brief Create quaternion from A* coord bins
    * @param theta continuous bin coordinates angle
    * @return quaternion orientation in map frame
    */
-  geometry_msgs::Quaternion getWorldOrientation(const float & theta);
+  geometry_msgs::msg::Quaternion getWorldOrientation(const float & theta);
 
   /**
    * @brief Remove hooking at end of paths
@@ -113,25 +108,19 @@ public:
   void removeHook(std::vector<Eigen::Vector2d> & path);
 
 protected:
-  std::unique_ptr<AStarAlgorithm<
-    NodeSE2<GridCollisionChecker<
-      costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
-      costmap_2d::Footprint>>,
-    GridCollisionChecker<
-      costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
-      costmap_2d::Footprint>,
-    costmap_2d::Costmap2D, costmap_2d::Footprint>>
-    _a_star;
-  std::unique_ptr<Smoother<costmap_2d::Costmap2D>> _smoother;
-  costmap_2d::Costmap2D * _costmap;
-  std::unique_ptr<CostmapDownsampler<costmap_2d::Costmap2D>> _costmap_downsampler;
+  std::unique_ptr<AStarAlgorithm<NodeSE2>> _a_star;
+  std::unique_ptr<Smoother> _smoother;
+  rclcpp::Clock::SharedPtr _clock;
+  rclcpp::Logger _logger{rclcpp::get_logger("SmacPlanner")};
+  nav2_costmap_2d::Costmap2D * _costmap;
+  std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
   std::string _global_frame, _name;
   float _tolerance;
   int _downsampling_factor;
   unsigned int _angle_quantizations;
   double _angle_bin_size;
   bool _downsample_costmap;
-  std::unique_ptr<ros::Publisher> _raw_plan_publisher;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   SmootherParams _smoother_params;
   OptimizerParams _optimizer_params;
   double _max_planning_time;

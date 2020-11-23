@@ -16,24 +16,24 @@
 #define SMAC_PLANNER__NODE_2D_HPP_
 
 #include <math.h>
-#include <vector>
+
+#include <functional>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <queue>
-#include <limits>
 #include <utility>
-#include <functional>
+#include <vector>
 
 #include "smac_planner/constants.hpp"
-#include "smac_planner/collision_checker.hpp"
 
 namespace smac_planner
 {
-
 /**
  * @class smac_planner::Node2D
  * @brief Node2D implementation for graph
  */
+template <typename GridCollisionCheckerT>
 class Node2D
 {
 public:
@@ -48,9 +48,7 @@ public:
   struct Coordinates
   {
     Coordinates() {}
-    Coordinates(const float & x_in, const float & y_in)
-    : x(x_in), y(y_in)
-    {}
+    Coordinates(const float & x_in, const float & y_in) : x(x_in), y(y_in) {}
 
     float x, y;
   };
@@ -61,63 +59,62 @@ public:
    * @param cost_in The costmap cost at this node
    * @param index The index of this node for self-reference
    */
-  explicit Node2D(unsigned char & cost_in, const unsigned int index);
+  Node2D(unsigned char & cost_in, const unsigned int index)
+  : parent(nullptr),
+    _cell_cost(static_cast<float>(cost_in)),
+    _accumulated_cost(std::numeric_limits<float>::max()),
+    _index(index),
+    _was_visited(false),
+    _is_queued(false){};
 
   /**
    * @brief A destructor for smac_planner::Node2D
    */
-  ~Node2D();
+  ~Node2D() { parent = nullptr; };
 
   /**
    * @brief operator== for comparisons
    * @param Node2D right hand side node reference
    * @return If cell indicies are equal
    */
-  bool operator==(const Node2D & rhs)
-  {
-    return this->_index == rhs._index;
-  }
+  bool operator==(const Node2D & rhs) { return this->_index == rhs._index; }
 
   /**
    * @brief Reset method for new search
    * @param cost_in The costmap cost at this node
    */
-  void reset(const unsigned char & cost);
+  void reset(const unsigned char & cost)
+  {
+    parent = nullptr;
+    _cell_cost = static_cast<float>(cost);
+    _accumulated_cost = std::numeric_limits<float>::max();
+    _was_visited = false;
+    _is_queued = false;
+  }
+
   /**
    * @brief Gets the accumulated cost at this node
    * @return accumulated cost
    */
-  inline float & getAccumulatedCost()
-  {
-    return _accumulated_cost;
-  }
+  inline float & getAccumulatedCost() { return _accumulated_cost; }
 
   /**
    * @brief Sets the accumulated cost at this node
    * @param reference to accumulated cost
    */
-  inline void setAccumulatedCost(const float cost_in)
-  {
-    _accumulated_cost = cost_in;
-  }
+  inline void setAccumulatedCost(const float cost_in) { _accumulated_cost = cost_in; }
 
   /**
    * @brief Gets the costmap cost at this node
    * @return costmap cost
    */
-  inline float & getCost()
-  {
-    return _cell_cost;
-  }
+  inline float & getCost() { return _cell_cost; }
 
   /**
    * @brief Gets if cell has been visited in search
    * @param If cell was visited
    */
-  inline bool & wasVisited()
-  {
-    return _was_visited;
-  }
+  inline bool & wasVisited() { return _was_visited; }
 
   /**
    * @brief Sets if cell has been visited in search
@@ -132,27 +129,18 @@ public:
    * @brief Gets if cell is currently queued in search
    * @param If cell was queued
    */
-  inline bool & isQueued()
-  {
-    return _is_queued;
-  }
+  inline bool & isQueued() { return _is_queued; }
 
   /**
    * @brief Sets if cell is currently queued in search
    */
-  inline void queued()
-  {
-    _is_queued = true;
-  }
+  inline void queued() { _is_queued = true; }
 
   /**
    * @brief Gets cell index
    * @return Reference to cell index
    */
-  inline unsigned int & getIndex()
-  {
-    return _index;
-  }
+  inline unsigned int & getIndex() { return _index; }
 
   /**
    * @brief Check if this node is valid
@@ -160,14 +148,44 @@ public:
    * @param collision_checker Pointer to collision checker object
    * @return whether this node is valid and collision free
    */
-  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker collision_checker);
+  bool isNodeValid(const bool & traverse_unknown, GridCollisionCheckerT /*collision_checker*/)
+  {
+    // NOTE(stevemacenski): Right now, we do not check if the node has wrapped around
+    // the regular grid (e.g. your node is on the edge of the costmap and i+1
+    // goes to the other side). This check would add compute time and my assertion is
+    // that if you do wrap around, the heuristic will be so high it'll be added far
+    // in the queue that it will never be called if a valid path exists.
+    // This is intentionally un-included to increase speed, but be aware. If this causes
+    // trouble, please file a ticket and we can address it then.
+
+    auto & cost = this->getCost();
+
+    // occupied node
+    if (cost == OCCUPIED || cost == INSCRIBED) {
+      return false;
+    }
+
+    // unknown node
+    if (cost == UNKNOWN && !traverse_unknown) {
+      return false;
+    }
+
+    return true;
+  }
 
   /**
    * @brief get traversal cost from this node to child node
    * @param child Node pointer to this node's child
    * @return traversal cost
    */
-  float getTraversalCost(const NodePtr & child);
+  float getTraversalCost(const NodePtr & child)
+  {
+    // cost to travel will be the cost of the cell's code
+
+    // neutral_cost is neutral cost for cost just to travel anywhere (50)
+    // 0.8 is a scale factor to remap costs [0, 252] evenly from [50, 252]
+    return Node2D::neutral_cost + 0.8 * child->getCost();
+  }
 
   /**
    * @brief Get index
@@ -206,8 +224,11 @@ public:
    * @return Heuristic cost between the nodes
    */
   static float getHeuristicCost(
-    const Coordinates & node_coords,
-    const Coordinates & goal_coordinates);
+    const Coordinates & node_coords, const Coordinates & goal_coordinates)
+  {
+    return hypotf(goal_coordinates.x - node_coords.x, goal_coordinates.y - node_coords.y) *
+           Node2D::neutral_cost;
+  }
 
   /**
    * @brief Initialize the neighborhood to be used in A*
@@ -215,9 +236,26 @@ public:
    * @param x_size_uint The total x size to find neighbors
    * @param neighborhood The desired neighborhood type
    */
-  static void initNeighborhood(
-    const unsigned int & x_size_uint,
-    const MotionModel & neighborhood);
+  static void initNeighborhood(const unsigned int & x_size_uint, const MotionModel & neighborhood)
+  {
+    int x_size = static_cast<int>(x_size_uint);
+    switch (neighborhood) {
+      case MotionModel::UNKNOWN:
+        throw std::runtime_error("Unknown neighborhood type selected.");
+      case MotionModel::VON_NEUMANN:
+        _neighbors_grid_offsets = {-1, +1, -x_size, +x_size};
+        break;
+      case MotionModel::MOORE:
+        _neighbors_grid_offsets = {-1,          +1,          -x_size,     +x_size,
+                                   -x_size - 1, -x_size + 1, +x_size - 1, +x_size + 1};
+        break;
+      default:
+        throw std::runtime_error(
+          "Invalid neighborhood type selected. "
+          "Von-Neumann and Moore are valid for Node2D.");
+    }
+  }
+
   /**
    * @brief Retrieve all valid neighbors of a node.
    * @param node Pointer to the node we are currently exploring in A*
@@ -226,13 +264,37 @@ public:
    */
   static void getNeighbors(
     NodePtr & node,
-    std::function<bool(const unsigned int &, smac_planner::Node2D * &)> & validity_checker,
-    GridCollisionChecker collision_checker,
-    const bool & traverse_unknown,
-    NodeVector & neighbors);
+    std::function<bool(const unsigned int &, smac_planner::Node2D<GridCollisionCheckerT> *&)> &
+      NeighborGetter,
+    GridCollisionCheckerT collision_checker, const bool & traverse_unknown, NodeVector & neighbors)
+  {
+    // NOTE(stevemacenski): Irritatingly, the order here matters. If you start in free
+    // space and then expand 8-connected, the first set of neighbors will be all cost
+    // _neutral_cost. Then its expansion will all be 2 * _neutral_cost but now multiple
+    // nodes are touching that node so the last cell to update the back pointer wins.
+    // Thusly, the ordering ends with the cardinal directions for both sets such that
+    // behavior is consistent in large free spaces between them.
+    // 100  50   0
+    // 100  50  50
+    // 100 100 100   where lower-middle '100' is visited with same cost by both bottom '50' nodes
+    // Therefore, it is valuable to have some low-potential across the entire map
+    // rather than a small inflation around the obstacles
+    int index;
+    NodePtr neighbor;
+    int node_i = node->getIndex();
+
+    for (unsigned int i = 0; i != _neighbors_grid_offsets.size(); ++i) {
+      index = node_i + _neighbors_grid_offsets[i];
+      if (NeighborGetter(index, neighbor)) {
+        if (neighbor->isNodeValid(traverse_unknown, collision_checker) && !neighbor->wasVisited()) {
+          neighbors.push_back(neighbor);
+        }
+      }
+    }
+  }
 
   Node2D * parent;
-  static double neutral_cost;
+  constexpr static double neutral_cost{50.0};
   static std::vector<int> _neighbors_grid_offsets;
 
 private:
@@ -242,6 +304,9 @@ private:
   bool _was_visited;
   bool _is_queued;
 };
+
+template <typename GridCollisionCheckerT>
+std::vector<int> Node2D<GridCollisionCheckerT>::_neighbors_grid_offsets;
 
 }  // namespace smac_planner
 

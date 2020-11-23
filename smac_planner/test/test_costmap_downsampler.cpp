@@ -16,23 +16,23 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "smac_planner/costmap_downsampler.hpp"
 
 class RclCppFixture
 {
 public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
+  RclCppFixture() { rclcpp::init(0, nullptr); }
+  ~RclCppFixture() { rclcpp::shutdown(); }
 };
 RclCppFixture g_rclcppfixture;
 
 TEST(CostmapDownsampler, costmap_downsample_test)
 {
-  nav2_util::LifecycleNode::SharedPtr node = std::make_shared<nav2_util::LifecycleNode>(
-    "CostmapDownsamplerTest");
+  nav2_util::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2_util::LifecycleNode>("CostmapDownsamplerTest");
   smac_planner::CostmapDownsampler downsampler;
 
   // create basic costmap

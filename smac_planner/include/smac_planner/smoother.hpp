@@ -16,25 +16,24 @@
 #define SMAC_PLANNER__SMOOTHER_HPP_
 
 #include <cmath>
-#include <vector>
 #include <iostream>
 #include <memory>
 #include <queue>
 #include <utility>
+#include <vector>
 
-#include "smac_planner/types.hpp"
-#include "smac_planner/smoother_cost_function.hpp"
-
-#include "ceres/ceres.h"
 #include "Eigen/Core"
+#include "ceres/ceres.h"
+#include "smac_planner/smoother_cost_function.hpp"
+#include "smac_planner/types.hpp"
 
 namespace smac_planner
 {
-
 /**
  * @class smac_planner::Smoother
  * @brief A Conjugate Gradient 2D path smoother implementation
  */
+template <typename Costmap2DT>
 class Smoother
 {
 public:
@@ -99,9 +98,7 @@ public:
    * @return If smoothing was successful
    */
   bool smooth(
-    std::vector<Eigen::Vector2d> & path,
-    nav2_costmap_2d::Costmap2D * costmap,
-    const SmootherParams & params)
+    std::vector<Eigen::Vector2d> & path, Costmap2DT * costmap, const SmootherParams & params)
   {
     _options.max_solver_time_in_seconds = params.max_time;
 
@@ -112,7 +109,8 @@ public:
     }
 
     ceres::GradientProblemSolver::Summary summary;
-    ceres::GradientProblem problem(new UnconstrainedSmootherCostFunction(&path, costmap, params));
+    ceres::GradientProblem problem(
+      new UnconstrainedSmootherCostFunction<Costmap2DT>(&path, costmap, params));
     ceres::Solve(_options, problem, parameters, &summary);
 
     if (_debug) {

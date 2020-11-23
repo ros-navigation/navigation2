@@ -16,29 +16,28 @@
 #define SMAC_PLANNER__SMOOTHER_COST_FUNCTION_HPP_
 
 #include <cmath>
-#include <vector>
 #include <iostream>
-#include <unordered_map>
 #include <memory>
 #include <queue>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
-#include "ceres/ceres.h"
 #include "Eigen/Core"
-#include "smac_planner/types.hpp"
-#include "nav2_costmap_2d/costmap_2d.hpp"
+#include "ceres/ceres.h"
 #include "smac_planner/options.hpp"
+#include "smac_planner/types.hpp"
 
 #define EPSILON 0.0001
 
 namespace smac_planner
 {
-
 /**
  * @struct smac_planner::UnconstrainedSmootherCostFunction
  * @brief Cost function for path smoothing with multiple terms
  * including curvature, smoothness, collision, and avoid obstacles.
  */
+template <typename Costmap2DT>
 class UnconstrainedSmootherCostFunction : public ceres::FirstOrderFunction
 {
 public:
@@ -48,8 +47,7 @@ public:
    * @param costmap A costmap to get values for collision and obstacle avoidance
    */
   UnconstrainedSmootherCostFunction(
-    std::vector<Eigen::Vector2d> * original_path,
-    nav2_costmap_2d::Costmap2D * costmap,
+    std::vector<Eigen::Vector2d> * original_path, Costmap2DT * costmap,
     const SmootherParams & params)
   : _original_path(original_path),
     _num_params(2 * original_path->size()),
@@ -67,20 +65,14 @@ public:
     /**
      * @brief A constructor for smac_planner::CurvatureComputations
      */
-    CurvatureComputations()
-    {
-      valid = true;
-    }
+    CurvatureComputations() { valid = true; }
 
     bool valid;
     /**
      * @brief Check if result is valid for penalty
      * @return is valid (non-nan, non-inf, and turning angle > max)
      */
-    bool isValid()
-    {
-      return valid;
-    }
+    bool isValid() { return valid; }
 
     Eigen::Vector2d delta_xi{0.0, 0.0};
     Eigen::Vector2d delta_xi_p{0.0, 0.0};
@@ -98,10 +90,7 @@ public:
    * @param gradient of path at each X,Y pair from cost function derived analytically
    * @return if successful in computing values
    */
-  virtual bool Evaluate(
-    const double * parameters,
-    double * cost,
-    double * gradient) const
+  virtual bool Evaluate(const double * parameters, double * cost, double * gradient) const
   {
     Eigen::Vector2d xi;
     Eigen::Vector2d xi_p1;
@@ -147,11 +136,9 @@ public:
         gradient[y_index] = 0.0;
         addSmoothingJacobian(_params.smooth_weight, xi, xi_p1, xi_m1, grad_x_raw, grad_y_raw);
         addCurvatureJacobian(
-          _params.curvature_weight, xi, xi_p1, xi_m1, curvature_params,
-          grad_x_raw, grad_y_raw);
+          _params.curvature_weight, xi, xi_p1, xi_m1, curvature_params, grad_x_raw, grad_y_raw);
         addDistanceJacobian(
-          _params.distance_weight, xi, _original_path->at(
-            i), grad_x_raw, grad_y_raw);
+          _params.distance_weight, xi, _original_path->at(i), grad_x_raw, grad_y_raw);
 
         if (valid_coords) {
           addCostJacobian(_params.costmap_weight, mx, my, costmap_cost, grad_x_raw, grad_y_raw);
@@ -171,7 +158,7 @@ public:
    * @brief Get number of parameter blocks
    * @return Number of parameters in cost function
    */
-  virtual int NumParameters() const {return _num_params;}
+  virtual int NumParameters() const { return _num_params; }
 
 protected:
   /**
@@ -183,19 +170,11 @@ protected:
    * @param r Residual (cost) of term
    */
   inline void addSmoothingResidual(
-    const double & weight,
-    const Eigen::Vector2d & pt,
-    const Eigen::Vector2d & pt_p,
-    const Eigen::Vector2d & pt_m,
-    double & r) const
+    const double & weight, const Eigen::Vector2d & pt, const Eigen::Vector2d & pt_p,
+    const Eigen::Vector2d & pt_m, double & r) const
   {
-    r += weight * (
-      pt_p.dot(pt_p) -
-      4 * pt_p.dot(pt) +
-      2 * pt_p.dot(pt_m) +
-      4 * pt.dot(pt) -
-      4 * pt.dot(pt_m) +
-      pt_m.dot(pt_m));    // objective function value
+    r += weight * (pt_p.dot(pt_p) - 4 * pt_p.dot(pt) + 2 * pt_p.dot(pt_m) + 4 * pt.dot(pt) -
+                   4 * pt.dot(pt_m) + pt_m.dot(pt_m));  // objective function value
   }
 
   /**
@@ -208,17 +187,13 @@ protected:
    * @param j1 Gradient of Y term
    */
   inline void addSmoothingJacobian(
-    const double & weight,
-    const Eigen::Vector2d & pt,
-    const Eigen::Vector2d & pt_p,
-    const Eigen::Vector2d & pt_m,
-    double & j0,
-    double & j1) const
+    const double & weight, const Eigen::Vector2d & pt, const Eigen::Vector2d & pt_p,
+    const Eigen::Vector2d & pt_m, double & j0, double & j1) const
   {
-    j0 += weight *
-      (-4 * pt_m[0] + 8 * pt[0] - 4 * pt_p[0]);   // xi x component of partial-derivative
-    j1 += weight *
-      (-4 * pt_m[1] + 8 * pt[1] - 4 * pt_p[1]);   // xi y component of partial-derivative
+    j0 +=
+      weight * (-4 * pt_m[0] + 8 * pt[0] - 4 * pt_p[0]);  // xi x component of partial-derivative
+    j1 +=
+      weight * (-4 * pt_m[1] + 8 * pt[1] - 4 * pt_p[1]);  // xi y component of partial-derivative
   }
 
   /**
@@ -231,12 +206,8 @@ protected:
    * @param r Residual (cost) of term
    */
   inline void addCurvatureResidual(
-    const double & weight,
-    const Eigen::Vector2d & pt,
-    const Eigen::Vector2d & pt_p,
-    const Eigen::Vector2d & pt_m,
-    CurvatureComputations & curvature_params,
-    double & r) const
+    const double & weight, const Eigen::Vector2d & pt, const Eigen::Vector2d & pt_p,
+    const Eigen::Vector2d & pt_m, CurvatureComputations & curvature_params, double & r) const
   {
     curvature_params.valid = true;
     curvature_params.delta_xi = Eigen::Vector2d(pt[0] - pt_m[0], pt[1] - pt_m[1]);
@@ -244,10 +215,10 @@ protected:
     curvature_params.delta_xi_norm = curvature_params.delta_xi.norm();
     curvature_params.delta_xi_p_norm = curvature_params.delta_xi_p.norm();
 
-    if (curvature_params.delta_xi_norm < EPSILON || curvature_params.delta_xi_p_norm < EPSILON ||
+    if (
+      curvature_params.delta_xi_norm < EPSILON || curvature_params.delta_xi_p_norm < EPSILON ||
       std::isnan(curvature_params.delta_xi_p_norm) || std::isnan(curvature_params.delta_xi_norm) ||
-      std::isinf(curvature_params.delta_xi_p_norm) || std::isinf(curvature_params.delta_xi_norm))
-    {
+      std::isinf(curvature_params.delta_xi_p_norm) || std::isinf(curvature_params.delta_xi_norm)) {
       // ensure we have non-nan values returned
       curvature_params.valid = false;
       return;
@@ -272,8 +243,8 @@ protected:
       return;
     }
 
-    r += weight *
-      curvature_params.ki_minus_kmax * curvature_params.ki_minus_kmax;  // objective function value
+    r += weight * curvature_params.ki_minus_kmax *
+         curvature_params.ki_minus_kmax;  // objective function value
   }
 
   /**
@@ -287,12 +258,8 @@ protected:
    * @param j1 Gradient of Y term
    */
   inline void addCurvatureJacobian(
-    const double & weight,
-    const Eigen::Vector2d & pt,
-    const Eigen::Vector2d & pt_p,
-    const Eigen::Vector2d & /*pt_m*/,
-    CurvatureComputations & curvature_params,
-    double & j0,
+    const double & weight, const Eigen::Vector2d & pt, const Eigen::Vector2d & pt_p,
+    const Eigen::Vector2d & /*pt_m*/, CurvatureComputations & curvature_params, double & j0,
     double & j1) const
   {
     if (!curvature_params.isValid()) {
@@ -311,16 +278,16 @@ protected:
     const double & u = 2 * curvature_params.ki_minus_kmax;
     const double & common_prefix =
       (1 / curvature_params.delta_xi_norm) * partial_delta_phi_i_wrt_cost_delta_phi_i;
-    const double & common_suffix = curvature_params.delta_phi_i /
-      (curvature_params.delta_xi_norm * curvature_params.delta_xi_norm);
+    const double & common_suffix = curvature_params.delta_phi_i / (curvature_params.delta_xi_norm *
+                                                                   curvature_params.delta_xi_norm);
 
-    const Eigen::Vector2d & d_delta_xi_d_xi = curvature_params.delta_xi /
-      curvature_params.delta_xi_norm;
+    const Eigen::Vector2d & d_delta_xi_d_xi =
+      curvature_params.delta_xi / curvature_params.delta_xi_norm;
 
-    const Eigen::Vector2d jacobian = u *
-      (common_prefix * (-p1 - p2) - (common_suffix * d_delta_xi_d_xi));
-    const Eigen::Vector2d jacobian_im1 = u *
-      (common_prefix * p2 + (common_suffix * d_delta_xi_d_xi));
+    const Eigen::Vector2d jacobian =
+      u * (common_prefix * (-p1 - p2) - (common_suffix * d_delta_xi_d_xi));
+    const Eigen::Vector2d jacobian_im1 =
+      u * (common_prefix * p2 + (common_suffix * d_delta_xi_d_xi));
     const Eigen::Vector2d jacobian_ip1 = u * (common_prefix * p1);
 
     // Old formulation we may require again.
@@ -341,9 +308,7 @@ protected:
    * @param r Residual (cost) of term
    */
   inline void addDistanceResidual(
-    const double & weight,
-    const Eigen::Vector2d & xi,
-    const Eigen::Vector2d & xi_original,
+    const double & weight, const Eigen::Vector2d & xi, const Eigen::Vector2d & xi_original,
     double & r) const
   {
     r += weight * (xi - xi_original).dot(xi - xi_original);  // objective function value
@@ -358,16 +323,12 @@ protected:
    * @param j1 Gradient of Y term
    */
   inline void addDistanceJacobian(
-    const double & weight,
-    const Eigen::Vector2d & xi,
-    const Eigen::Vector2d & xi_original,
-    double & j0,
-    double & j1) const
+    const double & weight, const Eigen::Vector2d & xi, const Eigen::Vector2d & xi_original,
+    double & j0, double & j1) const
   {
     j0 += weight * 2 * (xi[0] - xi_original[0]);  // xi y component of partial-derivative
     j1 += weight * 2 * (xi[1] - xi_original[1]);  // xi y component of partial-derivative
   }
-
 
   /**
    * @brief Cost function term for steering away from costs
@@ -376,10 +337,7 @@ protected:
    * @param params computed values to reduce overhead
    * @param r Residual (cost) of term
    */
-  inline void addCostResidual(
-    const double & weight,
-    const double & value,
-    double & r) const
+  inline void addCostResidual(const double & weight, const double & value, double & r) const
   {
     if (value == FREE) {
       return;
@@ -399,12 +357,8 @@ protected:
    * @param j1 Gradient of Y term
    */
   inline void addCostJacobian(
-    const double & weight,
-    const unsigned int & mx,
-    const unsigned int & my,
-    const double & value,
-    double & j0,
-    double & j1) const
+    const double & weight, const unsigned int & mx, const unsigned int & my, const double & value,
+    double & j0, double & j1) const
   {
     if (value == FREE) {
       return;
@@ -424,9 +378,7 @@ protected:
    * @param mx Point Xi's y coordinate in map frame
    * @param params Params reference to store gradients
    */
-  inline Eigen::Vector2d getCostmapGradient(
-    const unsigned int mx,
-    const unsigned int my) const
+  inline Eigen::Vector2d getCostmapGradient(const unsigned int mx, const unsigned int my) const
   {
     // find unit vector that describes that direction
     // via 7 point taylor series approximation for gradient at Xi
@@ -496,9 +448,7 @@ protected:
    * @return Normalized vector of orthogonal components
    */
   inline Eigen::Vector2d normalizedOrthogonalComplement(
-    const Eigen::Vector2d & a,
-    const Eigen::Vector2d & b,
-    const double & a_norm,
+    const Eigen::Vector2d & a, const Eigen::Vector2d & b, const double & a_norm,
     const double & b_norm) const
   {
     return (a - (a.dot(b) * b / b.squaredNorm())) / (a_norm * b_norm);
@@ -506,7 +456,7 @@ protected:
 
   std::vector<Eigen::Vector2d> * _original_path{nullptr};
   int _num_params;
-  nav2_costmap_2d::Costmap2D * _costmap{nullptr};
+  Costmap2DT * _costmap{nullptr};
   SmootherParams _params;
 };
 

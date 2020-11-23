@@ -13,24 +13,25 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "smac_planner/node_se2.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "smac_planner/a_star.hpp"
 #include "smac_planner/collision_checker.hpp"
+#include "smac_planner/node_se2.hpp"
 
 class RclCppFixture
 {
 public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
+  RclCppFixture() { rclcpp::init(0, nullptr); }
+  ~RclCppFixture() { rclcpp::shutdown(); }
 };
 RclCppFixture g_rclcppfixture;
 
@@ -72,8 +73,8 @@ TEST(AStarTest, test_a_star_2d)
 
   // setting non-zero dim 3 for 2D search
   EXPECT_THROW(
-    a_star.createGraph(
-      costmapA->getSizeInCellsX(), costmapA->getSizeInCellsY(), 10, costmapA), std::runtime_error);
+    a_star.createGraph(costmapA->getSizeInCellsX(), costmapA->getSizeInCellsY(), 10, costmapA),
+    std::runtime_error);
   EXPECT_THROW(a_star.setGoal(0, 0, 10), std::runtime_error);
   EXPECT_THROW(a_star.setStart(0, 0, 10), std::runtime_error);
 
@@ -89,17 +90,17 @@ TEST(AStarTest, test_a_star_2d)
   num_it = 0;
   EXPECT_THROW(a_star_2.createPath(path, num_it, tolerance), std::runtime_error);
   a_star_2.setStart(50, 50, 0);  // invalid
-  a_star_2.setGoal(0, 0, 0);  // valid
+  a_star_2.setGoal(0, 0, 0);     // valid
   num_it = 0;
   EXPECT_THROW(a_star_2.createPath(path, num_it, tolerance), std::runtime_error);
-  a_star_2.setStart(0, 0, 0);  // valid
+  a_star_2.setStart(0, 0, 0);   // valid
   a_star_2.setGoal(50, 50, 0);  // invalid
   num_it = 0;
   EXPECT_THROW(a_star_2.createPath(path, num_it, tolerance), std::runtime_error);
   num_it = 0;
   // invalid goal but liberal tolerance
   a_star_2.setStart(20, 20, 0);  // valid
-  a_star_2.setGoal(50, 50, 0);  // invalid
+  a_star_2.setGoal(50, 50, 0);   // invalid
   EXPECT_TRUE(a_star_2.createPath(path, num_it, some_tolerance));
   EXPECT_EQ(path.size(), 32u);
   for (unsigned int i = 0; i != path.size(); i++) {

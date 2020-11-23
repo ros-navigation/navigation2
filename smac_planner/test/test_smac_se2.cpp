@@ -13,27 +13,28 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "smac_planner/node_se2.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "smac_planner/a_star.hpp"
 #include "smac_planner/collision_checker.hpp"
-#include "smac_planner/smac_planner.hpp"
-#include "smac_planner/smac_planner_2d.hpp"
+#include "smac_planner/nav2_smac_planner.hpp"
+#include "smac_planner/nav2_smac_planner_2d.hpp"
+#include "smac_planner/node_se2.hpp"
 
 class RclCppFixture
 {
 public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
+  RclCppFixture() { rclcpp::init(0, nullptr); }
+  ~RclCppFixture() { rclcpp::shutdown(); }
 };
 RclCppFixture g_rclcppfixture;
 

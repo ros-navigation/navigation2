@@ -7,32 +7,45 @@
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache-2.0</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
+  <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
 
-  <depend>rclcpp</depend>
-  <depend>rclcpp_action</depend>
-  <depend>rclcpp_lifecycle</depend>
+  <depend condition="$ROS_VERSION == 1">roslib</depend>
+  <depend condition="$ROS_VERSION == 1">roscpp</depend>
+  <depend condition="$ROS_VERSION == 2">rclcpp</depend>
+  <depend condition="$ROS_VERSION == 2">rclcpp_action</depend>
+  <depend condition="$ROS_VERSION == 2">rclcpp_lifecycle</depend>
   <depend>visualization_msgs</depend>
-  <depend>nav2_util</depend>
-  <depend>nav2_msgs</depend>
+  <depend condition="$ROS_VERSION == 2">nav2_util</depend>
+  <depend condition="$ROS_VERSION == 2">nav2_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>builtin_interfaces</depend>
-  <depend>nav2_common</depend>
+  <depend condition="$ROS_VERSION == 2">builtin_interfaces</depend>
+  <depend condition="$ROS_VERSION == 2">nav2_common</depend>
   <depend>tf2_ros</depend>
-  <depend>nav2_costmap_2d</depend>
-  <depend>nav2_core</depend>
+  <depend condition="$ROS_VERSION == 2">nav2_costmap_2d</depend>
+  <depend condition="$ROS_VERSION == 2">nav2_core</depend>
+  <depend condition="$ROS_VERSION == 1">nav_core</depend>
+  <depend condition="$ROS_VERSION == 1">nav_core2</depend>
+  <depend condition="$ROS_VERSION == 1">std_msgs</depend>
+  <depend condition="$ROS_VERSION == 1">costmap_2d</depend>
+  
   <depend>pluginlib</depend>
   <depend>libceres-dev</depend>
-  <depend>eigen3_cmake_module</depend>
+  <depend condition="$ROS_VERSION == 2">eigen3_cmake_module</depend>
   <depend>eigen</depend>
   <depend>ompl</depend>
+  <depend>libomp-dev</depend>
 
-  <test_depend>ament_lint_common</test_depend>
-  <test_depend>ament_lint_auto</test_depend>
+  <test_depend condition="$ROS_VERSION == 2">ament_lint_common</test_depend>
+  <test_depend condition="$ROS_VERSION == 2">ament_lint_auto</test_depend>
 
   <export>
-    <build_type>ament_cmake</build_type>
-    <nav2_core plugin="${prefix}/global_planner_plugin.xml" />
+    <!-- <build_type condition="$ROS_VERSION == 2">ament_cmake</build_type> -->
+    <nav2_core condition="$ROS_VERSION == 2" plugin="${prefix}/global_planner_plugin.xml" />
+
+    <build_type condition="$ROS_VERSION == 1">catkin</build_type>
+    <nav_core condition="$ROS_VERSION == 1" plugin="${prefix}/smac_plugin_2d.xml"/>
+    <nav_core condition="$ROS_VERSION == 1" plugin="${prefix}/smac_plugin.xml"/>
   </export>
 </package>

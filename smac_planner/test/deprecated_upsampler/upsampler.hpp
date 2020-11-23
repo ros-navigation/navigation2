@@ -15,24 +15,22 @@
 #ifndef DEPRECATED_UPSAMPLER__UPSAMPLER_HPP_
 #define DEPRECATED_UPSAMPLER__UPSAMPLER_HPP_
 
+#include <algorithm>
 #include <cmath>
-#include <vector>
 #include <iostream>
 #include <memory>
 #include <queue>
-#include <algorithm>
 #include <utility>
+#include <vector>
 
+#include "Eigen/Core"
+#include "ceres/ceres.h"
 #include "smac_planner/types.hpp"
 #include "smac_planner/upsampler_cost_function.hpp"
 #include "smac_planner/upsampler_cost_function_nlls.hpp"
 
-#include "ceres/ceres.h"
-#include "Eigen/Core"
-
 namespace smac_planner
 {
-
 /**
  * @class smac_planner::Upsampler
  * @brief A Conjugate Gradient 2D path upsampler implementation
@@ -65,7 +63,7 @@ public:
     _options.nonlinear_conjugate_gradient_type = ceres::POLAK_RIBIERE;
     _options.line_search_interpolation_type = ceres::CUBIC;
 
-    _options.max_num_iterations = params.max_iterations;  // 5000
+    _options.max_num_iterations = params.max_iterations;    // 5000
     _options.max_solver_time_in_seconds = params.max_time;  // 5.0; // TODO
 
     _options.function_tolerance = params.fn_tol;
@@ -100,9 +98,7 @@ public:
    * @return If Upsampler was successful
    */
   bool upsample(
-    std::vector<Eigen::Vector2d> & path,
-    const SmootherParams & params,
-    const int & upsample_ratio)
+    std::vector<Eigen::Vector2d> & path, const SmootherParams & params, const int & upsample_ratio)
   {
     _options.max_solver_time_in_seconds = params.max_time;
 
@@ -142,7 +138,6 @@ public:
     ceres::GradientProblemSolver::Summary summary;
     ceres::GradientProblem problem(new UpsamplerCostFunction(temp_path, params, upsample_ratio));
     ceres::Solve(_options, problem, parameters, &summary);
-
 
     path.resize(total_size / 2);
     for (int i = 0; i != total_size / 2; i++) {
