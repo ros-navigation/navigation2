@@ -52,8 +52,6 @@ SmacPlanner::~SmacPlanner()
 
 void SmacPlanner::initialize(std::string name, costmap_2d::Costmap2DROS * costmap_ros)
 {
-  //auto node = parent.lock();
-
   _costmap = costmap_ros->getCostmap();
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
@@ -109,9 +107,9 @@ void SmacPlanner::initialize(std::string name, costmap_2d::Costmap2DROS * costma
 
   if (motion_model == MotionModel::UNKNOWN) {
     ROS_WARN_STREAM(
-      "Unable to get MotionModel search type. Given '"
-      << motion_model_for_search.c_str()
-      << "', valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.");
+      "Unable to get MotionModel search type. Given '" <<
+        motion_model_for_search.c_str() <<
+        "', valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.");
   }
 
   if (max_on_approach_iterations <= 0) {
@@ -131,13 +129,13 @@ void SmacPlanner::initialize(std::string name, costmap_2d::Costmap2DROS * costma
     search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
 
   _a_star = std::make_unique<AStarAlgorithm<
-    NodeSE2<GridCollisionChecker<
-      costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
-      costmap_2d::Footprint>>,
-    GridCollisionChecker<
-      costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
-      costmap_2d::Footprint>,
-    costmap_2d::Costmap2D, costmap_2d::Footprint>>(motion_model, search_info);
+        NodeSE2<GridCollisionChecker<
+          costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
+          costmap_2d::Footprint>>,
+        GridCollisionChecker<
+          costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
+          costmap_2d::Footprint>,
+        costmap_2d::Costmap2D, costmap_2d::Footprint>>(motion_model, search_info);
   _a_star->initialize(allow_unknown, max_iterations, max_on_approach_iterations);
   _a_star->setFootprint(
     costmap_ros->getRobotFootprint(), false); /* costmap_ros->getUseRadius()); */
@@ -204,20 +202,20 @@ void SmacPlanner::initialize(std::string name, costmap_2d::Costmap2DROS * costma
     std::make_unique<ros::Publisher>(node_handle.advertise<nav_msgs::Path>("/unsmoothed_plan", 1));
 
   ROS_INFO_STREAM(
-    "Configured plugin" << _name.c_str() << "of type SmacPlanner with "
-                        << "tolerance " << _tolerance << ", maximum iterations " << max_iterations
-                        << ", "
-                        << "max on approach iterations " << max_on_approach_iterations << ", and "
-                        << (allow_unknown ? "allowing unknown traversal"
-                                          : "not allowing unknown traversal")
-                        << ". Using motion model: " << toString(motion_model) << ".");
+    "Configured plugin" << _name.c_str() << "of type SmacPlanner with " <<
+      "tolerance " << _tolerance << ", maximum iterations " << max_iterations <<
+      ", " <<
+      "max on approach iterations " << max_on_approach_iterations << ", and " <<
+    (allow_unknown ? "allowing unknown traversal" :
+    "not allowing unknown traversal") <<
+      ". Using motion model: " << toString(motion_model) << ".");
 }
 
 void SmacPlanner::activate()
 {
   ROS_INFO_STREAM("Activating plugin " << _name.c_str() << " of type SmacPlanner");
   if (_costmap_downsampler) {
-    //_costmap_downsampler->on_activate();
+    // _costmap_downsampler->on_activate();
   }
 }
 
@@ -225,7 +223,7 @@ void SmacPlanner::deactivate()
 {
   ROS_INFO_STREAM("Deactivating plugin " << _name.c_str() << " of type SmacPlanner");
   if (_costmap_downsampler) {
-    //_costmap_downsampler->on_deactivate();
+    // _costmap_downsampler->on_deactivate();
   }
 }
 
@@ -254,8 +252,8 @@ bool SmacPlanner::makePlan(
   }
 
   ROS_DEBUG_STREAM(
-    "X: " << _costmap->getOriginX() << " Y: " << _costmap->getOriginY() << " \n size: "
-          << _costmap->getSizeInMetersX() << " y: " << _costmap->getSizeInMetersY());
+    "X: " << _costmap->getOriginX() << " Y: " << _costmap->getOriginY() << " \n size: " <<
+      _costmap->getSizeInMetersX() << " y: " << _costmap->getSizeInMetersY());
 
   // Set Costmap
   _a_star->createGraph(
@@ -294,13 +292,14 @@ bool SmacPlanner::makePlan(
 
   // Compute plan
   NodeSE2<GridCollisionChecker<
-    costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
-    costmap_2d::Footprint>>::CoordinateVector path;
+      costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
+      costmap_2d::Footprint>>::CoordinateVector path;
   int num_iterations = 0;
   std::string error;
   try {
     if (!_a_star->createPath(
-          path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution()))) {
+        path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution())))
+    {
       if (num_iterations < _a_star->getMaxIterations()) {
         error = std::string("no valid path found");
       } else {
@@ -343,8 +342,9 @@ bool SmacPlanner::makePlan(
 #ifdef BENCHMARK_TESTING
     steady_clock::time_point b = steady_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(b - a);
-    std::cout << "It took " << time_span.count() * 1000 << " milliseconds with " << num_iterations
-              << " iterations." << std::endl;
+    std::cout << "It took " << time_span.count() * 1000 << " milliseconds with " <<
+      num_iterations <<
+      " iterations." << std::endl;
 #endif
     return true;
   }
@@ -358,8 +358,8 @@ bool SmacPlanner::makePlan(
   // Smooth plan
   if (!_smoother->smooth(path_world, costmap, _smoother_params)) {
     ROS_WARN_STREAM(
-      _name.c_str()
-      << ": failed to smooth plan, Ceres could not find a usable solution to optimize.");
+      _name.c_str() <<
+        ": failed to smooth plan, Ceres could not find a usable solution to optimize.");
     return true;
   }
 
@@ -384,7 +384,8 @@ void SmacPlanner::removeHook(std::vector<Eigen::Vector2d> & path)
   interpolated_second_to_last_point = (path.end()[-3] + path.end()[-1]) / 2.0;
   if (
     squaredDistance(path.end()[-2], path.end()[-1]) >
-    squaredDistance(interpolated_second_to_last_point, path.end()[-1])) {
+    squaredDistance(interpolated_second_to_last_point, path.end()[-1]))
+  {
     path.end()[-2] = interpolated_second_to_last_point;
   }
 }

@@ -61,14 +61,14 @@ public:
     /**
      * @brief A constructor for smac_planner::CurvatureComputations
      */
-    CurvatureComputations() { valid = false; }
+    CurvatureComputations() {valid = false;}
 
     bool valid;
     /**
      * @brief Check if result is valid for penalty
      * @return is valid (non-nan, non-inf, and turning angle > max)
      */
-    bool isValid() { return valid; }
+    bool isValid() {return valid;}
 
     Eigen::Vector2d delta_xi{0, 0};
     Eigen::Vector2d delta_xi_p{0, 0};
@@ -144,7 +144,7 @@ public:
    * @brief Get number of parameter blocks
    * @return Number of parameters in cost function
    */
-  virtual int NumParameters() const { return _num_params; }
+  virtual int NumParameters() const {return _num_params;}
 
 protected:
   /**
@@ -160,7 +160,7 @@ protected:
     const Eigen::Vector2d & pt_m, double & r) const
   {
     r += weight * (pt_p.dot(pt_p) - 4 * pt_p.dot(pt) + 2 * pt_p.dot(pt_m) + 4 * pt.dot(pt) -
-                   4 * pt.dot(pt_m) + pt_m.dot(pt_m));  // objective function value
+      4 * pt.dot(pt_m) + pt_m.dot(pt_m));               // objective function value
   }
 
   /**
@@ -202,7 +202,8 @@ protected:
     if (
       curvature_params.delta_xi_norm < EPSILON || curvature_params.delta_xi_p_norm < EPSILON ||
       std::isnan(curvature_params.delta_xi_p_norm) || std::isnan(curvature_params.delta_xi_norm) ||
-      std::isinf(curvature_params.delta_xi_p_norm) || std::isinf(curvature_params.delta_xi_norm)) {
+      std::isinf(curvature_params.delta_xi_p_norm) || std::isinf(curvature_params.delta_xi_norm))
+    {
       // ensure we have non-nan values returned
       curvature_params.valid = false;
       return;
@@ -251,7 +252,7 @@ protected:
     }
 
     r += weight * curvature_params.ki_minus_kmax *
-         curvature_params.ki_minus_kmax;  // objective function value
+      curvature_params.ki_minus_kmax;     // objective function value
   }
 
   /**
@@ -286,7 +287,7 @@ protected:
     const double & common_prefix =
       (1 / curvature_params.delta_xi_norm) * partial_delta_phi_i_wrt_cost_delta_phi_i;
     const double & common_suffix = curvature_params.delta_phi_i / (curvature_params.delta_xi_norm *
-                                                                   curvature_params.delta_xi_norm);
+      curvature_params.delta_xi_norm);
     const Eigen::Vector2d & d_delta_xi_d_xi =
       curvature_params.delta_xi / curvature_params.delta_xi_norm;
 

@@ -33,7 +33,7 @@ namespace smac_planner
  * @class smac_planner::Smoother
  * @brief A Conjugate Gradient 2D path smoother implementation
  */
-template <typename Costmap2DT>
+template<typename Costmap2DT>
 class Smoother
 {
 public:

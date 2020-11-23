@@ -36,7 +36,7 @@ namespace smac_planner
  * @class smac_planner::NodeBasic
  * @brief NodeBasic implementation for priority queue insertion
  */
-template <typename NodeT>
+template<typename NodeT>
 class NodeBasic
 {
 public:
@@ -45,7 +45,8 @@ public:
    * @param cost_in The costmap cost at this node
    * @param index The index of this node for self-reference
    */
-  explicit NodeBasic(const unsigned int index) : index(index), graph_node_ptr(nullptr) {}
+  explicit NodeBasic(const unsigned int index)
+  : index(index), graph_node_ptr(nullptr) {}
 
   typename NodeT::Coordinates pose;  // Used by NodeSE2
   NodeT * graph_node_ptr;

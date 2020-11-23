@@ -79,23 +79,23 @@ void SmacPlanner2D::initialize(
   MotionModel motion_model = fromString(motion_model_for_search);
   if (motion_model == MotionModel::UNKNOWN) {
     ROS_WARN_STREAM(
-      "Unable to get MotionModel search type. Given '"
-      << motion_model_for_search.c_str()
-      << "', "
-         "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.");
+      "Unable to get MotionModel search type. Given '" <<
+        motion_model_for_search.c_str() <<
+        "', "
+        "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.");
   }
 
   if (max_on_approach_iterations <= 0) {
     ROS_INFO_STREAM(
-      "On approach iteration selected as <= 0, "
-      << "disabling tolerance and on approach iterations.");
+      "On approach iteration selected as <= 0, " <<
+        "disabling tolerance and on approach iterations.");
     max_on_approach_iterations = std::numeric_limits<int>::max();
   }
 
   if (max_iterations <= 0) {
     ROS_INFO_STREAM(
-      "maximum iteration selected as <= 0, "
-      << "disabling maximum iterations.");
+      "maximum iteration selected as <= 0, " <<
+        "disabling maximum iterations.");
     max_iterations = std::numeric_limits<int>::max();
   }
 
@@ -105,7 +105,7 @@ void SmacPlanner2D::initialize(
 
   _a_star = std::make_unique<
     AStarAlgorithm<Node2D<GridCollisionCheckerT>, GridCollisionCheckerT, costmap_2d::Costmap2D>
-      costmap_2d::Footprint>(motion_model, SearchInfo());
+    costmap_2d::Footprint>(motion_model, SearchInfo());
   _a_star->initialize(allow_unknown, max_iterations, max_on_approach_iterations);
 
   if (smooth_path) {
@@ -126,16 +126,16 @@ void SmacPlanner2D::initialize(
   _raw_plan_publisher = node->create_publisher<nav_msgs::Path>("unsmoothed_plan", 1);
 
   ROS_INFO_STREAM(
-    "Configured plugin " << _name.c_str()
-                         << " of type SmacPlanner2D with "
-                            "tolerance "
-                         << _tolerance << ", maximum iterations " << max_iterations
-                         << ", "
-                            "max on approach iterations "
-                         << max_on_approach_iterations << ", and "
-                         << (allow_unknown ? "allowing unknown traversal"
-                                           : "not allowing unknown traversal")
-                         << " Using motion model: " << toString(motion_model).c_str() << ".", );
+    "Configured plugin " << _name.c_str() <<
+      " of type SmacPlanner2D with "
+      "tolerance " <<
+      _tolerance << ", maximum iterations " << max_iterations <<
+      ", "
+      "max on approach iterations " <<
+      max_on_approach_iterations << ", and " <<
+    (allow_unknown ? "allowing unknown traversal" :
+    "not allowing unknown traversal") <<
+      " Using motion model: " << toString(motion_model).c_str() << ".", );
 }
 
 void SmacPlanner2D::activate()
@@ -208,7 +208,8 @@ nav_2d_msgs::Path2D SmacPlanner2D::makePlan(
   std::string error;
   try {
     if (!_a_star->createPath(
-          path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution()))) {
+        path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution())))
+    {
       if (num_iterations < _a_star->getMaxIterations()) {
         error = std::string("no valid path found");
       } else {
@@ -253,8 +254,9 @@ nav_2d_msgs::Path2D SmacPlanner2D::makePlan(
 #ifdef BENCHMARK_TESTING
     steady_clock::time_point b = steady_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(b - a);
-    std::cout << "It took " << time_span.count() * 1000 << " milliseconds with " << num_iterations
-              << " iterations." << std::endl;
+    std::cout << "It took " << time_span.count() * 1000 << " milliseconds with " <<
+      num_iterations <<
+      " iterations." << std::endl;
 #endif
     return plan;
   }
@@ -268,8 +270,8 @@ nav_2d_msgs::Path2D SmacPlanner2D::makePlan(
   // Smooth plan
   if (!_smoother->smooth(path_world, costmap, _smoother_params)) {
     ROS_WARN_STREAM(
-      _name.c_str()
-      << ": failed to smooth plan, Ceres could not find a usable solution to optimize.");
+      _name.c_str() <<
+        ": failed to smooth plan, Ceres could not find a usable solution to optimize.");
     return plan;
   }
 
@@ -292,7 +294,8 @@ void SmacPlanner2D::removeHook(std::vector<Eigen::Vector2d> & path)
   interpolated_second_to_last_point = (path.end()[-3] + path.end()[-1]) / 2.0;
   if (
     squaredDistance(path.end()[-2], path.end()[-1]) >
-    squaredDistance(interpolated_second_to_last_point, path.end()[-1])) {
+    squaredDistance(interpolated_second_to_last_point, path.end()[-1]))
+  {
     path.end()[-2] = interpolated_second_to_last_point;
   }
 }

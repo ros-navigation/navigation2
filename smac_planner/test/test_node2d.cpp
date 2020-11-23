@@ -27,8 +27,8 @@
 class RclCppFixture
 {
 public:
-  RclCppFixture() { rclcpp::init(0, nullptr); }
-  ~RclCppFixture() { rclcpp::shutdown(); }
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
 };
 RclCppFixture g_rclcppfixture;
 
@@ -120,10 +120,10 @@ TEST(Node2DTest, test_node_2d_neighbors)
   smac_planner::GridCollisionChecker checker(&costmapA);
   unsigned char cost = static_cast<unsigned int>(1);
   smac_planner::Node2D * node = new smac_planner::Node2D(cost, 1);
-  std::function<bool(const unsigned int &, smac_planner::Node2D *&)> neighborGetter =
-    [&, this](const unsigned int & index, smac_planner::Node2D *& neighbor_rtn) -> bool {
-    return true;
-  };
+  std::function<bool(const unsigned int &, smac_planner::Node2D * &)> neighborGetter =
+    [&, this](const unsigned int & index, smac_planner::Node2D * & neighbor_rtn) -> bool {
+      return true;
+    };
 
   smac_planner::Node2D::NodeVector neighbors;
   smac_planner::Node2D::getNeighbors(node, neighborGetter, checker, false, neighbors);

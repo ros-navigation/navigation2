@@ -33,7 +33,7 @@ namespace smac_planner
  * @class smac_planner::Node2D
  * @brief Node2D implementation for graph
  */
-template <typename GridCollisionCheckerT>
+template<typename GridCollisionCheckerT>
 class Node2D
 {
 public:
@@ -48,7 +48,8 @@ public:
   struct Coordinates
   {
     Coordinates() {}
-    Coordinates(const float & x_in, const float & y_in) : x(x_in), y(y_in) {}
+    Coordinates(const float & x_in, const float & y_in)
+    : x(x_in), y(y_in) {}
 
     float x, y;
   };
@@ -65,19 +66,19 @@ public:
     _accumulated_cost(std::numeric_limits<float>::max()),
     _index(index),
     _was_visited(false),
-    _is_queued(false){};
+    _is_queued(false) {}
 
   /**
    * @brief A destructor for smac_planner::Node2D
    */
-  ~Node2D() { parent = nullptr; };
+  ~Node2D() {parent = nullptr;}
 
   /**
    * @brief operator== for comparisons
    * @param Node2D right hand side node reference
    * @return If cell indicies are equal
    */
-  bool operator==(const Node2D & rhs) { return this->_index == rhs._index; }
+  bool operator==(const Node2D & rhs) {return this->_index == rhs._index;}
 
   /**
    * @brief Reset method for new search
@@ -96,25 +97,25 @@ public:
    * @brief Gets the accumulated cost at this node
    * @return accumulated cost
    */
-  inline float & getAccumulatedCost() { return _accumulated_cost; }
+  inline float & getAccumulatedCost() {return _accumulated_cost;}
 
   /**
    * @brief Sets the accumulated cost at this node
    * @param reference to accumulated cost
    */
-  inline void setAccumulatedCost(const float cost_in) { _accumulated_cost = cost_in; }
+  inline void setAccumulatedCost(const float cost_in) {_accumulated_cost = cost_in;}
 
   /**
    * @brief Gets the costmap cost at this node
    * @return costmap cost
    */
-  inline float & getCost() { return _cell_cost; }
+  inline float & getCost() {return _cell_cost;}
 
   /**
    * @brief Gets if cell has been visited in search
    * @param If cell was visited
    */
-  inline bool & wasVisited() { return _was_visited; }
+  inline bool & wasVisited() {return _was_visited;}
 
   /**
    * @brief Sets if cell has been visited in search
@@ -129,18 +130,18 @@ public:
    * @brief Gets if cell is currently queued in search
    * @param If cell was queued
    */
-  inline bool & isQueued() { return _is_queued; }
+  inline bool & isQueued() {return _is_queued;}
 
   /**
    * @brief Sets if cell is currently queued in search
    */
-  inline void queued() { _is_queued = true; }
+  inline void queued() {_is_queued = true;}
 
   /**
    * @brief Gets cell index
    * @return Reference to cell index
    */
-  inline unsigned int & getIndex() { return _index; }
+  inline unsigned int & getIndex() {return _index;}
 
   /**
    * @brief Check if this node is valid
@@ -246,13 +247,13 @@ public:
         _neighbors_grid_offsets = {-1, +1, -x_size, +x_size};
         break;
       case MotionModel::MOORE:
-        _neighbors_grid_offsets = {-1,          +1,          -x_size,     +x_size,
-                                   -x_size - 1, -x_size + 1, +x_size - 1, +x_size + 1};
+        _neighbors_grid_offsets = {-1, +1, -x_size, +x_size,
+          -x_size - 1, -x_size + 1, +x_size - 1, +x_size + 1};
         break;
       default:
         throw std::runtime_error(
-          "Invalid neighborhood type selected. "
-          "Von-Neumann and Moore are valid for Node2D.");
+                "Invalid neighborhood type selected. "
+                "Von-Neumann and Moore are valid for Node2D.");
     }
   }
 
@@ -264,8 +265,8 @@ public:
    */
   static void getNeighbors(
     NodePtr & node,
-    std::function<bool(const unsigned int &, smac_planner::Node2D<GridCollisionCheckerT> *&)> &
-      NeighborGetter,
+    std::function<bool(const unsigned int &, smac_planner::Node2D<GridCollisionCheckerT> * &)> &
+    NeighborGetter,
     GridCollisionCheckerT collision_checker, const bool & traverse_unknown, NodeVector & neighbors)
   {
     // NOTE(stevemacenski): Irritatingly, the order here matters. If you start in free
@@ -305,7 +306,7 @@ private:
   bool _is_queued;
 };
 
-template <typename GridCollisionCheckerT>
+template<typename GridCollisionCheckerT>
 std::vector<int> Node2D<GridCollisionCheckerT>::_neighbors_grid_offsets;
 
 }  // namespace smac_planner

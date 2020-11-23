@@ -40,7 +40,7 @@ SmacPlanner::~SmacPlanner()
 
 void SmacPlanner::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent, std::string name,
-  std::shared_ptr<tf2_ros::Buffer> /*tf*/,
+  std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   auto node = parent.lock();
@@ -255,7 +255,8 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   std::string error;
   try {
     if (!_a_star->createPath(
-          path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution()))) {
+        path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution())))
+    {
       if (num_iterations < _a_star->getMaxIterations()) {
         error = std::string("no valid path found");
       } else {
@@ -297,8 +298,9 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 #ifdef BENCHMARK_TESTING
     steady_clock::time_point b = steady_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(b - a);
-    std::cout << "It took " << time_span.count() * 1000 << " milliseconds with " << num_iterations
-              << " iterations." << std::endl;
+    std::cout << "It took " << time_span.count() * 1000 << " milliseconds with " <<
+      num_iterations <<
+      " iterations." << std::endl;
 #endif
     return plan;
   }
@@ -337,7 +339,8 @@ void SmacPlanner::removeHook(std::vector<Eigen::Vector2d> & path)
   interpolated_second_to_last_point = (path.end()[-3] + path.end()[-1]) / 2.0;
   if (
     squaredDistance(path.end()[-2], path.end()[-1]) >
-    squaredDistance(interpolated_second_to_last_point, path.end()[-1])) {
+    squaredDistance(interpolated_second_to_last_point, path.end()[-1]))
+  {
     path.end()[-2] = interpolated_second_to_last_point;
   }
 }

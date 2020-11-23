@@ -19,7 +19,8 @@
 
 namespace smac_planner
 {
-enum class MotionModel {
+enum class MotionModel
+{
   UNKNOWN = 0,
   VON_NEUMANN = 1,
   MOORE = 2,

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef SMAC_PLANNER__SMAC_PLANNER_2D_HPP_
-#define SMAC_PLANNER__SMAC_PLANNER_2D_HPP_
+#ifndef SMAC_PLANNER__NAV2_SMAC_PLANNER_2D_HPP_
+#define SMAC_PLANNER__NAV2_SMAC_PLANNER_2D_HPP_
 
 #include <memory>
 #include <string>
@@ -119,4 +119,4 @@ protected:
 
 }  // namespace smac_planner
 
-#endif  // SMAC_PLANNER__SMAC_PLANNER_2D_HPP_
+#endif  // SMAC_PLANNER__NAV2_SMAC_PLANNER_2D_HPP_

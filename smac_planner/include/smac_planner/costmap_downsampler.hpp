@@ -30,19 +30,20 @@ namespace smac_planner
  * @class smac_planner::CostmapDownsampler
  * @brief A costmap downsampler for more efficient path planning
  */
-template <typename Costmap2DT>
+template<typename Costmap2DT>
 class CostmapDownsampler
 {
 public:
   /**
    * @brief A constructor for CostmapDownsampler
    */
-  CostmapDownsampler() : _costmap(nullptr), _downsampled_costmap(nullptr) {}
+  CostmapDownsampler()
+  : _costmap(nullptr), _downsampled_costmap(nullptr) {}
 
   /**
    * @brief A destructor for CostmapDownsampler
    */
-  ~CostmapDownsampler(){};
+  ~CostmapDownsampler() {}
 
   /**
    * @brief Configure the downsampled costmap object and the ROS publisher
@@ -69,8 +70,8 @@ public:
   }
 
   /**
-   * @brief 
-   * 
+   * @brief
+   *
    */
   void on_cleanup()
   {
@@ -92,7 +93,8 @@ public:
     if (
       _downsampled_costmap->getSizeInCellsX() != _downsampled_size_x ||
       _downsampled_costmap->getSizeInCellsY() != _downsampled_size_y ||
-      _downsampled_costmap->getResolution() != _downsampled_resolution) {
+      _downsampled_costmap->getResolution() != _downsampled_resolution)
+    {
       resizeCostmap();
     }
 

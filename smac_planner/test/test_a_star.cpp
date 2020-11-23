@@ -30,8 +30,8 @@
 class RclCppFixture
 {
 public:
-  RclCppFixture() { rclcpp::init(0, nullptr); }
-  ~RclCppFixture() { rclcpp::shutdown(); }
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
 };
 RclCppFixture g_rclcppfixture;
 

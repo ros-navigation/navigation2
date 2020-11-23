@@ -29,8 +29,8 @@
 class RclCppFixture
 {
 public:
-  RclCppFixture() { rclcpp::init(0, nullptr); }
-  ~RclCppFixture() { rclcpp::shutdown(); }
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
 };
 RclCppFixture g_rclcppfixture;
 
@@ -194,11 +194,11 @@ TEST(NodeSE2Test, test_node_2d_neighbors)
   nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
   smac_planner::GridCollisionChecker checker(&costmapA);
   smac_planner::NodeSE2 * node = new smac_planner::NodeSE2(49);
-  std::function<bool(const unsigned int &, smac_planner::NodeSE2 *&)> neighborGetter =
-    [&, this](const unsigned int & index, smac_planner::NodeSE2 *& neighbor_rtn) -> bool {
-    // because we don't return a real object
-    return false;
-  };
+  std::function<bool(const unsigned int &, smac_planner::NodeSE2 * &)> neighborGetter =
+    [&, this](const unsigned int & index, smac_planner::NodeSE2 * & neighbor_rtn) -> bool {
+      // because we don't return a real object
+      return false;
+    };
 
   smac_planner::NodeSE2::NodeVector neighbors;
   smac_planner::NodeSE2::getNeighbors(node, neighborGetter, checker, false, neighbors);

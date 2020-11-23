@@ -56,7 +56,7 @@ inline double squaredDistance(const Eigen::Vector2d & p1, const Eigen::Vector2d 
  * @class smac_planner::AStarAlgorithm
  * @brief An A* implementation for planning in a costmap. Templated based on the Node type.
  */
-template <typename NodeT, typename GridCollisionCheckerT, typename Costmap2DT, typename FootprintT>
+template<typename NodeT, typename GridCollisionCheckerT, typename Costmap2DT, typename FootprintT>
 class AStarAlgorithm
 {
 public:
@@ -67,7 +67,7 @@ public:
   typedef typename NodeT::Coordinates Coordinates;
   typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef typename NodeVector::iterator NeighborIterator;
-  typedef std::function<bool(const unsigned int &, NodeT *&)> NodeGetter;
+  typedef std::function<bool (const unsigned int &, NodeT * &)> NodeGetter;
 
   /**
    * @struct smac_planner::NodeComparator
@@ -105,7 +105,7 @@ public:
   /**
    * @brief A destructor for smac_planner::AStarAlgorithm
    */
-  ~AStarAlgorithm(){};
+  ~AStarAlgorithm() {}
 
   /**
    * @brief Initialization of the planner with defaults
@@ -121,7 +121,7 @@ public:
     _traverse_unknown = allow_unknown;
     _max_iterations = max_iterations;
     _max_on_approach_iterations = max_on_approach_iterations;
-  };
+  }
 
   /**
    * @brief Creating path from given costmap, start, and goal
@@ -157,14 +157,14 @@ public:
     // Given an index, return a node ptr reference if its collision-free and valid
     const unsigned int max_index = getSizeX() * getSizeY() * getSizeDim3();
     NodeGetter neighborGetter = [&, this](
-                                  const unsigned int & index, NodePtr & neighbor_rtn) -> bool {
-      if (index < 0 || index >= max_index) {
-        return false;
-      }
+      const unsigned int & index, NodePtr & neighbor_rtn) -> bool {
+        if (index < 0 || index >= max_index) {
+          return false;
+        }
 
-      neighbor_rtn = addToGraph(index);
-      return true;
-    };
+        neighbor_rtn = addToGraph(index);
+        return true;
+      };
 
     while (iterations < getMaxIterations() && !_queue.empty()) {
       // 1) Pick Nbest from O s.t. min(f(Nbest)), remove from queue
@@ -197,7 +197,8 @@ public:
         approach_iterations++;
         if (
           approach_iterations > getOnApproachMaxIterations() ||
-          iterations + 1 == getMaxIterations()) {
+          iterations + 1 == getMaxIterations())
+        {
           NodePtr node = &_graph.at(_best_heuristic_node.second);
           return backtracePath(node, path);
         }
@@ -209,7 +210,8 @@ public:
         current_node, neighborGetter, _collision_checker, _traverse_unknown, neighbors);
 
       for (neighbor_iterator = neighbors.begin(); neighbor_iterator != neighbors.end();
-           ++neighbor_iterator) {
+        ++neighbor_iterator)
+      {
         neighbor = *neighbor_iterator;
 
         // 4.1) Compute the cost to go to this node
@@ -228,7 +230,7 @@ public:
     }
 
     return false;
-  };
+  }
 
   /**
    * @brief Node2D, 2D template. Create the graph based on the node type. For 2D nodes, a cost grid.
@@ -261,7 +263,7 @@ public:
 
   /**
    * @brief NodeSE2, 3D template. Create the graph based on the node type. For 2D nodes, a cost grid.
-   *   For 3D nodes, a SE2 grid without cost info as needs collision detector for footprint. 
+   *   For 3D nodes, a SE2 grid without cost info as needs collision detector for footprint.
    * @param x The total number of nodes in the X direction
    * @param y The total number of nodes in the X direction
    * @param dim_3 The total number of nodes in the theta or Z direction
@@ -272,7 +274,7 @@ public:
   //       (true == std::is_same<NodeT, NodeSE2<GridCollisionCheckerT>>::value), bool> = 0>
   void createGraph(
     const unsigned int & x_size, const unsigned int & y_size, const unsigned int & dim_3_size,
-    Costmap2DT *& costmap)
+    Costmap2DT * & costmap)
   {
     _costmap = costmap;
     _collision_checker = GridCollisionCheckerT(costmap);
@@ -371,7 +373,7 @@ public:
   {
     _footprint = footprint;
     _is_radius_footprint = use_radius;
-  };
+  }
 
   /**
    * @brief Perform an analytic path expansion to the goal
@@ -399,7 +401,7 @@ public:
   NodePtr getAnalyticPath(const NodePtr & node, const NodeGetter & node_getter)
   {
     ompl::base::ScopedState<> from(node->motion_table.state_space),
-      to(node->motion_table.state_space), s(node->motion_table.state_space);
+    to(node->motion_table.state_space), s(node->motion_table.state_space);
     const typename NodeT::Coordinates & node_coords = node->pose;
     from[0] = node_coords.x;
     from[1] = node_coords.y;
@@ -542,49 +544,49 @@ public:
    * @brief Get maximum number of iterations to plan
    * @return Reference to Maximum iterations parameter
    */
-  int & getMaxIterations() { return _max_iterations; };
+  int & getMaxIterations() {return _max_iterations;}
 
   /**
    * @brief Get pointer reference to starting node
    * @return Node pointer reference to starting node
    */
-  NodePtr & getStart() { return _start; };
+  NodePtr & getStart() {return _start;}
 
   /**
    * @brief Get pointer reference to goal node
    * @return Node pointer reference to goal node
    */
-  NodePtr & getGoal() { return _goal; };
+  NodePtr & getGoal() {return _goal;}
 
   /**
    * @brief Get maximum number of on-approach iterations after within threshold
    * @return Reference to Maximum on-appraoch iterations parameter
    */
-  int & getOnApproachMaxIterations() { return _max_on_approach_iterations; };
+  int & getOnApproachMaxIterations() {return _max_on_approach_iterations;}
 
   /**
    * @brief Get tolerance, in node nodes
    * @return Reference to tolerance parameter
    */
-  float & getToleranceHeuristic() { return _tolerance; };
+  float & getToleranceHeuristic() {return _tolerance;}
 
   /**
    * @brief Get size of graph in X
    * @return Size in X
    */
-  unsigned int & getSizeX() { return _x_size; };
+  unsigned int & getSizeX() {return _x_size;}
 
   /**
    * @brief Get size of graph in Y
    * @return Size in Y
    */
-  unsigned int & getSizeY() { return _y_size; };
+  unsigned int & getSizeY() {return _y_size;}
 
   /**
    * @brief Get number of angle quantization bins (SE2) or Z coordinate  (XYZ)
    * @return Number of angle bins / Z dimension
    */
-  unsigned int & getSizeDim3() { return _dim3_size; };
+  unsigned int & getSizeDim3() {return _dim3_size;}
 
 protected:
   /**
@@ -682,7 +684,7 @@ protected:
    * @param node Node pointer to check if its the goal node
    * @return if node is goal
    */
-  inline bool isGoal(NodePtr & node) { return node == getGoal(); };
+  inline bool isGoal(NodePtr & node) {return node == getGoal();}
 
   /**
    * @brief Get cost of traversal between nodes
@@ -693,14 +695,14 @@ protected:
   inline float getTraversalCost(NodePtr & current_node, NodePtr & new_node)
   {
     return current_node->getTraversalCost(new_node);
-  };
+  }
 
   /**
    * @brief Get total cost of traversal for a node
    * @param node Pointer to current node
    * @return Reference accumulated cost between the nodes
    */
-  inline float & getAccumulatedCost(NodePtr & node) { return node->getAccumulatedCost(); };
+  inline float & getAccumulatedCost(NodePtr & node) {return node->getAccumulatedCost();}
 
   /**
    * @brief Get cost of heuristic of node
@@ -718,7 +720,7 @@ protected:
     }
 
     return heuristic;
-  };
+  }
 
   /**
    * @brief Check if inputs to planner are valid
@@ -739,7 +741,8 @@ protected:
     // Check if ending point is valid
     if (
       getToleranceHeuristic() < 0.001 &&
-      !_goal->isNodeValid(_traverse_unknown, _collision_checker)) {
+      !_goal->isNodeValid(_traverse_unknown, _collision_checker))
+    {
       throw std::runtime_error("Failed to compute path, goal is occupied with no tolerance.");
     }
 
@@ -749,7 +752,7 @@ protected:
     }
 
     return true;
-  };
+  }
 
   /**
    * @brief Clear hueristic queue of nodes to search
@@ -758,7 +761,7 @@ protected:
   {
     NodeQueue q;
     std::swap(_queue, q);
-  };
+  }
 
   /**
    * @brief Clear graph of nodes searched
@@ -768,7 +771,7 @@ protected:
     Graph g;
     g.reserve(100000);
     std::swap(_graph, g);
-  };
+  }
 
   /**
    * @brief Attempt an analytic path completion
@@ -809,7 +812,7 @@ protected:
     }
     // No valid motion model - return nullptr
     return NodePtr(nullptr);
-  };
+  }
 
   bool _traverse_unknown;
   int _max_iterations;

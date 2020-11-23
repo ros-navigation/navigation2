@@ -25,9 +25,8 @@
 #include <vector>
 
 #include "nav_2d_msgs/Path2D.h"
-//#include "nav2_util/node_utils.hpp"
-#include <nav_msgs/OccupancyGrid.h>
-#include <nav_msgs/Path.h>
+#include "nav_msgs/OccupancyGrid.h"
+#include "nav_msgs/Path.h"
 
 #include "costmap_2d/footprint_collision_checker.hpp"
 #include "smac_planner/a_star.hpp"
@@ -114,14 +113,14 @@ public:
 
 protected:
   std::unique_ptr<AStarAlgorithm<
-    NodeSE2<GridCollisionChecker<
-      costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
-      costmap_2d::Footprint>>,
-    GridCollisionChecker<
-      costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
-      costmap_2d::Footprint>,
-    costmap_2d::Costmap2D, costmap_2d::Footprint>>
-    _a_star;
+      NodeSE2<GridCollisionChecker<
+        costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
+        costmap_2d::Footprint>>,
+      GridCollisionChecker<
+        costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
+        costmap_2d::Footprint>,
+      costmap_2d::Costmap2D, costmap_2d::Footprint>>
+  _a_star;
   std::unique_ptr<Smoother<costmap_2d::Costmap2D>> _smoother;
   costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<CostmapDownsampler<costmap_2d::Costmap2D>> _costmap_downsampler;

@@ -23,7 +23,7 @@ namespace smac_planner
  * @class smac_planner::GridCollisionChecker
  * @brief A costmap grid collision checker
  */
-template <typename FootprintCollisionCheckerT, typename Costmap2DT, typename FootprintT>
+template<typename FootprintCollisionCheckerT, typename Costmap2DT, typename FootprintT>
 class GridCollisionChecker : public FootprintCollisionCheckerT
 {
 public:
@@ -31,7 +31,8 @@ public:
    * @brief A constructor for smac_planner::GridCollisionChecker
    * @param costmap The costmap to collision check against
    */
-  GridCollisionChecker(Costmap2DT * costmap) : FootprintCollisionCheckerT(costmap) {}
+  explicit GridCollisionChecker(Costmap2DT * costmap)
+  : FootprintCollisionCheckerT(costmap) {}
 
   /**
    * @brief Set the footprint to use with collision checker

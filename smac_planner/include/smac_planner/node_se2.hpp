@@ -57,7 +57,8 @@ struct MotionPose
    * @param y Y pose
    * @param theta Angle of pose
    */
-  MotionPose(const float & x, const float & y, const float & theta) : _x(x), _y(y), _theta(theta) {}
+  MotionPose(const float & x, const float & y, const float & theta)
+  : _x(x), _y(y), _theta(theta) {}
 
   float _x;
   float _y;
@@ -67,14 +68,14 @@ struct MotionPose
 typedef std::vector<MotionPose> MotionPoses;
 
 // Must forward declare
-template <typename GridCollisionCheckerT>
+template<typename GridCollisionCheckerT>
 class NodeSE2;
 
 /**
  * @struct smac_planner::MotionTable
  * @brief A table of motion primitives and related functions
  */
-template <typename GridCollisionCheckerT>
+template<typename GridCollisionCheckerT>
 struct MotionTable
 {
   /**
@@ -252,7 +253,7 @@ struct MotionTable
  * @class smac_planner::NodeSE2
  * @brief NodeSE2 implementation for graph
  */
-template <typename GridCollisionCheckerT>
+template<typename GridCollisionCheckerT>
 class NodeSE2
 {
 public:
@@ -290,7 +291,7 @@ public:
    * @brief A constructor for smac_planner::NodeSE2
    * @param index The index of this node for self-reference
    */
-  NodeSE2(const unsigned int index)
+  explicit NodeSE2(const unsigned int index)
   : parent(nullptr),
     pose(0.0f, 0.0f, 0.0f),
     _cell_cost(std::numeric_limits<float>::quiet_NaN()),
@@ -305,20 +306,20 @@ public:
   /**
    * @brief A destructor for smac_planner::NodeSE2
    */
-  ~NodeSE2() { parent = nullptr; };
+  ~NodeSE2() {parent = nullptr;}
 
   /**
    * @brief operator== for comparisons
    * @param NodeSE2 right hand side node reference
    * @return If cell indicies are equal
    */
-  bool operator==(const NodeSE2 & rhs) { return this->_index == rhs._index; }
+  bool operator==(const NodeSE2 & rhs) {return this->_index == rhs._index;}
 
   /**
    * @brief setting continuous coordinate search poses (in partial-cells)
    * @param Pose pose
    */
-  inline void setPose(const Coordinates & pose_in) { pose = pose_in; }
+  inline void setPose(const Coordinates & pose_in) {pose = pose_in;}
 
   /**
    * @brief Reset method for new search
@@ -340,37 +341,37 @@ public:
    * @brief Gets the accumulated cost at this node
    * @return accumulated cost
    */
-  inline float & getAccumulatedCost() { return _accumulated_cost; }
+  inline float & getAccumulatedCost() {return _accumulated_cost;}
 
   /**
    * @brief Sets the accumulated cost at this node
    * @param reference to accumulated cost
    */
-  inline void setAccumulatedCost(const float cost_in) { _accumulated_cost = cost_in; }
+  inline void setAccumulatedCost(const float cost_in) {_accumulated_cost = cost_in;}
 
   /**
    * @brief Sets the motion primitive index used to achieve node in search
    * @param reference to motion primitive idx
    */
-  inline void setMotionPrimitiveIndex(const unsigned int & idx) { _motion_primitive_index = idx; }
+  inline void setMotionPrimitiveIndex(const unsigned int & idx) {_motion_primitive_index = idx;}
 
   /**
    * @brief Gets the motion primitive index used to achieve node in search
    * @return reference to motion primitive idx
    */
-  inline unsigned int & getMotionPrimitiveIndex() { return _motion_primitive_index; }
+  inline unsigned int & getMotionPrimitiveIndex() {return _motion_primitive_index;}
 
   /**
    * @brief Gets the costmap cost at this node
    * @return costmap cost
    */
-  inline float & getCost() { return _cell_cost; }
+  inline float & getCost() {return _cell_cost;}
 
   /**
    * @brief Gets if cell has been visited in search
    * @param If cell was visited
    */
-  inline bool & wasVisited() { return _was_visited; }
+  inline bool & wasVisited() {return _was_visited;}
 
   /**
    * @brief Sets if cell has been visited in search
@@ -385,18 +386,18 @@ public:
    * @brief Gets if cell is currently queued in search
    * @param If cell was queued
    */
-  inline bool & isQueued() { return _is_queued; }
+  inline bool & isQueued() {return _is_queued;}
 
   /**
    * @brief Sets if cell is currently queued in search
    */
-  inline void queued() { _is_queued = true; }
+  inline void queued() {_is_queued = true;}
 
   /**
    * @brief Gets cell index
    * @return Reference to cell index
    */
-  inline unsigned int & getIndex() { return _index; }
+  inline unsigned int & getIndex() {return _index;}
 
   /**
    * @brief Check if this node is valid
@@ -406,7 +407,8 @@ public:
   bool isNodeValid(const bool & traverse_unknown, GridCollisionCheckerT collision_checker)
   {
     if (collision_checker.inCollision(
-          this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown)) {
+        this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
+    {
       return false;
     }
 
@@ -424,8 +426,8 @@ public:
     const float normalized_cost = child->getCost() / 252.0;
     if (std::isnan(normalized_cost)) {
       throw std::runtime_error(
-        "Node attempted to get traversal "
-        "cost without a known SE2 collision cost!");
+              "Node attempted to get traversal "
+              "cost without a known SE2 collision cost!");
     }
 
     // this is the first node
@@ -442,7 +444,8 @@ public:
       travel_cost = travel_cost_raw;
     } else {
       if (getMotionPrimitiveIndex() == child->getMotionPrimitiveIndex()) {
-        // Turning motion but keeps in same direction: encourages to commit to turning if starting it
+        // Turning motion but keeps in same direction:
+        // encourages to commit to turning if starting it
         travel_cost = travel_cost_raw * motion_table.non_straight_penalty;
       } else {
         // Turning motion and changing direction: penalizes wiggling
@@ -563,9 +566,9 @@ public:
         break;
       default:
         throw std::runtime_error(
-          "Invalid motion model for SE2 node. Please select between"
-          " Dubin (Ackermann forward only),"
-          " Reeds-Shepp (Ackermann forward and back).");
+                "Invalid motion model for SE2 node. Please select between"
+                " Dubin (Ackermann forward only),"
+                " Reeds-Shepp (Ackermann forward and back).");
     }
   }
 
@@ -577,9 +580,9 @@ public:
    * @param goal_x Coordinate of Goal X
    * @param goal_y Coordinate of Goal Y
    */
-  template <typename Costmap2DT>
+  template<typename Costmap2DT>
   static void computeWavefrontHeuristic(
-    Costmap2DT *& costmap, const unsigned int & start_x, const unsigned int & start_y,
+    Costmap2DT * & costmap, const unsigned int & start_x, const unsigned int & start_y,
     const unsigned int & goal_x, const unsigned int & goal_y)
   {
     unsigned int size = costmap->getSizeInCellsX() * costmap->getSizeInCellsY();
@@ -638,7 +641,8 @@ public:
         costmap->indexToCells(idx, mx, my);  // ROS 1/2 compatibility: getCost(idx) missing in ROS1
         if (
           new_idx > 0 && new_idx < size_x * size_y && _wavefront_heuristic[new_idx] == 0 &&
-          static_cast<float>(costmap->getCost(mx, my)) < INSCRIBED) {
+          static_cast<float>(costmap->getCost(mx, my)) < INSCRIBED)
+        {
           my = new_idx / size_x;
           mx = new_idx - (my * size_x);
 
@@ -664,8 +668,8 @@ public:
    */
   static void getNeighbors(
     const NodePtr & node,
-    std::function<bool(const unsigned int &, smac_planner::NodeSE2<GridCollisionCheckerT> *&)> &
-      NeighborGetter,
+    std::function<bool(const unsigned int &, smac_planner::NodeSE2<GridCollisionCheckerT> * &)> &
+    NeighborGetter,
     GridCollisionCheckerT collision_checker, const bool & traverse_unknown, NodeVector & neighbors)
   {
     unsigned int index = 0;
@@ -684,8 +688,9 @@ public:
         // Cache the initial pose in case it was visited but valid
         // don't want to disrupt continuous coordinate expansion
         initial_node_coords = neighbor->pose;
-        neighbor->setPose(Coordinates(
-          motion_projections[i]._x, motion_projections[i]._y, motion_projections[i]._theta));
+        neighbor->setPose(
+          Coordinates(
+            motion_projections[i]._x, motion_projections[i]._y, motion_projections[i]._theta));
         if (neighbor->isNodeValid(traverse_unknown, collision_checker)) {
           neighbor->setMotionPrimitiveIndex(i);
           neighbors.push_back(neighbor);
@@ -711,10 +716,10 @@ private:
   static std::vector<unsigned int> _wavefront_heuristic;
 };
 
-template <typename GridCollisionCheckerT>
+template<typename GridCollisionCheckerT>
 MotionTable<GridCollisionCheckerT> NodeSE2<GridCollisionCheckerT>::motion_table;
 
-template <typename GridCollisionCheckerT>
+template<typename GridCollisionCheckerT>
 std::vector<unsigned int> NodeSE2<GridCollisionCheckerT>::_wavefront_heuristic;
 
 }  // namespace smac_planner
