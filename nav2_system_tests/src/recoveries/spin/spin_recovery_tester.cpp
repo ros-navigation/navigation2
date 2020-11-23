@@ -195,7 +195,7 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
       sendFakeFootprint();
       sendFakeCostmap();
       sendFakeOdom(command_yaw);
-      rclcpp::sleep_for(std::chrono::milliseconds(1));
+      rclcpp::sleep_for(std::chrono::milliseconds(10));
     }
     sendFakeOdom(target_yaw);
     RCLCPP_INFO(node_->get_logger(), "After sending goal");
@@ -285,20 +285,17 @@ void SpinRecoveryTester::sendFakeCostmap()
   fake_costmap.header.frame_id = "odom";
   fake_costmap.header.stamp = rclcpp::Clock().now();
   fake_costmap.metadata.layer = "master";
-  fake_costmap.metadata.resolution = .1;
-  fake_costmap.metadata.size_x = 10;
-  fake_costmap.metadata.size_y = 10;
+  fake_costmap.metadata.resolution = 1.;
+  fake_costmap.metadata.size_x = 100;
+  fake_costmap.metadata.size_y = 100;
   fake_costmap.metadata.origin.position.x = 0;
   fake_costmap.metadata.origin.position.y = 0;
   fake_costmap.metadata.origin.orientation.w = 1.0;
   float costmap_val = 0;
-  for (int ix = 50; ix >= -50; ix--) {
-    for (int iy = 50; iy >= -50; iy--) {
-      if (iy <= 0 && ix <= 0) {
-        costmap_val = 255;
-      }
-      else {
-        costmap_val = 0;
+  for (int ix = 0; ix < 100; ix++) {
+    for (int iy = 0; iy < 100; iy++) {
+      if (iy >= 50 && ix >= 50){
+        costmap_val = 95.0;
       }
       fake_costmap.data.push_back(costmap_val);
     }
