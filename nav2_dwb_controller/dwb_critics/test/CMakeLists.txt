@@ -6,3 +6,6 @@ target_link_libraries(obstacle_footprint_tests dwb_critics)
 
 ament_add_gtest(alignment_util_tests alignment_util_test.cpp)
 target_link_libraries(alignment_util_tests dwb_critics)
+
+ament_add_gtest(twirling_tests twirling_test.cpp)
+target_link_libraries(twirling_tests dwb_critics)
