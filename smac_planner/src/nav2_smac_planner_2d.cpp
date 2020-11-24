@@ -20,7 +20,9 @@
 #include <string>
 #include <vector>
 
+#include "smac_planner/collision_checker.hpp"
 #include "smac_planner/nav2_options.hpp"
+#include "smac_planner/types.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -129,7 +131,7 @@ void SmacPlanner2D::configure(
   _a_star->initialize(allow_unknown, max_iterations, max_on_approach_iterations);
 
   if (smooth_path) {
-    _smoother = std::make_unique<Smoother>();
+    _smoother = std::make_unique<Smoother<nav2_costmap_2d::Costmap2D>>();
     _optimizer_params = get_optimizer(node.get(), name);
     _smoother_params = get_smoother(node.get(), name);
     _smoother_params.max_curvature = 1.0f / minimum_turning_radius;
@@ -138,9 +140,9 @@ void SmacPlanner2D::configure(
 
   if (_downsample_costmap && _downsampling_factor > 1) {
     std::string topic_name = "downsampled_costmap";
-    _costmap_downsampler = std::make_unique<CostmapDownsampler>();
+    _costmap_downsampler = std::make_unique<CostmapDownsampler<nav2_costmap_2d::Costmap2D>>();
     _costmap_downsampler->on_configure(
-      node, _global_frame, topic_name, _costmap, _downsampling_factor);
+      []() {}, _global_frame, topic_name, _costmap, _downsampling_factor);
   }
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
@@ -160,7 +162,7 @@ void SmacPlanner2D::activate()
   RCLCPP_INFO(_logger, "Activating plugin %s of type SmacPlanner2D", _name.c_str());
   _raw_plan_publisher->on_activate();
   if (_costmap_downsampler) {
-    _costmap_downsampler->on_activate();
+    // _costmap_downsampler->on_activate();
   }
 }
 
@@ -169,7 +171,7 @@ void SmacPlanner2D::deactivate()
   RCLCPP_INFO(_logger, "Deactivating plugin %s of type SmacPlanner2D", _name.c_str());
   _raw_plan_publisher->on_deactivate();
   if (_costmap_downsampler) {
-    _costmap_downsampler->on_deactivate();
+    // _costmap_downsampler->on_deactivate();
   }
 }
 
@@ -222,8 +224,9 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 
   // Compute plan
   Node2D<GridCollisionChecker<
-      costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
-      costmap_2d::Footprint>>::CoordinateVector path;
+      nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>,
+      nav2_costmap_2d::Costmap2D,
+      nav2_costmap_2d::Footprint>>::CoordinateVector path;
   int num_iterations = 0;
   std::string error;
   try {

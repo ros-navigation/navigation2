@@ -48,40 +48,13 @@ SmootherParams get_smoother(rclcpp_lifecycle::LifecycleNode * node, const std::s
   return smoother_params;
 }
 
-OptimizerParams get_optimizer(rclcpp_lifecycle::LifecycleNode * node, const std::string & name)
-{
-  std::string local_name = name + std::string(".smoother.optimizer.");
-
-  OptimizerParams optimizer_params{};
-  // Optimizer params
-  nav2_util::declare_parameter_if_not_declared(
-    node, local_name + "param_tol", rclcpp::ParameterValue(1e-15));
-  node->get_parameter(local_name + "param_tol", optimizer_params.param_tol);
-  nav2_util::declare_parameter_if_not_declared(
-    node, local_name + "fn_tol", rclcpp::ParameterValue(1e-7));
-  node->get_parameter(local_name + "fn_tol", optimizer_params.fn_tol);
-  nav2_util::declare_parameter_if_not_declared(
-    node, local_name + "gradient_tol", rclcpp::ParameterValue(1e-10));
-  node->get_parameter(local_name + "gradient_tol", optimizer_params.gradient_tol);
-  nav2_util::declare_parameter_if_not_declared(
-    node, local_name + "max_iterations", rclcpp::ParameterValue(500));
-  node->get_parameter(local_name + "max_iterations", optimizer_params.max_iterations);
-  nav2_util::declare_parameter_if_not_declared(
-    node, local_name + "max_time", rclcpp::ParameterValue(0.100));
-  node->get_parameter(local_name + "max_time", optimizer_params.max_time);
-  nav2_util::declare_parameter_if_not_declared(
-    node, local_name + "debug_optimizer", rclcpp::ParameterValue(false));
-  node->get_parameter(local_name + "debug_optimizer", optimizer_params.debug);
-
-  optimizer_params.advanced = get_advanced(node, name);
-  return optimizer_params;
-}
-
-AdvancedParams get_advanced(rclcpp_lifecycle::LifecycleNode * node, const std::string & name)
+OptimizerParams::AdvancedParams get_advanced(
+  rclcpp_lifecycle::LifecycleNode * node,
+  const std::string & name)
 {
   std::string local_name = name + std::string(".smoother.optimizer.advanced.");
 
-  AdvancedParams advanced{};
+  OptimizerParams::AdvancedParams advanced{};
   // Optimizer advanced params
   nav2_util::declare_parameter_if_not_declared(
     node, local_name + "min_line_search_step_size",
@@ -114,6 +87,35 @@ AdvancedParams get_advanced(rclcpp_lifecycle::LifecycleNode * node, const std::s
     local_name + "max_line_search_step_expansion",
     advanced.max_line_search_step_expansion);
   return advanced;
+}
+
+OptimizerParams get_optimizer(rclcpp_lifecycle::LifecycleNode * node, const std::string & name)
+{
+  std::string local_name = name + std::string(".smoother.optimizer.");
+
+  OptimizerParams optimizer_params{};
+  // Optimizer params
+  nav2_util::declare_parameter_if_not_declared(
+    node, local_name + "param_tol", rclcpp::ParameterValue(1e-15));
+  node->get_parameter(local_name + "param_tol", optimizer_params.param_tol);
+  nav2_util::declare_parameter_if_not_declared(
+    node, local_name + "fn_tol", rclcpp::ParameterValue(1e-7));
+  node->get_parameter(local_name + "fn_tol", optimizer_params.fn_tol);
+  nav2_util::declare_parameter_if_not_declared(
+    node, local_name + "gradient_tol", rclcpp::ParameterValue(1e-10));
+  node->get_parameter(local_name + "gradient_tol", optimizer_params.gradient_tol);
+  nav2_util::declare_parameter_if_not_declared(
+    node, local_name + "max_iterations", rclcpp::ParameterValue(500));
+  node->get_parameter(local_name + "max_iterations", optimizer_params.max_iterations);
+  nav2_util::declare_parameter_if_not_declared(
+    node, local_name + "max_time", rclcpp::ParameterValue(0.100));
+  node->get_parameter(local_name + "max_time", optimizer_params.max_time);
+  nav2_util::declare_parameter_if_not_declared(
+    node, local_name + "debug_optimizer", rclcpp::ParameterValue(false));
+  node->get_parameter(local_name + "debug_optimizer", optimizer_params.debug);
+
+  optimizer_params.advanced = get_advanced(node, name);
+  return optimizer_params;
 }
 
 

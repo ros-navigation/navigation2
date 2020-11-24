@@ -29,6 +29,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "smac_planner/a_star.hpp"
+#include "smac_planner/collision_checker.hpp"
 #include "smac_planner/costmap_downsampler.hpp"
 #include "smac_planner/smoother.hpp"
 #include "tf2/utils.h"
@@ -120,11 +121,11 @@ protected:
         nav2_costmap_2d::Footprint>,
       nav2_costmap_2d::Costmap2D, nav2_costmap_2d::Footprint>>
   _a_star;
-  std::unique_ptr<Smoother> _smoother;
+  std::unique_ptr<Smoother<nav2_costmap_2d::Costmap2D>> _smoother;
   rclcpp::Clock::SharedPtr _clock;
   rclcpp::Logger _logger{rclcpp::get_logger("SmacPlanner")};
   nav2_costmap_2d::Costmap2D * _costmap;
-  std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
+  std::unique_ptr<CostmapDownsampler<nav2_costmap_2d::Costmap2D>> _costmap_downsampler;
   std::string _global_frame, _name;
   float _tolerance;
   int _downsampling_factor;
