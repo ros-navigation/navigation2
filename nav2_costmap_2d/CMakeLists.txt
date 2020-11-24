@@ -26,11 +26,9 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(angles REQUIRED)
-# ------------------------------------------
 find_package(pcl_conversions REQUIRED)
 find_package(PCL 1.5 REQUIRED)
 find_package(octomap REQUIRED)
-# ------------------------------------------
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
@@ -84,7 +82,7 @@ set(dependencies
   visualization_msgs
   angles
 )
-# ------------------------------------------
+
 set(nav2_3d_static_layer_pkgs
     rclcpp
     pluginlib
@@ -92,7 +90,6 @@ set(nav2_3d_static_layer_pkgs
     geometry_msgs
 
 )
-# ------------------------------------------
 
 ament_target_dependencies(nav2_costmap_2d_core
   ${dependencies}
@@ -136,7 +133,7 @@ ament_target_dependencies(nav2_costmap_2d_client
 target_link_libraries(nav2_costmap_2d_client
   nav2_costmap_2d_core
 )
-# ------------------------------------------
+
 add_library(nav2_3d_static_layer SHARED
         plugins/nav2_3d_static_layer.cpp
         )
@@ -148,7 +145,6 @@ target_link_libraries(nav2_3d_static_layer
         ${PCL_LIBRARIES}
         ${OCTOMAP_LIBRARIES}
         )
-# ------------------------------------------
 
 add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
 target_link_libraries(nav2_costmap_2d_markers
