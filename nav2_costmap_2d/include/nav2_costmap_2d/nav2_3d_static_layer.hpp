@@ -9,13 +9,12 @@
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
-#include "nav2_costmap_2d/obstacle_layer.hpp"
 
 namespace nav2_costmap_2d
 {
 // TODO 3D static layer now inherits from obstacle layer
 // TODO but we have to discuss the overall design of 2D/3D data input and processing
-class StaticLayer3D : public nav2_costmap_2d::ObstacleLayer
+class StaticLayer3D : public nav2_costmap_2d::CostmapLayer
 {
   /*
    *
@@ -40,8 +39,7 @@ public:
 
   virtual bool receivedMap();
   virtual void cloudCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr pointcloud);
-
-// TODO If the type name is too long, use typedef or using instead
+  virtual void filteredPoints(sensor_msgs::msg::PointCloud2 pointcloud);
   virtual void fillCostMapFromPointCloud(sensor_msgs::msg::PointCloud2::ConstSharedPtr cloud);
 
 private:
@@ -53,9 +51,6 @@ private:
 // TODO Is the (origin_x, origin_y) a relative axis origin point
   double _origin_x;
   double _origin_y;
-  /*
-   *  mark_threshold_ : >> ?? <<
-   */
   double _lethal_threshold;
   std::string _topic_name;
 

@@ -28,17 +28,18 @@ StaticLayer3D::~StaticLayer3D() {}
 void
 StaticLayer3D::onInitialize()
 {
-  nav2_costmap_2d::ObstacleLayer::onInitialize();
   RCLCPP_INFO(
     logger_,
     "humuhumunukunukuapuaa is loading 3d static map"
   );
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("topic_name", rclcpp::ParameterValue("pc2_map"));
-  declareParameter("lethal_threshold", rclcpp::ParameterValue(0.5));
+  declareParameter("lethal_threshold", rclcpp::ParameterValue(2.0));
   declareParameter("voxel_leafsize", rclcpp::ParameterValue(0.2));
   declareParameter("min_z_height", rclcpp::ParameterValue(0.0));
   declareParameter("max_z_height", rclcpp::ParameterValue(3.0));
+
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
   auto node = node_.lock();
   if (!node) {
@@ -55,6 +56,7 @@ StaticLayer3D::onInitialize()
   rolling_window_ = layered_costmap_->isRolling();
   default_value_ = NO_INFORMATION;
   global_frame_ = layered_costmap_->getGlobalFrameID();
+  map_received_ = false;
   /*
    * TODO:QoS part should be more specific
    * the observation function could be test when map server ready
@@ -74,9 +76,15 @@ StaticLayer3D::onInitialize()
 void
 StaticLayer3D::cloudCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr pointcloud)
 {
-  /*
-   *TODO: add observation part
-   */
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  if(!map_received_)
+  {
+      map_received_ = true;
+      RCLCPP_INFO(
+              logger_,
+              "here"
+              );
+  }
   Costmap2D * master = layered_costmap_->getCostmap();
   _map_resolution = master->getResolution();
   _map_size_x = master->getSizeInMetersX() / _map_resolution;
@@ -96,8 +104,31 @@ StaticLayer3D::cloudCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr point
     _map_size_x, _map_size_y, _map_resolution, origin_x_, origin_y_
   );
 
+  // filteredPoints(*pointcloud);
   fillCostMapFromPointCloud(pointcloud);
 
+}
+
+void
+StaticLayer3D::filteredPoints(sensor_msgs::msg::PointCloud2 cloud){
+  sensor_msgs::PointCloud2Iterator<float> iter_x(cloud, "x");
+  sensor_msgs::PointCloud2Iterator<float> iter_y(cloud, "y");
+  sensor_msgs::PointCloud2Iterator<float> iter_z(cloud, "z");
+  float scale = 0.1;
+  for (; iter_x != iter_x.end();){
+    for (; iter_y != iter_y.end(); ){
+      if (*iter_z >= lethal_threshold_){
+        unsigned int map_x = (unsigned int) (*iter_x) * scale;
+        unsigned int map_y = (unsigned int) (*iter_y) * scale;
+        if (map_2d_.getCost(map_x, map_y) != LETHAL_OBSTACLE){
+          map_2d_.setCost(map_x, map_y, LETHAL_OBSTACLE);
+        }
+      }
+      ++iter_z;
+      ++iter_y;
+      ++iter_x;
+    }
+  }
 }
 
 void
@@ -188,7 +219,7 @@ StaticLayer3D::updateBounds(
 {
   RCLCPP_INFO(
     logger_,
-    ">>>>>>>>>>>>>>>>>>>>>>>>>>>updateBounds"
+    "updating Bounds"
   );
   RCLCPP_INFO(
     logger_,
@@ -199,10 +230,10 @@ StaticLayer3D::updateBounds(
   /*
    *
    */
-  *min_x = -(size_x_ * _map_resolution);
-  *min_y = -(size_y_ * _map_resolution);
-  *max_x = size_x_ * _map_resolution;
-  *max_y = size_y_ * _map_resolution;
+  *min_x = -(_map_size_x * _map_resolution);
+  *min_y = -(_map_size_y * _map_resolution);
+  *max_x = _map_size_x * _map_resolution;
+  *max_y = _map_size_y * _map_resolution;
 
 
 }
@@ -214,7 +245,7 @@ StaticLayer3D::updateCosts(
 {
   RCLCPP_INFO(
     logger_,
-    ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>updateCosts"
+    "updating Costs"
   );
   RCLCPP_INFO(
     logger_,

@@ -24,7 +24,7 @@
   </library>
 
   <library path="nav2_3d_static_layer">
-    <class type="nav2_costmap_2d::Nav23dStaticLayer"  base_class_type="nav2_costmap_2d::Layer">
+    <class type="nav2_costmap_2d::StaticLayer3D"  base_class_type="nav2_costmap_2d::Layer">
       <description>The description for 3d static layer plugin.</description>
     </class>
   </library>
