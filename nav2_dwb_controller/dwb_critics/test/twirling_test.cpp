@@ -41,7 +41,7 @@
 #include "dwb_critics/twirling.hpp"
 #include "dwb_core/exceptions.hpp"
 
-TEST(ObstacleFootprint, Prepare)
+TEST(TwirlingTests, Scoring)
 {
   std::shared_ptr<dwb_critics::TwirlingCritic> critic =
     std::make_shared<dwb_critics::TwirlingCritic>();
