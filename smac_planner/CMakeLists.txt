@@ -27,7 +27,7 @@ find_package(OpenMP REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 
-if (${ROS_VERSION} EQUAL 2)
+if(${ROS_VERSION} EQUAL 2)
 
   # Not adding -DUSING_ROS since xml_parsing.cpp hasn't been ported to ROS2
 
@@ -128,8 +128,24 @@ if(${ROS_VERSION} EQUAL 2)
   pluginlib_export_plugin_description_file(nav2_core nav2_smac_plugin.xml)
   pluginlib_export_plugin_description_file(nav2_core nav2_smac_plugin_2d.xml)
 elseif(${ROS_VERSION} EQUAL 1)
+  # 2D plugin
+  add_library(${library_name}_2d SHARED src/nav_smac_planner_2d.cpp)
+
+  target_link_libraries(
+    ${library_name}_2d
+    PRIVATE ${CERES_LIBRARIES} ${OMPL_LIBRARIES} ${OpenMP_LIBRARIES}
+            OpenMP::OpenMP_CXX ${catkin_LIBRARIES})
+
+  target_include_directories(${library_name}_2d
+                             PRIVATE include ${CMAKE_CURRENT_BINARY_DIR})
+  target_include_directories(
+    ${library_name}_2d SYSTEM PUBLIC ${Eigen3_INCLUDE_DIRS}
+                                     ${catkin_INCLUDE_DIRS})
+
+  add_dependencies(${library_name}_2d ${catkin_EXPORTED_TARGETS})
+
   # SE2 plugin
-  add_library(${library_name} SHARED src/smac_planner.cpp)
+  add_library(${library_name} SHARED src/nav_smac_planner.cpp)
 
   target_link_libraries(
     ${library_name}

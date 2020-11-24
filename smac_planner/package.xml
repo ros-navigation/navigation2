@@ -8,7 +8,7 @@
   <license>Apache-2.0</license>
 
   <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
-  <!-- <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend> -->
+  <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
 
   <depend condition="$ROS_VERSION == 1">costmap_2d</depend>
   <depend condition="$ROS_VERSION == 1">nav_core</depend>
@@ -44,8 +44,8 @@
 
   <export>
     <build_type condition="$ROS_VERSION == 1">catkin</build_type>
-    <nav_core condition="$ROS_VERSION == 1" plugin="${prefix}/smac_plugin_2d.xml"/>
-    <nav_core condition="$ROS_VERSION == 1" plugin="${prefix}/smac_plugin.xml"/>
+    <nav_core condition="$ROS_VERSION == 1" plugin="${prefix}/nav_smac_plugin_2d.xml"/>
+    <nav_core condition="$ROS_VERSION == 1" plugin="${prefix}/nav_smac_plugin.xml"/>
 
     <build_type condition="$ROS_VERSION == 2">ament_cmake</build_type>
     <nav2_core condition="$ROS_VERSION == 2" plugin="${prefix}/global_planner_plugin.xml" />

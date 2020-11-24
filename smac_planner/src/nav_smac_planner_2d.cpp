@@ -12,45 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include "smac_planner/smac_planner.hpp"
-
-#include <nav_2d_utils/conversions.h>
-#include <ros/console.h>
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2/utils.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include "smac_planner/nav_smac_planner_2d.hpp"
 
 #include <algorithm>
-#include <chrono>
 #include <limits>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
 
-#include "Eigen/Core"
-#include "nav_core/base_global_planner.h"
 #include "pluginlib/class_list_macros.hpp"
 #include "smac_planner/collision_checker.hpp"
 #include "smac_planner/types.hpp"
 
-#define BENCHMARK_TESTING
+// #define BENCHMARK_TESTING
 
 namespace smac_planner
 {
 using namespace std::chrono;  // NOLINT
 
-SmacPlanner::SmacPlanner()
+SmacPlanner2D::SmacPlanner2D()
 : _a_star(nullptr), _smoother(nullptr), _costmap(nullptr), _costmap_downsampler(nullptr)
 {
 }
 
-SmacPlanner::~SmacPlanner()
+SmacPlanner2D::~SmacPlanner2D()
 {
-  ROS_INFO_STREAM("Destroying plugin %s of type SmacPlanner" << _name.c_str());
+  ROS_INFO_STREAM("Destroying plugin" << _name.c_str() << "of type SmacPlanner2D");
 }
 
-void SmacPlanner::initialize(std::string name, costmap_2d::Costmap2DROS * costmap_ros)
+void SmacPlanner2D::initialize(std::string name, costmap_2d::Costmap2DROS * costmap_ros)
 {
   _costmap = costmap_ros->getCostmap();
   _name = name;
@@ -64,81 +54,60 @@ void SmacPlanner::initialize(std::string name, costmap_2d::Costmap2DROS * costma
   node_handle.param<bool>("downsample_costmap", _downsample_costmap, true);
   node_handle.param<int>("downsampling_factor", _downsampling_factor, 1);
 
-  auto angle_quantizations{1};
-  node_handle.param<int>("angle_quantization_bins", angle_quantizations, 1);
-  _angle_bin_size = 2.0 * M_PI / angle_quantizations;
-  _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
-
   auto allow_unknown{true};
   node_handle.param<bool>("allow_unknown", allow_unknown, true);
 
   auto max_iterations{-1};
   node_handle.param<int>("max_iterations", max_iterations, -1);
 
-  int max_on_approach_iterations = std::numeric_limits<int>::max();
-  node_handle.param<int>("max_on_approach_iterations", max_on_approach_iterations, -1);
+  auto max_on_approach_iterations{1000};
+  node_handle.param<int>("max_on_approach_iterations", max_on_approach_iterations, 1000);
 
   auto smooth_path{false};
   node_handle.param<bool>("smooth_path", smooth_path, false);
 
-  SearchInfo search_info;
-  node_handle.param<float>("minimum_turning_radius", search_info.minimum_turning_radius, 0.2);
-  ROS_WARN_STREAM_COND(
-    search_info.minimum_turning_radius <= 0,
-    "Minimum turning radius is lt 0: " << search_info.minimum_turning_radius);
+  auto minimum_turning_radius{0.2F};
+  node_handle.param<float>("minimum_turning_radius", minimum_turning_radius, 0.2);
 
-  node_handle.param<float>("reverse_penalty", search_info.reverse_penalty, 2.0);
+  node_handle.param<double>("max_planning_time_ms", _max_planning_time, 1000.0);
 
-  node_handle.param<float>("change_penalty", search_info.change_penalty, 0.5);
-
-  node_handle.param<float>("non_straight_penalty", search_info.non_straight_penalty, 1.05);
-
-  node_handle.param<float>("cost_penalty", search_info.cost_penalty, 1.2);
-
-  node_handle.param<float>("analytic_expansion_ratio", search_info.analytic_expansion_ratio, 2.0);
-
-  node_handle.param<double>("max_planning_time_ms", _max_planning_time, 5000.0);
-
-  // Initialize motion_model
-  std::string motion_model_for_search{"DUBIN"};
+  std::string motion_model_for_search{"MOORE"};
   node_handle.param<std::string>(
-    "motion_model_for_search", motion_model_for_search, std::string("DUBIN"));
-  MotionModel motion_model = fromString(motion_model_for_search);
+    "motion_model_for_search", motion_model_for_search,
+    std::string("MOORE"));
 
+  MotionModel motion_model = fromString(motion_model_for_search);
   if (motion_model == MotionModel::UNKNOWN) {
     ROS_WARN_STREAM(
       "Unable to get MotionModel search type. Given '" <<
         motion_model_for_search.c_str() <<
-        "', valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.");
+        "', "
+        "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.");
   }
 
   if (max_on_approach_iterations <= 0) {
     ROS_INFO_STREAM(
-      "On approach iteration selected as <= 0, disabling tolerance and on approach iterations.");
+      "On approach iteration selected as <= 0, " <<
+        "disabling tolerance and on approach iterations.");
     max_on_approach_iterations = std::numeric_limits<int>::max();
   }
 
   if (max_iterations <= 0) {
-    ROS_INFO_STREAM("maximum iteration selected as <= 0, disabling maximum iterations.");
+    ROS_INFO_STREAM(
+      "maximum iteration selected as <= 0, " <<
+        "disabling maximum iterations.");
     max_iterations = std::numeric_limits<int>::max();
   }
 
-  // convert to grid coordinates
-  const double minimum_turning_radius_global_coords = search_info.minimum_turning_radius;
-  search_info.minimum_turning_radius =
-    search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
-
   _a_star = std::make_unique<AStarAlgorithm<
-        NodeSE2<GridCollisionChecker<
+        Node2D<GridCollisionChecker<
           costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
           costmap_2d::Footprint>>,
         GridCollisionChecker<
           costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
           costmap_2d::Footprint>,
-        costmap_2d::Costmap2D, costmap_2d::Footprint>>(motion_model, search_info);
+        costmap_2d::Costmap2D, costmap_2d::Footprint>>(motion_model, SearchInfo());
   _a_star->initialize(allow_unknown, max_iterations, max_on_approach_iterations);
-  _a_star->setFootprint(
-    costmap_ros->getRobotFootprint(), false); /* costmap_ros->getUseRadius()); */
 
   if (smooth_path) {
     _smoother = std::make_unique<Smoother<costmap_2d::Costmap2D>>();
@@ -186,8 +155,7 @@ void SmacPlanner::initialize(std::string name, costmap_2d::Costmap2DROS * costma
     smoother_node_handle.param<double>("w_smooth", _smoother_params.smooth_weight, 15000.0);
     smoother_node_handle.param<double>(
       "cost_scaling_factor", _smoother_params.costmap_factor, 10.0);
-
-    _smoother_params.max_curvature = 1.0f / minimum_turning_radius_global_coords;
+    _smoother_params.max_curvature = 1.0f / minimum_turning_radius;
     _smoother->initialize(_optimizer_params);
   }
 
@@ -202,34 +170,37 @@ void SmacPlanner::initialize(std::string name, costmap_2d::Costmap2DROS * costma
     std::make_unique<ros::Publisher>(node_handle.advertise<nav_msgs::Path>("/unsmoothed_plan", 1));
 
   ROS_INFO_STREAM(
-    "Configured plugin" << _name.c_str() << "of type SmacPlanner with " <<
-      "tolerance " << _tolerance << ", maximum iterations " << max_iterations <<
-      ", " <<
-      "max on approach iterations " << max_on_approach_iterations << ", and " <<
+    "Configured plugin " << _name.c_str() <<
+      " of type SmacPlanner2D with "
+      "tolerance " <<
+      _tolerance << ", maximum iterations " << max_iterations <<
+      ", "
+      "max on approach iterations " <<
+      max_on_approach_iterations << ", and " <<
     (allow_unknown ? "allowing unknown traversal" :
     "not allowing unknown traversal") <<
-      ". Using motion model: " << toString(motion_model) << ".");
+      " Using motion model: " << toString(motion_model).c_str() << ".");
 }
 
-void SmacPlanner::activate()
+void SmacPlanner2D::activate()
 {
-  ROS_INFO_STREAM("Activating plugin " << _name.c_str() << " of type SmacPlanner");
+  ROS_INFO_STREAM("Activating plugin " << _name.c_str() << " of type SmacPlanner2D");
   if (_costmap_downsampler) {
     // _costmap_downsampler->on_activate();
   }
 }
 
-void SmacPlanner::deactivate()
+void SmacPlanner2D::deactivate()
 {
-  ROS_INFO_STREAM("Deactivating plugin " << _name.c_str() << " of type SmacPlanner");
+  ROS_INFO_STREAM("Deactivating plugin " << _name.c_str() << " of type SmacPlanner2D");
   if (_costmap_downsampler) {
     // _costmap_downsampler->on_deactivate();
   }
 }
 
-void SmacPlanner::cleanup()
+void SmacPlanner2D::cleanup()
 {
-  ROS_INFO_STREAM("Cleaning up plugin " << _name.c_str() << " of type SmacPlanner");
+  ROS_INFO_STREAM("Cleaning up plugin " << _name.c_str() << " of type SmacPlanner2D");
   _a_star.reset();
   _smoother.reset();
   _costmap_downsampler->on_cleanup();
@@ -237,12 +208,11 @@ void SmacPlanner::cleanup()
   _raw_plan_publisher.reset();
 }
 
-bool SmacPlanner::makePlan(
+bool SmacPlanner2D::makePlan(
   const geometry_msgs::PoseStamped & start, const geometry_msgs::PoseStamped & goal,
   std::vector<geometry_msgs::PoseStamped> & planVector)
 {
   steady_clock::time_point a = steady_clock::now();
-
   std::unique_lock<costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
 
   // Downsample costmap, if required
@@ -256,27 +226,16 @@ bool SmacPlanner::makePlan(
       _costmap->getSizeInMetersX() << " y: " << _costmap->getSizeInMetersY());
 
   // Set Costmap
-  _a_star->createGraph(
-    costmap->getSizeInCellsX(), costmap->getSizeInCellsY(), _angle_quantizations, costmap);
+  _a_star->createGraph(costmap->getSizeInCellsX(), costmap->getSizeInCellsY(), 1, costmap);
 
-  // Set starting point, in A* bin search coordinates
+  // Set starting point
   unsigned int mx, my;
   costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
-  double orientation_bin = tf2::getYaw(start.pose.orientation) / _angle_bin_size;
-  while (orientation_bin < 0.0) {
-    orientation_bin += static_cast<float>(_angle_quantizations);
-  }
-  unsigned int orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setStart(mx, my, orientation_bin_id);
+  _a_star->setStart(mx, my, 0);
 
-  // Set goal point, in A* bin search coordinates
+  // Set goal point
   costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
-  orientation_bin = tf2::getYaw(goal.pose.orientation) / _angle_bin_size;
-  while (orientation_bin < 0.0) {
-    orientation_bin += static_cast<float>(_angle_quantizations);
-  }
-  orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setGoal(mx, my, orientation_bin_id);
+  _a_star->setGoal(mx, my, 0);
 
   // Setup message
   nav_msgs::Path plan;
@@ -291,7 +250,7 @@ bool SmacPlanner::makePlan(
   pose.pose.orientation.w = 1.0;
 
   // Compute plan
-  NodeSE2<GridCollisionChecker<
+  Node2D<GridCollisionChecker<
       costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
       costmap_2d::Footprint>>::CoordinateVector path;
   int num_iterations = 0;
@@ -320,14 +279,17 @@ bool SmacPlanner::makePlan(
   // We're going to downsample by 4x to give terms room to move.
   const int downsample_ratio = 4;
   std::vector<Eigen::Vector2d> path_world;
-  path_world.reserve(path.size());
-  plan.poses.reserve(path.size());
+  path_world.reserve(_smoother ? path.size() / downsample_ratio : path.size());
+  plan.poses.reserve(_smoother ? path.size() / downsample_ratio : path.size());
 
   for (int i = path.size() - 1; i >= 0; --i) {
+    if (_smoother && i % downsample_ratio != 0) {
+      continue;
+    }
+
     path_world.push_back(getWorldCoords(path[i].x, path[i].y, costmap));
     pose.pose.position.x = path_world.back().x();
     pose.pose.position.y = path_world.back().y();
-    pose.pose.orientation = getWorldOrientation(path[i].theta);
     plan.poses.push_back(pose);
     planVector.push_back(pose);
   }
@@ -366,7 +328,6 @@ bool SmacPlanner::makePlan(
   removeHook(path_world);
 
   // populate final path
-  // TODO(stevemacenski): set orientation to tangent of path
   for (uint i = 0; i != path_world.size(); i++) {
     pose.pose.position.x = path_world[i][0];
     pose.pose.position.y = path_world[i][1];
@@ -377,7 +338,7 @@ bool SmacPlanner::makePlan(
   return true;
 }
 
-void SmacPlanner::removeHook(std::vector<Eigen::Vector2d> & path)
+void SmacPlanner2D::removeHook(std::vector<Eigen::Vector2d> & path)
 {
   // Removes the end "hooking" since goal is locked in place
   Eigen::Vector2d interpolated_second_to_last_point;
@@ -390,25 +351,14 @@ void SmacPlanner::removeHook(std::vector<Eigen::Vector2d> & path)
   }
 }
 
-Eigen::Vector2d SmacPlanner::getWorldCoords(
+Eigen::Vector2d SmacPlanner2D::getWorldCoords(
   const float & mx, const float & my, const costmap_2d::Costmap2D * costmap)
 {
-  // mx, my are in continuous grid coordinates, must convert to world coordinates
-  double world_x =
-    static_cast<double>(costmap->getOriginX()) + (mx + 0.5) * costmap->getResolution();
-  double world_y =
-    static_cast<double>(costmap->getOriginY()) + (my + 0.5) * costmap->getResolution();
+  float world_x = static_cast<float>(costmap->getOriginX()) + (mx + 0.5) * costmap->getResolution();
+  float world_y = static_cast<float>(costmap->getOriginY()) + (my + 0.5) * costmap->getResolution();
   return Eigen::Vector2d(world_x, world_y);
-}
-
-geometry_msgs::Quaternion SmacPlanner::getWorldOrientation(const float & theta)
-{
-  // theta is in continuous bin coordinates, must convert to world orientation
-  tf2::Quaternion q;
-  q.setEuler(0.0, 0.0, theta * static_cast<double>(_angle_bin_size));
-  return tf2::toMsg(q);
 }
 
 }  // namespace smac_planner
 
-PLUGINLIB_EXPORT_CLASS(smac_planner::SmacPlanner, nav_core::BaseGlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(smac_planner::SmacPlanner2D, nav_core::BaseGlobalPlanner)

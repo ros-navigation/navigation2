@@ -12,27 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef SMAC_PLANNER__SMAC_PLANNER_2D_HPP_
-#define SMAC_PLANNER__SMAC_PLANNER_2D_HPP_
+#ifndef SMAC_PLANNER__NAV_SMAC_PLANNER_2D_HPP_
+#define SMAC_PLANNER__NAV_SMAC_PLANNER_2D_HPP_
 
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "costmap_2d/footprint_collision_checker.hpp"
 #include "geometry_msgs/PoseStamped.h"
 #include "nav_2d_msgs/Path2D.h"
 #include "nav_core2/costmap.h"
-#include "nav_core2/global_planner.h"
+#include "nav_core/base_global_planner.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include "nav_msgs/Path.h"
 #include "smac_planner/a_star.hpp"
+#include "smac_planner/collision_checker.hpp"
 #include "smac_planner/costmap_downsampler.hpp"
 #include "smac_planner/smoother.hpp"
 #include "tf2/utils.h"
 
 namespace smac_planner
 {
-class SmacPlanner2D : public nav_core2::GlobalPlanner
+class SmacPlanner2D : public nav_core::BaseGlobalPlanner
 {
 public:
   /**
@@ -46,39 +48,37 @@ public:
   ~SmacPlanner2D();
 
   /**
-   * @brief Configuring plugin
-   * @param parent Lifecycle node pointer
-   * @param name Name of plugin map
-   * @param tf Shared ptr of TF2 buffer
-   * @param costmap_ros CostmapPtr
+   * @brief  Initialization function for the SmacPlanner
+   * @param  name The name of this planner
+   * @param  costmap_ros A pointer to the ROS wrapper of the costmap to use for planning
    */
-  void initialize(
-    const ros::NodeHandle & parent, const std::string & name, TFListenerPtr tf,
-    nav_core2::Costmap::Ptr costmap) override;
+  void initialize(std::string name, costmap_2d::Costmap2DROS * costmap_ros) override;
 
   /**
    * @brief Cleanup lifecycle node
    */
-  void cleanup() override;
+  void cleanup();
 
   /**
    * @brief Activate lifecycle node
    */
-  void activate() override;
+  void activate();
 
   /**
    * @brief Deactivate lifecycle node
    */
-  void deactivate() override;
+  void deactivate();
 
   /**
-   * @brief Creating a plan from start and goal poses
-   * @param start Start pose
-   * @param goal Goal pose
-   * @return nav_msgs::Path of the generated path
+   * @brief Given a goal pose in the world, compute a plan
+   * @param start The start pose
+   * @param goal The goal pose
+   * @param plan The plan... filled by the planner
+   * @return True if a valid plan was found, false otherwise
    */
-  nav_2d_msgs::Path2D makePlan(
-    const nav_2d_msgs::Pose2DStamped & start, const nav_2d_msgs::Pose2DStamped & goal) override;
+  bool makePlan(
+    const geometry_msgs::PoseStamped & start, const geometry_msgs::PoseStamped & goal,
+    std::vector<geometry_msgs::PoseStamped> & planVector) override;
 
   /**
    * @brief Create an Eigen Vector2D of world poses from continuous map coords
@@ -97,15 +97,23 @@ public:
   void removeHook(std::vector<Eigen::Vector2d> & path);
 
 private:
-  std::unique_ptr<AStarAlgorithm<Node2D>> _a_star;
-  std::unique_ptr<Smoother> _smoother;
+  std::unique_ptr<AStarAlgorithm<
+      Node2D<GridCollisionChecker<
+        costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
+        costmap_2d::Footprint>>,
+      GridCollisionChecker<
+        costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
+        costmap_2d::Footprint>,
+      costmap_2d::Costmap2D, costmap_2d::Footprint>>
+  _a_star;
+  std::unique_ptr<Smoother<costmap_2d::Costmap2D>> _smoother;
   costmap_2d::Costmap2D * _costmap;
-  std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
+  std::unique_ptr<CostmapDownsampler<costmap_2d::Costmap2D>> _costmap_downsampler;
   std::string _global_frame, _name;
   float _tolerance;
   int _downsampling_factor;
   bool _downsample_costmap;
-  ros::Publisher _raw_plan_publisher;
+  std::unique_ptr<ros::Publisher> _raw_plan_publisher;
   SmootherParams _smoother_params;
   OptimizerParams _optimizer_params;
   double _max_planning_time;
@@ -113,4 +121,4 @@ private:
 
 }  // namespace smac_planner
 
-#endif  // SMAC_PLANNER__SMAC_PLANNER_2D_HPP_
+#endif  // SMAC_PLANNER__NAV_SMAC_PLANNER_2D_HPP_

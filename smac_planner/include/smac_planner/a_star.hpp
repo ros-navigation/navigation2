@@ -45,6 +45,18 @@ using namespace std::chrono;  // NOLINT
 
 namespace smac_planner
 {
+template<typename>
+struct IsNode2DInstance : public std::false_type {};
+
+template<typename>
+struct IsNodeSE2Instance : public std::false_type {};
+
+template<typename T>
+struct IsNode2DInstance<Node2D<T>>: public std::true_type {};
+
+template<typename T>
+struct IsNodeSE2Instance<NodeSE2<T>>: public std::true_type {};
+
 inline double squaredDistance(const Eigen::Vector2d & p1, const Eigen::Vector2d & p2)
 {
   const double & dx = p1[0] - p2[0];
@@ -240,26 +252,26 @@ public:
    * @param dim_3 The total number of nodes in the theta or Z direction
    * @param costmap Costmap to convert into the graph
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, Node2D<GridCollisionCheckerT>>::value), bool> = 0>
-  //   void createGraph(
-  //     const unsigned int & x_size, const unsigned int & y_size, const unsigned int & dim_3_size,
-  //     Costmap2DT *& costmap)
-  //   {
-  //     if (dim_3_size != 1) {
-  //       throw std::runtime_error("Node type Node2D cannot be given non-1 dim 3 quantization.");
-  //     }
-  //     _costmap = costmap;
-  //     _dim3_size = dim_3_size;  // 2D search MUST be 2D, not 3D or SE2.
-  //     clearGraph();
+  template<typename U = NodeT,
+    std::enable_if_t<!IsNodeSE2Instance<U>::value, bool> = true
+  >
+  void createGraph(
+    const unsigned int & x_size, const unsigned int & y_size, const unsigned int & dim_3_size,
+    Costmap2DT * & costmap)
+  {
+    if (dim_3_size != 1) {
+      throw std::runtime_error("Node type Node2D cannot be given non-1 dim 3 quantization.");
+    }
+    _costmap = costmap;
+    _dim3_size = dim_3_size;    // 2D search MUST be 2D, not 3D or SE2.
+    clearGraph();
 
-  //     if (getSizeX() != x_size || getSizeY() != y_size) {
-  //       _x_size = x_size;
-  //       _y_size = y_size;
-  //       NodeT::initNeighborhood(_x_size, _motion_model);
-  //     }
-  //   }
+    if (getSizeX() != x_size || getSizeY() != y_size) {
+      _x_size = x_size;
+      _y_size = y_size;
+      NodeT::initNeighborhood(_x_size, _motion_model);
+    }
+  }
 
   /**
    * @brief NodeSE2, 3D template. Create the graph based on the node type. For 2D nodes, a cost grid.
@@ -269,9 +281,9 @@ public:
    * @param dim_3 The total number of nodes in the theta or Z direction
    * @param costmap Costmap to convert into the graph
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, NodeSE2<GridCollisionCheckerT>>::value), bool> = 0>
+  template<typename U = NodeT,
+    std::enable_if_t<IsNodeSE2Instance<U>::value, bool> = true
+  >
   void createGraph(
     const unsigned int & x_size, const unsigned int & y_size, const unsigned int & dim_3_size,
     Costmap2DT * & costmap)
@@ -297,18 +309,18 @@ public:
    * @param my The node Y index of the goal
    * @param dim_3 The node dim_3 index of the goal
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, Node2D<GridCollisionCheckerT>>::value), bool> = 0>
-  //   void setGoal(const unsigned int & mx, const unsigned int & my, const unsigned int & dim_3)
-  //   {
-  //     if (dim_3 != 0) {
-  //       throw std::runtime_error("Node type Node2D cannot be given non-zero goal dim 3.");
-  //     }
+  template<typename U = NodeT,
+    std::enable_if_t<!IsNodeSE2Instance<U>::value, bool> = true
+  >
+  void setGoal(const unsigned int & mx, const unsigned int & my, const unsigned int & dim_3)
+  {
+    if (dim_3 != 0) {
+      throw std::runtime_error("Node type Node2D cannot be given non-zero goal dim 3.");
+    }
 
-  //     _goal = addToGraph(NodeT::getIndex(mx, my, getSizeX()));
-  //     _goal_coordinates = NodeT::Coordinates(mx, my);
-  //   }
+    _goal = addToGraph(NodeT::getIndex(mx, my, getSizeX()));
+    _goal_coordinates = typename NodeT::Coordinates(mx, my);
+  }
 
   /**
    * @brief Set the goal for planning, as a node (NodeSE2) index
@@ -316,9 +328,9 @@ public:
    * @param my The node Y index of the goal
    * @param dim_3 The node dim_3 index of the goal
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, NodeSE2<GridCollisionCheckerT>>::value), bool> = 0>
+  template<typename U = NodeT,
+    std::enable_if_t<IsNodeSE2Instance<U>::value, bool> = true
+  >
   void setGoal(const unsigned int & mx, const unsigned int & my, const unsigned int & dim_3)
   {
     _goal = addToGraph(NodeT::getIndex(mx, my, dim_3, getSizeX(), getSizeDim3()));
@@ -337,16 +349,16 @@ public:
    * @param my The node Y index of the goal
    * @param dim_3 The node dim_3 index of the goal
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, Node2D<GridCollisionCheckerT>>::value), bool> = 0>
-  //   void setStart(const unsigned int & mx, const unsigned int & my, const unsigned int & dim_3)
-  //   {
-  //     if (dim_3 != 0) {
-  //       throw std::runtime_error("Node type Node2D cannot be given non-zero starting dim 3.");
-  //     }
-  //     _start = addToGraph(NodeT::getIndex(mx, my, getSizeX()));
-  //   }
+  template<typename U = NodeT,
+    std::enable_if_t<!IsNodeSE2Instance<U>::value, bool> = true
+  >
+  void setStart(const unsigned int & mx, const unsigned int & my, const unsigned int & dim_3)
+  {
+    if (dim_3 != 0) {
+      throw std::runtime_error("Node type Node2D cannot be given non-zero starting dim 3.");
+    }
+    _start = addToGraph(NodeT::getIndex(mx, my, getSizeX()));
+  }
 
   /**
    * @brief Set the starting pose for planning, as a node (NodeSE2) index
@@ -354,9 +366,9 @@ public:
    * @param my The node Y index of the goal
    * @param dim_3 The node dim_3 index of the goal
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, NodeSE2<GridCollisionCheckerT>>::value), bool> = 0>
+  template<typename U = NodeT,
+    std::enable_if_t<IsNodeSE2Instance<U>::value, bool> = true
+  >
   void setStart(const unsigned int & mx, const unsigned int & my, const unsigned int & dim_3)
   {
     _start = addToGraph(NodeT::getIndex(mx, my, dim_3, getSizeX(), getSizeDim3()));
@@ -381,13 +393,13 @@ public:
    * @param getter The function object that gets valid nodes from the graph
    * @return Node pointer to goal node if successful, else return nullptr
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, Node2D<GridCollisionCheckerT>>::value), bool> = 0>
-  //   NodePtr getAnalyticPath(const NodePtr & node, const NodeGetter & node_getter)
-  //   {
-  //     return NodePtr(nullptr);
-  //   }
+  template<typename U = NodeT,
+    std::enable_if_t<!IsNodeSE2Instance<U>::value, bool> = true
+  >
+  NodePtr getAnalyticPath(const NodePtr & node, const NodeGetter & node_getter)
+  {
+    return NodePtr(nullptr);
+  }
 
   /**
    * @brief Perform an analytic path expansion to the goal
@@ -395,9 +407,9 @@ public:
    * @param getter The function object that gets valid nodes from the graph
    * @return Node pointer to goal node if successful, else return nullptr
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, NodeSE2<GridCollisionCheckerT>>::value), bool> = 0>
+  template<typename U = NodeT,
+    std::enable_if_t<IsNodeSE2Instance<U>::value, bool> = true
+  >
   NodePtr getAnalyticPath(const NodePtr & node, const NodeGetter & node_getter)
   {
     ompl::base::ScopedState<> from(node->motion_table.state_space),
@@ -496,24 +508,24 @@ public:
    * @param path Reference to a vector of indicies of generated path
    * @return whether the path was able to be backtraced
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, Node2D<GridCollisionCheckerT>>::value), bool> = 0>
-  //   bool backtracePath(NodePtr & node, CoordinateVector & path)
-  //   {
-  //     if (!node->parent) {
-  //       return false;
-  //     }
+  template<typename U = NodeT,
+    std::enable_if_t<!IsNodeSE2Instance<U>::value, bool> = true
+  >
+  bool backtracePath(NodePtr & node, CoordinateVector & path)
+  {
+    if (!node->parent) {
+      return false;
+    }
 
-  //     NodePtr current_node = node;
+    NodePtr current_node = node;
 
-  //     while (current_node->parent) {
-  //       path.push_back(NodeT::getCoords(current_node->getIndex(), getSizeX(), getSizeDim3()));
-  //       current_node = current_node->parent;
-  //     }
+    while (current_node->parent) {
+      path.push_back(NodeT::getCoords(current_node->getIndex(), getSizeX(), getSizeDim3()));
+      current_node = current_node->parent;
+    }
 
-  //     return path.size() > 1;
-  //   }
+    return path.size() > 1;
+  }
 
   /**
    * @brief Set the starting pose for planning, as a node (NodeSE2) index
@@ -521,9 +533,9 @@ public:
    * @param path Reference to a vector of indicies of generated path
    * @return whether the path was able to be backtraced
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, NodeSE2<GridCollisionCheckerT>>::value), bool> = 0>
+  template<typename U = NodeT,
+    std::enable_if_t<IsNodeSE2Instance<U>::value, bool> = true
+  >
   bool backtracePath(NodePtr & node, CoordinateVector & path)
   {
     if (!node->parent) {
@@ -593,23 +605,23 @@ protected:
    * @brief Get pointer to next goal in open set
    * @return Node (Node2D) pointer reference to next heuristically scored node
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, Node2D<GridCollisionCheckerT>>::value), bool> = 0>
-  //   NodePtr getNextNode()
-  //   {
-  //     NodeBasic<NodeT> node = _queue.top().second;
-  //     _queue.pop();
-  //     return node.graph_node_ptr;
-  //   }
+  template<typename U = NodeT,
+    std::enable_if_t<!IsNodeSE2Instance<U>::value, bool> = true
+  >
+  NodePtr getNextNode()
+  {
+    NodeBasic<NodeT> node = _queue.top().second;
+    _queue.pop();
+    return node.graph_node_ptr;
+  }
 
   /**
    * @brief Get pointer to next goal in open set
    * @return Node (NodeSE2) pointer reference to next heuristically scored node
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, NodeSE2<GridCollisionCheckerT>>::value), bool> = 0>
+  template<typename U = NodeT,
+    std::enable_if_t<IsNodeSE2Instance<U>::value, bool> = true
+  >
   NodePtr getNextNode()
   {
     NodeBasic<NodeT> node = _queue.top().second;
@@ -627,24 +639,24 @@ protected:
    * @param cost The cost to sort into the open set of the node
    * @param node Node (Node2D) pointer reference to add to open set
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, Node2D<GridCollisionCheckerT>>::value), bool> = 0>
-  //   void addNode(const float cost, NodePtr & node)
-  //   {
-  //     NodeBasic<NodeT> queued_node(node->getIndex());
-  //     queued_node.graph_node_ptr = node;
-  //     _queue.emplace(cost, queued_node);
-  //   }
+  template<typename U = NodeT,
+    std::enable_if_t<!IsNodeSE2Instance<U>::value, bool> = true
+  >
+  void addNode(const float cost, NodePtr & node)
+  {
+    NodeBasic<NodeT> queued_node(node->getIndex());
+    queued_node.graph_node_ptr = node;
+    _queue.emplace(cost, queued_node);
+  }
 
   /**
    * @brief Get pointer to next goal in open set
    * @param cost The cost to sort into the open set of the node
    * @param node Node (NodeSE2) pointer reference to add to open set
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, NodeSE2<GridCollisionCheckerT>>::value), bool> = 0>
+  template<typename U = NodeT,
+    std::enable_if_t<IsNodeSE2Instance<U>::value, bool> = true
+  >
   void addNode(const float cost, NodePtr & node)
   {
     NodeBasic<NodeT> queued_node(node->getIndex());
@@ -658,22 +670,22 @@ protected:
    * @param cost The cost to sort into the open set of the node
    * @param node Node pointer reference to add to open set
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, Node2D<GridCollisionCheckerT>>::value), bool> = 0>
-  //   NodePtr addToGraph(const unsigned int & index)
-  //   {
-  //     return &(_graph.emplace(index, NodeT(_costmap->getCharMap()[index], index)).first->second);
-  //   }
+  template<typename U = NodeT,
+    std::enable_if_t<!IsNodeSE2Instance<U>::value, bool> = true
+  >
+  NodePtr addToGraph(const unsigned int & index)
+  {
+    return &(_graph.emplace(index, NodeT(_costmap->getCharMap()[index], index)).first->second);
+  }
 
   /**
    * @brief Adds a node (NodeSE2) to the graph
    * @param cost The cost to sort into the open set of the node
    * @param node Node pointer reference to add to open set
    */
-  //   template <
-  //     typename std::enable_if_t<
-  //       (true == std::is_same<NodeT, NodeSE2<GridCollisionCheckerT>>::value), bool> = 0>
+  template<typename U = NodeT,
+    std::enable_if_t<IsNodeSE2Instance<U>::value, bool> = true
+  >
   NodePtr addToGraph(const unsigned int & index)
   {
     return &(_graph.emplace(index, NodeT(index)).first->second);

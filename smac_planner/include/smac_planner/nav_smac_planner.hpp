@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef SMAC_PLANNER__SMAC_PLANNER_HPP_
-#define SMAC_PLANNER__SMAC_PLANNER_HPP_
+#ifndef SMAC_PLANNER__NAV_SMAC_PLANNER_HPP_
+#define SMAC_PLANNER__NAV_SMAC_PLANNER_HPP_
 
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/costmap_2d_ros.h>
@@ -55,11 +55,9 @@ public:
   ~SmacPlanner();
 
   /**
-   * @brief Configuring plugin
-   * @param parent Lifecycle node pointer
-   * @param name Name of plugin map
-   * @param tf Shared ptr of TF2 buffer
-   * @param costmap_ros CostmapPtr
+   * @brief  Initialization function for the SmacPlanner
+   * @param  name The name of this planner
+   * @param  costmap_ros A pointer to the ROS wrapper of the costmap to use for planning
    */
   void initialize(std::string name, costmap_2d::Costmap2DROS * costmap_ros) override;
 
@@ -79,10 +77,11 @@ public:
   void deactivate();
 
   /**
-   * @brief Creating a plan from start and goal poses
-   * @param start Start pose
-   * @param goal Goal pose
-   * @return nav2_msgs::Path of the generated path
+   * @brief Given a goal pose in the world, compute a plan
+   * @param start The start pose
+   * @param goal The goal pose
+   * @param plan The plan... filled by the planner
+   * @return True if a valid plan was found, false otherwise
    */
   bool makePlan(
     const geometry_msgs::PoseStamped & start, const geometry_msgs::PoseStamped & goal,
@@ -138,4 +137,4 @@ protected:
 
 }  // namespace smac_planner
 
-#endif  // SMAC_PLANNER__SMAC_PLANNER_HPP_
+#endif  // SMAC_PLANNER__NAV_SMAC_PLANNER_HPP_
