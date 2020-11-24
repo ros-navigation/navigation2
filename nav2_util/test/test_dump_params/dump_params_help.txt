@@ -1,7 +1,0 @@
-Usage: dump_params
-Options:
-  -h [ --help ]           Print help message
-  -n [ --node_names ] arg A list of comma-separated node names
-  -f [ --format ] arg     The format to dump ('yaml' or 'markdown')
-  -v [ --verbose ]        Verbose option
-

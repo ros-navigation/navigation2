@@ -1,8 +1,0 @@
-#goal definition
-geometry_msgs/PoseStamped[] poses
----
-#result definition
-int32[] missed_waypoints
----
-#feedback
-uint32 current_waypoint

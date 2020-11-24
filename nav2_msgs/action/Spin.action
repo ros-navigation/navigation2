@@ -1,7 +1,0 @@
-#goal definition
-float32 target_yaw
----
-#result definition
-builtin_interfaces/Duration total_elapsed_time
----
-float32 angular_distance_traveled

@@ -1,5 +1,0 @@
-<library path="nav2_navfn_planner">
-	<class name="nav2_navfn_planner/NavfnPlanner" type="nav2_navfn_planner::NavfnPlanner" base_class_type="nav2_core::GlobalPlanner">
-	  <description></description>
-	</class>
-</library>

@@ -1,7 +1,0 @@
-<class_libraries>
-  <library path="dwb_core">
-    <class type="dwb_core::DWBLocalPlanner" base_class_type="nav2_core::Controller">
-      <description></description>
-    </class>
-  </library>
-</class_libraries>
