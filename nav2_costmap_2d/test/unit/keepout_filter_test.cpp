@@ -51,8 +51,8 @@ public:
       std::make_unique<nav2_msgs::msg::CostmapFilterInfo>();
     msg->type = 0;
     msg->filter_mask_topic = MASK_TOPIC;
-    msg->base = base;
-    msg->multiplier = multiplier;
+    msg->base = static_cast<float>(base);
+    msg->multiplier = static_cast<float>(multiplier);
 
     publisher_->publish(std::move(msg));
   }
