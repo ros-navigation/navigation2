@@ -129,7 +129,9 @@ TEST(ObstacleFootprint, Prepare)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
   costmap_ros->configure();
 
-  critic->initialize(node, "name", "ns", costmap_ros);
+  std::string name = "name";
+  std::string ns = "ns";
+  critic->initialize(node, name, ns, costmap_ros);
 
   geometry_msgs::msg::Pose2D pose;
   nav_2d_msgs::msg::Twist2D vel;
@@ -187,7 +189,9 @@ TEST(ObstacleFootprint, PointCost)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
   costmap_ros->configure();
 
-  critic->initialize(node, "name", "ns", costmap_ros);
+  std::string name = "name";
+  std::string ns = "ns";
+  critic->initialize(node, name, ns, costmap_ros);
 
   costmap_ros->getCostmap()->setCost(0, 0, nav2_costmap_2d::LETHAL_OBSTACLE);
   costmap_ros->getCostmap()->setCost(0, 1, nav2_costmap_2d::NO_INFORMATION);
@@ -208,7 +212,9 @@ TEST(ObstacleFootprint, LineCost)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
   costmap_ros->configure();
 
-  critic->initialize(node, "name", "ns", costmap_ros);
+  std::string name = "name";
+  std::string ns = "ns";
+  critic->initialize(node, name, ns, costmap_ros);
 
   costmap_ros->getCostmap()->setCost(3, 3, nav2_costmap_2d::LETHAL_OBSTACLE);
   costmap_ros->getCostmap()->setCost(3, 4, nav2_costmap_2d::LETHAL_OBSTACLE);
