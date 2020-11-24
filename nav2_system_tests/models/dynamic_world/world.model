@@ -1,0 +1,85 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="default">
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <model name="EmptyRoom">
+      <include>
+        <uri>model://empty_room</uri>
+      </include>
+    </model>
+
+    <model name="DynamicObstacle1">
+       <pose>-4 4 0.15 0 0 0</pose>
+       <include>
+        <uri>model://dynamic_obstacle</uri>
+      </include>
+    </model>
+
+    <model name="DynamicObstacle2">
+      <pose>-4 0 0.15 0 0 0</pose>
+      <include>
+        <uri>model://dynamic_obstacle</uri>
+      </include>
+    </model>
+
+    <model name="DynamicObstacle3">
+      <pose>-4 -4 0.15 0 0 0</pose>
+      <include>
+        <uri>model://dynamic_obstacle</uri>
+      </include>
+    </model>
+
+    <model name="DynamicObstacle4">
+      <pose>0 4 0.15 0 0 0</pose>
+      <include>
+        <uri>model://dynamic_obstacle</uri>
+      </include>
+    </model>
+
+    <model name="DynamicObstacle5">
+      <pose>0 0 0.15 0 0 0</pose>
+      <include>
+        <uri>model://dynamic_obstacle</uri>
+      </include>
+    </model>
+
+    <model name="DynamicObstacle6">
+      <pose>0 -4 0.15 0 0 0</pose>
+      <include>
+        <uri>model://dynamic_obstacle</uri>
+      </include>
+    </model>
+
+    <model name="DynamicObstacle7">
+      <pose>4 4 0.15 0 0 0</pose>
+      <include>
+        <uri>model://dynamic_obstacle</uri>
+      </include>
+    </model>
+
+    <model name="DynamicObstacle8">
+      <pose>4 0 0.15 0 0 0</pose>
+      <include>
+        <uri>model://dynamic_obstacle</uri>
+      </include>
+    </model>
+
+    <model name="DynamicObstacle9">
+      <pose>4 -4 0.15 0 0 0</pose>
+      <include>
+        <uri>model://dynamic_obstacle</uri>
+      </include>
+    </model>
+
+    <include>
+      <pose>2.0 2.0 0.0 0.0 0.0 0.0</pose>
+      <uri>model://turtlebot3_waffle</uri>
+    </include>
+  </world>
+</sdf>

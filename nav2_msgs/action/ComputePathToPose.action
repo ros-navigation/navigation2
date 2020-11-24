@@ -1,0 +1,9 @@
+#goal definition
+geometry_msgs/PoseStamped pose
+string planner_id
+---
+#result definition
+nav_msgs/Path path
+builtin_interfaces/Duration planning_time
+---
+#feedback

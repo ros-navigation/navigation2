@@ -1,0 +1,42 @@
+<class_libraries>
+  <library path="dwb_critics">
+    <class type="dwb_critics::PreferForwardCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Penalize trajectories with move backwards and/or turn too much</description>
+    </class>
+    <class type="dwb_critics::GoalDistCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Scores trajectories based on how far along the global path they end up.</description>
+    </class>
+    <class type="dwb_critics::PathAlignCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Scores trajectories based on how far from the global path the front of the robot ends up.
+      </description>
+    </class>
+    <class type="dwb_critics::GoalAlignCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Scores trajectories based on whether the robot ends up pointing toward the eventual goal
+      </description>
+    </class>
+    <class type="dwb_critics::PathDistCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Scores trajectories based on how far from the global path they end up.</description>
+    </class>
+    <class type="dwb_critics::OscillationCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Checks to see whether the sign of the commanded velocity flips frequently</description>
+    </class>
+    <class type="dwb_critics::RotateToGoalCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Forces the commanded trajectories to only be rotations if within a certain distance window
+      </description>
+    </class>
+    <class type="dwb_critics::BaseObstacleCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Uses costmap 2d to assign negative costs if a circular robot
+                   would collide at any point of the trajectory.
+      </description>
+    </class>
+    <class type="dwb_critics::ObstacleFootprintCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Uses costmap 2d to assign negative costs if robot footprint is in obstacle
+                   on any point of the trajectory.
+      </description>
+    </class>
+    <class type="dwb_critics::TwirlingCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Penalize trajectories with rotational velocities
+      </description>
+    </class>
+  </library>
+</class_libraries>

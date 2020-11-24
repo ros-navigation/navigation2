@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>nav2_dwb_controller</name>
+  <version>0.4.3</version>
+  <description>
+    ROS2 controller (DWB) metapackage
+  </description>
+  <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
+  <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>costmap_queue</depend>
+  <depend>dwb_core</depend>
+  <depend>dwb_critics</depend>
+  <depend>dwb_msgs</depend>
+  <depend>dwb_plugins</depend>
+  <depend>nav_2d_msgs</depend>
+  <depend>nav_2d_utils</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+
+</package>

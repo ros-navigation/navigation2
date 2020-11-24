@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format ="3">
+  <name>nav2_costmap_2d</name>
+  <version>0.4.3</version>
+  <description>
+    This package provides an implementation of a 2D costmap that takes in sensor
+    data from the world, builds a 2D or 3D occupancy grid of the data (depending
+    on whether a voxel based implementation is used), and inflates costs in a
+    2D costmap based on the occupancy grid and a user specified inflation radius.
+    This package also provides support for map_server based initialization of a
+    costmap, rolling window based costmaps, and parameter based subscription to
+    and configuration of sensor topics.
+  </description>
+  <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
+  <license>BSD-3-Clause</license>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>nav2_common</build_depend>
+
+  <depend>geometry_msgs</depend>
+  <depend>laser_geometry</depend>
+  <depend>map_msgs</depend>
+  <depend>message_filters</depend>
+  <depend>nav2_msgs</depend>
+  <depend>nav2_util</depend>
+  <depend>nav2_voxel_grid</depend>
+  <depend>nav_msgs</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_sensor_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>angles</depend>
+
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>nav2_map_server</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>launch</test_depend>
+  <test_depend>launch_testing</test_depend>
+  <test_depend>nav2_lifecycle_manager</test_depend>
+
+  <export>
+	  <build_type>ament_cmake</build_type>
+  </export>
+</package>

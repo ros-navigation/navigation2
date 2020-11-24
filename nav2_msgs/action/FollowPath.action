@@ -1,0 +1,10 @@
+#goal definition
+nav_msgs/Path path
+string controller_id
+---
+#result definition
+std_msgs/Empty result
+---
+#feedback
+float32 distance_to_goal
+float32 speed

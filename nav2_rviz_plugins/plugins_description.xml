@@ -1,0 +1,15 @@
+<library path="nav2_rviz_plugins">
+
+  <class name="nav2_rviz_plugins/GoalTool"
+         type="nav2_rviz_plugins::GoalTool"
+         base_class_type="rviz_common::Tool">
+    <description>A tool used to specify the navigation goal pose.</description>
+  </class>
+
+  <class name="nav2_rviz_plugins/Navigation 2"
+         type="nav2_rviz_plugins::Nav2Panel"
+         base_class_type="rviz_common::Panel">
+    <description>The Navigation2 rviz panel.</description>
+  </class>
+
+</library>

@@ -1,0 +1,22 @@
+#!/bin/bash
+for i in `seq 1 1000`;
+do
+    echo "======= START OF RUN: $i ========="
+
+    # Start with a new ros2 daemon 
+    ros2 daemon stop
+
+    # There shouldn't be any nodes in the list
+    ros2 node list
+    echo "----------------------------------"
+
+    # Bound the time of the bringup/shutdown in case it hangs
+    timeout 100 ./start_nav2
+
+    # Make sure there aren't any stray gazebo or ros2 processes hanging around
+    # that were not properly killed by the launch script
+    #kill -9 $(pgrep gzserver) &> /dev/null
+    kill -9 $(pgrep ros2) &> /dev/null
+
+    echo "======== END OF RUN: $i =========="
+done

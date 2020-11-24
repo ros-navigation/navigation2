@@ -1,0 +1,19 @@
+<class_libraries>
+	<library path="nav2_spin_recovery">
+	  <class name="nav2_recoveries/Spin" type="nav2_recoveries::Spin" base_class_type="nav2_core::Recovery">
+	    <description></description>
+	  </class>
+	</library>
+
+	<library path="nav2_backup_recovery">
+	  <class name="nav2_recoveries/BackUp" type="nav2_recoveries::BackUp" base_class_type="nav2_core::Recovery">
+	    <description></description>
+	  </class>
+	</library>
+
+	<library path="nav2_wait_recovery">
+	  <class name="nav2_recoveries/Wait" type="nav2_recoveries::Wait" base_class_type="nav2_core::Recovery">
+	    <description></description>
+	  </class>
+	</library>
+</class_libraries>
