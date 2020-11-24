@@ -113,7 +113,7 @@ if(${ROS_VERSION} EQUAL 2)
   ament_target_dependencies(${library_name} ${dependencies})
 
   # 2D plugin
-  add_library(${library_name}_2d SHARED src/smac_planner_2d.cpp)
+  add_library(${library_name}_2d SHARED src/nav2_smac_planner_2d.cpp)
 
   target_link_libraries(${library_name}_2d ${CERES_LIBRARIES} ${OMPL_LIBRARIES})
   target_include_directories(${library_name}_2d PUBLIC ${Eigen3_INCLUDE_DIRS})
@@ -172,10 +172,6 @@ if(${ROS_VERSION} EQUAL 2)
     RUNTIME DESTINATION lib/${PROJECT_NAME})
 
   install(DIRECTORY include/ DESTINATION include/)
-  ament_export_include_directories(include)
-  ament_export_libraries(${library_name} ${library_name}_2d)
-  ament_export_dependencies(${dependencies})
-  ament_package()
 
   if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
@@ -183,6 +179,11 @@ if(${ROS_VERSION} EQUAL 2)
     find_package(ament_cmake_gtest REQUIRED)
     add_subdirectory(test)
   endif()
+
+  ament_export_include_directories(include)
+  ament_export_libraries(${library_name} ${library_name}_2d)
+  ament_export_dependencies(${dependencies})
+  ament_package()
 elseif(${ROS_VERSION} EQUAL 1)
 
   install(

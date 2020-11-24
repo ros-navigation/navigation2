@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "Eigen/Core"
+#include "smac_planner/nav2_options.hpp"
 
 #define BENCHMARK_TESTING
 
@@ -142,14 +143,23 @@ void SmacPlanner::configure(
   search_info.minimum_turning_radius =
     search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
 
-  _a_star = std::make_unique<AStarAlgorithm<NodeSE2>>(motion_model, search_info);
+  _a_star = std::make_unique<AStarAlgorithm<
+        NodeSE2<GridCollisionChecker<
+          nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>,
+          nav2_costmap_2d::Costmap2D,
+          nav2_costmap_2d::Footprint>>,
+        GridCollisionChecker<
+          nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>,
+          nav2_costmap_2d::Costmap2D,
+          nav2_costmap_2d::Footprint>,
+        nav2_costmap_2d::Costmap2D, nav2_costmap_2d::Footprint>>(motion_model, search_info);
   _a_star->initialize(allow_unknown, max_iterations, max_on_approach_iterations);
   _a_star->setFootprint(costmap_ros->getRobotFootprint(), costmap_ros->getUseRadius());
 
   if (smooth_path) {
     _smoother = std::make_unique<Smoother>();
-    _optimizer_params.get(node.get(), name);
-    _smoother_params.get(node.get(), name);
+    _optimizer_params = get_optimizer(node.get(), name);
+    _smoother_params = get_smoother(node.get(), name);
     _smoother_params.max_curvature = 1.0f / minimum_turning_radius_global_coords;
     _smoother->initialize(_optimizer_params);
   }
@@ -250,7 +260,9 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   pose.pose.orientation.w = 1.0;
 
   // Compute plan
-  NodeSE2::CoordinateVector path;
+  NodeSE2<GridCollisionChecker<
+      costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
+      costmap_2d::Footprint>>::CoordinateVector path;
   int num_iterations = 0;
   std::string error;
   try {

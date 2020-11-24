@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include "smac_planner/nav2_smac_planner_2d.hpp"
+
 #include <algorithm>
 #include <limits>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "smac_planner/smac_planner_2d.hpp"
+#include "smac_planner/nav2_options.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -114,13 +116,22 @@ void SmacPlanner2D::configure(
     max_iterations = std::numeric_limits<int>::max();
   }
 
-  _a_star = std::make_unique<AStarAlgorithm<Node2D>>(motion_model, SearchInfo());
+  _a_star = std::make_unique<AStarAlgorithm<
+        Node2D<GridCollisionChecker<
+          nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>,
+          nav2_costmap_2d::Costmap2D,
+          nav2_costmap_2d::Footprint>>,
+        GridCollisionChecker<
+          nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>,
+          nav2_costmap_2d::Costmap2D,
+          nav2_costmap_2d::Footprint>,
+        nav2_costmap_2d::Costmap2D, nav2_costmap_2d::Footprint>>(motion_model, SearchInfo());
   _a_star->initialize(allow_unknown, max_iterations, max_on_approach_iterations);
 
   if (smooth_path) {
     _smoother = std::make_unique<Smoother>();
-    _optimizer_params.get(node.get(), name);
-    _smoother_params.get(node.get(), name);
+    _optimizer_params = get_optimizer(node.get(), name);
+    _smoother_params = get_smoother(node.get(), name);
     _smoother_params.max_curvature = 1.0f / minimum_turning_radius;
     _smoother->initialize(_optimizer_params);
   }
@@ -210,7 +221,9 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   pose.pose.orientation.w = 1.0;
 
   // Compute plan
-  Node2D::CoordinateVector path;
+  Node2D<GridCollisionChecker<
+      costmap_2d::FootprintCollisionChecker<costmap_2d::Costmap2D *>, costmap_2d::Costmap2D,
+      costmap_2d::Footprint>>::CoordinateVector path;
   int num_iterations = 0;
   std::string error;
   try {

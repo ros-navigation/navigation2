@@ -23,6 +23,7 @@
 #include "nav2_core/global_planner.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -101,7 +102,17 @@ public:
   void removeHook(std::vector<Eigen::Vector2d> & path);
 
 protected:
-  std::unique_ptr<AStarAlgorithm<Node2D>> _a_star;
+  std::unique_ptr<AStarAlgorithm<
+      Node2D<GridCollisionChecker<
+        nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>,
+        nav2_costmap_2d::Costmap2D,
+        nav2_costmap_2d::Footprint>>,
+      GridCollisionChecker<
+        nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>,
+        nav2_costmap_2d::Costmap2D,
+        nav2_costmap_2d::Footprint>,
+      nav2_costmap_2d::Costmap2D, nav2_costmap_2d::Footprint>>
+  _a_star;
   std::unique_ptr<Smoother> _smoother;
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
