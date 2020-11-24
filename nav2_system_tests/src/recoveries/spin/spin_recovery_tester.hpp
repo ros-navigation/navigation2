@@ -71,8 +71,7 @@ public:
 private:
   void sendInitialPose();
 
-  void sendFakeFootprint();
-  void sendFakeCostmap();
+  void sendFakeCostmap(float angle);
   void sendFakeOdom(float angle);
 
   void amclPoseCallback(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr);
