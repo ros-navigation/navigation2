@@ -70,7 +70,7 @@ void CostmapFilter::onInitialize()
   try {
     filter_info_topic_ = node->get_parameter(name_ + "." + "filter_info_topic").as_string();
   } catch (rclcpp::exceptions::ParameterNotDeclaredException & ex) {
-    RCLCPP_ERROR(node->get_logger(), "filter_info_topic parameter is not set");
+    RCLCPP_ERROR(logger_, "filter_info_topic parameter is not set");
     throw ex;
   }
   double transform_tolerance;

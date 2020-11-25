@@ -108,7 +108,7 @@ public:
   : Node("speed_limit_sub"), speed_limit_updated_(false)
   {
     subscriber_ = this->create_subscription<nav2_msgs::msg::SpeedLimit>(
-      speed_limit_topic, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+      speed_limit_topic, rclcpp::QoS(10),
       std::bind(&SpeedLimitSubscriber::speedLimitCallback, this, std::placeholders::_1));
   }
 
@@ -435,23 +435,15 @@ void TestNode::testFullMask(
   geometry_msgs::msg::Pose2D pose;
   nav2_msgs::msg::SpeedLimit::SharedPtr speed_limit;
 
-  pose.x = -tr_x;
+  // data = 0
+  pose.x = 1 - tr_x;
   pose.y = -tr_y;
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = waitSpeedLimit();
-  ASSERT_TRUE(speed_limit != nullptr);
-  EXPECT_EQ(speed_limit->speed_limit, nav2_costmap_2d::NO_SPEED_LIMIT);
+  ASSERT_TRUE(speed_limit == nullptr);
 
+  // data in range [1..100]
   unsigned int x, y;
-  for (x = 1; x < width_; x++) {
-    pose.x = x - tr_x;
-    pose.y = -tr_y;
-    speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
-    speed_limit = getSpeedLimit();
-    ASSERT_TRUE(speed_limit != nullptr);
-    EXPECT_EQ(speed_limit->speed_limit, nav2_costmap_2d::NO_SPEED_LIMIT);
-  }
-
   for (y = 1; y < height_; y++) {
     for (x = 0; x < width_; x++) {
       pose.x = x - tr_x;
@@ -462,6 +454,22 @@ void TestNode::testFullMask(
       verifySpeedLimit(type, base, multiplier, x, y, speed_limit);
     }
   }
+
+  // data = 0
+  pose.x = 1 - tr_x;
+  pose.y = -tr_y;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+  EXPECT_EQ(speed_limit->speed_limit, nav2_costmap_2d::NO_SPEED_LIMIT);
+
+  // data = -1
+  pose.x = -tr_x;
+  pose.y = -tr_y;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  speed_limit = getSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+  EXPECT_EQ(speed_limit->speed_limit, nav2_costmap_2d::NO_SPEED_LIMIT);
 }
 
 void TestNode::testSimpleMask(
@@ -476,21 +484,12 @@ void TestNode::testSimpleMask(
   geometry_msgs::msg::Pose2D pose;
   nav2_msgs::msg::SpeedLimit::SharedPtr speed_limit;
 
-  // data = -1
-  pose.x = -tr_x;
-  pose.y = -tr_y;
-  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
-  speed_limit = waitSpeedLimit();
-  ASSERT_TRUE(speed_limit != nullptr);
-  EXPECT_EQ(speed_limit->speed_limit, nav2_costmap_2d::NO_SPEED_LIMIT);
-
   // data = 0
   pose.x = 1 - tr_x;
   pose.y = -tr_y;
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = getSpeedLimit();
-  ASSERT_TRUE(speed_limit != nullptr);
-  EXPECT_EQ(speed_limit->speed_limit, nav2_costmap_2d::NO_SPEED_LIMIT);
+  ASSERT_TRUE(speed_limit == nullptr);
 
   // data = <some_middle_value>
   unsigned int x = width_ / 2 - 1;
@@ -511,6 +510,22 @@ void TestNode::testSimpleMask(
   speed_limit = waitSpeedLimit();
   ASSERT_TRUE(speed_limit != nullptr);
   verifySpeedLimit(type, base, multiplier, x, y, speed_limit);
+
+  // data = 0
+  pose.x = 1 - tr_x;
+  pose.y = -tr_y;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+  EXPECT_EQ(speed_limit->speed_limit, nav2_costmap_2d::NO_SPEED_LIMIT);
+
+  // data = -1
+  pose.x = -tr_x;
+  pose.y = -tr_y;
+  speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+  speed_limit = getSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+  EXPECT_EQ(speed_limit->speed_limit, nav2_costmap_2d::NO_SPEED_LIMIT);
 }
 
 void TestNode::testOutOfMask(uint8_t type, double base, double multiplier)
@@ -557,11 +572,14 @@ void TestNode::testIncorrectPercentage(uint8_t type, double base, double multipl
 
   std::vector<std::tuple<unsigned int, unsigned int>> points;
 
-  // (0, 1) point (data=1)
-  points.push_back(std::make_tuple(0, 1));
-  // Some middle point
+  // Some middle point corresponding to correct percentage
   points.push_back(std::make_tuple(width_ / 2 - 1, height_ / 2 - 1));
-  // (width_ - 1, height_ - 1) point (data=100)
+  // (0, 1) point corresponding to incorrect percentage: data = 1, percentage < 0%
+  points.push_back(std::make_tuple(0, 1));
+  // Some middle point corresponding to correct percentage
+  points.push_back(std::make_tuple(width_ / 2 - 1, height_ / 2 - 1));
+  // (width_ - 1, height_ - 1) point corresponding to incorrect percentage:
+  // data = 100, percentage > 100%
   points.push_back(std::make_tuple(width_ - 1, height_ - 1));
 
   for (auto it = points.begin(); it != points.end(); ++it) {

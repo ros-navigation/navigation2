@@ -53,7 +53,8 @@ static constexpr double BASE_DEFAULT = 0.0;
 static constexpr double MULTIPLIER_DEFAULT = 1.0;
 
 /** Speed filter constants */
-static constexpr double FAKE_SPEED_LIMIT = -1.0;
+static constexpr int8_t SPEED_MASK_UNKNOWN = -1;
+static constexpr int8_t SPEED_MASK_NO_LIMIT = 0;
 static constexpr double NO_SPEED_LIMIT = 0.0;
 
 }  // namespace nav2_costmap_2d

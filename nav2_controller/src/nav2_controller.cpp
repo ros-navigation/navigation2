@@ -173,7 +173,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   // Set subscribtion to the speed limiting topic
   speed_limit_sub_ = create_subscription<nav2_msgs::msg::SpeedLimit>(
-    speed_limit_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+    speed_limit_topic_, rclcpp::QoS(10),
     std::bind(&ControllerServer::speedLimitCallback, this, std::placeholders::_1));
 
   return nav2_util::CallbackReturn::SUCCESS;

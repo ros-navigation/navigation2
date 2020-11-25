@@ -68,18 +68,9 @@ public:
 
 protected:
   /**
-   * @brief: Name of speed limiting topic
-   */
-  std::string speed_limit_topic_;
-
-private:
-  void filterInfoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg);
-  void maskCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
-
-  /**
-   * @brief: Transforms robot pose from current layer frame to mask frame
-   * @param: pose Robot pose in costmap frame
-   * @param: mask_pose Robot pose in mask frame
+   * @brief:  Transforms robot pose from current layer frame to mask frame
+   * @param:  pose Robot pose in costmap frame
+   * @param:  mask_pose Robot pose in mask frame
    * @return: True if the transformation was successful, false otherwise
    */
   bool transformPose(
@@ -96,6 +87,21 @@ private:
    * @return True if the conversion was successful (legal bounds) false otherwise
    */
   bool worldToMask(double wx, double wy, unsigned int & mx, unsigned int & my) const;
+
+  /**
+   * @brief  Get the data of a cell in the filter mask
+   * @param  mx The x coordinate of the cell
+   * @param  my The y coordinate of the cell
+   * @return The data of the selected cell
+   */
+  inline int8_t getMaskData(
+    const unsigned int mx, const unsigned int my) const;
+
+private:
+  void filterInfoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg);
+  void maskCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+
+  std::string speed_limit_topic_;  // Name of speed limiting topic
 
   rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;

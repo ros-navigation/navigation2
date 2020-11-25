@@ -118,10 +118,10 @@ class NavTester(Node):
                                                      self.planCallback, volatile_qos)
         elif self.test_type == TestType.SPEED:
             self.speed_it = 0
-            self.limits = [0.0, 50.0, 0.0]
-            self.limit_passed = [False, False, False]
+            self.limits = [50.0, 0.0]
+            self.limit_passed = [False, False]
             self.plan_sub = self.create_subscription(SpeedLimit, 'speed_limit',
-                                                     self.speedLimitCallback, transient_local_qos)
+                                                     self.speedLimitCallback, volatile_qos)
 
         self.mask_received = False
         self.mask_sub = self.create_subscription(OccupancyGrid, 'filter_mask',
