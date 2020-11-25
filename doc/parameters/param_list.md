@@ -429,7 +429,7 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 | ----------| --------| ------------|
 | node_names | N/A | Ordered list of node names to bringup through lifecycle transition |
 | autostart | false | Whether to transition nodes to active state on startup |
-| bond_timeout_ms | 4000 | Timeout for bond to fail if no heartbeat can be found, in milliseconds. If set to 0, it will be disabled. Must be larger than 300ms for stable bringup. |
+| bond_timeout | 4.0 | Timeout for bond to fail if no heartbeat can be found, in seconds. If set to 0, it will be disabled. Must be larger than 0.3s for stable bringup. |
 
 # map_server
 
@@ -437,7 +437,7 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| save_map_timeout | 2000 | Timeout to attempt to save map with (ms) |
+| save_map_timeout | 2.0 | Timeout to attempt to save map with (s) |
 | free_thresh_default | 0.25 | Free space maximum threshold for occupancy grid |
 | occupied_thresh_default | 0.65 | Occupied space minimum threshhold for occupancy grid |
 | map_subscribe_transient_local | true | Use transient local QoS profile for incoming map subscription |
@@ -497,7 +497,7 @@ When `planner_plugins` parameter is not overridden, the following default plugin
 | `<name>`.allow_unknown | true | whether to allow traversing in unknown space |
 | `<name>`.max_iterations | -1 | Number of iterations before failing, disabled by -1 |
 | `<name>`.max_on_approach_iterations | 1000 | Iterations after within threshold before returning approximate path with best heuristic |
-| `<name>`.max_planning_time_ms | 5000 | Maximum planning time in ms |
+| `<name>`.max_planning_time | 5.0 | Maximum planning time in s |
 | `<name>`.smooth_path | false | Whether to smooth path with CG smoother |
 | `<name>`.motion_model_for_search | DUBIN | Motion model to search with. Options for SE2: DUBIN, REEDS_SHEPP. 2D: MOORE, VON_NEUMANN |
 | `<name>`.angle_quantization_bins | 1 | Number of angle quantization bins for SE2 node |
