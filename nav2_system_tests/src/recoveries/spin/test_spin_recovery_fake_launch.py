@@ -20,9 +20,8 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch import LaunchService
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 from nav2_common.launch import RewrittenYaml
@@ -31,7 +30,7 @@ from nav2_common.launch import RewrittenYaml
 def generate_launch_description():
 
     bringup_dir = get_package_share_directory('nav2_bringup')
-    
+
     namespace = LaunchConfiguration('namespace')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
@@ -45,13 +44,13 @@ def generate_launch_description():
         'default_bt_xml_filename': default_bt_xml_filename,
         'autostart': autostart,
         'map_subscribe_transient_local': map_subscribe_transient_local}
-    
+
     configured_params = RewrittenYaml(
             source_file=params_file,
             root_key=namespace,
             param_rewrites=param_substitutions,
             convert_types=True)
-    
+
     lifecycle_nodes = ['recoveries_server']
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
@@ -66,7 +65,7 @@ def generate_launch_description():
     return LaunchDescription([
         SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
 
-                DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'namespace', default_value='',
             description='Top-level namespace'),
 
@@ -119,7 +118,7 @@ def generate_launch_description():
             output='screen',
             parameters=[configured_params],
             remappings=remappings),
-        
+
         Node(
             package='nav2_lifecycle_manager',
             executable='lifecycle_manager',
