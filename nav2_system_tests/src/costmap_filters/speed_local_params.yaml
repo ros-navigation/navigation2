@@ -304,7 +304,7 @@ waypoint_follower:
 costmap_filter_info_server:
   ros__parameters:
     use_sim_time: true
-    type: 2
+    type: 1
     filter_info_topic: "/costmap_filter_info"
     mask_topic: "/filter_mask"
     base: 100.0

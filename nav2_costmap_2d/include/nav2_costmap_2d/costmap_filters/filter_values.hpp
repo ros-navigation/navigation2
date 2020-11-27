@@ -45,8 +45,8 @@ namespace nav2_costmap_2d
 
 /** Types of costmap filter */
 static constexpr uint8_t KEEPOUT_FILTER = 0;
-static constexpr uint8_t SPEED_FILTER_ABSOLUTE = 1;
-static constexpr uint8_t SPEED_FILTER_PERCENT = 2;
+static constexpr uint8_t SPEED_FILTER_PERCENT = 1;
+static constexpr uint8_t SPEED_FILTER_ABSOLUTE = 2;
 
 /** Default values for base and multiplier */
 static constexpr double BASE_DEFAULT = 0.0;

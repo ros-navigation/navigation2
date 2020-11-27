@@ -404,10 +404,7 @@ void TestNode::verifySpeedLimit(
   int8_t cost = mask_->makeData(x, y);
   // expected_limit is being calculated by using float32 base and multiplier
   double expected_limit = cost * multiplier + base;
-  if (type == nav2_costmap_2d::SPEED_FILTER_ABSOLUTE) {
-    EXPECT_FALSE(speed_limit->percentage);
-    EXPECT_NEAR(speed_limit->speed_limit, expected_limit, EPSILON);
-  } else if (type == nav2_costmap_2d::SPEED_FILTER_PERCENT) {
+  if (type == nav2_costmap_2d::SPEED_FILTER_PERCENT) {
     if (expected_limit < 0.0) {
       expected_limit = nav2_costmap_2d::NO_SPEED_LIMIT;
     }
@@ -641,10 +638,7 @@ TEST_F(TestNode, testAbsoluteSpeedLimit)
   // Initilize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, -1.23, 4.5);
-  createSpeedFilter("map");
-
-  // Test SpeedFilter
-  testFullMask(nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, -1.23, 4.5, NO_TRANSLATION, NO_TRANSLATION);
+  ASSERT_ANY_THROW(createSpeedFilter("map"));
 
   // Clean-up
   speed_filter_->resetFilter();
@@ -670,7 +664,7 @@ TEST_F(TestNode, testInfoRePublish)
 {
   // Initilize test system
   createMaps("map");
-  publishMaps(nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, -1.23, 4.5);
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 1.2, 3.4);
   createSpeedFilter("map");
 
   // Re-publish filter info (with incorrect base and multiplier)
@@ -690,7 +684,7 @@ TEST_F(TestNode, testMaskRePublish)
 {
   // Initilize test system
   createMaps("map");
-  publishMaps(nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, -1.23, 4.5);
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.1, 0.2);
   createSpeedFilter("map");
 
   // Re-publish filter mask and test that everything is working after
@@ -698,7 +692,7 @@ TEST_F(TestNode, testMaskRePublish)
 
   // Test SpeedFilter
   testSimpleMask(
-    nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, -1.23, 4.5, NO_TRANSLATION, NO_TRANSLATION);
+    nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.1, 0.2, NO_TRANSLATION, NO_TRANSLATION);
 
   // Clean-up
   speed_filter_->resetFilter();

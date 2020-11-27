@@ -118,14 +118,7 @@ void SpeedFilter::filterInfoCallback(
   // Set base_/multiplier_ or use speed limit in % of maximum speed
   base_ = msg->base;
   multiplier_ = msg->multiplier;
-  if (msg->type == SPEED_FILTER_ABSOLUTE) {
-    // Using speed limit in m/s
-    percentage_ = false;
-    RCLCPP_INFO(
-      logger_,
-      "SpeedFilter: Using absolute speed_limit = %f + filter_mask_data * %f",
-      base_, multiplier_);
-  } else if (msg->type == SPEED_FILTER_PERCENT) {
+  if (msg->type == SPEED_FILTER_PERCENT) {
     // Using speed limit in % of maximum speed
     percentage_ = true;
     RCLCPP_INFO(
@@ -133,6 +126,10 @@ void SpeedFilter::filterInfoCallback(
       "SpeedFilter: Using expressed in a percent from maximum speed"
       "speed_limit = %f + filter_mask_data * %f",
       base_, multiplier_);
+  } else if (msg->type == SPEED_FILTER_ABSOLUTE) {
+    // Speed limit in absolute values is not implemented yet
+    RCLCPP_ERROR(logger_, "SpeedFilter: Speed limit in absolute values is not implemented yet");
+    throw std::runtime_error("Mode is not implemented yet");
   } else {
     RCLCPP_ERROR(logger_, "SpeedFilter: Mode is not supported");
     throw std::runtime_error("Mode is not supported by SpeedFilter");
@@ -300,11 +297,6 @@ void SpeedFilter::process(
         RCLCPP_DEBUG(
           logger_,
           "SpeedFilter: Speed limit is set to %f of maximum speed",
-          speed_limit_);
-      } else {
-        RCLCPP_DEBUG(
-          logger_,
-          "SpeedFilter: Speed limit is set to %f m/s",
           speed_limit_);
       }
     } else {

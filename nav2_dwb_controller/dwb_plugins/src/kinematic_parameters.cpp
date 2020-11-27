@@ -129,8 +129,7 @@ void KinematicsHandler::initialize(
   update_kinematics(kinematics);
 }
 
-void KinematicsHandler::setSpeedLimit(
-  const bool & percentage, const double & speed_limit)
+void KinematicsHandler::setSpeedLimit(const double & speed_limit)
 {
   KinematicParameters kinematics(*kinematics_.load());
 
@@ -141,27 +140,11 @@ void KinematicsHandler::setSpeedLimit(
     kinematics.max_vel_y_ = kinematics.entire_max_vel_y_;
     kinematics.max_vel_theta_ = kinematics.entire_max_vel_theta_;
   } else {
-    if (percentage) {
-      // Speed limit is expressed in % from maximum speed of robot
-      kinematics.max_speed_xy_ = kinematics.entire_max_speed_xy_ * speed_limit / 100.0;
-      kinematics.max_vel_x_ = kinematics.entire_max_vel_x_ * speed_limit / 100.0;
-      kinematics.max_vel_y_ = kinematics.entire_max_vel_y_ * speed_limit / 100.0;
-      kinematics.max_vel_theta_ = kinematics.entire_max_vel_theta_ * speed_limit / 100.0;
-    } else {
-      // Speed limit is expressed in absolute value
-      kinematics.max_speed_xy_ = speed_limit;
-      if (speed_limit < kinematics.max_vel_x_) {
-        kinematics.max_vel_x_ = speed_limit;
-      }
-      if (speed_limit < kinematics.max_vel_y_) {
-        kinematics.max_vel_y_ = speed_limit;
-      }
-      // Hack(AlexeyMerzlyakov) for handling angular velocity changes:
-      // Max angular velocity is being changed in the same proportion
-      // as linear speed changed.
-      double ratio = speed_limit / kinematics.entire_max_speed_xy_;
-      kinematics.max_vel_theta_ = kinematics.entire_max_vel_theta_ * ratio;
-    }
+    // Speed limit is expressed in % from maximum speed of robot
+    kinematics.max_speed_xy_ = kinematics.entire_max_speed_xy_ * speed_limit / 100.0;
+    kinematics.max_vel_x_ = kinematics.entire_max_vel_x_ * speed_limit / 100.0;
+    kinematics.max_vel_y_ = kinematics.entire_max_vel_y_ * speed_limit / 100.0;
+    kinematics.max_vel_theta_ = kinematics.entire_max_vel_theta_ * speed_limit / 100.0;
   }
 
   // Do not forget to update max_speed_xy_sq_ as well

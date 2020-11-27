@@ -463,7 +463,11 @@ void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::Shar
 {
   ControllerMap::iterator it;
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
-    it->second->setSpeedLimit(msg->percentage, msg->speed_limit);
+    if (!msg->percentage) {
+      RCLCPP_ERROR(get_logger(), "Speed limit in absolute values is not implemented yet");
+      throw std::runtime_error("Speed limit in absolute values is not implemented yet");
+    }
+    it->second->setSpeedLimit(msg->speed_limit);
   }
 }
 
