@@ -1,0 +1,8 @@
+#goal definition
+sensor_msgs/NavSatFix[] waypoints
+---
+#result definition
+int32[] missed_waypoints
+---
+#feedback
+uint32 current_waypoint
