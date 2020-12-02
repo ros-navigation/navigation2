@@ -157,7 +157,7 @@ void GPSWaypointFollower::followGPSWaypoints()
   auto future_goal_handle = waypoint_follower_action_client_->async_send_goal(
     waypoint_follower_goal_, goal_options);
   if (rclcpp::spin_until_future_complete(
-      this->get_node_base_interface(),
+      client_node_,
       future_goal_handle) != rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Send goal call failed");
