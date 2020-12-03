@@ -36,9 +36,9 @@ please cite this work in your papers!
 
 ## Build Status
 
-| Service | Dashing | Eloquent | Foxy | Main |
+| Service | Dashing | Foxy | Main |
 | :---: | :---: | :---: | :---: | :---: |
-| ROS Build Farm | [![Build Status](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/) | [![Build Status](http://build.ros2.org/job/Edev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Edev__navigation2__ubuntu_bionic_amd64/) | [![Build Status](http://build.ros2.org/job/Fdev__navigation2__ubuntu_focal_amd64/badge/icon)](http://build.ros2.org/job/Fdev__navigation2__ubuntu_focal_amd64/) | N/A |
+| ROS Build Farm | [![Build Status](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/) | [![Build Status](http://build.ros2.org/job/Fdev__navigation2__ubuntu_focal_amd64/badge/icon)](http://build.ros2.org/job/Fdev__navigation2__ubuntu_focal_amd64/) | N/A |
 | Circle CI | N/A | N/A | N/A | [![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/main.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/main) |
 
 
