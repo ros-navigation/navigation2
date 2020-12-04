@@ -175,8 +175,7 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
     // optionally add max_msg_per_second = 25 (default) here
     try {
       bt_->addGrootMonitoring(&tree_, zmq_publisher_port, zmq_server_port);
-    }
-    catch (const std::logic_error & e) {
+    } catch (const std::logic_error & e) {
       RCLCPP_ERROR(get_logger(), "ZMQ already enabled, Error: %s", e.what());
     }
   }
