@@ -26,7 +26,6 @@
   <test_depend>ament_cmake_pytest</test_depend>
   <test_depend>launch</test_depend>
   <test_depend>launch_testing</test_depend>
-  <test_depend>python-zmq</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
