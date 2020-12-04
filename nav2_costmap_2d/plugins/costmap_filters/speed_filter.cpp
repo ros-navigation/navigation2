@@ -48,7 +48,7 @@ namespace nav2_costmap_2d
 {
 
 SpeedFilter::SpeedFilter()
-: speed_limit_topic_(""), filter_info_sub_(nullptr), mask_sub_(nullptr),
+: filter_info_sub_(nullptr), mask_sub_(nullptr),
   speed_limit_pub_(nullptr), filter_mask_(nullptr), mask_frame_(""), global_frame_(""),
   speed_limit_(NO_SPEED_LIMIT), speed_limit_prev_(NO_SPEED_LIMIT)
 {
@@ -65,8 +65,9 @@ void SpeedFilter::initializeFilter(
   }
 
   // Declare "speed_limit_topic" parameter specific to SpeedFilter only
+  std::string speed_limit_topic;
   declareParameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
-  node->get_parameter(name_ + "." + "speed_limit_topic", speed_limit_topic_);
+  node->get_parameter(name_ + "." + "speed_limit_topic", speed_limit_topic);
 
   filter_info_topic_ = filter_info_topic;
   // Setting new costmap filter info subscriber
@@ -83,13 +84,12 @@ void SpeedFilter::initializeFilter(
 
   // Create new speed limit publisher
   speed_limit_pub_ = node->create_publisher<nav2_msgs::msg::SpeedLimit>(
-    speed_limit_topic_, rclcpp::QoS(10));
+    speed_limit_topic, rclcpp::QoS(10));
   speed_limit_pub_->on_activate();
 
   // Reset speed conversion states
   base_ = BASE_DEFAULT;
   multiplier_ = MULTIPLIER_DEFAULT;
-  percentage_ = true;
 }
 
 void SpeedFilter::filterInfoCallback(
@@ -120,7 +120,6 @@ void SpeedFilter::filterInfoCallback(
   multiplier_ = msg->multiplier;
   if (msg->type == SPEED_FILTER_PERCENT) {
     // Using speed limit in % of maximum speed
-    percentage_ = true;
     RCLCPP_INFO(
       logger_,
       "SpeedFilter: Using expressed in a percent from maximum speed"
@@ -129,10 +128,10 @@ void SpeedFilter::filterInfoCallback(
   } else if (msg->type == SPEED_FILTER_ABSOLUTE) {
     // Speed limit in absolute values is not implemented yet
     RCLCPP_ERROR(logger_, "SpeedFilter: Speed limit in absolute values is not implemented yet");
-    throw std::runtime_error("Mode is not implemented yet");
+    return;
   } else {
     RCLCPP_ERROR(logger_, "SpeedFilter: Mode is not supported");
-    throw std::runtime_error("Mode is not supported by SpeedFilter");
+    return;
   }
 
   mask_topic_ = msg->filter_mask_topic;
@@ -264,41 +263,41 @@ void SpeedFilter::process(
 
   // Getting filter_mask data from cell where the robot placed and
   // calculating speed limit value
-  int8_t data = getMaskData(mask_robot_i, mask_robot_j);
-  if (data != SPEED_MASK_NO_LIMIT && data != SPEED_MASK_UNKNOWN) {
-    speed_limit_ = data * multiplier_ + base_;
-    if (percentage_) {
-      if (speed_limit_ < 0.0) {
-        RCLCPP_WARN(
-          logger_,
-          "SpeedFilter: Speed limit in filter_mask[%i, %i] is less than 0%, "
-          "which can not be true. Setting it to 0% value.",
-          mask_robot_i, mask_robot_j);
-        speed_limit_ = NO_SPEED_LIMIT;
-      }
-      if (speed_limit_ > 100.0) {
-        RCLCPP_WARN(
-          logger_,
-          "SpeedFilter: Speed limit in filter_mask[%i, %i] is higher than 100%, "
-          "which can not be true. Setting it to 100% value.",
-          mask_robot_i, mask_robot_j);
-        speed_limit_ = 100.0;
-      }
-    }
-  } else {
-    // Corresponding filter mask cell is free or unknown.
+  int8_t speed_mask_data = getMaskData(mask_robot_i, mask_robot_j);
+  if (speed_mask_data == SPEED_MASK_NO_LIMIT) {
+    // Corresponding filter mask cell is free.
     // Setting no speed limit there.
     speed_limit_ = NO_SPEED_LIMIT;
+  } else if (speed_mask_data == SPEED_MASK_UNKNOWN) {
+    // Corresponding filter mask cell is unknown.
+    // Do nothing.
+    return;
+  } else {
+    speed_limit_ = speed_mask_data * multiplier_ + base_;
+    if (speed_limit_ < 0.0) {
+      RCLCPP_WARN(
+        logger_,
+        "SpeedFilter: Speed limit in filter_mask[%i, %i] is less than 0%, "
+        "which can not be true. Setting it to 0% value.",
+        mask_robot_i, mask_robot_j);
+      speed_limit_ = NO_SPEED_LIMIT;
+    }
+    if (speed_limit_ > 100.0) {
+      RCLCPP_WARN(
+        logger_,
+        "SpeedFilter: Speed limit in filter_mask[%i, %i] is higher than 100%, "
+        "which can not be true. Setting it to 100% value.",
+        mask_robot_i, mask_robot_j);
+      speed_limit_ = 100.0;
+    }
   }
 
   if (speed_limit_ != speed_limit_prev_) {
     if (speed_limit_ != NO_SPEED_LIMIT) {
-      if (percentage_) {
-        RCLCPP_DEBUG(
-          logger_,
-          "SpeedFilter: Speed limit is set to %f of maximum speed",
-          speed_limit_);
-      }
+      RCLCPP_DEBUG(
+        logger_,
+        "SpeedFilter: Speed limit is set to %f%% of maximum speed",
+        speed_limit_);
     } else {
       RCLCPP_DEBUG(logger_, "SpeedFilter: Speed limit is set to its default value");
     }
@@ -308,7 +307,7 @@ void SpeedFilter::process(
       std::make_unique<nav2_msgs::msg::SpeedLimit>();
     msg->header.frame_id = global_frame_;
     msg->header.stamp = clock_->now();
-    msg->percentage = percentage_;
+    msg->percentage = true;
     msg->speed_limit = speed_limit_;
     speed_limit_pub_->publish(std::move(msg));
 

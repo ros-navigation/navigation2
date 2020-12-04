@@ -101,8 +101,6 @@ private:
   void filterInfoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg);
   void maskCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
 
-  std::string speed_limit_topic_;  // Name of speed limiting topic
-
   rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
 
@@ -114,7 +112,6 @@ private:
   std::string global_frame_;  // Frame of currnet layer (master_grid)
 
   double base_, multiplier_;
-  bool percentage_;
   double speed_limit_, speed_limit_prev_;
 };
 

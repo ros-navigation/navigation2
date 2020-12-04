@@ -211,7 +211,7 @@ protected:
   void publishMaps(uint8_t type, double base, double multiplier);
   void rePublishInfo(uint8_t type, double base, double multiplier);
   void rePublishMask();
-  void createSpeedFilter(const std::string & global_frame);
+  bool createSpeedFilter(const std::string & global_frame);
   void createTFBroadcaster(const std::string & mask_frame, const std::string & global_frame);
 
   // Test methods
@@ -293,7 +293,7 @@ void TestNode::rePublishInfo(uint8_t type, double base, double multiplier)
   info_publisher_ = std::make_shared<InfoPublisher>(type, base, multiplier);
   // Allow both CostmapFilterInfo and filter mask subscribers
   // to receive a new message
-  waitSome(500ms);
+  waitSome(100ms);
 }
 
 void TestNode::rePublishMask()
@@ -301,7 +301,7 @@ void TestNode::rePublishMask()
   mask_publisher_.reset();
   mask_publisher_ = std::make_shared<MaskPublisher>(*mask_);
   // Allow filter mask subscriber to receive a new message
-  waitSome(500ms);
+  waitSome(100ms);
 }
 
 nav2_msgs::msg::SpeedLimit::SharedPtr TestNode::getSpeedLimit()
@@ -323,7 +323,7 @@ nav2_msgs::msg::SpeedLimit::SharedPtr TestNode::waitSpeedLimit()
       return speed_limit_subscriber_->getSpeedLimit();
     }
     rclcpp::spin_some(speed_limit_subscriber_);
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(10ms);
   }
   return nullptr;
 }
@@ -334,11 +334,11 @@ void TestNode::waitSome(const std::chrono::nanoseconds & duration)
   while (rclcpp::ok() && node_->now() - start_time <= rclcpp::Duration(duration)) {
     rclcpp::spin_some(node_->get_node_base_interface());
     rclcpp::spin_some(speed_limit_subscriber_);
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(10ms);
   }
 }
 
-void TestNode::createSpeedFilter(const std::string & global_frame)
+bool TestNode::createSpeedFilter(const std::string & global_frame)
 {
   node_ = std::make_shared<nav2_util::LifecycleNode>("test_node");
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
@@ -367,10 +367,16 @@ void TestNode::createSpeedFilter(const std::string & global_frame)
   speed_limit_subscriber_ = std::make_shared<SpeedLimitSubscriber>(SPEED_LIMIT_TOPIC);
 
   // Wait until mask will be received by SpeedFilter
+  const std::chrono::nanoseconds timeout = 500ms;
+  rclcpp::Time start_time = node_->now();
   while (!speed_filter_->isActive()) {
+    if (node_->now() - start_time > rclcpp::Duration(timeout)) {
+      return false;
+    }
     rclcpp::spin_some(node_->get_node_base_interface());
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(10ms);
   }
+  return true;
 }
 
 void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::string & global_frame)
@@ -393,7 +399,7 @@ void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::st
   tf_broadcaster_->sendTransform(*transform_);
 
   // Allow tf_buffer_ to be filled by listener
-  waitSome(200ms);
+  waitSome(100ms);
 }
 
 void TestNode::verifySpeedLimit(
@@ -436,7 +442,7 @@ void TestNode::testFullMask(
   pose.x = 1 - tr_x;
   pose.y = -tr_y;
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
-  speed_limit = waitSpeedLimit();
+  speed_limit = getSpeedLimit();
   ASSERT_TRUE(speed_limit == nullptr);
 
   // data in range [1..100]
@@ -608,7 +614,7 @@ TEST_F(TestNode, testPercentSpeedLimit)
   // Initilize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
-  createSpeedFilter("map");
+  EXPECT_TRUE(createSpeedFilter("map"));
 
   // Test SpeedFilter
   testFullMask(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, NO_TRANSLATION, NO_TRANSLATION);
@@ -623,7 +629,7 @@ TEST_F(TestNode, testIncorrectPercentSpeedLimit)
   // Initilize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, -50.0, 2.0);
-  createSpeedFilter("map");
+  EXPECT_TRUE(createSpeedFilter("map"));
 
   // Test SpeedFilter
   testIncorrectPercentage(nav2_costmap_2d::SPEED_FILTER_PERCENT, -50.0, 2.0);
@@ -638,7 +644,7 @@ TEST_F(TestNode, testAbsoluteSpeedLimit)
   // Initilize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, -1.23, 4.5);
-  ASSERT_ANY_THROW(createSpeedFilter("map"));
+  EXPECT_FALSE(createSpeedFilter("map"));
 
   // Clean-up
   speed_filter_->resetFilter();
@@ -650,7 +656,7 @@ TEST_F(TestNode, testOutOfBounds)
   // Initilize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
-  createSpeedFilter("map");
+  EXPECT_TRUE(createSpeedFilter("map"));
 
   // Test SpeedFilter
   testOutOfMask(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
@@ -665,7 +671,7 @@ TEST_F(TestNode, testInfoRePublish)
   // Initilize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 1.2, 3.4);
-  createSpeedFilter("map");
+  EXPECT_TRUE(createSpeedFilter("map"));
 
   // Re-publish filter info (with incorrect base and multiplier)
   // and test that everything is working after
@@ -685,7 +691,7 @@ TEST_F(TestNode, testMaskRePublish)
   // Initilize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.1, 0.2);
-  createSpeedFilter("map");
+  EXPECT_TRUE(createSpeedFilter("map"));
 
   // Re-publish filter mask and test that everything is working after
   rePublishMask();
@@ -704,7 +710,11 @@ TEST_F(TestNode, testIncorrectFilterType)
   // Initilize test system
   createMaps("map");
   publishMaps(INCORRECT_TYPE, -1.23, 4.5);
-  EXPECT_THROW(createSpeedFilter("map"), std::runtime_error);
+  EXPECT_FALSE(createSpeedFilter("map"));
+
+  // Clean-up
+  speed_filter_->resetFilter();
+  reset();
 }
 
 TEST_F(TestNode, testDifferentFrame)
@@ -712,7 +722,7 @@ TEST_F(TestNode, testDifferentFrame)
   // Initilize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
-  createSpeedFilter("odom");
+  EXPECT_TRUE(createSpeedFilter("odom"));
   createTFBroadcaster("map", "odom");
 
   // Test SpeedFilter

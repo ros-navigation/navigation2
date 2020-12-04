@@ -118,7 +118,9 @@ class NavTester(Node):
                                                      self.planCallback, volatile_qos)
         elif self.test_type == TestType.SPEED:
             self.speed_it = 0
+            # Expected chain of speed limits
             self.limits = [50.0, 0.0]
+            # Permissive array: all received speed limits must match to "limits" from above
             self.limit_passed = [False, False]
             self.plan_sub = self.create_subscription(SpeedLimit, 'speed_limit',
                                                      self.speedLimitCallback, volatile_qos)
@@ -200,6 +202,7 @@ class NavTester(Node):
             return True
         return False
 
+    # Checks that (x, y) position does not belong to a keepout zone.
     def checkKeepout(self, x, y):
         if not self.mask_received:
             self.warn_msg('Filter mask was not received')
@@ -209,6 +212,13 @@ class NavTester(Node):
             return False
         return True
 
+    # Checks that currently received speed_limit is equal to the it-th item
+    # of expected speed "limits" array.
+    # If so, sets it-th item of permissive array "limit_passed" to be true.
+    # Otherwise it will be remained to be false.
+    # Also verifies that speed limit messages received no more than N-times
+    # (where N - is the length of "limits" array),
+    # otherwise sets overall "filter_test_result" to be false.
     def checkSpeed(self, it, speed_limit):
         if it >= len(self.limits):
             self.error_msg('Got excess speed limit')
@@ -349,6 +359,11 @@ def test_RobotMovesToGoal(robot_tester):
     return robot_tester.reachesGoal(timeout=60, distance=0.5)
 
 
+# Tests that all received speed limits are correct:
+# If overall "filter_test_result" is true
+# checks that all items in "limit_passed" permissive array are also true.
+# In other words, it verifies that all speed limits are received
+# exactly (by count and values) as expected by "limits" array.
 def test_SpeedLimitsAllCorrect(robot_tester):
     if not robot_tester.filter_test_result:
         return False

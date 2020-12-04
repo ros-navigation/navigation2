@@ -108,10 +108,10 @@ void KinematicsHandler::initialize(
   nh->get_parameter(plugin_name + ".decel_lim_y", kinematics.decel_lim_y_);
   nh->get_parameter(plugin_name + ".decel_lim_theta", kinematics.decel_lim_theta_);
 
-  kinematics.entire_max_vel_x_ = kinematics.max_vel_x_;
-  kinematics.entire_max_vel_y_ = kinematics.max_vel_y_;
-  kinematics.entire_max_speed_xy_ = kinematics.max_speed_xy_;
-  kinematics.entire_max_vel_theta_ = kinematics.max_vel_theta_;
+  kinematics.base_max_vel_x_ = kinematics.max_vel_x_;
+  kinematics.base_max_vel_y_ = kinematics.max_vel_y_;
+  kinematics.base_max_speed_xy_ = kinematics.max_speed_xy_;
+  kinematics.base_max_vel_theta_ = kinematics.max_vel_theta_;
 
   // Setup callback for changes to parameters.
   parameters_client_ = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -135,16 +135,16 @@ void KinematicsHandler::setSpeedLimit(const double & speed_limit)
 
   if (speed_limit == nav2_costmap_2d::NO_SPEED_LIMIT) {
     // Restore default value
-    kinematics.max_speed_xy_ = kinematics.entire_max_speed_xy_;
-    kinematics.max_vel_x_ = kinematics.entire_max_vel_x_;
-    kinematics.max_vel_y_ = kinematics.entire_max_vel_y_;
-    kinematics.max_vel_theta_ = kinematics.entire_max_vel_theta_;
+    kinematics.max_speed_xy_ = kinematics.base_max_speed_xy_;
+    kinematics.max_vel_x_ = kinematics.base_max_vel_x_;
+    kinematics.max_vel_y_ = kinematics.base_max_vel_y_;
+    kinematics.max_vel_theta_ = kinematics.base_max_vel_theta_;
   } else {
     // Speed limit is expressed in % from maximum speed of robot
-    kinematics.max_speed_xy_ = kinematics.entire_max_speed_xy_ * speed_limit / 100.0;
-    kinematics.max_vel_x_ = kinematics.entire_max_vel_x_ * speed_limit / 100.0;
-    kinematics.max_vel_y_ = kinematics.entire_max_vel_y_ * speed_limit / 100.0;
-    kinematics.max_vel_theta_ = kinematics.entire_max_vel_theta_ * speed_limit / 100.0;
+    kinematics.max_speed_xy_ = kinematics.base_max_speed_xy_ * speed_limit / 100.0;
+    kinematics.max_vel_x_ = kinematics.base_max_vel_x_ * speed_limit / 100.0;
+    kinematics.max_vel_y_ = kinematics.base_max_vel_y_ * speed_limit / 100.0;
+    kinematics.max_vel_theta_ = kinematics.base_max_vel_theta_ * speed_limit / 100.0;
   }
 
   // Do not forget to update max_speed_xy_sq_ as well
@@ -171,19 +171,19 @@ KinematicsHandler::on_parameter_event_callback(
         kinematics.min_vel_y_ = value.double_value;
       } else if (name == plugin_name_ + ".max_vel_x") {
         kinematics.max_vel_x_ = value.double_value;
-        kinematics.entire_max_vel_x_ = kinematics.max_vel_x_;
+        kinematics.base_max_vel_x_ = kinematics.max_vel_x_;
       } else if (name == plugin_name_ + ".max_vel_y") {
         kinematics.max_vel_y_ = value.double_value;
-        kinematics.entire_max_vel_y_ = kinematics.max_vel_y_;
+        kinematics.base_max_vel_y_ = kinematics.max_vel_y_;
       } else if (name == plugin_name_ + ".max_vel_theta") {
         kinematics.max_vel_theta_ = value.double_value;
-        kinematics.entire_max_vel_theta_ = kinematics.max_vel_theta_;
+        kinematics.base_max_vel_theta_ = kinematics.max_vel_theta_;
       } else if (name == plugin_name_ + ".min_speed_xy") {
         kinematics.min_speed_xy_ = value.double_value;
         kinematics.min_speed_xy_sq_ = kinematics.min_speed_xy_ * kinematics.min_speed_xy_;
       } else if (name == plugin_name_ + ".max_speed_xy") {
         kinematics.max_speed_xy_ = value.double_value;
-        kinematics.entire_max_speed_xy_ = kinematics.max_speed_xy_;
+        kinematics.base_max_speed_xy_ = kinematics.max_speed_xy_;
       } else if (name == plugin_name_ + ".min_speed_theta") {
         kinematics.min_speed_theta_ = value.double_value;
         kinematics.max_speed_xy_sq_ = kinematics.max_speed_xy_ * kinematics.max_speed_xy_;

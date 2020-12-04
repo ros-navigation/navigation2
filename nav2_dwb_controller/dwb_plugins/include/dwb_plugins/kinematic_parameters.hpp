@@ -80,13 +80,13 @@ protected:
   double min_vel_y_{0};
   double max_vel_x_{0};
   double max_vel_y_{0};
-  double entire_max_vel_x_{0};
-  double entire_max_vel_y_{0};
+  double base_max_vel_x_{0};
+  double base_max_vel_y_{0};
   double max_vel_theta_{0};
-  double entire_max_vel_theta_{0};
+  double base_max_vel_theta_{0};
   double min_speed_xy_{0};
   double max_speed_xy_{0};
-  double entire_max_speed_xy_{0};
+  double base_max_speed_xy_{0};
   double min_speed_theta_{0};
   double acc_lim_x_{0};
   double acc_lim_y_{0};

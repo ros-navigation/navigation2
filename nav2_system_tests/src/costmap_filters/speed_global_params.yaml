@@ -16,7 +16,7 @@ amcl:
     laser_likelihood_max_dist: 2.0
     laser_max_range: 100.0
     laser_min_range: -1.0
-    laser_model_type: "likelihood_field_prob"
+    laser_model_type: "beam"
     max_beams: 60
     max_particles: 2000
     min_particles: 500
