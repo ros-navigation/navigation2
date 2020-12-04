@@ -271,6 +271,11 @@ void SpeedFilter::process(
   } else if (speed_mask_data == SPEED_MASK_UNKNOWN) {
     // Corresponding filter mask cell is unknown.
     // Do nothing.
+    RCLCPP_ERROR(
+      logger_,
+      "SpeedFilter: Found unknown cell in filter_mask[%i, %i], "
+      "which is invalid for this kind of filter",
+      mask_robot_i, mask_robot_j);
     return;
   } else {
     speed_limit_ = speed_mask_data * multiplier_ + base_;
