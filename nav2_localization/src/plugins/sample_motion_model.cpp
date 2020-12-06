@@ -33,21 +33,26 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
     {	
         RCLCPP_ERROR(node_->get_logger(), "delta_rot_1 is NAN or INF");	
         delta_rot_1 = 0.0; // TODO: consider a different value	
-    }	
+    }
+
+    // Avoid calculating this angle for very small transitions (e.g. on-the-spot rotation)
+    if(hypot(x_bar_prime-x_bar, y_bar_prime-y_bar) < 0.01)
+        delta_rot_1 = 0.0;
+
     double delta_trans = hypot(x_bar_prime-x_bar, y_bar_prime-y_bar);	
     double delta_rot_2 = AngleUtils::angle_diff(AngleUtils::angle_diff(theta_bar_prime, theta_bar), delta_rot_1);	
 
-    std::random_device device_;	
-    std::mt19937 generator_(device_());	
+    std::random_device device;	
+    std::mt19937 generator(device());
 
-    std::normal_distribution<double> delta_rot_1_noise_dist(0.0, sqrt(alpha1_*delta_rot_1 + alpha2_*delta_trans));	
-    double delta_rot_1_hat = delta_rot_1 - delta_rot_1_noise_dist(generator_);	
+    std::normal_distribution<double> delta_rot_1_noise_dist(0.0, sqrt(alpha1_*pow(delta_rot_1, 2) + alpha2_*pow(delta_trans, 2)));	
+    double delta_rot_1_hat = AngleUtils::angle_diff(delta_rot_1, delta_rot_1_noise_dist(generator));
 
-    std::normal_distribution<double> delta_trans_noise_dist(0.0, sqrt(alpha3_*delta_trans + alpha4_*(delta_rot_1+delta_rot_2)));	
-    double delta_trans_hat = delta_trans - delta_trans_noise_dist(generator_);	
+    std::normal_distribution<double> delta_trans_noise_dist(0.0, sqrt(alpha3_*pow(delta_trans, 2) + alpha4_*(pow(delta_rot_1, 2) + pow(delta_rot_2, 2))));	
+    double delta_trans_hat = delta_trans - delta_trans_noise_dist(generator);	
 
-    std::normal_distribution<double> delta_rot_2_noise_dist(0.0, sqrt(alpha1_*delta_rot_2 + alpha2_*delta_trans));	
-    double delta_rot_2_hat = delta_rot_2 - delta_rot_2_noise_dist(generator_);	
+    std::normal_distribution<double> delta_rot_2_noise_dist(0.0, sqrt(alpha1_*pow(delta_rot_2, 2) + alpha2_*pow(delta_trans, 2)));
+    double delta_rot_2_hat = AngleUtils::angle_diff(delta_rot_2, delta_rot_2_noise_dist(generator));	
 
     geometry_msgs::msg::TransformStamped most_likely_pose;	
     most_likely_pose.transform.translation.x = x + delta_trans_hat*cos(theta + delta_rot_1_hat);	
