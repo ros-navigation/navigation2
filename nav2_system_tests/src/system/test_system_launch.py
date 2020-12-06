@@ -23,13 +23,12 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch import LaunchService
 from launch.actions import ExecuteProcess, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.launch_context import LaunchContext
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 
 from nav2_common.launch import RewrittenYaml
-
-from launch.launch_context import LaunchContext
 
 
 def generate_launch_description():
@@ -48,11 +47,11 @@ def generate_launch_description():
     context = LaunchContext()
     param_substitutions = {}
 
-    if (os.getenv('ASTAR') == "True"):
-        param_substitutions.update({'use_astar': "True"})
+    if (os.getenv('ASTAR') == 'True'):
+        param_substitutions.update({'use_astar': 'True'})
 
-    if (os.getenv('GROOT_MONITORING') == "True"):
-        param_substitutions.update({'enable_groot_monitoring': "True"})
+    if (os.getenv('GROOT_MONITORING') == 'True'):
+        param_substitutions.update({'enable_groot_monitoring': 'True'})
 
     configured_params = RewrittenYaml(
         source_file=params_file,
