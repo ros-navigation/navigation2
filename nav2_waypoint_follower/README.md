@@ -27,18 +27,11 @@ Neither is better than the other, it highly depends on the tasks your robot(s) a
 
 ## Nav2 GPS Waypoint Follower
 
-`nav2_waypoint_follower` provides an action server interface that accepts GPS waypoint following requests by using tools provided by `robot_localization` and `nav2_waypoint_follower` itself.  The action for GPS waypoint following has properties as; 
+`nav2_waypoint_follower` provides an action server named `FollowGPSWaypoints` which accepts GPS waypoint following requests by using tools provided by `robot_localization` and `nav2_waypoint_follower` itself.
 
-```yaml
-#goal definition
-sensor_msgs/NavSatFix[] waypoints
----
-#result definition
-int32[] missed_waypoints
----
-#feedback
-uint32 current_waypoint
-```
+`robot_localization`'s `navsat_transform_node` provides a service `fromLL`, which is used to convert pure GPS coordinates(longitude, latitude, alitude)
+to cartesian coordinates in map frame(x,y), then the existent action named `FollowWaypoints` from `nav2_waypoint_follower` is used to get robot go through each converted waypoints. 
+The action msg definition for GPS waypoint following can be found [here](https://github.com/ros-planning/navigation2/blob/main/nav2_msgs/action/FollowGPSWaypoints.action); 
 
 In a common use case, an client node can read a set of GPS waypoints from a YAML file an create a client to action server named as `FollowGPSWaypoints`.  
 For instance;

@@ -61,11 +61,8 @@ public:
 
   // Shorten the types for GPS waypoint following
   using ActionTGPS = nav2_msgs::action::FollowGPSWaypoints;
-  using ClientTGPS = nav2_msgs::action::FollowWaypoints;
   using ActionServerGPS = nav2_util::SimpleActionServer<ActionTGPS>;
-  using ActionClientGPS = rclcpp_action::Client<ClientTGPS>;
-  using WaypointFollowerGoalHandle =
-    rclcpp_action::ClientGoalHandle<ClientTGPS>;
+
   /**
    * @brief A constructor for nav2_waypoint_follower::WaypointFollower class
    */
@@ -110,21 +107,30 @@ protected:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
+   * @brief Templated function to perform internal logic behind waypoint following,
+   *        Both GPS and non GPS waypoint following callbacks makes use of this function when a client asked to do so.
+   *        Callbacks fills in appropriate types for the tempelated types, see followWaypointCallback funtions for details.
+   *
+   * @tparam T action_server
+   * @tparam U poses
+   * @tparam V feedback
+   * @tparam Z result
+   * @param action_server
+   * @param poses
+   * @param feedback
+   * @param result
+   */
+  template<typename T, typename U, typename V, typename Z>
+  void followWaypointsLogic(
+    const T & action_server,
+    const U & poses,
+    const V & feedback,
+    const Z & result);
+
+  /**
    * @brief Action server callbacks
    */
-  void followWaypoints();
-
-  /**
-   * @brief Action client result callback
-   * @param result Result of action server updated asynchronously
-   */
-  void resultCallback(const rclcpp_action::ClientGoalHandle<ClientT>::WrappedResult & result);
-
-  /**
-   * @brief Action client goal response callback
-   * @param goal Response of action server updated asynchronously
-   */
-  void goalResponseCallback(const rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr & goal);
+  void followWaypointsCallback();
 
   /**
    * @brief send robot through each of GPS
@@ -133,7 +139,21 @@ protected:
    *
    * @param waypoints, acquired from action client
    */
-  void followGPSWaypoints();
+  void followGPSWaypointsCallback();
+
+  /**
+ * @brief Action client result callback
+ * @param result Result of action server updated asynchronously
+ */
+  template<typename T>
+  void resultCallback(const T & result);
+
+  /**
+   * @brief Action client goal response callback
+   * @param goal Response of action server updated asynchronously
+   */
+  template<typename T>
+  void goalResponseCallback(const T & goal);
 
 /**
  * @brief given some gps_waypoints, converts them to map frame using robot_localization's service `fromLL`.
@@ -150,36 +170,21 @@ protected:
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & parent_node,
     const rclcpp::Client<robot_localization::srv::FromLL>::SharedPtr & fromll_client);
 
-  /**
-   * @brief Action client result callback
-   * @param result Result of action server updated asynchronously
-   */
-  void GPSResultCallback(const rclcpp_action::ClientGoalHandle<ClientTGPS>::WrappedResult & result);
-
-  /**
-   * @brief Action client goal response callback
-   * @param goal Response of action server updated asynchronously
-   */
-  void GPSGoalResponseCallback(const rclcpp_action::ClientGoalHandle<ClientTGPS>::SharedPtr & goal);
+  // Common vars used for both GPS and cartesian point following
+  rclcpp::Node::SharedPtr client_node_;
+  std::vector<int> failed_ids_;
+  int loop_rate_;
+  bool stop_on_failure_;
 
   // Our action server for waypoint following
   std::unique_ptr<ActionServer> action_server_;
   ActionClient::SharedPtr nav_to_pose_client_;
-  rclcpp::Node::SharedPtr nav_to_pose_client_node_;
   std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future_goal_handle_;
-  bool stop_on_failure_;
   ActionStatus current_goal_status_;
-  int loop_rate_;
-  std::vector<int> failed_ids_;
 
   // Our action server for GPS waypoint following
   std::unique_ptr<ActionServerGPS> gps_action_server_;
   rclcpp::Client<robot_localization::srv::FromLL>::SharedPtr from_ll_to_map_client_;
-  ActionClientGPS::SharedPtr waypoint_follower_action_client_;
-  rclcpp::Node::SharedPtr waypoint_follower_client_node_;
-  ActionStatus gps_current_goal_status_;
-  ClientTGPS::Goal waypoint_follower_goal_;
-  WaypointFollowerGoalHandle::SharedPtr waypoint_follower_goal_handle_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
 
   // Task Execution At Waypoint Plugin
