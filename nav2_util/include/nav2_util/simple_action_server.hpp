@@ -34,17 +34,20 @@ class SimpleActionServer
 public:
   typedef std::function<void ()> ExecuteCallback;
 
+  typedef std::function<bool (std::shared_ptr<const typename ActionT::Goal>)> GoalCheckerCallback;
+
   explicit SimpleActionServer(
     typename nodeT::SharedPtr node,
     const std::string & action_name,
     ExecuteCallback execute_callback,
+    GoalCheckerCallback goal_checker_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500))
   : SimpleActionServer(
       node->get_node_base_interface(),
       node->get_node_clock_interface(),
       node->get_node_logging_interface(),
       node->get_node_waitables_interface(),
-      action_name, execute_callback, server_timeout)
+      action_name, execute_callback, goal_checker_callback, server_timeout)
   {}
 
   explicit SimpleActionServer(
@@ -54,6 +57,7 @@ public:
     rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface,
     const std::string & action_name,
     ExecuteCallback execute_callback,
+    GoalCheckerCallback goal_checker_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500))
   : node_base_interface_(node_base_interface),
     node_clock_interface_(node_clock_interface),
@@ -61,6 +65,7 @@ public:
     node_waitables_interface_(node_waitables_interface),
     action_name_(action_name),
     execute_callback_(execute_callback),
+    goal_checker_callback_(goal_checker_callback),
     server_timeout_(server_timeout)
   {
     using namespace std::placeholders;  // NOLINT
@@ -77,12 +82,22 @@ public:
 
   rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID & /*uuid*/,
-    std::shared_ptr<const typename ActionT::Goal>/*goal*/)
+    std::shared_ptr<const typename ActionT::Goal> goal)
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
 
     if (!server_active_) {
       return rclcpp_action::GoalResponse::REJECT;
+    }
+
+    // Only ckeck the goal if a callback was bind
+    if (goal_checker_callback_ != nullptr) {
+      RCLCPP_INFO(
+        node_logging_interface_->get_logger(),
+        "Goal Checker active");
+      if (!goal_checker_callback_(goal)) {
+        return rclcpp_action::GoalResponse::REJECT;
+      }
     }
 
     debug_msg("Received request for goal acceptance");
@@ -330,6 +345,7 @@ protected:
   std::string action_name_;
 
   ExecuteCallback execute_callback_;
+  GoalCheckerCallback goal_checker_callback_;
   std::future<void> execution_future_;
   bool stop_execution_{false};
 
