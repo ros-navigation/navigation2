@@ -32,16 +32,11 @@ public:
 
 	virtual void setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr& map) = 0;
 
-	virtual void setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan) = 0;
-
-	virtual sensor_msgs::msg::LaserScan::ConstSharedPtr getLaserScan() = 0;
-
 	virtual void setLaserPose(const geometry_msgs::msg::TransformStamped& laser_pose) = 0;
 
 protected:
 	nav2_util::LifecycleNode::SharedPtr node_;
 	nav_msgs::msg::OccupancyGrid::SharedPtr map_; // Reference to the 2D occupancy grid map of the environment where the robot is
-	sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan_;
 	geometry_msgs::msg::TransformStamped laser_pose_;
 };  
 } // nav2_localization

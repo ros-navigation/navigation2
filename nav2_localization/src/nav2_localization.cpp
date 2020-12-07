@@ -215,7 +215,7 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
     // we don't want our callbacks to fire until we're in the active state
     if (!get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {return;}
 
-    matcher2d_->setLaserScan(laser_scan);
+	solver_->setLaserScan(laser_scan);
     geometry_msgs::msg::TransformStamped odom_to_base_transform;
     try
     {

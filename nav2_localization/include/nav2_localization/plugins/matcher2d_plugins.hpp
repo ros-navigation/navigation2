@@ -16,15 +16,11 @@ public:
 	void deactivate();
 	void cleanup();
 
-	double probabilityGet(const sensor_msgs::msg::LaserScan & measurement, const geometry_msgs::msg::TransformStamped & curr_pose) const;
+	double probabilityGet(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan, const sensor_msgs::msg::LaserScan & measurement, const geometry_msgs::msg::TransformStamped & curr_pose) const;
 
 	void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node);
 
 	void setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr& map);
-
-	void setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan);
-
-	sensor_msgs::msg::LaserScan::ConstSharedPtr getLaserScan();
 
 	void setLaserPose(const geometry_msgs::msg::TransformStamped& laser_pose);
 

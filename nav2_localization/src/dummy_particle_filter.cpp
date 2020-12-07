@@ -13,7 +13,7 @@ void DummyParticleFilter::prediction_step(const SampleMotionModel::Ptr &motion_s
 {}
 
 void DummyParticleFilter::update_step(const Matcher2d::Ptr &matcher2d,
-									 const sensor_msgs::msg::LaserScan &measurement)
+									  const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan)
 {}
 
 geometry_msgs::msg::TransformStamped DummyParticleFilter::get_most_likely_pose()

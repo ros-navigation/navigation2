@@ -29,26 +29,27 @@ void LikelihoodFieldMatcher2d::configure(const rclcpp_lifecycle::LifecycleNode::
 }
 
 double LikelihoodFieldMatcher2d::probabilityGet(
+	const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan,
 	const sensor_msgs::msg::LaserScan & measurement,
 	const geometry_msgs::msg::TransformStamped & curr_pose) const
 {
 	double q = 1;
 
 	// in case the user specfies more beams than is avaiable
-	int max_number_of_beams = std::min(max_number_of_beams, static_cast<int>(laser_scan_->ranges.size()));
+	int max_number_of_beams = std::min(max_number_of_beams, static_cast<int>(laser_scan->ranges.size()));
 	for(int i=0; i<max_number_of_beams; i++)
 	{
-		if(laser_scan_->ranges[i]<z_max_ || laser_scan_->ranges[i]>z_min_) // within sensor range
+		if(laser_scan->ranges[i]<z_max_ || laser_scan->ranges[i]>z_min_) // within sensor range
 		{
 			double x_z_kt = curr_pose.transform.translation.x +
 							laser_pose_.transform.translation.x * cos(tf2::getYaw(curr_pose.transform.rotation)) -
 							laser_pose_.transform.translation.y * sin(tf2::getYaw(curr_pose.transform.rotation)) +
-							laser_scan_->ranges[i] * 
+							laser_scan->ranges[i] * 
 							cos(tf2::getYaw(curr_pose.transform.rotation) + tf2::getYaw(laser_pose_.transform.rotation));
 			double y_z_kt = curr_pose.transform.translation.y +
 							laser_pose_.transform.translation.y * cos(tf2::getYaw(curr_pose.transform.rotation)) +
 							laser_pose_.transform.translation.x * sin(tf2::getYaw(curr_pose.transform.rotation)) +
-							laser_scan_->ranges[i] * 
+							laser_scan->ranges[i] * 
 							sin(tf2::getYaw(curr_pose.transform.rotation) + tf2::getYaw(laser_pose_.transform.rotation));
 			int8_t end_point_index = MapUtils::coordinates_to_index(x_z_kt, y_z_kt, map_->info.width);
 			double dist_prob = pre_computed_likelihood_field_.at(end_point_index);
@@ -78,16 +79,6 @@ void LikelihoodFieldMatcher2d::setMap(const nav_msgs::msg::OccupancyGrid::Shared
 {
 	map_ = map;
 	preComputeLikelihoodField();	// TODO: is this the best place for this?
-}
-
-void LikelihoodFieldMatcher2d::setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan)
-{
-	laser_scan_ = laser_scan;
-}
-
-sensor_msgs::msg::LaserScan::ConstSharedPtr LikelihoodFieldMatcher2d::getLaserScan()
-{
-	return laser_scan_;
 }
 
 void LikelihoodFieldMatcher2d::preComputeLikelihoodField()

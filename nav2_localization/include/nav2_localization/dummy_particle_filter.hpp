@@ -25,7 +25,7 @@ public:
         				 const geometry_msgs::msg::TransformStamped& curr_odom,
 						 const geometry_msgs::msg::TransformStamped& prev_pose);
 	void update_step(const Matcher2d::Ptr &matcher2d,
-					 const sensor_msgs::msg::LaserScan &measurement);
+					 const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan);
 	geometry_msgs::msg::TransformStamped get_most_likely_pose();
 
 private:
