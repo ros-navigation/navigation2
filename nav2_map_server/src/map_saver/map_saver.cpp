@@ -47,7 +47,7 @@ MapSaver::MapSaver()
   RCLCPP_INFO(get_logger(), "Creating");
 
   save_map_timeout_ = std::make_shared<rclcpp::Duration>(
-    std::chrono::milliseconds(declare_parameter("save_map_timeout", 2000)));
+    rclcpp::Duration::from_seconds(declare_parameter("save_map_timeout", 2.0)));
 
   free_thresh_default_ = declare_parameter("free_thresh_default", 0.25),
   occupied_thresh_default_ = declare_parameter("occupied_thresh_default", 0.65);
