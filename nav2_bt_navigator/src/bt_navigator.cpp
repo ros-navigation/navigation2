@@ -161,9 +161,6 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
     std::istreambuf_iterator<char>(xml_file),
     std::istreambuf_iterator<char>());
 
-  RCLCPP_DEBUG(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename.c_str());
-  RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string.c_str());
-
   // Create the Behavior Tree from the XML input
   tree_ = bt_->createTreeFromText(xml_string, blackboard_);
   current_bt_xml_filename_ = bt_xml_filename;
@@ -266,7 +263,7 @@ BtNavigator::navigateToPose()
       return action_server_->is_cancel_requested();
     };
 
-  std::string bt_xml_filename = action_server_->get_current_goal()->behavior_tree.c_str();
+  std::string bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
 
   // Empty id in request is default for backward compatibility
   bt_xml_filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
@@ -274,8 +271,8 @@ BtNavigator::navigateToPose()
 
   if (!loadBehaviorTree(bt_xml_filename)) {
     RCLCPP_ERROR(
-      get_logger(), "BT file not found: %s. Navigation canceled. Current bt: %s",
-      bt_xml_filename.c_str(), current_bt_xml_filename_.c_str());
+      get_logger(), "BT file not found: %s. Navigation canceled.",
+      bt_xml_filename.c_str());
     action_server_->terminate_current();
     return;
   }
