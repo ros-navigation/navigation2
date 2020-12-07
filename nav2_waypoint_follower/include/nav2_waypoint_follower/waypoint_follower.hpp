@@ -19,19 +19,21 @@
 #include <string>
 #include <vector>
 
+#include "rclcpp_action/rclcpp_action.hpp"
+#include "pluginlib/class_loader.hpp"
+#include "pluginlib/class_list_macros.hpp"
+#include "sensor_msgs/msg/nav_sat_fix.hpp"
+
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/action/follow_waypoints.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/simple_action_server.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
-
 #include "nav2_util/node_utils.hpp"
-#include "nav2_core/waypoint_task_executor.hpp"
-#include "pluginlib/class_loader.hpp"
-#include "pluginlib/class_list_macros.hpp"
-#include "sensor_msgs/msg/nav_sat_fix.hpp"
 #include "nav2_msgs/action/follow_gps_waypoints.hpp"
+#include "nav2_util/service_client.hpp"
+#include "nav2_core/waypoint_task_executor.hpp"
+
 #include "robot_localization/srv/from_ll.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
@@ -168,7 +170,7 @@ protected:
     const
     std::vector<sensor_msgs::msg::NavSatFix> & gps_waypoints,
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & parent_node,
-    const rclcpp::Client<robot_localization::srv::FromLL>::SharedPtr & fromll_client);
+    nav2_util::ServiceClient<robot_localization::srv::FromLL> & fromll_client);
 
   // Common vars used for both GPS and cartesian point following
   rclcpp::Node::SharedPtr client_node_;
@@ -184,8 +186,7 @@ protected:
 
   // Our action server for GPS waypoint following
   std::unique_ptr<ActionServerGPS> gps_action_server_;
-  rclcpp::Client<robot_localization::srv::FromLL>::SharedPtr from_ll_to_map_client_;
-  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  nav2_util::ServiceClient<robot_localization::srv::FromLL> from_ll_to_map_client_;
 
   // Task Execution At Waypoint Plugin
   pluginlib::ClassLoader<nav2_core::WaypointTaskExecutor>

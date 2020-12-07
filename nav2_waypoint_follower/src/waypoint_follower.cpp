@@ -26,6 +26,7 @@ namespace nav2_waypoint_follower
 
 WaypointFollower::WaypointFollower()
 : nav2_util::LifecycleNode("WaypointFollower", "", false),
+  from_ll_to_map_client_("/fromLL", client_node_),
   waypoint_task_executor_loader_("nav2_waypoint_follower",
     "nav2_core::WaypointTaskExecutor")
 {
@@ -74,13 +75,9 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_waitables_interface(),
     "FollowWaypoints", std::bind(&WaypointFollower::followWaypointsCallback, this));
 
-  callback_group_ = this->create_callback_group(
-    rclcpp::callback_group::CallbackGroupType::MutuallyExclusive);
-  from_ll_to_map_client_ =
-    this->create_client<robot_localization::srv::FromLL>(
+  from_ll_to_map_client_ = nav2_util::ServiceClient<robot_localization::srv::FromLL>(
     "/fromLL",
-    rmw_qos_profile_services_default,
-    callback_group_);
+    client_node_);
 
   gps_action_server_ = std::make_unique<ActionServerGPS>(
     get_node_base_interface(),
@@ -363,43 +360,41 @@ WaypointFollower::convertGPSWaypointstoPosesinMap(
   const
   std::vector<sensor_msgs::msg::NavSatFix> & gps_waypoints,
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & parent_node,
-  const rclcpp::Client<robot_localization::srv::FromLL>::SharedPtr & fromll_client)
+  nav2_util::ServiceClient<robot_localization::srv::FromLL> & fromll_client)
 {
   RCLCPP_INFO(parent_node->get_logger(), "Converting GPS waypoints to Map Frame..");
 
   std::vector<geometry_msgs::msg::PoseStamped> poses_in_map_frame_vector;
   int index_of_gps_waypoints = 0;
   for (auto && curr_gps_waypoint : gps_waypoints) {
-    auto fromLLRequest = std::make_shared<robot_localization::srv::FromLL::Request>();
-    fromLLRequest->ll_point.latitude = curr_gps_waypoint.latitude;
-    fromLLRequest->ll_point.longitude = curr_gps_waypoint.longitude;
-    fromLLRequest->ll_point.altitude = curr_gps_waypoint.altitude;
-    if (!fromll_client->wait_for_service((std::chrono::seconds(1)))) {
+    auto request = std::make_shared<robot_localization::srv::FromLL::Request>();
+    auto response = std::make_shared<robot_localization::srv::FromLL::Response>();
+    request->ll_point.latitude = curr_gps_waypoint.latitude;
+    request->ll_point.longitude = curr_gps_waypoint.longitude;
+    request->ll_point.altitude = curr_gps_waypoint.altitude;
+    fromll_client.wait_for_service((std::chrono::seconds(1)));
+    auto is_conversion_succeeded = fromll_client.invoke(
+      request,
+      response);
+    if (!is_conversion_succeeded) {
       RCLCPP_ERROR(
         parent_node->get_logger(),
-        "fromLL service from robot_localization is not available"
-        "cannot convert GPS waypoints to Map frame poses,"
+        "fromLL service of robot_localization could not convert %i th GPS waypoint to"
+        "Map frame, going to skip this point!"
         "Make sure you have run navsat_transform_node of robot_localization");
-      return std::vector<geometry_msgs::msg::PoseStamped>();
+      index_of_gps_waypoints++;
+      continue;
+    } else {
+      // this poses are assumed to be on global frame (map)
+      geometry_msgs::msg::PoseStamped curr_waypoint_in_map_frame;
+      curr_waypoint_in_map_frame.header.frame_id = "map";
+      curr_waypoint_in_map_frame.header.stamp = parent_node->now();
+      curr_waypoint_in_map_frame.pose.position.x = response->map_point.x;
+      curr_waypoint_in_map_frame.pose.position.y = response->map_point.y;
+      curr_waypoint_in_map_frame.pose.position.z = response->map_point.z;
+      index_of_gps_waypoints++;
+      poses_in_map_frame_vector.push_back(curr_waypoint_in_map_frame);
     }
-    auto inner_client_callback =
-      [&, parent_node](rclcpp::Client<robot_localization::srv::FromLL>::SharedFuture inner_future)
-      {
-        auto result = inner_future.get();
-      };
-    auto inner_future_result = fromll_client->async_send_request(
-      fromLLRequest,
-      inner_client_callback);
-    // this poses are assumed to be on global frame (map)
-    geometry_msgs::msg::PoseStamped curr_waypoint_in_map_frame;
-    curr_waypoint_in_map_frame.header.frame_id = "map";
-    curr_waypoint_in_map_frame.header.stamp = parent_node->now();
-    curr_waypoint_in_map_frame.pose.position.x = inner_future_result.get()->map_point.x;
-    curr_waypoint_in_map_frame.pose.position.y = inner_future_result.get()->map_point.y;
-    curr_waypoint_in_map_frame.pose.position.z = inner_future_result.get()->map_point.z;
-
-    index_of_gps_waypoints++;
-    poses_in_map_frame_vector.push_back(curr_waypoint_in_map_frame);
   }
   RCLCPP_INFO(
     parent_node->get_logger(),
