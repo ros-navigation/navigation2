@@ -23,7 +23,7 @@ repositories:
     type: git
     url: https://github.com/stevemacenski/bond_core.git
     version: fix_deprecation_warning
-  ros/
+  ros/diagnostics:
     type: git
     url: https://github.com/ros/diagnostics.git
     version: ros2-devel  
