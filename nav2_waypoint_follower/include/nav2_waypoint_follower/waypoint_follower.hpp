@@ -114,7 +114,6 @@ protected:
    *        Callbacks fills in appropriate types for the tempelated types, see followWaypointCallback funtions for details.
    *
    * @tparam T action_server
-   * @tparam U poses
    * @tparam V feedback
    * @tparam Z result
    * @param action_server
@@ -122,10 +121,9 @@ protected:
    * @param feedback
    * @param result
    */
-  template<typename T, typename U, typename V, typename Z>
+  template<typename T, typename V, typename Z>
   void followWaypointsLogic(
     const T & action_server,
-    const U & poses,
     const V & feedback,
     const Z & result);
 
@@ -167,10 +165,10 @@ protected:
  * @return std::vector<geometry_msgs::msg::PoseStamped>
  */
   static std::vector<geometry_msgs::msg::PoseStamped> convertGPSWaypointstoPosesinMap(
-    const
-    std::vector<sensor_msgs::msg::NavSatFix> & gps_waypoints,
+    const std::vector<sensor_msgs::msg::NavSatFix> & gps_waypoints,
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & parent_node,
-    nav2_util::ServiceClient<robot_localization::srv::FromLL> & fromll_client);
+    const
+    std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> & fromll_client);
 
   // Common vars used for both GPS and cartesian point following
   rclcpp::Node::SharedPtr client_node_;
@@ -186,7 +184,7 @@ protected:
 
   // Our action server for GPS waypoint following
   std::unique_ptr<ActionServerGPS> gps_action_server_;
-  nav2_util::ServiceClient<robot_localization::srv::FromLL> from_ll_to_map_client_;
+  std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> from_ll_to_map_client_;
 
   // Task Execution At Waypoint Plugin
   pluginlib::ClassLoader<nav2_core::WaypointTaskExecutor>

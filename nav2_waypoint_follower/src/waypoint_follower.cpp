@@ -26,7 +26,6 @@ namespace nav2_waypoint_follower
 
 WaypointFollower::WaypointFollower()
 : nav2_util::LifecycleNode("WaypointFollower", "", false),
-  from_ll_to_map_client_("/fromLL", client_node_),
   waypoint_task_executor_loader_("nav2_waypoint_follower",
     "nav2_core::WaypointTaskExecutor")
 {
@@ -75,7 +74,8 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_waitables_interface(),
     "FollowWaypoints", std::bind(&WaypointFollower::followWaypointsCallback, this));
 
-  from_ll_to_map_client_ = nav2_util::ServiceClient<robot_localization::srv::FromLL>(
+  from_ll_to_map_client_ = std::make_unique<
+    nav2_util::ServiceClient<robot_localization::srv::FromLL>>(
     "/fromLL",
     client_node_);
 
@@ -151,14 +151,27 @@ WaypointFollower::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-template<typename T, typename U, typename V, typename Z>
+template<typename T, typename V, typename Z>
 void WaypointFollower::followWaypointsLogic(
   const T & action_server,
-  const U & poses,
   const V & feedback,
   const Z & result)
 {
   auto goal = action_server->get_current_goal();
+
+  std::vector<geometry_msgs::msg::PoseStamped> poses;
+
+  // compile time static check to decide which block of code to be built
+  if constexpr (std::is_same<T, std::unique_ptr<ActionServer>>::value)
+  {
+    // If normal waypoint following callback was called, we build here
+    poses = goal->poses;
+  } else {
+    // If GPS waypoint following callback was called, we build here
+    poses = convertGPSWaypointstoPosesinMap(
+      goal->waypoints, shared_from_this(),
+      from_ll_to_map_client_);
+  }
 
   if (!action_server || !action_server->is_server_active()) {
     RCLCPP_DEBUG(get_logger(), "Action server inactive. Stopping.");
@@ -193,6 +206,14 @@ void WaypointFollower::followWaypointsLogic(
     if (action_server->is_preempt_requested()) {
       RCLCPP_INFO(get_logger(), "Preempting the goal pose.");
       goal = action_server->accept_pending_goal();
+      if constexpr (std::is_same<T, std::unique_ptr<ActionServer>>::value)
+      {
+        poses = goal->poses;  // Discarded if cond is false
+      } else {
+        poses = convertGPSWaypointstoPosesinMap(
+          goal->waypoints, shared_from_this(),
+          from_ll_to_map_client_);
+      }
       goal_index = 0;
       new_goal = true;
     }
@@ -300,10 +321,9 @@ void WaypointFollower::followWaypointsCallback()
   auto result = std::make_shared<ActionT::Result>();
 
   followWaypointsLogic<std::unique_ptr<ActionServer>,
-    std::vector<geometry_msgs::msg::PoseStamped>, ActionT::Feedback::SharedPtr,
+    ActionT::Feedback::SharedPtr,
     ActionT::Result::SharedPtr>(
     action_server_,
-    action_server_->get_current_goal()->poses,
     feedback, result);
 }
 
@@ -312,14 +332,11 @@ void WaypointFollower::followGPSWaypointsCallback()
   auto feedback = std::make_shared<ActionTGPS::Feedback>();
   auto result = std::make_shared<ActionTGPS::Result>();
 
-  std::vector<geometry_msgs::msg::PoseStamped> poses = convertGPSWaypointstoPosesinMap(
-    gps_action_server_->get_current_goal()->waypoints, shared_from_this(), from_ll_to_map_client_);
-
   followWaypointsLogic<std::unique_ptr<ActionServerGPS>,
-    std::vector<geometry_msgs::msg::PoseStamped>, ActionTGPS::Feedback::SharedPtr,
+    ActionTGPS::Feedback::SharedPtr,
     ActionTGPS::Result::SharedPtr>(
     gps_action_server_,
-    poses, feedback, result);
+    feedback, result);
 }
 
 template<typename T>
@@ -354,26 +371,23 @@ void WaypointFollower::goalResponseCallback(
   }
 }
 
-
 std::vector<geometry_msgs::msg::PoseStamped>
 WaypointFollower::convertGPSWaypointstoPosesinMap(
-  const
-  std::vector<sensor_msgs::msg::NavSatFix> & gps_waypoints,
+  const std::vector<sensor_msgs::msg::NavSatFix> & gps_waypoints,
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & parent_node,
-  nav2_util::ServiceClient<robot_localization::srv::FromLL> & fromll_client)
+  const std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> & fromll_client)
 {
   RCLCPP_INFO(parent_node->get_logger(), "Converting GPS waypoints to Map Frame..");
 
   std::vector<geometry_msgs::msg::PoseStamped> poses_in_map_frame_vector;
-  int index_of_gps_waypoints = 0;
   for (auto && curr_gps_waypoint : gps_waypoints) {
     auto request = std::make_shared<robot_localization::srv::FromLL::Request>();
     auto response = std::make_shared<robot_localization::srv::FromLL::Response>();
     request->ll_point.latitude = curr_gps_waypoint.latitude;
     request->ll_point.longitude = curr_gps_waypoint.longitude;
     request->ll_point.altitude = curr_gps_waypoint.altitude;
-    fromll_client.wait_for_service((std::chrono::seconds(1)));
-    auto is_conversion_succeeded = fromll_client.invoke(
+    fromll_client->wait_for_service((std::chrono::seconds(1)));
+    auto is_conversion_succeeded = fromll_client->invoke(
       request,
       response);
     if (!is_conversion_succeeded) {
@@ -382,7 +396,6 @@ WaypointFollower::convertGPSWaypointstoPosesinMap(
         "fromLL service of robot_localization could not convert %i th GPS waypoint to"
         "Map frame, going to skip this point!"
         "Make sure you have run navsat_transform_node of robot_localization");
-      index_of_gps_waypoints++;
       continue;
     } else {
       // this poses are assumed to be on global frame (map)
@@ -392,7 +405,6 @@ WaypointFollower::convertGPSWaypointstoPosesinMap(
       curr_waypoint_in_map_frame.pose.position.x = response->map_point.x;
       curr_waypoint_in_map_frame.pose.position.y = response->map_point.y;
       curr_waypoint_in_map_frame.pose.position.z = response->map_point.z;
-      index_of_gps_waypoints++;
       poses_in_map_frame_vector.push_back(curr_waypoint_in_map_frame);
     }
   }
