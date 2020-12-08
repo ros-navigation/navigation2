@@ -55,7 +55,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
   stop_on_failure_ = get_parameter("stop_on_failure").as_bool();
   loop_rate_ = get_parameter("loop_rate").as_int();
   waypoint_task_executor_id_ = get_parameter("waypoint_task_executor_plugin").as_string();
-  // related to waypoint following
+
   std::vector<std::string> new_args = rclcpp::NodeOptions().arguments();
   new_args.push_back("--ros-args");
   new_args.push_back("-r");
@@ -85,6 +85,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_logging_interface(),
     get_node_waitables_interface(),
     "FollowGPSWaypoints", std::bind(&WaypointFollower::followGPSWaypointsCallback, this));
+
   try {
     waypoint_task_executor_type_ = nav2_util::get_plugin_type_param(
       this,
@@ -140,6 +141,7 @@ WaypointFollower::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   action_server_.reset();
   nav_to_pose_client_.reset();
   gps_action_server_.reset();
+  from_ll_to_map_client_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -180,7 +182,6 @@ void WaypointFollower::followWaypointsLogic(
   auto goal = action_server->get_current_goal();
 
   std::vector<geometry_msgs::msg::PoseStamped> poses;
-
   poses = getUpdatedPoses<T>(action_server);
 
   if (!action_server || !action_server->is_server_active()) {
@@ -228,7 +229,6 @@ void WaypointFollower::followWaypointsLogic(
       client_goal.pose = poses[goal_index];
 
       auto send_goal_options = rclcpp_action::Client<ClientT>::SendGoalOptions();
-
       send_goal_options.result_callback =
         std::bind(
         &WaypointFollower::resultCallback<rclcpp_action::ClientGoalHandle<ClientT>::WrappedResult>,
