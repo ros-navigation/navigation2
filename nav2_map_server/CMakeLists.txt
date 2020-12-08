@@ -57,20 +57,16 @@ set(library_name ${map_server_executable}_core)
 
 add_library(${map_io_library_name}_2d SHARED
   src/map_2d/map_mode.cpp
-  src/map_2d/map_io_2d.cpp
-#  src/map_2d/map_server_2d.cpp
-#  src/map_2d/map_saver_2d.cpp
-    )
+  src/map_2d/map_io_2d.cpp)
 
 add_library(${map_io_library_name}_3d SHARED
   src/map_3d/pcl_helper.cpp
-  src/map_3d/map_io_3d.cpp
-#  src/map_3d/map_server_3d.cpp
-#  src/map_3d/map_saver_3d.cpp
-    )
+  src/map_3d/map_io_3d.cpp)
 
 add_library(${library_name} SHARED
-  src/costmap_filter_info/costmap_filter_info_server.cpp)
+  src/costmap_filter_info/costmap_filter_info_server.cpp
+  include/nav2_map_server/map_server.hpp
+  include/nav2_map_server/map_saver.hpp
   src/map_server/map_server_core.cpp
   src/map_saver/map_saver_core.cpp
   src/map_2d/map_server_2d.cpp
@@ -170,8 +166,8 @@ endif()
 target_link_libraries(${map_saver_cli_executable}
   ${library_name})
 
-target_link_libraries(${map_saver_cli_3d_executable}
-  ${library_name})
+#target_link_libraries(${map_saver_cli_3d_executable}
+#  ${library_name})
 
 target_link_libraries(${map_saver_server_executable}_2d
   ${library_name})

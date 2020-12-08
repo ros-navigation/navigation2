@@ -19,8 +19,10 @@
 #include <vector>
 namespace nav2_map_server
 {
+
 namespace map_2d
 {
+  
 /**
  * @enum nav2_map_server::MapMode
  * @brief Describes the relation between image pixel values and map occupancy
@@ -68,7 +70,9 @@ const char * map_mode_to_string(MapMode map_mode);
  * @return map mode corresponding to the string
  */
 MapMode map_mode_from_string(std::string map_mode_name);
+
 }  // namespace map_2d
+
 }  // namespace nav2_map_server
 
 #endif  // NAV2_MAP_SERVER__MAP_2D__MAP_MODE_HPP_

@@ -1,6 +1,22 @@
-/* Copyright (c) 2020 Samsung Research Russia
- * Copyright 2019 Rover Robotics
+/* Copyright (c) 2018 Intel Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* Copyright 2019 Rover Robotics
+ * Copyright 2010 Brian Gerkey
  * Copyright (c) 2008, Willow Garage, Inc.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -11,7 +27,7 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <ORGANIZATION> nor the names of its
+ *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
  *
@@ -28,15 +44,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "nav2_map_server/map_2d/map_server_2d.hpp"
+
 #include <string>
 #include <memory>
 #include <fstream>
 #include <stdexcept>
 #include <utility>
 
-#include "nav2_map_server/map_2d/map_server_2d.hpp"
-#include "nav2_map_server/map_2d/map_io_2d.hpp"
+#include "yaml-cpp/yaml.h"
 #include "lifecycle_msgs/msg/state.hpp"
+#include "nav2_map_server/map_2d/map_io_2d.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -57,7 +75,6 @@ MapServer<nav_msgs::msg::OccupancyGrid>::MapServer()
 
 MapServer<nav_msgs::msg::OccupancyGrid>::~MapServer()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn MapServer<nav_msgs::msg::OccupancyGrid>::on_configure(
@@ -106,9 +123,13 @@ MapServer<nav_msgs::msg::OccupancyGrid>::on_activate(const rclcpp_lifecycle::Sta
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
+  // Publish the map using the latched topic
   occ_pub_->on_activate();
   auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
   occ_pub_->publish(std::move(occ_grid));
+
+  // create bond connection
+  createBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -120,6 +141,9 @@ MapServer<nav_msgs::msg::OccupancyGrid>::on_deactivate(const rclcpp_lifecycle::S
 
   occ_pub_->on_deactivate();
 
+  // destroy bond connection
+  destroyBond();
+  
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -127,17 +151,11 @@ nav2_util::CallbackReturn
 MapServer<nav_msgs::msg::OccupancyGrid>::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
+  
   occ_pub_.reset();
   occ_service_.reset();
   load_map_service_.reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-MapServer<nav_msgs::msg::OccupancyGrid>::on_error(const rclcpp_lifecycle::State & /*state*/)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -189,17 +207,14 @@ bool MapServer<nav_msgs::msg::OccupancyGrid>::loadMapResponseFromYaml(
   std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response)
 {
   switch (map_2d::loadMapFromYaml(yaml_file, msg_)) {
-    case map_2d::MAP_DOES_NOT_EXIST:
-      response->result =
-        nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
+    case map_2d::MAP_DOES_NOT_EXIST:response->result = 
+      nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
       return false;
-    case map_2d::INVALID_MAP_METADATA:
-      response->result =
-        nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA;
+    case map_2d::INVALID_MAP_METADATA:response->result =
+      nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA;
       return false;
-    case map_2d::INVALID_MAP_DATA:
-      response->result =
-        nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA;
+    case map_2d::INVALID_MAP_DATA:response->result =
+      nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA;
       return false;
     case map_2d::LOAD_MAP_SUCCESS:
       // Correcting msg_ header when it belongs to specific node
@@ -218,4 +233,5 @@ void MapServer<nav_msgs::msg::OccupancyGrid>::updateMsgHeader()
   msg_.header.frame_id = frame_id_;
   msg_.header.stamp = now();
 }
+
 }  // namespace nav2_map_server

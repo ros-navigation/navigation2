@@ -13,9 +13,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// Created by shivam on 10/3/20.
-//
 
 #include <memory>
 #include <string>
@@ -36,14 +33,14 @@ const char * USAGE_STRING{
   "\n"
   "Arguments:\n"
   "  -h/--help\n"
-  "  -t <map_topic>\n"
-  "  -f <mapname>\n"
-  "  --occ <threshold_occupied>\n"
-  "  --free <threshold_free>\n"
-  "  --fmt <map_format>\n"
-  "  --as_bin (for pointClouds)Give the flag to save map with binary encodings\n"
-  "  --origin <[size 7 vector of floats]>\n"
-  "  --mode trinary(default)/scale/raw\n"
+  "  -t <map_topic, 2D|3D>\n"
+  "  -f <map_name, 2D|3D>\n"
+  "  --occ <threshold_occupied, 2D>\n"
+  "  --free <threshold_free, 2D>\n"
+  "  --mode trinary(default)/scale/raw, 2D\n"
+  "  --fmt <map_format, 2D|3D>\n"
+  "  --as_bin (for pointClouds)Give the flag to save map with binary encodings, 3D\n"
+  "  --origin_t <origin_topic, 3D>\n"
   "\n"
   "NOTE: --ros-args should be passed at the end of command line"};
 
@@ -56,7 +53,7 @@ typedef enum
   COMMAND_FREE_THRESH,
   COMMAND_MODE,
   COMMAND_ENCODING,
-  COMMAND_VIEW_POINT
+  COMMAND_VIEW_POINT_TOPIC
 } COMMAND_TYPE;
 
 struct cmd_struct
@@ -83,7 +80,7 @@ struct SaveParamList
 // Output parameters: map_topic, save_parameters
 ARGUMENTS_STATUS parse_arguments(
   const rclcpp::Logger & logger, int argc, char ** argv,
-  std::string & map_topic, SaveParamList & save_parameters)
+  std::string & map_topic, std::string & origin_topic, SaveParamList & save_parameters)
 {
   const struct cmd_struct commands[] = {
     {"-t", COMMAND_MAP_TOPIC},
@@ -92,7 +89,7 @@ ARGUMENTS_STATUS parse_arguments(
     {"--free", COMMAND_FREE_THRESH},
     {"--mode", COMMAND_MODE},
     {"--as_bin", COMMAND_ENCODING},
-    {"--origin", COMMAND_VIEW_POINT},
+    {"--origin_t", COMMAND_VIEW_POINT_TOPIC},
     {"--fmt", COMMAND_IMAGE_FORMAT}
   };
 
@@ -146,26 +143,8 @@ ARGUMENTS_STATUS parse_arguments(
                 it->c_str());
             }
             break;
-          case COMMAND_VIEW_POINT:
-            for (int k = 0; k < 9; ++k) {
-              std::string tmp = *it;
-              if (tmp == "[") {
-                it++;
-                continue;
-              } else if (tmp == "]") {
-                break;
-              }
-              if (k < 4) {
-                save_parameters.save_parameters_3d.origin.center.push_back(
-                  std::stof(tmp.substr(0, tmp.size() - 1)));
-              } else if (k < 7) {
-                save_parameters.save_parameters_3d.origin.orientation.push_back(
-                  std::stof(tmp.substr(0, tmp.size() - 1)));
-              } else if (k == 7) {
-                save_parameters.save_parameters_3d.origin.orientation.push_back(std::stof(tmp));
-              }
-              it++;
-            }
+          case COMMAND_VIEW_POINT_TOPIC:
+            origin_topic = *it;
             break;
           case COMMAND_ENCODING:
             it--;  // as this one is a simple flag that puts binary format to on
@@ -193,7 +172,8 @@ int main(int argc, char ** argv)
   // Parse CLI-arguments
   SaveParamList save_parameters;
   std::string map_topic = "map";
-  switch (parse_arguments(logger, argc, argv, map_topic, save_parameters)) {
+  std::string origin_topic = "map_origin";
+  switch (parse_arguments(logger, argc, argv, map_topic, origin_topic, save_parameters)) {
     case ARGUMENTS_INVALID:
       rclcpp::shutdown();
       return -1;
@@ -207,9 +187,10 @@ int main(int argc, char ** argv)
   // Call saveMapTopicToFile()
   int retcode;
   try {
-    if (save_parameters.save_parameters_3d.format == "pcd") {
+    if (save_parameters.save_parameters_3d.format == "pcd" &&
+        save_parameters.save_parameters_3d.format == "ply") {
       auto map_saver = std::make_shared<nav2_map_server::MapSaver<sensor_msgs::msg::PointCloud2>>();
-      if (map_saver->saveMapTopicToFile(map_topic, save_parameters.save_parameters_3d)) {
+      if (map_saver->saveMapTopicToFile(map_topic, origin_topic, save_parameters.save_parameters_3d)) {
         retcode = 0;
       } else {
         retcode = 1;

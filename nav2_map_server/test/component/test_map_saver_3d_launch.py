@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 # Copyright (c) 2020 Shvivam Pandey pandeyshivam2017robotics@gmail.com
 # Copyright (c) 2018 Intel Corporation
 #

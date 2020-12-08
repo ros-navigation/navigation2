@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-// Created by shivam on 9/15/20.
-//
-
 #ifndef NAV2_MAP_SERVER__MAP_3D__MAP_SERVER_3D_HPP_
 #define NAV2_MAP_SERVER__MAP_3D__MAP_SERVER_3D_HPP_
 
@@ -83,12 +79,6 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when Error is raised
-   * @param state Lifecycle Node's state
-   * @return Success or Failure
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Load the map YAML, image from map file name and
@@ -151,6 +141,7 @@ protected:
   // The message to publish the pose topic
   geometry_msgs::msg::Pose origin_msg_;
 };
+
 }  // namespace nav2_map_server
 
 #endif  // NAV2_MAP_SERVER__MAP_3D__MAP_SERVER_3D_HPP_

@@ -1,6 +1,4 @@
 // Copyright (c) 2020 Shivamm Pandey pandeyshivam2017robotics@gmail.com
-// Copyright (c) 2020 Samsung Research Russia
-// Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,10 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-//
-// Created by shivam on 10/11/20.
-//
 
 #include <gtest/gtest.h>
 #include <experimental/filesystem>
@@ -131,18 +125,9 @@ TEST_F(MapSaverTestFixture, SaveMap3D)
 
   // 1. Send valid save_map service request
   req->map_topic = "map";
+  req->origin_topic = "map_origin";
+
   req->map_url = path(g_tmp_dir) / path(g_valid_pcd_map_name);
-
-  // set view point translation
-  req->origin.position.x = g_valid_center_pcd[0];
-  req->origin.position.y = g_valid_center_pcd[1];
-  req->origin.position.z = g_valid_center_pcd[2];
-
-  // set view point rotation
-  req->origin.orientation.w = g_valid_orientation_pcd[0];
-  req->origin.orientation.x = g_valid_orientation_pcd[1];
-  req->origin.orientation.y = g_valid_orientation_pcd[2];
-  req->origin.orientation.z = g_valid_orientation_pcd[3];
 
   req->file_format = "pcd";
   req->as_binary = false;
@@ -177,18 +162,9 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters3D)
 
   // 1. Send save_map service request with default parameters
   req->map_topic = "";
+  req->origin_topic = "";
+
   req->map_url = path(g_tmp_dir) / path(g_valid_pcd_map_name);
-
-  // set view point translation
-  req->origin.position.x = g_valid_center_pcd[0];
-  req->origin.position.y = g_valid_center_pcd[1];
-  req->origin.position.z = g_valid_center_pcd[2];
-
-  // set view point rotation
-  req->origin.orientation.w = g_valid_orientation_pcd[0];
-  req->origin.orientation.x = g_valid_orientation_pcd[1];
-  req->origin.orientation.y = g_valid_orientation_pcd[2];
-  req->origin.orientation.z = g_valid_orientation_pcd[3];
 
   req->file_format = "";
   req->as_binary = false;

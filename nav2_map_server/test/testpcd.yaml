@@ -1,2 +1,2 @@
-image: Hokuyo_0.pcd
+image: "testcloud.pcd"
 origin: [0, 0, 0, 1, 0, 0, 0]

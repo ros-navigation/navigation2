@@ -31,6 +31,7 @@ namespace nav2_map_server
 
 namespace map_2d
 {
+  
 struct LoadParameters
 {
   std::string image_file_name;
@@ -49,22 +50,6 @@ typedef enum
   INVALID_MAP_METADATA,
   INVALID_MAP_DATA
 } LOAD_MAP_STATUS;
-
-/// Get the given subnode value.
-/// The only reason this function exists is to wrap the exceptions in slightly nicer error messages,
-/// including the name of the failed key
-/// @throw YAML::Exception
-template<typename T>
-T yaml_get_value(const YAML::Node & node, const std::string & key)
-{
-  try {
-    return node[key].as<T>();
-  } catch (YAML::Exception & e) {
-    std::stringstream ss;
-    ss << "Failed to parse YAML tag '" << key << "' for reason: " << e.msg;
-    throw YAML::Exception(e.mark, ss.str());
-  }
-}
 
 /**
  * @brief Load and parse the given YAML file
@@ -95,6 +80,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
   const std::string & yaml_file,
   nav_msgs::msg::OccupancyGrid & map);
 
+
 /* Map output part */
 
 struct SaveParameters
@@ -115,7 +101,9 @@ struct SaveParameters
 bool saveMapToFile(
   const nav_msgs::msg::OccupancyGrid & map,
   const SaveParameters & save_parameters);
+
 }  // namespace map_2d
+
 }  // namespace nav2_map_server
 
 #endif  // NAV2_MAP_SERVER__MAP_2D__MAP_IO_2D_HPP_

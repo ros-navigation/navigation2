@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-// Created by shivam on 9/24/20.
-//
-
 #ifndef NAV2_MAP_SERVER__MAP_3D__MAP_SAVER_3D_HPP_
 #define NAV2_MAP_SERVER__MAP_3D__MAP_SAVER_3D_HPP_
+
 #include <string>
 #include <memory>
 
@@ -59,6 +56,7 @@ public:
    */
   bool saveMapTopicToFile(
     const std::string & map_topic,
+    const std::string  & origin_topic,
     const map_3d::SaveParameters & save_parameters);
 
 protected:
@@ -92,12 +90,6 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when Error is raised
-   * @param state Lifecycle Node's state
-   * @return Success or Failure
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Map saving service callback
@@ -112,12 +104,15 @@ protected:
 
   // The timeout for saving the map in service
   std::shared_ptr<rclcpp::Duration> save_map_timeout_;
+  // param for handling QoS configuration
+  bool map_subscribe_transient_local_;
 
   // The name of the service for saving a map from topic
   const std::string save_map_service_name_{"save_map"};
   // A service to save PointCloud2 data to a file at runtime (SaveMap)
   rclcpp::Service<nav2_msgs::srv::SaveMap3D>::SharedPtr save_map_service_;
 };
+
 }  // namespace nav2_map_server
 
 #endif  // NAV2_MAP_SERVER__MAP_3D__MAP_SAVER_3D_HPP_

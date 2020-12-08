@@ -1,5 +1,4 @@
-/* Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
- * Copyright (c) 2018 Intel Corporation
+/* Copyright (c) 2018 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,13 +44,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "nav2_map_server/map_server_core.hpp"
+
 #include <string>
 #include <memory>
+#include <fstream>
+#include <stdexcept>
+#include <utility>
 #include <functional>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_map_server/map_server_core.hpp"
+
+using namespace std::chrono_literals;
+using namespace std::placeholders;
+
 namespace nav2_map_server
 {
 
@@ -99,10 +106,4 @@ MapServer<mapT>::on_shutdown(const rclcpp_lifecycle::State & state)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-template<class mapT>
-nav2_util::CallbackReturn
-MapServer<mapT>::on_error(const rclcpp_lifecycle::State & state)
-{
-  return nav2_util::CallbackReturn::SUCCESS;
-}
 }  // namespace nav2_map_server

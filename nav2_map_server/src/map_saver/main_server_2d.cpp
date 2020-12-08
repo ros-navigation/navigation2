@@ -29,5 +29,6 @@ int main(int argc, char ** argv)
   auto service_node = std::make_shared<nav2_map_server::MapSaver<nav_msgs::msg::OccupancyGrid>>();
   rclcpp::spin(service_node->get_node_base_interface());
   rclcpp::shutdown();
+
   return 0;
 }
