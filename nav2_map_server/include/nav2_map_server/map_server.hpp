@@ -11,9 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// Created by shivam on 10/3/20.
-//
 
 #ifndef NAV2_MAP_SERVER__MAP_SERVER_HPP_
 #define NAV2_MAP_SERVER__MAP_SERVER_HPP_

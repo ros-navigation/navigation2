@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 
-//
-// Created by shivam on 9/15/20.
-//
+#include "nav2_map_server/map_3d/map_server_3d.hpp"
 
 #include <string>
 #include <memory>
@@ -23,9 +21,9 @@
 #include <stdexcept>
 #include <utility>
 
-#include "nav2_map_server/map_3d/map_server_3d.hpp"
-#include "nav2_map_server/map_3d/map_io_3d.hpp"
+#include "yaml-cpp/yaml.h"
 #include "lifecycle_msgs/msg/state.hpp"
+#include "nav2_map_server/map_3d/map_io_3d.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -46,7 +44,6 @@ MapServer<sensor_msgs::msg::PointCloud2>::MapServer()
 
 MapServer<sensor_msgs::msg::PointCloud2>::~MapServer()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn MapServer<sensor_msgs::msg::PointCloud2>::on_configure(
@@ -147,13 +144,6 @@ nav2_util::CallbackReturn MapServer<sensor_msgs::msg::PointCloud2>::on_cleanup(
   pcd_service_.reset();
   pcd_load_map_service_.reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-MapServer<sensor_msgs::msg::PointCloud2>::on_error(const rclcpp_lifecycle::State & /*state*/)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 

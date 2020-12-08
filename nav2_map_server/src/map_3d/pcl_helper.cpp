@@ -28,8 +28,10 @@
 
 namespace nav2_map_server
 {
+
 namespace map_3d
 {
+
 void modifyMsgFields(
   sensor_msgs::msg::PointCloud2 & msg,
   const std::vector<pcl::PCLPointField> & fields)
@@ -97,5 +99,7 @@ bool ends_with(std::string const & value, std::string const & ending)
   if (ending.size() > value.size()) {return false;}
   return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
+
 }  // namespace map_3d
+
 }  // namespace nav2_map_server

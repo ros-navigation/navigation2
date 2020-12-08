@@ -1,22 +1,7 @@
-/* Copyright (c) 2018 Intel Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/* Copyright 2019 Rover Robotics
- * Copyright 2010 Brian Gerkey
+/*
+ * Copyright (c) 2020 Samsung Research Russia
+ * Copyright 2019 Rover Robotics
  * Copyright (c) 2008, Willow Garage, Inc.
- *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,7 +12,7 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Willow Garage, Inc. nor the names of its
+ *     * Neither the name of the <ORGANIZATION> nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
  *
@@ -44,17 +29,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "nav2_map_server/map_2d/map_saver_2d.hpp"
 
 #include <string>
 #include <memory>
-
-#include "nav2_map_server/map_2d/map_saver_2d.hpp"
-#include "nav2_map_server/map_2d/map_io_2d.hpp"
+#include <stdexcept>
+#include <functional>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_msgs/srv/save_map.hpp"
+#include "nav2_map_server/map_2d/map_io_2d.hpp"
+
+using namespace std::placeholders;
 
 namespace nav2_map_server
 {
@@ -69,11 +57,11 @@ MapSaver<nav_msgs::msg::OccupancyGrid>::MapSaver()
 
   free_thresh_default_ = declare_parameter("free_thresh_default", 0.25),
   occupied_thresh_default_ = declare_parameter("occupied_thresh_default", 0.65);
+  map_subscribe_transient_local_ = declare_parameter("map_subscribe_transient_local", true);
 }
 
 MapSaver<nav_msgs::msg::OccupancyGrid>::~MapSaver()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn
@@ -84,14 +72,10 @@ MapSaver<nav_msgs::msg::OccupancyGrid>::on_configure(const rclcpp_lifecycle::Sta
   // Make name prefix for services
   const std::string service_prefix = get_name() + std::string("/");
 
+  // Create a service that saves the occupancy grid from map topic to a file
   save_map_service_ = create_service<nav2_msgs::srv::SaveMap>(
     service_prefix + save_map_service_name_,
-    [this](
-      const std::shared_ptr<rmw_request_id_t> request_header,
-      const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
-      std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response) {
-      saveMapCallback(request_header, request, response);
-    });
+    std::bind(&MapSaver::saveMapCallback, this, _1, _2, _3));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -100,6 +84,10 @@ nav2_util::CallbackReturn
 MapSaver<nav_msgs::msg::OccupancyGrid>::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
+
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -107,6 +95,10 @@ nav2_util::CallbackReturn
 MapSaver<nav_msgs::msg::OccupancyGrid>::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
+
+  // destroy bond connection
+  destroyBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -114,14 +106,6 @@ nav2_util::CallbackReturn
 MapSaver<nav_msgs::msg::OccupancyGrid>::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
-  save_map_service_.reset();
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-MapSaver<nav_msgs::msg::OccupancyGrid>::on_error(const rclcpp_lifecycle::State & /*state*/)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -143,7 +127,6 @@ void MapSaver<nav_msgs::msg::OccupancyGrid>::saveMapCallback(
   save_parameters.image_format = request->image_format;
   save_parameters.free_thresh = request->free_thresh;
   save_parameters.occupied_thresh = request->occupied_thresh;
-
   try {
     save_parameters.mode = map_2d::map_mode_from_string(request->map_mode);
   } catch (std::invalid_argument &) {
@@ -173,7 +156,7 @@ bool MapSaver<nav_msgs::msg::OccupancyGrid>::saveMapTopicToFile(
     nav_msgs::msg::OccupancyGrid::SharedPtr map_msg = nullptr;
 
     // Correct map_topic_loc if necessary
-    if (map_topic_loc == "") {
+    if (map_topic_loc.empty()) {
       map_topic_loc = "map";
       RCLCPP_WARN(
         get_logger(), "Map topic unspecified. Map messages will be read from \'%s\' topic",
@@ -188,7 +171,6 @@ bool MapSaver<nav_msgs::msg::OccupancyGrid>::saveMapTopicToFile(
         free_thresh_default_);
       save_parameters_loc.free_thresh = free_thresh_default_;
     }
-
     if (save_parameters_loc.occupied_thresh == 0.0) {
       RCLCPP_WARN(
         get_logger(),
@@ -206,8 +188,14 @@ bool MapSaver<nav_msgs::msg::OccupancyGrid>::saveMapTopicToFile(
     // Add new subscription for incoming map topic.
     // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode
     // as a map listener.
+    rclcpp::QoS map_qos(10);  // initialize to default
+    if (map_subscribe_transient_local_) {
+      map_qos.transient_local();
+      map_qos.reliable();
+      map_qos.keep_last(1);
+    }
     auto map_sub = rclcpp_node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
-      map_topic_loc, rclcpp::SystemDefaultsQoS(), mapCallback);
+      map_topic_loc, map_qos, mapCallback);
 
     rclcpp::Time start_time = now();
     while (rclcpp::ok()) {
@@ -234,7 +222,6 @@ bool MapSaver<nav_msgs::msg::OccupancyGrid>::saveMapTopicToFile(
     return false;
   }
 
-  RCLCPP_ERROR(get_logger(), "This situation should never appear");
   return false;
 }
 

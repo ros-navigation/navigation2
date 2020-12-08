@@ -1,5 +1,4 @@
 // Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
-// Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-//
-// Created by shivam on 9/15/20.
-//
 
 #ifndef NAV2_MAP_SERVER__MAP_SERVER_CORE_HPP_
 #define NAV2_MAP_SERVER__MAP_SERVER_CORE_HPP_
@@ -75,13 +70,8 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when Error is raised
-   * @param state Lifecycle Node's state
-   * @return Success or Failure
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 };
+
 }  // namespace nav2_map_server
 
 #endif  // NAV2_MAP_SERVER__MAP_SERVER_CORE_HPP_

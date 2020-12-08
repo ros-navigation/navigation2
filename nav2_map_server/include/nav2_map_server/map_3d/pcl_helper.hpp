@@ -29,8 +29,10 @@
 
 namespace nav2_map_server
 {
+
 namespace  map_3d
 {
+  
 void modifyMsgFields(
   sensor_msgs::msg::PointCloud2 & msg,
   const std::vector<pcl::PCLPointField> & fields);
@@ -48,7 +50,9 @@ void msgToPcl(
   const sensor_msgs::msg::PointCloud2 & msg);
 
 bool ends_with(std::string const & value, std::string const & ending);
+
 }  // namespace map_3d
+
 }  // namespace nav2_map_server
 
 #endif  // NAV2_MAP_SERVER__MAP_3D__PCL_HELPER_HPP_

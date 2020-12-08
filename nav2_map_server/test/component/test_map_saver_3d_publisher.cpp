@@ -1,5 +1,4 @@
 // Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
-// Copyright (c) 2020 Samsung Research Russia
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-//
-// Created by shivam on 10/10/20.
-//
 
 #include <experimental/filesystem>
 #include <string>
@@ -55,6 +50,10 @@ public:
       "map",
       rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
+    origin_pub_ = create_publisher<geometry_msgs::msg::Pose>(
+        "map_origin",
+        rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
     timer_ = create_wall_timer(300ms, std::bind(&TestPublisher::mapPublishCallback, this));
   }
 
@@ -62,11 +61,13 @@ protected:
   void mapPublishCallback()
   {
     pcd_pub_->publish(pcd_msg_);
+    origin_pub_->publish(origin_msg_);
   }
 
   rclcpp::TimerBase::SharedPtr timer_;
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pcd_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr origin_pub_;
   sensor_msgs::msg::PointCloud2 pcd_msg_;
   geometry_msgs::msg::Pose origin_msg_;
 };

@@ -91,9 +91,26 @@ namespace nav2_map_server
 
 namespace map_2d
 {
+
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
 // === Map input part ===
+
+/// Get the given subnode value.
+/// The only reason this function exists is to wrap the exceptions in slightly nicer error messages,
+/// including the name of the failed key
+/// @throw YAML::Exception
+template<typename T>
+T yaml_get_value(const YAML::Node & node, const std::string & key)
+{
+  try {
+    return node[key].as<T>();
+  } catch (YAML::Exception & e) {
+    std::stringstream ss;
+    ss << "Failed to parse YAML tag '" << key << "' for reason: " << e.msg;
+    throw YAML::Exception(e.mark, ss.str());
+  }
+}
 
 LoadParameters loadMapYaml(const std::string & yaml_filename)
 {
@@ -110,7 +127,6 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
     fname_copy.push_back('\0');
     image_file_name = std::string(dirname(fname_copy.data())) + '/' + image_file_name;
   }
-
   load_parameters.image_file_name = image_file_name;
 
   load_parameters.resolution = yaml_get_value<double>(doc, "resolution");
@@ -233,7 +249,8 @@ void loadMapFromFile(
             }
             break;
           }
-        default: throw std::runtime_error("Invalid map mode");
+        default: 
+          throw std::runtime_error("Invalid map mode");
       }
       msg.data[msg.info.width * (msg.info.height - y - 1) + x] = map_cell;
     }
@@ -246,9 +263,8 @@ void loadMapFromFile(
   msg.header.stamp = clock.now();
 
   std::cout <<
-    "[DEBUG] [map_io]: Read map " << load_parameters.image_file_name <<
-    ": " << msg.info.width << " X " << msg.info.height << " map @ " <<
-    msg.info.resolution << " m/cell" << std::endl;
+    "[DEBUG] [map_io]: Read map " << load_parameters.image_file_name << ": " << msg.info.width << 
+    " X " << msg.info.height << " map @ " << msg.info.resolution << " m/cell" << std::endl;
 
   map = msg;
 }
@@ -379,10 +395,8 @@ void checkSaveParameters(SaveParameters & save_parameters)
     }
   } catch (Magick::ErrorOption & e) {
     std::cout <<
-      "[WARN] [map_io]: Format '" << save_parameters.image_format <<
-      "' is not usable. Using '" << FALLBACK_FORMAT << "' instead:" <<
-      std::endl << e.what() << std::endl;
-
+      "[WARN] [map_io]: Format '" << save_parameters.image_format << "' is not usable. Using '" << 
+      FALLBACK_FORMAT << "' instead:" << std::endl << e.what() << std::endl;
     save_parameters.image_format = FALLBACK_FORMAT;
   }
 
@@ -411,9 +425,8 @@ void tryWriteMapToFile(
   const SaveParameters & save_parameters)
 {
   std::cout <<
-    "[INFO] [map_io]: Received a " << map.info.width << " X " <<
-    map.info.height << " map @ " << map.info.resolution <<
-    " m/pix" << std::endl;
+    "[INFO] [map_io]: Received a " << map.info.width << " X " << map.info.height << " map @ " << 
+    map.info.resolution << " m/pix" << std::endl;
 
   std::string mapdatafile = save_parameters.map_file_name + "." + save_parameters.image_format;
   {
@@ -459,7 +472,8 @@ void tryWriteMapToFile(
               pixel = Magick::ColorGray{(100.0 - map_cell) / 100.0};
             }
             break;
-          case MapMode::Raw: Magick::Quantum q;
+          case MapMode::Raw: 
+            Magick::Quantum q;
             if (map_cell < 0 || 100 < map_cell) {
               q = MaxRGB;
             } else {
@@ -467,8 +481,8 @@ void tryWriteMapToFile(
             }
             pixel = Magick::Color(q, q, q);
             break;
-          default: std::cerr <<
-              "[ERROR] [map_io]: Map mode should be Trinary, Scale or Raw" << std::endl;
+          default: 
+            std::cerr << "[ERROR] [map_io]: Map mode should be Trinary, Scale or Raw" << std::endl;
             throw std::runtime_error("Invalid map mode");
         }
         image.pixelColor(x, y, pixel);
@@ -532,4 +546,5 @@ bool saveMapToFile(
 }
 
 }  // namespace map_2d
+
 }  // namespace nav2_map_server

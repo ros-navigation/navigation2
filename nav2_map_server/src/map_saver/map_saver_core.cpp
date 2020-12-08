@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+/* 
  * Copyright (c) 2020 Samsung Research Russia
  * Copyright 2019 Rover Robotics
  * Copyright (c) 2008, Willow Garage, Inc.
@@ -29,9 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-//
-// Created by shivam on 10/3/20.
-//
+#include "nav2_map_server/map_saver_core.hpp"
 
 #include <string>
 #include <memory>
@@ -39,7 +37,9 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_map_server/map_saver_core.hpp"
+
+using namespace std::placeholders;
+
 namespace nav2_map_server
 {
 
@@ -87,10 +87,4 @@ MapSaver<mapT>::on_shutdown(const rclcpp_lifecycle::State & state)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-template<class mapT>
-nav2_util::CallbackReturn
-MapSaver<mapT>::on_error(const rclcpp_lifecycle::State & state)
-{
-  return nav2_util::CallbackReturn::SUCCESS;
-}
 }  // namespace nav2_map_server

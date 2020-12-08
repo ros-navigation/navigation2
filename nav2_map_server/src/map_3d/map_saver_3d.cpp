@@ -13,10 +13,6 @@
  * limitations under the License.
  */
 
-//
-// Created by shivam on 9/24/20.
-//
-
 #include "nav2_map_server/map_saver_core.hpp"
 
 #include <string>
@@ -40,11 +36,12 @@ MapSaver<sensor_msgs::msg::PointCloud2>::MapSaver()
 
   save_map_timeout_ = std::make_shared<rclcpp::Duration>(
     std::chrono::milliseconds(declare_parameter("save_map_timeout", 2000)));
+
+  map_subscribe_transient_local_ = declare_parameter("map_subscribe_transient_local", true);  
 }
 
 MapSaver<sensor_msgs::msg::PointCloud2>::~MapSaver()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn
@@ -79,6 +76,10 @@ nav2_util::CallbackReturn
 MapSaver<sensor_msgs::msg::PointCloud2>::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
+
+  // destroy bond connection
+  destroyBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -86,14 +87,6 @@ nav2_util::CallbackReturn
 MapSaver<sensor_msgs::msg::PointCloud2>::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
-  save_map_service_.reset();
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-MapSaver<sensor_msgs::msg::PointCloud2>::on_error(const rclcpp_lifecycle::State & /*state*/)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -104,7 +97,6 @@ MapSaver<sensor_msgs::msg::PointCloud2>::on_shutdown(const rclcpp_lifecycle::Sta
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-
 void MapSaver<sensor_msgs::msg::PointCloud2>::saveMapCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
@@ -113,42 +105,32 @@ void MapSaver<sensor_msgs::msg::PointCloud2>::saveMapCallback(
   map_3d::SaveParameters save_parameters;
   save_parameters.origin.resize();
   save_parameters.map_file_name = request->map_url;
-
-  // Set view_point translation(origin)
-  save_parameters.origin.center.resize(3);
-  save_parameters.origin.center[0] = request->origin.position.x;
-  save_parameters.origin.center[1] = request->origin.position.y;
-  save_parameters.origin.center[2] = request->origin.position.z;
-
-  // Set view_point orientation
-  save_parameters.origin.orientation.resize(4);
-  save_parameters.origin.orientation[0] = request->origin.orientation.w;
-  save_parameters.origin.orientation[1] = request->origin.orientation.x;
-  save_parameters.origin.orientation[2] = request->origin.orientation.y;
-  save_parameters.origin.orientation[3] = request->origin.orientation.z;
-
   save_parameters.as_binary = request->as_binary;
   save_parameters.format = request->file_format;
 
-  response->result = saveMapTopicToFile(request->map_topic, save_parameters);
+  response->result = saveMapTopicToFile(request->map_topic, request->origin_topic, save_parameters);
 }
-
 
 bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
   const std::string & map_topic,
+  const std::string  & origin_topic,
   const map_3d::SaveParameters & save_parameters)
 {
   // Local copies of map_topic and save_parameters that could be changed
   std::string map_topic_loc = map_topic;
+  std::string  origin_topic_loc = origin_topic;
   map_3d::SaveParameters save_parameters_loc = save_parameters;
 
   RCLCPP_INFO(
-    get_logger(), "Saving map from \'%s\' topic to \'%s\' file",
-    map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
+    get_logger(), "Saving map from \'%s\' topic and origin from topic \'%s\' to \'%s\' file",
+    map_topic_loc.c_str(), origin_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
 
   try {
     // Pointer to map message received in the subscription callback
     sensor_msgs::msg::PointCloud2::SharedPtr pcd_map_msg = nullptr;
+
+    // Pointer to the origin message received in the subscription callback
+    geometry_msgs::msg::Pose::SharedPtr origin_msg = nullptr;
 
     // Correct map_topic_loc if necessary
     if (map_topic_loc.empty()) {
@@ -158,17 +140,40 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
         map_topic_loc.c_str());
     }
 
+    // Correct origin_topic_loc if necessary
+    if (origin_topic_loc.empty()) {
+      origin_topic_loc = "map_origin";
+      RCLCPP_WARN(
+          get_logger(), "Origin topic unspecified. Origin messages will be read from \'%s\' topic",
+          origin_topic_loc.c_str());
+    }
+
     // A callback function that receives map message from subscribed topic
     auto map_callback = [&pcd_map_msg](
       const sensor_msgs::msg::PointCloud2::SharedPtr msg) -> void {
         pcd_map_msg = msg;
       };
 
+    // A callback function that receives origin message from subscribed topic
+    auto origin_callback = [&origin_msg](
+        const geometry_msgs::msg::Pose::SharedPtr msg) -> void {
+      origin_msg = msg;
+    };
+
     // Add new subscription for incoming map topic.
     // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode
     // as a map listener.
+    rclcpp::QoS map_qos(10);  // initialize to default
+    if (map_subscribe_transient_local_) {
+      map_qos.transient_local();
+      map_qos.reliable();
+      map_qos.keep_last(1);
+    }
     auto map_sub = rclcpp_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
-      map_topic_loc, rclcpp::SystemDefaultsQoS(), map_callback);
+      map_topic_loc, map_qos, map_callback);
+
+    auto origin_sub = rclcpp_node_->create_subscription<geometry_msgs::msg::Pose>(
+      origin_topic_loc, map_qos, origin_callback);
 
     rclcpp::Time start_time = now();
     while (rclcpp::ok()) {
@@ -177,10 +182,22 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
         return false;
       }
 
-      if (pcd_map_msg) {
-        // Map message received. Saving it to file
-        std::cout << "data " << pcd_map_msg->width << std::endl;
+      if (pcd_map_msg && origin_msg) {
 
+        // Set view_point translation(origin)
+        save_parameters_loc.origin.center.resize(3);
+        save_parameters_loc.origin.center[0] = origin_msg->position.x;
+        save_parameters_loc.origin.center[1] = origin_msg->position.y;
+        save_parameters_loc.origin.center[2] = origin_msg->position.z;
+
+        // Set view_point orientation
+        save_parameters_loc.origin.orientation.resize(4);
+        save_parameters_loc.origin.orientation[0] = origin_msg->orientation.w;
+        save_parameters_loc.origin.orientation[1] = origin_msg->orientation.x;
+        save_parameters_loc.origin.orientation[2] = origin_msg->orientation.y;
+        save_parameters_loc.origin.orientation[3] = origin_msg->orientation.z;
+
+        // Map message received. Saving it to file
         if (map_3d::saveMapToFile(*pcd_map_msg, save_parameters_loc)) {
           RCLCPP_INFO(get_logger(), "Map saved successfully");
           return true;
@@ -197,7 +214,6 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
     return false;
   }
 
-  RCLCPP_ERROR(get_logger(), "This situation should never appear");
   return false;
 }
 

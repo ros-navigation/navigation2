@@ -1,6 +1,4 @@
 // Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
-// Copyright (c) 2020 Samsung Research Russia
-// Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -72,12 +70,8 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when Error is raised
-   * @param state Lifecycle Node's state
-   * @return Success or Failure
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 };
+
 }  // namespace nav2_map_server
+
 #endif  // NAV2_MAP_SERVER__MAP_SAVER_CORE_HPP_

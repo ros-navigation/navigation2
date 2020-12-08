@@ -12,12 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-// Created by shivam on 10/3/20.
-//
-
 #include <memory>
-#include <stdexcept>
 #include <string>
 
 #include "nav2_map_server/map_server.hpp"
@@ -28,15 +23,10 @@ int main(int argc, char ** argv)
 {
   std::string node_name("map_server");
 
-  try {
-    rclcpp::init(argc, argv);
-    auto node = std::make_shared<nav2_map_server::MapServer<nav_msgs::msg::OccupancyGrid>>();
-    rclcpp::spin(node->get_node_base_interface());
-    rclcpp::shutdown();
-    return 0;
-  } catch (std::exception & ex) {
-    RCLCPP_ERROR(rclcpp::get_logger(node_name), ex.what());
-    RCLCPP_ERROR(rclcpp::get_logger(node_name), "Exiting");
-    return -1;
-  }
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<nav2_map_server::MapServer<nav_msgs::msg::OccupancyGrid>>();
+  rclcpp::spin(node->get_node_base_interface());
+  rclcpp::shutdown();
+
+  return 0;
 }

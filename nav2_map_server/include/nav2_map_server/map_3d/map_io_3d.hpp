@@ -11,9 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// Created by shivam on 7/5/20.
-//
 
 #ifndef NAV2_MAP_SERVER__MAP_3D__MAP_IO_3D_HPP_
 #define NAV2_MAP_SERVER__MAP_3D__MAP_IO_3D_HPP_
@@ -32,6 +29,7 @@ namespace nav2_map_server
 
 namespace map_3d
 {
+
 struct Origin
 {
   std::vector<float> center;
@@ -109,7 +107,9 @@ struct SaveParameters
 bool saveMapToFile(
   const sensor_msgs::msg::PointCloud2 & map,
   const SaveParameters & save_parameters);
+
 }  // namespace map_3d
+
 }  // namespace nav2_map_server
 
 #endif  // NAV2_MAP_SERVER__MAP_3D__MAP_IO_3D_HPP_

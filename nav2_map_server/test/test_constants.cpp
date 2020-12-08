@@ -64,7 +64,7 @@ const char * g_valid_pgm_file = "testmap.pgm";
 const char * g_valid_yaml_file = "testmap.yaml";
 const char * g_tmp_dir = "/tmp";
 const char * g_valid_pcd_map_name = "testpcd";
-const char * g_valid_pcd_file = "Hokuyo_0.pcd";
+const char * g_valid_pcd_file = "testcloud.pcd";
 const char * g_valid_pcd_yaml_file = "testpcd.yaml";
 
 const double g_valid_image_res = 0.1;

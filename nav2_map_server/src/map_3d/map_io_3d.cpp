@@ -23,7 +23,10 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <stdexcept>
 #include <memory>
+
 
 #include "nav2_util/geometry_utils.hpp"
 
@@ -73,8 +76,10 @@ char * dirname(char * path)
 
 namespace nav2_map_server
 {
+
 namespace map_3d
 {
+
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
 // === Map input part ===
@@ -395,4 +400,5 @@ bool saveMapToFile(
 }
 
 }  // namespace map_3d
+
 }  // namespace nav2_map_server

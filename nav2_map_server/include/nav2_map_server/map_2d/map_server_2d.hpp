@@ -1,5 +1,3 @@
-// Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
-// Copyright (c) 2020 Samsung Research Russia
 // Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,18 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-// Created by shivam on 9/10/20.
-//
-
 #ifndef NAV2_MAP_SERVER__MAP_2D__MAP_SERVER_2D_HPP_
 #define NAV2_MAP_SERVER__MAP_2D__MAP_SERVER_2D_HPP_
 
-#include <string>
-#include <memory>
-
 #include "nav2_map_server/map_server_core.hpp"
 #include "nav2_map_server/map_2d/map_io_2d.hpp"
+
+#include <string>
+#include <memory>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -36,6 +30,11 @@
 namespace nav2_map_server
 {
 
+/**
+ * @class nav2_map_server::MapServer
+ * @brief Parses the map yaml file and creates a service and a publisher that
+ * provides occupancy grid
+ */
 template<>
 class MapServer<nav_msgs::msg::OccupancyGrid>: public nav2_util::LifecycleNode
 {
@@ -81,12 +80,6 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when Error is raised
-   * @param state Lifecycle Node's state
-   * @return Success or Failure
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Load the map YAML, image from map file name and
@@ -127,7 +120,6 @@ protected:
     const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
     std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
 
-
   // The name of the service for getting a map
   const std::string service_name_{"map"};
 
@@ -149,6 +141,7 @@ protected:
   // The message to publish on the occupancy grid topic
   nav_msgs::msg::OccupancyGrid msg_;
 };
+
 }  // namespace nav2_map_server
 
 #endif  // NAV2_MAP_SERVER__MAP_2D__MAP_SERVER_2D_HPP_
