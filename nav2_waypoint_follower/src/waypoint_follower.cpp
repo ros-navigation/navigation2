@@ -151,6 +151,26 @@ WaypointFollower::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
+template<typename T>
+std::vector<geometry_msgs::msg::PoseStamped> WaypointFollower::getUpdatedPoses(
+  const T & action_server)
+{
+  std::vector<geometry_msgs::msg::PoseStamped> poses;
+
+  // compile time static check to decide which block of code to be built
+  if constexpr (std::is_same<T, std::unique_ptr<ActionServer>>::value)
+  {
+    // If normal waypoint following callback was called, we build here
+    poses = action_server->get_current_goal()->poses;
+  } else {
+    // If GPS waypoint following callback was called, we build here
+    poses = convertGPSWaypointstoPosesinMap(
+      action_server->get_current_goal()->waypoints, shared_from_this(),
+      from_ll_to_map_client_);
+  }
+  return poses;
+}
+
 template<typename T, typename V, typename Z>
 void WaypointFollower::followWaypointsLogic(
   const T & action_server,
@@ -161,17 +181,7 @@ void WaypointFollower::followWaypointsLogic(
 
   std::vector<geometry_msgs::msg::PoseStamped> poses;
 
-  // compile time static check to decide which block of code to be built
-  if constexpr (std::is_same<T, std::unique_ptr<ActionServer>>::value)
-  {
-    // If normal waypoint following callback was called, we build here
-    poses = goal->poses;
-  } else {
-    // If GPS waypoint following callback was called, we build here
-    poses = convertGPSWaypointstoPosesinMap(
-      goal->waypoints, shared_from_this(),
-      from_ll_to_map_client_);
-  }
+  poses = getUpdatedPoses<T>(action_server);
 
   if (!action_server || !action_server->is_server_active()) {
     RCLCPP_DEBUG(get_logger(), "Action server inactive. Stopping.");
@@ -206,14 +216,7 @@ void WaypointFollower::followWaypointsLogic(
     if (action_server->is_preempt_requested()) {
       RCLCPP_INFO(get_logger(), "Preempting the goal pose.");
       goal = action_server->accept_pending_goal();
-      if constexpr (std::is_same<T, std::unique_ptr<ActionServer>>::value)
-      {
-        poses = goal->poses;  // Discarded if cond is false
-      } else {
-        poses = convertGPSWaypointstoPosesinMap(
-          goal->waypoints, shared_from_this(),
-          from_ll_to_map_client_);
-      }
+      poses = getUpdatedPoses<T>(action_server);
       goal_index = 0;
       new_goal = true;
     }

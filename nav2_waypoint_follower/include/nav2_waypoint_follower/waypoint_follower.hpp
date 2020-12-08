@@ -170,6 +170,9 @@ protected:
     const
     std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> & fromll_client);
 
+  template<typename T>
+  std::vector<geometry_msgs::msg::PoseStamped> getUpdatedPoses(const T & action_server);
+
   // Common vars used for both GPS and cartesian point following
   rclcpp::Node::SharedPtr client_node_;
   std::vector<int> failed_ids_;
