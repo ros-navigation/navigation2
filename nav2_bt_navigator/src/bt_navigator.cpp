@@ -267,7 +267,6 @@ BtNavigator::navigateToPose()
 
   // Empty id in request is default for backward compatibility
   bt_xml_filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
-  RCLCPP_DEBUG(get_logger(), "Check if we need to load BT: %s", bt_xml_filename.c_str());
 
   if (!loadBehaviorTree(bt_xml_filename)) {
     RCLCPP_ERROR(
