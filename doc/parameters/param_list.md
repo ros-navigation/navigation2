@@ -5,6 +5,9 @@
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | default_bt_xml_filename | N/A | path to the default behavior tree XML description |
+| enable_groot_monitoring | True | enable Groot live monitoring of the behavior tree |
+| groot_zmq_publisher_port | 1666 | change port of the zmq publisher needed for groot |
+| groot_zmq_server_port | 1667 | change port of the zmq server needed for groot |
 | plugin_lib_names | ["nav2_compute_path_to_pose_action_bt_node", "nav2_follow_path_action_bt_node", "nav2_back_up_action_bt_node", "nav2_spin_action_bt_node", "nav2_wait_action_bt_node", "nav2_clear_costmap_service_bt_node", "nav2_is_stuck_condition_bt_node", "nav2_goal_reached_condition_bt_node", "nav2_initial_pose_received_condition_bt_node", "nav2_goal_updated_condition_bt_node", "nav2_reinitialize_global_localization_service_bt_node", "nav2_rate_controller_bt_node", "nav2_distance_controller_bt_node", "nav2_recovery_node_bt_node", "nav2_pipeline_sequence_bt_node", "nav2_round_robin_node_bt_node", "nav2_transform_available_condition_bt_node"] | list of behavior tree node shared libraries |
 | transform_tolerance | 0.1 | TF transform tolerance |
 | global_frame | "map" | Reference frame |
@@ -429,7 +432,7 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 | ----------| --------| ------------|
 | node_names | N/A | Ordered list of node names to bringup through lifecycle transition |
 | autostart | false | Whether to transition nodes to active state on startup |
-| bond_timeout_ms | 4000 | Timeout for bond to fail if no heartbeat can be found, in milliseconds. If set to 0, it will be disabled. Must be larger than 300ms for stable bringup. |
+| bond_timeout | 4.0 | Timeout for bond to fail if no heartbeat can be found, in seconds. If set to 0, it will be disabled. Must be larger than 0.3s for stable bringup. |
 
 # map_server
 
@@ -437,7 +440,7 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| save_map_timeout | 2000 | Timeout to attempt to save map with (ms) |
+| save_map_timeout | 2.0 | Timeout to attempt to save map with (s) |
 | free_thresh_default | 0.25 | Free space maximum threshold for occupancy grid |
 | occupied_thresh_default | 0.65 | Occupied space minimum threshhold for occupancy grid |
 | map_subscribe_transient_local | true | Use transient local QoS profile for incoming map subscription |
@@ -497,7 +500,7 @@ When `planner_plugins` parameter is not overridden, the following default plugin
 | `<name>`.allow_unknown | true | whether to allow traversing in unknown space |
 | `<name>`.max_iterations | -1 | Number of iterations before failing, disabled by -1 |
 | `<name>`.max_on_approach_iterations | 1000 | Iterations after within threshold before returning approximate path with best heuristic |
-| `<name>`.max_planning_time_ms | 5000 | Maximum planning time in ms |
+| `<name>`.max_planning_time | 5.0 | Maximum planning time in s |
 | `<name>`.smooth_path | false | Whether to smooth path with CG smoother |
 | `<name>`.motion_model_for_search | DUBIN | Motion model to search with. Options for SE2: DUBIN, REEDS_SHEPP. 2D: MOORE, VON_NEUMANN |
 | `<name>`.angle_quantization_bins | 1 | Number of angle quantization bins for SE2 node |

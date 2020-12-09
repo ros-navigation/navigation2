@@ -63,7 +63,7 @@ Please note that not all params needed to run the navigation stack are shown her
 - Then add `my_marker` to RVIZ using the GUI.
 
 
-####Errata:
+#### Errata:
 - To see the markers in 3D, you will need to change the _view_ in RVIZ to a 3 dimensional view (e.g. orbit) from the RVIZ GUI.
 - Currently due to some bug in rviz, you need to set the `fixed_frame` in the rviz display, to `odom` frame.
 - Using pointcloud data from a saved bag file while using gazebo simulation can be troublesome due to the clock time skipping to an earlier time.

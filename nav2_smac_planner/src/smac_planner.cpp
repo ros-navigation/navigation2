@@ -111,8 +111,8 @@ void SmacPlanner::configure(
   node->get_parameter(name + ".analytic_expansion_ratio", search_info.analytic_expansion_ratio);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".max_planning_time_ms", rclcpp::ParameterValue(5000.0));
-  node->get_parameter(name + ".max_planning_time_ms", _max_planning_time);
+    node, name + ".max_planning_time", rclcpp::ParameterValue(5.0));
+  node->get_parameter(name + ".max_planning_time", _max_planning_time);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
