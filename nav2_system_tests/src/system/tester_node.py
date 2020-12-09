@@ -23,6 +23,7 @@ import time
 from typing import Optional
 
 from action_msgs.msg import GoalStatus
+from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
@@ -93,13 +94,17 @@ class NavTester(Node):
         self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
         self.goal_pub.publish(self.getStampedPoseMsg(self.goal_pose))
 
-    def runNavigateAction(self, goal_pose: Optional[Pose] = None):
+    def runNavigateAction(
+        self,
+        goal_pose: Optional[Pose] = None,
+        bt_filepath: Optional[str] = None
+    ):
         # Sends a `NavToPose` action request and waits for completion
         self.info_msg("Waiting for 'NavigateToPose' action server")
         while not self.action_client.wait_for_server(timeout_sec=1.0):
             self.info_msg("'NavigateToPose' action server not available, waiting...")
 
-        if (os.getenv('GROOT_MONITORING') == 'True'):
+        if (os.getenv('GROOT_MONITORING') == 'True' and bt_filepath is None):
             if self.grootMonitoringGetStatus():
                 self.error_msg('Behavior Tree must not be running already!')
                 self.error_msg('Are you running multiple goals/bts..?')
@@ -109,6 +114,9 @@ class NavTester(Node):
         self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
         goal_msg = NavigateToPose.Goal()
         goal_msg.pose = self.getStampedPoseMsg(self.goal_pose)
+
+        if bt_filepath is not None:
+            goal_msg.behavior_tree = bt_filepath
 
         self.info_msg('Sending goal request...')
         send_goal_future = self.action_client.send_goal_async(goal_msg)
@@ -124,7 +132,7 @@ class NavTester(Node):
         get_result_future = goal_handle.get_result_async()
 
         future_return = True
-        if (os.getenv('GROOT_MONITORING') == 'True'):
+        if (os.getenv('GROOT_MONITORING') == 'True' and bt_filepath is None):
             try:
                 if not self.grootMonitoringReloadTree():
                     self.error_msg('Failed GROOT_BT - Reload Tree from ZMQ Server')
@@ -308,12 +316,80 @@ class NavTester(Node):
             self.info_msg('Waiting for amcl_pose to be received')
             rclpy.spin_once(self, timeout_sec=1)
 
+    def sendGoalWithWrongBT(self, goal_pose: Optional[Pose] = None):
+        # Sends a `NavToPose` action request and awaits goal REJECTION
+        self.info_msg("Waiting for 'NavigateToPose' action server")
+        while not self.action_client.wait_for_server(timeout_sec=1.0):
+            self.info_msg("'NavigateToPose' action server not available, waiting...")
+
+        self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
+        goal_msg = NavigateToPose.Goal()
+        goal_msg.pose = self.getStampedPoseMsg(self.goal_pose)
+
+        # Craft wrong behavior tree path
+        goal_msg.behavior_tree = '/definitely/not/your/bt.xml'
+
+        self.info_msg('Sending goal request...')
+        send_goal_future = self.action_client.send_goal_async(goal_msg)
+
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        goal_handle = send_goal_future.result()
+
+        if not goal_handle.accepted:
+            self.info_msg('Goal rejected - wrong BT-file')
+            return True
+
+        # Cancel the goal just in case
+        future = self.goal_handle.cancel_goal_async()
+        rclpy.spin_until_future_complete(self, future)
+
+        cancel_response = future.result()
+        if len(cancel_response.goals_canceling) > 0:
+            self.get_logger().info('Goal successfully canceled')
+        else:
+            self.get_logger().info('Goal failed to cancel')
+
+        return False
+
+    def getPathToBadXMLFile(self, bt_filename):
+        nav2_share_dir = get_package_share_directory('nav2_system_tests')
+        bt_filepath = os.path.join(nav2_share_dir, 'behavior_trees', bt_filename)
+        return bt_filepath
+
+    def getPathToGoodXMLFile(self, bt_filename):
+        nav2_share_dir = get_package_share_directory('nav2_bt_navigator')
+        bt_filepath = os.path.join(nav2_share_dir, 'behavior_trees', bt_filename)
+        return bt_filepath
+
 
 def test_RobotMovesToGoal(robot_tester):
     robot_tester.info_msg('Setting goal pose')
     robot_tester.publishGoalPose()
     robot_tester.info_msg('Waiting 60 seconds for robot to reach goal')
     return robot_tester.reachesGoal(timeout=60, distance=0.5)
+
+
+def test_RobotGetsBadBehaviorTree(robot_tester):
+    robot_tester.info_msg('Sending Action Goal with wrong Behavior Tree')
+    return robot_tester.sendGoalWithWrongBT()
+
+
+def test_RobotGetsCorruptXMLFile(robot_tester):
+    robot_tester.info_msg('Sending Action Goal with Corrupt XML - Missing end root tag')
+    bt_filepath = robot_tester.getPathToBadXMLFile('missing_end_root_tag.xmlbad')
+    return not robot_tester.runNavigateAction(
+        goal_pose=fwd_pose(float(0), float(0)),
+        bt_filepath=bt_filepath
+        )
+
+
+def test_RobotGetsDifferentWorkingBT(robot_tester):
+    robot_tester.info_msg('Sending new Goal with Round-Robin BT')
+    bt_filepath = robot_tester.getPathToGoodXMLFile('navigate_w_replanning_and_recovery.xml')
+    return robot_tester.runNavigateAction(
+        goal_pose=fwd_pose(float(0), float(0)),
+        bt_filepath=bt_filepath
+        )
 
 
 def run_all_tests(robot_tester):
@@ -329,6 +405,16 @@ def run_all_tests(robot_tester):
         result = test_RobotMovesToGoal(robot_tester)
 
     # Add more tests here if desired
+    if (result):
+        result = test_RobotGetsBadBehaviorTree(robot_tester)
+
+    time.sleep(5)
+    if (result):
+        result = test_RobotGetsCorruptXMLFile(robot_tester)
+
+    time.sleep(5)
+    if (result):
+        result = test_RobotGetsDifferentWorkingBT(robot_tester)
 
     if (result):
         robot_tester.info_msg('Test PASSED')

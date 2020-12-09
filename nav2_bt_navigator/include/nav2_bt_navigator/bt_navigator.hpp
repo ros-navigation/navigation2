@@ -96,6 +96,8 @@ protected:
    */
   void navigateToPose();
 
+  bool goalCheckerCallback(std::shared_ptr<const typename Action::Goal> goal);
+
   /**
    * @brief Goal pose initialization on the blackboard
    */
