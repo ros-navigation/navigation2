@@ -107,7 +107,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("min_theta_velocity_threshold", min_theta_velocity_threshold_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
-  get_parameter("speed_limit_topic", speed_limit_topic_);
+  std::string speed_limit_topic;
+  get_parameter("speed_limit_topic", speed_limit_topic);
 
   costmap_ros_->on_configure(state);
 
@@ -173,7 +174,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   // Set subscribtion to the speed limiting topic
   speed_limit_sub_ = create_subscription<nav2_msgs::msg::SpeedLimit>(
-    speed_limit_topic_, rclcpp::QoS(10),
+    speed_limit_topic, rclcpp::QoS(10),
     std::bind(&ControllerServer::speedLimitCallback, this, std::placeholders::_1));
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -465,7 +466,7 @@ void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::Shar
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
     if (!msg->percentage) {
       RCLCPP_ERROR(get_logger(), "Speed limit in absolute values is not implemented yet");
-      throw std::runtime_error("Speed limit in absolute values is not implemented yet");
+      return;
     }
     it->second->setSpeedLimit(msg->speed_limit);
   }

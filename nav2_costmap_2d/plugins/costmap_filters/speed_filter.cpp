@@ -278,6 +278,7 @@ void SpeedFilter::process(
       mask_robot_i, mask_robot_j);
     return;
   } else {
+    // Normal case: speed_mask_data in range of [1..100]
     speed_limit_ = speed_mask_data * multiplier_ + base_;
     if (speed_limit_ < 0.0) {
       RCLCPP_WARN(

@@ -229,10 +229,6 @@ protected:
   double min_y_velocity_threshold_;
   double min_theta_velocity_threshold_;
 
-  // Speed limit parameters
-  std::string speed_limit_topic_;
-
-
   // Whether we've published the single controller warning yet
   geometry_msgs::msg::Pose end_pose_;
 
