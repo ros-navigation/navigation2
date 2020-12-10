@@ -102,6 +102,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_FATAL(
         get_logger(), "Failed to create global planner. Exception: %s",
         ex.what());
+      return nav2_util::CallbackReturn::FAILURE;
     }
   }
 

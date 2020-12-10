@@ -115,6 +115,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     RCLCPP_FATAL(
       get_logger(),
       "Failed to create progress_checker. Exception: %s", ex.what());
+    return nav2_util::CallbackReturn::FAILURE;
   }
   try {
     goal_checker_type_ = nav2_util::get_plugin_type_param(node, goal_checker_id_);
@@ -127,6 +128,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     RCLCPP_FATAL(
       get_logger(),
       "Failed to create goal_checker. Exception: %s", ex.what());
+    return nav2_util::CallbackReturn::FAILURE;
   }
 
   for (size_t i = 0; i != controller_ids_.size(); i++) {
@@ -145,6 +147,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_FATAL(
         get_logger(),
         "Failed to create controller. Exception: %s", ex.what());
+      return nav2_util::CallbackReturn::FAILURE;
     }
   }
 
