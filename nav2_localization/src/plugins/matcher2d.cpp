@@ -28,28 +28,42 @@ double LikelihoodFieldMatcher2d::getScanProbability(
 	const sensor_msgs::msg::LaserScan::ConstSharedPtr &scan,
 	const geometry_msgs::msg::TransformStamped &curr_pose)
 {
-	double q = 1;
+	double q = 1;	// Probability of curr_pose given scan
+	double theta = tf2::getYaw(curr_pose.transform.rotation); // Robot's orientation
 
-	// in case the user specfies more beams than is avaiable
-	int max_number_of_beams = std::min(max_number_of_beams, static_cast<int>(laser_scan->ranges.size()));
-	for(int i=0; i<max_number_of_beams; i++)
+	double z_max = scan->range_max;
+	double z_min = scan->range_min;
+
+	// In case the user specifies more beams than is available
+	int max_number_of_beams = std::min(max_number_of_beams, static_cast<int>(scan->ranges.size()));
+	int beams_to_skip = scan->ranges.size()/max_number_of_beams;
+	
+	// Iterate over the specfied number of beams, skipping between them to get an even distribution  
+	for(int i=0; i<max_number_of_beams; i+=beams_to_skip)
 	{
-		if(laser_scan->ranges[i]<z_max_ || laser_scan->ranges[i]>z_min_) // within sensor range
+		// Check if the range is within the sensor's limits
+		if(scan->ranges[i]<z_max && scan->ranges[i]>z_min)
 		{
+			// Map the beam end-point onto the map
+			double beam_angle = tf2::getYaw(sensor_pose_.transform.rotation) + scan->angle_min + scan->angle_increment*i;
 			double x_z_kt = curr_pose.transform.translation.x +
-							laser_pose_.transform.translation.x * cos(tf2::getYaw(curr_pose.transform.rotation)) -
-							laser_pose_.transform.translation.y * sin(tf2::getYaw(curr_pose.transform.rotation)) +
-							laser_scan->ranges[i] * 
-							cos(tf2::getYaw(curr_pose.transform.rotation) + tf2::getYaw(laser_pose_.transform.rotation));
+							sensor_pose_.transform.translation.x * cos(theta) -
+							sensor_pose_.transform.translation.y * sin(theta) +
+							scan->ranges[i] * 
+							cos(theta + beam_angle);
 			double y_z_kt = curr_pose.transform.translation.y +
-							laser_pose_.transform.translation.y * cos(tf2::getYaw(curr_pose.transform.rotation)) +
-							laser_pose_.transform.translation.x * sin(tf2::getYaw(curr_pose.transform.rotation)) +
-							laser_scan->ranges[i] * 
-							sin(tf2::getYaw(curr_pose.transform.rotation) + tf2::getYaw(laser_pose_.transform.rotation));
-			int8_t end_point_index = MapUtils::coordinates_to_index(x_z_kt, y_z_kt, map_->info.width);
-			double dist_prob = pre_computed_likelihood_field_.at(end_point_index);
+							sensor_pose_.transform.translation.y * cos(theta) +
+							sensor_pose_.transform.translation.x * sin(theta) +
+							scan->ranges[i] * 
+							sin(theta + beam_angle);
 
-			q *= z_hit_* dist_prob + (z_rand_/z_max_);
+			// Get index of the laser end-point in the grid map
+			int end_point_index = MapUtils::coordinates_to_index(x_z_kt, y_z_kt, map_->info.width);
+
+			// Get the likelihood field probability at that endpoint 
+			double dist_prob = pre_computed_likelihood_field_[end_point_index];
+
+			q *= z_hit_* dist_prob + (z_rand_/z_max);
 		}
 	}
 	return q;
