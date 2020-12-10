@@ -14,12 +14,12 @@ public:
     geometry_msgs::msg::TransformStamped getMostLikelyPose(
         const geometry_msgs::msg::TransformStamped& prev_odom,
         const geometry_msgs::msg::TransformStamped& curr_odom,
-        const geometry_msgs::msg::TransformStamped& prev_pose);
+        const geometry_msgs::msg::TransformStamped& prev_pose) override;
 
-    void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
-    void activate();
-    void deactivate();
-    void cleanup();
+    void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) override;
+    void activate() override;
+    void deactivate() override;
+    void cleanup() override;
 
 private:
     // Noise parameters

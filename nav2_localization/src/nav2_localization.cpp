@@ -244,7 +244,7 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
         RCLCPP_ERROR(get_logger(), "%s", e.what());
         return;
     }
-    matcher2d_->setLaserPose(laser_pose);
+    matcher2d_->setSensorPose(laser_pose);
 
     // The estimated robot's pose in the global frame
     geometry_msgs::msg::TransformStamped current_pose = solver_->solve(odom_to_base_transform);

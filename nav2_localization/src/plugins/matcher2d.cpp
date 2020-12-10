@@ -7,31 +7,26 @@
 namespace nav2_localization
 {
 
-void LikelihoodFieldMatcher2d::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node)
+void LikelihoodFieldMatcher2d::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
 {
 	node_ = node;
 
 	node_->declare_parameter("max_likelihood_distance", 2.0);
 	node_->declare_parameter("sigma_hit", 0.2);
 	node_->declare_parameter("max_number_of_beams", 60);
-	node_->declare_parameter("z_max", 0.05);
-	node_->declare_parameter("z_min", 0.0);
 	node_->declare_parameter("z_hit", 0.5);
 	node_->declare_parameter("z_rand", 0.5);
 
 	node_->get_parameter("max_likelihood_distance", max_likelihood_distace_);
     node_->get_parameter("sigma_hit", sigma_hit_);
 	node_->get_parameter("max_number_of_beams", max_number_of_beams_);
-	node_->get_parameter("z_max", z_max_);
-	node_->get_parameter("z_min", z_min_);
 	node_->get_parameter("z_hit", z_hit_);
 	node_->get_parameter("z_rand", z_rand_);
 }
 
-double LikelihoodFieldMatcher2d::probabilityGet(
-	const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan,
-	const sensor_msgs::msg::LaserScan & measurement,
-	const geometry_msgs::msg::TransformStamped & curr_pose) const
+double LikelihoodFieldMatcher2d::getScanProbability(
+	const sensor_msgs::msg::LaserScan::ConstSharedPtr &scan,
+	const geometry_msgs::msg::TransformStamped &curr_pose)
 {
 	double q = 1;
 
@@ -85,9 +80,7 @@ void LikelihoodFieldMatcher2d::preComputeLikelihoodField()
 {
 	std::vector<int> occupied_cells;
 
-    RCLCPP_ERROR(node_->get_logger(), "1");
-
-	// Identify all the occupied cells
+    // Identify all the occupied cells
 	for(auto index=0; index < map_->info.width*map_->info.height; index++)
 	{
 		if(map_->data[index]==100) // the cell is occupied
@@ -99,21 +92,16 @@ void LikelihoodFieldMatcher2d::preComputeLikelihoodField()
 			pre_computed_likelihood_field_[index] = max_likelihood_distace_;
 	}
 
-    RCLCPP_ERROR(node_->get_logger(), "2");
-
-	// Depth first search for other cells
+    // Depth first search for other cells
 	for(auto index : occupied_cells)
 	{
 		std::vector<bool> visited(map_->info.width*map_->info.height, false);
 		DFS(index, index, visited);
 	}
 
-    RCLCPP_ERROR(node_->get_logger(), "3");
-	
-	// Apply zero-mean norrmal distribution
+    // Apply zero-mean norrmal distribution
 	for(auto index=0; index < map_->info.width*map_->info.height; index++)
 		pre_computed_likelihood_field_[index] = (1.0/(sqrt(2*M_PI)*sigma_hit_))*exp(-0.5*((pre_computed_likelihood_field_[index]*pre_computed_likelihood_field_[index])/(sigma_hit_*sigma_hit_)));
-    RCLCPP_ERROR(node_->get_logger(), "4");
 }
 
 void LikelihoodFieldMatcher2d::DFS(const int &index_curr, const int &index_of_obstacle, std::vector<bool> &visited)
@@ -169,9 +157,9 @@ void LikelihoodFieldMatcher2d::DFS(const int &index_curr, const int &index_of_ob
 	}
 }
 
-void LikelihoodFieldMatcher2d::setLaserPose(const geometry_msgs::msg::TransformStamped& laser_pose)
+void LikelihoodFieldMatcher2d::setSensorPose(const geometry_msgs::msg::TransformStamped &sensor_pose)
 {
-	laser_pose_ = laser_pose;
+	sensor_pose_ = sensor_pose;
 }
 } // nav2_localization
 
