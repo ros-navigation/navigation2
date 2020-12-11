@@ -36,9 +36,8 @@ public:
      * @return Estimation of the current position
      */
 	virtual geometry_msgs::msg::TransformStamped solve(
-		const geometry_msgs::msg::TransformStamped& curr_odom) = 0;
-
-	virtual void setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan) = 0;
+		const geometry_msgs::msg::TransformStamped& curr_odom,
+		const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan) = 0;
 
 	virtual void init_filter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose) = 0;
 
@@ -61,7 +60,6 @@ protected:
 	Matcher2d::Ptr matcher_;
 	geometry_msgs::msg::TransformStamped prev_odom_; // Previous pose odometry-based estimation
 	geometry_msgs::msg::TransformStamped prev_pose_; // Previous pose estimation
-	sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan_;
 };
 } // nav2_localization
 

@@ -6,20 +6,16 @@
 
 namespace nav2_localization
 {
-void DummySolver2d::setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan)
-{
-	laser_scan_ = laser_scan;
-}
-
 geometry_msgs::msg::TransformStamped DummySolver2d::solve(
-	const geometry_msgs::msg::TransformStamped& curr_odom)
+	const geometry_msgs::msg::TransformStamped& curr_odom,
+	const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan)
 {
 	// Motion update
 	pf_->prediction_step(motionSampler_, curr_odom, prev_odom_, prev_pose_);
 	prev_odom_ = curr_odom;
 
 	// Measurement update
-	pf_->update_step(matcher_, laser_scan_);
+	pf_->update_step(matcher_, laser_scan);
 
 	geometry_msgs::msg::TransformStamped curr_pose = pf_->get_most_likely_pose();
 	prev_pose_ = curr_pose;

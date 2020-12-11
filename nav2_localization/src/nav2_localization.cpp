@@ -215,7 +215,6 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
     // we don't want our callbacks to fire until we're in the active state
     if (!get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {return;}
 
-	solver_->setLaserScan(laser_scan);
     geometry_msgs::msg::TransformStamped odom_to_base_transform;
     try
     {
@@ -247,7 +246,7 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
     matcher2d_->setSensorPose(laser_pose);
 
     // The estimated robot's pose in the global frame
-    geometry_msgs::msg::TransformStamped current_pose = solver_->solve(odom_to_base_transform);
+    geometry_msgs::msg::TransformStamped current_pose = solver_->solve(odom_to_base_transform, laser_scan);
 
     current_pose.header.stamp = laser_scan->header.stamp;
     current_pose.header.frame_id = map_frame_id_;

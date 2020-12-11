@@ -24,9 +24,8 @@ public:
 	DummySolver2d() {};
 
 	geometry_msgs::msg::TransformStamped solve(
-		const geometry_msgs::msg::TransformStamped& curr_odom);
-
-	void setLaserScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan);
+		const geometry_msgs::msg::TransformStamped& curr_odom,
+		const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan);
 
 	void init_filter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose);
 
