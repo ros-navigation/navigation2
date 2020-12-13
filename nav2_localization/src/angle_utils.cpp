@@ -3,7 +3,7 @@
 
 namespace nav2_localization
 {
-double AngleUtils::angle_diff(const double &a, const double &b)
+double AngleUtils::angleDiff(const double &a, const double &b)
 {
     double angle = a - b;
     angle = fmod(angle, 2.0*M_PI); // limit the angle from 0 to 2*Pi

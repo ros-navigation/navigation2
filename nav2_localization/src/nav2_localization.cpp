@@ -122,7 +122,7 @@ LocalizationServer::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr ms
 void
 LocalizationServer::initTransforms()
 {
-    // Initilize transform listener and broadcaster
+    // Initialize transform listener and broadcaster
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(rclcpp_node_->get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
         rclcpp_node_->get_node_base_interface(),
@@ -205,7 +205,7 @@ LocalizationServer::initPlugins()
 void
 LocalizationServer::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-    solver_->init_filter(msg);
+    solver_->initFilter(msg);
 }
 
 void

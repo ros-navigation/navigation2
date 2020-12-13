@@ -39,8 +39,20 @@ public:
 		const geometry_msgs::msg::TransformStamped& curr_odom,
 		const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan) = 0;
 
-	virtual void init_filter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose) = 0;
+	/**
+	 * @brief Initializes the filter being used with a given pose
+	 * @param pose The pose at which to initialize the filter
+	 */ 
+	virtual void initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose) = 0;
 
+	/**
+     * @brief Configures the solver, during the "Configuring" state of the parent lifecycle node.
+     * @param node Pointer to the parent lifecycle node
+	 * @param motionSampler The Sample Motion Model to use 
+	 * @param matcher The 2D Matcher to use
+	 * @param odom Initial odometry
+	 * @param pose Initial pose
+     */   
 	virtual void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
 		SampleMotionModel::Ptr& motionSampler,
@@ -48,10 +60,19 @@ public:
 		const geometry_msgs::msg::TransformStamped& odom,
 		const geometry_msgs::msg::TransformStamped& pose) = 0;
 
+	/**
+     * @brief Activates the solver, during the "Activating" state of the parent lifecycle node.
+     */
 	virtual void activate() = 0;
 
+	/**
+     * @brief Deactivates the solver, during the "Deactivating" state of the parent lifecycle node. 
+     */
 	virtual void deactivate() = 0;
 
+	/**
+     * @brief Cleans up the solver, during the "Cleaningup" state of the parent lifecycle node.
+     */
 	virtual void cleanup() = 0;
 
 protected:

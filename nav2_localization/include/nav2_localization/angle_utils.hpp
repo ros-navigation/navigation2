@@ -3,10 +3,20 @@
 
 namespace nav2_localization
 {
+/**
+ * @class AngleUtils
+ * @brief Encapsulates useful methods to manipulate angles
+ */
 class AngleUtils
 {
 public:
-    static double angle_diff(const double &a, const double &b);
+    /**
+     * @brief Calculates the difference between two angles and bounds the output to [-pi, pi]
+     * @param a First angle
+     * @param b Second angle
+     * @return the difference between angle a and b, bounded to [-pi, pi]
+     */
+    static double angleDiff(const double &a, const double &b);
 };
 }
 

@@ -25,20 +25,20 @@ public:
 
 	geometry_msgs::msg::TransformStamped solve(
 		const geometry_msgs::msg::TransformStamped& curr_odom,
-		const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan);
+		const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan) override;
 
-	void init_filter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose);
+	void initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose) override;
 
 	void configure(
 		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
 		SampleMotionModel::Ptr& motionSampler,
 		Matcher2d::Ptr& matcher,
 		const geometry_msgs::msg::TransformStamped& odom,
-		const geometry_msgs::msg::TransformStamped& pose);
+		const geometry_msgs::msg::TransformStamped& pose) override;
 
-	void activate();
-	void deactivate();
-	void cleanup();
+	void activate() override;
+	void deactivate() override;
+	void cleanup() override;
 
 private:
 	std::shared_ptr<DummyParticleFilter> pf_;

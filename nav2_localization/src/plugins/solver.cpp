@@ -23,7 +23,7 @@ geometry_msgs::msg::TransformStamped DummySolver2d::solve(
     return curr_pose;
 }
 
-void DummySolver2d::init_filter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose)
+void DummySolver2d::initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose)
 {
 
 }

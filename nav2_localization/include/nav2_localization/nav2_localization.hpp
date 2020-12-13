@@ -74,12 +74,42 @@ protected:
      */
     nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
+    /**
+     * @brief Initializes the publishers and subscribers
+     */
     void initPubSub();
+    
+    /**
+     * @brief Initializes the member variables required to transform between coordinate frames
+     */
     void initTransforms();
+
+    /**
+     * @brief Initializes the laser scan message filter
+     */
     void initMessageFilters();
+    
+    /**
+     * @brief Initializes plugins
+     */
     void initPlugins();
+    
+    /**
+     * @brief Callback when the map is received
+     * @param msg pointer to the received map message
+     */
     void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+
+    /**
+     * @brief Callback when the laser is received
+     * @param laser_scan pointer to the received laser message
+     */
     void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
+
+    /**
+     * @brief Callback when the initial pose of the robot is received
+     * @param msg pointer to the received pose
+     */
     void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 
     // Map
