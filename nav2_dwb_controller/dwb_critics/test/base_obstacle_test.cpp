@@ -144,10 +144,13 @@ TEST(BaseObstacle, CriticVisualization)
   sensor_msgs::msg::PointCloud pointcloud;
   critic->addCriticVisualization(pointcloud);
 
+  int size_x = costmap_ros->getCostmap()->getSizeInCellsX();
+  int size_y = costmap_ros->getCostmap()->getSizeInCellsY();
+
   // The values in the pointcloud should be equal to the values in the costmap
-  for (unsigned int y = 0; y < 50; y++) {
-    for (unsigned int x = 0; x < 50; x++) {
-      float pointValue = pointcloud.channels[0].values[y * 50 + x];
+  for (unsigned int y = 0; y < size_y; y++) {
+    for (unsigned int x = 0; x < size_x; x++) {
+      float pointValue = pointcloud.channels[0].values[y * size_y + x];
       ASSERT_EQ(static_cast<int>(pointValue), costmap_ros->getCostmap()->getCost(x, y));
     }
   }
