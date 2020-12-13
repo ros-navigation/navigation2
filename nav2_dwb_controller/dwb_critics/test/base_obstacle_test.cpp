@@ -150,8 +150,8 @@ TEST(BaseObstacle, CriticVisualization)
   // The values in the pointcloud should be equal to the values in the costmap
   for (unsigned int y = 0; y < size_y; y++) {
     for (unsigned int x = 0; x < size_x; x++) {
-      // float pointValue = pointcloud.channels[0].values[y * size_y + x];
-      // ASSERT_EQ(static_cast<int>(pointValue), costmap_ros->getCostmap()->getCost(x, y));
+      float pointValue = pointcloud.channels[0].values[y * size_y + x];
+      ASSERT_EQ(static_cast<int>(pointValue), costmap_ros->getCostmap()->getCost(x, y));
     }
   }
 }
