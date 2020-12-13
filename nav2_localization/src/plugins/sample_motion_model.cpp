@@ -42,16 +42,22 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
     double delta_trans = hypot(x_bar_prime-x_bar, y_bar_prime-y_bar);	
     double delta_rot_2 = AngleUtils::angle_diff(AngleUtils::angle_diff(theta_bar_prime, theta_bar), delta_rot_1);	
 
+    // Treat forward and backward motion in the same way
+    double delta_rot_1_noise = std::min(fabs(AngleUtils::angle_diff(delta_rot_1, 0.0)),
+                                        fabs(AngleUtils::angle_diff(delta_rot_1, M_PI)));
+    double delta_rot_2_noise = std::min(fabs(AngleUtils::angle_diff(delta_rot_2, 0.0)),
+                                        fabs(AngleUtils::angle_diff(delta_rot_2, M_PI)));
+
     std::random_device device;	
     std::mt19937 generator(device());
 
-    std::normal_distribution<double> delta_rot_1_noise_dist(0.0, sqrt(alpha1_*pow(delta_rot_1, 2) + alpha2_*pow(delta_trans, 2)));	
+    std::normal_distribution<double> delta_rot_1_noise_dist(0.0, sqrt(alpha1_*pow(delta_rot_1_noise, 2) + alpha2_*pow(delta_trans, 2)));	
     double delta_rot_1_hat = AngleUtils::angle_diff(delta_rot_1, delta_rot_1_noise_dist(generator));
 
-    std::normal_distribution<double> delta_trans_noise_dist(0.0, sqrt(alpha3_*pow(delta_trans, 2) + alpha4_*(pow(delta_rot_1, 2) + pow(delta_rot_2, 2))));	
+    std::normal_distribution<double> delta_trans_noise_dist(0.0, sqrt(alpha3_*pow(delta_trans, 2) + alpha4_*(pow(delta_rot_1_noise, 2) + pow(delta_rot_2_noise, 2))));	
     double delta_trans_hat = delta_trans - delta_trans_noise_dist(generator);	
 
-    std::normal_distribution<double> delta_rot_2_noise_dist(0.0, sqrt(alpha1_*pow(delta_rot_2, 2) + alpha2_*pow(delta_trans, 2)));
+    std::normal_distribution<double> delta_rot_2_noise_dist(0.0, sqrt(alpha1_*pow(delta_rot_2_noise, 2) + alpha2_*pow(delta_trans, 2)));
     double delta_rot_2_hat = AngleUtils::angle_diff(delta_rot_2, delta_rot_2_noise_dist(generator));	
 
     geometry_msgs::msg::TransformStamped most_likely_pose;	
