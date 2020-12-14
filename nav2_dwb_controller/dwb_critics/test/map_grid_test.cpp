@@ -41,7 +41,6 @@
 #include "dwb_critics/map_grid.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
-// #include "dwb_core/exceptions.hpp"
 
 class OpenMapGrid : public dwb_critics::MapGridCritic
 {
@@ -183,8 +182,10 @@ TEST(MapGrid, ObstacleUnreachable)
   unsigned int unreachable_cost = obstacle_cost + 1;
 
   std::cout << "Size (x * y) " << unreachable_cost << std::endl;
-  critic->setAsObstacle(3);
-  EXPECT_EQ(critic->getValue(3), obstacle_cost);
+  critic->setAsObstacle(2);
+  EXPECT_EQ(critic->getValue(1), unreachable_cost);
+  EXPECT_EQ(critic->getValue(2), obstacle_cost);
+  EXPECT_EQ(critic->getValue(3), unreachable_cost);
 }
 
 TEST(MapGrid, CriticVisualization)
@@ -201,12 +202,6 @@ TEST(MapGrid, CriticVisualization)
   std::string name = "name";
   std::string ns = "ns";
 
-  // TODO(wilcobonestroo): Find out how MapGridCritic should be used...
-  costmap_ros->getCostmap()->setCost(3, 2, 0);
-  costmap_ros->getCostmap()->setCost(30, 12, 85);
-  costmap_ros->getCostmap()->setCost(10, 49, 24);
-  costmap_ros->getCostmap()->setCost(45, 2, 1);
-
   critic->initialize(node, name, ns, costmap_ros);
   // This makes all cells "unreachable"
   critic->reset();
@@ -222,10 +217,8 @@ TEST(MapGrid, CriticVisualization)
   for (int y = 0; y < size_y; y++) {
     for (int x = 0; x < size_x; x++) {
       float pointValue = pointcloud.channels[0].values[y * size_y + x];
-      // std::cout << pointValue << " ";
       ASSERT_EQ(static_cast<int>(pointValue), unreachable);
     }
-    // std::cout << std::endl;
   }
 }
 
