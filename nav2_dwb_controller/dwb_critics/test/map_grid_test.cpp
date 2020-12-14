@@ -39,11 +39,167 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_critics/map_grid.hpp"
+#include "nav2_util/node_utils.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
 // #include "dwb_core/exceptions.hpp"
 
-TEST(MapGrid, SANITY)
+class OpenMapGrid : public dwb_critics::MapGridCritic
 {
-  ASSERT_FALSE(false);
+public:
+  bool aggregationTypeIsLast()
+  {
+    return dwb_critics::MapGridCritic::ScoreAggregationType::Last == aggregationType_;
+  }
+
+  bool aggregationTypeIsSum()
+  {
+    return dwb_critics::MapGridCritic::ScoreAggregationType::Sum == aggregationType_;
+  }
+
+  bool aggregationTypeIsProduct()
+  {
+    return dwb_critics::MapGridCritic::ScoreAggregationType::Product == aggregationType_;
+  }
+
+  double getValue(unsigned int index)
+  {
+    return cell_values_[index];
+  }
+
+  void reset()
+  {
+    dwb_critics::MapGridCritic::reset();
+  }
+};
+
+TEST(MapGrid, Last)
+{
+  auto critic = std::make_shared<OpenMapGrid>();
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
+  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  node->configure();
+  node->activate();
+  costmap_ros->configure();
+
+  std::string name = "test";
+  std::string ns = "ns";
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, ns + "." + name + ".aggregation_type",
+    rclcpp::ParameterValue(std::string("last")));
+
+  critic->initialize(node, name, ns, costmap_ros);
+
+  EXPECT_TRUE(critic->aggregationTypeIsLast());
+  // TODO(wilcobonestroo): Find out how MapGridCritic should be used...
+}
+
+TEST(MapGrid, Sum)
+{
+  // TODO(wilcobonestroo): Find out how MapGridCritic should be used...
+}
+
+TEST(MapGrid, Product)
+{
+  // TODO(wilcobonestroo): Find out how MapGridCritic should be used...
+}
+
+TEST(MapGrid, InvalidValue)
+{
+  auto critic = std::make_shared<OpenMapGrid>();
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
+  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  node->configure();
+  node->activate();
+  costmap_ros->configure();
+
+  std::string name = "test";
+  std::string ns = "ns";
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, ns + "." + name + ".aggregation_type",
+    rclcpp::ParameterValue(std::string("invalid_value")));
+
+  critic->initialize(node, name, ns, costmap_ros);
+
+  // For an invalid type it should fall back to Last
+  EXPECT_TRUE(critic->aggregationTypeIsLast());
+}
+
+TEST(MapGrid, ObstacleUnreachable)
+{
+  auto critic = std::make_shared<OpenMapGrid>();
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
+  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  node->configure();
+  node->activate();
+  costmap_ros->configure();
+
+  std::string name = "test";
+  std::string ns = "ns";
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, ns + "." + name + ".aggregation_type",
+    rclcpp::ParameterValue(std::string("last")));
+
+  critic->initialize(node, name, ns, costmap_ros);
+  // TODO(wilcobonestroo): Shouldn't the critic call reset on initialization?
+  critic->reset();
+
+  // The value for obstacle should be the number of grid cell
+  unsigned int size_x = costmap_ros->getCostmap()->getSizeInCellsX();
+  unsigned int size_y = costmap_ros->getCostmap()->getSizeInCellsY();
+  unsigned int obstacle_cost = size_x * size_y;
+  unsigned int unreachable_cost = obstacle_cost + 1;
+
+  unreachable_cost = unreachable_cost + 2;
+
+  std::cout << "Size (x * y) " << unreachable_cost << std::endl;
+  critic->setAsObstacle(3);
+
+  EXPECT_EQ(critic->getValue(3), obstacle_cost);
+}
+
+TEST(MapGrid, CriticVisualization)
+{
+  auto critic = std::make_shared<OpenMapGrid>();
+
+  auto node = nav2_util::LifecycleNode::make_shared("base_obstacle_critic_tester");
+  node->configure();
+  node->activate();
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
+  costmap_ros->configure();
+
+  std::string name = "name";
+  std::string ns = "ns";
+
+  // TODO(wilcobonestroo): Find out how MapGridCritic should be used...
+  costmap_ros->getCostmap()->setCost(3, 2, 0);
+  costmap_ros->getCostmap()->setCost(30, 12, 85);
+  costmap_ros->getCostmap()->setCost(10, 49, 24);
+  costmap_ros->getCostmap()->setCost(45, 2, 1);
+
+  critic->initialize(node, name, ns, costmap_ros);
+  // This makes all cells "unreachable"
+  critic->reset();
+
+  sensor_msgs::msg::PointCloud pointcloud;
+  critic->addCriticVisualization(pointcloud);
+
+  int size_x = costmap_ros->getCostmap()->getSizeInCellsX();
+  int size_y = costmap_ros->getCostmap()->getSizeInCellsY();
+  int unreachable = size_x * size_y + 1;
+
+  // The values in the pointcloud should be equal to the values in the costmap
+  for (int y = 0; y < size_y; y++) {
+    for (int x = 0; x < size_x; x++) {
+      float pointValue = pointcloud.channels[0].values[y * size_y + x];
+      // std::cout << pointValue << " ";
+      ASSERT_EQ(static_cast<int>(pointValue), unreachable);
+    }
+    // std::cout << std::endl;
+  }
 }
 
 int main(int argc, char ** argv)
