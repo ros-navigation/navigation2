@@ -91,17 +91,48 @@ TEST(MapGrid, Last)
   critic->initialize(node, name, ns, costmap_ros);
 
   EXPECT_TRUE(critic->aggregationTypeIsLast());
-  // TODO(wilcobonestroo): Find out how MapGridCritic should be used...
 }
 
 TEST(MapGrid, Sum)
 {
-  // TODO(wilcobonestroo): Find out how MapGridCritic should be used...
+  auto critic = std::make_shared<OpenMapGrid>();
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
+  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  node->configure();
+  node->activate();
+  costmap_ros->configure();
+
+  std::string name = "test";
+  std::string ns = "ns";
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, ns + "." + name + ".aggregation_type",
+    rclcpp::ParameterValue(std::string("sum")));
+
+  critic->initialize(node, name, ns, costmap_ros);
+
+  EXPECT_TRUE(critic->aggregationTypeIsSum());
 }
 
 TEST(MapGrid, Product)
 {
-  // TODO(wilcobonestroo): Find out how MapGridCritic should be used...
+  auto critic = std::make_shared<OpenMapGrid>();
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
+  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  node->configure();
+  node->activate();
+  costmap_ros->configure();
+
+  std::string name = "test";
+  std::string ns = "ns";
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, ns + "." + name + ".aggregation_type",
+    rclcpp::ParameterValue(std::string("product")));
+
+  critic->initialize(node, name, ns, costmap_ros);
+
+  EXPECT_TRUE(critic->aggregationTypeIsProduct());
 }
 
 TEST(MapGrid, InvalidValue)
@@ -143,7 +174,6 @@ TEST(MapGrid, ObstacleUnreachable)
     rclcpp::ParameterValue(std::string("last")));
 
   critic->initialize(node, name, ns, costmap_ros);
-  // TODO(wilcobonestroo): Shouldn't the critic call reset on initialization?
   critic->reset();
 
   // The value for obstacle should be the number of grid cell
@@ -152,11 +182,8 @@ TEST(MapGrid, ObstacleUnreachable)
   unsigned int obstacle_cost = size_x * size_y;
   unsigned int unreachable_cost = obstacle_cost + 1;
 
-  unreachable_cost = unreachable_cost + 2;
-
   std::cout << "Size (x * y) " << unreachable_cost << std::endl;
   critic->setAsObstacle(3);
-
   EXPECT_EQ(critic->getValue(3), obstacle_cost);
 }
 
