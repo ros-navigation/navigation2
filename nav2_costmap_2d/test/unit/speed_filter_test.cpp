@@ -213,6 +213,7 @@ protected:
   void rePublishMask();
   bool createSpeedFilter(const std::string & global_frame);
   void createTFBroadcaster(const std::string & mask_frame, const std::string & global_frame);
+  void publishTransform();
 
   // Test methods
   void testFullMask(
@@ -387,7 +388,7 @@ void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::st
   transform_->header.frame_id = mask_frame;
   transform_->child_frame_id = global_frame;
 
-  transform_->header.stamp = node_->now();
+  transform_->header.stamp = node_->now() + rclcpp::Duration(100ms);
   transform_->transform.translation.x = TRANSLATION_X;
   transform_->transform.translation.y = TRANSLATION_Y;
   transform_->transform.translation.z = 0.0;
@@ -400,6 +401,14 @@ void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::st
 
   // Allow tf_buffer_ to be filled by listener
   waitSome(100ms);
+}
+
+void TestNode::publishTransform()
+{
+  if (tf_broadcaster_) {
+    transform_->header.stamp = node_->now() + rclcpp::Duration(100ms);
+    tf_broadcaster_->sendTransform(*transform_);
+  }
 }
 
 void TestNode::verifySpeedLimit(
@@ -441,6 +450,7 @@ void TestNode::testFullMask(
   // data = 0
   pose.x = 1 - tr_x;
   pose.y = -tr_y;
+  publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = getSpeedLimit();
   ASSERT_TRUE(speed_limit == nullptr);
@@ -451,6 +461,7 @@ void TestNode::testFullMask(
     for (x = 0; x < width_; x++) {
       pose.x = x - tr_x;
       pose.y = y - tr_y;
+      publishTransform();
       speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
       speed_limit = waitSpeedLimit();
       ASSERT_TRUE(speed_limit != nullptr);
@@ -461,6 +472,7 @@ void TestNode::testFullMask(
   // data = 0
   pose.x = 1 - tr_x;
   pose.y = -tr_y;
+  publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = waitSpeedLimit();
   ASSERT_TRUE(speed_limit != nullptr);
@@ -469,6 +481,7 @@ void TestNode::testFullMask(
   // data = -1
   pose.x = -tr_x;
   pose.y = -tr_y;
+  publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = getSpeedLimit();
   ASSERT_TRUE(speed_limit != nullptr);
@@ -490,6 +503,7 @@ void TestNode::testSimpleMask(
   // data = 0
   pose.x = 1 - tr_x;
   pose.y = -tr_y;
+  publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = getSpeedLimit();
   ASSERT_TRUE(speed_limit == nullptr);
@@ -499,6 +513,7 @@ void TestNode::testSimpleMask(
   unsigned int y = height_ / 2 - 1;
   pose.x = x - tr_x;
   pose.y = y - tr_y;
+  publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = waitSpeedLimit();
   ASSERT_TRUE(speed_limit != nullptr);
@@ -509,6 +524,7 @@ void TestNode::testSimpleMask(
   y = height_ - 1;
   pose.x = x - tr_x;
   pose.y = y - tr_y;
+  publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = waitSpeedLimit();
   ASSERT_TRUE(speed_limit != nullptr);
@@ -517,6 +533,7 @@ void TestNode::testSimpleMask(
   // data = 0
   pose.x = 1 - tr_x;
   pose.y = -tr_y;
+  publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = waitSpeedLimit();
   ASSERT_TRUE(speed_limit != nullptr);
@@ -525,6 +542,7 @@ void TestNode::testSimpleMask(
   // data = -1
   pose.x = -tr_x;
   pose.y = -tr_y;
+  publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = getSpeedLimit();
   ASSERT_TRUE(speed_limit != nullptr);

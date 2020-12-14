@@ -39,8 +39,8 @@
 
 #include <cmath>
 
-#include "tf2/convert.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "geometry_msgs/msg/point_stamped.hpp"
 
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
@@ -175,12 +175,15 @@ bool SpeedFilter::transformPose(
     // Filter mask and current layer are in different frames:
     // Prepare transform from current layer frame (global_frame_) to mask frame
     geometry_msgs::msg::TransformStamped transform;
-    tf2::Transform tf2_transform;
-    tf2_transform.setIdentity();  // initialize by identical transform
+    geometry_msgs::msg::PointStamped in, out;
+    in.header.stamp = clock_->now();
+    in.header.frame_id = global_frame_;
+    in.point.x = pose.x;
+    in.point.y = pose.y;
+    in.point.z = 0;
+
     try {
-      transform = tf_->lookupTransform(
-        mask_frame_, global_frame_, tf2::TimePointZero,
-        transform_tolerance_);
+      tf_->transform(in, out, mask_frame_, transform_tolerance_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(
         logger_,
@@ -189,14 +192,8 @@ bool SpeedFilter::transformPose(
         global_frame_.c_str(), mask_frame_.c_str(), ex.what());
       return false;
     }
-    tf2::fromMsg(transform.transform, tf2_transform);
-
-    // Transform (pose.x, pose.y) point from global_frame_
-    // to mask_pose point in mask_frame_
-    tf2::Vector3 point(pose.x, pose.y, 0);
-    point = tf2_transform * point;
-    mask_pose.x = point.x();
-    mask_pose.y = point.y();
+    mask_pose.x = out.point.x;
+    mask_pose.y = out.point.y;
   } else {
     // Filter mask and current layer are in the same frame:
     // Just use pose coordinates
