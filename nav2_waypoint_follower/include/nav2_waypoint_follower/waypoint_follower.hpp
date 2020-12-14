@@ -34,10 +34,7 @@
 #include "nav2_core/waypoint_task_executor.hpp"
 
 #include "robot_localization/srv/from_ll.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
-#include "tf2_ros/transform_listener.h"
 #include "tf2_ros/buffer.h"
-#include "tf2/transform_datatypes.h"
 
 namespace nav2_waypoint_follower
 {
@@ -166,14 +163,14 @@ protected:
  * @param fromll_client
  * @return std::vector<geometry_msgs::msg::PoseStamped>
  */
-  std::vector<geometry_msgs::msg::PoseStamped> convertGPSWaypointstoPosesinMap(
-    const std::vector<nav2_msgs::msg::OrientedNavSatFix> & gps_waypoints,
+  std::vector<geometry_msgs::msg::PoseStamped> convertGPSPoses2MapPoses(
+    const std::vector<nav2_msgs::msg::OrientedNavSatFix> & gps_poses,
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & parent_node,
     const
     std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> & fromll_client);
 
   template<typename T>
-  std::vector<geometry_msgs::msg::PoseStamped> getUpdatedPoses(const T & action_server);
+  std::vector<geometry_msgs::msg::PoseStamped> getLatestGoalPoses(const T & action_server);
 
   // Common vars used for both GPS and cartesian point following
   rclcpp::Node::SharedPtr client_node_;
@@ -201,8 +198,6 @@ protected:
 
   // tf buffer to get transfroms
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  // tf listner for tf transforms
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 }  // namespace nav2_waypoint_follower
