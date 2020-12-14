@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "nav2_waypoint_follower/waypoint_follower.hpp"
-#include "nav_2d_utils/tf_help.hpp"
 
 #include <fstream>
 #include <memory>
@@ -21,6 +20,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "nav_2d_utils/tf_help.hpp"
 
 namespace nav2_waypoint_follower
 {
@@ -388,7 +389,6 @@ WaypointFollower::convertGPSPoses2MapPoses(
 
   std::vector<geometry_msgs::msg::PoseStamped> poses_in_map_frame_vector;
   for (auto && curr_gps_pose : gps_poses) {
-
     auto request = std::make_shared<robot_localization::srv::FromLL::Request>();
     auto response = std::make_shared<robot_localization::srv::FromLL::Response>();
     request->ll_point.latitude = curr_gps_pose.position.latitude;
