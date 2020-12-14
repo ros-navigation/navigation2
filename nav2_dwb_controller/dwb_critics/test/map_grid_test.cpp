@@ -178,13 +178,13 @@ TEST(MapGrid, ObstacleUnreachable)
   // The value for obstacle should be the number of grid cell
   unsigned int size_x = costmap_ros->getCostmap()->getSizeInCellsX();
   unsigned int size_y = costmap_ros->getCostmap()->getSizeInCellsY();
-  unsigned int obstacle_cost = size_x * size_y;
-  unsigned int unreachable_cost = obstacle_cost + 1;
+  unsigned int obstacle_value = size_x * size_y;
+  unsigned int unreachable_value = obstacle_value + 1;
 
   critic->setAsObstacle(2);
-  EXPECT_EQ(critic->getValue(1), unreachable_cost);
-  EXPECT_EQ(critic->getValue(2), obstacle_cost);
-  EXPECT_EQ(critic->getValue(3), unreachable_cost);
+  EXPECT_EQ(critic->getValue(1), unreachable_value);
+  EXPECT_EQ(critic->getValue(2), obstacle_value);
+  EXPECT_EQ(critic->getValue(3), unreachable_value);
 }
 
 TEST(MapGrid, CriticVisualization)
@@ -202,21 +202,33 @@ TEST(MapGrid, CriticVisualization)
   std::string ns = "ns";
 
   critic->initialize(node, name, ns, costmap_ros);
+
+  int size_x = costmap_ros->getCostmap()->getSizeInCellsX();
+  int size_y = costmap_ros->getCostmap()->getSizeInCellsY();
+  int obstacle_value = size_x * size_y;
+  int unreachable_value = obstacle_value + 1;
+
   // This makes all cells "unreachable"
   critic->reset();
+
+  // Make some random values obstacle
+  critic->setAsObstacle(23);
+  critic->setAsObstacle(78);
+  critic->setAsObstacle(128);
 
   sensor_msgs::msg::PointCloud pointcloud;
   critic->addCriticVisualization(pointcloud);
 
-  int size_x = costmap_ros->getCostmap()->getSizeInCellsX();
-  int size_y = costmap_ros->getCostmap()->getSizeInCellsY();
-  int unreachable = size_x * size_y + 1;
-
   // The values in the pointcloud should be equal to the values in the costmap
   for (int y = 0; y < size_y; y++) {
     for (int x = 0; x < size_x; x++) {
-      float pointValue = pointcloud.channels[0].values[y * size_y + x];
-      ASSERT_EQ(static_cast<int>(pointValue), unreachable);
+      int index = y * size_y + x;
+      float pointValue = pointcloud.channels[0].values[index];
+      if (index == 23 || index == 78 || index == 128) {
+        ASSERT_EQ(static_cast<int>(pointValue), obstacle_value);
+      } else {
+        ASSERT_EQ(static_cast<int>(pointValue), unreachable_value);
+      }
     }
   }
 }
