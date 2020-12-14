@@ -181,7 +181,6 @@ TEST(MapGrid, ObstacleUnreachable)
   unsigned int obstacle_cost = size_x * size_y;
   unsigned int unreachable_cost = obstacle_cost + 1;
 
-  std::cout << "Size (x * y) " << unreachable_cost << std::endl;
   critic->setAsObstacle(2);
   EXPECT_EQ(critic->getValue(1), unreachable_cost);
   EXPECT_EQ(critic->getValue(2), obstacle_cost);
