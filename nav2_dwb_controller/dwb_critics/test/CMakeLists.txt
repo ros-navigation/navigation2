@@ -9,3 +9,6 @@ target_link_libraries(alignment_util_tests dwb_critics)
 
 ament_add_gtest(twirling_tests twirling_test.cpp)
 target_link_libraries(twirling_tests dwb_critics)
+
+ament_add_gtest(map_grid_tests map_grid_test.cpp)
+target_link_libraries(map_grid_tests dwb_critics)
