@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_waypoint_follower/waypoint_follower.hpp"
+#include "nav_2d_utils/tf_help.hpp"
 
 #include <fstream>
 #include <memory>
@@ -85,6 +86,9 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_logging_interface(),
     get_node_waitables_interface(),
     "FollowGPSWaypoints", std::bind(&WaypointFollower::followGPSWaypointsCallback, this));
+  // used for transfroming orientation of GPS poses to map frame
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   try {
     waypoint_task_executor_type_ = nav2_util::get_plugin_type_param(
@@ -167,7 +171,7 @@ std::vector<geometry_msgs::msg::PoseStamped> WaypointFollower::getUpdatedPoses(
   } else {
     // If GPS waypoint following callback was called, we build here
     poses = convertGPSWaypointstoPosesinMap(
-      action_server->get_current_goal()->waypoints, shared_from_this(),
+      action_server->get_current_goal()->gps_poses, shared_from_this(),
       from_ll_to_map_client_);
   }
   return poses;
@@ -376,19 +380,22 @@ void WaypointFollower::goalResponseCallback(
 
 std::vector<geometry_msgs::msg::PoseStamped>
 WaypointFollower::convertGPSWaypointstoPosesinMap(
-  const std::vector<sensor_msgs::msg::NavSatFix> & gps_waypoints,
+  const std::vector<nav2_msgs::msg::OrientedNavSatFix> & gps_poses,
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & parent_node,
   const std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> & fromll_client)
 {
   RCLCPP_INFO(parent_node->get_logger(), "Converting GPS waypoints to Map Frame..");
+  rclcpp::Duration transform_tolerance(0, 500);
 
   std::vector<geometry_msgs::msg::PoseStamped> poses_in_map_frame_vector;
-  for (auto && curr_gps_waypoint : gps_waypoints) {
+  for (auto && curr_gps_waypoint : gps_poses) {
+
     auto request = std::make_shared<robot_localization::srv::FromLL::Request>();
     auto response = std::make_shared<robot_localization::srv::FromLL::Response>();
-    request->ll_point.latitude = curr_gps_waypoint.latitude;
-    request->ll_point.longitude = curr_gps_waypoint.longitude;
-    request->ll_point.altitude = curr_gps_waypoint.altitude;
+    request->ll_point.latitude = curr_gps_waypoint.position.latitude;
+    request->ll_point.longitude = curr_gps_waypoint.position.longitude;
+    request->ll_point.altitude = curr_gps_waypoint.position.altitude;
+
     fromll_client->wait_for_service((std::chrono::seconds(1)));
     auto is_conversion_succeeded = fromll_client->invoke(
       request,
@@ -408,6 +415,15 @@ WaypointFollower::convertGPSWaypointstoPosesinMap(
       curr_waypoint_in_map_frame.pose.position.x = response->map_point.x;
       curr_waypoint_in_map_frame.pose.position.y = response->map_point.y;
       curr_waypoint_in_map_frame.pose.position.z = response->map_point.z;
+
+      geometry_msgs::msg::Quaternion utm_orientation = curr_gps_waypoint.orientation;
+      geometry_msgs::msg::PoseStamped temporary_pose;
+      temporary_pose.pose.orientation = utm_orientation;
+      temporary_pose.header.frame_id = "utm";
+      nav_2d_utils::transformPose(
+        tf_buffer_, "map", temporary_pose, temporary_pose, transform_tolerance);
+      curr_waypoint_in_map_frame.pose.orientation = temporary_pose.pose.orientation;
+
       poses_in_map_frame_vector.push_back(curr_waypoint_in_map_frame);
     }
   }

@@ -22,8 +22,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "sensor_msgs/msg/nav_sat_fix.hpp"
-
+#include "nav2_msgs/msg/oriented_nav_sat_fix.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/action/follow_waypoints.hpp"
@@ -36,6 +35,9 @@
 
 #include "robot_localization/srv/from_ll.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.h"
+#include "tf2/transform_datatypes.h"
 
 namespace nav2_waypoint_follower
 {
@@ -156,16 +158,16 @@ protected:
   void goalResponseCallback(const T & goal);
 
 /**
- * @brief given some gps_waypoints, converts them to map frame using robot_localization's service `fromLL`.
+ * @brief given some gps_poses, converts them to map frame using robot_localization's service `fromLL`.
  *        Constructs a vector of stamped poses in map frame and returns them.
  *
- * @param gps_waypoints
+ * @param gps_poses
  * @param parent_node
  * @param fromll_client
  * @return std::vector<geometry_msgs::msg::PoseStamped>
  */
-  static std::vector<geometry_msgs::msg::PoseStamped> convertGPSWaypointstoPosesinMap(
-    const std::vector<sensor_msgs::msg::NavSatFix> & gps_waypoints,
+  std::vector<geometry_msgs::msg::PoseStamped> convertGPSWaypointstoPosesinMap(
+    const std::vector<nav2_msgs::msg::OrientedNavSatFix> & gps_waypoints,
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & parent_node,
     const
     std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> & fromll_client);
@@ -196,6 +198,11 @@ protected:
   waypoint_task_executor_;
   std::string waypoint_task_executor_id_;
   std::string waypoint_task_executor_type_;
+
+  // tf buffer to get transfroms
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  // tf listner for tf transforms
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 }  // namespace nav2_waypoint_follower

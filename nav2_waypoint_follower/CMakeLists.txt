@@ -23,6 +23,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav_2d_utils REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(pluginlib REQUIRED)
@@ -53,6 +54,7 @@ set(dependencies
   nav_msgs
   nav2_msgs
   nav2_util
+  nav_2d_utils
   tf2_ros
   nav2_core
   pluginlib
