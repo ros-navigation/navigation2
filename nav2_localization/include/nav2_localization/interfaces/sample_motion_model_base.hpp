@@ -20,7 +20,7 @@ public:
      * @brief Calculates the most likely pose that the robot is now in, following its motion.
      * @param prev_odom The robot's odometry at the previous time step (i.e. before the robot has moved).
      * @param curr_odom The robot's odometry at the current time step (i.e. after the robot has moved).
-     * @param prev_pose The robot's pose at the previous time step.
+     * @param prev_pose The robot's pose estimation at the previous time step.
      * @return The most likely pose of the robot at the current time step, based on the model's estimation.
      */
     virtual geometry_msgs::msg::TransformStamped getMostLikelyPose(

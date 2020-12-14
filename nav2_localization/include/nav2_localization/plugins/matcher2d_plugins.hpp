@@ -28,7 +28,7 @@ private:
 	void preComputeLikelihoodField();	
 	
 	/**
-	 * @brief Depth-first search. This is used within the preComputeLikelihoodField method to speed up the computation
+	 * @brief Depth-First Search (DFS). This is used within the preComputeLikelihoodField method to speed up the computation
 	 * @param index_curr Index of current map cell
 	 * @param index_of_obstacle Index of an obstacle
 	 * @param visited A vector of all the cells that have been visited so far

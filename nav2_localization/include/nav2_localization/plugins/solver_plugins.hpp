@@ -41,7 +41,7 @@ public:
 	void cleanup() override;
 
 private:
-	std::shared_ptr<DummyParticleFilter> pf_;
+	std::shared_ptr<DummyParticleFilter> pf_; // Particle filter
 };
 } // nav2_localization
 
