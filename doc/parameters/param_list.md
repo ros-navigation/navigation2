@@ -176,7 +176,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | ----------| --------| ------------|
 | `<filter name>`.enabled | true | Whether it is enabled |
 | `<filter name>`.filter_info_topic | N/A | Name of the incoming CostmapFilterInfo topic having filter-related information |
-| `<filter name>`.transform_tolerance | 0.0 | TF tolerance |
+| `<filter name>`.transform_tolerance | 0.1 | TF tolerance |
 
 ## speed filter
 
@@ -187,7 +187,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | `<filter name>`.enabled | true | Whether it is enabled |
 | `<filter name>`.filter_info_topic | N/A | Name of the incoming CostmapFilterInfo topic having filter-related information |
 | `<filter name>`.speed_limit_topic | "speed_limit" | Topic to publish speed limit to |
-| `<filter name>`.transform_tolerance | 0.0 | TF tolerance |
+| `<filter name>`.transform_tolerance | 0.1 | TF tolerance |
 
 # controller_server
 
