@@ -173,7 +173,8 @@ bool SpeedFilter::transformPose(
 {
   if (mask_frame_ != global_frame_) {
     // Filter mask and current layer are in different frames:
-    // Prepare transform from current layer frame (global_frame_) to mask frame
+    // Transform (pose.x, pose.y) point from current layer frame (global_frame_)
+    // to mask_pose point in mask_frame_
     geometry_msgs::msg::TransformStamped transform;
     geometry_msgs::msg::PointStamped in, out;
     in.header.stamp = clock_->now();
