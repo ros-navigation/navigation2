@@ -35,11 +35,11 @@
  * Author: Alexey Merzlyakov
  *********************************************************************/
 
-#include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
-
 #include "tf2/convert.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
-#include "tf2_ros/transform_broadcaster.h"
+
+#include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
+#include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
 namespace nav2_costmap_2d
 {

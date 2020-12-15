@@ -23,3 +23,9 @@ target_link_libraries(keepout_filter_test
   nav2_costmap_2d_core
   filters
 )
+
+ament_add_gtest(speed_filter_test speed_filter_test.cpp)
+target_link_libraries(speed_filter_test
+  nav2_costmap_2d_core
+  filters
+)
