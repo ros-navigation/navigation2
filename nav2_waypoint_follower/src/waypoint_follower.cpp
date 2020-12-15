@@ -89,6 +89,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     "FollowGPSWaypoints", std::bind(&WaypointFollower::followGPSWaypointsCallback, this));
   // used for transfroming orientation of GPS poses to map frame
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   try {
     waypoint_task_executor_type_ = nav2_util::get_plugin_type_param(
