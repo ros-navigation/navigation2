@@ -129,7 +129,7 @@ void addObservation(
   p.z = oz;
 
   // obstacle range = raytrace range = 100.0
-  nav2_costmap_2d::Observation obs(p, cloud, 100.0, 100.0);
+  nav2_costmap_2d::Observation obs(p, cloud, 100.0, 100.0, 10.0);
   olayer->addStaticObservation(obs, marking, clearing);
 }
 

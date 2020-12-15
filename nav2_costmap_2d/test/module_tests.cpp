@@ -70,7 +70,8 @@ const double RESOLUTION(1);
 const double WINDOW_LENGTH(10);
 const unsigned char THRESHOLD(100);
 const double MAX_Z(1.0);
-const double RAYTRACE_RANGE(20.0);
+const double raytrace_max_range(20.0);
+const double raytrace_min_range(3.0);
 const double OBSTACLE_RANGE(20.0);
 const double ROBOT_RADIUS(1.0);
 
@@ -99,7 +100,7 @@ TEST(costmap, testResetForStaticMap) {
 
   // Allocate the cost map, with a inflation to 3 cells all around
   nav2_costmap_2d::Costmap2D map(10, 10, RESOLUTION, 0.0, 0.0, 3, 3, 3,
-    OBSTACLE_RANGE, MAX_Z, RAYTRACE_RANGE, 25, staticMap, THRESHOLD);
+    OBSTACLE_RANGE, MAX_Z, raytrace_max_range, raytrace_min_range, 25, staticMap, THRESHOLD);
 
   // Populate the cost map with a wall around the perimeter. Free space should clear out the room.
   pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -138,7 +139,7 @@ TEST(costmap, testResetForStaticMap) {
   p.x = wx;
   p.y = wy;
   p.z = MAX_Z;
-  nav2_costmap_2d::Observation obs(p, cloud, OBSTACLE_RANGE, RAYTRACE_RANGE);
+  nav2_costmap_2d::Observation obs(p, cloud, OBSTACLE_RANGE, raytrace_max_range, raytrace_min_range);
   std::vector<nav2_costmap_2d::Observation> obsBuf;
   obsBuf.push_back(obs);
 
