@@ -30,6 +30,7 @@ BtNavigator::BtNavigator()
 : nav2_util::LifecycleNode("bt_navigator", "", false),
   start_time_(0)
 {
+  RCLCPP_INFO(get_logger(), "Creating");
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));

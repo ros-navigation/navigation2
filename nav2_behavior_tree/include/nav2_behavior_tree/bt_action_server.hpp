@@ -64,8 +64,6 @@ public:
     logger_ = node->get_logger();
     clock_ = node->get_clock();
 
-    RCLCPP_INFO(logger_, "Creating");
-
     const std::vector<std::string> plugin_libs = {
       "nav2_compute_path_to_pose_action_bt_node",
       "nav2_follow_path_action_bt_node",
@@ -113,8 +111,6 @@ public:
    */
   bool on_configure(const std::shared_ptr<tf2_ros::Buffer> & tf)
   {
-    RCLCPP_INFO(logger_, "Configuring");
-
     auto node = node_.lock();
     if (!node) {
       throw std::runtime_error{"Failed to lock node"};
@@ -169,7 +165,6 @@ public:
    */
   bool on_activate()
   {
-    RCLCPP_INFO(logger_, "Activating");
     if (!loadBehaviorTree(default_bt_xml_filename_)) {
       RCLCPP_ERROR(logger_, "Error loading XML file: %s", default_bt_xml_filename_.c_str());
       return false;
@@ -184,7 +179,6 @@ public:
    */
   bool on_deactivate()
   {
-    RCLCPP_INFO(logger_, "Deactivating");
     action_server_->deactivate();
     return true;
   }
@@ -195,10 +189,8 @@ public:
    */
   bool on_cleanup()
   {
-    RCLCPP_INFO(logger_, "Cleaning up");
-
     client_node_.reset();
-
+    tf_.reset();
     action_server_.reset();
     topic_logger_.reset();
     plugin_lib_names_.clear();
@@ -207,8 +199,6 @@ public:
     bt_->haltAllActions(tree_.rootNode());
     bt_->resetGrootMonitor();
     bt_.reset();
-
-    RCLCPP_INFO(logger_, "Completed Cleaning up");
     return true;
   }
 
@@ -218,7 +208,6 @@ public:
    */
   bool on_shutdown()
   {
-    RCLCPP_INFO(logger_, "Shutting down");
     return true;
   }
 

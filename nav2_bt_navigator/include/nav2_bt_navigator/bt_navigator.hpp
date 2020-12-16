@@ -81,8 +81,17 @@ protected:
 
   using Action = nav2_msgs::action::NavigateToPose;
 
+  /**
+   * @brief A callback to be called when a new goal is received by the BT action server
+   * Can be used to check if goal is valid and put values on
+   * the blackboard which depend on the received goal
+   */
   bool on_goal_received(Action::Goal::ConstSharedPtr goal);
 
+  /**
+   * @brief A callback that defines execution that happens on one iteration through the BT
+   * Can be used to publish action feedback
+   */
   void on_loop();
 
   /**
@@ -91,6 +100,7 @@ protected:
    */
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
 
+  // To handle all the BT related execution
   std::unique_ptr<nav2_behavior_tree::BtActionServer<Action>> bt_action_server_;
 
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
@@ -108,6 +118,7 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
+  // Feedback message
   std::shared_ptr<Action::Feedback> feedback_msg_;
 };
 
