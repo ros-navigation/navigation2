@@ -1,4 +1,6 @@
 // Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+// Copyright (c) 2020 Samsung Research Russia
+// Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,7 +58,7 @@ public:
    */
   bool saveMapTopicToFile(
     const std::string & map_topic,
-    const std::string  & origin_topic,
+    const std::string & origin_topic,
     const map_3d::SaveParameters & save_parameters);
 
 protected:

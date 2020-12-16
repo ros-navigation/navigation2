@@ -51,8 +51,8 @@ public:
       rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
     origin_pub_ = create_publisher<geometry_msgs::msg::Pose>(
-        "map_origin",
-        rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+      "map_origin",
+      rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
     timer_ = create_wall_timer(300ms, std::bind(&TestPublisher::mapPublishCallback, this));
   }

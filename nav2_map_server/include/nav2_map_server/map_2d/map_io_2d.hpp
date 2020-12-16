@@ -31,7 +31,7 @@ namespace nav2_map_server
 
 namespace map_2d
 {
-  
+
 struct LoadParameters
 {
   std::string image_file_name;

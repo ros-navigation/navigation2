@@ -11,9 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// Created by shivam on 7/10/20.
-//
+
+/*Helper functions for PCL<->sensor_msg conversions*/
 
 #ifndef NAV2_MAP_SERVER__MAP_3D__PCL_HELPER_HPP_
 #define NAV2_MAP_SERVER__MAP_3D__PCL_HELPER_HPP_
@@ -32,7 +31,7 @@ namespace nav2_map_server
 
 namespace  map_3d
 {
-  
+
 void modifyMsgFields(
   sensor_msgs::msg::PointCloud2 & msg,
   const std::vector<pcl::PCLPointField> & fields);

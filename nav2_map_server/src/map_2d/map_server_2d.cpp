@@ -143,7 +143,7 @@ MapServer<nav_msgs::msg::OccupancyGrid>::on_deactivate(const rclcpp_lifecycle::S
 
   // destroy bond connection
   destroyBond();
-  
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -151,7 +151,7 @@ nav2_util::CallbackReturn
 MapServer<nav_msgs::msg::OccupancyGrid>::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
-  
+
   occ_pub_.reset();
   occ_service_.reset();
   load_map_service_.reset();
@@ -207,14 +207,14 @@ bool MapServer<nav_msgs::msg::OccupancyGrid>::loadMapResponseFromYaml(
   std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response)
 {
   switch (map_2d::loadMapFromYaml(yaml_file, msg_)) {
-    case map_2d::MAP_DOES_NOT_EXIST:response->result = 
-      nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
+    case map_2d::MAP_DOES_NOT_EXIST: response->result =
+        nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
       return false;
-    case map_2d::INVALID_MAP_METADATA:response->result =
-      nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA;
+    case map_2d::INVALID_MAP_METADATA: response->result =
+        nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA;
       return false;
-    case map_2d::INVALID_MAP_DATA:response->result =
-      nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA;
+    case map_2d::INVALID_MAP_DATA: response->result =
+        nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA;
       return false;
     case map_2d::LOAD_MAP_SUCCESS:
       // Correcting msg_ header when it belongs to specific node

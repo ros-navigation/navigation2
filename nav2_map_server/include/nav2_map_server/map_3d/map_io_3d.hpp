@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* PointCloud map input-output library */
+
 #ifndef NAV2_MAP_SERVER__MAP_3D__MAP_IO_3D_HPP_
 #define NAV2_MAP_SERVER__MAP_3D__MAP_IO_3D_HPP_
 

@@ -188,9 +188,13 @@ int main(int argc, char ** argv)
   int retcode;
   try {
     if (save_parameters.save_parameters_3d.format == "pcd" &&
-        save_parameters.save_parameters_3d.format == "ply") {
+      save_parameters.save_parameters_3d.format == "ply")
+    {
       auto map_saver = std::make_shared<nav2_map_server::MapSaver<sensor_msgs::msg::PointCloud2>>();
-      if (map_saver->saveMapTopicToFile(map_topic, origin_topic, save_parameters.save_parameters_3d)) {
+      if (map_saver->saveMapTopicToFile(
+          map_topic, origin_topic,
+          save_parameters.save_parameters_3d))
+      {
         retcode = 0;
       } else {
         retcode = 1;

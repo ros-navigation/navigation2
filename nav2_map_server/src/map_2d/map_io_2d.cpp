@@ -249,7 +249,7 @@ void loadMapFromFile(
             }
             break;
           }
-        default: 
+        default:
           throw std::runtime_error("Invalid map mode");
       }
       msg.data[msg.info.width * (msg.info.height - y - 1) + x] = map_cell;
@@ -263,7 +263,7 @@ void loadMapFromFile(
   msg.header.stamp = clock.now();
 
   std::cout <<
-    "[DEBUG] [map_io]: Read map " << load_parameters.image_file_name << ": " << msg.info.width << 
+    "[DEBUG] [map_io]: Read map " << load_parameters.image_file_name << ": " << msg.info.width <<
     " X " << msg.info.height << " map @ " << msg.info.resolution << " m/cell" << std::endl;
 
   map = msg;
@@ -395,7 +395,7 @@ void checkSaveParameters(SaveParameters & save_parameters)
     }
   } catch (Magick::ErrorOption & e) {
     std::cout <<
-      "[WARN] [map_io]: Format '" << save_parameters.image_format << "' is not usable. Using '" << 
+      "[WARN] [map_io]: Format '" << save_parameters.image_format << "' is not usable. Using '" <<
       FALLBACK_FORMAT << "' instead:" << std::endl << e.what() << std::endl;
     save_parameters.image_format = FALLBACK_FORMAT;
   }
@@ -425,7 +425,7 @@ void tryWriteMapToFile(
   const SaveParameters & save_parameters)
 {
   std::cout <<
-    "[INFO] [map_io]: Received a " << map.info.width << " X " << map.info.height << " map @ " << 
+    "[INFO] [map_io]: Received a " << map.info.width << " X " << map.info.height << " map @ " <<
     map.info.resolution << " m/pix" << std::endl;
 
   std::string mapdatafile = save_parameters.map_file_name + "." + save_parameters.image_format;
@@ -472,7 +472,7 @@ void tryWriteMapToFile(
               pixel = Magick::ColorGray{(100.0 - map_cell) / 100.0};
             }
             break;
-          case MapMode::Raw: 
+          case MapMode::Raw:
             Magick::Quantum q;
             if (map_cell < 0 || 100 < map_cell) {
               q = MaxRGB;
@@ -481,7 +481,7 @@ void tryWriteMapToFile(
             }
             pixel = Magick::Color(q, q, q);
             break;
-          default: 
+          default:
             std::cerr << "[ERROR] [map_io]: Map mode should be Trinary, Scale or Raw" << std::endl;
             throw std::runtime_error("Invalid map mode");
         }

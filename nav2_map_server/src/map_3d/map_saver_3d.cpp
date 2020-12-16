@@ -37,7 +37,7 @@ MapSaver<sensor_msgs::msg::PointCloud2>::MapSaver()
   save_map_timeout_ = std::make_shared<rclcpp::Duration>(
     std::chrono::milliseconds(declare_parameter("save_map_timeout", 2000)));
 
-  map_subscribe_transient_local_ = declare_parameter("map_subscribe_transient_local", true);  
+  map_subscribe_transient_local_ = declare_parameter("map_subscribe_transient_local", true);
 }
 
 MapSaver<sensor_msgs::msg::PointCloud2>::~MapSaver()
@@ -113,12 +113,12 @@ void MapSaver<sensor_msgs::msg::PointCloud2>::saveMapCallback(
 
 bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
   const std::string & map_topic,
-  const std::string  & origin_topic,
+  const std::string & origin_topic,
   const map_3d::SaveParameters & save_parameters)
 {
   // Local copies of map_topic and save_parameters that could be changed
   std::string map_topic_loc = map_topic;
-  std::string  origin_topic_loc = origin_topic;
+  std::string origin_topic_loc = origin_topic;
   map_3d::SaveParameters save_parameters_loc = save_parameters;
 
   RCLCPP_INFO(
@@ -144,8 +144,8 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
     if (origin_topic_loc.empty()) {
       origin_topic_loc = "map_origin";
       RCLCPP_WARN(
-          get_logger(), "Origin topic unspecified. Origin messages will be read from \'%s\' topic",
-          origin_topic_loc.c_str());
+        get_logger(), "Origin topic unspecified. Origin messages will be read from \'%s\' topic",
+        origin_topic_loc.c_str());
     }
 
     // A callback function that receives map message from subscribed topic
@@ -156,9 +156,9 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
 
     // A callback function that receives origin message from subscribed topic
     auto origin_callback = [&origin_msg](
-        const geometry_msgs::msg::Pose::SharedPtr msg) -> void {
-      origin_msg = msg;
-    };
+      const geometry_msgs::msg::Pose::SharedPtr msg) -> void {
+        origin_msg = msg;
+      };
 
     // Add new subscription for incoming map topic.
     // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode
@@ -183,7 +183,6 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
       }
 
       if (pcd_map_msg && origin_msg) {
-
         // Set view_point translation(origin)
         save_parameters_loc.origin.center.resize(3);
         save_parameters_loc.origin.center[0] = origin_msg->position.x;

@@ -22,7 +22,7 @@ namespace nav2_map_server
 
 namespace map_2d
 {
-  
+
 /**
  * @enum nav2_map_server::MapMode
  * @brief Describes the relation between image pixel values and map occupancy
