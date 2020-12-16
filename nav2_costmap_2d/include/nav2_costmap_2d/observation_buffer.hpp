@@ -80,7 +80,8 @@ public:
     double observation_keep_time,
     double expected_update_rate,
     double min_obstacle_height, double max_obstacle_height, double obstacle_range,
-    double raytrace_max_range, double raytrace_min_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
+    double raytrace_max_range, double raytrace_min_range, tf2_ros::Buffer & tf2_buffer,
+    std::string global_frame,
     std::string sensor_frame,
     tf2::Duration tf_tolerance);
 

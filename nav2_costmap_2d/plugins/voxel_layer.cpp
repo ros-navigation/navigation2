@@ -364,7 +364,11 @@ void VoxelLayer::raytraceFreespace(
     double ray_x, ray_y, ray_z;
     // Scale ray origin
     double ray_origin_scaling_factor = 1.0;
-    ray_origin_scaling_factor = std::max(std::min(ray_origin_scaling_factor, (raytrace_min_range - 2 * resolution_) / raytrace_min_range), 0.0);
+    ray_origin_scaling_factor =
+      std::max(
+      std::min(
+        ray_origin_scaling_factor,
+        (raytrace_min_range - 2 * resolution_) / raytrace_min_range), 0.0);
     px = ray_origin_scaling_factor * (px - ox) + ox;
     py = ray_origin_scaling_factor * (py - oy) + oy;
     pz = ray_origin_scaling_factor * (pz - oz) + oz;

@@ -139,7 +139,8 @@ TEST(costmap, testResetForStaticMap) {
   p.x = wx;
   p.y = wy;
   p.z = MAX_Z;
-  nav2_costmap_2d::Observation obs(p, cloud, OBSTACLE_RANGE, raytrace_max_range, raytrace_min_range);
+  nav2_costmap_2d::Observation obs(p, cloud, OBSTACLE_RANGE, raytrace_max_range,
+    raytrace_min_range);
   std::vector<nav2_costmap_2d::Observation> obsBuf;
   obsBuf.push_back(obs);
 

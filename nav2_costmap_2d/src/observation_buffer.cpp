@@ -54,7 +54,8 @@ ObservationBuffer::ObservationBuffer(
   double observation_keep_time,
   double expected_update_rate,
   double min_obstacle_height, double max_obstacle_height, double obstacle_range,
-  double raytrace_max_range, double raytrace_min_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
+  double raytrace_max_range, double raytrace_min_range, tf2_ros::Buffer & tf2_buffer,
+  std::string global_frame,
   std::string sensor_frame, tf2::Duration tf_tolerance)
 : tf2_buffer_(tf2_buffer),
   observation_keep_time_(rclcpp::Duration::from_seconds(observation_keep_time)),
@@ -63,7 +64,8 @@ ObservationBuffer::ObservationBuffer(
   sensor_frame_(sensor_frame),
   topic_name_(topic_name),
   min_obstacle_height_(min_obstacle_height), max_obstacle_height_(max_obstacle_height),
-  obstacle_range_(obstacle_range), raytrace_max_range_(raytrace_max_range), raytrace_min_range_(raytrace_min_range), tf_tolerance_(tf_tolerance)
+  obstacle_range_(obstacle_range), raytrace_max_range_(raytrace_max_range), raytrace_min_range_(
+    raytrace_min_range), tf_tolerance_(tf_tolerance)
 {
   auto node = parent.lock();
   clock_ = node->get_clock();

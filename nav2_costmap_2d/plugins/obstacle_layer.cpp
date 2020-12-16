@@ -165,7 +165,7 @@ void ObstacleLayer::onInitialize()
 
     // get the raytrace ranges for the sensor
     double raytrace_max_range, raytrace_min_range;
-    node->get_parameter(name_ + "." + source + "." + "raytrace_min_range", raytrace_min_range); 
+    node->get_parameter(name_ + "." + source + "." + "raytrace_min_range", raytrace_min_range);
     node->get_parameter(name_ + "." + source + "." + "raytrace_max_range", raytrace_max_range);
 
 
@@ -182,7 +182,8 @@ void ObstacleLayer::onInitialize()
         new ObservationBuffer(
           node, topic, observation_keep_time, expected_update_rate,
           min_obstacle_height,
-          max_obstacle_height, obstacle_range, raytrace_max_range, raytrace_min_range, *tf_, global_frame_,
+          max_obstacle_height, obstacle_range, raytrace_max_range, raytrace_min_range, *tf_,
+          global_frame_,
           sensor_frame, tf2::durationFromSec(transform_tolerance))));
 
     // check if we'll add this buffer to our marking observation buffers
@@ -588,8 +589,8 @@ ObstacleLayer::raytraceFreespace(
       RCLCPP_WARN(
         logger_,
         "Ray origin at (%.2f, %.2f) is out of map bounds. The costmap cannot raytrace for it.",
-        px, py);  
-      continue; 
+        px, py);
+      continue;
     }
 
     // the minimum value to raytrace from is the origin

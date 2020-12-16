@@ -50,7 +50,8 @@ public:
    * @brief  Creates an empty observation
    */
   Observation()
-  : cloud_(new sensor_msgs::msg::PointCloud2()), obstacle_range_(0.0), raytrace_max_range_(0.0), raytrace_min_range_(0.0)
+  : cloud_(new sensor_msgs::msg::PointCloud2()), obstacle_range_(0.0), raytrace_max_range_(0.0),
+    raytrace_min_range_(0.0)
   {
   }
 
@@ -76,7 +77,8 @@ public:
     geometry_msgs::msg::Point & origin, const sensor_msgs::msg::PointCloud2 & cloud,
     double obstacle_range, double raytrace_max_range, double raytrace_min_range)
   : origin_(origin), cloud_(new sensor_msgs::msg::PointCloud2(cloud)),
-    obstacle_range_(obstacle_range), raytrace_max_range_(raytrace_max_range), raytrace_min_range_(raytrace_min_range)
+    obstacle_range_(obstacle_range), raytrace_max_range_(raytrace_max_range), raytrace_min_range_(
+      raytrace_min_range)
   {
   }
 
@@ -86,7 +88,8 @@ public:
    */
   Observation(const Observation & obs)
   : origin_(obs.origin_), cloud_(new sensor_msgs::msg::PointCloud2(*(obs.cloud_))),
-    obstacle_range_(obs.obstacle_range_), raytrace_max_range_(obs.raytrace_max_range_), raytrace_min_range_(obs.raytrace_min_range_)
+    obstacle_range_(obs.obstacle_range_), raytrace_max_range_(obs.raytrace_max_range_),
+    raytrace_min_range_(obs.raytrace_min_range_)
   {
   }
 
