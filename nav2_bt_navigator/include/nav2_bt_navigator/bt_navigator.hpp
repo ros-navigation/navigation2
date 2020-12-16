@@ -23,7 +23,6 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_bt_navigator/ros_topic_logger.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 
 namespace nav2_bt_navigator
@@ -33,7 +32,7 @@ namespace nav2_bt_navigator
  * @brief An action server that uses behavior tree for navigating a robot to its
  * goal position.
  */
-class BtNavigator : public nav2_behavior_tree::BtActionServer<nav2_msgs::action::NavigateToPose>
+class BtNavigator : public nav2_util::LifecycleNode
 {
 public:
   /**
@@ -46,15 +45,45 @@ public:
   ~BtNavigator();
 
 protected:
-  nav2_util::CallbackReturn on_configure() override;
+  /**
+   * @brief Configures member variables
+   *
+   * Initializes action server for "NavigationToPose"; subscription to
+   * "goal_sub"; and builds behavior tree from xml file.
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Activates action server
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Deactivates action server
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Resets member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when in shutdown state
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
-  nav2_util::CallbackReturn on_cleanup() override;
+  using Action = nav2_msgs::action::NavigateToPose;
 
-  bool on_goal_received() override;
+  bool on_goal_received(Action::Goal::ConstSharedPtr goal);
 
-  void on_loop() override;
-
-  bool is_canceling() override;
+  void on_loop();
 
   /**
    * @brief A subscription and callback to handle the topic-based goal published
@@ -62,7 +91,7 @@ protected:
    */
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
 
-  using Action = nav2_msgs::action::NavigateToPose;
+  std::unique_ptr<nav2_behavior_tree::BtActionServer<Action>> bt_action_server_;
 
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
 
@@ -75,7 +104,9 @@ protected:
   std::string global_frame_;
   double transform_tolerance_;
 
-  std::unique_ptr<RosTopicLogger> topic_logger_;
+  // Spinning transform that can be used by the BT nodes
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   std::shared_ptr<Action::Feedback> feedback_msg_;
 };
