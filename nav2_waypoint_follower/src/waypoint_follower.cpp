@@ -399,7 +399,7 @@ WaypointFollower::convertGPSPoses2MapPoses(
     fromll_client->wait_for_service((std::chrono::seconds(1)));
     if (!fromll_client->invoke(
         request,
-        response);)
+        response))
     {
       RCLCPP_ERROR(
         parent_node->get_logger(),
