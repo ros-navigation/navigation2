@@ -397,10 +397,10 @@ WaypointFollower::convertGPSPoses2MapPoses(
     request->ll_point.altitude = curr_oriented_navsat_fix.position.altitude;
 
     fromll_client->wait_for_service((std::chrono::seconds(1)));
-    auto is_conversion_succeeded = fromll_client->invoke(
-      request,
-      response);
-    if (!is_conversion_succeeded) {
+    if (!fromll_client->invoke(
+        request,
+        response);)
+    {
       RCLCPP_ERROR(
         parent_node->get_logger(),
         "fromLL service of robot_localization could not convert %i th GPS waypoint to"
@@ -420,7 +420,9 @@ WaypointFollower::convertGPSPoses2MapPoses(
       curr_pose_utm_frame.pose.orientation = curr_oriented_navsat_fix.orientation;
       curr_pose_utm_frame.header.frame_id = "utm";
       try {
-        tf_buffer_->transform(curr_pose_utm_frame, curr_pose_map_frame, "map");
+        tf_buffer_->transform(
+          curr_pose_utm_frame, curr_pose_map_frame, "map",
+          tf2::durationFromSec(1.0));
       } catch (tf2::TransformException & ex) {
         RCLCPP_ERROR(
           parent_node->get_logger(),
