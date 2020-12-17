@@ -24,6 +24,10 @@
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/create_timer_ros.h"
 
 namespace nav2_bt_navigator
 {
@@ -86,13 +90,18 @@ protected:
    * Can be used to check if goal is valid and put values on
    * the blackboard which depend on the received goal
    */
-  bool on_goal_received(Action::Goal::ConstSharedPtr goal);
+  bool onGoalReceived(Action::Goal::ConstSharedPtr goal);
 
   /**
    * @brief A callback that defines execution that happens on one iteration through the BT
    * Can be used to publish action feedback
    */
-  void on_loop();
+  void onLoop();
+
+  /**
+   * @brief A callback that is called when a preempt is requested
+   */
+  void onPreempt();
 
   /**
    * @brief A subscription and callback to handle the topic-based goal published

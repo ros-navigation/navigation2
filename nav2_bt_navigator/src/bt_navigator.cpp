@@ -68,14 +68,16 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   bt_action_server_ = std::make_unique<nav2_behavior_tree::BtActionServer<Action>>(
     shared_from_this(),
     "navigate_to_pose",
-    std::bind(&BtNavigator::on_goal_received, this, std::placeholders::_1),
-    std::bind(&BtNavigator::on_loop, this));
+    std::bind(&BtNavigator::onGoalReceived, this, std::placeholders::_1),
+    std::bind(&BtNavigator::onLoop, this),
+    std::bind(&BtNavigator::onPreempt, this));
 
-  if (!bt_action_server_->on_configure(tf_)) {
+  if (!bt_action_server_->on_configure()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
   auto blackboard = bt_action_server_->getBlackboard();
+  blackboard->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
   blackboard->set<bool>("initial_pose_received", false);  // NOLINT
   blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
@@ -149,7 +151,7 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 bool
-BtNavigator::on_goal_received(Action::Goal::ConstSharedPtr goal)
+BtNavigator::onGoalReceived(Action::Goal::ConstSharedPtr goal)
 {
   RCLCPP_INFO(
     get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
@@ -178,7 +180,7 @@ BtNavigator::on_goal_received(Action::Goal::ConstSharedPtr goal)
 }
 
 void
-BtNavigator::on_loop()
+BtNavigator::onLoop()
 {
   // action server feedback (pose, duration of task,
   // number of recoveries, and distance remaining to goal)
@@ -199,6 +201,15 @@ BtNavigator::on_loop()
   feedback_msg_->navigation_time = now() - start_time_;
 
   bt_action_server_->getActionServer()->publish_feedback(feedback_msg_);
+}
+
+void
+BtNavigator::onPreempt()
+{
+  RCLCPP_INFO(get_logger(), "Received goal preemption request");
+  auto action_server = bt_action_server_->getActionServer();
+  action_server->accept_pending_goal();
+  onGoalReceived(action_server->get_current_goal());
 }
 
 void

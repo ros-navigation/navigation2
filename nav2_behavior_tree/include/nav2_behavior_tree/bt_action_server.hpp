@@ -27,10 +27,6 @@
 #include "nav2_behavior_tree/ros_topic_logger.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/simple_action_server.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/create_timer_ros.h"
 
 namespace nav2_behavior_tree
 {
@@ -46,6 +42,7 @@ public:
 
   typedef std::function<bool (typename ActionT::Goal::ConstSharedPtr)> OnGoalReceivedCallback;
   typedef std::function<void ()> OnLoopCallback;
+  typedef std::function<void ()> OnPreemptCallback;
 
   /**
    * @brief A constructor for nav2_behavior_tree::BtActionServer class
@@ -54,11 +51,13 @@ public:
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & action_name,
     OnGoalReceivedCallback on_goal_received_callback,
-    OnLoopCallback on_loop_callback)
+    OnLoopCallback on_loop_callback,
+    OnPreemptCallback on_preempt_callback = nullptr)
   : action_name_(action_name),
     node_(parent),
     on_goal_received_callback_(on_goal_received_callback),
-    on_loop_callback_(on_loop_callback)
+    on_loop_callback_(on_loop_callback),
+    on_preempt_callback_(on_preempt_callback)
   {
     auto node = node_.lock();
     logger_ = node->get_logger();
@@ -109,7 +108,7 @@ public:
    * and calls user-defined onConfigure.
    * @return true on SUCCESS and false on FAILURE
    */
-  bool on_configure(const std::shared_ptr<tf2_ros::Buffer> & tf)
+  bool on_configure()
   {
     auto node = node_.lock();
     if (!node) {
@@ -123,9 +122,6 @@ public:
         "--"});
     // Support for handling the topic-based goal pose from rviz
     client_node_ = std::make_shared<rclcpp::Node>("_", options);
-
-    // TF buffer
-    tf_ = tf;
 
     action_server_ = std::make_shared<ActionServer>(
       node->get_node_base_interface(),
@@ -145,7 +141,6 @@ public:
 
     // Put items on the blackboard
     blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
-    blackboard_->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
     blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
 
     // Get the BT filename to use from the node parameter
@@ -190,7 +185,6 @@ public:
   bool on_cleanup()
   {
     client_node_.reset();
-    tf_.reset();
     action_server_.reset();
     topic_logger_.reset();
     plugin_lib_names_.clear();
@@ -279,6 +273,11 @@ public:
     return action_server_;
   }
 
+  std::string getCurrentBTFilename() const
+  {
+    return current_bt_xml_filename_;
+  }
+
 protected:
   /**
    * @brief Action server callback
@@ -303,10 +302,8 @@ protected:
       };
 
     auto on_loop = [&]() {
-        if (action_server_->is_preempt_requested()) {
-          RCLCPP_INFO(logger_, "Received goal preemption request");
-          action_server_->accept_pending_goal();
-          on_goal_received_callback_(action_server_->get_current_goal());
+        if (action_server_->is_preempt_requested() && on_preempt_callback_) {
+          on_preempt_callback_();
         }
         topic_logger_->flush();
         on_loop_callback_();
@@ -362,9 +359,6 @@ protected:
   // A regular, non-spinning ROS node that we can use for calls to the action client
   rclcpp::Node::SharedPtr client_node_;
 
-  // Spinning transform that can be used by the BT nodes
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-
   // Parent node
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
 
@@ -385,6 +379,7 @@ protected:
   // User-provided callbacks
   OnGoalReceivedCallback on_goal_received_callback_;
   OnLoopCallback on_loop_callback_;
+  OnPreemptCallback on_preempt_callback_;
 };
 
 }  // namespace nav2_behavior_tree
