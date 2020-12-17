@@ -35,6 +35,7 @@
 
 #include "robot_localization/srv/from_ll.hpp"
 #include "tf2_ros/buffer.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 namespace nav2_waypoint_follower
 {

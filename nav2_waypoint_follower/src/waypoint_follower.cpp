@@ -21,8 +21,6 @@
 #include <utility>
 #include <vector>
 
-#include "nav_2d_utils/tf_help.hpp"
-
 namespace nav2_waypoint_follower
 {
 
@@ -388,12 +386,14 @@ WaypointFollower::convertGPSPoses2MapPoses(
   rclcpp::Duration transform_tolerance(0, 500);
 
   std::vector<geometry_msgs::msg::PoseStamped> poses_in_map_frame_vector;
-  for (auto && curr_gps_pose : gps_poses) {
+  auto stamp = parent_node->now();
+
+  for (auto && curr_oriented_navsat_fix : gps_poses) {
     auto request = std::make_shared<robot_localization::srv::FromLL::Request>();
     auto response = std::make_shared<robot_localization::srv::FromLL::Response>();
-    request->ll_point.latitude = curr_gps_pose.position.latitude;
-    request->ll_point.longitude = curr_gps_pose.position.longitude;
-    request->ll_point.altitude = curr_gps_pose.position.altitude;
+    request->ll_point.latitude = curr_oriented_navsat_fix.position.latitude;
+    request->ll_point.longitude = curr_oriented_navsat_fix.position.longitude;
+    request->ll_point.altitude = curr_oriented_navsat_fix.position.altitude;
 
     fromll_client->wait_for_service((std::chrono::seconds(1)));
     auto is_conversion_succeeded = fromll_client->invoke(
@@ -408,22 +408,25 @@ WaypointFollower::convertGPSPoses2MapPoses(
       continue;
     } else {
       // this poses are assumed to be on global frame (map)
-      geometry_msgs::msg::PoseStamped curr_pose_in_map_frame;
-      curr_pose_in_map_frame.header.frame_id = "map";
-      curr_pose_in_map_frame.header.stamp = parent_node->now();
-      curr_pose_in_map_frame.pose.position.x = response->map_point.x;
-      curr_pose_in_map_frame.pose.position.y = response->map_point.y;
-      curr_pose_in_map_frame.pose.position.z = response->map_point.z;
+      geometry_msgs::msg::PoseStamped curr_pose_map_frame;
+      curr_pose_map_frame.header.frame_id = "map";
+      curr_pose_map_frame.header.stamp = stamp;
+      curr_pose_map_frame.pose.position.x = response->map_point.x;
+      curr_pose_map_frame.pose.position.y = response->map_point.y;
+      curr_pose_map_frame.pose.position.z = response->map_point.z;
 
-      geometry_msgs::msg::Quaternion utm_orientation = curr_gps_pose.orientation;
-      geometry_msgs::msg::PoseStamped temporary_pose;
-      temporary_pose.pose.orientation = utm_orientation;
-      temporary_pose.header.frame_id = "utm";
-      nav_2d_utils::transformPose(
-        tf_buffer_, "map", temporary_pose, temporary_pose, transform_tolerance);
-      curr_pose_in_map_frame.pose.orientation = temporary_pose.pose.orientation;
-
-      poses_in_map_frame_vector.push_back(curr_pose_in_map_frame);
+      geometry_msgs::msg::PoseStamped curr_pose_utm_frame;
+      curr_pose_utm_frame.pose.orientation = curr_oriented_navsat_fix.orientation;
+      curr_pose_utm_frame.header.frame_id = "utm";
+      try {
+        tf_buffer_->transform(curr_pose_utm_frame, curr_pose_map_frame, "map");
+      } catch (tf2::TransformException & ex) {
+        RCLCPP_ERROR(
+          parent_node->get_logger(),
+          "Exception in itm -> map transform: %s",
+          ex.what());
+      }
+      poses_in_map_frame_vector.push_back(curr_pose_map_frame);
     }
   }
   RCLCPP_INFO(
