@@ -21,7 +21,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp_v3/utils/shared_library.h"
-
+#include "nav2_behavior_tree/bt_action_server.hpp"
 namespace nav2_behavior_tree
 {
 

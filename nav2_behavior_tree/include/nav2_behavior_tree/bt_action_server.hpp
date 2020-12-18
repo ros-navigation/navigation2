@@ -96,7 +96,7 @@ public:
    * @return true if the resulting BT correspond to the one in bt_xml_filename. false
    * if something went wrong, and previous BT is maintained
    */
-  bool loadBehaviorTree(const std::string & bt_xml_filename);
+  bool loadBehaviorTree(const std::string & bt_xml_filename = "");
 
   /**
    * @brief Getter function for BT Blackboard
@@ -108,17 +108,36 @@ public:
   }
 
   /**
-   * @brief Getter function for action server
-   * @return shared pointer to action server
+   * @brief Getter function for current BT XML filename
+   * @return string
    */
-  std::shared_ptr<ActionServer> getActionServer() const
-  {
-    return action_server_;
-  }
-
   std::string getCurrentBTFilename() const
   {
     return current_bt_xml_filename_;
+  }
+
+  /**
+   * @brief Wrapper function to accept pending goal if a preempt has been requested
+   */
+  const std::shared_ptr<const typename ActionT::Goal> accept_pending_goal()
+  {
+    return action_server_->accept_pending_goal();
+  }
+
+  /**
+   * @brief Wrapper function to get current goal
+   */
+  const std::shared_ptr<const typename ActionT::Goal> get_current_goal() const
+  {
+    return action_server_->get_current_goal();
+  }
+
+  /**
+   * @brief Wrapper function to publish action feedback
+   */
+  void publish_feedback(typename std::shared_ptr<typename ActionT::Feedback> feedback)
+  {
+    action_server_->publish_feedback(feedback);
   }
 
 protected:

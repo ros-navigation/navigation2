@@ -185,13 +185,6 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 bool
 BtNavigator::onGoalReceived(Action::Goal::ConstSharedPtr goal)
 {
-  RCLCPP_INFO(
-    get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
-    goal->pose.pose.position.x, goal->pose.pose.position.y);
-
-  // Reset state for new action feedback
-  start_time_ = now();
-
   auto bt_xml_filename = goal->behavior_tree;
 
   if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
@@ -201,12 +194,7 @@ BtNavigator::onGoalReceived(Action::Goal::ConstSharedPtr goal)
     return false;
   }
 
-  auto blackboard = bt_action_server_->getBlackboard();
-  blackboard->set<int>("number_recoveries", 0);  // NOLINT
-  // Update the goal pose on the blackboard
-  blackboard->set<geometry_msgs::msg::PoseStamped>("goal", goal->pose);
-
-  feedback_msg_ = std::make_shared<Action::Feedback>();
+  initializeGoalPose(goal);
 
   return true;
 }
@@ -216,32 +204,48 @@ BtNavigator::onLoop()
 {
   // action server feedback (pose, duration of task,
   // number of recoveries, and distance remaining to goal)
+  auto feedback_msg = std::make_shared<Action::Feedback>();
+
   nav2_util::getCurrentPose(
-    feedback_msg_->current_pose, *tf_, global_frame_, robot_frame_, transform_tolerance_);
+    feedback_msg->current_pose, *tf_, global_frame_, robot_frame_, transform_tolerance_);
 
   auto blackboard = bt_action_server_->getBlackboard();
 
   geometry_msgs::msg::PoseStamped goal_pose;
   blackboard->get("goal", goal_pose);
 
-  feedback_msg_->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
-    feedback_msg_->current_pose.pose, goal_pose.pose);
+  feedback_msg->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
+    feedback_msg->current_pose.pose, goal_pose.pose);
 
   int recovery_count = 0;
   blackboard->get<int>("number_recoveries", recovery_count);
-  feedback_msg_->number_of_recoveries = recovery_count;
-  feedback_msg_->navigation_time = now() - start_time_;
+  feedback_msg->number_of_recoveries = recovery_count;
+  feedback_msg->navigation_time = now() - start_time_;
 
-  bt_action_server_->getActionServer()->publish_feedback(feedback_msg_);
+  bt_action_server_->publish_feedback(feedback_msg);
 }
 
 void
 BtNavigator::onPreempt()
 {
   RCLCPP_INFO(get_logger(), "Received goal preemption request");
-  auto action_server = bt_action_server_->getActionServer();
-  action_server->accept_pending_goal();
-  onGoalReceived(action_server->get_current_goal());
+  initializeGoalPose(bt_action_server_->accept_pending_goal());
+}
+
+void
+BtNavigator::initializeGoalPose(Action::Goal::ConstSharedPtr goal)
+{
+  RCLCPP_INFO(
+    get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
+    goal->pose.pose.position.x, goal->pose.pose.position.y);
+
+  // Reset state for new action feedback
+  start_time_ = now();
+  auto blackboard = bt_action_server_->getBlackboard();
+  blackboard->set<int>("number_recoveries", 0);  // NOLINT
+
+  // Update the goal pose on the blackboard
+  blackboard->set<geometry_msgs::msg::PoseStamped>("goal", goal->pose);
 }
 
 void

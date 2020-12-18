@@ -104,6 +104,11 @@ protected:
   void onPreempt();
 
   /**
+   * @brief Goal pose initialization on the blackboard
+   */
+  void initializeGoalPose(Action::Goal::ConstSharedPtr goal);
+
+  /**
    * @brief A subscription and callback to handle the topic-based goal published
    * from rviz
    */
@@ -126,9 +131,6 @@ protected:
   // Spinning transform that can be used by the BT nodes
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-
-  // Feedback message
-  std::shared_ptr<Action::Feedback> feedback_msg_;
 };
 
 }  // namespace nav2_bt_navigator
