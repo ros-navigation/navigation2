@@ -18,9 +18,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <set>
-#include <exception>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
@@ -52,54 +49,12 @@ public:
     const std::string & action_name,
     OnGoalReceivedCallback on_goal_received_callback,
     OnLoopCallback on_loop_callback,
-    OnPreemptCallback on_preempt_callback = nullptr)
-  : action_name_(action_name),
-    node_(parent),
-    on_goal_received_callback_(on_goal_received_callback),
-    on_loop_callback_(on_loop_callback),
-    on_preempt_callback_(on_preempt_callback)
-  {
-    auto node = node_.lock();
-    logger_ = node->get_logger();
-    clock_ = node->get_clock();
-
-    const std::vector<std::string> plugin_libs = {
-      "nav2_compute_path_to_pose_action_bt_node",
-      "nav2_follow_path_action_bt_node",
-      "nav2_back_up_action_bt_node",
-      "nav2_spin_action_bt_node",
-      "nav2_wait_action_bt_node",
-      "nav2_clear_costmap_service_bt_node",
-      "nav2_is_stuck_condition_bt_node",
-      "nav2_goal_reached_condition_bt_node",
-      "nav2_initial_pose_received_condition_bt_node",
-      "nav2_goal_updated_condition_bt_node",
-      "nav2_reinitialize_global_localization_service_bt_node",
-      "nav2_rate_controller_bt_node",
-      "nav2_distance_controller_bt_node",
-      "nav2_speed_controller_bt_node",
-      "nav2_truncate_path_action_bt_node",
-      "nav2_goal_updater_node_bt_node",
-      "nav2_recovery_node_bt_node",
-      "nav2_pipeline_sequence_bt_node",
-      "nav2_round_robin_node_bt_node",
-      "nav2_transform_available_condition_bt_node",
-      "nav2_time_expired_condition_bt_node",
-      "nav2_distance_traveled_condition_bt_node"
-    };
-
-    // Declare this node's parameters
-    node->declare_parameter("default_bt_xml_filename");
-    node->declare_parameter("plugin_lib_names", plugin_libs);
-    node->declare_parameter("enable_groot_monitoring", true);
-    node->declare_parameter("groot_zmq_publisher_port", 1666);
-    node->declare_parameter("groot_zmq_server_port", 1667);
-  }
+    OnPreemptCallback on_preempt_callback = nullptr);
 
   /**
    * @brief A destructor for nav2_behavior_tree::BtActionServer class
    */
-  ~BtActionServer() {}
+  ~BtActionServer();
 
   /**
    * @brief Configures member variables
@@ -108,102 +63,31 @@ public:
    * and calls user-defined onConfigure.
    * @return true on SUCCESS and false on FAILURE
    */
-  bool on_configure()
-  {
-    auto node = node_.lock();
-    if (!node) {
-      throw std::runtime_error{"Failed to lock node"};
-    }
-
-    // use suffix '_rclcpp_node' to keep parameter file consistency #1773
-    auto options = rclcpp::NodeOptions().arguments(
-      {"--ros-args",
-        "-r", std::string("__node:=") + node->get_name() + "_rclcpp_node",
-        "--"});
-    // Support for handling the topic-based goal pose from rviz
-    client_node_ = std::make_shared<rclcpp::Node>("_", options);
-
-    action_server_ = std::make_shared<ActionServer>(
-      node->get_node_base_interface(),
-      node->get_node_clock_interface(),
-      node->get_node_logging_interface(),
-      node->get_node_waitables_interface(),
-      action_name_, std::bind(&BtActionServer<ActionT>::executeCallback, this));
-
-    // Get the libraries to pull plugins from
-    plugin_lib_names_ = node->get_parameter("plugin_lib_names").as_string_array();
-
-    // Create the class that registers our custom nodes and executes the BT
-    bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
-
-    // Create the blackboard that will be shared by all of the nodes in the tree
-    blackboard_ = BT::Blackboard::create();
-
-    // Put items on the blackboard
-    blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
-    blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
-
-    // Get the BT filename to use from the node parameter
-    node->get_parameter("default_bt_xml_filename", default_bt_xml_filename_);
-
-    // Get parameter for monitoring with Groot via ZMQ Publisher
-    node->get_parameter("enable_groot_monitoring", enable_groot_monitoring_);
-    node->get_parameter("groot_zmq_publisher_port", groot_zmq_publisher_port_);
-    node->get_parameter("groot_zmq_server_port", groot_zmq_server_port_);
-
-    return true;
-  }
+  bool on_configure();
 
   /**
    * @brief Activates action server
    * @return true on SUCCESS and false on FAILURE
    */
-  bool on_activate()
-  {
-    if (!loadBehaviorTree(default_bt_xml_filename_)) {
-      RCLCPP_ERROR(logger_, "Error loading XML file: %s", default_bt_xml_filename_.c_str());
-      return false;
-    }
-    action_server_->activate();
-    return true;
-  }
+  bool on_activate();
 
   /**
    * @brief Deactivates action server
    * @return true on SUCCESS and false on FAILURE
    */
-  bool on_deactivate()
-  {
-    action_server_->deactivate();
-    return true;
-  }
+  bool on_deactivate();
 
   /**
    * @brief Resets member variables
    * @return true on SUCCESS and false on FAILURE
    */
-  bool on_cleanup()
-  {
-    client_node_.reset();
-    action_server_.reset();
-    topic_logger_.reset();
-    plugin_lib_names_.clear();
-    current_bt_xml_filename_.clear();
-    blackboard_.reset();
-    bt_->haltAllActions(tree_.rootNode());
-    bt_->resetGrootMonitor();
-    bt_.reset();
-    return true;
-  }
+  bool on_cleanup();
 
   /**
    * @brief Called when in shutdown state
    * @return true on SUCCESS and false on FAILURE
    */
-  bool on_shutdown()
-  {
-    return true;
-  }
+  bool on_shutdown();
 
   /**
    * @brief Replace current BT with another one
@@ -211,49 +95,7 @@ public:
    * @return true if the resulting BT correspond to the one in bt_xml_filename. false
    * if something went wrong, and previous BT is maintained
    */
-  bool loadBehaviorTree(const std::string & bt_xml_filename)
-  {
-    // Empty filename is default for backward compatibility
-    auto filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
-
-    // Use previous BT if it is the existing one
-    if (current_bt_xml_filename_ == filename) {
-      RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml is already loaded");
-      return true;
-    }
-
-    // if a new tree is created, than the ZMQ Publisher must be destroyed
-    bt_->resetGrootMonitor();
-
-    // Read the input BT XML from the specified file into a string
-    std::ifstream xml_file(filename);
-
-    if (!xml_file.good()) {
-      RCLCPP_ERROR(logger_, "Couldn't open input XML file: %s", filename.c_str());
-      return false;
-    }
-
-    auto xml_string = std::string(
-      std::istreambuf_iterator<char>(xml_file),
-      std::istreambuf_iterator<char>());
-
-    // Create the Behavior Tree from the XML input
-    tree_ = bt_->createTreeFromText(xml_string, blackboard_);
-    topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
-
-    current_bt_xml_filename_ = filename;
-
-    // Enable monitoring with Groot
-    if (enable_groot_monitoring_) {
-      // optionally add max_msg_per_second = 25 (default) here
-      try {
-        bt_->addGrootMonitoring(&tree_, groot_zmq_publisher_port_, groot_zmq_server_port_);
-      } catch (const std::logic_error & e) {
-        RCLCPP_ERROR(logger_, "ZMQ already enabled, Error: %s", e.what());
-      }
-    }
-    return true;
-  }
+  bool loadBehaviorTree(const std::string & bt_xml_filename);
 
   /**
    * @brief Getter function for BT Blackboard
@@ -282,57 +124,7 @@ protected:
   /**
    * @brief Action server callback
    */
-  void executeCallback()
-  {
-    if (!on_goal_received_callback_(action_server_->get_current_goal())) {
-      action_server_->terminate_current();
-      return;
-    }
-
-    auto is_canceling = [this]() {
-        if (action_server_ == nullptr) {
-          RCLCPP_DEBUG(logger_, "Action server unavailable. Canceling.");
-          return true;
-        }
-        if (!action_server_->is_server_active()) {
-          RCLCPP_DEBUG(logger_, "Action server is inactive. Canceling.");
-          return true;
-        }
-        return action_server_->is_cancel_requested();
-      };
-
-    auto on_loop = [&]() {
-        if (action_server_->is_preempt_requested() && on_preempt_callback_) {
-          on_preempt_callback_();
-        }
-        topic_logger_->flush();
-        on_loop_callback_();
-      };
-
-    // Execute the BT that was previously created in the configure step
-    nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
-
-    // Make sure that the Bt is not in a running state from a previous execution
-    // note: if all the ControlNodes are implemented correctly, this is not needed.
-    bt_->haltAllActions(tree_.rootNode());
-
-    switch (rc) {
-      case nav2_behavior_tree::BtStatus::SUCCEEDED:
-        RCLCPP_INFO(logger_, "Goal succeeded");
-        action_server_->succeeded_current();
-        break;
-
-      case nav2_behavior_tree::BtStatus::FAILED:
-        RCLCPP_ERROR(logger_, "Goal failed");
-        action_server_->terminate_current();
-        break;
-
-      case nav2_behavior_tree::BtStatus::CANCELED:
-        RCLCPP_INFO(logger_, "Goal canceled");
-        action_server_->terminate_all();
-        break;
-    }
-  }
+  void executeCallback();
 
   // Action name
   std::string action_name_;
@@ -384,4 +176,5 @@ protected:
 
 }  // namespace nav2_behavior_tree
 
+#include <nav2_behavior_tree/bt_action_server_impl.hpp>  // NOLINT(build/include_order)
 #endif  // NAV2_BEHAVIOR_TREE__BT_ACTION_SERVER_HPP_

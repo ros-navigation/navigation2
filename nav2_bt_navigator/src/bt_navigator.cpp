@@ -31,6 +31,33 @@ BtNavigator::BtNavigator()
   start_time_(0)
 {
   RCLCPP_INFO(get_logger(), "Creating");
+
+  const std::vector<std::string> plugin_libs = {
+    "nav2_compute_path_to_pose_action_bt_node",
+    "nav2_follow_path_action_bt_node",
+    "nav2_back_up_action_bt_node",
+    "nav2_spin_action_bt_node",
+    "nav2_wait_action_bt_node",
+    "nav2_clear_costmap_service_bt_node",
+    "nav2_is_stuck_condition_bt_node",
+    "nav2_goal_reached_condition_bt_node",
+    "nav2_initial_pose_received_condition_bt_node",
+    "nav2_goal_updated_condition_bt_node",
+    "nav2_reinitialize_global_localization_service_bt_node",
+    "nav2_rate_controller_bt_node",
+    "nav2_distance_controller_bt_node",
+    "nav2_speed_controller_bt_node",
+    "nav2_truncate_path_action_bt_node",
+    "nav2_goal_updater_node_bt_node",
+    "nav2_recovery_node_bt_node",
+    "nav2_pipeline_sequence_bt_node",
+    "nav2_round_robin_node_bt_node",
+    "nav2_transform_available_condition_bt_node",
+    "nav2_time_expired_condition_bt_node",
+    "nav2_distance_traveled_condition_bt_node"
+  };
+
+  declare_parameter("plugin_lib_names", plugin_libs);
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
