@@ -18,6 +18,7 @@
 #include <string>
 #include <utility>
 #include <set>
+#include <vector>
 
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
