@@ -33,6 +33,8 @@ WaypointFollower::WaypointFollower()
 
   declare_parameter("stop_on_failure", true);
   declare_parameter("loop_rate", 20);
+  declare_parameter("gps_waypoint_transform_timeout", 0.1);
+
   nav2_util::declare_parameter_if_not_declared(
     this, std::string("waypoint_task_executor_plugin"),
     rclcpp::ParameterValue(std::string("wait_at_waypoint")));
@@ -55,6 +57,10 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
   stop_on_failure_ = get_parameter("stop_on_failure").as_bool();
   loop_rate_ = get_parameter("loop_rate").as_int();
   waypoint_task_executor_id_ = get_parameter("waypoint_task_executor_plugin").as_string();
+  gps_waypoint_transform_timeout_ =
+    std::make_shared<rclcpp::Duration>(
+    rclcpp::Duration::from_seconds(
+      get_parameter("gps_waypoint_transform_timeout").as_double()));
 
   std::vector<std::string> new_args = rclcpp::NodeOptions().arguments();
   new_args.push_back("--ros-args");
@@ -384,7 +390,6 @@ WaypointFollower::convertGPSPoses2MapPoses(
   const std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> & fromll_client)
 {
   RCLCPP_INFO(parent_node->get_logger(), "Converting GPS waypoints to Map Frame..");
-  rclcpp::Duration transform_tolerance(0, 500);
 
   std::vector<geometry_msgs::msg::PoseStamped> poses_in_map_frame_vector;
   auto stamp = parent_node->now();
@@ -397,10 +402,7 @@ WaypointFollower::convertGPSPoses2MapPoses(
     request->ll_point.altitude = curr_oriented_navsat_fix.position.altitude;
 
     fromll_client->wait_for_service((std::chrono::seconds(1)));
-    if (!fromll_client->invoke(
-        request,
-        response))
-    {
+    if (!fromll_client->invoke(request, response)) {
       RCLCPP_ERROR(
         parent_node->get_logger(),
         "fromLL service of robot_localization could not convert %i th GPS waypoint to"
@@ -422,7 +424,7 @@ WaypointFollower::convertGPSPoses2MapPoses(
       try {
         tf_buffer_->transform(
           curr_pose_utm_frame, curr_pose_map_frame, "map",
-          tf2::durationFromSec(1.0));
+          tf2::durationFromSec(gps_waypoint_transform_timeout_->seconds()));
       } catch (tf2::TransformException & ex) {
         RCLCPP_ERROR(
           parent_node->get_logger(),

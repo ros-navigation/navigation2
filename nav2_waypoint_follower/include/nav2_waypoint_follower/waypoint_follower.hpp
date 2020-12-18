@@ -189,6 +189,7 @@ protected:
   // Our action server for GPS waypoint following
   std::unique_ptr<ActionServerGPS> gps_action_server_;
   std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> from_ll_to_map_client_;
+  std::shared_ptr<rclcpp::Duration> gps_waypoint_transform_timeout_;
 
   // Task Execution At Waypoint Plugin
   pluginlib::ClassLoader<nav2_core::WaypointTaskExecutor>
