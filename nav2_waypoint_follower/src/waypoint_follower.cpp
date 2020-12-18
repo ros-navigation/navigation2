@@ -33,7 +33,7 @@ WaypointFollower::WaypointFollower()
 
   declare_parameter("stop_on_failure", true);
   declare_parameter("loop_rate", 20);
-  declare_parameter("gps_waypoint_transform_timeout", 0.1);
+  declare_parameter("transform_tolerance", 0.1);
 
   nav2_util::declare_parameter_if_not_declared(
     this, std::string("waypoint_task_executor_plugin"),
@@ -57,10 +57,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
   stop_on_failure_ = get_parameter("stop_on_failure").as_bool();
   loop_rate_ = get_parameter("loop_rate").as_int();
   waypoint_task_executor_id_ = get_parameter("waypoint_task_executor_plugin").as_string();
-  gps_waypoint_transform_timeout_ =
-    std::make_shared<rclcpp::Duration>(
-    rclcpp::Duration::from_seconds(
-      get_parameter("gps_waypoint_transform_timeout").as_double()));
+  transform_tolerance_ = get_parameter("transform_tolerance").as_double();
 
   std::vector<std::string> new_args = rclcpp::NodeOptions().arguments();
   new_args.push_back("--ros-args");
@@ -424,7 +421,7 @@ WaypointFollower::convertGPSPoses2MapPoses(
       try {
         tf_buffer_->transform(
           curr_pose_utm_frame, curr_pose_map_frame, "map",
-          tf2::durationFromSec(gps_waypoint_transform_timeout_->seconds()));
+          tf2::durationFromSec(transform_tolerance_));
       } catch (tf2::TransformException & ex) {
         RCLCPP_ERROR(
           parent_node->get_logger(),
