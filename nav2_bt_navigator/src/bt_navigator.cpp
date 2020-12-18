@@ -93,9 +93,13 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   robot_frame_ = get_parameter("robot_base_frame").as_string();
   transform_tolerance_ = get_parameter("transform_tolerance").as_double();
 
+  // Libraries to pull plugins (BT Nodes) from
+  auto plugin_lib_names = get_parameter("plugin_lib_names").as_string_array();
+
   bt_action_server_ = std::make_unique<nav2_behavior_tree::BtActionServer<Action>>(
     shared_from_this(),
     "navigate_to_pose",
+    plugin_lib_names,
     std::bind(&BtNavigator::onGoalReceived, this, std::placeholders::_1),
     std::bind(&BtNavigator::onLoop, this),
     std::bind(&BtNavigator::onPreempt, this));

@@ -20,6 +20,7 @@
 #include <fstream>
 #include <set>
 #include <exception>
+#include <vector>
 
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 
@@ -32,10 +33,12 @@ template<class ActionT>
 BtActionServer<ActionT>::BtActionServer(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & action_name,
+  const std::vector<std::string> & plugin_lib_names,
   OnGoalReceivedCallback on_goal_received_callback,
   OnLoopCallback on_loop_callback,
   OnPreemptCallback on_preempt_callback)
 : action_name_(action_name),
+  plugin_lib_names_(plugin_lib_names),
   node_(parent),
   on_goal_received_callback_(on_goal_received_callback),
   on_loop_callback_(on_loop_callback),
@@ -78,14 +81,6 @@ bool BtActionServer<ActionT>::on_configure()
     node->get_node_logging_interface(),
     node->get_node_waitables_interface(),
     action_name_, std::bind(&BtActionServer<ActionT>::executeCallback, this));
-
-  // Get the libraries to pull plugins from
-  if (node->has_parameter("plugin_lib_names")) {
-    plugin_lib_names_ = node->get_parameter("plugin_lib_names").as_string_array();
-  } else {
-    RCLCPP_ERROR(logger_, "'plugin_lib_names' param is not defined");
-    return false;
-  }
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
