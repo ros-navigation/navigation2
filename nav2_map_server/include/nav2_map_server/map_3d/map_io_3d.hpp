@@ -81,7 +81,7 @@ void loadMapFromFile(
   geometry_msgs::msg::Pose & origin_msg);
 
 /**
- * @brief Load the map YAML, image from map file and
+ * @brief Load the map YAML, pcd from map file and
  * generate a PointCloud2(PCD2)
  * @param yaml_file Name of input YAML file
  * @param map_msg Output loaded map
@@ -92,6 +92,9 @@ LOAD_MAP_STATUS loadMapFromYaml(
   sensor_msgs::msg::PointCloud2 & map_msg,
   geometry_msgs::msg::Pose & origin_msg);
 
+/**
+ * @brief SaveParameters for 3D map usage
+ */
 struct SaveParameters
 {
   std::string map_file_name;

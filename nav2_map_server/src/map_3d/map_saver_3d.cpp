@@ -55,12 +55,7 @@ MapSaver<sensor_msgs::msg::PointCloud2>::on_configure(const rclcpp_lifecycle::St
   // Create a service that saves the occupancy grid or PointCloud2 from map topic to a file
   save_map_service_ = create_service<nav2_msgs::srv::SaveMap3D>(
     service_prefix + save_map_service_name_,
-    [this](
-      const std::shared_ptr<rmw_request_id_t> request_header,
-      const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
-      std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response) {
-      saveMapCallback(request_header, request, response);
-    });
+    std::bind(&MapSaver<sensor_msgs::msg::PointCloud2>::saveMapCallback, this, _1, _2, _3));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

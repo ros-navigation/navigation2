@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/*
+ * File combining all the definitions of map_saver of different type.
+ */
+
 #ifndef NAV2_MAP_SERVER__MAP_SAVER_HPP_
 #define NAV2_MAP_SERVER__MAP_SAVER_HPP_
 

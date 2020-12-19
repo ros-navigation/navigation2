@@ -70,16 +70,9 @@ nav2_util::CallbackReturn MapServer<sensor_msgs::msg::PointCloud2>::on_configure
   const std::string service_prefix = get_name() + std::string("/");
 
   // Create a service that provides the PointCloud2
-  auto get_map_callback_lambda = [this](
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<nav2_msgs::srv::GetMap3D::Request> request,
-    std::shared_ptr<nav2_msgs::srv::GetMap3D::Response> response) {
-      getMapCallback(request_header, request, response);
-    };
-
   pcd_service_ = create_service<nav2_msgs::srv::GetMap3D>(
     service_prefix + std::string(service_name_),
-    get_map_callback_lambda);
+    std::bind(&MapServer<sensor_msgs::msg::PointCloud2>::getMapCallback, this, _1, _2, _3));
 
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   pcd_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>(
@@ -92,15 +85,9 @@ nav2_util::CallbackReturn MapServer<sensor_msgs::msg::PointCloud2>::on_configure
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   // Create a service that loads the PointCloud2 from a file
-  auto load_map_callback_lambda = [this](
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<nav2_msgs::srv::LoadMap3D::Request> request,
-    std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response) {
-      loadMapCallback(request_header, request, response);
-    };
-
   pcd_load_map_service_ = create_service<nav2_msgs::srv::LoadMap3D>(
-    service_prefix + std::string(load_map_service_name_), load_map_callback_lambda);
+    service_prefix + std::string(load_map_service_name_),
+    std::bind(&MapServer<sensor_msgs::msg::PointCloud2>::loadMapCallback, this, _1, _2, _3));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

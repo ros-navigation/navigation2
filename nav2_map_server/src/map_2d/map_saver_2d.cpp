@@ -75,7 +75,7 @@ MapSaver<nav_msgs::msg::OccupancyGrid>::on_configure(const rclcpp_lifecycle::Sta
   // Create a service that saves the occupancy grid from map topic to a file
   save_map_service_ = create_service<nav2_msgs::srv::SaveMap>(
     service_prefix + save_map_service_name_,
-    std::bind(&MapSaver::saveMapCallback, this, _1, _2, _3));
+    std::bind(&MapSaver<nav_msgs::msg::OccupancyGrid>::saveMapCallback, this, _1, _2, _3));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
