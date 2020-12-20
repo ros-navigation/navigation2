@@ -35,7 +35,7 @@ MapSaver<sensor_msgs::msg::PointCloud2>::MapSaver()
   RCLCPP_INFO(get_logger(), "Creating");
 
   save_map_timeout_ = std::make_shared<rclcpp::Duration>(
-    std::chrono::milliseconds(declare_parameter("save_map_timeout", 2000)));
+      rclcpp::Duration::from_seconds(declare_parameter("save_map_timeout", 2.0)));
 
   map_subscribe_transient_local_ = declare_parameter("map_subscribe_transient_local", true);
 }
@@ -124,6 +124,9 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
     // Pointer to map message received in the subscription callback
     sensor_msgs::msg::PointCloud2::SharedPtr pcd_map_msg = nullptr;
 
+    // Mutex for handling map_msg shared resource
+    std::recursive_mutex access;
+
     // Pointer to the origin message received in the subscription callback
     geometry_msgs::msg::Pose::SharedPtr origin_msg = nullptr;
 
@@ -144,14 +147,16 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
     }
 
     // A callback function that receives map message from subscribed topic
-    auto map_callback = [&pcd_map_msg](
+    auto map_callback = [&pcd_map_msg, &access](
       const sensor_msgs::msg::PointCloud2::SharedPtr msg) -> void {
+        std::lock_guard<std::recursive_mutex> guard(access);
         pcd_map_msg = msg;
       };
 
     // A callback function that receives origin message from subscribed topic
-    auto origin_callback = [&origin_msg](
+    auto origin_callback = [&origin_msg, &access](
       const geometry_msgs::msg::Pose::SharedPtr msg) -> void {
+        std::lock_guard<std::recursive_mutex> guard(access);
         origin_msg = msg;
       };
 

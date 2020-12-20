@@ -53,7 +53,7 @@ MapSaver<nav_msgs::msg::OccupancyGrid>::MapSaver()
   RCLCPP_INFO(get_logger(), "Creating");
 
   save_map_timeout_ = std::make_shared<rclcpp::Duration>(
-    std::chrono::milliseconds(declare_parameter("save_map_timeout", 2000)));
+      rclcpp::Duration::from_seconds(declare_parameter("save_map_timeout", 2.0)));
 
   free_thresh_default_ = declare_parameter("free_thresh_default", 0.25),
   occupied_thresh_default_ = declare_parameter("occupied_thresh_default", 0.65);
@@ -155,6 +155,9 @@ bool MapSaver<nav_msgs::msg::OccupancyGrid>::saveMapTopicToFile(
     // Pointer to map message received in the subscription callback
     nav_msgs::msg::OccupancyGrid::SharedPtr map_msg = nullptr;
 
+    // Mutex for handling map_msg shared resource
+    std::recursive_mutex access;
+
     // Correct map_topic_loc if necessary
     if (map_topic_loc.empty()) {
       map_topic_loc = "map";
@@ -180,10 +183,11 @@ bool MapSaver<nav_msgs::msg::OccupancyGrid>::saveMapTopicToFile(
     }
 
     // A callback function that receives map message from subscribed topic
-    auto mapCallback = [&map_msg](
-      const nav_msgs::msg::OccupancyGrid::SharedPtr msg) -> void {
-        map_msg = msg;
-      };
+    auto mapCallback = [&map_msg, &access](
+        const nav_msgs::msg::OccupancyGrid::SharedPtr msg) -> void {
+      std::lock_guard<std::recursive_mutex> guard(access);
+      map_msg = msg;
+    };
 
     // Add new subscription for incoming map topic.
     // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode
