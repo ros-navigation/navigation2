@@ -30,16 +30,6 @@
 
 const double MAX_Z(1.0);
 
-void setValues(nav2_costmap_2d::Costmap2D & costmap, const unsigned char * map)
-{
-  int index = 0;
-  for (unsigned int i = 0; i < costmap.getSizeInCellsY(); i++) {
-    for (unsigned int j = 0; j < costmap.getSizeInCellsX(); j++) {
-      costmap.setCost(j, i, map[index]);
-    }
-  }
-}
-
 char printableCost(unsigned char cost)
 {
   switch (cost) {
