@@ -162,7 +162,7 @@ void loadMapFromFile(
   std::cout << "[INFO] [map_io_3d]: Loading pcd_file: " <<
     load_parameters.pcd_file_name << std::endl;
 
-  pcl::PCLPointCloud2::Ptr cloud = std::make_shared<pcl::PCLPointCloud2>();
+  pcl::PCLPointCloud2::Ptr cloud(new pcl::PCLPointCloud2());
 
   //  create a pcd reader for PointCloud2 data
   pcl::PCDReader reader;
@@ -333,7 +333,7 @@ void TryWriteMapToFile(
     file_name += ".ply";
   }
 
-  std::shared_ptr<pcl::PCLPointCloud2> cloud_2 = std::make_shared<pcl::PCLPointCloud2>();
+  pcl::PCLPointCloud2::Ptr cloud_2(new pcl::PCLPointCloud2());
   msgToPcl(cloud_2, map);
 
   pcl::PCDWriter writer;

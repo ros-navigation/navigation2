@@ -46,7 +46,7 @@ void modifyMsgFields(
 
 void pclToMsg(
   sensor_msgs::msg::PointCloud2 & msg,
-  const std::shared_ptr<pcl::PCLPointCloud2> & cloud)
+  const pcl::PCLPointCloud2::Ptr & cloud)
 {
   msg.data.clear();
   modifyMsgFields(msg, cloud->fields);
@@ -76,7 +76,7 @@ void modifyPclFields(
 }
 
 void msgToPcl(
-  std::shared_ptr<pcl::PCLPointCloud2> & cloud,
+  pcl::PCLPointCloud2::Ptr & cloud,
   const sensor_msgs::msg::PointCloud2 & msg)
 {
   cloud->data.clear();
