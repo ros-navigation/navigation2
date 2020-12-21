@@ -134,7 +134,7 @@ void ObstacleLayer::onInitialize()
     declareParameter(source + "." + "clearing", rclcpp::ParameterValue(false));
     declareParameter(source + "." + "obstacle_range", rclcpp::ParameterValue(2.5));
     declareParameter(source + "." + "raytrace_max_range", rclcpp::ParameterValue(3.0));
-    declareParameter(source + "." + "raytrace_min_range", rclcpp::ParameterValue(0.2));
+    declareParameter(source + "." + "raytrace_min_range", rclcpp::ParameterValue(0.0));
 
     node->get_parameter(name_ + "." + source + "." + "topic", topic);
     node->get_parameter(name_ + "." + source + "." + "sensor_frame", sensor_frame);
@@ -538,7 +538,6 @@ ObstacleLayer::raytraceFreespace(
 {
   double ox = clearing_observation.origin_.x;
   double oy = clearing_observation.origin_.y;
-  double raytrace_min_range = clearing_observation.raytrace_min_range_;
   const sensor_msgs::msg::PointCloud2 & cloud = *(clearing_observation.cloud_);
 
   // get the map coordinates of the origin of the sensor
@@ -573,26 +572,6 @@ ObstacleLayer::raytraceFreespace(
     double a = wx - ox;
     double b = wy - oy;
 
-    double distance = std::sqrt(a * a + b * b);
-    // If distance to the point in the cloud is lesser than minimum range from which ray tracing is possible do not perform any further computation
-    if (distance <= raytrace_min_range) {
-      continue;
-    }
-
-    // Get first point from which raytrace clearing is possible (ray origin)
-    double px = ox + a / distance * raytrace_min_range;
-    double py = oy + b / distance * raytrace_min_range;
-
-    // Convert the point to map coordinates
-    if (!worldToMap(px, py, x0, y0)) {
-      // If the starting point of the ray lies outside the map boundaries do not perform further computation
-      RCLCPP_WARN(
-        logger_,
-        "Ray origin at (%.2f, %.2f) is out of map bounds. The costmap cannot raytrace for it.",
-        px, py);
-      continue;
-    }
-
     // the minimum value to raytrace from is the origin
     if (wx < origin_x) {
       double t = (origin_x - ox) / a;
@@ -626,9 +605,10 @@ ObstacleLayer::raytraceFreespace(
     }
 
     unsigned int cell_raytrace_max_range = cellDistance(clearing_observation.raytrace_max_range_);
+    unsigned int cell_raytrace_min_range = cellDistance(clearing_observation.raytrace_min_range_);
     MarkCell marker(costmap_, FREE_SPACE);
     // and finally... we can execute our trace to clear obstacles along that line
-    raytraceLine(marker, x0, y0, x1, y1, cell_raytrace_max_range);
+    raytraceLine(marker, x0, y0, x1, y1, cell_raytrace_max_range, cell_raytrace_min_range);
 
     updateRaytraceBounds(
       ox, oy, wx, wy, clearing_observation.raytrace_max_range_, min_x, min_y, max_x,

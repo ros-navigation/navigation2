@@ -308,7 +308,6 @@ void VoxelLayer::raytraceFreespace(
   double ox = clearing_observation.origin_.x;
   double oy = clearing_observation.origin_.y;
   double oz = clearing_observation.origin_.z;
-  double raytrace_min_range = clearing_observation.raytrace_min_range_;
 
   if (!worldToMap3DFloat(ox, oy, oz, sensor_x, sensor_y, sensor_z)) {
     RCLCPP_WARN(
@@ -348,40 +347,6 @@ void VoxelLayer::raytraceFreespace(
     double wpz = *iter_z;
 
     double distance = dist(ox, oy, oz, wpx, wpy, wpz);
-    // If distance to the point in the cloud is lesser than minimum range from which ray tracing is possible do not perform any further computation
-    if (distance <= raytrace_min_range) {
-      continue;
-    }
-    double delta_x = wpx - ox;
-    double delta_y = wpy - oy;
-    double delta_z = wpz - oz;
-
-    // Get first point from which raytrace clearing is possible (ray origin)
-    double px = ox + delta_x / distance * raytrace_min_range;
-    double py = oy + delta_y / distance * raytrace_min_range;
-    double pz = oz + delta_z / distance * raytrace_min_range;
-
-    double ray_x, ray_y, ray_z;
-    // Scale ray origin
-    double ray_origin_scaling_factor = 1.0;
-    ray_origin_scaling_factor =
-      std::max(
-      std::min(
-        ray_origin_scaling_factor,
-        (raytrace_min_range - 2 * resolution_) / raytrace_min_range), 0.0);
-    px = ray_origin_scaling_factor * (px - ox) + ox;
-    py = ray_origin_scaling_factor * (py - oy) + oy;
-    pz = ray_origin_scaling_factor * (pz - oz) + oz;
-
-    if (!worldToMap3DFloat(px, py, pz, ray_x, ray_y, ray_z)) {
-      // If the starting point of the ray lies outside the map boundaries do not perform further computation
-      RCLCPP_WARN(
-        logger_,
-        "Ray origin: (%.2f, %.2f, %.2f), out of map bounds. The costmap can't raytrace for it.",
-        px, py, pz);
-      continue;
-    }
-
 
     double scaling_fact = 1.0;
     scaling_fact = std::max(std::min(scaling_fact, (distance - 2 * resolution_) / distance), 0.0);
@@ -427,14 +392,15 @@ void VoxelLayer::raytraceFreespace(
     double point_x, point_y, point_z;
     if (worldToMap3DFloat(wpx, wpy, wpz, point_x, point_y, point_z)) {
       unsigned int cell_raytrace_max_range = cellDistance(clearing_observation.raytrace_max_range_);
+      unsigned int cell_raytrace_min_range = cellDistance(clearing_observation.raytrace_min_range_);
 
 
       // voxel_grid_.markVoxelLine(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z);
       voxel_grid_.clearVoxelLineInMap(
-        ray_x, ray_y, ray_z, point_x, point_y, point_z,
+        sensor_x, sensor_y, sensor_z, point_x, point_y, point_z,
         costmap_,
         unknown_threshold_, mark_threshold_, FREE_SPACE, NO_INFORMATION,
-        cell_raytrace_max_range);
+        cell_raytrace_max_range, cell_raytrace_min_range);
 
       updateRaytraceBounds(
         ox, oy, wpx, wpy, clearing_observation.raytrace_max_range_, min_x, min_y,
