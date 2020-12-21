@@ -405,6 +405,14 @@ WaypointFollower::convertGPSPoses2MapPoses(
         "fromLL service of robot_localization could not convert %i th GPS waypoint to"
         "Map frame, going to skip this point!"
         "Make sure you have run navsat_transform_node of robot_localization");
+      if (stop_on_failure_) {
+        RCLCPP_ERROR(
+          parent_node->get_logger(),
+          "Conversion of %i th GPS waypoint to"
+          "Map frame failed and stop_on_failure is set to true"
+          "Not going to execute any of waypoints, exiting with failure!");
+        return std::vector<geometry_msgs::msg::PoseStamped>();
+      }
       continue;
     } else {
       // this poses are assumed to be on global frame (map)
