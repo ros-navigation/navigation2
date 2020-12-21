@@ -223,7 +223,8 @@ public:
   template<class ActionType>
   inline void raytraceLine(
     ActionType at, double x0, double y0, double z0,
-    double x1, double y1, double z1, unsigned int max_length = UINT_MAX, unsigned int min_length = 0)
+    double x1, double y1, double z1, unsigned int max_length = UINT_MAX,
+    unsigned int min_length = 0)
   {
     int dx = int(x1) - int(x0);  // NOLINT
     int dy = int(y1) - int(y0);  // NOLINT
