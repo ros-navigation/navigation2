@@ -77,7 +77,8 @@ MapServer<nav_msgs::msg::OccupancyGrid>::~MapServer()
 {
 }
 
-nav2_util::CallbackReturn MapServer<nav_msgs::msg::OccupancyGrid>::on_configure(
+nav2_util::CallbackReturn
+MapServer<nav_msgs::msg::OccupancyGrid>::on_configure(
   const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");

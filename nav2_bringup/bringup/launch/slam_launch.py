@@ -74,7 +74,7 @@ def generate_launch_description():
 
     start_map_saver_server_cmd = Node(
             package='nav2_map_server',
-            executable='map_saver_server',
+            executable='map_saver_server_2d',
             output='screen',
             parameters=[configured_params])
 

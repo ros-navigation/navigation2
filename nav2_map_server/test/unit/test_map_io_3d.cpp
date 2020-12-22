@@ -58,8 +58,8 @@ protected:
   // Output: save_parameters
   void fillSaveParameters(
     const std::string & map_file_name,
-    const std::vector<float> & center,
-    const std::vector<float> & orientation,
+    const std::vector<double> & center,
+    const std::vector<double> & orientation,
     const std::string & format,
     bool as_binary,
     map_3d::SaveParameters & save_parameters)
@@ -84,12 +84,12 @@ protected:
     const sensor_msgs::msg::PointCloud2 & map_msg,
     const geometry_msgs::msg::Pose & origin)
   {
-    std::vector<float> center;
+    std::vector<double> center;
     center.push_back(origin.position.x);
     center.push_back(origin.position.y);
     center.push_back(origin.position.z);
 
-    std::vector<float> orientation;
+    std::vector<double> orientation;
     orientation.push_back(origin.orientation.w);
     orientation.push_back(origin.orientation.x);
     orientation.push_back(origin.orientation.y);
@@ -122,8 +122,8 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
 
   // 2. Save OccupancyGrid into a tmp file
   map_3d::SaveParameters saveParameters;
-  std::vector<float> center(3);
-  std::vector<float> orientation(4);
+  std::vector<double> center(3);
+  std::vector<double> orientation(4);
 
   // Set view_point translation(origin)
   center[0] = origin.position.x;

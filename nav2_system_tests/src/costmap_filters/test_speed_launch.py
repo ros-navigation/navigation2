@@ -90,7 +90,7 @@ def generate_launch_description():
         # Nodes required for Costmap Filters configuration
         Node(
             package='nav2_map_server',
-            executable='map_server',
+            executable='map_server_2d',
             name='filter_mask_server',
             output='screen',
             parameters=[new_yaml]),

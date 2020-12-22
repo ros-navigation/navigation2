@@ -158,8 +158,10 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   std::cout << "[DEBUG] [map_io_2d]: origin[1]: " << load_parameters.origin[1] << std::endl;
   std::cout << "[DEBUG] [map_io_2d]: origin[2]: " << load_parameters.origin[2] << std::endl;
   std::cout << "[DEBUG] [map_io_2d]: free_thresh: " << load_parameters.free_thresh << std::endl;
-  std::cout << "[DEBUG] [map_io_2d]: occupied_thresh: " << load_parameters.occupied_thresh << std::endl;
-  std::cout << "[DEBUG] [map_io_2d]: mode: " << map_mode_to_string(load_parameters.mode) << std::endl;
+  std::cout << "[DEBUG] [map_io_2d]: occupied_thresh: " <<
+    load_parameters.occupied_thresh << std::endl;
+  std::cout << "[DEBUG] [map_io_2d]: mode: " <<
+    map_mode_to_string(load_parameters.mode) << std::endl;
   std::cout << "[DEBUG] [map_io_2d]: negate: " << load_parameters.negate << std::endl;  //NOLINT
 
   return load_parameters;
@@ -329,7 +331,8 @@ void checkSaveParameters(SaveParameters & save_parameters)
   // Checking thresholds
   if (save_parameters.occupied_thresh == 0.0) {
     save_parameters.occupied_thresh = 0.65;
-    std::cout << "[WARN] [map_io_2d]: Occupied threshold unspecified. Setting it to default value: " <<
+    std::cout <<
+      "[WARN] [map_io_2d]: Occupied threshold unspecified. Setting it to default value: " <<
       save_parameters.occupied_thresh << std::endl;
   }
   if (save_parameters.free_thresh == 0.0) {
@@ -394,8 +397,9 @@ void checkSaveParameters(SaveParameters & save_parameters)
     }
   } catch (Magick::ErrorOption & e) {
     std::cout <<
-      "[WARN] [map_io_2d]: Format '" << save_parameters.image_format << "' is not usable. Using '" <<
-      FALLBACK_FORMAT << "' instead:" << std::endl << e.what() << std::endl;
+      "[WARN] [map_io_2d]: Format '" << save_parameters.image_format <<
+      "' is not usable. Using '" << FALLBACK_FORMAT << "' instead:" << std::endl << e.what() <<
+      std::endl;
     save_parameters.image_format = FALLBACK_FORMAT;
   }
 
@@ -481,7 +485,8 @@ void tryWriteMapToFile(
             pixel = Magick::Color(q, q, q);
             break;
           default:
-            std::cerr << "[ERROR] [map_io_2d]: Map mode should be Trinary, Scale or Raw" << std::endl;
+            std::cerr << "[ERROR] [map_io_2d]: Map mode should be Trinary, Scale or Raw" <<
+              std::endl;
             throw std::runtime_error("Invalid map mode");
         }
         image.pixelColor(x, y, pixel);

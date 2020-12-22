@@ -37,7 +37,8 @@ public:
   {
     std::string pub_map_pcd_file = path(TEST_DIR) / path(g_valid_pcd_yaml_file);
 
-
+    sensor_msgs::msg::PointCloud2 pcd_msg_;
+    geometry_msgs::msg::Pose origin_msg_;
     map_3d::LOAD_MAP_STATUS status =
       map_3d::loadMapFromYaml(pub_map_pcd_file, pcd_msg_, origin_msg_);
 
@@ -56,13 +57,11 @@ public:
 
     pcd_pub_->publish(pcd_msg_);
     origin_pub_->publish(origin_msg_);
-    }
+  }
 
 protected:
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pcd_pub_;
   rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr origin_pub_;
-  sensor_msgs::msg::PointCloud2 pcd_msg_;
-  geometry_msgs::msg::Pose origin_msg_;
 };
 
 int main(int argc, char ** argv)

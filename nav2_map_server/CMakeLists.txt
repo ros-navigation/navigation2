@@ -177,7 +177,7 @@ target_link_libraries(${map_saver_server_executable}_3d
 
 target_link_libraries(${costmap_filter_info_server_executable}
 ${library_name})
-  
+
 target_include_directories(${map_io_library_name}_2d SYSTEM PRIVATE
   ${GRAPHICSMAGICKCPP_INCLUDE_DIRS})
 
@@ -189,7 +189,7 @@ if(WIN32)
     YAML_CPP_DLL)
 
   target_compile_definitions(${map_io_library_name}_3d PRIVATE
-      YAML_CPP_DLL)
+    YAML_CPP_DLL)
 endif()
 
 install(TARGETS

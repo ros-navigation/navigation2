@@ -62,6 +62,9 @@ public:
   {
     lifecycle_client_->change_state(Transition::TRANSITION_DEACTIVATE);
     lifecycle_client_->change_state(Transition::TRANSITION_CLEANUP);
+    lifecycle_client_->change_state(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+    lifecycle_client_.reset();
+    node_.reset();
   }
 
   template<class T>
@@ -87,12 +90,12 @@ protected:
     const sensor_msgs::msg::PointCloud2 & map_msg,
     const geometry_msgs::msg::Pose & origin)
   {
-    std::vector<float> center;
+    std::vector<double> center;
     center.push_back(origin.position.x);
     center.push_back(origin.position.y);
     center.push_back(origin.position.z);
 
-    std::vector<float> orientation;
+    std::vector<double> orientation;
     orientation.push_back(origin.orientation.w);
     orientation.push_back(origin.orientation.x);
     orientation.push_back(origin.orientation.y);

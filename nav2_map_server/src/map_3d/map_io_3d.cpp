@@ -293,7 +293,7 @@ void CheckSaveParameters(SaveParameters & save_parameters)
   }
 
   // Confirm for the presently implemented formats
-  if (save_parameters.format != "ply" || save_parameters.format != "pcd") {
+  if (save_parameters.format != "ply" && save_parameters.format != "pcd") {
     save_parameters.format = "pcd";
     std::cout << "[WARNING] [map_io_3d]: " << save_parameters.format <<
       " support is not implemented, Falling back to pcd file format" << std::endl;
@@ -307,6 +307,7 @@ void CheckSaveParameters(SaveParameters & save_parameters)
 
   // Get the origin shape confirmed
   if (save_parameters.origin.center.size() != 3 && save_parameters.origin.orientation.size() != 4) {
+    save_parameters.origin.resize();
     save_parameters.origin.center = {0, 0, 0};
     save_parameters.origin.orientation = {1, 0, 0, 0};
     std::cout << "[WARNING] [map_io_3d]: "

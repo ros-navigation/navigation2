@@ -35,7 +35,7 @@ MapSaver<sensor_msgs::msg::PointCloud2>::MapSaver()
   RCLCPP_INFO(get_logger(), "Creating");
 
   save_map_timeout_ = std::make_shared<rclcpp::Duration>(
-      rclcpp::Duration::from_seconds(declare_parameter("save_map_timeout", 2.0)));
+    rclcpp::Duration::from_seconds(declare_parameter("save_map_timeout", 2.0)));
 
   map_subscribe_transient_local_ = declare_parameter("map_subscribe_transient_local", true);
 }
@@ -64,6 +64,10 @@ nav2_util::CallbackReturn
 MapSaver<sensor_msgs::msg::PointCloud2>::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
+
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -82,6 +86,9 @@ nav2_util::CallbackReturn
 MapSaver<sensor_msgs::msg::PointCloud2>::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
+
+  save_map_service_.reset();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -124,11 +131,11 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
     // Pointer to map message received in the subscription callback
     sensor_msgs::msg::PointCloud2::SharedPtr pcd_map_msg = nullptr;
 
-    // Mutex for handling map_msg shared resource
-    std::recursive_mutex access;
-
     // Pointer to the origin message received in the subscription callback
     geometry_msgs::msg::Pose::SharedPtr origin_msg = nullptr;
+
+    // Mutex for handling map_msg shared resource
+    std::recursive_mutex access;
 
     // Correct map_topic_loc if necessary
     if (map_topic_loc.empty()) {
@@ -140,7 +147,7 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
 
     // Correct origin_topic_loc if necessary
     if (origin_topic_loc.empty()) {
-      origin_topic_loc = "map_origin";
+      origin_topic_loc = map_topic_loc + "_origin";
       RCLCPP_WARN(
         get_logger(), "Origin topic unspecified. Origin messages will be read from \'%s\' topic",
         origin_topic_loc.c_str());
@@ -169,7 +176,7 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
       map_qos.reliable();
       map_qos.keep_last(1);
     }
-    auto map_sub = rclcpp_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
+    auto pcd_map_sub = rclcpp_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
       map_topic_loc, map_qos, map_callback);
 
     auto origin_sub = rclcpp_node_->create_subscription<geometry_msgs::msg::Pose>(
@@ -183,14 +190,17 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
       }
 
       if (pcd_map_msg && origin_msg) {
+        std::lock_guard<std::recursive_mutex> guard(access);
+        // map_sub is no more needed
+        pcd_map_sub.reset();
+        origin_sub.reset();
+
+        save_parameters_loc.origin.resize();
         // Set view_point translation(origin)
-        save_parameters_loc.origin.center.resize(3);
         save_parameters_loc.origin.center[0] = origin_msg->position.x;
         save_parameters_loc.origin.center[1] = origin_msg->position.y;
         save_parameters_loc.origin.center[2] = origin_msg->position.z;
-
         // Set view_point orientation
-        save_parameters_loc.origin.orientation.resize(4);
         save_parameters_loc.origin.orientation[0] = origin_msg->orientation.w;
         save_parameters_loc.origin.orientation[1] = origin_msg->orientation.x;
         save_parameters_loc.origin.orientation[2] = origin_msg->orientation.y;

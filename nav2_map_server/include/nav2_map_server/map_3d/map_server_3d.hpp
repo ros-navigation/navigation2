@@ -115,6 +115,7 @@ protected:
     const std::shared_ptr<nav2_msgs::srv::LoadMap3D::Request> request,
     std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response);
 
+  void updateMsgHeader();
 
   // The name of the service for getting a map
   const std::string service_name_{"map"};
@@ -132,6 +133,9 @@ protected:
 
   // A topic on which the PointCloud2 will be published
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr pcd_pub_;
+
+  // The frame ID used in the returned PointCloud2 message
+  std::string frame_id_;
 
   // The message to publish the pointcloud topic
   sensor_msgs::msg::PointCloud2 pcd_msg_;

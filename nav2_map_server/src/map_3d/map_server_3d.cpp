@@ -46,7 +46,8 @@ MapServer<sensor_msgs::msg::PointCloud2>::~MapServer()
 {
 }
 
-nav2_util::CallbackReturn MapServer<sensor_msgs::msg::PointCloud2>::on_configure(
+nav2_util::CallbackReturn
+MapServer<sensor_msgs::msg::PointCloud2>::on_configure(
   const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -81,7 +82,7 @@ nav2_util::CallbackReturn MapServer<sensor_msgs::msg::PointCloud2>::on_configure
 
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   origin_pub_ = create_publisher<geometry_msgs::msg::Pose>(
-    topic_name,
+    topic_name + "_origin",
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   // Create a service that loads the PointCloud2 from a file
@@ -92,7 +93,8 @@ nav2_util::CallbackReturn MapServer<sensor_msgs::msg::PointCloud2>::on_configure
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn MapServer<sensor_msgs::msg::PointCloud2>::on_activate(
+nav2_util::CallbackReturn
+MapServer<sensor_msgs::msg::PointCloud2>::on_activate(
   const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
@@ -107,10 +109,14 @@ nav2_util::CallbackReturn MapServer<sensor_msgs::msg::PointCloud2>::on_activate(
   auto origin = std::make_unique<geometry_msgs::msg::Pose>(origin_msg_);
   origin_pub_->publish(std::move(origin));
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn MapServer<sensor_msgs::msg::PointCloud2>::on_deactivate(
+nav2_util::CallbackReturn
+MapServer<sensor_msgs::msg::PointCloud2>::on_deactivate(
   const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -118,10 +124,14 @@ nav2_util::CallbackReturn MapServer<sensor_msgs::msg::PointCloud2>::on_deactivat
   pcd_pub_->on_deactivate();
   origin_pub_->on_deactivate();
 
+  // create bond connection
+  destroyBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn MapServer<sensor_msgs::msg::PointCloud2>::on_cleanup(
+nav2_util::CallbackReturn
+MapServer<sensor_msgs::msg::PointCloud2>::on_cleanup(
   const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -156,6 +166,8 @@ bool MapServer<sensor_msgs::msg::PointCloud2>::loadMapResponseFromYaml(
         nav2_msgs::srv::LoadMap3D::Response::RESULT_INVALID_MAP_DATA;
       return false;
     case map_3d::LOAD_MAP_SUCCESS:
+      updateMsgHeader();
+
       response->map = pcd_msg_;
       response->origin = origin_msg_;
       response->result = nav2_msgs::srv::LoadMap3D::Response::RESULT_SUCCESS;
@@ -201,6 +213,12 @@ void MapServer<sensor_msgs::msg::PointCloud2>::loadMapCallback(
     auto pcd_msg = std::make_unique<sensor_msgs::msg::PointCloud2>(pcd_msg_);
     pcd_pub_->publish(std::move(pcd_msg));  // publish new map
   }
+}
+
+void MapServer<sensor_msgs::msg::PointCloud2>::updateMsgHeader()
+{
+  pcd_msg_.header.frame_id = frame_id_;
+  pcd_msg_.header.stamp = now();
 }
 
 }  // namespace nav2_map_server

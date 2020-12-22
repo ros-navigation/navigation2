@@ -82,7 +82,7 @@ def generate_launch_description():
 
         Node(
             package='nav2_map_server',
-            executable='map_server',
+            executable='map_server_2d',
             name='map_server',
             output='screen',
             parameters=[configured_params],

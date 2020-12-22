@@ -54,8 +54,8 @@ extern const size_t g_valid_pcd_data_size;
 // *INDENT-OFF*
 // Uncrustify may incorrectly guide to add extra spaces in < double > during CI tests
 extern const std::vector<double> g_valid_origin;
-extern const std::vector<float> g_valid_center_pcd;
-extern const std::vector<float> g_valid_orientation_pcd;
+extern const std::vector<double> g_valid_center_pcd;
+extern const std::vector<double> g_valid_orientation_pcd;
 // *INDENT-ON*
 extern const double g_default_free_thresh;
 extern const double g_default_occupied_thresh;

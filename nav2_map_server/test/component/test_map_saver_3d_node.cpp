@@ -62,6 +62,8 @@ public:
   {
     lifecycle_client_->change_state(Transition::TRANSITION_DEACTIVATE);
     lifecycle_client_->change_state(Transition::TRANSITION_CLEANUP);
+    lifecycle_client_.reset();
+    node_.reset();
   }
 
   template<class T>
@@ -86,21 +88,29 @@ protected:
     const sensor_msgs::msg::PointCloud2 & map_msg,
     const geometry_msgs::msg::Pose & origin)
   {
-    std::vector<float> center;
-    center.push_back(origin.position.x);
-    center.push_back(origin.position.y);
-    center.push_back(origin.position.z);
+    std::vector<double> center;
+    center.resize(3);
+    center[0] = origin.position.x;
+    center[1] = origin.position.y;
+    center[2] = origin.position.z;
 
-    std::vector<float> orientation;
-    orientation.push_back(origin.orientation.w);
-    orientation.push_back(origin.orientation.x);
-    orientation.push_back(origin.orientation.y);
-    orientation.push_back(origin.orientation.z);
-    ASSERT_EQ(center, g_valid_center_pcd);
-    ASSERT_EQ(orientation, g_valid_orientation_pcd);
+    std::vector<double> orientation;
+    orientation.resize(4);
+    orientation[0] = origin.orientation.w;
+    orientation[1] = origin.orientation.x;
+    orientation[2] = origin.orientation.y;
+    orientation[3] = origin.orientation.z;
 
-    ASSERT_EQ(map_msg.width, g_valid_pcd_width);
-    ASSERT_EQ(map_msg.data.size(), g_valid_pcd_data_size);
+    for (int i = 0; i < 3; i++) {
+      ASSERT_EQ(center[i], g_valid_center_pcd[i]);
+    }
+
+    for (int i = 0; i < 4; i++) {
+      ASSERT_EQ(orientation[1], g_valid_orientation_pcd[1]);
+    }
+
+    ASSERT_FLOAT_EQ(map_msg.width, g_valid_pcd_width);
+    ASSERT_FLOAT_EQ(map_msg.data.size(), g_valid_pcd_data_size);
   }
 
   static rclcpp::Node::SharedPtr node_;
