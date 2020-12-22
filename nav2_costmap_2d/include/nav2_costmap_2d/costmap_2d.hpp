@@ -415,7 +415,7 @@ protected:
     if (dist <= min_length) {
       return;
     }
-    
+
     double scale = (dist == 0.0) ? 1.0 : std::min(1.0, max_length / dist);
 
     x0 = (unsigned int)(x0 + dx / dist * min_length);
