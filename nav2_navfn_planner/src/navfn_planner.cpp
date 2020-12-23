@@ -52,7 +52,7 @@ NavfnPlanner::NavfnPlanner()
   // Declare this node's parameters
   declare_parameter("tolerance", rclcpp::ParameterValue(0.0));
   declare_parameter("use_astar", rclcpp::ParameterValue(false));
-  declare_parameter("allow_unknown", rclcpp::ParameterValue(false));
+  declare_parameter("allow_unknown", rclcpp::ParameterValue(true));
 
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
