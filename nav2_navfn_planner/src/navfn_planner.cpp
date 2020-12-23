@@ -52,6 +52,7 @@ NavfnPlanner::NavfnPlanner()
   // Declare this node's parameters
   declare_parameter("tolerance", rclcpp::ParameterValue(0.0));
   declare_parameter("use_astar", rclcpp::ParameterValue(false));
+  declare_parameter("allow_unknown", rclcpp::ParameterValue(false));
 
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
@@ -70,6 +71,7 @@ NavfnPlanner::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Initialize parameters
   get_parameter("tolerance", tolerance_);
   get_parameter("use_astar", use_astar_);
+  get_parameter("allow_unknown;", allow_unknown_);
 
   getCostmap(costmap_);
   RCLCPP_DEBUG(get_logger(), "Costmap size: %d,%d",
