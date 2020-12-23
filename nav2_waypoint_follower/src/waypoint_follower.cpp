@@ -199,8 +199,12 @@ void WaypointFollower::followWaypointsLogic(
     get_logger(), "Received follow waypoint request with %i waypoints.",
     static_cast<int>(poses.size()));
 
-  if (poses.size() == 0) {
-    action_server->succeeded_current(result);
+  if (poses.empty()) {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Empty vector of Waypoints passed to waypoint following logic. "
+      "Nothing to execute, returning with failure!");
+    action_server->terminate_current(result);
     return;
   }
 
@@ -224,6 +228,14 @@ void WaypointFollower::followWaypointsLogic(
       RCLCPP_INFO(get_logger(), "Preempting the goal pose.");
       goal = action_server->accept_pending_goal();
       poses = getLatestGoalPoses<T>(action_server);
+      if (poses.empty()) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Empty vector of Waypoints passed to waypoint following logic. "
+          "Nothing to execute, returning with failure!");
+        action_server->terminate_current(result);
+        return;
+      }
       goal_index = 0;
       new_goal = true;
     }
