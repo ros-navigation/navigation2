@@ -40,7 +40,7 @@ double LikelihoodFieldMatcher2d::getScanProbability(
 	int beams_to_skip = scan->ranges.size()/max_number_of_beams;
 	
 	// Iterate over the specfied number of beams, skipping between them to get an even distribution  
-	for(int i=0; i<ranges.size(); i+=beams_to_skip)
+	for(int i=0; i<scan->ranges.size(); i+=beams_to_skip)
 	{
 		// Check if the range is within the sensor's limits
 		if(scan->ranges[i]<z_max && scan->ranges[i]>z_min)
