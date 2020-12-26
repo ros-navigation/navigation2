@@ -3,6 +3,12 @@
 
 namespace nav2_localization
 {
+std::pair<int, int> MapUtils::worldCoordToMapCoord(const double &x, const double &y, const nav_msgs::msg::MapMetaData &map_info)
+{
+    int map_x = floor((x - map_info.origin.position.x) / map_info.resolution);
+    int map_y = floor((y - map_info.origin.position.y) / map_info.resolution);
+    return std::make_pair(map_x, map_y);
+}
 int MapUtils::coordinatesToIndex(const uint32_t &x, const uint32_t &y, const uint32_t &map_width)
 {
     return x + y*map_width;
@@ -13,8 +19,8 @@ std::pair<uint32_t, uint32_t> MapUtils::indexToCoordinates(const int &index, con
     uint32_t y = (index - x)/map_width;
     return std::make_pair(x, y);
 }
-double MapUtils::distanceBetweenTwoPoints(const uint32_t &x1, const uint32_t &y1,
-                                          const uint32_t &x2, const uint32_t &y2)
+double MapUtils::distanceBetweenTwoPoints(const int &x1, const int &y1,
+                                          const int &x2, const int &y2)
 {
     return hypot(x1-x2, y1-y2);
 }
