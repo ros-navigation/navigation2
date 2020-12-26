@@ -28,7 +28,7 @@ double LikelihoodFieldMatcher2d::getScanProbability(
 	const sensor_msgs::msg::LaserScan::ConstSharedPtr &scan,
 	const geometry_msgs::msg::TransformStamped &curr_pose)
 {
-	double q = 1;	// Probability of curr_pose given scan
+	double q = 1.0;	// Probability of curr_pose given scan
 	double theta = tf2::getYaw(curr_pose.transform.rotation); // Robot's orientation
 
 	// Get the specfied max and min range of the sensor
@@ -39,6 +39,8 @@ double LikelihoodFieldMatcher2d::getScanProbability(
 	int max_number_of_beams = std::min(max_number_of_beams_, static_cast<int>(scan->ranges.size()));
 	int beams_to_skip = scan->ranges.size()/max_number_of_beams;
 	
+	static double max_distance_prob = (1.0/(sqrt(2*M_PI)*sigma_hit_))*exp(-0.5*(pow(max_likelihood_distace_, 2)/(sigma_hit_*sigma_hit_)));
+
 	// Iterate over the specfied number of beams, skipping between them to get an even distribution  
 	for(int i=0; i<scan->ranges.size(); i+=beams_to_skip)
 	{
@@ -59,10 +61,17 @@ double LikelihoodFieldMatcher2d::getScanProbability(
 							sin(theta + beam_angle);
 
 			// Get index of the laser end-point in the grid map
-			int end_point_index = MapUtils::coordinatesToIndex(x_z_kt, y_z_kt, map_->info.width);
+			std::pair<int, int> map_coord = MapUtils::worldCoordToMapCoord(x_z_kt, y_z_kt, map_->info);
+			int map_x = map_coord.first;
+			int map_y = map_coord.second;
+			int end_point_index = MapUtils::coordinatesToIndex(map_x, map_y, map_->info.width);
 
 			// Get the likelihood field probability at that endpoint 
-			double dist_prob = pre_computed_likelihood_field_[end_point_index];
+			double dist_prob;
+			if(end_point_index<0 || end_point_index>=map_->data.size()) // out of map bounds
+				dist_prob = max_distance_prob;
+			else
+				dist_prob = pre_computed_likelihood_field_[end_point_index];
 
 			q *= z_hit_* dist_prob + (z_rand_/z_max);
 		}
@@ -96,7 +105,7 @@ void LikelihoodFieldMatcher2d::preComputeLikelihoodField()
 	std::vector<int> occupied_cells;
 
     // Identify all the occupied cells
-	for(auto index=0; index < map_->info.width*map_->info.height; index++)
+	for(auto index=0; index < map_->data.size(); index++)
 	{
 		if(map_->data[index]==100) // the cell is occupied
 		{
@@ -110,12 +119,12 @@ void LikelihoodFieldMatcher2d::preComputeLikelihoodField()
     // Depth first search for other cells
 	for(auto index : occupied_cells)
 	{
-		std::vector<bool> visited(map_->info.width*map_->info.height, false);
+		std::vector<bool> visited(map_->data.size(), false);
 		DFS(index, index, visited);
 	}
 
     // Apply zero-mean norrmal distribution
-	for(auto index=0; index < map_->info.width*map_->info.height; index++)
+	for(auto index=0; index < map_->data.size(); index++)
 		pre_computed_likelihood_field_[index] = (1.0/(sqrt(2*M_PI)*sigma_hit_))*exp(-0.5*((pre_computed_likelihood_field_[index]*pre_computed_likelihood_field_[index])/(sigma_hit_*sigma_hit_)));
 }
 
