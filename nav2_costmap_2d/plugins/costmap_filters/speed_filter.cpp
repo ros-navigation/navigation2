@@ -281,16 +281,16 @@ void SpeedFilter::process(
     if (speed_limit_ < 0.0) {
       RCLCPP_WARN(
         logger_,
-        "SpeedFilter: Speed limit in filter_mask[%i, %i] is less than 0%, "
-        "which can not be true. Setting it to 0% value.",
+        "SpeedFilter: Speed limit in filter_mask[%i, %i] is less than 0%%, "
+        "which can not be true. Setting it to 0%% value.",
         mask_robot_i, mask_robot_j);
       speed_limit_ = NO_SPEED_LIMIT;
     }
     if (speed_limit_ > 100.0) {
       RCLCPP_WARN(
         logger_,
-        "SpeedFilter: Speed limit in filter_mask[%i, %i] is higher than 100%, "
-        "which can not be true. Setting it to 100% value.",
+        "SpeedFilter: Speed limit in filter_mask[%i, %i] is higher than 100%%, "
+        "which can not be true. Setting it to 100%% value.",
         mask_robot_i, mask_robot_j);
       speed_limit_ = 100.0;
     }
