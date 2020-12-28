@@ -144,7 +144,7 @@ protected:
   const std::string global_frame_{"map"};
 
   // Whether or not the planner should be allowed to plan through unknown space
-  const bool allow_unknown_{true};
+  bool allow_unknown_;
 
   // If the goal is obstructed, the tolerance specifies how many meters the planner
   // can relax the constraint in x and y before failing
