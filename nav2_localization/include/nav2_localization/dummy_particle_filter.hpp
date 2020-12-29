@@ -2,7 +2,7 @@
 #define NAV2_LOCALIZATION__DUMMY_PARTICLE_FILTER_HPP_
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
-#include "sensor_msgs/msg/point_cloud2.h"
+#include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
 #include "nav2_localization/interfaces/matcher2d_base.hpp"
 #include <vector>

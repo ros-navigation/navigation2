@@ -11,7 +11,7 @@
 #include "nav2_localization/interfaces/solver_base.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "message_filters/subscriber.h"
-#include "sensor_msgs/msg/point_cloud2.h"
+#include "sensor_msgs/msg/point_cloud2.hpp"
 #include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"

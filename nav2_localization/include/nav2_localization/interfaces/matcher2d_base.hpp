@@ -2,7 +2,7 @@
 #define NAV2_LOCALIZATION__MATCHER2D_BASE_HPP_
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
-#include "sensor_msgs/msg/point_cloud2.h"
+#include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_util/lifecycle_node.hpp"
