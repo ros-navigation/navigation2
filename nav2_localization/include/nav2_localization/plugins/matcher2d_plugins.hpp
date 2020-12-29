@@ -12,7 +12,7 @@ class LikelihoodFieldMatcher2d : public Matcher2d
 public:
 	LikelihoodFieldMatcher2d() : Matcher2d(){}
 
-	double getScanProbability(const sensor_msgs::msg::LaserScan::ConstSharedPtr& scan,
+	double getScanProbability(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan,
 							  const geometry_msgs::msg::TransformStamped &curr_pose) override;
 	void setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr &map) override;
 	void setSensorPose(const geometry_msgs::msg::TransformStamped &sensor_pose) override;

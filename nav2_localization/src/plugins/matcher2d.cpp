@@ -4,6 +4,7 @@
 #include "nav2_localization/map_utils.hpp"
 #include "tf2/utils.h"
 #include <sensor_msgs/point_cloud_conversion.h>
+#include <sensor_msgs/PointCloud.h>
 
 namespace nav2_localization
 {

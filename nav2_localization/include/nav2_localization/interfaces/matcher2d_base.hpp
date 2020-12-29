@@ -2,7 +2,7 @@
 #define NAV2_LOCALIZATION__MATCHER2D_BASE_HPP_
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
-#include "sensor_msgs/msg/laser_scan.hpp"
+#include <sensor_msgs/PointCloud2.h>
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -28,7 +28,7 @@ public:
 	 * @param curr_pose A pose to match the scan from.
 	 * @return The probability of the robot being at curr_pose, given scan
 	 */
-	virtual double getScanProbability(const sensor_msgs::msg::LaserScan::ConstSharedPtr &scan,
+	virtual double getScanProbability(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &scan,
 									  const geometry_msgs::msg::TransformStamped &curr_pose) = 0;
 
 	/**
