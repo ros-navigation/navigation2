@@ -5,6 +5,7 @@
 #include "tf2/utils.h"
 #include "sensor_msgs/point_cloud_conversion.hpp"
 #include "sensor_msgs/msg/point_cloud.hpp"
+#include <math.h> // To use "pow()" and "atan2()"
 
 namespace nav2_localization
 {
@@ -32,34 +33,40 @@ double LikelihoodFieldMatcher2d::getScanProbability(
 {
 
 	// Convert received PC2 to PC
-	sensor_msgs::Pointcloud pointcloud;
-	sensor_msgs::convertPointCloud2ToPointCloud(scan, pointcloud);
+	sensor_msgs::msg::PointCloud pointcloud;
+	sensor_msgs::convertPointCloud2ToPointCloud(*scan.get(), pointcloud);
 
 	// Get scan data from pointcloud
 	std::vector<double> ranges;
 	std::vector<double> angles;
-	geometry_msgs::Point32 point;
+	geometry_msgs::msg::Point32 point;
 	int valid_beams = 0;
 	double distance;
 	double angle;
 
-	for(for i=0; pointcloud.points.size(); i++)
+	for(int i=0; pointcloud.points.size(); i++)
 	{
-		geometry_msgs::Point32 point = pointcloud.points[i];
+		point = pointcloud.points[i];
  
 		if(point.z == 0)
 		{
-			distance = sqrt(point.x^2 + point.y^2);
-			angle = atan2(point.x/(point.y+1e-10)); // atan(x/y)
+			distance = sqrt(pow(point.x, 2) + pow(point.y, 2));
+			angle = atan2(point.x, point.y+1e-10); // atan(x/y)
 			
-			ranges.append(distance);
-			angles.append(angle);
+			ranges.push_back(distance);
+			angles.push_back(angle);
 			valid_beams++;
 		}
 		else
-			string warning << "WARNING: Point number" << i << " of the scan will be ignored since it does not have z=0 and this plugin is oriented to 2D spaces. Its z is " << point.z;
-			RCLCPP_ERROR(get_logger(), warning);
+		{
+			std::stringstream warning;
+			warning << "WARNING: Point number " << i << " of the scan will be ignored since it does not have z=0 and this plugin is oriented to 2D spaces. Its z is " << point.z;
+			RCLCPP_WARN(node_->get_logger(), warning.str());
+		}
 	}
+
+	// Get most distant measurement (taken as max range
+	double z_max = max_element(ranges.begin(), ranges.end()) - ranges.begin();
 
 	double q = 1;	// Probability of curr_pose given scan
 	double theta = tf2::getYaw(curr_pose.transform.rotation); // Robot's orientation

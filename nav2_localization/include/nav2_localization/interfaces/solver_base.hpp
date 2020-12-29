@@ -37,7 +37,7 @@ public:
      */
 	virtual geometry_msgs::msg::TransformStamped solve(
 		const geometry_msgs::msg::TransformStamped& curr_odom,
-		const sensor_msgs::msg::Pointcloud2::ConstSharedPtr& scan) = 0;
+		const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan) = 0;
 
 	/**
 	 * @brief Initializes the filter being used with a given pose
