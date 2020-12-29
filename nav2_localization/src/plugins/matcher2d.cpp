@@ -3,8 +3,8 @@
 #include "nav2_localization/plugins/matcher2d_plugins.hpp"
 #include "nav2_localization/map_utils.hpp"
 #include "tf2/utils.h"
-#include <sensor_msgs/point_cloud_conversion.h>
-#include <sensor_msgs/PointCloud.h>
+#include "sensor_msgs/point_cloud_conversion.hpp"
+#include "sensor_msgs/msg/point_cloud.h"
 
 namespace nav2_localization
 {
