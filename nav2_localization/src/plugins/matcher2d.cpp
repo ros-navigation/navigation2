@@ -3,6 +3,7 @@
 #include "nav2_localization/plugins/matcher2d_plugins.hpp"
 #include "nav2_localization/map_utils.hpp"
 #include "tf2/utils.h"
+#include <sensor_msgs/point_cloud_conversion.h>
 
 namespace nav2_localization
 {
@@ -25,47 +26,73 @@ void LikelihoodFieldMatcher2d::configure(const rclcpp_lifecycle::LifecycleNode::
 }
 
 double LikelihoodFieldMatcher2d::getScanProbability(
-	const sensor_msgs::msg::LaserScan::ConstSharedPtr &scan,
+	const sensor_msgs::msg::PointCloud2::ConstSharedPtr &scan,
 	const geometry_msgs::msg::TransformStamped &curr_pose)
 {
+
+	// Convert received PC2 to PC
+	sensor_msgs::Pointcloud pointcloud;
+	sensor_msgs::convertPointCloud2ToPointCloud(scan, pointcloud);
+
+	// Get scan data from pointcloud
+	std::vector<double> ranges;
+	std::vector<double> angles;
+	geometry_msgs::Point32 point;
+	int valid_beams = 0;
+	double distance;
+	double angle;
+
+	for(for i=0; pointcloud.points.size(); i++)
+	{
+		geometry_msgs::Point32 point = pointcloud.points[i];
+ 
+		if(point.z == 0)
+		{
+			distance = sqrt(point.x^2 + point.y^2);
+			angle = atan2(point.x/(point.y+1e-10)); // atan(x/y)
+			
+			ranges.append(distance);
+			angles.append(angle);
+			valid_beams++;
+		}
+		else
+			string warning << "WARNING: Point number" << i << " of the scan will be ignored since it does not have z=0 and this plugin is oriented to 2D spaces. Its z is " << point.z;
+			RCLCPP_ERROR(get_logger(), warning);
+	}
+
 	double q = 1;	// Probability of curr_pose given scan
 	double theta = tf2::getYaw(curr_pose.transform.rotation); // Robot's orientation
 
-	// Get the specfied max and min range of the sensor
-	double z_max = scan->range_max;
-	double z_min = scan->range_min;
-
 	// In case the user specifies more beams than is available
-	int max_number_of_beams = std::min(max_number_of_beams_, static_cast<int>(scan->ranges.size()));
-	int beams_to_skip = scan->ranges.size()/max_number_of_beams;
+	int max_number_of_beams = std::min(max_number_of_beams_, valid_beams);
+	int beams_to_skip = valid_beams/max_number_of_beams;
 	
-	// Iterate over the specfied number of beams, skipping between them to get an even distribution  
-	for(int i=0; i<scan->ranges.size(); i+=beams_to_skip)
+	// Iterate over the specfied number of beams, skipping between them to get an even distribution 
+	// TODO - Document that:
+	//  - The points must be sorted (as in a LaserScan msg), or shall we sort them?
+	//  - The points should be inside the range of the sensor (advisable check in charge of the user)
+	for(int i=0; i<valid_beams; i+=beams_to_skip)
 	{
-		// Check if the range is within the sensor's limits
-		if(scan->ranges[i]<z_max && scan->ranges[i]>z_min)
-		{
-			// Map the beam end-point onto the map
-			double beam_angle = tf2::getYaw(sensor_pose_.transform.rotation) + scan->angle_min + scan->angle_increment*i;
-			double x_z_kt = curr_pose.transform.translation.x +
-							sensor_pose_.transform.translation.x * cos(theta) -
-							sensor_pose_.transform.translation.y * sin(theta) +
-							scan->ranges[i] * 
-							cos(theta + beam_angle);
-			double y_z_kt = curr_pose.transform.translation.y +
-							sensor_pose_.transform.translation.y * cos(theta) +
-							sensor_pose_.transform.translation.x * sin(theta) +
-							scan->ranges[i] * 
-							sin(theta + beam_angle);
+		// Map the beam end-point onto the map
+		double beam_angle = tf2::getYaw(sensor_pose_.transform.rotation) + angles[i];
+		double x_z_kt = curr_pose.transform.translation.x +
+						sensor_pose_.transform.translation.x * cos(theta) -
+						sensor_pose_.transform.translation.y * sin(theta) +
+						ranges[i] * 
+						cos(theta + beam_angle);
+		double y_z_kt = curr_pose.transform.translation.y +
+						sensor_pose_.transform.translation.y * cos(theta) +
+						sensor_pose_.transform.translation.x * sin(theta) +
+						ranges[i] * 
+						sin(theta + beam_angle);
 
-			// Get index of the laser end-point in the grid map
-			int end_point_index = MapUtils::coordinatesToIndex(x_z_kt, y_z_kt, map_->info.width);
+		// Get index of the laser end-point in the grid map
+		int end_point_index = MapUtils::coordinatesToIndex(x_z_kt, y_z_kt, map_->info.width);
 
-			// Get the likelihood field probability at that endpoint 
-			double dist_prob = pre_computed_likelihood_field_[end_point_index];
+		// Get the likelihood field probability at that endpoint 
+		double dist_prob = pre_computed_likelihood_field_[end_point_index];
 
-			q *= z_hit_* dist_prob + (z_rand_/z_max);
-		}
+		q *= z_hit_* dist_prob + (z_rand_/z_max);
 	}
 	return q;
 }
