@@ -11,7 +11,7 @@
 #include "nav2_localization/interfaces/solver_base.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "message_filters/subscriber.h"
-#include "sensor_msgs/msg/laser_scan.hpp"
+#include <sensor_msgs/PointCloud2.h>
 #include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
@@ -85,7 +85,7 @@ protected:
     void initTransforms();
 
     /**
-     * @brief Initializes the laser scan message filter
+     * @brief Initializes the scan message filter
      */
     void initMessageFilters();
     
@@ -101,10 +101,10 @@ protected:
     void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
 
     /**
-     * @brief Callback when the laser is received
-     * @param laser_scan pointer to the received laser message
+     * @brief Callback when the scan is received
+     * @param scan pointer to the received PointCloud2 message
      */
-    void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
+    void scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr scan);
 
     /**
      * @brief Callback when the initial pose of the robot is received
@@ -116,7 +116,7 @@ protected:
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
     bool first_map_received_{false};
 
-    // Laser scan
+    // Scan
     std::string scan_topic_;
 
     // Transforms
@@ -129,9 +129,9 @@ protected:
     tf2::Duration transform_tolerance_;
 
     // Message filters
-    std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
-    std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
-    message_filters::Connection laser_scan_connection_;
+    std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> scan_sub_;
+    std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>> scan_filter_;
+    message_filters::Connection scan_connection_;
 
     // Sample Motion Model Plugin
     pluginlib::ClassLoader<nav2_localization::SampleMotionModel> sample_motion_model_loader_;

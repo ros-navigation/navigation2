@@ -23,7 +23,7 @@ LocalizationServer::LocalizationServer()
     declare_parameter("sample_motion_model_id", default_sample_motion_model_id_);
     declare_parameter("matcher2d_id", default_matcher2d_id_);
     declare_parameter("solver_id", default_solver_id_);
-    declare_parameter("laser_scan_topic", "scan");
+    declare_parameter("scan_topic", "scan");
     declare_parameter("odom_frame_id", "odom");
     declare_parameter("base_frame_id", "base_link");
     declare_parameter("map_frame_id", "map");
@@ -46,7 +46,7 @@ LocalizationServer::on_configure(const rclcpp_lifecycle::State & state)
     get_parameter("sample_motion_model_id", sample_motion_model_id_);
     get_parameter("matcher2d_id", matcher2d_id_);
     get_parameter("solver_id", solver_id_);
-    get_parameter("laser_scan_topic", scan_topic_);
+    get_parameter("scan_topic", scan_topic_);
     get_parameter("odom_frame_id", odom_frame_id_);
     get_parameter("base_frame_id", base_frame_id_);
     get_parameter("map_frame_id", map_frame_id_);
@@ -83,10 +83,10 @@ LocalizationServer::on_cleanup(const rclcpp_lifecycle::State & state)
 {
     initial_pose_sub_.reset();
 
-    // Laser Scan
-    laser_scan_connection_.disconnect();
-    laser_scan_filter_.reset();
-    laser_scan_sub_.reset();
+    // Scan
+    scan_connection_.disconnect();
+    scan_filter_.reset();
+    scan_sub_.reset();
 
     // Transforms
     tf_broadcaster_.reset();
@@ -135,15 +135,15 @@ LocalizationServer::initTransforms()
 void
 LocalizationServer::initMessageFilters()
 {
-    laser_scan_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
+    scan_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(
         rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
 
-    laser_scan_filter_ = std::make_shared<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-        *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_);
+    scan_filter_ = std::make_shared<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>>(
+        *scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_);
 
-    laser_scan_connection_ = laser_scan_filter_->registerCallback(
+    scan_connection_ = scan_filter_->registerCallback(
         std::bind(
-            &LocalizationServer::laserReceived,
+            &LocalizationServer::scanReceived,
             this, std::placeholders::_1));
 }
 
@@ -209,7 +209,7 @@ LocalizationServer::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceSt
 }
 
 void
-LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
+LocalizationServer::scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr scan)
 {
     // Since the sensor data is continually being published by the simulator or robot,
     // we don't want our callbacks to fire until we're in the active state
@@ -220,7 +220,7 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
     {
         odom_to_base_transform = tf_buffer_->lookupTransform(base_frame_id_,
                                                             odom_frame_id_,
-                                                            laser_scan->header.stamp,
+                                                            scan->header.stamp,
                                                             transform_tolerance_);
     }
     catch(const tf2::TransformException& e)
@@ -230,12 +230,12 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
     }
 
     // TODO: should this run only once?
-    geometry_msgs::msg::TransformStamped laser_pose;
+    geometry_msgs::msg::TransformStamped sensor_pose;
     try
     {
-        laser_pose = tf_buffer_->lookupTransform(laser_scan->header.frame_id,
+        sensor_pose = tf_buffer_->lookupTransform(scan->header.frame_id,
                                                 base_frame_id_,                 
-                                                laser_scan->header.stamp,
+                                                scan->header.stamp,
                                                 transform_tolerance_);
     }
     catch(const tf2::TransformException& e)
@@ -243,12 +243,12 @@ LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr la
         RCLCPP_ERROR(get_logger(), "%s", e.what());
         return;
     }
-    matcher2d_->setSensorPose(laser_pose);
+    matcher2d_->setSensorPose(sensor_pose);
 
     // The estimated robot's pose in the global frame
-    geometry_msgs::msg::TransformStamped current_pose = solver_->solve(odom_to_base_transform, laser_scan);
+    geometry_msgs::msg::TransformStamped current_pose = solver_->solve(odom_to_base_transform, scan);
 
-    current_pose.header.stamp = laser_scan->header.stamp;
+    current_pose.header.stamp = scan->header.stamp;
     current_pose.header.frame_id = map_frame_id_;
     current_pose.child_frame_id = base_frame_id_;
 
