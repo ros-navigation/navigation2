@@ -5,7 +5,7 @@
 #include "tf2/utils.h"
 #include "sensor_msgs/point_cloud_conversion.hpp"
 #include "sensor_msgs/msg/point_cloud.hpp"
-#include <math.h> // To use "pow()" and "atan2()"
+#include <math.h> // To use "hypot()" and "atan2()"
 
 namespace nav2_localization
 {
@@ -50,7 +50,7 @@ double LikelihoodFieldMatcher2d::getScanProbability(
  
 		if(point.z == 0)
 		{
-			distance = sqrt(pow(point.x, 2) + pow(point.y, 2));
+			distance = hypot(point.x, point.y);
 			angle = atan2(point.x, point.y+1e-10); // atan(x/y)
 			
 			ranges.push_back(distance);
@@ -66,7 +66,7 @@ double LikelihoodFieldMatcher2d::getScanProbability(
 	}
 
 	// Get most distant measurement (taken as max range
-	double z_max = max_element(ranges.begin(), ranges.end()) - ranges.begin();
+	double z_max = *max_element(ranges.begin(), ranges.end());
 
 	double q = 1;	// Probability of curr_pose given scan
 	double theta = tf2::getYaw(curr_pose.transform.rotation); // Robot's orientation
