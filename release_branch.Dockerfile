@@ -4,11 +4,11 @@
 # Example build command:
 # export CMAKE_BUILD_TYPE=Debug
 # docker build -t nav2:release_branch \
-#   --build-arg FROM_IMAGE=dashing \
+#   --build-arg FROM_IMAGE=eloquent \
 #   --build-arg CMAKE_BUILD_TYPE \
 #   -f Dockerfile.release_branch ./
 
-ARG FROM_IMAGE=dashing
+ARG FROM_IMAGE=eloquent
 FROM ros:$FROM_IMAGE
 
 RUN rosdep update

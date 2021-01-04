@@ -7,10 +7,10 @@
 # set at the time we start the last step, the ros1_bridge build.
 
 if [ "$ROS2_DISTRO" = "" ]; then
-	export ROS2_DISTRO=dashing
+	export ROS2_DISTRO=eloquent
 fi
-if [ "$ROS2_DISTRO" != "dashing" ]; then
-	echo "ROS2_DISTRO variable must be set to dashing"
+if [ "$ROS2_DISTRO" != "eloquent" ]; then
+	echo "ROS2_DISTRO variable must be set to eloquent"
 	exit 1
 fi
 
