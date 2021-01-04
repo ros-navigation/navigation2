@@ -408,20 +408,18 @@ protected:
     int offset_dx = sign(dx);
     int offset_dy = sign(dy) * size_x_;
 
-
     // we need to chose how much to scale our dominant dimension,
     // based on the maximum length of the line
     double dist = std::hypot(dx, dy);
-    if (dist <= min_length) {
+    if (dist < min_length) {
       return;
     }
-
-    double scale = (dist == 0.0) ? 1.0 : std::min(1.0, max_length / dist);
 
     x0 = (unsigned int)(x0 + dx / dist * min_length);
     y0 = (unsigned int)(y0 + dy / dist * min_length);
     unsigned int offset = y0 * size_x_ + x0;
 
+    double scale = (dist == 0.0) ? 1.0 : std::min(1.0, max_length / dist);
     unsigned int length;
     // if x is dominant
     if (abs_dx >= abs_dy) {

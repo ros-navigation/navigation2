@@ -241,10 +241,12 @@ public:
     // we need to chose how much to scale our dominant dimension, based on the
     // maximum length of the line
     double dist = sqrt((x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1) + (z0 - z1) * (z0 - z1));
-    if ((unsigned int)(dist) <= min_length) {
+    if ((unsigned int)(dist) < min_length) {
       return;
     }
     double scale = std::min(1.0, max_length / dist);
+
+    // Updating x0, y0, z0 to the point at distance min_length from the initial point
     x0 = x0 + dx / dist * min_length;
     y0 = y0 + dy / dist * min_length;
     z0 = z0 + dz / dist * min_length;
@@ -261,6 +263,7 @@ public:
     if (abs_dx >= max(abs_dy, abs_dz)) {
       int error_y = abs_dx / 2;
       int error_z = abs_dx / 2;
+      // Since initial point has been updated above, subtracting min_length from the total length
       length = (unsigned int)(scale * abs_dx) - min_length;
       bresenham3D(
         at, grid_off, grid_off, z_off, abs_dx, abs_dy, abs_dz, error_y, error_z,
@@ -272,6 +275,7 @@ public:
     if (abs_dy >= abs_dz) {
       int error_x = abs_dy / 2;
       int error_z = abs_dy / 2;
+      // Since initial point has been updated above, subtracting min_length from the total length
       length = (unsigned int)(scale * abs_dy) - min_length;
       bresenham3D(
         at, grid_off, grid_off, z_off, abs_dy, abs_dx, abs_dz, error_x, error_z,
@@ -282,6 +286,7 @@ public:
     // otherwise, z is dominant
     int error_x = abs_dz / 2;
     int error_y = abs_dz / 2;
+    // Since initial point has been updated above, subtracting min_length from the total length
     length = (unsigned int)(scale * abs_dz) - min_length;
 
     bresenham3D(

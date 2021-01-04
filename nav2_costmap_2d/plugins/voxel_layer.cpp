@@ -403,7 +403,8 @@ void VoxelLayer::raytraceFreespace(
         cell_raytrace_max_range, cell_raytrace_min_range);
 
       updateRaytraceBounds(
-        ox, oy, wpx, wpy, clearing_observation.raytrace_max_range_, min_x, min_y,
+        ox, oy, wpx, wpy, clearing_observation.raytrace_max_range_,
+        clearing_observation.raytrace_min_range_, min_x, min_y,
         max_x,
         max_y);
 

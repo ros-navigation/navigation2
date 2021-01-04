@@ -611,7 +611,8 @@ ObstacleLayer::raytraceFreespace(
     raytraceLine(marker, x0, y0, x1, y1, cell_raytrace_max_range, cell_raytrace_min_range);
 
     updateRaytraceBounds(
-      ox, oy, wx, wy, clearing_observation.raytrace_max_range_, min_x, min_y, max_x,
+      ox, oy, wx, wy, clearing_observation.raytrace_max_range_,
+      clearing_observation.raytrace_min_range_, min_x, min_y, max_x,
       max_y);
   }
 }
@@ -644,12 +645,15 @@ ObstacleLayer::deactivate()
 
 void
 ObstacleLayer::updateRaytraceBounds(
-  double ox, double oy, double wx, double wy, double range,
+  double ox, double oy, double wx, double wy, double max_range, double min_range,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
   double dx = wx - ox, dy = wy - oy;
   double full_distance = hypot(dx, dy);
-  double scale = std::min(1.0, range / full_distance);
+  if (full_distance < min_range) {
+    return;
+  }
+  double scale = std::min(1.0, max_range / full_distance);
   double ex = ox + dx * scale, ey = oy + dy * scale;
   touch(ex, ey, min_x, min_y, max_x, max_y);
 }
