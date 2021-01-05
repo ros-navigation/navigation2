@@ -35,13 +35,13 @@ Example: See [CLOiSim](https://github.com/lge-ros2/cloisim) for details
 ```bash
 ros2 launch sim_device_bringup driver_sim.launch.py robot_name:=cloi
 ```
-See [CLOiSim](https://github.com/lge-ros2/sim_device) for details
+See [sim_device](https://github.com/lge-ros2/sim_device) for details
 
 ## Terminal 3: Launch sim_device world_sim
 ```bash
 ros2 launch sim_device_bringup world_sim.launch.py
 ```
-See [CLOiSim](https://github.com/lge-ros2/sim_device) for details
+See [sim_device](https://github.com/lge-ros2/sim_device) for details
 
 ## Terminal 4: Launch navigation with params
 ```bash
