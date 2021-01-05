@@ -98,6 +98,7 @@ target_link_libraries(layers
 
 add_library(filters SHARED
   plugins/costmap_filters/keepout_filter.cpp
+  plugins/costmap_filters/speed_filter.cpp
 )
 ament_target_dependencies(filters
   ${dependencies}
