@@ -368,11 +368,7 @@ bool PlannerTester::plannerTest(
   // Then request to compute a path
   TaskStatus status = createPlan(goal, path);
 
-<<<<<<< HEAD
-  RCLCPP_DEBUG(this->get_logger(), "Path request status: %d", (int)status);
-=======
   RCLCPP_DEBUG(this->get_logger(), "Path request status: %d", static_cast<int8_t>(status));
->>>>>>> 2efdad8eb838d28ab9f3c24fc4aa5136b0ae9bdc
 
   if (status == TaskStatus::FAILED) {
     return false;

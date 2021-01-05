@@ -68,11 +68,7 @@ void ClearCostmapService::clearExceptRegionCallback(
 {
   RCLCPP_INFO(
     logger_,
-<<<<<<< HEAD
-    "Received request to clear except a region the %s", costmap_.getName().c_str());
-=======
     ("Received request to clear except a region the " + costmap_.getName()).c_str());
->>>>>>> 2efdad8eb838d28ab9f3c24fc4aa5136b0ae9bdc
 
   clearRegion(request->reset_distance, true);
 }
