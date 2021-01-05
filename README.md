@@ -48,7 +48,7 @@ See [sim_device](https://github.com/lge-ros2/sim_device) for details
 ros2 launch nav2_bringup bringup_launch.py use_namespace:=true namespace:=cloi use_sim_time:=true map:=/home/zikprid/work/cloi_ws/seocho_tower_B1F.yaml
 ```
 
-## Terminal 4: Launch rviz
+## Terminal 5: Launch rviz
 ```bash
 ros2 launch nav2_bringup rviz_launch.py use_namespace:=true namespace:=cloi rviz_config:=../src/navigation2/nav2_bringup/bringup/rviz/nav2_cloi.rviz
 ```
