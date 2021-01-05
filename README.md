@@ -17,11 +17,11 @@ Please visit our [documentation site](https://navigation.ros.org/). [Please visi
 * [Install CLOiSim](https://github.com/lge-ros2/cloisim)
 * [Install sim_device](https://github.com/lge-ros2/sim_device)
 
-# Build foxy-devel
+# Build foxy-devel-cloi
 ```bash
 mkdir -p ~/navigation2_ws/src
 cd ~/navigation2_ws/src
-git clone https://github.com/lge-ros2/navigation2 --branch foxy-devel
+git clone https://github.com/lge-ros2/navigation2 --branch foxy-devel-cloi
 cd ~/navigation2_ws
 rosdep install -y -r -q --from-paths src --ignore-src --rosdistro foxy
 colcon build --symlink-install
