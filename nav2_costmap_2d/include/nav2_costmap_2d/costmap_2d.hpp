@@ -415,6 +415,7 @@ protected:
       return;
     }
 
+    // Adjust x0, y0 and offset to start from min_length distance
     x0 = (unsigned int)(x0 + dx / dist * min_length);
     y0 = (unsigned int)(y0 + dy / dist * min_length);
     unsigned int offset = y0 * size_x_ + x0;
@@ -424,6 +425,8 @@ protected:
     // if x is dominant
     if (abs_dx >= abs_dy) {
       int error_y = abs_dx / 2;
+
+      // Subtract min_length from total length since initial point (x0, y0) has been adjusted
       length = (unsigned int)(scale * abs_dx) - min_length;
 
       bresenham2D(
@@ -433,6 +436,8 @@ protected:
 
     // otherwise y is dominant
     int error_x = abs_dy / 2;
+
+    // Subtract min_length from total length since initial point (x0, y0) has been adjusted
     length = (unsigned int)(scale * abs_dy) - min_length;
     bresenham2D(
       at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset, length);
