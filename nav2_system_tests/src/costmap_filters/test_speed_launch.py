@@ -40,8 +40,7 @@ def generate_launch_description():
                                     os.getenv('BT_NAVIGATOR_XML'))
 
     bringup_dir = get_package_share_directory('nav2_bringup')
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    params_file = os.path.join(script_dir, 'keepout_params.yaml')
+    params_file = os.getenv('PARAMS_FILE')
 
     # Replace the `use_astar` setting on the params file
     param_substitutions = {
@@ -118,7 +117,7 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
-             '-t', 'keepout', '-r', '-2.0', '-0.5', '0.0', '-0.5'],
+             '-t', 'speed', '-r', '-2.0', '-0.5', '0.0', '-0.5'],
         name='tester_node',
         output='screen')
 

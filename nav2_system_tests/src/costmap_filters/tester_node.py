@@ -16,6 +16,7 @@
 # limitations under the License.
 
 import argparse
+from enum import Enum
 import math
 import sys
 import time
@@ -27,6 +28,7 @@ from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import NavigateToPose
+from nav2_msgs.msg import SpeedLimit
 from nav2_msgs.srv import ManageLifecycleNodes
 from nav_msgs.msg import OccupancyGrid
 from nav_msgs.msg import Path
@@ -37,6 +39,11 @@ from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.qos import QoSProfile
+
+
+class TestType(Enum):
+    KEEPOUT = 0
+    SPEED = 1
 
 
 class FilterMask():
@@ -78,6 +85,7 @@ class NavTester(Node):
 
     def __init__(
         self,
+        test_type: TestType,
         initial_pose: Pose,
         goal_pose: Pose,
         namespace: str = ''
@@ -87,28 +95,39 @@ class NavTester(Node):
                                                       'initialpose', 10)
         self.goal_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
 
-        pose_qos = QoSProfile(
+        transient_local_qos = QoSProfile(
           durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
           reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
           history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
           depth=1)
 
-        path_qos = QoSProfile(
+        volatile_qos = QoSProfile(
           durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_VOLATILE,
           reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
           history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
           depth=1)
 
         self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
-                                                       'amcl_pose', self.poseCallback, pose_qos)
+                                                       'amcl_pose', self.poseCallback,
+                                                       transient_local_qos)
 
+        self.test_type = test_type
         self.filter_test_result = True
-        self.plan_sub = self.create_subscription(Path, 'plan',
-                                                 self.planCallback, path_qos)
+        if self.test_type == TestType.KEEPOUT:
+            self.plan_sub = self.create_subscription(Path, 'plan',
+                                                     self.planCallback, volatile_qos)
+        elif self.test_type == TestType.SPEED:
+            self.speed_it = 0
+            # Expected chain of speed limits
+            self.limits = [50.0, 0.0]
+            # Permissive array: all received speed limits must match to "limits" from above
+            self.limit_passed = [False, False]
+            self.plan_sub = self.create_subscription(SpeedLimit, 'speed_limit',
+                                                     self.speedLimitCallback, volatile_qos)
 
         self.mask_received = False
         self.mask_sub = self.create_subscription(OccupancyGrid, 'filter_mask',
-                                                 self.maskCallback, pose_qos)
+                                                 self.maskCallback, transient_local_qos)
 
         self.initial_pose_received = False
         self.initial_pose = initial_pose
@@ -183,6 +202,7 @@ class NavTester(Node):
             return True
         return False
 
+    # Checks that (x, y) position does not belong to a keepout zone.
     def checkKeepout(self, x, y):
         if not self.mask_received:
             self.warn_msg('Filter mask was not received')
@@ -192,12 +212,31 @@ class NavTester(Node):
             return False
         return True
 
+    # Checks that currently received speed_limit is equal to the it-th item
+    # of expected speed "limits" array.
+    # If so, sets it-th item of permissive array "limit_passed" to be true.
+    # Otherwise it will be remained to be false.
+    # Also verifies that speed limit messages received no more than N-times
+    # (where N - is the length of "limits" array),
+    # otherwise sets overall "filter_test_result" to be false.
+    def checkSpeed(self, it, speed_limit):
+        if it >= len(self.limits):
+            self.error_msg('Got excess speed limit')
+            self.filter_test_result = False
+            return
+        if speed_limit == self.limits[it]:
+            self.limit_passed[it] = True
+        else:
+            self.error_msg('Incorrect speed limit received: ' + str(speed_limit) +
+                           ', but should be: ' + str(self.limits[it]))
+
     def poseCallback(self, msg):
         self.info_msg('Received amcl_pose')
         self.current_pose = msg.pose.pose
         self.initial_pose_received = True
-        if not self.checkKeepout(msg.pose.pose.position.x, msg.pose.pose.position.y):
-            self.error_msg('Robot goes into keepout zone')
+        if self.test_type == TestType.KEEPOUT:
+            if not self.checkKeepout(msg.pose.pose.position.x, msg.pose.pose.position.y):
+                self.error_msg('Robot goes into keepout zone')
 
     def planCallback(self, msg):
         self.info_msg('Received plan')
@@ -205,6 +244,11 @@ class NavTester(Node):
             if not self.checkKeepout(pose.pose.position.x, pose.pose.position.y):
                 self.error_msg('Path plan intersects with keepout zone')
                 return
+
+    def speedLimitCallback(self, msg):
+        self.info_msg('Received speed limit: ' + str(msg.speed_limit))
+        self.checkSpeed(self.speed_it, msg.speed_limit)
+        self.speed_it += 1
 
     def maskCallback(self, msg):
         self.info_msg('Received filter mask')
@@ -315,6 +359,21 @@ def test_RobotMovesToGoal(robot_tester):
     return robot_tester.reachesGoal(timeout=60, distance=0.5)
 
 
+# Tests that all received speed limits are correct:
+# If overall "filter_test_result" is true
+# checks that all items in "limit_passed" permissive array are also true.
+# In other words, it verifies that all speed limits are received
+# exactly (by count and values) as expected by "limits" array.
+def test_SpeedLimitsAllCorrect(robot_tester):
+    if not robot_tester.filter_test_result:
+        return False
+    for passed in robot_tester.limit_passed:
+        if not passed:
+            robot_tester.error_msg('Did not meet one of the speed limit')
+            return False
+    return True
+
+
 def run_all_tests(robot_tester):
     # set transforms to use_sim_time
     result = True
@@ -331,7 +390,10 @@ def run_all_tests(robot_tester):
         result = test_RobotMovesToGoal(robot_tester)
 
     if (result):
-        result = robot_tester.filter_test_result
+        if robot_tester.test_type == TestType.KEEPOUT:
+            result = robot_tester.filter_test_result
+        elif robot_tester.test_type == TestType.SPEED:
+            result = test_SpeedLimitsAllCorrect(robot_tester)
 
     # Add more tests here if desired
 
@@ -358,8 +420,14 @@ def fwd_pose(x=0.0, y=0.0, z=0.01):
 def get_tester(args):
 
     # Requested tester for one robot
+    type_str = args.type
     init_x, init_y, final_x, final_y = args.robot[0]
+    test_type = TestType.KEEPOUT  # Default value
+    if type_str == 'speed':
+        test_type = TestType.SPEED
+
     tester = NavTester(
+        test_type,
         initial_pose=fwd_pose(float(init_x), float(init_y)),
         goal_pose=fwd_pose(float(final_x), float(final_y)))
     tester.info_msg(
@@ -370,7 +438,9 @@ def get_tester(args):
 
 def main(argv=sys.argv[1:]):
     # The robot(s) positions from the input arguments
-    parser = argparse.ArgumentParser(description='System-level navigation tester node')
+    parser = argparse.ArgumentParser(description='System-level costmap filters tester node')
+    parser.add_argument('-t', '--type', type=str, action='store', dest='type',
+                        help='Type of costmap filter being tested.')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-r', '--robot', action='append', nargs=4,
                        metavar=('init_x', 'init_y', 'final_x', 'final_y'),

@@ -180,8 +180,19 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | Parameter | Default | Description |
 | ----------| --------| ------------|
 | `<filter name>`.enabled | true | Whether it is enabled |
-| `<filter name>`.filter_info_topic | N/A | Name of the CostmapFilterInfo topic having filter-related information |
-| `<filter name>`.transform_tolerance | 0.0 | TF tolerance |
+| `<filter name>`.filter_info_topic | N/A | Name of the incoming CostmapFilterInfo topic having filter-related information |
+| `<filter name>`.transform_tolerance | 0.1 | TF tolerance |
+
+## speed filter
+
+* `<filter name>`: Name corresponding to the `nav2_costmap_2d::SpeedFilter` plugin. This name gets defined in `plugins`.
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| `<filter name>`.enabled | true | Whether it is enabled |
+| `<filter name>`.filter_info_topic | N/A | Name of the incoming CostmapFilterInfo topic having filter-related information |
+| `<filter name>`.speed_limit_topic | "speed_limit" | Topic to publish speed limit to |
+| `<filter name>`.transform_tolerance | 0.1 | TF tolerance |
 
 # controller_server
 
@@ -197,6 +208,7 @@ When `plugins` parameter is not overridden, the following default plugins are lo
 | min_x_velocity_threshold | 0.0001 | Minimum X velocity to use (m/s) |
 | min_y_velocity_threshold | 0.0001 | Minimum Y velocity to use (m/s) |
 | min_theta_velocity_threshold | 0.0001 | Minimum angular velocity to use (rad/s) |
+| speed_limit_topic | "speed_limit" | Speed limiting topic name to subscribe |
 
 **NOTE:** When `controller_plugins` parameter is overridden, each plugin namespace defined in the list needs to have a `plugin` parameter defining the type of plugin to be loaded in the namespace.
 
@@ -454,6 +466,16 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 | yaml_filename | N/A | Path to map yaml file |
 | topic_name | "map" | topic  to publish loaded map to |
 | frame_id | "map" | Frame to publish loaded map in |
+
+## costmap_filter_info_server
+
+| Parameter | Default | Description |
+| ----------| --------| ------------|
+| type | 0 | Type of costmap filter used. This is an enum for the type of filter this should be interpreted as. We provide the following pre-defined types: 0 - keepout zones / preferred lanes filter; 1 - speed filter, speed limit is specified in % of maximum speed; 2 - speed filter, speed limit is specified in absolute value (not implemented yet) |
+| filter_info_topic | "costmap_filter_info" | Topic to publish costmap filter information to |
+| mask_topic | "filter_mask" | Topic to publish filter mask to. The value of this parameter should be in accordance with `topic_name` parameter of `map_server` tuned to filter mask publishing |
+| base | 0.0 | Base of `OccupancyGrid` mask value -> filter space value linear conversion which is being proceeded as: `filter_space_value = base + multiplier * mask_value` |
+| multiplier | 1.0 | Multiplier of `OccupancyGrid` mask value -> filter space value linear conversion which is being proceeded as: `filter_space_value = base + multiplier * mask_value` |
 
 # planner_server
 

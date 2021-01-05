@@ -123,6 +123,12 @@ public:
     const geometry_msgs::msg::Pose2D & start_pose,
     const nav_2d_msgs::msg::Twist2D & start_vel,
     const nav_2d_msgs::msg::Twist2D & cmd_vel) = 0;
+
+  /**
+   * @brief Limits the maximum linear speed of the robot.
+   * @param speed_limit expressed in percentage from maximum robot speed.
+   */
+  virtual void setSpeedLimit(const double & speed_limit) = 0;
 };
 
 }  // namespace dwb_core

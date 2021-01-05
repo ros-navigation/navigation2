@@ -1,5 +1,8 @@
 std_msgs/Header header
 # Type of plugin used (keepout filter, speed limit in m/s, speed limit in percent, etc...)
+# 0: keepout/lanes filter
+# 1: speed limit filter in % of maximum speed
+# 2: speed limit filter in absolute values
 uint8 type
 # Name of filter mask topic
 string filter_mask_topic
