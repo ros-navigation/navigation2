@@ -344,7 +344,7 @@ bool PlannerTester::defaultPlannerRandomTests(
 
   RCLCPP_INFO(
     this->get_logger(),
-    "Tested with %u tests. Planner failed on %u. Test time %u ms",
+    "Tested with %u tests. Planner failed on %u. Test time %ld ms",
     number_tests, num_fail, elapsed.count());
 
   if ((num_fail / number_tests) > acceptable_fail_ratio) {
@@ -368,7 +368,7 @@ bool PlannerTester::plannerTest(
   // Then request to compute a path
   TaskStatus status = createPlan(goal, path);
 
-  RCLCPP_DEBUG(this->get_logger(), "Path request status: %d", status);
+  RCLCPP_DEBUG(this->get_logger(), "Path request status: %d", (int)status);
 
   if (status == TaskStatus::FAILED) {
     return false;
