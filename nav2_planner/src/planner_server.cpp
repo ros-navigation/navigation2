@@ -102,6 +102,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_FATAL(
         get_logger(), "Failed to create global planner. Exception: %s",
         ex.what());
+      return nav2_util::CallbackReturn::FAILURE;
     }
   }
 
@@ -254,7 +255,7 @@ PlannerServer::computePlan()
 
     RCLCPP_DEBUG(
       get_logger(),
-      "Found valid path of size %u to (%.2f, %.2f)",
+      "Found valid path of size %lu to (%.2f, %.2f)",
       result->path.poses.size(), goal->pose.pose.position.x,
       goal->pose.pose.position.y);
 

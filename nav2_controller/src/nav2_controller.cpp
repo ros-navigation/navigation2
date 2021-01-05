@@ -53,6 +53,8 @@ ControllerServer::ControllerServer()
   declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
 
+  declare_parameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
+
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()}, "local_costmap");
@@ -105,6 +107,9 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("min_theta_velocity_threshold", min_theta_velocity_threshold_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
+  std::string speed_limit_topic;
+  get_parameter("speed_limit_topic", speed_limit_topic);
+
   costmap_ros_->on_configure(state);
 
   try {
@@ -118,6 +123,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     RCLCPP_FATAL(
       get_logger(),
       "Failed to create progress_checker. Exception: %s", ex.what());
+    return nav2_util::CallbackReturn::FAILURE;
   }
   try {
     goal_checker_type_ = nav2_util::get_plugin_type_param(node, goal_checker_id_);
@@ -130,6 +136,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     RCLCPP_FATAL(
       get_logger(),
       "Failed to create goal_checker. Exception: %s", ex.what());
+    return nav2_util::CallbackReturn::FAILURE;
   }
 
   for (size_t i = 0; i != controller_ids_.size(); i++) {
@@ -148,6 +155,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_FATAL(
         get_logger(),
         "Failed to create controller. Exception: %s", ex.what());
+      return nav2_util::CallbackReturn::FAILURE;
     }
   }
 
@@ -166,6 +174,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   action_server_ = std::make_unique<ActionServer>(
     rclcpp_node_, "follow_path",
     std::bind(&ControllerServer::computeControl, this));
+
+  // Set subscribtion to the speed limiting topic
+  speed_limit_sub_ = create_subscription<nav2_msgs::msg::SpeedLimit>(
+    speed_limit_topic, rclcpp::QoS(10),
+    std::bind(&ControllerServer::speedLimitCallback, this, std::placeholders::_1));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -227,6 +240,7 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   action_server_.reset();
   odom_sub_.reset();
   vel_publisher_.reset();
+  speed_limit_sub_.reset();
   action_server_.reset();
   goal_checker_->reset();
 
@@ -447,6 +461,18 @@ bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)
   }
   pose = current_pose;
   return true;
+}
+
+void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::SharedPtr msg)
+{
+  ControllerMap::iterator it;
+  for (it = controllers_.begin(); it != controllers_.end(); ++it) {
+    if (!msg->percentage) {
+      RCLCPP_ERROR(get_logger(), "Speed limit in absolute values is not implemented yet");
+      return;
+    }
+    it->second->setSpeedLimit(msg->speed_limit);
+  }
 }
 
 }  // namespace nav2_controller
