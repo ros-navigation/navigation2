@@ -222,14 +222,14 @@ BtNavigator::onLoop()
   feedback_msg->number_of_recoveries = recovery_count;
   feedback_msg->navigation_time = now() - start_time_;
 
-  bt_action_server_->publish_feedback(feedback_msg);
+  bt_action_server_->publishFeedback(feedback_msg);
 }
 
 void
 BtNavigator::onPreempt()
 {
   RCLCPP_INFO(get_logger(), "Received goal preemption request");
-  initializeGoalPose(bt_action_server_->accept_pending_goal());
+  initializeGoalPose(bt_action_server_->acceptPendingGoal());
 }
 
 void

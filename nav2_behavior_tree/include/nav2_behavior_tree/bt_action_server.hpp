@@ -119,7 +119,7 @@ public:
   /**
    * @brief Wrapper function to accept pending goal if a preempt has been requested
    */
-  const std::shared_ptr<const typename ActionT::Goal> accept_pending_goal()
+  const std::shared_ptr<const typename ActionT::Goal> acceptPendingGoal()
   {
     return action_server_->accept_pending_goal();
   }
@@ -127,7 +127,7 @@ public:
   /**
    * @brief Wrapper function to get current goal
    */
-  const std::shared_ptr<const typename ActionT::Goal> get_current_goal() const
+  const std::shared_ptr<const typename ActionT::Goal> getCurrentGoal() const
   {
     return action_server_->get_current_goal();
   }
@@ -135,7 +135,7 @@ public:
   /**
    * @brief Wrapper function to publish action feedback
    */
-  void publish_feedback(typename std::shared_ptr<typename ActionT::Feedback> feedback)
+  void publishFeedback(typename std::shared_ptr<typename ActionT::Feedback> feedback)
   {
     action_server_->publish_feedback(feedback);
   }
