@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import os
+import sys
+from collections import OrderedDict
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -23,7 +25,23 @@ from launch_ros.actions import Node
 from nav2_common.launch import RewrittenYaml
 
 
+def parse_launch_arguments(launch_arguments):
+    """Parse the given launch arguments from the command line, into list of tuples for launch."""
+    parsed_launch_arguments = OrderedDict()  # type: ignore
+    for argument in launch_arguments:
+        count = argument.count(':=')
+        if count == 0 or argument.startswith(':=') or (count == 1 and argument.endswith(':=')):
+            pass
+        else:
+            name, value = argument.split(':=', maxsplit=1)
+            parsed_launch_arguments[name] = value  # last one wins is intentional
+    return parsed_launch_arguments
+
 def generate_launch_description():
+    parsed_args_dict = parse_launch_arguments(sys.argv)
+    remap_ns = parsed_args_dict['namespace']
+    print('remap_ns : '+remap_ns)
+
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
 
@@ -47,7 +65,8 @@ def generate_launch_description():
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static')]
+                  ('/tf_static', 'tf_static'),
+                  ('/scan', '/'+remap_ns+'/scan')]
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
