@@ -41,6 +41,8 @@
 #include <algorithm>
 #include <cassert>
 #include <vector>
+#include <memory>
+#include <utility>
 
 #include "pluginlib/class_list_macros.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
@@ -70,27 +72,31 @@ void VoxelLayer::onInitialize()
   declareParameter("combination_method", rclcpp::ParameterValue(1));
   declareParameter("publish_voxel_map", rclcpp::ParameterValue(false));
 
-  node_->get_parameter(name_ + "." + "enabled", enabled_);
-  node_->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
-  node_->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
-  node_->get_parameter(name_ + "." + "z_voxels", size_z_);
-  node_->get_parameter(name_ + "." + "origin_z", origin_z_);
-  node_->get_parameter(name_ + "." + "z_resolution", z_resolution_);
-  node_->get_parameter(name_ + "." + "unknown_threshold", unknown_threshold_);
-  node_->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
-  node_->get_parameter(name_ + "." + "combination_method", combination_method_);
-  node_->get_parameter(name_ + "." + "publish_voxel_map", publish_voxel_);
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  node->get_parameter(name_ + "." + "enabled", enabled_);
+  node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  node->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
+  node->get_parameter(name_ + "." + "z_voxels", size_z_);
+  node->get_parameter(name_ + "." + "origin_z", origin_z_);
+  node->get_parameter(name_ + "." + "z_resolution", z_resolution_);
+  node->get_parameter(name_ + "." + "unknown_threshold", unknown_threshold_);
+  node->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
+  node->get_parameter(name_ + "." + "combination_method", combination_method_);
+  node->get_parameter(name_ + "." + "publish_voxel_map", publish_voxel_);
 
   auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 
   if (publish_voxel_) {
-    voxel_pub_ = node_->create_publisher<nav2_msgs::msg::VoxelGrid>(
+    voxel_pub_ = node->create_publisher<nav2_msgs::msg::VoxelGrid>(
       "voxel_grid", custom_qos);
+    voxel_pub_->on_activate();
   }
 
-  voxel_pub_->on_activate();
-
-  clearing_endpoints_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud>(
+  clearing_endpoints_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud>(
     "clearing_endpoints", custom_qos);
 
   unknown_threshold_ += (VOXEL_BITS - size_z_);
@@ -207,24 +213,25 @@ void VoxelLayer::updateBounds(
   }
 
   if (publish_voxel_) {
-    nav2_msgs::msg::VoxelGrid grid_msg;
+    auto grid_msg = std::make_unique<nav2_msgs::msg::VoxelGrid>();
     unsigned int size = voxel_grid_.sizeX() * voxel_grid_.sizeY();
-    grid_msg.size_x = voxel_grid_.sizeX();
-    grid_msg.size_y = voxel_grid_.sizeY();
-    grid_msg.size_z = voxel_grid_.sizeZ();
-    grid_msg.data.resize(size);
-    memcpy(&grid_msg.data[0], voxel_grid_.getData(), size * sizeof(unsigned int));
+    grid_msg->size_x = voxel_grid_.sizeX();
+    grid_msg->size_y = voxel_grid_.sizeY();
+    grid_msg->size_z = voxel_grid_.sizeZ();
+    grid_msg->data.resize(size);
+    memcpy(&grid_msg->data[0], voxel_grid_.getData(), size * sizeof(unsigned int));
 
-    grid_msg.origin.x = origin_x_;
-    grid_msg.origin.y = origin_y_;
-    grid_msg.origin.z = origin_z_;
+    grid_msg->origin.x = origin_x_;
+    grid_msg->origin.y = origin_y_;
+    grid_msg->origin.z = origin_z_;
 
-    grid_msg.resolutions.x = resolution_;
-    grid_msg.resolutions.y = resolution_;
-    grid_msg.resolutions.z = z_resolution_;
-    grid_msg.header.frame_id = global_frame_;
-    grid_msg.header.stamp = node_->now();
-    voxel_pub_->publish(grid_msg);
+    grid_msg->resolutions.x = resolution_;
+    grid_msg->resolutions.y = resolution_;
+    grid_msg->resolutions.z = z_resolution_;
+    grid_msg->header.frame_id = global_frame_;
+    grid_msg->header.stamp = clock_->now();
+
+    voxel_pub_->publish(std::move(grid_msg));
   }
 
   updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
@@ -289,6 +296,8 @@ void VoxelLayer::raytraceFreespace(
   double * max_x,
   double * max_y)
 {
+  auto clearing_endpoints_ = std::make_unique<sensor_msgs::msg::PointCloud>();
+
   size_t clearing_observation_cloud_size = clearing_observation.cloud_->height *
     clearing_observation.cloud_->width;
   if (clearing_observation_cloud_size == 0) {
@@ -302,16 +311,25 @@ void VoxelLayer::raytraceFreespace(
 
   if (!worldToMap3DFloat(ox, oy, oz, sensor_x, sensor_y, sensor_z)) {
     RCLCPP_WARN(
-      node_->get_logger(),
+      logger_,
       "Sensor origin: (%.2f, %.2f, %.2f), out of map bounds. The costmap can't raytrace for it.",
       ox, oy, oz);
     return;
   }
 
-  bool publish_clearing_points = (node_->count_subscribers("clearing_endpoints") > 0);
+  bool publish_clearing_points;
+
+  {
+    auto node = node_.lock();
+    if (!node) {
+      throw std::runtime_error{"Failed to lock node"};
+    }
+    publish_clearing_points = (node->count_subscribers("clearing_endpoints") > 0);
+  }
+
   if (publish_clearing_points) {
-    clearing_endpoints_.points.clear();
-    clearing_endpoints_.points.reserve(clearing_observation_cloud_size);
+    clearing_endpoints_->points.clear();
+    clearing_endpoints_->points.reserve(clearing_observation_cloud_size);
   }
 
   // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
@@ -391,16 +409,16 @@ void VoxelLayer::raytraceFreespace(
         point.x = wpx;
         point.y = wpy;
         point.z = wpz;
-        clearing_endpoints_.points.push_back(point);
+        clearing_endpoints_->points.push_back(point);
       }
     }
   }
 
   if (publish_clearing_points) {
-    clearing_endpoints_.header.frame_id = global_frame_;
-    clearing_endpoints_.header.stamp = clearing_observation.cloud_->header.stamp;
+    clearing_endpoints_->header.frame_id = global_frame_;
+    clearing_endpoints_->header.stamp = clearing_observation.cloud_->header.stamp;
 
-    clearing_endpoints_pub_->publish(clearing_endpoints_);
+    clearing_endpoints_pub_->publish(std::move(clearing_endpoints_));
   }
 }
 

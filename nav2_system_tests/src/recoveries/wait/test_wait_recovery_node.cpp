@@ -16,6 +16,8 @@
 #include <gtest/gtest.h>
 #include <cmath>
 #include <tuple>
+#include <string>
+#include <algorithm>
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -24,6 +26,14 @@
 using namespace std::chrono_literals;
 
 using nav2_system_tests::WaitRecoveryTester;
+
+std::string testNameGenerator(const testing::TestParamInfo<std::tuple<float, float>> & param)
+{
+  std::string name = std::to_string(std::abs(std::get<0>(param.param))) + "_" + std::to_string(
+    std::get<1>(param.param));
+  name.erase(std::remove(name.begin(), name.end(), '.'), name.end());
+  return name;
+}
 
 class WaitRecoveryTestFixture
   : public ::testing::TestWithParam<std::tuple<float, float>>
@@ -52,11 +62,16 @@ WaitRecoveryTester * WaitRecoveryTestFixture::wait_recovery_tester = nullptr;
 TEST_P(WaitRecoveryTestFixture, testSWaitRecovery)
 {
   float wait_time = std::get<0>(GetParam());
+  float cancel = std::get<1>(GetParam());
 
   bool success = false;
   int num_tries = 3;
   for (int i = 0; i != num_tries; i++) {
-    success = success || wait_recovery_tester->recoveryTest(wait_time);
+    if (cancel == 1.0) {
+      success = success || wait_recovery_tester->recoveryTestCancel(wait_time);
+    } else {
+      success = success || wait_recovery_tester->recoveryTest(wait_time);
+    }
     if (success) {
       break;
     }
@@ -65,13 +80,15 @@ TEST_P(WaitRecoveryTestFixture, testSWaitRecovery)
   EXPECT_EQ(true, success);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
   WaitRecoveryTests,
   WaitRecoveryTestFixture,
   ::testing::Values(
     std::make_tuple(1.0, 0.0),
     std::make_tuple(2.0, 0.0),
-    std::make_tuple(5.0, 0.0)), );
+    std::make_tuple(5.0, 0.0),
+    std::make_tuple(10.0, 1.0)),
+  testNameGenerator);
 
 int main(int argc, char ** argv)
 {

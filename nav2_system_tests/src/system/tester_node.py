@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 # Copyright 2018 Intel Corporation.
+# Copyright 2020 Florian Gramss
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +16,10 @@
 
 import argparse
 import math
+import os
 import sys
 import time
+
 from typing import Optional
 
 from action_msgs.msg import GoalStatus
@@ -33,6 +36,8 @@ from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.qos import QoSProfile
+
+import zmq
 
 
 class NavTester(Node):
@@ -94,6 +99,13 @@ class NavTester(Node):
         while not self.action_client.wait_for_server(timeout_sec=1.0):
             self.info_msg("'NavigateToPose' action server not available, waiting...")
 
+        if (os.getenv('GROOT_MONITORING') == 'True'):
+            if self.grootMonitoringGetStatus():
+                self.error_msg('Behavior Tree must not be running already!')
+                self.error_msg('Are you running multiple goals/bts..?')
+                return False
+            self.info_msg('This Error above MUST Fail and is o.k.!')
+
         self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
         goal_msg = NavigateToPose.Goal()
         goal_msg.pose = self.getStampedPoseMsg(self.goal_pose)
@@ -111,6 +123,19 @@ class NavTester(Node):
         self.info_msg('Goal accepted')
         get_result_future = goal_handle.get_result_async()
 
+        future_return = True
+        if (os.getenv('GROOT_MONITORING') == 'True'):
+            try:
+                if not self.grootMonitoringReloadTree():
+                    self.error_msg('Failed GROOT_BT - Reload Tree from ZMQ Server')
+                    future_return = False
+                if not self.grootMonitoringGetStatus():
+                    self.error_msg('Failed GROOT_BT - Get Status from ZMQ Publisher')
+                    future_return = False
+            except Exception as e:
+                self.error_msg('Failed GROOT_BT - ZMQ Tests: ' + e.__doc__ + e.message)
+                future_return = False
+
         self.info_msg("Waiting for 'NavigateToPose' action to complete")
         rclpy.spin_until_future_complete(self, get_result_future)
         status = get_result_future.result().status
@@ -118,7 +143,79 @@ class NavTester(Node):
             self.info_msg('Goal failed with status code: {0}'.format(status))
             return False
 
+        if not future_return:
+            return False
+
         self.info_msg('Goal succeeded!')
+        return True
+
+    def grootMonitoringReloadTree(self):
+        # ZeroMQ Context
+        context = zmq.Context()
+
+        sock = context.socket(zmq.REQ)
+        port = 1667  # default server port for groot monitoring
+        # # Set a Timeout so we do not spin till infinity
+        sock.setsockopt(zmq.RCVTIMEO, 1000)
+        # sock.setsockopt(zmq.LINGER, 0)
+
+        sock.connect('tcp://localhost:' + str(port))
+        self.info_msg('ZMQ Server Port: ' + str(port))
+
+        # this should fail
+        try:
+            sock.recv()
+            self.error_msg('ZMQ Reload Tree Test 1/3 - This should have failed!')
+            # Only works when ZMQ server receives a request first
+            sock.close()
+            return False
+        except zmq.error.ZMQError:
+            self.info_msg('ZMQ Reload Tree Test 1/3: Check')
+        try:
+            # request tree from server
+            sock.send_string('')
+            # receive tree from server as flat_buffer
+            sock.recv()
+            self.info_msg('ZMQ Reload Tree Test 2/3: Check')
+        except zmq.error.Again:
+            self.info_msg('ZMQ Reload Tree Test 2/3 - Failed to load tree')
+            sock.close()
+            return False
+
+        # this should fail
+        try:
+            sock.recv()
+            self.error_msg('ZMQ Reload Tree Test 3/3 - This should have failed!')
+            # Tree should only be loadable ONCE after ZMQ server received a request
+            sock.close()
+            return False
+        except zmq.error.ZMQError:
+            self.info_msg('ZMQ Reload Tree Test 3/3: Check')
+
+        return True
+
+    def grootMonitoringGetStatus(self):
+        # ZeroMQ Context
+        context = zmq.Context()
+        # Define the socket using the 'Context'
+        sock = context.socket(zmq.SUB)
+        # Set a Timeout so we do not spin till infinity
+        sock.setsockopt(zmq.RCVTIMEO, 2000)
+        # sock.setsockopt(zmq.LINGER, 0)
+
+        # Define subscription and messages with prefix to accept.
+        sock.setsockopt_string(zmq.SUBSCRIBE, '')
+        port = 1666  # default publishing port for groot monitoring
+        sock.connect('tcp://127.0.0.1:' + str(port))
+
+        for request in range(3):
+            try:
+                sock.recv()
+            except zmq.error.Again:
+                self.error_msg('ZMQ - Did not receive any status')
+                sock.close()
+                return False
+        self.info_msg('ZMQ - Did receive status')
         return True
 
     def poseCallback(self, msg):
@@ -203,22 +300,13 @@ class NavTester(Node):
         except Exception as e:
             self.error_msg('Service call failed %r' % (e,))
 
-
-def test_InitialPose(robot_tester, timeout, retries):
-    robot_tester.initial_pose_received = False
-    retry_count = 1
-    while not robot_tester.initial_pose_received and retry_count <= retries:
-        retry_count += 1
-        robot_tester.info_msg('Setting initial pose')
-        robot_tester.setInitialPose()
-        robot_tester.info_msg('Waiting for amcl_pose to be received')
-        rclpy.spin_once(robot_tester, timeout_sec=timeout)  # wait for poseCallback
-
-    if (robot_tester.initial_pose_received):
-        robot_tester.info_msg('test_InitialPose PASSED')
-    else:
-        robot_tester.info_msg('test_InitialPose FAILED')
-    return robot_tester.initial_pose_received
+    def wait_for_initial_pose(self):
+        self.initial_pose_received = False
+        while not self.initial_pose_received:
+            self.info_msg('Setting initial pose')
+            self.setInitialPose()
+            self.info_msg('Waiting for amcl_pose to be received')
+            rclpy.spin_once(self, timeout_sec=1)
 
 
 def test_RobotMovesToGoal(robot_tester):
@@ -233,18 +321,12 @@ def run_all_tests(robot_tester):
     result = True
     if (result):
         robot_tester.wait_for_node_active('amcl')
-        result = test_InitialPose(robot_tester, timeout=1, retries=10)
-    if (result):
+        robot_tester.wait_for_initial_pose()
         robot_tester.wait_for_node_active('bt_navigator')
-    if (result):
         result = robot_tester.runNavigateAction()
 
-    # TODO(orduno) Test sending the navigation request through the topic interface.
-    #              Need to update tester to receive multiple goal poses.
-    #              Need to fix bug with shutting down while bt_navigator
-    #              is still running.
-    # if (result):
-        # result = test_RobotMovesToGoal(robot_tester)
+    if (result):
+        result = test_RobotMovesToGoal(robot_tester)
 
     # Add more tests here if desired
 

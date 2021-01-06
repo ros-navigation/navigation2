@@ -61,6 +61,7 @@ public:
   virtual void activate();
   virtual void deactivate();
   virtual void reset();
+  virtual bool isClearable() {return false;}
 
   virtual void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
@@ -110,6 +111,9 @@ private:
   unsigned char unknown_cost_value_;
   bool trinary_costmap_;
   bool map_received_{false};
+  tf2::Duration transform_tolerance_;
+  std::atomic<bool> update_in_progress_;
+  nav_msgs::msg::OccupancyGrid::SharedPtr map_buffer_;
 };
 
 }  // namespace nav2_costmap_2d

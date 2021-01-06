@@ -21,6 +21,7 @@
 #include "behaviortree_cpp_v3/action_node.h"
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "nav2_behavior_tree/bt_conversions.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -35,7 +36,12 @@ public:
     const BT::NodeConfiguration & conf)
   : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name)
   {
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+    node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
+
+    // Get the required items from the blackboard
+    server_timeout_ =
+      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
+    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
     // Initialize the input and output messages
     goal_ = typename ActionT::Goal();
@@ -178,8 +184,8 @@ public:
   {
     if (should_cancel_goal()) {
       auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
-      if (rclcpp::spin_until_future_complete(node_, future_cancel) !=
-        rclcpp::executor::FutureReturnCode::SUCCESS)
+      if (rclcpp::spin_until_future_complete(node_, future_cancel, server_timeout_) !=
+        rclcpp::FutureReturnCode::SUCCESS)
       {
         RCLCPP_ERROR(
           node_->get_logger(),
@@ -202,13 +208,8 @@ protected:
     auto status = goal_handle_->get_status();
 
     // Check if the goal is still executing
-    if (status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
-      status == action_msgs::msg::GoalStatus::STATUS_EXECUTING)
-    {
-      return true;
-    }
-
-    return false;
+    return status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
+           status == action_msgs::msg::GoalStatus::STATUS_EXECUTING;
   }
 
 
@@ -218,7 +219,10 @@ protected:
     auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
     send_goal_options.result_callback =
       [this](const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result) {
-        if (result.code != rclcpp_action::ResultCode::ABORTED) {
+        // TODO(#1652): a work around until rcl_action interface is updated
+        // if goal ids are not matched, the older goal call this callback so ignore the result
+        // if matched, it must be processed (including aborted)
+        if (this->goal_handle_->get_goal_id() == result.goal_id) {
           goal_result_available_ = true;
           result_ = result;
         }
@@ -226,8 +230,8 @@ protected:
 
     auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
 
-    if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
-      rclcpp::executor::FutureReturnCode::SUCCESS)
+    if (rclcpp::spin_until_future_complete(node_, future_goal_handle, server_timeout_) !=
+      rclcpp::FutureReturnCode::SUCCESS)
     {
       throw std::runtime_error("send_goal failed");
     }
@@ -236,6 +240,14 @@ protected:
     if (!goal_handle_) {
       throw std::runtime_error("Goal was rejected by the action server");
     }
+  }
+
+  void increment_recovery_count()
+  {
+    int recovery_count = 0;
+    config().blackboard->template get<int>("number_recoveries", recovery_count);  // NOLINT
+    recovery_count += 1;
+    config().blackboard->template set<int>("number_recoveries", recovery_count);  // NOLINT
   }
 
   std::string action_name_;
@@ -250,6 +262,10 @@ protected:
 
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
+
+  // The timeout value while waiting for response from a server when a
+  // new action goal is sent or canceled
+  std::chrono::milliseconds server_timeout_;
 };
 
 }  // namespace nav2_behavior_tree

@@ -7,6 +7,7 @@ add_library(${library_name} SHARED
   lifecycle_node.cpp
   robot_utils.cpp
   node_thread.cpp
+  odometry_utils.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -19,6 +20,7 @@ ament_target_dependencies(${library_name}
   lifecycle_msgs
   rclcpp_lifecycle
   tf2_geometry_msgs
+  bondcpp
 )
 
 add_executable(lifecycle_bringup
@@ -37,9 +39,13 @@ target_link_libraries(dump_params ${Boost_PROGRAM_OPTIONS_LIBRARY})
 
 install(TARGETS
   ${library_name}
-  lifecycle_bringup
-  dump_params
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(TARGETS
+  lifecycle_bringup
+  dump_params
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )

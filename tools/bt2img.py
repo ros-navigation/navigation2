@@ -36,10 +36,10 @@ control_nodes = [
     "Repeat",
     "Subtree",
     "Timeout",
-    "RateController",
     "RecoveryNode",
     "PipelineSequence",
-    "RoundRobin"
+    "RoundRobin",
+    "Control",
     ]
 action_nodes = [
     "AlwaysFailure",
@@ -52,17 +52,36 @@ action_nodes = [
     "Wait",
     "ClearEntireCostmap",
     "ReinitializeGlobalLocalization",
+    "Action",
     ]
 condition_nodes = [
     "IsStuck",
     "GoalReached",
     "initialPoseReceived",
+    "GoalUpdated",
+    "DistanceTraveled",
+    "TimeExpired",
+    "TransformAvailable",
+    "Condition",
     ]
+decorator_nodes = [
+    "Decorator",
+    "RateController",
+    "DistanceController",
+    "SpeedController",
+]
+subtree_nodes = [
+    "SubTree",
+]
+
+global xml_tree
 
 def main():
+    global xml_tree
     args = parse_command_line()
     xml_tree = xml.etree.ElementTree.parse(args.behavior_tree)
-    behavior_tree = find_behavior_tree(xml_tree)
+    root_tree_name = find_root_tree_name(xml_tree)
+    behavior_tree = find_behavior_tree(xml_tree, root_tree_name)
     dot = convert2dot(behavior_tree)
     if args.legend:
         legend = make_legend()
@@ -88,15 +107,19 @@ def parse_command_line():
                         help='Generate a legend image as well')
     return parser.parse_args()
 
-# An XML file can have multiple behavior trees defined in it in theory. We don't
-# currently support that.
-def find_behavior_tree(xml_tree):
+def find_root_tree_name(xml_tree):
+    return xml_tree.getroot().get('main_tree_to_execute')
+
+def find_behavior_tree(xml_tree, tree_name):
     trees = xml_tree.findall('BehaviorTree')
-    if (len(trees) == 0):
+    if len(trees) == 0:
         raise RuntimeError("No behavior trees were found in the XML file")
-    if (len(trees) > 1):
-        raise RuntimeError("This program only supports one behavior tree per file")
-    return trees[0]
+
+    for tree in trees:
+        if tree_name == tree.get('ID'):
+            return tree
+
+    raise RuntimeError("No behavior tree for name " + tree_name + " found in the XML file")
 
 # Generate a dot description of the root of the behavior tree.
 def convert2dot(behavior_tree):
@@ -111,6 +134,18 @@ def convert2dot(behavior_tree):
 # call this function on the children. Nodes are given an ID that is the hash
 # of the node to ensure each is unique.
 def convert_subtree(dot, parent_node, parent_dot_name):
+    if parent_node.tag == "SubTree":
+        add_sub_tree(dot, parent_dot_name, parent_node)
+    else:
+        add_nodes(dot, parent_dot_name, parent_node)
+
+def add_sub_tree(dot, parent_dot_name, parent_node):
+    root_tree_name = parent_node.get('ID')
+    dot.node(parent_dot_name, root_tree_name, shape='box')
+    behavior_tree = find_behavior_tree(xml_tree, root_tree_name)
+    convert_subtree(dot, behavior_tree, parent_dot_name)
+
+def add_nodes(dot, parent_dot_name, parent_node):
     for node in list(parent_node):
         label = make_label(node)
         dot.node(str(hash(node)), label, color=node_color(node.tag), style='filled', shape='box')
@@ -139,6 +174,10 @@ def node_color(type):
         return "cornflowerblue"
     if type in condition_nodes:
         return "yellow2"
+    if type in decorator_nodes:
+        return "darkorange1"
+    if type in subtree_nodes:
+        return "darkorchid1"
     #else it's unknown
     return "grey"
 

@@ -4,10 +4,10 @@ ENABLE_BUILD=true
 ENABLE_ROS2=true
 
 if [ "$ROS2_DISTRO" = "" ]; then
-  export ROS2_DISTRO=eloquent
+  export ROS2_DISTRO=foxy
 fi
-if [ "$ROS2_DISTRO" != "eloquent" ]; then
-  echo "ROS2_DISTRO variable must be set to eloquent"
+if [ "$ROS2_DISTRO" != "foxy" ]; then
+  echo "ROS2_DISTRO variable must be set to foxy"
   exit 1
 fi
 
@@ -24,7 +24,7 @@ for opt in "$@" ; do
     *)
       echo "Invalid option: $opt"
       echo "Valid options:"
-      echo "--no-ros2       Uses the binary distribution of ROS2 eloquent"
+      echo "--no-ros2       Uses the binary distribution of ROS2 foxy"
       echo "--download-only Skips the build step and only downloads the code"
       exit 1
     ;;
@@ -65,7 +65,7 @@ download_ros2_dependencies() {
   echo "Downloading the dependencies workspace"
   mkdir -p ros2_nav_dependencies_ws/src
   cd ros2_nav_dependencies_ws
-  vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
+  vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/underlay.repos
   return_to_root_dir
 }
 

@@ -12,159 +12,124 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__IS_STUCK_CONDITION_HPP_
-#define NAV2_BEHAVIOR_TREE__IS_STUCK_CONDITION_HPP_
-
 #include <string>
 #include <chrono>
-#include <cmath>
-#include <atomic>
-#include <memory>
-#include <deque>
 
-#include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp_v3/condition_node.h"
-#include "nav_msgs/msg/odometry.hpp"
+#include "nav2_behavior_tree/plugins/condition/is_stuck_condition.hpp"
 
 using namespace std::chrono_literals; // NOLINT
 
 namespace nav2_behavior_tree
 {
 
-class IsStuckCondition : public BT::ConditionNode
+IsStuckCondition::IsStuckCondition(
+  const std::string & condition_name,
+  const BT::NodeConfiguration & conf)
+: BT::ConditionNode(condition_name, conf),
+  is_stuck_(false),
+  odom_history_size_(10),
+  current_accel_(0.0),
+  brake_accel_limit_(-10.0)
 {
-public:
-  IsStuckCondition(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf)
-  : BT::ConditionNode(condition_name, conf),
-    is_stuck_(false),
-    odom_history_size_(10),
-    current_accel_(0.0),
-    brake_accel_limit_(-10.0)
-  {
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
-    odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
-      "odom",
-      rclcpp::SystemDefaultsQoS(),
-      std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1));
+  odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
+    "odom",
+    rclcpp::SystemDefaultsQoS(),
+    std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1));
 
-    RCLCPP_DEBUG(node_->get_logger(), "Initialized an IsStuckCondition BT node");
+  RCLCPP_DEBUG(node_->get_logger(), "Initialized an IsStuckCondition BT node");
 
-    RCLCPP_INFO_ONCE(node_->get_logger(), "Waiting on odometry");
+  RCLCPP_INFO_ONCE(node_->get_logger(), "Waiting on odometry");
+}
+
+IsStuckCondition::~IsStuckCondition()
+{
+  RCLCPP_DEBUG(node_->get_logger(), "Shutting down IsStuckCondition BT node");
+}
+
+void IsStuckCondition::onOdomReceived(const typename nav_msgs::msg::Odometry::SharedPtr msg)
+{
+  RCLCPP_INFO_ONCE(node_->get_logger(), "Got odometry");
+
+  while (odom_history_.size() >= odom_history_size_) {
+    odom_history_.pop_front();
   }
 
-  IsStuckCondition() = delete;
+  odom_history_.push_back(*msg);
 
-  ~IsStuckCondition()
-  {
-    RCLCPP_DEBUG(node_->get_logger(), "Shutting down IsStuckCondition BT node");
+  // TODO(orduno) #383 Move the state calculation and is stuck to robot class
+  updateStates();
+}
+
+BT::NodeStatus IsStuckCondition::tick()
+{
+  // TODO(orduno) #383 Once check for is stuck and state calculations are moved to robot class
+  //              this becomes
+  // if (robot_state_.isStuck()) {
+
+  if (is_stuck_) {
+    logStuck("Robot got stuck!");
+    return BT::NodeStatus::SUCCESS;  // Successfully detected a stuck condition
   }
 
-  void onOdomReceived(const typename nav_msgs::msg::Odometry::SharedPtr msg)
-  {
-    RCLCPP_INFO_ONCE(node_->get_logger(), "Got odometry");
+  logStuck("Robot is free");
+  return BT::NodeStatus::FAILURE;  // Failed to detected a stuck condition
+}
 
-    while (odom_history_.size() >= odom_history_size_) {
-      odom_history_.pop_front();
-    }
+void IsStuckCondition::logStuck(const std::string & msg) const
+{
+  static std::string prev_msg;
 
-    odom_history_.push_back(*msg);
-
-    // TODO(orduno) #383 Move the state calculation and is stuck to robot class
-    updateStates();
+  if (msg == prev_msg) {
+    return;
   }
 
-  BT::NodeStatus tick() override
-  {
-    // TODO(orduno) #383 Once check for is stuck and state calculations are moved to robot class
-    //              this becomes
-    // if (robot_state_.isStuck()) {
+  RCLCPP_INFO(node_->get_logger(), msg.c_str());
+  prev_msg = msg;
+}
 
-    if (is_stuck_) {
-      logStuck("Robot got stuck!");
-      return BT::NodeStatus::SUCCESS;  // Successfully detected a stuck condition
-    }
+void IsStuckCondition::updateStates()
+{
+  // Approximate acceleration
+  // TODO(orduno) #400 Smooth out velocity history for better accel approx.
+  if (odom_history_.size() > 2) {
+    auto curr_odom = odom_history_.end()[-1];
+    double curr_time = static_cast<double>(curr_odom.header.stamp.sec);
+    curr_time += (static_cast<double>(curr_odom.header.stamp.nanosec)) * 1e-9;
 
-    logStuck("Robot is free");
-    return BT::NodeStatus::FAILURE;  // Failed to detected a stuck condition
+    auto prev_odom = odom_history_.end()[-2];
+    double prev_time = static_cast<double>(prev_odom.header.stamp.sec);
+    prev_time += (static_cast<double>(prev_odom.header.stamp.nanosec)) * 1e-9;
+
+    double dt = curr_time - prev_time;
+    double vel_diff = static_cast<double>(
+      curr_odom.twist.twist.linear.x - prev_odom.twist.twist.linear.x);
+    current_accel_ = vel_diff / dt;
   }
 
-  void logStuck(const std::string & msg) const
-  {
-    static std::string prev_msg;
+  is_stuck_ = isStuck();
+}
 
-    if (msg == prev_msg) {
-      return;
-    }
+bool IsStuckCondition::isStuck()
+{
+  // TODO(orduno) #400 The robot getting stuck can result on different types of motion
+  // depending on the state prior to getting stuck (sudden change in accel, not moving at all,
+  // random oscillations, etc). For now, we only address the case where there is a sudden
+  // harsh deceleration. A better approach to capture all situations would be to do a forward
+  // simulation of the robot motion and compare it with the actual one.
 
-    RCLCPP_INFO(node_->get_logger(), msg);
-    prev_msg = msg;
+  // Detect if robot bumped into something by checking for abnormal deceleration
+  if (current_accel_ < brake_accel_limit_) {
+    RCLCPP_DEBUG(
+      node_->get_logger(), "Current deceleration is beyond brake limit."
+      " brake limit: %.2f, current accel: %.2f", brake_accel_limit_, current_accel_);
+
+    return true;
   }
 
-  void updateStates()
-  {
-    // Approximate acceleration
-    // TODO(orduno) #400 Smooth out velocity history for better accel approx.
-    if (odom_history_.size() > 2) {
-      auto curr_odom = odom_history_.end()[-1];
-      double curr_time = static_cast<double>(curr_odom.header.stamp.sec);
-      curr_time += (static_cast<double>(curr_odom.header.stamp.nanosec)) * 1e-9;
-
-      auto prev_odom = odom_history_.end()[-2];
-      double prev_time = static_cast<double>(prev_odom.header.stamp.sec);
-      prev_time += (static_cast<double>(prev_odom.header.stamp.nanosec)) * 1e-9;
-
-      double dt = curr_time - prev_time;
-      double vel_diff = static_cast<double>(
-        curr_odom.twist.twist.linear.x - prev_odom.twist.twist.linear.x);
-      current_accel_ = vel_diff / dt;
-    }
-
-    is_stuck_ = isStuck();
-  }
-
-  bool isStuck()
-  {
-    // TODO(orduno) #400 The robot getting stuck can result on different types of motion
-    // depending on the state prior to getting stuck (sudden change in accel, not moving at all,
-    // random oscillations, etc). For now, we only address the case where there is a sudden
-    // harsh deceleration. A better approach to capture all situations would be to do a forward
-    // simulation of the robot motion and compare it with the actual one.
-
-    // Detect if robot bumped into something by checking for abnormal deceleration
-    if (current_accel_ < brake_accel_limit_) {
-      RCLCPP_DEBUG(
-        node_->get_logger(), "Current deceleration is beyond brake limit."
-        " brake limit: %.2f, current accel: %.2f", brake_accel_limit_, current_accel_);
-
-      return true;
-    }
-
-    return false;
-  }
-
-  static BT::PortsList providedPorts() {return {};}
-
-private:
-  // The node that will be used for any ROS operations
-  rclcpp::Node::SharedPtr node_;
-
-  std::atomic<bool> is_stuck_;
-
-  // Listen to odometry
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-  // Store history of odometry measurements
-  std::deque<nav_msgs::msg::Odometry> odom_history_;
-  std::deque<nav_msgs::msg::Odometry>::size_type odom_history_size_;
-
-  // Calculated states
-  double current_accel_;
-
-  // Robot specific paramters
-  double brake_accel_limit_;
-};
+  return false;
+}
 
 }  // namespace nav2_behavior_tree
 
@@ -173,5 +138,3 @@ BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::IsStuckCondition>("IsStuck");
 }
-
-#endif  // NAV2_BEHAVIOR_TREE__IS_STUCK_CONDITION_HPP_

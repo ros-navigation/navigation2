@@ -38,6 +38,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -53,52 +54,61 @@ namespace dwb_core
 {
 
 DWBPublisher::DWBPublisher(
-  nav2_util::LifecycleNode::SharedPtr node,
+  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
-: node_(node), plugin_name_(plugin_name)
+: node_(parent),
+  plugin_name_(plugin_name)
 {
-  declare_parameter_if_not_declared(
-    node_, plugin_name + ".publish_evaluation",
-    rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node_, plugin_name + ".publish_global_plan",
-    rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node_, plugin_name + ".publish_transformed_plan",
-    rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node_, plugin_name + ".publish_local_plan",
-    rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node_, plugin_name + ".publish_trajectories",
-    rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node_, plugin_name + ".publish_cost_grid_pc",
-    rclcpp::ParameterValue(false));
-  declare_parameter_if_not_declared(
-    node_, plugin_name + ".marker_lifetime",
-    rclcpp::ParameterValue(0.1));
+  auto node = node_.lock();
+  clock_ = node->get_clock();
 }
 
 nav2_util::CallbackReturn
 DWBPublisher::on_configure()
 {
-  node_->get_parameter(plugin_name_ + ".publish_evaluation", publish_evaluation_);
-  node_->get_parameter(plugin_name_ + ".publish_global_plan", publish_global_plan_);
-  node_->get_parameter(plugin_name_ + ".publish_transformed_plan", publish_transformed_);
-  node_->get_parameter(plugin_name_ + ".publish_local_plan", publish_local_plan_);
-  node_->get_parameter(plugin_name_ + ".publish_trajectories", publish_trajectories_);
-  node_->get_parameter(plugin_name_ + ".publish_cost_grid_pc", publish_cost_grid_pc_);
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
 
-  eval_pub_ = node_->create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation", 1);
-  global_pub_ = node_->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
-  transformed_pub_ = node_->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
-  local_pub_ = node_->create_publisher<nav_msgs::msg::Path>("local_plan", 1);
-  marker_pub_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>("marker", 1);
-  cost_grid_pc_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud>("cost_cloud", 1);
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".publish_evaluation",
+    rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".publish_global_plan",
+    rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".publish_transformed_plan",
+    rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".publish_local_plan",
+    rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".publish_trajectories",
+    rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".publish_cost_grid_pc",
+    rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".marker_lifetime",
+    rclcpp::ParameterValue(0.1));
+
+  node->get_parameter(plugin_name_ + ".publish_evaluation", publish_evaluation_);
+  node->get_parameter(plugin_name_ + ".publish_global_plan", publish_global_plan_);
+  node->get_parameter(plugin_name_ + ".publish_transformed_plan", publish_transformed_);
+  node->get_parameter(plugin_name_ + ".publish_local_plan", publish_local_plan_);
+  node->get_parameter(plugin_name_ + ".publish_trajectories", publish_trajectories_);
+  node->get_parameter(plugin_name_ + ".publish_cost_grid_pc", publish_cost_grid_pc_);
+
+  eval_pub_ = node->create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation", 1);
+  global_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
+  transformed_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
+  local_pub_ = node->create_publisher<nav_msgs::msg::Path>("local_plan", 1);
+  marker_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>("marker", 1);
+  cost_grid_pc_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud>("cost_cloud", 1);
 
   double marker_lifetime = 0.0;
-  node_->get_parameter(plugin_name_ + ".marker_lifetime", marker_lifetime);
+  node->get_parameter(plugin_name_ + ".marker_lifetime", marker_lifetime);
   marker_lifetime_ = rclcpp::Duration::from_seconds(marker_lifetime);
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -146,24 +156,22 @@ DWBPublisher::on_cleanup()
 void
 DWBPublisher::publishEvaluation(std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results)
 {
-  if (node_->count_subscribers(eval_pub_->get_topic_name()) < 1) {return;}
-
-  if (results == nullptr) {return;}
-
-  if (publish_evaluation_) {
-    eval_pub_->publish(*results);
+  if (results) {
+    if (publish_evaluation_ && eval_pub_->get_subscription_count() > 0) {
+      auto msg = std::make_unique<dwb_msgs::msg::LocalPlanEvaluation>(*results);
+      eval_pub_->publish(std::move(msg));
+    }
+    publishTrajectories(*results);
   }
-
-  publishTrajectories(*results);
 }
 
 void
 DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & results)
 {
-  if (node_->count_subscribers(marker_pub_->get_topic_name()) < 1) {return;}
+  if (marker_pub_->get_subscription_count() < 1) {return;}
 
   if (!publish_trajectories_) {return;}
-  visualization_msgs::msg::MarkerArray ma;
+  auto ma = std::make_unique<visualization_msgs::msg::MarkerArray>();
   visualization_msgs::msg::Marker m;
 
   if (results.twists.size() == 0) {return;}
@@ -216,9 +224,9 @@ DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & res
       pt.z = 0;
       m.points.push_back(pt);
     }
-    ma.markers.push_back(m);
+    ma->markers.push_back(m);
   }
-  marker_pub_->publish(ma);
+  marker_pub_->publish(std::move(ma));
 }
 
 void
@@ -228,10 +236,14 @@ DWBPublisher::publishLocalPlan(
 {
   if (!publish_local_plan_) {return;}
 
-  nav_msgs::msg::Path path =
-    nav_2d_utils::poses2DToPath(traj.poses, header.frame_id, header.stamp);
-  if (node_->count_subscribers(local_pub_->get_topic_name()) > 0) {
-    local_pub_->publish(path);
+  auto path =
+    std::make_unique<nav_msgs::msg::Path>(
+    nav_2d_utils::poses2DToPath(
+      traj.poses, header.frame_id,
+      header.stamp));
+
+  if (local_pub_->get_subscription_count() > 0) {
+    local_pub_->publish(std::move(path));
   }
 }
 
@@ -240,25 +252,25 @@ DWBPublisher::publishCostGrid(
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
   const std::vector<TrajectoryCritic::Ptr> critics)
 {
-  if (node_->count_subscribers(cost_grid_pc_pub_->get_topic_name()) < 1) {return;}
+  if (cost_grid_pc_pub_->get_subscription_count() < 1) {return;}
 
   if (!publish_cost_grid_pc_) {return;}
 
-  sensor_msgs::msg::PointCloud cost_grid_pc;
-  cost_grid_pc.header.frame_id = costmap_ros->getGlobalFrameID();
-  cost_grid_pc.header.stamp = node_->now();
+  auto cost_grid_pc = std::make_unique<sensor_msgs::msg::PointCloud>();
+  cost_grid_pc->header.frame_id = costmap_ros->getGlobalFrameID();
+  cost_grid_pc->header.stamp = clock_->now();
 
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros->getCostmap();
   double x_coord, y_coord;
   unsigned int size_x = costmap->getSizeInCellsX();
   unsigned int size_y = costmap->getSizeInCellsY();
-  cost_grid_pc.points.resize(size_x * size_y);
+  cost_grid_pc->points.resize(size_x * size_y);
   unsigned int i = 0;
   for (unsigned int cy = 0; cy < size_y; cy++) {
     for (unsigned int cx = 0; cx < size_x; cx++) {
       costmap->mapToWorld(cx, cy, x_coord, y_coord);
-      cost_grid_pc.points[i].x = x_coord;
-      cost_grid_pc.points[i].y = y_coord;
+      cost_grid_pc->points[i].x = x_coord;
+      cost_grid_pc->points[i].y = y_coord;
       i++;
     }
   }
@@ -268,23 +280,23 @@ DWBPublisher::publishCostGrid(
   totals.values.resize(size_x * size_y, 0.0);
 
   for (TrajectoryCritic::Ptr critic : critics) {
-    unsigned int channel_index = cost_grid_pc.channels.size();
-    critic->addCriticVisualization(cost_grid_pc);
-    if (channel_index == cost_grid_pc.channels.size()) {
+    unsigned int channel_index = cost_grid_pc->channels.size();
+    critic->addCriticVisualization(*cost_grid_pc);
+    if (channel_index == cost_grid_pc->channels.size()) {
       // No channels were added, so skip to next critic
       continue;
     }
     double scale = critic->getScale();
     for (i = 0; i < size_x * size_y; i++) {
-      totals.values[i] += cost_grid_pc.channels[channel_index].values[i] * scale;
+      totals.values[i] += cost_grid_pc->channels[channel_index].values[i] * scale;
     }
   }
-  cost_grid_pc.channels.push_back(totals);
+  cost_grid_pc->channels.push_back(totals);
 
   // TODO(crdelsey): convert pc to pc2
   // sensor_msgs::msg::PointCloud2 cost_grid_pc2;
   // convertPointCloudToPointCloud2(cost_grid_pc, cost_grid_pc2);
-  cost_grid_pc_pub_->publish(cost_grid_pc);
+  cost_grid_pc_pub_->publish(std::move(cost_grid_pc));
 }
 
 void
@@ -310,10 +322,10 @@ DWBPublisher::publishGenericPlan(
   const nav_2d_msgs::msg::Path2D plan,
   rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag)
 {
-  if (node_->count_subscribers(pub.get_topic_name()) < 1) {return;}
+  if (pub.get_subscription_count() < 1) {return;}
   if (!flag) {return;}
-  nav_msgs::msg::Path path = nav_2d_utils::pathToPath(plan);
-  pub.publish(path);
+  auto path = std::make_unique<nav_msgs::msg::Path>(nav_2d_utils::pathToPath(plan));
+  pub.publish(std::move(path));
 }
 
 }  // namespace dwb_core

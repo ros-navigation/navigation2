@@ -15,6 +15,8 @@ nav2_package()
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Costmap.msg"
   "msg/CostmapMetaData.msg"
+  "msg/CostmapFilterInfo.msg"
+  "msg/SpeedLimit.msg"
   "msg/VoxelGrid.msg"
   "msg/BehaviorTreeStatusChange.msg"
   "msg/BehaviorTreeLog.msg"
@@ -34,7 +36,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/Wait.action"
   "action/Spin.action"
   "action/DummyRecovery.action"
-  "action/RandomCrawl.action"
   "action/FollowWaypoints.action"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs
 )

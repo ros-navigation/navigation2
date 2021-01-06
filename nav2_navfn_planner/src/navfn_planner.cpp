@@ -19,6 +19,8 @@
 // the Global Dynamic Window Approach. IEEE.
 // https://cs.stanford.edu/group/manips/publications/pdfs/Brock_1999_ICRA.pdf
 
+// #define BENCHMARK_TESTING
+
 #include "nav2_navfn_planner/navfn_planner.hpp"
 
 #include <chrono>
@@ -50,34 +52,37 @@ NavfnPlanner::NavfnPlanner()
 NavfnPlanner::~NavfnPlanner()
 {
   RCLCPP_INFO(
-    node_->get_logger(), "Destroying plugin %s of type NavfnPlanner",
+    logger_, "Destroying plugin %s of type NavfnPlanner",
     name_.c_str());
 }
 
 void
 NavfnPlanner::configure(
-  rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
+  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
-  node_ = parent;
   tf_ = tf;
   name_ = name;
   costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();
 
+  auto node = parent.lock();
+  clock_ = node->get_clock();
+  logger_ = node->get_logger();
+
   RCLCPP_INFO(
-    node_->get_logger(), "Configuring plugin %s of type NavfnPlanner",
+    logger_, "Configuring plugin %s of type NavfnPlanner",
     name_.c_str());
 
   // Initialize parameters
   // Declare this plugin's parameters
-  declare_parameter_if_not_declared(node_, name + ".tolerance", rclcpp::ParameterValue(2.0));
-  node_->get_parameter(name + ".tolerance", tolerance_);
-  declare_parameter_if_not_declared(node_, name + ".use_astar", rclcpp::ParameterValue(false));
-  node_->get_parameter(name + ".use_astar", use_astar_);
-  declare_parameter_if_not_declared(node_, name + ".allow_unknown", rclcpp::ParameterValue(true));
-  node_->get_parameter(name + ".allow_unknown", allow_unknown_);
+  declare_parameter_if_not_declared(node, name + ".tolerance", rclcpp::ParameterValue(0.5));
+  node->get_parameter(name + ".tolerance", tolerance_);
+  declare_parameter_if_not_declared(node, name + ".use_astar", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".use_astar", use_astar_);
+  declare_parameter_if_not_declared(node, name + ".allow_unknown", rclcpp::ParameterValue(true));
+  node->get_parameter(name + ".allow_unknown", allow_unknown_);
 
   // Create a planner based on the new costmap size
   planner_ = std::make_unique<NavFn>(
@@ -89,7 +94,7 @@ void
 NavfnPlanner::activate()
 {
   RCLCPP_INFO(
-    node_->get_logger(), "Activating plugin %s of type NavfnPlanner",
+    logger_, "Activating plugin %s of type NavfnPlanner",
     name_.c_str());
 }
 
@@ -97,7 +102,7 @@ void
 NavfnPlanner::deactivate()
 {
   RCLCPP_INFO(
-    node_->get_logger(), "Deactivating plugin %s of type NavfnPlanner",
+    logger_, "Deactivating plugin %s of type NavfnPlanner",
     name_.c_str());
 }
 
@@ -105,7 +110,7 @@ void
 NavfnPlanner::cleanup()
 {
   RCLCPP_INFO(
-    node_->get_logger(), "Cleaning up plugin %s of type NavfnPlanner",
+    logger_, "Cleaning up plugin %s of type NavfnPlanner",
     name_.c_str());
   planner_.reset();
 }
@@ -114,6 +119,10 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
+#ifdef BENCHMARK_TESTING
+  steady_clock::time_point a = steady_clock::now();
+#endif
+
   // Update planner based on the new costmap size
   if (isPlannerOutOfDate()) {
     planner_->setNavArr(
@@ -125,9 +134,17 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 
   if (!makePlan(start.pose, goal.pose, tolerance_, path)) {
     RCLCPP_WARN(
-      node_->get_logger(), "%s: failed to create plan with "
+      logger_, "%s: failed to create plan with "
       "tolerance %.2f.", name_.c_str(), tolerance_);
   }
+
+#ifdef BENCHMARK_TESTING
+  steady_clock::time_point b = steady_clock::now();
+  duration<double> time_span = duration_cast<duration<double>>(b - a);
+  std::cout << "It took " << time_span.count() * 1000 <<
+    " milliseconds with " << num_iterations << " iterations." << std::endl;
+#endif
+
   return path;
 }
 
@@ -152,19 +169,22 @@ NavfnPlanner::makePlan(
   // clear the plan, just in case
   plan.poses.clear();
 
+  plan.header.stamp = clock_->now();
+  plan.header.frame_id = global_frame_;
+
   // TODO(orduno): add checks for start and goal reference frame -- should be in global frame
 
   double wx = start.position.x;
   double wy = start.position.y;
 
   RCLCPP_DEBUG(
-    node_->get_logger(), "Making plan from (%.2f,%.2f) to (%.2f,%.2f)",
+    logger_, "Making plan from (%.2f,%.2f) to (%.2f,%.2f)",
     start.position.x, start.position.y, goal.position.x, goal.position.y);
 
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {
     RCLCPP_WARN(
-      node_->get_logger(),
+      logger_,
       "Cannot create a plan: the robot's start position is off the global"
       " costmap. Planning will always fail, are you sure"
       " the robot has been properly localized?");
@@ -174,12 +194,16 @@ NavfnPlanner::makePlan(
   // clear the starting cell within the costmap because we know it can't be an obstacle
   clearRobotCell(mx, my);
 
+  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
+
   // make sure to resize the underlying array that Navfn uses
   planner_->setNavArr(
     costmap_->getSizeInCellsX(),
     costmap_->getSizeInCellsY());
 
   planner_->setCostmap(costmap_->getCharMap(), true, allow_unknown_);
+
+  lock.unlock();
 
   int map_start[2];
   map_start[0] = mx;
@@ -190,7 +214,7 @@ NavfnPlanner::makePlan(
 
   if (!worldToMap(wx, wy, mx, my)) {
     RCLCPP_WARN(
-      node_->get_logger(),
+      logger_,
       "The goal sent to the planner is off the global costmap."
       " Planning will always fail to this goal.");
     return false;
@@ -213,26 +237,35 @@ NavfnPlanner::makePlan(
 
   double resolution = costmap_->getResolution();
   geometry_msgs::msg::Pose p, best_pose;
-  p = goal;
 
   bool found_legal = false;
-  double best_sdist = std::numeric_limits<double>::max();
 
-  p.position.y = goal.position.y - tolerance;
+  p = goal;
+  double potential = getPointPotential(p.position);
+  if (potential < POT_HIGH) {
+    // Goal is reachable by itself
+    best_pose = p;
+    found_legal = true;
+  } else {
+    // Goal is not reachable. Trying to find nearest to the goal
+    // reachable point within its tolerance region
+    double best_sdist = std::numeric_limits<double>::max();
 
-  while (p.position.y <= goal.position.y + tolerance) {
-    p.position.x = goal.position.x - tolerance;
-    while (p.position.x <= goal.position.x + tolerance) {
-      double potential = getPointPotential(p.position);
-      double sdist = squared_distance(p, goal);
-      if (potential < POT_HIGH && sdist < best_sdist) {
-        best_sdist = sdist;
-        best_pose = p;
-        found_legal = true;
+    p.position.y = goal.position.y - tolerance;
+    while (p.position.y <= goal.position.y + tolerance) {
+      p.position.x = goal.position.x - tolerance;
+      while (p.position.x <= goal.position.x + tolerance) {
+        potential = getPointPotential(p.position);
+        double sdist = squared_distance(p, goal);
+        if (potential < POT_HIGH && sdist < best_sdist) {
+          best_sdist = sdist;
+          best_pose = p;
+          found_legal = true;
+        }
+        p.position.x += resolution;
       }
-      p.position.x += resolution;
+      p.position.y += resolution;
     }
-    p.position.y += resolution;
   }
 
   if (found_legal) {
@@ -241,7 +274,7 @@ NavfnPlanner::makePlan(
       smoothApproachToGoal(best_pose, plan);
     } else {
       RCLCPP_ERROR(
-        node_->get_logger(),
+        logger_,
         "Failed to create a plan from potential when a legal"
         " potential was found. This shouldn't happen.");
     }
@@ -289,7 +322,7 @@ NavfnPlanner::getPlanFromPotential(
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {
     RCLCPP_WARN(
-      node_->get_logger(),
+      logger_,
       "The goal sent to the navfn planner is off the global costmap."
       " Planning will always fail to this goal.");
     return false;
@@ -301,21 +334,23 @@ NavfnPlanner::getPlanFromPotential(
 
   planner_->setStart(map_goal);
 
-  int path_len = planner_->calcPath(costmap_->getSizeInCellsX() * 4);
+  const int & max_cycles = (costmap_->getSizeInCellsX() >= costmap_->getSizeInCellsY()) ?
+    (costmap_->getSizeInCellsX() * 4) : (costmap_->getSizeInCellsY() * 4);
+
+  int path_len = planner_->calcPath(max_cycles);
   if (path_len == 0) {
-    RCLCPP_DEBUG(node_->get_logger(), "No path found\n");
     return false;
   }
 
-  RCLCPP_DEBUG(node_->get_logger(), "Path found, %d steps\n", path_len);
+  auto cost = planner_->getLastPathCost();
+  RCLCPP_DEBUG(
+    logger_,
+    "Path found, %d steps, %f cost\n", path_len, cost);
 
   // extract the plan
   float * x = planner_->getPathX();
   float * y = planner_->getPathY();
   int len = planner_->getPathLen();
-
-  plan.header.stamp = node_->now();
-  plan.header.frame_id = global_frame_;
 
   for (int i = len - 1; i >= 0; --i) {
     // convert the plan to world coordinates
@@ -348,44 +383,47 @@ NavfnPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point)
   return planner_->potarr[index];
 }
 
-bool
-NavfnPlanner::validPointPotential(const geometry_msgs::msg::Point & world_point)
-{
-  return validPointPotential(world_point, tolerance_);
-}
+// bool
+// NavfnPlanner::validPointPotential(const geometry_msgs::msg::Point & world_point)
+// {
+//   return validPointPotential(world_point, tolerance_);
+// }
 
-bool
-NavfnPlanner::validPointPotential(
-  const geometry_msgs::msg::Point & world_point, double tolerance)
-{
-  const double resolution = costmap_->getResolution();
+// bool
+// NavfnPlanner::validPointPotential(
+//   const geometry_msgs::msg::Point & world_point, double tolerance)
+// {
+//   const double resolution = costmap_->getResolution();
 
-  geometry_msgs::msg::Point p = world_point;
-  p.y = world_point.y - tolerance;
+//   geometry_msgs::msg::Point p = world_point;
+//   double potential = getPointPotential(p);
+//   if (potential < POT_HIGH) {
+//     // world_point is reachable by itself
+//     return true;
+//   } else {
+//     // world_point, is not reachable. Trying to find any
+//     // reachable point within its tolerance region
+//     p.y = world_point.y - tolerance;
+//     while (p.y <= world_point.y + tolerance) {
+//       p.x = world_point.x - tolerance;
+//       while (p.x <= world_point.x + tolerance) {
+//         potential = getPointPotential(p);
+//         if (potential < POT_HIGH) {
+//           return true;
+//         }
+//         p.x += resolution;
+//       }
+//       p.y += resolution;
+//     }
+//   }
 
-  while (p.y <= world_point.y + tolerance) {
-    p.x = world_point.x - tolerance;
-    while (p.x <= world_point.x + tolerance) {
-      double potential = getPointPotential(p);
-      if (potential < POT_HIGH) {
-        return true;
-      }
-      p.x += resolution;
-    }
-    p.y += resolution;
-  }
-
-  return false;
-}
+//   return false;
+// }
 
 bool
 NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
 {
   if (wx < costmap_->getOriginX() || wy < costmap_->getOriginY()) {
-    RCLCPP_ERROR(
-      node_->get_logger(), "worldToMap failed: wx,wy: %f,%f, "
-      "size_x,size_y: %d,%d", wx, wy,
-      costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
     return false;
   }
 
@@ -399,7 +437,8 @@ NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int &
   }
 
   RCLCPP_ERROR(
-    node_->get_logger(), "worldToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
+    logger_,
+    "worldToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
     costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
 
   return false;

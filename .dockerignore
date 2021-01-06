@@ -1,10 +1,11 @@
 ################################################################################
 # Repo
 
-.circleci/*
-.git/*
+.circleci/
+.dockerhub/
+.git/
+.github/
 .dockerignore
 .gitignore
 **Dockerfile
 **.Dockerfile
-codecov.yml

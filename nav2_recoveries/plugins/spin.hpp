@@ -40,8 +40,10 @@ public:
 protected:
   bool isCollisionFree(
     const double & distance,
-    const geometry_msgs::msg::Twist & cmd_vel,
+    geometry_msgs::msg::Twist * cmd_vel,
     geometry_msgs::msg::Pose2D & pose2d);
+
+  SpinAction::Feedback::SharedPtr feedback_;
 
   double min_rotational_vel_;
   double max_rotational_vel_;

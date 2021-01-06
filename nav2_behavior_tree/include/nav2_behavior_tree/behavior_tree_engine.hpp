@@ -1,4 +1,5 @@
 // Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2020 Florian Gramss
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +23,8 @@
 #include "behaviortree_cpp_v3/behavior_tree.h"
 #include "behaviortree_cpp_v3/bt_factory.h"
 #include "behaviortree_cpp_v3/xml_parsing.h"
+#include "behaviortree_cpp_v3/loggers/bt_zmq_publisher.h"
+
 
 namespace nav2_behavior_tree
 {
@@ -40,30 +43,29 @@ public:
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
-  BT::Tree buildTreeFromText(
+  BT::Tree createTreeFromText(
     const std::string & xml_string,
     BT::Blackboard::Ptr blackboard);
 
-  // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
-  void haltAllActions(BT::TreeNode * root_node)
-  {
-    // this halt signal should propagate through the entire tree.
-    root_node->halt();
-    root_node->setStatus(BT::NodeStatus::IDLE);
+  BT::Tree createTreeFromFile(
+    const std::string & file_path,
+    BT::Blackboard::Ptr blackboard);
 
-    // but, just in case...
-    auto visitor = [](BT::TreeNode * node) {
-        if (node->status() == BT::NodeStatus::RUNNING) {
-          node->halt();
-          node->setStatus(BT::NodeStatus::IDLE);
-        }
-      };
-    BT::applyRecursiveVisitor(root_node, visitor);
-  }
+  void addGrootMonitoring(
+    BT::Tree * tree,
+    uint16_t publisher_port,
+    uint16_t server_port,
+    uint16_t max_msg_per_second = 25);
+
+  void resetGrootMonitor();
+
+  // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
+  void haltAllActions(BT::TreeNode * root_node);
 
 protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
+  std::unique_ptr<BT::PublisherZMQ> groot_monitor_;
 };
 
 }  // namespace nav2_behavior_tree

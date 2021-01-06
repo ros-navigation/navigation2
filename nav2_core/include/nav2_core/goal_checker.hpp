@@ -64,12 +64,12 @@ public:
 
   /**
    * @brief Initialize any parameters from the NodeHandle
-   * @param nh NodeHandle for grabbing parameters
+   * @param parent Node pointer for grabbing parameters
    */
   virtual void initialize(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name) = 0;
-  virtual void reset() {}
+  virtual void reset() = 0;
   /**
    * @brief Check whether the goal should be considered reached
    * @param query_pose The pose to check

@@ -116,7 +116,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_interfaces(${library_name} HAS_LIBRARY_TARGET)
+ament_export_targets(${library_name} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
   Qt5
   rviz_common

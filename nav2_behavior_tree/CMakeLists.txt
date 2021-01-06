@@ -6,9 +6,9 @@ find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
@@ -31,6 +31,7 @@ set(dependencies
   rclcpp_action
   rclcpp_lifecycle
   geometry_msgs
+  sensor_msgs
   nav2_msgs
   nav_msgs
   behaviortree_cpp_v3
@@ -77,8 +78,20 @@ list(APPEND plugin_libs nav2_transform_available_condition_bt_node)
 add_library(nav2_goal_reached_condition_bt_node SHARED plugins/condition/goal_reached_condition.cpp)
 list(APPEND plugin_libs nav2_goal_reached_condition_bt_node)
 
+add_library(nav2_goal_updated_condition_bt_node SHARED plugins/condition/goal_updated_condition.cpp)
+list(APPEND plugin_libs nav2_goal_updated_condition_bt_node)
+
+add_library(nav2_time_expired_condition_bt_node SHARED plugins/condition/time_expired_condition.cpp)
+list(APPEND plugin_libs nav2_time_expired_condition_bt_node)
+
+add_library(nav2_distance_traveled_condition_bt_node SHARED plugins/condition/distance_traveled_condition.cpp)
+list(APPEND plugin_libs nav2_distance_traveled_condition_bt_node)
+
 add_library(nav2_initial_pose_received_condition_bt_node SHARED plugins/condition/initial_pose_received_condition.cpp)
 list(APPEND plugin_libs nav2_initial_pose_received_condition_bt_node)
+
+add_library(nav2_is_battery_low_condition_bt_node SHARED plugins/condition/is_battery_low_condition.cpp)
+list(APPEND plugin_libs nav2_is_battery_low_condition_bt_node)
 
 add_library(nav2_reinitialize_global_localization_service_bt_node SHARED plugins/action/reinitialize_global_localization_service.cpp)
 list(APPEND plugin_libs nav2_reinitialize_global_localization_service_bt_node)
@@ -86,14 +99,23 @@ list(APPEND plugin_libs nav2_reinitialize_global_localization_service_bt_node)
 add_library(nav2_rate_controller_bt_node SHARED plugins/decorator/rate_controller.cpp)
 list(APPEND plugin_libs nav2_rate_controller_bt_node)
 
+add_library(nav2_distance_controller_bt_node SHARED plugins/decorator/distance_controller.cpp)
+list(APPEND plugin_libs nav2_distance_controller_bt_node)
+
+add_library(nav2_speed_controller_bt_node SHARED plugins/decorator/speed_controller.cpp)
+list(APPEND plugin_libs nav2_speed_controller_bt_node)
+
+add_library(nav2_truncate_path_action_bt_node SHARED plugins/action/truncate_path_action.cpp)
+list(APPEND plugin_libs nav2_truncate_path_action_bt_node)
+
+add_library(nav2_goal_updater_node_bt_node SHARED plugins/decorator/goal_updater_node.cpp)
+list(APPEND plugin_libs nav2_goal_updater_node_bt_node)
+
 add_library(nav2_recovery_node_bt_node SHARED plugins/control/recovery_node.cpp)
 list(APPEND plugin_libs nav2_recovery_node_bt_node)
 
 add_library(nav2_navigate_to_pose_action_bt_node SHARED plugins/action/navigate_to_pose_action.cpp)
 list(APPEND plugin_libs nav2_navigate_to_pose_action_bt_node)
-
-add_library(nav2_random_crawl_action_bt_node SHARED plugins/action/random_crawl_action.cpp)
-list(APPEND plugin_libs nav2_random_crawl_action_bt_node)
 
 add_library(nav2_pipeline_sequence_bt_node SHARED plugins/control/pipeline_sequence.cpp)
 list(APPEND plugin_libs nav2_pipeline_sequence_bt_node)
@@ -110,19 +132,25 @@ install(TARGETS ${library_name}
                 ${plugin_libs}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/
   DESTINATION include/
 )
 
+install(FILES nav2_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_gtest REQUIRED)
+  add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include)
+ament_export_include_directories(
+  include
+)
 
 ament_export_libraries(
   ${library_name}

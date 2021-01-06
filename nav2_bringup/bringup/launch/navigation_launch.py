@@ -31,7 +31,7 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
-    bt_xml_file = LaunchConfiguration('bt_xml_file')
+    default_bt_xml_filename = LaunchConfiguration('default_bt_xml_filename')
     map_subscribe_transient_local = LaunchConfiguration('map_subscribe_transient_local')
 
     lifecycle_nodes = ['controller_server',
@@ -52,7 +52,7 @@ def generate_launch_description():
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'use_sim_time': use_sim_time,
-        'bt_xml_filename': bt_xml_file,
+        'default_bt_xml_filename': default_bt_xml_filename,
         'autostart': autostart,
         'map_subscribe_transient_local': map_subscribe_transient_local}
 
@@ -64,7 +64,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         # Set env var to print messages to stdout immediately
-        SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
+        SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
 
         DeclareLaunchArgument(
             'namespace', default_value='',
@@ -84,7 +84,7 @@ def generate_launch_description():
             description='Full path to the ROS2 parameters file to use'),
 
         DeclareLaunchArgument(
-            'bt_xml_file',
+            'default_bt_xml_filename',
             default_value=os.path.join(
                 get_package_share_directory('nav2_bt_navigator'),
                 'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
@@ -96,47 +96,47 @@ def generate_launch_description():
 
         Node(
             package='nav2_controller',
-            node_executable='controller_server',
+            executable='controller_server',
             output='screen',
             parameters=[configured_params],
             remappings=remappings),
 
         Node(
             package='nav2_planner',
-            node_executable='planner_server',
-            node_name='planner_server',
+            executable='planner_server',
+            name='planner_server',
             output='screen',
             parameters=[configured_params],
             remappings=remappings),
 
         Node(
             package='nav2_recoveries',
-            node_executable='recoveries_server',
-            node_name='recoveries_server',
+            executable='recoveries_server',
+            name='recoveries_server',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time}],
+            parameters=[configured_params],
             remappings=remappings),
 
         Node(
             package='nav2_bt_navigator',
-            node_executable='bt_navigator',
-            node_name='bt_navigator',
+            executable='bt_navigator',
+            name='bt_navigator',
             output='screen',
             parameters=[configured_params],
             remappings=remappings),
 
         Node(
             package='nav2_waypoint_follower',
-            node_executable='waypoint_follower',
-            node_name='waypoint_follower',
+            executable='waypoint_follower',
+            name='waypoint_follower',
             output='screen',
             parameters=[configured_params],
             remappings=remappings),
 
         Node(
             package='nav2_lifecycle_manager',
-            node_executable='lifecycle_manager',
-            node_name='lifecycle_manager_navigation',
+            executable='lifecycle_manager',
+            name='lifecycle_manager_navigation',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},

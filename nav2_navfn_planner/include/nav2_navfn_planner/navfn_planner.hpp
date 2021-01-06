@@ -42,7 +42,7 @@ public:
 
   // plugin configure
   void configure(
-    rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
@@ -88,8 +88,8 @@ protected:
   // Check for a valid potential value at a given point in the world
   // - must call computePotential first
   // - currently unused
-  bool validPointPotential(const geometry_msgs::msg::Point & world_point);
-  bool validPointPotential(const geometry_msgs::msg::Point & world_point, double tolerance);
+  // bool validPointPotential(const geometry_msgs::msg::Point & world_point);
+  // bool validPointPotential(const geometry_msgs::msg::Point & world_point, double tolerance);
 
   // Compute the squared distance between two points
   inline double squared_distance(
@@ -119,8 +119,11 @@ protected:
   // TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
-  // node ptr
-  nav2_util::LifecycleNode::SharedPtr node_;
+  // Clock
+  rclcpp::Clock::SharedPtr clock_;
+
+  // Logger
+  rclcpp::Logger logger_{rclcpp::get_logger("NavfnPlanner")};
 
   // Global Costmap
   nav2_costmap_2d::Costmap2D * costmap_;

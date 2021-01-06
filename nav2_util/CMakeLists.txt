@@ -15,6 +15,9 @@ find_package(rclcpp_action REQUIRED)
 find_package(test_msgs REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(bondcpp REQUIRED)
+find_package(bond REQUIRED)
+find_package(action_msgs REQUIRED)
 
 set(dependencies
     nav2_msgs
@@ -28,6 +31,9 @@ set(dependencies
     rclcpp_action
     test_msgs
     rclcpp_lifecycle
+    bondcpp
+    bond
+    action_msgs
 )
 
 nav2_package()
@@ -43,6 +49,8 @@ install(DIRECTORY include/
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(ament_cmake_pytest REQUIRED)
+  find_package(launch_testing_ament_cmake REQUIRED)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)

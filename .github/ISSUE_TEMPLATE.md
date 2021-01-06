@@ -11,6 +11,8 @@ For Bug report or feature requests, please fill out the relevant category below
 
 - Operating System:
   - <!-- OS and version (e.g. Windows 10, Ubuntu 16.04...) -->
+- ROS2 Version:
+  - <!-- ROS2 distribution and install method (e.g. Foxy binaries, Dashing source...) -->
 - Version or commit hash:
   - <!-- from source: output of `git -C navigation2 rev-parse HEAD
          apt binaries: output of: dpkg-query --show "ros-$ROS_DISTRO-navigation2"

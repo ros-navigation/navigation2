@@ -28,6 +28,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/buffer.h"
 
 namespace nav2_bt_navigator
 {
@@ -82,13 +83,10 @@ protected:
    * @return SUCCESS or FAILURE
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when in error state
-   * @param state Reference to LifeCycle node state
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::NavigateToPose>;
+  using Action = nav2_msgs::action::NavigateToPose;
+
+  using ActionServer = nav2_util::SimpleActionServer<Action>;
 
   // Our action server implements the NavigateToPose action
   std::unique_ptr<ActionServer> action_server_;
@@ -110,13 +108,22 @@ protected:
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
 
+  /**
+   * @brief Replace current BT with another one
+   * @param bt_xml_filename The file containing the new BT
+   * @return true if the resulting BT correspond to the one in bt_xml_filename. false
+   * if something went wrong, and previous BT is mantained
+   */
+  bool loadBehaviorTree(const std::string & bt_id);
+
   BT::Tree tree_;
 
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
 
-  // The XML string that defines the Behavior Tree to create
-  std::string xml_string_;
+  // The XML fiñe that cointains the Behavior Tree to create
+  std::string current_bt_xml_filename_;
+  std::string default_bt_xml_filename_;
 
   // The wrapper class for the BT functionality
   std::unique_ptr<nav2_behavior_tree::BehaviorTreeEngine> bt_;
@@ -125,7 +132,7 @@ protected:
   std::vector<std::string> plugin_lib_names_;
 
   // A client that we'll use to send a command message to our own task server
-  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr self_client_;
+  rclcpp_action::Client<Action>::SharedPtr self_client_;
 
   // A regular, non-spinning ROS node that we can use for calls to the action client
   rclcpp::Node::SharedPtr client_node_;
@@ -133,6 +140,12 @@ protected:
   // Spinning transform that can be used by the BT nodes
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+  // Metrics for feedback
+  rclcpp::Time start_time_;
+  std::string robot_frame_;
+  std::string global_frame_;
+  double transform_tolerance_;
 };
 
 }  // namespace nav2_bt_navigator

@@ -38,14 +38,13 @@ public:
     typename nodeT::SharedPtr node,
     const std::string & action_name,
     ExecuteCallback execute_callback,
-    bool autostart = true,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500))
   : SimpleActionServer(
       node->get_node_base_interface(),
       node->get_node_clock_interface(),
       node->get_node_logging_interface(),
       node->get_node_waitables_interface(),
-      action_name, execute_callback, autostart, server_timeout)
+      action_name, execute_callback, server_timeout)
   {}
 
   explicit SimpleActionServer(
@@ -55,7 +54,6 @@ public:
     rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface,
     const std::string & action_name,
     ExecuteCallback execute_callback,
-    bool autostart = true,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500))
   : node_base_interface_(node_base_interface),
     node_clock_interface_(node_clock_interface),
@@ -65,12 +63,7 @@ public:
     execute_callback_(execute_callback),
     server_timeout_(server_timeout)
   {
-    if (autostart) {
-      server_active_ = true;
-    }
-
     using namespace std::placeholders;  // NOLINT
-
     action_server_ = rclcpp_action::create_server<ActionT>(
       node_base_interface_,
       node_clock_interface_,
@@ -322,6 +315,7 @@ public:
   {
     if (!is_active(current_handle_)) {
       error_msg("Trying to publish feedback when the current goal handle is not active");
+      return;
     }
 
     current_handle_->publish_feedback(feedback);

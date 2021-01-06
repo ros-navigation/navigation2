@@ -67,7 +67,7 @@ public:
    * @brief  Constructor for the Costmap2DPublisher
    */
   Costmap2DPublisher(
-    nav2_util::LifecycleNode::SharedPtr ros_node,
+    const nav2_util::LifecycleNode::WeakPtr & parent,
     Costmap2D * costmap,
     std::string global_frame,
     std::string topic_name,
@@ -130,7 +130,9 @@ private:
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::GetCostmap::Response> response);
 
-  nav2_util::LifecycleNode::SharedPtr node_;
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
+
   Costmap2D * costmap_;
   std::string global_frame_;
   std::string topic_name_;
@@ -151,8 +153,10 @@ private:
   // Service for getting the costmaps
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_service_;
 
-  nav_msgs::msg::OccupancyGrid grid_;
-  nav2_msgs::msg::Costmap costmap_raw_;
+  float grid_resolution;
+  unsigned int grid_width, grid_height;
+  std::unique_ptr<nav_msgs::msg::OccupancyGrid> grid_;
+  std::unique_ptr<nav2_msgs::msg::Costmap> costmap_raw_;
   // Translate from 0-255 values in costmap to -1 to 100 values in message.
   static char * cost_translation_table_;
 };

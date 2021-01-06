@@ -21,7 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
-#include "nav2_costmap_2d/collision_checker.hpp"
+#include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 
 namespace nav2_core
 {
@@ -47,9 +47,9 @@ public:
    * @param  costmap_ros A pointer to the costmap
    */
   virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
-    std::shared_ptr<nav2_costmap_2d::CollisionChecker> collision_checker) = 0;
+    std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker) = 0;
 
   /**
    * @brief Method to cleanup resources used on shutdown.

@@ -31,7 +31,9 @@
 
 #include "nav2_map_server/map_io.hpp"
 
+#ifndef _WIN32
 #include <libgen.h>
+#endif
 #include <iostream>
 #include <string>
 #include <vector>
@@ -44,6 +46,45 @@
 #include "yaml-cpp/yaml.h"
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2/LinearMath/Quaternion.h"
+#include "nav2_util/occ_grid_values.hpp"
+
+#ifdef _WIN32
+// https://github.com/rtv/Stage/blob/master/replace/dirname.c
+static
+char * dirname(char * path)
+{
+  static const char dot[] = ".";
+  char * last_slash;
+
+  if (path == NULL) {
+    return path;
+  }
+
+  /* Find last '/'.  */
+  last_slash = path != NULL ? strrchr(path, '/') : NULL;
+
+  if (last_slash != NULL && last_slash == path) {
+    /* The last slash is the first character in the string.  We have to
+       return "/".  */
+    ++last_slash;
+  } else if (last_slash != NULL && last_slash[1] == '\0') {
+    /* The '/' is the last character, we have to look further.  */
+    last_slash = reinterpret_cast<char *>(memchr(path, last_slash - path, '/'));
+  }
+
+  if (last_slash != NULL) {
+    /* Terminate the path.  */
+    last_slash[0] = '\0';
+  } else {
+    /* This assignment is ill-designed but the XPG specs require to
+       return a string containing "." in any case no directory part is
+       found and so a static and constant string is required.  */
+    path = reinterpret_cast<char *>(dot);
+  }
+
+  return path;
+}
+#endif
 
 namespace nav2_map_server
 {
@@ -173,20 +214,20 @@ void loadMapFromFile(
       switch (load_parameters.mode) {
         case MapMode::Trinary:
           if (load_parameters.occupied_thresh < occ) {
-            map_cell = 100;
+            map_cell = nav2_util::OCC_GRID_OCCUPIED;
           } else if (occ < load_parameters.free_thresh) {
-            map_cell = 0;
+            map_cell = nav2_util::OCC_GRID_FREE;
           } else {
-            map_cell = -1;
+            map_cell = nav2_util::OCC_GRID_UNKNOWN;
           }
           break;
         case MapMode::Scale:
           if (pixel.alphaQuantum() != OpaqueOpacity) {
-            map_cell = -1;
+            map_cell = nav2_util::OCC_GRID_UNKNOWN;
           } else if (load_parameters.occupied_thresh < occ) {
-            map_cell = 100;
+            map_cell = nav2_util::OCC_GRID_OCCUPIED;
           } else if (occ < load_parameters.free_thresh) {
-            map_cell = 0;
+            map_cell = nav2_util::OCC_GRID_FREE;
           } else {
             map_cell = std::rint(
               (occ - load_parameters.free_thresh) /
@@ -195,10 +236,12 @@ void loadMapFromFile(
           break;
         case MapMode::Raw: {
             double occ_percent = std::round(shade * 255);
-            if (0 <= occ_percent && occ_percent <= 100) {
+            if (nav2_util::OCC_GRID_FREE <= occ_percent &&
+              occ_percent <= nav2_util::OCC_GRID_OCCUPIED)
+            {
               map_cell = static_cast<int8_t>(occ_percent);
             } else {
-              map_cell = -1;
+              map_cell = nav2_util::OCC_GRID_UNKNOWN;
             }
             break;
           }

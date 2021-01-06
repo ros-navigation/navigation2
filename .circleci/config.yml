@@ -1,17 +1,6 @@
 version: 2.1
-orbs:
-  codecov: codecov/codecov@1.0.5
 
-references:
-  common_environment: &common_environment
-    ROS_WS: "/opt/ros_ws"
-    UNDERLAY_WS: "/opt/underlay_ws"
-    OVERLAY_WS: "/opt/overlay_ws"
-    CCACHE_LOGFILE: "/tmp/ccache.log"
-    CCACHE_MAXSIZE: "200M"
-    MAKEFLAGS: "-j 1 -l 2"
-    RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED: "1"
-    RETEST_UNTIL_PASS: "2"
+_commands:
   common_commands: &common_commands
     restore_from_cache:
       description: "Restore From Cache"
@@ -70,10 +59,27 @@ references:
                 (echo vcs_export && cat) >> checksum.txt
               sha256sum $PWD/checksum.txt >> checksum.txt
               apt-get update
+              rosdep update
+              
+              # workarround for OMPL and rosdep
+              # https://github.com/ompl/ompl/issues/753
+              # Prevent searching $ROS_WS/install given it's too big for rosdep
+
+              if [ "$ROS_WS" == "<< parameters.underlay >>" ]; then
+                underlay_ws=""
+              else
+                underlay_ws=<< parameters.underlay >>/src
+              fi
+              echo underlay_ws = $underlay_ws
+
               dependencies=$(
                 rosdep install -q -y \
                   --from-paths src \
+                    $underlay_ws \
                   --ignore-src \
+                  --skip-keys " \
+                    slam_toolbox \
+                    " \
                   --verbose | \
                 awk '$1 ~ /^resolution\:/' | \
                 awk -F'[][]' '{print $2}' | \
@@ -108,16 +114,17 @@ references:
                   name: Build Workspace | << parameters.workspace >>
                   working_directory: << parameters.workspace >>
                   command: |
-                    if [ -d install ] && [ ! -f build_failed ]
+                    BUILD_UNFINISHED=$(colcon list --packages-skip-build-finished)
+                    BUILD_FAILED=$(colcon list --packages-select-build-failed)
+                    if [ -n "$BUILD_UNFINISHED" ] || [ -n "$BUILD_FAILED" ]
                     then
-                      echo "Skipping Build"
-                    else
                       . << parameters.underlay >>/install/setup.sh
                       rm -rf build install log
                       colcon build \
                         --symlink-install \
                         --mixin << parameters.mixins >>
-                      rm -f build_failed
+                    else
+                      echo "Skipping Build"
                     fi
               - save_to_cache:
                   key: << parameters.key >>
@@ -135,8 +142,6 @@ references:
       parameters:
         workspace:
           type: string
-        mixins:
-          type: string
       steps:
         - run:
             name: Test Workspace | << parameters.workspace >>
@@ -153,11 +158,6 @@ references:
               set -o xtrace
               colcon test \
                 --packages-select ${TEST_PACKAGES} \
-                --mixin << parameters.mixins >>
-              colcon test \
-                --packages-select ${TEST_PACKAGES} \
-                --packages-select-test-failures \
-                --mixin << parameters.mixins >> \
                 --retest-until-pass ${RETEST_UNTIL_PASS} \
                 --ctest-args --test-regex "test_.*"
               colcon test-result \
@@ -180,6 +180,19 @@ references:
             path: << parameters.workspace >>/test_results
         - store_artifacts:
             path: << parameters.workspace >>/test_results
+    trigger_dockerhub_url:
+      description: "Trigger Dockerhub URL"
+      parameters:
+        data:
+          type: string
+      steps:
+        - run:
+            command: |
+              curl -H "Content-Type: application/json" \
+                --data '<< parameters.data >>' \
+                -X POST ${DOCKERHUB_TRIGGER_URL}
+
+_steps:
   pre_checkout: &pre_checkout
     run:
       name: Pre Checkout
@@ -193,6 +206,7 @@ references:
           (echo ros_entrypoint && cat) >> checksum.txt
         sha256sum $PWD/checksum.txt >> checksum.txt
         rm -rf $OVERLAY_WS/*
+        mv ~/.ccache /mnt/ramdisk/.ccache
   on_checkout: &on_checkout
     checkout:
       path: src/navigation2
@@ -201,16 +215,16 @@ references:
       name: Post Checkout
       command: |
         if ! cmp \
-          $OVERLAY_WS/src/navigation2/tools/ros2_dependencies.repos \
-          $UNDERLAY_WS/ros2_dependencies.repos >/dev/null 2>&1
+          $OVERLAY_WS/src/navigation2/tools/underlay.repos \
+          $UNDERLAY_WS/underlay.repos >/dev/null 2>&1
         then
           echo "Cleaning Underlay"
           rm -rf $UNDERLAY_WS/*
-          cp $OVERLAY_WS/src/navigation2/tools/ros2_dependencies.repos \
-            $UNDERLAY_WS/ros2_dependencies.repos
+          cp $OVERLAY_WS/src/navigation2/tools/underlay.repos \
+            $UNDERLAY_WS/underlay.repos
           mkdir -p $UNDERLAY_WS/src
           vcs import $UNDERLAY_WS/src \
-            < $UNDERLAY_WS/ros2_dependencies.repos
+            < $UNDERLAY_WS/underlay.repos
         fi
   install_underlay_dependencies: &install_underlay_dependencies
     install_dependencies:
@@ -259,12 +273,11 @@ references:
     save_to_cache:
       key: ccache
       workspace: /opt/underlay_ws
-      path: ~/.ccache
+      path: /mnt/ramdisk/.ccache
       when: always
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
       workspace: /opt/overlay_ws
-      mixins: ${OVERLAY_MIXINS}
   collect_overlay_coverage: &collect_overlay_coverage
     run:
       name: Collect Code Coverage
@@ -272,14 +285,25 @@ references:
       command: src/navigation2/tools/code_coverage_report.bash ci
       when: always
   upload_overlay_coverage: &upload_overlay_coverage
-    codecov/upload:
-      file: lcov/project_coverage.info
-      flags: project
+    run:
+      name: Upload Code Coverage
+      working_directory: /opt/overlay_ws
+      command: |
+        curl -s https://codecov.io/bash | bash -s -- \
+          -f "lcov/project_coverage.info" \
+          -R "src/navigation2" \
+          -t "${CODECOV_TOKEN}" \
+          -n "${CIRCLE_BUILD_NUM}" \
+          -F "project" \
+          -Z || echo 'Codecov upload failed'
       when: always
-  install_deployment_key: &install_deployment_key
-    add_ssh_keys:
-      fingerprints:
-        - "0e:8e:90:bf:3d:a9:04:d9:04:b4:62:38:a5:3b:90:7d"
+  trigger_dockerhub_build: &trigger_dockerhub_build
+    trigger_dockerhub_url:
+        data: |
+          {
+            "source_type": "Branch",
+            "source_name": "main"
+          }
 
 commands:
   <<: *common_commands
@@ -322,11 +346,28 @@ commands:
     steps:
       - *collect_overlay_coverage
       - *upload_overlay_coverage
+  trigger_dockerhub:
+    description: "Trigger DockerHub"
+    steps:
+      - *trigger_dockerhub_build
+
+_environments:
+  common_environment: &common_environment
+    ROS_WS: "/opt/ros_ws"
+    UNDERLAY_WS: "/opt/underlay_ws"
+    OVERLAY_WS: "/opt/overlay_ws"
+    CCACHE_DIR: "/mnt/ramdisk/.ccache"
+    CCACHE_LOGFILE: "/tmp/ccache.log"
+    CCACHE_MAXSIZE: "200M"
+    MAKEFLAGS: "-j 1 -l 2"
+    RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED: "0"
+    RETEST_UNTIL_PASS: "2"
+    DEBIAN_FRONTEND: "noninteractive"
 
 executors:
   debug_exec:
     docker:
-      - image: rosplanning/navigation2:master.debug
+      - image: rosplanning/navigation2:main.debug
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
@@ -335,13 +376,26 @@ executors:
       UNDERLAY_MIXINS: "release ccache"
   release_exec:
     docker:
-      - image: rosplanning/navigation2:master.release
+      - image: rosplanning/navigation2:main.release
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
       CACHE_NONCE: "Release"
       OVERLAY_MIXINS: "release ccache"
       UNDERLAY_MIXINS: "release ccache"
+  python_exec:
+    docker:
+      - image: circleci/python
+
+_jobs:
+  job_test: &job_test
+    parameters:
+      rmw:
+        default: "rmw_fastrtps_cpp"
+        type: string
+    parallelism: 1
+    environment:
+      RMW_IMPLEMENTATION: << parameters.rmw >>
 
 jobs:
   debug_build: &debug_build
@@ -354,30 +408,22 @@ jobs:
     executor: release_exec
     <<: *debug_build
   debug_test:
+    <<: *job_test
     executor: debug_exec
-    parallelism: 1
     steps:
       - restore_build
       - test_build
       - report_coverage
-  release_test: &release_test
+  release_test:
+    <<: *job_test
     executor: release_exec
-    parallelism: 1
     steps:
       - restore_build
       - test_build
-  test_rmw_connext_cpp:
-    <<: *release_test
-    environment:
-      RMW_IMPLEMENTATION: "rmw_connext_cpp"
-  test_rmw_cyclonedds_cpp:
-    <<: *release_test
-    environment:
-      RMW_IMPLEMENTATION: "rmw_cyclonedds_cpp"
-  test_rmw_fastrtps_cpp:
-    <<: *release_test
-    environment:
-      RMW_IMPLEMENTATION: "rmw_fastrtps_cpp"
+  rebuild_dockerhub:
+    executor: python_exec
+    steps:
+      - trigger_dockerhub
 
 workflows:
   version: 2
@@ -398,19 +444,29 @@ workflows:
           requires:
             - debug_build
       - release_build
-      - test_rmw_connext_cpp:
+      - release_test:
           requires:
             - release_build
-      - test_rmw_cyclonedds_cpp:
-          requires:
-            - release_build
-      - test_rmw_fastrtps_cpp:
-          requires:
-            - release_build
+          matrix:
+            parameters:
+              rmw:
+                # - rmw_connext_cpp
+                - rmw_cyclonedds_cpp
+                - rmw_fastrtps_cpp
     triggers:
       - schedule:
-          cron: "0 0 * * *"
+          cron: "0 13 * * *"
           filters:
             branches:
               only:
-                - master
+                - main
+  dockerhub:
+    jobs:
+      - rebuild_dockerhub
+    triggers:
+      - schedule:
+          cron: "0 7 * * *"
+          filters:
+            branches:
+              only:
+                - main

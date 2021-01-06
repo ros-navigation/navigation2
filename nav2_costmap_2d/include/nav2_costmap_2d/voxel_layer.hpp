@@ -80,6 +80,7 @@ public:
   }
   virtual void matchSize();
   virtual void reset();
+  virtual bool isClearable() {return true;}
 
 protected:
   virtual void resetMaps();
@@ -99,7 +100,6 @@ private:
   double z_resolution_, origin_z_;
   int unknown_threshold_, mark_threshold_, size_z_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr clearing_endpoints_pub_;
-  sensor_msgs::msg::PointCloud clearing_endpoints_;
 
   inline bool worldToMap3DFloat(
     double wx, double wy, double wz, double & mx, double & my,

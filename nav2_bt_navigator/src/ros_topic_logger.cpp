@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
 #include <utility>
 #include "nav2_bt_navigator/ros_topic_logger.hpp"
 #include "tf2_ros/buffer_interface.h"
@@ -20,10 +21,13 @@ namespace nav2_bt_navigator
 {
 
 RosTopicLogger::RosTopicLogger(
-  const rclcpp::Node::SharedPtr & ros_node, const BT::Tree & tree)
-: StatusChangeLogger(tree.root_node), ros_node_(ros_node)
+  const rclcpp::Node::WeakPtr & ros_node, const BT::Tree & tree)
+: StatusChangeLogger(tree.rootNode())
 {
-  log_pub_ = ros_node_->create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
+  auto node = ros_node.lock();
+  clock_ = node->get_clock();
+  logger_ = node->get_logger();
+  log_pub_ = node->create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
     "behavior_tree_log",
     rclcpp::QoS(10));
 }
@@ -38,15 +42,14 @@ void RosTopicLogger::callback(
 
   // BT timestamps are a duration since the epoch. Need to convert to a time_point
   // before converting to a msg.
-  event.timestamp =
-    tf2_ros::toMsg(std::chrono::time_point<std::chrono::high_resolution_clock>(timestamp));
+  event.timestamp = tf2_ros::toMsg(tf2::TimePoint(timestamp));
   event.node_name = node.name();
   event.previous_status = toStr(prev_status, false);
   event.current_status = toStr(status, false);
   event_log_.push_back(std::move(event));
 
   RCLCPP_DEBUG(
-    ros_node_->get_logger(), "[%.3f]: %25s %s -> %s",
+    logger_, "[%.3f]: %25s %s -> %s",
     std::chrono::duration<double>(timestamp).count(),
     node.name().c_str(),
     toStr(prev_status, true).c_str(),
@@ -55,11 +58,11 @@ void RosTopicLogger::callback(
 
 void RosTopicLogger::flush()
 {
-  if (event_log_.size() > 0) {
-    nav2_msgs::msg::BehaviorTreeLog log_msg;
-    log_msg.timestamp = ros_node_->now();
-    log_msg.event_log = event_log_;
-    log_pub_->publish(log_msg);
+  if (!event_log_.empty()) {
+    auto log_msg = std::make_unique<nav2_msgs::msg::BehaviorTreeLog>();
+    log_msg->timestamp = clock_->now();
+    log_msg->event_log = event_log_;
+    log_pub_->publish(std::move(log_msg));
     event_log_.clear();
   }
 }

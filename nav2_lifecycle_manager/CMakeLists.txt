@@ -13,6 +13,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(bondcpp REQUIRED)
 
 nav2_package()
 
@@ -38,6 +39,7 @@ set(dependencies
   std_msgs
   std_srvs
   tf2_geometry_msgs
+  bondcpp
 )
 
 ament_target_dependencies(${library_name}
@@ -57,10 +59,14 @@ ament_target_dependencies(lifecycle_manager
 )
 
 install(TARGETS
-  lifecycle_manager
   ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(TARGETS
+  lifecycle_manager
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -69,6 +75,11 @@ install(DIRECTORY include/ DESTINATION include/)
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_pytest REQUIRED)
+
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

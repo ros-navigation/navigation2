@@ -13,9 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <gtest/gtest.h>
 #include <cmath>
 #include <tuple>
+#include <string>
+#include <algorithm>
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -24,6 +25,14 @@
 using namespace std::chrono_literals;
 
 using nav2_system_tests::SpinRecoveryTester;
+
+std::string testNameGenerator(const testing::TestParamInfo<std::tuple<float, float>> & param)
+{
+  std::string name = std::to_string(std::abs(std::get<0>(param.param))) + "_" + std::to_string(
+    std::get<1>(param.param));
+  name.erase(std::remove(name.begin(), name.end(), '.'), name.end());
+  return name;
+}
 
 class SpinRecoveryTestFixture
   : public ::testing::TestWithParam<std::tuple<float, float>>
@@ -66,7 +75,7 @@ TEST_P(SpinRecoveryTestFixture, testSpinRecovery)
   EXPECT_EQ(true, success);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
   SpinRecoveryTests,
   SpinRecoveryTestFixture,
   ::testing::Values(
@@ -76,7 +85,8 @@ INSTANTIATE_TEST_CASE_P(
     std::make_tuple(M_PIf32, 0.1),
     std::make_tuple(3.0 * M_PIf32 / 2.0, 0.15),
     std::make_tuple(-2.0 * M_PIf32, 0.1),
-    std::make_tuple(4.0 * M_PIf32, 0.15)), );
+    std::make_tuple(4.0 * M_PIf32, 0.15)),
+  testNameGenerator);
 
 int main(int argc, char ** argv)
 {

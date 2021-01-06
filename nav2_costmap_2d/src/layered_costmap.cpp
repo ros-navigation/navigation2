@@ -42,6 +42,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <limits>
 
 #include "nav2_costmap_2d/footprint.hpp"
 
@@ -129,8 +130,8 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
     return;
   }
 
-  minx_ = miny_ = 1e30;
-  maxx_ = maxy_ = -1e30;
+  minx_ = miny_ = std::numeric_limits<double>::max();
+  maxx_ = maxy_ = std::numeric_limits<double>::lowest();
 
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
     plugin != plugins_.end(); ++plugin)

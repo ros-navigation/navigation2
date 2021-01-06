@@ -123,7 +123,7 @@ bool WaitRecoveryTester::recoveryTest(
   auto goal_handle_future = client_ptr_->async_send_goal(goal_msg);
 
   if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(node_->get_logger(), "send goal call failed :(");
     return false;
@@ -140,7 +140,7 @@ bool WaitRecoveryTester::recoveryTest(
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for result");
   if (rclcpp::spin_until_future_complete(node_, result_future) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(node_->get_logger(), "get result call failed :(");
     return false;
@@ -170,6 +170,83 @@ bool WaitRecoveryTester::recoveryTest(
   }
 
   return true;
+}
+
+bool WaitRecoveryTester::recoveryTestCancel(
+  const float wait_time)
+{
+  if (!is_active_) {
+    RCLCPP_ERROR(node_->get_logger(), "Not activated");
+    return false;
+  }
+
+  // Sleep to let recovery server be ready for serving in multiple runs
+  std::this_thread::sleep_for(5s);
+
+  auto start_time = node_->now();
+  auto goal_msg = Wait::Goal();
+  goal_msg.time = rclcpp::Duration(wait_time, 0.0);
+
+  RCLCPP_INFO(this->node_->get_logger(), "Sending goal");
+
+  auto goal_handle_future = client_ptr_->async_send_goal(goal_msg);
+
+  if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
+    rclcpp::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(node_->get_logger(), "send goal call failed :(");
+    return false;
+  }
+
+  rclcpp_action::ClientGoalHandle<Wait>::SharedPtr goal_handle = goal_handle_future.get();
+  if (!goal_handle) {
+    RCLCPP_ERROR(node_->get_logger(), "Goal was rejected by server");
+    return false;
+  }
+
+  // Wait for the server to be done with the goal
+  auto result_future = client_ptr_->async_cancel_all_goals();
+
+  RCLCPP_INFO(node_->get_logger(), "Waiting for cancellation");
+  if (rclcpp::spin_until_future_complete(node_, result_future) !=
+    rclcpp::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(node_->get_logger(), "get cancel result call failed :(");
+    return false;
+  }
+
+  auto status = goal_handle_future.get()->get_status();
+
+  switch (status) {
+    case rclcpp_action::GoalStatus::STATUS_SUCCEEDED: RCLCPP_ERROR(
+        node_->get_logger(),
+        "Goal succeeded");
+      return false;
+    case rclcpp_action::GoalStatus::STATUS_ABORTED: RCLCPP_ERROR(
+        node_->get_logger(),
+        "Goal was aborted");
+      return false;
+    case rclcpp_action::GoalStatus::STATUS_CANCELED: RCLCPP_INFO(
+        node_->get_logger(),
+        "Goal was canceled");
+      return true;
+    case rclcpp_action::GoalStatus::STATUS_CANCELING: RCLCPP_INFO(
+        node_->get_logger(),
+        "Goal is cancelling");
+      return true;
+    case rclcpp_action::GoalStatus::STATUS_EXECUTING: RCLCPP_ERROR(
+        node_->get_logger(),
+        "Goal is executing");
+      return false;
+    case rclcpp_action::GoalStatus::STATUS_ACCEPTED: RCLCPP_ERROR(
+        node_->get_logger(),
+        "Goal is processing");
+      return false;
+    default: RCLCPP_ERROR(node_->get_logger(), "Unknown result code");
+      return false;
+  }
+
+  return false;
 }
 
 void WaitRecoveryTester::sendInitialPose()

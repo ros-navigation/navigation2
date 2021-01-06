@@ -52,27 +52,27 @@ public:
    * @brief Make start up service call
    * @return true or false
    */
-  bool startup();
+  bool startup(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Make shutdown service call
    * @return true or false
    */
-  bool shutdown();
+  bool shutdown(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Make pause service call
    * @return true or false
    */
-  bool pause();
+  bool pause(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Make resume service call
    * @return true or false
    */
-  bool resume();
+  bool resume(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Make reset service call
    * @return true or false
    */
-  bool reset();
+  bool reset(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Check if lifecycle node manager server is active
    * @return ACTIVE or INACTIVE or TIMEOUT
@@ -103,7 +103,9 @@ protected:
    * @brief A generic method used to call startup, shutdown, etc.
    * @param command
    */
-  bool callService(uint8_t command);
+  bool callService(
+    uint8_t command,
+    const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
 
   // The node to use for the service call
   rclcpp::Node::SharedPtr node_;
@@ -112,14 +114,6 @@ protected:
   rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr is_active_client_;
   std::string manage_service_name_;
   std::string active_service_name_;
-
-  using PoseWithCovarianceStamped = geometry_msgs::msg::PoseWithCovarianceStamped;
-
-  // For convenience, this client also supports sending the initial pose
-  rclcpp::Publisher<PoseWithCovarianceStamped>::SharedPtr initial_pose_publisher_;
-
-  // Also, for convenience, this client supports invoking the NavigateToPose action
-  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr navigate_action_client_;
 };
 
 }  // namespace nav2_lifecycle_manager

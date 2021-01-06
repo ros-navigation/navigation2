@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+<!--
+  For instructions on using Groot and description of the following BehaviorTree nodes,
+  please refer to the groot_instructions.md and REAMDE.md respectively located in the 
+  nav2_behavior_tree package.
+-->
+<root>
+  <TreeNodesModel>
+    <!-- ############################### ACTION NODES ################################# -->
+    <Action ID="BackUp">
+      <input_port name="backup_dist">Distance to backup</input_port>
+      <input_port name="backup_speed">Speed at which to backup</input_port>
+    </Action>
+
+    <Action ID="ClearEntireCostmap">
+      <input_port name="service_name">Service name</input_port>
+    </Action>
+
+    <Action ID="ComputePathToPose">
+      <input_port name="goal">Destination to plan to</input_port>
+      <output_port name="path">Path created by ComputePathToPose node</output_port>
+      <input_port name="planner_id"/>
+    </Action>
+
+    <Action ID="FollowPath">
+      <input_port name="controller_id" default="FollowPath"/>
+      <input_port name="path">Path to follow</input_port>
+    </Action>
+
+    <Action ID="NavigateToPose">
+        <input_port name="goal">Goal</input_port>
+    </Action>
+
+    <Action ID="RandomCrawl"/>
+
+    <Action ID="Spin">
+      <input_port name="spin_dist">Spin distance</input_port>
+    </Action>
+
+    <Action ID="Wait">
+      <input_port name="wait_duration">Wait time</input_port>
+    </Action>
+
+    <!-- ############################### CONDITION NODES ############################## -->
+    <Condition ID="GoalReached">
+        <input_port name="goal">Destination</input_port>
+    </Condition>
+
+    <Condition ID="IsStuck"/>
+
+    <Condition ID="TransformAvailable">
+      <input_port name="child">Child frame for transform</input_port>
+      <input_port name="parent">Parent frame for transform</input_port>
+    </Condition>
+
+    <Condition ID="GoalUpdated"/>
+
+    <!-- ############################### CONTROL NODES ################################ -->
+    <Control ID="PipelineSequence"/>
+
+    <Control ID="RecoveryNode">
+      <input_port name="number_of_retries">Number of retries</input_port>
+    </Control>
+
+    <Control ID="RoundRobin"/>
+
+    <!-- ############################### DECORATOR NODES ############################## -->
+    <Decorator ID="RateController">
+      <input_port name="hz">Rate</input_port>
+    </Decorator>
+
+    <Decorator ID="DistanceController">
+      <input_port name="distance">Distance</input_port>
+    </Decorator>
+
+    <Decorator ID="SpeedController">
+      <input_port name="min_rate">Minimum rate</input_port>
+      <input_port name="max_rate">Maximum rate</input_port>
+      <input_port name="min_speed">Minimum speed</input_port>
+      <input_port name="max_speed">Maximum speed</input_port>
+      <input_port name="filter_duration">Duration (secs) for velocity smoothing filter</input_port>
+    </Decorator>
+
+  </TreeNodesModel>
+</root>
