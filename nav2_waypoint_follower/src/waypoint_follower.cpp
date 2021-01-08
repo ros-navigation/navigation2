@@ -202,8 +202,9 @@ void WaypointFollower::followWaypointsLogic(
   if (poses.empty()) {
     RCLCPP_ERROR(
       get_logger(),
-      "Empty vector of Waypoints passed to waypoint following logic. "
-      "Nothing to execute, returning with failure!");
+      "Empty vector of waypoints passed to waypoint following "
+      "action potentially due to conversation failure or empty request."
+    );
     action_server->terminate_current(result);
     return;
   }
