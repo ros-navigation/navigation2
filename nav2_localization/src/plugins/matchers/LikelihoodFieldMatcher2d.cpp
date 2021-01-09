@@ -1,6 +1,6 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_localization/interfaces/matcher2d_base.hpp"
-#include "nav2_localization/plugins/matcher2d_plugins.hpp"
+#include "nav2_localization/plugins/matchers/LikelihoodFieldMatcher2d.hpp"
 #include "nav2_localization/map_utils.hpp"
 #include "tf2/utils.h"
 
