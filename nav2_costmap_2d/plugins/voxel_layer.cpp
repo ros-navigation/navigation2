@@ -353,7 +353,6 @@ void VoxelLayer::raytraceFreespace(
     double wpz = *iter_z;
 
     double distance = dist(ox, oy, oz, wpx, wpy, wpz);
-
     double scaling_fact = 1.0;
     scaling_fact = std::max(std::min(scaling_fact, (distance - 2 * resolution_) / distance), 0.0);
     wpx = scaling_fact * (wpx - ox) + ox;

@@ -415,10 +415,10 @@ protected:
       return;
     }
 
-    // Adjust x0, y0 and offset to start from min_length distance
-    x0 = (unsigned int)(x0 + dx / dist * min_length);
-    y0 = (unsigned int)(y0 + dy / dist * min_length);
-    unsigned int offset = y0 * size_x_ + x0;
+    // Adjust starting point and offset to start from min_length distance
+    unsigned int new_x0 = (unsigned int)(x0 + dx / dist * min_length);
+    unsigned int new_y0 = (unsigned int)(y0 + dy / dist * min_length);
+    unsigned int offset = new_y0 * size_x_ + new_x0;
 
     double scale = (dist == 0.0) ? 1.0 : std::min(1.0, max_length / dist);
     unsigned int length;

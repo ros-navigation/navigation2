@@ -246,14 +246,14 @@ public:
     }
     double scale = std::min(1.0, max_length / dist);
 
-    // Updating x0, y0, z0 to the point at distance min_length from the initial point
-    x0 = x0 + dx / dist * min_length;
-    y0 = y0 + dy / dist * min_length;
-    z0 = z0 + dz / dist * min_length;
+    // Updating starting point to the point at distance min_length from the initial point
+    double new_x0 = x0 + dx / dist * min_length;
+    double new_y0 = y0 + dy / dist * min_length;
+    double new_z0 = z0 + dz / dist * min_length;
 
 
-    unsigned int z_mask = ((1 << 16) | 1) << (unsigned int)z0;
-    unsigned int offset = (unsigned int)y0 * size_x_ + (unsigned int)x0;
+    unsigned int z_mask = ((1 << 16) | 1) << (unsigned int)new_z0;
+    unsigned int offset = (unsigned int)new_y0 * size_x_ + (unsigned int)new_x0;
 
     GridOffset grid_off(offset);
     ZOffset z_off(z_mask);
