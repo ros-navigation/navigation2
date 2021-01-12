@@ -325,7 +325,7 @@ class NavTester(Node):
             rclpy.spin_until_future_complete(self, future)
             future.result()
             self.info_msg('Shutting down navigation lifecycle manager complete.')
-        except Exception as e:
+        except Exception as e: # noqa: B902
             self.error_msg('Service call failed %r' % (e,))
         transition_service = 'lifecycle_manager_localization/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
@@ -340,7 +340,7 @@ class NavTester(Node):
             rclpy.spin_until_future_complete(self, future)
             future.result()
             self.info_msg('Shutting down localization lifecycle manager complete')
-        except Exception as e:
+        except Exception as e: # noqa: B902
             self.error_msg('Service call failed %r' % (e,))
 
     def wait_for_initial_pose(self):

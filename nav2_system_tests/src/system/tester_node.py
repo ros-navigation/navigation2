@@ -132,7 +132,7 @@ class NavTester(Node):
                 if not self.grootMonitoringGetStatus():
                     self.error_msg('Failed GROOT_BT - Get Status from ZMQ Publisher')
                     future_return = False
-            except Exception as e:
+            except Exception as e: # noqa: B902
                 self.error_msg('Failed GROOT_BT - ZMQ Tests: ' + e.__doc__ + e.message)
                 future_return = False
 
@@ -282,7 +282,7 @@ class NavTester(Node):
             rclpy.spin_until_future_complete(self, future)
             future.result()
             self.info_msg('Shutting down navigation lifecycle manager complete.')
-        except Exception as e:
+        except Exception as e: # noqa: B902
             self.error_msg('Service call failed %r' % (e,))
         transition_service = 'lifecycle_manager_localization/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
@@ -297,7 +297,7 @@ class NavTester(Node):
             rclpy.spin_until_future_complete(self, future)
             future.result()
             self.info_msg('Shutting down localization lifecycle manager complete')
-        except Exception as e:
+        except Exception as e: # noqa: B902
             self.error_msg('Service call failed %r' % (e,))
 
     def wait_for_initial_pose(self):

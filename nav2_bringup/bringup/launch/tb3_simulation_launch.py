@@ -129,8 +129,8 @@ def generate_launch_description():
         'world',
         # TODO(orduno) Switch back once ROS argument passing has been fixed upstream
         #              https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/91
-        # default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'),
-                                #    'worlds/turtlebot3_worlds/waffle.model'),
+        # default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'), 
+        #              'worlds/turtlebot3_worlds/waffle.model'),
         default_value=os.path.join(bringup_dir, 'worlds', 'waffle.model'),
         description='Full path to world model file to load')
 

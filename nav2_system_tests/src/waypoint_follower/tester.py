@@ -86,7 +86,7 @@ class WaypointFollowerTest(Node):
         try:
             rclpy.spin_until_future_complete(self, send_goal_future)
             self.goal_handle = send_goal_future.result()
-        except Exception as e:
+        except Exception as e: # noqa: B902
             self.error_msg('Service call failed %r' % (e,))
 
         if not self.goal_handle.accepted:
@@ -104,7 +104,7 @@ class WaypointFollowerTest(Node):
             rclpy.spin_until_future_complete(self, get_result_future)
             status = get_result_future.result().status
             result = get_result_future.result().result
-        except Exception as e:
+        except Exception as e: # noqa: B902
             self.error_msg('Service call failed %r' % (e,))
 
         if status != GoalStatus.STATUS_SUCCEEDED:
@@ -138,7 +138,7 @@ class WaypointFollowerTest(Node):
         try:
             rclpy.spin_until_future_complete(self, future)
             future.result()
-        except Exception as e:
+        except Exception as e: # noqa: B902
             self.error_msg('%s service call failed %r' % (transition_service, e,))
 
         self.info_msg('{} finished'.format(transition_service))
@@ -154,7 +154,7 @@ class WaypointFollowerTest(Node):
         try:
             rclpy.spin_until_future_complete(self, future)
             future.result()
-        except Exception as e:
+        except Exception as e: # noqa: B902
             self.error_msg('%s service call failed %r' % (transition_service, e,))
 
         self.info_msg('{} finished'.format(transition_service))
