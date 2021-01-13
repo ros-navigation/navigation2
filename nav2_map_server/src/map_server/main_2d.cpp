@@ -17,6 +17,7 @@
 
 #include "nav2_map_server/map_server.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+
 #include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)

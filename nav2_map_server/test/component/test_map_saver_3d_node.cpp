@@ -20,12 +20,13 @@
 #include <vector>
 
 #include "test_constants/test_constants.h"
-#include "nav2_map_server/map_saver.hpp"
 #include "nav2_util/lifecycle_service_client.hpp"
 
 #include "nav2_msgs/srv/save_map3_d.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "geometry_msgs/msg/pose.hpp"
+
+#include "nav2_map_server/map_saver.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -154,7 +155,7 @@ TEST_F(MapSaverTestFixture, SaveMap3D)
     path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
     map_msg, pose_msg);
 
-  ASSERT_EQ(status, map_3d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_3d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg, pose_msg);
 }
 
@@ -190,6 +191,6 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters3D)
     path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
     map_msg, pose_msg);
 
-  ASSERT_EQ(status, map_3d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_3d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg, pose_msg);
 }

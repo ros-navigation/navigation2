@@ -24,8 +24,9 @@
 #include "nav2_util/lifecycle_service_client.hpp"
 
 #include "nav2_msgs/srv/save_map.hpp"
-#include "nav2_map_server/map_2d/map_io_2d.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+
+#include "nav2_map_server/map_2d/map_io_2d.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -130,7 +131,7 @@ TEST_F(MapSaverTestFixture, SaveMap)
   nav_msgs::msg::OccupancyGrid map_msg;
   map_2d::LOAD_MAP_STATUS status =
     map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
-  ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 }
 
@@ -161,7 +162,7 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters)
   nav_msgs::msg::OccupancyGrid map_msg;
   map_2d::LOAD_MAP_STATUS status =
     map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
-  ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 }
 
@@ -196,7 +197,7 @@ TEST_F(MapSaverTestFixture, SaveMapInvalidParameters)
   nav_msgs::msg::OccupancyGrid map_msg;
   map_2d::LOAD_MAP_STATUS status =
     map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
-  ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 
   req->image_format = "png";
@@ -204,7 +205,7 @@ TEST_F(MapSaverTestFixture, SaveMapInvalidParameters)
   resp = send_request<nav2_msgs::srv::SaveMap>(node_, client, req);
   ASSERT_EQ(resp->result, true);
   status = map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
-  ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
   verifyMapMsg(map_msg);
 
   req->map_mode = "trinary";

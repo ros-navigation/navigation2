@@ -36,9 +36,10 @@
 #include <string>
 #include <vector>
 
-#include "nav2_map_server/map_2d/map_io_2d.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "test_constants/test_constants.h"
+
+#include "nav2_map_server/map_2d/map_io_2d.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -127,7 +128,7 @@ TEST_F(MapIOTester, loadSaveValidPGM)
   // 3. Load saved map and verify it
   map_2d::LOAD_MAP_STATUS status =
     map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
-  ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
 
   verifyMapMsg(map_msg);
 }
@@ -157,7 +158,7 @@ TEST_F(MapIOTester, loadSaveValidPNG)
   // 3. Load saved map and verify it
   map_2d::LOAD_MAP_STATUS status =
     map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
-  ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
 
   verifyMapMsg(map_msg);
 }
@@ -189,7 +190,7 @@ TEST_F(MapIOTester, loadSaveValidBMP)
   // 3. Load saved map and verify it
   map_2d::LOAD_MAP_STATUS status =
     map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
-  ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
 
   verifyMapMsg(map_msg);
 }
@@ -202,7 +203,7 @@ TEST_F(MapIOTester, loadSaveMapModes)
   nav_msgs::msg::OccupancyGrid map_msg;
   map_2d::LOAD_MAP_STATUS status =
     map_2d::loadMapFromYaml(path(TEST_DIR) / path(g_valid_yaml_file), map_msg);
-  ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
 
   // No need to check Trinary mode. This already verified in previous testcases.
   // 2. Save map in Scale mode.
@@ -214,7 +215,7 @@ TEST_F(MapIOTester, loadSaveMapModes)
 
   // 3. Load saved map and verify it
   status = map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
-  ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
 
   verifyMapMsg(map_msg);
 
@@ -225,7 +226,7 @@ TEST_F(MapIOTester, loadSaveMapModes)
 
   // 5. Load saved map and verify it
   status = map_2d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_yaml_file), map_msg);
-  ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
 
   verifyMapMsg(map_msg);
 }
@@ -245,10 +246,10 @@ TEST_F(MapIOTester, loadInvalidFile)
 
   // 2. Trying to load incorrect map by loadMapFromYaml()
   map_2d::LOAD_MAP_STATUS status = map_2d::loadMapFromYaml("", map_msg);
-  ASSERT_EQ(status, map_2d::MAP_DOES_NOT_EXIST);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_STATUS::MAP_DOES_NOT_EXIST);
 
   status = map_2d::loadMapFromYaml(std::string(test_invalid) + ".yaml", map_msg);
-  ASSERT_EQ(status, map_2d::INVALID_MAP_METADATA);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_STATUS::INVALID_MAP_METADATA);
 }
 
 // Load map from a valid file. Trying to save map with different sets of parameters.
@@ -259,7 +260,7 @@ TEST_F(MapIOTester, saveInvalidParameters)
   nav_msgs::msg::OccupancyGrid map_msg;
   map_2d::LOAD_MAP_STATUS status =
     map_2d::loadMapFromYaml(path(TEST_DIR) / path(g_valid_yaml_file), map_msg);
-  ASSERT_EQ(status, map_2d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_2d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
 
   // 2. Trying to save map with different sets of parameters
   map_2d::SaveParameters saveParameters;

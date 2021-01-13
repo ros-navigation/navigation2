@@ -17,11 +17,13 @@
 #include <memory>
 #include <chrono>
 
+#include "test_constants/test_constants.h"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_map_server/map_3d/map_io_3d.hpp"
+
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "geometry_msgs/msg/pose.hpp"
-#include "test_constants/test_constants.h"
+
+#include "nav2_map_server/map_3d/map_io_3d.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -42,7 +44,7 @@ public:
     map_3d::LOAD_MAP_STATUS status =
       map_3d::loadMapFromYaml(pub_map_pcd_file, pcd_msg_, origin_msg_);
 
-    if (status != map_3d::LOAD_MAP_SUCCESS) {
+    if (status != map_3d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS) {
       RCLCPP_ERROR(get_logger(), "Can not load %s map file", pub_map_pcd_file.c_str());
       return;
     }

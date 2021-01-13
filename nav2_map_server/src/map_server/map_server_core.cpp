@@ -15,17 +15,9 @@
 #include "nav2_map_server/map_server_core.hpp"
 
 #include <string>
-#include <memory>
-#include <fstream>
-#include <stdexcept>
-#include <utility>
-#include <functional>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-
-using namespace std::chrono_literals;
-using namespace std::placeholders;
 
 namespace nav2_map_server
 {

@@ -13,16 +13,17 @@
  * limitations under the License.
  */
 
-#include "nav2_map_server/map_saver_core.hpp"
+#include "nav2_map_server/map_3d/map_saver_3d.hpp"
 
 #include <string>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 #include <functional>
 
-#include "nav2_map_server/map_3d/map_io_3d.hpp"
-#include "nav2_map_server/map_3d/map_saver_3d.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
+
+#include "nav2_map_server/map_3d/map_io_3d.hpp"
 
 using namespace std::placeholders;
 
@@ -105,7 +106,6 @@ void MapSaver<sensor_msgs::msg::PointCloud2>::saveMapCallback(
   std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response)
 {
   map_3d::SaveParameters save_parameters;
-  save_parameters.origin.resize();
   save_parameters.map_file_name = request->map_url;
   save_parameters.as_binary = request->as_binary;
   save_parameters.format = request->file_format;
@@ -195,16 +195,6 @@ bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
         pcd_map_sub.reset();
         origin_sub.reset();
 
-        save_parameters_loc.origin.resize();
-        // Set view_point translation(origin)
-        save_parameters_loc.origin.center[0] = origin_msg->position.x;
-        save_parameters_loc.origin.center[1] = origin_msg->position.y;
-        save_parameters_loc.origin.center[2] = origin_msg->position.z;
-        // Set view_point orientation
-        save_parameters_loc.origin.orientation[0] = origin_msg->orientation.w;
-        save_parameters_loc.origin.orientation[1] = origin_msg->orientation.x;
-        save_parameters_loc.origin.orientation[2] = origin_msg->orientation.y;
-        save_parameters_loc.origin.orientation[3] = origin_msg->orientation.z;
 
         // Map message received. Saving it to file
         if (map_3d::saveMapToFile(*pcd_map_msg, save_parameters_loc)) {

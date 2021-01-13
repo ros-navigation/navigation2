@@ -1,4 +1,3 @@
-// Copyright 2020 Shivam Pandey pandeyshvivamm2017robotics@gmail.com
 // Copyright 2019 Rover Robotics
 // Copyright (c) 2008, Willow Garage, Inc.
 //
@@ -23,6 +22,7 @@
 #include "nav2_map_server/map_saver.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+
 #include "rclcpp/rclcpp.hpp"
 
 using namespace nav2_map_server;  // NOLINT
@@ -40,7 +40,7 @@ const char * USAGE_STRING{
   "  --mode trinary(default)/scale/raw, 2D\n"
   "  --fmt <map_format, 2D|3D>\n"
   "  --as_bin (for pointClouds)Give the flag to save map with binary encodings, 3D\n"
-  "  --origin_t <origin_topic, 3D>\n"
+  "  --origin <origin_topic, 3D>\n"
   "\n"
   "NOTE: --ros-args should be passed at the end of command line"};
 
@@ -89,7 +89,7 @@ ARGUMENTS_STATUS parse_arguments(
     {"--free", COMMAND_FREE_THRESH},
     {"--mode", COMMAND_MODE},
     {"--as_bin", COMMAND_ENCODING},
-    {"--origin_t", COMMAND_VIEW_POINT_TOPIC},
+    {"--origin", COMMAND_VIEW_POINT_TOPIC},
     {"--fmt", COMMAND_IMAGE_FORMAT}
   };
 

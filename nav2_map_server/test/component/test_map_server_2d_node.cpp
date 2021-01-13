@@ -19,10 +19,10 @@
 #include <memory>
 
 #include "test_constants/test_constants.h"
-#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_util/lifecycle_service_client.hpp"
-#include "nav2_msgs/srv/load_map.hpp"
 
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav2_msgs/srv/load_map.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 
 #define TEST_DIR TEST_DIRECTORY

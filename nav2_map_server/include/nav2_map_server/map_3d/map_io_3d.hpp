@@ -32,34 +32,36 @@ namespace nav2_map_server
 namespace map_3d
 {
 
-struct Origin
-{
-  std::vector<double> center;
-  std::vector<double> orientation;
-
-  void resize()
-  {
-    center.resize(3);
-    orientation.resize(4);
-  }
-};
-
 /**
  * @brief parameters that will be populated while reading a YAML file
  */
 struct LoadParameters
 {
+  LoadParameters()
+  {
+    origin.position.x = 0.0;
+    origin.position.y = 0.0;
+    origin.position.z = 0.0;
+
+    // initialize orientation
+    origin.orientation.w = 1.0;
+    origin.orientation.x = 0.0;
+    origin.orientation.y = 0.0;
+    origin.orientation.z = 0.0;
+  }
+
   std::string pcd_file_name;
-  Origin origin;
+  geometry_msgs::msg::Pose origin;
+  bool use_ext_origin = true;
 };
 
-typedef enum
+enum class LOAD_MAP_STATUS
 {
   LOAD_MAP_SUCCESS,
   MAP_DOES_NOT_EXIST,
   INVALID_MAP_METADATA,
   INVALID_MAP_DATA
-} LOAD_MAP_STATUS;
+};
 
 /**
  * @brief Load and parse the given YAML file
@@ -85,6 +87,7 @@ void loadMapFromFile(
  * generate a PointCloud2(PCD2)
  * @param yaml_file Name of input YAML file
  * @param map_msg Output loaded map
+ * @param origin_msg Output loaded viewpoint
  * @return status of map loaded
  */
 LOAD_MAP_STATUS loadMapFromYaml(
@@ -97,9 +100,22 @@ LOAD_MAP_STATUS loadMapFromYaml(
  */
 struct SaveParameters
 {
-  std::string map_file_name;
+  SaveParameters()
+  {
+    origin.position.x = 0.0;
+    origin.position.y = 0.0;
+    origin.position.z = 0.0;
+
+    // initialize orientation
+    origin.orientation.w = 1.0;
+    origin.orientation.x = 0.0;
+    origin.orientation.y = 0.0;
+    origin.orientation.z = 0.0;
+  }
+
+  std::string map_file_name{""};
   std::string format{"pcd"};
-  Origin origin;
+  geometry_msgs::msg::Pose origin;
   bool as_binary = false;
 };
 

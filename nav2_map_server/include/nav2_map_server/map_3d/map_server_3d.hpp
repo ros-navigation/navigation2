@@ -20,16 +20,16 @@
 #include <memory>
 #include <functional>
 
-#include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/srv/get_map3_d.hpp"
 #include "nav2_msgs/srv/load_map3_d.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "geometry_msgs/msg/pose.hpp"
+
 #include "nav2_map_server/map_server_core.hpp"
 
 namespace nav2_map_server
 {
+
 /**
  * @class nav2_map_server::MapServer
  * @brief Parses the map yaml file and creates a service and a publisher that
@@ -94,6 +94,11 @@ protected:
     std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response);
 
   /**
+ * @brief Method correcting msg_ header when it belongs to instantiated object
+ */
+  void updateMsgHeader();
+
+  /**
    * @brief Map getting service callback for pcd
    * @param request_header Service request header
    * @param request Service request
@@ -115,8 +120,6 @@ protected:
     const std::shared_ptr<nav2_msgs::srv::LoadMap3D::Request> request,
     std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response);
 
-  void updateMsgHeader();
-
   // The name of the service for getting a map
   const std::string service_name_{"map"};
 
@@ -124,7 +127,6 @@ protected:
   const std::string load_map_service_name_{"load_map"};
 
   // PointCloud2 related fields
-
   // A service to provide the pointcloud2 (GetMap3D) and the message to return
   rclcpp::Service<nav2_msgs::srv::GetMap3D>::SharedPtr pcd_service_;
 
@@ -134,12 +136,13 @@ protected:
   // A topic on which the PointCloud2 will be published
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr pcd_pub_;
 
-  // The frame ID used in the returned PointCloud2 message
-  std::string frame_id_;
-
   // The message to publish the pointcloud topic
   sensor_msgs::msg::PointCloud2 pcd_msg_;
 
+  // The frame ID used in the returned PointCloud2 message
+  std::string frame_id_;
+
+  // Origin related message and publishers
   // A topic on which the Pose will be published
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Pose>::SharedPtr origin_pub_;
 

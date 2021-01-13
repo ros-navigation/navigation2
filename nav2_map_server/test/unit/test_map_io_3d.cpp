@@ -17,11 +17,13 @@
 #include <string>
 #include <vector>
 
-#include "nav2_map_server/map_3d/map_io_3d.hpp"
-#include "nav2_util/lifecycle_node.hpp"
 #include "test_constants/test_constants.h"
+#include "nav2_util/lifecycle_node.hpp"
+
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "geometry_msgs/msg/pose.hpp"
+
+#include "nav2_map_server/map_3d/map_io_3d.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -49,8 +51,17 @@ protected:
     map_3d::LoadParameters & load_parameters)
   {
     load_parameters.pcd_file_name = pcd_file_name;
-    load_parameters.origin.center = g_valid_center_pcd;
-    load_parameters.origin.orientation = g_valid_orientation_pcd;
+
+    // Fill up origin params
+    // [x, y, z] position
+    load_parameters.origin.position.x = g_valid_center_pcd[0];
+    load_parameters.origin.position.y = g_valid_center_pcd[1];
+    load_parameters.origin.position.z = g_valid_center_pcd[2];
+    // [qw, qx, qy, qz] orientation
+    load_parameters.origin.orientation.w = g_valid_orientation_pcd[0];
+    load_parameters.origin.orientation.x = g_valid_orientation_pcd[1];
+    load_parameters.origin.orientation.y = g_valid_orientation_pcd[2];
+    load_parameters.origin.orientation.z = g_valid_orientation_pcd[3];
   }
 
   // Fill SaveParameters with standard for testing values
@@ -64,17 +75,16 @@ protected:
     bool as_binary,
     map_3d::SaveParameters & save_parameters)
   {
-    save_parameters.origin.resize();
     save_parameters.map_file_name = map_file_name;
 
-    save_parameters.origin.center[0] = center[0];
-    save_parameters.origin.center[1] = center[1];
-    save_parameters.origin.center[2] = center[2];
+    save_parameters.origin.position.x = center[0];
+    save_parameters.origin.position.y = center[1];
+    save_parameters.origin.position.z = center[2];
 
-    save_parameters.origin.orientation[0] = orientation[0];
-    save_parameters.origin.orientation[1] = orientation[1];
-    save_parameters.origin.orientation[2] = orientation[2];
-    save_parameters.origin.orientation[3] = orientation[3];
+    save_parameters.origin.orientation.w = orientation[0];
+    save_parameters.origin.orientation.x = orientation[1];
+    save_parameters.origin.orientation.y = orientation[2];
+    save_parameters.origin.orientation.z = orientation[3];
 
     save_parameters.as_binary = as_binary;
     save_parameters.format = format;
@@ -154,7 +164,7 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
   // 3. Load saved map and verify it
   map_3d::LOAD_MAP_STATUS status =
     map_3d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_pcd_yaml_file), map_msg, origin);
-  ASSERT_EQ(status, map_3d::LOAD_MAP_SUCCESS);
+  ASSERT_EQ(status, map_3d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
 
   verifyMapMsg(map_msg, origin);
 }

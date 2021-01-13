@@ -15,10 +15,6 @@
 #ifndef NAV2_MAP_SERVER__MAP_SERVER_CORE_HPP_
 #define NAV2_MAP_SERVER__MAP_SERVER_CORE_HPP_
 
-#include <string>
-#include <memory>
-#include <functional>
-
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 

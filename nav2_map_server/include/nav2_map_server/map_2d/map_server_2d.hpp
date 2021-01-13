@@ -15,17 +15,14 @@
 #ifndef NAV2_MAP_SERVER__MAP_2D__MAP_SERVER_2D_HPP_
 #define NAV2_MAP_SERVER__MAP_2D__MAP_SERVER_2D_HPP_
 
-#include "nav2_map_server/map_server_core.hpp"
-#include "nav2_map_server/map_2d/map_io_2d.hpp"
-
 #include <string>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 #include "nav2_msgs/srv/load_map.hpp"
+
+#include "nav2_map_server/map_server_core.hpp"
 
 namespace nav2_map_server
 {

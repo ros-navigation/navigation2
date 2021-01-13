@@ -15,13 +15,9 @@
 #include "nav2_map_server/map_saver_core.hpp"
 
 #include <string>
-#include <memory>
-#include <functional>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-
-using namespace std::placeholders;
 
 namespace nav2_map_server
 {

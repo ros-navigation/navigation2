@@ -276,7 +276,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
 {
   if (yaml_file.empty()) {
     std::cerr << "[ERROR] [map_io_2d]: YAML file name is empty, can't load!" << std::endl;
-    return MAP_DOES_NOT_EXIST;
+    return LOAD_MAP_STATUS::MAP_DOES_NOT_EXIST;
   }
   std::cout << "[INFO] [map_io_2d]: Loading yaml file: " << yaml_file << std::endl;
   LoadParameters load_parameters;
@@ -286,12 +286,12 @@ LOAD_MAP_STATUS loadMapFromYaml(
     std::cerr <<
       "[ERROR] [map_io_2d]: Failed processing YAML file " << yaml_file << " at position (" <<
       e.mark.line << ":" << e.mark.column << ") for reason: " << e.what() << std::endl;
-    return INVALID_MAP_METADATA;
+    return LOAD_MAP_STATUS::INVALID_MAP_METADATA;
   } catch (std::exception & e) {
     std::cerr <<
       "[ERROR] [map_io_2d]: Failed to parse map YAML loaded from file " << yaml_file <<
       " for reason: " << e.what() << std::endl;
-    return INVALID_MAP_METADATA;
+    return LOAD_MAP_STATUS::INVALID_MAP_METADATA;
   }
 
   try {
@@ -300,10 +300,10 @@ LOAD_MAP_STATUS loadMapFromYaml(
     std::cerr <<
       "[ERROR] [map_io_2d]: Failed to load image file " << load_parameters.image_file_name <<
       " for reason: " << e.what() << std::endl;
-    return INVALID_MAP_DATA;
+    return LOAD_MAP_STATUS::INVALID_MAP_DATA;
   }
 
-  return LOAD_MAP_SUCCESS;
+  return LOAD_MAP_STATUS::LOAD_MAP_SUCCESS;
 }
 
 // === Map output part ===

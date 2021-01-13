@@ -42,13 +42,13 @@ struct LoadParameters
   bool negate;
 };
 
-typedef enum
+enum class LOAD_MAP_STATUS
 {
   LOAD_MAP_SUCCESS,
   MAP_DOES_NOT_EXIST,
   INVALID_MAP_METADATA,
   INVALID_MAP_DATA
-} LOAD_MAP_STATUS;
+};
 
 /**
  * @brief Load and parse the given YAML file

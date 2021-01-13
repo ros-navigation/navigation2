@@ -18,13 +18,14 @@
 #define NAV2_MAP_SERVER__MAP_3D__PCL_HELPER_HPP_
 
 #include <vector>
-#include <memory>
 #include <string>
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 
 #include "pcl/PCLPointField.h"
 #include "pcl_conversions/pcl_conversions.h"
+#include "Eigen/Core"
 
 namespace nav2_map_server
 {
@@ -76,6 +77,29 @@ void msgToPcl(
  * @return true or false
  */
 bool ends_with(std::string const & value, std::string const & ending);
+
+/**
+ * @brief Converts position and orientation from PCL to geometry_msg format
+ * @param position input Eigen::Vector4f from pcl
+ * @param orientation input Eigen::Quaternionf from pcl
+ * @param origin desired Pose in geonetry_msg format
+ */
+void viewPoint2Pose(
+  const Eigen::Vector4f & position,
+  const Eigen::Quaternionf & orientation,
+  geometry_msgs::msg::Pose & origin);
+
+/**
+ * @brief Converts origin info from geometry_msgs format to pcl position and orientation
+ * @param origin input geometry_msgs::msg::Pose
+ * @param position desired Eigen::Vector4f
+ * @param orientation desired Eigen::Quaternionf
+ */
+void pose2ViewPoint(
+  const geometry_msgs::msg::Pose & origin,
+  Eigen::Vector4f & position,
+  Eigen::Quaternionf & orientation);
+
 
 }  // namespace map_3d
 

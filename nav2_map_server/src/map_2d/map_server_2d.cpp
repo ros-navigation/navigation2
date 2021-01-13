@@ -48,11 +48,9 @@
 
 #include <string>
 #include <memory>
-#include <fstream>
 #include <stdexcept>
 #include <utility>
 
-#include "yaml-cpp/yaml.h"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_map_server/map_2d/map_io_2d.hpp"
 
@@ -208,16 +206,16 @@ bool MapServer<nav_msgs::msg::OccupancyGrid>::loadMapResponseFromYaml(
   std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response)
 {
   switch (map_2d::loadMapFromYaml(yaml_file, msg_)) {
-    case map_2d::MAP_DOES_NOT_EXIST: response->result =
-        nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
+    case map_2d::LOAD_MAP_STATUS::MAP_DOES_NOT_EXIST:
+      response->result = nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
       return false;
-    case map_2d::INVALID_MAP_METADATA: response->result =
-        nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA;
+    case map_2d::LOAD_MAP_STATUS::INVALID_MAP_METADATA:
+      response->result = nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_METADATA;
       return false;
-    case map_2d::INVALID_MAP_DATA: response->result =
-        nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA;
+    case map_2d::LOAD_MAP_STATUS::INVALID_MAP_DATA:
+      response->result = nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA;
       return false;
-    case map_2d::LOAD_MAP_SUCCESS:
+    case map_2d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS:
       // Correcting msg_ header when it belongs to specific node
       updateMsgHeader();
 

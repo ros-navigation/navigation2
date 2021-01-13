@@ -12,16 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_map_server/map_3d/pcl_helper.hpp"
-
+#include <iostream>
 #include <vector>
-#include <memory>
 #include <string>
 
-#include "sensor_msgs/msg/point_cloud2.hpp"
-
-#include "pcl/PCLPointField.h"
-#include "pcl_conversions/pcl_conversions.h"
+#include "nav2_map_server/map_3d/pcl_helper.hpp"
 
 namespace nav2_map_server
 {
@@ -99,6 +94,40 @@ bool ends_with(std::string const & value, std::string const & ending)
 {
   if (ending.size() > value.size()) {return false;}
   return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
+void viewPoint2Pose(
+  const Eigen::Vector4f & position,
+  const Eigen::Quaternionf & orientation,
+  geometry_msgs::msg::Pose & origin)
+{
+  // Put position information to origin
+  origin.position.x = static_cast<double>(position[0]);
+  origin.position.y = static_cast<double>(position[1]);
+  origin.position.z = static_cast<double>(position[2]);
+
+  // Put orientation information to origin
+  origin.orientation.w = static_cast<double>(orientation.w());
+  origin.orientation.x = static_cast<double>(orientation.x());
+  origin.orientation.y = static_cast<double>(orientation.y());
+  origin.orientation.z = static_cast<double>(orientation.z());
+}
+
+void pose2ViewPoint(
+  const geometry_msgs::msg::Pose & origin,
+  Eigen::Vector4f & position,
+  Eigen::Quaternionf & orientation)
+{
+  // Update center information of viewPoint
+  position[0] = static_cast<float>(origin.position.x);
+  position[1] = static_cast<float>(origin.position.y);
+  position[2] = static_cast<float>(origin.position.z);
+
+  // Update center information of viewPoint
+  orientation.w() = static_cast<float>(origin.orientation.w);
+  orientation.x() = static_cast<float>(origin.orientation.x);
+  orientation.y() = static_cast<float>(origin.orientation.y);
+  orientation.z() = static_cast<float>(origin.orientation.z);
 }
 
 }  // namespace map_3d

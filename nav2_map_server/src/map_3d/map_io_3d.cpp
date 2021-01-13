@@ -22,16 +22,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <fstream>
 #include <stdexcept>
-#include <memory>
-
-
-#include "nav2_util/geometry_utils.hpp"
 
 #include "yaml-cpp/yaml.h"
 #include "nav2_map_server/map_3d/pcl_helper.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
+
 #include "pcl/io/pcd_io.h"
 #include "Eigen/Core"
 
@@ -79,8 +75,6 @@ namespace nav2_map_server
 namespace map_3d
 {
 
-using nav2_util::geometry_utils::orientationAroundZAxis;
-
 // === Map input part ===
 
 /// Get the given subnode value.
@@ -105,7 +99,6 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
 
   YAML::Node doc = YAML::LoadFile(yaml_filename);
   LoadParameters load_parameters;
-  load_parameters.origin.resize();
 
   std::string pcd_file_name(YamlGetValue<std::string>(doc, "image"));
   if (!ends_with(pcd_file_name, ".pcd")) {
@@ -126,26 +119,34 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   }
   std::cout << "setting the origin";
 
-  // Get view point as center and orientation
+  // Get view point as position and orientation
   // view point will be loaded from pcd file while reading
   // If not provided by YAML, if it provided by both YAML and PCD then
   // a warning will be issued if they are not equal and PCD  will take precedence
   try {
     // Load origin form yaml_file
-    std::vector<float> pcd_origin = YamlGetValue<std::vector<float>>(doc, "origin");
-
-    if (pcd_origin.size() == 7) {
-      for (int i = 0; i < 7; ++i) {
-        if (i < 3) {
-          load_parameters.origin.center[i] = pcd_origin[i];
-        } else {
-          load_parameters.origin.orientation[i - 3] = pcd_origin[i];
-        }
-      }
+    std::vector<double> pcd_origin = YamlGetValue<std::vector<double>>(doc, "origin");
+    if (pcd_origin.size() != 7) {
+      throw std::invalid_argument("view_point is wrong");
     }
+
+    // Convert to Pose
+    // Position
+    load_parameters.origin.position.x = pcd_origin[0];
+    load_parameters.origin.position.y = pcd_origin[1];
+    load_parameters.origin.position.z = pcd_origin[2];
+
+    // Orientation
+    load_parameters.origin.orientation.w = pcd_origin[3];
+    load_parameters.origin.orientation.x = pcd_origin[4];
+    load_parameters.origin.orientation.y = pcd_origin[5];
+    load_parameters.origin.orientation.z = pcd_origin[6];
+
+    load_parameters.use_ext_origin = true;
   } catch (YAML::Exception & e) {
+    load_parameters.use_ext_origin = false;
     std::cout << "[WARNING] [map_io_3d]: Couldn't load view_point from yaml file: "
-      "If not provided it we will try to load from pcd file" << std::endl;
+      "If not provided, we will try to load from pcd file" << std::endl;
   }
 
   return load_parameters;
@@ -167,56 +168,40 @@ void loadMapFromFile(
   //  create a pcd reader for PointCloud2 data
   pcl::PCDReader reader;
 
-  Eigen::Vector4f center;
+  Eigen::Vector4f position;
   Eigen::Quaternionf orientation;
-  int pcd_version = 0;
 
-  std::cout << "[debug] [map_io_3d]" << "feeding pcd filename to reader" << std::endl;
+  // PCD version fixed to version 0.7
+  // will use sensor origin (added in PCD version 0.7)
+  int pcd_version = pcl::PCDReader::PCD_V7;
+
+  std::cout << "[DEBUG] [map_io_3d]" << "feeding pcd filename to reader" << std::endl;
 
   if (reader.read(
       load_parameters.pcd_file_name, *cloud,
-      center, orientation, pcd_version) == -1)              //* load the file
+      position, orientation, pcd_version) == -1)              //* load the file
   {
     std::string error_msg{"Couldn't read "};
     error_msg += load_parameters.pcd_file_name + "\n";
     PCL_ERROR(error_msg.c_str());
   }
-  std::cout << "[debug] [map_io_3d]" << "pcd file is loaded" << std::endl;
+  std::cout << "[DEBUG] [map_io_3d]: pcd file is loaded" << std::endl;
 
-  if (load_parameters.origin.center.size() == 3 &&
-    load_parameters.origin.orientation.size() == 4)
-  {
-    // Update translation of transformation
-    origin_msg.position.x = load_parameters.origin.center[0];
-    origin_msg.position.y = load_parameters.origin.center[1];
-    origin_msg.position.z = load_parameters.origin.center[2];
-
-    // Update rotation of transformation
-    origin_msg.orientation.w = load_parameters.origin.orientation[0];
-    origin_msg.orientation.x = load_parameters.origin.orientation[1];
-    origin_msg.orientation.y = load_parameters.origin.orientation[2];
-    origin_msg.orientation.z = load_parameters.origin.orientation[3];
-  } else {
-    std::cout << "[WARNING] [map_io_3d]: View Point(center and orientation) not provided by "
+  if (!load_parameters.use_ext_origin) {
+    std::cout << "[WARNING] [map_io_3d]: View Point(position and orientation) not provided by "
       "YAML now will be using view_point defined by pcd reader" << std::endl;
 
-    // Update translation of transformation
-    origin_msg.position.x = center[0];
-    origin_msg.position.y = center[1];
-    origin_msg.position.z = center[2];
-
-    // Update rotation of transformation
-    origin_msg.orientation.w = orientation.w();
-    origin_msg.orientation.x = orientation.x();
-    origin_msg.orientation.y = orientation.y();
-    origin_msg.orientation.z = orientation.z();
+    viewPoint2Pose(position, orientation, origin_msg);
+  } else {
+    origin_msg = load_parameters.origin;
   }
-  std::cout << "[debug] [map_io_3d]" << "converting pcd to message" << std::endl;
+
+  std::cout << "[DEBUG] [map_io_3d]: converting pcd to message" << std::endl;
 
   //  update message data
   pclToMsg(map, cloud);
 
-  std::cout << "[debug] [map_io_3d]" << "message conversion is done" << std::endl;
+  std::cout << "[DEBUG] [map_io_3d]: message conversion is done" << std::endl;
 
   map_msg = map;
 }
@@ -228,13 +213,11 @@ LOAD_MAP_STATUS loadMapFromYaml(
 {
   if (yaml_file.empty()) {
     std::cerr << "[ERROR] [map_io_3d]: YAML file name is empty, can't load!" << std::endl;
-    return MAP_DOES_NOT_EXIST;
+    return LOAD_MAP_STATUS::MAP_DOES_NOT_EXIST;
   }
 
   std::cout << "[INFO] [map_io_3d]: Loading yaml file: " << yaml_file << std::endl;
   LoadParameters load_parameters;
-
-  load_parameters.origin.resize();
 
   try {
     std::cout << "initiating load_parameters";
@@ -245,7 +228,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
       " at position (" << e.mark.line << ":" << e.mark.column << ") for reason: " <<
       e.what() << std::endl;
 
-    return INVALID_MAP_METADATA;
+    return LOAD_MAP_STATUS::INVALID_MAP_METADATA;
   }
 
   try {
@@ -255,10 +238,10 @@ LOAD_MAP_STATUS loadMapFromYaml(
       "[ERROR] [map_io_3d]: Failed to load image file " << load_parameters.pcd_file_name <<
       " for reason: " << e.what() << std::endl;
 
-    return INVALID_MAP_DATA;
+    return LOAD_MAP_STATUS::INVALID_MAP_DATA;
   }
 
-  return LOAD_MAP_SUCCESS;
+  return LOAD_MAP_STATUS::LOAD_MAP_SUCCESS;
 }
 // === Map output part ===
 
@@ -289,7 +272,7 @@ void CheckSaveParameters(SaveParameters & save_parameters)
   if (save_parameters.format.empty()) {
     save_parameters.format = "pcd";
     std::cout << "[WARNING] [map_io_3d]: No map format is "
-      "specifies we will be using pcd format" << std::endl;
+      "specified. pcd format will be used." << std::endl;
   }
 
   // Confirm for the presently implemented formats
@@ -298,21 +281,12 @@ void CheckSaveParameters(SaveParameters & save_parameters)
     std::cout << "[WARNING] [map_io_3d]: " << save_parameters.format <<
       " support is not implemented, Falling back to pcd file format" << std::endl;
   }
+
   if (save_parameters.format == "ply") {
     // TODO(Shivam Pandey): add ply support
     save_parameters.format = "pcd";
     std::cout << "[WARNING] [map_io_3d]: ply support is not implemented, "
       "Falling back to pcd file format" << std::endl;
-  }
-
-  // Get the origin shape confirmed
-  if (save_parameters.origin.center.size() != 3 && save_parameters.origin.orientation.size() != 4) {
-    save_parameters.origin.resize();
-    save_parameters.origin.center = {0, 0, 0};
-    save_parameters.origin.orientation = {1, 0, 0, 0};
-    std::cout << "[WARNING] [map_io_3d]: "
-      "origin and orientation provided must have a length of 3 and 4 respectively, "
-      "Falling back to identity transform[0, 0, 0] ,[1, 0, 0, 0]" << std::endl;
   }
 }
 
@@ -340,20 +314,14 @@ void TryWriteMapToFile(
   pcl::PCDWriter writer;
 
   // Initialize origin
-  Eigen::Vector4f center = Eigen::Vector4f::Zero();
-  center[0] = save_parameters.origin.center[0];
-  center[1] = save_parameters.origin.center[1];
-  center[2] = save_parameters.origin.center[2];
+  Eigen::Vector4f position = Eigen::Vector4f::Zero();
 
   // Initialize orientation
   Eigen::Quaternionf orientation = Eigen::Quaternionf::Identity();
-  orientation.w() = save_parameters.origin.orientation[0];
-  orientation.x() = save_parameters.origin.orientation[1];
-  orientation.y() = save_parameters.origin.orientation[2];
-  orientation.z() = save_parameters.origin.orientation[3];
+  pose2ViewPoint(save_parameters.origin, position, orientation);
 
   if (writer.write(
-      file_name, cloud_2, center,
+      file_name, cloud_2, position,
       orientation, save_parameters.as_binary) == -1)
   {
     std::string error_msg{"Couldn't write "};
@@ -371,10 +339,10 @@ void TryWriteMapToFile(
     emitter << YAML::Key << "image" << YAML::Value << file_name;
 
     emitter << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq <<
-      save_parameters.origin.center[0] << save_parameters.origin.center[1] <<
-      save_parameters.origin.center[2] << save_parameters.origin.orientation[0] <<
-      save_parameters.origin.orientation[1] << save_parameters.origin.orientation[2] <<
-      save_parameters.origin.orientation[3] << YAML::EndSeq;
+      save_parameters.origin.position.x << save_parameters.origin.position.y <<
+      save_parameters.origin.position.z << save_parameters.origin.orientation.w <<
+      save_parameters.origin.orientation.x << save_parameters.origin.orientation.y <<
+      save_parameters.origin.orientation.z << YAML::EndSeq;
 
     emitter << YAML::Key << "file_format" << YAML::Value << save_parameters.format;
     emitter << YAML::Key << "as_binary" << YAML::Value << save_parameters.as_binary;
