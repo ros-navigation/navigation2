@@ -223,7 +223,7 @@ protected:
     uint8_t type, double base, double multiplier,
     double tr_x, double tr_y);
   void testOutOfMask(uint8_t type, double base, double multiplier);
-  void testIncorrectPercentage(uint8_t type, double base, double multiplier);
+  void testIncorrectLimits(uint8_t type, double base, double multiplier);
 
   void reset();
 
@@ -420,15 +420,19 @@ void TestNode::verifySpeedLimit(
   // expected_limit is being calculated by using float32 base and multiplier
   double expected_limit = cost * multiplier + base;
   if (type == nav2_costmap_2d::SPEED_FILTER_PERCENT) {
-    if (expected_limit < 0.0) {
+    if (expected_limit < 0.0 || expected_limit > 100.0) {
       expected_limit = nav2_costmap_2d::NO_SPEED_LIMIT;
-    }
-    if (expected_limit > 100.0) {
-      expected_limit = 100.0;
     }
     EXPECT_TRUE(speed_limit->percentage);
     EXPECT_TRUE(speed_limit->speed_limit >= 0.0);
     EXPECT_TRUE(speed_limit->speed_limit <= 100.0);
+    EXPECT_NEAR(speed_limit->speed_limit, expected_limit, EPSILON);
+  } else if (type == nav2_costmap_2d::SPEED_FILTER_ABSOLUTE) {
+    if (expected_limit < 0.0) {
+      expected_limit = nav2_costmap_2d::NO_SPEED_LIMIT;
+    }
+    EXPECT_FALSE(speed_limit->percentage);
+    EXPECT_TRUE(speed_limit->speed_limit >= 0.0);
     EXPECT_NEAR(speed_limit->speed_limit, expected_limit, EPSILON);
   } else {
     FAIL() << "The type of costmap filter is unknown";
@@ -581,7 +585,7 @@ void TestNode::testOutOfMask(uint8_t type, double base, double multiplier)
   ASSERT_TRUE(speed_limit == old_speed_limit);
 }
 
-void TestNode::testIncorrectPercentage(uint8_t type, double base, double multiplier)
+void TestNode::testIncorrectLimits(uint8_t type, double base, double multiplier)
 {
   const int min_i = 0;
   const int min_j = 0;
@@ -593,14 +597,14 @@ void TestNode::testIncorrectPercentage(uint8_t type, double base, double multipl
 
   std::vector<std::tuple<unsigned int, unsigned int>> points;
 
-  // Some middle point corresponding to correct percentage
+  // Some middle point corresponding to correct speed limit value
   points.push_back(std::make_tuple(width_ / 2 - 1, height_ / 2 - 1));
-  // (0, 1) point corresponding to incorrect percentage: data = 1, percentage < 0%
+  // (0, 1) point corresponding to incorrect limit value: data = 1, value < 0
   points.push_back(std::make_tuple(0, 1));
-  // Some middle point corresponding to correct percentage
+  // Some middle point corresponding to correct speed limit value
   points.push_back(std::make_tuple(width_ / 2 - 1, height_ / 2 - 1));
-  // (width_ - 1, height_ - 1) point corresponding to incorrect percentage:
-  // data = 100, percentage > 100%
+  // (width_ - 1, height_ - 1) point corresponding to incorrect limit value:
+  // data = 100, value > 100
   points.push_back(std::make_tuple(width_ - 1, height_ - 1));
 
   for (auto it = points.begin(); it != points.end(); ++it) {
@@ -650,7 +654,7 @@ TEST_F(TestNode, testIncorrectPercentSpeedLimit)
   EXPECT_TRUE(createSpeedFilter("map"));
 
   // Test SpeedFilter
-  testIncorrectPercentage(nav2_costmap_2d::SPEED_FILTER_PERCENT, -50.0, 2.0);
+  testIncorrectLimits(nav2_costmap_2d::SPEED_FILTER_PERCENT, -50.0, 2.0);
 
   // Clean-up
   speed_filter_->resetFilter();
@@ -661,8 +665,26 @@ TEST_F(TestNode, testAbsoluteSpeedLimit)
 {
   // Initilize test system
   createMaps("map");
-  publishMaps(nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, -1.23, 4.5);
-  EXPECT_FALSE(createSpeedFilter("map"));
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, 1.23, 4.5);
+  EXPECT_TRUE(createSpeedFilter("map"));
+
+  // Test SpeedFilter
+  testFullMask(nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, 1.23, 4.5, NO_TRANSLATION, NO_TRANSLATION);
+
+  // Clean-up
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testIncorrectAbsoluteSpeedLimit)
+{
+  // Initilize test system
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, -50.0, 2.0);
+  EXPECT_TRUE(createSpeedFilter("map"));
+
+  // Test SpeedFilter
+  testIncorrectLimits(nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, -50.0, 2.0);
 
   // Clean-up
   speed_filter_->resetFilter();
@@ -688,7 +710,7 @@ TEST_F(TestNode, testInfoRePublish)
 {
   // Initilize test system
   createMaps("map");
-  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 1.2, 3.4);
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, 1.23, 4.5);
   EXPECT_TRUE(createSpeedFilter("map"));
 
   // Re-publish filter info (with incorrect base and multiplier)
@@ -708,7 +730,7 @@ TEST_F(TestNode, testMaskRePublish)
 {
   // Initilize test system
   createMaps("map");
-  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.1, 0.2);
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, 1.23, 4.5);
   EXPECT_TRUE(createSpeedFilter("map"));
 
   // Re-publish filter mask and test that everything is working after
@@ -716,7 +738,7 @@ TEST_F(TestNode, testMaskRePublish)
 
   // Test SpeedFilter
   testSimpleMask(
-    nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.1, 0.2, NO_TRANSLATION, NO_TRANSLATION);
+    nav2_costmap_2d::SPEED_FILTER_ABSOLUTE, 1.23, 4.5, NO_TRANSLATION, NO_TRANSLATION);
 
   // Clean-up
   speed_filter_->resetFilter();
@@ -727,7 +749,7 @@ TEST_F(TestNode, testIncorrectFilterType)
 {
   // Initilize test system
   createMaps("map");
-  publishMaps(INCORRECT_TYPE, -1.23, 4.5);
+  publishMaps(INCORRECT_TYPE, 1.23, 4.5);
   EXPECT_FALSE(createSpeedFilter("map"));
 
   // Clean-up

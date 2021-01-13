@@ -112,6 +112,7 @@ private:
   std::string global_frame_;  // Frame of currnet layer (master_grid)
 
   double base_, multiplier_;
+  bool percentage_;
   double speed_limit_, speed_limit_prev_;
 };
 

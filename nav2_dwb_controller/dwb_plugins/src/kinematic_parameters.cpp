@@ -129,7 +129,8 @@ void KinematicsHandler::initialize(
   update_kinematics(kinematics);
 }
 
-void KinematicsHandler::setSpeedLimit(const double & speed_limit)
+void KinematicsHandler::setSpeedLimit(
+  const bool & percentage, const double & speed_limit)
 {
   KinematicParameters kinematics(*kinematics_.load());
 
@@ -140,11 +141,28 @@ void KinematicsHandler::setSpeedLimit(const double & speed_limit)
     kinematics.max_vel_y_ = kinematics.base_max_vel_y_;
     kinematics.max_vel_theta_ = kinematics.base_max_vel_theta_;
   } else {
-    // Speed limit is expressed in % from maximum speed of robot
-    kinematics.max_speed_xy_ = kinematics.base_max_speed_xy_ * speed_limit / 100.0;
-    kinematics.max_vel_x_ = kinematics.base_max_vel_x_ * speed_limit / 100.0;
-    kinematics.max_vel_y_ = kinematics.base_max_vel_y_ * speed_limit / 100.0;
-    kinematics.max_vel_theta_ = kinematics.base_max_vel_theta_ * speed_limit / 100.0;
+    if (percentage) {
+      // Speed limit is expressed in % from maximum speed of robot
+      kinematics.max_speed_xy_ = kinematics.base_max_speed_xy_ * speed_limit / 100.0;
+      kinematics.max_vel_x_ = kinematics.base_max_vel_x_ * speed_limit / 100.0;
+      kinematics.max_vel_y_ = kinematics.base_max_vel_y_ * speed_limit / 100.0;
+      kinematics.max_vel_theta_ = kinematics.base_max_vel_theta_ * speed_limit / 100.0;
+    } else {
+      // Speed limit is expressed in absolute value
+      if (speed_limit < kinematics.base_max_speed_xy_) {
+        kinematics.max_speed_xy_ = speed_limit;
+        // Handling angular velocity changes: Max angular velocity is being changed
+        // in the same proportion as linear speed changed.
+        const double ratio = speed_limit / kinematics.base_max_speed_xy_;
+        kinematics.max_vel_theta_ = kinematics.base_max_vel_theta_ * ratio;
+      }
+      if (speed_limit < kinematics.base_max_vel_x_) {
+        kinematics.max_vel_x_ = speed_limit;
+      }
+      if (speed_limit < kinematics.base_max_vel_y_) {
+        kinematics.max_vel_y_ = speed_limit;
+      }
+    }
   }
 
   // Do not forget to update max_speed_xy_sq_ as well

@@ -474,7 +474,7 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 
 | Parameter | Default | Description |
 | ----------| --------| ------------|
-| type | 0 | Type of costmap filter used. This is an enum for the type of filter this should be interpreted as. We provide the following pre-defined types: 0 - keepout zones / preferred lanes filter; 1 - speed filter, speed limit is specified in % of maximum speed; 2 - speed filter, speed limit is specified in absolute value (not implemented yet) |
+| type | 0 | Type of costmap filter used. This is an enum for the type of filter this should be interpreted as. We provide the following pre-defined types: 0 - keepout zones / preferred lanes filter; 1 - speed filter, speed limit is specified in % of maximum speed; 2 - speed filter, speed limit is specified in absolute value (m/s) |
 | filter_info_topic | "costmap_filter_info" | Topic to publish costmap filter information to |
 | mask_topic | "filter_mask" | Topic to publish filter mask to. The value of this parameter should be in accordance with `topic_name` parameter of `map_server` tuned to filter mask publishing |
 | base | 0.0 | Base of `OccupancyGrid` mask value -> filter space value linear conversion which is being proceeded as: `filter_space_value = base + multiplier * mask_value` |
