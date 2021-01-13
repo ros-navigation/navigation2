@@ -416,9 +416,9 @@ protected:
     }
 
     // Adjust starting point and offset to start from min_length distance
-    unsigned int new_x0 = (unsigned int)(x0 + dx / dist * min_length);
-    unsigned int new_y0 = (unsigned int)(y0 + dy / dist * min_length);
-    unsigned int offset = new_y0 * size_x_ + new_x0;
+    unsigned int min_x0 = (unsigned int)(x0 + dx / dist * min_length);
+    unsigned int min_y0 = (unsigned int)(y0 + dy / dist * min_length);
+    unsigned int offset = min_y0 * size_x_ + min_x0;
 
     double scale = (dist == 0.0) ? 1.0 : std::min(1.0, max_length / dist);
     unsigned int length;
@@ -426,7 +426,7 @@ protected:
     if (abs_dx >= abs_dy) {
       int error_y = abs_dx / 2;
 
-      // Subtract min_length from total length since initial point (x0, y0) has been adjusted
+      // Subtract min_length from total length since initial point (x0, y0) has been adjusted by min Z
       length = (unsigned int)(scale * abs_dx) - min_length;
 
       bresenham2D(
@@ -437,7 +437,7 @@ protected:
     // otherwise y is dominant
     int error_x = abs_dy / 2;
 
-    // Subtract min_length from total length since initial point (x0, y0) has been adjusted
+    // Subtract min_length from total length since initial point (x0, y0) has been adjusted by min Z
     length = (unsigned int)(scale * abs_dy) - min_length;
     bresenham2D(
       at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset, length);
