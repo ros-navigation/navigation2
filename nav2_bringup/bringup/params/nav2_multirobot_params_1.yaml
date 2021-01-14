@@ -170,6 +170,8 @@ local_costmap:
           max_obstacle_height: 2.0
           clearing: True
           marking: True
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
       static_layer:
         map_subscribe_transient_local: True
       always_send_full_costmap: True
@@ -193,6 +195,8 @@ global_costmap:
           max_obstacle_height: 2.0
           clearing: True
           marking: True
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
       static_layer:
         map_subscribe_transient_local: True
       always_send_full_costmap: True
