@@ -133,7 +133,7 @@ void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & positi
   }
   std::cout << now().nanoseconds() << std::endl;
 
-  base_transform_->header.stamp = now() + rclcpp::Duration(250000000);
+  base_transform_->header.stamp = now() + rclcpp::Duration(0.25s);
   base_transform_->transform.translation.x = position.x;
   base_transform_->transform.translation.y = position.y;
   base_transform_->transform.rotation.w = 1.0;
@@ -344,7 +344,7 @@ bool PlannerTester::defaultPlannerRandomTests(
 
   RCLCPP_INFO(
     this->get_logger(),
-    "Tested with %u tests. Planner failed on %u. Test time %u ms",
+    "Tested with %u tests. Planner failed on %u. Test time %ld ms",
     number_tests, num_fail, elapsed.count());
 
   if ((num_fail / number_tests) > acceptable_fail_ratio) {
@@ -368,7 +368,7 @@ bool PlannerTester::plannerTest(
   // Then request to compute a path
   TaskStatus status = createPlan(goal, path);
 
-  RCLCPP_DEBUG(this->get_logger(), "Path request status: %d", status);
+  RCLCPP_DEBUG(this->get_logger(), "Path request status: %d", static_cast<int8_t>(status));
 
   if (status == TaskStatus::FAILED) {
     return false;

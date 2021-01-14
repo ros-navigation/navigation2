@@ -144,21 +144,21 @@ void pf_kdtree_insert(pf_kdtree_t * self, pf_vector_t pose, double value)
 ////////////////////////////////////////////////////////////////////////////////
 // Determine the probability estimate for the given pose. TODO: this
 // should do a kernel density estimate rather than a simple histogram.
-double pf_kdtree_get_prob(pf_kdtree_t * self, pf_vector_t pose)
-{
-  int key[3];
-  pf_kdtree_node_t * node;
+// double pf_kdtree_get_prob(pf_kdtree_t * self, pf_vector_t pose)
+// {
+//   int key[3];
+//   pf_kdtree_node_t * node;
 
-  key[0] = floor(pose.v[0] / self->size[0]);
-  key[1] = floor(pose.v[1] / self->size[1]);
-  key[2] = floor(pose.v[2] / self->size[2]);
+//   key[0] = floor(pose.v[0] / self->size[0]);
+//   key[1] = floor(pose.v[1] / self->size[1]);
+//   key[2] = floor(pose.v[2] / self->size[2]);
 
-  node = pf_kdtree_find_node(self, self->root, key);
-  if (node == NULL) {
-    return 0.0;
-  }
-  return node->value;
-}
+//   node = pf_kdtree_find_node(self, self->root, key);
+//   if (node == NULL) {
+//     return 0.0;
+//   }
+//   return node->value;
+// }
 
 
 ////////////////////////////////////////////////////////////////////////////////

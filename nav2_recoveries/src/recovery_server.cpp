@@ -90,13 +90,15 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     global_frame, robot_base_frame, transform_tolerance_);
 
   recovery_types_.resize(recovery_ids_.size());
-  loadRecoveryPlugins();
+  if (!loadRecoveryPlugins()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 
-void
+bool
 RecoveryServer::loadRecoveryPlugins()
 {
   auto node = shared_from_this();
@@ -114,9 +116,11 @@ RecoveryServer::loadRecoveryPlugins()
         get_logger(), "Failed to create recovery %s of type %s."
         " Exception: %s", recovery_ids_[i].c_str(), recovery_types_[i].c_str(),
         ex.what());
-      exit(-1);
+      return false;
     }
   }
+
+  return true;
 }
 
 nav2_util::CallbackReturn

@@ -68,7 +68,7 @@ protected:
   CostmapSubscriber & costmap_sub_;
   FootprintSubscriber & footprint_sub_;
   double transform_tolerance_;
-  FootprintCollisionChecker collision_checker_;
+  FootprintCollisionChecker<std::shared_ptr<Costmap2D>> collision_checker_;
 };
 
 }  // namespace nav2_costmap_2d

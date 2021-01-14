@@ -20,6 +20,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <chrono>
 
 #include "nav2_rviz_plugins/goal_common.hpp"
 #include "rviz_common/display_context.hpp"
@@ -34,7 +35,9 @@ using nav2_util::geometry_utils::orientationAroundZAxis;
 GoalPoseUpdater GoalUpdater;
 
 Nav2Panel::Nav2Panel(QWidget * parent)
-: Panel(parent), client_nav_("lifecycle_manager_navigation"),
+: Panel(parent),
+  server_timeout_(10),
+  client_nav_("lifecycle_manager_navigation"),
   client_loc_("lifecycle_manager_localization")
 {
   // Create the control button and its tooltip
@@ -316,12 +319,12 @@ Nav2Panel::onPause()
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::pause,
-      &client_nav_));
+      &client_nav_, std::placeholders::_1), server_timeout_);
   QFuture<void> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::pause,
-      &client_loc_));
+      &client_loc_, std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -331,12 +334,12 @@ Nav2Panel::onResume()
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::resume,
-      &client_nav_));
+      &client_nav_, std::placeholders::_1), server_timeout_);
   QFuture<void> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::resume,
-      &client_loc_));
+      &client_loc_, std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -346,12 +349,12 @@ Nav2Panel::onStartup()
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::startup,
-      &client_nav_));
+      &client_nav_, std::placeholders::_1), server_timeout_);
   QFuture<void> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::startup,
-      &client_loc_));
+      &client_loc_, std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -361,12 +364,12 @@ Nav2Panel::onShutdown()
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::reset,
-      &client_nav_));
+      &client_nav_, std::placeholders::_1), server_timeout_);
   QFuture<void> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::reset,
-      &client_loc_));
+      &client_loc_, std::placeholders::_1), server_timeout_);
   timer_.stop();
 }
 
@@ -409,7 +412,7 @@ Nav2Panel::onCancelButtonPressed()
     auto future_cancel =
       waypoint_follower_action_client_->async_cancel_goal(waypoint_follower_goal_handle_);
 
-    if (rclcpp::spin_until_future_complete(client_node_, future_cancel) !=
+    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel waypoint follower");
@@ -418,7 +421,7 @@ Nav2Panel::onCancelButtonPressed()
   } else {
     auto future_cancel = navigation_action_client_->async_cancel_goal(navigation_goal_handle_);
 
-    if (rclcpp::spin_until_future_complete(client_node_, future_cancel) !=
+    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel goal");
@@ -522,7 +525,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 
   auto future_goal_handle =
     waypoint_follower_action_client_->async_send_goal(waypoint_follower_goal_, send_goal_options);
-  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
+  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle, server_timeout_) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
@@ -562,7 +565,7 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
 
   auto future_goal_handle =
     navigation_action_client_->async_send_goal(navigation_goal_, send_goal_options);
-  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
+  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle, server_timeout_) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
@@ -627,7 +630,7 @@ Nav2Panel::updateWpNavigationMarkers()
     arrow_marker.color.g = 255;
     arrow_marker.color.b = 0;
     arrow_marker.color.a = 1.0f;
-    arrow_marker.lifetime = rclcpp::Duration(0);
+    arrow_marker.lifetime = rclcpp::Duration(0s);
     arrow_marker.frame_locked = false;
     marker_array->markers.push_back(arrow_marker);
 
@@ -645,7 +648,7 @@ Nav2Panel::updateWpNavigationMarkers()
     circle_marker.color.g = 0;
     circle_marker.color.b = 0;
     circle_marker.color.a = 1.0f;
-    circle_marker.lifetime = rclcpp::Duration(0);
+    circle_marker.lifetime = rclcpp::Duration(0s);
     circle_marker.frame_locked = false;
     marker_array->markers.push_back(circle_marker);
 
@@ -664,7 +667,7 @@ Nav2Panel::updateWpNavigationMarkers()
     marker_text.color.g = 255;
     marker_text.color.b = 0;
     marker_text.color.a = 1.0f;
-    marker_text.lifetime = rclcpp::Duration(0);
+    marker_text.lifetime = rclcpp::Duration(0s);
     marker_text.frame_locked = false;
     marker_text.text = "wp_" + std::to_string(i + 1);
     marker_array->markers.push_back(marker_text);

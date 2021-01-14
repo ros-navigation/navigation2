@@ -21,5 +21,9 @@ repositories:
     version: ros2
   ros/bond_core:
     type: git
-    url: https://github.com/SteveMacenski/bond_core.git
-    version: lifecycle_support_2
+    url: https://github.com/ros/bond_core.git
+    version: ros2
+  ompl/ompl:
+    type: git
+    url: https://github.com/ompl/ompl.git
+    version: 1.5.0

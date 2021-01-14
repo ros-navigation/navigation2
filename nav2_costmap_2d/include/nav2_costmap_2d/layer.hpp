@@ -68,6 +68,7 @@ public:
   virtual void deactivate() {} /** @brief Stop publishers. */
   virtual void activate() {}   /** @brief Restart publishers if they've been stopped. */
   virtual void reset() = 0;
+  virtual bool isClearable() = 0;
 
   /**
    * @brief This is called by the LayeredCostmap to poll this plugin as to how
@@ -126,8 +127,9 @@ public:
   void declareParameter(
     const std::string & param_name,
     const rclcpp::ParameterValue & value);
+  void declareParameter(
+    const std::string & param_name);
   bool hasParameter(const std::string & param_name);
-  void undeclareAllParameters();
   std::string getFullName(const std::string & param_name);
 
 protected:

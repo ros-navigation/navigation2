@@ -4,6 +4,7 @@ project(nav_2d_utils)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -18,11 +19,13 @@ set(dependencies
   geometry_msgs
   nav_2d_msgs
   nav_msgs
+  std_msgs
   rclcpp
   tf2
   tf2_geometry_msgs
   nav2_msgs
   nav2_util
+  nav_2d_msgs
 )
 
 include_directories(
@@ -51,6 +54,8 @@ ament_target_dependencies(tf_help
   ${dependencies}
 )
 
+target_link_libraries(tf_help conversions)
+
 install(TARGETS conversions path_ops tf_help
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
@@ -65,6 +70,9 @@ if(BUILD_TESTING)
   # the following line skips the linter which checks for copyrights
   set(ament_cmake_copyright_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

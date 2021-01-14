@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <chrono>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -183,7 +184,7 @@ public:
     setPose(x, y, theta);
     publishFootprint();
     publishCostmap();
-    rclcpp::sleep_for(std::chrono::milliseconds(50));
+    rclcpp::sleep_for(std::chrono::milliseconds(1000));
     return collision_checker_->isCollisionFree(pose);
   }
 
@@ -230,7 +231,7 @@ protected:
   {
     geometry_msgs::msg::TransformStamped tf_stamped;
     tf_stamped.header.frame_id = "map";
-    tf_stamped.header.stamp = now() + rclcpp::Duration(1.0);
+    tf_stamped.header.stamp = now() + rclcpp::Duration(1.0ns);
     tf_stamped.child_frame_id = "base_link";
     tf_stamped.transform.translation.x = x;
     tf_stamped.transform.translation.y = y;

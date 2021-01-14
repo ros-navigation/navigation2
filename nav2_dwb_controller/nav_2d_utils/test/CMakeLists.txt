@@ -1,0 +1,9 @@
+ament_add_gtest(2d_utils_tests 2d_utils_test.cpp)
+target_link_libraries(2d_utils_tests conversions)
+
+ament_add_gtest(path_ops_tests path_ops_test.cpp)
+target_link_libraries(path_ops_tests path_ops)
+
+ament_add_gtest(tf_help_tests tf_help_test.cpp)
+target_link_libraries(tf_help_tests tf_help conversions)
+

@@ -40,9 +40,11 @@
 #include <list>
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include "tf2/convert.h"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
+using namespace std::chrono_literals;
 
 namespace nav2_costmap_2d
 {
@@ -53,7 +55,7 @@ ObservationBuffer::ObservationBuffer(
   double expected_update_rate,
   double min_obstacle_height, double max_obstacle_height, double obstacle_range,
   double raytrace_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
-  std::string sensor_frame, double tf_tolerance)
+  std::string sensor_frame, tf2::Duration tf_tolerance)
 : tf2_buffer_(tf2_buffer),
   observation_keep_time_(rclcpp::Duration::from_seconds(observation_keep_time)),
   expected_update_rate_(rclcpp::Duration::from_seconds(expected_update_rate)),
@@ -71,54 +73,6 @@ ObservationBuffer::ObservationBuffer(
 
 ObservationBuffer::~ObservationBuffer()
 {
-}
-
-bool ObservationBuffer::setGlobalFrame(const std::string new_global_frame)
-{
-  rclcpp::Time transform_time = clock_->now();
-  std::string tf_error;
-
-  geometry_msgs::msg::TransformStamped transformStamped;
-  if (!tf2_buffer_.canTransform(
-      new_global_frame, global_frame_, tf2_ros::fromMsg(transform_time),
-      tf2::durationFromSec(tf_tolerance_), &tf_error))
-  {
-    RCLCPP_ERROR(
-      logger_, "Transform between %s and %s with tolerance %.2f failed: %s.",
-      new_global_frame.c_str(),
-      global_frame_.c_str(), tf_tolerance_, tf_error.c_str());
-    return false;
-  }
-
-  std::list<Observation>::iterator obs_it;
-  for (obs_it = observation_list_.begin(); obs_it != observation_list_.end(); ++obs_it) {
-    try {
-      Observation & obs = *obs_it;
-
-      geometry_msgs::msg::PointStamped origin;
-      origin.header.frame_id = global_frame_;
-      origin.header.stamp = transform_time;
-      origin.point = obs.origin_;
-
-      // we need to transform the origin of the observation to the new global frame
-      tf2_buffer_.transform(origin, origin, new_global_frame, tf2::durationFromSec(tf_tolerance_));
-      obs.origin_ = origin.point;
-
-      // we also need to transform the cloud of the observation to the new global frame
-      tf2_buffer_.transform(
-        *(obs.cloud_), *(obs.cloud_), new_global_frame, tf2::durationFromSec(tf_tolerance_));
-    } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR(
-        logger_, "TF Error attempting to transform an observation from %s to %s: %s",
-        global_frame_.c_str(),
-        new_global_frame.c_str(), ex.what());
-      return false;
-    }
-  }
-
-  // now we need to update our global_frame member
-  global_frame_ = new_global_frame;
-  return true;
 }
 
 void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
@@ -141,7 +95,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
     local_origin.point.x = 0;
     local_origin.point.y = 0;
     local_origin.point.z = 0;
-    tf2_buffer_.transform(local_origin, global_origin, global_frame_);
+    tf2_buffer_.transform(local_origin, global_origin, global_frame_, tf_tolerance_);
     tf2::convert(global_origin.point, observation_list_.front().origin_);
 
     // make sure to pass on the raytrace/obstacle range
@@ -152,7 +106,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
     sensor_msgs::msg::PointCloud2 global_frame_cloud;
 
     // transform the point cloud
-    tf2_buffer_.transform(cloud, global_frame_cloud, global_frame_);
+    tf2_buffer_.transform(cloud, global_frame_cloud, global_frame_, tf_tolerance_);
     global_frame_cloud.header.stamp = cloud.header.stamp;
 
     // now we need to remove observations from the cloud that are below
@@ -228,7 +182,7 @@ void ObservationBuffer::purgeStaleObservations()
   if (!observation_list_.empty()) {
     std::list<Observation>::iterator obs_it = observation_list_.begin();
     // if we're keeping observations for no time... then we'll only keep one observation
-    if (observation_keep_time_ == rclcpp::Duration(0.0)) {
+    if (observation_keep_time_ == rclcpp::Duration(0.0s)) {
       observation_list_.erase(++obs_it, observation_list_.end());
       return;
     }
@@ -250,7 +204,7 @@ void ObservationBuffer::purgeStaleObservations()
 
 bool ObservationBuffer::isCurrent() const
 {
-  if (expected_update_rate_ == rclcpp::Duration(0.0)) {
+  if (expected_update_rate_ == rclcpp::Duration(0.0s)) {
     return true;
   }
 

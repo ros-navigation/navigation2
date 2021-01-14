@@ -1,6 +1,10 @@
 # Navigation 2
 [![Build Status](https://img.shields.io/docker/pulls/rosplanning/navigation2.svg?maxAge=2592000)](https://hub.docker.com/r/rosplanning/navigation2) [![Build Status](https://img.shields.io/docker/cloud/build/rosplanning/navigation2.svg?label=docker%20build)](https://hub.docker.com/r/rosplanning/navigation2) [![codecov](https://codecov.io/gh/ros-planning/navigation2/branch/main/graph/badge.svg)](https://codecov.io/gh/ros-planning/navigation2)
 
+<p align="center">
+  <img height="300" src="doc/nav2_logo.png" />
+</p>
+
 For detailed instructions on how to:
 - [Getting Started](https://navigation.ros.org/getting_started/index.html)
 - [Build](https://navigation.ros.org/build_instructions/index.html#build)
@@ -32,10 +36,10 @@ please cite this work in your papers!
 
 ## Build Status
 
-| Service | Dashing | Eloquent | Foxy | Main |
-| :---: | :---: | :---: | :---: | :---: |
-| ROS Build Farm | [![Build Status](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/) | [![Build Status](http://build.ros2.org/job/Edev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Edev__navigation2__ubuntu_bionic_amd64/) | [![Build Status](http://build.ros2.org/job/Fdev__navigation2__ubuntu_focal_amd64/badge/icon)](http://build.ros2.org/job/Fdev__navigation2__ubuntu_focal_amd64/) | N/A |
-| Circle CI | N/A | N/A | N/A | [![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/main.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/main) |
+| Service | Dashing | Foxy | Main |
+| :---: | :---: | :---: | :---: |
+| ROS Build Farm | [![Build Status](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__navigation2__ubuntu_bionic_amd64/) | [![Build Status](http://build.ros2.org/job/Fdev__navigation2__ubuntu_focal_amd64/badge/icon)](http://build.ros2.org/job/Fdev__navigation2__ubuntu_focal_amd64/) | N/A |
+| Circle CI | N/A | N/A | [![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/main.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/main) |
 
 
 | Package     | Dashing Source | Dashing Debian | Eloquent Source | Eloquent Debian | Foxy Source | Foxy Debian |

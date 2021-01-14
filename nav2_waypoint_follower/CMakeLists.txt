@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_waypoint_follower)
 
+# Try for OpenCV 4.X, but settle for whatever is installed
+find_package(OpenCV 4 QUIET)
+if(NOT OpenCV_FOUND)
+  find_package(OpenCV REQUIRED)
+endif()
+message(STATUS "Found OpenCV version ${OpenCV_VERSION}")
+
+find_package(image_transport REQUIRED)
+find_package(cv_bridge REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -10,6 +19,8 @@ find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(nav2_core REQUIRED)
+find_package(pluginlib REQUIRED)
 
 nav2_package()
 
@@ -37,6 +48,11 @@ set(dependencies
   nav2_msgs
   nav2_util
   tf2_ros
+  nav2_core
+  pluginlib
+  image_transport
+  cv_bridge
+  OpenCV
 )
 
 ament_target_dependencies(${executable_name}
@@ -49,7 +65,22 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-install(TARGETS ${library_name}
+add_library(wait_at_waypoint SHARED plugins/wait_at_waypoint.cpp)
+ament_target_dependencies(wait_at_waypoint ${dependencies})
+#prevent pluginlib from using boost
+target_compile_definitions(wait_at_waypoint PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
+add_library(photo_at_waypoint SHARED plugins/photo_at_waypoint.cpp)
+ament_target_dependencies(photo_at_waypoint ${dependencies})
+#prevent pluginlib from using boost
+target_compile_definitions(photo_at_waypoint PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
+add_library(input_at_waypoint SHARED plugins/input_at_waypoint.cpp)
+ament_target_dependencies(input_at_waypoint ${dependencies})
+#prevent pluginlib from using boost
+target_compile_definitions(input_at_waypoint PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
+install(TARGETS ${library_name} wait_at_waypoint photo_at_waypoint input_at_waypoint
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -69,5 +100,8 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
+ament_export_libraries(wait_at_waypoint photo_at_waypoint input_at_waypoint)
+
+pluginlib_export_plugin_description_file(nav2_waypoint_follower plugins.xml)
 
 ament_package()

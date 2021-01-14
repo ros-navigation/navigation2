@@ -12,7 +12,10 @@
 #   --tag nav2:source \
 #   --file source.Dockerfile ../
 #
-# Omit the `--no-cache` if you know you don't need to break the cache.
+# Use `--no-cache` to break the local docker build cache.
+# Use `--pull` to pull the latest parent image from the remote registry.
+# Use `--target=<stage_name>` to build stages not used for final stage.
+# 
 # We're only building on top of a ros2 devel image to get the basics
 # prerequisites installed such as the apt source, rosdep, etc. We don't want to
 # actually use any of the ros release packages. Instead we are going to build
@@ -44,7 +47,7 @@ RUN vcs import ./ < ../underlay.repos && \
 ARG OVERLAY_WS
 WORKDIR $OVERLAY_WS/src
 COPY ./ ./ros-planning/navigation2
-RUN colcon list --names-only | cat > ../packages.txt
+RUN colcon list --names-only | cat >> /opt/packages.txt
 
 # remove skiped packages
 WORKDIR /opt
@@ -55,7 +58,7 @@ RUN find ./ \
       | xargs dirname | xargs rm -rf || true && \
     colcon list --paths-only \
       --packages-skip-up-to  \
-        $(cat $OVERLAY_WS/packages.txt | xargs) \
+        $(cat packages.txt | xargs) \
       | xargs rm -rf
 
 # copy manifests for caching
@@ -63,8 +66,8 @@ RUN mkdir -p /tmp/opt && \
     find ./ -name "package.xml" | \
       xargs cp --parents -t /tmp/opt
 
-# multi-stage for building
-FROM $FROM_IMAGE AS builder
+# multi-stage for ros2 dependencies
+FROM $FROM_IMAGE AS ros2_depender
 ARG DEBIAN_FRONTEND=noninteractive
 
 # edit apt for caching
@@ -97,6 +100,9 @@ RUN --mount=type=cache,target=/var/cache/apt \
         $(cat /tmp/skip_keys.txt | xargs) \
         "
 
+# multi-stage for building ros2
+FROM ros2_depender AS ros2_builder
+
 # build ros2 source
 COPY --from=cacher $ROS2_WS ./
 ARG ROS2_MIXINS="release ccache"
@@ -105,13 +111,31 @@ RUN --mount=type=cache,target=/root/.ccache \
       --symlink-install \
       --mixin $ROS2_MIXINS
 
+# multi-stage for testing ros2
+FROM ros2_builder AS ros2_tester
+
+# test overlay build
+ARG RUN_TESTS
+ARG FAIL_ON_TEST_FAILURE=True
+RUN if [ -n "$RUN_TESTS" ]; then \
+        . install/setup.sh && \
+        colcon test && \
+        colcon test-result \
+          || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
+    fi
+
+# multi-stage for underlay dependencies
+FROM ros2_depender AS underlay_depender
+
+# copy manifests for caching
+COPY --from=cacher /tmp/$ROS2_WS $ROS2_WS
+
 # install underlay dependencies
 ARG UNDERLAY_WS
 WORKDIR $UNDERLAY_WS
 COPY --from=cacher /tmp/$UNDERLAY_WS ./
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
-    . $ROS2_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
         $ROS2_WS/src \
@@ -119,6 +143,12 @@ RUN --mount=type=cache,target=/var/cache/apt \
       --skip-keys " \
         $(cat /tmp/skip_keys.txt | xargs) \
       "
+
+# multi-stage for building underlay
+FROM underlay_depender AS underlay_builder
+
+# copy workspace for caching
+COPY --from=ros2_builder $ROS2_WS $ROS2_WS
 
 # build underlay source
 COPY --from=cacher $UNDERLAY_WS ./
@@ -129,13 +159,32 @@ RUN --mount=type=cache,target=/root/.ccache \
       --symlink-install \
       --mixin $UNDERLAY_MIXINS
 
+# multi-stage for testing underlay
+FROM underlay_builder AS underlay_tester
+
+# test overlay build
+ARG RUN_TESTS
+ARG FAIL_ON_TEST_FAILURE=True
+RUN if [ -n "$RUN_TESTS" ]; then \
+        . install/setup.sh && \
+        colcon test && \
+        colcon test-result \
+          || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
+    fi
+
+# multi-stage for overlay dependencies
+FROM underlay_depender AS overlay_depender
+
+# copy manifests for caching
+COPY --from=cacher /tmp/$ROS2_WS $ROS2_WS
+COPY --from=cacher /tmp/$UNDERLAY_WS $UNDERLAY_WS
+
 # install overlay dependencies
 ARG OVERLAY_WS
 WORKDIR $OVERLAY_WS
 COPY --from=cacher /tmp/$OVERLAY_WS ./
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
-    . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
         $ROS2_WS/src \
@@ -145,6 +194,13 @@ RUN --mount=type=cache,target=/var/cache/apt \
         $(cat /tmp/skip_keys.txt | xargs) \
       "
 
+# multi-stage for building overlay
+FROM overlay_depender AS overlay_builder
+
+# copy workspace for caching
+COPY --from=ros2_builder $ROS2_WS $ROS2_WS
+COPY --from=underlay_builder $UNDERLAY_WS $UNDERLAY_WS
+
 # build overlay source
 COPY --from=cacher $OVERLAY_WS ./
 ARG OVERLAY_MIXINS="release ccache"
@@ -153,6 +209,30 @@ RUN --mount=type=cache,target=/root/.ccache \
     colcon build \
       --symlink-install \
       --mixin $OVERLAY_MIXINS
+
+# multi-stage for testing overlay
+FROM overlay_builder AS overlay_tester
+
+# test overlay build
+ARG RUN_TESTS
+ARG FAIL_ON_TEST_FAILURE=True
+RUN if [ -n "$RUN_TESTS" ]; then \
+        . install/setup.sh && \
+        colcon test && \
+        colcon test-result \
+          || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
+    fi
+
+# multi-stage for testing workspaces
+FROM overlay_builder AS workspaces_tester
+
+# copy workspace test results
+COPY --from=ros2_tester     $ROS2_WS/log      $ROS2_WS/log
+COPY --from=underlay_tester $UNDERLAY_WS/log  $UNDERLAY_WS/log
+COPY --from=overlay_tester  $OVERLAY_WS/log   $OVERLAY_WS/log
+
+# multi-stage for shipping overlay
+FROM overlay_builder AS overlay_shipper
 
 # restore apt for docker
 RUN mv /etc/apt/docker-clean /etc/apt/apt.conf.d/ && \
@@ -164,14 +244,3 @@ ENV OVERLAY_WS $OVERLAY_WS
 RUN sed --in-place \
       's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
       /ros_entrypoint.sh
-
-# test overlay build
-ARG RUN_TESTS
-ARG FAIL_ON_TEST_FAILURE=Ture
-RUN if [ -n "$RUN_TESTS" ]; then \
-        . $OVERLAY_WS/install/setup.sh && \
-        colcon test \
-          --mixin $OVERLAY_MIXINS \
-        && colcon test-result \
-          || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
-    fi

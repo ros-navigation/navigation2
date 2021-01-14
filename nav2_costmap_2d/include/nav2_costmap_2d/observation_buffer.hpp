@@ -49,6 +49,7 @@
 #include "nav2_costmap_2d/observation.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
+
 namespace nav2_costmap_2d
 {
 /**
@@ -80,21 +81,12 @@ public:
     double min_obstacle_height, double max_obstacle_height, double obstacle_range,
     double raytrace_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
     std::string sensor_frame,
-    double tf_tolerance);
+    tf2::Duration tf_tolerance);
 
   /**
    * @brief  Destructor... cleans up
    */
   ~ObservationBuffer();
-
-  /**
-   * @brief Sets the global frame of an observation buffer. This will
-   * transform all the currently cached observations to the new global
-   * frame
-   * @param new_global_frame The name of the new global frame.
-   * @return True if the operation succeeds, false otherwise
-   */
-  bool setGlobalFrame(const std::string new_global_frame);
 
   /**
    * @brief  Transforms a PointCloud to the global frame and buffers it
@@ -155,7 +147,7 @@ private:
   double min_obstacle_height_, max_obstacle_height_;
   std::recursive_mutex lock_;  ///< @brief A lock for accessing data in callbacks safely
   double obstacle_range_, raytrace_range_;
-  double tf_tolerance_;
+  tf2::Duration tf_tolerance_;
 };
 }  // namespace nav2_costmap_2d
 #endif  // NAV2_COSTMAP_2D__OBSERVATION_BUFFER_HPP_

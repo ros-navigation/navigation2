@@ -60,6 +60,7 @@ RangeSensorLayer::RangeSensorLayer() {}
 void RangeSensorLayer::onInitialize()
 {
   current_ = true;
+  was_reset_ = false;
   buffered_readings_ = 0;
   last_reading_time_ = clock_->now();
   default_value_ = to_cost(0.5);
@@ -77,7 +78,7 @@ void RangeSensorLayer::onInitialize()
   declareParameter("phi", rclcpp::ParameterValue(1.2));
   node->get_parameter(name_ + "." + "phi", phi_v_);
   declareParameter("inflate_cone", rclcpp::ParameterValue(1.0));
-  node->get_parameter(name_ + "." + "phi", phi_v_);
+  node->get_parameter(name_ + "." + "inflate_cone", inflate_cone_);
   declareParameter("no_readings_timeout", rclcpp::ParameterValue(0.0));
   node->get_parameter(name_ + "." + "no_readings_timeout", no_readings_timeout_);
   declareParameter("clear_threshold", rclcpp::ParameterValue(0.2));
@@ -509,7 +510,12 @@ void RangeSensorLayer::updateCosts(
   }
 
   buffered_readings_ = 0;
-  current_ = true;
+
+  // if not current due to reset, set current now after clearing
+  if (!current_ && was_reset_) {
+    was_reset_ = false;
+    current_ = true;
+  }
 }
 
 void RangeSensorLayer::reset()
@@ -517,7 +523,7 @@ void RangeSensorLayer::reset()
   RCLCPP_DEBUG(logger_, "Reseting range sensor layer...");
   deactivate();
   resetMaps();
-  current_ = true;
+  was_reset_ = true;
   activate();
 }
 

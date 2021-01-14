@@ -83,10 +83,10 @@ TEST(LifecycleClientTest, BasicTest)
 {
   LifecycleClientTestFixture fix;
   nav2_lifecycle_manager::LifecycleManagerClient client("lifecycle_manager_test");
-  EXPECT_TRUE(client.startup());
   EXPECT_EQ(
     nav2_lifecycle_manager::SystemStatus::TIMEOUT,
     client.is_active(std::chrono::nanoseconds(1000)));
+  EXPECT_TRUE(client.startup());
   EXPECT_EQ(
     nav2_lifecycle_manager::SystemStatus::ACTIVE,
     client.is_active(std::chrono::nanoseconds(1000000000)));

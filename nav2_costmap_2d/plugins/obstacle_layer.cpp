@@ -108,6 +108,7 @@ void ObstacleLayer::onInitialize()
 
   ObstacleLayer::matchSize();
   current_ = true;
+  was_reset_ = false;
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
@@ -179,7 +180,7 @@ void ObstacleLayer::onInitialize()
           node, topic, observation_keep_time, expected_update_rate,
           min_obstacle_height,
           max_obstacle_height, obstacle_range, raytrace_range, *tf_, global_frame_,
-          sensor_frame, transform_tolerance)));
+          sensor_frame, tf2::durationFromSec(transform_tolerance))));
 
     // check if we'll add this buffer to our marking observation buffers
     if (marking) {
@@ -444,6 +445,12 @@ ObstacleLayer::updateCosts(
     return;
   }
 
+  // if not current due to reset, set current now after clearing
+  if (!current_ && was_reset_) {
+    was_reset_ = false;
+    current_ = true;
+  }
+
   if (footprint_clearing_enabled_) {
     setConvexPolygonCost(transformed_footprint_, nav2_costmap_2d::FREE_SPACE);
   }
@@ -647,7 +654,8 @@ ObstacleLayer::reset()
 {
   resetMaps();
   resetBuffersLastUpdated();
-  current_ = true;
+  current_ = false;
+  was_reset_ = true;
 }
 
 void

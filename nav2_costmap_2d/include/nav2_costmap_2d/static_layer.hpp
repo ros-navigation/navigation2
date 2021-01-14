@@ -61,6 +61,7 @@ public:
   virtual void activate();
   virtual void deactivate();
   virtual void reset();
+  virtual bool isClearable() {return false;}
 
   virtual void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,

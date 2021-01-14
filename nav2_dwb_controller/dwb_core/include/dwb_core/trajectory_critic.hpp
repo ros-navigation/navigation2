@@ -93,8 +93,8 @@ public:
    */
   void initialize(
     const nav2_util::LifecycleNode::SharedPtr & nh,
-    std::string & name,
-    std::string & ns,
+    const std::string & name,
+    const std::string & ns,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
   {
     node_ = nh;

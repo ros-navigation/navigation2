@@ -1,6 +1,4 @@
 version: 2.1
-orbs:
-  codecov: codecov/codecov@1.1.1
 
 _commands:
   common_commands: &common_commands
@@ -62,9 +60,22 @@ _commands:
               sha256sum $PWD/checksum.txt >> checksum.txt
               apt-get update
               rosdep update
+              
+              # workarround for OMPL and rosdep
+              # https://github.com/ompl/ompl/issues/753
+              # Prevent searching $ROS_WS/install given it's too big for rosdep
+
+              if [ "$ROS_WS" == "<< parameters.underlay >>" ]; then
+                underlay_ws=""
+              else
+                underlay_ws=<< parameters.underlay >>/src
+              fi
+              echo underlay_ws = $underlay_ws
+
               dependencies=$(
                 rosdep install -q -y \
                   --from-paths src \
+                    $underlay_ws \
                   --ignore-src \
                   --skip-keys " \
                     slam_toolbox \
@@ -274,9 +285,17 @@ _steps:
       command: src/navigation2/tools/code_coverage_report.bash ci
       when: always
   upload_overlay_coverage: &upload_overlay_coverage
-    codecov/upload:
-      file: lcov/project_coverage.info
-      flags: project
+    run:
+      name: Upload Code Coverage
+      working_directory: /opt/overlay_ws
+      command: |
+        curl -s https://codecov.io/bash | bash -s -- \
+          -f "lcov/project_coverage.info" \
+          -R "src/navigation2" \
+          -t "${CODECOV_TOKEN}" \
+          -n "${CIRCLE_BUILD_NUM}" \
+          -F "project" \
+          -Z || echo 'Codecov upload failed'
       when: always
   trigger_dockerhub_build: &trigger_dockerhub_build
     trigger_dockerhub_url:
