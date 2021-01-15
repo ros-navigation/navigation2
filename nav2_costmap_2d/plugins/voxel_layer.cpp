@@ -168,8 +168,8 @@ void VoxelLayer::updateBounds(
 
     const sensor_msgs::msg::PointCloud2 & cloud = *(obs.cloud_);
 
-    double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
-    double sq_raytrace_min_range = obs.raytrace_min_range_ * obs.raytrace_min_range_;
+    double sq_obstacle_max_range = obs.obstacle_max_range_ * obs.obstacle_max_range_;
+    double sq_obstacle_min_range = obs.obstacle_min_range_ * obs.obstacle_min_range_;
 
     sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
@@ -187,12 +187,12 @@ void VoxelLayer::updateBounds(
         (*iter_z - obs.origin_.z) * (*iter_z - obs.origin_.z);
 
       // if the point is far enough away... we won't consider it
-      if (sq_dist >= sq_obstacle_range) {
+      if (sq_dist >= sq_obstacle_max_range) {
         continue;
       }
 
       // If the point is too close, do not consider it
-      if (sq_dist < sq_raytrace_min_range) {
+      if (sq_dist < sq_obstacle_min_range) {
         continue;
       }
 

@@ -395,7 +395,7 @@ TEST_F(TestNode, testRaytracing) {
 
   ASSERT_EQ(lethal_count, 1);
 
-  addObservation(olayer, 1.0, 1.0, MAX_Z / 2, 0, 0, MAX_Z / 2, true, true, 100.0, 5.0);
+  addObservation(olayer, 1.0, 1.0, MAX_Z / 2, 0, 0, MAX_Z / 2, true, true, 100.0, 5.0, 100.0, 5.0);
 
   // This actually puts the LETHAL (254) point in the costmap at (0,0)
   layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose

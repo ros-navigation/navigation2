@@ -132,7 +132,8 @@ void ObstacleLayer::onInitialize()
     declareParameter(source + "." + "inf_is_valid", rclcpp::ParameterValue(false));
     declareParameter(source + "." + "marking", rclcpp::ParameterValue(true));
     declareParameter(source + "." + "clearing", rclcpp::ParameterValue(false));
-    declareParameter(source + "." + "obstacle_range", rclcpp::ParameterValue(2.5));
+    declareParameter(source + "." + "obstacle_max_range", rclcpp::ParameterValue(2.5));
+    declareParameter(source + "." + "obstacle_min_range", rclcpp::ParameterValue(0.0));
     declareParameter(source + "." + "raytrace_max_range", rclcpp::ParameterValue(3.0));
     declareParameter(source + "." + "raytrace_min_range", rclcpp::ParameterValue(0.0));
 
@@ -160,8 +161,9 @@ void ObstacleLayer::onInitialize()
     }
 
     // get the obstacle range for the sensor
-    double obstacle_range;
-    node->get_parameter(name_ + "." + source + "." + "obstacle_range", obstacle_range);
+    double obstacle_max_range, obstacle_min_range;
+    node->get_parameter(name_ + "." + source + "." + "obstacle_max_range", obstacle_max_range);
+    node->get_parameter(name_ + "." + source + "." + "obstacle_min_range", obstacle_min_range);
 
     // get the raytrace ranges for the sensor
     double raytrace_max_range, raytrace_min_range;
@@ -182,7 +184,8 @@ void ObstacleLayer::onInitialize()
         new ObservationBuffer(
           node, topic, observation_keep_time, expected_update_rate,
           min_obstacle_height,
-          max_obstacle_height, obstacle_range, raytrace_max_range, raytrace_min_range, *tf_,
+          max_obstacle_height, obstacle_max_range, obstacle_min_range, raytrace_max_range,
+          raytrace_min_range, *tf_,
           global_frame_,
           sensor_frame, tf2::durationFromSec(transform_tolerance))));
 
@@ -381,8 +384,8 @@ ObstacleLayer::updateBounds(
 
     const sensor_msgs::msg::PointCloud2 & cloud = *(obs.cloud_);
 
-    double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
-    double sq_raytrace_min_range = obs.raytrace_min_range_ * obs.raytrace_min_range_;
+    double sq_obstacle_max_range = obs.obstacle_max_range_ * obs.obstacle_max_range_;
+    double sq_obstacle_min_range = obs.obstacle_min_range_ * obs.obstacle_min_range_;
 
     sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
@@ -404,13 +407,13 @@ ObstacleLayer::updateBounds(
         (pz - obs.origin_.z) * (pz - obs.origin_.z);
 
       // if the point is far enough away... we won't consider it
-      if (sq_dist >= sq_obstacle_range) {
+      if (sq_dist >= sq_obstacle_max_range) {
         RCLCPP_DEBUG(logger_, "The point is too far away");
         continue;
       }
 
       // if the point is too close, do not conisder it
-      if (sq_dist < sq_raytrace_min_range) {
+      if (sq_dist < sq_obstacle_min_range) {
         RCLCPP_DEBUG(logger_, "The point is too close");
         continue;
       }
