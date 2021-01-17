@@ -11,12 +11,15 @@
 #include "nav2_localization/interfaces/solver_base.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "message_filters/subscriber.h"
+#include "sensor_msgs/msg/laser_scan.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "laser_geometry/laser_geometry.hpp"
+
 
 namespace nav2_localization
 {
@@ -101,6 +104,12 @@ protected:
     void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
 
     /**
+     * @brief Callback when a LaserScan is received. It will convert it to a PC and use the callback for generic scans
+     * @param scan pointer to the received LaserScan message
+     */
+    void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
+
+    /**
      * @brief Callback when the scan is received
      * @param scan pointer to the received PointCloud2 message
      */
@@ -129,9 +138,13 @@ protected:
     tf2::Duration transform_tolerance_;
 
     // Message filters
+    std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> scan_sub_;
+    std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
     std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>> scan_filter_;
+    message_filters::Connection laser_scan_connection_;
     message_filters::Connection scan_connection_;
+	laser_geometry::LaserProjection laser_to_pc_projector_;
 
     // Sample Motion Model Plugin
     pluginlib::ClassLoader<nav2_localization::SampleMotionModel> sample_motion_model_loader_;

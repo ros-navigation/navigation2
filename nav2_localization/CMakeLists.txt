@@ -16,6 +16,7 @@ find_package(message_filters REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(laser_geometry REQUIRED)
 
 set(dependencies
   rclcpp
@@ -31,6 +32,7 @@ set(dependencies
   tf2_ros
   tf2
   nav2_msgs
+  laser_geometry
 )
 
 include_directories(include)
