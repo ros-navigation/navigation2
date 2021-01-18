@@ -1,6 +1,6 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_localization/interfaces/solver_base.hpp"
-#include "nav2_localization/plugins/solvers/MCLSolver2d.hpp"
+#include "nav2_localization/plugins/solvers/mcl_solver2d.hpp"
 #include "nav2_localization/particle_filter.hpp"
 #include <vector>
 

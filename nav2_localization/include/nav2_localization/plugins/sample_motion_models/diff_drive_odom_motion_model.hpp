@@ -1,5 +1,5 @@
-#ifndef NAV2_LOCALIZATION__SAMPLE_MOTION_MODEL_PLUGINS_HPP_
-#define NAV2_LOCALIZATION__SAMPLE_MOTION_MODEL_PLUGINS_HPP_
+#ifndef NAV2_LOCALIZATION__DIFF_DRIVE_ODOM_MOTION_MODEL_HPP_
+#define NAV2_LOCALIZATION__DIFF_DRIVE_ODOM_MOTION_MODEL_HPP_
 
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
 #include "geometry_msgs/msg/pose.hpp"
@@ -30,4 +30,4 @@ private:
 };
 } // nav2_localization
 
-#endif // NAV2_LOCALIZATION__SAMPLE_MOTION_MODEL_PLUGINS_HPP_
+#endif // NAV2_LOCALIZATION__DIFF_DRIVE_ODOM_MOTION_MODEL_HPP_
