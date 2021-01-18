@@ -103,7 +103,7 @@ TEST_F(TestNode, TestPercentLimit)
   EXPECT_NEAR(kp.getMaxSpeedXY(), MAX_VEL_LINEAR, EPSILON);
 
   // Set speed limit 30% from maximum robot speed
-  kh.setSpeedLimit(true, 30);
+  kh.setSpeedLimit(30, true);
 
   // Update KinematicParameters values from KinematicsHandler
   kp = kh.getKinematics();
@@ -113,7 +113,7 @@ TEST_F(TestNode, TestPercentLimit)
   EXPECT_NEAR(kp.getMaxSpeedXY(), MAX_VEL_LINEAR * 0.3, EPSILON);
 
   // Restore maximum speed to its default
-  kh.setSpeedLimit(true, nav2_costmap_2d::NO_SPEED_LIMIT);
+  kh.setSpeedLimit(nav2_costmap_2d::NO_SPEED_LIMIT, true);
 
   // Update KinematicParameters values from KinematicsHandler
   kp = kh.getKinematics();
@@ -135,27 +135,17 @@ TEST_F(TestNode, TestAbsoluteLimit)
   EXPECT_NEAR(kp.getMaxSpeedXY(), MAX_VEL_LINEAR, EPSILON);
 
   // Set speed limit 35.0 m/s
-  kh.setSpeedLimit(false, 35.0);
+  kh.setSpeedLimit(35.0, false);
 
   // Update KinematicParameters values from KinematicsHandler
   kp = kh.getKinematics();
-  EXPECT_NEAR(kp.getMaxX(), 35.0, EPSILON);
-  EXPECT_NEAR(kp.getMaxY(), 30.0, EPSILON);
+  EXPECT_NEAR(kp.getMaxX(), MAX_VEL_X * 35.0 / MAX_VEL_LINEAR, EPSILON);
+  EXPECT_NEAR(kp.getMaxY(), MAX_VEL_Y * 35.0 / MAX_VEL_LINEAR, EPSILON);
   EXPECT_NEAR(kp.getMaxTheta(), MAX_VEL_THETA * 35.0 / MAX_VEL_LINEAR, EPSILON);
   EXPECT_NEAR(kp.getMaxSpeedXY(), 35.0, EPSILON);
 
-  // Set speed limit 15.0 m/s
-  kh.setSpeedLimit(false, 15.0);
-
-  // Update KinematicParameters values from KinematicsHandler
-  kp = kh.getKinematics();
-  EXPECT_NEAR(kp.getMaxX(), 15.0, EPSILON);
-  EXPECT_NEAR(kp.getMaxY(), 15.0, EPSILON);
-  EXPECT_NEAR(kp.getMaxTheta(), MAX_VEL_THETA * 15.0 / MAX_VEL_LINEAR, EPSILON);
-  EXPECT_NEAR(kp.getMaxSpeedXY(), 15.0, EPSILON);
-
   // Restore maximum speed to its default
-  kh.setSpeedLimit(false, nav2_costmap_2d::NO_SPEED_LIMIT);
+  kh.setSpeedLimit(nav2_costmap_2d::NO_SPEED_LIMIT, false);
 
   // Update KinematicParameters values from KinematicsHandler
   kp = kh.getKinematics();

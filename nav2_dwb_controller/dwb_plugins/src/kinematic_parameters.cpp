@@ -130,7 +130,7 @@ void KinematicsHandler::initialize(
 }
 
 void KinematicsHandler::setSpeedLimit(
-  const bool & percentage, const double & speed_limit)
+  const double & speed_limit, const bool & percentage)
 {
   KinematicParameters kinematics(*kinematics_.load());
 
@@ -151,16 +151,14 @@ void KinematicsHandler::setSpeedLimit(
       // Speed limit is expressed in absolute value
       if (speed_limit < kinematics.base_max_speed_xy_) {
         kinematics.max_speed_xy_ = speed_limit;
-        // Handling angular velocity changes: Max angular velocity is being changed
-        // in the same proportion as linear speed changed.
+        // Handling components and angular velocity changes:
+        // Max velocities are being changed in the same proportion
+        // as absolute linear speed changed in order to preserve
+        // robot movng trajectories to be the same after speed change.
         const double ratio = speed_limit / kinematics.base_max_speed_xy_;
+        kinematics.max_vel_x_ = kinematics.base_max_vel_x_ * ratio;
+        kinematics.max_vel_y_ = kinematics.base_max_vel_y_ * ratio;
         kinematics.max_vel_theta_ = kinematics.base_max_vel_theta_ * ratio;
-      }
-      if (speed_limit < kinematics.base_max_vel_x_) {
-        kinematics.max_vel_x_ = speed_limit;
-      }
-      if (speed_limit < kinematics.base_max_vel_y_) {
-        kinematics.max_vel_y_ = speed_limit;
       }
     }
   }

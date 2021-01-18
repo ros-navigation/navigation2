@@ -467,7 +467,7 @@ void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::Shar
 {
   ControllerMap::iterator it;
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
-    it->second->setSpeedLimit(msg->percentage, msg->speed_limit);
+    it->second->setSpeedLimit(msg->speed_limit, msg->percentage);
   }
 }
 
