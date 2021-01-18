@@ -279,9 +279,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     client_node_,
     "navigate_to_pose");
   waypoint_follower_action_client_ =
-    rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(
+    rclcpp_action::create_client<nav2_msgs::action::follow_waypoints>(
     client_node_,
-    "FollowWaypoints");
+    "follow_waypoints");
   navigation_goal_ = nav2_msgs::action::NavigateToPose::Goal();
   waypoint_follower_goal_ = nav2_msgs::action::FollowWaypoints::Goal();
 

@@ -79,7 +79,7 @@ private:
   using NavigationGoalHandle =
     rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>;
   using WaypointFollowerGoalHandle =
-    rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowWaypoints>;
+    rclcpp_action::ClientGoalHandle<nav2_msgs::action::follow_waypoints>;
 
   // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
@@ -92,7 +92,7 @@ private:
 
   // The NavigateToPose action client
   rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr navigation_action_client_;
-  rclcpp_action::Client<nav2_msgs::action::FollowWaypoints>::SharedPtr
+  rclcpp_action::Client<nav2_msgs::action::follow_waypoints>::SharedPtr
     waypoint_follower_action_client_;
 
   // Goal-related state

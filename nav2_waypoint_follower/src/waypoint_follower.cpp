@@ -72,7 +72,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_clock_interface(),
     get_node_logging_interface(),
     get_node_waitables_interface(),
-    "FollowWaypoints", std::bind(&WaypointFollower::followWaypoints, this));
+    "follow_waypoints", std::bind(&WaypointFollower::followWaypoints, this));
 
   try {
     waypoint_task_executor_type_ = nav2_util::get_plugin_type_param(
