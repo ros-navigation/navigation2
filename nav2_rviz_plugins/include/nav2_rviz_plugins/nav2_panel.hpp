@@ -97,7 +97,7 @@ private:
 
   // Goal-related state
   nav2_msgs::action::NavigateToPose::Goal navigation_goal_;
-  nav2_msgs::action::FollowWaypoints::Goal waypoint_follower_goal_;
+  nav2_msgs::action::follow_waypoints::Goal waypoint_follower_goal_;
   NavigationGoalHandle::SharedPtr navigation_goal_handle_;
   WaypointFollowerGoalHandle::SharedPtr waypoint_follower_goal_handle_;
 

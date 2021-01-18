@@ -283,7 +283,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     client_node_,
     "follow_waypoints");
   navigation_goal_ = nav2_msgs::action::NavigateToPose::Goal();
-  waypoint_follower_goal_ = nav2_msgs::action::FollowWaypoints::Goal();
+  waypoint_follower_goal_ = nav2_msgs::action::follow_waypoints::Goal();
 
   wp_navigation_markers_pub_ =
     client_node_->create_publisher<visualization_msgs::msg::MarkerArray>(
@@ -501,7 +501,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
     waypoint_follower_action_client_->wait_for_action_server(std::chrono::seconds(5));
   if (!is_action_server_ready) {
     RCLCPP_ERROR(
-      client_node_->get_logger(), "FollowWaypoints action server is not available."
+      client_node_->get_logger(), "follow_waypoints action server is not available."
       " Is the initial pose set?");
     return;
   }
@@ -520,7 +520,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =
-    rclcpp_action::Client<nav2_msgs::action::FollowWaypoints>::SendGoalOptions();
+    rclcpp_action::Client<nav2_msgs::action::follow_waypoints>::SendGoalOptions();
   send_goal_options.result_callback = [](auto) {};
 
   auto future_goal_handle =
@@ -550,7 +550,7 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
   if (!is_action_server_ready) {
     RCLCPP_ERROR(
       client_node_->get_logger(),
-      "FollowWaypoints action server is not available."
+      "follow_waypoints action server is not available."
       " Is the initial pose set?");
     return;
   }
