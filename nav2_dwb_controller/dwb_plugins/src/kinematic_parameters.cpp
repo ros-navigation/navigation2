@@ -154,7 +154,7 @@ void KinematicsHandler::setSpeedLimit(
         // Handling components and angular velocity changes:
         // Max velocities are being changed in the same proportion
         // as absolute linear speed changed in order to preserve
-        // robot movng trajectories to be the same after speed change.
+        // robot moving trajectories to be the same after speed change.
         const double ratio = speed_limit / kinematics.base_max_speed_xy_;
         kinematics.max_vel_x_ = kinematics.base_max_vel_x_ * ratio;
         kinematics.max_vel_y_ = kinematics.base_max_vel_y_ * ratio;
