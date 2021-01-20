@@ -163,7 +163,7 @@ void RegulatedPurePursuitController::activate()
   RCLCPP_INFO(
     logger_,
     "Activating controller: %s of type "
-    "regulated_pure_pursuit_controller::RegulatedPurePursuitController\"  %s",
+    "regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
   global_pub_->on_activate();
   carrot_pub_->on_activate();
@@ -175,7 +175,7 @@ void RegulatedPurePursuitController::deactivate()
   RCLCPP_INFO(
     logger_,
     "Deactivating controller: %s of type "
-    "regulated_pure_pursuit_controller::RegulatedPurePursuitController\"  %s",
+    "regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
   global_pub_->on_deactivate();
   carrot_pub_->on_deactivate();
@@ -470,6 +470,11 @@ void RegulatedPurePursuitController::applyConstraints(
 void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
 {
   global_plan_ = path;
+}
+
+void RegulatedPurePursuitController::setSpeedLimit(const double & speed_limit)
+{
+  desired_linear_vel_ = speed_limit;
 }
 
 nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(

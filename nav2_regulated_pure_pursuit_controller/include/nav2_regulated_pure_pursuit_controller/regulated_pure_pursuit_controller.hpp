@@ -56,6 +56,8 @@ public:
 
   void setPlan(const nav_msgs::msg::Path & path) override;
 
+  void setSpeedLimit(const double & speed_limit) override;
+
 protected:
   nav_msgs::msg::Path transformGlobalPlan(const geometry_msgs::msg::PoseStamped & pose);
 
