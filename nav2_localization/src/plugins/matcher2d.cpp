@@ -3,8 +3,7 @@
 #include "nav2_localization/plugins/matcher2d_plugins.hpp"
 #include "nav2_localization/map_utils.hpp"
 #include "tf2/utils.h"
-#include "sensor_msgs/point_cloud_conversion.hpp"
-#include "sensor_msgs/msg/point_cloud.hpp"
+#include "sensor_msgs/point_cloud2_iterator.hpp"
 #include <math.h> // To use "hypot()" and "atan2()"
 
 namespace nav2_localization
@@ -31,38 +30,32 @@ double LikelihoodFieldMatcher2d::getScanProbability(
 	const sensor_msgs::msg::PointCloud2::ConstSharedPtr &scan,
 	const geometry_msgs::msg::TransformStamped &curr_pose)
 {
-
-	// Convert received PC2 to PC
-	sensor_msgs::msg::PointCloud pointcloud;
-	sensor_msgs::convertPointCloud2ToPointCloud(*scan.get(), pointcloud);
-
 	// Get scan data from pointcloud
 	std::vector<double> ranges;
 	std::vector<double> angles;
-	geometry_msgs::msg::Point32 point;
+	geometry_msgs::msg::Point point;
 	int valid_beams = 0;
 	double distance;
 	double angle;
 
-	for(int i=0; pointcloud.points.size(); i++)
+	// Create PC2 iterators to make sure we read the X and Y coordinates
+	sensor_msgs::PointCloud2ConstIterator<float> iter_x(*scan, "x"),
+                                                 iter_y(*scan, "y");
+
+	while (iter_x != iter_x.end())
 	{
-		point = pointcloud.points[i];
- 
-		if(point.z == 0)
-		{
-			distance = hypot(point.x, point.y);
-			angle = atan2(point.x, point.y+1e-10); // atan(x/y)
-			
-			ranges.push_back(distance);
-			angles.push_back(angle);
-			valid_beams++;
-		}
-		else
-		{
-			std::stringstream warning;
-			warning << "WARNING: Point number " << i << " of the scan will be ignored since it does not have z=0 and this plugin is oriented to 2D spaces. Its z is " << point.z;
-			RCLCPP_WARN(node_->get_logger(), warning.str());
-		}
+		point.x = *iter_x;
+		point.y = *iter_y;
+
+        ++iter_x;
+		++iter_y;
+		
+		distance = hypot(point.x, point.y);
+		angle = atan2(point.x, point.y+1e-10); // atan(x/y)
+		
+		ranges.push_back(distance);
+		angles.push_back(angle);
+		valid_beams++;
 	}
 
 	// Get most distant measurement (taken as max range
