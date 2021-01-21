@@ -15,11 +15,11 @@ struct particle
 	float weight;
 };
 
-class DummyParticleFilter
+class ParticleFilter
 {
 public:
-	DummyParticleFilter(const int &initial_number_of_particles,
-						const geometry_msgs::msg::TransformStamped &initial_pose);
+	ParticleFilter(const int &initial_number_of_particles,
+					const geometry_msgs::msg::TransformStamped &initial_pose);
 	void prediction_step(const SampleMotionModel::Ptr &motion_sampler,
 						 const geometry_msgs::msg::TransformStamped& prev_odom,
         				 const geometry_msgs::msg::TransformStamped& curr_odom,

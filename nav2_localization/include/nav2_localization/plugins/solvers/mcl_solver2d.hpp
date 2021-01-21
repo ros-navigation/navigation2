@@ -13,14 +13,14 @@
 
 // Others
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "nav2_localization/dummy_particle_filter.hpp"
+#include "nav2_localization/particle_filter.hpp"
 
 namespace nav2_localization
 {
-class DummySolver2d : public nav2_localization::Solver
+class MCLSolver2d : public nav2_localization::Solver
 {
 public:
-	DummySolver2d() {};
+	MCLSolver2d() {};
 
 	geometry_msgs::msg::TransformStamped solve(
 		const geometry_msgs::msg::TransformStamped& curr_odom,
@@ -40,7 +40,7 @@ public:
 	void cleanup() override;
 
 private:
-	std::shared_ptr<DummyParticleFilter> pf_; // Particle filter
+	std::shared_ptr<ParticleFilter> pf_; // Particle filter
 };
 } // nav2_localization
 

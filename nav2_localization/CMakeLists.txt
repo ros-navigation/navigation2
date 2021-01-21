@@ -37,13 +37,14 @@ set(dependencies
 
 include_directories(include)
 
-add_library(sample_motion_model SHARED src/plugins/sample_motion_model.cpp src/angle_utils.cpp)
+
+add_library(sample_motion_model SHARED src/plugins/motion_models/diff_drive_odom_motion_model.cpp src/angle_utils.cpp)
 ament_target_dependencies(sample_motion_model ${dependencies})
 
-add_library(matcher2d SHARED src/plugins/matcher2d.cpp src/map_utils.cpp)
+add_library(matcher2d SHARED src/plugins/matchers/likelihood_field_matcher2d.cpp src/map_utils.cpp)
 ament_target_dependencies(matcher2d ${dependencies})
 
-add_library(solver SHARED src/plugins/solver.cpp src/dummy_particle_filter.cpp)
+add_library(solver SHARED src/plugins/solvers/mcl_solver2d.cpp src/particle_filter.cpp)
 ament_target_dependencies(solver ${dependencies})
 
 set(executable_name nav2_localization)

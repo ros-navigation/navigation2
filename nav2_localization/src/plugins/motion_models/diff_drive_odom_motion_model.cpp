@@ -1,6 +1,6 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
-#include "nav2_localization/plugins/sample_motion_model_plugins.hpp"
+#include "nav2_localization/plugins/sample_motion_models/diff_drive_odom_motion_model.hpp"
 #include "nav2_localization/angle_utils.hpp"
 #include "tf2/convert.h"
 #include "tf2/LinearMath/Quaternion.h"
