@@ -53,6 +53,9 @@ def generate_launch_description():
     if (os.getenv('GROOT_MONITORING') == 'True'):
         param_substitutions.update({'enable_groot_monitoring': 'True'})
 
+    param_substitutions.update({'planner_server.ros__parameters.GridBased.plugin': os.getenv('PLANNER')})
+    param_substitutions.update({'controller_server.ros__parameters.FollowPath.plugin': os.getenv('CONTROLLER')})
+
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key='',
