@@ -21,9 +21,6 @@
 #include <vector>
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
-#include "geometry_msgs/msg/transform.hpp"
-#include "geometry_msgs/msg/vector3.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 
 namespace nav2_map_server

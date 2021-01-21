@@ -129,13 +129,10 @@ protected:
   // PointCloud2 related fields
   // A service to provide the pointcloud2 (GetMap3D) and the message to return
   rclcpp::Service<nav2_msgs::srv::GetMap3D>::SharedPtr pcd_service_;
-
   // A service to load the PointCloud2 from file at run time (LoadMap3D)
   rclcpp::Service<nav2_msgs::srv::LoadMap3D>::SharedPtr pcd_load_map_service_;
-
   // A topic on which the PointCloud2 will be published
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr pcd_pub_;
-
   // The message to publish the pointcloud topic
   sensor_msgs::msg::PointCloud2 pcd_msg_;
 
@@ -145,7 +142,6 @@ protected:
   // Origin related message and publishers
   // A topic on which the Pose will be published
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Pose>::SharedPtr origin_pub_;
-
   // The message to publish the pose topic
   geometry_msgs::msg::Pose origin_msg_;
 };

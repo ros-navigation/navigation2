@@ -26,7 +26,6 @@
 
 #include "yaml-cpp/yaml.h"
 #include "nav2_map_server/map_3d/pcl_helper.hpp"
-#include "sensor_msgs/msg/point_cloud2.hpp"
 
 #include "pcl/io/pcd_io.h"
 #include "Eigen/Core"

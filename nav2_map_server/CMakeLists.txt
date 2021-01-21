@@ -33,6 +33,14 @@ set(map_saver_server_executable map_saver_server)
 
 set(costmap_filter_info_server_executable costmap_filter_info_server)
 
+# Making 2D as default map-saver adn server
+add_executable(${map_server_executable}
+  src/map_server/main_2d.cpp)
+
+add_executable(${map_saver_server_executable}
+    src/map_saver/main_server_2d.cpp)
+##########################################
+
 add_executable(${map_server_executable}_2d
   src/map_server/main_2d.cpp)
 
@@ -108,6 +116,14 @@ set(map_saver_dependencies
   nav2_util
   geometry_msgs)
 
+# Default map server and saver
+ament_target_dependencies(${map_server_executable}
+  ${map_server_dependencies})
+
+ament_target_dependencies(${map_saver_server_executable}
+  ${map_saver_dependencies})
+###############
+
 ament_target_dependencies(${map_server_executable}_2d
   ${map_server_dependencies})
 
@@ -146,6 +162,12 @@ target_link_libraries(${library_name}
   ${map_io_library_name}_3d
   ${PCL_LIBRARIES})
 
+# Default map server
+target_link_libraries(${map_server_executable}
+    ${map_io_library_name}_2d
+    ${library_name})
+###################
+
 target_link_libraries(${map_server_executable}_2d
   ${map_io_library_name}_2d
   ${library_name})
@@ -156,6 +178,12 @@ target_link_libraries(${map_server_executable}_3d
 
 
 if(WIN32)
+
+  # Default map server
+  target_compile_definitions(${map_server_executable} PRIVATE
+      YAML_CPP_DLL)
+  ####################
+
   target_compile_definitions(${map_server_executable}_2d PRIVATE
     YAML_CPP_DLL)
 
@@ -166,8 +194,10 @@ endif()
 target_link_libraries(${map_saver_cli_executable}
   ${library_name})
 
-#target_link_libraries(${map_saver_cli_3d_executable}
-#  ${library_name})
+# Default map saver
+target_link_libraries(${map_saver_server_executable}
+  ${library_name})
+###################
 
 target_link_libraries(${map_saver_server_executable}_2d
   ${library_name})
@@ -201,9 +231,11 @@ install(TARGETS
   RUNTIME DESTINATION bin)
 
 install(TARGETS
+  ${map_server_executable}
   ${map_server_executable}_2d
   ${map_server_executable}_3d
   ${map_saver_cli_executable}
+  ${map_saver_server_executable}
   ${map_saver_server_executable}_2d
   ${map_saver_server_executable}_3d
   ${costmap_filter_info_server_executable}
