@@ -65,9 +65,10 @@ Mixing the proximity and curvature regulated linear velocities with the time-sca
 | `use_cost_regulated_linear_velocity_scaling` | Whether to use the regulated features for proximity to obstacles | 
 | `regulated_linear_scaling_min_radius` | The turning radius for which the regulation features are triggered. Remember, sharper turns have smaller radii | 
 | `regulated_linear_scaling_min_speed` | The minimum speed for which the regulated features can send, to ensure process is still achievable even in high cost spaces with high curvature. | 
-| `use_rotate_to_heading` | Whether to enable rotating to rough heading when using holonomic planners. Recommended on for all robot types except ackermann, which cannot rotate in place. | 
-| `rotate_to_heading_min_angle` | The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if enabled. | 
+| `use_rotate_to_heading` | Whether to enable rotating to rough heading and goal orientation when using holonomic planners. Recommended on for all robot types except ackermann, which cannot rotate in place. | 
+| `rotate_to_heading_min_angle` | The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if `use_rotate_to_heading` is enabled. | 
 | `max_angular_accel` | Maximum allowable angular acceleration while rotating to heading, if enabled | 
+| `goal_dist_tol` | XY tolerance from goal to rotate to the goal heading, if `use_rotate_to_heading` is enabled. This should match or be smaller than the `GoalChecker`'s translational goal tolerance. | 
 
 
 Example fully-described XML with default parameter values:
@@ -115,6 +116,7 @@ controller_server:
       use_rotate_to_heading: true
       rotate_to_heading_min_angle: 0.785
       max_angular_accel: 3.2
+      goal_dist_tol: 0.25
 ```
 
 ## Topics

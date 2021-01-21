@@ -114,6 +114,8 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".rotate_to_heading_min_angle", rclcpp::ParameterValue(0.785));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".goal_dist_tol", rclcpp::ParameterValue(0.25));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   node->get_parameter(plugin_name_ + ".max_linear_accel", max_linear_accel_);
@@ -136,12 +138,13 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(plugin_name_ + ".use_rotate_to_heading", use_rotate_to_heading_);
   node->get_parameter(plugin_name_ + ".rotate_to_heading_min_angle", rotate_to_heading_min_angle_);
   node->get_parameter(plugin_name_ + ".max_angular_accel", max_angular_accel_);
+  node->get_parameter(plugin_name_ + ".goal_dist_tol", goal_dist_tol_);
   node->get_parameter("control_frequency", control_frequency);
 
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
   control_duration_ = 1.0 / control_frequency;
 
-  global_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
+  global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point", 1);
   carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc", 1);
 }
@@ -153,7 +156,7 @@ void RegulatedPurePursuitController::cleanup()
     "Cleaning up controller: %s of type"
     " regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
-  global_pub_.reset();
+  global_path_pub_.reset();
   carrot_pub_.reset();
   carrot_arc_pub_.reset();
 }
@@ -165,7 +168,7 @@ void RegulatedPurePursuitController::activate()
     "Activating controller: %s of type "
     "regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
-  global_pub_->on_activate();
+  global_path_pub_->on_activate();
   carrot_pub_->on_activate();
   carrot_arc_pub_->on_activate();
 }
@@ -177,7 +180,7 @@ void RegulatedPurePursuitController::deactivate()
     "Deactivating controller: %s of type "
     "regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
-  global_pub_->on_deactivate();
+  global_path_pub_->on_deactivate();
   carrot_pub_->on_deactivate();
   carrot_arc_pub_->on_deactivate();
 }
@@ -239,14 +242,17 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   angular_vel = desired_linear_vel_ * curvature;
 
   // Make sure we're in compliance with basic constraints
-  double angle_to_path;
-  if (shouldRotateToPath(carrot_pose, angle_to_path)) {
-    rotateToHeading(linear_vel, angular_vel, angle_to_path, speed);
+  double angle_to_heading;
+  if (shouldRotateToGoalHeading(carrot_pose)) {
+    double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
+    rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
+  } else if (shouldRotateToPath(carrot_pose, angle_to_heading)) {
+    rotateToHeading(linear_vel, angular_vel, angle_to_heading, speed);
   } else {
     applyConstraints(
-      linear_vel, fabs(lookahead_dist - sqrt(carrot_dist2)),
+      fabs(lookahead_dist - sqrt(carrot_dist2)),
       lookahead_dist, curvature, speed,
-      costAtPose(pose.pose.position.x, pose.pose.position.y));
+      costAtPose(pose.pose.position.x, pose.pose.position.y), linear_vel);
   }
 
   // Collision checking on this velocity heading
@@ -269,6 +275,14 @@ bool RegulatedPurePursuitController::shouldRotateToPath(
   // Whether we should rotate robot to rough path heading
   angle_to_path = atan2(carrot_pose.pose.position.y, carrot_pose.pose.position.x);
   return use_rotate_to_heading_ && fabs(angle_to_path) > rotate_to_heading_min_angle_;
+}
+
+bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
+  const geometry_msgs::msg::PoseStamped & carrot_pose)
+{
+  // Whether we should rotate robot to goal heading
+  double dist_to_goal = std::hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
+  return use_rotate_to_heading_ && dist_to_goal < goal_dist_tol_;
 }
 
 void RegulatedPurePursuitController::rotateToHeading(
@@ -329,7 +343,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
     return true;
   }
 
-  // debug messages
+  // visualization messages
   nav_msgs::msg::Path arc_pts_msg;
   arc_pts_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
   arc_pts_msg.header.stamp = robot_pose.header.stamp;
@@ -406,10 +420,9 @@ double RegulatedPurePursuitController::costAtPose(const double & x, const double
 }
 
 void RegulatedPurePursuitController::applyConstraints(
-  double & linear_vel,
   const double & dist_error, const double & lookahead_dist,
   const double & curvature, const geometry_msgs::msg::Twist & curr_speed,
-  const double & pose_cost)
+  const double & pose_cost, double & linear_vel)
 {
   double curvature_vel = linear_vel;
   double cost_vel = linear_vel;
@@ -533,7 +546,7 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   // Remove the portion of the global plan that we've already passed so we don't
   // process it on the next iteration (this is called path pruning)
   global_plan_.poses.erase(begin(global_plan_.poses), transformation_begin);
-  global_pub_->publish(transformed_plan);
+  global_path_pub_->publish(transformed_plan);
 
   if (transformed_plan.poses.empty()) {
     throw nav2_core::PlannerException("Resulting plan has 0 poses in it.");

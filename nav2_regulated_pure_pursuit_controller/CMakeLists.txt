@@ -30,17 +30,19 @@ set(dependencies
   tf2
 )
 
-add_library(nav2_regulated_pure_pursuit_controller SHARED
+set(library_name nav2_regulated_pure_pursuit_controller)
+
+add_library(${library_name} SHARED
         src/regulated_pure_pursuit_controller.cpp)
 
 # prevent pluginlib from using boost
-target_compile_definitions(nav2_regulated_pure_pursuit_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
-ament_target_dependencies(nav2_regulated_pure_pursuit_controller
+ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-install(TARGETS nav2_regulated_pure_pursuit_controller
+install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -55,10 +57,11 @@ if(BUILD_TESTING)
   # the following line skips the linter which checks for copyrights
   set(ament_cmake_copyright_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(nav2_regulated_pure_pursuit_controller)
+ament_export_libraries(${library_name})
 ament_export_dependencies(${dependencies})
 
 pluginlib_export_plugin_description_file(nav2_core nav2_regulated_pure_pursuit_controller.xml)
