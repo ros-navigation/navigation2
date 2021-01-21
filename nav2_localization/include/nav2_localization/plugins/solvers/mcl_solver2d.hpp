@@ -9,7 +9,6 @@
 // Types
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "sensor_msgs/msg/laser_scan.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
 // Others
@@ -25,7 +24,7 @@ public:
 
 	geometry_msgs::msg::TransformStamped solve(
 		const geometry_msgs::msg::TransformStamped& curr_odom,
-		const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan) override;
+		const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan) override;
 
 	void initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose) override;
 

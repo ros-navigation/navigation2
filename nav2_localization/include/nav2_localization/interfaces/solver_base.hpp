@@ -9,7 +9,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "sensor_msgs/msg/laser_scan.hpp"
+#include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
 // Others
@@ -37,7 +37,7 @@ public:
      */
 	virtual geometry_msgs::msg::TransformStamped solve(
 		const geometry_msgs::msg::TransformStamped& curr_odom,
-		const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan) = 0;
+		const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan) = 0;
 
 	/**
 	 * @brief Initializes the filter being used with a given pose

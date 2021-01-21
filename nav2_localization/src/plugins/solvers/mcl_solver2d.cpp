@@ -8,7 +8,7 @@ namespace nav2_localization
 {
 geometry_msgs::msg::TransformStamped MCLSolver2d::solve(
 	const geometry_msgs::msg::TransformStamped& curr_odom,
-	const sensor_msgs::msg::LaserScan::ConstSharedPtr& laser_scan)
+	const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan)
 {
 	// Motion update
 	pf_->update();
@@ -19,6 +19,7 @@ geometry_msgs::msg::TransformStamped MCLSolver2d::solve(
 
 	geometry_msgs::msg::TransformStamped curr_pose;
 	// curr_pose = pf_->get_most_likely_pose();
+
 	prev_pose_ = curr_pose;
 
     return curr_pose;

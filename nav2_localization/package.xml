@@ -21,6 +21,7 @@
   <depend>sensor_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>laser_geometry</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
