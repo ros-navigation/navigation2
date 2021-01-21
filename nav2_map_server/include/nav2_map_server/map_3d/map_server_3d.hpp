@@ -31,21 +31,21 @@ namespace nav2_map_server
 {
 
 /**
- * @class nav2_map_server::MapServer
+ * @class nav2_map_server::MapServer<sensor_msgs::msg::PointCloud2>
  * @brief Parses the map yaml file and creates a service and a publisher that
- * provides occupancy grid
+ * provides PointCloud maps, via. GetMap3D, and LoadMap3D services
  */
 template<>
 class MapServer<sensor_msgs::msg::PointCloud2>: public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief A constructor for nav2_map_server::MapServer
+   * @brief A constructor for nav2_map_server::MapServer<sensor_msgs::msg::PointCloud2>
    */
   MapServer();
 
   /**
-   * @brief A Destructor for nav2_map_server::MapServer
+   * @brief A Destructor for nav2_map_server::MapServer<sensor_msgs::msg::PointCloud2>
    */
   ~MapServer() override;
 

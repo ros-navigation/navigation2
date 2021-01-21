@@ -21,6 +21,12 @@
 namespace nav2_map_server
 {
 
+/**
+ * @brief nav2_map_server::MapServer class for map server(read adn host map) utils and services
+ * The class is templated with the map type and supports OccupancyGrids
+ * and Pointcloud based maps for now.
+ * @tparam mapT Template parameter for map type
+ */
 template<class mapT>
 class MapServer : public nav2_util::LifecycleNode
 {

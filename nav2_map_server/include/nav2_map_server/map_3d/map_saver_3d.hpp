@@ -29,21 +29,22 @@ namespace nav2_map_server
 {
 
 /**
- * @class nav2_map_server::MapSaver
+ * @class nav2_map_server::MapSaver<sensor_msgs::msg::PointCloud2>
  * @brief A class that provides map saving methods and services
+ * for PointCloud maps, via. SaveMap3D service
  */
 template<>
 class MapSaver<sensor_msgs::msg::PointCloud2>: public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief Constructor for the nav2_map_server::MapSaver
+   * @brief Constructor for the nav2_map_server::MapSaver<sensor_msgs::msg::PointCloud2>
    * @param is_pcd Bool for distinguishing b/w pcd and image, false by default
    */
   MapSaver();
 
   /**
-   * @brief Destructor for the nav2_map_server::MapServer
+   * @brief Destructor for the nav2_map_server::MapServer<sensor_msgs::msg::PointCloud2>
    */
   ~MapSaver() override;
 

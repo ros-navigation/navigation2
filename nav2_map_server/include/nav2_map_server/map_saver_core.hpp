@@ -21,6 +21,12 @@
 namespace nav2_map_server
 {
 
+/**
+ * @brief nav2_map_server::MapSaver class for savemap utils and services
+ * The class is templated with the map type and supports OccupancyGrids
+ * and Pointcloud based maps for now.
+ * @tparam mapT Template argument for Map type
+ */
 template<class mapT>
 class MapSaver : public nav2_util::LifecycleNode
 {
