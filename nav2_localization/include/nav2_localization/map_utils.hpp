@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <utility>
+#include "nav_msgs/msg/map_meta_data.hpp"
 
 // TODO: should this be moved to nav2_util?
 namespace nav2_localization
@@ -14,6 +15,16 @@ namespace nav2_localization
 class MapUtils
 {
 public:
+
+    /**
+     * @brief Converts world coordinates into grid map coordinates
+     * @param x World x coordinate
+     * @param y World y coordinate
+     * @param map_info Grid map metadata
+     * @return The corresponding grid map coordinates as a pair
+     */
+    static std::pair<int, int> worldCoordToMapCoord(const double &x, const double &y, const nav_msgs::msg::MapMetaData &map_info);
+
     /**
      * @brief Returns the index of a point in the map
      * @param x X coordinate of the cell (width)
@@ -39,8 +50,8 @@ public:
      * @param y2 y corrdinate of point 2
      * @return The euclidean distance between (x1, y1) and (x2, y2)
      */
-    static double distanceBetweenTwoPoints(const uint32_t &x1, const uint32_t &y1,
-                                           const uint32_t &x2, const uint32_t &y2);
+    static double distanceBetweenTwoPoints(const int &x1, const int &y1,
+                                           const int &x2, const int &y2);
 };
 }
 

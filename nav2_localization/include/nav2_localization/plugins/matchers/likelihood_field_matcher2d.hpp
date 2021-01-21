@@ -1,5 +1,5 @@
-#ifndef NAV2_LOCALIZATION__MATCHER2D_PLUGINS_HPP_
-#define NAV2_LOCALIZATION__MATCHER2D_PLUGINS_HPP_
+#ifndef NAV2_LOCALIZATION__LIKELIHOOD_FIELD_MATCHER2D_HPP_
+#define NAV2_LOCALIZATION__LIKELIHOOD_FIELD_MATCHER2D_HPP_
 
 #include "nav2_localization/interfaces/matcher2d_base.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -46,4 +46,4 @@ private:
 };  
 } // nav2_localization
 
-#endif // NAV2_LOCALIZATION__MATCHER2D_PLUGINS_HPP_
+#endif // NAV2_LOCALIZATION__LIKELIHOOD_FIELD_MATCHER2D_HPP_

@@ -11,13 +11,15 @@ geometry_msgs::msg::TransformStamped MCLSolver2d::solve(
 	const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan)
 {
 	// Motion update
-	pf_->prediction_step(motionSampler_, curr_odom, prev_odom_, prev_pose_);
+	pf_->update();
 	prev_odom_ = curr_odom;
 
 	// Measurement update
-	pf_->update_step(matcher_, scan);
+	pf_->resample();
 
-	geometry_msgs::msg::TransformStamped curr_pose = pf_->get_most_likely_pose();
+	geometry_msgs::msg::TransformStamped curr_pose;
+	// curr_pose = pf_->get_most_likely_pose();
+
 	prev_pose_ = curr_pose;
 
     return curr_pose;
@@ -46,7 +48,7 @@ void MCLSolver2d::configure(
 	int number_of_particles;
 	node_->get_parameter("num_particles", number_of_particles);
 
-	pf_ = std::make_shared<ParticleFilter>(number_of_particles, pose);
+	pf_ = std::make_shared<ParticleFilter>(number_of_particles);
 
 	prev_odom_ = odom;
 	prev_pose_ = pose;

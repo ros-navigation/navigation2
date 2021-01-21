@@ -1,5 +1,5 @@
-#ifndef NAV2_LOCALIZATION__SOLVER_PLUGINS_HPP_
-#define NAV2_LOCALIZATION__SOLVER_PLUGINS_HPP_
+#ifndef NAV2_LOCALIZATION__MCL_SOLVER2D_HPP_
+#define NAV2_LOCALIZATION__MCL_SOLVER2D_HPP_
 
 // Interfaces
 #include "nav2_localization/interfaces/solver_base.hpp"
@@ -44,4 +44,4 @@ private:
 };
 } // nav2_localization
 
-#endif // NAV2_LOCALIZATION__SOLVER_PLUGINS_HPP_
+#endif // NAV2_LOCALIZATION__MCL_SOLVER2D_HPP_
