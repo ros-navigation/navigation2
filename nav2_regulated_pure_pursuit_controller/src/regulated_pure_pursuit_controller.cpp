@@ -185,21 +185,6 @@ void RegulatedPurePursuitController::deactivate()
   carrot_arc_pub_->on_deactivate();
 }
 
-double RegulatedPurePursuitController::getLookAheadDistance(const geometry_msgs::msg::Twist & speed)
-{
-  // If using velocity-scaled look ahead distances, find and clamp the dist
-  // Else, use the static look ahead distance
-  double lookahead_dist = 0.0;
-  if (use_velocity_scaled_lookahead_dist_) {
-    lookahead_dist = speed.linear.x * lookahead_time_;
-    lookahead_dist = std::clamp(lookahead_dist, min_lookahead_dist_, max_lookahead_dist_);
-  } else {
-    lookahead_dist = lookahead_dist_;
-  }
-
-  return lookahead_dist;
-}
-
 std::unique_ptr<geometry_msgs::msg::PointStamped> RegulatedPurePursuitController::createCarrotMsg(
   const geometry_msgs::msg::PoseStamped & carrot_pose)
 {
@@ -209,6 +194,19 @@ std::unique_ptr<geometry_msgs::msg::PointStamped> RegulatedPurePursuitController
   carrot_msg->point.y = carrot_pose.pose.position.y;
   carrot_msg->point.z = 0.01;  // publish right over map to stand out
   return carrot_msg;
+}
+
+double RegulatedPurePursuitController::getLookAheadDistance(const geometry_msgs::msg::Twist & speed)
+{
+  // If using velocity-scaled look ahead distances, find and clamp the dist
+  // Else, use the static look ahead distance
+  double lookahead_dist = lookahead_dist_;
+  if (use_velocity_scaled_lookahead_dist_) {
+    lookahead_dist = speed.linear.x * lookahead_time_;
+    lookahead_dist = std::clamp(lookahead_dist, min_lookahead_dist_, max_lookahead_dist_);
+  }
+
+  return lookahead_dist;
 }
 
 geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocityCommands(
