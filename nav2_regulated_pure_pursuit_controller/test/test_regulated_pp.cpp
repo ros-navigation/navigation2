@@ -47,6 +47,9 @@ public:
   };
 
   void setVelocityScaledLookAhead() {use_velocity_scaled_lookahead_dist_ = true;};
+  void setCostRegulationScaling() {use_cost_regulated_linear_velocity_scaling_ = true;};
+  void resetVelocityRegulationScaling() {use_regulated_linear_velocity_scaling_ = false;};
+  void resetVelocityApproachScaling() {use_approach_vel_scaling_ = false;};
 
   double getLookAheadDistanceWrapper(const geometry_msgs::msg::Twist & twist)
   {
@@ -58,6 +61,32 @@ public:
   {
     return getLookAheadPoint(dist, path);
   };
+
+  bool shouldRotateToPathWrapper(
+    const geometry_msgs::msg::PoseStamped & carrot_pose, double & angle_to_path)
+  {
+    return shouldRotateToPath(carrot_pose, angle_to_path);
+  }
+
+  bool shouldRotateToGoalHeadingWrapper(const geometry_msgs::msg::PoseStamped & carrot_pose)
+  {
+    return shouldRotateToGoalHeading(carrot_pose);
+  }
+
+  void rotateToHeadingWrapper(double & linear_vel, double & angular_vel,
+    const double & angle_to_path, const geometry_msgs::msg::Twist & curr_speed)
+  {
+    return rotateToHeading(linear_vel, angular_vel, angle_to_path, curr_speed);
+  }
+
+  void applyConstraintsWrapper(
+  const double & dist_error, const double & lookahead_dist,
+  const double & curvature, const geometry_msgs::msg::Twist & curr_speed,
+  const double & pose_cost, double & linear_vel)
+  {
+    return applyConstraints(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  }
+
 };
 
 TEST(RegulatedPurePursuitTest, basicAPI)
@@ -162,21 +191,146 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
   EXPECT_EQ(pt.pose.position.x, 9.0);
 }
 
-// TEST(RegulatedPurePursuitTest, rotate)
+TEST(RegulatedPurePursuitTest, rotateTests)
+{
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
+  std::string name = "PathFollower";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  ctrl->configure(node, name, tf, costmap);
+
+  // shouldRotateToPath
+  geometry_msgs::msg::PoseStamped carrot;
+  double angle_to_path_rtn;
+  EXPECT_EQ(ctrl->shouldRotateToPathWrapper(carrot, angle_to_path_rtn), false);
+
+  carrot.pose.position.x = 0.5;
+  carrot.pose.position.y = 0.25;
+  EXPECT_EQ(ctrl->shouldRotateToPathWrapper(carrot, angle_to_path_rtn), false);
+
+  carrot.pose.position.x = 0.5;
+  carrot.pose.position.y = 1.0;
+  EXPECT_EQ(ctrl->shouldRotateToPathWrapper(carrot, angle_to_path_rtn), true);
+
+  // shouldRotateToGoalHeading
+  carrot.pose.position.x = 0.0;
+  carrot.pose.position.y = 0.0;
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
+
+  carrot.pose.position.x = 0.0;
+  carrot.pose.position.y = 0.24;
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
+
+  carrot.pose.position.x = 0.0;
+  carrot.pose.position.y = 0.26;
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), false);
+
+  // rotateToHeading
+  double lin_v = 10.0;
+  double ang_v = 0.5;
+  double angle_to_path = 0.4;
+  geometry_msgs::msg::Twist curr_speed;
+  curr_speed.angular.z = 1.75;
+
+  // basic full speed at a speed
+  ctrl->rotateToHeadingWrapper(lin_v, ang_v, angle_to_path, curr_speed);
+  EXPECT_EQ(lin_v, 0.0);
+  EXPECT_EQ(ang_v, 1.8);
+
+  // negative direction
+  angle_to_path = -0.4;
+  curr_speed.angular.z = -1.75;
+  ctrl->rotateToHeadingWrapper(lin_v, ang_v, angle_to_path, curr_speed);
+  EXPECT_EQ(ang_v, -1.8);
+
+  // kinematic clamping, no speed, some speed accelerating, some speed decelerating
+  angle_to_path = 0.4;
+  curr_speed.angular.z = 0.0;
+  ctrl->rotateToHeadingWrapper(lin_v, ang_v, angle_to_path, curr_speed);
+  EXPECT_NEAR(ang_v, 0.16, 0.01);
+
+  curr_speed.angular.z = 1.0;
+  ctrl->rotateToHeadingWrapper(lin_v, ang_v, angle_to_path, curr_speed);
+  EXPECT_NEAR(ang_v, 1.16, 0.01);
+
+  angle_to_path = -0.4;
+  curr_speed.angular.z = 1.0;
+  ctrl->rotateToHeadingWrapper(lin_v, ang_v, angle_to_path, curr_speed);
+  EXPECT_NEAR(ang_v, 0.84, 0.01);
+}
+
+TEST(RegulatedPurePursuitTest, applyConstraints)
+{
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
+  std::string name = "PathFollower";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  ctrl->configure(node, name, tf, costmap);
+
+  double dist_error = 0.0;
+  double lookahead_dist = 0.6;
+  double curvature = 0.5;
+  geometry_msgs::msg::Twist curr_speed;
+  double pose_cost = 0.0;
+  double linear_vel = 0.0;
+
+  // since costmaps here are bogus, we can't access them
+  ctrl->resetVelocityApproachScaling();
+
+  // test curvature regulation (default)
+  curr_speed.linear.x = 0.25;
+  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  EXPECT_EQ(linear_vel, 0.25);  // min set speed
+
+  linear_vel = 1.0;
+  curvature = 0.7407;
+  curr_speed.linear.x = 0.5;
+  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  EXPECT_NEAR(linear_vel, 0.5, 0.01);  // lower by curvature
+
+  linear_vel = 1.0;
+  curvature = 1000.0;
+  curr_speed.linear.x = 0.25;
+  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  EXPECT_NEAR(linear_vel, 0.25, 0.01);  // min out by curvature
+
+
+  // now try with cost regulation (turn off velocity and only cost)
+  ctrl->setCostRegulationScaling();
+  ctrl->resetVelocityRegulationScaling();
+  curvature = 0.0;
+
+  // min changable cost
+  pose_cost = 1;
+  linear_vel = 0.5;
+  curr_speed.linear.x = 0.5;
+  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  EXPECT_NEAR(linear_vel, 0.498, 0.01);
+
+  // max changing cost
+  pose_cost = 127;
+  curr_speed.linear.x = 0.255;
+  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  EXPECT_NEAR(linear_vel, 0.255, 0.01);
+
+  // over max cost thresh
+  pose_cost = 200;
+  curr_speed.linear.x = 0.25;
+  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  EXPECT_NEAR(linear_vel, 0.25, 0.01);
+
+  // test kinematic clamping
+  pose_cost = 200;
+  curr_speed.linear.x = 1.0;
+  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  EXPECT_NEAR(linear_vel, 0.5, 0.01);
+}
+
+// TEST(RegulatedPurePursuitTest, collisionTests)
 // {
-// # shouldRotateToPath on diff inputs
-
-// # on diff inputs shouldRotateToGoalHeading
-
-// # rotateToHeading, check zeroed out linear vel, angular sign on input dist, kinematic clamping
-
-
-// }
-
-// TEST(RegulatedPurePursuitTest, applyConstraints)
-// {
-// # applyConstraints range of inputs 
-
+//   # costAtPose with small costmap inputted? Then could also do inCollision
 
 // }
 
@@ -184,7 +338,5 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
 // ## Add vars to set planners / controllers for integration tests
 //  # hybrid A* and pure pursuit for one of them.
  
-// ? computeVelocityCommands --- integration testing
+// ? computeVelocityCommands, isCollisionImminent--- integration testing
 // ? transformPose, transformGlobalPlan --- integration testing
-// ? costAtPose, inCollision, isCollisionImminent --- integration testing
-
