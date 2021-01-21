@@ -327,16 +327,3 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
   EXPECT_NEAR(linear_vel, 0.5, 0.01);
 }
-
-// TEST(RegulatedPurePursuitTest, collisionTests)
-// {
-//   # costAtPose with small costmap inputted? Then could also do inCollision
-
-// }
-
-// TODO
-// ## Add vars to set planners / controllers for integration tests
-//  # hybrid A* and pure pursuit for one of them.
- 
-// ? computeVelocityCommands, isCollisionImminent--- integration testing
-// ? transformPose, transformGlobalPlan --- integration testing
