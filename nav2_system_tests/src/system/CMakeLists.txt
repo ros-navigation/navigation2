@@ -1,6 +1,3 @@
-# NOTE: The ASTAR=True does not work currently due to remapping not functioning
-# All set to false, A* testing of NavFn happens in the planning test portion
-
 ament_add_test(test_bt_navigator
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
@@ -14,7 +11,7 @@ ament_add_test(test_bt_navigator
     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
     ASTAR=True
     CONTROLLER=nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
-    PLANNER=nav2_navfn_planner/NavfnPlanner
+    PLANNER=nav2_smac_planner/SmacPlanner
 )
 
 ament_add_test(test_bt_navigator_with_dijkstra
