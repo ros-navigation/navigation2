@@ -44,7 +44,7 @@ ament_add_test(test_bt_navigator_with_groot_monitoring
     ASTAR=False
     GROOT_MONITORING=True
     CONTROLLER=dwb_core::DWBLocalPlanner
-    PLANNER=nav2_smac_planner/SmacPlanner
+    PLANNER=nav2_navfn_planner/NavfnPlanner
 )
 
 ament_add_test(test_dynamic_obstacle
