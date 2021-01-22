@@ -31,7 +31,10 @@ namespace nav2_map_server
 class OccGridLoader : public nav2_util::LifecycleHelperInterface
 {
 public:
-  OccGridLoader(rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::string & yaml_filename);
+  OccGridLoader(rclcpp_lifecycle::LifecycleNode::SharedPtr node
+    , std::string & yaml_filename
+    , std::string & topic_name
+    , std::string & frame_id);
   OccGridLoader() = delete;
   ~OccGridLoader();
 
@@ -46,6 +49,8 @@ protected:
 
   // The name of the YAML file from which to get the conversion parameters
   std::string yaml_filename_;
+  std::string topic_name_;
+  std::string frame_id_;
 
   typedef struct
   {
@@ -73,12 +78,6 @@ protected:
 
   // The message to publish on the occupancy grid topic
   std::unique_ptr<nav_msgs::msg::OccupancyGrid> msg_;
-
-  // The frame ID used in the returned OccupancyGrid message
-  static constexpr const char * frame_id_{"map"};
-
-  // The name for the topic on which the map will be published
-  static constexpr const char * topic_name_{"map"};
 
   // The name of the service for getting a map
   static constexpr const char * service_name_{"map"};

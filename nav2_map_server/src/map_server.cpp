@@ -35,6 +35,8 @@ MapServer::MapServer()
 
   // Declare the node parameters
   declare_parameter("yaml_filename", rclcpp::ParameterValue(std::string("map.yaml")));
+  declare_parameter("topic_name", rclcpp::ParameterValue(std::string("map")));
+  declare_parameter("frame_id", rclcpp::ParameterValue(std::string("map")));
 }
 
 MapServer::~MapServer()
@@ -49,7 +51,11 @@ MapServer::on_configure(const rclcpp_lifecycle::State & state)
 
   // Get the name of the YAML file to use
   std::string yaml_filename;
+  std::string topic_name;
+  std::string frame_id;
   get_parameter("yaml_filename", yaml_filename);
+  get_parameter("topic_name", topic_name);
+  get_parameter("frame_id", frame_id);
 
   // Make sure that there's a valid file there and open it up
   std::ifstream fin(yaml_filename.c_str());
@@ -71,7 +77,7 @@ MapServer::on_configure(const rclcpp_lifecycle::State & state)
 
   // Create the correct map loader for the specified map type
   if (map_type == "occupancy") {
-    map_loader_ = std::make_unique<OccGridLoader>(shared_from_this(), yaml_filename);
+    map_loader_ = std::make_unique<OccGridLoader>(shared_from_this(), yaml_filename, topic_name, frame_id);
   } else {
     std::string msg = "Cannot load unknown map type: '" + map_type + "'";
     throw std::runtime_error(msg);

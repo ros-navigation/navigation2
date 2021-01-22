@@ -49,8 +49,14 @@ namespace nav2_map_server
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
 OccGridLoader::OccGridLoader(
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::string & yaml_filename)
-: node_(node), yaml_filename_(yaml_filename)
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node
+  , std::string & yaml_filename
+  , std::string & topic_name
+  , std::string & frame_id)
+  : node_(node)
+  , yaml_filename_(yaml_filename)
+  , topic_name_(topic_name)
+  , frame_id_(frame_id)
 {
   RCLCPP_INFO(node_->get_logger(), "OccGridLoader: Creating");
 }
