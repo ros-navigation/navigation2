@@ -33,7 +33,7 @@ class WaypointFollowerTest(Node):
     def __init__(self):
         super().__init__(node_name='nav2_waypoint_tester', namespace='')
         self.waypoints = None
-        self.action_client = ActionClient(self, FollowWaypoints, 'FollowWaypoints')
+        self.action_client = ActionClient(self, FollowWaypoints, 'follow_waypoints')
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
                                                       'initialpose', 10)
         self.initial_pose_received = False
@@ -76,7 +76,7 @@ class WaypointFollowerTest(Node):
             return False
 
         while not self.action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg("'FollowWaypoints' action server not available, waiting...")
+            self.info_msg("'follow_waypoints' action server not available, waiting...")
 
         action_request = FollowWaypoints.Goal()
         action_request.poses = self.waypoints
@@ -99,7 +99,7 @@ class WaypointFollowerTest(Node):
 
         get_result_future = self.goal_handle.get_result_async()
 
-        self.info_msg("Waiting for 'FollowWaypoints' action to complete")
+        self.info_msg("Waiting for 'follow_waypoints' action to complete")
         try:
             rclpy.spin_until_future_complete(self, get_result_future)
             status = get_result_future.result().status
@@ -125,7 +125,7 @@ class WaypointFollowerTest(Node):
         self.info_msg('Shutting down')
 
         self.action_client.destroy()
-        self.info_msg('Destroyed FollowWaypoints action client')
+        self.info_msg('Destroyed follow_waypoints action client')
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
