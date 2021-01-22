@@ -168,7 +168,8 @@ void VoxelLayer::updateBounds(
 
     const sensor_msgs::msg::PointCloud2 & cloud = *(obs.cloud_);
 
-    double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
+    double sq_obstacle_max_range = obs.obstacle_max_range_ * obs.obstacle_max_range_;
+    double sq_obstacle_min_range = obs.obstacle_min_range_ * obs.obstacle_min_range_;
 
     sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
@@ -186,7 +187,12 @@ void VoxelLayer::updateBounds(
         (*iter_z - obs.origin_.z) * (*iter_z - obs.origin_.z);
 
       // if the point is far enough away... we won't consider it
-      if (sq_dist >= sq_obstacle_range) {
+      if (sq_dist >= sq_obstacle_max_range) {
+        continue;
+      }
+
+      // If the point is too close, do not consider it
+      if (sq_dist < sq_obstacle_min_range) {
         continue;
       }
 
@@ -390,17 +396,20 @@ void VoxelLayer::raytraceFreespace(
 
     double point_x, point_y, point_z;
     if (worldToMap3DFloat(wpx, wpy, wpz, point_x, point_y, point_z)) {
-      unsigned int cell_raytrace_range = cellDistance(clearing_observation.raytrace_range_);
+      unsigned int cell_raytrace_max_range = cellDistance(clearing_observation.raytrace_max_range_);
+      unsigned int cell_raytrace_min_range = cellDistance(clearing_observation.raytrace_min_range_);
+
 
       // voxel_grid_.markVoxelLine(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z);
       voxel_grid_.clearVoxelLineInMap(
         sensor_x, sensor_y, sensor_z, point_x, point_y, point_z,
         costmap_,
         unknown_threshold_, mark_threshold_, FREE_SPACE, NO_INFORMATION,
-        cell_raytrace_range);
+        cell_raytrace_max_range, cell_raytrace_min_range);
 
       updateRaytraceBounds(
-        ox, oy, wpx, wpy, clearing_observation.raytrace_range_, min_x, min_y,
+        ox, oy, wpx, wpy, clearing_observation.raytrace_max_range_,
+        clearing_observation.raytrace_min_range_, min_x, min_y,
         max_x,
         max_y);
 
