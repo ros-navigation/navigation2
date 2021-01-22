@@ -76,7 +76,7 @@ class WaypointFollowerTest(Node):
             return False
 
         while not self.action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg("follow_waypoints action server not available, waiting...")
+            self.info_msg("FollowWaypoints action server not available, waiting...")
 
         action_request = FollowWaypoints.Goal()
         action_request.poses = self.waypoints
