@@ -24,6 +24,10 @@ find_package(pluginlib REQUIRED)
 
 nav2_package()
 
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+
 include_directories(
   include
 )
