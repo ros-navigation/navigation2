@@ -18,7 +18,7 @@ import time
 
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
-from nav2_msgs.action import follow_waypoints
+from nav2_msgs.action import FollowWaypoints
 from nav2_msgs.srv import ManageLifecycleNodes
 
 import rclpy
@@ -33,7 +33,7 @@ class WaypointFollowerTest(Node):
     def __init__(self):
         super().__init__(node_name='nav2_waypoint_tester', namespace='')
         self.waypoints = None
-        self.action_client = ActionClient(self, follow_waypoints, 'follow_waypoints')
+        self.action_client = ActionClient(self, FollowWaypoints, 'follow_waypoints')
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
                                                       'initialpose', 10)
         self.initial_pose_received = False
@@ -76,9 +76,9 @@ class WaypointFollowerTest(Node):
             return False
 
         while not self.action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg("'follow_waypoints' action server not available, waiting...")
+            self.info_msg("follow_waypoints action server not available, waiting...")
 
-        action_request = follow_waypoints.Goal()
+        action_request = FollowWaypoints.Goal()
         action_request.poses = self.waypoints
 
         self.info_msg('Sending goal request...')
