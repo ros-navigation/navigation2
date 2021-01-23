@@ -320,7 +320,7 @@ void WaypointFollower::followWaypointsLogic(
       if (goal_index >= poses.size()) {
         RCLCPP_INFO(
           get_logger(), "Completed all %i waypoints requested.",
-          poses.size());
+          static_cast<int>(poses.size()));
         result->missed_waypoints = failed_ids_;
         action_server->succeeded_current(result);
         failed_ids_.clear();
@@ -428,33 +428,45 @@ WaypointFollower::convertGPSPoses2MapPoses(
       }
       continue;
     } else {
-      // this poses are assumed to be on global frame (map)
-      geometry_msgs::msg::PoseStamped curr_pose_map_frame;
-      curr_pose_map_frame.header.frame_id = "map";
-      curr_pose_map_frame.header.stamp = stamp;
-      curr_pose_map_frame.pose.position.x = response->map_point.x;
-      curr_pose_map_frame.pose.position.y = response->map_point.y;
-      curr_pose_map_frame.pose.position.z = response->map_point.z;
-
-      geometry_msgs::msg::PoseStamped curr_pose_utm_frame;
-      curr_pose_utm_frame.pose.orientation = curr_oriented_navsat_fix.orientation;
-      curr_pose_utm_frame.header.frame_id = "utm";
+      // fromll_client converted the point from LL to Map frames
+      // but it actually did not consider the possible yaw offset between utm and map frames ;
+      // "https://github.com/cra-ros-pkg/robot_localization/blob/
+      // 79162b2ac53a112c51d23859c499e8438cf9938e/src/navsat_transform.cpp#L394"
+      // see above link on how they set rotation between UTM and
+      // Map to Identity , where actually it might not be
+      geometry_msgs::msg::TransformStamped utm_to_map_transform;
       try {
-        tf_buffer_->transform(
-          curr_pose_utm_frame, curr_pose_map_frame, "map",
-          tf2::durationFromSec(transform_tolerance_));
+        utm_to_map_transform = tf_buffer_->lookupTransform("utm", "map", tf2::TimePointZero);
       } catch (tf2::TransformException & ex) {
         RCLCPP_ERROR(
           parent_node->get_logger(),
-          "Exception in itm -> map transform: %s",
+          "Exception in getting utm -> map transform: %s",
           ex.what());
       }
+      tf2::Quaternion utm_to_map_quat;
+      tf2::fromMsg(utm_to_map_transform.transform.rotation, utm_to_map_quat);
+      double roll, pitch, yaw;
+      tf2::Matrix3x3 m(utm_to_map_quat); m.getRPY(roll, pitch, yaw);
+      // we need to consider the possible yaw_offset between utm and map here,
+      // rotate x , y with amount of yaw
+      double x = response->map_point.x;
+      double y = response->map_point.y;
+      double x_dot = x * std::cos(yaw) - y * std::sin(yaw);
+      double y_dot = x * std::sin(yaw) + y * std::cos(yaw);
+      geometry_msgs::msg::PoseStamped curr_pose_map_frame;
+      curr_pose_map_frame.header.frame_id = "map";
+      curr_pose_map_frame.header.stamp = stamp;
+      curr_pose_map_frame.pose.position.x = x_dot;
+      curr_pose_map_frame.pose.position.y = y_dot;
+      curr_pose_map_frame.pose.position.z = response->map_point.z;
+      curr_pose_map_frame.pose.orientation = curr_oriented_navsat_fix.orientation;
       poses_in_map_frame_vector.push_back(curr_pose_map_frame);
     }
   }
   RCLCPP_INFO(
     parent_node->get_logger(),
-    "Converted all %i GPS waypoint to Map frame", poses_in_map_frame_vector.size());
+    "Converted all %i GPS waypoint to Map frame",
+    static_cast<int>(poses_in_map_frame_vector.size()));
   return poses_in_map_frame_vector;
 }
 
