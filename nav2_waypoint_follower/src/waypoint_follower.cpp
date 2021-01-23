@@ -403,7 +403,7 @@ WaypointFollower::convertGPSPoses2MapPoses(
 
   std::vector<geometry_msgs::msg::PoseStamped> poses_in_map_frame_vector;
   auto stamp = parent_node->now();
-
+  int waypoint_index = 0;
   for (auto && curr_oriented_navsat_fix : gps_poses) {
     auto request = std::make_shared<robot_localization::srv::FromLL::Request>();
     auto response = std::make_shared<robot_localization::srv::FromLL::Response>();
@@ -417,13 +417,13 @@ WaypointFollower::convertGPSPoses2MapPoses(
         parent_node->get_logger(),
         "fromLL service of robot_localization could not convert %i th GPS waypoint to"
         "Map frame, going to skip this point!"
-        "Make sure you have run navsat_transform_node of robot_localization");
+        "Make sure you have run navsat_transform_node of robot_localization", waypoint_index);
       if (stop_on_failure_) {
         RCLCPP_ERROR(
           parent_node->get_logger(),
           "Conversion of %i th GPS waypoint to"
           "Map frame failed and stop_on_failure is set to true"
-          "Not going to execute any of waypoints, exiting with failure!");
+          "Not going to execute any of waypoints, exiting with failure!", waypoint_index);
         return std::vector<geometry_msgs::msg::PoseStamped>();
       }
       continue;
@@ -462,6 +462,7 @@ WaypointFollower::convertGPSPoses2MapPoses(
       curr_pose_map_frame.pose.orientation = curr_oriented_navsat_fix.orientation;
       poses_in_map_frame_vector.push_back(curr_pose_map_frame);
     }
+    waypoint_index++;
   }
   RCLCPP_INFO(
     parent_node->get_logger(),
