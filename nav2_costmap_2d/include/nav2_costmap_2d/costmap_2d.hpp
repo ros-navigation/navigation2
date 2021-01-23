@@ -391,12 +391,13 @@ protected:
    * @param  x1 The ending x coordinate
    * @param  y1 The ending y coordinate
    * @param  max_length The maximum desired length of the segment... allows you to not go all the way to the endpoint
+   * @param  min_length The minimum desired length of the segment
    */
   template<class ActionType>
   inline void raytraceLine(
     ActionType at, unsigned int x0, unsigned int y0, unsigned int x1,
     unsigned int y1,
-    unsigned int max_length = UINT_MAX)
+    unsigned int max_length = UINT_MAX, unsigned int min_length = 0)
   {
     int dx = x1 - x0;
     int dy = y1 - y0;
@@ -407,27 +408,39 @@ protected:
     int offset_dx = sign(dx);
     int offset_dy = sign(dy) * size_x_;
 
-    unsigned int offset = y0 * size_x_ + x0;
-
     // we need to chose how much to scale our dominant dimension,
     // based on the maximum length of the line
     double dist = std::hypot(dx, dy);
-    double scale = (dist == 0.0) ? 1.0 : std::min(1.0, max_length / dist);
+    if (dist < min_length) {
+      return;
+    }
 
+    // Adjust starting point and offset to start from min_length distance
+    unsigned int min_x0 = (unsigned int)(x0 + dx / dist * min_length);
+    unsigned int min_y0 = (unsigned int)(y0 + dy / dist * min_length);
+    unsigned int offset = min_y0 * size_x_ + min_x0;
+
+    double scale = (dist == 0.0) ? 1.0 : std::min(1.0, max_length / dist);
+    unsigned int length;
     // if x is dominant
     if (abs_dx >= abs_dy) {
       int error_y = abs_dx / 2;
+
+      // Subtract min_length from total length since initial point (x0, y0) has been adjusted by min Z
+      length = (unsigned int)(scale * abs_dx) - min_length;
+
       bresenham2D(
-        at, abs_dx, abs_dy, error_y, offset_dx, offset_dy, offset,
-        (unsigned int)(scale * abs_dx));
+        at, abs_dx, abs_dy, error_y, offset_dx, offset_dy, offset, length);
       return;
     }
 
     // otherwise y is dominant
     int error_x = abs_dy / 2;
+
+    // Subtract min_length from total length since initial point (x0, y0) has been adjusted by min Z
+    length = (unsigned int)(scale * abs_dy) - min_length;
     bresenham2D(
-      at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset,
-      (unsigned int)(scale * abs_dy));
+      at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset, length);
   }
 
 private:

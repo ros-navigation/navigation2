@@ -281,7 +281,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   waypoint_follower_action_client_ =
     rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(
     client_node_,
-    "FollowWaypoints");
+    "follow_waypoints");
   navigation_goal_ = nav2_msgs::action::NavigateToPose::Goal();
   waypoint_follower_goal_ = nav2_msgs::action::FollowWaypoints::Goal();
 
@@ -501,7 +501,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
     waypoint_follower_action_client_->wait_for_action_server(std::chrono::seconds(5));
   if (!is_action_server_ready) {
     RCLCPP_ERROR(
-      client_node_->get_logger(), "FollowWaypoints action server is not available."
+      client_node_->get_logger(), "follow_waypoints action server is not available."
       " Is the initial pose set?");
     return;
   }
@@ -550,7 +550,7 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
   if (!is_action_server_ready) {
     RCLCPP_ERROR(
       client_node_->get_logger(),
-      "FollowWaypoints action server is not available."
+      "follow_waypoints action server is not available."
       " Is the initial pose set?");
     return;
   }

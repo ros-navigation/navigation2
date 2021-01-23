@@ -267,13 +267,12 @@ bool Costmap2D::worldToMap(double wx, double wy, unsigned int & mx, unsigned int
     return false;
   }
 
-  mx = static_cast<int>((wx - origin_x_) / resolution_);
-  my = static_cast<int>((wy - origin_y_) / resolution_);
+  mx = static_cast<unsigned int>((wx - origin_x_) / resolution_);
+  my = static_cast<unsigned int>((wy - origin_y_) / resolution_);
 
   if (mx < size_x_ && my < size_y_) {
     return true;
   }
-
   return false;
 }
 
