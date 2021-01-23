@@ -75,7 +75,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_clock_interface(),
     get_node_logging_interface(),
     get_node_waitables_interface(),
-    "FollowWaypoints", std::bind(&WaypointFollower::followWaypointsCallback, this));
+    "follow_waypoints", std::bind(&WaypointFollower::followWaypointsCallback, this));
 
   from_ll_to_map_client_ = std::make_unique<
     nav2_util::ServiceClient<robot_localization::srv::FromLL>>(
@@ -87,7 +87,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_clock_interface(),
     get_node_logging_interface(),
     get_node_waitables_interface(),
-    "FollowGPSWaypoints", std::bind(&WaypointFollower::followGPSWaypointsCallback, this));
+    "follow_gps_waypoints", std::bind(&WaypointFollower::followGPSWaypointsCallback, this));
   // used for transfroming orientation of GPS poses to map frame
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);

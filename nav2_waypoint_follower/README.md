@@ -40,7 +40,7 @@ For instance,
 ```cpp
 using ClientT = nav2_msgs::action::FollowGPSWaypoints;
 rclcpp_action::Client<ClientT>::SharedPtr gps_waypoint_follower_action_client_;
-gps_waypoint_follower_action_client_ = rclcpp_action::create_client<ClientT>(this, "FollowGPSWaypoints");
+gps_waypoint_follower_action_client_ = rclcpp_action::create_client<ClientT>(this, "follow_gps_waypoints");
 ```
 
 All other functionalities provided by `nav2_waypoint_follower` such as WaypointTaskExecutors are usable and can be configured in WaypointTaskExecutor.  
