@@ -32,6 +32,7 @@ namespace nav2_map_server
  * @class nav2_map_server::MapSaver<nav_msgs::msg::OccupancyGrid>
  * @brief A class that provides map saving methods and services
  * for OccupancyGrid maps via. SaveMap service
+ * SaveMap service default name : save_map
  */
 template<>
 class MapSaver<nav_msgs::msg::OccupancyGrid>: public nav2_util::LifecycleNode
@@ -39,7 +40,6 @@ class MapSaver<nav_msgs::msg::OccupancyGrid>: public nav2_util::LifecycleNode
 public:
   /**
    * @brief Constructor for the nav2_map_server::MapSaver<nav_msgs::msg::OccupancyGrid>
-   * @param is_pcd Bool for distinguishing b/w pcd and image, false by default
    */
   MapSaver();
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+// Copyright (c) 2020 Shivam Pandey
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,8 +36,8 @@ namespace  map_3d
 /**
  * @brief Modifies message fields that describes how
  * the pointcloud data is arranged and type of each field.
- * @param msg
- * @param fields
+ * @param msg Output PointCloud2 sensor message with modified fields.
+ * @param fields Input PCLPointFields indicating field types used in pcd-v0.7
  */
 void modifyMsgFields(
   sensor_msgs::msg::PointCloud2 & msg,
@@ -80,26 +80,25 @@ bool ends_with(std::string const & value, std::string const & ending);
 
 /**
  * @brief Converts position and orientation from PCL to geometry_msg format
+ * @param origin desired Pose in geonetry_msg format
  * @param position input Eigen::Vector4f from pcl
  * @param orientation input Eigen::Quaternionf from pcl
- * @param origin desired Pose in geonetry_msg format
  */
 void viewPoint2Pose(
+  geometry_msgs::msg::Pose & origin,
   const Eigen::Vector4f & position,
-  const Eigen::Quaternionf & orientation,
-  geometry_msgs::msg::Pose & origin);
+  const Eigen::Quaternionf & orientation);
 
 /**
  * @brief Converts origin info from geometry_msgs format to pcl position and orientation
- * @param origin input geometry_msgs::msg::Pose
  * @param position desired Eigen::Vector4f
  * @param orientation desired Eigen::Quaternionf
+ * @param origin input geometry_msgs::msg::Pose
  */
 void pose2ViewPoint(
-  const geometry_msgs::msg::Pose & origin,
   Eigen::Vector4f & position,
-  Eigen::Quaternionf & orientation);
-
+  Eigen::Quaternionf & orientation,
+  const geometry_msgs::msg::Pose & origin);
 
 }  // namespace map_3d
 

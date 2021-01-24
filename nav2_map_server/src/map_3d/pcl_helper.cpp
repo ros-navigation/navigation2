@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+// Copyright (c) 2020 Shivam Pandey
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ void modifyMsgFields(
     new_field.offset = field.offset;
     msg.fields.push_back(new_field);
   }
-  std::cout << "[debug][pcl_helper]: message field modification done" << std::endl;
+  std::cout << "[DEBUG][pcl_helper]: message field modification done" << std::endl;
 }
 
 void pclToMsg(
@@ -54,7 +54,7 @@ void pclToMsg(
   msg.is_bigendian = cloud->is_bigendian;
   msg.is_dense = cloud->is_dense;
   msg.header = pcl_conversions::fromPCL(cloud->header);
-  std::cout << "[debug][pcl_helper]: PCL to message conversion done" << std::endl;
+  std::cout << "[DEBUG][pcl_helper]: PCL to message conversion done" << std::endl;
 }
 
 void modifyPclFields(
@@ -70,7 +70,7 @@ void modifyPclFields(
     new_field.offset = field.offset;
     fields.push_back(new_field);
   }
-  std::cout << "[debug][pcl_helper]: PCL field modification done" << std::endl;
+  std::cout << "[DEBUG][pcl_helper]: PCL field modification done" << std::endl;
 }
 
 void msgToPcl(
@@ -87,19 +87,21 @@ void msgToPcl(
   cloud->is_bigendian = msg.is_bigendian;
   cloud->is_dense = msg.is_dense;
   cloud->header = pcl_conversions::toPCL(msg.header);
-  std::cout << "[debug][pcl_helper]: message to PCL conversion done" << std::endl;
+  std::cout << "[DEBUG][pcl_helper]: message to PCL conversion done" << std::endl;
 }
 
 bool ends_with(std::string const & value, std::string const & ending)
 {
-  if (ending.size() > value.size()) {return false;}
+  if (ending.size() > value.size()) {
+    return false;
+  }
   return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
 void viewPoint2Pose(
+  geometry_msgs::msg::Pose & origin,
   const Eigen::Vector4f & position,
-  const Eigen::Quaternionf & orientation,
-  geometry_msgs::msg::Pose & origin)
+  const Eigen::Quaternionf & orientation)
 {
   // Put position information to origin
   origin.position.x = static_cast<double>(position[0]);
@@ -114,9 +116,9 @@ void viewPoint2Pose(
 }
 
 void pose2ViewPoint(
-  const geometry_msgs::msg::Pose & origin,
   Eigen::Vector4f & position,
-  Eigen::Quaternionf & orientation)
+  Eigen::Quaternionf & orientation,
+  const geometry_msgs::msg::Pose & origin)
 {
   // Update center information of viewPoint
   position[0] = static_cast<float>(origin.position.x);

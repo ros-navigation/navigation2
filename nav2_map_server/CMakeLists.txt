@@ -33,14 +33,6 @@ set(map_saver_server_executable map_saver_server)
 
 set(costmap_filter_info_server_executable costmap_filter_info_server)
 
-# Making 2D as default map-saver adn server
-add_executable(${map_server_executable}
-  src/map_server/main_2d.cpp)
-
-add_executable(${map_saver_server_executable}
-    src/map_saver/main_server_2d.cpp)
-##########################################
-
 add_executable(${map_server_executable}_2d
   src/map_server/main_2d.cpp)
 
@@ -73,8 +65,8 @@ add_library(${map_io_library_name}_3d SHARED
 
 add_library(${library_name} SHARED
   src/costmap_filter_info/costmap_filter_info_server.cpp
-  include/nav2_map_server/map_server.hpp
-  include/nav2_map_server/map_saver.hpp
+#  include/nav2_map_server/map_server.hpp
+#  include/nav2_map_server/map_saver.hpp
   src/map_server/map_server_core.cpp
   src/map_saver/map_saver_core.cpp
   src/map_2d/map_server_2d.cpp
@@ -83,12 +75,8 @@ add_library(${library_name} SHARED
   src/map_3d/map_saver_3d.cpp)
 
 set(map_io_2d_dependencies
-  rclcpp
-  rclcpp_lifecycle
   yaml_cpp_vendor
-  geometry_msgs
   nav_msgs
-  std_msgs
   nav2_util
   tf2)
 
@@ -115,14 +103,6 @@ set(map_saver_dependencies
   nav2_msgs
   nav2_util
   geometry_msgs)
-
-# Default map server and saver
-ament_target_dependencies(${map_server_executable}
-  ${map_server_dependencies})
-
-ament_target_dependencies(${map_saver_server_executable}
-  ${map_saver_dependencies})
-###############
 
 ament_target_dependencies(${map_server_executable}_2d
   ${map_server_dependencies})
@@ -162,12 +142,6 @@ target_link_libraries(${library_name}
   ${map_io_library_name}_3d
   ${PCL_LIBRARIES})
 
-# Default map server
-target_link_libraries(${map_server_executable}
-    ${map_io_library_name}_2d
-    ${library_name})
-###################
-
 target_link_libraries(${map_server_executable}_2d
   ${map_io_library_name}_2d
   ${library_name})
@@ -178,26 +152,14 @@ target_link_libraries(${map_server_executable}_3d
 
 
 if(WIN32)
-
-  # Default map server
-  target_compile_definitions(${map_server_executable} PRIVATE
-      YAML_CPP_DLL)
-  ####################
-
   target_compile_definitions(${map_server_executable}_2d PRIVATE
     YAML_CPP_DLL)
-
   target_compile_definitions(${map_server_executable}_3d PRIVATE
     YAML_CPP_DLL)
 endif()
 
 target_link_libraries(${map_saver_cli_executable}
   ${library_name})
-
-# Default map saver
-target_link_libraries(${map_saver_server_executable}
-  ${library_name})
-###################
 
 target_link_libraries(${map_saver_server_executable}_2d
   ${library_name})
@@ -217,7 +179,6 @@ target_link_libraries(${map_io_library_name}_2d
 if(WIN32)
   target_compile_definitions(${map_io_library_name}_2d PRIVATE
     YAML_CPP_DLL)
-
   target_compile_definitions(${map_io_library_name}_3d PRIVATE
     YAML_CPP_DLL)
 endif()
@@ -231,11 +192,9 @@ install(TARGETS
   RUNTIME DESTINATION bin)
 
 install(TARGETS
-  ${map_server_executable}
   ${map_server_executable}_2d
   ${map_server_executable}_3d
   ${map_saver_cli_executable}
-  ${map_saver_server_executable}
   ${map_saver_server_executable}_2d
   ${map_saver_server_executable}_3d
   ${costmap_filter_info_server_executable}

@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+/* Copyright (c) 2020 Shivam Pandey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@
 #include <functional>
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
-
-#include "nav2_map_server/map_3d/map_io_3d.hpp"
 
 using namespace std::placeholders;
 

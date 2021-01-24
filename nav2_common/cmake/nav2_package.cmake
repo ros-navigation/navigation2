@@ -31,12 +31,6 @@ macro(nav2_package)
   if(NOT CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 17)
   endif()
-
-  if(CMAKE_CXX_STANDARD LESS 14)
-    message(FATAL_ERROR "C++ standard is set to ${CMAKE_CXX_STANDARD}, navigation2 requires c++ standards >= 14
-                          please look if any of the navigation2 dependencies is build with usage requirements of c++ std < 14,
-                          consider to disable this usage requirement.")
-  endif()
   
   if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wdeprecated -fPIC)

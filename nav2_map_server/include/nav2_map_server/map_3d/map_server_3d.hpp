@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+// Copyright (c) 2020 Shivam Pandey
 // Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,6 @@
 
 #include <string>
 #include <memory>
-#include <functional>
 
 #include "nav2_msgs/srv/get_map3_d.hpp"
 #include "nav2_msgs/srv/load_map3_d.hpp"
@@ -34,6 +33,8 @@ namespace nav2_map_server
  * @class nav2_map_server::MapServer<sensor_msgs::msg::PointCloud2>
  * @brief Parses the map yaml file and creates a service and a publisher that
  * provides PointCloud maps, via. GetMap3D, and LoadMap3D services
+ * GetMap service default name : "map"
+ * LoadMap service default name : "load_map"
  */
 template<>
 class MapServer<sensor_msgs::msg::PointCloud2>: public nav2_util::LifecycleNode

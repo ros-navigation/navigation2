@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+/* Copyright (c) 2020 Shivam Pandey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@ MapServer<sensor_msgs::msg::PointCloud2>::on_deactivate(
   pcd_pub_->on_deactivate();
   origin_pub_->on_deactivate();
 
-  // create bond connection
+  // destroy bond connection
   destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;

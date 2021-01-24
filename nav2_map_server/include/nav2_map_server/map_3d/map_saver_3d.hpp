@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+// Copyright (c) 2020 Shivam Pandey
 // Copyright (c) 2020 Samsung Research Russia
 // Copyright (c) 2018 Intel Corporation
 //
@@ -32,6 +32,7 @@ namespace nav2_map_server
  * @class nav2_map_server::MapSaver<sensor_msgs::msg::PointCloud2>
  * @brief A class that provides map saving methods and services
  * for PointCloud maps, via. SaveMap3D service
+ * SaveMap service default name : save_map
  */
 template<>
 class MapSaver<sensor_msgs::msg::PointCloud2>: public nav2_util::LifecycleNode
@@ -39,7 +40,6 @@ class MapSaver<sensor_msgs::msg::PointCloud2>: public nav2_util::LifecycleNode
 public:
   /**
    * @brief Constructor for the nav2_map_server::MapSaver<sensor_msgs::msg::PointCloud2>
-   * @param is_pcd Bool for distinguishing b/w pcd and image, false by default
    */
   MapSaver();
 

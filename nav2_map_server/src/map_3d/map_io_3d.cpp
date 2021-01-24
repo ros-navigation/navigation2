@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Shivam Pandey pandeyshivam2017robotics@gmail.com
+// Copyright (c) 2020 Shivam Pandey
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ namespace map_3d
 /// including the name of the failed key
 /// @throw YAML::Exception
 template<typename T>
-T YamlGetValue(const YAML::Node & node, const std::string & key)
+T yaml_get_value(const YAML::Node & node, const std::string & key)
 {
   try {
     return node[key].as<T>();
@@ -99,7 +99,7 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   YAML::Node doc = YAML::LoadFile(yaml_filename);
   LoadParameters load_parameters;
 
-  std::string pcd_file_name(YamlGetValue<std::string>(doc, "image"));
+  std::string pcd_file_name(yaml_get_value<std::string>(doc, "image"));
   if (!ends_with(pcd_file_name, ".pcd")) {
     throw YAML::Exception(
             doc["image"].Mark(),
@@ -124,7 +124,7 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   // a warning will be issued if they are not equal and PCD  will take precedence
   try {
     // Load origin form yaml_file
-    std::vector<double> pcd_origin = YamlGetValue<std::vector<double>>(doc, "origin");
+    std::vector<double> pcd_origin = yaml_get_value<std::vector<double>>(doc, "origin");
     if (pcd_origin.size() != 7) {
       throw std::invalid_argument("view_point is wrong");
     }
@@ -174,7 +174,7 @@ void loadMapFromFile(
   // will use sensor origin (added in PCD version 0.7)
   int pcd_version = pcl::PCDReader::PCD_V7;
 
-  std::cout << "[DEBUG] [map_io_3d]" << "feeding pcd filename to reader" << std::endl;
+  std::cout << "[DEBUG] [map_io_3d]: feeding pcd filename to reader" << std::endl;
 
   if (reader.read(
       load_parameters.pcd_file_name, *cloud,
@@ -190,7 +190,7 @@ void loadMapFromFile(
     std::cout << "[WARNING] [map_io_3d]: View Point(position and orientation) not provided by "
       "YAML now will be using view_point defined by pcd reader" << std::endl;
 
-    viewPoint2Pose(position, orientation, origin_msg);
+    viewPoint2Pose(origin_msg, position, orientation);
   } else {
     origin_msg = load_parameters.origin;
   }
@@ -242,6 +242,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
 
   return LOAD_MAP_STATUS::LOAD_MAP_SUCCESS;
 }
+
 // === Map output part ===
 
 /**
@@ -250,7 +251,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
  * NOTE: save_parameters could be updated during function execution.
  * @throw std::exception in case of inconsistent parameters
  */
-void CheckSaveParameters(SaveParameters & save_parameters)
+void checkSaveParameters(SaveParameters & save_parameters)
 {
   // Check for empty file name/path
   if (save_parameters.map_file_name.empty()) {
@@ -295,7 +296,7 @@ void CheckSaveParameters(SaveParameters & save_parameters)
  * @param save_parameters Map saving parameters
  * @throw std::exception in case of problem
  */
-void TryWriteMapToFile(
+void tryWriteMapToFile(
   const sensor_msgs::msg::PointCloud2 & map,
   const SaveParameters & save_parameters)
 {
@@ -317,7 +318,7 @@ void TryWriteMapToFile(
 
   // Initialize orientation
   Eigen::Quaternionf orientation = Eigen::Quaternionf::Identity();
-  pose2ViewPoint(save_parameters.origin, position, orientation);
+  pose2ViewPoint(position, orientation, save_parameters.origin);
 
   if (writer.write(
       file_name, cloud_2, position,
@@ -366,9 +367,9 @@ bool saveMapToFile(
   try {
     // Check map parameters for consistecy
     // Revert to default if needed
-    CheckSaveParameters(save_parameters_loc);
+    checkSaveParameters(save_parameters_loc);
 
-    TryWriteMapToFile(map, save_parameters_loc);
+    tryWriteMapToFile(map, save_parameters_loc);
   } catch (std::exception & e) {
     std::cout << "[ERROR] [map_io_3d]: Failed to write map for reason: " << e.what() << std::endl;
     return false;
