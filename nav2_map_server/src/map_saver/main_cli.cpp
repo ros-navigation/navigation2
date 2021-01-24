@@ -33,15 +33,15 @@ const char * USAGE_STRING{
   "\n"
   "Arguments:\n"
   "  -h/--help\n"
-  "-----Parameters common to 2D and 3D map saver-----\n"
+  "\n-----Parameters common to 2D and 3D map saver-----\n\n"
   "  -t <map_topic, 2D|3D>\n"
   "  -f <map_name, 2D|3D>\n"
   "  --fmt <map_format, 2D|3D>\n"
-  "-----Parameters unique to 2D map saver-----\n"
+  "\n-----Parameters unique to 2D map saver-----\n\n"
   "  --occ <threshold_occupied, 2D>\n"
   "  --free <threshold_free, 2D>\n"
   "  --mode trinary(default)/scale/raw, 2D\n"
-  "-----Parameters unique to 3D map saver-----\n"
+  "\n-----Parameters unique to 3D map saver-----\n\n"
   "  --origin <origin_topic, 3D>\n"
   "  --as_bin (for pointClouds)Give the flag to save map with binary encodings, 3D\n"
   "\n"
@@ -74,8 +74,11 @@ typedef enum
 
 struct SaveParamList
 {
+  // 2D parameters
   map_2d::SaveParameters save_parameters_2d;
+  // 3D parameters
   map_3d::SaveParameters save_parameters_3d;
+  std::string origin_topic;
 };
 
 // Arguments parser
@@ -83,7 +86,7 @@ struct SaveParamList
 // Output parameters: map_topic, save_parameters
 ARGUMENTS_STATUS parse_arguments(
   const rclcpp::Logger & logger, int argc, char ** argv,
-  std::string & map_topic, std::string & origin_topic, SaveParamList & save_parameters)
+  std::string & map_topic, SaveParamList & save_parameters)
 {
   const struct cmd_struct commands[] = {
     {"-t", COMMAND_MAP_TOPIC},
@@ -147,7 +150,7 @@ ARGUMENTS_STATUS parse_arguments(
             }
             break;
           case COMMAND_VIEW_POINT_TOPIC:
-            origin_topic = *it;
+            save_parameters.origin_topic = *it;
             break;
           case COMMAND_ENCODING:
             it--;  // as this one is a simple flag that puts binary format to on
@@ -175,8 +178,8 @@ int main(int argc, char ** argv)
   // Parse CLI-arguments
   SaveParamList save_parameters;
   std::string map_topic = "map";
-  std::string origin_topic = "map_origin";
-  switch (parse_arguments(logger, argc, argv, map_topic, origin_topic, save_parameters)) {
+  save_parameters.origin_topic = "map_origin";
+  switch (parse_arguments(logger, argc, argv, map_topic, save_parameters)) {
     case ARGUMENTS_INVALID:
       rclcpp::shutdown();
       return -1;
@@ -195,7 +198,7 @@ int main(int argc, char ** argv)
     {
       auto map_saver = std::make_shared<nav2_map_server::MapSaver<sensor_msgs::msg::PointCloud2>>();
       if (map_saver->saveMapTopicToFile(
-          map_topic, origin_topic,
+          map_topic, save_parameters.origin_topic,
           save_parameters.save_parameters_3d))
       {
         retcode = 0;
