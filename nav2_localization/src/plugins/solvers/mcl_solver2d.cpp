@@ -1,8 +1,11 @@
+// Copyright (c) 2021 Jose M. TORRES-CAMARA and Khaled SAAD
+
+#include <vector>
+#include <memory>
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_localization/interfaces/solver_base.hpp"
 #include "nav2_localization/plugins/solvers/mcl_solver2d.hpp"
 #include "nav2_localization/particle_filter.hpp"
-#include <vector>
 
 namespace nav2_localization
 {
@@ -26,9 +29,7 @@ geometry_msgs::msg::TransformStamped MCLSolver2d::solve(
 }
 
 void MCLSolver2d::initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose)
-{
-
-}
+{}
 
 void MCLSolver2d::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
@@ -56,20 +57,14 @@ void MCLSolver2d::configure(
 }
 
 void MCLSolver2d::activate()
-{
-
-}
+{}
 
 void MCLSolver2d::deactivate()
-{
-
-}
+{}
 
 void MCLSolver2d::cleanup()
-{
+{}
 
-}
-
-} // nav2_localization
+}  // namespace nav2_localization
 
 PLUGINLIB_EXPORT_CLASS(nav2_localization::MCLSolver2d, nav2_localization::Solver)
