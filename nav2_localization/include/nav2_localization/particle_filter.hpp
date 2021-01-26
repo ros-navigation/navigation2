@@ -8,22 +8,22 @@ namespace nav2_localization
 {
 struct particle
 {
-	// pose
-	double weight;
+  // pose
+  double weight;
 };
 
 class ParticleFilter
 {
 public:
-	// TODO: Pass initial pose
-	ParticleFilter(const int &initial_number_of_particles);
-	void update();
-	void resample();
-	// TODO
-	// Type? get_most_likely_pose();
+  // TODO: Pass initial pose
+  ParticleFilter(const int &initial_number_of_particles);
+  void update();
+  void resample();
+  // TODO
+  // Type? get_most_likely_pose();
 
 private:
-	std::vector<particle> particles_;
+  std::vector<particle> particles_;
 };
 } // nav2_localization
 

@@ -144,7 +144,7 @@ protected:
     std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>> scan_filter_;
     message_filters::Connection laser_scan_connection_;
     message_filters::Connection scan_connection_;
-	laser_geometry::LaserProjection laser_to_pc_projector_;
+  laser_geometry::LaserProjection laser_to_pc_projector_;
 
     // Sample Motion Model Plugin
     pluginlib::ClassLoader<nav2_localization::SampleMotionModel> sample_motion_model_loader_;

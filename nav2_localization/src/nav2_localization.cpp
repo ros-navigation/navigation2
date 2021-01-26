@@ -136,7 +136,7 @@ LocalizationServer::initTransforms()
 void
 LocalizationServer::initMessageFilters()
 {
-	// LaserScan msg
+  // LaserScan msg
     laser_scan_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
         rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
 
@@ -148,7 +148,7 @@ LocalizationServer::initMessageFilters()
             &LocalizationServer::laserReceived,
             this, std::placeholders::_1));
 
-	// PointCloud msg
+  // PointCloud msg
     scan_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(
         rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
 
@@ -225,11 +225,11 @@ LocalizationServer::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceSt
 void
 LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
-	sensor_msgs::msg::PointCloud2 scan;
-	laser_to_pc_projector_.projectLaser(*laser_scan, scan);
-	std::shared_ptr<sensor_msgs::msg::PointCloud2> scan_ptr;
-	scan_ptr = std::make_shared<sensor_msgs::msg::PointCloud2>(scan);
-	scanReceived(scan_ptr);
+  sensor_msgs::msg::PointCloud2 scan;
+  laser_to_pc_projector_.projectLaser(*laser_scan, scan);
+  std::shared_ptr<sensor_msgs::msg::PointCloud2> scan_ptr;
+  scan_ptr = std::make_shared<sensor_msgs::msg::PointCloud2>(scan);
+  scanReceived(scan_ptr);
 }
 
 void

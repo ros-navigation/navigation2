@@ -29,18 +29,18 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
     double theta = tf2::getYaw(prev_pose.transform.rotation);
 
     double delta_rot_1 = AngleUtils::angleDiff(atan2(y_bar_prime-y_bar, x_bar_prime-x_bar), theta_bar);
-    if(isnan(delta_rot_1) || isinf(delta_rot_1))	
-    {	
-        RCLCPP_ERROR(node_->get_logger(), "delta_rot_1 is NAN or INF");	
-        delta_rot_1 = 0.0; // TODO: consider a different value	
+    if(isnan(delta_rot_1) || isinf(delta_rot_1))  
+    {  
+        RCLCPP_ERROR(node_->get_logger(), "delta_rot_1 is NAN or INF");  
+        delta_rot_1 = 0.0; // TODO: consider a different value  
     }
 
     // Avoid calculating this angle for very small transitions (e.g. on-the-spot rotation)
     if(hypot(x_bar_prime-x_bar, y_bar_prime-y_bar) < 0.01)
         delta_rot_1 = 0.0;
 
-    double delta_trans = hypot(x_bar_prime-x_bar, y_bar_prime-y_bar);	
-    double delta_rot_2 = AngleUtils::angleDiff(AngleUtils::angleDiff(theta_bar_prime, theta_bar), delta_rot_1);	
+    double delta_trans = hypot(x_bar_prime-x_bar, y_bar_prime-y_bar);  
+    double delta_rot_2 = AngleUtils::angleDiff(AngleUtils::angleDiff(theta_bar_prime, theta_bar), delta_rot_1);  
 
     // Treat forward and backward motion in the same way.
     // Without this a backward motion would be modelled as a 180 degree rotation, followed by
@@ -51,29 +51,29 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
     double delta_rot_2_noise = std::min(fabs(AngleUtils::angleDiff(delta_rot_2, 0.0)),
                                         fabs(AngleUtils::angleDiff(delta_rot_2, M_PI)));
 
-    std::random_device device;	
+    std::random_device device;  
     std::mt19937 generator(device());
 
     // Noise in the first rotation
-    std::normal_distribution<double> delta_rot_1_noise_dist(0.0, sqrt(alpha1_*pow(delta_rot_1_noise, 2) + alpha2_*pow(delta_trans, 2)));	
+    std::normal_distribution<double> delta_rot_1_noise_dist(0.0, sqrt(alpha1_*pow(delta_rot_1_noise, 2) + alpha2_*pow(delta_trans, 2)));  
     double delta_rot_1_hat = AngleUtils::angleDiff(delta_rot_1, delta_rot_1_noise_dist(generator));
 
     // Noise in the translation
-    std::normal_distribution<double> delta_trans_noise_dist(0.0, sqrt(alpha3_*pow(delta_trans, 2) + alpha4_*(pow(delta_rot_1_noise, 2) + pow(delta_rot_2_noise, 2))));	
-    double delta_trans_hat = delta_trans - delta_trans_noise_dist(generator);	
+    std::normal_distribution<double> delta_trans_noise_dist(0.0, sqrt(alpha3_*pow(delta_trans, 2) + alpha4_*(pow(delta_rot_1_noise, 2) + pow(delta_rot_2_noise, 2))));  
+    double delta_trans_hat = delta_trans - delta_trans_noise_dist(generator);  
 
     // Noise in the second rotation
     std::normal_distribution<double> delta_rot_2_noise_dist(0.0, sqrt(alpha1_*pow(delta_rot_2_noise, 2) + alpha2_*pow(delta_trans, 2)));
-    double delta_rot_2_hat = AngleUtils::angleDiff(delta_rot_2, delta_rot_2_noise_dist(generator));	
+    double delta_rot_2_hat = AngleUtils::angleDiff(delta_rot_2, delta_rot_2_noise_dist(generator));  
 
-    geometry_msgs::msg::TransformStamped most_likely_pose;	
-    most_likely_pose.transform.translation.x = x + delta_trans_hat*cos(theta + delta_rot_1_hat);	
-    most_likely_pose.transform.translation.y = y + delta_trans_hat*sin(theta + delta_rot_1_hat);	
+    geometry_msgs::msg::TransformStamped most_likely_pose;  
+    most_likely_pose.transform.translation.x = x + delta_trans_hat*cos(theta + delta_rot_1_hat);  
+    most_likely_pose.transform.translation.y = y + delta_trans_hat*sin(theta + delta_rot_1_hat);  
 
-    tf2::Quaternion theta_prime_quat;	
-    double theta_prime = theta + delta_rot_1_hat + delta_rot_2_hat;	
-    theta_prime_quat.setEuler(theta_prime, 0.0, 0.0);	
-    most_likely_pose.transform.rotation = tf2::toMsg(theta_prime_quat);	
+    tf2::Quaternion theta_prime_quat;  
+    double theta_prime = theta + delta_rot_1_hat + delta_rot_2_hat;  
+    theta_prime_quat.setEuler(theta_prime, 0.0, 0.0);  
+    most_likely_pose.transform.rotation = tf2::toMsg(theta_prime_quat);  
 
     return most_likely_pose;
 }

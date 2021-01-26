@@ -7,20 +7,20 @@
 namespace nav2_localization
 {
 geometry_msgs::msg::TransformStamped MCLSolver2d::solve(
-	const geometry_msgs::msg::TransformStamped& curr_odom,
-	const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan)
+  const geometry_msgs::msg::TransformStamped& curr_odom,
+  const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan)
 {
-	// Motion update
-	pf_->update();
-	prev_odom_ = curr_odom;
+  // Motion update
+  pf_->update();
+  prev_odom_ = curr_odom;
 
-	// Measurement update
-	pf_->resample();
+  // Measurement update
+  pf_->resample();
 
-	geometry_msgs::msg::TransformStamped curr_pose;
-	// curr_pose = pf_->get_most_likely_pose();
+  geometry_msgs::msg::TransformStamped curr_pose;
+  // curr_pose = pf_->get_most_likely_pose();
 
-	prev_pose_ = curr_pose;
+  prev_pose_ = curr_pose;
 
     return curr_pose;
 }
@@ -31,28 +31,28 @@ void MCLSolver2d::initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped
 }
 
 void MCLSolver2d::configure(
-	const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-	SampleMotionModel::Ptr& motionSampler,
-	Matcher2d::Ptr& matcher,
-	const geometry_msgs::msg::TransformStamped& odom,
-	const geometry_msgs::msg::TransformStamped& pose)
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
+  SampleMotionModel::Ptr& motionSampler,
+  Matcher2d::Ptr& matcher,
+  const geometry_msgs::msg::TransformStamped& odom,
+  const geometry_msgs::msg::TransformStamped& pose)
 {
-	node_ = node;
+  node_ = node;
 
-	node_->declare_parameter("num_particles", 1000);
+  node_->declare_parameter("num_particles", 1000);
 
-	motionSampler_ = motionSampler;
-	matcher_ = matcher;
+  motionSampler_ = motionSampler;
+  matcher_ = matcher;
 
-	// Get configuration and generate PF
-	int number_of_particles;
-	node_->get_parameter("num_particles", number_of_particles);
+  // Get configuration and generate PF
+  int number_of_particles;
+  node_->get_parameter("num_particles", number_of_particles);
 
-	pf_ = std::make_shared<ParticleFilter>(number_of_particles);
+  pf_ = std::make_shared<ParticleFilter>(number_of_particles);
 
-	prev_odom_ = odom;
-	prev_pose_ = pose;
-	return;
+  prev_odom_ = odom;
+  prev_pose_ = pose;
+  return;
 }
 
 void MCLSolver2d::activate()

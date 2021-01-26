@@ -20,27 +20,27 @@ namespace nav2_localization
 class MCLSolver2d : public nav2_localization::Solver
 {
 public:
-	MCLSolver2d() {};
+  MCLSolver2d() {};
 
-	geometry_msgs::msg::TransformStamped solve(
-		const geometry_msgs::msg::TransformStamped& curr_odom,
-		const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan) override;
+  geometry_msgs::msg::TransformStamped solve(
+    const geometry_msgs::msg::TransformStamped& curr_odom,
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan) override;
 
-	void initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose) override;
+  void initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose) override;
 
-	void configure(
-		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-		SampleMotionModel::Ptr& motionSampler,
-		Matcher2d::Ptr& matcher,
-		const geometry_msgs::msg::TransformStamped& odom,
-		const geometry_msgs::msg::TransformStamped& pose) override;
+  void configure(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
+    SampleMotionModel::Ptr& motionSampler,
+    Matcher2d::Ptr& matcher,
+    const geometry_msgs::msg::TransformStamped& odom,
+    const geometry_msgs::msg::TransformStamped& pose) override;
 
-	void activate() override;
-	void deactivate() override;
-	void cleanup() override;
+  void activate() override;
+  void deactivate() override;
+  void cleanup() override;
 
 private:
-	std::shared_ptr<ParticleFilter> pf_; // Particle filter
+  std::shared_ptr<ParticleFilter> pf_; // Particle filter
 };
 } // nav2_localization
 
