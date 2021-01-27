@@ -1,3 +1,5 @@
+// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+
 #include <memory>
 
 #include "nav2_localization/nav2_localization.hpp"

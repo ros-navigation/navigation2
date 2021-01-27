@@ -1,3 +1,6 @@
+// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+
+#include <memory>  // For make_shared<>
 #include "nav2_localization/nav2_localization.hpp"
 #include "nav2_util/string_utils.hpp"
 #include "tf2_ros/buffer.h"
@@ -253,12 +256,12 @@ LocalizationServer::scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr s
         return;
     }
 
-    // TODO: should this run only once?
+    // TODO(unassigned): should this run only once?
     geometry_msgs::msg::TransformStamped sensor_pose;
     try
     {
         sensor_pose = tf_buffer_->lookupTransform(scan->header.frame_id,
-                                                base_frame_id_,                 
+                                                base_frame_id_,
                                                 scan->header.stamp,
                                                 transform_tolerance_);
     }
@@ -282,4 +285,4 @@ LocalizationServer::scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr s
     tf_broadcaster_->sendTransform(map_to_odom_transform);
 }
 
-} //nav2_localiztion
+}  // namespace nav2_localization

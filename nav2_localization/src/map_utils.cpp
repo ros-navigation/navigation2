@@ -1,5 +1,8 @@
-#include "nav2_localization/map_utils.hpp"
+// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+
 #include <cmath>
+#include <utility>  // For make_pair
+#include "nav2_localization/map_utils.hpp"
 
 namespace nav2_localization
 {
@@ -24,4 +27,4 @@ double MapUtils::distanceBetweenTwoPoints(const int &x1, const int &y1,
 {
     return hypot(x1-x2, y1-y2);
 }
-}
+}  // namespace nav2_localization

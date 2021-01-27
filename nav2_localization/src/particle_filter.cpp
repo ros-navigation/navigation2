@@ -1,3 +1,5 @@
+// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+
 #include "nav2_localization/particle_filter.hpp"
 
 namespace  nav2_localization
@@ -11,4 +13,4 @@ void ParticleFilter::update()
 void ParticleFilter::resample()
 {}
 
-} // nav2_localization
+}  // namespace nav2_localization
