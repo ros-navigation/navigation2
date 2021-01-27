@@ -1,5 +1,9 @@
-#ifndef NAV2_LOCALIZATION__MCL_SOLVER2D_HPP_
-#define NAV2_LOCALIZATION__MCL_SOLVER2D_HPP_
+// Copyright (c) 2021 Jose M. TORRES-CAMARA and Khaled SAAD
+
+#ifndef NAV2_LOCALIZATION__PLUGINS__SOLVERS__MCL_SOLVER2D_HPP_
+#define NAV2_LOCALIZATION__PLUGINS__SOLVERS__MCL_SOLVER2D_HPP_
+
+#include <memory>  // For shared_ptr<>
 
 // Interfaces
 #include "nav2_localization/interfaces/solver_base.hpp"
@@ -20,7 +24,7 @@ namespace nav2_localization
 class MCLSolver2d : public nav2_localization::Solver
 {
 public:
-  MCLSolver2d() {};
+  MCLSolver2d() {}
 
   geometry_msgs::msg::TransformStamped solve(
     const geometry_msgs::msg::TransformStamped& curr_odom,
@@ -40,8 +44,8 @@ public:
   void cleanup() override;
 
 private:
-  std::shared_ptr<ParticleFilter> pf_; // Particle filter
+  std::shared_ptr<ParticleFilter> pf_;  // Particle filter
 };
-} // nav2_localization
+}  // namespace nav2_localization
 
-#endif // NAV2_LOCALIZATION__MCL_SOLVER2D_HPP_
+#endif  // NAV2_LOCALIZATION__PLUGINS__SOLVERS__MCL_SOLVER2D_HPP_

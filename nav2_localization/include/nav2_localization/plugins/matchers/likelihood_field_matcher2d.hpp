@@ -1,9 +1,12 @@
-#ifndef NAV2_LOCALIZATION__LIKELIHOOD_FIELD_MATCHER2D_HPP_
-#define NAV2_LOCALIZATION__LIKELIHOOD_FIELD_MATCHER2D_HPP_
+// Copyright (c) 2021 Jose M. TORRES-CAMARA and Khaled SAAD
 
+#ifndef NAV2_LOCALIZATION__PLUGINS__MATCHERS__LIKELIHOOD_FIELD_MATCHER2D_HPP_
+#define NAV2_LOCALIZATION__PLUGINS__MATCHERS__LIKELIHOOD_FIELD_MATCHER2D_HPP_
+
+#include <vector>  // For vector<>
+#include <unordered_map>
 #include "nav2_localization/interfaces/matcher2d_base.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include <unordered_map>
 
 namespace nav2_localization
 {
@@ -24,9 +27,9 @@ public:
 private:
   /**
    * @brief Computes and caches the likelihood field for the set map.
-   */ 
-  void preComputeLikelihoodField();  
-  
+   */
+  void preComputeLikelihoodField();
+
   /**
    * @brief Depth-First Search (DFS). This is used within the preComputeLikelihoodField method to speed up the computation
    * @param index_curr Index of current map cell
@@ -36,14 +39,14 @@ private:
   void DFS(const int &index_curr, const int &index_of_obstacle, std::vector<bool> &visited);
 
   std::unordered_map<int, double>  pre_computed_likelihood_field_;  // Cached likelihood field values
-  double max_likelihood_distace_; // The distance beyond which the likelihood is 0
+  double max_likelihood_distace_;  // The distance beyond which the likelihood is 0
   int max_number_of_beams_;  // The maximum number of beams to use when matching
 
   // Matcher parameters
   double sigma_hit_;
   double z_hit_;
   double z_rand_;
-};  
-} // nav2_localization
+};
+}  // namespace nav2_localization
 
-#endif // NAV2_LOCALIZATION__LIKELIHOOD_FIELD_MATCHER2D_HPP_
+#endif  // NAV2_LOCALIZATION__PLUGINS__MATCHERS__LIKELIHOOD_FIELD_MATCHER2D_HPP_

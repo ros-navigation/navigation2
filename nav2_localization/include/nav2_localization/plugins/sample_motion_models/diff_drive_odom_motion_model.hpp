@@ -1,5 +1,7 @@
-#ifndef NAV2_LOCALIZATION__DIFF_DRIVE_ODOM_MOTION_MODEL_HPP_
-#define NAV2_LOCALIZATION__DIFF_DRIVE_ODOM_MOTION_MODEL_HPP_
+// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+
+#ifndef NAV2_LOCALIZATION__PLUGINS__SAMPLE_MOTION_MODELS__DIFF_DRIVE_ODOM_MOTION_MODEL_HPP_
+#define NAV2_LOCALIZATION__PLUGINS__SAMPLE_MOTION_MODELS__DIFF_DRIVE_ODOM_MOTION_MODEL_HPP_
 
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
 #include "geometry_msgs/msg/pose.hpp"
@@ -28,6 +30,6 @@ private:
     double alpha3_;
     double alpha4_;
 };
-} // nav2_localization
+}  // namespace nav2_localization
 
-#endif // NAV2_LOCALIZATION__DIFF_DRIVE_ODOM_MOTION_MODEL_HPP_
+#endif  // NAV2_LOCALIZATION__PLUGINS__SAMPLE_MOTION_MODELS__DIFF_DRIVE_ODOM_MOTION_MODEL_HPP_
