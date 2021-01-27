@@ -22,8 +22,8 @@
 namespace nav2_localization
 {
 geometry_msgs::msg::TransformStamped MCLSolver2d::solve(
-  const geometry_msgs::msg::TransformStamped& curr_odom,
-  const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan)
+  const geometry_msgs::msg::TransformStamped & curr_odom,
+  const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan)
 {
   // Motion update
   pf_->update();
@@ -37,18 +37,18 @@ geometry_msgs::msg::TransformStamped MCLSolver2d::solve(
 
   prev_pose_ = curr_pose;
 
-    return curr_pose;
+  return curr_pose;
 }
 
-void MCLSolver2d::initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose)
+void MCLSolver2d::initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & pose)
 {}
 
 void MCLSolver2d::configure(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-  SampleMotionModel::Ptr& motionSampler,
-  Matcher2d::Ptr& matcher,
-  const geometry_msgs::msg::TransformStamped& odom,
-  const geometry_msgs::msg::TransformStamped& pose)
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  SampleMotionModel::Ptr & motionSampler,
+  Matcher2d::Ptr & matcher,
+  const geometry_msgs::msg::TransformStamped & odom,
+  const geometry_msgs::msg::TransformStamped & pose)
 {
   node_ = node;
 
@@ -65,7 +65,6 @@ void MCLSolver2d::configure(
 
   prev_odom_ = odom;
   prev_pose_ = pose;
-  return;
 }
 
 void MCLSolver2d::activate()

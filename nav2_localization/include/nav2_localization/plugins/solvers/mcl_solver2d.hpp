@@ -39,17 +39,17 @@ public:
   MCLSolver2d() {}
 
   geometry_msgs::msg::TransformStamped solve(
-    const geometry_msgs::msg::TransformStamped& curr_odom,
-    const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan) override;
+    const geometry_msgs::msg::TransformStamped & curr_odom,
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan) override;
 
-  void initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose) override;
+  void initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & pose) override;
 
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-    SampleMotionModel::Ptr& motionSampler,
-    Matcher2d::Ptr& matcher,
-    const geometry_msgs::msg::TransformStamped& odom,
-    const geometry_msgs::msg::TransformStamped& pose) override;
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    SampleMotionModel::Ptr & motionSampler,
+    Matcher2d::Ptr & matcher,
+    const geometry_msgs::msg::TransformStamped & odom,
+    const geometry_msgs::msg::TransformStamped & pose) override;
 
   void activate() override;
   void deactivate() override;

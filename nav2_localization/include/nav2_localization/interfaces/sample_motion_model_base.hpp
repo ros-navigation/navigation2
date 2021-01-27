@@ -29,43 +29,43 @@ namespace nav2_localization
 class SampleMotionModel
 {
 public:
-    using Ptr = std::shared_ptr<nav2_localization::SampleMotionModel>;
+  using Ptr = std::shared_ptr<nav2_localization::SampleMotionModel>;
 
-    /**
-     * @brief Calculates the most likely pose that the robot is now in, following its motion.
-     * @param prev_odom The robot's odometry at the previous time step (i.e. before the robot has moved).
-     * @param curr_odom The robot's odometry at the current time step (i.e. after the robot has moved).
-     * @param prev_pose The robot's pose estimation at the previous time step.
-     * @return The most likely pose of the robot at the current time step, based on the model's estimation.
-     */
-    virtual geometry_msgs::msg::TransformStamped getMostLikelyPose(
-        const geometry_msgs::msg::TransformStamped& prev_odom,
-        const geometry_msgs::msg::TransformStamped& curr_odom,
-        const geometry_msgs::msg::TransformStamped& prev_pose) = 0;
+  /**
+   * @brief Calculates the most likely pose that the robot is now in, following its motion.
+   * @param prev_odom The robot's odometry at the previous time step (i.e. before the robot has moved).
+   * @param curr_odom The robot's odometry at the current time step (i.e. after the robot has moved).
+   * @param prev_pose The robot's pose estimation at the previous time step.
+   * @return The most likely pose of the robot at the current time step, based on the model's estimation.
+   */
+  virtual geometry_msgs::msg::TransformStamped getMostLikelyPose(
+    const geometry_msgs::msg::TransformStamped & prev_odom,
+    const geometry_msgs::msg::TransformStamped & curr_odom,
+    const geometry_msgs::msg::TransformStamped & prev_pose) = 0;
 
-    /**
-     * @brief Configures the model, during the "Configuring" state of the parent lifecycle node.
-     * @param node Pointer to the parent lifecycle node.
-     */     
-    virtual void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) = 0;
+  /**
+   * @brief Configures the model, during the "Configuring" state of the parent lifecycle node.
+   * @param node Pointer to the parent lifecycle node.
+   */
+  virtual void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) = 0;
 
-    /**
-     * @brief Activates the model, during the "Activating" state of the parent lifecycle node.
-     */
-    virtual void activate() = 0;
+  /**
+   * @brief Activates the model, during the "Activating" state of the parent lifecycle node.
+   */
+  virtual void activate() = 0;
 
-    /**
-     * @brief Deactivates the model, during the "Decativating" state of the parent lifecycle node. 
-     */
-    virtual void deactivate() = 0;
+  /**
+   * @brief Deactivates the model, during the "Decativating" state of the parent lifecycle node.
+   */
+  virtual void deactivate() = 0;
 
-    /**
-     * @brief Cleans up the model, during the "Cleaningup" state of the parent lifecycle node.
-     */
-    virtual void cleanup() = 0;
+  /**
+   * @brief Cleans up the model, during the "Cleaningup" state of the parent lifecycle node.
+   */
+  virtual void cleanup() = 0;
 
 protected:
-    rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 };
 }  // namespace nav2_localization
 

@@ -41,7 +41,7 @@ namespace nav2_localization
 class Solver
 {
 public:
-  Solver(){}
+  Solver() {}
 
   using Ptr = std::shared_ptr<nav2_localization::Solver>;
 
@@ -52,29 +52,30 @@ public:
      * @return Estimation of the current position
      */
   virtual geometry_msgs::msg::TransformStamped solve(
-    const geometry_msgs::msg::TransformStamped& curr_odom,
-    const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan) = 0;
+    const geometry_msgs::msg::TransformStamped & curr_odom,
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan) = 0;
 
   /**
    * @brief Initializes the filter being used with a given pose
    * @param pose The pose at which to initialize the filter
-   */ 
-  virtual void initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose) = 0;
+   */
+  virtual void initFilter(
+    const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & pose) = 0;
 
   /**
      * @brief Configures the solver, during the "Configuring" state of the parent lifecycle node.
      * @param node Pointer to the parent lifecycle node
-   * @param motionSampler The Sample Motion Model to use 
+   * @param motionSampler The Sample Motion Model to use
    * @param matcher The 2D Matcher to use
    * @param odom Initial odometry
    * @param pose Initial pose
-     */   
+     */
   virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-    SampleMotionModel::Ptr& motionSampler,
-    Matcher2d::Ptr& matcher,
-    const geometry_msgs::msg::TransformStamped& odom,
-    const geometry_msgs::msg::TransformStamped& pose) = 0;
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    SampleMotionModel::Ptr & motionSampler,
+    Matcher2d::Ptr & matcher,
+    const geometry_msgs::msg::TransformStamped & odom,
+    const geometry_msgs::msg::TransformStamped & pose) = 0;
 
   /**
      * @brief Activates the solver, during the "Activating" state of the parent lifecycle node.
@@ -82,7 +83,7 @@ public:
   virtual void activate() = 0;
 
   /**
-     * @brief Deactivates the solver, during the "Deactivating" state of the parent lifecycle node. 
+     * @brief Deactivates the solver, during the "Deactivating" state of the parent lifecycle node.
      */
   virtual void deactivate() = 0;
 

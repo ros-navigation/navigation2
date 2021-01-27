@@ -29,7 +29,7 @@ class ParticleFilter
 {
 public:
   // TODO(unassigned): Pass initial pose
-  explicit ParticleFilter(const int &initial_number_of_particles);
+  explicit ParticleFilter(const int & initial_number_of_particles);
   void update();
   void resample();
   // TODO(unassigned): Type? get_most_likely_pose();

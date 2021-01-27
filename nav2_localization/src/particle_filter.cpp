@@ -16,7 +16,7 @@
 
 namespace  nav2_localization
 {
-ParticleFilter::ParticleFilter(const int &initial_number_of_particles)
+ParticleFilter::ParticleFilter(const int & initial_number_of_particles)
 {}
 
 void ParticleFilter::update()

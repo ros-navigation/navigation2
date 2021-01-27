@@ -25,22 +25,22 @@ namespace nav2_localization
 class DiffDriveOdomMotionModel : public SampleMotionModel
 {
 public:
-    geometry_msgs::msg::TransformStamped getMostLikelyPose(
-        const geometry_msgs::msg::TransformStamped& prev_odom,
-        const geometry_msgs::msg::TransformStamped& curr_odom,
-        const geometry_msgs::msg::TransformStamped& prev_pose) override;
+  geometry_msgs::msg::TransformStamped getMostLikelyPose(
+    const geometry_msgs::msg::TransformStamped & prev_odom,
+    const geometry_msgs::msg::TransformStamped & curr_odom,
+    const geometry_msgs::msg::TransformStamped & prev_pose) override;
 
-    void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node) override;
-    void activate() override;
-    void deactivate() override;
-    void cleanup() override;
+  void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) override;
+  void activate() override;
+  void deactivate() override;
+  void cleanup() override;
 
 private:
-    // Noise parameters
-    double alpha1_;
-    double alpha2_;
-    double alpha3_;
-    double alpha4_;
+  // Noise parameters
+  double alpha1_;
+  double alpha2_;
+  double alpha3_;
+  double alpha4_;
 };
 }  // namespace nav2_localization
 
