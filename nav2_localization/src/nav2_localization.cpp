@@ -19,7 +19,10 @@ LocalizationServer::LocalizationServer()
   default_matcher2d_id_("LikelihoodFieldMatcher2d"),
   solver_loader_("nav2_localization", "nav2_localization::Solver"),
   default_solver_id_("MCLSolver2d"),
-  default_types_{"nav2_localization::DiffDriveOdomMotionModel", "nav2_localization::LikelihoodFieldMatcher2d", "nav2_localization::MCLSolver2d"}
+  default_types_{
+    "nav2_localization::DiffDriveOdomMotionModel",
+    "nav2_localization::LikelihoodFieldMatcher2d",
+    "nav2_localization::MCLSolver2d"}
 {
     RCLCPP_INFO(get_logger(), "Creating localization server");
 
@@ -190,9 +193,13 @@ LocalizationServer::initPlugins()
 
     try {
         sample_motion_model_type_ = nav2_util::get_plugin_type_param(node, sample_motion_model_id_);
-        sample_motion_model_ = sample_motion_model_loader_.createUniqueInstance(sample_motion_model_type_);
+        sample_motion_model_ =
+          sample_motion_model_loader_.createUniqueInstance(sample_motion_model_type_);
     } catch (const pluginlib::PluginlibException & ex) {
-        RCLCPP_FATAL(get_logger(), "Failed to create sample motion model. Exception: %s", ex.what());
+        RCLCPP_FATAL(
+          get_logger(),
+          "Failed to create sample motion model. Exception: %s",
+          ex.what());
         exit(-1);
     }
 
@@ -216,11 +223,17 @@ LocalizationServer::initPlugins()
         exit(-1);
     }
 
-    solver_->configure(node, sample_motion_model_, matcher2d_, geometry_msgs::msg::TransformStamped(), geometry_msgs::msg::TransformStamped());
+    solver_->configure(
+      node,
+      sample_motion_model_,
+      matcher2d_,
+      geometry_msgs::msg::TransformStamped(),
+      geometry_msgs::msg::TransformStamped());
 }
 
 void
-LocalizationServer::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+LocalizationServer::initialPoseReceived(
+  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
     solver_->initFilter(msg);
 }
@@ -273,7 +286,8 @@ LocalizationServer::scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr s
     matcher2d_->setSensorPose(sensor_pose);
 
     // The estimated robot's pose in the global frame
-    geometry_msgs::msg::TransformStamped current_pose = solver_->solve(odom_to_base_transform, scan);
+    geometry_msgs::msg::TransformStamped current_pose =
+      solver_->solve(odom_to_base_transform, scan);
 
     current_pose.header.stamp = scan->header.stamp;
     current_pose.header.frame_id = map_frame_id_;

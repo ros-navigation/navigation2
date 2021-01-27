@@ -145,19 +145,34 @@ void LikelihoodFieldMatcher2d::preComputeLikelihoodField()
 
   // Apply zero-mean norrmal distribution
   for(auto index = 0; index < map_->info.width*map_->info.height; index++)
-    pre_computed_likelihood_field_[index] = (1.0/(sqrt(2*M_PI)*sigma_hit_))*exp(-0.5*((pre_computed_likelihood_field_[index]*pre_computed_likelihood_field_[index])/(sigma_hit_*sigma_hit_)));
+    pre_computed_likelihood_field_[index] =
+      (1.0 / (sqrt(2*M_PI)*sigma_hit_)) *
+      exp(-0.5 * (
+        (pre_computed_likelihood_field_[index] * pre_computed_likelihood_field_[index]) /
+        (sigma_hit_ * sigma_hit_)));
 }
 
-void LikelihoodFieldMatcher2d::DFS(const int &index_curr, const int &index_of_obstacle, std::vector<bool> &visited)
+void LikelihoodFieldMatcher2d::DFS(
+  const int &index_curr,
+  const int &index_of_obstacle,
+  std::vector<bool> &visited)
 {
   visited[index_curr] = true;
-  std::pair<uint32_t, uint32_t> coord_curr = MapUtils::indexToCoordinates(index_curr, map_->info.width);
-  std::pair<uint32_t, uint32_t> coord_obs = MapUtils::indexToCoordinates(index_of_obstacle, map_->info.width);
+  std::pair<uint32_t, uint32_t> coord_curr = MapUtils::indexToCoordinates(
+    index_curr,
+    map_->info.width);
+  std::pair<uint32_t, uint32_t> coord_obs = MapUtils::indexToCoordinates(
+    index_of_obstacle,
+    map_->info.width);
 
   // This cell is NOT an obstacle
   if(pre_computed_likelihood_field_[index_curr] != 0.0)
   {
-    double distance_to_obstacle = MapUtils::distanceBetweenTwoPoints(coord_curr.first, coord_curr.second, coord_obs.first, coord_obs.second)*map_->info.resolution;
+    double distance_to_obstacle = MapUtils::distanceBetweenTwoPoints(
+      coord_curr.first,
+      coord_curr.second,
+      coord_obs.first,
+      coord_obs.second)*map_->info.resolution;
 
     // Getting too far from the obstacle, so abandon search
     if(distance_to_obstacle > max_likelihood_distace_)
@@ -171,7 +186,11 @@ void LikelihoodFieldMatcher2d::DFS(const int &index_curr, const int &index_of_ob
   // Cell to the left
   if(coord_curr.first > 0)
   {
-    int left_cell_index =  MapUtils::coordinatesToIndex(coord_curr.first-1, coord_curr.second, map_->info.width);
+    int left_cell_index = MapUtils::coordinatesToIndex(
+      coord_curr.first-1,
+      coord_curr.second,
+      map_->info.width);
+
     if(!visited[left_cell_index])
       DFS(left_cell_index, index_of_obstacle, visited);
   }
@@ -179,7 +198,11 @@ void LikelihoodFieldMatcher2d::DFS(const int &index_curr, const int &index_of_ob
   // Cell to the right
   if(coord_curr.first < map_->info.width-1)
   {
-    int right_cell_index =  MapUtils::coordinatesToIndex(coord_curr.first+1, coord_curr.second, map_->info.width);
+    int right_cell_index = MapUtils::coordinatesToIndex(
+      coord_curr.first+1,
+      coord_curr.second,
+      map_->info.width);
+
     if(!visited[right_cell_index])
       DFS(right_cell_index, index_of_obstacle, visited);
   }
@@ -187,7 +210,11 @@ void LikelihoodFieldMatcher2d::DFS(const int &index_curr, const int &index_of_ob
   // Cell above
   if(coord_curr.second > 0)
   {
-    int up_cell_index =  MapUtils::coordinatesToIndex(coord_curr.first, coord_curr.second-1, map_->info.width);
+    int up_cell_index = MapUtils::coordinatesToIndex(
+      coord_curr.first,
+      coord_curr.second-1,
+      map_->info.width);
+
     if(!visited[up_cell_index])
       DFS(up_cell_index, index_of_obstacle, visited);
   }
@@ -195,13 +222,18 @@ void LikelihoodFieldMatcher2d::DFS(const int &index_curr, const int &index_of_ob
   // Cell below
   if(coord_curr.second < map_->info.height-1)
   {
-    int down_cell_index =  MapUtils::coordinatesToIndex(coord_curr.first, coord_curr.second+1, map_->info.width);
+    int down_cell_index = MapUtils::coordinatesToIndex(
+      coord_curr.first,
+      coord_curr.second+1,
+      map_->info.width);
+
     if(!visited[down_cell_index])
       DFS(down_cell_index, index_of_obstacle, visited);
   }
 }
 
-void LikelihoodFieldMatcher2d::setSensorPose(const geometry_msgs::msg::TransformStamped &sensor_pose)
+void LikelihoodFieldMatcher2d::setSensorPose(
+  const geometry_msgs::msg::TransformStamped &sensor_pose)
 {
   sensor_pose_ = sensor_pose;
 }
