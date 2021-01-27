@@ -1,3 +1,5 @@
+// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+
 #ifndef NAV2_LOCALIZATION__ANGLE_UTILS_HPP_
 #define NAV2_LOCALIZATION__ANGLE_UTILS_HPP_
 
@@ -18,6 +20,6 @@ public:
      */
     static double angleDiff(const double &a, const double &b);
 };
-}
+}  // namespace nav2_localization
 
-#endif // NAV2_LOCALIZATION__ANGLE_UTILS_HPP_
+#endif  // NAV2_LOCALIZATION__ANGLE_UTILS_HPP_

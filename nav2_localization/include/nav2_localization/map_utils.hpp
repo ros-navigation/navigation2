@@ -1,3 +1,5 @@
+// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+
 #ifndef NAV2_LOCALIZATION__MAP_UTILS_HPP_
 #define NAV2_LOCALIZATION__MAP_UTILS_HPP_
 
@@ -5,7 +7,7 @@
 #include <utility>
 #include "nav_msgs/msg/map_meta_data.hpp"
 
-// TODO: should this be moved to nav2_util?
+// TODO(unassigned): should this be moved to nav2_util?
 namespace nav2_localization
 {
 /**
@@ -15,7 +17,6 @@ namespace nav2_localization
 class MapUtils
 {
 public:
-
     /**
      * @brief Converts world coordinates into grid map coordinates
      * @param x World x coordinate
@@ -53,6 +54,6 @@ public:
     static double distanceBetweenTwoPoints(const int &x1, const int &y1,
                                            const int &x2, const int &y2);
 };
-}
+}  // namespace nav2_localization
 
-#endif // NAV2_LOCALIZATION__MAP_UTILS_HPP_
+#endif  // NAV2_LOCALIZATION__MAP_UTILS_HPP_

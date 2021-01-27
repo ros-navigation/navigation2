@@ -1,7 +1,11 @@
+// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+
 #ifndef NAV2_LOCALIZATION__NAV2_LOCALIZATION_HPP_
 #define NAV2_LOCALIZATION__NAV2_LOCALIZATION_HPP_
 
 #include <string>
+#include <vector>  // For vector<>
+#include <memory>  // For shared_ptr<>
 
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
@@ -27,11 +31,11 @@ namespace nav2_localization
 class LocalizationServer : public nav2_util::LifecycleNode
 {
 public:
-
     /**
     * @brief Constructor for nav2_localization::LocalizationServer
     */
     LocalizationServer();
+
     /**
     * @brief Destructor for nav2_localization::LocalizationServer
     */
@@ -48,6 +52,7 @@ protected:
      * model or matcher plugins
      */
     nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+
     /**
      * @brief Activates member variables
      *
@@ -56,6 +61,7 @@ protected:
      * @return Success or Failure
      */
     nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+
     /**
      * @brief Deactivates member variables
      *
@@ -63,6 +69,7 @@ protected:
      * @return Success or Failure
      */
     nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+
     /**
      * @brief Calls clean up states and resets member variables.
      *
@@ -70,6 +77,7 @@ protected:
      * @return Success or Failure
      */
     nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+
     /**
      * @brief Called when in Shutdown state
      * @param state LifeCycle Node's state
@@ -81,7 +89,7 @@ protected:
      * @brief Initializes the publishers and subscribers
      */
     void initPubSub();
-    
+
     /**
      * @brief Initializes the member variables required to transform between coordinate frames
      */
@@ -91,12 +99,12 @@ protected:
      * @brief Initializes the scan message filter
      */
     void initMessageFilters();
-    
+
     /**
      * @brief Initializes plugins
      */
     void initPlugins();
-    
+
     /**
      * @brief Callback when the map is received
      * @param msg pointer to the received map message
@@ -176,6 +184,6 @@ protected:
     initial_pose_sub_;
 };
 
-}
+}  // namespace nav2_localization
 
-#endif // NAV2_LOCALIZATION__NAV2_LOCALIZATION_HPP_
+#endif  // NAV2_LOCALIZATION__NAV2_LOCALIZATION_HPP_

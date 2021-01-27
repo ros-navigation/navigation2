@@ -1,3 +1,4 @@
+// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
 
 #ifndef NAV2_LOCALIZATION__PARTICLE_FILTER_HPP_
 #define NAV2_LOCALIZATION__PARTICLE_FILTER_HPP_
@@ -15,16 +16,15 @@ struct particle
 class ParticleFilter
 {
 public:
-  // TODO: Pass initial pose
-  ParticleFilter(const int &initial_number_of_particles);
+  // TODO(unassigned): Pass initial pose
+  explicit ParticleFilter(const int &initial_number_of_particles);
   void update();
   void resample();
-  // TODO
-  // Type? get_most_likely_pose();
+  // TODO(unassigned): Type? get_most_likely_pose();
 
 private:
   std::vector<particle> particles_;
 };
-} // nav2_localization
+}  // namespace nav2_localization
 
-#endif // NAV2_LOCALIZATION__PARTICLE_FILTER_HPP_
+#endif  // NAV2_LOCALIZATION__PARTICLE_FILTER_HPP_
