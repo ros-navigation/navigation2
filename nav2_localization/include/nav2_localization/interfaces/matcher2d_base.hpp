@@ -71,8 +71,8 @@ public:
 
 protected:
   nav2_util::LifecycleNode::SharedPtr node_;
-  nav_msgs::msg::OccupancyGrid::SharedPtr map_;  // Reference to the 2D occupancy grid map of the environment where the robot is
-  geometry_msgs::msg::TransformStamped sensor_pose_;  // The pose of the sensor relative to the center of the robot's base
+  nav_msgs::msg::OccupancyGrid::SharedPtr map_;  // 2D grid map of the environment
+  geometry_msgs::msg::TransformStamped sensor_pose_;  // Sensor pose relative to the robot's base
 };
 }  // namespace nav2_localization
 
