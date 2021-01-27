@@ -1,6 +1,9 @@
-#ifndef NAV2_LOCALIZATION__MATCHER2D_BASE_HPP_
-#define NAV2_LOCALIZATION__MATCHER2D_BASE_HPP_
+// Copyright (c) 2021 Jose M. TORRES-CAMARA and Khaled SAAD
 
+#ifndef NAV2_LOCALIZATION__INTERFACES__MATCHER2D_BASE_HPP_
+#define NAV2_LOCALIZATION__INTERFACES__MATCHER2D_BASE_HPP_
+
+#include <memory>  // For shared_ptr<>
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -28,25 +31,26 @@ public:
    * @param curr_pose A pose to match the scan from.
    * @return The probability of the robot being at curr_pose, given scan
    */
-  virtual double getScanProbability(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &scan,
-                    const geometry_msgs::msg::TransformStamped &curr_pose) = 0;
+  virtual double getScanProbability(
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr &scan,
+    const geometry_msgs::msg::TransformStamped &curr_pose) = 0;
 
   /**
    * @brief Sets the map of the environment, against which the matcher will compare sensor readings.
    * @param map A map of the environment
    */
   virtual void setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr &map) = 0;
-  
+
   /**
    * @brief Sets the pose of the sensor relative to the center of the robot's base.
    * @param sensor_pose The pose of the sensor relative to the center of the robot's base
    */
   virtual void setSensorPose(const geometry_msgs::msg::TransformStamped &sensor_pose) = 0;
-  
+
   /**
      * @brief Configures the model, during the "Configuring" state of the parent lifecycle node.
      * @param node Pointer to the parent lifecycle node.
-     */   
+     */
   virtual void configure(const nav2_util::LifecycleNode::SharedPtr &node) = 0;
 
   /**
@@ -67,9 +71,9 @@ public:
 
 protected:
   nav2_util::LifecycleNode::SharedPtr node_;
-  nav_msgs::msg::OccupancyGrid::SharedPtr map_;     // Reference to the 2D occupancy grid map of the environment where the robot is
+  nav_msgs::msg::OccupancyGrid::SharedPtr map_;  // Reference to the 2D occupancy grid map of the environment where the robot is
   geometry_msgs::msg::TransformStamped sensor_pose_;  // The pose of the sensor relative to the center of the robot's base
-};  
-} // nav2_localization
+};
+}  // namespace nav2_localization
 
-#endif // NAV2_LOCALIZATION__MATCHER2D_BASE_HPP_
+#endif  // NAV2_LOCALIZATION__INTERFACES__MATCHER2D_BASE_HPP_

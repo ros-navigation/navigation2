@@ -1,5 +1,9 @@
-#ifndef NAV2_LOCALIZATION__SOLVER_BASE_HPP_
-#define NAV2_LOCALIZATION__SOLVER_BASE_HPP_
+// Copyright (c) 2021 Jose M. TORRES-CAMARA and Khaled SAAD
+
+#ifndef NAV2_LOCALIZATION__INTERFACES__SOLVER_BASE_HPP_
+#define NAV2_LOCALIZATION__INTERFACES__SOLVER_BASE_HPP_
+
+#include <memory>  // For shared_ptr<>
 
 // Other Interfaces
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
@@ -79,9 +83,9 @@ protected:
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   SampleMotionModel::Ptr motionSampler_;
   Matcher2d::Ptr matcher_;
-  geometry_msgs::msg::TransformStamped prev_odom_; // Previous pose odometry-based estimation
-  geometry_msgs::msg::TransformStamped prev_pose_; // Previous pose estimation
+  geometry_msgs::msg::TransformStamped prev_odom_;  // Previous pose odometry-based estimation
+  geometry_msgs::msg::TransformStamped prev_pose_;  // Previous pose estimation
 };
-} // nav2_localization
+}  // namespace nav2_localization
 
-#endif // NAV2_LOCALIZATION__SOLVER_BASE_HPP_
+#endif  // NAV2_LOCALIZATION__INTERFACES__SOLVER_BASE_HPP_

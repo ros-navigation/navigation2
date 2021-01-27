@@ -1,6 +1,9 @@
-#ifndef NAV2_LOCALIZATION__SAMPLE_MOTION_MODEL_BASE_HPP_
-#define NAV2_LOCALIZATION__SAMPLE_MOTION_MODEL_BASE_HPP_
+// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
 
+#ifndef NAV2_LOCALIZATION__INTERFACES__SAMPLE_MOTION_MODEL_BASE_HPP_
+#define NAV2_LOCALIZATION__INTERFACES__SAMPLE_MOTION_MODEL_BASE_HPP_
+
+#include <memory>  // For shared_ptr<>
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -12,7 +15,7 @@ namespace nav2_localization
  * @brief Abstract interface for sample motion model to adhere to with pluginlib
  */
 class SampleMotionModel
-{   
+{
 public:
     using Ptr = std::shared_ptr<nav2_localization::SampleMotionModel>;
 
@@ -51,7 +54,7 @@ public:
 
 protected:
     rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
-};  
-} // nav2_localization
+};
+}  // namespace nav2_localization
 
-#endif // NAV2_LOCALIZATION__SAMPLE_MOTION_MODEL_BASE_HPP_
+#endif  // NAV2_LOCALIZATION__INTERFACES__SAMPLE_MOTION_MODEL_BASE_HPP_
