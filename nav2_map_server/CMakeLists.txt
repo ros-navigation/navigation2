@@ -65,8 +65,6 @@ add_library(${map_io_library_name}_3d SHARED
 
 add_library(${library_name} SHARED
   src/costmap_filter_info/costmap_filter_info_server.cpp
-#  include/nav2_map_server/map_server.hpp
-#  include/nav2_map_server/map_saver.hpp
   src/map_server/map_server_core.cpp
   src/map_saver/map_saver_core.cpp
   src/map_2d/map_server_2d.cpp
