@@ -235,9 +235,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     curvature = 2.0 * carrot_pose.pose.position.y / carrot_dist2;
   }
 
-  // Apply curvature to angular velocity
   linear_vel = desired_linear_vel_;
-  angular_vel = desired_linear_vel_ * curvature;
 
   // Make sure we're in compliance with basic constraints
   double angle_to_heading;
@@ -251,6 +249,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       fabs(lookahead_dist - sqrt(carrot_dist2)),
       lookahead_dist, curvature, speed,
       costAtPose(pose.pose.position.x, pose.pose.position.y), linear_vel);
+
+      // Apply curvature to angular velocity after constraining linear velocity
+      angular_vel = linear_vel * curvature;
   }
 
   // Collision checking on this velocity heading
