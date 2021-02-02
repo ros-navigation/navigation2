@@ -237,6 +237,9 @@ protected:
   double max_allowed_time_to_collision_;
   bool use_regulated_linear_velocity_scaling_;
   bool use_cost_regulated_linear_velocity_scaling_;
+  double cost_scaling_dist_;
+  double cost_scaling_gain_;
+  double inflation_cost_scaling_factor_;
   double regulated_linear_scaling_min_radius_;
   double regulated_linear_scaling_min_speed_;
   bool use_rotate_to_heading_;

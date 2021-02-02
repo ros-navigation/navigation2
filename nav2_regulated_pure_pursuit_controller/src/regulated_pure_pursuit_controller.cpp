@@ -105,6 +105,12 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_cost_regulated_linear_velocity_scaling", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".cost_scaling_dist", rclcpp::ParameterValue(0.6));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".cost_scaling_gain", rclcpp::ParameterValue(1.0));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".inflation_cost_scaling_factor", rclcpp::ParameterValue(3.0));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".regulated_linear_scaling_min_radius", rclcpp::ParameterValue(0.90));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".regulated_linear_scaling_min_speed", rclcpp::ParameterValue(0.25));
@@ -133,6 +139,9 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(plugin_name_ + ".max_allowed_time_to_collision", max_allowed_time_to_collision_);
   node->get_parameter(plugin_name_ + ".use_regulated_linear_velocity_scaling", use_regulated_linear_velocity_scaling_);
   node->get_parameter(plugin_name_ + ".use_cost_regulated_linear_velocity_scaling", use_cost_regulated_linear_velocity_scaling_);
+  node->get_parameter(plugin_name_ + ".cost_scaling_dist", cost_scaling_dist_);
+  node->get_parameter(plugin_name_ + ".cost_scaling_gain", cost_scaling_gain_);
+  node->get_parameter(plugin_name_ + ".inflation_cost_scaling_factor", inflation_cost_scaling_factor_);
   node->get_parameter(plugin_name_ + ".regulated_linear_scaling_min_radius", regulated_linear_scaling_min_radius_);
   node->get_parameter(plugin_name_ + ".regulated_linear_scaling_min_speed", regulated_linear_scaling_min_speed_);
   node->get_parameter(plugin_name_ + ".use_rotate_to_heading", use_rotate_to_heading_);
@@ -143,6 +152,12 @@ void RegulatedPurePursuitController::configure(
 
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
   control_duration_ = 1.0 / control_frequency;
+
+  if (inflation_cost_scaling_factor_ <= 0.0) {
+    RCLCPP_WARN(logger_, "The value inflation_cost_scaling_factor is incorrectly set, \
+    it should be >0. Disabling cost regulated linear velocity scaling.");
+    use_cost_regulated_linear_velocity_scaling_ = false;
+  }
 
   global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point", 1);
@@ -436,18 +451,15 @@ void RegulatedPurePursuitController::applyConstraints(
   if (use_cost_regulated_linear_velocity_scaling_ &&
     pose_cost != static_cast<double>(NO_INFORMATION))
   {
-    // Note(stevemacenski): We can use the cost at a pose as a derived value proportional to
-    // distance to obstacle since we lack a distance map. [0-128] is the freespace costed
-    // range, above 128 is possibly inscribed, so it should max out at 128 to be a minimum speed
-    // in when in questionable states. This creates a linear mapping of
-    // cost [0, 128] to speed [min regulated speed, linear vel]
-    double max_non_collision = 128.0;
-    if (pose_cost > max_non_collision) {
-      cost_vel = regulated_linear_scaling_min_speed_;
-    } else {
-      const double slope = (regulated_linear_scaling_min_speed_ - cost_vel) / max_non_collision;
-      cost_vel = slope * pose_cost + cost_vel;
-    }
+    auto inscribed_radius = costmap_ros_->getLayeredCostmap()->getInscribedRadius();
+
+    if (pose_cost != FREE_SPACE) {
+        const double lethal_dist = (-1.0 / inflation_cost_scaling_factor_) 
+        * std::log(pose_cost / (INSCRIBED_INFLATED_OBSTACLE - 1)) + inscribed_radius;
+        if (lethal_dist < cost_scaling_dist_){
+          cost_vel *= cost_scaling_gain_ * lethal_dist / cost_scaling_dist_;
+        }
+      }
   }
 
   // Use the lowest of the 2 constraint heuristics, but above the minimum translational speed
