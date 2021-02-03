@@ -7,11 +7,13 @@
 
 For detailed instructions on how to:
 - [Getting Started](https://navigation.ros.org/getting_started/index.html)
+- [Concepts](https://navigation.ros.org/concepts/index.html)
 - [Build](https://navigation.ros.org/build_instructions/index.html#build)
 - [Install](https://navigation.ros.org/build_instructions/index.html#install)
-- [Tutorials](https://navigation.ros.org/tutorials/index.html)
+- [General Tutorials](https://navigation.ros.org/tutorials/index.html) and [Algorithm Developer Tutorials](https://navigation.ros.org/plugin_tutorials/index.html)
 - [Configure](https://navigation.ros.org/configuration/index.html)
 - [Navigation Plugins](https://navigation.ros.org/plugins/index.html)
+- [Migration Guides](https://navigation.ros.org/migration/index.html)
 - [Contribute](https://navigation.ros.org/contribute/index.html)
 
 Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-hu52lnnq-cKYjuhTY~sEMbZXL8p9tOw) (if this link does not work, please contact maintainers to reactivate).
