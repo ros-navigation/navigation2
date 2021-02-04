@@ -1,6 +1,6 @@
 # Map Server
 
-The `Map Server` provides maps to the rest of the Navigation2 system using both topic and
+The `Map Server` provides maps to the rest of the Nav2 system using both topic and
 service interfaces.
 
 ## Changes from ROS1 Navigation Map Server
@@ -62,7 +62,7 @@ occupied_thresh: 0.65
 free_thresh: 0.196
 ```
 
-The Navigation2 software retains the map YAML file format from Nav1, but uses the ROS2 parameter
+The Nav2 software retains the map YAML file format from Nav1, but uses the ROS2 parameter
 mechanism to get the name of the YAML file to use. This effectively introduces a
 level of indirection to get the map yaml filename. For example, for a node named 'map_server',
 the parameter file would look like this:

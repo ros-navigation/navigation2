@@ -52,7 +52,7 @@ We further improve on the Hybrid-A\* work in the following ways:
 
 All of these features (multi-resolution, models, smoother, etc) are also available in the 2D `SmacPlanner2D` plugin.
 
-The 2D A\* implementation also does not have any of the weird artifacts introduced by the gradient wavefront-based 2D A\* implementation in the NavFn Planner. While this 2D A\* planner is slightly slower, I believe it's well worth the increased quality in paths. Though the `SmacPlanner2D` is grid-based, any reasonable local trajectory planner - including those supported by Navigation2 - will not have any issue with grid-based plans.
+The 2D A\* implementation also does not have any of the weird artifacts introduced by the gradient wavefront-based 2D A\* implementation in the NavFn Planner. While this 2D A\* planner is slightly slower, I believe it's well worth the increased quality in paths. Though the `SmacPlanner2D` is grid-based, any reasonable local trajectory planner - including those supported by Nav2 - will not have any issue with grid-based plans.
 
 ## Metrics
 
@@ -148,7 +148,7 @@ sudo apt-get install ros-<ros2-distro>-smac-planner
 
 Many users and default navigation configuration files I find are really missing the point of the inflation layer. While it's true that you can simply inflate a small radius around the walls, the _true_ value of the inflation layer is creating a consistent potential field around the entire map. 
 
-Some of the most popular tuning guides for Navigation / Navigation2 even [call this out specifically](https://arxiv.org/pdf/1706.09068.pdf) that there's substantial benefit to creating a gentle potential field across the width of the map - after inscribed costs are applied - yet very few users do this. 
+Some of the most popular tuning guides for Navigation / Nav2 even [call this out specifically](https://arxiv.org/pdf/1706.09068.pdf) that there's substantial benefit to creating a gentle potential field across the width of the map - after inscribed costs are applied - yet very few users do this. 
 
 This habit actually results in paths produced by NavFn, Global Planner, and now SmacPlanner to be very suboptimal. They really want to look for a smooth potential field rather than wide open 0-cost spaces in order to stay in the middle of spaces and deal with close-by moving obstacles better.
 

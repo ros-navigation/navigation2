@@ -9,7 +9,7 @@
   <class name="nav2_rviz_plugins/Navigation 2"
          type="nav2_rviz_plugins::Nav2Panel"
          base_class_type="rviz_common::Panel">
-    <description>The Navigation2 rviz panel.</description>
+    <description>The Nav2 rviz panel.</description>
   </class>
 
   <class name="nav2_rviz_plugins/ParticleCloud"

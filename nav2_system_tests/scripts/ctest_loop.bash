@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Simple bash script to loop over the navigation2 "bt_navigator" system test
+# Simple bash script to loop over the Nav2 "bt_navigator" system test
 #
 # options:
 # -c <#> - number of times to loop
