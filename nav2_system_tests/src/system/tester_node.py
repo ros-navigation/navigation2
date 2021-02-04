@@ -54,9 +54,9 @@ class NavTester(Node):
         self.goal_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
 
         pose_qos = QoSProfile(
-          durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
-          reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
-          history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+          durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+          reliability=QoSReliabilityPolicy.RELIABLE,
+          history=QoSHistoryPolicy.KEEP_LAST,
           depth=1)
 
         self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
