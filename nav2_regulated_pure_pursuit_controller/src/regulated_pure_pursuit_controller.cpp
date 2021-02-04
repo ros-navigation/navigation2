@@ -154,8 +154,8 @@ void RegulatedPurePursuitController::configure(
   control_duration_ = 1.0 / control_frequency;
 
   if (inflation_cost_scaling_factor_ <= 0.0) {
-    RCLCPP_WARN(logger_, "The value inflation_cost_scaling_factor is incorrectly set, \
-    it should be >0. Disabling cost regulated linear velocity scaling.");
+    RCLCPP_WARN(logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
+    "it should be >0. Disabling cost regulated linear velocity scaling.");
     use_cost_regulated_linear_velocity_scaling_ = false;
   }
 
@@ -449,17 +449,16 @@ void RegulatedPurePursuitController::applyConstraints(
 
   // limit the linear velocity by proximity to obstacles
   if (use_cost_regulated_linear_velocity_scaling_ &&
-    pose_cost != static_cast<double>(NO_INFORMATION))
+    pose_cost != static_cast<double>(NO_INFORMATION) &&
+    pose_cost != static_cast<double>(FREE_SPACE))
   {
-    auto inscribed_radius = costmap_ros_->getLayeredCostmap()->getInscribedRadius();
+    const double inscribed_radius = costmap_ros_->getLayeredCostmap()->getInscribedRadius();
+    const double min_distance_to_obstacle = (-1.0 / inflation_cost_scaling_factor_) *
+    std::log(pose_cost / (INSCRIBED_INFLATED_OBSTACLE - 1)) + inscribed_radius;
 
-    if (pose_cost != FREE_SPACE) {
-        const double lethal_dist = (-1.0 / inflation_cost_scaling_factor_) 
-        * std::log(pose_cost / (INSCRIBED_INFLATED_OBSTACLE - 1)) + inscribed_radius;
-        if (lethal_dist < cost_scaling_dist_){
-          cost_vel *= cost_scaling_gain_ * lethal_dist / cost_scaling_dist_;
-        }
-      }
+    if (min_distance_to_obstacle < cost_scaling_dist_) {
+      cost_vel *= cost_scaling_gain_ * min_distance_to_obstacle / cost_scaling_dist_;
+    }
   }
 
   // Use the lowest of the 2 constraint heuristics, but above the minimum translational speed
