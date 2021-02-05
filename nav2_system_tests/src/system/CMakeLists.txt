@@ -1,6 +1,3 @@
-# NOTE: The ASTAR=True does not work currently due to remapping not functioning
-# All set to false, A* testing of NavFn happens in the planning test portion
-
 ament_add_test(test_bt_navigator
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"

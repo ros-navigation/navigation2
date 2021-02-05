@@ -96,14 +96,14 @@ class NavTester(Node):
         self.goal_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
 
         transient_local_qos = QoSProfile(
-          durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
-          reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
-          history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+          durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+          reliability=QoSReliabilityPolicy.RELIABLE,
+          history=QoSHistoryPolicy.KEEP_LAST,
           depth=1)
 
         volatile_qos = QoSProfile(
           durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_VOLATILE,
-          reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
+          reliability=QoSReliabilityPolicy.RELIABLE,
           history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
           depth=1)
 
