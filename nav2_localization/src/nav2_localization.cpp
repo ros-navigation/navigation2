@@ -239,10 +239,10 @@ LocalizationServer::scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr s
     // we don't want our callbacks to fire until we're in the active state
     if (!get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {return;}
 
-    geometry_msgs::msg::TransformStamped odom_to_base_transform;
+    geometry_msgs::msg::TransformStamped odom_to_base_msg;
     try
     {
-        odom_to_base_transform = tf_buffer_->lookupTransform(base_frame_id_,
+        odom_to_base_msg = tf_buffer_->lookupTransform(base_frame_id_,
                                                             odom_frame_id_,
                                                             scan->header.stamp,
                                                             transform_tolerance_);
@@ -270,16 +270,21 @@ LocalizationServer::scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr s
     matcher2d_->setSensorPose(sensor_pose);
 
     // The estimated robot's pose in the global frame
-    geometry_msgs::msg::TransformStamped current_pose = solver_->solve(odom_to_base_transform, scan);
+    geometry_msgs::msg::TransformStamped map_to_base_msg = solver_->solve(odom_to_base_msg, scan);
 
-    current_pose.header.stamp = scan->header.stamp;
-    current_pose.header.frame_id = map_frame_id_;
-    current_pose.child_frame_id = base_frame_id_;
+    tf2::Stamped<tf2::Transform> odom_to_base_tf;
+    tf2::fromMsg(odom_to_base_msg, odom_to_base_tf);
 
-    geometry_msgs::msg::TransformStamped map_to_odom_transform;
-    map_to_odom_transform = tf_buffer_->transform(current_pose, odom_frame_id_);
+    tf2::Stamped<tf2::Transform> map_to_base_tf;
+    tf2::fromMsg(map_to_base_msg, map_to_base_tf);
 
-    tf_broadcaster_->sendTransform(map_to_odom_transform);
+    geometry_msgs::msg::TransformStamped map_to_odom_msg;
+    map_to_odom_msg.transform = tf2::toMsg(map_to_base_tf.inverseTimes(odom_to_base_tf));
+    map_to_odom_msg.header.stamp = scan->header.stamp;
+    map_to_odom_msg.header.frame_id = map_frame_id_;
+    map_to_odom_msg.child_frame_id = odom_frame_id_;
+
+    tf_broadcaster_->sendTransform(map_to_odom_msg);
 }
 
 } //nav2_localiztion
