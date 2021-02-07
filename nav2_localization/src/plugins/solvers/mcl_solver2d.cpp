@@ -29,6 +29,7 @@ geometry_msgs::msg::TransformStamped MCLSolver2d::solve(
 	geometry_msgs::msg::TransformStamped curr_pose = pf_-> getMostLikelyPose();
 	prev_pose_ = curr_pose;
 
+	publishParticleCloud();
     return curr_pose;
 }
 
@@ -45,6 +46,24 @@ void MCLSolver2d::initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped
 	prev_pose_ = init_pose;
 }
 
+void MCLSolver2d::publishParticleCloud()
+{
+	std::vector<Particle> particles = pf_->getParticles();
+	geometry_msgs::msg::PoseArray pose_array;
+	pose_array.header.frame_id = map_frame_id_;
+	pose_array.header.stamp = node_->now();
+	for(auto p : particles)
+	{
+		geometry_msgs::msg::Pose pose;
+		pose.position.x = p.pose_.transform.translation.x;
+		pose.position.y = p.pose_.transform.translation.y;
+		pose.position.z = p.pose_.transform.translation.z;
+		pose.orientation = p.pose_.transform.rotation;
+		pose_array.poses.push_back(pose);
+	}
+	particlecloud_pub_->publish(pose_array);
+}
+
 void MCLSolver2d::configure(
 	const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
 	SampleMotionModel::Ptr& motionSampler,
@@ -53,6 +72,9 @@ void MCLSolver2d::configure(
 	const geometry_msgs::msg::TransformStamped& pose)
 {
 	node_ = node;
+
+	particlecloud_pub_ = node_->create_publisher<geometry_msgs::msg::PoseArray>(
+    	"particlecloud", rclcpp::SensorDataQoS());
 
 	node_->declare_parameter("num_particles", 1000);
 	node_->declare_parameter("motion_linear_tol", 0.05);
@@ -65,6 +87,7 @@ void MCLSolver2d::configure(
 	node_->get_parameter("num_particles", init_number_of_particles_);
 	node_->get_parameter("motion_linear_tol", motion_linear_tol_);
 	node->get_parameter("motion_angular_tol", motion_angular_tol_);
+	node->get_parameter("map_frame_id", map_frame_id_);
 
 	pf_ = std::make_shared<ParticleFilter>(init_number_of_particles_, pose);
 
@@ -74,7 +97,7 @@ void MCLSolver2d::configure(
 
 void MCLSolver2d::activate()
 {
-
+	particlecloud_pub_->on_activate();
 }
 
 void MCLSolver2d::deactivate()

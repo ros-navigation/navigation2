@@ -8,6 +8,7 @@
 
 // Types
 #include "geometry_msgs/msg/transform_stamped.hpp"
+#include "geometry_msgs/msg/pose_array.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
@@ -40,11 +41,15 @@ public:
 	void cleanup() override;
 
 private:
+	void publishParticleCloud();
+
 	std::shared_ptr<ParticleFilter> pf_; // Particle filter
 	int init_number_of_particles_;
 	bool first_iteration_;
 	double motion_linear_tol_;
 	double motion_angular_tol_;
+	rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr particlecloud_pub_;
+	std::string map_frame_id_;
 };
 } // nav2_localization
 
