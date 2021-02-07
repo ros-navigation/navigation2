@@ -23,7 +23,7 @@ public:
      * @param map_info Grid map metadata
      * @return The corresponding grid map coordinates as a pair
      */
-    static std::pair<int, int> worldCoordToMapCoord(const double &x, const double &y, const nav_msgs::msg::MapMetaData &map_info);
+    static std::pair<int, int> worldToMapCoord(const double &x, const double &y, const nav_msgs::msg::MapMetaData &map_info);
 
     /**
      * @brief Returns the index of a point in the map
@@ -32,7 +32,7 @@ public:
      * @param map_width Width of the map (in cells)
      * @return Index of ("x", "y") in the map
      */
-    static int coordinatesToIndex(const uint32_t &x, const uint32_t &y, const uint32_t &map_width);
+    static int mapCoordToIndex(const uint32_t &x, const uint32_t &y, const uint32_t &map_width);
 
     /**
      * @brief Returns the coordinates of an index in the map
@@ -40,7 +40,7 @@ public:
      * @param map_width Width of the map (in cells)
      * @return The coordinates corresponding to the given index
      */
-    static std::pair<uint32_t, uint32_t> indexToCoordinates(const int &index, const uint32_t &map_width);
+    static std::pair<uint32_t, uint32_t> mapIndexToCoord(const int &index, const uint32_t &map_width);
 
     /**
      * @brief Returns the euclidean distance between two points
