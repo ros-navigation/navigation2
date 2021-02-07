@@ -37,6 +37,7 @@ private:
 
 	std::unordered_map<int, double>	pre_computed_likelihood_field_;	// Cached likelihood field values
 	double max_likelihood_distace_; // The distance beyond which the likelihood is 0
+	double max_likelihood_dist_prob_;
 	int max_number_of_beams_;	// The maximum number of beams to use when matching
 
 	// Matcher parameters
