@@ -70,9 +70,9 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
     most_likely_pose.transform.translation.x = x + delta_trans_hat*cos(theta + delta_rot_1_hat);	
     most_likely_pose.transform.translation.y = y + delta_trans_hat*sin(theta + delta_rot_1_hat);	
 
-    tf2::Quaternion theta_prime_quat;	
+    tf2::Quaternion theta_prime_quat; 
     double theta_prime = theta + delta_rot_1_hat + delta_rot_2_hat;	
-    theta_prime_quat.setEuler(theta_prime, 0.0, 0.0);	
+    theta_prime_quat.setRPY(0.0, 0.0, theta_prime);	
     most_likely_pose.transform.rotation = tf2::toMsg(theta_prime_quat);	
 
     return most_likely_pose;
@@ -82,11 +82,16 @@ void DiffDriveOdomMotionModel::configure(const rclcpp_lifecycle::LifecycleNode::
 {
     node_ = node;
 
+    node_->declare_parameter("alpha1", 0.2);
+    node_->declare_parameter("alpha2", 0.2);
+    node_->declare_parameter("alpha3", 0.2);
+    node_->declare_parameter("alpha4", 0.2);
+
     // set noise parameters
     node_->get_parameter("alpha1", alpha1_);
     node_->get_parameter("alpha2", alpha2_);
     node_->get_parameter("alpha3", alpha3_);
-    node_->get_parameter("alpha4", alpha4_);
+    node_->get_parameter("alpha4", alpha4_);	
 }
 
 void DiffDriveOdomMotionModel::activate()

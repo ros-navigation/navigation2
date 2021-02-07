@@ -172,8 +172,7 @@ protected:
     std::vector<std::string> localization_ids_;
 
     // Publishers and Subscribers
-    rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
-    initial_pose_sub_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr initial_pose_sub_;
 };
 
 }

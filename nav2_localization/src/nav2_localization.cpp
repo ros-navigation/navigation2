@@ -27,7 +27,7 @@ LocalizationServer::LocalizationServer()
     declare_parameter("odom_frame_id", "odom");
     declare_parameter("base_frame_id", "base_link");
     declare_parameter("map_frame_id", "map");
-    declare_parameter("tansform_tolerance", 0.0);
+    declare_parameter("transform_tolerance", 1.0);
     declare_parameter("localization_plugins", default_ids_);
 }
 
@@ -242,10 +242,10 @@ LocalizationServer::scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr s
     geometry_msgs::msg::TransformStamped odom_to_base_msg;
     try
     {
-        odom_to_base_msg = tf_buffer_->lookupTransform(base_frame_id_,
-                                                            odom_frame_id_,
-                                                            scan->header.stamp,
-                                                            transform_tolerance_);
+        odom_to_base_msg = tf_buffer_->lookupTransform(odom_frame_id_,
+                                                       base_frame_id_,
+                                                       scan->header.stamp,
+                                                       transform_tolerance_);
     }
     catch(const tf2::TransformException& e)
     {
@@ -257,10 +257,10 @@ LocalizationServer::scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr s
     geometry_msgs::msg::TransformStamped sensor_pose;
     try
     {
-        sensor_pose = tf_buffer_->lookupTransform(scan->header.frame_id,
-                                                base_frame_id_,                 
-                                                scan->header.stamp,
-                                                transform_tolerance_);
+        sensor_pose = tf_buffer_->lookupTransform(base_frame_id_,
+                                                  scan->header.frame_id,                 
+                                                  scan->header.stamp,
+                                                  transform_tolerance_);
     }
     catch(const tf2::TransformException& e)
     {
@@ -279,8 +279,7 @@ LocalizationServer::scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr s
     tf2::fromMsg(map_to_base_msg, map_to_base_tf);
 
     geometry_msgs::msg::TransformStamped map_to_odom_msg;
-    map_to_odom_msg.transform = tf2::toMsg(map_to_base_tf.inverseTimes(odom_to_base_tf));
-    map_to_odom_msg.header.stamp = scan->header.stamp;
+    map_to_odom_msg.header.stamp = tf2_ros::toMsg(tf2_ros::fromMsg(scan->header.stamp) + transform_tolerance_);
     map_to_odom_msg.header.frame_id = map_frame_id_;
     map_to_odom_msg.child_frame_id = odom_frame_id_;
 

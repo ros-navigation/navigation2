@@ -36,6 +36,7 @@ void ParticleFilter::update(const geometry_msgs::msg::TransformStamped &prev_odo
         p.weight_ /= sum_of_weights_;
 
     particles_t_ = resample(particles_t_bar);
+    particles_t_1_ = particles_t_;
 
     updateStats();
 }
@@ -101,7 +102,7 @@ void ParticleFilter::updateStats()
     most_likely_pose_.transform.translation.y = mean_y;
 
     tf2::Quaternion theta_prime_quat;
-    theta_prime_quat.setEuler(mean_theta, 0.0, 0.0);
+    theta_prime_quat.setRPY(0.0, 0.0, mean_theta);
     most_likely_pose_.transform.rotation = tf2::toMsg(theta_prime_quat);
 }
 
