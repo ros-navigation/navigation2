@@ -36,19 +36,10 @@ public:
    * @param map_info Grid map metadata
    * @return The corresponding grid map coordinates as a pair
    */
-  static std::pair<int, int> worldCoordToMapCoord(
+  static std::pair<int, int> worldToMapCoord(
     const double & x,
     const double & y,
     const nav_msgs::msg::MapMetaData & map_info);
-
-  /**
-   * @brief Converts world coordinates into grid map coordinates
-   * @param x World x coordinate
-   * @param y World y coordinate
-   * @param map_info Grid map metadata
-   * @return The corresponding grid map coordinates as a pair
-   */
-  static std::pair<int, int> worldToMapCoord(const double &x, const double &y, const nav_msgs::msg::MapMetaData &map_info);
 
   /**
    * @brief Returns the index of a point in the map
