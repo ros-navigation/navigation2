@@ -18,13 +18,13 @@ localization_server:
     prior_mu_y: 0.0
     num_particles: 2000
     num_dimensions: 3
-    localization_plugins: ["DiffDriveOdomMotionModelPDF", "LikelihoodFieldMatcher2dPDF", "DummySolver2d"]
-    DiffDriveOdomMotionModelPDF:
-      plugin: "nav2_localization::DiffDriveOdomMotionModelPDF"
-    LikelihoodFieldMatcher2dPDF:
-      plugin: "nav2_localization::LikelihoodFieldMatcher2dPDF"
-    DummySolver2d:
-      plugin: "nav2_localization::DummySolver2d"
+    localization_plugins: ["DiffDriveOdomMotionModel", "LikelihoodFieldMatcher2d", "MCLSolver2d"]
+    DiffDriveOdomMotionModel:
+      plugin: "nav2_localization::DiffDriveOdomMotionModel"
+    LikelihoodFieldMatcher2d:
+      plugin: "nav2_localization::LikelihoodFieldMatcher2d"
+    MCLSolver2d:
+      plugin: "nav2_localization::MCLSolver2d"
 
 localization_server_rclcpp_node:
   ros__parameters:

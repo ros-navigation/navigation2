@@ -101,7 +101,7 @@ protected:
    * @brief Initializes the publishers and subscribers
    */
   void initPubSub();
-
+  
   /**
    * @brief Initializes the member variables required to transform between coordinate frames
    */
@@ -111,12 +111,12 @@ protected:
    * @brief Initializes the scan message filter
    */
   void initMessageFilters();
-
+  
   /**
    * @brief Initializes plugins
    */
   void initPlugins();
-
+  
   /**
    * @brief Callback when the map is received
    * @param msg pointer to the received map message
@@ -164,7 +164,7 @@ protected:
   std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>> scan_filter_;
   message_filters::Connection laser_scan_connection_;
   message_filters::Connection scan_connection_;
-  laser_geometry::LaserProjection laser_to_pc_projector_;
+laser_geometry::LaserProjection laser_to_pc_projector_;
 
   // Sample Motion Model Plugin
   pluginlib::ClassLoader<nav2_localization::SampleMotionModel> sample_motion_model_loader_;
@@ -191,9 +191,9 @@ protected:
   std::vector<std::string> default_types_;
   std::vector<std::string> localization_ids_;
 
-  // Publishers and Subscribers
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
-    initial_pose_sub_;
+  // Initial pose
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr initial_pose_sub_;
+  bool initial_pose_set_;
 };
 
 }  // namespace nav2_localization

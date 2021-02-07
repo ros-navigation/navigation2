@@ -56,61 +56,68 @@ double LikelihoodFieldMatcher2d::getScanProbability(
   int valid_beams = 0;
   double distance;
   double angle;
-
+  
   // Create PC2 iterators to make sure we read the X and Y coordinates
-  sensor_msgs::PointCloud2ConstIterator<float> iter_x(*scan, "x"),
-  iter_y(*scan, "y");
-
+  sensor_msgs::PointCloud2ConstIterator<float>
+    iter_x(*scan, "y"), iter_y(*scan, "x");
+  
   while (iter_x != iter_x.end()) {
-    point.x = *iter_x;
-    point.y = *iter_y;
-
-    ++iter_x;
-    ++iter_y;
-
-    distance = hypot(point.x, point.y);
-    angle = atan2(point.x, point.y + 1e-10);  // atan(x/y)
-
-    ranges.push_back(distance);
-    angles.push_back(angle);
-    valid_beams++;
+  	point.x = *iter_x;
+  	point.y = *iter_y;
+  
+  	++iter_x;
+  	++iter_y;
+  	
+  	distance = hypot(point.x, point.y);
+  	angle = atan2(point.x, point.y + 1e-10);  // atan(x/y)
+  	
+  	ranges.push_back(distance);
+  	angles.push_back(angle);
+  	valid_beams++;
   }
-
+  
   // Get most distant measurement (taken as max range)
   double z_max = *max_element(ranges.begin(), ranges.end());
-
+  
   double q = 1;  // Probability of curr_pose given scan
   double theta = tf2::getYaw(curr_pose.transform.rotation);  // Robot's orientation
-
+  
   // In case the user specifies more beams than is available
   int max_number_of_beams = std::min(max_number_of_beams_, valid_beams);
   int beams_to_skip = valid_beams / max_number_of_beams;
-
+  
   // Iterate over the specfied number of beams, skipping between them to get an even distribution
   // TODO(unassigned): Document that:
   //  - The points are assumed sorted, as in a LaserScan.
   //  - The points should be inside the range of the sensor (advisable check in charge of the user).
   for (int i = 0; i < valid_beams; i += beams_to_skip) {
-    // Map the beam end-point onto the map
-    double beam_angle = tf2::getYaw(sensor_pose_.transform.rotation) + angles[i];
-    double x_z_kt = curr_pose.transform.translation.x +
-      sensor_pose_.transform.translation.x * cos(theta) -
-      sensor_pose_.transform.translation.y * sin(theta) +
-      ranges[i] *
-      cos(theta + beam_angle);
-    double y_z_kt = curr_pose.transform.translation.y +
-      sensor_pose_.transform.translation.y * cos(theta) +
-      sensor_pose_.transform.translation.x * sin(theta) +
-      ranges[i] *
-      sin(theta + beam_angle);
-
-    // Get index of the laser end-point in the grid map
-    int end_point_index = MapUtils::coordinatesToIndex(x_z_kt, y_z_kt, map_->info.width);
-
-    // Get the likelihood field probability at that endpoint
-    double dist_prob = pre_computed_likelihood_field_[end_point_index];
-
-    q *= z_hit_ * dist_prob + (z_rand_ / z_max);
+  	// Map the beam end-point onto the map
+  	double beam_angle = tf2::getYaw(sensor_pose_.transform.rotation) + angles[i];
+  	double x_z_kt = curr_pose.transform.translation.x +
+  					sensor_pose_.transform.translation.x * cos(theta) -
+  					sensor_pose_.transform.translation.y * sin(theta) +
+  					ranges[i] * 
+  					cos(theta + beam_angle);
+  	double y_z_kt = curr_pose.transform.translation.y +
+  					sensor_pose_.transform.translation.y * cos(theta) +
+  					sensor_pose_.transform.translation.x * sin(theta) +
+  					ranges[i] * 
+  					sin(theta + beam_angle);
+  
+  	std::pair<int, int> map_coord = MapUtils::worldToMapCoord(x_z_kt, y_z_kt, map_->info);
+  	int map_x = map_coord.first;
+  	int map_y = map_coord.second;
+	// Get index of the laser end-point in the grid map
+  	int map_index = MapUtils::mapCoordToIndex(map_x, map_y, map_->info.width);
+  
+	// Get the likelihood field probability at that endpoint
+  	double dist_prob;
+  	if(map_index < 0 || map_index >= map_->data.size())
+  		dist_prob = max_likelihood_dist_prob_;
+  	else
+  		dist_prob = pre_computed_likelihood_field_[map_index];
+  
+  	q *= z_hit_ * dist_prob + (z_rand_ / z_max);
   }
   return q;
 }
@@ -133,32 +140,37 @@ void LikelihoodFieldMatcher2d::setMap(const nav_msgs::msg::OccupancyGrid::Shared
 void LikelihoodFieldMatcher2d::preComputeLikelihoodField()
 {
   std::vector<int> occupied_cells;
-
+  
   // Identify all the occupied cells
   for (auto index = 0; index < map_->info.width * map_->info.height; index++) {
-    if (map_->data[index] == 100) {  // The cell is occupied
-      pre_computed_likelihood_field_[index] = 0.0;
-      occupied_cells.push_back(index);
-    } else {
-      pre_computed_likelihood_field_[index] = max_likelihood_distace_;
-    }
+  	if (map_->data[index] == 100) {  // The cell is occupied
+  		pre_computed_likelihood_field_[index] = 0.0;
+  		occupied_cells.push_back(index);
+  	} else {
+  		pre_computed_likelihood_field_[index] = max_likelihood_distace_;
+	}
   }
-
+  
   // Depth first search for other cells
   for (auto index : occupied_cells) {
     std::vector<bool> visited(map_->info.width * map_->info.height, false);
-    DFS(index, index, visited);
+  	DFS(index, index, visited);
   }
-
+  
   // Apply zero-mean norrmal distribution
   for (auto index = 0; index < map_->info.width * map_->info.height; index++) {
-    pre_computed_likelihood_field_[index] =
-      (1.0 / (sqrt(2 * M_PI) * sigma_hit_)) *
-      exp(
-      -0.5 * (
-        (pre_computed_likelihood_field_[index] * pre_computed_likelihood_field_[index]) /
-        (sigma_hit_ * sigma_hit_)));
+  	pre_computed_likelihood_field_[index] =
+	  (1.0 / (sqrt(2 * M_PI) * sigma_hit_)) * 
+	  exp(
+	    -0.5 * (
+		  (pre_computed_likelihood_field_[index] * pre_computed_likelihood_field_[index]) /
+		  (sigma_hit_ * sigma_hit_)));
   }
+  
+  max_likelihood_dist_prob_ =
+    (1.0 / (sqrt(2*M_PI) * sigma_hit_)) *
+	exp(
+	  -(max_likelihood_distace_ * max_likelihood_distace_) / (2 * sigma_hit_ * sigma_hit_));
 }
 
 void LikelihoodFieldMatcher2d::DFS(
@@ -167,78 +179,78 @@ void LikelihoodFieldMatcher2d::DFS(
   std::vector<bool> & visited)
 {
   visited[index_curr] = true;
-  std::pair<uint32_t, uint32_t> coord_curr = MapUtils::indexToCoordinates(
+  std::pair<uint32_t, uint32_t> coord_curr = MapUtils::mapIndexToCoord(
     index_curr,
-    map_->info.width);
-  std::pair<uint32_t, uint32_t> coord_obs = MapUtils::indexToCoordinates(
-    index_of_obstacle,
-    map_->info.width);
-
+	map_->info.width);
+  std::pair<uint32_t, uint32_t> coord_obs = MapUtils::mapIndexToCoord(
+	index_of_obstacle,
+	map_->info.width);
+  
   // This cell is NOT an obstacle
   if (pre_computed_likelihood_field_[index_curr] != 0.0) {
-    double distance_to_obstacle = MapUtils::distanceBetweenTwoPoints(
-      coord_curr.first,
-      coord_curr.second,
-      coord_obs.first,
-      coord_obs.second) * map_->info.resolution;
-
-    // Getting too far from the obstacle, so abandon search
-    if (distance_to_obstacle > max_likelihood_distace_) {
-      return;
-    }
-
-    // Found a closer obstacle
-    if (distance_to_obstacle < pre_computed_likelihood_field_[index_curr]) {
-      pre_computed_likelihood_field_[index_curr] = distance_to_obstacle;
-    }
+  	double distance_to_obstacle = MapUtils::distanceBetweenTwoPoints(
+	  coord_curr.first,
+	  coord_curr.second,
+	  coord_obs.first,
+	  coord_obs.second) * map_->info.resolution;
+  
+  	// Getting too far from the obstacle, so abandon search
+  	if (distance_to_obstacle > max_likelihood_distace_) {
+	  return;
+	}
+  
+  	// Found a closer obstacle
+  	if (distance_to_obstacle < pre_computed_likelihood_field_[index_curr]) {
+  	  pre_computed_likelihood_field_[index_curr] = distance_to_obstacle;
+	}
   }
-
+  
   // Cell to the left
   if (coord_curr.first > 0) {
-    int left_cell_index = MapUtils::coordinatesToIndex(
-      coord_curr.first - 1,
-      coord_curr.second,
-      map_->info.width);
+  	int left_cell_index = MapUtils::mapCoordToIndex(
+	  coord_curr.first - 1,
+	  coord_curr.second,
+	  map_->info.width);
 
-    if (!visited[left_cell_index]) {
-      DFS(left_cell_index, index_of_obstacle, visited);
-    }
+  	if (!visited[left_cell_index]) {
+	  DFS(left_cell_index, index_of_obstacle, visited);
+	}
   }
-
+  
   // Cell to the right
   if (coord_curr.first < map_->info.width - 1) {
-    int right_cell_index = MapUtils::coordinatesToIndex(
-      coord_curr.first + 1,
-      coord_curr.second,
-      map_->info.width);
+  	int right_cell_index = MapUtils::mapCoordToIndex(
+	  coord_curr.first + 1,
+	  coord_curr.second,
+	  map_->info.width);
 
-    if (!visited[right_cell_index]) {
-      DFS(right_cell_index, index_of_obstacle, visited);
-    }
+  	if (!visited[right_cell_index]) {
+	  DFS(right_cell_index, index_of_obstacle, visited);
+	}
   }
-
+  
   // Cell above
   if (coord_curr.second > 0) {
-    int up_cell_index = MapUtils::coordinatesToIndex(
-      coord_curr.first,
-      coord_curr.second - 1,
-      map_->info.width);
+  	int up_cell_index = MapUtils::mapCoordToIndex(
+	  coord_curr.first,
+	  coord_curr.second - 1,
+	  map_->info.width);
 
-    if (!visited[up_cell_index]) {
-      DFS(up_cell_index, index_of_obstacle, visited);
-    }
+  	if (!visited[up_cell_index]) {
+	  DFS(up_cell_index, index_of_obstacle, visited);
+	}
   }
-
+  
   // Cell below
   if (coord_curr.second < map_->info.height - 1) {
-    int down_cell_index = MapUtils::coordinatesToIndex(
-      coord_curr.first,
-      coord_curr.second + 1,
-      map_->info.width);
+  	int down_cell_index = MapUtils::mapCoordToIndex(
+	  coord_curr.first,
+	  coord_curr.second + 1,
+	  map_->info.width);
 
-    if (!visited[down_cell_index]) {
-      DFS(down_cell_index, index_of_obstacle, visited);
-    }
+  	if (!visited[down_cell_index]) {
+	  DFS(down_cell_index, index_of_obstacle, visited);
+	}
   }
 }
 

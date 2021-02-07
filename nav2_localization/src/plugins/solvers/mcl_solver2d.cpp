@@ -18,6 +18,9 @@
 #include "nav2_localization/interfaces/solver_base.hpp"
 #include "nav2_localization/plugins/solvers/mcl_solver2d.hpp"
 #include "nav2_localization/particle_filter.hpp"
+#include "nav2_localization/angle_utils.hpp"
+#include "tf2/utils.h"
+#include <vector>
 
 namespace nav2_localization
 {
@@ -25,23 +28,57 @@ geometry_msgs::msg::TransformStamped MCLSolver2d::solve(
   const geometry_msgs::msg::TransformStamped & curr_odom,
   const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan)
 {
-  // Motion update
-  pf_->update();
-  prev_odom_ = curr_odom;
+	if(first_iteration_)
+	{
+		prev_odom_ = curr_odom;
+		first_iteration_ = false;
+	}
+	double distance_moved = std::hypot(prev_odom_.transform.translation.x-curr_odom.transform.translation.x,
+									   prev_odom_.transform.translation.y-curr_odom.transform.translation.y);
+	double angle_moved = AngleUtils::angleDiff(tf2::getYaw(curr_odom.transform.rotation), tf2::getYaw(prev_odom_.transform.rotation));
+	if((distance_moved < motion_linear_tol_) && (angle_moved < motion_angular_tol_))
+		return prev_pose_;
 
-  // Measurement update
-  pf_->resample();
+	pf_->update(prev_odom_, curr_odom, scan, motionSampler_, matcher_);
+	prev_odom_ = curr_odom;
 
-  geometry_msgs::msg::TransformStamped curr_pose;
-  // curr_pose = pf_->get_most_likely_pose();
+	geometry_msgs::msg::TransformStamped curr_pose = pf_-> getMostLikelyPose();
+	prev_pose_ = curr_pose;
 
-  prev_pose_ = curr_pose;
-
-  return curr_pose;
+	publishParticleCloud();
+    return curr_pose;
 }
 
-void MCLSolver2d::initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & pose)
-{}
+void MCLSolver2d::initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose)
+{
+	geometry_msgs::msg::TransformStamped init_pose;
+	init_pose.transform.translation.x = pose->pose.pose.position.x;
+	init_pose.transform.translation.y = pose->pose.pose.position.y;
+	init_pose.transform.translation.z = pose->pose.pose.position.z;
+	init_pose.transform.rotation = pose->pose.pose.orientation;
+	pf_->initFilter(init_number_of_particles_, init_pose);
+
+	first_iteration_ = true;
+	prev_pose_ = init_pose;
+}
+
+void MCLSolver2d::publishParticleCloud()
+{
+	std::vector<Particle> particles = pf_->getParticles();
+	geometry_msgs::msg::PoseArray pose_array;
+	pose_array.header.frame_id = map_frame_id_;
+	pose_array.header.stamp = node_->now();
+	for(auto p : particles)
+	{
+		geometry_msgs::msg::Pose pose;
+		pose.position.x = p.pose_.transform.translation.x;
+		pose.position.y = p.pose_.transform.translation.y;
+		pose.position.z = p.pose_.transform.translation.z;
+		pose.orientation = p.pose_.transform.rotation;
+		pose_array.poses.push_back(pose);
+	}
+	particlecloud_pub_->publish(pose_array);
+}
 
 void MCLSolver2d::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
@@ -52,23 +89,32 @@ void MCLSolver2d::configure(
 {
   node_ = node;
 
-  node_->declare_parameter("num_particles", 1000);
+	particlecloud_pub_ = node_->create_publisher<geometry_msgs::msg::PoseArray>(
+    	"particlecloud", rclcpp::SensorDataQoS());
+
+	node_->declare_parameter("num_particles", 1000);
+	node_->declare_parameter("motion_linear_tol", 0.05);
+	node_->declare_parameter("motion_angular_tol", 0.05);
 
   motionSampler_ = motionSampler;
   matcher_ = matcher;
 
-  // Get configuration and generate PF
-  int number_of_particles;
-  node_->get_parameter("num_particles", number_of_particles);
+	// Get configuration and generate PF
+	node_->get_parameter("num_particles", init_number_of_particles_);
+	node_->get_parameter("motion_linear_tol", motion_linear_tol_);
+	node->get_parameter("motion_angular_tol", motion_angular_tol_);
+	node->get_parameter("map_frame_id", map_frame_id_);
 
-  pf_ = std::make_shared<ParticleFilter>(number_of_particles);
+	pf_ = std::make_shared<ParticleFilter>(init_number_of_particles_, pose);
 
-  prev_odom_ = odom;
-  prev_pose_ = pose;
+	prev_pose_ = pose;
+	return;
 }
 
 void MCLSolver2d::activate()
-{}
+{
+	particlecloud_pub_->on_activate();
+}
 
 void MCLSolver2d::deactivate()
 {}
