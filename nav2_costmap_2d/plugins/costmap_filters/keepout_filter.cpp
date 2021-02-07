@@ -35,11 +35,11 @@
  * Author: Alexey Merzlyakov
  *********************************************************************/
 
-#include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
-
 #include "tf2/convert.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
-#include "tf2_ros/transform_broadcaster.h"
+
+#include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
+#include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -63,11 +63,11 @@ void KeepoutFilter::initializeFilter(
   filter_info_topic_ = filter_info_topic;
   // Setting new costmap filter info subscriber
   RCLCPP_INFO(
-    node->get_logger(),
-    "Subscribing to \"%s\" topic for filter info...",
-    filter_info_topic.c_str());
+    logger_,
+    "KeepoutFilter: Subscribing to \"%s\" topic for filter info...",
+    filter_info_topic_.c_str());
   filter_info_sub_ = node->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
-    filter_info_topic, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+    filter_info_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&KeepoutFilter::filterInfoCallback, this, std::placeholders::_1));
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
@@ -83,21 +83,25 @@ void KeepoutFilter::filterInfoCallback(
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  // Resetting previous subscriber each time when new costmap filter information arrives
-  if (mask_sub_) {
+  if (!mask_sub_) {
+    RCLCPP_INFO(
+      logger_,
+      "KeepoutFilter: Received filter info from %s topic.", filter_info_topic_.c_str());
+  } else {
     RCLCPP_WARN(
-      node->get_logger(),
-      "New costmap filter info arrived from %s topic. Updating old filter info.",
+      logger_,
+      "KeepoutFilter: New costmap filter info arrived from %s topic. Updating old filter info.",
       filter_info_topic_.c_str());
+    // Resetting previous subscriber each time when new costmap filter information arrives
     mask_sub_.reset();
   }
 
   // Checking that base and multiplier are set to their default values
   if (msg->base != BASE_DEFAULT or msg->multiplier != MULTIPLIER_DEFAULT) {
     RCLCPP_ERROR(
-      node->get_logger(),
-      "For proper use of keepout filter base and multiplier in CostmapFilterInfo message "
-      "should be set to their default values (%f and %f)",
+      logger_,
+      "KeepoutFilter: For proper use of keepout filter base and multiplier"
+      " in CostmapFilterInfo message should be set to their default values (%f and %f)",
       BASE_DEFAULT, MULTIPLIER_DEFAULT);
   }
 
@@ -105,9 +109,9 @@ void KeepoutFilter::filterInfoCallback(
 
   // Setting new filter mask subscriber
   RCLCPP_INFO(
-    node->get_logger(),
-    "Subscribing to \"%s\" topic for filter mask...",
-    msg->filter_mask_topic.c_str());
+    logger_,
+    "KeepoutFilter: Subscribing to \"%s\" topic for filter mask...",
+    mask_topic_.c_str());
   mask_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
     mask_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&KeepoutFilter::maskCallback, this, std::placeholders::_1));
@@ -123,10 +127,14 @@ void KeepoutFilter::maskCallback(
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  if (mask_costmap_) {
+  if (!mask_costmap_) {
+    RCLCPP_INFO(
+      logger_,
+      "KeepoutFilter: Received filter mask from %s topic.", mask_topic_.c_str());
+  } else {
     RCLCPP_WARN(
-      node->get_logger(),
-      "New filter mask arrived from %s topic. Updating old filter mask.",
+      logger_,
+      "KeepoutFilter: New filter mask arrived from %s topic. Updating old filter mask.",
       mask_topic_.c_str());
     mask_costmap_.reset();
   }
@@ -143,16 +151,11 @@ void KeepoutFilter::process(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
   if (!mask_costmap_) {
     // Show warning message every 2 seconds to not litter an output
     RCLCPP_WARN_THROTTLE(
-      node->get_logger(), *(node->get_clock()), 2000,
-      "Filter mask was not received");
+      logger_, *(clock_), 2000,
+      "KeepoutFilter: Filter mask was not received");
     return;
   }
 
@@ -171,8 +174,8 @@ void KeepoutFilter::process(
         transform_tolerance_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(
-        node->get_logger(),
-        "KeepoutFilter: failed to get costmap frame (%s) "
+        logger_,
+        "KeepoutFilter: Failed to get costmap frame (%s) "
         "transformation to mask frame (%s) with error: %s",
         global_frame_.c_str(), mask_frame_.c_str(), ex.what());
       return;
@@ -296,6 +299,7 @@ void KeepoutFilter::resetFilter()
 bool KeepoutFilter::isActive()
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
+
   if (mask_costmap_) {
     return true;
   }

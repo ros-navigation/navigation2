@@ -51,8 +51,8 @@ public:
       std::make_unique<nav2_msgs::msg::CostmapFilterInfo>();
     msg->type = 0;
     msg->filter_mask_topic = MASK_TOPIC;
-    msg->base = base;
-    msg->multiplier = multiplier;
+    msg->base = static_cast<float>(base);
+    msg->multiplier = static_cast<float>(multiplier);
 
     publisher_->publish(std::move(msg));
   }
@@ -186,7 +186,7 @@ void TestNode::rePublishInfo(double base, double multiplier)
   info_publisher_ = std::make_shared<InfoPublisher>(base, multiplier);
   // Allow both CostmapFilterInfo and filter mask subscribers
   // to receive a new message
-  waitSome(500ms);
+  waitSome(100ms);
 }
 
 void TestNode::rePublishMask()
@@ -194,7 +194,7 @@ void TestNode::rePublishMask()
   mask_publisher_.reset();
   mask_publisher_ = std::make_shared<MaskPublisher>(*mask_);
   // Allow filter mask subscriber to receive a new message
-  waitSome(500ms);
+  waitSome(100ms);
 }
 
 void TestNode::waitSome(const std::chrono::nanoseconds & duration)
@@ -202,7 +202,7 @@ void TestNode::waitSome(const std::chrono::nanoseconds & duration)
   rclcpp::Time start_time = node_->now();
   while (rclcpp::ok() && node_->now() - start_time <= rclcpp::Duration(duration)) {
     rclcpp::spin_some(node_->get_node_base_interface());
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(10ms);
   }
 }
 
@@ -231,7 +231,7 @@ void TestNode::createKeepoutFilter(const std::string & global_frame)
   // Wait until mask will be received by KeepoutFilter
   while (!keepout_filter_->isActive()) {
     rclcpp::spin_some(node_->get_node_base_interface());
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(10ms);
   }
 }
 
@@ -255,7 +255,7 @@ void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::st
   tf_broadcaster_->sendTransform(*transform_);
 
   // Allow tf_buffer_ to be filled by listener
-  waitSome(200ms);
+  waitSome(100ms);
 }
 
 void TestNode::verifyMasterGrid(unsigned char free_value, unsigned char keepout_value)

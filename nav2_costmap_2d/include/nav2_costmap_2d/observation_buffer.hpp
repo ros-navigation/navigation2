@@ -49,6 +49,7 @@
 #include "nav2_costmap_2d/observation.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
+
 namespace nav2_costmap_2d
 {
 /**
@@ -65,8 +66,10 @@ public:
    * @param  expected_update_rate How often this buffer is expected to be updated, 0 means there is no limit
    * @param  min_obstacle_height The minimum height of a hitpoint to be considered legal
    * @param  max_obstacle_height The minimum height of a hitpoint to be considered legal
-   * @param  obstacle_range The range to which the sensor should be trusted for inserting obstacles
-   * @param  raytrace_range The range to which the sensor should be trusted for raytracing to clear out space
+   * @param  obstacle_max_range The range to which the sensor should be trusted for inserting obstacles
+   * @param  obstacle_min_range The range from which the sensor should be trusted for inserting obstacles
+   * @param  raytrace_max_range The range to which the sensor should be trusted for raytracing to clear out space
+   * @param  raytrace_min_range The range from which the sensor should be trusted for raytracing to clear out space
    * @param  tf2_buffer A reference to a tf2 Buffer
    * @param  global_frame The frame to transform PointClouds into
    * @param  sensor_frame The frame of the origin of the sensor, can be left blank to be read from the messages
@@ -77,10 +80,12 @@ public:
     std::string topic_name,
     double observation_keep_time,
     double expected_update_rate,
-    double min_obstacle_height, double max_obstacle_height, double obstacle_range,
-    double raytrace_range, tf2_ros::Buffer & tf2_buffer, std::string global_frame,
+    double min_obstacle_height, double max_obstacle_height, double obstacle_max_range,
+    double obstacle_min_range,
+    double raytrace_max_range, double raytrace_min_range, tf2_ros::Buffer & tf2_buffer,
+    std::string global_frame,
     std::string sensor_frame,
-    double tf_tolerance);
+    tf2::Duration tf_tolerance);
 
   /**
    * @brief  Destructor... cleans up
@@ -145,8 +150,8 @@ private:
   std::string topic_name_;
   double min_obstacle_height_, max_obstacle_height_;
   std::recursive_mutex lock_;  ///< @brief A lock for accessing data in callbacks safely
-  double obstacle_range_, raytrace_range_;
-  double tf_tolerance_;
+  double obstacle_max_range_, obstacle_min_range_, raytrace_max_range_, raytrace_min_range_;
+  tf2::Duration tf_tolerance_;
 };
 }  // namespace nav2_costmap_2d
 #endif  // NAV2_COSTMAP_2D__OBSERVATION_BUFFER_HPP_

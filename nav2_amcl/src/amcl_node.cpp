@@ -406,7 +406,7 @@ AmclNode::checkLaserReceived()
     RCLCPP_WARN(
       get_logger(), "Laser scan has not been received"
       " (and thus no pose updates have been published)."
-      " Verify that data is being published on the %s topic.", scan_topic_);
+      " Verify that data is being published on the %s topic.", scan_topic_.c_str());
     return;
   }
 
@@ -415,7 +415,7 @@ AmclNode::checkLaserReceived()
     RCLCPP_WARN(
       get_logger(), "No laser scan received (and thus no pose updates have been published) for %f"
       " seconds.  Verify that data is being published on the %s topic.",
-      d.nanoseconds() * 1e-9, scan_topic_);
+      d.nanoseconds() * 1e-9, scan_topic_.c_str());
   }
 }
 

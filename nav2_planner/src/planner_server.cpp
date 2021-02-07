@@ -102,6 +102,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_FATAL(
         get_logger(), "Failed to create global planner. Exception: %s",
         ex.what());
+      return nav2_util::CallbackReturn::FAILURE;
     }
   }
 
@@ -225,6 +226,12 @@ PlannerServer::computePlan()
       return;
     }
 
+    // Don't compute a plan until costmap is valid (after clear costmap)
+    rclcpp::Rate r(100);
+    while (!costmap_ros_->isCurrent()) {
+      r.sleep();
+    }
+
     geometry_msgs::msg::PoseStamped start;
     if (!costmap_ros_->getRobotPose(start)) {
       action_server_->terminate_current();
@@ -248,7 +255,7 @@ PlannerServer::computePlan()
 
     RCLCPP_DEBUG(
       get_logger(),
-      "Found valid path of size %u to (%.2f, %.2f)",
+      "Found valid path of size %lu to (%.2f, %.2f)",
       result->path.poses.size(), goal->pose.pose.position.x,
       goal->pose.pose.position.y);
 

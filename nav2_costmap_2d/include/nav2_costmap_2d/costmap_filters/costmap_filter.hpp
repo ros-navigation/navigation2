@@ -47,9 +47,6 @@
 namespace nav2_costmap_2d
 {
 
-static constexpr double BASE_DEFAULT = 0.0;
-static constexpr double MULTIPLIER_DEFAULT = 1.0;
-
 /**
  * @brief: CostmapFilter basic class. It is inherited from Layer in order to avoid
  * hidden problems when the shared handling of costmap_ resource (PR #1936)
@@ -84,6 +81,7 @@ public:
   virtual void activate() final;
   virtual void deactivate() final;
   virtual void reset() final;
+  virtual bool isClearable() {return false;}
 
   /** CostmapFilter API **/
   /**

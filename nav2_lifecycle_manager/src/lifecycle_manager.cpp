@@ -40,13 +40,14 @@ LifecycleManager::LifecycleManager()
   // of nodes
   declare_parameter("node_names");
   declare_parameter("autostart", rclcpp::ParameterValue(false));
-  declare_parameter("bond_timeout_ms", 4000);
+  declare_parameter("bond_timeout", 4.0);
 
   node_names_ = get_parameter("node_names").as_string_array();
   get_parameter("autostart", autostart_);
-  int bond_timeout_int;
-  get_parameter("bond_timeout_ms", bond_timeout_int);
-  bond_timeout_ = std::chrono::milliseconds(bond_timeout_int);
+  double bond_timeout_s;
+  get_parameter("bond_timeout", bond_timeout_s);
+  bond_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::duration<double>(bond_timeout_s));
 
   manager_srv_ = create_service<ManageLifecycleNodes>(
     get_name() + std::string("/manage_nodes"),

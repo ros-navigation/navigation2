@@ -60,6 +60,7 @@ RangeSensorLayer::RangeSensorLayer() {}
 void RangeSensorLayer::onInitialize()
 {
   current_ = true;
+  was_reset_ = false;
   buffered_readings_ = 0;
   last_reading_time_ = clock_->now();
   default_value_ = to_cost(0.5);
@@ -509,7 +510,12 @@ void RangeSensorLayer::updateCosts(
   }
 
   buffered_readings_ = 0;
-  current_ = true;
+
+  // if not current due to reset, set current now after clearing
+  if (!current_ && was_reset_) {
+    was_reset_ = false;
+    current_ = true;
+  }
 }
 
 void RangeSensorLayer::reset()
@@ -517,7 +523,7 @@ void RangeSensorLayer::reset()
   RCLCPP_DEBUG(logger_, "Reseting range sensor layer...");
   deactivate();
   resetMaps();
-  current_ = true;
+  was_reset_ = true;
   activate();
 }
 

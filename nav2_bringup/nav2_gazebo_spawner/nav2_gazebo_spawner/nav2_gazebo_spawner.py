@@ -25,7 +25,7 @@ import rclpy
 
 def main():
     # Get input arguments from user
-    parser = argparse.ArgumentParser(description='Spawn Robot into Gazebo with navigation2')
+    parser = argparse.ArgumentParser(description='Spawn Robot into Gazebo with Nav2')
     parser.add_argument('-n', '--robot_name', type=str, default='robot',
                         help='Name of the robot to spawn')
     parser.add_argument('-ns', '--robot_namespace', type=str, default='robot',

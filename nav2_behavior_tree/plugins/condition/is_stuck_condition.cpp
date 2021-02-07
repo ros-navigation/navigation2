@@ -85,7 +85,7 @@ void IsStuckCondition::logStuck(const std::string & msg) const
     return;
   }
 
-  RCLCPP_INFO(node_->get_logger(), msg);
+  RCLCPP_INFO(node_->get_logger(), msg.c_str());
   prev_msg = msg;
 }
 

@@ -131,6 +131,17 @@ public:
     const nav_2d_msgs::msg::Twist2D & velocity,
     std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results);
 
+  /**
+   * @brief Limits the maximum linear speed of the robot.
+   * @param speed_limit expressed in percentage from maximum robot speed.
+   */
+  void setSpeedLimit(const double & speed_limit) override
+  {
+    if (traj_generator_) {
+      traj_generator_->setSpeedLimit(speed_limit);
+    }
+  }
+
 protected:
   /**
    * @brief Helper method for two common operations for the operating on the global_plan

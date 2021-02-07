@@ -14,17 +14,15 @@
 
 #include "nav2_bt_navigator/bt_navigator.hpp"
 
-#include <fstream>
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 #include <set>
+#include <vector>
 
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
-#include "nav2_bt_navigator/ros_topic_logger.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -60,8 +58,6 @@ BtNavigator::BtNavigator()
     "nav2_distance_traveled_condition_bt_node"
   };
 
-  // Declare this node's parameters
-  declare_parameter("default_bt_xml_filename");
   declare_parameter("plugin_lib_names", plugin_libs);
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter("global_frame", std::string("map"));
@@ -78,17 +74,6 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  // use suffix '_rclcpp_node' to keep parameter file consistency #1773
-  auto options = rclcpp::NodeOptions().arguments(
-    {"--ros-args",
-      "-r", std::string("__node:=") + get_name() + "_rclcpp_node",
-      "--"});
-  // Support for handling the topic-based goal pose from rviz
-  client_node_ = std::make_shared<rclcpp::Node>("_", options);
-
-  self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
-    client_node_, "navigate_to_pose");
-
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
     get_node_base_interface(), get_node_timers_interface());
@@ -96,71 +81,39 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_->setUsingDedicatedThread(true);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
 
+  self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
+    shared_from_this(), "navigate_to_pose");
+
   goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
     "goal_pose",
     rclcpp::SystemDefaultsQoS(),
     std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
-  action_server_ = std::make_unique<ActionServer>(
-    get_node_base_interface(),
-    get_node_clock_interface(),
-    get_node_logging_interface(),
-    get_node_waitables_interface(),
-    "navigate_to_pose", std::bind(&BtNavigator::navigateToPose, this));
-
-  // Get the libraries to pull plugins from
-  plugin_lib_names_ = get_parameter("plugin_lib_names").as_string_array();
   global_frame_ = get_parameter("global_frame").as_string();
   robot_frame_ = get_parameter("robot_base_frame").as_string();
   transform_tolerance_ = get_parameter("transform_tolerance").as_double();
 
-  // Create the class that registers our custom nodes and executes the BT
-  bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
+  // Libraries to pull plugins (BT Nodes) from
+  auto plugin_lib_names = get_parameter("plugin_lib_names").as_string_array();
 
-  // Create the blackboard that will be shared by all of the nodes in the tree
-  blackboard_ = BT::Blackboard::create();
+  bt_action_server_ = std::make_unique<nav2_behavior_tree::BtActionServer<Action>>(
+    shared_from_this(),
+    "navigate_to_pose",
+    plugin_lib_names,
+    std::bind(&BtNavigator::onGoalReceived, this, std::placeholders::_1),
+    std::bind(&BtNavigator::onLoop, this),
+    std::bind(&BtNavigator::onPreempt, this));
 
-  // Put items on the blackboard
-  blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
-  blackboard_->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
-  blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
-  blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
-  blackboard_->set<int>("number_recoveries", 0);  // NOLINT
+  if (!bt_action_server_->on_configure()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
 
-  // Get the BT filename to use from the node parameter
-  get_parameter("default_bt_xml_filename", default_bt_xml_filename_);
+  auto blackboard = bt_action_server_->getBlackboard();
+  blackboard->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
+  blackboard->set<bool>("initial_pose_received", false);  // NOLINT
+  blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
   return nav2_util::CallbackReturn::SUCCESS;
-}
-
-bool
-BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
-{
-  // Use previous BT if it is the existing one
-  if (current_bt_xml_filename_ == bt_xml_filename) {
-    return true;
-  }
-
-  // Read the input BT XML from the specified file into a string
-  std::ifstream xml_file(bt_xml_filename);
-
-  if (!xml_file.good()) {
-    RCLCPP_ERROR(get_logger(), "Couldn't open input XML file: %s", bt_xml_filename.c_str());
-    return false;
-  }
-
-  auto xml_string = std::string(
-    std::istreambuf_iterator<char>(xml_file),
-    std::istreambuf_iterator<char>());
-
-  RCLCPP_DEBUG(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename.c_str());
-  RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string.c_str());
-
-  // Create the Behavior Tree from the XML input
-  tree_ = bt_->buildTreeFromText(xml_string, blackboard_);
-  current_bt_xml_filename_ = bt_xml_filename;
-
-  return true;
 }
 
 nav2_util::CallbackReturn
@@ -168,12 +121,9 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  if (!loadBehaviorTree(default_bt_xml_filename_)) {
-    RCLCPP_ERROR(get_logger(), "Error loading XML file: %s", default_bt_xml_filename_.c_str());
+  if (!bt_action_server_->on_activate()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
-
-  action_server_->activate();
 
   // create bond connection
   createBond();
@@ -186,7 +136,9 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  action_server_->deactivate();
+  if (!bt_action_server_->on_deactivate()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
 
   // destroy bond connection
   destroyBond();
@@ -202,19 +154,17 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   // TODO(orduno) Fix the race condition between the worker thread ticking the tree
   //              and the main thread resetting the resources, see #1344
   goal_sub_.reset();
-  client_node_.reset();
   self_client_.reset();
 
   // Reset the listener before the buffer
   tf_listener_.reset();
   tf_.reset();
 
-  action_server_.reset();
-  plugin_lib_names_.clear();
-  current_bt_xml_filename_.clear();
-  blackboard_.reset();
-  bt_->haltAllActions(tree_.rootNode());
-  bt_.reset();
+  if (!bt_action_server_->on_cleanup()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
+  bt_action_server_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
   return nav2_util::CallbackReturn::SUCCESS;
@@ -224,109 +174,78 @@ nav2_util::CallbackReturn
 BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
+
+  if (!bt_action_server_->on_shutdown()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void
-BtNavigator::navigateToPose()
+bool
+BtNavigator::onGoalReceived(Action::Goal::ConstSharedPtr goal)
 {
-  initializeGoalPose();
+  auto bt_xml_filename = goal->behavior_tree;
 
-  auto is_canceling = [this]() {
-      if (action_server_ == nullptr) {
-        RCLCPP_DEBUG(get_logger(), "Action server unavailable. Canceling.");
-        return true;
-      }
-
-      if (!action_server_->is_server_active()) {
-        RCLCPP_DEBUG(get_logger(), "Action server is inactive. Canceling.");
-        return true;
-      }
-
-      return action_server_->is_cancel_requested();
-    };
-
-  auto bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
-
-  // Empty id in request is default for backward compatibility
-  bt_xml_filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
-
-  if (!loadBehaviorTree(bt_xml_filename)) {
+  if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
     RCLCPP_ERROR(
-      get_logger(), "BT file not found: %s. Navigation canceled",
-      bt_xml_filename.c_str(), current_bt_xml_filename_.c_str());
-    action_server_->terminate_current();
-    return;
+      get_logger(), "BT file not found: %s. Navigation canceled.",
+      bt_xml_filename.c_str());
+    return false;
   }
 
-  RosTopicLogger topic_logger(client_node_, tree_);
-  std::shared_ptr<Action::Feedback> feedback_msg = std::make_shared<Action::Feedback>();
+  initializeGoalPose(goal);
 
-  auto on_loop = [&]() {
-      if (action_server_->is_preempt_requested()) {
-        RCLCPP_INFO(get_logger(), "Received goal preemption request");
-        action_server_->accept_pending_goal();
-        initializeGoalPose();
-      }
-      topic_logger.flush();
-
-      // action server feedback (pose, duration of task,
-      // number of recoveries, and distance remaining to goal)
-      nav2_util::getCurrentPose(
-        feedback_msg->current_pose, *tf_, global_frame_, robot_frame_, transform_tolerance_);
-
-      geometry_msgs::msg::PoseStamped goal_pose;
-      blackboard_->get("goal", goal_pose);
-
-      feedback_msg->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
-        feedback_msg->current_pose.pose, goal_pose.pose);
-
-      int recovery_count = 0;
-      blackboard_->get<int>("number_recoveries", recovery_count);
-      feedback_msg->number_of_recoveries = recovery_count;
-      feedback_msg->navigation_time = now() - start_time_;
-      action_server_->publish_feedback(feedback_msg);
-    };
-
-  // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
-  // Make sure that the Bt is not in a running state from a previous execution
-  // note: if all the ControlNodes are implemented correctly, this is not needed.
-  bt_->haltAllActions(tree_.rootNode());
-
-  switch (rc) {
-    case nav2_behavior_tree::BtStatus::SUCCEEDED:
-      RCLCPP_INFO(get_logger(), "Navigation succeeded");
-      action_server_->succeeded_current();
-      break;
-
-    case nav2_behavior_tree::BtStatus::FAILED:
-      RCLCPP_ERROR(get_logger(), "Navigation failed");
-      action_server_->terminate_current();
-      break;
-
-    case nav2_behavior_tree::BtStatus::CANCELED:
-      RCLCPP_INFO(get_logger(), "Navigation canceled");
-      action_server_->terminate_all();
-      break;
-  }
+  return true;
 }
 
 void
-BtNavigator::initializeGoalPose()
+BtNavigator::onLoop()
 {
-  auto goal = action_server_->get_current_goal();
+  // action server feedback (pose, duration of task,
+  // number of recoveries, and distance remaining to goal)
+  auto feedback_msg = std::make_shared<Action::Feedback>();
 
+  nav2_util::getCurrentPose(
+    feedback_msg->current_pose, *tf_, global_frame_, robot_frame_, transform_tolerance_);
+
+  auto blackboard = bt_action_server_->getBlackboard();
+
+  geometry_msgs::msg::PoseStamped goal_pose;
+  blackboard->get("goal", goal_pose);
+
+  feedback_msg->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
+    feedback_msg->current_pose.pose, goal_pose.pose);
+
+  int recovery_count = 0;
+  blackboard->get<int>("number_recoveries", recovery_count);
+  feedback_msg->number_of_recoveries = recovery_count;
+  feedback_msg->navigation_time = now() - start_time_;
+
+  bt_action_server_->publishFeedback(feedback_msg);
+}
+
+void
+BtNavigator::onPreempt()
+{
+  RCLCPP_INFO(get_logger(), "Received goal preemption request");
+  initializeGoalPose(bt_action_server_->acceptPendingGoal());
+}
+
+void
+BtNavigator::initializeGoalPose(Action::Goal::ConstSharedPtr goal)
+{
   RCLCPP_INFO(
     get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
     goal->pose.pose.position.x, goal->pose.pose.position.y);
 
   // Reset state for new action feedback
   start_time_ = now();
-  blackboard_->set<int>("number_recoveries", 0);  // NOLINT
+  auto blackboard = bt_action_server_->getBlackboard();
+  blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard_->set<geometry_msgs::msg::PoseStamped>("goal", goal->pose);
+  blackboard->set<geometry_msgs::msg::PoseStamped>("goal", goal->pose);
 }
 
 void

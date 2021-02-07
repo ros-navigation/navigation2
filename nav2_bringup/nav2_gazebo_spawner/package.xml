@@ -3,7 +3,7 @@
 <package format="3">
   <name>nav2_gazebo_spawner</name>
   <version>0.4.3</version>
-  <description>Package for spawning a robot model into Gazebo for navigation2</description>
+  <description>Package for spawning a robot model into Gazebo for Nav2</description>
   <maintainer email="carlos.orduno@intel.com">lkumarbe</maintainer>
   <maintainer email="lalit.kumar.begani@intel.com">lkumarbe</maintainer>
   <license>Apache-2.0</license>

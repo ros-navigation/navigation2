@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <libgen.h>
+
 #include <iomanip>
 #include <iostream>
 #include <memory>

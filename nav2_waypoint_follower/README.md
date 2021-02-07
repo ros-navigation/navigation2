@@ -1,8 +1,9 @@
 # Nav2 Waypoint Follower
 
-The navigation2 waypoint follower is an example application of how to use the navigation action to complete some sort of orchestrated task. In this example, that task is to take a given set of waypoints and navigate to a set of positions in the order provided in the action request. The last waypoint in the waypoint array is the final position.
+The Nav2 waypoint follower is an example application of how to use the navigation action to complete some sort of orchestrated task. In this example, that task is to take a given set of waypoints and navigate to a set of positions in the order provided in the action request. The last waypoint in the waypoint array is the final position.
 
-The package exposes the `FollowWaypoints` action server of type `nav2_msgs/FollowWaypoints`. It is given an array of waypoints to visit, gives feedback about the current index of waypoint it is processing, and returns a list of waypoints it was unable to complete.
+The package exposes the `follow_waypoints` action server of type `nav2_msgs/FollowWaypoints`.
+ It is given an array of waypoints to visit, gives feedback about the current index of waypoint it is processing, and returns a list of waypoints it was unable to complete.
 
 It also hosts a waypoint task executor plugin which can be used to perform custom behavior at a waypoint like waiting for user instruction, taking a picture, or picking up a box.
 
@@ -12,7 +13,7 @@ There is a parameterization `stop_on_failure` whether to stop processing the way
 
 The ``nav2_waypoint_follower`` contains a waypoint following program with a plugin interface for specific task executors.
 This is useful if you need to go to a given location and complete a specific task like take a picture, pick up a box, or wait for user input.
-It is a nice demo application for how to use navigation2 in a sample application.
+It is a nice demo application for how to use Nav2 in a sample application.
 
 However, it could be used for more than just a sample application.
 There are 2 schools of thoughts for fleet managers / dispatchers.
