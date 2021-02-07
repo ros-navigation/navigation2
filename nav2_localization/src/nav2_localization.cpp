@@ -281,6 +281,7 @@ LocalizationServer::scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr s
     tf2::fromMsg(map_to_base_msg, map_to_base_tf);
 
     geometry_msgs::msg::TransformStamped map_to_odom_msg;
+    map_to_odom_msg.transform = tf2::toMsg(odom_to_base_tf.inverseTimes(map_to_base_tf));
     map_to_odom_msg.header.stamp = tf2_ros::toMsg(tf2_ros::fromMsg(scan->header.stamp) + transform_tolerance_);
     map_to_odom_msg.header.frame_id = map_frame_id_;
     map_to_odom_msg.child_frame_id = odom_frame_id_;
