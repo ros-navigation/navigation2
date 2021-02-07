@@ -1,7 +1,23 @@
+// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License. Reserved.
+
 #ifndef NAV2_LOCALIZATION__NAV2_LOCALIZATION_HPP_
 #define NAV2_LOCALIZATION__NAV2_LOCALIZATION_HPP_
 
 #include <string>
+#include <vector>  // For vector<>
+#include <memory>  // For shared_ptr<>
 
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
@@ -27,155 +43,159 @@ namespace nav2_localization
 class LocalizationServer : public nav2_util::LifecycleNode
 {
 public:
+  /**
+  * @brief Constructor for nav2_localization::LocalizationServer
+  */
+  LocalizationServer();
 
-    /**
-    * @brief Constructor for nav2_localization::LocalizationServer
-    */
-    LocalizationServer();
-    /**
-    * @brief Destructor for nav2_localization::LocalizationServer
-    */
-    ~LocalizationServer();
+  /**
+  * @brief Destructor for nav2_localization::LocalizationServer
+  */
+  ~LocalizationServer();
 
 protected:
-    /**
-     * @brief Configures server parameters and member variables
-     *
-     * Configures motion model and matcher plugins; Initialize odom subscriber.
-     * @param state LifeCycle Node's state
-     * @return Success or Failure
-     * @throw pluginlib::PluginlibException When failed to initialize motion
-     * model or matcher plugins
-     */
-    nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-    /**
-     * @brief Activates member variables
-     *
-     * Activates motion model and matcher.
-     * @param state LifeCycle Node's state
-     * @return Success or Failure
-     */
-    nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-    /**
-     * @brief Deactivates member variables
-     *
-     * @param state LifeCycle Node's state
-     * @return Success or Failure
-     */
-    nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-    /**
-     * @brief Calls clean up states and resets member variables.
-     *
-     * @param state LifeCycle Node's state
-     * @return Success or Failure
-     */
-    nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
-    /**
-     * @brief Called when in Shutdown state
-     * @param state LifeCycle Node's state
-     * @return Success or Failure
-     */
-    nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Configures server parameters and member variables
+   *
+   * Configures motion model and matcher plugins; Initialize odom subscriber.
+   * @param state LifeCycle Node's state
+   * @return Success or Failure
+   * @throw pluginlib::PluginlibException When failed to initialize motion
+   * model or matcher plugins
+   */
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
 
-    /**
-     * @brief Initializes the publishers and subscribers
-     */
-    void initPubSub();
-    
-    /**
-     * @brief Initializes the member variables required to transform between coordinate frames
-     */
-    void initTransforms();
+  /**
+   * @brief Activates member variables
+   *
+   * Activates motion model and matcher.
+   * @param state LifeCycle Node's state
+   * @return Success or Failure
+   */
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
 
-    /**
-     * @brief Initializes the scan message filter
-     */
-    void initMessageFilters();
-    
-    /**
-     * @brief Initializes plugins
-     */
-    void initPlugins();
-    
-    /**
-     * @brief Callback when the map is received
-     * @param msg pointer to the received map message
-     */
-    void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+  /**
+   * @brief Deactivates member variables
+   *
+   * @param state LifeCycle Node's state
+   * @return Success or Failure
+   */
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
 
-    /**
-     * @brief Callback when a LaserScan is received. It will convert it to a PC and use the callback for generic scans
-     * @param scan pointer to the received LaserScan message
-     */
-    void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
+  /**
+   * @brief Calls clean up states and resets member variables.
+   *
+   * @param state LifeCycle Node's state
+   * @return Success or Failure
+   */
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
-    /**
-     * @brief Callback when the scan is received
-     * @param scan pointer to the received PointCloud2 message
-     */
-    void scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr scan);
+  /**
+   * @brief Called when in Shutdown state
+   * @param state LifeCycle Node's state
+   * @return Success or Failure
+   */
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
-    /**
-     * @brief Callback when the initial pose of the robot is received
-     * @param msg pointer to the received pose
-     */
-    void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+  /**
+   * @brief Initializes the publishers and subscribers
+   */
+  void initPubSub();
+  
+  /**
+   * @brief Initializes the member variables required to transform between coordinate frames
+   */
+  void initTransforms();
 
-    // Map
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
-    bool first_map_received_{false};
+  /**
+   * @brief Initializes the scan message filter
+   */
+  void initMessageFilters();
+  
+  /**
+   * @brief Initializes plugins
+   */
+  void initPlugins();
+  
+  /**
+   * @brief Callback when the map is received
+   * @param msg pointer to the received map message
+   */
+  void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
 
-    // Scan
-    std::string scan_topic_;
+  /**
+   * @brief Callback when a LaserScan is received. It will convert it to a PC and use the callback for generic scans
+   * @param scan pointer to the received LaserScan message
+   */
+  void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
 
-    // Transforms
-    std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-    std::string odom_frame_id_;
-    std::string base_frame_id_;
-    std::string map_frame_id_;
-    tf2::Duration transform_tolerance_;
+  /**
+   * @brief Callback when the scan is received
+   * @param scan pointer to the received PointCloud2 message
+   */
+  void scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr scan);
 
-    // Message filters
-    std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
-    std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> scan_sub_;
-    std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
-    std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>> scan_filter_;
-    message_filters::Connection laser_scan_connection_;
-    message_filters::Connection scan_connection_;
-	laser_geometry::LaserProjection laser_to_pc_projector_;
+  /**
+   * @brief Callback when the initial pose of the robot is received
+   * @param msg pointer to the received pose
+   */
+  void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 
-    // Sample Motion Model Plugin
-    pluginlib::ClassLoader<nav2_localization::SampleMotionModel> sample_motion_model_loader_;
-    nav2_localization::SampleMotionModel::Ptr sample_motion_model_;
-    std::string default_sample_motion_model_id_;
-    std::string sample_motion_model_id_;
-    std::string sample_motion_model_type_;
+  // Map
+  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
+  bool first_map_received_{false};
 
-    // Matcher Plugin
-    pluginlib::ClassLoader<nav2_localization::Matcher2d> matcher2d_loader_;
-    nav2_localization::Matcher2d::Ptr matcher2d_;
-    std::string default_matcher2d_id_;
-    std::string matcher2d_id_;
-    std::string matcher2d_type_;
+  // Scan
+  std::string scan_topic_;
 
-    // Solver Plugin
-    pluginlib::ClassLoader<nav2_localization::Solver> solver_loader_;
-    nav2_localization::Solver::Ptr solver_;
-    std::string default_solver_id_;
-    std::string solver_id_;
-    std::string solver_type_;
+  // Transforms
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::string odom_frame_id_;
+  std::string base_frame_id_;
+  std::string map_frame_id_;
+  tf2::Duration transform_tolerance_;
 
-    std::vector<std::string> default_ids_;
-    std::vector<std::string> default_types_;
-    std::vector<std::string> localization_ids_;
+  // Message filters
+  std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
+  std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> scan_sub_;
+  std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
+  std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>> scan_filter_;
+  message_filters::Connection laser_scan_connection_;
+  message_filters::Connection scan_connection_;
+laser_geometry::LaserProjection laser_to_pc_projector_;
 
-    // Initial pose
-    rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr initial_pose_sub_;
-    bool initial_pose_set_;
+  // Sample Motion Model Plugin
+  pluginlib::ClassLoader<nav2_localization::SampleMotionModel> sample_motion_model_loader_;
+  nav2_localization::SampleMotionModel::Ptr sample_motion_model_;
+  std::string default_sample_motion_model_id_;
+  std::string sample_motion_model_id_;
+  std::string sample_motion_model_type_;
+
+  // Matcher Plugin
+  pluginlib::ClassLoader<nav2_localization::Matcher2d> matcher2d_loader_;
+  nav2_localization::Matcher2d::Ptr matcher2d_;
+  std::string default_matcher2d_id_;
+  std::string matcher2d_id_;
+  std::string matcher2d_type_;
+
+  // Solver Plugin
+  pluginlib::ClassLoader<nav2_localization::Solver> solver_loader_;
+  nav2_localization::Solver::Ptr solver_;
+  std::string default_solver_id_;
+  std::string solver_id_;
+  std::string solver_type_;
+
+  std::vector<std::string> default_ids_;
+  std::vector<std::string> default_types_;
+  std::vector<std::string> localization_ids_;
+
+  // Initial pose
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr initial_pose_sub_;
+  bool initial_pose_set_;
 };
 
-}
+}  // namespace nav2_localization
 
-#endif // NAV2_LOCALIZATION__NAV2_LOCALIZATION_HPP_
+#endif  // NAV2_LOCALIZATION__NAV2_LOCALIZATION_HPP_

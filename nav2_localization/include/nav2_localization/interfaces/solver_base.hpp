@@ -1,5 +1,21 @@
-#ifndef NAV2_LOCALIZATION__SOLVER_BASE_HPP_
-#define NAV2_LOCALIZATION__SOLVER_BASE_HPP_
+// Copyright (c) 2021 Jose M. TORRES-CAMARA and Khaled SAAD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License. Reserved.
+
+#ifndef NAV2_LOCALIZATION__INTERFACES__SOLVER_BASE_HPP_
+#define NAV2_LOCALIZATION__INTERFACES__SOLVER_BASE_HPP_
+
+#include <memory>  // For shared_ptr<>
 
 // Other Interfaces
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
@@ -25,63 +41,64 @@ namespace nav2_localization
 class Solver
 {
 public:
-	Solver(){}
+  Solver() {}
 
-	using Ptr = std::shared_ptr<nav2_localization::Solver>;
+  using Ptr = std::shared_ptr<nav2_localization::Solver>;
 
-	/**
+  /**
      * @brief Estimates a pose fusing odometry and sensor information
      * @param curr_odom Current pose odometry-based estimation
      * @param scan Current measurement
      * @return Estimation of the current position
      */
-	virtual geometry_msgs::msg::TransformStamped solve(
-		const geometry_msgs::msg::TransformStamped& curr_odom,
-		const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan) = 0;
+  virtual geometry_msgs::msg::TransformStamped solve(
+    const geometry_msgs::msg::TransformStamped & curr_odom,
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan) = 0;
 
-	/**
-	 * @brief Initializes the filter being used with a given pose
-	 * @param pose The pose at which to initialize the filter
-	 */ 
-	virtual void initFilter(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose) = 0;
+  /**
+   * @brief Initializes the filter being used with a given pose
+   * @param pose The pose at which to initialize the filter
+   */
+  virtual void initFilter(
+    const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & pose) = 0;
 
-	/**
+  /**
      * @brief Configures the solver, during the "Configuring" state of the parent lifecycle node.
      * @param node Pointer to the parent lifecycle node
-	 * @param motionSampler The Sample Motion Model to use 
-	 * @param matcher The 2D Matcher to use
-	 * @param odom Initial odometry
-	 * @param pose Initial pose
-     */   
-	virtual void configure(
-		const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-		SampleMotionModel::Ptr& motionSampler,
-		Matcher2d::Ptr& matcher,
-		const geometry_msgs::msg::TransformStamped& odom,
-		const geometry_msgs::msg::TransformStamped& pose) = 0;
+   * @param motionSampler The Sample Motion Model to use
+   * @param matcher The 2D Matcher to use
+   * @param odom Initial odometry
+   * @param pose Initial pose
+     */
+  virtual void configure(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    SampleMotionModel::Ptr & motionSampler,
+    Matcher2d::Ptr & matcher,
+    const geometry_msgs::msg::TransformStamped & odom,
+    const geometry_msgs::msg::TransformStamped & pose) = 0;
 
-	/**
+  /**
      * @brief Activates the solver, during the "Activating" state of the parent lifecycle node.
      */
-	virtual void activate() = 0;
+  virtual void activate() = 0;
 
-	/**
-     * @brief Deactivates the solver, during the "Deactivating" state of the parent lifecycle node. 
+  /**
+     * @brief Deactivates the solver, during the "Deactivating" state of the parent lifecycle node.
      */
-	virtual void deactivate() = 0;
+  virtual void deactivate() = 0;
 
-	/**
+  /**
      * @brief Cleans up the solver, during the "Cleaningup" state of the parent lifecycle node.
      */
-	virtual void cleanup() = 0;
+  virtual void cleanup() = 0;
 
 protected:
-	rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
-	SampleMotionModel::Ptr motionSampler_;
-	Matcher2d::Ptr matcher_;
-	geometry_msgs::msg::TransformStamped prev_odom_; // Previous pose odometry-based estimation
-	geometry_msgs::msg::TransformStamped prev_pose_; // Previous pose estimation
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  SampleMotionModel::Ptr motionSampler_;
+  Matcher2d::Ptr matcher_;
+  geometry_msgs::msg::TransformStamped prev_odom_;  // Previous pose odometry-based estimation
+  geometry_msgs::msg::TransformStamped prev_pose_;  // Previous pose estimation
 };
-} // nav2_localization
+}  // namespace nav2_localization
 
-#endif // NAV2_LOCALIZATION__SOLVER_BASE_HPP_
+#endif  // NAV2_LOCALIZATION__INTERFACES__SOLVER_BASE_HPP_

@@ -1,3 +1,19 @@
+// Copyright (c) 2021 Jose M. TORRES-CAMARA and Khaled SAAD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License. Reserved.
+
+#include <vector>
+#include <memory>
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_localization/interfaces/solver_base.hpp"
 #include "nav2_localization/plugins/solvers/mcl_solver2d.hpp"
@@ -9,8 +25,8 @@
 namespace nav2_localization
 {
 geometry_msgs::msg::TransformStamped MCLSolver2d::solve(
-	const geometry_msgs::msg::TransformStamped& curr_odom,
-	const sensor_msgs::msg::PointCloud2::ConstSharedPtr& scan)
+  const geometry_msgs::msg::TransformStamped & curr_odom,
+  const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan)
 {
 	if(first_iteration_)
 	{
@@ -65,13 +81,13 @@ void MCLSolver2d::publishParticleCloud()
 }
 
 void MCLSolver2d::configure(
-	const rclcpp_lifecycle::LifecycleNode::SharedPtr& node,
-	SampleMotionModel::Ptr& motionSampler,
-	Matcher2d::Ptr& matcher,
-	const geometry_msgs::msg::TransformStamped& odom,
-	const geometry_msgs::msg::TransformStamped& pose)
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  SampleMotionModel::Ptr & motionSampler,
+  Matcher2d::Ptr & matcher,
+  const geometry_msgs::msg::TransformStamped & odom,
+  const geometry_msgs::msg::TransformStamped & pose)
 {
-	node_ = node;
+  node_ = node;
 
 	particlecloud_pub_ = node_->create_publisher<geometry_msgs::msg::PoseArray>(
     	"particlecloud", rclcpp::SensorDataQoS());
@@ -80,8 +96,8 @@ void MCLSolver2d::configure(
 	node_->declare_parameter("motion_linear_tol", 0.05);
 	node_->declare_parameter("motion_angular_tol", 0.05);
 
-	motionSampler_ = motionSampler;
-	matcher_ = matcher;
+  motionSampler_ = motionSampler;
+  matcher_ = matcher;
 
 	// Get configuration and generate PF
 	node_->get_parameter("num_particles", init_number_of_particles_);
@@ -101,15 +117,11 @@ void MCLSolver2d::activate()
 }
 
 void MCLSolver2d::deactivate()
-{
-
-}
+{}
 
 void MCLSolver2d::cleanup()
-{
+{}
 
-}
-
-} // nav2_localization
+}  // namespace nav2_localization
 
 PLUGINLIB_EXPORT_CLASS(nav2_localization::MCLSolver2d, nav2_localization::Solver)

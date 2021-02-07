@@ -123,4 +123,4 @@ std::vector<Particle> ParticleFilter::getParticles()
     return particles_t_;
 }
 
-} // nav2_localization
+}  // namespace nav2_localization
