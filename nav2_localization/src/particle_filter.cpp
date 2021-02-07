@@ -7,6 +7,13 @@ namespace  nav2_localization
 {
 ParticleFilter::ParticleFilter(const int &initial_number_of_particles, const geometry_msgs::msg::TransformStamped &init_pose)
 {
+    initFilter(initial_number_of_particles, init_pose);
+}
+
+void ParticleFilter::initFilter(const int &initial_number_of_particles, const geometry_msgs::msg::TransformStamped &init_pose)
+{
+    particles_t_1_.clear();
+
     std::default_random_engine generator;
     std::normal_distribution<double> rand_distribution(0.0, 0.1);
 

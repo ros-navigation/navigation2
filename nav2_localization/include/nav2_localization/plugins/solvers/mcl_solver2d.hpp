@@ -41,6 +41,10 @@ public:
 
 private:
 	std::shared_ptr<ParticleFilter> pf_; // Particle filter
+	int init_number_of_particles_;
+	bool first_iteration_;
+	double motion_linear_tol_;
+	double motion_angular_tol_;
 };
 } // nav2_localization
 

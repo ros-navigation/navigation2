@@ -22,6 +22,7 @@ class ParticleFilter
 {
 public:
 	ParticleFilter(const int &initial_number_of_particles, const geometry_msgs::msg::TransformStamped &init_pose);
+	void initFilter(const int &initial_number_of_particles, const geometry_msgs::msg::TransformStamped &init_pose);
 	void update(const geometry_msgs::msg::TransformStamped &prev_odom,
 				const geometry_msgs::msg::TransformStamped &curr_odom,
 				const sensor_msgs::msg::PointCloud2::ConstSharedPtr &scan,
