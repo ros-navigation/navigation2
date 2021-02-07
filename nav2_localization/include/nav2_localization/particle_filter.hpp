@@ -28,6 +28,7 @@ public:
 				const SampleMotionModel::Ptr &motion_model,
 				const Matcher2d::Ptr &matcher);
 	geometry_msgs::msg::TransformStamped getMostLikelyPose();
+	std::vector<Particle> getParticles();
 
 private:
 	std::vector<Particle> sample(const geometry_msgs::msg::TransformStamped &prev_odom,

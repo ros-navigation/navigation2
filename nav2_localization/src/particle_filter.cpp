@@ -111,4 +111,9 @@ geometry_msgs::msg::TransformStamped ParticleFilter::getMostLikelyPose()
     return most_likely_pose_;
 }
 
+std::vector<Particle> ParticleFilter::getParticles()
+{
+    return particles_t_;
+}
+
 } // nav2_localization
