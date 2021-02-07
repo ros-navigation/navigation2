@@ -192,7 +192,8 @@ laser_geometry::LaserProjection laser_to_pc_projector_;
   std::vector<std::string> localization_ids_;
 
   // Initial pose
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr initial_pose_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
+    initial_pose_sub_;
   bool initial_pose_set_;
 };
 

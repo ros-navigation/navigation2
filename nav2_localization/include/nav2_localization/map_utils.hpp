@@ -48,7 +48,7 @@ public:
    * @param map_width Width of the map (in cells)
    * @return Index of ("x", "y") in the map
    */
-  static int mapCoordToIndex(const uint32_t &x, const uint32_t &y, const uint32_t &map_width);
+  static int mapCoordToIndex(const uint32_t & x, const uint32_t & y, const uint32_t & map_width);
 
   /**
    * @brief Returns the coordinates of an index in the map
@@ -56,7 +56,9 @@ public:
    * @param map_width Width of the map (in cells)
    * @return The coordinates corresponding to the given index
    */
-  static std::pair<uint32_t, uint32_t> mapIndexToCoord(const int &index, const uint32_t &map_width);
+  static std::pair<uint32_t, uint32_t> mapIndexToCoord(
+    const int & index,
+    const uint32_t & map_width);
 
   /**
    * @brief Returns the euclidean distance between two points
