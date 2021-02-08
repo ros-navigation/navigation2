@@ -16,9 +16,7 @@
 #include <gtest/gtest.h>
 #include <experimental/filesystem>
 #include <rclcpp/rclcpp.hpp>
-#include <string>
 #include <memory>
-#include <vector>
 
 #include "test_constants/test_constants.h"
 #include "nav2_util/lifecycle_service_client.hpp"

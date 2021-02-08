@@ -15,7 +15,6 @@
 #include <gtest/gtest.h>
 #include <experimental/filesystem>
 #include <rclcpp/rclcpp.hpp>
-#include <string>
 #include <memory>
 #include <vector>
 

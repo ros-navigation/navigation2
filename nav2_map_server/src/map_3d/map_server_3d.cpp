@@ -54,7 +54,7 @@ MapServer<sensor_msgs::msg::PointCloud2>::on_configure(
   std::string yaml_filename = get_parameter("yaml_filename").as_string();
 
   std::string topic_name = get_parameter("topic_name").as_string();
-//  frame_id_ = get_parameter("frame_id").as_string();
+  frame_id_ = get_parameter("frame_id").as_string();
 
   // Shared pointer to LoadMap::Response is also should be initialized
   // in order to avoid null-pointer dereference

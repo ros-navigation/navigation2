@@ -20,7 +20,6 @@ find_package(pcl_conversions REQUIRED)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(PCL 1.10 REQUIRED common io)
 
-
 nav2_package()
 
 include_directories(include ${PCL_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
@@ -148,7 +147,6 @@ target_link_libraries(${map_server_executable}_3d
   ${map_io_library_name}_3d
   ${library_name})
 
-
 if(WIN32)
   target_compile_definitions(${map_server_executable}_2d PRIVATE
     YAML_CPP_DLL)
@@ -166,7 +164,7 @@ target_link_libraries(${map_saver_server_executable}_3d
     ${library_name})
 
 target_link_libraries(${costmap_filter_info_server_executable}
-${library_name})
+  ${library_name})
 
 target_include_directories(${map_io_library_name}_2d SYSTEM PRIVATE
   ${GRAPHICSMAGICKCPP_INCLUDE_DIRS})

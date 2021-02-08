@@ -46,7 +46,7 @@ protected:
   // Fill LoadParameters with standard for testing values
   // Input: pcd_file_name
   // Output: load_parameters
-  void fillLoadParameters(
+  static void fillLoadParameters(
     const std::string & pcd_file_name,
     map_3d::LoadParameters & load_parameters)
   {
@@ -67,7 +67,7 @@ protected:
   // Fill SaveParameters with standard for testing values
   // Input: map_file_name, format
   // Output: save_parameters
-  void fillSaveParameters(
+  static void fillSaveParameters(
     const std::string & map_file_name,
     const std::vector<double> & center,
     const std::vector<double> & orientation,
@@ -122,13 +122,10 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
   // 1. Load reference map file and verify obtained OccupancyGrid
   map_3d::LoadParameters loadParameters;
   fillLoadParameters(path(TEST_DIR) / path(g_valid_pcd_file), loadParameters);
-  std::cout << "[debug] " << "filled load parameters" << std::endl;
 
   sensor_msgs::msg::PointCloud2 map_msg;
   geometry_msgs::msg::Pose origin;
   ASSERT_NO_THROW(map_3d::loadMapFromFile(loadParameters, map_msg, origin));
-
-  std::cout << "[debug]" << "file_loaded" << std::endl;
 
   // 2. Save OccupancyGrid into a tmp file
   map_3d::SaveParameters saveParameters;
@@ -146,8 +143,6 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
   orientation[2] = origin.orientation.y;
   orientation[3] = origin.orientation.z;
 
-  std::cout << "[debug]" << "origin loaded" << std::endl;
-
   ASSERT_EQ(center, g_valid_center_pcd);
   ASSERT_EQ(orientation, g_valid_orientation_pcd);
 
@@ -155,11 +150,7 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
     path(g_tmp_dir) / path(g_valid_pcd_map_name),
     center, orientation, "pcd", false, saveParameters);
 
-  std::cout << "[debug] " << "filled save parameters" << std::endl;
-
   ASSERT_TRUE(map_3d::saveMapToFile(map_msg, saveParameters));
-
-  std::cout << "[debug] " << "save file is done" << std::endl;
 
   // 3. Load saved map and verify it
   map_3d::LOAD_MAP_STATUS status =

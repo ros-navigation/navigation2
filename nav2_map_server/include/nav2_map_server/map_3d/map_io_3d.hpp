@@ -111,7 +111,7 @@ struct SaveParameters
   }
 
   std::string map_file_name{""};
-  std::string format{"pcd"};
+  std::string format{""};
   geometry_msgs::msg::Pose origin;
   bool as_binary = false;
 };

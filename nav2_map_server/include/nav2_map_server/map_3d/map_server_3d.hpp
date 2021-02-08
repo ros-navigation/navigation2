@@ -137,14 +137,14 @@ protected:
   // The message to publish the pointcloud topic
   sensor_msgs::msg::PointCloud2 pcd_msg_;
 
-  // The frame ID used in the returned PointCloud2 message
-  std::string frame_id_;
-
   // Origin related message and publishers
   // A topic on which the Pose will be published
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Pose>::SharedPtr origin_pub_;
   // The message to publish the pose topic
   geometry_msgs::msg::Pose origin_msg_;
+
+  // The frame ID used in the returned PointCloud2 message
+  std::string frame_id_;
 };
 
 }  // namespace nav2_map_server

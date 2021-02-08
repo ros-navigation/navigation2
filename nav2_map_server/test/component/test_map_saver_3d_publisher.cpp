@@ -15,7 +15,6 @@
 #include <experimental/filesystem>
 #include <string>
 #include <memory>
-#include <chrono>
 
 #include "test_constants/test_constants.h"
 #include "rclcpp/rclcpp.hpp"
@@ -27,7 +26,6 @@
 
 #define TEST_DIR TEST_DIRECTORY
 
-using namespace std::chrono_literals;
 using namespace nav2_map_server;  // NOLINT
 using std::experimental::filesystem::path;
 
@@ -38,21 +36,21 @@ public:
   : Node("map_publisher")
   {
     std::string pub_map_pcd_file = path(TEST_DIR) / path(g_valid_pcd_yaml_file);
-
     sensor_msgs::msg::PointCloud2 pcd_msg_;
     geometry_msgs::msg::Pose origin_msg_;
     map_3d::LOAD_MAP_STATUS status =
       map_3d::loadMapFromYaml(pub_map_pcd_file, pcd_msg_, origin_msg_);
-
     if (status != map_3d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS) {
       RCLCPP_ERROR(get_logger(), "Can not load %s map file", pub_map_pcd_file.c_str());
       return;
     }
 
+    // Creating publisher of message type sensor_msgs::msg::PointCloud2
     pcd_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>(
       "map",
       rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
+    // Creating publisher of message type geometry_msgs::msg::Pose
     origin_pub_ = create_publisher<geometry_msgs::msg::Pose>(
       "map_origin",
       rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());

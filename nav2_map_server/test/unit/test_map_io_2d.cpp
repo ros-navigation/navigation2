@@ -34,7 +34,6 @@
 #include <gtest/gtest.h>
 #include <experimental/filesystem>
 #include <string>
-#include <vector>
 
 #include "nav2_util/lifecycle_node.hpp"
 #include "test_constants/test_constants.h"
@@ -62,7 +61,7 @@ protected:
   // Fill LoadParameters with standard for testing values
   // Input: image_file_name
   // Output: load_parameters
-  void fillLoadParameters(
+  static void fillLoadParameters(
     const std::string & image_file_name,
     map_2d::LoadParameters & load_parameters)
   {
@@ -78,7 +77,7 @@ protected:
   // Fill SaveParameters with standard for testing values
   // Input: map_file_name, image_format
   // Output: save_parameters
-  void fillSaveParameters(
+  static void fillSaveParameters(
     const std::string & map_file_name,
     const std::string & image_format,
     map_2d::SaveParameters & save_parameters)
@@ -92,7 +91,7 @@ protected:
 
   // Check that map_msg corresponds to reference pattern
   // Input: map_msg
-  void verifyMapMsg(const nav_msgs::msg::OccupancyGrid & map_msg)
+  static void verifyMapMsg(const nav_msgs::msg::OccupancyGrid & map_msg)
   {
     ASSERT_FLOAT_EQ(map_msg.info.resolution, g_valid_image_res);
     ASSERT_EQ(map_msg.info.width, g_valid_image_width);
