@@ -298,32 +298,32 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
 
 
   // now try with cost regulation (turn off velocity and only cost)
-  ctrl->setCostRegulationScaling();
-  ctrl->resetVelocityRegulationScaling();
-  curvature = 0.0;
+  // ctrl->setCostRegulationScaling();
+  // ctrl->resetVelocityRegulationScaling();
+  // curvature = 0.0;
 
   // min changable cost
-  pose_cost = 1;
-  linear_vel = 0.5;
-  curr_speed.linear.x = 0.5;
-  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
-  EXPECT_NEAR(linear_vel, 0.498, 0.01);
+  // pose_cost = 1;
+  // linear_vel = 0.5;
+  // curr_speed.linear.x = 0.5;
+  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  // EXPECT_NEAR(linear_vel, 0.498, 0.01);
 
   // max changing cost
-  pose_cost = 127;
-  curr_speed.linear.x = 0.255;
-  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
-  EXPECT_NEAR(linear_vel, 0.255, 0.01);
+  // pose_cost = 127;
+  // curr_speed.linear.x = 0.255;
+  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  // EXPECT_NEAR(linear_vel, 0.255, 0.01);
 
   // over max cost thresh
-  pose_cost = 200;
-  curr_speed.linear.x = 0.25;
-  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
-  EXPECT_NEAR(linear_vel, 0.25, 0.01);
+  // pose_cost = 200;
+  // curr_speed.linear.x = 0.25;
+  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  // EXPECT_NEAR(linear_vel, 0.25, 0.01);
 
   // test kinematic clamping
-  pose_cost = 200;
-  curr_speed.linear.x = 1.0;
-  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
-  EXPECT_NEAR(linear_vel, 0.5, 0.01);
+  // pose_cost = 200;
+  // curr_speed.linear.x = 1.0;
+  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  // EXPECT_NEAR(linear_vel, 0.5, 0.01);
 }
