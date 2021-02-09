@@ -139,10 +139,6 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-install(DIRECTORY test/
-  DESTINATION test/
-)
-
 install(FILES nav2_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
@@ -154,7 +150,6 @@ endif()
 
 ament_export_include_directories(
   include
-  test
 )
 
 ament_export_libraries(
