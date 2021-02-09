@@ -115,14 +115,20 @@ public:
       std::bind(&DummyActionServer::handle_accepted, this, _1));
   }
 
-  void setFailureIndices(const std::vector<std::pair<int, int>> & failIdx)
+  void setFailureRanges(const std::vector<std::pair<int, int>> & failureRanges)
   {
-    failure_idx_ = failIdx;
+    failure_ranges_ = failureRanges;
+  }
+
+  void setRunningRanges(const std::vector<std::pair<int, int>> & runningRanges)
+  {
+    running_ranges_ = runningRanges;
   }
 
   void reset()
   {
-    failure_idx_.clear();
+    failure_ranges_.clear();
+    running_ranges_.clear();
     goal_count_ = 0;
   }
 
@@ -156,8 +162,17 @@ protected:
     goal_count_++;
     auto result = fillResult();
 
+    // if current goal index exists in running range, the thread sleeps for 1 second
+    // to simulate a long running action
+    for (auto & index : running_ranges_) {
+      if (goal_count_ >= index.first && goal_count_ <= index.second) {
+        std::this_thread::sleep_for(1s);
+        break;
+      }
+    }
+
     // if current goal index exists in failure range, the goal will be aborted
-    for (auto & index : failure_idx_) {
+    for (auto & index : failure_ranges_) {
       if (goal_count_ >= index.first && goal_count_ <= index.second) {
         goal_handle->abort(result);
         return;
@@ -180,9 +195,12 @@ protected:
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
   std::string action_name_;
 
-  // contains pairs of indices for which the requested action goal will be aborted
+  // contains pairs of indices which define a range for which the
+  // requested action goal will return running for 1s or be aborted
   // for all other indices, the action server will return success
-  std::vector<std::pair<int, int>> failure_idx_;
+  std::vector<std::pair<int, int>> failure_ranges_;
+  std::vector<std::pair<int, int>> running_ranges_;
+
   int goal_count_;
 };
 
