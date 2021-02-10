@@ -16,7 +16,6 @@
 #define NAV2_MAP_SERVER__MAP_2D__MAP_MODE_HPP_
 
 #include <string>
-#include <vector>
 
 namespace nav2_map_server
 {

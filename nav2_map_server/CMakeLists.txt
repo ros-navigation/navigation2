@@ -10,7 +10,6 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(GRAPHICSMAGICKCPP REQUIRED)
@@ -73,25 +72,24 @@ add_library(${library_name} SHARED
 
 set(map_io_2d_dependencies
   yaml_cpp_vendor
-  nav_msgs
   nav2_util
-  tf2)
+  tf2
+  nav_msgs)
 
 set(map_io_3d_dependencies
   ${map_io_2d_dependencies}
+  pcl_conversions
   sensor_msgs
-  geometry_msgs
-  pcl_conversions)
+  geometry_msgs)
 
 set(map_server_dependencies
   rclcpp
   rclcpp_lifecycle
+  yaml_cpp_vendor
+  nav2_util
   nav_msgs
   nav2_msgs
-  geometry_msgs
-  yaml_cpp_vendor
-  std_msgs
-  nav2_util)
+  geometry_msgs)
 
 set(map_saver_dependencies
   rclcpp

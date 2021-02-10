@@ -18,7 +18,6 @@
 #define NAV2_MAP_SERVER__MAP_3D__MAP_IO_3D_HPP_
 
 #include <string>
-#include <vector>
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "geometry_msgs/msg/pose.hpp"

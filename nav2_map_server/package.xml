@@ -16,7 +16,6 @@
 
   <depend>rclcpp_lifecycle</depend>
   <depend>nav_msgs</depend>
-  <depend>std_msgs</depend>
   <depend>rclcpp</depend>
   <depend>yaml_cpp_vendor</depend>
   <depend>launch_ros</depend>

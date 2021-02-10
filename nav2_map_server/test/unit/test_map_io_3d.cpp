@@ -17,11 +17,8 @@
 #include <string>
 #include <vector>
 
-#include "test_constants/test_constants.h"
 #include "nav2_util/lifecycle_node.hpp"
-
-#include "sensor_msgs/msg/point_cloud2.hpp"
-#include "geometry_msgs/msg/pose.hpp"
+#include "test_constants/test_constants.h"
 
 #include "nav2_map_server/map_3d/map_io_3d.hpp"
 

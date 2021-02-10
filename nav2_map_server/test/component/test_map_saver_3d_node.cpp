@@ -22,10 +22,8 @@
 #include "nav2_util/lifecycle_service_client.hpp"
 
 #include "nav2_msgs/srv/save_map3_d.hpp"
-#include "sensor_msgs/msg/point_cloud2.hpp"
-#include "geometry_msgs/msg/pose.hpp"
 
-#include "nav2_map_server/map_saver.hpp"
+#include "nav2_map_server/map_3d/map_io_3d.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
