@@ -1,6 +1,8 @@
 #goal definition
 geometry_msgs/PoseStamped pose
+geometry_msgs/PoseStamped start_pose
 string planner_id
+bool use_start_pose
 ---
 #result definition
 nav_msgs/Path path

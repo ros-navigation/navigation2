@@ -232,10 +232,15 @@ PlannerServer::computePlan()
       r.sleep();
     }
 
+    // Use start_pose if provided otherwise use current robot pose
     geometry_msgs::msg::PoseStamped start;
-    if (!costmap_ros_->getRobotPose(start)) {
-      action_server_->terminate_current();
-      return;
+    if (goal->use_start_pose) {
+      start = goal->start_pose;
+    } else {
+      if (!costmap_ros_->getRobotPose(start)) {
+        action_server_->terminate_current();
+        return;
+      }
     }
 
     if (action_server_->is_preempt_requested()) {
