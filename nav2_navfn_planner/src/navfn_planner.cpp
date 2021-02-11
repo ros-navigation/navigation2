@@ -67,7 +67,8 @@ NavfnPlanner::configure(
   costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();
 
-  auto node = parent.lock();
+  node_ = parent;
+  auto node = node_.lock();
   clock_ = node->get_clock();
   logger_ = node->get_logger();
 
@@ -122,6 +123,12 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point a = steady_clock::now();
 #endif
+
+  // Refresh parameter
+  auto node = node_.lock();
+  node->get_parameter(name_ + ".tolerance", tolerance_);
+  node->get_parameter(name_ + ".use_astar", use_astar_);
+  node->get_parameter(name_ + ".allow_unknown", allow_unknown_);
 
   // Update planner based on the new costmap size
   if (isPlannerOutOfDate()) {

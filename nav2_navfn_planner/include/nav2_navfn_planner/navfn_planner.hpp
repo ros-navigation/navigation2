@@ -140,6 +140,8 @@ protected:
 
   // Whether to use the astar planner or default dijkstras
   bool use_astar_;
+
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
 };
 
 }  // namespace nav2_navfn_planner
