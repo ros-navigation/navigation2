@@ -10,6 +10,8 @@ ament_add_test(test_bt_navigator
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
     ASTAR=True
+    CONTROLLER=nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
+    PLANNER=nav2_navfn_planner/NavfnPlanner
 )
 
 ament_add_test(test_bt_navigator_with_dijkstra
@@ -24,6 +26,8 @@ ament_add_test(test_bt_navigator_with_dijkstra
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
     ASTAR=False
+    CONTROLLER=dwb_core::DWBLocalPlanner
+    PLANNER=nav2_navfn_planner/NavfnPlanner
 )
 
 ament_add_test(test_bt_navigator_with_groot_monitoring
@@ -39,6 +43,8 @@ ament_add_test(test_bt_navigator_with_groot_monitoring
     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
     ASTAR=False
     GROOT_MONITORING=True
+    CONTROLLER=dwb_core::DWBLocalPlanner
+    PLANNER=nav2_navfn_planner/NavfnPlanner
 )
 
 ament_add_test(test_dynamic_obstacle
@@ -53,6 +59,8 @@ ament_add_test(test_dynamic_obstacle
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
     ASTAR=False
+    CONTROLLER=dwb_core::DWBLocalPlanner
+    PLANNER=nav2_navfn_planner/NavfnPlanner
 )
 
 # ament_add_test(test_multi_robot
@@ -67,4 +75,6 @@ ament_add_test(test_dynamic_obstacle
 #     TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
 #     TEST_SDF=${PROJECT_SOURCE_DIR}/models/turtlebot3_waffle/model.sdf
 #     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
+#     CONTROLLER=dwb_core::DWBLocalPlanner
+#     PLANNER=nav2_navfn_planner/NavfnPlanner
 # )
