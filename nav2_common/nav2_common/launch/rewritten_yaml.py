@@ -106,10 +106,31 @@ class RewrittenYaml(launch.Substitution):
         return resolved_params, resolved_keys
 
     def substitute_params(self, yaml, param_rewrites):
+        # substitute leaf-only parameters
         for key in self.getYamlLeafKeys(yaml):
             if key.key() in param_rewrites:
                 raw_value = param_rewrites[key.key()]
                 key.setValue(self.convert(raw_value))
+
+        # substitute total path parameters
+        yaml_paths = self.pathify(yaml)
+        for path in yaml_paths:
+            if path in param_rewrites:
+                # this is an absolute path (ex. 'key.keyA.keyB.val')
+                rewrite_val = param_rewrites[path]
+                yaml_keys = path.split('.')
+                yaml = self.updateYamlPathVals(yaml, yaml_keys, rewrite_val)
+
+
+    def updateYamlPathVals(self, yaml, yaml_key_list, rewrite_val):
+        for key in yaml_key_list:
+            if key == yaml_key_list[-1]:
+                yaml[key] = rewrite_val
+                break
+            key = yaml_key_list.pop(0)
+            yaml[key] = self.updateYamlPathVals(yaml.get(key, {}), yaml_key_list, rewrite_val)
+
+        return yaml
 
     def substitute_keys(self, yaml, key_rewrites):
         if len(key_rewrites) != 0:
@@ -128,6 +149,24 @@ class RewrittenYaml(launch.Substitution):
                 yield DictItemReference(yamlData, key)
         except AttributeError:
             return
+
+    def pathify(self, d, p=None, paths=None, joinchar='.'):
+        if p is None:
+            paths = {}
+            self.pathify(d, "", paths, joinchar=joinchar)
+            return paths
+        pn = p
+        if p != "":
+            pn += '.'
+        if isinstance(d, dict):
+            for k in d:
+                v = d[k]
+                self.pathify(v, pn + k, paths, joinchar=joinchar)
+        elif isinstance(d, list):
+            for idx, e in enumerate(d):
+                self.pathify(e, pn + str(idx), paths, joinchar=joinchar)
+        else:
+            paths[p] = d
 
     def convert(self, text_value):
         if self.__convert_types:
