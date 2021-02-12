@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <boost/filesystem.hpp>
+
 #include <vector>
 #include <string>
 #include <fstream>
@@ -34,6 +36,7 @@
 #include "server_handler.hpp"
 
 using namespace std::chrono_literals;
+namespace fs = boost::filesystem;
 
 class BehaviorTreeHandler
 {
@@ -118,7 +121,12 @@ public:
     blackboard->set<geometry_msgs::msg::PoseStamped>("goal", goal);  // NOLINT
 
     // Create the Behavior Tree from the XML input
-    tree = factory_.createTreeFromText(xml_string, blackboard);
+    try {
+      tree = factory_.createTreeFromText(xml_string, blackboard);
+    } catch (BT::RuntimeError & exp) {
+      RCLCPP_ERROR(node_->get_logger(), "%s: %s", filename.c_str(), exp.what());
+      return false;
+    }
 
     return true;
   }
@@ -178,6 +186,20 @@ protected:
 std::shared_ptr<ServerHandler> BehaviorTreeTestFixture::server_handler = nullptr;
 std::shared_ptr<BehaviorTreeHandler> BehaviorTreeTestFixture::bt_handler = nullptr;
 
+TEST_F(BehaviorTreeTestFixture, TestBTXMLFiles)
+{
+  fs::path root = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  root /= "behavior_trees/";
+
+  if (boost::filesystem::exists(root) && boost::filesystem::is_directory(root)) {
+    for (auto const & entry : boost::filesystem::recursive_directory_iterator(root)) {
+      if (boost::filesystem::is_regular_file(entry) && entry.path().extension() == ".xml") {
+        EXPECT_EQ(bt_handler->loadBehaviorTree(entry.path().string()), true);
+      }
+    }
+  }
+}
+
 /**
  * Test scenario:
  *
@@ -187,10 +209,10 @@ std::shared_ptr<BehaviorTreeHandler> BehaviorTreeTestFixture::bt_handler = nullp
 TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
 {
   // Load behavior tree from file
-  std::string bt_file =
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator") +
-    "/behavior_trees/navigate_w_replanning_and_recovery.xml";
-  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file), true);
+  fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  bt_file /= "behavior_trees/";
+  bt_file /= "navigate_w_replanning_and_recovery.xml";
+  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
 
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
@@ -229,10 +251,10 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
 TEST_F(BehaviorTreeTestFixture, TestAllFailure)
 {
   // Load behavior tree from file
-  std::string bt_file =
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator") +
-    "/behavior_trees/navigate_w_replanning_and_recovery.xml";
-  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file), true);
+  fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  bt_file /= "behavior_trees/";
+  bt_file /= "navigate_w_replanning_and_recovery.xml";
+  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
 
   // Set all action server to fail the first 100 times
   std::vector<std::pair<int, int>> failureRange;
@@ -285,10 +307,10 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
 TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
 {
   // Load behavior tree from file
-  std::string bt_file =
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator") +
-    "/behavior_trees/navigate_w_replanning_and_recovery.xml";
-  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file), true);
+  fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  bt_file /= "behavior_trees/";
+  bt_file /= "navigate_w_replanning_and_recovery.xml";
+  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
 
   // Set ComputePathToPose and FollowPath action servers to fail for the first action
   std::vector<std::pair<int, int>> failureRange;
@@ -339,10 +361,10 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
 TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
 {
   // Load behavior tree from file
-  std::string bt_file =
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator") +
-    "/behavior_trees/navigate_w_replanning_and_recovery.xml";
-  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file), true);
+  fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  bt_file /= "behavior_trees/";
+  bt_file /= "navigate_w_replanning_and_recovery.xml";
+  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
 
   // Set ComputePathToPose action server to fail for the first action
   std::vector<std::pair<int, int>> plannerFailureRange;
@@ -437,10 +459,10 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
 TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
 {
   // Load behavior tree from file
-  std::string bt_file =
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator") +
-    "/behavior_trees/navigate_w_replanning_and_recovery.xml";
-  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file), true);
+  fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  bt_file /= "behavior_trees/";
+  bt_file /= "navigate_w_replanning_and_recovery.xml";
+  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
 
   // Set ComputePathToPose action server to fail for the first 2 actions
   std::vector<std::pair<int, int>> plannerFailureRange;
@@ -526,10 +548,10 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
 TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
 {
   // Load behavior tree from file
-  std::string bt_file =
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator") +
-    "/behavior_trees/navigate_w_replanning_and_recovery.xml";
-  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file), true);
+  fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  bt_file /= "behavior_trees/";
+  bt_file /= "navigate_w_replanning_and_recovery.xml";
+  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
 
   // Set ComputePathToPose action server to fail for the first 2 actions
   std::vector<std::pair<int, int>> plannerFailureRange;
