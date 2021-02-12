@@ -119,7 +119,7 @@ Status Spin::onCycleUpdate()
   action_server_->publish_feedback(feedback_);
 
   double remaining_yaw = abs(cmd_yaw_) - abs(relative_yaw_);
-  if (remaining_yaw <= 0) {
+  if (remaining_yaw < 1e-6) {
     stopRobot();
     return Status::SUCCEEDED;
   }
@@ -138,7 +138,7 @@ Status Spin::onCycleUpdate()
   if (!isCollisionFree(relative_yaw_, cmd_vel.get(), pose2d)) {
     stopRobot();
     RCLCPP_WARN(logger_, "Collision Ahead - Exiting Spin");
-    return Status::SUCCEEDED;
+    return Status::FAILED;
   }
 
   vel_pub_->publish(std::move(cmd_vel));

@@ -36,8 +36,16 @@ SpinRecoveryTester::SpinRecoveryTester()
 {
   node_ = rclcpp::Node::make_shared("spin_recovery_test");
 
+
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
+  if (std::getenv("MAKE_FAKE_COSTMAP") != NULL) {
+    // if this variable is set, make a fake costmap
+    make_fake_costmap_ = true;
+  } else {
+    make_fake_costmap_ = false;
+  }
 
   client_ptr_ = rclcpp_action::create_client<Spin>(
     node_->get_node_base_interface(),
@@ -48,6 +56,8 @@ SpinRecoveryTester::SpinRecoveryTester()
 
   publisher_ =
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
+  fake_costmap_publisher_ =
+    node_->create_publisher<nav2_msgs::msg::Costmap>("local_costmap/costmap_raw", 10);
 
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
@@ -67,12 +77,15 @@ void SpinRecoveryTester::activate()
     throw std::runtime_error("Trying to activate while already active");
     return;
   }
-
-  while (!initial_pose_received_) {
-    RCLCPP_WARN(node_->get_logger(), "Initial pose not received");
-    sendInitialPose();
-    std::this_thread::sleep_for(100ms);
-    rclcpp::spin_some(node_);
+  if (!make_fake_costmap_) {
+    while (!initial_pose_received_) {
+      RCLCPP_WARN(node_->get_logger(), "Initial pose not received");
+      sendInitialPose();
+      std::this_thread::sleep_for(100ms);
+      rclcpp::spin_some(node_);
+    }
+  } else {
+    sendFakeOdom(0.0);
   }
 
   // Wait for lifecycle_manager_navigation to activate recoveries_server
@@ -114,10 +127,18 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   // Sleep to let recovery server be ready for serving in multiple runs
   std::this_thread::sleep_for(5s);
 
+  if (make_fake_costmap_) {
+    sendFakeOdom(0.0);
+  }
+
   auto goal_msg = Spin::Goal();
   goal_msg.target_yaw = target_yaw;
 
-  RCLCPP_INFO(this->node_->get_logger(), "Sending goal");
+  // Intialize fake costmap
+  if (make_fake_costmap_) {
+    sendFakeCostmap(target_yaw);
+    sendFakeOdom(0.0);
+  }
 
   geometry_msgs::msg::PoseStamped initial_pose;
   if (!nav2_util::getCurrentPose(initial_pose, *tf_buffer_, "odom")) {
@@ -125,7 +146,11 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     return false;
   }
   RCLCPP_INFO(node_->get_logger(), "Found current robot pose");
-
+  RCLCPP_INFO(
+    node_->get_logger(),
+    "Init Yaw is %lf",
+    fabs(tf2::getYaw(initial_pose.pose.orientation)));
+  RCLCPP_INFO(node_->get_logger(), "Before sending goal");
   auto goal_handle_future = client_ptr_->async_send_goal(goal_msg);
 
   if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
@@ -145,6 +170,26 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   auto result_future = client_ptr_->async_get_result(goal_handle);
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for result");
+  rclcpp::sleep_for(std::chrono::milliseconds(1000));
+
+  if (make_fake_costmap_) {  // if we are faking the costmap, we will fake success.
+    sendFakeOdom(0.0);
+    sendFakeCostmap(target_yaw);
+    RCLCPP_INFO(node_->get_logger(), "target_yaw %lf", target_yaw);
+    // Slowly increment command yaw by increment to simulate the robot slowly spinning into place
+    float step_size = tolerance / 4.0;
+    for (float command_yaw = 0.0;
+      abs(command_yaw) < abs(target_yaw);
+      command_yaw = command_yaw + step_size)
+    {
+      sendFakeOdom(command_yaw);
+      sendFakeCostmap(target_yaw);
+      rclcpp::sleep_for(std::chrono::milliseconds(1));
+    }
+    sendFakeOdom(target_yaw);
+    sendFakeCostmap(target_yaw);
+    RCLCPP_INFO(node_->get_logger(), "After sending goal");
+  }
   if (rclcpp::spin_until_future_complete(node_, result_future) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
@@ -184,12 +229,46 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   if (fabs(dyaw) > tolerance) {
     RCLCPP_ERROR(
       node_->get_logger(),
+      "Init Yaw is %lf (tolerance %lf)",
+      fabs(tf2::getYaw(initial_pose.pose.orientation)), tolerance);
+    RCLCPP_ERROR(
+      node_->get_logger(),
+      "Current Yaw is %lf (tolerance %lf)",
+      fabs(tf2::getYaw(current_pose.pose.orientation)), tolerance);
+    RCLCPP_ERROR(
+      node_->get_logger(),
       "Angular distance from goal is %lf (tolerance %lf)",
       fabs(dyaw), tolerance);
     return false;
   }
 
   return true;
+}
+
+void SpinRecoveryTester::sendFakeCostmap(float angle)
+{
+  nav2_msgs::msg::Costmap fake_costmap;
+
+  fake_costmap.header.frame_id = "odom";
+  fake_costmap.header.stamp = rclcpp::Time();
+  fake_costmap.metadata.layer = "master";
+  fake_costmap.metadata.resolution = .1;
+  fake_costmap.metadata.size_x = 100;
+  fake_costmap.metadata.size_y = 100;
+  fake_costmap.metadata.origin.position.x = 0;
+  fake_costmap.metadata.origin.position.y = 0;
+  fake_costmap.metadata.origin.orientation.w = 1.0;
+  float costmap_val = 0;
+  for (int ix = 0; ix < 100; ix++) {
+    for (int iy = 0; iy < 100; iy++) {
+      if (abs(angle) > M_PI_2f32) {
+        // fake obstacles in the way so we get failure due to potential collision
+        costmap_val = 100;
+      }
+      fake_costmap.data.push_back(costmap_val);
+    }
+  }
+  fake_costmap_publisher_->publish(fake_costmap);
 }
 
 void SpinRecoveryTester::sendInitialPose()
@@ -215,6 +294,25 @@ void SpinRecoveryTester::sendInitialPose()
   RCLCPP_INFO(node_->get_logger(), "Sent initial pose");
 }
 
+void SpinRecoveryTester::sendFakeOdom(float angle)
+{
+  geometry_msgs::msg::TransformStamped transformStamped;
+
+  transformStamped.header.stamp = rclcpp::Time();
+  transformStamped.header.frame_id = "odom";
+  transformStamped.child_frame_id = "base_link";
+  transformStamped.transform.translation.x = 0.0;
+  transformStamped.transform.translation.y = 0.0;
+  transformStamped.transform.translation.z = 0.0;
+  tf2::Quaternion q;
+  q.setRPY(0, 0, angle);
+  transformStamped.transform.rotation.x = q.x();
+  transformStamped.transform.rotation.y = q.y();
+  transformStamped.transform.rotation.z = q.z();
+  transformStamped.transform.rotation.w = q.w();
+
+  tf_broadcaster_->sendTransform(transformStamped);
+}
 void SpinRecoveryTester::amclPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
 {
