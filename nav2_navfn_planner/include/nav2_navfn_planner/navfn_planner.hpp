@@ -87,7 +87,7 @@ public:
 
 protected:
   /**
-   * @brief // Compute a plan given start and goal poses, provided in global world frame.
+   * @brief Compute a plan given start and goal poses, provided in global world frame.
    * @param start Start pose
    * @param goal Goal pose
    * @param tolerance Relaxation constraint in x and y
