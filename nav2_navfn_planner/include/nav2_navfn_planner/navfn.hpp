@@ -219,6 +219,10 @@ public:
    */
   void updateCellAstar(int n);
 
+  /**
+   * @brief  Set up navigation potential arrays for new propagation
+   * @param keepit whether or not use COST_NEUTRAL
+   */
   void setupNavFn(bool keepit = false);
 
   /**
@@ -253,7 +257,13 @@ public:
    */
   int calcPath(int n, int * st = NULL);
 
+  /**
+   * @brief  Calculate gradient at a cell
+   * @param n Cell number <n>
+   * @return float norm
+   */
   float gradCell(int n);  /**< calculates gradient at cell <n>, returns norm */
+
   float pathStep;  /**< step size for following gradient */
 
   /** display callback */
