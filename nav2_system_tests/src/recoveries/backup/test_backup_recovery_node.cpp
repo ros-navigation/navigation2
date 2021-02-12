@@ -72,10 +72,9 @@ TEST_P(BackupRecoveryTestFixture, testBackupRecovery)
   success = backup_recovery_tester->defaultBackupRecoveryTest(target_dist, tolerance);
 
   // if intentionally backing into an obstacle, should fail.
-  // TODO(stevemacenski): uncomment this once note below completed.
-  // if (target_dist < -1.0) {
-  //   success = !success;
-  // }
+  if (target_dist < -0.1) {
+    success = !success;
+  }
 
   EXPECT_EQ(true, success);
 }
@@ -89,7 +88,7 @@ INSTANTIATE_TEST_SUITE_P(
   BackupRecoveryTests,
   BackupRecoveryTestFixture,
   ::testing::Values(
-    std::make_tuple(-0.1, 0.1),
+    std::make_tuple(-0.05, 0.01),
     std::make_tuple(-0.2, 0.1),
     std::make_tuple(-2.0, 0.1)),
   testNameGenerator);

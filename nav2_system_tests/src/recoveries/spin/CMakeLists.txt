@@ -21,3 +21,14 @@ ament_add_test(test_spin_recovery
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
 )
+
+ament_add_test(test_spin_recovery_fake
+  GENERATE_RESULT_FOR_RETURN_CODE_ZERO
+  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_spin_recovery_fake_launch.py"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+  TIMEOUT 180
+  ENV
+    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map_circular.yaml
+    TEST_EXECUTABLE=$<TARGET_FILE:${test_spin_recovery_exec}>
+    MAKE_FAKE_COSTMAP=true
+)
