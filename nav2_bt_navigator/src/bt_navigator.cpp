@@ -275,8 +275,22 @@ BtNavigator::navigateToPose()
       geometry_msgs::msg::PoseStamped goal_pose;
       blackboard_->get("goal", goal_pose);
 
+      // Get current path points
+      nav_msgs::msg::Path current_path;
+      blackboard_->get("path", current_path);
+
+      // Calculate distance on the path
+
+      // Get current speed
+
+      // Calculate estimated time taken to goal
+
+      // TODO (Deepak): Update this to add path distance computation
       feedback_msg->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
         feedback_msg->current_pose.pose, goal_pose.pose);
+
+      // feedback_msg->estimated_navigation_time_remaining = nav2_util::geometry_utils::
+      //   estimate_navigation_time_remaining(distance, current_velocity);
 
       int recovery_count = 0;
       blackboard_->get<int>("number_recoveries", recovery_count);
