@@ -52,7 +52,7 @@ public:
 
   /**
    * @brief Returns the coordinates of an index in the map
-   * @param index 
+   * @param index
    * @param map_width Width of the map (in cells)
    * @return The coordinates corresponding to the given index
    */

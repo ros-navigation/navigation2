@@ -38,7 +38,7 @@ LocalizationServer::LocalizationServer()
     "nav2_localization::MCLSolver2d"}
 {
   RCLCPP_INFO(get_logger(), "Creating localization server");
-  
+
   declare_parameter("sample_motion_model_id", default_sample_motion_model_id_);
   declare_parameter("matcher2d_id", default_matcher2d_id_);
   declare_parameter("solver_id", default_solver_id_);
@@ -266,51 +266,52 @@ LocalizationServer::scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr s
 {
   // Since the sensor data is continually being published by the simulator or robot,
   // we don't want our callbacks to fire until we're in the active state
-  if ((!get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) || (!initial_pose_set_)) {return;}
-  
+  if ((!get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) ||
+    (!initial_pose_set_)) {return;}
+
   geometry_msgs::msg::TransformStamped odom_to_base_msg;
   try {
-      odom_to_base_msg = tf_buffer_->lookupTransform(
-        odom_frame_id_,
-        base_frame_id_,
-        scan->header.stamp,
-        transform_tolerance_);
+    odom_to_base_msg = tf_buffer_->lookupTransform(
+      odom_frame_id_,
+      base_frame_id_,
+      scan->header.stamp,
+      transform_tolerance_);
   } catch (const tf2::TransformException & e) {
-      RCLCPP_ERROR(get_logger(), "%s", e.what());
-      return;
+    RCLCPP_ERROR(get_logger(), "%s", e.what());
+    return;
   }
-  
+
   // TODO(unassigned): should this run only once?
   geometry_msgs::msg::TransformStamped sensor_pose;
   try {
-      sensor_pose = tf_buffer_->lookupTransform(
-        base_frame_id_,
-        scan->header.frame_id,                 
-        scan->header.stamp,
-        transform_tolerance_);
+    sensor_pose = tf_buffer_->lookupTransform(
+      base_frame_id_,
+      scan->header.frame_id,
+      scan->header.stamp,
+      transform_tolerance_);
   } catch (const tf2::TransformException & e) {
-      RCLCPP_ERROR(get_logger(), "%s", e.what());
-      return;
+    RCLCPP_ERROR(get_logger(), "%s", e.what());
+    return;
   }
   matcher2d_->setSensorPose(sensor_pose);
-  
+
   // The estimated robot's pose in the global frame
   geometry_msgs::msg::TransformStamped map_to_base_msg =
     solver_->solve(odom_to_base_msg, scan);
-  
+
   tf2::Stamped<tf2::Transform> odom_to_base_tf;
   tf2::fromMsg(odom_to_base_msg, odom_to_base_tf);
-  
+
   tf2::Stamped<tf2::Transform> map_to_base_tf;
   tf2::fromMsg(map_to_base_msg, map_to_base_tf);
-  
+
   geometry_msgs::msg::TransformStamped map_to_odom_msg;
   map_to_odom_msg.transform = tf2::toMsg(odom_to_base_tf.inverseTimes(map_to_base_tf));
   map_to_odom_msg.header.stamp =
     tf2_ros::toMsg(tf2_ros::fromMsg(scan->header.stamp) + transform_tolerance_);
   map_to_odom_msg.header.frame_id = map_frame_id_;
   map_to_odom_msg.child_frame_id = odom_frame_id_;
-  
+
   tf_broadcaster_->sendTransform(map_to_odom_msg);
 }
 

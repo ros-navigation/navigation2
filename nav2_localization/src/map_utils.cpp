@@ -29,7 +29,7 @@ std::pair<int, int> MapUtils::worldToMapCoord(
 }
 int MapUtils::mapCoordToIndex(const uint32_t & x, const uint32_t & y, const uint32_t & map_width)
 {
-    return floor(x + y * map_width);
+  return floor(x + y * map_width);
 }
 std::pair<uint32_t, uint32_t> MapUtils::mapIndexToCoord(
   const int & index,
