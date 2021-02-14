@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <random>
 #include <memory>  // For make_shared<>
 #include "nav2_localization/nav2_localization.hpp"
 #include "nav2_util/string_utils.hpp"
@@ -215,7 +216,8 @@ LocalizationServer::initPlugins()
     exit(-1);
   }
 
-  sample_motion_model_->configure(node);
+  std::random_device rand_device;
+  sample_motion_model_->configure(node, rand_device());
 
   try {
     matcher2d_type_ = nav2_util::get_plugin_type_param(node, matcher2d_id_);

@@ -14,6 +14,7 @@
 
 #include <cmath>
 #include <random>
+#include <memory>
 #include <algorithm>
 
 #include "pluginlib/class_list_macros.hpp"
@@ -74,13 +75,11 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
     fabs(AngleUtils::angleDiff(delta_rot_2, 0.0)),
     fabs(AngleUtils::angleDiff(delta_rot_2, M_PI)));
 
-  std::random_device device;
-  std::mt19937 generator(device());
-
   // Noise in the first rotation
   std::normal_distribution<double> delta_rot_1_noise_dist(0.0,
     sqrt(alpha1_ * pow(delta_rot_1_noise, 2) + alpha2_ * pow(delta_trans, 2)));
-  double delta_rot_1_hat = AngleUtils::angleDiff(delta_rot_1, delta_rot_1_noise_dist(generator));
+  double delta_rot_1_hat =
+    AngleUtils::angleDiff(delta_rot_1, delta_rot_1_noise_dist(*rand_num_gen_));
 
   // Noise in the translation
   std::normal_distribution<double> delta_trans_noise_dist(
@@ -89,13 +88,14 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
       alpha3_ * pow(delta_trans, 2) +
       alpha4_ * (pow(delta_rot_1_noise, 2) +
       pow(delta_rot_2_noise, 2))));
-  double delta_trans_hat = delta_trans - delta_trans_noise_dist(generator);
+  double delta_trans_hat = delta_trans - delta_trans_noise_dist(*rand_num_gen_);
 
   // Noise in the second rotation
   std::normal_distribution<double> delta_rot_2_noise_dist(
     0.0,
     sqrt(alpha1_ * pow(delta_rot_2_noise, 2) + alpha2_ * pow(delta_trans, 2)));
-  double delta_rot_2_hat = AngleUtils::angleDiff(delta_rot_2, delta_rot_2_noise_dist(generator));
+  double delta_rot_2_hat =
+    AngleUtils::angleDiff(delta_rot_2, delta_rot_2_noise_dist(*rand_num_gen_));
 
   geometry_msgs::msg::TransformStamped most_likely_pose;
   most_likely_pose.transform.translation.x = x + delta_trans_hat * cos(theta + delta_rot_1_hat);
@@ -109,7 +109,9 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
   return most_likely_pose;
 }
 
-void DiffDriveOdomMotionModel::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
+void DiffDriveOdomMotionModel::configure(
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const unsigned int & rand_num_gen_seed)
 {
   node_ = node;
 
@@ -118,15 +120,17 @@ void DiffDriveOdomMotionModel::configure(const rclcpp_lifecycle::LifecycleNode::
   node_->declare_parameter("alpha3", 0.2);
   node_->declare_parameter("alpha4", 0.2);
 
+  rand_num_gen_ = std::make_shared<std::mt19937>(rand_num_gen_seed);
+}
+
+void DiffDriveOdomMotionModel::activate()
+{
   // set noise parameters
   node_->get_parameter("alpha1", alpha1_);
   node_->get_parameter("alpha2", alpha2_);
   node_->get_parameter("alpha3", alpha3_);
   node_->get_parameter("alpha4", alpha4_);
 }
-
-void DiffDriveOdomMotionModel::activate()
-{}
 
 void DiffDriveOdomMotionModel::deactivate()
 {}

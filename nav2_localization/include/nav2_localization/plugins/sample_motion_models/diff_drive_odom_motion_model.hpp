@@ -15,6 +15,9 @@
 #ifndef NAV2_LOCALIZATION__PLUGINS__SAMPLE_MOTION_MODELS__DIFF_DRIVE_ODOM_MOTION_MODEL_HPP_
 #define NAV2_LOCALIZATION__PLUGINS__SAMPLE_MOTION_MODELS__DIFF_DRIVE_ODOM_MOTION_MODEL_HPP_
 
+#include <random>
+#include <memory>
+
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -30,7 +33,9 @@ public:
     const geometry_msgs::msg::TransformStamped & curr_odom,
     const geometry_msgs::msg::TransformStamped & prev_pose) override;
 
-  void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) override;
+  void configure(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    const unsigned int & rand_num_gen_seed) override;
   void activate() override;
   void deactivate() override;
   void cleanup() override;
@@ -41,6 +46,8 @@ private:
   double alpha2_;
   double alpha3_;
   double alpha4_;
+
+  std::shared_ptr<std::mt19937> rand_num_gen_;
 };
 }  // namespace nav2_localization
 
