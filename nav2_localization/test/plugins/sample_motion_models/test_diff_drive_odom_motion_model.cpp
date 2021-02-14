@@ -80,17 +80,14 @@ TEST_F(DiffDriveOdomMotionModelTest, MoveForward)
   double x_bar = 0.0;
   double y_bar = 0.0;
   double theta_bar = 0.0;
-  geometry_msgs::msg::TransformStamped prev_odom = createTransformStampedMsg(
-    x_bar, y_bar, 0.0,
-    theta_bar);
+  geometry_msgs::msg::TransformStamped prev_odom =
+    createTransformStampedMsg(x_bar, y_bar, 0.0, theta_bar);
 
   double x_bar_prime = 1.0;
   double y_bar_prime = 0.0;
   double theta_bar_prime = 0.0;
-  geometry_msgs::msg::TransformStamped curr_odom = createTransformStampedMsg(
-    x_bar_prime,
-    y_bar_prime, 0.0,
-    theta_bar_prime);
+  geometry_msgs::msg::TransformStamped curr_odom =
+    createTransformStampedMsg(x_bar_prime, y_bar_prime, 0.0, theta_bar_prime);
 
   double x = 0.0;
   double y = 0.0;
