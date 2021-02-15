@@ -32,7 +32,7 @@ void ComputePathToPoseAction::on_tick()
 {
   getInput("goal", goal_.pose);
   getInput("planner_id", goal_.planner_id);
-  if (getInput("start_pose", goal_.start_pose)) {
+  if (getInput("start", goal_.start)) {
     goal_.use_start_pose = true;
   }
 }
