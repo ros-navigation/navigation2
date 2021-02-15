@@ -40,6 +40,8 @@
 
 using namespace std::chrono_literals;
 using nav2_util::declare_parameter_if_not_declared;
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
 
 namespace nav2_navfn_planner
 {
@@ -67,8 +69,7 @@ NavfnPlanner::configure(
   costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();
 
-  node_ = parent;
-  auto node = node_.lock();
+  auto node = parent.lock();
   clock_ = node->get_clock();
   logger_ = node->get_logger();
 
@@ -89,6 +90,16 @@ NavfnPlanner::configure(
   planner_ = std::make_unique<NavFn>(
     costmap_->getSizeInCellsX(),
     costmap_->getSizeInCellsY());
+
+  // Setup callback for changes to parameters.
+  parameters_client_ = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(),
+    node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  parameter_event_sub_ = parameters_client_->on_parameter_event(
+    std::bind(&NavfnPlanner::on_parameter_event_callback, this, _1));
 }
 
 void
@@ -123,12 +134,6 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point a = steady_clock::now();
 #endif
-
-  // Refresh parameter
-  auto node = node_.lock();
-  node->get_parameter(name_ + ".tolerance", tolerance_);
-  node->get_parameter(name_ + ".use_astar", use_astar_);
-  node->get_parameter(name_ + ".allow_unknown", allow_unknown_);
 
   // Update planner based on the new costmap size
   if (isPlannerOutOfDate()) {
@@ -466,7 +471,31 @@ NavfnPlanner::clearRobotCell(unsigned int mx, unsigned int my)
   costmap_->setCost(mx, my, nav2_costmap_2d::FREE_SPACE);
 }
 
-}  // namespace nav2_navfn_planner
+void
+NavfnPlanner::on_parameter_event_callback(
+  const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+{
+  for (auto & changed_parameter : event->changed_parameters) {
+    const auto & type = changed_parameter.value.type;
+    const auto & name = changed_parameter.name;
+    const auto & value = changed_parameter.value;
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == name_ + ".tolerance") {
+        tolerance_ = value.double_value;
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == name_ + ".use_astar") {
+        use_astar_ = value.bool_value;
+      } else if (name == name_ + ".allow_unknown") {
+        allow_unknown_ = value.bool_value;
+      }
+    }
+  }
+}
+
+}
+// namespace nav2_navfn_planner
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_navfn_planner::NavfnPlanner, nav2_core::GlobalPlanner)

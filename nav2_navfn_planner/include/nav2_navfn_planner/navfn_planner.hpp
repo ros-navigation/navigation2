@@ -141,7 +141,10 @@ protected:
   // Whether to use the astar planner or default dijkstras
   bool use_astar_;
 
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  // Subscription for parameter change
+  rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
+  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
+  void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
 };
 
 }  // namespace nav2_navfn_planner
