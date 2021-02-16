@@ -76,16 +76,12 @@ TEST(AngleUtilsTest, DiffOnTheEdgeOfRange)
   double a = 2 * M_PI;
   double b = M_PI;
 
-  // valid range is [-pi, pi) so wraps around
-  double expected = -M_PI;
+  double expected = M_PI;
   double actual = AngleUtils::angleDiff(a, b);
   EXPECT_NEAR(expected, actual, EPSILON);
 
-  a = M_PI;
-  b = 2 * M_PI;
-
   expected = -M_PI;
-  actual = AngleUtils::angleDiff(a, b);
+  actual = AngleUtils::angleDiff(b, a);
   EXPECT_NEAR(expected, actual, EPSILON);
 }
 
