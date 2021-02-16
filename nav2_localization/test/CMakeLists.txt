@@ -18,3 +18,8 @@ ament_target_dependencies(simple_test
 target_link_libraries(simple_test
   ${library_name}
 )
+
+ament_add_gtest(test_angle_utils
+  test_angle_utils.cpp
+  ../src/angle_utils.cpp
+)

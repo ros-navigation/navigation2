@@ -22,9 +22,9 @@ double AngleUtils::angleDiff(const double & a, const double & b)
   double angle = a - b;
   angle = fmod(angle, 2.0 * M_PI);  // Limit the angle from 0 to 2*Pi
 
-  if (angle <= M_PI && angle >= -M_PI) {  // Angle within the desired limit
+  if (angle < M_PI && angle >= -M_PI) {  // Angle within the desired limit
     return angle;
-  } else if (angle > M_PI) {
+  } else if (angle >= M_PI) {
     return angle - 2.0 * M_PI;
   } else {
     return angle + 2.0 * M_PI;
