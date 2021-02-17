@@ -1,11 +1,11 @@
-#Nav2 Theta Star Planner
+# Nav2 Theta Star Planner
 
 The Theta Star Planner is a global planning plugin meant to be used with the Nav2 Planner Server.
 The `nav2_theta_star_planner` implements a highly optimized version of the Theta Star Planner (specifically the [Lazy Theta\* P variant](http://idm-lab.org/bib/abstracts/papers/aaai10b.pdf)) meant 
 to plan any-angle paths using A\*. Further improvements to the path quality were made by taking into account the costs from a 2D costmap. 
 The planner supports differential-drive and omni-directional robots.
 
-##Features
+## Features
 - Allows to tune the path quality from being taut to being smooth (this depends on the resolution of the map)
 - Uses the potential field from the costmap to penalise high cost regions
 - Is well suited for smaller robots of the omni-directional and differential drive kind
@@ -14,7 +14,7 @@ The planner supports differential-drive and omni-directional robots.
 
 TODO(Anshu-man567) : add images and gifs
  
-##Parameters 
+## Parameters 
 
 The parameters of the planner are :
 - ``` .how_many_corners ``` : to choose between 4-connected and 8-connected graph expnasions
