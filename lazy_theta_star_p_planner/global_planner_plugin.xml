@@ -1,5 +1,0 @@
-<library path="lazy_theta_star_p_planner_plugin">
-    <class name="lazyThetaStarP_Planner/LazyThetaStarP_Planner" type="lazyThetaStarP_Planner::LazyThetaStarP_Planner" base_class_type="nav2_core::GlobalPlanner">
-        <description>this is empty</description>
-    </class>
-</library>
