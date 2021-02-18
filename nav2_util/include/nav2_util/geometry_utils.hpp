@@ -63,11 +63,10 @@ inline double euclidean_distance(
   return euclidean_distance(pos1.pose, pos2.pose);
 }
 
-double calculate_distance_to_goal(const nav_msgs::msg::Path& path)
+double calculate_distance_to_goal(const nav_msgs::msg::Path & path)
 {
   double path_length = 0.0;
-  for (size_t idx = 0; idx < path.poses.size() - 1; ++idx)
-  {
+  for (size_t idx = 0; idx < path.poses.size() - 1; ++idx) {
     path_length += euclidean_distance(path.poses[idx].pose, path.poses[idx + 1].pose);
   }
   return path_length;

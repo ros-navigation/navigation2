@@ -22,7 +22,7 @@
 #include <vector>
 #include <set>
 
-#include "nav2_util/geometry_utils.hpp"
+// #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
 #include "nav2_bt_navigator/ros_topic_logger.hpp"
@@ -104,7 +104,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     "goal_pose",
     rclcpp::SystemDefaultsQoS(),
     std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
-  
+
   // Odometry smoother object for getting current speed
   odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(client_node_, 0.3);
 
@@ -285,20 +285,17 @@ BtNavigator::navigateToPose()
       blackboard_->get("path", current_path);
 
       // Calculate distance on the path
-      double distance_remaining = nav2_util::geometry_utils::calculate_distance_to_goal(current_path);
+      double distance_remaining =
+        nav2_util::geometry_utils::calculate_distance_to_goal(current_path);
 
-      if (distance_remaining <= transform_tolerance_)
-      {
+      if (distance_remaining <= transform_tolerance_) {
         estimated_navigation_time_remaining_ = rclcpp::Duration::from_seconds(0.0);
-      } 
-      else
-      {
+      } else {
         // Get current speed
         current_linear_speed_ = odom_smoother_->getTwist().linear.x;
 
         // Calculate estimated time taken to goal if speed is higher than 1mm/s
-        if (std::abs(current_linear_speed_) > 0.05)
-        {
+        if (std::abs(current_linear_speed_) > 0.05) {
           estimated_navigation_time_remaining_ =
             rclcpp::Duration::from_seconds(distance_remaining / std::abs(current_linear_speed_));
         }

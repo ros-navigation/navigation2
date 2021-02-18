@@ -16,9 +16,11 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "gtest/gtest.h"
 
 using nav2_util::geometry_utils::euclidean_distance;
+using nav2_util::geometry_utils::calculate_distance_to_goal;
 
 TEST(GeometryUtils, euclidean_distance_point)
 {
@@ -48,4 +50,24 @@ TEST(GeometryUtils, euclidean_distance_pose)
   pose2.position.z = 2.0;
 
   ASSERT_NEAR(euclidean_distance(pose1, pose2), 10.24695, 1e-5);
+}
+
+TEST(GeometryUtils, calculate_distance_to_goal)
+{
+  nav_msgs::msg::Path straight_line_path;
+  size_t nb_path_points = 10;
+  float distance_between_poses = 2.0;
+  float current_x_loc = 0.0;
+
+  for (size_t i = 0; i < nb_path_points; ++i) {
+    geometry_msgs::msg::PoseStamped pose_stamped_msg;
+    pose_stamped_msg.pose.position.x = current_x_loc;
+
+    straight_line_path.poses.push_back(pose_stamped_msg);
+
+    current_x_loc += distance_between_poses;
+  }
+
+  ASSERT_NEAR(calculate_distance_to_goal(straight_line_path),
+    (nb_path_points - 1) * distance_between_poses, 1e-5);
 }
