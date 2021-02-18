@@ -240,6 +240,7 @@ When `controller_plugins`\`progress_checker_plugin`\`goal_checker_plugin` parame
 | `<dwb plugin>`.critics | N/A | List of critic plugins to use |
 | `<dwb plugin>`.default_critic_namespaces | ["dwb_critics"] | Namespaces to load critics in |
 | `<dwb plugin>`.prune_plan | true | Whether to prune the path of old, passed points |
+| `<dwb plugin>`.shorten_transformed_plan | true | Determines whether we will pass the full plan on to the critics |
 | `<dwb plugin>`.prune_distance | 1.0 | Distance (m) to prune backward until |
 | `<dwb plugin>`.debug_trajectory_details | false | Publish debug information |
 | `<dwb plugin>`.trajectory_generator_name | "dwb_plugins::StandardTrajectoryGenerator" | Trajectory generator plugin name |
