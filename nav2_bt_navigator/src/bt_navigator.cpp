@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 #include <set>
+#include <cmath>
 
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -32,7 +33,9 @@ namespace nav2_bt_navigator
 
 BtNavigator::BtNavigator()
 : nav2_util::LifecycleNode("bt_navigator", "", false),
-  start_time_(0)
+  start_time_(0),
+  current_linear_speed_(0.0),
+  estimated_navigation_time_remaining_(rclcpp::Duration::from_seconds(0.0))
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -102,6 +105,9 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     "goal_pose",
     rclcpp::SystemDefaultsQoS(),
     std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
+  
+  // Odometry smoother object for getting current speed
+  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(client_node_, 0.3);
 
   action_server_ = std::make_unique<ActionServer>(
     get_node_base_interface(),
@@ -280,20 +286,35 @@ BtNavigator::navigateToPose()
       blackboard_->get("path", current_path);
 
       // Calculate distance on the path
+      double distance_remaining = nav2_util::geometry_utils::calculate_distance_to_goal(current_path);
 
-      // Get current speed
+      if (distance_remaining <= transform_tolerance_)
+      {
+        estimated_navigation_time_remaining_ = rclcpp::Duration::from_seconds(0.0);
+      } 
+      else
+      {
+        // Get current speed
+        current_linear_speed_ = odom_smoother_->getTwist().linear.x;
 
-      // Calculate estimated time taken to goal
+        // Calculate estimated time taken to goal if speed is higher than 1mm/s
+        if (std::abs(current_linear_speed_) > 0.05)
+        {
+          estimated_navigation_time_remaining_ =
+            rclcpp::Duration::from_seconds(distance_remaining / std::abs(current_linear_speed_));
+        }
+      }
 
-      // TODO (Deepak): Update this to add path distance computation
-      feedback_msg->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
-        feedback_msg->current_pose.pose, goal_pose.pose);
-
-      // feedback_msg->estimated_navigation_time_remaining = nav2_util::geometry_utils::
-      //   estimate_navigation_time_remaining(distance, current_velocity);
+      std::cout << "=============== Current stats ================" << std::endl
+      << "Distance remaining: " << feedback_msg->distance_remaining << std::endl
+      << "Speed: " << current_linear_speed_ << std::endl
+      << "Time remaining: " << estimated_navigation_time_remaining_.seconds() << "." <<
+      estimated_navigation_time_remaining_.nanoseconds() << std::endl;
 
       int recovery_count = 0;
       blackboard_->get<int>("number_recoveries", recovery_count);
+      feedback_msg->distance_remaining = distance_remaining;
+      feedback_msg->estimated_navigation_time_remaining = estimated_navigation_time_remaining_;
       feedback_msg->number_of_recoveries = recovery_count;
       feedback_msg->navigation_time = now() - start_time_;
       action_server_->publish_feedback(feedback_msg);
@@ -347,5 +368,6 @@ BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr
   goal.pose = *pose;
   self_client_->async_send_goal(goal);
 }
+
 
 }  // namespace nav2_bt_navigator

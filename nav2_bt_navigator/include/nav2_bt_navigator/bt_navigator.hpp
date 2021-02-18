@@ -24,6 +24,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "tf2_ros/transform_listener.h"
@@ -130,6 +131,9 @@ protected:
   // Libraries to pull plugins (BT Nodes) from
   std::vector<std::string> plugin_lib_names_;
 
+  // Odometry smoother object
+  std::unique_ptr<nav2_util::OdomSmoother> odom_smoother_;
+
   // A client that we'll use to send a command message to our own task server
   rclcpp_action::Client<Action>::SharedPtr self_client_;
 
@@ -142,6 +146,8 @@ protected:
 
   // Metrics for feedback
   rclcpp::Time start_time_;
+  double current_linear_speed_;
+  rclcpp::Duration estimated_navigation_time_remaining_;
   std::string robot_frame_;
   std::string global_frame_;
   double transform_tolerance_;
