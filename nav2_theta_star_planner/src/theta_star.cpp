@@ -34,7 +34,7 @@ bool ThetaStar::generatePath(std::vector<coordsW> & raw_path)
   addToNodesData(index_generated_);
   double src_g_cost = getTraversalCost(src_.x, src_.y), src_h_cost = getHCost(src_.x, src_.y);
   nodes_data_[curr_id] = {src_.x, src_.y, src_g_cost, src_h_cost,
-						  curr_id, true, src_g_cost + src_h_cost};
+    curr_id, true, src_g_cost + src_h_cost};
   queue_.push({curr_id, (nodes_data_[curr_id].f)});
   addIndex(nodes_data_[curr_id].x, nodes_data_[curr_id].y, index_generated_);
   index_generated_++;
@@ -244,7 +244,7 @@ void ThetaStar::initializePosn(int size_inc)
 
   if (!node_position_.empty()) {
     for (; i < size_x_ * size_y_; i++) {
-	  node_position_[i] = -1;
+      node_position_[i] = -1;
     }
   }
 

@@ -19,51 +19,51 @@ find_package(ament_cmake_gtest REQUIRED)
 nav2_package()
 
 include_directories(
-        include
+  include
 )
 
 set(library_name ${PROJECT_NAME}_plugin)
 
 set(dependencies
-        ament_cmake
-        builtin_interfaces
-        nav2_common
-        nav2_core
-        nav2_costmap_2d
-        nav2_msgs
-        nav2_util
-        pluginlib
-        rclcpp
-        rclcpp_action
-        rclcpp_lifecycle
-        tf2_ros
-        )
+  ament_cmake
+  builtin_interfaces
+  nav2_common
+  nav2_core
+  nav2_costmap_2d
+  nav2_msgs
+  nav2_util
+  pluginlib
+  rclcpp
+  rclcpp_action
+  rclcpp_lifecycle
+  tf2_ros
+  )
 
 
 add_library(${library_name} SHARED
-        src/theta_star.cpp
-        src/theta_star_planner.cpp
-        )
+  src/theta_star.cpp
+  src/theta_star_planner.cpp
+  )
 
-ament_target_dependencies(${library_name}  ${dependencies} )
+ament_target_dependencies(${library_name} ${dependencies})
 
-target_compile_definitions(${library_name}  PUBLIC  "PLUGINLIB_DISABLE_BOOST_FUNCTIONS")
+target_compile_definitions(${library_name} PUBLIC "PLUGINLIB_DISABLE_BOOST_FUNCTIONS")
 
-pluginlib_export_plugin_description_file(nav2_core global_planner_plugin.xml)
+pluginlib_export_plugin_description_file(nav2_core theta_star_planner.xml)
 
 install(TARGETS ${library_name}
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION lib/${PROJECT_NAME}
-        )
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  )
 
 install(DIRECTORY include/
-        DESTINATION include/
-        )
+  DESTINATION include/
+  )
 
-install(FILES global_planner_plugin.xml
-        DESTINATION share/${PROJECT_NAME}
-        )
+install(FILES theta_star_planner.xml
+  DESTINATION share/${PROJECT_NAME}
+  )
 
 
 if (BUILD_TESTING)

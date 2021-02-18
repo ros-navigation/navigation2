@@ -26,58 +26,52 @@ void ThetaStarPlanner::configure(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   planner_ = std::make_unique<theta_star::ThetaStar>();
-  auto node_ = parent.lock();
-  logger_ = node_->get_logger();
-  clock_ = node_->get_clock();
+  auto node = parent.lock();
+  logger_ = node->get_logger();
+  clock_ = node->get_clock();
   name_ = name;
   tf_ = tf;
   planner_->costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();
 
   nav2_util::declare_parameter_if_not_declared(
-	  node_, name_ + ".how_many_corners", rclcpp::ParameterValue(
+    node, name_ + ".how_many_corners", rclcpp::ParameterValue(
       8));
 
-  node_->get_parameter(name_ + ".how_many_corners", planner_->how_many_corners_);
+  node->get_parameter(name_ + ".how_many_corners", planner_->how_many_corners_);
 
   if (planner_->how_many_corners_ != 8 && planner_->how_many_corners_ != 4) {
     planner_->how_many_corners_ = 8;
     RCLCPP_WARN(logger_,
-				"Your value for - .how_many_corners  was overridden, and is now set to 8");
+      "Your value for - .how_many_corners  was overridden, and is now set to 8");
   }
 
   nav2_util::declare_parameter_if_not_declared(
-	  node_, name_ + ".w_euc_cost", rclcpp::ParameterValue(4.0));
-  node_->get_parameter(name_ + ".w_euc_cost", planner_->w_euc_cost_);
+    node, name_ + ".w_euc_cost", rclcpp::ParameterValue(4.0));
+  node->get_parameter(name_ + ".w_euc_cost", planner_->w_euc_cost_);
 
   nav2_util::declare_parameter_if_not_declared(
-	  node_, name_ + ".w_traversal_cost", rclcpp::ParameterValue(6.25));
-  node_->get_parameter(name_ + ".w_traversal_cost", planner_->w_traversal_cost_);
+    node, name_ + ".w_traversal_cost", rclcpp::ParameterValue(6.25));
+  node->get_parameter(name_ + ".w_traversal_cost", planner_->w_traversal_cost_);
 
   nav2_util::declare_parameter_if_not_declared(
-	  node_, name_ + ".w_heuristic_cost", rclcpp::ParameterValue(1.0));
-  node_->get_parameter(name_ + ".w_heuristic_cost", planner_->w_heuristic_cost_);
+    node, name_ + ".w_heuristic_cost", rclcpp::ParameterValue(1.0));
+  node->get_parameter(name_ + ".w_heuristic_cost", planner_->w_heuristic_cost_);
 }
 
 void ThetaStarPlanner::cleanup()
 {
-  RCLCPP_INFO(
-	  logger_, "CleaningUp plugin %s of type nav2_theta_star_planner",
-	  name_.c_str());
+  RCLCPP_INFO(logger_, "CleaningUp plugin %s of type nav2_theta_star_planner", name_.c_str());
 }
 
 void ThetaStarPlanner::activate()
 {
-  RCLCPP_INFO(
-	  logger_, "Activating plugin %s of type nav2_theta_star_planner",
-	  name_.c_str());
+  RCLCPP_INFO(logger_, "Activating plugin %s of type nav2_theta_star_planner", name_.c_str());
 }
 
 void ThetaStarPlanner::deactivate()
 {
-  RCLCPP_INFO(
-	  logger_, "Deactivating plugin %s of type nav2_theta_star_planner",
-	  name_.c_str());
+  RCLCPP_INFO(logger_, "Deactivating plugin %s of type nav2_theta_star_planner", name_.c_str());
 }
 
 nav_msgs::msg::Path ThetaStarPlanner::createPlan(
@@ -87,13 +81,12 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   nav_msgs::msg::Path global_path;
   auto start_time = std::chrono::steady_clock::now();
   setStartAndGoal(start, goal);
-  RCLCPP_INFO(
-	  logger_, "Got the src_ and dst_... (%i, %i) && (%i, %i)",
-	  planner_->src_.x, planner_->src_.y, planner_->dst_.x, planner_->dst_.y);
+  RCLCPP_DEBUG(logger_, "Got the src_ and dst_... (%i, %i) && (%i, %i)",
+    planner_->src_.x, planner_->src_.y, planner_->dst_.x, planner_->dst_.y);
   getPlan(global_path);
   auto stop_time = std::chrono::steady_clock::now();
   auto dur = std::chrono::duration_cast<std::chrono::microseconds>(stop_time - start_time);
-  RCLCPP_INFO(logger_, "the time taken is : %i", dur.count());
+  RCLCPP_DEBUG(logger_, "the time taken is : %i", dur.count());
   return global_path;
 }
 
@@ -102,7 +95,7 @@ void ThetaStarPlanner::getPlan(nav_msgs::msg::Path & global_path)
   std::vector<coordsW> path;
 
   if (isSafeToPlan()) {
-    RCLCPP_ERROR(logger_, "EITHER OF THE START OR GOAL POINTS ARE AN OBSTACLE! ");
+    RCLCPP_ERROR(logger_, "Either of the start or goal pose are an obstacle! ");
     coordsW world{};
     planner_->costmap_->mapToWorld(planner_->src_.x, planner_->src_.y, world.x, world.y);
     path.push_back({world.x, world.y});
@@ -111,10 +104,9 @@ void ThetaStarPlanner::getPlan(nav_msgs::msg::Path & global_path)
     global_path = linearInterpolation(path, planner_->costmap_->getResolution());
     global_path.poses.clear();
   } else if (planner_->generatePath(path)) {
-    RCLCPP_INFO(logger_, "A PATH HAS BEEN GENERATED SUCCESSFULLY");
     global_path = linearInterpolation(path, planner_->costmap_->getResolution());
   } else {
-    RCLCPP_ERROR(logger_, "COULD NOT GENERATE PATH");
+    RCLCPP_ERROR(logger_, "Could not generate path between the given poses");
     global_path.poses.clear();
   }
   path.clear();

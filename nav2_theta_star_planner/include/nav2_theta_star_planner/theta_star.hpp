@@ -207,7 +207,7 @@ protected:
 
   void addIndex(const int & cx, const int & cy, const int & id_this)
   {
-	node_position_[size_x_ * cy + cx] = id_this;
+    node_position_[size_x_ * cy + cx] = id_this;
   }
 
   void getIndex(const int & cx, const int & cy, int & id_this)
@@ -230,7 +230,7 @@ protected:
     if (nodes_data_.size() <= static_cast<unsigned int>(id_this)) {
       nodes_data_.push_back({});
     } else {
-	  nodes_data_[id_this] = {};
+      nodes_data_[id_this] = {};
     }
   }
 

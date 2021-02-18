@@ -57,7 +57,7 @@ public:
 protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   rclcpp::Clock::SharedPtr clock_;
-  rclcpp::Logger logger_{rclcpp::get_logger("SmacPlanner2D")};
+  rclcpp::Logger logger_{rclcpp::get_logger("ThetaStarPlanner")};
   std::string global_frame_, name_;
 
   std::unique_ptr<theta_star::ThetaStar> planner_;
