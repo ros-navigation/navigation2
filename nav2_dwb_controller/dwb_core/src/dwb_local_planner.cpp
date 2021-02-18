@@ -94,6 +94,9 @@ void DWBLocalPlanner::configure(
     node, dwb_plugin_name_ + ".transform_tolerance",
     rclcpp::ParameterValue(0.1));
   declare_parameter_if_not_declared(
+    node, dwb_plugin_name_ + ".shorten_transformed_plan",
+    rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
     node, dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
     rclcpp::ParameterValue(true));
 
@@ -111,6 +114,7 @@ void DWBLocalPlanner::configure(
   node->get_parameter(
     dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
     short_circuit_trajectory_evaluation_);
+  node->get_parameter(dwb_plugin_name_ + ".shorten_transformed_plan", shorten_transformed_plan_);
 
   pub_ = std::make_unique<DWBPublisher>(node, dwb_plugin_name_);
   pub_->on_configure();
@@ -474,18 +478,11 @@ DWBLocalPlanner::transformGlobalPlan(
     sq_transform_start_threshold = sq_dist_threshold;
   }
 
-  // Determines whether we will pass the full plan all the way to the nav goal on
-  // to the critics or just a subset of the plan near the robot. True means pass
-  // just a subset. This gives DWB less discretion to decide how it gets to the
-  // nav goal. Instead it is encouraged to try to get on to the path generated
-  // by the global planner.
-  bool shorten_transformed_plan = true;
-
   // Set the maximum distance we'll include points after the part of the part of
   // the plan near the robot (the end of the plan). This determines the amount
   // of the plan passed on to the critics
   double sq_transform_end_threshold;
-  if (shorten_transformed_plan) {
+  if (shorten_transformed_plan_) {
     sq_transform_end_threshold = std::min(sq_dist_threshold, sq_prune_dist);
   } else {
     sq_transform_end_threshold = sq_dist_threshold;
