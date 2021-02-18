@@ -73,7 +73,6 @@ inline double calculate_distance_to_goal(const nav_msgs::msg::Path& path)
   return path_length;
 }
 
-
 }  // namespace geometry_utils
 }  // namespace nav2_util
 

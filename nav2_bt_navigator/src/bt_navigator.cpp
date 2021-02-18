@@ -21,7 +21,6 @@
 #include <utility>
 #include <vector>
 #include <set>
-#include <cmath>
 
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -305,12 +304,6 @@ BtNavigator::navigateToPose()
         }
       }
 
-      std::cout << "=============== Current stats ================" << std::endl
-      << "Distance remaining: " << feedback_msg->distance_remaining << std::endl
-      << "Speed: " << current_linear_speed_ << std::endl
-      << "Time remaining: " << estimated_navigation_time_remaining_.seconds() << "." <<
-      estimated_navigation_time_remaining_.nanoseconds() << std::endl;
-
       int recovery_count = 0;
       blackboard_->get<int>("number_recoveries", recovery_count);
       feedback_msg->distance_remaining = distance_remaining;
@@ -368,6 +361,5 @@ BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr
   goal.pose = *pose;
   self_client_->async_send_goal(goal);
 }
-
 
 }  // namespace nav2_bt_navigator
