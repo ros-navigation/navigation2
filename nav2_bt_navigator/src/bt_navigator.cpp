@@ -22,7 +22,7 @@
 #include <vector>
 #include <set>
 
-// #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
 #include "nav2_bt_navigator/ros_topic_logger.hpp"
@@ -286,7 +286,7 @@ BtNavigator::navigateToPose()
 
       // Calculate distance on the path
       double distance_remaining =
-        nav2_util::geometry_utils::calculate_distance_to_goal(current_path);
+        nav2_util::geometry_utils::calculate_path_length(current_path);
 
       if (distance_remaining <= transform_tolerance_) {
         estimated_navigation_time_remaining_ = rclcpp::Duration::from_seconds(0.0);

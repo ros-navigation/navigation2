@@ -20,7 +20,7 @@
 #include "gtest/gtest.h"
 
 using nav2_util::geometry_utils::euclidean_distance;
-using nav2_util::geometry_utils::calculate_distance_to_goal;
+using nav2_util::geometry_utils::calculate_path_length;
 
 TEST(GeometryUtils, euclidean_distance_point)
 {
@@ -52,7 +52,7 @@ TEST(GeometryUtils, euclidean_distance_pose)
   ASSERT_NEAR(euclidean_distance(pose1, pose2), 10.24695, 1e-5);
 }
 
-TEST(GeometryUtils, calculate_distance_to_goal)
+TEST(GeometryUtils, calculate_path_length)
 {
   nav_msgs::msg::Path straight_line_path;
   size_t nb_path_points = 10;
@@ -68,6 +68,7 @@ TEST(GeometryUtils, calculate_distance_to_goal)
     current_x_loc += distance_between_poses;
   }
 
-  ASSERT_NEAR(calculate_distance_to_goal(straight_line_path),
+  ASSERT_NEAR(
+    calculate_path_length(straight_line_path),
     (nb_path_points - 1) * distance_between_poses, 1e-5);
 }
