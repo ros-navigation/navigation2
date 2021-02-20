@@ -34,7 +34,7 @@ BtNavigator::BtNavigator()
 : nav2_util::LifecycleNode("bt_navigator", "", false),
   start_time_(0),
   current_linear_speed_(0.0),
-  estimated_navigation_time_remaining_(rclcpp::Duration::from_seconds(0.0))
+  estimated_time_remaining_(rclcpp::Duration::from_seconds(0.0))
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -289,14 +289,14 @@ BtNavigator::navigateToPose()
         nav2_util::geometry_utils::calculate_path_length(current_path);
 
       if (distance_remaining <= transform_tolerance_) {
-        estimated_navigation_time_remaining_ = rclcpp::Duration::from_seconds(0.0);
+        estimated_time_remaining_ = rclcpp::Duration::from_seconds(0.0);
       } else {
         // Get current speed
         current_linear_speed_ = odom_smoother_->getTwist().linear.x;
 
-        // Calculate estimated time taken to goal if speed is higher than 1mm/s
-        if (std::abs(current_linear_speed_) > 0.05) {
-          estimated_navigation_time_remaining_ =
+        // Calculate estimated time taken to goal if speed is higher than 5mm/s
+        if (std::abs(current_linear_speed_) > 0.005) {
+          estimated_time_remaining_ =
             rclcpp::Duration::from_seconds(distance_remaining / std::abs(current_linear_speed_));
         }
       }
@@ -304,7 +304,7 @@ BtNavigator::navigateToPose()
       int recovery_count = 0;
       blackboard_->get<int>("number_recoveries", recovery_count);
       feedback_msg->distance_remaining = distance_remaining;
-      feedback_msg->estimated_navigation_time_remaining = estimated_navigation_time_remaining_;
+      feedback_msg->estimated_time_remaining = estimated_time_remaining_;
       feedback_msg->number_of_recoveries = recovery_count;
       feedback_msg->navigation_time = now() - start_time_;
       action_server_->publish_feedback(feedback_msg);

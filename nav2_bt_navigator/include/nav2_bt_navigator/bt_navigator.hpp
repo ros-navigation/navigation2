@@ -147,7 +147,7 @@ protected:
   // Metrics for feedback
   rclcpp::Time start_time_;
   double current_linear_speed_;
-  rclcpp::Duration estimated_navigation_time_remaining_;
+  rclcpp::Duration estimated_time_remaining_;
   std::string robot_frame_;
   std::string global_frame_;
   double transform_tolerance_;
