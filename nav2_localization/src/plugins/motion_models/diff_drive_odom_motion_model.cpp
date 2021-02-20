@@ -33,80 +33,103 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
   const geometry_msgs::msg::TransformStamped & curr_odom,
   const geometry_msgs::msg::TransformStamped & prev_pose)
 {
-  double x_bar = prev_odom.transform.translation.x;
-  double y_bar = prev_odom.transform.translation.y;
-  double theta_bar = tf2::getYaw(prev_odom.transform.rotation);
+  MotionComponents ideal_motion = calculateIdealMotionComponents(prev_odom, curr_odom);
+  MotionComponents noisy_motion = calculateNoisyMotionComponents(ideal_motion);
+  return estimateCurrentPose(prev_pose, noisy_motion);
+}
 
-  double x_bar_prime = curr_odom.transform.translation.x;
-  double y_bar_prime = curr_odom.transform.translation.y;
-  double theta_bar_prime = tf2::getYaw(curr_odom.transform.rotation);
+DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateIdealMotionComponents(
+  const geometry_msgs::msg::TransformStamped & prev,
+  const geometry_msgs::msg::TransformStamped & curr)
+{
+  double x = prev.transform.translation.x;
+  double y = prev.transform.translation.y;
+  double theta = tf2::getYaw(prev.transform.rotation);
 
-  double x = prev_pose.transform.translation.x;
-  double y = prev_pose.transform.translation.y;
-  double theta = tf2::getYaw(prev_pose.transform.rotation);
+  double x_prime = curr.transform.translation.x;
+  double y_prime = curr.transform.translation.y;
+  double theta_prime = tf2::getYaw(curr.transform.rotation);
 
-  double delta_rot_1 = AngleUtils::angleDiff(
-    atan2(y_bar_prime - y_bar, x_bar_prime - x_bar),
-    theta_bar);
+  double rot_1 = AngleUtils::angleDiff(atan2(y_prime - y, x_prime - x), theta);
 
-  if (isnan(delta_rot_1) || isinf(delta_rot_1)) {
-    RCLCPP_ERROR(node_->get_logger(), "delta_rot_1 is NAN or INF");
-    delta_rot_1 = 0.0;      // TODO(unassigned): consider a different value
+  if (isnan(rot_1) || isinf(rot_1)) {
+    RCLCPP_ERROR(node_->get_logger(), "rot_1 is NAN or INF");
+    rot_1 = 0.0;      // TODO(unassigned): consider a different value
   }
 
   // Avoid calculating this angle for very small transitions (e.g. on-the-spot rotation)
-  if (hypot(x_bar_prime - x_bar, y_bar_prime - y_bar) < 0.01) {
-    delta_rot_1 = 0.0;
+  if (hypot(x_prime - x, y_prime - y) < 0.01) {
+    rot_1 = 0.0;
   }
 
-  double delta_trans = hypot(x_bar_prime - x_bar, y_bar_prime - y_bar);
-  double delta_rot_2 = AngleUtils::angleDiff(
-    AngleUtils::angleDiff(theta_bar_prime, theta_bar),
-    delta_rot_1);
+  double trans = hypot(x_prime - x, y_prime - y);
+  double rot_2 = AngleUtils::angleDiff(AngleUtils::angleDiff(theta_prime, theta), rot_1);
 
+  return MotionComponents(rot_1, trans, rot_2);
+}
+
+DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateNoisyMotionComponents(
+  const MotionComponents & ideal)
+{
   // Treat forward and backward motion in the same way.
   // Without this a backward motion would be modelled as a 180 degree rotation, followed by
   // a translation, followed by another 180 degree rotation; as opposed to just one backward
   // translation
-  double delta_rot_1_noise = std::min(
-    fabs(AngleUtils::angleDiff(delta_rot_1, 0.0)),
-    fabs(AngleUtils::angleDiff(delta_rot_1, M_PI)));
-  double delta_rot_2_noise = std::min(
-    fabs(AngleUtils::angleDiff(delta_rot_2, 0.0)),
-    fabs(AngleUtils::angleDiff(delta_rot_2, M_PI)));
+  double ideal_rot_1_normal = std::min(
+    fabs(AngleUtils::angleDiff(ideal.rot_1_, 0.0)),
+    fabs(AngleUtils::angleDiff(ideal.rot_1_, M_PI)));
+  double ideal_rot_2_normal = std::min(
+    fabs(AngleUtils::angleDiff(ideal.rot_2_, 0.0)),
+    fabs(AngleUtils::angleDiff(ideal.rot_2_, M_PI)));
 
   // Noise in the first rotation
-  std::normal_distribution<double> delta_rot_1_noise_dist(0.0,
-    sqrt(alpha1_ * pow(delta_rot_1_noise, 2) + alpha2_ * pow(delta_trans, 2)));
-  double delta_rot_1_hat =
-    AngleUtils::angleDiff(delta_rot_1, delta_rot_1_noise_dist(*rand_num_gen_));
+  std::normal_distribution<double> rot_1_noise_dist(0.0,
+    sqrt(
+      rot_rot_noise_parm_ * pow(ideal_rot_1_normal, 2) +
+      trans_rot_noise_parm_ * pow(ideal.trans_, 2)));
+  double rot_1_hat = AngleUtils::angleDiff(ideal.rot_1_, rot_1_noise_dist(*rand_num_gen_));
 
   // Noise in the translation
-  std::normal_distribution<double> delta_trans_noise_dist(
+  std::normal_distribution<double> trans_noise_dist(
     0.0,
     sqrt(
-      alpha3_ * pow(delta_trans, 2) +
-      alpha4_ * (pow(delta_rot_1_noise, 2) +
-      pow(delta_rot_2_noise, 2))));
-  double delta_trans_hat = delta_trans - delta_trans_noise_dist(*rand_num_gen_);
+      trans_trans_noise_parm_ * pow(ideal.trans_, 2) +
+      rot_trans_noise_param_ * (pow(ideal_rot_1_normal, 2) +
+      pow(ideal_rot_2_normal, 2))));
+  double trans_hat = ideal.trans_ - trans_noise_dist(*rand_num_gen_);
 
   // Noise in the second rotation
-  std::normal_distribution<double> delta_rot_2_noise_dist(
+  std::normal_distribution<double> rot_2_noise_dist(
     0.0,
-    sqrt(alpha1_ * pow(delta_rot_2_noise, 2) + alpha2_ * pow(delta_trans, 2)));
-  double delta_rot_2_hat =
-    AngleUtils::angleDiff(delta_rot_2, delta_rot_2_noise_dist(*rand_num_gen_));
+    sqrt(
+      rot_rot_noise_parm_ * pow(ideal_rot_2_normal, 2) +
+      trans_rot_noise_parm_ * pow(ideal.trans_, 2)));
+  double rot_2_hat = AngleUtils::angleDiff(ideal.rot_2_, rot_2_noise_dist(*rand_num_gen_));
 
-  geometry_msgs::msg::TransformStamped most_likely_pose;
-  most_likely_pose.transform.translation.x = x + delta_trans_hat * cos(theta + delta_rot_1_hat);
-  most_likely_pose.transform.translation.y = y + delta_trans_hat * sin(theta + delta_rot_1_hat);
+  return MotionComponents(rot_1_hat, trans_hat, rot_2_hat);
+}
+
+geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::estimateCurrentPose(
+  const geometry_msgs::msg::TransformStamped & prev_pose,
+  const MotionComponents & noisy_motion_components
+)
+{
+  double x = prev_pose.transform.translation.x;
+  double y = prev_pose.transform.translation.y;
+  double theta = tf2::getYaw(prev_pose.transform.rotation);
+
+  geometry_msgs::msg::TransformStamped estimated_pose;
+  estimated_pose.transform.translation.x =
+    x + noisy_motion_components.trans_ * cos(theta + noisy_motion_components.rot_1_);
+  estimated_pose.transform.translation.y =
+    y + noisy_motion_components.trans_ * sin(theta + noisy_motion_components.rot_1_);
 
   tf2::Quaternion theta_prime_quat;
-  double theta_prime = theta + delta_rot_1_hat + delta_rot_2_hat;
+  double theta_prime = theta + noisy_motion_components.rot_1_ + noisy_motion_components.rot_2_;
   theta_prime_quat.setRPY(0.0, 0.0, theta_prime);
-  most_likely_pose.transform.rotation = tf2::toMsg(theta_prime_quat);
+  estimated_pose.transform.rotation = tf2::toMsg(theta_prime_quat);
 
-  return most_likely_pose;
+  return estimated_pose;
 }
 
 void DiffDriveOdomMotionModel::configure(
@@ -115,22 +138,22 @@ void DiffDriveOdomMotionModel::configure(
 {
   node_ = node;
 
-  node_->declare_parameter("alpha1", 0.2);
-  node_->declare_parameter("alpha2", 0.2);
-  node_->declare_parameter("alpha3", 0.2);
-  node_->declare_parameter("alpha4", 0.2);
+  // set noise parameters
+  node_->get_parameter("rot_rot_noise", rot_rot_noise_parm_);
+  node_->get_parameter("trans_rot_noise", trans_rot_noise_parm_);
+  node_->get_parameter("trans_trans_noise", trans_trans_noise_parm_);
+  node_->get_parameter("rot_trans_noise", rot_trans_noise_param_);
+
+  node_->declare_parameter("rot_rot_noise", 0.2);
+  node_->declare_parameter("trans_rot_noise", 0.2);
+  node_->declare_parameter("trans_trans_noise", 0.2);
+  node_->declare_parameter("rot_trans_noise", 0.2);
 
   rand_num_gen_ = std::make_shared<std::mt19937>(rand_num_gen_seed);
 }
 
 void DiffDriveOdomMotionModel::activate()
-{
-  // set noise parameters
-  node_->get_parameter("alpha1", alpha1_);
-  node_->get_parameter("alpha2", alpha2_);
-  node_->get_parameter("alpha3", alpha3_);
-  node_->get_parameter("alpha4", alpha4_);
-}
+{}
 
 void DiffDriveOdomMotionModel::deactivate()
 {}

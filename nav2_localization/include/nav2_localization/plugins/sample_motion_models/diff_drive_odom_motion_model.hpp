@@ -41,11 +41,30 @@ public:
   void cleanup() override;
 
 private:
+  struct MotionComponents
+  {
+    MotionComponents(const double & rot_1, const double & trans, const double & rot_2)
+    : rot_1_(rot_1), trans_(trans), rot_2_(rot_2) {}
+    double rot_1_, trans_, rot_2_;
+  };
+
+  MotionComponents calculateIdealMotionComponents(
+    const geometry_msgs::msg::TransformStamped & prev,
+    const geometry_msgs::msg::TransformStamped & curr
+  );
+  MotionComponents calculateNoisyMotionComponents(
+    const MotionComponents & ideal
+  );
+  geometry_msgs::msg::TransformStamped estimateCurrentPose(
+    const geometry_msgs::msg::TransformStamped & prev_pose,
+    const MotionComponents & noisy_motion_components
+  );
+
   // Noise parameters
-  double alpha1_;
-  double alpha2_;
-  double alpha3_;
-  double alpha4_;
+  double rot_rot_noise_parm_;
+  double trans_rot_noise_parm_;
+  double trans_trans_noise_parm_;
+  double rot_trans_noise_param_;
 
   std::shared_ptr<std::mt19937> rand_num_gen_;
 };

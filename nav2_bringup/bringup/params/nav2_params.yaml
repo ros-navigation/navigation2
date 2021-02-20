@@ -3,10 +3,10 @@ localization_server:
     use_sim_time: True
     laser_scan_topic: "scan"
     transform_tolerance: 1.0
-    alpha1: 0.2
-    alpha2: 0.2
-    alpha3: 0.2
-    alpha4: 0.2
+    rot_rot_noise: 0.2
+    trans_rot_noise: 0.2
+    trans_trans_noise: 0.2
+    rot_trans_noise: 0.2
     max_likelihood_distace: 2.0
     sigma_hit: 0.2
     max_number_of_beams: 60
