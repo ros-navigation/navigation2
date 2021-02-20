@@ -127,7 +127,7 @@ bool BackUp::isCollisionFree(
   const double diff_dist = abs(command_x_) - distance;
   const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
   geometry_msgs::msg::Pose2D init_pose = pose2d;
-  
+
   while (cycle_count < max_cycle_count) {
     sim_position_change = cmd_vel->linear.x * (cycle_count / cycle_frequency_);
     pose2d.x = init_pose.x + sim_position_change * cos(init_pose.theta);
