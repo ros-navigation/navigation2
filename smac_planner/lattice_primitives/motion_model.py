@@ -1,40 +1,74 @@
 import scipy.interpolate
 import numpy as np
 import math
-from state import State
 
 import matplotlib.pyplot as plt
 
+from helper import normalize_angle
+
+class State:
+    
+    def __init__(self, x, y, yaw, velocity = 0):
+        self.x = x
+        self.y = y
+        self.yaw = yaw
+        self.velocity = velocity
+
+    def to_numpy(self):
+        return np.array([self.x, self.y, self.yaw, self.velocity], dtype=float)
+
+    def arc_distance_estimate(self):
+        return math.hypot(self.x, self.y)
+
+    def __repr__(self):
+        return f'State{self.x, self.y, self.yaw, self.velocity}'
+
+    def copy(self):
+        return State(self.x, self.y, self.yaw, self.velocity)
+
+    def __hash__(self):
+        return hash(f'{self.x} {self.y} {self.yaw}')
+
+    def __eq__(self, rhs): 
+        return self.x == rhs.x and self.y == rhs.y and self.yaw == rhs.yaw and self.velocity == rhs.velocity
+
 class MotionModel:
 
-    def __init__(self, wheel_base=1, traversal_velocity = 1.0, step_distance = 0.1):
+    # TODO: Implement Adaptive sampling steps
+    def __init__(self, config):
 
-        self.wheel_base = wheel_base # metres
-        self.traversal_velocity = traversal_velocity # metres / second
-        self.step_distance = step_distance # metres
+        self.wheel_base = config["MotionModel"]["wheel_base"] # metres
+        self.max_turn_rate = config["MotionModel"]["max_turn_rate"]
+        self.step_distance = config["MotionModel"]["step_distance"] # metres
+        self.sampling_steps = config["MotionModel"]["sampling_steps"]
+    
+    def update(self, state, velocity, delta_heading, delta_time):
 
-    @staticmethod
-    def _normalize_angle(angle):
-        return (angle + math.pi) % (2 * math.pi) - math.pi
+        delta_yaw = state.velocity / self.wheel_base * math.tan(delta_heading) * delta_time
 
-    def update(self, state, delta_heading, delta_time):
+        # Ensure turn rate is not greater than max turn rate
+        if (abs(delta_yaw) > np.deg2rad(self.max_turn_rate)):
+            sign = 1 if delta_yaw >= 0 else -1
+            delta_yaw = np.deg2rad(self.max_turn_rate) * sign
+
         # Uses a bicycle model with center at rear
-        state.velocity = self.traversal_velocity
+        state.velocity = velocity
+
         state.x += state.velocity * math.cos(state.yaw) * delta_time
         state.y += state.velocity * math.sin(state.yaw) * delta_time
-        state.yaw += state.velocity / self.wheel_base * math.tan(delta_heading) * delta_time
-        state.yaw = MotionModel._normalize_angle(state.yaw)
+        state.yaw += delta_yaw
+        state.yaw = normalize_angle(state.yaw)
     
-    def predict_motion(self, s, km, kf):
+    def predict_motion(self, initial_state, arc_length, knot_1, knot_2, total_time):
 
-        s = s if s > 0 else 1
+        arc_length = max(1, abs(arc_length))
+        total_time = max(1, total_time)
 
-        number_of_steps = s / self.step_distance
-
-        total_time = s / self.traversal_velocity
+        number_of_steps = arc_length / self.step_distance
 
         time_points = [0, total_time / 2, total_time]
-        curvature_points = [0, km, kf]
+        curvature_points = [0, knot_1, knot_2]
+        linear_velocity = arc_length / total_time
 
         # Use a spline angular velocity profile
         angular_velocity_profile = scipy.interpolate.UnivariateSpline(time_points, curvature_points, k=2)
@@ -47,13 +81,13 @@ class MotionModel:
 
         delta_time = total_time / number_of_steps
 
-        state = State(0,0,0)
+        state = initial_state.copy()
         xs = [state.x]
         ys = [state.y]
         yaws = [state.yaw]
 
         for delta_heading in heading_inputs:
-            self.update(state, delta_heading, delta_time)
+            self.update(state, linear_velocity, delta_heading, delta_time)
 
             xs.append(state.x)
             ys.append(state.y)
@@ -61,18 +95,19 @@ class MotionModel:
 
         return xs, ys, yaws
 
-    def predict_final_state(self, s, km, kf):
-        
-        s = s if s > 0 else 1
+    def predict_final_state(self, initial_state, arc_length, knot_1, knot_2, total_time):
 
-        number_of_steps = s / self.step_distance
+        arc_length = max(1, abs(arc_length))
+        total_time = max(1, total_time)
 
-        total_time = s / self.traversal_velocity
+        number_of_steps = arc_length / self.step_distance
 
         time_points = [0, total_time / 2, total_time]
-        curvature_points = [0, km, kf]
+        curvature_points = [0, knot_1, knot_2]
 
-        # Use a spline angular velocity profile since scale of inputs is same
+        linear_velocity = arc_length / total_time
+
+        # Use a spline angular velocity profile
         angular_velocity_profile = scipy.interpolate.UnivariateSpline(time_points, curvature_points, k=2)
 
         # Generate sampling points
@@ -83,9 +118,9 @@ class MotionModel:
 
         delta_time = total_time / number_of_steps
 
-        state = State(0,0,0)
-
+        state = initial_state.copy()
+        
         for delta_heading in heading_inputs:
-            self.update(state, delta_heading, delta_time)
+            self.update(state, linear_velocity, delta_heading, delta_time)
 
         return state

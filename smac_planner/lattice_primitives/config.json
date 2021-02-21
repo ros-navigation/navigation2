@@ -1,0 +1,30 @@
+{
+    "output_file": "primitives.csv",
+
+    "MotionModel": {
+        "wheel_base": 0.3,
+        "max_turn_rate": 15,
+        "step_distance": 0.1, 
+        "sampling_steps": [
+            0.2, 
+            0.02, 
+            0.02, 
+            0.2
+        ]
+    },
+
+    "TrajectoryGenerator": {
+        "max_iterations": 50,
+        "distance_threshold": 0.1,
+        "rotation_threshold": 0.1,
+        "verbose_output": true
+    },
+
+    "LatticeGenerator": {
+        "grid_separation": 1
+    },
+
+    "LookupTable": {
+        "file_name": "lookup_table.csv"
+    }
+}
