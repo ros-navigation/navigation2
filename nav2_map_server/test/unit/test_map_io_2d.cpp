@@ -38,6 +38,8 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "test_constants/test_constants.h"
 
+#include "nav_msgs/msg/occupancy_grid.hpp"
+
 #include "nav2_map_server/map_2d/map_io_2d.hpp"
 
 #define TEST_DIR TEST_DIRECTORY

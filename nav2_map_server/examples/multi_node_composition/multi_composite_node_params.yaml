@@ -1,0 +1,16 @@
+map_saver_server_2d_1:
+  ros__parameters:
+    save_map_timeout: 2.0
+    free_thresh_default: 0.25
+    occupancy_thresh_default: 0.65
+map_saver_server_2d_2:
+  ros__parameters:
+    save_map_timeout: 2.0
+    free_thresh_default: 0.25
+    occupancy_thresh_default: 0.5
+map_saver_server_3d_3:
+  ros__parameters:
+    save_map_timeout: 5.0
+map_saver_server_3d_4:
+  ros__parameters:
+    save_map_timeout: 4.0

@@ -20,6 +20,9 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "test_constants/test_constants.h"
 
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+
 #include "nav2_map_server/map_3d/map_io_3d.hpp"
 
 #define TEST_DIR TEST_DIRECTORY

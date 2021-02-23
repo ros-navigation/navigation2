@@ -22,6 +22,7 @@
 #include "nav2_util/lifecycle_service_client.hpp"
 
 #include "nav2_msgs/srv/save_map.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 #include "nav2_map_server/map_2d/map_io_2d.hpp"
 
