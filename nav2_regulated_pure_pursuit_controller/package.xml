@@ -20,8 +20,6 @@
   <depend>pluginlib</depend>
   <depend>tf2</depend>
 
-  <exec_depend>nav2_bringup</exec_depend>
-
   <test_depend>ament_cmake_gtest</test_depend>
 
   <export>
