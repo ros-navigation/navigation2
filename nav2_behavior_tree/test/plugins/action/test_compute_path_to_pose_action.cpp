@@ -42,7 +42,7 @@ protected:
     const auto goal = goal_handle->get_goal();
     auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
     result->path.poses.resize(1);
-    result->path.poses[0].pose.position.x = goal->pose.pose.position.x;
+    result->path.poses[0].pose.position.x = goal->goal.pose.position.x;
     goal_handle->succeed(result);
   }
 };
@@ -136,7 +136,7 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick)
   // the goal should have reached our server
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
-  EXPECT_EQ(action_server_->getCurrentGoal()->pose.pose.position.x, 1.0);
+  EXPECT_EQ(action_server_->getCurrentGoal()->goal.pose.position.x, 1.0);
   EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
 
   // check if returned path is correct
@@ -158,7 +158,7 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick)
   }
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(action_server_->getCurrentGoal()->pose.pose.position.x, -2.5);
+  EXPECT_EQ(action_server_->getCurrentGoal()->goal.pose.position.x, -2.5);
 
   config_->blackboard->get<nav_msgs::msg::Path>("path", path);
   EXPECT_EQ(path.poses.size(), 1u);
