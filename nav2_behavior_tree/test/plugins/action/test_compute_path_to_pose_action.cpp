@@ -165,6 +165,62 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick)
   EXPECT_EQ(path.poses[0].pose.position.x, -2.5);
 }
 
+TEST_F(ComputePathToPoseActionTestFixture, test_tick_use_start)
+{
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root main_tree_to_execute = "MainTree" >
+        <BehaviorTree ID="MainTree">
+            <ComputePathToPose goal="{goal}" start="{start}" use_start=true path="{path}" planner_id="GridBased"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // create new goal and set it on blackboard
+  geometry_msgs::msg::PoseStamped goal;
+  goal.header.stamp = node_->now();
+  goal.pose.position.x = 1.0;
+  config_->blackboard->set("goal", goal);
+
+  // tick until node succeeds
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
+    tree_->rootNode()->executeTick();
+  }
+
+  // the goal should have reached our server
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
+  EXPECT_EQ(action_server_->getCurrentGoal()->goal.pose.position.x, 1.0);
+  EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
+
+  // check if returned path is correct
+  nav_msgs::msg::Path path;
+  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  EXPECT_EQ(path.poses.size(), 1u);
+  EXPECT_EQ(path.poses[0].pose.position.x, 1.0);
+
+  // halt node so another goal can be sent
+  tree_->rootNode()->halt();
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
+
+  // set new goal
+  goal.pose.position.x = -2.5;
+  config_->blackboard->set("goal", goal);
+
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
+    tree_->rootNode()->executeTick();
+  }
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(action_server_->getCurrentGoal()->goal.pose.position.x, -2.5);
+
+  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  EXPECT_EQ(path.poses.size(), 1u);
+  EXPECT_EQ(path.poses[0].pose.position.x, -2.5);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
