@@ -71,8 +71,13 @@ TEST_P(SpinRecoveryTestFixture, testSpinRecovery)
       break;
     }
   }
-
-  EXPECT_EQ(true, success);
+  if (std::getenv("MAKE_FAKE_COSTMAP") != NULL && abs(target_yaw) > M_PI_2f32) {
+    // if this variable is set, make a fake costmap
+    // in the fake spin test, we expect a collision for angles > M_PI_2
+    EXPECT_EQ(false, success);
+  } else {
+    EXPECT_EQ(true, success);
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(
