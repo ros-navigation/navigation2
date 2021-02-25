@@ -494,8 +494,7 @@ NavfnPlanner::on_parameter_event_callback(
   }
 }
 
-}
-// namespace nav2_navfn_planner
+}  // namespace nav2_navfn_planner
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_navfn_planner::NavfnPlanner, nav2_core::GlobalPlanner)
