@@ -1,6 +1,6 @@
 include_directories(${PROJECT_SOURCE_DIR}/test)
 
-# map_server component test
+# map_server_2d component test
 ament_add_gtest_executable(test_map_server_2d_node
   test_map_server_2d_node.cpp
   ${PROJECT_SOURCE_DIR}/test/test_constants.cpp
@@ -24,7 +24,9 @@ ament_add_gtest_executable(test_map_server_3d_node
   test_map_server_3d_node.cpp
   ${PROJECT_SOURCE_DIR}/test/test_constants.cpp
 )
-ament_target_dependencies(test_map_server_3d_node rclcpp nav2_msgs nav2_util)
+ament_target_dependencies(test_map_server_3d_node rclcpp nav2_util nav2_msgs
+  geometry_msgs sensor_msgs
+)
 target_link_libraries(test_map_server_3d_node
   stdc++fs
 )
@@ -43,7 +45,7 @@ ament_add_gtest_executable(test_map_saver_2d_node
   test_map_saver_2d_node.cpp
   ${PROJECT_SOURCE_DIR}/test/test_constants.cpp
 )
-ament_target_dependencies(test_map_saver_2d_node rclcpp nav2_msgs nav2_util)
+ament_target_dependencies(test_map_saver_2d_node rclcpp nav2_util nav2_msgs)
 target_link_libraries(test_map_saver_2d_node
 #  ${library_name}
   ${map_io_library_name}_2d
@@ -74,8 +76,9 @@ ament_add_gtest_executable(test_map_saver_3d_node
   ${PROJECT_SOURCE_DIR}/test/test_constants.cpp
 )
 
-ament_target_dependencies(test_map_saver_3d_node rclcpp nav_msgs nav2_msgs
-  nav2_util sensor_msgs geometry_msgs)
+ament_target_dependencies(test_map_saver_3d_node rclcpp nav_msgs nav2_util nav_msgs
+  sensor_msgs geometry_msgs
+)
 target_link_libraries(test_map_saver_3d_node
   ${map_io_library_name}_3d
   stdc++fs

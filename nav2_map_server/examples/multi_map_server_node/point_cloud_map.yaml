@@ -1,0 +1,2 @@
+image: "../../test/testcloud.pcd"
+origin: [0, 0, 0, 1, 0, 0, 0]

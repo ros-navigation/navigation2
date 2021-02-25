@@ -15,18 +15,17 @@
 # limitations under the License.
 
 from launch import LaunchDescription
-from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument
+from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
-from nav2_common.launch import RewrittenYaml
+
 
 def generate_launch_description():
     # Parameters
-    namespace = "multi_3d_saver_server"
     params_file = LaunchConfiguration('params_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
-    
+
     # node names
     lifecycle_nodes = ['map_saver_server_3d_n1',
                        'map_saver_server_3d_n2',
@@ -35,29 +34,50 @@ def generate_launch_description():
 
     ld = LaunchDescription()
 
-    for node_name in lifecycle_nodes:
-        
-        # Nodes launching commands
-            start_map_saver_server_cmd = Node(
-                package='nav2_map_server',
-                executable='map_saver_server_3d',
-                output='screen',
-                name=node_name,
-                emulate_tty=True,  # https://github.com/ros2/launch/issues/188
-                parameters=[params_file])
-            
-            ld.add_action(start_map_saver_server_cmd)
-    
-    start_lifecycle_manager_cmd = Node(
-            package='nav2_lifecycle_manager',
-            executable='lifecycle_manager',
-            name='lifecycle_manager',
-            output='screen',
-            emulate_tty=True,  # https://github.com/ros2/launch/issues/188
-            parameters=[{'use_sim_time': use_sim_time},
-                        {'autostart': autostart},
-                        {'node_names': lifecycle_nodes}])
+    # Declare the launch arguments
+    declare_params_file_cmd = DeclareLaunchArgument(
+        'params_file',
+        default_value='',
+        description='Parameters file')
 
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='true',
+        description='Use simulation (Gazebo) clock if true')
+
+    declare_autostart_cmd = DeclareLaunchArgument(
+        'autostart',
+        default_value='true',
+        description='Automatically startup the nav2 stack')
+
+    for node_name in lifecycle_nodes:
+        # Nodes launching commands
+        start_map_saver_server_cmd = Node(
+            package='nav2_map_server',
+            executable='map_saver_server_3d',
+            output='screen',
+            name=node_name,
+            emulate_tty=True,  # https://github.com/ros2/launch/issues/188
+            parameters=[params_file])
+
+        ld.add_action(start_map_saver_server_cmd)
+
+    start_lifecycle_manager_cmd = Node(
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='lifecycle_manager',
+        output='screen',
+        emulate_tty=True,  # https://github.com/ros2/launch/issues/188
+        parameters=[{'use_sim_time': use_sim_time},
+                    {'autostart': autostart},
+                    {'node_names': lifecycle_nodes}])
+
+    # Declare the launch options
+    ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_use_sim_time_cmd)
+    ld.add_action(declare_autostart_cmd)
+
+    # Running lifecycle manager
     ld.add_action(start_lifecycle_manager_cmd)
 
     return ld
