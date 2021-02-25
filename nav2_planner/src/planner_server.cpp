@@ -232,7 +232,7 @@ PlannerServer::computePlan()
       r.sleep();
     }
 
-    // Use start_pose if provided otherwise use current robot pose
+    // Use start pose if provided otherwise use current robot pose
     geometry_msgs::msg::PoseStamped start;
     if (goal->use_start) {
       start = goal->start;
