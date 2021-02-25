@@ -241,11 +241,21 @@ PlannerServer::computePlan()
       return;
     }
 
+    // Copy needed as goal is const
+    geometry_msgs::msg::PoseStamped goal_pose = goal->goal;
+    if (!costmap_ros_->getPoseInGlobalFrame(start) ||
+        !costmap_ros_->getPoseInGlobalFrame(goal_pose)) {
+      RCLCPP_WARN(
+        get_logger(), "Could not transform the start or goal pose in the costmap frame");
+      action_server_->terminate_current();
+      return;
+    }
+
     if (action_server_->is_preempt_requested()) {
       goal = action_server_->accept_pending_goal();
     }
 
-    result->path = getPlan(start, goal->goal, goal->planner_id);
+    result->path = getPlan(start, goal_pose, goal->planner_id);
 
     if (result->path.poses.size() == 0) {
       RCLCPP_WARN(
