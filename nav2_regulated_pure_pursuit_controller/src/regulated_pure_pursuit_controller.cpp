@@ -338,20 +338,10 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   const double & angular_vel)
 {
   // Note(stevemacenski): This may be a bit unusual, but the robot_pose is in
-  // odom frame and the carrot_pose is in robot base frame. We need to collision
-  // check in odom frame, so all values will be relative to robot base pose.
-  // But we can still use the carrot pose in odom to find various quantities.
+  // odom frame and the carrot_pose is in robot base frame.
 
-  geometry_msgs::msg::PoseStamped carrot_in_odom;
-  if (!transformPose(costmap_ros_->getGlobalFrameID(), carrot_pose, carrot_in_odom))
-  {
-    RCLCPP_ERROR(logger_, "Unable to get carrot pose in odom frame, failing collision check!");
-    return true;
-  }
-
-  // check current point and carrot point are OK, most likely ones to be in collision
-  if (inCollision(carrot_in_odom.pose.position.x, carrot_in_odom.pose.position.y) ||
-    inCollision(robot_pose.pose.position.x, robot_pose.pose.position.y))
+  // check current point is OK
+  if (inCollision(robot_pose.pose.position.x, robot_pose.pose.position.y))
   {
     return true;
   }
