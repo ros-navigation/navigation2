@@ -333,8 +333,8 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
 
 bool RegulatedPurePursuitController::isCollisionImminent(
   const geometry_msgs::msg::PoseStamped & robot_pose,
-  const geometry_msgs::msg::PoseStamped & carrot_pose,
-  const double & curvature, const double & linear_vel,
+  const geometry_msgs::msg::PoseStamped & /*carrot_pose*/,
+  const double & /*curvature*/, const double & linear_vel,
   const double & angular_vel)
 {
   // Note(stevemacenski): This may be a bit unusual, but the robot_pose is in
@@ -361,11 +361,14 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   curr_pose.y = robot_pose.pose.position.y;
   curr_pose.theta = tf2::getYaw(robot_pose.pose.orientation);
 
+  int i = 1;
   while (true) {
     // only forward simulate within time requested
     if (i * projection_time > max_allowed_time_to_collision_) {
       break;
     }
+    
+    i++;
 
     // apply velocity at curr_pose over distance
     curr_pose.x += projection_time * (linear_vel * cos(curr_pose.theta));
