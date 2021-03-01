@@ -22,6 +22,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
+#include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
 class RclCppFixture
 {
@@ -112,9 +113,16 @@ TEST(RegulatedPurePursuitTest, basicAPI)
   EXPECT_EQ(ctrl->getPlan().poses[0].header.frame_id, std::string("fake_frame"));
 
   // set speed limit
-  EXPECT_NE(ctrl->getSpeed(), 0.51);
-  ctrl->setSpeedLimit(0.51);
+  const double base_speed = ctrl->getSpeed();
+  EXPECT_EQ(ctrl->getSpeed(), base_speed);
+  ctrl->setSpeedLimit(0.51, false);
   EXPECT_EQ(ctrl->getSpeed(), 0.51);
+  ctrl->setSpeedLimit(nav2_costmap_2d::NO_SPEED_LIMIT, false);
+  EXPECT_EQ(ctrl->getSpeed(), base_speed);
+  ctrl->setSpeedLimit(30, true);
+  EXPECT_EQ(ctrl->getSpeed(), base_speed * 0.3);
+  ctrl->setSpeedLimit(nav2_costmap_2d::NO_SPEED_LIMIT, true);
+  EXPECT_EQ(ctrl->getSpeed(), base_speed);
 }
 
 TEST(RegulatedPurePursuitTest, createCarrotMsg)

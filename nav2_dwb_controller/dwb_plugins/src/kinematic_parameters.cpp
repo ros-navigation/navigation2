@@ -129,7 +129,8 @@ void KinematicsHandler::initialize(
   update_kinematics(kinematics);
 }
 
-void KinematicsHandler::setSpeedLimit(const double & speed_limit)
+void KinematicsHandler::setSpeedLimit(
+  const double & speed_limit, const bool & percentage)
 {
   KinematicParameters kinematics(*kinematics_.load());
 
@@ -140,11 +141,26 @@ void KinematicsHandler::setSpeedLimit(const double & speed_limit)
     kinematics.max_vel_y_ = kinematics.base_max_vel_y_;
     kinematics.max_vel_theta_ = kinematics.base_max_vel_theta_;
   } else {
-    // Speed limit is expressed in % from maximum speed of robot
-    kinematics.max_speed_xy_ = kinematics.base_max_speed_xy_ * speed_limit / 100.0;
-    kinematics.max_vel_x_ = kinematics.base_max_vel_x_ * speed_limit / 100.0;
-    kinematics.max_vel_y_ = kinematics.base_max_vel_y_ * speed_limit / 100.0;
-    kinematics.max_vel_theta_ = kinematics.base_max_vel_theta_ * speed_limit / 100.0;
+    if (percentage) {
+      // Speed limit is expressed in % from maximum speed of robot
+      kinematics.max_speed_xy_ = kinematics.base_max_speed_xy_ * speed_limit / 100.0;
+      kinematics.max_vel_x_ = kinematics.base_max_vel_x_ * speed_limit / 100.0;
+      kinematics.max_vel_y_ = kinematics.base_max_vel_y_ * speed_limit / 100.0;
+      kinematics.max_vel_theta_ = kinematics.base_max_vel_theta_ * speed_limit / 100.0;
+    } else {
+      // Speed limit is expressed in absolute value
+      if (speed_limit < kinematics.base_max_speed_xy_) {
+        kinematics.max_speed_xy_ = speed_limit;
+        // Handling components and angular velocity changes:
+        // Max velocities are being changed in the same proportion
+        // as absolute linear speed changed in order to preserve
+        // robot moving trajectories to be the same after speed change.
+        const double ratio = speed_limit / kinematics.base_max_speed_xy_;
+        kinematics.max_vel_x_ = kinematics.base_max_vel_x_ * ratio;
+        kinematics.max_vel_y_ = kinematics.base_max_vel_y_ * ratio;
+        kinematics.max_vel_theta_ = kinematics.base_max_vel_theta_ * ratio;
+      }
+    }
   }
 
   // Do not forget to update max_speed_xy_sq_ as well

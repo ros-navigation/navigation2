@@ -21,6 +21,7 @@
 #include "nav2_core/exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
 using std::hypot;
 using std::min;
@@ -124,6 +125,7 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".goal_dist_tol", rclcpp::ParameterValue(0.25));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
+  base_desired_linear_vel_ = desired_linear_vel_;
   node->get_parameter(plugin_name_ + ".max_linear_accel", max_linear_accel_);
   node->get_parameter(plugin_name_ + ".max_linear_decel", max_linear_decel_);
   node->get_parameter(plugin_name_ + ".lookahead_dist", lookahead_dist_);
@@ -484,9 +486,20 @@ void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
   global_plan_ = path;
 }
 
-void RegulatedPurePursuitController::setSpeedLimit(const double & speed_limit)
+void RegulatedPurePursuitController::setSpeedLimit(const double & speed_limit, const bool & percentage)
 {
-  desired_linear_vel_ = speed_limit;
+  if (speed_limit == nav2_costmap_2d::NO_SPEED_LIMIT) {
+    // Restore default value
+    desired_linear_vel_ = base_desired_linear_vel_;
+  } else {
+    if (percentage) {
+      // Speed limit is expressed in % from maximum speed of robot
+      desired_linear_vel_ = base_desired_linear_vel_ * speed_limit / 100.0;
+    } else {
+      // Speed limit is expressed in absolute value
+      desired_linear_vel_ = speed_limit;
+    }
+  }
 }
 
 nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
