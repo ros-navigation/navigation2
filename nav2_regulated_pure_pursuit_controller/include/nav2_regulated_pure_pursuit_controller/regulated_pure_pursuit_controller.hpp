@@ -99,9 +99,12 @@ public:
 
   /**
    * @brief Limits the maximum linear speed of the robot.
-   * @param speed_limit expressed in percentage from maximum robot speed.
+   * @param speed_limit expressed in absolute value (in m/s)
+   * or in percentage from maximum robot speed.
+   * @param percentage Setting speed limit in percentage if true
+   * or in absolute values in false case.
    */
-  void setSpeedLimit(const double & speed_limit) override;
+  void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
 
 protected:
   /**
@@ -221,7 +224,7 @@ protected:
   nav2_costmap_2d::Costmap2D * costmap_;
   rclcpp::Logger logger_ {rclcpp::get_logger("RegulatedPurePursuitController")};
 
-  double desired_linear_vel_;
+  double desired_linear_vel_, base_desired_linear_vel_;
   double lookahead_dist_;
   double rotate_to_heading_angular_vel_;
   double max_lookahead_dist_;
