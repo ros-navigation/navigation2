@@ -274,8 +274,9 @@ BtNavigator::navigateToPose()
 
       // action server feedback (pose, duration of task,
       // number of recoveries, and distance remaining to goal)
+      geometry_msgs::msg::PoseStamped current_pose;
       nav2_util::getCurrentPose(
-        feedback_msg->current_pose, *tf_, global_frame_, robot_frame_, transform_tolerance_);
+        current_pose, *tf_, global_frame_, robot_frame_, transform_tolerance_);
 
       geometry_msgs::msg::PoseStamped goal_pose;
       blackboard_->get("goal", goal_pose);
@@ -284,24 +285,44 @@ BtNavigator::navigateToPose()
       nav_msgs::msg::Path current_path;
       blackboard_->get("path", current_path);
 
+      // Find the closest pose to current pose on global path
+      auto find_closest_pose_idx = 
+        [&current_pose, &current_path]() {
+          size_t closest_pose_idx = 0;
+          double curr_min_dist = std::numeric_limits<double>::max();
+          for (auto curr_it = current_path.poses.begin(); curr_it != current_path.poses.end(); ++curr_it) {
+            double curr_dist = nav2_util::geometry_utils::euclidean_distance(current_pose, *curr_it);
+            if (curr_dist < curr_min_dist) {
+              curr_min_dist = curr_dist;
+              closest_pose_idx = curr_it - current_path.poses.begin();
+            }
+          }
+          return closest_pose_idx;
+        };
+
+      size_t closest_pose_idx = find_closest_pose_idx();
+
       // Calculate distance on the path
       double distance_remaining =
-        nav2_util::geometry_utils::calculate_path_length(current_path);
+        nav2_util::geometry_utils::calculate_path_length(current_path, closest_pose_idx);
 
       if (distance_remaining <= transform_tolerance_) {
         estimated_time_remaining_ = rclcpp::Duration::from_seconds(0.0);
       } else {
         // Get current speed
-        current_linear_speed_ = odom_smoother_->getTwist().linear.x;
+        geometry_msgs::msg::Twist current_odom = odom_smoother_->getTwist();
+        current_linear_speed_ = hypot(current_odom.linear.x, current_odom.linear.y);
 
-        // Calculate estimated time taken to goal if speed is higher than 5mm/s
-        if (std::abs(current_linear_speed_) > 0.005) {
+        // Calculate estimated time taken to goal if speed is higher than 1cm/s 
+        // and at least 10cm to go
+        if ((std::abs(current_linear_speed_) > 0.01) && (distance_remaining > 0.1)) {
           estimated_time_remaining_ =
             rclcpp::Duration::from_seconds(distance_remaining / std::abs(current_linear_speed_));
         }
       }
 
       int recovery_count = 0;
+      feedback_msg->current_pose = current_pose;
       blackboard_->get<int>("number_recoveries", recovery_count);
       feedback_msg->distance_remaining = distance_remaining;
       feedback_msg->estimated_time_remaining = estimated_time_remaining_;
