@@ -159,7 +159,7 @@ target_link_libraries(${map_saver_server_executable}_2d
   ${library_name})
 
 target_link_libraries(${map_saver_server_executable}_3d
-    ${library_name})
+  ${library_name})
 
 target_link_libraries(${costmap_filter_info_server_executable}
   ${library_name})

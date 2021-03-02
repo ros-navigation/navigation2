@@ -4,7 +4,7 @@
 string map_topic
 string origin_topic
 string map_url
-# as_binary:- If true then map will be saved as a binary file
+# as_binary: If true then map will be saved as a binary file
 # else ASCII format will be used.
 bool as_binary
 # Constants for image_format. Supported formats: pcd, ply

@@ -36,7 +36,7 @@ const char * USAGE_STRING{
   "\n-----Parameters common to 2D and 3D map saver-----\n\n"
   "  -t <map_topic>\n"
   "  -f <map_name>\n"
-  "  --fmt <map_format> (Supported Formats:- 2D<pgm | bmp | png> and 3D<pcd>)\n"
+  "  --fmt <map_format> (Supported Formats: <pgm/bmp/png> for 2D and <pcd> for 3D)\n"
   "\n-----Parameters unique to 2D map saver-----\n\n"
   "  --occ <threshold_occupied>\n"
   "  --free <threshold_free>\n"
