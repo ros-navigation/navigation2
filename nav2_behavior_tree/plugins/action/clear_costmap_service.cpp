@@ -64,6 +64,8 @@ void ClearCostmapAroundRobotService::on_tick()
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::ClearEntireCostmapService>("ClearEntireCostmap");
-  factory.registerNodeType<nav2_behavior_tree::ClearCostmapExceptRegionService>("ClearCostmapExceptRegion");
-  factory.registerNodeType<nav2_behavior_tree::ClearCostmapAroundRobotService>("ClearCostmapAroundRobot");
+  factory.registerNodeType<nav2_behavior_tree::ClearCostmapExceptRegionService>(
+    "ClearCostmapExceptRegion");
+  factory.registerNodeType<nav2_behavior_tree::ClearCostmapAroundRobotService>(
+    "ClearCostmapAroundRobot");
 }

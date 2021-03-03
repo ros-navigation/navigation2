@@ -136,7 +136,8 @@ public:
     config_->blackboard->set<bool>("initial_pose_received", false);
     config_->blackboard->set<int>("number_recoveries", 0);
 
-    factory_->registerNodeType<nav2_behavior_tree::ClearCostmapExceptRegionService>("ClearCostmapExceptRegion");
+    factory_->registerNodeType<nav2_behavior_tree::ClearCostmapExceptRegionService>(
+      "ClearCostmapExceptRegion");
   }
 
   static void TearDownTestCase()
@@ -167,11 +168,16 @@ protected:
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr ClearCostmapExceptRegionServiceTestFixture::node_ = nullptr;
-std::shared_ptr<ClearCostmapExceptRegionService> ClearCostmapExceptRegionServiceTestFixture::server_ = nullptr;
-BT::NodeConfiguration * ClearCostmapExceptRegionServiceTestFixture::config_ = nullptr;
-std::shared_ptr<BT::BehaviorTreeFactory> ClearCostmapExceptRegionServiceTestFixture::factory_ = nullptr;
-std::shared_ptr<BT::Tree> ClearCostmapExceptRegionServiceTestFixture::tree_ = nullptr;
+rclcpp::Node::SharedPtr
+ClearCostmapExceptRegionServiceTestFixture::node_ = nullptr;
+std::shared_ptr<ClearCostmapExceptRegionService>
+ClearCostmapExceptRegionServiceTestFixture::server_ = nullptr;
+BT::NodeConfiguration
+* ClearCostmapExceptRegionServiceTestFixture::config_ = nullptr;
+std::shared_ptr<BT::BehaviorTreeFactory>
+ClearCostmapExceptRegionServiceTestFixture::factory_ = nullptr;
+std::shared_ptr<BT::Tree>
+ClearCostmapExceptRegionServiceTestFixture::tree_ = nullptr;
 
 TEST_F(ClearCostmapExceptRegionServiceTestFixture, test_tick)
 {
@@ -219,7 +225,8 @@ public:
     config_->blackboard->set<bool>("initial_pose_received", false);
     config_->blackboard->set<int>("number_recoveries", 0);
 
-    factory_->registerNodeType<nav2_behavior_tree::ClearCostmapAroundRobotService>("ClearCostmapAroundRobot");
+    factory_->registerNodeType<nav2_behavior_tree::ClearCostmapAroundRobotService>(
+      "ClearCostmapAroundRobot");
   }
 
   static void TearDownTestCase()
@@ -250,11 +257,16 @@ protected:
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr ClearCostmapAroundRobotServiceTestFixture::node_ = nullptr;
-std::shared_ptr<ClearCostmapAroundRobotService> ClearCostmapAroundRobotServiceTestFixture::server_ = nullptr;
-BT::NodeConfiguration * ClearCostmapAroundRobotServiceTestFixture::config_ = nullptr;
-std::shared_ptr<BT::BehaviorTreeFactory> ClearCostmapAroundRobotServiceTestFixture::factory_ = nullptr;
-std::shared_ptr<BT::Tree> ClearCostmapAroundRobotServiceTestFixture::tree_ = nullptr;
+rclcpp::Node::SharedPtr
+ClearCostmapAroundRobotServiceTestFixture::node_ = nullptr;
+std::shared_ptr<ClearCostmapAroundRobotService>
+ClearCostmapAroundRobotServiceTestFixture::server_ = nullptr;
+BT::NodeConfiguration
+* ClearCostmapAroundRobotServiceTestFixture::config_ = nullptr;
+std::shared_ptr<BT::BehaviorTreeFactory>
+ClearCostmapAroundRobotServiceTestFixture::factory_ = nullptr;
+std::shared_ptr<BT::Tree>
+ClearCostmapAroundRobotServiceTestFixture::tree_ = nullptr;
 
 TEST_F(ClearCostmapAroundRobotServiceTestFixture, test_tick)
 {
@@ -286,13 +298,13 @@ int main(int argc, char ** argv)
     });
 
   ClearCostmapExceptRegionServiceTestFixture::server_ =
-      std::make_shared<ClearCostmapExceptRegionService>();
+    std::make_shared<ClearCostmapExceptRegionService>();
   std::thread server_thread_except_region([]() {
       rclcpp::spin(ClearCostmapExceptRegionServiceTestFixture::server_);
     });
 
   ClearCostmapAroundRobotServiceTestFixture::server_ =
-      std::make_shared<ClearCostmapAroundRobotService>();
+    std::make_shared<ClearCostmapAroundRobotService>();
   std::thread server_thread_around_robot([]() {
       rclcpp::spin(ClearCostmapAroundRobotServiceTestFixture::server_);
     });

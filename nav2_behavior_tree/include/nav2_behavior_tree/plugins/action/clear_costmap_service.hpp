@@ -35,7 +35,8 @@ public:
   void on_tick() override;
 };
 
-class ClearCostmapExceptRegionService : public BtServiceNode<nav2_msgs::srv::ClearCostmapExceptRegion>
+class ClearCostmapExceptRegionService
+  : public BtServiceNode<nav2_msgs::srv::ClearCostmapExceptRegion>
 {
 public:
   ClearCostmapExceptRegionService(
@@ -48,8 +49,9 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<double>("reset_distance", 1,
-            "Distance from the robot above which obstacles are cleared")
+        BT::InputPort<double>(
+          "reset_distance", 1,
+          "Distance from the robot above which obstacles are cleared")
       });
   }
 };
@@ -67,8 +69,9 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<double>("reset_distance", 1,
-            "Distance from the robot under which obstacles are cleared")
+        BT::InputPort<double>(
+          "reset_distance", 1,
+          "Distance from the robot under which obstacles are cleared")
       });
   }
 };
