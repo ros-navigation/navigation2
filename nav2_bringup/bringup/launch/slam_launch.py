@@ -17,11 +17,14 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription,
+                            PushLaunchConfigurations, PopLaunchConfigurations,
+                            UnsetLaunchConfiguration)
+from launch.conditions import UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from nav2_common.launch import RewrittenYaml
+from nav2_common.launch import RewrittenYaml, HasNodeParams
 
 
 def generate_launch_description():
@@ -70,9 +73,25 @@ def generate_launch_description():
         description='Automatically startup the nav2 stack')
 
     # Nodes launching commands
+
+    # If the provided param file doesn't have slam_toolbox params, we must remove the 'params_file'
+    # LaunchConfiguration, or it will be passed automatically to slam_toolbox and will not load 
+    # the default file
+    has_slam_toolbox_params = HasNodeParams(source_file=params_file,
+                                            node_name='slam_toolbox')
+    # slam_toolbox with provided param_file
+    push_launch_config = PushLaunchConfigurations(
+            condition=UnlessCondition(has_slam_toolbox_params))
+
+    remove_params_file = UnsetLaunchConfiguration(
+            "params_file", condition=UnlessCondition(has_slam_toolbox_params))
+
     start_slam_toolbox_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(slam_launch_file),
         launch_arguments={'use_sim_time': use_sim_time}.items())
+
+    pop_launch_config = PopLaunchConfigurations(
+            condition=UnlessCondition(has_slam_toolbox_params))
 
     start_map_saver_server_cmd = Node(
             package='nav2_map_server',
@@ -98,7 +117,10 @@ def generate_launch_description():
     ld.add_action(declare_autostart_cmd)
 
     # Running SLAM Toolbox
+    ld.add_action(push_launch_config)
+    ld.add_action(remove_params_file)
     ld.add_action(start_slam_toolbox_cmd)
+    ld.add_action(pop_launch_config)
 
     # Running Map Saver Server
     ld.add_action(start_map_saver_server_cmd)
