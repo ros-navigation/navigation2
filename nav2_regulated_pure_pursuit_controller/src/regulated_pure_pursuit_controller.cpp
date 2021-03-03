@@ -270,7 +270,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   }
 
   // Collision checking on this velocity heading
-  if (isCollisionImminent(pose, carrot_pose, curvature, linear_vel, angular_vel)) {
+  if (isCollisionImminent(pose, linear_vel, angular_vel)) {
     throw std::runtime_error("RegulatedPurePursuitController detected collision ahead!");
   }
 
@@ -333,16 +333,13 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
 
 bool RegulatedPurePursuitController::isCollisionImminent(
   const geometry_msgs::msg::PoseStamped & robot_pose,
-  const geometry_msgs::msg::PoseStamped & /*carrot_pose*/,
-  const double & /*curvature*/, const double & linear_vel,
-  const double & angular_vel)
+  const double & linear_vel, const double & angular_vel)
 {
   // Note(stevemacenski): This may be a bit unusual, but the robot_pose is in
   // odom frame and the carrot_pose is in robot base frame.
 
   // check current point is OK
-  if (inCollision(robot_pose.pose.position.x, robot_pose.pose.position.y))
-  {
+  if (inCollision(robot_pose.pose.position.x, robot_pose.pose.position.y)) {
     return true;
   }
 
