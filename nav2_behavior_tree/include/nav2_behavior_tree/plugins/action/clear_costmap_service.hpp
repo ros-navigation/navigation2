@@ -35,10 +35,10 @@ public:
   void on_tick() override;
 };
 
-class ClearExceptRegionService : public BtServiceNode<nav2_msgs::srv::ClearCostmapExceptRegion>
+class ClearCostmapExceptRegionService : public BtServiceNode<nav2_msgs::srv::ClearCostmapExceptRegion>
 {
 public:
-  ClearExceptRegionService(
+  ClearCostmapExceptRegionService(
     const std::string & service_node_name,
     const BT::NodeConfiguration & conf);
 
@@ -54,10 +54,10 @@ public:
   }
 };
 
-class ClearAroundRobotService : public BtServiceNode<nav2_msgs::srv::ClearCostmapAroundRobot>
+class ClearCostmapAroundRobotService : public BtServiceNode<nav2_msgs::srv::ClearCostmapAroundRobot>
 {
 public:
-  ClearAroundRobotService(
+  ClearCostmapAroundRobotService(
     const std::string & service_node_name,
     const BT::NodeConfiguration & conf);
 

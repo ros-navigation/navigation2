@@ -32,27 +32,27 @@ void ClearEntireCostmapService::on_tick()
   increment_recovery_count();
 }
 
-ClearExceptRegionService::ClearExceptRegionService(
+ClearCostmapExceptRegionService::ClearCostmapExceptRegionService(
   const std::string & service_node_name,
   const BT::NodeConfiguration & conf)
 : BtServiceNode<nav2_msgs::srv::ClearCostmapExceptRegion>(service_node_name, conf)
 {
 }
 
-void ClearExceptRegionService::on_tick()
+void ClearCostmapExceptRegionService::on_tick()
 {
   getInput("reset_distance", request_->reset_distance);
   increment_recovery_count();
 }
 
-ClearAroundRobotService::ClearAroundRobotService(
+ClearCostmapAroundRobotService::ClearCostmapAroundRobotService(
   const std::string & service_node_name,
   const BT::NodeConfiguration & conf)
 : BtServiceNode<nav2_msgs::srv::ClearCostmapAroundRobot>(service_node_name, conf)
 {
 }
 
-void ClearAroundRobotService::on_tick()
+void ClearCostmapAroundRobotService::on_tick()
 {
   getInput("reset_distance", request_->reset_distance);
   increment_recovery_count();
@@ -64,6 +64,6 @@ void ClearAroundRobotService::on_tick()
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::ClearEntireCostmapService>("ClearEntireCostmap");
-  factory.registerNodeType<nav2_behavior_tree::ClearExceptRegionService>("ClearExceptRegion");
-  factory.registerNodeType<nav2_behavior_tree::ClearAroundRobotService>("ClearAroundRobot");
+  factory.registerNodeType<nav2_behavior_tree::ClearCostmapExceptRegionService>("ClearCostmapExceptRegion");
+  factory.registerNodeType<nav2_behavior_tree::ClearCostmapAroundRobotService>("ClearCostmapAroundRobot");
 }
