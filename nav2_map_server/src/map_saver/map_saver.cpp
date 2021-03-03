@@ -50,6 +50,8 @@ MapSaver::MapSaver()
 
   free_thresh_default_ = declare_parameter("free_thresh_default", 0.25),
   occupied_thresh_default_ = declare_parameter("occupied_thresh_default", 0.65);
+  // false only of foxy for backwards compatibility
+  map_subscribe_transient_local_ = declare_parameter("map_subscribe_transient_local", false);
 }
 
 MapSaver::~MapSaver()
@@ -173,8 +175,15 @@ bool MapSaver::saveMapTopicToFile(
     // Add new subscription for incoming map topic.
     // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode
     // as a map listener.
+    rclcpp::QoS map_qos = rclcpp::SystemDefaultsQoS();  // initialize to default
+    if (map_subscribe_transient_local_) {
+      map_qos = rclcpp::QoS(10);
+      map_qos.transient_local();
+      map_qos.reliable();
+      map_qos.keep_last(1);
+    }
     auto map_sub = rclcpp_node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
-      map_topic_loc, rclcpp::SystemDefaultsQoS(), mapCallback);
+      map_topic_loc, map_qos, mapCallback);
 
     rclcpp::Time start_time = now();
     while (rclcpp::ok()) {
