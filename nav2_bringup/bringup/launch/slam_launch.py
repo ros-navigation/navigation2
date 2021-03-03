@@ -18,13 +18,13 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription,
-                            PushLaunchConfigurations, PopLaunchConfigurations,
+                            PopLaunchConfigurations, PushLaunchConfigurations,
                             UnsetLaunchConfiguration)
 from launch.conditions import UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from nav2_common.launch import RewrittenYaml, HasNodeParams
+from nav2_common.launch import HasNodeParams, RewrittenYaml
 
 
 def generate_launch_description():
@@ -75,7 +75,7 @@ def generate_launch_description():
     # Nodes launching commands
 
     # If the provided param file doesn't have slam_toolbox params, we must remove the 'params_file'
-    # LaunchConfiguration, or it will be passed automatically to slam_toolbox and will not load 
+    # LaunchConfiguration, or it will be passed automatically to slam_toolbox and will not load
     # the default file
     has_slam_toolbox_params = HasNodeParams(source_file=params_file,
                                             node_name='slam_toolbox')
@@ -84,7 +84,7 @@ def generate_launch_description():
             condition=UnlessCondition(has_slam_toolbox_params))
 
     remove_params_file = UnsetLaunchConfiguration(
-            "params_file", condition=UnlessCondition(has_slam_toolbox_params))
+            'params_file', condition=UnlessCondition(has_slam_toolbox_params))
 
     start_slam_toolbox_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(slam_launch_file),
