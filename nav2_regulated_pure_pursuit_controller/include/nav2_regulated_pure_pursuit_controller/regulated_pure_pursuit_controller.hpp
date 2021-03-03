@@ -177,8 +177,7 @@ protected:
    */
   bool isCollisionImminent(
     const geometry_msgs::msg::PoseStamped &,
-    const geometry_msgs::msg::PoseStamped &,
-    const double &, const double &, const double &);
+    const double &, const double &);
 
   /**
    * @brief Whether point is in collision

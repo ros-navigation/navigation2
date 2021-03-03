@@ -272,7 +272,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   }
 
   // Collision checking on this velocity heading
-  if (isCollisionImminent(pose, carrot_pose, curvature, linear_vel, angular_vel)) {
+  if (isCollisionImminent(pose, linear_vel, angular_vel)) {
     throw std::runtime_error("RegulatedPurePursuitController detected collision ahead!");
   }
 
@@ -335,16 +335,13 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
 
 bool RegulatedPurePursuitController::isCollisionImminent(
   const geometry_msgs::msg::PoseStamped & robot_pose,
-  const geometry_msgs::msg::PoseStamped & carrot_pose,
-  const double & curvature, const double & linear_vel,
-  const double & angular_vel)
+  const double & linear_vel, const double & angular_vel)
 {
   // Note(stevemacenski): This may be a bit unusual, but the robot_pose is in
   // odom frame and the carrot_pose is in robot base frame.
 
   // check current point is OK
-  if (inCollision(robot_pose.pose.position.x, robot_pose.pose.position.y))
-  {
+  if (inCollision(robot_pose.pose.position.x, robot_pose.pose.position.y)) {
     return true;
   }
 
@@ -356,15 +353,6 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   pose_msg.header.frame_id = arc_pts_msg.header.frame_id;
   pose_msg.header.stamp = arc_pts_msg.header.stamp;
 
-  // Using curvature (k = 1 / R) and carrot distance (chord on circle R), project the command
-  const double chord_len = hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
-
-  // Find the number of increments by finding the arc length of the chord on circle
-  const double r = fabs(1.0 / curvature);
-  const double alpha = 2.0 * asin(chord_len / (2 * r)); // central angle
-  const double arc_len = alpha * r;
-  const double delta_dist = costmap_->getResolution();
-  const unsigned int num_pts = static_cast<unsigned int>(ceil(arc_len / delta_dist));
   const double projection_time = costmap_->getResolution() / linear_vel;
 
   geometry_msgs::msg::Pose2D curr_pose;
@@ -372,13 +360,16 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   curr_pose.y = robot_pose.pose.position.y;
   curr_pose.theta = tf2::getYaw(robot_pose.pose.orientation);
 
-  for (unsigned int i = 1; i < num_pts; i++) {
+  int i = 1;
+  while (true) {
     // only forward simulate within time requested
     if (i * projection_time > max_allowed_time_to_collision_) {
       break;
     }
+    
+    i++;
 
-    // apply velocity at curr_pose over distance delta_dist
+    // apply velocity at curr_pose over distance
     curr_pose.x += projection_time * (linear_vel * cos(curr_pose.theta));
     curr_pose.y += projection_time * (linear_vel * sin(curr_pose.theta));
     curr_pose.theta += projection_time * angular_vel;
