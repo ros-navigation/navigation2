@@ -41,14 +41,6 @@ public:
   const rclcpp::Node::SharedPtr & getNode() {return node_;}
 };
 
-TEST(ServiceClient, are_non_alphanumerics_removed)
-{
-  TestServiceClient t("/foo/bar");
-  string adjustedPrefix = "_foo_bar_Node_";
-  ASSERT_EQ(t.name().length(), adjustedPrefix.length() + 8);
-  ASSERT_EQ(0, t.name().compare(0, adjustedPrefix.length(), adjustedPrefix));
-}
-
 TEST(ServiceClient, can_ServiceClient_use_passed_in_node)
 {
   auto node = rclcpp::Node::make_shared("test_node");
