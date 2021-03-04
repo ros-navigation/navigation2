@@ -74,25 +74,6 @@ def generate_launch_description():
 
     # Nodes launching commands
 
-    # If the provided param file doesn't have slam_toolbox params, we must remove the 'params_file'
-    # LaunchConfiguration, or it will be passed automatically to slam_toolbox and will not load
-    # the default file
-    has_slam_toolbox_params = HasNodeParams(source_file=params_file,
-                                            node_name='slam_toolbox')
-    # slam_toolbox with provided param_file
-    push_launch_config = PushLaunchConfigurations(
-            condition=UnlessCondition(has_slam_toolbox_params))
-
-    remove_params_file = UnsetLaunchConfiguration(
-            'params_file', condition=UnlessCondition(has_slam_toolbox_params))
-
-    start_slam_toolbox_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(slam_launch_file),
-        launch_arguments={'use_sim_time': use_sim_time}.items())
-
-    pop_launch_config = PopLaunchConfigurations(
-            condition=UnlessCondition(has_slam_toolbox_params))
-
     start_map_saver_server_cmd = Node(
             package='nav2_map_server',
             node_executable='map_saver_server',
@@ -108,6 +89,30 @@ def generate_launch_description():
                         {'autostart': autostart},
                         {'node_names': lifecycle_nodes}])
 
+    # If the provided param file doesn't have slam_toolbox params, we must remove the 'params_file'
+    # LaunchConfiguration, or it will be passed automatically to slam_toolbox and will not load
+    # the default file
+    has_slam_toolbox_params = HasNodeParams(source_file=params_file,
+                                            node_name='slam_toolbox')
+    # Push (or save) current LaunchConfiguration
+    push_launch_config = PushLaunchConfigurations(
+            condition=UnlessCondition(has_slam_toolbox_params))
+
+    # Remove params_file LaunchConfiguration before passing to slam_toolbox
+    remove_params_file = UnsetLaunchConfiguration(
+            'params_file', condition=UnlessCondition(has_slam_toolbox_params))
+
+    # Include slam_toolbox LaunchDescription, the params_file will be pased automatically
+    # unless it was Unset before.
+    # See https://github.com/ros2/launch/issues/313
+    start_slam_toolbox_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(slam_launch_file),
+        launch_arguments={'use_sim_time': use_sim_time}.items())
+
+    # Pop (or load) previous LaunchConfiguration, resetting the state of params_file
+    pop_launch_config = PopLaunchConfigurations(
+            condition=UnlessCondition(has_slam_toolbox_params))
+
     ld = LaunchDescription()
 
     # Declare the launch options
@@ -116,14 +121,14 @@ def generate_launch_description():
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_autostart_cmd)
 
+    # Running Map Saver Server
+    ld.add_action(start_map_saver_server_cmd)
+    ld.add_action(start_lifecycle_manager_cmd)
+
     # Running SLAM Toolbox
     ld.add_action(push_launch_config)
     ld.add_action(remove_params_file)
     ld.add_action(start_slam_toolbox_cmd)
     ld.add_action(pop_launch_config)
-
-    # Running Map Saver Server
-    ld.add_action(start_map_saver_server_cmd)
-    ld.add_action(start_lifecycle_manager_cmd)
 
     return ld
