@@ -37,14 +37,28 @@ public:
     } else {
       node_ = generate_internal_node(service_name + "_Node");
     }
-    client_ = node_->create_client<ServiceT>(service_name);
+    callback_group_ = node_->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
+    callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+    client_ = node_->create_client<ServiceT>(
+      service_name,
+      rmw_qos_profile_services_default,
+      callback_group_);
   }
 
   ServiceClient(const std::string & service_name, const std::string & parent_name)
   : service_name_(service_name)
   {
     node_ = generate_internal_node(parent_name + std::string("_") + service_name + "_client");
-    client_ = node_->create_client<ServiceT>(service_name);
+    callback_group_ = node_->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
+    callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+    client_ = node_->create_client<ServiceT>(
+      service_name,
+      rmw_qos_profile_services_default,
+      callback_group_);
   }
 
   using RequestType = typename ServiceT::Request;
@@ -69,7 +83,7 @@ public:
       service_name_.c_str());
     auto future_result = client_->async_send_request(request);
 
-    if (rclcpp::spin_until_future_complete(node_, future_result, timeout) !=
+    if (callback_group_executor_.spin_until_future_complete(future_result, timeout) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       throw std::runtime_error(service_name_ + " service client: async_send_request failed");
@@ -97,7 +111,7 @@ public:
       service_name_.c_str());
     auto future_result = client_->async_send_request(request);
 
-    if (rclcpp::spin_until_future_complete(node_, future_result) !=
+    if (callback_group_executor_.spin_until_future_complete(future_result) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       return false;
@@ -122,6 +136,8 @@ public:
 protected:
   std::string service_name_;
   rclcpp::Node::SharedPtr node_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   typename rclcpp::Client<ServiceT>::SharedPtr client_;
 };
 
