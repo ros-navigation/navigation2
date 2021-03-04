@@ -66,41 +66,4 @@ bool getCurrentPose(
   return false;
 }
 
-bool getPoseInTargetFrame(
-  geometry_msgs::msg::PoseStamped & pose,
-  tf2_ros::Buffer & tf_buffer, const std::string target_frame,
-    const double transform_timeout)
-{
-  static rclcpp::Logger logger = rclcpp::get_logger("getPoseInTargetFrame");
-
-  try {
-    pose = tf_buffer.transform(
-      pose, target_frame,
-      tf2::durationFromSec(transform_timeout));
-    return true;
-  } catch (tf2::LookupException & ex) {
-    RCLCPP_ERROR(
-      logger,
-      "No Transform available Error looking up target frame: %s\n", ex.what());
-  } catch (tf2::ConnectivityException & ex) {
-    RCLCPP_ERROR(
-      logger,
-      "Connectivity Error looking up target frame: %s\n", ex.what());
-  } catch (tf2::ExtrapolationException & ex) {
-    RCLCPP_ERROR(
-      logger,
-      "Extrapolation Error looking up target frame: %s\n", ex.what());
-  } catch (tf2::TimeoutException & ex) {
-    RCLCPP_ERROR(
-      logger,
-      "Transform timeout with tolerance: %.4f", transform_timeout);
-  } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR(
-      logger, "Failed to transform from %s to %s",
-      pose.header.frame_id.c_str(), target_frame.c_str());
-  }
-
-  return false;
-}
-
 }  // end namespace nav2_util

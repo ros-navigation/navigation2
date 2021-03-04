@@ -140,14 +140,6 @@ public:
    */
   bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose);
 
-  /**
-   * @brief Transform the pose in the global frame of the costmap
-   * @param pose will be set to the pose of the robot in the global frame of the costmap
-   * @return True if the pose was transformed successfully, false otherwise
-   */
-
-  bool getPoseInGlobalFrame(geometry_msgs::msg::PoseStamped & pose);
-
   /** @brief Returns costmap name */
   std::string getName() const
   {
