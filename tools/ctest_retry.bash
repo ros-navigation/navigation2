@@ -43,7 +43,8 @@ done
 
 total=$RETRIES
 cd $TESTDIR
-export RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED=1
+export RCUTILS_LOGGING_BUFFERED_STREAM=1
+export RCUTILS_LOGGING_USE_STDOUT=1
 
 echo "Retrying Ctest up to " $total " times."
 for ((i=1;i<=total;i++))
