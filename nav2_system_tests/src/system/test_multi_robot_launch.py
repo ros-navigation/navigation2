@@ -109,7 +109,8 @@ def generate_launch_description():
         nav_instances_cmds.append(group)
 
     ld = LaunchDescription()
-    ld.add_action(SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),)
+    ld.add_action(SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),)
+    ld.add_action(SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),)
     ld.add_action(start_gazebo_cmd)
     for spawn_robot in spawn_robots_cmds:
         ld.add_action(spawn_robot)
