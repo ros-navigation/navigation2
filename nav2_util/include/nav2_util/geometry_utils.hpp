@@ -63,7 +63,7 @@ inline double euclidean_distance(
   return euclidean_distance(pos1.pose, pos2.pose);
 }
 
-inline double calculate_path_length(const nav_msgs::msg::Path & path, size_t start_index)
+inline double calculate_path_length(const nav_msgs::msg::Path & path, size_t start_index = 0)
 {
   if (start_index >= path.poses.size() - 1) {
     return 0.0;

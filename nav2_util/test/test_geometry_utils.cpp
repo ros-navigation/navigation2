@@ -69,7 +69,7 @@ TEST(GeometryUtils, calculate_path_length)
   }
 
   ASSERT_NEAR(
-    calculate_path_length(straight_line_path, 0),
+    calculate_path_length(straight_line_path),
     (nb_path_points - 1) * distance_between_poses, 1e-5);
 
   ASSERT_NEAR(
@@ -95,6 +95,6 @@ TEST(GeometryUtils, calculate_path_length)
   }
 
   ASSERT_NEAR(
-    calculate_path_length(circle_path, 0),
+    calculate_path_length(circle_path),
     2 * pi * polar_distance, 1e-1);
 }

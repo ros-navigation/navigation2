@@ -32,9 +32,7 @@ namespace nav2_bt_navigator
 
 BtNavigator::BtNavigator()
 : nav2_util::LifecycleNode("bt_navigator", "", false),
-  start_time_(0),
-  current_linear_speed_(0.0),
-  estimated_time_remaining_(rclcpp::Duration::from_seconds(0.0))
+  start_time_(0)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -290,42 +288,40 @@ BtNavigator::navigateToPose()
         [&current_pose, &current_path]() {
           size_t closest_pose_idx = 0;
           double curr_min_dist = std::numeric_limits<double>::max();
-          for (auto curr_it = current_path.poses.begin(); curr_it != current_path.poses.end(); ++curr_it) {
-            double curr_dist = nav2_util::geometry_utils::euclidean_distance(current_pose, *curr_it);
+          for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
+            double curr_dist = nav2_util::geometry_utils::euclidean_distance(
+              current_pose, current_path.poses[curr_idx]);
             if (curr_dist < curr_min_dist) {
               curr_min_dist = curr_dist;
-              closest_pose_idx = curr_it - current_path.poses.begin();
+              closest_pose_idx = curr_idx;
             }
           }
           return closest_pose_idx;
         };
 
-      size_t closest_pose_idx = find_closest_pose_idx();
-
       // Calculate distance on the path
       double distance_remaining =
-        nav2_util::geometry_utils::calculate_path_length(current_path, closest_pose_idx);
+        nav2_util::geometry_utils::calculate_path_length(current_path, find_closest_pose_idx());
 
-      if (distance_remaining <= transform_tolerance_) {
-        estimated_time_remaining_ = rclcpp::Duration::from_seconds(0.0);
-      } else {
-        // Get current speed
-        geometry_msgs::msg::Twist current_odom = odom_smoother_->getTwist();
-        current_linear_speed_ = hypot(current_odom.linear.x, current_odom.linear.y);
+      // Default value for time remaining
+      rclcpp::Duration estimated_time_remaining = rclcpp::Duration::from_seconds(0.0);
 
-        // Calculate estimated time taken to goal if speed is higher than 1cm/s 
-        // and at least 10cm to go
-        if ((std::abs(current_linear_speed_) > 0.01) && (distance_remaining > 0.1)) {
-          estimated_time_remaining_ =
-            rclcpp::Duration::from_seconds(distance_remaining / std::abs(current_linear_speed_));
-        }
+      // Get current speed
+      geometry_msgs::msg::Twist current_odom = odom_smoother_->getTwist();
+      double current_linear_speed = hypot(current_odom.linear.x, current_odom.linear.y);
+
+      // Calculate estimated time taken to goal if speed is higher than 1cm/s 
+      // and at least 10cm to go
+      if ((std::abs(current_linear_speed) > 0.01) && (distance_remaining > 0.1)) {
+        estimated_time_remaining =
+          rclcpp::Duration::from_seconds(distance_remaining / std::abs(current_linear_speed));
       }
 
       int recovery_count = 0;
       feedback_msg->current_pose = current_pose;
       blackboard_->get<int>("number_recoveries", recovery_count);
       feedback_msg->distance_remaining = distance_remaining;
-      feedback_msg->estimated_time_remaining = estimated_time_remaining_;
+      feedback_msg->estimated_time_remaining = estimated_time_remaining;
       feedback_msg->number_of_recoveries = recovery_count;
       feedback_msg->navigation_time = now() - start_time_;
       action_server_->publish_feedback(feedback_msg);
