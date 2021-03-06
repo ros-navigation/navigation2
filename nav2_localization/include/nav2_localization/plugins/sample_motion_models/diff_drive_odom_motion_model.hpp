@@ -40,7 +40,7 @@ public:
   void deactivate() override;
   void cleanup() override;
 
-private:
+protected:
   struct MotionComponents
   {
     MotionComponents(const double & rot_1, const double & trans, const double & rot_2)

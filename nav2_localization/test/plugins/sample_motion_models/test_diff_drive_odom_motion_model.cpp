@@ -24,34 +24,16 @@
 
 using nav2_localization::DiffDriveOdomMotionModel;
 
-class DiffDriveOdomMotionModelTest : public ::testing::Test
+class DiffDriveTestFixture : public DiffDriveOdomMotionModel, public ::testing::Test
 {
 protected:
   void SetUp() override
   {
-    seed_ = 1;
-    rand_num_gen_ = std::make_shared<std::mt19937>(seed_);
-
-    alpha1_ = 0.2;
-    alpha2_ = 0.2;
-    alpha3_ = 0.2;
-    alpha4_ = 0.2;
-
-    node_ = std::make_shared<nav2_util::LifecycleNode>(
-      "sample_diff_drive_odom_motion_model_test",
-      "", true);
-
-    motion_model_.configure(node_, seed_);
-    node_->set_parameter(rclcpp::Parameter("alpha1", alpha1_));
-    node_->set_parameter(rclcpp::Parameter("alpha2", alpha2_));
-    node_->set_parameter(rclcpp::Parameter("alpha3", alpha3_));
-    node_->set_parameter(rclcpp::Parameter("alpha4", alpha4_));
-    motion_model_.activate();
+    epsilon = 1e-3;
   }
 
   geometry_msgs::msg::TransformStamped createTransformStampedMsg(
-    const double x, const double y,
-    const double z, const double theta)
+    const double x, const double y, const double z, const double theta)
   {
     geometry_msgs::msg::TransformStamped result;
     result.transform.translation.x = x;
@@ -65,64 +47,93 @@ protected:
     return result;
   }
 
-  nav2_util::LifecycleNode::SharedPtr node_;
-  DiffDriveOdomMotionModel motion_model_;
-  double alpha1_;
-  double alpha2_;
-  double alpha3_;
-  double alpha4_;
-  unsigned int seed_;
-  std::shared_ptr<std::mt19937> rand_num_gen_;
+  double epsilon;
 };
 
-TEST_F(DiffDriveOdomMotionModelTest, MoveForward)
+TEST_F(DiffDriveTestFixture, IdealMotionTest)
 {
-  double x_bar = 0.0;
-  double y_bar = 0.0;
-  double theta_bar = 0.0;
-  geometry_msgs::msg::TransformStamped prev_odom =
-    createTransformStampedMsg(x_bar, y_bar, 0.0, theta_bar);
+  // no motion
+  geometry_msgs::msg::TransformStamped prev = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
+  geometry_msgs::msg::TransformStamped curr = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
+  MotionComponents motion_components = calculateIdealMotionComponents(prev, curr);
 
-  double x_bar_prime = 1.0;
-  double y_bar_prime = 0.0;
-  double theta_bar_prime = 0.0;
-  geometry_msgs::msg::TransformStamped curr_odom =
-    createTransformStampedMsg(x_bar_prime, y_bar_prime, 0.0, theta_bar_prime);
+  ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 0.0, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, 0.0, epsilon);
 
-  double x = 0.0;
-  double y = 0.0;
-  double theta = 0.0;
-  geometry_msgs::msg::TransformStamped prev_pose = createTransformStampedMsg(x, y, 0.0, theta);
+  // forward motion
+  prev = createTransformStampedMsg(0.0, 2.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
+  motion_components = calculateIdealMotionComponents(prev, curr);
 
-  double delta_rot_1 = atan2(y_bar_prime - y_bar, x_bar_prime - x_bar) - theta_bar_prime;
-  double delta_trans = hypot(x_bar_prime - x_bar, y_bar_prime - y_bar);
-  double delta_rot_2 = theta_bar_prime - theta_bar - delta_rot_1;
+  ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 2.0, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, 0.0, epsilon);
 
-  double rot_1_std = sqrt(alpha1_ * pow(delta_rot_1, 2) + alpha2_ * pow(delta_trans, 2));
-  double trans_std = sqrt(
-    alpha3_ * pow(delta_trans, 2) +
-    alpha4_ * pow(delta_rot_1, 2) +
-    alpha4_ * pow(delta_rot_2, 2));
-  double rot_2_std = sqrt(alpha1_ * pow(delta_rot_2, 2) + alpha2_ * pow(delta_trans, 2));
+  // backward motion
+  prev = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(0.0, 2.0, 0.0, 0.0);
+  motion_components = calculateIdealMotionComponents(prev, curr);
 
-  std::normal_distribution<double> rot_1_dist(0.0, rot_1_std);
-  std::normal_distribution<double> trans_dist(0.0, trans_std);
-  std::normal_distribution<double> rot_2_dist(0.0, rot_2_std);
+  ASSERT_NEAR(motion_components.rot_1_, M_PI, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 2.0, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, -M_PI, epsilon);
 
-  double delta_rot_1_hat = delta_rot_1 - rot_1_dist(*rand_num_gen_);
-  double delta_trans_hat = delta_trans - trans_dist(*rand_num_gen_);
-  double delta_rot_2_hat = delta_rot_2 - rot_2_dist(*rand_num_gen_);
+  // on-spot rotation
+  // counter clockwise
+  prev = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(2.0, 2.0, 0.0, M_PI_2);
+  motion_components = calculateIdealMotionComponents(prev, curr);
 
-  double x_prime = x + delta_trans_hat * cos(theta + delta_rot_1_hat);
-  double y_prime = y + delta_trans_hat * sin(theta + delta_rot_1_hat);
-  double theta_prime = theta + delta_rot_1_hat + delta_rot_2_hat;
+  ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 0.0, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, M_PI_2, epsilon);
 
-  geometry_msgs::msg::TransformStamped expected =
-    createTransformStampedMsg(x_prime, y_prime, 0.0, theta_prime);
-  geometry_msgs::msg::TransformStamped actual =
-    motion_model_.getMostLikelyPose(prev_odom, curr_odom, prev_pose);
+  // clockwise
+  prev = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(2.0, 2.0, 0.0, -M_PI_2);
+  motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_EQ(expected, actual);
+  ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 0.0, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, -M_PI_2, epsilon);
+
+  // diagonal motion
+  // top left
+  prev = createTransformStampedMsg(0.0, 0.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
+  motion_components = calculateIdealMotionComponents(prev, curr);
+
+  ASSERT_NEAR(motion_components.rot_1_, M_PI_4, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 2.828, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, -M_PI_4, epsilon);
+
+  // bottom left
+  prev = createTransformStampedMsg(0.0, 0.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(-2.0, 2.0, 0.0, 0.0);
+  motion_components = calculateIdealMotionComponents(prev, curr);
+
+  ASSERT_NEAR(motion_components.rot_1_, 3 * M_PI_4, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 2.828, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, -3 * M_PI_4, epsilon);
+
+  // top right
+  prev = createTransformStampedMsg(0.0, 0.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(2.0, -2.0, 0.0, 0.0);
+  motion_components = calculateIdealMotionComponents(prev, curr);
+
+  ASSERT_NEAR(motion_components.rot_1_, -M_PI_4, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 2.828, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, M_PI_4, epsilon);
+
+  // bottom right
+  prev = createTransformStampedMsg(0.0, 0.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(-2.0, -2.0, 0.0, 0.0);
+  motion_components = calculateIdealMotionComponents(prev, curr);
+
+  ASSERT_NEAR(motion_components.rot_1_, -3 * M_PI_4, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 2.828, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, 3 * M_PI_4, epsilon);
 }
 
 int main(int argc, char ** argv)
