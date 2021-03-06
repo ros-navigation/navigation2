@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 #include <set>
+#include <limits>
 
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -284,7 +285,7 @@ BtNavigator::navigateToPose()
       blackboard_->get("path", current_path);
 
       // Find the closest pose to current pose on global path
-      auto find_closest_pose_idx = 
+      auto find_closest_pose_idx =
         [&current_pose, &current_path]() {
           size_t closest_pose_idx = 0;
           double curr_min_dist = std::numeric_limits<double>::max();
@@ -310,7 +311,7 @@ BtNavigator::navigateToPose()
       geometry_msgs::msg::Twist current_odom = odom_smoother_->getTwist();
       double current_linear_speed = hypot(current_odom.linear.x, current_odom.linear.y);
 
-      // Calculate estimated time taken to goal if speed is higher than 1cm/s 
+      // Calculate estimated time taken to goal if speed is higher than 1cm/s
       // and at least 10cm to go
       if ((std::abs(current_linear_speed) > 0.01) && (distance_remaining > 0.1)) {
         estimated_time_remaining =
