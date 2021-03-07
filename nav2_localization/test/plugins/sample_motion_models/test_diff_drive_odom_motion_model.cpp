@@ -199,6 +199,18 @@ TEST_F(DiffDriveTestFixture, NoisyMotionTest)
   ASSERT_NEAR(noisy_motion_components.rot_1_, ideal_motion_components.rot_1_, epsilon);
   ASSERT_NEAR(noisy_motion_components.trans_, 1.9751113, epsilon);
   ASSERT_NEAR(noisy_motion_components.rot_2_, ideal_motion_components.rot_2_, epsilon);
+
+  // All noise parameters set
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  rot_rot_noise_parm_ = 0.1;
+  trans_rot_noise_parm_ = 0.2;
+  trans_trans_noise_parm_ = 0.3;
+  rot_trans_noise_param_ = 0.4;
+  noisy_motion_components = calculateNoisyMotionComponents(ideal_motion_components);
+
+  ASSERT_NEAR(noisy_motion_components.rot_1_, -0.2569, epsilon);
+  ASSERT_NEAR(noisy_motion_components.trans_, 1.9078, epsilon);
+  ASSERT_NEAR(noisy_motion_components.rot_2_, 0.5349, epsilon);
 }
 
 int main(int argc, char ** argv)
