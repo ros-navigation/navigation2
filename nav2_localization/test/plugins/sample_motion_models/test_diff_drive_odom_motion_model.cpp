@@ -136,6 +136,71 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   ASSERT_NEAR(motion_components.rot_2_, 3 * M_PI_4, epsilon);
 }
 
+TEST_F(DiffDriveTestFixture, NoisyMotionTest)
+{
+  // No noise
+  rot_rot_noise_parm_ = 0.0;
+  trans_rot_noise_parm_ = 0.0;
+  trans_trans_noise_parm_ = 0.0;
+  rot_trans_noise_param_ = 0.0;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  MotionComponents ideal_motion_components(M_PI_4, 2.0, -M_PI_4);
+  MotionComponents noisy_motion_components =
+    calculateNoisyMotionComponents(ideal_motion_components);
+
+  ASSERT_NEAR(noisy_motion_components.rot_1_, M_PI_4, epsilon);
+  ASSERT_NEAR(noisy_motion_components.trans_, 2.0, epsilon);
+  ASSERT_NEAR(noisy_motion_components.rot_2_, -M_PI_4, epsilon);
+
+  // rot/rot noise only
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  rot_rot_noise_parm_ = 0.1;
+  trans_rot_noise_parm_ = 0.0;
+  trans_trans_noise_parm_ = 0.0;
+  rot_trans_noise_param_ = 0.0;
+  noisy_motion_components = calculateNoisyMotionComponents(ideal_motion_components);
+
+  ASSERT_NEAR(noisy_motion_components.rot_1_, 0.5065, epsilon);
+  ASSERT_NEAR(noisy_motion_components.trans_, ideal_motion_components.trans_, epsilon);
+  ASSERT_NEAR(noisy_motion_components.rot_2_, -0.4321, epsilon);
+
+  // trans/rot only
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  rot_rot_noise_parm_ = 0.0;
+  trans_rot_noise_parm_ = 0.1;
+  trans_trans_noise_parm_ = 0.0;
+  rot_trans_noise_param_ = 0.0;
+  noisy_motion_components = calculateNoisyMotionComponents(ideal_motion_components);
+
+  ASSERT_NEAR(noisy_motion_components.rot_1_, 0.0753, epsilon);
+  ASSERT_NEAR(noisy_motion_components.trans_, ideal_motion_components.trans_, epsilon);
+  ASSERT_NEAR(noisy_motion_components.rot_2_, 0.1142, epsilon);
+
+  // trans/trans only
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  rot_rot_noise_parm_ = 0.0;
+  trans_rot_noise_parm_ = 0.0;
+  trans_trans_noise_parm_ = 0.1;
+  rot_trans_noise_param_ = 0.0;
+  noisy_motion_components = calculateNoisyMotionComponents(ideal_motion_components);
+
+  ASSERT_NEAR(noisy_motion_components.rot_1_, ideal_motion_components.rot_1_, epsilon);
+  ASSERT_NEAR(noisy_motion_components.trans_, 1.9552, epsilon);
+  ASSERT_NEAR(noisy_motion_components.rot_2_, ideal_motion_components.rot_2_, epsilon);
+
+  // rot/trans only
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  rot_rot_noise_parm_ = 0.0;
+  trans_rot_noise_parm_ = 0.0;
+  trans_trans_noise_parm_ = 0.0;
+  rot_trans_noise_param_ = 0.1;
+  noisy_motion_components = calculateNoisyMotionComponents(ideal_motion_components);
+
+  ASSERT_NEAR(noisy_motion_components.rot_1_, ideal_motion_components.rot_1_, epsilon);
+  ASSERT_NEAR(noisy_motion_components.trans_, 1.9751113, epsilon);
+  ASSERT_NEAR(noisy_motion_components.rot_2_, ideal_motion_components.rot_2_, epsilon);
+}
+
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
