@@ -54,7 +54,8 @@ def generate_launch_description():
     context = LaunchContext()
     new_yaml = configured_params.perform(context)
     return LaunchDescription([
-        SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
+        SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+        SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
 
         # Launch gazebo server for simulation
         ExecuteProcess(
