@@ -55,7 +55,7 @@ TEST(ServiceClient, can_ServiceClient_invoke_in_callback)
 {
   int a = 0;
   auto service_node = rclcpp::Node::make_shared("service_node");
-  service_node->create_service<std_srvs::srv::Empty>(
+  auto service = service_node->create_service<std_srvs::srv::Empty>(
     "empty_srv",
     [&a](std_srvs::srv::Empty::Request::SharedPtr, std_srvs::srv::Empty::Response::SharedPtr) {
       a = 1;
@@ -65,20 +65,24 @@ TEST(ServiceClient, can_ServiceClient_invoke_in_callback)
   auto pub_node = rclcpp::Node::make_shared("pub_node");
   auto pub = pub_node->create_publisher<std_msgs::msg::Empty>(
     "empty_topic",
-    rclcpp::QoS(10).transient_local());
-  pub->publish(std_msgs::msg::Empty());
-  rclcpp::spin_some(pub_node);
+    rclcpp::QoS(1).transient_local());
+  auto pub_thread = std::thread([&]() {rclcpp::spin(pub_node);});
 
-  auto node = rclcpp::Node::make_shared("test_node");
-  TestServiceClient t("empty_srv", node);
-  node->create_subscription<std_msgs::msg::Empty>(
+  auto sub_node = rclcpp::Node::make_shared("sub_node");
+  ServiceClient<std_srvs::srv::Empty> client("empty_srv", sub_node);
+  auto sub = sub_node->create_subscription<std_msgs::msg::Empty>(
     "empty_topic",
-    rclcpp::QoS(10),
-    [&t](std_msgs::msg::Empty::SharedPtr) {
+    rclcpp::QoS(1),
+    [&client](std_msgs::msg::Empty::SharedPtr) {
       auto req = std::make_shared<std_srvs::srv::Empty::Request>();
-      auto res = t.invoke(req);
+      auto res = client.invoke(req);
     });
-  rclcpp::spin_some(node);
 
+  pub->publish(std_msgs::msg::Empty());
+  rclcpp::spin_some(sub_node);
+
+  rclcpp::shutdown();
+  srv_thread.join();
+  pub_thread.join();
   ASSERT_EQ(a, 1);
 }
