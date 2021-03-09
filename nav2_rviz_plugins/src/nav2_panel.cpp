@@ -218,7 +218,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   runningTransition->setTargetState(idle_);
   running_->addTransition(runningTransition);
 
-  ROSActionQTransition * idleAccumulatedTransition = new ROSActionQTransition(QActionState::INACTIVE);
+  ROSActionQTransition * idleAccumulatedTransition =
+    new ROSActionQTransition(QActionState::INACTIVE);
   idleAccumulatedTransition->setTargetState(accumulated_);
   idle_->addTransition(idleAccumulatedTransition);
 
