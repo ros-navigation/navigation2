@@ -46,7 +46,7 @@ public:
 
   typename ResponseType::SharedPtr invoke(
     typename RequestType::SharedPtr & request,
-    const std::chrono::seconds timeout = std::chrono::seconds(1))
+    const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1))
   {
     while (!client_->wait_for_service(std::chrono::seconds(1))) {
       if (!rclcpp::ok()) {
