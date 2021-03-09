@@ -428,7 +428,7 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
 void
 Nav2Panel::onCancelButtonPressed()
 {
-  if (state_machine_.configuration().contains(accumulated_)) {
+  if (waypoint_follower_goal_handle_) {
     auto future_cancel =
       waypoint_follower_action_client_->async_cancel_goal(waypoint_follower_goal_handle_);
 
@@ -438,7 +438,9 @@ Nav2Panel::onCancelButtonPressed()
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel waypoint follower");
       return;
     }
-  } else {
+  }
+
+  if (navigation_goal_handle_) {
     auto future_cancel = navigation_action_client_->async_cancel_goal(navigation_goal_handle_);
 
     if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
