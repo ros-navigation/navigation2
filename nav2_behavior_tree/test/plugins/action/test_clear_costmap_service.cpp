@@ -314,6 +314,8 @@ int main(int argc, char ** argv)
   // shutdown ROS
   rclcpp::shutdown();
   server_thread.join();
+  server_thread_except_region.join();
+  server_thread_around_robot.join();
 
   return all_successful;
 }
