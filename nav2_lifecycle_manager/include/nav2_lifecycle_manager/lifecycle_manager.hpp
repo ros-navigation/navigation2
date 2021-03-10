@@ -51,9 +51,13 @@ public:
    */
   ~LifecycleManager();
 
+  /**
+   * @brief init create service cleant and start if autostart is true
+   */
+  void init();
+
 protected:
-  // The ROS node to use when calling lifecycle services
-  rclcpp::Node::SharedPtr service_client_node_;
+  // The ROS node to create bond
   rclcpp::Node::SharedPtr bond_client_node_;
   std::unique_ptr<nav2_util::NodeThread> bond_node_thread_;
 
