@@ -102,6 +102,22 @@ void MotionTable::initDubin(
 
   // Create the correct OMPL state space
   state_space = std::make_unique<ompl::base::DubinsStateSpace>(search_info.minimum_turning_radius);
+
+  // Precompute projection deltas
+  delta_xs.resize(projections.size());
+  delta_ys.resize(projections.size());
+
+  for (unsigned int i = 0; i != projections.size(); i++) {
+    delta_xs[i].resize(num_angle_quantization);
+    delta_ys[i].resize(num_angle_quantization);
+
+    for (unsigned int j = 0; j != num_angle_quantization; j++) {
+      double cos_theta = cos(bin_size * j);
+      double sin_theta = sin(bin_size * j);
+      delta_xs[i][j] = projections[i]._x * cos_theta - projections[i]._y * sin_theta;
+      delta_ys[i][j] = projections[i]._x * sin_theta + projections[i]._y * cos_theta;
+    }
+  }
 }
 
 // http://planning.cs.uiuc.edu/node822.html
@@ -148,6 +164,22 @@ void MotionTable::initReedsShepp(
   // Create the correct OMPL state space
   state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
     search_info.minimum_turning_radius);
+
+  // Precompute projection deltas
+  delta_xs.resize(projections.size());
+  delta_ys.resize(projections.size());
+
+  for (unsigned int i = 0; i != projections.size(); i++) {
+    delta_xs[i].resize(num_angle_quantization);
+    delta_ys[i].resize(num_angle_quantization);
+
+    for (unsigned int j = 0; j != num_angle_quantization; j++) {
+      double cos_theta = cos(bin_size * j);
+      double sin_theta = sin(bin_size * j);
+      delta_xs[i][j] = projections[i]._x * cos_theta - projections[i]._y * sin_theta;
+      delta_ys[i][j] = projections[i]._x * sin_theta + projections[i]._y * cos_theta;
+    }
+  }
 }
 
 MotionPoses MotionTable::getProjections(const NodeSE2 * node)
@@ -164,15 +196,10 @@ MotionPose MotionTable::getProjection(const NodeSE2 * node, const unsigned int &
 {
   const MotionPose & motion_model = projections[motion_index];
 
-  // transform delta X, Y, and Theta into local coordinates
+  // normalize theta, I know its overkill, but I've been burned before...
   const float & node_heading = node->pose.theta;
-  const float cos_theta = cos(node_heading * bin_size);  // needs actual angle [0, 2PI]
-  const float sin_theta = sin(node_heading * bin_size);
-  const float delta_x = motion_model._x * cos_theta - motion_model._y * sin_theta;
-  const float delta_y = motion_model._x * sin_theta + motion_model._y * cos_theta;
   float new_heading = node_heading + motion_model._theta;
 
-  // normalize theta
   while (new_heading >= num_angle_quantization_float) {
     new_heading -= num_angle_quantization_float;
   }
@@ -180,7 +207,10 @@ MotionPose MotionTable::getProjection(const NodeSE2 * node, const unsigned int &
     new_heading += num_angle_quantization_float;
   }
 
-  return MotionPose(delta_x + node->pose.x, delta_y + node->pose.y, new_heading);
+  return MotionPose(
+    delta_xs[motion_index][node_heading] + node->pose.x,
+    delta_ys[motion_index][node_heading] + node->pose.y,
+    new_heading);
 }
 
 NodeSE2::NodeSE2(const unsigned int index)
