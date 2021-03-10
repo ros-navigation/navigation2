@@ -535,13 +535,15 @@ Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 }
 
 bool
-Costmap2DROS::getPoseInGlobalFrame(geometry_msgs::msg::PoseStamped & pose)
+Costmap2DROS::transformPoseToGlobalFrame(const geometry_msgs::msg::PoseStamped & input_pose,
+  geometry_msgs::msg::PoseStamped & transformed_pose)
 {
-  if (pose.header.frame_id == global_frame_) {
+  if (input_pose.header.frame_id == global_frame_) {
+    transformed_pose = input_pose;
     return true;
   } else {
-    return nav2_util::getPoseInTargetFrame(
-      pose, *tf_buffer_,
+    return nav2_util::transformPoseInTargetFrame(
+      input_pose, transformed_pose, *tf_buffer_,
       global_frame_, transform_tolerance_);
   }
 }

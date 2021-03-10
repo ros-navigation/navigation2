@@ -36,10 +36,11 @@ bool getCurrentPose(
   tf2_ros::Buffer & tf_buffer, const std::string global_frame = "map",
   const std::string robot_frame = "base_link", const double transform_timeout = 0.1);
 
-bool getPoseInTargetFrame(
-  geometry_msgs::msg::PoseStamped & pose,
+bool transformPoseInTargetFrame(
+  const geometry_msgs::msg::PoseStamped & input_pose,
+  geometry_msgs::msg::PoseStamped & transformed_pose,
   tf2_ros::Buffer & tf_buffer, const std::string target_frame,
-    const double transform_timeout = 0.1);
+  const double transform_timeout = 0.1);
 
 }  // end namespace nav2_util
 

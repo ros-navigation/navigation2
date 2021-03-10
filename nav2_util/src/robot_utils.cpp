@@ -32,19 +32,21 @@ bool getCurrentPose(
   global_pose.header.frame_id = robot_frame;
   global_pose.header.stamp = rclcpp::Time();
 
-  return getPoseInTargetFrame(global_pose, tf_buffer, global_frame, transform_timeout);
+  return transformPoseInTargetFrame(
+        global_pose, global_pose, tf_buffer, global_frame, transform_timeout);
 }
 
-bool getPoseInTargetFrame(
-  geometry_msgs::msg::PoseStamped & pose,
+bool transformPoseInTargetFrame(
+  const geometry_msgs::msg::PoseStamped & input_pose,
+  geometry_msgs::msg::PoseStamped & transformed_pose,
   tf2_ros::Buffer & tf_buffer, const std::string target_frame,
     const double transform_timeout)
 {
-  static rclcpp::Logger logger = rclcpp::get_logger("getPoseInTargetFrame");
+  static rclcpp::Logger logger = rclcpp::get_logger("transformPoseInTargetFrame");
 
   try {
-    pose = tf_buffer.transform(
-      pose, target_frame,
+    transformed_pose = tf_buffer.transform(
+      input_pose, target_frame,
       tf2::durationFromSec(transform_timeout));
     return true;
   } catch (tf2::LookupException & ex) {
@@ -66,7 +68,7 @@ bool getPoseInTargetFrame(
   } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(
       logger, "Failed to transform from %s to %s",
-      pose.header.frame_id.c_str(), target_frame.c_str());
+      input_pose.header.frame_id.c_str(), target_frame.c_str());
   }
 
   return false;
