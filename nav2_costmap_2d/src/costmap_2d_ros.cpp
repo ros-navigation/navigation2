@@ -535,7 +535,8 @@ Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 }
 
 bool
-Costmap2DROS::transformPoseToGlobalFrame(const geometry_msgs::msg::PoseStamped & input_pose,
+Costmap2DROS::transformPoseToGlobalFrame(
+  const geometry_msgs::msg::PoseStamped & input_pose,
   geometry_msgs::msg::PoseStamped & transformed_pose)
 {
   if (input_pose.header.frame_id == global_frame_) {

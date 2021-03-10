@@ -33,14 +33,14 @@ bool getCurrentPose(
   global_pose.header.stamp = rclcpp::Time();
 
   return transformPoseInTargetFrame(
-        global_pose, global_pose, tf_buffer, global_frame, transform_timeout);
+    global_pose, global_pose, tf_buffer, global_frame, transform_timeout);
 }
 
 bool transformPoseInTargetFrame(
   const geometry_msgs::msg::PoseStamped & input_pose,
   geometry_msgs::msg::PoseStamped & transformed_pose,
   tf2_ros::Buffer & tf_buffer, const std::string target_frame,
-    const double transform_timeout)
+  const double transform_timeout)
 {
   static rclcpp::Logger logger = rclcpp::get_logger("transformPoseInTargetFrame");
 

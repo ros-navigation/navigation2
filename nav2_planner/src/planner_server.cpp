@@ -244,7 +244,8 @@ PlannerServer::computePlan()
     // Changing the start and goal pose frame to the global_frame_ of costmap_ros_ if needed
     geometry_msgs::msg::PoseStamped goal_pose = goal->goal;
     if (!costmap_ros_->transformPoseToGlobalFrame(start, start) ||
-        !costmap_ros_->transformPoseToGlobalFrame(goal->goal, goal_pose)) {
+      !costmap_ros_->transformPoseToGlobalFrame(goal->goal, goal_pose))
+    {
       RCLCPP_WARN(
         get_logger(), "Could not transform the start or goal pose in the costmap frame");
       action_server_->terminate_current();

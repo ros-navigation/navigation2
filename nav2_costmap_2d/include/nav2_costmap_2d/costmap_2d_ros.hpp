@@ -146,7 +146,8 @@ public:
    * @param transformed_pose pose transformed
    * @return True if the pose was transformed successfully, false otherwise
    */
-  bool transformPoseToGlobalFrame(const geometry_msgs::msg::PoseStamped & input_pose,
+  bool transformPoseToGlobalFrame(
+    const geometry_msgs::msg::PoseStamped & input_pose,
     geometry_msgs::msg::PoseStamped & transformed_pose);
 
   /** @brief Returns costmap name */
