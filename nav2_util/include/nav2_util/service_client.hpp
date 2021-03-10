@@ -101,7 +101,7 @@ public:
     return response.get();
   }
 
-  void wait_for_service(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds::max())
+  bool wait_for_service(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds::max())
   {
     auto sleep_dur = std::chrono::milliseconds(10);
     while (!client_->wait_for_service(timeout)) {
@@ -111,6 +111,7 @@ public:
       }
       rclcpp::sleep_for(sleep_dur);
     }
+    return !client_->service_is_ready();
   }
 
 protected:
