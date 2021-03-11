@@ -74,7 +74,8 @@ public:
       "nav2_round_robin_node_bt_node",
       "nav2_transform_available_condition_bt_node",
       "nav2_time_expired_condition_bt_node",
-      "nav2_distance_traveled_condition_bt_node"
+      "nav2_distance_traveled_condition_bt_node",
+      "nav2_single_trigger_bt_node"
     };
     for (const auto & p : plugin_libs) {
       factory_.registerFromPlugin(BT::SharedLibrary::getOSName(p));
