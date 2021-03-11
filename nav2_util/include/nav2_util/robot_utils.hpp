@@ -30,12 +30,29 @@
 
 namespace nav2_util
 {
-
+/**
+* @brief get the current pose of the robot
+* @param global_pose Pose to transform
+* @param tf_buffer TF buffer to use for the transformation
+* @param global_frame Frame to transform into
+* @param robot_frame Frame to transform from
+* @param transform_timeout TF Timeout to use for transformation
+* @return bool Whether it could be transformed successfully
+*/
 bool getCurrentPose(
   geometry_msgs::msg::PoseStamped & global_pose,
   tf2_ros::Buffer & tf_buffer, const std::string global_frame = "map",
   const std::string robot_frame = "base_link", const double transform_timeout = 0.1);
 
+/**
+* @brief get an arbitrary pose in a target frame
+* @param input_pose Pose to transform
+* @param transformed_pose Output transformation
+* @param tf_buffer TF buffer to use for the transformation
+* @param target_frame Frame to transform into
+* @param transform_timeout TF Timeout to use for transformation
+* @return bool Whether it could be transformed successfully
+*/
 bool transformPoseInTargetFrame(
   const geometry_msgs::msg::PoseStamped & input_pose,
   geometry_msgs::msg::PoseStamped & transformed_pose,
