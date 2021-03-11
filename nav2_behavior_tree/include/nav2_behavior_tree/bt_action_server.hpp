@@ -140,6 +140,23 @@ public:
     action_server_->publish_feedback(feedback);
   }
 
+  /**
+   * @brief Getter function for the current BT tree
+   */
+  BT::Tree getTree() const
+  {
+    return tree_;
+  }
+
+  /**
+   * @brief Function to halt the current tree. It will interrupt the exectuion of RUNNING nodes
+   * by calling their halt() implementation (only for Async nodes that may return RUNNING)
+   */
+  void haltTree()
+  {
+    tree_.rootNode()->halt();
+  }
+
 protected:
   /**
    * @brief Action server callback
