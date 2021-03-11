@@ -534,4 +534,19 @@ Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
     global_frame_, robot_base_frame_, transform_tolerance_);
 }
 
+bool
+Costmap2DROS::transformPoseToGlobalFrame(
+  const geometry_msgs::msg::PoseStamped & input_pose,
+  geometry_msgs::msg::PoseStamped & transformed_pose)
+{
+  if (input_pose.header.frame_id == global_frame_) {
+    transformed_pose = input_pose;
+    return true;
+  } else {
+    return nav2_util::transformPoseInTargetFrame(
+      input_pose, transformed_pose, *tf_buffer_,
+      global_frame_, transform_tolerance_);
+  }
+}
+
 }  // namespace nav2_costmap_2d
