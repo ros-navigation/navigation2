@@ -77,7 +77,7 @@ public:
       }
 
       // if occupied or unknown and not to traverse unknown space
-      return footprint_cost_ >= OCCUPIED;
+      return footprint_cost_ >= INSCRIBED;
     } else {
       // if radius, then we can check the center of the cost assuming inflation is used
       footprint_cost_ = costmap_->getCost(
