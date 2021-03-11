@@ -126,6 +126,7 @@ protected:
   rclcpp::Time start_time_;
   std::string robot_frame_;
   std::string global_frame_;
+  std::string goal_blackboard_id_;
   double transform_tolerance_;
 
   // Spinning transform that can be used by the BT nodes
