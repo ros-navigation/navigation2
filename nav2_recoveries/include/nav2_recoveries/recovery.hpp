@@ -43,12 +43,19 @@ enum class Status : int8_t
 
 using namespace std::chrono_literals;  //NOLINT
 
+/**
+ * @class nav2_recoveries::Recovery
+ * @brief An action server recovery base class implementing the action server and basic factory.
+ */
 template<typename ActionT>
 class Recovery : public nav2_core::Recovery
 {
 public:
   using ActionServer = nav2_util::SimpleActionServer<ActionT, rclcpp_lifecycle::LifecycleNode>;
 
+  /**
+   * @brief A Recovery constructor
+   */
   Recovery()
   : action_server_(nullptr),
     cycle_frequency_(10.0),
@@ -85,6 +92,7 @@ public:
   {
   }
 
+  // configure the server on lifecycle setup
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
@@ -116,6 +124,7 @@ public:
     onConfigure();
   }
 
+  // Cleanup server on lifecycle transition
   void cleanup() override
   {
     action_server_.reset();
@@ -123,6 +132,7 @@ public:
     onCleanup();
   }
 
+  // Activate server on lifecycle transition
   void activate() override
   {
     RCLCPP_INFO(logger_, "Activating %s", recovery_name_.c_str());
@@ -132,6 +142,7 @@ public:
     enabled_ = true;
   }
 
+  // Deactivate server on lifecycle transition
   void deactivate() override
   {
     vel_pub_->on_deactivate();
@@ -160,6 +171,8 @@ protected:
   // Logger
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_recoveries")};
 
+  // Main execution callbacks for the action server implementation calling the recovery's
+  // onRun and cycle functions to execute a specific behavior
   void execute()
   {
     RCLCPP_INFO(logger_, "Attempting %s", recovery_name_.c_str());
@@ -244,6 +257,7 @@ protected:
     }
   }
 
+  // Stop the robot with a commanded velocity
   void stopRobot()
   {
     auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
