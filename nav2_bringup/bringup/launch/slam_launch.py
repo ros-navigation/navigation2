@@ -17,10 +17,8 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription,
-                            PopLaunchConfigurations, PushLaunchConfigurations,
-                            UnsetLaunchConfiguration)
-from launch.conditions import UnlessCondition
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -94,24 +92,17 @@ def generate_launch_description():
     # the default file
     has_slam_toolbox_params = HasNodeParams(source_file=params_file,
                                             node_name='slam_toolbox')
-    # Push (or save) current LaunchConfiguration
-    push_launch_config = PushLaunchConfigurations(
-            condition=UnlessCondition(has_slam_toolbox_params))
 
-    # Remove params_file LaunchConfiguration before passing to slam_toolbox
-    remove_params_file = UnsetLaunchConfiguration(
-            'params_file', condition=UnlessCondition(has_slam_toolbox_params))
-
-    # Include slam_toolbox LaunchDescription, the params_file will be pased automatically
-    # unless it was Unset before.
-    # See https://github.com/ros2/launch/issues/313
     start_slam_toolbox_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(slam_launch_file),
-        launch_arguments={'use_sim_time': use_sim_time}.items())
+        launch_arguments={'use_sim_time': use_sim_time}.items(),
+        condition=UnlessCondition(has_slam_toolbox_params))
 
-    # Pop (or load) previous LaunchConfiguration, resetting the state of params_file
-    pop_launch_config = PopLaunchConfigurations(
-            condition=UnlessCondition(has_slam_toolbox_params))
+    start_slam_toolbox_cmd_with_params = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(slam_launch_file),
+        launch_arguments={'use_sim_time': use_sim_time,
+                          'slam_params_file': params_file}.items(),
+        condition=IfCondition(has_slam_toolbox_params))
 
     ld = LaunchDescription()
 
@@ -125,10 +116,8 @@ def generate_launch_description():
     ld.add_action(start_map_saver_server_cmd)
     ld.add_action(start_lifecycle_manager_cmd)
 
-    # Running SLAM Toolbox
-    ld.add_action(push_launch_config)
-    ld.add_action(remove_params_file)
+    # Running SLAM Toolbox (Only one of them will be run)
     ld.add_action(start_slam_toolbox_cmd)
-    ld.add_action(pop_launch_config)
+    ld.add_action(start_slam_toolbox_cmd_with_params)
 
     return ld
