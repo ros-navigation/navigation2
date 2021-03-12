@@ -28,6 +28,11 @@ namespace nav2_util
 namespace geometry_utils
 {
 
+/**
+ * @brief Get a geometry_msgs Quaternion from a yaw angle
+ * @param angle Yaw angle to generate a quaternion from
+ * @return geometry_msgs Quaternion
+ */
 inline geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle)
 {
   tf2::Quaternion q;
@@ -35,6 +40,12 @@ inline geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle)
   return tf2::toMsg(q);
 }
 
+/**
+ * @brief Get the L2 distance between 2 geometry_msgs::Points
+ * @param pos1 First point
+ * @param pos1 Second point
+ * @param double L2 distance
+ */
 inline double euclidean_distance(
   const geometry_msgs::msg::Point & pos1,
   const geometry_msgs::msg::Point & pos2)
@@ -45,6 +56,12 @@ inline double euclidean_distance(
   return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 
+/**
+ * @brief Get the L2 distance between 2 geometry_msgs::Poses
+ * @param pos1 First pose
+ * @param pos1 Second pose
+ * @param double L2 distance
+ */
 inline double euclidean_distance(
   const geometry_msgs::msg::Pose & pos1,
   const geometry_msgs::msg::Pose & pos2)
@@ -55,6 +72,12 @@ inline double euclidean_distance(
   return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 
+/**
+ * @brief Get the L2 distance between 2 geometry_msgs::PoseStamped
+ * @param pos1 First pose
+ * @param pos1 Second pose
+ * @param double L2 distance
+ */
 inline double euclidean_distance(
   const geometry_msgs::msg::PoseStamped & pos1,
   const geometry_msgs::msg::PoseStamped & pos2)

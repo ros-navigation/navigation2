@@ -22,10 +22,19 @@
 namespace nav2_util
 {
 
+/**
+ * @class nav2_util::ServiceClient
+ * @brief A simple wrapper on ROS2 services for invoke() and block-style calling
+ */
 template<class ServiceT>
 class ServiceClient
 {
 public:
+  /**
+  * @brief A constructor
+  * @param service_name name of the service to call
+  * @param provided_node Node to create the service client off of
+  */
   explicit ServiceClient(
     const std::string & service_name,
     const rclcpp::Node::SharedPtr & provided_node)
@@ -44,6 +53,12 @@ public:
   using RequestType = typename ServiceT::Request;
   using ResponseType = typename ServiceT::Response;
 
+  /**
+  * @brief Invoke the service and block until completed or timed out
+  * @param request The request object to call the service using
+  * @param timeout Maximum timeout to wait for, default infinite
+  * @return Response A pointer to the service response from the request
+  */
   typename ResponseType::SharedPtr invoke(
     typename RequestType::SharedPtr & request,
     const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1))
@@ -72,6 +87,12 @@ public:
     return future_result.get();
   }
 
+  /**
+  * @brief Invoke the service and block until completed
+  * @param request The request object to call the service using
+  * @param Response A pointer to the service response from the request
+  * @return bool Whether it was successfully called
+  */
   bool invoke(
     typename RequestType::SharedPtr & request,
     typename ResponseType::SharedPtr & response)
@@ -101,6 +122,10 @@ public:
     return response.get();
   }
 
+  /**
+  * @brief Block until a service is available
+  * @param timeout Maximum timeout to wait for, default infinite
+  */
   void wait_for_service(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds::max())
   {
     auto sleep_dur = std::chrono::milliseconds(10);
