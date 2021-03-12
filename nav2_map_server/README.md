@@ -1,10 +1,10 @@
 ﻿
-﻿# Nav2 Map Server
+﻿# Map Server
 
 The `Map Server` provides maps to the rest of the Nav2 system using both topic and
 service interfaces.
 
-### Changes from ROS1 Navigation Map Server
+## Changes from ROS1 Navigation Map Server
 
 While the Nav2 Map Server provides the same general function as the Nav1 Map Server, the new
 code has some changes to accommodate ROS2 as well as some architectural improvements.
@@ -12,13 +12,13 @@ It was modified to support both OccupancyGrids and PointClouds, as well as be ex
 
 In addition, there is now new "load_map/load_map_3d" and "save_map/save_map_3d" services which can be used to dynamically load and save a map.
 
-#### Architecture 
+### Architecture 
 
 In contrast to the ROS1 navigation map server, the nav2 map server will support a variety of map types, and thus some aspects of the original code have been refactored to support this new extensible framework.
 
 #### Extensible Framework
 
-The Nav2 Map Server, leverages *template metaprogramming* to enable handling of new map-types via *template specializations*. This provides switching between different server types via specifying map-type as template parameter. Thus all specializations of map-server share the same `LifecycleNode` structure, while giving to user a complete  access to the design. This approach includes integration of a map I/O system which is responsible for basic operations with any type of map, and server parts for handling services, messages etc. with these maps. It allows to have an isolated per each map-type implementations of the complete map handling system.
+The Nav2 Map Server, leverages *template metaprogramming* to enable handling of new map types via *template specializations*. This provides switching between different server types via specifying map type as template parameter. Thus all specializations of map server share the same `LifecycleNode` structure, while giving to user a complete  access to the design. This approach includes integration of a map I/O system which is responsible for basic operations with any type of map, and server parts for handling services, messages etc. with these maps. It allows to have an isolated per each map type implementations of the complete map handling system.
 
 Demonstration of *template metaprogramming* and *specializations*:
 
@@ -37,10 +37,10 @@ class ExampleClass<specialization_2> {
 ```
 
 
-In order to get a new implementation for other map-type with the new map-server, one needs to define a specialization of the base server and saver with the required services/messages types, then
+In order to get a new implementation for other map type with the new map-server, one needs to define a specialization of the base server and saver with the required services/messages types, then
 add the declaration of this specialization into `map_server.hpp` and `map_saver.hpp` interface headers.
 
-## Architecture in detail
+#### Architecture in detail
 
 Currently, map server divides into four parts:
 
@@ -57,13 +57,13 @@ or by using service requests.
 `Map Saver` saves the map into a file. Like `map_server`, it has an ability to save the map from
 command-line or by calling a service.
 
-`MapIO 2D` - is a map input-output library for `OccupancyGrids`. The library is designed to be an object-independent in order to allow easily save/load map from external code just by calling necessary function. This library is also used by `Map Server` and `Map Saver`. It supports OccupancyGrid saving/loading functions moved from the rest part of map server code. It is designed to be replaceable for a new IO library (e.g. for library with a new map encoding method or any other library supporting costmaps, multifloor maps, etc...).
+`MapIO 2D` - is a map input-output library for `OccupancyGrids`. The library is designed to be an object-independent in order to allow easily save/load map from external code just by calling necessary function. This library is also used by `Map Server` and `Map Saver` to work. It supports OccupancyGrid saving/loading functions moved from the rest part of map server code. It is designed to be replaceable for a new IO library (e.g. for library with a new map encoding method or any other library supporting costmaps, multifloor maps, etc...).
 
-`MapIO 3D` - is a 3D analogue of `MapIO 2D`: map input-output library for `PointClouds` and deals especially with `pcd`. For more details about `pcd` file format please refer to [pcl website](https://pcl.readthedocs.io/projects/tutorials/en/latest/pcd_file_format.html#pcd-file-format).
+`MapIO 3D` - is a 3D analogue of `MapIO 2D`: map input-output library for `PointClouds` and deals especially with `pcd` file format, described at [pcl website](https://pcl.readthedocs.io/projects/tutorials/en/latest/pcd_file_format.html#pcd-file-format).
 
-**Note:** In the present implementation the `MapIO 2D` and  `MapIO 3D` libraries reflects their respective *specializations* compatible with `MapServer` and `MapSaver`. 
+**Note:** In the present implementation `MapServer` and `MapSaver` uses 2D and 3D maps reflecting their respective *specializations* as follows below.
 
-For `MapIO 2D`:
+For 2D case:
 ```c++
 // map_2d/map_server_2d.hpp
 // map_2d/map_server_2d.cpp
@@ -76,7 +76,7 @@ template<>
 class MapSaver<nav_msgs::msg::OccupancyGrid> : public nav2_util::LifecycleNode {...};
 ```
 
-For `MapIO 3D`:
+For  3D case:
 ```c++
 // map_3d/map_server_3d.hpp
 // map_3d/map_server_3d.cpp
@@ -89,9 +89,9 @@ template<>
 class MapSaver<sensor_msgs::msg::PointCloud2> : public nav2_util::LifecycleNode {...};
 ```
 
-### Library interfaces list
+#### Library interfaces list
 
-The following list provides the headers mapped to their present functionalities. *For example if one wants to use  the server node then adding `#include "map_server/map_server.hpp"` will provide the server node implementation with all the specializations for different map type.*
+The following list provides the headers mapped to their present functionalities. For example, if one wants to use  the server node then adding `#include "map_server/map_server.hpp"` will provide the server node implementation with a respective specialization of the selected map type.
 
 | Basic Components | Functionality | Namespace | Contains
 | :-----------------: | :-----------------: | :------------------: | :------------: |
@@ -100,7 +100,7 @@ The following list provides the headers mapped to their present functionalities.
 | map_io_2d.hpp | 2D Map IO | nav2_map_server::map_2d | Functions for OccupancyGrid I/O operations
 | map_io_3d.hpp | 3D Map IO | nav2_map_server::map_3d | Functions for PointCloud2 I/O operations
 
-### Existing Executables
+#### Existing Executables
 
 The existing system of Nav2 Map Server provides many executables to get a hassle free services launch and handling. Listed below all the executables with their callable names, and functionalities:
 
@@ -112,9 +112,7 @@ The existing system of Nav2 Map Server provides many executables to get a hassle
 | map_saver_server_3d | main_server_3d.cpp | Map Saver Server | LifecycleNode | PointCloud2
 | map_saver_cli | main_cli.cpp | Map Saver CLI | CLI | Detects based<br /> on input parameters
 
-These executables are used in running the `server/saver_server` with ros2 launch system, or sometimes used as a direct CLI, e.g `map_saver_cli` is used as a `CLI` to save map from a topic to file, on contrary to this `map_saver_server_*` is used with launch system and the launch handles the run of a `LifecycleManager` in order to get the `saver_server` configured, same for the `map_server_*`. 
-
-**Note:** * Although there is no launch file directly provided by `Nav2 Map Server` for launching a `map_server_*`, instead the external processes used to run the `map_server_*` according to their usage requirements, there can be multiplle instances of `map_server_*`, and that should be usage specific. [For example  view:  nav2_bringup/bringup/launch/localization_launch.py](https://github.com/ShivamPR21/navigation2/blob/de73c104f1d2407984c6de0e03c6ccf4d1d09f65/nav2_bringup/bringup/launch/localization_launch.py#L85)*
+Executables of `LifecycleNode` type are being running along with lifecycle node manager e.g. through a launch file, while `map_saver_cli` is designed to be called directly through a command line.
 
 ### CLI-usage
   
@@ -140,9 +138,7 @@ occupied_thresh: 0.65
 free_thresh: 0.196
 ```
 
-- Parameters files
-
-The Navigation2 software retains the map YAML file format from Nav1, but uses the ROS2 parameter
+The Nav2 software retains the map YAML file format from Nav1, but uses the ROS2 parameter
 mechanism to get the name of the YAML file to use. This effectively introduces a level of indirection to get the map yaml filename. For example, for a node named 'map_server', the parameter file would look like this:
 
 ```yaml
@@ -152,19 +148,15 @@ map_server:
         yaml_filename: "map_2d.yaml"
 ```
 
-Below is the process to use `parameters file` with ros2:
+Below is the process to use `parameters file` with ROS2:
 
-- 2D Server
 ```shell
 # Provide the params filename accordinaly
 # Specify the parmeters file
+############################
+# For 2D Map Server
 $ ros2 run nav2_map_server map_server_2d --ros-args --params-file <map_server_params_2d.yaml>
-```
-
-- 3D Server
-```shell
-# Provide the params filename accordinaly
-# Specify the parmeters file
+# For 3D Map Server
 $ ros2 run nav2_map_server map_server_3d --ros-args --params-file <map_server_params_2d.yaml>
 ```
 
@@ -173,7 +165,7 @@ For 3D map server YAML consists of two main arguments file name as `image`, and 
 image: testmap.pcd
 origin: [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 ```
-and the `parameters file` can be  defined as shown here:
+and the `parameters file` can be  defined as shown below:
  
 ```yaml
 # map_server_params_3d.yaml
@@ -182,7 +174,7 @@ map_server:
         yaml_filename: "map_3d.yaml"
 ```
 
-**Note:** * As any `LifecycleNode`, Map Server needs to be configured and activated via a call for the state change. This could be done for example by following code snippet:*
+**Note:** As any `LifecycleNode`, Map Server needs to be configured and activated via a call for the state change. This could be done for example by the following code snippet:
 
 ```c++
 // map_client.cpp
@@ -217,7 +209,7 @@ lifecycle_client_->change_state(Transition::TRANSITION_CLEANUP);
 lifecycle_client_->change_state(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
 ```
 
-> Build Instructions for the state changing client:
+- `CMakeFile.txt` for the given above `map_client.cpp`:
 
 ```make - Makefile
 cmake_minimum_required(VERSION 3.5)
@@ -239,7 +231,8 @@ install(TARGETS server_init
   RUNTIME DESTINATION lib/${PROJECT_NAME})
 ```
 
-> Run command for generated executable
+- Command to run generated executable in parallel with `map_server_2d/map_server_3d`
+
 ```shell
 // In the workspace directory
 // Use colcon build to get the package build and installed
@@ -308,135 +301,22 @@ map_saver_server_3d_4:
 Then, one can invoke the process via launch file, with the YAML-file that contains the parameters for both nodes:
 
 ```shell
+# For Map Server
 # Files are placed in the
 # `nav2_map_server/examples/multi_map_saver_node` directory
 $ ros2 launch multi_composite_map_saver.launch.py params_file:="multi_composite_node_params.yaml"
-```
-```shell
+# For Map Saver
 # Files are placed in the
 # `nav2_map_server/examples/multi_map_server_node` directory
 $ ros2 launch multi_composite_map_server.launch.py params_file:="multi_composite_node_params.yaml"
 ```
 
-### Supported Map Types
+## Supported Map Types
 
 - Occupancy grid (nav_msgs/msg/OccupancyGrid)
 - PointCloud PointCloud2 (sensor_msgs/msg/PointCloud2)
 
-Presently, only two main map-types are supported one for `2D` and other for `3D`, still one can implement their own with full freedom to hold all the aspects of your new `map type`. 
-
-Interested in developing map server for a new Map Type, then follow the instructions:
-
-1. Create services and messages:
-One should create new Services and Messages to get the hold on the data or simply use existing one. The Map Server and Saver would handle the map related data, through these Services and Messages. 
-For example 3D Map Server  uses `PointCloud2` and `Pose` messages, and also defines the `GetMap3D` `LoadMap3D` and `SaveMap3D` services to handle the requiest relaed to point cloud maps. 
-2. Declare the skeleton of Map Server/Saver specialization for new map type:
-The Nav2 Map Server uses `LifecycleNode` for Server/Saver, the provided `map_server/map_server_core.hpp`, and `map_saver/map_saver_core.hpp` defined the base skeleton of a `LifecycleNode` templated on the map type. One need to define the specialization of these templated class for new map type. 
-For example: If the map type `new_mapT` the skeleton would be something like: 
-```c++
-// new_mapt_server.hpp
-#include <map_server/map_server_core.hpp>
-
-template<>class MapServer<new_mapT> : public nav2_util::LifecycleNode{
-
-MapServer();
-
-~MapServer();
-
-// Override the methods provided in the template<mapT>MapServer 
-// class declared in map_server_core.hpp 
-
-// Declare publishers, services and related callbacks, 
-// and whatever else one needs.
-};
-```
-```c++
-// new_mapt_saver.hpp
-#include <map_saver/map_saver_core.hpp>
-
-template<>class MapSaver<new_mapT> : public nav2_util::LifecycleNode{
-
-MapServer();
-
-~MapServer();
-
-// Override the methods provided in the template<mapT>MapSaver 
-// class declared in map_saver_core.hpp 
-
-// Declare publishers, services and related callbacks, 
-// and whatever else one needs.
-};
-```
-3. Implement the specializations:
-The implementation phase is mainly for defining the functions and callbacks that are related to the specialization skeleton that was created earlier.
-```c++
-// new_mapt_server.cpp
-#include <new_mapt_server.cpp>
-
-template<>class MapServer<new_mapT> : public nav2_util::LifecycleNode{
-
-MapServer();
-
-~MapServer();
-
-// Override the methods provided in the template<mapT>MapServer 
-// class declared in map_server_core.hpp 
-
-// Declare publishers, services and related callbacks, 
-// and whatever else one needs.
-};
-```
-```c++
-// new_mapt_saver.cpp
-#include <new_mapt_saver.hpp>
-
-MapSaver<new_mapT>::MapServer(){
-// Define this
-}
-
-MapSaver<new_mapT>::~MapServer(){
-// Define this
-}
-
-// Define the function overrides
-
-// Define the services handling system, callbacks
-// Manipulate valriable
-// Or whatever possible
-};
-```
-
-4. Integrate this specialization with existing Map Server:
-Simply add the declaration of specialization of Map Server for new map type in the `map_server/map_server.hpp`, and for Map Saver in `map_server/map_saver.hpp`.
-Example:
-
-```c++
-// map_server.hpp
-#include <map_server/map_server_core.hpp>
-
-// add specialization declaration
-#include <new_mapt_server.hpp>
-```
-```c++
-// map_saver.hpp
-#include <map_saver/map_saver_core.hpp>
-
-// add specialization declaration
-#include <new_mapt_saver.hpp>
-```
-> Add the definition in the library 
-```make
-# Cmakelist.txt
-...
-
-add_library(map_server
-  new_mapt_server.cpp
-  new_mapt_server.cpp)
-
-...
-# Remember to link the dependencies 
-# of the new specialization
-```
+Presently, only two main map types are supported one for `2D` and other for `3D`, still one can implement their own with full freedom to hold all the aspects of the new `map type`. 
 
 ## MapIO 2D library
 
@@ -474,7 +354,7 @@ Here listed the details for all the available services:
 
 ### Occupancy Grid services
 
-1. 2D Map server
+1. 2D Map Server
 - GerMap 
 	- nav_msgs/srv/GetMap.srv
 ```yaml
@@ -523,7 +403,7 @@ bool result
 ```
 
 ### Point Cloud services
-1. 3D Map server
+1. 3D Map Server
 - GetMap
 	- nav2_msgs/srv/GetMap3D.srv
 ```yaml
@@ -553,7 +433,7 @@ sensor_msgs/PointCloud2 map
 geometry_msgs/Pose origin
 uint8 result
 ```
-2. 3D Map saver
+2. 3D Map Saver
 - SaveMap
 	- nav2_msgs/srv/SaveMap3D.srv
 ```yaml
@@ -589,7 +469,7 @@ $ ros2 launch nav2_map_server map_saver_server_2d.launch.py
 $ ros2 launch nav2_map_server map_saver_server_3d.launch.py
 ```
 
- Once the services are online, any program can call the running services as shown in the examples below:
+**Note:** Although there is no launch file directly executing `map_server`, its launching principles are the same as for `map_saver_server` and could be found in `nav2_bringup/bringup/launch/localization_launch.py` file.
 
 Service usage examples:
 - 2D Map Server and Saver
