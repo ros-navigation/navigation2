@@ -1,5 +1,4 @@
-﻿
-﻿# Map Server
+# Map Server
 
 The `Map Server` provides maps to the rest of the Nav2 system using both topic and
 service interfaces.
@@ -316,7 +315,9 @@ $ ros2 launch multi_composite_map_server.launch.py params_file:="multi_composite
 - Occupancy grid (nav_msgs/msg/OccupancyGrid)
 - PointCloud PointCloud2 (sensor_msgs/msg/PointCloud2)
 
-Presently, only two main map types are supported one for `2D` and other for `3D`, still one can implement their own with full freedom to hold all the aspects of the new `map type`. 
+For now, there are only two main map types are supported one for `2D`(OccupancyGrid) and other for `3D`(PointCloud), still one can implement their own with full freedom to hold all the aspects of the new map type. This is simple with Nav2 Map Server, just define the *template specialization* of the core(bare minimum) implementation for Map Server`nav2_map_server/map_server_core.<hpp/cpp>`, and Map Saver`nav2_map_server/map_saver_core.<hpp/cpp>`. The new map type can use either a preimplemented `MapIO 2D` and `MapIO 3D`, or a custom I/O library to handle map files, and message conversions.
+
+**Note:** In order to get *templates* working properly, the new *template specialization* should be linked with the core implentation of Map Server and Saver. In the present implementation this is done through a top-level header for Map Server`nav2_map_server/map_server.hpp` and Map Saver`nav2_map_server/map_saver.hpp`.
 
 ## MapIO 2D library
 
