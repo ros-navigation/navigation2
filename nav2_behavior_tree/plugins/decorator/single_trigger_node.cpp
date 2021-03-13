@@ -37,11 +37,24 @@ BT::NodeStatus SingleTrigger::tick()
   setStatus(BT::NodeStatus::RUNNING);
 
   if (first_time_) {
-    first_time_ = false;
-    return BT::NodeStatus::SUCCESS;
-  } else {
-    return BT::NodeStatus::FAILURE;
+    const BT::NodeStatus child_state = child_node_->executeTick();
+
+    switch (child_state) {
+      case BT::NodeStatus::RUNNING:
+        return BT::NodeStatus::RUNNING;
+
+      case BT::NodeStatus::SUCCESS:
+        first_time_ = false;
+        return BT::NodeStatus::SUCCESS;
+
+      case BT::NodeStatus::FAILURE:
+      default:
+        first_time_ = false;
+        return BT::NodeStatus::FAILURE;
+    }
   }
+
+  return BT::NodeStatus::FAILURE;
 }
 
 }  // namespace nav2_behavior_tree
