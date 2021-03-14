@@ -89,21 +89,21 @@ inline double euclidean_distance(
 /**
  * @brief Calculate the length of the provided path, starting at the provided index
  * @param path Path containing the poses that are planned
- * @param start_index Optional argument specifying the starting index for 
+ * @param start_index Optional argument specifying the starting index for
  * the calculation of path length. Provide this if you want to calculate length of a
  * subset of the path.
  * @return double Path length
  */
 inline double calculate_path_length(const nav_msgs::msg::Path & path, size_t start_index = 0)
 {
-    if (start_index >= path.poses.size() - 1) {
-        return 0.0;
-    }
-    double path_length = 0.0;
-    for (size_t idx = start_index; idx < path.poses.size() - 1; ++idx) {
-        path_length += euclidean_distance(path.poses[idx].pose, path.poses[idx + 1].pose);
-    }
-    return path_length;
+  if (start_index >= path.poses.size() - 1) {
+    return 0.0;
+  }
+  double path_length = 0.0;
+  for (size_t idx = start_index; idx < path.poses.size() - 1; ++idx) {
+    path_length += euclidean_distance(path.poses[idx].pose, path.poses[idx + 1].pose);
+  }
+  return path_length;
 }
 
 }  // namespace geometry_utils
