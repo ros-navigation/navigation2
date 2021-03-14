@@ -18,6 +18,7 @@
 #include <string>
 #include <utility>
 #include <set>
+#include <limits>
 #include <vector>
 
 #include "nav2_util/geometry_utils.hpp"
@@ -90,6 +91,9 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     "goal_pose",
     rclcpp::SystemDefaultsQoS(),
     std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
+
+  // Odometry smoother object for getting current speed
+  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(shared_from_this(), 0.3);
 
   global_frame_ = get_parameter("global_frame").as_string();
   robot_frame_ = get_parameter("robot_base_frame").as_string();
@@ -206,22 +210,59 @@ void
 BtNavigator::onLoop()
 {
   // action server feedback (pose, duration of task,
-  // number of recoveries, and distance remaining to goal)
+  // time remaining, number of recoveries, and
+  // distance remaining to goal)
   auto feedback_msg = std::make_shared<Action::Feedback>();
 
+  geometry_msgs::msg::PoseStamped current_pose;
   nav2_util::getCurrentPose(
-    feedback_msg->current_pose, *tf_, global_frame_, robot_frame_, transform_tolerance_);
+    current_pose, *tf_, global_frame_, robot_frame_, transform_tolerance_);
 
   auto blackboard = bt_action_server_->getBlackboard();
 
-  geometry_msgs::msg::PoseStamped goal_pose;
-  blackboard->get(goal_blackboard_id_, goal_pose);
+  // Get current path points
+  nav_msgs::msg::Path current_path;
+  blackboard_->get("path", current_path);
 
-  feedback_msg->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
-    feedback_msg->current_pose.pose, goal_pose.pose);
+  // Find the closest pose to current pose on global path
+  auto find_closest_pose_idx =
+    [&current_pose, &current_path]() {
+      size_t closest_pose_idx = 0;
+      double curr_min_dist = std::numeric_limits<double>::max();
+      for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
+        double curr_dist = nav2_util::geometry_utils::euclidean_distance(
+          current_pose, current_path.poses[curr_idx]);
+        if (curr_dist < curr_min_dist) {
+          curr_min_dist = curr_dist;
+          closest_pose_idx = curr_idx;
+        }
+      }
+      return closest_pose_idx;
+    };
+
+  // Calculate distance on the path
+  double distance_remaining =
+    nav2_util::geometry_utils::calculate_path_length(current_path, find_closest_pose_idx());
+
+  // Default value for time remaining
+  rclcpp::Duration estimated_time_remaining = rclcpp::Duration::from_seconds(0.0);
+
+  // Get current speed
+  geometry_msgs::msg::Twist current_odom = odom_smoother_->getTwist();
+  double current_linear_speed = hypot(current_odom.linear.x, current_odom.linear.y);
+
+  // Calculate estimated time taken to goal if speed is higher than 1cm/s
+  // and at least 10cm to go
+  if ((std::abs(current_linear_speed) > 0.01) && (distance_remaining > 0.1)) {
+    estimated_time_remaining =
+      rclcpp::Duration::from_seconds(distance_remaining / std::abs(current_linear_speed));
+  }
 
   int recovery_count = 0;
   blackboard->get<int>("number_recoveries", recovery_count);
+  feedback_msg->current_pose = current_pose;
+  feedback_msg->distance_remaining = distance_remaining;
+  feedback_msg->estimated_time_remaining = estimated_time_remaining;
   feedback_msg->number_of_recoveries = recovery_count;
   feedback_msg->navigation_time = now() - start_time_;
 
