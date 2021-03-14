@@ -35,6 +35,10 @@
 #ifndef DWB_CRITICS__BASE_OBSTACLE_HPP_
 #define DWB_CRITICS__BASE_OBSTACLE_HPP_
 
+#include <string>
+#include <vector>
+#include <utility>
+
 #include "dwb_core/trajectory_critic.hpp"
 
 namespace dwb_critics
@@ -55,7 +59,8 @@ class BaseObstacleCritic : public dwb_core::TrajectoryCritic
 public:
   void onInit() override;
   double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
-  void addCriticVisualization(sensor_msgs::msg::PointCloud & pc) override;
+  void addCriticVisualization(
+          std::vector<std::pair<std::string, std::vector<float>>> & cost_channels) override;
 
   /**
    * @brief Return the obstacle score for a particular pose

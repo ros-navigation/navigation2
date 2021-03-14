@@ -96,8 +96,9 @@ void VoxelLayer::onInitialize()
     voxel_pub_->on_activate();
   }
 
-  clearing_endpoints_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud>(
+  clearing_endpoints_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud2>(
     "clearing_endpoints", custom_qos);
+  clearing_endpoints_pub_->on_activate();
 
   unknown_threshold_ += (VOXEL_BITS - size_z_);
   matchSize();
@@ -302,7 +303,7 @@ void VoxelLayer::raytraceFreespace(
   double * max_x,
   double * max_y)
 {
-  auto clearing_endpoints_ = std::make_unique<sensor_msgs::msg::PointCloud>();
+  auto clearing_endpoints_ = std::make_unique<sensor_msgs::msg::PointCloud2>();
 
   size_t clearing_observation_cloud_size = clearing_observation.cloud_->height *
     clearing_observation.cloud_->width;
@@ -334,9 +335,30 @@ void VoxelLayer::raytraceFreespace(
   }
 
   if (publish_clearing_points) {
-    clearing_endpoints_->points.clear();
-    clearing_endpoints_->points.reserve(clearing_observation_cloud_size);
+    clearing_endpoints_->data.clear();
+    clearing_endpoints_->width = clearing_observation.cloud_->width;
+    clearing_endpoints_->height = clearing_observation.cloud_->height;
+    clearing_endpoints_->is_dense = true;  // are there no invalid points in the cloud ?
+    clearing_endpoints_->is_bigendian = false;
+  }else{
+    clearing_endpoints_->width  = 0;
+    clearing_endpoints_->height = 0;
   }
+  // FIXME(sachin): Should I use clearing_observation.cloud_->fields.size() ??
+  clearing_endpoints_->fields.resize(3);
+  int offset = 0;
+  for(size_t i = 0; i < clearing_endpoints_->fields.size(); ++i, offset += 4){
+    clearing_endpoints_->fields[i].offset   = offset;
+    clearing_endpoints_->fields[i].count    = 1;
+    clearing_endpoints_->fields[i].datatype = sensor_msgs::msg::PointField::FLOAT32;
+  }
+
+  clearing_endpoints_->fields[0].name = "x";
+  clearing_endpoints_->fields[1].name = "y";
+  clearing_endpoints_->fields[2].name = "z";
+  clearing_endpoints_->point_step     = offset;
+  clearing_endpoints_->row_step = clearing_endpoints_->point_step * clearing_endpoints_->width;
+  clearing_endpoints_->data.resize(clearing_endpoints_->row_step * clearing_endpoints_->height);
 
   // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
   double map_end_x = origin_x_ + getSizeInMetersX();
@@ -346,6 +368,10 @@ void VoxelLayer::raytraceFreespace(
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(*(clearing_observation.cloud_), "x");
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(*(clearing_observation.cloud_), "y");
   sensor_msgs::PointCloud2ConstIterator<float> iter_z(*(clearing_observation.cloud_), "z");
+
+  sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_x(*clearing_endpoints_, "x");
+  sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_y(*clearing_endpoints_, "y");
+  sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_z(*clearing_endpoints_, "z");
 
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
     double wpx = *iter_x;
@@ -414,11 +440,13 @@ void VoxelLayer::raytraceFreespace(
         max_y);
 
       if (publish_clearing_points) {
-        geometry_msgs::msg::Point32 point;
-        point.x = wpx;
-        point.y = wpy;
-        point.z = wpz;
-        clearing_endpoints_->points.push_back(point);
+        *clearing_endpoints_iter_x = wpx;
+        *clearing_endpoints_iter_y = wpy;
+        *clearing_endpoints_iter_z = wpz;
+
+        ++clearing_endpoints_iter_x;
+        ++clearing_endpoints_iter_y;
+        ++clearing_endpoints_iter_z;
       }
     }
   }
