@@ -228,7 +228,8 @@ double RegulatedPurePursuitController::getLookAheadDistance(const geometry_msgs:
 
 geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
-  const geometry_msgs::msg::Twist & speed)
+  const geometry_msgs::msg::Twist & speed,
+  nav2_core::GoalChecker * /*goal_checker*/)
 {
   // Transform path to robot base frame
   auto transformed_plan = transformGlobalPlan(pose);

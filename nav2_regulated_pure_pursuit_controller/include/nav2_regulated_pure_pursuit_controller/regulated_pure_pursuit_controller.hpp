@@ -84,12 +84,13 @@ public:
    *
    * @param pose      Current robot pose
    * @param velocity  Current robot velocity
-   * @param results   Output param, if not NULL, will be filled in with full evaluation results
+   * @param goal_checker   Ptr to the goal checker for this task in case useful in computing commands
    * @return          Best command
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
-    const geometry_msgs::msg::Twist & velocity) override;
+    const geometry_msgs::msg::Twist & velocity,
+    nav2_core::GoalChecker * /*goal_checker*/) override;
 
   /**
    * @brief nav2_core setPlan - Sets the global plan
