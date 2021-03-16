@@ -36,7 +36,7 @@ class ExampleClass<specialization_2> {
 ```
 
 
-In order to get a new implementation for other map type with the new map-server, one needs to define a specialization of the base server and saver with the required services/messages types, then
+In order to get a new implementation for other map type with the new map server, one needs to define a specialization of the base server and saver with the required services/messages types, then
 add the declaration of this specialization into `map_server.hpp` and `map_saver.hpp` interface headers.
 
 #### Architecture in detail
@@ -147,18 +147,6 @@ map_server:
         yaml_filename: "map_2d.yaml"
 ```
 
-Below is the process to use `parameters file` with ROS2:
-
-```shell
-# Provide the params filename accordinaly
-# Specify the parmeters file
-############################
-# For 2D Map Server
-$ ros2 run nav2_map_server map_server_2d --ros-args --params-file <map_server_params_2d.yaml>
-# For 3D Map Server
-$ ros2 run nav2_map_server map_server_3d --ros-args --params-file <map_server_params_2d.yaml>
-```
-
 For 3D map server YAML consists of two main arguments file name as `image`, and view point as `origin` :
 ```yaml
 image: testmap.pcd
@@ -171,6 +159,15 @@ and the `parameters file` can be  defined as shown below:
 map_server:
     ros__parameters:
         yaml_filename: "map_3d.yaml"
+```
+
+Below is the process to use `parameters file` with ROS2:
+
+```shell
+# For 2D Map Server
+$ ros2 run nav2_map_server map_server_2d --ros-args --params-file <map_server_params_2d.yaml>
+# For 3D Map Server
+$ ros2 run nav2_map_server map_server_3d --ros-args --params-file <map_server_params_3d.yaml>
 ```
 
 **Note:** As any `LifecycleNode`, Map Server needs to be configured and activated via a call for the state change. This could be done for example by the following code snippet:
@@ -305,8 +302,6 @@ Then, one can invoke the process via launch file, with the YAML-file that contai
 # `nav2_map_server/examples/multi_map_saver_node` directory
 $ ros2 launch multi_composite_map_saver.launch.py params_file:="multi_composite_node_params.yaml"
 # For Map Saver
-# Files are placed in the
-# `nav2_map_server/examples/multi_map_server_node` directory
 $ ros2 launch multi_composite_map_server.launch.py params_file:="multi_composite_node_params.yaml"
 ```
 
@@ -315,9 +310,7 @@ $ ros2 launch multi_composite_map_server.launch.py params_file:="multi_composite
 - Occupancy grid (nav_msgs/msg/OccupancyGrid)
 - PointCloud PointCloud2 (sensor_msgs/msg/PointCloud2)
 
-For now, there are only two main map types are supported one for `2D`(OccupancyGrid) and other for `3D`(PointCloud), still one can implement their own with full freedom to hold all the aspects of the new map type. This is simple with Nav2 Map Server, just define the *template specialization* of the core(bare minimum) implementation for Map Server`nav2_map_server/map_server_core.<hpp/cpp>`, and Map Saver`nav2_map_server/map_saver_core.<hpp/cpp>`. The new map type can use either a preimplemented `MapIO 2D` and `MapIO 3D`, or a custom I/O library to handle map files, and message conversions.
-
-**Note:** In order to get *templates* working properly, the new *template specialization* should be linked with the core implentation of Map Server and Saver. In the present implementation this is done through a top-level header for Map Server`nav2_map_server/map_server.hpp` and Map Saver`nav2_map_server/map_saver.hpp`.
+For now, there are only two main map types are supported one for `2D`(OccupancyGrid) and other for `3D`(PointCloud), still one can implement their own with full freedom to hold all the aspects of the new map type. Such extensions could be simply supported in Map Server. For that it is required to define the template specialization of the core (bare minimum) implementation of the new map type for Map Server, Map Saver and Map IO library. Also the new map type can use either a preimplemented `MapIO 2D` and `MapIO 3D`, or a custom I/O library to handle map files, and message conversions.
 
 ## MapIO 2D library
 
