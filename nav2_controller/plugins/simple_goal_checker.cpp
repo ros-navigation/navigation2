@@ -34,6 +34,7 @@
 
 #include <memory>
 #include <string>
+#include <limits>
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"

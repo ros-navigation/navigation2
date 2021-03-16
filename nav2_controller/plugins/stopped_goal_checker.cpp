@@ -35,6 +35,7 @@
 #include <cmath>
 #include <string>
 #include <memory>
+#include <limits>
 #include "nav2_controller/plugins/stopped_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_util/node_utils.hpp"
