@@ -49,7 +49,7 @@ BT::NodeStatus SingleTrigger::tick()
 
       case BT::NodeStatus::FAILURE:
         first_time_ = false;
-        return BT::NodeStatus::FAILURE;      
+        return BT::NodeStatus::FAILURE;
 
       default:
         first_time_ = false;
