@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__PURE_PURSUIT_CONTROLLER_HPP_
-#define NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__PURE_PURSUIT_CONTROLLER_HPP_
+#ifndef NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__REGULATED_PURE_PURSUIT_CONTROLLER_HPP_
+#define NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__REGULATED_PURE_PURSUIT_CONTROLLER_HPP_
 
 #include <string>
 #include <vector>
@@ -165,7 +165,8 @@ protected:
    * @param angle_to_path Angle of robot output relatie to carrot marker
    * @param curr_speed the current robot speed
    */
-  void rotateToHeading(double & linear_vel, double & angular_vel,
+  void rotateToHeading(
+    double & linear_vel, double & angular_vel,
     const double & angle_to_path, const geometry_msgs::msg::Twist & curr_speed);
 
   /**
@@ -252,10 +253,11 @@ protected:
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>> carrot_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
+  carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller
 
-#endif  // NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__PURE_PURSUIT_CONTROLLER_HPP_
+#endif  // NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__REGULATED_PURE_PURSUIT_CONTROLLER_HPP_
