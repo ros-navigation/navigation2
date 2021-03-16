@@ -272,7 +272,7 @@ map_server_3d_n4:
         yaml_filename: "./point_cloud_map.yaml"
 ```
 
-- Map server
+- Map saver
 ```yaml
 # For composite MapSaver launch
 # examples/multi_map_saver_node/multi_composite_node_params.yaml
