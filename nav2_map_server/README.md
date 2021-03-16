@@ -297,9 +297,9 @@ map_saver_server_3d_4:
 Then, one can invoke the process via launch file, with the YAML-file that contains the parameters for both nodes:
 
 ```shell
-# For Map Server
 # Files are placed in the
 # `nav2_map_server/examples/multi_map_saver_node` directory
+# For Map Server
 $ ros2 launch multi_composite_map_saver.launch.py params_file:="multi_composite_node_params.yaml"
 # For Map Saver
 $ ros2 launch multi_composite_map_server.launch.py params_file:="multi_composite_node_params.yaml"
@@ -310,8 +310,7 @@ $ ros2 launch multi_composite_map_server.launch.py params_file:="multi_composite
 - Occupancy grid (nav_msgs/msg/OccupancyGrid)
 - PointCloud PointCloud2 (sensor_msgs/msg/PointCloud2)
 
-For now, there are only two main map types are supported one for `2D`(OccupancyGrid) and other for `3D`(PointCloud), still one can implement their own with full freedom to hold all the aspects of the new map type. Such extensions could be simply supported in Map Server. For that it is required to define the template specialization of the core (bare minimum) implementation of the new map type for Map Server, Map Saver and Map IO library. Also the new map type can use either a preimplemented `MapIO 2D` and `MapIO 3D`, or a custom I/O library to handle map files, and message conversions.
-
+For now, there are only two main map types are supported one for `2D`(OccupancyGrid) and other for `3D`(PointCloud), still one can implement their own with full freedom to hold all the aspects of the new map type. Such extensions could be simply supported in Map Server. For that it is required to define the template specialization of the core (bare minimum) implementation of the new map type for Map Server, Map Saver and Map IO library.
 ## MapIO 2D library
 
 `MapIO 2D` library contains following API functions declared in `map_2d/map_io_2d.hpp` to work with

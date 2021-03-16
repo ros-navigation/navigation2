@@ -35,7 +35,7 @@ MapServer<sensor_msgs::msg::PointCloud2>::MapServer()
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare the node parameters
-  declare_parameter("yaml_filename");
+  declare_parameter("yaml_filename", rclcpp::PARAMETER_STRING);
   declare_parameter("topic_name", "map");
   declare_parameter("frame_id", "map");
 }
