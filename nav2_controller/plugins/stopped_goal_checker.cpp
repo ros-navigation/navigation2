@@ -82,6 +82,27 @@ bool StoppedGoalChecker::isGoalReached(
          hypot(velocity.linear.x, velocity.linear.y) <= trans_stopped_velocity_;
 }
 
+bool StoppedGoalChecker::getTolerances(
+  geometry_msgs::msg::Pose & pose_tolerance,
+  geometry_msgs::msg::Twist & vel_tolerance)
+{
+  double invalid_field = std::numeric_limits<double>::lowest();
+
+  // populate the poses
+  bool rtn = SimpleGoalChecker::getTolerances(pose_tolerance, vel_tolerance);
+
+  // override the velocities
+  vel_tolerance.linear.x = trans_stopped_velocity_;
+  vel_tolerance.linear.y = trans_stopped_velocity_;
+  vel_tolerance.linear.z = invalid_field;
+
+  vel_tolerance.angular.x = invalid_field;
+  vel_tolerance.angular.y = invalid_field;
+  vel_tolerance.angular.z = rot_stopped_velocity_;
+
+  return true && rtn;
+}
+
 }  // namespace nav2_controller
 
 PLUGINLIB_EXPORT_CLASS(nav2_controller::StoppedGoalChecker, nav2_core::GoalChecker)

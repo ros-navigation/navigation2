@@ -64,6 +64,9 @@ public:
   bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
     const geometry_msgs::msg::Twist & velocity) override;
+  bool getTolerances(
+    geometry_msgs::msg::Pose & pose_tolerance,
+    geometry_msgs::msg::Twist & vel_tolerance) override;
 
 protected:
   double xy_goal_tolerance_, yaw_goal_tolerance_;
