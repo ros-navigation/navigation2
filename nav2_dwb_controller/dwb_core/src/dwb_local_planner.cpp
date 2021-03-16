@@ -76,8 +76,12 @@ void DWBLocalPlanner::configure(
   costmap_ros_ = costmap_ros;
   tf_ = tf;
   dwb_plugin_name_ = name;
-  declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".critics");
-  declare_parameter_if_not_declared(node, dwb_plugin_name_ + ".default_critic_namespaces");
+  declare_parameter_if_not_declared(
+    node, dwb_plugin_name_ + ".critics",
+    rclcpp::PARAMETER_STRING_ARRAY);
+  declare_parameter_if_not_declared(
+    node, dwb_plugin_name_ + ".default_critic_namespaces",
+    rclcpp::ParameterValue(std::vector<std::string>()));
   declare_parameter_if_not_declared(
     node, dwb_plugin_name_ + ".prune_plan",
     rclcpp::ParameterValue(true));
