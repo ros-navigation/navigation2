@@ -116,13 +116,13 @@ bool SimpleGoalChecker::getTolerances(
   pose_tolerance.position.y = xy_goal_tolerance_;
   pose_tolerance.position.z = invalid_field;
   pose_tolerance.orientation =
-    nav2_util::geometry_utils::orientationAroundZAxis(yaw_goal_tolerance);
+    nav2_util::geometry_utils::orientationAroundZAxis(yaw_goal_tolerance_);
 
   vel_tolerance.linear.x = invalid_field;
   vel_tolerance.linear.y = invalid_field;
   vel_tolerance.linear.z = invalid_field;
 
-  vel_tolerance.angular.x = invalid_field; 
+  vel_tolerance.angular.x = invalid_field;
   vel_tolerance.angular.y = invalid_field;
   vel_tolerance.angular.z = invalid_field;
 

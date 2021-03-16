@@ -73,6 +73,7 @@ void RegulatedPurePursuitController::configure(
 
   double transform_tolerance = 0.1;
   double control_frequency = 20.0;
+  goal_dist_tol_ = 0.25; // reasonable default before first update
 
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".desired_linear_vel", rclcpp::ParameterValue(0.5));
@@ -121,8 +122,6 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".rotate_to_heading_min_angle", rclcpp::ParameterValue(0.785));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
-  declare_parameter_if_not_declared(
-    node, plugin_name_ + ".goal_dist_tol", rclcpp::ParameterValue(0.25));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   base_desired_linear_vel_ = desired_linear_vel_;
@@ -149,7 +148,6 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(plugin_name_ + ".use_rotate_to_heading", use_rotate_to_heading_);
   node->get_parameter(plugin_name_ + ".rotate_to_heading_min_angle", rotate_to_heading_min_angle_);
   node->get_parameter(plugin_name_ + ".max_angular_accel", max_angular_accel_);
-  node->get_parameter(plugin_name_ + ".goal_dist_tol", goal_dist_tol_);
   node->get_parameter("controller_frequency", control_frequency);
 
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
@@ -229,8 +227,17 @@ double RegulatedPurePursuitController::getLookAheadDistance(const geometry_msgs:
 geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & speed,
-  nav2_core::GoalChecker * /*goal_checker*/)
+  nav2_core::GoalChecker * goal_checker)
 {
+  // Update for the current goal checker's state
+  geometry_msgs::msg::Pose pose_tolerance;
+  geometry_msgs::msg::Twist vel_tolerance;
+  if (!goal_checker->getTolerances(pose_tolerance, vel_tolerance)) {
+    RCLCPP_WARN(logger_, "Unable to retrieve goal checker's tolerances!");
+  } else {
+    goal_dist_tol_ = pose_tolerance.position.x;
+  }
+
   // Transform path to robot base frame
   auto transformed_plan = transformGlobalPlan(pose);
 
