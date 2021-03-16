@@ -131,6 +131,7 @@ SimpleGoalChecker::on_parameter_event_callback(
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == plugin_name_ + ".xy_goal_tolerance") {
         xy_goal_tolerance_ = value.double_value;
+        xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
       } else if (name == plugin_name_ + ".yaw_goal_tolerance") {
         yaw_goal_tolerance_ = value.double_value;
       }
