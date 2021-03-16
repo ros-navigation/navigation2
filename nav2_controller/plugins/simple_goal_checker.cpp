@@ -45,6 +45,9 @@
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
+
 namespace nav2_controller
 {
 
@@ -61,6 +64,7 @@ void SimpleGoalChecker::initialize(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
 {
+  plugin_name_ = plugin_name;
   auto node = parent.lock();
 
   nav2_util::declare_parameter_if_not_declared(
@@ -78,6 +82,16 @@ void SimpleGoalChecker::initialize(
   node->get_parameter(plugin_name + ".stateful", stateful_);
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+
+  // Setup callback for changes to parameters.
+  parameters_client_ = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(),
+    node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  parameter_event_sub_ = parameters_client_->on_parameter_event(
+    std::bind(&SimpleGoalChecker::on_parameter_event_callback, this, _1));
 }
 
 void SimpleGoalChecker::reset()
@@ -128,6 +142,30 @@ bool SimpleGoalChecker::getTolerances(
   vel_tolerance.angular.z = invalid_field;
 
   return true;
+}
+
+void
+SimpleGoalChecker::on_parameter_event_callback(
+  const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+{
+  for (auto & changed_parameter : event->changed_parameters) {
+    const auto & type = changed_parameter.value.type;
+    const auto & name = changed_parameter.name;
+    const auto & value = changed_parameter.value;
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == plugin_name_ + ".xy_goal_tolerance") {
+        xy_goal_tolerance_ = value.double_value;
+        xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+      } else if (name == plugin_name_ + ".yaw_goal_tolerance") {
+        yaw_goal_tolerance_ = value.double_value;
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == plugin_name_ + ".stateful") {
+        stateful_ = value.bool_value;
+      }
+    }
+  }
 }
 
 }  // namespace nav2_controller
