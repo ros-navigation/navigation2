@@ -14,6 +14,10 @@ ament_add_gtest(test_goal_updater_node test_goal_updater_node.cpp)
 target_link_libraries(test_goal_updater_node nav2_goal_updater_node_bt_node)
 ament_target_dependencies(test_goal_updater_node ${dependencies})
 
+ament_add_gtest(test_planner_selector_node test_planner_selector_node.cpp)
+target_link_libraries(test_planner_selector_node nav2_planner_selector_bt_node)
+ament_target_dependencies(test_planner_selector_node ${dependencies})
+
 ament_add_gtest(test_single_trigger_node test_single_trigger_node.cpp)
 target_link_libraries(test_single_trigger_node nav2_single_trigger_bt_node)
 ament_target_dependencies(test_single_trigger_node ${dependencies})
