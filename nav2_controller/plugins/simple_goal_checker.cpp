@@ -34,10 +34,12 @@
 
 #include <memory>
 #include <string>
+#include <limits>
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
@@ -117,6 +119,29 @@ bool SimpleGoalChecker::isGoalReached(
     tf2::getYaw(query_pose.orientation),
     tf2::getYaw(goal_pose.orientation));
   return fabs(dyaw) < yaw_goal_tolerance_;
+}
+
+bool SimpleGoalChecker::getTolerances(
+  geometry_msgs::msg::Pose & pose_tolerance,
+  geometry_msgs::msg::Twist & vel_tolerance)
+{
+  double invalid_field = std::numeric_limits<double>::lowest();
+
+  pose_tolerance.position.x = xy_goal_tolerance_;
+  pose_tolerance.position.y = xy_goal_tolerance_;
+  pose_tolerance.position.z = invalid_field;
+  pose_tolerance.orientation =
+    nav2_util::geometry_utils::orientationAroundZAxis(yaw_goal_tolerance_);
+
+  vel_tolerance.linear.x = invalid_field;
+  vel_tolerance.linear.y = invalid_field;
+  vel_tolerance.linear.z = invalid_field;
+
+  vel_tolerance.angular.x = invalid_field;
+  vel_tolerance.angular.y = invalid_field;
+  vel_tolerance.angular.z = invalid_field;
+
+  return true;
 }
 
 void

@@ -35,33 +35,34 @@ RclCppFixture g_rclcppfixture;
 class BasicAPIRPP : public nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
 {
 public:
-  BasicAPIRPP() : nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController() {};
+  BasicAPIRPP()
+  : nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController() {}
 
-  nav_msgs::msg::Path getPlan() {return global_plan_;};
+  nav_msgs::msg::Path getPlan() {return global_plan_;}
 
-  double getSpeed() {return desired_linear_vel_;};
+  double getSpeed() {return desired_linear_vel_;}
 
   std::unique_ptr<geometry_msgs::msg::PointStamped> createCarrotMsgWrapper(
     const geometry_msgs::msg::PoseStamped & carrot_pose)
   {
     return createCarrotMsg(carrot_pose);
-  };
+  }
 
-  void setVelocityScaledLookAhead() {use_velocity_scaled_lookahead_dist_ = true;};
-  void setCostRegulationScaling() {use_cost_regulated_linear_velocity_scaling_ = true;};
-  void resetVelocityRegulationScaling() {use_regulated_linear_velocity_scaling_ = false;};
-  void resetVelocityApproachScaling() {use_approach_vel_scaling_ = false;};
+  void setVelocityScaledLookAhead() {use_velocity_scaled_lookahead_dist_ = true;}
+  void setCostRegulationScaling() {use_cost_regulated_linear_velocity_scaling_ = true;}
+  void resetVelocityRegulationScaling() {use_regulated_linear_velocity_scaling_ = false;}
+  void resetVelocityApproachScaling() {use_approach_vel_scaling_ = false;}
 
   double getLookAheadDistanceWrapper(const geometry_msgs::msg::Twist & twist)
   {
     return getLookAheadDistance(twist);
-  };
+  }
 
   geometry_msgs::msg::PoseStamped getLookAheadPointWrapper(
     const double & dist, const nav_msgs::msg::Path & path)
   {
     return getLookAheadPoint(dist, path);
-  };
+  }
 
   bool shouldRotateToPathWrapper(
     const geometry_msgs::msg::PoseStamped & carrot_pose, double & angle_to_path)
@@ -74,20 +75,22 @@ public:
     return shouldRotateToGoalHeading(carrot_pose);
   }
 
-  void rotateToHeadingWrapper(double & linear_vel, double & angular_vel,
+  void rotateToHeadingWrapper(
+    double & linear_vel, double & angular_vel,
     const double & angle_to_path, const geometry_msgs::msg::Twist & curr_speed)
   {
     return rotateToHeading(linear_vel, angular_vel, angle_to_path, curr_speed);
   }
 
   void applyConstraintsWrapper(
-  const double & dist_error, const double & lookahead_dist,
-  const double & curvature, const geometry_msgs::msg::Twist & curr_speed,
-  const double & pose_cost, double & linear_vel)
+    const double & dist_error, const double & lookahead_dist,
+    const double & curvature, const geometry_msgs::msg::Twist & curr_speed,
+    const double & pose_cost, double & linear_vel)
   {
-    return applyConstraints(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+    return applyConstraints(
+      dist_error, lookahead_dist, curvature, curr_speed, pose_cost,
+      linear_vel);
   }
-
 };
 
 TEST(RegulatedPurePursuitTest, basicAPI)
@@ -289,19 +292,25 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
 
   // test curvature regulation (default)
   curr_speed.linear.x = 0.25;
-  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  ctrl->applyConstraintsWrapper(
+    dist_error, lookahead_dist, curvature, curr_speed, pose_cost,
+    linear_vel);
   EXPECT_EQ(linear_vel, 0.25);  // min set speed
 
   linear_vel = 1.0;
   curvature = 0.7407;
   curr_speed.linear.x = 0.5;
-  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  ctrl->applyConstraintsWrapper(
+    dist_error, lookahead_dist, curvature, curr_speed, pose_cost,
+    linear_vel);
   EXPECT_NEAR(linear_vel, 0.5, 0.01);  // lower by curvature
 
   linear_vel = 1.0;
   curvature = 1000.0;
   curr_speed.linear.x = 0.25;
-  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  ctrl->applyConstraintsWrapper(
+    dist_error, lookahead_dist, curvature, curr_speed, pose_cost,
+    linear_vel);
   EXPECT_NEAR(linear_vel, 0.25, 0.01);  // min out by curvature
 
 
@@ -314,24 +323,28 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   // pose_cost = 1;
   // linear_vel = 0.5;
   // curr_speed.linear.x = 0.5;
-  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  // ctrl->applyConstraintsWrapper(
+  //   dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
   // EXPECT_NEAR(linear_vel, 0.498, 0.01);
 
   // max changing cost
   // pose_cost = 127;
   // curr_speed.linear.x = 0.255;
-  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  // ctrl->applyConstraintsWrapper(
+  //   dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
   // EXPECT_NEAR(linear_vel, 0.255, 0.01);
 
   // over max cost thresh
   // pose_cost = 200;
   // curr_speed.linear.x = 0.25;
-  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  // ctrl->applyConstraintsWrapper(
+  //   dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
   // EXPECT_NEAR(linear_vel, 0.25, 0.01);
 
   // test kinematic clamping
   // pose_cost = 200;
   // curr_speed.linear.x = 1.0;
-  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  // ctrl->applyConstraintsWrapper(
+  //   dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
   // EXPECT_NEAR(linear_vel, 0.5, 0.01);
 }

@@ -235,7 +235,8 @@ DWBLocalPlanner::setPlan(const nav_msgs::msg::Path & path)
 geometry_msgs::msg::TwistStamped
 DWBLocalPlanner::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
-  const geometry_msgs::msg::Twist & velocity)
+  const geometry_msgs::msg::Twist & velocity,
+  nav2_core::GoalChecker * /*goal_checker*/)
 {
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results = nullptr;
   if (pub_->shouldRecordEvaluation()) {
