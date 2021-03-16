@@ -60,22 +60,22 @@ void CostmapFilter::onInitialize()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  // Declare common for all costmap filters parameters
-  declareParameter("enabled", rclcpp::ParameterValue(true));
-  declareParameter("filter_info_topic");
-  declareParameter("transform_tolerance", rclcpp::ParameterValue(0.1));
-
-  // Get parameters
-  node->get_parameter(name_ + "." + "enabled", enabled_);
   try {
+    // Declare common for all costmap filters parameters
+    declareParameter("enabled", rclcpp::ParameterValue(true));
+    declareParameter("filter_info_topic", rclcpp::PARAMETER_STRING);
+    declareParameter("transform_tolerance", rclcpp::ParameterValue(0.1));
+
+    // Get parameters
+    node->get_parameter(name_ + "." + "enabled", enabled_);
     filter_info_topic_ = node->get_parameter(name_ + "." + "filter_info_topic").as_string();
-  } catch (rclcpp::exceptions::ParameterNotDeclaredException & ex) {
-    RCLCPP_ERROR(logger_, "filter_info_topic parameter is not set");
+    double transform_tolerance;
+    node->get_parameter(name_ + "." + "transform_tolerance", transform_tolerance);
+    transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
+  } catch (const std::exception & ex) {
+    RCLCPP_ERROR(logger_, "Parameter problem: %s", ex.what());
     throw ex;
   }
-  double transform_tolerance;
-  node->get_parameter(name_ + "." + "transform_tolerance", transform_tolerance);
-  transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
 }
 
 void CostmapFilter::activate()
