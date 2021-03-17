@@ -42,7 +42,7 @@ PlannerSelector::PlannerSelector(
     topic_name_, 1, std::bind(&PlannerSelector::callback_planner_select, this, _1));
 }
 
-inline BT::NodeStatus PlannerSelector::tick()
+BT::NodeStatus PlannerSelector::tick()
 {
   rclcpp::spin_some(node_);
 
