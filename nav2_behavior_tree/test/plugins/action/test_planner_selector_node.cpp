@@ -21,7 +21,7 @@
 
 #include "../../test_action_server.hpp"
 #include "behaviortree_cpp_v3/bt_factory.h"
-#include "nav2_behavior_tree/plugins/decorator/planner_selector_node.hpp"
+#include "nav2_behavior_tree/plugins/action/planner_selector_node.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "std_msgs/msg/string.hpp"
 
@@ -80,9 +80,7 @@ TEST_F(PlannerSelectorTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-          <PlannerSelector selected_planner="{selected_planner}" default_planner="TEST_DEFAULT_PLANNER_NAME">
-            <AlwaysSuccess/>
-          </PlannerSelector>
+          <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector_custom_topic_name"/>
         </BehaviorTree>
       </root>)";
 
@@ -94,18 +92,18 @@ TEST_F(PlannerSelectorTestFixture, test_tick)
   }
 
   // check default value
-  std_msgs::msg::String selected_planner_result;
+  std::string selected_planner_result;
   config_->blackboard->get("selected_planner", selected_planner_result);
 
-  EXPECT_EQ(selected_planner_result.data, "TEST_DEFAULT_PLANNER_NAME");
+  EXPECT_EQ(selected_planner_result, "GridBased");
 
   std_msgs::msg::String selected_planner_cmd;
 
-  std::string TEST_PLANNER_VALUE = "DWC";
-  selected_planner_cmd.data = TEST_PLANNER_VALUE;
+
+  selected_planner_cmd.data = "RRT";
 
   auto planner_selector_pub =
-    node_->create_publisher<std_msgs::msg::String>("planner_selector", 10);
+    node_->create_publisher<std_msgs::msg::String>("planner_selector_custom_topic_name", 10);
 
   // publish a few updates of the selected_planner
   auto start = node_->now();
@@ -118,7 +116,7 @@ TEST_F(PlannerSelectorTestFixture, test_tick)
 
   // check planner updated
   config_->blackboard->get("selected_planner", selected_planner_result);
-  EXPECT_EQ(selected_planner_cmd, selected_planner_result);
+  EXPECT_EQ("RRT", selected_planner_result);
 }
 
 int main(int argc, char ** argv)

@@ -17,9 +17,8 @@
 #include <memory>
 
 #include "std_msgs/msg/string.hpp"
-#include "behaviortree_cpp_v3/decorator_node.h"
 
-#include "nav2_behavior_tree/plugins/decorator/planner_selector_node.hpp"
+#include "nav2_behavior_tree/plugins/action/planner_selector_node.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -31,37 +30,35 @@ using std::placeholders::_1;
 PlannerSelector::PlannerSelector(
   const std::string & name,
   const BT::NodeConfiguration & conf)
-: BT::DecoratorNode(name, conf)
+: BT::SyncActionNode(name, conf)
 {
-  auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
-  last_selected_planner_.data = "";
+  if (!getInput("topic_name", topic_name_)) {
+    topic_name_ = "planner_selector";
+  }
 
-  std::string planner_selector_topic;
-
-  node->get_parameter_or<std::string>(
-    "planner_selector_topic", planner_selector_topic,
-    "planner_selector");
-
-  planner_selector_sub_ = node->create_subscription<std_msgs::msg::String>(
-    planner_selector_topic, 10, std::bind(&PlannerSelector::callback_planner_select, this, _1));
+  planner_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
+    topic_name_, 1, std::bind(&PlannerSelector::callback_planner_select, this, _1));
 }
 
 inline BT::NodeStatus PlannerSelector::tick()
 {
-  if (last_selected_planner_.data.empty()) {
-    getInput("default_planner", last_selected_planner_.data);
+  rclcpp::spin_some(node_);
+
+  if (last_selected_planner_.empty()) {
+    getInput("default_planner", last_selected_planner_);
   }
 
   setOutput("selected_planner", last_selected_planner_);
 
-  return child_node_->executeTick();
+  return BT::NodeStatus::SUCCESS;
 }
 
 void
 PlannerSelector::callback_planner_select(const std_msgs::msg::String::SharedPtr msg)
 {
-  last_selected_planner_ = *msg;
+  last_selected_planner_ = msg->data;
 }
 
 }  // namespace nav2_behavior_tree
