@@ -30,6 +30,11 @@ namespace BT
 // in our BT XML files. They parse the strings in the XML into their corresponding
 // data type.
 
+/**
+ * @brief Parse XML string to geometry_msgs::msg::Point
+ * @param key XML string
+ * @return geometry_msgs::msg::Point
+ */
 template<>
 inline geometry_msgs::msg::Point convertFromString(const StringView key)
 {
@@ -46,6 +51,11 @@ inline geometry_msgs::msg::Point convertFromString(const StringView key)
   }
 }
 
+/**
+ * @brief Parse XML string to geometry_msgs::msg::Quaternion
+ * @param key XML string
+ * @return geometry_msgs::msg::Quaternion
+ */
 template<>
 inline geometry_msgs::msg::Quaternion convertFromString(const StringView key)
 {
@@ -63,6 +73,11 @@ inline geometry_msgs::msg::Quaternion convertFromString(const StringView key)
   }
 }
 
+/**
+ * @brief Parse XML string to geometry_msgs::msg::PoseStamped
+ * @param key XML string
+ * @return geometry_msgs::msg::PoseStamped
+ */
 template<>
 inline geometry_msgs::msg::PoseStamped convertFromString(const StringView key)
 {
@@ -85,6 +100,11 @@ inline geometry_msgs::msg::PoseStamped convertFromString(const StringView key)
   }
 }
 
+/**
+ * @brief Parse XML string to std::chrono::milliseconds
+ * @param key XML string
+ * @return std::chrono::milliseconds
+ */
 template<>
 inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(const StringView key)
 {

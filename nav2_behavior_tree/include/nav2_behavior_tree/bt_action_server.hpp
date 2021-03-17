@@ -59,48 +59,47 @@ public:
 
   /**
    * @brief Configures member variables
-   *
    * Initializes action server for, builds behavior tree from xml file,
    * and calls user-defined onConfigure.
-   * @return true on SUCCESS and false on FAILURE
+   * @return bool true on SUCCESS and false on FAILURE
    */
   bool on_configure();
 
   /**
    * @brief Activates action server
-   * @return true on SUCCESS and false on FAILURE
+   * @return bool true on SUCCESS and false on FAILURE
    */
   bool on_activate();
 
   /**
    * @brief Deactivates action server
-   * @return true on SUCCESS and false on FAILURE
+   * @return bool true on SUCCESS and false on FAILURE
    */
   bool on_deactivate();
 
   /**
    * @brief Resets member variables
-   * @return true on SUCCESS and false on FAILURE
+   * @return bool true on SUCCESS and false on FAILURE
    */
   bool on_cleanup();
 
   /**
    * @brief Called when in shutdown state
-   * @return true on SUCCESS and false on FAILURE
+   * @return bool true on SUCCESS and false on FAILURE
    */
   bool on_shutdown();
 
   /**
    * @brief Replace current BT with another one
    * @param bt_xml_filename The file containing the new BT, uses default filename if empty
-   * @return true if the resulting BT correspond to the one in bt_xml_filename. false
+   * @return bool true if the resulting BT correspond to the one in bt_xml_filename. false
    * if something went wrong, and previous BT is maintained
    */
   bool loadBehaviorTree(const std::string & bt_xml_filename = "");
 
   /**
    * @brief Getter function for BT Blackboard
-   * @return shared pointer to current BT blackboard
+   * @return BT::Blackboard::Ptr Shared pointer to current BT blackboard
    */
   BT::Blackboard::Ptr getBlackboard() const
   {
@@ -109,7 +108,7 @@ public:
 
   /**
    * @brief Getter function for current BT XML filename
-   * @return string
+   * @return string Containing current BT XML filename
    */
   std::string getCurrentBTFilename() const
   {
@@ -118,6 +117,7 @@ public:
 
   /**
    * @brief Wrapper function to accept pending goal if a preempt has been requested
+   * @return Shared pointer to pending action goal
    */
   const std::shared_ptr<const typename ActionT::Goal> acceptPendingGoal()
   {
@@ -126,6 +126,7 @@ public:
 
   /**
    * @brief Wrapper function to get current goal
+   * @return Shared pointer to current action goal
    */
   const std::shared_ptr<const typename ActionT::Goal> getCurrentGoal() const
   {
@@ -142,6 +143,7 @@ public:
 
   /**
    * @brief Getter function for the current BT tree
+   * @return BT::Tree Current behavior tree
    */
   BT::Tree getTree() const
   {

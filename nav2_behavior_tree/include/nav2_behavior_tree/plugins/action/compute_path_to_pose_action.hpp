@@ -24,18 +24,37 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::ComputePathToPose
+ */
 class ComputePathToPoseAction : public BtActionNode<nav2_msgs::action::ComputePathToPose>
 {
 public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::ComputePathToPoseAction
+   * @param xml_tag_name Name for the XML tag for this node
+   * @param action_name Action name this node creates a client for
+   * @param conf BT node configuration
+   */
   ComputePathToPoseAction(
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf);
 
+  /**
+   * @brief Function to perform some user-defined operation on tick
+   */
   void on_tick() override;
 
+  /**
+   * @brief Function to perform some user-defined operation upon successful completion of the action
+   */
   BT::NodeStatus on_success() override;
 
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing basic ports along with node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts(
