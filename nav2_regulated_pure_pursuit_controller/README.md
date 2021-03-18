@@ -71,8 +71,6 @@ Mixing the proximity and curvature regulated linear velocities with the time-sca
 | `use_rotate_to_heading` | Whether to enable rotating to rough heading and goal orientation when using holonomic planners. Recommended on for all robot types except ackermann, which cannot rotate in place. | 
 | `rotate_to_heading_min_angle` | The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if `use_rotate_to_heading` is enabled. | 
 | `max_angular_accel` | Maximum allowable angular acceleration while rotating to heading, if enabled | 
-| `goal_dist_tol` | XY tolerance from goal to rotate to the goal heading, if `use_rotate_to_heading` is enabled. This should match or be smaller than the `GoalChecker`'s translational goal tolerance. | 
-
 
 Example fully-described XML with default parameter values:
 
@@ -119,7 +117,6 @@ controller_server:
       use_rotate_to_heading: true
       rotate_to_heading_min_angle: 0.785
       max_angular_accel: 3.2
-      goal_dist_tol: 0.25
       cost_scaling_dist: 0.3
       cost_scaling_gain: 1.0
       inflation_cost_scaling_factor: 3.0
