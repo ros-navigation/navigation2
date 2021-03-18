@@ -26,7 +26,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 
-namespace nav2_core
+namespace nav2_bt_navigator
 {
 
 /**
@@ -103,7 +103,7 @@ protected:
 
 /**
  * @class Navigator
- * @brief Navigator interface that acts as a virtual base class for all BT-based Navigator action's plugins
+ * @brief Navigator interface that acts as a base class for all BT-based Navigator action's plugins
  */
 template<class ActionT>
 class Navigator
@@ -119,7 +119,7 @@ public:
   /**
    * @brief Virtual destructor
    */
-  virtual ~Navigator() {}
+  virtual ~Navigator() = default;
 
   bool on_configure(
     rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
@@ -279,6 +279,6 @@ protected:
   NavigatorMuxer * plugin_muxer_;
 };
 
-}  // namespace nav2_core
+}  // namespace nav2_bt_navigator
 
 #endif  // NAV2_CORE__NAVIGATOR_HPP_

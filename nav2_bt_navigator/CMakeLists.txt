@@ -31,13 +31,6 @@ add_executable(${executable_name}
 
 set(library_name ${executable_name}_core)
 
-#TODO plugins
-add_library(${library_name} SHARED
-  src/bt_navigator.cpp
-  plugins/navigate_to_pose.cpp
-  plugins/navigate_through_poses.cpp
-)
-
 set(dependencies
   rclcpp
   rclcpp_action
@@ -52,6 +45,12 @@ set(dependencies
   nav2_util
   nav2_core
   tf2_ros
+)
+
+add_library(${library_name} SHARED
+  src/bt_navigator.cpp
+  plugins/navigate_to_pose.cpp
+  plugins/navigate_through_poses.cpp
 )
 
 ament_target_dependencies(${executable_name}

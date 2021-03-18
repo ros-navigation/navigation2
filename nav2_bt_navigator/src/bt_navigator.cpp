@@ -33,7 +33,8 @@ namespace nav2_bt_navigator
 // [DONE] make abstract navigator that these inherit
 // [DONE] make navigate through poses plugin
 // [DONE] move muxer checks into header
-// make navigator plugins / vector
+// [NOT POSSIBLE] make navigator plugins / vector -> can get to load, but need to know ActionT that's impossible to get from
+  // a base class
 
 // [DONE] test navigate to pose still works (done, preemption, cancel), feedback is still good
 // [DONE] on completion being called
@@ -112,7 +113,8 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Libraries to pull plugins (BT Nodes) from
   auto plugin_lib_names = get_parameter("plugin_lib_names").as_string_array();
 
-  navigator_ = std::make_unique<nav2_bt_navigator::NavigateToPoseNavigator>();  // TODO pluginlib / vector
+  pose_navigator_ = std::make_unique<nav2_bt_navigator::NavigateToPoseNavigator>();
+  poses_navigator_ = std::make_unique<nav2_bt_navigator::NavigateThroughPosesNavigator>();
 
   nav2_core::FeedbackUtils feedback_utils;
   feedback_utils.tf = tf_;
@@ -120,7 +122,13 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   feedback_utils.robot_frame = robot_frame_;
   feedback_utils.transform_tolerance = transform_tolerance_;
 
-  if (!navigator_->on_configure(
+  if (!pose_navigator_->on_configure(
+    shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
+  {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
+  if (!poses_navigator_->on_configure(
     shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
   {
     return nav2_util::CallbackReturn::FAILURE;
@@ -134,7 +142,11 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  if (!navigator_->on_activate()) {
+  if (!pose_navigator_->on_activate()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
+  if (!poses_navigator_->on_activate()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -149,7 +161,11 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  if (!navigator_->on_deactivate()) {
+  if (!pose_navigator_->on_deactivate()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
+  if (!poses_navigator_->on_deactivate()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -168,11 +184,16 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_.reset();
   tf_.reset();
 
-  if (!navigator_->on_cleanup()) {
+  if (!pose_navigator_->on_cleanup()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
-  navigator_.reset();
+  if (!poses_navigator_->on_cleanup()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
+  pose_navigator_.reset();
+  poses_navigator_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
   return nav2_util::CallbackReturn::SUCCESS;
@@ -183,7 +204,11 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
 
-  if (!navigator_->on_shutdown()) {
+  if (!pose_navigator_->on_shutdown()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
+  if (!poses_navigator_->on_shutdown()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
