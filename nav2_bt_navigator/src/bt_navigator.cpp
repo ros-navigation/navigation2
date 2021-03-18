@@ -27,9 +27,31 @@
 namespace nav2_bt_navigator
 {
 
+// TODO
+// [DONE] Separate out the NavToPose and NavThruPose onloop/preempt/goal/initial goal pose set
+// [DONE] make actions mutually exclusive (only 1 can be running at a time)
+// [DONE] make abstract navigator that these inherit
+// [DONE] make navigate through poses plugin
+// make navigator plugins / vector
+
+// test muxer updates state with done, preemption, cancel
+// test navigate to pose still works (done, preemption, cancel), feedback is still good
+// on completion being called
+// topic working for navigate to pose
+// test navigate through poses plugin "works" (can nav, but check logging things properly called)
+
+// BT XML node for ComputePathThroughPoses
+// planner_server action for ComputePathThroughPoses
+// planner_server action fill out to compute paths between each pose and append them to a final path
+// method for culling out and reporting the number of poses remaining
+
+// BT XML file of feature
+
+// rviz plugin use this next to WP follower for demos
+// test case
+
 BtNavigator::BtNavigator()
-: nav2_util::LifecycleNode("bt_navigator", "", false),
-  start_time_(0)
+: nav2_util::LifecycleNode("bt_navigator", "", false)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -64,7 +86,6 @@ BtNavigator::BtNavigator()
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
   declare_parameter("odom_topic", std::string("odom"));
-  declare_parameter("goal_blackboard_id", std::string("goal"));
 }
 
 BtNavigator::~BtNavigator()
@@ -83,38 +104,26 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_->setUsingDedicatedThread(true);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
 
-  self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
-    shared_from_this(), "navigate_to_pose");
-
-  goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
-    "goal_pose",
-    rclcpp::SystemDefaultsQoS(),
-    std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
-
   global_frame_ = get_parameter("global_frame").as_string();
   robot_frame_ = get_parameter("robot_base_frame").as_string();
   transform_tolerance_ = get_parameter("transform_tolerance").as_double();
-  goal_blackboard_id_ = get_parameter("goal_blackboard_id").as_string();
 
   // Libraries to pull plugins (BT Nodes) from
   auto plugin_lib_names = get_parameter("plugin_lib_names").as_string_array();
 
-  bt_action_server_ = std::make_unique<nav2_behavior_tree::BtActionServer<Action>>(
-    shared_from_this(),
-    "navigate_to_pose",
-    plugin_lib_names,
-    std::bind(&BtNavigator::onGoalReceived, this, std::placeholders::_1),
-    std::bind(&BtNavigator::onLoop, this),
-    std::bind(&BtNavigator::onPreempt, this));
+  navigator_ = std::make_unique<nav2_bt_navigator::NavigateToPoseNavigator>();  // TODO pluginlib / vector
 
-  if (!bt_action_server_->on_configure()) {
+  nav2_core::FeedbackUtils feedback_utils;
+  feedback_utils.tf = tf_;
+  feedback_utils.global_frame = global_frame_;
+  feedback_utils.robot_frame = robot_frame_;
+  feedback_utils.transform_tolerance = transform_tolerance_;
+
+  if (!navigator_->on_configure(
+    shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
+  {
     return nav2_util::CallbackReturn::FAILURE;
   }
-
-  auto blackboard = bt_action_server_->getBlackboard();
-  blackboard->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
-  blackboard->set<bool>("initial_pose_received", false);  // NOLINT
-  blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -124,7 +133,7 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  if (!bt_action_server_->on_activate()) {
+  if (!navigator_->on_activate()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -139,7 +148,7 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  if (!bt_action_server_->on_deactivate()) {
+  if (!navigator_->on_deactivate()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -154,20 +163,15 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  // TODO(orduno) Fix the race condition between the worker thread ticking the tree
-  //              and the main thread resetting the resources, see #1344
-  goal_sub_.reset();
-  self_client_.reset();
-
   // Reset the listener before the buffer
   tf_listener_.reset();
   tf_.reset();
 
-  if (!bt_action_server_->on_cleanup()) {
+  if (!navigator_->on_cleanup()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
-  bt_action_server_.reset();
+  navigator_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
   return nav2_util::CallbackReturn::SUCCESS;
@@ -178,85 +182,11 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
 
-  if (!bt_action_server_->on_shutdown()) {
+  if (!navigator_->on_shutdown()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
   return nav2_util::CallbackReturn::SUCCESS;
-}
-
-bool
-BtNavigator::onGoalReceived(Action::Goal::ConstSharedPtr goal)
-{
-  auto bt_xml_filename = goal->behavior_tree;
-
-  if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
-    RCLCPP_ERROR(
-      get_logger(), "BT file not found: %s. Navigation canceled.",
-      bt_xml_filename.c_str());
-    return false;
-  }
-
-  initializeGoalPose(goal);
-
-  return true;
-}
-
-void
-BtNavigator::onLoop()
-{
-  // action server feedback (pose, duration of task,
-  // number of recoveries, and distance remaining to goal)
-  auto feedback_msg = std::make_shared<Action::Feedback>();
-
-  nav2_util::getCurrentPose(
-    feedback_msg->current_pose, *tf_, global_frame_, robot_frame_, transform_tolerance_);
-
-  auto blackboard = bt_action_server_->getBlackboard();
-
-  geometry_msgs::msg::PoseStamped goal_pose;
-  blackboard->get(goal_blackboard_id_, goal_pose);
-
-  feedback_msg->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
-    feedback_msg->current_pose.pose, goal_pose.pose);
-
-  int recovery_count = 0;
-  blackboard->get<int>("number_recoveries", recovery_count);
-  feedback_msg->number_of_recoveries = recovery_count;
-  feedback_msg->navigation_time = now() - start_time_;
-
-  bt_action_server_->publishFeedback(feedback_msg);
-}
-
-void
-BtNavigator::onPreempt()
-{
-  RCLCPP_INFO(get_logger(), "Received goal preemption request");
-  initializeGoalPose(bt_action_server_->acceptPendingGoal());
-}
-
-void
-BtNavigator::initializeGoalPose(Action::Goal::ConstSharedPtr goal)
-{
-  RCLCPP_INFO(
-    get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
-    goal->pose.pose.position.x, goal->pose.pose.position.y);
-
-  // Reset state for new action feedback
-  start_time_ = now();
-  auto blackboard = bt_action_server_->getBlackboard();
-  blackboard->set<int>("number_recoveries", 0);  // NOLINT
-
-  // Update the goal pose on the blackboard
-  blackboard->set<geometry_msgs::msg::PoseStamped>(goal_blackboard_id_, goal->pose);
-}
-
-void
-BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
-{
-  nav2_msgs::action::NavigateToPose::Goal goal;
-  goal.pose = *pose;
-  self_client_->async_send_goal(goal);
 }
 
 }  // namespace nav2_bt_navigator
