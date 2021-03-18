@@ -92,9 +92,6 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     rclcpp::SystemDefaultsQoS(),
     std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
-  // Odometry smoother object for getting current speed
-  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(weak_from_this(), 0.3);
-
   global_frame_ = get_parameter("global_frame").as_string();
   robot_frame_ = get_parameter("robot_base_frame").as_string();
   transform_tolerance_ = get_parameter("transform_tolerance").as_double();
@@ -119,6 +116,10 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   blackboard->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
   blackboard->set<bool>("initial_pose_received", false);  // NOLINT
   blackboard->set<int>("number_recoveries", 0);  // NOLINT
+
+  // Odometry smoother object for getting current speed
+  auto node_handle = blackboard->get<rclcpp::Node::SharedPtr>("node");
+  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(node_handle, 0.3);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
