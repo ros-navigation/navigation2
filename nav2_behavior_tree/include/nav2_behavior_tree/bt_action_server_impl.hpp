@@ -51,10 +51,18 @@ BtActionServer<ActionT>::BtActionServer(
   clock_ = node->get_clock();
 
   // Declare this node's parameters
-  node->declare_parameter("default_bt_xml_filename", rclcpp::PARAMETER_STRING);
-  node->declare_parameter("enable_groot_monitoring", true);
-  node->declare_parameter("groot_zmq_publisher_port", 1666);
-  node->declare_parameter("groot_zmq_server_port", 1667);
+  if (!node->has_parameter("default_bt_xml_filename")) {
+    node->declare_parameter("default_bt_xml_filename", rclcpp::PARAMETER_STRING);
+  }
+  if (!node->has_parameter("enable_groot_monitoring")) {
+    node->declare_parameter("enable_groot_monitoring", true);
+  }
+  if (!node->has_parameter("groot_zmq_publisher_port")) {
+    node->declare_parameter("groot_zmq_publisher_port", 1666);
+  }
+  if (!node->has_parameter("groot_zmq_publisher_port")) {
+    node->declare_parameter("groot_zmq_server_port", 1667);
+  }
 }
 
 template<class ActionT>

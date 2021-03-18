@@ -42,6 +42,9 @@ namespace nav2_bt_navigator
 // [DONE] test navigate through poses plugin "works" (can nav, but check logging things properly called)
 // [DONE] test muxer updates state with done, preemption, cancel
 
+// make which navigator to use a runtime option? either/or
+// 2 servers, 2 packages?
+
 // BT XML node for ComputePathThroughPoses
 // planner_server action for ComputePathThroughPoses
 // planner_server action fill out to compute paths between each pose and append them to a final path
@@ -116,7 +119,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   pose_navigator_ = std::make_unique<nav2_bt_navigator::NavigateToPoseNavigator>();
   poses_navigator_ = std::make_unique<nav2_bt_navigator::NavigateThroughPosesNavigator>();
 
-  nav2_core::FeedbackUtils feedback_utils;
+  nav2_bt_navigator::FeedbackUtils feedback_utils;
   feedback_utils.tf = tf_;
   feedback_utils.global_frame = global_frame_;
   feedback_utils.robot_frame = robot_frame_;
@@ -142,11 +145,7 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  if (!pose_navigator_->on_activate()) {
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-
-  if (!poses_navigator_->on_activate()) {
+  if (!pose_navigator_->on_activate() || !poses_navigator_->on_activate()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -161,11 +160,7 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  if (!pose_navigator_->on_deactivate()) {
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-
-  if (!poses_navigator_->on_deactivate()) {
+  if (!pose_navigator_->on_deactivate() || !poses_navigator_->on_deactivate()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -184,11 +179,7 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_.reset();
   tf_.reset();
 
-  if (!pose_navigator_->on_cleanup()) {
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-
-  if (!poses_navigator_->on_cleanup()) {
+  if (!pose_navigator_->on_cleanup() || !poses_navigator_->on_cleanup()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -204,11 +195,7 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
 
-  if (!pose_navigator_->on_shutdown()) {
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-
-  if (!poses_navigator_->on_shutdown()) {
+  if (!pose_navigator_->on_shutdown() || !poses_navigator_->on_shutdown()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 

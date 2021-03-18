@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CORE__NAVIGATOR_HPP_
-#define NAV2_CORE__NAVIGATOR_HPP_
+#ifndef NAV2_BT_NAVIGATOR__NAVIGATOR_HPP_
+#define NAV2_BT_NAVIGATOR__NAVIGATOR_HPP_
 
 #include <memory>
 #include <string>
@@ -109,7 +109,7 @@ template<class ActionT>
 class Navigator
 {
 public:
-  using Ptr = std::shared_ptr<nav2_core::Navigator<ActionT>>;
+  using Ptr = std::shared_ptr<nav2_bt_navigator::Navigator<ActionT>>;
 
   Navigator()
   {
@@ -125,7 +125,7 @@ public:
     rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
     const std::vector<std::string> & plugin_lib_names,
     const FeedbackUtils & feedback_utils,
-    nav2_core::NavigatorMuxer * plugin_muxer)
+    nav2_bt_navigator::NavigatorMuxer * plugin_muxer)
   {
     auto node = parent_node.lock();
     logger_ = node->get_logger();
@@ -281,4 +281,4 @@ protected:
 
 }  // namespace nav2_bt_navigator
 
-#endif  // NAV2_CORE__NAVIGATOR_HPP_
+#endif  // nav2_bt_navigator__NAVIGATOR_HPP_

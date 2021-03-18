@@ -83,9 +83,10 @@ protected:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   // To handle all the BT related execution
-  std::unique_ptr<nav2_core::Navigator<nav2_msgs::action::NavigateToPose>> pose_navigator_;
-  std::unique_ptr<nav2_core::Navigator<nav2_msgs::action::NavigateToPose>> poses_navigator_;
-  nav2_core::NavigatorMuxer plugin_muxer_;
+  std::unique_ptr<nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateToPose>> pose_navigator_;
+  std::unique_ptr<nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateThroughPoses>>
+    poses_navigator_;
+  nav2_bt_navigator::NavigatorMuxer plugin_muxer_;
 
   // Metrics for feedback
   std::string robot_frame_;
