@@ -388,7 +388,8 @@ void ControllerServer::computeAndPublishVelocity()
   auto cmd_vel_2d =
     controllers_[current_controller_]->computeVelocityCommands(
     pose,
-    nav_2d_utils::twist2Dto3D(twist));
+    nav_2d_utils::twist2Dto3D(twist),
+    goal_checker_.get());
 
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);
@@ -467,11 +468,7 @@ void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::Shar
 {
   ControllerMap::iterator it;
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
-    if (!msg->percentage) {
-      RCLCPP_ERROR(get_logger(), "Speed limit in absolute values is not implemented yet");
-      return;
-    }
-    it->second->setSpeedLimit(msg->speed_limit);
+    it->second->setSpeedLimit(msg->speed_limit, msg->percentage);
   }
 }
 

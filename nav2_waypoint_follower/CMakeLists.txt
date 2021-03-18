@@ -28,6 +28,8 @@ find_package(robot_localization REQUIRED)
 
 nav2_package()
 
+link_libraries(stdc++fs)
+
 include_directories(
   include
 )
@@ -101,7 +103,9 @@ install(DIRECTORY include/
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
   ament_lint_auto_find_test_dependencies()
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

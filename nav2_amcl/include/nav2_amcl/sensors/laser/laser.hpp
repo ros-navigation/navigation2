@@ -29,12 +29,32 @@ namespace nav2_amcl
 // Forward declarations
 class LaserData;
 
+/**
+ * @class nav2_amcl::Laser
+ * @brief An abstract laser model class
+ */
 class Laser
 {
 public:
+  /**
+   * @brief A Laser constructor
+   * @param max_beams number of beams to use
+   * @param map Map pointer to use
+   */
   Laser(size_t max_beams, map_t * map);
   virtual ~Laser();
+
+  /**
+   * @brief update based on new sensor data
+   * @param data Laser data to update using
+   * @return bool If successful
+   */
   virtual bool sensorUpdate(pf_t * pf, LaserData * data) = 0;
+
+  /**
+   * @brief update laser pose
+   * @param laser_pose Laser pose
+   */
   void SetLaserPose(pf_vector_t & laser_pose);
 
 protected:

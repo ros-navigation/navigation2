@@ -16,7 +16,7 @@ fi
 
 set -e
 
-# so you can call from anywhere in the navigation2_ws, ros2_ws, or deps branches
+# so you can call from anywhere in the nav2_ws, ros2_ws, or deps branches
 while [[ "$PWD" =~ ros2_ws ]]; do
   cd ../
 done
@@ -25,7 +25,7 @@ while [[ "$PWD" =~ ros2_nav_dependencies_ws ]]; do
   cd ../
 done
 
-while [[ "$PWD" =~ navigation2_ws ]]; do
+while [[ "$PWD" =~ nav2_ws ]]; do
   cd ../
 done
 
@@ -54,7 +54,7 @@ export ROSDISTRO_INDEX_URL='https://raw.githubusercontent.com/ros2/rosdistro/ros
  colcon build --symlink-install)
 
 # Build our code
-cd $CWD/navigation2_ws
+cd $CWD/nav2_ws
 export ROSDISTRO_INDEX_URL='https://raw.githubusercontent.com/ros2/rosdistro/ros2/index.yaml'
 (. $ROS2_SETUP_FILE && . $CWD/ros2_nav_dependencies_ws/install/setup.bash &&
  colcon build --symlink-install)
@@ -62,7 +62,7 @@ export ROSDISTRO_INDEX_URL='https://raw.githubusercontent.com/ros2/rosdistro/ros
 # Update the ROS1 bridge
 if test "$ENABLE_ROS1" = true && test "$ENABLE_ROS2" = true ; then
   cd $CWD
-  . navigation2_ws/install/setup.bash
+  . nav2_ws/install/setup.bash
   cd $CWD/ros2_ws
   colcon build --symlink-install --packages-select ros1_bridge --cmake-force-configure
 fi

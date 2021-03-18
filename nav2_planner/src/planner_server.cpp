@@ -232,8 +232,22 @@ PlannerServer::computePlan()
       r.sleep();
     }
 
+    // Use start pose if provided otherwise use current robot pose
     geometry_msgs::msg::PoseStamped start;
-    if (!costmap_ros_->getRobotPose(start)) {
+    if (goal->use_start) {
+      start = goal->start;
+    } else if (!costmap_ros_->getRobotPose(start)) {
+      action_server_->terminate_current();
+      return;
+    }
+
+    // Changing the start and goal pose frame to the global_frame_ of costmap_ros_ if needed
+    geometry_msgs::msg::PoseStamped goal_pose = goal->goal;
+    if (!costmap_ros_->transformPoseToGlobalFrame(start, start) ||
+      !costmap_ros_->transformPoseToGlobalFrame(goal->goal, goal_pose))
+    {
+      RCLCPP_WARN(
+        get_logger(), "Could not transform the start or goal pose in the costmap frame");
       action_server_->terminate_current();
       return;
     }
@@ -242,13 +256,13 @@ PlannerServer::computePlan()
       goal = action_server_->accept_pending_goal();
     }
 
-    result->path = getPlan(start, goal->pose, goal->planner_id);
+    result->path = getPlan(start, goal_pose, goal->planner_id);
 
     if (result->path.poses.size() == 0) {
       RCLCPP_WARN(
         get_logger(), "Planning algorithm %s failed to generate a valid"
         " path to (%.2f, %.2f)", goal->planner_id.c_str(),
-        goal->pose.pose.position.x, goal->pose.pose.position.y);
+        goal_pose.pose.position.x, goal_pose.pose.position.y);
       action_server_->terminate_current();
       return;
     }
@@ -256,8 +270,8 @@ PlannerServer::computePlan()
     RCLCPP_DEBUG(
       get_logger(),
       "Found valid path of size %lu to (%.2f, %.2f)",
-      result->path.poses.size(), goal->pose.pose.position.x,
-      goal->pose.pose.position.y);
+      result->path.poses.size(), goal_pose.pose.position.x,
+      goal_pose.pose.position.y);
 
     // Publish the plan for visualization purposes
     publishPlan(result->path);
@@ -276,8 +290,8 @@ PlannerServer::computePlan()
   } catch (std::exception & ex) {
     RCLCPP_WARN(
       get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
-      goal->planner_id.c_str(), goal->pose.pose.position.x,
-      goal->pose.pose.position.y, ex.what());
+      goal->planner_id.c_str(), goal->goal.pose.position.x,
+      goal->goal.pose.position.y, ex.what());
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
     action_server_->terminate_current();

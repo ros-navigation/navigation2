@@ -1,7 +1,7 @@
 
 
 # Target Use Cases
-The Navigation2 system is targeting the following use cases:
+The Nav2 system is targeting the following use cases:
 
 [2D Indoor Navigation](indoor_navigation_use_case.md) - example: Warehouse / Logistics robot
 
