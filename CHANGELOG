@@ -2,4 +2,6 @@ CHANGELOG
 - new navigate through poses navigator
 - pluginize the navigator logic to allow for both
 - create a new onComplete callback in the bt action server to populate results meaningfully or indicate completion
-- make sure only 1 navigator at a time can be processed with a muxer
+- make sure only 1 navigator at a time can be processed with a muxer handled for plugins automatically
+
+

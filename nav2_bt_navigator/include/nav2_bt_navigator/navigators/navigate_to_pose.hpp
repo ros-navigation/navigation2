@@ -31,20 +31,33 @@ class NavigateToPoseNavigator : public nav2_core::Navigator<nav2_msgs::action::N
 public:
   using ActionT = nav2_msgs::action::NavigateToPose;
 
+  /**
+   * @brief A constructor for NavigateToPoseNavigator
+   */
   NavigateToPoseNavigator() : Navigator() {};
 
+  /**
+   * @brief A configure state transition to configure navigator's state
+   * @param node Weakptr to the lifecycle node
+   */
   bool configure(
     rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
+
+  /**
+   * @brief A cleanup state transition to remove memory allocated
+   */
   bool cleanup() override;
 
   /**
    * @brief A subscription and callback to handle the topic-based goal published
    * from rviz
+   * @param pose Pose received via atopic
    */
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
 
   /**
    * @brief Get action name for this navigator
+   * @return string Name of action server
    */
   std::string getName() {return std::string("navigate_to_pose");}
 
@@ -54,8 +67,10 @@ protected:
    * @brief A callback to be called when a new goal is received by the BT action server
    * Can be used to check if goal is valid and put values on
    * the blackboard which depend on the received goal
+   * @param goal Action template's goal message
+   * @return bool if goal was received successfully to be processed
    */
-  bool onGoalReceived(ActionT::Goal::ConstSharedPtr goal) override;
+  bool goalReceived(ActionT::Goal::ConstSharedPtr goal) override;
 
   /**
    * @brief A callback that defines execution that happens on one iteration through the BT
@@ -71,11 +86,13 @@ protected:
   /**
    * @brief A callback that is called when a the action is completed, can fill in
    * action result message or indicate that this action is done.
+   * @param result Action template result message to populate
    */
-  void onCompletion(typename ActionT::Result::SharedPtr result) override;
+  void goalCompleted(typename ActionT::Result::SharedPtr result) override;
 
   /**
    * @brief Goal pose initialization on the blackboard
+   * @param goal Action template's goal message to process
    */
   void initializeGoalPose(ActionT::Goal::ConstSharedPtr goal);
 

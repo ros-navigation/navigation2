@@ -32,6 +32,7 @@ namespace nav2_bt_navigator
 // [DONE] make actions mutually exclusive (only 1 can be running at a time)
 // [DONE] make abstract navigator that these inherit
 // [DONE] make navigate through poses plugin
+// [DONE] move muxer checks into header
 // make navigator plugins / vector
 
 // test muxer updates state with done, preemption, cancel

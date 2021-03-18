@@ -103,7 +103,7 @@ protected:
 
 /**
  * @class Navigator
- * @brief Navigator interface that acts as a virtual base class for all Navigator plugins
+ * @brief Navigator interface that acts as a virtual base class for all BT-based Navigator action's plugins
  */
 template<class ActionT>
 class Navigator
@@ -203,11 +203,32 @@ public:
 
 protected:
   /**
+   * @brief An intermediate goal reception function to mux navigators.
+   */
+  bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal) {
+    if (plugin_muxer_->isNavigating()) {
+      return false;
+    }
+
+    plugin_muxer_->startNavigating(getName());
+
+    return goalReceived(goal);
+  }
+
+  /**
+   * @brief An intermediate compution function to mux navigators
+   */
+  void onCompletion(typename ActionT::Result::SharedPtr result) {
+    plugin_muxer_->stopNavigating(getName());
+    goalCompleted(result);
+  }
+
+  /**
    * @brief A callback to be called when a new goal is received by the BT action server
    * Can be used to check if goal is valid and put values on
    * the blackboard which depend on the received goal
    */
-  virtual bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal) = 0;
+  virtual bool goalReceived(typename ActionT::Goal::ConstSharedPtr goal) = 0;
 
   /**
    * @brief A callback that defines execution that happens on one iteration through the BT
@@ -224,7 +245,7 @@ protected:
    * @brief A callback that is called when a the action is completed, can fill in
    * action result message or indicate that this action is done.
    */
-  virtual void onCompletion(typename ActionT::Result::SharedPtr result) = 0;
+  virtual void goalCompleted(typename ActionT::Result::SharedPtr result) = 0;
 
   /**
    * @param Method to configure resources.
@@ -252,7 +273,7 @@ protected:
   virtual bool shutdown() {return true;};
 
   std::unique_ptr<nav2_behavior_tree::BtActionServer<ActionT>> bt_action_server_;
-  rclcpp::Logger logger_{rclcpp::get_logger("BTNavigator")};
+  rclcpp::Logger logger_{rclcpp::get_logger("Navigator")};
   rclcpp::Clock::SharedPtr clock_;
   FeedbackUtils feedback_utils_;
   NavigatorMuxer * plugin_muxer_;

@@ -47,14 +47,8 @@ NavigateToPoseNavigator::cleanup()
 }
 
 bool
-NavigateToPoseNavigator::onGoalReceived(ActionT::Goal::ConstSharedPtr goal)
+NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 {
-  if (plugin_muxer_->isNavigating()) {
-    return false;
-  }
-  
-  plugin_muxer_->startNavigating(getName());
-
   auto bt_xml_filename = goal->behavior_tree;
 
   if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
@@ -70,9 +64,8 @@ NavigateToPoseNavigator::onGoalReceived(ActionT::Goal::ConstSharedPtr goal)
 }
 
 void
-NavigateToPoseNavigator::onCompletion(typename ActionT::Result::SharedPtr /*result*/)
+NavigateToPoseNavigator::goalCompleted(typename ActionT::Result::SharedPtr /*result*/)
 {
-  plugin_muxer_->stopNavigating(getName());
 }
 
 void

@@ -32,14 +32,8 @@ NavigateThroughPosesNavigator::configure(
 }
 
 bool
-NavigateThroughPosesNavigator::onGoalReceived(ActionT::Goal::ConstSharedPtr goal)
+NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 {
-  if (plugin_muxer_->isNavigating()) {
-    return false;
-  }
-  
-  plugin_muxer_->startNavigating(getName());
-
   auto bt_xml_filename = goal->behavior_tree;
 
   if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
@@ -55,9 +49,8 @@ NavigateThroughPosesNavigator::onGoalReceived(ActionT::Goal::ConstSharedPtr goal
 }
 
 void
-NavigateThroughPosesNavigator::onCompletion(typename ActionT::Result::SharedPtr /*result*/)
+NavigateThroughPosesNavigator::goalCompleted(typename ActionT::Result::SharedPtr /*result*/)
 {
-  plugin_muxer_->stopNavigating(getName());
 }
 
 void
