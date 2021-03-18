@@ -35,11 +35,11 @@ namespace nav2_bt_navigator
 // [DONE] move muxer checks into header
 // make navigator plugins / vector
 
-// test muxer updates state with done, preemption, cancel
-// test navigate to pose still works (done, preemption, cancel), feedback is still good
-// on completion being called
-// topic working for navigate to pose
-// test navigate through poses plugin "works" (can nav, but check logging things properly called)
+// [DONE] test navigate to pose still works (done, preemption, cancel), feedback is still good
+// [DONE] on completion being called
+// [DONE] topic working for navigate to pose
+// [DONE] test navigate through poses plugin "works" (can nav, but check logging things properly called)
+// [DONE] test muxer updates state with done, preemption, cancel
 
 // BT XML node for ComputePathThroughPoses
 // planner_server action for ComputePathThroughPoses

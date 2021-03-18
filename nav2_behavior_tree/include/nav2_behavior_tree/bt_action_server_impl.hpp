@@ -228,7 +228,7 @@ void BtActionServer<ActionT>::executeCallback()
 
   // Give server an opportunity to populate the result message or simple give
   // an indication that the action is complete.
-  std::shared_ptr<typename ActionT::Result> result;
+  auto result = std::make_shared<typename ActionT::Result>();
   on_completion_callback_(result);
 
   switch (rc) {
