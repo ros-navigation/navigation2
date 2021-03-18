@@ -34,9 +34,7 @@ PlannerSelector::PlannerSelector(
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
-  if (!getInput("topic_name", topic_name_)) {
-    topic_name_ = "planner_selector";
-  }
+  getInput("topic_name", topic_name_);
 
   planner_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
     topic_name_, 1, std::bind(&PlannerSelector::callback_planner_select, this, _1));

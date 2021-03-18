@@ -73,7 +73,7 @@ BT::NodeConfiguration * PlannerSelectorTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> PlannerSelectorTestFixture::factory_ = nullptr;
 std::shared_ptr<BT::Tree> PlannerSelectorTestFixture::tree_ = nullptr;
 
-TEST_F(PlannerSelectorTestFixture, test_tick)
+TEST_F(PlannerSelectorTestFixture, test_custom_topic)
 {
   // create tree
   std::string xml_txt =
@@ -99,11 +99,55 @@ TEST_F(PlannerSelectorTestFixture, test_tick)
 
   std_msgs::msg::String selected_planner_cmd;
 
-
   selected_planner_cmd.data = "RRT";
 
   auto planner_selector_pub =
     node_->create_publisher<std_msgs::msg::String>("planner_selector_custom_topic_name", 10);
+
+  // publish a few updates of the selected_planner
+  auto start = node_->now();
+  while ((node_->now() - start).seconds() < 0.5) {
+    tree_->rootNode()->executeTick();
+    planner_selector_pub->publish(selected_planner_cmd);
+
+    rclcpp::spin_some(node_);
+  }
+
+  // check planner updated
+  config_->blackboard->get("selected_planner", selected_planner_result);
+  EXPECT_EQ("RRT", selected_planner_result);
+}
+
+TEST_F(PlannerSelectorTestFixture, test_default_topic)
+{
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root main_tree_to_execute = "MainTree" >
+        <BehaviorTree ID="MainTree">
+          <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // tick until node succeeds
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
+    tree_->rootNode()->executeTick();
+  }
+
+  // check default value
+  std::string selected_planner_result;
+  config_->blackboard->get("selected_planner", selected_planner_result);
+
+  EXPECT_EQ(selected_planner_result, "GridBased");
+
+  std_msgs::msg::String selected_planner_cmd;
+
+  selected_planner_cmd.data = "RRT";
+
+  auto planner_selector_pub =
+    node_->create_publisher<std_msgs::msg::String>("planner_selector", 10);
 
   // publish a few updates of the selected_planner
   auto start = node_->now();

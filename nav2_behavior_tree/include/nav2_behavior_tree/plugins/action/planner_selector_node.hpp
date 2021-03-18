@@ -28,9 +28,22 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * @brief The PlannerSelector is an auxiliar behavior used to switch the planner
+ * that will be used by the planner server. It subscribes to a topic "planner_selector"
+ * to get the decision about what planner must be used. It is usually used in
+ * conjunction with the ComputePathToPoseAction. The selected_planner output port is
+ * passed to the planner_id input port.
+ */
 class PlannerSelector : public BT::SyncActionNode
 {
 public:
+  /**
+   * @brief Construct a new Planner Selector object
+   *
+   * @param xml_tag_name
+   * @param conf
+   */
   PlannerSelector(
     const std::string & xml_tag_name,
     const BT::NodeConfiguration & conf);
@@ -44,6 +57,7 @@ public:
 
       BT::InputPort<std::string>(
         "topic_name",
+        "planner_selector",
         "the input topic name to select the planner"),
 
       BT::OutputPort<std::string>(
