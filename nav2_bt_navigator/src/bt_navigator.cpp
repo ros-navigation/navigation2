@@ -93,7 +93,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
   // Odometry smoother object for getting current speed
-  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(shared_from_this(), 0.3);
+  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(weak_from_this(), 0.3);
 
   global_frame_ = get_parameter("global_frame").as_string();
   robot_frame_ = get_parameter("robot_base_frame").as_string();
