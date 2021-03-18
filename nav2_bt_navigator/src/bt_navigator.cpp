@@ -222,7 +222,7 @@ BtNavigator::onLoop()
 
   // Get current path points
   nav_msgs::msg::Path current_path;
-  blackboard_->get("path", current_path);
+  blackboard->get("path", current_path);
 
   // Find the closest pose to current pose on global path
   auto find_closest_pose_idx =
