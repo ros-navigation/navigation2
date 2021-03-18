@@ -1,5 +1,5 @@
 <!--
-  This Behavior Tree replans the global path periodically at 1 Hz.
+  This Behavior Tree replans the global path periodically proprortional to speed.
 -->
 
 <root main_tree_to_execute="MainTree">

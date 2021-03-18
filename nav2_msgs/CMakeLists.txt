@@ -31,6 +31,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SaveMap.srv"
   "action/BackUp.action"
   "action/ComputePathToPose.action"
+  "action/ComputePathThroughPoses.action"
   "action/FollowPath.action"
   "action/NavigateToPose.action"
   "action/NavigateThroughPoses.action"

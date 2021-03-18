@@ -42,18 +42,29 @@ namespace nav2_bt_navigator
 // [DONE] test navigate through poses plugin "works" (can nav, but check logging things properly called)
 // [DONE] test muxer updates state with done, preemption, cancel
 
-// make which navigator to use a runtime option? either/or
-// 2 servers, 2 packages?
+// [DONE] BT XML node for ComputePathThroughPoses
+// [DONE] BT XML file of feature using ComputePathThroughPoses/goals
+// [DONE] navigate to pose XML Bt node create new navigate through pose Bt node (for system)
 
-// BT XML node for ComputePathThroughPoses
-// planner_server action for ComputePathThroughPoses
-// planner_server action fill out to compute paths between each pose and append them to a final path
-// method for culling out and reporting the number of poses remaining
+// planner_server action ComputePathThroughPoses fill out to compute paths between each pose and append them to a final path
+// method for culling out and reporting the number of poses remaining to navigate through poses feedback
+    // in planner
+    // in BT node
+    // in BT XML
+    // in BT navigator
 
-// BT XML file of feature
+// test ComputePathThroughPoses action: culling, all together, NavFn, Smac, time
+// test ComputePathThroughPoses BT node
+// test NavigateThroughPoses BT node
+// test through poses XML together (compute path through poses, goal updated, culling, preemption, cancel, complete)
 
 // rviz plugin use this next to WP follower for demos
-// test case
+// system test case
+
+// Doxygen
+// plugins list + migration guide
+// readme + plugins in libs list + sync BTnodes.xml file for groot
+// XML list (is that somewhere? if not, make it)
 
 BtNavigator::BtNavigator()
 : nav2_util::LifecycleNode("bt_navigator", "", false)

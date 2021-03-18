@@ -29,13 +29,19 @@ GoalUpdatedCondition::GoalUpdatedCondition(
 BT::NodeStatus GoalUpdatedCondition::tick()
 {
   if (status() == BT::NodeStatus::IDLE) {
-    goal_ = config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal");
+    config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", goal_);
+    config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", goals_);
     return BT::NodeStatus::FAILURE;
   }
 
-  auto current_goal = config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal");
-  if (goal_ != current_goal) {
+  geometry_msgs::msg::PoseStamped current_goal;
+  config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", current_goal);
+  std::vector<geometry_msgs::msg::PoseStamped> current_goals;
+  config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", current_goals);
+
+  if (goal_ != current_goal || goals_ != current_goals) {
     goal_ = current_goal;
+    goals_ = current_goals;
     return BT::NodeStatus::SUCCESS;
   }
 

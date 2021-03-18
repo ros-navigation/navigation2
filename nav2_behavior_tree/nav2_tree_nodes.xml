@@ -23,6 +23,13 @@
       <input_port name="planner_id"/>
     </Action>
 
+    <Action ID="ComputePathThroughPoses">
+      <input_port name="goals">Destinations to plan through</input_port>
+      <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
+      <output_port name="path">Path created by ComputePathToPose node</output_port>
+      <input_port name="planner_id"/>
+    </Action>
+
     <Action ID="FollowPath">
       <input_port name="controller_id" default="FollowPath"/>
       <input_port name="path">Path to follow</input_port>
@@ -31,8 +38,6 @@
     <Action ID="NavigateToPose">
         <input_port name="goal">Goal</input_port>
     </Action>
-
-    <Action ID="RandomCrawl"/>
 
     <Action ID="Spin">
       <input_port name="spin_dist">Spin distance</input_port>
@@ -72,6 +77,14 @@
 
     <Decorator ID="DistanceController">
       <input_port name="distance">Distance</input_port>
+    </Decorator>
+
+    <Decorator ID="SingleTrigger">
+    </Decorator>
+
+    <Decorator ID="GoalUpdater">
+      <input_port name="input_goal">Original goal in</input_port>
+      <output_port name="output_goal">Output goal set by subscription</output_port>
     </Decorator>
 
     <Decorator ID="SpeedController">
