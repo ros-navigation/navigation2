@@ -15,6 +15,7 @@
 #include "nav2_controller/plugins/simple_progress_checker.hpp"
 #include <cmath>
 #include <string>
+#include <memory>
 #include "nav2_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
