@@ -206,7 +206,7 @@ _steps:
           (echo ros_entrypoint && cat) >> checksum.txt
         sha256sum $PWD/checksum.txt >> checksum.txt
         rm -rf $OVERLAY_WS/*
-        mv ~/.ccache /tmp/.ccache
+        mv ~/.ccache $CCACHE_DIR
   on_checkout: &on_checkout
     checkout:
       path: src/navigation2
@@ -268,12 +268,12 @@ _steps:
       build: false
   store_ccache_logs: &store_ccache_logs
     store_artifacts:
-        path: /tmp/ccache.log
+        path: $CCACHE_LOGFILE
   save_ccache: &save_ccache
     save_to_cache:
       key: ccache
       workspace: /opt/underlay_ws
-      path: /tmp/.ccache
+      path: $CCACHE_DIR
       when: always
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
