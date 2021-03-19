@@ -206,7 +206,7 @@ _steps:
           (echo ros_entrypoint && cat) >> checksum.txt
         sha256sum $PWD/checksum.txt >> checksum.txt
         rm -rf $OVERLAY_WS/*
-        mv ~/.ccache /mnt/ramdisk/.ccache
+        mv ~/.ccache /tmp/.ccache
   on_checkout: &on_checkout
     checkout:
       path: src/navigation2
@@ -273,7 +273,7 @@ _steps:
     save_to_cache:
       key: ccache
       workspace: /opt/underlay_ws
-      path: /mnt/ramdisk/.ccache
+      path: /tmp/.ccache
       when: always
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
@@ -356,7 +356,7 @@ _environments:
     ROS_WS: "/opt/ros_ws"
     UNDERLAY_WS: "/opt/underlay_ws"
     OVERLAY_WS: "/opt/overlay_ws"
-    CCACHE_DIR: "/mnt/ramdisk/.ccache"
+    CCACHE_DIR: "/tmp/.ccache"
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
     MAKEFLAGS: "-j 1 -l 2"
