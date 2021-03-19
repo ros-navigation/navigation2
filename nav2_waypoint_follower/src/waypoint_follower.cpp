@@ -246,6 +246,7 @@ void WaypointFollower::followWaypointsLogic(
       new_goal = false;
       ClientT::Goal client_goal;
       client_goal.pose = poses[goal_index];
+      client_goal.pose.header.stamp = this->now();
 
       auto send_goal_options = rclcpp_action::Client<ClientT>::SendGoalOptions();
       send_goal_options.result_callback =
@@ -316,6 +317,7 @@ void WaypointFollower::followWaypointsLogic(
     {
       // Update server state
       goal_index++;
+      poses[goal_index].header.stamp = this->now();
       new_goal = true;
       if (goal_index >= poses.size()) {
         RCLCPP_INFO(
@@ -402,7 +404,6 @@ WaypointFollower::convertGPSPoses2MapPoses(
   RCLCPP_INFO(parent_node->get_logger(), "Converting GPS waypoints to Map Frame..");
 
   std::vector<geometry_msgs::msg::PoseStamped> poses_in_map_frame_vector;
-  auto stamp = parent_node->now();
   int waypoint_index = 0;
   for (auto && curr_oriented_navsat_fix : gps_poses) {
     auto request = std::make_shared<robot_localization::srv::FromLL::Request>();
@@ -455,7 +456,7 @@ WaypointFollower::convertGPSPoses2MapPoses(
       double y_dot = x * std::sin(yaw) + y * std::cos(yaw);
       geometry_msgs::msg::PoseStamped curr_pose_map_frame;
       curr_pose_map_frame.header.frame_id = "map";
-      curr_pose_map_frame.header.stamp = stamp;
+      curr_pose_map_frame.header.stamp = parent_node->now();
       curr_pose_map_frame.pose.position.x = x_dot;
       curr_pose_map_frame.pose.position.y = y_dot;
       curr_pose_map_frame.pose.position.z = response->map_point.z;
