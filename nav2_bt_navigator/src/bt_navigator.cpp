@@ -118,8 +118,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
   // Odometry smoother object for getting current speed
-  auto node_handle = blackboard->get<rclcpp::Node::SharedPtr>("node");
-  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(node_handle, 0.3);
+  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(shared_from_this(), 0.3);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
