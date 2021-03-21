@@ -326,6 +326,22 @@ public:
   }
 
   /**
+   * @brief Get the pending goal object
+   * @return Goal Ptr to the goal that's pending
+   */
+  const std::shared_ptr<const typename ActionT::Goal> get_pending_goal() const
+  {
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+    if (!pending_handle_ || !pending_handle_->is_active()) {
+      error_msg("Attempting to get pending goal when not available");
+      return std::shared_ptr<const typename ActionT::Goal>();
+    }
+
+    return pending_handle_->get_goal();
+  }
+
+  /**
    * @brief Whether or not a cancel command has come in
    * @return bool Whether a cancel command has been requested or not
    */

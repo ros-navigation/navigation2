@@ -39,7 +39,8 @@ public:
 
   typedef std::function<bool (typename ActionT::Goal::ConstSharedPtr)> OnGoalReceivedCallback;
   typedef std::function<void ()> OnLoopCallback;
-  typedef std::function<void ()> OnPreemptCallback;
+  typedef std::function<void (typename ActionT::Goal::ConstSharedPtr)> OnPreemptCallback;
+  typedef std::function<bool ()> ShouldCancelGoalCallback;
 
   /**
    * @brief A constructor for nav2_behavior_tree::BtActionServer class
@@ -50,7 +51,8 @@ public:
     const std::vector<std::string> & plugin_lib_names,
     OnGoalReceivedCallback on_goal_received_callback,
     OnLoopCallback on_loop_callback,
-    OnPreemptCallback on_preempt_callback = nullptr);
+    OnPreemptCallback on_preempt_callback = nullptr,
+    ShouldCancelGoalCallback should_cancel_goal_callback = nullptr);
 
   /**
    * @brief A destructor for nav2_behavior_tree::BtActionServer class
@@ -116,6 +118,15 @@ public:
   }
 
   /**
+   * @brief Getter function for default BT XML filename
+   * @return string Containing default BT XML filename
+   */
+  std::string getDefaultBTFilename() const
+  {
+    return default_bt_xml_filename_;
+  }
+
+  /**
    * @brief Wrapper function to accept pending goal if a preempt has been requested
    * @return Shared pointer to pending action goal
    */
@@ -131,6 +142,24 @@ public:
   const std::shared_ptr<const typename ActionT::Goal> getCurrentGoal() const
   {
     return action_server_->get_current_goal();
+  }
+
+  /**
+   * @brief Wrapper function to get pending goal
+   * @return Shared pointer to pending action goal
+   */
+  const std::shared_ptr<const typename ActionT::Goal> getPendingGoal() const
+  {
+    return action_server_->get_pending_goal();
+  }
+
+  /**
+   * @brief Wrapper function to check if preempt is requested
+   * @return bool true if preempt is requested, false otherwise
+   */
+  bool isPreemptRequested()
+  {
+    return action_server_->is_preempt_requested();
   }
 
   /**
@@ -151,7 +180,7 @@ public:
   }
 
   /**
-   * @brief Function to halt the current tree. It will interrupt the exectuion of RUNNING nodes
+   * @brief Function to halt the current tree. It will interrupt the execution of RUNNING nodes
    * by calling their halt() implementation (only for Async nodes that may return RUNNING)
    */
   void haltTree()
@@ -211,6 +240,7 @@ protected:
   OnGoalReceivedCallback on_goal_received_callback_;
   OnLoopCallback on_loop_callback_;
   OnPreemptCallback on_preempt_callback_;
+  ShouldCancelGoalCallback should_cancel_goal_callback_;
 };
 
 }  // namespace nav2_behavior_tree

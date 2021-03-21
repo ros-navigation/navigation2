@@ -101,7 +101,12 @@ protected:
   /**
    * @brief A callback that is called when a preempt is requested
    */
-  void onPreempt();
+  void onPreempt(Action::Goal::ConstSharedPtr goal);
+
+  /**
+   * @brief A callback that can be used to decide if the current running action should be cancelled
+   */
+  bool shouldCancelCurrentGoal();
 
   /**
    * @brief Goal pose initialization on the blackboard
