@@ -249,7 +249,7 @@ BtNavigator::onLoop()
 
   // Get current speed
   geometry_msgs::msg::Twist current_odom = odom_smoother_->getTwist();
-  double current_linear_speed = hypot(current_odom.linear.x, current_odom.linear.y);
+  double current_linear_speed = std::hypot(current_odom.linear.x, current_odom.linear.y);
 
   // Calculate estimated time taken to goal if speed is higher than 1cm/s
   // and at least 10cm to go
