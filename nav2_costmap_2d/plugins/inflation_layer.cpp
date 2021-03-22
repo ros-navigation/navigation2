@@ -259,9 +259,9 @@ InflationLayer::updateCosts(
       // when some layer is going after inflation_layer,
       // we need to apply inflation_layer only to inside of given bounds
       if (static_cast<int>(mx) >= base_min_i &&
-          static_cast<int>(my) >= base_min_j &&
-          static_cast<int>(mx) < base_max_i &&
-          static_cast<int>(my) < base_max_j)
+        static_cast<int>(my) >= base_min_j &&
+        static_cast<int>(mx) < base_max_i &&
+        static_cast<int>(my) < base_max_j)
       {
         if (old_cost == NO_INFORMATION &&
           (inflate_unknown_ ? (cost > FREE_SPACE) : (cost >= INSCRIBED_INFLATED_OBSTACLE)))

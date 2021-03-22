@@ -328,7 +328,7 @@ TEST_F(TestNode, testInflationAroundUnkown)
   layers.updateMap(0, 0, 0);
 
   layers.getCostmap()->setCost(4, 4, nav2_costmap_2d::NO_INFORMATION);
-  ilayer->updateCosts(*layers.getCostmap(), 0, 0, 8, 8);
+  ilayer->updateCosts(*layers.getCostmap(), 0, 0, 10, 10);
 
   validatePointInflation(4, 4, layers.getCostmap(), ilayer, inflation_radius);
 }
