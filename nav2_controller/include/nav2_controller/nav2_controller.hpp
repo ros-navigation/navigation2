@@ -229,8 +229,13 @@ protected:
   double min_y_velocity_threshold_;
   double min_theta_velocity_threshold_;
 
+  double controller_patience_;
+
   // Whether we've published the single controller warning yet
   geometry_msgs::msg::Pose end_pose_;
+
+  // Last time the controller generated a valid command
+  rclcpp::Time last_valid_cmd_time_;
 
 private:
   /**
