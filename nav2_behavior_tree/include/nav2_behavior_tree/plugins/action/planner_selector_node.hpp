@@ -29,25 +29,29 @@ namespace nav2_behavior_tree
 {
 
 /**
- * @brief The PlannerSelector is an auxiliar behavior used to switch the planner
+ * @brief The PlannerSelector behavior is used to switch the planner
  * that will be used by the planner server. It subscribes to a topic "planner_selector"
- * to get the decision about what planner must be used. It is usually used in
- * conjunction with the ComputePathToPoseAction. The selected_planner output port is
- * passed to the planner_id input port.
+ * to get the decision about what planner must be used. It is usually used before of
+ * the ComputePathToPoseAction. The selected_planner output port is passed to planner_id
+ * input port of the ComputePathToPoseAction
  */
 class PlannerSelector : public BT::SyncActionNode
 {
 public:
   /**
-   * @brief Construct a new Planner Selector object
+   * @brief A constructor for nav2_behavior_tree::PlannerSelector
    *
-   * @param xml_tag_name
-   * @param conf
+   * @param xml_tag_name Name for the XML tag for this node
+   * @param conf  BT node configuration
    */
   PlannerSelector(
     const std::string & xml_tag_name,
     const BT::NodeConfiguration & conf);
 
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing basic ports along with node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     return {
@@ -67,8 +71,16 @@ public:
   }
 
 private:
+  /**
+   * @brief Function to perform some user-defined operation on tick
+   */
   BT::NodeStatus tick();
 
+  /**
+   * @brief callback function for the planner_selector topic
+   *
+   * @param msg the message with the id of the planner_selector
+   */
   void callback_planner_select(const std_msgs::msg::String::SharedPtr msg);
 
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr planner_selector_sub_;
