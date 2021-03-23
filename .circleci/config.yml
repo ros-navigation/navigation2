@@ -361,7 +361,7 @@ _environments:
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
     MAKEFLAGS: ""
-    COLCON_HOME: "/tmp"
+    COLCON_DEFAULTS_FILE: "/tmp/defaults.yaml"
     RCUTILS_LOGGING_BUFFERED_STREAM: "0"
     RCUTILS_LOGGING_USE_STDOUT: "0"
     RETEST_UNTIL_PASS: "2"
