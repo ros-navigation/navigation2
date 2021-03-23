@@ -32,6 +32,12 @@
         <input_port name="goal">Goal</input_port>
     </Action>
 
+    <Action ID="PlannerSelector">
+        <input_port name="topic_name">Name of the topic to receive planner selection commands</input_port>
+        <input_port name="default_planner">Default planner of the planner selector</input_port>
+        <output_port name="selected_planner">Name of the selected planner received from the topic subcription</output_port>
+    </Action>
+
     <Action ID="RandomCrawl"/>
 
     <Action ID="Spin">
