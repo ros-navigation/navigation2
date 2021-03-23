@@ -129,6 +129,9 @@ list(APPEND plugin_libs nav2_single_trigger_bt_node)
 add_library(nav2_planner_selector_bt_node SHARED plugins/action/planner_selector_node.cpp)
 list(APPEND plugin_libs nav2_planner_selector_bt_node)
 
+add_library(nav2_controller_selector_bt_node SHARED plugins/action/controller_selector_node.cpp)
+list(APPEND plugin_libs nav2_controller_selector_bt_node)
+
 foreach(bt_plugin ${plugin_libs})
   ament_target_dependencies(${bt_plugin} ${dependencies})
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
