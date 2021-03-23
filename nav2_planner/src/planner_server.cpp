@@ -131,12 +131,12 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
 
   // Create the action servers for path planning to a pose and through poses
-  action_server_pose_ = std::make_unique<ActionServerPose>(
+  action_server_pose_ = std::make_unique<ActionServerToPose>(
     rclcpp_node_,
     "compute_path_to_pose",
     std::bind(&PlannerServer::computePlan, this));
 
-  action_server_poses_ = std::make_unique<ActionServerPoses>(
+  action_server_poses_ = std::make_unique<ActionServerThroughPoses>(
     rclcpp_node_,
     "compute_path_through_poses",
     std::bind(&PlannerServer::computePlanThroughPoses, this));
@@ -226,6 +226,15 @@ bool PlannerServer::isServerInactive(
   return false;
 }
 
+void PlannerServer::waitForCostmap()
+{
+  // Don't compute a plan until costmap is valid (after clear costmap)
+  rclcpp::Rate r(100);
+  while (!costmap_ros_->isCurrent()) {
+    r.sleep();
+  }
+}
+
 template <typename T>
 bool PlannerServer::isCancelRequested(
   std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server)
@@ -237,15 +246,6 @@ bool PlannerServer::isCancelRequested(
   }
 
   return false;
-}
-
-void PlannerServer::waitForCostmap()
-{
-  // Don't compute a plan until costmap is valid (after clear costmap)
-  rclcpp::Rate r(100);
-  while (!costmap_ros_->isCurrent()) {
-    r.sleep();
-  }
 }
 
 template <typename T>
@@ -274,6 +274,49 @@ bool PlannerServer::getStartPose(
   return true;
 }
 
+template <typename T>
+bool PlannerServer::transformPosesToGlobalFrame(
+  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
+  geometry_msgs::msg::PoseStamped & curr_start,
+  geometry_msgs::msg::PoseStamped & curr_goal)
+{
+  if (!costmap_ros_->transformPoseToGlobalFrame(curr_start, curr_start) ||
+    !costmap_ros_->transformPoseToGlobalFrame(curr_goal, curr_goal))
+  {
+    RCLCPP_WARN(
+      get_logger(), "Could not transform the start or goal pose in the costmap frame");
+    action_server->terminate_current();
+    return false;
+  }
+
+  return true;
+}
+
+template <typename T>
+bool PlannerServer::validatePath(
+  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
+  const geometry_msgs::msg::PoseStamped & goal,
+  const nav_msgs::msg::Path & path,
+  const std::string & planner_id)
+{
+  if (path.poses.size() == 0) {
+    RCLCPP_WARN(
+      get_logger(), "Planning algorithm %s failed to generate a valid"
+      " path to (%.2f, %.2f)", planner_id.c_str(),
+      goal.pose.position.x, goal.pose.position.y);
+    action_server->terminate_current();
+    return false;
+  }
+
+  RCLCPP_DEBUG(
+    get_logger(),
+    "Found valid path of size %lu to (%.2f, %.2f)",
+    path.poses.size(), goal.pose.position.x,
+    goal.pose.position.y);
+
+  return true;
+}
+
 void
 PlannerServer::computePlanThroughPoses()
 {
@@ -281,7 +324,7 @@ PlannerServer::computePlanThroughPoses()
 
   // Initialize the ComputePathToPose goal and result
   auto goal = action_server_poses_->get_current_goal();
-  auto result = std::make_shared<nav2_msgs::action::ComputePathThroughPoses::Result>();
+  auto result = std::make_shared<ActionThroughPoses::Result>();
   nav_msgs::msg::Path concat_path;
 
   try {
@@ -299,7 +342,7 @@ PlannerServer::computePlanThroughPoses()
       return;
     }
 
-    // Changing the start and goal pose frame to the global_frame_ of costmap_ros_ if needed
+    // Get consecutive paths through these points
     std::vector<geometry_msgs::msg::PoseStamped>::iterator goal_iter;
     geometry_msgs::msg::PoseStamped curr_start, curr_goal;
     for (unsigned int i = 0; i != goal->goals.size(); i++) {
@@ -312,12 +355,7 @@ PlannerServer::computePlanThroughPoses()
       curr_goal = goal->goals[i];
 
       // Transform them into the global frame
-      if (!costmap_ros_->transformPoseToGlobalFrame(curr_start, curr_start) ||
-        !costmap_ros_->transformPoseToGlobalFrame(curr_goal, curr_goal))
-      {
-        RCLCPP_WARN(
-          get_logger(), "Could not transform the start or goal pose in the costmap frame");
-        action_server_poses_->terminate_current();
+      if (!transformPosesToGlobalFrame(action_server_poses_, curr_start, curr_goal)) {
         return;
       }
 
@@ -325,25 +363,14 @@ PlannerServer::computePlanThroughPoses()
       nav_msgs::msg::Path curr_path = getPlan(curr_start, curr_goal, goal->planner_id);
 
       // check path for validity
-      if (curr_path.poses.size() == 0) {
-        RCLCPP_WARN(
-          get_logger(), "Planning algorithm %s failed to generate a valid"
-          " path to (%.2f, %.2f)", goal->planner_id.c_str(),
-          curr_goal.pose.position.x, curr_goal.pose.position.y);
-        action_server_poses_->terminate_current();
+      if (!validatePath(action_server_poses_, curr_goal, curr_path, goal->planner_id)) {
         return;
       }
 
-      // Concatinate paths together
+      // Concatenate paths together
       concat_path.poses.insert(
         concat_path.poses.end(), curr_path.poses.begin(), curr_path.poses.end());
       concat_path.header = curr_path.header;
-
-      RCLCPP_DEBUG(
-        get_logger(),
-        "Found valid path of size %lu to (%.2f, %.2f)",
-        curr_path.poses.size(), curr_goal.pose.position.x,
-        curr_goal.pose.position.y);
     }
 
     // Publish the plan for visualization purposes
@@ -378,7 +405,7 @@ PlannerServer::computePlan()
 
   // Initialize the ComputePathToPose goal and result
   auto goal = action_server_pose_->get_current_goal();
-  auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
+  auto result = std::make_shared<ActionToPose::Result>();
 
   try {
     if (isServerInactive(action_server_pose_) || isCancelRequested(action_server_pose_)) {
@@ -395,33 +422,17 @@ PlannerServer::computePlan()
       return;
     }
 
-    // Changing the start and goal pose frame to the global_frame_ of costmap_ros_ if needed
+    // Transform them into the global frame
     geometry_msgs::msg::PoseStamped goal_pose = goal->goal;
-    if (!costmap_ros_->transformPoseToGlobalFrame(start, start) ||
-      !costmap_ros_->transformPoseToGlobalFrame(goal->goal, goal_pose))
-    {
-      RCLCPP_WARN(
-        get_logger(), "Could not transform the goal pose in the costmap frame");
-      action_server_pose_->terminate_current();
+    if (!transformPosesToGlobalFrame(action_server_poses_, start, goal_pose)) {
       return;
     }
 
     result->path = getPlan(start, goal_pose, goal->planner_id);
 
-    if (result->path.poses.size() == 0) {
-      RCLCPP_WARN(
-        get_logger(), "Planning algorithm %s failed to generate a valid"
-        " path to (%.2f, %.2f)", goal->planner_id.c_str(),
-        goal_pose.pose.position.x, goal_pose.pose.position.y);
-      action_server_pose_->terminate_current();
+    if (!validatePath(action_server_poses_, goal_pose, result->path, goal->planner_id)) {
       return;
     }
-
-    RCLCPP_DEBUG(
-      get_logger(),
-      "Found valid path of size %lu to (%.2f, %.2f)",
-      result->path.poses.size(), goal_pose.pose.position.x,
-      goal_pose.pose.position.y);
 
     // Publish the plan for visualization purposes
     publishPlan(result->path);

@@ -102,33 +102,89 @@ protected:
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
-  using ActionPose = nav2_msgs::action::ComputePathToPose;
-  using ActionPoses = nav2_msgs::action::ComputePathThroughPoses;
-  using ActionServerPose = nav2_util::SimpleActionServer<ActionPose>;
-  using ActionServerPoses = nav2_util::SimpleActionServer<ActionPoses>;
+  using ActionToPose = nav2_msgs::action::ComputePathToPose;
+  using ActionThroughPoses = nav2_msgs::action::ComputePathThroughPoses;
+  using ActionServerToPose = nav2_util::SimpleActionServer<ActionToPose>;
+  using ActionServerThroughPoses = nav2_util::SimpleActionServer<ActionThroughPoses>;
 
+  /**
+   * @brief Check if an action server is valid / active
+   * @param action_server Action server to test
+   * @return SUCCESS or FAILURE
+   */
   template <typename T>
   bool isServerInactive(std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server);
 
+  /**
+   * @brief Check if an action server has a cancellation request pending
+   * @param action_server Action server to test
+   * @return SUCCESS or FAILURE
+   */
   template <typename T>
   bool isCancelRequested(std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server);
 
+  /**
+   * @brief Wait for costmap to be valid with updated sensor data or repopulate after a
+   * clearing recovery. Blocks until true without timeout.
+   */
   void waitForCostmap();
 
+  /**
+   * @brief Check if an action server has a preemption request and replaces the goal
+   * with the new preemption goal.
+   * @param action_server Action server to get updated goal if required
+   * @param goal Goal to overwrite
+   */
   template <typename T>
   void getPreemptedGoalIfRequested(
     std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
     typename std::shared_ptr<const typename T::Goal> goal);
 
+  /**
+   * @brief Get the starting pose from costmap or message, if valid
+   * @param action_server Action server to terminate if required
+   * @param goal Goal to find start from
+   * @param start The starting pose to use
+   * @return bool If successful in finding a valid starting pose
+   */
   template <typename T>
   bool getStartPose(
     std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
     typename std::shared_ptr<const typename T::Goal> goal,
     geometry_msgs::msg::PoseStamped & start);
 
+  /**
+   * @brief Transform start and goal poses into the costmap
+   * global frame for path planning plugins to utilize
+   * @param action_server Action server to terminate if required
+   * @param start The starting pose to transform
+   * @param goal Goal pose to transform
+   * @return bool If successful in transforming poses
+   */
+  template <typename T>
+  bool transformPosesToGlobalFrame(
+    std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
+    geometry_msgs::msg::PoseStamped & curr_start,
+    geometry_msgs::msg::PoseStamped & curr_goal);
+
+  /**
+   * @brief Validate that the path contains a meaningful path
+   * @param action_server Action server to terminate if required
+   * @param goal Goal Current goal
+   * @param path Current path
+   * @param planner_id The planner ID used to generate the path
+   * @return bool If path is valid
+   */
+  template <typename T>
+  bool validatePath(
+    std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
+    const geometry_msgs::msg::PoseStamped & curr_goal,
+    const nav_msgs::msg::Path & path,
+    const std::string & planner_id);
+
   // Our action server implements the ComputePathToPose action
-  std::unique_ptr<ActionServerPose> action_server_pose_;
-  std::unique_ptr<ActionServerPoses> action_server_poses_;
+  std::unique_ptr<ActionServerToPose> action_server_pose_;
+  std::unique_ptr<ActionServerThroughPoses> action_server_poses_;
 
   /**
    * @brief The action server callback which calls planner to get the path
