@@ -38,6 +38,12 @@
         <output_port name="selected_planner">Name of the selected planner received from the topic subcription</output_port>
     </Action>
 
+    <Action ID="ControllerSelector">
+        <input_port name="topic_name">Name of the topic to receive controller selection commands</input_port>
+        <input_port name="default_controller">Default controller of the controller selector</input_port>
+        <output_port name="selected_controller">Name of the selected controller received from the topic subcription</output_port>
+    </Action>
+
     <Action ID="RandomCrawl"/>
 
     <Action ID="Spin">
