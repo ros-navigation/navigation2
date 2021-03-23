@@ -62,7 +62,7 @@ public:
   explicit OdomSmoother(
     const nav2_util::LifecycleNode::WeakPtr & parent,
     double filter_duration = 0.3,
-    const std::string& odom_topic = "odom");
+    const std::string & odom_topic = "odom");
 
   /**
    * @brief Get twist msg from smoother
