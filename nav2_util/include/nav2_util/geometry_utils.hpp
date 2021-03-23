@@ -85,6 +85,27 @@ inline double euclidean_distance(
   return euclidean_distance(pos1.pose, pos2.pose);
 }
 
+/**
+ * Find element in iterator with the minimum calculated value
+ */
+template<typename Iter, typename Getter>
+inline Iter min_by(Iter begin, Iter end, Getter getCompareVal)
+{
+  if (begin == end) {
+    return end;
+  }
+  auto lowest = getCompareVal(*begin);
+  Iter lowest_it = begin;
+  for (Iter it = ++begin; it != end; ++it) {
+    auto comp = getCompareVal(*it);
+    if (comp < lowest) {
+      lowest = comp;
+      lowest_it = it;
+    }
+  }
+  return lowest_it;
+}
+
 }  // namespace geometry_utils
 }  // namespace nav2_util
 

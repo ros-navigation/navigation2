@@ -26,6 +26,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
+#include "nav2_msgs/action/compute_path_through_poses.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/simple_action_server.hpp"
@@ -101,16 +102,45 @@ protected:
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
-  using ActionT = nav2_msgs::action::ComputePathToPose;
-  using ActionServer = nav2_util::SimpleActionServer<ActionT>;
+  using ActionPose = nav2_msgs::action::ComputePathToPose;
+  using ActionPoses = nav2_msgs::action::ComputePathThroughPoses;
+  using ActionServerPose = nav2_util::SimpleActionServer<ActionPose>;
+  using ActionServerPoses = nav2_util::SimpleActionServer<ActionPoses>;
+
+  template <typename T>
+  bool isServerInactive(std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server);
+
+  template <typename T>
+  bool isCancelRequested(std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server);
+
+  void waitForCostmap();
+
+  template <typename T>
+  void getPreemptedGoalIfRequested(
+    std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
+    typename std::shared_ptr<const typename T::Goal> goal);
+
+  template <typename T>
+  bool getStartPose(
+    std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
+    typename std::shared_ptr<const typename T::Goal> goal,
+    geometry_msgs::msg::PoseStamped & start);
 
   // Our action server implements the ComputePathToPose action
-  std::unique_ptr<ActionServer> action_server_;
+  std::unique_ptr<ActionServerPose> action_server_pose_;
+  std::unique_ptr<ActionServerPoses> action_server_poses_;
 
   /**
    * @brief The action server callback which calls planner to get the path
+   * ComputePathToPose
    */
   void computePlan();
+
+  /**
+   * @brief The action server callback which calls planner to get the path
+   * ComputePathThroughPoses
+   */
+  void computePlanThroughPoses();
 
   /**
    * @brief Publish a path for visualization purposes
