@@ -28,9 +28,17 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * @brief A class to publish BT logs on BT status change
+ */
 class RosTopicLogger : public BT::StatusChangeLogger
 {
 public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::RosTopicLogger
+   * @param ros_node Weak pointer to parent rclcpp::Node
+   * @param tree BT to monitor
+   */
   RosTopicLogger(const rclcpp::Node::WeakPtr & ros_node, const BT::Tree & tree)
   : StatusChangeLogger(tree.rootNode())
   {
@@ -42,6 +50,13 @@ public:
       rclcpp::QoS(10));
   }
 
+  /**
+   * @brief Callback function which is called each time BT changes status
+   * @param timestamp Timestamp of BT status change
+   * @param node Node that changed status
+   * @param prev_status Previous status of the node
+   * @param status Current status of the node
+   */
   void callback(
     BT::Duration timestamp,
     const BT::TreeNode & node,
@@ -66,6 +81,9 @@ public:
       toStr(status, true).c_str() );
   }
 
+  /**
+   * @brief Clear log buffer if any
+   */
   void flush() override
   {
     if (!event_log_.empty()) {

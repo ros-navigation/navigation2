@@ -28,14 +28,26 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * @brief A BT::DecoratorNode that subscribes to a goal topic and updates
+ * the current goal on the blackboard
+ */
 class GoalUpdater : public BT::DecoratorNode
 {
 public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::GoalUpdater
+   * @param xml_tag_name Name for the XML tag for this node
+   * @param conf BT node configuration
+   */
   GoalUpdater(
     const std::string & xml_tag_name,
     const BT::NodeConfiguration & conf);
 
-
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     return {
@@ -47,8 +59,16 @@ public:
   }
 
 private:
+  /**
+   * @brief The main override required by a BT action
+   * @return BT::NodeStatus Status of tick execution
+   */
   BT::NodeStatus tick() override;
 
+  /**
+   * @brief Callback function for goal update topic
+   * @param msg Shared pointer to geometry_msgs::msg::PoseStamped message
+   */
   void callback_updated_goal(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;

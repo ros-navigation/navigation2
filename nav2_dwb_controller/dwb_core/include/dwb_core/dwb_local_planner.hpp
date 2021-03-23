@@ -93,11 +93,13 @@ public:
    *
    * @param pose Current robot pose
    * @param velocity Current robot velocity
+   * @param goal_checker   Ptr to the goal checker for this task in case useful in computing commands
    * @return The best command for the robot to drive
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
-    const geometry_msgs::msg::Twist & velocity) override;
+    const geometry_msgs::msg::Twist & velocity,
+    nav2_core::GoalChecker * /*goal_checker*/) override;
 
   /**
    * @brief Score a given command. Can be used for testing.

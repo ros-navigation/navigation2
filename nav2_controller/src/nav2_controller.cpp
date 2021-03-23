@@ -388,7 +388,8 @@ void ControllerServer::computeAndPublishVelocity()
   auto cmd_vel_2d =
     controllers_[current_controller_]->computeVelocityCommands(
     pose,
-    nav_2d_utils::twist2Dto3D(twist));
+    nav_2d_utils::twist2Dto3D(twist),
+    goal_checker_.get());
 
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);

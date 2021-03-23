@@ -57,19 +57,23 @@ TEST_F(SingleTriggerTestFixture, test_behavior)
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
 
   // tick once, should work
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(dummy_node_->status(), BT::NodeStatus::IDLE);
 
   // tick again with dummy node success, should fail
-  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
   // tick again with dummy node idle, should still fail
   dummy_node_->changeStatus(BT::NodeStatus::IDLE);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
-  // halt BT for a new execution run, should work once and then fail
+  // halt BT for a new execution run, should work when dummy node is running
+  // and once when dummy node returns success and then fail
   bt_node_->halt();
+  dummy_node_->changeStatus(BT::NodeStatus::RUNNING);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
+  dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 }

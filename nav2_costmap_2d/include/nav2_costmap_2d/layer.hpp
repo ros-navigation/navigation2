@@ -128,7 +128,8 @@ public:
     const std::string & param_name,
     const rclcpp::ParameterValue & value);
   void declareParameter(
-    const std::string & param_name);
+    const std::string & param_name,
+    const rclcpp::ParameterType & param_type);
   bool hasParameter(const std::string & param_name);
   std::string getFullName(const std::string & param_name);
 

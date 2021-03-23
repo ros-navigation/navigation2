@@ -91,7 +91,8 @@ Layer::declareParameter(
 
 void
 Layer::declareParameter(
-  const std::string & param_name)
+  const std::string & param_name,
+  const rclcpp::ParameterType & param_type)
 {
   auto node = node_.lock();
   if (!node) {
@@ -99,7 +100,7 @@ Layer::declareParameter(
   }
   local_params_.insert(param_name);
   nav2_util::declare_parameter_if_not_declared(
-    node, getFullName(param_name));
+    node, getFullName(param_name), param_type);
 }
 
 bool
