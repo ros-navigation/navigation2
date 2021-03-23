@@ -424,13 +424,13 @@ PlannerServer::computePlan()
 
     // Transform them into the global frame
     geometry_msgs::msg::PoseStamped goal_pose = goal->goal;
-    if (!transformPosesToGlobalFrame(action_server_poses_, start, goal_pose)) {
+    if (!transformPosesToGlobalFrame(action_server_pose_, start, goal_pose)) {
       return;
     }
 
     result->path = getPlan(start, goal_pose, goal->planner_id);
 
-    if (!validatePath(action_server_poses_, goal_pose, result->path, goal->planner_id)) {
+    if (!validatePath(action_server_pose_, goal_pose, result->path, goal->planner_id)) {
       return;
     }
 
