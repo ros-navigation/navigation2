@@ -214,6 +214,7 @@ _steps:
     run:
       name: Post Checkout
       command: |
+        cp $OVERLAY_WS/src/navigation2/tools/defaults.yaml /tmp
         if ! cmp \
           $OVERLAY_WS/src/navigation2/tools/underlay.repos \
           $UNDERLAY_WS/underlay.repos >/dev/null 2>&1
@@ -360,6 +361,7 @@ _environments:
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
     MAKEFLAGS: "-j 1 -l 2"
+    COLCON_HOME: "/tmp"
     RCUTILS_LOGGING_BUFFERED_STREAM: "0"
     RCUTILS_LOGGING_USE_STDOUT: "0"
     RETEST_UNTIL_PASS: "2"
