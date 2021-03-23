@@ -37,7 +37,7 @@ PlannerSelector::PlannerSelector(
   getInput("topic_name", topic_name_);
 
   planner_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-    topic_name_, 1, std::bind(&PlannerSelector::callback_planner_select, this, _1));
+    topic_name_, 1, std::bind(&PlannerSelector::callbackPlannerSelect, this, _1));
 }
 
 BT::NodeStatus PlannerSelector::tick()
@@ -54,7 +54,7 @@ BT::NodeStatus PlannerSelector::tick()
 }
 
 void
-PlannerSelector::callback_planner_select(const std_msgs::msg::String::SharedPtr msg)
+PlannerSelector::callbackPlannerSelect(const std_msgs::msg::String::SharedPtr msg)
 {
   last_selected_planner_ = msg->data;
 }

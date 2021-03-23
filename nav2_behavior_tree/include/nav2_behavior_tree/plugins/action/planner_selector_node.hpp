@@ -81,7 +81,7 @@ private:
    *
    * @param msg the message with the id of the planner_selector
    */
-  void callback_planner_select(const std_msgs::msg::String::SharedPtr msg);
+  void callbackPlannerSelect(const std_msgs::msg::String::SharedPtr msg);
 
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr planner_selector_sub_;
 
