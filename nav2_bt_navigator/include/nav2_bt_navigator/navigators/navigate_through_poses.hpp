@@ -20,6 +20,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_bt_navigator/navigator.hpp"
 #include "nav2_msgs/action/navigate_through_poses.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 
@@ -85,6 +86,8 @@ protected:
 
   rclcpp::Time start_time_;
   std::string goals_blackboard_id_;
+  std::string path_blackboard_id_;
+  bool cull_passed_poses_;
 };
 
 }  // namespace nav2_bt_navigator

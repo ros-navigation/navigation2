@@ -46,17 +46,15 @@ namespace nav2_bt_navigator
 // [DONE] BT XML file of feature using ComputePathThroughPoses/goals
 // [DONE] navigate to pose XML Bt node create new navigate through pose Bt node (for system)
 
-// planner_server action ComputePathThroughPoses fill out to compute paths between each pose and append them to a final path
-// method for culling out and reporting the number of poses remaining to navigate through poses feedback
-    // in planner
-    // in BT node
-    // in BT XML
-    // in BT navigator
+// [DONE] method for culling out and reporting the number of poses remaining to navigate through poses feedback
+// [DONE] planner_server action ComputePathThroughPoses fill out to compute paths between each pose and append them to a final path
 
-// test ComputePathThroughPoses action: culling, all together, NavFn, Smac, time
-// test ComputePathThroughPoses BT node
-// test NavigateThroughPoses BT node
-// test through poses XML together (compute path through poses, goal updated, culling, preemption, cancel, complete)
+// [N/A] test NavigateThroughPoses BT node
+// test ComputePathThroughPoses action: NavFn, Smac, compute time
+// test ComputePathThroughPoses BT node: take goals and send to action server, puts path on blackboard for FollowPaths
+// test culling of points in navigator, close calls, loops, switchbacks, etc
+// test XML all together (compute path through poses, goal updated, culling, preemption, cancel, complete)
+// test muxer when having both actually running
 
 // rviz plugin use this next to WP follower for demos
 // system test case

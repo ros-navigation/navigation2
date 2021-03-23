@@ -28,6 +28,10 @@ NavigateThroughPosesNavigator::configure(
   auto node = parent_node.lock();
   node->declare_parameter("goals_blackboard_id", std::string("goals"));
   goals_blackboard_id_ = node->get_parameter("goals_blackboard_id").as_string();
+  node->declare_parameter("path_blackboard_id", std::string("path"));
+  path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
+  node->declare_parameter("cull_passed_poses", true);
+  cull_passed_poses_ = node->get_parameter("cull_passed_poses").as_bool();
   return true;
 }
 
@@ -56,6 +60,8 @@ NavigateThroughPosesNavigator::goalCompleted(typename ActionT::Result::SharedPtr
 void
 NavigateThroughPosesNavigator::onLoop()
 {
+  using namespace nav2_util::geometry_utils;
+
   // action server feedback (pose, duration of task,
   // number of recoveries, and distance remaining to goal)
   auto feedback_msg = std::make_shared<ActionT::Feedback>();
@@ -70,14 +76,50 @@ NavigateThroughPosesNavigator::onLoop()
   std::vector<geometry_msgs::msg::PoseStamped> goal_poses;
   blackboard->get(goals_blackboard_id_, goal_poses);
 
-  feedback_msg->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
+  feedback_msg->distance_remaining = euclidean_distance(
     feedback_msg->current_pose.pose, goal_poses.back().pose);
 
   int recovery_count = 0;
   blackboard->get<int>("number_recoveries", recovery_count);
   feedback_msg->number_of_recoveries = recovery_count;
   feedback_msg->navigation_time = clock_->now() - start_time_;
-  // feedback_msg->number_of_poses_remaining = //  TODO feedback from compute path to poses.
+
+  // TODO should this all be a BT node next to compute path through poses?
+  // Find and remove any via-point poses already passed from replanning
+  // We only need to consider the first point(s)
+  // and stop at first point that doesn't meet our criteria for removal
+
+  // A) find closest point on path
+  nav_msgs::msg::Path current_path;
+  blackboard->get<nav_msgs::msg::Path>(path_blackboard_id_, current_path);
+
+  unsigned int closest_to_robot =
+    nav2_util::geometry_utils::min_by(
+    current_path.poses.begin(), current_path.poses.end(),
+    [&feedback_msg](const geometry_msgs::msg::PoseStamped & ps) {
+      return euclidean_distance(feedback_msg->current_pose.pose, ps.pose);
+    }) - current_path.poses.begin();
+
+  // B) find the indices of the goals (or their closest points)
+  // if smaller, then passed and should be removed
+  // if bigger, then we haven't passed it and we can exit
+  while (cull_passed_poses_ && goal_poses.size() > 1) {
+    unsigned int closest_to_viapoint =
+      nav2_util::geometry_utils::min_by(
+      current_path.poses.begin(), current_path.poses.end(),
+      [&goal_poses](const geometry_msgs::msg::PoseStamped & ps) {
+        return euclidean_distance(goal_poses[0].pose, ps.pose);
+      }) - current_path.poses.begin();
+
+    if (closest_to_viapoint > closest_to_robot) {
+      break;
+    }
+
+    goal_poses.erase(goal_poses.begin());
+  }
+
+  blackboard->set(goals_blackboard_id_, goal_poses);
+  feedback_msg->number_of_poses_remaining = goal_poses.size();
 
   bt_action_server_->publishFeedback(feedback_msg);
 }

@@ -3,5 +3,7 @@ CHANGELOG
 - abstract out this logic to allow for expansion (but not plugins)
 - create a new onComplete callback in the bt action server to populate results meaningfully or indicate completion
 - make sure only 1 navigator at a time can be processed with a muxer handled for plugins automatically
+- nav through poses cull pts passed so don't replan through old areas
 
-
+Qs:
+- Should culling happen in a new BT node (TruncateOldPosesFromPath?), is this way catching all reasonable edge cases?
