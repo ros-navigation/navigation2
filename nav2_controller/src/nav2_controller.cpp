@@ -111,6 +111,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   std::string speed_limit_topic;
   get_parameter("speed_limit_topic", speed_limit_topic);
+  get_parameter("controller_patience", controller_patience_);
 
   costmap_ros_->on_configure(state);
 
@@ -390,15 +391,15 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 
-  if (controller_patience_ > 0 || controller_patience_ == -1.0) {
-    try {
-      cmd_vel_2d =
-        controllers_[current_controller_]->computeVelocityCommands(
-        pose,
-        nav_2d_utils::twist2Dto3D(twist),
-        goal_checker_.get());
-      last_valid_cmd_time_ = now();
-    } catch (nav2_core::PlannerException & e) {
+  try {
+    cmd_vel_2d =
+      controllers_[current_controller_]->computeVelocityCommands(
+      pose,
+      nav_2d_utils::twist2Dto3D(twist),
+      goal_checker_.get());
+    last_valid_cmd_time_ = now();
+  } catch (nav2_core::PlannerException & e) {
+    if (controller_patience_ > 0 || controller_patience_ == -1.0) {
       RCLCPP_WARN(this->get_logger(), e.what());
       cmd_vel_2d.twist.angular.x = 0;
       cmd_vel_2d.twist.angular.y = 0;
@@ -408,13 +409,13 @@ void ControllerServer::computeAndPublishVelocity()
       cmd_vel_2d.twist.linear.z = 0;
       cmd_vel_2d.header.frame_id = costmap_ros_->getBaseFrameID();
       cmd_vel_2d.header.stamp = now();
+      publishVelocity(cmd_vel_2d);
+      if ((now() - last_valid_cmd_time_).seconds() > controller_patience_) {
+        throw nav2_core::PlannerException("Controller patience exceeded");
+      }
+    } else {
+      throw nav2_core::PlannerException(e.what());
     }
-  } else {
-    cmd_vel_2d =
-      controllers_[current_controller_]->computeVelocityCommands(
-      pose,
-      nav_2d_utils::twist2Dto3D(twist),
-      goal_checker_.get());
   }
 
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
@@ -424,9 +425,7 @@ void ControllerServer::computeAndPublishVelocity()
 
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);
-  if (controller_patience_ > 0 && (now() - last_valid_cmd_time_).seconds() > 5) {
-    throw nav2_core::PlannerException("Controller patience exceeded");
-  }
+
 }
 
 void ControllerServer::updateGlobalPath()
