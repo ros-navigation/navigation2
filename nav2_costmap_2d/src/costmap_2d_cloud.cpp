@@ -73,66 +73,52 @@ rclcpp::Node::SharedPtr g_node;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_marked;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_unknown;
 
-void pointCloud2Helper(std::unique_ptr<sensor_msgs::msg::PointCloud2>& cloud,
-                       uint32_t num_channels,
-                       std_msgs::msg::Header header,
-                       V_Cell& g_cells){
-    cloud->header = header;
-    cloud->width = num_channels;
-    cloud->height = 1;
-    cloud->fields.resize(6);  // x,y,z,r,g,b
-    cloud->is_dense = true;  // are there no invalid points in the cloud ?
-    cloud->is_bigendian = false;
-    int offset = 0;
+void pointCloud2Helper(
+  std::unique_ptr<sensor_msgs::msg::PointCloud2> & cloud,
+  uint32_t num_channels,
+  std_msgs::msg::Header header,
+  V_Cell & g_cells)
+{
+  cloud->header = header;
+  cloud->width = num_channels;
+  cloud->height = 1;
+  cloud->is_dense = true;
+  cloud->is_bigendian = false;
+  sensor_msgs::PointCloud2Modifier modifier(*cloud);
 
-    for(size_t i = 0; i < cloud->fields.size(); ++i){
-      cloud->fields[i].offset   = offset;
-      cloud->fields[i].count    = 1;
-      if (i < 3){
-        cloud->fields[i].datatype = sensor_msgs::msg::PointField::FLOAT32;
-        offset += 4;
-      }else{
-        cloud->fields[i].datatype = sensor_msgs::msg::PointField::UINT8;
-        offset++;
-      }
-    }
+  modifier.setPointCloud2Fields(
+    6, "x", 1, sensor_msgs::msg::PointField::FLOAT32,
+    "y", 1, sensor_msgs::msg::PointField::FLOAT32,
+    "z", 1, sensor_msgs::msg::PointField::FLOAT32,
+    "r", 1, sensor_msgs::msg::PointField::UINT8,
+    "g", 1, sensor_msgs::msg::PointField::UINT8,
+    "b", 1, sensor_msgs::msg::PointField::UINT8);
 
-    cloud->fields[0].name = "x";
-    cloud->fields[1].name = "y";
-    cloud->fields[2].name = "z";
+  sensor_msgs::PointCloud2Iterator<float> iter_x(*cloud, "x");
+  sensor_msgs::PointCloud2Iterator<float> iter_y(*cloud, "y");
+  sensor_msgs::PointCloud2Iterator<float> iter_z(*cloud, "z");
 
-    cloud->fields[3].name = "r";
-    cloud->fields[4].name = "g";
-    cloud->fields[5].name = "b";
+  sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(*cloud, "r");
+  sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(*cloud, "g");
+  sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*cloud, "b");
 
-    cloud->point_step = offset;
-    cloud->row_step   = cloud->point_step * cloud->width;
-    cloud->data.resize(cloud->row_step * cloud->height);
-    sensor_msgs::PointCloud2Iterator<float> iter_x(*cloud, "x");
-    sensor_msgs::PointCloud2Iterator<float> iter_y(*cloud, "y");
-    sensor_msgs::PointCloud2Iterator<float> iter_z(*cloud, "z");
+  for (uint32_t i = 0; i < num_channels; ++i) {
+    Cell & c = g_cells[i];
+    // assigning value to the point cloud2's iterator
+    *iter_x = c.x;
+    *iter_y = c.y;
+    *iter_z = c.z;
+    *iter_r = g_colors_r[c.status] * 255.0;
+    *iter_g = g_colors_g[c.status] * 255.0;
+    *iter_b = g_colors_b[c.status] * 255.0;
 
-    sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(*cloud, "r");
-    sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(*cloud, "g");
-    sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*cloud, "b");
-
-    for (uint32_t i = 0; i < num_channels; ++i) {
-      Cell & c = g_cells[i];
-      // assigning value to the point cloud2's iterator
-      *iter_x = c.x;
-      *iter_y = c.y;
-      *iter_z = c.z;
-      *iter_r = g_colors_r[c.status] * 255.0;
-      *iter_g = g_colors_g[c.status] * 255.0;
-      *iter_b = g_colors_b[c.status] * 255.0;
-
-      ++iter_x;
-      ++iter_y;
-      ++iter_z;
-      ++iter_r;
-      ++iter_g;
-      ++iter_b;
-    }
+    ++iter_x;
+    ++iter_y;
+    ++iter_z;
+    ++iter_r;
+    ++iter_g;
+    ++iter_b;
+  }
 }
 
 void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)

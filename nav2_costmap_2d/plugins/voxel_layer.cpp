@@ -305,9 +305,7 @@ void VoxelLayer::raytraceFreespace(
 {
   auto clearing_endpoints_ = std::make_unique<sensor_msgs::msg::PointCloud2>();
 
-  size_t clearing_observation_cloud_size = clearing_observation.cloud_->height *
-    clearing_observation.cloud_->width;
-  if (clearing_observation_cloud_size == 0) {
+  if (clearing_observation.cloud_->height == 0 || clearing_observation.cloud_->width == 0) {
     return;
   }
 
@@ -338,27 +336,19 @@ void VoxelLayer::raytraceFreespace(
     clearing_endpoints_->data.clear();
     clearing_endpoints_->width = clearing_observation.cloud_->width;
     clearing_endpoints_->height = clearing_observation.cloud_->height;
-    clearing_endpoints_->is_dense = true;  // are there no invalid points in the cloud ?
+    clearing_endpoints_->is_dense = true;
     clearing_endpoints_->is_bigendian = false;
-  }else{
-    clearing_endpoints_->width  = 0;
-    clearing_endpoints_->height = 0;
-  }
-  // FIXME(sachin): Should I use clearing_observation.cloud_->fields.size() ??
-  clearing_endpoints_->fields.resize(3);
-  int offset = 0;
-  for(size_t i = 0; i < clearing_endpoints_->fields.size(); ++i, offset += 4){
-    clearing_endpoints_->fields[i].offset   = offset;
-    clearing_endpoints_->fields[i].count    = 1;
-    clearing_endpoints_->fields[i].datatype = sensor_msgs::msg::PointField::FLOAT32;
   }
 
-  clearing_endpoints_->fields[0].name = "x";
-  clearing_endpoints_->fields[1].name = "y";
-  clearing_endpoints_->fields[2].name = "z";
-  clearing_endpoints_->point_step     = offset;
-  clearing_endpoints_->row_step = clearing_endpoints_->point_step * clearing_endpoints_->width;
-  clearing_endpoints_->data.resize(clearing_endpoints_->row_step * clearing_endpoints_->height);
+  sensor_msgs::PointCloud2Modifier modifier(*clearing_endpoints_);
+  modifier.setPointCloud2Fields(
+    3, "x", 1, sensor_msgs::msg::PointField::FLOAT32,
+    "y", 1, sensor_msgs::msg::PointField::FLOAT32,
+    "z", 1, sensor_msgs::msg::PointField::FLOAT32);
+
+  sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_x(*clearing_endpoints_, "x");
+  sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_y(*clearing_endpoints_, "y");
+  sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_z(*clearing_endpoints_, "z");
 
   // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
   double map_end_x = origin_x_ + getSizeInMetersX();
@@ -368,10 +358,6 @@ void VoxelLayer::raytraceFreespace(
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(*(clearing_observation.cloud_), "x");
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(*(clearing_observation.cloud_), "y");
   sensor_msgs::PointCloud2ConstIterator<float> iter_z(*(clearing_observation.cloud_), "z");
-
-  sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_x(*clearing_endpoints_, "x");
-  sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_y(*clearing_endpoints_, "y");
-  sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_z(*clearing_endpoints_, "z");
 
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
     double wpx = *iter_x;

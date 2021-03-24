@@ -100,7 +100,7 @@ private:
   double z_resolution_, origin_z_;
   int unknown_threshold_, mark_threshold_, size_z_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr
-  clearing_endpoints_pub_;
+    clearing_endpoints_pub_;
 
   inline bool worldToMap3DFloat(
     double wx, double wy, double wz, double & mx, double & my,
