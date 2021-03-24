@@ -12,7 +12,7 @@ _commands:
       steps:
         - restore_cache:
             name: Restore Cache << parameters.key >>
-            key: "<< parameters.key >>-v3\
+            key: "<< parameters.key >>-v1\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
@@ -32,7 +32,7 @@ _commands:
       steps:
         - save_cache:
             name: Save Cache << parameters.key >>
-            key: "<< parameters.key >>-v3\
+            key: "<< parameters.key >>-v1\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
@@ -359,7 +359,7 @@ _environments:
     CCACHE_DIR: "/tmp/.ccache"
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
-    MAKEFLAGS: "-j 4"
+    MAKEFLAGS: "-j 2"
     COLCON_DEFAULTS_FILE: "/tmp/defaults.yaml"
     RCUTILS_LOGGING_BUFFERED_STREAM: "0"
     RCUTILS_LOGGING_USE_STDOUT: "0"
