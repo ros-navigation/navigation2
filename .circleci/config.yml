@@ -12,7 +12,7 @@ _commands:
       steps:
         - restore_cache:
             name: Restore Cache << parameters.key >>
-            key: "<< parameters.key >>-v2\
+            key: "<< parameters.key >>-v3\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
@@ -32,7 +32,7 @@ _commands:
       steps:
         - save_cache:
             name: Save Cache << parameters.key >>
-            key: "<< parameters.key >>-v2\
+            key: "<< parameters.key >>-v3\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
