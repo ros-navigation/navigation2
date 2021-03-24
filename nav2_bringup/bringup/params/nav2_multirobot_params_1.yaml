@@ -79,6 +79,7 @@ bt_navigator:
     - nav2_single_trigger_bt_node
     - nav2_planner_selector_bt_node
     - nav2_controller_selector_bt_node
+    - nav2_goal_checker_selector_bt_node
 
 bt_navigator_rclcpp_node:
   ros__parameters:

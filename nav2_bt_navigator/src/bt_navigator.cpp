@@ -58,7 +58,8 @@ BtNavigator::BtNavigator()
     "nav2_distance_traveled_condition_bt_node",
     "nav2_single_trigger_bt_node",
     "nav2_planner_selector_bt_node",
-    "nav2_controller_selector_bt_node"
+    "nav2_controller_selector_bt_node",
+    "nav2_goal_checker_selector_bt_node"
   };
 
   declare_parameter("plugin_lib_names", plugin_libs);

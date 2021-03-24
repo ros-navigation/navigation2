@@ -41,3 +41,7 @@ ament_target_dependencies(test_planner_selector_node ${dependencies})
 ament_add_gtest(test_controller_selector_node test_controller_selector_node.cpp)
 target_link_libraries(test_controller_selector_node nav2_controller_selector_bt_node)
 ament_target_dependencies(test_controller_selector_node ${dependencies})
+
+ament_add_gtest(test_goal_checker_selector_node test_goal_checker_selector_node.cpp)
+target_link_libraries(test_goal_checker_selector_node nav2_goal_checker_selector_bt_node)
+ament_target_dependencies(test_goal_checker_selector_node ${dependencies})
