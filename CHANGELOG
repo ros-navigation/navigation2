@@ -7,3 +7,42 @@ CHANGELOG
 
 Qs:
 - Should culling happen in a new BT node (TruncateOldPosesFromPath?), is this way catching all reasonable edge cases?
+
+
+
+// TODO
+// [DONE] Separate out the NavToPose and NavThruPose onloop/preempt/goal/initial goal pose set
+// [DONE] make actions mutually exclusive (only 1 can be running at a time)
+// [DONE] make abstract navigator that these inherit
+// [DONE] make navigate through poses plugin
+// [DONE] move muxer checks into header
+// [NOT POSSIBLE] make navigator plugins / vector -> can get to load, but need to know ActionT that's impossible to get from
+  // a base class
+
+// [DONE] test navigate to pose still works (done, preemption, cancel), feedback is still good
+// [DONE] on completion being called
+// [DONE] topic working for navigate to pose
+// [DONE] test navigate through poses plugin "works" (can nav, but check logging things properly called)
+// [DONE] test muxer updates state with done, preemption, cancel
+
+// [DONE] BT XML node for ComputePathThroughPoses
+// [DONE] BT XML file of feature using ComputePathThroughPoses/goals
+// [DONE] navigate to pose XML Bt node create new navigate through pose Bt node (for system)
+
+// [DONE] method for culling out and reporting the number of poses remaining to navigate through poses feedback
+// [DONE] planner_server action ComputePathThroughPoses fill out to compute paths between each pose and append them to a final path
+
+// [N/A] test NavigateThroughPoses BT node
+// test ComputePathThroughPoses action: NavFn, Smac, compute time
+// test ComputePathThroughPoses BT node: take goals and send to action server, puts path on blackboard for FollowPaths
+// test XML all together (compute path through poses, goal updated, culling, preemption, cancel, complete)
+// test muxer when having both actually running
+// test culling of points in navigator, close calls, loops, switchbacks, etc
+
+// [DONE] rviz plugin use this next to WP follower for demos
+// system test case
+
+// Doxygen
+// plugins list + migration guide
+// readme + plugins in libs list + sync BTnodes.xml file for groot
+// XML list (is that somewhere? if not, make it)
