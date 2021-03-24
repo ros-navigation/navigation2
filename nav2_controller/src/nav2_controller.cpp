@@ -425,7 +425,6 @@ void ControllerServer::computeAndPublishVelocity()
 
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);
-
 }
 
 void ControllerServer::updateGlobalPath()
