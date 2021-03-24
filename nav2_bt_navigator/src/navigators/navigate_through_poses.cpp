@@ -66,15 +66,20 @@ NavigateThroughPosesNavigator::onLoop()
   // number of recoveries, and distance remaining to goal)
   auto feedback_msg = std::make_shared<ActionT::Feedback>();
 
-  nav2_util::getCurrentPose(
-    feedback_msg->current_pose, *feedback_utils_.tf,
-    feedback_utils_.global_frame, feedback_utils_.robot_frame,
-    feedback_utils_.transform_tolerance);
-
   auto blackboard = bt_action_server_->getBlackboard();
 
   std::vector<geometry_msgs::msg::PoseStamped> goal_poses;
   blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>(goals_blackboard_id_, goal_poses);
+
+  if (goal_poses.size() == 0) {
+    bt_action_server_->publishFeedback(feedback_msg);
+    return;
+  }
+
+  nav2_util::getCurrentPose(
+    feedback_msg->current_pose, *feedback_utils_.tf,
+    feedback_utils_.global_frame, feedback_utils_.robot_frame,
+    feedback_utils_.transform_tolerance);
 
   feedback_msg->distance_remaining = euclidean_distance(
     feedback_msg->current_pose.pose, goal_poses.back().pose);
@@ -134,9 +139,11 @@ NavigateThroughPosesNavigator::onPreempt()
 void
 NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
 {
-  RCLCPP_INFO(
-    logger_, "Begin navigating from current location through %li poses to (%.2f, %.2f)",
-    goal->poses.size(), goal->poses.back().pose.position.x, goal->poses.back().pose.position.y);
+  if (goal->poses.size() > 0) {
+    RCLCPP_INFO(
+      logger_, "Begin navigating from current location through %li poses to (%.2f, %.2f)",
+      goal->poses.size(), goal->poses.back().pose.position.x, goal->poses.back().pose.position.y);    
+  }
 
   // Reset state for new action feedback
   start_time_ = clock_->now();

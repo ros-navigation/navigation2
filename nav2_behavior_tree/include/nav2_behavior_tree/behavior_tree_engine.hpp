@@ -66,7 +66,7 @@ protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
 
-  inline static std::unique_ptr<BT::PublisherZMQ> groot_monitor_;
+  static inline std::unique_ptr<BT::PublisherZMQ> groot_monitor_;
 };
 
 }  // namespace nav2_behavior_tree

@@ -336,7 +336,7 @@ PlannerServer::computePlanThroughPoses()
 
     getPreemptedGoalIfRequested(action_server_poses_, goal);
 
-    if (goal->poses.size() == 0) {
+    if (goal->goals.size() == 0) {
       RCLCPP_WARN(
         get_logger(),
         "Compute path through poses requested a plan with no viapoint poses, returning.");

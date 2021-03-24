@@ -228,7 +228,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->addTransition(pause_resume_button_, SIGNAL(clicked()), paused_);
   paused_->addTransition(pause_resume_button_, SIGNAL(clicked()), resumed_);
 
-  // ROSAction Transitions
+  // ROSAction Transitions: So when actions are updated remotely (failing, succeeding, etc)
+  // the state of the application will also update. This means that if in the processing
+  // states and then goes inactive, move back to the idle state. Vise versa as well.
   ROSActionQTransition * idleTransition = new ROSActionQTransition(QActionState::INACTIVE);
   idleTransition->setTargetState(running_);
   idle_->addTransition(idleTransition);
@@ -463,6 +465,19 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
 void
 Nav2Panel::onCancelButtonPressed()
 {
+  if (navigation_goal_handle_) {
+
+    auto future_cancel = navigation_action_client_->async_cancel_goal(navigation_goal_handle_);
+
+    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
+      rclcpp::FutureReturnCode::SUCCESS)
+    {
+      RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel goal");
+    } else {
+      navigation_goal_handle_.reset();
+    }
+  }
+
   if (waypoint_follower_goal_handle_) {
     auto future_cancel =
       waypoint_follower_action_client_->async_cancel_goal(waypoint_follower_goal_handle_);
@@ -471,7 +486,8 @@ Nav2Panel::onCancelButtonPressed()
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel waypoint follower");
-      return;
+    } else {
+      waypoint_follower_goal_handle_.reset();
     }
   }
 
@@ -483,20 +499,11 @@ Nav2Panel::onCancelButtonPressed()
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel nav through pose action");
-      return;
+    } else {
+      nav_through_poses_goal_handle_.reset();
     }
   }
 
-  if (navigation_goal_handle_) {
-    auto future_cancel = navigation_action_client_->async_cancel_goal(navigation_goal_handle_);
-
-    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel goal");
-      return;
-    }
-  }
 
   timer_.stop();
 }
@@ -701,7 +708,7 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
   if (!is_action_server_ready) {
     RCLCPP_ERROR(
       client_node_->get_logger(),
-      "follow_waypoints action server is not available."
+      "navigate_to_pose action server is not available."
       " Is the initial pose set?");
     return;
   }
