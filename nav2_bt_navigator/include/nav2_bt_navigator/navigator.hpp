@@ -207,6 +207,10 @@ protected:
    */
   bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal) {
     if (plugin_muxer_->isNavigating()) {
+      RCLCPP_ERROR(
+        logger_,
+        "Requested navigation from %s while another navigator is processing,"
+        " rejecting request.", getName().c_str());
       return false;
     }
 

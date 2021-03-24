@@ -56,9 +56,11 @@ bt_navigator:
     enable_groot_monitoring: True
     groot_zmq_publisher_port: 1666
     groot_zmq_server_port: 1667
+    # This param is overridden in the launch files with the /full/path/to.xml and as a CLI launch configuration
     default_bt_xml_filename: "navigate_w_replanning_and_recovery.xml"
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
+    - nav2_compute_path_through_poses_action_bt_node
     - nav2_follow_path_action_bt_node
     - nav2_back_up_action_bt_node
     - nav2_spin_action_bt_node

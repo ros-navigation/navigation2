@@ -336,6 +336,13 @@ PlannerServer::computePlanThroughPoses()
 
     getPreemptedGoalIfRequested(action_server_poses_, goal);
 
+    if (goal->poses.size() == 0) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Compute path through poses requested a plan with no viapoint poses, returning.");
+      action_server_poses_->terminate_current();
+    }
+
     // Use start pose if provided otherwise use current robot pose
     geometry_msgs::msg::PoseStamped start;
     if (!getStartPose(action_server_poses_, goal, start)) {

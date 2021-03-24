@@ -74,7 +74,7 @@ NavigateThroughPosesNavigator::onLoop()
   auto blackboard = bt_action_server_->getBlackboard();
 
   std::vector<geometry_msgs::msg::PoseStamped> goal_poses;
-  blackboard->get(goals_blackboard_id_, goal_poses);
+  blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>(goals_blackboard_id_, goal_poses);
 
   feedback_msg->distance_remaining = euclidean_distance(
     feedback_msg->current_pose.pose, goal_poses.back().pose);
@@ -118,7 +118,7 @@ NavigateThroughPosesNavigator::onLoop()
     goal_poses.erase(goal_poses.begin());
   }
 
-  blackboard->set(goals_blackboard_id_, goal_poses);
+  blackboard->set<std::vector<geometry_msgs::msg::PoseStamped>>(goals_blackboard_id_, goal_poses);
   feedback_msg->number_of_poses_remaining = goal_poses.size();
 
   bt_action_server_->publishFeedback(feedback_msg);
