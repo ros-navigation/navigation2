@@ -268,12 +268,12 @@ _steps:
       build: false
   store_ccache_logs: &store_ccache_logs
     store_artifacts:
-        path: $CCACHE_LOGFILE
+        path: /tmp/ccache.log
   save_ccache: &save_ccache
     save_to_cache:
       key: ccache
       workspace: /opt/underlay_ws
-      path: $CCACHE_DIR
+      path: /tmp/.ccache
       when: always
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
