@@ -26,14 +26,30 @@ namespace nav2_recoveries
 {
 using WaitAction = nav2_msgs::action::Wait;
 
+/**
+ * @class nav2_recoveries::Wait
+ * @brief An action server recovery for waiting a fixed duration
+ */
 class Wait : public Recovery<WaitAction>
 {
 public:
+  /**
+   * @brief A constructor for nav2_recoveries::Wait
+   */
   Wait();
   ~Wait();
 
+  /**
+   * @brief Initialization to run behavior
+   * @param command Goal to execute
+   * @return Status of recovery
+   */
   Status onRun(const std::shared_ptr<const WaitAction::Goal> command) override;
 
+  /**
+   * @brief Loop function to run behavior
+   * @return Status of recovery
+   */
   Status onCycleUpdate() override;
 
 protected:

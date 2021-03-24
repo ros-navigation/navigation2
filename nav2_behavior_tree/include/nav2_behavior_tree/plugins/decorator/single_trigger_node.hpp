@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2021 Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__RATE_CONTROLLER_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__RATE_CONTROLLER_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__SINGLE_TRIGGER_NODE_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__SINGLE_TRIGGER_NODE_HPP_
 
 #include <chrono>
 #include <string>
@@ -24,17 +24,18 @@ namespace nav2_behavior_tree
 {
 
 /**
- * @brief A BT::DecoratorNode that ticks its child at a specified rate
+ * @brief A BT::DecoratorNode that triggers its child only once and returns FAILURE
+ * for every succeeding tick
  */
-class RateController : public BT::DecoratorNode
+class SingleTrigger : public BT::DecoratorNode
 {
 public:
   /**
-   * @brief A constructor for nav2_behavior_tree::RateController
+   * @brief A constructor for nav2_behavior_tree::SingleTrigger
    * @param name Name for the XML tag for this node
    * @param conf BT node configuration
    */
-  RateController(
+  SingleTrigger(
     const std::string & name,
     const BT::NodeConfiguration & conf);
 
@@ -44,9 +45,7 @@ public:
    */
   static BT::PortsList providedPorts()
   {
-    return {
-      BT::InputPort<double>("hz", 10.0, "Rate")
-    };
+    return {};
   }
 
 private:
@@ -56,11 +55,9 @@ private:
    */
   BT::NodeStatus tick() override;
 
-  std::chrono::time_point<std::chrono::high_resolution_clock> start_;
-  double period_;
   bool first_time_;
 };
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__RATE_CONTROLLER_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__SINGLE_TRIGGER_NODE_HPP_

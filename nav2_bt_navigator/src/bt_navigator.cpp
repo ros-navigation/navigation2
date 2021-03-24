@@ -55,7 +55,8 @@ BtNavigator::BtNavigator()
     "nav2_round_robin_node_bt_node",
     "nav2_transform_available_condition_bt_node",
     "nav2_time_expired_condition_bt_node",
-    "nav2_distance_traveled_condition_bt_node"
+    "nav2_distance_traveled_condition_bt_node",
+    "nav2_single_trigger_bt_node"
   };
 
   declare_parameter("plugin_lib_names", plugin_libs);
@@ -63,6 +64,7 @@ BtNavigator::BtNavigator()
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
   declare_parameter("odom_topic", std::string("odom"));
+  declare_parameter("goal_blackboard_id", std::string("goal"));
 }
 
 BtNavigator::~BtNavigator()
@@ -92,6 +94,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   global_frame_ = get_parameter("global_frame").as_string();
   robot_frame_ = get_parameter("robot_base_frame").as_string();
   transform_tolerance_ = get_parameter("transform_tolerance").as_double();
+  goal_blackboard_id_ = get_parameter("goal_blackboard_id").as_string();
 
   // Libraries to pull plugins (BT Nodes) from
   auto plugin_lib_names = get_parameter("plugin_lib_names").as_string_array();
@@ -212,7 +215,7 @@ BtNavigator::onLoop()
   auto blackboard = bt_action_server_->getBlackboard();
 
   geometry_msgs::msg::PoseStamped goal_pose;
-  blackboard->get("goal", goal_pose);
+  blackboard->get(goal_blackboard_id_, goal_pose);
 
   feedback_msg->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
     feedback_msg->current_pose.pose, goal_pose.pose);
@@ -245,7 +248,7 @@ BtNavigator::initializeGoalPose(Action::Goal::ConstSharedPtr goal)
   blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard->set<geometry_msgs::msg::PoseStamped>("goal", goal->pose);
+  blackboard->set<geometry_msgs::msg::PoseStamped>(goal_blackboard_id_, goal->pose);
 }
 
 void

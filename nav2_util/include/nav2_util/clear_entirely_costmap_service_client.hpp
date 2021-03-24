@@ -22,11 +22,17 @@
 
 namespace nav2_util
 {
-
+/**
+ * @class nav2_util::ClearEntirelyCostmapServiceClient
+ * @brief A service client to clear costmaps entirely
+ */
 class ClearEntirelyCostmapServiceClient
   : public nav2_util::ServiceClient<nav2_msgs::srv::ClearEntireCostmap>
 {
 public:
+  /**
+* @brief A constructor for nav2_util::ClearEntirelyCostmapServiceClient
+   */
   explicit ClearEntirelyCostmapServiceClient(const std::string & service_name)
   : nav2_util::ServiceClient<nav2_msgs::srv::ClearEntireCostmap>(service_name)
   {

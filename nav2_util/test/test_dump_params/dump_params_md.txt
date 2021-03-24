@@ -2,7 +2,6 @@
 |Parameter|Default Value|
 |---|---|
 |use_sim_time|False|
-|param_not_set|NOT_SET|
 |param_bool|True|
 |param_int|1234|
 |param_double|3.14|
