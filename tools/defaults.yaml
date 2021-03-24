@@ -1,4 +1,4 @@
 "build":
   "executor": "parallel"
-  "parallel-workers": 4
+  "parallel-workers": 2
   "symlink-install": true
