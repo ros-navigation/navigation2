@@ -125,6 +125,7 @@ public:
   /**
   * @brief Block until a service is available
   * @param timeout Maximum timeout to wait for, default infinite
+  * @return true if the client is ready
   */
   bool wait_for_service(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds::max())
   {
