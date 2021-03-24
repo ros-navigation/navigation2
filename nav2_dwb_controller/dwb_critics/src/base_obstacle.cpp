@@ -96,7 +96,7 @@ bool BaseObstacleCritic::isValidCost(const unsigned char cost)
 }
 
 void BaseObstacleCritic::addCriticVisualization(
-      std::vector<std::pair<std::string, std::vector<float>>> & cost_channels)
+  std::vector<std::pair<std::string, std::vector<float>>> & cost_channels)
 {
   std::pair<std::string, std::vector<float>> grid_scores;
   grid_scores.first = name_;

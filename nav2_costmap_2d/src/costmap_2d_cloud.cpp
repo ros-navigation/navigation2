@@ -73,6 +73,13 @@ rclcpp::Node::SharedPtr g_node;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_marked;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_unknown;
 
+/**
+ * @brief An helper function to fill pointcloud2 of both the marked and unknown points from voxel_grid
+ * @param cloud PointCloud2 Ptr which needs to be filled
+ * @param num_channels Represents the total number of points that are going to be filled
+ * @param header Carries the header information that needs to be assigned to PointCloud2 header
+ * @param g_cells contains the x, y, z values that needs to be added to the PointCloud2
+ */
 void pointCloud2Helper(
   std::unique_ptr<sensor_msgs::msg::PointCloud2> & cloud,
   uint32_t num_channels,

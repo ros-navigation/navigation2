@@ -167,7 +167,7 @@ double MapGridCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
 }
 
 void MapGridCritic::addCriticVisualization(
-    std::vector<std::pair<std::string, std::vector<float>>> & cost_channels)
+  std::vector<std::pair<std::string, std::vector<float>>> & cost_channels)
 {
   std::pair<std::string, std::vector<float>> grid_scores;
   grid_scores.first = name_;
@@ -183,7 +183,7 @@ void MapGridCritic::addCriticVisualization(
       i++;
     }
   }
-  /** FIXME(sachin): This works with the assumption that multiple 
+  /** FIXME(sachin): This works with the assumption that multiple
    * critics doesn't have same name. Is that the fact ?
    */
   cost_channels.push_back(grid_scores);

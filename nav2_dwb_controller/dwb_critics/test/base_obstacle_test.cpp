@@ -141,7 +141,7 @@ TEST(BaseObstacle, CriticVisualization)
   costmap_ros->getCostmap()->setCost(10, 49, 24);
   costmap_ros->getCostmap()->setCost(45, 2, 12);
 
-std::vector<std::pair<std::string, std::vector<float>>> cost_channels;
+  std::vector<std::pair<std::string, std::vector<float>>> cost_channels;
   critic->addCriticVisualization(cost_channels);
 
   unsigned int size_x = costmap_ros->getCostmap()->getSizeInCellsX();

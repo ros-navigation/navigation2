@@ -266,7 +266,7 @@ DWBPublisher::publishCostGrid(
   unsigned int size_x = costmap->getSizeInCellsX();
   unsigned int size_y = costmap->getSizeInCellsY();
 
-std::vector<std::pair<std::string, std::vector<float>>> cost_channels;
+  std::vector<std::pair<std::string, std::vector<float>>> cost_channels;
   std::vector<float> total_cost(size_x * size_y, 0.0);
 
   for (TrajectoryCritic::Ptr critic : critics) {
@@ -291,11 +291,11 @@ std::vector<std::pair<std::string, std::vector<float>>> cost_channels;
   cost_grid_pc->is_bigendian = false;
 
   int offset = 0;
-  for(size_t i = 0; i < cost_grid_pc->fields.size(); ++i, offset += 4){
-    cost_grid_pc->fields[i].offset   = offset;
-    cost_grid_pc->fields[i].count    = 1;
+  for (size_t i = 0; i < cost_grid_pc->fields.size(); ++i, offset += 4) {
+    cost_grid_pc->fields[i].offset = offset;
+    cost_grid_pc->fields[i].count = 1;
     cost_grid_pc->fields[i].datatype = sensor_msgs::msg::PointField::FLOAT32;
-    if (i >= 3){
+    if (i >= 3) {
       cost_grid_pc->fields[i].name = cost_channels[i - 3].first;
     }
   }
@@ -306,12 +306,12 @@ std::vector<std::pair<std::string, std::vector<float>>> cost_channels;
   cost_grid_pc->fields[2].name = "z";
 
   cost_grid_pc->point_step = offset;
-  cost_grid_pc->row_step   = cost_grid_pc->point_step * cost_grid_pc->width;
+  cost_grid_pc->row_step = cost_grid_pc->point_step * cost_grid_pc->width;
   cost_grid_pc->data.resize(cost_grid_pc->row_step * cost_grid_pc->height);
 
   std::vector<sensor_msgs::PointCloud2Iterator<float>> cost_grid_pc_iter;
 
-  for(size_t i = 0; i < cost_grid_pc->fields.size(); ++i) {
+  for (size_t i = 0; i < cost_grid_pc->fields.size(); ++i) {
     sensor_msgs::PointCloud2Iterator<float> iter(*cost_grid_pc, cost_grid_pc->fields[i].name);
     cost_grid_pc_iter.push_back(iter);
   }
@@ -324,7 +324,7 @@ std::vector<std::pair<std::string, std::vector<float>>> cost_channels;
       *cost_grid_pc_iter[1] = y_coord;
       *cost_grid_pc_iter[2] = 0.0;   // z value
 
-      for(size_t i = 3; i < cost_grid_pc_iter.size(); ++i){
+      for (size_t i = 3; i < cost_grid_pc_iter.size(); ++i) {
         *cost_grid_pc_iter[i] = cost_channels[i - 3].second[j];
         ++cost_grid_pc_iter[i];
       }
