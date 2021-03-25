@@ -213,7 +213,7 @@ _steps:
     run:
       name: Post Checkout
       command: |
-        cp $OVERLAY_WS/src/navigation2/tools/defaults.yaml $COLCON_DEFAULTS_FILE
+        cp $OVERLAY_WS/src/navigation2/.circleci/defaults.yaml $COLCON_DEFAULTS_FILE
         if ! cmp \
           $OVERLAY_WS/src/navigation2/tools/underlay.repos \
           $UNDERLAY_WS/underlay.repos >/dev/null 2>&1
