@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <string>
-
+#include <vector>
 #include "nav2_behavior_tree/plugins/condition/goal_updated_condition.hpp"
 
 namespace nav2_behavior_tree

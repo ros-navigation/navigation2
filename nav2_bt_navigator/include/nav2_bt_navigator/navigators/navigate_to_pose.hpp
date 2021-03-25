@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_TO_POSE_HPP_
+#define NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_TO_POSE_HPP_
+
 #include <string>
 #include <vector>
 
@@ -30,7 +33,8 @@ namespace nav2_bt_navigator
  * @class NavigateToPoseNavigator
  * @brief A navigator for navigating to a specified pose
  */
-class NavigateToPoseNavigator : public nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateToPose>
+class NavigateToPoseNavigator
+  : public nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateToPose>
 {
 public:
   using ActionT = nav2_msgs::action::NavigateToPose;
@@ -38,7 +42,8 @@ public:
   /**
    * @brief A constructor for NavigateToPoseNavigator
    */
-  NavigateToPoseNavigator() : Navigator() {};
+  NavigateToPoseNavigator()
+  : Navigator() {}
 
   /**
    * @brief A configure state transition to configure navigator's state
@@ -65,8 +70,14 @@ public:
    */
   std::string getName() {return std::string("navigate_to_pose");}
 
-protected:
+  /**
+   * @brief Get navigator's default BT
+   * @param node WeakPtr to the lifecycle node
+   * @return string Filepath to default XML
+   */
+  std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
 
+protected:
   /**
    * @brief A callback to be called when a new goal is received by the BT action server
    * Can be used to check if goal is valid and put values on
@@ -109,3 +120,5 @@ protected:
 };
 
 }  // namespace nav2_bt_navigator
+
+#endif  // NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_TO_POSE_HPP_

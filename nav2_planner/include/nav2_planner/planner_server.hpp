@@ -112,7 +112,7 @@ protected:
    * @param action_server Action server to test
    * @return SUCCESS or FAILURE
    */
-  template <typename T>
+  template<typename T>
   bool isServerInactive(std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server);
 
   /**
@@ -120,7 +120,7 @@ protected:
    * @param action_server Action server to test
    * @return SUCCESS or FAILURE
    */
-  template <typename T>
+  template<typename T>
   bool isCancelRequested(std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server);
 
   /**
@@ -135,7 +135,7 @@ protected:
    * @param action_server Action server to get updated goal if required
    * @param goal Goal to overwrite
    */
-  template <typename T>
+  template<typename T>
   void getPreemptedGoalIfRequested(
     std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
     typename std::shared_ptr<const typename T::Goal> goal);
@@ -147,7 +147,7 @@ protected:
    * @param start The starting pose to use
    * @return bool If successful in finding a valid starting pose
    */
-  template <typename T>
+  template<typename T>
   bool getStartPose(
     std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
     typename std::shared_ptr<const typename T::Goal> goal,
@@ -161,7 +161,7 @@ protected:
    * @param goal Goal pose to transform
    * @return bool If successful in transforming poses
    */
-  template <typename T>
+  template<typename T>
   bool transformPosesToGlobalFrame(
     std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
     geometry_msgs::msg::PoseStamped & curr_start,
@@ -175,7 +175,7 @@ protected:
    * @param planner_id The planner ID used to generate the path
    * @return bool If path is valid
    */
-  template <typename T>
+  template<typename T>
   bool validatePath(
     std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
     const geometry_msgs::msg::PoseStamped & curr_goal,

@@ -14,6 +14,8 @@
 
 #include <vector>
 #include <string>
+#include <set>
+#include <memory>
 
 #include "nav2_bt_navigator/navigators/navigate_through_poses.hpp"
 
@@ -32,17 +34,25 @@ NavigateThroughPosesNavigator::configure(
   path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
   node->declare_parameter("cull_passed_poses", true);
   cull_passed_poses_ = node->get_parameter("cull_passed_poses").as_bool();
-
-  // due to a quirk with how the default BT XML is read in, we must populate
-  // the "goal" field specially due to ports that initialized the key, but not
-  // the actualy value, in the blackboard. This sets an actual value to attain
-  // rather than a null pointer that results in an any::cast() exception as
-  // there is no default constructor.
-  geometry_msgs::msg::PoseStamped fake_pose;
-  auto blackboard = bt_action_server_->getBlackboard();
-  blackboard->set<geometry_msgs::msg::PoseStamped>("goal", fake_pose);
-
   return true;
+}
+
+std::string
+NavigateThroughPosesNavigator::getDefaultBTFilepath(
+  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node)
+{
+  std::string default_bt_xml_filename;
+  auto node = parent_node.lock();
+  if (!node->has_parameter("default_nav_through_poses_bt_xml")) {
+    std::string pkg_share_dir =
+      ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+    std::string tree_file = pkg_share_dir +
+      "/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml";
+    node->declare_parameter("default_nav_through_poses_bt_xml", tree_file);
+  }
+  node->get_parameter("default_nav_through_poses_bt_xml", default_bt_xml_filename);
+
+  return default_bt_xml_filename;
 }
 
 bool
@@ -70,7 +80,7 @@ NavigateThroughPosesNavigator::goalCompleted(typename ActionT::Result::SharedPtr
 void
 NavigateThroughPosesNavigator::onLoop()
 {
-  using namespace nav2_util::geometry_utils;
+  using namespace nav2_util::geometry_utils;  // NOLINT
 
   // action server feedback (pose, duration of task,
   // number of recoveries, and distance remaining to goal)
@@ -135,7 +145,8 @@ NavigateThroughPosesNavigator::onLoop()
     }
 
     blackboard->set<Goals>(goals_blackboard_id_, goal_poses);
-  } catch (...) {}
+  } catch (...) {
+  }
 
   feedback_msg->number_of_poses_remaining = goal_poses.size();
 
@@ -155,7 +166,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   if (goal->poses.size() > 0) {
     RCLCPP_INFO(
       logger_, "Begin navigating from current location through %li poses to (%.2f, %.2f)",
-      goal->poses.size(), goal->poses.back().pose.position.x, goal->poses.back().pose.position.y);    
+      goal->poses.size(), goal->poses.back().pose.position.x, goal->poses.back().pose.position.y);
   }
 
   // Reset state for new action feedback

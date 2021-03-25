@@ -214,7 +214,7 @@ PlannerServer::on_shutdown(const rclcpp_lifecycle::State &)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-template <typename T>
+template<typename T>
 bool PlannerServer::isServerInactive(
   std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server)
 {
@@ -222,7 +222,7 @@ bool PlannerServer::isServerInactive(
     RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
     return true;
   }
-  
+
   return false;
 }
 
@@ -235,7 +235,7 @@ void PlannerServer::waitForCostmap()
   }
 }
 
-template <typename T>
+template<typename T>
 bool PlannerServer::isCancelRequested(
   std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server)
 {
@@ -248,7 +248,7 @@ bool PlannerServer::isCancelRequested(
   return false;
 }
 
-template <typename T>
+template<typename T>
 void PlannerServer::getPreemptedGoalIfRequested(
   std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
   typename std::shared_ptr<const typename T::Goal> goal)
@@ -258,7 +258,7 @@ void PlannerServer::getPreemptedGoalIfRequested(
   }
 }
 
-template <typename T>
+template<typename T>
 bool PlannerServer::getStartPose(
   std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
   typename std::shared_ptr<const typename T::Goal> goal,
@@ -274,7 +274,7 @@ bool PlannerServer::getStartPose(
   return true;
 }
 
-template <typename T>
+template<typename T>
 bool PlannerServer::transformPosesToGlobalFrame(
   std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
   geometry_msgs::msg::PoseStamped & curr_start,
@@ -292,7 +292,7 @@ bool PlannerServer::transformPosesToGlobalFrame(
   return true;
 }
 
-template <typename T>
+template<typename T>
 bool PlannerServer::validatePath(
   std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
   const geometry_msgs::msg::PoseStamped & goal,
@@ -357,7 +357,7 @@ PlannerServer::computePlanThroughPoses()
       if (i == 0) {
         curr_start = start;
       } else {
-        curr_start = goal->goals[i-1];
+        curr_start = goal->goals[i - 1];
       }
       curr_goal = goal->goals[i];
 

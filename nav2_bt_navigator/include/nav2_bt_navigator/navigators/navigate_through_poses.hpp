@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_THROUGH_POSES_HPP_
+#define NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_THROUGH_POSES_HPP_
+
 #include <string>
 #include <vector>
 
@@ -31,7 +34,8 @@ namespace nav2_bt_navigator
  * @class NavigateToPoseNavigator
  * @brief A navigator for navigating to a a bunch of intermediary poses
  */
-class NavigateThroughPosesNavigator : public nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateThroughPoses>
+class NavigateThroughPosesNavigator
+  : public nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateThroughPoses>
 {
 public:
   using ActionT = nav2_msgs::action::NavigateThroughPoses;
@@ -40,7 +44,8 @@ public:
   /**
    * @brief A constructor for NavigateThroughPosesNavigator
    */
-  NavigateThroughPosesNavigator() : Navigator() {};
+  NavigateThroughPosesNavigator()
+  : Navigator() {}
 
   /**
    * @brief A configure state transition to configure navigator's state
@@ -53,10 +58,16 @@ public:
    * @brief Get action name for this navigator
    * @return string Name of action server
    */
-  std::string getName() {return std::string("navigate_through_poses");}
+  std::string getName() override {return std::string("navigate_through_poses");}
+
+  /**
+   * @brief Get navigator's default BT
+   * @param node WeakPtr to the lifecycle node
+   * @return string Filepath to default XML
+   */
+  std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
 
 protected:
-
   /**
    * @brief A callback to be called when a new goal is received by the BT action server
    * Can be used to check if goal is valid and put values on
@@ -96,3 +107,5 @@ protected:
 };
 
 }  // namespace nav2_bt_navigator
+
+#endif  // NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_THROUGH_POSES_HPP_

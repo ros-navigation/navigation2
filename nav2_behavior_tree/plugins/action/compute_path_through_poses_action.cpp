@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "nav2_behavior_tree/plugins/action/compute_path_through_poses_action.hpp"
 

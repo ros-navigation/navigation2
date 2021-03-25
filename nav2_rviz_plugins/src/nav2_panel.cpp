@@ -21,6 +21,7 @@
 #include <vector>
 #include <utility>
 #include <chrono>
+#include <string>
 
 #include "nav2_rviz_plugins/goal_common.hpp"
 #include "rviz_common/display_context.hpp"
@@ -87,7 +88,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   pre_initial_->assignProperty(pause_resume_button_, "text", "Pause");
   pre_initial_->assignProperty(pause_resume_button_, "enabled", false);
 
-  pre_initial_->assignProperty(navigation_mode_button_, "text", "Waypoint / Nav Through Poses Mode");
+  pre_initial_->assignProperty(
+    navigation_mode_button_, "text",
+    "Waypoint / Nav Through Poses Mode");
   pre_initial_->assignProperty(navigation_mode_button_, "enabled", false);
 
   initial_ = new QState();
@@ -152,13 +155,19 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulated_nav_through_poses_->assignProperty(start_reset_button_, "toolTip", cancel_msg);
   accumulated_nav_through_poses_->assignProperty(start_reset_button_, "enabled", true);
 
-  accumulated_nav_through_poses_->assignProperty(pause_resume_button_, "text", "Start Nav Through Poses");
+  accumulated_nav_through_poses_->assignProperty(
+    pause_resume_button_, "text",
+    "Start Nav Through Poses");
   accumulated_nav_through_poses_->assignProperty(pause_resume_button_, "enabled", false);
   accumulated_nav_through_poses_->assignProperty(pause_resume_button_, "toolTip", nft_goal_msg);
 
-  accumulated_nav_through_poses_->assignProperty(navigation_mode_button_, "text", "Start Waypoint Following");
+  accumulated_nav_through_poses_->assignProperty(
+    navigation_mode_button_, "text",
+    "Start Waypoint Following");
   accumulated_nav_through_poses_->assignProperty(navigation_mode_button_, "enabled", false);
-  accumulated_nav_through_poses_->assignProperty(navigation_mode_button_, "toolTip", waypoint_goal_msg);
+  accumulated_nav_through_poses_->assignProperty(
+    navigation_mode_button_, "toolTip",
+    waypoint_goal_msg);
 
   // State entered to cancel the navigate_to_pose action
   canceled_ = new QState();
@@ -205,7 +214,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QObject::connect(resumed_, SIGNAL(exited()), this, SLOT(onResume()));
   QObject::connect(accumulating_, SIGNAL(entered()), this, SLOT(onAccumulating()));
   QObject::connect(accumulated_wp_, SIGNAL(entered()), this, SLOT(onAccumulatedWp()));
-  QObject::connect(accumulated_nav_through_poses_, SIGNAL(entered()), this, SLOT(onAccumulatedNTP()));
+  QObject::connect(
+    accumulated_nav_through_poses_, SIGNAL(entered()), this,
+    SLOT(onAccumulatedNTP()));
 
   // Start/Reset button click transitions
   initial_->addTransition(start_reset_button_, SIGNAL(clicked()), idle_);
@@ -214,7 +225,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   paused_->addTransition(start_reset_button_, SIGNAL(clicked()), reset_);
   idle_->addTransition(navigation_mode_button_, SIGNAL(clicked()), accumulating_);
   accumulating_->addTransition(navigation_mode_button_, SIGNAL(clicked()), accumulated_wp_);
-  accumulating_->addTransition(pause_resume_button_, SIGNAL(clicked()), accumulated_nav_through_poses_);
+  accumulating_->addTransition(
+    pause_resume_button_, SIGNAL(
+      clicked()), accumulated_nav_through_poses_);
   accumulating_->addTransition(start_reset_button_, SIGNAL(clicked()), idle_);
   accumulated_wp_->addTransition(start_reset_button_, SIGNAL(clicked()), canceled_);
   accumulated_nav_through_poses_->addTransition(start_reset_button_, SIGNAL(clicked()), canceled_);
@@ -466,7 +479,6 @@ void
 Nav2Panel::onCancelButtonPressed()
 {
   if (navigation_goal_handle_) {
-
     auto future_cancel = navigation_action_client_->async_cancel_goal(navigation_goal_handle_);
 
     if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
@@ -614,7 +626,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
   // Send the goal poses
   waypoint_follower_goal_.poses = poses;
 
-  RCLCPP_INFO(
+  RCLCPP_DEBUG(
     client_node_->get_logger(), "Sending a path of %zu waypoints:",
     waypoint_follower_goal_.poses.size());
   for (auto waypoint : waypoint_follower_goal_.poses) {
@@ -659,15 +671,19 @@ Nav2Panel::startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> pos
     return;
   }
 
-  // Send the goal poses
+  // TODO(stevemacenski): A future user might wish to set another BT for this request.
   std::string pkg_share_dir =
     ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   std::string tree_file = pkg_share_dir +
-    "/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml";  // TODO this is now hardcoded
+    "/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml";
   nav_through_poses_goal_.poses = poses;
   nav_through_poses_goal_.behavior_tree = tree_file;
 
   RCLCPP_INFO(
+    client_node_->get_logger(), "Nav2Panel: NavigateThroughPoses will be "
+    "called with behavior tree: %s.", tree_file.c_str());
+
+  RCLCPP_DEBUG(
     client_node_->get_logger(), "Sending a path of %zu waypoints:",
     nav_through_poses_goal_.poses.size());
   for (auto waypoint : nav_through_poses_goal_.poses) {
@@ -715,6 +731,10 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
 
   // Send the goal pose
   navigation_goal_.pose = pose;
+
+  RCLCPP_INFO(
+    client_node_->get_logger(),
+    "NavigateToPose will be called using the BT Navigator's default behavior tree.");
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =

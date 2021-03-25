@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 #include <deque>
 
 #include "nav_msgs/msg/odometry.hpp"

@@ -23,8 +23,8 @@
 #include <vector>
 
 #include "nav2_msgs/action/navigate_to_pose.hpp"
-
 #include "nav2_behavior_tree/bt_action_server.hpp"
+#include "ament_index_cpp/get_package_share_directory.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -34,11 +34,13 @@ BtActionServer<ActionT>::BtActionServer(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & action_name,
   const std::vector<std::string> & plugin_lib_names,
+  const std::string & default_bt_xml_filename,
   OnGoalReceivedCallback on_goal_received_callback,
   OnLoopCallback on_loop_callback,
   OnPreemptCallback on_preempt_callback,
   OnCompletionCallback on_completion_callback)
 : action_name_(action_name),
+  default_bt_xml_filename_(default_bt_xml_filename),
   plugin_lib_names_(plugin_lib_names),
   node_(parent),
   on_goal_received_callback_(on_goal_received_callback),
@@ -51,9 +53,6 @@ BtActionServer<ActionT>::BtActionServer(
   clock_ = node->get_clock();
 
   // Declare this node's parameters
-  if (!node->has_parameter("default_bt_xml_filename")) {
-    node->declare_parameter("default_bt_xml_filename", rclcpp::PARAMETER_STRING);
-  }
   if (!node->has_parameter("enable_groot_monitoring")) {
     node->declare_parameter("enable_groot_monitoring", true);
   }
@@ -102,8 +101,15 @@ bool BtActionServer<ActionT>::on_configure()
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
 
-  // Get the BT filename to use from the node parameter
-  node->get_parameter("default_bt_xml_filename", default_bt_xml_filename_);
+  // due to a quirk with how the default BT XML is read in if changed, we should populate
+  // the "goal" and "goals" fields specially due to ports that initialized the key for use,
+  // but no actual value is set, in the blackboard. This sets an actual value such that 'get'
+  // does not return a null pointer that results in an any::cast() exception as
+  // there is no default constructor in a null field - in any navigator type.
+  geometry_msgs::msg::PoseStamped fake_pose;
+  std::vector<geometry_msgs::msg::PoseStamped> fake_poses;
+  blackboard_->set<geometry_msgs::msg::PoseStamped>("goal", fake_pose);  // NOLINT
+  blackboard_->set<std::vector<geometry_msgs::msg::PoseStamped>>("goals", fake_poses);  // NOLINT
 
   // Get parameter for monitoring with Groot via ZMQ Publisher
   node->get_parameter("enable_groot_monitoring", enable_groot_monitoring_);

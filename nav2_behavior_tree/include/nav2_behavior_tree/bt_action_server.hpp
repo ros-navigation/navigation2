@@ -49,6 +49,7 @@ public:
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & action_name,
     const std::vector<std::string> & plugin_lib_names,
+    const std::string & default_bt_xml_filename,
     OnGoalReceivedCallback on_goal_received_callback,
     OnLoopCallback on_loop_callback,
     OnPreemptCallback on_preempt_callback,

@@ -52,13 +52,15 @@ public:
   /**
    * @brief A Navigator Muxer constructor
    */
-  NavigatorMuxer() : current_navigator_(std::string("")) {};
+  NavigatorMuxer()
+  : current_navigator_(std::string("")) {}
 
   /**
    * @brief Get the navigator muxer state
    * @return bool If a navigator is in progress
    */
-  bool isNavigating() {
+  bool isNavigating()
+  {
     std::scoped_lock l(mutex_);
     return !current_navigator_.empty();
   }
@@ -67,7 +69,8 @@ public:
    * @brief Start navigating with a given navigator
    * @param string Name of the navigator to start
    */
-  void startNavigating(const std::string & navigator_name) {
+  void startNavigating(const std::string & navigator_name)
+  {
     std::scoped_lock l(mutex_);
     if (!current_navigator_.empty()) {
       RCLCPP_ERROR(
@@ -83,7 +86,8 @@ public:
    * @brief Stop navigating with a given navigator
    * @param string Name of the navigator ending task
    */
-  void stopNavigating(const std::string & navigator_name) {
+  void stopNavigating(const std::string & navigator_name)
+  {
     std::scoped_lock l(mutex_);
     if (current_navigator_ != navigator_name) {
       RCLCPP_ERROR(
@@ -92,7 +96,7 @@ public:
         " task is in progress! This likely occurred from an incorrect"
         "implementation of a navigator plugin.");
     } else {
-      current_navigator_ = std::string("");      
+      current_navigator_ = std::string("");
     }
   }
 
@@ -145,15 +149,19 @@ public:
     feedback_utils_ = feedback_utils;
     plugin_muxer_ = plugin_muxer;
 
-    // do some stuff
+    // get the default behavior tree for this navigator
+    std::string default_bt_xml_filename = getDefaultBTFilepath(parent_node);
+
+    // Create the Behavior Tree Action Server for this navigator
     bt_action_server_ = std::make_unique<nav2_behavior_tree::BtActionServer<ActionT>>(
-    node,
-    getName(),
-    plugin_lib_names,
-    std::bind(&Navigator::onGoalReceived, this, std::placeholders::_1),
-    std::bind(&Navigator::onLoop, this),
-    std::bind(&Navigator::onPreempt, this),
-    std::bind(&Navigator::onCompletion, this, std::placeholders::_1));
+      node,
+      getName(),
+      plugin_lib_names,
+      default_bt_xml_filename,
+      std::bind(&Navigator::onGoalReceived, this, std::placeholders::_1),
+      std::bind(&Navigator::onLoop, this),
+      std::bind(&Navigator::onPreempt, this),
+      std::bind(&Navigator::onCompletion, this, std::placeholders::_1));
 
     bool ok = true;
     if (!bt_action_server_->on_configure()) {
@@ -233,11 +241,14 @@ public:
    */
   virtual std::string getName() = 0;
 
+  virtual std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) = 0;
+
 protected:
   /**
    * @brief An intermediate goal reception function to mux navigators.
    */
-  bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal) {
+  bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
+  {
     if (plugin_muxer_->isNavigating()) {
       RCLCPP_ERROR(
         logger_,
@@ -254,7 +265,8 @@ protected:
   /**
    * @brief An intermediate compution function to mux navigators
    */
-  void onCompletion(typename ActionT::Result::SharedPtr result) {
+  void onCompletion(typename ActionT::Result::SharedPtr result)
+  {
     plugin_muxer_->stopNavigating(getName());
     goalCompleted(result);
   }
@@ -286,27 +298,27 @@ protected:
   /**
    * @param Method to configure resources.
    */
-  virtual bool configure(rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/) {return true;};
+  virtual bool configure(rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/) {return true;}
 
   /**
    * @brief Method to cleanup resources.
    */
-  virtual bool cleanup() {return true;};
+  virtual bool cleanup() {return true;}
 
   /**
    * @brief Method to active and any threads involved in execution.
    */
-  virtual bool activate() {return true;};
+  virtual bool activate() {return true;}
 
   /**
    * @brief Method to deactive and any threads involved in execution.
    */
-  virtual bool deactivate() {return true;};
+  virtual bool deactivate() {return true;}
 
   /**
    * @brief Method to deactive and any threads involved in execution.
    */
-  virtual bool shutdown() {return true;};
+  virtual bool shutdown() {return true;}
 
   std::unique_ptr<nav2_behavior_tree::BtActionServer<ActionT>> bt_action_server_;
   rclcpp::Logger logger_{rclcpp::get_logger("Navigator")};
@@ -317,4 +329,4 @@ protected:
 
 }  // namespace nav2_bt_navigator
 
-#endif  // nav2_bt_navigator__NAVIGATOR_HPP_
+#endif  // NAV2_BT_NAVIGATOR__NAVIGATOR_HPP_

@@ -16,6 +16,7 @@
 #define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__COMPUTE_PATH_THROUGH_POSES_ACTION_HPP_
 
 #include <string>
+#include <vector>
 
 #include "nav2_msgs/action/compute_path_through_poses.hpp"
 #include "nav_msgs/msg/path.h"
@@ -28,7 +29,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::ComputePathThroughPoses
  */
-class ComputePathThroughPosesAction : public BtActionNode<nav2_msgs::action::ComputePathThroughPoses>
+class ComputePathThroughPosesAction
+  : public BtActionNode<nav2_msgs::action::ComputePathThroughPoses>
 {
 public:
   /**
@@ -61,7 +63,9 @@ public:
     return providedBasicPorts(
       {
         BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathThroughPoses node"),
-        BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>("goals", "Destinations to plan through"),
+        BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+          "goals",
+          "Destinations to plan through"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>(
           "start", "Start pose of the path if overriding current robot pose"),
         BT::InputPort<std::string>("planner_id", ""),

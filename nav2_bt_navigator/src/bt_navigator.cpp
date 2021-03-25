@@ -57,9 +57,9 @@ BtNavigator::BtNavigator()
     "nav2_time_expired_condition_bt_node",
     "nav2_distance_traveled_condition_bt_node",
     "nav2_single_trigger_bt_node",
-    "is_battery_low_bt_node",
-    "navigate_through_poses_bt_node",
-    "navigate_to_pose_bt_node"
+    "nav2_is_battery_low_condition_bt_node",
+    "nav2_navigate_through_poses_action_bt_node",
+    "nav2_navigate_to_pose_action_bt_node"
   };
 
   declare_parameter("plugin_lib_names", plugin_libs);
@@ -102,13 +102,13 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   feedback_utils.transform_tolerance = transform_tolerance_;
 
   if (!pose_navigator_->on_configure(
-    shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
+      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
   if (!poses_navigator_->on_configure(
-    shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
+      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
