@@ -111,6 +111,9 @@ class Navigator
 public:
   using Ptr = std::shared_ptr<nav2_bt_navigator::Navigator<ActionT>>;
 
+  /**
+   * @brief A Navigator constructor
+   */
   Navigator()
   {
     plugin_muxer_ = nullptr;
@@ -121,6 +124,15 @@ public:
    */
   virtual ~Navigator() = default;
 
+  /**
+   * @brief Configuration to setup the navigator's backend BT and actions
+   * @param parent_node The ROS parent node to utilize
+   * @param plugin_lib_names a vector of plugin shared libraries to load
+   * @param feedback_utils Some utilities useful for navigators to have
+   * @param plugin_muxer The muxing object to ensure only one navigator
+   * can be active at a time
+   * @return bool If successful
+   */
   bool on_configure(
     rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
     const std::vector<std::string> & plugin_lib_names,
@@ -156,6 +168,10 @@ public:
     return configure(parent_node) && ok;
   }
 
+  /**
+   * @brief Actiation of the navigator's backend BT and actions
+   * @return bool If successful
+   */
   bool on_activate()
   {
     bool ok = true;
@@ -167,6 +183,10 @@ public:
     return activate() && ok;
   }
 
+  /**
+   * @brief Dectiation of the navigator's backend BT and actions
+   * @return bool If successful
+   */
   bool on_deactivate()
   {
     bool ok = true;
@@ -177,6 +197,10 @@ public:
     return deactivate() && ok;
   }
 
+  /**
+   * @brief Cleanup a navigator
+   * @return bool If successful
+   */
   bool on_cleanup()
   {
     bool ok = true;
@@ -189,6 +213,10 @@ public:
     return cleanup() && ok;
   }
 
+  /**
+   * @brief Shutdown a navigator
+   * @return bool If successful
+   */
   bool on_shutdown()
   {
     bool ok = true;
@@ -199,6 +227,10 @@ public:
     return shutdown() && ok;
   }
 
+  /**
+   * @brief Get the action name of this navigator to expose
+   * @return string Name of action to expose
+   */
   virtual std::string getName() = 0;
 
 protected:

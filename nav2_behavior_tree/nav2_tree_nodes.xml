@@ -39,6 +39,19 @@
         <input_port name="goal">Goal</input_port>
     </Action>
 
+    <Action ID="NavigateThroughPoses">
+        <input_port name="goals">Goals</input_port>
+    </Action>
+
+    <Action ID="ReinitializeGlobalLocalization">
+    </Action>
+
+    <Action ID="TruncatePath">
+        <input_port name="distance">Distance before goal to truncate</input_port>
+        <input_port name="input_path">Path to truncate</input_port>
+        <output_port name="output_path">Truncated path to utilize</output_port>
+    </Action>
+
     <Action ID="Spin">
       <input_port name="spin_dist">Spin distance</input_port>
     </Action>
@@ -61,6 +74,24 @@
 
     <Condition ID="GoalUpdated"/>
 
+    <Condition ID="IsBatteryLow">
+      <input_port name="min_battery">Min battery % or voltage before triggering</input_port>
+      <input_port name="battery_topic">Topic for battery info</input_port>
+      <input_port name="is_voltage">Bool if check based on voltage or total %</input_port>
+    </Condition>
+
+    <Condition ID="DistanceTraveled">
+      <input_port name="distance">Distance to check if passed</input_port>
+      <input_port name="global_frame">reference frame to check in</input_port>
+      <input_port name="robot_base_frame">Robot frame to check relative to global_frame</input_port>
+    </Condition>
+
+    <Condition ID="TimeExpired">
+      <input_port name="seconds">Time to check if expired</input_port>
+    </Condition>
+
+    <Condition ID="InitialPoseReceived">
+    </Condition>
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
 

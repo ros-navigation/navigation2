@@ -54,6 +54,7 @@ public:
 
     const std::vector<std::string> plugin_libs = {
       "nav2_compute_path_to_pose_action_bt_node",
+      "nav2_compute_path_through_poses_action_bt_node",
       "nav2_follow_path_action_bt_node",
       "nav2_back_up_action_bt_node",
       "nav2_spin_action_bt_node",
@@ -75,7 +76,10 @@ public:
       "nav2_transform_available_condition_bt_node",
       "nav2_time_expired_condition_bt_node",
       "nav2_distance_traveled_condition_bt_node",
-      "nav2_single_trigger_bt_node"
+      "nav2_single_trigger_bt_node",
+      "is_battery_low_bt_node",
+      "navigate_through_poses_bt_node",
+      "navigate_to_pose_bt_node"
     };
     for (const auto & p : plugin_libs) {
       factory_.registerFromPlugin(BT::SharedLibrary::getOSName(p));

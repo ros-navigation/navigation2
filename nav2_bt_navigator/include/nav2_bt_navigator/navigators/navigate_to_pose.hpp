@@ -26,6 +26,10 @@
 namespace nav2_bt_navigator
 {
 
+/**
+ * @class NavigateToPoseNavigator
+ * @brief A navigator for navigating to a specified pose
+ */
 class NavigateToPoseNavigator : public nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateToPose>
 {
 public:
