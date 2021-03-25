@@ -274,13 +274,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Lifecycle publishers must be explicitly activated
   pose_pub_->on_activate();
-  particlecloud_pub_->on_activate();
   particle_cloud_pub_->on_activate();
-
-  RCLCPP_WARN(
-    get_logger(),
-    "Publishing the particle cloud as geometry_msgs/PoseArray msg is deprecated, "
-    "will be published as nav2_msgs/ParticleCloud in the future");
 
   first_pose_sent_ = false;
 
@@ -318,7 +312,6 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   // Lifecycle publishers must be explicitly deactivated
   pose_pub_->on_deactivate();
-  particlecloud_pub_->on_deactivate();
   particle_cloud_pub_->on_deactivate();
 
   // destroy bond connection
@@ -354,7 +347,6 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   // PubSub
   pose_pub_.reset();
-  particlecloud_pub_.reset();
   particle_cloud_pub_.reset();
 
   // Odometry
@@ -873,19 +865,6 @@ AmclNode::publishParticleCloud(const pf_sample_set_t * set)
   cloud_with_weights_msg->header.frame_id = global_frame_id_;
   cloud_with_weights_msg->particles.resize(set->sample_count);
 
-  auto cloud_msg = std::make_unique<geometry_msgs::msg::PoseArray>();
-  cloud_msg->header.stamp = this->now();
-  cloud_msg->header.frame_id = global_frame_id_;
-  cloud_msg->poses.resize(set->sample_count);
-  for (int i = 0; i < set->sample_count; i++) {
-    cloud_msg->poses[i].position.x = set->samples[i].pose.v[0];
-    cloud_msg->poses[i].position.y = set->samples[i].pose.v[1];
-    cloud_msg->poses[i].position.z = 0;
-    cloud_msg->poses[i].orientation = orientationAroundZAxis(set->samples[i].pose.v[2]);
-    cloud_with_weights_msg->particles[i].pose = (*cloud_msg).poses[i];
-    cloud_with_weights_msg->particles[i].weight = set->samples[i].weight;
-  }
-  particlecloud_pub_->publish(std::move(cloud_msg));
   particle_cloud_pub_->publish(std::move(cloud_with_weights_msg));
 }
 
@@ -1263,10 +1242,6 @@ void
 AmclNode::initPubSub()
 {
   RCLCPP_INFO(get_logger(), "initPubSub");
-
-  particlecloud_pub_ = create_publisher<geometry_msgs::msg::PoseArray>(
-    "particlecloud",
-    rclcpp::SensorDataQoS());
 
   particle_cloud_pub_ = create_publisher<nav2_msgs::msg::ParticleCloud>(
     "particle_cloud",

@@ -214,7 +214,7 @@ Visualization Manager:
       Use Timestamp: false
       Value: true
     - Alpha: 1
-      Class: nav2_rviz_plugins/ParticleCloud
+      Class: nav2_rviz_plugins/ParticleFilter
       Color: 0; 180; 0
       Enabled: true
       Max Arrow Length: 0.3
