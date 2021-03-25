@@ -173,6 +173,7 @@ protected:
   void message(const std::string & msg);
 
   // Timer thread to look at bond connections
+  rclcpp::TimerBase::SharedPtr init_timer_;
   rclcpp::TimerBase::SharedPtr bond_timer_;
   std::chrono::milliseconds bond_timeout_;
 

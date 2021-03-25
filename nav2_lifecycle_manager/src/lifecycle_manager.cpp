@@ -75,6 +75,10 @@ LifecycleManager::LifecycleManager()
   transition_label_map_[Transition::TRANSITION_DEACTIVATE] = std::string("Deactivating ");
   transition_label_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] =
     std::string("Shutting down ");
+
+  init_timer_ = this->create_wall_timer(
+    std::chrono::milliseconds(100),
+    std::bind(&LifecycleManager::init, this));
 }
 
 LifecycleManager::~LifecycleManager()
@@ -85,6 +89,7 @@ LifecycleManager::~LifecycleManager()
 void
 LifecycleManager::init()
 {
+  init_timer_->cancel();
   createLifecycleServiceClients();
 
   if (autostart_) {
