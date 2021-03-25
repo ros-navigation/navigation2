@@ -93,6 +93,7 @@ private:
 
   // current goal
   geometry_msgs::msg::PoseStamped goal_;
+  std::vector<geometry_msgs::msg::PoseStamped> goals_;
 };
 
 }  // namespace nav2_behavior_tree

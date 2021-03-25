@@ -32,6 +32,16 @@ NavigateThroughPosesNavigator::configure(
   path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
   node->declare_parameter("cull_passed_poses", true);
   cull_passed_poses_ = node->get_parameter("cull_passed_poses").as_bool();
+
+  // due to a quirk with how the default BT XML is read in, we must populate
+  // the "goal" field specially due to ports that initialized the key, but not
+  // the actualy value, in the blackboard. This sets an actual value to attain
+  // rather than a null pointer that results in an any::cast() exception as
+  // there is no default constructor.
+  geometry_msgs::msg::PoseStamped fake_pose;
+  auto blackboard = bt_action_server_->getBlackboard();
+  blackboard->set<geometry_msgs::msg::PoseStamped>("goal", fake_pose);
+
   return true;
 }
 
@@ -68,8 +78,8 @@ NavigateThroughPosesNavigator::onLoop()
 
   auto blackboard = bt_action_server_->getBlackboard();
 
-  std::vector<geometry_msgs::msg::PoseStamped> goal_poses;
-  blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>(goals_blackboard_id_, goal_poses);
+  Goals goal_poses;
+  blackboard->get<Goals>(goals_blackboard_id_, goal_poses);
 
   if (goal_poses.size() == 0) {
     bt_action_server_->publishFeedback(feedback_msg);
@@ -94,36 +104,39 @@ NavigateThroughPosesNavigator::onLoop()
   // We only need to consider the first point(s)
   // and stop at first point that doesn't meet our criteria for removal
 
-  // A) find closest point on path
-  nav_msgs::msg::Path current_path;
-  blackboard->get<nav_msgs::msg::Path>(path_blackboard_id_, current_path);
-
-  unsigned int closest_to_robot =
-    nav2_util::geometry_utils::min_by(
-    current_path.poses.begin(), current_path.poses.end(),
-    [&feedback_msg](const geometry_msgs::msg::PoseStamped & ps) {
-      return euclidean_distance(feedback_msg->current_pose.pose, ps.pose);
-    }) - current_path.poses.begin();
-
-  // B) find the indices of the goals (or their closest points)
-  // if smaller, then passed and should be removed
-  // if bigger, then we haven't passed it and we can exit
-  while (cull_passed_poses_ && goal_poses.size() > 1) {
-    unsigned int closest_to_viapoint =
+  try {
+    // A) find closest point on path
+    // In try because if Path is not yet set, this blackboard call will throw
+    // an exception, letting us know we have no valid path yet to analyze.
+    nav_msgs::msg::Path current_path = blackboard->get<nav_msgs::msg::Path>(path_blackboard_id_);
+    unsigned int closest_to_robot =
       nav2_util::geometry_utils::min_by(
       current_path.poses.begin(), current_path.poses.end(),
-      [&goal_poses](const geometry_msgs::msg::PoseStamped & ps) {
-        return euclidean_distance(goal_poses[0].pose, ps.pose);
+      [&feedback_msg](const geometry_msgs::msg::PoseStamped & ps) {
+        return euclidean_distance(feedback_msg->current_pose.pose, ps.pose);
       }) - current_path.poses.begin();
 
-    if (closest_to_viapoint > closest_to_robot) {
-      break;
+    // B) find the indices of the goals (or their closest points)
+    // if smaller, then passed and should be removed
+    // if bigger, then we haven't passed it and we can exit
+    while (cull_passed_poses_ && goal_poses.size() > 1) {
+      unsigned int closest_to_viapoint =
+        nav2_util::geometry_utils::min_by(
+        current_path.poses.begin(), current_path.poses.end(),
+        [&goal_poses](const geometry_msgs::msg::PoseStamped & ps) {
+          return euclidean_distance(goal_poses[0].pose, ps.pose);
+        }) - current_path.poses.begin();
+
+      if (closest_to_viapoint > closest_to_robot) {
+        break;
+      }
+
+      goal_poses.erase(goal_poses.begin());
     }
 
-    goal_poses.erase(goal_poses.begin());
-  }
+    blackboard->set<Goals>(goals_blackboard_id_, goal_poses);
+  } catch (...) {}
 
-  blackboard->set<std::vector<geometry_msgs::msg::PoseStamped>>(goals_blackboard_id_, goal_poses);
   feedback_msg->number_of_poses_remaining = goal_poses.size();
 
   bt_action_server_->publishFeedback(feedback_msg);
@@ -151,7 +164,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard->set<std::vector<geometry_msgs::msg::PoseStamped>>(goals_blackboard_id_, goal->poses);
+  blackboard->set<Goals>(goals_blackboard_id_, goal->poses);
 }
 
 }  // namespace nav2_bt_navigator
