@@ -68,6 +68,7 @@ The nav2_behavior_tree package provides several navigation-specific nodes that a
 | Backup |  Action | Invokes the BackUp ROS2 action server, which causes the robot to back up to a specific pose. This is used in nav2 Behavior Trees as a recovery behavior. The nav2_recoveries module implements the BackUp action server. |
 | ComputePathToPose |    Action   | Invokes the ComputePathToPose ROS2 action server, which is implemented by the nav2_planner module. The server address can be remapped using the `server_name` input port. |
 | ComputePathThroughPoses |    Action   | Invokes the ComputePathThroughPoses ROS2 action server, which is implemented by the nav2_planner module. The server address can be remapped using the `server_name` input port. |
+| RemovePassedGoals |    Action   | Removes `goals` from a vector of intermediary goal poses which the robot is either approaching or has passed within a tolerance of to prevent replanning to initial points. |
 | FollowPath | Action |Invokes the FollowPath ROS2 action server, which is implemented by the controller plugin modules loaded. The server address can be remapped using the `server_name` input port. |
 | GoalReached | Condition | Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, otherwise it returns FAILURE. |
 | IsStuck | Condition | Determines if the robot is not progressing towards the goal. If the robot is stuck and not progressing, the condition returns SUCCESS, otherwise it returns FAILURE. |
