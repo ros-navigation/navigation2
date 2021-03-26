@@ -59,7 +59,8 @@ BtNavigator::BtNavigator()
     "nav2_single_trigger_bt_node",
     "nav2_is_battery_low_condition_bt_node",
     "nav2_navigate_through_poses_action_bt_node",
-    "nav2_navigate_to_pose_action_bt_node"
+    "nav2_navigate_to_pose_action_bt_node",
+    "nav2_remove_passed_goals_action_bt_node"
   };
 
   declare_parameter("plugin_lib_names", plugin_libs);
