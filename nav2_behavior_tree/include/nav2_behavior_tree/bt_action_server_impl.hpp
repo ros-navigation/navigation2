@@ -36,13 +36,15 @@ BtActionServer<ActionT>::BtActionServer(
   const std::vector<std::string> & plugin_lib_names,
   OnGoalReceivedCallback on_goal_received_callback,
   OnLoopCallback on_loop_callback,
-  OnPreemptCallback on_preempt_callback)
+  OnPreemptCallback on_preempt_callback,
+  OnBtExitedCallback on_bt_exited_callback)
 : action_name_(action_name),
   plugin_lib_names_(plugin_lib_names),
   node_(parent),
   on_goal_received_callback_(on_goal_received_callback),
   on_loop_callback_(on_loop_callback),
-  on_preempt_callback_(on_preempt_callback)
+  on_preempt_callback_(on_preempt_callback),
+  on_bt_exited_callback_(on_bt_exited_callback)
 {
   auto node = node_.lock();
   logger_ = node->get_logger();
@@ -223,20 +225,25 @@ void BtActionServer<ActionT>::executeCallback()
   // note: if all the ControlNodes are implemented correctly, this is not needed.
   bt_->haltAllActions(tree_.rootNode());
 
+  std::shared_ptr<typename ActionT::Result> result = std::make_shared<typename ActionT::Result>();
+  if (on_bt_exited_callback_) {
+    on_bt_exited_callback_(result);
+  }
+
   switch (rc) {
     case nav2_behavior_tree::BtStatus::SUCCEEDED:
       RCLCPP_INFO(logger_, "Goal succeeded");
-      action_server_->succeeded_current();
+      action_server_->succeeded_current(result);
       break;
 
     case nav2_behavior_tree::BtStatus::FAILED:
       RCLCPP_ERROR(logger_, "Goal failed");
-      action_server_->terminate_current();
+      action_server_->terminate_current(result);
       break;
 
     case nav2_behavior_tree::BtStatus::CANCELED:
       RCLCPP_INFO(logger_, "Goal canceled");
-      action_server_->terminate_all();
+      action_server_->terminate_all(result);
       break;
   }
 }

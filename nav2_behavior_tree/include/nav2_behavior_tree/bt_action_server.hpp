@@ -40,6 +40,7 @@ public:
   typedef std::function<bool (typename ActionT::Goal::ConstSharedPtr)> OnGoalReceivedCallback;
   typedef std::function<void ()> OnLoopCallback;
   typedef std::function<void ()> OnPreemptCallback;
+  typedef std::function<void (typename ActionT::Result::SharedPtr)> OnBtExitedCallback;
 
   /**
    * @brief A constructor for nav2_behavior_tree::BtActionServer class
@@ -50,7 +51,8 @@ public:
     const std::vector<std::string> & plugin_lib_names,
     OnGoalReceivedCallback on_goal_received_callback,
     OnLoopCallback on_loop_callback,
-    OnPreemptCallback on_preempt_callback = nullptr);
+    OnPreemptCallback on_preempt_callback = nullptr,
+    OnBtExitedCallback on_bt_exited_callback = nullptr);
 
   /**
    * @brief A destructor for nav2_behavior_tree::BtActionServer class
@@ -211,6 +213,7 @@ protected:
   OnGoalReceivedCallback on_goal_received_callback_;
   OnLoopCallback on_loop_callback_;
   OnPreemptCallback on_preempt_callback_;
+  OnBtExitedCallback on_bt_exited_callback_;
 };
 
 }  // namespace nav2_behavior_tree
