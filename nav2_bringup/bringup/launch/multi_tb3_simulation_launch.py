@@ -160,8 +160,10 @@ def generate_launch_description():
                                   'map': map_yaml_file,
                                   'use_sim_time': 'True',
                                   'params_file': params_file,
-                                  'default_nav_through_poses_bt_xml': default_nav_through_poses_bt_xml,
-                                  'default_nav_to_pose_bt_xml': default_nav_to_pose_bt_xml,
+                                  'default_nav_through_poses_bt_xml':
+                                      default_nav_through_poses_bt_xml,
+                                  'default_nav_to_pose_bt_xml':
+                                      default_nav_to_pose_bt_xml,
                                   'autostart': autostart,
                                   'use_rviz': 'False',
                                   'use_simulator': 'False',
@@ -180,11 +182,11 @@ def generate_launch_description():
             LogInfo(
                 condition=IfCondition(log_settings),
                 msg=[robot['name'], ' Nav to Pose behavior tree xml: ',
-                default_nav_to_pose_bt_xml]),
+                                    default_nav_to_pose_bt_xml]),
             LogInfo(
                 condition=IfCondition(log_settings),
                 msg=[robot['name'], ' Nav Through Poses behavior tree xml: ',
-                default_nav_through_poses_bt_xml]),
+                                    default_nav_through_poses_bt_xml]),
             LogInfo(
                 condition=IfCondition(log_settings),
                 msg=[robot['name'], ' rviz config file: ', rviz_config_file]),

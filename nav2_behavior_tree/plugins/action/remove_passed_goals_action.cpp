@@ -69,7 +69,7 @@ inline BT::NodeStatus RemovePassedGoals::tick()
       break;
     }
 
-   goal_poses.erase(goal_poses.begin());
+    goal_poses.erase(goal_poses.begin());
   }
 
   setOutput("output_goals", goal_poses);
