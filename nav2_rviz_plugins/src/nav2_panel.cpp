@@ -671,17 +671,10 @@ Nav2Panel::startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> pos
     return;
   }
 
-  // TODO(stevemacenski): A future user might wish to set another BT for this request.
-  std::string pkg_share_dir =
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
-  std::string tree_file = pkg_share_dir +
-    "/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml";
   nav_through_poses_goal_.poses = poses;
-  nav_through_poses_goal_.behavior_tree = tree_file;
-
   RCLCPP_INFO(
-    client_node_->get_logger(), "Nav2Panel: NavigateThroughPoses will be "
-    "called with behavior tree: %s.", tree_file.c_str());
+    client_node_->get_logger(),
+    "NavigateThroughPoses will be called using the BT Navigator's default behavior tree.");
 
   RCLCPP_DEBUG(
     client_node_->get_logger(), "Sending a path of %zu waypoints:",

@@ -101,16 +101,6 @@ bool BtActionServer<ActionT>::on_configure()
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
 
-  // due to a quirk with how the default BT XML is read in if changed, we should populate
-  // the "goal" and "goals" fields specially due to ports that initialized the key for use,
-  // but no actual value is set, in the blackboard. This sets an actual value such that 'get'
-  // does not return a null pointer that results in an any::cast() exception as
-  // there is no default constructor in a null field - in any navigator type.
-  geometry_msgs::msg::PoseStamped fake_pose;
-  std::vector<geometry_msgs::msg::PoseStamped> fake_poses;
-  blackboard_->set<geometry_msgs::msg::PoseStamped>("goal", fake_pose);  // NOLINT
-  blackboard_->set<std::vector<geometry_msgs::msg::PoseStamped>>("goals", fake_poses);  // NOLINT
-
   // Get parameter for monitoring with Groot via ZMQ Publisher
   node->get_parameter("enable_groot_monitoring", enable_groot_monitoring_);
   node->get_parameter("groot_zmq_publisher_port", groot_zmq_publisher_port_);
