@@ -51,11 +51,6 @@ public:
    */
   ~LifecycleManager();
 
-  /**
-   * @brief init create service cleant and start if autostart is true
-   */
-  void init();
-
 protected:
   // The ROS node to create bond
   rclcpp::Node::SharedPtr bond_client_node_;

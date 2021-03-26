@@ -78,23 +78,18 @@ LifecycleManager::LifecycleManager()
 
   init_timer_ = this->create_wall_timer(
     std::chrono::milliseconds(100),
-    std::bind(&LifecycleManager::init, this));
+    [this]() -> void {
+      init_timer_->cancel();
+      createLifecycleServiceClients();
+      if (autostart_) {
+        startup();
+      }
+    });
 }
 
 LifecycleManager::~LifecycleManager()
 {
   RCLCPP_INFO(get_logger(), "Destroying %s", get_name());
-}
-
-void
-LifecycleManager::init()
-{
-  init_timer_->cancel();
-  createLifecycleServiceClients();
-
-  if (autostart_) {
-    startup();
-  }
 }
 
 void
