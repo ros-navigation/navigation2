@@ -26,10 +26,20 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * @brief Abstract class representing an action based BT node
+ * @tparam ActionT Type of action
+ */
 template<class ActionT>
 class BtActionNode : public BT::ActionNodeBase
 {
 public:
+  /**
+   * @brief A nav2_behavior_tree::BtActionNode constructor
+   * @param xml_tag_name Name for the XML tag for this node
+   * @param action_name Action name this node creates a client for
+   * @param conf BT node configuration
+   */
   BtActionNode(
     const std::string & xml_tag_name,
     const std::string & action_name,
@@ -63,7 +73,10 @@ public:
   {
   }
 
-  // Create instance of an action server
+  /**
+   * @brief Create instance of an action client
+   * @param action_name Action name to create client for
+   */
   void createActionClient(const std::string & action_name)
   {
     // Now that we have the ROS node to use, create the action client for this BT action
@@ -74,8 +87,12 @@ public:
     action_client_->wait_for_action_server();
   }
 
-  // Any subclass of BtActionNode that accepts parameters must provide a providedPorts method
-  // and call providedBasicPorts in it.
+  /**
+   * @brief Any subclass of BtActionNode that accepts parameters must provide a
+   * providedPorts method and call providedBasicPorts in it.
+   * @param addition Additional ports to add to BT port list
+   * @return BT::PortsList Containing basic ports along with node-specific ports
+   */
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
     BT::PortsList basic = {
@@ -87,6 +104,10 @@ public:
     return basic;
   }
 
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing basic ports along with node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts({});
@@ -95,39 +116,54 @@ public:
   // Derived classes can override any of the following methods to hook into the
   // processing for the action: on_tick, on_wait_for_result, and on_success
 
-  // Could do dynamic checks, such as getting updates to values on the blackboard
+  /**
+   * @brief Function to perform some user-defined operation on tick
+   * Could do dynamic checks, such as getting updates to values on the blackboard
+   */
   virtual void on_tick()
   {
   }
 
-  // There can be many loop iterations per tick. Any opportunity to do something after
-  // a timeout waiting for a result that hasn't been received yet
+  /**
+   * @brief Function to perform some user-defined operation after a timeout
+   * waiting for a result that hasn't been received yet
+   */
   virtual void on_wait_for_result()
   {
   }
 
-  // Called upon successful completion of the action. A derived class can override this
-  // method to put a value on the blackboard, for example.
+  /**
+   * @brief Function to perform some user-defined operation upon successful
+   * completion of the action. Could put a value on the blackboard.
+   * @return BT::NodeStatus Returns SUCCESS by default, user may override return another value
+   */
   virtual BT::NodeStatus on_success()
   {
     return BT::NodeStatus::SUCCESS;
   }
 
-  // Called when a the action is aborted. By default, the node will return FAILURE.
-  // The user may override it to return another value, instead.
+  /**
+   * @brief Function to perform some user-defined operation whe the action is aborted.
+   * @return BT::NodeStatus Returns FAILURE by default, user may override return another value
+   */
   virtual BT::NodeStatus on_aborted()
   {
     return BT::NodeStatus::FAILURE;
   }
 
-  // Called when a the action is cancelled. By default, the node will return SUCCESS.
-  // The user may override it to return another value, instead.
+  /**
+   * @brief Function to perform some user-defined operation when the action is cancelled.
+   * @return BT::NodeStatus Returns SUCCESS by default, user may override return another value
+   */
   virtual BT::NodeStatus on_cancelled()
   {
     return BT::NodeStatus::SUCCESS;
   }
 
-  // The main override required by a BT action
+  /**
+   * @brief The main override required by a BT action
+   * @return BT::NodeStatus Status of tick execution
+   */
   BT::NodeStatus tick() override
   {
     // first step to be done only at the beginning of the Action
@@ -178,8 +214,10 @@ public:
     }
   }
 
-  // The other (optional) override required by a BT action. In this case, we
-  // make sure to cancel the ROS2 action if it is still running.
+  /**
+   * @brief The other (optional) override required by a BT action. In this case, we
+   * make sure to cancel the ROS2 action if it is still running.
+   */
   void halt() override
   {
     if (should_cancel_goal()) {
@@ -197,6 +235,10 @@ public:
   }
 
 protected:
+  /**
+   * @brief Function to check if current goal should be cancelled
+   * @return bool True if current goal should be cancelled, false otherwise
+   */
   bool should_cancel_goal()
   {
     // Shut the node down if it is currently running
@@ -212,7 +254,9 @@ protected:
            status == action_msgs::msg::GoalStatus::STATUS_EXECUTING;
   }
 
-
+  /**
+   * @brief Function to send new goal to action server
+   */
   void on_new_goal_received()
   {
     goal_result_available_ = false;
@@ -242,6 +286,9 @@ protected:
     }
   }
 
+  /**
+   * @brief Function to increment recovery count on blackboard if this node wraps a recovery
+   */
   void increment_recovery_count()
   {
     int recovery_count = 0;

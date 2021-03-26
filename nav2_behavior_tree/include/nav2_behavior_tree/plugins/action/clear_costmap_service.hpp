@@ -25,26 +25,55 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * @brief A nav2_behavior_tree::BtServiceNode class that wraps nav2_msgs::srv::ClearEntireCostmap
+ */
 class ClearEntireCostmapService : public BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>
 {
 public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::ClearEntireCostmapService
+   * @param service_node_name Service name this node creates a client for
+   * @param conf BT node configuration
+   */
   ClearEntireCostmapService(
     const std::string & service_node_name,
     const BT::NodeConfiguration & conf);
 
+  /**
+   * @brief The main override required by a BT service
+   * @return BT::NodeStatus Status of tick execution
+   */
   void on_tick() override;
 };
 
+/**
+ * @brief A nav2_behavior_tree::BtServiceNode class that
+ * wraps nav2_msgs::srv::ClearCostmapExceptRegion
+ */
 class ClearCostmapExceptRegionService
   : public BtServiceNode<nav2_msgs::srv::ClearCostmapExceptRegion>
 {
 public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::ClearCostmapExceptRegionService
+   * @param service_node_name Service name this node creates a client for
+   * @param conf BT node configuration
+   */
   ClearCostmapExceptRegionService(
     const std::string & service_node_name,
     const BT::NodeConfiguration & conf);
 
+  /**
+   * @brief The main override required by a BT service
+   * @return BT::NodeStatus Status of tick execution
+   */
   void on_tick() override;
 
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing basic ports along with node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts(
@@ -56,15 +85,32 @@ public:
   }
 };
 
+/**
+ * @brief A nav2_behavior_tree::BtServiceNode class that
+ * wraps nav2_msgs::srv::ClearCostmapAroundRobot
+ */
 class ClearCostmapAroundRobotService : public BtServiceNode<nav2_msgs::srv::ClearCostmapAroundRobot>
 {
 public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::ClearCostmapAroundRobotService
+   * @param service_node_name Service name this node creates a client for
+   * @param conf BT node configuration
+   */
   ClearCostmapAroundRobotService(
     const std::string & service_node_name,
     const BT::NodeConfiguration & conf);
 
+  /**
+   * @brief The main override required by a BT service
+   * @return BT::NodeStatus Status of tick execution
+   */
   void on_tick() override;
 
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing basic ports along with node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts(
