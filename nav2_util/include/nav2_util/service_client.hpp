@@ -136,7 +136,6 @@ public:
       }
       rclcpp::sleep_for(sleep_dur);
     }
-    return;
   }
 
 protected:

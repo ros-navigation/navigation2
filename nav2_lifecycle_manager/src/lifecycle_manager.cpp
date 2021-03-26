@@ -77,7 +77,7 @@ LifecycleManager::LifecycleManager()
     std::string("Shutting down ");
 
   init_timer_ = this->create_wall_timer(
-    std::chrono::milliseconds(100),
+    std::chrono::nanoseconds(10),
     [this]() -> void {
       init_timer_->cancel();
       createLifecycleServiceClients();
