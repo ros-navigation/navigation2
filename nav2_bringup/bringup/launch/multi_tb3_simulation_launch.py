@@ -179,10 +179,12 @@ def generate_launch_description():
                 msg=[robot['name'], ' params yaml: ', params_file]),
             LogInfo(
                 condition=IfCondition(log_settings),
-                msg=[robot['name'], ' Nav to Pose behavior tree xml: ', default_nav_to_pose_bt_xml]),
+                msg=[robot['name'], ' Nav to Pose behavior tree xml: ',
+                default_nav_to_pose_bt_xml]),
             LogInfo(
                 condition=IfCondition(log_settings),
-                msg=[robot['name'], ' Nav Through Poses behavior tree xml: ', default_nav_through_poses_bt_xml]),
+                msg=[robot['name'], ' Nav Through Poses behavior tree xml: ',
+                default_nav_through_poses_bt_xml]),
             LogInfo(
                 condition=IfCondition(log_settings),
                 msg=[robot['name'], ' rviz config file: ', rviz_config_file]),
