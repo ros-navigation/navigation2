@@ -52,9 +52,6 @@ protected:
     const geometry_msgs::msg::TransformStamped & prev,
     const geometry_msgs::msg::TransformStamped & curr
   );
-  MotionComponents calculateNoisyMotionComponents(
-    const MotionComponents & ideal
-  );
   double calculateNoisyRot1(const MotionComponents & ideal);
   double calculateNoisyTrans(const MotionComponents & ideal);
   double calculateNoisyRot2(const MotionComponents & ideal);

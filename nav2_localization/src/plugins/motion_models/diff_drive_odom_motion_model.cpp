@@ -33,9 +33,28 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
   const geometry_msgs::msg::TransformStamped & curr_odom,
   const geometry_msgs::msg::TransformStamped & prev_pose)
 {
-  MotionComponents ideal_motion = calculateIdealMotionComponents(prev_odom, curr_odom);
-  MotionComponents noisy_motion = calculateNoisyMotionComponents(ideal_motion);
-  return estimateCurrentPose(prev_pose, noisy_motion);
+  MotionComponents ideal_motion_components = calculateIdealMotionComponents(prev_odom, curr_odom);
+
+  double rot_1_hat = calculateNoisyRot1(ideal_motion_components);
+  double trans_hat = calculateNoisyTrans(ideal_motion_components);
+  double rot_2_hat = calculateNoisyRot2(ideal_motion_components);
+
+  double x = prev_pose.transform.translation.x;
+  double y = prev_pose.transform.translation.y;
+  double theta = tf2::getYaw(prev_pose.transform.rotation);
+
+  geometry_msgs::msg::TransformStamped estimated_pose;
+  estimated_pose.transform.translation.x =
+    x + trans_hat * cos(theta + rot_1_hat);
+  estimated_pose.transform.translation.y =
+    y + trans_hat * sin(theta + rot_1_hat);
+
+  tf2::Quaternion theta_prime_quat;
+  double theta_prime = theta + rot_1_hat + rot_2_hat;
+  theta_prime_quat.setRPY(0.0, 0.0, theta_prime);
+  estimated_pose.transform.rotation = tf2::toMsg(theta_prime_quat);
+
+  return estimated_pose;
 }
 
 DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateIdealMotionComponents(
@@ -78,15 +97,6 @@ DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateId
   return MotionComponents(rot_1, trans, rot_2);
 }
 
-DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateNoisyMotionComponents(
-  const MotionComponents & ideal)
-{
-  double rot_1_hat = calculateNoisyRot1(ideal);
-  double trans_hat = calculateNoisyTrans(ideal);
-  double rot_2_hat = calculateNoisyRot2(ideal);
-  return MotionComponents(rot_1_hat, trans_hat, rot_2_hat);
-}
-
 double DiffDriveOdomMotionModel::calculateNoisyRot1(const MotionComponents & ideal)
 {
   std::normal_distribution<double> rot_1_noise_dist(0.0,
@@ -115,29 +125,6 @@ double DiffDriveOdomMotionModel::calculateNoisyRot2(const MotionComponents & ide
       rot_rot_noise_parm_ * pow(ideal.rot_2_, 2) +
       trans_rot_noise_parm_ * pow(ideal.trans_, 2)));
   return AngleUtils::angleDiff(ideal.rot_2_, rot_2_noise_dist(*rand_num_gen_));
-}
-
-geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::estimateCurrentPose(
-  const geometry_msgs::msg::TransformStamped & prev_pose,
-  const MotionComponents & noisy_motion_components
-)
-{
-  double x = prev_pose.transform.translation.x;
-  double y = prev_pose.transform.translation.y;
-  double theta = tf2::getYaw(prev_pose.transform.rotation);
-
-  geometry_msgs::msg::TransformStamped estimated_pose;
-  estimated_pose.transform.translation.x =
-    x + noisy_motion_components.trans_ * cos(theta + noisy_motion_components.rot_1_);
-  estimated_pose.transform.translation.y =
-    y + noisy_motion_components.trans_ * sin(theta + noisy_motion_components.rot_1_);
-
-  tf2::Quaternion theta_prime_quat;
-  double theta_prime = theta + noisy_motion_components.rot_1_ + noisy_motion_components.rot_2_;
-  theta_prime_quat.setRPY(0.0, 0.0, theta_prime);
-  estimated_pose.transform.rotation = tf2::toMsg(theta_prime_quat);
-
-  return estimated_pose;
 }
 
 void DiffDriveOdomMotionModel::configure(
