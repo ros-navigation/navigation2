@@ -282,16 +282,12 @@ class NavTester(Node):
 
     def wait_for_clearning_endpoints(self, timeout):
         start_time = time.time()
-        print('Waiting for clearing_endpoints')
         while not self.clearing_endpoints_received:
             self.info_msg('Waiting for clearing_endpoints msg to be received ...')
             rclpy.spin_once(self, timeout_sec=1)
             if (time.time() - start_time) > timeout:
                 self.error_msg('Time out to waiting for clearing_endpoints')
-                print('Time out to waiting for clearing_endpoints')
-
                 return False
-        print('Finished for clearing_endpoints')
         return True
 
     def reachesGoal(self, timeout, distance):
