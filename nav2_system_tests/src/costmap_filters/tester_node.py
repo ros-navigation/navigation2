@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
 # Copyright (c) 2018 Intel Corporation.
 # Copyright (c) 2020 Samsung Research Russia
@@ -34,11 +34,11 @@ from nav_msgs.msg import OccupancyGrid
 from nav_msgs.msg import Path
 
 import rclpy
-
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.qos import QoSProfile
+from sensor_msgs.msg import PointCloud2
 
 
 class TestType(Enum):
@@ -110,12 +110,18 @@ class NavTester(Node):
         self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
                                                        'amcl_pose', self.poseCallback,
                                                        transient_local_qos)
-
+        self.clearing_ep_sub = self.create_subscription(PointCloud2,
+                                                        'local_costmap/clearing_endpoints',
+                                                        self.clearingEndpointsCallback,
+                                                        transient_local_qos)
         self.test_type = test_type
         self.filter_test_result = True
+        self.clearing_endpoints_received = False
+
         if self.test_type == TestType.KEEPOUT:
             self.plan_sub = self.create_subscription(Path, 'plan',
                                                      self.planCallback, volatile_qos)
+            
         elif self.test_type == TestType.SPEED:
             self.speed_it = 0
             # Expected chain of speed limits
@@ -132,7 +138,8 @@ class NavTester(Node):
         self.initial_pose_received = False
         self.initial_pose = initial_pose
         self.goal_pose = goal_pose
-        self.action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+        self.action_client = ActionClient(
+            self, NavigateToPose, 'navigate_to_pose')
 
     def info_msg(self, msg: str):
         self.get_logger().info('\033[1;37;44m' + msg + '\033[0m')
@@ -165,7 +172,8 @@ class NavTester(Node):
         # Sends a `NavToPose` action request and waits for completion
         self.info_msg("Waiting for 'NavigateToPose' action server")
         while not self.action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg("'NavigateToPose' action server not available, waiting...")
+            self.info_msg(
+                "'NavigateToPose' action server not available, waiting...")
 
         self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
         goal_msg = NavigateToPose.Goal()
@@ -208,7 +216,8 @@ class NavTester(Node):
             self.warn_msg('Filter mask was not received')
         elif self.isInKeepout(x, y):
             self.filter_test_result = False
-            self.error_msg('Pose (' + str(x) + ', ' + str(y) + ') belongs to keepout zone')
+            self.error_msg('Pose (' + str(x) + ', ' +
+                           str(y) + ') belongs to keepout zone')
             return False
         return True
 
@@ -245,6 +254,11 @@ class NavTester(Node):
                 self.error_msg('Path plan intersects with keepout zone')
                 return
 
+    def clearingEndpointsCallback(self, msg):
+        self.info_msg('Received Endpoints')
+        if len(msg.data) > 0:
+            self.clearing_endpoints_received = True
+
     def speedLimitCallback(self, msg):
         self.info_msg('Received speed limit: ' + str(msg.speed_limit))
         self.checkSpeed(self.speed_it, msg.speed_limit)
@@ -264,6 +278,20 @@ class NavTester(Node):
             if (time.time() - start_time) > timeout:
                 self.error_msg('Time out to waiting filter mask')
                 return False
+        return True
+
+    def wait_for_clearning_endpoints(self, timeout):
+        start_time = time.time()
+        print('Waiting for clearing_endpoints')
+        while not self.clearing_endpoints_received:
+            self.info_msg('Waiting for clearing_endpoints msg to be received ...')
+            rclpy.spin_once(self, timeout_sec=1)
+            if (time.time() - start_time) > timeout:
+                self.error_msg('Time out to waiting for clearing_endpoints')
+                print('Time out to waiting for clearing_endpoints')
+
+                return False
+        print('Finished for clearing_endpoints')
         return True
 
     def reachesGoal(self, timeout, distance):
@@ -380,9 +408,10 @@ def run_all_tests(robot_tester):
     if (result):
         robot_tester.wait_for_node_active('amcl')
         robot_tester.wait_for_initial_pose()
+        result = robot_tester.wait_for_clearning_endpoints(10)
         robot_tester.wait_for_node_active('bt_navigator')
-        result = robot_tester.wait_for_filter_mask(10)
-
+        # result = robot_tester.wait_for_filter_mask(10)
+        result = result and robot_tester.wait_for_filter_mask(10)
     if (result):
         result = robot_tester.runNavigateAction()
 
