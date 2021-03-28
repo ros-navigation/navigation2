@@ -55,6 +55,9 @@ protected:
   MotionComponents calculateNoisyMotionComponents(
     const MotionComponents & ideal
   );
+  double calculateNoisyRot1(const MotionComponents & ideal);
+  double calculateNoisyTrans(const MotionComponents & ideal);
+  double calculateNoisyRot2(const MotionComponents & ideal);
   geometry_msgs::msg::TransformStamped estimateCurrentPose(
     const geometry_msgs::msg::TransformStamped & prev_pose,
     const MotionComponents & noisy_motion_components

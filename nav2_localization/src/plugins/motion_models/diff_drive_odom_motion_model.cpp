@@ -50,7 +50,17 @@ DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateId
   double y_prime = curr.transform.translation.y;
   double theta_prime = tf2::getYaw(curr.transform.rotation);
 
+  // Assume the first rotation does not exceed +/- 90 degrees. This is done to
+  // account for situtations where the robot is moving backwards. If the first
+  // rotation is not restericted, a robot moving backwards in a straight line
+  // will be modelled by a 180 rotation, followed by a translation then a 180
+  // degree rotation in the oppsite
   double rot_1 = AngleUtils::angleDiff(atan2(y_prime - y, x_prime - x), theta);
+  if (rot_1 < -M_PI_2) {
+    rot_1 += M_PI;
+  } else if (rot_1 > M_PI_2) {
+    rot_1 -= M_PI;
+  }
 
   if (isnan(rot_1) || isinf(rot_1)) {
     RCLCPP_ERROR(node_->get_logger(), "rot_1 is NAN or INF");
@@ -71,42 +81,40 @@ DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateId
 DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateNoisyMotionComponents(
   const MotionComponents & ideal)
 {
-  // Treat forward and backward motion in the same way.
-  // Without this a backward motion would be modelled as a 180 degree rotation, followed by
-  // a translation, followed by another 180 degree rotation; as opposed to just one backward
-  // translation
-  double ideal_rot_1_normal = std::min(
-    fabs(AngleUtils::angleDiff(ideal.rot_1_, 0.0)),
-    fabs(AngleUtils::angleDiff(ideal.rot_1_, M_PI)));
-  double ideal_rot_2_normal = std::min(
-    fabs(AngleUtils::angleDiff(ideal.rot_2_, 0.0)),
-    fabs(AngleUtils::angleDiff(ideal.rot_2_, M_PI)));
+  double rot_1_hat = calculateNoisyRot1(ideal);
+  double trans_hat = calculateNoisyTrans(ideal);
+  double rot_2_hat = calculateNoisyRot2(ideal);
+  return MotionComponents(rot_1_hat, trans_hat, rot_2_hat);
+}
 
-  // Noise in the first rotation
+double DiffDriveOdomMotionModel::calculateNoisyRot1(const MotionComponents & ideal)
+{
   std::normal_distribution<double> rot_1_noise_dist(0.0,
     sqrt(
-      rot_rot_noise_parm_ * pow(ideal_rot_1_normal, 2) +
+      rot_rot_noise_parm_ * pow(ideal.rot_1_, 2) +
       trans_rot_noise_parm_ * pow(ideal.trans_, 2)));
-  double rot_1_hat = AngleUtils::angleDiff(ideal.rot_1_, rot_1_noise_dist(*rand_num_gen_));
+  return AngleUtils::angleDiff(ideal.rot_1_, rot_1_noise_dist(*rand_num_gen_));
+}
 
-  // Noise in the translation
+double DiffDriveOdomMotionModel::calculateNoisyTrans(const MotionComponents & ideal)
+{
   std::normal_distribution<double> trans_noise_dist(
     0.0,
     sqrt(
       trans_trans_noise_parm_ * pow(ideal.trans_, 2) +
-      rot_trans_noise_param_ * (pow(ideal_rot_1_normal, 2) +
-      pow(ideal_rot_2_normal, 2))));
-  double trans_hat = ideal.trans_ - trans_noise_dist(*rand_num_gen_);
+      rot_trans_noise_param_ * (pow(ideal.rot_1_, 2) +
+      pow(ideal.rot_2_, 2))));
+  return ideal.trans_ - trans_noise_dist(*rand_num_gen_);
+}
 
-  // Noise in the second rotation
+double DiffDriveOdomMotionModel::calculateNoisyRot2(const MotionComponents & ideal)
+{
   std::normal_distribution<double> rot_2_noise_dist(
     0.0,
     sqrt(
-      rot_rot_noise_parm_ * pow(ideal_rot_2_normal, 2) +
+      rot_rot_noise_parm_ * pow(ideal.rot_2_, 2) +
       trans_rot_noise_parm_ * pow(ideal.trans_, 2)));
-  double rot_2_hat = AngleUtils::angleDiff(ideal.rot_2_, rot_2_noise_dist(*rand_num_gen_));
-
-  return MotionComponents(rot_1_hat, trans_hat, rot_2_hat);
+  return AngleUtils::angleDiff(ideal.rot_2_, rot_2_noise_dist(*rand_num_gen_));
 }
 
 geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::estimateCurrentPose(
