@@ -44,7 +44,7 @@ class MotionModel:
     
     def update(self, state, velocity, delta_heading, delta_time):
 
-        delta_yaw = state.velocity / self.wheel_base * math.tan(delta_heading) * delta_time
+        delta_yaw = (state.velocity / self.wheel_base) * math.tan(delta_heading) * delta_time
 
         # Ensure turn rate is not greater than max turn rate
         if (abs(delta_yaw) > np.deg2rad(self.max_turn_rate)):
