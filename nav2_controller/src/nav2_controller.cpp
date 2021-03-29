@@ -409,8 +409,9 @@ void ControllerServer::computeAndPublishVelocity()
       cmd_vel_2d.twist.linear.z = 0;
       cmd_vel_2d.header.frame_id = costmap_ros_->getBaseFrameID();
       cmd_vel_2d.header.stamp = now();
-      publishVelocity(cmd_vel_2d);
-      if ((now() - last_valid_cmd_time_).seconds() > controller_patience_) {
+      if ((now() - last_valid_cmd_time_).seconds() > controller_patience_ &&
+        controller_patience_ != -1.0)
+      {
         throw nav2_core::PlannerException("Controller patience exceeded");
       }
     } else {
