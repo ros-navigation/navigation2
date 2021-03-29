@@ -452,7 +452,7 @@ workflows:
           matrix:
             parameters:
               rmw:
-                # - rmw_connext_cpp
+                - rmw_connextdds
                 - rmw_cyclonedds_cpp
                 - rmw_fastrtps_cpp
     triggers:
