@@ -52,9 +52,9 @@ protected:
     const geometry_msgs::msg::TransformStamped & prev,
     const geometry_msgs::msg::TransformStamped & curr
   );
-  double calculateNoisyRot1(const MotionComponents & ideal);
-  double calculateNoisyTrans(const MotionComponents & ideal);
-  double calculateNoisyRot2(const MotionComponents & ideal);
+  double calculateNoisyRot1(const double & rot1, const double & trans);
+  double calculateNoisyTrans(const double & rot1, const double & trans, const double & rot2);
+  double calculateNoisyRot2(const double & trans, const double & rot2);
   geometry_msgs::msg::TransformStamped estimateCurrentPose(
     const geometry_msgs::msg::TransformStamped & prev_pose,
     const MotionComponents & noisy_motion_components

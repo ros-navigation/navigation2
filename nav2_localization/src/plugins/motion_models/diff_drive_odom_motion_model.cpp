@@ -35,9 +35,16 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
 {
   MotionComponents ideal_motion_components = calculateIdealMotionComponents(prev_odom, curr_odom);
 
-  double rot_1_hat = calculateNoisyRot1(ideal_motion_components);
-  double trans_hat = calculateNoisyTrans(ideal_motion_components);
-  double rot_2_hat = calculateNoisyRot2(ideal_motion_components);
+  double rot_1_hat = calculateNoisyRot1(
+    ideal_motion_components.rot_1_,
+    ideal_motion_components.trans_);
+  double trans_hat = calculateNoisyTrans(
+    ideal_motion_components.rot_1_,
+    ideal_motion_components.trans_,
+    ideal_motion_components.rot_2_);
+  double rot_2_hat = calculateNoisyRot2(
+    ideal_motion_components.trans_,
+    ideal_motion_components.rot_2_);
 
   double x = prev_pose.transform.translation.x;
   double y = prev_pose.transform.translation.y;
@@ -97,34 +104,35 @@ DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateId
   return MotionComponents(rot_1, trans, rot_2);
 }
 
-double DiffDriveOdomMotionModel::calculateNoisyRot1(const MotionComponents & ideal)
+double DiffDriveOdomMotionModel::calculateNoisyRot1(const double & rot1, const double & trans)
 {
   std::normal_distribution<double> rot_1_noise_dist(0.0,
     sqrt(
-      rot_rot_noise_parm_ * pow(ideal.rot_1_, 2) +
-      trans_rot_noise_parm_ * pow(ideal.trans_, 2)));
-  return AngleUtils::angleDiff(ideal.rot_1_, rot_1_noise_dist(*rand_num_gen_));
+      rot_rot_noise_parm_ * pow(rot1, 2) +
+      trans_rot_noise_parm_ * pow(trans, 2)));
+  return AngleUtils::angleDiff(rot1, rot_1_noise_dist(*rand_num_gen_));
 }
 
-double DiffDriveOdomMotionModel::calculateNoisyTrans(const MotionComponents & ideal)
+double DiffDriveOdomMotionModel::calculateNoisyTrans(
+  const double & rot1, const double & trans, const double & rot2)
 {
   std::normal_distribution<double> trans_noise_dist(
     0.0,
     sqrt(
-      trans_trans_noise_parm_ * pow(ideal.trans_, 2) +
-      rot_trans_noise_param_ * (pow(ideal.rot_1_, 2) +
-      pow(ideal.rot_2_, 2))));
-  return ideal.trans_ - trans_noise_dist(*rand_num_gen_);
+      trans_trans_noise_parm_ * pow(trans, 2) +
+      rot_trans_noise_param_ * (pow(rot1, 2) +
+      pow(rot2, 2))));
+  return trans - trans_noise_dist(*rand_num_gen_);
 }
 
-double DiffDriveOdomMotionModel::calculateNoisyRot2(const MotionComponents & ideal)
+double DiffDriveOdomMotionModel::calculateNoisyRot2(const double & trans, const double & rot2)
 {
   std::normal_distribution<double> rot_2_noise_dist(
     0.0,
     sqrt(
-      rot_rot_noise_parm_ * pow(ideal.rot_2_, 2) +
-      trans_rot_noise_parm_ * pow(ideal.trans_, 2)));
-  return AngleUtils::angleDiff(ideal.rot_2_, rot_2_noise_dist(*rand_num_gen_));
+      rot_rot_noise_parm_ * pow(rot2, 2) +
+      trans_rot_noise_parm_ * pow(trans, 2)));
+  return AngleUtils::angleDiff(rot2, rot_2_noise_dist(*rand_num_gen_));
 }
 
 void DiffDriveOdomMotionModel::configure(
