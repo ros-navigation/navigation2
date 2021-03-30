@@ -197,8 +197,6 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
 template<class ActionT>
 void BtActionServer<ActionT>::executeCallback()
 {
-  nav2_behavior_tree::BtStatus rc;
-
   if (!on_goal_received_callback_(action_server_->get_current_goal())) {
     action_server_->terminate_current();
     return;
@@ -225,7 +223,7 @@ void BtActionServer<ActionT>::executeCallback()
     };
 
   // Execute the BT that was previously created in the configure step
-  rc = bt_->run(&tree_, on_loop, is_canceling);
+  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
 
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.
