@@ -35,14 +35,14 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
 {
   MotionComponents ideal_motion_components = calculateIdealMotionComponents(prev_odom, curr_odom);
 
-  double rot_1_hat = calculateNoisyRot1(
+  double rot_1_hat = calculateNoisyRot(
     ideal_motion_components.rot_1_,
     ideal_motion_components.trans_);
   double trans_hat = calculateNoisyTrans(
     ideal_motion_components.rot_1_,
     ideal_motion_components.trans_,
     ideal_motion_components.rot_2_);
-  double rot_2_hat = calculateNoisyRot2(
+  double rot_2_hat = calculateNoisyRot(
     ideal_motion_components.trans_,
     ideal_motion_components.rot_2_);
 
@@ -104,13 +104,13 @@ DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateId
   return MotionComponents(rot_1, trans, rot_2);
 }
 
-double DiffDriveOdomMotionModel::calculateNoisyRot1(const double & rot1, const double & trans)
+double DiffDriveOdomMotionModel::calculateNoisyRot(const double & rot, const double & trans)
 {
-  std::normal_distribution<double> rot_1_noise_dist(0.0,
+  std::normal_distribution<double> rot_noise_dist(0.0,
     sqrt(
-      rot_rot_noise_parm_ * pow(rot1, 2) +
+      rot_rot_noise_parm_ * pow(rot, 2) +
       trans_rot_noise_parm_ * pow(trans, 2)));
-  return AngleUtils::angleDiff(rot1, rot_1_noise_dist(*rand_num_gen_));
+  return AngleUtils::angleDiff(rot, rot_noise_dist(*rand_num_gen_));
 }
 
 double DiffDriveOdomMotionModel::calculateNoisyTrans(
@@ -123,16 +123,6 @@ double DiffDriveOdomMotionModel::calculateNoisyTrans(
       rot_trans_noise_param_ * (pow(rot1, 2) +
       pow(rot2, 2))));
   return trans - trans_noise_dist(*rand_num_gen_);
-}
-
-double DiffDriveOdomMotionModel::calculateNoisyRot2(const double & trans, const double & rot2)
-{
-  std::normal_distribution<double> rot_2_noise_dist(
-    0.0,
-    sqrt(
-      rot_rot_noise_parm_ * pow(rot2, 2) +
-      trans_rot_noise_parm_ * pow(trans, 2)));
-  return AngleUtils::angleDiff(rot2, rot_2_noise_dist(*rand_num_gen_));
 }
 
 void DiffDriveOdomMotionModel::configure(
