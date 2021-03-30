@@ -59,7 +59,7 @@ BtActionServer<ActionT>::BtActionServer(
   if (!node->has_parameter("groot_zmq_publisher_port")) {
     node->declare_parameter("groot_zmq_publisher_port", 1666);
   }
-  if (!node->has_parameter("groot_zmq_publisher_port")) {
+  if (!node->has_parameter("groot_zmq_server_port")) {
     node->declare_parameter("groot_zmq_server_port", 1667);
   }
 }
