@@ -33,12 +33,12 @@ protected:
   }
 
   geometry_msgs::msg::TransformStamped createTransformStampedMsg(
-    const double x, const double y, const double z, const double theta)
+    const double x, const double y, const double theta)
   {
     geometry_msgs::msg::TransformStamped result;
     result.transform.translation.x = x;
     result.transform.translation.y = y;
-    result.transform.translation.z = z;
+    result.transform.translation.z = 0.0;
 
     tf2::Quaternion angle;
     angle.setRPY(0.0, 0.0, theta);
@@ -53,8 +53,8 @@ protected:
 TEST_F(DiffDriveTestFixture, IdealMotionTest)
 {
   // no motion
-  geometry_msgs::msg::TransformStamped prev = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
-  geometry_msgs::msg::TransformStamped curr = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
+  geometry_msgs::msg::TransformStamped prev = createTransformStampedMsg(2.0, 2.0, 0.0);
+  geometry_msgs::msg::TransformStamped curr = createTransformStampedMsg(2.0, 2.0, 0.0);
   MotionComponents motion_components = calculateIdealMotionComponents(prev, curr);
 
   ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
@@ -62,8 +62,8 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   ASSERT_NEAR(motion_components.rot_2_, 0.0, epsilon);
 
   // forward motion
-  prev = createTransformStampedMsg(0.0, 2.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
+  prev = createTransformStampedMsg(0.0, 2.0, 0.0);
+  curr = createTransformStampedMsg(2.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
@@ -71,18 +71,35 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   ASSERT_NEAR(motion_components.rot_2_, 0.0, epsilon);
 
   // backward motion
-  prev = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(0.0, 2.0, 0.0, 0.0);
+  prev = createTransformStampedMsg(2.0, 2.0, 0.0);
+  curr = createTransformStampedMsg(0.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, M_PI, epsilon);
+  ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
   ASSERT_NEAR(motion_components.trans_, 2.0, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, -M_PI, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, 0.0, epsilon);
+
+  // side motion
+  prev = createTransformStampedMsg(0.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(0.0, -2.0, 0.0);
+  motion_components = calculateIdealMotionComponents(prev, curr);
+
+  ASSERT_NEAR(motion_components.rot_1_, -M_PI_2, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 2.0, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, M_PI_2, epsilon);
+
+  prev = createTransformStampedMsg(0.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(0.0, 2.0, 0.0);
+  motion_components = calculateIdealMotionComponents(prev, curr);
+
+  ASSERT_NEAR(motion_components.rot_1_, M_PI_2, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 2.0, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, -M_PI_2, epsilon);
 
   // on-spot rotation
   // counter clockwise
-  prev = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(2.0, 2.0, 0.0, M_PI_2);
+  prev = createTransformStampedMsg(2.0, 2.0, 0.0);
+  curr = createTransformStampedMsg(2.0, 2.0, M_PI_2);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
@@ -90,8 +107,8 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   ASSERT_NEAR(motion_components.rot_2_, M_PI_2, epsilon);
 
   // clockwise
-  prev = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(2.0, 2.0, 0.0, -M_PI_2);
+  prev = createTransformStampedMsg(2.0, 2.0, 0.0);
+  curr = createTransformStampedMsg(2.0, 2.0, -M_PI_2);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
@@ -100,8 +117,8 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
 
   // diagonal motion
   // top left
-  prev = createTransformStampedMsg(0.0, 0.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(2.0, 2.0, 0.0, 0.0);
+  prev = createTransformStampedMsg(0.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(2.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   ASSERT_NEAR(motion_components.rot_1_, M_PI_4, epsilon);
@@ -109,17 +126,17 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   ASSERT_NEAR(motion_components.rot_2_, -M_PI_4, epsilon);
 
   // bottom left
-  prev = createTransformStampedMsg(0.0, 0.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(-2.0, 2.0, 0.0, 0.0);
+  prev = createTransformStampedMsg(0.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(-2.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, 3 * M_PI_4, epsilon);
+  ASSERT_NEAR(motion_components.rot_1_, -M_PI_4, epsilon);
   ASSERT_NEAR(motion_components.trans_, 2.828, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, -3 * M_PI_4, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, M_PI_4, epsilon);
 
   // top right
-  prev = createTransformStampedMsg(0.0, 0.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(2.0, -2.0, 0.0, 0.0);
+  prev = createTransformStampedMsg(0.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(2.0, -2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   ASSERT_NEAR(motion_components.rot_1_, -M_PI_4, epsilon);
@@ -127,13 +144,13 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   ASSERT_NEAR(motion_components.rot_2_, M_PI_4, epsilon);
 
   // bottom right
-  prev = createTransformStampedMsg(0.0, 0.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(-2.0, -2.0, 0.0, 0.0);
+  prev = createTransformStampedMsg(0.0, 0.0, 0.0);
+  curr = createTransformStampedMsg(-2.0, -2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, -3 * M_PI_4, epsilon);
+  ASSERT_NEAR(motion_components.rot_1_, M_PI_4, epsilon);
   ASSERT_NEAR(motion_components.trans_, 2.828, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, 3 * M_PI_4, epsilon);
+  ASSERT_NEAR(motion_components.rot_2_, -M_PI_4, epsilon);
 }
 
 TEST_F(DiffDriveTestFixture, NoisyMotionTest)
