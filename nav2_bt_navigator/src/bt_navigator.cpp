@@ -173,11 +173,6 @@ nav2_util::CallbackReturn
 BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-
-  if (!pose_navigator_->on_shutdown() || !poses_navigator_->on_shutdown()) {
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 

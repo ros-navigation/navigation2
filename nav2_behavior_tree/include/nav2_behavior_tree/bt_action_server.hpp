@@ -87,12 +87,6 @@ public:
   bool on_cleanup();
 
   /**
-   * @brief Called when in shutdown state
-   * @return bool true on SUCCESS and false on FAILURE
-   */
-  bool on_shutdown();
-
-  /**
    * @brief Replace current BT with another one
    * @param bt_xml_filename The file containing the new BT, uses default filename if empty
    * @return bool true if the resulting BT correspond to the one in bt_xml_filename. false

@@ -143,12 +143,6 @@ bool BtActionServer<ActionT>::on_cleanup()
 }
 
 template<class ActionT>
-bool BtActionServer<ActionT>::on_shutdown()
-{
-  return true;
-}
-
-template<class ActionT>
 bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filename)
 {
   // Empty filename is default for backward compatibility

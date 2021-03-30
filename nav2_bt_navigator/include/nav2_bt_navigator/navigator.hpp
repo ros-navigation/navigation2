@@ -222,20 +222,6 @@ public:
   }
 
   /**
-   * @brief Shutdown a navigator
-   * @return bool If successful
-   */
-  bool on_shutdown()
-  {
-    bool ok = true;
-    if (!bt_action_server_->on_shutdown()) {
-      ok = false;
-    }
-
-    return shutdown() && ok;
-  }
-
-  /**
    * @brief Get the action name of this navigator to expose
    * @return string Name of action to expose
    */
@@ -314,11 +300,6 @@ protected:
    * @brief Method to deactive and any threads involved in execution.
    */
   virtual bool deactivate() {return true;}
-
-  /**
-   * @brief Method to deactive and any threads involved in execution.
-   */
-  virtual bool shutdown() {return true;}
 
   std::unique_ptr<nav2_behavior_tree::BtActionServer<ActionT>> bt_action_server_;
   rclcpp::Logger logger_{rclcpp::get_logger("Navigator")};

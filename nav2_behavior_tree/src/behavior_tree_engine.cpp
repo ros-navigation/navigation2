@@ -99,7 +99,9 @@ BehaviorTreeEngine::addGrootMonitoring(
 void
 BehaviorTreeEngine::resetGrootMonitor()
 {
-  groot_monitor_.reset();
+  if (groot_monitor_) {
+    groot_monitor_.reset();
+  }
 }
 
 // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
