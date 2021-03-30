@@ -199,40 +199,33 @@ void BtActionServer<ActionT>::executeCallback()
 {
   nav2_behavior_tree::BtStatus rc;
 
-  try {
-    if (!on_goal_received_callback_(action_server_->get_current_goal())) {
-      action_server_->terminate_current();
-      return;
-    }
-
-    auto is_canceling = [&]() {
-        if (action_server_ == nullptr) {
-          RCLCPP_DEBUG(logger_, "Action server unavailable. Canceling.");
-          return true;
-        }
-        if (!action_server_->is_server_active()) {
-          RCLCPP_DEBUG(logger_, "Action server is inactive. Canceling.");
-          return true;
-        }
-        return action_server_->is_cancel_requested();
-      };
-
-    auto on_loop = [&]() {
-        if (action_server_->is_preempt_requested() && on_preempt_callback_) {
-          on_preempt_callback_();
-        }
-        topic_logger_->flush();
-        on_loop_callback_();
-      };
-
-    // Execute the BT that was previously created in the configure step
-    rc = bt_->run(&tree_, on_loop, is_canceling);
-  } catch (std::exception & e) {
-    RCLCPP_ERROR(
-      logger_,
-      "BT Action Server failed while processing behavior tree with exception: %s", e.what());
-    rc = nav2_behavior_tree::BtStatus::FAILED;
+  if (!on_goal_received_callback_(action_server_->get_current_goal())) {
+    action_server_->terminate_current();
+    return;
   }
+
+  auto is_canceling = [&]() {
+      if (action_server_ == nullptr) {
+        RCLCPP_DEBUG(logger_, "Action server unavailable. Canceling.");
+        return true;
+      }
+      if (!action_server_->is_server_active()) {
+        RCLCPP_DEBUG(logger_, "Action server is inactive. Canceling.");
+        return true;
+      }
+      return action_server_->is_cancel_requested();
+    };
+
+  auto on_loop = [&]() {
+      if (action_server_->is_preempt_requested() && on_preempt_callback_) {
+        on_preempt_callback_();
+      }
+      topic_logger_->flush();
+      on_loop_callback_();
+    };
+
+  // Execute the BT that was previously created in the configure step
+  rc = bt_->run(&tree_, on_loop, is_canceling);
 
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.
