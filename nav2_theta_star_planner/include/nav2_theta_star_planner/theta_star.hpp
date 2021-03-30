@@ -109,7 +109,8 @@ protected:
 
   /// the vector nodes_data_ stores the coordinates, costs and index of the parent node,
   /// and whether or not the node is present in queue_
-  /// it is initialised with no elements and its size increases depending on the number of nodes searched
+  /// it is initialised with no elements
+  /// and its size increases depending on the number of nodes searched
   std::vector<tree_node> nodes_data_;
 
   /// this is the priority queue (open_list) to select the next node for expansion

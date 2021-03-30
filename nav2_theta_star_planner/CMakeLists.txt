@@ -15,17 +15,15 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(ament_cmake_gtest REQUIRED)
 
-
 nav2_package()
 
 include_directories(
   include
 )
 
-set(library_name ${PROJECT_NAME}_plugin)
+set(library_name ${PROJECT_NAME})
 
-set(dependencies
-  ament_cmake
+set(dependencies ament_cmake
   builtin_interfaces
   nav2_common
   nav2_core
@@ -37,13 +35,13 @@ set(dependencies
   rclcpp_action
   rclcpp_lifecycle
   tf2_ros
-  )
+)
 
 
 add_library(${library_name} SHARED
   src/theta_star.cpp
   src/theta_star_planner.cpp
-  )
+)
 
 ament_target_dependencies(${library_name} ${dependencies})
 
@@ -55,21 +53,21 @@ install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
-  )
+)
 
 install(DIRECTORY include/
   DESTINATION include/
-  )
+)
 
 install(FILES theta_star_planner.xml
   DESTINATION share/${PROJECT_NAME}
-  )
+)
 
 
-if (BUILD_TESTING)
+if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
-endif ()
+endif()
 
 
 ament_export_include_directories(include)
