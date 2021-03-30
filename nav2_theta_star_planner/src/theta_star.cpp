@@ -20,21 +20,24 @@ namespace theta_star
 
 ThetaStar::ThetaStar()
 : w_traversal_cost_(4.0),
-  w_euc_cost_(6.25),
+  w_euc_cost_(7.0),
   w_heuristic_cost_(1.0),
   how_many_corners_(8),
   size_x_(0),
   size_y_(0),
-  index_generated_(0) {}
+  index_generated_(0)
+{
+  curr_node = new tree_node;
+}
 
 bool ThetaStar::generatePath(std::vector<coordsW> & raw_path)
 {
-  setContainers();
+  resetContainers();
   int curr_id = index_generated_;
   addToNodesData(index_generated_);
   double src_g_cost = getTraversalCost(src_.x, src_.y), src_h_cost = getHCost(src_.x, src_.y);
-  nodes_data_[curr_id] = {src_.x, src_.y, src_g_cost, src_h_cost,
-    curr_id, true, src_g_cost + src_h_cost};
+  nodes_data_[curr_id] =
+  {src_.x, src_.y, src_g_cost, src_h_cost, curr_id, true, src_g_cost + src_h_cost};
   queue_.push({curr_id, (nodes_data_[curr_id].f)});
   addIndex(nodes_data_[curr_id].x, nodes_data_[curr_id].y, index_generated_);
   index_generated_++;
@@ -76,8 +79,7 @@ void ThetaStar::resetParent(tree_node & curr_data)
 
   if (losCheck(curr_data.x, curr_data.y, maybe_par.x, maybe_par.y, los_cost)) {
     g_cost = maybe_par.g +
-      getEuclideanCost(curr_data.x, curr_data.y, maybe_par.x, maybe_par.y) +
-      los_cost;
+      getEuclideanCost(curr_data.x, curr_data.y, maybe_par.x, maybe_par.y) + los_cost;
 
     if (g_cost < curr_data.g) {
       curr_data.parent_id = curr_par.parent_id;
@@ -106,8 +108,9 @@ void ThetaStar::setNeighbors(const tree_node & curr_data, const int & curr_id)
     }
 
     m_par = curr_id;
-    g_cost = curr_data.g + getEuclideanCost(curr_data.x, curr_data.y, mx, my) + getTraversalCost(mx,
-        my);
+    g_cost = curr_data.g + getEuclideanCost(curr_data.x, curr_data.y, mx, my) + getTraversalCost(
+      mx,
+      my);
 
     getIndex(mx, my, m_id);
 
@@ -159,10 +162,7 @@ void ThetaStar::backtrace(std::vector<coordsW> & raw_points, int curr_id)
 }
 
 bool ThetaStar::losCheck(
-  const int & x0,
-  const int & y0,
-  const int & x1,
-  const int & y1,
+  const int & x0, const int & y0, const int & x1, const int & y1,
   double & sl_cost)
 {
   sl_cost = 0;
@@ -221,14 +221,16 @@ bool ThetaStar::losCheck(
   return true;
 }
 
-void ThetaStar::setContainers()
+void ThetaStar::resetContainers()
 {
   index_generated_ = 0;
   int last_size_x = size_x_;
   int last_size_y = size_y_;
   int curr_size_x = static_cast<int>(costmap_->getSizeInCellsX());
   int curr_size_y = static_cast<int>(costmap_->getSizeInCellsY());
-  if (last_size_x != curr_size_x || last_size_y != curr_size_y) {
+  if (((last_size_x != curr_size_x) || (last_size_y != curr_size_y)) &&
+    static_cast<int>(node_position_.size()) < (curr_size_x * curr_size_y))
+  {
     initializePosn(curr_size_y * curr_size_x - last_size_y * last_size_x);
     nodes_data_.reserve(curr_size_x * curr_size_y);
   } else {

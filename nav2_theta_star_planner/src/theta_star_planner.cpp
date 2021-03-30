@@ -35,15 +35,13 @@ void ThetaStarPlanner::configure(
   global_frame_ = costmap_ros->getGlobalFrameID();
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name_ + ".how_many_corners", rclcpp::ParameterValue(
-      8));
+    node, name_ + ".how_many_corners", rclcpp::ParameterValue(8));
 
   node->get_parameter(name_ + ".how_many_corners", planner_->how_many_corners_);
 
   if (planner_->how_many_corners_ != 8 && planner_->how_many_corners_ != 4) {
     planner_->how_many_corners_ = 8;
-    RCLCPP_WARN(logger_,
-      "Your value for - .how_many_corners  was overridden, and is now set to 8");
+    RCLCPP_WARN(logger_, "Your value for - .how_many_corners  was overridden, and is now set to 8");
   }
 
   nav2_util::declare_parameter_if_not_declared(
@@ -51,7 +49,7 @@ void ThetaStarPlanner::configure(
   node->get_parameter(name_ + ".w_euc_cost", planner_->w_euc_cost_);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name_ + ".w_traversal_cost", rclcpp::ParameterValue(6.25));
+    node, name_ + ".w_traversal_cost", rclcpp::ParameterValue(7.0));
   node->get_parameter(name_ + ".w_traversal_cost", planner_->w_traversal_cost_);
 
   nav2_util::declare_parameter_if_not_declared(
@@ -81,12 +79,13 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   nav_msgs::msg::Path global_path;
   auto start_time = std::chrono::steady_clock::now();
   setStartAndGoal(start, goal);
-  RCLCPP_DEBUG(logger_, "Got the src_ and dst_... (%i, %i) && (%i, %i)",
+  RCLCPP_DEBUG(
+    logger_, "Got the src and dst... (%i, %i) && (%i, %i)",
     planner_->src_.x, planner_->src_.y, planner_->dst_.x, planner_->dst_.y);
   getPlan(global_path);
   auto stop_time = std::chrono::steady_clock::now();
   auto dur = std::chrono::duration_cast<std::chrono::microseconds>(stop_time - start_time);
-  RCLCPP_DEBUG(logger_, "the time taken is : %i", dur.count());
+  RCLCPP_INFO(logger_, "the time taken is : %i", static_cast<int>(dur.count()));
   return global_path;
 }
 

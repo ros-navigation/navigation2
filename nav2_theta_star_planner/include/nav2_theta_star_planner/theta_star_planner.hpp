@@ -62,15 +62,22 @@ protected:
 
   std::unique_ptr<theta_star::ThetaStar> planner_;
 
+  /**
+   * @brief the function responsible for calling the planner and retrieving a path from it
+   * @return global_path is the planned path to be taken
+   */
   void getPlan(nav_msgs::msg::Path & global_path);
 
+  /**
+   * @brief initialises the values of the start and goal points in the object of the planner
+   */
   void setStartAndGoal(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal);
 
   /**
-   * @brief linearily interpolates between the adjacent waypoints of the path
-   * @param raw_path is used to send in the path recieved from the planner
+   * @brief interpolates points between the adjacent waypoints of the path
+   * @param raw_path is used to send in the path received from the planner
    * @param dist_bw_points is used to send in the interpolation_resolution
    * @return the final path with waypoints at a distance of the value of interpolation_resolution of each other
    */
@@ -78,10 +85,15 @@ protected:
     const std::vector<coordsW> & raw_path,
     const double & dist_bw_points);
 
+  /**
+   * @brief checks whether the start and goal points have costmap costs lower than LETHAL_COST
+   * @return the result of the check
+   */
   bool isSafeToPlan() const
   {
-    return !(planner_->isSafe(planner_->src_.x,
-           planner_->src_.y)) || !(planner_->isSafe(planner_->dst_.x, planner_->dst_.y));
+    return !(planner_->isSafe(
+             planner_->src_.x,
+             planner_->src_.y)) || !(planner_->isSafe(planner_->dst_.x, planner_->dst_.y));
   }
 };
 }   //  namespace nav2_theta_star_planner
