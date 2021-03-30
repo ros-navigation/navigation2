@@ -29,7 +29,7 @@ class DiffDriveTestFixture : public DiffDriveOdomMotionModel, public ::testing::
 protected:
   void SetUp() override
   {
-    epsilon = 1e-3;
+    epsilon = 1e-4;
   }
 
   geometry_msgs::msg::TransformStamped createTransformStampedMsg(
@@ -122,7 +122,7 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   ASSERT_NEAR(motion_components.rot_1_, M_PI_4, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 2.828, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 2.8284, epsilon);
   ASSERT_NEAR(motion_components.rot_2_, -M_PI_4, epsilon);
 
   // bottom left
@@ -131,7 +131,7 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   ASSERT_NEAR(motion_components.rot_1_, -M_PI_4, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 2.828, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 2.8284, epsilon);
   ASSERT_NEAR(motion_components.rot_2_, M_PI_4, epsilon);
 
   // top right
@@ -140,7 +140,7 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   ASSERT_NEAR(motion_components.rot_1_, -M_PI_4, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 2.828, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 2.8284, epsilon);
   ASSERT_NEAR(motion_components.rot_2_, M_PI_4, epsilon);
 
   // bottom right
@@ -149,85 +149,104 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   ASSERT_NEAR(motion_components.rot_1_, M_PI_4, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 2.828, epsilon);
+  ASSERT_NEAR(motion_components.trans_, 2.8284, epsilon);
   ASSERT_NEAR(motion_components.rot_2_, -M_PI_4, epsilon);
 }
 
-TEST_F(DiffDriveTestFixture, NoisyMotionTest)
+TEST_F(DiffDriveTestFixture, NoisyRotTest)
 {
-  // No noise
+  // no noise
   rot_rot_noise_parm_ = 0.0;
   trans_rot_noise_parm_ = 0.0;
-  trans_trans_noise_parm_ = 0.0;
-  rot_trans_noise_param_ = 0.0;
   rand_num_gen_ = std::make_shared<std::mt19937>(0);
-  MotionComponents ideal_motion_components(M_PI_4, 2.0, -M_PI_4);
-  MotionComponents noisy_motion_components =
-    calculateNoisyMotionComponents(ideal_motion_components);
 
-  ASSERT_NEAR(noisy_motion_components.rot_1_, M_PI_4, epsilon);
-  ASSERT_NEAR(noisy_motion_components.trans_, 2.0, epsilon);
-  ASSERT_NEAR(noisy_motion_components.rot_2_, -M_PI_4, epsilon);
+  double rot = M_PI_4;
+  double trans = 2.0;
+  double noisy_rot = calculateNoisyRot(rot, trans);
+  ASSERT_NEAR(rot, noisy_rot, epsilon);
 
   // rot/rot noise only
-  rand_num_gen_ = std::make_shared<std::mt19937>(0);
-  rot_rot_noise_parm_ = 0.1;
+  rot_rot_noise_parm_ = 0.2;
   trans_rot_noise_parm_ = 0.0;
-  trans_trans_noise_parm_ = 0.0;
-  rot_trans_noise_param_ = 0.0;
-  noisy_motion_components = calculateNoisyMotionComponents(ideal_motion_components);
-
-  ASSERT_NEAR(noisy_motion_components.rot_1_, 0.5065, epsilon);
-  ASSERT_NEAR(noisy_motion_components.trans_, ideal_motion_components.trans_, epsilon);
-  ASSERT_NEAR(noisy_motion_components.rot_2_, -0.4321, epsilon);
-
-  // trans/rot only
   rand_num_gen_ = std::make_shared<std::mt19937>(0);
+
+  rot = M_PI_4;
+  trans = 2.0;
+  noisy_rot = calculateNoisyRot(rot, trans);
+  // distribution variance = rot_rot_noise_parm_*rot^2 = 0.2*(pi/4)^2 = 0.1234
+  // output of the distribution given the rand number generator seeded with 0: 0.3944
+  ASSERT_NEAR(noisy_rot, rot - 0.3944, epsilon);
+  // changing trans should have no impact
+  trans = 5.0;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  noisy_rot = calculateNoisyRot(rot, trans);
+  ASSERT_NEAR(noisy_rot, rot - 0.3944, epsilon);
+
+  // rot/trans noise only
   rot_rot_noise_parm_ = 0.0;
-  trans_rot_noise_parm_ = 0.1;
-  trans_trans_noise_parm_ = 0.0;
-  rot_trans_noise_param_ = 0.0;
-  noisy_motion_components = calculateNoisyMotionComponents(ideal_motion_components);
-
-  ASSERT_NEAR(noisy_motion_components.rot_1_, 0.0753, epsilon);
-  ASSERT_NEAR(noisy_motion_components.trans_, ideal_motion_components.trans_, epsilon);
-  ASSERT_NEAR(noisy_motion_components.rot_2_, 0.1142, epsilon);
-
-  // trans/trans only
-  rand_num_gen_ = std::make_shared<std::mt19937>(0);
-  rot_rot_noise_parm_ = 0.0;
-  trans_rot_noise_parm_ = 0.0;
-  trans_trans_noise_parm_ = 0.1;
-  rot_trans_noise_param_ = 0.0;
-  noisy_motion_components = calculateNoisyMotionComponents(ideal_motion_components);
-
-  ASSERT_NEAR(noisy_motion_components.rot_1_, ideal_motion_components.rot_1_, epsilon);
-  ASSERT_NEAR(noisy_motion_components.trans_, 1.9552, epsilon);
-  ASSERT_NEAR(noisy_motion_components.rot_2_, ideal_motion_components.rot_2_, epsilon);
-
-  // rot/trans only
-  rand_num_gen_ = std::make_shared<std::mt19937>(0);
-  rot_rot_noise_parm_ = 0.0;
-  trans_rot_noise_parm_ = 0.0;
-  trans_trans_noise_parm_ = 0.0;
-  rot_trans_noise_param_ = 0.1;
-  noisy_motion_components = calculateNoisyMotionComponents(ideal_motion_components);
-
-  ASSERT_NEAR(noisy_motion_components.rot_1_, ideal_motion_components.rot_1_, epsilon);
-  ASSERT_NEAR(noisy_motion_components.trans_, 1.9751113, epsilon);
-  ASSERT_NEAR(noisy_motion_components.rot_2_, ideal_motion_components.rot_2_, epsilon);
-
-  // All noise parameters set
-  rand_num_gen_ = std::make_shared<std::mt19937>(0);
-  rot_rot_noise_parm_ = 0.1;
   trans_rot_noise_parm_ = 0.2;
-  trans_trans_noise_parm_ = 0.3;
-  rot_trans_noise_param_ = 0.4;
-  noisy_motion_components = calculateNoisyMotionComponents(ideal_motion_components);
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
 
-  ASSERT_NEAR(noisy_motion_components.rot_1_, -0.2569, epsilon);
-  ASSERT_NEAR(noisy_motion_components.trans_, 1.9078, epsilon);
-  ASSERT_NEAR(noisy_motion_components.rot_2_, 0.5349, epsilon);
+  rot = M_PI_4;
+  trans = 2.0;
+  noisy_rot = calculateNoisyRot(rot, trans);
+  // distribution variance = trans_rot_noise_parm_*trans^2 = 0.2*2.0^2 = 0.8
+  // output of the distribution given the rand number generator seeded with 0: 1.0043
+  ASSERT_NEAR(noisy_rot, rot - 1.0043, epsilon);
+  // changing rot should have no impact
+  rot = 0.0;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  noisy_rot = calculateNoisyRot(rot, trans);
+  ASSERT_NEAR(noisy_rot, rot - 1.0043, epsilon);
+
+  // both noise parameters set
+  rot_rot_noise_parm_ = 0.2;
+  trans_rot_noise_parm_ = 0.3;
+
+  // rot only
+  rot = M_PI_4;
+  trans = 0.0;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  noisy_rot = calculateNoisyRot(rot, trans);
+  // distribution variance = rot_rot_noise_parm_*rot^2 = 0.2*(pi/4)^2 = 0.1234
+  // output of the distribution given the rand number generator seeded with 0: 0.3944
+  ASSERT_NEAR(noisy_rot, rot - 0.3944, epsilon);
+
+  // trans only
+  rot = 0.0;
+  trans = 2.0;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  noisy_rot = calculateNoisyRot(rot, trans);
+  // distribution variance = trans_rot_noise_parm_*trans^2 = 0.3*(2.0)^2 = 1.2
+  // output of the distribution given the rand number generator seeded with 0: 1.2230
+  ASSERT_NEAR(noisy_rot, rot - 1.2300, epsilon);
+
+  // no trans or rot
+  rot = 0.0;
+  trans = 0.0;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  noisy_rot = calculateNoisyRot(rot, trans);
+  ASSERT_NEAR(noisy_rot, 0.0, epsilon);
+
+  // +ve rot with trans
+  rot = M_PI_4;
+  trans = 2.0;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  noisy_rot = calculateNoisyRot(rot, trans);
+  // distribution variance = rot_rot_noise_parm_*rot^2 + trans_rot_noise_parm_*trans^2
+  //                       = 0.2*(pi/4)^2 + 0.3*2.0^2 = 1.3234
+  // output of the distribution given the rand number generator seeded with 0: 1.2917
+  ASSERT_NEAR(noisy_rot, rot - 1.2917, epsilon);
+
+  // -ve rot with trans
+  rot = -M_PI_4;
+  trans = 2.0;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  noisy_rot = calculateNoisyRot(rot, trans);
+  // distribution variance = rot_rot_noise_parm_*rot^2 + trans_rot_noise_parm_*trans^2
+  //                       = 0.2*(pi/4)^2 + 0.3*2.0^2 = 1.3234
+  // output of the distribution given the rand number generator seeded with 0: 1.2917
+  ASSERT_NEAR(noisy_rot, rot - 1.2917, epsilon);
 }
 
 int main(int argc, char ** argv)
