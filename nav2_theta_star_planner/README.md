@@ -10,7 +10,7 @@ The Theta Star Planner is a global planning plugin meant to be used with the Nav
 
 ## Metrics
 For the below example the planner took ~44ms to compute the path of 87.5m - 
-![example.png](/img/Screenshot%20from%202021-03-27%2000-37-47.png)
+![example.png](/img/00-37.png)
 
 The parameters were set to - `w_euc_cost: 1.0`, `w_traversal_cost: 5.0`, `w_heuristic_cost: 1.0` and the `global_costmap`'s `inflation_layer` parameters are set as - `cost_scaling_factor:5.0`, `inflation_radius: 5.5`
 
@@ -84,8 +84,3 @@ Because of how the cost function works, the output path has a natural tendency t
 This planner is recommended to be used with local planners like DWB or TEB (or other any planner / controllers that form a local trajectory to be traversed) as these take into account the abrupt turns which might arise due to the planner not being able to find a smoother turns owing to the aforementioned reasons.
 
 While smoother paths can be achieved by increasing the costmap resolution (ie using a costmap of 1cm resolution rather than a 5cm one) it is not recommended to do so as it comes at the cost of increased query times from the planner. Test the planners performance on the finer costmaps before making a switch to those costmaps. 
-
-
-
-
- 
