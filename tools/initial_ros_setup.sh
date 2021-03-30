@@ -41,8 +41,8 @@ return_to_root_dir() {
 
 download_navstack() {
   echo "Downloading the ROS 2 navstack"
-  mkdir -p navigation2_ws/src
-  cd navigation2_ws
+  mkdir -p nav2_ws/src
+  cd nav2_ws
   if [ -f "custom_nav2.repos" ]; then #override default location for testing
     vcs import src < custom_nav2.repos
   else
@@ -65,7 +65,7 @@ download_ros2_dependencies() {
   echo "Downloading the dependencies workspace"
   mkdir -p ros2_nav_dependencies_ws/src
   cd ros2_nav_dependencies_ws
-  vcs import src < ${CWD}/navigation2_ws/src/navigation2/tools/ros2_dependencies.repos
+  vcs import src < ${CWD}/nav2_ws/src/navigation2/tools/underlay.repos
   return_to_root_dir
 }
 
@@ -106,7 +106,7 @@ if [ "$REPLY" = "y" ]; then
   download_all
   rosdep_install
   if [ "$ENABLE_BUILD" = true ]; then
-    $CWD/navigation2_ws/src/navigation2/tools/build_all.sh
+    $CWD/nav2_ws/src/navigation2/tools/build_all.sh
   fi
 
   cd ${CWD}
@@ -115,9 +115,9 @@ if [ "$REPLY" = "y" ]; then
   echo "Everything downloaded and built successfully."
   echo "To use the navstack source the setup.bash in the install folder"
   echo
-  echo "> source navigation2/install/setup.bash"
+  echo "> source nav2_ws/install/setup.bash"
   echo
   echo "To build the navstack you can either"
-  echo "1. Run 'colcon build --symlink-install' from the navigation2 folder"
-  echo "2. or run 'make' from navigation2/build/<project> folder"
+  echo "1. Run 'colcon build --symlink-install' from the nav2_ws folder"
+  echo "2. or run 'make' from nav2_ws/build/<project> folder"
 fi

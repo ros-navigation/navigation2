@@ -20,12 +20,12 @@
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_behavior_tree/behavior_tree_engine.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_util/simple_action_server.hpp"
+#include "nav2_behavior_tree/bt_action_server.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 
@@ -82,74 +82,56 @@ protected:
    * @return SUCCESS or FAILURE
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when in error state
-   * @param state Reference to LifeCycle node state
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   using Action = nav2_msgs::action::NavigateToPose;
 
-  using ActionServer = nav2_util::SimpleActionServer<Action>;
-
-  // Our action server implements the NavigateToPose action
-  std::unique_ptr<ActionServer> action_server_;
+  /**
+   * @brief A callback to be called when a new goal is received by the BT action server
+   * Can be used to check if goal is valid and put values on
+   * the blackboard which depend on the received goal
+   */
+  bool onGoalReceived(Action::Goal::ConstSharedPtr goal);
 
   /**
-   * @brief Action server callbacks
+   * @brief A callback that defines execution that happens on one iteration through the BT
+   * Can be used to publish action feedback
    */
-  void navigateToPose();
+  void onLoop();
+
+  /**
+   * @brief A callback that is called when a preempt is requested
+   */
+  void onPreempt();
 
   /**
    * @brief Goal pose initialization on the blackboard
    */
-  void initializeGoalPose();
+  void initializeGoalPose(Action::Goal::ConstSharedPtr goal);
 
   /**
    * @brief A subscription and callback to handle the topic-based goal published
    * from rviz
    */
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
+
+  // To handle all the BT related execution
+  std::unique_ptr<nav2_behavior_tree::BtActionServer<Action>> bt_action_server_;
+
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-
-  /**
-   * @brief Replace current BT with another one
-   * @param bt_xml_filename The file containing the new BT
-   * @return true if the resulting BT correspond to the one in bt_xml_filename. false
-   * if something went wrong, and previous BT is mantained
-   */
-  bool loadBehaviorTree(const std::string & bt_id);
-
-  BT::Tree tree_;
-
-  // The blackboard shared by all of the nodes in the tree
-  BT::Blackboard::Ptr blackboard_;
-
-  // The XML fiñe that cointains the Behavior Tree to create
-  std::string current_bt_xml_filename_;
-  std::string default_bt_xml_filename_;
-
-  // The wrapper class for the BT functionality
-  std::unique_ptr<nav2_behavior_tree::BehaviorTreeEngine> bt_;
-
-  // Libraries to pull plugins (BT Nodes) from
-  std::vector<std::string> plugin_lib_names_;
 
   // A client that we'll use to send a command message to our own task server
   rclcpp_action::Client<Action>::SharedPtr self_client_;
-
-  // A regular, non-spinning ROS node that we can use for calls to the action client
-  rclcpp::Node::SharedPtr client_node_;
-
-  // Spinning transform that can be used by the BT nodes
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   // Metrics for feedback
   rclcpp::Time start_time_;
   std::string robot_frame_;
   std::string global_frame_;
+  std::string goal_blackboard_id_;
   double transform_tolerance_;
+
+  // Spinning transform that can be used by the BT nodes
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 }  // namespace nav2_bt_navigator

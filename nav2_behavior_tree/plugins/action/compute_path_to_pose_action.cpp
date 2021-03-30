@@ -12,61 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__COMPUTE_PATH_TO_POSE_ACTION_HPP_
-#define NAV2_BEHAVIOR_TREE__COMPUTE_PATH_TO_POSE_ACTION_HPP_
-
 #include <memory>
 #include <string>
 
-#include "nav2_msgs/action/compute_path_to_pose.hpp"
-#include "nav_msgs/msg/path.h"
-#include "nav2_behavior_tree/bt_action_node.hpp"
+#include "nav2_behavior_tree/plugins/action/compute_path_to_pose_action.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class ComputePathToPoseAction : public BtActionNode<nav2_msgs::action::ComputePathToPose>
+ComputePathToPoseAction::ComputePathToPoseAction(
+  const std::string & xml_tag_name,
+  const std::string & action_name,
+  const BT::NodeConfiguration & conf)
+: BtActionNode<nav2_msgs::action::ComputePathToPose>(xml_tag_name, action_name, conf)
 {
-public:
-  ComputePathToPoseAction(
-    const std::string & xml_tag_name,
-    const std::string & action_name,
-    const BT::NodeConfiguration & conf)
-  : BtActionNode<nav2_msgs::action::ComputePathToPose>(xml_tag_name, action_name, conf)
-  {
+}
+
+void ComputePathToPoseAction::on_tick()
+{
+  getInput("goal", goal_.goal);
+  getInput("planner_id", goal_.planner_id);
+  if (getInput("start", goal_.start)) {
+    goal_.use_start = true;
   }
+}
 
-  void on_tick() override
-  {
-    getInput("goal", goal_.pose);
-    getInput("planner_id", goal_.planner_id);
-  }
-
-  BT::NodeStatus on_success() override
-  {
-    setOutput("path", result_.result->path);
-
-    if (first_time_) {
-      first_time_ = false;
-    } else {
-      config().blackboard->set("path_updated", true);
-    }
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  static BT::PortsList providedPorts()
-  {
-    return providedBasicPorts(
-      {
-        BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
-        BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
-        BT::InputPort<std::string>("planner_id", ""),
-      });
-  }
-
-private:
-  bool first_time_{true};
-};
+BT::NodeStatus ComputePathToPoseAction::on_success()
+{
+  setOutput("path", result_.result->path);
+  return BT::NodeStatus::SUCCESS;
+}
 
 }  // namespace nav2_behavior_tree
 
@@ -83,5 +58,3 @@ BT_REGISTER_NODES(factory)
   factory.registerBuilder<nav2_behavior_tree::ComputePathToPoseAction>(
     "ComputePathToPose", builder);
 }
-
-#endif  // NAV2_BEHAVIOR_TREE__COMPUTE_PATH_TO_POSE_ACTION_HPP_

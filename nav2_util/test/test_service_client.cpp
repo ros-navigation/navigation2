@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
 #include <string>
 #include "nav2_util/service_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
+#include "std_msgs/msg/empty.hpp"
 #include "gtest/gtest.h"
 
 using nav2_util::ServiceClient;
@@ -41,18 +43,46 @@ public:
   const rclcpp::Node::SharedPtr & getNode() {return node_;}
 };
 
-TEST(ServiceClient, are_non_alphanumerics_removed)
-{
-  TestServiceClient t("/foo/bar");
-  string adjustedPrefix = "_foo_bar_Node_";
-  ASSERT_EQ(t.name().length(), adjustedPrefix.length() + 8);
-  ASSERT_EQ(0, t.name().compare(0, adjustedPrefix.length(), adjustedPrefix));
-}
-
 TEST(ServiceClient, can_ServiceClient_use_passed_in_node)
 {
   auto node = rclcpp::Node::make_shared("test_node");
   TestServiceClient t("bar", node);
   ASSERT_EQ(t.getNode(), node);
   ASSERT_EQ(t.name(), "test_node");
+}
+
+TEST(ServiceClient, can_ServiceClient_invoke_in_callback)
+{
+  int a = 0;
+  auto service_node = rclcpp::Node::make_shared("service_node");
+  auto service = service_node->create_service<std_srvs::srv::Empty>(
+    "empty_srv",
+    [&a](std_srvs::srv::Empty::Request::SharedPtr, std_srvs::srv::Empty::Response::SharedPtr) {
+      a = 1;
+    });
+  auto srv_thread = std::thread([&]() {rclcpp::spin(service_node);});
+
+  auto pub_node = rclcpp::Node::make_shared("pub_node");
+  auto pub = pub_node->create_publisher<std_msgs::msg::Empty>(
+    "empty_topic",
+    rclcpp::QoS(1).transient_local());
+  auto pub_thread = std::thread([&]() {rclcpp::spin(pub_node);});
+
+  auto sub_node = rclcpp::Node::make_shared("sub_node");
+  ServiceClient<std_srvs::srv::Empty> client("empty_srv", sub_node);
+  auto sub = sub_node->create_subscription<std_msgs::msg::Empty>(
+    "empty_topic",
+    rclcpp::QoS(1),
+    [&client](std_msgs::msg::Empty::SharedPtr) {
+      auto req = std::make_shared<std_srvs::srv::Empty::Request>();
+      auto res = client.invoke(req);
+    });
+
+  pub->publish(std_msgs::msg::Empty());
+  rclcpp::spin_some(sub_node);
+
+  rclcpp::shutdown();
+  srv_thread.join();
+  pub_thread.join();
+  ASSERT_EQ(a, 1);
 }

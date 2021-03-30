@@ -22,9 +22,12 @@
 #include <vector>
 
 #include "nav2_core/controller.hpp"
+#include "nav2_core/progress_checker.hpp"
+#include "nav2_core/goal_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "nav2_msgs/action/follow_path.hpp"
+#include "nav2_msgs/msg/speed_limit.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/simple_action_server.hpp"
@@ -100,12 +103,6 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when in Error state
-   * @param state LifeCycle Node's state
-   * @return Success or Failure
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   using Action = nav2_msgs::action::FollowPath;
   using ActionServer = nav2_util::SimpleActionServer<Action>;
@@ -200,6 +197,23 @@ protected:
   // Publishers and subscribers
   std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
+  rclcpp::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_sub_;
+
+  // Progress Checker Plugin
+  pluginlib::ClassLoader<nav2_core::ProgressChecker> progress_checker_loader_;
+  nav2_core::ProgressChecker::Ptr progress_checker_;
+  std::string default_progress_checker_id_;
+  std::string default_progress_checker_type_;
+  std::string progress_checker_id_;
+  std::string progress_checker_type_;
+
+  // Goal Checker Plugin
+  pluginlib::ClassLoader<nav2_core::GoalChecker> goal_checker_loader_;
+  nav2_core::GoalChecker::Ptr goal_checker_;
+  std::string default_goal_checker_id_;
+  std::string default_goal_checker_type_;
+  std::string goal_checker_id_;
+  std::string goal_checker_type_;
 
   // Controller Plugins
   pluginlib::ClassLoader<nav2_core::Controller> lp_loader_;
@@ -210,16 +224,20 @@ protected:
   std::vector<std::string> controller_types_;
   std::string controller_ids_concat_, current_controller_;
 
-  std::unique_ptr<ProgressChecker> progress_checker_;
-
   double controller_frequency_;
   double min_x_velocity_threshold_;
   double min_y_velocity_threshold_;
   double min_theta_velocity_threshold_;
 
   // Whether we've published the single controller warning yet
-  bool single_controller_warning_given_{false};
   geometry_msgs::msg::Pose end_pose_;
+
+private:
+  /**
+    * @brief Callback for speed limiting messages
+    * @param msg Shared pointer to nav2_msgs::msg::SpeedLimit
+    */
+  void speedLimitCallback(const nav2_msgs::msg::SpeedLimit::SharedPtr msg);
 };
 
 }  // namespace nav2_controller

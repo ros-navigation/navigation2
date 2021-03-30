@@ -2,7 +2,7 @@
 # Build context must be the /navigation2 root folder for COPY.
 # Example build command:
 # export UNDERLAY_MIXINS="debug ccache"
-# export OVERLAY_MIXINS="debug ccache coverage"
+# export OVERLAY_MIXINS="debug ccache coverage-gcc"
 # docker build -t nav2:latest \
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./
@@ -16,8 +16,8 @@ FROM $FROM_IMAGE AS cacher
 # clone underlay source
 ARG UNDERLAY_WS
 WORKDIR $UNDERLAY_WS/src
-COPY ./tools/ros2_dependencies.repos ../
-RUN vcs import ./ < ../ros2_dependencies.repos && \
+COPY ./tools/underlay.repos ../
+RUN vcs import ./ < ../underlay.repos && \
     find ./ -name ".git" | xargs rm -rf
 
 # copy overlay source
@@ -35,6 +35,7 @@ RUN mkdir -p /tmp/opt && \
 
 # multi-stage for building
 FROM $FROM_IMAGE AS builder
+ARG DEBIAN_FRONTEND=noninteractive
 
 # install CI dependencies
 RUN apt-get update && apt-get install -q -y \
@@ -50,6 +51,9 @@ COPY --from=cacher /tmp/$UNDERLAY_WS ./
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
+      --skip-keys " \
+        slam_toolbox \
+        " \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
@@ -62,10 +66,7 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
       --symlink-install \
       --mixin $UNDERLAY_MIXINS \
       --event-handlers console_direct+ \
-    || touch build_failed && \
-    if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
-      exit 1; \
-    fi
+    || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
 
 # install overlay dependencies
 ARG OVERLAY_WS
@@ -75,6 +76,9 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
         $UNDERLAY_WS/src \
+      --skip-keys " \
+        slam_toolbox \
+        "\
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
@@ -85,10 +89,7 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
     colcon build \
       --symlink-install \
       --mixin $OVERLAY_MIXINS \
-    || touch build_failed && \
-    if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
-      exit 1; \
-    fi
+    || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
 
 # source overlay from entrypoint
 ENV UNDERLAY_WS $UNDERLAY_WS
@@ -96,3 +97,13 @@ ENV OVERLAY_WS $OVERLAY_WS
 RUN sed --in-place \
       's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
       /ros_entrypoint.sh
+
+# test overlay build
+ARG RUN_TESTS
+ARG FAIL_ON_TEST_FAILURE=True
+RUN if [ -n "$RUN_TESTS" ]; then \
+        . install/setup.sh && \
+        colcon test && \
+        colcon test-result \
+          || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
+    fi

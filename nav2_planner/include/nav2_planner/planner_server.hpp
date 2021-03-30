@@ -58,6 +58,17 @@ public:
 
   using PlannerMap = std::unordered_map<std::string, nav2_core::GlobalPlanner::Ptr>;
 
+  /**
+   * @brief Method to get plan from the desired plugin
+   * @param start starting pose
+   * @param goal goal request
+   * @return Path
+   */
+  nav_msgs::msg::Path getPlan(
+    const geometry_msgs::msg::PoseStamped & start,
+    const geometry_msgs::msg::PoseStamped & goal,
+    const std::string & planner_id);
+
 protected:
   /**
    * @brief Configure member variables and initializes planner
@@ -89,14 +100,9 @@ protected:
    * @return SUCCESS or FAILURE
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when in error state
-   * @param state Reference to LifeCycle node state
-   * @return SUCCESS or FAILURE
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
-  using ActionServer = nav2_util::SimpleActionServer<nav2_msgs::action::ComputePathToPose>;
+  using ActionT = nav2_msgs::action::ComputePathToPose;
+  using ActionServer = nav2_util::SimpleActionServer<ActionT>;
 
   // Our action server implements the ComputePathToPose action
   std::unique_ptr<ActionServer> action_server_;
@@ -122,6 +128,9 @@ protected:
   double max_planner_duration_;
   std::string planner_ids_concat_;
 
+  // Clock
+  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
+
   // TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
@@ -132,9 +141,6 @@ protected:
 
   // Publishers for the path
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
-
-  // Whether we've published the single planner warning yet
-  bool single_planner_warning_given_{false};
 };
 
 }  // namespace nav2_planner

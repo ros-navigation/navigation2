@@ -80,11 +80,20 @@ std::string time_to_string(size_t len);
 rclcpp::NodeOptions
 get_node_options_default(bool allow_undeclared = true, bool declare_initial_params = true);
 
+/// Declares static ROS2 parameter and sets it to a given value if it was not already declared
+/* Declares static ROS2 parameter and sets it to a given value
+ * if it was not already declared.
+ *
+ * \param[in] node A node in which given parameter to be declared
+ * \param[in] param_name The name of parameter
+ * \param[in] default_value Parameter value to initialize with
+ * \param[in] parameter_descriptor Parameter descriptor (optional)
+ */
 template<typename NodeT>
 void declare_parameter_if_not_declared(
   NodeT node,
   const std::string & param_name,
-  const rclcpp::ParameterValue & default_value = rclcpp::ParameterValue(),
+  const rclcpp::ParameterValue & default_value,
   const rcl_interfaces::msg::ParameterDescriptor & parameter_descriptor =
   rcl_interfaces::msg::ParameterDescriptor())
 {
@@ -93,15 +102,54 @@ void declare_parameter_if_not_declared(
   }
 }
 
+/// Declares static ROS2 parameter with given type if it was not already declared
+/* Declares static ROS2 parameter with given type if it was not already declared.
+ * NOTE: The parameter should be set via input param-file
+ * or throught a command-line. Otherwise according to the RCLCPP API,
+ * NoParameterOverrideProvided exception will be thrown by declare_parameter().
+ *
+ * \param[in] node A node in which given parameter to be declared
+ * \param[in] param_type The type of parameter
+ * \param[in] default_value Parameter value to initialize with
+ * \param[in] parameter_descriptor Parameter descriptor (optional)
+ */
+template<typename NodeT>
+void declare_parameter_if_not_declared(
+  NodeT node,
+  const std::string & param_name,
+  const rclcpp::ParameterType & param_type,
+  const rcl_interfaces::msg::ParameterDescriptor & parameter_descriptor =
+  rcl_interfaces::msg::ParameterDescriptor())
+{
+  if (!node->has_parameter(param_name)) {
+    node->declare_parameter(param_name, param_type, parameter_descriptor);
+  }
+}
+
+/// Gets the type of plugin for the selected node and its plugin
+/**
+ * Gets the type of plugin for the selected node and its plugin.
+ * Actually seeks for the value of "<plugin_name>.plugin" parameter.
+ *
+ * \param[in] node Selected node
+ * \param[in] plugin_name The name of plugin the type of which is being searched for
+ * \return A string containing the type of plugin (the value of "<plugin_name>.plugin" parameter)
+ */
 template<typename NodeT>
 std::string get_plugin_type_param(
   NodeT node,
   const std::string & plugin_name)
 {
-  declare_parameter_if_not_declared(node, plugin_name + ".plugin");
+  try {
+    declare_parameter_if_not_declared(node, plugin_name + ".plugin", rclcpp::PARAMETER_STRING);
+  } catch (rclcpp::exceptions::NoParameterOverrideProvided & ex) {
+    RCLCPP_FATAL(node->get_logger(), "'plugin' param not defined for %s", plugin_name.c_str());
+    exit(-1);
+  }
   std::string plugin_type;
   if (!node->get_parameter(plugin_name + ".plugin", plugin_type)) {
-    RCLCPP_FATAL(node->get_logger(), "'plugin' param not defined for %s", plugin_name.c_str());
+    RCLCPP_FATAL(
+      node->get_logger(), "Can not get 'plugin' param value for %s", plugin_name.c_str());
     exit(-1);
   }
   return plugin_type;

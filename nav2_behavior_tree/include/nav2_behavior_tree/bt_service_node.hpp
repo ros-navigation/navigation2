@@ -26,20 +26,29 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * @brief Abstract class representing a service based BT node
+ * @tparam ServiceT Type of service
+ */
 template<class ServiceT>
 class BtServiceNode : public BT::SyncActionNode
 {
 public:
+  /**
+   * @brief A nav2_behavior_tree::BtServiceNode constructor
+   * @param service_node_name Service name this node creates a client for
+   * @param conf BT node configuration
+   */
   BtServiceNode(
     const std::string & service_node_name,
     const BT::NodeConfiguration & conf)
   : BT::SyncActionNode(service_node_name, conf), service_node_name_(service_node_name)
   {
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+    node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
 
     // Get the required items from the blackboard
     server_timeout_ =
-      config().blackboard->get<std::chrono::milliseconds>("server_timeout");
+      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
     // Now that we have node_ to use, create the service client for this BT service
@@ -66,8 +75,12 @@ public:
   {
   }
 
-  // Any subclass of BtServiceNode that accepts parameters must provide a providedPorts method
-  // and call providedBasicPorts in it.
+  /**
+   * @brief Any subclass of BtServiceNode that accepts parameters must provide a
+   * providedPorts method and call providedBasicPorts in it.
+   * @param addition Additional ports to add to BT port list
+   * @return BT::PortsList Containing basic ports along with node-specific ports
+   */
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
     BT::PortsList basic = {
@@ -79,12 +92,19 @@ public:
     return basic;
   }
 
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing basic ports along with node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts({});
   }
 
-  // The main override required by a BT service
+  /**
+   * @brief The main override required by a BT service
+   * @return BT::NodeStatus Status of tick execution
+   */
   BT::NodeStatus tick() override
   {
     on_tick();
@@ -92,12 +112,19 @@ public:
     return check_future(future_result);
   }
 
-  // Fill in service request with information if necessary
+  /**
+   * @brief Function to perform some user-defined operation on tick
+   * Fill in service request with information if necessary
+   */
   virtual void on_tick()
   {
   }
 
-  // Check the future and decide the status of Behaviortree
+  /**
+   * @brief Check the future and decide the status of BT
+   * @param future_result shared_future of service response
+   * @return BT::NodeStatus SUCCESS if future complete before timeout, FAILURE otherwise
+   */
   virtual BT::NodeStatus check_future(
     std::shared_future<typename ServiceT::Response::SharedPtr> future_result)
   {
@@ -116,19 +143,24 @@ public:
     return BT::NodeStatus::FAILURE;
   }
 
-  // An opportunity to do something after
-  // a timeout waiting for a result that hasn't been received yet
+  /**
+   * @brief Function to perform some user-defined operation after a timeout waiting
+   * for a result that hasn't been received yet
+   */
   virtual void on_wait_for_result()
   {
   }
 
 protected:
+  /**
+   * @brief Function to increment recovery count on blackboard if this node wraps a recovery
+   */
   void increment_recovery_count()
   {
     int recovery_count = 0;
-    config().blackboard->get<int>("number_recoveries", recovery_count);  // NOLINT
+    config().blackboard->template get<int>("number_recoveries", recovery_count);  // NOLINT
     recovery_count += 1;
-    config().blackboard->set<int>("number_recoveries", recovery_count);  // NOLINT
+    config().blackboard->template set<int>("number_recoveries", recovery_count);  // NOLINT
   }
 
   std::string service_name_, service_node_name_;

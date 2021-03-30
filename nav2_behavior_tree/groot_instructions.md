@@ -7,6 +7,6 @@
 To visualize the behavior trees using Groot:
 1. Open Groot in editor mode
 2. Select the `Load palette from file` option  (import button) near the top left corner.
-3. Open the file `/path/to/navigation2/nav2_behavior_tree/nav2_tree_nodes.xml` to import all the behavior tree nodes used for navigation.
+3. Open the file `/path/to/nav2/nav2_behavior_tree/nav2_tree_nodes.xml` to import all the behavior tree nodes used for navigation.
 4. Select `Load tree` option near the top left corner
 5. Browse the tree you want to visualize the select ok.

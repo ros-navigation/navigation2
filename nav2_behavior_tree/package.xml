@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_behavior_tree</name>
-  <version>0.3.4</version>
+  <version>0.4.3</version>
   <description>TODO</description>
   <maintainer email="michael.jeronimo@intel.com">Michael Jeronimo</maintainer>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
@@ -17,10 +17,10 @@
   <build_depend>rclcpp</build_depend>
   <build_depend>rclcpp_action</build_depend>
   <build_depend>rclcpp_lifecycle</build_depend>
-  <build_depend>std_msgs</build_depend>
   <build_depend>behaviortree_cpp_v3</build_depend>
   <build_depend>builtin_interfaces</build_depend>
   <build_depend>geometry_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
   <build_depend>nav2_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>tf2</build_depend>
@@ -39,6 +39,7 @@
   <exec_depend>behaviortree_cpp_v3</exec_depend>
   <exec_depend>builtin_interfaces</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>tf2</exec_depend>

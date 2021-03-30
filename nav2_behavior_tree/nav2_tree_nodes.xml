@@ -18,6 +18,7 @@
 
     <Action ID="ComputePathToPose">
       <input_port name="goal">Destination to plan to</input_port>
+      <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
       <output_port name="path">Path created by ComputePathToPose node</output_port>
       <input_port name="planner_id"/>
     </Action>
@@ -28,8 +29,19 @@
     </Action>
 
     <Action ID="NavigateToPose">
-        <input_port name="orientation">Orientation</input_port>
-        <input_port name="position">Position</input_port>
+        <input_port name="goal">Goal</input_port>
+    </Action>
+
+    <Action ID="PlannerSelector">
+        <input_port name="topic_name">Name of the topic to receive planner selection commands</input_port>
+        <input_port name="default_planner">Default planner of the planner selector</input_port>
+        <output_port name="selected_planner">Name of the selected planner received from the topic subcription</output_port>
+    </Action>
+
+    <Action ID="ControllerSelector">
+        <input_port name="topic_name">Name of the topic to receive controller selection commands</input_port>
+        <input_port name="default_controller">Default controller of the controller selector</input_port>
+        <output_port name="selected_controller">Name of the selected controller received from the topic subcription</output_port>
     </Action>
 
     <Action ID="RandomCrawl"/>
@@ -53,6 +65,8 @@
       <input_port name="child">Child frame for transform</input_port>
       <input_port name="parent">Parent frame for transform</input_port>
     </Condition>
+
+    <Condition ID="GoalUpdated"/>
 
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>

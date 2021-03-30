@@ -32,7 +32,6 @@ set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
   src/bt_navigator.cpp
-  src/ros_topic_logger.cpp
 )
 
 set(dependencies
@@ -82,5 +81,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-
+ament_export_libraries(${library_name})
+ament_export_dependencies(${dependencies})
 ament_package()

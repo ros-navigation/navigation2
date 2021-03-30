@@ -26,17 +26,32 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * @brief Abstract class representing an action based BT node
+ * @tparam ActionT Type of action
+ */
 template<class ActionT>
 class BtActionNode : public BT::ActionNodeBase
 {
 public:
+  /**
+   * @brief A nav2_behavior_tree::BtActionNode constructor
+   * @param xml_tag_name Name for the XML tag for this node
+   * @param action_name Action name this node creates a client for
+   * @param conf BT node configuration
+   */
   BtActionNode(
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
   : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name)
   {
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+    node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
+
+    // Get the required items from the blackboard
+    server_timeout_ =
+      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
+    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
     // Initialize the input and output messages
     goal_ = typename ActionT::Goal();
@@ -58,7 +73,10 @@ public:
   {
   }
 
-  // Create instance of an action server
+  /**
+   * @brief Create instance of an action client
+   * @param action_name Action name to create client for
+   */
   void createActionClient(const std::string & action_name)
   {
     // Now that we have the ROS node to use, create the action client for this BT action
@@ -69,8 +87,12 @@ public:
     action_client_->wait_for_action_server();
   }
 
-  // Any subclass of BtActionNode that accepts parameters must provide a providedPorts method
-  // and call providedBasicPorts in it.
+  /**
+   * @brief Any subclass of BtActionNode that accepts parameters must provide a
+   * providedPorts method and call providedBasicPorts in it.
+   * @param addition Additional ports to add to BT port list
+   * @return BT::PortsList Containing basic ports along with node-specific ports
+   */
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
     BT::PortsList basic = {
@@ -82,6 +104,10 @@ public:
     return basic;
   }
 
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing basic ports along with node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts({});
@@ -90,39 +116,54 @@ public:
   // Derived classes can override any of the following methods to hook into the
   // processing for the action: on_tick, on_wait_for_result, and on_success
 
-  // Could do dynamic checks, such as getting updates to values on the blackboard
+  /**
+   * @brief Function to perform some user-defined operation on tick
+   * Could do dynamic checks, such as getting updates to values on the blackboard
+   */
   virtual void on_tick()
   {
   }
 
-  // There can be many loop iterations per tick. Any opportunity to do something after
-  // a timeout waiting for a result that hasn't been received yet
+  /**
+   * @brief Function to perform some user-defined operation after a timeout
+   * waiting for a result that hasn't been received yet
+   */
   virtual void on_wait_for_result()
   {
   }
 
-  // Called upon successful completion of the action. A derived class can override this
-  // method to put a value on the blackboard, for example.
+  /**
+   * @brief Function to perform some user-defined operation upon successful
+   * completion of the action. Could put a value on the blackboard.
+   * @return BT::NodeStatus Returns SUCCESS by default, user may override return another value
+   */
   virtual BT::NodeStatus on_success()
   {
     return BT::NodeStatus::SUCCESS;
   }
 
-  // Called when a the action is aborted. By default, the node will return FAILURE.
-  // The user may override it to return another value, instead.
+  /**
+   * @brief Function to perform some user-defined operation whe the action is aborted.
+   * @return BT::NodeStatus Returns FAILURE by default, user may override return another value
+   */
   virtual BT::NodeStatus on_aborted()
   {
     return BT::NodeStatus::FAILURE;
   }
 
-  // Called when a the action is cancelled. By default, the node will return SUCCESS.
-  // The user may override it to return another value, instead.
+  /**
+   * @brief Function to perform some user-defined operation when the action is cancelled.
+   * @return BT::NodeStatus Returns SUCCESS by default, user may override return another value
+   */
   virtual BT::NodeStatus on_cancelled()
   {
     return BT::NodeStatus::SUCCESS;
   }
 
-  // The main override required by a BT action
+  /**
+   * @brief The main override required by a BT action
+   * @return BT::NodeStatus Status of tick execution
+   */
   BT::NodeStatus tick() override
   {
     // first step to be done only at the beginning of the Action
@@ -173,13 +214,15 @@ public:
     }
   }
 
-  // The other (optional) override required by a BT action. In this case, we
-  // make sure to cancel the ROS2 action if it is still running.
+  /**
+   * @brief The other (optional) override required by a BT action. In this case, we
+   * make sure to cancel the ROS2 action if it is still running.
+   */
   void halt() override
   {
     if (should_cancel_goal()) {
       auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
-      if (rclcpp::spin_until_future_complete(node_, future_cancel) !=
+      if (rclcpp::spin_until_future_complete(node_, future_cancel, server_timeout_) !=
         rclcpp::FutureReturnCode::SUCCESS)
       {
         RCLCPP_ERROR(
@@ -192,6 +235,10 @@ public:
   }
 
 protected:
+  /**
+   * @brief Function to check if current goal should be cancelled
+   * @return bool True if current goal should be cancelled, false otherwise
+   */
   bool should_cancel_goal()
   {
     // Shut the node down if it is currently running
@@ -207,7 +254,9 @@ protected:
            status == action_msgs::msg::GoalStatus::STATUS_EXECUTING;
   }
 
-
+  /**
+   * @brief Function to send new goal to action server
+   */
   void on_new_goal_received()
   {
     goal_result_available_ = false;
@@ -225,8 +274,8 @@ protected:
 
     auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
 
-    if (rclcpp::spin_until_future_complete(node_, future_goal_handle) !=
-      rclcpp::executor::FutureReturnCode::SUCCESS)
+    if (rclcpp::spin_until_future_complete(node_, future_goal_handle, server_timeout_) !=
+      rclcpp::FutureReturnCode::SUCCESS)
     {
       throw std::runtime_error("send_goal failed");
     }
@@ -237,12 +286,15 @@ protected:
     }
   }
 
+  /**
+   * @brief Function to increment recovery count on blackboard if this node wraps a recovery
+   */
   void increment_recovery_count()
   {
     int recovery_count = 0;
-    config().blackboard->get<int>("number_recoveries", recovery_count);  // NOLINT
+    config().blackboard->template get<int>("number_recoveries", recovery_count);  // NOLINT
     recovery_count += 1;
-    config().blackboard->set<int>("number_recoveries", recovery_count);  // NOLINT
+    config().blackboard->template set<int>("number_recoveries", recovery_count);  // NOLINT
   }
 
   std::string action_name_;
@@ -257,6 +309,10 @@ protected:
 
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
+
+  // The timeout value while waiting for response from a server when a
+  // new action goal is sent or canceled
+  std::chrono::milliseconds server_timeout_;
 };
 
 }  // namespace nav2_behavior_tree

@@ -42,6 +42,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <limits>
 
 #include "nav2_costmap_2d/footprint.hpp"
 

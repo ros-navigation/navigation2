@@ -83,6 +83,8 @@ public:
   virtual void activate();
   virtual void deactivate();
   virtual void reset();
+  virtual bool isClearable() {return true;}
+
   /**
    * @brief triggers the update of observations buffer
    */
@@ -151,7 +153,7 @@ protected:
     double * max_y);
 
   void updateRaytraceBounds(
-    double ox, double oy, double wx, double wy, double range,
+    double ox, double oy, double wx, double wy, double max_range, double min_range,
     double * min_x, double * min_y,
     double * max_x,
     double * max_y);
@@ -185,6 +187,7 @@ protected:
   std::vector<nav2_costmap_2d::Observation> static_marking_observations_;
 
   bool rolling_window_;
+  bool was_reset_;
   int combination_method_;
 };
 

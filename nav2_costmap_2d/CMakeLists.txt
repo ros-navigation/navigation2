@@ -22,6 +22,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(angles REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
@@ -48,6 +49,7 @@ add_library(nav2_costmap_2d_core SHARED
   src/observation_buffer.cpp
   src/clear_costmap_service.cpp
   src/footprint_collision_checker.cpp
+  plugins/costmap_filters/costmap_filter.cpp
 )
 
 # prevent pluginlib from using boost
@@ -72,6 +74,7 @@ set(dependencies
   tf2_ros
   tf2_sensor_msgs
   visualization_msgs
+  angles
 )
 
 ament_target_dependencies(nav2_costmap_2d_core
@@ -84,11 +87,23 @@ add_library(layers SHARED
   plugins/obstacle_layer.cpp
   src/observation_buffer.cpp
   plugins/voxel_layer.cpp
+  plugins/range_sensor_layer.cpp
 )
 ament_target_dependencies(layers
   ${dependencies}
 )
 target_link_libraries(layers
+  nav2_costmap_2d_core
+)
+
+add_library(filters SHARED
+  plugins/costmap_filters/keepout_filter.cpp
+  plugins/costmap_filters/speed_filter.cpp
+)
+ament_target_dependencies(filters
+  ${dependencies}
+)
+target_link_libraries(filters
   nav2_costmap_2d_core
 )
 
@@ -128,11 +143,13 @@ ament_target_dependencies(nav2_costmap_2d
 target_link_libraries(nav2_costmap_2d
   nav2_costmap_2d_core
   layers
+  filters
 )
 
 install(TARGETS
   nav2_costmap_2d_core
   layers
+  filters
   nav2_costmap_2d_client
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -166,7 +183,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(layers nav2_costmap_2d_core nav2_costmap_2d_client)
+ament_export_libraries(layers filters nav2_costmap_2d_core nav2_costmap_2d_client)
 ament_export_dependencies(${dependencies})
 pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_package()

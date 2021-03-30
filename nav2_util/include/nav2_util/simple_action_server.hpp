@@ -28,26 +28,43 @@
 namespace nav2_util
 {
 
+/**
+ * @class nav2_util::SimpleActionServer
+ * @brief An action server wrapper to make applications simpler using Actions
+ */
 template<typename ActionT, typename nodeT = rclcpp::Node>
 class SimpleActionServer
 {
 public:
   typedef std::function<void ()> ExecuteCallback;
 
+  /**
+   * @brief An constructor for SimpleActionServer
+   * @param node Ptr to node to make actions
+   * @param action_name Name of the action to call
+   * @param execute_callback Execution  callback function of Action
+   * @param server_timeout Timeout to to react to stop or preemption requests
+   */
   explicit SimpleActionServer(
     typename nodeT::SharedPtr node,
     const std::string & action_name,
     ExecuteCallback execute_callback,
-    bool autostart = true,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500))
   : SimpleActionServer(
       node->get_node_base_interface(),
       node->get_node_clock_interface(),
       node->get_node_logging_interface(),
       node->get_node_waitables_interface(),
-      action_name, execute_callback, autostart, server_timeout)
+      action_name, execute_callback, server_timeout)
   {}
 
+  /**
+   * @brief An constructor for SimpleActionServer
+   * @param <node interfaces> Abstract node interfaces to make actions
+   * @param action_name Name of the action to call
+   * @param execute_callback Execution  callback function of Action
+   * @param server_timeout Timeout to to react to stop or preemption requests
+   */
   explicit SimpleActionServer(
     rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
     rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface,
@@ -55,7 +72,6 @@ public:
     rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface,
     const std::string & action_name,
     ExecuteCallback execute_callback,
-    bool autostart = true,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500))
   : node_base_interface_(node_base_interface),
     node_clock_interface_(node_clock_interface),
@@ -65,12 +81,7 @@ public:
     execute_callback_(execute_callback),
     server_timeout_(server_timeout)
   {
-    if (autostart) {
-      server_active_ = true;
-    }
-
     using namespace std::placeholders;  // NOLINT
-
     action_server_ = rclcpp_action::create_server<ActionT>(
       node_base_interface_,
       node_clock_interface_,
@@ -82,6 +93,12 @@ public:
       std::bind(&SimpleActionServer::handle_accepted, this, _1));
   }
 
+  /**
+   * @brief handle the goal requested: accept or reject. This implementation always accepts.
+   * @param uuid Goal ID
+   * @param Goal A shared pointer to the specific goal
+   * @return GoalResponse response of the goal processed
+   */
   rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID & /*uuid*/,
     std::shared_ptr<const typename ActionT::Goal>/*goal*/)
@@ -96,6 +113,12 @@ public:
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
   }
 
+  /**
+   * @brief Accepts cancellation requests of action server.
+   * @param uuid Goal ID
+   * @param Goal A server goal handle to cancel
+   * @return CancelResponse response of the goal cancelled
+   */
   rclcpp_action::CancelResponse handle_cancel(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>/*handle*/)
   {
@@ -104,6 +127,10 @@ public:
     return rclcpp_action::CancelResponse::ACCEPT;
   }
 
+  /**
+   * @brief Handles accepted goals and adds to preempted queue to switch to
+   * @param Goal A server goal handle to cancel
+   */
   void handle_accepted(const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle)
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
@@ -136,6 +163,9 @@ public:
     }
   }
 
+  /**
+   * @brief Computed background work and processes stop requests
+   */
   void work()
   {
     while (rclcpp::ok() && !stop_execution_ && is_active(current_handle_)) {
@@ -175,6 +205,9 @@ public:
     debug_msg("Worker thread done.");
   }
 
+  /**
+   * @brief Active action server
+   */
   void activate()
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
@@ -182,6 +215,9 @@ public:
     stop_execution_ = false;
   }
 
+  /**
+   * @brief Deactive action server
+   */
   void deactivate()
   {
     debug_msg("Deactivating...");
@@ -215,6 +251,10 @@ public:
     debug_msg("Deactivation completed.");
   }
 
+  /**
+   * @brief Whether the action server is munching on a goal
+   * @return bool If its running or not
+   */
   bool is_running()
   {
     return execution_future_.valid() &&
@@ -222,18 +262,30 @@ public:
            std::future_status::timeout);
   }
 
+  /**
+   * @brief Whether the action server is active or not
+   * @return bool If its active or not
+   */
   bool is_server_active()
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
     return server_active_;
   }
 
+  /**
+   * @brief Whether the action server has been asked to be preempted with a new goal
+   * @return bool If there's a preemption request or not
+   */
   bool is_preempt_requested() const
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
     return preempt_requested_;
   }
 
+  /**
+   * @brief Accept pending goals
+   * @return Goal Ptr to the  goal that's going to be accepted
+   */
   const std::shared_ptr<const typename ActionT::Goal> accept_pending_goal()
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
@@ -257,6 +309,10 @@ public:
     return current_handle_->get_goal();
   }
 
+  /**
+   * @brief Get the current goal object
+   * @return Goal Ptr to the  goal that's being processed currently
+   */
   const std::shared_ptr<const typename ActionT::Goal> get_current_goal() const
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
@@ -269,6 +325,10 @@ public:
     return current_handle_->get_goal();
   }
 
+  /**
+   * @brief Whether or not a cancel command has come in
+   * @return bool Whether a cancel command has been requested or not
+   */
   bool is_cancel_requested() const
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
@@ -287,6 +347,10 @@ public:
     return current_handle_->is_canceling();
   }
 
+  /**
+   * @brief Terminate all pending and active actions
+   * @param result A result object to send to the terminated actions
+   */
   void terminate_all(
     typename std::shared_ptr<typename ActionT::Result> result =
     std::make_shared<typename ActionT::Result>())
@@ -297,6 +361,10 @@ public:
     preempt_requested_ = false;
   }
 
+  /**
+   * @brief Terminate the active action
+   * @param result A result object to send to the terminated action
+   */
   void terminate_current(
     typename std::shared_ptr<typename ActionT::Result> result =
     std::make_shared<typename ActionT::Result>())
@@ -305,6 +373,10 @@ public:
     terminate(current_handle_, result);
   }
 
+  /**
+   * @brief Return success of the active action
+   * @param result A result object to send to the terminated actions
+   */
   void succeeded_current(
     typename std::shared_ptr<typename ActionT::Result> result =
     std::make_shared<typename ActionT::Result>())
@@ -318,6 +390,10 @@ public:
     }
   }
 
+  /**
+   * @brief Publish feedback to the action server clients
+   * @param feedback A feedback object to send to the clients
+   */
   void publish_feedback(typename std::shared_ptr<typename ActionT::Feedback> feedback)
   {
     if (!is_active(current_handle_)) {
@@ -350,17 +426,30 @@ protected:
 
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
 
+  /**
+   * @brief Generate an empty result object for an action type
+   */
   constexpr auto empty_result() const
   {
     return std::make_shared<typename ActionT::Result>();
   }
 
+  /**
+   * @brief Whether a given goal handle is currently active
+   * @param handle Goal handle to check
+   * @return Whether this goal handle is active
+   */
   constexpr bool is_active(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle) const
   {
     return handle != nullptr && handle->is_active();
   }
 
+  /**
+   * @brief Terminate a particular action with a result
+   * @param handle goal handle to terminate
+   * @param the Results object to terminate the action with
+   */
   void terminate(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle,
     typename std::shared_ptr<typename ActionT::Result> result =
@@ -380,6 +469,9 @@ protected:
     }
   }
 
+  /**
+   * @brief Info logging
+   */
   void info_msg(const std::string & msg) const
   {
     RCLCPP_INFO(
@@ -387,6 +479,9 @@ protected:
       "[%s] [ActionServer] %s", action_name_.c_str(), msg.c_str());
   }
 
+  /**
+   * @brief Debug logging
+   */
   void debug_msg(const std::string & msg) const
   {
     RCLCPP_DEBUG(
@@ -394,6 +489,9 @@ protected:
       "[%s] [ActionServer] %s", action_name_.c_str(), msg.c_str());
   }
 
+  /**
+   * @brief Error logging
+   */
   void error_msg(const std::string & msg) const
   {
     RCLCPP_ERROR(
@@ -401,6 +499,9 @@ protected:
       "[%s] [ActionServer] %s", action_name_.c_str(), msg.c_str());
   }
 
+  /**
+   * @brief Warn logging
+   */
   void warn_msg(const std::string & msg) const
   {
     RCLCPP_WARN(

@@ -37,7 +37,10 @@
 
 #include <vector>
 #include <string>
+#include <chrono>
 #include "dwb_core/trajectory_critic.hpp"
+
+using namespace std::chrono_literals;  // NOLINT
 
 namespace dwb_critics
 {
@@ -80,7 +83,7 @@ class OscillationCritic : public dwb_core::TrajectoryCritic
 {
 public:
   OscillationCritic()
-  : oscillation_reset_time_(0) {}
+  : oscillation_reset_time_(0s) {}
   void onInit() override;
   bool prepare(
     const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
@@ -152,6 +155,7 @@ private:
   geometry_msgs::msg::Pose2D pose_, prev_stationary_pose_;
   // Saved timestamp
   rclcpp::Time prev_reset_time_;
+  rclcpp::Clock::SharedPtr clock_;
 };
 
 }  // namespace dwb_critics

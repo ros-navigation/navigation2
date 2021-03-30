@@ -157,7 +157,7 @@ protected:
     auto future_goal = client_->async_send_goal(goal);
 
     if (rclcpp::spin_until_future_complete(node_lifecycle_, future_goal) !=
-      rclcpp::executor::FutureReturnCode::SUCCESS)
+      rclcpp::FutureReturnCode::SUCCESS)
     {
       std::cout << "failed sending goal" << std::endl;
       // failed sending the goal
@@ -229,6 +229,27 @@ TEST_F(RecoveryTest, testingSequentialFailures)
 {
   ASSERT_TRUE(sendCommand("Testing failure on run"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
+  SUCCEED();
+}
+
+TEST_F(RecoveryTest, testingTotalElapsedTimeIsGratherThanZeroIfStarted)
+{
+  ASSERT_TRUE(sendCommand("Testing success"));
+  EXPECT_GT(getResult().result->total_elapsed_time.sec, 0.0);
+  SUCCEED();
+}
+
+TEST_F(RecoveryTest, testingTotalElapsedTimeIsZeroIfFailureOnInit)
+{
+  ASSERT_TRUE(sendCommand("Testing failure on init"));
+  EXPECT_EQ(getResult().result->total_elapsed_time.sec, 0.0);
+  SUCCEED();
+}
+
+TEST_F(RecoveryTest, testingTotalElapsedTimeIsZeroIfFailureOnRun)
+{
+  ASSERT_TRUE(sendCommand("Testing failure on run"));
+  EXPECT_EQ(getResult().result->total_elapsed_time.sec, 0.0);
   SUCCEED();
 }
 

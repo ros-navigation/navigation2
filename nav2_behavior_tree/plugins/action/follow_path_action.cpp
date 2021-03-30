@@ -12,59 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__FOLLOW_PATH_ACTION_HPP_
-#define NAV2_BEHAVIOR_TREE__FOLLOW_PATH_ACTION_HPP_
-
 #include <memory>
 #include <string>
 
-#include "nav2_msgs/action/follow_path.hpp"
-#include "nav2_behavior_tree/bt_action_node.hpp"
+#include "nav2_behavior_tree/plugins/action/follow_path_action.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
+FollowPathAction::FollowPathAction(
+  const std::string & xml_tag_name,
+  const std::string & action_name,
+  const BT::NodeConfiguration & conf)
+: BtActionNode<nav2_msgs::action::FollowPath>(xml_tag_name, action_name, conf)
 {
-public:
-  FollowPathAction(
-    const std::string & xml_tag_name,
-    const std::string & action_name,
-    const BT::NodeConfiguration & conf)
-  : BtActionNode<nav2_msgs::action::FollowPath>(xml_tag_name, action_name, conf)
-  {
-    config().blackboard->set("path_updated", false);
-  }
+}
 
-  void on_tick() override
-  {
-    getInput("path", goal_.path);
-    getInput("controller_id", goal_.controller_id);
-  }
+void FollowPathAction::on_tick()
+{
+  getInput("path", goal_.path);
+  getInput("controller_id", goal_.controller_id);
+}
 
-  void on_wait_for_result() override
-  {
-    // Check if the goal has been updated
-    if (config().blackboard->get<bool>("path_updated")) {
-      // Reset the flag in the blackboard
-      config().blackboard->set("path_updated", false);
+void FollowPathAction::on_wait_for_result()
+{
+  // Grab the new path
+  nav_msgs::msg::Path new_path;
+  getInput("path", new_path);
 
-      // Grab the new goal and set the flag so that we send the new goal to
-      // the action server on the next loop iteration
-      getInput("path", goal_.path);
-      goal_updated_ = true;
-    }
+  // Check if it is not same with the current one
+  if (goal_.path != new_path) {
+    // the action server on the next loop iteration
+    goal_.path = new_path;
+    goal_updated_ = true;
   }
-
-  static BT::PortsList providedPorts()
-  {
-    return providedBasicPorts(
-      {
-        BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
-        BT::InputPort<std::string>("controller_id", ""),
-      });
-  }
-};
+}
 
 }  // namespace nav2_behavior_tree
 
@@ -81,5 +63,3 @@ BT_REGISTER_NODES(factory)
   factory.registerBuilder<nav2_behavior_tree::FollowPathAction>(
     "FollowPath", builder);
 }
-
-#endif  // NAV2_BEHAVIOR_TREE__FOLLOW_PATH_ACTION_HPP_

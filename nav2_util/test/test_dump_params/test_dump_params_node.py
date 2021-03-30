@@ -24,8 +24,6 @@ class TestDumpParamsNode(Node):
 
     def __init__(self, name):
         Node.__init__(self, name)
-        self.declare_parameter('param_not_set',
-                               descriptor=ParameterDescriptor(description='not set'))
         self.declare_parameter('param_bool',
                                True,
                                ParameterDescriptor(description='boolean', read_only=True))

@@ -44,7 +44,7 @@
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
-#include "nav2_costmap_2d/testing_helper.hpp"
+#include "../testing_helper.hpp"
 #include "nav2_util/node_utils.hpp"
 
 using geometry_msgs::msg::Point;
@@ -142,6 +142,12 @@ void TestNode::validatePointInflation(
 
         if (dist > inflation_radius) {
           continue;
+        }
+
+        if (dist == bin->first) {
+          // Adding to our current bin could cause a reallocation
+          // Which appears to cause the iterator to get messed up
+          dist += 0.001;
         }
 
         if (cell.x_ > 0) {
@@ -322,7 +328,7 @@ TEST_F(TestNode, testInflationAroundUnkown)
   layers.updateMap(0, 0, 0);
 
   layers.getCostmap()->setCost(4, 4, nav2_costmap_2d::NO_INFORMATION);
-  ilayer->updateCosts(*layers.getCostmap(), 0, 0, 8, 8);
+  ilayer->updateCosts(*layers.getCostmap(), 0, 0, 10, 10);
 
   validatePointInflation(4, 4, layers.getCostmap(), ilayer, inflation_radius);
 }

@@ -12,34 +12,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__CLEAR_COSTMAP_SERVICE_HPP_
-#define NAV2_BEHAVIOR_TREE__CLEAR_COSTMAP_SERVICE_HPP_
-
 #include <string>
 #include <memory>
-#include <cmath>
 
-#include "nav2_behavior_tree/bt_service_node.hpp"
-#include "nav2_msgs/srv/clear_entire_costmap.hpp"
+#include "nav2_behavior_tree/plugins/action/clear_costmap_service.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class ClearEntireCostmapService : public BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>
+ClearEntireCostmapService::ClearEntireCostmapService(
+  const std::string & service_node_name,
+  const BT::NodeConfiguration & conf)
+: BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>(service_node_name, conf)
 {
-public:
-  ClearEntireCostmapService(
-    const std::string & service_node_name,
-    const BT::NodeConfiguration & conf)
-  : BtServiceNode<nav2_msgs::srv::ClearEntireCostmap>(service_node_name, conf)
-  {
-  }
+}
 
-  void on_tick() override
-  {
-    increment_recovery_count();
-  }
-};
+void ClearEntireCostmapService::on_tick()
+{
+  increment_recovery_count();
+}
+
+ClearCostmapExceptRegionService::ClearCostmapExceptRegionService(
+  const std::string & service_node_name,
+  const BT::NodeConfiguration & conf)
+: BtServiceNode<nav2_msgs::srv::ClearCostmapExceptRegion>(service_node_name, conf)
+{
+}
+
+void ClearCostmapExceptRegionService::on_tick()
+{
+  getInput("reset_distance", request_->reset_distance);
+  increment_recovery_count();
+}
+
+ClearCostmapAroundRobotService::ClearCostmapAroundRobotService(
+  const std::string & service_node_name,
+  const BT::NodeConfiguration & conf)
+: BtServiceNode<nav2_msgs::srv::ClearCostmapAroundRobot>(service_node_name, conf)
+{
+}
+
+void ClearCostmapAroundRobotService::on_tick()
+{
+  getInput("reset_distance", request_->reset_distance);
+  increment_recovery_count();
+}
 
 }  // namespace nav2_behavior_tree
 
@@ -47,6 +64,8 @@ public:
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::ClearEntireCostmapService>("ClearEntireCostmap");
+  factory.registerNodeType<nav2_behavior_tree::ClearCostmapExceptRegionService>(
+    "ClearCostmapExceptRegion");
+  factory.registerNodeType<nav2_behavior_tree::ClearCostmapAroundRobotService>(
+    "ClearCostmapAroundRobot");
 }
-
-#endif  // NAV2_BEHAVIOR_TREE__CLEAR_COSTMAP_SERVICE_HPP_

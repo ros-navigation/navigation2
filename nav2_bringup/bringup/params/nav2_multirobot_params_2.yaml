@@ -37,6 +37,7 @@ amcl:
     z_max: 0.05
     z_rand: 0.5
     z_short: 0.05
+    scan_topic: scan
 
 amcl_map_client:
   ros__parameters:
@@ -68,11 +69,16 @@ bt_navigator:
     - nav2_rate_controller_bt_node
     - nav2_distance_controller_bt_node
     - nav2_speed_controller_bt_node
+    - nav2_truncate_path_action_bt_node
+    - nav2_goal_updater_node_bt_node
     - nav2_recovery_node_bt_node
     - nav2_pipeline_sequence_bt_node
     - nav2_transform_available_condition_bt_node
     - nav2_time_expired_condition_bt_node
     - nav2_distance_traveled_condition_bt_node
+    - nav2_single_trigger_bt_node
+    - nav2_planner_selector_bt_node
+    - nav2_controller_selector_bt_node
 
 bt_navigator_rclcpp_node:
   ros__parameters:
@@ -85,8 +91,21 @@ controller_server:
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugin: "goal_checker"
     controller_plugins: ["FollowPath"]
 
+    # Progress checker parameters
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.5
+      movement_time_allowance: 10.0
+    # Goal checker parameters
+    goal_checker:
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.25
+      yaw_goal_tolerance: 0.25
+      stateful: True
     # DWB parameters
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
@@ -145,6 +164,7 @@ local_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
+        inflation_radius: 0.55
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
@@ -153,6 +173,10 @@ local_costmap:
           max_obstacle_height: 2.0
           clearing: True
           marking: True
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
       static_layer:
         map_subscribe_transient_local: True
       always_send_full_costmap: True
@@ -176,6 +200,10 @@ global_costmap:
           max_obstacle_height: 2.0
           clearing: True
           marking: True
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
       static_layer:
         map_subscribe_transient_local: True
       always_send_full_costmap: True
@@ -191,6 +219,7 @@ map_server:
   ros__parameters:
     use_sim_time: True
     yaml_filename: "turtlebot3_world.yaml"
+    save_map_timeout: 5.0
 
 planner_server:
   ros__parameters:

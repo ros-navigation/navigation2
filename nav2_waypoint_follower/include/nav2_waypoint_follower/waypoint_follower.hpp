@@ -26,6 +26,11 @@
 #include "nav2_util/simple_action_server.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
+#include "nav2_util/node_utils.hpp"
+#include "nav2_core/waypoint_task_executor.hpp"
+#include "pluginlib/class_loader.hpp"
+#include "pluginlib/class_list_macros.hpp"
+
 namespace nav2_waypoint_follower
 {
 
@@ -63,7 +68,7 @@ protected:
   /**
    * @brief Configures member variables
    *
-   * Initializes action server for "FollowWaypoints"
+   * Initializes action server for "follow_waypoints"
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
@@ -92,11 +97,6 @@ protected:
    * @return SUCCESS or FAILURE
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when in error state
-   * @param state Reference to LifeCycle node state
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Action server callbacks
@@ -111,19 +111,27 @@ protected:
 
   /**
    * @brief Action client goal response callback
-   * @param future Shared future to goalhandle
+   * @param goal Response of action server updated asynchronously
    */
-  void goalResponseCallback(
-    std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future);
+  void goalResponseCallback(const rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr & goal);
 
   // Our action server
   std::unique_ptr<ActionServer> action_server_;
   ActionClient::SharedPtr nav_to_pose_client_;
   rclcpp::Node::SharedPtr client_node_;
+  std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future_goal_handle_;
   bool stop_on_failure_;
   ActionStatus current_goal_status_;
   int loop_rate_;
   std::vector<int> failed_ids_;
+
+  // Task Execution At Waypoint Plugin
+  pluginlib::ClassLoader<nav2_core::WaypointTaskExecutor>
+  waypoint_task_executor_loader_;
+  pluginlib::UniquePtr<nav2_core::WaypointTaskExecutor>
+  waypoint_task_executor_;
+  std::string waypoint_task_executor_id_;
+  std::string waypoint_task_executor_type_;
 };
 
 }  // namespace nav2_waypoint_follower

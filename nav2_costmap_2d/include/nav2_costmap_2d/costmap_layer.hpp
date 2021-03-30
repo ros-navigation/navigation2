@@ -60,7 +60,7 @@ public:
 
   virtual void matchSize();
 
-  virtual void clearArea(int start_x, int start_y, int end_x, int end_y);
+  virtual void clearArea(int start_x, int start_y, int end_x, int end_y, bool invert);
 
   /**
    * If an external source changes values in the costmap,

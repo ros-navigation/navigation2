@@ -40,33 +40,33 @@ LifecycleManagerClient::LifecycleManagerClient(const std::string & name)
 }
 
 bool
-LifecycleManagerClient::startup()
+LifecycleManagerClient::startup(const std::chrono::nanoseconds timeout)
 {
-  return callService(ManageLifecycleNodes::Request::STARTUP);
+  return callService(ManageLifecycleNodes::Request::STARTUP, timeout);
 }
 
 bool
-LifecycleManagerClient::shutdown()
+LifecycleManagerClient::shutdown(const std::chrono::nanoseconds timeout)
 {
-  return callService(ManageLifecycleNodes::Request::SHUTDOWN);
+  return callService(ManageLifecycleNodes::Request::SHUTDOWN, timeout);
 }
 
 bool
-LifecycleManagerClient::pause()
+LifecycleManagerClient::pause(const std::chrono::nanoseconds timeout)
 {
-  return callService(ManageLifecycleNodes::Request::PAUSE);
+  return callService(ManageLifecycleNodes::Request::PAUSE, timeout);
 }
 
 bool
-LifecycleManagerClient::resume()
+LifecycleManagerClient::resume(const std::chrono::nanoseconds timeout)
 {
-  return callService(ManageLifecycleNodes::Request::RESUME);
+  return callService(ManageLifecycleNodes::Request::RESUME, timeout);
 }
 
 bool
-LifecycleManagerClient::reset()
+LifecycleManagerClient::reset(const std::chrono::nanoseconds timeout)
 {
-  return callService(ManageLifecycleNodes::Request::RESET);
+  return callService(ManageLifecycleNodes::Request::RESET, timeout);
 }
 
 SystemStatus
@@ -88,7 +88,7 @@ LifecycleManagerClient::is_active(const std::chrono::nanoseconds timeout)
   auto future_result = is_active_client_->async_send_request(request);
 
   if (rclcpp::spin_until_future_complete(node_, future_result, timeout) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     return SystemStatus::TIMEOUT;
   }
@@ -101,7 +101,7 @@ LifecycleManagerClient::is_active(const std::chrono::nanoseconds timeout)
 }
 
 bool
-LifecycleManagerClient::callService(uint8_t command)
+LifecycleManagerClient::callService(uint8_t command, const std::chrono::nanoseconds timeout)
 {
   auto request = std::make_shared<ManageLifecycleNodes::Request>();
   request->command = command;
@@ -122,7 +122,13 @@ LifecycleManagerClient::callService(uint8_t command)
     node_->get_logger(), "Sending %s request",
     manage_service_name_.c_str());
   auto future_result = manager_client_->async_send_request(request);
-  rclcpp::spin_until_future_complete(node_, future_result);
+
+  if (rclcpp::spin_until_future_complete(node_, future_result, timeout) !=
+    rclcpp::FutureReturnCode::SUCCESS)
+  {
+    return false;
+  }
+
   return future_result.get()->success;
 }
 
