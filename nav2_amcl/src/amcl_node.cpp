@@ -865,6 +865,14 @@ AmclNode::publishParticleCloud(const pf_sample_set_t * set)
   cloud_with_weights_msg->header.frame_id = global_frame_id_;
   cloud_with_weights_msg->particles.resize(set->sample_count);
 
+  for (int i = 0; i < set->sample_count; i++) {
+    cloud_with_weights_msg->particles[i].pose.position.x = set->samples[i].pose.v[0];
+    cloud_with_weights_msg->particles[i].pose.position.y = set->samples[i].pose.v[1];
+    cloud_with_weights_msg->particles[i].pose.position.z = 0;
+    cloud_with_weights_msg->particles[i].pose.orientation = orientationAroundZAxis(set->samples[i].pose.v[2]);
+    cloud_with_weights_msg->particles[i].weight = set->samples[i].weight;
+  }
+  
   particle_cloud_pub_->publish(std::move(cloud_with_weights_msg));
 }
 
