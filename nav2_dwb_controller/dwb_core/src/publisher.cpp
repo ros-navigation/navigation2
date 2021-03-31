@@ -284,10 +284,10 @@ DWBPublisher::publishCostGrid(
 
   cost_channels.push_back(std::make_pair("total_cost", total_cost));
 
-  cost_grid_pc->width = size_x * size_y;  // Should this be height and width instead ?
+  cost_grid_pc->width = size_x * size_y;
   cost_grid_pc->height = 1;
   cost_grid_pc->fields.resize(3 + cost_channels.size());  // x,y,z, + cost channels
-  cost_grid_pc->is_dense = true;  // are there no invalid points in the cloud ?
+  cost_grid_pc->is_dense = true;
   cost_grid_pc->is_bigendian = false;
 
   int offset = 0;
@@ -302,7 +302,6 @@ DWBPublisher::publishCostGrid(
 
   cost_grid_pc->fields[0].name = "x";
   cost_grid_pc->fields[1].name = "y";
-  // Does it need to have z. since it should be set to zero in this case.
   cost_grid_pc->fields[2].name = "z";
 
   cost_grid_pc->point_step = offset;
