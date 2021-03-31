@@ -229,7 +229,7 @@ protected:
   double min_y_velocity_threshold_;
   double min_theta_velocity_threshold_;
 
-  double controller_patience_;
+  double failure_tolerance_;
 
   // Whether we've published the single controller warning yet
   geometry_msgs::msg::Pose end_pose_;

@@ -55,7 +55,7 @@ ControllerServer::ControllerServer()
 
   declare_parameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
 
-  declare_parameter("controller_patience", rclcpp::ParameterValue(0.0));
+  declare_parameter("failure_tolerance", rclcpp::ParameterValue(0.0));
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -111,7 +111,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   std::string speed_limit_topic;
   get_parameter("speed_limit_topic", speed_limit_topic);
-  get_parameter("controller_patience", controller_patience_);
+  get_parameter("failure_tolerance", failure_tolerance_);
 
   costmap_ros_->on_configure(state);
 
@@ -399,7 +399,7 @@ void ControllerServer::computeAndPublishVelocity()
       goal_checker_.get());
     last_valid_cmd_time_ = now();
   } catch (nav2_core::PlannerException & e) {
-    if (controller_patience_ > 0 || controller_patience_ == -1.0) {
+    if (failure_tolerance_ > 0 || failure_tolerance_ == -1.0) {
       RCLCPP_WARN(this->get_logger(), e.what());
       cmd_vel_2d.twist.angular.x = 0;
       cmd_vel_2d.twist.angular.y = 0;
@@ -409,8 +409,8 @@ void ControllerServer::computeAndPublishVelocity()
       cmd_vel_2d.twist.linear.z = 0;
       cmd_vel_2d.header.frame_id = costmap_ros_->getBaseFrameID();
       cmd_vel_2d.header.stamp = now();
-      if ((now() - last_valid_cmd_time_).seconds() > controller_patience_ &&
-        controller_patience_ != -1.0)
+      if ((now() - last_valid_cmd_time_).seconds() > failure_tolerance_ &&
+        failure_tolerance_ != -1.0)
       {
         throw nav2_core::PlannerException("Controller patience exceeded");
       }
