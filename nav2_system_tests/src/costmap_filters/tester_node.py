@@ -269,17 +269,14 @@ class NavTester(Node):
                 return
 
     def clearingEndpointsCallback(self, msg):
-        self.info_msg('Received Endpoints')
         if len(msg.data) > 0:
             self.clearing_endpoints_received = True
 
     def voxelMarkedCallback(self, msg):
-        self.info_msg('Received Voxel Marked Points')
         if len(msg.data) > 0:
             self.voxel_marked_received = True
 
     def voxelUnknownCallback(self, msg):
-        self.info_msg('Received Voxel unknown points')
         if len(msg.data) > 0:
             self.voxel_unknown_received = True
 
@@ -309,26 +306,15 @@ class NavTester(Node):
                 return False
         return True
 
-    def wait_for_clearning_endpoints(self, timeout):
+    def wait_for_pointcloud_subscribers(self, timeout):
         start_time = time.time()
-        while not self.clearing_endpoints_received:
+        while not self.voxel_unknown_received or not self.voxel_marked_received or not self.clearing_endpoints_received:
             self.info_msg(
-                'Waiting for clearing_endpoints msg to be received ...')
-            rclpy.spin_once(self, timeout_sec=1)
-            if (time.time() - start_time) > timeout:
-                self.error_msg('Time out to waiting for clearing_endpoints')
-                return False
-        return True
-
-    def wait_for_voxel_pointcloud(self, timeout):
-        start_time = time.time()
-        while not self.voxel_unknown_received or not self.voxel_marked_received:
-            self.info_msg(
-                'Waiting for voxel_unknown_received/voxel_marked_received msg to be received ...')
+                'Waiting for voxel_marked_cloud/voxel_unknown_cloud/clearing_endpoints msg to be received ...')
             rclpy.spin_once(self, timeout_sec=1)
             if (time.time() - start_time) > timeout:
                 self.error_msg(
-                    'Time out to waiting for voxel_unknown_received/voxel_marked_received')
+                    'Time out to waiting for voxel_marked_cloud/voxel_unknown_cloud/clearing_endpoints msgs')
                 return False
         return True
 
@@ -453,14 +439,13 @@ def run_all_tests(robot_tester):
     if (result):
         robot_tester.wait_for_node_active('amcl')
         robot_tester.wait_for_initial_pose()
-        result = robot_tester.wait_for_clearning_endpoints(10)
         robot_tester.wait_for_node_active('bt_navigator')
-        result = result and robot_tester.wait_for_filter_mask(10)
+        result = robot_tester.wait_for_filter_mask(10)
     if (result):
         result = robot_tester.runNavigateAction()
 
     if robot_tester.test_type == TestType.KEEPOUT:
-        result = result and robot_tester.wait_for_voxel_pointcloud(10)
+        result = result and robot_tester.wait_for_pointcloud_subscribers(10)
 
     if (result):
         result = test_RobotMovesToGoal(robot_tester)
@@ -468,7 +453,7 @@ def run_all_tests(robot_tester):
     if (result):
         if robot_tester.test_type == TestType.KEEPOUT:
             result = robot_tester.filter_test_result
-            result = result and robot_tester.filter_test_result
+            result = result and robot_tester.cost_cloud_received
         elif robot_tester.test_type == TestType.SPEED:
             result = test_SpeedLimitsAllCorrect(robot_tester)
 

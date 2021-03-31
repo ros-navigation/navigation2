@@ -167,7 +167,6 @@ public:
    *
    * @param pc PointCloud to add channels to
    */
-  // FIXME(sachin): is there a compultion to use ros type messages as arguments ?
   virtual void addCriticVisualization(std::vector<std::pair<std::string, std::vector<float>>> &) {}
 
   std::string getName()

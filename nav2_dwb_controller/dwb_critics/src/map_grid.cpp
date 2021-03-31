@@ -183,9 +183,6 @@ void MapGridCritic::addCriticVisualization(
       i++;
     }
   }
-  /** FIXME(sachin): This works with the assumption that multiple
-   * critics doesn't have same name. Is that the fact ?
-   */
   cost_channels.push_back(grid_scores);
 }
 
