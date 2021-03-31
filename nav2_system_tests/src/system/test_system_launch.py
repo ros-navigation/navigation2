@@ -107,7 +107,7 @@ def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
     test1_action = ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
+        cmd=[os.path.join(os.getenv('TEST_DIR'), os.getenv('TESTER')),
              '-r', '-2.0', '-0.5', '0.0', '2.0'],
         name='tester_node',
         output='screen')
