@@ -124,7 +124,7 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  if (!pose_navigator_->on_activate() || !poses_navigator_->on_activate()) {
+  if (!poses_navigator_->on_activate() || !pose_navigator_->on_activate()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -139,7 +139,7 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  if (!pose_navigator_->on_deactivate() || !poses_navigator_->on_deactivate()) {
+  if (!poses_navigator_->on_deactivate() || !pose_navigator_->on_deactivate()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -158,12 +158,12 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_.reset();
   tf_.reset();
 
-  if (!pose_navigator_->on_cleanup() || !poses_navigator_->on_cleanup()) {
+  if (!poses_navigator_->on_cleanup() || !pose_navigator_->on_cleanup()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
-  pose_navigator_.reset();
   poses_navigator_.reset();
+  pose_navigator_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
   return nav2_util::CallbackReturn::SUCCESS;
