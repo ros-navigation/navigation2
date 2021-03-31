@@ -38,6 +38,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <utility>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -166,7 +167,7 @@ public:
    *
    * @param pc PointCloud to add channels to
    */
-  virtual void addCriticVisualization(sensor_msgs::msg::PointCloud &) {}
+  virtual void addCriticVisualization(std::vector<std::pair<std::string, std::vector<float>>> &) {}
 
   std::string getName()
   {
