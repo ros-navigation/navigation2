@@ -39,7 +39,7 @@ respect to a function, value = 253
 ### Cost function
 ```
 g(neigh) = g(curr) + w_euc_cost*euc_cost(curr, neigh) + w_traversal_cost*(costmap_cost(curr,neigh)/LETHAL_COST)^2
-h(neigh) = w_heuristic_cost * euc_cost(neigh, par)
+h(neigh) = w_heuristic_cost * euc_cost(neigh, goal)
 f(neigh) = g(neigh) + h(neigh)
 ```
 Because of how the program works when the 'neigh' node is to be expanded, depending
