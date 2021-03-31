@@ -308,13 +308,16 @@ class NavTester(Node):
 
     def wait_for_pointcloud_subscribers(self, timeout):
         start_time = time.time()
-        while not self.voxel_unknown_received or not self.voxel_marked_received or not self.clearing_endpoints_received:
+        while not self.voxel_unknown_received or not self.voxel_marked_received \
+                or not self.clearing_endpoints_received:
             self.info_msg(
-                'Waiting for voxel_marked_cloud/voxel_unknown_cloud/clearing_endpoints msg to be received ...')
+                'Waiting for voxel_marked_cloud/voxel_unknown_cloud/\
+                clearing_endpoints msg to be received ...')
             rclpy.spin_once(self, timeout_sec=1)
             if (time.time() - start_time) > timeout:
                 self.error_msg(
-                    'Time out to waiting for voxel_marked_cloud/voxel_unknown_cloud/clearing_endpoints msgs')
+                    'Time out to waiting for voxel_marked_cloud/voxel_unknown_cloud/\
+                    clearing_endpoints msgs')
                 return False
         return True
 
