@@ -247,9 +247,10 @@ BtNavigator::onPreempt(Action::Goal::ConstSharedPtr goal)
     RCLCPP_WARN(
       get_logger(),
       "Preemption request was rejected since the requested BT XML file is not the same "
-      "as the one that the current goal is executing. Cancel the current goal and send a new "
-      "action request if you want to use a different BT XML file. For now, continuing to "
-      "track the last goal until completion.");
+      "as the one that the current goal is executing. Preemption with a new BT is invalid "
+      "since it would require cancellation of the previous goal instead of true preemption."
+      "\nCancel the current goal and send a new action request if you want to use a "
+      "different BT XML file. For now, continuing to track the last goal until completion.");
     bt_action_server_->terminatePendingGoal();
   }
 }

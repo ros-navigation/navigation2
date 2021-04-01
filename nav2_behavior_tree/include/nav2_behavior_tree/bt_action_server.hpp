@@ -160,15 +160,6 @@ public:
   }
 
   /**
-   * @brief Wrapper function to check if preempt is requested
-   * @return bool true if preempt is requested, false otherwise
-   */
-  bool isPreemptRequested()
-  {
-    return action_server_->is_preempt_requested();
-  }
-
-  /**
    * @brief Wrapper function to publish action feedback
    */
   void publishFeedback(typename std::shared_ptr<typename ActionT::Feedback> feedback)
