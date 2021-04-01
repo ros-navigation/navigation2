@@ -42,4 +42,4 @@
 - [ ] Check that any new functions have Doxygen added
 - [ ] Check that any new features have test coverage
 - [ ] Check that any new plugins is added to the plugins page
- 
+- [ ] If BT Node, Additionally: add to BT's XML index of nodes for groot, BT package's readme table, and BT library lists

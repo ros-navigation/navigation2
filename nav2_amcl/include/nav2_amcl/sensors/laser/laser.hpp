@@ -36,8 +36,10 @@ class LaserData;
 class Laser
 {
 public:
-  /*
-   * @brief Laser constructor
+  /**
+   * @brief A Laser constructor
+   * @param max_beams number of beams to use
+   * @param map Map pointer to use
    */
   Laser(size_t max_beams, map_t * map);
 
