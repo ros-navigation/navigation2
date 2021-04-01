@@ -81,6 +81,8 @@ bt_navigator:
     - nav2_time_expired_condition_bt_node
     - nav2_distance_traveled_condition_bt_node
     - nav2_single_trigger_bt_node
+    - nav2_planner_selector_bt_node
+    - nav2_controller_selector_bt_node
 
 bt_navigator_rclcpp_node:
   ros__parameters:
@@ -150,7 +152,7 @@ controller_server:
       RotateToGoal.scale: 32.0
       RotateToGoal.slowing_factor: 5.0
       RotateToGoal.lookahead_time: -1.0
-
+      
 controller_server_rclcpp_node:
   ros__parameters:
     use_sim_time: True
