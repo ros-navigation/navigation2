@@ -27,10 +27,26 @@
 namespace nav2_amcl
 {
 
+/*
+ * @class angleutils
+ * @brief Some utilities for working with angles  
+ */
 class angleutils
 {
 public:
+  /*
+   * @brief Normalize angles
+   * @brief z Angle to normalize
+   * @return normalized angle 
+   */
   static double normalize(double z);
+
+  /*
+   * @brief Find minimum distance between 2 angles
+   * @brief a Angle 1
+   * @brief b Angle 2
+   * @return normalized angle difference 
+   */
   static double angle_diff(double a, double b);
 };
 
