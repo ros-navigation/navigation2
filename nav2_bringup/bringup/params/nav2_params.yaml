@@ -98,7 +98,6 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["precise_goal_checker", "general_goal_checker"]
-    default_goal_checker: "precise_goal_checker" 
     controller_plugins: ["FollowPath"]
 
     # Progress checker parameters
