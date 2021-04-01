@@ -94,7 +94,7 @@ TEST(collision_footprint, test_footprint_at_pose_with_movement)
 
   for (unsigned int i = 40; i <= 60; ++i) {
     for (unsigned int j = 40; j <= 60; ++j) {
-      costmap_->setCost(i, j, 0);
+      costmap_->setCost(i, j, 128);
     }
   }
 
@@ -133,8 +133,7 @@ TEST(collision_footprint, test_footprint_at_pose_with_movement)
 TEST(collision_footprint, test_point_and_line_cost)
 {
   nav2_costmap_2d::Costmap2D * costmap_ = new nav2_costmap_2d::Costmap2D(
-    100, 100, 0.10000, 0, 0.0,
-    0.0);
+    100, 100, 0.10000, 0, 0.0, 128.0);
 
   costmap_->setCost(62, 50, 254);
   costmap_->setCost(39, 60, 254);
