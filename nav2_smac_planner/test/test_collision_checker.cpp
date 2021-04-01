@@ -118,7 +118,7 @@ TEST(collision_footprint, test_footprint_at_pose_with_movement)
 
   collision_checker.inCollision(50, 50, 0.0, false);
   float cost = collision_checker.getCost();
-  EXPECT_NEAR(cost, 0.0, 0.001);
+  EXPECT_NEAR(cost, 128.0, 0.001);
 
   collision_checker.inCollision(50, 49, 0.0, false);
   float up_value = collision_checker.getCost();
@@ -158,7 +158,7 @@ TEST(collision_footprint, test_point_and_line_cost)
 
   collision_checker.inCollision(50, 50, 0.0, false);
   float value = collision_checker.getCost();
-  EXPECT_NEAR(value, 0.0, 0.001);
+  EXPECT_NEAR(value, 128.0, 0.001);
 
   collision_checker.inCollision(49, 50, 0.0, false);
   float left_value = collision_checker.getCost();
