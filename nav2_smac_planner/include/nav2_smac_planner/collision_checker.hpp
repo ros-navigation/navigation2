@@ -78,6 +78,16 @@ public:
         return false;
       }
 
+      // If its inscribed, in collision, or unknown in the middle,
+      // no need to even check the footprint, its invalid
+      if (footprint_cost_ == UNKNOWN && !traverse_unknown) {
+        return true;
+      }
+
+      if (footprint_cost_ == INSCRIBED || footprint_cost_ == OCCUPIED) {
+        return true;
+      }
+
       // if possible inscribed, need to check actual footprint pose
       footprint_cost_ = footprintCostAtPose(
         wx, wy, static_cast<double>(theta), unoriented_footprint_);
