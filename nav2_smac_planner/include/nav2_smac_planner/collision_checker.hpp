@@ -69,7 +69,16 @@ public:
     costmap_->mapToWorld(static_cast<double>(x), static_cast<double>(y), wx, wy);
 
     if (!footprint_is_radius_) {
-      // if footprint, then we check for the footprint's points
+      // if footprint, then we check for the footprint's points, but first see
+      // if the robot is even potentially in an inscribed collision
+      footprint_cost_ = costmap_->getCost(
+        static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+
+      if (footprint_cost_ < POSSIBLY_INSCRIBED) {
+        return false;
+      }
+
+      // if possible inscribed, need to check actual footprint pose
       footprint_cost_ = footprintCostAtPose(
         wx, wy, static_cast<double>(theta), unoriented_footprint_);
       if (footprint_cost_ == UNKNOWN && traverse_unknown) {
