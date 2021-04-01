@@ -36,15 +36,13 @@ BtActionServer<ActionT>::BtActionServer(
   const std::vector<std::string> & plugin_lib_names,
   OnGoalReceivedCallback on_goal_received_callback,
   OnLoopCallback on_loop_callback,
-  OnPreemptCallback on_preempt_callback,
-  ShouldCancelGoalCallback should_cancel_goal_callback)
+  OnPreemptCallback on_preempt_callback)
 : action_name_(action_name),
   plugin_lib_names_(plugin_lib_names),
   node_(parent),
   on_goal_received_callback_(on_goal_received_callback),
   on_loop_callback_(on_loop_callback),
-  on_preempt_callback_(on_preempt_callback),
-  should_cancel_goal_callback_(should_cancel_goal_callback)
+  on_preempt_callback_(on_preempt_callback)
 {
   auto node = node_.lock();
   logger_ = node->get_logger();
@@ -207,13 +205,7 @@ void BtActionServer<ActionT>::executeCallback()
         RCLCPP_DEBUG(logger_, "Action server is inactive. Canceling.");
         return true;
       }
-      if (action_server_->is_cancel_requested()) {
-        return true;
-      }
-      if (should_cancel_goal_callback_) {
-        return should_cancel_goal_callback_();
-      }
-      return false;
+      return action_server_->is_cancel_requested();
     };
 
   auto on_loop = [&]() {
@@ -244,7 +236,7 @@ void BtActionServer<ActionT>::executeCallback()
 
     case nav2_behavior_tree::BtStatus::CANCELED:
       RCLCPP_INFO(logger_, "Goal canceled");
-      action_server_->terminate_current();
+      action_server_->terminate_all();
       break;
   }
 }

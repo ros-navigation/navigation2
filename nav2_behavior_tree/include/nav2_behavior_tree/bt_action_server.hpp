@@ -40,7 +40,6 @@ public:
   typedef std::function<bool (typename ActionT::Goal::ConstSharedPtr)> OnGoalReceivedCallback;
   typedef std::function<void ()> OnLoopCallback;
   typedef std::function<void (typename ActionT::Goal::ConstSharedPtr)> OnPreemptCallback;
-  typedef std::function<bool ()> ShouldCancelGoalCallback;
 
   /**
    * @brief A constructor for nav2_behavior_tree::BtActionServer class
@@ -51,8 +50,7 @@ public:
     const std::vector<std::string> & plugin_lib_names,
     OnGoalReceivedCallback on_goal_received_callback,
     OnLoopCallback on_loop_callback,
-    OnPreemptCallback on_preempt_callback = nullptr,
-    ShouldCancelGoalCallback should_cancel_goal_callback = nullptr);
+    OnPreemptCallback on_preempt_callback);
 
   /**
    * @brief A destructor for nav2_behavior_tree::BtActionServer class
@@ -133,6 +131,14 @@ public:
   const std::shared_ptr<const typename ActionT::Goal> acceptPendingGoal()
   {
     return action_server_->accept_pending_goal();
+  }
+
+  /**
+   * @brief Wrapper function to terminate pending goal if a preempt has been requested
+   */
+  void terminatePendingGoal()
+  {
+    action_server_->terminate_pending_goal();
   }
 
   /**
@@ -240,7 +246,6 @@ protected:
   OnGoalReceivedCallback on_goal_received_callback_;
   OnLoopCallback on_loop_callback_;
   OnPreemptCallback on_preempt_callback_;
-  ShouldCancelGoalCallback should_cancel_goal_callback_;
 };
 
 }  // namespace nav2_behavior_tree

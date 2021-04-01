@@ -105,8 +105,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     plugin_lib_names,
     std::bind(&BtNavigator::onGoalReceived, this, std::placeholders::_1),
     std::bind(&BtNavigator::onLoop, this),
-    std::bind(&BtNavigator::onPreempt, this, std::placeholders::_1),
-    std::bind(&BtNavigator::shouldCancelCurrentGoal, this));
+    std::bind(&BtNavigator::onPreempt, this, std::placeholders::_1));
 
   if (!bt_action_server_->on_configure()) {
     return nav2_util::CallbackReturn::FAILURE;
@@ -242,37 +241,15 @@ BtNavigator::onPreempt(Action::Goal::ConstSharedPtr goal)
     // if pending goal has an empty behavior_tree field, it requests the default BT file
     // accept the pending goal if the current goal is running the default BT file
     initializeGoalPose(bt_action_server_->acceptPendingGoal());
-  }
-}
-
-bool
-BtNavigator::shouldCancelCurrentGoal()
-{
-  if (!bt_action_server_->isPreemptRequested()) {
-    return false;
-  }
-
-  auto pending = bt_action_server_->getPendingGoal();
-
-  if (pending) {
-    // if pending goal requests the same BT as the current goal, don't cancel the current goal
-    // the old BT will be used to handle the pending goal
-    if (pending->behavior_tree == bt_action_server_->getCurrentBTFilename() ||
-      (pending->behavior_tree.empty() &&
-      bt_action_server_->getCurrentBTFilename() == bt_action_server_->getDefaultBTFilename()))
-    {
-      return false;
-    }
-
-    // if pending goal requested a different BT we'll cancel the current goal
-    RCLCPP_INFO(
+  } else {
+    RCLCPP_WARN(
       get_logger(),
-      "Goal was preempted with a different BT XML file, cancelling the previous goal.");
-    return true;
+      "Preemption request was rejected since the requested BT XML file is not the same "
+      "as the one that the current goal is executing. Cancel the current goal and send a new "
+      "action request if you want to use a different BT XML file. For now, continuing to "
+      "track the last goal until completion.");
+    bt_action_server_->terminatePendingGoal();
   }
-
-  // if there's no pending goal don't cancel the current goal
-  return false;
 }
 
 void

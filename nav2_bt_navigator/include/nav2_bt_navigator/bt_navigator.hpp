@@ -104,11 +104,6 @@ protected:
   void onPreempt(Action::Goal::ConstSharedPtr goal);
 
   /**
-   * @brief A callback that can be used to decide if the current running action should be cancelled
-   */
-  bool shouldCancelCurrentGoal();
-
-  /**
    * @brief Goal pose initialization on the blackboard
    */
   void initializeGoalPose(Action::Goal::ConstSharedPtr goal);
