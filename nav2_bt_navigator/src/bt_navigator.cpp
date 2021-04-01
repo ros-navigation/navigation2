@@ -262,7 +262,7 @@ BtNavigator::onLoop()
     feedback_msg->current_pose = current_pose;
     feedback_msg->distance_remaining = distance_remaining;
     feedback_msg->estimated_time_remaining = estimated_time_remaining;
-  } catch(...) {
+  } catch (...) {
     // Ignore if anything failed
   }
 
