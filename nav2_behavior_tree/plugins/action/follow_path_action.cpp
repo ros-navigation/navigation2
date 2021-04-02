@@ -53,7 +53,7 @@ void FollowPathAction::on_wait_for_result()
 
   if (goal_.controller_id != new_controller_id) {
     goal_.controller_id = new_controller_id;
-    goal_updated_ |= true;
+    goal_updated_ = true;
   }
 
   std::string new_goal_checker_id;
@@ -61,7 +61,7 @@ void FollowPathAction::on_wait_for_result()
 
   if (goal_.goal_checker_id != new_goal_checker_id) {
     goal_.goal_checker_id = new_goal_checker_id;
-    goal_updated_ |= true;
+    goal_updated_ = true;
   }
 }
 

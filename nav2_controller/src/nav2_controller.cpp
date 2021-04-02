@@ -317,8 +317,8 @@ bool ControllerServer::findGoalCheckerId(
       current_goal_checker = goal_checkers_.begin()->first;
     } else {
       RCLCPP_ERROR(
-        get_logger(), "FollowPath called with goal_checker name %s in parameter 'current_goal_checker', "
-        "which does not exist. Available goal checkers are %s.",
+        get_logger(), "FollowPath called with goal_checker name %s in parameter"
+        " 'current_goal_checker', which does not exist. Available goal checkers are %s.",
         c_name.c_str(), goal_checker_ids_concat_.c_str());
       return false;
     }
