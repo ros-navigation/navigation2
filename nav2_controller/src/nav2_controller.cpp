@@ -55,6 +55,8 @@ ControllerServer::ControllerServer()
 
   declare_parameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
 
+  declare_parameter("failure_tolerance", rclcpp::ParameterValue(0.0));
+
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()}, "local_costmap");
@@ -120,6 +122,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   std::string speed_limit_topic;
   get_parameter("speed_limit_topic", speed_limit_topic);
+  get_parameter("failure_tolerance", failure_tolerance_);
 
   costmap_ros_->on_configure(state);
 
@@ -356,6 +359,7 @@ void ControllerServer::computeControl()
     setPlannerPath(action_server_->get_current_goal()->path);
     progress_checker_->reset();
 
+    last_valid_cmd_time_ = now();
     rclcpp::WallRate loop_rate(controller_frequency_);
     while (rclcpp::ok()) {
       if (action_server_ == nullptr || !action_server_->is_server_active()) {
@@ -444,11 +448,35 @@ void ControllerServer::computeAndPublishVelocity()
 
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
 
-  auto cmd_vel_2d =
-    controllers_[current_controller_]->computeVelocityCommands(
-    pose,
-    nav_2d_utils::twist2Dto3D(twist),
-    goal_checkers_[current_goal_checker_].get());
+  geometry_msgs::msg::TwistStamped cmd_vel_2d;
+
+  try {
+    cmd_vel_2d =
+      controllers_[current_controller_]->computeVelocityCommands(
+      pose,
+      nav_2d_utils::twist2Dto3D(twist),
+      goal_checkers_[current_goal_checker_].get());
+    last_valid_cmd_time_ = now();
+  } catch (nav2_core::PlannerException & e) {
+    if (failure_tolerance_ > 0 || failure_tolerance_ == -1.0) {
+      RCLCPP_WARN(this->get_logger(), e.what());
+      cmd_vel_2d.twist.angular.x = 0;
+      cmd_vel_2d.twist.angular.y = 0;
+      cmd_vel_2d.twist.angular.z = 0;
+      cmd_vel_2d.twist.linear.x = 0;
+      cmd_vel_2d.twist.linear.y = 0;
+      cmd_vel_2d.twist.linear.z = 0;
+      cmd_vel_2d.header.frame_id = costmap_ros_->getBaseFrameID();
+      cmd_vel_2d.header.stamp = now();
+      if ((now() - last_valid_cmd_time_).seconds() > failure_tolerance_ &&
+        failure_tolerance_ != -1.0)
+      {
+        throw nav2_core::PlannerException("Controller patience exceeded");
+      }
+    } else {
+      throw nav2_core::PlannerException(e.what());
+    }
+  }
 
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);

@@ -108,7 +108,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     plugin_lib_names,
     std::bind(&BtNavigator::onGoalReceived, this, std::placeholders::_1),
     std::bind(&BtNavigator::onLoop, this),
-    std::bind(&BtNavigator::onPreempt, this));
+    std::bind(&BtNavigator::onPreempt, this, std::placeholders::_1));
 
   if (!bt_action_server_->on_configure()) {
     return nav2_util::CallbackReturn::FAILURE;
@@ -232,10 +232,28 @@ BtNavigator::onLoop()
 }
 
 void
-BtNavigator::onPreempt()
+BtNavigator::onPreempt(Action::Goal::ConstSharedPtr goal)
 {
   RCLCPP_INFO(get_logger(), "Received goal preemption request");
-  initializeGoalPose(bt_action_server_->acceptPendingGoal());
+
+  if (goal->behavior_tree == bt_action_server_->getCurrentBTFilename() ||
+    (goal->behavior_tree.empty() &&
+    bt_action_server_->getCurrentBTFilename() == bt_action_server_->getDefaultBTFilename()))
+  {
+    // if pending goal requests the same BT as the current goal, accept the pending goal
+    // if pending goal has an empty behavior_tree field, it requests the default BT file
+    // accept the pending goal if the current goal is running the default BT file
+    initializeGoalPose(bt_action_server_->acceptPendingGoal());
+  } else {
+    RCLCPP_WARN(
+      get_logger(),
+      "Preemption request was rejected since the requested BT XML file is not the same "
+      "as the one that the current goal is executing. Preemption with a new BT is invalid "
+      "since it would require cancellation of the previous goal instead of true preemption."
+      "\nCancel the current goal and send a new action request if you want to use a "
+      "different BT XML file. For now, continuing to track the last goal until completion.");
+    bt_action_server_->terminatePendingGoal();
+  }
 }
 
 void

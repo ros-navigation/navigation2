@@ -210,7 +210,7 @@ void BtActionServer<ActionT>::executeCallback()
 
   auto on_loop = [&]() {
       if (action_server_->is_preempt_requested() && on_preempt_callback_) {
-        on_preempt_callback_();
+        on_preempt_callback_(action_server_->get_pending_goal());
       }
       topic_logger_->flush();
       on_loop_callback_();

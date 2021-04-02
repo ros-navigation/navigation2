@@ -86,3 +86,14 @@ TEST(ServiceClient, can_ServiceClient_invoke_in_callback)
   pub_thread.join();
   ASSERT_EQ(a, 1);
 }
+
+TEST(ServiceClient, can_ServiceClient_timeout)
+{
+  rclcpp::init(0, nullptr);
+  auto node = rclcpp::Node::make_shared("test_node");
+  TestServiceClient t("bar", node);
+  rclcpp::spin_some(node);
+  bool ready = t.wait_for_service(std::chrono::milliseconds(10));
+  rclcpp::shutdown();
+  ASSERT_EQ(ready, false);
+}

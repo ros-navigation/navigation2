@@ -114,6 +114,13 @@ def generate_launch_description():
                               'params_file': new_yaml,
                               'bt_xml_file': bt_navigator_xml,
                               'autostart': 'True'}.items()),
+
+        Node(
+            package='nav2_costmap_2d',
+            executable='nav2_costmap_2d_cloud',
+            name='costmap_2d_cloud',
+            output='screen',
+            remappings=[('voxel_grid', 'local_costmap/voxel_grid')]),
     ])
 
 
