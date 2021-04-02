@@ -64,7 +64,7 @@ public:
     createActionClient(action_name_);
 
     // Give the derive class a chance to do any initialization
-    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", xml_tag_name.c_str());
+    RCLCPP_DEBUG(node_->get_logger(), "\"%s\" BtActionNode initialized", xml_tag_name.c_str());
   }
 
   BtActionNode() = delete;
@@ -83,7 +83,7 @@ public:
     action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name);
 
     // Make sure the server is actually there before continuing
-    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
+    RCLCPP_DEBUG(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
     action_client_->wait_for_action_server();
   }
 

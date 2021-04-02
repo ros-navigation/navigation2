@@ -63,6 +63,7 @@ const float UNKNOWN = 255;
 const float OCCUPIED = 254;
 const float INSCRIBED = 253;
 const float MAX_NON_OBSTACLE = 252;
+const float POSSIBLY_INSCRIBED = 128;
 const float FREE = 0;
 
 }  // namespace nav2_smac_planner
