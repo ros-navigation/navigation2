@@ -259,7 +259,6 @@ BtNavigator::onLoop()
         rclcpp::Duration::from_seconds(distance_remaining / std::abs(current_linear_speed));
     }
 
-    feedback_msg->current_pose = current_pose;
     feedback_msg->distance_remaining = distance_remaining;
     feedback_msg->estimated_time_remaining = estimated_time_remaining;
   } catch (...) {
@@ -269,6 +268,7 @@ BtNavigator::onLoop()
   int recovery_count = 0;
   blackboard->get<int>("number_recoveries", recovery_count);
   feedback_msg->number_of_recoveries = recovery_count;
+  feedback_msg->current_pose = current_pose;
   feedback_msg->navigation_time = now() - start_time_;
 
   bt_action_server_->publishFeedback(feedback_msg);
