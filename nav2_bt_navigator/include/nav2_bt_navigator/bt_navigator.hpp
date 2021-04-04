@@ -102,7 +102,7 @@ protected:
   /**
    * @brief A callback that is called when a preempt is requested
    */
-  void onPreempt();
+  void onPreempt(Action::Goal::ConstSharedPtr goal);
 
   /**
    * @brief Goal pose initialization on the blackboard

@@ -121,7 +121,6 @@ _commands:
                       . << parameters.underlay >>/install/setup.sh
                       rm -rf build install log
                       colcon build \
-                        --symlink-install \
                         --mixin << parameters.mixins >>
                     else
                       echo "Skipping Build"
@@ -206,7 +205,7 @@ _steps:
           (echo ros_entrypoint && cat) >> checksum.txt
         sha256sum $PWD/checksum.txt >> checksum.txt
         rm -rf $OVERLAY_WS/*
-        mv ~/.ccache /mnt/ramdisk/.ccache
+        mv ~/.ccache $CCACHE_DIR
   on_checkout: &on_checkout
     checkout:
       path: src/navigation2
@@ -214,6 +213,7 @@ _steps:
     run:
       name: Post Checkout
       command: |
+        cp $OVERLAY_WS/src/navigation2/.circleci/defaults.yaml $COLCON_DEFAULTS_FILE
         if ! cmp \
           $OVERLAY_WS/src/navigation2/tools/underlay.repos \
           $UNDERLAY_WS/underlay.repos >/dev/null 2>&1
@@ -273,7 +273,7 @@ _steps:
     save_to_cache:
       key: ccache
       workspace: /opt/underlay_ws
-      path: /mnt/ramdisk/.ccache
+      path: /tmp/.ccache
       when: always
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
@@ -356,10 +356,11 @@ _environments:
     ROS_WS: "/opt/ros_ws"
     UNDERLAY_WS: "/opt/underlay_ws"
     OVERLAY_WS: "/opt/overlay_ws"
-    CCACHE_DIR: "/mnt/ramdisk/.ccache"
+    CCACHE_DIR: "/tmp/.ccache"
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
-    MAKEFLAGS: "-j 1 -l 2"
+    MAKEFLAGS: "-j 2 -l 2 "
+    COLCON_DEFAULTS_FILE: "/tmp/defaults.yaml"
     RCUTILS_LOGGING_BUFFERED_STREAM: "0"
     RCUTILS_LOGGING_USE_STDOUT: "0"
     RETEST_UNTIL_PASS: "2"
@@ -451,7 +452,7 @@ workflows:
           matrix:
             parameters:
               rmw:
-                # - rmw_connext_cpp
+                - rmw_connextdds
                 - rmw_cyclonedds_cpp
                 - rmw_fastrtps_cpp
     triggers:
