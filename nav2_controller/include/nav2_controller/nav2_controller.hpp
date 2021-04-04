@@ -233,7 +233,7 @@ protected:
   geometry_msgs::msg::Pose end_pose_;
 
   // Current path
-  nav2_msgs::msg::Path current_path_;
+  nav_msgs::msg::Path current_path_;
 
 private:
   /**
