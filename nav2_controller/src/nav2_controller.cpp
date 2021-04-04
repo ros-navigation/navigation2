@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <limits>
 
 #include "nav2_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
