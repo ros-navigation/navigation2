@@ -232,6 +232,9 @@ protected:
   // Whether we've published the single controller warning yet
   geometry_msgs::msg::Pose end_pose_;
 
+  // Current path
+  nav2_msgs::msg::Path current_path_;
+
 private:
   /**
     * @brief Callback for speed limiting messages
