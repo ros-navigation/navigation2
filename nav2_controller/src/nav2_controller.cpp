@@ -396,13 +396,14 @@ void ControllerServer::computeAndPublishVelocity()
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);
 
   // Find the closest pose to current pose on global path
+  nav_msgs::msg::Path & current_path = current_path_;
   auto find_closest_pose_idx =
-    [&pose, &current_path_]() {
+    [&pose, &current_path]() {
       size_t closest_pose_idx = 0;
       double curr_min_dist = std::numeric_limits<double>::max();
-      for (size_t curr_idx = 0; curr_idx < current_path_.poses.size(); ++curr_idx) {
+      for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
         double curr_dist = nav2_util::geometry_utils::euclidean_distance(
-          pose, current_path_.poses[curr_idx]);
+          pose, current_path.poses[curr_idx]);
         if (curr_dist < curr_min_dist) {
           curr_min_dist = curr_dist;
           closest_pose_idx = curr_idx;
