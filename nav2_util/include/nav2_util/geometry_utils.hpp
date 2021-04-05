@@ -108,7 +108,6 @@ inline Iter min_by(Iter begin, Iter end, Getter getCompareVal)
 }
 
 /**
-
  * @brief Calculate the length of the provided path, starting at the provided index
  * @param path Path containing the poses that are planned
  * @param start_index Optional argument specifying the starting index for
