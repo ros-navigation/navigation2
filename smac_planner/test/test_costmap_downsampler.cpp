@@ -13,13 +13,11 @@
 // limitations under the License. Reserved.
 
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "smac_planner/costmap_downsampler.hpp"
 
@@ -35,8 +33,7 @@ TEST(CostmapDownsampler, costmap_downsample_test)
 {
   nav2_util::LifecycleNode::SharedPtr node = std::make_shared<nav2_util::LifecycleNode>(
     "CostmapDownsamplerTest");
-  smac_planner::CostmapDownsampler downsampler(node);
-  auto map_sub = nav2_costmap_2d::CostmapSubscriber(node, "unused_topic");
+  smac_planner::CostmapDownsampler downsampler;
 
   // create basic costmap
   nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
@@ -44,7 +41,7 @@ TEST(CostmapDownsampler, costmap_downsample_test)
   costmapA.setCost(5, 5, 50);
 
   // downsample it
-  downsampler.initialize("map", "unused_topic", &costmapA, 2);
+  downsampler.on_configure(node, "map", "unused_topic", &costmapA, 2);
   nav2_costmap_2d::Costmap2D * downsampledCostmapA = downsampler.downsample(2);
 
   // validate it
@@ -57,10 +54,10 @@ TEST(CostmapDownsampler, costmap_downsample_test)
   nav2_costmap_2d::Costmap2D costmapB(4, 4, 0.10, 0.0, 0.0, 0);
 
   // downsample it
-  downsampler.initialize("map", "unused_topic", &costmapB, 4);
-  downsampler.activatePublisher();
+  downsampler.on_configure(node, "map", "unused_topic", &costmapB, 4);
+  downsampler.on_activate();
   nav2_costmap_2d::Costmap2D * downsampledCostmapB = downsampler.downsample(4);
-  downsampler.deactivatePublisher();
+  downsampler.on_deactivate();
 
   // validate size
   EXPECT_EQ(downsampledCostmapB->getSizeInCellsX(), 1u);

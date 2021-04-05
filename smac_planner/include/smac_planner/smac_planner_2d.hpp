@@ -106,7 +106,8 @@ protected:
   std::unique_ptr<Smoother> _smoother;
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
-  nav2_util::LifecycleNode::SharedPtr _node;
+  rclcpp::Clock::SharedPtr _clock;
+  rclcpp::Logger _logger{rclcpp::get_logger("SmacPlanner2D")};
   std::string _global_frame, _name;
   float _tolerance;
   int _downsampling_factor;

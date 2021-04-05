@@ -54,6 +54,8 @@
       <input_port name="parent">Parent frame for transform</input_port>
     </Condition>
 
+    <Condition ID="GoalUpdated"/>
+
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
 
