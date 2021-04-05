@@ -234,11 +234,11 @@ protected:
   // Whether we've published the single controller warning yet
   geometry_msgs::msg::Pose end_pose_;
 
-  // Current path container
-  nav_msgs::msg::Path current_path_;
-
   // Last time the controller generated a valid command
   rclcpp::Time last_valid_cmd_time_;
+
+  // Current path container
+  nav_msgs::msg::Path current_path_;
 
 private:
   /**
