@@ -237,6 +237,9 @@ protected:
   // Last time the controller generated a valid command
   rclcpp::Time last_valid_cmd_time_;
 
+  // Current path container
+  nav_msgs::msg::Path current_path_;
+
 private:
   /**
     * @brief Callback for speed limiting messages

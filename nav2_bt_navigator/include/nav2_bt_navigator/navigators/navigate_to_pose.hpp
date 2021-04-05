@@ -25,6 +25,8 @@
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav_msgs/msg/path.hpp"
+#include "nav2_util/odometry_utils.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -117,6 +119,10 @@ protected:
   rclcpp_action::Client<ActionT>::SharedPtr self_client_;
 
   std::string goal_blackboard_id_;
+  std::string path_blackboard_id_;
+
+  // Odometry smoother object
+  std::unique_ptr<nav2_util::OdomSmoother> odom_smoother_;
 };
 
 }  // namespace nav2_bt_navigator
