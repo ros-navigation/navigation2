@@ -17,7 +17,7 @@
 
 #include <string>
 #include <vector>
-
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -26,7 +26,6 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav_msgs/msg/path.hpp"
 #include "nav2_util/odometry_utils.hpp"
 
 namespace nav2_bt_navigator
