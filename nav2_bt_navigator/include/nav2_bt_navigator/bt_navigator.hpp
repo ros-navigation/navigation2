@@ -23,6 +23,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "nav2_util/odometry_utils.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "tf2_ros/buffer.h"
@@ -121,6 +122,9 @@ protected:
 
   // A client that we'll use to send a command message to our own task server
   rclcpp_action::Client<Action>::SharedPtr self_client_;
+
+  // Odometry smoother object
+  std::unique_ptr<nav2_util::OdomSmoother> odom_smoother_;
 
   // Metrics for feedback
   rclcpp::Time start_time_;
