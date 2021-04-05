@@ -55,15 +55,10 @@ Iter min_by(Iter begin, Iter end, Getter getCompareVal)
 }
 
 void RegulatedPurePursuitController::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
   std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
 {
-  auto node = parent.lock();
-  if (!node) {
-    throw std::runtime_error("Unable to lock node!");
-  }
-
   costmap_ros_ = costmap_ros;
   costmap_ = costmap_ros_->getCostmap();
   tf_ = tf;
@@ -473,11 +468,6 @@ void RegulatedPurePursuitController::applyConstraints(
 void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
 {
   global_plan_ = path;
-}
-
-void RegulatedPurePursuitController::setSpeedLimit(const double & speed_limit)
-{
-  desired_linear_vel_ = speed_limit;
 }
 
 nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(

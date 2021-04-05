@@ -110,11 +110,6 @@ TEST(RegulatedPurePursuitTest, basicAPI)
   ctrl->setPlan(path);
   EXPECT_EQ(ctrl->getPlan().poses.size(), 2ul);
   EXPECT_EQ(ctrl->getPlan().poses[0].header.frame_id, std::string("fake_frame"));
-
-  // set speed limit
-  EXPECT_NE(ctrl->getSpeed(), 0.51);
-  ctrl->setSpeedLimit(0.51);
-  EXPECT_EQ(ctrl->getSpeed(), 0.51);
 }
 
 TEST(RegulatedPurePursuitTest, createCarrotMsg)

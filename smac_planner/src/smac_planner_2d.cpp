@@ -42,11 +42,10 @@ SmacPlanner2D::~SmacPlanner2D()
 }
 
 void SmacPlanner2D::configure(
-  rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
-  _node = parent;
   _logger = node->get_logger();
   _clock = node->get_clock();
   _costmap = costmap_ros->getCostmap();

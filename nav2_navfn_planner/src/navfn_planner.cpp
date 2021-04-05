@@ -90,10 +90,10 @@ NavfnPlanner::configure(
 
   // Setup callback for changes to parameters.
   parameters_client_ = std::make_shared<rclcpp::AsyncParametersClient>(
-    node->get_node_base_interface(),
-    node->get_node_topics_interface(),
-    node->get_node_graph_interface(),
-    node->get_node_services_interface());
+    node_->get_node_base_interface(),
+    node_->get_node_topics_interface(),
+    node_->get_node_graph_interface(),
+    node_->get_node_services_interface());
 
   parameter_event_sub_ = parameters_client_->on_parameter_event(
     std::bind(&NavfnPlanner::on_parameter_event_callback, this, _1));

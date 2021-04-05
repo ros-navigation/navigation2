@@ -51,7 +51,7 @@ public:
    * @param downsampling_factor Multiplier for the costmap resolution
    */
   void on_configure(
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    const nav2_util::LifecycleNode::SharedPtr & node,
     const std::string & global_frame,
     const std::string & topic_name,
     nav2_costmap_2d::Costmap2D * const costmap,

@@ -56,7 +56,7 @@ public:
    * @param costmap_ros Costmap2DROS object of environment
    */
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr & parent,
     std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros) override;
 
@@ -96,12 +96,6 @@ public:
    * @param path The global plan
    */
   void setPlan(const nav_msgs::msg::Path & path) override;
-
-  /**
-   * @brief Limits the maximum linear speed of the robot.
-   * @param speed_limit expressed in percentage from maximum robot speed.
-   */
-  void setSpeedLimit(const double & speed_limit) override;
 
 protected:
   /**
