@@ -30,7 +30,9 @@ NavigateThroughPosesNavigator::configure(
   auto node = parent_node.lock();
   node->declare_parameter("goals_blackboard_id", std::string("goals"));
   goals_blackboard_id_ = node->get_parameter("goals_blackboard_id").as_string();
-  node->declare_parameter("path_blackboard_id", std::string("path"));
+  if (!node->has_parameter("path_blackboard_id")) {
+    node->declare_parameter("path_blackboard_id", std::string("path"));
+  }
   path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
 
   // Odometry smoother object for getting current speed
