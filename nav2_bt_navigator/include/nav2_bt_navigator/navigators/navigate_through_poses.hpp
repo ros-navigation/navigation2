@@ -86,7 +86,7 @@ protected:
   /**
    * @brief A callback that is called when a preempt is requested
    */
-  void onPreempt(Action::Goal::ConstSharedPtr goal) override;
+  void onPreempt(ActionT::Goal::ConstSharedPtr goal) override;
 
   /**
    * @brief A callback that is called when a the action is completed, can fill in

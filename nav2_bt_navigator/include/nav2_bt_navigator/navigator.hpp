@@ -160,7 +160,7 @@ public:
       default_bt_xml_filename,
       std::bind(&Navigator::onGoalReceived, this, std::placeholders::_1),
       std::bind(&Navigator::onLoop, this),
-      std::bind(&Navigator::onPreempt, this),
+      std::bind(&Navigator::onPreempt, this, std::placeholders::_1),
       std::bind(&Navigator::onCompletion, this, std::placeholders::_1));
 
     bool ok = true;
@@ -273,7 +273,7 @@ protected:
   /**
    * @brief A callback that is called when a preempt is requested
    */
-  virtual void onPreempt() = 0;
+  virtual void onPreempt(typename ActionT::Goal::ConstSharedPtr goal) = 0;
 
   /**
    * @brief A callback that is called when a the action is completed, can fill in

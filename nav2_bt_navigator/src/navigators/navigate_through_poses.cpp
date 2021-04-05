@@ -112,7 +112,7 @@ NavigateThroughPosesNavigator::onLoop()
 }
 
 void
-NavigateThroughPosesNavigator::onPreempt(Action::Goal::ConstSharedPtr goal)
+NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 {
   RCLCPP_INFO(logger_, "Received goal preemption request");
 
@@ -123,10 +123,10 @@ NavigateThroughPosesNavigator::onPreempt(Action::Goal::ConstSharedPtr goal)
     // if pending goal requests the same BT as the current goal, accept the pending goal
     // if pending goal has an empty behavior_tree field, it requests the default BT file
     // accept the pending goal if the current goal is running the default BT file
-    initializeGoalPose(bt_action_server_->acceptPendingGoal());
+    initializeGoalPoses(bt_action_server_->acceptPendingGoal());
   } else {
     RCLCPP_WARN(
-      get_logger(),
+      logger_,
       "Preemption request was rejected since the requested BT XML file is not the same "
       "as the one that the current goal is executing. Preemption with a new BT is invalid "
       "since it would require cancellation of the previous goal instead of true preemption."
