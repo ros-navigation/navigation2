@@ -39,7 +39,7 @@ public:
 
   typedef std::function<bool (typename ActionT::Goal::ConstSharedPtr)> OnGoalReceivedCallback;
   typedef std::function<void ()> OnLoopCallback;
-  typedef std::function<void ()> OnPreemptCallback;
+  typedef std::function<void (typename ActionT::Goal::ConstSharedPtr)> OnPreemptCallback;
   typedef std::function<void (typename ActionT::Result::SharedPtr)> OnCompletionCallback;
 
   /**
@@ -113,6 +113,15 @@ public:
   }
 
   /**
+   * @brief Getter function for default BT XML filename
+   * @return string Containing default BT XML filename
+   */
+  std::string getDefaultBTFilename() const
+  {
+    return default_bt_xml_filename_;
+  }
+
+  /**
    * @brief Wrapper function to accept pending goal if a preempt has been requested
    * @return Shared pointer to pending action goal
    */
@@ -122,12 +131,29 @@ public:
   }
 
   /**
+   * @brief Wrapper function to terminate pending goal if a preempt has been requested
+   */
+  void terminatePendingGoal()
+  {
+    action_server_->terminate_pending_goal();
+  }
+
+  /**
    * @brief Wrapper function to get current goal
    * @return Shared pointer to current action goal
    */
   const std::shared_ptr<const typename ActionT::Goal> getCurrentGoal() const
   {
     return action_server_->get_current_goal();
+  }
+
+  /**
+   * @brief Wrapper function to get pending goal
+   * @return Shared pointer to pending action goal
+   */
+  const std::shared_ptr<const typename ActionT::Goal> getPendingGoal() const
+  {
+    return action_server_->get_pending_goal();
   }
 
   /**
@@ -148,7 +174,7 @@ public:
   }
 
   /**
-   * @brief Function to halt the current tree. It will interrupt the exectuion of RUNNING nodes
+   * @brief Function to halt the current tree. It will interrupt the execution of RUNNING nodes
    * by calling their halt() implementation (only for Async nodes that may return RUNNING)
    */
   void haltTree()

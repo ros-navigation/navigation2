@@ -25,6 +25,10 @@
 #include <queue>
 #include "nav2_amcl/map/map.hpp"
 
+/*
+ * @class CellData
+ * @brief Data about map cells
+ */
 class CellData
 {
 public:
@@ -33,9 +37,16 @@ public:
   unsigned int src_i_, src_j_;
 };
 
+/*
+ * @class CachedDistanceMap
+ * @brief Cached map with distances
+ */
 class CachedDistanceMap
 {
 public:
+  /*
+   * @brief CachedDistanceMap constructor
+   */
   CachedDistanceMap(double scale, double max_dist)
   : distances_(NULL), scale_(scale), max_dist_(max_dist)
   {
@@ -48,6 +59,10 @@ public:
       }
     }
   }
+
+  /*
+   * @brief CachedDistanceMap destructor
+   */
   ~CachedDistanceMap()
   {
     if (distances_) {
@@ -63,7 +78,9 @@ public:
   int cell_radius_;
 };
 
-
+/*
+ * @brief operator<
+ */
 bool operator<(const CellData & a, const CellData & b)
 {
   return a.map_->cells[MAP_INDEX(
@@ -71,6 +88,12 @@ bool operator<(const CellData & a, const CellData & b)
              a.j_)].occ_dist > a.map_->cells[MAP_INDEX(b.map_, b.i_, b.j_)].occ_dist;
 }
 
+/*
+ * @brief get_distance_map
+ * @param scale of cost information wrt distance
+ * @param max_dist Maximum distance to cache from occupied information
+ * @return Pointer to cached distance map
+ */
 CachedDistanceMap *
 get_distance_map(double scale, double max_dist)
 {
@@ -86,6 +109,9 @@ get_distance_map(double scale, double max_dist)
   return cdm;
 }
 
+/*
+ * @brief enqueue cell data for caching
+ */
 void enqueue(
   map_t * map, int i, int j,
   int src_i, int src_j,
@@ -119,7 +145,11 @@ void enqueue(
   marked[MAP_INDEX(map, i, j)] = 1;
 }
 
-// Update the cspace distance values
+/*
+ * @brief Update the cspace distance values
+ * @param map Map to update
+ * @param max_occ_distance Maximum distance for occpuancy interest
+ */
 void map_update_cspace(map_t * map, double max_occ_dist)
 {
   unsigned char * marked;

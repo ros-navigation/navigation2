@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
 # Copyright (c) 2018 Intel Corporation.
 # Copyright (c) 2020 Samsung Research Russia
@@ -34,11 +34,11 @@ from nav_msgs.msg import OccupancyGrid
 from nav_msgs.msg import Path
 
 import rclpy
-
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.qos import QoSProfile
+from sensor_msgs.msg import PointCloud2
 
 
 class TestType(Enum):
@@ -96,26 +96,46 @@ class NavTester(Node):
         self.goal_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
 
         transient_local_qos = QoSProfile(
-          durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
-          reliability=QoSReliabilityPolicy.RELIABLE,
-          history=QoSHistoryPolicy.KEEP_LAST,
-          depth=1)
+            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1)
 
         volatile_qos = QoSProfile(
-          durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_VOLATILE,
-          reliability=QoSReliabilityPolicy.RELIABLE,
-          history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
-          depth=1)
+            durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_VOLATILE,
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+            depth=1)
 
         self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
                                                        'amcl_pose', self.poseCallback,
                                                        transient_local_qos)
-
+        self.clearing_ep_sub = self.create_subscription(PointCloud2,
+                                                        'local_costmap/clearing_endpoints',
+                                                        self.clearingEndpointsCallback,
+                                                        transient_local_qos)
         self.test_type = test_type
         self.filter_test_result = True
+        self.clearing_endpoints_received = False
+        self.voxel_marked_received = False
+        self.voxel_unknown_received = False
+        self.cost_cloud_received = False
+
         if self.test_type == TestType.KEEPOUT:
             self.plan_sub = self.create_subscription(Path, 'plan',
                                                      self.planCallback, volatile_qos)
+            self.voxel_marked_sub = self.create_subscription(PointCloud2,
+                                                             'voxel_marked_cloud',
+                                                             self.voxelMarkedCallback,
+                                                             1)
+            self.voxel_unknown_sub = self.create_subscription(PointCloud2,
+                                                              'voxel_unknown_cloud',
+                                                              self.voxelUnknownCallback,
+                                                              1)
+            self.cost_cloud_sub = self.create_subscription(PointCloud2,
+                                                           'cost_cloud',
+                                                           self.dwbCostCloudCallback,
+                                                           1)
         elif self.test_type == TestType.SPEED:
             self.speed_it = 0
             # Expected chain of speed limits
@@ -132,7 +152,8 @@ class NavTester(Node):
         self.initial_pose_received = False
         self.initial_pose = initial_pose
         self.goal_pose = goal_pose
-        self.action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+        self.action_client = ActionClient(
+            self, NavigateToPose, 'navigate_to_pose')
 
     def info_msg(self, msg: str):
         self.get_logger().info('\033[1;37;44m' + msg + '\033[0m')
@@ -165,7 +186,8 @@ class NavTester(Node):
         # Sends a `NavToPose` action request and waits for completion
         self.info_msg("Waiting for 'NavigateToPose' action server")
         while not self.action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg("'NavigateToPose' action server not available, waiting...")
+            self.info_msg(
+                "'NavigateToPose' action server not available, waiting...")
 
         self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
         goal_msg = NavigateToPose.Goal()
@@ -208,7 +230,8 @@ class NavTester(Node):
             self.warn_msg('Filter mask was not received')
         elif self.isInKeepout(x, y):
             self.filter_test_result = False
-            self.error_msg('Pose (' + str(x) + ', ' + str(y) + ') belongs to keepout zone')
+            self.error_msg('Pose (' + str(x) + ', ' +
+                           str(y) + ') belongs to keepout zone')
             return False
         return True
 
@@ -245,6 +268,23 @@ class NavTester(Node):
                 self.error_msg('Path plan intersects with keepout zone')
                 return
 
+    def clearingEndpointsCallback(self, msg):
+        if len(msg.data) > 0:
+            self.clearing_endpoints_received = True
+
+    def voxelMarkedCallback(self, msg):
+        if len(msg.data) > 0:
+            self.voxel_marked_received = True
+
+    def voxelUnknownCallback(self, msg):
+        if len(msg.data) > 0:
+            self.voxel_unknown_received = True
+
+    def dwbCostCloudCallback(self, msg):
+        self.info_msg('Received cost_cloud points')
+        if len(msg.data) > 0:
+            self.cost_cloud_received = True
+
     def speedLimitCallback(self, msg):
         self.info_msg('Received speed limit: ' + str(msg.speed_limit))
         self.checkSpeed(self.speed_it, msg.speed_limit)
@@ -263,6 +303,21 @@ class NavTester(Node):
             rclpy.spin_once(self, timeout_sec=1)
             if (time.time() - start_time) > timeout:
                 self.error_msg('Time out to waiting filter mask')
+                return False
+        return True
+
+    def wait_for_pointcloud_subscribers(self, timeout):
+        start_time = time.time()
+        while not self.voxel_unknown_received or not self.voxel_marked_received \
+                or not self.clearing_endpoints_received:
+            self.info_msg(
+                'Waiting for voxel_marked_cloud/voxel_unknown_cloud/\
+                clearing_endpoints msg to be received ...')
+            rclpy.spin_once(self, timeout_sec=1)
+            if (time.time() - start_time) > timeout:
+                self.error_msg(
+                    'Time out to waiting for voxel_marked_cloud/voxel_unknown_cloud/\
+                    clearing_endpoints msgs')
                 return False
         return True
 
@@ -305,7 +360,8 @@ class NavTester(Node):
                 state = future.result().current_state.label
                 self.info_msg('Result of get_state: %s' % state)
             else:
-                self.error_msg('Exception while calling service: %r' % future.exception())
+                self.error_msg('Exception while calling service: %r' %
+                               future.exception())
             time.sleep(5)
 
     def shutdown(self):
@@ -313,9 +369,11 @@ class NavTester(Node):
         self.action_client.destroy()
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client = self.create_client(
+            ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(transition_service + ' service not available, waiting...')
+            self.info_msg(transition_service +
+                          ' service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -324,13 +382,16 @@ class NavTester(Node):
             self.info_msg('Shutting down navigation lifecycle manager...')
             rclpy.spin_until_future_complete(self, future)
             future.result()
-            self.info_msg('Shutting down navigation lifecycle manager complete.')
+            self.info_msg(
+                'Shutting down navigation lifecycle manager complete.')
         except Exception as e:  # noqa: B902
             self.error_msg('Service call failed %r' % (e,))
         transition_service = 'lifecycle_manager_localization/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client = self.create_client(
+            ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(transition_service + ' service not available, waiting...')
+            self.info_msg(transition_service +
+                          ' service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -339,7 +400,8 @@ class NavTester(Node):
             self.info_msg('Shutting down localization lifecycle manager...')
             rclpy.spin_until_future_complete(self, future)
             future.result()
-            self.info_msg('Shutting down localization lifecycle manager complete')
+            self.info_msg(
+                'Shutting down localization lifecycle manager complete')
         except Exception as e:  # noqa: B902
             self.error_msg('Service call failed %r' % (e,))
 
@@ -382,9 +444,11 @@ def run_all_tests(robot_tester):
         robot_tester.wait_for_initial_pose()
         robot_tester.wait_for_node_active('bt_navigator')
         result = robot_tester.wait_for_filter_mask(10)
-
     if (result):
         result = robot_tester.runNavigateAction()
+
+    if robot_tester.test_type == TestType.KEEPOUT:
+        result = result and robot_tester.wait_for_pointcloud_subscribers(10)
 
     if (result):
         result = test_RobotMovesToGoal(robot_tester)
@@ -392,6 +456,7 @@ def run_all_tests(robot_tester):
     if (result):
         if robot_tester.test_type == TestType.KEEPOUT:
             result = robot_tester.filter_test_result
+            result = result and robot_tester.cost_cloud_received
         elif robot_tester.test_type == TestType.SPEED:
             result = test_SpeedLimitsAllCorrect(robot_tester)
 
@@ -438,7 +503,8 @@ def get_tester(args):
 
 def main(argv=sys.argv[1:]):
     # The robot(s) positions from the input arguments
-    parser = argparse.ArgumentParser(description='System-level costmap filters tester node')
+    parser = argparse.ArgumentParser(
+        description='System-level costmap filters tester node')
     parser.add_argument('-t', '--type', type=str, action='store', dest='type',
                         help='Type of costmap filter being tested.')
     group = parser.add_mutually_exclusive_group(required=True)
