@@ -76,6 +76,8 @@ DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateId
   double y_prime = curr.transform.translation.y;
   double theta_prime = tf2::getYaw(curr.transform.rotation);
 
+  double trans = hypot(x_prime - x, y_prime - y);
+
   // Assume the first rotation does not exceed +/- 90 degrees. This is done to
   // account for situtations where the robot is moving backwards. If the first
   // rotation is not restricted, a robot moving backwards in a straight line
@@ -84,8 +86,10 @@ DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateId
   double rot_1 = angles::normalize_angle(atan2(y_prime - y, x_prime - x) - theta);
   if (rot_1 < -M_PI_2) {
     rot_1 += M_PI;
+    trans *= -1;    // moving backwards
   } else if (rot_1 > M_PI_2) {
     rot_1 -= M_PI;
+    trans *= -1;    // moving backwards
   }
 
   if (isnan(rot_1) || isinf(rot_1)) {
@@ -98,7 +102,6 @@ DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateId
     rot_1 = 0.0;
   }
 
-  double trans = hypot(x_prime - x, y_prime - y);
   double rot_2 = angles::normalize_angle(angles::normalize_angle(theta_prime - theta) - rot_1);
 
   return MotionComponents(rot_1, trans, rot_2);
