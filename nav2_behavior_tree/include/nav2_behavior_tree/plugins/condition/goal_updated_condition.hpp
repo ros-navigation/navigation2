@@ -16,6 +16,7 @@
 #define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GOAL_UPDATED_CONDITION_HPP_
 
 #include <string>
+#include <vector>
 
 #include "behaviortree_cpp_v3/condition_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -58,6 +59,7 @@ public:
 
 private:
   geometry_msgs::msg::PoseStamped goal_;
+  std::vector<geometry_msgs::msg::PoseStamped> goals_;
 };
 
 }  // namespace nav2_behavior_tree

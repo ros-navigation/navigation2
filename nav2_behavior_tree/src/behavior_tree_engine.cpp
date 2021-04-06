@@ -44,17 +44,24 @@ BehaviorTreeEngine::run(
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes
-  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
-    if (cancelRequested()) {
-      tree->rootNode()->halt();
-      return BtStatus::CANCELED;
+  try {
+    while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
+      if (cancelRequested()) {
+        tree->rootNode()->halt();
+        return BtStatus::CANCELED;
+      }
+
+      result = tree->tickRoot();
+
+      onLoop();
+
+      loopRate.sleep();
     }
-
-    result = tree->tickRoot();
-
-    onLoop();
-
-    loopRate.sleep();
+  } catch (const std::exception & ex) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("BehaviorTreeEngine"),
+      "Behavior tree threw exception: %s. Exiting with failure.", ex.what());
+    return BtStatus::FAILED;
   }
 
   return (result == BT::NodeStatus::SUCCESS) ? BtStatus::SUCCEEDED : BtStatus::FAILED;
@@ -92,7 +99,9 @@ BehaviorTreeEngine::addGrootMonitoring(
 void
 BehaviorTreeEngine::resetGrootMonitor()
 {
-  groot_monitor_.reset();
+  if (groot_monitor_) {
+    groot_monitor_.reset();
+  }
 }
 
 // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state

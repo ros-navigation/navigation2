@@ -35,27 +35,6 @@ using namespace nav2_costmap_2d;  // NOLINT
 namespace nav2_regulated_pure_pursuit_controller
 {
 
-/**
- * Find element in iterator with the minimum calculated value
- */
-template<typename Iter, typename Getter>
-Iter min_by(Iter begin, Iter end, Getter getCompareVal)
-{
-  if (begin == end) {
-    return end;
-  }
-  auto lowest = getCompareVal(*begin);
-  Iter lowest_it = begin;
-  for (Iter it = ++begin; it != end; ++it) {
-    auto comp = getCompareVal(*it);
-    if (comp < lowest) {
-      lowest = comp;
-      lowest_it = it;
-    }
-  }
-  return lowest_it;
-}
-
 void RegulatedPurePursuitController::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
@@ -545,7 +524,7 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
 
   // First find the closest pose on the path to the robot
   auto transformation_begin =
-    min_by(
+    nav2_util::geometry_utils::min_by(
     global_plan_.poses.begin(), global_plan_.poses.end(),
     [&robot_pose](const geometry_msgs::msg::PoseStamped & ps) {
       return euclidean_distance(robot_pose, ps);

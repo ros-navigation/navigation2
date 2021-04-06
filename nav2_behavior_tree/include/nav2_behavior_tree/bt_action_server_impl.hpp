@@ -23,8 +23,8 @@
 #include <vector>
 
 #include "nav2_msgs/action/navigate_to_pose.hpp"
-
 #include "nav2_behavior_tree/bt_action_server.hpp"
+#include "ament_index_cpp/get_package_share_directory.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -34,25 +34,34 @@ BtActionServer<ActionT>::BtActionServer(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & action_name,
   const std::vector<std::string> & plugin_lib_names,
+  const std::string & default_bt_xml_filename,
   OnGoalReceivedCallback on_goal_received_callback,
   OnLoopCallback on_loop_callback,
-  OnPreemptCallback on_preempt_callback)
+  OnPreemptCallback on_preempt_callback,
+  OnCompletionCallback on_completion_callback)
 : action_name_(action_name),
+  default_bt_xml_filename_(default_bt_xml_filename),
   plugin_lib_names_(plugin_lib_names),
   node_(parent),
   on_goal_received_callback_(on_goal_received_callback),
   on_loop_callback_(on_loop_callback),
-  on_preempt_callback_(on_preempt_callback)
+  on_preempt_callback_(on_preempt_callback),
+  on_completion_callback_(on_completion_callback)
 {
   auto node = node_.lock();
   logger_ = node->get_logger();
   clock_ = node->get_clock();
 
   // Declare this node's parameters
-  node->declare_parameter("default_bt_xml_filename", rclcpp::PARAMETER_STRING);
-  node->declare_parameter("enable_groot_monitoring", true);
-  node->declare_parameter("groot_zmq_publisher_port", 1666);
-  node->declare_parameter("groot_zmq_server_port", 1667);
+  if (!node->has_parameter("enable_groot_monitoring")) {
+    node->declare_parameter("enable_groot_monitoring", true);
+  }
+  if (!node->has_parameter("groot_zmq_publisher_port")) {
+    node->declare_parameter("groot_zmq_publisher_port", 1666);
+  }
+  if (!node->has_parameter("groot_zmq_server_port")) {
+    node->declare_parameter("groot_zmq_server_port", 1667);
+  }
 }
 
 template<class ActionT>
@@ -92,9 +101,6 @@ bool BtActionServer<ActionT>::on_configure()
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
 
-  // Get the BT filename to use from the node parameter
-  node->get_parameter("default_bt_xml_filename", default_bt_xml_filename_);
-
   // Get parameter for monitoring with Groot via ZMQ Publisher
   node->get_parameter("enable_groot_monitoring", enable_groot_monitoring_);
   node->get_parameter("groot_zmq_publisher_port", groot_zmq_publisher_port_);
@@ -133,12 +139,6 @@ bool BtActionServer<ActionT>::on_cleanup()
   bt_->haltAllActions(tree_.rootNode());
   bt_->resetGrootMonitor();
   bt_.reset();
-  return true;
-}
-
-template<class ActionT>
-bool BtActionServer<ActionT>::on_shutdown()
-{
   return true;
 }
 
@@ -196,7 +196,7 @@ void BtActionServer<ActionT>::executeCallback()
     return;
   }
 
-  auto is_canceling = [this]() {
+  auto is_canceling = [&]() {
       if (action_server_ == nullptr) {
         RCLCPP_DEBUG(logger_, "Action server unavailable. Canceling.");
         return true;
@@ -223,20 +223,25 @@ void BtActionServer<ActionT>::executeCallback()
   // note: if all the ControlNodes are implemented correctly, this is not needed.
   bt_->haltAllActions(tree_.rootNode());
 
+  // Give server an opportunity to populate the result message or simple give
+  // an indication that the action is complete.
+  auto result = std::make_shared<typename ActionT::Result>();
+  on_completion_callback_(result);
+
   switch (rc) {
     case nav2_behavior_tree::BtStatus::SUCCEEDED:
       RCLCPP_INFO(logger_, "Goal succeeded");
-      action_server_->succeeded_current();
+      action_server_->succeeded_current(result);
       break;
 
     case nav2_behavior_tree::BtStatus::FAILED:
       RCLCPP_ERROR(logger_, "Goal failed");
-      action_server_->terminate_current();
+      action_server_->terminate_current(result);
       break;
 
     case nav2_behavior_tree::BtStatus::CANCELED:
       RCLCPP_INFO(logger_, "Goal canceled");
-      action_server_->terminate_all();
+      action_server_->terminate_all(result);
       break;
   }
 }

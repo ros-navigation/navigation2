@@ -67,6 +67,8 @@ The nav2_behavior_tree package provides several navigation-specific nodes that a
 |----------|:-------------|------|
 | Backup |  Action | Invokes the BackUp ROS2 action server, which causes the robot to back up to a specific pose. This is used in nav2 Behavior Trees as a recovery behavior. The nav2_recoveries module implements the BackUp action server. |
 | ComputePathToPose |    Action   | Invokes the ComputePathToPose ROS2 action server, which is implemented by the nav2_planner module. The server address can be remapped using the `server_name` input port. |
+| ComputePathThroughPoses |    Action   | Invokes the ComputePathThroughPoses ROS2 action server, which is implemented by the nav2_planner module. The server address can be remapped using the `server_name` input port. |
+| RemovePassedGoals |    Action   | Removes `goals` from a vector of intermediary goal poses which the robot is either approaching or has passed within a tolerance of to prevent replanning to initial points. |
 | FollowPath | Action |Invokes the FollowPath ROS2 action server, which is implemented by the controller plugin modules loaded. The server address can be remapped using the `server_name` input port. |
 | GoalReached | Condition | Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, otherwise it returns FAILURE. |
 | IsStuck | Condition | Determines if the robot is not progressing towards the goal. If the robot is stuck and not progressing, the condition returns SUCCESS, otherwise it returns FAILURE. |
@@ -74,6 +76,7 @@ The nav2_behavior_tree package provides several navigation-specific nodes that a
 | GoalUpdated | Condition | Checks if the global navigation goal has changed in the blackboard. Returns failure if the goal is the same, if it changes, it returns success. |
 | IsBatteryLow | Condition | Checks if battery is low by subscribing to a sensor_msgs/BatteryState topic and checking if battery voltage/percentage is below a specified minimum value. |
 | NavigateToPose | Action | Invokes the NavigateToPose ROS2 action server, which is implemented by the bt_navigator module. |
+| NavigateThroughPoses | Action | Invokes the NavigateThroughPoses ROS2 action server, which is implemented by the bt_navigator module. |
 | RateController | Decorator | A node that throttles the tick rate for its child. The tick rate can be supplied to the node as a parameter. The node returns RUNNING when it is not ticking its child. Currently, in the navigation stack, the `RateController` is used to adjust the rate at which the `ComputePathToPose` and `GoalReached` nodes are ticked. |
 | DistanceController | Decorator | A node that controls the tick rate for its child based on the distance traveled. The distance to be traveled before replanning can be supplied to the node as a parameter. The node returns RUNNING when it is not ticking its child. Currently, in the navigation stack, the `DistanceController` is used to adjust the rate at which the `ComputePathToPose` and `GoalReached` nodes are ticked. |
 | SpeedController | Decorator | A node that controls the tick rate for its child based on the current robot speed. This decorator offers the most flexibility as the user can set the minimum/maximum tick rate which is adjusted according to the current robot speed. |
