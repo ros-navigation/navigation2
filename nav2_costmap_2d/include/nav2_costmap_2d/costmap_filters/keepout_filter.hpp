@@ -50,6 +50,11 @@
 namespace nav2_costmap_2d
 {
 
+/**
+ * @class KeepoutFilter
+ * @brief Reads in a keepout mask and marks keepout regions in the map
+ * to prevent planning or control in restricted areas
+ */
 class KeepoutFilter : public CostmapFilter
 {
 public:

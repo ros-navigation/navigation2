@@ -55,7 +55,9 @@ public:
     raytrace_min_range_(0.0)
   {
   }
-
+  /**
+   * @brief A destructor
+   */
   virtual ~Observation()
   {
     delete cloud_;

@@ -48,7 +48,12 @@
 
 namespace nav2_costmap_2d
 {
-
+/**
+ * @class SpeedFilter
+ * @brief Reads in a speed restriction mask and enables a robot to
+ * dynamically adjust speed based on pose in map to slow in dangerous
+ * areas. Done via absolute speed setting or percentage of maximum speed
+ */
 class SpeedFilter : public CostmapFilter
 {
 public:

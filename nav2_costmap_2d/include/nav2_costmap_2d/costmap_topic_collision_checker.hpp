@@ -37,7 +37,11 @@
 
 namespace nav2_costmap_2d
 {
-
+/**
+ * @class CostmapTopicCollisionChecker
+ * @brief Using a costmap via a ros topic, this object is used to
+ * find if robot poses are in collision with the costmap environment
+ */
 class CostmapTopicCollisionChecker
 {
 public:

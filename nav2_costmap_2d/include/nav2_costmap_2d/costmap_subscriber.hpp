@@ -25,7 +25,10 @@
 
 namespace nav2_costmap_2d
 {
-
+/**
+ * @class CostmapSubscriber
+ * @brief Subscribes to the costmap via a ros topic
+ */
 class CostmapSubscriber
 {
 public:

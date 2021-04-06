@@ -31,6 +31,10 @@ namespace nav2_costmap_2d
 
 class Costmap2DROS;
 
+/**
+ * @class ClearCostmapService
+ * @brief Exposes services to clear costmap objects in inclusive/exclusive regions or completely
+ */
 class ClearCostmapService
 {
 public:
