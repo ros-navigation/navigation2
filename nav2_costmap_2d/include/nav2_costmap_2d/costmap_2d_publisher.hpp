@@ -78,19 +78,34 @@ public:
    */
   ~Costmap2DPublisher();
 
+  /**
+   * @brief Configure node
+   */
   void on_configure() {}
+
+  /**
+   * @brief Activate node
+   */
   void on_activate()
   {
     costmap_pub_->on_activate();
     costmap_update_pub_->on_activate();
     costmap_raw_pub_->on_activate();
   }
+
+  /**
+   * @brief deactivate node
+   */
   void on_deactivate()
   {
     costmap_pub_->on_deactivate();
     costmap_update_pub_->on_deactivate();
     costmap_raw_pub_->on_deactivate();
   }
+
+  /**
+   * @brief Cleanup node
+   */
   void on_cleanup() {}
 
   /** @brief Include the given bounds in the changed-rectangle. */
