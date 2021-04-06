@@ -43,8 +43,8 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
     ideal_motion_components.trans_,
     ideal_motion_components.rot_2_);
   double rot_2_hat = calculateNoisyRot(
-    ideal_motion_components.trans_,
-    ideal_motion_components.rot_2_);
+    ideal_motion_components.rot_2_,
+    ideal_motion_components.trans_);
 
   double x = prev_pose.transform.translation.x;
   double y = prev_pose.transform.translation.y;
@@ -78,7 +78,7 @@ DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateId
 
   // Assume the first rotation does not exceed +/- 90 degrees. This is done to
   // account for situtations where the robot is moving backwards. If the first
-  // rotation is not restericted, a robot moving backwards in a straight line
+  // rotation is not restricted, a robot moving backwards in a straight line
   // will be modelled by a 180 rotation, followed by a translation then a 180
   // degree rotation in the oppsite
   double rot_1 = angles::normalize_angle(atan2(y_prime - y, x_prime - x) - theta);
