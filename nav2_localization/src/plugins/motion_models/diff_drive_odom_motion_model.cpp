@@ -20,7 +20,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_localization/interfaces/sample_motion_model_base.hpp"
 #include "nav2_localization/plugins/sample_motion_models/diff_drive_odom_motion_model.hpp"
-#include "nav2_localization/angle_utils.hpp"
+#include "angles/angles.h"
 #include "tf2/convert.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2/utils.h"
@@ -81,7 +81,7 @@ DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateId
   // rotation is not restericted, a robot moving backwards in a straight line
   // will be modelled by a 180 rotation, followed by a translation then a 180
   // degree rotation in the oppsite
-  double rot_1 = AngleUtils::angleDiff(atan2(y_prime - y, x_prime - x), theta);
+  double rot_1 = angles::normalize_angle(atan2(y_prime - y, x_prime - x) - theta);
   if (rot_1 < -M_PI_2) {
     rot_1 += M_PI;
   } else if (rot_1 > M_PI_2) {
@@ -99,7 +99,7 @@ DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateId
   }
 
   double trans = hypot(x_prime - x, y_prime - y);
-  double rot_2 = AngleUtils::angleDiff(AngleUtils::angleDiff(theta_prime, theta), rot_1);
+  double rot_2 = angles::normalize_angle(angles::normalize_angle(theta_prime - theta) - rot_1);
 
   return MotionComponents(rot_1, trans, rot_2);
 }
@@ -110,7 +110,7 @@ double DiffDriveOdomMotionModel::calculateNoisyRot(const double & rot, const dou
     sqrt(
       rot_rot_noise_parm_ * pow(rot, 2) +
       trans_rot_noise_parm_ * pow(trans, 2)));
-  return AngleUtils::angleDiff(rot, rot_noise_dist(*rand_num_gen_));
+  return angles::normalize_angle(rot - rot_noise_dist(*rand_num_gen_));
 }
 
 double DiffDriveOdomMotionModel::calculateNoisyTrans(

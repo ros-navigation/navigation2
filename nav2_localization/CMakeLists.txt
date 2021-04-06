@@ -37,7 +37,7 @@ set(dependencies
 
 include_directories(include)
 
-add_library(sample_motion_model SHARED src/plugins/motion_models/diff_drive_odom_motion_model.cpp src/angle_utils.cpp)
+add_library(sample_motion_model SHARED src/plugins/motion_models/diff_drive_odom_motion_model.cpp)
 ament_target_dependencies(sample_motion_model ${dependencies})
 
 add_library(matcher2d SHARED src/plugins/matchers/likelihood_field_matcher2d.cpp src/map_utils.cpp)
