@@ -54,7 +54,13 @@ namespace nav2_costmap_2d
 class CostmapFilter : public Layer
 {
 public:
+  /**
+   * @brief A constructor
+   */
   CostmapFilter();
+  /**
+   * @brief A destructor
+   */
   ~CostmapFilter();
 
   /**
@@ -69,18 +75,53 @@ public:
     return access_;
   }
 
-  /** Layer API **/
+  /**
+   * @brief Initialization process of layer on startup
+   */
   virtual void onInitialize() final;
+
+  /**
+   * @brief Update the bounds of the master costmap by this layer's update dimensions
+   * @param robot_x X pose of robot
+   * @param robot_y Y pose of robot
+   * @param robot_yaw Robot orientation
+   * @param min_x X min map coord of the window to update
+   * @param min_y Y min map coord of the window to update
+   * @param max_x X max map coord of the window to update
+   * @param max_y Y max map coord of the window to update
+   */
   virtual void updateBounds(
     double robot_x, double robot_y, double robot_yaw,
     double * min_x, double * min_y, double * max_x, double * max_y) final;
+
+  /**
+   * @brief Update the costs in the master costmap in the window
+   * @param master_grid The master costmap grid to update
+   * @param min_x X min map coord of the window to update
+   * @param min_y Y min map coord of the window to update
+   * @param max_x X max map coord of the window to update
+   * @param max_y Y max map coord of the window to update
+   */
   virtual void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j) final;
 
+  /**
+   * @brief Activate the layer
+   */
   virtual void activate() final;
+  /**
+   * @brief Deactivate the layer
+   */
   virtual void deactivate() final;
+  /**
+   * @brief Reset the layer
+   */
   virtual void reset() final;
+
+  /**
+   * @brief If clearing operations should be processed on this layer or not
+   */
   virtual bool isClearable() {return false;}
 
   /** CostmapFilter API **/

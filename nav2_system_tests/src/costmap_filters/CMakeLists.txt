@@ -9,7 +9,7 @@ ament_add_test(test_keepout_filter
     TEST_MASK=${PROJECT_SOURCE_DIR}/maps/keepout_mask.yaml
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/turtlebot3_ros2_demo.world
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
-    BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
+    BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
     ASTAR=False
 )
 
@@ -25,7 +25,7 @@ ament_add_test(test_speed_filter_global
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/turtlebot3_ros2_demo.world
     PARAMS_FILE=${CMAKE_CURRENT_SOURCE_DIR}/speed_global_params.yaml
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
-    BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
+    BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
     ASTAR=False
 )
 
@@ -41,6 +41,6 @@ ament_add_test(test_speed_filter_local
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/turtlebot3_ros2_demo.world
     PARAMS_FILE=${CMAKE_CURRENT_SOURCE_DIR}/speed_local_params.yaml
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
-    BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
+    BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
     ASTAR=False
 )

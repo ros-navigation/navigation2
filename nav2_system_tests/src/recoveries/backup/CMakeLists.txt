@@ -19,5 +19,5 @@ ament_add_test(test_backup_recovery
     TEST_EXECUTABLE=$<TARGET_FILE:${test_backup_recovery_exec}>
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/turtlebot3_ros2_demo.world
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
-    BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
+    BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
 )

@@ -25,24 +25,45 @@
 
 namespace nav2_costmap_2d
 {
-
+/**
+ * @class CostmapSubscriber
+ * @brief Subscribes to the costmap via a ros topic
+ */
 class CostmapSubscriber
 {
 public:
+  /**
+   * @brief A constructor
+   */
   CostmapSubscriber(
     const nav2_util::LifecycleNode::WeakPtr & parent,
     const std::string & topic_name);
 
+  /**
+   * @brief A constructor
+   */
   CostmapSubscriber(
     const rclcpp::Node::WeakPtr & parent,
     const std::string & topic_name);
 
+  /**
+   * @brief A destructor
+   */
   ~CostmapSubscriber() {}
 
+  /**
+   * @brief A Get the costmap from topic
+   */
   std::shared_ptr<Costmap2D> getCostmap();
 
 protected:
+  /**
+   * @brief Convert an occ grid message into a costmap object
+   */
   void toCostmap2D();
+  /**
+   * @brief Callback for the costmap topic
+   */
   void costmapCallback(const nav2_msgs::msg::Costmap::SharedPtr msg);
 
   std::shared_ptr<Costmap2D> costmap_;

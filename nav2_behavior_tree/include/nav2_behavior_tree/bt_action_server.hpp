@@ -40,6 +40,7 @@ public:
   typedef std::function<bool (typename ActionT::Goal::ConstSharedPtr)> OnGoalReceivedCallback;
   typedef std::function<void ()> OnLoopCallback;
   typedef std::function<void (typename ActionT::Goal::ConstSharedPtr)> OnPreemptCallback;
+  typedef std::function<void (typename ActionT::Result::SharedPtr)> OnCompletionCallback;
 
   /**
    * @brief A constructor for nav2_behavior_tree::BtActionServer class
@@ -48,9 +49,11 @@ public:
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & action_name,
     const std::vector<std::string> & plugin_lib_names,
+    const std::string & default_bt_xml_filename,
     OnGoalReceivedCallback on_goal_received_callback,
     OnLoopCallback on_loop_callback,
-    OnPreemptCallback on_preempt_callback);
+    OnPreemptCallback on_preempt_callback,
+    OnCompletionCallback on_completion_callback);
 
   /**
    * @brief A destructor for nav2_behavior_tree::BtActionServer class
@@ -82,12 +85,6 @@ public:
    * @return bool true on SUCCESS and false on FAILURE
    */
   bool on_cleanup();
-
-  /**
-   * @brief Called when in shutdown state
-   * @return bool true on SUCCESS and false on FAILURE
-   */
-  bool on_shutdown();
 
   /**
    * @brief Replace current BT with another one
@@ -237,6 +234,7 @@ protected:
   OnGoalReceivedCallback on_goal_received_callback_;
   OnLoopCallback on_loop_callback_;
   OnPreemptCallback on_preempt_callback_;
+  OnCompletionCallback on_completion_callback_;
 };
 
 }  // namespace nav2_behavior_tree
