@@ -125,9 +125,7 @@ double DiffDriveOdomMotionModel::calculateNoisyTrans(
   return trans - trans_noise_dist(*rand_num_gen_);
 }
 
-void DiffDriveOdomMotionModel::configure(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
-  const unsigned int & rand_num_gen_seed)
+void DiffDriveOdomMotionModel::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
 {
   node_ = node;
 
@@ -142,7 +140,8 @@ void DiffDriveOdomMotionModel::configure(
   node_->declare_parameter("trans_trans_noise", 0.2);
   node_->declare_parameter("rot_trans_noise", 0.2);
 
-  rand_num_gen_ = std::make_shared<std::mt19937>(rand_num_gen_seed);
+  std::random_device rand_device;
+  rand_num_gen_ = std::make_shared<std::mt19937>(rand_device());
 }
 
 void DiffDriveOdomMotionModel::activate()

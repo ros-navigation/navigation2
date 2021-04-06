@@ -46,11 +46,8 @@ public:
   /**
    * @brief Configures the model, during the "Configuring" state of the parent lifecycle node.
    * @param node Pointer to the parent lifecycle node.
-   * @param rand_num_gen_seed Seed for the random number generator used for sampling
    */
-  virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
-    const unsigned int & rand_num_gen_seed) = 0;
+  virtual void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) = 0;
 
   /**
    * @brief Activates the model, during the "Activating" state of the parent lifecycle node.

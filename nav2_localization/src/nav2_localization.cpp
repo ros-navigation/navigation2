@@ -216,8 +216,7 @@ LocalizationServer::initPlugins()
     exit(-1);
   }
 
-  std::random_device rand_device;
-  sample_motion_model_->configure(node, rand_device());
+  sample_motion_model_->configure(node);
 
   try {
     matcher2d_type_ = nav2_util::get_plugin_type_param(node, matcher2d_id_);

@@ -33,9 +33,7 @@ public:
     const geometry_msgs::msg::TransformStamped & curr_odom,
     const geometry_msgs::msg::TransformStamped & prev_pose) override;
 
-  void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
-    const unsigned int & rand_num_gen_seed) override;
+  void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) override;
   void activate() override;
   void deactivate() override;
   void cleanup() override;
