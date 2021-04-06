@@ -57,44 +57,44 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   geometry_msgs::msg::TransformStamped curr = createTransformStampedMsg(2.0, 2.0, 0.0);
   MotionComponents motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 0.0, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, 0.0, epsilon);
+  EXPECT_NEAR(motion_components.rot_1_, 0.0, epsilon);
+  EXPECT_NEAR(motion_components.trans_, 0.0, epsilon);
+  EXPECT_NEAR(motion_components.rot_2_, 0.0, epsilon);
 
   // forward motion
   prev = createTransformStampedMsg(0.0, 2.0, 0.0);
   curr = createTransformStampedMsg(2.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 2.0, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, 0.0, epsilon);
+  EXPECT_NEAR(motion_components.rot_1_, 0.0, epsilon);
+  EXPECT_NEAR(motion_components.trans_, 2.0, epsilon);
+  EXPECT_NEAR(motion_components.rot_2_, 0.0, epsilon);
 
   // backward motion
   prev = createTransformStampedMsg(2.0, 2.0, 0.0);
   curr = createTransformStampedMsg(0.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 2.0, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, 0.0, epsilon);
+  EXPECT_NEAR(motion_components.rot_1_, 0.0, epsilon);
+  EXPECT_NEAR(motion_components.trans_, 2.0, epsilon);
+  EXPECT_NEAR(motion_components.rot_2_, 0.0, epsilon);
 
   // side motion
   prev = createTransformStampedMsg(0.0, 0.0, 0.0);
   curr = createTransformStampedMsg(0.0, -2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, -M_PI_2, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 2.0, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, M_PI_2, epsilon);
+  EXPECT_NEAR(motion_components.rot_1_, -M_PI_2, epsilon);
+  EXPECT_NEAR(motion_components.trans_, 2.0, epsilon);
+  EXPECT_NEAR(motion_components.rot_2_, M_PI_2, epsilon);
 
   prev = createTransformStampedMsg(0.0, 0.0, 0.0);
   curr = createTransformStampedMsg(0.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, M_PI_2, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 2.0, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, -M_PI_2, epsilon);
+  EXPECT_NEAR(motion_components.rot_1_, M_PI_2, epsilon);
+  EXPECT_NEAR(motion_components.trans_, 2.0, epsilon);
+  EXPECT_NEAR(motion_components.rot_2_, -M_PI_2, epsilon);
 
   // on-spot rotation
   // counter clockwise
@@ -102,18 +102,18 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   curr = createTransformStampedMsg(2.0, 2.0, M_PI_2);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 0.0, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, M_PI_2, epsilon);
+  EXPECT_NEAR(motion_components.rot_1_, 0.0, epsilon);
+  EXPECT_NEAR(motion_components.trans_, 0.0, epsilon);
+  EXPECT_NEAR(motion_components.rot_2_, M_PI_2, epsilon);
 
   // clockwise
   prev = createTransformStampedMsg(2.0, 2.0, 0.0);
   curr = createTransformStampedMsg(2.0, 2.0, -M_PI_2);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, 0.0, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 0.0, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, -M_PI_2, epsilon);
+  EXPECT_NEAR(motion_components.rot_1_, 0.0, epsilon);
+  EXPECT_NEAR(motion_components.trans_, 0.0, epsilon);
+  EXPECT_NEAR(motion_components.rot_2_, -M_PI_2, epsilon);
 
   // diagonal motion
   // top left
@@ -121,36 +121,36 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   curr = createTransformStampedMsg(2.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, M_PI_4, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 2.8284, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, -M_PI_4, epsilon);
+  EXPECT_NEAR(motion_components.rot_1_, M_PI_4, epsilon);
+  EXPECT_NEAR(motion_components.trans_, 2.8284, epsilon);
+  EXPECT_NEAR(motion_components.rot_2_, -M_PI_4, epsilon);
 
   // bottom left
   prev = createTransformStampedMsg(0.0, 0.0, 0.0);
   curr = createTransformStampedMsg(-2.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, -M_PI_4, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 2.8284, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, M_PI_4, epsilon);
+  EXPECT_NEAR(motion_components.rot_1_, -M_PI_4, epsilon);
+  EXPECT_NEAR(motion_components.trans_, 2.8284, epsilon);
+  EXPECT_NEAR(motion_components.rot_2_, M_PI_4, epsilon);
 
   // top right
   prev = createTransformStampedMsg(0.0, 0.0, 0.0);
   curr = createTransformStampedMsg(2.0, -2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, -M_PI_4, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 2.8284, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, M_PI_4, epsilon);
+  EXPECT_NEAR(motion_components.rot_1_, -M_PI_4, epsilon);
+  EXPECT_NEAR(motion_components.trans_, 2.8284, epsilon);
+  EXPECT_NEAR(motion_components.rot_2_, M_PI_4, epsilon);
 
   // bottom right
   prev = createTransformStampedMsg(0.0, 0.0, 0.0);
   curr = createTransformStampedMsg(-2.0, -2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
-  ASSERT_NEAR(motion_components.rot_1_, M_PI_4, epsilon);
-  ASSERT_NEAR(motion_components.trans_, 2.8284, epsilon);
-  ASSERT_NEAR(motion_components.rot_2_, -M_PI_4, epsilon);
+  EXPECT_NEAR(motion_components.rot_1_, M_PI_4, epsilon);
+  EXPECT_NEAR(motion_components.trans_, 2.8284, epsilon);
+  EXPECT_NEAR(motion_components.rot_2_, -M_PI_4, epsilon);
 }
 
 TEST_F(DiffDriveTestFixture, NoisyRotTest)
@@ -163,7 +163,7 @@ TEST_F(DiffDriveTestFixture, NoisyRotTest)
   double rot = M_PI_4;
   double trans = 2.0;
   double noisy_rot = calculateNoisyRot(rot, trans);
-  ASSERT_NEAR(rot, noisy_rot, epsilon);
+  EXPECT_NEAR(rot, noisy_rot, epsilon);
 
   // rot/rot noise only
   rot_rot_noise_parm_ = 0.2;
@@ -175,12 +175,12 @@ TEST_F(DiffDriveTestFixture, NoisyRotTest)
   noisy_rot = calculateNoisyRot(rot, trans);
   // distribution variance = rot_rot_noise_parm_*rot^2 = 0.2*(pi/4)^2 = 0.1234
   // output of the distribution given the rand number generator seeded with 0: 0.3944
-  ASSERT_NEAR(noisy_rot, rot - 0.3944, epsilon);
+  EXPECT_NEAR(noisy_rot, rot - 0.3944, epsilon);
   // changing trans should have no impact
   trans = 5.0;
   rand_num_gen_ = std::make_shared<std::mt19937>(0);
   noisy_rot = calculateNoisyRot(rot, trans);
-  ASSERT_NEAR(noisy_rot, rot - 0.3944, epsilon);
+  EXPECT_NEAR(noisy_rot, rot - 0.3944, epsilon);
 
   // rot/trans noise only
   rot_rot_noise_parm_ = 0.0;
@@ -192,12 +192,12 @@ TEST_F(DiffDriveTestFixture, NoisyRotTest)
   noisy_rot = calculateNoisyRot(rot, trans);
   // distribution variance = trans_rot_noise_parm_*trans^2 = 0.2*2.0^2 = 0.8
   // output of the distribution given the rand number generator seeded with 0: 1.0043
-  ASSERT_NEAR(noisy_rot, rot - 1.0043, epsilon);
+  EXPECT_NEAR(noisy_rot, rot - 1.0043, epsilon);
   // changing rot should have no impact
   rot = 0.0;
   rand_num_gen_ = std::make_shared<std::mt19937>(0);
   noisy_rot = calculateNoisyRot(rot, trans);
-  ASSERT_NEAR(noisy_rot, rot - 1.0043, epsilon);
+  EXPECT_NEAR(noisy_rot, rot - 1.0043, epsilon);
 
   // both noise parameters set
   rot_rot_noise_parm_ = 0.2;
@@ -210,7 +210,7 @@ TEST_F(DiffDriveTestFixture, NoisyRotTest)
   noisy_rot = calculateNoisyRot(rot, trans);
   // distribution variance = rot_rot_noise_parm_*rot^2 = 0.2*(pi/4)^2 = 0.1234
   // output of the distribution given the rand number generator seeded with 0: 0.3944
-  ASSERT_NEAR(noisy_rot, rot - 0.3944, epsilon);
+  EXPECT_NEAR(noisy_rot, rot - 0.3944, epsilon);
 
   // trans only
   rot = 0.0;
@@ -219,14 +219,14 @@ TEST_F(DiffDriveTestFixture, NoisyRotTest)
   noisy_rot = calculateNoisyRot(rot, trans);
   // distribution variance = trans_rot_noise_parm_*trans^2 = 0.3*(2.0)^2 = 1.2
   // output of the distribution given the rand number generator seeded with 0: 1.2230
-  ASSERT_NEAR(noisy_rot, rot - 1.2300, epsilon);
+  EXPECT_NEAR(noisy_rot, rot - 1.2300, epsilon);
 
   // no trans or rot
   rot = 0.0;
   trans = 0.0;
   rand_num_gen_ = std::make_shared<std::mt19937>(0);
   noisy_rot = calculateNoisyRot(rot, trans);
-  ASSERT_NEAR(noisy_rot, 0.0, epsilon);
+  EXPECT_NEAR(noisy_rot, 0.0, epsilon);
 
   // +ve rot with trans
   rot = M_PI_4;
@@ -236,7 +236,7 @@ TEST_F(DiffDriveTestFixture, NoisyRotTest)
   // distribution variance = rot_rot_noise_parm_*rot^2 + trans_rot_noise_parm_*trans^2
   //                       = 0.2*(pi/4)^2 + 0.3*2.0^2 = 1.3234
   // output of the distribution given the rand number generator seeded with 0: 1.2917
-  ASSERT_NEAR(noisy_rot, rot - 1.2917, epsilon);
+  EXPECT_NEAR(noisy_rot, rot - 1.2917, epsilon);
 
   // -ve rot with trans
   rot = -M_PI_4;
@@ -246,7 +246,7 @@ TEST_F(DiffDriveTestFixture, NoisyRotTest)
   // distribution variance = rot_rot_noise_parm_*rot^2 + trans_rot_noise_parm_*trans^2
   //                       = 0.2*(pi/4)^2 + 0.3*2.0^2 = 1.3234
   // output of the distribution given the rand number generator seeded with 0: 1.2917
-  ASSERT_NEAR(noisy_rot, rot - 1.2917, epsilon);
+  EXPECT_NEAR(noisy_rot, rot - 1.2917, epsilon);
 }
 
 int main(int argc, char ** argv)
