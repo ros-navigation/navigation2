@@ -249,6 +249,103 @@ TEST_F(DiffDriveTestFixture, NoisyRotTest)
   EXPECT_NEAR(noisy_rot, rot - 1.2917, epsilon);
 }
 
+TEST_F(DiffDriveTestFixture, NoisyTransTest)
+{
+  // no noise
+  trans_trans_noise_parm_ = 0.0;
+  rot_trans_noise_param_ = 0.0;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+
+  double rot1 = M_PI_4;
+  double trans = 2.0;
+  double rot2 = M_PI_4;
+  double noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
+  ASSERT_NEAR(noisy_trans, trans, epsilon);
+
+  // trans/trans noise only
+  trans_trans_noise_parm_ = 0.2;
+  rot_trans_noise_param_ = 0.0;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+
+  rot1 = M_PI_4;
+  trans = 2.0;
+  rot2 = M_PI_4;
+  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
+  // distribution variance = trans_trans_noise_parm_*trans^2 = 0.2*(2.0)^2 = 0.8
+  // output of the distribution given the rand number generator seeded with 0: 1.0043
+  ASSERT_NEAR(noisy_trans, trans - 1.0043, epsilon);
+  // changing rot1 and 2 should have no impact
+  rot1 = M_PI;
+  rot2 = -M_PI_2;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
+  ASSERT_NEAR(noisy_trans, trans - 1.0043, epsilon);
+
+  // rot/trans noise only
+  trans_trans_noise_parm_ = 0.0;
+  rot_trans_noise_param_ = 0.2;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+
+  rot1 = M_PI_4;
+  trans = 2.0;
+  rot2 = M_PI_4;
+  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
+  // distribution variance = rot_trans_noise_parm_*(rot1^2 + rot2^2) = 0.2*(2*(pi/4)^2) = 0.2467
+  // output of the distribution given the rand number generator seeded with 0: 0.5577
+  ASSERT_NEAR(noisy_trans, trans - 0.5577, epsilon);
+  // changing trans should have no impact
+  trans = 5.0;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
+  ASSERT_NEAR(noisy_trans, trans - 0.5577, epsilon);
+
+  // both noise parameters set
+  trans_trans_noise_parm_ = 0.2;
+  rot_trans_noise_param_ = 0.3;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+
+  // straight line motion - forward
+  rot1 = 0.0;
+  trans = 2.0;
+  rot2 = 0.0;
+  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
+  // distribution variance = trans_trans_noise_parm_*trans^2 = 0.2*(2.0)^2 = 0.8
+  // output of the distribution given the rand number generator seeded with 0: 1.0043
+  ASSERT_NEAR(noisy_trans, trans - 1.0043, epsilon);
+
+  // straight line motion - backward
+  rot1 = 0.0;
+  trans = -2.0;
+  rot2 = 0.0;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
+  // distribution variance = trans_trans_noise_parm_*trans^2 = 0.2*(2.0)^2 = 0.8
+  // output of the distribution given the rand number generator seeded with 0: 1.0043
+  ASSERT_NEAR(noisy_trans, trans - 1.0043, epsilon);
+
+  // on-the-spot rotation
+  rot1 = 0.0;
+  trans = 0.0;
+  rot2 = M_PI_2;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
+  // distribution variance = rot_trans_noise_parm_*rot2^2 = 0.3*(pi/2)^2 = 0.7402
+  // output of the distribution given the rand number generator seeded with 0: 0.9660
+  ASSERT_NEAR(noisy_trans, -0.9660, epsilon);
+
+  // both angles set
+  rot1 = M_PI_4;
+  trans = 2.0;
+  rot2 = M_PI_2;
+  rand_num_gen_ = std::make_shared<std::mt19937>(0);
+  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
+  // distribution variance = trans_trans_noise_parm_*trans^2 +
+  //                         rot_trans_noise_parm_*(rot1^2 + rot2^2)
+  //                       = 0.2*(2.0)^2 + 0.3*((pi/4)^2 + (pi/2)^2) = 1.7253
+  // output of the distribution given the rand number generator seeded with 0: 1.4748
+  ASSERT_NEAR(noisy_trans, trans - 1.4748, epsilon);
+}
+
 TEST_F(DiffDriveTestFixture, MostLikelyPoseTest)
 {
   rand_num_gen_ = std::make_shared<std::mt19937>(0);
@@ -398,93 +495,6 @@ TEST_F(DiffDriveTestFixture, MostLikelyPoseTest)
   EXPECT_NEAR(expected_pose.transform.translation.x, actual_pose.transform.translation.x, epsilon);
   EXPECT_NEAR(expected_pose.transform.translation.y, actual_pose.transform.translation.y, epsilon);
   EXPECT_NEAR(expected_angle, actual_angle, epsilon);
-}
-
-TEST_F(DiffDriveTestFixture, NoisyTransTest)
-{
-  // no noise
-  trans_trans_noise_parm_ = 0.0;
-  rot_trans_noise_param_ = 0.0;
-  rand_num_gen_ = std::make_shared<std::mt19937>(0);
-
-  double rot1 = M_PI_4;
-  double trans = 2.0;
-  double rot2 = M_PI_4;
-  double noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
-  ASSERT_NEAR(noisy_trans, trans, epsilon);
-
-  // trans/trans noise only
-  trans_trans_noise_parm_ = 0.2;
-  rot_trans_noise_param_ = 0.0;
-  rand_num_gen_ = std::make_shared<std::mt19937>(0);
-
-  rot1 = M_PI_4;
-  trans = 2.0;
-  rot2 = M_PI_4;
-  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
-  // distribution variance = trans_trans_noise_parm_*trans^2 = 0.2*(2.0)^2 = 0.8
-  // output of the distribution given the rand number generator seeded with 0: 1.0043
-  ASSERT_NEAR(noisy_trans, trans - 1.0043, epsilon);
-  // changing rot1 and 2 should have no impact
-  rot1 = M_PI;
-  rot2 = -M_PI_2;
-  rand_num_gen_ = std::make_shared<std::mt19937>(0);
-  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
-  ASSERT_NEAR(noisy_trans, trans - 1.0043, epsilon);
-
-  // rot/trans noise only
-  trans_trans_noise_parm_ = 0.0;
-  rot_trans_noise_param_ = 0.2;
-  rand_num_gen_ = std::make_shared<std::mt19937>(0);
-
-  rot1 = M_PI_4;
-  trans = 2.0;
-  rot2 = M_PI_4;
-  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
-  // distribution variance = rot_trans_noise_parm_*(rot1^2 + rot2^2) = 0.2*(2*(pi/4)^2) = 0.2467
-  // output of the distribution given the rand number generator seeded with 0: 0.5577
-  ASSERT_NEAR(noisy_trans, trans - 0.5577, epsilon);
-  // changing trans should have no impact
-  trans = 5.0;
-  rand_num_gen_ = std::make_shared<std::mt19937>(0);
-  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
-  ASSERT_NEAR(noisy_trans, trans - 0.5577, epsilon);
-
-  // both noise parameters set
-  trans_trans_noise_parm_ = 0.2;
-  rot_trans_noise_param_ = 0.3;
-  rand_num_gen_ = std::make_shared<std::mt19937>(0);
-
-  // straight line motion
-  rot1 = 0.0;
-  trans = 2.0;
-  rot2 = 0.0;
-  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
-  // distribution variance = trans_trans_noise_parm_*trans^2 = 0.2*(2.0)^2 = 0.8
-  // output of the distribution given the rand number generator seeded with 0: 1.0043
-  ASSERT_NEAR(noisy_trans, trans - 1.0043, epsilon);
-
-  // on-the-spot rotation
-  rot1 = 0.0;
-  trans = 0.0;
-  rot2 = M_PI_2;
-  rand_num_gen_ = std::make_shared<std::mt19937>(0);
-  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
-  // distribution variance = rot_trans_noise_parm_*rot2^2 = 0.3*(pi/2)^2 = 0.7402
-  // output of the distribution given the rand number generator seeded with 0: 0.9660
-  ASSERT_NEAR(noisy_trans, -0.9660, epsilon);
-
-  // both angles set
-  rot1 = M_PI_4;
-  trans = 2.0;
-  rot2 = M_PI_2;
-  rand_num_gen_ = std::make_shared<std::mt19937>(0);
-  noisy_trans = calculateNoisyTrans(rot1, trans, rot2);
-  // distribution variance = trans_trans_noise_parm_*trans^2 +
-  //                         rot_trans_noise_parm_*(rot1^2 + rot2^2)
-  //                       = 0.2*(2.0)^2 + 0.3*((pi/4)^2 + (pi/2)^2) = 1.7253
-  // output of the distribution given the rand number generator seeded with 0: 1.4748
-  ASSERT_NEAR(noisy_trans, trans - 1.4748, epsilon);
 }
 
 int main(int argc, char ** argv)
