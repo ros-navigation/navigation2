@@ -258,11 +258,19 @@ public:
    */
   double getResolution() const;
 
+  /**
+   * @brief Set the default background value of the costmap
+   * @param c default value
+   */
   void setDefaultValue(unsigned char c)
   {
     default_value_ = c;
   }
 
+  /**
+   * @brief Get the default background value of the costmap
+   * @return default value
+   */
   unsigned char getDefaultValue()
   {
     return default_value_;
@@ -309,12 +317,21 @@ public:
    */
   bool saveMap(std::string file_name);
 
+  /**
+   * @brief Resize the costmap
+   */
   void resizeMap(
     unsigned int size_x, unsigned int size_y, double resolution, double origin_x,
     double origin_y);
 
+  /**
+   * @brief Reset the costmap in bounds
+   */
   void resetMap(unsigned int x0, unsigned int y0, unsigned int xn, unsigned int yn);
 
+  /**
+   * @brief Reset the costmap in bounds to a value
+   */
   void resetMapToValue(
     unsigned int x0, unsigned int y0, unsigned int xn, unsigned int yn, unsigned char value);
 
@@ -467,6 +484,9 @@ private:
     at(offset);
   }
 
+  /**
+   * @brief get the sign of an int
+   */
   inline int sign(int x)
   {
     return x > 0 ? 1.0 : -1.0;

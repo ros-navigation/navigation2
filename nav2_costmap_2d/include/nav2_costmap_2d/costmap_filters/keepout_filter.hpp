@@ -58,22 +58,43 @@ namespace nav2_costmap_2d
 class KeepoutFilter : public CostmapFilter
 {
 public:
+  /**
+   * @brief A constructor
+   */
   KeepoutFilter();
 
+  /**
+   * @brief Initialize the filter and subscribe to the info topic
+   */
   void initializeFilter(
     const std::string & filter_info_topic);
 
+  /**
+   * @brief Process the keepout layer at the current pose / bounds / grid
+   */
   void process(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j,
     const geometry_msgs::msg::Pose2D & pose);
 
+  /**
+   * @brief Reset the costmap filter / topic / info
+   */
   void resetFilter();
 
+  /**
+   * @brief If this filter is active
+   */
   bool isActive();
 
 private:
+  /**
+   * @brief Callback for the filter information
+   */
   void filterInfoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg);
+  /**
+   * @brief Callback for the filter mask
+   */
   void maskCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
 
   rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;

@@ -90,12 +90,34 @@ public:
     const std::string & parent_namespace,
     const std::string & local_namespace);
 
+  /**
+   * @brief A destructor
+   */
   ~Costmap2DROS();
 
+  /**
+   * @brief Configure node
+   */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Activate node
+   */
   nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Deactivate node
+   */
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Cleanup node
+   */
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief shutdown node
+   */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
@@ -120,6 +142,9 @@ public:
    */
   void resume();
 
+  /**
+   * @brief Update the map with the layered costmap / plugins
+   */
   void updateMap();
 
   /**
@@ -190,6 +215,9 @@ public:
     return robot_base_frame_;
   }
 
+  /**
+   * @brief Get the layered costmap object used in the node
+   */
   LayeredCostmap * getLayeredCostmap()
   {
     return layered_costmap_.get();
@@ -284,6 +312,10 @@ protected:
   std::unique_ptr<LayeredCostmap> layered_costmap_{nullptr};
   std::string name_;
   std::string parent_namespace_;
+
+  /**
+   * @brief Function on timer for costmap update
+   */
   void mapUpdateLoop(double frequency);
   bool map_update_thread_shutdown_{false};
   bool stop_updates_{false};
@@ -294,7 +326,9 @@ protected:
   rclcpp::Duration publish_cycle_{1, 0};
   pluginlib::ClassLoader<Layer> plugin_loader_{"nav2_costmap_2d", "nav2_costmap_2d::Layer"};
 
-  // Parameters
+  /**
+   * @brief Get parameters for node
+   */
   void getParameters();
   bool always_send_full_costmap_{false};
   std::string footprint_;

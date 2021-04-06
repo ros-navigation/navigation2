@@ -45,6 +45,9 @@ namespace nav2_costmap_2d
 class CostmapTopicCollisionChecker
 {
 public:
+  /**
+   * @brief A constructor
+   */
   CostmapTopicCollisionChecker(
     CostmapSubscriber & costmap_sub,
     FootprintSubscriber & footprint_sub,
@@ -53,15 +56,28 @@ public:
     std::string global_frame = "map",
     std::string robot_base_frame = "base_link",
     double transform_tolerance = 0.1);
-
+  /**
+   * @brief A destructor
+   */
   ~CostmapTopicCollisionChecker() = default;
 
-  // Returns the obstacle footprint score for a particular pose
+  /**
+   * @brief Returns the obstacle footprint score for a particular pose
+   */
   double scorePose(const geometry_msgs::msg::Pose2D & pose);
+  /**
+   * @brief Returns if a pose is collision free
+   */
   bool isCollisionFree(const geometry_msgs::msg::Pose2D & pose);
 
 protected:
+  /**
+   * @brief Set a new footprint
+   */
   void unorientFootprint(const Footprint & oriented_footprint, Footprint & reset_footprint);
+  /**
+   * @brief Get a footprint at a set pose
+   */
   Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose);
 
   // Name used for logging
