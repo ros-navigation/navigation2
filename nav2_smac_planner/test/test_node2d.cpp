@@ -35,7 +35,7 @@ RclCppFixture g_rclcppfixture;
 TEST(Node2DTest, test_node_2d)
 {
   nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
-  nav2_smac_planner::GridCollisionChecker checker(&costmapA);
+  nav2_smac_planner::GridCollisionChecker checker(&costmapA, 72);
 
   // test construction
   unsigned char cost = static_cast<unsigned char>(1);
@@ -117,7 +117,7 @@ TEST(Node2DTest, test_node_2d_neighbors)
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[7], 101);
 
   nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
-  nav2_smac_planner::GridCollisionChecker checker(&costmapA);
+  nav2_smac_planner::GridCollisionChecker checker(&costmapA, 72);
   unsigned char cost = static_cast<unsigned int>(1);
   nav2_smac_planner::Node2D * node = new nav2_smac_planner::Node2D(cost, 1);
   std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> neighborGetter =

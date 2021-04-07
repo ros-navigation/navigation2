@@ -111,13 +111,6 @@ struct MotionTable
    */
   MotionPoses getProjections(const NodeSE2 * node);
 
-  /**
-   * @brief Get a projection of motion model
-   * @param node Ptr to SE2 node
-   * @return A motion pose
-   */
-  MotionPose getProjection(const NodeSE2 * node, const unsigned int & motion_index);
-
   MotionPoses projections;
   unsigned int size_x;
   unsigned int num_angle_quantization;
@@ -216,7 +209,7 @@ public:
    * @brief Sets the accumulated cost at this node
    * @param reference to accumulated cost
    */
-  inline void setAccumulatedCost(const float cost_in)
+  inline void setAccumulatedCost(const float & cost_in)
   {
     _accumulated_cost = cost_in;
   }
@@ -297,7 +290,7 @@ public:
    * @param traverse_unknown If we can explore unknown nodes on the graph
    * @return whether this node is valid and collision free
    */
-  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker collision_checker);
+  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker & collision_checker);
 
   /**
    * @brief Get traversal cost of parent node to child node
@@ -317,7 +310,7 @@ public:
    */
   static inline unsigned int getIndex(
     const unsigned int & x, const unsigned int & y, const unsigned int & angle,
-    const unsigned int & width, const unsigned int angle_quantization)
+    const unsigned int & width, const unsigned int & angle_quantization)
   {
     return angle + x * angle_quantization + y * width * angle_quantization;
   }
@@ -346,7 +339,7 @@ public:
    */
   static inline Coordinates getCoords(
     const unsigned int & index,
-    const unsigned int & width, const unsigned int angle_quantization)
+    const unsigned int & width, const unsigned int & angle_quantization)
   {
     return Coordinates(
       (index / angle_quantization) % width,    // x
@@ -401,7 +394,7 @@ public:
   static void getNeighbors(
     const NodePtr & node,
     std::function<bool(const unsigned int &, nav2_smac_planner::NodeSE2 * &)> & validity_checker,
-    GridCollisionChecker collision_checker,
+    GridCollisionChecker & collision_checker,
     const bool & traverse_unknown,
     NodeVector & neighbors);
 

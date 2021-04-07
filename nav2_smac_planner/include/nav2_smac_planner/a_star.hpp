@@ -227,7 +227,7 @@ protected:
    * @param cost The cost to sort into the open set of the node
    * @param node Node pointer reference to add to open set
    */
-  inline void addNode(const float cost, NodePtr & node);
+  inline void addNode(const float & cost, NodePtr & node);
 
   /**
    * @brief Adds node to graph

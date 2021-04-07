@@ -49,7 +49,7 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   _start(nullptr),
   _goal(nullptr),
   _motion_model(motion_model),
-  _collision_checker(nullptr)
+  _collision_checker(nullptr, 0)
 {
   _graph.reserve(100000);
 }
@@ -99,7 +99,7 @@ void AStarAlgorithm<NodeSE2>::createGraph(
   nav2_costmap_2d::Costmap2D * & costmap)
 {
   _costmap = costmap;
-  _collision_checker = GridCollisionChecker(costmap);
+  _collision_checker = GridCollisionChecker(costmap, dim_3_size);
   _collision_checker.setFootprint(_footprint, _is_radius_footprint);
 
   _dim3_size = dim_3_size;
@@ -506,7 +506,7 @@ typename AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getNextNode()
 }
 
 template<typename NodeT>
-void AStarAlgorithm<NodeT>::addNode(const float cost, NodePtr & node)
+void AStarAlgorithm<NodeT>::addNode(const float & cost, NodePtr & node)
 {
   NodeBasic<NodeT> queued_node(node->getIndex());
   queued_node.graph_node_ptr = node;
@@ -514,7 +514,7 @@ void AStarAlgorithm<NodeT>::addNode(const float cost, NodePtr & node)
 }
 
 template<>
-void AStarAlgorithm<NodeSE2>::addNode(const float cost, NodePtr & node)
+void AStarAlgorithm<NodeSE2>::addNode(const float & cost, NodePtr & node)
 {
   NodeBasic<NodeSE2> queued_node(node->getIndex());
   queued_node.pose = node->pose;

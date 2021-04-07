@@ -51,7 +51,7 @@ void Node2D::reset(const unsigned char & cost)
 
 bool Node2D::isNodeValid(
   const bool & traverse_unknown,
-  GridCollisionChecker /*collision_checker*/)
+  GridCollisionChecker & /*collision_checker*/)
 {
   // NOTE(stevemacenski): Right now, we do not check if the node has wrapped around
   // the regular grid (e.g. your node is on the edge of the costmap and i+1
@@ -119,7 +119,7 @@ void Node2D::initNeighborhood(
 void Node2D::getNeighbors(
   NodePtr & node,
   std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> & NeighborGetter,
-  GridCollisionChecker collision_checker,
+  GridCollisionChecker & collision_checker,
   const bool & traverse_unknown,
   NodeVector & neighbors)
 {

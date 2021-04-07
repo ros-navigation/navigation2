@@ -185,32 +185,31 @@ void MotionTable::initReedsShepp(
 MotionPoses MotionTable::getProjections(const NodeSE2 * node)
 {
   MotionPoses projection_list;
+  projection_list.reserve(projections.size());
+
   for (unsigned int i = 0; i != projections.size(); i++) {
-    projection_list.push_back(getProjection(node, i));
+
+    const MotionPose & motion_model = projections[i];
+
+    // normalize theta, I know its overkill, but I've been burned before...
+    const float & node_heading = node->pose.theta;
+    float new_heading = node_heading + motion_model._theta;
+
+    if (new_heading >= num_angle_quantization_float) {
+      new_heading -= num_angle_quantization_float;
+    }
+
+    if (new_heading < 0.0) {
+      new_heading += num_angle_quantization_float;
+    }
+
+    projection_list.emplace_back(
+      delta_xs[i][node_heading] + node->pose.x,
+      delta_ys[i][node_heading] + node->pose.y,
+      new_heading);
   }
 
   return projection_list;
-}
-
-MotionPose MotionTable::getProjection(const NodeSE2 * node, const unsigned int & motion_index)
-{
-  const MotionPose & motion_model = projections[motion_index];
-
-  // normalize theta, I know its overkill, but I've been burned before...
-  const float & node_heading = node->pose.theta;
-  float new_heading = node_heading + motion_model._theta;
-
-  while (new_heading >= num_angle_quantization_float) {
-    new_heading -= num_angle_quantization_float;
-  }
-  while (new_heading < 0.0) {
-    new_heading += num_angle_quantization_float;
-  }
-
-  return MotionPose(
-    delta_xs[motion_index][node_heading] + node->pose.x,
-    delta_ys[motion_index][node_heading] + node->pose.y,
-    new_heading);
 }
 
 NodeSE2::NodeSE2(const unsigned int index)
@@ -243,7 +242,7 @@ void NodeSE2::reset()
   pose.theta = 0.0f;
 }
 
-bool NodeSE2::isNodeValid(const bool & traverse_unknown, GridCollisionChecker collision_checker)
+bool NodeSE2::isNodeValid(const bool & traverse_unknown, GridCollisionChecker & collision_checker)
 {
   if (collision_checker.inCollision(
       this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
@@ -379,6 +378,9 @@ void NodeSE2::computeWavefrontHeuristic(
   q.emplace(goal_index);
 
   unsigned int idx = goal_index;
+  unsigned int new_idx;
+  unsigned int last_wave_cost;
+
   _wavefront_heuristic[idx] = 2;
 
   static const std::vector<int> neighborhood = {1, -1,  // left right
@@ -396,8 +398,8 @@ void NodeSE2::computeWavefrontHeuristic(
 
     // find neighbors
     for (unsigned int i = 0; i != neighborhood.size(); i++) {
-      unsigned int new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
-      unsigned int last_wave_cost = _wavefront_heuristic[idx];
+      new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
+      last_wave_cost = _wavefront_heuristic[idx];
 
       // if neighbor is unvisited and non-lethal, set N and add to queue
       if (new_idx > 0 && new_idx < size_x * size_y &&
@@ -424,7 +426,7 @@ void NodeSE2::computeWavefrontHeuristic(
 void NodeSE2::getNeighbors(
   const NodePtr & node,
   std::function<bool(const unsigned int &, nav2_smac_planner::NodeSE2 * &)> & NeighborGetter,
-  GridCollisionChecker collision_checker,
+  GridCollisionChecker & collision_checker,
   const bool & traverse_unknown,
   NodeVector & neighbors)
 {

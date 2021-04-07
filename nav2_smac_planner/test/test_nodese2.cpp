@@ -49,7 +49,7 @@ TEST(NodeSE2Test, test_node_se2)
 
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     10, 10, 0.05, 0.0, 0.0, 0);
-  nav2_smac_planner::GridCollisionChecker checker(costmapA);
+  nav2_smac_planner::GridCollisionChecker checker(costmapA, 72);
   checker.setFootprint(nav2_costmap_2d::Footprint(), true);
 
   // test construction
@@ -196,7 +196,7 @@ TEST(NodeSE2Test, test_node_2d_neighbors)
   EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[5]._theta, 5, 0.01);
 
   nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
-  nav2_smac_planner::GridCollisionChecker checker(&costmapA);
+  nav2_smac_planner::GridCollisionChecker checker(&costmapA, 72);
   nav2_smac_planner::NodeSE2 * node = new nav2_smac_planner::NodeSE2(49);
   std::function<bool(const unsigned int &, nav2_smac_planner::NodeSE2 * &)> neighborGetter =
     [&, this](const unsigned int & index, nav2_smac_planner::NodeSE2 * & neighbor_rtn) -> bool

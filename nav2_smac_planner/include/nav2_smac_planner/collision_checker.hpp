@@ -32,10 +32,14 @@ public:
   /**
    * @brief A constructor for nav2_smac_planner::GridCollisionChecker
    * @param costmap The costmap to collision check against
+   * @param num_quantizations The number of quantizations to precompute footprint
+   * orientations for to speed up collision checking
    */
   GridCollisionChecker(
-    nav2_costmap_2d::Costmap2D * costmap)
-  : FootprintCollisionChecker(costmap)
+    nav2_costmap_2d::Costmap2D * costmap,
+    unsigned int num_quantizations)
+  : FootprintCollisionChecker(costmap),
+    num_quantizations_(num_quantizations)
   {
   }
 
@@ -46,8 +50,33 @@ public:
    */
   void setFootprint(const nav2_costmap_2d::Footprint & footprint, const bool & radius)
   {
-    unoriented_footprint_ = footprint;
     footprint_is_radius_ = radius;
+
+    if (radius) {
+      return;
+    }
+
+    bin_size_ = 2.0 * M_PI / static_cast<double>(num_quantizations_);
+    oriented_footprints_.reserve(num_quantizations_);
+    double sin_th, cos_th;
+    geometry_msgs::msg::Point new_pt;
+    const unsigned int footprint_size = footprint.size();
+
+    // Precompute the orientation bins for checking to use
+    for (unsigned int i = 0; i != num_quantizations_; i++) {
+      sin_th = sin(i * bin_size_);
+      cos_th = cos(i * bin_size_);
+      nav2_costmap_2d::Footprint oriented_footprint;
+      oriented_footprint.reserve(footprint_size);
+
+      for (unsigned int j = 0; j < footprint_size; j++) {
+        new_pt.x = footprint[j].x * cos_th - footprint[j].y * sin_th;
+        new_pt.y = footprint[j].x * sin_th + footprint[j].y * cos_th;
+        oriented_footprint.push_back(new_pt);
+      }
+
+      oriented_footprints_.push_back(oriented_footprint);
+    }
   }
 
   /**
@@ -88,9 +117,22 @@ public:
         return true;
       }
 
-      // if possible inscribed, need to check actual footprint pose
-      footprint_cost_ = footprintCostAtPose(
-        wx, wy, static_cast<double>(theta), unoriented_footprint_);
+      // if possible inscribed, need to check actual footprint pose.
+      // Use precomputed oriented footprints are done on initialization,
+      // offset by translation value to collision check
+      int angle_bin = theta / bin_size_;
+      geometry_msgs::msg::Point new_pt;
+      const nav2_costmap_2d::Footprint & oriented_footprint = oriented_footprints_[angle_bin];
+      nav2_costmap_2d::Footprint current_footprint;
+      current_footprint.reserve(oriented_footprint.size());
+      for (unsigned int i = 0; i < oriented_footprint.size(); ++i) {
+        new_pt.x = wx + oriented_footprint[i].x;
+        new_pt.y = wy + oriented_footprint[i].y;
+        current_footprint.push_back(new_pt);
+      }
+
+      footprint_cost_ = footprintCost(current_footprint);
+
       if (footprint_cost_ == UNKNOWN && traverse_unknown) {
         return false;
       }
@@ -122,9 +164,11 @@ public:
   }
 
 protected:
-  nav2_costmap_2d::Footprint unoriented_footprint_;
+  std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
   double footprint_cost_;
   bool footprint_is_radius_;
+  unsigned int num_quantizations_;
+  double bin_size_;
 };
 
 }  // namespace nav2_smac_planner
