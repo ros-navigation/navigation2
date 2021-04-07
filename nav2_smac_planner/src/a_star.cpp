@@ -109,6 +109,7 @@ void AStarAlgorithm<NodeSE2>::createGraph(
   if (getSizeX() != x_size || getSizeY() != y_size) {
     _x_size = x_size;
     _y_size = y_size;
+
     NodeSE2::initMotionModel(_motion_model, _x_size, _y_size, _dim3_size, _search_info);
   }
 }

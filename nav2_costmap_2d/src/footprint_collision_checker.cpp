@@ -84,7 +84,7 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint footpr
 
   // we also need to connect the first point in the footprint to the last point
   // the last iteration's x1, y1 are the last footprint point's coordinates
-  return std::max(lineCost(xstart, x1, ystart, y1), footprint_cost);;
+  return std::max(lineCost(xstart, x1, ystart, y1), footprint_cost);
 }
 
 template<typename CostmapT>

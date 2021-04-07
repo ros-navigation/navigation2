@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
-
+#include <vector>
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_smac_planner/constants.hpp"
 

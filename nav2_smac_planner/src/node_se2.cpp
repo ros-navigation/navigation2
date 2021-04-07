@@ -188,7 +188,6 @@ MotionPoses MotionTable::getProjections(const NodeSE2 * node)
   projection_list.reserve(projections.size());
 
   for (unsigned int i = 0; i != projections.size(); i++) {
-
     const MotionPose & motion_model = projections[i];
 
     // normalize theta, I know its overkill, but I've been burned before...
