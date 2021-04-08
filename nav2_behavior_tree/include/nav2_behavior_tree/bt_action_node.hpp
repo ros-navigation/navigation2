@@ -182,12 +182,14 @@ public:
       // user defined callback. May modify the value of "goal_updated_"
       on_wait_for_result();
 
-      auto goal_status = goal_handle_->get_status();
-      if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
-        goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
-      {
-        goal_updated_ = false;
-        on_new_goal_received();
+      if (goal_handle_) {
+        auto goal_status = goal_handle_->get_status();
+        if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
+          goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
+        {
+          goal_updated_ = false;
+          on_new_goal_received();
+        }
       }
 
       rclcpp::spin_some(node_);
@@ -242,7 +244,7 @@ protected:
   bool should_cancel_goal()
   {
     // Shut the node down if it is currently running
-    if (status() != BT::NodeStatus::RUNNING) {
+    if (status() != BT::NodeStatus::RUNNING || !goal_handle_) {
       return false;
     }
 
@@ -266,7 +268,7 @@ protected:
         // TODO(#1652): a work around until rcl_action interface is updated
         // if goal ids are not matched, the older goal call this callback so ignore the result
         // if matched, it must be processed (including aborted)
-        if (this->goal_handle_->get_goal_id() == result.goal_id) {
+        if (this->goal_handle_ && (this->goal_handle_->get_goal_id() == result.goal_id)) {
           goal_result_available_ = true;
           result_ = result;
         }
