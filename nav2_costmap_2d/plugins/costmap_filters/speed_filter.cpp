@@ -38,7 +38,9 @@
 #include "nav2_costmap_2d/costmap_filters/speed_filter.hpp"
 
 #include <cmath>
-
+#include <utility>
+#include <memory>
+#include <string>
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "geometry_msgs/msg/point_stamped.hpp"
 

@@ -73,26 +73,69 @@ public:
   unsigned int src_x_, src_y_;
 };
 
+/**
+ * @class InflationLayer
+ * @brief Layer to convolve costmap by robot's radius or footprint to prevent
+ * collisions and largely simply collision checking
+ */
 class InflationLayer : public Layer
 {
 public:
+  /**
+    * @brief A constructor
+    */
   InflationLayer();
 
+  /**
+    * @brief A destructor
+    */
   ~InflationLayer();
 
+  /**
+   * @brief Initialization process of layer on startup
+   */
   void onInitialize() override;
+
+  /**
+   * @brief Update the bounds of the master costmap by this layer's update dimensions
+   * @param robot_x X pose of robot
+   * @param robot_y Y pose of robot
+   * @param robot_yaw Robot orientation
+   * @param min_x X min map coord of the window to update
+   * @param min_y Y min map coord of the window to update
+   * @param max_x X max map coord of the window to update
+   * @param max_y Y max map coord of the window to update
+   */
   void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
     double * min_y,
     double * max_x,
     double * max_y) override;
+  /**
+   * @brief Update the costs in the master costmap in the window
+   * @param master_grid The master costmap grid to update
+   * @param min_x X min map coord of the window to update
+   * @param min_y Y min map coord of the window to update
+   * @param max_x X max map coord of the window to update
+   * @param max_y Y max map coord of the window to update
+   */
   void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j) override;
 
+  /**
+   * @brief Match the size of the master costmap
+   */
   void matchSize() override;
+
+  /**
+   * @brief If clearing operations should be processed on this layer or not
+   */
   virtual bool isClearable() {return false;}
 
+  /**
+   * @brief Reset this costmap
+   */
   void reset() override
   {
     matchSize();
@@ -120,12 +163,19 @@ public:
 
   // Provide a typedef to ease future code maintenance
   typedef std::recursive_mutex mutex_t;
+
+  /**
+   * @brief Get the mutex of the inflation inforamtion
+   */
   mutex_t * getMutex()
   {
     return access_;
   }
 
 protected:
+  /**
+   * @brief Process updates on footprint changes to the inflation layer
+   */
   void onFootprintChanged() override;
 
 private:
@@ -163,15 +213,27 @@ private:
     return cached_costs_[dx * cache_length_ + dy];
   }
 
+  /**
+   * @brief Compute cached dsitances
+   */
   void computeCaches();
 
+  /**
+   * @brief Compute cached dsitances
+   */
   int generateIntegerDistances();
 
+  /**
+   * @brief Compute cached dsitances
+   */
   unsigned int cellDistance(double world_dist)
   {
     return layered_costmap_->getCostmap()->cellDistance(world_dist);
   }
 
+  /**
+   * @brief Enqueue new cells in cache distance update search
+   */
   inline void enqueue(
     unsigned int index, unsigned int mx, unsigned int my,
     unsigned int src_x, unsigned int src_y);

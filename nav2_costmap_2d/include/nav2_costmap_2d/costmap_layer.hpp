@@ -45,21 +45,40 @@
 namespace nav2_costmap_2d
 {
 
+/**
+ * @class CostmapLayer
+ * @brief A costmap layer base class for costmap plugin layers.
+ * Rather than just a layer, this object also contains an internal
+ * costmap object to populate and maintain state.
+ */
 class CostmapLayer : public Layer, public Costmap2D
 {
 public:
+  /**
+   * @brief CostmapLayer constructor
+   */
   CostmapLayer()
   : has_extra_bounds_(false),
     extra_min_x_(1e6), extra_max_x_(-1e6),
     extra_min_y_(1e6), extra_max_y_(-1e6) {}
 
+  /**
+   * @brief If layer is discrete
+   */
   bool isDiscretized()
   {
     return true;
   }
 
+  /**
+   * @brief Match the size of the master costmap
+   */
   virtual void matchSize();
 
+  /**
+   * @brief Clear an are in the costmap with the given dimension
+   * if invert, then clear everything except these dimensions
+   */
   virtual void clearArea(int start_x, int start_y, int end_x, int end_y, bool invert);
 
   /**

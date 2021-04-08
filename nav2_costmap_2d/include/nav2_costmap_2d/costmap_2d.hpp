@@ -258,11 +258,19 @@ public:
    */
   double getResolution() const;
 
+  /**
+   * @brief Set the default background value of the costmap
+   * @param c default value
+   */
   void setDefaultValue(unsigned char c)
   {
     default_value_ = c;
   }
 
+  /**
+   * @brief Get the default background value of the costmap
+   * @return default value
+   */
   unsigned char getDefaultValue()
   {
     return default_value_;
@@ -309,12 +317,21 @@ public:
    */
   bool saveMap(std::string file_name);
 
+  /**
+   * @brief Resize the costmap
+   */
   void resizeMap(
     unsigned int size_x, unsigned int size_y, double resolution, double origin_x,
     double origin_y);
 
+  /**
+   * @brief Reset the costmap in bounds
+   */
   void resetMap(unsigned int x0, unsigned int y0, unsigned int xn, unsigned int yn);
 
+  /**
+   * @brief Reset the costmap in bounds to a value
+   */
   void resetMapToValue(
     unsigned int x0, unsigned int y0, unsigned int xn, unsigned int yn, unsigned char value);
 
@@ -390,7 +407,8 @@ protected:
    * @param  y0 The starting y coordinate
    * @param  x1 The ending x coordinate
    * @param  y1 The ending y coordinate
-   * @param  max_length The maximum desired length of the segment... allows you to not go all the way to the endpoint
+   * @param  max_length The maximum desired length of the segment...
+   * allows you to not go all the way to the endpoint
    * @param  min_length The minimum desired length of the segment
    */
   template<class ActionType>
@@ -426,7 +444,7 @@ protected:
     if (abs_dx >= abs_dy) {
       int error_y = abs_dx / 2;
 
-      // Subtract min_length from total length since initial point (x0, y0) has been adjusted by min Z
+      // Subtract minlength from length since initial point (x0, y0)has been adjusted by min Z
       length = (unsigned int)(scale * abs_dx) - min_length;
 
       bresenham2D(
@@ -437,7 +455,7 @@ protected:
     // otherwise y is dominant
     int error_x = abs_dy / 2;
 
-    // Subtract min_length from total length since initial point (x0, y0) has been adjusted by min Z
+    // Subtract minlength from total length since initial point (x0, y0) has been adjusted by min Z
     length = (unsigned int)(scale * abs_dy) - min_length;
     bresenham2D(
       at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset, length);
@@ -445,7 +463,8 @@ protected:
 
 private:
   /**
-   * @brief  A 2D implementation of Bresenham's raytracing algorithm... applies an action at each step
+   * @brief  A 2D implementation of Bresenham's raytracing algorithm...
+   * applies an action at each step
    */
   template<class ActionType>
   inline void bresenham2D(
@@ -467,6 +486,9 @@ private:
     at(offset);
   }
 
+  /**
+   * @brief get the sign of an int
+   */
   inline int sign(int x)
   {
     return x > 0 ? 1.0 : -1.0;

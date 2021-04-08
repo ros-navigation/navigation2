@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <limits>
 
 #include "nav2_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
@@ -432,6 +433,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
     get_logger(), "Path end point is (%.2f, %.2f)",
     end_pose.pose.position.x, end_pose.pose.position.y);
   end_pose_ = end_pose.pose;
+  current_path_ = path;
 }
 
 void ControllerServer::computeAndPublishVelocity()
@@ -480,7 +482,26 @@ void ControllerServer::computeAndPublishVelocity()
 
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);
-  feedback->distance_to_goal = nav2_util::geometry_utils::euclidean_distance(end_pose_, pose.pose);
+
+  // Find the closest pose to current pose on global path
+  nav_msgs::msg::Path & current_path = current_path_;
+  auto find_closest_pose_idx =
+    [&pose, &current_path]() {
+      size_t closest_pose_idx = 0;
+      double curr_min_dist = std::numeric_limits<double>::max();
+      for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
+        double curr_dist = nav2_util::geometry_utils::euclidean_distance(
+          pose, current_path.poses[curr_idx]);
+        if (curr_dist < curr_min_dist) {
+          curr_min_dist = curr_dist;
+          closest_pose_idx = curr_idx;
+        }
+      }
+      return closest_pose_idx;
+    };
+
+  feedback->distance_to_goal =
+    nav2_util::geometry_utils::calculate_path_length(current_path_, find_closest_pose_idx());
   action_server_->publish_feedback(feedback);
 
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());

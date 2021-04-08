@@ -53,6 +53,18 @@ public:
     const std::string & odom_topic = "odom");
 
   /**
+   * @brief Overloadded Constructor for nav_util::LifecycleNode parent
+   * that subscribes to an Odometry topic
+   * @param parent NodeHandle for creating subscriber
+   * @param filter_duration Duration for odom history (seconds)
+   * @param odom_topic Topic on which odometry should be received
+   */
+  explicit OdomSmoother(
+    const nav2_util::LifecycleNode::WeakPtr & parent,
+    double filter_duration = 0.3,
+    const std::string & odom_topic = "odom");
+
+  /**
    * @brief Get twist msg from smoother
    * @return twist Twist msg
    */
