@@ -69,13 +69,7 @@ ControllerServer::ControllerServer()
 ControllerServer::~ControllerServer()
 {
   progress_checker_.reset();
-
-  for (auto & goal_checker : goal_checkers_) {
-    goal_checker.second.reset();
-  }
-
   goal_checkers_.clear();
-  goal_checker_ids_.clear();
   controllers_.clear();
 }
 
