@@ -69,7 +69,7 @@ ControllerServer::~ControllerServer()
 {
   progress_checker_.reset();
 
-  for (auto & goal_checker: goal_checkers_) {
+  for (auto & goal_checker : goal_checkers_) {
     goal_checker.second.reset();
   }
 

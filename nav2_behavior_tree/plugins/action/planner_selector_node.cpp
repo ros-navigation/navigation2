@@ -35,7 +35,7 @@ PlannerSelector::PlannerSelector(
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
   getInput("topic_name", topic_name_);
-  
+
   rclcpp::QoS qos(rclcpp::KeepLast(1));
   qos.transient_local().reliable();
 
