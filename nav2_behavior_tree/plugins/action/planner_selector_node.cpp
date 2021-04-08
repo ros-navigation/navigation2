@@ -40,7 +40,7 @@ PlannerSelector::PlannerSelector(
   qos.transient_local().reliable();
 
   planner_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-    topic_name_, qos, std::bind(&PlannerSelector::callbackPlannerSelect, this, _1));
+    topic_name_, 1, std::bind(&PlannerSelector::callbackPlannerSelect, this, _1));
 }
 
 BT::NodeStatus PlannerSelector::tick()

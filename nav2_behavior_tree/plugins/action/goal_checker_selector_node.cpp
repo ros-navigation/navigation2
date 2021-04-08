@@ -40,7 +40,7 @@ GoalCheckerSelector::GoalCheckerSelector(
   qos.transient_local().reliable();
 
   goal_checker_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-    topic_name_, qos, std::bind(&GoalCheckerSelector::callbackGoalCheckerSelect, this, _1));
+    topic_name_, 1, std::bind(&GoalCheckerSelector::callbackGoalCheckerSelect, this, _1));
 }
 
 BT::NodeStatus GoalCheckerSelector::tick()
