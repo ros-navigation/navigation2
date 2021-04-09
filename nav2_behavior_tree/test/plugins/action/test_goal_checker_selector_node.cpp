@@ -103,8 +103,11 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
 
   selected_goal_checker_cmd.data = "AngularGoalChecker";
 
+  rclcpp::QoS qos(rclcpp::KeepLast(1));
+  qos.transient_local().reliable();
+
   auto goal_checker_selector_pub =
-    node_->create_publisher<std_msgs::msg::String>("goal_checker_selector_custom_topic_name", 10);
+    node_->create_publisher<std_msgs::msg::String>("goal_checker_selector_custom_topic_name", qos);
 
   // publish a few updates of the selected_goal_checker
   auto start = node_->now();
@@ -148,8 +151,11 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
 
   selected_goal_checker_cmd.data = "RRT";
 
+  rclcpp::QoS qos(rclcpp::KeepLast(1));
+  qos.transient_local().reliable();
+
   auto goal_checker_selector_pub =
-    node_->create_publisher<std_msgs::msg::String>("goal_checker_selector", 10);
+    node_->create_publisher<std_msgs::msg::String>("goal_checker_selector", qos);
 
   // publish a few updates of the selected_goal_checker
   auto start = node_->now();

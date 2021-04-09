@@ -40,7 +40,7 @@ ControllerSelector::ControllerSelector(
   qos.transient_local().reliable();
 
   controller_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-    topic_name_, 1, std::bind(&ControllerSelector::callbackControllerSelect, this, _1));
+    topic_name_, qos, std::bind(&ControllerSelector::callbackControllerSelect, this, _1));
 }
 
 BT::NodeStatus ControllerSelector::tick()

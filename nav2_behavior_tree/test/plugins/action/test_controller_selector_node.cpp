@@ -103,8 +103,11 @@ TEST_F(ControllerSelectorTestFixture, test_custom_topic)
 
   selected_controller_cmd.data = "DWC";
 
+  rclcpp::QoS qos(rclcpp::KeepLast(1));
+  qos.transient_local().reliable();
+
   auto controller_selector_pub =
-    node_->create_publisher<std_msgs::msg::String>("controller_selector_custom_topic_name", 10);
+    node_->create_publisher<std_msgs::msg::String>("controller_selector_custom_topic_name", qos);
 
   // publish a few updates of the selected_controller
   auto start = node_->now();
@@ -148,8 +151,11 @@ TEST_F(ControllerSelectorTestFixture, test_default_topic)
 
   selected_controller_cmd.data = "RRT";
 
+  rclcpp::QoS qos(rclcpp::KeepLast(1));
+  qos.transient_local().reliable();
+
   auto controller_selector_pub =
-    node_->create_publisher<std_msgs::msg::String>("controller_selector", 10);
+    node_->create_publisher<std_msgs::msg::String>("controller_selector", qos);
 
   // publish a few updates of the selected_controller
   auto start = node_->now();
