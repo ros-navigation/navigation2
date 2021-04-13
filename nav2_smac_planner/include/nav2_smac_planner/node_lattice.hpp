@@ -34,14 +34,16 @@
 
 namespace nav2_smac_planner
 {
+// TODO update readme param list
 
-// TODO speicalized: getNextNode, addNode
-
-// TODO what can be shared / abstracted out from Lattice and Hybrid
-
-// TODO update readme
+// TODO add Lattice new planner plugin / xml
 
 // TODO add fields to SearchInfo for Lattice
+		// num prims
+		// range of angular inputs valid since turning rad isn't the right one anymore.
+	  // add to motion model diff/omni + update in string conversion functions in constants.hpp
+
+// TODO test coverage
 
 // Must forward declare
 class NodeLattice;
@@ -231,28 +233,14 @@ public:
    * @param x X coordinate of point
    * @param y Y coordinate of point
    * @param angle Theta coordinate of point
-   * @param width Width of costmap
-   * @param angle_quantization Number of theta bins
-   * @return Index
-   */
-  static inline unsigned int getIndex(
-    const unsigned int & x, const unsigned int & y, const unsigned int & angle,
-    const unsigned int & width, const unsigned int & angle_quantization)
-  {
-    return 0;    // TODO
-  }
-
-  /**
-   * @brief Get index at coordinates
-   * @param x X coordinate of point
-   * @param y Y coordinate of point
-   * @param angle Theta coordinate of point
    * @return Index
    */
   static inline unsigned int getIndex(
     const unsigned int & x, const unsigned int & y, const unsigned int & angle)
   {
-    return getIndex(0,0,0,0,0);    // TODO
+    return NodeHybrid::getIndex(
+    	x, y, angle, motion_table.size_x,
+      motion_table.num_angle_quantization);
   }
 
   /**
@@ -266,7 +254,10 @@ public:
     const unsigned int & index,
     const unsigned int & width, const unsigned int & angle_quantization)
   {
-    return Coordinates(0,0,0);    // TODO
+    return NodeHybrid::Coordinates(
+      (index / angle_quantization) % width,    // x
+      index / (angle_quantization * width),    // y
+      index % angle_quantization);    // theta
   }
 
   /**

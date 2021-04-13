@@ -1,7 +1,8 @@
 # Smac Planner
 
 The SmacPlanner is a plugin for the Nav2 Planner server. It includes currently 2 distinct plugins:
-- `SmacPlanner`: a highly optimized fully reconfigurable Hybrid-A* implementation supporting Dubin and Reeds-Shepp models.
+- `SmacPlannerHybrid`: a highly optimized fully reconfigurable Hybrid-A* implementation supporting Dubin and Reeds-Shepp models.
+- `SmacPlannerLattice`: a highly optimized fully reconfigurable State Lattice implementation supporting Differential and Omnidirectionl models.
 - `SmacPlanner2D`: a highly optimized fully reconfigurable grid-based A* implementation supporting Moore and Von Neumann models.
 
 It also introduces the following basic building blocks:
@@ -16,16 +17,21 @@ We have users reporting using this on:
 
 ## Introduction
 
-The `nav2_smac_planner` package contains an optimized templated A* search algorithm used to create multiple A\*-based planners for multiple types of robot platforms. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). We support differential-drive and omni-directional drive robots using the `SmacPlanner2D` planner which implements a cost-aware A\* planner. We support cars, car-like, and ackermann vehicles using the `SmacPlanner` plugin which implements a Hybrid-A\* planner. This plugin is also useful for curvature constrained planning, like when planning robot at high speeds to make sure they don't flip over or otherwise skid out of control. It is also applicable to non-round robots (such as large rectangular or arbitrary shaped robots of differential/omnidirectional drivetrains) that need pose-based collision checking.
+The `nav2_smac_planner` package contains an optimized templated A* search algorithm used to create multiple A\*-based planners for multiple types of robot platforms. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). We support **circular** differential-drive and omni-directional drive robots using the `SmacPlanner2D` planner which implements a cost-aware A\* planner. We support cars, car-like, and ackermann vehicles using the `SmacPlannerHybrid` plugin which implements a Hybrid-A\* planner.  We support **non-circular, arbitrary shaped** differntial drive and omnidirectional vehicles using the `SmacPlannerLattice` plugin which implements a Stat Lattice planner. These plugins are also useful for curvature constrained planning, like when planning robot at high speeds to make sure they don't flip over or otherwise skid out of control. It is also applicable to non-round robots (such as large rectangular or arbitrary shaped robots of differential/omnidirectional drivetrains) that need pose-based collision checking.
 
-The `SmacPlanner` fully-implements the Hybrid-A* planner as proposed in [Practical Search Techniques in Path Planning for Autonomous Driving](https://ai.stanford.edu/~ddolgov/papers/dolgov_gpp_stair08.pdf), including hybrid searching, CG smoothing, analytic expansions and hueristic functions.
+The `SmacPlannerHybrid` fully-implements the Hybrid-A* planner as proposed in [Practical Search Techniques in Path Planning for Autonomous Driving](https://ai.stanford.edu/~ddolgov/papers/dolgov_gpp_stair08.pdf), including hybrid searching, CG smoothing, analytic expansions and hueristic functions.
+
+The `SmacPlannerLattice` fully-implements the State Lattice planner, including lattice searching, CG smoothing, analytic expansions and hueristic functions.
 
 In summary...
 
-The `SmacPlanner` is designed to work with:
+The `SmacPlannerHybrid` is designed to work with:
 - Ackermann, car, and car-like robots
 - High speed or curvature constrained robots (as to not flip over, skid, or dump load at high speeds)
-- Arbitrary shaped, non-circular differential or omnidirectional robots requring SE2 collision checking
+- Arbitrary shaped, non-circular differential or omnidirectional robots requiring SE2 collision checking with constrained curvatures
+
+The `SmacPlannerLattice` is designed to work with:
+- Arbitrary shaped, non-circular differential or omnidirectional robots requiring SE2 collision checking using the full capabilities of the drivetrain
 
 The `SmacPlanner2D` is designed to work with:
 - Circular, differential or omnidirectional robots
@@ -50,7 +56,7 @@ We further improve on the Hybrid-A\* work in the following ways:
 - Speed optimizations: Fast approximation of shortest paths with wavefront hueristic, no data structure graph lookups in main loop, near-zero copy main loop, Voronoi field approximation, et al.
 - Templated Nodes and A\* implementation to support additional robot extensions.
 
-All of these features (multi-resolution, models, smoother, etc) are also available in the 2D `SmacPlanner2D` plugin.
+All of these features (multi-resolution, models, smoother, etc) are also available in the `SmacPlanner2D` and `SmacPlannerLattice` plugins.
 
 The 2D A\* implementation also does not have any of the weird artifacts introduced by the gradient wavefront-based 2D A\* implementation in the NavFn Planner. While this 2D A\* planner is slightly slower, I believe it's well worth the increased quality in paths. Though the `SmacPlanner2D` is grid-based, any reasonable local trajectory planner - including those supported by Nav2 - will not have any issue with grid-based plans.
 
@@ -69,17 +75,15 @@ For example, the following path (roughly 85 meters) path took 33ms to compute.
 
 The basic design centralizes a templated A\* implementation that handles the search of a graph of nodes. The implementation is templated by the nodes, `NodeT`, which contain the methods needed to compute the hueristics, travel costs, and search neighborhoods. The outcome of this design is then a standard A\* implementation that can be used to traverse any type of graph as long as a node template can be created for it.
 
-We provide by default a 2D node template (`Node2D`) which does 2D grid-search with either 4 or 8-connected neighborhoods, but the smoother can be used to smooth it out. We also provide a SE2 node template (`NodeSE2`) which does SE2 (X, Y, theta) search and collision checking on Dubin or Reeds-Shepp motion models. Additional templates could be easily made and included for 3D grid search and non-grid base searching like routing.
+We provide by default a 2D node template (`Node2D`) which does 2D grid-search with either 4 or 8-connected neighborhoods, but the smoother can be used to smooth it out. We also provide a Hybrid A\* node template (`NodeHybrid`) which does SE2 (X, Y, theta) search and collision checking on Dubin or Reeds-Shepp motion models. We also provide the Lattice (`NodeLattice`) node for state lattice planning making use of the wider range of velocity options available to differential and omnidirectional robots. Additional templates could be easily made and included for 3D grid search and non-grid base searching like routing.
 
-Additional node templates could be added into the future to better support other types of robot path planning, such as including a state lattice motion primitive node and 3D path planning. Pull requests or discussions aroudn this point is encouraged.
-
-In the ROS2 facing plugin, we take in the global goals and pre-process the data to feed into the templated A\* used. This includes processing any requests to downsample the costmap to another resolution to speed up search and smoothing the resulting A\* path. For the SE2 and `SmacPlanner` plugins, the path is promised to be kinematically feasible due to the kinematically valid models used in branching search. The 2D A\* is also promised to be feasible for differential and omni-directional robots.
+In the ROS2 facing plugin, we take in the global goals and pre-process the data to feed into the templated A\* used. This includes processing any requests to downsample the costmap to another resolution to speed up search and smoothing the resulting A\* path. For the `SmacPlannerHybrid` and `SmacPlannerLattice` plugins, the path is promised to be kinematically feasible due to the kinematically valid models used in branching search. The 2D A\* is also promised to be feasible for differential and omni-directional robots.
 
 We isolated the A\*, costmap downsampler, smoother, and Node template objects from ROS2 to allow them to be easily testable independently of ROS or the planner. The only place ROS is used is in the planner plugins themselves. 
 
 ## Parameters
 
-See inline description of parameters in the `SmacPlanner`. This includes comments as specific parameters apply to `SmacPlanner2D` and `SmacPlanner` in SE2 place.
+See inline description of parameters in the `SmacPlanner`. This includes comments as specific parameters apply to `SmacPlanner2D` and `SmacPlanner` in place.
 
 ```
 planner_server:
@@ -166,7 +170,7 @@ Take this advise into account. Some good numbers to potentially start with would
 
 ### Costmap Resolutions
 
-We provide for both the Hybrid-A\* and 2D A\* implementations a costmap downsampler option. This can be **incredible** beneficial when planning very long paths in larger spaces. The motion models for SE2 planning and neighborhood search in 2D planning is proportional to the costmap resolution. By downsampling it, you can N^2 reduce the number of expansions required to achieve a particular goal. However, the lower the resolution, the larger small obstacles appear and you won't be able to get super close to obstacles. This is a trade-off to make and test. Some numbers I've seen are 2-4x drops in planning CPU time for a 2-3x downsample rate. For 60m paths in an office space, I was able to get it << 100ms at a 2-3x downsample rate.
+We provide for the Hybrid-A\*, State Lattice, and 2D A\* implementations a costmap downsampler option. This can be **incredible** beneficial when planning very long paths in larger spaces. The motion models for SE2 planning and neighborhood search in 2D planning is proportional to the costmap resolution. By downsampling it, you can N^2 reduce the number of expansions required to achieve a particular goal. However, the lower the resolution, the larger small obstacles appear and you won't be able to get super close to obstacles. This is a trade-off to make and test. Some numbers I've seen are 2-4x drops in planning CPU time for a 2-3x downsample rate. For 60m paths in an office space, I was able to get it << 100ms at a 2-3x downsample rate.
 
 I recommend users using a 5cm resolution costmap and playing with the different values of downsampling rate until they achieve what they think is optimal performance (lowest number of expansions vs. necessity to achieve fine goal poses). Then, I would recommend to change the global costmap resolution to this new value. That way you don't own the compute of downsampling and maintaining a higher-resolution costmap that isn't used.
 

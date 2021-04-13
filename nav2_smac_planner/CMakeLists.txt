@@ -69,7 +69,7 @@ set(dependencies
 
 # Hybrid plugin
 add_library(${library_name} SHARED
-  src/smac_planner.cpp
+  src/smac_planner_hybrid.cpp
   src/a_star.cpp
   src/node_hybrid.cpp
   src/node_lattice.cpp

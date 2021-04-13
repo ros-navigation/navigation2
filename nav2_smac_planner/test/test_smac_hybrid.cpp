@@ -26,7 +26,7 @@
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
-#include "nav2_smac_planner/smac_planner.hpp"
+#include "nav2_smac_planner/smac_planner_hybrid.hpp"
 #include "nav2_smac_planner/smac_planner_2d.hpp"
 
 class RclCppFixture
@@ -62,7 +62,7 @@ TEST(SmacTest, test_smac_se2)
   start.pose.position.y = 0.0;
   start.pose.orientation.w = 1.0;
   goal = start;
-  auto planner = std::make_unique<nav2_smac_planner::SmacPlanner>();
+  auto planner = std::make_unique<nav2_smac_planner::SmacPlannerHybrid>();
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
 

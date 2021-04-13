@@ -452,7 +452,8 @@ void NodeHybrid::getNeighbors(
     index = NodeHybrid::getIndex(
       static_cast<unsigned int>(motion_projections[i]._x),
       static_cast<unsigned int>(motion_projections[i]._y),
-      static_cast<unsigned int>(motion_projections[i]._theta));
+      static_cast<unsigned int>(motion_projections[i]._theta),
+      motion_table.size_x, motion_table.num_angle_quantization);
 
     if (NeighborGetter(index, neighbor) && !neighbor->wasVisited()) {
       // Cache the initial pose in case it was visited but valid

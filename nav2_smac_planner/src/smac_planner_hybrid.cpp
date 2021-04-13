@@ -19,7 +19,7 @@
 #include <limits>
 
 #include "Eigen/Core"
-#include "nav2_smac_planner/smac_planner.hpp"
+#include "nav2_smac_planner/smac_planner_hybrid.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -28,7 +28,7 @@ namespace nav2_smac_planner
 
 using namespace std::chrono;  // NOLINT
 
-SmacPlanner::SmacPlanner()
+SmacPlannerHybrid::SmacPlannerHybrid()
 : _a_star(nullptr),
   _smoother(nullptr),
   _costmap(nullptr),
@@ -36,14 +36,14 @@ SmacPlanner::SmacPlanner()
 {
 }
 
-SmacPlanner::~SmacPlanner()
+SmacPlannerHybrid::~SmacPlannerHybrid()
 {
   RCLCPP_INFO(
-    _logger, "Destroying plugin %s of type SmacPlanner",
+    _logger, "Destroying plugin %s of type SmacPlannerHybrid",
     _name.c_str());
 }
 
-void SmacPlanner::configure(
+void SmacPlannerHybrid::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
@@ -170,7 +170,7 @@ void SmacPlanner::configure(
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
   RCLCPP_INFO(
-    _logger, "Configured plugin %s of type SmacPlanner with "
+    _logger, "Configured plugin %s of type SmacPlannerHybrid with "
     "tolerance %.2f, maximum iterations %i, "
     "max on approach iterations %i, and %s. Using motion model: %s.",
     _name.c_str(), _tolerance, max_iterations, max_on_approach_iterations,
@@ -178,10 +178,10 @@ void SmacPlanner::configure(
     toString(motion_model).c_str());
 }
 
-void SmacPlanner::activate()
+void SmacPlannerHybrid::activate()
 {
   RCLCPP_INFO(
-    _logger, "Activating plugin %s of type SmacPlanner",
+    _logger, "Activating plugin %s of type SmacPlannerHybrid",
     _name.c_str());
   _raw_plan_publisher->on_activate();
   if (_costmap_downsampler) {
@@ -189,10 +189,10 @@ void SmacPlanner::activate()
   }
 }
 
-void SmacPlanner::deactivate()
+void SmacPlannerHybrid::deactivate()
 {
   RCLCPP_INFO(
-    _logger, "Deactivating plugin %s of type SmacPlanner",
+    _logger, "Deactivating plugin %s of type SmacPlannerHybrid",
     _name.c_str());
   _raw_plan_publisher->on_deactivate();
   if (_costmap_downsampler) {
@@ -200,10 +200,10 @@ void SmacPlanner::deactivate()
   }
 }
 
-void SmacPlanner::cleanup()
+void SmacPlannerHybrid::cleanup()
 {
   RCLCPP_INFO(
-    _logger, "Cleaning up plugin %s of type SmacPlanner",
+    _logger, "Cleaning up plugin %s of type SmacPlannerHybrid",
     _name.c_str());
   _a_star.reset();
   _smoother.reset();
@@ -212,7 +212,7 @@ void SmacPlanner::cleanup()
   _raw_plan_publisher.reset();
 }
 
-nav_msgs::msg::Path SmacPlanner::createPlan(
+nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
@@ -350,7 +350,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   return plan;
 }
 
-void SmacPlanner::removeHook(std::vector<Eigen::Vector2d> & path)
+void SmacPlannerHybrid::removeHook(std::vector<Eigen::Vector2d> & path)
 {
   // Removes the end "hooking" since goal is locked in place
   Eigen::Vector2d interpolated_second_to_last_point;
@@ -363,7 +363,7 @@ void SmacPlanner::removeHook(std::vector<Eigen::Vector2d> & path)
   }
 }
 
-Eigen::Vector2d SmacPlanner::getWorldCoords(
+Eigen::Vector2d SmacPlannerHybrid::getWorldCoords(
   const float & mx, const float & my, const nav2_costmap_2d::Costmap2D * costmap)
 {
   // mx, my are in continuous grid coordinates, must convert to world coordinates
@@ -374,7 +374,7 @@ Eigen::Vector2d SmacPlanner::getWorldCoords(
   return Eigen::Vector2d(world_x, world_y);
 }
 
-geometry_msgs::msg::Quaternion SmacPlanner::getWorldOrientation(const float & theta)
+geometry_msgs::msg::Quaternion SmacPlannerHybrid::getWorldOrientation(const float & theta)
 {
   // theta is in continuous bin coordinates, must convert to world orientation
   tf2::Quaternion q;
@@ -385,4 +385,4 @@ geometry_msgs::msg::Quaternion SmacPlanner::getWorldOrientation(const float & th
 }  // namespace nav2_smac_planner
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_smac_planner::SmacPlanner, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_smac_planner::SmacPlannerHybrid, nav2_core::GlobalPlanner)

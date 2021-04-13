@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_SMAC_PLANNER__SMAC_PLANNER_HPP_
-#define NAV2_SMAC_PLANNER__SMAC_PLANNER_HPP_
+#ifndef NAV2_SMAC_PLANNER__SMAC_PLANNER_HYBRID_HPP_
+#define NAV2_SMAC_PLANNER__SMAC_PLANNER_HYBRID_HPP_
 
 #include <memory>
 #include <vector>
@@ -35,18 +35,18 @@
 namespace nav2_smac_planner
 {
 
-class SmacPlanner : public nav2_core::GlobalPlanner
+class SmacPlannerHybrid : public nav2_core::GlobalPlanner
 {
 public:
   /**
    * @brief constructor
    */
-  SmacPlanner();
+  SmacPlannerHybrid();
 
   /**
    * @brief destructor
    */
-  ~SmacPlanner();
+  ~SmacPlannerHybrid();
 
   /**
    * @brief Configuring plugin
@@ -112,7 +112,7 @@ protected:
   std::unique_ptr<AStarAlgorithm<NodeHybrid>> _a_star;
   std::unique_ptr<Smoother> _smoother;
   rclcpp::Clock::SharedPtr _clock;
-  rclcpp::Logger _logger{rclcpp::get_logger("SmacPlanner")};
+  rclcpp::Logger _logger{rclcpp::get_logger("SmacPlannerHybrid")};
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
   std::string _global_frame, _name;
@@ -129,4 +129,4 @@ protected:
 
 }  // namespace nav2_smac_planner
 
-#endif  // NAV2_SMAC_PLANNER__SMAC_PLANNER_HPP_
+#endif  // NAV2_SMAC_PLANNER__SMAC_PLANNER_HYBRID_HPP_
