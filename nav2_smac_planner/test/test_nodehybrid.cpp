@@ -22,7 +22,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_smac_planner/node_se2.hpp"
+#include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 
 class RclCppFixture
@@ -33,7 +33,7 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
-TEST(NodeSE2Test, test_node_se2)
+TEST(NodeHybridTest, test_node_hybrid)
 {
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 1.2;
@@ -44,7 +44,7 @@ TEST(NodeSE2Test, test_node_se2)
   unsigned int size_y = 10;
   unsigned int size_theta = 72;
 
-  nav2_smac_planner::NodeSE2::initMotionModel(
+  nav2_smac_planner::NodeHybrid::initMotionModel(
     nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
 
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
@@ -53,8 +53,8 @@ TEST(NodeSE2Test, test_node_se2)
   checker.setFootprint(nav2_costmap_2d::Footprint(), true);
 
   // test construction
-  nav2_smac_planner::NodeSE2 testA(49);
-  nav2_smac_planner::NodeSE2 testB(49);
+  nav2_smac_planner::NodeHybrid testA(49);
+  nav2_smac_planner::NodeHybrid testB(49);
   EXPECT_TRUE(std::isnan(testA.getCost()));
 
   // test node valid and cost
@@ -96,17 +96,17 @@ TEST(NodeSE2Test, test_node_se2)
   EXPECT_EQ(testA.getMotionPrimitiveIndex(), 2u);
 
   // check heuristic cost computation
-  nav2_smac_planner::NodeSE2::computeWavefrontHeuristic(
+  nav2_smac_planner::NodeHybrid::computeWavefrontHeuristic(
     costmapA,
     static_cast<unsigned int>(10.0),
     static_cast<unsigned int>(5.0),
     0.0, 0.0);
-  nav2_smac_planner::NodeSE2::Coordinates A(0.0, 0.0, 4.2);
-  nav2_smac_planner::NodeSE2::Coordinates B(10.0, 5.0, 54.1);
+  nav2_smac_planner::NodeHybrid::Coordinates A(0.0, 0.0, 4.2);
+  nav2_smac_planner::NodeHybrid::Coordinates B(10.0, 5.0, 54.1);
   EXPECT_NEAR(testB.getHeuristicCost(B, A), 16.723, 0.01);
 
   // check operator== works on index
-  nav2_smac_planner::NodeSE2 testC(49);
+  nav2_smac_planner::NodeHybrid testC(49);
   EXPECT_TRUE(testA == testC);
 
   // check accumulated costs are set
@@ -125,21 +125,21 @@ TEST(NodeSE2Test, test_node_se2)
   EXPECT_EQ(testC.getIndex(), 49u);
 
   // check set pose and pose
-  testC.setPose(nav2_smac_planner::NodeSE2::Coordinates(10.0, 5.0, 4));
+  testC.setPose(nav2_smac_planner::NodeHybrid::Coordinates(10.0, 5.0, 4));
   EXPECT_EQ(testC.pose.x, 10.0);
   EXPECT_EQ(testC.pose.y, 5.0);
   EXPECT_EQ(testC.pose.theta, 4);
 
   // check static index functions
-  EXPECT_EQ(nav2_smac_planner::NodeSE2::getIndex(1u, 1u, 4u, 10u, 72u), 796u);
-  EXPECT_EQ(nav2_smac_planner::NodeSE2::getCoords(796u, 10u, 72u).x, 1u);
-  EXPECT_EQ(nav2_smac_planner::NodeSE2::getCoords(796u, 10u, 72u).y, 1u);
-  EXPECT_EQ(nav2_smac_planner::NodeSE2::getCoords(796u, 10u, 72u).theta, 4u);
+  EXPECT_EQ(nav2_smac_planner::NodeHybrid::getIndex(1u, 1u, 4u, 10u, 72u), 796u);
+  EXPECT_EQ(nav2_smac_planner::NodeHybrid::getCoords(796u, 10u, 72u).x, 1u);
+  EXPECT_EQ(nav2_smac_planner::NodeHybrid::getCoords(796u, 10u, 72u).y, 1u);
+  EXPECT_EQ(nav2_smac_planner::NodeHybrid::getCoords(796u, 10u, 72u).theta, 4u);
 
   delete costmapA;
 }
 
-TEST(NodeSE2Test, test_node_2d_neighbors)
+TEST(NodeHybridTest, test_node_2d_neighbors)
 {
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 1.2;
@@ -149,64 +149,64 @@ TEST(NodeSE2Test, test_node_2d_neighbors)
   unsigned int size_x = 100;
   unsigned int size_y = 100;
   unsigned int size_theta = 72;
-  nav2_smac_planner::NodeSE2::initMotionModel(
+  nav2_smac_planner::NodeHybrid::initMotionModel(
     nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
 
 
   // test neighborhood computation
-  EXPECT_EQ(nav2_smac_planner::NodeSE2::motion_table.projections.size(), 3u);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[0]._x, 1.731517, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[0]._y, 0, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[0]._theta, 0, 0.01);
+  EXPECT_EQ(nav2_smac_planner::NodeHybrid::motion_table.projections.size(), 3u);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._x, 1.731517, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._y, 0, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._theta, 0, 0.01);
 
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[1]._x, 1.69047, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[1]._y, 0.3747, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[1]._theta, 5, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[1]._x, 1.69047, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[1]._y, 0.3747, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[1]._theta, 5, 0.01);
 
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[2]._x, 1.69047, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[2]._y, -0.3747, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[2]._theta, -5, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._x, 1.69047, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._y, -0.3747, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._theta, -5, 0.01);
 
-  nav2_smac_planner::NodeSE2::initMotionModel(
+  nav2_smac_planner::NodeHybrid::initMotionModel(
     nav2_smac_planner::MotionModel::REEDS_SHEPP, size_x, size_y, size_theta, info);
 
-  EXPECT_EQ(nav2_smac_planner::NodeSE2::motion_table.projections.size(), 6u);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[0]._x, 1.731517, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[0]._y, 0, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[0]._theta, 0, 0.01);
+  EXPECT_EQ(nav2_smac_planner::NodeHybrid::motion_table.projections.size(), 6u);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._x, 1.731517, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._y, 0, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._theta, 0, 0.01);
 
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[1]._x, 1.69047, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[1]._y, 0.3747, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[1]._theta, 5, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[1]._x, 1.69047, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[1]._y, 0.3747, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[1]._theta, 5, 0.01);
 
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[2]._x, 1.69047, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[2]._y, -0.3747, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[2]._theta, -5, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._x, 1.69047, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._y, -0.3747, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._theta, -5, 0.01);
 
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[3]._x, -1.731517, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[3]._y, 0, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[3]._theta, 0, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[3]._x, -1.731517, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[3]._y, 0, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[3]._theta, 0, 0.01);
 
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[4]._x, -1.69047, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[4]._y, 0.3747, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[4]._theta, -5, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[4]._x, -1.69047, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[4]._y, 0.3747, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[4]._theta, -5, 0.01);
 
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[5]._x, -1.69047, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[5]._y, -0.3747, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeSE2::motion_table.projections[5]._theta, 5, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[5]._x, -1.69047, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[5]._y, -0.3747, 0.01);
+  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[5]._theta, 5, 0.01);
 
   nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
   nav2_smac_planner::GridCollisionChecker checker(&costmapA, 72);
-  nav2_smac_planner::NodeSE2 * node = new nav2_smac_planner::NodeSE2(49);
-  std::function<bool(const unsigned int &, nav2_smac_planner::NodeSE2 * &)> neighborGetter =
-    [&, this](const unsigned int & index, nav2_smac_planner::NodeSE2 * & neighbor_rtn) -> bool
+  nav2_smac_planner::NodeHybrid * node = new nav2_smac_planner::NodeHybrid(49);
+  std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> neighborGetter =
+    [&, this](const unsigned int & index, nav2_smac_planner::NodeHybrid * & neighbor_rtn) -> bool
     {
       // because we don't return a real object
       return false;
     };
 
-  nav2_smac_planner::NodeSE2::NodeVector neighbors;
-  nav2_smac_planner::NodeSE2::getNeighbors(node, neighborGetter, checker, false, neighbors);
+  nav2_smac_planner::NodeHybrid::NodeVector neighbors;
+  nav2_smac_planner::NodeHybrid::getNeighbors(node, neighborGetter, checker, false, neighbors);
   delete node;
 
   // should be empty since totally invalid

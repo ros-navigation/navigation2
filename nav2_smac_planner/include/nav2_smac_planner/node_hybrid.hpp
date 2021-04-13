@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_SMAC_PLANNER__NODE_SE2_HPP_
-#define NAV2_SMAC_PLANNER__NODE_SE2_HPP_
+#ifndef NAV2_SMAC_PLANNER__NODE_HYBRID_HPP_
+#define NAV2_SMAC_PLANNER__NODE_HYBRID_HPP_
 
 #include <math.h>
 #include <vector>
@@ -65,18 +65,18 @@ struct MotionPose
 typedef std::vector<MotionPose> MotionPoses;
 
 // Must forward declare
-class NodeSE2;
+class NodeHybrid;
 
 /**
- * @struct nav2_smac_planner::MotionTable
+ * @struct nav2_smac_planner::HybridMotionTable
  * @brief A table of motion primitives and related functions
  */
-struct MotionTable
+struct HybridMotionTable
 {
   /**
-   * @brief A constructor for nav2_smac_planner::MotionTable
+   * @brief A constructor for nav2_smac_planner::HybridMotionTable
    */
-  MotionTable() {}
+  HybridMotionTable() {}
 
   /**
    * @brief Initializing using Dubin model
@@ -106,15 +106,16 @@ struct MotionTable
 
   /**
    * @brief Get projections of motion models
-   * @param node Ptr to SE2 node
+   * @param node Ptr to NodeHybrid
    * @return A set of motion poses
    */
-  MotionPoses getProjections(const NodeSE2 * node);
+  MotionPoses getProjections(const NodeHybrid * node);
 
   MotionPoses projections;
   unsigned int size_x;
   unsigned int num_angle_quantization;
   float num_angle_quantization_float;
+  float min_turning_radius;
   float bin_size;
   float change_penalty;
   float non_straight_penalty;
@@ -126,28 +127,28 @@ struct MotionTable
 };
 
 /**
- * @class nav2_smac_planner::NodeSE2
- * @brief NodeSE2 implementation for graph
+ * @class nav2_smac_planner::NodeHybrid
+ * @brief NodeHybrid implementation for graph, Hybrid-A*
  */
-class NodeSE2
+class NodeHybrid
 {
 public:
-  typedef NodeSE2 * NodePtr;
-  typedef std::unique_ptr<std::vector<NodeSE2>> Graph;
+  typedef NodeHybrid * NodePtr;
+  typedef std::unique_ptr<std::vector<NodeHybrid>> Graph;
   typedef std::vector<NodePtr> NodeVector;
   /**
-   * @class nav2_smac_planner::NodeSE2::Coordinates
-   * @brief NodeSE2 implementation of coordinate structure
+   * @class nav2_smac_planner::NodeHybrid::Coordinates
+   * @brief NodeHybrid implementation of coordinate structure
    */
   struct Coordinates
   {
     /**
-     * @brief A constructor for nav2_smac_planner::NodeSE2::Coordinates
+     * @brief A constructor for nav2_smac_planner::NodeHybrid::Coordinates
      */
     Coordinates() {}
 
     /**
-     * @brief A constructor for nav2_smac_planner::NodeSE2::Coordinates
+     * @brief A constructor for nav2_smac_planner::NodeHybrid::Coordinates
      * @param x_in X coordinate
      * @param y_in Y coordinate
      * @param theta_in Theta coordinate
@@ -162,22 +163,22 @@ public:
   typedef std::vector<Coordinates> CoordinateVector;
 
   /**
-   * @brief A constructor for nav2_smac_planner::NodeSE2
+   * @brief A constructor for nav2_smac_planner::NodeHybrid
    * @param index The index of this node for self-reference
    */
-  explicit NodeSE2(const unsigned int index);
+  explicit NodeHybrid(const unsigned int index);
 
   /**
-   * @brief A destructor for nav2_smac_planner::NodeSE2
+   * @brief A destructor for nav2_smac_planner::NodeHybrid
    */
-  ~NodeSE2();
+  ~NodeHybrid();
 
   /**
    * @brief operator== for comparisons
-   * @param NodeSE2 right hand side node reference
+   * @param NodeHybrid right hand side node reference
    * @return If cell indicies are equal
    */
-  bool operator==(const NodeSE2 & rhs)
+  bool operator==(const NodeHybrid & rhs)
   {
     return this->_index == rhs._index;
   }
@@ -393,15 +394,15 @@ public:
    */
   static void getNeighbors(
     const NodePtr & node,
-    std::function<bool(const unsigned int &, nav2_smac_planner::NodeSE2 * &)> & validity_checker,
+    std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> & validity_checker,
     GridCollisionChecker & collision_checker,
     const bool & traverse_unknown,
     NodeVector & neighbors);
 
-  NodeSE2 * parent;
+  NodeHybrid * parent;
   Coordinates pose;
   static double neutral_cost;
-  static MotionTable motion_table;
+  static HybridMotionTable motion_table;
 
 private:
   float _cell_cost;
@@ -415,4 +416,4 @@ private:
 
 }  // namespace nav2_smac_planner
 
-#endif  // NAV2_SMAC_PLANNER__NODE_SE2_HPP_
+#endif  // NAV2_SMAC_PLANNER__NODE_HYBRID_HPP_

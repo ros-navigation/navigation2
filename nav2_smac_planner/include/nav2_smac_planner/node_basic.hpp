@@ -28,7 +28,8 @@
 #include "ompl/base/StateSpace.h"
 
 #include "nav2_smac_planner/constants.hpp"
-#include "nav2_smac_planner/node_se2.hpp"
+#include "nav2_smac_planner/node_hybrid.hpp"
+#include "nav2_smac_planner/node_lattice.hpp"
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
@@ -55,13 +56,14 @@ public:
   {
   }
 
-  typename NodeT::Coordinates pose;  // Used by NodeSE2
+  typename NodeT::Coordinates pose;  // Used by NodeHybrid and NodeLattice
   NodeT * graph_node_ptr;
   unsigned int index;
 };
 
 template class NodeBasic<Node2D>;
-template class NodeBasic<NodeSE2>;
+template class NodeBasic<NodeHybrid>;
+template class NodeBasic<NodeLattice>;
 
 }  // namespace nav2_smac_planner
 

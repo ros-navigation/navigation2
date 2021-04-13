@@ -25,7 +25,7 @@
 #include "ompl/base/spaces/DubinsStateSpace.h"
 #include "ompl/base/spaces/ReedsSheppStateSpace.h"
 
-#include "nav2_smac_planner/node_se2.hpp"
+#include "nav2_smac_planner/node_hybrid.hpp"
 
 using namespace std::chrono;  // NOLINT
 
@@ -33,9 +33,9 @@ namespace nav2_smac_planner
 {
 
 // defining static member for all instance to share
-std::vector<unsigned int> NodeSE2::_wavefront_heuristic;
-double NodeSE2::neutral_cost = sqrt(2);
-MotionTable NodeSE2::motion_table;
+std::vector<unsigned int> NodeHybrid::_wavefront_heuristic;
+double NodeHybrid::neutral_cost = sqrt(2);
+HybridMotionTable NodeHybrid::motion_table;
 
 // Each of these tables are the projected motion models through
 // time and space applied to the search on the current node in
@@ -46,19 +46,27 @@ MotionTable NodeSE2::motion_table;
 
 // http://planning.cs.uiuc.edu/node821.html
 // Model for ackermann style vehicle with minimum radius restriction
-void MotionTable::initDubin(
+void HybridMotionTable::initDubin(
   unsigned int & size_x_in,
   unsigned int & /*size_y_in*/,
   unsigned int & num_angle_quantization_in,
   SearchInfo & search_info)
 {
   size_x = size_x_in;
-  num_angle_quantization = num_angle_quantization_in;
-  num_angle_quantization_float = static_cast<float>(num_angle_quantization);
   change_penalty = search_info.change_penalty;
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
+
+  // if nothing changed, no need to re-compute primitives
+  if (num_angle_quantization_in == num_angle_quantization &&
+    min_turning_radius == search_info.minimum_turning_radius) {
+    return;
+  }
+
+  num_angle_quantization = num_angle_quantization_in;
+  num_angle_quantization_float = static_cast<float>(num_angle_quantization);
+  min_turning_radius = search_info.minimum_turning_radius;
 
   // angle must meet 3 requirements:
   // 1) be increment of quantized bin size
@@ -70,7 +78,7 @@ void MotionTable::initDubin(
   //
   // chord >= sqrt(2) >= 2 * R * sin (angle / 2); where angle / N = quantized bin size
   // Thusly: angle <= 2.0 * asin(sqrt(2) / (2 * R))
-  float angle = 2.0 * asin(sqrt(2.0) / (2 * search_info.minimum_turning_radius));
+  float angle = 2.0 * asin(sqrt(2.0) / (2 * min_turning_radius));
   // Now make sure angle is an increment of the quantized bin size
   // And since its based on the minimum chord, we need to make sure its always larger
   bin_size =
@@ -88,11 +96,10 @@ void MotionTable::initDubin(
   // find deflections
   // If we make a right triangle out of the chord in circle of radius
   // min turning angle, we can see that delta X = R * sin (angle)
-  float delta_x = search_info.minimum_turning_radius * sin(angle);
+  float delta_x = min_turning_radius * sin(angle);
   // Using that same right triangle, we can see that the complement
   // to delta Y is R * cos (angle). If we subtract R, we get the actual value
-  float delta_y = search_info.minimum_turning_radius -
-    (search_info.minimum_turning_radius * cos(angle));
+  float delta_y = min_turning_radius - (min_turning_radius * cos(angle));
 
   projections.clear();
   projections.reserve(3);
@@ -101,7 +108,7 @@ void MotionTable::initDubin(
   projections.emplace_back(delta_x, -delta_y, -increments);  // Right
 
   // Create the correct OMPL state space
-  state_space = std::make_unique<ompl::base::DubinsStateSpace>(search_info.minimum_turning_radius);
+  state_space = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius);
 
   // Precompute projection deltas
   delta_xs.resize(projections.size());
@@ -123,21 +130,29 @@ void MotionTable::initDubin(
 // http://planning.cs.uiuc.edu/node822.html
 // Same as Dubin model but now reverse is valid
 // See notes in Dubin for explanation
-void MotionTable::initReedsShepp(
+void HybridMotionTable::initReedsShepp(
   unsigned int & size_x_in,
   unsigned int & /*size_y_in*/,
   unsigned int & num_angle_quantization_in,
   SearchInfo & search_info)
 {
   size_x = size_x_in;
-  num_angle_quantization = num_angle_quantization_in;
-  num_angle_quantization_float = static_cast<float>(num_angle_quantization);
   change_penalty = search_info.change_penalty;
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
 
-  float angle = 2.0 * asin(sqrt(2.0) / (2 * search_info.minimum_turning_radius));
+  // if nothing changed, no need to re-compute primitives
+  if (num_angle_quantization_in == num_angle_quantization &&
+    min_turning_radius == search_info.minimum_turning_radius) {
+    return;
+  }
+
+  num_angle_quantization = num_angle_quantization_in;
+  num_angle_quantization_float = static_cast<float>(num_angle_quantization);
+  min_turning_radius = search_info.minimum_turning_radius;
+
+  float angle = 2.0 * asin(sqrt(2.0) / (2 * min_turning_radius));
   bin_size =
     2.0f * static_cast<float>(M_PI) / static_cast<float>(num_angle_quantization);
   float increments;
@@ -148,9 +163,8 @@ void MotionTable::initReedsShepp(
   }
   angle = increments * bin_size;
 
-  float delta_x = search_info.minimum_turning_radius * sin(angle);
-  float delta_y = search_info.minimum_turning_radius -
-    (search_info.minimum_turning_radius * cos(angle));
+  float delta_x = min_turning_radius * sin(angle);
+  float delta_y = min_turning_radius - (min_turning_radius * cos(angle));
 
   projections.clear();
   projections.reserve(6);
@@ -163,7 +177,7 @@ void MotionTable::initReedsShepp(
 
   // Create the correct OMPL state space
   state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
-    search_info.minimum_turning_radius);
+    min_turning_radius);
 
   // Precompute projection deltas
   delta_xs.resize(projections.size());
@@ -182,7 +196,7 @@ void MotionTable::initReedsShepp(
   }
 }
 
-MotionPoses MotionTable::getProjections(const NodeSE2 * node)
+MotionPoses HybridMotionTable::getProjections(const NodeHybrid * node)
 {
   MotionPoses projection_list;
   projection_list.reserve(projections.size());
@@ -211,7 +225,7 @@ MotionPoses MotionTable::getProjections(const NodeSE2 * node)
   return projection_list;
 }
 
-NodeSE2::NodeSE2(const unsigned int index)
+NodeHybrid::NodeHybrid(const unsigned int index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),
   _cell_cost(std::numeric_limits<float>::quiet_NaN()),
@@ -223,12 +237,12 @@ NodeSE2::NodeSE2(const unsigned int index)
 {
 }
 
-NodeSE2::~NodeSE2()
+NodeHybrid::~NodeHybrid()
 {
   parent = nullptr;
 }
 
-void NodeSE2::reset()
+void NodeHybrid::reset()
 {
   parent = nullptr;
   _cell_cost = std::numeric_limits<float>::quiet_NaN();
@@ -241,7 +255,7 @@ void NodeSE2::reset()
   pose.theta = 0.0f;
 }
 
-bool NodeSE2::isNodeValid(const bool & traverse_unknown, GridCollisionChecker & collision_checker)
+bool NodeHybrid::isNodeValid(const bool & traverse_unknown, GridCollisionChecker & collision_checker)
 {
   if (collision_checker.inCollision(
       this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
@@ -253,7 +267,7 @@ bool NodeSE2::isNodeValid(const bool & traverse_unknown, GridCollisionChecker & 
   return true;
 }
 
-float NodeSE2::getTraversalCost(const NodePtr & child)
+float NodeHybrid::getTraversalCost(const NodePtr & child)
 {
   const float normalized_cost = child->getCost() / 252.0;
   if (std::isnan(normalized_cost)) {
@@ -264,11 +278,11 @@ float NodeSE2::getTraversalCost(const NodePtr & child)
 
   // this is the first node
   if (getMotionPrimitiveIndex() == std::numeric_limits<unsigned int>::max()) {
-    return NodeSE2::neutral_cost;
+    return NodeHybrid::neutral_cost;
   }
 
   float travel_cost = 0.0;
-  float travel_cost_raw = NodeSE2::neutral_cost + motion_table.cost_penalty * normalized_cost;
+  float travel_cost_raw = NodeHybrid::neutral_cost + motion_table.cost_penalty * normalized_cost;
 
   if (child->getMotionPrimitiveIndex() == 0 || child->getMotionPrimitiveIndex() == 3) {
     // straight motion, no additional costs to be applied
@@ -292,7 +306,7 @@ float NodeSE2::getTraversalCost(const NodePtr & child)
   return travel_cost;
 }
 
-float NodeSE2::getHeuristicCost(
+float NodeHybrid::getHeuristicCost(
   const Coordinates & node_coords,
   const Coordinates & goal_coords)
 {
@@ -314,16 +328,16 @@ float NodeSE2::getHeuristicCost(
 
   // if lethal or didn't visit, use the motion heuristic instead.
   if (wavefront_value == 0) {
-    return NodeSE2::neutral_cost * motion_heuristic;
+    return NodeHybrid::neutral_cost * motion_heuristic;
   }
 
   // -2 because wavefront starts at 2
   const float wavefront_heuristic = static_cast<float>(wavefront_value - 2);
 
-  return NodeSE2::neutral_cost * std::max(wavefront_heuristic, motion_heuristic);
+  return NodeHybrid::neutral_cost * std::max(wavefront_heuristic, motion_heuristic);
 }
 
-void NodeSE2::initMotionModel(
+void NodeHybrid::initMotionModel(
   const MotionModel & motion_model,
   unsigned int & size_x,
   unsigned int & size_y,
@@ -346,7 +360,7 @@ void NodeSE2::initMotionModel(
   }
 }
 
-void NodeSE2::computeWavefrontHeuristic(
+void NodeHybrid::computeWavefrontHeuristic(
   nav2_costmap_2d::Costmap2D * & costmap,
   const unsigned int & start_x, const unsigned int & start_y,
   const unsigned int & goal_x, const unsigned int & goal_y)
@@ -422,9 +436,9 @@ void NodeSE2::computeWavefrontHeuristic(
   }
 }
 
-void NodeSE2::getNeighbors(
+void NodeHybrid::getNeighbors(
   const NodePtr & node,
-  std::function<bool(const unsigned int &, nav2_smac_planner::NodeSE2 * &)> & NeighborGetter,
+  std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> & NeighborGetter,
   GridCollisionChecker & collision_checker,
   const bool & traverse_unknown,
   NodeVector & neighbors)
@@ -435,11 +449,10 @@ void NodeSE2::getNeighbors(
   const MotionPoses motion_projections = motion_table.getProjections(node);
 
   for (unsigned int i = 0; i != motion_projections.size(); i++) {
-    index = NodeSE2::getIndex(
+    index = NodeHybrid::getIndex(
       static_cast<unsigned int>(motion_projections[i]._x),
       static_cast<unsigned int>(motion_projections[i]._y),
-      static_cast<unsigned int>(motion_projections[i]._theta),
-      motion_table.size_x, motion_table.num_angle_quantization);
+      static_cast<unsigned int>(motion_projections[i]._theta));
 
     if (NeighborGetter(index, neighbor) && !neighbor->wasVisited()) {
       // Cache the initial pose in case it was visited but valid

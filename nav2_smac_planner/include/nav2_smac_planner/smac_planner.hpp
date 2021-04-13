@@ -109,7 +109,7 @@ public:
   void removeHook(std::vector<Eigen::Vector2d> & path);
 
 protected:
-  std::unique_ptr<AStarAlgorithm<NodeSE2>> _a_star;
+  std::unique_ptr<AStarAlgorithm<NodeHybrid>> _a_star;
   std::unique_ptr<Smoother> _smoother;
   rclcpp::Clock::SharedPtr _clock;
   rclcpp::Logger _logger{rclcpp::get_logger("SmacPlanner")};

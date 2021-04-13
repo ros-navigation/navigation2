@@ -22,7 +22,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_smac_planner/node_se2.hpp"
+#include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 
@@ -126,7 +126,7 @@ TEST(AStarTest, test_a_star_se2)
   info.reverse_penalty = 2.1;
   info.minimum_turning_radius = 2.0;  // in grid coordinates
   unsigned int size_theta = 72;
-  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeSE2> a_star(
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
     nav2_smac_planner::MotionModel::DUBIN, info);
   int max_iterations = 10000;
   float tolerance = 10.0;
@@ -150,7 +150,7 @@ TEST(AStarTest, test_a_star_se2)
     costmapA->getSizeInCellsX(), costmapA->getSizeInCellsY(), size_theta, costmapA);
   a_star.setStart(10u, 10u, 0u);
   a_star.setGoal(80u, 80u, 40u);
-  nav2_smac_planner::NodeSE2::CoordinateVector path;
+  nav2_smac_planner::NodeHybrid::CoordinateVector path;
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
 
   // check path is the right size and collision free

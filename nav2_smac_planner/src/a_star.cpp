@@ -91,8 +91,8 @@ void AStarAlgorithm<Node2D>::createGraph(
   }
 }
 
-template<>
-void AStarAlgorithm<NodeSE2>::createGraph(
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::createGraph(
   const unsigned int & x_size,
   const unsigned int & y_size,
   const unsigned int & dim_3_size,
@@ -110,7 +110,7 @@ void AStarAlgorithm<NodeSE2>::createGraph(
     _x_size = x_size;
     _y_size = y_size;
 
-    NodeSE2::initMotionModel(_motion_model, _x_size, _y_size, _dim3_size, _search_info);
+    NodeT::initMotionModel(_motion_model, _x_size, _y_size, _dim3_size, _search_info);
   }
 }
 
@@ -128,11 +128,11 @@ typename AStarAlgorithm<Node2D>::NodePtr AStarAlgorithm<Node2D>::addToGraph(
   return &(_graph.emplace(index, Node2D(_costmap->getCharMap()[index], index)).first->second);
 }
 
-template<>
-typename AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::addToGraph(
+template<typename NodeT>
+typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::addToGraph(
   const unsigned int & index)
 {
-  return &(_graph.emplace(index, NodeSE2(index)).first->second);
+  return &(_graph.emplace(index, NodeT(index)).first->second);
 }
 
 template<>
@@ -147,13 +147,13 @@ void AStarAlgorithm<Node2D>::setStart(
   _start = addToGraph(Node2D::getIndex(mx, my, getSizeX()));
 }
 
-template<>
-void AStarAlgorithm<NodeSE2>::setStart(
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::setStart(
   const unsigned int & mx,
   const unsigned int & my,
   const unsigned int & dim_3)
 {
-  _start = addToGraph(NodeSE2::getIndex(mx, my, dim_3, getSizeX(), getSizeDim3()));
+  _start = addToGraph(NodeT::getIndex(mx, my, dim_3));
   _start->setPose(
     Coordinates(
       static_cast<float>(mx),
@@ -175,24 +175,26 @@ void AStarAlgorithm<Node2D>::setGoal(
   _goal_coordinates = Node2D::Coordinates(mx, my);
 }
 
-template<>
-void AStarAlgorithm<NodeSE2>::setGoal(
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::setGoal(
   const unsigned int & mx,
   const unsigned int & my,
   const unsigned int & dim_3)
 {
-  _goal = addToGraph(NodeSE2::getIndex(mx, my, dim_3, getSizeX(), getSizeDim3()));
-  _goal_coordinates = NodeSE2::Coordinates(
+  _goal = addToGraph(NodeT::getIndex(mx, my, dim_3));
+  _goal_coordinates = typename NodeT::Coordinates(
     static_cast<float>(mx),
     static_cast<float>(my),
     static_cast<float>(dim_3));
   _goal->setPose(_goal_coordinates);
 
-  NodeSE2::computeWavefrontHeuristic(
-    _costmap,
-    static_cast<unsigned int>(getStart()->pose.x),
-    static_cast<unsigned int>(getStart()->pose.y),
-    mx, my);
+  if (std::is_same<NodeT, NodeHybrid>::value) {
+    NodeHybrid::computeWavefrontHeuristic(
+      _costmap,
+      static_cast<unsigned int>(getStart()->pose.x),
+      static_cast<unsigned int>(getStart()->pose.y),
+      mx, my);
+  }
 }
 
 template<typename NodeT>
@@ -335,14 +337,14 @@ bool AStarAlgorithm<NodeT>::isGoal(NodePtr & node)
   return node == getGoal();
 }
 
-template<>
-AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getAnalyticPath(
+template<typename NodeT>
+typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::getAnalyticPath(
   const NodePtr & node,
   const NodeGetter & node_getter)
 {
   ompl::base::ScopedState<> from(node->motion_table.state_space), to(
     node->motion_table.state_space), s(node->motion_table.state_space);
-  const NodeSE2::Coordinates & node_coords = node->pose;
+  const typename NodeT::Coordinates & node_coords = node->pose;
   from[0] = node_coords.x;
   from[1] = node_coords.y;
   from[2] = node_coords.theta * node->motion_table.bin_size;
@@ -378,7 +380,7 @@ AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getAnalyticPath(
       angle += node->motion_table.num_angle_quantization_float;
     }
     // Turn the pose into a node, and check if it is valid
-    index = NodeSE2::getIndex(
+    index = NodeT::getIndex(
       static_cast<unsigned int>(reals[0]),
       static_cast<unsigned int>(reals[1]),
       static_cast<unsigned int>(angle));
@@ -429,8 +431,8 @@ AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getAnalyticPath(
   return _goal;
 }
 
-template<typename NodeT>
-typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::getAnalyticPath(
+template<>
+typename AStarAlgorithm<Node2D>::NodePtr AStarAlgorithm<Node2D>::getAnalyticPath(
   const NodePtr & node,
   const NodeGetter & node_getter)
 {
@@ -456,8 +458,8 @@ bool AStarAlgorithm<Node2D>::backtracePath(NodePtr & node, CoordinateVector & pa
   return path.size() > 1;
 }
 
-template<>
-bool AStarAlgorithm<NodeSE2>::backtracePath(NodePtr & node, CoordinateVector & path)
+template<typename NodeT>
+bool AStarAlgorithm<NodeT>::backtracePath(NodePtr & node, CoordinateVector & path)
 {
   if (!node->parent) {
     return false;
@@ -485,20 +487,23 @@ typename AStarAlgorithm<NodeT>::NodePtr & AStarAlgorithm<NodeT>::getGoal()
   return _goal;
 }
 
+template<>
+typename AStarAlgorithm<Node2D>::NodePtr AStarAlgorithm<Node2D>::getNextNode()
+{
+  NodeBasic<Node2D> node = _queue.top().second;
+  _queue.pop();
+  return node.graph_node_ptr;
+}
+
 template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::getNextNode()
 {
   NodeBasic<NodeT> node = _queue.top().second;
   _queue.pop();
-  return node.graph_node_ptr;
-}
 
-template<>
-typename AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getNextNode()
-{
-  NodeBasic<NodeSE2> node = _queue.top().second;
-  _queue.pop();
-
+  // We only want to override the node's pose if it has not yet been visited
+  // to prevent the case that a node has been queued multiple times and
+  // a new branch is overriding one of lower cost already visited.
   if (!node.graph_node_ptr->wasVisited()) {
     node.graph_node_ptr->pose = node.pose;
   }
@@ -506,18 +511,18 @@ typename AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getNextNode()
   return node.graph_node_ptr;
 }
 
-template<typename NodeT>
-void AStarAlgorithm<NodeT>::addNode(const float & cost, NodePtr & node)
+template<>
+void AStarAlgorithm<Node2D>::addNode(const float & cost, NodePtr & node)
 {
-  NodeBasic<NodeT> queued_node(node->getIndex());
+  NodeBasic<Node2D> queued_node(node->getIndex());
   queued_node.graph_node_ptr = node;
   _queue.emplace(cost, queued_node);
 }
 
-template<>
-void AStarAlgorithm<NodeSE2>::addNode(const float & cost, NodePtr & node)
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::addNode(const float & cost, NodePtr & node)
 {
-  NodeBasic<NodeSE2> queued_node(node->getIndex());
+  NodeBasic<NodeT> queued_node(node->getIndex());
   queued_node.pose = node->pose;
   queued_node.graph_node_ptr = node;
   _queue.emplace(cost, queued_node);
@@ -609,7 +614,7 @@ typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::tryAnalyticExpans
   int & closest_distance)
 {
   if (_motion_model == MotionModel::DUBIN || _motion_model == MotionModel::REEDS_SHEPP) {
-    // This must be a NodeSE2 node if we are using these motion models
+    // This must be a NodeHybrid node if we are using these motion models
 
     // See if we are closer and should be expanding more often
     const Coordinates node_coords =
@@ -647,6 +652,7 @@ typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::tryAnalyticExpans
 
 // Instantiate algorithm for the supported template types
 template class AStarAlgorithm<Node2D>;
-template class AStarAlgorithm<NodeSE2>;
+template class AStarAlgorithm<NodeHybrid>;
+template class AStarAlgorithm<NodeLattice>;
 
 }  // namespace nav2_smac_planner

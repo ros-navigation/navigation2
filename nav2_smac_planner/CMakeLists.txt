@@ -67,11 +67,12 @@ set(dependencies
   eigen3_cmake_module
 )
 
-# SE2 plugin
+# Hybrid plugin
 add_library(${library_name} SHARED
   src/smac_planner.cpp
   src/a_star.cpp
-  src/node_se2.cpp
+  src/node_hybrid.cpp
+  src/node_lattice.cpp
   src/costmap_downsampler.cpp
   src/node_2d.cpp
 )
@@ -87,7 +88,8 @@ ament_target_dependencies(${library_name}
 add_library(${library_name}_2d SHARED
   src/smac_planner_2d.cpp
   src/a_star.cpp
-  src/node_se2.cpp
+  src/node_hybrid.cpp
+  src/node_lattice.cpp
   src/costmap_downsampler.cpp
   src/node_2d.cpp
 )

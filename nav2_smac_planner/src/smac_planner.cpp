@@ -145,7 +145,7 @@ void SmacPlanner::configure(
   search_info.minimum_turning_radius =
     search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
 
-  _a_star = std::make_unique<AStarAlgorithm<NodeSE2>>(motion_model, search_info);
+  _a_star = std::make_unique<AStarAlgorithm<NodeHybrid>>(motion_model, search_info);
   _a_star->initialize(
     allow_unknown,
     max_iterations,
@@ -265,7 +265,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
   pose.pose.orientation.w = 1.0;
 
   // Compute plan
-  NodeSE2::CoordinateVector path;
+  NodeHybrid::CoordinateVector path;
   int num_iterations = 0;
   std::string error;
   try {

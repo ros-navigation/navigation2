@@ -53,7 +53,7 @@ TEST(SmootherTest, test_smoother)
   info.reverse_penalty = 2.1;
   info.minimum_turning_radius = 4.0;  // in grid coordinates
   unsigned int size_theta = 72;
-  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeSE2> a_star(
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
     nav2_smac_planner::MotionModel::DUBIN, info);
   int max_iterations = 1000000;
   float tolerance = 0.0;
@@ -64,7 +64,7 @@ TEST(SmootherTest, test_smoother)
   a_star.createGraph(costmap->getSizeInCellsX(), costmap->getSizeInCellsY(), size_theta, costmap);
   a_star.setStart(10u, 10u, 0u);
   a_star.setGoal(80u, 80u, 40u);
-  nav2_smac_planner::NodeSE2::CoordinateVector plan;
+  nav2_smac_planner::NodeHybrid::CoordinateVector plan;
   EXPECT_TRUE(a_star.createPath(plan, num_it, tolerance));
 
   // populate our smoothing paths
