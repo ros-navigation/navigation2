@@ -117,7 +117,7 @@ inline Iter min_by(Iter begin, Iter end, Getter getCompareVal)
  */
 inline double calculate_path_length(const nav_msgs::msg::Path & path, size_t start_index = 0)
 {
-  if (start_index >= path.poses.size() - 1) {
+  if (start_index + 1 >= path.poses.size()) {
     return 0.0;
   }
   double path_length = 0.0;
