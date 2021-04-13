@@ -136,11 +136,27 @@ public:
   }
 
   /**
+   * @brief Get the vector of pointers to the costmap filters
+   */
+  std::vector<std::shared_ptr<Layer>> * getFilters()
+  {
+    return &filters_;
+  }
+
+  /**
    * @brief Add a new plugin to the plugins vector to process
    */
   void addPlugin(std::shared_ptr<Layer> plugin)
   {
     plugins_.push_back(plugin);
+  }
+
+  /**
+   * @brief Add a new costmap filter plugin to the filters vector to process
+   */
+  void addFilter(std::shared_ptr<Layer> filter)
+  {
+    filters_.push_back(filter);
   }
 
   /**
@@ -197,7 +213,7 @@ public:
   bool isOutofBounds(double robot_x, double robot_y);
 
 private:
-  Costmap2D costmap_;
+  Costmap2D plugins_costmap_, costmap_;
   std::string global_frame_;
 
   bool rolling_window_;  /// < @brief Whether or not the costmap should roll with the robot
@@ -207,6 +223,7 @@ private:
   unsigned int bx0_, bxn_, by0_, byn_;
 
   std::vector<std::shared_ptr<Layer>> plugins_;
+  std::vector<std::shared_ptr<Layer>> filters_;
 
   bool initialized_;
   bool size_locked_;

@@ -344,6 +344,8 @@ protected:
   std::vector<std::string> default_types_;
   std::vector<std::string> plugin_names_;
   std::vector<std::string> plugin_types_;
+  std::vector<std::string> filter_names_;
+  std::vector<std::string> filter_types_;
   double resolution_{0};
   std::string robot_base_frame_;   ///< The frame_id of the robot base
   double robot_radius_;

@@ -112,6 +112,15 @@ void ClearCostmapService::clearRegion(const double reset_distance, bool invert)
       clearLayerRegion(costmap_layer, x, y, reset_distance, invert);
     }
   }
+
+  layers = costmap_.getLayeredCostmap()->getFilters();
+
+  for (auto & layer : *layers) {
+    if (layer->isClearable()) {
+      auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
+      clearLayerRegion(costmap_layer, x, y, reset_distance, invert);
+    }
+  }
 }
 
 void ClearCostmapService::clearLayerRegion(

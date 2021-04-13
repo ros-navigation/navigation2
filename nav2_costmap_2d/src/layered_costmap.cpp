@@ -53,7 +53,7 @@ namespace nav2_costmap_2d
 {
 
 LayeredCostmap::LayeredCostmap(std::string global_frame, bool rolling_window, bool track_unknown)
-: costmap_(),
+: plugins_costmap_(), costmap_(),
   global_frame_(global_frame),
   rolling_window_(rolling_window),
   current_(false),
@@ -71,8 +71,10 @@ LayeredCostmap::LayeredCostmap(std::string global_frame, bool rolling_window, bo
   inscribed_radius_(0.1)
 {
   if (track_unknown) {
+    plugins_costmap_.setDefaultValue(255);
     costmap_.setDefaultValue(255);
   } else {
+    plugins_costmap_.setDefaultValue(0);
     costmap_.setDefaultValue(0);
   }
 }
@@ -81,6 +83,9 @@ LayeredCostmap::~LayeredCostmap()
 {
   while (plugins_.size() > 0) {
     plugins_.pop_back();
+  }
+  while (filters_.size() > 0) {
+    filters_.pop_back();
   }
 }
 
@@ -92,11 +97,17 @@ void LayeredCostmap::resizeMap(
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getMutex()));
   size_locked_ = size_locked;
+  plugins_costmap_.resizeMap(size_x, size_y, resolution, origin_x, origin_y);
   costmap_.resizeMap(size_x, size_y, resolution, origin_x, origin_y);
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
     plugin != plugins_.end(); ++plugin)
   {
     (*plugin)->matchSize();
+  }
+  for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
+    filter != filters_.end(); ++filter)
+  {
+    (*filter)->matchSize();
   }
 }
 
@@ -117,6 +128,7 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
   if (rolling_window_) {
     double new_origin_x = robot_x - costmap_.getSizeInMetersX() / 2;
     double new_origin_y = robot_y - costmap_.getSizeInMetersY() / 2;
+    plugins_costmap_.updateOrigin(new_origin_x, new_origin_y);
     costmap_.updateOrigin(new_origin_x, new_origin_y);
   }
 
@@ -126,7 +138,7 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
       "Robot is out of bounds of the costmap!");
   }
 
-  if (plugins_.size() == 0) {
+  if (plugins_.size() == 0 && filters_.size() == 0) {
     return;
   }
 
@@ -151,6 +163,24 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
         (*plugin)->getName().c_str());
     }
   }
+  for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
+    filter != filters_.end(); ++filter)
+  {
+    double prev_minx = minx_;
+    double prev_miny = miny_;
+    double prev_maxx = maxx_;
+    double prev_maxy = maxy_;
+    (*filter)->updateBounds(robot_x, robot_y, robot_yaw, &minx_, &miny_, &maxx_, &maxy_);
+    if (minx_ > prev_minx || miny_ > prev_miny || maxx_ < prev_maxx || maxy_ < prev_maxy) {
+      RCLCPP_WARN(
+        rclcpp::get_logger(
+          "nav2_costmap_2d"), "Illegal bounds change, was [tl: (%f, %f), br: (%f, %f)], but "
+        "is now [tl: (%f, %f), br: (%f, %f)]. The offending layer is %s",
+        prev_minx, prev_miny, prev_maxx, prev_maxy,
+        minx_, miny_, maxx_, maxy_,
+        (*filter)->getName().c_str());
+    }
+  }
 
   int x0, xn, y0, yn;
   costmap_.worldToMapEnforceBounds(minx_, miny_, x0, y0);
@@ -169,11 +199,41 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
     return;
   }
 
-  costmap_.resetMap(x0, y0, xn, yn);
-  for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
-    plugin != plugins_.end(); ++plugin)
-  {
-    (*plugin)->updateCosts(costmap_, x0, y0, xn, yn);
+  if (filters_.size() == 0) {
+    // If there are no filters enabled just update costmap sequentially by each plugin
+    costmap_.resetMap(x0, y0, xn, yn);
+    for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
+      plugin != plugins_.end(); ++plugin)
+    {
+      (*plugin)->updateCosts(costmap_, x0, y0, xn, yn);
+    }
+  } else {
+    // Costmap Filters enabled
+    // 1. Update costmap by plugins
+    plugins_costmap_.resetMap(x0, y0, xn, yn);
+    for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
+      plugin != plugins_.end(); ++plugin)
+    {
+      (*plugin)->updateCosts(plugins_costmap_, x0, y0, xn, yn);
+    }
+
+    // 2. Copy processed costmap window to a final costmap.
+    // plugins_costmap_ remain to be untouched for further usage by plugins.
+    if (!costmap_.copyWindow(plugins_costmap_, x0, y0, xn, yn, x0, y0)) {
+      RCLCPP_ERROR(
+        rclcpp::get_logger("nav2_costmap_2d"),
+        "Can not copy costmap (%i,%i)..(%i,%i) window",
+        x0, y0, xn, yn);
+      throw std::runtime_error{"Can not copy costmap"};
+    }
+
+    // 3. Apply filters over the plugins in order to make filters' work
+    // not being considered by plugins on next updateMap() calls
+    for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
+      filter != filters_.end(); ++filter)
+    {
+      (*filter)->updateCosts(costmap_, x0, y0, xn, yn);
+    }
   }
 
   bx0_ = x0;
@@ -192,6 +252,11 @@ bool LayeredCostmap::isCurrent()
   {
     current_ = current_ && (*plugin)->isCurrent();
   }
+  for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
+    filter != filters_.end(); ++filter)
+  {
+    current_ = current_ && (*filter)->isCurrent();
+  }
   return current_;
 }
 
@@ -207,6 +272,12 @@ void LayeredCostmap::setFootprint(const std::vector<geometry_msgs::msg::Point> &
     ++plugin)
   {
     (*plugin)->onFootprintChanged();
+  }
+  for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
+    filter != filters_.end();
+    ++filter)
+  {
+    (*filter)->onFootprintChanged();
   }
 }
 

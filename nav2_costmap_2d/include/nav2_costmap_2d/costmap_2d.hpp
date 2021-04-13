@@ -115,6 +115,22 @@ public:
     double win_size_y);
 
   /**
+   * @brief Copies the (x0,y0)..(xn,yn) window from source costmap into a current costmap
+     @param source Source costmap where the window will be copied from
+     @param sx0 Lower x-boundary of the source window to copy, in cells
+     @param sy0 Lower y-boundary of the source window to copy, in cells
+     @param sxn Upper x-boundary of the source window to copy, in cells
+     @param syn Upper y-boundary of the source window to copy, in cells
+     @param dx0 Lower x-boundary of the destination window to copy, in cells
+     @param dx0 Lower y-boundary of the destination window to copy, in cells
+     @returns true if copy was succeeded or false in negative case
+   */
+  bool copyWindow(
+    const Costmap2D & source,
+    unsigned int sx0, unsigned int sy0, unsigned int sxn, unsigned int syn,
+    unsigned int dx0, unsigned int dy0);
+
+  /**
    * @brief  Default constructor
    */
   Costmap2D();
