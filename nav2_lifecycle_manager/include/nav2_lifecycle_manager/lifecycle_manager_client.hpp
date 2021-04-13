@@ -45,7 +45,7 @@ public:
   /**
    * @brief A constructor for LifeCycleMangerClient
    */
-  explicit LifecycleManagerClient(const std::string & name);
+  explicit LifecycleManagerClient(const std::string & name, std::string namespace_ = "");
 
   // Client-side interface to the Nav2 lifecycle manager
   /**

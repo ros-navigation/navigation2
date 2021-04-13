@@ -16,7 +16,6 @@
 
 #include <cmath>
 #include <memory>
-#include <algorithm>
 #include <string>
 #include <utility>
 
@@ -27,15 +26,19 @@ namespace nav2_lifecycle_manager
 {
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
-LifecycleManagerClient::LifecycleManagerClient(const std::string & name)
+LifecycleManagerClient::LifecycleManagerClient(
+  const std::string & name,
+  std::string namespace_)
 {
-  manage_service_name_ = name + std::string("/manage_nodes");
-  active_service_name_ = name + std::string("/is_active");
+  if (namespace_ != "") {
+    namespace_ += "/";
+  }
+
+  manage_service_name_ = namespace_ + name + std::string("/manage_nodes");
+  active_service_name_ = namespace_ + name + std::string("/is_active");
 
   // Create the node to use for all of the service clients
-  std::string node_name = name + "_service_client";
-  std::replace(node_name.begin(), node_name.end(), '/', '_');
-  node_ = std::make_shared<rclcpp::Node>(node_name);
+  node_ = std::make_shared<rclcpp::Node>(name + "_service_client");
 
   // Create the service clients
   manager_client_ = node_->create_client<ManageLifecycleNodes>(manage_service_name_);
