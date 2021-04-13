@@ -268,7 +268,7 @@ protected:
         // TODO(#1652): a work around until rcl_action interface is updated
         // if goal ids are not matched, the older goal call this callback so ignore the result
         // if matched, it must be processed (including aborted)
-        if (this->goal_handle_ && (this->goal_handle_->get_goal_id() == result.goal_id)) {
+        if (this->goal_handle_->get_goal_id() == result.goal_id) {
           goal_result_available_ = true;
           result_ = result;
         }
