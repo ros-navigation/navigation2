@@ -175,7 +175,7 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
       RCLCPP_WARN(
         rclcpp::get_logger(
           "nav2_costmap_2d"), "Illegal bounds change, was [tl: (%f, %f), br: (%f, %f)], but "
-        "is now [tl: (%f, %f), br: (%f, %f)]. The offending layer is %s",
+        "is now [tl: (%f, %f), br: (%f, %f)]. The offending filter is %s",
         prev_minx, prev_miny, prev_maxx, prev_maxy,
         minx_, miny_, maxx_, maxy_,
         (*filter)->getName().c_str());
