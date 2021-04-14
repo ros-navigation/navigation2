@@ -313,29 +313,6 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   return plan;
 }
 
-void SmacPlanner2D::removeHook(std::vector<Eigen::Vector2d> & path)
-{
-  // Removes the end "hooking" since goal is locked in place
-  Eigen::Vector2d interpolated_second_to_last_point;
-  interpolated_second_to_last_point = (path.end()[-3] + path.end()[-1]) / 2.0;
-  if (
-    squaredDistance(path.end()[-2], path.end()[-1]) >
-    squaredDistance(interpolated_second_to_last_point, path.end()[-1]))
-  {
-    path.end()[-2] = interpolated_second_to_last_point;
-  }
-}
-
-Eigen::Vector2d SmacPlanner2D::getWorldCoords(
-  const float & mx, const float & my, const nav2_costmap_2d::Costmap2D * costmap)
-{
-  float world_x =
-    static_cast<float>(costmap->getOriginX()) + (mx + 0.5) * costmap->getResolution();
-  float world_y =
-    static_cast<float>(costmap->getOriginY()) + (my + 0.5) * costmap->getResolution();
-  return Eigen::Vector2d(world_x, world_y);
-}
-
 }  // namespace nav2_smac_planner
 
 #include "pluginlib/class_list_macros.hpp"

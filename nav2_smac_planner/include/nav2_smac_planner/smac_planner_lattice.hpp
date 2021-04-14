@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Samsung Research America
+// Copyright (c) 2021, Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_SMAC_PLANNER__SMAC_PLANNER_2D_HPP_
-#define NAV2_SMAC_PLANNER__SMAC_PLANNER_2D_HPP_
+#ifndef NAV2_SMAC_PLANNER__SMAC_PLANNER_LATTICE_HPP_
+#define NAV2_SMAC_PLANNER__SMAC_PLANNER_LATTICE_HPP_
 
 #include <memory>
 #include <vector>
@@ -36,18 +36,18 @@
 namespace nav2_smac_planner
 {
 
-class SmacPlanner2D : public nav2_core::GlobalPlanner
+class SmacPlannerLattice : public nav2_core::GlobalPlanner
 {
 public:
   /**
    * @brief constructor
    */
-  SmacPlanner2D();
+  SmacPlannerLattice();
 
   /**
    * @brief destructor
    */
-  ~SmacPlanner2D();
+  ~SmacPlannerLattice();
 
   /**
    * @brief Configuring plugin
@@ -87,15 +87,17 @@ public:
     const geometry_msgs::msg::PoseStamped & goal) override;
 
 protected:
-  std::unique_ptr<AStarAlgorithm<Node2D>> _a_star;
+  std::unique_ptr<AStarAlgorithm<NodeLattice>> _a_star;
   std::unique_ptr<Smoother> _smoother;
+  rclcpp::Clock::SharedPtr _clock;
+  rclcpp::Logger _logger{rclcpp::get_logger("SmacPlannerLattice")};
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
-  rclcpp::Clock::SharedPtr _clock;
-  rclcpp::Logger _logger{rclcpp::get_logger("SmacPlanner2D")};
   std::string _global_frame, _name;
   float _tolerance;
   int _downsampling_factor;
+  unsigned int _angle_quantizations;
+  double _angle_bin_size;
   bool _downsample_costmap;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   SmootherParams _smoother_params;
@@ -105,4 +107,4 @@ protected:
 
 }  // namespace nav2_smac_planner
 
-#endif  // NAV2_SMAC_PLANNER__SMAC_PLANNER_2D_HPP_
+#endif  // NAV2_SMAC_PLANNER__SMAC_PLANNER_LATTICE_HPP_

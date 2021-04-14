@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Samsung Research America
+// Copyright (c) 2021, Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 #include <limits>
 
 #include "Eigen/Core"
-#include "nav2_smac_planner/smac_planner_hybrid.hpp"
+#include "nav2_smac_planner/smac_planner_lattice.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -28,7 +28,7 @@ namespace nav2_smac_planner
 
 using namespace std::chrono;  // NOLINT
 
-SmacPlannerHybrid::SmacPlannerHybrid()
+SmacPlannerLattice::SmacPlannerLattice()
 : _a_star(nullptr),
   _smoother(nullptr),
   _costmap(nullptr),
@@ -36,14 +36,14 @@ SmacPlannerHybrid::SmacPlannerHybrid()
 {
 }
 
-SmacPlannerHybrid::~SmacPlannerHybrid()
+SmacPlannerLattice::~SmacPlannerLattice()
 {
   RCLCPP_INFO(
-    _logger, "Destroying plugin %s of type SmacPlannerHybrid",
+    _logger, "Destroying plugin %s of type SmacPlannerLattice",
     _name.c_str());
 }
 
-void SmacPlannerHybrid::configure(
+void SmacPlannerLattice::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
@@ -75,12 +75,6 @@ void SmacPlannerHybrid::configure(
   node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".angle_quantization_bins", rclcpp::ParameterValue(72));
-  node->get_parameter(name + ".angle_quantization_bins", angle_quantizations);
-  _angle_bin_size = 2.0 * M_PI / angle_quantizations;
-  _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
-
-  nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".allow_unknown", allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
@@ -91,8 +85,8 @@ void SmacPlannerHybrid::configure(
   node->get_parameter(name + ".smooth_path", smooth_path);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.2));
-  node->get_parameter(name + ".minimum_turning_radius", search_info.minimum_turning_radius);
+    node, name + ".lattice_filepath", rclcpp::ParameterValue(0.2));
+  node->get_parameter(name + ".lattice_filepath", search_info.lattice_filepath);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".reverse_penalty", rclcpp::ParameterValue(2.0));
@@ -114,17 +108,13 @@ void SmacPlannerHybrid::configure(
     node, name + ".max_planning_time", rclcpp::ParameterValue(5.0));
   node->get_parameter(name + ".max_planning_time", _max_planning_time);
 
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
-  node->get_parameter(name + ".motion_model_for_search", motion_model_for_search);
-  MotionModel motion_model = fromString(motion_model_for_search);
-  if (motion_model == MotionModel::UNKNOWN) {
-    RCLCPP_WARN(
-      _logger,
-      "Unable to get MotionModel search type. Given '%s', "
-      "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP, STATE_LATTICE.",
-      motion_model_for_search.c_str());
-  }
+
+  LatticeMetadata metadata = LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
+  _angle_quantizations = metadata.first;
+  _angle_bin_size = 2.0 * M_PI / static_cast<double>(_angle_quantizations);
+  float min_turning_radius = metadata.second;
+
+  MotionModel motion_model = MotionModel::STATE_LATTICE;
 
   if (max_on_approach_iterations <= 0) {
     RCLCPP_INFO(
@@ -140,12 +130,7 @@ void SmacPlannerHybrid::configure(
     max_iterations = std::numeric_limits<int>::max();
   }
 
-  // convert to grid coordinates
-  const double minimum_turning_radius_global_coords = search_info.minimum_turning_radius;
-  search_info.minimum_turning_radius =
-    search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
-
-  _a_star = std::make_unique<AStarAlgorithm<NodeHybrid>>(motion_model, search_info);
+  _a_star = std::make_unique<AStarAlgorithm<NodeLattice>>(motion_model, search_info);
   _a_star->initialize(
     allow_unknown,
     max_iterations,
@@ -156,7 +141,7 @@ void SmacPlannerHybrid::configure(
     _smoother = std::make_unique<Smoother>();
     _optimizer_params.get(node.get(), name);
     _smoother_params.get(node.get(), name);
-    _smoother_params.max_curvature = 1.0f / minimum_turning_radius_global_coords;
+    _smoother_params.max_curvature = 1.0f / min_turning_radius;
     _smoother->initialize(_optimizer_params);
   }
 
@@ -170,18 +155,18 @@ void SmacPlannerHybrid::configure(
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
   RCLCPP_INFO(
-    _logger, "Configured plugin %s of type SmacPlannerHybrid with "
+    _logger, "Configured plugin %s of type SmacPlannerLattice with "
     "tolerance %.2f, maximum iterations %i, "
-    "max on approach iterations %i, and %s. Using motion model: %s.",
+    "max on approach iterations %i, and %s. Using motion model: %s. State lattice file: %s.",
     _name.c_str(), _tolerance, max_iterations, max_on_approach_iterations,
     allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
-    toString(motion_model).c_str());
+    toString(motion_model).c_str(), search_info.lattice_filepath.c_str());
 }
 
-void SmacPlannerHybrid::activate()
+void SmacPlannerLattice::activate()
 {
   RCLCPP_INFO(
-    _logger, "Activating plugin %s of type SmacPlannerHybrid",
+    _logger, "Activating plugin %s of type SmacPlannerLattice",
     _name.c_str());
   _raw_plan_publisher->on_activate();
   if (_costmap_downsampler) {
@@ -189,10 +174,10 @@ void SmacPlannerHybrid::activate()
   }
 }
 
-void SmacPlannerHybrid::deactivate()
+void SmacPlannerLattice::deactivate()
 {
   RCLCPP_INFO(
-    _logger, "Deactivating plugin %s of type SmacPlannerHybrid",
+    _logger, "Deactivating plugin %s of type SmacPlannerLattice",
     _name.c_str());
   _raw_plan_publisher->on_deactivate();
   if (_costmap_downsampler) {
@@ -200,10 +185,10 @@ void SmacPlannerHybrid::deactivate()
   }
 }
 
-void SmacPlannerHybrid::cleanup()
+void SmacPlannerLattice::cleanup()
 {
   RCLCPP_INFO(
-    _logger, "Cleaning up plugin %s of type SmacPlannerHybrid",
+    _logger, "Cleaning up plugin %s of type SmacPlannerLattice",
     _name.c_str());
   _a_star.reset();
   _smoother.reset();
@@ -212,7 +197,7 @@ void SmacPlannerHybrid::cleanup()
   _raw_plan_publisher.reset();
 }
 
-nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
+nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
@@ -353,4 +338,4 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 }  // namespace nav2_smac_planner
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_smac_planner::SmacPlannerHybrid, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_smac_planner::SmacPlannerLattice, nav2_core::GlobalPlanner)

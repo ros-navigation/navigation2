@@ -21,6 +21,7 @@
 
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/smoother.hpp"
+#include "nav2_smac_planner/utils.hpp"
 #include "nav2_smac_planner/costmap_downsampler.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_core/global_planner.hpp"
@@ -84,29 +85,6 @@ public:
   nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override;
-
-  /**
-   * @brief Create an Eigen Vector2D of world poses from continuous map coords
-   * @param mx float of map X coordinate
-   * @param my float of map Y coordinate
-   * @param costmap Costmap pointer
-   * @return Eigen::Vector2d eigen vector of the generated path
-   */
-  Eigen::Vector2d getWorldCoords(
-    const float & mx, const float & my, const nav2_costmap_2d::Costmap2D * costmap);
-
-  /**
-   * @brief Create quaternion from A* coord bins
-   * @param theta continuous bin coordinates angle
-   * @return quaternion orientation in map frame
-   */
-  geometry_msgs::msg::Quaternion getWorldOrientation(const float & theta);
-
-  /**
-   * @brief Remove hooking at end of paths
-   * @param path Path to remove hooking from
-   */
-  void removeHook(std::vector<Eigen::Vector2d> & path);
 
 protected:
   std::unique_ptr<AStarAlgorithm<NodeHybrid>> _a_star;

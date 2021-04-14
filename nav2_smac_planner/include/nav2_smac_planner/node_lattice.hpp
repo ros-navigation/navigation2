@@ -35,13 +35,11 @@
 namespace nav2_smac_planner
 {
 
-// TODO add Lattice new planner plugin / xml
-	// read in lattice filepath and input to SearchInfo for use.
-	// rm params not relevent anymore and add ones that are (bins, turn rad, etc set by the primitives file)
-
 // TODO continuous coordinates not required here?!?! End in bins exactly, might change how we do search to be more 2d-A*-y
 		// must be to be a lattice pattern
 	  // but also want to make use of the analytic expansion
+
+// TODo depending on primitive lengths, collision check intermediary points, not just the end points.
 
 // matt
 // SBPL-or-other methods for state lattice robot-centric
@@ -57,10 +55,14 @@ namespace nav2_smac_planner
 // TODO update readme param list
 // TODO test coverage
 // TODO smoother improvements / replacement
+// TODO params on hybrid-A* bins / length of primitives / tuning speed / optimizations in code
+// TODO on approach not working if unreachable / can't get to approach on destination invalid?
 
-// Must forward declare
+// forward declare
 class NodeLattice;
 class NodeHybrid;
+
+typedef std::pair<unsigned int, double> LatticeMetadata;
 
 /**
  * @struct nav2_smac_planner::LatticeMotionTable
@@ -92,6 +94,15 @@ struct LatticeMotionTable
    * @return A set of motion poses
    */
   MotionPoses getProjections(const NodeLattice * node);
+
+  /**
+   * @brief Get file metadata needed
+   * @param lattice_filepath Filepath to the lattice file
+   * @return A set of metadata containing the number of angular bins
+   * and the global coordinates minimum turning radius of the primitives
+   * for use in analytic expansion and heuristic calculation.
+   */
+  static LatticeMetadata getLatticeMetadata(const std::string & lattice_filepath);
 
   MotionPoses projections;
   unsigned int size_x;

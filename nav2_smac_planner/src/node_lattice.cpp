@@ -56,16 +56,23 @@ void LatticeMotionTable::initMotionModel(
     return;
   }
 
-  // TODO read in file, precompute based on orientation bins for lookup at runtime
+  // TODO Matt read in file, precompute based on orientation bins for lookup at runtime
   // file is `search_info.lattice_filepath`, to be read in from plugin and provided here.
 
-  // TODO create a state_space with the max turning rad primitive within the file (or another -- mid?)
+  // TODO Matt create a state_space with the max turning rad primitive within the file (or another -- mid?)
   // to use for analytic expansions and heuristic generation. Potentially make both an extreme and a passive one?
 }
 
 MotionPoses LatticeMotionTable::getProjections(const NodeLattice * node)
 {
-  return MotionPoses();  // TODO lookup at run time the primitives to use at node
+  return MotionPoses();  // TODO Matt lookup at run time the primitives to use at node
+}
+
+LatticeMetadata LatticeMotionTable::getLatticeMetadata(const std::string & lattice_filepath)
+{
+  // TODO Matt from this file extract and return the number of angle bins and turning radius in global coordinates, respectively.
+  // world coordinates meaning meters, not cells
+  return {0 /*num bins*/, 0 /*turning rad*/};
 }
 
 NodeLattice::NodeLattice(const unsigned int index)
@@ -110,17 +117,19 @@ bool NodeLattice::isNodeValid(const bool & traverse_unknown, GridCollisionChecke
 
 float NodeLattice::getTraversalCost(const NodePtr & child)
 {
-  return 0.0;  // TODO: cost of different angles, changing, nonstraight, backwards, distance long
+  return 0.0;  // TODO Josh: cost of different angles, changing, nonstraight, backwards, distance long
   // should this use neutral_cost? TODO if not, set to 1 for no impact in A*
   // can use getMotionPrimitiveIndex() to get the ID of the index of the primitive the child/this belongs to for use
+  // feel free to make new params, let me know and I'll add tothe SearchInfo struct for inputs and add to the plugin TODO
 }
 
 float NodeLattice::getHeuristicCost(
   const Coordinates & node_coords,
   const Coordinates & goal_coords)
 {
-  return 0.0;  // TODO: wavefront, ompl, or more optimal heuristic for wavefront search.
+  return 0.0;  // TODO Josh: wavefront, ompl, or more optimal heuristic for wavefront search.
   // should this use neutral_cost? TODO if not, set to 1 for no impact A*
+  // feel free to make new params, let me know and I'll add tothe SearchInfo struct for inputs and add to the plugin TODO
 }
 
 void NodeLattice::initMotionModel(
