@@ -165,7 +165,6 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::shared_ptr<Layer> filter = plugin_loader_.createSharedInstance(filter_types_[i]);
     layered_costmap_->addFilter(filter);
 
-    // TODO(mjeronimo): instead of get(), use a shared ptr
     filter->initialize(
       layered_costmap_.get(), filter_names_[i], tf_buffer_.get(),
       shared_from_this(), client_node_, rclcpp_node_);

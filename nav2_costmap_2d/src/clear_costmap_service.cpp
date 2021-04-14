@@ -113,14 +113,8 @@ void ClearCostmapService::clearRegion(const double reset_distance, bool invert)
     }
   }
 
-  layers = costmap_.getLayeredCostmap()->getFilters();
-
-  for (auto & layer : *layers) {
-    if (layer->isClearable()) {
-      auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
-      clearLayerRegion(costmap_layer, x, y, reset_distance, invert);
-    }
-  }
+  // AlexeyMerzlyakov: No need to clear layer region for costmap filters
+  // as they are always supposed to be not clearable.
 }
 
 void ClearCostmapService::clearLayerRegion(
