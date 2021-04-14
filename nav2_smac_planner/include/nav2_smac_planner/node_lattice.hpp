@@ -34,16 +34,29 @@
 
 namespace nav2_smac_planner
 {
-// TODO update readme param list
 
 // TODO add Lattice new planner plugin / xml
+	// read in lattice filepath and input to SearchInfo for use.
+	// rm params not relevent anymore and add ones that are (bins, turn rad, etc set by the primitives file)
 
-// TODO add fields to SearchInfo for Lattice
-		// num prims
-		// range of angular inputs valid since turning rad isn't the right one anymore.
-	  // add to motion model diff/omni + update in string conversion functions in constants.hpp
+// TODO continuous coordinates not required here?!?! End in bins exactly, might change how we do search to be more 2d-A*-y
+		// must be to be a lattice pattern
+	  // but also want to make use of the analytic expansion
 
+// matt
+// SBPL-or-other methods for state lattice robot-centric
+	// is it even a lattice? Or approximation?
+	// week or two to figure out if their method works or go back to this other method
+	// ME: look into this method from SBPL and others like it to see what makes sense + understand it
+
+// josh
+	// heuristic: what do state lattice people use?
+	// travel: use usual, cost weighted against non-optimal motions and tuned gains.  travel costs on distance
+	// ME: look into heuristics for state lattice search + travel costs on distance
+
+// TODO update readme param list
 // TODO test coverage
+// TODO smoother improvements / replacement
 
 // Must forward declare
 class NodeLattice;
@@ -91,8 +104,6 @@ struct LatticeMotionTable
   float cost_penalty;
   float reverse_penalty;
   ompl::base::StateSpacePtr state_space;
-  std::vector<std::vector<double>> delta_xs;
-  std::vector<std::vector<double>> delta_ys;
 };
 
 /**
@@ -142,6 +153,24 @@ public:
    * @brief Reset method for new search
    */
   void reset();
+
+  /**
+   * @brief Sets the motion primitive index used to achieve node in search
+   * @param reference to motion primitive idx
+   */
+  inline void setMotionPrimitiveIndex(const unsigned int & idx)
+  {
+    _motion_primitive_index = idx;
+  }
+
+  /**
+   * @brief Gets the motion primitive index used to achieve node in search
+   * @return reference to motion primitive idx
+   */
+  inline unsigned int & getMotionPrimitiveIndex()
+  {
+    return _motion_primitive_index;
+  }
 
   /**
    * @brief Gets the accumulated cost at this node
@@ -300,7 +329,7 @@ public:
 
   NodeLattice * parent;
   Coordinates pose;
-  static double neutral_cost;  // TODO, these might not be the same length?
+  static double neutral_cost;
   static LatticeMotionTable motion_table;
 
 private:
@@ -309,6 +338,7 @@ private:
   unsigned int _index;
   bool _was_visited;
   bool _is_queued;
+  unsigned int _motion_primitive_index;
 };
 
 }  // namespace nav2_smac_planner

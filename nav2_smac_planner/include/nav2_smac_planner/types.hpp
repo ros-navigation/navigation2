@@ -17,6 +17,7 @@
 
 #include <vector>
 #include <utility>
+#include <string>
 
 namespace nav2_smac_planner
 {
@@ -35,6 +36,7 @@ struct SearchInfo
   float reverse_penalty;
   float cost_penalty;
   float analytic_expansion_ratio;
+  std::string lattice_filepath;
 };
 
 }  // namespace nav2_smac_planner

@@ -354,7 +354,7 @@ void NodeHybrid::initMotionModel(
       break;
     default:
       throw std::runtime_error(
-              "Invalid motion model for SE2 node. Please select between"
+              "Invalid motion model for Hybrid A*. Please select between"
               " Dubin (Ackermann forward only),"
               " Reeds-Shepp (Ackermann forward and back).");
   }

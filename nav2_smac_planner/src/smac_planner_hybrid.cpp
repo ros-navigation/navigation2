@@ -122,7 +122,7 @@ void SmacPlannerHybrid::configure(
     RCLCPP_WARN(
       _logger,
       "Unable to get MotionModel search type. Given '%s', "
-      "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
+      "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP, STATE_LATTICE.",
       motion_model_for_search.c_str());
   }
 

@@ -613,8 +613,10 @@ typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::tryAnalyticExpans
   const NodePtr & current_node, const NodeGetter & getter, int & analytic_iterations,
   int & closest_distance)
 {
-  if (_motion_model == MotionModel::DUBIN || _motion_model == MotionModel::REEDS_SHEPP) {
-    // This must be a NodeHybrid node if we are using these motion models
+  if (_motion_model == MotionModel::DUBIN || _motion_model == MotionModel::REEDS_SHEPP ||
+    _motion_model == MotionModel::STATE_LATTICE)
+  {
+    // This must be a NodeHybrid or NodeLattice if we are using these motion models
 
     // See if we are closer and should be expanding more often
     const Coordinates node_coords =
