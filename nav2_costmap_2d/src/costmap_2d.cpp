@@ -192,6 +192,10 @@ bool Costmap2D::copyWindow(
   const unsigned int sz_x = sxn - sx0;
   const unsigned int sz_y = syn - sy0;
 
+  if (sxn > source.getSizeInCellsX() || syn > source.getSizeInCellsY()) {
+    return false;
+  }
+
   if (dx0 + sz_x > size_x_ || dy0 + sz_y > size_y_) {
     return false;
   }
