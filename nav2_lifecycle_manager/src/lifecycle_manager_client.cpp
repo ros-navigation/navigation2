@@ -28,7 +28,7 @@ using nav2_util::geometry_utils::orientationAroundZAxis;
 
 LifecycleManagerClient::LifecycleManagerClient(
   const std::string & name,
-  std::string & ns)
+  const std::string & ns)
 {
   manage_service_name_ = name + std::string("/manage_nodes");
   active_service_name_ = name + std::string("/is_active");
