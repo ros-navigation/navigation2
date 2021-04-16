@@ -54,27 +54,6 @@ public:
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override;
 
-protected:
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-  rclcpp::Clock::SharedPtr clock_;
-  rclcpp::Logger logger_{rclcpp::get_logger("ThetaStarPlanner")};
-  std::string global_frame_, name_;
-
-  std::unique_ptr<theta_star::ThetaStar> planner_;
-
-  /**
-   * @brief the function responsible for calling the planner and retrieving a path from it
-   * @return global_path is the planned path to be taken
-   */
-  void getPlan(nav_msgs::msg::Path & global_path);
-
-  /**
-   * @brief initialises the values of the start and goal points in the object of the planner
-   */
-  void setStartAndGoal(
-    const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal);
-
   /**
    * @brief interpolates points between the adjacent waypoints of the path
    * @param raw_path is used to send in the path received from the planner
@@ -85,16 +64,19 @@ protected:
     const std::vector<coordsW> & raw_path,
     const double & dist_bw_points);
 
+protected:
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Logger logger_{rclcpp::get_logger("ThetaStarPlanner")};
+  std::string global_frame_, name_;
+
+  std::unique_ptr<theta_star::ThetaStar> planner_;
+
   /**
-   * @brief checks whether the start and goal points have costmap costs lower than LETHAL_COST
-   * @return the result of the check
+   * @brief the function responsible for calling the algorithm and retrieving a path from it
+   * @return global_path is the planned path to be taken
    */
-  bool isSafeToPlan() const
-  {
-    return !(planner_->isSafe(
-             planner_->src_.x,
-             planner_->src_.y)) || !(planner_->isSafe(planner_->dst_.x, planner_->dst_.y));
-  }
+  void getPlan(nav_msgs::msg::Path & global_path);
 };
 }   //  namespace nav2_theta_star_planner
 

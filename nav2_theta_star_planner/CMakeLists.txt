@@ -15,7 +15,8 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(ament_cmake_gtest REQUIRED)
 
-nav2_package()
+nav2_package() #Calls the nav2_package.cmake file
+add_compile_options(-O3)
 
 include_directories(
   include
@@ -66,7 +67,11 @@ install(FILES theta_star_planner.xml
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  set(gtest_disable_pthreads OFF)
   ament_lint_auto_find_test_dependencies()
+  ament_add_gtest(test_theta_star test/test_theta_star.cpp)
+  ament_target_dependencies(test_theta_star ${dependencies})
+  target_link_libraries(test_theta_star ${library_name})
 endif()
 
 

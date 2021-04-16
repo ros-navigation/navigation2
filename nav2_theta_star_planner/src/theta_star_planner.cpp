@@ -78,7 +78,7 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
 {
   nav_msgs::msg::Path global_path;
   auto start_time = std::chrono::steady_clock::now();
-  setStartAndGoal(start, goal);
+  planner_->setStartAndGoal(start, goal);
   RCLCPP_DEBUG(
     logger_, "Got the src and dst... (%i, %i) && (%i, %i)",
     planner_->src_.x, planner_->src_.y, planner_->dst_.x, planner_->dst_.y);
@@ -93,7 +93,7 @@ void ThetaStarPlanner::getPlan(nav_msgs::msg::Path & global_path)
 {
   std::vector<coordsW> path;
 
-  if (isSafeToPlan()) {
+  if (planner_->isSafeToPlan()) {
     RCLCPP_ERROR(logger_, "Either of the start or goal pose are an obstacle! ");
     coordsW world{};
     planner_->costmap_->mapToWorld(planner_->src_.x, planner_->src_.y, world.x, world.y);
@@ -140,17 +140,7 @@ nav_msgs::msg::Path ThetaStarPlanner::linearInterpolation(
   }
   return pa;
 }
-void ThetaStarPlanner::setStartAndGoal(
-  const geometry_msgs::msg::PoseStamped & start,
-  const geometry_msgs::msg::PoseStamped & goal)
-{
-  unsigned int src_[2], dst_[2];
-  planner_->costmap_->worldToMap(start.pose.position.x, start.pose.position.y, src_[0], src_[1]);
-  planner_->costmap_->worldToMap(goal.pose.position.x, goal.pose.position.y, dst_[0], dst_[1]);
 
-  planner_->src_ = {static_cast<int>(src_[0]), static_cast<int>(src_[1])};
-  planner_->dst_ = {static_cast<int>(dst_[0]), static_cast<int>(dst_[1])};
-}
 
 }  // namespace nav2_theta_star_planner
 

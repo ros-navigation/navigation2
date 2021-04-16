@@ -1,0 +1,153 @@
+//  Copyright 2020 Anshumaan Singh
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
+#include <gtest/gtest.h>
+#include <memory>
+#include <vector>
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_theta_star_planner/theta_star.hpp"
+#include "nav2_theta_star_planner/theta_star_planner.hpp"
+
+class init_rclcpp
+{
+public:
+  init_rclcpp() {rclcpp::init(0, nullptr);}
+  ~init_rclcpp() {rclcpp::shutdown();}
+};
+
+/// class created to access the protected members of the ThetaStar class
+/// u is used as shorthand for use
+class test_theta_star : public theta_star::ThetaStar
+{
+public:
+  int getSizeOfNodePosition()
+  {
+    return static_cast<int>(node_position_.size());
+  }
+
+  bool ulosCheck(const int & x0, const int & y0, const int & x1, const int & y1, double & sl_cost)
+  {
+    return losCheck(x0, y0, x1, y1, sl_cost);
+  }
+
+  bool uwithinLimits(const int & cx, const int & cy) {return withinLimits(cx, cy);}
+
+  bool uisGoal(const tree_node & this_node) {return isGoal(this_node);}
+
+  void uinitializePosn(int size_inc = 0) {initializePosn(size_inc);}
+
+  void uaddIndex(const int & cx, const int & cy, const int & id_this) {addIndex(cx, cy, id_this);}
+
+  void ugetIndex(const int & cx, const int & cy, int & id_this) {getIndex(cx, cy, id_this);}
+
+  bool runAlgo(std::vector<coordsW> & path)
+  {
+    if (!isSafeToPlan()) {
+      return generatePath(path);
+    }
+    return false;
+  }
+};
+
+init_rclcpp node;
+auto planner_ = std::make_unique<test_theta_star>();
+
+// Tests meant to test the algorithm itself and its helper functions
+TEST(ThetaStarTest, test_theta_star)
+{
+  planner_->costmap_ = new nav2_costmap_2d::Costmap2D(50, 50, 1.0, 0.0, 0.0, 0);
+  for (int i = 20; i <= 30; i++) {
+    for (int j = 20; j <= 30; j++) {
+      planner_->costmap_->setCost(i, j, 253);
+    }
+  }
+
+  planner_->size_x_ = 50;
+  planner_->size_y_ = 50;
+  planner_->src_ = {10, 10};
+  planner_->dst_ = {40, 35};
+
+  /// Check if the initializePosn function works properly
+  planner_->uinitializePosn(50 * 50);
+  EXPECT_EQ(planner_->getSizeOfNodePosition(), (50 * 50)) << "passed this 1";
+
+  /// Check if the withinLimits function works properly
+  EXPECT_TRUE(planner_->uwithinLimits(20, 40));
+  EXPECT_FALSE(planner_->uwithinLimits(120, 140));
+
+  tree_node n = {40, 35, 120, 0, 1, false, 20};
+  /// Check if the isGoal function works properly
+  EXPECT_TRUE(planner_->uisGoal(n));       // both (x,y) are the goal coordinates
+  n.x = 25;
+  EXPECT_FALSE(planner_->uisGoal(n));      // only y coordinate matches with that of goal
+  n.x = 40;
+  n.y = 20;
+  EXPECT_FALSE(planner_->uisGoal(n));      // only x coordinate matches with that of goal
+  n.x = 30;
+  EXPECT_FALSE(planner_->uisGoal(n));      // both (x, y) are different from the goal coordinate
+
+  /// Check if the isSafe functions work properly
+  EXPECT_TRUE(planner_->isSafe(10, 30));       // cost at this point is 0
+  EXPECT_FALSE(planner_->isSafe(25, 25));      // cost at this point is 253 (>LETHAL_COST)
+
+  int c_id;
+  /// Check if the addIndex & getIndex work properly
+  coordsM c = {20, 30};
+  planner_->uaddIndex(c.x, c.y, 0);
+  planner_->ugetIndex(c.x, c.y, c_id);
+  EXPECT_EQ(c_id, 0);
+
+  double sl_cost = 0.0;
+  /// Checking for the case where the losCheck should return the value as true
+  EXPECT_TRUE(planner_->ulosCheck(10, 10, 40, 10, sl_cost));
+  /// and as false
+  EXPECT_FALSE(planner_->ulosCheck(10, 25, 30, 25, sl_cost));
+
+  std::vector<coordsW> path;
+  /// Check if the planner returns a path for the case where a path exists
+  EXPECT_TRUE(planner_->runAlgo(path));
+  /// and where it doesn't exist
+  planner_->src_ = {25, 25};
+  EXPECT_FALSE(planner_->runAlgo(path));
+}
+
+// Smoke tests meant to detect issues arising from the plugin part rather than the algorithm
+TEST(ThetaStarPlanner, test_theta_star_planner)
+{
+  rclcpp_lifecycle::LifecycleNode::SharedPtr life_node =
+    std::make_shared<rclcpp_lifecycle::LifecycleNode>("ThetaStarPlannerTest");
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  geometry_msgs::msg::PoseStamped start, goal;
+  start.pose.position.x = 0.0;
+  start.pose.position.y = 0.0;
+  start.pose.orientation.w = 1.0;
+  goal = start;
+  auto planner_2d = std::make_unique<nav2_theta_star_planner::ThetaStarPlanner>();
+  planner_2d->configure(life_node, "test", nullptr, costmap_ros);
+  planner_2d->activate();
+
+  nav_msgs::msg::Path path = planner_2d->createPlan(start, goal);
+
+  planner_2d->deactivate();
+  planner_2d->cleanup();
+
+  planner_2d.reset();
+  costmap_ros->on_cleanup(rclcpp_lifecycle::State());
+  life_node.reset();
+  costmap_ros.reset();
+}

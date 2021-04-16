@@ -19,7 +19,7 @@ namespace theta_star
 {
 
 ThetaStar::ThetaStar()
-: w_traversal_cost_(4.0),
+: w_traversal_cost_(2.0),
   w_euc_cost_(7.0),
   w_heuristic_cost_(1.0),
   how_many_corners_(8),
@@ -28,6 +28,18 @@ ThetaStar::ThetaStar()
   index_generated_(0)
 {
   curr_node = new tree_node;
+}
+
+void ThetaStar::setStartAndGoal(
+  const geometry_msgs::msg::PoseStamped & start,
+  const geometry_msgs::msg::PoseStamped & goal)
+{
+  unsigned int s[2], d[2];
+  costmap_->worldToMap(start.pose.position.x, start.pose.position.y, s[0], s[1]);
+  costmap_->worldToMap(goal.pose.position.x, goal.pose.position.y, d[0], d[1]);
+
+  src_ = {static_cast<int>(s[0]), static_cast<int>(s[1])};
+  dst_ = {static_cast<int>(d[0]), static_cast<int>(d[1])};
 }
 
 bool ThetaStar::generatePath(std::vector<coordsW> & raw_path)
@@ -108,9 +120,8 @@ void ThetaStar::setNeighbors(const tree_node & curr_data, const int & curr_id)
     }
 
     m_par = curr_id;
-    g_cost = curr_data.g + getEuclideanCost(curr_data.x, curr_data.y, mx, my) + getTraversalCost(
-      mx,
-      my);
+    g_cost = curr_data.g + getEuclideanCost(curr_data.x, curr_data.y, mx, my) +
+      getTraversalCost(mx, my);
 
     getIndex(mx, my, m_id);
 
@@ -125,7 +136,6 @@ void ThetaStar::setNeighbors(const tree_node & curr_data, const int & curr_id)
 
     h_cost = getHCost(mx, my);
     cal_cost = g_cost + h_cost;
-
     if (curr_node->f > cal_cost) {
       curr_node->g = g_cost;
       curr_node->h = h_cost;
@@ -254,5 +264,4 @@ void ThetaStar::initializePosn(int size_inc)
     node_position_.emplace_back(-1);
   }
 }
-
 }  //  namespace theta_star
