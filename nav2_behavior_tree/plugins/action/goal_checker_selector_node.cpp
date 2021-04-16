@@ -48,7 +48,13 @@ BT::NodeStatus GoalCheckerSelector::tick()
   rclcpp::spin_some(node_);
 
   if (last_selected_goal_checker_.empty()) {
-    getInput("default_goal_checker", last_selected_goal_checker_);
+    std::string default_goal_checker;
+    getInput("default_goal_checker", default_goal_checker);
+    if (default_goal_checker.empty()) {
+      return BT::NodeStatus::FAILURE;
+    } else {
+      last_selected_goal_checker_ = default_goal_checker;
+    }
   }
 
   setOutput("selected_goal_checker", last_selected_goal_checker_);

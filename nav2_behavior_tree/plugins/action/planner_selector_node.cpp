@@ -48,7 +48,13 @@ BT::NodeStatus PlannerSelector::tick()
   rclcpp::spin_some(node_);
 
   if (last_selected_planner_.empty()) {
-    getInput("default_planner", last_selected_planner_);
+    std::string default_planner;
+    getInput("default_planner", default_planner);
+    if (default_planner.empty()) {
+      return BT::NodeStatus::FAILURE;
+    } else {
+      last_selected_planner_ = default_planner;
+    }
   }
 
   setOutput("selected_planner", last_selected_planner_);

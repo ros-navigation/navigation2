@@ -39,6 +39,7 @@
     <Action ID="FollowPath">
       <input_port name="controller_id" default="FollowPath"/>
       <input_port name="path">Path to follow</input_port>
+      <input_port name="goal_checker_id" default="GoalChecker">Goal checker</input_port>
     </Action>
 
     <Action ID="NavigateToPose">

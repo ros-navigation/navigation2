@@ -48,7 +48,13 @@ BT::NodeStatus ControllerSelector::tick()
   rclcpp::spin_some(node_);
 
   if (last_selected_controller_.empty()) {
-    getInput("default_controller", last_selected_controller_);
+    std::string default_controller;
+    getInput("default_controller", default_controller);
+    if (default_controller.empty()) {
+      return BT::NodeStatus::FAILURE;
+    } else {
+      last_selected_controller_ = default_controller;
+    }
   }
 
   setOutput("selected_controller", last_selected_controller_);
