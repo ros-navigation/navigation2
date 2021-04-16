@@ -111,7 +111,7 @@ public:
    * @brief checks whether the start and goal points have costmap costs lower than LETHAL_COST
    * @return the opposite result of the check
    */
-  bool isSafeToPlan() const
+  bool isUnsafeToPlan() const
   {
     return !(isSafe(src_.x, src_.y)) || !(isSafe(dst_.x, dst_.y));
   }

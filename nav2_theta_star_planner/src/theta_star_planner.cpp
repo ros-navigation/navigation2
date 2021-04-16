@@ -93,14 +93,8 @@ void ThetaStarPlanner::getPlan(nav_msgs::msg::Path & global_path)
 {
   std::vector<coordsW> path;
 
-  if (planner_->isSafeToPlan()) {
+  if (planner_->isUnsafeToPlan()) {
     RCLCPP_ERROR(logger_, "Either of the start or goal pose are an obstacle! ");
-    coordsW world{};
-    planner_->costmap_->mapToWorld(planner_->src_.x, planner_->src_.y, world.x, world.y);
-    path.push_back({world.x, world.y});
-    planner_->costmap_->mapToWorld(planner_->dst_.x, planner_->dst_.y, world.x, world.y);
-    path.push_back({world.x, world.y});
-    global_path = linearInterpolation(path, planner_->costmap_->getResolution());
     global_path.poses.clear();
   } else if (planner_->generatePath(path)) {
     global_path = linearInterpolation(path, planner_->costmap_->getResolution());

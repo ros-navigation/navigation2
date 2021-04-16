@@ -53,7 +53,7 @@ public:
 
   bool runAlgo(std::vector<coordsW> & path)
   {
-    if (!isSafeToPlan()) {
+    if (!isUnsafeToPlan()) {
       return generatePath(path);
     }
     return false;
