@@ -75,8 +75,17 @@ TEST(ThetaStarTest, test_theta_star)
 
   planner_->size_x_ = 50;
   planner_->size_y_ = 50;
-  planner_->src_ = {10, 10};
-  planner_->dst_ = {40, 35};
+  geometry_msgs::msg::PoseStamped start, goal;
+  start.pose.position.x = 10;
+  start.pose.position.y = 10;
+  start.pose.orientation.w = 1.0;
+  goal.pose.position.x = 40;
+  goal.pose.position.y = 35;
+  goal.pose.orientation.w = 1.0;
+  /// Check if the setStartAndGoal function works properly
+  planner_->setStartAndGoal(start, goal);
+  EXPECT_TRUE(planner_->src_.x == 10 && planner_->src_.y == 10);
+  EXPECT_TRUE(planner_->dst_.x == 40 && planner_->dst_.y == 35);
 
   /// Check if the initializePosn function works properly
   planner_->uinitializePosn(50 * 50);
