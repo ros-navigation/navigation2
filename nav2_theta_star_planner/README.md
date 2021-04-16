@@ -14,8 +14,8 @@ For the below example the planner took ~46ms (averaged value) to compute the pat
 
 The parameters were set to - `w_euc_cost: 1.0`, `w_traversal_cost: 5.0`, `w_heuristic_cost: 1.0` and the `global_costmap`'s `inflation_layer` parameters are set as - `cost_scaling_factor:5.0`, `inflation_radius: 5.5`
 
-##Cost Function Details
-###Symbols and their meanings
+## Cost Function Details
+### Symbols and their meanings
 **g(a)** - cost function cost for the node 'a'
 
 **h(a)** - heuristic function cost for the node 'a'
