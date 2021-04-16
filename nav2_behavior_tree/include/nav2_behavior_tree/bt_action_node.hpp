@@ -234,6 +234,9 @@ public:
     }
 
     setStatus(BT::NodeStatus::IDLE);
+    if (goal_handle_) {
+      goal_handle_.reset();
+    }
   }
 
 protected:
@@ -282,6 +285,9 @@ protected:
       throw std::runtime_error("send_goal failed");
     }
 
+    if (goal_handle_) {
+      goal_handle_.reset();
+    }
     goal_handle_ = future_goal_handle.get();
     if (!goal_handle_) {
       throw std::runtime_error("Goal was rejected by the action server");
