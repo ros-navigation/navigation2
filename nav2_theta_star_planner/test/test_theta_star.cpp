@@ -151,6 +151,7 @@ TEST(ThetaStarPlanner, test_theta_star_planner)
   planner_2d->activate();
 
   nav_msgs::msg::Path path = planner_2d->createPlan(start, goal);
+  EXPECT_GT(static_cast<int>(path.poses.size()), 0);
 
   planner_2d->deactivate();
   planner_2d->cleanup();
