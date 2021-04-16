@@ -10,7 +10,7 @@ The Theta Star Planner is a global planning plugin meant to be used with the Nav
 
 ## Metrics
 For the below example the planner took ~46ms (averaged value) to compute the path of 87.5m - 
-![example.png](/img/00-37.png)
+![example.png](img/00-37.png)
 
 The parameters were set to - `w_euc_cost: 1.0`, `w_traversal_cost: 5.0`, `w_heuristic_cost: 1.0` and the `global_costmap`'s `inflation_layer` parameters are set as - `cost_scaling_factor:5.0`, `inflation_radius: 5.5`
 
