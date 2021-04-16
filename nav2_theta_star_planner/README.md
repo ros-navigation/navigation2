@@ -16,24 +16,24 @@ The parameters were set to - `w_euc_cost: 1.0`, `w_traversal_cost: 5.0`, `w_heur
 
 ##Cost Function Details
 ###Symbols and their meanings
-**g(a)** - cost function cost for the init_rclcpp 'a'
+**g(a)** - cost function cost for the node 'a'
 
-**h(a)** - heuristic function cost for the init_rclcpp 'a'
+**h(a)** - heuristic function cost for the node 'a'
 
-**f(a)** - total cost (g(a) + h(a)) for the init_rclcpp 'a'
+**f(a)** - total cost (g(a) + h(a)) for the node 'a'
 
 **LETHAL_COST** - a value of the costmap traversal cost that inscribes an obstacle with
 respect to a function, value = 253
 
-**curr** - represents the init_rclcpp whose neighbours are being added to the list
+**curr** - represents the node whose neighbours are being added to the list
 
 **neigh** - one of the neighboring nodes of curr
 
-**par** - parent init_rclcpp of curr
+**par** - parent node of curr
 
-**euc_cost(a,b)** - euclidean distance between the init_rclcpp type 'a' and type 'b'
+**euc_cost(a,b)** - euclidean distance between the node type 'a' and type 'b'
 
-**costmap_cost(a,b)** - the costmap traversal cost (ranges from 0 - 252, 254 = unknown value) between the init_rclcpp type 'a' and type 'b'
+**costmap_cost(a,b)** - the costmap traversal cost (ranges from 0 - 252, 254 = unknown value) between the node type 'a' and type 'b'
 
 ### Cost function
 ```
