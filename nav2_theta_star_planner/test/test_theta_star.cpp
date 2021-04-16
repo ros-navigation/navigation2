@@ -126,9 +126,12 @@ TEST(ThetaStarTest, test_theta_star)
   std::vector<coordsW> path;
   /// Check if the planner returns a path for the case where a path exists
   EXPECT_TRUE(planner_->runAlgo(path));
+  EXPECT_GT(static_cast<int>(path.size()), 0);
   /// and where it doesn't exist
+  path.clear();
   planner_->src_ = {25, 25};
   EXPECT_FALSE(planner_->runAlgo(path));
+  EXPECT_EQ(static_cast<int>(path.size()), 0);
 }
 
 // Smoke tests meant to detect issues arising from the plugin part rather than the algorithm
