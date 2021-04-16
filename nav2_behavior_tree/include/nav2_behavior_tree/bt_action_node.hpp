@@ -177,19 +177,21 @@ public:
       on_new_goal_received();
     }
 
+    if (!goal_handle_) {
+      throw std::logic_error("BtActionNode::Tick: invalid goal handle");
+    }
+
     // The following code corresponds to the "RUNNING" loop
     if (rclcpp::ok() && !goal_result_available_) {
       // user defined callback. May modify the value of "goal_updated_"
       on_wait_for_result();
 
-      if (goal_handle_) {
-        auto goal_status = goal_handle_->get_status();
-        if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
-          goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
-        {
-          goal_updated_ = false;
-          on_new_goal_received();
-        }
+      auto goal_status = goal_handle_->get_status();
+      if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
+        goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
+      {
+        goal_updated_ = false;
+        on_new_goal_received();
       }
 
       rclcpp::spin_some(node_);
