@@ -41,7 +41,7 @@ g(neigh) = g(curr) + w_euc_cost*euc_cost(curr, neigh) + w_traversal_cost*(costma
 h(neigh) = w_heuristic_cost * euc_cost(neigh, goal)
 f(neigh) = g(neigh) + h(neigh)
 ```
-Because of how the program works when the 'neigh' init_rclcpp is to be expanded, depending
+Because of how the program works when the 'neigh' node is to be expanded, depending
 on the result of the LOS check, (if the LOS check returns true) the value of g(neigh) might change to `g(par) +
 w1*euc_cost(par, neigh) + w2*(costmap(par,neigh)/LETHAL_COST)^2`
 
@@ -70,7 +70,7 @@ Do note that the `global_costmap`'s `inflation_layer` values recommended for the
 ## Usage Notes
 
 ### Tuning the Parameters
-Before starting off, do note that the costmap_cost(curr,neigh) component after being operated (before being multiplied to its parameter and being substituted in g(init_rclcpp)) varies from 0 to 1. Keep this in mind while tuning.
+Before starting off, do note that the costmap_cost(curr,neigh) component after being operated (before being multiplied to its parameter and being substituted in g(node)) varies from 0 to 1. Keep this in mind while tuning.
 
 This planner uses the costs associated with each cell from the `global_costmap` as a measure of the point's proximity to the obstacles. Providing a gentle potential field that covers the entirety of the region (with only small pocket like regions of cost = 0) is recommended in order to achieve paths that pass through the middle of the spaces. A good starting point could be to set the `inflation_layer`'s parameters as - `cost_scaling_factor:10.0`, `inflation_radius: 5.5` and then to decrease the value of `cost_scaling_factor` to achieve the said potential field.
 
