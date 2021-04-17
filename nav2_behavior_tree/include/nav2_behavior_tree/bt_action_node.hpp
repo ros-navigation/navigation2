@@ -177,10 +177,6 @@ public:
       on_new_goal_received();
     }
 
-    if (!goal_handle_) {
-      throw std::logic_error("BtActionNode::Tick: invalid goal handle");
-    }
-
     // The following code corresponds to the "RUNNING" loop
     if (rclcpp::ok() && !goal_result_available_) {
       // user defined callback. May modify the value of "goal_updated_"
@@ -273,7 +269,7 @@ protected:
         // TODO(#1652): a work around until rcl_action interface is updated
         // if goal ids are not matched, the older goal call this callback so ignore the result
         // if matched, it must be processed (including aborted)
-        if (this->goal_handle_ && (this->goal_handle_->get_goal_id() == result.goal_id)) {
+        if (!this->goal_handle_ || (this->goal_handle_->get_goal_id() == result.goal_id)) {
           goal_result_available_ = true;
           result_ = result;
         }
@@ -287,9 +283,6 @@ protected:
       throw std::runtime_error("send_goal failed");
     }
 
-    if (goal_handle_) {
-      goal_handle_.reset();
-    }
     goal_handle_ = future_goal_handle.get();
     if (!goal_handle_) {
       throw std::runtime_error("Goal was rejected by the action server");
