@@ -3,3 +3,12 @@ nav2_behavior_tree
 nav2_msgs
 nav2_common
 nav2_util
+nav2_planner
+nav2_costmap_2d
+nav2_core
+nav2_voxel_grid
+nav2_lifecycle_manager
+nav2_map_server
+nav2_amcl
+nav2_rviz_plugins
+nav2_navfn_planner
