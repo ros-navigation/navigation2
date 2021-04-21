@@ -112,6 +112,9 @@ void ClearCostmapService::clearRegion(const double reset_distance, bool invert)
       clearLayerRegion(costmap_layer, x, y, reset_distance, invert);
     }
   }
+
+  // AlexeyMerzlyakov: No need to clear layer region for costmap filters
+  // as they are always supposed to be not clearable.
 }
 
 void ClearCostmapService::clearLayerRegion(

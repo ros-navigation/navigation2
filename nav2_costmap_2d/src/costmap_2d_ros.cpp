@@ -101,6 +101,7 @@ Costmap2DROS::Costmap2DROS(
   declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
   declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
   declare_parameter("plugins", rclcpp::ParameterValue(default_plugins_));
+  declare_parameter("filters", rclcpp::ParameterValue(std::vector<std::string>()));
   declare_parameter("publish_frequency", rclcpp::ParameterValue(1.0));
   declare_parameter("resolution", rclcpp::ParameterValue(0.1));
   declare_parameter("robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
@@ -156,6 +157,19 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
       shared_from_this(), client_node_, rclcpp_node_);
 
     RCLCPP_INFO(get_logger(), "Initialized plugin \"%s\"", plugin_names_[i].c_str());
+  }
+  // and costmap filters as well
+  for (unsigned int i = 0; i < filter_names_.size(); ++i) {
+    RCLCPP_INFO(get_logger(), "Using costmap filter \"%s\"", filter_names_[i].c_str());
+
+    std::shared_ptr<Layer> filter = plugin_loader_.createSharedInstance(filter_types_[i]);
+    layered_costmap_->addFilter(filter);
+
+    filter->initialize(
+      layered_costmap_.get(), filter_names_[i], tf_buffer_.get(),
+      shared_from_this(), client_node_, rclcpp_node_);
+
+    RCLCPP_INFO(get_logger(), "Initialized costmap filter \"%s\"", filter_names_[i].c_str());
   }
 
   // Create the publishers and subscribers
@@ -300,6 +314,7 @@ Costmap2DROS::getParameters()
   get_parameter("update_frequency", map_update_frequency_);
   get_parameter("width", map_width_meters_);
   get_parameter("plugins", plugin_names_);
+  get_parameter("filters", filter_names_);
 
   auto node = shared_from_this();
 
@@ -310,10 +325,14 @@ Costmap2DROS::getParameters()
     }
   }
   plugin_types_.resize(plugin_names_.size());
+  filter_types_.resize(filter_names_.size());
 
   // 1. All plugins must have 'plugin' param defined in their namespace to define the plugin type
   for (size_t i = 0; i < plugin_names_.size(); ++i) {
     plugin_types_[i] = nav2_util::get_plugin_type_param(node, plugin_names_[i]);
+  }
+  for (size_t i = 0; i < filter_names_.size(); ++i) {
+    filter_types_[i] = nav2_util::get_plugin_type_param(node, filter_names_[i]);
   }
 
   // 2. The map publish frequency cannot be 0 (to avoid a divde-by-zero)
@@ -455,6 +474,7 @@ Costmap2DROS::start()
 {
   RCLCPP_INFO(get_logger(), "start");
   std::vector<std::shared_ptr<Layer>> * plugins = layered_costmap_->getPlugins();
+  std::vector<std::shared_ptr<Layer>> * filters = layered_costmap_->getFilters();
 
   // check if we're stopped or just paused
   if (stopped_) {
@@ -464,6 +484,12 @@ Costmap2DROS::start()
       ++plugin)
     {
       (*plugin)->activate();
+    }
+    for (std::vector<std::shared_ptr<Layer>>::iterator filter = filters->begin();
+      filter != filters->end();
+      ++filter)
+    {
+      (*filter)->activate();
     }
     stopped_ = false;
   }
@@ -482,11 +508,17 @@ Costmap2DROS::stop()
 {
   stop_updates_ = true;
   std::vector<std::shared_ptr<Layer>> * plugins = layered_costmap_->getPlugins();
+  std::vector<std::shared_ptr<Layer>> * filters = layered_costmap_->getFilters();
   // unsubscribe from topics
   for (std::vector<std::shared_ptr<Layer>>::iterator plugin = plugins->begin();
     plugin != plugins->end(); ++plugin)
   {
     (*plugin)->deactivate();
+  }
+  for (std::vector<std::shared_ptr<Layer>>::iterator filter = filters->begin();
+    filter != filters->end(); ++filter)
+  {
+    (*filter)->deactivate();
   }
   initialized_ = false;
   stopped_ = true;
@@ -519,10 +551,16 @@ Costmap2DROS::resetLayers()
 
   // Reset each of the plugins
   std::vector<std::shared_ptr<Layer>> * plugins = layered_costmap_->getPlugins();
+  std::vector<std::shared_ptr<Layer>> * filters = layered_costmap_->getFilters();
   for (std::vector<std::shared_ptr<Layer>>::iterator plugin = plugins->begin();
     plugin != plugins->end(); ++plugin)
   {
     (*plugin)->reset();
+  }
+  for (std::vector<std::shared_ptr<Layer>>::iterator filter = filters->begin();
+    filter != filters->end(); ++filter)
+  {
+    (*filter)->reset();
   }
 }
 
