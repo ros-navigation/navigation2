@@ -53,7 +53,7 @@ namespace nav2_costmap_2d
 {
 
 LayeredCostmap::LayeredCostmap(std::string global_frame, bool rolling_window, bool track_unknown)
-: plugins_costmap_(), costmap_(),
+: primary_costmap_(), combined_costmap_(),
   global_frame_(global_frame),
   rolling_window_(rolling_window),
   current_(false),
@@ -71,11 +71,11 @@ LayeredCostmap::LayeredCostmap(std::string global_frame, bool rolling_window, bo
   inscribed_radius_(0.1)
 {
   if (track_unknown) {
-    plugins_costmap_.setDefaultValue(255);
-    costmap_.setDefaultValue(255);
+    primary_costmap_.setDefaultValue(255);
+    combined_costmap_.setDefaultValue(255);
   } else {
-    plugins_costmap_.setDefaultValue(0);
-    costmap_.setDefaultValue(0);
+    primary_costmap_.setDefaultValue(0);
+    combined_costmap_.setDefaultValue(0);
   }
 }
 
@@ -95,10 +95,10 @@ void LayeredCostmap::resizeMap(
   double origin_y,
   bool size_locked)
 {
-  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getMutex()));
+  std::unique_lock<Costmap2D::mutex_t> lock(*(combined_costmap_.getMutex()));
   size_locked_ = size_locked;
-  plugins_costmap_.resizeMap(size_x, size_y, resolution, origin_x, origin_y);
-  costmap_.resizeMap(size_x, size_y, resolution, origin_x, origin_y);
+  primary_costmap_.resizeMap(size_x, size_y, resolution, origin_x, origin_y);
+  combined_costmap_.resizeMap(size_x, size_y, resolution, origin_x, origin_y);
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
     plugin != plugins_.end(); ++plugin)
   {
@@ -114,22 +114,22 @@ void LayeredCostmap::resizeMap(
 bool LayeredCostmap::isOutofBounds(double robot_x, double robot_y)
 {
   unsigned int mx, my;
-  return !costmap_.worldToMap(robot_x, robot_y, mx, my);
+  return !combined_costmap_.worldToMap(robot_x, robot_y, mx, my);
 }
 
 void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
 {
   // Lock for the remainder of this function, some plugins (e.g. VoxelLayer)
   // implement thread unsafe updateBounds() functions.
-  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getMutex()));
+  std::unique_lock<Costmap2D::mutex_t> lock(*(combined_costmap_.getMutex()));
 
   // if we're using a rolling buffer costmap...
   // we need to update the origin using the robot's position
   if (rolling_window_) {
-    double new_origin_x = robot_x - costmap_.getSizeInMetersX() / 2;
-    double new_origin_y = robot_y - costmap_.getSizeInMetersY() / 2;
-    plugins_costmap_.updateOrigin(new_origin_x, new_origin_y);
-    costmap_.updateOrigin(new_origin_x, new_origin_y);
+    double new_origin_x = robot_x - combined_costmap_.getSizeInMetersX() / 2;
+    double new_origin_y = robot_y - combined_costmap_.getSizeInMetersY() / 2;
+    primary_costmap_.updateOrigin(new_origin_x, new_origin_y);
+    combined_costmap_.updateOrigin(new_origin_x, new_origin_y);
   }
 
   if (isOutofBounds(robot_x, robot_y)) {
@@ -183,13 +183,13 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
   }
 
   int x0, xn, y0, yn;
-  costmap_.worldToMapEnforceBounds(minx_, miny_, x0, y0);
-  costmap_.worldToMapEnforceBounds(maxx_, maxy_, xn, yn);
+  combined_costmap_.worldToMapEnforceBounds(minx_, miny_, x0, y0);
+  combined_costmap_.worldToMapEnforceBounds(maxx_, maxy_, xn, yn);
 
   x0 = std::max(0, x0);
-  xn = std::min(static_cast<int>(costmap_.getSizeInCellsX()), xn + 1);
+  xn = std::min(static_cast<int>(combined_costmap_.getSizeInCellsX()), xn + 1);
   y0 = std::max(0, y0);
-  yn = std::min(static_cast<int>(costmap_.getSizeInCellsY()), yn + 1);
+  yn = std::min(static_cast<int>(combined_costmap_.getSizeInCellsY()), yn + 1);
 
   RCLCPP_DEBUG(
     rclcpp::get_logger(
@@ -201,25 +201,25 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
 
   if (filters_.size() == 0) {
     // If there are no filters enabled just update costmap sequentially by each plugin
-    costmap_.resetMap(x0, y0, xn, yn);
+    combined_costmap_.resetMap(x0, y0, xn, yn);
     for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
       plugin != plugins_.end(); ++plugin)
     {
-      (*plugin)->updateCosts(costmap_, x0, y0, xn, yn);
+      (*plugin)->updateCosts(combined_costmap_, x0, y0, xn, yn);
     }
   } else {
     // Costmap Filters enabled
     // 1. Update costmap by plugins
-    plugins_costmap_.resetMap(x0, y0, xn, yn);
+    primary_costmap_.resetMap(x0, y0, xn, yn);
     for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
       plugin != plugins_.end(); ++plugin)
     {
-      (*plugin)->updateCosts(plugins_costmap_, x0, y0, xn, yn);
+      (*plugin)->updateCosts(primary_costmap_, x0, y0, xn, yn);
     }
 
     // 2. Copy processed costmap window to a final costmap.
-    // plugins_costmap_ remain to be untouched for further usage by plugins.
-    if (!costmap_.copyWindow(plugins_costmap_, x0, y0, xn, yn, x0, y0)) {
+    // primary_costmap_ remain to be untouched for further usage by plugins.
+    if (!combined_costmap_.copyWindow(primary_costmap_, x0, y0, xn, yn, x0, y0)) {
       RCLCPP_ERROR(
         rclcpp::get_logger("nav2_costmap_2d"),
         "Can not copy costmap (%i,%i)..(%i,%i) window",
@@ -232,7 +232,7 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
     for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
       filter != filters_.end(); ++filter)
     {
-      (*filter)->updateCosts(costmap_, x0, y0, xn, yn);
+      (*filter)->updateCosts(combined_costmap_, x0, y0, xn, yn);
     }
   }
 

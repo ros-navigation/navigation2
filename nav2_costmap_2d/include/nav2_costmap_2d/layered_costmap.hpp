@@ -108,7 +108,7 @@ public:
    */
   Costmap2D * getCostmap()
   {
-    return &costmap_;
+    return &combined_costmap_;
   }
 
   /**
@@ -124,7 +124,7 @@ public:
    */
   bool isTrackingUnknown()
   {
-    return costmap_.getDefaultValue() == nav2_costmap_2d::NO_INFORMATION;
+    return combined_costmap_.getDefaultValue() == nav2_costmap_2d::NO_INFORMATION;
   }
 
   /**
@@ -213,7 +213,12 @@ public:
   bool isOutofBounds(double robot_x, double robot_y);
 
 private:
-  Costmap2D plugins_costmap_, costmap_;
+  // primary_costmap_ is a bottom costmap used by plugins when costmap filters were enabled.
+  // combined_costmap_ is a final costmap where all results produced by plugins and filters (if any)
+  // to be merged.
+  // The separation is aimed to avoid interferences of work between plugins and filters.
+  // primay_costmap_ and combined_costmap_ have the same sizes, origins and default values.
+  Costmap2D primary_costmap_, combined_costmap_;
   std::string global_frame_;
 
   bool rolling_window_;  /// < @brief Whether or not the costmap should roll with the robot
