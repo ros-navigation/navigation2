@@ -35,6 +35,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/Spin.action"
   "action/DummyRecovery.action"
   "action/FollowWaypoints.action"
+  "action/ComputePath.action"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs
 )
 
