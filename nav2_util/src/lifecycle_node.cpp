@@ -40,7 +40,8 @@ namespace nav2_util
 // MessageFilter.
 //
 
-LifecycleNode::LifecycleNode(const std::string & node_name,
+LifecycleNode::LifecycleNode(
+  const std::string & node_name,
   const std::string & ns, bool use_rclcpp_node,
   const rclcpp::NodeOptions & options)
 : rclcpp_lifecycle::LifecycleNode(node_name, ns, options),
