@@ -49,9 +49,14 @@ public:
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
 
     // Get the required items from the blackboard
+    bt_loop_timeout_ =
+      config().blackboard->template get<std::chrono::milliseconds>("bt_loop_timeout");
     server_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
+      config().blackboard->template get<std::chrono::milliseconds>("default_server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+
+    // Set spin_until_future_complete timeout
+    timeout_ = server_timeout_ < bt_loop_timeout_ ? server_timeout_ : bt_loop_timeout_;
 
     // Initialize the input and output messages
     goal_ = typename ActionT::Goal();
@@ -174,7 +179,24 @@ public:
       // user defined callback
       on_tick();
 
-      on_new_goal_received();
+      send_new_goal();
+    }
+
+    // if new goal was sent and action server has not yet responded
+    // check the future goal handle
+    if (goal_sent_) {
+      if (!check_future_goal_handle()) {
+        // return RUNNING if there is still some time before timeout happens
+        auto elapsed = (node_->now() - sent_time_).to_chrono<std::chrono::milliseconds>();
+        if (elapsed < server_timeout_) {
+          return BT::NodeStatus::RUNNING;
+        }
+        // if server has taken more time to respond than the specified timeout value return FAILURE
+        RCLCPP_WARN(
+          node_->get_logger(),
+          "Timed out while waiting for action server to respond for %s", action_name_.c_str());
+        return BT::NodeStatus::FAILURE;
+      }
     }
 
     // The following code corresponds to the "RUNNING" loop
@@ -187,7 +209,17 @@ public:
         goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
       {
         goal_updated_ = false;
-        on_new_goal_received();
+        send_new_goal();
+        if (!check_future_goal_handle()) {
+          auto elapsed = (node_->now() - sent_time_).to_chrono<std::chrono::milliseconds>();
+          if (elapsed < server_timeout_) {
+            return BT::NodeStatus::RUNNING;
+          }
+          RCLCPP_WARN(
+            node_->get_logger(),
+            "Timed out while waiting for action server to respond for %s", action_name_.c_str());
+          return BT::NodeStatus::FAILURE;
+        }
       }
 
       rclcpp::spin_some(node_);
@@ -257,7 +289,7 @@ protected:
   /**
    * @brief Function to send new goal to action server
    */
-  void on_new_goal_received()
+  void send_new_goal()
   {
     goal_result_available_ = false;
     auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
@@ -272,18 +304,42 @@ protected:
         }
       };
 
-    auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
+    future_goal_handle_ = action_client_->async_send_goal(goal_, send_goal_options);
+    sent_time_ = node_->now();
+    goal_sent_ = true;
+  }
 
-    if (rclcpp::spin_until_future_complete(node_, future_goal_handle, server_timeout_) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
+  /**
+   * @brief Function to check response from the action server when a new goal is sent
+   * @return boolen True if future_goal_handle_ returns SUCCESS, False when it returns TIMEOUT
+   */
+  bool check_future_goal_handle()
+  {
+    auto elapsed = (node_->now() - sent_time_).to_chrono<std::chrono::milliseconds>();
+    auto remaining = server_timeout_ - elapsed;
+
+    // server has already timed out, no need to sleep
+    if (remaining <= std::chrono::milliseconds(0)) {
+      return false;
+    }
+
+    auto timeout = remaining > timeout_ ? timeout_ : remaining;
+
+    auto result = rclcpp::spin_until_future_complete(node_, future_goal_handle_, timeout);
+    if (result == rclcpp::FutureReturnCode::INTERRUPTED) {
       throw std::runtime_error("send_goal failed");
     }
 
-    goal_handle_ = future_goal_handle.get();
-    if (!goal_handle_) {
-      throw std::runtime_error("Goal was rejected by the action server");
+    if (result == rclcpp::FutureReturnCode::SUCCESS) {
+      goal_handle_ = future_goal_handle_.get();
+      if (!goal_handle_) {
+        throw std::runtime_error("Goal was rejected by the action server");
+      }
+      goal_sent_ = false;
+      return true;
     }
+
+    return false;
   }
 
   /**
@@ -313,6 +369,18 @@ protected:
   // The timeout value while waiting for response from a server when a
   // new action goal is sent or canceled
   std::chrono::milliseconds server_timeout_;
+
+  // The timeout value for BT loop execution
+  std::chrono::milliseconds bt_loop_timeout_;
+
+  // spin_until_future_complete timeout value
+  std::chrono::milliseconds timeout_;
+
+  // To track the action server response when a new goal is sent
+  std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr>
+  future_goal_handle_;
+  bool goal_sent_{false};
+  rclcpp::Time sent_time_;
 };
 
 }  // namespace nav2_behavior_tree

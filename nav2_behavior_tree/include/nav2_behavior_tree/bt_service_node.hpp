@@ -47,9 +47,14 @@ public:
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
 
     // Get the required items from the blackboard
+    bt_loop_timeout_ =
+      config().blackboard->template get<std::chrono::milliseconds>("bt_loop_timeout");
     server_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
+      config().blackboard->template get<std::chrono::milliseconds>("default_server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+
+    // Set spin_until_future_complete timeout
+    timeout_ = server_timeout_ < bt_loop_timeout_ ? server_timeout_ : bt_loop_timeout_;
 
     // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
@@ -107,9 +112,13 @@ public:
    */
   BT::NodeStatus tick() override
   {
-    on_tick();
-    auto future_result = service_client_->async_send_request(request_);
-    return check_future(future_result);
+    if (!request_sent_) {
+      on_tick();
+      future_result_ = service_client_->async_send_request(request_);
+      sent_time_ = node_->now();
+      request_sent_ = true;
+    }
+    return check_future();
   }
 
   /**
@@ -122,24 +131,35 @@ public:
 
   /**
    * @brief Check the future and decide the status of BT
-   * @param future_result shared_future of service response
    * @return BT::NodeStatus SUCCESS if future complete before timeout, FAILURE otherwise
    */
-  virtual BT::NodeStatus check_future(
-    std::shared_future<typename ServiceT::Response::SharedPtr> future_result)
+  virtual BT::NodeStatus check_future()
   {
-    rclcpp::FutureReturnCode rc;
-    rc = rclcpp::spin_until_future_complete(
-      node_,
-      future_result, server_timeout_);
-    if (rc == rclcpp::FutureReturnCode::SUCCESS) {
-      return BT::NodeStatus::SUCCESS;
-    } else if (rc == rclcpp::FutureReturnCode::TIMEOUT) {
-      RCLCPP_WARN(
-        node_->get_logger(),
-        "Node timed out while executing service call to %s.", service_name_.c_str());
-      on_wait_for_result();
+    auto elapsed = (node_->now() - sent_time_).to_chrono<std::chrono::milliseconds>();
+    auto remaining = server_timeout_ - elapsed;
+
+    if (remaining > std::chrono::milliseconds(0)) {
+      auto timeout = remaining > timeout_ ? timeout_ : remaining;
+
+      auto rc = rclcpp::spin_until_future_complete(node_, future_result_, timeout);
+      if (rc == rclcpp::FutureReturnCode::SUCCESS) {
+        request_sent_ = false;
+        return BT::NodeStatus::SUCCESS;
+      }
+
+      if (rc == rclcpp::FutureReturnCode::TIMEOUT) {
+        on_wait_for_result();
+        elapsed = (node_->now() - sent_time_).to_chrono<std::chrono::milliseconds>();
+        if (elapsed < server_timeout_) {
+          return BT::NodeStatus::RUNNING;
+        }
+      }
     }
+
+    RCLCPP_WARN(
+      node_->get_logger(),
+      "Node timed out while executing service call to %s.", service_name_.c_str());
+
     return BT::NodeStatus::FAILURE;
   }
 
@@ -173,6 +193,17 @@ protected:
   // The timeout value while to use in the tick loop while waiting for
   // a result from the server
   std::chrono::milliseconds server_timeout_;
+
+  // The timeout value for BT loop execution
+  std::chrono::milliseconds bt_loop_timeout_;
+
+  // spin_until_future_complete timeout value
+  std::chrono::milliseconds timeout_;
+
+  // To track the server response when a new request is sent
+  std::shared_future<typename ServiceT::Response::SharedPtr> future_result_;
+  bool request_sent_{false};
+  rclcpp::Time sent_time_;
 };
 
 }  // namespace nav2_behavior_tree
