@@ -52,7 +52,7 @@ public:
     bt_loop_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("bt_loop_timeout");
     server_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("default_server_timeout");
+      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
     // Set spin_until_future_complete timeout
