@@ -52,6 +52,9 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "server_timeout",
       std::chrono::milliseconds(10));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "bt_loop_timeout",
+      std::chrono::milliseconds(10));
     config_->blackboard->set<bool>("initial_pose_received", false);
 
     transform_handler_->activate();

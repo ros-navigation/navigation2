@@ -110,6 +110,8 @@ public:
     blackboard->set<rclcpp::Node::SharedPtr>("node", node_);  // NOLINT
     blackboard->set<std::chrono::milliseconds>(
       "server_timeout", std::chrono::milliseconds(10));  // NOLINT
+    blackboard->set<std::chrono::milliseconds>(
+      "bt_loop_timeout", std::chrono::milliseconds(10));  // NOLINT
     blackboard->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
     blackboard->set<bool>("initial_pose_received", false);  // NOLINT
     blackboard->set<int>("number_recoveries", 0);  // NOLINT
