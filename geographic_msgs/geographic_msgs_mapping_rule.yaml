@@ -1,0 +1,9 @@
+# This file defines mappings between ROS 1 and ROS 2 interfaces.
+# It is used with the ros1_bridge to allow for communication between ROS 1 and ROS 2.
+
+-
+  ros1_package_name: 'uuid_msgs'
+  ros1_message_name: 'UniqueID'
+  ros2_package_name: 'unique_identifier_msgs'
+  ros2_message_name: 'UUID'
+

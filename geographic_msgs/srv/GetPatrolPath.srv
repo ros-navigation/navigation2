@@ -1,0 +1,14 @@
+# This service requests for a patrolling-path that covers a polygon
+
+# The vertices of the area to be patrolled. Note: the first and the last point should 
+# be the same.
+geographic_msgs/GeoPolygon polygon
+
+---
+
+uint8 RESULT_SUCCESS = 0
+uint8 RESULT_FAILURE = 255
+
+uint8 result
+geographic_msgs/GeoPath path  # patrolling-path
+string error # error message when unable to compute path

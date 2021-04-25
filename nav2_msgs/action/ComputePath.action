@@ -13,12 +13,7 @@ string planner_id
 bool use_start # If true, use current robot pose as path start, if false, use start above instead
 ---
 #result definition
-nav_msgs/Path[] path_local
-geographic_msgs/GeoPath[] path_global
-
-nav_msgs/Path[] boundary_local
-geographic_msgs/GeoPath[] boundary_global
-
+nav2_msgs/PathandBoundary path_and_boundary
 builtin_interfaces/Duration planning_time
 ---
 #feedback
