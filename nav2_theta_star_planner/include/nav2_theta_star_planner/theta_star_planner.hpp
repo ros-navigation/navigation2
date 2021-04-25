@@ -54,16 +54,6 @@ public:
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override;
 
-  /**
-   * @brief interpolates points between the adjacent waypoints of the path
-   * @param raw_path is used to send in the path received from the planner
-   * @param dist_bw_points is used to send in the interpolation_resolution
-   * @return the final path with waypoints at a distance of the value of interpolation_resolution of each other
-   */
-  static nav_msgs::msg::Path linearInterpolation(
-    const std::vector<coordsW> & raw_path,
-    const double & dist_bw_points);
-
 protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   rclcpp::Clock::SharedPtr clock_;
@@ -77,6 +67,16 @@ protected:
    * @return global_path is the planned path to be taken
    */
   void getPlan(nav_msgs::msg::Path & global_path);
+
+  /**
+   * @brief interpolates points between the consecutive waypoints of the path
+   * @param raw_path is used to send in the path received from the planner
+   * @param dist_bw_points is used to send in the interpolation_resolution (which has been set as the costmap resolution)
+   * @return the final path with waypoints at a distance of the value of interpolation_resolution of each other
+   */
+  static nav_msgs::msg::Path linearInterpolation(
+    const std::vector<coordsW> & raw_path,
+    const double & dist_bw_points);
 };
 }   //  namespace nav2_theta_star_planner
 

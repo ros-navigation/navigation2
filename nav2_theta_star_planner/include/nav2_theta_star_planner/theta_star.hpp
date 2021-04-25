@@ -70,13 +70,13 @@ public:
 
   /// weight on the costmap traversal cost
   double w_traversal_cost_;
-  /// weight on the euclidean distance cost (as of now used for calculations of g_cost)
+  /// weight on the euclidean distance cost (used for calculations of g_cost)
   double w_euc_cost_;
-  /// weight on the heuristic cost (for h_cost calculations)
+  /// weight on the heuristic cost (used for h_cost calculations)
   double w_heuristic_cost_;
   /// parameter to set the number of adjacent nodes to be searched on
   int how_many_corners_;
-  /// the x directional and y directional lengths of the map respectively
+  /// the x-directional and y-directional lengths of the map respectively
   int size_x_, size_y_;
 
   ThetaStar();
@@ -108,8 +108,8 @@ public:
     const geometry_msgs::msg::PoseStamped & goal);
 
   /**
-   * @brief checks whether the start and goal points have costmap costs lower than LETHAL_COST
-   * @return the opposite result of the check
+   * @brief checks whether the start and goal points have costmap costs greater than LETHAL_COST
+   * @return true if the cost of any one of the points is greater than LETHAL_COST
    */
   bool isUnsafeToPlan() const
   {
@@ -129,7 +129,7 @@ protected:
   /// and its size increases depending on the number of nodes searched
   std::vector<tree_node> nodes_data_;
 
-  /// this is the priority queue (open_list) to select the next node for expansion
+  /// this is the priority queue (open_list) to select the next node to be expanded
   std::priority_queue<pos, std::vector<pos>, comp> queue_;
 
   /// it is a counter like variable used to generate consecutive indices
@@ -148,17 +148,17 @@ protected:
 
   tree_node * curr_node;
 
-  /** @brief it performs a line of sight (los) check between the current node and the parent node of its parent node
-   *            if an los is found and the new costs calculated are lesser then the cost and parent node
+  /** @brief it performs a line of sight (los) check between the current node and the parent node of its parent node;
+   *            if an los is found and the new costs calculated are lesser, then the cost and parent node
    *            of the current node is updated
    * @param data of the current node
   */
   void resetParent(tree_node & curr_data);
 
   /**
-   * @brief this function expands the neighbors of the current node
+   * @brief this function expands the current node
    * @param curr_data used to send the data of the current node
-   * @param curr_id used to send the index of the current node as stored in nodes_position
+   * @param curr_id used to send the index of the current node as stored in nodes_position_
    */
   void setNeighbors(const tree_node & curr_data, const int & curr_int);
 
@@ -173,7 +173,7 @@ protected:
 
   /**
 * @brief it is an overloaded function to ease the cost calculations while performing the LOS check
-* @param cost denotes the total straight line traversal cost, adds the traversal cost for the node (cx, cy) at every instance, it is also being returned
+* @param cost denotes the total straight line traversal cost; it adds the traversal cost for the node (cx, cy) at every instance; it is also being returned
 * @return false if the traversal cost is greater than / equal to the LETHAL_COST and true otherwise
 */
   bool isSafe(const int & cx, const int & cy, double & cost) const
@@ -245,31 +245,31 @@ protected:
 
   /**
    * @brief initialises the node_position_ vector by storing -1 as index for all points(x, y) within the limits of the map
-   * @param size_inc is used to increase the the elements of node_position_ in case the size of the map increases
+   * @param size_inc is used to increase the number of elements in node_position_ in case the size of the map increases
    */
   void initializePosn(int size_inc = 0);
 
   /**
-  * @brief it stores id_this in node_position_ at the index ( <x directional size of the map>*cy + cx )
+  * @brief it stores id_this in node_position_ at the index [ size_x_*cy + cx ]
   * @param id_this the index at which the data of the point(cx, cy) is stored in nodes_data_
   */
-  void addIndex(const int & cx, const int & cy, const int & id_this)
+  inline void addIndex(const int & cx, const int & cy, const int & id_this)
   {
     node_position_[size_x_ * cy + cx] = id_this;
   }
 
   /**
    * @brief retrieves the index at which the data of the point(cx, cy) is stored in nodes_data
-   * @return id_this
+   * @return id_this is the index
    */
-  void getIndex(const int & cx, const int & cy, int & id_this)
+  inline void getIndex(const int & cx, const int & cy, int & id_this)
   {
     id_this = node_position_[size_x_ * cy + cx];
   }
 
   /**
    * @brief this function depending on the size of the nodes_data_ vector allots space to store the data for a node(x, y)
-   * @param id_this is the index at which the data is stored for that node
+   * @param id_this is the index at which the data is stored/has to be stored for that node
    */
   void addToNodesData(const int & id_this)
   {

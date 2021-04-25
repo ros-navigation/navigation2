@@ -45,11 +45,11 @@ void ThetaStarPlanner::configure(
   }
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name_ + ".w_euc_cost", rclcpp::ParameterValue(4.0));
+    node, name_ + ".w_euc_cost", rclcpp::ParameterValue(1.0));
   node->get_parameter(name_ + ".w_euc_cost", planner_->w_euc_cost_);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name_ + ".w_traversal_cost", rclcpp::ParameterValue(7.0));
+    node, name_ + ".w_traversal_cost", rclcpp::ParameterValue(5.0));
   node->get_parameter(name_ + ".w_traversal_cost", planner_->w_traversal_cost_);
 
   nav2_util::declare_parameter_if_not_declared(
@@ -60,6 +60,7 @@ void ThetaStarPlanner::configure(
 void ThetaStarPlanner::cleanup()
 {
   RCLCPP_INFO(logger_, "CleaningUp plugin %s of type nav2_theta_star_planner", name_.c_str());
+  planner_.reset();
 }
 
 void ThetaStarPlanner::activate()
@@ -92,7 +93,6 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
 void ThetaStarPlanner::getPlan(nav_msgs::msg::Path & global_path)
 {
   std::vector<coordsW> path;
-
   if (planner_->isUnsafeToPlan()) {
     RCLCPP_ERROR(logger_, "Either of the start or goal pose are an obstacle! ");
     global_path.poses.clear();
@@ -102,7 +102,6 @@ void ThetaStarPlanner::getPlan(nav_msgs::msg::Path & global_path)
     RCLCPP_ERROR(logger_, "Could not generate path between the given poses");
     global_path.poses.clear();
   }
-  path.clear();
   global_path.header.stamp = clock_->now();
   global_path.header.frame_id = global_frame_;
 }
@@ -115,12 +114,12 @@ nav_msgs::msg::Path ThetaStarPlanner::linearInterpolation(
 
   for (unsigned int j = 0; j < raw_path.size() - 1; j++) {
     geometry_msgs::msg::PoseStamped p;
-    coordsW pt1 = {raw_path[j].x, raw_path[j].y};
+    coordsW pt1 = raw_path[j];
     p.pose.position.x = pt1.x;
     p.pose.position.y = pt1.y;
     pa.poses.push_back(p);
 
-    coordsW pt2 = {raw_path[j + 1].x, raw_path[j + 1].y};
+    coordsW pt2 = raw_path[j + 1];
     geometry_msgs::msg::PoseStamped p1;
     double distance = std::hypot(pt2.x - pt1.x, pt2.y - pt1.y);
     int loops = static_cast<int>(distance / dist_bw_points);

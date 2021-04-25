@@ -19,8 +19,8 @@ namespace theta_star
 {
 
 ThetaStar::ThetaStar()
-: w_traversal_cost_(2.0),
-  w_euc_cost_(7.0),
+: w_traversal_cost_(1.0),
+  w_euc_cost_(5.0),
   w_heuristic_cost_(1.0),
   how_many_corners_(8),
   size_x_(0),
@@ -157,13 +157,13 @@ void ThetaStar::backtrace(std::vector<coordsW> & raw_points, int curr_id)
   coordsW world{};
   do {
     costmap_->mapToWorld(nodes_data_[curr_id].x, nodes_data_[curr_id].y, world.x, world.y);
-    path_rev.push_back({world.x, world.y});
+    path_rev.push_back(world);
     if (path_rev.size() > 1) {
       curr_id = nodes_data_[curr_id].parent_id;
     }
   } while (curr_id != 0);
   costmap_->mapToWorld(nodes_data_[curr_id].x, nodes_data_[curr_id].y, world.x, world.y);
-  path_rev.push_back({world.x, world.y});
+  path_rev.push_back(world);
 
   raw_points.reserve(path_rev.size());
   for (int i = static_cast<int>(path_rev.size()) - 1; i >= 0; i--) {
