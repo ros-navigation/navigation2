@@ -52,7 +52,13 @@ public:
   {
     footprint_is_radius_ = radius;
 
+    // Use radius, no caching required
     if (radius) {
+      return;
+    }
+
+    // No change, no updates required
+    if (footprint == unoriented_footprint_) {
       return;
     }
 
@@ -77,6 +83,8 @@ public:
 
       oriented_footprints_.push_back(oriented_footprint);
     }
+
+    unoriented_footprint_ = footprint;
   }
 
   /**
@@ -154,6 +162,25 @@ public:
   }
 
   /**
+   * @brief Check if in collision with costmap and footprint at pose
+   * @param i Index to search collision status of
+   * @param traverse_unknown Whether or not to traverse in unknown space
+   * @return boolean if in collision or not.
+   */
+  bool inCollision(
+    const unsigned int & i,
+    const bool & traverse_unknown)
+  {
+    footprint_cost_ = costmap_->getCost(i);
+    if (footprint_cost_ == UNKNOWN && traverse_unknown) {
+      return false;
+    }
+
+    // if occupied or unknown and not to traverse unknown space
+    return footprint_cost_ >= INSCRIBED;
+  }
+
+  /**
    * @brief Get cost at footprint pose in costmap
    * @return the cost at the pose in costmap
    */
@@ -165,6 +192,7 @@ public:
 
 protected:
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
+  nav2_costmap_2d::Footprint unoriented_footprint_;
   double footprint_cost_;
   bool footprint_is_radius_;
   unsigned int num_quantizations_;

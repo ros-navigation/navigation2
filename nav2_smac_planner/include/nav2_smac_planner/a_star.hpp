@@ -98,7 +98,9 @@ public:
   void initialize(
     const bool & allow_unknown,
     int & max_iterations,
-    const int & max_on_approach_iterations);
+    const int & max_on_approach_iterations,
+    const float & lookup_table_size,
+    const unsigned int & dim_3_size);
 
   /**
    * @brief Creating path from given costmap, start, and goal
@@ -114,13 +116,11 @@ public:
    *   For 3D nodes, a SE2 grid without cost info as needs collision detector for footprint.
    * @param x The total number of nodes in the X direction
    * @param y The total number of nodes in the X direction
-   * @param dim_3 The total number of nodes in the theta or Z direction
    * @param costmap Costmap to convert into the graph
    */
-  void createGraph(
+  void setCosts(
     const unsigned int & x,
     const unsigned int & y,
-    const unsigned int & dim_3,
     nav2_costmap_2d::Costmap2D * & costmap);
 
   /**

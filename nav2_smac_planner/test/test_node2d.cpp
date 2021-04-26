@@ -39,25 +39,24 @@ TEST(Node2DTest, test_node_2d)
 
   // test construction
   unsigned char cost = static_cast<unsigned char>(1);
-  nav2_smac_planner::Node2D testA(cost, 1);
-  nav2_smac_planner::Node2D testB(cost, 1);
+  nav2_smac_planner::Node2D testA(1);
+  testA.setCost(cost);
+  nav2_smac_planner::Node2D testB(1);
+  testB.setCost(cost);
   EXPECT_EQ(testA.getCost(), 1.0f);
 
   // test reset
-  testA.reset(10);
-  EXPECT_EQ(testA.getCost(), 10.0f);
+  testA.reset();
+  EXPECT_EQ(testA.getCost(), 0.0f);
 
   // Check constants
   EXPECT_EQ(testA.neutral_cost, 50.0f);
 
   // check collision checking
   EXPECT_EQ(testA.isNodeValid(false, checker), true);
-  testA.reset(254);
-  EXPECT_EQ(testA.isNodeValid(false, checker), false);
-  testA.reset(255);
+  testA.setCost(255);
   EXPECT_EQ(testA.isNodeValid(true, checker), true);
-  EXPECT_EQ(testA.isNodeValid(false, checker), false);
-  testA.reset(10);
+  testA.setCost(10);
 
   // check traversal cost computation
   EXPECT_EQ(testB.getTraversalCost(&testA), 58.0f);
@@ -69,7 +68,8 @@ TEST(Node2DTest, test_node_2d)
 
   // check operator== works on index
   unsigned char costC = '2';
-  nav2_smac_planner::Node2D testC(costC, 1);
+  nav2_smac_planner::Node2D testC(1);
+  testC.setCost(costC);
   EXPECT_TRUE(testA == testC);
 
   // check accumulated costs are set
@@ -97,15 +97,20 @@ TEST(Node2DTest, test_node_2d)
 
 TEST(Node2DTest, test_node_2d_neighbors)
 {
+  nav2_smac_planner::SearchInfo info;
+  unsigned int size_x = 10u;
+  unsigned int size_y = 10u;
+  unsigned int quant = 0u;
   // test neighborhood computation
-  nav2_smac_planner::Node2D::initNeighborhood(10u, nav2_smac_planner::MotionModel::VON_NEUMANN);
+  nav2_smac_planner::Node2D::initMotionModel(nav2_smac_planner::MotionModel::VON_NEUMANN, size_x, size_y, quant, info);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets.size(), 4u);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[0], -1);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[1], 1);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[2], -10);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[3], 10);
 
-  nav2_smac_planner::Node2D::initNeighborhood(100u, nav2_smac_planner::MotionModel::MOORE);
+  size_x = 100u;
+  nav2_smac_planner::Node2D::initMotionModel(nav2_smac_planner::MotionModel::MOORE, size_x, size_y, quant, info);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets.size(), 8u);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[0], -1);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[1], 1);
@@ -119,7 +124,8 @@ TEST(Node2DTest, test_node_2d_neighbors)
   nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
   nav2_smac_planner::GridCollisionChecker checker(&costmapA, 72);
   unsigned char cost = static_cast<unsigned int>(1);
-  nav2_smac_planner::Node2D * node = new nav2_smac_planner::Node2D(cost, 1);
+  nav2_smac_planner::Node2D * node = new nav2_smac_planner::Node2D(1);
+  node->setCost(cost);
   std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> neighborGetter =
     [&, this](const unsigned int & index, nav2_smac_planner::Node2D * & neighbor_rtn) -> bool
     {

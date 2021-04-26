@@ -34,6 +34,10 @@
 namespace nav2_smac_planner
 {
 
+typedef std::vector<float> DistanceHeuristicLookupTable;
+typedef std::vector<unsigned int> WavefrontHeuristicLookupTable;
+typedef std::pair<double, double> TrigValues;
+
 // Need seperate pose struct for motion table operations
 
 /**
@@ -124,6 +128,7 @@ struct HybridMotionTable
   ompl::base::StateSpacePtr state_space;
   std::vector<std::vector<double>> delta_xs;
   std::vector<std::vector<double>> delta_ys;
+  std::vector<TrigValues> trig_values;
 };
 
 /**
@@ -136,6 +141,7 @@ public:
   typedef NodeHybrid * NodePtr;
   typedef std::unique_ptr<std::vector<NodeHybrid>> Graph;
   typedef std::vector<NodePtr> NodeVector;
+
   /**
    * @class nav2_smac_planner::NodeHybrid::Coordinates
    * @brief NodeHybrid implementation of coordinate structure
@@ -381,10 +387,24 @@ public:
    * @param goal_x Coordinate of Goal X
    * @param goal_y Coordinate of Goal Y
    */
-  static void computeWavefrontHeuristic(
+  static void precomputeWavefrontHeuristic(
     nav2_costmap_2d::Costmap2D * & costmap,
     const unsigned int & start_x, const unsigned int & start_y,
     const unsigned int & goal_x, const unsigned int & goal_y);
+
+  /**
+   * @brief Compute the SE2 distance heuristic
+   * @param lookup_table_dim Size, in costmap pixels, of the
+   * each lookup table dimension to populate
+   * @param motion_model Motion model to use for state space
+   * @param dim_3_size Number of quantization bins for caching
+   * @param search_info Info containing minimum radius to use
+   */
+  static void precomputeDistanceHeuristic(
+    const float & lookup_table_dim,
+    const MotionModel & motion_model,
+    const unsigned int & dim_3_size,
+    const SearchInfo & search_info);
 
   /**
    * @brief Retrieve all valid neighbors of a node.
@@ -403,6 +423,9 @@ public:
   Coordinates pose;
   static double neutral_cost;
   static HybridMotionTable motion_table;
+  static WavefrontHeuristicLookupTable wavefront_heuristic_lookup_table;
+  static DistanceHeuristicLookupTable dist_heuristic_lookup;
+  static float size_lookup;
 
 private:
   float _cell_cost;
@@ -411,7 +434,6 @@ private:
   bool _was_visited;
   bool _is_queued;
   unsigned int _motion_primitive_index;
-  static std::vector<unsigned int> _wavefront_heuristic;
 };
 
 }  // namespace nav2_smac_planner

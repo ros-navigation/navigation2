@@ -63,53 +63,51 @@ template<typename NodeT>
 void AStarAlgorithm<NodeT>::initialize(
   const bool & allow_unknown,
   int & max_iterations,
-  const int & max_on_approach_iterations)
+  const int & max_on_approach_iterations,
+  const float & lookup_table_size,
+  const unsigned int & dim_3_size)
 {
   _traverse_unknown = allow_unknown;
   _max_iterations = max_iterations;
   _max_on_approach_iterations = max_on_approach_iterations;
+  NodeT::precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size, _search_info);
+  _dim3_size = dim_3_size;
 }
 
 template<>
-void AStarAlgorithm<Node2D>::createGraph(
-  const unsigned int & x_size,
-  const unsigned int & y_size,
-  const unsigned int & dim_3_size,
-  nav2_costmap_2d::Costmap2D * & costmap)
+void AStarAlgorithm<Node2D>::initialize(
+  const bool & allow_unknown,
+  int & max_iterations,
+  const int & max_on_approach_iterations,
+  const float & /*lookup_table_size*/,
+  const unsigned int & dim_3_size)
 {
+  _traverse_unknown = allow_unknown;
+  _max_iterations = max_iterations;
+  _max_on_approach_iterations = max_on_approach_iterations;
+
   if (dim_3_size != 1) {
     throw std::runtime_error("Node type Node2D cannot be given non-1 dim 3 quantization.");
   }
-  _costmap = costmap;
-  _dim3_size = dim_3_size;  // 2D search MUST be 2D, not 3D or SE2.
-  clearGraph();
-
-  if (getSizeX() != x_size || getSizeY() != y_size) {
-    _x_size = x_size;
-    _y_size = y_size;
-    Node2D::initNeighborhood(_x_size, _motion_model);
-  }
+  _dim3_size = dim_3_size;
+  _collision_checker = GridCollisionChecker(nullptr, _dim3_size);
 }
 
 template<typename NodeT>
-void AStarAlgorithm<NodeT>::createGraph(
+void AStarAlgorithm<NodeT>::setCosts(
   const unsigned int & x_size,
   const unsigned int & y_size,
-  const unsigned int & dim_3_size,
   nav2_costmap_2d::Costmap2D * & costmap)
 {
   _costmap = costmap;
-  _collision_checker = GridCollisionChecker(costmap, dim_3_size);
+  _collision_checker.setCostmap(_costmap);
   _collision_checker.setFootprint(_footprint, _is_radius_footprint);
 
-  _dim3_size = dim_3_size;
-  unsigned int index;
   clearGraph();
 
   if (getSizeX() != x_size || getSizeY() != y_size) {
     _x_size = x_size;
     _y_size = y_size;
-
     NodeT::initMotionModel(_motion_model, _x_size, _y_size, _dim3_size, _search_info);
   }
 }
@@ -119,13 +117,10 @@ void AStarAlgorithm<NodeT>::setFootprint(nav2_costmap_2d::Footprint footprint, b
 {
   _footprint = footprint;
   _is_radius_footprint = use_radius;
-}
 
-template<>
-typename AStarAlgorithm<Node2D>::NodePtr AStarAlgorithm<Node2D>::addToGraph(
-  const unsigned int & index)
-{
-  return &(_graph.emplace(index, Node2D(_costmap->getCharMap()[index], index)).first->second);
+  if (std::is_same<NodeT, Node2D>::value) {
+    _is_radius_footprint = true;  // 2D must be a radius check, only.
+  }
 }
 
 template<typename NodeT>
@@ -188,13 +183,11 @@ void AStarAlgorithm<NodeT>::setGoal(
     static_cast<float>(dim_3));
   _goal->setPose(_goal_coordinates);
 
-  if (std::is_same<NodeT, NodeHybrid>::value) {
-    NodeHybrid::computeWavefrontHeuristic(
-      _costmap,
-      static_cast<unsigned int>(getStart()->pose.x),
-      static_cast<unsigned int>(getStart()->pose.y),
-      mx, my);
-  }
+  NodeT::precomputeWavefrontHeuristic(
+    _costmap,
+    static_cast<unsigned int>(getStart()->pose.x),
+    static_cast<unsigned int>(getStart()->pose.y),
+    mx, my);
 }
 
 template<typename NodeT>

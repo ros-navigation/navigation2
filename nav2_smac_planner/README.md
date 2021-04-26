@@ -21,7 +21,7 @@ The `nav2_smac_planner` package contains an optimized templated A* search algori
 
 The `SmacPlannerHybrid` fully-implements the Hybrid-A* planner as proposed in [Practical Search Techniques in Path Planning for Autonomous Driving](https://ai.stanford.edu/~ddolgov/papers/dolgov_gpp_stair08.pdf), including hybrid searching, CG smoothing, analytic expansions and hueristic functions.
 
-The `SmacPlannerLattice` fully-implements the State Lattice planner, including lattice searching, CG smoothing, analytic expansions and hueristic functions.
+The `SmacPlannerLattice` fully-implements the State Lattice planner with CG smoothing. While we do not implement it precisely the same way as [Optimal, Smooth, Nonholonomic MobileRobot Motion Planning in State Lattices](https://www.ri.cmu.edu/pub_files/pub4/pivtoraiko_mihail_2007_1/pivtoraiko_mihail_2007_1.pdf), it is sufficiently similar it may be used as a good reference. Additional optimizations for on-approach analytic expansions and simplier heuristic functions were used, largely matching those of Hybrid-A\*.
 
 In summary...
 
@@ -101,13 +101,15 @@ planner_server:
       max_on_approach_iterations: 1000  # maximum number of iterations to attempt to reach goal once in tolerance, 2D only
       max_planning_time: 2.0            # max time in s for planner to plan, smooth, and upsample. Will scale maximum smoothing and upsampling times based on remaining time after planning.
       smooth_path: false                # Whether to smooth searched path
-      motion_model_for_search: "DUBIN"  # 2D Moore, Von Neumann; SE2 Dubin, Redds-Shepp
-      angle_quantization_bins: 72       # For SE2 node: Number of angle bins for search, must be 1 for 2D node (no angle search)
-      minimum_turning_radius: 0.20      # For SE2 node & smoother: minimum turning radius in m of path / vehicle
+      motion_model_for_search: "DUBIN"  # 2D Moore, Von Neumann; Hybrid Dubin, Redds-Shepp; State Lattice set internally
+      angle_quantization_bins: 72       # For Hybrid/Lattice nodes: Number of angle bins for search, must be 1 for 2D node (no angle search)
+      minimum_turning_radius: 0.20      # For Hybrid/Lattice nodes and smoother: minimum turning radius in m of path / vehicle
       reverse_penalty: 2.1              # For Reeds-Shepp model: penalty to apply if motion is reversing, must be => 1
-      change_penalty: 0.20              # For SE2 node: penalty to apply if motion is changing directions, must be >= 0
-      non_straight_penalty: 1.05        # For SE2 node: penalty to apply if motion is non-straight, must be => 1
-      cost_penalty: 1.3                 # For SE2 node: penalty to apply to higher cost zones
+      change_penalty: 0.20              # For Hybrid/Lattice nodes: penalty to apply if motion is changing directions, must be >= 0
+      non_straight_penalty: 1.05        # For Hybrid/Lattice nodes: penalty to apply if motion is non-straight, must be => 1
+      cost_penalty: 1.3                 # For Hybrid/Lattice nodes: penalty to apply to higher cost zones
+      lattice_filepath: ""              # For Lattice node: the filepath to the state lattice graph
+      lookup_table_size: 20             # For Hybrid/Lattice nodes: Size of the dubin/reeds-sheep distance window to cache, in meters.
 
       smoother:
         smoother:

@@ -59,6 +59,7 @@ void SmacPlannerLattice::configure(
   int max_iterations;
   int max_on_approach_iterations = std::numeric_limits<int>::max();
   int angle_quantizations;
+  int lookup_table_size;
   SearchInfo search_info;
   bool smooth_path;
   std::string motion_model_for_search;
@@ -107,7 +108,9 @@ void SmacPlannerLattice::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(5.0));
   node->get_parameter(name + ".max_planning_time", _max_planning_time);
-
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".lookup_table_size", rclcpp::ParameterValue(20.0));
+  node->get_parameter(name + ".lookup_table_size", lookup_table_size);
 
   LatticeMetadata metadata = LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
   _angle_quantizations = metadata.first;
@@ -130,11 +133,16 @@ void SmacPlannerLattice::configure(
     max_iterations = std::numeric_limits<int>::max();
   }
 
+  float lookup_table_dim =
+    static_cast<float>(lookup_table_size) / static_cast<float>(_costmap->getResolution() * _downsampling_factor);
+
   _a_star = std::make_unique<AStarAlgorithm<NodeLattice>>(motion_model, search_info);
   _a_star->initialize(
     allow_unknown,
     max_iterations,
-    max_on_approach_iterations);
+    max_on_approach_iterations,
+    lookup_table_dim,
+    _angle_quantizations);
   _a_star->setFootprint(costmap_ros->getRobotFootprint(), costmap_ros->getUseRadius());
 
   if (smooth_path) {
@@ -212,10 +220,9 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   }
 
   // Set Costmap
-  _a_star->createGraph(
+  _a_star->setCosts(
     costmap->getSizeInCellsX(),
     costmap->getSizeInCellsY(),
-    _angle_quantizations,
     costmap);
 
   // Set starting point, in A* bin search coordinates
@@ -250,7 +257,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   pose.pose.orientation.w = 1.0;
 
   // Compute plan
-  NodeHybrid::CoordinateVector path;
+  NodeLattice::CoordinateVector path;
   int num_iterations = 0;
   std::string error;
   try {

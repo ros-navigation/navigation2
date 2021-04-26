@@ -33,9 +33,12 @@ namespace nav2_smac_planner
 {
 
 // defining static member for all instance to share
-std::vector<unsigned int> NodeHybrid::_wavefront_heuristic;
+WavefrontHeuristicLookupTable NodeHybrid::wavefront_heuristic_lookup_table;
 double NodeHybrid::neutral_cost = sqrt(2);
 HybridMotionTable NodeHybrid::motion_table;
+float NodeHybrid::size_lookup = 25;
+DistanceHeuristicLookupTable NodeHybrid::dist_heuristic_lookup;
+
 
 // Each of these tables are the projected motion models through
 // time and space applied to the search on the current node in
@@ -108,11 +111,14 @@ void HybridMotionTable::initDubin(
   projections.emplace_back(delta_x, -delta_y, -increments);  // Right
 
   // Create the correct OMPL state space
-  state_space = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius);
+  if (!state_space) {
+    state_space = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius);    
+  }
 
   // Precompute projection deltas
   delta_xs.resize(projections.size());
   delta_ys.resize(projections.size());
+  trig_values.resize(num_angle_quantization);
 
   for (unsigned int i = 0; i != projections.size(); i++) {
     delta_xs[i].resize(num_angle_quantization);
@@ -121,6 +127,10 @@ void HybridMotionTable::initDubin(
     for (unsigned int j = 0; j != num_angle_quantization; j++) {
       double cos_theta = cos(bin_size * j);
       double sin_theta = sin(bin_size * j);
+      if (i == 0) {
+        // if first iteration, cache the trig values for later
+        trig_values[j] = {cos_theta, sin_theta};
+      }
       delta_xs[i][j] = projections[i]._x * cos_theta - projections[i]._y * sin_theta;
       delta_ys[i][j] = projections[i]._x * sin_theta + projections[i]._y * cos_theta;
     }
@@ -176,12 +186,15 @@ void HybridMotionTable::initReedsShepp(
   projections.emplace_back(-delta_x, -delta_y, increments);  // Backward + Right
 
   // Create the correct OMPL state space
-  state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
-    min_turning_radius);
+  if (!state_space) {
+    state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
+      min_turning_radius);  
+  }
 
   // Precompute projection deltas
   delta_xs.resize(projections.size());
   delta_ys.resize(projections.size());
+  trig_values.resize(num_angle_quantization);
 
   for (unsigned int i = 0; i != projections.size(); i++) {
     delta_xs[i].resize(num_angle_quantization);
@@ -190,6 +203,10 @@ void HybridMotionTable::initReedsShepp(
     for (unsigned int j = 0; j != num_angle_quantization; j++) {
       double cos_theta = cos(bin_size * j);
       double sin_theta = sin(bin_size * j);
+      if (i == 0) {
+        // if first iteration, cache the trig values for later
+        trig_values[j] = {cos_theta, sin_theta};
+      }
       delta_xs[i][j] = projections[i]._x * cos_theta - projections[i]._y * sin_theta;
       delta_ys[i][j] = projections[i]._x * sin_theta + projections[i]._y * cos_theta;
     }
@@ -310,30 +327,62 @@ float NodeHybrid::getHeuristicCost(
   const Coordinates & node_coords,
   const Coordinates & goal_coords)
 {
-  // Dubin or Reeds-Shepp shortest distances
-  // Create OMPL states for checking
-  ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
-  from[0] = node_coords.x;
-  from[1] = node_coords.y;
-  from[2] = node_coords.theta * motion_table.bin_size;
-  to[0] = goal_coords.x;
-  to[1] = goal_coords.y;
-  to[2] = goal_coords.theta * motion_table.bin_size;
+  // rotate and translate node_coords such that goal_coords relative is (0,0,0)
+  // Due to the rounding involved in exact cell increments for caching,
+  // this is not an exact replica of a live heuristic, but has bounded error.
+  // (Usually less than 1 cell length)
 
-  const float motion_heuristic = motion_table.state_space->distance(from(), to());
+  // This angle is negative since we are de-rotating the current node
+  // by the goal angle; cos(-th) = cos(th) & sin(-th) = -sin(th)
+  const TrigValues & trig_vals = motion_table.trig_values[goal_coords.theta];
+  const float cos_th = trig_vals.first;
+  const float sin_th = -trig_vals.second;
+  const float dx = node_coords.x - goal_coords.x;
+  const float dy = node_coords.y - goal_coords.y;
 
-  const unsigned int & wavefront_idx = static_cast<unsigned int>(node_coords.y) *
-    motion_table.size_x + static_cast<unsigned int>(node_coords.x);
-  const unsigned int & wavefront_value = _wavefront_heuristic[wavefront_idx];
-
-  // if lethal or didn't visit, use the motion heuristic instead.
-  if (wavefront_value == 0) {
-    return NodeHybrid::neutral_cost * motion_heuristic;
+  double dtheta_bin = node_coords.theta - goal_coords.theta;
+  if (dtheta_bin > motion_table.num_angle_quantization) {
+    dtheta_bin -= motion_table.num_angle_quantization;
+  } else if (dtheta_bin < 0) {
+    dtheta_bin += motion_table.num_angle_quantization;
   }
 
-  // -2 because wavefront starts at 2
-  const float wavefront_heuristic = static_cast<float>(wavefront_value - 2);
+  Coordinates node_coords_relative(
+    round(dx * cos_th - dy * sin_th),
+    round(dx * sin_th + dy * cos_th),
+    round(dtheta_bin));
 
+  // Check if the relative node coordinate is within the localized window around the goal
+  // to apply the distance heuristic. Since the lookup table is contains only the positive
+  // X axis, we mirror the Y and theta values across the X axis to find the heuristic values.
+  float motion_heuristic = 0.0;
+  const int floored_size = floor(size_lookup / 2.0);
+  const int ceiling_size = ceil(size_lookup / 2.0);
+  const float mirrored_relative_y = abs(node_coords_relative.y);
+  if (abs(node_coords_relative.x) < floored_size && mirrored_relative_y < floored_size) {
+    // Need to mirror angle if Y coordinate was mirrored
+    int theta_pos;
+    if (node_coords_relative.y < 0.0) {
+      theta_pos = motion_table.num_angle_quantization - node_coords_relative.theta;      
+    } else {
+      theta_pos = node_coords_relative.theta;
+    }
+    const int x_pos = node_coords_relative.x + floored_size;
+    const int y_pos = static_cast<int>(mirrored_relative_y);
+    const int index = 
+      x_pos * ceiling_size * motion_table.num_angle_quantization +
+      y_pos * motion_table.num_angle_quantization +
+      theta_pos;
+    motion_heuristic = dist_heuristic_lookup[index];
+  }
+
+  const unsigned int wavefront_idx = static_cast<unsigned int>(node_coords.y) *
+    motion_table.size_x + static_cast<unsigned int>(node_coords.x);
+  const unsigned int & wavefront_value = wavefront_heuristic_lookup_table[wavefront_idx];
+  
+  // -2 as wavefront values start at 2, multiplying by 1.207 since the wavefront expansion moves both
+  // on grid (1) and on diagonals (sqrt(2)). Thusly, the average wavefront move is (1 + sqrt(2)) / 2
+  const float wavefront_heuristic = static_cast<float>(wavefront_value - 2) * 1.207;
   return NodeHybrid::neutral_cost * std::max(wavefront_heuristic, motion_heuristic);
 }
 
@@ -360,27 +409,31 @@ void NodeHybrid::initMotionModel(
   }
 }
 
-void NodeHybrid::computeWavefrontHeuristic(
+void NodeHybrid::precomputeWavefrontHeuristic(
   nav2_costmap_2d::Costmap2D * & costmap,
   const unsigned int & start_x, const unsigned int & start_y,
   const unsigned int & goal_x, const unsigned int & goal_y)
 {
+  // TODO optimization: param for only update on map and topic.
+  // Only update wavefrontH on initial map not each request.
+  // Wouldnt include dyanmic obstalces but still drive search between fixed
+  //  infra and collision checking will deal with dynamic. Saves 60-100ms on a warehouse scale.
   unsigned int size = costmap->getSizeInCellsX() * costmap->getSizeInCellsY();
-  if (_wavefront_heuristic.size() == size) {
+  if (wavefront_heuristic_lookup_table.size() == size) {
     // must reset all values
-    for (unsigned int i = 0; i != _wavefront_heuristic.size(); i++) {
-      _wavefront_heuristic[i] = 0;
+    for (unsigned int i = 0; i != wavefront_heuristic_lookup_table.size(); i++) {
+      wavefront_heuristic_lookup_table[i] = 0;
     }
   } else {
-    unsigned int wavefront_size = _wavefront_heuristic.size();
-    _wavefront_heuristic.resize(size, 0);
+    unsigned int wavefront_size = wavefront_heuristic_lookup_table.size();
+    wavefront_heuristic_lookup_table.resize(size, 0);
     // must reset values for non-constructed indices
     for (unsigned int i = 0; i != wavefront_size; i++) {
-      _wavefront_heuristic[i] = 0;
+      wavefront_heuristic_lookup_table[i] = 0;
     }
   }
 
-  const unsigned int & size_x = motion_table.size_x;
+  const unsigned int & size_x = costmap->getSizeInCellsX();
   const int size_x_int = static_cast<int>(size_x);
   const unsigned int size_y = costmap->getSizeInCellsY();
   const unsigned int goal_index = goal_y * size_x + goal_x;
@@ -394,7 +447,7 @@ void NodeHybrid::computeWavefrontHeuristic(
   unsigned int new_idx;
   unsigned int last_wave_cost;
 
-  _wavefront_heuristic[idx] = 2;
+  wavefront_heuristic_lookup_table[idx] = 2;
 
   static const std::vector<int> neighborhood = {1, -1,  // left right
     size_x_int, -size_x_int,  // up down
@@ -412,11 +465,11 @@ void NodeHybrid::computeWavefrontHeuristic(
     // find neighbors
     for (unsigned int i = 0; i != neighborhood.size(); i++) {
       new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
-      last_wave_cost = _wavefront_heuristic[idx];
+      last_wave_cost = wavefront_heuristic_lookup_table[idx];
 
       // if neighbor is unvisited and non-lethal, set N and add to queue
       if (new_idx > 0 && new_idx < size_x * size_y &&
-        _wavefront_heuristic[new_idx] == 0 &&
+        wavefront_heuristic_lookup_table[new_idx] == 0 &&
         static_cast<float>(costmap->getCost(idx)) < INSCRIBED)
       {
         my = new_idx / size_x;
@@ -429,8 +482,55 @@ void NodeHybrid::computeWavefrontHeuristic(
           continue;
         }
 
-        _wavefront_heuristic[new_idx] = last_wave_cost + 1;
+        wavefront_heuristic_lookup_table[new_idx] = last_wave_cost + 1;
         q.emplace(idx + neighborhood[i]);
+      }
+    }
+  }
+}
+
+void NodeHybrid::precomputeDistanceHeuristic(
+  const float & lookup_table_dim,
+  const MotionModel & motion_model,
+  const unsigned int & dim_3_size,
+  const SearchInfo & search_info)
+{
+  // Dubin or Reeds-Shepp shortest distances
+  if (motion_model == MotionModel::DUBIN) {
+    motion_table.state_space = std::make_unique<ompl::base::DubinsStateSpace>(search_info.minimum_turning_radius);
+  } else if (motion_model == MotionModel::REEDS_SHEPP) {
+    motion_table.state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(search_info.minimum_turning_radius);
+  } else {
+    throw std::runtime_error(
+          "Node attempted to precompute distance heuristics "
+          "with invalid motion model!");
+  }
+
+  ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
+  to[0] = 0.0;
+  to[1] = 0.0;
+  to[2] = 0.0;
+  size_lookup = lookup_table_dim;
+  float motion_heuristic = 0.0;
+  unsigned int index = 0;
+  int dim_3_size_int = static_cast<int>(dim_3_size);
+  float angular_bin_size = 2 * M_PI / static_cast<float>(dim_3_size);
+
+  // Create a lookup table of Dubin/Reeds-Shepp distances in a window around the goal
+  // to help drive the search towards admissible approaches. Deu to symmetries in the
+  // Heuristic space, we need to only store 2 of the 4 quadrants and simply mirror
+  // around the X axis any relative node lookup. This reduces memory overhead and increases
+  // the size of a window a platform can store in memory.
+  dist_heuristic_lookup.resize(size_lookup * ceil(size_lookup / 2.0) * dim_3_size_int);
+  for (float x = ceil(-size_lookup / 2.0); x <= floor(size_lookup / 2.0); x += 1.0) {
+    for (float y = 0.0; y <= floor(size_lookup / 2.0); y += 1.0) {
+      for (int heading = 0; heading != dim_3_size_int; heading++) {
+        from[0] = x;
+        from[1] = y;
+        from[2] = heading * angular_bin_size;
+        motion_heuristic = motion_table.state_space->distance(from(), to());
+        dist_heuristic_lookup[index] = motion_heuristic;
+        index++;
       }
     }
   }

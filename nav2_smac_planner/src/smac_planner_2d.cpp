@@ -121,7 +121,9 @@ void SmacPlanner2D::configure(
   _a_star->initialize(
     allow_unknown,
     max_iterations,
-    max_on_approach_iterations);
+    max_on_approach_iterations,
+    0.0 /*unused for 2D*/,
+    0.0 /*unused for 2D*/);
 
   if (smooth_path) {
     _smoother = std::make_unique<Smoother>();
@@ -198,10 +200,9 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   }
 
   // Set Costmap
-  _a_star->createGraph(
+  _a_star->setCosts(
     costmap->getSizeInCellsX(),
     costmap->getSizeInCellsY(),
-    1,
     costmap);
 
   // Set starting point

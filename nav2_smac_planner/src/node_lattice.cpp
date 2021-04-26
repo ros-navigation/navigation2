@@ -44,23 +44,24 @@ double NodeLattice::neutral_cost = sqrt(2);
 // amount of time or particular distance forward.
 void LatticeMotionTable::initMotionModel(
   unsigned int & size_x_in,
-  unsigned int & /*size_y_in*/,
-  unsigned int & num_angle_quantization_in,
   SearchInfo & search_info)
 {
   size_x = size_x_in;
 
-  if (num_angle_quantization_in == num_angle_quantization &&
-      min_turning_radius == search_info.minimum_turning_radius)
+  if (current_lattice_filepath == search_info.lattice_filepath)
   {
     return;
   }
+
+  current_lattice_filepath = search_info.lattice_filepath;
 
   // TODO Matt read in file, precompute based on orientation bins for lookup at runtime
   // file is `search_info.lattice_filepath`, to be read in from plugin and provided here.
 
   // TODO Matt create a state_space with the max turning rad primitive within the file (or another -- mid?)
   // to use for analytic expansions and heuristic generation. Potentially make both an extreme and a passive one?
+
+  // TODO populate num_angle_quantization, size_x, min_turning_radius, trig_values, all of the member variables of LatticeMotionTable
 }
 
 MotionPoses LatticeMotionTable::getProjections(const NodeLattice * node)
@@ -120,23 +121,77 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
   return 0.0;  // TODO Josh: cost of different angles, changing, nonstraight, backwards, distance long
   // should this use neutral_cost? TODO if not, set to 1 for no impact in A*
   // can use getMotionPrimitiveIndex() to get the ID of the index of the primitive the child/this belongs to for use
-  // feel free to make new params, let me know and I'll add tothe SearchInfo struct for inputs and add to the plugin TODO
+  // feel free to make new params, let me know and I'll add tothe SearchInfo struct for inputs and add to the plugin/readme TODO
 }
 
 float NodeLattice::getHeuristicCost(
   const Coordinates & node_coords,
   const Coordinates & goal_coords)
 {
-  return 0.0;  // TODO Josh: wavefront, ompl, or more optimal heuristic for wavefront search.
-  // should this use neutral_cost? TODO if not, set to 1 for no impact A*
-  // feel free to make new params, let me know and I'll add tothe SearchInfo struct for inputs and add to the plugin TODO
+  // rotate and translate node_coords such that goal_coords relative is (0,0,0)
+  // Due to the rounding involved in exact cell increments for caching,
+  // this is not an exact replica of a live heuristic, but has bounded error.
+  // (Usually less than 1 cell length)
+
+  // This angle is negative since we are de-rotating the current node
+  // by the goal angle; cos(-th) = cos(th) & sin(-th) = -sin(th)
+  const TrigValues & trig_vals = motion_table.trig_values[goal_coords.theta];
+  const float cos_th = trig_vals.first;
+  const float sin_th = -trig_vals.second;
+  const float dx = node_coords.x - goal_coords.x;
+  const float dy = node_coords.y - goal_coords.y;
+
+  double dtheta_bin = node_coords.theta - goal_coords.theta;
+  if (dtheta_bin > motion_table.num_angle_quantization) {
+    dtheta_bin -= motion_table.num_angle_quantization;
+  } else if (dtheta_bin < 0) {
+    dtheta_bin += motion_table.num_angle_quantization;
+  }
+
+  Coordinates node_coords_relative(
+    round(dx * cos_th - dy * sin_th),
+    round(dx * sin_th + dy * cos_th),
+    round(dtheta_bin));
+
+  // Check if the relative node coordinate is within the localized window around the goal
+  // to apply the distance heuristic. Since the lookup table is contains only the positive
+  // X axis, we mirror the Y and theta values across the X axis to find the heuristic values.
+  float motion_heuristic = 0.0;
+  const int floored_size = floor(NodeHybrid::size_lookup / 2.0);
+  const int ceiling_size = ceil(NodeHybrid::size_lookup / 2.0);
+  const float mirrored_relative_y = abs(node_coords_relative.y);
+  if (abs(node_coords_relative.x) < floored_size && mirrored_relative_y < floored_size) {
+    // Need to mirror angle if Y coordinate was mirrored
+    int theta_pos;
+    if (node_coords_relative.y < 0.0) {
+      theta_pos = motion_table.num_angle_quantization - node_coords_relative.theta;      
+    } else {
+      theta_pos = node_coords_relative.theta;
+    }
+    const int x_pos = node_coords_relative.x + floored_size;
+    const int y_pos = static_cast<int>(mirrored_relative_y);
+    const int index = 
+      x_pos * ceiling_size * motion_table.num_angle_quantization +
+      y_pos * motion_table.num_angle_quantization +
+      theta_pos;
+    motion_heuristic = NodeHybrid::dist_heuristic_lookup[index];
+  }
+
+  const unsigned int wavefront_idx = static_cast<unsigned int>(node_coords.y) *
+    motion_table.size_x + static_cast<unsigned int>(node_coords.x);
+  const unsigned int & wavefront_value = NodeHybrid::wavefront_heuristic_lookup_table[wavefront_idx];
+  
+  // -2 as wavefront values start at 2, multiplying by 1.207 since the wavefront expansion moves both
+  // on grid (1) and on diagonals (sqrt(2)). Thusly, the average wavefront move is (1 + sqrt(2)) / 2
+  const float wavefront_heuristic = static_cast<float>(wavefront_value - 2) * 1.207;
+  return NodeLattice::neutral_cost * std::max(wavefront_heuristic, motion_heuristic);
 }
 
 void NodeLattice::initMotionModel(
   const MotionModel & motion_model,
   unsigned int & size_x,
-  unsigned int & size_y,
-  unsigned int & num_angle_quantization,
+  unsigned int & /*size_y*/,
+  unsigned int & /*num_angle_quantization*/,
   SearchInfo & search_info)
 {
 
@@ -146,7 +201,27 @@ void NodeLattice::initMotionModel(
       " STATE_LATTICE and provide a valid lattice file.");
   }
 
-  motion_table.initMotionModel(size_x, size_y, num_angle_quantization, search_info);
+  motion_table.initMotionModel(size_x, search_info);
+}
+
+void NodeLattice::precomputeWavefrontHeuristic(
+  nav2_costmap_2d::Costmap2D * & costmap,
+  const unsigned int & start_x, const unsigned int & start_y,
+  const unsigned int & goal_x, const unsigned int & goal_y)
+{
+  // State Lattice and Hybrid-A* share this heuristics
+  NodeHybrid::precomputeWavefrontHeuristic(costmap, start_x, start_y, goal_x, goal_y);
+}
+
+
+void NodeLattice::precomputeDistanceHeuristic(
+  const float & lookup_table_dim,
+  const MotionModel & motion_model,
+  const unsigned int & dim_3_size,
+  const SearchInfo & search_info)
+{
+  // State Lattice and Hybrid-A* share this heuristics
+  NodeHybrid::precomputeDistanceHeuristic(lookup_table_dim, motion_model, dim_3_size, search_info);
 }
 
 void NodeLattice::getNeighbors(

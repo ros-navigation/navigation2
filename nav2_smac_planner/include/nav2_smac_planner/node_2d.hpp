@@ -24,6 +24,7 @@
 #include <utility>
 #include <functional>
 
+#include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 
@@ -58,10 +59,9 @@ public:
 
   /**
    * @brief A constructor for nav2_smac_planner::Node2D
-   * @param cost_in The costmap cost at this node
    * @param index The index of this node for self-reference
    */
-  explicit Node2D(unsigned char & cost_in, const unsigned int index);
+  explicit Node2D(const unsigned int index);
 
   /**
    * @brief A destructor for nav2_smac_planner::Node2D
@@ -80,9 +80,8 @@ public:
 
   /**
    * @brief Reset method for new search
-   * @param cost_in The costmap cost at this node
    */
-  void reset(const unsigned char & cost);
+  void reset();
   /**
    * @brief Gets the accumulated cost at this node
    * @return accumulated cost
@@ -108,6 +107,15 @@ public:
   inline float & getCost()
   {
     return _cell_cost;
+  }
+
+  /**
+   * @brief Gets the costmap cost at this node
+   * @return costmap cost
+   */
+  inline void setCost(const float & cost)
+  {
+    _cell_cost = cost;
   }
 
   /**
@@ -212,12 +220,18 @@ public:
   /**
    * @brief Initialize the neighborhood to be used in A*
    * We support 4-connect (VON_NEUMANN) and 8-connect (MOORE)
-   * @param x_size_uint The total x size to find neighbors
    * @param neighborhood The desired neighborhood type
+   * @param x_size_uint The total x size to find neighbors
+   * @param y_size The total y size to find neighbors
+   * @param num_angle_quantization Number of quantizations, must be 0
+   * @param search_info Search parameters, unused by 2D node
    */
-  static void initNeighborhood(
-    const unsigned int & x_size_uint,
-    const MotionModel & neighborhood);
+  static void initMotionModel(
+    const MotionModel & motion_model,
+    unsigned int & size_x,
+    unsigned int & size_y,
+    unsigned int & num_angle_quantization,
+    SearchInfo & search_info);
   /**
    * @brief Retrieve all valid neighbors of a node.
    * @param node Pointer to the node we are currently exploring in A*

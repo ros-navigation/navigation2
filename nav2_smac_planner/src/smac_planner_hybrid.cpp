@@ -59,6 +59,7 @@ void SmacPlannerHybrid::configure(
   int max_iterations;
   int max_on_approach_iterations = std::numeric_limits<int>::max();
   int angle_quantizations;
+  double lookup_table_size;
   SearchInfo search_info;
   bool smooth_path;
   std::string motion_model_for_search;
@@ -75,7 +76,7 @@ void SmacPlannerHybrid::configure(
   node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".angle_quantization_bins", rclcpp::ParameterValue(72));
+    node, name + ".angle_quantization_bins", rclcpp::ParameterValue(64));
   node->get_parameter(name + ".angle_quantization_bins", angle_quantizations);
   _angle_bin_size = 2.0 * M_PI / angle_quantizations;
   _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
@@ -113,6 +114,9 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(5.0));
   node->get_parameter(name + ".max_planning_time", _max_planning_time);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".lookup_table_size", rclcpp::ParameterValue(20.0));
+  node->get_parameter(name + ".lookup_table_size", lookup_table_size);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
@@ -144,12 +148,27 @@ void SmacPlannerHybrid::configure(
   const double minimum_turning_radius_global_coords = search_info.minimum_turning_radius;
   search_info.minimum_turning_radius =
     search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
+  float lookup_table_dim =
+    static_cast<float>(lookup_table_size) / static_cast<float>(_costmap->getResolution() * _downsampling_factor);
+
+  // Make sure its a whole number
+  lookup_table_dim = static_cast<float>(static_cast<int>(lookup_table_dim));
+
+  // Make sure its an odd number
+  if (static_cast<int>(lookup_table_dim) % 2 == 0) {
+    RCLCPP_INFO(
+      _logger,
+      "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd", lookup_table_dim);
+    lookup_table_dim += 1.0;
+  }
 
   _a_star = std::make_unique<AStarAlgorithm<NodeHybrid>>(motion_model, search_info);
   _a_star->initialize(
     allow_unknown,
     max_iterations,
-    max_on_approach_iterations);
+    max_on_approach_iterations,
+    lookup_table_dim,
+    _angle_quantizations);
   _a_star->setFootprint(costmap_ros->getRobotFootprint(), costmap_ros->getUseRadius());
 
   if (smooth_path) {
@@ -227,10 +246,9 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   }
 
   // Set Costmap
-  _a_star->createGraph(
+  _a_star->setCosts(
     costmap->getSizeInCellsX(),
     costmap->getSizeInCellsY(),
-    _angle_quantizations,
     costmap);
 
   // Set starting point, in A* bin search coordinates

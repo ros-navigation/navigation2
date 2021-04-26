@@ -59,9 +59,9 @@ TEST(SmootherTest, test_smoother)
   float tolerance = 0.0;
   int it_on_approach = 1000000000;
   int num_it = 0;
-  a_star.initialize(false, max_iterations, it_on_approach);
+  a_star.initialize(false, max_iterations, it_on_approach, 0.0, size_theta);
   a_star.setFootprint(nav2_costmap_2d::Footprint(), true);
-  a_star.createGraph(costmap->getSizeInCellsX(), costmap->getSizeInCellsY(), size_theta, costmap);
+  a_star.setCosts(costmap->getSizeInCellsX(), costmap->getSizeInCellsY(), costmap);
   a_star.setStart(10u, 10u, 0u);
   a_star.setGoal(80u, 80u, 40u);
   nav2_smac_planner::NodeHybrid::CoordinateVector plan;

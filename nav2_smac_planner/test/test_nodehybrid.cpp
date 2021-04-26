@@ -96,7 +96,7 @@ TEST(NodeHybridTest, test_node_hybrid)
   EXPECT_EQ(testA.getMotionPrimitiveIndex(), 2u);
 
   // check heuristic cost computation
-  nav2_smac_planner::NodeHybrid::computeWavefrontHeuristic(
+  nav2_smac_planner::NodeHybrid::precomputeWavefrontHeuristic(
     costmapA,
     static_cast<unsigned int>(10.0),
     static_cast<unsigned int>(5.0),
@@ -139,7 +139,7 @@ TEST(NodeHybridTest, test_node_hybrid)
   delete costmapA;
 }
 
-TEST(NodeHybridTest, test_node_2d_neighbors)
+TEST(NodeHybridTest, test_node_debin_neighbors)
 {
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 1.2;
@@ -167,6 +167,18 @@ TEST(NodeHybridTest, test_node_2d_neighbors)
   EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._y, -0.3747, 0.01);
   EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._theta, -5, 0.01);
 
+}
+
+TEST(NodeHybridTest, test_node_reeds_neighbors)
+{
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 1.2;
+  info.non_straight_penalty = 1.4;
+  info.reverse_penalty = 2.1;
+  info.minimum_turning_radius = 4;  // 0.2 in grid coordinates
+  unsigned int size_x = 100;
+  unsigned int size_y = 100;
+  unsigned int size_theta = 72;
   nav2_smac_planner::NodeHybrid::initMotionModel(
     nav2_smac_planner::MotionModel::REEDS_SHEPP, size_x, size_y, size_theta, info);
 

@@ -25,9 +25,9 @@ namespace nav2_smac_planner
 std::vector<int> Node2D::_neighbors_grid_offsets;
 double Node2D::neutral_cost = 50.0;
 
-Node2D::Node2D(unsigned char & cost_in, const unsigned int index)
+Node2D::Node2D(const unsigned int index)
 : parent(nullptr),
-  _cell_cost(static_cast<float>(cost_in)),
+  _cell_cost(0.0),
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
   _was_visited(false),
@@ -40,10 +40,10 @@ Node2D::~Node2D()
   parent = nullptr;
 }
 
-void Node2D::reset(const unsigned char & cost)
+void Node2D::reset()
 {
   parent = nullptr;
-  _cell_cost = static_cast<float>(cost);
+  _cell_cost = 0.0;
   _accumulated_cost = std::numeric_limits<float>::max();
   _was_visited = false;
   _is_queued = false;
@@ -51,7 +51,7 @@ void Node2D::reset(const unsigned char & cost)
 
 bool Node2D::isNodeValid(
   const bool & traverse_unknown,
-  GridCollisionChecker & /*collision_checker*/)
+  GridCollisionChecker & collision_checker)
 {
   // NOTE(stevemacenski): Right now, we do not check if the node has wrapped around
   // the regular grid (e.g. your node is on the edge of the costmap and i+1
@@ -61,18 +61,12 @@ bool Node2D::isNodeValid(
   // This is intentionally un-included to increase speed, but be aware. If this causes
   // trouble, please file a ticket and we can address it then.
 
-  auto & cost = this->getCost();
-
-  // occupied node
-  if (cost == OCCUPIED || cost == INSCRIBED) {
+  if (collision_checker.inCollision(this->getIndex(), traverse_unknown))
+  {
     return false;
   }
 
-  // unknown node
-  if (cost == UNKNOWN && !traverse_unknown) {
-    return false;
-  }
-
+  _cell_cost = collision_checker.getCost();
   return true;
 }
 
@@ -94,9 +88,12 @@ float Node2D::getHeuristicCost(
     goal_coordinates.y - node_coords.y) * Node2D::neutral_cost;
 }
 
-void Node2D::initNeighborhood(
-  const unsigned int & x_size_uint,
-  const MotionModel & neighborhood)
+void Node2D::initMotionModel(
+  const MotionModel & neighborhood,
+  unsigned int & x_size_uint,
+  unsigned int & /*size_y*/,
+  unsigned int & /*num_angle_quantization*/,
+  SearchInfo & /*search_info*/)
 {
   int x_size = static_cast<int>(x_size_uint);
   switch (neighborhood) {
