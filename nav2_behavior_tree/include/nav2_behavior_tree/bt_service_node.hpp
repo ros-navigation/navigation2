@@ -156,7 +156,7 @@ public:
     RCLCPP_WARN(
       node_->get_logger(),
       "Node timed out while executing service call to %s.", service_name_.c_str());
-
+    request_sent_ = false;
     return BT::NodeStatus::FAILURE;
   }
 

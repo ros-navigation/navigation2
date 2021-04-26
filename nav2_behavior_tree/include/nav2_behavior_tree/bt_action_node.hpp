@@ -192,6 +192,7 @@ public:
         RCLCPP_WARN(
           node_->get_logger(),
           "Timed out while waiting for action server to respond for %s", action_name_.c_str());
+        goal_sent_ = false;
         return BT::NodeStatus::FAILURE;
       }
     }
@@ -215,6 +216,7 @@ public:
           RCLCPP_WARN(
             node_->get_logger(),
             "Timed out while waiting for action server to respond for %s", action_name_.c_str());
+          goal_sent_ = false;
           return BT::NodeStatus::FAILURE;
         }
       }
@@ -260,6 +262,7 @@ public:
       }
     }
 
+    goal_sent_ = false;
     setStatus(BT::NodeStatus::IDLE);
   }
 
@@ -317,6 +320,7 @@ protected:
 
     // server has already timed out, no need to sleep
     if (remaining <= std::chrono::milliseconds(0)) {
+      goal_sent_ = false;
       return false;
     }
 
@@ -324,15 +328,16 @@ protected:
 
     auto result = rclcpp::spin_until_future_complete(node_, future_goal_handle_, timeout);
     if (result == rclcpp::FutureReturnCode::INTERRUPTED) {
+      goal_sent_ = false;
       throw std::runtime_error("send_goal failed");
     }
 
     if (result == rclcpp::FutureReturnCode::SUCCESS) {
+      goal_sent_ = false;
       goal_handle_ = future_goal_handle_.get();
       if (!goal_handle_) {
         throw std::runtime_error("Goal was rejected by the action server");
       }
-      goal_sent_ = false;
       return true;
     }
 
