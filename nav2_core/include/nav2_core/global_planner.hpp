@@ -23,6 +23,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_msgs/msg/path_and_boundary.hpp"
 
 namespace nav2_core
 {
@@ -73,9 +74,15 @@ namespace nav2_core
    * @param goal  The goal pose of the robot
    * @return      The sequence of poses to get from start to goal, if any
    */
-    virtual nav_msgs::msg::Path createPlan(
-        const geometry_msgs::msg::PoseStamped &start,
-        const geometry_msgs::msg::PoseStamped &goal) = 0;
+    template <typename PoseType, typename PathType>
+    nav2_msgs::msg::PathAndBoundary createPlan(
+        const PoseType &start,
+        const PathType &goal)
+    {
+      (void)start;
+      (void)goal;
+      return nav2_msgs::msg::PathAndBoundary();
+    }
   };
 
 } // namespace nav2_core
