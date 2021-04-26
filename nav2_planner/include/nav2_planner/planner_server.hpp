@@ -24,6 +24,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_and_boundary.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/compute_path.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
@@ -65,7 +66,7 @@ namespace nav2_planner
    * @return Path
    */
     template <typename PoseType, typename PathType>
-    nav2_msgs::msg::PathandBoundary getPlan(
+    nav2_msgs::msg::PathAndBoundary getPlan(
         const PoseType &start,
         const PathType &goal,
         const std::string &planner_id);

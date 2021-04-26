@@ -13,7 +13,7 @@ string planner_id
 bool use_start # If true, use current robot pose as path start, if false, use start above instead
 ---
 #result definition
-nav2_msgs/PathandBoundary path_and_boundary
+nav2_msgs/PathAndBoundary path_and_boundary
 builtin_interfaces/Duration planning_time
 ---
 #feedback

@@ -41,6 +41,7 @@ namespace nav2_planner
         default_types_{"nav2_navfn_planner/NavfnPlanner"},
         costmap_(nullptr)
   {
+
     // Declare this node's parameters
     declare_parameter("planner_plugins", default_ids_);
     declare_parameter("expected_planner_frequency", 20.0);
@@ -312,7 +313,7 @@ namespace nav2_planner
   }
 
   template <typename PoseType, typename PathType>
-  nav2_msgs::msg::PathandBoundary
+  nav2_msgs::msg::PathAndBoundary
   PlannerServer::getPlan(
       const PoseType &start,
       const PathType &goals,
@@ -352,7 +353,7 @@ namespace nav2_planner
       }
     }
 
-    return nav2_msgs::msg::PathandBoundary();
+    return nav2_msgs::msg::PathAndBoundary();
   }
 
   void
