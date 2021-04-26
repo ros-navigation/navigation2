@@ -53,9 +53,6 @@ public:
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
-    // Set spin_until_future_complete timeout
-    timeout_ = server_timeout_ < bt_loop_timeout_ ? server_timeout_ : bt_loop_timeout_;
-
     // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
     service_client_ = node_->create_client<ServiceT>(service_name_);
@@ -139,7 +136,7 @@ public:
     auto remaining = server_timeout_ - elapsed;
 
     if (remaining > std::chrono::milliseconds(0)) {
-      auto timeout = remaining > timeout_ ? timeout_ : remaining;
+      auto timeout = remaining > bt_loop_timeout_ ? bt_loop_timeout_ : remaining;
 
       auto rc = rclcpp::spin_until_future_complete(node_, future_result_, timeout);
       if (rc == rclcpp::FutureReturnCode::SUCCESS) {
@@ -196,9 +193,6 @@ protected:
 
   // The timeout value for BT loop execution
   std::chrono::milliseconds bt_loop_timeout_;
-
-  // spin_until_future_complete timeout value
-  std::chrono::milliseconds timeout_;
 
   // To track the server response when a new request is sent
   std::shared_future<typename ServiceT::Response::SharedPtr> future_result_;

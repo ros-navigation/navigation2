@@ -55,9 +55,6 @@ public:
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
-    // Set spin_until_future_complete timeout
-    timeout_ = server_timeout_ < bt_loop_timeout_ ? server_timeout_ : bt_loop_timeout_;
-
     // Initialize the input and output messages
     goal_ = typename ActionT::Goal();
     result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
@@ -323,7 +320,7 @@ protected:
       return false;
     }
 
-    auto timeout = remaining > timeout_ ? timeout_ : remaining;
+    auto timeout = remaining > bt_loop_timeout_ ? bt_loop_timeout_ : remaining;
 
     auto result = rclcpp::spin_until_future_complete(node_, future_goal_handle_, timeout);
     if (result == rclcpp::FutureReturnCode::INTERRUPTED) {
@@ -372,9 +369,6 @@ protected:
 
   // The timeout value for BT loop execution
   std::chrono::milliseconds bt_loop_timeout_;
-
-  // spin_until_future_complete timeout value
-  std::chrono::milliseconds timeout_;
 
   // To track the action server response when a new goal is sent
   std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr>
