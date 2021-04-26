@@ -12,7 +12,6 @@ class LookupTable:
     def __init__(self, config):
         self.trajectory_generator = TrajectoryGenerator(config)
 
-
         self.headings = [0.0, math.atan(1/2), np.deg2rad(45), math.atan(2), np.deg2rad(90)]
 
         self.table = defaultdict(list)
@@ -25,8 +24,8 @@ class LookupTable:
 
         states = []
 
-        for x_pos in x:
-            for y_pos in y:
+        for y_pos in y: 
+            for x_pos in x:
 
                 # Skip the origin point
                 if x_pos == 0 and y_pos == 0:
@@ -39,7 +38,7 @@ class LookupTable:
 
     def get_nearest_params(self, start_state, end_state):
         min_distance = float('inf')
-
+        
         best_params = self.table[start_state][0][1:]
 
         for values in self.table[start_state]:
@@ -54,14 +53,14 @@ class LookupTable:
 
     def create(self):
         # Create an initial set of parameters (1 for each heading)
-        self.table[State(0,0,self.headings[0])].append(((State(1,0,self.headings[0]), 1,0,0,1)))
-        self.table[State(0,0,self.headings[1])].append(((State(2,1,self.headings[1]), math.sqrt(5),0,0,1)))
-        self.table[State(0,0,self.headings[2])].append(((State(1,1,self.headings[2]), math.sqrt(2),0,0,1)))
-        self.table[State(0,0,self.headings[3])].append(((State(1,2,self.headings[3]), math.sqrt(5),0,0,1)))
-        self.table[State(0,0,self.headings[4])].append(((State(0,1,self.headings[4]), 1,0,0,1)))
+        self.table[State(0,0,self.headings[0])].append(((State(1,0,self.headings[0]), 1,0,0)))
+        self.table[State(0,0,self.headings[1])].append(((State(2,1,self.headings[1]), math.sqrt(5),0,0)))
+        self.table[State(0,0,self.headings[2])].append(((State(1,1,self.headings[2]), math.sqrt(2),0,0)))
+        self.table[State(0,0,self.headings[3])].append(((State(1,2,self.headings[3]), math.sqrt(5),0,0)))
+        self.table[State(0,0,self.headings[4])].append(((State(0,1,self.headings[4]), 1,0,0)))
 
         states_list = self.get_states_list()
-        
+
         test = [] # TODO: REMOVE
 
         failed_states = 0 
@@ -71,7 +70,7 @@ class LookupTable:
         for start in initial_states:
             for target in states_list:
                 best_params = self.get_nearest_params(start, target)
-                estimated_p = [target.arc_distance_estimate(), best_params[1], best_params[2], best_params[3]]
+                estimated_p = [target.arc_distance_estimate(), best_params[1], best_params[2]]
                 
                 result = self.trajectory_generator.optimize_trajectory(start, target, estimated_p)
 
@@ -96,7 +95,7 @@ class LookupTable:
 
         for start_state, values in self.table.items():
             for motion in values:
-                formatted_table.append([start_state.x, start_state.y, start_state.yaw, motion[0].x, motion[0].y, motion[0].yaw, motion[1], motion[2], motion[3], motion[4]])
+                formatted_table.append([start_state.x, start_state.y, start_state.yaw, motion[0].x, motion[0].y, motion[0].yaw, motion[1], motion[2], motion[3]])
 
         with open(file_name, 'w', newline='') as lookup_table_file:
             writer = csv.writer(lookup_table_file, quoting=csv.QUOTE_MINIMAL)
@@ -107,5 +106,5 @@ class LookupTable:
             reader = csv.reader(lookup_table_file, quoting=csv.QUOTE_MINIMAL)
 
             for row in reader:
-                start_x, start_y, start_yaw, target_x, target_y, target_yaw, arc_distance, k0, k1, time = row
-                self.table[State(int(start_x), int(start_y), float(start_yaw))].append([State(int(target_x), int(target_y), float(target_yaw)), float(arc_distance), float(k0), float(k1), float(time)])
+                start_x, start_y, start_yaw, target_x, target_y, target_yaw, arc_distance, k0, k1 = row
+                self.table[State(int(start_x), int(start_y), float(start_yaw))].append([State(int(target_x), int(target_y), float(target_yaw)), float(arc_distance), float(k0), float(k1)])

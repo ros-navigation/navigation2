@@ -13,20 +13,21 @@ def angle_difference(angle_1, angle_2):
     
     return difference
 
-# def plot_arrow(x, y, yaw, length=1.0, width=0.5, fc="r", ec="k"):
-#     """
-#     Plot arrow
-#     """
-#     plt.arrow(x, y, length * math.cos(yaw), length * math.sin(yaw),
-#               fc=fc, ec=ec, head_width=width, head_length=width)
-#     plt.plot(x, y)
-#     plt.plot(0, 0)
+import matplotlib.pyplot as plt
+def plot_arrow(x, y, yaw, length=1.0, width=0.5, fc="r", ec="k"):
+    """
+    Plot arrow
+    """
+    plt.arrow(x, y, length * math.cos(yaw), length * math.sin(yaw),
+              fc=fc, ec=ec, head_width=width, head_length=width)
+    plt.plot(x, y)
+    plt.plot(0, 0)
 
 
-# def show_trajectory(target, xc, yc, arrow=False):
-#     if arrow:
-#         plot_arrow(target.x, target.y, target.yaw)
-#     plt.plot(xc, yc, "-r")
-#     plt.axis("equal")
-#     plt.grid(True)
-#     plt.show()
+def show_trajectory(target, xc, yc, arrow=False):
+    if arrow:
+        plot_arrow(target.x, target.y, target.yaw)
+    plt.plot(xc, yc, "-r")
+    plt.axis("equal")
+    plt.grid(True)
+    plt.show()

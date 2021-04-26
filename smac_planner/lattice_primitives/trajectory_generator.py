@@ -1,3 +1,4 @@
+from helper import show_trajectory
 import numpy as np
 from motion_model import MotionModel
 
@@ -33,7 +34,7 @@ class TrajectoryGenerator:
                 control_change = - np.linalg.inv(jacobian) @ state_difference
             except np.linalg.linalg.LinAlgError:
                 if self.verbose:
-                    print("Cannot find trajectory")
+                    print(f'Cannot find trajectory. {i} iterations')
 
                 return None
 

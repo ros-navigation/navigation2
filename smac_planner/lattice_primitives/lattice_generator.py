@@ -85,12 +85,12 @@ class LatticeGenerator:
         initial_headings = [math.atan(i) for i in [0, 1/2, 1, 2]]
 
         # Create initial states using (0,0) and discrete headings
-        initial_states = [State(x=0, y=0, yaw=heading, velocity=0) for heading in initial_headings]
+        initial_states = [State(x=0, y=0, yaw=heading) for heading in initial_headings]
 
         # Use from -180 to 180 with 0 being straight (otherwise lookup will be funny)
         target_headings = [np.deg2rad(quadrants) + heading for quadrants in [-180, -90, 0, 90] for heading in initial_headings]
 
-        for start in [State(0,0,0.0), State(0,0,math.atan(1))]:
+        for start in initial_states:
             
             minimal_spanning_trajectories = defaultdict(list) # TODO: Rename - not clear
             none_found = True
@@ -98,14 +98,14 @@ class LatticeGenerator:
             current_level = 1
 
             # TODO: Minimum number of initial iterations before exiting? (with the none_found flag this loop may never exit)
-            while (not all_decomposed) or none_found:
+            while ((not all_decomposed) or none_found) and current_level < 4:
                 all_decomposed = True
 
                 # Generate x,y coordinates for current level
                 positions = self.get_lattice_points_at_level(current_level)
 
                 # Create target states using x,y coordinates and discrete headings
-                targets = [State(x=p[0], y=p[1], yaw=heading, velocity=0) for p in positions for heading in target_headings]
+                targets = [State(x=p[0], y=p[1], yaw=heading) for p in positions for heading in target_headings]
 
                 for target in targets:
                     print(start, target)
