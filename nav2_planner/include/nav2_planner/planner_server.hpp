@@ -69,7 +69,8 @@ namespace nav2_planner
     nav2_msgs::msg::PathAndBoundary getPlan(
         const PoseType &start,
         const PathType &goal,
-        const std::string &planner_id);
+        const std::string &planner_id,
+        const int &robots);
 
   protected:
     /**

@@ -268,7 +268,7 @@ namespace nav2_planner
         goal = action_server_->accept_pending_goal();
       }
 
-      result->path_and_boundary = getPlan(start, goals, goal->planner_id);
+      result->path_and_boundary = getPlan(start, goals, goal->planner_id, goal->robots);
 
       if (result->path_and_boundary.path_local.empty() &&
           result->path_and_boundary.path_global.empty())
@@ -318,7 +318,8 @@ namespace nav2_planner
   PlannerServer::getPlan(
       const PoseType &start,
       const PathType &goals,
-      const std::string &planner_id)
+      const std::string &planner_id,
+      const int &robots)
   {
     RCLCPP_DEBUG(
         get_logger(), "Attempting to a find path from goal(s) to start");
@@ -331,7 +332,7 @@ namespace nav2_planner
 
     if (planners_.find(planner_id) != planners_.end())
     {
-      return planners_[planner_id]->createPlan(start, goals);
+      return planners_[planner_id]->createPlan(start, goals, robots);
     }
     else
     {
@@ -342,7 +343,7 @@ namespace nav2_planner
                           "Server will use only plugin %s in server."
                           " This warning will appear once.",
             planner_ids_concat_.c_str());
-        return planners_[planners_.begin()->first]->createPlan(start, goals);
+        return planners_[planners_.begin()->first]->createPlan(start, goals, robots);
       }
       else
       {

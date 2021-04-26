@@ -77,10 +77,12 @@ namespace nav2_core
     template <typename PoseType, typename PathType>
     nav2_msgs::msg::PathAndBoundary createPlan(
         const PoseType &start,
-        const PathType &goal)
+        const PathType &goal,
+        const int &robots)
     {
       (void)start;
       (void)goal;
+      (void)robots;
       return nav2_msgs::msg::PathAndBoundary();
     }
   };
