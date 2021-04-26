@@ -41,6 +41,7 @@ namespace nav2_planner
         default_types_{"nav2_navfn_planner/NavfnPlanner"},
         costmap_(nullptr)
   {
+    RCLCPP_INFO(get_logger(), "Creating");
 
     // Declare this node's parameters
     declare_parameter("planner_plugins", default_ids_);
