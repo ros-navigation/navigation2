@@ -106,6 +106,7 @@ void NodeLattice::reset()
 
 bool NodeLattice::isNodeValid(const bool & traverse_unknown, GridCollisionChecker & collision_checker)
 {
+  // TODO if primitive longer than 1.5 cells, then we need to split into 1 cell increments and collision check across them
   if (collision_checker.inCollision(
       this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
   {
@@ -204,26 +205,6 @@ void NodeLattice::initMotionModel(
   motion_table.initMotionModel(size_x, search_info);
 }
 
-void NodeLattice::precomputeWavefrontHeuristic(
-  nav2_costmap_2d::Costmap2D * & costmap,
-  const unsigned int & start_x, const unsigned int & start_y,
-  const unsigned int & goal_x, const unsigned int & goal_y)
-{
-  // State Lattice and Hybrid-A* share this heuristics
-  NodeHybrid::precomputeWavefrontHeuristic(costmap, start_x, start_y, goal_x, goal_y);
-}
-
-
-void NodeLattice::precomputeDistanceHeuristic(
-  const float & lookup_table_dim,
-  const MotionModel & motion_model,
-  const unsigned int & dim_3_size,
-  const SearchInfo & search_info)
-{
-  // State Lattice and Hybrid-A* share this heuristics
-  NodeHybrid::precomputeDistanceHeuristic(lookup_table_dim, motion_model, dim_3_size, search_info);
-}
-
 void NodeLattice::getNeighbors(
   const NodePtr & node,
   std::function<bool(const unsigned int &, nav2_smac_planner::NodeLattice * &)> & NeighborGetter,
@@ -243,9 +224,11 @@ void NodeLattice::getNeighbors(
       static_cast<unsigned int>(motion_projections[i]._theta));
 
     if (NeighborGetter(index, neighbor) && !neighbor->wasVisited()) {
-      // Cache the initial pose in case it was visited but valid
-      // don't want to disrupt other lattices being expanded
-      initial_node_coords = neighbor->pose;
+      // For State Lattice, the poses are exact bin increments and the pose
+      // can be derived from the index alone.
+      // However, we store them as if they were continuous so that it may be
+      // leveraged by the analytic expansion tool to accelerate goal approaches,
+      // collision checking, and backtracing (even if not strictly necessary).
       neighbor->setPose(
         Coordinates(
           motion_projections[i]._x,
@@ -254,8 +237,6 @@ void NodeLattice::getNeighbors(
       if (neighbor->isNodeValid(traverse_unknown, collision_checker)) {
         neighbor->setMotionPrimitiveIndex(i);
         neighbors.push_back(neighbor);
-      } else {
-        neighbor->setPose(initial_node_coords);
       }
     }
   }

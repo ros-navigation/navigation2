@@ -34,53 +34,10 @@
 
 namespace nav2_smac_planner
 {
-// https://www.ri.cmu.edu/pub_files/pub4/pivtoraiko_mihail_2007_1/pivtoraiko_mihail_2007_1.pdf
-		// controls should be the most basic primitives and remove any that can be made up (or mostly represented) as a linear combination of other primitives.
-			// fig 4 on Page 12
-			// if a primitive passes near another node, use that node instead
-		// lattice edges should end where others can pick up or lattice correctly into to reduce branching effects
-			// TODO how do I use that if visiting the same bin/cell from leaving and entering of a continuous lattice grid?
-		// controls should radiate from the central node
-			// by radiating + decomposing smaller primitives that are "close" sets the length of the primitives
-		// not all angular bins will have the same number of primitives
-		// params: cell resolution, angle discretizations, max turning specifications
-		// end of page 18 talks about delaying collision checking for speed ups!!
-			// use minimum possible cost until it is expanded in the search for use, then collision check
-			// so only check collisions on expansion, not on arrival like we do right now
-			// then compare with the next best in the open set and reinsert if required
-			// add a "has been checked" so that if requeued or looked at from another source, it doesn't recompute.
-		// distance traveled used as cost -- Reeds-shepp are better than L2 norms, but still not great
-			// instead they use an obstacle-free lookup using the planner itself to compute costs
-			// sounds a whole lot like the Hybrid-A* method I simplified to wavefront
-			// they recommend precomputing by running the planner for the minimum spanning set of primitives and looking up actual costs later
-			// the lookup table can't be infinitely sized, so use the L2 norm for distant queries off the lookup table
-			// window size for lookup set by a ratio of estimated costs using L2
-		// they did experiments with 16 bins and 12 primitives per orientation (on average)
-		// longer controls = less expansions to reach goal, but a longer total path length (suboptimal)
-		// More controls = more memory and compute, but better chances of a shorter route 
-		// not much slower than A* when using the perfect hueristic + longer primitives than just closest neighbors
-
-// TODO continuous coordinates not required here?!?! End in bins exactly, might change how we do search to be more 2d-A*-y
-		// must be to be a lattice pattern
-	  // but also want to make use of the analytic expansion
-
-// TODO depending on primitive lengths, collision check intermediary points, not just the end points.
-		// do the non-checking-until-expanded thing--make sure to watch out for the fragile isNodeValid setting of _cost_cell and then later getting for getTraversalCost
-
-// TODO smoother improvements / replacement
-// TODO on approach not working if unreachable / can't get to approach on destination invalid?
-
-// matt
-// SBPL-or-other methods for state lattice robot-centric
-	// is it even a lattice? Or approximation?
-	// week or two to figure out if their method works or go back to this other method
-	// ME: look into this method from SBPL and others like it to see what makes sense + understand it
-
 // TODO test coverage
 // TODO update docs for new plugin name Hybrid + Lattice (plugins page, configuration page) and add new params for lattice/description of algo
   // add all the optimizations added (cached heuristics all, leveraging symmetry in the H-space to lower mem footprint, precompute primitives and rotations, precompute footprint rotations, collision check only when required)
 // TODO update any compute times / map sizes as given in docs/readmes
-// TODO possibly inscribed proper use
 // TODO param default updttes
 
 // forward declare
@@ -303,6 +260,7 @@ public:
   static inline unsigned int getIndex(
     const unsigned int & x, const unsigned int & y, const unsigned int & angle)
   {
+    // Hybrid-A* and State Lattice share a coordinate system
     return NodeHybrid::getIndex(
     	x, y, angle, motion_table.size_x,
       motion_table.num_angle_quantization);
@@ -319,6 +277,7 @@ public:
     const unsigned int & index,
     const unsigned int & width, const unsigned int & angle_quantization)
   {
+    // Hybrid-A* and State Lattice share a coordinate system
     return NodeHybrid::Coordinates(
       (index / angle_quantization) % width,    // x
       index / (angle_quantization * width),    // y
@@ -361,7 +320,11 @@ public:
   static void precomputeWavefrontHeuristic(
     nav2_costmap_2d::Costmap2D * & costmap,
     const unsigned int & start_x, const unsigned int & start_y,
-    const unsigned int & goal_x, const unsigned int & goal_y);
+    const unsigned int & goal_x, const unsigned int & goal_y)
+  {
+    // State Lattice and Hybrid-A* share this heuristics
+    NodeHybrid::precomputeWavefrontHeuristic(costmap, start_x, start_y, goal_x, goal_y);
+  };
 
   /**
    * @brief Compute the SE2 distance heuristic
@@ -375,7 +338,11 @@ public:
     const float & lookup_table_dim,
     const MotionModel & motion_model,
     const unsigned int & dim_3_size,
-    const SearchInfo & search_info);
+    const SearchInfo & search_info)
+  {
+    // State Lattice and Hybrid-A* share this heuristics
+    NodeHybrid::precomputeDistanceHeuristic(lookup_table_dim, motion_model, dim_3_size, search_info);
+  };
 
   /**
    * @brief Retrieve all valid neighbors of a node.

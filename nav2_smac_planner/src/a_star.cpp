@@ -72,6 +72,7 @@ void AStarAlgorithm<NodeT>::initialize(
   _max_on_approach_iterations = max_on_approach_iterations;
   NodeT::precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size, _search_info);
   _dim3_size = dim_3_size;
+  _collision_checker = GridCollisionChecker(nullptr, _dim3_size);
 }
 
 template<>
@@ -127,6 +128,8 @@ template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::addToGraph(
   const unsigned int & index)
 {
+  // Emplace will only create a new object if it doesn't already exist.
+  // If an element exists, it will return the existing object, not create a new one.
   return &(_graph.emplace(index, NodeT(index)).first->second);
 }
 
@@ -288,11 +291,12 @@ bool AStarAlgorithm<NodeT>::createPath(
     } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
       approach_iterations++;
-      if (approach_iterations > getOnApproachMaxIterations() ||
-        iterations + 1 == getMaxIterations())
+      if (approach_iterations > getOnApproachMaxIterations())
       {
         NodePtr node = &_graph.at(_best_heuristic_node.second);
         return backtracePath(node, path);
+      } else if (iterations + 1 == getMaxIterations()) {
+        return false;
       }
     }
 

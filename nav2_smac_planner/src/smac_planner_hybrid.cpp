@@ -57,7 +57,6 @@ void SmacPlannerHybrid::configure(
 
   bool allow_unknown;
   int max_iterations;
-  int max_on_approach_iterations = std::numeric_limits<int>::max();
   int angle_quantizations;
   double lookup_table_size;
   SearchInfo search_info;
@@ -65,9 +64,6 @@ void SmacPlannerHybrid::configure(
   std::string motion_model_for_search;
 
   // General planner params
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".tolerance", rclcpp::ParameterValue(0.125));
-  _tolerance = static_cast<float>(node->get_parameter(name + ".tolerance").as_double());
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".downsample_costmap", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".downsample_costmap", _downsample_costmap);
@@ -85,7 +81,7 @@ void SmacPlannerHybrid::configure(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".allow_unknown", allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".max_iterations", rclcpp::ParameterValue(-1));
+    node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
   node->get_parameter(name + ".max_iterations", max_iterations);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".smooth_path", rclcpp::ParameterValue(false));
@@ -130,13 +126,6 @@ void SmacPlannerHybrid::configure(
       motion_model_for_search.c_str());
   }
 
-  if (max_on_approach_iterations <= 0) {
-    RCLCPP_INFO(
-      _logger, "On approach iteration selected as <= 0, "
-      "disabling tolerance and on approach iterations.");
-    max_on_approach_iterations = std::numeric_limits<int>::max();
-  }
-
   if (max_iterations <= 0) {
     RCLCPP_INFO(
       _logger, "maximum iteration selected as <= 0, "
@@ -166,7 +155,7 @@ void SmacPlannerHybrid::configure(
   _a_star->initialize(
     allow_unknown,
     max_iterations,
-    max_on_approach_iterations,
+    std::numeric_limits<int>::max(),
     lookup_table_dim,
     _angle_quantizations);
   _a_star->setFootprint(costmap_ros->getRobotFootprint(), costmap_ros->getUseRadius());
@@ -190,9 +179,8 @@ void SmacPlannerHybrid::configure(
 
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlannerHybrid with "
-    "tolerance %.2f, maximum iterations %i, "
-    "max on approach iterations %i, and %s. Using motion model: %s.",
-    _name.c_str(), _tolerance, max_iterations, max_on_approach_iterations,
+    "maximum iterations %i, and %s. Using motion model: %s.",
+    _name.c_str(), max_iterations,
     allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
     toString(motion_model).c_str());
 }
@@ -287,8 +275,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   int num_iterations = 0;
   std::string error;
   try {
-    if (!_a_star->createPath(
-        path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution())))
+    if (!_a_star->createPath(path, num_iterations, 0.0))
     {
       if (num_iterations < _a_star->getMaxIterations()) {
         error = std::string("no valid path found");

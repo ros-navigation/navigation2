@@ -1,13 +1,13 @@
 # Smac Planner
 
 The SmacPlanner is a plugin for the Nav2 Planner server. It includes currently 2 distinct plugins:
-- `SmacPlannerHybrid`: a highly optimized fully reconfigurable Hybrid-A* implementation supporting Dubin and Reeds-Shepp models.
+- `SmacPlannerHybrid`: a highly optimized fully reconfigurable Hybrid-A* implementation supporting Dubin and Reeds-Shepp models (ackermann and car models).
 - `SmacPlannerLattice`: a highly optimized fully reconfigurable State Lattice implementation supporting Differential and Omnidirectionl models.
 - `SmacPlanner2D`: a highly optimized fully reconfigurable grid-based A* implementation supporting Moore and Von Neumann models.
 
 It also introduces the following basic building blocks:
 - `CostmapDownsampler`: A library to take in a costmap object and downsample it to another resolution.
-- `AStar`: A generic and highly optimized A* template library used by the planning plugins to search. Template implementations are provided for grid-A* and SE2 Hybrid-A* planning. Additional template for 3D planning also could be made available.
+- `AStar`: A generic and highly optimized A* template library used by the planning plugins to search. Template implementations are provided for grid-A*, SE2 Hybrid-A*, and SE2 State Lattice planning. Additional template for 3D planning also could be made available.
 - `CollisionChecker`: Collision check based on a robot's radius or footprint.
 - `Smoother`: A Conjugate-gradient (CG) smoother with several optional cost function implementations for use. This is a cost-aware smoother unlike b-splines or bezier curves.
 
@@ -17,7 +17,7 @@ We have users reporting using this on:
 
 ## Introduction
 
-The `nav2_smac_planner` package contains an optimized templated A* search algorithm used to create multiple A\*-based planners for multiple types of robot platforms. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). We support **circular** differential-drive and omni-directional drive robots using the `SmacPlanner2D` planner which implements a cost-aware A\* planner. We support cars, car-like, and ackermann vehicles using the `SmacPlannerHybrid` plugin which implements a Hybrid-A\* planner.  We support **non-circular, arbitrary shaped** differntial drive and omnidirectional vehicles using the `SmacPlannerLattice` plugin which implements a Stat Lattice planner. These plugins are also useful for curvature constrained planning, like when planning robot at high speeds to make sure they don't flip over or otherwise skid out of control. It is also applicable to non-round robots (such as large rectangular or arbitrary shaped robots of differential/omnidirectional drivetrains) that need pose-based collision checking.
+The `nav2_smac_planner` package contains an optimized templated A* search algorithm used to create multiple A\*-based planners for multiple types of robot platforms. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). We support **circular** differential-drive and omni-directional drive robots using the `SmacPlanner2D` planner which implements a cost-aware A\* planner. We support **cars, car-like, and ackermann vehicles** using the `SmacPlannerHybrid` plugin which implements a Hybrid-A\* planner.  We support **non-circular, arbitrary shaped** differntial drive and omnidirectional vehicles using the `SmacPlannerLattice` plugin which implements a State Lattice planner. These plugins are also useful for curvature constrained planning, like when planning robot at high speeds to make sure they don't flip over or otherwise skid out of control. It is also applicable to non-round robots (such as large rectangular or arbitrary shaped robots of differential/omnidirectional drivetrains) that need pose-based collision checking.
 
 The `SmacPlannerHybrid` fully-implements the Hybrid-A* planner as proposed in [Practical Search Techniques in Path Planning for Autonomous Driving](https://ai.stanford.edu/~ddolgov/papers/dolgov_gpp_stair08.pdf), including hybrid searching, CG smoothing, analytic expansions and hueristic functions.
 
@@ -47,6 +47,7 @@ We further improve on the Hybrid-A\* work in the following ways:
 - Approximated smoother Voronoi field using costmap inflation function.
 - Fixed 3 mathematical issues in the original paper resulting in higher quality smoothing.
 - Faster planning than original paper by highly optimizing the template A\* algorithm.
+- Faster planning via precomputed heuristic, motion primitive, and other values.
 - Automatically adjusted search motion model sizes by motion model, costmap resolution, and bin sizing.
 - Closest path on approach within tolerance if exact path cannot be found or in invalid space.
 - Multi-model hybrid searching including Dubin and Reeds-Shepp models. More models may be trivially added.
@@ -97,7 +98,7 @@ planner_server:
       downsample_costmap: false         # whether or not to downsample the map
       downsampling_factor: 1            # multiplier for the resolution of the costmap layer (e.g. 2 on a 5cm costmap would be 10cm)
       allow_unknown: false              # allow traveling in unknown space
-      max_iterations: -1                # maximum total iterations to search for before failing
+      max_iterations: 1000000           # maximum total iterations to search for before failing (in case unreachable), set to -1 to disable
       max_on_approach_iterations: 1000  # maximum number of iterations to attempt to reach goal once in tolerance, 2D only
       max_planning_time: 2.0            # max time in s for planner to plan, smooth, and upsample. Will scale maximum smoothing and upsampling times based on remaining time after planning.
       smooth_path: false                # Whether to smooth searched path

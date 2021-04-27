@@ -75,7 +75,7 @@ void SmacPlanner2D::configure(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".allow_unknown", allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".max_iterations", rclcpp::ParameterValue(-1));
+    node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
   node->get_parameter(name + ".max_iterations", max_iterations);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
@@ -123,7 +123,7 @@ void SmacPlanner2D::configure(
     max_iterations,
     max_on_approach_iterations,
     0.0 /*unused for 2D*/,
-    0.0 /*unused for 2D*/);
+    1.0 /*unused for 2D*/);
 
   if (smooth_path) {
     _smoother = std::make_unique<Smoother>();
