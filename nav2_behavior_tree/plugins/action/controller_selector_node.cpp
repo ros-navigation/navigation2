@@ -47,6 +47,10 @@ BT::NodeStatus ControllerSelector::tick()
 {
   rclcpp::spin_some(node_);
 
+  // This behavior always use the last selected controller received from the topic input.
+  // When no input is specified it uses the default controller.
+  // If the default controller is not specified the behavior works in the "required controller mode":
+  // In this mode, if the controller selection is not received by the topic input the behavior returns FAILURE.
   if (last_selected_controller_.empty()) {
     std::string default_controller;
     getInput("default_controller", default_controller);

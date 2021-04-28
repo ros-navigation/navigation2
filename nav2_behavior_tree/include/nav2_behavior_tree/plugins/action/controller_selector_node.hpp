@@ -74,8 +74,8 @@ private:
   /**
    * @brief Function to perform some user-defined operation on tick
    */
-  BT::NodeStatus tick();
-
+  BT::NodeStatus tick() override;
+  
   /**
    * @brief callback function for the controller_selector topic
    *

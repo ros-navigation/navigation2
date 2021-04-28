@@ -47,6 +47,10 @@ BT::NodeStatus GoalCheckerSelector::tick()
 {
   rclcpp::spin_some(node_);
 
+  // This behavior always use the last selected goal_checker received from the topic input.
+  // When no input is specified it uses the default goal_checker.
+  // If the default goal_checker is not specified the behavior works in the "required goal_checker mode":
+  // In this mode, if the goal_checker selection is not received by the topic input the behavior returns FAILURE.
   if (last_selected_goal_checker_.empty()) {
     std::string default_goal_checker;
     getInput("default_goal_checker", default_goal_checker);

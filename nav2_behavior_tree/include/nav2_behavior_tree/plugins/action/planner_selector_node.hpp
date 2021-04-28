@@ -74,7 +74,7 @@ private:
   /**
    * @brief Function to perform some user-defined operation on tick
    */
-  BT::NodeStatus tick();
+  BT::NodeStatus tick() override;
 
   /**
    * @brief callback function for the planner_selector topic
@@ -82,6 +82,7 @@ private:
    * @param msg the message with the id of the planner_selector
    */
   void callbackPlannerSelect(const std_msgs::msg::String::SharedPtr msg);
+
 
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr planner_selector_sub_;
 
