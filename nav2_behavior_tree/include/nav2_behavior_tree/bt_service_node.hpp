@@ -47,8 +47,8 @@ public:
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
 
     // Get the required items from the blackboard
-    bt_loop_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("bt_loop_timeout");
+    bt_loop_duration_ =
+      config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
     server_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
@@ -136,7 +136,7 @@ public:
     auto remaining = server_timeout_ - elapsed;
 
     if (remaining > std::chrono::milliseconds(0)) {
-      auto timeout = remaining > bt_loop_timeout_ ? bt_loop_timeout_ : remaining;
+      auto timeout = remaining > bt_loop_duration_ ? bt_loop_duration_ : remaining;
 
       auto rc = rclcpp::spin_until_future_complete(node_, future_result_, timeout);
       if (rc == rclcpp::FutureReturnCode::SUCCESS) {
@@ -192,7 +192,7 @@ protected:
   std::chrono::milliseconds server_timeout_;
 
   // The timeout value for BT loop execution
-  std::chrono::milliseconds bt_loop_timeout_;
+  std::chrono::milliseconds bt_loop_duration_;
 
   // To track the server response when a new request is sent
   std::shared_future<typename ServiceT::Response::SharedPtr> future_result_;

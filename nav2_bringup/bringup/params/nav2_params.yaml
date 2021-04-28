@@ -53,7 +53,7 @@ bt_navigator:
     global_frame: map
     robot_base_frame: base_link
     odom_topic: /odom
-    bt_loop_timeout: 10
+    bt_loop_duration: 10
     default_server_timeout: 10
     enable_groot_monitoring: True
     groot_zmq_publisher_port: 1666

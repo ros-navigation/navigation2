@@ -53,8 +53,8 @@ BtActionServer<ActionT>::BtActionServer(
   clock_ = node->get_clock();
 
   // Declare this node's parameters
-  if (!node->has_parameter("bt_loop_timeout")) {
-    node->declare_parameter("bt_loop_timeout", 10);
+  if (!node->has_parameter("bt_loop_duration")) {
+    node->declare_parameter("bt_loop_duration", 10);
   }
   if (!node->has_parameter("default_server_timeout")) {
     node->declare_parameter("default_server_timeout", 10);
@@ -104,8 +104,8 @@ bool BtActionServer<ActionT>::on_configure()
 
   // Get parameters for BT timeouts
   int timeout;
-  node->get_parameter("bt_loop_timeout", timeout);
-  bt_loop_timeout_ = std::chrono::milliseconds(timeout);
+  node->get_parameter("bt_loop_duration", timeout);
+  bt_loop_duration_ = std::chrono::milliseconds(timeout);
   node->get_parameter("default_server_timeout", timeout);
   default_server_timeout_ = std::chrono::milliseconds(timeout);
 
@@ -118,7 +118,7 @@ bool BtActionServer<ActionT>::on_configure()
   // Put items on the blackboard
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
-  blackboard_->set<std::chrono::milliseconds>("bt_loop_timeout", bt_loop_timeout_);  // NOLINT
+  blackboard_->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
 
   return true;
 }
@@ -231,7 +231,7 @@ void BtActionServer<ActionT>::executeCallback()
     };
 
   // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling, bt_loop_timeout_);
+  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling, bt_loop_duration_);
 
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.

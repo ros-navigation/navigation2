@@ -225,8 +225,8 @@ protected:
   // To publish BT logs
   std::unique_ptr<RosTopicLogger> topic_logger_;
 
-  // Timeout value for each iteration of BT execution
-  std::chrono::milliseconds bt_loop_timeout_;
+  // Duration for each iteration of BT execution
+  std::chrono::milliseconds bt_loop_duration_;
 
   // Default timeout value while waiting for response from a server
   std::chrono::milliseconds default_server_timeout_;
