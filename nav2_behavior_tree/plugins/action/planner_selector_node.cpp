@@ -49,8 +49,9 @@ BT::NodeStatus PlannerSelector::tick()
 
   // This behavior always use the last selected planner received from the topic input.
   // When no input is specified it uses the default planner.
-  // If the default planner is not specified the behavior works in the "required planner mode":
-  // In this mode, if the planner selection is not received by the topic input the behavior returns FAILURE.
+  // If the default planner is not specified then we work in "required planner mode":
+  // In this mode, the behavior returns failure if the planner selection is not received from
+  // the topic input.
   if (last_selected_planner_.empty()) {
     std::string default_planner;
     getInput("default_planner", default_planner);
