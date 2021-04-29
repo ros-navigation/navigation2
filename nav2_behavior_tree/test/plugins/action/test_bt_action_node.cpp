@@ -201,7 +201,7 @@ std::shared_ptr<BT::BehaviorTreeFactory> BTActionNodeTestFixture::factory_ = nul
 std::shared_ptr<BT::Tree> BTActionNodeTestFixture::tree_ = nullptr;
 std::shared_ptr<std::thread> BTActionNodeTestFixture::server_thread_ = nullptr;
 
-TEST_F(BTActionNodeTestFixture, test_short_action)
+TEST_F(BTActionNodeTestFixture, test_server_timeout_success)
 {
   // create tree
   std::string xml_txt =
@@ -255,6 +255,33 @@ TEST_F(BTActionNodeTestFixture, test_short_action)
   for (size_t i = 0; i < expected.size(); ++i) {
     EXPECT_EQ(sequence[i], expected[i]);
   }
+
+  // start a new execution cycle with the previous BT to ensure previous state doesn't leak into
+  // the new cycle
+
+  // halt BT for a new execution cycle
+  tree_->haltTree();
+
+  // setting a large action server goal handling duration
+  action_server_->setHandleGoalSleepDuration(100ms);
+
+  // reset state variables
+  ticks = 0;
+  result = BT::NodeStatus::RUNNING;
+
+  // main BT execution loop
+  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
+    result = tree_->tickRoot();
+    ticks++;
+    loopRate.sleep();
+  }
+
+  // since the server timeout was smaller than the action server goal handling duration
+  // the BT should have failed
+  EXPECT_EQ(result, BT::NodeStatus::FAILURE);
+
+  // since the server timeout is 20ms and bt loop duration is 10ms, number of ticks should be 2
+  EXPECT_EQ(ticks, 2);
 }
 
 TEST_F(BTActionNodeTestFixture, test_server_timeout_failure)
@@ -299,6 +326,33 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_failure)
 
   // since the server timeout is 90ms and bt loop duration is 10ms, number of ticks should be 9
   EXPECT_EQ(ticks, 9);
+
+  // start a new execution cycle with the previous BT to ensure previous state doesn't leak into
+  // the new cycle
+
+  // halt BT for a new execution cycle
+  tree_->haltTree();
+
+  // setting a small action server goal handling duration
+  action_server_->setHandleGoalSleepDuration(25ms);
+
+  // reset state variables
+  ticks = 0;
+  result = BT::NodeStatus::RUNNING;
+
+  // main BT execution loop
+  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
+    result = tree_->tickRoot();
+    ticks++;
+    loopRate.sleep();
+  }
+
+  // since the server timeout was smaller than the action server goal handling duration
+  // the BT should have failed
+  EXPECT_EQ(result, BT::NodeStatus::SUCCESS);
+
+  // takes 3 ticks waiting for the action server acknowledgement and 3 more ticks to get goal result
+  EXPECT_EQ(ticks, 6);
 }
 
 int main(int argc, char ** argv)
