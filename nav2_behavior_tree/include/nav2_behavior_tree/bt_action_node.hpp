@@ -182,9 +182,10 @@ public:
     // if new goal was sent and action server has not yet responded
     // check the future goal handle
     if (!goal_handle_) {
-      if (!is_future_goal_handle_complete()) {
+      auto elapsed = (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
+      if (!is_future_goal_handle_complete(elapsed)) {
         // return RUNNING if there is still some time before timeout happens
-        if (time_elapsed_since_goal_sent_ < server_timeout_) {
+        if (elapsed < server_timeout_) {
           return BT::NodeStatus::RUNNING;
         }
         // if server has taken more time to respond than the specified timeout value return FAILURE
@@ -208,8 +209,9 @@ public:
       {
         goal_updated_ = false;
         send_new_goal();
-        if (!is_future_goal_handle_complete()) {
-          if (time_elapsed_since_goal_sent_ < server_timeout_) {
+        auto elapsed = (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
+        if (!is_future_goal_handle_complete(elapsed)) {
+          if (elapsed < server_timeout_) {
             return BT::NodeStatus::RUNNING;
           }
           RCLCPP_WARN(
@@ -316,23 +318,29 @@ protected:
         }
       };
 
-    goal_handle_.reset();
     future_goal_handle_ = action_client_->async_send_goal(goal_, send_goal_options);
     time_goal_sent_ = node_->now();
-    time_elapsed_since_goal_sent_ = std::chrono::milliseconds(0);
   }
 
   /**
    * @brief Function to check if the action server acknowledged a new goal
+   * @param elapsed Duration since the last goal was sent and future goal handle has not completed.
+   * After waiting for the future to complete, this value is incremented with the timeout value.
    * @return boolean True if future_goal_handle_ returns SUCCESS, False otherwise
    */
-  bool is_future_goal_handle_complete()
+  bool is_future_goal_handle_complete(std::chrono::milliseconds & elapsed)
   {
-    auto timeout = server_timeout_ > bt_loop_duration_ ? bt_loop_duration_ : server_timeout_;
-    auto result = rclcpp::spin_until_future_complete(node_, future_goal_handle_, timeout);
+    auto remaining = server_timeout_ - elapsed;
 
-    time_elapsed_since_goal_sent_ =
-      (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
+    // server has already timed out, no need to sleep
+    if (remaining <= std::chrono::milliseconds(0)) {
+      goal_handle_.reset();
+      return false;
+    }
+
+    auto timeout = remaining > bt_loop_duration_ ? bt_loop_duration_ : remaining;
+    auto result = rclcpp::spin_until_future_complete(node_, future_goal_handle_, timeout);
+    elapsed += timeout;
 
     if (result == rclcpp::FutureReturnCode::INTERRUPTED) {
       goal_handle_.reset();
@@ -385,7 +393,6 @@ protected:
   std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr>
   future_goal_handle_;
   rclcpp::Time time_goal_sent_;
-  std::chrono::milliseconds time_elapsed_since_goal_sent_;
 };
 
 }  // namespace nav2_behavior_tree

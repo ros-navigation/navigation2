@@ -1,3 +1,6 @@
+ament_add_gtest(test_bt_action_node test_bt_action_node.cpp)
+ament_target_dependencies(test_bt_action_node ${dependencies})
+
 ament_add_gtest(test_action_spin_action test_spin_action.cpp)
 target_link_libraries(test_action_spin_action nav2_spin_action_bt_node)
 ament_target_dependencies(test_action_spin_action ${dependencies})
