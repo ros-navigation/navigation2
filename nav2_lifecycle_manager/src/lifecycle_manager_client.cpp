@@ -28,17 +28,30 @@ using nav2_util::geometry_utils::orientationAroundZAxis;
 
 LifecycleManagerClient::LifecycleManagerClient(
   const std::string & name,
-  const std::string & ns, std::shared_ptr<rclcpp::Node> parent_node)
+  const std::string & ns)
 {
   manage_service_name_ = name + std::string("/manage_nodes");
   active_service_name_ = name + std::string("/is_active");
 
   // Create the node to use for all of the service clients
-  if (parent_node == nullptr) {
-    node_ = std::make_shared<rclcpp::Node>(name + "_service_client", ns);
-  } else {
-    node_ = parent_node;
-  }
+  node_ = std::make_shared<rclcpp::Node>(name + "_service_client", ns);
+
+  // Create the service clients
+  manager_client_ = std::make_shared<nav2_util::ServiceClient<ManageLifecycleNodes>>(
+    manage_service_name_, node_);
+  is_active_client_ = std::make_shared<nav2_util::ServiceClient<std_srvs::srv::Trigger>>(
+    active_service_name_, node_);
+}
+
+LifecycleManagerClient::LifecycleManagerClient(
+  const std::string & name,
+  std::shared_ptr<rclcpp::Node> parent_node)
+{
+  manage_service_name_ = name + std::string("/manage_nodes");
+  active_service_name_ = name + std::string("/is_active");
+
+  // Use parent node for service call and logging
+  node_ = parent_node;
 
   // Create the service clients
   manager_client_ = std::make_shared<nav2_util::ServiceClient<ManageLifecycleNodes>>(
@@ -87,7 +100,7 @@ LifecycleManagerClient::is_active(const std::chrono::nanoseconds timeout)
     node_->get_logger(), "Waiting for the %s service...",
     active_service_name_.c_str());
 
-  if (!is_active_client_->wait_for_service(timeout)) {
+  if (!is_active_client_->wait_for_service(std::chrono::seconds(1))) {
     return SystemStatus::TIMEOUT;
   }
 
@@ -101,7 +114,7 @@ LifecycleManagerClient::is_active(const std::chrono::nanoseconds timeout)
     return SystemStatus::TIMEOUT;
   }
 
-  if (response.get()->success) {
+  if (response->success) {
     return SystemStatus::ACTIVE;
   } else {
     return SystemStatus::INACTIVE;
@@ -131,7 +144,7 @@ LifecycleManagerClient::callService(uint8_t command, const std::chrono::nanoseco
     manage_service_name_.c_str());
   try {
     auto future_result = manager_client_->invoke(request, timeout);
-    return future_result.get()->success;
+    return future_result->success;
   } catch (std::runtime_error &) {
     return false;
   }

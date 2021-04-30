@@ -45,11 +45,21 @@ class LifecycleManagerClient
 public:
   /**
    * @brief A constructor for LifeCycleMangerClient
+   * @param name Managed node name
+   * @param ns Service node namespace
    */
   explicit LifecycleManagerClient(
     const std::string & name,
-    const std::string & ns = "",
-    std::shared_ptr<rclcpp::Node> parent_node = nullptr);
+    const std::string & ns = "");
+
+  /**
+   * @brief A constructor for LifeCycleMangerClient
+   * @param name Managed node name
+   * @param parent_node Node that execute the service calls
+   */
+  explicit LifecycleManagerClient(
+    const std::string & name,
+    std::shared_ptr<rclcpp::Node> parent_node);
 
   // Client-side interface to the Nav2 lifecycle manager
   /**
