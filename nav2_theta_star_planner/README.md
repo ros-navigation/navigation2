@@ -6,11 +6,11 @@ The Theta Star Planner is a global planning plugin meant to be used with the Nav
 - Is well suited for smaller robots of the omni-directional and differential drive kind
 - As it considers the costmap traversal cost during execution it tends to smoothen the paths automatically, thus mitigating the need to smoothen the path. (The presence of sharp turns depends on the resolution of the map, and it decreases as the map resolution increases.)
 - Allows to control the path behavior to either be any angle directed or to be in the middle of the spaces
-- The planner uses A\* search along with line of sight checks to form any-angle paths thus avoiding zig-zag paths that may be present in the usual implementation of A\*  
+- The planner uses A\* search along with line of sight checks to form any-angle paths thus avoiding zig-zag paths that may be present in the usual implementation of A\*
+- The algorithmic part of the planner has been segregated from the plugin part to allow for reusability.
 
 ## Metrics
-For the below example the planner took ~46ms (averaged value) to compute the path of 87.5m - 
-
+For the below example the planner took ~46ms (averaged value) to compute the path of 87.5m -
 ![example.png](img/00-37.png)
 
 The parameters were set to - `w_euc_cost: 1.0`, `w_traversal_cost: 5.0`, `w_heuristic_cost: 1.0` and the `global_costmap`'s `inflation_layer` parameters are set as - `cost_scaling_factor:5.0`, `inflation_radius: 5.5`
@@ -71,17 +71,17 @@ Do note that the `global_costmap`'s `inflation_layer` values recommended for the
 ## Usage Notes
 
 ### Tuning the Parameters
-Before starting off, do note that the costmap_cost(curr,neigh) component after being operated (before being multiplied to its parameter and being substituted in g(init_rclcpp)) varies from 0 to 1. Keep this in mind while tuning.
+Before starting off, do note that the costmap_cost(curr,neigh) component after being operated (ie before being multiplied to its parameter and being substituted in g(init_rclcpp)) varies from 0 to 1.
 
-This planner uses the costs associated with each cell from the `global_costmap` as a measure of the point's proximity to the obstacles. Providing a gentle potential field that covers the entirety of the region (with only small pocket like regions of cost = 0) is recommended in order to achieve paths that pass through the middle of the spaces. A good starting point could be to set the `inflation_layer`'s parameters as - `cost_scaling_factor:10.0`, `inflation_radius: 5.5` and then to decrease the value of `cost_scaling_factor` to achieve the said potential field.
+This planner uses the costs associated with each cell from the `global_costmap` as a measure of the point's proximity to the obstacles. Providing a gentle potential field that covers the entirety of the region (thus leading to only small pocket like regions of cost = 0) is recommended in order to achieve paths that pass through the middle of the spaces. A good starting point could be to set the `inflation_layer`'s parameters as - `cost_scaling_factor:10.0`, `inflation_radius: 5.5` and then to decrease the value of `cost_scaling_factor` to achieve the said potential field.
 
-Providing a gentle potential field over the region allows the planner to compensate for the increase in path lengths which would allow for an increase in the distance from the obstacles, which around a corner allows for naturally smoothing the turns and thus removing the requirement for the use of an external path smoother.
+Providing a gentle potential field over the region allows the planner to compensate for the increase in path lengths by leading to an increase in the distance from the obstacles, which around a corner allows for naturally smoothing the turns and thus removing the requirement for the use of an external path smoother.
 
 In order to achieve paths that stay in the middle of the spaces set `w_traversal_cost` at a higher value than `w_euc_cost`. To begin with, you can set the parameters to its default values and then increase the value of `w_traversal_cost`, while also decreasing `w_euc_cost` to allow for an increase in the path length thus letting the path to settle in the middle regions of the spaces with lower costs on the costmap. While tuning the planner's parameters you can also change the `inflation_layer`'s parameters to tune the behavior of the paths.
 
 ### Path Smoothing
-Because of how the cost function works, the output path has a natural tendency to form smooth curves around corners, though the smoothness of the path depends on how wide the turn is and the number of cells in that turns.
+Because of how the cost function works, the output path has a natural tendency to form smooth curves around corners, though the smoothness of the path depends on how wide the turn is, and the number of cells in that turn.
 
 This planner is recommended to be used with local planners like DWB or TEB (or other any planner / controllers that form a local trajectory to be traversed) as these take into account the abrupt turns which might arise due to the planner not being able to find a smoother turns owing to the aforementioned reasons.
 
-While smoother paths can be achieved by increasing the costmap resolution (ie using a costmap of 1cm resolution rather than a 5cm one) it is not recommended to do so as it comes at the cost of increased query times from the planner. Test the planners performance on the finer costmaps before making a switch to those costmaps.
+While smoother paths can be achieved by increasing the costmap resolution (ie using a costmap of 1cm resolution rather than a 5cm one) it is not recommended doing so as it comes at the cost of increased query times from the planner. Test the planners performance on the finer costmaps before making a switch to those costmaps.
