@@ -53,13 +53,17 @@ BtNavigator::BtNavigator()
     "nav2_distance_controller_bt_node",
     "nav2_speed_controller_bt_node",
     "nav2_truncate_path_action_bt_node",
-    "nav2_change_goal_node_bt_node",
     "nav2_recovery_node_bt_node",
     "nav2_pipeline_sequence_bt_node",
     "nav2_round_robin_node_bt_node",
     "nav2_transform_available_condition_bt_node",
     "nav2_time_expired_condition_bt_node",
     "nav2_distance_traveled_condition_bt_node"
+    "nav2_rotate_action_bt_node",
+    "nav2_translate_action_bt_node",
+    "nav2_is_battery_low_condition_bt_node",
+    "nav2_goal_updater_node_bt_node",
+    "nav2_navigate_to_pose_action_bt_node",
   };
 
   // Declare this node's parameters
