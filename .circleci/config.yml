@@ -289,7 +289,10 @@ _steps:
       name: Upload Code Coverage
       working_directory: /opt/overlay_ws
       command: |
-        curl -s https://codecov.io/bash | bash -s -- \
+        curl -s https://codecov.io/bash > codecov
+        local codecov_version=$(grep -o 'VERSION=\"[0-9\.]*\"' codecov | cut -d'"' -f2)
+        shasum -a 512 -c <(curl -s "https://raw.githubusercontent.com/codecov/codecov-bash/${codecov_version}/SHA512SUM" | grep -w "codecov")
+        bash codecov \
           -f "lcov/project_coverage.info" \
           -R "src/navigation2" \
           -t "${CODECOV_TOKEN}" \
