@@ -31,7 +31,7 @@ namespace nav2_behavior_tree
  * @tparam ServiceT Type of service
  */
 template<class ServiceT>
-class BtServiceNode : public BT::SyncActionNode
+class BtServiceNode : public BT::ActionNodeBase
 {
 public:
   /**
@@ -42,7 +42,7 @@ public:
   BtServiceNode(
     const std::string & service_node_name,
     const BT::NodeConfiguration & conf)
-  : BT::SyncActionNode(service_node_name, conf), service_node_name_(service_node_name)
+  : BT::ActionNodeBase(service_node_name, conf), service_node_name_(service_node_name)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
 
@@ -116,6 +116,15 @@ public:
       request_sent_ = true;
     }
     return check_future();
+  }
+
+  /**
+   * @brief The other (optional) override required by a BT service.
+   */
+  void halt() override
+  {
+    request_sent_ = false;
+    setStatus(BT::NodeStatus::IDLE);
   }
 
   /**

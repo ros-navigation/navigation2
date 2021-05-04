@@ -57,7 +57,7 @@ BtActionServer<ActionT>::BtActionServer(
     node->declare_parameter("bt_loop_duration", 10);
   }
   if (!node->has_parameter("default_server_timeout")) {
-    node->declare_parameter("default_server_timeout", 10);
+    node->declare_parameter("default_server_timeout", 20);
   }
   if (!node->has_parameter("enable_groot_monitoring")) {
     node->declare_parameter("enable_groot_monitoring", true);
