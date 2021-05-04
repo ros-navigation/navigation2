@@ -271,7 +271,6 @@ public:
       }
     }
 
-    goal_handle_.reset();
     setStatus(BT::NodeStatus::IDLE);
   }
 
