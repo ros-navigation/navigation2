@@ -237,8 +237,8 @@ namespace nav2_planner
 
       auto start_local = goal->start_local;
       auto goals_local = goal->goals_local;
-      auto start_global = goal->start_local;
-      auto goals_global = goal->goals_local;
+      auto start_global = goal->start_global;
+      auto goals_global = goal->goals_global;
 
       if (!goal->use_start)
       {
