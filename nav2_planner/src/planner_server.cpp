@@ -238,12 +238,12 @@ namespace nav2_planner
       auto start = goal->start_local;
       auto goals = goal->goals_local;
 
-      if (goal->mode == goal->LOCAL)
+      if (goal->mode == nav2_msgs::action::ComputePath::Goal::LOCAL)
       {
         auto start = goal->start_local;
         auto goals = goal->goals_local;
       }
-      else if (goal->mode == goal->GLOBAL)
+      else if (goal->mode == nav2_msgs::action::ComputePath::Goal::GLOBAL)
       {
         auto start = goal->start_global;
         auto goals = goal->goals_global;
