@@ -257,11 +257,17 @@ namespace nav2_planner
 
       if (goal->mode == nav2_msgs::action::ComputePath::Goal::LOCAL)
       {
+        RCLCPP_INFO(
+            get_logger(),
+            "Local mode selected.");
         result->path_and_boundary = getPlan(start_local, goals_local,
                                             goal->planner_id, goal->robots);
       }
       else if (goal->mode == nav2_msgs::action::ComputePath::Goal::GLOBAL)
       {
+        RCLCPP_INFO(
+            get_logger(),
+            "Global mode selected.");
         result->path_and_boundary = getPlan(start_global, goals_global,
                                             goal->planner_id, goal->robots);
       }
