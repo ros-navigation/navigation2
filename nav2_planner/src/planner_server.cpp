@@ -235,28 +235,15 @@ namespace nav2_planner
         return;
       }
 
-      auto start = goal->start_local;
-      auto goals = goal->goals_local;
-
-      if (goal->mode == nav2_msgs::action::ComputePath::Goal::LOCAL)
-      {
-        auto start = goal->start_local;
-        auto goals = goal->goals_local;
-      }
-      else if (goal->mode == nav2_msgs::action::ComputePath::Goal::GLOBAL)
-      {
-        auto start = goal->start_global;
-        auto goals = goal->goals_global;
-      }
-      else
-      {
-        return;
-      }
+      auto start_local = goal->start_local;
+      auto goals_local = goal->goals_local;
+      auto start_global = goal->start_local;
+      auto goals_global = goal->goals_local;
 
       if (!goal->use_start)
       {
-        // We might have to revisit this about getRobotPose if we are using GPS
-        if (!costmap_ros_->getRobotPose(start))
+        // TODO: We might have to revisit this about getRobotPose if we are using GPS
+        if (!costmap_ros_->getRobotPose(start_local))
         {
           action_server_->terminate_current();
           return;
@@ -268,7 +255,16 @@ namespace nav2_planner
         goal = action_server_->accept_pending_goal();
       }
 
-      result->path_and_boundary = getPlan(start, goals, goal->planner_id, goal->robots);
+      if (goal->mode == nav2_msgs::action::ComputePath::Goal::LOCAL)
+      {
+        result->path_and_boundary = getPlan(start_local, goals_local,
+                                            goal->planner_id, goal->robots);
+      }
+      else if (goal->mode == nav2_msgs::action::ComputePath::Goal::GLOBAL)
+      {
+        result->path_and_boundary = getPlan(start_global, goals_global,
+                                            goal->planner_id, goal->robots);
+      }
 
       if (result->path_and_boundary.path_local.empty() &&
           result->path_and_boundary.path_global.empty())
