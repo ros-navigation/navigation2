@@ -68,7 +68,7 @@ protected:
   /**
    * @brief Configures member variables
    *
-   * Initializes action server for "FollowWaypoints"
+   * Initializes action server for "follow_waypoints"
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */

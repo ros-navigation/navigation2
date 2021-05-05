@@ -26,19 +26,39 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * @brief A BT::ConditionNode that returns SUCCESS if there is a valid transform
+ * between two specified frames and FAILURE otherwise
+ */
 class TransformAvailableCondition : public BT::ConditionNode
 {
 public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::TransformAvailableCondition
+   * @param condition_name Name for the XML tag for this node
+   * @param conf BT node configuration
+   */
   TransformAvailableCondition(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf);
 
   TransformAvailableCondition() = delete;
 
+  /**
+   * @brief A destructor for nav2_behavior_tree::TransformAvailableCondition
+   */
   ~TransformAvailableCondition();
 
+  /**
+   * @brief The main override required by a BT action
+   * @return BT::NodeStatus Status of tick execution
+   */
   BT::NodeStatus tick() override;
 
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     return {

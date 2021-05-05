@@ -38,7 +38,7 @@ LifecycleManager::LifecycleManager()
 
   // The list of names is parameterized, allowing this module to be used with a different set
   // of nodes
-  declare_parameter("node_names");
+  declare_parameter("node_names", rclcpp::PARAMETER_STRING_ARRAY);
   declare_parameter("autostart", rclcpp::ParameterValue(false));
   declare_parameter("bond_timeout", 4.0);
 
@@ -57,11 +57,8 @@ LifecycleManager::LifecycleManager()
     get_name() + std::string("/is_active"),
     std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3));
 
-  auto service_options = rclcpp::NodeOptions().arguments(
-    {"--ros-args", "-r", std::string("__node:=") + get_name() + "_service_client", "--"});
   auto bond_options = rclcpp::NodeOptions().arguments(
     {"--ros-args", "-r", std::string("__node:=") + get_name() + "_bond_client", "--"});
-  service_client_node_ = std::make_shared<rclcpp::Node>("_", service_options);
   bond_client_node_ = std::make_shared<rclcpp::Node>("_", bond_options);
   bond_node_thread_ = std::make_unique<nav2_util::NodeThread>(bond_client_node_);
 
@@ -79,11 +76,15 @@ LifecycleManager::LifecycleManager()
   transition_label_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] =
     std::string("Shutting down ");
 
-  createLifecycleServiceClients();
-
-  if (autostart_) {
-    startup();
-  }
+  init_timer_ = this->create_wall_timer(
+    std::chrono::nanoseconds(10),
+    [this]() -> void {
+      init_timer_->cancel();
+      createLifecycleServiceClients();
+      if (autostart_) {
+        startup();
+      }
+    });
 }
 
 LifecycleManager::~LifecycleManager()
@@ -131,7 +132,7 @@ LifecycleManager::createLifecycleServiceClients()
   message("Creating and initializing lifecycle service clients");
   for (auto & node_name : node_names_) {
     node_map_[node_name] =
-      std::make_shared<LifecycleServiceClient>(node_name, service_client_node_);
+      std::make_shared<LifecycleServiceClient>(node_name, shared_from_this());
   }
 }
 

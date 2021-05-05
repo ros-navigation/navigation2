@@ -14,6 +14,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav2_core REQUIRED)
 find_package(tf2_ros REQUIRED)
 
 nav2_package()
@@ -30,11 +31,6 @@ add_executable(${executable_name}
 
 set(library_name ${executable_name}_core)
 
-add_library(${library_name} SHARED
-  src/bt_navigator.cpp
-  src/ros_topic_logger.cpp
-)
-
 set(dependencies
   rclcpp
   rclcpp_action
@@ -47,7 +43,14 @@ set(dependencies
   behaviortree_cpp_v3
   std_srvs
   nav2_util
+  nav2_core
   tf2_ros
+)
+
+add_library(${library_name} SHARED
+  src/bt_navigator.cpp
+  src/navigators/navigate_to_pose.cpp
+  src/navigators/navigate_through_poses.cpp
 )
 
 ament_target_dependencies(${executable_name}
@@ -82,5 +85,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-
+ament_export_libraries(${library_name})
+ament_export_dependencies(${dependencies})
 ament_package()

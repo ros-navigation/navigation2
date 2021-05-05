@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <limits>
 
 #include "nav2_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
@@ -54,6 +55,8 @@ ControllerServer::ControllerServer()
   declare_parameter("min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
 
   declare_parameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
+
+  declare_parameter("failure_tolerance", rclcpp::ParameterValue(0.0));
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -109,6 +112,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   std::string speed_limit_topic;
   get_parameter("speed_limit_topic", speed_limit_topic);
+  get_parameter("failure_tolerance", failure_tolerance_);
 
   costmap_ros_->on_configure(state);
 
@@ -297,6 +301,7 @@ void ControllerServer::computeControl()
     setPlannerPath(action_server_->get_current_goal()->path);
     progress_checker_->reset();
 
+    last_valid_cmd_time_ = now();
     rclcpp::WallRate loop_rate(controller_frequency_);
     while (rclcpp::ok()) {
       if (action_server_ == nullptr || !action_server_->is_server_active()) {
@@ -369,6 +374,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
     get_logger(), "Path end point is (%.2f, %.2f)",
     end_pose.pose.position.x, end_pose.pose.position.y);
   end_pose_ = end_pose.pose;
+  current_path_ = path;
 }
 
 void ControllerServer::computeAndPublishVelocity()
@@ -385,14 +391,58 @@ void ControllerServer::computeAndPublishVelocity()
 
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
 
-  auto cmd_vel_2d =
-    controllers_[current_controller_]->computeVelocityCommands(
-    pose,
-    nav_2d_utils::twist2Dto3D(twist));
+  geometry_msgs::msg::TwistStamped cmd_vel_2d;
+
+  try {
+    cmd_vel_2d =
+      controllers_[current_controller_]->computeVelocityCommands(
+      pose,
+      nav_2d_utils::twist2Dto3D(twist),
+      goal_checker_.get());
+    last_valid_cmd_time_ = now();
+  } catch (nav2_core::PlannerException & e) {
+    if (failure_tolerance_ > 0 || failure_tolerance_ == -1.0) {
+      RCLCPP_WARN(this->get_logger(), e.what());
+      cmd_vel_2d.twist.angular.x = 0;
+      cmd_vel_2d.twist.angular.y = 0;
+      cmd_vel_2d.twist.angular.z = 0;
+      cmd_vel_2d.twist.linear.x = 0;
+      cmd_vel_2d.twist.linear.y = 0;
+      cmd_vel_2d.twist.linear.z = 0;
+      cmd_vel_2d.header.frame_id = costmap_ros_->getBaseFrameID();
+      cmd_vel_2d.header.stamp = now();
+      if ((now() - last_valid_cmd_time_).seconds() > failure_tolerance_ &&
+        failure_tolerance_ != -1.0)
+      {
+        throw nav2_core::PlannerException("Controller patience exceeded");
+      }
+    } else {
+      throw nav2_core::PlannerException(e.what());
+    }
+  }
 
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);
-  feedback->distance_to_goal = nav2_util::geometry_utils::euclidean_distance(end_pose_, pose.pose);
+
+  // Find the closest pose to current pose on global path
+  nav_msgs::msg::Path & current_path = current_path_;
+  auto find_closest_pose_idx =
+    [&pose, &current_path]() {
+      size_t closest_pose_idx = 0;
+      double curr_min_dist = std::numeric_limits<double>::max();
+      for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
+        double curr_dist = nav2_util::geometry_utils::euclidean_distance(
+          pose, current_path.poses[curr_idx]);
+        if (curr_dist < curr_min_dist) {
+          curr_min_dist = curr_dist;
+          closest_pose_idx = curr_idx;
+        }
+      }
+      return closest_pose_idx;
+    };
+
+  feedback->distance_to_goal =
+    nav2_util::geometry_utils::calculate_path_length(current_path_, find_closest_pose_idx());
   action_server_->publish_feedback(feedback);
 
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
@@ -467,11 +517,7 @@ void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::Shar
 {
   ControllerMap::iterator it;
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
-    if (!msg->percentage) {
-      RCLCPP_ERROR(get_logger(), "Speed limit in absolute values is not implemented yet");
-      return;
-    }
-    it->second->setSpeedLimit(msg->speed_limit);
+    it->second->setSpeedLimit(msg->speed_limit, msg->percentage);
   }
 }
 

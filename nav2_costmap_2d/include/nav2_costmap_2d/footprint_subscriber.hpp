@@ -24,30 +24,49 @@
 
 namespace nav2_costmap_2d
 {
-
+/**
+ * @class FootprintSubscriber
+ * @brief Subscriber to the footprint topic to get current robot footprint
+ * (if changing) for use in collision avoidance
+ */
 class FootprintSubscriber
 {
 public:
+  /**
+   * @brief A constructor
+   */
   FootprintSubscriber(
     const nav2_util::LifecycleNode::WeakPtr & parent,
     const std::string & topic_name,
     const double & footprint_timeout);
 
+  /**
+   * @brief A constructor
+   */
   FootprintSubscriber(
     const rclcpp::Node::WeakPtr & parent,
     const std::string & topic_name,
     const double & footprint_timeout);
 
+  /**
+   * @brief A destructor
+   */
   ~FootprintSubscriber() {}
 
-  // Returns an oriented robot footprint at current time.
+  /**
+   * @brief Returns an oriented robot footprint at current time.
+   */
   bool getFootprint(
     std::vector<geometry_msgs::msg::Point> & footprint,
     rclcpp::Duration & valid_footprint_timeout);
+  /**
+   * @brief Returns an oriented robot footprint without timeout
+   */
   bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint);
 
-  // Returns an oriented robot footprint.
-  // The second parameter is the time the fooptrint was at this orientation.
+  /**
+   * @brief Returns an oriented robot footprint at stamped time.
+   */
   bool getFootprint(
     std::vector<geometry_msgs::msg::Point> & footprint,
     rclcpp::Time & stamp, rclcpp::Duration valid_footprint_timeout);
@@ -55,6 +74,9 @@ public:
 protected:
   rclcpp::Clock::SharedPtr clock_;
 
+  /**
+   * @brief Callback to process new footprint updates.
+   */
   void footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg);
 
   std::string topic_name_;

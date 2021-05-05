@@ -7,8 +7,8 @@ navigation2/tools/bt2img.py \
   --image_out navigation2/nav2_bt_navigator/doc/simple_parallel \
   --legend navigation2/nav2_bt_navigator/doc/legend
 navigation2/tools/bt2img.py \
-  --behavior_tree navigation2/nav2_bt_navigator/behavior_trees/navigate_w_replanning_and_recovery.xml \
+  --behavior_tree navigation2/nav2_bt_navigator/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml \
   --image_out navigation2/nav2_bt_navigator/doc/parallel_w_recovery
 navigation2/tools/bt2img.py \
-  --behavior_tree navigation2/nav2_bt_navigator/behavior_trees/navigate_w_replanning_and_round_robin_recovery.xml \
-  --image_out navigation2/nav2_bt_navigator/doc/parallel_w_round_robin_recovery
+  --behavior_tree navigation2/nav2_bt_navigator/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml \
+  --image_out navigation2/nav2_bt_navigator/doc/parallel_through_poses_w_recovery

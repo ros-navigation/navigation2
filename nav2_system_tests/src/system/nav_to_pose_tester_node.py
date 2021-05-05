@@ -54,9 +54,9 @@ class NavTester(Node):
         self.goal_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
 
         pose_qos = QoSProfile(
-          durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
-          reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
-          history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+          durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+          reliability=QoSReliabilityPolicy.RELIABLE,
+          history=QoSHistoryPolicy.KEEP_LAST,
           depth=1)
 
         self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
@@ -132,7 +132,7 @@ class NavTester(Node):
                 if not self.grootMonitoringGetStatus():
                     self.error_msg('Failed GROOT_BT - Get Status from ZMQ Publisher')
                     future_return = False
-            except Exception as e:
+            except Exception as e:  # noqa: B902
                 self.error_msg('Failed GROOT_BT - ZMQ Tests: ' + e.__doc__ + e.message)
                 future_return = False
 
@@ -282,7 +282,7 @@ class NavTester(Node):
             rclpy.spin_until_future_complete(self, future)
             future.result()
             self.info_msg('Shutting down navigation lifecycle manager complete.')
-        except Exception as e:
+        except Exception as e:  # noqa: B902
             self.error_msg('Service call failed %r' % (e,))
         transition_service = 'lifecycle_manager_localization/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
@@ -297,7 +297,7 @@ class NavTester(Node):
             rclpy.spin_until_future_complete(self, future)
             future.result()
             self.info_msg('Shutting down localization lifecycle manager complete')
-        except Exception as e:
+        except Exception as e:  # noqa: B902
             self.error_msg('Service call failed %r' % (e,))
 
     def wait_for_initial_pose(self):

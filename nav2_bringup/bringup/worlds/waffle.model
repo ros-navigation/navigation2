@@ -137,6 +137,7 @@
             </linear_acceleration>
           </imu>
           <plugin name="turtlebot3_imu" filename="libgazebo_ros_imu_sensor.so">
+            <initial_orientation_as_reference>false</initial_orientation_as_reference>
             <ros>
               <!-- <namespace>/tb3</namespace> -->
               <remapping>~/out:=imu</remapping>
@@ -266,7 +267,7 @@
           <pose>0.0 0.144 0.023 0 0 0</pose>
           <geometry>
             <mesh>
-              <uri>model://turtlebot3_waffle/meshes/left_tire.dae</uri>
+              <uri>model://turtlebot3_waffle/meshes/tire.dae</uri>
               <scale>0.001 0.001 0.001</scale>
             </mesh>
           </geometry>
@@ -324,7 +325,7 @@
           <pose>0.0 -0.144 0.023 0 0 0</pose>
           <geometry>
             <mesh>
-              <uri>model://turtlebot3_waffle/meshes/right_tire.dae</uri>
+              <uri>model://turtlebot3_waffle/meshes/tire.dae</uri>
               <scale>0.001 0.001 0.001</scale>
             </mesh>
           </geometry>

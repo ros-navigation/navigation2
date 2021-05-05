@@ -23,6 +23,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch import LaunchService
 from launch.actions import ExecuteProcess, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.launch_context import LaunchContext
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
@@ -52,9 +53,11 @@ def generate_launch_description():
         root_key='',
         param_rewrites=param_substitutions,
         convert_types=True)
-
+    context = LaunchContext()
+    new_yaml = configured_params.perform(context)
     return LaunchDescription([
-        SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
+        SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+        SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
 
         # Launch gazebo server for simulation
         ExecuteProcess(
@@ -90,14 +93,14 @@ def generate_launch_description():
             executable='map_server',
             name='filter_mask_server',
             output='screen',
-            parameters=[configured_params]),
+            parameters=[new_yaml]),
 
         Node(
             package='nav2_map_server',
             executable='costmap_filter_info_server',
             name='costmap_filter_info_server',
             output='screen',
-            parameters=[configured_params]),
+            parameters=[new_yaml]),
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -106,7 +109,7 @@ def generate_launch_description():
                               'use_namespace': 'False',
                               'map': map_yaml_file,
                               'use_sim_time': 'True',
-                              'params_file': configured_params,
+                              'params_file': new_yaml,
                               'bt_xml_file': bt_navigator_xml,
                               'autostart': 'True'}.items()),
     ])

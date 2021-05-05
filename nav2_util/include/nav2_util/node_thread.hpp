@@ -21,17 +21,31 @@
 
 namespace nav2_util
 {
-
+/**
+ * @class nav2_util::NodeThread
+ * @brief A background thread to process node callbacks
+ */
 class NodeThread
 {
 public:
+  /**
+   * @brief A background thread to process node callbacks constructor
+   * @param node_base Interface to Node to spin in thread
+   */
   explicit NodeThread(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base);
 
+  /**
+   * @brief A background thread to process node callbacks constructor
+   * @param node Node pointer to spin in thread
+   */
   template<typename NodeT>
   explicit NodeThread(NodeT node)
   : NodeThread(node->get_node_base_interface())
   {}
 
+  /**
+   * @brief A destructor
+   */
   ~NodeThread();
 
 protected:

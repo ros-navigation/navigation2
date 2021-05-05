@@ -25,7 +25,7 @@ import rclpy
 
 def main():
     # Get input arguments from user
-    parser = argparse.ArgumentParser(description='Spawn Robot into Gazebo with navigation2')
+    parser = argparse.ArgumentParser(description='Spawn Robot into Gazebo with Nav2')
     parser.add_argument('-n', '--robot_name', type=str, default='robot',
                         help='Name of the robot to spawn')
     parser.add_argument('-ns', '--robot_namespace', type=str, default='robot',
@@ -99,7 +99,7 @@ def main():
 
     node.get_logger().info('Sending service request to `/spawn_entity`')
     future = client.call_async(request)
-    rclpy.spin_until_future_complete(node, future, args.timeout)
+    rclpy.spin_until_future_complete(node, future, timeout_sec=args.timeout)
     if future.result() is not None:
         print('response: %r' % future.result())
     else:

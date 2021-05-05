@@ -29,43 +29,89 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * @enum nav2_behavior_tree::BtStatus
+ * @brief An enum class representing BT execution status
+ */
 enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
 
+/**
+ * @class nav2_behavior_tree::BehaviorTreeEngine
+ * @brief A class to create and handle behavior trees
+ */
 class BehaviorTreeEngine
 {
 public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::BehaviorTreeEngine
+   * @param plugin_libraries vector of BT plugin library names to load
+   */
   explicit BehaviorTreeEngine(const std::vector<std::string> & plugin_libraries);
   virtual ~BehaviorTreeEngine() {}
 
+  /**
+   * @brief Function to execute a BT at a specific rate
+   * @param tree BT to execute
+   * @param onLoop Function to execute on each iteration of BT execution
+   * @param cancelRequested Function to check if cancel was requested during BT execution
+   * @param loopTimeout Time period for each iteration of BT execution
+   * @return nav2_behavior_tree::BtStatus Status of BT execution
+   */
   BtStatus run(
     BT::Tree * tree,
     std::function<void()> onLoop,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
+  /**
+   * @brief Function to create a BT from a XML string
+   * @param xml_string XML string representing BT
+   * @param blackboard Blackboard for BT
+   * @return BT::Tree Created behavior tree
+   */
   BT::Tree createTreeFromText(
     const std::string & xml_string,
     BT::Blackboard::Ptr blackboard);
 
+  /**
+   * @brief Function to create a BT from an XML file
+   * @param file_path Path to BT XML file
+   * @param blackboard Blackboard for BT
+   * @return BT::Tree Created behavior tree
+   */
   BT::Tree createTreeFromFile(
     const std::string & file_path,
     BT::Blackboard::Ptr blackboard);
 
+  /**
+   * @brief Add groot monitor to publish BT status changes
+   * @param tree BT to monitor
+   * @param publisher_port ZMQ publisher port for the Groot monitor
+   * @param server_port ZMQ server port for the Groot monitor
+   * @param max_msg_per_second Maximum number of messages that can be sent per second
+   */
   void addGrootMonitoring(
     BT::Tree * tree,
     uint16_t publisher_port,
     uint16_t server_port,
     uint16_t max_msg_per_second = 25);
 
+  /**
+   * @brief Reset groot monitor
+   */
   void resetGrootMonitor();
 
-  // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
+  /**
+   * @brief Function to explicitly reset all BT nodes to initial state
+   * @param root_node Pointer to BT root node
+   */
   void haltAllActions(BT::TreeNode * root_node);
 
 protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
-  std::unique_ptr<BT::PublisherZMQ> groot_monitor_;
+
+  static inline std::unique_ptr<BT::PublisherZMQ> groot_monitor_;
 };
 
 }  // namespace nav2_behavior_tree

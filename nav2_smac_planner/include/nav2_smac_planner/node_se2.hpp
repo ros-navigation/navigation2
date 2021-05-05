@@ -128,6 +128,8 @@ struct MotionTable
   float cost_penalty;
   float reverse_penalty;
   ompl::base::StateSpacePtr state_space;
+  std::vector<std::vector<double>> delta_xs;
+  std::vector<std::vector<double>> delta_ys;
 };
 
 /**

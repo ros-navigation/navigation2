@@ -47,6 +47,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "nav2_core/goal_checker.hpp"
 
 
 namespace nav2_core
@@ -107,17 +108,22 @@ public:
    *
    * @param pose Current robot pose
    * @param velocity Current robot velocity
+   * @param goal_checker Pointer to the current goal checker the task is utilizing
    * @return The best command for the robot to drive
    */
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
-    const geometry_msgs::msg::Twist & velocity) = 0;
+    const geometry_msgs::msg::Twist & velocity,
+    nav2_core::GoalChecker * goal_checker) = 0;
 
   /**
    * @brief Limits the maximum linear speed of the robot.
-   * @param speed_limit expressed in percentage from maximum robot speed.
+   * @param speed_limit expressed in absolute value (in m/s)
+   * or in percentage from maximum robot speed.
+   * @param percentage Setting speed limit in percentage if true
+   * or in absolute values in false case.
    */
-  virtual void setSpeedLimit(const double & speed_limit) = 0;
+  virtual void setSpeedLimit(const double & speed_limit, const bool & percentage) = 0;
 };
 
 }  // namespace nav2_core

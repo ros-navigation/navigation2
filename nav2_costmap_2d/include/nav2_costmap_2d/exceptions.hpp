@@ -40,7 +40,11 @@
 
 namespace nav2_costmap_2d
 {
-
+/**
+ * @class CollisionCheckerException
+ * @brief Exceptions thrown if collision checker determines a pose is in
+ * collision with the environment costmap
+ */
 class CollisionCheckerException : public std::runtime_error
 {
 public:

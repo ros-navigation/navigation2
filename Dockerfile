@@ -2,7 +2,7 @@
 # Build context must be the /navigation2 root folder for COPY.
 # Example build command:
 # export UNDERLAY_MIXINS="debug ccache"
-# export OVERLAY_MIXINS="debug ccache coverage"
+# export OVERLAY_MIXINS="debug ccache coverage-gcc"
 # docker build -t nav2:latest \
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./

@@ -8,5 +8,5 @@ ament_add_test(test_failure_navigator
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map_circular.yaml
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/turtlebot3_ros2_demo.world
     GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
-    BT_NAVIGATOR_XML=navigate_w_replanning_and_recovery.xml
+    BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
 )

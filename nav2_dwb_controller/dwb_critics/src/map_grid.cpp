@@ -35,6 +35,8 @@
 #include "dwb_critics/map_grid.hpp"
 #include <cmath>
 #include <string>
+#include <vector>
+#include <utility>
 #include <algorithm>
 #include <memory>
 #include "dwb_core/exceptions.hpp"
@@ -164,23 +166,24 @@ double MapGridCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
   return getScore(cell_x, cell_y);
 }
 
-void MapGridCritic::addCriticVisualization(sensor_msgs::msg::PointCloud & pc)
+void MapGridCritic::addCriticVisualization(
+  std::vector<std::pair<std::string, std::vector<float>>> & cost_channels)
 {
-  sensor_msgs::msg::ChannelFloat32 grid_scores;
-  grid_scores.name = name_;
+  std::pair<std::string, std::vector<float>> grid_scores;
+  grid_scores.first = name_;
 
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   unsigned int size_x = costmap->getSizeInCellsX();
   unsigned int size_y = costmap->getSizeInCellsY();
-  grid_scores.values.resize(size_x * size_y);
+  grid_scores.second.resize(size_x * size_y);
   unsigned int i = 0;
   for (unsigned int cy = 0; cy < size_y; cy++) {
     for (unsigned int cx = 0; cx < size_x; cx++) {
-      grid_scores.values[i] = getScore(cx, cy);
+      grid_scores.second[i] = getScore(cx, cy);
       i++;
     }
   }
-  pc.channels.push_back(grid_scores);
+  cost_channels.push_back(grid_scores);
 }
 
 }  // namespace dwb_critics

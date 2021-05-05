@@ -113,7 +113,7 @@ public:
 
   inline KinematicParameters getKinematics() {return *kinematics_.load();}
 
-  void setSpeedLimit(const double & speed_limit);
+  void setSpeedLimit(const double & speed_limit, const bool & percentage);
 
   using Ptr = std::shared_ptr<KinematicsHandler>;
 

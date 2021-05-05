@@ -36,7 +36,7 @@ using nav2_msgs::srv::ManageLifecycleNodes;
 /**
  * @class nav2_lifecycle_manager::LifecycleManager
  * @brief Implements service interface to transition the lifecycle nodes of
- * Navigation2 stack. It receives transition request and then uses lifecycle
+ * Nav2 stack. It receives transition request and then uses lifecycle
  * interface to change lifecycle node's state.
  */
 class LifecycleManager : public rclcpp::Node
@@ -52,8 +52,7 @@ public:
   ~LifecycleManager();
 
 protected:
-  // The ROS node to use when calling lifecycle services
-  rclcpp::Node::SharedPtr service_client_node_;
+  // The ROS node to create bond
   rclcpp::Node::SharedPtr bond_client_node_;
   std::unique_ptr<nav2_util::NodeThread> bond_node_thread_;
 
@@ -169,6 +168,7 @@ protected:
   void message(const std::string & msg);
 
   // Timer thread to look at bond connections
+  rclcpp::TimerBase::SharedPtr init_timer_;
   rclcpp::TimerBase::SharedPtr bond_timer_;
   std::chrono::milliseconds bond_timeout_;
 

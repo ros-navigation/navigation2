@@ -51,10 +51,20 @@ void LimitedAccelGenerator::initialize(
   plugin_name_ = plugin_name;
   StandardTrajectoryGenerator::initialize(nh, plugin_name_);
 
-  nav2_util::declare_parameter_if_not_declared(nh, plugin_name + ".sim_period");
-
-  if (nh->get_parameter(plugin_name + ".sim_period", acceleration_time_)) {
-  } else {
+  try {
+    nav2_util::declare_parameter_if_not_declared(
+      nh, plugin_name + ".sim_period", rclcpp::PARAMETER_DOUBLE);
+    if (!nh->get_parameter(plugin_name + ".sim_period", acceleration_time_)) {
+      // This actually should never appear, since declare_parameter_if_not_declared()
+      // completed w/o exceptions guarantee that static parameter will be initialized
+      // with some value. However for reliability we should also process the case
+      // when get_parameter() will return a failure for some other reasons.
+      throw std::runtime_error("Failed to get 'sim_period' value");
+    }
+  } catch (std::exception &) {
+    RCLCPP_WARN(
+      rclcpp::get_logger("LimitedAccelGenerator"),
+      "'sim_period' parameter is not set for %s", plugin_name.c_str());
     double controller_frequency = nav_2d_utils::searchAndGetParam(
       nh, "controller_frequency", 20.0);
     if (controller_frequency > 0) {
