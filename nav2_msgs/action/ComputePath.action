@@ -10,7 +10,7 @@ geographic_msgs/GeoPath goals_global
 geographic_msgs/GeoPoseStamped start_global
 
 string planner_id
-bool use_start # If true, use current robot pose as path start, if false, use start above instead
+bool use_start # If false, use robot pose as path start from , if true, use start above instead
 
 int8 robots
 ---
