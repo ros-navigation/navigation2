@@ -13,6 +13,7 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(geographic_msgs REQUIRED)
 
 nav2_package()
 
@@ -21,6 +22,7 @@ set(dependencies
   rclcpp_lifecycle
   std_msgs
   geometry_msgs
+  geographic_msgs
   nav2_costmap_2d
   pluginlib
   visualization_msgs
