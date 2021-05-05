@@ -17,6 +17,7 @@ find_package(builtin_interfaces REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(geographic_msgs REQUIRED)
 
 nav2_package()
 
@@ -36,6 +37,7 @@ set(dependencies
   nav2_msgs
   nav_msgs
   geometry_msgs
+  geographic_msgs
   builtin_interfaces
   tf2_ros
   nav2_costmap_2d
