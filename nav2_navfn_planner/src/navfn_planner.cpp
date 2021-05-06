@@ -117,32 +117,29 @@ namespace nav2_navfn_planner
       const int &robots)
   {
     (void)robots;
-    (void)goal;
-    (void)start;
-    RCLCPP_INFO(node_->get_logger(), "Yeloooooooooooooooooo");
     nav2_msgs::msg::PathAndBoundary path_and_boundary;
-    // // Update planner based on the new costmap size
-    // if (isPlannerOutOfDate())
-    // {
-    //   planner_->setNavArr(
-    //       costmap_->getSizeInCellsX(),
-    //       costmap_->getSizeInCellsY());
-    // }
+    // Update planner based on the new costmap size
+    if (isPlannerOutOfDate())
+    {
+      planner_->setNavArr(
+          costmap_->getSizeInCellsX(),
+          costmap_->getSizeInCellsY());
+    }
 
-    // nav_msgs::msg::Path path;
+    nav_msgs::msg::Path path;
 
-    // if (!makePlan(start.pose, goal[0].pose, tolerance_, path))
-    // {
-    //   RCLCPP_WARN(
-    //       node_->get_logger(), "%s: failed to create plan with "
-    //                            "tolerance %.2f.",
-    //       name_.c_str(), tolerance_);
-    // }
-    // path_and_boundary.path_local.push_back(path);
+    if (!makePlan(start.pose, goal.poses[0].pose, tolerance_, path))
+    {
+      RCLCPP_WARN(
+          node_->get_logger(), "%s: failed to create plan with "
+                               "tolerance %.2f.",
+          name_.c_str(), tolerance_);
+    }
+    path_and_boundary.path_local.push_back(path);
     return path_and_boundary;
   }
 
-  nav2_msgs::msg::PathAndBoundary createPlan(
+  nav2_msgs::msg::PathAndBoundary NavfnPlanner::createPlan(
       const geographic_msgs::msg::GeoPoseStamped &start,
       const geographic_msgs::msg::GeoPath &goal,
       const int &robots)
@@ -150,7 +147,6 @@ namespace nav2_navfn_planner
     (void)robots;
     (void)goal;
     (void)start;
-    // RCLCPP_INFO(node_->get_logger(), "Meloooooooooooooooooo");
     nav2_msgs::msg::PathAndBoundary path_and_boundary;
     return path_and_boundary;
   }
