@@ -87,7 +87,10 @@ lcov \
   --rc lcov_branch_coverage=0
 
 if [ $COVERAGE_REPORT_VIEW = codecovio ]; then
-  bash <(curl -s https://codecov.io/bash) \
+  curl -s https://codecov.io/bash > codecov
+  local codecov_version=$(grep -o 'VERSION=\"[0-9\.]*\"' codecov | cut -d'"' -f2)
+  shasum -a 512 -c <(curl -s "https://raw.githubusercontent.com/codecov/codecov-bash/${codecov_version}/SHA512SUM" | grep -w "codecov")
+  bash codecov \
     -f ${LCOVDIR}/project_coverage.info \
     -R src/navigation2
 elif [ $COVERAGE_REPORT_VIEW = genhtml ]; then
