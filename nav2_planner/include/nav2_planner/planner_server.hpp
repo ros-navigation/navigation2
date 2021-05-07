@@ -119,7 +119,7 @@ namespace nav2_planner
    * @brief Publish a path for visualization purposes
    * @param path Reference to Global Path
    */
-    void publishPlan(const nav_msgs::msg::Path &path);
+    void publishPlan(const nav2_msgs::msg::PathAndBoundary &path_boundary);
 
     // Planner
     PlannerMap planners_;
@@ -143,7 +143,7 @@ namespace nav2_planner
     nav2_costmap_2d::Costmap2D *costmap_;
 
     // Publishers for the path
-    rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
+    rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::PathAndBoundary>::SharedPtr plan_publisher_;
   };
 
 } // namespace nav2_planner

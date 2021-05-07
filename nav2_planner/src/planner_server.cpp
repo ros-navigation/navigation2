@@ -136,7 +136,7 @@ namespace nav2_planner
     }
 
     // Initialize pubs & subs
-    plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
+    plan_publisher_ = create_publisher<nav2_msgs::msg::PathAndBoundary>("plan", 1);
 
     // Create the action server that we implement with our navigateToPose method
     action_server_ = std::make_unique<ActionServer>(
@@ -287,9 +287,7 @@ namespace nav2_planner
           get_logger(),
           "Found valid path of size");
 
-      // Publish the plan for visualization purposes
-      // TODO
-      // publishPlan(result->path);
+      publishPlan(result->path_and_boundary);
 
       auto cycle_duration = steady_clock_.now() - start_time;
       result->planning_time = cycle_duration;
@@ -361,9 +359,9 @@ namespace nav2_planner
   }
 
   void
-  PlannerServer::publishPlan(const nav_msgs::msg::Path &path)
+  PlannerServer::publishPlan(const nav2_msgs::msg::PathAndBoundary &path_boundary)
   {
-    auto msg = std::make_unique<nav_msgs::msg::Path>(path);
+    auto msg = std::make_unique<nav2_msgs::msg::PathAndBoundary>(path_boundary);
     if (
         plan_publisher_->is_activated() &&
         this->count_subscribers(plan_publisher_->get_topic_name()) > 0)
