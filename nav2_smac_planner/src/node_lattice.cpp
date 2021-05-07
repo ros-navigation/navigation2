@@ -34,7 +34,6 @@ namespace nav2_smac_planner
 
 // defining static member for all instance to share
 LatticeMotionTable NodeLattice::motion_table;
-double NodeLattice::neutral_cost = sqrt(2);
 
 // Each of these tables are the projected motion models through
 // time and space applied to the search on the current node in
@@ -53,6 +52,12 @@ void LatticeMotionTable::initMotionModel(
     return;
   }
 
+  size_x = size_x_in;
+  change_penalty = search_info.change_penalty;
+  non_straight_penalty = search_info.non_straight_penalty;
+  cost_penalty = search_info.cost_penalty;
+  reverse_penalty = search_info.reverse_penalty;
+  obstacle_heuristic_cost_weight = search_info.obstacle_heuristic_cost_weight;
   current_lattice_filepath = search_info.lattice_filepath;
 
   // TODO Matt read in file, precompute based on orientation bins for lookup at runtime
@@ -120,14 +125,26 @@ bool NodeLattice::isNodeValid(const bool & traverse_unknown, GridCollisionChecke
 float NodeLattice::getTraversalCost(const NodePtr & child)
 {
   return 0.0;  // TODO Josh: cost of different angles, changing, nonstraight, backwards, distance long
-  // should this use neutral_cost? TODO if not, set to 1 for no impact in A*
+  // don't use neutral cost, since each primitive might have different length. use the length instead
   // can use getMotionPrimitiveIndex() to get the ID of the index of the primitive the child/this belongs to for use
   // feel free to make new params, let me know and I'll add tothe SearchInfo struct for inputs and add to the plugin/readme TODO
 }
 
 float NodeLattice::getHeuristicCost(
   const Coordinates & node_coords,
-  const Coordinates & goal_coords)
+  const Coordinates & goal_coords,
+  const nav2_costmap_2d::Costmap2D * costmap)
+{
+  // get obstacle heuristic value
+  const float obstacle_heuristic = getObstacleHeuristic(costmap, node_coords, goal_coords);
+  const float distance_heuristic = getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
+  return std::max(obstacle_heuristic, distance_heuristic);
+}
+
+float NodeLattice::getDistanceHeuristic(
+  const Coordinates & node_coords,
+  const Coordinates & goal_coords,
+  const float & obstacle_heuristic)
 {
   // rotate and translate node_coords such that goal_coords relative is (0,0,0)
   // Due to the rounding involved in exact cell increments for caching,
@@ -175,17 +192,19 @@ float NodeLattice::getHeuristicCost(
       x_pos * ceiling_size * motion_table.num_angle_quantization +
       y_pos * motion_table.num_angle_quantization +
       theta_pos;
-    motion_heuristic = NodeHybrid::dist_heuristic_lookup[index];
+    motion_heuristic = NodeHybrid::dist_heuristic_lookup_table[index];
+  } else if (obstacle_heuristic == 0.0) {
+    static ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
+    to[0] = goal_coords.x;
+    to[1] = goal_coords.y;
+    to[2] = goal_coords.theta * motion_table.num_angle_quantization;
+    from[0] = node_coords.x;
+    from[1] = node_coords.y;
+    from[2] = node_coords.theta * motion_table.num_angle_quantization;
+    motion_heuristic = motion_table.state_space->distance(from(), to());
   }
 
-  const unsigned int wavefront_idx = static_cast<unsigned int>(node_coords.y) *
-    motion_table.size_x + static_cast<unsigned int>(node_coords.x);
-  const unsigned int & wavefront_value = NodeHybrid::wavefront_heuristic_lookup_table[wavefront_idx];
-  
-  // -2 as wavefront values start at 2, multiplying by 1.207 since the wavefront expansion moves both
-  // on grid (1) and on diagonals (sqrt(2)). Thusly, the average wavefront move is (1 + sqrt(2)) / 2
-  const float wavefront_heuristic = static_cast<float>(wavefront_value - 2) * 1.207;
-  return NodeLattice::neutral_cost * std::max(wavefront_heuristic, motion_heuristic);
+  return motion_heuristic;
 }
 
 void NodeLattice::initMotionModel(
@@ -206,7 +225,6 @@ void NodeLattice::initMotionModel(
 }
 
 void NodeLattice::getNeighbors(
-  const NodePtr & node,
   std::function<bool(const unsigned int &, nav2_smac_planner::NodeLattice * &)> & NeighborGetter,
   GridCollisionChecker & collision_checker,
   const bool & traverse_unknown,
@@ -215,7 +233,7 @@ void NodeLattice::getNeighbors(
   unsigned int index = 0;
   NodePtr neighbor = nullptr;
   Coordinates initial_node_coords;
-  const MotionPoses motion_projections = motion_table.getProjections(node);
+  const MotionPoses motion_projections = motion_table.getProjections(this);
 
   for (unsigned int i = 0; i != motion_projections.size(); i++) {
     index = NodeLattice::getIndex(

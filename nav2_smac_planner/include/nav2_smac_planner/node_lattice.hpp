@@ -37,8 +37,11 @@ namespace nav2_smac_planner
 // TODO test coverage
 // TODO update docs for new plugin name Hybrid + Lattice (plugins page, configuration page) and add new params for lattice/description of algo
   // add all the optimizations added (cached heuristics all, leveraging symmetry in the H-space to lower mem footprint, precompute primitives and rotations, precompute footprint rotations, collision check only when required)
-// TODO update any compute times / map sizes as given in docs/readmes
-// TODO param default updttes
+  // update any compute times / map sizes as given in docs/readmes
+  // param default updttes and new params
+  // add to plugins, migration guide
+
+// TODO update docs to reflext that no longer "wavefront" but dynamic programming distance field
 
 // forward declare
 class NodeLattice;
@@ -94,6 +97,7 @@ struct LatticeMotionTable
   float non_straight_penalty;
   float cost_penalty;
   float reverse_penalty;
+  float obstacle_heuristic_cost_weight;
   ompl::base::StateSpacePtr state_space;
   std::vector<TrigValues> trig_values;
   std::string current_lattice_filepath;
@@ -288,11 +292,13 @@ public:
    * @brief Get cost of heuristic of node
    * @param node Node index current
    * @param node Node index of new
+   * @param costmap Costmap ptr to use
    * @return Heuristic cost between the nodes
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates);
+    const Coordinates & goal_coordinates,
+    const nav2_costmap_2d::Costmap2D * costmap);
 
   /**
    * @brief Initialize motion models
@@ -308,23 +314,6 @@ public:
     unsigned int & size_y,
     unsigned int & angle_quantization,
     SearchInfo & search_info);
-
-  /**
-   * @brief Compute the wavefront heuristic
-   * @param costmap Costmap to use to compute heuristic
-   * @param start_x Coordinate of Start X
-   * @param start_y Coordinate of Start Y
-   * @param goal_x Coordinate of Goal X
-   * @param goal_y Coordinate of Goal Y
-   */
-  static void precomputeWavefrontHeuristic(
-    nav2_costmap_2d::Costmap2D * & costmap,
-    const unsigned int & start_x, const unsigned int & start_y,
-    const unsigned int & goal_x, const unsigned int & goal_y)
-  {
-    // State Lattice and Hybrid-A* share this heuristics
-    NodeHybrid::precomputeWavefrontHeuristic(costmap, start_x, start_y, goal_x, goal_y);
-  };
 
   /**
    * @brief Compute the SE2 distance heuristic
@@ -345,13 +334,54 @@ public:
   };
 
   /**
+   * @brief Compute the wavefront heuristic
+   * @param costmap Costmap to use
+   * @param goal_coords Coordinates to start heuristic expansion at
+   */
+  static void resetObstacleHeuristic(
+    const nav2_costmap_2d::Costmap2D * costmap,
+    const unsigned int & goal_x, const unsigned int & goal_y)
+  {
+    // State Lattice and Hybrid-A* share this heuristics
+    NodeHybrid::resetObstacleHeuristic(costmap, goal_x, goal_y);
+  };
+
+  /**
+   * @brief Compute the Obstacle heuristic
+   * @param costmap Costmap ptr to use
+   * @param node_coords Coordinates to get heuristic at
+   * @param goal_coords Coordinates to compute heuristic to
+   * @return heuristic Heuristic value
+   */
+  static float getObstacleHeuristic(
+    const nav2_costmap_2d::Costmap2D * costmap,
+    const Coordinates & node_coords,
+    const Coordinates & goal_coords)
+  {
+    return NodeHybrid::getObstacleHeuristic(costmap, node_coords, goal_coords);
+  }
+
+  /**
+   * @brief Compute the Distance heuristic
+   * @param node_coords Coordinates to get heuristic at
+   * @param goal_coords Coordinates to compute heuristic to
+   * @param obstacle_heuristic Value of the obstacle heuristic to compute
+   * additional motion heuristics if required
+   * @return heuristic Heuristic value
+   */
+  static float getDistanceHeuristic(
+    const Coordinates & node_coords,
+    const Coordinates & goal_coords,
+    const float & obstacle_heuristic);
+
+  /**
    * @brief Retrieve all valid neighbors of a node.
-   * @param node Pointer to the node we are currently exploring in A*
    * @param validity_checker Functor for state validity checking
+   * @param collision_checker Collision checker to use
+   * @param traverse_unknown If unknown costs are valid to traverse
    * @param neighbors Vector of neighbors to be filled
    */
-  static void getNeighbors(
-    const NodePtr & node,
+  void getNeighbors(
     std::function<bool(const unsigned int &, nav2_smac_planner::NodeLattice * &)> & validity_checker,
     GridCollisionChecker & collision_checker,
     const bool & traverse_unknown,
@@ -359,7 +389,6 @@ public:
 
   NodeLattice * parent;
   Coordinates pose;
-  static double neutral_cost;
   static LatticeMotionTable motion_table;
 
 private:

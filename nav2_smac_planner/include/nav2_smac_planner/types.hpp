@@ -37,6 +37,8 @@ struct SearchInfo
   float cost_penalty;
   float analytic_expansion_ratio;
   std::string lattice_filepath;
+  bool cache_obstacle_heuristic;
+  float obstacle_heuristic_cost_weight;
 };
 
 }  // namespace nav2_smac_planner

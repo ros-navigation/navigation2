@@ -33,12 +33,12 @@ namespace nav2_smac_planner
 {
 
 // defining static member for all instance to share
-WavefrontHeuristicLookupTable NodeHybrid::wavefront_heuristic_lookup_table;
-double NodeHybrid::neutral_cost = sqrt(2);
+LookupTable NodeHybrid::obstacle_heuristic_lookup_table;
+std::queue<unsigned int> NodeHybrid::obstacle_heuristic_queue;
+double NodeHybrid::travel_distance_cost = sqrt(2);
 HybridMotionTable NodeHybrid::motion_table;
 float NodeHybrid::size_lookup = 25;
-DistanceHeuristicLookupTable NodeHybrid::dist_heuristic_lookup;
-
+LookupTable NodeHybrid::dist_heuristic_lookup_table;
 
 // Each of these tables are the projected motion models through
 // time and space applied to the search on the current node in
@@ -60,6 +60,7 @@ void HybridMotionTable::initDubin(
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
+  obstacle_heuristic_cost_weight = search_info.obstacle_heuristic_cost_weight;
 
   // if nothing changed, no need to re-compute primitives
   if (num_angle_quantization_in == num_angle_quantization &&
@@ -151,6 +152,7 @@ void HybridMotionTable::initReedsShepp(
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
+  obstacle_heuristic_cost_weight = search_info.obstacle_heuristic_cost_weight;
 
   // if nothing changed, no need to re-compute primitives
   if (num_angle_quantization_in == num_angle_quantization &&
@@ -295,14 +297,14 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
 
   // this is the first node
   if (getMotionPrimitiveIndex() == std::numeric_limits<unsigned int>::max()) {
-    return NodeHybrid::neutral_cost;
+    return NodeHybrid::travel_distance_cost;
   }
 
   float travel_cost = 0.0;
-  float travel_cost_raw = NodeHybrid::neutral_cost + motion_table.cost_penalty * normalized_cost;
+  float travel_cost_raw = NodeHybrid::travel_distance_cost + (motion_table.cost_penalty * normalized_cost);
 
   if (child->getMotionPrimitiveIndex() == 0 || child->getMotionPrimitiveIndex() == 3) {
-    // straight motion, no additional costs to be applied
+    // New motion is a straight motion, no additional costs to be applied
     travel_cost = travel_cost_raw;
   } else {
     if (getMotionPrimitiveIndex() == child->getMotionPrimitiveIndex()) {
@@ -310,8 +312,7 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
       travel_cost = travel_cost_raw * motion_table.non_straight_penalty;
     } else {
       // Turning motion and changing direction: penalizes wiggling
-      travel_cost = travel_cost_raw * motion_table.change_penalty;
-      travel_cost += travel_cost_raw * motion_table.non_straight_penalty;
+      travel_cost = travel_cost_raw * (motion_table.non_straight_penalty + motion_table.change_penalty);
     }
   }
 
@@ -325,12 +326,154 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
 
 float NodeHybrid::getHeuristicCost(
   const Coordinates & node_coords,
+  const Coordinates & goal_coords,
+  const nav2_costmap_2d::Costmap2D * costmap)
+{
+  const float obstacle_heuristic = getObstacleHeuristic(costmap, node_coords, goal_coords);
+  const float dist_heuristic = getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
+  return std::max(obstacle_heuristic, dist_heuristic);
+}
+
+void NodeHybrid::initMotionModel(
+  const MotionModel & motion_model,
+  unsigned int & size_x,
+  unsigned int & size_y,
+  unsigned int & num_angle_quantization,
+  SearchInfo & search_info)
+{
+  // find the motion model selected
+  switch (motion_model) {
+    case MotionModel::DUBIN:
+      motion_table.initDubin(size_x, size_y, num_angle_quantization, search_info);
+      break;
+    case MotionModel::REEDS_SHEPP:
+      motion_table.initReedsShepp(size_x, size_y, num_angle_quantization, search_info);
+      break;
+    default:
+      throw std::runtime_error(
+              "Invalid motion model for Hybrid A*. Please select between"
+              " Dubin (Ackermann forward only),"
+              " Reeds-Shepp (Ackermann forward and back).");
+  }
+
+  travel_distance_cost = motion_table.projections[0]._x;
+}
+
+void NodeHybrid::resetObstacleHeuristic(
+  const nav2_costmap_2d::Costmap2D * costmap,
+  const unsigned int & goal_x, const unsigned int & goal_y)
+{
+  // Clear lookup table
+  unsigned int size = costmap->getSizeInCellsX() * costmap->getSizeInCellsY();
+  if (obstacle_heuristic_lookup_table.size() == size) {
+    // must reset all values
+    for (unsigned int i = 0; i != obstacle_heuristic_lookup_table.size(); i++) {
+      obstacle_heuristic_lookup_table[i] = 0.0;
+    }
+  } else {
+    unsigned int obstacle_size = obstacle_heuristic_lookup_table.size();
+    obstacle_heuristic_lookup_table.resize(size, 0.0);
+    // must reset values for non-constructed indices
+    for (unsigned int i = 0; i != obstacle_size; i++) {
+      obstacle_heuristic_lookup_table[i] = 0.0;
+    }
+  }
+
+  // Set initial cost to 2 for expansion
+  const unsigned int & size_x = costmap->getSizeInCellsX();
+  const unsigned int goal_index = goal_y * size_x + goal_x;
+
+  std::queue<unsigned int> q;
+  std::swap(obstacle_heuristic_queue, q);
+  obstacle_heuristic_queue.emplace(goal_index);
+}
+
+float NodeHybrid::getObstacleHeuristic(
+  const nav2_costmap_2d::Costmap2D * costmap,
+  const Coordinates & node_coords,
   const Coordinates & goal_coords)
+{
+  // If already expanded, return the cost
+  unsigned int size_x = costmap->getSizeInCellsX();
+  const unsigned int start_index = node_coords.y * size_x + node_coords.x;
+  const float & starting_cost = obstacle_heuristic_lookup_table[start_index];
+  if (starting_cost != 0.0) {
+    return starting_cost;
+  }
+
+  // If not, expand until it is included. This dynamic programming ensures that
+  // we only expand the MINIMUM spanning set of the costmap per planning request.
+  // Rather than naively expanding the entire (potentially massive) map for a limited
+  // path, we only expand to the extent required for the furthest expansion in the
+  // search-planning request that dynamically updates during search as needed.
+  const int size_x_int = static_cast<int>(size_x);
+  const unsigned int size_y = costmap->getSizeInCellsY();
+  const float sqrt_2 = sqrt(2);
+  unsigned int mx, my, mx_idx, my_idx;
+  unsigned int idx = 0, new_idx = 0;
+  float last_accumulated_cost = 0.0, travel_cost = 0.0;
+  float heuristic_cost = 0.0, current_accumulated_cost = 0.0;
+  float cost = 0.0, existing_cost = 0.0;
+
+  const std::vector<int> neighborhood = {1, -1,  // left right
+    size_x_int, -size_x_int,  // up down
+    size_x_int + 1, size_x_int - 1,  // upper diagonals
+    -size_x_int + 1, -size_x_int - 1};  // lower diagonals
+
+  while (!obstacle_heuristic_queue.empty()) {
+    // get next one
+    idx = obstacle_heuristic_queue.front();
+    obstacle_heuristic_queue.pop();
+    last_accumulated_cost = obstacle_heuristic_lookup_table[idx];
+
+    if (idx == start_index) {
+      return last_accumulated_cost;
+    }
+
+    my_idx = idx / size_x;
+    mx_idx = idx - (my_idx * size_x);
+
+    // find neighbors
+    for (unsigned int i = 0; i != neighborhood.size(); i++) {
+      new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
+      cost = static_cast<float>(costmap->getCost(idx));
+
+      travel_cost = ((i <= 3) ? 1.0 : sqrt_2) + (motion_table.obstacle_heuristic_cost_weight * cost / 252.0);
+      current_accumulated_cost = last_accumulated_cost + travel_cost;
+      existing_cost = obstacle_heuristic_lookup_table[new_idx];
+
+      // if neighbor path is better and non-lethal, set new cost and add to queue
+      if (new_idx > 0 && new_idx < size_x * size_y && cost < INSCRIBED &&
+        (existing_cost == 0.0 || existing_cost > current_accumulated_cost))
+      {
+        my = new_idx / size_x;
+        mx = new_idx - (my * size_x);
+
+        if (mx == 0 && mx_idx >= size_x - 1 || mx >= size_x - 1 && mx_idx == 0) {
+          continue;
+        }
+        if (my == 0 && my_idx >= size_y - 1 || my >= size_y - 1 && my_idx == 0) {
+          continue;
+        }
+
+        obstacle_heuristic_lookup_table[new_idx] = current_accumulated_cost;
+        obstacle_heuristic_queue.emplace(new_idx);
+      }
+    }
+  }
+
+  return obstacle_heuristic_lookup_table[start_index];
+}
+
+float NodeHybrid::getDistanceHeuristic(
+  const Coordinates & node_coords,
+  const Coordinates & goal_coords,
+  const float & obstacle_heuristic)
 {
   // rotate and translate node_coords such that goal_coords relative is (0,0,0)
   // Due to the rounding involved in exact cell increments for caching,
   // this is not an exact replica of a live heuristic, but has bounded error.
-  // (Usually less than 1 cell length)
+  // (Usually less than 1 cell)
 
   // This angle is negative since we are de-rotating the current node
   // by the goal angle; cos(-th) = cos(th) & sin(-th) = -sin(th)
@@ -373,120 +516,19 @@ float NodeHybrid::getHeuristicCost(
       x_pos * ceiling_size * motion_table.num_angle_quantization +
       y_pos * motion_table.num_angle_quantization +
       theta_pos;
-    motion_heuristic = dist_heuristic_lookup[index];
+    motion_heuristic = dist_heuristic_lookup_table[index];
+  } else if (obstacle_heuristic == 0.0) {
+    static ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
+    to[0] = goal_coords.x;
+    to[1] = goal_coords.y;
+    to[2] = goal_coords.theta * motion_table.num_angle_quantization;
+    from[0] = node_coords.x;
+    from[1] = node_coords.y;
+    from[2] = node_coords.theta * motion_table.num_angle_quantization;
+    motion_heuristic = motion_table.state_space->distance(from(), to());
   }
 
-  const unsigned int wavefront_idx = static_cast<unsigned int>(node_coords.y) *
-    motion_table.size_x + static_cast<unsigned int>(node_coords.x);
-  const unsigned int & wavefront_value = wavefront_heuristic_lookup_table[wavefront_idx];
-  
-  // -2 as wavefront values start at 2, multiplying by 1.207 since the wavefront expansion moves both
-  // on grid (1) and on diagonals (sqrt(2)). Thusly, the average wavefront move is (1 + sqrt(2)) / 2
-  const float wavefront_heuristic = static_cast<float>(wavefront_value - 2) * 1.207;
-  return NodeHybrid::neutral_cost * std::max(wavefront_heuristic, motion_heuristic);
-}
-
-void NodeHybrid::initMotionModel(
-  const MotionModel & motion_model,
-  unsigned int & size_x,
-  unsigned int & size_y,
-  unsigned int & num_angle_quantization,
-  SearchInfo & search_info)
-{
-  // find the motion model selected
-  switch (motion_model) {
-    case MotionModel::DUBIN:
-      motion_table.initDubin(size_x, size_y, num_angle_quantization, search_info);
-      break;
-    case MotionModel::REEDS_SHEPP:
-      motion_table.initReedsShepp(size_x, size_y, num_angle_quantization, search_info);
-      break;
-    default:
-      throw std::runtime_error(
-              "Invalid motion model for Hybrid A*. Please select between"
-              " Dubin (Ackermann forward only),"
-              " Reeds-Shepp (Ackermann forward and back).");
-  }
-}
-
-void NodeHybrid::precomputeWavefrontHeuristic(
-  nav2_costmap_2d::Costmap2D * & costmap,
-  const unsigned int & start_x, const unsigned int & start_y,
-  const unsigned int & goal_x, const unsigned int & goal_y)
-{
-  // TODO optimization: param for only update on map and topic.
-  // Only update wavefrontH on initial map not each request.
-  // Wouldnt include dyanmic obstalces but still drive search between fixed
-  //  infra and collision checking will deal with dynamic. Saves 60-100ms on a warehouse scale.
-  unsigned int size = costmap->getSizeInCellsX() * costmap->getSizeInCellsY();
-  if (wavefront_heuristic_lookup_table.size() == size) {
-    // must reset all values
-    for (unsigned int i = 0; i != wavefront_heuristic_lookup_table.size(); i++) {
-      wavefront_heuristic_lookup_table[i] = 0;
-    }
-  } else {
-    unsigned int wavefront_size = wavefront_heuristic_lookup_table.size();
-    wavefront_heuristic_lookup_table.resize(size, 0);
-    // must reset values for non-constructed indices
-    for (unsigned int i = 0; i != wavefront_size; i++) {
-      wavefront_heuristic_lookup_table[i] = 0;
-    }
-  }
-
-  const unsigned int & size_x = costmap->getSizeInCellsX();
-  const int size_x_int = static_cast<int>(size_x);
-  const unsigned int size_y = costmap->getSizeInCellsY();
-  const unsigned int goal_index = goal_y * size_x + goal_x;
-  const unsigned int start_index = start_y * size_x + start_x;
-  unsigned int mx, my, mx_idx, my_idx;
-
-  std::queue<unsigned int> q;
-  q.emplace(goal_index);
-
-  unsigned int idx = goal_index;
-  unsigned int new_idx;
-  unsigned int last_wave_cost;
-
-  wavefront_heuristic_lookup_table[idx] = 2;
-
-  static const std::vector<int> neighborhood = {1, -1,  // left right
-    size_x_int, -size_x_int,  // up down
-    size_x_int + 1, size_x_int - 1,  // upper diagonals
-    -size_x_int + 1, -size_x_int - 1};  // lower diagonals
-
-  while (!q.empty() || idx == start_index) {
-    // get next one
-    idx = q.front();
-    q.pop();
-
-    my_idx = idx / size_x;
-    mx_idx = idx - (my_idx * size_x);
-
-    // find neighbors
-    for (unsigned int i = 0; i != neighborhood.size(); i++) {
-      new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
-      last_wave_cost = wavefront_heuristic_lookup_table[idx];
-
-      // if neighbor is unvisited and non-lethal, set N and add to queue
-      if (new_idx > 0 && new_idx < size_x * size_y &&
-        wavefront_heuristic_lookup_table[new_idx] == 0 &&
-        static_cast<float>(costmap->getCost(idx)) < INSCRIBED)
-      {
-        my = new_idx / size_x;
-        mx = new_idx - (my * size_x);
-
-        if (mx == 0 && mx_idx >= size_x - 1 || mx >= size_x - 1 && mx_idx == 0) {
-          continue;
-        }
-        if (my == 0 && my_idx >= size_y - 1 || my >= size_y - 1 && my_idx == 0) {
-          continue;
-        }
-
-        wavefront_heuristic_lookup_table[new_idx] = last_wave_cost + 1;
-        q.emplace(idx + neighborhood[i]);
-      }
-    }
-  }
+  return motion_heuristic;
 }
 
 void NodeHybrid::precomputeDistanceHeuristic(
@@ -521,7 +563,7 @@ void NodeHybrid::precomputeDistanceHeuristic(
   // Heuristic space, we need to only store 2 of the 4 quadrants and simply mirror
   // around the X axis any relative node lookup. This reduces memory overhead and increases
   // the size of a window a platform can store in memory.
-  dist_heuristic_lookup.resize(size_lookup * ceil(size_lookup / 2.0) * dim_3_size_int);
+  dist_heuristic_lookup_table.resize(size_lookup * ceil(size_lookup / 2.0) * dim_3_size_int);
   for (float x = ceil(-size_lookup / 2.0); x <= floor(size_lookup / 2.0); x += 1.0) {
     for (float y = 0.0; y <= floor(size_lookup / 2.0); y += 1.0) {
       for (int heading = 0; heading != dim_3_size_int; heading++) {
@@ -529,7 +571,7 @@ void NodeHybrid::precomputeDistanceHeuristic(
         from[1] = y;
         from[2] = heading * angular_bin_size;
         motion_heuristic = motion_table.state_space->distance(from(), to());
-        dist_heuristic_lookup[index] = motion_heuristic;
+        dist_heuristic_lookup_table[index] = motion_heuristic;
         index++;
       }
     }
@@ -537,7 +579,6 @@ void NodeHybrid::precomputeDistanceHeuristic(
 }
 
 void NodeHybrid::getNeighbors(
-  const NodePtr & node,
   std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> & NeighborGetter,
   GridCollisionChecker & collision_checker,
   const bool & traverse_unknown,
@@ -546,7 +587,7 @@ void NodeHybrid::getNeighbors(
   unsigned int index = 0;
   NodePtr neighbor = nullptr;
   Coordinates initial_node_coords;
-  const MotionPoses motion_projections = motion_table.getProjections(node);
+  const MotionPoses motion_projections = motion_table.getProjections(this);
 
   for (unsigned int i = 0; i != motion_projections.size(); i++) {
     index = NodeHybrid::getIndex(

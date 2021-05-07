@@ -72,7 +72,7 @@ void SmacPlannerHybrid::configure(
   node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".angle_quantization_bins", rclcpp::ParameterValue(64));
+    node, name + ".angle_quantization_bins", rclcpp::ParameterValue(72));
   node->get_parameter(name + ".angle_quantization_bins", angle_quantizations);
   _angle_bin_size = 2.0 * M_PI / angle_quantizations;
   _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
@@ -84,24 +84,30 @@ void SmacPlannerHybrid::configure(
     node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
   node->get_parameter(name + ".max_iterations", max_iterations);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".smooth_path", rclcpp::ParameterValue(false));
+    node, name + ".smooth_path", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".smooth_path", smooth_path);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.2));
+    node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
   node->get_parameter(name + ".minimum_turning_radius", search_info.minimum_turning_radius);
-
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(true));
+  node->get_parameter(name + ".cache_obstacle_heuristic", search_info.cache_obstacle_heuristic);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".obstacle_heuristic_cost_weight", rclcpp::ParameterValue(1.7));
+  node->get_parameter(
+    name + ".obstacle_heuristic_cost_weight", search_info.obstacle_heuristic_cost_weight);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".reverse_penalty", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".reverse_penalty", search_info.reverse_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".change_penalty", rclcpp::ParameterValue(0.5));
+    node, name + ".change_penalty", rclcpp::ParameterValue(0.10));
   node->get_parameter(name + ".change_penalty", search_info.change_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.05));
+    node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.10));
   node->get_parameter(name + ".non_straight_penalty", search_info.non_straight_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".cost_penalty", rclcpp::ParameterValue(1.2));
+    node, name + ".cost_penalty", rclcpp::ParameterValue(1.0));
   node->get_parameter(name + ".cost_penalty", search_info.cost_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(2.0));
@@ -162,10 +168,7 @@ void SmacPlannerHybrid::configure(
 
   if (smooth_path) {
     _smoother = std::make_unique<Smoother>();
-    _optimizer_params.get(node.get(), name);
-    _smoother_params.get(node.get(), name);
-    _smoother_params.max_curvature = 1.0f / minimum_turning_radius_global_coords;
-    _smoother->initialize(_optimizer_params);
+    _smoother->initialize(minimum_turning_radius_global_coords);
   }
 
   if (_downsample_costmap && _downsampling_factor > 1) {
@@ -296,17 +299,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     return plan;
   }
 
-  // Convert to world coordinates and downsample path for smoothing if necesssary
-  // We're going to downsample by 4x to give terms room to move.
-  const int downsample_ratio = 4;
-  std::vector<Eigen::Vector2d> path_world;
-  path_world.reserve(path.size());
+  // Convert to world coordinates
   plan.poses.reserve(path.size());
-
   for (int i = path.size() - 1; i >= 0; --i) {
-    path_world.push_back(getWorldCoords(path[i].x, path[i].y, costmap));
-    pose.pose.position.x = path_world.back().x();
-    pose.pose.position.y = path_world.back().y();
+    pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
     pose.pose.orientation = getWorldOrientation(path[i].theta, _angle_bin_size);
     plan.poses.push_back(pose);
   }
@@ -316,40 +312,24 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     _raw_plan_publisher->publish(plan);
   }
 
-  // If not smoothing or too short to smooth, return path
-  if (!_smoother || path_world.size() < 4) {
-#ifdef BENCHMARK_TESTING
-    steady_clock::time_point b = steady_clock::now();
-    duration<double> time_span = duration_cast<duration<double>>(b - a);
-    std::cout << "It took " << time_span.count() * 1000 <<
-      " milliseconds with " << num_iterations << " iterations." << std::endl;
-#endif
-    return plan;
-  }
-
   // Find how much time we have left to do smoothing
   steady_clock::time_point b = steady_clock::now();
   duration<double> time_span = duration_cast<duration<double>>(b - a);
   double time_remaining = _max_planning_time - static_cast<double>(time_span.count());
-  _smoother_params.max_time = std::min(time_remaining, _optimizer_params.max_time);
+
+#ifdef BENCHMARK_TESTING
+    std::cout << "It took " << time_span.count() * 1000 <<
+      " milliseconds with " << num_iterations << " iterations." << std::endl;
+#endif
 
   // Smooth plan
-  if (!_smoother->smooth(path_world, costmap, _smoother_params)) {
-    RCLCPP_WARN(
-      _logger,
-      "%s: failed to smooth plan, Ceres could not find a usable solution to optimize.",
-      _name.c_str());
-    return plan;
-  }
-
-  removeHook(path_world);
-
-  // populate final path
-  // TODO(stevemacenski): set orientation to tangent of path
-  for (uint i = 0; i != path_world.size(); i++) {
-    pose.pose.position.x = path_world[i][0];
-    pose.pose.position.y = path_world[i][1];
-    plan.poses[i] = pose;
+  if (_smoother && plan.poses.size() > 6) {
+    if (!_smoother->smooth(plan, costmap, time_remaining)) {
+      RCLCPP_WARN(
+        _logger,
+        "%s: failed to smooth plan or timed out while smoothing.",
+        _name.c_str());
+    }
   }
 
   return plan;

@@ -57,6 +57,7 @@ void SmacPlanner2D::configure(
   int max_iterations;
   int max_on_approach_iterations;
   bool smooth_path;
+  SearchInfo search_info;
   double minimum_turning_radius;
   std::string motion_model_for_search;
 
@@ -70,6 +71,9 @@ void SmacPlanner2D::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
   node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".cost_travel_multiplier", rclcpp::ParameterValue(2.0));
+  node->get_parameter(name + ".cost_travel_multiplier", search_info.cost_penalty);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
@@ -117,7 +121,7 @@ void SmacPlanner2D::configure(
     max_iterations = std::numeric_limits<int>::max();
   }
 
-  _a_star = std::make_unique<AStarAlgorithm<Node2D>>(motion_model, SearchInfo());
+  _a_star = std::make_unique<AStarAlgorithm<Node2D>>(motion_model, search_info);
   _a_star->initialize(
     allow_unknown,
     max_iterations,
@@ -127,10 +131,7 @@ void SmacPlanner2D::configure(
 
   if (smooth_path) {
     _smoother = std::make_unique<Smoother>();
-    _optimizer_params.get(node.get(), name);
-    _smoother_params.get(node.get(), name);
-    _smoother_params.max_curvature = 1.0f / minimum_turning_radius;
-    _smoother->initialize(_optimizer_params);
+    _smoother->initialize(minimum_turning_radius);
   }
 
   if (_downsample_costmap && _downsampling_factor > 1) {
@@ -253,21 +254,10 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     return plan;
   }
 
-  // Convert to world coordinates and downsample path for smoothing if necesssary
-  // We're going to downsample by 4x to give terms room to move.
-  const int downsample_ratio = 4;
-  std::vector<Eigen::Vector2d> path_world;
-  path_world.reserve(_smoother ? path.size() / downsample_ratio : path.size());
-  plan.poses.reserve(_smoother ? path.size() / downsample_ratio : path.size());
-
+  // Convert to world coordinates
+  plan.poses.reserve(path.size());
   for (int i = path.size() - 1; i >= 0; --i) {
-    if (_smoother && i % downsample_ratio != 0) {
-      continue;
-    }
-
-    path_world.push_back(getWorldCoords(path[i].x, path[i].y, costmap));
-    pose.pose.position.x = path_world.back().x();
-    pose.pose.position.y = path_world.back().y();
+    pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
     plan.poses.push_back(pose);
   }
 
@@ -276,39 +266,24 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     _raw_plan_publisher->publish(plan);
   }
 
-  // If not smoothing or too short to smooth, return path
-  if (!_smoother || path_world.size() < 4) {
-#ifdef BENCHMARK_TESTING
-    steady_clock::time_point b = steady_clock::now();
-    duration<double> time_span = duration_cast<duration<double>>(b - a);
-    std::cout << "It took " << time_span.count() * 1000 <<
-      " milliseconds with " << num_iterations << " iterations." << std::endl;
-#endif
-    return plan;
-  }
-
   // Find how much time we have left to do smoothing
   steady_clock::time_point b = steady_clock::now();
   duration<double> time_span = duration_cast<duration<double>>(b - a);
   double time_remaining = _max_planning_time - static_cast<double>(time_span.count());
-  _smoother_params.max_time = std::min(time_remaining, _optimizer_params.max_time);
+
+#ifdef BENCHMARK_TESTING
+    std::cout << "It took " << time_span.count() * 1000 <<
+      " milliseconds with " << num_iterations << " iterations." << std::endl;
+#endif
 
   // Smooth plan
-  if (!_smoother->smooth(path_world, costmap, _smoother_params)) {
-    RCLCPP_WARN(
-      _logger,
-      "%s: failed to smooth plan, Ceres could not find a usable solution to optimize.",
-      _name.c_str());
-    return plan;
-  }
-
-  removeHook(path_world);
-
-  // populate final path
-  for (uint i = 0; i != path_world.size(); i++) {
-    pose.pose.position.x = path_world[i][0];
-    pose.pose.position.y = path_world[i][1];
-    plan.poses[i] = pose;
+  if (_smoother && plan.poses.size() > 6) {
+    if (!_smoother->smooth(plan, costmap, time_remaining)) {
+      RCLCPP_WARN(
+        _logger,
+        "%s: failed to smooth plan or timed out while smoothing.",
+        _name.c_str());
+    }
   }
 
   return plan;

@@ -34,8 +34,7 @@
 namespace nav2_smac_planner
 {
 
-typedef std::vector<float> DistanceHeuristicLookupTable;
-typedef std::vector<unsigned int> WavefrontHeuristicLookupTable;
+typedef std::vector<float> LookupTable;
 typedef std::pair<double, double> TrigValues;
 
 // Need seperate pose struct for motion table operations
@@ -125,6 +124,7 @@ struct HybridMotionTable
   float non_straight_penalty;
   float cost_penalty;
   float reverse_penalty;
+  float obstacle_heuristic_cost_weight;
   ompl::base::StateSpacePtr state_space;
   std::vector<std::vector<double>> delta_xs;
   std::vector<std::vector<double>> delta_ys;
@@ -162,6 +162,16 @@ public:
     Coordinates(const float & x_in, const float & y_in, const float & theta_in)
     : x(x_in), y(y_in), theta(theta_in)
     {}
+
+    inline bool operator==(const Coordinates & rhs)
+    {
+      return (this->x == rhs.x && this->y == rhs.y && this->theta == rhs.theta);
+    }
+
+    inline bool operator!=(const Coordinates & rhs)
+    {
+      return !(*this == rhs);
+    }
 
     float x, y, theta;
   };
@@ -358,11 +368,13 @@ public:
    * @brief Get cost of heuristic of node
    * @param node Node index current
    * @param node Node index of new
+   * @param costmap Costmap ptr to use
    * @return Heuristic cost between the nodes
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates);
+    const Coordinates & goal_coordinates,
+    const nav2_costmap_2d::Costmap2D * costmap);
 
   /**
    * @brief Initialize motion models
@@ -380,19 +392,6 @@ public:
     SearchInfo & search_info);
 
   /**
-   * @brief Compute the wavefront heuristic
-   * @param costmap Costmap to use to compute heuristic
-   * @param start_x Coordinate of Start X
-   * @param start_y Coordinate of Start Y
-   * @param goal_x Coordinate of Goal X
-   * @param goal_y Coordinate of Goal Y
-   */
-  static void precomputeWavefrontHeuristic(
-    nav2_costmap_2d::Costmap2D * & costmap,
-    const unsigned int & start_x, const unsigned int & start_y,
-    const unsigned int & goal_x, const unsigned int & goal_y);
-
-  /**
    * @brief Compute the SE2 distance heuristic
    * @param lookup_table_dim Size, in costmap pixels, of the
    * each lookup table dimension to populate
@@ -407,13 +406,47 @@ public:
     const SearchInfo & search_info);
 
   /**
+   * @brief Compute the Obstacle heuristic
+   * @param costmap Costmap ptr to use
+   * @param node_coords Coordinates to get heuristic at
+   * @param goal_coords Coordinates to compute heuristic to
+   * @return heuristic Heuristic value
+   */
+  static float getObstacleHeuristic(
+    const nav2_costmap_2d::Costmap2D * costmap,
+    const Coordinates & node_coords,
+    const Coordinates & goal_coords);
+
+  /**
+   * @brief Compute the Distance heuristic
+   * @param node_coords Coordinates to get heuristic at
+   * @param goal_coords Coordinates to compute heuristic to
+   * @param obstacle_heuristic Value of the obstacle heuristic to compute
+   * additional motion heuristics if required
+   * @return heuristic Heuristic value
+   */
+  static float getDistanceHeuristic(
+    const Coordinates & node_coords,
+    const Coordinates & goal_coords,
+    const float & obstacle_heuristic);
+
+  /**
+   * @brief reset the obstacle heuristic state
+   * @param costmap Costmap to use
+   * @param goal_coords Coordinates to start heuristic expansion at
+   */
+  static void resetObstacleHeuristic(
+    const nav2_costmap_2d::Costmap2D * costmap,
+    const unsigned int & goal_x, const unsigned int & goal_y);
+
+  /**
    * @brief Retrieve all valid neighbors of a node.
-   * @param node Pointer to the node we are currently exploring in A*
    * @param validity_checker Functor for state validity checking
+   * @param collision_checker Collision checker to use
+   * @param traverse_unknown If unknown costs are valid to traverse
    * @param neighbors Vector of neighbors to be filled
    */
-  static void getNeighbors(
-    const NodePtr & node,
+  void getNeighbors(
     std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> & validity_checker,
     GridCollisionChecker & collision_checker,
     const bool & traverse_unknown,
@@ -421,10 +454,15 @@ public:
 
   NodeHybrid * parent;
   Coordinates pose;
-  static double neutral_cost;
+
+  // Constants required across all nodes but don't want to allocate more than once
+  static double travel_distance_cost;
   static HybridMotionTable motion_table;
-  static WavefrontHeuristicLookupTable wavefront_heuristic_lookup_table;
-  static DistanceHeuristicLookupTable dist_heuristic_lookup;
+  // Wavefront lookup and queue for continuing to expand as needed
+  static LookupTable obstacle_heuristic_lookup_table;
+  static std::queue<unsigned int> obstacle_heuristic_queue;
+  // Dubin / Reeds-Shepp lookup and size for dereferencing
+  static LookupTable dist_heuristic_lookup_table;
   static float size_lookup;
 
 private:

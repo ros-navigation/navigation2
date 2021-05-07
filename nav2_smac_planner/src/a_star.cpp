@@ -180,17 +180,18 @@ void AStarAlgorithm<NodeT>::setGoal(
   const unsigned int & dim_3)
 {
   _goal = addToGraph(NodeT::getIndex(mx, my, dim_3));
-  _goal_coordinates = typename NodeT::Coordinates(
+
+  typename NodeT::Coordinates goal_coords(
     static_cast<float>(mx),
     static_cast<float>(my),
     static_cast<float>(dim_3));
-  _goal->setPose(_goal_coordinates);
 
-  NodeT::precomputeWavefrontHeuristic(
-    _costmap,
-    static_cast<unsigned int>(getStart()->pose.x),
-    static_cast<unsigned int>(getStart()->pose.y),
-    mx, my);
+  if (!_search_info.cache_obstacle_heuristic || goal_coords != _goal_coordinates) {
+    NodeT::resetObstacleHeuristic(_costmap, mx, my);    
+  }
+
+  _goal_coordinates = goal_coords;
+  _goal->setPose(_goal_coordinates);
 }
 
 template<typename NodeT>
@@ -226,7 +227,7 @@ bool AStarAlgorithm<NodeT>::createPath(
   CoordinateVector & path, int & iterations,
   const float & tolerance)
 {
-  _tolerance = tolerance * NodeT::neutral_cost;
+  _tolerance = tolerance;
   _best_heuristic_node = {std::numeric_limits<float>::max(), 0};
   clearQueue();
 
@@ -241,6 +242,7 @@ bool AStarAlgorithm<NodeT>::createPath(
   // Optimization: preallocate all variables
   NodePtr current_node = nullptr;
   NodePtr neighbor = nullptr;
+  NodePtr node_to_expand = nullptr;
   float g_cost = 0.0;
   NodeVector neighbors;
   int approach_iterations = 0;
@@ -278,8 +280,14 @@ bool AStarAlgorithm<NodeT>::createPath(
 
     // 2.a) Use an analytic expansion (if available) to generate a path
     // to the goal.
+    if (_best_heuristic_node.first < std::numeric_limits<float>::max()) {
+      node_to_expand = &_graph.at(_best_heuristic_node.second);
+    } else {
+      node_to_expand = current_node;
+    }
+
     NodePtr result = tryAnalyticExpansion(
-      current_node, neighborGetter, analytic_iterations,
+      node_to_expand, neighborGetter, analytic_iterations,
       closest_distance);
     if (result != nullptr) {
       current_node = result;
@@ -291,19 +299,19 @@ bool AStarAlgorithm<NodeT>::createPath(
     } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
       approach_iterations++;
-      if (approach_iterations > getOnApproachMaxIterations())
-      {
+      if (approach_iterations >= getOnApproachMaxIterations()) {
         NodePtr node = &_graph.at(_best_heuristic_node.second);
         return backtracePath(node, path);
-      } else if (iterations + 1 == getMaxIterations()) {
-        return false;
       }
+    }
+
+    if (iterations + 1 == getMaxIterations()) {
+      return false;
     }
 
     // 4) Expand neighbors of Nbest not visited
     neighbors.clear();
-    NodeT::getNeighbors(
-      current_node, neighborGetter, _collision_checker, _traverse_unknown, neighbors);
+    current_node->getNeighbors(neighborGetter, _collision_checker, _traverse_unknown, neighbors);
 
     for (neighbor_iterator = neighbors.begin();
       neighbor_iterator != neighbors.end(); ++neighbor_iterator)
@@ -545,7 +553,7 @@ float AStarAlgorithm<NodeT>::getHeuristicCost(const NodePtr & node)
   const Coordinates node_coords =
     NodeT::getCoords(node->getIndex(), getSizeX(), getSizeDim3());
   float heuristic = NodeT::getHeuristicCost(
-    node_coords, _goal_coordinates);
+    node_coords, _goal_coordinates, _costmap);
 
   if (heuristic < _best_heuristic_node.first) {
     _best_heuristic_node = {heuristic, node->getIndex()};
@@ -623,7 +631,7 @@ typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::tryAnalyticExpans
       closest_distance,
       static_cast<int>(NodeT::getHeuristicCost(
         node_coords,
-        _goal_coordinates) / NodeT::neutral_cost)
+        _goal_coordinates, _costmap))
       );
     // We want to expand at a rate of d/expansion_ratio,
     // but check to see if we are so close that we would be expanding every iteration

@@ -23,7 +23,7 @@ namespace nav2_smac_planner
 
 // defining static member for all instance to share
 std::vector<int> Node2D::_neighbors_grid_offsets;
-double Node2D::neutral_cost = 50.0;
+float Node2D::cost_travel_multiplier = 2.0;
 
 Node2D::Node2D(const unsigned int index)
 : parent(nullptr),
@@ -72,20 +72,30 @@ bool Node2D::isNodeValid(
 
 float Node2D::getTraversalCost(const NodePtr & child)
 {
-  // cost to travel will be the cost of the cell's code
+  float normalized_cost = child->getCost() / 252.0;
+  const Coordinates A = getCoords(child->getIndex());
+  const Coordinates B = getCoords(this->getIndex());
+  const float & dx = A.x - B.x;
+  const float & dy = A.y - B.y;
+  static float sqrt_2 = sqrt(2);
 
-  // neutral_cost is neutral cost for cost just to travel anywhere (50)
-  // 0.8 is a scale factor to remap costs [0, 252] evenly from [50, 252]
-  return Node2D::neutral_cost + 0.8 * child->getCost();
+  // If a diagonal move, travel cost is sqrt(2) not 1.0.
+  if ((dx * dx + dy * dy) > 1.05) {
+    return sqrt_2 + cost_travel_multiplier * normalized_cost;
+  }
+
+  return 1.0 + cost_travel_multiplier * normalized_cost;
 }
 
 float Node2D::getHeuristicCost(
   const Coordinates & node_coords,
-  const Coordinates & goal_coordinates)
+  const Coordinates & goal_coordinates,
+  const nav2_costmap_2d::Costmap2D * costmap)
 {
-  return hypotf(
-    goal_coordinates.x - node_coords.x,
-    goal_coordinates.y - node_coords.y) * Node2D::neutral_cost;
+  // Using Moore distance as it more accurately represents the distances
+  // even a Van Neumann neighborhood robot can navigate.
+  return fabs(goal_coordinates.x - node_coords.x) +
+    fabs(goal_coordinates.y - node_coords.y);
 }
 
 void Node2D::initMotionModel(
@@ -93,9 +103,10 @@ void Node2D::initMotionModel(
   unsigned int & x_size_uint,
   unsigned int & /*size_y*/,
   unsigned int & /*num_angle_quantization*/,
-  SearchInfo & /*search_info*/)
+  SearchInfo & search_info)
 {
   int x_size = static_cast<int>(x_size_uint);
+  cost_travel_multiplier = search_info.cost_penalty;
   switch (neighborhood) {
     case MotionModel::UNKNOWN:
       throw std::runtime_error("Unknown neighborhood type selected.");
@@ -114,7 +125,6 @@ void Node2D::initMotionModel(
 }
 
 void Node2D::getNeighbors(
-  NodePtr & node,
   std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> & NeighborGetter,
   GridCollisionChecker & collision_checker,
   const bool & traverse_unknown,
@@ -122,7 +132,7 @@ void Node2D::getNeighbors(
 {
   // NOTE(stevemacenski): Irritatingly, the order here matters. If you start in free
   // space and then expand 8-connected, the first set of neighbors will be all cost
-  // _neutral_cost. Then its expansion will all be 2 * _neutral_cost but now multiple
+  // 1.0. Then its expansion will all be 2 * 1.0 but now multiple
   // nodes are touching that node so the last cell to update the back pointer wins.
   // Thusly, the ordering ends with the cardinal directions for both sets such that
   // behavior is consistent in large free spaces between them.
@@ -133,7 +143,7 @@ void Node2D::getNeighbors(
   // rather than a small inflation around the obstacles
   int index;
   NodePtr neighbor;
-  int node_i = node->getIndex();
+  int node_i = this->getIndex();
 
   for (unsigned int i = 0; i != _neighbors_grid_offsets.size(); ++i) {
     index = node_i + _neighbors_grid_offsets[i];

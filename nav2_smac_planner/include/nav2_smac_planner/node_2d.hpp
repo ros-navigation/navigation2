@@ -27,6 +27,7 @@
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "nav2_smac_planner/node_hybrid.hpp"
 
 namespace nav2_smac_planner
 {
@@ -208,14 +209,27 @@ public:
   }
 
   /**
+   * @brief Get index
+   * @param Index Index of point
+   * @return coordinates of point
+   */
+  static inline Coordinates getCoords(const unsigned int & index)
+  {
+    const unsigned int & size_x = _neighbors_grid_offsets[3];
+    return Coordinates(index % size_x, index / size_x);
+  }
+
+  /**
    * @brief Get cost of heuristic of node
    * @param node Node index current
    * @param node Node index of new
+   * @param costmap Costmap ptr to use
    * @return Heuristic cost between the nodes
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates);
+    const Coordinates & goal_coordinates,
+    const nav2_costmap_2d::Costmap2D * costmap);
 
   /**
    * @brief Initialize the neighborhood to be used in A*
@@ -232,21 +246,22 @@ public:
     unsigned int & size_y,
     unsigned int & num_angle_quantization,
     SearchInfo & search_info);
+
   /**
    * @brief Retrieve all valid neighbors of a node.
-   * @param node Pointer to the node we are currently exploring in A*
-   * @param graph Reference to graph to discover new nodes
+   * @param validity_checker Functor for state validity checking
+   * @param collision_checker Collision checker to use
+   * @param traverse_unknown If unknown costs are valid to traverse
    * @param neighbors Vector of neighbors to be filled
    */
-  static void getNeighbors(
-    NodePtr & node,
+  void getNeighbors(
     std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> & validity_checker,
     GridCollisionChecker & collision_checker,
     const bool & traverse_unknown,
     NodeVector & neighbors);
 
   Node2D * parent;
-  static double neutral_cost;
+  static float cost_travel_multiplier;
   static std::vector<int> _neighbors_grid_offsets;
 
 private:

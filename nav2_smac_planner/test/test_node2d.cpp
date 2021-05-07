@@ -49,9 +49,6 @@ TEST(Node2DTest, test_node_2d)
   testA.reset();
   EXPECT_EQ(testA.getCost(), 0.0f);
 
-  // Check constants
-  EXPECT_EQ(testA.neutral_cost, 50.0f);
-
   // check collision checking
   EXPECT_EQ(testA.isNodeValid(false, checker), true);
   testA.setCost(255);
@@ -64,7 +61,7 @@ TEST(Node2DTest, test_node_2d)
   // check heuristic cost computation
   nav2_smac_planner::Node2D::Coordinates A(0.0, 0.0);
   nav2_smac_planner::Node2D::Coordinates B(10.0, 5.0);
-  EXPECT_NEAR(testB.getHeuristicCost(A, B), 559.016, 0.01);
+  EXPECT_NEAR(testB.getHeuristicCost(A, B, nullptr), 559.016, 0.01);
 
   // check operator== works on index
   unsigned char costC = '2';
@@ -133,7 +130,7 @@ TEST(Node2DTest, test_node_2d_neighbors)
     };
 
   nav2_smac_planner::Node2D::NodeVector neighbors;
-  nav2_smac_planner::Node2D::getNeighbors(node, neighborGetter, checker, false, neighbors);
+  node->getNeighbors(neighborGetter, checker, false, neighbors);
   delete node;
 
   // should be empty since totally invalid

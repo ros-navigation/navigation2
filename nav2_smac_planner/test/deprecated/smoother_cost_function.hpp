@@ -56,6 +56,22 @@ public:
     _costmap(costmap),
     _params(params)
   {
+    // int height = costmap->getSizeInCellsX();
+    // int width = costmap->getSizeInCellsY();
+    // bool** binMap;
+    // binMap = new bool*[width];
+
+    // for (int x = 0; x < width; x++) { binMap[x] = new bool[height]; }
+
+    // for (int x = 0; x < width; ++x) {
+    //   for (int y = 0; y < height; ++y) {
+    //     binMap[x][y] = costmap->getCost(x,y) >= 253 ? true : false;
+    //   }
+    // }
+
+    // voronoiDiagram.initializeMap(width, height, binMap);
+    // voronoiDiagram.update();
+    // voronoiDiagram.visualize();
   }
 
   /**
@@ -134,12 +150,12 @@ public:
       // compute cost
       addSmoothingResidual(_params.smooth_weight, xi, xi_p1, xi_m1, cost_raw);
       addCurvatureResidual(_params.curvature_weight, xi, xi_p1, xi_m1, curvature_params, cost_raw);
-      addDistanceResidual(_params.distance_weight, xi, _original_path->at(i), cost_raw);
+      // addDistanceResidual(_params.distance_weight, xi, _original_path->at(i), cost_raw);
 
-      if (valid_coords = _costmap->worldToMap(xi[0], xi[1], mx, my)) {
-        costmap_cost = _costmap->getCost(mx, my);
-        addCostResidual(_params.costmap_weight, costmap_cost, cost_raw);
-      }
+      // if (valid_coords = _costmap->worldToMap(xi[0], xi[1], mx, my)) {
+      //   costmap_cost = _costmap->getCost(mx, my);
+      //   addCostResidual(_params.costmap_weight, costmap_cost, cost_raw, xi);
+      // }
 
       if (gradient != NULL) {
         // compute gradient
@@ -147,15 +163,15 @@ public:
         gradient[y_index] = 0.0;
         addSmoothingJacobian(_params.smooth_weight, xi, xi_p1, xi_m1, grad_x_raw, grad_y_raw);
         addCurvatureJacobian(
-          _params.curvature_weight, xi, xi_p1, xi_m1, curvature_params,
-          grad_x_raw, grad_y_raw);
-        addDistanceJacobian(
-          _params.distance_weight, xi, _original_path->at(
-            i), grad_x_raw, grad_y_raw);
+           _params.curvature_weight, xi, xi_p1, xi_m1, curvature_params,
+           grad_x_raw, grad_y_raw);
+        // addDistanceJacobian(
+        //   _params.distance_weight, xi, _original_path->at(
+        //     i), grad_x_raw, grad_y_raw);
 
-        if (valid_coords) {
-          addCostJacobian(_params.costmap_weight, mx, my, costmap_cost, grad_x_raw, grad_y_raw);
-        }
+        // if (valid_coords) {
+        //   addCostJacobian(_params.costmap_weight, mx, my, costmap_cost, grad_x_raw, grad_y_raw, xi);
+        // }
 
         gradient[x_index] = grad_x_raw;
         gradient[y_index] = grad_y_raw;
@@ -379,13 +395,23 @@ protected:
   inline void addCostResidual(
     const double & weight,
     const double & value,
-    double & r) const
+    double & r,
+    Eigen::Vector2d & xi) const
   {
     if (value == FREE) {
       return;
     }
 
     r += weight * value * value;  // objective function value
+
+
+    // float obsDst = voronoiDiagram.getDistance((int)xi[0], (int)xi[1]);
+
+    // if (abs(obsDst) > 0.3) {
+    //   return;
+    // }
+
+    // r += weight * (abs(obsDst) - 0.3) * (abs(obsDst) - 0.3);
   }
 
   /**
@@ -404,7 +430,8 @@ protected:
     const unsigned int & my,
     const double & value,
     double & j0,
-    double & j1) const
+    double & j1,
+    Eigen::Vector2d & xi) const
   {
     if (value == FREE) {
       return;
@@ -415,6 +442,16 @@ protected:
 
     j0 += common_prefix * grad[0];  // xi x component of partial-derivative
     j1 += common_prefix * grad[1];  // xi y component of partial-derivative
+
+
+    // float obsDst = voronoiDiagram.getDistance((int)xi[0], (int)xi[1]);
+
+    // if (abs(obsDst) > 0.3) {
+    //   return;
+    // }
+
+    // j0 += 2.0 * weight * (abs(obsDst) - 0.3) * (xi[0] - voronoiDiagram.getData()[(int)xi[0]][(int)xi[1]].obstX) / obsDst;
+    // j1 += 2.0 * weight * (abs(obsDst) - 0.3) * (xi[1] - voronoiDiagram.getData()[(int)xi[0]][(int)xi[1]].obstY) / obsDst;
   }
 
   /**
@@ -508,6 +545,7 @@ protected:
   int _num_params;
   nav2_costmap_2d::Costmap2D * _costmap{nullptr};
   SmootherParams _params;
+  // DynamicVoronoi voronoiDiagram;
 };
 
 }  // namespace nav2_smac_planner

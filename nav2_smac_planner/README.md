@@ -9,7 +9,7 @@ It also introduces the following basic building blocks:
 - `CostmapDownsampler`: A library to take in a costmap object and downsample it to another resolution.
 - `AStar`: A generic and highly optimized A* template library used by the planning plugins to search. Template implementations are provided for grid-A*, SE2 Hybrid-A*, and SE2 State Lattice planning. Additional template for 3D planning also could be made available.
 - `CollisionChecker`: Collision check based on a robot's radius or footprint.
-- `Smoother`: A Conjugate-gradient (CG) smoother with several optional cost function implementations for use. This is a cost-aware smoother unlike b-splines or bezier curves.
+- `Smoother`: A path smoother to smooth out 2D, Hybrid-A\*, and State Lattice paths.
 
 We have users reporting using this on:
 - Delivery robots
@@ -21,7 +21,7 @@ The `nav2_smac_planner` package contains an optimized templated A* search algori
 
 The `SmacPlannerHybrid` fully-implements the Hybrid-A* planner as proposed in [Practical Search Techniques in Path Planning for Autonomous Driving](https://ai.stanford.edu/~ddolgov/papers/dolgov_gpp_stair08.pdf), including hybrid searching, CG smoothing, analytic expansions and hueristic functions.
 
-The `SmacPlannerLattice` fully-implements the State Lattice planner with CG smoothing. While we do not implement it precisely the same way as [Optimal, Smooth, Nonholonomic MobileRobot Motion Planning in State Lattices](https://www.ri.cmu.edu/pub_files/pub4/pivtoraiko_mihail_2007_1/pivtoraiko_mihail_2007_1.pdf), it is sufficiently similar it may be used as a good reference. Additional optimizations for on-approach analytic expansions and simplier heuristic functions were used, largely matching those of Hybrid-A\*.
+The `SmacPlannerLattice` fully-implements the State Lattice planner with CG smoothing. While we do not implement it precisely the same way as [Optimal, Smooth, Nonholonomic MobileRobot Motion Planning in State Lattices](https://www.ri.cmu.edu/pub_files/pub4/pivtoraiko_mihail_2007_1/pivtoraiko_mihail_2007_1.pdf) (with control sets found using [Generating Near Minimal Spanning Control Sets for Constrained Motion Planning in Discrete State Spaces](https://www.ri.cmu.edu/pub_files/pub4/pivtoraiko_mihail_2005_1/pivtoraiko_mihail_2005_1.pdf)), it is sufficiently similar it may be used as a good reference. Additional optimizations for on-approach analytic expansions and simplier heuristic functions were used, largely matching those of Hybrid-A\*.
 
 In summary...
 
@@ -39,27 +39,27 @@ The `SmacPlanner2D` is designed to work with:
 
 ## Features 
 
-We further improve on the Hybrid-A\* work in the following ways:
+We further improve in the following ways:
 - Remove need for upsampling by searching with 10x smaller motion primitives (same as their upsampling ratio).
 - Multi-resolution search allowing planning to occur at a coarser resolution for wider spaces (O(N^2) faster).
 - Cost-aware penalty functions in search resulting in far smoother plans (further reducing requirement to smooth).
-- Additional cost functions in the CG smoother including path deflection.
-- Approximated smoother Voronoi field using costmap inflation function.
-- Fixed 3 mathematical issues in the original paper resulting in higher quality smoothing.
+- B-Spline-derived smoother
 - Faster planning than original paper by highly optimizing the template A\* algorithm.
 - Faster planning via precomputed heuristic, motion primitive, and other values.
 - Automatically adjusted search motion model sizes by motion model, costmap resolution, and bin sizing.
 - Closest path on approach within tolerance if exact path cannot be found or in invalid space.
 - Multi-model hybrid searching including Dubin and Reeds-Shepp models. More models may be trivially added.
-- Time monitoring of planning to dynamically scale the maximum CG smoothing time based on remaining planning duration requested. 
 - High unit and integration test coverage, doxygen documentation.
 - Uses modern C++14 language features and individual components are easily reusable.
-- Speed optimizations: Fast approximation of shortest paths with wavefront hueristic, no data structure graph lookups in main loop, near-zero copy main loop, Voronoi field approximation, et al.
+- Speed optimizations: no data structure graph lookups in main loop, near-zero copy main loop, dynamically generated graph and dynamic programming-based obstacle heuristic, optional recomputation of heuristics for subsiquent planning requests of the same goal, etc.
 - Templated Nodes and A\* implementation to support additional robot extensions.
+- Selective re-evaluation of the obstacle heuristic per goal/map or each iteration, which can speed up subsiquent replanning 20x or more.
 
 All of these features (multi-resolution, models, smoother, etc) are also available in the `SmacPlanner2D` and `SmacPlannerLattice` plugins.
 
 The 2D A\* implementation also does not have any of the weird artifacts introduced by the gradient wavefront-based 2D A\* implementation in the NavFn Planner. While this 2D A\* planner is slightly slower, I believe it's well worth the increased quality in paths. Though the `SmacPlanner2D` is grid-based, any reasonable local trajectory planner - including those supported by Nav2 - will not have any issue with grid-based plans.
+
+Note: In prior releases, a CG smoother largely implementing the original Hybrid-A\* paper's. However, this smoother failed to consistently provide useful results, took too much compute time, and was deprecated. While smoothing a path 95% of the time seems like a "good" solution, we need something far more reliable for practical use. Since we are working with mobile robots and not autonomous cars at 60 mph, we can take some different liberties in smoothing knowing that our local trajectory planners are pretty smart. If you are looking for it, it now lives in the `test/` directory in a depreciated folder. This smoother has been replaced by a B-Spline inspired solution which is faster, far more consistent, and simpler to understand. While this smoother is **not** cost-aware, we have added cost-aware penalty functions in the planners themselves to push the plans away from high-cost spaces and we do check for validity of smoothed sections to ensure feasibility.
 
 ## Metrics
 
@@ -94,46 +94,26 @@ planner_server:
 
     GridBased:
       plugin: "nav2_smac_planner/SmacPlanner"
-      tolerance: 0.5                    # tolerance for planning if unable to reach exact pose, in meters, for 2D node
-      downsample_costmap: false         # whether or not to downsample the map
-      downsampling_factor: 1            # multiplier for the resolution of the costmap layer (e.g. 2 on a 5cm costmap would be 10cm)
-      allow_unknown: false              # allow traveling in unknown space
-      max_iterations: 1000000           # maximum total iterations to search for before failing (in case unreachable), set to -1 to disable
-      max_on_approach_iterations: 1000  # maximum number of iterations to attempt to reach goal once in tolerance, 2D only
-      max_planning_time: 2.0            # max time in s for planner to plan, smooth, and upsample. Will scale maximum smoothing and upsampling times based on remaining time after planning.
-      smooth_path: false                # Whether to smooth searched path
-      motion_model_for_search: "DUBIN"  # 2D Moore, Von Neumann; Hybrid Dubin, Redds-Shepp; State Lattice set internally
-      angle_quantization_bins: 72       # For Hybrid/Lattice nodes: Number of angle bins for search, must be 1 for 2D node (no angle search)
-      minimum_turning_radius: 0.20      # For Hybrid/Lattice nodes and smoother: minimum turning radius in m of path / vehicle
-      reverse_penalty: 2.1              # For Reeds-Shepp model: penalty to apply if motion is reversing, must be => 1
-      change_penalty: 0.20              # For Hybrid/Lattice nodes: penalty to apply if motion is changing directions, must be >= 0
-      non_straight_penalty: 1.05        # For Hybrid/Lattice nodes: penalty to apply if motion is non-straight, must be => 1
-      cost_penalty: 1.3                 # For Hybrid/Lattice nodes: penalty to apply to higher cost zones
-      lattice_filepath: ""              # For Lattice node: the filepath to the state lattice graph
-      lookup_table_size: 20             # For Hybrid/Lattice nodes: Size of the dubin/reeds-sheep distance window to cache, in meters.
-
-      smoother:
-        smoother:
-          w_curve: 30.0                 # weight to minimize curvature of path
-          w_dist: 0.0                   # weight to bind path to original as optional replacement for cost weight
-          w_smooth: 30000.0             # weight to maximize smoothness of path
-          w_cost: 0.025                 # weight to steer robot away from collision and cost
-          cost_scaling_factor: 10.0     # this should match the inflation layer's parameter
-
-        # I do not recommend users mess with this unless they're doing production tuning
-        optimizer:
-          max_time: 0.10                # maximum compute time for smoother
-          max_iterations: 500           # max iterations of smoother
-          debug_optimizer: false        # print debug info
-          gradient_tol: 1.0e-10
-          fn_tol: 1.0e-20
-          param_tol: 1.0e-15
-          advanced:
-            min_line_search_step_size: 1.0e-20
-            max_num_line_search_step_size_iterations: 50
-            line_search_sufficient_function_decrease: 1.0e-20
-            max_num_line_search_direction_restarts: 10
-            max_line_search_step_expansion: 50
+      tolerance: 0.5                      # tolerance for planning if unable to reach exact pose, in meters, for 2D node
+      downsample_costmap: false           # whether or not to downsample the map
+      downsampling_factor: 1              # multiplier for the resolution of the costmap layer (e.g. 2 on a 5cm costmap would be 10cm)
+      allow_unknown: false                # allow traveling in unknown space
+      max_iterations: 1000000             # maximum total iterations to search for before failing (in case unreachable), set to -1 to disable
+      max_on_approach_iterations: 1000    # maximum number of iterations to attempt to reach goal once in tolerance, 2D only
+      max_planning_time: 2.0              # max time in s for planner to plan, smooth, and upsample. Will scale maximum smoothing and upsampling times based on remaining time after planning.
+      smooth_path: false                  # Whether to smooth searched path
+      motion_model_for_search: "DUBIN"    # 2D Moore, Von Neumann; Hybrid Dubin, Redds-Shepp; State Lattice set internally
+      cost_travel_multiplier: 2.0         # For 2D: Cost multiplier to apply to search to steer away from high cost areas. Larger values will place in the center of aisles more exactly (if non-`FREE` cost potential field exists) but take slightly longer to compute. To optimize for speed, a value of 1.0 is reasonable. A reasonable tradeoff value is 2.0. A value of 0.0 effective disables steering away from obstacles and acts like a naive binary search A*.
+      angle_quantization_bins: 64         # For Hybrid/Lattice nodes: Number of angle bins for search, must be 1 for 2D node (no angle search)
+      minimum_turning_radius: 0.40        # For Hybrid/Lattice nodes and smoother: minimum turning radius in m of path / vehicle
+      reverse_penalty: 2.1                # For Reeds-Shepp model: penalty to apply if motion is reversing, must be => 1
+      change_penalty: 0.20                # For Hybrid/Lattice nodes: penalty to apply if motion is changing directions, must be >= 0
+      non_straight_penalty: 1.05          # For Hybrid/Lattice nodes: penalty to apply if motion is non-straight, must be => 1
+      cost_penalty: 1.3                   # For Hybrid/Lattice nodes: penalty to apply to higher cost zones
+      lattice_filepath: ""                # For Lattice node: the filepath to the state lattice graph
+      lookup_table_size: 20               # For Hybrid/Lattice nodes: Size of the dubin/reeds-sheep distance window to cache, in meters.
+      cache_obstacle_heuristic: True      # For Hybrid/Lattice nodes: Cache the obstacle map dynamic programming distance expansion heuristic between subsiquent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
+      obstacle_heuristic_cost_weight: 1.7 # For Hybrid/Lattice nodes: A weight to apply to the normalize cell cost when adding into the obstacle map dynamic programming distance expansion heuristic. A value around 0.7-3.0 is reasonable. This drives the robot more towards the center of passages, but if overset, will cause additional planning time and more "wobbly" paths due to the weight associated with being in the center of spaces rather than smoothness.
 ```
 
 ## Topics
@@ -157,9 +137,17 @@ Many users and default navigation configuration files I find are really missing 
 
 Some of the most popular tuning guides for Navigation / Nav2 even [call this out specifically](https://arxiv.org/pdf/1706.09068.pdf) that there's substantial benefit to creating a gentle potential field across the width of the map - after inscribed costs are applied - yet very few users do this. 
 
-This habit actually results in paths produced by NavFn, Global Planner, and now SmacPlanner to be very suboptimal. They really want to look for a smooth potential field rather than wide open 0-cost spaces in order to stay in the middle of spaces and deal with close-by moving obstacles better.
+This habit actually results in paths produced by NavFn, Global Planner, and now SmacPlanner to be somewhat suboptimal. They really want to look for a smooth potential field rather than wide open 0-cost spaces in order to stay in the middle of spaces and deal with close-by moving obstacles better.
 
 So it is my recommendation in using this package, as well as all other cost-aware search planners available in ROS, to increase your inflation layer cost scale in order to adequately produce a smooth potential across the entire map. For very large open spaces, its fine to have 0-cost areas in the middle, but for halls, aisles, and similar; **please create a smooth potential to provide the best performance**. 
+
+### Hybrid-A* and State Lattice Turning Radius'
+
+A very reasonable and logical assumption would be to set the `minimum_turning_radius` to the kinematic limits of your vehicle. For an ackermann car, that's a physical quantity; while for differential or omni robots, its a bit of a dance around what kind of turns you'd like your robot to be able to make. Obviously setting this to something insanely small (like 20 cm) means you have alot of options, but also probably means the raw output plans won't be very straight and smooth when you have 2+ meter wide aisles to work in.
+
+I assert that you should also consider the environment you operate within when setting this. While you should **absolutely not** set this to be any smaller than the actual limits of your vehicle, there are some useful side effects of increasing this value in practical use. If you work in an area wider than the turning circle of your robot, you have some options that will ultimately improve the performance of the planner (in terms of CPU and compute time) as well as generate paths that are more "smooth" directly out of the planner -- not requiring any explicit path smoothing. 
+
+By default, `0.4m` is the setting which I think is "reasonable" for the smaller scale industrial grade robots (think Simbe, the small Fetch, or Locus robots) resulting in faster plans and less "wobbly" motions that do not require post-smoothing -- further improving CPU performance. I selected `0.4m` as a trade off between practical robots mentioned above and hobbyist users with a tiny-little-turtlebot-3 which might still need to navigate around some smaller cavities.
 
 ### 2D Search and Smoothing
 

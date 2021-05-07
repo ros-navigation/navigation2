@@ -98,8 +98,6 @@ protected:
   int _downsampling_factor;
   bool _downsample_costmap;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
-  SmootherParams _smoother_params;
-  OptimizerParams _optimizer_params;
   double _max_planning_time;
 };
 

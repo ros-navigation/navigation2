@@ -18,27 +18,11 @@
 #include <vector>
 #include "Eigen/Core"
 #include "geometry_msgs/msg/quaternion.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "tf2/utils.h"
 
 namespace nav2_smac_planner
 {
-
-/**
-* @brief Remove hooking at end of paths
-* @param path Path to remove hooking from
-*/
-inline void removeHook(std::vector<Eigen::Vector2d> & path)
-{
-  // Removes the end "hooking" since goal is locked in place
-  Eigen::Vector2d interpolated_second_to_last_point;
-  interpolated_second_to_last_point = (path.end()[-3] + path.end()[-1]) / 2.0;
-  if (
-    squaredDistance(path.end()[-2], path.end()[-1]) >
-    squaredDistance(interpolated_second_to_last_point, path.end()[-1]))
-  {
-    path.end()[-2] = interpolated_second_to_last_point;
-  }
-}
 
 /**
 * @brief Create an Eigen Vector2D of world poses from continuous map coords
@@ -47,14 +31,15 @@ inline void removeHook(std::vector<Eigen::Vector2d> & path)
 * @param costmap Costmap pointer
 * @return Eigen::Vector2d eigen vector of the generated path
 */
-inline Eigen::Vector2d getWorldCoords(
+inline geometry_msgs::msg::Pose getWorldCoords(
   const float & mx, const float & my, const nav2_costmap_2d::Costmap2D * costmap)
 {
-  float world_x =
+  geometry_msgs::msg::Pose msg;
+  msg.position.x =
     static_cast<float>(costmap->getOriginX()) + (mx + 0.5) * costmap->getResolution();
-  float world_y =
+  msg.position.y =
     static_cast<float>(costmap->getOriginY()) + (my + 0.5) * costmap->getResolution();
-  return Eigen::Vector2d(world_x, world_y);
+  return msg;
 }
 
 /**

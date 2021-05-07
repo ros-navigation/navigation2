@@ -70,7 +70,7 @@ TEST(NodeHybridTest, test_node_hybrid)
   EXPECT_TRUE(std::isnan(testA.getCost()));
 
   // Check constants
-  EXPECT_EQ(testA.neutral_cost, sqrt(2));
+  EXPECT_EQ(testA.travel_distance_cost, sqrt(2));
 
   // check collision checking
   EXPECT_EQ(testA.isNodeValid(false, checker), true);
@@ -96,14 +96,11 @@ TEST(NodeHybridTest, test_node_hybrid)
   EXPECT_EQ(testA.getMotionPrimitiveIndex(), 2u);
 
   // check heuristic cost computation
-  nav2_smac_planner::NodeHybrid::precomputeWavefrontHeuristic(
-    costmapA,
-    static_cast<unsigned int>(10.0),
-    static_cast<unsigned int>(5.0),
-    0.0, 0.0);
+  nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(
+    costmapA, 0.0, 0.0);
   nav2_smac_planner::NodeHybrid::Coordinates A(0.0, 0.0, 4.2);
   nav2_smac_planner::NodeHybrid::Coordinates B(10.0, 5.0, 54.1);
-  EXPECT_NEAR(testB.getHeuristicCost(B, A), 16.723, 0.01);
+  EXPECT_NEAR(testB.getHeuristicCost(B, A, costmapA), 16.723, 0.01);
 
   // check operator== works on index
   nav2_smac_planner::NodeHybrid testC(49);
@@ -218,7 +215,7 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
     };
 
   nav2_smac_planner::NodeHybrid::NodeVector neighbors;
-  nav2_smac_planner::NodeHybrid::getNeighbors(node, neighborGetter, checker, false, neighbors);
+  node->getNeighbors(neighborGetter, checker, false, neighbors);
   delete node;
 
   // should be empty since totally invalid
