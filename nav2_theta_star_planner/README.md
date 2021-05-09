@@ -10,6 +10,7 @@ The Theta Star Planner is a global planning plugin meant to be used with the Nav
 - The algorithmic part of the planner has been segregated from the plugin part to allow for reusability.
 
 ## Metrics
+In general the planner is capable of planning for a map of size (566  x 608) from 30ms to 80ms (averaged value, it might exceed the stated time limits here for some iterations)
 For the below example the planner took ~46ms (averaged value) to compute the path of 87.5m -
 ![example.png](img/00-37.png)
 
