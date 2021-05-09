@@ -53,7 +53,7 @@ The parameters of the planner are :
 - ` .how_many_corners ` : to choose between 4-connected and 8-connected graph expansions, the accepted values are 4 and 8
 - ` .w_euc_cost ` : weight applied on the length of the path. 
 - ` .w_traversal_cost ` : it tunes how harshly the nodes of high cost are penalised. From the above g(neigh) equation you can see that the cost-aware component of the cost function forms a parabolic curve, thus this parameter would, on increasing its value, make that curve steeper allowing for a greater differentiation (as the delta of costs would increase, when the graph becomes steep) among the nodes of different costs.
-- ` .w_heuristic_cost ` : it has been provided to have a admissible heuristic, so the recommendation would be to change its value only when required. Usually set is at the same value as the `w_euc_cost` or 1.0 (whichever is lower), though you may increase the value of `w_heuristic_cost` to speed up the process.
+- ` .w_heuristic_cost ` : it has been provided to have a admissible heuristic, so the recommendation would be to change its value only when required. Usually set is at the same value as `w_euc_cost` or 1.0 (whichever is lower), though you may increase the value of `w_heuristic_cost` to speed up the process.
 
 Below are the default values of the parameters :
 ```
