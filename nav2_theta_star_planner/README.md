@@ -84,6 +84,9 @@ In order to achieve paths that stay in the middle of the spaces set `w_traversal
 ### Path Smoothing
 Because of how the cost function works, the output path has a natural tendency to form smooth curves around corners, though the smoothness of the path depends on how wide the turn is, and the number of cells in that turn.
 
-This planner is recommended to be used with local planners like DWB or TEB (or other any planner / controllers that form a local trajectory to be traversed) as these take into account the abrupt turns which might arise due to the planner not being able to find a smoother turns owing to the aforementioned reasons.
+This planner is recommended to be used with local planners like DWB or TEB (or other any local planner / controllers that form a local trajectory to be traversed) as these take into account the abrupt turns which might arise due to the planner not being able to find a smoother turns owing to the aforementioned reasons.
 
 While smoother paths can be achieved by increasing the costmap resolution (ie using a costmap of 1cm resolution rather than a 5cm one) it is not recommended doing so as it comes at the cost of increased query times from the planner. Test the planners performance on the finer costmaps before making a switch to those costmaps.
+
+### Possible Applications
+This planner could be used in scenarios where planning speed matters over an extremely smooth path, which could anyways be handled by using a local planner/controller as mentioned above. Because of the any-angled nature of paths you can traverse environments diagonally (wherever it is allowed, eg: in a wide open region).
