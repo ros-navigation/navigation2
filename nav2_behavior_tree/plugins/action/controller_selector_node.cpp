@@ -33,16 +33,25 @@ ControllerSelector::ControllerSelector(
 : BT::SyncActionNode(name, conf)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  callback_group_ = node_->create_callback_group(
+    rclcpp::CallbackGroupType::MutuallyExclusive,
+    false);
+  callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
   getInput("topic_name", topic_name_);
 
+  rclcpp::SubscriptionOptions sub_option;
+  sub_option.callback_group = callback_group_;
   controller_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-    topic_name_, 1, std::bind(&ControllerSelector::callbackControllerSelect, this, _1));
+    topic_name_,
+    1,
+    std::bind(&ControllerSelector::callbackControllerSelect, this, _1),
+    sub_option);
 }
 
 BT::NodeStatus ControllerSelector::tick()
 {
-  rclcpp::spin_some(node_);
+  callback_group_executor_.spin_some();
 
   if (last_selected_controller_.empty()) {
     getInput("default_controller", last_selected_controller_);

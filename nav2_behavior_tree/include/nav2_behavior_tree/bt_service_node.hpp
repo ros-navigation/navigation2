@@ -45,6 +45,10 @@ public:
   : BT::SyncActionNode(service_node_name, conf), service_node_name_(service_node_name)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
+    callback_group_ = node_->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
+    callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
     // Get the required items from the blackboard
     server_timeout_ =
@@ -53,7 +57,10 @@ public:
 
     // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
-    service_client_ = node_->create_client<ServiceT>(service_name_);
+    service_client_ = node_->create_client<ServiceT>(
+      service_name_,
+      rmw_qos_profile_services_default,
+      callback_group_);
 
     // Make a request for the service without parameter
     request_ = std::make_shared<typename ServiceT::Request>();
@@ -129,9 +136,7 @@ public:
     std::shared_future<typename ServiceT::Response::SharedPtr> future_result)
   {
     rclcpp::FutureReturnCode rc;
-    rc = rclcpp::spin_until_future_complete(
-      node_,
-      future_result, server_timeout_);
+    rc = callback_group_executor_.spin_until_future_complete(future_result, server_timeout_);
     if (rc == rclcpp::FutureReturnCode::SUCCESS) {
       return BT::NodeStatus::SUCCESS;
     } else if (rc == rclcpp::FutureReturnCode::TIMEOUT) {
@@ -169,6 +174,8 @@ protected:
 
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 
   // The timeout value while to use in the tick loop while waiting for
   // a result from the server
