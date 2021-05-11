@@ -98,7 +98,7 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
 
 # install CI dependencies
 RUN pip3 install \
-      git+https://github.com/ruffsl/colcon-cache.git
+      git+https://github.com/ruffsl/colcon-cache.git@c8d4b3b84c67e8897731906aa11cd9e8911f5674
 
 # source overlay from entrypoint
 ENV UNDERLAY_WS $UNDERLAY_WS

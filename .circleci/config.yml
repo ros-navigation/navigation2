@@ -133,6 +133,12 @@ _commands:
                         --names-only \
                         --packages-select-build-failed \
                       | xargs)
+                    BUILD_VOID=$(
+                      colcon list \
+                        --names-only \
+                        --packages-select-cache-void \
+                        --packages-respective-cache-verb build \
+                      | xargs)
 
                     . << parameters.underlay >>/install/setup.sh
                     rm -rf log
@@ -140,7 +146,7 @@ _commands:
                       --packages-above \
                         $BUILD_UNFINISHED \
                         $BUILD_FAILED \
-                      --packages-skip-cache-hit \
+                        $BUILD_VOID \
                       --mixin << parameters.mixins >>
               - save_to_cache:
                   key: << parameters.key >>
@@ -168,11 +174,25 @@ _commands:
             name: Test Workspace | << parameters.workspace >>
             working_directory: << parameters.workspace >>
             command: |
+              TEST_FAILURES=$(
+                colcon list \
+                  --names-only \
+                  --packages-select-test-failures \
+                | xargs)
+              TEST_VOID=$(
+                colcon list \
+                  --names-only \
+                  --packages-select-cache-void \
+                  --packages-respective-cache-verb test \
+                | xargs)
+
               . install/setup.sh
               TEST_PACKAGES=$(
                 colcon list \
                   --names-only \
-                  --packages-skip-cache-hit \
+                  --packages-above \
+                    $TEST_FAILURES \
+                    $TEST_VOID \
                 | circleci tests split \
                   --split-by=timings \
                   --timings-type=classname \
