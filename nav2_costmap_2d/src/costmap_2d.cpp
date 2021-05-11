@@ -184,6 +184,29 @@ bool Costmap2D::copyCostmapWindow(
   return true;
 }
 
+bool Costmap2D::copyWindow(
+  const Costmap2D & source,
+  unsigned int sx0, unsigned int sy0, unsigned int sxn, unsigned int syn,
+  unsigned int dx0, unsigned int dy0)
+{
+  const unsigned int sz_x = sxn - sx0;
+  const unsigned int sz_y = syn - sy0;
+
+  if (sxn > source.getSizeInCellsX() || syn > source.getSizeInCellsY()) {
+    return false;
+  }
+
+  if (dx0 + sz_x > size_x_ || dy0 + sz_y > size_y_) {
+    return false;
+  }
+
+  copyMapRegion(
+    source.costmap_, sx0, sy0, source.size_x_,
+    costmap_, dx0, dy0, size_x_,
+    sz_x, sz_y);
+  return true;
+}
+
 Costmap2D & Costmap2D::operator=(const Costmap2D & map)
 {
   // check for self assignement

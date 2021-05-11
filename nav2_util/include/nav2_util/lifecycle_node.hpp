@@ -52,7 +52,7 @@ public:
    */
   LifecycleNode(
     const std::string & node_name,
-    const std::string & namespace_ = "",
+    const std::string & ns = "",
     bool use_rclcpp_node = false,
     const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   virtual ~LifecycleNode();
