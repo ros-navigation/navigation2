@@ -120,17 +120,19 @@ _commands:
                   name: Build Workspace | << parameters.workspace >>
                   working_directory: << parameters.workspace >>
                   command: |
-                    BUILD_UNFINISHED=$(colcon list --packages-skip-build-finished)
-                    BUILD_FAILED=$(colcon list --packages-select-build-failed)
-                    if [ -n "$BUILD_UNFINISHED" ] || [ -n "$BUILD_FAILED" ]
-                    then
-                      . << parameters.underlay >>/install/setup.sh
-                      rm -rf build install log
-                      colcon build \
-                        --mixin << parameters.mixins >>
-                    else
-                      echo "Skipping Build"
-                    fi
+                    colcon cache lock
+
+                    BUILD_UNFINISHED=$(colcon list --packages-skip-build-finished | xarg)
+                    BUILD_FAILED=$(colcon list --packages-select-build-failed | xarg)
+
+                    . << parameters.underlay >>/install/setup.sh
+                    rm -rf log
+                    colcon build \
+                      --packages-above \
+                        $BUILD_UNFINISHED \
+                        $BUILD_FAILED \
+                      --packages-skip-cache-hit \
+                      --mixin << parameters.mixins >>
               - save_to_cache:
                   key: << parameters.key >>
                   path: << parameters.workspace >>
@@ -154,12 +156,14 @@ _commands:
             command: |
               . install/setup.sh
               TEST_PACKAGES=$(
-                colcon list --names-only | \
-                  circleci tests split \
-                    --split-by=timings \
-                    --timings-type=classname \
-                    --show-counts | \
-                  xargs)
+                colcon list \
+                  --names-only \
+                  --packages-skip-cache-hit \
+                | circleci tests split \
+                  --split-by=timings \
+                  --timings-type=classname \
+                  --show-counts \
+                | xargs)
               set -o xtrace
               colcon test \
                 --packages-select ${TEST_PACKAGES} \
