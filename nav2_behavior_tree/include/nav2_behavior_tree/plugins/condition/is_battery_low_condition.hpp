@@ -46,6 +46,11 @@ public:
   IsBatteryLowCondition() = delete;
 
   /**
+   * @brief A destructor for nav2_behavior_tree::IsBatteryLowCondition
+   */
+  ~IsBatteryLowCondition();
+
+  /**
    * @brief The main override required by a BT action
    * @return BT::NodeStatus Status of tick execution
    */
@@ -74,6 +79,9 @@ private:
   void batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg);
 
   rclcpp::Node::SharedPtr node_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
+  std::thread callback_group_executor_thread;
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
   std::string battery_topic_;
   double min_battery_;

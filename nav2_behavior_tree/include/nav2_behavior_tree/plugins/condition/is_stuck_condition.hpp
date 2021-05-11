@@ -86,6 +86,9 @@ public:
 private:
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
+  std::thread callback_group_executor_thread;
 
   std::atomic<bool> is_stuck_;
 

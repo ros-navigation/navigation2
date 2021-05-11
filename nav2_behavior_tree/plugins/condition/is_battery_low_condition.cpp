@@ -33,10 +33,25 @@ IsBatteryLowCondition::IsBatteryLowCondition(
   getInput("battery_topic", battery_topic_);
   getInput("is_voltage", is_voltage_);
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  callback_group_ = node_->create_callback_group(
+    rclcpp::CallbackGroupType::MutuallyExclusive,
+    false);
+  callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+  callback_group_executor_thread = std::thread([this]() {callback_group_executor_.spin();});
+
+  rclcpp::SubscriptionOptions sub_option;
+  sub_option.callback_group = callback_group_;
   battery_sub_ = node_->create_subscription<sensor_msgs::msg::BatteryState>(
     battery_topic_,
     rclcpp::SystemDefaultsQoS(),
-    std::bind(&IsBatteryLowCondition::batteryCallback, this, std::placeholders::_1));
+    std::bind(&IsBatteryLowCondition::batteryCallback, this, std::placeholders::_1),
+    sub_option);
+}
+
+IsBatteryLowCondition::~IsBatteryLowCondition()
+{
+  callback_group_executor_.cancel();
+  callback_group_executor_thread.join();
 }
 
 BT::NodeStatus IsBatteryLowCondition::tick()

@@ -33,13 +33,29 @@ GoalUpdater::GoalUpdater(
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf)
 {
-  auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  callback_group_ = node_->create_callback_group(
+    rclcpp::CallbackGroupType::MutuallyExclusive,
+    false);
+  callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+  callback_group_executor_thread = std::thread([this]() {callback_group_executor_.spin();});
 
   std::string goal_updater_topic;
-  node->get_parameter_or<std::string>("goal_updater_topic", goal_updater_topic, "goal_update");
+  node_->get_parameter_or<std::string>("goal_updater_topic", goal_updater_topic, "goal_update");
 
-  goal_sub_ = node->create_subscription<geometry_msgs::msg::PoseStamped>(
-    goal_updater_topic, 10, std::bind(&GoalUpdater::callback_updated_goal, this, _1));
+  rclcpp::SubscriptionOptions sub_option;
+  sub_option.callback_group = callback_group_;
+  goal_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+    goal_updater_topic,
+    10,
+    std::bind(&GoalUpdater::callback_updated_goal, this, _1),
+    sub_option);
+}
+
+GoalUpdater::~GoalUpdater()
+{
+  callback_group_executor_.cancel();
+  callback_group_executor_thread.join();
 }
 
 inline BT::NodeStatus GoalUpdater::tick()
