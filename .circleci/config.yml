@@ -61,6 +61,9 @@ _commands:
             command: |
               . << parameters.underlay >>/install/setup.sh
               cat << parameters.underlay >>/checksum.txt > checksum.txt
+              vcs export --exact << parameters.underlay >>/src | \
+                (echo vcs_export && cat) >> checksum.txt
+              sha256sum $PWD/checksum.txt >> checksum.txt
               apt-get update
               rosdep update
 
@@ -142,13 +145,6 @@ _commands:
                   key: << parameters.key >>
                   path: << parameters.workspace >>
                   workspace: << parameters.workspace >>
-              - run:
-                  name: Append Checksum | << parameters.workspace >>
-                  working_directory: << parameters.workspace >>
-                  command: |
-                    vcs export --exact src | \
-                      (echo vcs_export && cat) >> checksum.txt
-                    sha256sum $PWD/checksum.txt >> checksum.txt
               - run:
                   name: Copy Build Logs
                   working_directory: << parameters.workspace >>
@@ -233,7 +229,7 @@ _steps:
     run:
       name: Pre Checkout
       command: |
-        mkdir -p $ROS_WS && cd $ROS_WS
+        mkdir -p $ROS_WS/src && cd $ROS_WS
         ln -s /opt/ros/$ROS_DISTRO install
         echo $CACHE_NONCE | \
           (echo cache_nonce && cat) >> checksum.txt
