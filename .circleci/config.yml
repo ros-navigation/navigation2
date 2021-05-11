@@ -12,11 +12,17 @@ _commands:
       steps:
         - restore_cache:
             name: Restore Cache << parameters.key >>
-            key: "<< parameters.key >>-v1\
-              -{{ arch }}\
-              -{{ .Branch }}\
-              -{{ .Environment.CIRCLE_PR_NUMBER }}\
-              -{{ checksum  \"<< parameters.workspace >>/checksum.txt\" }}"
+            keys:
+              - "<< parameters.key >>-v1\
+                -{{ arch }}\
+                -{{ .Branch }}\
+                -{{ .Environment.CIRCLE_PR_NUMBER }}\
+                -{{ checksum  \"<< parameters.workspace >>/checksum.txt\" }}"
+              - "<< parameters.key >>-v1\
+                -{{ arch }}\
+                -main\
+                -<no value>\
+                -{{ checksum  \"<< parameters.workspace >>/checksum.txt\" }}"
     save_to_cache:
       description: "Save To Cache"
       parameters:
