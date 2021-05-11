@@ -97,6 +97,10 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
       --mixin $OVERLAY_MIXINS \
     || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
 
+# install CI dependencies
+RUN pip3 install \
+      git+https://github.com/ruffsl/colcon-cache.git
+
 # source overlay from entrypoint
 ENV UNDERLAY_WS $UNDERLAY_WS
 ENV OVERLAY_WS $OVERLAY_WS
