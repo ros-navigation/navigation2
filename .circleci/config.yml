@@ -146,6 +146,7 @@ _commands:
                   key: << parameters.key >>
                   path: << parameters.workspace >>
                   workspace: << parameters.workspace >>
+                  when: always
               - run:
                   name: Copy Build Logs
                   working_directory: << parameters.workspace >>
