@@ -122,8 +122,16 @@ _commands:
                   command: |
                     colcon cache lock
 
-                    BUILD_UNFINISHED=$(colcon list --packages-skip-build-finished | xargs)
-                    BUILD_FAILED=$(colcon list --packages-select-build-failed | xargs)
+                    BUILD_UNFINISHED=$(
+                      colcon list \
+                        --names-only \
+                        --packages-skip-build-finished \
+                      | xargs)
+                    BUILD_FAILED=$(
+                      colcon list \
+                        --names-only \
+                        --packages-select-build-failed \
+                      | xargs)
 
                     . << parameters.underlay >>/install/setup.sh
                     rm -rf log
