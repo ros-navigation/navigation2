@@ -157,8 +157,12 @@ _commands:
     test_workspace:
       description: "Test Workspace"
       parameters:
+        key:
+          type: string
         workspace:
           type: string
+        cache_test:
+          type: boolean
       steps:
         - run:
             name: Test Workspace | << parameters.workspace >>
@@ -181,6 +185,14 @@ _commands:
                 --ctest-args --test-regex "test_.*"
               colcon test-result \
                 --verbose
+        - when:
+            condition: << parameters.cache_test >>
+            steps:
+              - save_to_cache:
+                  key: << parameters.key >>
+                  path: << parameters.workspace >>
+                  workspace: << parameters.workspace >>
+                  when: always
         - run:
             name: Copy Test Logs
             working_directory: << parameters.workspace >>
@@ -312,7 +324,9 @@ _steps:
       when: always
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
+      key: overlay_ws
       workspace: /opt/overlay_ws
+      cache_test: << parameters.cache_test >>
   collect_overlay_coverage: &collect_overlay_coverage
     run:
       name: Collect Code Coverage
@@ -380,6 +394,9 @@ commands:
       - *restore_overlay_workspace
   test_build:
     description: "Test Build"
+    parameters:
+      cache_test:
+        type: boolean
     steps:
       - *test_overlay_workspace
   report_coverage:
@@ -431,6 +448,9 @@ executors:
 _jobs:
   job_test: &job_test
     parameters:
+      cache_test:
+        type: boolean
+        default: false
       rmw:
         default: "rmw_cyclonedds_cpp"
         type: string
@@ -453,14 +473,16 @@ jobs:
     executor: debug_exec
     steps:
       - restore_build
-      - test_build
+      - test_build:
+          cache_test: << parameters.cache_test >>
       - report_coverage
   release_test:
     <<: *job_test
     executor: release_exec
     steps:
       - restore_build
-      - test_build
+      - test_build:
+          cache_test: << parameters.cache_test >>
   rebuild_dockerhub:
     executor: release_exec
     steps:
@@ -474,10 +496,13 @@ workflows:
       # - debug_test:
       #     requires:
       #       - debug_build
+      #     parameters:
+      #       cache_test: true
       - release_build
-      # - release_test:
-      #     requires:
-      #       - release_build
+      - release_test:
+          requires:
+            - release_build
+          cache_test: true
   nightly:
     jobs:
       # - debug_build
