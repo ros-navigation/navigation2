@@ -45,7 +45,8 @@ _commands:
               -{{ checksum  \"<< parameters.workspace >>/checksum.txt\" }}\
               -{{ epoch }}"
             paths:
-              - << parameters.path >>
+              - << parameters.path >>/build
+              - << parameters.path >>/install
             when: << parameters.when >>
     install_dependencies:
       description: "Install Dependencies"
