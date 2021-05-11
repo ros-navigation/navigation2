@@ -17,8 +17,7 @@ FROM $FROM_IMAGE AS cacher
 ARG UNDERLAY_WS
 WORKDIR $UNDERLAY_WS/src
 COPY ./tools/underlay.repos ../
-RUN vcs import ./ < ../underlay.repos && \
-    find ./ -name ".git" | xargs rm -rf
+RUN vcs import ./ < ../underlay.repos
 
 # copy overlay source
 ARG OVERLAY_WS
