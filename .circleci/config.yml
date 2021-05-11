@@ -477,9 +477,9 @@ workflows:
       #     requires:
       #       - debug_build
       - release_build
-      - release_test:
-          requires:
-            - release_build
+      # - release_test:
+      #     requires:
+      #       - release_build
   nightly:
     jobs:
       # - debug_build
@@ -487,15 +487,15 @@ workflows:
       #     requires:
       #       - debug_build
       - release_build
-      - release_test:
-          requires:
-            - release_build
-          matrix:
-            parameters:
-              rmw:
-                # - rmw_connextdds
-                # - rmw_cyclonedds_cpp
-                - rmw_fastrtps_cpp
+      # - release_test:
+      #     requires:
+      #       - release_build
+      #     matrix:
+      #       parameters:
+      #         rmw:
+      #           # - rmw_connextdds
+      #           # - rmw_cyclonedds_cpp
+      #           - rmw_fastrtps_cpp
     triggers:
       - schedule:
           cron: "0 13 * * *"
