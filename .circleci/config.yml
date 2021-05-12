@@ -271,6 +271,7 @@ _steps:
           (echo ros_entrypoint && cat) >> checksum.txt
         sha256sum $PWD/checksum.txt >> checksum.txt
         mv ~/.ccache $CCACHE_DIR
+        rm -rf $OVERLAY_WS/src
   on_checkout: &on_checkout
     checkout:
       path: src/navigation2
