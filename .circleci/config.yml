@@ -128,17 +128,22 @@ _commands:
                         --names-only \
                         --packages-skip-build-finished \
                       | xargs)
+                    echo BUILD_UNFINISHED: $BUILD_UNFINISHED
+
                     BUILD_FAILED=$(
                       colcon list \
                         --names-only \
                         --packages-select-build-failed \
                       | xargs)
+                    echo BUILD_FAILED: $BUILD_FAILED
+
                     BUILD_VOID=$(
                       colcon list \
                         --names-only \
                         --packages-select-cache-void \
                         --packages-respective-cache-verb build \
                       | xargs)
+                    echo BUILD_VOID: $BUILD_VOID
 
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
@@ -178,12 +183,15 @@ _commands:
                   --names-only \
                   --packages-select-test-failures \
                 | xargs)
+              echo TEST_FAILURES: $TEST_FAILURES
+
               TEST_VOID=$(
                 colcon list \
                   --names-only \
                   --packages-select-cache-void \
                   --packages-respective-cache-verb test \
                 | xargs)
+              echo TEST_VOID: $TEST_VOID
 
               . install/setup.sh
               TEST_PACKAGES=$(
