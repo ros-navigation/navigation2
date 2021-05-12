@@ -46,6 +46,8 @@ RUN apt-get update && \
       ros-$ROS_DISTRO-rmw-fastrtps-cpp \
       ros-$ROS_DISTRO-rmw-connextdds \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
+    && pip3 install \
+      git+https://github.com/ruffsl/colcon-cache.git@c8d4b3b84c67e8897731906aa11cd9e8911f5674 \
     && rosdep update \
     && rm -rf /var/lib/apt/lists/*
 
@@ -67,6 +69,7 @@ COPY --from=cacher $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache"
 ARG FAIL_ON_BUILD_FAILURE=True
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+    colcon cache lock && \
     colcon build \
       --symlink-install \
       --mixin $UNDERLAY_MIXINS \
@@ -91,14 +94,11 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
 COPY --from=cacher $OVERLAY_WS ./
 ARG OVERLAY_MIXINS="release ccache"
 RUN . $UNDERLAY_WS/install/setup.sh && \
+    colcon cache lock && \
     colcon build \
       --symlink-install \
       --mixin $OVERLAY_MIXINS \
     || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
-
-# install CI dependencies
-RUN pip3 install \
-      git+https://github.com/ruffsl/colcon-cache.git@c8d4b3b84c67e8897731906aa11cd9e8911f5674
 
 # source overlay from entrypoint
 ENV UNDERLAY_WS $UNDERLAY_WS
