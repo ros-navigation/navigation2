@@ -47,6 +47,7 @@ _commands:
             paths:
               - << parameters.path >>/build
               - << parameters.path >>/install
+              - << parameters.path >>/log
             when: << parameters.when >>
     install_dependencies:
       description: "Install Dependencies"
