@@ -141,7 +141,6 @@ _commands:
                       | xargs)
 
                     . << parameters.underlay >>/install/setup.sh
-                    rm -rf log
                     colcon build \
                       --packages-above \
                         $BUILD_UNFINISHED \
