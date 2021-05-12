@@ -145,13 +145,20 @@ _commands:
                       | xargs)
                     echo BUILD_VOID: $BUILD_VOID
 
-                    . << parameters.underlay >>/install/setup.sh
-                    colcon build \
-                      --packages-above \
-                        $BUILD_UNFINISHED \
-                        $BUILD_FAILED \
-                        $BUILD_VOID \
-                      --mixin << parameters.mixins >>
+                    if [ -n "$BUILD_UNFINISHED" ] || \
+                       [ -n "$BUILD_FAILED" ] || \
+                       [ -n "$BUILD_VOID" ]
+                    then
+                      . << parameters.underlay >>/install/setup.sh
+                      colcon build \
+                        --packages-above \
+                          $BUILD_UNFINISHED \
+                          $BUILD_FAILED \
+                          $BUILD_VOID \
+                        --mixin << parameters.mixins >>
+                    else
+                      echo "Skipping Build"
+                    fi
               - save_to_cache:
                   key: << parameters.key >>
                   path: << parameters.workspace >>
@@ -193,25 +200,31 @@ _commands:
                 | xargs)
               echo TEST_VOID: $TEST_VOID
 
-              . install/setup.sh
-              TEST_PACKAGES=$(
-                colcon list \
-                  --names-only \
-                  --packages-above \
-                    $TEST_FAILURES \
-                    $TEST_VOID \
-                | circleci tests split \
-                  --split-by=timings \
-                  --timings-type=classname \
-                  --show-counts \
-                | xargs)
-              set -o xtrace
-              colcon test \
-                --packages-select ${TEST_PACKAGES} \
-                --retest-until-pass ${RETEST_UNTIL_PASS} \
-                --ctest-args --test-regex "test_.*"
-              colcon test-result \
-                --verbose
+              if [ -n "$TEST_FAILURES" ] || \
+                 [ -n "$TEST_VOID" ]
+              then
+                . install/setup.sh
+                TEST_PACKAGES=$(
+                  colcon list \
+                    --names-only \
+                    --packages-above \
+                      $TEST_FAILURES \
+                      $TEST_VOID \
+                  | circleci tests split \
+                    --split-by=timings \
+                    --timings-type=classname \
+                    --show-counts \
+                  | xargs)
+                set -o xtrace
+                colcon test \
+                  --packages-select ${TEST_PACKAGES} \
+                  --retest-until-pass ${RETEST_UNTIL_PASS} \
+                  --ctest-args --test-regex "test_.*"
+                colcon test-result \
+                  --verbose
+              else
+                echo "Skipping Test"
+              fi
         - when:
             condition: << parameters.cache_test >>
             steps:
