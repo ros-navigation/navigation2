@@ -18,7 +18,7 @@
 
 #include "std_msgs/msg/string.hpp"
 
-#include "nav2_behavior_tree/plugins/action/planner_selector_node.hpp"
+#include "nav2_behavior_tree/plugins/action/goal_checker_selector_node.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -27,7 +27,7 @@ namespace nav2_behavior_tree
 
 using std::placeholders::_1;
 
-PlannerSelector::PlannerSelector(
+GoalCheckerSelector::GoalCheckerSelector(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf)
@@ -39,38 +39,38 @@ PlannerSelector::PlannerSelector(
   rclcpp::QoS qos(rclcpp::KeepLast(1));
   qos.transient_local().reliable();
 
-  planner_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-    topic_name_, qos, std::bind(&PlannerSelector::callbackPlannerSelect, this, _1));
+  goal_checker_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
+    topic_name_, qos, std::bind(&GoalCheckerSelector::callbackGoalCheckerSelect, this, _1));
 }
 
-BT::NodeStatus PlannerSelector::tick()
+BT::NodeStatus GoalCheckerSelector::tick()
 {
   rclcpp::spin_some(node_);
 
-  // This behavior always use the last selected planner received from the topic input.
-  // When no input is specified it uses the default planner.
-  // If the default planner is not specified then we work in "required planner mode":
-  // In this mode, the behavior returns failure if the planner selection is not received from
+  // This behavior always use the last selected goal checker received from the topic input.
+  // When no input is specified it uses the default goal checker.
+  // If the default goal checker is not specified then we work in "required goal checker mode":
+  // In this mode, the behavior returns failure if the goal checker selection is not received from
   // the topic input.
-  if (last_selected_planner_.empty()) {
-    std::string default_planner;
-    getInput("default_planner", default_planner);
-    if (default_planner.empty()) {
+  if (last_selected_goal_checker_.empty()) {
+    std::string default_goal_checker;
+    getInput("default_goal_checker", default_goal_checker);
+    if (default_goal_checker.empty()) {
       return BT::NodeStatus::FAILURE;
     } else {
-      last_selected_planner_ = default_planner;
+      last_selected_goal_checker_ = default_goal_checker;
     }
   }
 
-  setOutput("selected_planner", last_selected_planner_);
+  setOutput("selected_goal_checker", last_selected_goal_checker_);
 
   return BT::NodeStatus::SUCCESS;
 }
 
 void
-PlannerSelector::callbackPlannerSelect(const std_msgs::msg::String::SharedPtr msg)
+GoalCheckerSelector::callbackGoalCheckerSelect(const std_msgs::msg::String::SharedPtr msg)
 {
-  last_selected_planner_ = msg->data;
+  last_selected_goal_checker_ = msg->data;
 }
 
 }  // namespace nav2_behavior_tree
@@ -78,5 +78,5 @@ PlannerSelector::callbackPlannerSelect(const std_msgs::msg::String::SharedPtr ms
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::PlannerSelector>("PlannerSelector");
+  factory.registerNodeType<nav2_behavior_tree::GoalCheckerSelector>("GoalCheckerSelector");
 }
