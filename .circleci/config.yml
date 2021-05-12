@@ -204,7 +204,6 @@ _commands:
               if [ -n "$TEST_FAILURES" ] || \
                  [ -n "$TEST_VOID" ]
               then
-                . install/setup.sh
                 TEST_PACKAGES=$(
                   colcon list \
                     --names-only \
@@ -216,16 +215,19 @@ _commands:
                     --timings-type=classname \
                     --show-counts \
                   | xargs)
-                set -o xtrace
-                colcon test \
-                  --packages-select ${TEST_PACKAGES} \
-                  --retest-until-pass ${RETEST_UNTIL_PASS} \
-                  --ctest-args --test-regex "test_.*"
-                colcon test-result \
-                  --verbose
               else
-                echo "Skipping Test"
+                TEST_PACKAGES=""
               fi
+              echo TEST_PACKAGES: $TEST_PACKAGES
+
+              . install/setup.sh
+              set -o xtrace
+              colcon test \
+                --packages-select ${TEST_PACKAGES} \
+                --retest-until-pass ${RETEST_UNTIL_PASS} \
+                --ctest-args --test-regex "test_.*"
+              colcon test-result \
+                --verbose
         - when:
             condition: << parameters.cache_test >>
             steps:
