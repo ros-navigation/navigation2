@@ -270,7 +270,6 @@ _steps:
         TZ=utc stat -c '%y' /ros_entrypoint.sh | \
           (echo ros_entrypoint && cat) >> checksum.txt
         sha256sum $PWD/checksum.txt >> checksum.txt
-        rm -rf $OVERLAY_WS/*
         mv ~/.ccache $CCACHE_DIR
   on_checkout: &on_checkout
     checkout:
@@ -284,11 +283,9 @@ _steps:
           $OVERLAY_WS/src/navigation2/tools/underlay.repos \
           $UNDERLAY_WS/underlay.repos >/dev/null 2>&1
         then
-          echo "Cleaning Underlay"
-          rm -rf $UNDERLAY_WS/*
+          echo "Importing Underlay"
           cp $OVERLAY_WS/src/navigation2/tools/underlay.repos \
             $UNDERLAY_WS/underlay.repos
-          mkdir -p $UNDERLAY_WS/src
           vcs import $UNDERLAY_WS/src \
             < $UNDERLAY_WS/underlay.repos
         fi
