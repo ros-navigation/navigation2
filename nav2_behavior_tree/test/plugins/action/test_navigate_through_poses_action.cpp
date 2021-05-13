@@ -66,6 +66,9 @@ public:
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
       "server_timeout",
+      std::chrono::milliseconds(20));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "bt_loop_duration",
       std::chrono::milliseconds(10));
     config_->blackboard->set<bool>("initial_pose_received", false);
     std::vector<geometry_msgs::msg::PoseStamped> poses;
