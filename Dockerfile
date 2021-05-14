@@ -47,7 +47,7 @@ RUN apt-get update && \
       ros-$ROS_DISTRO-rmw-connextdds \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
     && pip3 install \
-      git+https://github.com/ruffsl/colcon-cache.git@c8d4b3b84c67e8897731906aa11cd9e8911f5674 \
+      git+https://github.com/ruffsl/colcon-cache.git@13c424c3a455ae04d1a4176a54c49a9d20c9dca0 \
     && rosdep update \
     && rm -rf /var/lib/apt/lists/*
 

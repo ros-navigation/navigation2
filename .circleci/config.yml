@@ -141,8 +141,8 @@ _commands:
                     BUILD_VOID=$(
                       colcon list \
                         --names-only \
-                        --packages-select-cache-void \
-                        --packages-respective-cache-verb build \
+                        --packages-select-cache-invalid \
+                        --packages-select-cache-key build \
                       | xargs)
                     echo BUILD_VOID: $BUILD_VOID
 
@@ -196,8 +196,8 @@ _commands:
               TEST_VOID=$(
                 colcon list \
                   --names-only \
-                  --packages-select-cache-void \
-                  --packages-respective-cache-verb test \
+                  --packages-select-cache-invalid \
+                  --packages-select-cache-key test \
                 | xargs)
               echo TEST_VOID: $TEST_VOID
 
