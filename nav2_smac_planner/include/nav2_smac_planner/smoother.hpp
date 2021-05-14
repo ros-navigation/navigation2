@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Samsung Research America
+// Copyright (c) 2021, Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,13 @@ public:
   /**
    * @brief A constructor for nav2_smac_planner::Smoother
    */
-  Smoother() {}
+  Smoother(const SmootherParams & params)
+  {
+    tolerance_ = params.tolerance_;
+    max_its_ = params.max_its_;
+    data_w_ = params.w_data_;
+    smooth_w_ = params.w_smooth_;
+  }
 
   /**
    * @brief A destructor for nav2_smac_planner::Smoother
@@ -51,8 +57,17 @@ public:
    */
   void initialize(const double & min_turning_radius)
   {
-
+    min_turning_rad_ = min_turning_radius;
   }
+
+  // TODO tangent to get actual angles (OR USE CURVATURE THAT WE KNOW AT EACH POINT?)
+
+  // TODO launch file / service provider for this for general use
+  
+  // TODO library in utils or a new package
+    // path orientation guestimator 
+    // path smoother 
+    // path length
 
   /**
    * @brief Smoother method
@@ -66,8 +81,142 @@ public:
     const nav2_costmap_2d::Costmap2D * costmap,
     const double & max_time)
   {
-    return false;
+    using namespace std::chrono;
+    steady_clock::time_point a = steady_clock::now();
+    rclcpp::Duration max_dur = rclcpp::Duration::from_seconds(max_time);
+
+    int its = 0;
+    double change = tolerance_;
+    const unsigned int & path_size = path.poses.size();
+    double x_i, y_i, y_m1, y_ip1, y_im2, y_ip2, y_i_org, curvature;
+    unsigned int mx, my;
+
+    // Adding 5% margin due to floating point error
+    const double max_curvature = (1.0 / min_turning_rad_) * 1.05;
+    nav_msgs::msg::Path new_path = path;
+    nav_msgs::msg::Path last_path = path;
+
+    while (change >= tolerance_) {
+      its += 1;
+      change = 0.0;
+
+      // Make sure the smoothing function will converge
+      if (its >= max_its_) {
+        RCLCPP_WARN(
+          rclcpp::get_logger("SmacPlannerSmoother"),
+          "Number of iterations has exceeded limit of %i.", max_its_);
+        path = last_path;
+        return false;
+      }
+
+      // Make sure still have time left to process
+      steady_clock::time_point b = steady_clock::now();
+      rclcpp::Duration timespan(duration_cast<duration<double>>(b - a));
+      if (timespan > max_dur) {
+        RCLCPP_WARN(
+          rclcpp::get_logger("SmacPlannerSmoother"),
+          "Smoothing time exceeded allowed duration of %0.2f.", max_time);
+        path = last_path;
+        return false;
+      }
+
+      for (unsigned int i = 2; i != path_size - 2; i++) {
+        for (unsigned int j = 0; j != 2; j++) {
+          x_i = getFieldByDim(path.poses[i], j);
+          y_i = getFieldByDim(new_path.poses[i], j);
+          y_m1 = getFieldByDim(new_path.poses[i - 1], j);
+          y_ip1 = getFieldByDim(new_path.poses[i + 1], j);
+          y_i_org =  y_i;
+
+          if (i > 2 && i < path_size - 2) {
+            // Smooth based on local 5 point neighborhood and original data locations
+            y_im2 = getFieldByDim(new_path.poses[i - 2], j);
+            y_ip2 = getFieldByDim(new_path.poses[i + 2], j);
+            y_i += data_w_ * (x_i - y_i) + smooth_w_ * (y_im2 + y_ip2 + y_ip1 + y_m1 - (4.0 * y_i));
+          } else {
+            // Smooth based on local 3 point neighborhood and original data locations
+            // At boundary conditions, need to use a more local neighborhood because the first
+            // and last 2 points cannot move to ensure the boundry conditions are upheld
+            y_i += data_w_ * (x_i - y_i) + smooth_w_ * (y_ip1 + y_m1 - (2.0 * y_i));  
+          }
+
+          setFieldByDim(new_path.poses[i], j, y_i);
+          change += abs(y_i - y_i_org);
+        }
+
+        // validate update is admissible, only checks cost if a valid costmap pointer is provided
+        float cost = 0.0;
+        if (costmap) {
+          costmap->worldToMap(getFieldByDim(path.poses[i], 0), getFieldByDim(path.poses[i], 1), mx, my);
+          cost = static_cast<float>(costmap->getCost(mx, my));
+        }
+        if (getCurvature(path, i) > max_curvature || cost > MAX_NON_OBSTACLE) {
+          RCLCPP_WARN(
+            rclcpp::get_logger("SmacPlannerSmoother"),
+            "Smoothing process resulted in an infeasible curvature or collision. "
+            "Returning the last path before the infeasibility was introduced.");
+          path = last_path;
+          return false;
+        }
+      }
+
+      last_path = new_path;
+    }
+
+    updatePathOrientations(new_path);
+    path = new_path;
+    return true;
   }
+
+protected:
+  inline double getFieldByDim(const geometry_msgs::msg::PoseStamped & msg, const unsigned int & dim)
+  {
+    if (dim == 0) {
+      return msg.pose.position.x;
+    } else if (dim == 1) {
+      return msg.pose.position.y;
+    } else {
+      return msg.pose.position.z;
+    }
+  }
+
+  inline void setFieldByDim(geometry_msgs::msg::PoseStamped & msg, const unsigned int dim, const double & value)
+  {
+    if (dim == 0) {
+      msg.pose.position.x = value;
+    } else if (dim == 1) {
+      msg.pose.position.y = value;
+    } else {
+      msg.pose.position.z = value;
+    }
+  }
+
+  inline double getCurvature(const nav_msgs::msg::Path & path, const unsigned int i)
+  {
+    const double dxi_x = getFieldByDim(path.poses[i], 0) - getFieldByDim(path.poses[i - 1], 0);
+    const double dxi_y = getFieldByDim(path.poses[i], 1) - getFieldByDim(path.poses[i - 1], 1);
+    const double dxip1_x = getFieldByDim(path.poses[i + 1], 0) - getFieldByDim(path.poses[i], 0);
+    const double dxip1_y = getFieldByDim(path.poses[i + 1], 1) - getFieldByDim(path.poses[i], 1);
+    const double norm_dx_i = hypot(dxi_x, dxi_y);
+    const double norm_dx_ip1 = hypot(dxip1_x, dxip1_y);
+    double arg = (dxi_x * dxip1_x + dxi_y * dxip1_y) / (norm_dx_i * norm_dx_ip1);
+    if (arg > 1.0) {
+      arg = 1.0;
+    } else if (arg < -1.0) {
+      arg = -1.0;
+    }
+    return acos(arg) / norm_dx_i;
+  }
+
+  inline void updatePathOrientations(nav_msgs::msg::Path & path)
+  {
+    for (unsigned int i = 1; i != path_size - 1; i++) {
+      new_path.poses[i].pose.orientation = geometry_msgs::msg::Quaternion();
+    }
+  }
+
+  double min_turning_rad_, tolerance_, data_w_, smooth_w_;
+  int max_its_;
 };
 
 }  // namespace nav2_smac_planner

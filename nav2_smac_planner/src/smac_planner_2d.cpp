@@ -56,9 +56,7 @@ void SmacPlanner2D::configure(
   bool allow_unknown;
   int max_iterations;
   int max_on_approach_iterations;
-  bool smooth_path;
   SearchInfo search_info;
-  double minimum_turning_radius;
   std::string motion_model_for_search;
 
   // General planner params
@@ -84,12 +82,6 @@ void SmacPlanner2D::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
   node->get_parameter(name + ".max_on_approach_iterations", max_on_approach_iterations);
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".smooth_path", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".smooth_path", smooth_path);
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.2));
-  node->get_parameter(name + ".minimum_turning_radius", minimum_turning_radius);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(1.0));
@@ -129,11 +121,11 @@ void SmacPlanner2D::configure(
     0.0 /*unused for 2D*/,
     1.0 /*unused for 2D*/);
 
-  if (smooth_path) {
-    _smoother = std::make_unique<Smoother>();
-    _smoother->initialize(minimum_turning_radius);
-  }
-
+  SmootherParams params;
+  params.get(node, name);
+  _smoother = std::make_unique<Smoother>(params);
+  _smoother->initialize(1e50 /*No valid minimum turning radius for 2D*/);
+  
   if (_downsample_costmap && _downsampling_factor > 1) {
     std::string topic_name = "downsampled_costmap";
     _costmap_downsampler = std::make_unique<CostmapDownsampler>();
@@ -277,13 +269,8 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 #endif
 
   // Smooth plan
-  if (_smoother && plan.poses.size() > 6) {
-    if (!_smoother->smooth(plan, costmap, time_remaining)) {
-      RCLCPP_WARN(
-        _logger,
-        "%s: failed to smooth plan or timed out while smoothing.",
-        _name.c_str());
-    }
+  if (plan.poses.size() > 6) {
+    _smoother->smooth(plan, costmap, time_remaining);
   }
 
   return plan;

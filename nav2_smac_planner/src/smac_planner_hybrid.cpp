@@ -60,7 +60,6 @@ void SmacPlannerHybrid::configure(
   int angle_quantizations;
   double lookup_table_size;
   SearchInfo search_info;
-  bool smooth_path;
   std::string motion_model_for_search;
 
   // General planner params
@@ -83,9 +82,6 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
   node->get_parameter(name + ".max_iterations", max_iterations);
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".smooth_path", rclcpp::ParameterValue(true));
-  node->get_parameter(name + ".smooth_path", smooth_path);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
@@ -166,10 +162,10 @@ void SmacPlannerHybrid::configure(
     _angle_quantizations);
   _a_star->setFootprint(costmap_ros->getRobotFootprint(), costmap_ros->getUseRadius());
 
-  if (smooth_path) {
-    _smoother = std::make_unique<Smoother>();
-    _smoother->initialize(minimum_turning_radius_global_coords);
-  }
+  SmootherParams params;
+  params.get(node, name);
+  _smoother = std::make_unique<Smoother>(params);
+  _smoother->initialize(minimum_turning_radius_global_coords);
 
   if (_downsample_costmap && _downsampling_factor > 1) {
     std::string topic_name = "downsampled_costmap";
@@ -318,19 +314,21 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   double time_remaining = _max_planning_time - static_cast<double>(time_span.count());
 
 #ifdef BENCHMARK_TESTING
-    std::cout << "It took " << time_span.count() * 1000 <<
-      " milliseconds with " << num_iterations << " iterations." << std::endl;
+  std::cout << "It took " << time_span.count() * 1000 <<
+    " milliseconds with " << num_iterations << " iterations." << std::endl;
 #endif
 
   // Smooth plan
   if (_smoother && plan.poses.size() > 6) {
-    if (!_smoother->smooth(plan, costmap, time_remaining)) {
-      RCLCPP_WARN(
-        _logger,
-        "%s: failed to smooth plan or timed out while smoothing.",
-        _name.c_str());
-    }
+    _smoother->smooth(plan, costmap, time_remaining);
   }
+
+#ifdef BENCHMARK_TESTING
+  steady_clock::time_point c = steady_clock::now();
+  duration<double> time_span2 = duration_cast<duration<double>>(c - b);
+  std::cout << "It took " << time_span2.count() * 1000 <<
+    " milliseconds to smooth path." << std::endl;
+#endif
 
   return plan;
 }
