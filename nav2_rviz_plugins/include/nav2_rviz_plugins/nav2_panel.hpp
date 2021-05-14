@@ -102,6 +102,12 @@ private:
   rclcpp_action::Client<nav2_msgs::action::NavigateThroughPoses>::SharedPtr
     nav_through_poses_action_client_;
 
+  // Navigation action feedback subscribers
+  rclcpp::Subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>::SharedPtr
+    navigation_feedback_sub_;
+  rclcpp::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>::SharedPtr
+    nav_through_poses_feedback_sub_;
+
   // Goal-related state
   nav2_msgs::action::NavigateToPose::Goal navigation_goal_;
   nav2_msgs::action::FollowWaypoints::Goal waypoint_follower_goal_;
@@ -120,6 +126,7 @@ private:
 
   QLabel * navigation_status_indicator_{nullptr};
   QLabel * localization_status_indicator_{nullptr};
+  QLabel * navigation_feedback_indicator_{nullptr};
 
   QStateMachine state_machine_;
   InitialThread * initial_thread_;
@@ -151,6 +158,19 @@ private:
   int getUniqueId();
 
   void resetUniqueId();
+
+  // callbacks for action feedback subscriptions
+  void onNavigateToPoseFeebackReceived(
+    const nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage::SharedPtr msg);
+  void onNavigateThroughPosesFeebackReceived(
+    const nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage::SharedPtr msg);
+
+  // create label string from feedback msg
+  template<typename T>
+  static inline std::string toLabel(T & msg);
+
+  // round off double to the specified precision and convert to string
+  static inline std::string toString(double val, int precision = 2);
 
   // Waypoint navigation visual markers publisher
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wp_navigation_markers_pub_;

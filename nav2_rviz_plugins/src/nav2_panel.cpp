@@ -49,6 +49,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   navigation_mode_button_ = new QPushButton;
   navigation_status_indicator_ = new QLabel;
   localization_status_indicator_ = new QLabel;
+  navigation_feedback_indicator_ = new QLabel;
 
   // Create the state machine used to present the proper control button states in the UI
 
@@ -74,11 +75,17 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     "<td>inactive</td></tr></table>");
   const QString localization_unknown("<table><tr><td width=100><b>Localization:</b></td>"
     "<td>unknown</td></tr></table>");
+  const QString navigation_feedback_inactive("<table><tr><td width=100><b>Feedback:</b></td>"
+    "<td>inactive</td></tr></table>");
+  const QString navigation_feedback_unknown("<table><tr><td width=100><b>Feedback:</b></td>"
+    "<td>unknown</td></tr></table>");
 
   navigation_status_indicator_->setText(navigation_unknown);
   localization_status_indicator_->setText(localization_unknown);
+  navigation_feedback_indicator_->setText(navigation_feedback_unknown);
   navigation_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   localization_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  navigation_feedback_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
   pre_initial_ = new QState();
   pre_initial_->setObjectName("pre_initial");
@@ -292,8 +299,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     });
   QObject::connect(
     initial_thread_, &InitialThread::navigationInactive,
-    [this, navigation_inactive] {
+    [this, navigation_inactive, navigation_feedback_inactive] {
       navigation_status_indicator_->setText(navigation_inactive);
+      navigation_feedback_indicator_->setText(navigation_feedback_inactive);
     });
   QObject::connect(
     initial_thread_, &InitialThread::localizationActive,
@@ -331,6 +339,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   main_layout->addWidget(pause_resume_button_);
   main_layout->addWidget(start_reset_button_);
   main_layout->addWidget(navigation_mode_button_);
+  main_layout->addWidget(navigation_feedback_indicator_);
 
   main_layout->setContentsMargins(10, 10, 10, 10);
   setLayout(main_layout);
@@ -373,6 +382,18 @@ void
 Nav2Panel::onInitialize()
 {
   auto node = getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
+
+  // create action feedback subscribers
+  navigation_feedback_sub_ =
+    node->create_subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>(
+    "navigate_to_pose/_action/feedback",
+    rclcpp::SystemDefaultsQoS(),
+    std::bind(&Nav2Panel::onNavigateToPoseFeebackReceived, this, std::placeholders::_1));
+  nav_through_poses_feedback_sub_ =
+    node->create_subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>(
+    "navigate_through_poses/_action/feedback",
+    rclcpp::SystemDefaultsQoS(),
+    std::bind(&Nav2Panel::onNavigateThroughPosesFeebackReceived, this, std::placeholders::_1));
 }
 
 void
@@ -851,6 +872,54 @@ Nav2Panel::updateWpNavigationMarkers()
   }
 
   wp_navigation_markers_pub_->publish(std::move(marker_array));
+}
+
+void
+Nav2Panel::onNavigateToPoseFeebackReceived(
+  const nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage::SharedPtr msg)
+{
+  std::string feedback_str =
+    "<table><tr><td width=150><b>Feedback:</b></td>"
+    "<td><font color=green>active</color></td></tr>" +
+    toLabel(msg->feedback) + "</table>";
+  navigation_feedback_indicator_->setText(QString(feedback_str.c_str()));
+}
+
+void
+Nav2Panel::onNavigateThroughPosesFeebackReceived(
+  const nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage::SharedPtr msg)
+{
+  std::string feedback_str =
+    "<table><tr><td width=150><b>Feedback:</b></td>"
+    "<td><font color=green>active</color></td></tr>"
+    "<tr><td>Poses remaining:</td><td>" +
+    std::to_string(msg->feedback.number_of_poses_remaining) +
+    "</td></tr>" + toLabel(msg->feedback) + "</table>";
+  navigation_feedback_indicator_->setText(QString(feedback_str.c_str()));
+}
+
+template<typename T>
+inline std::string Nav2Panel::toLabel(T & msg)
+{
+  return std::string(
+    "<tr><td>ETA:</td><td>" +
+    toString(rclcpp::Duration(msg.estimated_time_remaining).seconds(), 2) + " s"
+    "</td></tr><tr><td>Distance remaining:</td><td>" +
+    toString(msg.distance_remaining, 2) + " m"
+    "</td></tr><tr><td>Time taken:</td><td>" +
+    toString(rclcpp::Duration(msg.navigation_time).seconds(), 2) + " s"
+    "</td></tr><tr><td>Recoveries:</td><td>" +
+    std::to_string(msg.number_of_recoveries) +
+    "</td></tr>");
+}
+
+inline std::string
+Nav2Panel::toString(double val, int precision)
+{
+  std::ostringstream out;
+  out.precision(precision);
+  out << std::fixed << val;
+  return out.str();
 }
 
 }  // namespace nav2_rviz_plugins
