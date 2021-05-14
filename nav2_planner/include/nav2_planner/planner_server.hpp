@@ -63,7 +63,9 @@ namespace nav2_planner
    * @brief Method to get plan from the desired plugin
    * @param start starting pose
    * @param goal goal request
-   * @return Path
+   * @param planner_id name of the planner to be used
+   * @param robots number of robots
+   * @return Paths and boundaries
    */
     template <typename PoseType, typename PathType>
     nav2_msgs::msg::PathAndBoundary getPlan(
@@ -117,7 +119,7 @@ namespace nav2_planner
 
     /**
    * @brief Publish a path for visualization purposes
-   * @param path Reference to Global Path
+   * @param path_boundary Reference to Global Path
    */
     void publishPlan(const nav2_msgs::msg::PathAndBoundary &path_boundary);
 

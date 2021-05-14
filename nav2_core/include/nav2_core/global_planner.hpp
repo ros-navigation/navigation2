@@ -71,16 +71,24 @@ namespace nav2_core
     virtual void deactivate() = 0;
 
     /**
-   * @brief Method create the plan from a starting and ending goal.
-   * @param start The starting pose of the robot
-   * @param goal  The goal pose of the robot
-   * @return      The sequence of poses to get from start to goal, if any
+   * @brief Method create the cartesian plan from a starting and ending goal.
+   * @param start The starting pose (cartesian) of the robot
+   * @param goal  The goal pose (cartesian) of the robot
+   * @param robots The number of robots 
+   * @return Path and boundaries generated from the olanner
    */
     virtual nav2_msgs::msg::PathAndBoundary createPlan(
         const geometry_msgs::msg::PoseStamped &start,
         const nav_msgs::msg::Path &goal,
         const int &robots) = 0;
 
+    /**
+   * @brief Method create the GPS plan from a starting and ending goal.
+   * @param start The starting pose of the robot
+   * @param goal  The goal pose of the robot
+   * @param robots The number of robots 
+   * @return Path and boundaries generated from the planner
+   */
     virtual nav2_msgs::msg::PathAndBoundary createPlan(
         const geographic_msgs::msg::GeoPoseStamped &start,
         const geographic_msgs::msg::GeoPath &goal,
