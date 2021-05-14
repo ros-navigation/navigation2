@@ -38,9 +38,13 @@ FROM $FROM_IMAGE AS builder
 ARG DEBIAN_FRONTEND=noninteractive
 
 # install CI dependencies
-RUN apt-get update && apt-get install -q -y \
+ARG RTI_NC_LICENSE_ACCEPTED=yes
+RUN apt-get update && apt-get install -y \
       ccache \
       lcov \
+      ros-$ROS_DISTRO-rmw-fastrtps-cpp \
+      ros-$ROS_DISTRO-rmw-connextdds \
+      ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
     && rosdep update \
     && rm -rf /var/lib/apt/lists/*
 
