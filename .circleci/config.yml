@@ -138,24 +138,24 @@ _commands:
                       | xargs)
                     echo BUILD_FAILED: $BUILD_FAILED
 
-                    BUILD_VOID=$(
+                    BUILD_INVALID=$(
                       colcon list \
                         --names-only \
                         --packages-select-cache-invalid \
                         --packages-select-cache-key build \
                       | xargs)
-                    echo BUILD_VOID: $BUILD_VOID
+                    echo BUILD_INVALID: $BUILD_INVALID
 
                     if [ -n "$BUILD_UNFINISHED" ] || \
                        [ -n "$BUILD_FAILED" ] || \
-                       [ -n "$BUILD_VOID" ]
+                       [ -n "$BUILD_INVALID" ]
                     then
                       . << parameters.underlay >>/install/setup.sh
                       colcon build \
                         --packages-above \
                           $BUILD_UNFINISHED \
                           $BUILD_FAILED \
-                          $BUILD_VOID \
+                          $BUILD_INVALID \
                         --mixin << parameters.mixins >>
                     else
                       echo "Skipping Build"
@@ -193,23 +193,23 @@ _commands:
                 | xargs)
               echo TEST_FAILURES: $TEST_FAILURES
 
-              TEST_VOID=$(
+              TEST_INVALID=$(
                 colcon list \
                   --names-only \
                   --packages-select-cache-invalid \
                   --packages-select-cache-key test \
                 | xargs)
-              echo TEST_VOID: $TEST_VOID
+              echo TEST_INVALID: $TEST_INVALID
 
               if [ -n "$TEST_FAILURES" ] || \
-                 [ -n "$TEST_VOID" ]
+                 [ -n "$TEST_INVALID" ]
               then
                 TEST_PACKAGES=$(
                   colcon list \
                     --names-only \
                     --packages-above \
                       $TEST_FAILURES \
-                      $TEST_VOID \
+                      $TEST_INVALID \
                   | circleci tests split \
                     --split-by=timings \
                     --timings-type=classname \
