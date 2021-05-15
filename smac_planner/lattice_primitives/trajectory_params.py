@@ -9,6 +9,7 @@ class TrajectoryParameters:
     end_point: np.array
     start_angle: float
     end_angle: float
+    left_turn: bool
 
     start_to_arc_distance: float
     arc_to_end_distance: float
