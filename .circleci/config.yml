@@ -150,16 +150,23 @@ _commands:
                        [ -n "$BUILD_FAILED" ] || \
                        [ -n "$BUILD_INVALID" ]
                     then
-                      . << parameters.underlay >>/install/setup.sh
-                      colcon build \
-                        --packages-above \
-                          $BUILD_UNFINISHED \
-                          $BUILD_FAILED \
-                          $BUILD_INVALID \
-                        --mixin << parameters.mixins >>
+                      BUILD_PACKAGES=$(
+                        colcon list \
+                          --names-only \
+                          --packages-above \
+                            $BUILD_UNFINISHED \
+                            $BUILD_FAILED \
+                            $BUILD_INVALID \
+                        | xargs)
                     else
-                      echo "Skipping Build"
+                      BUILD_PACKAGES=""
                     fi
+                    echo BUILD_PACKAGES: $BUILD_PACKAGES
+                    
+                    . << parameters.underlay >>/install/setup.sh
+                    colcon build \
+                      --packages-select ${BUILD_PACKAGES} \
+                      --mixin << parameters.mixins >>
               - save_to_cache:
                   key: << parameters.key >>
                   path: << parameters.workspace >>
