@@ -23,6 +23,7 @@
 #include <utility>
 
 #include "nav2_smac_planner/types.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 namespace nav2_smac_planner
@@ -60,10 +61,7 @@ public:
     min_turning_rad_ = min_turning_radius;
   }
 
-  // TODO tangent to get actual angles (OR USE CURVATURE THAT WE KNOW AT EACH POINT?)
-
   // TODO launch file / service provider for this for general use
-  
   // TODO library in utils or a new package
     // path orientation guestimator 
     // path smoother 
@@ -106,6 +104,7 @@ public:
           rclcpp::get_logger("SmacPlannerSmoother"),
           "Number of iterations has exceeded limit of %i.", max_its_);
         path = last_path;
+        updateApproximatePathOrientations(new_path);
         return false;
       }
 
@@ -117,6 +116,7 @@ public:
           rclcpp::get_logger("SmacPlannerSmoother"),
           "Smoothing time exceeded allowed duration of %0.2f.", max_time);
         path = last_path;
+        updateApproximatePathOrientations(new_path);
         return false;
       }
 
@@ -155,6 +155,7 @@ public:
             rclcpp::get_logger("SmacPlannerSmoother"),
             "Smoothing process resulted in an infeasible curvature or collision. "
             "Returning the last path before the infeasibility was introduced.");
+          updateApproximatePathOrientations(new_path);
           path = last_path;
           return false;
         }
@@ -163,7 +164,7 @@ public:
       last_path = new_path;
     }
 
-    updatePathOrientations(new_path);
+    updateApproximatePathOrientations(new_path);
     path = new_path;
     return true;
   }
@@ -193,6 +194,7 @@ protected:
 
   inline double getCurvature(const nav_msgs::msg::Path & path, const unsigned int i)
   {
+    // k = 1 / r = acos(delta_phi) / |xi|, where delta_phi = (xi dot xi+1) / (|xi| * |xi+1|)
     const double dxi_x = getFieldByDim(path.poses[i], 0) - getFieldByDim(path.poses[i - 1], 0);
     const double dxi_y = getFieldByDim(path.poses[i], 1) - getFieldByDim(path.poses[i - 1], 1);
     const double dxip1_x = getFieldByDim(path.poses[i + 1], 0) - getFieldByDim(path.poses[i], 0);
@@ -200,18 +202,26 @@ protected:
     const double norm_dx_i = hypot(dxi_x, dxi_y);
     const double norm_dx_ip1 = hypot(dxip1_x, dxip1_y);
     double arg = (dxi_x * dxip1_x + dxi_y * dxip1_y) / (norm_dx_i * norm_dx_ip1);
+
+    // In case of small out of bounds issues from floating point error
     if (arg > 1.0) {
       arg = 1.0;
     } else if (arg < -1.0) {
       arg = -1.0;
     }
+
     return acos(arg) / norm_dx_i;
   }
 
-  inline void updatePathOrientations(nav_msgs::msg::Path & path)
+  inline void updateApproximatePathOrientations(nav_msgs::msg::Path & path)
   {
-    for (unsigned int i = 1; i != path_size - 1; i++) {
-      new_path.poses[i].pose.orientation = geometry_msgs::msg::Quaternion();
+    using namespace nav2_util::geometry_utils;
+    double dx, dy, theta;
+    for (unsigned int i = 0; i != path.poses.size() - 1; i++) {
+      dx = path.poses[i+1].pose.position.x - path.poses[i].pose.position.x;
+      dy = path.poses[i+1].pose.position.y - path.poses[i].pose.position.y;
+      theta = atan2(dy, dx);
+      path.poses[i].pose.orientation = orientationAroundZAxis(theta);
     }
   }
 
