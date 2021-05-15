@@ -23,7 +23,6 @@
   <depend>nav2_costmap_2d</depend>
   <depend>nav2_core</depend>
   <depend>pluginlib</depend>
-  <depend>libceres-dev</depend>
   <depend>eigen3_cmake_module</depend>
   <depend>eigen</depend>
   <depend>ompl</depend>

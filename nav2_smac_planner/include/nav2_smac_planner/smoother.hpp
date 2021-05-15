@@ -61,12 +61,6 @@ public:
     min_turning_rad_ = min_turning_radius;
   }
 
-  // TODO launch file / service provider for this for general use
-  // TODO library in utils or a new package
-    // path orientation guestimator 
-    // path smoother 
-    // path length
-
   /**
    * @brief Smoother method
    * @param path Reference to path
