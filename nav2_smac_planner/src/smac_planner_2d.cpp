@@ -124,7 +124,7 @@ void SmacPlanner2D::configure(
   SmootherParams params;
   params.get(node, name);
   _smoother = std::make_unique<Smoother>(params);
-  _smoother->initialize(1e50 /*No valid minimum turning radius for 2D*/);
+  _smoother->initialize(1e-50 /*No valid minimum turning radius for 2D*/);
   
   if (_downsample_costmap && _downsampling_factor > 1) {
     std::string topic_name = "downsampled_costmap";
