@@ -179,6 +179,17 @@ _commands:
             path: << parameters.workspace >>/test_results
         - store_artifacts:
             path: << parameters.workspace >>/test_results
+    check_image_updates:
+      description: "Check image updates"
+      steps:
+        - run:
+            command: |
+              apt-get update \
+                -o Dir::Etc::sourcelist="sources.list.d/ros2.list"
+              apt-get --simulate upgrade \
+                -o Dir::Etc::sourcelist="sources.list.d/ros2.list" \
+                | grep "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded." \
+                && echo "No image updates" || exit 1
     trigger_dockerhub_url:
       description: "Trigger Dockerhub URL"
       parameters:
@@ -186,6 +197,7 @@ _commands:
           type: string
       steps:
         - run:
+            when: on_fail
             command: |
               curl -H "Content-Type: application/json" \
                 --data '<< parameters.data >>' \
@@ -352,6 +364,7 @@ commands:
   trigger_dockerhub:
     description: "Trigger DockerHub"
     steps:
+      - *check_image_updates
       - *trigger_dockerhub_build
 
 _environments:
@@ -388,9 +401,6 @@ executors:
       CACHE_NONCE: "Release"
       OVERLAY_MIXINS: "release ccache"
       UNDERLAY_MIXINS: "release ccache"
-  python_exec:
-    docker:
-      - image: circleci/python
 
 _jobs:
   job_test: &job_test
@@ -426,7 +436,7 @@ jobs:
       - restore_build
       - test_build
   rebuild_dockerhub:
-    executor: python_exec
+    executor: release_exec
     steps:
       - trigger_dockerhub
 
