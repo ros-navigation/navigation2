@@ -540,12 +540,11 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      # - debug_build
-      # - debug_test:
-      #     requires:
-      #       - debug_build
-      #     parameters:
-      #       cache_test: true
+      - debug_build
+      - debug_test:
+          requires:
+            - debug_build
+          cache_test: true
       - release_build
       - release_test:
           requires:
@@ -553,20 +552,20 @@ workflows:
           cache_test: true
   nightly:
     jobs:
-      # - debug_build
-      # - debug_test:
-      #     requires:
-      #       - debug_build
+      - debug_build
+      - debug_test:
+          requires:
+            - debug_build
       - release_build
-      # - release_test:
-      #     requires:
-      #       - release_build
-      #     matrix:
-      #       parameters:
-      #         rmw:
-      #           # - rmw_connextdds
-      #           # - rmw_cyclonedds_cpp
-      #           - rmw_fastrtps_cpp
+      - release_test:
+          requires:
+            - release_build
+          matrix:
+            parameters:
+              rmw:
+                - rmw_connextdds
+                - rmw_cyclonedds_cpp
+                - rmw_fastrtps_cpp
     triggers:
       - schedule:
           cron: "0 13 * * *"
