@@ -146,6 +146,7 @@ _commands:
                       | xargs)
                     echo BUILD_INVALID: $BUILD_INVALID
 
+                    BUILD_PACKAGES=""
                     if [ -n "$BUILD_UNFINISHED" ] || \
                        [ -n "$BUILD_FAILED" ] || \
                        [ -n "$BUILD_INVALID" ]
@@ -158,11 +159,9 @@ _commands:
                             $BUILD_FAILED \
                             $BUILD_INVALID \
                         | xargs)
-                    else
-                      BUILD_PACKAGES=""
                     fi
                     echo BUILD_PACKAGES: $BUILD_PACKAGES
-                    
+
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
@@ -208,6 +207,7 @@ _commands:
                 | xargs)
               echo TEST_INVALID: $TEST_INVALID
 
+              TEST_PACKAGES=""
               if [ -n "$TEST_FAILURES" ] || \
                  [ -n "$TEST_INVALID" ]
               then
@@ -216,15 +216,21 @@ _commands:
                     --names-only \
                     --packages-above \
                       $TEST_FAILURES \
-                      $TEST_INVALID \
-                  | circleci tests split \
-                    --split-by=timings \
-                    --timings-type=classname \
-                    --show-counts \
-                  | xargs)
-              else
-                TEST_PACKAGES=""
+                      $TEST_INVALID)
               fi
+              if ( ! << parameters.cache_test >> )
+              then
+                TEST_PACKAGES=$(
+                  colcon list \
+                    --names-only)
+              fi
+              TEST_PACKAGES=$(
+                echo $TEST_PACKAGES \
+                | circleci tests split \
+                  --split-by=timings \
+                  --timings-type=classname \
+                  --show-counts \
+                | xargs)
               echo TEST_PACKAGES: $TEST_PACKAGES
 
               . install/setup.sh
