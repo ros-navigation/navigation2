@@ -45,11 +45,6 @@ public:
     const BT::NodeConfiguration & conf);
 
   /**
-   * @brief A destructor for nav2_behavior_tree::GoalUpdater
-   */
-  ~GoalUpdater();
-
-  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing node-specific ports
    */
@@ -83,7 +78,6 @@ private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
-  std::thread callback_group_executor_thread;
 };
 
 }  // namespace nav2_behavior_tree

@@ -38,7 +38,6 @@ GoalUpdater::GoalUpdater(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
   callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
-  callback_group_executor_thread = std::thread([this]() {callback_group_executor_.spin();});
 
   std::string goal_updater_topic;
   node_->get_parameter_or<std::string>("goal_updater_topic", goal_updater_topic, "goal_update");
@@ -52,17 +51,13 @@ GoalUpdater::GoalUpdater(
     sub_option);
 }
 
-GoalUpdater::~GoalUpdater()
-{
-  callback_group_executor_.cancel();
-  callback_group_executor_thread.join();
-}
-
 inline BT::NodeStatus GoalUpdater::tick()
 {
   geometry_msgs::msg::PoseStamped goal;
 
   getInput("input_goal", goal);
+
+  callback_group_executor_.spin_some();
 
   if (rclcpp::Time(last_goal_received_.header.stamp) > rclcpp::Time(goal.header.stamp)) {
     goal = last_goal_received_;

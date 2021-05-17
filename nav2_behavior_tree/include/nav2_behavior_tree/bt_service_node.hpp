@@ -154,8 +154,8 @@ public:
     if (remaining > std::chrono::milliseconds(0)) {
       auto timeout = remaining > bt_loop_duration_ ? bt_loop_duration_ : remaining;
 
-    rclcpp::FutureReturnCode rc;
-    rc = callback_group_executor_.spin_until_future_complete(future_result, server_timeout_);
+      rclcpp::FutureReturnCode rc;
+      rc = callback_group_executor_.spin_until_future_complete(future_result_, server_timeout_);
       if (rc == rclcpp::FutureReturnCode::SUCCESS) {
         request_sent_ = false;
         return BT::NodeStatus::SUCCESS;
