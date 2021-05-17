@@ -482,7 +482,7 @@ _environments:
 executors:
   debug_exec:
     docker:
-      - image: ruffsl/navigation2:main.debug
+      - image: rosplanning/navigation2:main.debug
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
@@ -491,7 +491,7 @@ executors:
       UNDERLAY_MIXINS: "release ccache"
   release_exec:
     docker:
-      - image: ruffsl/navigation2:main.release
+      - image: rosplanning/navigation2:main.release
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
@@ -579,13 +579,13 @@ workflows:
             branches:
               only:
                 - main
-  # dockerhub:
-  #   jobs:
-  #     - rebuild_dockerhub
-  #   triggers:
-  #     - schedule:
-  #         cron: "0 7 * * *"
-  #         filters:
-  #           branches:
-  #             only:
-  #               - main
+  dockerhub:
+    jobs:
+      - rebuild_dockerhub
+    triggers:
+      - schedule:
+          cron: "0 7 * * *"
+          filters:
+            branches:
+              only:
+                - main
