@@ -38,7 +38,7 @@ GoalPoseUpdater GoalUpdater;
 
 Nav2Panel::Nav2Panel(QWidget * parent)
 : Panel(parent),
-  server_timeout_(10),
+  server_timeout_(20),
   client_nav_("lifecycle_manager_navigation"),
   client_loc_("lifecycle_manager_localization")
 {

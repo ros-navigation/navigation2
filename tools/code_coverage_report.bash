@@ -88,7 +88,7 @@ lcov \
 
 if [ $COVERAGE_REPORT_VIEW = codecovio ]; then
   curl -s https://codecov.io/bash > codecov
-  local codecov_version=$(grep -o 'VERSION=\"[0-9\.]*\"' codecov | cut -d'"' -f2)
+  codecov_version=$(grep -o 'VERSION=\"[0-9\.]*\"' codecov | cut -d'"' -f2)
   shasum -a 512 -c <(curl -s "https://raw.githubusercontent.com/codecov/codecov-bash/${codecov_version}/SHA512SUM" | grep -w "codecov")
   bash codecov \
     -f ${LCOVDIR}/project_coverage.info \

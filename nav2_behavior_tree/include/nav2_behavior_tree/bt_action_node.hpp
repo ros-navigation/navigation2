@@ -53,6 +53,8 @@ public:
     callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
     // Get the required items from the blackboard
+    bt_loop_duration_ =
+      config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
     server_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
@@ -178,7 +180,26 @@ public:
       // user defined callback
       on_tick();
 
-      on_new_goal_received();
+      send_new_goal();
+    }
+
+    // if new goal was sent and action server has not yet responded
+    // check the future goal handle
+    if (future_goal_handle_) {
+      auto elapsed = (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
+      if (!is_future_goal_handle_complete(elapsed)) {
+        // return RUNNING if there is still some time before timeout happens
+        if (elapsed < server_timeout_) {
+          return BT::NodeStatus::RUNNING;
+        }
+        // if server has taken more time to respond than the specified timeout value return FAILURE
+        RCLCPP_WARN(
+          node_->get_logger(),
+          "Timed out while waiting for action server to acknowledge goal request for %s",
+          action_name_.c_str());
+        future_goal_handle_.reset();
+        return BT::NodeStatus::FAILURE;
+      }
     }
 
     // The following code corresponds to the "RUNNING" loop
@@ -191,7 +212,19 @@ public:
         goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
       {
         goal_updated_ = false;
-        on_new_goal_received();
+        send_new_goal();
+        auto elapsed = (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
+        if (!is_future_goal_handle_complete(elapsed)) {
+          if (elapsed < server_timeout_) {
+            return BT::NodeStatus::RUNNING;
+          }
+          RCLCPP_WARN(
+            node_->get_logger(),
+            "Timed out while waiting for action server to acknowledge goal request for %s",
+            action_name_.c_str());
+          future_goal_handle_.reset();
+          return BT::NodeStatus::FAILURE;
+        }
       }
 
       callback_group_executor_.spin_some();
@@ -203,19 +236,26 @@ public:
       }
     }
 
+    BT::NodeStatus status;
     switch (result_.code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
-        return on_success();
+        status = on_success();
+        break;
 
       case rclcpp_action::ResultCode::ABORTED:
-        return on_aborted();
+        status = on_aborted();
+        break;
 
       case rclcpp_action::ResultCode::CANCELED:
-        return on_cancelled();
+        status = on_cancelled();
+        break;
 
       default:
         throw std::logic_error("BtActionNode::Tick: invalid status value");
     }
+
+    goal_handle_.reset();
+    return status;
   }
 
   /**
@@ -250,6 +290,11 @@ protected:
       return false;
     }
 
+    // No need to cancel the goal if goal handle is invalid
+    if (!goal_handle_) {
+      return false;
+    }
+
     callback_group_executor_.spin_some();
     auto status = goal_handle_->get_status();
 
@@ -261,7 +306,7 @@ protected:
   /**
    * @brief Function to send new goal to action server
    */
-  void on_new_goal_received()
+  void send_new_goal()
   {
     goal_result_available_ = false;
     auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
@@ -276,18 +321,47 @@ protected:
         }
       };
 
-    auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
+    future_goal_handle_ = std::make_shared<
+      std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr>>(
+      action_client_->async_send_goal(goal_, send_goal_options));
+    time_goal_sent_ = node_->now();
+  }
 
-    if (callback_group_executor_.spin_until_future_complete(future_goal_handle, server_timeout_) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
+  /**
+   * @brief Function to check if the action server acknowledged a new goal
+   * @param elapsed Duration since the last goal was sent and future goal handle has not completed.
+   * After waiting for the future to complete, this value is incremented with the timeout value.
+   * @return boolean True if future_goal_handle_ returns SUCCESS, False otherwise
+   */
+  bool is_future_goal_handle_complete(std::chrono::milliseconds & elapsed)
+  {
+    auto remaining = server_timeout_ - elapsed;
+
+    // server has already timed out, no need to sleep
+    if (remaining <= std::chrono::milliseconds(0)) {
+      future_goal_handle_.reset();
+      return false;
+    }
+
+    auto timeout = remaining > bt_loop_duration_ ? bt_loop_duration_ : remaining;
+    auto result = rclcpp::spin_until_future_complete(node_, *future_goal_handle_, timeout);
+    elapsed += timeout;
+
+    if (result == rclcpp::FutureReturnCode::INTERRUPTED) {
+      future_goal_handle_.reset();
       throw std::runtime_error("send_goal failed");
     }
 
-    goal_handle_ = future_goal_handle.get();
-    if (!goal_handle_) {
-      throw std::runtime_error("Goal was rejected by the action server");
+    if (result == rclcpp::FutureReturnCode::SUCCESS) {
+      goal_handle_ = future_goal_handle_->get();
+      future_goal_handle_.reset();
+      if (!goal_handle_) {
+        throw std::runtime_error("Goal was rejected by the action server");
+      }
+      return true;
     }
+
+    return false;
   }
 
   /**
@@ -319,6 +393,14 @@ protected:
   // The timeout value while waiting for response from a server when a
   // new action goal is sent or canceled
   std::chrono::milliseconds server_timeout_;
+
+  // The timeout value for BT loop execution
+  std::chrono::milliseconds bt_loop_duration_;
+
+  // To track the action server acknowledgement when a new goal is sent
+  std::shared_ptr<std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr>>
+  future_goal_handle_;
+  rclcpp::Time time_goal_sent_;
 };
 
 }  // namespace nav2_behavior_tree

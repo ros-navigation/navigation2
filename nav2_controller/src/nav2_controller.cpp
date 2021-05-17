@@ -37,8 +37,8 @@ ControllerServer::ControllerServer()
   default_progress_checker_id_{"progress_checker"},
   default_progress_checker_type_{"nav2_controller::SimpleProgressChecker"},
   goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
-  default_goal_checker_id_{"goal_checker"},
-  default_goal_checker_type_{"nav2_controller::SimpleGoalChecker"},
+  default_goal_checker_ids_{"goal_checker"},
+  default_goal_checker_types_{"nav2_controller::SimpleGoalChecker"},
   lp_loader_("nav2_core", "nav2_core::Controller"),
   default_ids_{"FollowPath"},
   default_types_{"dwb_core::DWBLocalPlanner"}
@@ -48,7 +48,7 @@ ControllerServer::ControllerServer()
   declare_parameter("controller_frequency", 20.0);
 
   declare_parameter("progress_checker_plugin", default_progress_checker_id_);
-  declare_parameter("goal_checker_plugin", default_goal_checker_id_);
+  declare_parameter("goal_checker_plugins", default_goal_checker_ids_);
   declare_parameter("controller_plugins", default_ids_);
   declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
@@ -69,7 +69,7 @@ ControllerServer::ControllerServer()
 ControllerServer::~ControllerServer()
 {
   progress_checker_.reset();
-  goal_checker_.reset();
+  goal_checkers_.clear();
   controllers_.clear();
 }
 
@@ -86,11 +86,15 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       node, default_progress_checker_id_ + ".plugin",
       rclcpp::ParameterValue(default_progress_checker_type_));
   }
-  get_parameter("goal_checker_plugin", goal_checker_id_);
-  if (goal_checker_id_ == default_goal_checker_id_) {
-    nav2_util::declare_parameter_if_not_declared(
-      node, default_goal_checker_id_ + ".plugin",
-      rclcpp::ParameterValue(default_goal_checker_type_));
+
+  RCLCPP_INFO(get_logger(), "getting goal checker plugins..");
+  get_parameter("goal_checker_plugins", goal_checker_ids_);
+  if (goal_checker_ids_ == default_goal_checker_ids_) {
+    for (size_t i = 0; i < default_goal_checker_ids_.size(); ++i) {
+      nav2_util::declare_parameter_if_not_declared(
+        node, default_goal_checker_ids_[i] + ".plugin",
+        rclcpp::ParameterValue(default_goal_checker_types_[i]));
+    }
   }
 
   get_parameter("controller_plugins", controller_ids_);
@@ -103,6 +107,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   }
 
   controller_types_.resize(controller_ids_.size());
+  goal_checker_types_.resize(goal_checker_ids_.size());
 
   get_parameter("controller_frequency", controller_frequency_);
   get_parameter("min_x_velocity_threshold", min_x_velocity_threshold_);
@@ -129,19 +134,32 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       "Failed to create progress_checker. Exception: %s", ex.what());
     return nav2_util::CallbackReturn::FAILURE;
   }
-  try {
-    goal_checker_type_ = nav2_util::get_plugin_type_param(node, goal_checker_id_);
-    goal_checker_ = goal_checker_loader_.createUniqueInstance(goal_checker_type_);
-    RCLCPP_INFO(
-      get_logger(), "Created goal_checker : %s of type %s",
-      goal_checker_id_.c_str(), goal_checker_type_.c_str());
-    goal_checker_->initialize(node, goal_checker_id_);
-  } catch (const pluginlib::PluginlibException & ex) {
-    RCLCPP_FATAL(
-      get_logger(),
-      "Failed to create goal_checker. Exception: %s", ex.what());
-    return nav2_util::CallbackReturn::FAILURE;
+
+  for (size_t i = 0; i != goal_checker_ids_.size(); i++) {
+    try {
+      goal_checker_types_[i] = nav2_util::get_plugin_type_param(node, goal_checker_ids_[i]);
+      nav2_core::GoalChecker::Ptr goal_checker =
+        goal_checker_loader_.createUniqueInstance(goal_checker_types_[i]);
+      RCLCPP_INFO(
+        get_logger(), "Created goal checker : %s of type %s",
+        goal_checker_ids_[i].c_str(), goal_checker_types_[i].c_str());
+      goal_checker->initialize(node, goal_checker_ids_[i]);
+      goal_checkers_.insert({goal_checker_ids_[i], goal_checker});
+    } catch (const pluginlib::PluginlibException & ex) {
+      RCLCPP_FATAL(
+        get_logger(),
+        "Failed to create goal checker. Exception: %s", ex.what());
+      return nav2_util::CallbackReturn::FAILURE;
+    }
   }
+
+  for (size_t i = 0; i != goal_checker_ids_.size(); i++) {
+    goal_checker_ids_concat_ += goal_checker_ids_[i] + std::string(" ");
+  }
+
+  RCLCPP_INFO(
+    get_logger(),
+    "Controller Server has %s goal checkers available.", goal_checker_ids_concat_.c_str());
 
   for (size_t i = 0; i != controller_ids_.size(); i++) {
     try {
@@ -246,7 +264,7 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   vel_publisher_.reset();
   speed_limit_sub_.reset();
   action_server_.reset();
-  goal_checker_->reset();
+  goal_checkers_[current_goal_checker_]->reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -272,13 +290,39 @@ bool ControllerServer::findControllerId(
     } else {
       RCLCPP_ERROR(
         get_logger(), "FollowPath called with controller name %s, "
-        "which does not exist. Available controllers are %s.",
+        "which does not exist. Available controllers are: %s.",
         c_name.c_str(), controller_ids_concat_.c_str());
       return false;
     }
   } else {
     RCLCPP_DEBUG(get_logger(), "Selected controller: %s.", c_name.c_str());
     current_controller = c_name;
+  }
+
+  return true;
+}
+
+bool ControllerServer::findGoalCheckerId(
+  const std::string & c_name,
+  std::string & current_goal_checker)
+{
+  if (goal_checkers_.find(c_name) == goal_checkers_.end()) {
+    if (goal_checkers_.size() == 1 && c_name.empty()) {
+      RCLCPP_WARN_ONCE(
+        get_logger(), "No goal checker was specified in parameter 'current_goal_checker'."
+        " Server will use only plugin loaded %s. "
+        "This warning will appear once.", goal_checker_ids_concat_.c_str());
+      current_goal_checker = goal_checkers_.begin()->first;
+    } else {
+      RCLCPP_ERROR(
+        get_logger(), "FollowPath called with goal_checker name %s in parameter"
+        " 'current_goal_checker', which does not exist. Available goal checkers are: %s.",
+        c_name.c_str(), goal_checker_ids_concat_.c_str());
+      return false;
+    }
+  } else {
+    RCLCPP_DEBUG(get_logger(), "Selected goal checker: %s.", c_name.c_str());
+    current_goal_checker = c_name;
   }
 
   return true;
@@ -293,6 +337,15 @@ void ControllerServer::computeControl()
     std::string current_controller;
     if (findControllerId(c_name, current_controller)) {
       current_controller_ = current_controller;
+    } else {
+      action_server_->terminate_current();
+      return;
+    }
+
+    std::string gc_name = action_server_->get_current_goal()->goal_checker_id;
+    std::string current_goal_checker;
+    if (findGoalCheckerId(gc_name, current_goal_checker)) {
+      current_goal_checker_ = current_goal_checker;
     } else {
       action_server_->terminate_current();
       return;
@@ -368,7 +421,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   nav_2d_utils::transformPose(
     costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
     end_pose, end_pose, tolerance);
-  goal_checker_->reset();
+  goal_checkers_[current_goal_checker_]->reset();
 
   RCLCPP_DEBUG(
     get_logger(), "Path end point is (%.2f, %.2f)",
@@ -398,7 +451,7 @@ void ControllerServer::computeAndPublishVelocity()
       controllers_[current_controller_]->computeVelocityCommands(
       pose,
       nav_2d_utils::twist2Dto3D(twist),
-      goal_checker_.get());
+      goal_checkers_[current_goal_checker_].get());
     last_valid_cmd_time_ = now();
   } catch (nav2_core::PlannerException & e) {
     if (failure_tolerance_ > 0 || failure_tolerance_ == -1.0) {
@@ -500,7 +553,7 @@ bool ControllerServer::isGoalReached()
 
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
   geometry_msgs::msg::Twist velocity = nav_2d_utils::twist2Dto3D(twist);
-  return goal_checker_->isGoalReached(pose.pose, end_pose_, velocity);
+  return goal_checkers_[current_goal_checker_]->isGoalReached(pose.pose, end_pose_, velocity);
 }
 
 bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)
