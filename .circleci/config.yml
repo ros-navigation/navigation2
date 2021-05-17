@@ -179,6 +179,20 @@ _commands:
             path: << parameters.workspace >>/test_results
         - store_artifacts:
             path: << parameters.workspace >>/test_results
+    check_apt_updates:
+      description: "Check apt updates"
+      parameters:
+        sourcelist:
+          type: string
+      steps:
+        - run:
+            command: |
+              apt-get update \
+                -o Dir::Etc::sourcelist="<< parameters.sourcelist >>"
+              apt-get --simulate upgrade \
+                -o Dir::Etc::sourcelist="<< parameters.sourcelist >>" \
+                | grep "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded." \
+                && echo "No apt updates" || exit 1
     trigger_dockerhub_url:
       description: "Trigger Dockerhub URL"
       parameters:
@@ -186,6 +200,7 @@ _commands:
           type: string
       steps:
         - run:
+            when: on_fail
             command: |
               curl -H "Content-Type: application/json" \
                 --data '<< parameters.data >>' \
@@ -300,6 +315,9 @@ _steps:
           -F "project" \
           -Z || echo 'Codecov upload failed'
       when: always
+  check_ros2_updates: &check_ros2_updates
+    check_apt_updates:
+        sourcelist: sources.list.d/ros2.list
   trigger_dockerhub_build: &trigger_dockerhub_build
     trigger_dockerhub_url:
         data: |
@@ -352,6 +370,7 @@ commands:
   trigger_dockerhub:
     description: "Trigger DockerHub"
     steps:
+      - *check_ros2_updates
       - *trigger_dockerhub_build
 
 _environments:
@@ -388,9 +407,6 @@ executors:
       CACHE_NONCE: "Release"
       OVERLAY_MIXINS: "release ccache"
       UNDERLAY_MIXINS: "release ccache"
-  python_exec:
-    docker:
-      - image: circleci/python
 
 _jobs:
   job_test: &job_test
@@ -426,7 +442,7 @@ jobs:
       - restore_build
       - test_build
   rebuild_dockerhub:
-    executor: python_exec
+    executor: release_exec
     steps:
       - trigger_dockerhub
 

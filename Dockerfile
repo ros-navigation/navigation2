@@ -39,7 +39,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # install CI dependencies
 ARG RTI_NC_LICENSE_ACCEPTED=yes
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y \
       ccache \
       lcov \
       ros-$ROS_DISTRO-rmw-fastrtps-cpp \
