@@ -43,6 +43,7 @@ RUN apt-get update && \
     apt-get install -y \
       ccache \
       lcov \
+      python3-pip \
       ros-$ROS_DISTRO-rmw-fastrtps-cpp \
       ros-$ROS_DISTRO-rmw-connextdds \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
