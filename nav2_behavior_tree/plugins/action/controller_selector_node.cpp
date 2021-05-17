@@ -47,7 +47,7 @@ ControllerSelector::ControllerSelector(
   sub_option.callback_group = callback_group_;
   controller_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
     topic_name_,
-    1,
+    qos,
     std::bind(&ControllerSelector::callbackControllerSelect, this, _1),
     sub_option);
 }

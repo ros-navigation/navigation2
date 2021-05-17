@@ -47,7 +47,7 @@ PlannerSelector::PlannerSelector(
   sub_option.callback_group = callback_group_;
   planner_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
     topic_name_,
-    1,
+    qos,
     std::bind(&PlannerSelector::callbackPlannerSelect, this, _1),
     sub_option);
 }
