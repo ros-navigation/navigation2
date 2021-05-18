@@ -98,8 +98,12 @@ class TrajectoryGenerator:
 
                 # Deal with lines that are parallel
                 if m1 == m2:
-                        # If they are coincident then simply return a circle with infinite radius
+                        # If they are coincident (i.e. y-intercept is same) then simply return a circle with infinite radius
                         if round(-m2 * x2 + y2, 4) == 0:
+                                return TrajectoryParameters(-1, -1, -1, end_point, start_angle, end_angle, True, 0, 0)
+
+                        # Deal with edge case of 90
+                        elif abs(start_angle) == 90 and p[0] == q[0]:
                                 return TrajectoryParameters(-1, -1, -1, end_point, start_angle, end_angle, True, 0, 0)
                         else:
                                 print(f'No trajectory possible for equivalent start and end angles that also passes through p = {x2, y2}')
@@ -177,7 +181,7 @@ class TrajectoryGenerator:
                         perp_m2 = -1/m2 if m2 != 0 else 0
                         
                         circle_center = self.get_intersection_point(perp_m1, -perp_m1 * x1 + y1, perp_m2, -perp_m2 * x2 + y2)
-
+ 
                 # The circles radius is the length from the center to point p (or q)
                 radius = round(np.linalg.norm(circle_center - p), 4)
                 x_offset = round(circle_center[0], 4)
@@ -202,10 +206,9 @@ class TrajectoryGenerator:
 if __name__ == '__main__':
         import matplotlib.pyplot as plt
 
-        p = np.array([1, 0.5])
-        start_angle = 0
-        # end_angle = np.rad2deg(-np.arctan(1/2))
-        end_angle = 45
+        p = np.array([0, 0.2])
+        start_angle = 90.0
+        end_angle = 90.0
         print(p, start_angle, end_angle)
         trajGen = TrajectoryGenerator({"turning_radius":0.4,"step_distance":0.01})
         xs, ys = trajGen.generate_trajectory(p, start_angle, end_angle)
