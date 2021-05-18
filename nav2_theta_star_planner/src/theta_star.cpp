@@ -222,7 +222,7 @@ bool ThetaStar::losCheck(
       if (f != 0 && !isSafe(cx + u_x, cy + u_y, sl_cost)) {
         return false;
       }
-      if (dx == 0 && isSafe(cx, cy + u_y, sl_cost) && !isSafe(cx - 1, cy + u_y, sl_cost)) {
+      if (dx == 0 && !isSafe(cx, cy + u_y, sl_cost) && !isSafe(cx - 1, cy + u_y, sl_cost)) {
         return false;
       }
       cy += sy;
