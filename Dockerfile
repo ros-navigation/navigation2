@@ -34,7 +34,13 @@ RUN mkdir -p /tmp/opt && \
 
 # multi-stage for building
 FROM $FROM_IMAGE AS builder
+
+# config dependencies install
 ARG DEBIAN_FRONTEND=noninteractive
+RUN echo '\
+APT::Install-Recommends "0";\n\
+APT::Install-Suggests "0";\n\
+' > /etc/apt/apt.conf.d/01norecommend
 
 # install CI dependencies
 RUN apt-get update && \
