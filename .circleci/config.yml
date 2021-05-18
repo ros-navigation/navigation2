@@ -469,6 +469,7 @@ _environments:
     ROS_WS: "/opt/ros_ws"
     UNDERLAY_WS: "/opt/underlay_ws"
     OVERLAY_WS: "/opt/overlay_ws"
+    UNDERLAY_MIXINS: "release ccache"
     CCACHE_DIR: "/tmp/.ccache"
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
@@ -488,7 +489,6 @@ executors:
       <<: *common_environment
       CACHE_NONCE: "Debug"
       OVERLAY_MIXINS: "debug ccache coverage-gcc"
-      UNDERLAY_MIXINS: "release ccache"
   release_exec:
     docker:
       - image: rosplanning/navigation2:main.release
@@ -497,7 +497,6 @@ executors:
       <<: *common_environment
       CACHE_NONCE: "Release"
       OVERLAY_MIXINS: "release ccache"
-      UNDERLAY_MIXINS: "release ccache"
 
 _jobs:
   job_test: &job_test
