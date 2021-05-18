@@ -106,7 +106,7 @@ void declare_parameter_if_not_declared(
 /* Declares static ROS2 parameter with given type if it was not already declared.
  * NOTE: The parameter should be set via input param-file
  * or throught a command-line. Otherwise according to the RCLCPP API,
- * NoParameterOverrideProvided exception will be thrown by declare_parameter().
+ * ParameterUninitializedException exception will be thrown by declare_parameter().
  *
  * \param[in] node A node in which given parameter to be declared
  * \param[in] param_type The type of parameter
@@ -142,7 +142,7 @@ std::string get_plugin_type_param(
 {
   try {
     declare_parameter_if_not_declared(node, plugin_name + ".plugin", rclcpp::PARAMETER_STRING);
-  } catch (rclcpp::exceptions::NoParameterOverrideProvided & ex) {
+  } catch (rclcpp::exceptions::ParameterUninitialized & ex) {
     RCLCPP_FATAL(node->get_logger(), "'plugin' param not defined for %s", plugin_name.c_str());
     exit(-1);
   }

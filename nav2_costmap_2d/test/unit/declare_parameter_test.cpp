@@ -68,7 +68,7 @@ TEST(DeclareParameter, useInvalidParameter)
   try {
     layer.declareParameter("test2", rclcpp::PARAMETER_STRING);
     FAIL() << "Incorrectly handling test_layer.test2 parameter which was not set";
-  } catch (rclcpp::exceptions::NoParameterOverrideProvided & ex) {
+  } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
     SUCCEED();
   }
 }
