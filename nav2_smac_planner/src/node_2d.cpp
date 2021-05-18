@@ -61,8 +61,7 @@ bool Node2D::isNodeValid(
   // This is intentionally un-included to increase speed, but be aware. If this causes
   // trouble, please file a ticket and we can address it then.
 
-  if (collision_checker->inCollision(this->getIndex(), traverse_unknown))
-  {
+  if (collision_checker->inCollision(this->getIndex(), traverse_unknown)) {
     return false;
   }
 
@@ -95,7 +94,7 @@ float Node2D::getHeuristicCost(
   // Using Moore distance as it more accurately represents the distances
   // even a Van Neumann neighborhood robot can navigate.
   return fabs(goal_coordinates.x - node_coords.x) +
-    fabs(goal_coordinates.y - node_coords.y);
+         fabs(goal_coordinates.y - node_coords.y);
 }
 
 void Node2D::initMotionModel(

@@ -171,7 +171,7 @@ void AStarAlgorithm<NodeT>::setGoal(
     static_cast<float>(dim_3));
 
   if (!_search_info.cache_obstacle_heuristic || goal_coords != _goal_coordinates) {
-    NodeT::resetObstacleHeuristic(_costmap, mx, my);    
+    NodeT::resetObstacleHeuristic(_costmap, mx, my);
   }
 
   _goal_coordinates = goal_coords;

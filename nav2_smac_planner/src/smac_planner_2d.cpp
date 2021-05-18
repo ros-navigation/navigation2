@@ -134,7 +134,7 @@ void SmacPlanner2D::configure(
   params.get(node, name);
   _smoother = std::make_unique<Smoother>(params);
   _smoother->initialize(1e-50 /*No valid minimum turning radius for 2D*/);
-  
+
   // Initialize costmap downsampler
   if (_downsample_costmap && _downsampling_factor > 1) {
     std::string topic_name = "downsampled_costmap";
@@ -271,8 +271,8 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   double time_remaining = _max_planning_time - static_cast<double>(time_span.count());
 
 #ifdef BENCHMARK_TESTING
-    std::cout << "It took " << time_span.count() * 1000 <<
-      " milliseconds with " << num_iterations << " iterations." << std::endl;
+  std::cout << "It took " << time_span.count() * 1000 <<
+    " milliseconds with " << num_iterations << " iterations." << std::endl;
 #endif
 
   // Smooth plan

@@ -140,7 +140,8 @@ void SmacPlannerHybrid::configure(
   search_info.minimum_turning_radius =
     search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
   float lookup_table_dim =
-    static_cast<float>(lookup_table_size) / static_cast<float>(_costmap->getResolution() * _downsampling_factor);
+    static_cast<float>(lookup_table_size) /
+    static_cast<float>(_costmap->getResolution() * _downsampling_factor);
 
   // Make sure its a whole number
   lookup_table_dim = static_cast<float>(static_cast<int>(lookup_table_dim));
@@ -149,7 +150,8 @@ void SmacPlannerHybrid::configure(
   if (static_cast<int>(lookup_table_dim) % 2 == 0) {
     RCLCPP_INFO(
       _logger,
-      "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd", lookup_table_dim);
+      "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd",
+      lookup_table_dim);
     lookup_table_dim += 1.0;
   }
 
@@ -280,8 +282,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   int num_iterations = 0;
   std::string error;
   try {
-    if (!_a_star->createPath(path, num_iterations, 0.0))
-    {
+    if (!_a_star->createPath(path, num_iterations, 0.0)) {
       if (num_iterations < _a_star->getMaxIterations()) {
         error = std::string("no valid path found");
       } else {

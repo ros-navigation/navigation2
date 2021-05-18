@@ -47,8 +47,7 @@ void LatticeMotionTable::initMotionModel(
 {
   size_x = size_x_in;
 
-  if (current_lattice_filepath == search_info.lattice_filepath)
-  {
+  if (current_lattice_filepath == search_info.lattice_filepath) {
     return;
   }
 
@@ -109,7 +108,9 @@ void NodeLattice::reset()
   pose.theta = 0.0f;
 }
 
-bool NodeLattice::isNodeValid(const bool & traverse_unknown, GridCollisionChecker * collision_checker)
+bool NodeLattice::isNodeValid(
+  const bool & traverse_unknown,
+  GridCollisionChecker * collision_checker)
 {
   // TODO if primitive longer than 1.5 cells, then we need to split into 1 cell increments and collision check across them
   if (collision_checker->inCollision(
@@ -137,7 +138,8 @@ float NodeLattice::getHeuristicCost(
 {
   // get obstacle heuristic value
   const float obstacle_heuristic = getObstacleHeuristic(costmap, node_coords, goal_coords);
-  const float distance_heuristic = getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
+  const float distance_heuristic =
+    getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
   return std::max(obstacle_heuristic, distance_heuristic);
 }
 
@@ -182,13 +184,13 @@ float NodeLattice::getDistanceHeuristic(
     // Need to mirror angle if Y coordinate was mirrored
     int theta_pos;
     if (node_coords_relative.y < 0.0) {
-      theta_pos = motion_table.num_angle_quantization - node_coords_relative.theta;      
+      theta_pos = motion_table.num_angle_quantization - node_coords_relative.theta;
     } else {
       theta_pos = node_coords_relative.theta;
     }
     const int x_pos = node_coords_relative.x + floored_size;
     const int y_pos = static_cast<int>(mirrored_relative_y);
-    const int index = 
+    const int index =
       x_pos * ceiling_size * motion_table.num_angle_quantization +
       y_pos * motion_table.num_angle_quantization +
       theta_pos;
@@ -217,8 +219,8 @@ void NodeLattice::initMotionModel(
 
   if (motion_model != MotionModel::STATE_LATTICE) {
     throw std::runtime_error(
-      "Invalid motion model for Lattice node. Please select"
-      " STATE_LATTICE and provide a valid lattice file.");
+            "Invalid motion model for Lattice node. Please select"
+            " STATE_LATTICE and provide a valid lattice file.");
   }
 
   motion_table.initMotionModel(size_x, search_info);

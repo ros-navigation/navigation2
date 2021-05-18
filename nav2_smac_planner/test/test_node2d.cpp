@@ -100,7 +100,9 @@ TEST(Node2DTest, test_node_2d_neighbors)
   unsigned int size_y = 10u;
   unsigned int quant = 0u;
   // test neighborhood computation
-  nav2_smac_planner::Node2D::initMotionModel(nav2_smac_planner::MotionModel::VON_NEUMANN, size_x, size_y, quant, info);
+  nav2_smac_planner::Node2D::initMotionModel(
+    nav2_smac_planner::MotionModel::VON_NEUMANN, size_x,
+    size_y, quant, info);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets.size(), 4u);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[0], -1);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[1], 1);
@@ -108,7 +110,9 @@ TEST(Node2DTest, test_node_2d_neighbors)
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[3], 10);
 
   size_x = 100u;
-  nav2_smac_planner::Node2D::initMotionModel(nav2_smac_planner::MotionModel::MOORE, size_x, size_y, quant, info);
+  nav2_smac_planner::Node2D::initMotionModel(
+    nav2_smac_planner::MotionModel::MOORE, size_x, size_y,
+    quant, info);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets.size(), 8u);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[0], -1);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[1], 1);

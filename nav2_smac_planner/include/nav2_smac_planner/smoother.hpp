@@ -120,7 +120,7 @@ public:
           y_i = getFieldByDim(new_path.poses[i], j);
           y_m1 = getFieldByDim(new_path.poses[i - 1], j);
           y_ip1 = getFieldByDim(new_path.poses[i + 1], j);
-          y_i_org =  y_i;
+          y_i_org = y_i;
 
           if (i > 2 && i < path_size - 2) {
             // Smooth based on local 5 point neighborhood and original data locations
@@ -131,7 +131,7 @@ public:
             // Smooth based on local 3 point neighborhood and original data locations
             // At boundary conditions, need to use a more local neighborhood because the first
             // and last 2 points cannot move to ensure the boundry conditions are upheld
-            y_i += data_w_ * (x_i - y_i) + smooth_w_ * (y_ip1 + y_m1 - (2.0 * y_i));  
+            y_i += data_w_ * (x_i - y_i) + smooth_w_ * (y_ip1 + y_m1 - (2.0 * y_i));
           }
 
           setFieldByDim(new_path.poses[i], j, y_i);
@@ -175,7 +175,9 @@ protected:
     }
   }
 
-  inline void setFieldByDim(geometry_msgs::msg::PoseStamped & msg, const unsigned int dim, const double & value)
+  inline void setFieldByDim(
+    geometry_msgs::msg::PoseStamped & msg, const unsigned int dim,
+    const double & value)
   {
     if (dim == 0) {
       msg.pose.position.x = value;
@@ -212,8 +214,8 @@ protected:
     using namespace nav2_util::geometry_utils;
     double dx, dy, theta;
     for (unsigned int i = 0; i != path.poses.size() - 1; i++) {
-      dx = path.poses[i+1].pose.position.x - path.poses[i].pose.position.x;
-      dy = path.poses[i+1].pose.position.y - path.poses[i].pose.position.y;
+      dx = path.poses[i + 1].pose.position.x - path.poses[i].pose.position.x;
+      dy = path.poses[i + 1].pose.position.y - path.poses[i].pose.position.y;
       theta = atan2(dy, dx);
       path.poses[i].pose.orientation = orientationAroundZAxis(theta);
     }

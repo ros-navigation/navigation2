@@ -163,8 +163,8 @@ public:
         gradient[y_index] = 0.0;
         addSmoothingJacobian(_params.smooth_weight, xi, xi_p1, xi_m1, grad_x_raw, grad_y_raw);
         addCurvatureJacobian(
-           _params.curvature_weight, xi, xi_p1, xi_m1, curvature_params,
-           grad_x_raw, grad_y_raw);
+          _params.curvature_weight, xi, xi_p1, xi_m1, curvature_params,
+          grad_x_raw, grad_y_raw);
         // addDistanceJacobian(
         //   _params.distance_weight, xi, _original_path->at(
         //     i), grad_x_raw, grad_y_raw);

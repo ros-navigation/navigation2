@@ -64,7 +64,8 @@ void HybridMotionTable::initDubin(
 
   // if nothing changed, no need to re-compute primitives
   if (num_angle_quantization_in == num_angle_quantization &&
-    min_turning_radius == search_info.minimum_turning_radius) {
+    min_turning_radius == search_info.minimum_turning_radius)
+  {
     return;
   }
 
@@ -113,7 +114,7 @@ void HybridMotionTable::initDubin(
 
   // Create the correct OMPL state space
   if (!state_space) {
-    state_space = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius);    
+    state_space = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius);
   }
 
   // Precompute projection deltas
@@ -156,7 +157,8 @@ void HybridMotionTable::initReedsShepp(
 
   // if nothing changed, no need to re-compute primitives
   if (num_angle_quantization_in == num_angle_quantization &&
-    min_turning_radius == search_info.minimum_turning_radius) {
+    min_turning_radius == search_info.minimum_turning_radius)
+  {
     return;
   }
 
@@ -190,7 +192,7 @@ void HybridMotionTable::initReedsShepp(
   // Create the correct OMPL state space
   if (!state_space) {
     state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
-      min_turning_radius);  
+      min_turning_radius);
   }
 
   // Precompute projection deltas
@@ -274,7 +276,9 @@ void NodeHybrid::reset()
   pose.theta = 0.0f;
 }
 
-bool NodeHybrid::isNodeValid(const bool & traverse_unknown, GridCollisionChecker * collision_checker)
+bool NodeHybrid::isNodeValid(
+  const bool & traverse_unknown,
+  GridCollisionChecker * collision_checker)
 {
   if (collision_checker->inCollision(
       this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
@@ -301,7 +305,8 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
   }
 
   float travel_cost = 0.0;
-  float travel_cost_raw = NodeHybrid::travel_distance_cost + (motion_table.cost_penalty * normalized_cost);
+  float travel_cost_raw = NodeHybrid::travel_distance_cost +
+    (motion_table.cost_penalty * normalized_cost);
 
   if (child->getMotionPrimitiveIndex() == 0 || child->getMotionPrimitiveIndex() == 3) {
     // New motion is a straight motion, no additional costs to be applied
@@ -312,7 +317,8 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
       travel_cost = travel_cost_raw * motion_table.non_straight_penalty;
     } else {
       // Turning motion and changing direction: penalizes wiggling
-      travel_cost = travel_cost_raw * (motion_table.non_straight_penalty + motion_table.change_penalty);
+      travel_cost = travel_cost_raw *
+        (motion_table.non_straight_penalty + motion_table.change_penalty);
     }
   }
 
@@ -438,7 +444,8 @@ float NodeHybrid::getObstacleHeuristic(
       new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
       cost = static_cast<float>(costmap->getCost(idx));
 
-      travel_cost = ((i <= 3) ? 1.0 : sqrt_2) + (motion_table.obstacle_heuristic_cost_weight * cost / 252.0);
+      travel_cost =
+        ((i <= 3) ? 1.0 : sqrt_2) + (motion_table.obstacle_heuristic_cost_weight * cost / 252.0);
       current_accumulated_cost = last_accumulated_cost + travel_cost;
       existing_cost = obstacle_heuristic_lookup_table[new_idx];
 
@@ -506,13 +513,13 @@ float NodeHybrid::getDistanceHeuristic(
     // Need to mirror angle if Y coordinate was mirrored
     int theta_pos;
     if (node_coords_relative.y < 0.0) {
-      theta_pos = motion_table.num_angle_quantization - node_coords_relative.theta;      
+      theta_pos = motion_table.num_angle_quantization - node_coords_relative.theta;
     } else {
       theta_pos = node_coords_relative.theta;
     }
     const int x_pos = node_coords_relative.x + floored_size;
     const int y_pos = static_cast<int>(mirrored_relative_y);
-    const int index = 
+    const int index =
       x_pos * ceiling_size * motion_table.num_angle_quantization +
       y_pos * motion_table.num_angle_quantization +
       theta_pos;
@@ -539,13 +546,15 @@ void NodeHybrid::precomputeDistanceHeuristic(
 {
   // Dubin or Reeds-Shepp shortest distances
   if (motion_model == MotionModel::DUBIN) {
-    motion_table.state_space = std::make_unique<ompl::base::DubinsStateSpace>(search_info.minimum_turning_radius);
+    motion_table.state_space = std::make_unique<ompl::base::DubinsStateSpace>(
+      search_info.minimum_turning_radius);
   } else if (motion_model == MotionModel::REEDS_SHEPP) {
-    motion_table.state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(search_info.minimum_turning_radius);
+    motion_table.state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
+      search_info.minimum_turning_radius);
   } else {
     throw std::runtime_error(
-          "Node attempted to precompute distance heuristics "
-          "with invalid motion model!");
+            "Node attempted to precompute distance heuristics "
+            "with invalid motion model!");
   }
 
   ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);

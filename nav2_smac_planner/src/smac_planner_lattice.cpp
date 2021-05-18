@@ -125,7 +125,8 @@ void SmacPlannerLattice::configure(
   }
 
   float lookup_table_dim =
-    static_cast<float>(lookup_table_size) / static_cast<float>(_costmap->getResolution() * _downsampling_factor);
+    static_cast<float>(lookup_table_size) /
+    static_cast<float>(_costmap->getResolution() * _downsampling_factor);
 
   // Initialize collision checker
   _collision_checker = std::make_unique<GridCollisionChecker>(_costmap, _angle_quantizations);
@@ -255,8 +256,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   int num_iterations = 0;
   std::string error;
   try {
-    if (!_a_star->createPath(path, num_iterations, 0 /*no tolerance*/))
-    {
+    if (!_a_star->createPath(path, num_iterations, 0 /*no tolerance*/)) {
       if (num_iterations < _a_star->getMaxIterations()) {
         error = std::string("no valid path found");
       } else {

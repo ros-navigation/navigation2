@@ -165,7 +165,7 @@ public:
 
     inline bool operator==(const Coordinates & rhs)
     {
-      return (this->x == rhs.x && this->y == rhs.y && this->theta == rhs.theta);
+      return this->x == rhs.x && this->y == rhs.y && this->theta == rhs.theta;
     }
 
     inline bool operator!=(const Coordinates & rhs)

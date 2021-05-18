@@ -49,7 +49,9 @@ inline geometry_msgs::msg::Pose getWorldCoords(
 * @param theta continuous bin coordinates angle
 * @return quaternion orientation in map frame
 */
-inline geometry_msgs::msg::Quaternion getWorldOrientation(const float & theta, const float & bin_size)
+inline geometry_msgs::msg::Quaternion getWorldOrientation(
+  const float & theta,
+  const float & bin_size)
 {
   // theta is in continuous bin coordinates, must convert to world orientation
   tf2::Quaternion q;
@@ -71,13 +73,13 @@ inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DRO
   std::vector<std::shared_ptr<nav2_costmap_2d::Layer>>::iterator layer;
 
   // check if the costmap has an inflation layer
-  for(layer = costmap->getLayeredCostmap()->getPlugins()->begin();
-      layer != costmap->getLayeredCostmap()->getPlugins()->end();
-      ++layer)
+  for (layer = costmap->getLayeredCostmap()->getPlugins()->begin();
+    layer != costmap->getLayeredCostmap()->getPlugins()->end();
+    ++layer)
   {
     std::shared_ptr<nav2_costmap_2d::InflationLayer> inflation_layer =
       std::dynamic_pointer_cast<nav2_costmap_2d::InflationLayer>(*layer);
-    if (!inflation_layer)  {
+    if (!inflation_layer) {
       continue;
     }
 

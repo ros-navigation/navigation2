@@ -36,10 +36,10 @@ namespace nav2_smac_planner
 {
 // TODO test coverage
 // TODO update docs for new plugin name Hybrid + Lattice (plugins page, configuration page) and add new params for lattice/description of algo
-  // add all the optimizations added (cached heuristics all, leveraging symmetry in the H-space to lower mem footprint, precompute primitives and rotations, precompute footprint rotations, collision check only when required)
-  // update any compute times / map sizes as given in docs/readmes
-  // param default updttes and new params (and params deleted)
-  // add to plugins, migration guide
+// add all the optimizations added (cached heuristics all, leveraging symmetry in the H-space to lower mem footprint, precompute primitives and rotations, precompute footprint rotations, collision check only when required)
+// update any compute times / map sizes as given in docs/readmes
+// param default updttes and new params (and params deleted)
+// add to plugins, migration guide
 
 // TODO update docs to reflext that no longer "wavefront" but dynamic programming distance field
 
@@ -266,7 +266,7 @@ public:
   {
     // Hybrid-A* and State Lattice share a coordinate system
     return NodeHybrid::getIndex(
-    	x, y, angle, motion_table.size_x,
+      x, y, angle, motion_table.size_x,
       motion_table.num_angle_quantization);
   }
 
@@ -330,8 +330,10 @@ public:
     const SearchInfo & search_info)
   {
     // State Lattice and Hybrid-A* share this heuristics
-    NodeHybrid::precomputeDistanceHeuristic(lookup_table_dim, motion_model, dim_3_size, search_info);
-  };
+    NodeHybrid::precomputeDistanceHeuristic(
+      lookup_table_dim, motion_model, dim_3_size,
+      search_info);
+  }
 
   /**
    * @brief Compute the wavefront heuristic
@@ -344,7 +346,7 @@ public:
   {
     // State Lattice and Hybrid-A* share this heuristics
     NodeHybrid::resetObstacleHeuristic(costmap, goal_x, goal_y);
-  };
+  }
 
   /**
    * @brief Compute the Obstacle heuristic
@@ -382,7 +384,8 @@ public:
    * @param neighbors Vector of neighbors to be filled
    */
   void getNeighbors(
-    std::function<bool(const unsigned int &, nav2_smac_planner::NodeLattice * &)> & validity_checker,
+    std::function<bool(const unsigned int &,
+    nav2_smac_planner::NodeLattice * &)> & validity_checker,
     GridCollisionChecker * collision_checker,
     const bool & traverse_unknown,
     NodeVector & neighbors);
