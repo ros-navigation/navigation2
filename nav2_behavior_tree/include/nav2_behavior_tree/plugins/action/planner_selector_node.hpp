@@ -89,6 +89,8 @@ private:
   std::string last_selected_planner_;
 
   rclcpp::Node::SharedPtr node_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 
   std::string topic_name_;
 };

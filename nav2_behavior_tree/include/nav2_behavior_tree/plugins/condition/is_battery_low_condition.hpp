@@ -74,12 +74,13 @@ private:
   void batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg);
 
   rclcpp::Node::SharedPtr node_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
   std::string battery_topic_;
   double min_battery_;
   bool is_voltage_;
   bool is_battery_low_;
-  std::mutex mutex_;
 };
 
 }  // namespace nav2_behavior_tree

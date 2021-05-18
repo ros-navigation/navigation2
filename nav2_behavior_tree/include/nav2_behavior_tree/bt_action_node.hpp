@@ -47,6 +47,10 @@ public:
   : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
+    callback_group_ = node_->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
+    callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
     // Get the required items from the blackboard
     bt_loop_duration_ =
@@ -82,7 +86,7 @@ public:
   void createActionClient(const std::string & action_name)
   {
     // Now that we have the ROS node to use, create the action client for this BT action
-    action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name);
+    action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name, callback_group_);
 
     // Make sure the server is actually there before continuing
     RCLCPP_DEBUG(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
@@ -223,7 +227,7 @@ public:
         }
       }
 
-      rclcpp::spin_some(node_);
+      callback_group_executor_.spin_some();
 
       // check if, after invoking spin_some(), we finally received the result
       if (!goal_result_available_) {
@@ -262,7 +266,7 @@ public:
   {
     if (should_cancel_goal()) {
       auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
-      if (rclcpp::spin_until_future_complete(node_, future_cancel, server_timeout_) !=
+      if (callback_group_executor_.spin_until_future_complete(future_cancel, server_timeout_) !=
         rclcpp::FutureReturnCode::SUCCESS)
       {
         RCLCPP_ERROR(
@@ -291,7 +295,7 @@ protected:
       return false;
     }
 
-    rclcpp::spin_some(node_);
+    callback_group_executor_.spin_some();
     auto status = goal_handle_->get_status();
 
     // Check if the goal is still executing
@@ -340,7 +344,8 @@ protected:
     }
 
     auto timeout = remaining > bt_loop_duration_ ? bt_loop_duration_ : remaining;
-    auto result = rclcpp::spin_until_future_complete(node_, *future_goal_handle_, timeout);
+    auto result =
+      callback_group_executor_.spin_until_future_complete(*future_goal_handle_, timeout);
     elapsed += timeout;
 
     if (result == rclcpp::FutureReturnCode::INTERRUPTED) {
@@ -383,6 +388,8 @@ protected:
 
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 
   // The timeout value while waiting for response from a server when a
   // new action goal is sent or canceled
