@@ -236,9 +236,7 @@ _commands:
               . install/setup.sh
               set -o xtrace
               colcon test \
-                --packages-select ${TEST_PACKAGES} \
-                --retest-until-pass ${RETEST_UNTIL_PASS} \
-                --ctest-args --test-regex "test_.*"
+                --packages-select ${TEST_PACKAGES}
               colcon test-result \
                 --verbose
         - when:
@@ -477,7 +475,6 @@ _environments:
     COLCON_DEFAULTS_FILE: "/tmp/defaults.yaml"
     RCUTILS_LOGGING_BUFFERED_STREAM: "0"
     RCUTILS_LOGGING_USE_STDOUT: "0"
-    RETEST_UNTIL_PASS: "2"
     DEBIAN_FRONTEND: "noninteractive"
 
 executors:
