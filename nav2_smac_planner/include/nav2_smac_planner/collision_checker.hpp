@@ -48,8 +48,12 @@ public:
    * @param footprint The footprint to collision check against
    * @param radius Whether or not the footprint is a circle and use radius collision checking
    */
-  void setFootprint(const nav2_costmap_2d::Footprint & footprint, const bool & radius)
+  void setFootprint(
+    const nav2_costmap_2d::Footprint & footprint,
+    const bool & radius,
+    const double & possible_inscribed_cost)
   {
+    possible_inscribed_cost_ = possible_inscribed_cost;
     footprint_is_radius_ = radius;
 
     // Use radius, no caching required
@@ -111,7 +115,7 @@ public:
       footprint_cost_ = costmap_->getCost(
         static_cast<unsigned int>(x), static_cast<unsigned int>(y));
 
-      if (footprint_cost_ < POSSIBLY_INSCRIBED) {
+      if (footprint_cost_ < possible_inscribed_cost_) {
         return false;
       }
 
@@ -197,6 +201,7 @@ protected:
   bool footprint_is_radius_;
   unsigned int num_quantizations_;
   double bin_size_;
+  double possible_inscribed_cost_{-1};
 };
 
 }  // namespace nav2_smac_planner

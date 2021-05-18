@@ -51,7 +51,7 @@ void Node2D::reset()
 
 bool Node2D::isNodeValid(
   const bool & traverse_unknown,
-  GridCollisionChecker & collision_checker)
+  GridCollisionChecker * collision_checker)
 {
   // NOTE(stevemacenski): Right now, we do not check if the node has wrapped around
   // the regular grid (e.g. your node is on the edge of the costmap and i+1
@@ -61,12 +61,12 @@ bool Node2D::isNodeValid(
   // This is intentionally un-included to increase speed, but be aware. If this causes
   // trouble, please file a ticket and we can address it then.
 
-  if (collision_checker.inCollision(this->getIndex(), traverse_unknown))
+  if (collision_checker->inCollision(this->getIndex(), traverse_unknown))
   {
     return false;
   }
 
-  _cell_cost = collision_checker.getCost();
+  _cell_cost = collision_checker->getCost();
   return true;
 }
 
@@ -126,7 +126,7 @@ void Node2D::initMotionModel(
 
 void Node2D::getNeighbors(
   std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> & NeighborGetter,
-  GridCollisionChecker & collision_checker,
+  GridCollisionChecker * collision_checker,
   const bool & traverse_unknown,
   NodeVector & neighbors)
 {

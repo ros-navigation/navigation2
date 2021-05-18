@@ -113,6 +113,14 @@ void SmacPlanner2D::configure(
     max_iterations = std::numeric_limits<int>::max();
   }
 
+  // Initialize collision checker
+  _collision_checker = std::make_unique<GridCollisionChecker>(_costmap, 1 /*for 2D, most be 1*/);
+  _collision_checker->setFootprint(
+    costmap_ros->getRobotFootprint(),
+    true /*for 2D, most use radius*/,
+    0.0 /*for 2D cost at inscribed isn't relevent*/);
+
+  // Initialize A* template
   _a_star = std::make_unique<AStarAlgorithm<Node2D>>(motion_model, search_info);
   _a_star->initialize(
     allow_unknown,
@@ -121,11 +129,13 @@ void SmacPlanner2D::configure(
     0.0 /*unused for 2D*/,
     1.0 /*unused for 2D*/);
 
+  // Initialize path smoother
   SmootherParams params;
   params.get(node, name);
   _smoother = std::make_unique<Smoother>(params);
   _smoother->initialize(1e-50 /*No valid minimum turning radius for 2D*/);
   
+  // Initialize costmap downsampler
   if (_downsample_costmap && _downsampling_factor > 1) {
     std::string topic_name = "downsampled_costmap";
     _costmap_downsampler = std::make_unique<CostmapDownsampler>();
@@ -192,11 +202,8 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     costmap = _costmap_downsampler->downsample(_downsampling_factor);
   }
 
-  // Set Costmap
-  _a_star->setCosts(
-    costmap->getSizeInCellsX(),
-    costmap->getSizeInCellsY(),
-    costmap);
+  // Set collision checker and costmap information
+  _a_star->setCollisionChecker(_collision_checker.get());
 
   // Set starting point
   unsigned int mx, my;

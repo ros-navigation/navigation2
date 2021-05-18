@@ -38,7 +38,7 @@ namespace nav2_smac_planner
 // TODO update docs for new plugin name Hybrid + Lattice (plugins page, configuration page) and add new params for lattice/description of algo
   // add all the optimizations added (cached heuristics all, leveraging symmetry in the H-space to lower mem footprint, precompute primitives and rotations, precompute footprint rotations, collision check only when required)
   // update any compute times / map sizes as given in docs/readmes
-  // param default updttes and new params
+  // param default updttes and new params (and params deleted)
   // add to plugins, migration guide
 
 // TODO update docs to reflext that no longer "wavefront" but dynamic programming distance field
@@ -245,7 +245,7 @@ public:
    * @param traverse_unknown If we can explore unknown nodes on the graph
    * @return whether this node is valid and collision free
    */
-  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker & collision_checker);
+  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker * collision_checker);
 
   /**
    * @brief Get traversal cost of parent node to child node
@@ -383,7 +383,7 @@ public:
    */
   void getNeighbors(
     std::function<bool(const unsigned int &, nav2_smac_planner::NodeLattice * &)> & validity_checker,
-    GridCollisionChecker & collision_checker,
+    GridCollisionChecker * collision_checker,
     const bool & traverse_unknown,
     NodeVector & neighbors);
 

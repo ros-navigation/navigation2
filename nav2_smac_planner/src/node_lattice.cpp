@@ -109,16 +109,16 @@ void NodeLattice::reset()
   pose.theta = 0.0f;
 }
 
-bool NodeLattice::isNodeValid(const bool & traverse_unknown, GridCollisionChecker & collision_checker)
+bool NodeLattice::isNodeValid(const bool & traverse_unknown, GridCollisionChecker * collision_checker)
 {
   // TODO if primitive longer than 1.5 cells, then we need to split into 1 cell increments and collision check across them
-  if (collision_checker.inCollision(
+  if (collision_checker->inCollision(
       this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
   {
     return false;
   }
 
-  _cell_cost = collision_checker.getCost();
+  _cell_cost = collision_checker->getCost();
   return true;
 }
 
@@ -226,7 +226,7 @@ void NodeLattice::initMotionModel(
 
 void NodeLattice::getNeighbors(
   std::function<bool(const unsigned int &, nav2_smac_planner::NodeLattice * &)> & NeighborGetter,
-  GridCollisionChecker & collision_checker,
+  GridCollisionChecker * collision_checker,
   const bool & traverse_unknown,
   NodeVector & neighbors)
 {

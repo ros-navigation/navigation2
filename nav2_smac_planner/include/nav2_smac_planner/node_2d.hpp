@@ -169,7 +169,7 @@ public:
    * @param collision_checker Pointer to collision checker object
    * @return whether this node is valid and collision free
    */
-  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker & collision_checker);
+  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker * collision_checker);
 
   /**
    * @brief get traversal cost from this node to child node
@@ -256,7 +256,7 @@ public:
    */
   void getNeighbors(
     std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> & validity_checker,
-    GridCollisionChecker & collision_checker,
+    GridCollisionChecker * collision_checker,
     const bool & traverse_unknown,
     NodeVector & neighbors);
 

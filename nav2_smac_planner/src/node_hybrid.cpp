@@ -274,15 +274,15 @@ void NodeHybrid::reset()
   pose.theta = 0.0f;
 }
 
-bool NodeHybrid::isNodeValid(const bool & traverse_unknown, GridCollisionChecker & collision_checker)
+bool NodeHybrid::isNodeValid(const bool & traverse_unknown, GridCollisionChecker * collision_checker)
 {
-  if (collision_checker.inCollision(
+  if (collision_checker->inCollision(
       this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
   {
     return false;
   }
 
-  _cell_cost = collision_checker.getCost();
+  _cell_cost = collision_checker->getCost();
   return true;
 }
 
@@ -580,7 +580,7 @@ void NodeHybrid::precomputeDistanceHeuristic(
 
 void NodeHybrid::getNeighbors(
   std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> & NeighborGetter,
-  GridCollisionChecker & collision_checker,
+  GridCollisionChecker * collision_checker,
   const bool & traverse_unknown,
   NodeVector & neighbors)
 {

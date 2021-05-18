@@ -35,7 +35,8 @@ RclCppFixture g_rclcppfixture;
 TEST(Node2DTest, test_node_2d)
 {
   nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
-  nav2_smac_planner::GridCollisionChecker checker(&costmapA, 72);
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(&costmapA, 72);
 
   // test construction
   unsigned char cost = static_cast<unsigned char>(1);
@@ -50,9 +51,9 @@ TEST(Node2DTest, test_node_2d)
   EXPECT_EQ(testA.getCost(), 0.0f);
 
   // check collision checking
-  EXPECT_EQ(testA.isNodeValid(false, checker), true);
+  EXPECT_EQ(testA.isNodeValid(false, checker.get()), true);
   testA.setCost(255);
-  EXPECT_EQ(testA.isNodeValid(true, checker), true);
+  EXPECT_EQ(testA.isNodeValid(true, checker.get()), true);
   testA.setCost(10);
 
   // check traversal cost computation
@@ -119,7 +120,8 @@ TEST(Node2DTest, test_node_2d_neighbors)
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[7], 101);
 
   nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
-  nav2_smac_planner::GridCollisionChecker checker(&costmapA, 72);
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(&costmapA, 72);
   unsigned char cost = static_cast<unsigned int>(1);
   nav2_smac_planner::Node2D * node = new nav2_smac_planner::Node2D(1);
   node->setCost(cost);
@@ -130,7 +132,7 @@ TEST(Node2DTest, test_node_2d_neighbors)
     };
 
   nav2_smac_planner::Node2D::NodeVector neighbors;
-  node->getNeighbors(neighborGetter, checker, false, neighbors);
+  node->getNeighbors(neighborGetter, checker.get(), false, neighbors);
   delete node;
 
   // should be empty since totally invalid

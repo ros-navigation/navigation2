@@ -48,8 +48,7 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   _goal_coordinates(Coordinates()),
   _start(nullptr),
   _goal(nullptr),
-  _motion_model(motion_model),
-  _collision_checker(nullptr, 0)
+  _motion_model(motion_model)
 {
   _graph.reserve(100000);
 }
@@ -72,7 +71,6 @@ void AStarAlgorithm<NodeT>::initialize(
   _max_on_approach_iterations = max_on_approach_iterations;
   NodeT::precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size, _search_info);
   _dim3_size = dim_3_size;
-  _collision_checker = GridCollisionChecker(nullptr, _dim3_size);
 }
 
 template<>
@@ -91,18 +89,15 @@ void AStarAlgorithm<Node2D>::initialize(
     throw std::runtime_error("Node type Node2D cannot be given non-1 dim 3 quantization.");
   }
   _dim3_size = dim_3_size;
-  _collision_checker = GridCollisionChecker(nullptr, _dim3_size);
 }
 
 template<typename NodeT>
-void AStarAlgorithm<NodeT>::setCosts(
-  const unsigned int & x_size,
-  const unsigned int & y_size,
-  nav2_costmap_2d::Costmap2D * & costmap)
+void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision_checker)
 {
-  _costmap = costmap;
-  _collision_checker.setCostmap(_costmap);
-  _collision_checker.setFootprint(_footprint, _is_radius_footprint);
+  _collision_checker = collision_checker;
+  _costmap = collision_checker->getCostmap();
+  unsigned int x_size = _costmap->getSizeInCellsX();
+  unsigned int y_size = _costmap->getSizeInCellsY();
 
   clearGraph();
 
@@ -110,17 +105,6 @@ void AStarAlgorithm<NodeT>::setCosts(
     _x_size = x_size;
     _y_size = y_size;
     NodeT::initMotionModel(_motion_model, _x_size, _y_size, _dim3_size, _search_info);
-  }
-}
-
-template<typename NodeT>
-void AStarAlgorithm<NodeT>::setFootprint(nav2_costmap_2d::Footprint footprint, bool use_radius)
-{
-  _footprint = footprint;
-  _is_radius_footprint = use_radius;
-
-  if (std::is_same<NodeT, Node2D>::value) {
-    _is_radius_footprint = true;  // 2D must be a radius check, only.
   }
 }
 

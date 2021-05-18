@@ -127,6 +127,14 @@ void SmacPlannerLattice::configure(
   float lookup_table_dim =
     static_cast<float>(lookup_table_size) / static_cast<float>(_costmap->getResolution() * _downsampling_factor);
 
+  // Initialize collision checker
+  _collision_checker = std::make_unique<GridCollisionChecker>(_costmap, _angle_quantizations);
+  _collision_checker->setFootprint(
+    costmap_ros->getRobotFootprint(),
+    costmap_ros->getUseRadius(),
+    findCircumscribedCost(costmap_ros));
+
+  // Initialize A* template
   _a_star = std::make_unique<AStarAlgorithm<NodeLattice>>(motion_model, search_info);
   _a_star->initialize(
     allow_unknown,
@@ -134,13 +142,14 @@ void SmacPlannerLattice::configure(
     std::numeric_limits<int>::max(),
     lookup_table_dim,
     _angle_quantizations);
-  _a_star->setFootprint(costmap_ros->getRobotFootprint(), costmap_ros->getUseRadius());
 
+  // Initialize path smoother
   SmootherParams params;
   params.get(node, name);
   _smoother = std::make_unique<Smoother>(params);
   _smoother->initialize(min_turning_radius);
 
+  // Initialize costmap downsampler
   if (_downsample_costmap && _downsampling_factor > 1) {
     std::string topic_name = "downsampled_costmap";
     _costmap_downsampler = std::make_unique<CostmapDownsampler>();
@@ -207,11 +216,8 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
     costmap = _costmap_downsampler->downsample(_downsampling_factor);
   }
 
-  // Set Costmap
-  _a_star->setCosts(
-    costmap->getSizeInCellsX(),
-    costmap->getSizeInCellsY(),
-    costmap);
+  // Set collision checker and costmap information
+  _a_star->setCollisionChecker(_collision_checker.get());
 
   // Set starting point, in A* bin search coordinates
   unsigned int mx, my;

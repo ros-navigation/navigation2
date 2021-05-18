@@ -20,6 +20,8 @@
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "tf2/utils.h"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/inflation_layer.hpp"
 
 namespace nav2_smac_planner
 {
@@ -53,6 +55,42 @@ inline geometry_msgs::msg::Quaternion getWorldOrientation(const float & theta, c
   tf2::Quaternion q;
   q.setEuler(0.0, 0.0, theta * static_cast<double>(bin_size));
   return tf2::toMsg(q);
+}
+
+inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap)
+{
+  double result = -1.0;
+  bool inflation_layer_found = false;
+  std::vector<std::shared_ptr<nav2_costmap_2d::Layer>>::iterator layer;
+
+  // check if the costmap has an inflation layer
+  for(layer = costmap->getLayeredCostmap()->getPlugins()->begin();
+      layer != costmap->getLayeredCostmap()->getPlugins()->end();
+      ++layer)
+  {
+    std::shared_ptr<nav2_costmap_2d::InflationLayer> inflation_layer =
+      std::dynamic_pointer_cast<nav2_costmap_2d::InflationLayer>(*layer);
+    if (!inflation_layer)  {
+      continue;
+    }
+
+    inflation_layer_found = true;
+    double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
+    double resolution = costmap->getCostmap()->getResolution();
+    result = static_cast<double>(inflation_layer->computeCost(circum_radius / resolution));
+  }
+
+  if (!inflation_layer_found) {
+    RCLCPP_WARN(
+      rclcpp::get_logger("computeCircumscribedCost"),
+      "No inflation layer found in costmap configuration. "
+      "If this is an SE2-collision checking plugin, it cannot use costmap potential "
+      "field to speed up collision checking by only checking the full footprint "
+      "when robot is within possibly-inscribed radius of an obstacle. This may "
+      "significantly slow down planning times!");
+  }
+
+  return result;
 }
 
 }  // namespace nav2_smac_planner

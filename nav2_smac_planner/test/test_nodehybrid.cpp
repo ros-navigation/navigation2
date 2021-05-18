@@ -49,8 +49,9 @@ TEST(NodeHybridTest, test_node_hybrid)
 
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     10, 10, 0.05, 0.0, 0.0, 0);
-  nav2_smac_planner::GridCollisionChecker checker(costmapA, 72);
-  checker.setFootprint(nav2_costmap_2d::Footprint(), true);
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 72);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   // test construction
   nav2_smac_planner::NodeHybrid testA(49);
@@ -61,8 +62,8 @@ TEST(NodeHybridTest, test_node_hybrid)
   testA.pose.x = 5;
   testA.pose.y = 5;
   testA.pose.theta = 0;
-  EXPECT_EQ(testA.isNodeValid(true, checker), true);
-  EXPECT_EQ(testA.isNodeValid(false, checker), true);
+  EXPECT_EQ(testA.isNodeValid(true, checker.get()), true);
+  EXPECT_EQ(testA.isNodeValid(false, checker.get()), true);
   EXPECT_EQ(testA.getCost(), 0.0f);
 
   // test reset
@@ -73,7 +74,7 @@ TEST(NodeHybridTest, test_node_hybrid)
   EXPECT_EQ(testA.travel_distance_cost, sqrt(2));
 
   // check collision checking
-  EXPECT_EQ(testA.isNodeValid(false, checker), true);
+  EXPECT_EQ(testA.isNodeValid(false, checker.get()), true);
 
   // check traversal cost computation
   // simulated first node, should return neutral cost
@@ -205,7 +206,9 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
   EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[5]._theta, 5, 0.01);
 
   nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
-  nav2_smac_planner::GridCollisionChecker checker(&costmapA, 72);
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(&costmapA, 72);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
   nav2_smac_planner::NodeHybrid * node = new nav2_smac_planner::NodeHybrid(49);
   std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> neighborGetter =
     [&, this](const unsigned int & index, nav2_smac_planner::NodeHybrid * & neighbor_rtn) -> bool
@@ -215,7 +218,7 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
     };
 
   nav2_smac_planner::NodeHybrid::NodeVector neighbors;
-  node->getNeighbors(neighborGetter, checker, false, neighbors);
+  node->getNeighbors(neighborGetter, checker.get(), false, neighbors);
   delete node;
 
   // should be empty since totally invalid
