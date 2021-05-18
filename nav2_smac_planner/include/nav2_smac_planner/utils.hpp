@@ -57,6 +57,13 @@ inline geometry_msgs::msg::Quaternion getWorldOrientation(const float & theta, c
   return tf2::toMsg(q);
 }
 
+/**
+* @brief Find the min cost of the inflation decay function for which the robot MAY be
+* in collision in any orientation
+* @param costmap Costmap2DROS to get minimum inscribed cost (e.g. 128 in inflation layer documentation)
+* @return double circumscribed cost, any higher than this and need to do full footprint collision checking
+* since some element of the robot could be in collision
+*/
 inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap)
 {
   double result = -1.0;
