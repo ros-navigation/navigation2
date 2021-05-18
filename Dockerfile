@@ -17,8 +17,7 @@ FROM $FROM_IMAGE AS cacher
 ARG UNDERLAY_WS
 WORKDIR $UNDERLAY_WS/src
 COPY ./tools/underlay.repos ../
-RUN vcs import ./ < ../underlay.repos && \
-    find ./ -name ".git" | xargs rm -rf
+RUN vcs import ./ < ../underlay.repos
 
 # copy overlay source
 ARG OVERLAY_WS
@@ -44,9 +43,12 @@ RUN apt-get update && \
     apt-get install -y \
       ccache \
       lcov \
+      python3-pip \
       ros-$ROS_DISTRO-rmw-fastrtps-cpp \
       ros-$ROS_DISTRO-rmw-connextdds \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
+    && pip3 install \
+      git+https://github.com/ruffsl/colcon-cache.git@13c424c3a455ae04d1a4176a54c49a9d20c9dca0 \
     && rosdep update \
     && rm -rf /var/lib/apt/lists/*
 
@@ -68,6 +70,7 @@ COPY --from=cacher $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache"
 ARG FAIL_ON_BUILD_FAILURE=True
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+    colcon cache lock && \
     colcon build \
       --symlink-install \
       --mixin $UNDERLAY_MIXINS \
@@ -92,6 +95,7 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
 COPY --from=cacher $OVERLAY_WS ./
 ARG OVERLAY_MIXINS="release ccache"
 RUN . $UNDERLAY_WS/install/setup.sh && \
+    colcon cache lock && \
     colcon build \
       --symlink-install \
       --mixin $OVERLAY_MIXINS \
