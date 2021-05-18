@@ -17,12 +17,12 @@ _commands:
                 -{{ arch }}\
                 -{{ .Branch }}\
                 -{{ .Environment.CIRCLE_PR_NUMBER }}\
-                -{{ checksum  \"<< parameters.workspace >>/checksum.txt\" }}"
+                -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
               - "<< parameters.key >>-v1\
                 -{{ arch }}\
                 -main\
                 -<no value>\
-                -{{ checksum  \"<< parameters.workspace >>/checksum.txt\" }}"
+                -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
     save_to_cache:
       description: "Save To Cache"
       parameters:
@@ -42,7 +42,7 @@ _commands:
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
-              -{{ checksum  \"<< parameters.workspace >>/checksum.txt\" }}\
+              -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}\
               -{{ epoch }}"
             paths:
               - << parameters.path >>/build
@@ -62,10 +62,10 @@ _commands:
             working_directory: << parameters.workspace >>
             command: |
               . << parameters.underlay >>/install/setup.sh
-              cat << parameters.underlay >>/checksum.txt > checksum.txt
+              cat << parameters.underlay >>/lockfile.txt > lockfile.txt
               vcs export --exact << parameters.underlay >>/src | \
-                (echo vcs_export && cat) >> checksum.txt
-              sha256sum $PWD/checksum.txt >> checksum.txt
+                (echo vcs_export && cat) >> lockfile.txt
+              sha256sum $PWD/lockfile.txt >> lockfile.txt
               apt-get update
               rosdep update
 
@@ -93,8 +93,8 @@ _commands:
                 awk -F'[][]' '{print $2}' | \
                 tr -d \, | xargs -n1 | sort -u | xargs)
               dpkg -s $dependencies | \
-                (echo workspace_dependencies && cat) >> checksum.txt
-              sha256sum $PWD/checksum.txt >> checksum.txt
+                (echo workspace_dependencies && cat) >> lockfile.txt
+              sha256sum $PWD/lockfile.txt >> lockfile.txt
     setup_workspace:
       description: "Setup Workspace"
       parameters:
@@ -111,7 +111,7 @@ _commands:
           type: boolean
       steps:
         - store_artifacts:
-            path: << parameters.workspace >>/checksum.txt
+            path: << parameters.workspace >>/lockfile.txt
         - restore_from_cache:
             key: << parameters.key >>
             workspace: << parameters.workspace >>
@@ -302,11 +302,11 @@ _steps:
         mkdir -p $ROS_WS/src && cd $ROS_WS
         ln -s /opt/ros/$ROS_DISTRO install
         echo $CACHE_NONCE | \
-          (echo cache_nonce && cat) >> checksum.txt
-        sha256sum $PWD/checksum.txt >> checksum.txt
+          (echo cache_nonce && cat) >> lockfile.txt
+        sha256sum $PWD/lockfile.txt >> lockfile.txt
         TZ=utc stat -c '%y' /ros_entrypoint.sh | \
-          (echo ros_entrypoint && cat) >> checksum.txt
-        sha256sum $PWD/checksum.txt >> checksum.txt
+          (echo ros_entrypoint && cat) >> lockfile.txt
+        sha256sum $PWD/lockfile.txt >> lockfile.txt
         mv ~/.ccache $CCACHE_DIR
         rm -rf $OVERLAY_WS/src
   on_checkout: &on_checkout
