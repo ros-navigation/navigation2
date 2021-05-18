@@ -50,6 +50,7 @@ RUN apt-get update && \
 
 # install underlay dependencies
 ARG UNDERLAY_WS
+ENV UNDERLAY_WS $UNDERLAY_WS
 WORKDIR $UNDERLAY_WS
 COPY --from=cacher /tmp/$UNDERLAY_WS ./
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
@@ -75,6 +76,7 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 
 # install overlay dependencies
 ARG OVERLAY_WS
+ENV OVERLAY_WS $OVERLAY_WS
 WORKDIR $OVERLAY_WS
 COPY --from=cacher /tmp/$OVERLAY_WS ./
 RUN . $UNDERLAY_WS/install/setup.sh && \
@@ -87,6 +89,9 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
+# multi-stage for testing
+FROM builder AS tester
+
 # build overlay source
 COPY --from=cacher $OVERLAY_WS ./
 ARG OVERLAY_MIXINS="release ccache"
@@ -98,8 +103,6 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
     || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
 
 # source overlay from entrypoint
-ENV UNDERLAY_WS $UNDERLAY_WS
-ENV OVERLAY_WS $OVERLAY_WS
 RUN sed --in-place \
       's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
       /ros_entrypoint.sh
