@@ -145,7 +145,7 @@ std::string get_plugin_type_param(
         node->get_logger(), "Can not get 'plugin' param value for %s", plugin_name.c_str());
       exit(-1);
     }
-  } catch (rclcpp::exceptions::ParameterUninitialized & ex) {
+  } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
     RCLCPP_FATAL(node->get_logger(), "'plugin' param not defined for %s", plugin_name.c_str());
     exit(-1);
   }
