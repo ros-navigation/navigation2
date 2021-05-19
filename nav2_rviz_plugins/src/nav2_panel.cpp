@@ -687,8 +687,8 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
   auto send_goal_options =
     rclcpp_action::Client<nav2_msgs::action::FollowWaypoints>::SendGoalOptions();
   send_goal_options.result_callback = [this](auto) {
-    waypoint_follower_goal_handle_.reset();
-  };
+      waypoint_follower_goal_handle_.reset();
+    };
 
   auto future_goal_handle =
     waypoint_follower_action_client_->async_send_goal(waypoint_follower_goal_, send_goal_options);
@@ -739,8 +739,8 @@ Nav2Panel::startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> pos
   auto send_goal_options =
     rclcpp_action::Client<nav2_msgs::action::NavigateThroughPoses>::SendGoalOptions();
   send_goal_options.result_callback = [this](auto) {
-    nav_through_poses_goal_handle_.reset();
-  };
+      nav_through_poses_goal_handle_.reset();
+    };
 
   auto future_goal_handle =
     nav_through_poses_action_client_->async_send_goal(nav_through_poses_goal_, send_goal_options);
@@ -785,8 +785,8 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
   auto send_goal_options =
     rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
   send_goal_options.result_callback = [this](auto) {
-    navigation_goal_handle_.reset();
-  };
+      navigation_goal_handle_.reset();
+    };
 
   auto future_goal_handle =
     navigation_action_client_->async_send_goal(navigation_goal_, send_goal_options);
