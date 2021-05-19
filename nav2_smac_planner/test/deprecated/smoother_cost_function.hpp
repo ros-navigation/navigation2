@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_SMAC_PLANNER__SMOOTHER_COST_FUNCTION_HPP_
-#define NAV2_SMAC_PLANNER__SMOOTHER_COST_FUNCTION_HPP_
+#ifndef DEPRECATED__SMOOTHER_COST_FUNCTION_HPP_
+#define DEPRECATED__SMOOTHER_COST_FUNCTION_HPP_
 
 #include <cmath>
 #include <vector>
@@ -150,12 +150,12 @@ public:
       // compute cost
       addSmoothingResidual(_params.smooth_weight, xi, xi_p1, xi_m1, cost_raw);
       addCurvatureResidual(_params.curvature_weight, xi, xi_p1, xi_m1, curvature_params, cost_raw);
-      // addDistanceResidual(_params.distance_weight, xi, _original_path->at(i), cost_raw);
+      addDistanceResidual(_params.distance_weight, xi, _original_path->at(i), cost_raw);
 
-      // if (valid_coords = _costmap->worldToMap(xi[0], xi[1], mx, my)) {
-      //   costmap_cost = _costmap->getCost(mx, my);
-      //   addCostResidual(_params.costmap_weight, costmap_cost, cost_raw, xi);
-      // }
+      if (valid_coords = _costmap->worldToMap(xi[0], xi[1], mx, my)) {
+        costmap_cost = _costmap->getCost(mx, my);
+        addCostResidual(_params.costmap_weight, costmap_cost, cost_raw, xi);
+      }
 
       if (gradient != NULL) {
         // compute gradient
@@ -165,13 +165,13 @@ public:
         addCurvatureJacobian(
           _params.curvature_weight, xi, xi_p1, xi_m1, curvature_params,
           grad_x_raw, grad_y_raw);
-        // addDistanceJacobian(
-        //   _params.distance_weight, xi, _original_path->at(
-        //     i), grad_x_raw, grad_y_raw);
+        addDistanceJacobian(
+          _params.distance_weight, xi, _original_path->at(
+            i), grad_x_raw, grad_y_raw);
 
-        // if (valid_coords) {
-        //   addCostJacobian(_params.costmap_weight, mx, my, costmap_cost, grad_x_raw, grad_y_raw, xi);
-        // }
+        if (valid_coords) {
+          addCostJacobian(_params.costmap_weight, mx, my, costmap_cost, grad_x_raw, grad_y_raw);
+        }
 
         gradient[x_index] = grad_x_raw;
         gradient[y_index] = grad_y_raw;
@@ -430,8 +430,7 @@ protected:
     const unsigned int & my,
     const double & value,
     double & j0,
-    double & j1,
-    Eigen::Vector2d & xi) const
+    double & j1) const
   {
     if (value == FREE) {
       return;
@@ -442,16 +441,6 @@ protected:
 
     j0 += common_prefix * grad[0];  // xi x component of partial-derivative
     j1 += common_prefix * grad[1];  // xi y component of partial-derivative
-
-
-    // float obsDst = voronoiDiagram.getDistance((int)xi[0], (int)xi[1]);
-
-    // if (abs(obsDst) > 0.3) {
-    //   return;
-    // }
-
-    // j0 += 2.0 * weight * (abs(obsDst) - 0.3) * (xi[0] - voronoiDiagram.getData()[(int)xi[0]][(int)xi[1]].obstX) / obsDst;
-    // j1 += 2.0 * weight * (abs(obsDst) - 0.3) * (xi[1] - voronoiDiagram.getData()[(int)xi[0]][(int)xi[1]].obstY) / obsDst;
   }
 
   /**
@@ -550,4 +539,4 @@ protected:
 
 }  // namespace nav2_smac_planner
 
-#endif  // NAV2_SMAC_PLANNER__SMOOTHER_COST_FUNCTION_HPP_
+#endif  // DEPRECATED__SMOOTHER_COST_FUNCTION_HPP_

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef DEPRECATED_UPSAMPLER__UPSAMPLER_COST_FUNCTION_HPP_
-#define DEPRECATED_UPSAMPLER__UPSAMPLER_COST_FUNCTION_HPP_
+#ifndef DEPRECATED__UPSAMPLER_COST_FUNCTION_HPP_
+#define DEPRECATED__UPSAMPLER_COST_FUNCTION_HPP_
 
 #include <cmath>
 #include <vector>
@@ -363,4 +363,4 @@ protected:
 
 }  // namespace nav2_smac_planner
 
-#endif  // DEPRECATED_UPSAMPLER__UPSAMPLER_COST_FUNCTION_HPP_
+#endif  // DEPRECATED__UPSAMPLER_COST_FUNCTION_HPP_

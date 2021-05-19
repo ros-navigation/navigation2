@@ -24,6 +24,7 @@
 #include <memory>
 #include <utility>
 #include <limits>
+#include <string>
 
 #include "ompl/base/StateSpace.h"
 
@@ -34,14 +35,6 @@
 
 namespace nav2_smac_planner
 {
-// TODO test coverage
-// TODO update docs for new plugin name Hybrid + Lattice (plugins page, configuration page) and add new params for lattice/description of algo
-// add all the optimizations added (cached heuristics all, leveraging symmetry in the H-space to lower mem footprint, precompute primitives and rotations, precompute footprint rotations, collision check only when required)
-// update any compute times / map sizes as given in docs/readmes
-// param default updttes and new params (and params deleted)
-// add to plugins, migration guide
-
-// TODO update docs to reflext that no longer "wavefront" but dynamic programming distance field
 
 // forward declare
 class NodeLattice;

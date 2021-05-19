@@ -89,7 +89,7 @@ float Node2D::getTraversalCost(const NodePtr & child)
 float Node2D::getHeuristicCost(
   const Coordinates & node_coords,
   const Coordinates & goal_coordinates,
-  const nav2_costmap_2d::Costmap2D * costmap)
+  const nav2_costmap_2d::Costmap2D * /*costmap*/)
 {
   // Using Moore distance as it more accurately represents the distances
   // even a Van Neumann neighborhood robot can navigate.

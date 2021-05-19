@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <queue>
 #include <limits>
+#include <utility>
 
 #include "ompl/base/ScopedState.h"
 #include "ompl/base/spaces/DubinsStateSpace.h"

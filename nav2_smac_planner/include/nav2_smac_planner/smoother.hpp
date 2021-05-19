@@ -39,7 +39,7 @@ public:
   /**
    * @brief A constructor for nav2_smac_planner::Smoother
    */
-  Smoother(const SmootherParams & params)
+  explicit Smoother(const SmootherParams & params)
   {
     tolerance_ = params.tolerance_;
     max_its_ = params.max_its_;
@@ -73,7 +73,7 @@ public:
     const nav2_costmap_2d::Costmap2D * costmap,
     const double & max_time)
   {
-    using namespace std::chrono;
+    using namespace std::chrono;  // NOLINT
     steady_clock::time_point a = steady_clock::now();
     rclcpp::Duration max_dur = rclcpp::Duration::from_seconds(max_time);
 
@@ -141,7 +141,10 @@ public:
         // validate update is admissible, only checks cost if a valid costmap pointer is provided
         float cost = 0.0;
         if (costmap) {
-          costmap->worldToMap(getFieldByDim(path.poses[i], 0), getFieldByDim(path.poses[i], 1), mx, my);
+          costmap->worldToMap(
+            getFieldByDim(path.poses[i], 0), getFieldByDim(
+              path.poses[i],
+              1), mx, my);
           cost = static_cast<float>(costmap->getCost(mx, my));
         }
         if (getCurvature(path, i) > max_curvature || cost > MAX_NON_OBSTACLE) {
@@ -211,7 +214,7 @@ protected:
 
   inline void updateApproximatePathOrientations(nav_msgs::msg::Path & path)
   {
-    using namespace nav2_util::geometry_utils;
+    using namespace nav2_util::geometry_utils;  // NOLINT
     double dx, dy, theta;
     for (unsigned int i = 0; i != path.poses.size() - 1; i++) {
       dx = path.poses[i + 1].pose.position.x - path.poses[i].pose.position.x;

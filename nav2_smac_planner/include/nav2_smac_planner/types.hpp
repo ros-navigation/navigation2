@@ -18,6 +18,7 @@
 #include <vector>
 #include <utility>
 #include <string>
+#include <memory>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_util/node_utils.hpp"

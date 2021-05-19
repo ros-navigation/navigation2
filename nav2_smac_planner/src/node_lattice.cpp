@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <queue>
 #include <limits>
+#include <string>
 
 #include "ompl/base/ScopedState.h"
 #include "ompl/base/spaces/DubinsStateSpace.h"
@@ -59,23 +60,27 @@ void LatticeMotionTable::initMotionModel(
   obstacle_heuristic_cost_weight = search_info.obstacle_heuristic_cost_weight;
   current_lattice_filepath = search_info.lattice_filepath;
 
-  // TODO Matt read in file, precompute based on orientation bins for lookup at runtime
+  // TODO(Matt) read in file, precompute based on orientation bins for lookup at runtime
   // file is `search_info.lattice_filepath`, to be read in from plugin and provided here.
 
-  // TODO Matt create a state_space with the max turning rad primitive within the file (or another -- mid?)
-  // to use for analytic expansions and heuristic generation. Potentially make both an extreme and a passive one?
+  // TODO(Matt) create a state_space with the max turning rad primitive within the file
+  // (or another -- mid?)
+  // to use for analytic expansions and heuristic generation. Potentially make both an
+  // extreme and a passive one?
 
-  // TODO populate num_angle_quantization, size_x, min_turning_radius, trig_values, all of the member variables of LatticeMotionTable
+  // TODO(Matt) populate num_angle_quantization, size_x, min_turning_radius, trig_values,
+  // all of the member variables of LatticeMotionTable
 }
 
 MotionPoses LatticeMotionTable::getProjections(const NodeLattice * node)
 {
-  return MotionPoses();  // TODO Matt lookup at run time the primitives to use at node
+  return MotionPoses();  // TODO(Matt) lookup at run time the primitives to use at node
 }
 
 LatticeMetadata LatticeMotionTable::getLatticeMetadata(const std::string & lattice_filepath)
 {
-  // TODO Matt from this file extract and return the number of angle bins and turning radius in global coordinates, respectively.
+  // TODO(Matt) from this file extract and return the number of angle bins and
+  // turning radius in global coordinates, respectively.
   // world coordinates meaning meters, not cells
   return {0 /*num bins*/, 0 /*turning rad*/};
 }
@@ -112,7 +117,8 @@ bool NodeLattice::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker)
 {
-  // TODO if primitive longer than 1.5 cells, then we need to split into 1 cell increments and collision check across them
+  // TODO(steve) if primitive longer than 1.5 cells, then we need to split into 1 cell
+  // increments and collision check across them
   if (collision_checker->inCollision(
       this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
   {
@@ -125,10 +131,7 @@ bool NodeLattice::isNodeValid(
 
 float NodeLattice::getTraversalCost(const NodePtr & child)
 {
-  return 0.0;  // TODO Josh: cost of different angles, changing, nonstraight, backwards, distance long
-  // don't use neutral cost, since each primitive might have different length. use the length instead
-  // can use getMotionPrimitiveIndex() to get the ID of the index of the primitive the child/this belongs to for use
-  // feel free to make new params, let me know and I'll add tothe SearchInfo struct for inputs and add to the plugin/readme TODO
+  return 0.0;  // TODO(josh): cost of different angles, changing, nonstraight, backwards, distance
 }
 
 float NodeLattice::getHeuristicCost(
@@ -216,7 +219,6 @@ void NodeLattice::initMotionModel(
   unsigned int & /*num_angle_quantization*/,
   SearchInfo & search_info)
 {
-
   if (motion_model != MotionModel::STATE_LATTICE) {
     throw std::runtime_error(
             "Invalid motion model for Lattice node. Please select"

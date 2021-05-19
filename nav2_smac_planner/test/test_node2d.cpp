@@ -37,6 +37,7 @@ TEST(Node2DTest, test_node_2d)
   nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(&costmapA, 72);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   // test construction
   unsigned char cost = static_cast<unsigned char>(1);
@@ -45,6 +46,11 @@ TEST(Node2DTest, test_node_2d)
   nav2_smac_planner::Node2D testB(1);
   testB.setCost(cost);
   EXPECT_EQ(testA.getCost(), 1.0f);
+  nav2_smac_planner::SearchInfo info;
+  info.cost_penalty = 1.0;
+  unsigned int size = 10;
+  nav2_smac_planner::Node2D::initMotionModel(
+    nav2_smac_planner::MotionModel::MOORE, size, size, size, info);
 
   // test reset
   testA.reset();
@@ -57,12 +63,12 @@ TEST(Node2DTest, test_node_2d)
   testA.setCost(10);
 
   // check traversal cost computation
-  EXPECT_EQ(testB.getTraversalCost(&testA), 58.0f);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 1.03f, 0.1f);
 
   // check heuristic cost computation
   nav2_smac_planner::Node2D::Coordinates A(0.0, 0.0);
   nav2_smac_planner::Node2D::Coordinates B(10.0, 5.0);
-  EXPECT_NEAR(testB.getHeuristicCost(A, B, nullptr), 559.016, 0.01);
+  EXPECT_NEAR(testB.getHeuristicCost(A, B, nullptr), 15., 0.01);
 
   // check operator== works on index
   unsigned char costC = '2';
@@ -132,7 +138,7 @@ TEST(Node2DTest, test_node_2d_neighbors)
   std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> neighborGetter =
     [&, this](const unsigned int & index, nav2_smac_planner::Node2D * & neighbor_rtn) -> bool
     {
-      return true;
+      return false;
     };
 
   nav2_smac_planner::Node2D::NodeVector neighbors;

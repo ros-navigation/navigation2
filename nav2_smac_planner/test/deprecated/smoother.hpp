@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_SMAC_PLANNER__SMOOTHER_HPP_
-#define NAV2_SMAC_PLANNER__SMOOTHER_HPP_
+#ifndef DEPRECATED__SMOOTHER_HPP_
+#define DEPRECATED__SMOOTHER_HPP_
 
 #include <cmath>
 #include <vector>
@@ -138,4 +138,4 @@ private:
 
 }  // namespace nav2_smac_planner
 
-#endif  // NAV2_SMAC_PLANNER__SMOOTHER_HPP_
+#endif  // DEPRECATED__SMOOTHER_HPP_

@@ -16,6 +16,8 @@
 #define NAV2_SMAC_PLANNER__UTILS_HPP_
 
 #include <vector>
+#include <memory>
+
 #include "Eigen/Core"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "geometry_msgs/msg/pose.hpp"
