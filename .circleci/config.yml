@@ -396,8 +396,6 @@ _steps:
         bash codecov \
           -f "lcov/project_coverage.info" \
           -R "src/navigation2" \
-          -t "${CODECOV_TOKEN}" \
-          -n "${CIRCLE_BUILD_NUM}" \
           -F "project" \
           -Z || echo 'Codecov upload failed'
       when: always
