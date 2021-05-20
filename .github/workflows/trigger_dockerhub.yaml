@@ -1,0 +1,47 @@
+---
+name: Trigger Docker Hub
+
+on:
+  schedule:
+  # 7am UTC, 12am PDT
+  - cron:  '0 7 * * *'
+  push:
+    branches:
+    - main
+    paths:
+    - '**/package.xml'
+    - '**/*.repos'
+
+jobs:
+  rebuild_dockerhub:
+    name: Trigger Docker Hub
+    container:
+      image: rosplanning/navigation2:main.release
+    steps:
+    - name: "Check apt updates"
+       if: ${{ github.event_name == 'schedule' }}
+      env:
+        SOURCELIST: sources.list.d/ros2.list
+      run: |
+        apt-get update \
+          -o Dir::Etc::sourcelist="${SOURCELIST}"
+        apt-get --simulate upgrade \
+          -o Dir::Etc::sourcelist="${SOURCELIST}" \
+          | grep "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded." \
+          && echo "No apt updates" || exit 1
+    - name: "Check repo files"
+       if: ${{ github.event_name == 'push' }}
+      run: |
+        exit 1
+    - name: "Trigger Dockerhub URL"
+      if: ${{ failure() }}
+      env:
+        DATA: |
+          '{
+            "source_type": "Branch",
+            "source_name": "main"
+          }'
+      run: |
+        curl -H "Content-Type: application/json" \
+          --data ${DATA} \
+          -X POST ${{ secrets.DOCKERHUB_TRIGGER_URL }}
