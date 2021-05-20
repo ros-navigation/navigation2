@@ -265,32 +265,6 @@ _commands:
             path: << parameters.workspace >>/test_results
         - store_artifacts:
             path: << parameters.workspace >>/test_results
-    check_apt_updates:
-      description: "Check apt updates"
-      parameters:
-        sourcelist:
-          type: string
-      steps:
-        - run:
-            command: |
-              apt-get update \
-                -o Dir::Etc::sourcelist="<< parameters.sourcelist >>"
-              apt-get --simulate upgrade \
-                -o Dir::Etc::sourcelist="<< parameters.sourcelist >>" \
-                | grep "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded." \
-                && echo "No apt updates" || exit 1
-    trigger_dockerhub_url:
-      description: "Trigger Dockerhub URL"
-      parameters:
-        data:
-          type: string
-      steps:
-        - run:
-            when: on_fail
-            command: |
-              curl -H "Content-Type: application/json" \
-                --data '<< parameters.data >>' \
-                -X POST ${DOCKERHUB_TRIGGER_URL}
 
 _steps:
   pre_checkout: &pre_checkout
@@ -399,16 +373,6 @@ _steps:
           -F "project" \
           -Z || echo 'Codecov upload failed'
       when: always
-  check_ros2_updates: &check_ros2_updates
-    check_apt_updates:
-        sourcelist: sources.list.d/ros2.list
-  trigger_dockerhub_build: &trigger_dockerhub_build
-    trigger_dockerhub_url:
-        data: |
-          {
-            "source_type": "Branch",
-            "source_name": "main"
-          }
 
 commands:
   <<: *common_commands
@@ -454,11 +418,6 @@ commands:
     steps:
       - *collect_overlay_coverage
       - *upload_overlay_coverage
-  trigger_dockerhub:
-    description: "Trigger DockerHub"
-    steps:
-      - *check_ros2_updates
-      - *trigger_dockerhub_build
 
 _environments:
   common_environment: &common_environment
@@ -531,10 +490,6 @@ jobs:
       - restore_build
       - test_build:
           cache_test: << parameters.cache_test >>
-  rebuild_dockerhub:
-    executor: release_exec
-    steps:
-      - trigger_dockerhub
 
 workflows:
   version: 2
@@ -569,16 +524,6 @@ workflows:
     triggers:
       - schedule:
           cron: "0 13 * * *"
-          filters:
-            branches:
-              only:
-                - main
-  dockerhub:
-    jobs:
-      - rebuild_dockerhub
-    triggers:
-      - schedule:
-          cron: "0 7 * * *"
           filters:
             branches:
               only:
