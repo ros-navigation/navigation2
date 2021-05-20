@@ -47,7 +47,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/execution_timer.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/create_timer_ros.h"
 #include "nav2_util/robot_utils.hpp"
 
