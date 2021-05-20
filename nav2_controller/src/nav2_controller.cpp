@@ -256,6 +256,8 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
     it->second->cleanup();
   }
   controllers_.clear();
+
+  goal_checkers_.clear();
   costmap_ros_->on_cleanup(state);
 
   // Release any allocated resources
@@ -264,7 +266,6 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   vel_publisher_.reset();
   speed_limit_sub_.reset();
   action_server_.reset();
-  goal_checkers_[current_goal_checker_]->reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
