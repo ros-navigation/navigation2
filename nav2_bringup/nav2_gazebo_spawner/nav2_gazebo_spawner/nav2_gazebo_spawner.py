@@ -84,9 +84,10 @@ def main():
             # broadcasting a transform between`odom` and `base_footprint`
             break
 
-    ros_params = plugin.find('ros')
-    ros_tf_remap = ET.SubElement(ros_params, 'remapping')
-    ros_tf_remap.text = '/tf:=/' + args.robot_namespace + '/tf'
+    if args.robot_namespace:
+        ros_params = plugin.find('ros')
+        ros_tf_remap = ET.SubElement(ros_params, 'remapping')
+        ros_tf_remap.text = '/tf:=/' + args.robot_namespace + '/tf'
 
     # Set data for request
     request = SpawnEntity.Request()
