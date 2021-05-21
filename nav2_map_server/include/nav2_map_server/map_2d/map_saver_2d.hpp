@@ -31,7 +31,7 @@ namespace nav2_map_server
 {
 
 /**
- * @class nav2_map_server::MapSaver<nav_msgs::msg::OccupancyGrid>
+ * @class nav2_map_server::MapSaver2D
  * @brief A class that provides map saving methods and services
  * for OccupancyGrid maps via. SaveMap service
  * SaveMap service default name : save_map
@@ -40,12 +40,12 @@ class MapSaver2D: public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief Constructor for the nav2_map_server::MapSaver<nav_msgs::msg::OccupancyGrid>
+   * @brief Constructor for the nav2_map_server::MapSaver2D
    */
   MapSaver2D();
 
   /**
-   * @brief Destructor for the nav2_map_server::MapServer<nav_msgs::msg::OccupancyGrid>
+   * @brief Destructor for the nav2_map_server::MapServer2D
    */
   ~MapSaver2D() override;
 

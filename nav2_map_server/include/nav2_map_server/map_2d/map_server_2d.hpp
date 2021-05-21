@@ -29,7 +29,7 @@ namespace nav2_map_server
 {
 
 /**
- * @class nav2_map_server::MapServer<nav_msgs::msg::OccupancyGrid>
+ * @class nav2_map_server::MapServer2D
  * @brief Parses the map yaml file and creates a service and a publisher that
  * provides occupancy grid, hosts GetMap, and LoadMap services.
  * GetMap service default name : "map"
@@ -39,12 +39,12 @@ class MapServer2D: public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief A constructor for nav2_map_server::MapServer<nav_msgs::msg::OccupancyGrid>
+   * @brief A constructor for nav2_map_server::MapServer2D
    */
   MapServer2D();
 
   /**
-   * @brief A Destructor for nav2_map_server::MapServer<nav_msgs::msg::OccupancyGrid>
+   * @brief A Destructor for nav2_map_server::MapServer2D
    */
   ~MapServer2D() override;
 

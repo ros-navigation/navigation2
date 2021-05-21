@@ -31,7 +31,7 @@ namespace nav2_map_server
 {
 
 /**
- * @class nav2_map_server::MapServer<sensor_msgs::msg::PointCloud2>
+ * @class nav2_map_server::MapServer3D 
  * @brief Parses the map yaml file and creates a service and a publisher that
  * provides PointCloud maps, via. GetMap3D, and LoadMap3D services
  * GetMap service default name : "map"
@@ -41,12 +41,12 @@ class MapServer3D: public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief A constructor for nav2_map_server::MapServer<sensor_msgs::msg::PointCloud2>
+   * @brief A constructor for nav2_map_server::MapServer3D
    */
   MapServer3D();
 
   /**
-   * @brief A Destructor for nav2_map_server::MapServer<sensor_msgs::msg::PointCloud2>
+   * @brief A Destructor for nav2_map_server::MapServer3D
    */
   ~MapServer3D() override;
 

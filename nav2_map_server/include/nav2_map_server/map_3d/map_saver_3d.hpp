@@ -31,7 +31,7 @@ namespace nav2_map_server
 {
 
 /**
- * @class nav2_map_server::MapSaver<sensor_msgs::msg::PointCloud2>
+ * @class nav2_map_server::MapSaver3D
  * @brief A class that provides map saving methods and services
  * for PointCloud maps, via. SaveMap3D service
  * SaveMap service default name : save_map
@@ -40,12 +40,12 @@ class MapSaver3D: public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief Constructor for the nav2_map_server::MapSaver<sensor_msgs::msg::PointCloud2>
+   * @brief Constructor for the nav2_map_server::MapSaver3D
    */
   MapSaver3D();
 
   /**
-   * @brief Destructor for the nav2_map_server::MapServer<sensor_msgs::msg::PointCloud2>
+   * @brief Destructor for the nav2_map_server::MapSaver3D
    */
   ~MapSaver3D() override;
 
