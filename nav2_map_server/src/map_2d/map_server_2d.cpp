@@ -60,7 +60,7 @@ using namespace std::placeholders;
 namespace nav2_map_server
 {
 
-MapServer<nav_msgs::msg::OccupancyGrid>::MapServer()
+MapServer2D::MapServer2D()
 : nav2_util::LifecycleNode("map_server")
 {
   RCLCPP_INFO(get_logger(), "Creating");
@@ -71,12 +71,12 @@ MapServer<nav_msgs::msg::OccupancyGrid>::MapServer()
   declare_parameter("frame_id", "map");
 }
 
-MapServer<nav_msgs::msg::OccupancyGrid>::~MapServer()
+MapServer2D::~MapServer2D()
 {
 }
 
 nav2_util::CallbackReturn
-MapServer<nav_msgs::msg::OccupancyGrid>::on_configure(
+MapServer2D::on_configure(
   const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -102,7 +102,7 @@ MapServer<nav_msgs::msg::OccupancyGrid>::on_configure(
   // Create a service that provides the occupancy grid
   occ_service_ = create_service<nav_msgs::srv::GetMap>(
     service_prefix + std::string(service_name_),
-    std::bind(&MapServer<nav_msgs::msg::OccupancyGrid>::getMapCallback, this, _1, _2, _3));
+    std::bind(&MapServer2D::getMapCallback, this, _1, _2, _3));
 
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   occ_pub_ = create_publisher<nav_msgs::msg::OccupancyGrid>(
@@ -112,13 +112,13 @@ MapServer<nav_msgs::msg::OccupancyGrid>::on_configure(
   // Create a service that loads the occupancy grid from a file
   load_map_service_ = create_service<nav2_msgs::srv::LoadMap>(
     service_prefix + std::string(load_map_service_name_),
-    std::bind(&MapServer<nav_msgs::msg::OccupancyGrid>::loadMapCallback, this, _1, _2, _3));
+    std::bind(&MapServer2D::loadMapCallback, this, _1, _2, _3));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-MapServer<nav_msgs::msg::OccupancyGrid>::on_activate(const rclcpp_lifecycle::State & /*state*/)
+MapServer2D::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
@@ -134,7 +134,7 @@ MapServer<nav_msgs::msg::OccupancyGrid>::on_activate(const rclcpp_lifecycle::Sta
 }
 
 nav2_util::CallbackReturn
-MapServer<nav_msgs::msg::OccupancyGrid>::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+MapServer2D::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
@@ -147,7 +147,7 @@ MapServer<nav_msgs::msg::OccupancyGrid>::on_deactivate(const rclcpp_lifecycle::S
 }
 
 nav2_util::CallbackReturn
-MapServer<nav_msgs::msg::OccupancyGrid>::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+MapServer2D::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -159,13 +159,13 @@ MapServer<nav_msgs::msg::OccupancyGrid>::on_cleanup(const rclcpp_lifecycle::Stat
 }
 
 nav2_util::CallbackReturn
-MapServer<nav_msgs::msg::OccupancyGrid>::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
+MapServer2D::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void MapServer<nav_msgs::msg::OccupancyGrid>::getMapCallback(
+void MapServer2D::getMapCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav_msgs::srv::GetMap::Request>/*request*/,
   std::shared_ptr<nav_msgs::srv::GetMap::Response> response)
@@ -181,7 +181,7 @@ void MapServer<nav_msgs::msg::OccupancyGrid>::getMapCallback(
   response->map = msg_;
 }
 
-void MapServer<nav_msgs::msg::OccupancyGrid>::loadMapCallback(
+void MapServer2D::loadMapCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
   std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response)
@@ -201,7 +201,7 @@ void MapServer<nav_msgs::msg::OccupancyGrid>::loadMapCallback(
   }
 }
 
-bool MapServer<nav_msgs::msg::OccupancyGrid>::loadMapResponseFromYaml(
+bool MapServer2D::loadMapResponseFromYaml(
   const std::string & yaml_file,
   std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response)
 {
@@ -226,7 +226,7 @@ bool MapServer<nav_msgs::msg::OccupancyGrid>::loadMapResponseFromYaml(
   return true;
 }
 
-void MapServer<nav_msgs::msg::OccupancyGrid>::updateMsgHeader()
+void MapServer2D::updateMsgHeader()
 {
   msg_.info.map_load_time = now();
   msg_.header.frame_id = frame_id_;

@@ -42,7 +42,7 @@ using namespace std::placeholders;
 namespace nav2_map_server
 {
 
-MapSaver<nav_msgs::msg::OccupancyGrid>::MapSaver()
+MapSaver2D::MapSaver2D()
 : nav2_util::LifecycleNode("map_saver", "", true)
 {
   RCLCPP_INFO(get_logger(), "Creating");
@@ -55,12 +55,12 @@ MapSaver<nav_msgs::msg::OccupancyGrid>::MapSaver()
   map_subscribe_transient_local_ = declare_parameter("map_subscribe_transient_local", true);
 }
 
-MapSaver<nav_msgs::msg::OccupancyGrid>::~MapSaver()
+MapSaver2D::~MapSaver2D()
 {
 }
 
 nav2_util::CallbackReturn
-MapSaver<nav_msgs::msg::OccupancyGrid>::on_configure(const rclcpp_lifecycle::State & /*state*/)
+MapSaver2D::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -70,13 +70,13 @@ MapSaver<nav_msgs::msg::OccupancyGrid>::on_configure(const rclcpp_lifecycle::Sta
   // Create a service that saves the occupancy grid from map topic to a file
   save_map_service_ = create_service<nav2_msgs::srv::SaveMap>(
     service_prefix + save_map_service_name_,
-    std::bind(&MapSaver<nav_msgs::msg::OccupancyGrid>::saveMapCallback, this, _1, _2, _3));
+    std::bind(&MapSaver2D::saveMapCallback, this, _1, _2, _3));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-MapSaver<nav_msgs::msg::OccupancyGrid>::on_activate(const rclcpp_lifecycle::State & /*state*/)
+MapSaver2D::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
@@ -87,7 +87,7 @@ MapSaver<nav_msgs::msg::OccupancyGrid>::on_activate(const rclcpp_lifecycle::Stat
 }
 
 nav2_util::CallbackReturn
-MapSaver<nav_msgs::msg::OccupancyGrid>::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+MapSaver2D::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
@@ -98,7 +98,7 @@ MapSaver<nav_msgs::msg::OccupancyGrid>::on_deactivate(const rclcpp_lifecycle::St
 }
 
 nav2_util::CallbackReturn
-MapSaver<nav_msgs::msg::OccupancyGrid>::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+MapSaver2D::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -108,13 +108,13 @@ MapSaver<nav_msgs::msg::OccupancyGrid>::on_cleanup(const rclcpp_lifecycle::State
 }
 
 nav2_util::CallbackReturn
-MapSaver<nav_msgs::msg::OccupancyGrid>::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
+MapSaver2D::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void MapSaver<nav_msgs::msg::OccupancyGrid>::saveMapCallback(
+void MapSaver2D::saveMapCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
   std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response)
@@ -137,7 +137,7 @@ void MapSaver<nav_msgs::msg::OccupancyGrid>::saveMapCallback(
   response->result = saveMapTopicToFile(request->map_topic, save_parameters);
 }
 
-bool MapSaver<nav_msgs::msg::OccupancyGrid>::saveMapTopicToFile(
+bool MapSaver2D::saveMapTopicToFile(
   const std::string & map_topic,
   const map_2d::SaveParameters & save_parameters)
 {

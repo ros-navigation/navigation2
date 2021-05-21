@@ -22,8 +22,10 @@
 
 #include "nav2_msgs/srv/save_map3_d.hpp"
 
-#include "nav2_map_server/map_saver_core.hpp"
 #include "nav2_map_server/map_3d/map_io_3d.hpp"
+
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace nav2_map_server
 {
@@ -34,19 +36,18 @@ namespace nav2_map_server
  * for PointCloud maps, via. SaveMap3D service
  * SaveMap service default name : save_map
  */
-template<>
-class MapSaver<sensor_msgs::msg::PointCloud2>: public nav2_util::LifecycleNode
+class MapSaver3D: public nav2_util::LifecycleNode
 {
 public:
   /**
    * @brief Constructor for the nav2_map_server::MapSaver<sensor_msgs::msg::PointCloud2>
    */
-  MapSaver();
+  MapSaver3D();
 
   /**
    * @brief Destructor for the nav2_map_server::MapServer<sensor_msgs::msg::PointCloud2>
    */
-  ~MapSaver() override;
+  ~MapSaver3D() override;
 
   /**
    * @brief Read a message from incoming map topic and save map to a file

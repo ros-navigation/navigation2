@@ -28,7 +28,7 @@ using namespace std::placeholders;
 namespace nav2_map_server
 {
 
-MapSaver<sensor_msgs::msg::PointCloud2>::MapSaver()
+MapSaver3D::MapSaver3D()
 : nav2_util::LifecycleNode("map_saver", "", true)
 {
   RCLCPP_INFO(get_logger(), "Creating");
@@ -39,12 +39,12 @@ MapSaver<sensor_msgs::msg::PointCloud2>::MapSaver()
   map_subscribe_transient_local_ = declare_parameter("map_subscribe_transient_local", true);
 }
 
-MapSaver<sensor_msgs::msg::PointCloud2>::~MapSaver()
+MapSaver3D::~MapSaver3D()
 {
 }
 
 nav2_util::CallbackReturn
-MapSaver<sensor_msgs::msg::PointCloud2>::on_configure(const rclcpp_lifecycle::State & /*state*/)
+MapSaver3D::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -54,13 +54,13 @@ MapSaver<sensor_msgs::msg::PointCloud2>::on_configure(const rclcpp_lifecycle::St
   // Create a service that saves the occupancy grid or PointCloud2 from map topic to a file
   save_map_service_ = create_service<nav2_msgs::srv::SaveMap3D>(
     service_prefix + save_map_service_name_,
-    std::bind(&MapSaver<sensor_msgs::msg::PointCloud2>::saveMapCallback, this, _1, _2, _3));
+    std::bind(&MapSaver3D::saveMapCallback, this, _1, _2, _3));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-MapSaver<sensor_msgs::msg::PointCloud2>::on_activate(const rclcpp_lifecycle::State & /*state*/)
+MapSaver3D::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
@@ -71,7 +71,7 @@ MapSaver<sensor_msgs::msg::PointCloud2>::on_activate(const rclcpp_lifecycle::Sta
 }
 
 nav2_util::CallbackReturn
-MapSaver<sensor_msgs::msg::PointCloud2>::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+MapSaver3D::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
@@ -82,7 +82,7 @@ MapSaver<sensor_msgs::msg::PointCloud2>::on_deactivate(const rclcpp_lifecycle::S
 }
 
 nav2_util::CallbackReturn
-MapSaver<sensor_msgs::msg::PointCloud2>::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+MapSaver3D::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -92,13 +92,13 @@ MapSaver<sensor_msgs::msg::PointCloud2>::on_cleanup(const rclcpp_lifecycle::Stat
 }
 
 nav2_util::CallbackReturn
-MapSaver<sensor_msgs::msg::PointCloud2>::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
+MapSaver3D::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void MapSaver<sensor_msgs::msg::PointCloud2>::saveMapCallback(
+void MapSaver3D::saveMapCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::SaveMap3D::Request> request,
   std::shared_ptr<nav2_msgs::srv::SaveMap3D::Response> response)
@@ -111,7 +111,7 @@ void MapSaver<sensor_msgs::msg::PointCloud2>::saveMapCallback(
   response->result = saveMapTopicToFile(request->map_topic, request->origin_topic, save_parameters);
 }
 
-bool MapSaver<sensor_msgs::msg::PointCloud2>::saveMapTopicToFile(
+bool MapSaver3D::saveMapTopicToFile(
   const std::string & map_topic,
   const std::string & origin_topic,
   const map_3d::SaveParameters & save_parameters)

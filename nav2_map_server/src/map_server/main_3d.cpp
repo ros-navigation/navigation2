@@ -15,7 +15,7 @@
 #include <memory>
 #include <string>
 
-#include "nav2_map_server/map_server.hpp"
+#include "nav2_map_server/map_3d/map_server_3d.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 
 #include "rclcpp/rclcpp.hpp"
@@ -25,7 +25,7 @@ int main(int argc, char ** argv)
   std::string node_name("map_server");
 
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<nav2_map_server::MapServer<sensor_msgs::msg::PointCloud2>>();
+  auto node = std::make_shared<nav2_map_server::MapServer3D>();
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 

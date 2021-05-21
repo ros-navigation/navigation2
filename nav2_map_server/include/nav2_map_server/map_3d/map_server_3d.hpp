@@ -24,7 +24,8 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 
-#include "nav2_map_server/map_server_core.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace nav2_map_server
 {
@@ -36,19 +37,18 @@ namespace nav2_map_server
  * GetMap service default name : "map"
  * LoadMap service default name : "load_map"
  */
-template<>
-class MapServer<sensor_msgs::msg::PointCloud2>: public nav2_util::LifecycleNode
+class MapServer3D: public nav2_util::LifecycleNode
 {
 public:
   /**
    * @brief A constructor for nav2_map_server::MapServer<sensor_msgs::msg::PointCloud2>
    */
-  MapServer();
+  MapServer3D();
 
   /**
    * @brief A Destructor for nav2_map_server::MapServer<sensor_msgs::msg::PointCloud2>
    */
-  ~MapServer() override;
+  ~MapServer3D() override;
 
 protected:
   /**

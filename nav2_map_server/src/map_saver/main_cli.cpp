@@ -19,7 +19,8 @@
 #include <stdexcept>
 
 #include "nav2_map_server/map_2d/map_mode.hpp"
-#include "nav2_map_server/map_saver.hpp"
+#include "nav2_map_server/map_2d/map_saver_2d.hpp"
+#include "nav2_map_server/map_3d/map_saver_3d.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
@@ -196,7 +197,7 @@ int main(int argc, char ** argv)
     if (save_parameters.save_parameters_3d.format == "pcd" &&
       save_parameters.save_parameters_3d.format == "ply")
     {
-      auto map_saver = std::make_shared<nav2_map_server::MapSaver<sensor_msgs::msg::PointCloud2>>();
+      auto map_saver = std::make_shared<nav2_map_server::MapSaver3D>();
       if (map_saver->saveMapTopicToFile(
           map_topic, save_parameters.origin_topic,
           save_parameters.save_parameters_3d))
@@ -207,7 +208,7 @@ int main(int argc, char ** argv)
       }
 
     } else {
-      auto map_saver = std::make_shared<nav2_map_server::MapSaver<nav_msgs::msg::OccupancyGrid>>();
+      auto map_saver = std::make_shared<nav2_map_server::MapSaver2D>();
       if (map_saver->saveMapTopicToFile(map_topic, save_parameters.save_parameters_2d)) {
         retcode = 0;
       } else {

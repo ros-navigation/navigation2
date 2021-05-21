@@ -29,7 +29,7 @@ using namespace std::placeholders;
 namespace nav2_map_server
 {
 
-MapServer<sensor_msgs::msg::PointCloud2>::MapServer()
+MapServer3D::MapServer3D()
 : nav2_util::LifecycleNode("map_server")
 {
   RCLCPP_INFO(get_logger(), "Creating");
@@ -40,12 +40,12 @@ MapServer<sensor_msgs::msg::PointCloud2>::MapServer()
   declare_parameter("frame_id", "map");
 }
 
-MapServer<sensor_msgs::msg::PointCloud2>::~MapServer()
+MapServer3D::~MapServer3D()
 {
 }
 
 nav2_util::CallbackReturn
-MapServer<sensor_msgs::msg::PointCloud2>::on_configure(
+MapServer3D::on_configure(
   const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -71,7 +71,7 @@ MapServer<sensor_msgs::msg::PointCloud2>::on_configure(
   // Create a service that provides the PointCloud2
   pcd_service_ = create_service<nav2_msgs::srv::GetMap3D>(
     service_prefix + std::string(service_name_),
-    std::bind(&MapServer<sensor_msgs::msg::PointCloud2>::getMapCallback, this, _1, _2, _3));
+    std::bind(&MapServer3D::getMapCallback, this, _1, _2, _3));
 
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   pcd_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>(
@@ -86,13 +86,13 @@ MapServer<sensor_msgs::msg::PointCloud2>::on_configure(
   // Create a service that loads the PointCloud2 from a file
   pcd_load_map_service_ = create_service<nav2_msgs::srv::LoadMap3D>(
     service_prefix + std::string(load_map_service_name_),
-    std::bind(&MapServer<sensor_msgs::msg::PointCloud2>::loadMapCallback, this, _1, _2, _3));
+    std::bind(&MapServer3D::loadMapCallback, this, _1, _2, _3));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-MapServer<sensor_msgs::msg::PointCloud2>::on_activate(
+MapServer3D::on_activate(
   const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
@@ -114,7 +114,7 @@ MapServer<sensor_msgs::msg::PointCloud2>::on_activate(
 }
 
 nav2_util::CallbackReturn
-MapServer<sensor_msgs::msg::PointCloud2>::on_deactivate(
+MapServer3D::on_deactivate(
   const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -129,7 +129,7 @@ MapServer<sensor_msgs::msg::PointCloud2>::on_deactivate(
 }
 
 nav2_util::CallbackReturn
-MapServer<sensor_msgs::msg::PointCloud2>::on_cleanup(
+MapServer3D::on_cleanup(
   const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -143,13 +143,13 @@ MapServer<sensor_msgs::msg::PointCloud2>::on_cleanup(
 }
 
 nav2_util::CallbackReturn
-MapServer<sensor_msgs::msg::PointCloud2>::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
+MapServer3D::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-bool MapServer<sensor_msgs::msg::PointCloud2>::loadMapResponseFromYaml(
+bool MapServer3D::loadMapResponseFromYaml(
   const std::string & yaml_file,
   std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response)
 {
@@ -174,7 +174,7 @@ bool MapServer<sensor_msgs::msg::PointCloud2>::loadMapResponseFromYaml(
   return true;
 }
 
-void MapServer<sensor_msgs::msg::PointCloud2>::getMapCallback(
+void MapServer3D::getMapCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::GetMap3D::Request>/*request*/,
   std::shared_ptr<nav2_msgs::srv::GetMap3D::Response> response)
@@ -191,7 +191,7 @@ void MapServer<sensor_msgs::msg::PointCloud2>::getMapCallback(
   response->origin = origin_msg_;
 }
 
-void MapServer<sensor_msgs::msg::PointCloud2>::loadMapCallback(
+void MapServer3D::loadMapCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::LoadMap3D::Request> request,
   std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response)
@@ -213,7 +213,7 @@ void MapServer<sensor_msgs::msg::PointCloud2>::loadMapCallback(
   }
 }
 
-void MapServer<sensor_msgs::msg::PointCloud2>::updateMsgHeader()
+void MapServer3D::updateMsgHeader()
 {
   pcd_msg_.header.frame_id = frame_id_;
   pcd_msg_.header.stamp = now();

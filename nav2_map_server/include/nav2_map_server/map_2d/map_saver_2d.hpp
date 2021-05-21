@@ -22,7 +22,9 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_msgs/srv/save_map.hpp"
 
-#include "nav2_map_server/map_saver_core.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+
 #include "nav2_map_server/map_2d/map_io_2d.hpp"
 
 namespace nav2_map_server
@@ -34,19 +36,18 @@ namespace nav2_map_server
  * for OccupancyGrid maps via. SaveMap service
  * SaveMap service default name : save_map
  */
-template<>
-class MapSaver<nav_msgs::msg::OccupancyGrid>: public nav2_util::LifecycleNode
+class MapSaver2D: public nav2_util::LifecycleNode
 {
 public:
   /**
    * @brief Constructor for the nav2_map_server::MapSaver<nav_msgs::msg::OccupancyGrid>
    */
-  MapSaver();
+  MapSaver2D();
 
   /**
    * @brief Destructor for the nav2_map_server::MapServer<nav_msgs::msg::OccupancyGrid>
    */
-  ~MapSaver() override;
+  ~MapSaver2D() override;
 
   /**
    * @brief Read a message from incoming map topic and save map to a file

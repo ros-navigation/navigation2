@@ -22,7 +22,8 @@
 #include "nav_msgs/srv/get_map.hpp"
 #include "nav2_msgs/srv/load_map.hpp"
 
-#include "nav2_map_server/map_server_core.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace nav2_map_server
 {
@@ -34,19 +35,18 @@ namespace nav2_map_server
  * GetMap service default name : "map"
  * LoadMap service default name : "load_map"
  */
-template<>
-class MapServer<nav_msgs::msg::OccupancyGrid>: public nav2_util::LifecycleNode
+class MapServer2D: public nav2_util::LifecycleNode
 {
 public:
   /**
    * @brief A constructor for nav2_map_server::MapServer<nav_msgs::msg::OccupancyGrid>
    */
-  MapServer();
+  MapServer2D();
 
   /**
    * @brief A Destructor for nav2_map_server::MapServer<nav_msgs::msg::OccupancyGrid>
    */
-  ~MapServer() override;
+  ~MapServer2D() override;
 
 protected:
   /**
