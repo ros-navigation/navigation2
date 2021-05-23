@@ -15,6 +15,7 @@ on:
 jobs:
   rebuild_dockerhub:
     name: Trigger Docker Hub
+    runs-on: ubuntu-latest
     container:
       image: rosplanning/navigation2:main.release
     steps:
