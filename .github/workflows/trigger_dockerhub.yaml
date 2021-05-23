@@ -38,11 +38,12 @@ jobs:
         if: ${{ failure() }}
         env:
           DATA: |
-            '{
+            {
               "source_type": "Branch",
               "source_name": "main"
-            }'
+            }
         run: |
-          curl -H "Content-Type: application/json" \
-            --data ${DATA} \
-            -X POST ${{ secrets.DOCKERHUB_TRIGGER_URL }}
+          echo ${DATA} \
+            | curl -H "Content-Type: application/json" \
+              --data @- \
+              -X POST ${{ secrets.DOCKERHUB_TRIGGER_URL }}
