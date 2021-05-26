@@ -29,13 +29,13 @@ jobs:
           apt-get --simulate upgrade \
             -o Dir::Etc::sourcelist="${SOURCELIST}" \
             | grep "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded." \
-            && echo "No apt updates" || exit 1
-      - name: "Check repo files"
+            && echo "No apt updates" || echo "TRIGGER=true" >> $GITHUB_ENV
+      - name: "Check package updates"
         if: ${{ github.event_name == 'push' }}
         run: |
-          exit 1
+          echo "TRIGGER=true" >> $GITHUB_ENV
       - name: "Trigger Dockerhub URL"
-        if: ${{ failure() }}
+        if: ${{ fromJSON(env.TRIGGER) }}
         env:
           DATA: |
             {
