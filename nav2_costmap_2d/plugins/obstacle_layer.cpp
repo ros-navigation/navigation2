@@ -174,7 +174,7 @@ void ObstacleLayer::onInitialize()
           node_, topic, observation_keep_time, expected_update_rate,
           min_obstacle_height,
           max_obstacle_height, obstacle_range, raytrace_range, *tf_, global_frame_,
-          sensor_frame, tf2::durationFromSec(transform_tolerance))));
+          sensor_frame, transform_tolerance)));
 
     // check if we'll add this buffer to our marking observation buffers
     if (marking) {
