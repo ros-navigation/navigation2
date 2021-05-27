@@ -14,6 +14,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <libgen.h>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -347,13 +348,11 @@ int main(int argc, char * argv[])
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    #ifdef _WIN32
     if (vm.count("help")) {
       std::cout << "Usage: " << basename(argv[0]) << "\n";
       std::cout << desc << "\n";
       return 1;
     }
-    #endif
 
     std::vector<std::string> node_names;
 

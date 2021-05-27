@@ -36,11 +36,11 @@ public:
     const BT::NodeConfiguration & conf)
   : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name)
   {
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+    node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
 
     // Get the required items from the blackboard
     server_timeout_ =
-      config().blackboard->get<std::chrono::milliseconds>("server_timeout");
+      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
     // Initialize the input and output messages
@@ -245,9 +245,9 @@ protected:
   void increment_recovery_count()
   {
     int recovery_count = 0;
-    config().blackboard->get<int>("number_recoveries", recovery_count);  // NOLINT
+    config().blackboard->template get<int>("number_recoveries", recovery_count);  // NOLINT
     recovery_count += 1;
-    config().blackboard->set<int>("number_recoveries", recovery_count);  // NOLINT
+    config().blackboard->template set<int>("number_recoveries", recovery_count);  // NOLINT
   }
 
   std::string action_name_;
