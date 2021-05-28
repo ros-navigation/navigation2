@@ -94,7 +94,7 @@ public:
 
       // Make sure the smoothing function will converge
       if (its >= max_its_) {
-        RCLCPP_WARN(
+        RCLCPP_DEBUG(
           rclcpp::get_logger("SmacPlannerSmoother"),
           "Number of iterations has exceeded limit of %i.", max_its_);
         path = last_path;
@@ -106,7 +106,7 @@ public:
       steady_clock::time_point b = steady_clock::now();
       rclcpp::Duration timespan(duration_cast<duration<double>>(b - a));
       if (timespan > max_dur) {
-        RCLCPP_WARN(
+        RCLCPP_DEBUG(
           rclcpp::get_logger("SmacPlannerSmoother"),
           "Smoothing time exceeded allowed duration of %0.2f.", max_time);
         path = last_path;
@@ -161,14 +161,21 @@ public:
       last_path = new_path;
     }
 
+    // Lets do a very slight additional refinement, it shouldn't take more than a few nanoseconds
+    // but really puts the path quality over the top.
+    const double global_max_its = max_its_;
+    max_its_ = 40;
+    smooth(new_path, costmap, max_time);
+    max_its_ = global_max_its;
+
     for (unsigned int i = 3; i != path_size - 3; i++) {
       if (getCurvature(new_path, i) > max_curvature) {
         RCLCPP_DEBUG(
           rclcpp::get_logger("SmacPlannerSmoother"),
           "Smoothing process resulted in an infeasible curvature somewhere on the path. "
-          "This is most likely in the exit point boundary conditions which will be further "
-          "refined as you approach the goal. If this becomes a practical issue for you, please "
-          "file a ticket mentioning this message.");
+          "This is most likely at the end point boundary conditions which will be further "
+          "refined as a perfect curve as you approach the goal. If this becomes a practical "
+          "issue for you, please file a ticket mentioning this message.");
         updateApproximatePathOrientations(new_path);
         path = new_path;
         return false;
