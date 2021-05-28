@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_gazebo_spawner</name>
-  <version>1.0.4</version>
+  <version>1.0.5</version>
   <description>Package for spawning a robot model into Gazebo for Nav2</description>
   <maintainer email="carlos.orduno@intel.com">lkumarbe</maintainer>
   <maintainer email="lalit.kumar.begani@intel.com">lkumarbe</maintainer>
