@@ -449,12 +449,9 @@ float NodeHybrid::getObstacleHeuristic(
       travel_cost =
         ((i <= 3) ? 1.0 : sqrt_2) + (motion_table.obstacle_heuristic_cost_weight * cost / 252.0);
       current_accumulated_cost = last_accumulated_cost + travel_cost;
-      existing_cost = obstacle_heuristic_lookup_table[new_idx];
 
       // if neighbor path is better and non-lethal, set new cost and add to queue
-      if (new_idx > 0 && new_idx < size_x * size_y && cost < INSCRIBED &&
-        (existing_cost == 0.0 || existing_cost > current_accumulated_cost))
-      {
+      if (new_idx > 0 && new_idx < size_x * size_y && cost < INSCRIBED) {
         my = new_idx / size_x;
         mx = new_idx - (my * size_x);
 
@@ -465,8 +462,11 @@ float NodeHybrid::getObstacleHeuristic(
           continue;
         }
 
-        obstacle_heuristic_lookup_table[new_idx] = current_accumulated_cost;
-        obstacle_heuristic_queue.emplace(new_idx);
+        existing_cost = obstacle_heuristic_lookup_table[new_idx];
+        if (existing_cost == 0.0 || existing_cost > current_accumulated_cost) {
+          obstacle_heuristic_lookup_table[new_idx] = current_accumulated_cost;
+          obstacle_heuristic_queue.emplace(new_idx);
+        }
       }
     }
   }

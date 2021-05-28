@@ -71,7 +71,8 @@ public:
   bool smooth(
     nav_msgs::msg::Path & path,
     const nav2_costmap_2d::Costmap2D * costmap,
-    const double & max_time)
+    const double & max_time,
+    const bool do_refinement = true)
   {
     using namespace std::chrono;  // NOLINT
     steady_clock::time_point a = steady_clock::now();
@@ -161,12 +162,11 @@ public:
       last_path = new_path;
     }
 
-    // Lets do a very slight additional refinement, it shouldn't take more than a few nanoseconds
+    // Lets do additional refinement, it shouldn't take more than a couple milliseconds
     // but really puts the path quality over the top.
-    const double global_max_its = max_its_;
-    max_its_ = 40;
-    smooth(new_path, costmap, max_time);
-    max_its_ = global_max_its;
+    if (do_refinement) {
+      smooth(new_path, costmap, max_time, false);
+    }
 
     for (unsigned int i = 3; i != path_size - 3; i++) {
       if (getCurvature(new_path, i) > max_curvature) {

@@ -88,7 +88,7 @@ void SmacPlannerHybrid::configure(
     node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
   node->get_parameter(name + ".minimum_turning_radius", search_info.minimum_turning_radius);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(true));
+    node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".cache_obstacle_heuristic", search_info.cache_obstacle_heuristic);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".obstacle_heuristic_cost_weight", rclcpp::ParameterValue(1.7));
