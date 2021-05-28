@@ -27,7 +27,7 @@ float Node2D::cost_travel_multiplier = 2.0;
 
 Node2D::Node2D(const unsigned int index)
 : parent(nullptr),
-  _cell_cost(0.0),
+  _cell_cost(std::numeric_limits<float>::quiet_NaN()),
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
   _was_visited(false),
@@ -43,7 +43,7 @@ Node2D::~Node2D()
 void Node2D::reset()
 {
   parent = nullptr;
-  _cell_cost = 0.0;
+  _cell_cost = std::numeric_limits<float>::quiet_NaN();
   _accumulated_cost = std::numeric_limits<float>::max();
   _was_visited = false;
   _is_queued = false;
@@ -53,13 +53,10 @@ bool Node2D::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker)
 {
-  // NOTE(stevemacenski): Right now, we do not check if the node has wrapped around
-  // the regular grid (e.g. your node is on the edge of the costmap and i+1
-  // goes to the other side). This check would add compute time and my assertion is
-  // that if you do wrap around, the heuristic will be so high it'll be added far
-  // in the queue that it will never be called if a valid path exists.
-  // This is intentionally un-included to increase speed, but be aware. If this causes
-  // trouble, please file a ticket and we can address it then.
+  // Ensure we only check each node once
+  if (!std::isnan(_cell_cost)) {
+    return _cell_cost;
+  }
 
   if (collision_checker->inCollision(this->getIndex(), traverse_unknown)) {
     return false;

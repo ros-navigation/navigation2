@@ -36,15 +36,6 @@
 namespace nav2_smac_planner
 {
 
-inline double squaredDistance(
-  const Eigen::Vector2d & p1,
-  const Eigen::Vector2d & p2)
-{
-  const double & dx = p1[0] - p2[0];
-  const double & dy = p1[1] - p2[1];
-  return hypot(dx, dy);
-}
-
 /**
  * @class nav2_smac_planner::AStarAlgorithm
  * @brief An A* implementation for planning in a costmap. Templated based on the Node type.
@@ -61,6 +52,27 @@ public:
   typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef typename NodeVector::iterator NeighborIterator;
   typedef std::function<bool (const unsigned int &, NodeT * &)> NodeGetter;
+
+  /**
+   * @struct nav2_smac_planner::AnalyticExpansionNodes
+   * @brief Analytic expansion nodes and associated metadata
+   */
+
+  struct AnalyticExpansionNode
+  {
+    AnalyticExpansionNode(
+      NodePtr & node_in,
+      Coordinates & initial_coords_in,
+      Coordinates & proposed_coords_in)
+    : node(node_in), initial_coords(initial_coords_in), proposed_coords(proposed_coords_in)
+    {};
+
+    NodePtr node;
+    Coordinates initial_coords;
+    Coordinates proposed_coords;
+  };
+
+  typedef std::vector<AnalyticExpansionNode> AnalyticExpansionNodes;
 
   /**
    * @struct nav2_smac_planner::NodeComparator
@@ -140,22 +152,6 @@ public:
     const unsigned int & dim_3);
 
   /**
-   * @brief Perform an analytic path expansion to the goal
-   * @param node The node to start the analytic path from
-   * @param getter The function object that gets valid nodes from the graph
-   * @return Node pointer to goal node if successful, else return nullptr
-   */
-  NodePtr getAnalyticPath(const NodePtr & node, const NodeGetter & getter);
-
-  /**
-   * @brief Set the starting pose for planning, as a node index
-   * @param node Node pointer to the goal node to backtrace
-   * @param path Reference to a vector of indicies of generated path
-   * @return whether the path was able to be backtraced
-   */
-  bool backtracePath(NodePtr & node, CoordinateVector & path);
-
-  /**
    * @brief Get maximum number of iterations to plan
    * @return Reference to Maximum iterations parameter
    */
@@ -232,19 +228,12 @@ protected:
   inline bool isGoal(NodePtr & node);
 
   /**
-   * @brief Get cost of traversal between nodes
-   * @param current_node Pointer to current node
-   * @param new_node Pointer to new node
-   * @return Reference traversal cost between the nodes
+   * @brief Set the starting pose for planning, as a node index
+   * @param node Node pointer to the goal node to backtrace
+   * @param path Reference to a vector of indicies of generated path
+   * @return whether the path was able to be backtraced
    */
-  inline float getTraversalCost(NodePtr & current_node, NodePtr & new_node);
-
-  /**
-   * @brief Get total cost of traversal for a node
-   * @param node Pointer to current node
-   * @return Reference accumulated cost between the nodes
-   */
-  inline float & getAccumulatedCost(NodePtr & node);
+  bool backtracePath(NodePtr node, CoordinateVector & path);
 
   /**
    * @brief Get cost of heuristic of node
@@ -275,9 +264,25 @@ protected:
    * @return Node pointer reference to goal node if successful, else
    * return nullptr
    */
-  inline NodePtr tryAnalyticExpansion(
+  NodePtr tryAnalyticExpansion(
     const NodePtr & current_node,
     const NodeGetter & getter, int & iterations, int & best_cost);
+
+  /**
+   * @brief Perform an analytic path expansion to the goal
+   * @param node The node to start the analytic path from
+   * @param getter The function object that gets valid nodes from the graph
+   * @return A set of analytically expanded nodes to the goal from current node, if possible
+   */
+  AnalyticExpansionNodes getAnalyticPath(const NodePtr & node, const NodeGetter & getter);
+
+  /**
+   * @brief Takes final analytic expansion and appends to current expanded node
+   * @param node The node to start the analytic path from
+   * @param expanded_nodes Expanded nodes to append to end of current search path
+   * @return Node pointer to goal node if successful, else return nullptr
+   */
+  NodePtr setAnalyticPath(const NodePtr & node, const AnalyticExpansionNodes & expanded_nodes);
 
   bool _traverse_unknown;
   int _max_iterations;

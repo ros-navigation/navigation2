@@ -98,7 +98,7 @@ public:
           rclcpp::get_logger("SmacPlannerSmoother"),
           "Number of iterations has exceeded limit of %i.", max_its_);
         path = last_path;
-        updateApproximatePathOrientations(new_path);
+        updateApproximatePathOrientations(path);
         return false;
       }
 
@@ -110,7 +110,7 @@ public:
           rclcpp::get_logger("SmacPlannerSmoother"),
           "Smoothing time exceeded allowed duration of %0.2f.", max_time);
         path = last_path;
-        updateApproximatePathOrientations(new_path);
+        updateApproximatePathOrientations(path);
         return false;
       }
 
@@ -142,9 +142,9 @@ public:
         float cost = 0.0;
         if (costmap) {
           costmap->worldToMap(
-            getFieldByDim(path.poses[i], 0), getFieldByDim(
-              path.poses[i],
-              1), mx, my);
+            getFieldByDim(path.poses[i], 0),
+            getFieldByDim(path.poses[i], 1),
+            mx, my);
           cost = static_cast<float>(costmap->getCost(mx, my));
         }
         if (getCurvature(path, i) > max_curvature || cost > MAX_NON_OBSTACLE) {
@@ -152,8 +152,8 @@ public:
             rclcpp::get_logger("SmacPlannerSmoother"),
             "Smoothing process resulted in an infeasible curvature or collision. "
             "Returning the last path before the infeasibility was introduced.");
-          updateApproximatePathOrientations(new_path);
           path = last_path;
+          updateApproximatePathOrientations(path);
           return false;
         }
       }

@@ -273,24 +273,6 @@ public:
   inline void visited()
   {
     _was_visited = true;
-    _is_queued = false;
-  }
-
-  /**
-   * @brief Gets if cell is currently queued in search
-   * @param If cell was queued
-   */
-  inline bool & isQueued()
-  {
-    return _is_queued;
-  }
-
-  /**
-   * @brief Sets if cell is currently queued in search
-   */
-  inline void queued()
-  {
-    _is_queued = true;
   }
 
   /**
@@ -470,7 +452,6 @@ private:
   float _accumulated_cost;
   unsigned int _index;
   bool _was_visited;
-  bool _is_queued;
   unsigned int _motion_primitive_index;
 };
 

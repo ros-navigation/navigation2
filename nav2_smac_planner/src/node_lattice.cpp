@@ -91,8 +91,7 @@ NodeLattice::NodeLattice(const unsigned int index)
   _cell_cost(std::numeric_limits<float>::quiet_NaN()),
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
-  _was_visited(false),
-  _is_queued(false)
+  _was_visited(false)
 {
 }
 
@@ -107,7 +106,6 @@ void NodeLattice::reset()
   _cell_cost = std::numeric_limits<float>::quiet_NaN();
   _accumulated_cost = std::numeric_limits<float>::max();
   _was_visited = false;
-  _is_queued = false;
   pose.x = 0.0f;
   pose.y = 0.0f;
   pose.theta = 0.0f;
@@ -117,6 +115,11 @@ bool NodeLattice::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker)
 {
+  // Ensure we only check each node once
+  if (!std::isnan(_cell_cost)) {
+    return _cell_cost;
+  }
+
   // TODO(steve) if primitive longer than 1.5 cells, then we need to split into 1 cell
   // increments and collision check across them
   if (collision_checker->inCollision(

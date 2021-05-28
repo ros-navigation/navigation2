@@ -254,7 +254,6 @@ NodeHybrid::NodeHybrid(const unsigned int index)
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
   _was_visited(false),
-  _is_queued(false),
   _motion_primitive_index(std::numeric_limits<unsigned int>::max())
 {
 }
@@ -270,7 +269,6 @@ void NodeHybrid::reset()
   _cell_cost = std::numeric_limits<float>::quiet_NaN();
   _accumulated_cost = std::numeric_limits<float>::max();
   _was_visited = false;
-  _is_queued = false;
   _motion_primitive_index = std::numeric_limits<unsigned int>::max();
   pose.x = 0.0f;
   pose.y = 0.0f;
@@ -281,6 +279,11 @@ bool NodeHybrid::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker)
 {
+  // Ensure we only check each node once
+  if (!std::isnan(_cell_cost)) {
+    return _cell_cost;
+  }
+
   if (collision_checker->inCollision(
       this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
   {
@@ -374,21 +377,19 @@ void NodeHybrid::resetObstacleHeuristic(
   unsigned int size = costmap->getSizeInCellsX() * costmap->getSizeInCellsY();
   if (obstacle_heuristic_lookup_table.size() == size) {
     // must reset all values
-    for (unsigned int i = 0; i != obstacle_heuristic_lookup_table.size(); i++) {
-      obstacle_heuristic_lookup_table[i] = 0.0;
-    }
+    std::fill(
+      obstacle_heuristic_lookup_table.begin(),
+      obstacle_heuristic_lookup_table.end(), 0.0);
   } else {
     unsigned int obstacle_size = obstacle_heuristic_lookup_table.size();
     obstacle_heuristic_lookup_table.resize(size, 0.0);
     // must reset values for non-constructed indices
-    for (unsigned int i = 0; i != obstacle_size; i++) {
-      obstacle_heuristic_lookup_table[i] = 0.0;
-    }
+    std::fill_n(
+      obstacle_heuristic_lookup_table.begin(), obstacle_size, 0.0);
   }
 
   // Set initial cost to 2 for expansion
-  const unsigned int & size_x = costmap->getSizeInCellsX();
-  const unsigned int goal_index = goal_y * size_x + goal_x;
+  const unsigned int goal_index = goal_y * costmap->getSizeInCellsX() + goal_x;
 
   std::queue<unsigned int> q;
   std::swap(obstacle_heuristic_queue, q);

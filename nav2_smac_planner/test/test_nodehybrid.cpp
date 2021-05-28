@@ -111,11 +111,8 @@ TEST(NodeHybridTest, test_node_hybrid)
 
   // check visiting state
   EXPECT_EQ(testC.wasVisited(), false);
-  testC.queued();
-  EXPECT_EQ(testC.isQueued(), true);
   testC.visited();
   EXPECT_EQ(testC.wasVisited(), true);
-  EXPECT_EQ(testC.isQueued(), false);
 
   // check index
   EXPECT_EQ(testC.getIndex(), 49u);

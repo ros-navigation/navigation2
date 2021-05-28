@@ -30,6 +30,7 @@ using namespace std::chrono;  // NOLINT
 
 SmacPlannerLattice::SmacPlannerLattice()
 : _a_star(nullptr),
+  _collision_checker(nullptr, 1),
   _smoother(nullptr),
   _costmap(nullptr),
   _costmap_downsampler(nullptr)
@@ -100,7 +101,7 @@ void SmacPlannerLattice::configure(
     node, name + ".cost_penalty", rclcpp::ParameterValue(1.0));
   node->get_parameter(name + ".cost_penalty", search_info.cost_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(2.0));
+    node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(3.5));
   node->get_parameter(name + ".analytic_expansion_ratio", search_info.analytic_expansion_ratio);
 
   nav2_util::declare_parameter_if_not_declared(
@@ -129,8 +130,8 @@ void SmacPlannerLattice::configure(
     static_cast<float>(_costmap->getResolution() * _downsampling_factor);
 
   // Initialize collision checker
-  _collision_checker = std::make_unique<GridCollisionChecker>(_costmap, _angle_quantizations);
-  _collision_checker->setFootprint(
+  _collision_checker = GridCollisionChecker(_costmap, _angle_quantizations);
+  _collision_checker.setFootprint(
     costmap_ros->getRobotFootprint(),
     costmap_ros->getUseRadius(),
     findCircumscribedCost(costmap_ros));
@@ -218,7 +219,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   }
 
   // Set collision checker and costmap information
-  _a_star->setCollisionChecker(_collision_checker.get());
+  _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates
   unsigned int mx, my;

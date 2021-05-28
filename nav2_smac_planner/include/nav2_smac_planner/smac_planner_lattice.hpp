@@ -88,7 +88,7 @@ public:
 
 protected:
   std::unique_ptr<AStarAlgorithm<NodeLattice>> _a_star;
-  std::unique_ptr<GridCollisionChecker> _collision_checker;
+  GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;
   rclcpp::Clock::SharedPtr _clock;
   rclcpp::Logger _logger{rclcpp::get_logger("SmacPlannerLattice")};
