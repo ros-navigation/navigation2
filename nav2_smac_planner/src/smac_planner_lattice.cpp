@@ -216,6 +216,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   nav2_costmap_2d::Costmap2D * costmap = _costmap;
   if (_costmap_downsampler) {
     costmap = _costmap_downsampler->downsample(_downsampling_factor);
+    _collision_checker.setCostmap(costmap);
   }
 
   // Set collision checker and costmap information

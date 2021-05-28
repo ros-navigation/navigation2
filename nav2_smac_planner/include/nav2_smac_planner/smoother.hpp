@@ -142,15 +142,15 @@ public:
         float cost = 0.0;
         if (costmap) {
           costmap->worldToMap(
-            getFieldByDim(path.poses[i], 0),
-            getFieldByDim(path.poses[i], 1),
+            getFieldByDim(new_path.poses[i], 0),
+            getFieldByDim(new_path.poses[i], 1),
             mx, my);
           cost = static_cast<float>(costmap->getCost(mx, my));
         }
-        if (getCurvature(path, i) > max_curvature || cost > MAX_NON_OBSTACLE) {
-          RCLCPP_WARN(
+        if (cost > MAX_NON_OBSTACLE) {
+          RCLCPP_DEBUG(
             rclcpp::get_logger("SmacPlannerSmoother"),
-            "Smoothing process resulted in an infeasible curvature or collision. "
+            "Smoothing process resulted in an infeasible collision. "
             "Returning the last path before the infeasibility was introduced.");
           path = last_path;
           updateApproximatePathOrientations(path);
@@ -159,6 +159,20 @@ public:
       }
 
       last_path = new_path;
+    }
+
+    for (unsigned int i = 3; i != path_size - 3; i++) {
+      if (getCurvature(new_path, i) > max_curvature) {
+        RCLCPP_DEBUG(
+          rclcpp::get_logger("SmacPlannerSmoother"),
+          "Smoothing process resulted in an infeasible curvature somewhere on the path. "
+          "This is most likely in the exit point boundary conditions which will be further "
+          "refined as you approach the goal. If this becomes a practical issue for you, please "
+          "file a ticket mentioning this message.");
+        updateApproximatePathOrientations(new_path);
+        path = new_path;
+        return false;
+      }
     }
 
     updateApproximatePathOrientations(new_path);

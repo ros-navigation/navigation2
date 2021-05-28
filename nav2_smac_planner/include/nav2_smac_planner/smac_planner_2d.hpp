@@ -88,7 +88,7 @@ public:
 
 protected:
   std::unique_ptr<AStarAlgorithm<Node2D>> _a_star;
-  std::unique_ptr<GridCollisionChecker> _collision_checker;
+  GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;

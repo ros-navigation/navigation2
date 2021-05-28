@@ -28,6 +28,7 @@ using namespace std::chrono;  // NOLINT
 
 SmacPlanner2D::SmacPlanner2D()
 : _a_star(nullptr),
+  _collision_checker(nullptr, 1),
   _smoother(nullptr),
   _costmap(nullptr),
   _costmap_downsampler(nullptr)
@@ -114,8 +115,8 @@ void SmacPlanner2D::configure(
   }
 
   // Initialize collision checker
-  _collision_checker = std::make_unique<GridCollisionChecker>(_costmap, 1 /*for 2D, most be 1*/);
-  _collision_checker->setFootprint(
+  _collision_checker = GridCollisionChecker(_costmap, 1 /*for 2D, most be 1*/);
+  _collision_checker.setFootprint(
     costmap_ros->getRobotFootprint(),
     true /*for 2D, most use radius*/,
     0.0 /*for 2D cost at inscribed isn't relevent*/);
@@ -200,10 +201,11 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   nav2_costmap_2d::Costmap2D * costmap = _costmap;
   if (_costmap_downsampler) {
     costmap = _costmap_downsampler->downsample(_downsampling_factor);
+    _collision_checker.setCostmap(costmap);
   }
 
   // Set collision checker and costmap information
-  _a_star->setCollisionChecker(_collision_checker.get());
+  _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point
   unsigned int mx, my;
