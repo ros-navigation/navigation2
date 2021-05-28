@@ -19,6 +19,9 @@ jobs:
     container:
       image: rosplanning/navigation2:main.release
     steps:
+      - name: "Initialize environment"
+        run: |
+          echo "TRIGGER=false" >> $GITHUB_ENV
       - name: "Check apt updates"
         if: ${{ github.event_name == 'schedule' }}
         env:
