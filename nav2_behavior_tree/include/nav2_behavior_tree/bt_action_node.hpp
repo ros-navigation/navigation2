@@ -312,19 +312,12 @@ protected:
     auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
     send_goal_options.result_callback =
       [this](const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result) {
-        if (!this->goal_handle_) {
-          if (!future_goal_handle_) {
-            // Shouldn't run into this block scope
-            RCLCPP_WARN(
-              node_->get_logger(),
-              "Goal result for %s available, but it can not get a valid goal_handle_. "
-              "Normally, this message shouldn't be printed.",
-              action_name_.c_str());
-            return;
-          }
-
-          // If the future_goal_handle_ is not nullptr, try to get goal_handle_
-          this->goal_handle_ = future_goal_handle_->get();
+        if (future_goal_handle_) {
+          RCLCPP_DEBUG(
+            node_->get_logger(),
+            "Goal result for %s available, but it hasn't received the goal response yet. "
+            "It's probably a goal result for the last goal request", action_name_.c_str());
+          return;
         }
 
         // TODO(#1652): a work around until rcl_action interface is updated
