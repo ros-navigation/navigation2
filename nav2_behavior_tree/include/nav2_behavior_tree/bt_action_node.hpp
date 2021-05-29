@@ -178,7 +178,7 @@ public:
 
       default:
         RCLCPP_ERROR(
-          node_->get_logger(), "Action %s returned Unknown action status", action_name_.c_str());
+          node_->get_logger(), "Action server \"%s\" returned Unknown action status", action_name_.c_str());
         return BT::NodeStatus::FAILURE;
     }
   }
@@ -194,7 +194,7 @@ public:
       {
         RCLCPP_ERROR(
           node_->get_logger(),
-          "Failed to cancel action server for %s", action_name_.c_str());
+          "Failed to cancel action server \"%s\"", action_name_.c_str());
       }
     }
 
@@ -238,13 +238,16 @@ protected:
     if (rclcpp::spin_until_future_complete(node_, future_goal_handle, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
+      RCLCPP_ERROR(
+          node_->get_logger(), "Error sending goal to action server \"%s\" using a timeout of %d milliseconds.",
+            action_name_.c_str(), server_timeout_);
       return BT::NodeStatus::FAILURE;
     }
 
     goal_handle_ = future_goal_handle.get();
     if (!goal_handle_) {
       RCLCPP_ERROR(
-          node_->get_logger(), "Goal was rejected by action server %s", action_name_.c_str());
+          node_->get_logger(), "Goal was rejected by action server \"%s\"", action_name_.c_str());
       return BT::NodeStatus::FAILURE;
     }
     return BT::NodeStatus::SUCCESS;
