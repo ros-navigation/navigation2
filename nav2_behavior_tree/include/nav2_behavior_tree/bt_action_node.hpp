@@ -312,6 +312,14 @@ protected:
     auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
     send_goal_options.result_callback =
       [this](const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result) {
+        if (future_goal_handle_) {
+          RCLCPP_DEBUG(
+            node_->get_logger(),
+            "Goal result for %s available, but it hasn't received the goal response yet. "
+            "It's probably a goal result for the last goal request", action_name_.c_str());
+          return;
+        }
+
         // TODO(#1652): a work around until rcl_action interface is updated
         // if goal ids are not matched, the older goal call this callback so ignore the result
         // if matched, it must be processed (including aborted)
