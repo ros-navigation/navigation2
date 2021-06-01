@@ -2,7 +2,7 @@
 set -ex
 rm -rf ../../.dockerignore
 
-export FROM_IMAGE=ros:rolling
+export FROM_IMAGE=osrf/ros2:nightly
 export FAIL_ON_BUILD_FAILURE=""
 export UNDERLAY_MIXINS="release ccache"
 export OVERLAY_MIXINS="debug ccache coverage-gcc"
