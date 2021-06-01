@@ -245,25 +245,20 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     curvature = 2.0 * carrot_pose.pose.position.y / carrot_dist2;
   }
 
-  linear_vel = desired_linear_vel_;
+  // Determining the direction of the robot heading 
+  const double sign = carrot_pose.pose.position.x > 0.0 ? 1.0 : -1.0;
+
+  linear_vel = sign*desired_linear_vel_;
+
+  applyConstraints(fabs(lookahead_dist - sqrt(carrot_dist2)),lookahead_dist, curvature, speed, costAtPose(pose.pose.position.x, pose.pose.position.y), linear_vel);
+  // Apply curvature to angular velocity after constraining linear velocity
+  angular_vel = linear_vel * curvature;
 
   // Make sure we're in compliance with basic constraints
-  double angle_to_heading;
   if (shouldRotateToGoalHeading(carrot_pose)) {
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
-  } else if (shouldRotateToPath(carrot_pose, angle_to_heading)) {
-    rotateToHeading(linear_vel, angular_vel, angle_to_heading, speed);
-  } else {
-    applyConstraints(
-      fabs(lookahead_dist - sqrt(carrot_dist2)),
-      lookahead_dist, curvature, speed,
-      costAtPose(pose.pose.position.x, pose.pose.position.y), linear_vel);
-
-      // Apply curvature to angular velocity after constraining linear velocity
-      angular_vel = linear_vel * curvature;
   }
-
   // Collision checking on this velocity heading
   if (isCollisionImminent(pose, linear_vel, angular_vel)) {
     throw std::runtime_error("RegulatedPurePursuitController detected collision ahead!");
@@ -346,7 +341,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   pose_msg.header.frame_id = arc_pts_msg.header.frame_id;
   pose_msg.header.stamp = arc_pts_msg.header.stamp;
 
-  const double projection_time = costmap_->getResolution() / linear_vel;
+  const double projection_time = costmap_->getResolution() / fabs(linear_vel);
 
   geometry_msgs::msg::Pose2D curr_pose;
   curr_pose.x = robot_pose.pose.position.x;
@@ -462,7 +457,6 @@ void RegulatedPurePursuitController::applyConstraints(
   const double max_feasible_linear_speed = curr_speed.linear.x + max_linear_accel_ * dt;
   const double min_feasible_linear_speed = curr_speed.linear.x - max_linear_decel_ * dt;
   linear_vel = std::clamp(linear_vel, min_feasible_linear_speed, max_feasible_linear_speed);
-  linear_vel = std::clamp(linear_vel, 0.0, desired_linear_vel_);
 }
 
 void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
