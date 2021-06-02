@@ -1,16 +1,14 @@
 #!/bin/bash
 set -ex
-rm -rf ../../.dockerignore
 
-export FROM_IMAGE=ros:rolling
+export FROM_IMAGE=osrf/ros2:nightly-rmw-nonfree
 export FAIL_ON_BUILD_FAILURE=""
 export UNDERLAY_MIXINS="release ccache"
-export OVERLAY_MIXINS="debug ccache coverage-gcc"
 
 docker build \
+    --target builder \
     --tag ${IMAGE_NAME} \
     --build-arg FROM_IMAGE \
     --build-arg FAIL_ON_BUILD_FAILURE \
     --build-arg UNDERLAY_MIXINS \
-    --build-arg OVERLAY_MIXINS \
     --file ../../Dockerfile ../../.

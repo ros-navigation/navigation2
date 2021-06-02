@@ -280,7 +280,7 @@ _steps:
           (echo ros_entrypoint && cat) >> lockfile.txt
         sha256sum $PWD/lockfile.txt >> lockfile.txt
         mv ~/.ccache $CCACHE_DIR
-        rm -rf $OVERLAY_WS/src
+        rm -rf $OVERLAY_WS/*
   on_checkout: &on_checkout
     checkout:
       path: src/navigation2
@@ -437,7 +437,7 @@ _environments:
 executors:
   debug_exec:
     docker:
-      - image: rosplanning/navigation2:main.debug
+      - image: rosplanning/navigation2:main
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
@@ -445,7 +445,7 @@ executors:
       OVERLAY_MIXINS: "debug ccache coverage-gcc"
   release_exec:
     docker:
-      - image: rosplanning/navigation2:main.release
+      - image: rosplanning/navigation2:main
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
