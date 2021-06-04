@@ -138,7 +138,10 @@ public:
       // user defined callback
       on_tick();
 
-      on_new_goal_received();
+      BT::NodeStatus status = on_new_goal_received();
+      if( status == BT::NodeStatus::FAILURE) {
+        return BT::NodeStatus::FAILURE;
+      }
     }
 
     // The following code corresponds to the "RUNNING" loop
@@ -174,7 +177,9 @@ public:
         return on_cancelled();
 
       default:
-        throw std::logic_error("BtActionNode::Tick: invalid status value");
+        RCLCPP_ERROR(
+          node_->get_logger(), "Action server \"%s\" returned Unknown action status", action_name_.c_str());
+        return BT::NodeStatus::FAILURE;
     }
   }
 
@@ -189,7 +194,7 @@ public:
       {
         RCLCPP_ERROR(
           node_->get_logger(),
-          "Failed to cancel action server for %s", action_name_.c_str());
+          "Failed to cancel action server \"%s\"", action_name_.c_str());
       }
     }
 
@@ -213,7 +218,7 @@ protected:
   }
 
 
-  void on_new_goal_received()
+  BT::NodeStatus on_new_goal_received()
   {
     goal_result_available_ = false;
     auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
@@ -233,13 +238,19 @@ protected:
     if (rclcpp::spin_until_future_complete(node_, future_goal_handle, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
-      throw std::runtime_error("send_goal failed");
+      RCLCPP_ERROR(
+          node_->get_logger(), "Error sending goal to action server \"%s\" using a timeout of %d milliseconds.",
+            action_name_.c_str(), server_timeout_);
+      return BT::NodeStatus::FAILURE;
     }
 
     goal_handle_ = future_goal_handle.get();
     if (!goal_handle_) {
-      throw std::runtime_error("Goal was rejected by the action server");
+      RCLCPP_ERROR(
+          node_->get_logger(), "Goal was rejected by action server \"%s\"", action_name_.c_str());
+      return BT::NodeStatus::FAILURE;
     }
+    return BT::NodeStatus::SUCCESS;
   }
 
   void increment_recovery_count()
