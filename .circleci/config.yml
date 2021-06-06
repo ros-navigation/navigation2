@@ -368,7 +368,7 @@ _steps:
         codecov_version=$(grep -o 'VERSION=\"[0-9\.]*\"' codecov | cut -d'"' -f2)
         shasum -a 512 -c <(curl -s "https://raw.githubusercontent.com/codecov/codecov-bash/${codecov_version}/SHA512SUM" | grep -w "codecov")
         bash codecov \
-          -f "lcov/project_coverage.info" \
+          -f "lcov/total_coverage.info" \
           -R "src/navigation2" \
           -F "project" \
           -Z || echo 'Codecov upload failed'
