@@ -95,7 +95,6 @@ COPY --from=cacher /tmp/$OVERLAY_WS ./
 RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
-        $UNDERLAY_WS/src \
       --skip-keys " \
         slam_toolbox \
         "\
