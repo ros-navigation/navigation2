@@ -36,26 +36,27 @@ for opt in "$@" ; do
 done
 
 set -o xtrace
+mkdir -p ${LCOVDIR}
 
 # Ignore certain packages:
 # - messages, which are auto generated files
 # - system tests, which are themselves all test artifacts
 # - rviz plugins, which are not used for real navigation
-
-# Generate initial zero-coverage data.
-# This adds files that were otherwise not run to the report
-colcon lcov-result --initial \
-  --packages-ignore-regex \
-    ".*_msgs" \
-    ".*_tests" \
-    ".*_rviz.*"
+INCLUDE_PACKAGES=$(
+  colcon list \
+    --paths-only \
+    --packages-ignore-regex \
+      ".*_msgs" \
+      ".*_tests" \
+      ".*_rviz.*" \
+  | xargs)
 
 # Capture executed code data.
-colcon lcov-result \
-  --packages-ignore-regex \
-    ".*_msgs" \
-    ".*_tests" \
-    ".*_rviz.*"
+fastcov \
+  -d build \
+  --exclude test/ \
+  --include $INCLUDE_PACKAGES \
+  --output ${LCOVDIR}/total_coverage.info --lcov
 
 if [ $COVERAGE_REPORT_VIEW = codecovio ]; then
   curl -s https://codecov.io/bash > codecov

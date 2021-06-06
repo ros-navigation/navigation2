@@ -48,9 +48,9 @@ RUN apt-get update && \
     apt-get install -y \
       ccache \
       lcov \
-      python3-colcon-lcov-result \
       python3-pip \
     && pip3 install \
+      fastcov \
       git+https://github.com/ruffsl/colcon-cache.git@c1cedadc1ac6131fe825d075526ed4ae8e1b473c \
     && rosdep update \
     && rm -rf /var/lib/apt/lists/*
