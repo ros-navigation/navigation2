@@ -27,10 +27,13 @@ COPY ./ ./navigation2
 # copy manifests for caching
 WORKDIR /opt
 RUN mkdir -p /tmp/opt && \
-    find ./ -name "package.xml" | \
-      xargs cp --parents -t /tmp/opt && \
-    find ./ -name "COLCON_IGNORE" | \
-      xargs cp --parents -t /tmp/opt || true
+    find . -name "package.xml" \
+      | xargs cp --parents -t /tmp/opt && \
+    find . -name "COLCON_IGNORE" \
+      | xargs cp --parents -t /tmp/opt || true && \
+    find . -name "src" -type d \
+      -mindepth 1 -maxdepth 2 -printf '%P\n' \
+      | xargs -I % mkdir -p /tmp/opt/%
 
 # multi-stage for building
 FROM $FROM_IMAGE AS builder
