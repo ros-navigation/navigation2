@@ -267,7 +267,7 @@ _steps:
         TZ=utc stat -c '%y' /ros_entrypoint.sh | \
           (echo ros_entrypoint && cat) >> lockfile.txt
         sha256sum $PWD/lockfile.txt >> lockfile.txt
-        mv ~/.ccache $CCACHE_DIR
+        mv ~/.ccache $CCACHE_DIR || true
         rm -rf $OVERLAY_WS/*
   on_checkout: &on_checkout
     checkout:
