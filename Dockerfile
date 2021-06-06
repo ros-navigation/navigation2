@@ -6,7 +6,7 @@
 # docker build -t nav2:latest \
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./
-ARG FROM_IMAGE=osrf/ros2:nightly
+ARG FROM_IMAGE=osrf/ros2:testing
 ARG UNDERLAY_WS=/opt/underlay_ws
 ARG OVERLAY_WS=/opt/overlay_ws
 
@@ -43,12 +43,16 @@ APT::Install-Suggests "0";\n\
 ' > /etc/apt/apt.conf.d/01norecommend
 
 # install CI dependencies
+ARG RTI_NC_LICENSE_ACCEPTED=yes
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y \
       ccache \
       lcov \
       python3-pip \
+      ros-$ROS_DISTRO-rmw-fastrtps-cpp \
+      ros-$ROS_DISTRO-rmw-connextdds \
+      ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
     && pip3 install \
       fastcov \
       git+https://github.com/ruffsl/colcon-cache.git@c1cedadc1ac6131fe825d075526ed4ae8e1b473c \
