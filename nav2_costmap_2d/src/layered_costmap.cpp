@@ -145,40 +145,46 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
   minx_ = miny_ = std::numeric_limits<double>::max();
   maxx_ = maxy_ = std::numeric_limits<double>::lowest();
 
-  for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
-    plugin != plugins_.end(); ++plugin)
+  #pragma omp parallel reduction(min:minx_) reduction(min: miny_) \
+  reduction(max: maxx_) reduction(max: maxy_) num_threads(2)
   {
-    double prev_minx = minx_;
-    double prev_miny = miny_;
-    double prev_maxx = maxx_;
-    double prev_maxy = maxy_;
-    (*plugin)->updateBounds(robot_x, robot_y, robot_yaw, &minx_, &miny_, &maxx_, &maxy_);
-    if (minx_ > prev_minx || miny_ > prev_miny || maxx_ < prev_maxx || maxy_ < prev_maxy) {
-      RCLCPP_WARN(
-        rclcpp::get_logger(
-          "nav2_costmap_2d"), "Illegal bounds change, was [tl: (%f, %f), br: (%f, %f)], but "
-        "is now [tl: (%f, %f), br: (%f, %f)]. The offending layer is %s",
-        prev_minx, prev_miny, prev_maxx, prev_maxy,
-        minx_, miny_, maxx_, maxy_,
-        (*plugin)->getName().c_str());
+  #pragma omp for schedule(static, 1)
+    for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
+      plugin != plugins_.end(); ++plugin)
+    {
+      double prev_minx = minx_;
+      double prev_miny = miny_;
+      double prev_maxx = maxx_;
+      double prev_maxy = maxy_;
+      (*plugin)->updateBounds(robot_x, robot_y, robot_yaw, &minx_, &miny_, &maxx_, &maxy_);
+      if (minx_ > prev_minx || miny_ > prev_miny || maxx_ < prev_maxx || maxy_ < prev_maxy) {
+        RCLCPP_WARN(
+          rclcpp::get_logger(
+            "nav2_costmap_2d"), "Illegal bounds change, was [tl: (%f, %f), br: (%f, %f)], but "
+          "is now [tl: (%f, %f), br: (%f, %f)]. The offending layer is %s",
+          prev_minx, prev_miny, prev_maxx, prev_maxy,
+          minx_, miny_, maxx_, maxy_,
+          (*plugin)->getName().c_str());
+      }
     }
-  }
-  for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
-    filter != filters_.end(); ++filter)
-  {
-    double prev_minx = minx_;
-    double prev_miny = miny_;
-    double prev_maxx = maxx_;
-    double prev_maxy = maxy_;
-    (*filter)->updateBounds(robot_x, robot_y, robot_yaw, &minx_, &miny_, &maxx_, &maxy_);
-    if (minx_ > prev_minx || miny_ > prev_miny || maxx_ < prev_maxx || maxy_ < prev_maxy) {
-      RCLCPP_WARN(
-        rclcpp::get_logger(
-          "nav2_costmap_2d"), "Illegal bounds change, was [tl: (%f, %f), br: (%f, %f)], but "
-        "is now [tl: (%f, %f), br: (%f, %f)]. The offending filter is %s",
-        prev_minx, prev_miny, prev_maxx, prev_maxy,
-        minx_, miny_, maxx_, maxy_,
-        (*filter)->getName().c_str());
+  #pragma omp for nowait schedule(static, 1)
+    for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
+      filter != filters_.end(); ++filter)
+    {
+      double prev_minx = minx_;
+      double prev_miny = miny_;
+      double prev_maxx = maxx_;
+      double prev_maxy = maxy_;
+      (*filter)->updateBounds(robot_x, robot_y, robot_yaw, &minx_, &miny_, &maxx_, &maxy_);
+      if (minx_ > prev_minx || miny_ > prev_miny || maxx_ < prev_maxx || maxy_ < prev_maxy) {
+        RCLCPP_WARN(
+          rclcpp::get_logger(
+            "nav2_costmap_2d"), "Illegal bounds change, was [tl: (%f, %f), br: (%f, %f)], but "
+          "is now [tl: (%f, %f), br: (%f, %f)]. The offending filter is %s",
+          prev_minx, prev_miny, prev_maxx, prev_maxy,
+          minx_, miny_, maxx_, maxy_,
+          (*filter)->getName().c_str());
+      }
     }
   }
 
