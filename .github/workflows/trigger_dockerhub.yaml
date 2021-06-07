@@ -17,7 +17,7 @@ jobs:
     name: Trigger Docker Hub
     runs-on: ubuntu-latest
     container:
-      image: rosplanning/navigation2:main.release
+      image: rosplanning/navigation2:main
     steps:
       - name: "Initialize environment"
         run: |
