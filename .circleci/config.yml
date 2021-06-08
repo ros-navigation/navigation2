@@ -250,6 +250,13 @@ _commands:
             when: always
         - store_artifacts:
             path: << parameters.workspace >>/log/test
+        - run:
+            name: Copy Test Results
+            working_directory: << parameters.workspace >>
+            command: |
+              mkdir test_results/
+              cp -rH test_result/*/test_results/* test_results
+            when: always
         - store_test_results:
             path: << parameters.workspace >>/test_results
         - store_artifacts:
