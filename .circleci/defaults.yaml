@@ -1,3 +1,5 @@
+"clean.packages":
+  "test-result-base": "test_results"
 "build":
   "executor": "parallel"
   "parallel-workers": 2
