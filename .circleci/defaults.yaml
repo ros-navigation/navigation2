@@ -2,3 +2,7 @@
   "executor": "parallel"
   "parallel-workers": 2
   "symlink-install": true
+"test":
+  "test-result-base": "test_results"
+"test-result":
+  "test-result-base": "test_results"

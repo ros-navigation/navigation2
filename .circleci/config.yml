@@ -225,6 +225,10 @@ _commands:
                 | xargs)
               echo TEST_PACKAGES: $TEST_PACKAGES
 
+              colcon clean packages --yes \
+                --packages-select ${TEST_PACKAGES} \
+                --base-select test_result 
+
               . install/setup.sh
               set -o xtrace
               colcon test \
@@ -246,13 +250,6 @@ _commands:
             when: always
         - store_artifacts:
             path: << parameters.workspace >>/log/test
-        - run:
-            name: Copy Test Results
-            working_directory: << parameters.workspace >>
-            command: |
-              mkdir test_results/
-              cp -rH build/*/test_results/* test_results
-            when: always
         - store_test_results:
             path: << parameters.workspace >>/test_results
         - store_artifacts:
