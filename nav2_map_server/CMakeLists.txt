@@ -16,6 +16,7 @@ find_package(GRAPHICSMAGICKCPP REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
+find_package(pcl_ros REQUIRED)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(PCL 1.10 REQUIRED common io)
 
@@ -78,7 +79,8 @@ set(map_io_3d_dependencies
   ${map_io_2d_dependencies}
   pcl_conversions
   sensor_msgs
-  geometry_msgs)
+  geometry_msgs
+  pcl_ros)
 
 set(map_server_dependencies
   rclcpp

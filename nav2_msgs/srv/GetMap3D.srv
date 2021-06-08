@@ -2,4 +2,3 @@
 ---
 # The current map hosted by this map service.
 sensor_msgs/PointCloud2 map
-geometry_msgs/Pose origin

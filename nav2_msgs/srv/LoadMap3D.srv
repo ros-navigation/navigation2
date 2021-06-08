@@ -12,6 +12,5 @@ uint8 RESULT_UNDEFINED_FAILURE=255
 
 # Returned map is only valid if result equals RESULT_SUCCESS
 sensor_msgs/PointCloud2 map
-geometry_msgs/Pose origin
 
 uint8 result

@@ -21,6 +21,7 @@
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "geometry_msgs/msg/pose.hpp"
+#include "tf2/LinearMath/Transform.h"
 
 namespace nav2_map_server
 {
@@ -33,22 +34,8 @@ namespace map_3d
  */
 struct LoadParameters
 {
-  LoadParameters()
-  {
-    origin.position.x = 0.0;
-    origin.position.y = 0.0;
-    origin.position.z = 0.0;
-
-    // initialize orientation
-    origin.orientation.w = 1.0;
-    origin.orientation.x = 0.0;
-    origin.orientation.y = 0.0;
-    origin.orientation.z = 0.0;
-  }
-
   std::string pcd_file_name;
-  geometry_msgs::msg::Pose origin;
-  bool use_ext_origin = true;
+  tf2::Transform origin;
 };
 
 enum class LOAD_MAP_STATUS
@@ -75,8 +62,7 @@ LoadParameters loadMapYaml(const std::string & yaml_filename);
  */
 void loadMapFromFile(
   const LoadParameters & load_parameters,
-  sensor_msgs::msg::PointCloud2 & map_msg,
-  geometry_msgs::msg::Pose & origin_msg);
+  sensor_msgs::msg::PointCloud2 & map_msg);
 
 /**
  * @brief Load the map YAML, pcd from map file and
@@ -88,30 +74,15 @@ void loadMapFromFile(
  */
 LOAD_MAP_STATUS loadMapFromYaml(
   const std::string & yaml_file,
-  sensor_msgs::msg::PointCloud2 & map_msg,
-  geometry_msgs::msg::Pose & origin_msg);
+  sensor_msgs::msg::PointCloud2 & map_msg);
 
 /**
  * @brief SaveParameters for 3D map usage
  */
 struct SaveParameters
 {
-  SaveParameters()
-  {
-    origin.position.x = 0.0;
-    origin.position.y = 0.0;
-    origin.position.z = 0.0;
-
-    // initialize orientation
-    origin.orientation.w = 1.0;
-    origin.orientation.x = 0.0;
-    origin.orientation.y = 0.0;
-    origin.orientation.z = 0.0;
-  }
-
   std::string map_file_name{""};
   std::string format{""};
-  geometry_msgs::msg::Pose origin;
   bool as_binary = false;
 };
 

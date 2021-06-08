@@ -115,22 +115,22 @@ void viewPoint2Pose(
   origin.orientation.z = static_cast<double>(orientation.z());
 }
 
-void pose2ViewPoint(
-  Eigen::Vector4f & position,
-  Eigen::Quaternionf & orientation,
-  const geometry_msgs::msg::Pose & origin)
-{
-  // Update center information of viewPoint
-  position[0] = static_cast<float>(origin.position.x);
-  position[1] = static_cast<float>(origin.position.y);
-  position[2] = static_cast<float>(origin.position.z);
-
-  // Update center information of viewPoint
-  orientation.w() = static_cast<float>(origin.orientation.w);
-  orientation.x() = static_cast<float>(origin.orientation.x);
-  orientation.y() = static_cast<float>(origin.orientation.y);
-  orientation.z() = static_cast<float>(origin.orientation.z);
-}
+// void pose2ViewPoint(
+//   Eigen::Vector4f & position,
+//   Eigen::Quaternionf & orientation,
+//   const geometry_msgs::msg::Pose & origin)
+// {
+//   // Update center information of viewPoint
+//   position[0] = static_cast<float>(origin.position.x);
+//   position[1] = static_cast<float>(origin.position.y);
+//   position[2] = static_cast<float>(origin.position.z);
+//
+//   // Update center information of viewPoint
+//   orientation.w() = static_cast<float>(origin.orientation.w);
+//   orientation.x() = static_cast<float>(origin.orientation.x);
+//   orientation.y() = static_cast<float>(origin.orientation.y);
+//   orientation.z() = static_cast<float>(origin.orientation.z);
+// }
 
 }  // namespace map_3d
 

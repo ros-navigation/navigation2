@@ -29,6 +29,11 @@
 
 #include "pcl/io/pcd_io.h"
 #include "Eigen/Core"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Vector3.h"
+#include "tf2/LinearMath/Scalar.h"
+
+#include "pcl_ros/transforms.hpp"
 
 #ifdef _WIN32
 // https://github.com/rtv/Stage/blob/master/replace/dirname.c
@@ -99,13 +104,12 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   YAML::Node doc = YAML::LoadFile(yaml_filename);
   LoadParameters load_parameters;
 
-  std::string pcd_file_name(yaml_get_value<std::string>(doc, "image"));
+  std::string pcd_file_name(yaml_get_value<std::string>(doc, "pcd"));
   if (!ends_with(pcd_file_name, ".pcd")) {
     throw YAML::Exception(
             doc["image"].Mark(),
             "The pcd file is invalid please pass a file name with extension .pcd");
   }
-  std::cout << "file written";
 
   if (pcd_file_name[0] != '/') {
     // dirname takes a mutable char *, so we copy into a vector
@@ -116,7 +120,6 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   } else {
     load_parameters.pcd_file_name = pcd_file_name;
   }
-  std::cout << "setting the origin";
 
   // Get view point as position and orientation
   // view point will be loaded from pcd file while reading
@@ -131,21 +134,18 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
 
     // Convert to Pose
     // Position
-    load_parameters.origin.position.x = pcd_origin[0];
-    load_parameters.origin.position.y = pcd_origin[1];
-    load_parameters.origin.position.z = pcd_origin[2];
+    tf2::Vector3 translation = tf2::Vector3(tf2Scalar(pcd_origin[0]), 
+                                            tf2Scalar(pcd_origin[1]), 
+                                            tf2Scalar(pcd_origin[2]));
 
-    // Orientation
-    load_parameters.origin.orientation.w = pcd_origin[3];
-    load_parameters.origin.orientation.x = pcd_origin[4];
-    load_parameters.origin.orientation.y = pcd_origin[5];
-    load_parameters.origin.orientation.z = pcd_origin[6];
+    tf2::Quaternion rotation = tf2::Quaternion(tf2Scalar(pcd_origin[4]), 
+                                               tf2Scalar(pcd_origin[5]),
+                                               tf2Scalar(pcd_origin[6]),
+                                               tf2Scalar(pcd_origin[3]));
 
-    load_parameters.use_ext_origin = true;
+    load_parameters.origin = tf2::Transform(rotation, translation); 
   } catch (YAML::Exception & e) {
-    load_parameters.use_ext_origin = false;
-    std::cout << "[WARNING] [map_io_3d]: Couldn't load view_point from yaml file: "
-      "If not provided, we will try to load from pcd file" << std::endl;
+    std::cout << "[WARNING] [map_io_3d]: Couldn't load view_point from yaml file: " << std::endl;
   }
 
   return load_parameters;
@@ -153,11 +153,9 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
 
 void loadMapFromFile(
   const LoadParameters & load_parameters,
-  sensor_msgs::msg::PointCloud2 & map_msg,
-  geometry_msgs::msg::Pose & origin_msg)
+  sensor_msgs::msg::PointCloud2 & map_msg)
 {
-  sensor_msgs::msg::PointCloud2 map;
-  geometry_msgs::msg::Pose map_origin;
+  sensor_msgs::msg::PointCloud2 map, map2;
 
   std::cout << "[INFO] [map_io_3d]: Loading pcd_file: " <<
     load_parameters.pcd_file_name << std::endl;
@@ -186,15 +184,6 @@ void loadMapFromFile(
   }
   std::cout << "[DEBUG] [map_io_3d]: pcd file is loaded" << std::endl;
 
-  if (!load_parameters.use_ext_origin) {
-    std::cout << "[WARNING] [map_io_3d]: View Point(position and orientation) not provided by "
-      "YAML now will be using view_point defined by pcd reader" << std::endl;
-
-    viewPoint2Pose(origin_msg, position, orientation);
-  } else {
-    origin_msg = load_parameters.origin;
-  }
-
   std::cout << "[DEBUG] [map_io_3d]: converting pcd to message" << std::endl;
 
   //  update message data
@@ -202,13 +191,13 @@ void loadMapFromFile(
 
   std::cout << "[DEBUG] [map_io_3d]: message conversion is done" << std::endl;
 
-  map_msg = map;
+  pcl_ros::transformPointCloud("random", load_parameters.origin, map, map2);
+  map_msg = map2;
 }
 
 LOAD_MAP_STATUS loadMapFromYaml(
   const std::string & yaml_file,
-  sensor_msgs::msg::PointCloud2 & map_msg,
-  geometry_msgs::msg::Pose & origin_msg)
+  sensor_msgs::msg::PointCloud2 & map_msg)
 {
   if (yaml_file.empty()) {
     std::cerr << "[ERROR] [map_io_3d]: YAML file name is empty, can't load!" << std::endl;
@@ -231,7 +220,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
   }
 
   try {
-    loadMapFromFile(load_parameters, map_msg, origin_msg);
+    loadMapFromFile(load_parameters, map_msg);
   } catch (std::exception & e) {
     std::cerr <<
       "[ERROR] [map_io_3d]: Failed to load image file " << load_parameters.pcd_file_name <<
@@ -339,10 +328,7 @@ void tryWriteMapToFile(
     emitter << YAML::Key << "image" << YAML::Value << file_name;
 
     emitter << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq <<
-      save_parameters.origin.position.x << save_parameters.origin.position.y <<
-      save_parameters.origin.position.z << save_parameters.origin.orientation.w <<
-      save_parameters.origin.orientation.x << save_parameters.origin.orientation.y <<
-      save_parameters.origin.orientation.z << YAML::EndSeq;
+      0 << 0 << 0 << 1 << 0 << 0 << 0 << YAML::EndSeq;
 
     emitter << YAML::Key << "file_format" << YAML::Value << save_parameters.format;
     emitter << YAML::Key << "as_binary" << YAML::Value << save_parameters.as_binary;
