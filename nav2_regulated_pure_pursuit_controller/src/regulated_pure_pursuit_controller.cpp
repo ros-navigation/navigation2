@@ -245,7 +245,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Find look ahead distance and point on path and publish
   const double lookahead_dist = getLookAheadDistance(speed);
   auto carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan);
-  carrot_pub_->publish(std::move(createCarrotMsg(carrot_pose)));
+  carrot_pub_->publish(createCarrotMsg(carrot_pose));
 
   double linear_vel, angular_vel;
 
