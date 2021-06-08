@@ -69,21 +69,9 @@ _commands:
               apt-get update
               rosdep update
 
-              # workarround for OMPL and rosdep
-              # https://github.com/ompl/ompl/issues/753
-              # Prevent searching $ROS_WS/install given it's too big for rosdep
-
-              if [ "$ROS_WS" == "<< parameters.underlay >>" ]; then
-                underlay_ws=""
-              else
-                underlay_ws=<< parameters.underlay >>/src
-              fi
-              echo underlay_ws = $underlay_ws
-
               dependencies=$(
                 rosdep install -q -y \
                   --from-paths src \
-                    $underlay_ws \
                   --ignore-src \
                   --skip-keys " \
                     slam_toolbox \
@@ -279,7 +267,7 @@ _steps:
         TZ=utc stat -c '%y' /ros_entrypoint.sh | \
           (echo ros_entrypoint && cat) >> lockfile.txt
         sha256sum $PWD/lockfile.txt >> lockfile.txt
-        mv ~/.ccache $CCACHE_DIR
+        mv ~/.ccache $CCACHE_DIR || true
         rm -rf $OVERLAY_WS/*
   on_checkout: &on_checkout
     checkout:
