@@ -150,6 +150,10 @@ _commands:
                     fi
                     echo BUILD_PACKAGES: $BUILD_PACKAGES
 
+                    colcon clean packages --yes \
+                      --packages-select ${BUILD_PACKAGES} \
+                      --base-select install
+
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
