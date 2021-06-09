@@ -82,13 +82,13 @@ _commands:
             command: |
               . << parameters.underlay >>/install/setup.sh
               cat << parameters.underlay >>/lockfile.txt > lockfile.txt
-              
+
               vcs export --exact << parameters.underlay >>/src | \
                 (echo vcs_export && cat) >> lockfile.txt
               sha256sum $PWD/lockfile.txt >> lockfile.txt
 
               apt-get update
-              rosdep update
+              rosdep update --rosdistro $ROS_DISTRO
               dependencies=$(
                 rosdep install -q -y \
                   --from-paths src \
