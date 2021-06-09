@@ -102,11 +102,6 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
-# source underlay from entrypoint
-RUN sed --in-place \
-      's|^source .*|source "$UNDERLAY_WS/install/setup.bash"|' \
-      /ros_entrypoint.sh
-
 # multi-stage for testing
 FROM builder AS tester
 
