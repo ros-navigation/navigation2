@@ -83,6 +83,8 @@ _commands:
               . << parameters.underlay >>/install/setup.sh
               AMENT_PREFIX_PATH=$(echo "$AMENT_PREFIX_PATH" | \
                 sed -e 's|:/opt/ros/'$ROS_DISTRO'$||')
+              AMENT_PREFIX_PATH=$(echo "$AMENT_PREFIX_PATH" | \
+                sed -e 's|/opt/ros/'$ROS_DISTRO'$||')
 
               cat << parameters.underlay >>/lockfile.txt > lockfile.txt
               vcs export --exact << parameters.underlay >>/src | \
