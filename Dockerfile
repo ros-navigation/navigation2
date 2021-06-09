@@ -80,6 +80,7 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 COPY --from=cacher $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache"
 ARG FAIL_ON_BUILD_FAILURE=True
+ARG CCACHE_DIR=".ccache"
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon cache lock && \
     colcon build \
