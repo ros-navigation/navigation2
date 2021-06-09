@@ -1,10 +1,15 @@
+_common: &common
+  "test-result-base": "test_results"
+
 "clean.packages":
-  "test-result-base": "test_result"
+  <<: *common
 "build":
+  <<: *common
   "executor": "parallel"
   "parallel-workers": 2
   "symlink-install": true
 "test":
-  "test-result-base": "test_result"
+  <<: *common
+  "executor": "sequential"
 "test-result":
-  "test-result-base": "test_result"
+  <<: *common
