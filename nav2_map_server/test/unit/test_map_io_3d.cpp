@@ -21,7 +21,6 @@
 #include "test_constants/test_constants.h"
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
-#include "geometry_msgs/msg/pose.hpp"
 
 #include "nav2_map_server/map_3d/map_io_3d.hpp"
 
@@ -52,16 +51,20 @@ protected:
   {
     load_parameters.pcd_file_name = pcd_file_name;
 
-    // Fill up origin params
-    // [x, y, z] position
-    load_parameters.origin.position.x = g_valid_center_pcd[0];
-    load_parameters.origin.position.y = g_valid_center_pcd[1];
-    load_parameters.origin.position.z = g_valid_center_pcd[2];
-    // [qw, qx, qy, qz] orientation
-    load_parameters.origin.orientation.w = g_valid_orientation_pcd[0];
-    load_parameters.origin.orientation.x = g_valid_orientation_pcd[1];
-    load_parameters.origin.orientation.y = g_valid_orientation_pcd[2];
-    load_parameters.origin.orientation.z = g_valid_orientation_pcd[3];
+
+    // Position
+    tf2::Vector3 translation = tf2::Vector3(
+      tf2Scalar(0),
+      tf2Scalar(0),
+      tf2Scalar(0));
+    // Orientation
+    tf2::Quaternion rotation = tf2::Quaternion(
+      tf2Scalar(1),
+      tf2Scalar(0),
+      tf2Scalar(0),
+      tf2Scalar(0));
+    // Transform
+    load_parameters.origin = tf2::Transform(rotation, translation);
   }
 
   // Fill SaveParameters with standard for testing values
@@ -69,44 +72,19 @@ protected:
   // Output: save_parameters
   static void fillSaveParameters(
     const std::string & map_file_name,
-    const std::vector<double> & center,
-    const std::vector<double> & orientation,
     const std::string & format,
     bool as_binary,
     map_3d::SaveParameters & save_parameters)
   {
     save_parameters.map_file_name = map_file_name;
 
-    save_parameters.origin.position.x = center[0];
-    save_parameters.origin.position.y = center[1];
-    save_parameters.origin.position.z = center[2];
-
-    save_parameters.origin.orientation.w = orientation[0];
-    save_parameters.origin.orientation.x = orientation[1];
-    save_parameters.origin.orientation.y = orientation[2];
-    save_parameters.origin.orientation.z = orientation[3];
-
     save_parameters.as_binary = as_binary;
     save_parameters.format = format;
   }
 
   static void verifyMapMsg(
-    const sensor_msgs::msg::PointCloud2 & map_msg,
-    const geometry_msgs::msg::Pose & origin)
+    const sensor_msgs::msg::PointCloud2 & map_msg)
   {
-    std::vector<double> center;
-    center.push_back(origin.position.x);
-    center.push_back(origin.position.y);
-    center.push_back(origin.position.z);
-
-    std::vector<double> orientation;
-    orientation.push_back(origin.orientation.w);
-    orientation.push_back(origin.orientation.x);
-    orientation.push_back(origin.orientation.y);
-    orientation.push_back(origin.orientation.z);
-    ASSERT_EQ(center, g_valid_center_pcd);
-    ASSERT_EQ(orientation, g_valid_orientation_pcd);
-
     ASSERT_EQ(map_msg.width, g_valid_pcd_width);
     ASSERT_EQ(map_msg.data.size(), g_valid_pcd_data_size);
   }
@@ -124,40 +102,25 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
   fillLoadParameters(path(TEST_DIR) / path(g_valid_pcd_file), loadParameters);
 
   sensor_msgs::msg::PointCloud2 map_msg;
-  geometry_msgs::msg::Pose origin;
-  ASSERT_NO_THROW(map_3d::loadMapFromFile(loadParameters, map_msg, origin));
+  ASSERT_NO_THROW(map_3d::loadMapFromFile(loadParameters, map_msg));
 
   // 2. Save OccupancyGrid into a tmp file
   map_3d::SaveParameters saveParameters;
   std::vector<double> center(3);
   std::vector<double> orientation(4);
 
-  // Set view_point translation(origin)
-  center[0] = origin.position.x;
-  center[1] = origin.position.y;
-  center[2] = origin.position.z;
-
-  // Set view_point orientation
-  orientation[0] = origin.orientation.w;
-  orientation[1] = origin.orientation.x;
-  orientation[2] = origin.orientation.y;
-  orientation[3] = origin.orientation.z;
-
-  ASSERT_EQ(center, g_valid_center_pcd);
-  ASSERT_EQ(orientation, g_valid_orientation_pcd);
-
   fillSaveParameters(
     path(g_tmp_dir) / path(g_valid_pcd_map_name),
-    center, orientation, "pcd", false, saveParameters);
+    "pcd", false, saveParameters);
 
   ASSERT_TRUE(map_3d::saveMapToFile(map_msg, saveParameters));
 
   // 3. Load saved map and verify it
   map_3d::LOAD_MAP_STATUS status =
-    map_3d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_pcd_yaml_file), map_msg, origin);
+    map_3d::loadMapFromYaml(path(g_tmp_dir) / path(g_valid_pcd_yaml_file), map_msg);
   ASSERT_EQ(status, map_3d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
 
-  verifyMapMsg(map_msg, origin);
+  verifyMapMsg(map_msg);
 }
 
 // Load valid YAML file and check for consistency

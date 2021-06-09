@@ -36,7 +36,7 @@ namespace nav2_map_server
  * for OccupancyGrid maps via. SaveMap service
  * SaveMap service default name : save_map
  */
-class MapSaver2D: public nav2_util::LifecycleNode
+class MapSaver2D : public nav2_util::LifecycleNode
 {
 public:
   /**

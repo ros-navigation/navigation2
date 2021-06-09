@@ -108,29 +108,24 @@ void MapSaver3D::saveMapCallback(
   save_parameters.as_binary = request->as_binary;
   save_parameters.format = request->file_format;
 
-  response->result = saveMapTopicToFile(request->map_topic, request->origin_topic, save_parameters);
+  response->result = saveMapTopicToFile(request->map_topic, save_parameters);
 }
 
 bool MapSaver3D::saveMapTopicToFile(
   const std::string & map_topic,
-  const std::string & origin_topic,
   const map_3d::SaveParameters & save_parameters)
 {
   // Local copies of map_topic and save_parameters that could be changed
   std::string map_topic_loc = map_topic;
-  std::string origin_topic_loc = origin_topic;
   map_3d::SaveParameters save_parameters_loc = save_parameters;
 
   RCLCPP_INFO(
-    get_logger(), "Saving map from \'%s\' topic and origin from topic \'%s\' to \'%s\' file",
-    map_topic_loc.c_str(), origin_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
+    get_logger(), "Saving map from \'%s\' topic and default origin to \'%s\' file",
+    map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
 
   try {
     // Pointer to map message received in the subscription callback
     sensor_msgs::msg::PointCloud2::SharedPtr pcd_map_msg = nullptr;
-
-    // Pointer to the origin message received in the subscription callback
-    geometry_msgs::msg::Pose::SharedPtr origin_msg = nullptr;
 
     // Mutex for handling map_msg shared resource
     std::recursive_mutex access;
@@ -143,26 +138,11 @@ bool MapSaver3D::saveMapTopicToFile(
         map_topic_loc.c_str());
     }
 
-    // Correct origin_topic_loc if necessary
-    if (origin_topic_loc.empty()) {
-      origin_topic_loc = map_topic_loc + "_origin";
-      RCLCPP_WARN(
-        get_logger(), "Origin topic unspecified. Origin messages will be read from \'%s\' topic",
-        origin_topic_loc.c_str());
-    }
-
     // A callback function that receives map message from subscribed topic
     auto map_callback = [&pcd_map_msg, &access](
       const sensor_msgs::msg::PointCloud2::SharedPtr msg) -> void {
         std::lock_guard<std::recursive_mutex> guard(access);
         pcd_map_msg = msg;
-      };
-
-    // A callback function that receives origin message from subscribed topic
-    auto origin_callback = [&origin_msg, &access](
-      const geometry_msgs::msg::Pose::SharedPtr msg) -> void {
-        std::lock_guard<std::recursive_mutex> guard(access);
-        origin_msg = msg;
       };
 
     // Add new subscription for incoming map topic.
@@ -177,9 +157,6 @@ bool MapSaver3D::saveMapTopicToFile(
     auto pcd_map_sub = rclcpp_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
       map_topic_loc, map_qos, map_callback);
 
-    auto origin_sub = rclcpp_node_->create_subscription<geometry_msgs::msg::Pose>(
-      origin_topic_loc, map_qos, origin_callback);
-
     rclcpp::Time start_time = now();
     while (rclcpp::ok()) {
       if ((now() - start_time) > *save_map_timeout_) {
@@ -187,12 +164,10 @@ bool MapSaver3D::saveMapTopicToFile(
         return false;
       }
 
-      if (pcd_map_msg && origin_msg) {
+      if (pcd_map_msg) {
         std::lock_guard<std::recursive_mutex> guard(access);
         // map_sub is no more needed
         pcd_map_sub.reset();
-        origin_sub.reset();
-
 
         // Map message received. Saving it to file
         if (map_3d::saveMapToFile(*pcd_map_msg, save_parameters_loc)) {

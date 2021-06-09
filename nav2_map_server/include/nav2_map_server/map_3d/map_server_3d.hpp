@@ -22,7 +22,6 @@
 #include "nav2_msgs/srv/get_map3_d.hpp"
 #include "nav2_msgs/srv/load_map3_d.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
-#include "geometry_msgs/msg/pose.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -31,13 +30,13 @@ namespace nav2_map_server
 {
 
 /**
- * @class nav2_map_server::MapServer3D 
+ * @class nav2_map_server::MapServer3D
  * @brief Parses the map yaml file and creates a service and a publisher that
  * provides PointCloud maps, via. GetMap3D, and LoadMap3D services
  * GetMap service default name : "map"
  * LoadMap service default name : "load_map"
  */
-class MapServer3D: public nav2_util::LifecycleNode
+class MapServer3D : public nav2_util::LifecycleNode
 {
 public:
   /**
@@ -136,12 +135,6 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr pcd_pub_;
   // The message to publish the pointcloud topic
   sensor_msgs::msg::PointCloud2 pcd_msg_;
-
-  // Origin related message and publishers
-  // A topic on which the Pose will be published
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Pose>::SharedPtr origin_pub_;
-  // The message to publish the pose topic
-  geometry_msgs::msg::Pose origin_msg_;
 
   // The frame ID used in the returned PointCloud2 message
   std::string frame_id_;

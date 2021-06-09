@@ -199,7 +199,7 @@ int main(int argc, char ** argv)
     {
       auto map_saver = std::make_shared<nav2_map_server::MapSaver3D>();
       if (map_saver->saveMapTopicToFile(
-          map_topic, save_parameters.origin_topic,
+          map_topic,
           save_parameters.save_parameters_3d))
       {
         retcode = 0;

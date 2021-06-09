@@ -35,7 +35,7 @@ namespace nav2_map_server
  * GetMap service default name : "map"
  * LoadMap service default name : "load_map"
  */
-class MapServer2D: public nav2_util::LifecycleNode
+class MapServer2D : public nav2_util::LifecycleNode
 {
 public:
   /**

@@ -23,7 +23,6 @@
 
 #include "nav2_msgs/srv/save_map3_d.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
-#include "geometry_msgs/msg/pose.hpp"
 
 #include "nav2_map_server/map_3d/map_io_3d.hpp"
 
@@ -85,30 +84,8 @@ public:
 
 protected:
   static void verifyMapMsg(
-    const sensor_msgs::msg::PointCloud2 & map_msg,
-    const geometry_msgs::msg::Pose & origin)
+    const sensor_msgs::msg::PointCloud2 & map_msg)
   {
-    std::vector<double> center;
-    center.resize(3);
-    center[0] = origin.position.x;
-    center[1] = origin.position.y;
-    center[2] = origin.position.z;
-
-    std::vector<double> orientation;
-    orientation.resize(4);
-    orientation[0] = origin.orientation.w;
-    orientation[1] = origin.orientation.x;
-    orientation[2] = origin.orientation.y;
-    orientation[3] = origin.orientation.z;
-
-    for (int i = 0; i < 3; i++) {
-      ASSERT_EQ(center[i], g_valid_center_pcd[i]);
-    }
-
-    for (int i = 0; i < 4; i++) {
-      ASSERT_EQ(orientation[1], g_valid_orientation_pcd[1]);
-    }
-
     ASSERT_FLOAT_EQ(map_msg.width, g_valid_pcd_width);
     ASSERT_FLOAT_EQ(map_msg.data.size(), g_valid_pcd_data_size);
   }
@@ -135,7 +112,6 @@ TEST_F(MapSaverTestFixture, SaveMap3D)
 
   // 1. Send valid save_map service request
   req->map_topic = "map";
-  req->origin_topic = "map_origin";
 
   req->map_url = path(g_tmp_dir) / path(g_valid_pcd_map_name);
 
@@ -147,15 +123,14 @@ TEST_F(MapSaverTestFixture, SaveMap3D)
 
   // 2. Load saved map and verify it
   sensor_msgs::msg::PointCloud2 map_msg;
-  geometry_msgs::msg::Pose pose_msg;
 
   map_3d::LOAD_MAP_STATUS status =
     map_3d::loadMapFromYaml(
     path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
-    map_msg, pose_msg);
+    map_msg);
 
   ASSERT_EQ(status, map_3d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
-  verifyMapMsg(map_msg, pose_msg);
+  verifyMapMsg(map_msg);
 }
 
 // Send map(pcd) saving service request with default parameters.
@@ -172,7 +147,6 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters3D)
 
   // 1. Send save_map service request with default parameters
   req->map_topic = "";
-  req->origin_topic = "";
 
   req->map_url = path(g_tmp_dir) / path(g_valid_pcd_map_name);
 
@@ -184,12 +158,11 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters3D)
 
   // 2. Load saved map and verify it
   sensor_msgs::msg::PointCloud2 map_msg;
-  geometry_msgs::msg::Pose pose_msg;
   map_3d::LOAD_MAP_STATUS status =
     map_3d::loadMapFromYaml(
     path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
-    map_msg, pose_msg);
+    map_msg);
 
   ASSERT_EQ(status, map_3d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
-  verifyMapMsg(map_msg, pose_msg);
+  verifyMapMsg(map_msg);
 }

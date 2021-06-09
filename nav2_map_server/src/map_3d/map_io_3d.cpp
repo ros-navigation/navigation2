@@ -132,18 +132,19 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
       throw std::invalid_argument("view_point is wrong");
     }
 
-    // Convert to Pose
     // Position
-    tf2::Vector3 translation = tf2::Vector3(tf2Scalar(pcd_origin[0]), 
-                                            tf2Scalar(pcd_origin[1]), 
-                                            tf2Scalar(pcd_origin[2]));
-
-    tf2::Quaternion rotation = tf2::Quaternion(tf2Scalar(pcd_origin[4]), 
-                                               tf2Scalar(pcd_origin[5]),
-                                               tf2Scalar(pcd_origin[6]),
-                                               tf2Scalar(pcd_origin[3]));
-
-    load_parameters.origin = tf2::Transform(rotation, translation); 
+    tf2::Vector3 translation = tf2::Vector3(
+      tf2Scalar(pcd_origin[0]),
+      tf2Scalar(pcd_origin[1]),
+      tf2Scalar(pcd_origin[2]));
+    // Orientation
+    tf2::Quaternion rotation = tf2::Quaternion(
+      tf2Scalar(pcd_origin[4]),
+      tf2Scalar(pcd_origin[5]),
+      tf2Scalar(pcd_origin[6]),
+      tf2Scalar(pcd_origin[3]));
+    // Transform
+    load_parameters.origin = tf2::Transform(rotation, translation);
   } catch (YAML::Exception & e) {
     std::cout << "[WARNING] [map_io_3d]: Couldn't load view_point from yaml file: " << std::endl;
   }
@@ -304,10 +305,8 @@ void tryWriteMapToFile(
 
   // Initialize origin
   Eigen::Vector4f position = Eigen::Vector4f::Zero();
-
   // Initialize orientation
   Eigen::Quaternionf orientation = Eigen::Quaternionf::Identity();
-  pose2ViewPoint(position, orientation, save_parameters.origin);
 
   if (writer.write(
       file_name, cloud_2, position,

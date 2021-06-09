@@ -20,7 +20,6 @@
 #include <string>
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
-#include "geometry_msgs/msg/pose.hpp"
 #include "tf2/LinearMath/Transform.h"
 
 namespace nav2_map_server

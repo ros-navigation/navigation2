@@ -78,11 +78,6 @@ MapServer3D::on_configure(
     topic_name,
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
-  // Create a publisher using the QoS settings to emulate a ROS1 latched topic
-  origin_pub_ = create_publisher<geometry_msgs::msg::Pose>(
-    topic_name + "_origin",
-    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
-
   // Create a service that loads the PointCloud2 from a file
   pcd_load_map_service_ = create_service<nav2_msgs::srv::LoadMap3D>(
     service_prefix + std::string(load_map_service_name_),
@@ -99,13 +94,9 @@ MapServer3D::on_activate(
 
   // Publish the map(pcd if enabled) using the latched topic
   pcd_pub_->on_activate();
-  origin_pub_->on_activate();
 
   auto pcd_cloud_2 = std::make_unique<sensor_msgs::msg::PointCloud2>(pcd_msg_);
   pcd_pub_->publish(std::move(pcd_cloud_2));
-
-  auto origin = std::make_unique<geometry_msgs::msg::Pose>(origin_msg_);
-  origin_pub_->publish(std::move(origin));
 
   // create bond connection
   createBond();
@@ -120,7 +111,6 @@ MapServer3D::on_deactivate(
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   pcd_pub_->on_deactivate();
-  origin_pub_->on_deactivate();
 
   // destroy bond connection
   destroyBond();
@@ -135,7 +125,6 @@ MapServer3D::on_cleanup(
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
   pcd_pub_.reset();
-  origin_pub_.reset();
   pcd_service_.reset();
   pcd_load_map_service_.reset();
 
@@ -153,7 +142,7 @@ bool MapServer3D::loadMapResponseFromYaml(
   const std::string & yaml_file,
   std::shared_ptr<nav2_msgs::srv::LoadMap3D::Response> response)
 {
-  switch (map_3d::loadMapFromYaml(yaml_file, pcd_msg_, origin_msg_)) {
+  switch (map_3d::loadMapFromYaml(yaml_file, pcd_msg_)) {
     case map_3d::LOAD_MAP_STATUS::MAP_DOES_NOT_EXIST:
       response->result = nav2_msgs::srv::LoadMap3D::Response::RESULT_MAP_DOES_NOT_EXIST;
       return false;
@@ -167,7 +156,6 @@ bool MapServer3D::loadMapResponseFromYaml(
       updateMsgHeader();
 
       response->map = pcd_msg_;
-      response->origin = origin_msg_;
       response->result = nav2_msgs::srv::LoadMap3D::Response::RESULT_SUCCESS;
   }
 
@@ -188,7 +176,6 @@ void MapServer3D::getMapCallback(
   }
   RCLCPP_INFO(get_logger(), "Handling GetMap request");
   response->map = pcd_msg_;
-  response->origin = origin_msg_;
 }
 
 void MapServer3D::loadMapCallback(

@@ -36,7 +36,7 @@ namespace nav2_map_server
  * for PointCloud maps, via. SaveMap3D service
  * SaveMap service default name : save_map
  */
-class MapSaver3D: public nav2_util::LifecycleNode
+class MapSaver3D : public nav2_util::LifecycleNode
 {
 public:
   /**
@@ -57,7 +57,6 @@ public:
    */
   bool saveMapTopicToFile(
     const std::string & map_topic,
-    const std::string & origin_topic,
     const map_3d::SaveParameters & save_parameters);
 
 protected:
