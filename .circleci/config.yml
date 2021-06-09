@@ -81,8 +81,10 @@ _commands:
             working_directory: << parameters.workspace >>
             command: |
               . << parameters.underlay >>/install/setup.sh
-              cat << parameters.underlay >>/lockfile.txt > lockfile.txt
+              AMENT_PREFIX_PATH=$(echo "$AMENT_PREFIX_PATH" | \
+                sed -e 's|:/opt/ros/'$ROS_DISTRO'$||')
 
+              cat << parameters.underlay >>/lockfile.txt > lockfile.txt
               vcs export --exact << parameters.underlay >>/src | \
                 (echo vcs_export && cat) >> lockfile.txt
               sha256sum $PWD/lockfile.txt >> lockfile.txt
