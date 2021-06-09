@@ -63,6 +63,7 @@ _commands:
               -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}\
               -{{ epoch }}"
             paths:
+              - << parameters.path >>/.ccache
               - << parameters.path >>/build
               - << parameters.path >>/install
               - << parameters.path >>/log
@@ -292,7 +293,6 @@ _steps:
         TZ=utc stat -c '%y' /ros_entrypoint.sh | \
           (echo ros_entrypoint && cat) >> lockfile.txt
         sha256sum $PWD/lockfile.txt >> lockfile.txt
-        mv ~/.ccache $CCACHE_DIR || true
         rm -rf $OVERLAY_WS/*
   on_checkout: &on_checkout
     checkout:
