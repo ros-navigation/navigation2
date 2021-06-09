@@ -1,7 +1,29 @@
 version: 2.1
 
 _commands:
+  common_steps: &common_steps
+    store_ccache_logs: &store_ccache_logs
+      store_artifacts:
+          path: /tmp/ccache.log
   common_commands: &common_commands
+    ccache_stats:
+      description: "CCache Stats"
+      parameters:
+        workspace:
+          type: string
+        when:
+          type: string
+          default: on_success
+      steps:
+        - run:
+            name: CCache Stats
+            working_directory: << parameters.workspace >>
+            command: |
+              ccache -s # show stats
+              ccache -z # zero stats
+              ccache -V # show version
+              ccache -p # show config
+            when: << parameters.when >>
     restore_from_cache:
       description: "Restore From Cache"
       parameters:
@@ -106,6 +128,9 @@ _commands:
         - when:
             condition: << parameters.build >>
             steps:
+              - ccache_stats:
+                  workspace: << parameters.workspace >>
+                  when: always
               - run:
                   name: Build Workspace | << parameters.workspace >>
                   working_directory: << parameters.workspace >>
@@ -158,6 +183,9 @@ _commands:
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
                       --mixin << parameters.mixins >>
+              - ccache_stats:
+                  workspace: << parameters.workspace >>
+                  when: always
               - save_to_cache:
                   key: << parameters.key >>
                   path: << parameters.workspace >>
@@ -292,18 +320,6 @@ _steps:
     install_dependencies:
       underlay: /opt/ros_ws
       workspace: /opt/underlay_ws
-  restore_ccache: &restore_ccache
-    restore_from_cache:
-      key: ccache
-      workspace: /opt/underlay_ws
-  ccache_stats: &ccache_stats
-    run:
-      name: CCache Stats
-      command: |
-        ccache -s # show stats
-        ccache -z # zero stats
-        ccache -V # show version
-        ccache -p # show config
   setup_underlay_workspace: &setup_underlay_workspace
     setup_workspace: &setup_workspace_underlay
       key: underlay_ws
@@ -328,15 +344,6 @@ _steps:
     setup_workspace:
       <<: *setup_workspace_overlay
       build: false
-  store_ccache_logs: &store_ccache_logs
-    store_artifacts:
-        path: /tmp/ccache.log
-  save_ccache: &save_ccache
-    save_to_cache:
-      key: ccache
-      workspace: /opt/underlay_ws
-      path: /tmp/.ccache
-      when: always
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
       key: overlay_ws
@@ -375,18 +382,13 @@ commands:
     description: "Setup Dependencies"
     steps:
       - *install_underlay_dependencies
-      - *restore_ccache
-      - *ccache_stats
       - *setup_underlay_workspace
-      - *ccache_stats
       - *install_overlay_dependencies
   build_source:
     description: "Build Source"
     steps:
       - *setup_overlay_workspace
       - *store_ccache_logs
-      - *ccache_stats
-      - *save_ccache
   restore_build:
     description: "Restore Build"
     steps:
@@ -414,7 +416,7 @@ _environments:
     UNDERLAY_WS: "/opt/underlay_ws"
     OVERLAY_WS: "/opt/overlay_ws"
     UNDERLAY_MIXINS: "release ccache"
-    CCACHE_DIR: "/tmp/.ccache"
+    CCACHE_DIR: ".ccache"
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
     MAKEFLAGS: "-j 2 -l 2 "
