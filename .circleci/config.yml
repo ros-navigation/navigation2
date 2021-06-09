@@ -1,10 +1,6 @@
 version: 2.1
 
 _commands:
-  common_steps: &common_steps
-    store_ccache_logs: &store_ccache_logs
-      store_artifacts:
-          path: /tmp/ccache.log
   common_commands: &common_commands
     ccache_stats:
       description: "CCache Stats"
@@ -388,7 +384,6 @@ commands:
     description: "Build Source"
     steps:
       - *setup_overlay_workspace
-      - *store_ccache_logs
   restore_build:
     description: "Restore Build"
     steps:
@@ -417,7 +412,7 @@ _environments:
     OVERLAY_WS: "/opt/overlay_ws"
     UNDERLAY_MIXINS: "release ccache"
     CCACHE_DIR: ".ccache"
-    CCACHE_LOGFILE: "/tmp/ccache.log"
+    CCACHE_LOGFILE: "log/build/ccache.log"
     CCACHE_MAXSIZE: "200M"
     MAKEFLAGS: "-j 2 -l 2 "
     COLCON_DEFAULTS_FILE: "/tmp/defaults.yaml"
