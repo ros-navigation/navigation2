@@ -102,7 +102,7 @@ _commands:
                 awk '$1 ~ /^resolution\:/' | \
                 awk -F'[][]' '{print $2}' | \
                 tr -d \, | xargs -n1 | sort -u | xargs)
-              dpkg --list $dependencies | \
+              dpkg --list dpkg $dependencies | \
                 (echo workspace_dependencies && cat) >> lockfile.txt
               sha256sum $PWD/lockfile.txt >> lockfile.txt
     setup_workspace:
