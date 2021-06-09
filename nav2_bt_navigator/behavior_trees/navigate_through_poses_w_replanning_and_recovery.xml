@@ -10,7 +10,7 @@
         <RateController hz="0.333">
           <RecoveryNode number_of_retries="1" name="ComputePathThroughPoses">
             <ReactiveSequence>
-              <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.5"/>
+              <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.7"/>
               <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
             </ReactiveSequence>
             <ReactiveFallback name="ComputePathThroughPosesRecoveryFallback">

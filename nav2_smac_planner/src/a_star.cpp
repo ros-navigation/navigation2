@@ -273,8 +273,6 @@ bool AStarAlgorithm<NodeT>::createPath(
     // 3) Check if we're at the goal, backtrace if required
     if (isGoal(current_node)) {
       return backtracePath(current_node, path);
-    } else if (iterations + 1 == getMaxIterations()) {
-      return false;
     } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
       approach_iterations++;
@@ -300,7 +298,7 @@ bool AStarAlgorithm<NodeT>::createPath(
         neighbor->setAccumulatedCost(g_cost);
         neighbor->parent = current_node;
 
-        // 4.3) If not in queue or visited, add it, `getNeighbors()` handles
+        // 4.3) Add to queue with heuristic cost
         addNode(g_cost + getHeuristicCost(neighbor), neighbor);
       }
     }
@@ -508,9 +506,9 @@ typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::tryAnalyticExpans
         NodePtr node = current_node;
         NodePtr test_node = current_node;
         AnalyticExpansionNodes refined_analytic_nodes;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 8; i++) {
           // Attempt to create better paths in 5 node increments, need to make sure
-          // they exist for each in order to do so.
+          // they exist for each in order to do so (maximum of 40 points back).
           if (test_node->parent && test_node->parent->parent && test_node->parent->parent->parent
             && test_node->parent->parent->parent->parent && test_node->parent->parent->parent->parent->parent)
           {

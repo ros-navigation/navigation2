@@ -389,11 +389,9 @@ void NodeHybrid::resetObstacleHeuristic(
   }
 
   // Set initial cost to 2 for expansion
-  const unsigned int goal_index = goal_y * costmap->getSizeInCellsX() + goal_x;
-
   std::queue<unsigned int> q;
   std::swap(obstacle_heuristic_queue, q);
-  obstacle_heuristic_queue.emplace(goal_index);
+  obstacle_heuristic_queue.emplace(goal_y * costmap->getSizeInCellsX() + goal_x);
 }
 
 float NodeHybrid::getObstacleHeuristic(
@@ -405,7 +403,7 @@ float NodeHybrid::getObstacleHeuristic(
   unsigned int size_x = costmap->getSizeInCellsX();
   const unsigned int start_index = node_coords.y * size_x + node_coords.x;
   const float & starting_cost = obstacle_heuristic_lookup_table[start_index];
-  if (starting_cost != 0.0) {
+  if (starting_cost > 0.0) {
     return starting_cost;
   }
 
@@ -445,7 +443,6 @@ float NodeHybrid::getObstacleHeuristic(
     for (unsigned int i = 0; i != neighborhood.size(); i++) {
       new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
       cost = static_cast<float>(costmap->getCost(idx));
-
       travel_cost =
         ((i <= 3) ? 1.0 : sqrt_2) + (motion_table.obstacle_heuristic_cost_weight * cost / 252.0);
       current_accumulated_cost = last_accumulated_cost + travel_cost;
@@ -527,6 +524,7 @@ float NodeHybrid::getDistanceHeuristic(
       theta_pos;
     motion_heuristic = dist_heuristic_lookup_table[index];
   } else if (obstacle_heuristic == 0.0) {
+    // If no obstacle heuristic value, must have some H to use
     static ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
     to[0] = goal_coords.x;
     to[1] = goal_coords.y;
