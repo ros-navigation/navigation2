@@ -82,12 +82,13 @@ _commands:
             command: |
               . << parameters.underlay >>/install/setup.sh
               cat << parameters.underlay >>/lockfile.txt > lockfile.txt
+              
               vcs export --exact << parameters.underlay >>/src | \
                 (echo vcs_export && cat) >> lockfile.txt
               sha256sum $PWD/lockfile.txt >> lockfile.txt
+
               apt-get update
               rosdep update
-
               dependencies=$(
                 rosdep install -q -y \
                   --from-paths src \
@@ -287,12 +288,15 @@ _steps:
       command: |
         mkdir -p $ROS_WS/src && cd $ROS_WS
         ln -s /opt/ros/$ROS_DISTRO install
+
         echo $CACHE_NONCE | \
           (echo cache_nonce && cat) >> lockfile.txt
         sha256sum $PWD/lockfile.txt >> lockfile.txt
+        
         TZ=utc stat -c '%y' /ros_entrypoint.sh | \
           (echo ros_entrypoint && cat) >> lockfile.txt
         sha256sum $PWD/lockfile.txt >> lockfile.txt
+
         rm -rf $OVERLAY_WS/*
   on_checkout: &on_checkout
     checkout:
