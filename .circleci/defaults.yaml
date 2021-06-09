@@ -10,6 +10,7 @@ _common: &common
   "symlink-install": true
 "test":
   <<: *common
-  "executor": "sequential"
+  "executor": "parallel"
+  "parallel-workers": 1
 "test-result":
   <<: *common
