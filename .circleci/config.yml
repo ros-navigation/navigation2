@@ -14,6 +14,8 @@ _commands:
         - run:
             name: CCache Stats
             working_directory: << parameters.workspace >>
+            environment:
+              CCACHE_DIR: << parameters.workspace >>/.ccache
             command: |
               ccache -s # show stats
               ccache -z # zero stats
@@ -138,6 +140,8 @@ _commands:
               - run:
                   name: Build Workspace | << parameters.workspace >>
                   working_directory: << parameters.workspace >>
+                  environment:
+                    CCACHE_DIR: << parameters.workspace >>/.ccache
                   command: |
                     colcon cache lock
 
@@ -421,8 +425,7 @@ _environments:
     UNDERLAY_WS: "/opt/underlay_ws"
     OVERLAY_WS: "/opt/overlay_ws"
     UNDERLAY_MIXINS: "release ccache"
-    CCACHE_DIR: ".ccache"
-    CCACHE_LOGFILE: "log/build/ccache.log"
+    CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
     MAKEFLAGS: "-j 2 -l 2 "
     COLCON_DEFAULTS_FILE: "/tmp/defaults.yaml"
