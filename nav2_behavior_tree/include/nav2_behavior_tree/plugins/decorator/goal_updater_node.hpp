@@ -74,6 +74,10 @@ private:
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
 
   geometry_msgs::msg::PoseStamped last_goal_received_;
+
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 };
 
 }  // namespace nav2_behavior_tree

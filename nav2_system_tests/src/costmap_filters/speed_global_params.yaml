@@ -197,11 +197,6 @@ local_costmap:
           data_type: "LaserScan"
       static_layer:
         map_subscribe_transient_local: True
-      speed_filter:
-        plugin: "nav2_costmap_2d::SpeedFilter"
-        enabled: True
-        filter_info_topic: "/costmap_filter_info"
-        speed_limit_topic: "/speed_limit"
       always_send_full_costmap: True
   local_costmap_client:
     ros__parameters:
@@ -221,7 +216,8 @@ global_costmap:
       robot_radius: 0.22
       resolution: 0.05
       track_unknown_space: true
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer", "speed_filter"]
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      filters: ["speed_filter"]
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True

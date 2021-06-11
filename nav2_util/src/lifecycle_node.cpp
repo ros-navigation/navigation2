@@ -42,9 +42,9 @@ namespace nav2_util
 
 LifecycleNode::LifecycleNode(
   const std::string & node_name,
-  const std::string & namespace_, bool use_rclcpp_node,
+  const std::string & ns, bool use_rclcpp_node,
   const rclcpp::NodeOptions & options)
-: rclcpp_lifecycle::LifecycleNode(node_name, namespace_, options),
+: rclcpp_lifecycle::LifecycleNode(node_name, ns, options),
   use_rclcpp_node_(use_rclcpp_node)
 {
   // server side never times out from lifecycle manager
@@ -60,7 +60,7 @@ LifecycleNode::LifecycleNode(
     new_args.push_back(std::string("__node:=") + this->get_name() + "_rclcpp_node");
     new_args.push_back("--");
     rclcpp_node_ = std::make_shared<rclcpp::Node>(
-      "_", namespace_, rclcpp::NodeOptions(options).arguments(new_args));
+      "_", ns, rclcpp::NodeOptions(options).arguments(new_args));
     rclcpp_thread_ = std::make_unique<NodeThread>(rclcpp_node_);
   }
 

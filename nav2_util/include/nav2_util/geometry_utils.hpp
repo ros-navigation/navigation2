@@ -21,7 +21,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 namespace nav2_util
@@ -117,7 +117,7 @@ inline Iter min_by(Iter begin, Iter end, Getter getCompareVal)
  */
 inline double calculate_path_length(const nav_msgs::msg::Path & path, size_t start_index = 0)
 {
-  if (start_index >= path.poses.size() - 1) {
+  if (start_index + 1 >= path.poses.size()) {
     return 0.0;
   }
   double path_length = 0.0;

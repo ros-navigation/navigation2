@@ -53,6 +53,12 @@ BtActionServer<ActionT>::BtActionServer(
   clock_ = node->get_clock();
 
   // Declare this node's parameters
+  if (!node->has_parameter("bt_loop_duration")) {
+    node->declare_parameter("bt_loop_duration", 10);
+  }
+  if (!node->has_parameter("default_server_timeout")) {
+    node->declare_parameter("default_server_timeout", 20);
+  }
   if (!node->has_parameter("enable_groot_monitoring")) {
     node->declare_parameter("enable_groot_monitoring", true);
   }
@@ -91,6 +97,18 @@ bool BtActionServer<ActionT>::on_configure()
     node->get_node_waitables_interface(),
     action_name_, std::bind(&BtActionServer<ActionT>::executeCallback, this));
 
+  // Get parameter for monitoring with Groot via ZMQ Publisher
+  node->get_parameter("enable_groot_monitoring", enable_groot_monitoring_);
+  node->get_parameter("groot_zmq_publisher_port", groot_zmq_publisher_port_);
+  node->get_parameter("groot_zmq_server_port", groot_zmq_server_port_);
+
+  // Get parameters for BT timeouts
+  int timeout;
+  node->get_parameter("bt_loop_duration", timeout);
+  bt_loop_duration_ = std::chrono::milliseconds(timeout);
+  node->get_parameter("default_server_timeout", timeout);
+  default_server_timeout_ = std::chrono::milliseconds(timeout);
+
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
 
@@ -99,12 +117,8 @@ bool BtActionServer<ActionT>::on_configure()
 
   // Put items on the blackboard
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
-  blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
-
-  // Get parameter for monitoring with Groot via ZMQ Publisher
-  node->get_parameter("enable_groot_monitoring", enable_groot_monitoring_);
-  node->get_parameter("groot_zmq_publisher_port", groot_zmq_publisher_port_);
-  node->get_parameter("groot_zmq_server_port", groot_zmq_server_port_);
+  blackboard_->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
+  blackboard_->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
 
   return true;
 }
@@ -217,7 +231,7 @@ void BtActionServer<ActionT>::executeCallback()
     };
 
   // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
+  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling, bt_loop_duration_);
 
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.

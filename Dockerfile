@@ -6,7 +6,7 @@
 # docker build -t nav2:latest \
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./
-ARG FROM_IMAGE=osrf/ros2:nightly
+ARG FROM_IMAGE=osrf/ros2:testing
 ARG UNDERLAY_WS=/opt/underlay_ws
 ARG OVERLAY_WS=/opt/overlay_ws
 
@@ -17,8 +17,7 @@ FROM $FROM_IMAGE AS cacher
 ARG UNDERLAY_WS
 WORKDIR $UNDERLAY_WS/src
 COPY ./tools/underlay.repos ../
-RUN vcs import ./ < ../underlay.repos && \
-    find ./ -name ".git" | xargs rm -rf
+RUN vcs import ./ < ../underlay.repos
 
 # copy overlay source
 ARG OVERLAY_WS
@@ -27,25 +26,45 @@ COPY ./ ./navigation2
 
 # copy manifests for caching
 WORKDIR /opt
-RUN mkdir -p /tmp/opt && \
-    find ./ -name "package.xml" | \
-      xargs cp --parents -t /tmp/opt && \
-    find ./ -name "COLCON_IGNORE" | \
-      xargs cp --parents -t /tmp/opt || true
+RUN find . -name "src" -type d \
+      -mindepth 1 -maxdepth 2 -printf '%P\n' \
+      | xargs -I % mkdir -p /tmp/opt/% && \
+    find . -name "package.xml" \
+      | xargs cp --parents -t /tmp/opt && \
+    find . -name "COLCON_IGNORE" \
+      | xargs cp --parents -t /tmp/opt || true
 
 # multi-stage for building
 FROM $FROM_IMAGE AS builder
+
+# config dependencies install
 ARG DEBIAN_FRONTEND=noninteractive
+RUN echo '\
+APT::Install-Recommends "0";\n\
+APT::Install-Suggests "0";\n\
+' > /etc/apt/apt.conf.d/01norecommend
 
 # install CI dependencies
-RUN apt-get update && apt-get install -q -y \
+ARG RTI_NC_LICENSE_ACCEPTED=yes
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y \
       ccache \
       lcov \
+      python3-pip \
+      ros-$ROS_DISTRO-rmw-fastrtps-cpp \
+      ros-$ROS_DISTRO-rmw-connextdds \
+      ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
+    && pip3 install \
+      fastcov \
+      git+https://github.com/ruffsl/colcon-cache.git@c1cedadc1ac6131fe825d075526ed4ae8e1b473c \
+      git+https://github.com/ruffsl/colcon-clean.git@87dee2dd1e47c2b97ac6d8300f76e3f607d19ef6 \
     && rosdep update \
     && rm -rf /var/lib/apt/lists/*
 
 # install underlay dependencies
 ARG UNDERLAY_WS
+ENV UNDERLAY_WS $UNDERLAY_WS
 WORKDIR $UNDERLAY_WS
 COPY --from=cacher /tmp/$UNDERLAY_WS ./
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
@@ -61,7 +80,9 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 COPY --from=cacher $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache"
 ARG FAIL_ON_BUILD_FAILURE=True
+ARG CCACHE_DIR=".ccache"
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+    colcon cache lock && \
     colcon build \
       --symlink-install \
       --mixin $UNDERLAY_MIXINS \
@@ -70,30 +91,32 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 
 # install overlay dependencies
 ARG OVERLAY_WS
+ENV OVERLAY_WS $OVERLAY_WS
 WORKDIR $OVERLAY_WS
 COPY --from=cacher /tmp/$OVERLAY_WS ./
 RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
-        $UNDERLAY_WS/src \
       --skip-keys " \
         slam_toolbox \
         "\
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
+# multi-stage for testing
+FROM builder AS tester
+
 # build overlay source
 COPY --from=cacher $OVERLAY_WS ./
 ARG OVERLAY_MIXINS="release ccache"
 RUN . $UNDERLAY_WS/install/setup.sh && \
+    colcon cache lock && \
     colcon build \
       --symlink-install \
       --mixin $OVERLAY_MIXINS \
     || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
 
 # source overlay from entrypoint
-ENV UNDERLAY_WS $UNDERLAY_WS
-ENV OVERLAY_WS $OVERLAY_WS
 RUN sed --in-place \
       's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
       /ros_entrypoint.sh

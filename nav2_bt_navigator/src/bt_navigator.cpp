@@ -63,7 +63,8 @@ BtNavigator::BtNavigator()
     "nav2_navigate_to_pose_action_bt_node",
     "nav2_remove_passed_goals_action_bt_node"
     "nav2_planner_selector_bt_node",
-    "nav2_controller_selector_bt_node"
+    "nav2_controller_selector_bt_node",
+    "nav2_goal_checker_selector_bt_node"
   };
 
   declare_parameter("plugin_lib_names", plugin_libs);

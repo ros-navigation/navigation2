@@ -33,19 +33,42 @@ ControllerSelector::ControllerSelector(
 : BT::SyncActionNode(name, conf)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  callback_group_ = node_->create_callback_group(
+    rclcpp::CallbackGroupType::MutuallyExclusive,
+    false);
+  callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
   getInput("topic_name", topic_name_);
 
+  rclcpp::QoS qos(rclcpp::KeepLast(1));
+  qos.transient_local().reliable();
+
+  rclcpp::SubscriptionOptions sub_option;
+  sub_option.callback_group = callback_group_;
   controller_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-    topic_name_, 1, std::bind(&ControllerSelector::callbackControllerSelect, this, _1));
+    topic_name_,
+    qos,
+    std::bind(&ControllerSelector::callbackControllerSelect, this, _1),
+    sub_option);
 }
 
 BT::NodeStatus ControllerSelector::tick()
 {
-  rclcpp::spin_some(node_);
+  callback_group_executor_.spin_some();
 
+  // This behavior always use the last selected controller received from the topic input.
+  // When no input is specified it uses the default controller.
+  // If the default controller is not specified then we work in "required controller mode":
+  // In this mode, the behavior returns failure if the controller selection is not received from
+  // the topic input.
   if (last_selected_controller_.empty()) {
-    getInput("default_controller", last_selected_controller_);
+    std::string default_controller;
+    getInput("default_controller", default_controller);
+    if (default_controller.empty()) {
+      return BT::NodeStatus::FAILURE;
+    } else {
+      last_selected_controller_ = default_controller;
+    }
   }
 
   setOutput("selected_controller", last_selected_controller_);
