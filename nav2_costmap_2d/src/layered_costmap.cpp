@@ -43,6 +43,7 @@
 #include <string>
 #include <vector>
 #include <limits>
+#include <omp.h>
 
 #include "nav2_costmap_2d/footprint.hpp"
 
@@ -145,10 +146,14 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
   minx_ = miny_ = std::numeric_limits<double>::max();
   maxx_ = maxy_ = std::numeric_limits<double>::lowest();
 
+  int n_cores = omp_get_num_procs();
+  int n_plugin_threads = std::max(std::min((int)plugins_.size(), n_cores), 1);
+  int n_filter_threads = std::max(std::min((int)filters_.size(), n_cores), 1);
+
   #pragma omp parallel reduction(min:minx_) reduction(min: miny_) \
-  reduction(max: maxx_) reduction(max: maxy_) num_threads(2)
+  reduction(max: maxx_) reduction(max: maxy_) num_threads(n_plugin_threads)
   {
-  #pragma omp for schedule(static, 1)
+  #pragma omp for nowait schedule(auto)
     for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
       plugin != plugins_.end(); ++plugin)
     {
@@ -167,7 +172,12 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
           (*plugin)->getName().c_str());
       }
     }
-  #pragma omp for nowait schedule(static, 1)
+  }
+
+  #pragma omp parallel reduction(min:minx_) reduction(min: miny_) \
+  reduction(max: maxx_) reduction(max: maxy_) num_threads(n_filter_threads)
+  {
+  #pragma omp for nowait schedule(auto)
     for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
       filter != filters_.end(); ++filter)
     {
