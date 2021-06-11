@@ -70,7 +70,6 @@ add_library(${library_name} SHARED
   src/smac_planner_hybrid.cpp
   src/a_star.cpp
   src/node_hybrid.cpp
-  src/node_lattice.cpp
   src/costmap_downsampler.cpp
   src/node_2d.cpp
 )
@@ -87,7 +86,6 @@ add_library(${library_name}_2d SHARED
   src/smac_planner_2d.cpp
   src/a_star.cpp
   src/node_hybrid.cpp
-  src/node_lattice.cpp
   src/costmap_downsampler.cpp
   src/node_2d.cpp
 )
@@ -99,32 +97,13 @@ ament_target_dependencies(${library_name}_2d
   ${dependencies}
 )
 
-# Lattice plugin
-add_library(${library_name}_lattice SHARED
-  src/smac_planner_lattice.cpp
-  src/a_star.cpp
-  src/node_hybrid.cpp
-  src/node_lattice.cpp
-  src/costmap_downsampler.cpp
-  src/node_2d.cpp
-)
-
-target_link_libraries(${library_name}_lattice ${OMPL_LIBRARIES})
-target_include_directories(${library_name}_lattice PUBLIC ${Eigen3_INCLUDE_DIRS})
-
-ament_target_dependencies(${library_name}_lattice
-  ${dependencies}
-)
-
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 target_compile_definitions(${library_name}_2d PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-target_compile_definitions(${library_name}_lattice PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 pluginlib_export_plugin_description_file(nav2_core smac_plugin.xml)
 pluginlib_export_plugin_description_file(nav2_core smac_plugin_2d.xml)
-pluginlib_export_plugin_description_file(nav2_core smac_plugin_lattice.xml)
 
-install(TARGETS ${library_name} ${library_name}_2d ${library_name}_lattice
+install(TARGETS ${library_name} ${library_name}_2d
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -142,6 +121,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name} ${library_name}_2d ${library_name}_lattice)
+ament_export_libraries(${library_name} ${library_name}_2d)
 ament_export_dependencies(${dependencies})
 ament_package()

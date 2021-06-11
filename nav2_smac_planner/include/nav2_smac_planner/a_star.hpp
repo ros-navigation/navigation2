@@ -28,7 +28,6 @@
 
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
-#include "nav2_smac_planner/node_lattice.hpp"
 #include "nav2_smac_planner/node_basic.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"

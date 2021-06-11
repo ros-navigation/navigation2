@@ -665,6 +665,5 @@ typename AStarAlgorithm<Node2D>::NodePtr AStarAlgorithm<Node2D>::setAnalyticPath
 // Instantiate algorithm for the supported template types
 template class AStarAlgorithm<Node2D>;
 template class AStarAlgorithm<NodeHybrid>;
-template class AStarAlgorithm<NodeLattice>;
 
 }  // namespace nav2_smac_planner
