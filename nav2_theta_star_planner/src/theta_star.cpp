@@ -19,15 +19,15 @@ namespace theta_star
 {
 
 ThetaStar::ThetaStar()
-: w_traversal_cost_(1.0),
-  w_euc_cost_(5.0),
+: w_traversal_cost_(1.2),
+  w_euc_cost_(2.5),
   w_heuristic_cost_(1.0),
   how_many_corners_(8),
   size_x_(0),
   size_y_(0),
   index_generated_(0)
 {
-  curr_node = new tree_node;
+  exp_node = new tree_node;
 }
 
 void ThetaStar::setStartAndGoal(
@@ -45,29 +45,27 @@ void ThetaStar::setStartAndGoal(
 bool ThetaStar::generatePath(std::vector<coordsW> & raw_path)
 {
   resetContainers();
-  int curr_id = index_generated_;
   addToNodesData(index_generated_);
   double src_g_cost = getTraversalCost(src_.x, src_.y), src_h_cost = getHCost(src_.x, src_.y);
-  nodes_data_[curr_id] =
-  {src_.x, src_.y, src_g_cost, src_h_cost, curr_id, true, src_g_cost + src_h_cost};
-  queue_.push({curr_id, (nodes_data_[curr_id].f)});
-  addIndex(nodes_data_[curr_id].x, nodes_data_[curr_id].y, index_generated_);
+  nodes_data_[index_generated_] =
+  {src_.x, src_.y, src_g_cost, src_h_cost, &nodes_data_[index_generated_], true, src_g_cost + src_h_cost};
+  queue_.push({&nodes_data_[index_generated_]});
+  addIndex(src_.x, src_.y, &nodes_data_[index_generated_]);
+  tree_node* curr_data = &nodes_data_[index_generated_];
   index_generated_++;
-
-  int nodes_opened = 0;
+  nodes_opened = 0;
 
   while (!queue_.empty()) {
     nodes_opened++;
 
-    tree_node & curr_data = nodes_data_[curr_id];
-    if (isGoal(curr_data)) {
+    if (isGoal(*curr_data)) {
       break;
     }
 
     resetParent(curr_data);
-    setNeighbors(curr_data, curr_id);
+    setNeighbors(curr_data);
 
-    curr_id = queue_.top().pos_id;
+    curr_data = queue_.top();
     queue_.pop();
   }
 
@@ -76,40 +74,40 @@ bool ThetaStar::generatePath(std::vector<coordsW> & raw_path)
     return false;
   }
 
-  backtrace(raw_path, curr_id);
+  backtrace(raw_path, curr_data);
   clearQueue();
 
   return true;
 }
 
-void ThetaStar::resetParent(tree_node & curr_data)
+void ThetaStar::resetParent(tree_node * curr_data)
 {
   double g_cost, los_cost = 0;
-  curr_data.is_in_queue = false;
-  tree_node & curr_par = nodes_data_[curr_data.parent_id];
-  tree_node & maybe_par = nodes_data_[curr_par.parent_id];
+  curr_data->is_in_queue = false;
+  const tree_node * curr_par = curr_data->parent_id;
+  const tree_node * maybe_par = curr_par->parent_id;
 
-  if (losCheck(curr_data.x, curr_data.y, maybe_par.x, maybe_par.y, los_cost)) {
-    g_cost = maybe_par.g +
-      getEuclideanCost(curr_data.x, curr_data.y, maybe_par.x, maybe_par.y) + los_cost;
+  if (losCheck(curr_data->x, curr_data->y, maybe_par->x, maybe_par->y, los_cost)) {
+    g_cost = maybe_par->g +
+      getEuclideanCost(curr_data->x, curr_data->y, maybe_par->x, maybe_par->y) + los_cost;
 
-    if (g_cost < curr_data.g) {
-      curr_data.parent_id = curr_par.parent_id;
-      curr_data.g = g_cost;
-      curr_data.f = g_cost + curr_data.h;
+    if (g_cost < curr_data->g) {
+      curr_data->parent_id = maybe_par;
+      curr_data->g = g_cost;
+      curr_data->f = g_cost + curr_data->h;
     }
   }
 }
 
-void ThetaStar::setNeighbors(const tree_node & curr_data, const int & curr_id)
+void ThetaStar::setNeighbors(const tree_node * curr_data)
 {
   int mx, my;
-  int m_id, m_par;
+  tree_node* m_id = NULL;
   double g_cost, h_cost, cal_cost;
 
   for (int i = 0; i < how_many_corners_; i++) {
-    mx = curr_data.x + moves[i].x;
-    my = curr_data.y + moves[i].y;
+    mx = curr_data->x + moves[i].x;
+    my = curr_data->y + moves[i].y;
 
     if (withinLimits(mx, my)) {
       if (!isSafe(mx, my)) {
@@ -119,50 +117,49 @@ void ThetaStar::setNeighbors(const tree_node & curr_data, const int & curr_id)
       continue;
     }
 
-    m_par = curr_id;
-    g_cost = curr_data.g + getEuclideanCost(curr_data.x, curr_data.y, mx, my) +
+    g_cost = curr_data->g + getEuclideanCost(curr_data->x, curr_data->y, mx, my) +
       getTraversalCost(mx, my);
 
-    getIndex(mx, my, m_id);
+    m_id = getIndex(mx, my);
 
-    if (m_id == -1) {
+    if (m_id == NULL) {
       addToNodesData(index_generated_);
-      m_id = index_generated_;
+      m_id = &nodes_data_[index_generated_];
       addIndex(mx, my, m_id);
       index_generated_++;
     }
 
-    curr_node = &nodes_data_[m_id];
+    exp_node = m_id;
 
     h_cost = getHCost(mx, my);
     cal_cost = g_cost + h_cost;
-    if (curr_node->f > cal_cost) {
-      curr_node->g = g_cost;
-      curr_node->h = h_cost;
-      curr_node->f = cal_cost;
-      curr_node->parent_id = m_par;
-      if (!curr_node->is_in_queue) {
-        curr_node->x = mx;
-        curr_node->y = my;
-        curr_node->is_in_queue = true;
-        queue_.push({m_id, (curr_node->f)});
+    if (exp_node->f > cal_cost) {
+      exp_node->g = g_cost;
+      exp_node->h = h_cost;
+      exp_node->f = cal_cost;
+      exp_node->parent_id = curr_data;
+      if (!exp_node->is_in_queue) {
+        exp_node->x = mx;
+        exp_node->y = my;
+        exp_node->is_in_queue = true;
+        queue_.push({m_id});
       }
     }
   }
 }
 
-void ThetaStar::backtrace(std::vector<coordsW> & raw_points, int curr_id)
+void ThetaStar::backtrace(std::vector<coordsW> & raw_points, const tree_node * curr_n) const
 {
   std::vector<coordsW> path_rev;
   coordsW world{};
   do {
-    costmap_->mapToWorld(nodes_data_[curr_id].x, nodes_data_[curr_id].y, world.x, world.y);
+    costmap_->mapToWorld(curr_n->x, curr_n->y, world.x, world.y);
     path_rev.push_back(world);
     if (path_rev.size() > 1) {
-      curr_id = nodes_data_[curr_id].parent_id;
+			curr_n = curr_n->parent_id;
     }
-  } while (curr_id != 0);
-  costmap_->mapToWorld(nodes_data_[curr_id].x, nodes_data_[curr_id].y, world.x, world.y);
+  } while (curr_n->parent_id != curr_n);
+  costmap_->mapToWorld(curr_n->x, curr_n->y, world.x, world.y);
   path_rev.push_back(world);
 
   raw_points.reserve(path_rev.size());
@@ -173,26 +170,23 @@ void ThetaStar::backtrace(std::vector<coordsW> & raw_points, int curr_id)
 
 bool ThetaStar::losCheck(
   const int & x0, const int & y0, const int & x1, const int & y1,
-  double & sl_cost)
+  double & sl_cost) const
 {
   sl_cost = 0;
 
   int cx, cy;
   int dy = abs(y1 - y0), dx = abs(x1 - x0), f = 0;
-  int sx, sy;
-  int lx, ly;  // this variable is reserved for future use
-  sy = y1 > y0 ? 1 : -1;
+  int sx, sy;  
   sx = x1 > x0 ? 1 : -1;
+  sy = y1 > y0 ? 1 : -1;
 
   int u_x = (sx - 1) / 2;
   int u_y = (sy - 1) / 2;
-  lx = x1;
-  ly = y1;
   cx = x0;
   cy = y0;
 
   if (dx >= dy) {
-    while (cx != lx) {
+    while (cx != x1) {
       f += dy;
       if (f >= dx) {
         if (!isSafe(cx + u_x, cy + u_y, sl_cost)) {
@@ -210,7 +204,7 @@ bool ThetaStar::losCheck(
       cx += sx;
     }
   } else {
-    while (cy != ly) {
+    while (cy != y1) {
       f = f + dx;
       if (f >= dy) {
         if (!isSafe(cx + u_x, cy + u_y, sl_cost)) {
@@ -256,12 +250,12 @@ void ThetaStar::initializePosn(int size_inc)
 
   if (!node_position_.empty()) {
     for (; i < size_x_ * size_y_; i++) {
-      node_position_[i] = -1;
+      node_position_[i] = nullptr;
     }
   }
 
   for (; i < size_inc; i++) {
-    node_position_.emplace_back(-1);
+    node_position_.push_back(nullptr);
   }
 }
 }  //  namespace theta_star
