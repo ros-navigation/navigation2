@@ -124,8 +124,7 @@ TEST(AStarTest, test_a_star_se2)
   info.reverse_penalty = 2.0;
   info.minimum_turning_radius = 8;  // in grid coordinates
   unsigned int size_theta = 72;
-  info.cost_penalty = 1.0;
-  info.obstacle_heuristic_cost_weight = 1.7;
+  info.cost_penalty = 1.7;
   nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
     nav2_smac_planner::MotionModel::DUBIN, info);
   int max_iterations = 10000;
@@ -156,8 +155,8 @@ TEST(AStarTest, test_a_star_se2)
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
 
   // check path is the right size and collision free
-  EXPECT_EQ(num_it, 354);
-  EXPECT_EQ(path.size(), 72u);
+  EXPECT_EQ(num_it, 351);
+  EXPECT_EQ(path.size(), 73u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }

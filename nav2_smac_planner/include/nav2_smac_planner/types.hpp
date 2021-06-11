@@ -42,7 +42,6 @@ struct SearchInfo
   float analytic_expansion_ratio;
   std::string lattice_filepath;
   bool cache_obstacle_heuristic;
-  float obstacle_heuristic_cost_weight;
 };
 
 /**

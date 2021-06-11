@@ -40,6 +40,8 @@ double NodeHybrid::travel_distance_cost = sqrt(2);
 HybridMotionTable NodeHybrid::motion_table;
 float NodeHybrid::size_lookup = 25;
 LookupTable NodeHybrid::dist_heuristic_lookup_table;
+nav2_costmap_2d::Costmap2D * NodeHybrid::sampled_costmap = nullptr;
+CostmapDownsampler NodeHybrid::downsampler;
 
 // Each of these tables are the projected motion models through
 // time and space applied to the search on the current node in
@@ -61,7 +63,6 @@ void HybridMotionTable::initDubin(
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
-  obstacle_heuristic_cost_weight = search_info.obstacle_heuristic_cost_weight;
 
   // if nothing changed, no need to re-compute primitives
   if (num_angle_quantization_in == num_angle_quantization &&
@@ -154,7 +155,6 @@ void HybridMotionTable::initReedsShepp(
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
-  obstacle_heuristic_cost_weight = search_info.obstacle_heuristic_cost_weight;
 
   // if nothing changed, no need to re-compute primitives
   if (num_angle_quantization_in == num_angle_quantization &&
@@ -279,11 +279,6 @@ bool NodeHybrid::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker)
 {
-  // Ensure we only check each node once
-  if (!std::isnan(_cell_cost)) {
-    return _cell_cost;
-  }
-
   if (collision_checker->inCollision(
       this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
   {
@@ -308,9 +303,20 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
     return NodeHybrid::travel_distance_cost;
   }
 
+  // Note(stevemacenski): `travel_cost_raw` at one point contained a term:
+  // `+ motion_table.cost_penalty * normalized_cost;`
+  // It has been removed, but we may want to readdress this point and determine
+  // the technically and theoretically correctness of that choice. I feel technically speaking
+  // that term has merit, but it doesn't seem to impact performance or path quality.
+  // W/o it lowers the travel cost, which would drive the heuristics up proportionally where I
+  // would expect it to plan much faster in all cases, but I only see it in some cases. Since
+  // this term would weight against moving to high cost zones, I would expect to see more smooth
+  // central motion, but I only see it in some cases, possibly because the obstacle heuristic is
+  // already driving the robot away from high cost areas; implicitly handling this. However,
+  // then I would expect that not adding it here would make it unbalanced enough that path quality
+  // would suffer, which I did not see in my limited experimentation, possibly due to the smoother.
   float travel_cost = 0.0;
-  float travel_cost_raw = NodeHybrid::travel_distance_cost +
-    (motion_table.cost_penalty * normalized_cost);
+  float travel_cost_raw = NodeHybrid::travel_distance_cost;
 
   if (child->getMotionPrimitiveIndex() == 0 || child->getMotionPrimitiveIndex() == 3) {
     // New motion is a straight motion, no additional costs to be applied
@@ -337,9 +343,9 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
 float NodeHybrid::getHeuristicCost(
   const Coordinates & node_coords,
   const Coordinates & goal_coords,
-  const nav2_costmap_2d::Costmap2D * costmap)
+  const nav2_costmap_2d::Costmap2D * /*costmap*/)
 {
-  const float obstacle_heuristic = getObstacleHeuristic(costmap, node_coords, goal_coords);
+  const float obstacle_heuristic = getObstacleHeuristic(node_coords, goal_coords);
   const float dist_heuristic = getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
   return std::max(obstacle_heuristic, dist_heuristic);
 }
@@ -370,11 +376,20 @@ void NodeHybrid::initMotionModel(
 }
 
 void NodeHybrid::resetObstacleHeuristic(
-  const nav2_costmap_2d::Costmap2D * costmap,
+  nav2_costmap_2d::Costmap2D * costmap,
   const unsigned int & goal_x, const unsigned int & goal_y)
 {
+  // Downsample costmap 2x to compute a sparse obstacle heuristic. This speeds up
+  // the planner considerably to search through 75% less cells with no detectable
+  // erosion of path quality after even modest smoothing. The error would be no more
+  // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
+  std::weak_ptr<nav2_util::LifecycleNode> ptr;
+  downsampler.on_configure(ptr, "fake_frame", "fake_topic", costmap, 2.0);
+  downsampler.on_activate();
+  sampled_costmap = downsampler.downsample(2.0);
+
   // Clear lookup table
-  unsigned int size = costmap->getSizeInCellsX() * costmap->getSizeInCellsY();
+  unsigned int size = sampled_costmap->getSizeInCellsX() * sampled_costmap->getSizeInCellsY();
   if (obstacle_heuristic_lookup_table.size() == size) {
     // must reset all values
     std::fill(
@@ -388,23 +403,25 @@ void NodeHybrid::resetObstacleHeuristic(
       obstacle_heuristic_lookup_table.begin(), obstacle_size, 0.0);
   }
 
-  // Set initial cost to 2 for expansion
+  // Set initial goal point to queue from. Divided by 2 due to downsampled costmap.
   std::queue<unsigned int> q;
   std::swap(obstacle_heuristic_queue, q);
-  obstacle_heuristic_queue.emplace(goal_y * costmap->getSizeInCellsX() + goal_x);
+  obstacle_heuristic_queue.emplace(
+    ceil(goal_y / 2.0) * sampled_costmap->getSizeInCellsX() + ceil(goal_x / 2.0));
 }
 
 float NodeHybrid::getObstacleHeuristic(
-  const nav2_costmap_2d::Costmap2D * costmap,
   const Coordinates & node_coords,
   const Coordinates & goal_coords)
 {
   // If already expanded, return the cost
-  unsigned int size_x = costmap->getSizeInCellsX();
-  const unsigned int start_index = node_coords.y * size_x + node_coords.x;
+  unsigned int size_x = sampled_costmap->getSizeInCellsX();
+  // Divided by 2 due to downsampled costmap.
+  const unsigned int start_index = ceil(node_coords.y / 2.0) * size_x + ceil(node_coords.x / 2.0);
   const float & starting_cost = obstacle_heuristic_lookup_table[start_index];
   if (starting_cost > 0.0) {
-    return starting_cost;
+    // costs are doubled due to downsampling
+    return 2.0 * starting_cost;
   }
 
   // If not, expand until it is included. This dynamic programming ensures that
@@ -413,7 +430,7 @@ float NodeHybrid::getObstacleHeuristic(
   // path, we only expand to the extent required for the furthest expansion in the
   // search-planning request that dynamically updates during search as needed.
   const int size_x_int = static_cast<int>(size_x);
-  const unsigned int size_y = costmap->getSizeInCellsY();
+  const unsigned int size_y = sampled_costmap->getSizeInCellsY();
   const float sqrt_2 = sqrt(2);
   unsigned int mx, my, mx_idx, my_idx;
   unsigned int idx = 0, new_idx = 0;
@@ -432,8 +449,10 @@ float NodeHybrid::getObstacleHeuristic(
     obstacle_heuristic_queue.pop();
     last_accumulated_cost = obstacle_heuristic_lookup_table[idx];
 
+
     if (idx == start_index) {
-      return last_accumulated_cost;
+      // costs are doubled due to downsampling
+      return 2.0 * last_accumulated_cost;
     }
 
     my_idx = idx / size_x;
@@ -442,9 +461,9 @@ float NodeHybrid::getObstacleHeuristic(
     // find neighbors
     for (unsigned int i = 0; i != neighborhood.size(); i++) {
       new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
-      cost = static_cast<float>(costmap->getCost(idx));
+      cost = static_cast<float>(sampled_costmap->getCost(idx));
       travel_cost =
-        ((i <= 3) ? 1.0 : sqrt_2) + (motion_table.obstacle_heuristic_cost_weight * cost / 252.0);
+        ((i <= 3) ? 1.0 : sqrt_2) + (motion_table.cost_penalty * cost / 252.0);
       current_accumulated_cost = last_accumulated_cost + travel_cost;
 
       // if neighbor path is better and non-lethal, set new cost and add to queue
@@ -468,7 +487,8 @@ float NodeHybrid::getObstacleHeuristic(
     }
   }
 
-  return obstacle_heuristic_lookup_table[start_index];
+  // costs are doubled due to downsampling
+  return 2.0 * obstacle_heuristic_lookup_table[start_index];
 }
 
 float NodeHybrid::getDistanceHeuristic(
@@ -525,6 +545,7 @@ float NodeHybrid::getDistanceHeuristic(
     motion_heuristic = dist_heuristic_lookup_table[index];
   } else if (obstacle_heuristic == 0.0) {
     // If no obstacle heuristic value, must have some H to use
+    // In nominal situations, this should never be called.
     static ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
     to[0] = goal_coords.x;
     to[1] = goal_coords.y;

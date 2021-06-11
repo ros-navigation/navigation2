@@ -53,11 +53,6 @@ bool Node2D::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker)
 {
-  // Ensure we only check each node once
-  if (!std::isnan(_cell_cost)) {
-    return _cell_cost;
-  }
-
   if (collision_checker->inCollision(this->getIndex(), traverse_unknown)) {
     return false;
   }

@@ -30,6 +30,7 @@
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "nav2_smac_planner/costmap_downsampler.hpp"
 
 namespace nav2_smac_planner
 {
@@ -124,7 +125,6 @@ struct HybridMotionTable
   float non_straight_penalty;
   float cost_penalty;
   float reverse_penalty;
-  float obstacle_heuristic_cost_weight;
   ompl::base::StateSpacePtr state_space;
   std::vector<std::vector<double>> delta_xs;
   std::vector<std::vector<double>> delta_ys;
@@ -389,13 +389,11 @@ public:
 
   /**
    * @brief Compute the Obstacle heuristic
-   * @param costmap Costmap ptr to use
    * @param node_coords Coordinates to get heuristic at
    * @param goal_coords Coordinates to compute heuristic to
    * @return heuristic Heuristic value
    */
   static float getObstacleHeuristic(
-    const nav2_costmap_2d::Costmap2D * costmap,
     const Coordinates & node_coords,
     const Coordinates & goal_coords);
 
@@ -418,7 +416,7 @@ public:
    * @param goal_coords Coordinates to start heuristic expansion at
    */
   static void resetObstacleHeuristic(
-    const nav2_costmap_2d::Costmap2D * costmap,
+    nav2_costmap_2d::Costmap2D * costmap,
     const unsigned int & goal_x, const unsigned int & goal_y);
 
   /**
@@ -443,6 +441,8 @@ public:
   // Wavefront lookup and queue for continuing to expand as needed
   static LookupTable obstacle_heuristic_lookup_table;
   static std::queue<unsigned int> obstacle_heuristic_queue;
+  static nav2_costmap_2d::Costmap2D * sampled_costmap;
+  static CostmapDownsampler downsampler;
   // Dubin / Reeds-Shepp lookup and size for dereferencing
   static LookupTable dist_heuristic_lookup_table;
   static float size_lookup;

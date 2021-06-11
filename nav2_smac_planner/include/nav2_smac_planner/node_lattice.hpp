@@ -90,7 +90,6 @@ struct LatticeMotionTable
   float non_straight_penalty;
   float cost_penalty;
   float reverse_penalty;
-  float obstacle_heuristic_cost_weight;
   ompl::base::StateSpacePtr state_space;
   std::vector<TrigValues> trig_values;
   std::string current_lattice_filepath;
@@ -316,7 +315,7 @@ public:
    * @param goal_coords Coordinates to start heuristic expansion at
    */
   static void resetObstacleHeuristic(
-    const nav2_costmap_2d::Costmap2D * costmap,
+    nav2_costmap_2d::Costmap2D * costmap,
     const unsigned int & goal_x, const unsigned int & goal_y)
   {
     // State Lattice and Hybrid-A* share this heuristics
@@ -325,17 +324,15 @@ public:
 
   /**
    * @brief Compute the Obstacle heuristic
-   * @param costmap Costmap ptr to use
    * @param node_coords Coordinates to get heuristic at
    * @param goal_coords Coordinates to compute heuristic to
    * @return heuristic Heuristic value
    */
   static float getObstacleHeuristic(
-    const nav2_costmap_2d::Costmap2D * costmap,
     const Coordinates & node_coords,
     const Coordinates & goal_coords)
   {
-    return NodeHybrid::getObstacleHeuristic(costmap, node_coords, goal_coords);
+    return NodeHybrid::getObstacleHeuristic(node_coords, goal_coords);
   }
 
   /**

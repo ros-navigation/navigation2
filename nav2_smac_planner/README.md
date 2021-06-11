@@ -106,13 +106,12 @@ planner_server:
       angle_quantization_bins: 64         # For Hybrid/Lattice nodes: Number of angle bins for search, must be 1 for 2D node (no angle search)
       minimum_turning_radius: 0.40        # For Hybrid/Lattice nodes: minimum turning radius in m of path / vehicle
       reverse_penalty: 2.1                # For Reeds-Shepp model: penalty to apply if motion is reversing, must be => 1
-      change_penalty: 0.20                # For Hybrid/Lattice nodes: penalty to apply if motion is changing directions, must be >= 0
-      non_straight_penalty: 1.05          # For Hybrid/Lattice nodes: penalty to apply if motion is non-straight, must be => 1
-      cost_penalty: 1.3                   # For Hybrid/Lattice nodes: penalty to apply to higher cost zones
+      change_penalty: 0.15                # For Hybrid/Lattice nodes: penalty to apply if motion is changing directions, must be >= 0
+      non_straight_penalty: 1.50          # For Hybrid/Lattice nodes: penalty to apply if motion is non-straight, must be => 1
+      cost_penalty: 1.7                   # For Hybrid/Lattice nodes: penalty to apply to higher cost areas when adding into the obstacle map dynamic programming distance expansion heuristic. This drives the robot more towards the center of passages. A value between 1.3 - 3.5 is reasonable.
       lattice_filepath: ""                # For Lattice node: the filepath to the state lattice graph
       lookup_table_size: 20               # For Hybrid/Lattice nodes: Size of the dubin/reeds-sheep distance window to cache, in meters.
-      cache_obstacle_heuristic: True      # For Hybrid/Lattice nodes: Cache the obstacle map dynamic programming distance expansion heuristic between subsiquent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
-      obstacle_heuristic_cost_weight: 1.7 # For Hybrid/Lattice nodes: A weight to apply to the normalize cell cost when adding into the obstacle map dynamic programming distance expansion heuristic. A value around 0.7-3.0 is reasonable. This drives the robot more towards the center of passages, but if overset, will cause additional planning time and more "wobbly" paths due to the weight associated with being in the center of spaces rather than smoothness.
+      cache_obstacle_heuristic: True      # For Hybrid/Lattice nodes: Cache the obstacle map dynamic programming distance expansion heuristic between subsiquent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.     
       smoother:
         max_iterations: 1000
         w_smooth: 0.3
@@ -155,8 +154,49 @@ By default, `0.4m` is the setting which I think is "reasonable" for the smaller 
 
 ### Costmap Resolutions
 
-We provide for the Hybrid-A\*, State Lattice, and 2D A\* implementations a costmap downsampler option. This can be **incredible** beneficial when planning very long paths in larger spaces. The motion models for SE2 planning and neighborhood search in 2D planning is proportional to the costmap resolution. By downsampling it, you can N^2 reduce the number of expansions required to achieve a particular goal. However, the lower the resolution, the larger small obstacles appear and you won't be able to get super close to obstacles. This is a trade-off to make and test. Some numbers I've seen are 2-4x drops in planning CPU time for a 2-3x downsample rate. For 60m paths in an office space, I was able to get it << 100ms at a 2-3x downsample rate.
+We provide for the Hybrid-A\*, State Lattice, and 2D A\* implementations a costmap downsampler option. This can be **incredible** beneficial when planning very long paths in larger spaces. The motion models for SE2 planning and neighborhood search in 2D planning is proportional to the costmap resolution. By downsampling it, you can N^2 reduce the number of expansions required to achieve a particular goal. However, the lower the resolution, the larger small obstacles appear and you won't be able to get super close to obstacles. This is a trade-off to make and test. Some numbers I've seen are 2-4x drops in planning CPU time for a 2-3x downsample rate. For long and complex paths, I was able to get it << 100ms at only a 2x downsample rate from a plan that otherwise took upward of 400ms.
 
 I recommend users using a 5cm resolution costmap and playing with the different values of downsampling rate until they achieve what they think is optimal performance (lowest number of expansions vs. necessity to achieve fine goal poses). Then, I would recommend to change the global costmap resolution to this new value. That way you don't own the compute of downsampling and maintaining a higher-resolution costmap that isn't used.
 
 Remember, the global costmap is **only** there to provide an environment for the planner to work in. It is not there for human-viewing even if a more fine resolution costmap is more human "pleasing". If you use multiple planners in the planner server, then you will want to use the highest resolution for the most needed planner and then use the downsampler to downsample to the Hybrid-A* resolution. 
+
+### No path found for clearly valid goals or long compute times
+
+Before addressing the section below, make sure you have an appropriately set max iterations parameter. If you have a 1 km2 sized warehouse, clearly 5000 expansions will be insufficient. Try increasing this value if you're unable to achieve goals or disable it with the `-1` value to see if you are now able to plan within a reasonable time period. If you still have issues, there is a secondary effect which could be happening that is good to be aware of.
+
+In maps with small gaps or holes, you may see an issue planning to certain regions. If there are gaps small enough to be untraversible yet large enough that inflation doesn't close it up with inflated costs, then it is recommended to lightly touch up the map or increase your inflation to remove those spaces from non-lethal space. 
+
+Seeing the figures below, you'll see an attempt to plan into a "U" shaped region across the map. The first figure shows the small gap in the map (from an imperfect SLAM session) which is nearly traversible, but not quite. From the starting location, that gap yeilds the shortest path to the goal, so the heuristics will attempt to route the paths in that direction. However, it is not possible to actually pass with a kinematically valid path with the footprint set. As a result, the planner expands all of its maximum 1,000,000 iterations attempting to fit through it (visualized in red). If an infinite number of iterations were allowed, eventually a valid path would be found, but might take significant time.
+
+By simply increasing the footprint (a bit hackier, the best solution is to edit the map to make this area impassible), then that gap is now properly blocked as un-navigable. In the second figure, you can see that the heuristics influence the expansion down a navigable route and is able to find a path in less than 10,000 iterations (or about 110ms). It is easy now!
+
+As such, it is recommended if you have sparse SLAM maps, gaps or holes in your map, that you lightly post-process them to fill those gaps or increasing your footprint's padding or radius to make these areas invalid. Without it, it might waste expansions on this small corridor that: A) you dont want your robot actually using B) probably isnt actually valid and a SLAM artifact and C) if there's a more open space, you'd rather it use that. 
+
+![](media/A.png)
+![](media/B.png)
+
+One interesting thing to note from the second figure is that you see a number of expansions in open space. This is due to travel / heuristic values being so similar, tuning values of the penalty weights can have a decent impact there. The defaults are set as a good middle ground between large open spaces and confined aisles (environment specific tuning could be done to reduce the number of expansions for a specific map, speeding up the planner). The planner actually runs substantially faster the more confined the areas of search / environments are -- but still plenty fast for even wide open areas!
+
+Sometimes visualizing the expansions is very useful to debug potential concerns (why does this goal take longer to compute, why can't I find a path, etc), should you on rare occasion run into an issue. The following snippet is what I used to visualize the expansion in the images above which may help you in future endevours.
+
+``` cpp
+// In createPath()
+static auto node = std::make_shared<rclcpp::Node>("test");
+static auto pub = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions", 1);
+geometry_msgs::msg::PoseArray msg;
+geometry_msgs::msg::Pose msg_pose;
+msg.header.stamp = node->now();
+msg.header.frame_id = "map";
+
+...
+
+// Each time we expand a new node 
+msg_pose.position.x = _costmap->getOriginX() + (current_node->pose.x * _costmap->getResolution());
+msg_pose.position.y = _costmap->getOriginY() + (current_node->pose.y * _costmap->getResolution());
+msg.poses.push_back(msg_pose);
+
+... 
+
+// On backtrace or failure
+pub->publish(msg);
+```

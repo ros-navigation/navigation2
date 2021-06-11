@@ -91,20 +91,16 @@ void SmacPlannerHybrid::configure(
     node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".cache_obstacle_heuristic", search_info.cache_obstacle_heuristic);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".obstacle_heuristic_cost_weight", rclcpp::ParameterValue(1.7));
-  node->get_parameter(
-    name + ".obstacle_heuristic_cost_weight", search_info.obstacle_heuristic_cost_weight);
-  nav2_util::declare_parameter_if_not_declared(
     node, name + ".reverse_penalty", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".reverse_penalty", search_info.reverse_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".change_penalty", rclcpp::ParameterValue(0.10));
+    node, name + ".change_penalty", rclcpp::ParameterValue(0.15));
   node->get_parameter(name + ".change_penalty", search_info.change_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.10));
+    node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.50));
   node->get_parameter(name + ".non_straight_penalty", search_info.non_straight_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".cost_penalty", rclcpp::ParameterValue(1.0));
+    node, name + ".cost_penalty", rclcpp::ParameterValue(1.7));
   node->get_parameter(name + ".cost_penalty", search_info.cost_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(3.5));

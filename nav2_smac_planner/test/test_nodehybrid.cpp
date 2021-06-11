@@ -40,8 +40,7 @@ TEST(NodeHybridTest, test_node_hybrid)
   info.non_straight_penalty = 1.1;
   info.reverse_penalty = 2.0;
   info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
-  info.cost_penalty = 1.0;
-  info.obstacle_heuristic_cost_weight = 1.7;
+  info.cost_penalty = 1.7;
   unsigned int size_x = 10;
   unsigned int size_y = 10;
   unsigned int size_theta = 72;

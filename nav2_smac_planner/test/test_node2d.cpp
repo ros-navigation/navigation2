@@ -54,7 +54,7 @@ TEST(Node2DTest, test_node_2d)
 
   // test reset
   testA.reset();
-  EXPECT_EQ(testA.getCost(), 0.0f);
+  EXPECT_TRUE(std::isnan(testA.getCost()));
 
   // check collision checking
   EXPECT_EQ(testA.isNodeValid(false, checker.get()), true);

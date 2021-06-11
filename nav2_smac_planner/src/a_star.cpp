@@ -509,8 +509,9 @@ typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::tryAnalyticExpans
         for (int i = 0; i < 8; i++) {
           // Attempt to create better paths in 5 node increments, need to make sure
           // they exist for each in order to do so (maximum of 40 points back).
-          if (test_node->parent && test_node->parent->parent && test_node->parent->parent->parent
-            && test_node->parent->parent->parent->parent && test_node->parent->parent->parent->parent->parent)
+          if (test_node->parent && test_node->parent->parent && test_node->parent->parent->parent &&
+            test_node->parent->parent->parent->parent &&
+            test_node->parent->parent->parent->parent->parent)
           {
             test_node = test_node->parent->parent->parent->parent->parent;
             refined_analytic_nodes = getAnalyticPath(test_node, getter);

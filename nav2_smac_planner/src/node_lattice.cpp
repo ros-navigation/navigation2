@@ -57,7 +57,6 @@ void LatticeMotionTable::initMotionModel(
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
-  obstacle_heuristic_cost_weight = search_info.obstacle_heuristic_cost_weight;
   current_lattice_filepath = search_info.lattice_filepath;
 
   // TODO(Matt) read in file, precompute based on orientation bins for lookup at runtime
@@ -115,11 +114,6 @@ bool NodeLattice::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker)
 {
-  // Ensure we only check each node once
-  if (!std::isnan(_cell_cost)) {
-    return _cell_cost;
-  }
-
   // TODO(steve) if primitive longer than 1.5 cells, then we need to split into 1 cell
   // increments and collision check across them
   if (collision_checker->inCollision(
@@ -143,7 +137,7 @@ float NodeLattice::getHeuristicCost(
   const nav2_costmap_2d::Costmap2D * costmap)
 {
   // get obstacle heuristic value
-  const float obstacle_heuristic = getObstacleHeuristic(costmap, node_coords, goal_coords);
+  const float obstacle_heuristic = getObstacleHeuristic(node_coords, goal_coords);
   const float distance_heuristic =
     getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
   return std::max(obstacle_heuristic, distance_heuristic);

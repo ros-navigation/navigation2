@@ -65,7 +65,7 @@ public:
       Coordinates & initial_coords_in,
       Coordinates & proposed_coords_in)
     : node(node_in), initial_coords(initial_coords_in), proposed_coords(proposed_coords_in)
-    {};
+    {}
 
     NodePtr node;
     Coordinates initial_coords;
