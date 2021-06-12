@@ -78,7 +78,7 @@ public:
   CostmapT getCostmap()
   {
     return costmap_;
-  };
+  }
 
 protected:
   CostmapT costmap_;
