@@ -31,7 +31,7 @@ namespace nav2_behavior_tree
  * @tparam ServiceT Type of service
  */
 template<class ServiceT>
-class BtServiceNode : public BT::SyncActionNode
+class BtServiceNode : public BT::ActionNodeBase
 {
 public:
   /**
@@ -42,18 +42,27 @@ public:
   BtServiceNode(
     const std::string & service_node_name,
     const BT::NodeConfiguration & conf)
-  : BT::SyncActionNode(service_node_name, conf), service_node_name_(service_node_name)
+  : BT::ActionNodeBase(service_node_name, conf), service_node_name_(service_node_name)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
+    callback_group_ = node_->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
+    callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
     // Get the required items from the blackboard
+    bt_loop_duration_ =
+      config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
     server_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
     // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
-    service_client_ = node_->create_client<ServiceT>(service_name_);
+    service_client_ = node_->create_client<ServiceT>(
+      service_name_,
+      rmw_qos_profile_services_default,
+      callback_group_);
 
     // Make a request for the service without parameter
     request_ = std::make_shared<typename ServiceT::Request>();
@@ -107,9 +116,22 @@ public:
    */
   BT::NodeStatus tick() override
   {
-    on_tick();
-    auto future_result = service_client_->async_send_request(request_);
-    return check_future(future_result);
+    if (!request_sent_) {
+      on_tick();
+      future_result_ = service_client_->async_send_request(request_);
+      sent_time_ = node_->now();
+      request_sent_ = true;
+    }
+    return check_future();
+  }
+
+  /**
+   * @brief The other (optional) override required by a BT service.
+   */
+  void halt() override
+  {
+    request_sent_ = false;
+    setStatus(BT::NodeStatus::IDLE);
   }
 
   /**
@@ -122,24 +144,36 @@ public:
 
   /**
    * @brief Check the future and decide the status of BT
-   * @param future_result shared_future of service response
    * @return BT::NodeStatus SUCCESS if future complete before timeout, FAILURE otherwise
    */
-  virtual BT::NodeStatus check_future(
-    std::shared_future<typename ServiceT::Response::SharedPtr> future_result)
+  virtual BT::NodeStatus check_future()
   {
-    rclcpp::FutureReturnCode rc;
-    rc = rclcpp::spin_until_future_complete(
-      node_,
-      future_result, server_timeout_);
-    if (rc == rclcpp::FutureReturnCode::SUCCESS) {
-      return BT::NodeStatus::SUCCESS;
-    } else if (rc == rclcpp::FutureReturnCode::TIMEOUT) {
-      RCLCPP_WARN(
-        node_->get_logger(),
-        "Node timed out while executing service call to %s.", service_name_.c_str());
-      on_wait_for_result();
+    auto elapsed = (node_->now() - sent_time_).to_chrono<std::chrono::milliseconds>();
+    auto remaining = server_timeout_ - elapsed;
+
+    if (remaining > std::chrono::milliseconds(0)) {
+      auto timeout = remaining > bt_loop_duration_ ? bt_loop_duration_ : remaining;
+
+      rclcpp::FutureReturnCode rc;
+      rc = callback_group_executor_.spin_until_future_complete(future_result_, server_timeout_);
+      if (rc == rclcpp::FutureReturnCode::SUCCESS) {
+        request_sent_ = false;
+        return BT::NodeStatus::SUCCESS;
+      }
+
+      if (rc == rclcpp::FutureReturnCode::TIMEOUT) {
+        on_wait_for_result();
+        elapsed = (node_->now() - sent_time_).to_chrono<std::chrono::milliseconds>();
+        if (elapsed < server_timeout_) {
+          return BT::NodeStatus::RUNNING;
+        }
+      }
     }
+
+    RCLCPP_WARN(
+      node_->get_logger(),
+      "Node timed out while executing service call to %s.", service_name_.c_str());
+    request_sent_ = false;
     return BT::NodeStatus::FAILURE;
   }
 
@@ -169,10 +203,20 @@ protected:
 
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 
   // The timeout value while to use in the tick loop while waiting for
   // a result from the server
   std::chrono::milliseconds server_timeout_;
+
+  // The timeout value for BT loop execution
+  std::chrono::milliseconds bt_loop_duration_;
+
+  // To track the server response when a new request is sent
+  std::shared_future<typename ServiceT::Response::SharedPtr> future_result_;
+  bool request_sent_{false};
+  rclcpp::Time sent_time_;
 };
 
 }  // namespace nav2_behavior_tree

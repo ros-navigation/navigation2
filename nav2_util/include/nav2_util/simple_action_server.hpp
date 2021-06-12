@@ -133,9 +133,17 @@ public:
    * @return CancelResponse response of the goal cancelled
    */
   rclcpp_action::CancelResponse handle_cancel(
-    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>/*handle*/)
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle)
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+    if (!handle->is_active()) {
+      warn_msg(
+        "Received request for goal cancellation,"
+        "but the handle is inactive, so reject the request");
+      return rclcpp_action::CancelResponse::REJECT;
+    }
+
     debug_msg("Received request for goal cancellation");
     return rclcpp_action::CancelResponse::ACCEPT;
   }

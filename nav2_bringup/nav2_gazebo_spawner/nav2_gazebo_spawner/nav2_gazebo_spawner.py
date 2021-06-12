@@ -84,9 +84,10 @@ def main():
             # broadcasting a transform between`odom` and `base_footprint`
             break
 
-    ros_params = plugin.find('ros')
-    ros_tf_remap = ET.SubElement(ros_params, 'remapping')
-    ros_tf_remap.text = '/tf:=/' + args.robot_namespace + '/tf'
+    if args.robot_namespace:
+        ros_params = plugin.find('ros')
+        ros_tf_remap = ET.SubElement(ros_params, 'remapping')
+        ros_tf_remap.text = '/tf:=/' + args.robot_namespace + '/tf'
 
     # Set data for request
     request = SpawnEntity.Request()
@@ -99,7 +100,7 @@ def main():
 
     node.get_logger().info('Sending service request to `/spawn_entity`')
     future = client.call_async(request)
-    rclpy.spin_until_future_complete(node, future, args.timeout)
+    rclpy.spin_until_future_complete(node, future, timeout_sec=args.timeout)
     if future.result() is not None:
         print('response: %r' % future.result())
     else:
