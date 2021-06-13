@@ -53,9 +53,7 @@ jobs:
           echo "::set-output name=no_cache::true"
   rebuild_ci_image:
     name: Rebuild CI Image
-    if: |
-      needs.check_ci_files.outputs.trigger == 'true' ||
-      needs.check_ci_image.outputs.trigger == 'true'
+    if: always()
     needs:
       - check_ci_files
       - check_ci_image
@@ -81,7 +79,16 @@ jobs:
             no_cache=true
           fi
           echo "::set-output name=no_cache::${no_cache}"
+
+          trigger=false
+          if  [ "${{needs.check_ci_files.outputs.trigger}}" == 'true' ] || \
+              [ "${{needs.check_ci_image.outputs.trigger}}" == 'true' ]
+          then
+            trigger=true
+          fi
+          echo "::set-output name=trigger::${trigger}"
       - name: Build and push
+        if: steps.config.outputs.trigger == 'true'
         id: docker_build
         uses: docker/build-push-action@v2
         with:
