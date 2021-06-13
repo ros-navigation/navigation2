@@ -83,8 +83,8 @@ jobs:
           cache-from: type=registry,ref=rosplanning/navigation2:main
           cache-to: type=inline
           target: builder
-          tags:
-            - rosplanning/navigation2:main
-            - rosplanning/navigation2:main-${{ steps.config.outputs.timestamp }}
+          tags: |
+            rosplanning/navigation2:main
+            rosplanning/navigation2:main-${{ steps.config.outputs.timestamp }}
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
