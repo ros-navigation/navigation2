@@ -82,15 +82,13 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 # build underlay source
 COPY --from=cacher $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache"
-ARG FAIL_ON_BUILD_FAILURE=True
 ARG CCACHE_DIR="$UNDERLAY_WS/.ccache"
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon cache lock && \
     colcon build \
       --symlink-install \
       --mixin $UNDERLAY_MIXINS \
-      --event-handlers console_direct+ \
-    || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
+      --event-handlers console_direct+
 
 # install overlay dependencies
 ARG OVERLAY_WS
@@ -117,8 +115,7 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
     colcon cache lock && \
     colcon build \
       --symlink-install \
-      --mixin $OVERLAY_MIXINS \
-    || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
+      --mixin $OVERLAY_MIXINS
 
 # source overlay from entrypoint
 RUN sed --in-place \
