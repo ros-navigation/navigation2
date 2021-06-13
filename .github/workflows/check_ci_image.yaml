@@ -1,21 +1,14 @@
 ---
-name: Trigger Docker Hub
+name: Check CI Image
 
 on:
   schedule:
   # 7am UTC, 12am PDT
   - cron:  '0 7 * * *'
-  push:
-    branches:
-    - main
-    paths:
-    - '**/package.xml'
-    - '**/*.repos'
-    - 'Dockerfile'
 
 jobs:
-  rebuild_dockerhub:
-    name: Trigger Docker Hub
+  check_ci_image:
+    name: Check CI Image
     runs-on: ubuntu-latest
     container:
       image: rosplanning/navigation2:main
@@ -24,7 +17,6 @@ jobs:
         run: |
           echo "TRIGGER=false" >> $GITHUB_ENV
       - name: "Check apt updates"
-        if: ${{ github.event_name == 'schedule' }}
         env:
           SOURCELIST: sources.list.d/ros2.list
         run: |
@@ -34,20 +26,10 @@ jobs:
             -o Dir::Etc::sourcelist="${SOURCELIST}" \
             | grep "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded." \
             && echo "No apt updates" || echo "TRIGGER=true" >> $GITHUB_ENV
-      - name: "Check package updates"
-        if: ${{ github.event_name == 'push' }}
-        run: |
-          echo "TRIGGER=true" >> $GITHUB_ENV
-      - name: "Trigger Dockerhub URL"
+      - name: "Dispatch Rebuild CI Image"
         if: ${{ fromJSON(env.TRIGGER) }}
-        env:
-          DATA: |
-            {
-              "source_type": "Branch",
-              "source_name": "main"
-            }
-        run: |
-          echo ${DATA} \
-            | curl -H "Content-Type: application/json" \
-              --data @- \
-              -X POST ${{ secrets.DOCKERHUB_TRIGGER_URL }}
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          event-type: rebuild-ci-image
+          client-payload: '{"no_cache": "true"}'
