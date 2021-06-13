@@ -17,24 +17,29 @@ jobs:
   check_ci_files:
     name: Check CI Files
     runs-on: ubuntu-latest
+    outputs:
+      trigger: ${{ steps.check.outputs.trigger }}
+      no_cache: ${{ steps.check.outputs.no_cache }}
     steps:
-      - name: "Initialize environment"
-        run: |
-          echo "TRIGGER=false" >> $GITHUB_ENV
-          echo "NO_CACHE=false" >> $GITHUB_ENV
       - name: "Check package updates"
+        id: check
         if: ${{ github.event_name == 'push' }}
         run: |
-          echo "TRIGGER=true" >> $GITHUB_ENV
+          echo "::set-output name=trigger::${{ true }}"
+          echo "::set-output name=no_cache::${{ false }}"
   check_ci_image:
     name: Check CI Image
     if: ${{ github.event_name == 'schedule' }}
     needs: check_ci_files
     runs-on: ubuntu-latest
+    outputs:
+      trigger: ${{ steps.check.outputs.trigger }}
+      no_cache: ${{ steps.check.outputs.no_cache }}
     container:
       image: rosplanning/navigation2:main
     steps:
       - name: "Check apt updates"
+        id: check
         env:
           SOURCELIST: sources.list.d/ros2.list
         run: |
@@ -43,12 +48,17 @@ jobs:
           apt-get --simulate upgrade \
             -o Dir::Etc::sourcelist="${SOURCELIST}" \
             | grep "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded." \
-            && echo "No apt updates" || echo "TRIGGER=true" >> $GITHUB_ENV
-          echo "NO_CACHE=true" >> $GITHUB_ENV
+            && echo "::set-output name=trigger::${{ false }}" \
+            || echo "::set-output name=trigger::${{ true }}"
+          echo "::set-output name=no_cache::${{ true }}"
   rebuild_ci_image:
     name: Rebuild CI Image
-    if: ${{ fromJSON(env.TRIGGER) }}
-    needs: check_ci_image
+    if: |
+      needs.check_ci_files.outputs.trigger ||
+      needs.check_ci_image.outputs.trigger
+    needs:
+      - check_ci_files
+      - check_ci_image
     runs-on: ubuntu-latest
     steps:
       - name: Set up Docker Buildx
