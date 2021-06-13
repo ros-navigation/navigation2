@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <condition_variable>
 #include <math.h>
 #include <memory>
 #include <string>
@@ -82,7 +83,7 @@ TEST(WaypointFollowerTest, InputAtWaypoint)
 
   EXPECT_NEAR((end_time - start_time).seconds(), 10.0, 0.1);
 
-  // has input now, should work
+  has input now, should work
   std::thread t1(publish_message);
   EXPECT_TRUE(iaw.processAtWaypoint(pose, 0));
   t1.join();
@@ -91,15 +92,34 @@ TEST(WaypointFollowerTest, InputAtWaypoint)
 TEST(WaypointFollowerTest, PhotoAtWaypoint)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testWaypointNode");
-  auto pub = node->create_publisher<sensor_msgs::msg::Image>("/camer/color/image_raw", 1);
+  auto pub = node->create_publisher<sensor_msgs::msg::Image>("/camera/color/image_raw", 1);
   pub->on_activate();
+  std::condition_variable cv;
+  std::mutex mtx;
+  std::unique_lock<std::mutex> lck(mtx, std::defer_lock);
+  bool data_published = false;
   auto publish_message =
     [&, this]() -> void
     {
       rclcpp::Rate(5).sleep();
       auto msg = std::make_unique<sensor_msgs::msg::Image>();
+      // fill image msg data. 
+      msg->encoding = "rgb8";
+      msg->height = 240;
+      msg->width = 320;
+      msg->step = 960;
+      auto size = msg->height * msg->width * 3;
+      msg->data.reserve(size);
+      int fake_data = 0;
+      for (size_t i = 0; i < size; i++) {
+        msg->data.push_back(fake_data++);
+      }
       pub->publish(std::move(msg));
       rclcpp::spin_some(node->shared_from_this()->get_node_base_interface());
+      lck.lock();
+      data_published = true;
+      cv.notify_one();
+      lck.unlock();
     };
 
   nav2_waypoint_follower::PhotoAtWaypoint paw;
@@ -109,8 +129,10 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
   geometry_msgs::msg::PoseStamped pose;
   EXPECT_FALSE(paw.processAtWaypoint(pose, 0));
 
-  // has image now, should still fail because its invalid
   std::thread t1(publish_message);
-  EXPECT_FALSE(paw.processAtWaypoint(pose, 0));
+  cv.wait(lck);
+  // has image now, since we force waiting until image is published
+  EXPECT_TRUE(paw.processAtWaypoint(pose, 0));
+  
   t1.join();
 }
