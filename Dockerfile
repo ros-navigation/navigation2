@@ -83,7 +83,7 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 COPY --from=cacher $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache"
 ARG FAIL_ON_BUILD_FAILURE=True
-ARG CCACHE_DIR=".ccache"
+ARG CCACHE_DIR="$UNDERLAY_WS/.ccache"
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon cache lock && \
     colcon build \
@@ -112,6 +112,7 @@ FROM builder AS tester
 # build overlay source
 COPY --from=cacher $OVERLAY_WS ./
 ARG OVERLAY_MIXINS="release ccache"
+ARG CCACHE_DIR="$OVERLAY_WS/.ccache"
 RUN . $UNDERLAY_WS/install/setup.sh && \
     colcon cache lock && \
     colcon build \
