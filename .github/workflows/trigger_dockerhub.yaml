@@ -11,6 +11,7 @@ on:
     paths:
     - '**/package.xml'
     - '**/*.repos'
+    - 'Dockerfile'
 
 jobs:
   rebuild_dockerhub:
