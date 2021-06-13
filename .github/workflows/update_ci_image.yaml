@@ -1,9 +1,10 @@
 ---
-name: Rebuild CI Image
+name: Update CI Image
 
 on:
-  repository_dispatch:
-    types: [rebuild-ci-image]
+  schedule:
+  # 7am UTC, 12am PDT
+  - cron:  '0 7 * * *'
   push:
     branches:
     - main
@@ -13,8 +14,39 @@ on:
     - 'Dockerfile'
 
 jobs:
+  check_ci_files:
+    name: Check CI Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Initialize environment"
+        run: |
+          echo "TRIGGER=false" >> $GITHUB_ENV
+          echo "NO_CACHE=false" >> $GITHUB_ENV
+      - name: "Check package updates"
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          echo "TRIGGER=true" >> $GITHUB_ENV
+  check_ci_image:
+    name: Check CI Image
+    if: ${{ github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    container:
+      image: rosplanning/navigation2:main
+    steps:
+      - name: "Check apt updates"
+        env:
+          SOURCELIST: sources.list.d/ros2.list
+        run: |
+          apt-get update \
+            -o Dir::Etc::sourcelist="${SOURCELIST}"
+          apt-get --simulate upgrade \
+            -o Dir::Etc::sourcelist="${SOURCELIST}" \
+            | grep "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded." \
+            && echo "No apt updates" || echo "TRIGGER=true" >> $GITHUB_ENV
+          echo "NO_CACHE=true" >> $GITHUB_ENV
   rebuild_ci_image:
     name: Rebuild CI Image
+    if: ${{ fromJSON(env.TRIGGER) }}
     runs-on: ubuntu-latest
     steps:
       - name: Set up Docker Buildx
@@ -35,7 +67,7 @@ jobs:
         with:
           pull: true
           push: true
-          no-cache: ${{ github.event.client_payload.no_cache }}
+          no-cache: ${{ fromJSON(env.NO_CACHE) }}
           cache-from: type=registry,ref=rosplanning/navigation2:main
           cache-to: type=inline
           target: builder
