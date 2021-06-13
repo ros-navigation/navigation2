@@ -25,8 +25,8 @@ jobs:
         id: check
         if: ${{ github.event_name == 'push' }}
         run: |
-          echo "::set-output name=trigger::${{ true }}"
-          echo "::set-output name=no_cache::${{ false }}"
+          echo "::set-output name=trigger::true"
+          echo "::set-output name=no_cache::false"
   check_ci_image:
     name: Check CI Image
     if: ${{ github.event_name == 'schedule' }}
@@ -48,14 +48,14 @@ jobs:
           apt-get --simulate upgrade \
             -o Dir::Etc::sourcelist="${SOURCELIST}" \
             | grep "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded." \
-            && echo "::set-output name=trigger::${{ false }}" \
-            || echo "::set-output name=trigger::${{ true }}"
-          echo "::set-output name=no_cache::${{ true }}"
+            && echo "::set-output name=trigger::false" \
+            || echo "::set-output name=trigger::true"
+          echo "::set-output name=no_cache::true"
   rebuild_ci_image:
     name: Rebuild CI Image
     if: |
-      needs.check_ci_files.outputs.trigger ||
-      needs.check_ci_image.outputs.trigger
+      toJSON(needs.check_ci_files.outputs.trigger) ||
+      toJSON(needs.check_ci_image.outputs.trigger)
     needs:
       - check_ci_files
       - check_ci_image
