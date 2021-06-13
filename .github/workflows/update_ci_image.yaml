@@ -53,9 +53,7 @@ jobs:
           echo "::set-output name=no_cache::true"
   rebuild_ci_image:
     name: Rebuild CI Image
-    if: |
-      ${{ toJSON(needs.check_ci_files.outputs.trigger) ||
-      toJSON(needs.check_ci_image.outputs.trigger) }}$
+    if: ${{ always() }}$
     needs:
       - check_ci_files
       - check_ci_image
