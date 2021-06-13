@@ -53,7 +53,9 @@ jobs:
           echo "::set-output name=no_cache::true"
   rebuild_ci_image:
     name: Rebuild CI Image
-    if: ${{ always() }}
+    if: |
+      ${{ toJSON(needs.check_ci_files.outputs.trigger) ||
+      toJSON(needs.check_ci_image.outputs.trigger) }}$
     needs:
       - check_ci_files
       - check_ci_image
@@ -77,7 +79,9 @@ jobs:
         with:
           pull: true
           push: true
-          no-cache: ${{ fromJSON(env.NO_CACHE) }}
+          no-cache: |
+            ${{ toJSON(needs.check_ci_files.outputs.no_cache) ||
+            toJSON(needs.check_ci_image.outputs.no_cache) }}$
           cache-from: type=registry,ref=rosplanning/navigation2:main
           cache-to: type=inline
           target: builder
