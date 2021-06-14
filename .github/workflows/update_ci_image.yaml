@@ -3,15 +3,15 @@ name: Update CI Image
 
 on:
   schedule:
-  # 7am UTC, 12am PDT
-  - cron:  '0 7 * * *'
+    # 7am UTC, 12am PDT
+    - cron:  '0 7 * * *'
   push:
     branches:
-    - main
+      - main
     paths:
-    - '**/package.xml'
-    - '**/*.repos'
-    - 'Dockerfile'
+      - '**/package.xml'
+      - '**/*.repos'
+      - 'Dockerfile'
 
 jobs:
   check_ci_files:
