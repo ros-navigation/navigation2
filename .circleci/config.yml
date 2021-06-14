@@ -263,7 +263,7 @@ _commands:
 
               colcon clean packages --yes \
                 --packages-select ${TEST_PACKAGES} \
-                --base-select test_result 
+                --base-select test_result
 
               . install/setup.sh
               set -o xtrace
@@ -302,7 +302,7 @@ _steps:
         echo $CACHE_NONCE | \
           (echo cache_nonce && cat) >> lockfile.txt
         sha256sum $PWD/lockfile.txt >> lockfile.txt
-        
+
         TZ=utc stat -c '%y' /ros_entrypoint.sh | \
           (echo ros_entrypoint && cat) >> lockfile.txt
         sha256sum $PWD/lockfile.txt >> lockfile.txt
@@ -436,7 +436,7 @@ _environments:
 executors:
   debug_exec:
     docker:
-      - image: rosplanning/navigation2:main
+      - image: ghcr.io/ros-planning/navigation2:main
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
@@ -444,7 +444,7 @@ executors:
       OVERLAY_MIXINS: "debug ccache coverage-gcc"
   release_exec:
     docker:
-      - image: rosplanning/navigation2:main
+      - image: ghcr.io/ros-planning/navigation2:main
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment

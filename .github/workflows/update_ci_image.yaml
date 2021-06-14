@@ -36,7 +36,7 @@ jobs:
       trigger: ${{ steps.check.outputs.trigger }}
       no_cache: ${{ steps.check.outputs.no_cache }}
     container:
-      image: rosplanning/navigation2:main
+      image: ghcr.io/ros-planning/navigation2:main
     steps:
       - name: "Check apt updates"
         id: check
@@ -64,8 +64,9 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Set build config
         id: config
         run: |
@@ -95,11 +96,11 @@ jobs:
           pull: true
           push: true
           no-cache: ${{ steps.config.outputs.no_cache }}
-          cache-from: type=registry,ref=rosplanning/navigation2:main
+          cache-from: type=registry,ref=ghcr.io/ros-planning/navigation2:main
           cache-to: type=inline
           target: builder
           tags: |
-            rosplanning/navigation2:main
-            rosplanning/navigation2:main-${{ steps.config.outputs.timestamp }}
+            ghcr.io/ros-planning/navigation2:main
+            ghcr.io/ros-planning/navigation2:main-${{ steps.config.outputs.timestamp }}
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
