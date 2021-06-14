@@ -83,7 +83,7 @@ TEST(WaypointFollowerTest, InputAtWaypoint)
 
   EXPECT_NEAR((end_time - start_time).seconds(), 10.0, 0.1);
 
-  has input now, should work
+  // has input now, should work
   std::thread t1(publish_message);
   EXPECT_TRUE(iaw.processAtWaypoint(pose, 0));
   t1.join();
