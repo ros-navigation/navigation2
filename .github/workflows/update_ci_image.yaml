@@ -103,4 +103,5 @@ jobs:
             ghcr.io/ros-planning/navigation2:main
             ghcr.io/ros-planning/navigation2:main-${{ steps.config.outputs.timestamp }}
       - name: Image digest
+        if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
