@@ -23,13 +23,13 @@ jobs:
     steps:
       - name: "Check package updates"
         id: check
-        if: ${{ github.event_name == 'push' }}
+        if: github.event_name == 'push'
         run: |
           echo "::set-output name=trigger::true"
           echo "::set-output name=no_cache::false"
   check_ci_image:
     name: Check CI Image
-    if: ${{ github.event_name == 'schedule' }}
+    if: github.event_name == 'schedule'
     needs: check_ci_files
     runs-on: ubuntu-latest
     outputs:
