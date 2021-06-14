@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <condition_variable>
 #include <math.h>
+#include <condition_variable>
 #include <memory>
 #include <string>
 #include <vector>
@@ -103,7 +103,7 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
     {
       rclcpp::Rate(5).sleep();
       auto msg = std::make_unique<sensor_msgs::msg::Image>();
-      // fill image msg data. 
+      // fill image msg data.
       msg->encoding = "rgb8";
       msg->height = 240;
       msg->width = 320;
@@ -133,6 +133,6 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
   cv.wait(lck);
   // has image now, since we force waiting until image is published
   EXPECT_TRUE(paw.processAtWaypoint(pose, 0));
-  
+
   t1.join();
 }
