@@ -229,6 +229,15 @@ public:
 
   virtual std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) = 0;
 
+  /**
+   * @brief Get the action server
+   * @return Action server pointer
+   */
+  std::unique_ptr<nav2_behavior_tree::BtActionServer<ActionT>>& getActionServer()
+  {
+    return bt_action_server_;
+  }
+
 protected:
   /**
    * @brief An intermediate goal reception function to mux navigators.
