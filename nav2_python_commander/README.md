@@ -12,7 +12,6 @@ This was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41
 
 The methods provided by the basic navigator are shown below, with inputs and expected returns. If a server fails, it may throw an exception or return a `None` object, so please be sure to properly wrap your navigation calls in try/catch and check results for `None` type.
 
-| --------------------------------- | -------------------------------------------------------------------------- |
 | Robot Navigator Method            | Description                                                                |
 | --------------------------------- | -------------------------------------------------------------------------- |
 | setInitialPose(initial_pose)      | Sets the initial pose (`PoseStamped`) of the robot to localization.        |
@@ -34,7 +33,6 @@ The methods provided by the basic navigator are shown below, with inputs and exp
 | waitUntilNav2Active()             | Blocks until Nav2 is completely online and lifecycle nodes are in the active state. To be used in conjunction with autostart or external lifecycle bringup.  |
 | lifecycleStartup()                | Sends a request to all lifecycle management servers to bring them into the active state, to be used if autostart is `false` and you want this program to control Nav2's lifecycle. |
 | lifecycleShutdown()               | Sends a request to all lifecycle management servers to shut them down.     |
-| --------------------------------- | -------------------------------------------------------------------------- |
 
 A general template for building applications is as follows:
 
@@ -69,7 +67,7 @@ elif result == NavigationResult.FAILED:
 
 Make sure to install the `aws_robomaker_small_warehouse_world` package or build it in your local workspace alongside Nav2. It can be found [here](https://github.com/aws-robotics/aws-robomaker-small-warehouse-world). The demonstrations, examples, and launch files assume you're working with this gazebo world (such that the hard-programmed shelf locations and routes highlighting the API are meaningful).
 
-There are 2 main ways to run the demos of the `nav2_python_commander` API.
+Make sure you have set the model directory of turtlebot3 simulation and aws warehouse world to the `GAZEBO_MODEL_PATH`. There are 2 main ways to run the demos of the `nav2_python_commander` API.
 
 ### Automatically
 
