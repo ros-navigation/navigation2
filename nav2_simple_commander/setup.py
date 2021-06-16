@@ -2,7 +2,7 @@ from setuptools import setup
 import os
 from glob import glob
 
-package_name = 'nav2_python_commander'
+package_name = 'nav2_simple_commander'
 
 setup(
     name=package_name,
@@ -23,12 +23,12 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-                'example_nav_to_pose = nav2_python_commander.example_nav_to_pose:main',
-                'example_nav_through_poses = nav2_python_commander.example_nav_through_poses:main',
-                'example_waypoint_follower = nav2_python_commander.example_waypoint_follower:main',
-                'demo_picking = nav2_python_commander.demo_picking:main',
-                'demo_inspection = nav2_python_commander.demo_inspection:main',
-                'demo_security = nav2_python_commander.demo_security:main',
+                'example_nav_to_pose = nav2_simple_commander.example_nav_to_pose:main',
+                'example_nav_through_poses = nav2_simple_commander.example_nav_through_poses:main',
+                'example_waypoint_follower = nav2_simple_commander.example_waypoint_follower:main',
+                'demo_picking = nav2_simple_commander.demo_picking:main',
+                'demo_inspection = nav2_simple_commander.demo_inspection:main',
+                'demo_security = nav2_simple_commander.demo_security:main',
         ],
     },
 )

@@ -25,7 +25,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     warehouse_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
-    python_commander_dir = get_package_share_directory('nav2_python_commander')
+    python_commander_dir = get_package_share_directory('nav2_simple_commander')
 
     map_yaml_file = os.path.join(warehouse_dir, 'maps', '005', 'map.yaml')
     world = os.path.join(python_commander_dir, 'warehouse.world')
@@ -62,7 +62,7 @@ def generate_launch_description():
 
     # start the demo autonomy task
     demo_cmd = Node(
-        package='nav2_python_commander',
+        package='nav2_simple_commander',
         executable='demo_inspection',
         emulate_tty=True,
         output='screen')

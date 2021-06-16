@@ -1,4 +1,4 @@
-# Nav2 Python3 Commander
+# Nav2 Simple (Python3) Commander
 
 ## Overview
 
@@ -38,7 +38,7 @@ A general template for building applications is as follows:
 
 ``` python3
 
-from nav2_python_command.robot_navigator import BasicNavigator
+from nav2_simple_commander.robot_navigator import BasicNavigator
 import rclpy
 
 rclpy.init()
@@ -67,7 +67,7 @@ elif result == NavigationResult.FAILED:
 
 Make sure to install the `aws_robomaker_small_warehouse_world` package or build it in your local workspace alongside Nav2. It can be found [here](https://github.com/aws-robotics/aws-robomaker-small-warehouse-world). The demonstrations, examples, and launch files assume you're working with this gazebo world (such that the hard-programmed shelf locations and routes highlighting the API are meaningful).
 
-Make sure you have set the model directory of turtlebot3 simulation and aws warehouse world to the `GAZEBO_MODEL_PATH`. There are 2 main ways to run the demos of the `nav2_python_commander` API.
+Make sure you have set the model directory of turtlebot3 simulation and aws warehouse world to the `GAZEBO_MODEL_PATH`. There are 2 main ways to run the demos of the `nav2_simple_commander` API.
 
 ### Automatically
 
@@ -75,28 +75,28 @@ The main benefit of this is automatically showing the above demonstrations in a 
 
 ``` bash
 # Launch the launch file for the demo / example
-ros2 launch nav2_python_commander demo_security_launch.py
+ros2 launch nav2_simple_commander demo_security_launch.py
 ```
 
-This will bring up the robot in the AWS Warehouse in a reasonable position, launch the autonomy script, and complete some task to demonstrate the `nav2_python_commander` API.
+This will bring up the robot in the AWS Warehouse in a reasonable position, launch the autonomy script, and complete some task to demonstrate the `nav2_simple_commander` API.
 
 ### Manually
 
-The main benefit of this is to be able to launch alternative robot models or different navigation configurations than the default for a specific technology demonstation. As long as Nav2 and the simulation (or physical robot) is running, the python commander examples / demos don't care what the robot is or how it got there. Since the examples / demos do contain hard-programmed item locations or routes, you should still utilize the AWS Warehouse. Obviously these are easy to update if you wish to adapt these examples / demos to another environment.
+The main benefit of this is to be able to launch alternative robot models or different navigation configurations than the default for a specific technology demonstation. As long as Nav2 and the simulation (or physical robot) is running, the simple python commander examples / demos don't care what the robot is or how it got there. Since the examples / demos do contain hard-programmed item locations or routes, you should still utilize the AWS Warehouse. Obviously these are easy to update if you wish to adapt these examples / demos to another environment.
 
 ``` bash
 # Terminal 1: launch your robot navigation and simulation (or physical robot). For example
 ros2 launch nav2_bringup tb3_simulation_launch.py world:=/path/to/aws_robomaker_small_warehouse_world/.world map:=/path/to/aws_robomaker_small_warehouse_world/.yaml
 
 # Terminal 2: launch your autonomy / application demo or example. For example
-ros2 run nav2_python_commander demo_security
+ros2 run nav2_simple_commander demo_security
 ```
 
 Then you should see the autonomy application running!
 
 ## Examples
 
-The `nav2_python_commander` has a few examples to highlight the API functions available to you as a user:
+The `nav2_simple_commander` has a few examples to highlight the API functions available to you as a user:
 
 - `example_nav_to_pose.py` - Demonstrates the navigate to pose capabilities of the navigator, as well as a number of auxiliary methods.
 - `example_nav_through_poses.py` - Demonstrates the navigate through poses capabilities of the navigator, as well as a number of auxiliary methods.
@@ -104,7 +104,7 @@ The `nav2_python_commander` has a few examples to highlight the API functions av
 
 ## Demos
 
-The `nav2_python_commander` has a few demonstrations to highlight a couple of simple autonomy applications you can build using the `nav2_python_commander` API:
+The `nav2_simple_commander` has a few demonstrations to highlight a couple of simple autonomy applications you can build using the `nav2_simple_commander` API:
 
 - `demo_security.py` - A simple security robot application, showing how to have a robot follow a security route using Navigate Through Poses to do a patrol route, indefinitely. 
 - `demo_picking.py` - A simple item picking application, showing how to have a robot drive to a specific shelf in a warehouse to either pick an item or have a person place an item into a basket and deliver it to a destination for shipping using Navigate To Pose.

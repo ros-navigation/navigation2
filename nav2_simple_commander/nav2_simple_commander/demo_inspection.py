@@ -20,7 +20,7 @@ from geometry_msgs.msg import PoseStamped
 from rclpy.duration import Duration
 import rclpy
 
-from nav2_python_commander.robot_navigator import BasicNavigator, NavigationResult
+from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
 
 '''
 Basic stock inspection demo. In this demonstration, the expectation
