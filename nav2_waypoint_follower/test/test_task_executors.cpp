@@ -42,18 +42,26 @@ TEST(WaypointFollowerTest, WaitAtWaypoint)
 
   node->declare_parameter("WAW.waypoint_pause_duration", 50);
 
-  nav2_waypoint_follower::WaitAtWaypoint waw;
-  waw.initialize(node, std::string("WAW"));
+  std::unique_ptr<nav2_waypoint_follower::WaitAtWaypoint> waw(
+    new nav2_waypoint_follower::WaitAtWaypoint);
+  waw->initialize(node, std::string("WAW"));
 
   auto start_time = node->now();
 
   // should wait 50ms
   geometry_msgs::msg::PoseStamped pose;
-  waw.processAtWaypoint(pose, 0);
+  waw->processAtWaypoint(pose, 0);
 
   auto end_time = node->now();
 
   EXPECT_NEAR((end_time - start_time).seconds(), 0.05, 0.01);
+
+  waw.reset(new nav2_waypoint_follower::WaitAtWaypoint);
+  node->set_parameter(rclcpp::Parameter("WAW.enabled", false));
+  waw->initialize(node, std::string("WAW"));
+
+  // plugin is not enabled, should exit
+  EXPECT_TRUE(waw->processAtWaypoint(pose, 0));
 }
 
 TEST(WaypointFollowerTest, InputAtWaypoint)
