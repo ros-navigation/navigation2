@@ -75,7 +75,7 @@ def main():
     # Simply the current waypoint ID for the demonstation
     i = 0
     while not navigator.isNavComplete():
-        i = i + 1
+        i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
             print('Executing current waypoint: ' +

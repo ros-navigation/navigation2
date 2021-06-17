@@ -79,12 +79,17 @@ class BasicNavigator(Node):
         self.get_costmap_local_srv = self.create_client(GetCostmap, '/local_costmap/get_costmap')
 
     def setInitialPose(self, initial_pose):
+        """
+        Set the initial pose to the localization system
+        """
         self.initial_pose_received = False
         self.initial_pose = initial_pose
         self._setInitialPose()
 
     def goThroughPoses(self, poses):
-        # Sends a `NavThroughPoses` action request
+        """
+        Sends a `NavThroughPoses` action request
+        """
         self.debug("Waiting for 'NavigateThroughPoses' action server")
         while not self.nav_through_poses_client.wait_for_server(timeout_sec=1.0):
             self.info("'NavigateThroughPoses' action server not available, waiting...")
@@ -106,7 +111,9 @@ class BasicNavigator(Node):
         return True
 
     def goToPose(self, pose):
-        # Sends a `NavToPose` action request
+        """
+        Sends a `NavToPose` action request
+        """
         self.debug("Waiting for 'NavigateToPose' action server")
         while not self.nav_to_pose_client.wait_for_server(timeout_sec=1.0):
             self.info("'NavigateToPose' action server not available, waiting...")
@@ -130,7 +137,9 @@ class BasicNavigator(Node):
         return True
 
     def followWaypoints(self, poses):
-        # Sends a `FollowWaypoints` action request
+        """
+        Sends a `FollowWaypoints` action request
+        """
         self.debug("Waiting for 'FollowWaypoints' action server")
         while not self.follow_waypoints_client.wait_for_server(timeout_sec=1.0):
             self.info("'FollowWaypoints' action server not available, waiting...")
@@ -152,6 +161,9 @@ class BasicNavigator(Node):
         return True
 
     def cancelNav(self):
+        """
+        Cancel pending navigation request of any type
+        """
         self.info('Canceling current goal.')
         if self.result_future:
             future = self.goal_handle.cancel_goal_async()
@@ -159,6 +171,9 @@ class BasicNavigator(Node):
         return
 
     def isNavComplete(self):
+        """
+        Check if the navigation request of any type is complete yet
+        """
         if not self.result_future:
             # task was cancelled or completed
             return True
@@ -176,9 +191,15 @@ class BasicNavigator(Node):
         return True
 
     def getFeedback(self):
+        """
+        Get the pending action feedback message
+        """
         return self.feedback
 
     def getResult(self):
+        """
+        Get the pending action result message
+        """
         if self.status == GoalStatus.STATUS_SUCCEEDED:
             return NavigationResult.SUCCEEDED
         elif self.status == GoalStatus.STATUS_ABORTED:
@@ -189,6 +210,9 @@ class BasicNavigator(Node):
             return NavigationResult.UNKNOWN
 
     def waitUntilNav2Active(self):
+        """
+        Block until the full navigation system is up and running
+        """
         self._waitForNodeToActivate('amcl')
         self._waitForInitialPose()
         self._waitForNodeToActivate('bt_navigator')
@@ -196,7 +220,9 @@ class BasicNavigator(Node):
         return
 
     def getPath(self, start, goal):
-        # Sends a `NavToPose` action request
+        """
+        Sends a `ComputePathToPose` action request
+        """
         self.debug("Waiting for 'ComputePathToPose' action server")
         while not self.compute_path_to_pose_client.wait_for_server(timeout_sec=1.0):
             self.info("'ComputePathToPose' action server not available, waiting...")
@@ -224,7 +250,9 @@ class BasicNavigator(Node):
         return self.result_future.result().result.path
 
     def getPathThroughPoses(self, start, goals):
-        # Sends a `NavToPose` action request
+        """
+        Sends a `ComputePathThroughPoses` action request
+        """
         self.debug("Waiting for 'ComputePathThroughPoses' action server")
         while not self.compute_path_through_poses_client.wait_for_server(timeout_sec=1.0):
             self.info("'ComputePathThroughPoses' action server not available, waiting...")
@@ -252,6 +280,9 @@ class BasicNavigator(Node):
         return self.result_future.result().result.path
 
     def changeMap(self, map_filepath):
+        """
+        Change the current static map in the map server
+        """
         while not self.change_maps_srv.wait_for_service(timeout_sec=1.0):
             self.info('change map service not available, waiting...')
         req = LoadMap.Request()
@@ -266,11 +297,17 @@ class BasicNavigator(Node):
         return
 
     def clearAllCostmaps(self):
+        """
+        Clear all costmaps
+        """
         self.clearLocalCostmap()
         self.clearGlobalCostmap()
         return
 
     def clearLocalCostmap(self):
+        """
+        Clear local costmap
+        """
         while not self.clear_costmap_local_srv.wait_for_service(timeout_sec=1.0):
             self.info('Clear local costmaps service not available, waiting...')
         req = ClearEntireCostmap.Request()
@@ -279,6 +316,9 @@ class BasicNavigator(Node):
         return
 
     def clearGlobalCostmap(self):
+        """
+        Clear global costmap
+        """
         while not self.clear_costmap_global_srv.wait_for_service(timeout_sec=1.0):
             self.info('Clear global costmaps service not available, waiting...')
         req = ClearEntireCostmap.Request()
@@ -287,6 +327,9 @@ class BasicNavigator(Node):
         return
 
     def getGlobalCostmap(self):
+        """
+        Get the global costmap
+        """
         while not self.get_costmap_global_srv.wait_for_service(timeout_sec=1.0):
             self.info('Get global costmaps service not available, waiting...')
         req = GetCostmap.Request()
@@ -295,6 +338,9 @@ class BasicNavigator(Node):
         return future.result().map
 
     def getLocalCostmap(self):
+        """
+        Get the local costmap
+        """
         while not self.get_costmap_local_srv.wait_for_service(timeout_sec=1.0):
             self.info('Get local costmaps service not available, waiting...')
         req = GetCostmap.Request()
@@ -303,11 +349,12 @@ class BasicNavigator(Node):
         return future.result().map
 
     def lifecycleStartup(self):
+        """
+        Startup nav2 lifecycle system
+        """
         self.info('Starting up lifecycle nodes based on lifecycle_manager.')
-        srvs = self.get_service_names_and_types()
-        for srv in srvs:
-            if srv[1][0] == 'nav2_msgs/srv/ManageLifecycleNodes':
-                srv_name = srv[0]
+        for srv_name, srv_type in self.get_service_names_and_types():
+            if srv_type[0] == 'nav2_msgs/srv/ManageLifecycleNodes':
                 self.info('Starting up ' + srv_name)
                 mgr_client = self.create_client(ManageLifecycleNodes, srv_name)
                 while not mgr_client.wait_for_service(timeout_sec=1.0):
@@ -328,11 +375,12 @@ class BasicNavigator(Node):
         return
 
     def lifecycleShutdown(self):
+        """
+        Shutdown nav2 lifecycle system
+        """
         self.info('Shutting down lifecycle nodes based on lifecycle_manager.')
-        srvs = self.get_service_names_and_types()
-        for srv in srvs:
-            if srv[1][0] == 'nav2_msgs/srv/ManageLifecycleNodes':
-                srv_name = srv[0]
+        for srv_name, srv_type in self.get_service_names_and_types():
+            if srv_type[0] == 'nav2_msgs/srv/ManageLifecycleNodes':
                 self.info('Shutting down ' + srv_name)
                 mgr_client = self.create_client(ManageLifecycleNodes, srv_name)
                 while not mgr_client.wait_for_service(timeout_sec=1.0):
@@ -354,7 +402,7 @@ class BasicNavigator(Node):
 
         req = GetState.Request()
         state = 'unknown'
-        while (state != 'active'):
+        while state != 'active':
             self.debug('Getting ' + node_name + ' state...')
             future = state_client.call_async(req)
             rclpy.spin_until_future_complete(self, future)

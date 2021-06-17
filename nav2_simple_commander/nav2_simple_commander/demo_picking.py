@@ -83,7 +83,7 @@ def main():
     # Simply print information for workers on the robot's ETA for the demonstation
     i = 0
     while not navigator.isNavComplete():
-        i = i + 1
+        i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
             print('Estimated time of arrival at ' + request_item_location +

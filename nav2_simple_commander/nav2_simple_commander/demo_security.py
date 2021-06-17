@@ -74,7 +74,7 @@ def main():
         # Simply print ETA for the demonstation
         i = 0
         while not navigator.isNavComplete():
-            i = i + 1
+            i += 1
             feedback = navigator.getFeedback()
             if feedback and i % 5 == 0:
                 print('Estimated time to complete current route: ' + '{0:.0f}'.format(

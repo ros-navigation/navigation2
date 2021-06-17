@@ -7,8 +7,6 @@
   <maintainer email="stevenmacenski@gmail.com">steve</maintainer>
   <license>Apache-2.0</license>
 
-  <depend>aws_robomaker_small_warehouse_world</depend>
-
   <exec_depend>python-enum</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
