@@ -13,20 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
 from copy import deepcopy
 
 from geometry_msgs.msg import PoseStamped
-from rclpy.duration import Duration
+from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
 import rclpy
 
-from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
-
-'''
+"""
 Basic stock inspection demo. In this demonstration, the expectation
 is that there are cameras or RFID sensors mounted on the robots
 collecting information about stock quantity and location.
-'''
+"""
+
+
 def main():
     rclpy.init()
 
@@ -68,7 +67,6 @@ def main():
         inspection_pose.pose.position.x = pt[0]
         inspection_pose.pose.position.y = pt[1]
         inspection_points.append(deepcopy(inspection_pose))
-    nav_start = navigator.get_clock().now()
     navigator.followWaypoints(inspection_points)
 
     # Do something during our route (e.x. AI to analyze stock information or upload to the cloud)

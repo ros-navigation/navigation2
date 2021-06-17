@@ -13,35 +13,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
-from copy import deepcopy
-
 from geometry_msgs.msg import PoseStamped
-from rclpy.duration import Duration
-import rclpy
-
 from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
+
+import rclpy
+from rclpy.duration import Duration
+
 
 # Shelf positions for picking
 shelf_positions = {
-    "shelf_A": [-3.829, -7.604],
-    "shelf_B": [-3.791, -3.287],
-    "shelf_C": [-3.791, 1.254],
-    "shelf_D": [-3.24, 5.861]}
+    'shelf_A': [-3.829, -7.604],
+    'shelf_B': [-3.791, -3.287],
+    'shelf_C': [-3.791, 1.254],
+    'shelf_D': [-3.24, 5.861]}
 
 # Shipping destination for picked products
 shipping_destinations = {
-    "recycling": [-0.205, 7.403],
-    "pallet_jack7": [-0.073, -8.497],
-    "conveyer_432": [6.217, 2.153],
-    "frieght_bay_3": [-6.349, 9.147]}
+    'recycling': [-0.205, 7.403],
+    'pallet_jack7': [-0.073, -8.497],
+    'conveyer_432': [6.217, 2.153],
+    'frieght_bay_3': [-6.349, 9.147]}
 
-'''
+"""
 Basic item picking demo. In this demonstration, the expectation
 is that there is a person at the item shelf to put the item on the robot
 and at the pallet jack to remove it
 (probably with some kind of button for 'got item, robot go do next task').
-'''
+"""
+
+
 def main():
     # Recieved virtual request for picking item at Shelf A and bring to
     # worker at the pallet jack 7 for shipping. This request would
@@ -88,7 +88,7 @@ def main():
         if feedback and i % 5 == 0:
             print('Estimated time of arrival at ' + request_item_location +
                   ' for worker: ' + '{0:.0f}'.format(
-                  Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
+                      Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
                   + ' seconds.')
 
     result = navigator.getResult()

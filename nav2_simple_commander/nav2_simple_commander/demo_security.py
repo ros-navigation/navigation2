@@ -13,20 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
 from copy import deepcopy
 
 from geometry_msgs.msg import PoseStamped
-from rclpy.duration import Duration
-import rclpy
-
 from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
 
-'''
+import rclpy
+from rclpy.duration import Duration
+
+
+"""
 Basic security route patrol demo. In this demonstration, the expectation
 is that there are security cameras mounted on the robots recording or being
 watched live by security staff.
-'''
+"""
+
+
 def main():
     rclpy.init()
 

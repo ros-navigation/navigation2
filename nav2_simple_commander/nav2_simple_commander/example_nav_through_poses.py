@@ -13,17 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
-
 from geometry_msgs.msg import PoseStamped
-from rclpy.duration import Duration
-import rclpy
-
 from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
+import rclpy
+from rclpy.duration import Duration
 
-'''
+"""
 Basic navigation demo to go to poses.
-'''
+"""
+
+
 def main():
     rclpy.init()
 
