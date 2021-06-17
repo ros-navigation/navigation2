@@ -60,9 +60,32 @@ public:
   }
 
   /**
-    * @brief  Explicitly define copy assignment operator for Observation as it has a user-declared destructor
-    */
-  Observation & operator=(const Observation &) = default;
+  * @brief  Copy assignment operator
+  * @param obs The observation to copy
+  */
+  Observation & operator=(const Observation & obs){
+      origin_ = obs.origin_;
+      cloud_ = new sensor_msgs::msg::PointCloud2(*(obs.cloud_));
+      obstacle_range_ = obs.obstacle_range_;
+      raytrace_range_ = obs.raytrace_range_;
+      
+      return *this;
+  }
+
+  /**
+  * @brief  Move assignment operator
+  * @param obs The observation to move
+  */
+  Observation & operator=(Observation && obs){
+      origin_ = std::move(obs.origin_);
+      cloud_ = std::move(obs.cloud_);
+      raytrace_range_ = std::move(obs.raytrace_range_);
+      obstacle_range_ = std::move(obs.obstacle_range_);
+      
+      obs.cloud_ = nullptr; // Prevents data release in the destructor
+      
+      return *this;
+  }
 
   /**
    * @brief  Creates an observation from an origin point and a point cloud
@@ -89,6 +112,17 @@ public:
   {
   }
 
+  /**
+   * @brief  Move constructor
+   * @param obs The observation to move
+   */
+  Observation(Observation && obs)
+  : origin_(std::move(obs.origin_)), cloud_(std::move(obs.cloud_)),
+    obstacle_range_(std::move(obs.obstacle_range_)), raytrace_range_(std::move(obs.raytrace_range_))
+  {
+      obs.cloud_ = nullptr; // Prevents data release in the destructor
+  }
+  
   /**
    * @brief  Creates an observation from a point cloud
    * @param cloud The point cloud of the observation
