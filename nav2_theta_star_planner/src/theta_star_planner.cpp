@@ -49,7 +49,7 @@ void ThetaStarPlanner::configure(
   node->get_parameter(name_ + ".w_euc_cost", planner_->w_euc_cost_);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name_ + ".w_traversal_cost", rclcpp::ParameterValue(5.0));
+    node, name_ + ".w_traversal_cost", rclcpp::ParameterValue(2.0));
   node->get_parameter(name_ + ".w_traversal_cost", planner_->w_traversal_cost_);
 
   nav2_util::declare_parameter_if_not_declared(
@@ -87,6 +87,7 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   auto stop_time = std::chrono::steady_clock::now();
   auto dur = std::chrono::duration_cast<std::chrono::microseconds>(stop_time - start_time);
   RCLCPP_DEBUG(logger_, "the time taken is : %i", static_cast<int>(dur.count()));
+  RCLCPP_DEBUG(logger_, "the nodes_opened are:  %i", planner_->nodes_opened);
   return global_path;
 }
 

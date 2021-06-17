@@ -19,8 +19,8 @@ namespace theta_star
 {
 
 ThetaStar::ThetaStar()
-: w_traversal_cost_(1.2),
-  w_euc_cost_(2.5),
+: w_traversal_cost_(1.0),
+  w_euc_cost_(2.0),
   w_heuristic_cost_(1.0),
   how_many_corners_(8),
   size_x_(0),
@@ -48,10 +48,11 @@ bool ThetaStar::generatePath(std::vector<coordsW> & raw_path)
   addToNodesData(index_generated_);
   double src_g_cost = getTraversalCost(src_.x, src_.y), src_h_cost = getHCost(src_.x, src_.y);
   nodes_data_[index_generated_] =
-  {src_.x, src_.y, src_g_cost, src_h_cost, &nodes_data_[index_generated_], true, src_g_cost + src_h_cost};
+  {src_.x, src_.y, src_g_cost, src_h_cost, &nodes_data_[index_generated_], true,
+    src_g_cost + src_h_cost};
   queue_.push({&nodes_data_[index_generated_]});
   addIndex(src_.x, src_.y, &nodes_data_[index_generated_]);
-  tree_node* curr_data = &nodes_data_[index_generated_];
+  tree_node * curr_data = &nodes_data_[index_generated_];
   index_generated_++;
   nodes_opened = 0;
 
@@ -102,7 +103,7 @@ void ThetaStar::resetParent(tree_node * curr_data)
 void ThetaStar::setNeighbors(const tree_node * curr_data)
 {
   int mx, my;
-  tree_node* m_id = NULL;
+  tree_node * m_id = NULL;
   double g_cost, h_cost, cal_cost;
 
   for (int i = 0; i < how_many_corners_; i++) {
@@ -156,7 +157,7 @@ void ThetaStar::backtrace(std::vector<coordsW> & raw_points, const tree_node * c
     costmap_->mapToWorld(curr_n->x, curr_n->y, world.x, world.y);
     path_rev.push_back(world);
     if (path_rev.size() > 1) {
-			curr_n = curr_n->parent_id;
+      curr_n = curr_n->parent_id;
     }
   } while (curr_n->parent_id != curr_n);
   costmap_->mapToWorld(curr_n->x, curr_n->y, world.x, world.y);
@@ -176,7 +177,7 @@ bool ThetaStar::losCheck(
 
   int cx, cy;
   int dy = abs(y1 - y0), dx = abs(x1 - x0), f = 0;
-  int sx, sy;  
+  int sx, sy;
   sx = x1 > x0 ? 1 : -1;
   sy = y1 > y0 ? 1 : -1;
 

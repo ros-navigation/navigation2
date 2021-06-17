@@ -54,7 +54,6 @@ struct comp
   }
 };
 
-// TODO (Anshu-man567) : Update the doc down below
 namespace theta_star
 {
 class ThetaStar
@@ -73,9 +72,6 @@ public:
   int how_many_corners_;
   /// the x-directional and y-directional lengths of the map respectively
   int size_x_, size_y_;
-
-  // TODO (Anshu-man567) : Delete it after use
-  rclcpp::Logger logger_{rclcpp::get_logger("ThetaStarPlanner")};
 
   ThetaStar();
 
@@ -114,7 +110,6 @@ public:
     return !(isSafe(src_.x, src_.y)) || !(isSafe(dst_.x, dst_.y));
   }
 
-  /// TODO (Anshu-man567): Remove this!!!!!!
 	int nodes_opened = 0;
 
 protected:
