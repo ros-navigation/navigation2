@@ -26,6 +26,7 @@ enum class MotionModel
   MOORE = 2,
   DUBIN = 3,
   REEDS_SHEPP = 4,
+  STATE_LATTICE = 5,
 };
 
 inline std::string toString(const MotionModel & n)
@@ -39,6 +40,8 @@ inline std::string toString(const MotionModel & n)
       return "Dubin";
     case MotionModel::REEDS_SHEPP:
       return "Reeds-Shepp";
+    case MotionModel::STATE_LATTICE:
+      return "State Lattice";
     default:
       return "Unknown";
   }
@@ -54,16 +57,17 @@ inline MotionModel fromString(const std::string & n)
     return MotionModel::DUBIN;
   } else if (n == "REEDS_SHEPP") {
     return MotionModel::REEDS_SHEPP;
+  } else if (n == "STATE_LATTICE") {
+    return MotionModel::STATE_LATTICE;
   } else {
     return MotionModel::UNKNOWN;
   }
 }
 
-const float UNKNOWN = 255;
-const float OCCUPIED = 254;
-const float INSCRIBED = 253;
-const float MAX_NON_OBSTACLE = 252;
-const float POSSIBLY_INSCRIBED = 128;
+const float UNKNOWN = 255.0;
+const float OCCUPIED = 254.0;
+const float INSCRIBED = 253.0;
+const float MAX_NON_OBSTACLE = 252.0;
 const float FREE = 0;
 
 }  // namespace nav2_smac_planner

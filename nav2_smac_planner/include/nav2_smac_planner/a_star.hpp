@@ -27,22 +27,13 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 
 #include "nav2_smac_planner/node_2d.hpp"
-#include "nav2_smac_planner/node_se2.hpp"
+#include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/node_basic.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"
 
 namespace nav2_smac_planner
 {
-
-inline double squaredDistance(
-  const Eigen::Vector2d & p1,
-  const Eigen::Vector2d & p2)
-{
-  const double & dx = p1[0] - p2[0];
-  const double & dy = p1[1] - p2[1];
-  return hypot(dx, dy);
-}
 
 /**
  * @class nav2_smac_planner::AStarAlgorithm
@@ -60,6 +51,27 @@ public:
   typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef typename NodeVector::iterator NeighborIterator;
   typedef std::function<bool (const unsigned int &, NodeT * &)> NodeGetter;
+
+  /**
+   * @struct nav2_smac_planner::AnalyticExpansionNodes
+   * @brief Analytic expansion nodes and associated metadata
+   */
+
+  struct AnalyticExpansionNode
+  {
+    AnalyticExpansionNode(
+      NodePtr & node_in,
+      Coordinates & initial_coords_in,
+      Coordinates & proposed_coords_in)
+    : node(node_in), initial_coords(initial_coords_in), proposed_coords(proposed_coords_in)
+    {}
+
+    NodePtr node;
+    Coordinates initial_coords;
+    Coordinates proposed_coords;
+  };
+
+  typedef std::vector<AnalyticExpansionNode> AnalyticExpansionNodes;
 
   /**
    * @struct nav2_smac_planner::NodeComparator
@@ -97,7 +109,9 @@ public:
   void initialize(
     const bool & allow_unknown,
     int & max_iterations,
-    const int & max_on_approach_iterations);
+    const int & max_on_approach_iterations,
+    const float & lookup_table_size,
+    const unsigned int & dim_3_size);
 
   /**
    * @brief Creating path from given costmap, start, and goal
@@ -109,18 +123,10 @@ public:
   bool createPath(CoordinateVector & path, int & num_iterations, const float & tolerance);
 
   /**
-   * @brief Create the graph based on the node type. For 2D nodes, a cost grid.
-   *   For 3D nodes, a SE2 grid without cost info as needs collision detector for footprint.
-   * @param x The total number of nodes in the X direction
-   * @param y The total number of nodes in the X direction
-   * @param dim_3 The total number of nodes in the theta or Z direction
-   * @param costmap Costmap to convert into the graph
+   * @brief Sets the collision checker to use
+   * @param collision_checker Collision checker to use for checking state validity
    */
-  void createGraph(
-    const unsigned int & x,
-    const unsigned int & y,
-    const unsigned int & dim_3,
-    nav2_costmap_2d::Costmap2D * & costmap);
+  void setCollisionChecker(GridCollisionChecker * collision_checker);
 
   /**
    * @brief Set the goal for planning, as a node index
@@ -143,29 +149,6 @@ public:
     const unsigned int & mx,
     const unsigned int & my,
     const unsigned int & dim_3);
-
-  /**
-   * @brief Set the footprint
-   * @param footprint footprint of robot
-   * @param use_radius Whether this footprint is a circle with radius
-   */
-  void setFootprint(nav2_costmap_2d::Footprint footprint, bool use_radius);
-
-  /**
-   * @brief Perform an analytic path expansion to the goal
-   * @param node The node to start the analytic path from
-   * @param getter The function object that gets valid nodes from the graph
-   * @return Node pointer to goal node if successful, else return nullptr
-   */
-  NodePtr getAnalyticPath(const NodePtr & node, const NodeGetter & getter);
-
-  /**
-   * @brief Set the starting pose for planning, as a node index
-   * @param node Node pointer to the goal node to backtrace
-   * @param path Reference to a vector of indicies of generated path
-   * @return whether the path was able to be backtraced
-   */
-  bool backtracePath(NodePtr & node, CoordinateVector & path);
 
   /**
    * @brief Get maximum number of iterations to plan
@@ -227,7 +210,7 @@ protected:
    * @param cost The cost to sort into the open set of the node
    * @param node Node pointer reference to add to open set
    */
-  inline void addNode(const float cost, NodePtr & node);
+  inline void addNode(const float & cost, NodePtr & node);
 
   /**
    * @brief Adds node to graph
@@ -244,19 +227,12 @@ protected:
   inline bool isGoal(NodePtr & node);
 
   /**
-   * @brief Get cost of traversal between nodes
-   * @param current_node Pointer to current node
-   * @param new_node Pointer to new node
-   * @return Reference traversal cost between the nodes
+   * @brief Set the starting pose for planning, as a node index
+   * @param node Node pointer to the goal node to backtrace
+   * @param path Reference to a vector of indicies of generated path
+   * @return whether the path was able to be backtraced
    */
-  inline float getTraversalCost(NodePtr & current_node, NodePtr & new_node);
-
-  /**
-   * @brief Get total cost of traversal for a node
-   * @param node Pointer to current node
-   * @return Reference accumulated cost between the nodes
-   */
-  inline float & getAccumulatedCost(NodePtr & node);
+  bool backtracePath(NodePtr node, CoordinateVector & path);
 
   /**
    * @brief Get cost of heuristic of node
@@ -287,9 +263,25 @@ protected:
    * @return Node pointer reference to goal node if successful, else
    * return nullptr
    */
-  inline NodePtr tryAnalyticExpansion(
+  NodePtr tryAnalyticExpansion(
     const NodePtr & current_node,
     const NodeGetter & getter, int & iterations, int & best_cost);
+
+  /**
+   * @brief Perform an analytic path expansion to the goal
+   * @param node The node to start the analytic path from
+   * @param getter The function object that gets valid nodes from the graph
+   * @return A set of analytically expanded nodes to the goal from current node, if possible
+   */
+  AnalyticExpansionNodes getAnalyticPath(const NodePtr & node, const NodeGetter & getter);
+
+  /**
+   * @brief Takes final analytic expansion and appends to current expanded node
+   * @param node The node to start the analytic path from
+   * @param expanded_nodes Expanded nodes to append to end of current search path
+   * @return Node pointer to goal node if successful, else return nullptr
+   */
+  NodePtr setAnalyticPath(const NodePtr & node, const AnalyticExpansionNodes & expanded_nodes);
 
   bool _traverse_unknown;
   int _max_iterations;
@@ -310,9 +302,7 @@ protected:
   MotionModel _motion_model;
   NodeHeuristicPair _best_heuristic_node;
 
-  GridCollisionChecker _collision_checker;
-  nav2_costmap_2d::Footprint _footprint;
-  bool _is_radius_footprint;
+  GridCollisionChecker * _collision_checker;
   nav2_costmap_2d::Costmap2D * _costmap;
 };
 

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_SMAC_PLANNER__OPTIONS_HPP_
-#define NAV2_SMAC_PLANNER__OPTIONS_HPP_
+#ifndef DEPRECATED__OPTIONS_HPP_
+#define DEPRECATED__OPTIONS_HPP_
 
 #include <string>
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -204,4 +204,4 @@ struct OptimizerParams
 
 }  // namespace nav2_smac_planner
 
-#endif  // NAV2_SMAC_PLANNER__OPTIONS_HPP_
+#endif  // DEPRECATED__OPTIONS_HPP_
