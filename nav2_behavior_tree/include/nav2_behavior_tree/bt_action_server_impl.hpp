@@ -60,7 +60,7 @@ BtActionServer<ActionT>::BtActionServer(
     node->declare_parameter("default_server_timeout", 20);
   }
   if (!node->has_parameter("enable_groot_monitoring")) {
-    node->declare_parameter("enable_groot_monitoring", true);
+    node->declare_parameter("enable_groot_monitoring", false);
   }
   if (!node->has_parameter("groot_zmq_publisher_port")) {
     node->declare_parameter("groot_zmq_publisher_port", 1666);
