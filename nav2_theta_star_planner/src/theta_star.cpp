@@ -103,7 +103,7 @@ void ThetaStar::resetParent(tree_node * curr_data)
 void ThetaStar::setNeighbors(const tree_node * curr_data)
 {
   int mx, my;
-  tree_node * m_id = NULL;
+  tree_node * m_id = nullptr;
   double g_cost, h_cost, cal_cost;
 
   for (int i = 0; i < how_many_corners_; i++) {
@@ -123,7 +123,7 @@ void ThetaStar::setNeighbors(const tree_node * curr_data)
 
     m_id = getIndex(mx, my);
 
-    if (m_id == NULL) {
+    if (m_id == nullptr) {
       addToNodesData(index_generated_);
       m_id = &nodes_data_[index_generated_];
       addIndex(mx, my, m_id);

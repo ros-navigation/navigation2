@@ -38,12 +38,12 @@ struct coordsW
 
 struct tree_node
 {
-	int x, y;
-	double g = INF_COST;
-	double h = INF_COST;
-	const tree_node* parent_id = NULL;
-	bool is_in_queue = false;
-	double f = INF_COST;
+  int x, y;
+  double g = INF_COST;
+  double h = INF_COST;
+  const tree_node * parent_id = nullptr;
+  bool is_in_queue = false;
+  double f = INF_COST;
 };
 
 struct comp
@@ -110,14 +110,14 @@ public:
     return !(isSafe(src_.x, src_.y)) || !(isSafe(dst_.x, dst_.y));
   }
 
-	int nodes_opened = 0;
+  int nodes_opened = 0;
 
 protected:
   /// for the coordinates (x,y), it stores at node_position_[size_x_ * y + x],
   /// the pointer to the location at which the data of the node is present in nodes_data_
   /// it is initialised with size_x_ * size_y_ elements
   /// and its number of elements increases to account for a change in map size
-  std::vector<tree_node*> node_position_;
+  std::vector<tree_node *> node_position_;
 
   /// the vector nodes_data_ stores the coordinates, costs and index of the parent node,
   /// and whether or not the node is present in queue_, for all the nodes searched
@@ -126,7 +126,7 @@ protected:
   std::vector<tree_node> nodes_data_;
 
   /// this is the priority queue (open_list) to select the next node to be expanded
-  std::priority_queue<tree_node*, std::vector<tree_node*>, comp> queue_;
+  std::priority_queue<tree_node *, std::vector<tree_node *>, comp> queue_;
 
   /// it is a counter like variable used to generate consecutive indices
   /// such that the data for all the nodes (in open and closed lists) could be stored
@@ -166,14 +166,16 @@ protected:
    * @param sl_cost is used to return the cost thus incurred
    * @return true if a line of sight exists between the points
    */
-  bool losCheck(const int & x0, const int & y0, const int & x1, const int & y1, double & sl_cost) const;
+  bool losCheck(
+    const int & x0, const int & y0, const int & x1, const int & y1,
+    double & sl_cost) const;
 
-	/**
-   * @brief it returns the path by backtracking from the goal to the start, by using their parent nodes
-   * @param raw_points used to return the path  thus found
-   * @param curr_id sends in the index of the goal coordinate, as stored in nodes_position
-   */
-	void backtrace(std::vector<coordsW> & raw_points, const tree_node * curr_n) const;
+  /**
+* @brief it returns the path by backtracking from the goal to the start, by using their parent nodes
+* @param raw_points used to return the path  thus found
+* @param curr_id sends in the index of the goal coordinate, as stored in nodes_position
+*/
+  void backtrace(std::vector<coordsW> & raw_points, const tree_node * curr_n) const;
 
   /**
    * @brief it is an overloaded function to ease the cost calculations while performing the LOS check
@@ -196,9 +198,9 @@ protected:
    *           the actual costmap cost by 0.9 to keep the output in the range of [25, 255)
    */
   inline double getCost(const int & cx, const int & cy) const
-	{
-  	return 25 + 0.9*costmap_->getCost(cx, cy);
-	}
+  {
+    return 25 + 0.9 * costmap_->getCost(cx, cy);
+  }
 
   /**
    * @brief for the point(cx, cy), its traversal cost is calculated by
@@ -268,7 +270,7 @@ protected:
    * @brief retrieves the pointer of the location at which the data of the point(cx, cy) is stored in nodes_data
    * @return id_this is the pointer to that location
    */
-  inline tree_node* getIndex(const int & cx, const int & cy)
+  inline tree_node * getIndex(const int & cx, const int & cy)
   {
     return node_position_[size_x_ * cy + cx];
   }
@@ -296,7 +298,7 @@ protected:
    */
   void clearQueue()
   {
-    queue_ = std::priority_queue<tree_node*, std::vector<tree_node*>, comp>();
+    queue_ = std::priority_queue<tree_node *, std::vector<tree_node *>, comp>();
   }
 };
 }   //  namespace theta_star

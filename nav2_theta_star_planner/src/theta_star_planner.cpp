@@ -86,7 +86,7 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   getPlan(global_path);
   auto stop_time = std::chrono::steady_clock::now();
   auto dur = std::chrono::duration_cast<std::chrono::microseconds>(stop_time - start_time);
-  RCLCPP_DEBUG(logger_, "the time taken is : %i", static_cast<int>(dur.count()));
+  RCLCPP_INFO(logger_, "the time taken for pointy is : %i", static_cast<int>(dur.count()));
   RCLCPP_DEBUG(logger_, "the nodes_opened are:  %i", planner_->nodes_opened);
   return global_path;
 }
