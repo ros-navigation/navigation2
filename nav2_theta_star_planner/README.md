@@ -2,12 +2,12 @@
 The Theta Star Planner is a global planning plugin meant to be used with the Nav2 Planner Server. The `nav2_theta_star_planner` implements a highly optimized version of the Theta\* Planner (specifically the [Lazy Theta\* P variant](http://idm-lab.org/bib/abstracts/papers/aaai10b.pdf)) meant to plan any-angle paths using A\*. The planner supports differential-drive and omni-directional robots.
 
 ## Features 
+- The planner uses A\* search along with line of sight (LOS) checks to form any-angle paths thus avoiding zig-zag paths that may be present in the usual implementation of A\*
+- As it also considers the costmap traversal cost during execution (along with LOS checks) it tends to smoothen the paths automatically, thus mitigating the need to smoothen the path (The presence of sharp turns depends on the resolution of the map, and it decreases as the map resolution increases)
 - Uses the costs from the costmap to penalise high cost regions
-- Is well suited for smaller robots of the omni-directional and differential drive kind
-- As it considers the costmap traversal cost during execution it tends to smoothen the paths automatically, thus mitigating the need to smoothen the path. (The presence of sharp turns depends on the resolution of the map, and it decreases as the map resolution increases.)
 - Allows to control the path behavior to either be any angle directed or to be in the middle of the spaces
-- The planner uses A\* search along with line of sight checks to form any-angle paths thus avoiding zig-zag paths that may be present in the usual implementation of A\*
-- The algorithmic part of the planner has been segregated from the plugin part to allow for reusability.
+- Is well suited for smaller robots of the omni-directional and differential drive kind
+- The algorithmic part of the planner has been segregated from the plugin part to allow for reusability
 
 ## Metrics
 In general the planner is capable of planning for a map of size (566  x 608) from 30ms to 80ms (averaged value, it might exceed the stated time limits here for some iterations depending on how the parameters have been tuned).
