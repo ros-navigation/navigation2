@@ -64,11 +64,11 @@ planner_server:
     planner_plugin_ids: ["GridBased"]
     GridBased:
       how_many_corners: 8
-      w_euc_cost: 4.0
-      w_traversal_cost: 7.0
+      w_euc_cost: 1.0
+      w_traversal_cost: 2.0
       w_heuristic_cost: 1.0
 ```
-Do note that the `global_costmap`'s `inflation_layer` values recommended for the above values of the parameter are - `cost_scaling_factor:1.0`, `inflation_radius: 5.5`
+Do note that the `global_costmap`'s `inflation_layer` values recommended for the above values of the parameter are - `cost_scaling_factor:4.0`, `inflation_radius: 5.5`
 
 ## Usage Notes
 
