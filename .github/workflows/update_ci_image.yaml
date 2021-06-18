@@ -99,6 +99,8 @@ jobs:
           cache-from: type=registry,ref=ghcr.io/ros-planning/navigation2:main
           cache-to: type=inline
           target: builder
+          build-args: |
+            FROM_STAGE=integration
           tags: |
             ghcr.io/ros-planning/navigation2:main
             ghcr.io/ros-planning/navigation2:main-${{ steps.config.outputs.timestamp }}

@@ -14,9 +14,8 @@ ARG OVERLAY_WS=/opt/overlay_ws
 # multi-stage for development
 FROM $FROM_IMAGE AS development
 
-# multi-stage for testing
-# https://github.com/dependabot/dependabot-core/issues/2057
-FROM osrf/ros2:testing-20210605003201 AS testing
+# multi-stage for integration
+FROM osrf/ros2:testing-20210605003201 AS integration
 
 # multi-stage for caching
 FROM $FROM_STAGE AS cacher
