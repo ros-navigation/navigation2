@@ -23,10 +23,10 @@
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_smac_planner/node_se2.hpp"
+#include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
-#include "nav2_smac_planner/smac_planner.hpp"
+#include "nav2_smac_planner/smac_planner_hybrid.hpp"
 #include "nav2_smac_planner/smac_planner_2d.hpp"
 
 class RclCppFixture

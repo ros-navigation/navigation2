@@ -48,18 +48,24 @@ void CostmapDownsampler::on_configure(
     _downsampled_size_x, _downsampled_size_y, _downsampled_resolution,
     _costmap->getOriginX(), _costmap->getOriginY(), UNKNOWN);
 
-  _downsampled_costmap_pub = std::make_unique<nav2_costmap_2d::Costmap2DPublisher>(
-    node, _downsampled_costmap.get(), global_frame, topic_name, false);
+  if (!node.expired()) {
+    _downsampled_costmap_pub = std::make_unique<nav2_costmap_2d::Costmap2DPublisher>(
+      node, _downsampled_costmap.get(), global_frame, topic_name, false);
+  }
 }
 
 void CostmapDownsampler::on_activate()
 {
-  _downsampled_costmap_pub->on_activate();
+  if (_downsampled_costmap_pub) {
+    _downsampled_costmap_pub->on_activate();
+  }
 }
 
 void CostmapDownsampler::on_deactivate()
 {
-  _downsampled_costmap_pub->on_deactivate();
+  if (_downsampled_costmap_pub) {
+    _downsampled_costmap_pub->on_deactivate();
+  }
 }
 
 void CostmapDownsampler::on_cleanup()
@@ -90,7 +96,9 @@ nav2_costmap_2d::Costmap2D * CostmapDownsampler::downsample(
     }
   }
 
-  _downsampled_costmap_pub->publishCostmap();
+  if (_downsampled_costmap_pub) {
+    _downsampled_costmap_pub->publishCostmap();
+  }
   return _downsampled_costmap.get();
 }
 
