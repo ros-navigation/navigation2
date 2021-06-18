@@ -95,8 +95,8 @@ public:
   }
 
   /**
-  * @brief initialises the values of the start and goal points
-  */
+   * @brief initialises the values of the start and goal points
+   */
   void setStartAndGoal(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal);
@@ -171,10 +171,10 @@ protected:
     double & sl_cost) const;
 
   /**
-* @brief it returns the path by backtracking from the goal to the start, by using their parent nodes
-* @param raw_points used to return the path  thus found
-* @param curr_id sends in the index of the goal coordinate, as stored in nodes_position
-*/
+   * @brief it returns the path by backtracking from the goal to the start, by using their parent nodes
+   * @param raw_points used to return the path  thus found
+   * @param curr_id sends in the index of the goal coordinate, as stored in nodes_position
+   */
   void backtrace(std::vector<coordsW> & raw_points, const tree_node * curr_n) const;
 
   /**
