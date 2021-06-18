@@ -3,7 +3,7 @@ The Theta Star Planner is a global planning plugin meant to be used with the Nav
 
 ## Features 
 - The planner uses A\* search along with line of sight (LOS) checks to form any-angle paths thus avoiding zig-zag paths that may be present in the usual implementation of A\*
-- As it also considers the costmap traversal cost during execution (along with LOS checks) it tends to smoothen the paths automatically, thus mitigating the need to smoothen the path (The presence of sharp turns depends on the resolution of the map, and it decreases as the map resolution increases)
+- As it also considers the costmap traversal cost during execution it tends to smoothen the paths automatically, thus mitigating the need to smoothen the path (The presence of sharp turns depends on the resolution of the map, and it decreases as the map resolution increases)
 - Uses the costs from the costmap to penalise high cost regions
 - Allows to control the path behavior to either be any angle directed or to be in the middle of the spaces
 - Is well suited for smaller robots of the omni-directional and differential drive kind
