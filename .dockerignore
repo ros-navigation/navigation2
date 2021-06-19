@@ -2,7 +2,7 @@
 # Repo
 
 .circleci/
-.dockerhub/
+.github/
 .git/
 .github/
 .dockerignore
