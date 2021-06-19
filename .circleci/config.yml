@@ -436,7 +436,7 @@ _environments:
 executors:
   debug_exec:
     docker:
-      - image: ghcr.io/ros-planning/navigation2:main
+      - image: ghcr.io/ruffsl/navigation2:main
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
@@ -444,7 +444,7 @@ executors:
       OVERLAY_MIXINS: "debug ccache coverage-gcc"
   release_exec:
     docker:
-      - image: ghcr.io/ros-planning/navigation2:main
+      - image: ghcr.io/ruffsl/navigation2:main
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
