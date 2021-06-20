@@ -57,6 +57,7 @@ fastcov --lcov \
   --exclude test/ \
   --include $INCLUDE_PACKAGES \
   --process-gcno \
+  --validate-sources \
   --output ${LCOVDIR}/total_coverage.info
 
 if [ $COVERAGE_REPORT_VIEW = codecovio ]; then
