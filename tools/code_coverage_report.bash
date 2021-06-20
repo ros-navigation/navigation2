@@ -56,6 +56,7 @@ fastcov --lcov \
   -d build \
   --exclude test/ \
   --include $INCLUDE_PACKAGES \
+  --branch-coverage \
   --process-gcno \
   --validate-sources \
   --dump-statistic \
