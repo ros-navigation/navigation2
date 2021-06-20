@@ -52,11 +52,11 @@ INCLUDE_PACKAGES=$(
   | xargs)
 
 # Capture executed code data.
-fastcov \
+fastcov --lcov \
   -d build \
   --exclude test/ \
   --include $INCLUDE_PACKAGES \
-  --output ${LCOVDIR}/total_coverage.info --lcov
+  --output ${LCOVDIR}/total_coverage.info
 
 if [ $COVERAGE_REPORT_VIEW = codecovio ]; then
   curl -s https://codecov.io/bash > codecov
