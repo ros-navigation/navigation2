@@ -44,7 +44,7 @@ mkdir -p ${LCOVDIR}
 # - rviz plugins, which are not used for real navigation
 INCLUDE_PACKAGES=$(
   colcon list \
-    --paths-only \
+    --names-only \
     --packages-ignore-regex \
       ".*_msgs" \
       ".*_tests" \
