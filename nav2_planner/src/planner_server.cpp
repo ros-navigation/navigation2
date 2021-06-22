@@ -222,11 +222,13 @@ PlannerServer::computePlan()
 
     geometry_msgs::msg::PoseStamped start;
     if (!costmap_ros_->getRobotPose(start)) {
+      RCLCPP_INFO(get_logger(), "Failed to get robot pose in global frame.");
       action_server_->terminate_current();
       return;
     }
 
     if (action_server_->is_preempt_requested()) {
+      RCLCPP_INFO(get_logger(), "Goal was preempted.");
       goal = action_server_->accept_pending_goal();
     }
 
@@ -241,7 +243,7 @@ PlannerServer::computePlan()
       return;
     }
 
-    RCLCPP_DEBUG(
+    RCLCPP_INFO(
       get_logger(),
       "Found valid path of size %u to (%.2f, %.2f)",
       result->path.poses.size(), goal->pose.pose.position.x,

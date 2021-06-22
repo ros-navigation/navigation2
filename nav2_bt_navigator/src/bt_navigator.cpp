@@ -316,7 +316,11 @@ BtNavigator::navigateToPose()
 
     case nav2_behavior_tree::BtStatus::FAILED:
       RCLCPP_ERROR(get_logger(), "Navigation failed");
-      action_server_->terminate_current();
+      try {
+        action_server_->terminate_current();
+      } catch (const std::exception & ex) {
+        RCLCPP_ERROR(get_logger(), "Failed to terminate action after BT sent failed status: %s", ex.what());
+      }
       break;
 
     case nav2_behavior_tree::BtStatus::CANCELED:
