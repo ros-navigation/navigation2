@@ -103,7 +103,7 @@ def generate_launch_description():
     ])
 
 
-def main(argv=sys.argv[1:]):
+def main1(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
     test1_action = ExecuteProcess(
@@ -119,5 +119,26 @@ def main(argv=sys.argv[1:]):
     return lts.run(ls)
 
 
+def main2(argv=sys.argv[1:]):
+    ld = generate_launch_description()
+
+    test2_action = ExecuteProcess(
+        cmd=[os.path.join(os.getenv('TEST_DIR'), os.getenv('TESTER')),
+             '-r', '-200000.0', '-200000.0', '0.0', '2.0'],
+        name='tester_node',
+        output='screen')
+
+    lts = LaunchTestService()
+    lts.add_test_action(ld, test2_action)
+    ls = LaunchService(argv=argv)
+    ls.include_launch_description(ld)
+    return lts.run(ls)
+
+
 if __name__ == '__main__':
-    sys.exit(main())
+    result1 = main1()
+    result2 = main2()
+    if result1 is False or result2 is False:
+        sys.exit(False)
+    else:
+        sys.exit(True)
