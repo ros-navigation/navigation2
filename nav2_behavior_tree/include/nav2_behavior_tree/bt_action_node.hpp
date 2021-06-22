@@ -213,7 +213,7 @@ public:
       {
         RCLCPP_ERROR(
           node_->get_logger(),
-          "Failed to cancel action server for %s", action_name_.c_str());
+          "Failed to cancel action server \"%s\"", action_name_.c_str());
       }
     }
 
