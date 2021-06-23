@@ -64,9 +64,9 @@ public:
   }
 
   /**
-  * @brief  Copy assignment operator
-  * @param obs The observation to copy
-  */
+   * @brief  Copy assignment operator
+   * @param obs The observation to copy
+   */
   Observation & operator=(const Observation & obs)
   {
     origin_ = obs.origin_;
