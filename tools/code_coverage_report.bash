@@ -42,21 +42,30 @@ mkdir -p ${LCOVDIR}
 # - messages, which are auto generated files
 # - system tests, which are themselves all test artifacts
 # - rviz plugins, which are not used for real navigation
-INCLUDE_PACKAGES=$(
+EXCLUDE_PACKAGES=$(
   colcon list \
-    --paths-only \
-    --packages-ignore-regex \
+    --names-only \
+    --packages-select-regex \
       ".*_msgs" \
       ".*_tests" \
       ".*_rviz.*" \
   | xargs)
+INCLUDE_PACKAGES=$(
+  colcon list \
+    --names-only \
+    --packages-ignore \
+      $EXCLUDE_PACKAGES \
+  | xargs)
 
 # Capture executed code data.
-fastcov \
+fastcov --lcov \
   -d build \
-  --exclude test/ \
+  --exclude test/ $EXCLUDE_PACKAGES \
   --include $INCLUDE_PACKAGES \
-  --output ${LCOVDIR}/total_coverage.info --lcov
+  --process-gcno \
+  --validate-sources \
+  --dump-statistic \
+  --output ${LCOVDIR}/total_coverage.info
 
 if [ $COVERAGE_REPORT_VIEW = codecovio ]; then
   curl -s https://codecov.io/bash > codecov
