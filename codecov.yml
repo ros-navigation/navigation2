@@ -1,6 +1,6 @@
 fixes:
-  - "**/src/navigation2/::"
-  - "**/install/::"
+  - "src/navigation2/::"
+  - "install/::"
 
 ignore:
   - "*/**/test/*"  # ignore package test directories, e.g. nav2_dwb_controller/costmap_queue/tests
