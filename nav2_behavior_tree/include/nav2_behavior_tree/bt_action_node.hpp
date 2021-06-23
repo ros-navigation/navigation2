@@ -275,6 +275,7 @@ protected:
       );
       return BT::NodeStatus::FAILURE;
     }
+    return BT::NodeStatus::SUCCESS;
   }
 
   void increment_recovery_count()
