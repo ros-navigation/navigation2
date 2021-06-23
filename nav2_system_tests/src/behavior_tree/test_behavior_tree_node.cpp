@@ -54,6 +54,7 @@ public:
 
     const std::vector<std::string> plugin_libs = {
       "nav2_compute_path_to_pose_action_bt_node",
+      "nav2_compute_path_through_poses_action_bt_node",
       "nav2_follow_path_action_bt_node",
       "nav2_back_up_action_bt_node",
       "nav2_spin_action_bt_node",
@@ -76,8 +77,13 @@ public:
       "nav2_time_expired_condition_bt_node",
       "nav2_distance_traveled_condition_bt_node",
       "nav2_single_trigger_bt_node",
+      "nav2_is_battery_low_condition_bt_node",
+      "nav2_navigate_through_poses_action_bt_node",
+      "nav2_navigate_to_pose_action_bt_node",
+      "nav2_remove_passed_goals_action_bt_node",
       "nav2_planner_selector_bt_node",
-      "nav2_controller_selector_bt_node"
+      "nav2_controller_selector_bt_node",
+      "nav2_goal_checker_selector_bt_node"
     };
     for (const auto & p : plugin_libs) {
       factory_.registerFromPlugin(BT::SharedLibrary::getOSName(p));
@@ -104,7 +110,9 @@ public:
     // Put items on the blackboard
     blackboard->set<rclcpp::Node::SharedPtr>("node", node_);  // NOLINT
     blackboard->set<std::chrono::milliseconds>(
-      "server_timeout", std::chrono::milliseconds(10));  // NOLINT
+      "server_timeout", std::chrono::milliseconds(20));  // NOLINT
+    blackboard->set<std::chrono::milliseconds>(
+      "bt_loop_duration", std::chrono::milliseconds(10));  // NOLINT
     blackboard->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
     blackboard->set<bool>("initial_pose_received", false);  // NOLINT
     blackboard->set<int>("number_recoveries", 0);  // NOLINT
@@ -214,7 +222,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
   // Load behavior tree from file
   fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   bt_file /= "behavior_trees/";
-  bt_file /= "navigate_w_replanning_and_recovery.xml";
+  bt_file /= "navigate_to_pose_w_replanning_and_recovery.xml";
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
 
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
@@ -256,7 +264,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
   // Load behavior tree from file
   fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   bt_file /= "behavior_trees/";
-  bt_file /= "navigate_w_replanning_and_recovery.xml";
+  bt_file /= "navigate_to_pose_w_replanning_and_recovery.xml";
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
 
   // Set all action server to fail the first 100 times
@@ -312,7 +320,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
   // Load behavior tree from file
   fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   bt_file /= "behavior_trees/";
-  bt_file /= "navigate_w_replanning_and_recovery.xml";
+  bt_file /= "navigate_to_pose_w_replanning_and_recovery.xml";
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
 
   // Set ComputePathToPose and FollowPath action servers to fail for the first action
@@ -366,7 +374,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
   // Load behavior tree from file
   fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   bt_file /= "behavior_trees/";
-  bt_file /= "navigate_w_replanning_and_recovery.xml";
+  bt_file /= "navigate_to_pose_w_replanning_and_recovery.xml";
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
 
   // Set ComputePathToPose action server to fail for the first action
@@ -464,7 +472,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
   // Load behavior tree from file
   fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   bt_file /= "behavior_trees/";
-  bt_file /= "navigate_w_replanning_and_recovery.xml";
+  bt_file /= "navigate_to_pose_w_replanning_and_recovery.xml";
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
 
   // Set ComputePathToPose action server to fail for the first 2 actions
@@ -553,7 +561,7 @@ TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
   // Load behavior tree from file
   fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   bt_file /= "behavior_trees/";
-  bt_file /= "navigate_w_replanning_and_recovery.xml";
+  bt_file /= "navigate_to_pose_w_replanning_and_recovery.xml";
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
 
   // Set ComputePathToPose action server to fail for the first 2 actions

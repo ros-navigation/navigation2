@@ -35,8 +35,11 @@
  * Author: Alexey Merzlyakov
  *********************************************************************/
 
+#include <string>
+#include <memory>
+#include <algorithm>
 #include "tf2/convert.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"

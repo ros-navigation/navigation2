@@ -41,7 +41,7 @@
 #include "nav_2d_utils/conversions.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace nav_2d_utils
 {

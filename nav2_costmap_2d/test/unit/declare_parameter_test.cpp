@@ -65,10 +65,11 @@ TEST(DeclareParameter, useInvalidParameter)
 
   layer.initialize(&layers, "test_layer", &tf, node, nullptr, nullptr);
 
+  layer.declareParameter("test2", rclcpp::PARAMETER_STRING);
   try {
-    layer.declareParameter("test2", rclcpp::PARAMETER_STRING);
+    std::string val = node->get_parameter("test_layer.test2").as_string();
     FAIL() << "Incorrectly handling test_layer.test2 parameter which was not set";
-  } catch (rclcpp::exceptions::NoParameterOverrideProvided & ex) {
+  } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
     SUCCEED();
   }
 }

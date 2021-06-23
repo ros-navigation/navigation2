@@ -41,8 +41,8 @@ TEST(collision_footprint, test_basic)
 
   nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
 
-  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_);
-  collision_checker.setFootprint(footprint, false /*use footprint*/);
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_, 72);
+  collision_checker.setFootprint(footprint, false /*use footprint*/, 0.0);
   collision_checker.inCollision(5.0, 5.0, 0.0, false);
   float cost = collision_checker.getCost();
   EXPECT_NEAR(cost, 0.0, 0.001);
@@ -53,9 +53,9 @@ TEST(collision_footprint, test_point_cost)
 {
   nav2_costmap_2d::Costmap2D * costmap_ = new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0, 0, 0);
 
-  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_);
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_, 72);
   nav2_costmap_2d::Footprint footprint;
-  collision_checker.setFootprint(footprint, true /*radius / pointcose*/);
+  collision_checker.setFootprint(footprint, true /*radius / pointcose*/, 0.0);
 
   collision_checker.inCollision(5.0, 5.0, 0.0, false);
   float cost = collision_checker.getCost();
@@ -67,9 +67,9 @@ TEST(collision_footprint, test_world_to_map)
 {
   nav2_costmap_2d::Costmap2D * costmap_ = new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0, 0, 0);
 
-  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_);
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_, 72);
   nav2_costmap_2d::Footprint footprint;
-  collision_checker.setFootprint(footprint, true /*radius / point cost*/);
+  collision_checker.setFootprint(footprint, true /*radius / point cost*/, 0.0);
 
   unsigned int x, y;
 
@@ -94,7 +94,7 @@ TEST(collision_footprint, test_footprint_at_pose_with_movement)
 
   for (unsigned int i = 40; i <= 60; ++i) {
     for (unsigned int j = 40; j <= 60; ++j) {
-      costmap_->setCost(i, j, 0);
+      costmap_->setCost(i, j, 128);
     }
   }
 
@@ -113,12 +113,12 @@ TEST(collision_footprint, test_footprint_at_pose_with_movement)
 
   nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
 
-  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_);
-  collision_checker.setFootprint(footprint, false /*use footprint*/);
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_, 72);
+  collision_checker.setFootprint(footprint, false /*use footprint*/, 0.0);
 
   collision_checker.inCollision(50, 50, 0.0, false);
   float cost = collision_checker.getCost();
-  EXPECT_NEAR(cost, 0.0, 0.001);
+  EXPECT_NEAR(cost, 128.0, 0.001);
 
   collision_checker.inCollision(50, 49, 0.0, false);
   float up_value = collision_checker.getCost();
@@ -133,8 +133,7 @@ TEST(collision_footprint, test_footprint_at_pose_with_movement)
 TEST(collision_footprint, test_point_and_line_cost)
 {
   nav2_costmap_2d::Costmap2D * costmap_ = new nav2_costmap_2d::Costmap2D(
-    100, 100, 0.10000, 0, 0.0,
-    0.0);
+    100, 100, 0.10000, 0, 0.0, 128.0);
 
   costmap_->setCost(62, 50, 254);
   costmap_->setCost(39, 60, 254);
@@ -154,12 +153,12 @@ TEST(collision_footprint, test_point_and_line_cost)
 
   nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
 
-  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_);
-  collision_checker.setFootprint(footprint, false /*use footprint*/);
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_, 72);
+  collision_checker.setFootprint(footprint, false /*use footprint*/, 0.0);
 
   collision_checker.inCollision(50, 50, 0.0, false);
   float value = collision_checker.getCost();
-  EXPECT_NEAR(value, 0.0, 0.001);
+  EXPECT_NEAR(value, 128.0, 0.001);
 
   collision_checker.inCollision(49, 50, 0.0, false);
   float left_value = collision_checker.getCost();

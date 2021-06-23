@@ -39,7 +39,8 @@ public:
 
   typedef std::function<bool (typename ActionT::Goal::ConstSharedPtr)> OnGoalReceivedCallback;
   typedef std::function<void ()> OnLoopCallback;
-  typedef std::function<void ()> OnPreemptCallback;
+  typedef std::function<void (typename ActionT::Goal::ConstSharedPtr)> OnPreemptCallback;
+  typedef std::function<void (typename ActionT::Result::SharedPtr)> OnCompletionCallback;
 
   /**
    * @brief A constructor for nav2_behavior_tree::BtActionServer class
@@ -48,9 +49,11 @@ public:
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & action_name,
     const std::vector<std::string> & plugin_lib_names,
+    const std::string & default_bt_xml_filename,
     OnGoalReceivedCallback on_goal_received_callback,
     OnLoopCallback on_loop_callback,
-    OnPreemptCallback on_preempt_callback = nullptr);
+    OnPreemptCallback on_preempt_callback,
+    OnCompletionCallback on_completion_callback);
 
   /**
    * @brief A destructor for nav2_behavior_tree::BtActionServer class
@@ -84,12 +87,6 @@ public:
   bool on_cleanup();
 
   /**
-   * @brief Called when in shutdown state
-   * @return bool true on SUCCESS and false on FAILURE
-   */
-  bool on_shutdown();
-
-  /**
    * @brief Replace current BT with another one
    * @param bt_xml_filename The file containing the new BT, uses default filename if empty
    * @return bool true if the resulting BT correspond to the one in bt_xml_filename. false
@@ -116,6 +113,15 @@ public:
   }
 
   /**
+   * @brief Getter function for default BT XML filename
+   * @return string Containing default BT XML filename
+   */
+  std::string getDefaultBTFilename() const
+  {
+    return default_bt_xml_filename_;
+  }
+
+  /**
    * @brief Wrapper function to accept pending goal if a preempt has been requested
    * @return Shared pointer to pending action goal
    */
@@ -125,12 +131,29 @@ public:
   }
 
   /**
+   * @brief Wrapper function to terminate pending goal if a preempt has been requested
+   */
+  void terminatePendingGoal()
+  {
+    action_server_->terminate_pending_goal();
+  }
+
+  /**
    * @brief Wrapper function to get current goal
    * @return Shared pointer to current action goal
    */
   const std::shared_ptr<const typename ActionT::Goal> getCurrentGoal() const
   {
     return action_server_->get_current_goal();
+  }
+
+  /**
+   * @brief Wrapper function to get pending goal
+   * @return Shared pointer to pending action goal
+   */
+  const std::shared_ptr<const typename ActionT::Goal> getPendingGoal() const
+  {
+    return action_server_->get_pending_goal();
   }
 
   /**
@@ -151,7 +174,7 @@ public:
   }
 
   /**
-   * @brief Function to halt the current tree. It will interrupt the exectuion of RUNNING nodes
+   * @brief Function to halt the current tree. It will interrupt the execution of RUNNING nodes
    * by calling their halt() implementation (only for Async nodes that may return RUNNING)
    */
   void haltTree()
@@ -202,6 +225,12 @@ protected:
   // To publish BT logs
   std::unique_ptr<RosTopicLogger> topic_logger_;
 
+  // Duration for each iteration of BT execution
+  std::chrono::milliseconds bt_loop_duration_;
+
+  // Default timeout value while waiting for response from a server
+  std::chrono::milliseconds default_server_timeout_;
+
   // Parameters for Groot monitoring
   bool enable_groot_monitoring_;
   int groot_zmq_publisher_port_;
@@ -211,6 +240,7 @@ protected:
   OnGoalReceivedCallback on_goal_received_callback_;
   OnLoopCallback on_loop_callback_;
   OnPreemptCallback on_preempt_callback_;
+  OnCompletionCallback on_completion_callback_;
 };
 
 }  // namespace nav2_behavior_tree

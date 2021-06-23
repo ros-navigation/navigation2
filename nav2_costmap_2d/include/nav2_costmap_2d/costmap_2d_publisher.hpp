@@ -52,7 +52,7 @@
 #include "tf2/transform_datatypes.h"
 #include "nav2_util/lifecycle_node.hpp"
 #include "tf2/LinearMath/Quaternion.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -78,19 +78,34 @@ public:
    */
   ~Costmap2DPublisher();
 
+  /**
+   * @brief Configure node
+   */
   void on_configure() {}
+
+  /**
+   * @brief Activate node
+   */
   void on_activate()
   {
     costmap_pub_->on_activate();
     costmap_update_pub_->on_activate();
     costmap_raw_pub_->on_activate();
   }
+
+  /**
+   * @brief deactivate node
+   */
   void on_deactivate()
   {
     costmap_pub_->on_deactivate();
     costmap_update_pub_->on_deactivate();
     costmap_raw_pub_->on_deactivate();
   }
+
+  /**
+   * @brief Cleanup node
+   */
   void on_cleanup() {}
 
   /** @brief Include the given bounds in the changed-rectangle. */

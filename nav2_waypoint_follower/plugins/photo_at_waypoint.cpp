@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_waypoint_follower/plugins/photo_at_waypoint.hpp"
 #include <pluginlib/class_list_macros.hpp>
 
 #include <string>
 #include <memory>
 
+#include "nav2_util/node_utils.hpp"
+#include "nav2_waypoint_follower/plugins/photo_at_waypoint.hpp"
 
 namespace nav2_waypoint_follower
 {
@@ -37,14 +38,18 @@ void PhotoAtWaypoint::initialize(
 
   curr_frame_msg_ = std::make_shared<sensor_msgs::msg::Image>();
 
-  node->declare_parameter(plugin_name + ".enabled", rclcpp::ParameterValue(true));
-  node->declare_parameter(
-    plugin_name + ".image_topic",
+  nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name + ".enabled",
+    rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name + ".image_topic",
     rclcpp::ParameterValue("/camera/color/image_raw"));
-  node->declare_parameter(
-    plugin_name + ".save_dir",
+  nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name + ".save_dir",
     rclcpp::ParameterValue("/tmp/waypoint_images"));
-  node->declare_parameter(plugin_name + ".image_format", rclcpp::ParameterValue("png"));
+  nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name + ".image_format",
+    rclcpp::ParameterValue("png"));
 
   std::string save_dir_as_string;
   node->get_parameter(plugin_name + ".enabled", is_enabled_);

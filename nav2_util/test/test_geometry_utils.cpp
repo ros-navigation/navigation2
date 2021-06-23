@@ -16,9 +16,11 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "gtest/gtest.h"
 
 using nav2_util::geometry_utils::euclidean_distance;
+using nav2_util::geometry_utils::calculate_path_length;
 
 TEST(GeometryUtils, euclidean_distance_point)
 {
@@ -48,4 +50,51 @@ TEST(GeometryUtils, euclidean_distance_pose)
   pose2.position.z = 2.0;
 
   ASSERT_NEAR(euclidean_distance(pose1, pose2), 10.24695, 1e-5);
+}
+
+TEST(GeometryUtils, calculate_path_length)
+{
+  nav_msgs::msg::Path straight_line_path;
+  size_t nb_path_points = 10;
+  float distance_between_poses = 2.0;
+  float current_x_loc = 0.0;
+
+  for (size_t i = 0; i < nb_path_points; ++i) {
+    geometry_msgs::msg::PoseStamped pose_stamped_msg;
+    pose_stamped_msg.pose.position.x = current_x_loc;
+
+    straight_line_path.poses.push_back(pose_stamped_msg);
+
+    current_x_loc += distance_between_poses;
+  }
+
+  ASSERT_NEAR(
+    calculate_path_length(straight_line_path),
+    (nb_path_points - 1) * distance_between_poses, 1e-5);
+
+  ASSERT_NEAR(
+    calculate_path_length(straight_line_path, straight_line_path.poses.size()),
+    0.0, 1e-5);
+
+  nav_msgs::msg::Path circle_path;
+  float polar_distance = 2.0;
+  uint32_t current_polar_angle_deg = 0;
+  constexpr float pi = 3.14159265358979;
+
+  while (current_polar_angle_deg != 360) {
+    float x_loc = polar_distance * std::cos(current_polar_angle_deg * (pi / 180.0));
+    float y_loc = polar_distance * std::sin(current_polar_angle_deg * (pi / 180.0));
+
+    geometry_msgs::msg::PoseStamped pose_stamped_msg;
+    pose_stamped_msg.pose.position.x = x_loc;
+    pose_stamped_msg.pose.position.y = y_loc;
+
+    circle_path.poses.push_back(pose_stamped_msg);
+
+    current_polar_angle_deg += 1;
+  }
+
+  ASSERT_NEAR(
+    calculate_path_length(circle_path),
+    2 * pi * polar_distance, 1e-1);
 }

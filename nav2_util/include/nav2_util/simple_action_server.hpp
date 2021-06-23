@@ -36,7 +36,17 @@ template<typename ActionT, typename nodeT = rclcpp::Node>
 class SimpleActionServer
 {
 public:
+  // Callback function to complete main work. This should itself deal with its
+  // own exceptions, but if for some reason one is thrown, it will be caught
+  // in SimpleActionServer and terminate the action itself.
   typedef std::function<void ()> ExecuteCallback;
+
+  // Callback function to notify the user that an exception was thrown that
+  // the simple action server caught (or another failure) and the action was
+  // terminated. To avoid using, catch exceptions in your application such that
+  // the SimpleActionServer will never need to terminate based on failed action
+  // ExecuteCallback.
+  typedef std::function<void ()> CompletionCallback;
 
   /**
    * @brief An constructor for SimpleActionServer
@@ -49,13 +59,14 @@ public:
     typename nodeT::SharedPtr node,
     const std::string & action_name,
     ExecuteCallback execute_callback,
+    CompletionCallback completion_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500))
   : SimpleActionServer(
       node->get_node_base_interface(),
       node->get_node_clock_interface(),
       node->get_node_logging_interface(),
       node->get_node_waitables_interface(),
-      action_name, execute_callback, server_timeout)
+      action_name, execute_callback, completion_callback, server_timeout)
   {}
 
   /**
@@ -72,6 +83,7 @@ public:
     rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface,
     const std::string & action_name,
     ExecuteCallback execute_callback,
+    CompletionCallback completion_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500))
   : node_base_interface_(node_base_interface),
     node_clock_interface_(node_clock_interface),
@@ -79,6 +91,7 @@ public:
     node_waitables_interface_(node_waitables_interface),
     action_name_(action_name),
     execute_callback_(execute_callback),
+    completion_callback_(completion_callback),
     server_timeout_(server_timeout)
   {
     using namespace std::placeholders;  // NOLINT
@@ -120,9 +133,17 @@ public:
    * @return CancelResponse response of the goal cancelled
    */
   rclcpp_action::CancelResponse handle_cancel(
-    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>/*handle*/)
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle)
   {
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+    if (!handle->is_active()) {
+      warn_msg(
+        "Received request for goal cancellation,"
+        "but the handle is inactive, so reject the request");
+      return rclcpp_action::CancelResponse::REJECT;
+    }
+
     debug_msg("Received request for goal cancellation");
     return rclcpp_action::CancelResponse::ACCEPT;
   }
@@ -177,6 +198,7 @@ public:
           node_logging_interface_->get_logger(),
           "Action server failed while executing action callback: \"%s\"", ex.what());
         terminate_all();
+        completion_callback_();
         return;
       }
 
@@ -186,12 +208,14 @@ public:
       if (stop_execution_) {
         warn_msg("Stopping the thread per request.");
         terminate_all();
+        completion_callback_();
         break;
       }
 
       if (is_active(current_handle_)) {
         warn_msg("Current goal was not completed successfully.");
         terminate(current_handle_);
+        completion_callback_();
       }
 
       if (is_active(pending_handle_)) {
@@ -244,6 +268,7 @@ public:
       info_msg("Waiting for async process to finish.");
       if (steady_clock::now() - start_time >= server_timeout_) {
         terminate_all();
+        completion_callback_();
         throw std::runtime_error("Action callback is still running and missed deadline to stop");
       }
     }
@@ -310,6 +335,24 @@ public:
   }
 
   /**
+   * @brief Terminate pending goals
+   */
+  void terminate_pending_goal()
+  {
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+    if (!pending_handle_ || !pending_handle_->is_active()) {
+      error_msg("Attempting to terminate pending goal when not available");
+      return;
+    }
+
+    terminate(pending_handle_);
+    preempt_requested_ = false;
+
+    debug_msg("Pending goal terminated");
+  }
+
+  /**
    * @brief Get the current goal object
    * @return Goal Ptr to the  goal that's being processed currently
    */
@@ -323,6 +366,22 @@ public:
     }
 
     return current_handle_->get_goal();
+  }
+
+  /**
+   * @brief Get the pending goal object
+   * @return Goal Ptr to the goal that's pending
+   */
+  const std::shared_ptr<const typename ActionT::Goal> get_pending_goal() const
+  {
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+    if (!pending_handle_ || !pending_handle_->is_active()) {
+      error_msg("Attempting to get pending goal when not available");
+      return std::shared_ptr<const typename ActionT::Goal>();
+    }
+
+    return pending_handle_->get_goal();
   }
 
   /**
@@ -413,6 +472,7 @@ protected:
   std::string action_name_;
 
   ExecuteCallback execute_callback_;
+  CompletionCallback completion_callback_;
   std::future<void> execution_future_;
   bool stop_execution_{false};
 

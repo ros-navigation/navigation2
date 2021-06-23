@@ -78,11 +78,17 @@ public:
     return global_frame_;
   }
 
+  /**
+   * @brief Resize the map to a new size, resolution, or origin
+   */
   void resizeMap(
     unsigned int size_x, unsigned int size_y, double resolution, double origin_x,
     double origin_y,
     bool size_locked = false);
 
+  /**
+   * @brief Get the size of the bounds for update
+   */
   void getUpdatedBounds(double & minx, double & miny, double & maxx, double & maxy)
   {
     minx = minx_;
@@ -91,38 +97,79 @@ public:
     maxy = maxy_;
   }
 
+  /**
+   * @brief If the costmap is current, e.g. are all the layers processing recent data
+   * and not stale information for a good state.
+   */
   bool isCurrent();
 
+  /**
+   * @brief Get the costmap pointer to the master costmap
+   */
   Costmap2D * getCostmap()
   {
-    return &costmap_;
+    return &combined_costmap_;
   }
 
+  /**
+   * @brief If this costmap is rolling or not
+   */
   bool isRolling()
   {
     return rolling_window_;
   }
 
+  /**
+   * @brief If this costmap is tracking unknown space or not
+   */
   bool isTrackingUnknown()
   {
-    return costmap_.getDefaultValue() == nav2_costmap_2d::NO_INFORMATION;
+    return combined_costmap_.getDefaultValue() == nav2_costmap_2d::NO_INFORMATION;
   }
 
+  /**
+   * @brief Get the vector of pointers to the costmap plugins
+   */
   std::vector<std::shared_ptr<Layer>> * getPlugins()
   {
     return &plugins_;
   }
 
+  /**
+   * @brief Get the vector of pointers to the costmap filters
+   */
+  std::vector<std::shared_ptr<Layer>> * getFilters()
+  {
+    return &filters_;
+  }
+
+  /**
+   * @brief Add a new plugin to the plugins vector to process
+   */
   void addPlugin(std::shared_ptr<Layer> plugin)
   {
     plugins_.push_back(plugin);
   }
 
+  /**
+   * @brief Add a new costmap filter plugin to the filters vector to process
+   */
+  void addFilter(std::shared_ptr<Layer> filter)
+  {
+    filters_.push_back(filter);
+  }
+
+  /**
+   * @brief Get if the size of the costmap is locked
+   */
   bool isSizeLocked()
   {
     return size_locked_;
   }
 
+  /**
+   * @brief Get the bounds of the costmap
+   */
   void getBounds(unsigned int * x0, unsigned int * xn, unsigned int * y0, unsigned int * yn)
   {
     *x0 = bx0_;
@@ -131,6 +178,9 @@ public:
     *yn = byn_;
   }
 
+  /**
+   * @brief if the costmap is initialized
+   */
   bool isInitialized()
   {
     return initialized_;
@@ -163,7 +213,12 @@ public:
   bool isOutofBounds(double robot_x, double robot_y);
 
 private:
-  Costmap2D costmap_;
+  // primary_costmap_ is a bottom costmap used by plugins when costmap filters were enabled.
+  // combined_costmap_ is a final costmap where all results produced by plugins and filters (if any)
+  // to be merged.
+  // The separation is aimed to avoid interferences of work between plugins and filters.
+  // primay_costmap_ and combined_costmap_ have the same sizes, origins and default values.
+  Costmap2D primary_costmap_, combined_costmap_;
   std::string global_frame_;
 
   bool rolling_window_;  /// < @brief Whether or not the costmap should roll with the robot
@@ -173,6 +228,7 @@ private:
   unsigned int bx0_, bxn_, by0_, byn_;
 
   std::vector<std::shared_ptr<Layer>> plugins_;
+  std::vector<std::shared_ptr<Layer>> filters_;
 
   bool initialized_;
   bool size_locked_;

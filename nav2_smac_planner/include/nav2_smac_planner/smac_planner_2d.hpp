@@ -21,6 +21,7 @@
 
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/smoother.hpp"
+#include "nav2_smac_planner/utils.hpp"
 #include "nav2_smac_planner/costmap_downsampler.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_core/global_planner.hpp"
@@ -85,24 +86,9 @@ public:
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override;
 
-  /**
-   * @brief Create an Eigen Vector2D of world poses from continuous map coords
-   * @param mx float of map X coordinate
-   * @param my float of map Y coordinate
-   * @param costmap Costmap pointer
-   * @return Eigen::Vector2d eigen vector of the generated path
-   */
-  Eigen::Vector2d getWorldCoords(
-    const float & mx, const float & my, const nav2_costmap_2d::Costmap2D * costmap);
-
-  /**
-   * @brief Remove hooking at end of paths
-   * @param path Path to remove hooking from
-   */
-  void removeHook(std::vector<Eigen::Vector2d> & path);
-
 protected:
   std::unique_ptr<AStarAlgorithm<Node2D>> _a_star;
+  GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
@@ -113,8 +99,6 @@ protected:
   int _downsampling_factor;
   bool _downsample_costmap;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
-  SmootherParams _smoother_params;
-  OptimizerParams _optimizer_params;
   double _max_planning_time;
 };
 
