@@ -24,7 +24,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 const double INF_COST = DBL_MAX;
-const int LETHAL_COST = 250;
+const int LETHAL_COST = 252;
 
 struct coordsM
 {
@@ -199,7 +199,7 @@ protected:
    */
   inline double getCost(const int & cx, const int & cy) const
   {
-    return 25 + 0.9 * costmap_->getCost(cx, cy);
+    return 26 + 0.9 * costmap_->getCost(cx, cy);
   }
 
   /**
