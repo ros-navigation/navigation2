@@ -68,7 +68,6 @@ void loadMapFromFile(
  * generate a PointCloud2(PCD2)
  * @param yaml_file Name of input YAML file
  * @param map_msg Output loaded map
- * @param origin_msg Output loaded viewpoint
  * @return status of map loaded
  */
 LOAD_MAP_STATUS loadMapFromYaml(

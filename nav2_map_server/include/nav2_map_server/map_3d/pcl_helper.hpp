@@ -89,17 +89,6 @@ void viewPoint2Pose(
   const Eigen::Vector4f & position,
   const Eigen::Quaternionf & orientation);
 
-/**
- * @brief Converts origin info from geometry_msgs format to pcl position and orientation
- * @param position desired Eigen::Vector4f
- * @param orientation desired Eigen::Quaternionf
- * @param origin input geometry_msgs::msg::Pose
- */
-// void pose2ViewPoint(
-//   Eigen::Vector4f & position,
-//   Eigen::Quaternionf & orientation,
-//   const geometry_msgs::msg::Pose & origin);
-
 }  // namespace map_3d
 
 }  // namespace nav2_map_server

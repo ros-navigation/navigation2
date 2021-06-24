@@ -106,8 +106,6 @@ TEST_F(MapIO3DTester, loadSaveValidPCD)
 
   // 2. Save OccupancyGrid into a tmp file
   map_3d::SaveParameters saveParameters;
-  std::vector<double> center(3);
-  std::vector<double> orientation(4);
 
   fillSaveParameters(
     path(g_tmp_dir) / path(g_valid_pcd_map_name),

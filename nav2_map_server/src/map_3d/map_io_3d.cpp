@@ -324,7 +324,7 @@ void tryWriteMapToFile(
     YAML::Emitter emitter;
     emitter << YAML::Precision(3);
     emitter << YAML::BeginMap;
-    emitter << YAML::Key << "image" << YAML::Value << file_name;
+    emitter << YAML::Key << "pcd" << YAML::Value << file_name;
 
     emitter << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq <<
       0 << 0 << 0 << 1 << 0 << 0 << 0 << YAML::EndSeq;
