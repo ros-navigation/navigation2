@@ -1,0 +1,10 @@
+{
+    "turningRadius":0.4,
+    "stepDistance":0.005, 
+    "gridSeparation":0.05, 
+    "maxLength":1, 
+    "numberOfHeadings": 16, 
+    "outputFile":"output.json"
+
+}
+    
