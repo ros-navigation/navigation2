@@ -8,11 +8,11 @@ import time
 class LatticeGenerator:
 
     def __init__(self, config):
-        self.grid_separation = config["grid_separation"]
+        self.grid_separation = config["gridSeparation"]
         self.trajectory_generator = TrajectoryGenerator(config)
-        self.turning_radius = config["turning_radius"]
-        self.max_level = round(config["max_length"] / self.grid_separation)
-        self.number_of_headings = config["number_of_headings"]
+        self.turning_radius = config["turningRadius"]
+        self.max_level = round(config["maxLength"] / self.grid_separation)
+        self.number_of_headings = config["numberOfHeadings"]
         
     def angle_difference(self, angle_1, angle_2):
 
@@ -58,7 +58,7 @@ class LatticeGenerator:
                 outer_edge_y += [i, i]
                 outer_edge_x += [-max_val, max_val]
 
-        return [np.rad2deg(np.arctan2(i, j)) for i, j in zip(outer_edge_x, outer_edge_y)]
+        return [np.rad2deg(np.arctan2(j, i)) for i, j in zip(outer_edge_x, outer_edge_y)]
 
     def point_to_line_distance(self, p1, p2, q):
         '''
@@ -102,7 +102,6 @@ class LatticeGenerator:
             
 
     def generate_minimal_spanning_set(self):
-        s = time.time()
         result = defaultdict(list)
 
         all_headings = self.get_heading_discretization()
@@ -127,7 +126,7 @@ class LatticeGenerator:
 
                 for target_point in positions:
                     for target_heading in target_headings:
-                        xs, ys = self.trajectory_generator.generate_trajectory(target_point, start_heading, target_heading)
+                        xs, ys, _ = self.trajectory_generator.generate_trajectory(target_point, start_heading, target_heading)
 
                         if len(xs) != 0:
 
@@ -140,33 +139,74 @@ class LatticeGenerator:
 
                 current_level += 1
 
-        print("Time elapsed = ", time.time() - s)    
 
         return result
 
-if __name__ == "__main__":
 
-    import matplotlib.pyplot as plt
+    def run(self):
+        minimal_set_endpoints = self.generate_minimal_spanning_set()
 
-    test = LatticeGenerator({"turning_radius":0.4,"step_distance":0.005, "grid_separation":0.05, "max_length":1, "number_of_headings": 16})
+        # Copy the 0 degree trajectories to 90 degerees
+        end_points_for_90 = []
 
-    result = test.generate_minimal_spanning_set()
+        for end_point, end_angle in minimal_set_endpoints[0.0]:
+            x, y = end_point
 
-    print("\n\n")
+            end_points_for_90.append((np.array([y, x]), 90 - end_angle))
 
-    fig = plt.figure()
+        minimal_set_endpoints[90.0] = end_points_for_90
 
-    for i,start_angle in enumerate(result.keys(), 1):
-        ax = fig.add_subplot(2,2,i)
+        # Generate the paths for all trajectories
+        minmal_set_trajectories = defaultdict(list)
+       
+        for start_angle in minimal_set_endpoints.keys():
 
-        for end_point, end_angle in result[start_angle]:
-            xs, ys = test.trajectory_generator.generate_trajectory(end_point, start_angle, end_angle)
-            ax.plot(xs, ys, "b")
-            plt.axis("square")
-            ax.set_xlim([0,.8])
-            ax.set_ylim([0,.8])
-            plt.grid(True)
-            plt.title(f'{round(start_angle,2)}')
-            print(start_angle, end_angle, end_point)
-    
-    plt.show()
+            for end_point, end_angle in minimal_set_endpoints[start_angle]:
+                xs, ys, traj_params = self.trajectory_generator.generate_trajectory(end_point, start_angle, end_angle, step_distance=self.grid_separation)
+
+                xs = xs.round(5)
+                ys = ys.round(5)
+
+                flipped_xs = [-x for x in xs]
+                flipped_ys = [-y for y in ys]
+
+                yaws_quad1 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(xs[:-1], ys[:-1], xs[1:], ys[1:])]
+                yaws_quad2 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(flipped_xs[:-1], ys[:-1], flipped_xs[1:], ys[1:])]
+                yaws_quad3 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(flipped_xs[:-1], flipped_ys[:-1], flipped_xs[1:], flipped_ys[1:])]
+                yaws_quad4 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(xs[:-1], flipped_ys[:-1], xs[1:], flipped_ys[1:])]
+
+                arc_length = 2 * np.pi * traj_params.radius * abs(start_angle - end_angle) / 360.0
+                straight_length = traj_params.start_to_arc_distance + traj_params.arc_to_end_distance
+                trajectory_length = arc_length + traj_params.start_to_arc_distance + traj_params.arc_to_end_distance
+
+                trajectory_info = (traj_params.radius, trajectory_length, arc_length, straight_length)
+
+                
+                # Special cases for trajectories that run straight across the axis
+                if start_angle == 0 and end_angle == 0:
+                    quadrant_1 = (start_angle, end_angle, *trajectory_info, list(zip(xs, ys, yaws_quad1)))
+                    quadrant_2 = (180 - start_angle, 180 - end_angle, *trajectory_info, list(zip(flipped_xs, ys, yaws_quad2)))
+                    
+                    minmal_set_trajectories[quadrant_1[0]].append(quadrant_1)
+                    minmal_set_trajectories[quadrant_2[0]].append(quadrant_2)
+                
+                elif (start_angle == 90 and end_angle == 90):
+                    quadrant_1 = (start_angle, end_angle, *trajectory_info, list(zip(xs, ys, yaws_quad1)))
+                    quadrant_4 = (-start_angle, -end_angle, *trajectory_info, list(zip(xs, flipped_ys, yaws_quad4)))
+
+                    minmal_set_trajectories[quadrant_1[0]].append(quadrant_1)
+                    minmal_set_trajectories[quadrant_4[0]].append(quadrant_4)
+                else:
+                    # Quadrants move counter-clockwise from top right (i.e. positive x and positive y)
+
+                    quadrant_1 = (start_angle, end_angle, *trajectory_info, list(zip(xs, ys, yaws_quad1)))
+                    quadrant_2 = (180 - start_angle, 180 - end_angle, *trajectory_info, list(zip(flipped_xs, ys, yaws_quad2)))
+                    quadrant_3 = (start_angle - 180, end_angle - 180, *trajectory_info, list(zip(flipped_xs, flipped_ys, yaws_quad3)))
+                    quadrant_4 = (-start_angle, -end_angle, *trajectory_info, list(zip(xs, flipped_ys, yaws_quad4)))
+                    
+                    minmal_set_trajectories[quadrant_1[0]].append(quadrant_1)
+                    minmal_set_trajectories[quadrant_2[0]].append(quadrant_2)
+                    minmal_set_trajectories[quadrant_3[0]].append(quadrant_3)
+                    minmal_set_trajectories[quadrant_4[0]].append(quadrant_4)
+
+        return minmal_set_trajectories
