@@ -4,11 +4,11 @@ import numpy as np
 class TrajectoryGenerator:
 
         def __init__(self, config):
-                self.turning_radius = config["turning_radius"]
-                self.step_distance = config["step_distance"]
+                self.turning_radius = config["turningRadius"]
+                self.step_distance = config["stepDistance"]
 
 
-        def create_arc_trajectory(self, trajectory_params):
+        def create_arc_trajectory(self, trajectory_params, step_distance):
 
                 '''
                 Create arc trajectory using the following parameterization:
@@ -23,7 +23,7 @@ class TrajectoryGenerator:
                 '''
 
                 arc_length = 2 * np.pi * trajectory_params.radius * abs(trajectory_params.start_angle - trajectory_params.end_angle) / 360
-                steps = int(round(arc_length / self.step_distance))
+                steps = int(round(arc_length / step_distance))
                 
                 if trajectory_params.left_turn:
                         ts = np.linspace(np.deg2rad(trajectory_params.start_angle) - np.pi/2, np.deg2rad(trajectory_params.end_angle) - np.pi/2, steps)
@@ -35,9 +35,9 @@ class TrajectoryGenerator:
 
                 return xs, ys
 
-        def create_line_trajectory(self, x1, y1, x2, y2):
+        def create_line_trajectory(self, x1, y1, x2, y2, step_distance):
                 distance = np.linalg.norm(np.subtract([x1, y1], [x2, y2]))
-                steps = int(round(distance / self.step_distance))
+                steps = int(round(distance / step_distance))
 
                 ts = np.linspace(0, 1, steps)
 
@@ -46,17 +46,17 @@ class TrajectoryGenerator:
 
                 return xs, ys
 
-        def build_trajectory(self, trajectory_params):
+        def build_trajectory(self, trajectory_params, step_distance):
                 if trajectory_params.radius > 0:
 
-                        arc_xs, arc_ys = self.create_arc_trajectory(trajectory_params)
+                        arc_xs, arc_ys = self.create_arc_trajectory(trajectory_params, step_distance)
 
-                        start_xs, start_ys = self.create_line_trajectory(0,0, arc_xs[0], arc_ys[0])
-                        end_xs, end_ys = self.create_line_trajectory(arc_xs[-1], arc_ys[-1], *trajectory_params.end_point)
+                        start_xs, start_ys = self.create_line_trajectory(0,0, arc_xs[0], arc_ys[0], step_distance)
+                        end_xs, end_ys = self.create_line_trajectory(arc_xs[-1], arc_ys[-1], *trajectory_params.end_point, step_distance)
                         
                         return np.concatenate((start_xs, arc_xs, end_xs)), np.concatenate((start_ys, arc_ys, end_ys))
                 else:
-                        xs, ys = self.create_line_trajectory(0,0,*trajectory_params.end_point)
+                        xs, ys = self.create_line_trajectory(0,0,*trajectory_params.end_point, step_distance)
                         return xs, ys
 
 
@@ -100,11 +100,11 @@ class TrajectoryGenerator:
                 if m1 == m2:
                         # If they are coincident (i.e. y-intercept is same) then simply return a circle with infinite radius
                         if round(-m2 * x2 + y2, 4) == 0:
-                                return TrajectoryParameters(-1, -1, -1, end_point, start_angle, end_angle, True, 0, 0)
+                                return TrajectoryParameters(0, 0, 0, end_point, start_angle, end_angle, True, np.linalg.norm(end_point), 0)
 
                         # Deal with edge case of 90
                         elif abs(start_angle) == 90 and p[0] == q[0]:
-                                return TrajectoryParameters(-1, -1, -1, end_point, start_angle, end_angle, True, 0, 0)
+                                return TrajectoryParameters(0, 0, 0, end_point, start_angle, end_angle, True, np.linalg.norm(end_point), 0)
                         else:
                                 print(f'No trajectory possible for equivalent start and end angles that also passes through p = {x2, y2}')
                                 return None
@@ -195,25 +195,16 @@ class TrajectoryGenerator:
 
                 return TrajectoryParameters(radius, x_offset, y_offset, end_point, start_angle, end_angle, left_turn, start_to_arc_distance, arc_to_end_distance)
 
-        def generate_trajectory(self, end_point, start_angle, end_angle):
+        def generate_trajectory(self, end_point, start_angle, end_angle, step_distance=None):
+
+                if step_distance is None:
+                        step_distance = self.step_distance
+
                 trajectory_params = self.calculate_trajectory_params(end_point, start_angle, end_angle)
 
                 if trajectory_params is None:
-                        return [], []
+                        return [], [], trajectory_params
 
-                return self.build_trajectory(trajectory_params)
+                xs, ys = self.build_trajectory(trajectory_params, step_distance)
 
-if __name__ == '__main__':
-        import matplotlib.pyplot as plt
-
-        p = np.array([0, 0.2])
-        start_angle = 90.0
-        end_angle = 90.0
-        print(p, start_angle, end_angle)
-        trajGen = TrajectoryGenerator({"turning_radius":0.4,"step_distance":0.01})
-        xs, ys = trajGen.generate_trajectory(p, start_angle, end_angle)
-
-        plt.plot(xs, ys)
-        plt.grid()
-        plt.axis("square")
-        plt.show()
+                return xs, ys, trajectory_params
