@@ -117,6 +117,8 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".goal_dist_tol", rclcpp::ParameterValue(0.25));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".reverse_driving", rclcpp::ParameterValue(false));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   node->get_parameter(plugin_name_ + ".max_linear_accel", max_linear_accel_);
@@ -143,6 +145,7 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(plugin_name_ + ".rotate_to_heading_min_angle", rotate_to_heading_min_angle_);
   node->get_parameter(plugin_name_ + ".max_angular_accel", max_angular_accel_);
   node->get_parameter(plugin_name_ + ".goal_dist_tol", goal_dist_tol_);
+  node->get_parameter(plugin_name_ + ".reverse_driving", reverse_driving_);
   node->get_parameter("controller_frequency", control_frequency);
 
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
@@ -152,6 +155,13 @@ void RegulatedPurePursuitController::configure(
     RCLCPP_WARN(logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
     "it should be >0. Disabling cost regulated linear velocity scaling.");
     use_cost_regulated_linear_velocity_scaling_ = false;
+  }
+
+  // Possible to drive in reverse direction if and only if "use_rotate_to_heading" parameter is set to false
+
+  if(use_rotate_to_heading_)
+  {
+    reverse_driving_ = false;
   }
 
   global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
@@ -226,8 +236,21 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Transform path to robot base frame
   auto transformed_plan = transformGlobalPlan(pose);
 
-  // Find look ahead distance and point on path and publish
-  const double lookahead_dist = getLookAheadDistance(speed);
+  double lookahead_dist = getLookAheadDistance(speed);  
+
+  // Check for reverse driving
+  if(reverse_driving_)
+  {
+    // Cusp check
+    double orientation_change_dist_= checkOrientation(pose);
+
+    // Calculate the carrot pose based on the lookahead distance and/or the orientation_change_dist
+    if(orientation_change_dist_ < lookahead_dist)
+    {
+      lookahead_dist = orientation_change_dist_;
+    }
+  }
+
   auto carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan);
   carrot_pub_->publish(createCarrotMsg(carrot_pose));
 
@@ -245,7 +268,14 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     curvature = 2.0 * carrot_pose.pose.position.y / carrot_dist2;
   }
 
-  linear_vel = desired_linear_vel_;
+  // Setting the velocity direction
+  double sign = 1.0;
+
+  if(reverse_driving_){
+    sign = carrot_pose.pose.position.x >= 0.0 ? 1.0:-1.0;
+  }
+
+  linear_vel = sign*desired_linear_vel_;
 
   // Make sure we're in compliance with basic constraints
   double angle_to_heading;
@@ -346,7 +376,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   pose_msg.header.frame_id = arc_pts_msg.header.frame_id;
   pose_msg.header.stamp = arc_pts_msg.header.stamp;
 
-  const double projection_time = costmap_->getResolution() / linear_vel;
+  const double projection_time = costmap_->getResolution() / fabs(linear_vel);
 
   geometry_msgs::msg::Pose2D curr_pose;
   curr_pose.x = robot_pose.pose.position.x;
@@ -416,6 +446,7 @@ void RegulatedPurePursuitController::applyConstraints(
   double curvature_vel = linear_vel;
   double cost_vel = linear_vel;
   double approach_vel = linear_vel;
+  double sign = linear_vel > 0.0 ? 1.0:-1.0;
 
   // limit the linear velocity by curvature
   const double radius = fabs(1.0 / curvature);
@@ -439,30 +470,30 @@ void RegulatedPurePursuitController::applyConstraints(
   }
 
   // Use the lowest of the 2 constraint heuristics, but above the minimum translational speed
-  linear_vel = std::min(cost_vel, curvature_vel);
-  linear_vel = std::max(linear_vel, regulated_linear_scaling_min_speed_);
+  linear_vel = std::min(fabs(cost_vel), fabs(curvature_vel));
+  linear_vel = std::max(fabs(linear_vel), fabs(regulated_linear_scaling_min_speed_));
 
   // if the actual lookahead distance is shorter than requested, that means we're at the
   // end of the path. We'll scale linear velocity by error to slow to a smooth stop
   if (use_approach_vel_scaling_ && dist_error > 2.0 * costmap_->getResolution()) {
     double velocity_scaling = 1.0 - (dist_error / lookahead_dist);
     double unbounded_vel = approach_vel * velocity_scaling;
-    if (unbounded_vel < min_approach_linear_velocity_) {
+    if (fabs(unbounded_vel) < fabs(min_approach_linear_velocity_)) {
       approach_vel = min_approach_linear_velocity_;
     } else {
-      approach_vel *= velocity_scaling;
+      approach_vel = fabs(approach_vel)*velocity_scaling;
     }
-
     // Use the lowest velocity between approach and other constraints, if all overlapping
-    linear_vel = std::min(linear_vel, approach_vel);
+    linear_vel = std::min(fabs(linear_vel), fabs(approach_vel));
   }
-
   // Limit linear velocities to be valid and kinematically feasible, v = v0 + a * dt
+  linear_vel = sign*linear_vel;
   double & dt = control_duration_;
   const double max_feasible_linear_speed = curr_speed.linear.x + max_linear_accel_ * dt;
   const double min_feasible_linear_speed = curr_speed.linear.x - max_linear_decel_ * dt;
   linear_vel = std::clamp(linear_vel, min_feasible_linear_speed, max_feasible_linear_speed);
-  linear_vel = std::clamp(linear_vel, 0.0, desired_linear_vel_);
+  linear_vel = std::clamp(fabs(linear_vel), 0.0, desired_linear_vel_);
+  linear_vel = sign*linear_vel;
 }
 
 void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
@@ -533,6 +564,44 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   }
 
   return transformed_plan;
+}
+
+double RegulatedPurePursuitController::dot(double v1[], double v2[])
+{
+  // Supports only 2D
+  return  (v1[0]*v2[0]) + (v1[1]*v2[1]);
+}
+
+double RegulatedPurePursuitController::checkOrientation(const geometry_msgs::msg::PoseStamped & pose )
+{
+  double dot_sign = 0.0;
+  double iter = 1;
+  double cusp_distance = 0.0;
+  bool not_in_cusp = true;
+
+  do
+  {
+    // We have two vectors for the dot product OA and AB. Determining the vectors.
+    double oa_x = global_plan_.poses[iter].pose.position.x - global_plan_.poses[iter-1].pose.position.x;
+    double oa_y = global_plan_.poses[iter].pose.position.y - global_plan_.poses[iter-1].pose.position.y;
+    double ab_x = global_plan_.poses[iter+1].pose.position.x - global_plan_.poses[iter].pose.position.x;
+    double ab_y = global_plan_.poses[iter+1].pose.position.y - global_plan_.poses[iter].pose.position.y;
+    double OA[] = {oa_x,oa_y};
+    double AB[] = {ab_x,ab_y};
+    // Checking for the existance of cusp using the dot product
+    dot_sign = dot(OA, AB) > 0.0 ? 1.0 : -1.0;
+    iter++;
+    // Getting the distance of the cusp, if the cusp is found
+    if(dot_sign == -1.0 || global_plan_.poses.size()<=iter)
+    {
+      auto x = global_plan_.poses[iter].pose.position.x- pose.pose.position.x;
+      auto y = global_plan_.poses[iter].pose.position.y- pose.pose.position.y;
+      cusp_distance = sqrt((x*x)+(y*y));
+      not_in_cusp = false;
+    }
+  }while(dot_sign == 1.0 && not_in_cusp);
+  // returning the distance if there is a cusp, else use the lookahead distance
+  return cusp_distance;
 }
 
 bool RegulatedPurePursuitController::transformPose(
