@@ -27,7 +27,6 @@ nav2_package()
 link_libraries(stdc++fs)
 
 include_directories(
-  include
 )
 
 set(executable_name waypoint_follower)
@@ -40,6 +39,11 @@ set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
   src/waypoint_follower.cpp
+)
+
+target_include_directories(${library_name} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
 
 set(dependencies
@@ -71,18 +75,31 @@ add_library(wait_at_waypoint SHARED plugins/wait_at_waypoint.cpp)
 ament_target_dependencies(wait_at_waypoint ${dependencies})
 #prevent pluginlib from using boost
 target_compile_definitions(wait_at_waypoint PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_include_directories(wait_at_waypoint PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 
 add_library(photo_at_waypoint SHARED plugins/photo_at_waypoint.cpp)
 ament_target_dependencies(photo_at_waypoint ${dependencies})
 #prevent pluginlib from using boost
 target_compile_definitions(photo_at_waypoint PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_include_directories(photo_at_waypoint PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 
 add_library(input_at_waypoint SHARED plugins/input_at_waypoint.cpp)
 ament_target_dependencies(input_at_waypoint ${dependencies})
 #prevent pluginlib from using boost
 target_compile_definitions(input_at_waypoint PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_include_directories(input_at_waypoint PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 
 install(TARGETS ${library_name} wait_at_waypoint photo_at_waypoint input_at_waypoint
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -105,6 +122,7 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(wait_at_waypoint photo_at_waypoint input_at_waypoint)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 pluginlib_export_plugin_description_file(nav2_waypoint_follower plugins.xml)
 

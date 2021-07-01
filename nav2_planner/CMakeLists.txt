@@ -21,7 +21,6 @@ find_package(nav2_core REQUIRED)
 nav2_package()
 
 include_directories(
-  include
 )
 
 set(executable_name planner_server)
@@ -54,6 +53,11 @@ ament_target_dependencies(${library_name}
 
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
+target_include_directories(${library_name} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
 add_executable(${executable_name}
   src/main.cpp
 )
@@ -68,6 +72,7 @@ ament_target_dependencies(${executable_name}
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 install(TARGETS ${library_name}
+  EXPORT export_${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -89,4 +94,5 @@ endif()
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
 ament_export_dependencies(${dependencies})
+ament_export_targets(export_${library_name} HAS_LIBRARY_TARGET)
 ament_package()

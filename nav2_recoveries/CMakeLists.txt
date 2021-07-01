@@ -21,7 +21,6 @@ find_package(pluginlib REQUIRED)
 nav2_package()
 
 include_directories(
-  include
 )
 
 set(library_name recoveries_server_core)
@@ -56,6 +55,11 @@ ament_target_dependencies(nav2_spin_recovery
 # prevent pluginlib from using boost
 target_compile_definitions(nav2_spin_recovery PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
+target_include_directories(nav2_spin_recovery PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
 add_library(nav2_backup_recovery SHARED
   plugins/back_up.cpp
 )
@@ -67,6 +71,11 @@ ament_target_dependencies(nav2_backup_recovery
 # prevent pluginlib from using boost
 target_compile_definitions(nav2_backup_recovery PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
+target_include_directories(nav2_backup_recovery PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
 add_library(nav2_wait_recovery SHARED
   plugins/wait.cpp
 )
@@ -77,6 +86,11 @@ ament_target_dependencies(nav2_wait_recovery
 
 # prevent pluginlib from using boost
 target_compile_definitions(nav2_wait_recovery PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
+target_include_directories(nav2_wait_recovery PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 
 pluginlib_export_plugin_description_file(nav2_core recovery_plugin.xml)
 
@@ -91,6 +105,11 @@ ament_target_dependencies(${library_name}
 
 # prevent pluginlib from using boost
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
+target_include_directories(${library_name} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 
 # Executable
 add_executable(${executable_name}
@@ -108,6 +127,7 @@ install(TARGETS ${library_name}
                 nav2_backup_recovery
                 nav2_spin_recovery
                 nav2_wait_recovery
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -138,5 +158,6 @@ ament_export_libraries(${library_name}
   nav2_spin_recovery
   nav2_wait_recovery
 )
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 ament_package()

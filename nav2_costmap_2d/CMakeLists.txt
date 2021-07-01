@@ -30,7 +30,6 @@ find_package(Eigen3 REQUIRED)
 nav2_package()
 
 include_directories(
-  include
   ${EIGEN3_INCLUDE_DIRS}
 )
 
@@ -54,6 +53,11 @@ add_library(nav2_costmap_2d_core SHARED
 
 # prevent pluginlib from using boost
 target_compile_definitions(nav2_costmap_2d_core PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
+target_include_directories(nav2_costmap_2d_core PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 
 set(dependencies
   geometry_msgs
@@ -95,6 +99,10 @@ ament_target_dependencies(layers
 target_link_libraries(layers
   nav2_costmap_2d_core
 )
+target_include_directories(layers PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 
 add_library(filters SHARED
   plugins/costmap_filters/keepout_filter.cpp
@@ -105,6 +113,10 @@ ament_target_dependencies(filters
 )
 target_link_libraries(filters
   nav2_costmap_2d_core
+)
+target_include_directories(filters PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
 
 add_library(nav2_costmap_2d_client SHARED
@@ -119,6 +131,10 @@ ament_target_dependencies(nav2_costmap_2d_client
 
 target_link_libraries(nav2_costmap_2d_client
   nav2_costmap_2d_core
+)
+target_include_directories(nav2_costmap_2d_client PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
 
 add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
@@ -151,6 +167,7 @@ install(TARGETS
   layers
   filters
   nav2_costmap_2d_client
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -185,5 +202,6 @@ endif()
 ament_export_include_directories(include)
 ament_export_libraries(layers filters nav2_costmap_2d_core nav2_costmap_2d_client)
 ament_export_dependencies(${dependencies})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_package()

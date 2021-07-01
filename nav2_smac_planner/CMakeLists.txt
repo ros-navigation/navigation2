@@ -33,7 +33,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 add_compile_options(-O3 -Wextra -Wdeprecated -fPIC)
 
 include_directories(
-  include
   ${OMPL_INCLUDE_DIRS}
   ${OpenMP_INCLUDE_DIRS}
 )
@@ -75,7 +74,11 @@ add_library(${library_name} SHARED
 )
 
 target_link_libraries(${library_name} ${OMPL_LIBRARIES} ${OpenMP_LIBRARIES}  OpenMP::OpenMP_CXX)
-target_include_directories(${library_name} PUBLIC ${Eigen3_INCLUDE_DIRS})
+target_include_directories(${library_name} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${Eigen3_INCLUDE_DIRS}
+)
 
 ament_target_dependencies(${library_name}
   ${dependencies}
@@ -91,7 +94,11 @@ add_library(${library_name}_2d SHARED
 )
 
 target_link_libraries(${library_name}_2d ${OMPL_LIBRARIES})
-target_include_directories(${library_name}_2d PUBLIC ${Eigen3_INCLUDE_DIRS})
+target_include_directories(${library_name}_2d PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${Eigen3_INCLUDE_DIRS}
+)
 
 ament_target_dependencies(${library_name}_2d
   ${dependencies}
@@ -104,6 +111,7 @@ pluginlib_export_plugin_description_file(nav2_core smac_plugin.xml)
 pluginlib_export_plugin_description_file(nav2_core smac_plugin_2d.xml)
 
 install(TARGETS ${library_name} ${library_name}_2d
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -122,5 +130,6 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name} ${library_name}_2d)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(${dependencies})
 ament_package()

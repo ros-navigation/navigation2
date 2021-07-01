@@ -21,7 +21,6 @@ find_package(nav2_core REQUIRED)
 nav2_package()
 
 include_directories(
-  include
 )
 
 set(dependencies
@@ -51,11 +50,17 @@ add_library(dwb_core SHARED
 # prevent pluginlib from using boost
 target_compile_definitions(dwb_core PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
+target_include_directories(dwb_core PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
 ament_target_dependencies(dwb_core
   ${dependencies}
 )
 
 install(TARGETS dwb_core
+  EXPORT export_dwb_core
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -78,6 +83,7 @@ endif()
 ament_export_include_directories(include)
 ament_export_libraries(dwb_core)
 ament_export_dependencies(${dependencies})
+ament_export_targets(export_dwb_core HAS_LIBRARY_TARGET)
 
 pluginlib_export_plugin_description_file(nav2_core local_planner_plugin.xml)
 

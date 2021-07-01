@@ -42,7 +42,6 @@ set(nav2_rviz_plugins_headers_to_moc
 )
 
 include_directories(
-  include
 )
 
 set(library_name ${PROJECT_NAME})
@@ -78,6 +77,8 @@ ament_target_dependencies(${library_name}
 )
 
 target_include_directories(${library_name} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
   ${Qt5Widgets_INCLUDE_DIRS}
   ${OGRE_INCLUDE_DIRS}
 )
@@ -98,7 +99,7 @@ pluginlib_export_plugin_description_file(rviz_common plugins_description.xml)
 
 install(
   TARGETS ${library_name}
-  EXPORT ${library_name}
+  EXPORT export_${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -116,7 +117,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_targets(${library_name} HAS_LIBRARY_TARGET)
+ament_export_targets(export_${library_name} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
   Qt5
   rviz_common

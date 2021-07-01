@@ -16,7 +16,6 @@ nav2_package()
 set(CMAKE_CXX_STANDARD 17)
 
 include_directories(
-  include
 )
 
 set(dependencies
@@ -38,11 +37,17 @@ add_library(${library_name} SHARED
 # prevent pluginlib from using boost
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
+target_include_directories(${library_name} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
 install(TARGETS ${library_name}
+  EXPORT export_${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -63,6 +68,7 @@ endif()
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
 ament_export_dependencies(${dependencies})
+ament_export_targets(export_${library_name} HAS_LIBRARY_TARGET)
 
 pluginlib_export_plugin_description_file(nav2_core nav2_regulated_pure_pursuit_controller.xml)
 

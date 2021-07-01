@@ -21,7 +21,6 @@ find_package(pluginlib REQUIRED)
 nav2_package()
 
 include_directories(
-  include
 )
 
 set(library_name nav2_navfn_planner)
@@ -55,9 +54,15 @@ ament_target_dependencies(${library_name}
 # prevent pluginlib from using boost
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
+target_include_directories(${library_name} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
 pluginlib_export_plugin_description_file(nav2_core global_planner_plugin.xml)
 
 install(TARGETS ${library_name}
+  EXPORT export_${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -78,5 +83,6 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
+ament_export_targets(export_${library_name} HAS_LIBRARY_TARGET)
 ament_export_dependencies(${dependencies})
 ament_package()

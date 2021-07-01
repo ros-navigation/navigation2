@@ -24,7 +24,6 @@ set(dependencies
 )
 
 include_directories(
-  include
 )
 
 add_library(standard_traj_generator SHARED
@@ -36,6 +35,10 @@ ament_target_dependencies(standard_traj_generator ${dependencies})
 # prevent pluginlib from using boost
 target_compile_definitions(standard_traj_generator PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
+target_include_directories(standard_traj_generator PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -48,6 +51,7 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS standard_traj_generator
+        EXPORT export_standard_traj_generator
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
@@ -61,6 +65,8 @@ install(FILES plugins.xml
 
 ament_export_include_directories(include)
 ament_export_libraries(standard_traj_generator)
+ament_export_targets(export_standard_traj_generator HAS_LIBRARY_TARGET)
+
 pluginlib_export_plugin_description_file(dwb_core plugins.xml)
 
 ament_package()

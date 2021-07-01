@@ -18,7 +18,6 @@ find_package(nav2_util REQUIRED)
 nav2_package()
 
 include_directories(
-  include
 )
 
 add_library(${PROJECT_NAME} SHARED
@@ -39,6 +38,11 @@ add_library(${PROJECT_NAME} SHARED
 # prevent pluginlib from using boost
 target_compile_definitions(${PROJECT_NAME} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
+target_include_directories(${PROJECT_NAME} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
 set(dependencies
   angles
   nav2_costmap_2d
@@ -58,6 +62,7 @@ ament_target_dependencies(${PROJECT_NAME}
 )
 
 install(TARGETS ${PROJECT_NAME}
+        EXPORT export_${PROJECT_NAME}
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
@@ -84,6 +89,7 @@ ament_export_libraries(${PROJECT_NAME})
 ament_export_dependencies(
   ${dependencies}
 )
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 pluginlib_export_plugin_description_file(dwb_core default_critics.xml)
 
