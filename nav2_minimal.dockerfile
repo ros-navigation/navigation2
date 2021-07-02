@@ -98,6 +98,24 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
     fi
 
 # source overlay from entrypoint
-RUN sed --in-place \
-      's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
-      /ros_entrypoint.sh
+# RUN sed --in-place \
+#       's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
+#       /ros_entrypoint.sh
+
+########## PRODUCTION BUILD STAGE ##########
+FROM build AS prod_stage
+
+ENV OVERLAY_WS /opt/overlay_ws
+WORKDIR $OVERLAY_WS/src
+
+COPY debian/create_debians.sh $OVERLAY_WS/src/create_debians.sh
+# COPY umd_mission/docker/debian/50-my-packages.list /etc/ros/rosdep/sources.list.d/50-my-packages.list
+# COPY umd_mission/docker/debian/rosdep.yaml /rosdep.yaml
+
+RUN . /opt/ros/foxy/setup.sh \
+  && . /opt/overlay_ws/install/setup.sh \
+  && . /opt/underlay_ws/install/setup.sh \
+  && ./create_debians.sh \
+  && rm -rf $OVERLAY_WS $UNDERLAY_WS
+
+WORKDIR /opt/ros/foxy
