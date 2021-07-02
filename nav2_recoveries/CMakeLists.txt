@@ -53,9 +53,6 @@ ament_target_dependencies(nav2_spin_recovery
   ${dependencies}
 )
 
-# prevent pluginlib from using boost
-target_compile_definitions(nav2_spin_recovery PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 add_library(nav2_backup_recovery SHARED
   plugins/back_up.cpp
 )
@@ -64,9 +61,6 @@ ament_target_dependencies(nav2_backup_recovery
   ${dependencies}
 )
 
-# prevent pluginlib from using boost
-target_compile_definitions(nav2_backup_recovery PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 add_library(nav2_wait_recovery SHARED
   plugins/wait.cpp
 )
@@ -74,9 +68,6 @@ add_library(nav2_wait_recovery SHARED
 ament_target_dependencies(nav2_wait_recovery
   ${dependencies}
 )
-
-# prevent pluginlib from using boost
-target_compile_definitions(nav2_wait_recovery PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 pluginlib_export_plugin_description_file(nav2_core recovery_plugin.xml)
 
@@ -88,9 +79,6 @@ add_library(${library_name}
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
-
-# prevent pluginlib from using boost
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 # Executable
 add_executable(${executable_name}
