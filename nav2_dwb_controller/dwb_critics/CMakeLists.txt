@@ -81,6 +81,7 @@ ament_export_libraries(${PROJECT_NAME})
 ament_export_dependencies(
   ${dependencies}
 )
+ament_export_definitions("PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 pluginlib_export_plugin_description_file(dwb_core default_critics.xml)
 

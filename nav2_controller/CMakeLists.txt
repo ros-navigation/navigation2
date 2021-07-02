@@ -110,6 +110,7 @@ ament_export_libraries(simple_progress_checker
   simple_goal_checker
   stopped_goal_checker
   ${library_name})
+ament_export_definitions("PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 pluginlib_export_plugin_description_file(nav2_core plugins.xml)
 
 ament_package()

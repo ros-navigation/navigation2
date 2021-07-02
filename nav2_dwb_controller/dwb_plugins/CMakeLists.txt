@@ -61,6 +61,7 @@ install(FILES plugins.xml
 
 ament_export_include_directories(include)
 ament_export_libraries(standard_traj_generator)
+ament_export_definitions("PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 pluginlib_export_plugin_description_file(dwb_core plugins.xml)
 
 ament_package()
