@@ -63,6 +63,7 @@ endif()
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
 ament_export_dependencies(${dependencies})
+ament_export_definitions("PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 pluginlib_export_plugin_description_file(nav2_core nav2_regulated_pure_pursuit_controller.xml)
 
