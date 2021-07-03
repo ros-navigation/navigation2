@@ -64,7 +64,7 @@ RUN apt-get update && \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
     && pip3 install \
       fastcov \
-      git+https://github.com/ruffsl/colcon-cache.git@c1cedadc1ac6131fe825d075526ed4ae8e1b473c \
+      git+https://github.com/ruffsl/colcon-cache.git@1d6ae5745ac3e124bb46c3a636439dbc02af77dd \
       git+https://github.com/ruffsl/colcon-clean.git@87dee2dd1e47c2b97ac6d8300f76e3f607d19ef6 \
     && rosdep update \
     && rm -rf /var/lib/apt/lists/*
