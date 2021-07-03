@@ -6,19 +6,12 @@
 # docker build -t nav2:latest \
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./
-ARG FROM_IMAGE=osrf/ros2:testing
-ARG FROM_STAGE=development
+ARG FROM_IMAGE=ros:rolling
 ARG UNDERLAY_WS=/opt/underlay_ws
 ARG OVERLAY_WS=/opt/overlay_ws
 
-# multi-stage for development
-FROM $FROM_IMAGE AS development
-
-# multi-stage for integration
-FROM osrf/ros2:testing-20210605003201 AS integration
-
 # multi-stage for caching
-FROM $FROM_STAGE AS cacher
+FROM $FROM_IMAGE AS cacher
 
 # clone underlay source
 ARG UNDERLAY_WS
@@ -42,7 +35,7 @@ RUN find . -name "src" -type d \
       | xargs cp --parents -t /tmp/opt || true
 
 # multi-stage for building
-FROM $FROM_STAGE AS builder
+FROM $FROM_IMAGE AS builder
 
 # config dependencies install
 ARG DEBIAN_FRONTEND=noninteractive
