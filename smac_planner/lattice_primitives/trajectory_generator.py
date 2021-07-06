@@ -37,7 +37,12 @@ class TrajectoryGenerator:
 
         def create_line_trajectory(self, x1, y1, x2, y2, step_distance):
                 distance = np.linalg.norm(np.subtract([x1, y1], [x2, y2]))
+
                 steps = int(round(distance / step_distance))
+
+                # If steps is 0 or 1 then simply return the end point
+                if steps <= 1:
+                        return [x2], [y2]
 
                 ts = np.linspace(0, 1, steps)
 
@@ -48,11 +53,18 @@ class TrajectoryGenerator:
 
         def build_trajectory(self, trajectory_params, step_distance):
                 if trajectory_params.radius > 0:
-
                         arc_xs, arc_ys = self.create_arc_trajectory(trajectory_params, step_distance)
 
-                        start_xs, start_ys = self.create_line_trajectory(0,0, arc_xs[0], arc_ys[0], step_distance)
-                        end_xs, end_ys = self.create_line_trajectory(arc_xs[-1], arc_ys[-1], *trajectory_params.end_point, step_distance)
+                        start_xs = []
+                        start_ys = []
+                        end_xs = []
+                        end_ys = []
+                
+                        if trajectory_params.start_to_arc_distance > 0:
+                                start_xs, start_ys = self.create_line_trajectory(0,0, arc_xs[0], arc_ys[0], step_distance)
+                        
+                        if trajectory_params.arc_to_end_distance > 0:
+                                end_xs, end_ys = self.create_line_trajectory(arc_xs[-1], arc_ys[-1], *trajectory_params.end_point, step_distance)
                         
                         return np.concatenate((start_xs, arc_xs, end_xs)), np.concatenate((start_ys, arc_ys, end_ys))
                 else:

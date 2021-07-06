@@ -132,8 +132,8 @@ class LatticeGenerator:
 
                             # Check if path overlaps something in minimal spanning set
                             if(self.is_minimal_path(xs, ys, minimal_trajectory_set)):
-                                new_end_point = np.array([target_point[0], target_point[1], np.deg2rad(target_heading)])
-                                minimal_trajectory_set.append(new_end_point)
+                                new_end_pose = np.array([target_point[0], target_point[1], np.deg2rad(target_heading)])
+                                minimal_trajectory_set.append(new_end_pose)
 
                                 result[start_heading].append((target_point, target_heading))
 
@@ -170,10 +170,10 @@ class LatticeGenerator:
                 flipped_xs = [-x for x in xs]
                 flipped_ys = [-y for y in ys]
 
-                yaws_quad1 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(xs[:-1], ys[:-1], xs[1:], ys[1:])]
-                yaws_quad2 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(flipped_xs[:-1], ys[:-1], flipped_xs[1:], ys[1:])]
-                yaws_quad3 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(flipped_xs[:-1], flipped_ys[:-1], flipped_xs[1:], flipped_ys[1:])]
-                yaws_quad4 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(xs[:-1], flipped_ys[:-1], xs[1:], flipped_ys[1:])]
+                yaws_quad1 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(xs[:-1], ys[:-1], xs[1:], ys[1:])] + [np.deg2rad(end_angle)]
+                yaws_quad2 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(flipped_xs[:-1], ys[:-1], flipped_xs[1:], ys[1:])] + [np.pi - np.deg2rad(end_angle)]
+                yaws_quad3 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(flipped_xs[:-1], flipped_ys[:-1], flipped_xs[1:], flipped_ys[1:])]  + [-np.pi + np.deg2rad(end_angle)]
+                yaws_quad4 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(xs[:-1], flipped_ys[:-1], xs[1:], flipped_ys[1:])] + [-np.deg2rad(end_angle)]
 
                 arc_length = 2 * np.pi * traj_params.radius * abs(start_angle - end_angle) / 360.0
                 straight_length = traj_params.start_to_arc_distance + traj_params.arc_to_end_distance
