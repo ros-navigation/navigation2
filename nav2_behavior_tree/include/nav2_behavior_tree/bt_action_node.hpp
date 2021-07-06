@@ -275,6 +275,22 @@ public:
       }
     }
 
+    auto start_time = node_->now();
+    while (rclcpp::ok()
+           && !goal_result_available_
+           && node_->now() - start_time < server_timeout_) {
+      RCLCPP_DEBUG(
+        node_->get_logger(),
+        "Waiting for goal result after cancelling, for action %s", action_name_.c_str());
+      callback_group_executor_.spin_some();
+      rclcpp::sleep_for(std::chrono::milliseconds(1));
+    }
+    if (!goal_result_available_) {
+      RCLCPP_ERROR_STREAM(
+        node_->get_logger(),
+        "Failed to get result for action " << action_name_.c_str() << " after cancelling. BT might not finish cleanly. ");
+    }
+
     setStatus(BT::NodeStatus::IDLE);
   }
 
