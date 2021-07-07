@@ -213,15 +213,7 @@ protected:
    * @param pose Pose input to determine the cusp position
    * @return robot distance from the cusp
    */
-  double detectPathOrientation(const geometry_msgs::msg::PoseStamped & pose);
-
-  /**
-   * @brief determines the dot product
-   * @param u_x, u_y, represents the vector u
-   * @param v_x, v_y, represents the vector v 
-   * @return robot distance from the cusp
-   */
-  inline double dot(double u_x, double u_y, double v_x, double v_y);
+  double findDirectionChange(const geometry_msgs::msg::PoseStamped & pose);
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
