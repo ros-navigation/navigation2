@@ -43,6 +43,9 @@ public:
       config().blackboard->get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
+    RCLCPP_INFO(node_->get_logger(), "Action Name: %s\nServer Timeout: %d", 
+                action_name_.c_str(), server_timeout_);
+    
     // Initialize the input and output messages
     goal_ = typename ActionT::Goal();
     result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
@@ -68,10 +71,20 @@ public:
   {
     // Now that we have the ROS node to use, create the action client for this BT action
     action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name);
-
-    // Make sure the server is actually there before continuing
-    RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
-    action_client_->wait_for_action_server();
+    if (action_client_ != nullptr) {
+      // Make sure the server is actually there before continuing
+      RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
+      try {
+        action_client_->wait_for_action_server();
+      } catch (const std::exception & ex) { 
+        RCLCPP_ERROR(
+          node_->get_logger(), "Action server \"%s\" was not available: \"%s\"", action_name.c_str(), ex.what()
+        );
+      }
+      
+    } else {
+      RCLCPP_ERROR(node_->get_logger(), "Action client \"%s\" could not be created, BT node is corrupted", action_name.c_str());
+    }
   }
 
   // Any subclass of BtActionNode that accepts parameters must provide a providedPorts method
@@ -130,56 +143,61 @@ public:
   // The main override required by a BT action
   BT::NodeStatus tick() override
   {
-    // first step to be done only at the beginning of the Action
-    if (status() == BT::NodeStatus::IDLE) {
-      // setting the status to RUNNING to notify the BT Loggers (if any)
-      setStatus(BT::NodeStatus::RUNNING);
+    try {
+      // first step to be done only at the beginning of the Action
+      if (status() == BT::NodeStatus::IDLE) {
+        // setting the status to RUNNING to notify the BT Loggers (if any)
+        setStatus(BT::NodeStatus::RUNNING);
 
-      // user defined callback
-      on_tick();
+        // user defined callback
+        on_tick();
 
-      BT::NodeStatus status = on_new_goal_received();
-      if( status == BT::NodeStatus::FAILURE) {
-        return BT::NodeStatus::FAILURE;
-      }
-    }
-
-    // The following code corresponds to the "RUNNING" loop
-    if (rclcpp::ok() && !goal_result_available_) {
-      // user defined callback. May modify the value of "goal_updated_"
-      on_wait_for_result();
-
-      auto goal_status = goal_handle_->get_status();
-      if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
-        goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
-      {
-        goal_updated_ = false;
-        on_new_goal_received();
+        BT::NodeStatus status = on_new_goal_received();
+        if( status == BT::NodeStatus::FAILURE) {
+          return BT::NodeStatus::FAILURE;
+        }
       }
 
-      rclcpp::spin_some(node_);
+      // The following code corresponds to the "RUNNING" loop
+      if (rclcpp::ok() && !goal_result_available_) {
+        // user defined callback. May modify the value of "goal_updated_"
+        on_wait_for_result();
 
-      // check if, after invoking spin_some(), we finally received the result
-      if (!goal_result_available_) {
-        // Yield this Action, returning RUNNING
-        return BT::NodeStatus::RUNNING;
+        auto goal_status = goal_handle_->get_status();
+        if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
+          goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
+        {
+          goal_updated_ = false;
+          on_new_goal_received();
+        }
+
+        rclcpp::spin_some(node_);
+
+        // check if, after invoking spin_some(), we finally received the result
+        if (!goal_result_available_) {
+          // Yield this Action, returning RUNNING
+          return BT::NodeStatus::RUNNING;
+        }
       }
-    }
 
-    switch (result_.code) {
-      case rclcpp_action::ResultCode::SUCCEEDED:
-        return on_success();
+      switch (result_.code) {
+        case rclcpp_action::ResultCode::SUCCEEDED:
+          return on_success();
 
-      case rclcpp_action::ResultCode::ABORTED:
-        return on_aborted();
+        case rclcpp_action::ResultCode::ABORTED:
+          return on_aborted();
 
-      case rclcpp_action::ResultCode::CANCELED:
-        return on_cancelled();
+        case rclcpp_action::ResultCode::CANCELED:
+          return on_cancelled();
 
-      default:
-        RCLCPP_ERROR(
-          node_->get_logger(), "Action server \"%s\" returned Unknown action status", action_name_.c_str());
-        return BT::NodeStatus::FAILURE;
+        default:
+          RCLCPP_ERROR(
+            node_->get_logger(), "Action %s returned Unknown action status", action_name_.c_str());
+          return BT::NodeStatus::FAILURE;
+      }
+    } catch (const std::exception & ex) {
+      RCLCPP_ERROR(node_->get_logger(), "Action %s failed with exception: %s", action_name_.c_str(), ex.what());
+      return BT::NodeStatus::FAILURE;
     }
   }
 
@@ -187,6 +205,7 @@ public:
   // make sure to cancel the ROS2 action if it is still running.
   void halt() override
   {
+    RCLCPP_INFO(node_->get_logger(), "BT Action \"%s\" has been halted", action_name_.c_str());
     if (should_cancel_goal()) {
       auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
       if (rclcpp::spin_until_future_complete(node_, future_cancel, server_timeout_) !=
@@ -204,6 +223,7 @@ public:
 protected:
   bool should_cancel_goal()
   {
+    RCLCPP_INFO(node_->get_logger(), "BT Action \"%s\" goal should be canceled", action_name_.c_str());
     // Shut the node down if it is currently running
     if (status() != BT::NodeStatus::RUNNING) {
       return false;
@@ -220,34 +240,39 @@ protected:
 
   BT::NodeStatus on_new_goal_received()
   {
-    goal_result_available_ = false;
-    auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
-    send_goal_options.result_callback =
-      [this](const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result) {
-        // TODO(#1652): a work around until rcl_action interface is updated
-        // if goal ids are not matched, the older goal call this callback so ignore the result
-        // if matched, it must be processed (including aborted)
-        if (this->goal_handle_->get_goal_id() == result.goal_id) {
-          goal_result_available_ = true;
-          result_ = result;
-        }
-      };
+    try {
+      goal_result_available_ = false;
+      auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
+      send_goal_options.result_callback =
+        [this](const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result) {
+          // TODO(#1652): a work around until rcl_action interface is updated
+          // if goal ids are not matched, the older goal call this callback so ignore the result
+          // if matched, it must be processed (including aborted)
+          if (this->goal_handle_->get_goal_id() == result.goal_id) {
+            goal_result_available_ = true;
+            result_ = result;
+          }
+        };
 
-    auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
+      auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
 
-    if (rclcpp::spin_until_future_complete(node_, future_goal_handle, server_timeout_) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
+      if (rclcpp::spin_until_future_complete(node_, future_goal_handle, server_timeout_) !=
+        rclcpp::FutureReturnCode::SUCCESS)
+      {
+        return BT::NodeStatus::FAILURE;
+      }
+
+      goal_handle_ = future_goal_handle.get();
+      if (!goal_handle_) {
+        RCLCPP_ERROR(
+            node_->get_logger(), "Goal was rejected by action server %s", action_name_.c_str());
+        return BT::NodeStatus::FAILURE;
+      }
+      return BT::NodeStatus::SUCCESS;
+    } catch (const std::exception & ex) {
       RCLCPP_ERROR(
-          node_->get_logger(), "Error sending goal to action server \"%s\" using a timeout of %d milliseconds.",
-            action_name_.c_str(), server_timeout_);
-      return BT::NodeStatus::FAILURE;
-    }
-
-    goal_handle_ = future_goal_handle.get();
-    if (!goal_handle_) {
-      RCLCPP_ERROR(
-          node_->get_logger(), "Goal was rejected by action server \"%s\"", action_name_.c_str());
+        node_->get_logger(), "New goal for action [%s] was received failed with exception: %s", action_name_.c_str(), ex.what()
+      );
       return BT::NodeStatus::FAILURE;
     }
     return BT::NodeStatus::SUCCESS;
