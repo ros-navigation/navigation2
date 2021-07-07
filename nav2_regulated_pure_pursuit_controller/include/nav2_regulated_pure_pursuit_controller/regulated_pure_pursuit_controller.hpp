@@ -198,7 +198,7 @@ protected:
   void applyConstraints(
     const double & dist_error, const double & lookahead_dist,
     const double & curvature, const geometry_msgs::msg::Twist & speed,
-    const double & pose_cost, double & linear_vel);
+    const double & pose_cost, double & linear_vel, double & sign);
 
   /**
    * @brief Get lookahead point
@@ -208,9 +208,20 @@ protected:
    */
   geometry_msgs::msg::PoseStamped getLookAheadPoint(const double &, const nav_msgs::msg::Path &);
 
-  double checkOrientation(const geometry_msgs::msg::PoseStamped & pose);
+  /**
+   * @brief checks for the cusp position
+   * @param pose Pose input to determine the cusp position
+   * @return robot distance from the cusp
+   */
+  double detectPathOrientation(const geometry_msgs::msg::PoseStamped & pose);
 
-  double dot(double q1[], double q2[]);
+  /**
+   * @brief determines the dot product
+   * @param u_x, u_y, represents the vector u
+   * @param v_x, v_y, represents the vector v 
+   * @return robot distance from the cusp
+   */
+  inline double dot(double u_x, double u_y, double v_x, double v_y);
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
@@ -243,7 +254,7 @@ protected:
   double max_angular_accel_;
   double rotate_to_heading_min_angle_;
   double goal_dist_tol_;
-  bool reverse_driving_;
+  bool allow_reversing_;
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;

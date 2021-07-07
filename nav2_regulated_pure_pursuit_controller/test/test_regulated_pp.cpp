@@ -82,9 +82,10 @@ public:
   void applyConstraintsWrapper(
   const double & dist_error, const double & lookahead_dist,
   const double & curvature, const geometry_msgs::msg::Twist & curr_speed,
-  const double & pose_cost, double & linear_vel)
+  const double & pose_cost, double & linear_vel, double & sign)
   {
-    return applyConstraints(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+    return applyConstraints(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, 
+      linear_vel, sign);
   }
 
 };
@@ -270,25 +271,29 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   geometry_msgs::msg::Twist curr_speed;
   double pose_cost = 0.0;
   double linear_vel = 0.0;
+  double sign = 1.0;
 
   // since costmaps here are bogus, we can't access them
   ctrl->resetVelocityApproachScaling();
 
   // test curvature regulation (default)
   curr_speed.linear.x = 0.25;
-  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, 
+    linear_vel, sign);
   EXPECT_EQ(linear_vel, 0.25);  // min set speed
 
   linear_vel = 1.0;
   curvature = 0.7407;
   curr_speed.linear.x = 0.5;
-  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, 
+    linear_vel, sign);
   EXPECT_NEAR(linear_vel, 0.5, 0.01);  // lower by curvature
 
   linear_vel = 1.0;
   curvature = 1000.0;
   curr_speed.linear.x = 0.25;
-  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, 
+    linear_vel, sign);
   EXPECT_NEAR(linear_vel, 0.25, 0.01);  // min out by curvature
 
 
@@ -301,24 +306,24 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   // pose_cost = 1;
   // linear_vel = 0.5;
   // curr_speed.linear.x = 0.5;
-  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel, sign);
   // EXPECT_NEAR(linear_vel, 0.498, 0.01);
 
   // max changing cost
   // pose_cost = 127;
   // curr_speed.linear.x = 0.255;
-  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel, sign);
   // EXPECT_NEAR(linear_vel, 0.255, 0.01);
 
   // over max cost thresh
   // pose_cost = 200;
   // curr_speed.linear.x = 0.25;
-  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel, sign);
   // EXPECT_NEAR(linear_vel, 0.25, 0.01);
 
   // test kinematic clamping
   // pose_cost = 200;
   // curr_speed.linear.x = 1.0;
-  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
+  // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel, sign);
   // EXPECT_NEAR(linear_vel, 0.5, 0.01);
 }
