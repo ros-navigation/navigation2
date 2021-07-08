@@ -480,7 +480,7 @@ void RegulatedPurePursuitController::applyConstraints(
     if (unbounded_vel < min_approach_linear_velocity_) {
       approach_vel = min_approach_linear_velocity_;
     } else {
-      approach_vel = approach_vel * velocity_scaling;
+      approach_vel *= velocity_scaling;
     }
     // Use the lowest velocity between approach and other constraints, if all overlapping
     linear_vel = std::min(linear_vel, approach_vel);
