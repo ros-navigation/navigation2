@@ -581,8 +581,9 @@ double RegulatedPurePursuitController::findDirectionChange(
       global_plan_.poses[pose_id].pose.position.y;
 
     /* Checking for the existance of cusp, in the path, using the dot product
-    and determine it's distance from the robot */
-    if ( (oa_x * ab_x) + (oa_y * ab_y) <= 0) {
+    and determine it's distance from the robot. If there is no cusp in the path,
+    then just determine the distance to the goal location. */
+    if ( (oa_x * ab_x) + (oa_y * ab_y) < 0.0 || pose_id == global_plan_.poses.size() ) {
       auto x = global_plan_.poses[pose_id].pose.position.x - pose.pose.position.x;
       auto y = global_plan_.poses[pose_id].pose.position.y - pose.pose.position.y;
       return hypot(x, y); // returning the distance if there is a cusp
