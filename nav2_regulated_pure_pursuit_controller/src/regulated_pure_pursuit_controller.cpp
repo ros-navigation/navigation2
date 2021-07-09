@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <string>
+#include <limits>
 #include <memory>
 #include <utility>
 
@@ -163,11 +164,12 @@ void RegulatedPurePursuitController::configure(
     use_cost_regulated_linear_velocity_scaling_ = false;
   }
 
-  /** Possible to drive in reverse direction if and only if 
+  /** Possible to drive in reverse direction if and only if
    "use_rotate_to_heading" parameter is set to false **/
 
   if (use_rotate_to_heading_ && allow_reversing_) {
-    RCLCPP_WARN(logger_, "Disabling reversing. Both use_rotate_to_heading and allow_reversing "
+    RCLCPP_WARN(
+      logger_, "Disabling reversing. Both use_rotate_to_heading and allow_reversing "
       "parameter cannot be set to true. By default setting use_rotate_to_heading true");
     allow_reversing_ = false;
   }
@@ -601,10 +603,10 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
 }
 
 double RegulatedPurePursuitController::findDirectionChange(
-  const geometry_msgs::msg::PoseStamped & pose )
+  const geometry_msgs::msg::PoseStamped & pose)
 {
   // Iterating through the global path to determine the position of the cusp
-   for (unsigned int pose_id = 1; pose_id < global_plan_.poses.size(); ++pose_id)  {
+  for (unsigned int pose_id = 1; pose_id < global_plan_.poses.size(); ++pose_id) {
     // We have two vectors for the dot product OA and AB. Determining the vectors.
     double oa_x = global_plan_.poses[pose_id].pose.position.x -
       global_plan_.poses[pose_id - 1].pose.position.x;
@@ -621,7 +623,7 @@ double RegulatedPurePursuitController::findDirectionChange(
     if ( (oa_x * ab_x) + (oa_y * ab_y) < 0.0 || pose_id == global_plan_.poses.size() ) {
       auto x = global_plan_.poses[pose_id].pose.position.x - pose.pose.position.x;
       auto y = global_plan_.poses[pose_id].pose.position.y - pose.pose.position.y;
-      return hypot(x, y); // returning the distance if there is a cusp
+      return hypot(x, y);  // returning the distance if there is a cusp
     }
   }
 

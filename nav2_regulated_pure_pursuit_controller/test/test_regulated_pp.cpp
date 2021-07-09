@@ -87,7 +87,8 @@ public:
     const double & curvature, const geometry_msgs::msg::Twist & curr_speed,
     const double & pose_cost, double & linear_vel, double & sign)
   {
-    return applyConstraints(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, 
+    return applyConstraints(
+      dist_error, lookahead_dist, curvature, curr_speed, pose_cost,
       linear_vel, sign);
   }
 };
@@ -293,7 +294,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   // test curvature regulation (default)
   curr_speed.linear.x = 0.25;
   ctrl->applyConstraintsWrapper(
-    dist_error, lookahead_dist, curvature, curr_speed, pose_cost, 
+    dist_error, lookahead_dist, curvature, curr_speed, pose_cost,
     linear_vel, sign);
   EXPECT_EQ(linear_vel, 0.25);  // min set speed
 
@@ -301,7 +302,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   curvature = 0.7407;
   curr_speed.linear.x = 0.5;
   ctrl->applyConstraintsWrapper(
-    dist_error, lookahead_dist, curvature, curr_speed, pose_cost, 
+    dist_error, lookahead_dist, curvature, curr_speed, pose_cost,
     linear_vel, sign);
   EXPECT_NEAR(linear_vel, 0.5, 0.01);  // lower by curvature
 
@@ -309,7 +310,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   curvature = 1000.0;
   curr_speed.linear.x = 0.25;
   ctrl->applyConstraintsWrapper(
-    dist_error, lookahead_dist, curvature, curr_speed, pose_cost, 
+    dist_error, lookahead_dist, curvature, curr_speed, pose_cost,
     linear_vel, sign);
   EXPECT_NEAR(linear_vel, 0.25, 0.01);  // min out by curvature
 
