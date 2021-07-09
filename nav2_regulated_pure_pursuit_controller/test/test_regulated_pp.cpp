@@ -313,6 +313,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
     linear_vel, sign);
   EXPECT_NEAR(linear_vel, 0.25, 0.01);  // min out by curvature
 
+
   // now try with cost regulation (turn off velocity and only cost)
   // ctrl->setCostRegulationScaling();
   // ctrl->resetVelocityRegulationScaling();

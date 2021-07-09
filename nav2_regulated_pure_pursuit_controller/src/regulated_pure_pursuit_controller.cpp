@@ -604,7 +604,7 @@ double RegulatedPurePursuitController::findDirectionChange(
   const geometry_msgs::msg::PoseStamped & pose )
 {
   // Iterating through the global path to determine the position of the cusp
-   for (unsigned int pose_id = 1; pose_id <= global_plan_.poses.size(); ++pose_id)  {
+   for (unsigned int pose_id = 1; pose_id < global_plan_.poses.size(); ++pose_id)  {
     // We have two vectors for the dot product OA and AB. Determining the vectors.
     double oa_x = global_plan_.poses[pose_id].pose.position.x -
       global_plan_.poses[pose_id - 1].pose.position.x;
@@ -625,7 +625,7 @@ double RegulatedPurePursuitController::findDirectionChange(
     }
   }
 
-  return 0.0;
+  return std::numeric_limits<double>::max();
 }
 
 bool RegulatedPurePursuitController::transformPose(
