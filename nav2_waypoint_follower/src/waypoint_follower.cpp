@@ -57,8 +57,8 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
   waypoint_task_executor_id_ = get_parameter("waypoint_task_executor_plugin").as_string();
 
   callback_group_ = create_callback_group(
-      rclcpp::CallbackGroupType::MutuallyExclusive,
-      false);
+    rclcpp::CallbackGroupType::MutuallyExclusive,
+    false);
   callback_group_executor_.add_callback_group(callback_group_, get_node_base_interface());
 
   nav_to_pose_client_ = rclcpp_action::create_client<ClientT>(
@@ -66,7 +66,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_graph_interface(),
     get_node_logging_interface(),
     get_node_waitables_interface(),
-    "navigate_to_pose",callback_group_);
+    "navigate_to_pose", callback_group_);
 
   action_server_ = std::make_unique<ActionServer>(
     get_node_base_interface(),
