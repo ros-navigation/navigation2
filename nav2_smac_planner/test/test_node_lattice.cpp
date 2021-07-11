@@ -20,7 +20,6 @@ using json = nlohmann::json;
 
 TEST(ParserTest, test_lattice_node)
 {
-    std::cout << "Starting" << std::endl; 
     //TODO: Where should the lattice file be placed? 
     std::string filePath = "/home/josh/nav2_ws/src/navigation2/nav2_smac_planner/test/output.json";
     std::ifstream myJsonFile(filePath);
@@ -33,8 +32,7 @@ TEST(ParserTest, test_lattice_node)
     nav2_smac_planner::LatticeMetadata metaData; 
     nav2_smac_planner::MotionPrimitive myPrimitive; 
     nav2_smac_planner::MotionPose pose; 
-
-    std::cout << "Created empty data types " << std::endl; 
+    
     json jsonMetaData = j["latticeMetadata"];
     json jsonPrimatives = j["primitives"];
     json jsonPose = jsonPrimatives[0]["poses"][0];
@@ -75,4 +73,5 @@ TEST(ParserTest, test_lattice_node)
     EXPECT_NEAR(myPrimitives[0].poses[1]._x, 0.06667, 0.01);
     EXPECT_NEAR(myPrimitives[0].poses[1]._y, 0.0, 0.01);
     EXPECT_NEAR(myPrimitives[0].poses[1]._theta, 0.0, 0.01);
+
 }
