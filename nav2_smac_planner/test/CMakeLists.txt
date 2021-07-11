@@ -86,3 +86,14 @@ target_link_libraries(test_smac_2d
   ${library_name}_2d
 )
 
+#Test Lattice node 
+ament_add_gtest(test_lattice_node 
+  test_node_lattice.cpp)
+
+ament_target_dependencies(test_lattice_node 
+ ${dependencies}
+)
+
+target_link_libraries(test_lattice_node
+  ${library_name} )
+

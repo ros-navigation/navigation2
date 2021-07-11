@@ -21,6 +21,7 @@
 #include <queue>
 #include <limits>
 #include <string>
+#include <fstream>
 
 #include "ompl/base/ScopedState.h"
 #include "ompl/base/spaces/DubinsStateSpace.h"
@@ -69,6 +70,36 @@ void LatticeMotionTable::initMotionModel(
 
   // TODO(Matt) populate num_angle_quantization, size_x, min_turning_radius, trig_values,
   // all of the member variables of LatticeMotionTable
+
+  std::ifstream latticeFile(current_lattice_filepath);
+
+  if( !latticeFile.is_open() )
+  {
+    throw std::runtime_error("Could not open lattice file");
+  }
+
+  nlohmann::json j;
+  latticeFile >> j;
+
+  float prevStartAngle = 0; 
+  std::vector<MotionPrimitive> primitives; 
+  for(auto const& primative : j["primitives"] )
+  {
+    MotionPrimitive newPrimitive; 
+    fromJsonToMotionPrimitive(primative, newPrimitive); 
+
+    if(prevStartAngle != newPrimitive.startAngle )
+    {
+      motionPrimitives.emplace_back(primitives);
+      primitives.clear(); 
+      prevStartAngle = newPrimitive.startAngle;
+    }
+    primitives.emplace_back(newPrimitive);
+  }
+  motionPrimitives.emplace_back(primitives); 
+ 
+  fromJsonToMetaData(j["latticeMetadata"], latticeMetadata);
+
 }
 
 MotionPoses LatticeMotionTable::getProjections(const NodeLattice * node)
@@ -81,8 +112,46 @@ LatticeMetadata LatticeMotionTable::getLatticeMetadata(const std::string & latti
   // TODO(Matt) from this file extract and return the number of angle bins and
   // turning radius in global coordinates, respectively.
   // world coordinates meaning meters, not cells
-  return {0 /*num bins*/, 0 /*turning rad*/};
+  return LatticeMetadata();
 }
+
+void fromJsonToMetaData(const nlohmann::json &j, LatticeMetadata &latticeMetadata)
+{
+  j.at("turningRadius").get_to(latticeMetadata.turningRadius);
+  j.at("stepDistance").get_to(latticeMetadata.stepDistance);
+  j.at("gridSeparation").get_to(latticeMetadata.gridSeparation);
+  j.at("maxLength").get_to(latticeMetadata.maxLength);
+  j.at("numberOfHeadings").get_to(latticeMetadata.numberOfHeadings);
+  j.at("outputFile").get_to(latticeMetadata.outputFile);
+  j.at("headingAngles").get_to(latticeMetadata.headingAngles);
+  j.at("numberOfTrajectories").get_to(latticeMetadata.numberOfTrajectories);
+}
+
+void fromJsonToPose(const nlohmann::json &j, MotionPose &pose)
+{
+  pose._x = j[0]; 
+  pose._y = j[1]; 
+  pose._theta = j[2];
+}
+
+void fromJsonToMotionPrimitive(const nlohmann::json &j, MotionPrimitive &motionPrimitive)
+{
+  j.at("trajectoryId").get_to(motionPrimitive.trajectoryId);
+  j.at("startAngle").get_to(motionPrimitive.startAngle);
+  j.at("endAngle").get_to(motionPrimitive.endAngle);   
+  j.at("radius").get_to(motionPrimitive.radius);
+  j.at("trajectoryLength").get_to(motionPrimitive.trajectoryLength);
+  j.at("arcLength").get_to(motionPrimitive.arcLength);
+  j.at("straightLength").get_to(motionPrimitive.straightLength);
+
+  for(auto& jsonPose : j["poses"])
+  {
+      MotionPose pose;
+      fromJsonToPose(jsonPose, pose);
+      motionPrimitive.poses.push_back(pose);
+  }
+}
+
 
 NodeLattice::NodeLattice(const unsigned int index)
 : parent(nullptr),

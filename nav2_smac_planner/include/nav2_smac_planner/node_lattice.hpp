@@ -25,6 +25,7 @@
 #include <utility>
 #include <limits>
 #include <string>
+#include <nlohmann/json.hpp>
 
 #include "ompl/base/StateSpace.h"
 
@@ -40,7 +41,37 @@ namespace nav2_smac_planner
 class NodeLattice;
 class NodeHybrid;
 
-typedef std::pair<unsigned int, double> LatticeMetadata;
+/**
+ * @struct nav2_smac_planner::LatticeMetadata
+ * @brief A struct of all lattice metadata
+ */
+struct LatticeMetadata
+{
+  float turningRadius;
+  float stepDistance;
+  float gridSeparation;
+  float maxLength; 
+  unsigned int numberOfHeadings; 
+  std::string outputFile; 
+  std::vector<float> headingAngles; 
+  unsigned int numberOfTrajectories; 
+};
+
+/**
+ * @struct nav2_smac_planner::MotionPrimitive
+ * @brief A struct of all motion primitive data
+ */
+struct MotionPrimitive
+{
+  unsigned int trajectoryId;
+  float startAngle; 
+  float endAngle; 
+  float radius;
+  float trajectoryLength; 
+  float arcLength; 
+  float straightLength; 
+  MotionPoses poses; 
+};
 
 /**
  * @struct nav2_smac_planner::LatticeMotionTable
@@ -93,7 +124,30 @@ struct LatticeMotionTable
   ompl::base::StateSpacePtr state_space;
   std::vector<TrigValues> trig_values;
   std::string current_lattice_filepath;
+  std::vector<std::vector<MotionPrimitive>> motionPrimitives;
+  LatticeMetadata latticeMetadata;
 };
+
+/**
+ * @brief convert json to lattice metadata 
+ * @param[in] j json object
+ * @param[out] lattice meta data 
+ */
+void fromJsonToMetaData(const nlohmann::json &j, LatticeMetadata &latticeMetaData);
+
+/**
+ * @brief convert json to pose 
+ * @param[in] j json object
+ * @param[out] pose 
+ */
+void fromJsonToPose(const nlohmann::json &j, MotionPose &pose);
+
+/**
+ * @brief convert json to motion primitive
+ * @param[in] j json object 
+ * @param[out] motion primitive
+ */
+void fromJsonToMotionPrimitive(const nlohmann::json &j, MotionPrimitive &motionPrimitive);
 
 /**
  * @class nav2_smac_planner::NodeLattice
