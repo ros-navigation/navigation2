@@ -13,14 +13,20 @@ def read_config():
 
     return config
 
-def write_to_json(minimal_set_trajectories, config):
-    output_dict = {"version": VERSION, "dateGenerated": datetime.today().strftime('%Y-%m-%d'), "latticeMetadata": dict(), "primitives": []}
+def create_header(config, minimal_set_trajectories):
+    header_dict = {"version": VERSION, "dateGenerated": datetime.today().strftime('%Y-%m-%d'), "latticeMetadata": dict(), "primitives": []}
 
     for key, value in config.items():
-        output_dict["latticeMetadata"][key] = value
+        header_dict["latticeMetadata"][key] = value
 
     heading_angles = set([angle for angle in minimal_set_trajectories.keys()])
-    output_dict["latticeMetadata"]["headingAngles"] = sorted(list(heading_angles))
+    header_dict["latticeMetadata"]["headingAngles"] = sorted(list(heading_angles))
+
+    return header_dict
+
+
+def write_to_json(minimal_set_trajectories, config):
+    output_dict = create_header(config, minimal_set_trajectories)
 
     idx = 0
     for start_angle in minimal_set_trajectories.keys():
@@ -43,7 +49,7 @@ def write_to_json(minimal_set_trajectories, config):
     output_dict["latticeMetadata"]["numberOfTrajectories"] = idx
 
     with open(config['outputFile'], 'w') as output_file:
-        json.dump(output_dict, output_file)
+        json.dump(output_dict, output_file, indent="\t")
 
 
 def save_visualizations(minimal_set_trajectories):
