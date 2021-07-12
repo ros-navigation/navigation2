@@ -3,7 +3,6 @@ import numpy as np
 from collections import defaultdict
 
 import math
-import time
 
 class LatticeGenerator:
 
@@ -181,11 +180,17 @@ class LatticeGenerator:
 
                 trajectory_info = (traj_params.radius, trajectory_length, arc_length, straight_length)
 
+                '''
+                Quadrant 1: +x, +y
+                Quadrant 2: -x, +y
+                Quadrant 3: -x, -y
+                Quadrant 4: +x, -y
+                '''
                 
                 # Special cases for trajectories that run straight across the axis
                 if start_angle == 0 and end_angle == 0:
-                    quadrant_1 = (start_angle, end_angle, *trajectory_info, list(zip(xs, ys, yaws_quad1)))
-                    quadrant_2 = (180 - start_angle, 180 - end_angle, *trajectory_info, list(zip(flipped_xs, ys, yaws_quad2)))
+                    quadrant_1 = (0.0, 0.0, *trajectory_info, list(zip(xs, ys, yaws_quad1)))
+                    quadrant_2 = (-180, -180, *trajectory_info, list(zip(flipped_xs, ys, yaws_quad2)))
                     
                     minmal_set_trajectories[quadrant_1[0]].append(quadrant_1)
                     minmal_set_trajectories[quadrant_2[0]].append(quadrant_2)
@@ -196,14 +201,27 @@ class LatticeGenerator:
 
                     minmal_set_trajectories[quadrant_1[0]].append(quadrant_1)
                     minmal_set_trajectories[quadrant_4[0]].append(quadrant_4)
-                else:
-                    # Quadrants move counter-clockwise from top right (i.e. positive x and positive y)
 
-                    quadrant_1 = (start_angle, end_angle, *trajectory_info, list(zip(xs, ys, yaws_quad1)))
-                    quadrant_2 = (180 - start_angle, 180 - end_angle, *trajectory_info, list(zip(flipped_xs, ys, yaws_quad2)))
-                    quadrant_3 = (start_angle - 180, end_angle - 180, *trajectory_info, list(zip(flipped_xs, flipped_ys, yaws_quad3)))
-                    quadrant_4 = (-start_angle, -end_angle, *trajectory_info, list(zip(xs, flipped_ys, yaws_quad4)))
-                    
+                else:
+                    # Need to prevent 180 or -0 being added as a start or end angle
+                    if start_angle == 0:
+                        quadrant_1 = (start_angle, end_angle, *trajectory_info, list(zip(xs, ys, yaws_quad1)))
+                        quadrant_2 = (-180, 180 - end_angle, *trajectory_info, list(zip(flipped_xs, ys, yaws_quad2)))
+                        quadrant_3 = (-180, end_angle - 180, *trajectory_info, list(zip(flipped_xs, flipped_ys, yaws_quad3)))
+                        quadrant_4 = (start_angle, -end_angle, *trajectory_info, list(zip(xs, flipped_ys, yaws_quad4)))
+
+                    elif end_angle == 0:
+                        quadrant_1 = (start_angle, end_angle, *trajectory_info, list(zip(xs, ys, yaws_quad1)))
+                        quadrant_2 = (180 - start_angle, -180, *trajectory_info, list(zip(flipped_xs, ys, yaws_quad2)))
+                        quadrant_3 = (start_angle - 180, -180, *trajectory_info, list(zip(flipped_xs, flipped_ys, yaws_quad3)))
+                        quadrant_4 = (start_angle, end_angle, *trajectory_info, list(zip(xs, flipped_ys, yaws_quad4)))
+
+                    else:
+                        quadrant_1 = (start_angle, end_angle, *trajectory_info, list(zip(xs, ys, yaws_quad1)))
+                        quadrant_2 = (180 - start_angle, 180 - end_angle, *trajectory_info, list(zip(flipped_xs, ys, yaws_quad2)))
+                        quadrant_3 = (start_angle - 180, end_angle - 180, *trajectory_info, list(zip(flipped_xs, flipped_ys, yaws_quad3)))
+                        quadrant_4 = (-start_angle, -end_angle, *trajectory_info, list(zip(xs, flipped_ys, yaws_quad4)))
+
                     minmal_set_trajectories[quadrant_1[0]].append(quadrant_1)
                     minmal_set_trajectories[quadrant_2[0]].append(quadrant_2)
                     minmal_set_trajectories[quadrant_3[0]].append(quadrant_3)
