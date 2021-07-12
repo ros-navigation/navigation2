@@ -25,7 +25,7 @@ def write_to_json(minimal_set_trajectories, config):
     idx = 0
     for start_angle in minimal_set_trajectories.keys():
 
-        for trajectory_data in minimal_set_trajectories[start_angle]:
+        for trajectory_data in sorted(minimal_set_trajectories[start_angle], key=lambda x: x[1]):
 
             traj_info = dict()
             traj_info['trajectoryId'] = idx
