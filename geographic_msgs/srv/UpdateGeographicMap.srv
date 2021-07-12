@@ -1,0 +1,9 @@
+# This service updates a geographic map.
+
+# Changes to geographic map.
+GeographicMapChanges updates
+
+---
+
+bool   success        # true if the call succeeded
+string status         # more details

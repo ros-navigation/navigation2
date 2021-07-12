@@ -24,6 +24,8 @@
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geographic_msgs/msg/geo_pose_stamped.hpp"
+#include "geographic_msgs/msg/geo_path.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
@@ -34,111 +36,116 @@
 namespace nav2_navfn_planner
 {
 
-class NavfnPlanner : public nav2_core::GlobalPlanner
-{
-public:
-  NavfnPlanner();
-  ~NavfnPlanner();
-
-  // plugin configure
-  void configure(
-    rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
-    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
-
-  // plugin cleanup
-  void cleanup() override;
-
-  // plugin activate
-  void activate() override;
-
-  // plugin deactivate
-  void deactivate() override;
-
-
-  // plugin create path
-  nav_msgs::msg::Path createPlan(
-    const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal) override;
-
-protected:
-  // Compute a plan given start and goal poses, provided in global world frame.
-  bool makePlan(
-    const geometry_msgs::msg::Pose & start,
-    const geometry_msgs::msg::Pose & goal, double tolerance,
-    nav_msgs::msg::Path & plan);
-
-  // Compute the navigation function given a seed point in the world to start from
-  bool computePotential(const geometry_msgs::msg::Point & world_point);
-
-  // Compute a plan to a goal from a potential - must call computePotential first
-  bool getPlanFromPotential(
-    const geometry_msgs::msg::Pose & goal,
-    nav_msgs::msg::Path & plan);
-
-  // Remove artifacts at the end of the path - originated from planning on a discretized world
-  void smoothApproachToGoal(
-    const geometry_msgs::msg::Pose & goal,
-    nav_msgs::msg::Path & plan);
-
-  // Compute the potential, or navigation cost, at a given point in the world
-  // - must call computePotential first
-  double getPointPotential(const geometry_msgs::msg::Point & world_point);
-
-  // Check for a valid potential value at a given point in the world
-  // - must call computePotential first
-  // - currently unused
-  // bool validPointPotential(const geometry_msgs::msg::Point & world_point);
-  // bool validPointPotential(const geometry_msgs::msg::Point & world_point, double tolerance);
-
-  // Compute the squared distance between two points
-  inline double squared_distance(
-    const geometry_msgs::msg::Pose & p1,
-    const geometry_msgs::msg::Pose & p2)
+  class NavfnPlanner : public nav2_core::GlobalPlanner
   {
-    double dx = p1.position.x - p2.position.x;
-    double dy = p1.position.y - p2.position.y;
-    return dx * dx + dy * dy;
-  }
+  public:
+    NavfnPlanner();
+    ~NavfnPlanner();
 
-  // Transform a point from world to map frame
-  bool worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my);
+    // plugin configure
+    void configure(
+        rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
+        std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+        std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
-  // Transform a point from map to world frame
-  void mapToWorld(double mx, double my, double & wx, double & wy);
+    // plugin cleanup
+    void cleanup() override;
 
-  // Set the corresponding cell cost to be free space
-  void clearRobotCell(unsigned int mx, unsigned int my);
+    // plugin activate
+    void activate() override;
 
-  // Determine if a new planner object should be made
-  bool isPlannerOutOfDate();
+    // plugin deactivate
+    void deactivate() override;
 
-  // Planner based on ROS1 NavFn algorithm
-  std::unique_ptr<NavFn> planner_;
+    // plugin create path
+    nav2_msgs::msg::PathAndBoundary createPlan(
+        const geometry_msgs::msg::PoseStamped &start,
+        const nav_msgs::msg::Path &goal,
+        const int &robots) override;
 
-  // TF buffer
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+    nav2_msgs::msg::PathAndBoundary createPlan(
+        const geographic_msgs::msg::GeoPoseStamped &start,
+        const geographic_msgs::msg::GeoPath &goal,
+        const int &robots) override;
 
-  // node ptr
-  nav2_util::LifecycleNode::SharedPtr node_;
+  protected:
+    // Compute a plan given start and goal poses, provided in global world frame.
+    bool makePlan(
+        const geometry_msgs::msg::Pose &start,
+        const geometry_msgs::msg::Pose &goal, double tolerance,
+        nav_msgs::msg::Path &plan);
 
-  // Global Costmap
-  nav2_costmap_2d::Costmap2D * costmap_;
+    // Compute the navigation function given a seed point in the world to start from
+    bool computePotential(const geometry_msgs::msg::Point &world_point);
 
-  // The global frame of the costmap
-  std::string global_frame_, name_;
+    // Compute a plan to a goal from a potential - must call computePotential first
+    bool getPlanFromPotential(
+        const geometry_msgs::msg::Pose &goal,
+        nav_msgs::msg::Path &plan);
 
-  // Whether or not the planner should be allowed to plan through unknown space
-  bool allow_unknown_;
+    // Remove artifacts at the end of the path - originated from planning on a discretized world
+    void smoothApproachToGoal(
+        const geometry_msgs::msg::Pose &goal,
+        nav_msgs::msg::Path &plan);
 
-  // If the goal is obstructed, the tolerance specifies how many meters the planner
-  // can relax the constraint in x and y before failing
-  double tolerance_;
+    // Compute the potential, or navigation cost, at a given point in the world
+    // - must call computePotential first
+    double getPointPotential(const geometry_msgs::msg::Point &world_point);
 
-  // Whether to use the astar planner or default dijkstras
-  bool use_astar_;
-};
+    // Check for a valid potential value at a given point in the world
+    // - must call computePotential first
+    // - currently unused
+    // bool validPointPotential(const geometry_msgs::msg::Point & world_point);
+    // bool validPointPotential(const geometry_msgs::msg::Point & world_point, double tolerance);
 
-}  // namespace nav2_navfn_planner
+    // Compute the squared distance between two points
+    inline double squared_distance(
+        const geometry_msgs::msg::Pose &p1,
+        const geometry_msgs::msg::Pose &p2)
+    {
+      double dx = p1.position.x - p2.position.x;
+      double dy = p1.position.y - p2.position.y;
+      return dx * dx + dy * dy;
+    }
 
-#endif  // NAV2_NAVFN_PLANNER__NAVFN_PLANNER_HPP_
+    // Transform a point from world to map frame
+    bool worldToMap(double wx, double wy, unsigned int &mx, unsigned int &my);
+
+    // Transform a point from map to world frame
+    void mapToWorld(double mx, double my, double &wx, double &wy);
+
+    // Set the corresponding cell cost to be free space
+    void clearRobotCell(unsigned int mx, unsigned int my);
+
+    // Determine if a new planner object should be made
+    bool isPlannerOutOfDate();
+
+    // Planner based on ROS1 NavFn algorithm
+    std::unique_ptr<NavFn> planner_;
+
+    // TF buffer
+    std::shared_ptr<tf2_ros::Buffer> tf_;
+
+    // node ptr
+    nav2_util::LifecycleNode::SharedPtr node_;
+
+    // Global Costmap
+    nav2_costmap_2d::Costmap2D *costmap_;
+
+    // The global frame of the costmap
+    std::string global_frame_, name_;
+
+    // Whether or not the planner should be allowed to plan through unknown space
+    bool allow_unknown_;
+
+    // If the goal is obstructed, the tolerance specifies how many meters the planner
+    // can relax the constraint in x and y before failing
+    double tolerance_;
+
+    // Whether to use the astar planner or default dijkstras
+    bool use_astar_;
+  };
+
+} // namespace nav2_navfn_planner
+
+#endif // NAV2_NAVFN_PLANNER__NAVFN_PLANNER_HPP_

@@ -1,0 +1,21 @@
+#goal definition
+uint8 LOCAL = 0
+uint8 GLOBAL = 1
+uint8 mode
+
+nav_msgs/Path goals_local
+geometry_msgs/PoseStamped start_local
+
+geographic_msgs/GeoPath goals_global
+geographic_msgs/GeoPoseStamped start_global
+
+string planner_id
+bool use_start # If false, use robot pose as path start from , if true, use start above instead
+
+int8 robots
+---
+#result definition
+nav2_msgs/PathAndBoundary path_and_boundary
+builtin_interfaces/Duration planning_time
+---
+#feedback

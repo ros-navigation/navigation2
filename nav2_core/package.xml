@@ -15,6 +15,7 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>geographic_msgs</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>pluginlib</depend>
   <depend>nav_msgs</depend>

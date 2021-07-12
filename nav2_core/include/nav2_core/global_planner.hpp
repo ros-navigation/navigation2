@@ -23,61 +23,78 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_msgs/msg/path_and_boundary.hpp"
+#include "geographic_msgs/msg/geo_pose_stamped.hpp"
+#include "geographic_msgs/msg/geo_path.hpp"
 
 namespace nav2_core
 {
 
-/**
+  /**
  * @class GlobalPlanner
  * @brief Abstract interface for global planners to adhere to with pluginlib
  */
-class GlobalPlanner
-{
-public:
-  using Ptr = std::shared_ptr<GlobalPlanner>;
+  class GlobalPlanner
+  {
+  public:
+    using Ptr = std::shared_ptr<GlobalPlanner>;
 
-  /**
+    /**
    * @brief Virtual destructor
    */
-  virtual ~GlobalPlanner() {}
+    virtual ~GlobalPlanner() {}
 
-  /**
+    /**
    * @param  parent pointer to user's node
    * @param  name The name of this planner
    * @param  tf A pointer to a TF buffer
    * @param  costmap_ros A pointer to the costmap
    */
-  virtual void configure(
-    rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
-    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) = 0;
+    virtual void configure(
+        rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
+        std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+        std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) = 0;
 
-  /**
+    /**
    * @brief Method to cleanup resources used on shutdown.
    */
-  virtual void cleanup() = 0;
+    virtual void cleanup() = 0;
 
-  /**
+    /**
    * @brief Method to active planner and any threads involved in execution.
    */
-  virtual void activate() = 0;
+    virtual void activate() = 0;
 
-  /**
+    /**
    * @brief Method to deactive planner and any threads involved in execution.
    */
-  virtual void deactivate() = 0;
+    virtual void deactivate() = 0;
 
-  /**
-   * @brief Method create the plan from a starting and ending goal.
+    /**
+   * @brief Method create the cartesian plan from a starting and ending goal.
+   * @param start The starting pose (cartesian) of the robot
+   * @param goal  The goal pose (cartesian) of the robot
+   * @param robots The number of robots 
+   * @return Path and boundaries generated from the olanner
+   */
+    virtual nav2_msgs::msg::PathAndBoundary createPlan(
+        const geometry_msgs::msg::PoseStamped &start,
+        const nav_msgs::msg::Path &goal,
+        const int &robots) = 0;
+
+    /**
+   * @brief Method create the GPS plan from a starting and ending goal.
    * @param start The starting pose of the robot
    * @param goal  The goal pose of the robot
-   * @return      The sequence of poses to get from start to goal, if any
+   * @param robots The number of robots 
+   * @return Path and boundaries generated from the planner
    */
-  virtual nav_msgs::msg::Path createPlan(
-    const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal) = 0;
-};
+    virtual nav2_msgs::msg::PathAndBoundary createPlan(
+        const geographic_msgs::msg::GeoPoseStamped &start,
+        const geographic_msgs::msg::GeoPath &goal,
+        const int &robots) = 0;
+  };
 
-}  // namespace nav2_core
+} // namespace nav2_core
 
-#endif  // NAV2_CORE__GLOBAL_PLANNER_HPP_
+#endif // NAV2_CORE__GLOBAL_PLANNER_HPP_

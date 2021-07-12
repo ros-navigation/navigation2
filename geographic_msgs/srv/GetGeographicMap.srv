@@ -1,0 +1,15 @@
+# This service requests a region of a geographic map.
+
+string url            # where to read map data
+
+# Bounding box for the desired map.  If all zeros, provide all data
+# available from the specified URL.
+BoundingBox bounds
+
+---
+
+bool success          # true if the call succeeded
+string status         # more details
+
+# The requested map, its bounds may differ from the requested bounds.
+GeographicMap map
