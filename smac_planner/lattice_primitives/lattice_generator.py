@@ -108,7 +108,7 @@ class LatticeGenerator:
 
         initial_headings = sorted(list(filter(lambda x: 0 <= x and x < 90, all_headings)))
 
-        start_level = int(round(self.turning_radius * np.cos(np.arctan(1/2) - np.pi / 2) / self.grid_separation))
+        start_level = int(np.floor(self.turning_radius * np.cos(np.arctan(1/2) - np.pi / 2) / self.grid_separation))
 
         for start_heading in initial_headings:
             
