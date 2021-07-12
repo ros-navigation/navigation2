@@ -380,9 +380,19 @@ def get_testers(args):
     return testers
 
 
+def check_args(expect_failure: str):
+    # Check if --expect_failure is True or False
+    if expect_failure != 'True' and expect_failure != 'False':
+        print('\033[1;37;41m' + ' -e flag must be set to True or False only. ' + '\033[0m')
+        exit(1)
+    else:
+        return eval(expect_failure)
+
+
 def main(argv=sys.argv[1:]):
     # The robot(s) positions from the input arguments
     parser = argparse.ArgumentParser(description='System-level navigation tester node')
+    parser.add_argument('-e', '--expect_failure')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-r', '--robot', action='append', nargs=4,
                        metavar=('init_x', 'init_y', 'final_x', 'final_y'),
@@ -394,6 +404,8 @@ def main(argv=sys.argv[1:]):
 
     args, unknown = parser.parse_known_args()
 
+    expect_failure = check_args(args.expect_failure)
+
     rclpy.init()
 
     # Create testers for each robot
@@ -404,7 +416,7 @@ def main(argv=sys.argv[1:]):
 
     for tester in testers:
         passed = run_all_tests(tester)
-        if not passed:
+        if passed != expect_failure:
             break
 
     for tester in testers:
@@ -413,7 +425,7 @@ def main(argv=sys.argv[1:]):
 
     testers[0].info_msg('Done Shutting Down.')
 
-    if not passed:
+    if passed != expect_failure:
         testers[0].info_msg('Exiting failed')
         exit(1)
     else:
