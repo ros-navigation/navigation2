@@ -87,6 +87,30 @@ TEST(ServiceClient, can_ServiceClient_invoke_in_callback)
   ASSERT_EQ(a, 1);
 }
 
+TEST(ServiceClient, can_ServiceClient_use_default_callback_group)
+{
+  rclcpp::init(0, nullptr);
+  int a = 0;
+  auto service_node = rclcpp::Node::make_shared("service_node");
+  auto service = service_node->create_service<std_srvs::srv::Empty>(
+    "empty_srv",
+    [&a](std_srvs::srv::Empty::Request::SharedPtr, std_srvs::srv::Empty::Response::SharedPtr) {
+      a = 1;
+    });
+  auto srv_thread = std::thread([&]() {rclcpp::spin(service_node);});
+
+  auto client_node = rclcpp::Node::make_shared("client_node");
+  ServiceClient<std_srvs::srv::Empty> client("empty_srv", client_node, true);
+  auto client_thread = std::thread([&]() {rclcpp::spin(client_node);});
+
+  auto req = std::make_shared<std_srvs::srv::Empty::Request>();
+  auto res2 = client.invoke(req);
+  rclcpp::shutdown();
+  srv_thread.join();
+  client_thread.join();
+  ASSERT_EQ(a, 1);
+}
+
 TEST(ServiceClient, can_ServiceClient_timeout)
 {
   rclcpp::init(0, nullptr);
