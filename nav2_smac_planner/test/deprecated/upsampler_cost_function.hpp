@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef DEPRECATED_UPSAMPLER__UPSAMPLER_COST_FUNCTION_NLLS_HPP_
-#define DEPRECATED_UPSAMPLER__UPSAMPLER_COST_FUNCTION_NLLS_HPP_
+#ifndef DEPRECATED__UPSAMPLER_COST_FUNCTION_HPP_
+#define DEPRECATED__UPSAMPLER_COST_FUNCTION_HPP_
 
 #include <cmath>
 #include <vector>
@@ -33,28 +33,28 @@
 namespace nav2_smac_planner
 {
 /**
- * @struct nav2_smac_planner::UpsamplerConstrainedCostFunction
- * @brief Cost function for path upsampling with multiple terms using NLLS
- * including curvature, smoothness, collision, and avoid obstacles.
+ * @struct nav2_smac_planner::UpsamplerCostFunction
+ * @brief Cost function for path upsampling with multiple terms using unconstrained
+ * optimization including curvature, smoothness, collision, and avoid obstacles.
  */
-class UpsamplerConstrainedCostFunction : public ceres::SizedCostFunction<1, 1, 1>
+class UpsamplerCostFunction : public ceres::FirstOrderFunction
 {
 public:
   /**
-   * @brief A constructor for nav2_smac_planner::UpsamplerConstrainedCostFunction
+   * @brief A constructor for nav2_smac_planner::UpsamplerCostFunction
    * @param num_points Number of path points to consider
    */
-  UpsamplerConstrainedCostFunction(
+  UpsamplerCostFunction(
     const std::vector<Eigen::Vector2d> & path,
     const SmootherParams & params,
-    const int & upsample_ratio,
-    const int & i)
-  : _path(path),
+    const int & upsample_ratio)
+  : _num_params(2 * path.size()),
     _params(params),
     _upsample_ratio(upsample_ratio),
-    index(i)
+    _path(path)
   {
   }
+  // TODO(stevemacenski) removed upsample_ratio because temp upsampling on path size
 
   /**
    * @struct CurvatureComputations
@@ -67,7 +67,7 @@ public:
      */
     CurvatureComputations()
     {
-      valid = true;
+      valid = false;
     }
 
     bool valid;
@@ -96,39 +96,68 @@ public:
    * @param gradient of path at each X,Y pair from cost function derived analytically
    * @return if successful in computing values
    */
-
-  bool Evaluate(
-    double const * const * parameters,
-    double * residuals,
-    double ** jacobians) const override
+  virtual bool Evaluate(
+    const double * parameters,
+    double * cost,
+    double * gradient) const
   {
-    Eigen::Vector2d xi = Eigen::Vector2d(parameters[0][0], parameters[1][0]);
-    Eigen::Vector2d xi_p1 = _path.at(index + 1);
-    Eigen::Vector2d xi_m1 = _path.at(index - 1);
+    Eigen::Vector2d xi;
+    Eigen::Vector2d xi_p1;
+    Eigen::Vector2d xi_m1;
+    uint x_index, y_index;
+    cost[0] = 0.0;
+    double cost_raw = 0.0;
+    double grad_x_raw = 0.0;
+    double grad_y_raw = 0.0;
+
+    // cache some computations between the residual and jacobian
     CurvatureComputations curvature_params;
-    double grad_x_raw = 0, grad_y_raw = 0, cost_raw = 0;
 
-    // compute cost
-    addSmoothingResidual(15000, xi, xi_p1, xi_m1, cost_raw);
-    addCurvatureResidual(60.0, xi, xi_p1, xi_m1, curvature_params, cost_raw);
+    for (int i = 0; i != NumParameters() / 2; i++) {
+      x_index = 2 * i;
+      y_index = 2 * i + 1;
+      gradient[x_index] = 0.0;
+      gradient[y_index] = 0.0;
+      if (i < 1 || i >= NumParameters() / 2 - 1) {
+        continue;
+      }
 
-    residuals[0] = 0;
-    residuals[0] = cost_raw;  // objective function value x
+      // if original point's neighbors TODO
+      if (i % _upsample_ratio == 1) {
+        continue;
+      }
 
-    if (jacobians != NULL && jacobians[0] != NULL) {
-      addSmoothingJacobian(15000, xi, xi_p1, xi_m1, grad_x_raw, grad_y_raw);
-      addCurvatureJacobian(60.0, xi, xi_p1, xi_m1, curvature_params, grad_x_raw, grad_y_raw);
+      xi = Eigen::Vector2d(parameters[x_index], parameters[y_index]);
 
-      jacobians[0][0] = 0;
-      jacobians[1][0] = 0;
-      jacobians[0][0] = grad_x_raw;  // x derivative
-      jacobians[1][0] = grad_y_raw;  // y derivative
-      jacobians[0][1] = 0.0;
-      jacobians[1][1] = 0.0;
+      // TODO(stevemacenski): from deep copy to make sure no feedback _path
+      xi_p1 = _path.at(i + 1);
+      xi_m1 = _path.at(i - 1);
+      // xi_p1 = Eigen::Vector2d(parameters[x_index + 2], parameters[y_index + 2]);
+      // xi_m1 = Eigen::Vector2d(parameters[x_index - 2], parameters[y_index - 2]);
+
+      // compute cost
+      addSmoothingResidual(15000, xi, xi_p1, xi_m1, cost_raw);
+      addCurvatureResidual(60.0, xi, xi_p1, xi_m1, curvature_params, cost_raw);
+
+      if (gradient != NULL) {
+        // compute gradient
+        addSmoothingJacobian(15000, xi, xi_p1, xi_m1, grad_x_raw, grad_y_raw);
+        addCurvatureJacobian(60.0, xi, xi_p1, xi_m1, curvature_params, grad_x_raw, grad_y_raw);
+
+        gradient[x_index] = grad_x_raw;
+        gradient[y_index] = grad_y_raw;
+      }
     }
 
+    cost[0] = cost_raw;
     return true;
   }
+
+  /**
+   * @brief Get number of parameter blocks
+   * @return Number of parameters in cost function
+   */
+  virtual int NumParameters() const {return _num_params;}
 
 protected:
   /**
@@ -219,6 +248,9 @@ protected:
 
     curvature_params.ki_minus_kmax = curvature_params.turning_rad - _upsample_ratio *
       _params.max_curvature;
+    // TODO(stevemacenski) is use of upsample_ratio correct here? small number?
+    // TODO(stevemacenski) can remove the subtraction with a
+    // lower weight value, does have direction issue, maybe just tuning?
 
     if (curvature_params.ki_minus_kmax <= EPSILON) {
       // Quadratic penalty need not apply
@@ -249,9 +281,8 @@ protected:
       return;
     }
 
-    // objective function value
     r += weight *
-      curvature_params.ki_minus_kmax * curvature_params.ki_minus_kmax;
+      curvature_params.ki_minus_kmax * curvature_params.ki_minus_kmax;  // objective function value
   }
 
   /**
@@ -299,13 +330,14 @@ protected:
     const Eigen::Vector2d jacobian_im1 = u *
       (common_prefix * p2 + (common_suffix * d_delta_xi_d_xi));
     const Eigen::Vector2d jacobian_ip1 = u * (common_prefix * p1);
-    j0 += weight * jacobian[0];  // xi x component of partial-derivative
-    j1 += weight * jacobian[1];  // xi y component of partial-derivative
+    j0 += weight * jacobian[0];  // xi y component of partial-derivative
+    j1 += weight * jacobian[1];  // xi x component of partial-derivative
     // j0 += weight *
     //   (jacobian_im1[0] + 2 * jacobian[0] + jacobian_ip1[0]);
     // j1 += weight *
     //   (jacobian_im1[1] + 2 * jacobian[1] + jacobian_ip1[1]);
   }
+
   /**
    * @brief Computing the normalized orthogonal component of 2 vectors
    * @param a Vector
@@ -323,12 +355,12 @@ protected:
     return (a - (a.dot(b) * b / b.squaredNorm())) / (a_norm * b_norm);
   }
 
-  std::vector<Eigen::Vector2d> _path;
+  int _num_params;
   SmootherParams _params;
   int _upsample_ratio;
-  int index;
+  std::vector<Eigen::Vector2d> _path;
 };
 
 }  // namespace nav2_smac_planner
 
-#endif  // DEPRECATED_UPSAMPLER__UPSAMPLER_COST_FUNCTION_NLLS_HPP_
+#endif  // DEPRECATED__UPSAMPLER_COST_FUNCTION_HPP_

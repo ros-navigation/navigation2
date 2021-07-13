@@ -23,10 +23,10 @@
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_smac_planner/node_se2.hpp"
+#include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
-#include "nav2_smac_planner/smac_planner.hpp"
+#include "nav2_smac_planner/smac_planner_hybrid.hpp"
 #include "nav2_smac_planner/smac_planner_2d.hpp"
 
 class RclCppFixture
@@ -50,8 +50,6 @@ TEST(SmacTest, test_smac_se2)
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
-  nodeSE2->declare_parameter("test.smooth_path", true);
-  nodeSE2->set_parameter(rclcpp::Parameter("test.smooth_path", true));
   nodeSE2->declare_parameter("test.downsample_costmap", true);
   nodeSE2->set_parameter(rclcpp::Parameter("test.downsample_costmap", true));
   nodeSE2->declare_parameter("test.downsampling_factor", 2);
@@ -61,8 +59,10 @@ TEST(SmacTest, test_smac_se2)
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
   start.pose.orientation.w = 1.0;
-  goal = start;
-  auto planner = std::make_unique<nav2_smac_planner::SmacPlanner>();
+  goal.pose.position.x = 1.0;
+  goal.pose.position.y = 1.0;
+  goal.pose.orientation.w = 1.0;
+  auto planner = std::make_unique<nav2_smac_planner::SmacPlannerHybrid>();
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
 
@@ -78,15 +78,4 @@ TEST(SmacTest, test_smac_se2)
   costmap_ros->on_cleanup(rclcpp_lifecycle::State());
   costmap_ros.reset();
   nodeSE2.reset();
-}
-
-TEST(SmacTestSE2, test_dist)
-{
-  Eigen::Vector2d p1;
-  p1[0] = 0.0;
-  p1[1] = 0.0;
-  Eigen::Vector2d p2;
-  p2[0] = 0.0;
-  p2[1] = 1.0;
-  EXPECT_NEAR(nav2_smac_planner::squaredDistance(p1, p2), 1.0, 0.001);
 }

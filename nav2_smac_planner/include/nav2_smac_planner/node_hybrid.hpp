@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_SMAC_PLANNER__NODE_SE2_HPP_
-#define NAV2_SMAC_PLANNER__NODE_SE2_HPP_
+#ifndef NAV2_SMAC_PLANNER__NODE_HYBRID_HPP_
+#define NAV2_SMAC_PLANNER__NODE_HYBRID_HPP_
 
 #include <math.h>
 #include <vector>
@@ -30,9 +30,13 @@
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "nav2_smac_planner/costmap_downsampler.hpp"
 
 namespace nav2_smac_planner
 {
+
+typedef std::vector<float> LookupTable;
+typedef std::pair<double, double> TrigValues;
 
 // Need seperate pose struct for motion table operations
 
@@ -65,18 +69,18 @@ struct MotionPose
 typedef std::vector<MotionPose> MotionPoses;
 
 // Must forward declare
-class NodeSE2;
+class NodeHybrid;
 
 /**
- * @struct nav2_smac_planner::MotionTable
+ * @struct nav2_smac_planner::HybridMotionTable
  * @brief A table of motion primitives and related functions
  */
-struct MotionTable
+struct HybridMotionTable
 {
   /**
-   * @brief A constructor for nav2_smac_planner::MotionTable
+   * @brief A constructor for nav2_smac_planner::HybridMotionTable
    */
-  MotionTable() {}
+  HybridMotionTable() {}
 
   /**
    * @brief Initializing using Dubin model
@@ -106,22 +110,16 @@ struct MotionTable
 
   /**
    * @brief Get projections of motion models
-   * @param node Ptr to SE2 node
+   * @param node Ptr to NodeHybrid
    * @return A set of motion poses
    */
-  MotionPoses getProjections(const NodeSE2 * node);
-
-  /**
-   * @brief Get a projection of motion model
-   * @param node Ptr to SE2 node
-   * @return A motion pose
-   */
-  MotionPose getProjection(const NodeSE2 * node, const unsigned int & motion_index);
+  MotionPoses getProjections(const NodeHybrid * node);
 
   MotionPoses projections;
   unsigned int size_x;
   unsigned int num_angle_quantization;
   float num_angle_quantization_float;
+  float min_turning_radius;
   float bin_size;
   float change_penalty;
   float non_straight_penalty;
@@ -130,31 +128,33 @@ struct MotionTable
   ompl::base::StateSpacePtr state_space;
   std::vector<std::vector<double>> delta_xs;
   std::vector<std::vector<double>> delta_ys;
+  std::vector<TrigValues> trig_values;
 };
 
 /**
- * @class nav2_smac_planner::NodeSE2
- * @brief NodeSE2 implementation for graph
+ * @class nav2_smac_planner::NodeHybrid
+ * @brief NodeHybrid implementation for graph, Hybrid-A*
  */
-class NodeSE2
+class NodeHybrid
 {
 public:
-  typedef NodeSE2 * NodePtr;
-  typedef std::unique_ptr<std::vector<NodeSE2>> Graph;
+  typedef NodeHybrid * NodePtr;
+  typedef std::unique_ptr<std::vector<NodeHybrid>> Graph;
   typedef std::vector<NodePtr> NodeVector;
+
   /**
-   * @class nav2_smac_planner::NodeSE2::Coordinates
-   * @brief NodeSE2 implementation of coordinate structure
+   * @class nav2_smac_planner::NodeHybrid::Coordinates
+   * @brief NodeHybrid implementation of coordinate structure
    */
   struct Coordinates
   {
     /**
-     * @brief A constructor for nav2_smac_planner::NodeSE2::Coordinates
+     * @brief A constructor for nav2_smac_planner::NodeHybrid::Coordinates
      */
     Coordinates() {}
 
     /**
-     * @brief A constructor for nav2_smac_planner::NodeSE2::Coordinates
+     * @brief A constructor for nav2_smac_planner::NodeHybrid::Coordinates
      * @param x_in X coordinate
      * @param y_in Y coordinate
      * @param theta_in Theta coordinate
@@ -163,28 +163,38 @@ public:
     : x(x_in), y(y_in), theta(theta_in)
     {}
 
+    inline bool operator==(const Coordinates & rhs)
+    {
+      return this->x == rhs.x && this->y == rhs.y && this->theta == rhs.theta;
+    }
+
+    inline bool operator!=(const Coordinates & rhs)
+    {
+      return !(*this == rhs);
+    }
+
     float x, y, theta;
   };
 
   typedef std::vector<Coordinates> CoordinateVector;
 
   /**
-   * @brief A constructor for nav2_smac_planner::NodeSE2
+   * @brief A constructor for nav2_smac_planner::NodeHybrid
    * @param index The index of this node for self-reference
    */
-  explicit NodeSE2(const unsigned int index);
+  explicit NodeHybrid(const unsigned int index);
 
   /**
-   * @brief A destructor for nav2_smac_planner::NodeSE2
+   * @brief A destructor for nav2_smac_planner::NodeHybrid
    */
-  ~NodeSE2();
+  ~NodeHybrid();
 
   /**
    * @brief operator== for comparisons
-   * @param NodeSE2 right hand side node reference
+   * @param NodeHybrid right hand side node reference
    * @return If cell indicies are equal
    */
-  bool operator==(const NodeSE2 & rhs)
+  bool operator==(const NodeHybrid & rhs)
   {
     return this->_index == rhs._index;
   }
@@ -216,7 +226,7 @@ public:
    * @brief Sets the accumulated cost at this node
    * @param reference to accumulated cost
    */
-  inline void setAccumulatedCost(const float cost_in)
+  inline void setAccumulatedCost(const float & cost_in)
   {
     _accumulated_cost = cost_in;
   }
@@ -263,24 +273,6 @@ public:
   inline void visited()
   {
     _was_visited = true;
-    _is_queued = false;
-  }
-
-  /**
-   * @brief Gets if cell is currently queued in search
-   * @param If cell was queued
-   */
-  inline bool & isQueued()
-  {
-    return _is_queued;
-  }
-
-  /**
-   * @brief Sets if cell is currently queued in search
-   */
-  inline void queued()
-  {
-    _is_queued = true;
   }
 
   /**
@@ -297,7 +289,7 @@ public:
    * @param traverse_unknown If we can explore unknown nodes on the graph
    * @return whether this node is valid and collision free
    */
-  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker collision_checker);
+  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker * collision_checker);
 
   /**
    * @brief Get traversal cost of parent node to child node
@@ -317,7 +309,7 @@ public:
    */
   static inline unsigned int getIndex(
     const unsigned int & x, const unsigned int & y, const unsigned int & angle,
-    const unsigned int & width, const unsigned int angle_quantization)
+    const unsigned int & width, const unsigned int & angle_quantization)
   {
     return angle + x * angle_quantization + y * width * angle_quantization;
   }
@@ -346,7 +338,7 @@ public:
    */
   static inline Coordinates getCoords(
     const unsigned int & index,
-    const unsigned int & width, const unsigned int angle_quantization)
+    const unsigned int & width, const unsigned int & angle_quantization)
   {
     return Coordinates(
       (index / angle_quantization) % width,    // x
@@ -358,11 +350,13 @@ public:
    * @brief Get cost of heuristic of node
    * @param node Node index current
    * @param node Node index of new
+   * @param costmap Costmap ptr to use
    * @return Heuristic cost between the nodes
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates);
+    const Coordinates & goal_coordinates,
+    const nav2_costmap_2d::Costmap2D * costmap);
 
   /**
    * @brief Initialize motion models
@@ -380,46 +374,87 @@ public:
     SearchInfo & search_info);
 
   /**
-   * @brief Compute the wavefront heuristic
-   * @param costmap Costmap to use to compute heuristic
-   * @param start_x Coordinate of Start X
-   * @param start_y Coordinate of Start Y
-   * @param goal_x Coordinate of Goal X
-   * @param goal_y Coordinate of Goal Y
+   * @brief Compute the SE2 distance heuristic
+   * @param lookup_table_dim Size, in costmap pixels, of the
+   * each lookup table dimension to populate
+   * @param motion_model Motion model to use for state space
+   * @param dim_3_size Number of quantization bins for caching
+   * @param search_info Info containing minimum radius to use
    */
-  static void computeWavefrontHeuristic(
-    nav2_costmap_2d::Costmap2D * & costmap,
-    const unsigned int & start_x, const unsigned int & start_y,
+  static void precomputeDistanceHeuristic(
+    const float & lookup_table_dim,
+    const MotionModel & motion_model,
+    const unsigned int & dim_3_size,
+    const SearchInfo & search_info);
+
+  /**
+   * @brief Compute the Obstacle heuristic
+   * @param node_coords Coordinates to get heuristic at
+   * @param goal_coords Coordinates to compute heuristic to
+   * @return heuristic Heuristic value
+   */
+  static float getObstacleHeuristic(
+    const Coordinates & node_coords,
+    const Coordinates & goal_coords);
+
+  /**
+   * @brief Compute the Distance heuristic
+   * @param node_coords Coordinates to get heuristic at
+   * @param goal_coords Coordinates to compute heuristic to
+   * @param obstacle_heuristic Value of the obstacle heuristic to compute
+   * additional motion heuristics if required
+   * @return heuristic Heuristic value
+   */
+  static float getDistanceHeuristic(
+    const Coordinates & node_coords,
+    const Coordinates & goal_coords,
+    const float & obstacle_heuristic);
+
+  /**
+   * @brief reset the obstacle heuristic state
+   * @param costmap Costmap to use
+   * @param goal_coords Coordinates to start heuristic expansion at
+   */
+  static void resetObstacleHeuristic(
+    nav2_costmap_2d::Costmap2D * costmap,
     const unsigned int & goal_x, const unsigned int & goal_y);
 
   /**
    * @brief Retrieve all valid neighbors of a node.
-   * @param node Pointer to the node we are currently exploring in A*
    * @param validity_checker Functor for state validity checking
+   * @param collision_checker Collision checker to use
+   * @param traverse_unknown If unknown costs are valid to traverse
    * @param neighbors Vector of neighbors to be filled
    */
-  static void getNeighbors(
-    const NodePtr & node,
-    std::function<bool(const unsigned int &, nav2_smac_planner::NodeSE2 * &)> & validity_checker,
-    GridCollisionChecker collision_checker,
+  void getNeighbors(
+    std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> & validity_checker,
+    GridCollisionChecker * collision_checker,
     const bool & traverse_unknown,
     NodeVector & neighbors);
 
-  NodeSE2 * parent;
+  NodeHybrid * parent;
   Coordinates pose;
-  static double neutral_cost;
-  static MotionTable motion_table;
+
+  // Constants required across all nodes but don't want to allocate more than once
+  static double travel_distance_cost;
+  static HybridMotionTable motion_table;
+  // Wavefront lookup and queue for continuing to expand as needed
+  static LookupTable obstacle_heuristic_lookup_table;
+  static std::queue<unsigned int> obstacle_heuristic_queue;
+  static nav2_costmap_2d::Costmap2D * sampled_costmap;
+  static CostmapDownsampler downsampler;
+  // Dubin / Reeds-Shepp lookup and size for dereferencing
+  static LookupTable dist_heuristic_lookup_table;
+  static float size_lookup;
 
 private:
   float _cell_cost;
   float _accumulated_cost;
   unsigned int _index;
   bool _was_visited;
-  bool _is_queued;
   unsigned int _motion_primitive_index;
-  static std::vector<unsigned int> _wavefront_heuristic;
 };
 
 }  // namespace nav2_smac_planner
 
-#endif  // NAV2_SMAC_PLANNER__NODE_SE2_HPP_
+#endif  // NAV2_SMAC_PLANNER__NODE_HYBRID_HPP_

@@ -24,7 +24,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_smac_planner/node_basic.hpp"
 #include "nav2_smac_planner/node_2d.hpp"
-#include "nav2_smac_planner/node_se2.hpp"
+#include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 
 class RclCppFixture
@@ -37,7 +37,7 @@ RclCppFixture g_rclcppfixture;
 
 TEST(NodeBasicTest, test_node_basic)
 {
-  nav2_smac_planner::NodeBasic<nav2_smac_planner::NodeSE2> node(50);
+  nav2_smac_planner::NodeBasic<nav2_smac_planner::NodeHybrid> node(50);
 
   EXPECT_EQ(node.index, 50u);
   EXPECT_EQ(node.graph_node_ptr, nullptr);

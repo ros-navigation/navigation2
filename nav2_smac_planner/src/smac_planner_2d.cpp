@@ -28,6 +28,7 @@ using namespace std::chrono;  // NOLINT
 
 SmacPlanner2D::SmacPlanner2D()
 : _a_star(nullptr),
+  _collision_checker(nullptr, 1),
   _smoother(nullptr),
   _costmap(nullptr),
   _costmap_downsampler(nullptr)
@@ -56,8 +57,7 @@ void SmacPlanner2D::configure(
   bool allow_unknown;
   int max_iterations;
   int max_on_approach_iterations;
-  bool smooth_path;
-  double minimum_turning_radius;
+  SearchInfo search_info;
   std::string motion_model_for_search;
 
   // General planner params
@@ -70,22 +70,19 @@ void SmacPlanner2D::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
   node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".cost_travel_multiplier", rclcpp::ParameterValue(2.0));
+  node->get_parameter(name + ".cost_travel_multiplier", search_info.cost_penalty);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".allow_unknown", allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".max_iterations", rclcpp::ParameterValue(-1));
+    node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
   node->get_parameter(name + ".max_iterations", max_iterations);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
   node->get_parameter(name + ".max_on_approach_iterations", max_on_approach_iterations);
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".smooth_path", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".smooth_path", smooth_path);
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.2));
-  node->get_parameter(name + ".minimum_turning_radius", minimum_turning_radius);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(1.0));
@@ -117,20 +114,29 @@ void SmacPlanner2D::configure(
     max_iterations = std::numeric_limits<int>::max();
   }
 
-  _a_star = std::make_unique<AStarAlgorithm<Node2D>>(motion_model, SearchInfo());
+  // Initialize collision checker
+  _collision_checker = GridCollisionChecker(_costmap, 1 /*for 2D, most be 1*/);
+  _collision_checker.setFootprint(
+    costmap_ros->getRobotFootprint(),
+    true /*for 2D, most use radius*/,
+    0.0 /*for 2D cost at inscribed isn't relevent*/);
+
+  // Initialize A* template
+  _a_star = std::make_unique<AStarAlgorithm<Node2D>>(motion_model, search_info);
   _a_star->initialize(
     allow_unknown,
     max_iterations,
-    max_on_approach_iterations);
+    max_on_approach_iterations,
+    0.0 /*unused for 2D*/,
+    1.0 /*unused for 2D*/);
 
-  if (smooth_path) {
-    _smoother = std::make_unique<Smoother>();
-    _optimizer_params.get(node.get(), name);
-    _smoother_params.get(node.get(), name);
-    _smoother_params.max_curvature = 1.0f / minimum_turning_radius;
-    _smoother->initialize(_optimizer_params);
-  }
+  // Initialize path smoother
+  SmootherParams params;
+  params.get(node, name);
+  _smoother = std::make_unique<Smoother>(params);
+  _smoother->initialize(1e-50 /*No valid minimum turning radius for 2D*/);
 
+  // Initialize costmap downsampler
   if (_downsample_costmap && _downsampling_factor > 1) {
     std::string topic_name = "downsampled_costmap";
     _costmap_downsampler = std::make_unique<CostmapDownsampler>();
@@ -195,14 +201,11 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   nav2_costmap_2d::Costmap2D * costmap = _costmap;
   if (_costmap_downsampler) {
     costmap = _costmap_downsampler->downsample(_downsampling_factor);
+    _collision_checker.setCostmap(costmap);
   }
 
-  // Set Costmap
-  _a_star->createGraph(
-    costmap->getSizeInCellsX(),
-    costmap->getSizeInCellsY(),
-    1,
-    costmap);
+  // Set collision checker and costmap information
+  _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point
   unsigned int mx, my;
@@ -252,21 +255,10 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     return plan;
   }
 
-  // Convert to world coordinates and downsample path for smoothing if necesssary
-  // We're going to downsample by 4x to give terms room to move.
-  const int downsample_ratio = 4;
-  std::vector<Eigen::Vector2d> path_world;
-  path_world.reserve(_smoother ? path.size() / downsample_ratio : path.size());
-  plan.poses.reserve(_smoother ? path.size() / downsample_ratio : path.size());
-
+  // Convert to world coordinates
+  plan.poses.reserve(path.size());
   for (int i = path.size() - 1; i >= 0; --i) {
-    if (_smoother && i % downsample_ratio != 0) {
-      continue;
-    }
-
-    path_world.push_back(getWorldCoords(path[i].x, path[i].y, costmap));
-    pose.pose.position.x = path_world.back().x();
-    pose.pose.position.y = path_world.back().y();
+    pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
     plan.poses.push_back(pose);
   }
 
@@ -275,65 +267,22 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     _raw_plan_publisher->publish(plan);
   }
 
-  // If not smoothing or too short to smooth, return path
-  if (!_smoother || path_world.size() < 4) {
-#ifdef BENCHMARK_TESTING
-    steady_clock::time_point b = steady_clock::now();
-    duration<double> time_span = duration_cast<duration<double>>(b - a);
-    std::cout << "It took " << time_span.count() * 1000 <<
-      " milliseconds with " << num_iterations << " iterations." << std::endl;
-#endif
-    return plan;
-  }
-
   // Find how much time we have left to do smoothing
   steady_clock::time_point b = steady_clock::now();
   duration<double> time_span = duration_cast<duration<double>>(b - a);
   double time_remaining = _max_planning_time - static_cast<double>(time_span.count());
-  _smoother_params.max_time = std::min(time_remaining, _optimizer_params.max_time);
+
+#ifdef BENCHMARK_TESTING
+  std::cout << "It took " << time_span.count() * 1000 <<
+    " milliseconds with " << num_iterations << " iterations." << std::endl;
+#endif
 
   // Smooth plan
-  if (!_smoother->smooth(path_world, costmap, _smoother_params)) {
-    RCLCPP_WARN(
-      _logger,
-      "%s: failed to smooth plan, Ceres could not find a usable solution to optimize.",
-      _name.c_str());
-    return plan;
-  }
-
-  removeHook(path_world);
-
-  // populate final path
-  for (uint i = 0; i != path_world.size(); i++) {
-    pose.pose.position.x = path_world[i][0];
-    pose.pose.position.y = path_world[i][1];
-    plan.poses[i] = pose;
+  if (plan.poses.size() > 6) {
+    _smoother->smooth(plan, costmap, time_remaining);
   }
 
   return plan;
-}
-
-void SmacPlanner2D::removeHook(std::vector<Eigen::Vector2d> & path)
-{
-  // Removes the end "hooking" since goal is locked in place
-  Eigen::Vector2d interpolated_second_to_last_point;
-  interpolated_second_to_last_point = (path.end()[-3] + path.end()[-1]) / 2.0;
-  if (
-    squaredDistance(path.end()[-2], path.end()[-1]) >
-    squaredDistance(interpolated_second_to_last_point, path.end()[-1]))
-  {
-    path.end()[-2] = interpolated_second_to_last_point;
-  }
-}
-
-Eigen::Vector2d SmacPlanner2D::getWorldCoords(
-  const float & mx, const float & my, const nav2_costmap_2d::Costmap2D * costmap)
-{
-  float world_x =
-    static_cast<float>(costmap->getOriginX()) + (mx + 0.5) * costmap->getResolution();
-  float world_y =
-    static_cast<float>(costmap->getOriginY()) + (my + 0.5) * costmap->getResolution();
-  return Eigen::Vector2d(world_x, world_y);
 }
 
 }  // namespace nav2_smac_planner
