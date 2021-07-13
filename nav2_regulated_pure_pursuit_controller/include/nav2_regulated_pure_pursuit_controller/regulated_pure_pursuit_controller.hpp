@@ -210,7 +210,7 @@ protected:
   void applyConstraints(
     const double & dist_error, const double & lookahead_dist,
     const double & curvature, const geometry_msgs::msg::Twist & speed,
-    const double & pose_cost, double & linear_vel);
+    const double & pose_cost, double & linear_vel, double & sign);
 
   /**
    * @brief Get lookahead point
@@ -219,6 +219,13 @@ protected:
    * @return Lookahead point
    */
   geometry_msgs::msg::PoseStamped getLookAheadPoint(const double &, const nav_msgs::msg::Path &);
+
+  /**
+   * @brief checks for the cusp position
+   * @param pose Pose input to determine the cusp position
+   * @return robot distance from the cusp
+   */
+  double findDirectionChange(const geometry_msgs::msg::PoseStamped & pose);
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
@@ -251,6 +258,7 @@ protected:
   double max_angular_accel_;
   double rotate_to_heading_min_angle_;
   double goal_dist_tol_;
+  bool allow_reversing_;
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
