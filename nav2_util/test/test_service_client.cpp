@@ -87,7 +87,50 @@ TEST(ServiceClient, can_ServiceClient_invoke_in_callback)
   ASSERT_EQ(a, 1);
 }
 
-TEST(ServiceClient, can_ServiceClient_use_default_callback_group)
+TEST(ServiceClient, can_ServiceClient_not_use_internal_executor1)
+{
+  rclcpp::init(0, nullptr);
+  int a = 0;
+  auto service_node = rclcpp::Node::make_shared("service_node");
+  auto service = service_node->create_service<std_srvs::srv::Empty>(
+    "empty_srv",
+    [&a](std_srvs::srv::Empty::Request::SharedPtr, std_srvs::srv::Empty::Response::SharedPtr) {
+      a = 1;
+    });
+  auto srv_thread = std::thread([&]() {rclcpp::spin(service_node);});
+
+  auto pub_node = rclcpp::Node::make_shared("pub_node");
+  auto pub = pub_node->create_publisher<std_msgs::msg::Empty>(
+    "empty_topic",
+    rclcpp::QoS(1).transient_local());
+  auto pub_thread = std::thread([&]() {rclcpp::spin(pub_node);});
+
+  auto sub_node = rclcpp::Node::make_shared("sub_node");
+  ServiceClient<std_srvs::srv::Empty> client("empty_srv", sub_node, false);
+  auto sub = sub_node->create_subscription<std_msgs::msg::Empty>(
+    "empty_topic",
+    rclcpp::QoS(1),
+    [&client](std_msgs::msg::Empty::SharedPtr) {
+      auto req = std::make_shared<std_srvs::srv::Empty::Request>();
+      auto res = client.invoke(req);
+    });
+  auto sub_thread = std::thread(
+    [&]() {
+      rclcpp::executors::MultiThreadedExecutor exec(rclcpp::ExecutorOptions(), 2);
+      exec.add_node(sub_node);
+      exec.spin();
+      exec.remove_node(sub_node);
+    });
+  pub->publish(std_msgs::msg::Empty());
+  sleep(1);
+  rclcpp::shutdown();
+  srv_thread.join();
+  pub_thread.join();
+  sub_thread.join();
+  ASSERT_EQ(a, 1);
+}
+
+TEST(ServiceClient, can_ServiceClient_not_use_internal_executor2)
 {
   rclcpp::init(0, nullptr);
   int a = 0;
@@ -100,7 +143,7 @@ TEST(ServiceClient, can_ServiceClient_use_default_callback_group)
   auto srv_thread = std::thread([&]() {rclcpp::spin(service_node);});
 
   auto client_node = rclcpp::Node::make_shared("client_node");
-  ServiceClient<std_srvs::srv::Empty> client("empty_srv", client_node, true);
+  ServiceClient<std_srvs::srv::Empty> client("empty_srv", client_node, false);
   auto client_thread = std::thread([&]() {rclcpp::spin(client_node);});
 
   auto req = std::make_shared<std_srvs::srv::Empty::Request>();

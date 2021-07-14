@@ -16,7 +16,7 @@
 #define NAV2_UTIL__SERVICE_CLIENT_HPP_
 
 #include <string>
-
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_util
@@ -34,32 +34,31 @@ public:
   * @brief A constructor
   * @param service_name name of the service to call
   * @param provided_node Node to create the service client off of
-  * @param use_default_callback_group Whether to use default callback group. when true,
-  * ServiceClient can't be invoked in ros callback.
+  * @param use_internal_executor Whether to create and use SingleThreadedExecutor, defalut True.
   */
   explicit ServiceClient(
     const std::string & service_name,
     const rclcpp::Node::SharedPtr & provided_node,
-    bool use_default_callback_group = false)
+    bool use_internal_executor = true)
   : service_name_(service_name), node_(provided_node),
-    use_default_callback_group_(use_default_callback_group)
+    use_internal_executor_(use_internal_executor)
   {
-    if (use_default_callback_group_) {
-      client_ = node_->create_client<ServiceT>(
-        service_name,
-        rmw_qos_profile_services_default);
-    } else {
+    if (use_internal_executor_) {
       callback_group_ = node_->create_callback_group(
         rclcpp::CallbackGroupType::MutuallyExclusive,
         false);
-      callback_group_executor_.add_callback_group(
+      callback_group_executor_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
+      callback_group_executor_->add_callback_group(
         callback_group_,
         node_->get_node_base_interface());
-      client_ = node_->create_client<ServiceT>(
-        service_name,
-        rmw_qos_profile_services_default,
-        callback_group_);
+    } else {
+      callback_group_ = node_->create_callback_group(
+        rclcpp::CallbackGroupType::MutuallyExclusive);
     }
+    client_ = node_->create_client<ServiceT>(
+      service_name,
+      rmw_qos_profile_services_default,
+      callback_group_);
   }
 
   using RequestType = typename ServiceT::Request;
@@ -91,7 +90,10 @@ public:
     auto future_result = client_->async_send_request(request);
 
     bool success = true;
-    if (use_default_callback_group_) {
+    if (use_internal_executor_) {
+      auto status = callback_group_executor_->spin_until_future_complete(future_result, timeout);
+      success = (status == rclcpp::FutureReturnCode::SUCCESS);
+    } else {
       std::future_status status;
       if (timeout < std::chrono::nanoseconds::zero()) {
         // Block forever until future completed
@@ -102,9 +104,6 @@ public:
         status = future_result.wait_for(timeout);
       }
       success = (status == std::future_status::ready);
-    } else {
-      auto status = callback_group_executor_.spin_until_future_complete(future_result, timeout);
-      success = (status == rclcpp::FutureReturnCode::SUCCESS);
     }
     if (!success) {
       throw std::runtime_error(service_name_ + " service client: async_send_request failed");
@@ -139,15 +138,15 @@ public:
     auto future_result = client_->async_send_request(request);
 
     bool success = true;
-    if (use_default_callback_group_) {
+    if (use_internal_executor_) {
+      auto status = callback_group_executor_->spin_until_future_complete(future_result);
+      success = (status == rclcpp::FutureReturnCode::SUCCESS);
+    } else {
       std::future_status status;
       // Block forever until future completed
       do {
         status = future_result.wait_for(std::chrono::seconds(1));
       } while (status != std::future_status::ready);
-    } else {
-      auto status = callback_group_executor_.spin_until_future_complete(future_result);
-      success = (status == rclcpp::FutureReturnCode::SUCCESS);
     }
 
     if (!success) {
@@ -172,8 +171,8 @@ protected:
   std::string service_name_;
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
-  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
-  bool use_default_callback_group_;
+  std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> callback_group_executor_;
+  bool use_internal_executor_;
   typename rclcpp::Client<ServiceT>::SharedPtr client_;
 };
 
