@@ -1,4 +1,4 @@
-from trajectory_params import TrajectoryParameters
+from trajectory import Trajectory, TrajectoryParameters, TrajectoryPath
 import numpy as np
 
 class TrajectoryGenerator:
@@ -7,9 +7,7 @@ class TrajectoryGenerator:
                 self.turning_radius = config["turningRadius"]
                 self.step_distance = config["stepDistance"]
 
-
-        def create_arc_trajectory(self, trajectory_params, step_distance):
-
+        def create_arc_path(self, trajectory_params: TrajectoryParameters, step_distance: float) -> TrajectoryPath:
                 '''
                 Create arc trajectory using the following parameterization:
                         r(t) = <R cos(t - pi/2) + a, R sin(t - pi/2) + b>
@@ -20,6 +18,18 @@ class TrajectoryGenerator:
 
                 This parameterization has the property that start_t represents the slope angle of the start point of the curve (represented in radians) and 
                 end_t represents the slope angle of the end point of the curve.
+
+                Parameters
+                ----------
+                trajectory_params: TrajectoryParameters
+                        The parameters that describe the arc to create
+                step_distance: float
+                        The distance between sampled points along the arc
+
+                Returns
+                -------
+                Trajectory
+                        A trajectory built only from the arc portion of the trajectory parameters
                 '''
 
                 arc_length = 2 * np.pi * trajectory_params.radius * abs(trajectory_params.start_angle - trajectory_params.end_angle) / 360
@@ -33,9 +43,13 @@ class TrajectoryGenerator:
                 xs = trajectory_params.radius * np.cos(ts) + trajectory_params.x_offset
                 ys = trajectory_params.radius * np.sin(ts) + trajectory_params.y_offset
 
-                return xs, ys
+                return TrajectoryPath(xs, ys)
 
-        def create_line_trajectory(self, x1, y1, x2, y2, step_distance):
+        def create_line_path(self, x1, y1, x2, y2, step_distance) -> TrajectoryPath:
+                '''
+                Creates a 
+                '''
+
                 distance = np.linalg.norm(np.subtract([x1, y1], [x2, y2]))
 
                 steps = int(round(distance / step_distance))
@@ -49,37 +63,35 @@ class TrajectoryGenerator:
                 xs = (1-ts) * x1 + ts * x2
                 ys = (1-ts) * y1 + ts * y2
 
-                return xs, ys
+                return TrajectoryPath(xs, ys)
 
-        def build_trajectory(self, trajectory_params, step_distance):
+        def create_path(self, trajectory_params: TrajectoryParameters, step_distance: float) -> TrajectoryPath:
                 if trajectory_params.radius > 0:
-                        arc_xs, arc_ys = self.create_arc_trajectory(trajectory_params, step_distance)
-
-                        start_xs = []
-                        start_ys = []
-                        end_xs = []
-                        end_ys = []
+                        arc_trajectory = self.create_arc_path(trajectory_params, step_distance)
                 
                         if trajectory_params.start_to_arc_distance > 0:
-                                start_xs, start_ys = self.create_line_trajectory(0,0, arc_xs[0], arc_ys[0], step_distance)
+                                start_to_arc_trajectory = self.create_line_path(0,0, arc_trajectory.xs[0], arc_trajectory.ys[0], step_distance)
                         
                         if trajectory_params.arc_to_end_distance > 0:
-                                end_xs, end_ys = self.create_line_trajectory(arc_xs[-1], arc_ys[-1], *trajectory_params.end_point, step_distance)
+                                arc_to_end_trajectory = self.create_line_path(arc_trajectory.xs[-1], arc_trajectory.ys[-1], *trajectory_params.end_point, step_distance)
                         
-                        return np.concatenate((start_xs, arc_xs, end_xs)), np.concatenate((start_ys, arc_ys, end_ys))
+                        final_trajectory = start_to_arc_trajectory + arc_trajectory + arc_to_end_trajectory
+
+                        return final_trajectory
                 else:
-                        xs, ys = self.create_line_trajectory(0,0,*trajectory_params.end_point, step_distance)
-                        return xs, ys
+                        # No arc in path therefore its only a straight line
+                        line_trajectory = self.create_line_path(0,0,*trajectory_params.end_point, step_distance)
+                        return line_trajectory
 
 
-        def get_intersection_point(self, m1, c1, m2, c2):
+        def get_intersection_point(self, m1: float, c1: float, m2: float, c2: float) -> np.array:
                 line1 = lambda x : m1 * x + c1
 
                 x_point = (c2 - c1) / (m1 - m2)
 
                 return np.array([x_point, line1(x_point)])
         
-        def is_left_turn(self, m1, end_point):
+        def is_left_turn(self, m1, end_point) -> bool:
                 line_eq = lambda x: m1 * x 
 
                 if line_eq(end_point[0]) <= end_point[1]:
@@ -217,6 +229,6 @@ class TrajectoryGenerator:
                 if trajectory_params is None:
                         return [], [], trajectory_params
 
-                xs, ys = self.build_trajectory(trajectory_params, step_distance)
+                trajectory_path = self.create_path(trajectory_params, step_distance)
 
-                return xs, ys, trajectory_params
+                return Trajectory(trajectory_path, trajectory_params)
