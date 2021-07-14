@@ -3,7 +3,7 @@ import numpy as np
 
 class TrajectoryGenerator:
 
-        def __init__(self, config):
+        def __init__(self, config: dict):
                 self.turning_radius = config["turningRadius"]
                 self.step_distance = config["stepDistance"]
 
@@ -28,8 +28,8 @@ class TrajectoryGenerator:
 
                 Returns
                 -------
-                Trajectory
-                        A trajectory built only from the arc portion of the trajectory parameters
+                TrajectoryPath
+                        A trajectory path built only from the arc portion of the trajectory parameters
                 '''
 
                 arc_length = 2 * np.pi * trajectory_params.radius * abs(trajectory_params.start_angle - trajectory_params.end_angle) / 360
@@ -42,12 +42,31 @@ class TrajectoryGenerator:
                 
                 xs = trajectory_params.radius * np.cos(ts) + trajectory_params.x_offset
                 ys = trajectory_params.radius * np.sin(ts) + trajectory_params.y_offset
+                yaws = np.linspace(np.deg2rad(trajectory_params.start_angle), np.deg2rad(trajectory_params.end_angle), steps)
 
-                return TrajectoryPath(xs, ys)
+                return TrajectoryPath(xs, ys, yaws)
 
-        def create_line_path(self, x1, y1, x2, y2, step_distance) -> TrajectoryPath:
+        def create_line_path(self, x1: float, y1: float, x2: float, y2: float, step_distance: float) -> TrajectoryPath:
                 '''
-                Creates a 
+                Create straight line trajectory from (x1, y1) to (x2, y2)
+
+                Parameters
+                ----------
+                x1: float
+                        x coordinate of start point
+                y1: float
+                        y coordinate of start point
+                x2: float
+                        x coordinate of end point
+                y2: float
+                        y coordinate of end point
+                step_distance: float
+                        The distance between sampled points along the line
+
+                Returns
+                -------
+                TrajectoryPath
+                        A straight line path from (x1, y1) to (x2, y2)
                 '''
 
                 distance = np.linalg.norm(np.subtract([x1, y1], [x2, y2]))
@@ -63,20 +82,41 @@ class TrajectoryGenerator:
                 xs = (1-ts) * x1 + ts * x2
                 ys = (1-ts) * y1 + ts * y2
 
-                return TrajectoryPath(xs, ys)
+                line_angle = np.arctan2((y2 - y1), (x2 - x1))
+                yaws = np.full(xs.shape, line_angle)
+
+                return TrajectoryPath(xs, ys, yaws)
 
         def create_path(self, trajectory_params: TrajectoryParameters, step_distance: float) -> TrajectoryPath:
+                '''
+                Create the full trajectory path that is represented by the given trajectory parameters
+
+                Parameters
+                ----------
+                trajectory_params: TrajectoryParameters
+                        The parameters that describe the trajectory to create
+                step_distance: float
+                        The distance between sampled points along the line
+
+                Returns
+                -------
+                TrajectoryPath
+                        The trajectory path described by the trajectory parameters
+                '''
+
                 if trajectory_params.radius > 0:
-                        arc_trajectory = self.create_arc_path(trajectory_params, step_distance)
+                        final_trajectory = self.create_arc_path(trajectory_params, step_distance)
                 
                         if trajectory_params.start_to_arc_distance > 0:
-                                start_to_arc_trajectory = self.create_line_path(0,0, arc_trajectory.xs[0], arc_trajectory.ys[0], step_distance)
+                                start_to_arc_trajectory = self.create_line_path(0,0, final_trajectory.xs[0], final_trajectory.ys[0], step_distance)
+
+                                final_trajectory = start_to_arc_trajectory + final_trajectory
                         
                         if trajectory_params.arc_to_end_distance > 0:
-                                arc_to_end_trajectory = self.create_line_path(arc_trajectory.xs[-1], arc_trajectory.ys[-1], *trajectory_params.end_point, step_distance)
-                        
-                        final_trajectory = start_to_arc_trajectory + arc_trajectory + arc_to_end_trajectory
+                                arc_to_end_trajectory = self.create_line_path(final_trajectory.xs[-1], final_trajectory.ys[-1], *trajectory_params.end_point, step_distance)
 
+                                final_trajectory = final_trajectory + arc_to_end_trajectory
+                        
                         return final_trajectory
                 else:
                         # No arc in path therefore its only a straight line
@@ -227,7 +267,7 @@ class TrajectoryGenerator:
                 trajectory_params = self.calculate_trajectory_params(end_point, start_angle, end_angle)
 
                 if trajectory_params is None:
-                        return [], [], trajectory_params
+                        return None
 
                 trajectory_path = self.create_path(trajectory_params, step_distance)
 

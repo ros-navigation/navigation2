@@ -18,13 +18,14 @@ class TrajectoryParameters:
 class TrajectoryPath:
     xs: np.array
     ys: np.array
+    yaws: np.array
     
     def __add__(self, rhs):
+        xs = np.concatenate((self.xs, rhs.xs))
+        ys = np.concatenate((self.ys, rhs.ys))
+        yaws = np.concatenate((self.yaws, rhs.yaws))
 
-        xs = np.concatenate(self.xs, rhs.xs)
-        ys = np.concatenate(self.ys, rhs.ys)
-
-        return TrajectoryPath(xs, ys)
+        return TrajectoryPath(xs, ys, yaws)
 
 @dataclass
 class Trajectory:
