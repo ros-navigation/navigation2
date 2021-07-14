@@ -1,6 +1,6 @@
 #!/bin/bash
 
-apt update && apt install -y python3-pip fakeroot dpkg-dev debhelper dh-python && pip3 install bloom
+apt update && apt install -y python3-pip dpkg-dev debhelper dh-python && pip3 install bloom
 
 # store the current dir
 CUR_DIR=$(pwd)
@@ -22,10 +22,13 @@ for PACKAGE in ${PACKAGE_LIST_UNDERLAY[@]}; do
     # We have to go to the ROS package parent directory
     cd /opt/underlay_ws/src/$PACKAGE;
     bloom-generate rosdebian --ros-distro foxy &> /dev/null
-    fakeroot debian/rules "binary --parallel" &> /dev/null
+    debian/rules "binary --parallel" &> /dev/null
 
     cd ..
     DEB_FILE=$(find *.deb);
+    if ! [[ $? -eq 0 ]]; then 
+        exit 1
+    fi
     dpkg -i $DEB_FILE
     rm *.deb *.ddeb
     cd $CUR_DIR
@@ -59,10 +62,13 @@ for PACKAGE in ${PACKAGE_LIST[@]}; do
     # We have to go to the ROS package parent directory
     cd $PACKAGE;
     bloom-generate rosdebian --ros-distro foxy &> /dev/null
-    fakeroot debian/rules "binary --parallel" &> /dev/null
+    debian/rules "binary --parallel" &> /dev/null
 
     cd ..
     DEB_FILE=$(find *.deb);
+    if ! [[ $? -eq 0 ]]; then 
+        exit 1
+    fi
     dpkg -i $DEB_FILE
     rm *.deb *.ddeb
     cd $CUR_DIR
