@@ -35,6 +35,7 @@ done
 # Package list to create and install debian. 
 # Watch out the order to avoid missing dependencies while creating the debian.
 PACKAGE_LIST=(
+            navigation2/geographic_msgs \
             navigation2/nav2_msgs \
             navigation2/nav2_common \
             navigation2/nav2_util \
