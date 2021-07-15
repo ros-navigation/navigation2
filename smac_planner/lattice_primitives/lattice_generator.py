@@ -163,16 +163,32 @@ class LatticeGenerator:
             for end_point, end_angle in single_quadrant_minimal_set[start_angle]:
                 trajectory = self.trajectory_generator.generate_trajectory(end_point, start_angle, end_angle, step_distance=self.grid_separation)
 
-                xs = trajectory.path.xs.round(5)
-                ys = trajectory.path.ys.round(5)
+                xs = trajectory.path.xs
+                ys = trajectory.path.ys
 
-                flipped_xs = [-x for x in xs]
-                flipped_ys = [-y for y in ys]
+                flipped_xs = np.array([-x for x in xs])
+                flipped_ys = np.array([-y for y in ys])
 
-                yaws_quad1 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(xs[:-1], ys[:-1], xs[1:], ys[1:])] + [np.deg2rad(end_angle)]
-                yaws_quad2 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(flipped_xs[:-1], ys[:-1], flipped_xs[1:], ys[1:])] + [np.pi - np.deg2rad(end_angle)]
-                yaws_quad3 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(flipped_xs[:-1], flipped_ys[:-1], flipped_xs[1:], flipped_ys[1:])]  + [-np.pi + np.deg2rad(end_angle)]
-                yaws_quad4 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(xs[:-1], flipped_ys[:-1], xs[1:], flipped_ys[1:])] + [-np.deg2rad(end_angle)]
+                yaws_quad1 = np.array([np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(xs[:-1], ys[:-1], xs[1:], ys[1:])] + [np.deg2rad(end_angle)])
+                yaws_quad2 = np.array([np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(flipped_xs[:-1], ys[:-1], flipped_xs[1:], ys[1:])] + [np.pi - np.deg2rad(end_angle)])
+                yaws_quad3 = np.array([np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(flipped_xs[:-1], flipped_ys[:-1], flipped_xs[1:], flipped_ys[1:])]  + [-np.pi + np.deg2rad(end_angle)])
+                yaws_quad4 = np.array([np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(xs[:-1], flipped_ys[:-1], xs[1:], flipped_ys[1:])] + [-np.deg2rad(end_angle)])
+
+                # Round position values
+                xs = xs.round(5)
+                ys = ys.round(5)
+                flipped_xs = flipped_xs.round(5)
+                flipped_ys = flipped_ys.round(5)
+
+                # Hack to remove negative zeros
+                xs += 0.
+                ys += 0.
+                flipped_xs += 0.
+                flipped_ys += 0.
+                yaws_quad1 += 0.
+                yaws_quad2 += 0.
+                yaws_quad3 += 0.
+                yaws_quad4 += 0. 
 
                 arc_length = 2 * np.pi * trajectory.parameters.radius * abs(start_angle - end_angle) / 360.0
                 straight_length = trajectory.parameters.start_to_arc_distance + trajectory.parameters.arc_to_end_distance
