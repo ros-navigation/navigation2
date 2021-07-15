@@ -131,7 +131,8 @@ class LatticeGenerator:
 
                 for target_point in positions:
                     for target_heading in target_headings:
-                        trajectory = self.trajectory_generator.generate_trajectory(target_point, start_heading, target_heading)
+                        # Use 10% of grid separation for finer granularity when checking if trajectory overlaps another already seen trajectory
+                        trajectory = self.trajectory_generator.generate_trajectory(target_point, start_heading, target_heading, 0.1 * self.grid_separation)
                         
 
                         if trajectory:
@@ -163,7 +164,7 @@ class LatticeGenerator:
         for start_angle in single_quadrant_minimal_set.keys():
 
             for end_point, end_angle in single_quadrant_minimal_set[start_angle]:
-                trajectory = self.trajectory_generator.generate_trajectory(end_point, start_angle, end_angle, step_distance=self.grid_separation)
+                trajectory = self.trajectory_generator.generate_trajectory(end_point, start_angle, end_angle, self.grid_separation)
 
                 xs = trajectory.path.xs
                 ys = trajectory.path.ys

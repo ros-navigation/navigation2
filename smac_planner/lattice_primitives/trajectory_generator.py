@@ -7,7 +7,6 @@ class TrajectoryGenerator:
 
         def __init__(self, config: dict):
                 self.turning_radius = config["turningRadius"]
-                self.step_distance = 0.1 * config["gridSeparation"]
 
         def _create_arc_path(self, trajectory_params: TrajectoryParameters, step_distance: float) -> TrajectoryPath:
                 '''
@@ -328,11 +327,26 @@ class TrajectoryGenerator:
 
                 return TrajectoryParameters(radius, x_offset, y_offset, end_point, start_angle, end_angle, left_turn, start_to_arc_distance, arc_to_end_distance)
 
-        def generate_trajectory(self, end_point, start_angle, end_angle, step_distance=None):
+        def generate_trajectory(self, end_point: float, start_angle: float, end_angle: float, step_distance: float) -> Union[Trajectory, None]:
+                '''
+                Creates a trajectory from (0,0, start_angle) to (end_point, end_angle) with points spaced step_distance apart
 
-                if step_distance is None:
-                        step_distance = self.step_distance
+                Parameters
+                ----------
+                end_point: np.array(2,)
+                        The desired end point of the trajectory
+                start_angle: float
+                        The start angle of the trajectory
+                end_angle: float
+                        The end angle of the trajectory
+                step_distance: float
+                        The spacing between points along the trajectory
 
+                Returns
+                -------
+                Trajectory or None
+                        If a valid trajectory exists then the Trajectory is returned, otherwise None
+                '''
                 trajectory_params = self._calculate_trajectory_params(end_point, start_angle, end_angle)
 
                 if trajectory_params is None:
