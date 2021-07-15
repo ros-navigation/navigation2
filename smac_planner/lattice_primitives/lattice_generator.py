@@ -1,4 +1,5 @@
 from trajectory_generator import TrajectoryGenerator
+from trajectory import Trajectory, TrajectoryPath, TrajectoryParameters
 import numpy as np
 from collections import defaultdict
 
@@ -77,14 +78,12 @@ class LatticeGenerator:
 
         return np.linalg.norm(q - projected_point)
 
-    def is_minimal_path(self, xs, ys, minimal_spanning_trajectories):
-
-        yaws = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(xs[:-1], ys[:-1], xs[1:], ys[1:])]
-
+    def is_minimal_path(self, trajectory_path: TrajectoryPath, minimal_spanning_trajectories):
+    
         distance_threshold = 0.5 * self.grid_separation
         rotation_threshold = 0.5 * np.deg2rad(360 / self.number_of_headings)
 
-        for x1, y1, x2, y2, yaw in zip(xs[:-1], ys[:-1], xs[1:], ys[1:], yaws[:-1]):
+        for x1, y1, x2, y2, yaw in zip(trajectory_path.xs[:-1], trajectory_path.ys[:-1], trajectory_path.xs[1:], trajectory_path.ys[1:], trajectory_path.yaws[:-1]):
 
             p1 = np.array([x1, y1])
             p2 = np.array([x2, y2])
@@ -101,11 +100,12 @@ class LatticeGenerator:
             
 
     def generate_minimal_spanning_set(self):
-        result = defaultdict(list)
+        single_quadrant_spanning_set = defaultdict(list)
 
-        all_headings = self.get_heading_discretization()
+        # Firstly generate the minimal set for a single quadrant
+        single_quadrant_headings = self.get_heading_discretization()
 
-        initial_headings = sorted(list(filter(lambda x: 0 <= x and x < 90, all_headings)))
+        initial_headings = sorted(list(filter(lambda x: 0 <= x and x < 90, single_quadrant_headings)))
 
         start_level = int(np.floor(self.turning_radius * np.cos(np.arctan(1/2) - np.pi / 2) / self.grid_separation))
 
@@ -115,7 +115,7 @@ class LatticeGenerator:
             current_level = start_level
 
             # To get target headings: sort headings radially and remove those that are more than 90 degrees away
-            target_headings = sorted(all_headings, key=lambda x: (abs(x - start_heading),-x))
+            target_headings = sorted(single_quadrant_headings, key=lambda x: (abs(x - start_heading),-x))
             target_headings = list(filter(lambda x : abs(start_heading - x) <= 90, target_headings))
                 
             while current_level <= self.max_level:
@@ -125,46 +125,43 @@ class LatticeGenerator:
 
                 for target_point in positions:
                     for target_heading in target_headings:
-                        xs, ys, _ = self.trajectory_generator.generate_trajectory(target_point, start_heading, target_heading)
+                        trajectory = self.trajectory_generator.generate_trajectory(target_point, start_heading, target_heading)
 
-                        if len(xs) != 0:
+                        if trajectory:
+                            assert(len(trajectory.path.xs) != 0) 
 
                             # Check if path overlaps something in minimal spanning set
-                            if(self.is_minimal_path(xs, ys, minimal_trajectory_set)):
+                            if(self.is_minimal_path(trajectory.path, minimal_trajectory_set)):
                                 new_end_pose = np.array([target_point[0], target_point[1], np.deg2rad(target_heading)])
                                 minimal_trajectory_set.append(new_end_pose)
 
-                                result[start_heading].append((target_point, target_heading))
+                                single_quadrant_spanning_set[start_heading].append((target_point, target_heading))
 
                 current_level += 1
 
+        return self.create_complete_minimal_spanning_set(single_quadrant_spanning_set)
 
-        return result
-
-
-    def run(self):
-        minimal_set_endpoints = self.generate_minimal_spanning_set()
-
+    def create_complete_minimal_spanning_set(self, single_quadrant_minimal_set):
         # Copy the 0 degree trajectories to 90 degerees
         end_points_for_90 = []
 
-        for end_point, end_angle in minimal_set_endpoints[0.0]:
+        for end_point, end_angle in single_quadrant_minimal_set[0.0]:
             x, y = end_point
 
             end_points_for_90.append((np.array([y, x]), 90 - end_angle))
 
-        minimal_set_endpoints[90.0] = end_points_for_90
+        single_quadrant_minimal_set[90.0] = end_points_for_90
 
         # Generate the paths for all trajectories
-        minmal_set_trajectories = defaultdict(list)
+        all_trajectories = defaultdict(list)
        
-        for start_angle in minimal_set_endpoints.keys():
+        for start_angle in single_quadrant_minimal_set.keys():
 
-            for end_point, end_angle in minimal_set_endpoints[start_angle]:
-                xs, ys, traj_params = self.trajectory_generator.generate_trajectory(end_point, start_angle, end_angle, step_distance=self.grid_separation)
+            for end_point, end_angle in single_quadrant_minimal_set[start_angle]:
+                trajectory = self.trajectory_generator.generate_trajectory(end_point, start_angle, end_angle, step_distance=self.grid_separation)
 
-                xs = xs.round(5)
-                ys = ys.round(5)
+                xs = trajectory.path.xs.round(5)
+                ys = trajectory.path.ys.round(5)
 
                 flipped_xs = [-x for x in xs]
                 flipped_ys = [-y for y in ys]
@@ -174,11 +171,11 @@ class LatticeGenerator:
                 yaws_quad3 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(flipped_xs[:-1], flipped_ys[:-1], flipped_xs[1:], flipped_ys[1:])]  + [-np.pi + np.deg2rad(end_angle)]
                 yaws_quad4 = [np.arctan2((yf - yi), (xf - xi)) for xi, yi, xf, yf in zip(xs[:-1], flipped_ys[:-1], xs[1:], flipped_ys[1:])] + [-np.deg2rad(end_angle)]
 
-                arc_length = 2 * np.pi * traj_params.radius * abs(start_angle - end_angle) / 360.0
-                straight_length = traj_params.start_to_arc_distance + traj_params.arc_to_end_distance
-                trajectory_length = arc_length + traj_params.start_to_arc_distance + traj_params.arc_to_end_distance
+                arc_length = 2 * np.pi * trajectory.parameters.radius * abs(start_angle - end_angle) / 360.0
+                straight_length = trajectory.parameters.start_to_arc_distance + trajectory.parameters.arc_to_end_distance
+                trajectory_length = arc_length + trajectory.parameters.start_to_arc_distance + trajectory.parameters.arc_to_end_distance
 
-                trajectory_info = (traj_params.radius, trajectory_length, arc_length, straight_length)
+                trajectory_info = (trajectory.parameters.radius, trajectory_length, arc_length, straight_length)
 
                 '''
                 Quadrant 1: +x, +y
@@ -192,15 +189,15 @@ class LatticeGenerator:
                     quadrant_1 = (0.0, 0.0, *trajectory_info, list(zip(xs, ys, yaws_quad1)))
                     quadrant_2 = (-180, -180, *trajectory_info, list(zip(flipped_xs, ys, yaws_quad2)))
                     
-                    minmal_set_trajectories[quadrant_1[0]].append(quadrant_1)
-                    minmal_set_trajectories[quadrant_2[0]].append(quadrant_2)
+                    all_trajectories[quadrant_1[0]].append(quadrant_1)
+                    all_trajectories[quadrant_2[0]].append(quadrant_2)
                 
                 elif (start_angle == 90 and end_angle == 90):
                     quadrant_1 = (start_angle, end_angle, *trajectory_info, list(zip(xs, ys, yaws_quad1)))
                     quadrant_4 = (-start_angle, -end_angle, *trajectory_info, list(zip(xs, flipped_ys, yaws_quad4)))
 
-                    minmal_set_trajectories[quadrant_1[0]].append(quadrant_1)
-                    minmal_set_trajectories[quadrant_4[0]].append(quadrant_4)
+                    all_trajectories[quadrant_1[0]].append(quadrant_1)
+                    all_trajectories[quadrant_4[0]].append(quadrant_4)
 
                 else:
                     # Need to prevent 180 or -0 being added as a start or end angle
@@ -222,9 +219,15 @@ class LatticeGenerator:
                         quadrant_3 = (start_angle - 180, end_angle - 180, *trajectory_info, list(zip(flipped_xs, flipped_ys, yaws_quad3)))
                         quadrant_4 = (-start_angle, -end_angle, *trajectory_info, list(zip(xs, flipped_ys, yaws_quad4)))
 
-                    minmal_set_trajectories[quadrant_1[0]].append(quadrant_1)
-                    minmal_set_trajectories[quadrant_2[0]].append(quadrant_2)
-                    minmal_set_trajectories[quadrant_3[0]].append(quadrant_3)
-                    minmal_set_trajectories[quadrant_4[0]].append(quadrant_4)
+                    all_trajectories[quadrant_1[0]].append(quadrant_1)
+                    all_trajectories[quadrant_2[0]].append(quadrant_2)
+                    all_trajectories[quadrant_3[0]].append(quadrant_3)
+                    all_trajectories[quadrant_4[0]].append(quadrant_4)
 
-        return minmal_set_trajectories
+        return all_trajectories
+
+    def run(self):
+        return self.generate_minimal_spanning_set()
+
+
+        
