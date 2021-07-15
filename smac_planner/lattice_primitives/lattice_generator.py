@@ -97,7 +97,10 @@ class LatticeGenerator:
                     return False
         
         return True
-            
+
+    def compute_min_trajectory_length(self):
+        # Compute arc length of circle that moves through an angle of 360/number of headings 
+        return 2 * math.pi * self.turning_radius * (1/self.number_of_headings)
 
     def generate_minimal_spanning_set(self):
         single_quadrant_spanning_set = defaultdict(list)
@@ -107,7 +110,8 @@ class LatticeGenerator:
 
         initial_headings = sorted(list(filter(lambda x: 0 <= x and x < 90, single_quadrant_headings)))
 
-        start_level = int(np.floor(self.turning_radius * np.cos(np.arctan(1/2) - np.pi / 2) / self.grid_separation))
+        min_trajectory_length = self.compute_min_trajectory_length()
+        start_level = int(np.floor(min_trajectory_length / self.grid_separation))
 
         for start_heading in initial_headings:
             
@@ -128,7 +132,6 @@ class LatticeGenerator:
                         trajectory = self.trajectory_generator.generate_trajectory(target_point, start_heading, target_heading)
 
                         if trajectory:
-                            assert(len(trajectory.path.xs) != 0) 
 
                             # Check if path overlaps something in minimal spanning set
                             if(self.is_minimal_path(trajectory.path, minimal_trajectory_set)):
