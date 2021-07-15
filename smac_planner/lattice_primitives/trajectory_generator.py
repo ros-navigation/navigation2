@@ -89,7 +89,7 @@ class TrajectoryGenerator:
                 xs = (1-ts) * start_point[0] + ts * end_point[0]
                 ys = (1-ts) * start_point[1] + ts * end_point[1]
 
-                yaws = np.full(xs.shape, line_angle)
+                yaws = np.full(xs.shape, line_angle, dtype=np.float64)
 
                 return TrajectoryPath(xs, ys, yaws)
 
