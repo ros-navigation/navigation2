@@ -211,7 +211,7 @@ class LatticeGenerator:
                         quadrant_1 = (start_angle, end_angle, *trajectory_info, list(zip(xs, ys, yaws_quad1)))
                         quadrant_2 = (180 - start_angle, -180, *trajectory_info, list(zip(flipped_xs, ys, yaws_quad2)))
                         quadrant_3 = (start_angle - 180, -180, *trajectory_info, list(zip(flipped_xs, flipped_ys, yaws_quad3)))
-                        quadrant_4 = (start_angle, end_angle, *trajectory_info, list(zip(xs, flipped_ys, yaws_quad4)))
+                        quadrant_4 = (-start_angle, end_angle, *trajectory_info, list(zip(xs, flipped_ys, yaws_quad4)))
 
                     else:
                         quadrant_1 = (start_angle, end_angle, *trajectory_info, list(zip(xs, ys, yaws_quad1)))
