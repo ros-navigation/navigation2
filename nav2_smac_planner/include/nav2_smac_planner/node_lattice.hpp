@@ -42,38 +42,6 @@ class NodeLattice;
 class NodeHybrid;
 
 /**
- * @struct nav2_smac_planner::LatticeMetadata
- * @brief A struct of all lattice metadata
- */
-struct LatticeMetadata
-{
-  float turningRadius;
-  float stepDistance;
-  float gridSeparation;
-  float maxLength; 
-  unsigned int numberOfHeadings; 
-  std::string outputFile; 
-  std::vector<float> headingAngles; 
-  unsigned int numberOfTrajectories; 
-};
-
-/**
- * @struct nav2_smac_planner::MotionPrimitive
- * @brief A struct of all motion primitive data
- */
-struct MotionPrimitive
-{
-  unsigned int trajectoryId;
-  float startAngle; 
-  float endAngle; 
-  float radius;
-  float trajectoryLength; 
-  float arcLength; 
-  float straightLength; 
-  MotionPoses poses; 
-};
-
-/**
  * @struct nav2_smac_planner::LatticeMotionTable
  * @brief A table of motion primitives and related functions
  */
@@ -117,6 +85,7 @@ struct LatticeMotionTable
   float num_angle_quantization_float;
   float min_turning_radius;
   float bin_size;
+  std::vector<float> primitive_start_angles;
   float change_penalty;
   float non_straight_penalty;
   float cost_penalty;

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Samsung Research America
+// Copyright (c) 2021 Joshua Wallace
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,20 +14,21 @@
 
 #include "nav2_smac_planner/node_lattice.hpp"
 #include "gtest/gtest.h"
+#include "ament_index_cpp/get_package_share_directory.hpp"
 #include <fstream>
 
 using json = nlohmann::json;
 
 TEST(ParserTest, test_lattice_node)
 {
-    //TODO: Where should the lattice file be placed? 
-    std::string filePath = "/home/josh/nav2_ws/src/navigation2/nav2_smac_planner/test/output.json";
+    std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+    std::string filePath = pkg_share_dir + "/output.json";
     std::ifstream myJsonFile(filePath);
 
     ASSERT_TRUE(myJsonFile.is_open());
+
     json j; 
     myJsonFile >> j;
-
 
     nav2_smac_planner::LatticeMetadata metaData; 
     nav2_smac_planner::MotionPrimitive myPrimitive; 
@@ -40,14 +41,13 @@ TEST(ParserTest, test_lattice_node)
     nav2_smac_planner::fromJsonToMetaData(jsonMetaData, metaData);
 
     //Checks for parsing meta data 
-    EXPECT_NEAR(metaData.turningRadius, 0.4, 0.001);
-    EXPECT_NEAR(metaData.stepDistance, 0.005, 0.0001);
-    EXPECT_NEAR(metaData.gridSeparation, 0.05, 0.001);
-    EXPECT_NEAR(metaData.maxLength, 1, 0.01);
-    EXPECT_NEAR(metaData.numberOfHeadings, 16, 0.01);
-    EXPECT_EQ(metaData.outputFile, "output.json");
-    EXPECT_NEAR(metaData.headingAngles[0], -180.0, 0.01);
-
+    EXPECT_NEAR(metaData.min_turning_radius, 0.4, 0.001);
+    EXPECT_NEAR(metaData.step_distance, 0.005, 0.0001);
+    EXPECT_NEAR(metaData.grid_separation, 0.05, 0.001);
+    EXPECT_NEAR(metaData.max_length, 1, 0.01);
+    EXPECT_NEAR(metaData.number_of_headings, 16, 0.01);
+    EXPECT_EQ(metaData.output_file, "output.json");
+    EXPECT_NEAR(metaData.heading_angles[0], -180.0, 0.01);
 
     std::vector<nav2_smac_planner::MotionPrimitive> myPrimitives;
     for(auto& primative : jsonPrimatives)
@@ -58,13 +58,13 @@ TEST(ParserTest, test_lattice_node)
     }
 
     //Checks for parsing primitives 
-    EXPECT_NEAR(myPrimitives[0].trajectoryId, 0, 0.01);
-    EXPECT_NEAR(myPrimitives[0].startAngle, 0.0,0.01);
-    EXPECT_NEAR(myPrimitives[0].endAngle, 0.0, 0.01);
+    EXPECT_NEAR(myPrimitives[0].trajectory_id, 0, 0.01);
+    EXPECT_NEAR(myPrimitives[0].start_angle, 0.0,0.01);
+    EXPECT_NEAR(myPrimitives[0].end_angle, 0.0, 0.01);
     EXPECT_NEAR(myPrimitives[0].radius, 0.0, 0.01);
-    EXPECT_NEAR(myPrimitives[0].trajectoryLength, 0.2, 0.01);
-    EXPECT_NEAR(myPrimitives[0].arcLength, 0.0, 0.01);
-    EXPECT_NEAR(myPrimitives[0].straightLength, 0.2, 0.01);
+    EXPECT_NEAR(myPrimitives[0].trajectory_length, 0.2, 0.01);
+    EXPECT_NEAR(myPrimitives[0].arc_length, 0.0, 0.01);
+    EXPECT_NEAR(myPrimitives[0].straight_length, 0.2, 0.01);
 
     EXPECT_NEAR(myPrimitives[0].poses[0]._x, 0.0, 0.01);
     EXPECT_NEAR(myPrimitives[0].poses[0]._y, 0.0, 0.01);
@@ -73,5 +73,4 @@ TEST(ParserTest, test_lattice_node)
     EXPECT_NEAR(myPrimitives[0].poses[1]._x, 0.06667, 0.01);
     EXPECT_NEAR(myPrimitives[0].poses[1]._y, 0.0, 0.01);
     EXPECT_NEAR(myPrimitives[0].poses[1]._theta, 0.0, 0.01);
-
 }

@@ -110,7 +110,7 @@ void SmacPlannerLattice::configure(
   LatticeMetadata metadata = LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
   _angle_quantizations = 0.0; //TODO: not valid for lattice planner
   _angle_bin_size = 2.0 * M_PI / static_cast<double>(_angle_quantizations);
-  float min_turning_radius = metadata.turningRadius;
+  float min_turning_radius = metadata.min_turning_radius;
 
   MotionModel motion_model = MotionModel::STATE_LATTICE;
 

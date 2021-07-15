@@ -25,8 +25,6 @@
 
 #include "ompl/base/ScopedState.h"
 #include "ompl/base/spaces/DubinsStateSpace.h"
-#include "ompl/base/spaces/ReedsSheppStateSpace.h"
-
 #include "nav2_smac_planner/node_lattice.hpp"
 
 using namespace std::chrono;  // NOLINT
@@ -60,6 +58,36 @@ void LatticeMotionTable::initMotionModel(
   reverse_penalty = search_info.reverse_penalty;
   current_lattice_filepath = search_info.lattice_filepath;
 
+  std::ifstream latticeFile(current_lattice_filepath);
+
+  if( !latticeFile.is_open() )
+  {
+    throw std::runtime_error("Could not open lattice file");
+  }
+
+  nlohmann::json j;
+  latticeFile >> j;
+
+  fromJsonToMetaData(j["latticeMetadata"], latticeMetadata);
+
+  float prevStartAngle = 0; 
+  std::vector<MotionPrimitive> primitives; 
+  for(auto const& primative : j["primitives"] )
+  {
+    MotionPrimitive newPrimitive; 
+    fromJsonToMotionPrimitive(primative, newPrimitive); 
+
+    if(prevStartAngle != newPrimitive.start_angle )
+    {
+      motionPrimitives.emplace_back(primitives);
+      primitives.clear(); 
+      prevStartAngle = newPrimitive.start_angle;
+    }
+    primitives.emplace_back(newPrimitive);
+  }
+  motionPrimitives.emplace_back(primitives); 
+
+
   // TODO(Matt) read in file, precompute based on orientation bins for lookup at runtime
   // file is `search_info.lattice_filepath`, to be read in from plugin and provided here.
 
@@ -71,35 +99,40 @@ void LatticeMotionTable::initMotionModel(
   // TODO(Matt) populate num_angle_quantization, size_x, min_turning_radius, trig_values,
   // all of the member variables of LatticeMotionTable
 
-  std::ifstream latticeFile(current_lattice_filepath);
+  num_angle_quantization = latticeMetadata.number_of_headings;
+  num_angle_quantization_float = static_cast<float>(num_angle_quantization);
+  min_turning_radius = latticeMetadata.min_turning_radius;
 
-  if( !latticeFile.is_open() )
+  //Find the largest turning radius that is not equal to zero
+  float largestTurningRadius = std::numeric_limits<float>::max();
+  for(auto const& motionPrimitivesAtAngle : motionPrimitives)
   {
-    throw std::runtime_error("Could not open lattice file");
-  }
-
-  nlohmann::json j;
-  latticeFile >> j;
-
-  float prevStartAngle = 0; 
-  std::vector<MotionPrimitive> primitives; 
-  for(auto const& primative : j["primitives"] )
-  {
-    MotionPrimitive newPrimitive; 
-    fromJsonToMotionPrimitive(primative, newPrimitive); 
-
-    if(prevStartAngle != newPrimitive.startAngle )
+    for(auto const& motionPrimitive : motionPrimitivesAtAngle)
     {
-      motionPrimitives.emplace_back(primitives);
-      primitives.clear(); 
-      prevStartAngle = newPrimitive.startAngle;
+      if( motionPrimitive.radius < largestTurningRadius && motionPrimitive.radius != 0 )
+      {
+        largestTurningRadius = motionPrimitive.radius;
+      }
     }
-    primitives.emplace_back(newPrimitive);
   }
-  motionPrimitives.emplace_back(primitives); 
- 
-  fromJsonToMetaData(j["latticeMetadata"], latticeMetadata);
 
+  //NOTE: Note sure what type of state space this should be 
+  state_space = std::make_unique<ompl::base::DubinsStateSpace>( largestTurningRadius );
+
+  for(auto const& motionPrimitivesAtAngle : motionPrimitives)
+  {
+    for(auto const& motionPrimitive : motionPrimitivesAtAngle)
+    {
+      //TODO: angles in json file need to be converted to radians
+      primitive_start_angles.emplace_back( motionPrimitive.start_angle );
+    }
+  }
+
+  //TODO: angles in json file need to be converted to radians 
+  for(auto const &start_angle : primitive_start_angles)
+  {
+    trig_values.emplace_back( cos(start_angle), sin(start_angle) );
+  }
 }
 
 MotionPoses LatticeMotionTable::getProjections(const NodeLattice * node)
@@ -117,14 +150,14 @@ LatticeMetadata LatticeMotionTable::getLatticeMetadata(const std::string & latti
 
 void fromJsonToMetaData(const nlohmann::json &j, LatticeMetadata &latticeMetadata)
 {
-  j.at("turningRadius").get_to(latticeMetadata.turningRadius);
-  j.at("stepDistance").get_to(latticeMetadata.stepDistance);
-  j.at("gridSeparation").get_to(latticeMetadata.gridSeparation);
-  j.at("maxLength").get_to(latticeMetadata.maxLength);
-  j.at("numberOfHeadings").get_to(latticeMetadata.numberOfHeadings);
-  j.at("outputFile").get_to(latticeMetadata.outputFile);
-  j.at("headingAngles").get_to(latticeMetadata.headingAngles);
-  j.at("numberOfTrajectories").get_to(latticeMetadata.numberOfTrajectories);
+  j.at("turningRadius").get_to(latticeMetadata.min_turning_radius);
+  j.at("stepDistance").get_to(latticeMetadata.step_distance);
+  j.at("gridSeparation").get_to(latticeMetadata.grid_separation);
+  j.at("maxLength").get_to(latticeMetadata.max_length);
+  j.at("numberOfHeadings").get_to(latticeMetadata.number_of_headings);
+  j.at("outputFile").get_to(latticeMetadata.output_file);
+  j.at("headingAngles").get_to(latticeMetadata.heading_angles);
+  j.at("numberOfTrajectories").get_to(latticeMetadata.number_of_trajectories);
 }
 
 void fromJsonToPose(const nlohmann::json &j, MotionPose &pose)
@@ -136,13 +169,13 @@ void fromJsonToPose(const nlohmann::json &j, MotionPose &pose)
 
 void fromJsonToMotionPrimitive(const nlohmann::json &j, MotionPrimitive &motionPrimitive)
 {
-  j.at("trajectoryId").get_to(motionPrimitive.trajectoryId);
-  j.at("startAngle").get_to(motionPrimitive.startAngle);
-  j.at("endAngle").get_to(motionPrimitive.endAngle);   
+  j.at("trajectoryId").get_to(motionPrimitive.trajectory_id);
+  j.at("startAngle").get_to(motionPrimitive.start_angle);
+  j.at("endAngle").get_to(motionPrimitive.end_angle);   
   j.at("radius").get_to(motionPrimitive.radius);
-  j.at("trajectoryLength").get_to(motionPrimitive.trajectoryLength);
-  j.at("arcLength").get_to(motionPrimitive.arcLength);
-  j.at("straightLength").get_to(motionPrimitive.straightLength);
+  j.at("trajectoryLength").get_to(motionPrimitive.trajectory_length);
+  j.at("arcLength").get_to(motionPrimitive.arc_length);
+  j.at("straightLength").get_to(motionPrimitive.straight_length);
 
   for(auto& jsonPose : j["poses"])
   {
