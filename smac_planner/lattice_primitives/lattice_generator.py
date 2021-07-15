@@ -1,9 +1,9 @@
+from matplotlib.pyplot import step
 from trajectory_generator import TrajectoryGenerator
 from trajectory import Trajectory, TrajectoryPath, TrajectoryParameters
 import numpy as np
 from collections import defaultdict
-
-import math
+from motion_model import MotionModel
 
 class LatticeGenerator:
 
@@ -13,14 +13,16 @@ class LatticeGenerator:
         self.turning_radius = config["turningRadius"]
         self.max_level = round(config["maxLength"] / self.grid_separation)
         self.number_of_headings = config["numberOfHeadings"]
+
+        self.motion_model = MotionModel[config["motionModel"].upper()]
         
     def angle_difference(self, angle_1, angle_2):
 
         difference = abs(angle_1 - angle_2)
         
-        if difference > math.pi:
+        if difference > np.pi:
             # If difference > 180 return the shorter distance between the angles
-            difference = 2*math.pi - difference
+            difference = 2*np.pi - difference
         
         return difference
 
@@ -100,7 +102,7 @@ class LatticeGenerator:
 
     def compute_min_trajectory_length(self):
         # Compute arc length of circle that moves through an angle of 360/number of headings 
-        return 2 * math.pi * self.turning_radius * (1/self.number_of_headings)
+        return 2 * np.pi * self.turning_radius * (1/self.number_of_headings)
 
     def generate_minimal_spanning_set(self):
         single_quadrant_spanning_set = defaultdict(list)
@@ -130,9 +132,9 @@ class LatticeGenerator:
                 for target_point in positions:
                     for target_heading in target_headings:
                         trajectory = self.trajectory_generator.generate_trajectory(target_point, start_heading, target_heading)
+                        
 
                         if trajectory:
-
                             # Check if path overlaps something in minimal spanning set
                             if(self.is_minimal_path(trajectory.path, minimal_trajectory_set)):
                                 new_end_pose = np.array([target_point[0], target_point[1], np.deg2rad(target_heading)])
@@ -245,8 +247,74 @@ class LatticeGenerator:
 
         return all_trajectories
 
-    def run(self):
-        return self.generate_minimal_spanning_set()
+    def handle_motion_model(self, spanning_set):
 
+        if self.motion_model == MotionModel.ACKERMANN:
+            return spanning_set
 
+        elif self.motion_model == MotionModel.DIFF:
+            diff_spanning_set = self.add_in_place_turns(spanning_set)
+            return diff_spanning_set
+
+        elif self.motion_model == MotionModel.OMNI:
+            omni_spanning_set = self.add_in_place_turns(spanning_set)
+            omni_spanning_set = self.add_horizontal_motions(omni_spanning_set)
+            return omni_spanning_set
+
+        else:
+            print(f"No handling implemented for Motion Model: {self.motion_model}")
+            raise NotImplementedError
+    
+    def add_in_place_turns(self, spanning_set):
+        all_angles = sorted(spanning_set.keys(), key=spanning_set.get)
         
+        for idx, start_angle in enumerate(all_angles):
+            prev_angle_idx = idx - 1 if idx - 1 >= 0 else len(all_angles) - 1
+            next_angle_idx = idx + 1 if idx + 1 < len(all_angles) else 0
+
+            prev_angle = all_angles[prev_angle_idx]
+            next_angle = all_angles[next_angle_idx]
+
+            turn_left = (start_angle, prev_angle, 0, 0, 0, 0, [[0, 0, start_angle], [0, 0, prev_angle]])
+            turn_right = (start_angle, next_angle, 0, 0, 0, 0, [[0, 0, start_angle], [0, 0, next_angle]])
+
+            spanning_set[start_angle].append(turn_left)
+            spanning_set[start_angle].append(turn_right)
+
+        return spanning_set
+
+    def add_horizontal_motions(self, spanning_set):
+        min_trajectory_length = self.compute_min_trajectory_length()
+        steps = int(np.round(min_trajectory_length/self.grid_separation))
+
+        for start_angle in spanning_set.keys():
+            xs = np.linspace(0, min_trajectory_length * np.cos(np.deg2rad(start_angle + 90)), steps)
+            ys = np.linspace(0, min_trajectory_length * np.sin(np.deg2rad(start_angle + 90)), steps)
+            yaws = np.full(steps, np.deg2rad(start_angle), dtype=np.float64)
+
+            flipped_xs = -xs
+            flipped_ys = -ys
+
+            xs = xs.round(5)
+            ys = ys.round(5)
+            flipped_xs = flipped_xs.round(5)
+            flipped_ys = flipped_ys.round(5)
+
+            xs += 0.
+            ys += 0.
+            yaws += 0.
+            flipped_xs += 0.
+            flipped_ys += 0.
+
+            left_motion = (start_angle, start_angle, 0, min_trajectory_length, 0, min_trajectory_length, list(zip(xs, ys, yaws)))
+            right_motion = (start_angle, start_angle, 0, min_trajectory_length, 0, min_trajectory_length, list(zip(flipped_xs, flipped_ys, yaws)))
+        
+            spanning_set[start_angle].append(left_motion)
+            spanning_set[start_angle].append(right_motion)
+
+        return spanning_set
+
+    def run(self):
+        complete_spanning_set = self.generate_minimal_spanning_set()
+
+        return self.handle_motion_model(complete_spanning_set)
