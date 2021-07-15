@@ -3,12 +3,12 @@ from trajectory_generator import TrajectoryGenerator
 import numpy as np
 
 TURNING_RADIUS = 1
-STEP_DISTANCE = 0.1
+GRID_SEPARATION = 1
 
 class TestTrajectoryGenerator(unittest.TestCase):
 
     def setUp(self) -> None:
-        config = {"turningRadius":TURNING_RADIUS,"stepDistance":STEP_DISTANCE}
+        config = {"turningRadius":TURNING_RADIUS,"gridSeparation":GRID_SEPARATION}
         self.trajectory_generator = TrajectoryGenerator(config)
 
     def test_generate_trajectory_only_arc(self):
