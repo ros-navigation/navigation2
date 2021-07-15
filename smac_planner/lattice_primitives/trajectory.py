@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 
-@dataclass
+@dataclass(frozen=True)
 class TrajectoryParameters:
     radius: float
     x_offset: float
@@ -14,7 +14,7 @@ class TrajectoryParameters:
     start_to_arc_distance: float
     arc_to_end_distance: float
 
-@dataclass
+@dataclass(frozen=True)
 class TrajectoryPath:
     xs: np.array
     ys: np.array
@@ -27,7 +27,7 @@ class TrajectoryPath:
 
         return TrajectoryPath(xs, ys, yaws)
 
-@dataclass
+@dataclass(frozen=True)
 class Trajectory:
     path: TrajectoryPath
     parameters: TrajectoryParameters
