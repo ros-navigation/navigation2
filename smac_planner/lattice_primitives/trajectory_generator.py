@@ -7,7 +7,7 @@ class TrajectoryGenerator:
 
         def __init__(self, config: dict):
                 self.turning_radius = config["turningRadius"]
-                self.step_distance = config["stepDistance"]
+                self.step_distance = 0.1 * config["gridSeparation"]
 
         def _create_arc_path(self, trajectory_params: TrajectoryParameters, step_distance: float) -> TrajectoryPath:
                 '''
