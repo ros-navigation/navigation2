@@ -42,7 +42,7 @@ using namespace std::placeholders;
 namespace nav2_map_server
 {
 MapSaver::MapSaver()
-: nav2_util::LifecycleNode("map_saver", "", true)
+: nav2_util::LifecycleNode("map_saver", "")
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
