@@ -186,20 +186,29 @@ bool MapSaver::saveMapTopicToFile(
         map_msg = msg;
       };
 
-    // Add new subscription for incoming map topic.
-    // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode
-    // as a map listener.
     rclcpp::QoS map_qos(10);  // initialize to default
     if (map_subscribe_transient_local_) {
       map_qos.transient_local();
       map_qos.reliable();
       map_qos.keep_last(1);
     }
-    auto map_sub = rclcpp_node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
-      map_topic_loc, map_qos, mapCallback);
 
+    // Create new CallbackGroup for map_sub
+    auto callback_group = create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
+
+    auto option = rclcpp::SubscriptionOptions();
+    option.callback_group = callback_group;
+    auto map_sub = create_subscription<nav_msgs::msg::OccupancyGrid>(
+      map_topic_loc, map_qos, mapCallback, option);
+
+    // Create SingleThreadedExecutor to spin map_sub in callback_group
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_callback_group(callback_group, get_node_base_interface());
     rclcpp::Time start_time = now();
     while (rclcpp::ok()) {
+      executor.spin_some();
       if ((now() - start_time) > *save_map_timeout_) {
         RCLCPP_ERROR(get_logger(), "Failed to save the map: timeout");
         return false;
