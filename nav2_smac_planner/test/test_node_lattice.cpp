@@ -50,10 +50,10 @@ TEST(ParserTest, test_lattice_node)
     EXPECT_NEAR(metaData.heading_angles[0], -180.0, 0.01);
 
     std::vector<nav2_smac_planner::MotionPrimitive> myPrimitives;
-    for(auto& primative : jsonPrimatives)
+    for(unsigned int i = 0; i < jsonPrimatives.size() ; ++i)
     {
         nav2_smac_planner::MotionPrimitive newPrimative; 
-        nav2_smac_planner::fromJsonToMotionPrimitive(primative, newPrimative );
+        nav2_smac_planner::fromJsonToMotionPrimitive(jsonPrimatives[i], newPrimative );
         myPrimitives.push_back(newPrimative);
     }
 

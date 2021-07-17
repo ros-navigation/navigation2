@@ -72,10 +72,11 @@ void LatticeMotionTable::initMotionModel(
 
   float prevStartAngle = 0; 
   std::vector<MotionPrimitive> primitives; 
-  for(auto const& primative : j["primitives"] )
+  nlohmann::json jsonPrimitives = j["primitives"];
+  for(unsigned int i = 0; i < jsonPrimitives.size(); ++i)
   {
     MotionPrimitive newPrimitive; 
-    fromJsonToMotionPrimitive(primative, newPrimitive); 
+    fromJsonToMotionPrimitive(jsonPrimitives[i], newPrimitive); 
 
     if(prevStartAngle != newPrimitive.start_angle )
     {
@@ -83,43 +84,33 @@ void LatticeMotionTable::initMotionModel(
       primitives.clear(); 
       prevStartAngle = newPrimitive.start_angle;
     }
-    primitives.emplace_back(newPrimitive);
+    primitives.emplace_back(newPrimitive); 
   }
   motionPrimitives.emplace_back(primitives); 
-
-
-  // TODO(Matt) read in file, precompute based on orientation bins for lookup at runtime
-  // file is `search_info.lattice_filepath`, to be read in from plugin and provided here.
-
-  // TODO(Matt) create a state_space with the max turning rad primitive within the file
-  // (or another -- mid?)
-  // to use for analytic expansions and heuristic generation. Potentially make both an
-  // extreme and a passive one?
-
-  // TODO(Matt) populate num_angle_quantization, size_x, min_turning_radius, trig_values,
-  // all of the member variables of LatticeMotionTable
 
   num_angle_quantization = latticeMetadata.number_of_headings;
   num_angle_quantization_float = static_cast<float>(num_angle_quantization);
   min_turning_radius = latticeMetadata.min_turning_radius;
 
-  //NOTE: Note sure what type of state space this should be 
+  //TODO: Note sure what type of state space this should be 
   state_space = std::make_unique<ompl::base::DubinsStateSpace>( min_turning_radius );
 
-  for(auto const& motionPrimitivesAtAngle : motionPrimitives)
+  for(unsigned int i = 0; i < motionPrimitives.size(); ++i)
   {
-    for(auto const& motionPrimitive : motionPrimitivesAtAngle)
+    for(unsigned int j = 0; j < motionPrimitives[0].size(); ++j)
     {
       //TODO: angles in json file need to be converted to radians
-      primitive_headings.emplace_back( motionPrimitive.start_angle );
+      primitive_headings.emplace_back( motionPrimitives[i][j].start_angle );
     }
   }
 
-  //TODO: angles in json file need to be converted to radians 
-  for(auto const &start_angle : primitive_headings)
+  //TODO: angles in json file need to be converted to radians
+  for(unsigned int i = 0; i < primitive_headings.size(); ++i)
   {
-    trig_values.emplace_back( cos(start_angle), sin(start_angle) );
-  }
+    trig_values.emplace_back( 
+      cos(primitive_headings[i]), 
+      sin(primitive_headings[i]) );
+  } 
 }
 
 MotionPoses LatticeMotionTable::getProjections(const NodeLattice * node)
@@ -164,14 +155,13 @@ void fromJsonToMotionPrimitive(const nlohmann::json &j, MotionPrimitive &motionP
   j.at("arcLength").get_to(motionPrimitive.arc_length);
   j.at("straightLength").get_to(motionPrimitive.straight_length);
 
-  for(auto& jsonPose : j["poses"])
+  for(unsigned int i = 0; i < j["poses"].size(); ++i)
   {
-      MotionPose pose;
-      fromJsonToPose(jsonPose, pose);
-      motionPrimitive.poses.push_back(pose);
+    MotionPose pose;
+    fromJsonToPose(j["poses"][i], pose);
+    motionPrimitive.poses.push_back(pose);
   }
 }
-
 
 NodeLattice::NodeLattice(const unsigned int index)
 : parent(nullptr),
