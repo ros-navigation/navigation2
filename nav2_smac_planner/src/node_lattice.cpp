@@ -103,33 +103,20 @@ void LatticeMotionTable::initMotionModel(
   num_angle_quantization_float = static_cast<float>(num_angle_quantization);
   min_turning_radius = latticeMetadata.min_turning_radius;
 
-  //Find the largest turning radius that is not equal to zero
-  float largestTurningRadius = std::numeric_limits<float>::max();
-  for(auto const& motionPrimitivesAtAngle : motionPrimitives)
-  {
-    for(auto const& motionPrimitive : motionPrimitivesAtAngle)
-    {
-      if( motionPrimitive.radius < largestTurningRadius && motionPrimitive.radius != 0 )
-      {
-        largestTurningRadius = motionPrimitive.radius;
-      }
-    }
-  }
-
   //NOTE: Note sure what type of state space this should be 
-  state_space = std::make_unique<ompl::base::DubinsStateSpace>( largestTurningRadius );
+  state_space = std::make_unique<ompl::base::DubinsStateSpace>( min_turning_radius );
 
   for(auto const& motionPrimitivesAtAngle : motionPrimitives)
   {
     for(auto const& motionPrimitive : motionPrimitivesAtAngle)
     {
       //TODO: angles in json file need to be converted to radians
-      primitive_start_angles.emplace_back( motionPrimitive.start_angle );
+      primitive_headings.emplace_back( motionPrimitive.start_angle );
     }
   }
 
   //TODO: angles in json file need to be converted to radians 
-  for(auto const &start_angle : primitive_start_angles)
+  for(auto const &start_angle : primitive_headings)
   {
     trig_values.emplace_back( cos(start_angle), sin(start_angle) );
   }
@@ -151,8 +138,8 @@ LatticeMetadata LatticeMotionTable::getLatticeMetadata(const std::string & latti
 void fromJsonToMetaData(const nlohmann::json &j, LatticeMetadata &latticeMetadata)
 {
   j.at("turningRadius").get_to(latticeMetadata.min_turning_radius);
-  j.at("stepDistance").get_to(latticeMetadata.step_distance);
-  j.at("gridSeparation").get_to(latticeMetadata.grid_separation);
+  j.at("stepDistance").get_to(latticeMetadata.primitive_resolution);
+  j.at("gridSeparation").get_to(latticeMetadata.grid_resolution);
   j.at("maxLength").get_to(latticeMetadata.max_length);
   j.at("numberOfHeadings").get_to(latticeMetadata.number_of_headings);
   j.at("outputFile").get_to(latticeMetadata.output_file);
@@ -172,7 +159,7 @@ void fromJsonToMotionPrimitive(const nlohmann::json &j, MotionPrimitive &motionP
   j.at("trajectoryId").get_to(motionPrimitive.trajectory_id);
   j.at("startAngle").get_to(motionPrimitive.start_angle);
   j.at("endAngle").get_to(motionPrimitive.end_angle);   
-  j.at("radius").get_to(motionPrimitive.radius);
+  j.at("radius").get_to(motionPrimitive.turning_radius);
   j.at("trajectoryLength").get_to(motionPrimitive.trajectory_length);
   j.at("arcLength").get_to(motionPrimitive.arc_length);
   j.at("straightLength").get_to(motionPrimitive.straight_length);

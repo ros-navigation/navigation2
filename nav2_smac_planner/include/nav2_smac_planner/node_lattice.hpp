@@ -85,7 +85,7 @@ struct LatticeMotionTable
   float num_angle_quantization_float;
   float min_turning_radius;
   float bin_size;
-  std::vector<float> primitive_start_angles;
+  std::vector<float> primitive_headings;
   float change_penalty;
   float non_straight_penalty;
   float cost_penalty;
