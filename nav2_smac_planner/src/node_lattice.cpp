@@ -58,6 +58,8 @@ void LatticeMotionTable::initMotionModel(
   reverse_penalty = search_info.reverse_penalty;
   current_lattice_filepath = search_info.lattice_filepath;
 
+  latticeMetadata = getLatticeMetadata(current_lattice_filepath);
+
   std::ifstream latticeFile(current_lattice_filepath);
 
   if( !latticeFile.is_open() )
@@ -67,8 +69,6 @@ void LatticeMotionTable::initMotionModel(
 
   nlohmann::json j;
   latticeFile >> j;
-
-  fromJsonToMetaData(j["latticeMetadata"], latticeMetadata);
 
   float prevStartAngle = 0; 
   std::vector<MotionPrimitive> primitives; 
@@ -139,10 +139,21 @@ MotionPoses LatticeMotionTable::getMotionPrimitives(const NodeLattice * node)
 
 LatticeMetadata LatticeMotionTable::getLatticeMetadata(const std::string & lattice_filepath)
 {
-  // TODO(Matt) from this file extract and return the number of angle bins and
-  // turning radius in global coordinates, respectively.
-  // world coordinates meaning meters, not cells
-  return LatticeMetadata();
+  //NOTE: This seems redundant 
+  std::ifstream latticeFile(lattice_filepath);
+
+  if( !latticeFile.is_open() )
+  {
+    throw std::runtime_error("Could not open lattice file");
+  }
+
+  nlohmann::json j;
+  latticeFile >> j;
+  LatticeMetadata metadata;
+
+  fromJsonToMetaData(j["latticeMetadata"], metadata);
+
+  return metadata;
 }
 
 void fromJsonToMetaData(const nlohmann::json &j, LatticeMetadata &latticeMetadata)
