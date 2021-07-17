@@ -52,7 +52,7 @@ public:
   ~LifecycleManager();
 
 protected:
-  // Callback group used by services and timers 
+  // Callback group used by services and timers
   rclcpp::CallbackGroup::SharedPtr callback_group_;
 
   // The services provided by this node
