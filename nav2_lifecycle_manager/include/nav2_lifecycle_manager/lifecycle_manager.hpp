@@ -55,6 +55,7 @@ protected:
   // The ROS node to create bond
   rclcpp::Node::SharedPtr bond_client_node_;
   std::unique_ptr<nav2_util::NodeThread> bond_node_thread_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
 
   // The services provided by this node
   rclcpp::Service<ManageLifecycleNodes>::SharedPtr manager_srv_;
