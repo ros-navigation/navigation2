@@ -68,7 +68,7 @@ struct LatticeMotionTable
    * @param node Ptr to NodeLattice
    * @return A set of motion poses
    */
-  MotionPoses getProjections(const NodeLattice * node);
+  MotionPoses getMotionPrimitives(const NodeLattice * node);
 
   /**
    * @brief Get file metadata needed
@@ -79,7 +79,6 @@ struct LatticeMotionTable
    */
   static LatticeMetadata getLatticeMetadata(const std::string & lattice_filepath);
 
-  MotionPoses projections;
   unsigned int size_x;
   unsigned int num_angle_quantization;
   float num_angle_quantization_float;

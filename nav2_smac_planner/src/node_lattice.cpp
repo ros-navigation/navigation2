@@ -113,9 +113,28 @@ void LatticeMotionTable::initMotionModel(
   } 
 }
 
-MotionPoses LatticeMotionTable::getProjections(const NodeLattice * node)
+MotionPoses LatticeMotionTable::getMotionPrimitives(const NodeLattice * node)
 {
-  return MotionPoses();  // TODO(Matt) lookup at run time the primitives to use at node
+  //Question: Theta is in bin coords, 0-16 so theta does not have to be shifted?
+  const float node_heading = node->pose.theta; 
+  const unsigned int branches = motionPrimitives[node_heading].size();
+  MotionPoses primitive_projection_list; 
+  primitive_projection_list.reserve( branches );
+
+  for( unsigned int i = 0; i < branches; ++i)
+  {
+    const MotionPose end_pose = motionPrimitives[node_heading][i].poses.back(); 
+
+    primitive_projection_list.emplace_back( 
+      node->pose.x + end_pose._x, //Question: does this need to be converted to cells
+      node->pose.y + end_pose._y, //Question: does this need to be converted to cells
+      end_pose._theta); //Question: does this need to be converted to bins?
+  }
+
+  //Question: we will likely want to know the motion primitive index (0-104)
+  //That the lattice node will store for the backtrace 
+
+  return primitive_projection_list;
 }
 
 LatticeMetadata LatticeMotionTable::getLatticeMetadata(const std::string & lattice_filepath)
@@ -313,7 +332,7 @@ void NodeLattice::getNeighbors(
   unsigned int index = 0;
   NodePtr neighbor = nullptr;
   Coordinates initial_node_coords;
-  const MotionPoses motion_projections = motion_table.getProjections(this);
+  const MotionPoses motion_projections = motion_table.getMotionPrimitives(this);
 
   for (unsigned int i = 0; i != motion_projections.size(); i++) {
     index = NodeLattice::getIndex(
