@@ -225,11 +225,13 @@ bool NodeLattice::isNodeValid(
 {
   // TODO(steve) if primitive longer than 1.5 cells, then we need to split into 1 cell
   // increments and collision check across them
-  if (collision_checker->inCollision(
-      this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
-  {
-    return false;
-  }
+
+  //TODO: removed bin size from motion table, not sutible for lattice planner
+  // if (collision_checker->inCollision(
+  //     this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
+  // {
+  //   return false;
+  // }
 
   _cell_cost = collision_checker->getCost();
   return true;

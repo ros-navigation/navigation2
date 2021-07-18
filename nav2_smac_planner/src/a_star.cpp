@@ -545,10 +545,14 @@ typename AStarAlgorithm<NodeT>::AnalyticExpansionNodes AStarAlgorithm<NodeT>::ge
     node->motion_table.state_space), s(node->motion_table.state_space);
   from[0] = node->pose.x;
   from[1] = node->pose.y;
-  from[2] = node->pose.theta * node->motion_table.bin_size;
+  //TODO: Bin size removed from motion table for state lattice
+  // from[2] = node->pose.theta * node->motion_table.bin_size;
+  from[2] = 0.0;
   to[0] = _goal_coordinates.x;
   to[1] = _goal_coordinates.y;
-  to[2] = _goal_coordinates.theta * node->motion_table.bin_size;
+  to[2] = 0.0;
+  //TODO: Bin size removed from motion table for state lattice
+  // to[2] = _goal_coordinates.theta * node->motion_table.bin_size;
 
   float d = node->motion_table.state_space->distance(from(), to());
 
@@ -572,7 +576,9 @@ typename AStarAlgorithm<NodeT>::AnalyticExpansionNodes AStarAlgorithm<NodeT>::ge
   for (float i = 1; i < num_intervals; i++) {
     node->motion_table.state_space->interpolate(from(), to(), i / num_intervals, s());
     reals = s.reals();
-    angle = reals[2] / node->motion_table.bin_size;
+    //TODO: Bin size removed from motion table for state lattice
+    // angle = reals[2] / node->motion_table.bin_size;
+    angle = 0.0;
     while (angle >= node->motion_table.num_angle_quantization_float) {
       angle -= node->motion_table.num_angle_quantization_float;
     }
