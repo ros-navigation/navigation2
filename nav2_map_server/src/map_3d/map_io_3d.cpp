@@ -121,14 +121,13 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
     load_parameters.pcd_file_name = pcd_file_name;
   }
 
-  // Get view point as position and orientation
-  // view point will be loaded from pcd file while reading
-  // If not provided by YAML, if it provided by both YAML and PCD then
-  // a warning will be issued if they are not equal and PCD  will take precedence
-  try {
-    tf2::Quaternion rotation(0.0, 0.0, 0.0, 0.0);
-    tf2::Vector3 translation(1.0, 0.0, 0.0);
+  // Get view point as position and orientation.
+  // If not provided by YAML, it will be loaded from PCD file while 
+  // reading later in loadMapFromFile().
+  tf2::Quaternion rotation(0.0, 0.0, 0.0, 0.0);
+  tf2::Vector3 translation(1.0, 0.0, 0.0);
 
+  try {
     // Load origin form yaml_file
     std::vector<double> position = yaml_get_value<std::vector<double>>(doc, "position");
     if (position.size() != 3) {
@@ -143,7 +142,11 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
       tf2Scalar(position[1]),
       tf2Scalar(position[2]));
     }
+  } catch (YAML::Exception & e) {
+    std::cout << "[WARNING] [map_io_3d]: Couldn't load position from yaml file" << std::endl;
+  }
 
+  try {
     std::vector<double> orientation = yaml_get_value<std::vector<double>>(doc, "orientation");
     if (orientation.size() != 4) {
       // throw std::invalid_argument("Position size should be : 4");
@@ -158,12 +161,12 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
       tf2Scalar(orientation[2]),
       tf2Scalar(orientation[3]));
     }
-
-    // Transform
-    load_parameters.origin = tf2::Transform(rotation, translation);
   } catch (YAML::Exception & e) {
-    std::cout << "[WARNING] [map_io_3d]: Couldn't load view_point from yaml file: " << std::endl;
+    std::cout << "[WARNING] [map_io_3d]: Couldn't load orientation from yaml file" << std::endl;
   }
+
+  // Transform
+  load_parameters.origin = tf2::Transform(rotation, translation);
 
   return load_parameters;
 }
@@ -264,7 +267,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
     loadMapFromFile(load_parameters, map_msg);
   } catch (std::exception & e) {
     std::cerr <<
-      "[ERROR] [map_io_3d]: Failed to load image file " << load_parameters.pcd_file_name <<
+      "[ERROR] [map_io_3d]: Failed to load pcd file " << load_parameters.pcd_file_name <<
       " for reason: " << e.what() << std::endl;
 
     return LOAD_MAP_STATUS::INVALID_MAP_DATA;
