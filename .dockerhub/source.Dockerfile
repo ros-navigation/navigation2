@@ -223,16 +223,16 @@ RUN if [ -n "$RUN_TESTS" ]; then \
           || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
     fi
 
-# multi-stage for testing workspaces
-FROM overlay_builder AS workspaces_tester
+# multi-stage for testing workspace
+FROM overlay_builder AS workspace_tester
 
 # copy workspace test results
 COPY --from=ros2_tester     $ROS2_WS/log      $ROS2_WS/log
 COPY --from=underlay_tester $UNDERLAY_WS/log  $UNDERLAY_WS/log
 COPY --from=overlay_tester  $OVERLAY_WS/log   $OVERLAY_WS/log
 
-# multi-stage for shipping overlay
-FROM overlay_builder AS overlay_shipper
+# multi-stage for shipping workspace
+FROM overlay_builder AS workspace_shipper
 
 # restore apt for docker
 RUN mv /etc/apt/docker-clean /etc/apt/apt.conf.d/ && \
