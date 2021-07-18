@@ -299,24 +299,12 @@ void checkSaveParameters(SaveParameters & save_parameters)
   }
 
   // Check for file format
-  if (save_parameters.format.empty()) {
-    save_parameters.format = "pcd";
-    std::cout << "[WARNING] [map_io_3d]: No map format is "
-      "specified. pcd format will be used." << std::endl;
-  }
-
   // Confirm for the presently implemented formats
-  if (save_parameters.format != "ply" && save_parameters.format != "pcd") {
+  if (save_parameters.format != "pcd" && 
+      save_parameters.format.empty()) {
     save_parameters.format = "pcd";
     std::cout << "[WARNING] [map_io_3d]: " << save_parameters.format <<
       " support is not implemented, Falling back to pcd file format" << std::endl;
-  }
-
-  if (save_parameters.format == "ply") {
-    // TODO(Shivam Pandey): add ply support
-    save_parameters.format = "pcd";
-    std::cout << "[WARNING] [map_io_3d]: ply support is not implemented, "
-      "Falling back to pcd file format" << std::endl;
   }
 }
 
@@ -332,11 +320,7 @@ void tryWriteMapToFile(
 {
   std::string file_name(save_parameters.map_file_name);
 
-  if (save_parameters.format == "pcd") {
-    file_name += ".pcd";
-  } else if (save_parameters.format == "ply") {
-    file_name += ".ply";
-  }
+  file_name += ".pcd";
 
   pcl::PCLPointCloud2::Ptr cloud_2(new pcl::PCLPointCloud2());
   msgToPcl(cloud_2, map);
