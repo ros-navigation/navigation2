@@ -20,11 +20,17 @@
 
 #include "test_constants/test_constants.h"
 #include "nav2_util/lifecycle_service_client.hpp"
+// #include "tf2/LinearMath/Quaternion.h"
+// #include "tf2/LinearMath/Vector3.h"
+// #include "tf2/LinearMath/Scalar.h"
+#include "pcl/point_types.h"
+#include "pcl/conversions.h"
 
 #include "nav2_msgs/srv/save_map3_d.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 
 #include "nav2_map_server/map_3d/map_io_3d.hpp"
+#include "nav2_map_server/map_3d/pcl_helper.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -88,6 +94,52 @@ protected:
   {
     ASSERT_FLOAT_EQ(map_msg.width, g_valid_pcd_width);
     ASSERT_FLOAT_EQ(map_msg.data.size(), g_valid_pcd_data_size);
+    //
+    // // Load testing pointcloud
+    // sensor_msgs::msg::PointCloud2 base_cloud;
+    // map_3d::LoadParameters load_params;
+    //
+    // // fill out load parameters
+    // load_params.pcd_file_name = path(TEST_DIR) / path(g_valid_pcd_file);
+    //
+    // // Position
+    // tf2::Vector3 translation = tf2::Vector3(
+    //   tf2Scalar(pcd_origin[0]),
+    //   tf2Scalar(pcd_origin[1]),
+    //   tf2Scalar(pcd_origin[2]));
+    // // Orientation
+    // tf2::Quaternion rotation = tf2::Quaternion(
+    //   tf2Scalar(pcd_origin[4]),
+    //   tf2Scalar(pcd_origin[5]),
+    //   tf2Scalar(pcd_origin[6]),
+    //   tf2Scalar(pcd_origin[3]));
+    // // Transform
+    // load_params.origin = tf2::Transform(rotation, translation);
+    //
+    // // call map_3d:loadMapFromFile
+    // map_3d::loadMapFromFile(load_params, base_cloud);
+    //
+    // ASSERT_FLOAT_EQ(map_msg.data.size(), base_cloud.data.size());
+    //
+    // // compare the data
+    // for (int i = 0; i < map_msg.data.size(); i++){
+    //   ASSERT_EQ(map_msg.data[i], base_cloud.data[i]);
+    // }
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PCLPointCloud2::Ptr cloud2 (new pcl::PCLPointCloud2());
+
+    nav2_map_server::map_3d::msgToPcl(cloud2, map_msg);
+
+    pcl::fromPCLPointCloud2(*cloud2, *cloud);
+
+    int i = 0;
+    for (const auto& point: *cloud){
+      ASSERT_EQ(point.x, g_valid_pcd_content[i][0]);
+      ASSERT_EQ(point.y, g_valid_pcd_content[i][1]);
+      ASSERT_EQ(point.z, g_valid_pcd_content[i][2]);
+      i++;
+    }
   }
 
   static rclcpp::Node::SharedPtr node_;
@@ -126,7 +178,7 @@ TEST_F(MapSaverTestFixture, SaveMap3D)
 
   map_3d::LOAD_MAP_STATUS status =
     map_3d::loadMapFromYaml(
-    path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
+      path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
     map_msg);
 
   ASSERT_EQ(status, map_3d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);
@@ -160,7 +212,7 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters3D)
   sensor_msgs::msg::PointCloud2 map_msg;
   map_3d::LOAD_MAP_STATUS status =
     map_3d::loadMapFromYaml(
-    path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
+      path(g_tmp_dir) / path(g_valid_pcd_yaml_file),
     map_msg);
 
   ASSERT_EQ(status, map_3d::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS);

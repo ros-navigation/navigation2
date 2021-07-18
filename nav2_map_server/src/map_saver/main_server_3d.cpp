@@ -14,11 +14,11 @@
 // limitations under the License.
 
 #include <memory>
+#include <string>
 
 #include "nav2_map_server/map_3d/map_saver_3d.hpp"
 
 #include "rclcpp/rclcpp.hpp"
-#include "sensor_msgs/msg/point_cloud2.hpp"
 
 int main(int argc, char ** argv)
 {

@@ -133,7 +133,6 @@ TEST_F(MapSaverTestFixture, SaveMap)
   verifyMapMsg(map_msg);
 }
 
-
 // Send map saving service request with default parameters.
 // Load saved map and verify obtained OccupancyGrid.
 TEST_F(MapSaverTestFixture, SaveMapDefaultParameters)

@@ -16,7 +16,6 @@
 #include <string>
 
 #include "nav2_map_server/map_3d/map_server_3d.hpp"
-#include "sensor_msgs/msg/point_cloud2.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 

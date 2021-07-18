@@ -126,23 +126,39 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   // If not provided by YAML, if it provided by both YAML and PCD then
   // a warning will be issued if they are not equal and PCD  will take precedence
   try {
+    tf2::Quaternion rotation(0.0, 0.0, 0.0, 0.0);
+    tf2::Vector3 translation(1.0, 0.0, 0.0);
+
     // Load origin form yaml_file
-    std::vector<double> pcd_origin = yaml_get_value<std::vector<double>>(doc, "origin");
-    if (pcd_origin.size() != 7) {
-      throw std::invalid_argument("view_point is wrong");
+    std::vector<double> position = yaml_get_value<std::vector<double>>(doc, "position");
+    if (position.size() != 3) {
+      // throw std::invalid_argument("Position size should be : 3");
+      std::cout << "[WARNING] [map_io_3d]: Wrong size potision feld is provided in yaml, "
+        "will try to load origin from .pcd file" << std::endl;
+      load_parameters.position_from_pcd = true;
+    } else {
+    // Position
+    translation = tf2::Vector3(
+      tf2Scalar(position[0]),
+      tf2Scalar(position[1]),
+      tf2Scalar(position[2]));
     }
 
-    // Position
-    tf2::Vector3 translation = tf2::Vector3(
-      tf2Scalar(pcd_origin[0]),
-      tf2Scalar(pcd_origin[1]),
-      tf2Scalar(pcd_origin[2]));
+    std::vector<double> orientation = yaml_get_value<std::vector<double>>(doc, "orientation");
+    if (orientation.size() != 4) {
+      // throw std::invalid_argument("Position size should be : 4");
+      std::cout << "[WARNING] [map_io_3d]: Wrong size orientation feld is provided in yaml, "
+        "will try to load orientation from .pcd file" << std::endl;
+      load_parameters.orientation_from_pcd = true;
+    } else {
     // Orientation
-    tf2::Quaternion rotation = tf2::Quaternion(
-      tf2Scalar(pcd_origin[4]),
-      tf2Scalar(pcd_origin[5]),
-      tf2Scalar(pcd_origin[6]),
-      tf2Scalar(pcd_origin[3]));
+    rotation = tf2::Quaternion(
+      tf2Scalar(orientation[0]),
+      tf2Scalar(orientation[1]),
+      tf2Scalar(orientation[2]),
+      tf2Scalar(orientation[3]));
+    }
+
     // Transform
     load_parameters.origin = tf2::Transform(rotation, translation);
   } catch (YAML::Exception & e) {
@@ -189,10 +205,34 @@ void loadMapFromFile(
 
   //  update message data
   pclToMsg(map, cloud);
-
+  
   std::cout << "[DEBUG] [map_io_3d]: message conversion is done" << std::endl;
 
-  pcl_ros::transformPointCloud("random", load_parameters.origin, map, map2);
+  // Copy load_parameters and update
+  LoadParameters load_parameters_tmp = load_parameters;
+
+  if (load_parameters.position_from_pcd) {
+    // tf2::Vector3 trans = tf2::Vector3(
+    //   position[0],
+    //   position[1],
+    //   position[2]);
+    load_parameters_tmp.origin.setOrigin(
+      tf2::Vector3(
+      position[0],
+      position[1],
+      position[2]));
+  }
+
+  if (load_parameters.orientation_from_pcd) {
+    load_parameters_tmp.origin.setRotation(
+      tf2::Quaternion(
+      orientation.w(),
+      orientation.x(),
+      orientation.y(),
+      orientation.z()));
+  }
+
+  pcl_ros::transformPointCloud("random", load_parameters_tmp.origin, map, map2);
   map_msg = map2;
 }
 
@@ -326,8 +366,10 @@ void tryWriteMapToFile(
     emitter << YAML::BeginMap;
     emitter << YAML::Key << "pcd" << YAML::Value << file_name;
 
-    emitter << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq <<
-      0 << 0 << 0 << 1 << 0 << 0 << 0 << YAML::EndSeq;
+    emitter << YAML::Key << "position" << YAML::Flow << YAML::BeginSeq << 
+      0 << 0 << 0 << YAML::EndSeq;
+    emitter << YAML::Key << "orientation" << YAML::Flow << YAML::BeginSeq << 
+      1 << 0 << 0 << 0 << YAML::EndSeq;
 
     emitter << YAML::Key << "file_format" << YAML::Value << save_parameters.format;
     emitter << YAML::Key << "as_binary" << YAML::Value << save_parameters.as_binary;

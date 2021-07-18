@@ -19,10 +19,16 @@
 
 #include "nav2_util/lifecycle_node.hpp"
 #include "test_constants/test_constants.h"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Vector3.h"
+#include "tf2/LinearMath/Scalar.h"
+#include "pcl/point_types.h"
+#include "pcl/conversions.h"
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
 
 #include "nav2_map_server/map_3d/map_io_3d.hpp"
+#include "nav2_map_server/map_3d/pcl_helper.hpp"
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -87,6 +93,21 @@ protected:
   {
     ASSERT_EQ(map_msg.width, g_valid_pcd_width);
     ASSERT_EQ(map_msg.data.size(), g_valid_pcd_data_size);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PCLPointCloud2::Ptr cloud2 (new pcl::PCLPointCloud2());
+
+    nav2_map_server::map_3d::msgToPcl(cloud2, map_msg);
+
+    pcl::fromPCLPointCloud2(*cloud2, *cloud);
+
+    int i = 0;
+    for (const auto& point: *cloud){
+      ASSERT_EQ(point.x, g_valid_pcd_content[i][0]);
+      ASSERT_EQ(point.y, g_valid_pcd_content[i][1]);
+      ASSERT_EQ(point.z, g_valid_pcd_content[i][2]);
+      i++;
+    }
   }
 };
 

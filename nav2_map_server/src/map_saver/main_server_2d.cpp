@@ -14,11 +14,11 @@
 // limitations under the License.
 
 #include <memory>
+#include <string>
 
 #include "nav2_map_server/map_2d/map_saver_2d.hpp"
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav_msgs/msg/occupancy_grid.hpp"
 
 int main(int argc, char ** argv)
 {

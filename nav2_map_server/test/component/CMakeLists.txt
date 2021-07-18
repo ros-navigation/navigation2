@@ -29,6 +29,7 @@ ament_target_dependencies(test_map_server_3d_node rclcpp nav2_util nav2_msgs
 )
 target_link_libraries(test_map_server_3d_node
   stdc++fs
+  ${map_io_library_name}_3d
 )
 ament_add_test(test_map_server_3d_node
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
@@ -47,7 +48,6 @@ ament_add_gtest_executable(test_map_saver_2d_node
 )
 ament_target_dependencies(test_map_saver_2d_node rclcpp nav2_util nav2_msgs)
 target_link_libraries(test_map_saver_2d_node
-#  ${library_name}
   ${map_io_library_name}_2d
   stdc++fs
 )

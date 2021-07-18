@@ -19,7 +19,6 @@
 #include <string>
 #include <memory>
 
-#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_msgs/srv/save_map.hpp"
 
 #include "rclcpp/rclcpp.hpp"

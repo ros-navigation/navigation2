@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
@@ -43,7 +44,6 @@ const char * USAGE_STRING{
   "  --free <threshold_free>\n"
   "  --mode trinary(default)/scale/raw\n"
   "\n-----Parameters unique to 3D map saver-----\n\n"
-  "  --origin <origin_topic>\n"
   "  --as_bin Give the flag to save map with binary encodings\n"
   "\n"
   "NOTE: --ros-args should be passed at the end of command line"};
@@ -57,7 +57,6 @@ typedef enum
   COMMAND_FREE_THRESH,
   COMMAND_MODE,
   COMMAND_ENCODING,
-  COMMAND_VIEW_POINT_TOPIC
 } COMMAND_TYPE;
 
 struct cmd_struct
@@ -79,7 +78,6 @@ struct SaveParamList
   map_2d::SaveParameters save_parameters_2d;
   // 3D parameters
   map_3d::SaveParameters save_parameters_3d;
-  std::string origin_topic;
 };
 
 // Arguments parser
@@ -96,7 +94,6 @@ ARGUMENTS_STATUS parse_arguments(
     {"--free", COMMAND_FREE_THRESH},
     {"--mode", COMMAND_MODE},
     {"--as_bin", COMMAND_ENCODING},
-    {"--origin", COMMAND_VIEW_POINT_TOPIC},
     {"--fmt", COMMAND_IMAGE_FORMAT}
   };
 
@@ -130,10 +127,10 @@ ARGUMENTS_STATUS parse_arguments(
             save_parameters.save_parameters_3d.map_file_name = *it;
             break;
           case COMMAND_FREE_THRESH:
-            save_parameters.save_parameters_2d.free_thresh = atoi(it->c_str());
+            save_parameters.save_parameters_2d.free_thresh = std::atof(it->c_str());
             break;
           case COMMAND_OCCUPIED_THRESH:
-            save_parameters.save_parameters_2d.occupied_thresh = atoi(it->c_str());
+            save_parameters.save_parameters_2d.occupied_thresh = std::atof(it->c_str());
             break;
           case COMMAND_IMAGE_FORMAT:
             save_parameters.save_parameters_2d.image_format = *it;
@@ -149,9 +146,6 @@ ARGUMENTS_STATUS parse_arguments(
                 "Map mode parameter not recognized: %s, using default value (trinary)",
                 it->c_str());
             }
-            break;
-          case COMMAND_VIEW_POINT_TOPIC:
-            save_parameters.origin_topic = *it;
             break;
           case COMMAND_ENCODING:
             it--;  // as this one is a simple flag that puts binary format to on
@@ -179,7 +173,6 @@ int main(int argc, char ** argv)
   // Parse CLI-arguments
   SaveParamList save_parameters;
   std::string map_topic = "map";
-  save_parameters.origin_topic = "map_origin";
   switch (parse_arguments(logger, argc, argv, map_topic, save_parameters)) {
     case ARGUMENTS_INVALID:
       rclcpp::shutdown();

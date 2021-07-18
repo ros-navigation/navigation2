@@ -35,6 +35,7 @@ struct LoadParameters
 {
   std::string pcd_file_name;
   tf2::Transform origin;
+  bool position_from_pcd{false}, orientation_from_pcd{false};
 };
 
 enum class LOAD_MAP_STATUS

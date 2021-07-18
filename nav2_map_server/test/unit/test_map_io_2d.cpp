@@ -312,5 +312,5 @@ TEST_F(MapIOTester, loadInvalidYAML)
   map_2d::LoadParameters loadParameters;
   ASSERT_ANY_THROW(
     loadParameters =
-    map_2d::loadMapYaml(path(TEST_DIR) / path("invalid_file.yaml")));
+      map_2d::loadMapYaml(path(TEST_DIR) / path("invalid_file.yaml")));
 }

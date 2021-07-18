@@ -20,6 +20,12 @@
 
 #include "test_constants/test_constants.h"
 #include "nav2_util/lifecycle_service_client.hpp"
+// #include "tf2/LinearMath/Quaternion.h"
+// #include "tf2/LinearMath/Vector3.h"
+// #include "tf2/LinearMath/Scalar.h"
+#include "pcl/point_types.h"
+#include "pcl/conversions.h"
+#include "nav2_map_server/map_3d/pcl_helper.hpp"
 
 #include "nav2_msgs/srv/get_map3_d.hpp"
 #include "nav2_msgs/srv/load_map3_d.hpp"
@@ -89,6 +95,52 @@ protected:
   {
     ASSERT_EQ(map_msg.width, g_valid_pcd_width);
     ASSERT_EQ(map_msg.data.size(), g_valid_pcd_data_size);
+    //
+    // // Load testing pointcloud
+    // sensor_msgs::msg::PointCloud2 base_cloud;
+    // map_3d::LoadParameters load_params;
+    //
+    // // fill out load parameters
+    // load_params.pcd_file_name = path(TEST_DIR) / path(g_valid_pcd_file);
+    //
+    // // Position
+    // tf2::Vector3 translation = tf2::Vector3(
+    //   tf2Scalar(pcd_origin[0]),
+    //   tf2Scalar(pcd_origin[1]),
+    //   tf2Scalar(pcd_origin[2]));
+    // // Orientation
+    // tf2::Quaternion rotation = tf2::Quaternion(
+    //   tf2Scalar(pcd_origin[4]),
+    //   tf2Scalar(pcd_origin[5]),
+    //   tf2Scalar(pcd_origin[6]),
+    //   tf2Scalar(pcd_origin[3]));
+    // // Transform
+    // load_params.origin = tf2::Transform(rotation, translation);
+    //
+    // // call map_3d:loadMapFromFile
+    // map_3d::loadMapFromFile(load_params, base_cloud);
+    //
+    // ASSERT_FLOAT_EQ(map_msg.data.size(), base_cloud.data.size());
+    //
+    // // compare the data
+    // for (int i = 0; i < map_msg.data.size(); i++){
+    //   ASSERT_EQ(map_msg.data[i], base_cloud.data[i]);
+    // }
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PCLPointCloud2::Ptr cloud2 (new pcl::PCLPointCloud2());
+
+    nav2_map_server::map_3d::msgToPcl(cloud2, map_msg);
+
+    pcl::fromPCLPointCloud2(*cloud2, *cloud);
+
+    int i = 0;
+    for (const auto& point: *cloud){
+      ASSERT_EQ(point.x, g_valid_pcd_content[i][0]);
+      ASSERT_EQ(point.y, g_valid_pcd_content[i][1]);
+      ASSERT_EQ(point.z, g_valid_pcd_content[i][2]);
+      i++;
+    }
   }
 
   static rclcpp::Node::SharedPtr node_;
@@ -114,10 +166,7 @@ TEST_F(MapServer3DTestFixture, GetMap3D)
 
   auto resp = send_request<nav2_msgs::srv::GetMap3D>(node_, client, req);
 
-  sensor_msgs::msg::PointCloud2 map_msg;
-  map_msg = resp->map;
-
-  verifyMapMsg(map_msg);
+  verifyMapMsg(resp->map);
 }
 
 // Send map loading service request and verify obtained PointCloud
@@ -136,10 +185,7 @@ TEST_F(MapServer3DTestFixture, LoadMap3D)
 
   ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap3D::Response::RESULT_SUCCESS);
 
-  sensor_msgs::msg::PointCloud2 map_msg;
-  map_msg = resp->map;
-
-  verifyMapMsg(map_msg);
+  verifyMapMsg(resp->map);
 }
 
 // Send map loading service request without specifying which map to load
@@ -153,7 +199,7 @@ TEST_F(MapServer3DTestFixture, LoadMapNull3D)
   RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
   ASSERT_TRUE(client->wait_for_service());
 
-  req->map_url = "";
+  req->map_url = "invalid_file.yaml";
   RCLCPP_INFO(node_->get_logger(), "Sending load_map request with null file name");
   auto resp = send_request<nav2_msgs::srv::LoadMap3D>(node_, client, req);
 

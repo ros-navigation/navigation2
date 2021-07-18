@@ -58,5 +58,6 @@ extern const std::vector<double> g_valid_origin;
 // *INDENT-ON*
 extern const double g_default_free_thresh;
 extern const double g_default_occupied_thresh;
+extern const std::vector<std::vector<double>> g_valid_pcd_content;
 
 #endif  // TEST_CONSTANTS__TEST_CONSTANTS_H_

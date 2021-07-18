@@ -37,6 +37,8 @@
 #include <stdexcept>
 #include <functional>
 
+#include "nav_msgs/msg/occupancy_grid.hpp"
+
 using namespace std::placeholders;
 
 namespace nav2_map_server
