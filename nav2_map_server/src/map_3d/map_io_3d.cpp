@@ -122,7 +122,7 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   }
 
   // Get view point as position and orientation.
-  // If not provided by YAML, it will be loaded from PCD file while 
+  // If not provided by YAML, it will be loaded from PCD file while
   // reading later in loadMapFromFile().
   tf2::Quaternion rotation(0.0, 0.0, 0.0, 0.0);
   tf2::Vector3 translation(1.0, 0.0, 0.0);
@@ -136,11 +136,11 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
         "will try to load origin from .pcd file" << std::endl;
       load_parameters.position_from_pcd = true;
     } else {
-    // Position
-    translation = tf2::Vector3(
-      tf2Scalar(position[0]),
-      tf2Scalar(position[1]),
-      tf2Scalar(position[2]));
+      // Position
+      translation = tf2::Vector3(
+        tf2Scalar(position[0]),
+        tf2Scalar(position[1]),
+        tf2Scalar(position[2]));
     }
   } catch (YAML::Exception & e) {
     std::cout << "[WARNING] [map_io_3d]: Couldn't load position from yaml file" << std::endl;
@@ -154,12 +154,12 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
         "will try to load orientation from .pcd file" << std::endl;
       load_parameters.orientation_from_pcd = true;
     } else {
-    // Orientation
-    rotation = tf2::Quaternion(
-      tf2Scalar(orientation[0]),
-      tf2Scalar(orientation[1]),
-      tf2Scalar(orientation[2]),
-      tf2Scalar(orientation[3]));
+      // Orientation
+      rotation = tf2::Quaternion(
+        tf2Scalar(orientation[0]),
+        tf2Scalar(orientation[1]),
+        tf2Scalar(orientation[2]),
+        tf2Scalar(orientation[3]));
     }
   } catch (YAML::Exception & e) {
     std::cout << "[WARNING] [map_io_3d]: Couldn't load orientation from yaml file" << std::endl;
@@ -192,8 +192,6 @@ void loadMapFromFile(
   // will use sensor origin (added in PCD version 0.7)
   int pcd_version = pcl::PCDReader::PCD_V7;
 
-  std::cout << "[DEBUG] [map_io_3d]: feeding pcd filename to reader" << std::endl;
-
   if (reader.read(
       load_parameters.pcd_file_name, *cloud,
       position, orientation, pcd_version) == -1)              //* load the file
@@ -202,37 +200,27 @@ void loadMapFromFile(
     error_msg += load_parameters.pcd_file_name + "\n";
     PCL_ERROR(error_msg.c_str());
   }
-  std::cout << "[DEBUG] [map_io_3d]: pcd file is loaded" << std::endl;
-
-  std::cout << "[DEBUG] [map_io_3d]: converting pcd to message" << std::endl;
 
   //  update message data
   pclToMsg(map, cloud);
-  
-  std::cout << "[DEBUG] [map_io_3d]: message conversion is done" << std::endl;
 
   // Copy load_parameters and update
   LoadParameters load_parameters_tmp = load_parameters;
 
   if (load_parameters.position_from_pcd) {
-    // tf2::Vector3 trans = tf2::Vector3(
-    //   position[0],
-    //   position[1],
-    //   position[2]);
     load_parameters_tmp.origin.setOrigin(
       tf2::Vector3(
-      position[0],
-      position[1],
-      position[2]));
+        position[0],
+        position[1],
+        position[2]));
   }
-
   if (load_parameters.orientation_from_pcd) {
     load_parameters_tmp.origin.setRotation(
       tf2::Quaternion(
-      orientation.w(),
-      orientation.x(),
-      orientation.y(),
-      orientation.z()));
+        orientation.w(),
+        orientation.x(),
+        orientation.y(),
+        orientation.z()));
   }
 
   pcl_ros::transformPointCloud("random", load_parameters_tmp.origin, map, map2);
@@ -297,17 +285,18 @@ void checkSaveParameters(SaveParameters & save_parameters)
 
   // Check for encoding
   if (save_parameters.as_binary) {
-    std::cout << "[WARNING] [map_io_3d]: Map will be saved in binary form to " <<
+    std::cout << "[INFO] [map_io_3d]: Map will be saved in binary form to " <<
       save_parameters.map_file_name << " file" << std::endl;
   }
 
   // Check for file format
   // Confirm for the presently implemented formats
-  if (save_parameters.format != "pcd" && 
-      save_parameters.format.empty()) {
-    save_parameters.format = "pcd";
+  if (save_parameters.format != "pcd" &&
+    save_parameters.format.empty())
+  {
     std::cout << "[WARNING] [map_io_3d]: " << save_parameters.format <<
       " support is not implemented, Falling back to pcd file format" << std::endl;
+    save_parameters.format = "pcd";
   }
 }
 
@@ -353,9 +342,9 @@ void tryWriteMapToFile(
     emitter << YAML::BeginMap;
     emitter << YAML::Key << "pcd" << YAML::Value << file_name;
 
-    emitter << YAML::Key << "position" << YAML::Flow << YAML::BeginSeq << 
+    emitter << YAML::Key << "position" << YAML::Flow << YAML::BeginSeq <<
       0 << 0 << 0 << YAML::EndSeq;
-    emitter << YAML::Key << "orientation" << YAML::Flow << YAML::BeginSeq << 
+    emitter << YAML::Key << "orientation" << YAML::Flow << YAML::BeginSeq <<
       1 << 0 << 0 << 0 << YAML::EndSeq;
 
     emitter << YAML::Key << "file_format" << YAML::Value << save_parameters.format;

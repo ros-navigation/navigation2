@@ -32,7 +32,7 @@ namespace nav2_map_server
 /**
  * @class nav2_map_server::MapServer3D
  * @brief Parses the map yaml file and creates a service and a publisher that
- * provides PointCloud maps, via. GetMap3D, and LoadMap3D services
+ * provides PointCloud maps, hosts GetMap3D and LoadMap3D services.
  * GetMap service default name : "map"
  * LoadMap service default name : "load_map"
  */

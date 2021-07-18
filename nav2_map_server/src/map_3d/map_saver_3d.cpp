@@ -51,7 +51,7 @@ MapSaver3D::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Make name prefix for services
   const std::string service_prefix = get_name() + std::string("/");
 
-  // Create a service that saves the occupancy grid or PointCloud2 from map topic to a file
+  // Create a service that saves the PointCloud2 from map topic to a file
   save_map_service_ = create_service<nav2_msgs::srv::SaveMap3D>(
     service_prefix + save_map_service_name_,
     std::bind(&MapSaver3D::saveMapCallback, this, _1, _2, _3));
@@ -120,7 +120,7 @@ bool MapSaver3D::saveMapTopicToFile(
   map_3d::SaveParameters save_parameters_loc = save_parameters;
 
   RCLCPP_INFO(
-    get_logger(), "Saving map from \'%s\' topic and default origin to \'%s\' file",
+    get_logger(), "Saving map from topic: \'%s\', and default origin [0,0,0] to \'%s\' file",
     map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
 
   try {

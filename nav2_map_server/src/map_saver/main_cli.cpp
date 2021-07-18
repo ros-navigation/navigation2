@@ -185,7 +185,7 @@ int main(int argc, char ** argv)
   }
 
   // Call saveMapTopicToFile()
-  int retcode;
+  int retcode{1};
   try {
     if (save_parameters.save_parameters_3d.format == "pcd" &&
       save_parameters.save_parameters_3d.format == "ply")
@@ -204,8 +204,6 @@ int main(int argc, char ** argv)
       auto map_saver = std::make_shared<nav2_map_server::MapSaver2D>();
       if (map_saver->saveMapTopicToFile(map_topic, save_parameters.save_parameters_2d)) {
         retcode = 0;
-      } else {
-        retcode = 1;
       }
     }
   } catch (std::exception & e) {

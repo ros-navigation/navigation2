@@ -94,18 +94,19 @@ protected:
     ASSERT_EQ(map_msg.width, g_valid_pcd_width);
     ASSERT_EQ(map_msg.data.size(), g_valid_pcd_data_size);
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>());
-    pcl::PCLPointCloud2::Ptr cloud2 (new pcl::PCLPointCloud2());
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+    pcl::PCLPointCloud2::Ptr cloud2(new pcl::PCLPointCloud2());
 
     nav2_map_server::map_3d::msgToPcl(cloud2, map_msg);
 
     pcl::fromPCLPointCloud2(*cloud2, *cloud);
 
     int i = 0;
-    for (const auto& point: *cloud){
+    for (const auto & point: *cloud) {
       ASSERT_EQ(point.x, g_valid_pcd_content[i][0]);
       ASSERT_EQ(point.y, g_valid_pcd_content[i][1]);
       ASSERT_EQ(point.z, g_valid_pcd_content[i][2]);
+      ASSERT_EQ(point.rgb, g_valid_pcd_content[i][3]);
       i++;
     }
   }
