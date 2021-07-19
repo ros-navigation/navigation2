@@ -33,6 +33,7 @@
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
+#include "nav2_smac_planner/utils.hpp"
 
 namespace nav2_smac_planner
 {
@@ -94,27 +95,6 @@ struct LatticeMotionTable
   std::vector<std::vector<MotionPrimitive>> motionPrimitives;
   LatticeMetadata latticeMetadata;
 };
-
-/**
- * @brief convert json to lattice metadata 
- * @param[in] j json object
- * @param[out] lattice meta data 
- */
-void fromJsonToMetaData(const nlohmann::json &j, LatticeMetadata &latticeMetaData);
-
-/**
- * @brief convert json to pose 
- * @param[in] j json object
- * @param[out] pose 
- */
-void fromJsonToPose(const nlohmann::json &j, MotionPose &pose);
-
-/**
- * @brief convert json to motion primitive
- * @param[in] j json object 
- * @param[out] motion primitive
- */
-void fromJsonToMotionPrimitive(const nlohmann::json &j, MotionPrimitive &motionPrimitive);
 
 /**
  * @class nav2_smac_planner::NodeLattice

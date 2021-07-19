@@ -104,6 +104,57 @@ inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DRO
   return result;
 }
 
+/**
+ * @brief convert json to lattice metadata 
+ * @param[in] j json object
+ * @param[out] lattice meta data 
+ */
+inline void fromJsonToMetaData(const nlohmann::json &j, LatticeMetadata &latticeMetadata)
+{
+  j.at("turningRadius").get_to(latticeMetadata.min_turning_radius);
+  j.at("stepDistance").get_to(latticeMetadata.primitive_resolution);
+  j.at("gridSeparation").get_to(latticeMetadata.grid_resolution);
+  j.at("maxLength").get_to(latticeMetadata.max_length);
+  j.at("numberOfHeadings").get_to(latticeMetadata.number_of_headings);
+  j.at("outputFile").get_to(latticeMetadata.output_file);
+  j.at("headingAngles").get_to(latticeMetadata.heading_angles);
+  j.at("numberOfTrajectories").get_to(latticeMetadata.number_of_trajectories);
+}
+
+/**
+ * @brief convert json to pose 
+ * @param[in] j json object
+ * @param[out] pose 
+ */
+inline void fromJsonToPose(const nlohmann::json &j, MotionPose &pose)
+{
+  pose._x = j[0]; 
+  pose._y = j[1]; 
+  pose._theta = j[2];
+}
+
+/**
+ * @brief convert json to motion primitive
+ * @param[in] j json object 
+ * @param[out] motion primitive
+ */
+inline void fromJsonToMotionPrimitive(const nlohmann::json &j, MotionPrimitive &motionPrimitive)
+{
+  j.at("trajectoryId").get_to(motionPrimitive.trajectory_id);
+  j.at("startAngle").get_to(motionPrimitive.start_angle);
+  j.at("endAngle").get_to(motionPrimitive.end_angle);   
+  j.at("radius").get_to(motionPrimitive.turning_radius);
+  j.at("trajectoryLength").get_to(motionPrimitive.trajectory_length);
+  j.at("arcLength").get_to(motionPrimitive.arc_length);
+  j.at("straightLength").get_to(motionPrimitive.straight_length);
+
+  for(unsigned int i = 0; i < j["poses"].size(); ++i)
+  {
+    MotionPose pose;
+    fromJsonToPose(j["poses"][i], pose);
+    motionPrimitive.poses.push_back(pose);
+  }
+}
 }  // namespace nav2_smac_planner
 
 #endif  // NAV2_SMAC_PLANNER__UTILS_HPP_

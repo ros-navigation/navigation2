@@ -19,7 +19,7 @@
 
 using json = nlohmann::json;
 
-TEST(ParserTest, test_lattice_node)
+TEST(NodeLatticeTest, parser_test)
 {
     std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
     std::string filePath = pkg_share_dir + "/output.json";
@@ -73,4 +73,46 @@ TEST(ParserTest, test_lattice_node)
     EXPECT_NEAR(myPrimitives[0].poses[1]._x, 0.06667, 0.01);
     EXPECT_NEAR(myPrimitives[0].poses[1]._y, 0.0, 0.01);
     EXPECT_NEAR(myPrimitives[0].poses[1]._theta, 0.0, 0.01);
+}
+
+TEST(NodeLatticeTest, test_node_lattice_neighbors)
+{
+    std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+    std::string filePath = pkg_share_dir + "/output.json";
+    
+    nav2_smac_planner::SearchInfo info; 
+    info.minimum_turning_radius = 1.1; 
+    info.non_straight_penalty = 1; 
+    info.change_penalty = 1; 
+    info.reverse_penalty = 1; 
+    info.cost_penalty = 1; 
+    info.analytic_expansion_ratio = 1; 
+    info.lattice_filepath = filePath;
+    info.cache_obstacle_heuristic = true;  
+
+    unsigned int x = 100; 
+    unsigned int y = 100;
+    unsigned int angle_quantization = 16; 
+
+    nav2_smac_planner::NodeLattice::initMotionModel(nav2_smac_planner::MotionModel::STATE_LATTICE,
+                   x,
+                   y,
+                   angle_quantization,
+                   info);
+
+    nav2_smac_planner::NodeLattice aNode(0);
+    aNode.setPose( nav2_smac_planner::NodeHybrid::Coordinates(0, 0, 0) );
+    nav2_smac_planner::MotionPoses projections = nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives( &aNode);
+
+    EXPECT_NEAR(projections[0]._x, 0.13333, 0.01);
+    EXPECT_NEAR(projections[0]._y, 0.0, 0.01);
+    EXPECT_NEAR(projections[0]._theta, 0.0, 0.01);
+
+    aNode.setPose(nav2_smac_planner::NodeHybrid::Coordinates(0, 0, 1));
+
+    projections = nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives( &aNode);
+
+    EXPECT_NEAR(projections[0]._x, -0.13333, 0.01);
+    EXPECT_NEAR(projections[0]._y, 0.0, 0.01);
+    EXPECT_NEAR(projections[0]._theta, 3.14, 0.01);
 }
