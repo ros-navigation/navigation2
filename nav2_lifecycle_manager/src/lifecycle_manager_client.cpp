@@ -28,23 +28,6 @@ using nav2_util::geometry_utils::orientationAroundZAxis;
 
 LifecycleManagerClient::LifecycleManagerClient(
   const std::string & name,
-  const std::string & ns)
-{
-  manage_service_name_ = name + std::string("/manage_nodes");
-  active_service_name_ = name + std::string("/is_active");
-
-  // Create the node to use for all of the service clients
-  node_ = std::make_shared<rclcpp::Node>(name + "_service_client", ns);
-
-  // Create the service clients
-  manager_client_ = std::make_shared<nav2_util::ServiceClient<ManageLifecycleNodes>>(
-    manage_service_name_, node_);
-  is_active_client_ = std::make_shared<nav2_util::ServiceClient<std_srvs::srv::Trigger>>(
-    active_service_name_, node_);
-}
-
-LifecycleManagerClient::LifecycleManagerClient(
-  const std::string & name,
   std::shared_ptr<rclcpp::Node> parent_node)
 {
   manage_service_name_ = name + std::string("/manage_nodes");

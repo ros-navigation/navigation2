@@ -26,8 +26,9 @@ int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   RCLCPP_INFO(rclcpp::get_logger("test_updown"), "Initializing test");
-  nav2_lifecycle_manager::LifecycleManagerClient client_nav("lifecycle_manager_navigation");
-  nav2_lifecycle_manager::LifecycleManagerClient client_loc("lifecycle_manager_localization");
+  auto node = std::make_shared<rclcpp::Node>("lifecycle_manager_service_client");
+  nav2_lifecycle_manager::LifecycleManagerClient client_nav("lifecycle_manager_navigation", node);
+  nav2_lifecycle_manager::LifecycleManagerClient client_loc("lifecycle_manager_localization", node);
   bool test_passed = true;
 
   // Wait for a few seconds to let all of the nodes come up
