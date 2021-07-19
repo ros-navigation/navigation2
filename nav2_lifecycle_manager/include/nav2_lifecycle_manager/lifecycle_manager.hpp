@@ -18,11 +18,11 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
 #include "nav2_util/lifecycle_service_client.hpp"
-#include "nav2_util/node_thread.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
@@ -54,6 +54,8 @@ public:
 protected:
   // Callback group used by services and timers
   rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::SingleThreadedExecutor callback_group_executor_;
+  std::thread callback_group_executor_thread_;
 
   // The services provided by this node
   rclcpp::Service<ManageLifecycleNodes>::SharedPtr manager_srv_;
