@@ -1,5 +1,6 @@
 # Nav2
-[![Build Status](https://img.shields.io/docker/pulls/rosplanning/navigation2.svg?maxAge=2592000)](https://hub.docker.com/r/rosplanning/navigation2) [![Build Status](https://img.shields.io/docker/cloud/build/rosplanning/navigation2.svg?label=docker%20build)](https://hub.docker.com/r/rosplanning/navigation2) [![codecov](https://codecov.io/gh/ros-planning/navigation2/branch/main/graph/badge.svg)](https://codecov.io/gh/ros-planning/navigation2)
+[![GitHub Workflow Status](https://github.com/ros-planning/navigation2/actions/workflows/update_ci_image.yaml/badge.svg)](https://github.com/ros-planning/navigation2/actions/workflows/update_ci_image.yaml)
+[![codecov](https://codecov.io/gh/ros-planning/navigation2/branch/main/graph/badge.svg)](https://codecov.io/gh/ros-planning/navigation2)
 
 <p align="center">
   <img height="300" src="doc/nav2_logo.png" />
@@ -14,6 +15,7 @@ For detailed instructions on how to:
 - [Configure](https://navigation.ros.org/configuration/index.html)
 - [Navigation Plugins](https://navigation.ros.org/plugins/index.html)
 - [Migration Guides](https://navigation.ros.org/migration/index.html)
+- [Container Images](https://github.com/orgs/ros-planning/packages/container/package/navigation2)
 - [Contribute](https://navigation.ros.org/contribute/index.html)
 
 Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-hu52lnnq-cKYjuhTY~sEMbZXL8p9tOw) (if this link does not work, please contact maintainers to reactivate).
