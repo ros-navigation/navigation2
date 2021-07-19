@@ -3,6 +3,9 @@ import numpy as np
 
 from typing import Union
 
+import logging
+logger = logging.getLogger(__name__)
+
 class TrajectoryGenerator:
 
         def __init__(self, config: dict):
@@ -36,8 +39,7 @@ class TrajectoryGenerator:
                         A trajectory path built only from the arc portion of the trajectory parameters
                 '''
 
-                arc_length = 2 * np.pi * trajectory_params.radius * abs(trajectory_params.start_angle - trajectory_params.end_angle) / 360
-                steps = int(round(arc_length / step_distance))
+                steps = int(round(trajectory_params.arc_length / step_distance))
                 yaws = np.linspace(np.deg2rad(trajectory_params.start_angle), np.deg2rad(trajectory_params.end_angle), steps)
                 
                 if trajectory_params.end_point[0] >= 0:
@@ -252,7 +254,7 @@ class TrajectoryGenerator:
                         elif abs(start_angle) == 90 and p[0] == q[0]:
                                 return TrajectoryParameters(0, 0, 0, end_point, start_angle, end_angle, True, np.linalg.norm(end_point), 0)
                         else:
-                                print(f'No trajectory possible for equivalent start and end angles that also passes through p = {x2, y2}')
+                                logger.info(f'No trajectory possible for equivalent start and end angles that also passes through p = {x2, y2}')
                                 return None
 
                 angle_between_lines = np.deg2rad(180 - abs(end_angle - start_angle))
@@ -261,7 +263,7 @@ class TrajectoryGenerator:
                 intersection_point = self._get_intersection_point(m1, 0, m2, -m2 * x2 + y2)
 
                 # if intersection_point[0] < 0:
-                #         print("No trajectory possible as intersection point occurs behind start point")
+                #         logger.info("No trajectory possible as intersection point occurs behind start point")
                 #         return None
 
                 m2_direction_vec = np.array([1, m2])
@@ -278,7 +280,7 @@ class TrajectoryGenerator:
                         p_direction_vec /= np.linalg.norm(p_direction_vec)
 
                 if np.dot(m2_direction_vec, p_direction_vec) < 0:
-                        print("No trajectory possible since end point occurs before intersection along line 2")
+                        logger.info("No trajectory possible since end point occurs before intersection along line 2")
                         return None
 
                 # Calculate distance between point p = (x2,y2) and intersection point
@@ -292,7 +294,7 @@ class TrajectoryGenerator:
 
                 # Both the distance of p along line 2 and intersection point along line 1 must be greater than the minimum valid distance
                 if dist_p < min_valid_distance or dist_q < min_valid_distance:
-                        print("No trajectory possible where radius is larger than minimum turning radius")
+                        logger.info("No trajectory possible where radius is larger than minimum turning radius")
                         return None
                 
                 if dist_q < dist_p:
@@ -336,7 +338,7 @@ class TrajectoryGenerator:
                 y_offset = round(circle_center[1], 4)
 
                 if radius < self.turning_radius:
-                        print(f'Calculated circle radius is smaller than allowed turning radius: r = {radius}, min_radius = {self.turning_radius}')
+                        logger.info(f'Calculated circle radius is smaller than allowed turning radius: r = {radius}, min_radius = {self.turning_radius}')
                         return None
 
                 left_turn = self._is_left_turn(m1, end_point)
@@ -368,23 +370,8 @@ class TrajectoryGenerator:
                 if trajectory_params is None:
                         return None
 
-                print("Trajectory found")
+                logger.debug("Trajectory found")
 
                 trajectory_path = self._create_path(trajectory_params, step_distance)
 
                 return Trajectory(trajectory_path, trajectory_params)
-
-
-if __name__ == "__main__":
-        t = TrajectoryGenerator({"turningRadius": 1})
-        end_points = np.array([-1, -0.5])
-        traj = t.generate_trajectory(end_points, -157.5, -135, 0.004)
-
-        print(traj.parameters)
-
-        import matplotlib.pyplot as plt
-
-        plt.plot(traj.path.xs, traj.path.ys)
-        plt.axis([-2, 2, -2, 2])
-        plt.grid()
-        plt.show()
