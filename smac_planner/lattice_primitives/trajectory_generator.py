@@ -8,6 +8,9 @@ class TrajectoryGenerator:
         def __init__(self, config: dict):
                 self.turning_radius = config["turningRadius"]
 
+        def _normalize_angle(self, angle):
+                return (angle + np.pi) % (2 * np.pi) - np.pi 
+
         def _create_arc_path(self, trajectory_params: TrajectoryParameters, step_distance: float) -> TrajectoryPath:
                 '''
                 Create arc trajectory using the following parameterization:
@@ -35,16 +38,29 @@ class TrajectoryGenerator:
 
                 arc_length = 2 * np.pi * trajectory_params.radius * abs(trajectory_params.start_angle - trajectory_params.end_angle) / 360
                 steps = int(round(arc_length / step_distance))
-                
-                if trajectory_params.left_turn:
-                        ts = np.linspace(np.deg2rad(trajectory_params.start_angle) - np.pi/2, np.deg2rad(trajectory_params.end_angle) - np.pi/2, steps)
-                else:
-                        ts = np.linspace(np.deg2rad(trajectory_params.start_angle) + np.pi/2, np.deg2rad(trajectory_params.end_angle) + np.pi/2, steps)
-                
-                xs = trajectory_params.radius * np.cos(ts) + trajectory_params.x_offset
-                ys = trajectory_params.radius * np.sin(ts) + trajectory_params.y_offset
                 yaws = np.linspace(np.deg2rad(trajectory_params.start_angle), np.deg2rad(trajectory_params.end_angle), steps)
+                
+                if trajectory_params.end_point[0] >= 0:
+                        if trajectory_params.left_turn:
+                                ts = np.linspace(np.deg2rad(trajectory_params.start_angle) - np.pi/2, np.deg2rad(trajectory_params.end_angle) - np.pi/2, steps)
+                        else:
+                                ts = np.linspace(np.deg2rad(trajectory_params.start_angle) + np.pi/2, np.deg2rad(trajectory_params.end_angle) + np.pi/2, steps)
+                
+                        xs = trajectory_params.radius * np.cos(ts) + trajectory_params.x_offset
+                        ys = trajectory_params.radius * np.sin(ts) + trajectory_params.y_offset
+                        
+                else:
+                        adjusted_start_angle = self._normalize_angle(np.deg2rad(180 - trajectory_params.start_angle))
+                        adjusted_end_angle = self._normalize_angle(np.deg2rad(180 - trajectory_params.end_angle))
 
+                        if trajectory_params.left_turn:
+                                ts = np.linspace(adjusted_start_angle - np.pi/2, adjusted_end_angle - np.pi/2, steps)
+                        else:
+                                ts = np.linspace(adjusted_start_angle + np.pi/2, adjusted_end_angle + np.pi/2, steps)
+
+                        xs = trajectory_params.radius * -np.cos(ts) + trajectory_params.x_offset
+                        ys = trajectory_params.radius * np.sin(ts) + trajectory_params.y_offset
+                        
                 return TrajectoryPath(xs, ys, yaws)
 
         def _create_line_path(self, trajectory_params: TrajectoryParameters, start_point: np.array, end_point: np.array, step_distance: float) -> TrajectoryPath:
@@ -244,9 +260,9 @@ class TrajectoryGenerator:
                 # Find intersection point of the lines 1 and 2
                 intersection_point = self._get_intersection_point(m1, 0, m2, -m2 * x2 + y2)
 
-                if intersection_point[0] < 0:
-                        print("No trajectory possible as intersection point occurs behind start point")
-                        return None
+                # if intersection_point[0] < 0:
+                #         print("No trajectory possible as intersection point occurs behind start point")
+                #         return None
 
                 m2_direction_vec = np.array([1, m2])
 
@@ -357,3 +373,18 @@ class TrajectoryGenerator:
                 trajectory_path = self._create_path(trajectory_params, step_distance)
 
                 return Trajectory(trajectory_path, trajectory_params)
+
+
+if __name__ == "__main__":
+        t = TrajectoryGenerator({"turningRadius": 1})
+        end_points = np.array([-1, -0.5])
+        traj = t.generate_trajectory(end_points, -157.5, -135, 0.004)
+
+        print(traj.parameters)
+
+        import matplotlib.pyplot as plt
+
+        plt.plot(traj.path.xs, traj.path.ys)
+        plt.axis([-2, 2, -2, 2])
+        plt.grid()
+        plt.show()
