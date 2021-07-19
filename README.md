@@ -36,6 +36,20 @@ please cite this work in your papers!
  }
 ```
 
+ If you use our work on VSLAM and formal comparisons for service robot needs, please cite the paper:
+
+ - A. Merzlyakov, S. Macenski. [**A Comparison of Modern General-Purpose Visual SLAM Approaches**](https://arxiv.org/abs/2107.07589). IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2021.
+
+ ```bibtex
+ @InProceedings{vslamComparison2021,
+   title = {A Comparison of Modern General-Purpose Visual SLAM Approaches},
+   author = {Merzlyakov, Alexey and Macenski, Steven},
+   year = {2021},
+   booktitle = {2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+   pdf = {https://arxiv.org/abs/2107.07589}
+ }
+```
+
 ## Build Status
 
 | Service | Foxy  | Galactic | Main |
