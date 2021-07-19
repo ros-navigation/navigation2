@@ -14,6 +14,14 @@ class TrajectoryParameters:
     start_to_arc_distance: float
     arc_to_end_distance: float
 
+    @property
+    def arc_length(self):
+        return 2 * np.pi * self.radius * abs(self.start_angle - self.end_angle) / 360
+
+    @property
+    def total_length(self):
+        return self.arc_length + self.start_to_arc_distance + self.arc_to_end_distance
+
 @dataclass(frozen=True)
 class TrajectoryPath:
     xs: np.array
