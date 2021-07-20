@@ -172,7 +172,7 @@ class BasicNavigator(Node):
         if self.result_future.result():
             self.status = self.result_future.result().status
             if self.status != GoalStatus.STATUS_SUCCEEDED:
-                self.debug('Goal with failed with status code: {0}'.format(self.status))
+                self.debug(f'Goal with failed with status code: {self.status}')
                 return True
         else:
             # Timed out, still processing, not complete yet
@@ -227,7 +227,7 @@ class BasicNavigator(Node):
         rclpy.spin_until_future_complete(self, self.result_future)
         self.status = self.result_future.result().status
         if self.status != GoalStatus.STATUS_SUCCEEDED:
-            self.warn('Getting path failed with status code: {0}'.format(self.status))
+            self.warn(f'Getting path failed with status code: {self.status}')
             return None
 
         return self.result_future.result().result.path
@@ -255,7 +255,7 @@ class BasicNavigator(Node):
         rclpy.spin_until_future_complete(self, self.result_future)
         self.status = self.result_future.result().status
         if self.status != GoalStatus.STATUS_SUCCEEDED:
-            self.warn('Getting path failed with status code: {0}'.format(self.status))
+            self.warn(f'Getting path failed with status code: {self.status}')
             return None
 
         return self.result_future.result().result.path
@@ -373,7 +373,7 @@ class BasicNavigator(Node):
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
                 state = future.result().current_state.label
-                self.debug('Result of get_state: %s' % state)
+                self.debug(f'Result of get_state: {state}')
             time.sleep(2)
         return
 

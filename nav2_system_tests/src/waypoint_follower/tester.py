@@ -87,7 +87,7 @@ class WaypointFollowerTest(Node):
             rclpy.spin_until_future_complete(self, send_goal_future)
             self.goal_handle = send_goal_future.result()
         except Exception as e:  # noqa: B902
-            self.error_msg('Service call failed %r' % (e,))
+            self.error_msg(f'Service call failed {e!r}')
 
         if not self.goal_handle.accepted:
             self.error_msg('Goal rejected')
@@ -105,10 +105,10 @@ class WaypointFollowerTest(Node):
             status = get_result_future.result().status
             result = get_result_future.result().result
         except Exception as e:  # noqa: B902
-            self.error_msg('Service call failed %r' % (e,))
+            self.error_msg(f'Service call failed {e!r}')
 
         if status != GoalStatus.STATUS_SUCCEEDED:
-            self.info_msg('Goal failed with status code: {0}'.format(status))
+            self.info_msg(f'Goal failed with status code: {status}')
             return False
         if len(result.missed_waypoints) > 0:
             self.info_msg('Goal failed to process all waypoints,'
@@ -139,9 +139,9 @@ class WaypointFollowerTest(Node):
             rclpy.spin_until_future_complete(self, future)
             future.result()
         except Exception as e:  # noqa: B902
-            self.error_msg('%s service call failed %r' % (transition_service, e,))
+            self.error_msg(f'{transition_service} service call failed {e!r}')
 
-        self.info_msg('{} finished'.format(transition_service))
+        self.info_msg(f'{transition_service} finished')
 
         transition_service = 'lifecycle_manager_localization/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
@@ -155,9 +155,9 @@ class WaypointFollowerTest(Node):
             rclpy.spin_until_future_complete(self, future)
             future.result()
         except Exception as e:  # noqa: B902
-            self.error_msg('%s service call failed %r' % (transition_service, e,))
+            self.error_msg(f'{transition_service} service call failed {e!r}')
 
-        self.info_msg('{} finished'.format(transition_service))
+        self.info_msg(f'{transition_service} finished')
 
     def cancel_goal(self):
         cancel_future = self.goal_handle.cancel_goal_async()

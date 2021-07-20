@@ -210,7 +210,7 @@ class NavTester(Node):
         rclpy.spin_until_future_complete(self, get_result_future)
         status = get_result_future.result().status
         if status != GoalStatus.STATUS_SUCCEEDED:
-            self.info_msg('Goal failed with status code: {0}'.format(status))
+            self.info_msg(f'Goal failed with status code: {status}')
             return False
 
         self.info_msg('Goal succeeded!')
@@ -358,7 +358,7 @@ class NavTester(Node):
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
                 state = future.result().current_state.label
-                self.info_msg('Result of get_state: %s' % state)
+                self.info_msg(f'Result of get_state: {state}')
             else:
                 self.error_msg('Exception while calling service: %r' %
                                future.exception())
@@ -385,7 +385,7 @@ class NavTester(Node):
             self.info_msg(
                 'Shutting down navigation lifecycle manager complete.')
         except Exception as e:  # noqa: B902
-            self.error_msg('Service call failed %r' % (e,))
+            self.error_msg(f'Service call failed {e!r}')
         transition_service = 'lifecycle_manager_localization/manage_nodes'
         mgr_client = self.create_client(
             ManageLifecycleNodes, transition_service)
@@ -403,7 +403,7 @@ class NavTester(Node):
             self.info_msg(
                 'Shutting down localization lifecycle manager complete')
         except Exception as e:  # noqa: B902
-            self.error_msg('Service call failed %r' % (e,))
+            self.error_msg(f'Service call failed {e!r}')
 
     def wait_for_initial_pose(self):
         self.initial_pose_received = False
