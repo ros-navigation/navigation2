@@ -75,9 +75,7 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint footpr
     y0 = y1;
 
     // if in collision, no need to continue
-    if (footprint_cost == static_cast<double>(INSCRIBED_INFLATED_OBSTACLE) ||
-      footprint_cost == static_cast<double>(LETHAL_OBSTACLE))
-    {
+    if (footprint_cost == static_cast<double>(LETHAL_OBSTACLE)) {
       return footprint_cost;
     }
   }
@@ -101,9 +99,7 @@ double FootprintCollisionChecker<CostmapT>::lineCost(int x0, int x1, int y0, int
     }
 
     // if in collision, no need to continue
-    if (line_cost == static_cast<double>(INSCRIBED_INFLATED_OBSTACLE) ||
-      line_cost == static_cast<double>(LETHAL_OBSTACLE))
-    {
+    if (line_cost == static_cast<double>(LETHAL_OBSTACLE)) {
       return line_cost;
     }
   }
