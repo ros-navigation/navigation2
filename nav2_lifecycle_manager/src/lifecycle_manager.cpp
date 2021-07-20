@@ -49,7 +49,7 @@ LifecycleManager::LifecycleManager()
   bond_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::duration<double>(bond_timeout_s));
 
-  callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+  callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
   manager_srv_ = create_service<ManageLifecycleNodes>(
     get_name() + std::string("/manage_nodes"),
     std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3),
@@ -86,11 +86,18 @@ LifecycleManager::LifecycleManager()
       }
     },
     callback_group_);
+
+  callback_group_executor_thread_ = std::thread([this]() {
+    callback_group_executor_.add_callback_group(callback_group_, this->get_node_base_interface());
+    callback_group_executor_.spin();
+  });
 }
 
 LifecycleManager::~LifecycleManager()
 {
   RCLCPP_INFO(get_logger(), "Destroying %s", get_name());
+  callback_group_executor_.cancel();
+  callback_group_executor_thread_.join();
 }
 
 void
