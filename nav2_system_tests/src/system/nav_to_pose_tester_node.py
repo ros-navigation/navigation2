@@ -133,7 +133,7 @@ class NavTester(Node):
                     self.error_msg('Failed GROOT_BT - Get Status from ZMQ Publisher')
                     future_return = False
             except Exception as e:  # noqa: B902
-                self.error_msg('Failed GROOT_BT - ZMQ Tests: ' + e.__doc__ + e.message)
+                self.error_msg(f"Failed GROOT_BT - ZMQ Tests: {e.__doc__}{e.message}")
                 future_return = False
 
         self.info_msg("Waiting for 'NavigateToPose' action to complete")
@@ -159,8 +159,8 @@ class NavTester(Node):
         sock.setsockopt(zmq.RCVTIMEO, 1000)
         # sock.setsockopt(zmq.LINGER, 0)
 
-        sock.connect('tcp://localhost:' + str(port))
-        self.info_msg('ZMQ Server Port: ' + str(port))
+        sock.connect(f"tcp://localhost: {port}")
+        self.info_msg(f"ZMQ Server Port: {port}")
 
         # this should fail
         try:
@@ -206,7 +206,7 @@ class NavTester(Node):
         # Define subscription and messages with prefix to accept.
         sock.setsockopt_string(zmq.SUBSCRIBE, '')
         port = 1666  # default publishing port for groot monitoring
-        sock.connect('tcp://127.0.0.1:' + str(port))
+        sock.connect(f"tcp://127.0.0.1:{port}")
 
         for request in range(3):
             try:
@@ -242,20 +242,20 @@ class NavTester(Node):
         d_x = self.current_pose.position.x - self.goal_pose.position.x
         d_y = self.current_pose.position.y - self.goal_pose.position.y
         distance = math.sqrt(d_x * d_x + d_y * d_y)
-        self.info_msg('Distance from goal is: ' + str(distance))
+        self.info_msg(f"Distance from goal is: {distance}")
         return distance
 
     def wait_for_node_active(self, node_name: str):
         # Waits for the node within the tester namespace to become active
-        self.info_msg('Waiting for ' + node_name + ' to become active')
-        node_service = node_name + '/get_state'
+        self.info_msg(f"Waiting for {node_name} to become active")
+        node_service = f"{node_name}/get_state"
         state_client = self.create_client(GetState, node_service)
         while not state_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(node_service + ' service not available, waiting...')
+            self.info_msg(f"{node_service} service not available, waiting...")
         req = GetState.Request()  # empty request
         state = 'UNKNOWN'
         while (state != 'active'):
-            self.info_msg('Getting ' + node_name + ' state...')
+            self.info_msg(f"Getting {node_name} state...")
             future = state_client.call_async(req)
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
@@ -272,7 +272,7 @@ class NavTester(Node):
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(transition_service + ' service not available, waiting...')
+            self.info_msg(f"{transition_service} service not available, waiting...")
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -287,7 +287,7 @@ class NavTester(Node):
         transition_service = 'lifecycle_manager_localization/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(transition_service + ' service not available, waiting...')
+            self.info_msg(f"{transition_service} service not available, waiting...")
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
