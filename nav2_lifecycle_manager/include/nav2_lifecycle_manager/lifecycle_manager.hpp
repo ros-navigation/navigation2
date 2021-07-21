@@ -54,7 +54,7 @@ public:
 protected:
   // Callback group used by services and timers
   rclcpp::CallbackGroup::SharedPtr callback_group_;
-  rclcpp::SingleThreadedExecutor callback_group_executor_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   std::thread callback_group_executor_thread_;
 
   // The services provided by this node
