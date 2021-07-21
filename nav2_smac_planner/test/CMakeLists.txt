@@ -20,14 +20,14 @@ target_link_libraries(test_node2d
   ${library_name}
 )
 
-# Test NodeSE2
-ament_add_gtest(test_nodese2
-  test_nodese2.cpp
+# Test NodeHybrid
+ament_add_gtest(test_nodehybrid
+  test_nodehybrid.cpp
 )
-ament_target_dependencies(test_nodese2
+ament_target_dependencies(test_nodehybrid
   ${dependencies}
 )
-target_link_libraries(test_nodese2
+target_link_libraries(test_nodehybrid
   ${library_name}
 )
 
@@ -64,14 +64,14 @@ target_link_libraries(test_a_star
   ${library_name}
 )
 
-# Test SMAC SE2
-ament_add_gtest(test_smac_se2
-  test_smac_se2.cpp
+# Test SMAC Hybrid
+ament_add_gtest(test_smac_hybrid
+  test_smac_hybrid.cpp
 )
-ament_target_dependencies(test_smac_se2
+ament_target_dependencies(test_smac_hybrid
   ${dependencies}
 )
-target_link_libraries(test_smac_se2
+target_link_libraries(test_smac_hybrid
   ${library_name}
 )
 
@@ -86,13 +86,3 @@ target_link_libraries(test_smac_2d
   ${library_name}_2d
 )
 
-# Test smoother
-ament_add_gtest(test_smoother
-  test_smoother.cpp
-)
-ament_target_dependencies(test_smoother
-  ${dependencies}
-)
-target_link_libraries(test_smoother
-  ${library_name}_2d
-)

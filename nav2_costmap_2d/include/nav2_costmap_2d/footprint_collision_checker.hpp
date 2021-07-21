@@ -72,6 +72,13 @@ public:
   * @brief Set the current costmap object to use for collision detection
   */
   void setCostmap(CostmapT costmap);
+  /**
+  * @brief Get the current costmap object
+  */
+  CostmapT getCostmap()
+  {
+    return costmap_;
+  }
 
 protected:
   CostmapT costmap_;
