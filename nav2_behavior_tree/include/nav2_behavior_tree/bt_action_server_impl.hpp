@@ -86,9 +86,11 @@ bool BtActionServer<ActionT>::on_configure()
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args",
       "-r", std::string("__node:=") + std::string(node->get_name()) + "_rclcpp_node",
+      "-r", std::string("__ns:=") + action_name_,
       "--"});
+
   // Support for handling the topic-based goal pose from rviz
-  client_node_ = std::make_shared<rclcpp::Node>("_", action_name_, options);
+  client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   action_server_ = std::make_shared<ActionServer>(
     node->get_node_base_interface(),
