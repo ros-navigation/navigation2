@@ -1,5 +1,8 @@
 from dataclasses import dataclass
+
 import numpy as np
+
+from helper import angle_difference
 
 
 @dataclass(frozen=True)
@@ -17,7 +20,7 @@ class TrajectoryParameters:
 
     @property
     def arc_length(self):
-        return 2 * np.pi * self.radius * abs(self.start_angle - self.end_angle) / 360
+        return 2 * np.pi * self.radius * np.rad2deg(angle_difference(self.start_angle, self.end_angle)) / 360
 
     @property
     def total_length(self):

@@ -1,11 +1,12 @@
-from lattice_generator import LatticeGenerator
-
-import matplotlib.pyplot as plt
 import json
-
+import logging
 from datetime import datetime
 
-import logging
+import matplotlib.pyplot as plt
+import numpy as np
+
+from lattice_generator import LatticeGenerator
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -54,14 +55,6 @@ def write_to_json(minimal_set_trajectories, config):
             traj_info['poses'] = list(
                 zip(trajectory.path.xs.round(5), trajectory.path.ys.round(5), trajectory.path.yaws))
 
-            # traj_info['startAngle'] = trajectory_data[0]
-            # traj_info['endAngle'] = trajectory_data[1]
-            # traj_info['radius'] = trajectory_data[2]
-            # traj_info['trajectoryLength'] = trajectory_data[3]
-            # traj_info['arcLength'] = trajectory_data[4]
-            # traj_info['straightLength'] = trajectory_data[5]
-            # traj_info['poses'] = trajectory_data[-1]
-
             output_dict["primitives"].append(traj_info)
             idx += 1
 
@@ -87,7 +80,9 @@ def save_visualizations(minimal_set_trajectories):
 
     for start_angle in minimal_set_trajectories.keys():
 
-        if start_angle < 0 or start_angle > 90:
+        angle_in_deg = np.rad2deg(start_angle)
+
+        if start_angle < 0 or start_angle > np.pi/2:
             continue
 
         for trajectory in minimal_set_trajectories[start_angle]:
@@ -96,7 +91,7 @@ def save_visualizations(minimal_set_trajectories):
             plt.ylim(left_y, right_y)
 
         plt.grid(True)
-        plt.savefig(f'visualizations/{start_angle}.png')
+        plt.savefig(f'visualizations/{angle_in_deg}.png')
         plt.clf()
 
 

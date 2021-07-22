@@ -1,10 +1,10 @@
-from operator import le, truediv
-from trajectory import Trajectory, TrajectoryParameters, TrajectoryPath
-import numpy as np
-
+import logging
 from typing import Union
 
-import logging
+import numpy as np
+
+from trajectory import Trajectory, TrajectoryParameters, TrajectoryPath
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,7 +22,7 @@ class TrajectoryGenerator:
                 a = x offset
                 b = y offset
 
-        This parameterization has the property that start_t represents the slope angle of the start point of the curve (represented in radians) and 
+        This parameterization has the property that start_t represents the slope angle of the start point of the curve (represented in radians) and
         end_t represents the slope angle of the end point of the curve.
 
         Parameters
@@ -39,23 +39,20 @@ class TrajectoryGenerator:
         '''
 
         steps = int(round(trajectory_params.arc_length / step_distance))
-        yaws = np.linspace(np.deg2rad(trajectory_params.start_angle), np.deg2rad(
-            trajectory_params.end_angle), steps)
+        yaws = np.linspace(trajectory_params.start_angle,
+                           trajectory_params.end_angle, steps)
 
         start_angle = trajectory_params.start_angle
         end_angle = trajectory_params.end_angle
 
-        # The -180/180 boundary presents a problem so ensure that both angles have the same sign if we
-        if start_angle == 180 or start_angle == -180:
+        # The -pi/pi boundary presents a problem so ensure that both angles have the same sign
+        if abs(start_angle) == np.pi:
             start_angle = np.copysign(start_angle, end_angle)
 
-        if end_angle == 180 or end_angle == -180:
+        if abs(end_angle) == np.pi:
             end_angle = np.copysign(end_angle, start_angle)
 
         if trajectory_params.left_turn:
-            start_angle = np.deg2rad(start_angle)
-            end_angle = np.deg2rad(end_angle)
-
             if start_angle > end_angle:
                 end_angle += 2*np.pi
 
@@ -65,8 +62,8 @@ class TrajectoryGenerator:
             ys = trajectory_params.radius * \
                 np.sin(ts - np.pi/2) + trajectory_params.y_offset
         else:
-            start_angle = -np.deg2rad(start_angle)
-            end_angle = -np.deg2rad(end_angle)
+            start_angle = -start_angle
+            end_angle = -end_angle
 
             if start_angle > end_angle:
                 end_angle += 2*np.pi
@@ -101,10 +98,10 @@ class TrajectoryGenerator:
         '''
         if start_point[0] == 0 and start_point[1] == 0:
             distance = trajectory_params.start_to_arc_distance
-            line_angle = np.deg2rad(trajectory_params.start_angle)
+            line_angle = trajectory_params.start_angle
         else:
             distance = trajectory_params.arc_to_end_distance
-            line_angle = np.deg2rad(trajectory_params.end_angle)
+            line_angle = trajectory_params.end_angle
 
         steps = int(round(distance / step_distance))
 
@@ -216,9 +213,27 @@ class TrajectoryGenerator:
 
         return det >= 0
 
-    def _is_direction_vector_correct(self, point1, point2, line_angle):
+    def _is_direction_vector_correct(self, point1: np.array, point2: np.array, line_angle: float) -> bool:
+        '''
+        Checks whether the vector from point 1 -> point 2 shares the same direction as line angle
 
-        m = abs(np.tan(np.deg2rad(line_angle)).round(5))
+        Parameters
+        ----------
+        point1: np.array(2,)
+            The start point of the vector
+        point2: np.array(2,)
+            The end point of the vector
+        line_angle: float
+            The angle of a line to compare against the vector
+
+        Returns
+        -------
+        bool
+                True if both line and vector point in same direction
+        '''
+
+        # Need to round to prevent very small values for 0
+        m = abs(np.tan(line_angle).round(5))
 
         if line_angle < 0:
             m *= -1
@@ -228,9 +243,9 @@ class TrajectoryGenerator:
         direction_vec_from_gradient = np.array([1, m])
 
         # Handle when line angle is in quadrant 2/3 and when angle is 90
-        if line_angle > 90 or line_angle < -90:
+        if abs(line_angle) > np.pi/2:
             direction_vec_from_gradient = np.array([-1, m])
-        elif line_angle == 90 or line_angle == -90:
+        elif abs(line_angle) == np.pi/2:
             direction_vec_from_gradient = np.array([0, m])
 
         direction_vec_from_gradient = direction_vec_from_gradient.round(5)
@@ -262,9 +277,9 @@ class TrajectoryGenerator:
         end_point: np.array(2,)
                 The desired end point of the trajectory
         start_angle: float
-                The start angle of the trajectory
+                The start angle of the trajectory in radians
         end_angle: float
-                The end angle of the trajectory
+                The end angle of the trajectory in radians
 
         Returns
         -------
@@ -279,19 +294,19 @@ class TrajectoryGenerator:
         q = np.array([0, 0])
 
         # Find gradient of line 1 passing through (0,0) that makes an angle of start_angle with x_axis
-        m1 = np.tan(np.deg2rad(start_angle)).round(4)
+        m1 = np.tan(start_angle).round(5)
 
         # Find gradient of line 2 passing through (x2,y2) that makes an angle of end_angle with x-axis
-        m2 = np.tan(np.deg2rad(end_angle)).round(4)
+        m2 = np.tan(end_angle).round(5)
 
         # Deal with lines that are parallel
         if m1 == m2:
             # If they are coincident (i.e. y-intercept is same) then simply return a circle with infinite radius
-            if round(-m2 * x2 + y2, 4) == 0:
+            if round(-m2 * x2 + y2, 5) == 0:
                 return TrajectoryParameters.no_arc(end_point=end_point, start_angle=start_angle, end_angle=end_angle, left_turn=True)
 
             # Deal with edge case of 90
-            elif abs(start_angle) == 90 and p[0] == q[0]:
+            elif abs(start_angle) == np.pi/2 and p[0] == q[0]:
                 return TrajectoryParameters.no_arc(end_point=end_point, start_angle=start_angle, end_angle=end_angle, left_turn=True)
 
             else:
@@ -299,7 +314,7 @@ class TrajectoryGenerator:
                     f'No trajectory possible for equivalent start and end angles that also passes through p = {x2, y2}')
                 return None
 
-        angle_between_lines = np.deg2rad(180 - abs(end_angle - start_angle))
+        angle_between_lines = np.pi - abs(end_angle - start_angle)
 
         # Find intersection point of the lines 1 and 2
         intersection_point = self._get_intersection_point(
@@ -318,14 +333,14 @@ class TrajectoryGenerator:
             return None
 
         # Calculate distance between point p = (x2,y2) and intersection point
-        dist_p = round(np.linalg.norm(p-intersection_point, axis=0), 4)
+        dist_p = round(np.linalg.norm(p-intersection_point, axis=0), 5)
 
         # Calculate distance between point q = (0,0) and intersection point
-        dist_q = round(np.linalg.norm(q-intersection_point), 4)
+        dist_q = round(np.linalg.norm(q-intersection_point), 5)
 
         # Turn the turning radius into a minimum valid distance
         min_valid_distance = round(
-            self.turning_radius / np.tan(angle_between_lines / 2), 4)
+            self.turning_radius / np.tan(angle_between_lines / 2), 5)
 
         # Both the distance of p along line 2 and intersection point along line 1 must be greater than the minimum valid distance
         if dist_p < min_valid_distance or dist_q < min_valid_distance:
@@ -392,9 +407,9 @@ class TrajectoryGenerator:
         end_point: np.array(2,)
                 The desired end point of the trajectory
         start_angle: float
-                The start angle of the trajectory
+                The start angle of the trajectory in radians
         end_angle: float
-                The end angle of the trajectory
+                The end angle of the trajectory in radians
         step_distance: float
                 The spacing between points along the trajectory
 

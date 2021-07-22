@@ -1,8 +1,11 @@
-from trajectory_generator import TrajectoryGenerator
-from trajectory import Trajectory, TrajectoryPath, TrajectoryParameters
-import numpy as np
 from collections import defaultdict
+
+import numpy as np
+
+from helper import angle_difference
 from motion_model import MotionModel
+from trajectory import Trajectory, TrajectoryParameters, TrajectoryPath
+from trajectory_generator import TrajectoryGenerator
 
 
 class LatticeGenerator:
@@ -15,16 +18,6 @@ class LatticeGenerator:
         self.number_of_headings = config["numberOfHeadings"]
 
         self.motion_model = MotionModel[config["motionModel"].upper()]
-
-    def angle_difference(self, angle_1, angle_2):
-
-        difference = abs(angle_1 - angle_2)
-
-        if difference > np.pi:
-            # If difference > 180 return the shorter distance between the angles
-            difference = 2*np.pi - difference
-
-        return difference
 
     def get_coords_at_level(self, level):
         positions = []
@@ -59,7 +52,7 @@ class LatticeGenerator:
                 outer_edge_y += [i, i]
                 outer_edge_x += [-max_val, max_val]
 
-        return [np.rad2deg(np.arctan2(j, i)) for i, j in zip(outer_edge_x, outer_edge_y)]
+        return [np.arctan2(j, i) for i, j in zip(outer_edge_x, outer_edge_y)]
 
     def point_to_line_distance(self, p1, p2, q):
         '''
@@ -82,7 +75,7 @@ class LatticeGenerator:
     def is_minimal_path(self, trajectory_path: TrajectoryPath, minimal_spanning_trajectories):
 
         distance_threshold = 0.5 * self.grid_separation
-        rotation_threshold = 0.5 * np.deg2rad(360 / self.number_of_headings)
+        rotation_threshold = 0.5 * (2 * np.pi / self.number_of_headings)
 
         for x1, y1, x2, y2, yaw in zip(trajectory_path.xs[:-1], trajectory_path.ys[:-1], trajectory_path.xs[1:], trajectory_path.ys[1:], trajectory_path.yaws[:-1]):
 
@@ -93,14 +86,14 @@ class LatticeGenerator:
                 # TODO: point_to_line_distance gives direct distance which means the distance_threshold represents a circle
                 # around each point. Change so that we calculate manhattan distance? <- d_t will represent a box instead
                 if self.point_to_line_distance(p1, p2, prior_end_point[:-1]) < distance_threshold \
-                        and self.angle_difference(yaw, prior_end_point[-1]) < rotation_threshold:
+                        and angle_difference(yaw, prior_end_point[-1]) < rotation_threshold:
                     return False
 
         return True
 
     def compute_min_trajectory_length(self):
         # Compute arc length of circle that moves through an angle of 360/number of headings
-        return 2 * np.pi * self.turning_radius * (1/self.number_of_headings)
+        return 2 * np.pi * self.turning_radius * (360/self.number_of_headings) / 360
 
     def generate_minimal_spanning_set(self):
         quadrant1_end_poses = defaultdict(list)
@@ -108,7 +101,7 @@ class LatticeGenerator:
         heading_discretization = self.get_heading_discretization()
 
         initial_headings = sorted(
-            list(filter(lambda x: 0 <= x and x <= 90, heading_discretization)))
+            list(filter(lambda x: 0 <= x and x <= np.pi/2, heading_discretization)))
 
         min_trajectory_length = self.compute_min_trajectory_length()
         start_level = int(
@@ -123,7 +116,7 @@ class LatticeGenerator:
             target_headings = sorted(
                 heading_discretization, key=lambda x: (abs(x - start_heading), -x))
             target_headings = list(filter(lambda x: abs(
-                start_heading - x) <= 90, target_headings))
+                start_heading - x) <= np.pi/2, target_headings))
 
             while current_level <= self.max_level:
 
@@ -140,7 +133,7 @@ class LatticeGenerator:
                             # Check if path overlaps something in minimal spanning set
                             if(self.is_minimal_path(trajectory.path, minimal_trajectory_end_poses)):
                                 new_end_pose = np.array(
-                                    [target_point[0], target_point[1], np.deg2rad(target_heading)])
+                                    [target_point[0], target_point[1], target_heading])
                                 minimal_trajectory_end_poses.append(
                                     new_end_pose)
 
@@ -163,10 +156,10 @@ class LatticeGenerator:
                 # Prevent double adding trajectories that lie on axes
                 if start_angle == 0 and end_angle == 0:
                     quadrant1_start_angle = start_angle
-                    quadrant3_start_angle = -180
+                    quadrant3_start_angle = -np.pi
 
                     quadrant1_end_angle = end_angle
-                    quadrant3_end_angle = end_angle - 180
+                    quadrant3_end_angle = end_angle - np.pi
 
                     quadrant1_trajectory = self.trajectory_generator.generate_trajectory(np.array(
                         [x, y]), quadrant1_start_angle, quadrant1_end_angle, self.grid_separation)
@@ -178,11 +171,11 @@ class LatticeGenerator:
 
                     all_trajectories[quadrant3_trajectory.parameters.start_angle].append(
                         quadrant3_trajectory)
-                elif abs(start_angle) == 90 and abs(end_angle) == 90:
-                    quadrant2_start_angle = 90
-                    quadrant4_start_angle = -90
+                elif abs(start_angle) == np.pi/2 and abs(end_angle) == np.pi/2:
+                    quadrant2_start_angle = np.pi/2
+                    quadrant4_start_angle = -np.pi/2
 
-                    quadrant2_end_angle = 180 - end_angle if end_angle != 0 else -180
+                    quadrant2_end_angle = np.pi - end_angle if end_angle != 0 else -np.pi
                     quadrant4_end_angle = -end_angle if end_angle != 0 else 0
 
                     quadrant2_trajectory = self.trajectory_generator.generate_trajectory(np.array(
@@ -197,13 +190,13 @@ class LatticeGenerator:
                         quadrant4_trajectory)
                 else:
                     quadrant1_start_angle = start_angle
-                    quadrant2_start_angle = 180 - start_angle if start_angle != 0 else -180
-                    quadrant3_start_angle = start_angle - 180
+                    quadrant2_start_angle = np.pi - start_angle if start_angle != 0 else -np.pi
+                    quadrant3_start_angle = start_angle - np.pi
                     quadrant4_start_angle = -start_angle if start_angle != 0 else 0
 
                     quadrant1_end_angle = end_angle
-                    quadrant2_end_angle = 180 - end_angle if end_angle != 0 else -180
-                    quadrant3_end_angle = end_angle - 180
+                    quadrant2_end_angle = np.pi - end_angle if end_angle != 0 else -np.pi
+                    quadrant3_end_angle = end_angle - np.pi
                     quadrant4_end_angle = -end_angle if end_angle != 0 else 0
 
                     # Generate trajectories for all quadrants and use the grid separation as step distance
@@ -282,16 +275,16 @@ class LatticeGenerator:
 
         for start_angle in spanning_set.keys():
             left_shift_xs = np.linspace(0, min_trajectory_length *
-                                        np.cos(np.deg2rad(start_angle + 90)), steps)
+                                        np.cos(start_angle + np.pi/2), steps)
             left_shift_ys = np.linspace(0, min_trajectory_length *
-                                        np.sin(np.deg2rad(start_angle + 90)), steps)
+                                        np.sin(start_angle + np.pi/2), steps)
 
             right_shift_xs = np.linspace(0, min_trajectory_length *
-                                         np.cos(np.deg2rad(start_angle - 90)), steps)
+                                         np.cos(start_angle - np.pi/2), steps)
             right_shift_ys = np.linspace(0, min_trajectory_length *
-                                         np.sin(np.deg2rad(start_angle - 90)), steps)
+                                         np.sin(start_angle - np.pi/2), steps)
 
-            yaws = np.full(steps, np.deg2rad(start_angle), dtype=np.float64)
+            yaws = np.full(steps, start_angle, dtype=np.float64)
 
             left_end_point = np.array([left_shift_xs[-1], left_shift_ys[-1]])
             left_shift_params = TrajectoryParameters.no_arc(
