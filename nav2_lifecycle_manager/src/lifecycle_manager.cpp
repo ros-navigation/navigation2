@@ -86,18 +86,15 @@ LifecycleManager::LifecycleManager()
       }
     },
     callback_group_);
-
-  callback_group_executor_thread_ = std::thread([this]() {
-    callback_group_executor_.add_callback_group(callback_group_, this->get_node_base_interface());
-    callback_group_executor_.spin();
-  });
+  auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor->add_callback_group(callback_group_, get_node_base_interface());
+  service_thread_ = std::make_unique<nav2_util::NodeThread>(executor);
 }
 
 LifecycleManager::~LifecycleManager()
 {
   RCLCPP_INFO(get_logger(), "Destroying %s", get_name());
-  callback_group_executor_.cancel();
-  callback_group_executor_thread_.join();
+  service_thread_.reset();
 }
 
 void

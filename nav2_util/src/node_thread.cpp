@@ -32,7 +32,7 @@ NodeThread::NodeThread(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr nod
     });
 }
 
-NodeThread::NodeThread(rclcpp::Executor::SharedPtr executor)
+NodeThread::NodeThread(rclcpp::executors::SingleThreadedExecutor::SharedPtr executor)
 : executor_(executor)
 {
   thread_ = std::make_unique<std::thread>([&]() {executor_->spin();});
