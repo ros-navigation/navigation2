@@ -1,3 +1,4 @@
+from operator import le, truediv
 from trajectory import Trajectory, TrajectoryParameters, TrajectoryPath
 import numpy as np
 
@@ -10,9 +11,6 @@ class TrajectoryGenerator:
 
         def __init__(self, config: dict):
                 self.turning_radius = config["turningRadius"]
-
-        def _normalize_angle(self, angle):
-                return (angle + np.pi) % (2 * np.pi) - np.pi 
 
         def _create_arc_path(self, trajectory_params: TrajectoryParameters, step_distance: float) -> TrajectoryPath:
                 '''
@@ -41,27 +39,37 @@ class TrajectoryGenerator:
 
                 steps = int(round(trajectory_params.arc_length / step_distance))
                 yaws = np.linspace(np.deg2rad(trajectory_params.start_angle), np.deg2rad(trajectory_params.end_angle), steps)
-                
-                if trajectory_params.end_point[0] >= 0:
-                        if trajectory_params.left_turn:
-                                ts = np.linspace(np.deg2rad(trajectory_params.start_angle) - np.pi/2, np.deg2rad(trajectory_params.end_angle) - np.pi/2, steps)
-                        else:
-                                ts = np.linspace(np.deg2rad(trajectory_params.start_angle) + np.pi/2, np.deg2rad(trajectory_params.end_angle) + np.pi/2, steps)
-                
-                        xs = trajectory_params.radius * np.cos(ts) + trajectory_params.x_offset
-                        ys = trajectory_params.radius * np.sin(ts) + trajectory_params.y_offset
-                        
+
+                start_angle = trajectory_params.start_angle
+                end_angle = trajectory_params.end_angle
+
+                # The -180/180 boundary presents a problem so ensure that both angles have the same sign if we 
+                if start_angle == 180 or start_angle == -180:
+                        start_angle = np.copysign(start_angle, end_angle)
+
+                if end_angle == 180 or end_angle == -180:
+                        end_angle = np.copysign(end_angle, start_angle)
+
+                if trajectory_params.left_turn:
+                        start_angle = np.deg2rad(start_angle)
+                        end_angle = np.deg2rad(end_angle)
+
+                        if start_angle > end_angle:
+                                end_angle += 2*np.pi
+
+                        ts = np.linspace(start_angle, end_angle, steps)
+                        xs = trajectory_params.radius * np.cos(ts - np.pi/2) + trajectory_params.x_offset
+                        ys = trajectory_params.radius * np.sin(ts - np.pi/2) + trajectory_params.y_offset
                 else:
-                        adjusted_start_angle = self._normalize_angle(np.deg2rad(180 - trajectory_params.start_angle))
-                        adjusted_end_angle = self._normalize_angle(np.deg2rad(180 - trajectory_params.end_angle))
+                        start_angle = -np.deg2rad(start_angle)
+                        end_angle = -np.deg2rad(end_angle)
 
-                        if trajectory_params.left_turn:
-                                ts = np.linspace(adjusted_start_angle - np.pi/2, adjusted_end_angle - np.pi/2, steps)
-                        else:
-                                ts = np.linspace(adjusted_start_angle + np.pi/2, adjusted_end_angle + np.pi/2, steps)
+                        if start_angle > end_angle:
+                                end_angle += 2*np.pi
 
-                        xs = trajectory_params.radius * -np.cos(ts) + trajectory_params.x_offset
-                        ys = trajectory_params.radius * np.sin(ts) + trajectory_params.y_offset
+                        ts = np.linspace(start_angle, end_angle, steps)
+                        xs = trajectory_params.radius * -np.cos(ts + np.pi/2) + trajectory_params.x_offset
+                        ys = trajectory_params.radius * np.sin(ts + np.pi/2) + trajectory_params.y_offset
                         
                 return TrajectoryPath(xs, ys, yaws)
 
@@ -177,29 +185,52 @@ class TrajectoryGenerator:
 
                 return np.array([x_point, line1(x_point)])
         
-        def _is_left_turn(self, m1: float, end_point: np.array) -> bool:
+        def _is_left_turn(self, intersection_point: np.array, end_point: np.array) -> bool:
                 '''
-                Tests if a point lies to the left/right (same as above/below) of a line
+                Uses the determinant to determine whether the arc formed by intersection and end point turns left or right
 
                 Parameters
                 ----------
-                m1: float
-                        The gradient of the line
-                end_point: np.array (2,)
-                        The point to check
+                intersection_point: np.array(2,)
+                        The intersection point of the lines formed from the start and end angles
+                end_point: np.array(2,)
+                        The chosen end point of the trajectory
 
                 Returns
                 -------
                 bool
-                        True if point is on left or on line, False otherwise
+                        True if curve turns left, false otherwise
                 '''
+                matrix = np.vstack([intersection_point, end_point])
+                det = np.linalg.det(matrix)
 
-                line_eq = lambda x: m1 * x 
+                return det >= 0
 
-                if line_eq(end_point[0]) <= end_point[1]:
+        def _is_direction_vector_correct(self, point1, point2, line_angle):
+               
+                m = abs(np.tan(np.deg2rad(line_angle)).round(5))
+
+                if line_angle < 0:
+                        m *= -1
+
+                direction_vec_from_points = point2 - point1
+
+                direction_vec_from_gradient = np.array([1, m]) 
+
+                # Handle when line angle is in quadrant 2/3 and when angle is 90
+                if line_angle > 90 or line_angle < -90:
+                        direction_vec_from_gradient = np.array([-1, m])
+                elif line_angle == 90 or line_angle == -90:
+                        direction_vec_from_gradient = np.array([0, m])
+
+                direction_vec_from_gradient = direction_vec_from_gradient.round(5)
+                direction_vec_from_points = direction_vec_from_points.round(5)
+
+                if np.all(np.sign(direction_vec_from_points) == np.sign(direction_vec_from_gradient)):
                         return True
                 else:
                         return False
+
 
         def _calculate_trajectory_params(self, end_point: np.array, start_angle: float, end_angle: float) -> Union[TrajectoryParameters, None]:
                 '''
@@ -262,25 +293,14 @@ class TrajectoryGenerator:
                 # Find intersection point of the lines 1 and 2
                 intersection_point = self._get_intersection_point(m1, 0, m2, -m2 * x2 + y2)
 
-                # if intersection_point[0] < 0:
-                #         logger.info("No trajectory possible as intersection point occurs behind start point")
-                #         return None
+                # Check that the vector from (0,0) to intersection point agrees with the angle of line 1
+                if not self._is_direction_vector_correct(q, intersection_point, start_angle):
+                        logger.info("No trajectory possible since intersection point occurs before start point on line 1")
+                        return None
 
-                m2_direction_vec = np.array([1, m2])
-
-                if end_angle > 90 or end_angle < -90:
-                        m2_direction_vec *= -1
-
-                if np.all(m2_direction_vec != np.zeros(2)):
-                        m2_direction_vec /= np.linalg.norm(m2_direction_vec) 
-
-                p_direction_vec = p - intersection_point
-
-                if np.all(p_direction_vec != np.zeros(2)):
-                        p_direction_vec /= np.linalg.norm(p_direction_vec)
-
-                if np.dot(m2_direction_vec, p_direction_vec) < 0:
-                        logger.info("No trajectory possible since end point occurs before intersection along line 2")
+                # Check that the vector from intersection point to p agrees with the angle of line 2
+                if not self._is_direction_vector_correct(intersection_point, p, end_angle):
+                        logger.info("No trajectory possible since intersection point occurs after end point on line 2")
                         return None
 
                 # Calculate distance between point p = (x2,y2) and intersection point
@@ -307,7 +327,7 @@ class TrajectoryGenerator:
 
                 elif dist_q > dist_p:
                         # Find new point q on line 1 that is equidistant away from intersection point as point p is on line 2
-                        vec_line1 = -intersection_point
+                        vec_line1 = q - intersection_point
                         vec_line1 /= np.linalg.norm(vec_line1)
 
                         q = intersection_point + dist_p * vec_line1
@@ -341,7 +361,7 @@ class TrajectoryGenerator:
                         logger.info(f'Calculated circle radius is smaller than allowed turning radius: r = {radius}, min_radius = {self.turning_radius}')
                         return None
 
-                left_turn = self._is_left_turn(m1, end_point)
+                left_turn = self._is_left_turn(intersection_point, end_point)
 
                 return TrajectoryParameters(radius, x_offset, y_offset, end_point, start_angle, end_angle, left_turn, start_to_arc_distance, arc_to_end_distance)
 
