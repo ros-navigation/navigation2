@@ -24,6 +24,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "nav2_util/node_thread.hpp"
 
 namespace nav2_util
 {
@@ -54,7 +55,7 @@ public:
    * @param action_name Name of the action to call
    * @param execute_callback Execution  callback function of Action
    * @param server_timeout Timeout to to react to stop or preemption requests
-   * @param spin_thread  Whether to spin with a dedicated thread internally
+   * @param spin_thread Whether to spin with a dedicated thread internally
    */
   template<typename NodeT>
   explicit SimpleActionServer(
@@ -78,7 +79,7 @@ public:
    * @param action_name Name of the action to call
    * @param execute_callback Execution  callback function of Action
    * @param server_timeout Timeout to to react to stop or preemption requests
-   * @param spin_thread  Whether to spin with a dedicated thread internally
+   * @param spin_thread Whether to spin with a dedicated thread internally
    */
   explicit SimpleActionServer(
     rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
@@ -117,9 +118,9 @@ public:
       rcl_action_server_get_default_options(),
       callback_group_);
     if (spin_thread_) {
-      auto executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-      executor_->add_callback_group(callback_group_, node_base_interface_);
-      executor_thread_ = std::make_unique<std::thread>([&]() {executor_->spin();});
+      auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+      executor->add_callback_group(callback_group_, node_base_interface_);
+      executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor);
     }
   }
 
@@ -129,8 +130,7 @@ public:
   ~SimpleActionServer()
   {
     if (spin_thread_) {
-      executor_->cancel();
-      executor_thread_->join();
+      executor_thread_.reset();
     }
   }
   /**
@@ -514,8 +514,7 @@ protected:
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
   bool spin_thread_;
   rclcpp::CallbackGroup::SharedPtr callback_group_{nullptr};
-  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
-  std::unique_ptr<std::thread> executor_thread_;
+  std::unique_ptr<nav2_util::NodeThread> executor_thread_;
 
   /**
    * @brief Generate an empty result object for an action type
