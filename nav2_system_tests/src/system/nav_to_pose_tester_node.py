@@ -133,7 +133,7 @@ class NavTester(Node):
                     self.error_msg('Failed GROOT_BT - Get Status from ZMQ Publisher')
                     future_return = False
             except Exception as e:  # noqa: B902
-                self.error_msg(f'Failed GROOT_BT - ZMQ Tests: {e.__doc__}{e.message}')
+                self.error_msg(f'Failed GROOT_BT - ZMQ Tests: {e}')
                 future_return = False
 
         self.info_msg("Waiting for 'NavigateToPose' action to complete")
