@@ -56,6 +56,7 @@ public:
    * @param execute_callback Execution  callback function of Action
    * @param server_timeout Timeout to to react to stop or preemption requests
    * @param spin_thread Whether to spin with a dedicated thread internally
+   * @param options Options to pass to the underlying rcl_action_server_t
    */
   template<typename NodeT>
   explicit SimpleActionServer(
@@ -64,13 +65,14 @@ public:
     ExecuteCallback execute_callback,
     CompletionCallback completion_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
-    bool spin_thread = false)
+    bool spin_thread = false,
+    const rcl_action_server_options_t & options = rcl_action_server_get_default_options())
   : SimpleActionServer(
       node->get_node_base_interface(),
       node->get_node_clock_interface(),
       node->get_node_logging_interface(),
       node->get_node_waitables_interface(),
-      action_name, execute_callback, completion_callback, server_timeout, spin_thread)
+      action_name, execute_callback, completion_callback, server_timeout, spin_thread, options)
   {}
 
   /**
@@ -80,6 +82,7 @@ public:
    * @param execute_callback Execution  callback function of Action
    * @param server_timeout Timeout to to react to stop or preemption requests
    * @param spin_thread Whether to spin with a dedicated thread internally
+   * @param options Options to pass to the underlying rcl_action_server_t
    */
   explicit SimpleActionServer(
     rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
@@ -90,7 +93,8 @@ public:
     ExecuteCallback execute_callback,
     CompletionCallback completion_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
-    bool spin_thread = false)
+    bool spin_thread = false,
+    const rcl_action_server_options_t & options = rcl_action_server_get_default_options())
   : node_base_interface_(node_base_interface),
     node_clock_interface_(node_clock_interface),
     node_logging_interface_(node_logging_interface),
@@ -115,24 +119,15 @@ public:
       std::bind(&SimpleActionServer::handle_goal, this, _1, _2),
       std::bind(&SimpleActionServer::handle_cancel, this, _1),
       std::bind(&SimpleActionServer::handle_accepted, this, _1),
-      rcl_action_server_get_default_options(),
+      options,
       callback_group_);
     if (spin_thread_) {
-      auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-      executor->add_callback_group(callback_group_, node_base_interface_);
-      executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor);
+      executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+      executor_->add_callback_group(callback_group_, node_base_interface_);
+      executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
     }
   }
 
-  /**
-   * @brief A destructor
-   */
-  ~SimpleActionServer()
-  {
-    if (spin_thread_) {
-      executor_thread_.reset();
-    }
-  }
   /**
    * @brief handle the goal requested: accept or reject. This implementation always accepts.
    * @param uuid Goal ID
@@ -514,6 +509,7 @@ protected:
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
   bool spin_thread_;
   rclcpp::CallbackGroup::SharedPtr callback_group_{nullptr};
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   std::unique_ptr<nav2_util::NodeThread> executor_thread_;
 
   /**
