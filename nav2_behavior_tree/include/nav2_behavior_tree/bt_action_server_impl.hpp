@@ -82,11 +82,13 @@ bool BtActionServer<ActionT>::on_configure()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  // use suffix '_rclcpp_node' to keep parameter file consistency #1773
+  // Name client node after action name
+  std::string client_node_name = action_name_;
+  std::replace(client_node_name.begin(), client_node_name.end(), '/', '_');
+  // Use suffix '_rclcpp_node' to keep parameter file consistency #1773
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args",
-      "-r", std::string("__node:=") + std::string(node->get_name()) + "_rclcpp_node",
-      "-r", std::string("__ns:=") + action_name_,
+      "-r", std::string("__node:=") + std::string(node->get_name()) + client_node_name + "_rclcpp_node",
       "--"});
 
   // Support for handling the topic-based goal pose from rviz
