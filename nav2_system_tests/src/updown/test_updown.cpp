@@ -15,6 +15,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
