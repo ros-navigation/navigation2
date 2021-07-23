@@ -436,8 +436,14 @@ bool RegulatedPurePursuitController::isCollisionImminent(
 bool RegulatedPurePursuitController::inCollision(const double & x, const double & y)
 {
   unsigned int mx, my;
-  costmap_->worldToMap(x, y, mx, my);
 
+  auto convertWorldToMap = costmap_->worldToMap(x, y, mx, my);
+  if (!convertWorldToMap) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *(clock_), 30000,
+      "The dimensions of the costmap is smaller, proceed at your own risk");
+    return false;
+  }
   unsigned char cost = costmap_->getCost(mx, my);
 
   if (costmap_ros_->getLayeredCostmap()->isTrackingUnknown()) {
@@ -450,7 +456,13 @@ bool RegulatedPurePursuitController::inCollision(const double & x, const double 
 double RegulatedPurePursuitController::costAtPose(const double & x, const double & y)
 {
   unsigned int mx, my;
-  costmap_->worldToMap(x, y, mx, my);
+  auto convertWorldToMap = costmap_->worldToMap(x, y, mx, my);
+  if (!convertWorldToMap) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *(clock_), 30000,
+      "The dimensions of the costmap is smaller, proceed at your own risk");
+    return 0.0;
+  }
 
   unsigned char cost = costmap_->getCost(mx, my);
   return static_cast<double>(cost);
