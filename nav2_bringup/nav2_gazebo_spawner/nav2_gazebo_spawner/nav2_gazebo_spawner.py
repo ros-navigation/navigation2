@@ -37,7 +37,8 @@ def main():
     parser.add_argument('-z', type=float, default=0,
                         help='the z component of the initial position [meters]')
     parser.add_argument('-k', '--timeout', type=float, default=10.0,
-                        help="Seconds to wait. Block until the future is complete if negative. Don't wait if 0.")
+                        help="Seconds to wait. Block until the future is complete if negative. \
+                            Don't wait if 0.")
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-t', '--turtlebot_type', type=str,
