@@ -25,6 +25,8 @@
 namespace nav2_smac_planner
 {
 using namespace std::chrono;  // NOLINT
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
 
 SmacPlanner2D::SmacPlanner2D()
 : _a_star(nullptr),
@@ -145,6 +147,16 @@ void SmacPlanner2D::configure(
   }
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
+
+  // Setup callback for changes to parameters.
+  parameters_client_ = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(),
+    node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  parameter_event_sub_ = parameters_client_->on_parameter_event(
+    std::bind(&SmacPlanner2D::on_parameter_event_callback, this, _1));
 
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlanner2D with "
@@ -283,6 +295,22 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   }
 
   return plan;
+}
+
+void SmacPlanner2D::on_parameter_event_callback(
+  const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+{
+  for (auto & changed_parameter : event->changed_parameters) {
+    const auto & type = changed_parameter.value.type;
+    const auto & name = changed_parameter.name;
+    const auto & value = changed_parameter.value;
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == _name + ".tolerance") {
+        _tolerance = static_cast<float>(value.double_value);
+      }
+    }
+  }
 }
 
 }  // namespace nav2_smac_planner
