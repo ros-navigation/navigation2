@@ -153,8 +153,7 @@ def generate_launch_description():
         output='screen',
         parameters=[{'use_sim_time': use_sim_time,
                      'robot_description':robot_description}],
-        remappings=remappings,
-        arguments=[urdf])
+        remappings=remappings)
 
     start_gazebo_spawner_cmd = Node(
         package='nav2_gazebo_spawner',
