@@ -125,13 +125,13 @@ def generate_launch_description():
         #              https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/91
         # default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'),
         # worlds/turtlebot3_worlds/waffle.model')
-        default_value=os.path.join(bringup_dir, 'worlds', 'waffle.model'),
+        default_value=os.path.join(bringup_dir, 'worlds', 'world_only.model'),
         description='Full path to world model file to load')
 
     # Specify the actions
     start_gazebo_server_cmd = ExecuteProcess(
         condition=IfCondition(use_simulator),
-        cmd=['gzserver', '-s', 'libgazebo_ros_init.so', world],
+        cmd=['gzserver', '-s', 'libgazebo_ros_init.so','-s','libgazebo_ros_factory.so', world],
         cwd=[launch_dir], output='screen')
 
     start_gazebo_client_cmd = ExecuteProcess(
@@ -152,6 +152,19 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}],
         remappings=remappings,
         arguments=[urdf])
+
+    start_gazebo_spawner_cmd = Node(
+        package='nav2_gazebo_spawner',
+        executable='nav2_gazebo_spawner',
+        output='screen',
+        arguments=[
+            '--robot_name', 'turtlebot3_waffle',
+            '--turtlebot_type','waffle', 
+            '--robot_namespace',namespace,              
+            '-x', '0.000000',
+            '-y', '0.000000',
+            '-z', '0.000000'])
+    
 
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -194,6 +207,7 @@ def generate_launch_description():
     # Add any conditioned actions
     ld.add_action(start_gazebo_server_cmd)
     ld.add_action(start_gazebo_client_cmd)
+    ld.add_action(start_gazebo_spawner_cmd)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_robot_state_publisher_cmd)
