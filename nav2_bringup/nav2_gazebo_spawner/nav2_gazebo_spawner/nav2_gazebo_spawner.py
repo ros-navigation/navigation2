@@ -87,7 +87,7 @@ def main():
     if args.robot_namespace:
         ros_params = plugin.find('ros')
         ros_tf_remap = ET.SubElement(ros_params, 'remapping')
-        ros_tf_remap.text = f"/tf:=/{args.robot_namespace}/tf"
+        ros_tf_remap.text = f'/tf:=/{args.robot_namespace}/tf'
 
     # Set data for request
     request = SpawnEntity.Request()

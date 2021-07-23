@@ -124,15 +124,15 @@ class NavTester(Node):
 
     def wait_for_node_active(self, node_name: str):
         # Waits for the node within the tester namespace to become active
-        self.info_msg(f"Waiting for {node_name} to become active")
-        node_service = f"{node_name}/get_state"
+        self.info_msg(f'Waiting for {node_name} to become active')
+        node_service = f'{node_name}/get_state'
         state_client = self.create_client(GetState, node_service)
         while not state_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f"{node_service} service not available, waiting...")
+            self.info_msg(f'{node_service} service not available, waiting...')
         req = GetState.Request()  # empty request
         state = 'UNKNOWN'
         while (state != 'active'):
-            self.info_msg(f"Getting {node_name} state...")
+            self.info_msg(f'Getting {node_name} state...')
             future = state_client.call_async(req)
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
@@ -149,7 +149,7 @@ class NavTester(Node):
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f"{transition_service} service not available, waiting...")
+            self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -164,7 +164,7 @@ class NavTester(Node):
         transition_service = 'lifecycle_manager_localization/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f"{transition_service} service not available, waiting...")
+            self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
