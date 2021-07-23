@@ -123,7 +123,7 @@ def generate_launch_description():
     # Define commands for launching the navigation instances
     nav_instances_cmds = []
     for robot in robots:
-        params_file = LaunchConfiguration(robot['name'] + '_params_file')
+        params_file = LaunchConfiguration(f"{robot['name']}_params_file")
 
         group = GroupAction([
             IncludeLaunchDescription(
