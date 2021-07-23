@@ -131,7 +131,7 @@ def generate_launch_description():
     # Specify the actions
     start_gazebo_server_cmd = ExecuteProcess(
         condition=IfCondition(use_simulator),
-        cmd=['gzserver', '-s', 'libgazebo_ros_init.so','-s','libgazebo_ros_factory.so', world],
+        cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so', world],
         cwd=[launch_dir], output='screen')
 
     start_gazebo_client_cmd = ExecuteProcess(
@@ -152,7 +152,7 @@ def generate_launch_description():
         namespace=namespace,
         output='screen',
         parameters=[{'use_sim_time': use_sim_time,
-                     'robot_description':robot_description}],
+                     'robot_description': robot_description}],
         remappings=remappings)
 
     start_gazebo_spawner_cmd = Node(
@@ -161,12 +161,11 @@ def generate_launch_description():
         output='screen',
         arguments=[
             '--robot_name', 'turtlebot3_waffle',
-            '--turtlebot_type','waffle', 
-            '--robot_namespace',namespace,              
+            '--turtlebot_type', 'waffle',
+            '--robot_namespace', namespace,
             '-x', '-2.000000',
             '-y', '-0.500000',
             '-z', '0.010000'])
-    
 
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
