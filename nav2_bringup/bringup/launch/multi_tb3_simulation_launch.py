@@ -49,6 +49,7 @@ def generate_launch_description():
     # On this example all robots are launched with the same settings
     map_yaml_file = LaunchConfiguration('map')
 
+    default_bt_xml_filename = LaunchConfiguration('default_bt_xml_filename')
     autostart = LaunchConfiguration('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
@@ -81,6 +82,13 @@ def generate_launch_description():
         default_value=os.path.join(bringup_dir, 'params', 'nav2_multirobot_params_2.yaml'),
         description='Full path to the ROS2 parameters file to use for robot2 launched nodes')
 
+    declare_bt_xml_cmd = DeclareLaunchArgument(
+        'default_bt_xml_filename',
+        default_value=os.path.join(
+            get_package_share_directory('nav2_bt_navigator'),
+            'behavior_trees', 'navigate_w_replanning_and_recovery.xml'),
+        description='Full path to the behavior tree xml file to use')
+
     declare_autostart_cmd = DeclareLaunchArgument(
         'autostart', default_value='false',
         description='Automatically startup the stacks')
@@ -102,7 +110,7 @@ def generate_launch_description():
 
     # Start Gazebo with plugin providing the robot spawing service
     start_gazebo_cmd = ExecuteProcess(
-        cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_factory.so', world],
+        cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so', world],
         output='screen')
 
     # Define commands for spawing the robots into Gazebo
@@ -144,6 +152,7 @@ def generate_launch_description():
                                   'map': map_yaml_file,
                                   'use_sim_time': 'True',
                                   'params_file': params_file,
+                                  'default_bt_xml_filename': default_bt_xml_filename,
                                   'autostart': autostart,
                                   'use_rviz': 'False',
                                   'use_simulator': 'False',
@@ -159,6 +168,9 @@ def generate_launch_description():
             LogInfo(
                 condition=IfCondition(log_settings),
                 msg=[robot['name'], ' params yaml: ', params_file]),
+            LogInfo(
+                condition=IfCondition(log_settings),
+                msg=[robot['name'], ' behavior tree xml: ', default_bt_xml_filename]),
             LogInfo(
                 condition=IfCondition(log_settings),
                 msg=[robot['name'], ' rviz config file: ', rviz_config_file]),
@@ -181,6 +193,7 @@ def generate_launch_description():
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_robot1_params_file_cmd)
     ld.add_action(declare_robot2_params_file_cmd)
+    ld.add_action(declare_bt_xml_cmd)
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
