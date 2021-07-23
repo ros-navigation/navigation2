@@ -161,9 +161,9 @@ def generate_launch_description():
             '--robot_name', 'turtlebot3_waffle',
             '--turtlebot_type','waffle', 
             '--robot_namespace',namespace,              
-            '-x', '0.000000',
-            '-y', '0.000000',
-            '-z', '0.000000'])
+            '-x', '-2.000000',
+            '-y', '-0.500000',
+            '-z', '0.010000'])
     
 
     rviz_cmd = IncludeLaunchDescription(
