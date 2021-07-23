@@ -141,6 +141,8 @@ def generate_launch_description():
         cwd=[launch_dir], output='screen')
 
     urdf = os.path.join(bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
+    with open(urdf, 'r') as infp:
+        robot_description = infp.read()
 
     start_robot_state_publisher_cmd = Node(
         condition=IfCondition(use_robot_state_pub),
@@ -149,7 +151,8 @@ def generate_launch_description():
         name='robot_state_publisher',
         namespace=namespace,
         output='screen',
-        parameters=[{'use_sim_time': use_sim_time}],
+        parameters=[{'use_sim_time': use_sim_time,
+                     'robot_description':robot_description}],
         remappings=remappings,
         arguments=[urdf])
 
