@@ -155,7 +155,7 @@ bool MapSaver3D::saveMapTopicToFile(
 
     auto option = rclcpp::SubscriptionOptions();
     option.callback_group = callback_group;
-    
+
     auto map_sub = create_subscription<sensor_msgs::msg::PointCloud2>(
       map_topic_loc, map_qos, mapCallback, option);
 

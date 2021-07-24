@@ -102,7 +102,7 @@ protected:
     pcl::fromPCLPointCloud2(*cloud2, *cloud);
 
     int i = 0;
-    for (const auto & point: *cloud) {
+    for (const auto & point : *cloud) {
       ASSERT_EQ(point.x, g_valid_pcd_content[i][0]);
       ASSERT_EQ(point.y, g_valid_pcd_content[i][1]);
       ASSERT_EQ(point.z, g_valid_pcd_content[i][2]);

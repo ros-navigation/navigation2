@@ -69,7 +69,7 @@ const char * g_valid_pcd_yaml_file = "testpcd.yaml";
 
 const double g_valid_image_res = 0.1;
 const size_t g_valid_pcd_width = 2;
-const size_t g_valid_pcd_data_size = 32; // xyz-rgb : (32[float]/8[unit8])*2[rows]*4[elements]
+const size_t g_valid_pcd_data_size = 32;  // xyz-rgb : (32[float]/8[unit8])*2[rows]*4[elements]
 const std::vector<double> g_valid_origin{2.0, 3.0, 1.0};
 
 const std::vector<std::vector<double>> g_valid_pcd_content{
