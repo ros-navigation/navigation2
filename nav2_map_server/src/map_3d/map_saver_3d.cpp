@@ -17,7 +17,7 @@
 
 #include <string>
 #include <memory>
-#include <mutex>
+#include <future>
 #include <stdexcept>
 #include <functional>
 
@@ -124,12 +124,6 @@ bool MapSaver3D::saveMapTopicToFile(
     map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
 
   try {
-    // Pointer to map message received in the subscription callback
-    sensor_msgs::msg::PointCloud2::SharedPtr pcd_map_msg = nullptr;
-
-    // Mutex for handling map_msg shared resource
-    std::recursive_mutex access;
-
     // Correct map_topic_loc if necessary
     if (map_topic_loc.empty()) {
       map_topic_loc = "map";
@@ -138,48 +132,54 @@ bool MapSaver3D::saveMapTopicToFile(
         map_topic_loc.c_str());
     }
 
+    std::promise<sensor_msgs::msg::PointCloud2::SharedPtr> prom;
+    std::future<sensor_msgs::msg::PointCloud2::SharedPtr> future_result = prom.get_future();
+
     // A callback function that receives map message from subscribed topic
-    auto map_callback = [&pcd_map_msg, &access](
+    auto mapCallback = [&prom](
       const sensor_msgs::msg::PointCloud2::SharedPtr msg) -> void {
-        std::lock_guard<std::recursive_mutex> guard(access);
-        pcd_map_msg = msg;
+        prom.set_value(msg);
       };
 
-    // Add new subscription for incoming map topic.
-    // Utilizing local rclcpp::Node (rclcpp_node_) from nav2_util::LifecycleNode
-    // as a map listener.
     rclcpp::QoS map_qos(10);  // initialize to default
     if (map_subscribe_transient_local_) {
       map_qos.transient_local();
       map_qos.reliable();
       map_qos.keep_last(1);
     }
-    auto pcd_map_sub = rclcpp_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
-      map_topic_loc, map_qos, map_callback);
 
-    rclcpp::Time start_time = now();
-    while (rclcpp::ok()) {
-      if ((now() - start_time) > *save_map_timeout_) {
-        RCLCPP_ERROR(get_logger(), "Failed to save the map: timeout");
-        return false;
-      }
+    // Create new CallbackGroup for map_sub
+    auto callback_group = create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
 
-      if (pcd_map_msg) {
-        std::lock_guard<std::recursive_mutex> guard(access);
-        // map_sub is no more needed
-        pcd_map_sub.reset();
+    auto option = rclcpp::SubscriptionOptions();
+    option.callback_group = callback_group;
+    
+    auto map_sub = create_subscription<sensor_msgs::msg::PointCloud2>(
+      map_topic_loc, map_qos, mapCallback, option);
 
-        // Map message received. Saving it to file
-        if (map_3d::saveMapToFile(*pcd_map_msg, save_parameters_loc)) {
-          RCLCPP_INFO(get_logger(), "Map saved successfully");
-          return true;
-        } else {
-          RCLCPP_ERROR(get_logger(), "Failed to save the map");
-          return false;
-        }
-      }
+    // Create SingleThreadedExecutor to spin map_sub in callback_group
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_callback_group(callback_group, get_node_base_interface());
 
-      rclcpp::sleep_for(std::chrono::milliseconds(100));
+    // Spin until map message received
+    auto timeout = save_map_timeout_->to_chrono<std::chrono::nanoseconds>();
+    auto status = executor.spin_until_future_complete(future_result, timeout);
+    if (status != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR(get_logger(), "Failed to spin map subscription");
+      return false;
+    }
+    // map_sub is no more needed
+    map_sub.reset();
+    // Map message received. Saving it to file
+    sensor_msgs::msg::PointCloud2::SharedPtr map_msg = future_result.get();
+    if (saveMapToFile(*map_msg, save_parameters_loc)) {
+      RCLCPP_INFO(get_logger(), "Map saved successfully");
+      return true;
+    } else {
+      RCLCPP_ERROR(get_logger(), "Failed to save the map");
+      return false;
     }
   } catch (std::exception & e) {
     RCLCPP_ERROR(get_logger(), "Failed to save the map: %s", e.what());
