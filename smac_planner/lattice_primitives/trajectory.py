@@ -48,6 +48,18 @@ class TrajectoryPath:
 
         return TrajectoryPath(xs, ys, yaws)
 
+    def to_output_format(self):
+        output_xs = self.xs.round(5)
+        output_ys = self.ys.round(5)
+        output_yaws = self.yaws.round(5)
+
+        # A bit of a hack but it removes any -0.0
+        output_xs = self.xs + 0.0
+        output_ys = self.ys + 0.0
+        output_yaws = self.yaws + 0.0
+
+        return list(zip(output_xs, output_ys, output_yaws))
+
 
 @dataclass(frozen=True)
 class Trajectory:

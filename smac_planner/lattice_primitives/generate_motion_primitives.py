@@ -52,8 +52,7 @@ def write_to_json(minimal_set_trajectories, config):
             traj_info['arcLength'] = round(trajectory.parameters.arc_length, 5)
             traj_info['straightLength'] = round(trajectory.parameters.start_to_arc_distance +
                                                 trajectory.parameters.arc_to_end_distance, 5)
-            traj_info['poses'] = list(
-                zip(trajectory.path.xs.round(5), trajectory.path.ys.round(5), trajectory.path.yaws))
+            traj_info['poses'] = trajectory.path.to_output_format()
 
             output_dict["primitives"].append(traj_info)
             idx += 1
