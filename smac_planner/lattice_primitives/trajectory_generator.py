@@ -1,3 +1,4 @@
+from helper import normalize_angle
 import logging
 from typing import Union
 
@@ -39,13 +40,11 @@ class TrajectoryGenerator:
         '''
 
         steps = int(round(trajectory_params.arc_length / step_distance))
-        yaws = np.linspace(trajectory_params.start_angle,
-                           trajectory_params.end_angle, steps)
 
         start_angle = trajectory_params.start_angle
         end_angle = trajectory_params.end_angle
 
-        # The -pi/pi boundary presents a problem so ensure that both angles have the same sign
+        # The -pi/pi boundary presents a problem so ensure that both angles have the same sign if we are on the boundary
         if abs(start_angle) == np.pi:
             start_angle = np.copysign(start_angle, end_angle)
 
@@ -55,6 +54,9 @@ class TrajectoryGenerator:
         if trajectory_params.left_turn:
             if start_angle > end_angle:
                 end_angle += 2*np.pi
+
+            yaws = np.linspace(start_angle, end_angle, steps)
+            yaws = normalize_angle(yaws)
 
             ts = np.linspace(start_angle, end_angle, steps)
             xs = trajectory_params.radius * \
@@ -67,6 +69,9 @@ class TrajectoryGenerator:
 
             if start_angle > end_angle:
                 end_angle += 2*np.pi
+
+            yaws = np.linspace(-start_angle, -end_angle, steps)
+            yaws = normalize_angle(yaws)
 
             ts = np.linspace(start_angle, end_angle, steps)
             xs = trajectory_params.radius * - \
