@@ -2,7 +2,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from helper import angle_difference
+from helper import angle_difference, normalize_angle
 from motion_model import MotionModel
 from trajectory import Trajectory, TrajectoryParameters, TrajectoryPath
 from trajectory_generator import TrajectoryGenerator
@@ -72,12 +72,12 @@ class LatticeGenerator:
 
         return np.linalg.norm(q - projected_point)
 
-    def is_minimal_path(self, trajectory_path: TrajectoryPath, minimal_spanning_trajectories):
+    def is_minimal_trajectory(self, trajectory: Trajectory, minimal_spanning_trajectories):
 
         distance_threshold = 0.5 * self.grid_separation
         rotation_threshold = 0.5 * (2 * np.pi / self.number_of_headings)
 
-        for x1, y1, x2, y2, yaw in zip(trajectory_path.xs[:-1], trajectory_path.ys[:-1], trajectory_path.xs[1:], trajectory_path.ys[1:], trajectory_path.yaws[:-1]):
+        for x1, y1, x2, y2, yaw in zip(trajectory.path.xs[:-1], trajectory.path.ys[:-1], trajectory.path.xs[1:], trajectory.path.ys[1:], trajectory.path.yaws[:-1]):
 
             p1 = np.array([x1, y1])
             p2 = np.array([x2, y2])
@@ -131,7 +131,7 @@ class LatticeGenerator:
 
                         if trajectory is not None:
                             # Check if path overlaps something in minimal spanning set
-                            if(self.is_minimal_path(trajectory.path, minimal_trajectory_end_poses)):
+                            if(self.is_minimal_trajectory(trajectory, minimal_trajectory_end_poses)):
                                 new_end_pose = np.array(
                                     [target_point[0], target_point[1], target_heading])
                                 minimal_trajectory_end_poses.append(
@@ -153,13 +153,13 @@ class LatticeGenerator:
             for end_point, end_angle in single_quadrant_minimal_set[start_angle]:
                 x, y = end_point
 
-                # Prevent double adding trajectories that lie on axes
+                # Prevent double adding trajectories that lie on axes (i.e. start and end angle are either both 0 or both pi/2)
                 if start_angle == 0 and end_angle == 0:
-                    quadrant1_start_angle = start_angle
+                    quadrant1_start_angle = 0.0
                     quadrant3_start_angle = -np.pi
 
-                    quadrant1_end_angle = end_angle
-                    quadrant3_end_angle = end_angle - np.pi
+                    quadrant1_end_angle = 0.0
+                    quadrant3_end_angle = -np.pi
 
                     quadrant1_trajectory = self.trajectory_generator.generate_trajectory(np.array(
                         [x, y]), quadrant1_start_angle, quadrant1_end_angle, self.grid_separation)
@@ -175,8 +175,8 @@ class LatticeGenerator:
                     quadrant2_start_angle = np.pi/2
                     quadrant4_start_angle = -np.pi/2
 
-                    quadrant2_end_angle = np.pi - end_angle if end_angle != 0 else -np.pi
-                    quadrant4_end_angle = -end_angle if end_angle != 0 else 0
+                    quadrant2_end_angle = np.pi/2
+                    quadrant4_end_angle = -np.pi/2
 
                     quadrant2_trajectory = self.trajectory_generator.generate_trajectory(np.array(
                         [-x, y]), quadrant2_start_angle, quadrant2_end_angle, self.grid_separation)
@@ -190,14 +190,19 @@ class LatticeGenerator:
                         quadrant4_trajectory)
                 else:
                     quadrant1_start_angle = start_angle
-                    quadrant2_start_angle = np.pi - start_angle if start_angle != 0 else -np.pi
-                    quadrant3_start_angle = start_angle - np.pi
-                    quadrant4_start_angle = -start_angle if start_angle != 0 else 0
+                    quadrant2_start_angle = normalize_angle(
+                        np.pi - start_angle) if start_angle != 0 else -np.pi
+                    quadrant3_start_angle = normalize_angle(
+                        start_angle - np.pi)
+                    quadrant4_start_angle = normalize_angle(
+                        -start_angle) if start_angle != 0 else 0.0
 
                     quadrant1_end_angle = end_angle
-                    quadrant2_end_angle = np.pi - end_angle if end_angle != 0 else -np.pi
-                    quadrant3_end_angle = end_angle - np.pi
-                    quadrant4_end_angle = -end_angle if end_angle != 0 else 0
+                    quadrant2_end_angle = normalize_angle(
+                        np.pi - end_angle) if end_angle != 0 else -np.pi
+                    quadrant3_end_angle = normalize_angle(end_angle - np.pi)
+                    quadrant4_end_angle = normalize_angle(
+                        -end_angle) if end_angle != 0 else 0.0
 
                     # Generate trajectories for all quadrants and use the grid separation as step distance
                     quadrant1_trajectory = self.trajectory_generator.generate_trajectory(np.array(
@@ -254,9 +259,9 @@ class LatticeGenerator:
             right_turn_params = TrajectoryParameters.no_arc(end_point=np.array(
                 [0, 0]), start_angle=start_angle, end_angle=next_angle, left_turn=False)
 
-            left_turn_path = TrajectoryPath(xs=np.array([0, 0]), ys=np.array(
+            left_turn_path = TrajectoryPath(xs=np.array([0.0, 0.0]), ys=np.array(
                 [0, 0]), yaws=np.array([start_angle, prev_angle]))
-            right_turn_path = TrajectoryPath(xs=np.array([0, 0]), ys=np.array(
+            right_turn_path = TrajectoryPath(xs=np.array([0.0, 0.0]), ys=np.array(
                 [0, 0]), yaws=np.array([start_angle, next_angle]))
 
             left_turn = Trajectory(

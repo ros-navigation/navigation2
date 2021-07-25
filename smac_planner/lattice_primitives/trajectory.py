@@ -20,7 +20,7 @@ class TrajectoryParameters:
 
     @property
     def arc_length(self):
-        return 2 * np.pi * self.radius * np.rad2deg(angle_difference(self.start_angle, self.end_angle)) / 360
+        return self.radius * angle_difference(self.start_angle, self.end_angle, self.left_turn)
 
     @property
     def total_length(self):
@@ -30,9 +30,9 @@ class TrajectoryParameters:
     def no_arc(end_point, start_angle, end_angle, left_turn):
         line_distance = np.linalg.norm(end_point)
 
-        return TrajectoryParameters(radius=0, x_offset=0, y_offset=0, end_point=end_point,
+        return TrajectoryParameters(radius=0.0, x_offset=0.0, y_offset=0.0, end_point=end_point,
                                     start_angle=start_angle, end_angle=end_angle, left_turn=left_turn,
-                                    start_to_arc_distance=line_distance, arc_to_end_distance=0)
+                                    start_to_arc_distance=line_distance, arc_to_end_distance=0.0)
 
 
 @dataclass(frozen=True)
