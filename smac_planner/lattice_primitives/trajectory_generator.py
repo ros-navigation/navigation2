@@ -1,4 +1,4 @@
-from helper import normalize_angle
+from helper import interpolate_yaws
 import logging
 from typing import Union
 
@@ -51,12 +51,12 @@ class TrajectoryGenerator:
         if abs(end_angle) == np.pi:
             end_angle = np.copysign(end_angle, start_angle)
 
+        yaws = interpolate_yaws(start_angle, end_angle,
+                                trajectory_params.left_turn, steps)
+
         if trajectory_params.left_turn:
             if start_angle > end_angle:
                 end_angle += 2*np.pi
-
-            yaws = np.linspace(start_angle, end_angle, steps)
-            yaws = normalize_angle(yaws)
 
             ts = np.linspace(start_angle, end_angle, steps)
             xs = trajectory_params.turning_radius * \
@@ -69,9 +69,6 @@ class TrajectoryGenerator:
 
             if start_angle > end_angle:
                 end_angle += 2*np.pi
-
-            yaws = np.linspace(-start_angle, -end_angle, steps)
-            yaws = normalize_angle(yaws)
 
             ts = np.linspace(start_angle, end_angle, steps)
             xs = trajectory_params.turning_radius * - \

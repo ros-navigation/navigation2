@@ -2,7 +2,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from helper import angle_difference, normalize_angle
+from helper import angle_difference, interpolate_yaws, normalize_angle
 from motion_model import MotionModel
 from trajectory import Trajectory, TrajectoryParameters, TrajectoryPath
 from trajectory_generator import TrajectoryGenerator
@@ -245,7 +245,7 @@ class LatticeGenerator:
             raise NotImplementedError
 
     def add_in_place_turns(self, spanning_set):
-        all_angles = sorted(spanning_set.keys(), key=spanning_set.get)
+        all_angles = sorted(list(spanning_set.keys()))
 
         for idx, start_angle in enumerate(all_angles):
             prev_angle_idx = idx - 1 if idx - 1 >= 0 else len(all_angles) - 1
@@ -255,14 +255,23 @@ class LatticeGenerator:
             next_angle = all_angles[next_angle_idx]
 
             left_turn_params = TrajectoryParameters.no_arc(end_point=np.array(
-                [0, 0]), start_angle=start_angle, end_angle=prev_angle, left_turn=True)
+                [0, 0]), start_angle=start_angle, end_angle=next_angle, left_turn=True)
             right_turn_params = TrajectoryParameters.no_arc(end_point=np.array(
-                [0, 0]), start_angle=start_angle, end_angle=next_angle, left_turn=False)
+                [0, 0]), start_angle=start_angle, end_angle=prev_angle, left_turn=False)
 
-            left_turn_path = TrajectoryPath(xs=np.array([0.0, 0.0]), ys=np.array(
-                [0, 0]), yaws=np.array([start_angle, prev_angle]))
-            right_turn_path = TrajectoryPath(xs=np.array([0.0, 0.0]), ys=np.array(
-                [0, 0]), yaws=np.array([start_angle, next_angle]))
+            # Calculate number of steps needed to rotate by roughly 10 degrees for each pose
+            angle_dif = angle_difference(start_angle, next_angle)
+            steps = int(round(angle_dif / np.deg2rad(10))) + 1
+
+            position = np.full(steps, 0)
+            left_yaws = interpolate_yaws(start_angle, next_angle, True, steps)
+            right_yaws = interpolate_yaws(
+                start_angle, prev_angle, False, steps)
+
+            left_turn_path = TrajectoryPath(
+                xs=position, ys=position, yaws=left_yaws)
+            right_turn_path = TrajectoryPath(
+                xs=position, ys=position, yaws=right_yaws)
 
             left_turn = Trajectory(
                 parameters=left_turn_params, path=left_turn_path)
