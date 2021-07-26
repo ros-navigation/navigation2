@@ -11,7 +11,7 @@ STEP_DISTANCE = 0.1
 class TestTrajectoryGenerator(unittest.TestCase):
 
     def setUp(self) -> None:
-        config = {"turningRadius": TURNING_RADIUS}
+        config = {"turning_radius": TURNING_RADIUS}
         self.trajectory_generator = TrajectoryGenerator(config)
 
     def test_generate_trajectory_only_arc(self):

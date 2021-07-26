@@ -7,7 +7,7 @@ from helper import angle_difference
 
 @dataclass(frozen=True)
 class TrajectoryParameters:
-    radius: float
+    turning_radius: float
     x_offset: float
     y_offset: float
     end_point: np.array
@@ -20,7 +20,7 @@ class TrajectoryParameters:
 
     @property
     def arc_length(self):
-        return self.radius * angle_difference(self.start_angle, self.end_angle, self.left_turn)
+        return self.turning_radius * angle_difference(self.start_angle, self.end_angle, self.left_turn)
 
     @property
     def total_length(self):
@@ -30,7 +30,7 @@ class TrajectoryParameters:
     def no_arc(end_point, start_angle, end_angle, left_turn):
         line_distance = np.linalg.norm(end_point)
 
-        return TrajectoryParameters(radius=0.0, x_offset=0.0, y_offset=0.0, end_point=end_point,
+        return TrajectoryParameters(turning_radius=0.0, x_offset=0.0, y_offset=0.0, end_point=end_point,
                                     start_angle=start_angle, end_angle=end_angle, left_turn=left_turn,
                                     start_to_arc_distance=line_distance, arc_to_end_distance=0.0)
 

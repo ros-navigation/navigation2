@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 class TrajectoryGenerator:
 
     def __init__(self, config: dict):
-        self.turning_radius = config["turningRadius"]
+        self.turning_radius = config["turning_radius"]
 
-    def _create_arc_path(self, trajectory_params: TrajectoryParameters, step_distance: float) -> TrajectoryPath:
+    def _create_arc_path(self, trajectory_params: TrajectoryParameters, primitive_resolution: float) -> TrajectoryPath:
         '''
         Create arc trajectory using the following parameterization:
                 r(t) = <R cos(t - pi/2) + a, R sin(t - pi/2) + b>
@@ -30,7 +30,7 @@ class TrajectoryGenerator:
         ----------
         trajectory_params: TrajectoryParameters
                 The parameters that describe the arc to create
-        step_distance: float
+        primitive_resolution: float
                 The distance between sampled points along the arc
 
         Returns
@@ -39,7 +39,7 @@ class TrajectoryGenerator:
                 A trajectory path built only from the arc portion of the trajectory parameters
         '''
 
-        steps = int(round(trajectory_params.arc_length / step_distance))
+        steps = int(round(trajectory_params.arc_length / primitive_resolution))
 
         start_angle = trajectory_params.start_angle
         end_angle = trajectory_params.end_angle
@@ -59,9 +59,9 @@ class TrajectoryGenerator:
             yaws = normalize_angle(yaws)
 
             ts = np.linspace(start_angle, end_angle, steps)
-            xs = trajectory_params.radius * \
+            xs = trajectory_params.turning_radius * \
                 np.cos(ts - np.pi/2) + trajectory_params.x_offset
-            ys = trajectory_params.radius * \
+            ys = trajectory_params.turning_radius * \
                 np.sin(ts - np.pi/2) + trajectory_params.y_offset
         else:
             start_angle = -start_angle
@@ -74,14 +74,14 @@ class TrajectoryGenerator:
             yaws = normalize_angle(yaws)
 
             ts = np.linspace(start_angle, end_angle, steps)
-            xs = trajectory_params.radius * - \
+            xs = trajectory_params.turning_radius * - \
                 np.cos(ts + np.pi/2) + trajectory_params.x_offset
-            ys = trajectory_params.radius * \
+            ys = trajectory_params.turning_radius * \
                 np.sin(ts + np.pi/2) + trajectory_params.y_offset
 
         return TrajectoryPath(xs, ys, yaws)
 
-    def _create_line_path(self, trajectory_params: TrajectoryParameters, start_point: np.array, end_point: np.array, step_distance: float) -> TrajectoryPath:
+    def _create_line_path(self, trajectory_params: TrajectoryParameters, start_point: np.array, end_point: np.array, primitive_resolution: float) -> TrajectoryPath:
         '''
         Create straight line trajectory from (x1, y1) to (x2, y2)
 
@@ -93,7 +93,7 @@ class TrajectoryGenerator:
                 [x, y] coordinate of start point
         end_p: np.array(2,)
                 [x, y] coordinate of end point
-        step_distance: float
+        primitive_resolution: float
                 The distance between sampled points along the line
 
         Returns
@@ -108,7 +108,7 @@ class TrajectoryGenerator:
             distance = trajectory_params.arc_to_end_distance
             line_angle = trajectory_params.end_angle
 
-        steps = int(round(distance / step_distance))
+        steps = int(round(distance / primitive_resolution))
 
         # If steps is 0 or 1 then simply return the end point
         if steps <= 1:
@@ -126,7 +126,7 @@ class TrajectoryGenerator:
 
         return TrajectoryPath(xs, ys, yaws)
 
-    def _create_path(self, trajectory_params: TrajectoryParameters, step_distance: float) -> TrajectoryPath:
+    def _create_path(self, trajectory_params: TrajectoryParameters, primitive_resolution: float) -> TrajectoryPath:
         '''
         Create the full trajectory path that is represented by the given trajectory parameters
 
@@ -134,7 +134,7 @@ class TrajectoryGenerator:
         ----------
         trajectory_params: TrajectoryParameters
                 The parameters that describe the trajectory to create
-        step_distance: float
+        primitive_resolution: float
                 The distance between sampled points along the line
 
         Returns
@@ -143,16 +143,16 @@ class TrajectoryGenerator:
                 The trajectory path described by the trajectory parameters
         '''
 
-        if trajectory_params.radius > 0:
+        if trajectory_params.turning_radius > 0:
             final_trajectory = self._create_arc_path(
-                trajectory_params, step_distance)
+                trajectory_params, primitive_resolution)
 
             if trajectory_params.start_to_arc_distance > 0:
                 start_point = np.array([0, 0])
                 end_point = np.array(
                     [final_trajectory.xs[0], final_trajectory.ys[0]])
                 start_to_arc_trajectory = self._create_line_path(
-                    trajectory_params, start_point, end_point, step_distance)
+                    trajectory_params, start_point, end_point, primitive_resolution)
 
                 final_trajectory = start_to_arc_trajectory + final_trajectory
 
@@ -160,7 +160,7 @@ class TrajectoryGenerator:
                 start_point = np.array(
                     [final_trajectory.xs[-1], final_trajectory.ys[-1]])
                 arc_to_end_trajectory = self._create_line_path(
-                    trajectory_params, start_point, trajectory_params.end_point, step_distance)
+                    trajectory_params, start_point, trajectory_params.end_point, primitive_resolution)
 
                 final_trajectory = final_trajectory + arc_to_end_trajectory
 
@@ -168,7 +168,7 @@ class TrajectoryGenerator:
         else:
             # No arc in path therefore its only a straight line3
             start_point = np.array([0, 0])
-            return self._create_line_path(trajectory_params, start_point, trajectory_params.end_point, step_distance)
+            return self._create_line_path(trajectory_params, start_point, trajectory_params.end_point, primitive_resolution)
 
     def _get_intersection_point(self, m1: float, c1: float, m2: float, c2: float) -> np.array:
         '''
@@ -403,9 +403,9 @@ class TrajectoryGenerator:
 
         return TrajectoryParameters(radius, x_offset, y_offset, end_point, start_angle, end_angle, left_turn, start_to_arc_distance, arc_to_end_distance)
 
-    def generate_trajectory(self, end_point: float, start_angle: float, end_angle: float, step_distance: float) -> Union[Trajectory, None]:
+    def generate_trajectory(self, end_point: float, start_angle: float, end_angle: float, primitive_resolution: float) -> Union[Trajectory, None]:
         '''
-        Creates a trajectory from (0,0, start_angle) to (end_point, end_angle) with points spaced step_distance apart
+        Creates a trajectory from (0,0, start_angle) to (end_point, end_angle) with points spaced primitive_resolution apart
 
         Parameters
         ----------
@@ -415,7 +415,7 @@ class TrajectoryGenerator:
                 The start angle of the trajectory in radians
         end_angle: float
                 The end angle of the trajectory in radians
-        step_distance: float
+        primitive_resolution: float
                 The spacing between points along the trajectory
 
         Returns
@@ -431,6 +431,7 @@ class TrajectoryGenerator:
 
         logger.debug("Trajectory found")
 
-        trajectory_path = self._create_path(trajectory_params, step_distance)
+        trajectory_path = self._create_path(
+            trajectory_params, primitive_resolution)
 
         return Trajectory(trajectory_path, trajectory_params)

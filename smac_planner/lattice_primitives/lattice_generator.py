@@ -11,21 +11,21 @@ from trajectory_generator import TrajectoryGenerator
 class LatticeGenerator:
 
     def __init__(self, config):
-        self.grid_separation = config["gridSeparation"]
         self.trajectory_generator = TrajectoryGenerator(config)
-        self.turning_radius = config["turningRadius"]
-        self.max_level = round(config["maxLength"] / self.grid_separation)
-        self.number_of_headings = config["numberOfHeadings"]
+        self.grid_resolution = config["grid_resolution"]
+        self.turning_radius = config["turning_radius"]
+        self.max_level = round(config["max_length"] / self.grid_resolution)
+        self.num_of_headings = config["num_of_headings"]
 
-        self.motion_model = MotionModel[config["motionModel"].upper()]
+        self.motion_model = MotionModel[config["motion_model"].upper()]
 
     def get_coords_at_level(self, level):
         positions = []
 
-        max_point_coord = self.grid_separation * level
+        max_point_coord = self.grid_resolution * level
 
         for i in range(level):
-            varying_point_coord = self.grid_separation * i
+            varying_point_coord = self.grid_resolution * i
 
             # Varying y-coord
             positions.append((max_point_coord, varying_point_coord))
@@ -39,7 +39,7 @@ class LatticeGenerator:
         return np.array(positions)
 
     def get_heading_discretization(self):
-        max_val = int((((self.number_of_headings + 4)/4) - 1) / 2)
+        max_val = int((((self.num_of_headings + 4)/4) - 1) / 2)
 
         outer_edge_x = []
         outer_edge_y = []
@@ -74,8 +74,8 @@ class LatticeGenerator:
 
     def is_minimal_trajectory(self, trajectory: Trajectory, minimal_spanning_trajectories):
 
-        distance_threshold = 0.5 * self.grid_separation
-        rotation_threshold = 0.5 * (2 * np.pi / self.number_of_headings)
+        distance_threshold = 0.5 * self.grid_resolution
+        rotation_threshold = 0.5 * (2 * np.pi / self.num_of_headings)
 
         for x1, y1, x2, y2, yaw in zip(trajectory.path.xs[:-1], trajectory.path.ys[:-1], trajectory.path.xs[1:], trajectory.path.ys[1:], trajectory.path.yaws[:-1]):
 
@@ -93,7 +93,7 @@ class LatticeGenerator:
 
     def compute_min_trajectory_length(self):
         # Compute arc length of circle that moves through an angle of 360/number of headings
-        return 2 * np.pi * self.turning_radius * (360/self.number_of_headings) / 360
+        return 2 * np.pi * self.turning_radius * (360/self.num_of_headings) / 360
 
     def generate_minimal_spanning_set(self):
         quadrant1_end_poses = defaultdict(list)
@@ -105,7 +105,7 @@ class LatticeGenerator:
 
         min_trajectory_length = self.compute_min_trajectory_length()
         start_level = int(
-            np.floor(min_trajectory_length / self.grid_separation))
+            np.floor(min_trajectory_length / self.grid_resolution))
 
         for start_heading in initial_headings:
             minimal_trajectory_end_poses = []
@@ -127,7 +127,7 @@ class LatticeGenerator:
                     for target_heading in target_headings:
                         # Use 10% of grid separation for finer granularity when checking if trajectory overlaps another already seen trajectory
                         trajectory = self.trajectory_generator.generate_trajectory(
-                            target_point, start_heading, target_heading, 0.1 * self.grid_separation)
+                            target_point, start_heading, target_heading, 0.1 * self.grid_resolution)
 
                         if trajectory is not None:
                             # Check if path overlaps something in minimal spanning set
@@ -162,9 +162,9 @@ class LatticeGenerator:
                     quadrant3_end_angle = -np.pi
 
                     quadrant1_trajectory = self.trajectory_generator.generate_trajectory(np.array(
-                        [x, y]), quadrant1_start_angle, quadrant1_end_angle, self.grid_separation)
+                        [x, y]), quadrant1_start_angle, quadrant1_end_angle, self.grid_resolution)
                     quadrant3_trajectory = self.trajectory_generator.generate_trajectory(np.array(
-                        [-x, -y]), quadrant3_start_angle, quadrant3_end_angle, self.grid_separation)
+                        [-x, -y]), quadrant3_start_angle, quadrant3_end_angle, self.grid_resolution)
 
                     all_trajectories[quadrant1_trajectory.parameters.start_angle].append(
                         quadrant1_trajectory)
@@ -179,10 +179,10 @@ class LatticeGenerator:
                     quadrant4_end_angle = -np.pi/2
 
                     quadrant2_trajectory = self.trajectory_generator.generate_trajectory(np.array(
-                        [-x, y]), quadrant2_start_angle, quadrant2_end_angle, self.grid_separation)
+                        [-x, y]), quadrant2_start_angle, quadrant2_end_angle, self.grid_resolution)
 
                     quadrant4_trajectory = self.trajectory_generator.generate_trajectory(np.array(
-                        [x, -y]), quadrant4_start_angle, quadrant4_end_angle, self.grid_separation)
+                        [x, -y]), quadrant4_start_angle, quadrant4_end_angle, self.grid_resolution)
 
                     all_trajectories[quadrant2_trajectory.parameters.start_angle].append(
                         quadrant2_trajectory)
@@ -206,13 +206,13 @@ class LatticeGenerator:
 
                     # Generate trajectories for all quadrants and use the grid separation as step distance
                     quadrant1_trajectory = self.trajectory_generator.generate_trajectory(np.array(
-                        [x, y]), quadrant1_start_angle, quadrant1_end_angle, self.grid_separation)
+                        [x, y]), quadrant1_start_angle, quadrant1_end_angle, self.grid_resolution)
                     quadrant2_trajectory = self.trajectory_generator.generate_trajectory(np.array(
-                        [-x, y]), quadrant2_start_angle, quadrant2_end_angle, self.grid_separation)
+                        [-x, y]), quadrant2_start_angle, quadrant2_end_angle, self.grid_resolution)
                     quadrant3_trajectory = self.trajectory_generator.generate_trajectory(np.array(
-                        [-x, -y]), quadrant3_start_angle, quadrant3_end_angle, self.grid_separation)
+                        [-x, -y]), quadrant3_start_angle, quadrant3_end_angle, self.grid_resolution)
                     quadrant4_trajectory = self.trajectory_generator.generate_trajectory(np.array(
-                        [x, -y]), quadrant4_start_angle, quadrant4_end_angle, self.grid_separation)
+                        [x, -y]), quadrant4_start_angle, quadrant4_end_angle, self.grid_resolution)
 
                     all_trajectories[quadrant1_trajectory.parameters.start_angle].append(
                         quadrant1_trajectory)
@@ -276,7 +276,7 @@ class LatticeGenerator:
 
     def add_horizontal_motions(self, spanning_set):
         min_trajectory_length = self.compute_min_trajectory_length()
-        steps = int(np.round(min_trajectory_length/self.grid_separation))
+        steps = int(np.round(min_trajectory_length/self.grid_resolution))
 
         for start_angle in spanning_set.keys():
             left_shift_xs = np.linspace(0, min_trajectory_length *

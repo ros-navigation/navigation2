@@ -1,9 +1,8 @@
 {
-    "motionModel": "ackermann",
-    "turningRadius": 0.4,
-    "gridSeparation": 0.05, 
-    "maxLength": 1, 
-    "numberOfHeadings": 16, 
-    "outputFile": "output.json"
+    "motion_model": "ackermann",
+    "turning_radius": 0.4,
+    "grid_resolution": 0.05,
+    "max_length": 1,
+    "num_of_headings": 16,
+    "output_file": "output.json"
 }
-    
