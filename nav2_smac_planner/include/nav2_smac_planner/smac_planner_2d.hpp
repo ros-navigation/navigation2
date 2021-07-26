@@ -18,6 +18,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <mutex>
 
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/smoother.hpp"
@@ -100,10 +101,18 @@ protected:
   bool _downsample_costmap;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   double _max_planning_time;
+  bool _allow_unknown;
+  int _max_iterations;
+  int _max_on_approach_iterations;
+  SearchInfo _search_info;
+  std::string _motion_model_for_search;
+  MotionModel _motion_model;
+  std::mutex _mutex;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr _node;
 
   // Subscription for parameter change
-  rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
-  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
+  rclcpp::AsyncParametersClient::SharedPtr _parameters_client;
+  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr _parameter_event_sub;
 
   /**
    * @brief Callback executed when a paramter change is detected
