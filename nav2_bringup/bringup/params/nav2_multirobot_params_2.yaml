@@ -59,6 +59,10 @@ bt_navigator:
     # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
     # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
     # They can be set here or via a RewrittenYaml remap from a parent launch file to Nav2.
+    # if enable_groot_monitoring is set to True, ports need to be different for each robot !!
+    enable_groot_monitoring: False
+    groot_zmq_publisher_port: 1789
+    groot_zmq_server_port: 1887
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
     - nav2_compute_path_through_poses_action_bt_node
