@@ -51,7 +51,7 @@ template<typename ActionT>
 class Recovery : public nav2_core::Recovery
 {
 public:
-  using ActionServer = nav2_util::SimpleActionServer<ActionT, rclcpp_lifecycle::LifecycleNode>;
+  using ActionServer = nav2_util::SimpleActionServer<ActionT>;
 
   /**
    * @brief A Recovery constructor
