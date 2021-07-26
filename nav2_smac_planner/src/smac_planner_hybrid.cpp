@@ -221,8 +221,10 @@ void SmacPlannerHybrid::cleanup()
     _name.c_str());
   _a_star.reset();
   _smoother.reset();
-  _costmap_downsampler->on_cleanup();
-  _costmap_downsampler.reset();
+  if (_costmap_downsampler) {
+    _costmap_downsampler->on_cleanup();
+    _costmap_downsampler.reset();
+  }
   _raw_plan_publisher.reset();
 }
 
