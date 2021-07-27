@@ -1,6 +1,7 @@
 import json
 import logging
 from datetime import datetime
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,7 +15,11 @@ VERSION = 1.0
 
 
 def read_config():
-    with open("config.json") as config_file:
+
+    cur_dir = Path(__file__).parent
+    config_path = cur_dir / "config.json"
+
+    with open(config_path) as config_file:
         config = json.load(config_file)
 
     return config
@@ -60,11 +65,15 @@ def write_to_json(minimal_set_trajectories, config):
 
     output_dict["lattice_metadata"]["number_of_trajectories"] = idx
 
-    with open(config['output_file'], 'w') as output_file:
+    output_path = Path(__file__).parent / config["output_file"]
+
+    with open(output_path, 'w') as output_file:
         json.dump(output_dict, output_file, indent="\t")
 
 
 def save_visualizations(minimal_set_trajectories):
+
+    visualizations_folder = Path(__file__).parent / "visualizations"
 
     for start_angle in minimal_set_trajectories.keys():
 
@@ -75,7 +84,9 @@ def save_visualizations(minimal_set_trajectories):
     plt.axis('square')
     left_x, right_x = plt.xlim()
     left_y, right_y = plt.ylim()
-    plt.savefig("visualizations/all_trajectories.png")
+
+    output_path = visualizations_folder / "all_trajectories.png"
+    plt.savefig(output_path)
     plt.clf()
 
     for start_angle in minimal_set_trajectories.keys():
@@ -91,7 +102,9 @@ def save_visualizations(minimal_set_trajectories):
             plt.ylim(left_y, right_y)
 
         plt.grid(True)
-        plt.savefig(f'visualizations/{angle_in_deg}.png')
+
+        output_path = visualizations_folder / f'{angle_in_deg}.png'
+        plt.savefig(output_path)
         plt.clf()
 
 
