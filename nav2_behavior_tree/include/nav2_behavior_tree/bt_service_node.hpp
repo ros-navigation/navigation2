@@ -143,6 +143,16 @@ public:
   }
 
   /**
+   * @brief Function to perform some user-defined operation upon successful
+   * completion of the action. Could put a value on the blackboard.
+   * @return BT::NodeStatus Returns SUCCESS by default, user may override return another value
+   */
+  virtual BT::NodeStatus on_success()
+  {
+    return BT::NodeStatus::SUCCESS;
+  }
+
+  /**
    * @brief Check the future and decide the status of BT
    * @return BT::NodeStatus SUCCESS if future complete before timeout, FAILURE otherwise
    */
@@ -158,7 +168,8 @@ public:
       rc = callback_group_executor_.spin_until_future_complete(future_result_, server_timeout_);
       if (rc == rclcpp::FutureReturnCode::SUCCESS) {
         request_sent_ = false;
-        return BT::NodeStatus::SUCCESS;
+        BT::NodeStatus status = on_success();   
+        return status;
       }
 
       if (rc == rclcpp::FutureReturnCode::TIMEOUT) {
