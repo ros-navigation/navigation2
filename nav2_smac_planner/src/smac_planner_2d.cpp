@@ -375,7 +375,7 @@ void SmacPlanner2D::on_parameter_event_callback(
     }
 
     // Re-Initialize costmap downsampler
-    if (reinit_a_star) {
+    if (reinit_downsampler) {
       if (_downsample_costmap && _downsampling_factor > 1) {
         auto node = _node.lock();
         std::string topic_name = "downsampled_costmap";
