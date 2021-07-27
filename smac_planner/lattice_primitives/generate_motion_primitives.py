@@ -34,7 +34,7 @@ def create_header(config, minimal_set_trajectories):
 
     heading_angles = set([angle for angle in minimal_set_trajectories.keys()])
     header_dict["lattice_metadata"]["heading_angles"] = sorted(
-        list(heading_angles))
+        list(heading_angles), key=lambda x: (x < 0, x))
 
     return header_dict
 
@@ -42,8 +42,10 @@ def create_header(config, minimal_set_trajectories):
 def write_to_json(minimal_set_trajectories, config):
     output_dict = create_header(config, minimal_set_trajectories)
 
+    trajectory_start_angles = list(minimal_set_trajectories.keys())
+
     idx = 0
-    for start_angle in minimal_set_trajectories.keys():
+    for start_angle in sorted(trajectory_start_angles, key=lambda x: (x < 0, x)):
 
         for trajectory in sorted(minimal_set_trajectories[start_angle], key=lambda x: x.parameters.end_angle):
 
