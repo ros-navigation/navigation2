@@ -102,23 +102,9 @@ def generate_launch_description():
 
     # Start Gazebo with plugin providing the robot spawing service
     start_gazebo_cmd = ExecuteProcess(
-        cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_factory.so', world],
+        cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_init.so', 
+                        '-s', 'libgazebo_ros_factory.so', world],
         output='screen')
-
-    # Define commands for spawing the robots into Gazebo
-    spawn_robots_cmds = []
-    for robot in robots:
-        spawn_robots_cmds.append(
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch',
-                                                           'spawn_tb3_launch.py')),
-                launch_arguments={
-                                  'x_pose': TextSubstitution(text=str(robot['x_pose'])),
-                                  'y_pose': TextSubstitution(text=str(robot['y_pose'])),
-                                  'z_pose': TextSubstitution(text=str(robot['z_pose'])),
-                                  'robot_name': robot['name'],
-                                  'turtlebot_type': TextSubstitution(text='waffle')
-                                  }.items()))
 
     # Define commands for launching the navigation instances
     nav_instances_cmds = []
@@ -148,7 +134,11 @@ def generate_launch_description():
                                   'use_rviz': 'False',
                                   'use_simulator': 'False',
                                   'headless': 'False',
-                                  'use_robot_state_pub': use_robot_state_pub}.items()),
+                                  'use_robot_state_pub': use_robot_state_pub,
+                                  'x_pose': TextSubstitution(text=str(robot['x_pose'])),
+                                  'y_pose': TextSubstitution(text=str(robot['y_pose'])),
+                                  'z_pose': TextSubstitution(text=str(robot['z_pose'])),
+                                  'robot_name':TextSubstitution(text=robot['name']), }.items()),
 
             LogInfo(
                 condition=IfCondition(log_settings),
@@ -188,9 +178,6 @@ def generate_launch_description():
 
     # Add the actions to start gazebo, robots and simulations
     ld.add_action(start_gazebo_cmd)
-
-    for spawn_robot_cmd in spawn_robots_cmds:
-        ld.add_action(spawn_robot_cmd)
 
     for simulation_instance_cmd in nav_instances_cmds:
         ld.add_action(simulation_instance_cmd)
