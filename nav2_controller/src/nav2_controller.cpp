@@ -270,7 +270,6 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   odom_sub_.reset();
   vel_publisher_.reset();
   speed_limit_sub_.reset();
-  action_server_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
