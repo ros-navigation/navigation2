@@ -168,7 +168,7 @@ public:
       rc = callback_group_executor_.spin_until_future_complete(future_result_, server_timeout_);
       if (rc == rclcpp::FutureReturnCode::SUCCESS) {
         request_sent_ = false;
-        BT::NodeStatus status = on_success();   
+        BT::NodeStatus status = on_success();
         return status;
       }
 
