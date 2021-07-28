@@ -88,6 +88,12 @@ public:
     const geometry_msgs::msg::PoseStamped & goal) override;
 
 protected:
+  /**
+   * @brief Callback executed when a paramter change is detected
+   * @param event ParameterEvent message
+   */
+  void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+
   std::unique_ptr<AStarAlgorithm<Node2D>> _a_star;
   GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;
@@ -113,12 +119,6 @@ protected:
   // Subscription for parameter change
   rclcpp::AsyncParametersClient::SharedPtr _parameters_client;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr _parameter_event_sub;
-
-  /**
-   * @brief Callback executed when a paramter change is detected
-   * @param event ParameterEvent message
-   */
-  void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
 };
 
 }  // namespace nav2_smac_planner
