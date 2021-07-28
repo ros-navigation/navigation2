@@ -331,6 +331,8 @@ void SmacPlanner2D::on_parameter_event_callback(
       } else if (name == _name + ".allow_unknown") {
         reinit_a_star = true;
         _allow_unknown = value.bool_value;
+      } else if (name == _name + ".ignore_goal_orientation") {
+        _ignore_goal_orientation = value.bool_value;
       }
     } else if (type == ParameterType::PARAMETER_INTEGER) {
       if (name == _name + ".downsampling_factor") {
