@@ -80,6 +80,9 @@ void SmacPlanner2D::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
   node->get_parameter(name + ".max_on_approach_iterations", _max_on_approach_iterations);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".ignore_goal_orientation", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".ignore_goal_orientation", _ignore_goal_orientation);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(1.0));
@@ -290,6 +293,10 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   // Smooth plan
   if (plan.poses.size() > 6) {
     _smoother->smooth(plan, costmap, time_remaining);
+  }
+
+  if (!_ignore_goal_orientation && plan.poses.size() > 0) {
+    plan.poses[plan.poses.size() - 1].pose.orientation = goal.pose.orientation;
   }
 
   return plan;

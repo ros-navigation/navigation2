@@ -110,6 +110,7 @@ protected:
   bool _allow_unknown;
   int _max_iterations;
   int _max_on_approach_iterations;
+  bool _ignore_goal_orientation;
   SearchInfo _search_info;
   std::string _motion_model_for_search;
   MotionModel _motion_model;
