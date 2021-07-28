@@ -144,10 +144,10 @@ class SafetyZone : public rclcpp::Node
 
     void timer_callback(const sensor_msgs::msg::LaserScan::SharedPtr _msg)
     {
-        
+        // empty function 
     }
 
-
+    // set footprint callback function 
     void setRobotFootprintPolygon(
     const geometry_msgs::msg::Polygon::SharedPtr footprint)
     {
@@ -157,10 +157,10 @@ class SafetyZone : public rclcpp::Node
 
     rclcpp::TimerBase::SharedPtr timer_;
 
-     /// Laser messages subscriber
+     /// Footprint subscriber
     rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
 
-    ///  Velocity command publisher
+    ///  Footprint publisher
     rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
 
      /// Laser messages subscriber
