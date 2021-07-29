@@ -266,7 +266,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // Collision checking on this velocity heading
   if (isCollisionImminent(pose, linear_vel, angular_vel)) {
-    throw std::runtime_error("RegulatedPurePursuitController detected collision ahead!");
+    throw nav2_core::PlannerException("RegulatedPurePursuitController detected collision ahead!");
   }
 
   // populate and return message
