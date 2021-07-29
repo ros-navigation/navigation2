@@ -110,12 +110,13 @@ protected:
      */
     void getParameters();
     std::string safety_polygon_;
-    float safety_polygon_padding_{0};
-    std::string global_frame_;       ///< The global frame
-    int map_height_meters_{0};
+    // float safety_polygon_padding_{0}; 
     double origin_x_{0};
     double origin_y_{0};
-    std::string robot_base_frame_;   ///< The frame_id of the robot base
+    double zone_action_{};
+    int zone_priority_{0};
+    int zone_num_pts_{0};
+    std::string base_frame_;   ///< The frame_id of the robot base
 
     // Derived parameters
     bool use_polygon_{true};

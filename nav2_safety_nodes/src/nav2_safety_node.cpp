@@ -29,8 +29,15 @@ namespace nav2_safety_nodes{
 
     RCLCPP_INFO(get_logger(), "Creating Safety Polygon");
 
-    // pass footprint parameters at string
-    declare_parameter("safety_polygon_");
+    // pass polygon parameters at string
+    declare_parameter("safety_polygon_", rclcpp::ParameterValue(std::string("[]"));
+    declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
+    declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
+    declare_parameter("zone_action", rclcpp::ParameterValue(0.0));
+    declare_parameter("zone_priority", rclcpp::ParameterValue(1));
+    declare_parameter("zone_num_pts", rclcpp::ParameterValue(1));
+    declare_parameter("base_frame", rclcpp::ParameterValue(std::string("base_link")));
+    // declare_parameter("safety_polygon_padding", rclcpp::ParameterValue(0.01f));
 
   }
 
@@ -47,14 +54,24 @@ namespace nav2_safety_nodes{
     
     // Getting all parameters
     getParameters();
-
+  
     // polygon -> point vector
     if(safety_polygon_){
       std::vector<geometry_msgs::msg::Point> new_polygon;
+      // parsing polygon parameters
       getSafetyZonesFromString(safety_polygon_, new_polygon);
+      // converting into point vector
       toPointVector(new_polygon);
     }
 
+      return nav2_util::CallbackReturn::SUCCESS;
+    }
+
+  nav2_util::CallbackReturn
+  SafetyZone::on_activate(const rclcpp_lifecycle::State & /*state*/)
+  {
+    RCLCPP_INFO(get_logger(), "Activating");
+    
     // Create the publishers and subscribers
     safety_polygon_sub_ = create_subscription<geometry_msgs::msg::Polygon>(
     "safety_polygon_",
@@ -74,14 +91,6 @@ namespace nav2_safety_nodes{
     timer_ = create_wall_timer(
       100ms, std::bind(&SafetyZone::timer_callback, this));
 
-
-      return nav2_util::CallbackReturn::SUCCESS;
-    }
-
-  nav2_util::CallbackReturn
-  SafetyZone::on_activate(const rclcpp_lifecycle::State & /*state*/)
-  {
-    RCLCPP_INFO(get_logger(), "Activating");
     return nav2_util::CallbackReturn::SUCCESS;
   }
 
@@ -115,12 +124,13 @@ namespace nav2_safety_nodes{
     // Get all of the required parameters
     
     get_parameter("safety_polygon", safety_polygon_).as_string();
-    get_parameter("footprint_padding", safety_polygon_padding_);
-    get_parameter("global_frame", global_frame_);
-    get_parameter("height", map_height_meters_);
     get_parameter("origin_x", origin_x_);
     get_parameter("origin_y", origin_y_);
-    get_parameter("robot_base_frame", robot_base_frame_);
+    getparameter("zone_action", zone_action_)
+    getparameter("zone_priority", zone_priority_)
+    getparameter("zone_num_pts", zone_num_pts_)
+    get_parameter("base_frame", base_frame_);
+    // get_parameter("safety_polygon_padding", safety_polygon_padding_);
 
     auto node = shared_from_this();
 
@@ -141,7 +151,7 @@ namespace nav2_safety_nodes{
     }
   }
 
-  // getSafetyZonesFromString function
+  // parsing polygon parameters
   bool SafetyZone::getSafetyZonesFromString(
   const std::string & safety_zone_str,
   std::vector<geometry_msgs::msg::Point> & safety_zone)
