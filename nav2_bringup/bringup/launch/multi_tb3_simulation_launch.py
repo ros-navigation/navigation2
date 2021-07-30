@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Example for spawing multiple robots in Gazebo.
+Example for spawning multiple robots in Gazebo.
 
 This is an example on how to create a launch file for spawning multiple robots into Gazebo
 and launch multiple instances of the navigation stack, each controlling one robot.
@@ -100,10 +100,10 @@ def generate_launch_description():
         default_value='True',
         description='Whether to start RVIZ')
 
-    # Start Gazebo with plugin providing the robot spawing service
+    # Start Gazebo with plugin providing the robot spawning service
     start_gazebo_cmd = ExecuteProcess(
         cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_init.so', 
-                        '-s', 'libgazebo_ros_factory.so', world],
+                                     '-s', 'libgazebo_ros_factory.so', world],
         output='screen')
 
     # Define commands for launching the navigation instances

@@ -179,8 +179,8 @@ def generate_launch_description():
                      'robot_description': robot_description}],
         remappings=remappings)
 
-    turtlebot3_gazebo_dir = get_package_share_directory('turtlebot3_gazebo')
-    robot_model_sdf = os.path.join(turtlebot3_gazebo_dir,'models', 'turtlebot3_waffle', 'model.sdf')
+    tb3_gazebo_dir = get_package_share_directory('turtlebot3_gazebo')
+    robot_model_sdf = os.path.join(tb3_gazebo_dir,'models', 'turtlebot3_waffle', 'model.sdf')
 
     start_gazebo_spawner_cmd = Node(
         package='nav2_gazebo_spawner',
