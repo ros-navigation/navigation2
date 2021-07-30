@@ -1,5 +1,5 @@
-#ifndef NAV2_SAFETY_NODES__POLYGON_NODE_HPP_
-#define NAV2_SAFETY_NODES__POLYGON_NODE_HPP_
+#ifndef NAV2_SAFETY_NODES__NAV2_SAFETY_NODE_HPP_
+#define NAV2_SAFETY_NODES__NAV2_SAFETY_NODE_HPP_
 
 #include <memory>
 #include <string>
@@ -73,6 +73,12 @@ public:
     std::vector<geometry_msgs::msg::Point> toPointVector(
       geometry_msgs::msg::Polygon::SharedPtr polygon);
 
+    /** @brief Parse a vector of vector of floats from a string.
+     * @param input
+     * @param error_return
+     * Syntax is [[1.0, 2.0], [3.3, 4.4, 5.5], ...] */
+    std::vector<std::vector<float>> parseVVF(const std::string & input, std::string & error_return);
+
     /**
      * @brief Make the safety_zone from the given string.
      *
@@ -87,44 +93,27 @@ public:
      * @brief Action server callbacks
      */
     void timer_callback(const sensor_msgs::msg::LaserScan::SharedPtr _msg);
-    
 protected:
-
     rclcpp::Node::SharedPtr client_node_;
-
-
     // Publishers and subscribers
     rclcpp::TimerBase::SharedPtr timer_;
 
-    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr safety_polygon_pub_;
-    rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr safety_polygon_sub_;
-    rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr safety_polygon_sub_;
-
-    
+    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
+                      safety_polygon_pub_;
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
-    
-
     /**
      * @brief Get parameters for node
      */
     void getParameters();
     std::string safety_polygon_;
-    // float safety_polygon_padding_{0}; 
-    double origin_x_{0};
-    double origin_y_{0};
     double zone_action_{};
     int zone_priority_{0};
     int zone_num_pts_{0};
     std::string base_frame_;   ///< The frame_id of the robot base
-
-    // Derived parameters
-    bool use_polygon_{true};
-
-} 
-
 }
-  // end namespace nav2_safety_nodes
 
-#endif  // NAV2_SAFETY_NODES__POLYGON_NODE_HPP_
+}  // end namespace nav2_safety_nodes
+
+#endif  // NAV2_SAFETY_NODES__NAV2_SAFETY_NODE_HPP_
 
