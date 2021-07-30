@@ -126,13 +126,6 @@ namespace nav2_safety_nodes{
         logger_, "The safety_polygon is invalid: \"%s\" :) ",
         safety_polygon_.c_str());
         }
-      if(safety_polygon_){
-        std::vector<geometry_msgs::msg::Point> new_polygon;
-        // parsing polygon parameters
-        getSafetyZonesFromString(safety_polygon_, new_polygon);
-        // converting into point vector
-        toPointVector(new_polygon);
-      }
     }
   }
 
@@ -178,6 +171,18 @@ namespace nav2_safety_nodes{
 
       return true;
   }
+
+  // function to convert polygon in vector of points
+  std::vector<geometry_msgs::msg::Point>
+      toPointVector(geometry_msgs::msg::Polygon::SharedPtr polygon)
+  {
+    std::vector<geometry_msgs::msg::Point> pts;
+    for (unsigned int i = 0; i < polygon->points.size(); i++) {
+      pts.push_back(toPoint(polygon->points[i]));
+    }
+    return pts;
+  }
+
   // Parse a vector of vector of floats from a string.
   std::vector<std::vector<float>> parseVVF(const std::string & input, std::string & error_return)
   {
@@ -239,16 +244,4 @@ namespace nav2_safety_nodes{
 
     return result;
   }
-  // function to convert footprint in vector of points
-  std::vector<geometry_msgs::msg::Point>
-      toPointVector(geometry_msgs::msg::Polygon::SharedPtr polygon)
-  {
-    std::vector<geometry_msgs::msg::Point> pts;
-    for (unsigned int i = 0; i < polygon->points.size(); i++) {
-      pts.push_back(toPoint(polygon->points[i]));
-    }
-    return pts;
-  }
-
-
 }  // namespace nav2_safety_nodes
