@@ -70,14 +70,15 @@ public:
     /**
      * @brief Convert Polygon msg to vector of Points.
      */
-    std::vector<geometry_msgs::msg::Point> toPointVector(
-      geometry_msgs::msg::Polygon::SharedPtr polygon);
+    std::vector<geometry_msgs::msg::Point>
+      toPointVector(geometry_msgs::msg::Polygon::SharedPtr polygon);
 
     /** @brief Parse a vector of vector of floats from a string.
      * @param input
      * @param error_return
      * Syntax is [[1.0, 2.0], [3.3, 4.4, 5.5], ...] */
-    std::vector<std::vector<float>> parseVVF(const std::string & input, std::string & error_return);
+    std::vector<std::vector<float>> 
+      parseVVF(const std::string & input, std::string & error_return);
 
     /**
      * @brief Make the safety_zone from the given string.
