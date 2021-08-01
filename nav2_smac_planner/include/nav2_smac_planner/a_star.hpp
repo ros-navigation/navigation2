@@ -283,6 +283,8 @@ protected:
    * @return Node pointer to goal node if successful, else return nullptr
    */
   NodePtr setAnalyticPath(const NodePtr & node, const AnalyticExpansionNodes & expanded_nodes);
+  
+  float getRadFromBin(const NodePtr & node, float bin);
 
   bool _traverse_unknown;
   int _max_iterations;

@@ -545,14 +545,10 @@ typename AStarAlgorithm<NodeT>::AnalyticExpansionNodes AStarAlgorithm<NodeT>::ge
     node->motion_table.state_space), s(node->motion_table.state_space);
   from[0] = node->pose.x;
   from[1] = node->pose.y;
-  //TODO: Bin size removed from motion table for state lattice
-  // from[2] = node->pose.theta * node->motion_table.bin_size;
-  from[2] = 0.0;
+  from[2] = getRadFromBin(node, node->pose.theta);
   to[0] = _goal_coordinates.x;
   to[1] = _goal_coordinates.y;
-  to[2] = 0.0;
-  //TODO: Bin size removed from motion table for state lattice
-  // to[2] = _goal_coordinates.theta * node->motion_table.bin_size;
+  to[2] = getRadFromBin(node, _goal_coordinates.theta);
 
   float d = node->motion_table.state_space->distance(from(), to());
 
@@ -666,6 +662,24 @@ typename AStarAlgorithm<Node2D>::NodePtr AStarAlgorithm<Node2D>::setAnalyticPath
   const AnalyticExpansionNodes & expanded_nodes)
 {
   return NodePtr(nullptr);
+}
+
+template<typename NodeT>
+float AStarAlgorithm<NodeT>::getRadFromBin(const NodePtr & node, float bin)
+{
+  throw std::runtime_error("Node Type 2D does not have an angle");
+}
+
+template<>
+float AStarAlgorithm<NodeHybrid>::getRadFromBin(const NodePtr & node, float bin)
+{
+  return bin * node->motion_table.bin_size;
+}
+
+template<>
+float AStarAlgorithm<NodeLattice>::getRadFromBin(const NodePtr & node, float bin)
+{
+  return node->motion_table.primitive_headings[bin];
 }
 
 // Instantiate algorithm for the supported template types

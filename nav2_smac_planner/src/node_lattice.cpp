@@ -80,17 +80,18 @@ void LatticeMotionTable::initMotionModel(
 
     if(prevStartAngle != newPrimitive.start_angle )
     {
-      motionPrimitives.emplace_back(primitives);
+      motionPrimitives.push_back(primitives);
       primitives.clear(); 
       prevStartAngle = newPrimitive.start_angle;
     }
-    primitives.emplace_back(newPrimitive); 
+    primitives.push_back(newPrimitive); 
   }
-  motionPrimitives.emplace_back(primitives); 
+  motionPrimitives.push_back(primitives); 
 
   num_angle_quantization = latticeMetadata.number_of_headings;
   num_angle_quantization_float = static_cast<float>(num_angle_quantization);
   min_turning_radius = latticeMetadata.min_turning_radius;
+  grid_resolution = latticeMetadata.grid_resolution; 
 
   //TODO: Note sure what type of state space this should be 
   state_space = std::make_unique<ompl::base::DubinsStateSpace>( min_turning_radius );
@@ -100,7 +101,7 @@ void LatticeMotionTable::initMotionModel(
     for(unsigned int j = 0; j < motionPrimitives[0].size(); ++j)
     {
       //TODO: angles in json file need to be converted to radians
-      primitive_headings.emplace_back( motionPrimitives[i][j].start_angle );
+      primitive_headings.push_back( motionPrimitives[i][j].start_angle );
     }
   }
 
@@ -125,10 +126,11 @@ MotionPoses LatticeMotionTable::getMotionPrimitives(const NodeLattice * node)
   {
     const MotionPose end_pose = motionPrimitives[node_heading][i].poses.back(); 
 
+
     primitive_projection_list.emplace_back( 
-      node->pose.x + end_pose._x, //Question: does this need to be converted to cells
-      node->pose.y + end_pose._y, //Question: does this need to be converted to cells
-      end_pose._theta); //Question: does this need to be converted to bins?
+      node->pose.x + end_pose._x / grid_resolution, 
+      node->pose.y + end_pose._y / grid_resolution,
+      primitive_headings[end_pose._theta]);
   }
 
   //Question: we will likely want to know the motion primitive index (0-104)
@@ -189,12 +191,11 @@ bool NodeLattice::isNodeValid(
   // TODO(steve) if primitive longer than 1.5 cells, then we need to split into 1 cell
   // increments and collision check across them
 
-  //TODO: removed bin size from motion table, not sutible for lattice planner
-  // if (collision_checker->inCollision(
-  //     this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
-  // {
-  //   return false;
-  // }
+  if (collision_checker->inCollision(
+      this->pose.x, this->pose.y, this->motion_table.primitive_headings[this->pose.theta], traverse_unknown))
+  {
+    return false;
+  }
 
   _cell_cost = collision_checker->getCost();
   return true;
