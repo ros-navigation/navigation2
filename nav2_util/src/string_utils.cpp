@@ -13,7 +13,12 @@
 // limitations under the License.
 
 #include "nav2_util/string_utils.hpp"
+#include "geometry_msgs/msg/point32.hpp"
+
+#include <cstdio>  // for EOF
 #include <string>
+#include <sstream>
+#include <vector>
 
 using std::string;
 
@@ -45,50 +50,110 @@ Tokens split(const string & tokenstring, char delimiter)
   return tokens;
 }
 
-std::vector<geometry_msgs::msg::Point> makeVectorPointsFromString(const std::string & safety_zone_str,
-      std::vector<geometry_msgs::msg::Point> & safety_zone){
 
-        std::string error;
-        std::vector<std::vector<float>> vvf = parseVVF(safety_zone_str, error);
-        if (error != "") {
-              RCLCPP_ERROR(
-              logger_, "Error parsing safety_zone : '%s'", error.c_str());
-              RCLCPP_ERROR(
-              logger_, "  Safety_zone string was '%s'.", safety_zone_str.c_str());
-          }
-        // convert vvf into points.
-              if (vvf.size() < 3) {
-                  RCLCPP_ERROR(
-                  logger_,
-                  "You must specify at least three points for the robot safety_zone, reverting to previous safety_zone."); //NOLINT
-              }
-              safety_zone.reserve(vvf.size());
-              for (unsigned int i = 0; i < vvf.size(); i++) {
-                  if (vvf[i].size() == 2) {
-                  geometry_msgs::msg::Point point;
-                  point.x = vvf[i][0];
-                  point.y = vvf[i][1];
-                  point.z = 0;
-                  safety_zone.push_back(point);
-                  } else {
-                  RCLCPP_ERROR(
-                      logger_,
-                      "Points in the safety_zone specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT
-                      static_cast<int>(vvf[i].size()));
-                  }
-              }
-            toPointVector(safety_zone);
-          }
+/** @brief Parse a vector of vector of floats from a string.
+ * @param input
+ * @param error_return
+ * Syntax is [[1.0, 2.0], [3.3, 4.4, 5.5], ...] */
+std::vector<std::vector<float>> parseVVF(const std::string & input, std::string & error_return)
+{
+  std::vector<std::vector<float>> result;
 
-// function to convert polygon in vector of points
-std::vector<geometry_msgs::msg::Point> 
-    toPointVector(geometry_msgs::msg::Polygon::SharedPtr polygon)
-        {
-        std::vector<geometry_msgs::msg::Point> pts;
-        for (unsigned int i = 0; i < polygon->points.size(); i++) {
-            pts.push_back(toPoint(polygon->points[i]));
+  std::stringstream input_ss(input);
+  int depth = 0;
+  std::vector<float> current_vector;
+  while (!!input_ss && !input_ss.eof()) {
+    switch (input_ss.peek()) {
+      case EOF:
+        break;
+      case '[':
+        depth++;
+        if (depth > 2) {
+          error_return = "Array depth greater than 2";
+          return result;
         }
-        return pts;
-        }  
+        input_ss.get();
+        current_vector.clear();
+        break;
+      case ']':
+        depth--;
+        if (depth < 0) {
+          error_return = "More close ] than open [";
+          return result;
+        }
+        input_ss.get();
+        if (depth == 1) {
+          result.push_back(current_vector);
+        }
+        break;
+      case ',':
+      case ' ':
+      case '\t':
+        input_ss.get();
+        break;
+      default:  // All other characters should be part of the numbers.
+        if (depth != 2) {
+          std::stringstream err_ss;
+          err_ss << "Numbers at depth other than 2. Char was '" << char(input_ss.peek()) << "'.";
+          error_return = err_ss.str();
+          return result;
+        }
+        float value;
+        input_ss >> value;
+        if (!!input_ss) {
+          current_vector.push_back(value);
+        }
+        break;
+    }
+  }
+
+  if (depth != 0) {
+    error_return = "Unterminated vector string.";
+  } else {
+    error_return = "";
+  }
+
+  return result;
+}
+
+
+
+/** @brief Parse a vector of vector of floats from a string & convert to vector of points. */
+std::vector<geometry_msgs::msg::Point> makeVectorPointsFromString(
+    const std::string & safety_zone_str,
+    std::vector<geometry_msgs::msg::Point> & safety_zone)
+{
+  std::string error;
+  std::vector<std::vector<float>> vvf = parseVVF(safety_zone_str, error);
+  if (error != "") {
+        RCLCPP_ERROR(
+        logger_, "Error parsing safety_zone : '%s'", error.c_str());
+        RCLCPP_ERROR(
+        logger_, "  Safety_zone string was '%s'.", safety_zone_str.c_str());
+    }
+  // convert vvf into points.
+  if (vvf.size() < 3) {
+      RCLCPP_ERROR(
+      logger_,
+      "You must specify at least three points for the robot safety_zone, reverting to previous safety_zone."); //NOLINT
+  }
+  safety_zone.reserve(vvf.size());
+  for (unsigned int i = 0; i < vvf.size(); i++) {
+      if (vvf[i].size() == 2) {
+      geometry_msgs::msg::Point point;
+      point.x = vvf[i][0];
+      point.y = vvf[i][1];
+      point.z = 0;
+      safety_zone.push_back(point);
+      } else {
+      RCLCPP_ERROR(
+          logger_,
+          "Points in the safety_zone specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT
+          static_cast<int>(vvf[i].size()));
+      }
+  }
+  return safety_zone;
+}
+
 
 }  // namespace nav2_util
