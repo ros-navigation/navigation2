@@ -296,6 +296,8 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 void SmacPlanner2D::on_parameter_event_callback(
   const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
 {
+  std::lock_guard<std::mutex> lock_reinit(_mutex);
+
   bool reinit_a_star = false;
   bool reinit_downsampler = false;
 
@@ -361,8 +363,6 @@ void SmacPlanner2D::on_parameter_event_callback(
 
   // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
   if (reinit_a_star || reinit_downsampler) {
-    std::lock_guard<std::mutex> lock_reinit(_mutex);
-
     // Re-Initialize A* template
     if (reinit_a_star) {
       _a_star = std::make_unique<AStarAlgorithm<Node2D>>(_motion_model, _search_info);
