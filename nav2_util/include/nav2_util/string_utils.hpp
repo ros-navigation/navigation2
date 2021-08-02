@@ -15,53 +15,44 @@
 #ifndef NAV2_UTIL__STRING_UTILS_HPP_
 #define NAV2_UTIL__STRING_UTILS_HPP_
 
+#include "geometry_msgs/msg/point32.hpp"
+
 #include <string>
 #include <vector>
-
-#include "geometry_msgs/msg/twist.hpp"
-#include "geometry_msgs/msg/point32.hpp"
 
 namespace nav2_util
 {
 
 typedef std::vector<std::string> Tokens;
 
-/*
- * @brief Remove leading slash from a topic name
+/** @brief Remove leading slash from a topic name
  * @param in String of topic in
  * @return String out without slash
 */
 std::string strip_leading_slash(const std::string & in);
 
-///
-/*
- * @brief Split a string at the delimiters
+/** @brief Split a string at the delimiters
  * @param in String to split
  * @param Delimiter criteria
  * @return Tokens
 */
 Tokens split(const std::string & tokenstring, char delimiter);
 
-
 /** @brief Parse a vector of vector of floats from a string.
  * @param input
  * @param error_return
  * Syntax is [[1.0, 2.0], [3.3, 4.4, 5.5], ...] */
-std::vector<std::vector<float>> parseVVF(const std::string & input, std::string & error_return)
+std::vector<std::vector<float>> parseVVF(const std::string & input, std::string & error_return);
 
-// function to convert polygon in vector of points
-std::vector<geometry_msgs::msg::Point> 
-    toPointVector(geometry_msgs::msg::Polygon::SharedPtr polygon);
-
-
-std::vector<geometry_msgs::msg::Point> 
-  makeVectorPointsFromString(const std::string & safety_zone_str,
+/**
+ * @brief Make the vector from the given string.
+ * @param str_pts
+ * @param vector_pts
+ * Format should be bracketed array of arrays of floats, like so: [[1.0, 2.2], [3.3, 4.2], ...]
+ *
+ */
+bool makeVectorPointsFromString(const std::string & safety_zone_str,
   std::vector<geometry_msgs::msg::Point> & safety_zone); 
-
-
-  
-    }
-
 
 }  // namespace nav2_util
 

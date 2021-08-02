@@ -12,236 +12,161 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/point32.hpp"
-#include "sensor_msgs/msg/laser_scan.hpp"
+
+#include "rclcpp/time.hpp"
+#include "pluginlib/class_list_macros.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_sensor_msgs/tf2_sensor_msgs.h"
+#include "sensor_msgs/msg/point_cloud2.hpp"
 
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_util/string_utils.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_safety_nodes/nav2_safety_node.hpp"
-
-
 
 using namespace std::chrono_literals;
 
 namespace nav2_safety_nodes{
 
-  SafetyZone::SafetyZone()
-  : nav2_util::LifecycleNode("SafetyZone", "", true, rclcpp::NodeOptions().arguments())
-  {
-    RCLCPP_INFO(logger_, "Creating Safety Polygon");
+SafetyZone::SafetyZone()
+: nav2_util::LifecycleNode("SafetyZone", "", true, rclcpp::NodeOptions().arguments())
+{
+  logger_ = get_logger();
+  RCLCPP_INFO(logger_, "Creating Safety Polygon");
 
-    // pass polygon parameters at string
-    declare_parameter("safety_polygon", rclcpp::ParameterValue(std::string("[]")));
-    declare_parameter("zone_action", rclcpp::ParameterValue(0.0));
-    declare_parameter("zone_priority", rclcpp::ParameterValue(1));
-    declare_parameter("zone_num_pts", rclcpp::ParameterValue(1));
-    declare_parameter("base_frame", rclcpp::ParameterValue(std::string("base_link")));
-  }
+  // pass polygon parameters at string
+  declare_parameter("safety_polygon", rclcpp::ParameterValue(std::string("[]")));
+  declare_parameter("zone_action", rclcpp::ParameterValue(0.0));
+  declare_parameter("zone_priority", rclcpp::ParameterValue(1));
+  declare_parameter("zone_num_pts", rclcpp::ParameterValue(1));
+  declare_parameter("base_frame", rclcpp::ParameterValue(std::string("base_link")));
+}
 
-  SafetyZone::~SafetyZone()
-  {
-  }
+SafetyZone::~SafetyZone()
+{
+}
 
-  nav2_util::CallbackReturn
-  SafetyZone::on_configure(const rclcpp_lifecycle::State & /*state*/)
-  {
-    RCLCPP_INFO(logger_, "Configuring");
+nav2_util::CallbackReturn
+SafetyZone::on_configure(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(logger_, "Configuring");
 
-    auto node = shared_from_this();
-    // Getting all parameters
-    getParameters();
-      return nav2_util::CallbackReturn::SUCCESS;
-    }
+  auto node = shared_from_this();
+  // Getting all parameters
+  getParameters();
+  return nav2_util::CallbackReturn::SUCCESS;
+}
 
-  nav2_util::CallbackReturn
-  SafetyZone::on_activate(const rclcpp_lifecycle::State & /*state*/)
-  {
-    RCLCPP_INFO(logger_, "Activating");
-    // Create the publishers and subscribers
-    safety_polygon_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
-    "published_polygon", rclcpp::SystemDefaultsQoS());
-    // Laserscan subscriber
-    subscriber_ = create_subscription<sensor_msgs::msg::LaserScan>("laser_scan",
-                  rclcpp::SystemDefaultsQoS(),
-                  std::bind(&SafetyZone::timer_callback, this, std::placeholders::_1));
-      // Velocity publisher
-    publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+nav2_util::CallbackReturn
+SafetyZone::on_activate(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(logger_, "Activating");
+  // Create the publishers and subscribers
+  safety_polygon_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
+  "published_polygon", rclcpp::SystemDefaultsQoS());
+  // Laserscan subscriber
+  subscriber_ = create_subscription<sensor_msgs::msg::LaserScan>("laser_scan",
+            rclcpp::SystemDefaultsQoS(),
+            std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1));
+  // Velocity publisher
+  publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
 
-    // Timer -> 10hz
-    timer_ = create_wall_timer(
-      100ms, std::bind(&SafetyZone::timer_callback, this));
+  // Timer -> 10hz
+  timer_ = create_wall_timer(
+  100ms, std::bind(&SafetyZone::timer_callback, this));
 
-    return nav2_util::CallbackReturn::SUCCESS;
-  }
+  return nav2_util::CallbackReturn::SUCCESS;
+}
 
-  nav2_util::CallbackReturn
-  SafetyZone::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
-  {
-    RCLCPP_INFO(logger_, "Deactivating");
-    safety_polygon_pub_->on_deactivate();
+nav2_util::CallbackReturn
+SafetyZone::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(logger_, "Deactivating");
+  subscriber_.reset();
+  publisher_.reset();
+  safety_polygon_pub_.reset();
+  timer_.reset();
+  
+  return nav2_util::CallbackReturn::SUCCESS;
+}
 
-    return nav2_util::CallbackReturn::SUCCESS;
-  }
+nav2_util::CallbackReturn
+SafetyZone::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+{
+  RCLCPP_INFO(logger_, "Cleaning up");
+  return nav2_util::CallbackReturn::SUCCESS;
+}
 
-  nav2_util::CallbackReturn
-  SafetyZone::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
-  {
-    RCLCPP_INFO(logger_, "Cleaning up");
-    return nav2_util::CallbackReturn::SUCCESS;
-  }
-
-  nav2_util::CallbackReturn
-  SafetyZone::on_shutdown(const rclcpp_lifecycle::State &)
-  {
-    RCLCPP_INFO(logger_, "Shutting down");
-    return nav2_util::CallbackReturn::SUCCESS;
-  }
+nav2_util::CallbackReturn
+SafetyZone::on_shutdown(const rclcpp_lifecycle::State &)
+{
+  RCLCPP_INFO(logger_, "Shutting down");
+  return nav2_util::CallbackReturn::SUCCESS;
+}
 
   // Get Parameters
-  void
-  SafetyZone::getParameters()
-  {
-    RCLCPP_DEBUG(logger_, " getParameters");
+void
+SafetyZone::getParameters()
+{
+  RCLCPP_DEBUG(logger_, " getParameters");
 
-    // Get all of the required parameters
-    get_parameter("safety_polygon", safety_polygon_).as_string();
-    getparameter("zone_action", zone_action_)
-    getparameter("zone_priority", zone_priority_)
-    getparameter("zone_num_pts", zone_num_pts_)
-    get_parameter("base_frame", base_frame_);
+  // Get all of the required parameters
+  get_parameter("safety_polygon", safety_polygon_).as_string();
+  get_parameter("zone_action", zone_action_);
+  get_parameter("zone_priority", zone_priority_);
+  get_parameter("zone_num_pts", zone_num_pts_);
+  get_parameter("base_frame", base_frame_);
 
-    auto node = shared_from_this();
+  auto node = shared_from_this();
 
-    // If the safety_polygon has been specified, it must be in the correct format
-    if (safety_polygon_ != "" && safety_polygon_ != "[]") {
-      // Polygon parameter has been specified, polygon -> point vector
-      std::vector<geometry_msgs::msg::Point> new_polygon;
-      // parsing polygon parameters
-      if(getSafetyZonesFromString(safety_polygon_, new_polygon)){
-        // converting into point vector
-        toPointVector(new_polygon);
-      }else {
-        // Polygon provided but invalid, so stay with the radius
-        RCLCPP_ERROR(
-        logger_, "The safety_polygon is invalid: \"%s\" :) ",
-        safety_polygon_.c_str());
-        }
-    }
+  // If the safety_polygon has been specified, it must be in the correct format
+  if (safety_polygon_ != "" && safety_polygon_ != "[]") {
+    // Polygon parameter has been specified, polygon -> point vector(safety_zone)
+    std::vector<geometry_msgs::msg::Point> safety_zone_vector;
+    makeVectorPointsFromString(safety_polygon_, safety_zone);
+  }else {
+  // Polygon provided but invalid, so stay with the radius
+  RCLCPP_ERROR(
+  logger_, "The safety_polygon is invalid: \"%s\" :) ",
+  safety_polygon_.c_str());
   }
+}
 
-  // parsing polygon parameters
-  bool SafetyZone::getSafetyZonesFromString(
-  const std::string & safety_zone_str,
+// string of polygon points and returns a polygon vector
+bool
+SafetyZone::makeVectorPointsFromString(
+  const std::string & safety_polygon_,
   std::vector<geometry_msgs::msg::Point> & safety_zone)
-  {
-      std::string error;
-      std::vector<std::vector<float>> vvf = parseVVF(safety_zone_str, error);
+{
+  return nav2_util::makeVectorPointsFromString(safety_polygon_, safety_zone);
+}
 
-      if (error != "") {
-          RCLCPP_ERROR(
-          logger_, "Error parsing safety_zone : '%s'", error.c_str());
-          RCLCPP_ERROR(
-          logger_, "  Safety_zone string was '%s'.", safety_zone_str.c_str());
-          return false;
-      }
+void
+SafetyZone::laser_callback(
+  const sensor_msgs::msg::LaserScan::SharedPtr _msg)
+{
+  // project the laser into a point cloud
+  sensor_msgs::msg::PointCloud2 cloud;
+  cloud.header = _msg->header;
 
-      // convert vvf into points.
-      if (vvf.size() < 3) {
-          RCLCPP_ERROR(
-          logger_,
-          "You must specify at least three points for the robot safety_zone, reverting to previous safety_zone."); //NOLINT
-          return false;
-      }
-      safety_zone.reserve(vvf.size());
-      for (unsigned int i = 0; i < vvf.size(); i++) {
-          if (vvf[i].size() == 2) {
-          geometry_msgs::msg::Point point;
-          point.x = vvf[i][0];
-          point.y = vvf[i][1];
-          point.z = 0;
-          safety_zone.push_back(point);
-          } else {
-          RCLCPP_ERROR(
-              logger_,
-              "Points in the safety_zone specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT
-              static_cast<int>(vvf[i].size()));
-          return false;
-          }
-      }
-
-      return true;
+  // project the scan into a point cloud
+  try {
+    projector_.transformLaserScanToPointCloud(_msg->header.frame_id, *_msg, cloud, *tf_);
+  } catch (tf2::TransformException & ex) {
+    RCLCPP_WARN(
+      logger_,
+      "High fidelity enabled, but TF returned a transform exception to frame.");
+    projector_.projectLaser(*_msg, cloud);
   }
 
-  // function to convert polygon in vector of points
-  std::vector<geometry_msgs::msg::Point>
-      toPointVector(geometry_msgs::msg::Polygon::SharedPtr polygon)
-  {
-    std::vector<geometry_msgs::msg::Point> pts;
-    for (unsigned int i = 0; i < polygon->points.size(); i++) {
-      pts.push_back(toPoint(polygon->points[i]));
-    }
-    return pts;
-  }
+  sensor_msgs::msg::PointCloud2 base_frame_cloud;
+  tf2_ros::Buffer & tf2_buffer_;
 
-  // Parse a vector of vector of floats from a string.
-  std::vector<std::vector<float>> parseVVF(const std::string & input, std::string & error_return)
-  {
-    std::vector<std::vector<float>> result;
+  // transform the point cloud to base_frame
+  tf2_buffer_.transform(cloud, base_frame_cloud, base_frame_, tf_tolerance_);
+  base_frame_cloud.header.stamp = cloud.header.stamp;
+}
 
-    std::stringstream input_ss(input);
-    int depth = 0;
-    std::vector<float> current_vector;
-    while (!!input_ss && !input_ss.eof()) {
-      switch (input_ss.peek()) {
-        case EOF:
-          break;
-        case '[':
-          depth++;
-          if (depth > 2) {
-            error_return = "Array depth greater than 2";
-            return result;
-          }
-          input_ss.get();
-          current_vector.clear();
-          break;
-        case ']':
-          depth--;
-          if (depth < 0) {
-            error_return = "More close ] than open [";
-            return result;
-          }
-          input_ss.get();
-          if (depth == 1) {
-            result.push_back(current_vector);
-          }
-          break;
-        case ',':
-        case ' ':
-        case '\t':
-          input_ss.get();
-          break;
-        default:  // All other characters should be part of the numbers.
-          if (depth != 2) {
-            std::stringstream err_ss;
-            err_ss << "Numbers at depth other than 2. Char was '" << char(input_ss.peek()) << "'.";
-            error_return = err_ss.str();
-            return result;
-          }
-          float value;
-          input_ss >> value;
-          if (!!input_ss) {
-            current_vector.push_back(value);
-          }
-          break;
-      }
-    }
 
-    if (depth != 0) {
-      error_return = "Unterminated vector string.";
-    } else {
-      error_return = "";
-    }
-
-    return result;
-  }
 }  // namespace nav2_safety_nodes

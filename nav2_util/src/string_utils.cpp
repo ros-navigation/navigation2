@@ -116,43 +116,50 @@ std::vector<std::vector<float>> parseVVF(const std::string & input, std::string 
   return result;
 }
 
-
-
-/** @brief Parse a vector of vector of floats from a string & convert to vector of points. */
-std::vector<geometry_msgs::msg::Point> makeVectorPointsFromString(
-    const std::string & safety_zone_str,
-    std::vector<geometry_msgs::msg::Point> & safety_zone)
+/**
+ * @brief Make the vector from the given string.
+ * @param str_pts
+ * @param vector_pts
+ * Format should be bracketed array of arrays of floats, like so: [[1.0, 2.2], [3.3, 4.2], ...]
+ *
+ */
+bool makeVectorPointsFromString(
+    const std::string & str_pts,
+    std::vector<geometry_msgs::msg::Point> & vector_pts)
 {
   std::string error;
-  std::vector<std::vector<float>> vvf = parseVVF(safety_zone_str, error);
+  std::vector<std::vector<float>> vvf = parseVVF(str_pts, error);
   if (error != "") {
         RCLCPP_ERROR(
-        logger_, "Error parsing safety_zone : '%s'", error.c_str());
+        logger_, "Error parsing string : '%s'", error.c_str());
         RCLCPP_ERROR(
-        logger_, "  Safety_zone string was '%s'.", safety_zone_str.c_str());
+        logger_, "string was '%s'.", str_pts.c_str());
+        return false;
     }
   // convert vvf into points.
   if (vvf.size() < 3) {
       RCLCPP_ERROR(
       logger_,
-      "You must specify at least three points for the robot safety_zone, reverting to previous safety_zone."); //NOLINT
+      "You must specify at least three points in string, reverting to previous string."); //NOLINT
+      return false;
   }
-  safety_zone.reserve(vvf.size());
+  vector_pts.reserve(vvf.size());
   for (unsigned int i = 0; i < vvf.size(); i++) {
       if (vvf[i].size() == 2) {
       geometry_msgs::msg::Point point;
       point.x = vvf[i][0];
       point.y = vvf[i][1];
       point.z = 0;
-      safety_zone.push_back(point);
+        vector_pts.push_back(point);
       } else {
       RCLCPP_ERROR(
           logger_,
-          "Points in the safety_zone specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT
+          "Points in the string specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT
           static_cast<int>(vvf[i].size()));
+          return false;
       }
   }
-  return safety_zone;
+  return true;
 }
 
 

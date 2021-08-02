@@ -6,11 +6,18 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp/time.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_sensor_msgs/tf2_sensor_msgs.h"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "laser_geometry/laser_geometry.hpp"
 #include "geometry_msgs/msg/polygon.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/string_utils.hpp"
 
 namespace nav2_safety_nodes
 {
@@ -66,34 +73,31 @@ public:
        * @return True if the pose was set successfully, false otherwise
        */
     bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose);
-
-    /**
-     * @brief Convert Polygon msg to vector of Points.
-     */
-    std::vector<geometry_msgs::msg::Point>
-      toPointVector(geometry_msgs::msg::Polygon::SharedPtr polygon);
-
-    /** @brief Parse a vector of vector of floats from a string.
-     * @param input
-     * @param error_return
-     * Syntax is [[1.0, 2.0], [3.3, 4.4, 5.5], ...] */
-    std::vector<std::vector<float>> 
-      parseVVF(const std::string & input, std::string & error_return);
-
-    /**
-     * @brief Make the safety_zone from the given string.
-     *
-     * Format should be bracketed array of arrays of floats, like so: [[1.0, 2.2], [3.3, 4.2], ...]
-     *
-     */
-    bool getSafetyZonesFromString(
-      const std::string & safety_zone_str,
-      std::vector<geometry_msgs::msg::Point> & safety_zone);
+    
+    // /**
+    //  * @brief Make the safety_zone from the given string.
+    //  *
+    //  * Format should be bracketed array of arrays of floats, like so: [[1.0, 2.2], [3.3, 4.2], ...]
+    //  *
+    //  */
+    // bool makeVectorPointsFromString(
+    //   const std::string & safety_polygon_, 
+    //   std::vector<geometry_msgs::msg::Point> & safety_zone);
 
     /**
      * @brief Action server callbacks
      */
     void timer_callback(const sensor_msgs::msg::LaserScan::SharedPtr _msg);
+
+    /**
+     * @brief  A callback to handle buffering LaserScan messages
+     * @param message The message returned from a message notifier
+     */
+    void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr _msg);
+
+    // The Logger object for logging
+    rclcpp::Logger logger_{rclcpp::get_logger("nav2_safety_nodes")};
+  
 protected:
     rclcpp::Node::SharedPtr client_node_;
     // Publishers and subscribers
@@ -112,6 +116,13 @@ protected:
     int zone_priority_{0};
     int zone_num_pts_{0};
     std::string base_frame_;   ///< The frame_id of the robot base
+    
+    // derived parameters 
+    tf2::Duration tf_tolerance_;
+    tf2_ros::Buffer & tf2_buffer_;
+
+  /// @brief Used to project laser scans into point clouds
+    laser_geometry::LaserProjection projector_;
 }
 
 }  // end namespace nav2_safety_nodes
