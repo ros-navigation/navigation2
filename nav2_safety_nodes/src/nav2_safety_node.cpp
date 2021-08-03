@@ -19,7 +19,7 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.h"
 #include "sensor_msgs/msg/point_cloud2.hpp"
-
+#include "laser_geometry/laser_geometry.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/string_utils.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -27,7 +27,8 @@
 
 using namespace std::chrono_literals;
 
-namespace nav2_safety_nodes{
+namespace nav2_safety_nodes
+{
 
 SafetyZone::SafetyZone()
 : nav2_util::LifecycleNode("SafetyZone", "", true, rclcpp::NodeOptions().arguments())
@@ -64,17 +65,23 @@ SafetyZone::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(logger_, "Activating");
   // Create the publishers and subscribers
   safety_polygon_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
-  "published_polygon", rclcpp::SystemDefaultsQoS());
+    "published_polygon", rclcpp::SystemDefaultsQoS());
   // Laserscan subscriber
-  subscriber_ = create_subscription<sensor_msgs::msg::LaserScan>("laser_scan",
-            rclcpp::SystemDefaultsQoS(),
-            std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1));
+  subscriber_ = create_subscription<sensor_msgs::msg::LaserScan>(
+    "laser_scan",
+    rclcpp::SystemDefaultsQoS(),
+    std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1));
   // Velocity publisher
   publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
 
   // Timer -> 10hz
   timer_ = create_wall_timer(
-  100ms, std::bind(&SafetyZone::timer_callback, this));
+    100ms, std::bind(&SafetyZone::timer_callback, this));
+
+  rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr safety_polygon_pub_;
+  rclcpp::Subscriber<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -83,11 +90,10 @@ nav2_util::CallbackReturn
 SafetyZone::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(logger_, "Deactivating");
-  subscriber_.reset();
-  publisher_.reset();
-  safety_polygon_pub_.reset();
-  timer_.reset();
-  
+  subscriber_->on_deactivate();
+  publisher_->on_deactivate();
+  safety_polygon_pub_->on_deactivate();
+  timer_->on_deactivate();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -95,6 +101,11 @@ nav2_util::CallbackReturn
 SafetyZone::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(logger_, "Cleaning up");
+  subscriber_.reset();
+  publisher_.reset();
+  safety_polygon_pub_.reset();
+  tf_buffer_.reset();
+  timer_.reset();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -105,7 +116,7 @@ SafetyZone::on_shutdown(const rclcpp_lifecycle::State &)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-  // Get Parameters
+// Get Parameters
 void
 SafetyZone::getParameters()
 {
@@ -125,11 +136,11 @@ SafetyZone::getParameters()
     // Polygon parameter has been specified, polygon -> point vector(safety_zone)
     std::vector<geometry_msgs::msg::Point> safety_zone_vector;
     makeVectorPointsFromString(safety_polygon_, safety_zone);
-  }else {
-  // Polygon provided but invalid, so stay with the radius
-  RCLCPP_ERROR(
-  logger_, "The safety_polygon is invalid: \"%s\" :) ",
-  safety_polygon_.c_str());
+  } else {
+    // Polygon provided but invalid, so stay with the radius
+    RCLCPP_ERROR(
+      logger_, "The safety_polygon is invalid: \"%s\" :) ",
+      safety_polygon_.c_str());
   }
 }
 
@@ -166,6 +177,13 @@ SafetyZone::laser_callback(
   // transform the point cloud to base_frame
   tf2_buffer_.transform(cloud, base_frame_cloud, base_frame_, tf_tolerance_);
   base_frame_cloud.header.stamp = cloud.header.stamp;
+}
+
+void
+SafetyZone::timer_callback(
+  const sensor_msgs::msg::LaserScan::SharedPtr _msg)
+{
+  // Timer Call back
 }
 
 

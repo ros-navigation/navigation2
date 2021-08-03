@@ -15,7 +15,7 @@
 #ifndef NAV2_UTIL__STRING_UTILS_HPP_
 #define NAV2_UTIL__STRING_UTILS_HPP_
 
-#include "geometry_msgs/msg/point32.hpp"
+#include "geometry_msgs/msg/point.hpp"
 
 #include <string>
 #include <vector>

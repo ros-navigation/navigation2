@@ -123,7 +123,7 @@ protected:
 
   /// @brief Used to project laser scans into point clouds
     laser_geometry::LaserProjection projector_;
-}
+};
 
 }  // end namespace nav2_safety_nodes
 

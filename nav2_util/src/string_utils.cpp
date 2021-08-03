@@ -13,7 +13,8 @@
 // limitations under the License.
 
 #include "nav2_util/string_utils.hpp"
-#include "geometry_msgs/msg/point32.hpp"
+#include "geometry_msgs/msg/point.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 #include <cstdio>  // for EOF
 #include <string>
@@ -131,15 +132,15 @@ bool makeVectorPointsFromString(
   std::vector<std::vector<float>> vvf = parseVVF(str_pts, error);
   if (error != "") {
         RCLCPP_ERROR(
-        logger_, "Error parsing string : '%s'", error.c_str());
+        rclcpp::get_logger(""), "Error parsing string : '%s'", error.c_str());
         RCLCPP_ERROR(
-        logger_, "string was '%s'.", str_pts.c_str());
+        rclcpp::get_logger(""), "string was '%s'.", str_pts.c_str());
         return false;
     }
   // convert vvf into points.
   if (vvf.size() < 3) {
       RCLCPP_ERROR(
-      logger_,
+      rclcpp::get_logger(""),
       "You must specify at least three points in string, reverting to previous string."); //NOLINT
       return false;
   }
@@ -153,7 +154,7 @@ bool makeVectorPointsFromString(
         vector_pts.push_back(point);
       } else {
       RCLCPP_ERROR(
-          logger_,
+          rclcpp::get_logger(""),
           "Points in the string specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT
           static_cast<int>(vvf[i].size()));
           return false;
