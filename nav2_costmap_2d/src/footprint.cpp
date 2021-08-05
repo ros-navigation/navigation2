@@ -34,7 +34,7 @@
 #include <vector>
 
 #include "geometry_msgs/msg/point32.hpp"
-#include "nav2_costmap_2d/array_parser.hpp"
+#include "nav2_util/string_utils.hpp"
 #include "nav2_costmap_2d/costmap_math.hpp"
 
 namespace nav2_costmap_2d
@@ -174,46 +174,7 @@ bool makeFootprintFromString(
   const std::string & footprint_string,
   std::vector<geometry_msgs::msg::Point> & footprint)
 {
-  std::string error;
-  std::vector<std::vector<float>> vvf = parseVVF(footprint_string, error);
-
-  if (error != "") {
-    RCLCPP_ERROR(
-      rclcpp::get_logger(
-        "nav2_costmap_2d"), "Error parsing footprint parameter: '%s'", error.c_str());
-    RCLCPP_ERROR(
-      rclcpp::get_logger(
-        "nav2_costmap_2d"), "  Footprint string was '%s'.", footprint_string.c_str());
-    return false;
-  }
-
-  // convert vvf into points.
-  if (vvf.size() < 3) {
-    RCLCPP_ERROR(
-      rclcpp::get_logger(
-        "nav2_costmap_2d"),
-      "You must specify at least three points for the robot footprint, reverting to previous footprint."); //NOLINT
-    return false;
-  }
-  footprint.reserve(vvf.size());
-  for (unsigned int i = 0; i < vvf.size(); i++) {
-    if (vvf[i].size() == 2) {
-      geometry_msgs::msg::Point point;
-      point.x = vvf[i][0];
-      point.y = vvf[i][1];
-      point.z = 0;
-      footprint.push_back(point);
-    } else {
-      RCLCPP_ERROR(
-        rclcpp::get_logger(
-          "nav2_costmap_2d"),
-        "Points in the footprint specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT
-        static_cast<int>(vvf[i].size()));
-      return false;
-    }
-  }
-
-  return true;
+  return nav2_util::makeVectorPointsFromString(footprint_string, footprint);
 }
 
 }  // end namespace nav2_costmap_2d
