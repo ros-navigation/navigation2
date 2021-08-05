@@ -1,6 +1,6 @@
 #include <memory>
 
-#include "nav2_safety_nodes/safety_node.hpp"
+#include "nav2_safety_nodes/nav2_safety_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)

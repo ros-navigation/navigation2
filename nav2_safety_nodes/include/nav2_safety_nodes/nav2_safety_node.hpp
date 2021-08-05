@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <queue>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
@@ -80,14 +81,14 @@ public:
     //  * Format should be bracketed array of arrays of floats, like so: [[1.0, 2.2], [3.3, 4.2], ...]
     //  *
     //  */
-    // bool makeVectorPointsFromString(
-    //   const std::string & safety_polygon_, 
-    //   std::vector<geometry_msgs::msg::Point> & safety_zone);
+    bool makeVectorPointsFromString(
+      const std::string & safety_polygon_,
+      std::vector<geometry_msgs::msg::Point> & safety_zone);
 
     /**
      * @brief Action server callbacks
      */
-    void timer_callback(const sensor_msgs::msg::LaserScan::SharedPtr _msg);
+    void timer_callback();
 
     /**
      * @brief  A callback to handle buffering LaserScan messages
@@ -107,6 +108,7 @@ protected:
                       safety_polygon_pub_;
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
+
     /**
      * @brief Get parameters for node
      */
@@ -117,12 +119,17 @@ protected:
     int zone_num_pts_{0};
     std::string base_frame_;   ///< The frame_id of the robot base
     
+    // queue of transformed pointclouds
+    std::queue<unsigned int> queue_of_pointclouds;
+
     // derived parameters 
     tf2::Duration tf_tolerance_;
     tf2_ros::Buffer & tf2_buffer_;
+    tf2_ros::Buffer * tf_;
 
   /// @brief Used to project laser scans into point clouds
     laser_geometry::LaserProjection projector_;
+
 };
 
 }  // end namespace nav2_safety_nodes

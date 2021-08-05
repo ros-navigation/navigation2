@@ -22,12 +22,20 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
 
-add_library(nav2_safety_nodes_core SHARED
-  src/nav2_safety_node.cpp
+nav2_package()
+
+link_libraries(stdc++fs)
+
+include_directories(
+  include
 )
 
+# add_library(nav2_safety_nodes_core SHARED
+#   src/nav2_safety_node.cpp
+# )
+
 # prevent pluginlib from using boost
-target_compile_definitions(nav2_safety_nodes_core PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+# target_compile_definitions(nav2_safety_nodes_core PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 set(dependencies
   rclcpp
@@ -45,20 +53,19 @@ set(dependencies
 )
 
 
-ament_target_dependencies(nav2_safety_nodes_core 
-  ${dependencies}
-)
+# ament_target_dependencies(nav2_safety_nodes_core 
+#   ${dependencies}
+# )
 
-add_executable(safety_node src/nav2_safety_node.cpp)
-target_link_libraries(safety_node
-  nav2_safety_nodes_core
-)
-ament_target_dependencies(safety_node
-  ${dependencies}
-)
+add_executable(nav2_safety_node src/nav2_safety_node.cpp)
+ament_target_dependencies(nav2_safety_node ${dependencies})
+
+# target_link_libraries(nav2_safety_node
+#   nav2_safety_nodes_core
+# )
 
 install(TARGETS
-  safety_node
+  nav2_safety_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -80,6 +87,6 @@ endif()
 
 
 ament_export_include_directories(include)
-ament_export_libraries(nav2_safety_nodes_core)
+# ament_export_libraries(nav2_safety_nodes_core)
 ament_export_dependencies(${dependencies})
 ament_package()
