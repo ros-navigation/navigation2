@@ -155,6 +155,8 @@ SafetyZone::makeVectorPointsFromString(
   return nav2_util::makeVectorPointsFromString(safety_polygon_, safety_zone);
 }
 
+std::queue<unsigned int> queue_of_pointclouds;
+
 void
 SafetyZone::laser_callback(
   const sensor_msgs::msg::LaserScan::SharedPtr _msg)
@@ -180,15 +182,18 @@ SafetyZone::laser_callback(
   tf2_buffer_.transform(cloud, base_frame_cloud, base_frame_, tf_tolerance_);
   base_frame_cloud.header.stamp = cloud.header.stamp;
 
+  
+  
   queue_of_pointclouds.push({base_frame_cloud})
 
 }
 
 void
-SafetyZone::timer_callback(
-)
+SafetyZone::timer_callback()
 {
-  // Timer Call back
+  while (!queue_of_pointclouds.empty()){
+
+  }
 }
 
 
