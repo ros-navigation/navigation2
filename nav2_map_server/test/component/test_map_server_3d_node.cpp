@@ -169,5 +169,7 @@ TEST_F(MapServer3DTestFixture, LoadMapNull3D)
   RCLCPP_INFO(node_->get_logger(), "Sending load_map request with null file name");
   auto resp = send_request<nav2_msgs::srv::LoadMap3D>(node_, client, req);
 
-  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap3D::Response::RESULT_MAP_DOES_NOT_EXIST);
+  ASSERT_EQ(
+    resp->result,
+    nav2_msgs::srv::LoadMap3D::Response::RESULT_INVALID_MAP_METADATA);
 }

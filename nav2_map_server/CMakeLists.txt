@@ -22,6 +22,8 @@ find_package(PCL REQUIRED common io)
 
 nav2_package()
 
+add_definitions( -DMAP_SERVER_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")
+
 include_directories(include ${PCL_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
 
 set(map_server_executable map_server)

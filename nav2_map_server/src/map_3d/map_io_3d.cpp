@@ -35,6 +35,8 @@
 
 #include "pcl_ros/transforms.hpp"
 
+#define SRC_DIR MAP_SERVER_DIR
+
 #ifdef _WIN32
 // https://github.com/rtv/Stage/blob/master/replace/dirname.c
 static
@@ -100,8 +102,15 @@ T yaml_get_value(const YAML::Node & node, const std::string & key)
 LoadParameters loadMapYaml(const std::string & yaml_filename)
 {
   std::cout << "loading the yaml file";
+  std::string yaml_file_local = yaml_filename;
 
-  YAML::Node doc = YAML::LoadFile(yaml_filename);
+  if (yaml_file_local[0] != '/') {
+    // dirname takes a mutable char *, so we copy into a vector
+    yaml_file_local =
+      std::string(SRC_DIR) + '/' + yaml_file_local;
+  }
+
+  YAML::Node doc = YAML::LoadFile(yaml_file_local);
   LoadParameters load_parameters;
 
   std::string pcd_file_name(yaml_get_value<std::string>(doc, "pcd"));
@@ -113,10 +122,8 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
 
   if (pcd_file_name[0] != '/') {
     // dirname takes a mutable char *, so we copy into a vector
-    std::vector<char> fname_copy(yaml_filename.begin(), yaml_filename.end());
-    fname_copy.push_back('\0');
     load_parameters.pcd_file_name =
-      std::string(dirname(fname_copy.data())) + '/' + pcd_file_name;
+      std::string(SRC_DIR) + '/' + pcd_file_name;
   } else {
     load_parameters.pcd_file_name = pcd_file_name;
   }
@@ -217,10 +224,10 @@ void loadMapFromFile(
   if (load_parameters.orientation_from_pcd) {
     load_parameters_tmp.origin.setRotation(
       tf2::Quaternion(
-        orientation.w(),
         orientation.x(),
         orientation.y(),
-        orientation.z()));
+        orientation.z(),
+        orientation.w()));
   }
 
   pcl_ros::transformPointCloud("random", load_parameters_tmp.origin, map, map2);
@@ -345,7 +352,7 @@ void tryWriteMapToFile(
     emitter << YAML::Key << "position" << YAML::Flow << YAML::BeginSeq <<
       0 << 0 << 0 << YAML::EndSeq;
     emitter << YAML::Key << "orientation" << YAML::Flow << YAML::BeginSeq <<
-      1 << 0 << 0 << 0 << YAML::EndSeq;
+      0 << 0 << 0 << 1 << YAML::EndSeq;
 
     emitter << YAML::Key << "file_format" << YAML::Value << save_parameters.format;
     emitter << YAML::Key << "as_binary" << YAML::Value << save_parameters.as_binary;

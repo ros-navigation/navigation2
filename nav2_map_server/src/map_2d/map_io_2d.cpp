@@ -48,6 +48,8 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "nav2_util/occ_grid_values.hpp"
 
+#define SRC_DIR MAP_SERVER_DIR
+
 #ifdef _WIN32
 // https://github.com/rtv/Stage/blob/master/replace/dirname.c
 static
@@ -122,10 +124,7 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
     throw YAML::Exception(doc["image"].Mark(), "The image tag was empty.");
   }
   if (image_file_name[0] != '/') {
-    // dirname takes a mutable char *, so we copy into a vector
-    std::vector<char> fname_copy(yaml_filename.begin(), yaml_filename.end());
-    fname_copy.push_back('\0');
-    image_file_name = std::string(dirname(fname_copy.data())) + '/' + image_file_name;
+    image_file_name = std::string(SRC_DIR) + '/' + image_file_name;
   }
   load_parameters.image_file_name = image_file_name;
 
