@@ -65,10 +65,10 @@ protected:
       tf2Scalar(0));
     // Orientation
     tf2::Quaternion rotation = tf2::Quaternion(
-      tf2Scalar(1),
       tf2Scalar(0),
       tf2Scalar(0),
-      tf2Scalar(0));
+      tf2Scalar(0),
+      tf2Scalar(1));
     // Transform
     load_parameters.origin = tf2::Transform(rotation, translation);
   }

@@ -78,7 +78,15 @@ T yaml_get_value(const YAML::Node & node, const std::string & key)
 
 LoadParameters loadMapYaml(const std::string & yaml_filename)
 {
-  YAML::Node doc = YAML::LoadFile(yaml_filename);
+  std::cout << "loading the yaml file";
+  std::string yaml_file_local = yaml_filename;
+
+  if (yaml_file_local[0] != '/') {
+    // dirname takes a mutable char *, so we copy into a vector
+    yaml_file_local = std::string(SRC_DIR) + '/' + yaml_file_local;
+  }
+
+  YAML::Node doc = YAML::LoadFile(yaml_file_local);
   LoadParameters load_parameters;
 
   auto image_file_name = yaml_get_value<std::string>(doc, "image");
