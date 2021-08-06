@@ -50,44 +50,6 @@
 
 #define SRC_DIR MAP_SERVER_DIR
 
-#ifdef _WIN32
-// https://github.com/rtv/Stage/blob/master/replace/dirname.c
-static
-char * dirname(char * path)
-{
-  static const char dot[] = ".";
-  char * last_slash;
-
-  if (path == NULL) {
-    return path;
-  }
-
-  /* Find last '/'.  */
-  last_slash = path != NULL ? strrchr(path, '/') : NULL;
-
-  if (last_slash != NULL && last_slash == path) {
-    /* The last slash is the first character in the string.  We have to
-       return "/".  */
-    ++last_slash;
-  } else if (last_slash != NULL && last_slash[1] == '\0') {
-    /* The '/' is the last character, we have to look further.  */
-    last_slash = reinterpret_cast<char *>(memchr(path, last_slash - path, '/'));
-  }
-
-  if (last_slash != NULL) {
-    /* Terminate the path.  */
-    last_slash[0] = '\0';
-  } else {
-    /* This assignment is ill-designed but the XPG specs require to
-       return a string containing "." in any case no directory part is
-       found and so a static and constant string is required.  */
-    path = reinterpret_cast<char *>(dot);
-  }
-
-  return path;
-}
-#endif
-
 namespace nav2_map_server
 {
 
