@@ -52,21 +52,20 @@ set(dependencies
   tf2_sensor_msgs
 )
 
-
-# ament_target_dependencies(nav2_safety_nodes_core 
-#   ${dependencies}
-# )
-
 add_executable(nav2_safety_node src/nav2_safety_node.cpp)
-ament_target_dependencies(nav2_safety_node ${dependencies})
-
-# target_link_libraries(nav2_safety_node
-#   nav2_safety_nodes_core
-# )
+ament_target_dependencies(nav2_safety_node 
+  ${dependencies}
+  )
 
 install(TARGETS
   nav2_safety_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+# Install launch files.
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
 )
 
 install(DIRECTORY include/

@@ -6,27 +6,26 @@
 #include <vector>
 #include <queue>
 
+#include "message_filters/subscriber.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.h"
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "laser_geometry/laser_geometry.hpp"
-#include "geometry_msgs/msg/polygon.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
-#include "geometry_msgs/msg/point32.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/string_utils.hpp"
 
 namespace nav2_safety_nodes
 {
-
+typedef tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> MessageFilter;
 class SafetyZone : public nav2_util::LifecycleNode
 {
 public:
@@ -92,6 +91,8 @@ public:
     rclcpp::Logger logger_{rclcpp::get_logger("nav2_safety_nodes")};
 
 protected:
+    // The local node
+    rclcpp::Node::SharedPtr rclcpp_node_;
     /**
      * @brief Get parameters for node
      */
@@ -102,33 +103,29 @@ protected:
     int zone_num_pts_{0};
     std::string base_frame_;   ///< The frame_id of the robot base
     double tf_tolerance_{};
-
+    int input_queue_size_{0};
     /**
      * @brief Initialize required ROS transformations
      */
-    std::unique_ptr<tf2_ros::Buffer> tf2_;
-    std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
+    void initTransforms();
+    std::shared_ptr<tf2_ros::Buffer> tf2_;
+    std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
+    // Used to project laser scans into point clouds
+    laser_geometry::LaserProjection projector_;
+    
      // Publishers and subscribers
     /*
      * @brief Initialize pub subs of SafetyZone
      */
     void initPubSub();
-    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr 
+    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
       safety_polygon_pub_;
+    rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_pub_;
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
     rclcpp::TimerBase::SharedPtr timer_;
     
-    // Transforms
-    /*
-     * @brief Initialize required ROS transformations
-     */
-    void initTransforms();
-    std::shared_ptr<tf2_ros::Buffer> tf_;
-    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-
     /**
      * @brief Action server callbacks
      */
@@ -140,9 +137,7 @@ protected:
      */
     void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr message);
 
-  /// @brief Used to project laser scans into point clouds
-    laser_geometry::LaserProjection projector_;
-
+    void subscriptionListenerThreadLoop();
 };
 
 }  // end namespace nav2_safety_nodes
