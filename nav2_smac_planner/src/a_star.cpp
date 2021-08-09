@@ -329,7 +329,7 @@ bool AStarAlgorithm<Node2D>::backtracePath(NodePtr node, CoordinateVector & path
     current_node = current_node->parent;
   }
 
-  return path.size() > 1;
+  return path.size() > 0;
 }
 
 template<typename NodeT>
@@ -346,7 +346,7 @@ bool AStarAlgorithm<NodeT>::backtracePath(NodePtr node, CoordinateVector & path)
     current_node = current_node->parent;
   }
 
-  return path.size() > 1;
+  return path.size() > 0;
 }
 
 template<typename NodeT>
