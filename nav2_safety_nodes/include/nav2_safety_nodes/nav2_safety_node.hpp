@@ -6,12 +6,9 @@
 #include <vector>
 #include <queue>
 
-#include "message_filters/subscriber.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/buffer.h"
-#include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.h"
@@ -25,7 +22,6 @@
 
 namespace nav2_safety_nodes
 {
-typedef tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> MessageFilter;
 class SafetyZone : public nav2_util::LifecycleNode
 {
 public:
@@ -103,7 +99,6 @@ protected:
     int zone_num_pts_{0};
     std::string base_frame_;   ///< The frame_id of the robot base
     double tf_tolerance_{};
-    int input_queue_size_{0};
     /**
      * @brief Initialize required ROS transformations
      */

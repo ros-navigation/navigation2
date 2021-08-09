@@ -20,7 +20,6 @@
 #include "rclcpp/time.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2/convert.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.h"
@@ -52,13 +51,6 @@ SafetyZone::SafetyZone()
   declare_parameter("zone_num_pts", rclcpp::ParameterValue(1));
   declare_parameter("base_frame", rclcpp::ParameterValue(std::string("base_link")));
   declare_parameter("tf_tolerance", rclcpp::ParameterValue(0.01));
-  declare_parameter("queue_size", rclcpp::ParameterValue(static_cast<int>(std::thread::hardware_concurrency())));
-
-  tf2_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    this->get_node_base_interface(), this->get_node_timers_interface());
-  tf2_->setCreateTimerInterface(timer_interface);
-  tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_);
 }
 
 SafetyZone::~SafetyZone()
@@ -120,7 +112,6 @@ SafetyZone::getParameters()
   zone_num_pts_ = get_parameter("zone_num_pts").as_int();
   base_frame_ = get_parameter("base_frame").as_string();
   tf_tolerance_ = get_parameter("tf_tolerance").as_double();
-  input_queue_size_ = get_parameter("queue_size").as_int();
 
   // If the safety_polygon has been specified, it must be in the correct format
   if (safety_polygon_ != "" && safety_polygon_ != "[]") {
@@ -156,7 +147,7 @@ SafetyZone::initPubSub()
   // Create the publishers and subscribers
   safety_polygon_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
     "published_polygon", rclcpp::SystemDefaultsQoS());
-  // Pointcloud publisher  
+  // Pointcloud publisher
   point_cloud_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>(
     "cloud", rclcpp::SensorDataQoS());
   // Laserscan subscriber
@@ -188,7 +179,6 @@ SafetyZone::laser_callback(
   // project the laser into a point cloud
   auto cloud_msg = std::make_unique<sensor_msgs::msg::PointCloud2>();
   projector_.projectLaser(*message, *cloud_msg);
-  
   // Transform cloud if necessary
   if (!base_frame_.empty() && cloud_msg->header.frame_id != base_frame_) {
     try {
