@@ -10,7 +10,11 @@
 #include "rclcpp/time.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/create_timer_ros.h"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.h"
+
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "laser_geometry/laser_geometry.hpp"
 #include "geometry_msgs/msg/polygon.hpp"
@@ -74,7 +78,6 @@ public:
        * @return True if the pose was set successfully, false otherwise
        */
     bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose);
-    
     // /**
     //  * @brief Make the safety_zone from the given string.
     //  *
@@ -85,30 +88,10 @@ public:
       const std::string & safety_polygon_,
       std::vector<geometry_msgs::msg::Point> & safety_zone);
 
-    /**
-     * @brief Action server callbacks
-     */
-    void timer_callback();
-
-    /**
-     * @brief  A callback to handle buffering LaserScan messages
-     * @param message The message returned from a message notifier
-     */
-    void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr _msg);
-
     // The Logger object for logging
     rclcpp::Logger logger_{rclcpp::get_logger("nav2_safety_nodes")};
-  
+
 protected:
-    rclcpp::Node::SharedPtr client_node_;
-    // Publishers and subscribers
-    rclcpp::TimerBase::SharedPtr timer_;
-
-    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
-                      safety_polygon_pub_;
-    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
-    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
-
     /**
      * @brief Get parameters for node
      */
@@ -118,14 +101,44 @@ protected:
     int zone_priority_{0};
     int zone_num_pts_{0};
     std::string base_frame_;   ///< The frame_id of the robot base
-    
-    // queue of transformed pointclouds
-    std::queue<unsigned int> queue_of_pointclouds;
+    double tf_tolerance_{};
 
-    // derived parameters 
-    tf2::Duration tf_tolerance_;
-    tf2_ros::Buffer & tf2_buffer_;
-    tf2_ros::Buffer * tf_;
+    /**
+     * @brief Initialize required ROS transformations
+     */
+    std::unique_ptr<tf2_ros::Buffer> tf2_;
+    std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
+
+     // Publishers and subscribers
+    /*
+     * @brief Initialize pub subs of SafetyZone
+     */
+    void initPubSub();
+    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr 
+      safety_polygon_pub_;
+    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
+    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
+    rclcpp::TimerBase::SharedPtr timer_;
+    
+    // Transforms
+    /*
+     * @brief Initialize required ROS transformations
+     */
+    void initTransforms();
+    std::shared_ptr<tf2_ros::Buffer> tf_;
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+    /**
+     * @brief Action server callbacks
+     */
+    void timer_callback();
+
+    /**
+     * @brief  A callback to handle buffering LaserScan messages
+     * @param message The message returned from a message notifier
+     */
+    void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr message);
 
   /// @brief Used to project laser scans into point clouds
     laser_geometry::LaserProjection projector_;

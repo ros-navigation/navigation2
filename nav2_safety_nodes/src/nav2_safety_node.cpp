@@ -15,7 +15,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/point32.hpp"
-
+#include "tf2_ros/transform_listener.h"
+#include "nav2_util/lifecycle_node.hpp"
 #include "rclcpp/time.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
@@ -47,6 +48,13 @@ SafetyZone::SafetyZone()
   declare_parameter("zone_priority", rclcpp::ParameterValue(1));
   declare_parameter("zone_num_pts", rclcpp::ParameterValue(1));
   declare_parameter("base_frame", rclcpp::ParameterValue(std::string("base_link")));
+  declare_parameter("tf_tolerance", rclcpp::ParameterValue(0.01));
+
+  tf2_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+    this->get_node_base_interface(), this->get_node_timers_interface());
+  tf2_->setCreateTimerInterface(timer_interface);
+  tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_);
 }
 
 SafetyZone::~SafetyZone()
@@ -57,9 +65,6 @@ nav2_util::CallbackReturn
 SafetyZone::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(logger_, "Configuring");
-
-  auto node = shared_from_this();
-  // Getting all parameters
   getParameters();
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -68,26 +73,7 @@ nav2_util::CallbackReturn
 SafetyZone::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(logger_, "Activating");
-  // Create the publishers and subscribers
-  safety_polygon_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
-    "published_polygon", rclcpp::SystemDefaultsQoS());
-  // Laserscan subscriber
-  subscriber_ = create_subscription<sensor_msgs::msg::LaserScan>(
-    "laser_scan",
-    rclcpp::SystemDefaultsQoS(),
-    std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1));
-  // Velocity publisher
-  publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", rclcpp::SystemDefaultsQoS());
-
-  // Timer -> 10hzs
-  timer_ = create_wall_timer(
-    100ms, std::bind(&SafetyZone::timer_callback, this));
-
-  rclcpp::TimerBase::SharedPtr timer_;
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
-  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr safety_polygon_pub_;
-  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
-
+  initPubSub();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -95,8 +81,6 @@ nav2_util::CallbackReturn
 SafetyZone::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(logger_, "Deactivating");
-  publisher_->on_deactivate();
-  safety_polygon_pub_->on_deactivate();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -130,8 +114,7 @@ SafetyZone::getParameters()
   zone_priority_ = get_parameter("zone_priority").as_int();
   zone_num_pts_ = get_parameter("zone_num_pts").as_int();
   base_frame_ = get_parameter("base_frame").as_string();
-
-  auto node = shared_from_this();
+  tf_tolerance_ = get_parameter("tf_tolerance").as_double();
 
   // If the safety_polygon has been specified, it must be in the correct format
   if (safety_polygon_ != "" && safety_polygon_ != "[]") {
@@ -146,6 +129,42 @@ SafetyZone::getParameters()
   }
 }
 
+// Publishers and subscribers
+void 
+SafetyZone::initPubSub()
+{
+  RCLCPP_INFO(logger_, "initPubSub");
+  // Create the publishers and subscribers
+  safety_polygon_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
+    "published_polygon", rclcpp::SystemDefaultsQoS());
+  // Laserscan subscriber
+  subscriber_ = create_subscription<sensor_msgs::msg::LaserScan>(
+    "laser_scan", rclcpp::SystemDefaultsQoS(),
+    std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1));
+  // Velocity publisher
+  publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", rclcpp::SystemDefaultsQoS());
+  // Timer -> 10hzs
+  timer_ = create_wall_timer(
+    100ms, std::bind(&SafetyZone::timer_callback, this));
+
+  RCLCPP_INFO(logger_, "Subscribed to laser topic.");
+}
+
+void
+SafetyZone::initTransforms()
+{
+  RCLCPP_INFO(get_logger(), "initTransforms");
+
+  // Initialize transform listener and broadcaster
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+    this->get_node_base_interface(),
+    this->get_node_timers_interface());
+  tf_buffer_->setCreateTimerInterface(timer_interface);
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+}
+
+
 // string of polygon points and returns a polygon vector
 bool
 SafetyZone::makeVectorPointsFromString(
@@ -155,45 +174,37 @@ SafetyZone::makeVectorPointsFromString(
   return nav2_util::makeVectorPointsFromString(safety_polygon_, safety_zone);
 }
 
-std::queue<unsigned int> queue_of_pointclouds;
-
 void
 SafetyZone::laser_callback(
-  const sensor_msgs::msg::LaserScan::SharedPtr _msg)
+  const sensor_msgs::msg::LaserScan::SharedPtr message)
 {
   // project the laser into a point cloud
   sensor_msgs::msg::PointCloud2 cloud;
-  cloud.header = _msg->header;
+  cloud.header = message->header;
 
   // project the scan into a point cloud
   try {
-    projector_.transformLaserScanToPointCloud(_msg->header.frame_id, *_msg, cloud, *tf_);
+    projector_.transformLaserScanToPointCloud(message->header.frame_id, *message, cloud, *tf_);
   } catch (tf2::TransformException & ex) {
     RCLCPP_WARN(
       logger_,
-      "High fidelity enabled, but TF returned a transform exception to frame.");
-    projector_.projectLaser(*_msg, cloud);
+      "TF returned a transform exception to frame.");
+    projector_.projectLaser(*message, cloud);
   }
 
   sensor_msgs::msg::PointCloud2 base_frame_cloud;
-  
-
-  // // transform the point cloud to base_frame
-  tf2_buffer_.transform(cloud, base_frame_cloud, base_frame_, tf_tolerance_);
+  // transform the point cloud to base_frame
+  tf2_->transform(cloud, base_frame_cloud, base_frame_, tf2::durationFromSec(tf_tolerance_));
   base_frame_cloud.header.stamp = cloud.header.stamp;
-
-  
-  
-  queue_of_pointclouds.push({base_frame_cloud})
 
 }
 
 void
 SafetyZone::timer_callback()
 {
-  while (!queue_of_pointclouds.empty()){
+  // while (!queue_of_pointclouds.empty()){
 
-  }
+  // }
 }
 
 
