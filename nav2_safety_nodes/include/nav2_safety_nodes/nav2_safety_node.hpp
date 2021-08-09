@@ -16,6 +16,7 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "laser_geometry/laser_geometry.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/string_utils.hpp"
@@ -72,7 +73,7 @@ public:
        * @param global_pose Will be set to the pose of the robot in the global frame of the costmap
        * @return True if the pose was set successfully, false otherwise
        */
-    bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose);
+    // bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose);
     // /**
     //  * @brief Make the safety_zone from the given string.
     //  *

@@ -29,13 +29,12 @@ link_libraries(stdc++fs)
 include_directories(
   include
 )
-
-# add_library(nav2_safety_nodes_core SHARED
-#   src/nav2_safety_node.cpp
-# )
-
 # prevent pluginlib from using boost
 # target_compile_definitions(nav2_safety_nodes_core PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
+add_library(nav2_safety_node_core SHARED
+  src/nav2_safety_node.cpp
+)
 
 set(dependencies
   rclcpp
@@ -52,14 +51,29 @@ set(dependencies
   tf2_sensor_msgs
 )
 
-add_executable(nav2_safety_node src/nav2_safety_node.cpp)
-ament_target_dependencies(nav2_safety_node 
+ament_target_dependencies(nav2_safety_node_core
   ${dependencies}
-  )
+)
+
+add_executable(nav2_safety_node
+  src/main.cpp
+)
+target_link_libraries(nav2_safety_node
+  nav2_safety_node_core
+)
+ament_target_dependencies(nav2_safety_node
+  ${dependencies}
+)
 
 install(TARGETS
-  nav2_safety_node
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+nav2_safety_node_core 
+RUNTIME DESTINATION lib
+LIBRARY DESTINATION lib
+ARCHIVE DESTINATION lib)
+
+install(TARGETS
+nav2_safety_node 
+RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 # Install launch files.
@@ -86,6 +100,6 @@ endif()
 
 
 ament_export_include_directories(include)
-# ament_export_libraries(nav2_safety_nodes_core)
+ament_export_libraries(nav2_safety_node_core)
 ament_export_dependencies(${dependencies})
 ament_package()
