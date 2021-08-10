@@ -4,15 +4,16 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <queue>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
 #include "tf2_ros/buffer.h"
+#include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.h"
 
+#include "message_filters/subscriber.h"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "laser_geometry/laser_geometry.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
@@ -109,7 +110,7 @@ protected:
 
     // Used to project laser scans into point clouds
     laser_geometry::LaserProjection projector_;
-    
+    std::vector<std::shared_ptr<sensor_msgs::msg::PointCloud2>> pcl_queue;
      // Publishers and subscribers
     /*
      * @brief Initialize pub subs of SafetyZone
@@ -117,7 +118,8 @@ protected:
     void initPubSub();
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
       safety_polygon_pub_;
-    rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_pub_;
+    // rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_pub_;
+    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> point_cloud_pub_;
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
     rclcpp::TimerBase::SharedPtr timer_;
