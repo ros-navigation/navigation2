@@ -503,15 +503,6 @@
         </axis>
       </joint>
 
-      <joint name="camera_rgb_joint" type="fixed">
-        <parent>camera_link</parent>
-        <child>camera_rgb_frame</child>
-        <pose>0.005 0.018 0.013 0 0 0</pose>
-        <axis>
-          <xyz>0 0 1</xyz>
-        </axis>
-      </joint>
-
       <plugin name="turtlebot3_diff_drive" filename="libgazebo_ros_diff_drive.so">
 
         <ros>
