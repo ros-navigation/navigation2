@@ -47,7 +47,7 @@ jobs:
             -o Dir::Etc::sourcelist="${SOURCELIST}"
           apt-get --simulate upgrade \
             -o Dir::Etc::sourcelist="${SOURCELIST}" \
-            | grep "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded." \
+            | grep "^0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.$" \
             && echo "::set-output name=trigger::false" \
             || echo "::set-output name=trigger::true"
           echo "::set-output name=no_cache::true"
