@@ -59,6 +59,10 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
   // Silently ensure that both the speed and direction are positive.
   command_x_ = std::fabs(command->target.x);
   command_speed_ = std::fabs(command->speed);
+  command_time_allowance_ = command->time_allowance;
+  
+  back_up_time_end_ = std::chrono::steady_clock::now() +
+    rclcpp::Duration(command_time_allowance_).to_chrono<std::chrono::nanoseconds>();
 
   if (!nav2_util::getCurrentPose(
       initial_pose_, *tf_, global_frame_, robot_base_frame_,
@@ -67,12 +71,25 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
     RCLCPP_ERROR(logger_, "Initial robot pose is not available.");
     return Status::FAILED;
   }
-
+  
   return Status::SUCCEEDED;
 }
 
 Status BackUp::onCycleUpdate()
 {
+  // Check if the allowed BackUp duration is not exceeded
+  auto current_time = std::chrono::steady_clock::now();
+  auto time_left = std::chrono::duration_cast<std::chrono::nanoseconds>(back_up_time_end_ - current_time).count();
+  feedback_->time_left = rclcpp::Duration(rclcpp::Duration::from_nanoseconds(time_left));
+  
+  // If the time_allowance is smaller than zero, this restriction will be ignored 
+  // and the BackUp movement will continue until the robot reaches the desired goal position
+  if (command_time_allowance_.seconds() < 0 && time_left <= 0) {
+    stopRobot();
+    RCLCPP_WARN(logger_, "Exceeded time allowance before reaching the BackUp goal - Exiting BackUp");
+    return Status::FAILED;
+  }
+    
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, global_frame_, robot_base_frame_,
