@@ -173,19 +173,19 @@ SafetyZone::laser_callback(
   const sensor_msgs::msg::LaserScan::SharedPtr message)
 {
   // project the laser into a point cloud
-  sensor_msgs::msg::PointCloud2 cloud;
-  projector_.projectLaser(*message, cloud);
+  const sensor_msgs::msg::PointCloud2::SharedPtr cloud;
+  projector_.projectLaser(*message, *cloud);
 
   // Transform cloud if necessary
-  if (!base_frame_.empty() && cloud.header.frame_id != base_frame_) {
+  if (!base_frame_.empty() && cloud->header.frame_id != base_frame_) {
     try {
-      cloud = tf2_->transform(cloud, base_frame_, tf2::durationFromSec(tf_tolerance_));
-      // pcl_queue.push_back(cloud);
+      *cloud = tf2_->transform(*cloud, base_frame_, tf2::durationFromSec(tf_tolerance_));
+      pcl_queue.push(cloud);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR_STREAM(logger_, "Transform failure: " << ex.what());
       return;
     }
-    point_cloud_pub_->publish(std::move(cloud));
+    point_cloud_pub_->publish(std::move(*cloud));
   }
 }
 

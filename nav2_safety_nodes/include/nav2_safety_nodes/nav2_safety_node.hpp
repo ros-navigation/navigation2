@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <queue>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
@@ -110,7 +111,7 @@ protected:
 
     // Used to project laser scans into point clouds
     laser_geometry::LaserProjection projector_;
-    std::vector<std::shared_ptr<sensor_msgs::msg::PointCloud2>> pcl_queue;
+    std::queue<std::shared_ptr<sensor_msgs::msg::PointCloud2>> pcl_queue;
      // Publishers and subscribers
     /*
      * @brief Initialize pub subs of SafetyZone
