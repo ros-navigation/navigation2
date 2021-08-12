@@ -127,7 +127,6 @@ protected:
     std::vector<rclcpp::Subscription<sensor_msgs::msg::LaserScan>> scan_subscribers_;
 
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
-    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
     rclcpp::TimerBase::SharedPtr timer_;
     
     /**

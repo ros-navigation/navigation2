@@ -89,7 +89,6 @@ SafetyZone::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(logger_, "Cleaning up");
   publisher_.reset();
-  subscriber_.reset();
   safety_polygon_pub_.reset();
   timer_.reset();
   return nav2_util::CallbackReturn::SUCCESS;
@@ -159,7 +158,7 @@ SafetyZone::initPubSub(const std::vector<std::string> & scan_topics_)
   // Multiple Laserscan subscribers
   if(scan_topics_.size() > 0){
     RCLCPP_INFO(logger_, "Subscribing to scan topics");
-    scan_subscribers.resize(scan_topics_.size());
+    // scan_subscribers_.resize(scan_topics_.size());
     for(int i=0; i<scan_topics_.size(); ++i){
         
         scan_subscribers_[i] = create_subscription<sensor_msgs::msg::LaserScan>(
