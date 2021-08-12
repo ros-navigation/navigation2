@@ -167,17 +167,16 @@ def generate_launch_description():
                      'robot_description': robot_description}],
         remappings=remappings)
 
-    tb3_gazebo_dir = get_package_share_directory('turtlebot3_gazebo')
-    robot_model_sdf = os.path.join(tb3_gazebo_dir, 'models', 'turtlebot3_waffle', 'model.sdf')
+    robot_model_sdf = os.path.join(bringup_dir, 'worlds', 'waffle.model')
 
     start_gazebo_spawner_cmd = Node(
-        package='nav2_gazebo_spawner',
-        executable='nav2_gazebo_spawner',
+        package='gazebo_ros',
+        executable='spawn_entity.py',
         output='screen',
         arguments=[
-            '--robot_name', robot_name,
-            '--sdf', robot_model_sdf,
-            '--robot_namespace', namespace,
+            '-entity', robot_name,
+            '-file', robot_model_sdf,
+            '-robot_namespace', namespace,
             '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
             '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']])
 
