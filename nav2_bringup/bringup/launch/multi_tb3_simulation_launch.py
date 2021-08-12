@@ -39,8 +39,10 @@ def generate_launch_description():
 
     # Names and poses of the robots
     robots = [
-        {'name': 'robot1', 'x_pose': 0.0, 'y_pose': 0.5, 'z_pose': 0.01},
-        {'name': 'robot2', 'x_pose': 0.0, 'y_pose': -0.5, 'z_pose': 0.01}]
+        {'name': 'robot1', 'x_pose': 0.0, 'y_pose': 0.5, 'z_pose': 0.01,
+                           'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0},
+        {'name': 'robot2', 'x_pose': 0.0, 'y_pose': -0.5, 'z_pose': 0.01,
+                           'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0}]
 
     # Simulation settings
     world = LaunchConfiguration('world')
@@ -138,6 +140,9 @@ def generate_launch_description():
                                   'x_pose': TextSubstitution(text=str(robot['x_pose'])),
                                   'y_pose': TextSubstitution(text=str(robot['y_pose'])),
                                   'z_pose': TextSubstitution(text=str(robot['z_pose'])),
+                                  'roll': TextSubstitution(text=str(robot['roll'])),
+                                  'pitch': TextSubstitution(text=str(robot['pitch'])),
+                                  'yaw': TextSubstitution(text=str(robot['yaw'])),
                                   'robot_name':TextSubstitution(text=robot['name']), }.items()),
 
             LogInfo(

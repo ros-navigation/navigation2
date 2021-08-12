@@ -47,9 +47,12 @@ def generate_launch_description():
     use_rviz = LaunchConfiguration('use_rviz')
     headless = LaunchConfiguration('headless')
     world = LaunchConfiguration('world')
-    x_pose = LaunchConfiguration('x_pose')
-    y_pose = LaunchConfiguration('y_pose')
-    z_pose = LaunchConfiguration('z_pose')
+    pose = {'x': LaunchConfiguration('x_pose', default='-2.00'),
+            'y': LaunchConfiguration('y_pose', default='-0.50'),
+            'z': LaunchConfiguration('z_pose', default='0.01'),
+            'R': LaunchConfiguration('roll', default='0.00'),
+            'P': LaunchConfiguration('pitch', default='0.00'),
+            'Y': LaunchConfiguration('yaw', default='0.00')}
     robot_name = LaunchConfiguration('robot_name')
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
@@ -132,21 +135,6 @@ def generate_launch_description():
         default_value=os.path.join(bringup_dir, 'worlds', 'world_only.model'),
         description='Full path to world model file to load')
 
-    declare_x_pose_cmd = DeclareLaunchArgument(
-        'x_pose',
-        default_value='-2.0000',
-        description='initial X position of the robot')
-
-    declare_y_pose_cmd = DeclareLaunchArgument(
-        'y_pose',
-        default_value='-0.5000',
-        description='initial Y position of the robot')
-
-    declare_z_pose_cmd = DeclareLaunchArgument(
-        'z_pose',
-        default_value='0.0100',
-        description='initial Z position of the robot')
-
     declare_robot_name_cmd = DeclareLaunchArgument(
         'robot_name',
         default_value='turtlebot3_waffle',
@@ -180,7 +168,7 @@ def generate_launch_description():
         remappings=remappings)
 
     tb3_gazebo_dir = get_package_share_directory('turtlebot3_gazebo')
-    robot_model_sdf = os.path.join(tb3_gazebo_dir,'models', 'turtlebot3_waffle', 'model.sdf')
+    robot_model_sdf = os.path.join(tb3_gazebo_dir, 'models', 'turtlebot3_waffle', 'model.sdf')
 
     start_gazebo_spawner_cmd = Node(
         package='nav2_gazebo_spawner',
@@ -190,9 +178,8 @@ def generate_launch_description():
             '--robot_name', robot_name,
             '--sdf', robot_model_sdf,
             '--robot_namespace', namespace,
-            '-x', x_pose,
-            '-y', y_pose,
-            '-z', z_pose])
+            '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
+            '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']])
 
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -231,9 +218,6 @@ def generate_launch_description():
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
-    ld.add_action(declare_x_pose_cmd)
-    ld.add_action(declare_y_pose_cmd)
-    ld.add_action(declare_z_pose_cmd)
     ld.add_action(declare_robot_name_cmd)
 
     # Add any conditioned actions
