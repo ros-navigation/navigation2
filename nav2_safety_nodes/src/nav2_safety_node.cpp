@@ -37,15 +37,23 @@ SafetyZone::SafetyZone()
 : nav2_util::LifecycleNode("SafetyZone", "", false)
 {
   logger_ = get_logger();
+  
   RCLCPP_INFO(logger_, "Creating Safety Polygon");
 
+  // Vector of string for multiple LaserScan topics
+  const std::vector<std::string> scan_topics = {
+    "scan1",
+    "scan2"
+  };
+
   // pass polygon parameters at string
-  declare_parameter("safety_polygon", rclcpp::ParameterValue(std::string("[]")));
+  declare_parameter("safety_polygon",std::string("[]"));
   declare_parameter("zone_action", rclcpp::ParameterValue(0.0));
   declare_parameter("zone_priority", rclcpp::ParameterValue(1));
   declare_parameter("zone_num_pts", rclcpp::ParameterValue(1));
-  declare_parameter("base_frame", rclcpp::ParameterValue(std::string("base_link")));
+  declare_parameter("base_frame", std::string("base_link"));
   declare_parameter("tf_tolerance", rclcpp::ParameterValue(0.01));
+  declare_parameter("scan_topics", scan_topics);
 }
 
 SafetyZone::~SafetyZone()
@@ -65,7 +73,7 @@ nav2_util::CallbackReturn
 SafetyZone::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(logger_, "Activating");
-  initPubSub();
+  initPubSub(scan_topics_);
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -107,6 +115,7 @@ SafetyZone::getParameters()
   zone_num_pts_ = get_parameter("zone_num_pts").as_int();
   base_frame_ = get_parameter("base_frame").as_string();
   tf_tolerance_ = get_parameter("tf_tolerance").as_double();
+  scan_topics_ = get_parameter("scan_topics").as_string_array();
 
   // If the safety_polygon has been specified, it must be in the correct format
   if (safety_polygon_ != "" && safety_polygon_ != "[]") {
@@ -136,7 +145,7 @@ SafetyZone::initTransforms()
 
 // Publishers and subscribers
 void
-SafetyZone::initPubSub()
+SafetyZone::initPubSub(const std::vector<std::string> & scan_topics_)
 {
 
   RCLCPP_INFO(logger_, "initPubSub");
@@ -146,17 +155,28 @@ SafetyZone::initPubSub()
   // Pointcloud publisher
   point_cloud_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>(
     "cloud", rclcpp::SensorDataQoS());
-  // Laserscan subscriber
-  subscriber_ = create_subscription<sensor_msgs::msg::LaserScan>(
-    "laser_scan", rclcpp::SystemDefaultsQoS(),
-    std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1));
+  
+  // Multiple Laserscan subscribers
+  if(scan_topics_.size() > 0){
+    RCLCPP_INFO(logger_, "Subscribing to scan topics");
+    scan_subscribers.resize(scan_topics_.size());
+    for(int i=0; i<scan_topics_.size(); ++i){
+        
+        scan_subscribers_[i] = create_subscription<sensor_msgs::msg::LaserScan>(
+        scan_topics_[i].c_str(), rclcpp::SystemDefaultsQoS(),
+        std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1));
+      }
+    }
+  else{
+    RCLCPP_INFO(logger_, "Not subscribed to any topic.");
+  }
+
   // Velocity publisher
   publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", rclcpp::SystemDefaultsQoS());
   // Timer -> 10hzs
   timer_ = create_wall_timer(
     100ms, std::bind(&SafetyZone::timer_callback, this));
-
-  RCLCPP_INFO(logger_, "Subscribed to laser topic.");
+  RCLCPP_INFO(logger_, "Subscribed to scan topics");
 }
 
 // string of polygon points and returns a polygon vector

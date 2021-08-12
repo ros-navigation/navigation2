@@ -102,6 +102,8 @@ protected:
     int zone_num_pts_{0};
     std::string base_frame_;   ///< The frame_id of the robot base
     double tf_tolerance_{};
+    std::vector<std::string> scan_topics_;
+
     /**
      * @brief Initialize required ROS transformations
      */
@@ -116,11 +118,14 @@ protected:
     /*
      * @brief Initialize pub subs of SafetyZone
      */
-    void initPubSub();
+    void initPubSub(const std::vector<std::string> & scan_topics_);
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
       safety_polygon_pub_;
     // rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_pub_;
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> point_cloud_pub_;
+
+    std::vector<rclcpp::Subscription<sensor_msgs::msg::LaserScan>> scan_subscribers_;
+
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
     rclcpp::TimerBase::SharedPtr timer_;
