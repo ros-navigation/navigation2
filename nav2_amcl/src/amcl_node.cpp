@@ -335,8 +335,10 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   laser_scan_sub_.reset();
 
   // Map
-  map_free(map_);
-  map_ = nullptr;
+  if (map_ != NULL) {
+    map_free(map_);
+    map_ = nullptr;
+  }
   first_map_received_ = false;
   free_space_indices.resize(0);
 
