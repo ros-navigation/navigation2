@@ -118,13 +118,13 @@ protected:
     /*
      * @brief Initialize pub subs of SafetyZone
      */
-    void initPubSub(const std::vector<std::string> & scan_topics_);
+    void initPubSub();
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
       safety_polygon_pub_;
     // rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_pub_;
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> point_cloud_pub_;
 
-    std::vector<rclcpp::Subscription<sensor_msgs::msg::LaserScan>> scan_subscribers_;
+    std::vector<std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan>>> scan_subscribers_;
 
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
     rclcpp::TimerBase::SharedPtr timer_;
@@ -140,7 +140,6 @@ protected:
      */
     void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr message);
 
-    void subscriptionListenerThreadLoop();
 };
 
 }  // end namespace nav2_safety_nodes

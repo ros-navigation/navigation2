@@ -73,7 +73,7 @@ nav2_util::CallbackReturn
 SafetyZone::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(logger_, "Activating");
-  initPubSub(scan_topics_);
+  initPubSub();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -144,9 +144,11 @@ SafetyZone::initTransforms()
 
 // Publishers and subscribers
 void
-SafetyZone::initPubSub(const std::vector<std::string> & scan_topics_)
+SafetyZone::initPubSub()
 {
-
+  std::vector<std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan>>> 
+    scan_subscribers_ = {
+    };
   RCLCPP_INFO(logger_, "initPubSub");
   // Create the publishers and subscribers
   safety_polygon_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
@@ -157,13 +159,12 @@ SafetyZone::initPubSub(const std::vector<std::string> & scan_topics_)
   
   // Multiple Laserscan subscribers
   if(scan_topics_.size() > 0){
+    scan_subscribers_.resize(scan_topics_.size());
     RCLCPP_INFO(logger_, "Subscribing to scan topics");
-    // scan_subscribers_.resize(scan_topics_.size());
-    for(int i=0; i<scan_topics_.size(); ++i){
-        
-        scan_subscribers_[i] = create_subscription<sensor_msgs::msg::LaserScan>(
-        scan_topics_[i].c_str(), rclcpp::SystemDefaultsQoS(),
-        std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1));
+    for(int i=0; (unsigned)i<scan_topics_.size(); i++){
+          scan_subscribers_[i] = create_subscription<sensor_msgs::msg::LaserScan>(
+          scan_topics_[i].c_str(), rclcpp::SystemDefaultsQoS(),
+          std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1));
       }
     }
   else{
