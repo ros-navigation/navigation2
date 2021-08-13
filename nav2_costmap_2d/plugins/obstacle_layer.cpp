@@ -218,7 +218,7 @@ void ObstacleLayer::onInitialize()
 
       std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> filter(
         new tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>(
-          *sub, *tf_, global_frame_, 50, rclcpp_node_));
+          *sub, *tf_, global_frame_, 50, rclcpp_node_, tf2::durationFromSec(transform_tolerance)));
 
       if (inf_is_valid) {
         filter->registerCallback(
