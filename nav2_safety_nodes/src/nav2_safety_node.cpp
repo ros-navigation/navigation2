@@ -120,6 +120,7 @@ SafetyZone::getParameters()
   if (safety_polygon_ != "" && safety_polygon_ != "[]") {
     // Polygon parameter has been specified, polygon -> point vector(safety_zone)
     std::vector<geometry_msgs::msg::Point> safety_zone;
+    // std::vector<std::shared_ptr<geometry_msgs::msg::Point>> safety_zone;
     makeVectorPointsFromString(safety_polygon_, safety_zone);
   } else {
     // Polygon provided but invalid, so stay with the radius
@@ -201,6 +202,7 @@ SafetyZone::laser_callback(
     try {
       *cloud = tf2_->transform(*cloud, base_frame_, tf2::durationFromSec(tf_tolerance_));
       pcl_queue.push(cloud);
+      
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR_STREAM(logger_, "Transform failure: " << ex.what());
       return;
@@ -209,11 +211,33 @@ SafetyZone::laser_callback(
   }
 }
 
+double 
+SafetyZone::detectPoints(const sensor_msgs::msg::PointCloud2 & cloud, 
+    std::vector<geometry_msgs::msg::Point> safety_zone, double dotP, int N){
+    N = 0;
+    sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
+    sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
+    sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
+    for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z){
+      double px = *iter_x, py = *iter_y, pz = *iter_z;
+      for(geometry_msgs::msg::Point pt : safety_zone){
+        dotP =  pt.x * px +
+          pt.y * py +
+          pt.z * pz;
+        
+        if(dotP > 0){
+          N++;
+        }
+      }
+  }
+  return N;
+}
+
 void
 SafetyZone::timer_callback()
 {
   while (!pcl_queue.empty()){
-    // Empty 
+    // Currently Empty 
   }
 }
 

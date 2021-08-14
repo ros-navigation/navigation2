@@ -140,6 +140,9 @@ protected:
      */
     void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr message);
 
+  double detectPoints(const sensor_msgs::msg::PointCloud2 & cloud, 
+      std::vector<geometry_msgs::msg::Point> safety_zone, double dotP, int N);
+
 };
 
 }  // end namespace nav2_safety_nodes
