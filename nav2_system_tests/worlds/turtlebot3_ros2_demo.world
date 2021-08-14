@@ -455,6 +455,7 @@
 
           <ros>
             <!-- <namespace>/tb3</namespace> -->
+            <remapping>/tf:=tf</remapping>
           </ros>
 
           <!-- wheels -->
