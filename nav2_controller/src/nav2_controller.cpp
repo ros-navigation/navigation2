@@ -32,7 +32,7 @@ namespace nav2_controller
 {
 
 ControllerServer::ControllerServer()
-: LifecycleNode("controller_server", "", true),
+: nav2_util::LifecycleNode("controller_server", ""),
   progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
   default_progress_checker_id_{"progress_checker"},
   default_progress_checker_type_{"nav2_controller::SimpleProgressChecker"},
@@ -195,8 +195,12 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(
-    rclcpp_node_, "follow_path",
-    std::bind(&ControllerServer::computeControl, this));
+    shared_from_this(),
+    "follow_path",
+    std::bind(&ControllerServer::computeControl, this),
+    nullptr,
+    std::chrono::milliseconds(500),
+    true);
 
   // Set subscribtion to the speed limiting topic
   speed_limit_sub_ = create_subscription<nav2_msgs::msg::SpeedLimit>(
@@ -266,7 +270,6 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   odom_sub_.reset();
   vel_publisher_.reset();
   speed_limit_sub_.reset();
-  action_server_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

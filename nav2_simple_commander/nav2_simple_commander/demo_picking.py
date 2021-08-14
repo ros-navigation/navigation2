@@ -75,7 +75,7 @@ def main():
     shelf_item_pose.pose.position.y = shelf_positions[request_item_location][1]
     shelf_item_pose.pose.orientation.z = 1.0
     shelf_item_pose.pose.orientation.w = 0.0
-    print('Received request for item picking at ' + request_item_location + '.')
+    print(f'Received request for item picking at {request_item_location}.')
     navigator.goToPose(shelf_item_pose)
 
     # Do something during our route
@@ -105,12 +105,12 @@ def main():
         navigator.goToPose(shipping_destination)
 
     elif result == NavigationResult.CANCELED:
-        print('Task at ' + request_item_location + ' was canceled. Returning to staging point...')
+        print(f'Task at {request_item_location} was canceled. Returning to staging point...')
         initial_pose.header.stamp = navigator.get_clock().now().to_msg()
         navigator.goToPose(initial_pose)
 
     elif result == NavigationResult.FAILED:
-        print('Task at ' + request_item_location + ' failed!')
+        print(f'Task at {request_item_location} failed!')
         exit(-1)
 
     while not navigator.isNavComplete():
