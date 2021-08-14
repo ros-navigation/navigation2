@@ -54,6 +54,7 @@ def generate_launch_description():
             'P': LaunchConfiguration('pitch', default='0.00'),
             'Y': LaunchConfiguration('yaw', default='0.00')}
     robot_name = LaunchConfiguration('robot_name')
+    robot_sdf_file = LaunchConfiguration('robot_sdf_file')
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
@@ -140,6 +141,11 @@ def generate_launch_description():
         default_value='turtlebot3_waffle',
         description='name of the robot')
 
+    declare_robot_sdf_file_cmd = DeclareLaunchArgument(
+        'robot_sdf_file',
+        default_value=os.path.join(bringup_dir, 'worlds', 'waffle.model'),
+        description='Full path to robot sdf file to spawn the robot in gazebo')
+
     # Specify the actions
     start_gazebo_server_cmd = ExecuteProcess(
         condition=IfCondition(use_simulator),
@@ -167,15 +173,13 @@ def generate_launch_description():
                      'robot_description': robot_description}],
         remappings=remappings)
 
-    robot_model_sdf = os.path.join(bringup_dir, 'worlds', 'waffle.model')
-
     start_gazebo_spawner_cmd = Node(
         package='gazebo_ros',
         executable='spawn_entity.py',
         output='screen',
         arguments=[
             '-entity', robot_name,
-            '-file', robot_model_sdf,
+            '-file', robot_sdf_file,
             '-robot_namespace', namespace,
             '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
             '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']])
@@ -218,6 +222,7 @@ def generate_launch_description():
     ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_robot_name_cmd)
+    ld.add_action(declare_robot_sdf_file_cmd)
 
     # Add any conditioned actions
     ld.add_action(start_gazebo_server_cmd)
