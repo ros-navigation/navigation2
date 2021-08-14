@@ -140,7 +140,7 @@ protected:
      */
     void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr message);
 
-  double detectPoints(const sensor_msgs::msg::PointCloud2 & cloud, 
+  int detectPoints(const sensor_msgs::msg::PointCloud2 & cloud, 
       std::vector<geometry_msgs::msg::Point> safety_zone, double dotP, int N);
 
 };

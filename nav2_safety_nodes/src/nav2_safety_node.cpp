@@ -211,25 +211,30 @@ SafetyZone::laser_callback(
   }
 }
 
-double 
+int 
 SafetyZone::detectPoints(const sensor_msgs::msg::PointCloud2 & cloud, 
     std::vector<geometry_msgs::msg::Point> safety_zone, double dotP, int N){
     N = 0;
     sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
     sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
+    // iterating through cloud points 
     for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z){
       double px = *iter_x, py = *iter_y, pz = *iter_z;
+      // iterating through polygon points 
       for(geometry_msgs::msg::Point pt : safety_zone){
+        // getting dot product 
         dotP =  pt.x * px +
           pt.y * py +
           pt.z * pz;
-        
         if(dotP > 0){
-          N++;
+          // do something
+        }
+        else{
+          // do something
         }
       }
-  }
+    }
   return N;
 }
 
