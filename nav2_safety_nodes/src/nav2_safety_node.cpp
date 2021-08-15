@@ -25,7 +25,7 @@
 
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/string_utils.hpp"
-#include "nav2_util/node_utils.hpp" 
+#include "nav2_util/node_utils.hpp"
 #include "nav2_safety_nodes/nav2_safety_node.hpp"
 
 using namespace std::chrono_literals;
@@ -37,7 +37,6 @@ SafetyZone::SafetyZone()
 : nav2_util::LifecycleNode("SafetyZone", "", false)
 {
   logger_ = get_logger();
-  
   RCLCPP_INFO(logger_, "Creating Safety Polygon");
 
   // Vector of string for multiple LaserScan topics
@@ -47,7 +46,7 @@ SafetyZone::SafetyZone()
   };
 
   // pass polygon parameters at string
-  declare_parameter("safety_polygon",std::string("[]"));
+  declare_parameter("safety_polygon", std::string("[]"));
   declare_parameter("zone_action", rclcpp::ParameterValue(0.0));
   declare_parameter("zone_priority", rclcpp::ParameterValue(1));
   declare_parameter("zone_num_pts", rclcpp::ParameterValue(1));
@@ -147,9 +146,9 @@ SafetyZone::initTransforms()
 void
 SafetyZone::initPubSub()
 {
-  std::vector<std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan>>> 
-    scan_subscribers_ = {
-    };
+  std::vector<std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan>>>
+  scan_subscribers_ = {
+  };
   RCLCPP_INFO(logger_, "initPubSub");
   // Create the publishers and subscribers
   safety_polygon_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
@@ -157,18 +156,16 @@ SafetyZone::initPubSub()
   // Pointcloud publisher
   point_cloud_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>(
     "cloud", rclcpp::SensorDataQoS());
-  
   // Multiple Laserscan subscribers
-  if(scan_topics_.size() > 0){
+  if (scan_topics_.size() > 0) {
     scan_subscribers_.resize(scan_topics_.size());
     RCLCPP_INFO(logger_, "Subscribing to scan topics");
-    for(int i=0; (unsigned)i<scan_topics_.size(); i++){
-          scan_subscribers_[i] = create_subscription<sensor_msgs::msg::LaserScan>(
-          scan_topics_[i].c_str(), rclcpp::SystemDefaultsQoS(),
-          std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1));
-      }
+    for (int i = 0; (unsigned)i < scan_topics_.size(); i++) {
+      scan_subscribers_[i] = create_subscription<sensor_msgs::msg::LaserScan>(
+        scan_topics_[i].c_str(), rclcpp::SystemDefaultsQoS(),
+        std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1));
     }
-  else{
+  } else {
     RCLCPP_INFO(logger_, "Not subscribed to any topic.");
   }
 
@@ -202,7 +199,6 @@ SafetyZone::laser_callback(
     try {
       *cloud = tf2_->transform(*cloud, base_frame_, tf2::durationFromSec(tf_tolerance_));
       pcl_queue.push(cloud);
-      
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR_STREAM(logger_, "Transform failure: " << ex.what());
       return;
@@ -211,38 +207,40 @@ SafetyZone::laser_callback(
   }
 }
 
-int 
-SafetyZone::detectPoints(const sensor_msgs::msg::PointCloud2 & cloud, 
-    std::vector<geometry_msgs::msg::Point> safety_zone, double dotP, int N){
-    N = 0;
-    sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
-    sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
-    sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
-    // iterating through cloud points 
-    for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z){
-      double px = *iter_x, py = *iter_y, pz = *iter_z;
-      // iterating through polygon points 
-      for(geometry_msgs::msg::Point pt : safety_zone){
-        // getting dot product 
-        dotP =  pt.x * px +
-          pt.y * py +
-          pt.z * pz;
-        if(dotP > 0){
-          // do something
-        }
-        else{
-          // do something
-        }
+// In progress
+int
+SafetyZone::detectPoints(
+  const sensor_msgs::msg::PointCloud2 & cloud,
+  std::vector<geometry_msgs::msg::Point> safety_zone, double dotP, int N)
+{
+  N = 0;
+  sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
+  // iterating through cloud points
+  for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+    double px = *iter_x, py = *iter_y, pz = *iter_z;
+    // iterating through polygon points
+    for (geometry_msgs::msg::Point pt : safety_zone) {
+      // getting dot product
+      dotP = pt.x * px +
+        pt.y * py +
+        pt.z * pz;
+      if (dotP > 0) {
+        // do something
+      } else {
+        // do something
       }
     }
+  }
   return N;
 }
 
 void
 SafetyZone::timer_callback()
 {
-  while (!pcl_queue.empty()){
-    // Currently Empty 
+  while (!pcl_queue.empty()) {
+    // Currently Empty
   }
 }
 
