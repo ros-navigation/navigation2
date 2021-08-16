@@ -55,6 +55,10 @@ void ThetaStarPlanner::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name_ + ".w_heuristic_cost", rclcpp::ParameterValue(1.0));
   node->get_parameter(name_ + ".w_heuristic_cost", planner_->w_heuristic_cost_);
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".use_final_approach_orientation", use_final_approach_orientation_);
 }
 
 void ThetaStarPlanner::cleanup()
@@ -84,6 +88,22 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
     logger_, "Got the src and dst... (%i, %i) && (%i, %i)",
     planner_->src_.x, planner_->src_.y, planner_->dst_.x, planner_->dst_.y);
   getPlan(global_path);
+
+  size_t path_size = global_path.poses.size();
+  if (path_size > 0) {
+    global_path.poses.back().pose.orientation = goal.pose.orientation;
+    if (use_final_approach_orientation_ && path_size > 1) {
+      double dx, dy, theta;
+      dx =
+        global_path.poses.back().pose.position.x - global_path.poses[path_size - 2].pose.position.x;
+      dy =
+        global_path.poses.back().pose.position.y - global_path.poses[path_size - 2].pose.position.y;
+      theta = atan2(dy, dx);
+      global_path.poses.back().pose.orientation =
+        nav2_util::geometry_utils::orientationAroundZAxis(theta);
+    }
+  }
+
   auto stop_time = std::chrono::steady_clock::now();
   auto dur = std::chrono::duration_cast<std::chrono::microseconds>(stop_time - start_time);
   RCLCPP_DEBUG(logger_, "the time taken for pointy is : %i", static_cast<int>(dur.count()));

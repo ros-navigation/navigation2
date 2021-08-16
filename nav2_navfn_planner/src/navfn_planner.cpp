@@ -85,7 +85,8 @@ NavfnPlanner::configure(
   node->get_parameter(name + ".use_astar", use_astar_);
   declare_parameter_if_not_declared(node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".allow_unknown", allow_unknown_);
-  declare_parameter_if_not_declared(node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
+    node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".use_final_approach_orientation", use_final_approach_orientation_);
 
   // Create a planner based on the new costmap size
@@ -291,14 +292,15 @@ NavfnPlanner::makePlan(
     // extract the plan
     if (getPlanFromPotential(best_pose, plan)) {
       smoothApproachToGoal(best_pose, plan);
-      int plan_size = plan.poses.size();
+
+      size_t plan_size = plan.poses.size();
       if (use_final_approach_orientation_ && plan_size > 1) {
         double dx, dy, theta;
-        dx = plan.poses.back().pose.position.x - plan.poses[plan_size-2].pose.position.x;
-        dy = plan.poses.back().pose.position.y - plan.poses[plan_size-2].pose.position.y;
+        dx = plan.poses.back().pose.position.x - plan.poses[plan_size - 2].pose.position.x;
+        dy = plan.poses.back().pose.position.y - plan.poses[plan_size - 2].pose.position.y;
         theta = atan2(dy, dx);
         plan.poses.back().pose.orientation =
-            nav2_util::geometry_utils::orientationAroundZAxis(theta);
+          nav2_util::geometry_utils::orientationAroundZAxis(theta);
       }
     } else {
       RCLCPP_ERROR(
