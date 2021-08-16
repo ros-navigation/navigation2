@@ -28,6 +28,7 @@
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/smac_planner_hybrid.hpp"
 #include "nav2_smac_planner/smac_planner_2d.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 class RclCppFixture
 {
@@ -69,6 +70,20 @@ TEST(SmacTest, test_smac_2d)
     planner_2d->createPlan(start, goal);
   } catch (...) {
   }
+
+
+  goal.pose.position.x = 0.0;
+  goal.pose.position.y = 10.0;
+  goal.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI);
+  node2D->set_parameter(rclcpp::Parameter("test.use_final_approach_orientation", false));
+  nav_msgs::msg::Path plan;
+  try {
+    planner_2d->createPlan(start, goal);
+  } catch (...) {
+  }
+
+
+
 
   planner_2d->deactivate();
   planner_2d->cleanup();
