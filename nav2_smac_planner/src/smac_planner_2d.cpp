@@ -81,8 +81,8 @@ void SmacPlanner2D::configure(
     node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
   node->get_parameter(name + ".max_on_approach_iterations", _max_on_approach_iterations);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".ignore_goal_orientation", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".ignore_goal_orientation", _ignore_goal_orientation);
+    node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".use_final_approach_orientation", _use_final_approach_orientation);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(1.0));
@@ -295,8 +295,8 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     _smoother->smooth(plan, costmap, time_remaining);
   }
 
-  if (!_ignore_goal_orientation && plan.poses.size() > 0) {
-    plan.poses.back().pose.orientation = goal.pose.orientation;
+  if (!_use_final_approach_orientation && plan.poses.size() > 0) {
+    plan.poses[plan.poses.size() - 1].pose.orientation = goal.pose.orientation;
   }
 
   return plan;
@@ -331,8 +331,8 @@ void SmacPlanner2D::on_parameter_event_callback(
       } else if (name == _name + ".allow_unknown") {
         reinit_a_star = true;
         _allow_unknown = value.bool_value;
-      } else if (name == _name + ".ignore_goal_orientation") {
-        _ignore_goal_orientation = value.bool_value;
+      } else if (name == _name + ".use_final_approach_orientation") {
+        _use_final_approach_orientation = value.bool_value;
       }
     } else if (type == ParameterType::PARAMETER_INTEGER) {
       if (name == _name + ".downsampling_factor") {
