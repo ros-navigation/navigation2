@@ -146,10 +146,8 @@ public:
   /**
    * @brief Add a new plugin to the plugins vector to process
    */
-  void addPlugin(std::shared_ptr<Layer> plugin)
-  {
-    plugins_.push_back(plugin);
-  }
+  void addPlugin(std::shared_ptr<Layer> plugin);
+
 
   /**
    * @brief Add a new costmap filter plugin to the filters vector to process
