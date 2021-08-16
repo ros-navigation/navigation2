@@ -33,7 +33,7 @@ RecoveryServer::RecoveryServer()
     rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
   declare_parameter(
     "footprint_topic",
-    rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
+    rclcpp::ParameterValue(std::string("published_footprint")));
   declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
   declare_parameter("recovery_plugins", default_ids_);
 
