@@ -296,7 +296,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   }
 
   if (!_use_final_approach_orientation && plan.poses.size() > 0) {
-    plan.poses[plan.poses.size() - 1].pose.orientation = goal.pose.orientation;
+    plan.poses.back().pose.orientation = goal.pose.orientation;
   }
 
   return plan;
