@@ -291,12 +291,13 @@ ObstacleLayer::laserScanCallback(
       global_frame_.c_str(),
       ex.what());
     projector_.projectLaser(*message, cloud);
-  } catch (std::runtime_error &ex) {
+  } catch (std::runtime_error & ex) {
     RCLCPP_WARN(
       logger_,
-      "transformLaserScanToPointCloud error, it seems the message from laser is malformed. Ignore this message. what(): %s",
+      "transformLaserScanToPointCloud error, it seems the message from laser is malformed."
+      " Ignore this message. what(): %s",
       ex.what());
-    return; //ignore this message
+    return;
   }
 
   // buffer the point cloud
@@ -333,12 +334,13 @@ ObstacleLayer::laserScanValidInfCallback(
       "High fidelity enabled, but TF returned a transform exception to frame %s: %s",
       global_frame_.c_str(), ex.what());
     projector_.projectLaser(message, cloud);
-  } catch (std::runtime_error &ex) {
+  } catch (std::runtime_error & ex) {
     RCLCPP_WARN(
       logger_,
-      "transformLaserScanToPointCloud error, it seems the message from laser is malformed. Ignore this message. what(): %s",
+      "transformLaserScanToPointCloud error, it seems the message from laser is malformed."
+      " Ignore this message. what(): %s",
       ex.what());
-    return; //ignore this message
+    return;
   }
 
   // buffer the point cloud
