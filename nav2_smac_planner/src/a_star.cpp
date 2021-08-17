@@ -557,7 +557,9 @@ typename AStarAlgorithm<NodeT>::AnalyticExpansionNodes AStarAlgorithm<NodeT>::ge
   unsigned int num_intervals = std::floor(d / sqrt_2);
 
   AnalyticExpansionNodes possible_nodes;
-  possible_nodes.reserve(num_intervals - 1);  // We won't store this node or the goal
+  // When "from" and "to" are zero or one cell away,
+  // num_intervals == 0
+  possible_nodes.reserve(num_intervals);  // We won't store this node or the goal
   std::vector<double> reals;
 
   // Pre-allocate
