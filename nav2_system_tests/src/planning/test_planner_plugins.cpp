@@ -20,6 +20,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "planner_tester.hpp"
 #include "nav2_util/lifecycle_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 using namespace std::chrono_literals;
 
@@ -31,6 +32,42 @@ using ComputePathToPoseResult = nav_msgs::msg::Path;
 
 void callback(const nav_msgs::msg::Path::ConstSharedPtr /*grid*/)
 {
+}
+
+void testEndPathOrientation(std::string plugin)
+{
+  auto obj = std::make_shared<nav2_system_tests::NavFnPlannerTester>();
+  rclcpp_lifecycle::State state;
+  obj->set_parameter(rclcpp::Parameter("GridBased.plugin", plugin));
+  obj->declare_parameter(
+    "GridBased.use_final_approach_orientation", rclcpp::ParameterValue(false));
+  obj->onConfigure(state);
+
+  geometry_msgs::msg::PoseStamped start;
+  geometry_msgs::msg::PoseStamped goal;
+
+  start.pose.position.x = 0.5;
+  start.pose.position.y = 0.5;
+  start.header.frame_id = "map";
+
+  goal.pose.position.x = 2.0;
+  goal.pose.position.y = 2.0;
+  goal.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI);
+  goal.header.frame_id = "map";
+
+  // Test without use_final_approach_orientation
+  // expecting end path pose orientation to be equal to goal orientation
+  auto path = obj->getPlan(start, goal, "GridBased");
+  EXPECT_NEAR(tf2::getYaw(path.poses.back().pose.orientation), -M_PI, 0.01);
+  obj->onCleanup(state);
+
+  // Test WITH use_final_approach_orientation
+  // expecting end path pose orientation to be equal to approach orientation
+  obj->set_parameter(rclcpp::Parameter("GridBased.use_final_approach_orientation", true));
+  obj->onConfigure(state);
+  path = obj->getPlan(start, goal, "GridBased");
+  EXPECT_NEAR(tf2::getYaw(path.poses.back().pose.orientation), M_PI_4, 0.01);
+  obj->onCleanup(state);
 }
 
 TEST(testPluginMap, Failures)
@@ -53,6 +90,21 @@ TEST(testPluginMap, Failures)
   EXPECT_EQ(path.poses.size(), 0ul);
 
   obj->onCleanup(state);
+}
+
+TEST(testPluginMap, NavFnEndPath)
+{
+  testEndPathOrientation("nav2_navfn_planner/NavfnPlanner");
+}
+
+TEST(testPluginMap, Smac2dEndPath)
+{
+  testEndPathOrientation("nav2_smac_planner/SmacPlanner2D");
+}
+
+TEST(testPluginMap, ThetaStartEndPath)
+{
+  testEndPathOrientation("nav2_theta_star_planner/ThetaStarPlanner");
 }
 
 int main(int argc, char ** argv)
