@@ -137,7 +137,6 @@ In RVIZ:
 
 Note:
 * nav2_gazebo_spawner pkg inside nav2_bringup directory is deleted.
-* use of nav2_gazebo_spawner to spawn the robot in gazebo is not recommended any more. instead use spawn_entity.py 
-of gazebo_ros to spawn the robot.
-* gazebo should be started with both libgazebo_ros_init.so and libgazebo_ros_factory.so to work correctly
-* spawn_entity node could not remap /tf and /tf_static to tf and tf_static in the launch file yet. instead it should be done as remapping argument <remapping>/tf:=tf</remapping>  <remapping>/tf_static:=tf_static</remapping> under ros2 tag in each plugin which publishes transforms. it is essential if the nodes are started with namespace and also in multi robot launch to differentiate the tf's of the different robot. 
+* use of nav2_gazebo_spawner to spawn the robot in gazebo is not recommended any more. Instead use spawn_entity.py of gazebo_ros to spawn the robot.
+* gazebo should be started with both libgazebo_ros_init.so and libgazebo_ros_factory.so to work correctly.
+* spawn_entity node could not remap /tf and /tf_static to tf and tf_static in the launch file yet, used only for multi-robot situations. Instead it should be done as remapping argument <remapping>/tf:=tf</remapping>  <remapping>/tf_static:=tf_static</remapping> under ros2 tag in each plugin which publishs transforms in the SDF file. It is essential to differentiate the tf's of the different robot.
