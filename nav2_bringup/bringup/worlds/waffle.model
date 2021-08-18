@@ -440,14 +440,6 @@
           </plugin>
         </sensor>
 
-        <collision name="collision">
-          <pose>0 0.047 -0.005 0 0 0</pose>
-          <geometry>
-            <box>
-              <size>0.008 0.130 0.022</size>
-            </box>
-          </geometry>
-        </collision>
         <pose>0.069 -0.047 0.107 0 0 0</pose>
       </link>
 
