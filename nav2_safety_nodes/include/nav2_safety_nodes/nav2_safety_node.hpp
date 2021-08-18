@@ -7,6 +7,7 @@
 #include <queue>
 
 #include "rclcpp/rclcpp.hpp"
+#include "visualization_msgs/msg/marker.hpp"
 #include "rclcpp/time.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/message_filter.h"
@@ -91,7 +92,9 @@ public:
 
 protected:
     // The local node
-    rclcpp::Node::SharedPtr rclcpp_node_;
+    rclcpp::Node::SharedPtr n;
+    std::vector<geometry_msgs::msg::Point> safety_zone;
+    rclcpp::Clock::SharedPtr clk = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
     /**
      * @brief Get parameters for node
      */
@@ -127,6 +130,9 @@ protected:
     std::vector<std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan>>> scan_subscribers_;
 
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
+
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub;
+
     rclcpp::TimerBase::SharedPtr timer_;
     
     /**

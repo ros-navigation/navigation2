@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "rclcpp/rclcpp.hpp"
+#include "visualization_msgs/msg/marker.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "tf2_ros/transform_listener.h"
@@ -38,6 +39,8 @@ SafetyZone::SafetyZone()
 {
   logger_ = get_logger();
   RCLCPP_INFO(logger_, "Creating Safety Polygon");
+  rclcpp::Node::SharedPtr n;
+  rclcpp::Clock::SharedPtr clk = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
 
   // Vector of string for multiple LaserScan topics
   const std::vector<std::string> scan_topics = {
@@ -204,8 +207,39 @@ SafetyZone::laser_callback(
       return;
     }
     point_cloud_pub_->publish(std::move(*cloud));
+
+    auto m = std::make_unique<visualization_msgs::msg::Marker>();
+    m->header.frame_id = "/my_frame";
+    m->header.stamp = clk->now();
+    m->ns = n->get_namespace();
+    m->id = 0;
+    m->type = visualization_msgs::msg::Marker::POINTS;
+    m->action = visualization_msgs::msg::Marker::ADD;
+    m->pose.orientation.w = 1.0;
+    m->pose.orientation.w = 1.0;
+    m->scale.x = 0.2;
+    m->scale.y = 0.2;
+    m->scale.z = 0.0;
+    m->color.r = 1.0;
+    m->color.g = 1.0f;
+    m->color.b = 1.0;
+    m->color.a = 1.0;
+    
+    for (geometry_msgs::msg::Point pt : safety_zone) {
+      int i = 0;
+      geometry_msgs::msg::Point & p = m->points[i];
+        p.x = pt.x;
+        p.y = pt.y;
+        p.z = pt.z;
+        i++;
+    }
+
+    pub->publish(std::move(m));
+    RCLCPP_INFO(
+      logger_, "Published safety polygon");
   }
 }
+
 
 // In progress
 int
