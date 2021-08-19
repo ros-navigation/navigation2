@@ -57,7 +57,9 @@ class TrajectoryPath:
         output_ys = output_ys + 0.0
         output_yaws = self.yaws + 0.0
 
-        return list(zip(output_xs, output_ys, output_yaws))
+        stacked = np.vstack([output_xs, output_ys, output_yaws]).transpose()
+
+        return stacked.tolist()
 
 
 @dataclass(frozen=True)
