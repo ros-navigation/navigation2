@@ -36,8 +36,8 @@ using namespace std::chrono_literals;
 namespace nav2_planner
 {
 
-PlannerServer::PlannerServer()
-: nav2_util::LifecycleNode("nav2_planner", ""),
+PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("nav2_planner", "", false, options),
   gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
   default_ids_{"GridBased"},
   default_types_{"nav2_navfn_planner/NavfnPlanner"},

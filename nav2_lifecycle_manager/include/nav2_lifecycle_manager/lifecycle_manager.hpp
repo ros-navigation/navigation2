@@ -45,8 +45,9 @@ class LifecycleManager : public rclcpp::Node
 public:
   /**
    * @brief A constructor for nav2_lifecycle_manager::LifecycleManager
+   * @param options Additional options to control creation of the node.
    */
-  LifecycleManager();
+  LifecycleManager(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
    * @brief A destructor for nav2_lifecycle_manager::LifecycleManager
    */

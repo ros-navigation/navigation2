@@ -40,8 +40,9 @@ class RecoveryServer : public nav2_util::LifecycleNode
 public:
   /**
    * @brief A constructor for recovery_server::RecoveryServer
+   * @param options Additional options to control creation of the node.
    */
-  RecoveryServer();
+  RecoveryServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~RecoveryServer();
 
   /**
