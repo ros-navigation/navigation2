@@ -52,8 +52,8 @@ def generate_launch_description():
 
     # Launch Gazebo server for simulation
     start_gazebo_cmd = ExecuteProcess(
-            cmd=['gzserver', '-s', 'libgazebo_ros_factory.so',
-                 '--minimal_comms', world],
+            cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
+                 '-s', 'libgazebo_ros_factory.so', '--minimal_comms', world],
             output='screen')
 
     # Define commands for spawing the robots into Gazebo
@@ -61,13 +61,13 @@ def generate_launch_description():
     for robot in robots:
         spawn_robots_cmds.append(
             Node(
-                package='nav2_gazebo_spawner',
-                executable='nav2_gazebo_spawner',
+                package='gazebo_ros',
+                executable='spawn_entity.py',
                 output='screen',
                 arguments=[
-                    '--robot_name', TextSubstitution(text=robot['name']),
-                    '--robot_namespace', TextSubstitution(text=robot['name']),
-                    '--sdf', TextSubstitution(text=sdf),
+                    '-entity', TextSubstitution(text=robot['name']),
+                    '-robot_namespace', TextSubstitution(text=robot['name']),
+                    '-file', TextSubstitution(text=sdf),
                     '-x', TextSubstitution(text=str(robot['x_pose'])),
                     '-y', TextSubstitution(text=str(robot['y_pose'])),
                     '-z', TextSubstitution(text=str(robot['z_pose']))]
