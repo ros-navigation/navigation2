@@ -73,6 +73,9 @@ def generate_launch_description():
                     '-z', TextSubstitution(text=str(robot['z_pose']))]
             ))
 
+    with open(urdf, 'r') as infp:
+        robot_description = infp.read()
+
     # Define commands for launching the robot state publishers
     robot_state_pubs_cmds = []
     for robot in robots:
@@ -82,9 +85,8 @@ def generate_launch_description():
                 executable='robot_state_publisher',
                 namespace=TextSubstitution(text=robot['name']),
                 output='screen',
-                parameters=[{'use_sim_time': 'True'}],
-                remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')],
-                arguments=[urdf]))
+                parameters=[{'use_sim_time': True, 'robot_description': robot_description}],
+                remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')]))
 
     # Define commands for launching the navigation instances
     nav_instances_cmds = []
@@ -127,9 +129,10 @@ def main(argv=sys.argv[1:]):
 
     # TODO(orduno) remove duplicated definition of robots on `generate_launch_description`
     test1_action = ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
+        cmd=[os.path.join(os.getenv('TEST_DIR'), os.getenv('TESTER')),
              '-rs', 'robot1', '0.0', '0.5', '1.0', '0.5',
-             '-rs', 'robot2', '0.0', '-0.5', '1.0', '-0.5'],
+             '-rs', 'robot2', '0.0', '-0.5', '1.0', '-0.5',
+             '-e', 'True'],
         name='tester_node',
         output='screen')
 
