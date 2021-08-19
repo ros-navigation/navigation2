@@ -126,5 +126,5 @@ ament_export_libraries(${library_name}
   nav2_spin_recovery
   nav2_wait_recovery
 )
-
+ament_export_dependencies(${dependencies})
 ament_package()
