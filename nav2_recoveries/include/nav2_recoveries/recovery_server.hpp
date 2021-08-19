@@ -42,7 +42,7 @@ public:
    * @brief A constructor for recovery_server::RecoveryServer
    * @param options Additional options to control creation of the node.
    */
-  RecoveryServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit RecoveryServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~RecoveryServer();
 
   /**

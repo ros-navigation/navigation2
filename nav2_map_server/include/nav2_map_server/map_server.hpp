@@ -40,7 +40,7 @@ public:
    * @brief A constructor for nav2_map_server::MapServer
    * @param options Additional options to control creation of the node.
    */
-  MapServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit MapServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   /**
    * @brief A Destructor for nav2_map_server::MapServer

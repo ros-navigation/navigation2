@@ -39,7 +39,7 @@ public:
    * @brief Constructor for the nav2_map_server::MapSaver
    * @param options Additional options to control creation of the node.
    */
-  MapSaver(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit MapSaver(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   /**
    * @brief Destructor for the nav2_map_server::MapServer
