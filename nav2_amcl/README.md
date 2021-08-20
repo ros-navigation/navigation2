@@ -13,6 +13,11 @@ With the AutoLocalization branch of BT, first the `global_localization` service 
 
 **Warning**: AutoLocalization actuates robot; currently, obstacle avoidance has not been integrated into this feature. The user is advised to not use this feature on a physical robot for safety reasons.  As of now, this feature should only be used in simulations.
 
+# Select specific initial locations
+```
+ros2 service call  /reinitialize_selective_localization nav2_msgs/srv/SelectLocations "{locations: [ {x: 0, y: 0} ]}"
+```
+
 ## Future Plan
 * Running from Ros bag
 * Extending AMCL to work with different type of Sensors

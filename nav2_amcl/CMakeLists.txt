@@ -16,7 +16,7 @@ find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
 
-nav2_package()
+set(CMAKE_CXX_STANDARD 17)
 
 include_directories(
   include

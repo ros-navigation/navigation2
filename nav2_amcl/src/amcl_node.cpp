@@ -27,7 +27,10 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <random>
+#include <iterator>
 
+#include "nav2_msgs/msg/location.hpp"
 #include "message_filters/subscriber.h"
 #include "nav2_amcl/angleutils.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -221,6 +224,10 @@ AmclNode::AmclNode()
   add_parameter(
     "map_topic", rclcpp::ParameterValue("map"),
     "Topic to subscribe to in order to receive the map to localize on");
+
+  add_parameter(
+    "selective_search_radius", rclcpp::ParameterValue(1.0),
+    "Search radius from position when using selective initialization");
 }
 
 AmclNode::~AmclNode()
@@ -427,6 +434,11 @@ AmclNode::checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time las
 #if NEW_UNIFORM_SAMPLING
 std::vector<std::pair<int, int>> AmclNode::free_space_indices;
 #endif
+std::optional<std::vector<nav2_msgs::msg::Location>> optional_locations;
+double selective_search_radius;
+std::random_device random_dev;
+std::mt19937 random_generator(random_dev());
+tf2::Transform tx_odom_tf2;
 
 bool
 AmclNode::getOdomPose(
@@ -499,6 +511,28 @@ AmclNode::uniformPoseGenerator(void * arg)
   return p;
 }
 
+pf_vector_t
+AmclNode::selectivePoseGenerator(void * arg)
+{
+  map_t * map = reinterpret_cast<map_t *>(arg);
+  if(optional_locations) {
+    std::vector<nav2_msgs::msg::Location> locations = *optional_locations;
+    pf_vector_t particle;
+    auto location = *select_randomly(locations.begin(), locations.end(), random_generator);    geometry_msgs::msg::Pose current_pose;
+    current_pose.position.x = location.x + ( ( 2.0 * (drand48() - 0.5) ) * selective_search_radius );
+    current_pose.position.y = location.y + ( ( 2.0 * (drand48() - 0.5) ) * selective_search_radius );
+    tf2::Transform current_transform;
+    tf2::impl::Converter<true, false>::convert(current_pose, current_transform);
+    tf2::Transform new_transformation = current_transform * tx_odom_tf2;
+    particle.v[0] = new_transformation.getOrigin().x();
+    particle.v[1] = new_transformation.getOrigin().y();
+    particle.v[2] = drand48() * 2 * M_PI - M_PI;
+    return particle;
+  } else {
+    return AmclNode::uniformPoseGenerator(arg);
+  }
+}
+
 void
 AmclNode::globalLocalizationCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
@@ -514,6 +548,39 @@ AmclNode::globalLocalizationCallback(
   initial_pose_is_known_ = true;
   pf_init_ = false;
 }
+
+template<typename Iter, typename RandomGenerator>
+Iter AmclNode::select_randomly(Iter start, Iter end, RandomGenerator& g) {
+    std::uniform_int_distribution<> dis(0, std::distance(start, end) - 1);
+    std::advance(start, dis(g));
+    return start;
+}
+
+template<typename Iter>
+Iter AmclNode::select_randomly(Iter start, Iter end) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    return select_randomly(start, end, gen);
+}
+
+void
+AmclNode::selectiveLocalizationCallback(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<nav2_msgs::srv::SelectLocations::Request> request,
+  std::shared_ptr<nav2_msgs::srv::SelectLocations::Response> /*response*/)
+{
+  optional_locations = { request->locations };
+  selective_search_radius = selective_search_radius_;
+  updateOdomTransformation();
+  RCLCPP_INFO(get_logger(), "Initializing with povided locations and uniform distribution orientation");
+  pf_init_model(
+    pf_, (pf_init_model_fn_t)AmclNode::selectivePoseGenerator,
+    reinterpret_cast<void *>(map_));
+  RCLCPP_INFO(get_logger(), "Selective initialisation done!");
+  initial_pose_is_known_ = true;
+  pf_init_ = false;
+}
+
 
 // force nomotion updates (amcl updating without requiring motion)
 void
@@ -621,6 +688,32 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
   pf_init_ = false;
   init_pose_received_on_inactive = false;
   initial_pose_is_known_ = true;
+}
+
+
+void AmclNode::updateOdomTransformation()
+{
+  // In case the client sent us a pose estimate in the past, integrate the
+  // intervening odometric change.
+  geometry_msgs::msg::TransformStamped tx_odom;
+  try {
+    rclcpp::Time rclcpp_time = now();
+    tf2::TimePoint tf2_time(std::chrono::nanoseconds(rclcpp_time.nanoseconds()));
+    // Check if the transform is available
+    tx_odom = tf_buffer_->lookupTransform(
+      base_frame_id_, odom_frame_id_, tf2_time);
+  } catch (tf2::TransformException & e) {
+    // If we've never sent a transform, then this is normal, because the
+    // global_frame_id_ frame doesn't exist.  We only care about in-time
+    // transformation for on-the-move pose-setting, so ignoring this
+    // startup condition doesn't really cost us anything.
+    if (sent_first_transform_) {
+      RCLCPP_WARN(get_logger(), "Failed to transform initial pose in time (%s)", e.what());
+    }
+    tf2::impl::Converter<false, true>::convert(tf2::Transform::getIdentity(), tx_odom.transform);
+  }
+
+  tf2::impl::Converter<true, false>::convert(tx_odom.transform, tx_odom_tf2);
 }
 
 void
@@ -1101,6 +1194,7 @@ AmclNode::initParameters()
   get_parameter("always_reset_initial_pose", always_reset_initial_pose_);
   get_parameter("scan_topic", scan_topic_);
   get_parameter("map_topic", map_topic_);
+  get_parameter("selective_search_radius", selective_search_radius_);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -1288,6 +1382,10 @@ AmclNode::initServices()
   global_loc_srv_ = create_service<std_srvs::srv::Empty>(
     "reinitialize_global_localization",
     std::bind(&AmclNode::globalLocalizationCallback, this, _1, _2, _3));
+
+  selective_loc_srv_ = create_service<nav2_msgs::srv::SelectLocations>(
+    "reinitialize_selective_localization",
+    std::bind(&AmclNode::selectiveLocalizationCallback, this, _1, _2, _3));
 
   nomotion_update_srv_ = create_service<std_srvs::srv::Empty>(
     "request_nomotion_update",
