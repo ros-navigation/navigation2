@@ -19,6 +19,7 @@
 #include <algorithm>
 
 #include "nav2_smac_planner/smac_planner_2d.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -240,6 +241,25 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   pose.pose.orientation.y = 0.0;
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
+
+  // Corner case of the goal beeing closer to the start than the planner resolution
+  // which makes the planner fails
+  if (nav2_util::geometry_utils::euclidean_distance(start.pose, goal.pose) < 0.1) {
+    RCLCPP_INFO_STREAM(_logger, "Corner case");
+    // First pose is always start pose
+    pose.pose = start.pose;
+    plan.poses.push_back(pose);
+    // Add a second (goal) pose if start and are not stricly equal (and let the local planner
+    // decides if they are far enough or not to move)
+    if (start.pose != goal.pose){
+      pose.pose = goal.pose;
+      plan.poses.push_back(pose);
+    }
+    if (_use_final_approach_orientation) {
+      plan.poses.back().pose.orientation = start.pose.orientation;
+    }
+    return plan;
+  }
 
   // Compute plan
   Node2D::CoordinateVector path;
