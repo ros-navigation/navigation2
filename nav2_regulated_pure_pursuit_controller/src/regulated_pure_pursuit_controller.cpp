@@ -441,7 +441,7 @@ bool RegulatedPurePursuitController::inCollision(const double & x, const double 
   if (!costmap_->worldToMap(x, y, mx, my)) {
     RCLCPP_WARN_THROTTLE(
       logger_, *(clock_), 30000,
-      "The dimensions of the costmap is smaller, proceed at your own risk");
+      "The dimensions of the costmap is too small to successfully check for collisions as far ahead as requested. Proceed at your own risk, slow the robot, or increase your costmap size.");
     return false;
   }
 
