@@ -87,6 +87,7 @@ def write_to_json(minimal_set_trajectories, config):
 def save_visualizations(minimal_set_trajectories):
 
     visualizations_folder = Path(__file__).parent / "visualizations"
+    visualizations_folder.mkdir(exist_ok=True)
 
     for start_angle in minimal_set_trajectories.keys():
 
