@@ -43,7 +43,7 @@ void RegulatedPurePursuitController::configure(
 {
   auto node = parent.lock();
   if (!node) {
-    throw std::runtime_error("Unable to lock node!");
+    throw nav2_core::PlannerException("Unable to lock node!");
   }
 
   costmap_ros_ = costmap_ros;
@@ -51,6 +51,7 @@ void RegulatedPurePursuitController::configure(
   tf_ = tf;
   plugin_name_ = name;
   logger_ = node->get_logger();
+  clock_ = node->get_clock();
 
   double transform_tolerance = 0.1;
   double control_frequency = 20.0;
@@ -314,7 +315,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // Collision checking on this velocity heading
   if (isCollisionImminent(pose, linear_vel, angular_vel)) {
-    throw std::runtime_error("RegulatedPurePursuitController detected collision ahead!");
+    throw nav2_core::PlannerException("RegulatedPurePursuitController detected collision ahead!");
   }
 
   // populate and return message
@@ -437,13 +438,13 @@ bool RegulatedPurePursuitController::inCollision(const double & x, const double 
 {
   unsigned int mx, my;
 
-  auto convertWorldToMap = costmap_->worldToMap(x, y, mx, my);
-  if (!convertWorldToMap) {
+  if (!costmap_->worldToMap(x, y, mx, my)) {
     RCLCPP_WARN_THROTTLE(
       logger_, *(clock_), 30000,
       "The dimensions of the costmap is smaller, proceed at your own risk");
     return false;
   }
+
   unsigned char cost = costmap_->getCost(mx, my);
 
   if (costmap_ros_->getLayeredCostmap()->isTrackingUnknown()) {
@@ -456,12 +457,14 @@ bool RegulatedPurePursuitController::inCollision(const double & x, const double 
 double RegulatedPurePursuitController::costAtPose(const double & x, const double & y)
 {
   unsigned int mx, my;
-  auto convertWorldToMap = costmap_->worldToMap(x, y, mx, my);
-  if (!convertWorldToMap) {
-    RCLCPP_WARN_THROTTLE(
-      logger_, *(clock_), 30000,
-      "The dimensions of the costmap is smaller, proceed at your own risk");
-    return 0.0;
+
+  if (!costmap_->worldToMap(x, y, mx, my)) {
+    RCLCPP_FATAL_ONCE(
+      logger_,
+      "The dimensions of the costmap is smaller, the controller failed and so the robot cannot proceed further");
+    throw nav2_core::PlannerException(
+            "RegulatedPurePursuitController detected poor configuration of local costmap!");
+    return std::numeric_limits<double>::max();
   }
 
   unsigned char cost = costmap_->getCost(mx, my);
