@@ -1,5 +1,4 @@
 from collections import defaultdict
-from os import stat_result
 
 import numpy as np
 
