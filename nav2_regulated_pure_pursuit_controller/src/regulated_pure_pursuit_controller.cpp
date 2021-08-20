@@ -461,7 +461,7 @@ double RegulatedPurePursuitController::costAtPose(const double & x, const double
   if (!costmap_->worldToMap(x, y, mx, my)) {
     RCLCPP_FATAL_ONCE(
       logger_,
-      "The dimensions of the costmap is smaller, the controller failed and so the robot cannot proceed further");
+      "The dimensions of the costmap is too small to fully include your robot's footprint, thusly the robot cannot proceed.");
     throw nav2_core::PlannerException(
             "RegulatedPurePursuitController detected poor configuration of local costmap!");
     return std::numeric_limits<double>::max();
