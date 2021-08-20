@@ -463,7 +463,7 @@ double RegulatedPurePursuitController::costAtPose(const double & x, const double
       logger_,
       "The dimensions of the costmap is too small to fully include your robot's footprint, thusly the robot cannot proceed.");
     throw nav2_core::PlannerException(
-            "RegulatedPurePursuitController detected poor configuration of local costmap!");
+            "RegulatedPurePursuitController: Dimensions of the costmap are too small to encapsulate the robot footprint at current speeds!");
     return std::numeric_limits<double>::max();
   }
 
