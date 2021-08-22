@@ -182,7 +182,10 @@ _commands:
                         | xargs)
                     fi
                     echo BUILD_PACKAGES: $BUILD_PACKAGES
-                    
+
+                    rm -r << parameters.workspace >>/build/nav2_bringup
+                    rm -r << parameters.workspace >>/install/nav2_bringup
+
                     colcon clean packages --yes \
                       --packages-select ${BUILD_PACKAGES} \
                       --base-select install
