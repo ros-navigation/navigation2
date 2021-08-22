@@ -182,11 +182,18 @@ _commands:
                         | xargs)
                     fi
                     echo BUILD_PACKAGES: $BUILD_PACKAGES
+                    cd build
+                    ls 
+                    cd ..
 
                     colcon clean packages --yes \
                       --packages-select ${BUILD_PACKAGES} \
                       --base-select install
-
+                    
+                    cd build
+                    ls 
+                    cd ..
+                    
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
