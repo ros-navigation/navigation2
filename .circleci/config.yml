@@ -183,9 +183,6 @@ _commands:
                     fi
                     echo BUILD_PACKAGES: $BUILD_PACKAGES
                     
-                    rm -r build/nav2_bringup
-                    rm -r install/nav2_bringup
-                    
                     colcon clean packages --yes \
                       --packages-select ${BUILD_PACKAGES} \
                       --base-select install
