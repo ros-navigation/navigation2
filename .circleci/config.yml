@@ -190,7 +190,7 @@ _commands:
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
-                      --mixin << parameters.mixins >>
+                      --mixin << parameters.mixins >> \
                       --cmake-clean-cache
               - ccache_stats:
                   workspace: << parameters.workspace >>
