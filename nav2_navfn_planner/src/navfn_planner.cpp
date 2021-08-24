@@ -291,20 +291,24 @@ NavfnPlanner::makePlan(
 
       size_t plan_size = plan.poses.size();
       if (use_final_approach_orientation_ && plan_size > 1) {
-        double dx, dy, theta;
-        auto last_pose = plan.poses.back().pose.position;
-        auto approach_pose = plan.poses[plan_size - 2].pose.position;
-        // Deal with the case of NavFn producing a path with two equal last poses
-        if (std::abs(last_pose.x - approach_pose.x) < 0.0001 &&
-          std::abs(last_pose.y - approach_pose.y) < 0.0001 && plan_size > 2)
-        {
-          approach_pose = plan.poses[plan_size - 3].pose.position;
+        if (plan_size > 1) {
+          double dx, dy, theta;
+          auto last_pose = plan.poses.back().pose.position;
+          auto approach_pose = plan.poses[plan_size - 2].pose.position;
+          // Deal with the case of NavFn producing a path with two equal last poses
+          if (std::abs(last_pose.x - approach_pose.x) < 0.0001 &&
+            std::abs(last_pose.y - approach_pose.y) < 0.0001 && plan_size > 2)
+          {
+            approach_pose = plan.poses[plan_size - 3].pose.position;
+          }
+          dx = last_pose.x - approach_pose.x;
+          dy = last_pose.y - approach_pose.y;
+          theta = atan2(dy, dx);
+          plan.poses.back().pose.orientation =
+            nav2_util::geometry_utils::orientationAroundZAxis(theta);
+        } else if (plan_size == 1) {
+          plan.poses.back().pose.orientation = start.orientation;
         }
-        dx = last_pose.x - approach_pose.x;
-        dy = last_pose.y - approach_pose.y;
-        theta = atan2(dy, dx);
-        plan.poses.back().pose.orientation =
-          nav2_util::geometry_utils::orientationAroundZAxis(theta);
       }
     } else {
       RCLCPP_ERROR(
