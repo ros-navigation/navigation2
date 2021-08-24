@@ -37,6 +37,7 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
+
 // SMAC smoke tests for plugin-level issues rather than algorithms
 // (covered by more extensively testing in other files)
 // System tests in nav2_system_tests will actually plan with this work
@@ -77,4 +78,48 @@ TEST(SmacTest, test_smac_2d)
   costmap_ros->on_cleanup(rclcpp_lifecycle::State());
   node2D.reset();
   costmap_ros.reset();
+}
+
+TEST(SmacTest, test_smac_2d_reconfigure)
+{
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node2D =
+    std::make_shared<rclcpp_lifecycle::LifecycleNode>("Smac2DTest");
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros;
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  auto planner_2d = std::make_unique<nav2_smac_planner::SmacPlanner2D>();
+  planner_2d->configure(node2D, "test", nullptr, costmap_ros);
+  planner_2d->activate();
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node2D->get_node_base_interface(),
+    node2D->get_node_topics_interface(),
+    node2D->get_node_graph_interface(),
+    node2D->get_node_services_interface());
+
+  auto results = rec_param->set_parameters(
+  {
+    rclcpp::Parameter("test.tolerance", 1.0),
+    rclcpp::Parameter("test.cost_travel_multiplier", 1.0),
+    rclcpp::Parameter("test.max_planning_time", 2.0),
+    rclcpp::Parameter("test.downsample_costmap", false),
+    rclcpp::Parameter("test.allow_unknown", false),
+    rclcpp::Parameter("test.downsampling_factor", 2),
+    rclcpp::Parameter("test.max_iterations", -1),
+    rclcpp::Parameter("test.max_on_approach_iterations", -1),
+    rclcpp::Parameter("test.motion_model_for_search", "UNKNOWN")
+  });
+
+  rclcpp::spin_until_future_complete(node2D->get_node_base_interface(), results);
+
+  EXPECT_EQ(node2D->get_parameter("test.tolerance").as_double(), 1.0);
+  EXPECT_EQ(node2D->get_parameter("test.cost_travel_multiplier").as_double(), 1.0);
+  EXPECT_EQ(node2D->get_parameter("test.max_planning_time").as_double(), 2.0);
+  EXPECT_EQ(node2D->get_parameter("test.downsample_costmap").as_bool(), false);
+  EXPECT_EQ(node2D->get_parameter("test.allow_unknown").as_bool(), false);
+  EXPECT_EQ(node2D->get_parameter("test.downsampling_factor").as_int(), 2);
+  EXPECT_EQ(node2D->get_parameter("test.max_iterations").as_int(), -1);
+  EXPECT_EQ(node2D->get_parameter("test.max_on_approach_iterations").as_int(), -1);
+  EXPECT_EQ(node2D->get_parameter("test.motion_model_for_search").as_string(), "UNKNOWN");
 }
