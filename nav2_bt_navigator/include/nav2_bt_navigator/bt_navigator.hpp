@@ -40,8 +40,9 @@ class BtNavigator : public nav2_util::LifecycleNode
 public:
   /**
    * @brief A constructor for nav2_bt_navigator::BtNavigator class
+   * @param options Additional options to control creation of the node.
    */
-  BtNavigator();
+  explicit BtNavigator(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
    * @brief A destructor for nav2_bt_navigator::BtNavigator class
    */
