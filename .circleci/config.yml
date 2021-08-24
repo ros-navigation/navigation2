@@ -33,7 +33,7 @@ _commands:
         - restore_cache:
             name: Restore Cache << parameters.key >>
             keys:
-              - "<< parameters.key >>-v1\
+              - "<< parameters.key >>-v2\
                 -{{ arch }}\
                 -{{ .Branch }}\
                 -{{ .Environment.CIRCLE_PR_NUMBER }}\
@@ -58,7 +58,7 @@ _commands:
       steps:
         - save_cache:
             name: Save Cache << parameters.key >>
-            key: "<< parameters.key >>-v1\
+            key: "<< parameters.key >>-v2\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
@@ -183,17 +183,10 @@ _commands:
                     fi
                     echo BUILD_PACKAGES: $BUILD_PACKAGES
 
-                    rm -rf $OVERLAY_WS\build\nav2_bringup
-                    rm -rf $OVERLAY_WS\install\nav2_bringup
-
                     colcon clean packages --yes \
                       --packages-select ${BUILD_PACKAGES} \
                       --base-select install
-                    
-                    cd build
-                    ls 
-                    cd ..
-                    
+
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
