@@ -226,18 +226,6 @@ public:
     double x1, double y1, double z1, unsigned int max_length = UINT_MAX,
     unsigned int min_length = 0)
   {
-    int dx = int(x1) - int(x0);  // NOLINT
-    int dy = int(y1) - int(y0);  // NOLINT
-    int dz = int(z1) - int(z0);  // NOLINT
-
-    unsigned int abs_dx = abs(dx);
-    unsigned int abs_dy = abs(dy);
-    unsigned int abs_dz = abs(dz);
-
-    int offset_dx = sign(dx);
-    int offset_dy = sign(dy) * size_x_;
-    int offset_dz = sign(dz);
-
     // we need to chose how much to scale our dominant dimension, based on the
     // maximum length of the line
     double dist = sqrt((x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1) + (z0 - z1) * (z0 - z1));
@@ -247,10 +235,21 @@ public:
     double scale = std::min(1.0, max_length / dist);
 
     // Updating starting point to the point at distance min_length from the initial point
-    double min_x0 = x0 + dx / dist * min_length;
-    double min_y0 = y0 + dy / dist * min_length;
-    double min_z0 = z0 + dz / dist * min_length;
+    double min_x0 = x0 + (x1 - x0) / dist * min_length;
+    double min_y0 = y0 + (y1 - y0) / dist * min_length;
+    double min_z0 = z0 + (z1 - z0) / dist * min_length;
 
+    int dx = int(x1) - int(min_x0);  // NOLINT
+    int dy = int(y1) - int(min_y0);  // NOLINT
+    int dz = int(z1) - int(min_z0);  // NOLINT
+
+    unsigned int abs_dx = abs(dx);
+    unsigned int abs_dy = abs(dy);
+    unsigned int abs_dz = abs(dz);
+
+    int offset_dx = sign(dx);
+    int offset_dy = sign(dy) * size_x_;
+    int offset_dz = sign(dz);
 
     unsigned int z_mask = ((1 << 16) | 1) << (unsigned int)min_z0;
     unsigned int offset = (unsigned int)min_y0 * size_x_ + (unsigned int)min_x0;
@@ -258,16 +257,14 @@ public:
     GridOffset grid_off(offset);
     ZOffset z_off(z_mask);
 
-    unsigned int length = 0;
     // is x dominant
     if (abs_dx >= max(abs_dy, abs_dz)) {
       int error_y = abs_dx / 2;
       int error_z = abs_dx / 2;
-      // Since initial point has been updated above, subtracting min_length from the total length
-      length = (unsigned int)(scale * abs_dx) - min_length;
+
       bresenham3D(
         at, grid_off, grid_off, z_off, abs_dx, abs_dy, abs_dz, error_y, error_z,
-        offset_dx, offset_dy, offset_dz, offset, z_mask, length);
+        offset_dx, offset_dy, offset_dz, offset, z_mask, (unsigned int)(scale * abs_dx));
       return;
     }
 
@@ -275,23 +272,20 @@ public:
     if (abs_dy >= abs_dz) {
       int error_x = abs_dy / 2;
       int error_z = abs_dy / 2;
-      // Since initial point has been updated above, subtracting min_length from the total length
-      length = (unsigned int)(scale * abs_dy) - min_length;
+
       bresenham3D(
         at, grid_off, grid_off, z_off, abs_dy, abs_dx, abs_dz, error_x, error_z,
-        offset_dy, offset_dx, offset_dz, offset, z_mask, length);
+        offset_dy, offset_dx, offset_dz, offset, z_mask, (unsigned int)(scale * abs_dy));
       return;
     }
 
     // otherwise, z is dominant
     int error_x = abs_dz / 2;
     int error_y = abs_dz / 2;
-    // Since initial point has been updated above, subtracting min_length from the total length
-    length = (unsigned int)(scale * abs_dz) - min_length;
 
     bresenham3D(
       at, z_off, grid_off, grid_off, abs_dz, abs_dx, abs_dy, error_x, error_y, offset_dz,
-      offset_dx, offset_dy, offset, z_mask, length);
+      offset_dx, offset_dy, offset, z_mask, (unsigned int)(scale * abs_dz));
   }
 
 private:
