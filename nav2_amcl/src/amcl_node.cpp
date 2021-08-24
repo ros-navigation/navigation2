@@ -1107,6 +1107,25 @@ AmclNode::initParameters()
   last_time_printed_msg_ = now();
 
   // Semantic checks
+  if (laser_likelihood_max_dist_ < 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set laser_likelihood_max_dist to be negtive,"
+      " this isn't allowed so it will be set to default value 2.0.");
+    laser_likelihood_max_dist_ = 2.0;
+  }
+  if (max_particles_ < 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set max_particles to be negtive,"
+      " this isn't allowed so it will be set to default value 2000.");
+    max_particles_ = 2000;
+  }
+
+  if (min_particles_ < 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set min_particles to be negtive,"
+      " this isn't allowed so it will be set to default value 500.");
+    min_particles_ = 500;
+  }
 
   if (min_particles_ > max_particles_) {
     RCLCPP_WARN(
