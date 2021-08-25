@@ -80,7 +80,6 @@ TEST(SmacTest, test_smac_2d) {
   costmap_ros->on_cleanup(rclcpp_lifecycle::State());
   node2D.reset();
   costmap_ros.reset();
-  EXPECT_FALSE(true);
 }
 
 TEST(SmacTest, test_smac_2d_reconfigure) {
