@@ -99,7 +99,7 @@ TEST(SmacTest, test_smac_2d_reconfigure)
     node2D->get_node_graph_interface(),
     node2D->get_node_services_interface());
 
-  auto results = rec_param->set_parameters(
+  auto results = rec_param->set_parameters_atomically(
   {
     rclcpp::Parameter("test.tolerance", 1.0),
     rclcpp::Parameter("test.cost_travel_multiplier", 1.0),
