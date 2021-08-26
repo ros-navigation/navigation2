@@ -119,7 +119,7 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   getPlan(global_path);
 
   // Override last pose orientation to match goal if use_final_approach_orientation=false (default)
-  // and deal with corner case of plan of length 1
+  // set it to the approach orientation otherwise and deal with corner case of plan of length 1
   size_t path_size = global_path.poses.size();
   if (path_size == 1) {
     if (use_final_approach_orientation_) {

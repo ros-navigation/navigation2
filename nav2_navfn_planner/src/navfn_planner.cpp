@@ -317,7 +317,7 @@ NavfnPlanner::makePlan(
       smoothApproachToGoal(best_pose, plan);
 
       // Override last pose orientation to match goal if use_final_approach_orientation=false
-      // (default) and deal with corner case of plan of length 1
+      // set it to the approach orientation otherwise and deal with corner case of plan of length 1
       size_t plan_size = plan.poses.size();
       if (plan_size == 1) {
         if (use_final_approach_orientation_) {
