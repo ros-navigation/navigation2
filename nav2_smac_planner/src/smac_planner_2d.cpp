@@ -298,15 +298,6 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     plan.poses.push_back(pose);
   }
 
-  // Corner case of the plan returned by the planner is of size 1
-  if (plan.poses.size() == 1) {
-    if (_use_final_approach_orientation) {
-      plan.poses.back().pose.orientation = start.pose.orientation;
-    } else {
-      plan.poses.back().pose.orientation = goal.pose.orientation;
-    }
-  }
-
   // Publish raw path for debug
   if (_raw_plan_publisher->get_subscription_count() > 0) {
     _raw_plan_publisher->publish(plan);
@@ -327,7 +318,13 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     _smoother->smooth(plan, costmap, time_remaining);
   }
 
-  if (!_use_final_approach_orientation && plan.poses.size() > 0) {
+  // Override last pose orientation to match goal if use_final_approach_orientation=false (default)
+  // and deal with corner case of plan of length 1
+  if (_use_final_approach_orientation) {
+    if (plan.poses.size() == 1) {
+      plan.poses.back().pose.orientation = start.pose.orientation;
+    }
+  } else if (plan.poses.size() > 0) {
     plan.poses.back().pose.orientation = goal.pose.orientation;
   }
 
