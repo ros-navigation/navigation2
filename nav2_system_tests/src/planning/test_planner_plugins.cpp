@@ -34,7 +34,7 @@ void callback(const nav_msgs::msg::Path::ConstSharedPtr /*grid*/)
 {
 }
 
-void testEndPathOrientation(std::string plugin)
+void testSmallPathValidityAndOrientation(std::string plugin, double length)
 {
   auto obj = std::make_shared<nav2_system_tests::NavFnPlannerTester>();
   rclcpp_lifecycle::State state;
@@ -48,25 +48,43 @@ void testEndPathOrientation(std::string plugin)
 
   start.pose.position.x = 0.5;
   start.pose.position.y = 0.5;
+  start.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI_2);
   start.header.frame_id = "map";
 
-  goal.pose.position.x = 2.0;
-  goal.pose.position.y = 2.0;
+  goal.pose.position.x = 0.5;
+  goal.pose.position.y = start.pose.position.y + length;
   goal.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI);
   goal.header.frame_id = "map";
 
   // Test without use_final_approach_orientation
   // expecting end path pose orientation to be equal to goal orientation
   auto path = obj->getPlan(start, goal, "GridBased");
+  EXPECT_GT((int)path.poses.size(), 0);
   EXPECT_NEAR(tf2::getYaw(path.poses.back().pose.orientation), -M_PI, 0.01);
   obj->onCleanup(state);
 
   // Test WITH use_final_approach_orientation
   // expecting end path pose orientation to be equal to approach orientation
+  // which in the one pose corner case should be the start pose orientation
   obj->set_parameter(rclcpp::Parameter("GridBased.use_final_approach_orientation", true));
   obj->onConfigure(state);
   path = obj->getPlan(start, goal, "GridBased");
-  EXPECT_NEAR(tf2::getYaw(path.poses.back().pose.orientation), M_PI_4, 0.01);
+  EXPECT_GT((int)path.poses.size(), 0);
+
+  int path_size = path.poses.size();
+  if (path_size == 1) {
+    EXPECT_NEAR(
+      tf2::getYaw(path.poses.back().pose.orientation),
+      tf2::getYaw(start.pose.orientation),
+      0.01);
+  } else {
+    double dx = path.poses.back().pose.position.x - path.poses[path_size - 2].pose.position.x;
+    double dy = path.poses.back().pose.position.y - path.poses[path_size - 2].pose.position.y;
+    EXPECT_NEAR(
+      tf2::getYaw(path.poses.back().pose.orientation),
+      atan2(dy, dx),
+      0.01);
+  }
   obj->onCleanup(state);
 }
 
@@ -92,19 +110,64 @@ TEST(testPluginMap, Failures)
   obj->onCleanup(state);
 }
 
-TEST(testPluginMap, NavFnEndPath)
+TEST(testPluginMap, Smac2dEqualStartGoal)
 {
-  testEndPathOrientation("nav2_navfn_planner/NavfnPlanner");
+  testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.0);
 }
 
-TEST(testPluginMap, Smac2dEndPath)
+TEST(testPluginMap, Smac2dVerySmallPath)
 {
-  testEndPathOrientation("nav2_smac_planner/SmacPlanner2D");
+  testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.00001);
 }
 
-TEST(testPluginMap, ThetaStartEndPath)
+TEST(testPluginMap, Smac2dBelowCostmapResolution)
 {
-  testEndPathOrientation("nav2_theta_star_planner/ThetaStarPlanner");
+  testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.09);
+}
+
+TEST(testPluginMap, Smac2dAboveCostmapResolution)
+{
+  testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.102);
+}
+
+TEST(testPluginMap, NavFnEqualStartGoal)
+{
+  testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.0);
+}
+
+TEST(testPluginMap, NavFnVerySmallPath)
+{
+  testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.00001);
+}
+
+TEST(testPluginMap, NavFnBelowCostmapResolution)
+{
+  testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.09);
+}
+
+TEST(testPluginMap, NavFnAboveCostmapResolution)
+{
+  testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.102);
+}
+
+TEST(testPluginMap, ThetaStarEqualStartGoal)
+{
+  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.0);
+}
+
+TEST(testPluginMap, ThetaStarVerySmallPath)
+{
+  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.00001);
+}
+
+TEST(testPluginMap, ThetaStarBelowCostmapResolution)
+{
+  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.09);
+}
+
+TEST(testPluginMap, ThetaStarAboveCostmapResolution)
+{
+  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.102);
 }
 
 int main(int argc, char ** argv)

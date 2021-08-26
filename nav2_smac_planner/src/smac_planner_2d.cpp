@@ -242,22 +242,25 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
 
-  // Corner case of the goal beeing closer to the start than the planner resolution
-  // which makes the planner fails
-  if (nav2_util::geometry_utils::euclidean_distance(start.pose, goal.pose) < 0.1) {
-    RCLCPP_INFO_STREAM(_logger, "Corner case");
-    // First pose is always start pose
+  // Corner cases:
+  // * start(x,y) = goal(x,y) which makes the planner fails
+  // * start(x,y) to goal(x,y) distance very small which makes the planner fails
+  // * start(x,y) to goal(x,y) distance below the costamp resolution wich generates path of length 1
+  if (nav2_util::geometry_utils::euclidean_distance(start.pose, goal.pose) <
+    (costmap->getResolution() + costmap->getResolution() * 0.01))
+  {
+    if (costmap->getCost(mx, my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+      RCLCPP_WARN(_logger, "Failed to create a unique pose path because of obstacles");
+      return plan;
+    }
     pose.pose = start.pose;
+    // if we have a different start and goal orientation, set the unique path pose to the goal
+    // orientation, unless use_final_approach_orientation where we need it to be the goal
+    // orientation to avoid movement from the local planner
+    if (start.pose.orientation != goal.pose.orientation && !_use_final_approach_orientation) {
+      pose.pose.orientation = goal.pose.orientation;
+    }
     plan.poses.push_back(pose);
-    // Add a second (goal) pose if start and are not stricly equal (and let the local planner
-    // decides if they are far enough or not to move)
-    if (start.pose != goal.pose){
-      pose.pose = goal.pose;
-      plan.poses.push_back(pose);
-    }
-    if (_use_final_approach_orientation) {
-      plan.poses.back().pose.orientation = start.pose.orientation;
-    }
     return plan;
   }
 
@@ -293,6 +296,15 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   for (int i = path.size() - 1; i >= 0; --i) {
     pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
     plan.poses.push_back(pose);
+  }
+
+  // Corner case of the plan returned by the planner is of size 1
+  if (plan.poses.size() == 1) {
+    if (_use_final_approach_orientation) {
+      plan.poses.back().pose.orientation = start.pose.orientation;
+    } else {
+      plan.poses.back().pose.orientation = goal.pose.orientation;
+    }
   }
 
   // Publish raw path for debug

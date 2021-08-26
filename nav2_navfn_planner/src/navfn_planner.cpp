@@ -147,6 +147,33 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 
   nav_msgs::msg::Path path;
 
+  // Corner case of the start(x,y) = goal(x,y)
+  if (start.pose.position.x == goal.pose.position.x &&
+    start.pose.position.y == goal.pose.position.y)
+  {
+    unsigned int mx, my;
+    costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
+    if (costmap_->getCost(mx, my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+      RCLCPP_WARN(logger_, "Failed to create a unique pose path because of obstacles");
+      return path;
+    }
+    path.header.stamp = clock_->now();
+    path.header.frame_id = global_frame_;
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header = path.header;
+    pose.pose.position.z = 0.0;
+
+    pose.pose = start.pose;
+    // if we have a different start and goal orientation, set the unique path pose to the goal
+    // orientation, unless use_final_approach_orientation where we need it to be the goal
+    // orientation to avoid movement from the local planner
+    if (start.pose.orientation != goal.pose.orientation && !use_final_approach_orientation_) {
+      pose.pose.orientation = goal.pose.orientation;
+    }
+    path.poses.push_back(pose);
+    return path;
+  }
+
   if (!makePlan(start.pose, goal.pose, tolerance_, path)) {
     RCLCPP_WARN(
       logger_, "%s: failed to create plan with "

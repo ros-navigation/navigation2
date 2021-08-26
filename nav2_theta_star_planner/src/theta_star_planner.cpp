@@ -83,6 +83,35 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
 {
   nav_msgs::msg::Path global_path;
   auto start_time = std::chrono::steady_clock::now();
+
+  // Corner case start(x,y) to goal(x,y) distance below the costamp resolution
+  // wich generates path of length 1
+  if (nav2_util::geometry_utils::euclidean_distance(start.pose, goal.pose) <
+    (planner_->costmap_->getResolution() + planner_->costmap_->getResolution() * 0.01))
+  {
+    unsigned int mx, my;
+    planner_->costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
+    if (planner_->costmap_->getCost(mx, my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+      RCLCPP_WARN(logger_, "Failed to create a unique pose path because of obstacles");
+      return global_path;
+    }
+    global_path.header.stamp = clock_->now();
+    global_path.header.frame_id = global_frame_;
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header = global_path.header;
+    pose.pose.position.z = 0.0;
+
+    pose.pose = start.pose;
+    // if we have a different start and goal orientation, set the unique path pose to the goal
+    // orientation, unless use_final_approach_orientation where we need it to be the goal
+    // orientation to avoid movement from the local planner
+    if (start.pose.orientation != goal.pose.orientation && !use_final_approach_orientation_) {
+      pose.pose.orientation = goal.pose.orientation;
+    }
+    global_path.poses.push_back(pose);
+    return global_path;
+  }
+
   planner_->setStartAndGoal(start, goal);
   RCLCPP_DEBUG(
     logger_, "Got the src and dst... (%i, %i) && (%i, %i)",
