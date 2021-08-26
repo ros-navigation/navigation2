@@ -16,6 +16,7 @@ find_package(laser_geometry REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
@@ -42,6 +43,7 @@ set(dependencies
   std_msgs
   sensor_msgs
   geometry_msgs
+  visualization_msgs
   laser_geometry
   nav2_util
   pluginlib
@@ -58,12 +60,16 @@ ament_target_dependencies(nav2_safety_node_core
 add_executable(nav2_safety_node
   src/main.cpp
 )
+
 target_link_libraries(nav2_safety_node
   nav2_safety_node_core
 )
+
+
 ament_target_dependencies(nav2_safety_node
   ${dependencies}
 )
+
 
 install(TARGETS
 nav2_safety_node_core 
@@ -76,6 +82,7 @@ nav2_safety_node
 RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
+
 # Install launch files.
 install(DIRECTORY
   launch
@@ -86,7 +93,7 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-if(BUILD_TESTING)
+if(BUILD_detect_testING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
   # uncomment the line when a copyright and license is not present in all source files
@@ -94,7 +101,7 @@ if(BUILD_TESTING)
   # the following line skips cpplint (only works in a git repo)
   # uncomment the line when this package is not in a git repo
   set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
+  ament_lint_auto_find_detect_test_dependencies()
 
 endif()
 

@@ -76,6 +76,9 @@ SafetyZone::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(logger_, "Activating");
   initPubSub();
+  publisher_->on_activate();
+  safety_polygon_pub_->on_activate();
+  point_cloud_pub_->on_activate();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -92,6 +95,7 @@ SafetyZone::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(logger_, "Cleaning up");
   publisher_.reset();
   safety_polygon_pub_.reset();
+  point_cloud_pub_.reset();
   timer_.reset();
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -207,47 +211,29 @@ SafetyZone::laser_callback(
       return;
     }
     point_cloud_pub_->publish(std::move(*cloud));
+    detectPoints(*cloud, safety_zone);
 
-    auto m = std::make_unique<visualization_msgs::msg::Marker>();
-    m->header.frame_id = "/my_frame";
-    m->header.stamp = clk->now();
-    m->ns = n->get_namespace();
-    m->id = 0;
-    m->type = visualization_msgs::msg::Marker::POINTS;
-    m->action = visualization_msgs::msg::Marker::ADD;
-    m->pose.orientation.w = 1.0;
-    m->pose.orientation.w = 1.0;
-    m->scale.x = 0.2;
-    m->scale.y = 0.2;
-    m->scale.z = 0.0;
-    m->color.r = 1.0;
-    m->color.g = 1.0f;
-    m->color.b = 1.0;
-    m->color.a = 1.0;
-    
-    for (geometry_msgs::msg::Point pt : safety_zone) {
-      int i = 0;
-      geometry_msgs::msg::Point & p = m->points[i];
-        p.x = pt.x;
-        p.y = pt.y;
-        p.z = pt.z;
-        i++;
-    }
-
-    pub->publish(std::move(m));
     RCLCPP_INFO(
       logger_, "Published safety polygon");
   }
 }
 
 
+double 
+SafetyZone::cosine_sign(const Eigen::Vector3d &pt1,
+    const Eigen::Vector3d &pt2){
+    return pt1[0]*pt2[1]-pt1[1]*pt2[0];
+}
+
 // In progress
 int
 SafetyZone::detectPoints(
-  const sensor_msgs::msg::PointCloud2 & cloud,
-  std::vector<geometry_msgs::msg::Point> safety_zone, double dotP, int N)
+  const sensor_msgs::msg::PointCloud2 &cloud,
+  std::vector<geometry_msgs::msg::Point> safety_zone)
 {
-  N = 0;
+  int pointsInside = 0;
+  int right = 0, left = 0;
+  const int n = safety_zone.size();
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
   sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
@@ -255,19 +241,31 @@ SafetyZone::detectPoints(
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
     double px = *iter_x, py = *iter_y, pz = *iter_z;
     // iterating through polygon points
-    for (geometry_msgs::msg::Point pt : safety_zone) {
-      // getting dot product
-      dotP = pt.x * px +
-        pt.y * py +
-        pt.z * pz;
-      if (dotP > 0) {
-        // do something
-      } else {
-        // do something
+      for (int i = 0; i < n; ++i){
+
+        geometry_msgs::msg::Point a = safety_zone[i];
+        geometry_msgs::msg::Point b = safety_zone[(i+1)%n];
+        Eigen::Vector3d affine_segment = {b.x - a.x, b.y - a.y, b.z - a.z};
+        Eigen::Vector3d affine_point = {px - a.x, py - a.y, pz - a.z};
+      double x =  cosine_sign(affine_segment, affine_point);
+          if(x > 0){
+              right++;
+          }
+          else{
+              left++;
+          }
       }
-    }
+      if (left == n || right == n){
+          std::cout<<px<<","<<py<<" "<<"Inside"<<std::endl;
+          pointsInside++;
+          // return true;
+      }
+      else{
+          std::cout<<px<<","<<py<<" "<<"Outside"<<std::endl;
+          // return false;
+      }
   }
-  return N;
+  return pointsInside;
 }
 
 void

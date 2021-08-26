@@ -15,7 +15,7 @@
 #include "tf2_ros/create_timer_ros.h"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.h"
 
-#include "message_filters/subscriber.h"
+
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "laser_geometry/laser_geometry.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
@@ -124,14 +124,14 @@ protected:
     void initPubSub();
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
       safety_polygon_pub_;
-    // rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_pub_;
-    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> point_cloud_pub_;
-
+    
+    rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_pub_;
+  
     std::vector<std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan>>> scan_subscribers_;
 
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
 
-    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub;
+    rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr pub;
 
     rclcpp::TimerBase::SharedPtr timer_;
     
@@ -145,9 +145,13 @@ protected:
      * @param message The message returned from a message notifier
      */
     void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr message);
+    
+    double cosine_sign(const Eigen::Vector3d &pt1,
+        const Eigen::Vector3d &pt2);
 
-  int detectPoints(const sensor_msgs::msg::PointCloud2 & cloud, 
-      std::vector<geometry_msgs::msg::Point> safety_zone, double dotP, int N);
+    int detectPoints(
+      const sensor_msgs::msg::PointCloud2 & cloud,
+      std::vector<geometry_msgs::msg::Point> safety_zone);
 
 };
 
