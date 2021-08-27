@@ -165,7 +165,7 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 
     pose.pose = start.pose;
     // if we have a different start and goal orientation, set the unique path pose to the goal
-    // orientation, unless use_final_approach_orientation where we need it to be the goal
+    // orientation, unless use_final_approach_orientation=true where we need it to be the start
     // orientation to avoid movement from the local planner
     if (start.pose.orientation != goal.pose.orientation && !use_final_approach_orientation_) {
       pose.pose.orientation = goal.pose.orientation;
@@ -317,7 +317,10 @@ NavfnPlanner::makePlan(
       smoothApproachToGoal(best_pose, plan);
 
       // Override last pose orientation to match goal if use_final_approach_orientation=false
-      // set it to the approach orientation otherwise and deal with corner case of plan of length 1
+      // (default).
+      // If use_final_approach_orientation=true, interpolate the last pose orientation from the
+      // previous pose.
+      // And deal with corner case of plan of length 1
       size_t plan_size = plan.poses.size();
       if (plan_size == 1) {
         if (use_final_approach_orientation_) {
