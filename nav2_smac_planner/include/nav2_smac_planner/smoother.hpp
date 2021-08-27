@@ -243,8 +243,6 @@ protected:
       theta = atan2(dy, dx);
       path.poses[i].pose.orientation = orientationAroundZAxis(theta);
     }
-    // Populate last point
-    path.poses.back().pose.orientation = orientationAroundZAxis(theta);
   }
 
   double min_turning_rad_, tolerance_, data_w_, smooth_w_;

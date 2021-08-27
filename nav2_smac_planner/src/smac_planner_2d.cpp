@@ -318,14 +318,24 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     _smoother->smooth(plan, costmap, time_remaining);
   }
 
-  // Override last pose orientation to match goal if use_final_approach_orientation=false (default)
-  // and deal with corner case of plan of length 1
-  if (_use_final_approach_orientation) {
-    if (plan.poses.size() == 1) {
+  // Override last pose orientation to match goal if use_final_approach_orientation=false
+  // (default) and deal with corner case of plan of length 1
+  size_t plan_size = plan.poses.size();
+  if (plan_size == 1) {
+    if (_use_final_approach_orientation) {
       plan.poses.back().pose.orientation = start.pose.orientation;
+    } else {
+      plan.poses.back().pose.orientation = goal.pose.orientation;
     }
-  } else if (plan.poses.size() > 0) {
-    plan.poses.back().pose.orientation = goal.pose.orientation;
+  } else if (_use_final_approach_orientation && plan_size > 1) {
+    double dx, dy, theta;
+    auto last_pose = plan.poses.back().pose.position;
+    auto approach_pose = plan.poses[plan_size - 2].pose.position;
+    dx = last_pose.x - approach_pose.x;
+    dy = last_pose.y - approach_pose.y;
+    theta = atan2(dy, dx);
+    plan.poses.back().pose.orientation =
+      nav2_util::geometry_utils::orientationAroundZAxis(theta);
   }
 
   return plan;
