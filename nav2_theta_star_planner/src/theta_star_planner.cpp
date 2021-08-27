@@ -84,14 +84,13 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   nav_msgs::msg::Path global_path;
   auto start_time = std::chrono::steady_clock::now();
 
-  // Corner case start(x,y) to goal(x,y) distance below the costamp resolution
-  // wich generates path of length 1
-  if (nav2_util::geometry_utils::euclidean_distance(start.pose, goal.pose) <
-    (planner_->costmap_->getResolution() + planner_->costmap_->getResolution() * 0.01))
+  // Corner case of start and goal beeing on the same cell
+  unsigned int mx_start, my_start, mx_goal, my_goal;
+  planner_->costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start);
+  planner_->costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx_goal, my_goal);
+  if (mx_start == mx_goal && my_start == my_goal)
   {
-    unsigned int mx, my;
-    planner_->costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
-    if (planner_->costmap_->getCost(mx, my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+    if (planner_->costmap_->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
       RCLCPP_WARN(logger_, "Failed to create a unique pose path because of obstacles");
       return global_path;
     }

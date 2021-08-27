@@ -222,13 +222,13 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point
-  unsigned int mx, my;
-  costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
-  _a_star->setStart(mx, my, 0);
+  unsigned int mx_start, my_start, mx_goal, my_goal;
+  costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start);
+  _a_star->setStart(mx_start, my_start, 0);
 
   // Set goal point
-  costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
-  _a_star->setGoal(mx, my, 0);
+  costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal);
+  _a_star->setGoal(mx_goal, my_goal, 0);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -242,14 +242,10 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
 
-  // Corner cases:
-  // * start(x,y) = goal(x,y) which makes the planner fails
-  // * start(x,y) to goal(x,y) distance very small which makes the planner fails
-  // * start(x,y) to goal(x,y) distance below the costamp resolution wich generates path of length 1
-  if (nav2_util::geometry_utils::euclidean_distance(start.pose, goal.pose) <
-    (costmap->getResolution() + costmap->getResolution() * 0.01))
+  // Corner case of start and goal beeing on the same cell
+  if (mx_start == mx_goal && my_start == my_goal)
   {
-    if (costmap->getCost(mx, my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+    if (costmap->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
       RCLCPP_WARN(_logger, "Failed to create a unique pose path because of obstacles");
       return plan;
     }
