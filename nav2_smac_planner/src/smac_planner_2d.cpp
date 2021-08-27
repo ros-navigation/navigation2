@@ -243,8 +243,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   pose.pose.orientation.w = 1.0;
 
   // Corner case of start and goal beeing on the same cell
-  if (mx_start == mx_goal && my_start == my_goal)
-  {
+  if (mx_start == mx_goal && my_start == my_goal) {
     if (costmap->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
       RCLCPP_WARN(_logger, "Failed to create a unique pose path because of obstacles");
       return plan;

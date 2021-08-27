@@ -88,8 +88,7 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   unsigned int mx_start, my_start, mx_goal, my_goal;
   planner_->costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start);
   planner_->costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx_goal, my_goal);
-  if (mx_start == mx_goal && my_start == my_goal)
-  {
+  if (mx_start == mx_goal && my_start == my_goal) {
     if (planner_->costmap_->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
       RCLCPP_WARN(logger_, "Failed to create a unique pose path because of obstacles");
       return global_path;
