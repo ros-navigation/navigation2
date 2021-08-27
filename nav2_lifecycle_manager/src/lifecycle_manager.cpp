@@ -31,8 +31,8 @@ using nav2_util::LifecycleServiceClient;
 namespace nav2_lifecycle_manager
 {
 
-LifecycleManager::LifecycleManager()
-: Node("lifecycle_manager")
+LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
+: Node("lifecycle_manager", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 

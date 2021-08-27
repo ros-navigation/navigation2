@@ -73,10 +73,21 @@ public:
 
   virtual ~DWBLocalPlanner() {}
 
+  /**
+   * @brief Activate lifecycle node
+   */
   void activate() override;
+  
+  /**
+   * @brief Deactivate lifecycle node
+   */
   void deactivate() override;
-  void cleanup() override;
 
+  /**
+   * @brief Cleanup lifecycle node
+   */
+  void cleanup() override;
+   
   /**
    * @brief nav2_core setPlan - Sets the global plan
    * @param path The global plan

@@ -57,8 +57,8 @@ namespace nav2_amcl
 {
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
-AmclNode::AmclNode()
-: nav2_util::LifecycleNode("amcl", "", true)
+AmclNode::AmclNode(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("amcl", "", true, options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -335,8 +335,10 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   laser_scan_sub_.reset();
 
   // Map
-  map_free(map_);
-  map_ = nullptr;
+  if (map_ != NULL) {
+    map_free(map_);
+    map_ = nullptr;
+  }
   first_map_received_ = false;
   free_space_indices.resize(0);
 
@@ -1105,6 +1107,25 @@ AmclNode::initParameters()
   last_time_printed_msg_ = now();
 
   // Semantic checks
+  if (laser_likelihood_max_dist_ < 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set laser_likelihood_max_dist to be negtive,"
+      " this isn't allowed so it will be set to default value 2.0.");
+    laser_likelihood_max_dist_ = 2.0;
+  }
+  if (max_particles_ < 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set max_particles to be negtive,"
+      " this isn't allowed so it will be set to default value 2000.");
+    max_particles_ = 2000;
+  }
+
+  if (min_particles_ < 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set min_particles to be negtive,"
+      " this isn't allowed so it will be set to default value 500.");
+    min_particles_ = 500;
+  }
 
   if (min_particles_ > max_particles_) {
     RCLCPP_WARN(
@@ -1239,7 +1260,7 @@ AmclNode::initMessageFilters()
     rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
 
   laser_scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-    *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_);
+    *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_, transform_tolerance_);
 
   laser_scan_connection_ = laser_scan_filter_->registerCallback(
     std::bind(

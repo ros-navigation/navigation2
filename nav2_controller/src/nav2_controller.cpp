@@ -31,8 +31,8 @@ using namespace std::chrono_literals;
 namespace nav2_controller
 {
 
-ControllerServer::ControllerServer()
-: nav2_util::LifecycleNode("controller_server", ""),
+ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("controller_server", "", false, options),
   progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
   default_progress_checker_id_{"progress_checker"},
   default_progress_checker_type_{"nav2_controller::SimpleProgressChecker"},

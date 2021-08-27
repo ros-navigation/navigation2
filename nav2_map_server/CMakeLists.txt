@@ -154,4 +154,5 @@ ament_export_libraries(
   ${library_name}
   ${map_io_library_name}
 )
+ament_export_dependencies(${map_io_dependencies} ${map_server_dependencies})
 ament_package()

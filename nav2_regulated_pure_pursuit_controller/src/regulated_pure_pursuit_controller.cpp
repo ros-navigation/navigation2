@@ -51,6 +51,7 @@ void RegulatedPurePursuitController::configure(
   tf_ = tf;
   plugin_name_ = name;
   logger_ = node->get_logger();
+  clock_ = node->get_clock();
 
   double transform_tolerance = 0.1;
   double control_frequency = 20.0;
@@ -436,7 +437,15 @@ bool RegulatedPurePursuitController::isCollisionImminent(
 bool RegulatedPurePursuitController::inCollision(const double & x, const double & y)
 {
   unsigned int mx, my;
-  costmap_->worldToMap(x, y, mx, my);
+
+  if (!costmap_->worldToMap(x, y, mx, my)) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *(clock_), 30000,
+      "The dimensions of the costmap is too small to successfully check for "
+      "collisions as far ahead as requested. Proceed at your own risk, slow the robot, or "
+      "increase your costmap size.");
+    return false;
+  }
 
   unsigned char cost = costmap_->getCost(mx, my);
 
@@ -450,7 +459,16 @@ bool RegulatedPurePursuitController::inCollision(const double & x, const double 
 double RegulatedPurePursuitController::costAtPose(const double & x, const double & y)
 {
   unsigned int mx, my;
-  costmap_->worldToMap(x, y, mx, my);
+
+  if (!costmap_->worldToMap(x, y, mx, my)) {
+    RCLCPP_FATAL(
+      logger_,
+      "The dimensions of the costmap is too small to fully include your robot's footprint, "
+      "thusly the robot cannot proceed further");
+    throw nav2_core::PlannerException(
+            "RegulatedPurePursuitController: Dimensions of the costmap are too small "
+            "to encapsulate the robot footprint at current speeds!");
+  }
 
   unsigned char cost = costmap_->getCost(mx, my);
   return static_cast<double>(cost);

@@ -24,8 +24,8 @@
 namespace nav2_waypoint_follower
 {
 
-WaypointFollower::WaypointFollower()
-: nav2_util::LifecycleNode("WaypointFollower", "", false),
+WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("waypoint_follower", "", false, options),
   waypoint_task_executor_loader_("nav2_waypoint_follower",
     "nav2_core::WaypointTaskExecutor")
 {

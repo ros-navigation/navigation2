@@ -57,8 +57,9 @@ public:
 
   /**
    * @brief A constructor for nav2_waypoint_follower::WaypointFollower class
+   * @param options Additional options to control creation of the node.
    */
-  WaypointFollower();
+  explicit WaypointFollower(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
    * @brief A destructor for nav2_waypoint_follower::WaypointFollower class
    */
