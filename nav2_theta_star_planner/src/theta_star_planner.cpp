@@ -125,8 +125,6 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   if (path_size == 1) {
     if (use_final_approach_orientation_) {
       global_path.poses.back().pose.orientation = start.pose.orientation;
-    } else {
-      global_path.poses.back().pose.orientation = goal.pose.orientation;
     }
   } else if (path_size > 0) {
     global_path.poses.back().pose.orientation = goal.pose.orientation;

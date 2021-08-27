@@ -325,8 +325,6 @@ NavfnPlanner::makePlan(
       if (plan_size == 1) {
         if (use_final_approach_orientation_) {
           plan.poses.back().pose.orientation = start.orientation;
-        } else {
-          plan.poses.back().pose.orientation = goal.orientation;
         }
       } else if (use_final_approach_orientation_ && plan_size > 1) {
         double dx, dy, theta;
