@@ -89,7 +89,7 @@ public:
 
 protected:
   /**
-   * @brief Callback executed when a paramter change is detected
+   * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */
   void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
