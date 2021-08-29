@@ -414,14 +414,13 @@ void SmacPlannerHybrid::on_parameter_event_callback(
             "disabling maximum iterations.");
           _max_iterations = std::numeric_limits<int>::max();
         }
-      } else if (name == _name + ".angle_quantizations_bins") {
+      } else if (name == _name + ".angle_quantization_bins") {
         reinit_collision_checker = true;
         reinit_a_star = true;
         _angle_quantizations = value.integer_value;
         _angle_bin_size = 2.0 * M_PI / _angle_quantizations;
         _angle_quantizations = static_cast<unsigned int>(_angle_quantizations);
       }
-
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == _name + ".motion_model_for_search") {
         reinit_a_star = true;
