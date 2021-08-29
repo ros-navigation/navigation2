@@ -44,8 +44,7 @@ SafetyZone::SafetyZone()
 
   // Vector of string for multiple LaserScan topics
   const std::vector<std::string> scan_topics = {
-    "scan1",
-    "scan2"
+    "scan"
   };
 
   // pass polygon parameters at string
@@ -86,6 +85,9 @@ nav2_util::CallbackReturn
 SafetyZone::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(logger_, "Deactivating");
+  publisher_->on_deactivate();
+  safety_polygon_pub_->on_deactivate();
+  point_cloud_pub_->on_deactivate();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -126,8 +128,8 @@ SafetyZone::getParameters()
   if (safety_polygon_ != "" && safety_polygon_ != "[]") {
     // Polygon parameter has been specified, polygon -> point vector(safety_zone)
     std::vector<geometry_msgs::msg::Point> safety_zone;
-    // std::vector<std::shared_ptr<geometry_msgs::msg::Point>> safety_zone;
-    makeVectorPointsFromString(safety_polygon_, safety_zone);
+    /// string of polygon points and returns a polygon vector
+    nav2_util::makeVectorPointsFromString(safety_polygon_, safety_zone);
   } else {
     // Polygon provided but invalid, so stay with the radius
     RCLCPP_ERROR(
@@ -153,9 +155,6 @@ SafetyZone::initTransforms()
 void
 SafetyZone::initPubSub()
 {
-  std::vector<std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan>>>
-  scan_subscribers_ = {
-  };
   RCLCPP_INFO(logger_, "initPubSub");
   // Create the publishers and subscribers
   safety_polygon_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
@@ -164,33 +163,21 @@ SafetyZone::initPubSub()
   point_cloud_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>(
     "cloud", rclcpp::SensorDataQoS());
   // Multiple Laserscan subscribers
-  if (scan_topics_.size() > 0) {
-    scan_subscribers_.resize(scan_topics_.size());
-    RCLCPP_INFO(logger_, "Subscribing to scan topics");
-    for (int i = 0; (unsigned)i < scan_topics_.size(); i++) {
-      scan_subscribers_[i] = create_subscription<sensor_msgs::msg::LaserScan>(
+  scan_subscribers_.resize(scan_topics_.size());
+  reverse(scan_subscribers_.begin(), scan_subscribers_.end());
+  RCLCPP_INFO(logger_, "Subscribing to scan topics");
+  for (unsigned int i = 0; i < scan_topics_.size(); i++) {
+    scan_subscribers_.push_back(
+      create_subscription<sensor_msgs::msg::LaserScan>(
         scan_topics_[i].c_str(), rclcpp::SystemDefaultsQoS(),
-        std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1));
-    }
-  } else {
-    RCLCPP_INFO(logger_, "Not subscribed to any topic.");
+        std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1)));
   }
-
   // Velocity publisher
   publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", rclcpp::SystemDefaultsQoS());
   // Timer -> 10hzs
   timer_ = create_wall_timer(
     100ms, std::bind(&SafetyZone::timer_callback, this));
   RCLCPP_INFO(logger_, "Subscribed to scan topics");
-}
-
-// string of polygon points and returns a polygon vector
-bool
-SafetyZone::makeVectorPointsFromString(
-  const std::string & safety_polygon_,
-  std::vector<geometry_msgs::msg::Point> & safety_zone)
-{
-  return nav2_util::makeVectorPointsFromString(safety_polygon_, safety_zone);
 }
 
 void
@@ -205,30 +192,28 @@ SafetyZone::laser_callback(
   if (!base_frame_.empty() && cloud->header.frame_id != base_frame_) {
     try {
       *cloud = tf2_->transform(*cloud, base_frame_, tf2::durationFromSec(tf_tolerance_));
-      pcl_queue.push(cloud);
+      sensor_data.push(*cloud);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR_STREAM(logger_, "Transform failure: " << ex.what());
       return;
     }
-    point_cloud_pub_->publish(std::move(*cloud));
-    detectPoints(*cloud, safety_zone);
-
-    RCLCPP_INFO(
-      logger_, "Published safety polygon");
+  } else if (cloud->header.frame_id == base_frame_) {
+    sensor_data.push(*cloud);
   }
 }
 
-
-double 
-SafetyZone::cosine_sign(const Eigen::Vector3d &pt1,
-    const Eigen::Vector3d &pt2){
-    return pt1[0]*pt2[1]-pt1[1]*pt2[0];
+double
+SafetyZone::cosine_sign(
+  const Eigen::Vector3d & pt1,
+  const Eigen::Vector3d & pt2)
+{
+  return pt1[0] * pt2[1] - pt1[1] * pt2[0];
 }
 
 // In progress
 int
 SafetyZone::detectPoints(
-  const sensor_msgs::msg::PointCloud2 &cloud,
+  sensor_msgs::msg::PointCloud2 cloud,
   std::vector<geometry_msgs::msg::Point> safety_zone)
 {
   int pointsInside = 0;
@@ -241,29 +226,24 @@ SafetyZone::detectPoints(
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
     double px = *iter_x, py = *iter_y, pz = *iter_z;
     // iterating through polygon points
-      for (int i = 0; i < n; ++i){
-
-        geometry_msgs::msg::Point a = safety_zone[i];
-        geometry_msgs::msg::Point b = safety_zone[(i+1)%n];
-        Eigen::Vector3d affine_segment = {b.x - a.x, b.y - a.y, b.z - a.z};
-        Eigen::Vector3d affine_point = {px - a.x, py - a.y, pz - a.z};
-      double x =  cosine_sign(affine_segment, affine_point);
-          if(x > 0){
-              right++;
-          }
-          else{
-              left++;
-          }
+    for (int i = 0; i < n; ++i) {
+      geometry_msgs::msg::Point a = safety_zone[i];
+      geometry_msgs::msg::Point b = safety_zone[(i + 1) % n];
+      Eigen::Vector3d affine_segment = {b.x - a.x, b.y - a.y, b.z - a.z};
+      Eigen::Vector3d affine_point = {px - a.x, py - a.y, pz - a.z};
+      double x = cosine_sign(affine_segment, affine_point);
+      if (x > 0) {
+        right++;
+      } else {
+        left++;
       }
-      if (left == n || right == n){
-          std::cout<<px<<","<<py<<" "<<"Inside"<<std::endl;
-          pointsInside++;
-          // return true;
-      }
-      else{
-          std::cout<<px<<","<<py<<" "<<"Outside"<<std::endl;
-          // return false;
-      }
+    }
+    if (left == n || right == n) {
+      std::cout << "Yes" << std::endl;
+      pointsInside++;
+    } else {
+      std::cout << "No" << std::endl;
+    }
   }
   return pointsInside;
 }
@@ -271,8 +251,17 @@ SafetyZone::detectPoints(
 void
 SafetyZone::timer_callback()
 {
-  while (!pcl_queue.empty()) {
-    // Currently Empty
+  int num_pts = 0;
+  point_cloud_pub_->publish(std::move(sensor_data.front()));
+  RCLCPP_INFO(
+    logger_, "Published safety polygon");
+  while (!sensor_data.empty()) {
+    num_pts = detectPoints(sensor_data.front(), safety_zone);
+    sensor_data.pop();
+  }
+  if(num_pts >= zone_num_pts_){
+    RCLCPP_INFO(
+    logger_, "Error");
   }
 }
 

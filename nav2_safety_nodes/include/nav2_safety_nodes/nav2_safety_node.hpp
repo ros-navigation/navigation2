@@ -77,24 +77,13 @@ public:
        * @return True if the pose was set successfully, false otherwise
        */
     // bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose);
-    // /**
-    //  * @brief Make the safety_zone from the given string.
-    //  *
-    //  * Format should be bracketed array of arrays of floats, like so: [[1.0, 2.2], [3.3, 4.2], ...]
-    //  *
-    //  */
-    bool makeVectorPointsFromString(
-      const std::string & safety_polygon_,
-      std::vector<geometry_msgs::msg::Point> & safety_zone);
-
+    
     // The Logger object for logging
     rclcpp::Logger logger_{rclcpp::get_logger("nav2_safety_nodes")};
 
 protected:
     // The local node
-    rclcpp::Node::SharedPtr n;
     std::vector<geometry_msgs::msg::Point> safety_zone;
-    rclcpp::Clock::SharedPtr clk = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
     /**
      * @brief Get parameters for node
      */
@@ -116,7 +105,7 @@ protected:
 
     // Used to project laser scans into point clouds
     laser_geometry::LaserProjection projector_;
-    std::queue<std::shared_ptr<sensor_msgs::msg::PointCloud2>> pcl_queue;
+    std::queue<sensor_msgs::msg::PointCloud2> sensor_data;
      // Publishers and subscribers
     /*
      * @brief Initialize pub subs of SafetyZone
@@ -150,7 +139,7 @@ protected:
         const Eigen::Vector3d &pt2);
 
     int detectPoints(
-      const sensor_msgs::msg::PointCloud2 & cloud,
+      sensor_msgs::msg::PointCloud2 cloud,
       std::vector<geometry_msgs::msg::Point> safety_zone);
 
 };
