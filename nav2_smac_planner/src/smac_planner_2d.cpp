@@ -324,14 +324,18 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     } else {
       plan.poses.back().pose.orientation = goal.pose.orientation;
     }
-  } else if (_use_final_approach_orientation && plan_size > 1) {
-    double dx, dy, theta;
-    auto last_pose = plan.poses.back().pose.position;
-    auto approach_pose = plan.poses[plan_size - 2].pose.position;
-    dx = last_pose.x - approach_pose.x;
-    dy = last_pose.y - approach_pose.y;
-    theta = atan2(dy, dx);
-    plan.poses.back().pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
+  } else if (plan_size > 1) {
+    if (_use_final_approach_orientation) {
+      double dx, dy, theta;
+      auto last_pose = plan.poses.back().pose.position;
+      auto approach_pose = plan.poses[plan_size - 2].pose.position;
+      dx = last_pose.x - approach_pose.x;
+      dy = last_pose.y - approach_pose.y;
+      theta = atan2(dy, dx);
+      plan.poses.back().pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
+    } else {
+      plan.poses.back().pose.orientation = goal.pose.orientation;
+    }
   }
 
   return plan;
