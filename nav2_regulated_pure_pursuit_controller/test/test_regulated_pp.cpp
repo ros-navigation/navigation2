@@ -91,6 +91,12 @@ public:
       dist_error, lookahead_dist, curvature, curr_speed, pose_cost,
       linear_vel, sign);
   }
+
+  double findDirectionChangeWrapper(
+    const geometry_msgs::msg::PoseStamped & pose)
+  {
+    return findDirectionChange(pose);
+  }
 };
 
 TEST(RegulatedPurePursuitTest, basicAPI)
@@ -142,6 +148,29 @@ TEST(RegulatedPurePursuitTest, createCarrotMsg)
   EXPECT_EQ(rtn->point.x, 1.0);
   EXPECT_EQ(rtn->point.y, 12.0);
   EXPECT_EQ(rtn->point.z, 0.01);
+}
+
+TEST(RegulatedPurePursuitTest, findDirectionChange)
+{
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  geometry_msgs::msg::PoseStamped pose;
+  //pose.header.frame_id = "Hi!";
+  pose.pose.position.x = 1.0;
+  pose.pose.position.y = 0.0;
+  //pose.pose.orientation.w = 0.5;
+
+  nav_msgs::msg::Path path;
+  path.poses.resize(3);
+  //path.poses[0].header.frame_id = "fake_frame";
+  path.poses[0].pose.position.x = 1.0;
+  path.poses[0].pose.position.y = 1.0;
+  path.poses[1].pose.position.x = 2.0;
+  path.poses[1].pose.position.y = 2.0;
+  path.poses[2].pose.position.x = -1.0;
+  path.poses[2].pose.position.y = -1.0;
+  ctrl->setPlan(path);
+  auto rtn = ctrl->findDirectionChangeWrapper(pose);
+  EXPECT_EQ(rtn,sqrt(5.0));
 }
 
 TEST(RegulatedPurePursuitTest, lookaheadAPI)
