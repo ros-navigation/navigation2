@@ -18,11 +18,9 @@
 
 #include "tf2/convert.h"
 #include "tf2_ros/buffer.h"
-#include "tf2_sensor_msgs/tf2_sensor_msgs.h"
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
-#include "laser_geometry/laser_geometry.hpp"
 
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/string_utils.hpp"
@@ -39,8 +37,6 @@ SafetyZone::SafetyZone()
 {
   logger_ = get_logger();
   RCLCPP_INFO(logger_, "Creating Safety Polygon");
-  rclcpp::Node::SharedPtr n;
-  rclcpp::Clock::SharedPtr clk = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
 
   // Vector of string for multiple LaserScan topics
   const std::vector<std::string> scan_topics = {
@@ -217,7 +213,7 @@ SafetyZone::detectPoints(
   std::vector<geometry_msgs::msg::Point> safety_zone)
 {
   int pointsInside = 0;
-  int right = 0, left = 0;
+  int side = 0;
   const int n = safety_zone.size();
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
@@ -233,12 +229,12 @@ SafetyZone::detectPoints(
       Eigen::Vector3d affine_point = {px - a.x, py - a.y, pz - a.z};
       double x = cosine_sign(affine_segment, affine_point);
       if (x > 0) {
-        right++;
+        side++;
       } else {
-        left++;
+        side++;
       }
     }
-    if (left == n || right == n) {
+    if (side == n || side == (-1)*n) {
       std::cout << "Yes" << std::endl;
       pointsInside++;
     } else {
@@ -252,16 +248,15 @@ void
 SafetyZone::timer_callback()
 {
   int num_pts = 0;
+    num_pts = detectPoints(sensor_data.front(), safety_zone);
   point_cloud_pub_->publish(std::move(sensor_data.front()));
   RCLCPP_INFO(
     logger_, "Published safety polygon");
   while (!sensor_data.empty()) {
-    num_pts = detectPoints(sensor_data.front(), safety_zone);
     sensor_data.pop();
-  }
-  if(num_pts >= zone_num_pts_){
-    RCLCPP_INFO(
-    logger_, "Error");
+    if(num_pts >= zone_num_pts_){
+      break;
+    }
   }
 }
 
