@@ -313,30 +313,28 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     _smoother->smooth(plan, costmap, time_remaining);
   }
 
-  // Override last pose orientation to match goal if use_final_approach_orientation=false (default).
+
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
   // previous pose to set the orientation to the 'final approach' orientation of the robot so
   // it does not rotate.
   // And deal with corner case of plan of length 1
+  // If use_final_approach_orientation=false (default), override last pose orientation to match goal
   size_t plan_size = plan.poses.size();
-  if (plan_size == 1) {
-    if (_use_final_approach_orientation) {
+  if (_use_final_approach_orientation) {
+    if (plan_size == 1) {
       plan.poses.back().pose.orientation = start.pose.orientation;
-    } else {
-      plan.poses.back().pose.orientation = goal.pose.orientation;
-    }
-  } else if (plan_size > 1) {
-    if (_use_final_approach_orientation) {
+    } else if (plan_size > 1) {
       double dx, dy, theta;
       auto last_pose = plan.poses.back().pose.position;
       auto approach_pose = plan.poses[plan_size - 2].pose.position;
       dx = last_pose.x - approach_pose.x;
       dy = last_pose.y - approach_pose.y;
       theta = atan2(dy, dx);
-      plan.poses.back().pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
-    } else {
-      plan.poses.back().pose.orientation = goal.pose.orientation;
+      plan.poses.back().pose.orientation =
+        nav2_util::geometry_utils::orientationAroundZAxis(theta);
     }
+  } else if (plan_size > 0) {
+    plan.poses.back().pose.orientation = goal.pose.orientation;
   }
 
   return plan;

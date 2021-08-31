@@ -116,24 +116,20 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
     planner_->src_.x, planner_->src_.y, planner_->dst_.x, planner_->dst_.y);
   getPlan(global_path);
 
-  // Override last pose orientation to match goal if use_final_approach_orientation=false (default).
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
   // previous pose to set the orientation to the 'final approach' orientation of the robot so
   // it does not rotate.
   // And deal with corner case of plan of length 1
-  size_t path_size = global_path.poses.size();
-  if (path_size == 1) {
-    if (use_final_approach_orientation_) {
+  if (use_final_approach_orientation_) {
+    size_t plan_size = global_path.poses.size();
+    if (plan_size == 1) {
       global_path.poses.back().pose.orientation = start.pose.orientation;
-    }
-  } else if (path_size > 0) {
-    global_path.poses.back().pose.orientation = goal.pose.orientation;
-    if (use_final_approach_orientation_) {
+    } else if (plan_size > 1) {
       double dx, dy, theta;
-      dx =
-        global_path.poses.back().pose.position.x - global_path.poses[path_size - 2].pose.position.x;
-      dy =
-        global_path.poses.back().pose.position.y - global_path.poses[path_size - 2].pose.position.y;
+      auto last_pose = global_path.poses.back().pose.position;
+      auto approach_pose = global_path.poses[plan_size - 2].pose.position;
+      dx = last_pose.x - approach_pose.x;
+      dy = last_pose.y - approach_pose.y;
       theta = atan2(dy, dx);
       global_path.poses.back().pose.orientation =
         nav2_util::geometry_utils::orientationAroundZAxis(theta);

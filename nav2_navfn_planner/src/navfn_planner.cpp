@@ -316,32 +316,30 @@ NavfnPlanner::makePlan(
     if (getPlanFromPotential(best_pose, plan)) {
       smoothApproachToGoal(best_pose, plan);
 
-      // Override last pose orientation to match goal if use_final_approach_orientation=false
-      // (default).
       // If use_final_approach_orientation=true, interpolate the last pose orientation from the
       // previous pose to set the orientation to the 'final approach' orientation of the robot so
       // it does not rotate.
       // And deal with corner case of plan of length 1
-      size_t plan_size = plan.poses.size();
-      if (plan_size == 1) {
-        if (use_final_approach_orientation_) {
+      if (use_final_approach_orientation_) {
+        size_t plan_size = plan.poses.size();
+        if (plan_size == 1) {
           plan.poses.back().pose.orientation = start.orientation;
+        } else if (plan_size > 1) {
+          double dx, dy, theta;
+          auto last_pose = plan.poses.back().pose.position;
+          auto approach_pose = plan.poses[plan_size - 2].pose.position;
+          // Deal with the case of NavFn producing a path with two equal last poses
+          if (std::abs(last_pose.x - approach_pose.x) < 0.0001 &&
+            std::abs(last_pose.y - approach_pose.y) < 0.0001 && plan_size > 2)
+          {
+            approach_pose = plan.poses[plan_size - 3].pose.position;
+          }
+          dx = last_pose.x - approach_pose.x;
+          dy = last_pose.y - approach_pose.y;
+          theta = atan2(dy, dx);
+          plan.poses.back().pose.orientation =
+            nav2_util::geometry_utils::orientationAroundZAxis(theta);
         }
-      } else if (use_final_approach_orientation_ && plan_size > 1) {
-        double dx, dy, theta;
-        auto last_pose = plan.poses.back().pose.position;
-        auto approach_pose = plan.poses[plan_size - 2].pose.position;
-        // Deal with the case of NavFn producing a path with two equal last poses
-        if (std::abs(last_pose.x - approach_pose.x) < 0.0001 &&
-          std::abs(last_pose.y - approach_pose.y) < 0.0001 && plan_size > 2)
-        {
-          approach_pose = plan.poses[plan_size - 3].pose.position;
-        }
-        dx = last_pose.x - approach_pose.x;
-        dy = last_pose.y - approach_pose.y;
-        theta = atan2(dy, dx);
-        plan.poses.back().pose.orientation =
-          nav2_util::geometry_utils::orientationAroundZAxis(theta);
       }
     } else {
       RCLCPP_ERROR(
