@@ -77,7 +77,7 @@ public:
    * @brief Activate lifecycle node
    */
   void activate() override;
-  
+
   /**
    * @brief Deactivate lifecycle node
    */
@@ -87,7 +87,7 @@ public:
    * @brief Cleanup lifecycle node
    */
   void cleanup() override;
-   
+
   /**
    * @brief nav2_core setPlan - Sets the global plan
    * @param path The global plan
