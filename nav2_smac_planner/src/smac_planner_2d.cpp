@@ -315,7 +315,8 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 
   // Override last pose orientation to match goal if use_final_approach_orientation=false (default).
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
-  // previous pose.
+  // previous pose to set the orientation to the 'final approach' orientation of the robot so
+  // it does not rotate.
   // And deal with corner case of plan of length 1
   size_t plan_size = plan.poses.size();
   if (plan_size == 1) {
