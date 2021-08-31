@@ -78,8 +78,8 @@ void testSmallPathValidityAndOrientation(std::string plugin, double length)
       tf2::getYaw(start.pose.orientation),
       0.01);
   } else {
-    double dx = path.poses.back().pose.position.x - path.poses[path_size - 2].pose.position.x;
-    double dy = path.poses.back().pose.position.y - path.poses[path_size - 2].pose.position.y;
+    double dx = path.poses.back().pose.position.x - path.poses.front().pose.position.x;
+    double dy = path.poses.back().pose.position.y - path.poses.front().pose.position.y;
     EXPECT_NEAR(
       tf2::getYaw(path.poses.back().pose.orientation),
       atan2(dy, dx),
@@ -125,9 +125,14 @@ TEST(testPluginMap, Smac2dBelowCostmapResolution)
   testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.09);
 }
 
-TEST(testPluginMap, Smac2dAboveCostmapResolution)
+TEST(testPluginMap, Smac2dJustAboveCostmapResolution)
 {
   testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.102);
+}
+
+TEST(testPluginMap, Smac2dAboveCostmapResolution)
+{
+  testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 1.5);
 }
 
 TEST(testPluginMap, NavFnEqualStartGoal)
@@ -145,9 +150,14 @@ TEST(testPluginMap, NavFnBelowCostmapResolution)
   testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.09);
 }
 
-TEST(testPluginMap, NavFnAboveCostmapResolution)
+TEST(testPluginMap, NavFnJustAboveCostmapResolution)
 {
   testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.102);
+}
+
+TEST(testPluginMap, NavFnAboveCostmapResolution)
+{
+  testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 1.5);
 }
 
 TEST(testPluginMap, ThetaStarEqualStartGoal)
@@ -165,9 +175,14 @@ TEST(testPluginMap, ThetaStarBelowCostmapResolution)
   testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.09);
 }
 
-TEST(testPluginMap, ThetaStarAboveCostmapResolution)
+TEST(testPluginMap, ThetaStarJustAboveCostmapResolution)
 {
   testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.102);
+}
+
+TEST(testPluginMap, ThetaStarAboveCostmapResolution)
+{
+  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 1.5);
 }
 
 int main(int argc, char ** argv)
