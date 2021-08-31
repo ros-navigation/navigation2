@@ -319,7 +319,7 @@ NavfnPlanner::makePlan(
       // Override last pose orientation to match goal if use_final_approach_orientation=false
       // (default).
       // If use_final_approach_orientation=true, interpolate the last pose orientation from the
-      // previous pose to set the orientation to the 'final approach' orientation of robot so
+      // previous pose to set the orientation to the 'final approach' orientation of the robot so
       // it does not rotate.
       // And deal with corner case of plan of length 1
       size_t plan_size = plan.poses.size();
