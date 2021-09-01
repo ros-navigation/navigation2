@@ -19,6 +19,7 @@
 #include <algorithm>
 
 #include "nav2_smac_planner/smac_planner_2d.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -80,6 +81,9 @@ void SmacPlanner2D::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
   node->get_parameter(name + ".max_on_approach_iterations", _max_on_approach_iterations);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".use_final_approach_orientation", _use_final_approach_orientation);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(1.0));
@@ -218,13 +222,13 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point
-  unsigned int mx, my;
-  costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
-  _a_star->setStart(mx, my, 0);
+  unsigned int mx_start, my_start, mx_goal, my_goal;
+  costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start);
+  _a_star->setStart(mx_start, my_start, 0);
 
   // Set goal point
-  costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
-  _a_star->setGoal(mx, my, 0);
+  costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal);
+  _a_star->setGoal(mx_goal, my_goal, 0);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -237,6 +241,23 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   pose.pose.orientation.y = 0.0;
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
+
+  // Corner case of start and goal beeing on the same cell
+  if (mx_start == mx_goal && my_start == my_goal) {
+    if (costmap->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+      RCLCPP_WARN(_logger, "Failed to create a unique pose path because of obstacles");
+      return plan;
+    }
+    pose.pose = start.pose;
+    // if we have a different start and goal orientation, set the unique path pose to the goal
+    // orientation, unless use_final_approach_orientation=true where we need it to be the start
+    // orientation to avoid movement from the local planner
+    if (start.pose.orientation != goal.pose.orientation && !_use_final_approach_orientation) {
+      pose.pose.orientation = goal.pose.orientation;
+    }
+    plan.poses.push_back(pose);
+    return plan;
+  }
 
   // Compute plan
   Node2D::CoordinateVector path;
@@ -292,6 +313,30 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     _smoother->smooth(plan, costmap, time_remaining);
   }
 
+
+  // If use_final_approach_orientation=true, interpolate the last pose orientation from the
+  // previous pose to set the orientation to the 'final approach' orientation of the robot so
+  // it does not rotate.
+  // And deal with corner case of plan of length 1
+  // If use_final_approach_orientation=false (default), override last pose orientation to match goal
+  size_t plan_size = plan.poses.size();
+  if (_use_final_approach_orientation) {
+    if (plan_size == 1) {
+      plan.poses.back().pose.orientation = start.pose.orientation;
+    } else if (plan_size > 1) {
+      double dx, dy, theta;
+      auto last_pose = plan.poses.back().pose.position;
+      auto approach_pose = plan.poses[plan_size - 2].pose.position;
+      dx = last_pose.x - approach_pose.x;
+      dy = last_pose.y - approach_pose.y;
+      theta = atan2(dy, dx);
+      plan.poses.back().pose.orientation =
+        nav2_util::geometry_utils::orientationAroundZAxis(theta);
+    }
+  } else if (plan_size > 0) {
+    plan.poses.back().pose.orientation = goal.pose.orientation;
+  }
+
   return plan;
 }
 
@@ -324,6 +369,8 @@ void SmacPlanner2D::on_parameter_event_callback(
       } else if (name == _name + ".allow_unknown") {
         reinit_a_star = true;
         _allow_unknown = value.bool_value;
+      } else if (name == _name + ".use_final_approach_orientation") {
+        _use_final_approach_orientation = value.bool_value;
       }
     } else if (type == ParameterType::PARAMETER_INTEGER) {
       if (name == _name + ".downsampling_factor") {

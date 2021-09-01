@@ -32,6 +32,7 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_theta_star_planner/theta_star.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav2_theta_star_planner
 {
@@ -59,6 +60,7 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("ThetaStarPlanner")};
   std::string global_frame_, name_;
+  bool use_final_approach_orientation_;
 
   std::unique_ptr<theta_star::ThetaStar> planner_;
 
