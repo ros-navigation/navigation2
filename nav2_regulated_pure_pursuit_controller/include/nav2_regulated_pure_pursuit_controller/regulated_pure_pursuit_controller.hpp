@@ -59,7 +59,8 @@ public:
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
-    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros) override;
+    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros,
+    std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker) override;
 
   /**
    * @brief Cleanup controller state machine
@@ -233,6 +234,9 @@ protected:
   nav2_costmap_2d::Costmap2D * costmap_;
   rclcpp::Logger logger_ {rclcpp::get_logger("RegulatedPurePursuitController")};
   rclcpp::Clock::SharedPtr clock_;
+  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
+  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
+  std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
 
   double desired_linear_vel_, base_desired_linear_vel_;
   double lookahead_dist_;
@@ -260,6 +264,8 @@ protected:
   double rotate_to_heading_min_angle_;
   double goal_dist_tol_;
   bool allow_reversing_;
+  std::string global_frame_;
+  std::string robot_base_frame_;
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;

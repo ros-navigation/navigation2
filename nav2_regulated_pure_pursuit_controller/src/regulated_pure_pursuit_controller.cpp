@@ -39,7 +39,8 @@ namespace nav2_regulated_pure_pursuit_controller
 void RegulatedPurePursuitController::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
-  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
+  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros,
+  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker)
 {
   auto node = parent.lock();
   if (!node) {
@@ -178,6 +179,22 @@ void RegulatedPurePursuitController::configure(
   global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point", 1);
   carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc", 1);
+
+  std::string costmap_topic, footprint_topic;
+  node->get_parameter("costmap_topic", costmap_topic);
+  node->get_parameter("footprint_topic", footprint_topic);
+  node->get_parameter("transform_tolerance", transform_tolerance_);
+  costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
+    shared_from_this(), costmap_topic);
+  footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
+    shared_from_this(), footprint_topic, 1.0);
+
+  std::string global_frame, robot_base_frame;
+  get_parameter("global_frame", global_frame);
+  get_parameter("robot_base_frame", robot_base_frame);
+  collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+    *costmap_sub_, *footprint_sub_, *tf_, this->get_name(),
+    global_frame, robot_base_frame, transform_tolerance_);
 }
 
 void RegulatedPurePursuitController::cleanup()
@@ -190,6 +207,9 @@ void RegulatedPurePursuitController::cleanup()
   global_path_pub_.reset();
   carrot_pub_.reset();
   carrot_arc_pub_.reset();
+  footprint_sub_.reset();
+  costmap_sub_.reset();
+  collision_checker_.reset();
 }
 
 void RegulatedPurePursuitController::activate()
@@ -386,6 +406,10 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   if (inCollision(robot_pose.pose.position.x, robot_pose.pose.position.y)) {
     return true;
   }
+  if (collision_checker_->collision)) {
+    return true;
+  }
+
 
   // visualization messages
   nav_msgs::msg::Path arc_pts_msg;
