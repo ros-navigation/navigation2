@@ -1,11 +1,11 @@
 #goal definition
-geometry_msgs/PoseStamped goal
+nav_msgs/Path path
 geometry_msgs/PoseStamped start
-string planner_id
+string smoother_id
 bool use_start # If false, use current robot pose as path start, if true, use start above instead
 ---
 #result definition
 nav_msgs/Path path
-builtin_interfaces/Duration planning_time
+builtin_interfaces/Duration optimization_time
 ---
 #feedback

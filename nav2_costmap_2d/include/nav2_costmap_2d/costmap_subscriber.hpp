@@ -56,6 +56,11 @@ public:
    */
   std::shared_ptr<Costmap2D> getCostmap();
 
+  /**
+   * @brief Get the header from topic
+   */
+  std_msgs::msg::Header getHeader();
+
 protected:
   /**
    * @brief Convert an occ grid message into a costmap object

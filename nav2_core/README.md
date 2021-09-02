@@ -3,5 +3,6 @@
 This package hosts the abstract interface (virtual base classes) for plugins to be used with the following:
 - global planner (e.g., `nav2_navfn_planner`)
 - controller (i.e, path execution controller, e.g `nav2_dwb_controller`)
+- smoother (e.g., `rtv_ceres_costaware_smoother`)
 - goal checker
 - recovery behaviors
