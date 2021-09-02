@@ -16,6 +16,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <limits>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -168,6 +169,12 @@ TEST(RegulatedPurePursuitTest, findDirectionChange)
   ctrl->setPlan(path);
   auto rtn = ctrl->findDirectionChangeWrapper(pose);
   EXPECT_EQ(rtn, sqrt(5.0));
+
+  path.poses[2].pose.position.x = 3.0;
+  path.poses[2].pose.position.y = 3.0;
+  ctrl->setPlan(path);
+  rtn = ctrl->findDirectionChangeWrapper(pose);
+  EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
 
 TEST(RegulatedPurePursuitTest, lookaheadAPI)
