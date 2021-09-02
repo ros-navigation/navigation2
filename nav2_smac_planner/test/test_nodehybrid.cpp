@@ -37,6 +37,7 @@ TEST(NodeHybridTest, test_node_hybrid)
 {
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.1;
+  info.change_reverse_penalty = 0.6;
   info.non_straight_penalty = 1.1;
   info.reverse_penalty = 2.0;
   info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
@@ -93,12 +94,18 @@ TEST(NodeHybridTest, test_node_hybrid)
   // opposite direction as parent, testB
   testA.setMotionPrimitiveIndex(2);
   EXPECT_NEAR(testB.getTraversalCost(&testA), 2.506f, 0.01);
+  // opposite forward/reverse direction as parent, testB
+  testA.setMotionPrimitiveIndex(3);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 3.341f, 0.01);
+  // both reverse, testB
+  testB.setMotionPrimitiveIndex(3);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 4.177f, 0.01);
 
   // will throw because never collision checked testB
   EXPECT_THROW(testA.getTraversalCost(&testB), std::runtime_error);
 
   // check motion primitives
-  EXPECT_EQ(testA.getMotionPrimitiveIndex(), 2u);
+  EXPECT_EQ(testA.getMotionPrimitiveIndex(), 3u);
 
   // check operator== works on index
   nav2_smac_planner::NodeHybrid testC(49);
@@ -127,6 +134,79 @@ TEST(NodeHybridTest, test_node_hybrid)
   EXPECT_EQ(nav2_smac_planner::NodeHybrid::getCoords(796u, 10u, 72u).x, 1u);
   EXPECT_EQ(nav2_smac_planner::NodeHybrid::getCoords(796u, 10u, 72u).y, 1u);
   EXPECT_EQ(nav2_smac_planner::NodeHybrid::getCoords(796u, 10u, 72u).theta, 4u);
+
+  delete costmapA;
+}
+
+TEST(NodeHybridTest, test_obstacle_heuristic)
+{
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 0.1;
+  info.change_reverse_penalty = 0.6;
+  info.non_straight_penalty = 1.1;
+  info.reverse_penalty = 2.0;
+  info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
+  info.cost_penalty = 1.7;
+  unsigned int size_x = 100;
+  unsigned int size_y = 100;
+  unsigned int size_theta = 72;
+
+
+  nav2_smac_planner::NodeHybrid::initMotionModel(
+    nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
+
+  nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
+    100, 100, 0.1, 0.0, 0.0, 0);
+  // island in the middle of lethal cost to cross
+  for (unsigned int i = 20; i <= 80; ++i) {
+    for (unsigned int j = 40; j <= 60; ++j) {
+      costmapA->setCost(i, j, 254);
+    }
+  }
+  // path on the right is narrow and thus with high cost
+  for (unsigned int i = 20; i <= 80; ++i) {
+    for (unsigned int j = 61; j <= 70; ++j) {
+      costmapA->setCost(i, j, 250);
+    }
+  }
+  for (unsigned int i = 20; i <= 80; ++i) {
+    for (unsigned int j = 71; j < 100; ++j) {
+      costmapA->setCost(i, j, 254);
+    }
+  }
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 72);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+
+  nav2_smac_planner::NodeHybrid testA(0);
+  testA.pose.x = 10;
+  testA.pose.y = 50;
+  testA.pose.theta = 0;
+
+  nav2_smac_planner::NodeHybrid testB(1);
+  testB.pose.x = 90;
+  testB.pose.y = 51; //goal is a bit closer to the high-cost passage
+  testB.pose.theta = 0;
+
+  // first block the high-cost passage to make sure the cost spreads through the better path
+  for (unsigned int j = 61; j <= 70; ++j) {
+    costmapA->setCost(50, j, 254);
+  }
+  nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(costmapA, testB.pose.x, testB.pose.y);
+  float wide_passage_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(testA.pose, testB.pose, info.cost_penalty);
+
+  // then unblock it to check if cost remains the same
+  // (it should, since the unblocked narrow path will have higher cost than the wide one
+  //  and thus lower bound of the path cost should be unchanged)
+  for (unsigned int j = 61; j <= 70; ++j) {
+    costmapA->setCost(50, j, 250);
+  }
+  nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(costmapA, testB.pose.x, testB.pose.y);
+  float two_passages_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(testA.pose, testB.pose, info.cost_penalty);
+
+  printf("wp: %f, tp: %f\n", wide_passage_cost, two_passages_cost);
+
+  EXPECT_EQ(wide_passage_cost, two_passages_cost); // FAILURE
 
   delete costmapA;
 }

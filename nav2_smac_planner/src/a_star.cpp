@@ -24,12 +24,14 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include <fstream>
 
 #include "nav2_smac_planner/a_star.hpp"
 using namespace std::chrono;  // NOLINT
 
 namespace nav2_smac_planner
 {
+
 
 template<typename NodeT>
 AStarAlgorithm<NodeT>::AStarAlgorithm(
@@ -175,7 +177,7 @@ void AStarAlgorithm<NodeT>::setGoal(
     static_cast<float>(my),
     static_cast<float>(dim_3));
 
-  if (!_search_info.cache_obstacle_heuristic || goal_coords != _goal_coordinates) {
+  if (_search_info.obstacle_heuristic_admissible || !_search_info.cache_obstacle_heuristic || goal_coords != _goal_coordinates) {
     NodeT::resetObstacleHeuristic(_costmap, mx, my);
   }
 
@@ -210,6 +212,8 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
 
   return true;
 }
+
+int analytic_exp_start = 0;
 
 template<typename NodeT>
 bool AStarAlgorithm<NodeT>::createPath(

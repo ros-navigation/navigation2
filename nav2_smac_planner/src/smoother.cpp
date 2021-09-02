@@ -37,6 +37,9 @@ bool Smoother::smooth(
   const double & max_time,
   const bool do_refinement)
 {
+  if (max_its_ == 0)
+    return true;
+
   using namespace std::chrono;  // NOLINT
   steady_clock::time_point a = steady_clock::now();
   rclcpp::Duration max_dur = rclcpp::Duration::from_seconds(max_time);

@@ -38,6 +38,38 @@ namespace nav2_smac_planner
 typedef std::vector<float> LookupTable;
 typedef std::pair<double, double> TrigValues;
 
+typedef std::pair<double, double> DSKey;
+typedef std::pair<std::pair<double, double>, int> DSKeyVal;
+typedef std::multimap<DSKey, int> DSQueue;
+
+// BENCHMARKING
+struct PointXYZI {
+  float x = 0, y = 0, z = 0, intensity = 0;
+
+  PointXYZI(float x, float y, float z, float intensity) {
+    this->x = x;
+    this->y = y;
+    this->z = z;
+    this->intensity = intensity;
+  }
+
+  PointXYZI() {}
+};
+
+
+typedef std::pair<float, int> AStar2DElement;
+struct AStar2DComparator
+{
+  bool operator()(const AStar2DElement & a, const AStar2DElement & b) const
+  {
+    return a.first > b.first;
+  }
+};
+
+typedef std::vector<AStar2DElement> AStar2DQueue;
+
+// Need seperate pose struct for motion table operations
+
 // Must forward declare
 class NodeHybrid;
 
@@ -110,6 +142,12 @@ struct HybridMotionTable
   float non_straight_penalty;
   float cost_penalty;
   float reverse_penalty;
+  float change_reverse_penalty;
+  float max_analytic_expansion_angle_range;
+  float max_analytic_expansion_cost_subelevation;
+  float max_analytic_expansion_length;
+  bool obstacle_heuristic_enabled;
+  bool obstacle_heuristic_admissible;
   ompl::base::StateSpacePtr state_space;
   std::vector<std::vector<double>> delta_xs;
   std::vector<std::vector<double>> delta_ys;
@@ -382,6 +420,17 @@ public:
     const Coordinates & node_coords,
     const Coordinates & goal_coords,
     const double & cost_penalty);
+  
+  /**
+   * @brief Compute the Obstacle heuristic, following A* admissibility rule
+   * @param node_coords Coordinates to get heuristic at
+   * @param goal_coords Coordinates to compute heuristic to
+   * @return heuristic Heuristic value
+   */
+  static float getObstacleHeuristicAdmissible(
+    const Coordinates & node_coords,
+    const Coordinates & goal_coords,
+    const double & cost_penalty);
 
   /**
    * @brief Compute the Distance heuristic
@@ -434,11 +483,23 @@ public:
   // Wavefront lookup and queue for continuing to expand as needed
   static LookupTable obstacle_heuristic_lookup_table;
   static std::queue<unsigned int> obstacle_heuristic_queue;
+  static LookupTable astar_2d_h_table;
+  static bool astar_2d_first_run;
+  static AStar2DQueue astar_2d_queue;
+  static int run_number;
+  static int total_expansions_cnt;
+  static double total_time;
+  static double total_time_init;
+
   static nav2_costmap_2d::Costmap2D * sampled_costmap;
   static CostmapDownsampler downsampler;
   // Dubin / Reeds-Shepp lookup and size for dereferencing
   static LookupTable dist_heuristic_lookup_table;
   static float size_lookup;
+
+  // BENCHMARKING
+  static std::vector<PointXYZI> map_points;
+  static std::vector<PointXYZI> node_points;
 
 private:
   float _cell_cost;

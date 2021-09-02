@@ -38,10 +38,12 @@ void CostmapDownsampler::on_configure(
   const std::string & global_frame,
   const std::string & topic_name,
   nav2_costmap_2d::Costmap2D * const costmap,
-  const unsigned int & downsampling_factor)
+  const unsigned int & downsampling_factor,
+  const bool & use_min_cost_neighbor)
 {
   _costmap = costmap;
   _downsampling_factor = downsampling_factor;
+  _use_min_cost_neighbor = use_min_cost_neighbor;
   updateCostmapSize();
 
   _downsampled_costmap = std::make_unique<nav2_costmap_2d::Costmap2D>(
@@ -126,7 +128,7 @@ void CostmapDownsampler::setCostOfCell(
   const unsigned int & new_my)
 {
   unsigned int mx, my;
-  unsigned char cost = 0;
+  unsigned char cost = _use_min_cost_neighbor ? 255 : 0;
   unsigned int x_offset = new_mx * _downsampling_factor;
   unsigned int y_offset = new_my * _downsampling_factor;
 
@@ -140,7 +142,7 @@ void CostmapDownsampler::setCostOfCell(
       if (my >= _size_y) {
         continue;
       }
-      cost = std::max(cost, _costmap->getCost(mx, my));
+      cost = _use_min_cost_neighbor ? std::min(cost, _costmap->getCost(mx, my)) : std::max(cost, _costmap->getCost(mx, my));
     }
   }
 

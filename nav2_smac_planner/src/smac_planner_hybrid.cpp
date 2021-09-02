@@ -21,10 +21,19 @@
 #include "Eigen/Core"
 #include "nav2_smac_planner/smac_planner_hybrid.hpp"
 
-// #define BENCHMARK_TESTING
+#define BENCHMARK_TESTING
+
+#ifdef BENCHMARK_TESTING
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#endif
 
 namespace nav2_smac_planner
 {
+
+#ifdef BENCHMARK_TESTING
+rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr pcl_map_pub;
+rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr pcl_node_pub;
+#endif
 
 using namespace std::chrono;  // NOLINT
 using rcl_interfaces::msg::ParameterType;
@@ -98,6 +107,9 @@ void SmacPlannerHybrid::configure(
     node, name + ".change_penalty", rclcpp::ParameterValue(0.20));
   node->get_parameter(name + ".change_penalty", _search_info.change_penalty);
   nav2_util::declare_parameter_if_not_declared(
+    node, name + ".change_reverse_penalty", rclcpp::ParameterValue(0.5));
+  node->get_parameter(name + ".change_reverse_penalty", _search_info.change_reverse_penalty);
+  nav2_util::declare_parameter_if_not_declared(
     node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.25));
   node->get_parameter(name + ".non_straight_penalty", _search_info.non_straight_penalty);
   nav2_util::declare_parameter_if_not_declared(
@@ -106,6 +118,23 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(3.5));
   node->get_parameter(name + ".analytic_expansion_ratio", _search_info.analytic_expansion_ratio);
+  // default is inf to preserve original behavior. If confirmed to be used, M_PI*0.32 is a good default
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".max_analytic_expansion_angle_range", rclcpp::ParameterValue(std::numeric_limits<double>::infinity()));
+  node->get_parameter(name + ".max_analytic_expansion_angle_range", _search_info.max_analytic_expansion_angle_range);
+  // default is inf to preserve original behavior. If confirmed to be used, 0.15 is a good default
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".max_analytic_expansion_cost_subelevation", rclcpp::ParameterValue(std::numeric_limits<double>::infinity()));
+  node->get_parameter(name + ".max_analytic_expansion_cost_subelevation", _search_info.max_analytic_expansion_cost_subelevation);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".max_analytic_expansion_length", rclcpp::ParameterValue(std::numeric_limits<double>::infinity()));
+  node->get_parameter(name + ".max_analytic_expansion_length", _search_info.max_analytic_expansion_length);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".obstacle_heuristic_enabled", rclcpp::ParameterValue(true));
+  node->get_parameter(name + ".obstacle_heuristic_enabled", _search_info.obstacle_heuristic_enabled);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".obstacle_heuristic_admissible", rclcpp::ParameterValue(true));
+  node->get_parameter(name + ".obstacle_heuristic_admissible", _search_info.obstacle_heuristic_admissible);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(5.0));
@@ -186,6 +215,15 @@ void SmacPlannerHybrid::configure(
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
+  #ifdef BENCHMARK_TESTING
+  pcl_map_pub = node->create_publisher<sensor_msgs::msg::PointCloud2>(
+      "astar_map_pcl",
+      rclcpp::QoS(10));
+  pcl_node_pub = node->create_publisher<sensor_msgs::msg::PointCloud2>(
+      "astar_node_pcl",
+      rclcpp::QoS(10));
+  #endif
+
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlannerHybrid with "
     "maximum iterations %i, and %s. Using motion model: %s.",
@@ -207,6 +245,10 @@ void SmacPlannerHybrid::activate()
   // Add callback for dynamic parameters
   _dyn_params_handler = node->add_on_set_parameters_callback(
     std::bind(&SmacPlannerHybrid::dynamicParametersCallback, this, _1));
+  #ifdef BENCHMARK_TESTING
+  pcl_map_pub->on_activate();
+  pcl_node_pub->on_activate();
+  #endif
 }
 
 void SmacPlannerHybrid::deactivate()
@@ -219,6 +261,10 @@ void SmacPlannerHybrid::deactivate()
     _costmap_downsampler->on_deactivate();
   }
   _dyn_params_handler.reset();
+  #ifdef BENCHMARK_TESTING
+  pcl_map_pub->on_deactivate();
+  pcl_node_pub->on_deactivate();
+  #endif
 }
 
 void SmacPlannerHybrid::cleanup()
@@ -234,6 +280,81 @@ void SmacPlannerHybrid::cleanup()
   }
   _raw_plan_publisher.reset();
 }
+
+#ifdef BENCHMARK_TESTING
+void publishOHMap() {
+  sensor_msgs::msg::PointCloud2 pcl_map;
+  sensor_msgs::msg::PointCloud2 pcl_node;
+
+  std::vector<sensor_msgs::msg::PointField> fields;
+  auto pf_x = sensor_msgs::msg::PointField();
+  pf_x.name = std::string("x");
+  pf_x.offset = 0;
+  pf_x.datatype = (uint8_t)7;
+  pf_x.count = 1;
+  fields.push_back(pf_x);
+
+  auto pf_y = sensor_msgs::msg::PointField();
+  pf_y.name = std::string("y");
+  pf_y.offset = sizeof(float);
+  pf_y.datatype = (uint8_t)7;
+  pf_y.count = 1;
+  fields.push_back(pf_y);
+
+  auto pf_z = sensor_msgs::msg::PointField();
+  pf_z.name = std::string("z");
+  pf_z.offset = sizeof(float)*2;
+  pf_z.datatype = (uint8_t)7;
+  pf_z.count = 1;
+  fields.push_back(pf_z);
+
+  auto pf_i = sensor_msgs::msg::PointField();
+  pf_i.name = std::string("intensity");
+  pf_i.offset = sizeof(float)*3;
+  pf_i.datatype = (uint8_t)7;
+  pf_i.count = 1;
+  fields.push_back(pf_i);
+
+  pcl_map.fields = fields;
+  pcl_map.header.frame_id = "map";
+  pcl_map.point_step = sizeof(PointXYZI);
+  pcl_map.height = 1;
+  
+  pcl_node = pcl_map;
+
+  std::vector<PointXYZI> points;
+  points.reserve(NodeHybrid::map_points.size());
+  for (auto &p : NodeHybrid::map_points)
+    if (p.intensity > 0)
+      points.push_back(p);
+
+  pcl_map.data.assign((u_char *)points.data(), (u_char *)(points.data() + points.size()));
+  pcl_map.width = points.size();
+  pcl_map.row_step = pcl_map.width*pcl_map.point_step;
+  pcl_map_pub->publish(pcl_map);
+
+  points.clear();
+  points.reserve(NodeHybrid::node_points.size());
+  for (auto &p : NodeHybrid::node_points)
+    if (p.intensity > 0)
+      points.push_back(p);
+  pcl_node.data.assign((u_char *)points.data(), (u_char *)(points.data() + points.size()));
+  pcl_node.width = points.size();
+  pcl_node.row_step = pcl_node.width*pcl_node.point_step;
+  pcl_node_pub->publish(pcl_node);
+  // std::string path = node.motion_table.obstacle_heuristic_admissible ? "~/oh_map_admissible.map" : "~/oh_map.map";
+  // std::ofstream fout;
+  // fout.open(path, std::ios::binary | std::ios::out);
+
+  // int size_x = NodeHybrid::sampled_costmap->getSizeInCellsX();
+  // int size_y = NodeHybrid::sampled_costmap->getSizeInCellsY();
+
+  // fout.write((char*)&size_x, sizeof(size_x)); //TODO: write must be used because << converts value to ASCII string
+  // fout.write((char*)&size_y, sizeof(size_y));
+  // fout.write((char*)NodeHybrid::obstacle_heuristic_lookup_table.data(), size_x*size_y*sizeof(float));
+  // fout.close();
+}
+#endif
 
 nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
@@ -337,8 +458,12 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   double time_remaining = _max_planning_time - static_cast<double>(time_span.count());
 
 #ifdef BENCHMARK_TESTING
+  double length = 0;
+  for (unsigned int i = 1; i < plan.poses.size(); i++)
+    length += std::hypot(plan.poses[i].pose.position.x - plan.poses[i-1].pose.position.x, plan.poses[i].pose.position.y - plan.poses[i-1].pose.position.y);
   std::cout << "It took " << time_span.count() * 1000 <<
-    " milliseconds with " << num_iterations << " iterations." << std::endl;
+    " milliseconds with " << num_iterations << " iterations to plan path of length " << length << " meters." << std::endl;
+  publishOHMap();
 #endif
 
   // Smooth plan

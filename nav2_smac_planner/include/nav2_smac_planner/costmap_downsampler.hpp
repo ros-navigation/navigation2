@@ -55,7 +55,8 @@ public:
     const std::string & global_frame,
     const std::string & topic_name,
     nav2_costmap_2d::Costmap2D * const costmap,
-    const unsigned int & downsampling_factor);
+    const unsigned int & downsampling_factor,
+    const bool & use_min_cost_neighbor = false);
 
   /**
    * @brief Activate the publisher of the downsampled costmap
@@ -104,6 +105,7 @@ protected:
   unsigned int _downsampled_size_x;
   unsigned int _downsampled_size_y;
   unsigned int _downsampling_factor;
+  bool _use_min_cost_neighbor;
   float _downsampled_resolution;
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<nav2_costmap_2d::Costmap2D> _downsampled_costmap;
