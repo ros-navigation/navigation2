@@ -60,6 +60,8 @@ void SmacPlannerHybrid::configure(
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
 
+  int angle_quantizations;
+
   // General planner params
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".downsample_costmap", rclcpp::ParameterValue(false));
@@ -70,9 +72,9 @@ void SmacPlannerHybrid::configure(
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".angle_quantization_bins", rclcpp::ParameterValue(72));
-  node->get_parameter(name + ".angle_quantization_bins", _angle_quantizations);
-  _angle_bin_size = 2.0 * M_PI / _angle_quantizations;
-  _angle_quantizations = static_cast<unsigned int>(_angle_quantizations);
+  node->get_parameter(name + ".angle_quantization_bins", angle_quantizations);
+  _angle_bin_size = 2.0 * M_PI / angle_quantizations;
+  _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
@@ -417,9 +419,9 @@ void SmacPlannerHybrid::on_parameter_event_callback(
       } else if (name == _name + ".angle_quantization_bins") {
         reinit_collision_checker = true;
         reinit_a_star = true;
-        _angle_quantizations = value.integer_value;
-        _angle_bin_size = 2.0 * M_PI / _angle_quantizations;
-        _angle_quantizations = static_cast<unsigned int>(_angle_quantizations);
+        int angle_quantizations = value.integer_value;
+        _angle_bin_size = 2.0 * M_PI / angle_quantizations;
+        _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
       }
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == _name + ".motion_model_for_search") {

@@ -107,7 +107,7 @@ protected:
   bool _downsample_costmap;
   int _downsampling_factor;
   double _angle_bin_size;
-  int _angle_quantizations;
+  unsigned int _angle_quantizations;
   bool _allow_unknown;
   int _max_iterations;
   SearchInfo _search_info;
