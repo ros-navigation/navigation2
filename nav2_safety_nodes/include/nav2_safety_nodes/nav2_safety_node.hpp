@@ -8,7 +8,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "visualization_msgs/msg/marker.hpp"
-#include "rclcpp/time.hpp"
+
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_listener.h"
@@ -19,7 +19,6 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "laser_geometry/laser_geometry.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
-#include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/string_utils.hpp"
@@ -113,15 +112,9 @@ protected:
     void initPubSub();
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
       safety_polygon_pub_;
-    
-    rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_pub_;
-  
+    rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr 
+      point_cloud_pub_;
     std::vector<std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan>>> scan_subscribers_;
-
-    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
-
-    rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr pub;
-
     rclcpp::TimerBase::SharedPtr timer_;
     
     /**
@@ -135,9 +128,14 @@ protected:
      */
     void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr message);
     
-    double cosine_sign(const Eigen::Vector3d &pt1,
+    double dotProduct(const Eigen::Vector3d &pt1,
         const Eigen::Vector3d &pt2);
 
+    /**
+     * @brief  Function for detecting if point is inside or outside of safety zone
+     * @param message Pointcloud & safetyzone
+     * @return Number of points Inside
+     */
     int detectPoints(
       sensor_msgs::msg::PointCloud2 cloud,
       std::vector<geometry_msgs::msg::Point> safety_zone);
