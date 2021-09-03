@@ -197,7 +197,7 @@ void RegulatedPurePursuitController::cleanup()
   global_path_pub_.reset();
   carrot_pub_.reset();
   carrot_arc_pub_.reset();
-}
+  }
 
 void RegulatedPurePursuitController::activate()
 {
@@ -399,8 +399,6 @@ bool RegulatedPurePursuitController::isCollisionImminent(
     RCLCPP_INFO(logger_, "inside incollision  = true");
     return true;
   }
-
-
   // visualization messages
   nav_msgs::msg::Path arc_pts_msg;
   arc_pts_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
