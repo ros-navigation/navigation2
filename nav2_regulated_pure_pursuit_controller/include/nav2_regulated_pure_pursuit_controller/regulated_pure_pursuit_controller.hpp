@@ -43,12 +43,12 @@ public:
   /**
    * @brief Constructor for nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
    */
-  RegulatedPurePursuitController() = default;
+  RegulatedPurePursuitController();
 
   /**
    * @brief Destrructor for nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
    */
-  ~RegulatedPurePursuitController() override = default;
+  ~RegulatedPurePursuitController();
 
   /**
    * @brief Configure controller state machine
@@ -267,7 +267,7 @@ protected:
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
-  std::unique_ptr<GridCollisionChecker> _collision_checker;
+  GridCollisionChecker _collision_checker;
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller
