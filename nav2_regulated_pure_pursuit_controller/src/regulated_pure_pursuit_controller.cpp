@@ -178,6 +178,13 @@ void RegulatedPurePursuitController::configure(
   global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point", 1);
   carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc", 1);
+  
+  _collision_checker = std::make_unique<GridCollisionChecker>(costmap_, 1 /*for 2D, most be 1*/);
+  _collision_checker->setFootprint(
+    costmap_ros->getRobotFootprint(),
+    true /*for 2D, most use radius*/,
+    0.0 /*for 2D cost at inscribed isn't relevent*/);
+
 }
 
 void RegulatedPurePursuitController::cleanup()
@@ -383,9 +390,16 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   // odom frame and the carrot_pose is in robot base frame.
 
   // check current point is OK
+  if (_collision_checker->inCollision(robot_pose.pose.position.x, robot_pose.pose.position.y,
+       tf2::getYaw(robot_pose.pose.orientation),true)) {
+    //return true;
+    RCLCPP_INFO(logger_, "inside collision checker = true ");
+  }
   if (inCollision(robot_pose.pose.position.x, robot_pose.pose.position.y)) {
+    RCLCPP_INFO(logger_, "inside incollision  = true");
     return true;
   }
+
 
   // visualization messages
   nav_msgs::msg::Path arc_pts_msg;
@@ -422,11 +436,18 @@ bool RegulatedPurePursuitController::isCollisionImminent(
     pose_msg.pose.position.z = 0.01;
     arc_pts_msg.poses.push_back(pose_msg);
 
+    if (_collision_checker->inCollision(curr_pose.x, curr_pose.y,curr_pose.theta,true) ){
+      carrot_arc_pub_->publish(arc_pts_msg);
+      RCLCPP_INFO(logger_, "inside collision checker = true ");
+      //return true;
+    }
     // check for collision at this point
     if (inCollision(curr_pose.x, curr_pose.y)) {
       carrot_arc_pub_->publish(arc_pts_msg);
+      RCLCPP_INFO(logger_, "inside incollision  = true ");
       return true;
     }
+
   }
 
   carrot_arc_pub_->publish(arc_pts_msg);

@@ -28,6 +28,7 @@
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
+#include "nav2_regulated_pure_pursuit_controller/collision_checker.hpp"
 
 namespace nav2_regulated_pure_pursuit_controller
 {
@@ -266,6 +267,7 @@ protected:
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
+  std::unique_ptr<GridCollisionChecker> _collision_checker;
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller
