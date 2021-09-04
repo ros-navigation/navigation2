@@ -87,21 +87,41 @@ public:
     const geometry_msgs::msg::PoseStamped & goal) override;
 
 protected:
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+
   std::unique_ptr<AStarAlgorithm<NodeHybrid>> _a_star;
   GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;
   rclcpp::Clock::SharedPtr _clock;
   rclcpp::Logger _logger{rclcpp::get_logger("SmacPlannerHybrid")};
   nav2_costmap_2d::Costmap2D * _costmap;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> _costmap_ros;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
   std::string _global_frame, _name;
+  float _lookup_table_dim;
   float _tolerance;
-  int _downsampling_factor;
-  unsigned int _angle_quantizations;
-  double _angle_bin_size;
   bool _downsample_costmap;
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
+  int _downsampling_factor;
+  double _angle_bin_size;
+  unsigned int _angle_quantizations;
+  bool _allow_unknown;
+  int _max_iterations;
+  SearchInfo _search_info;
   double _max_planning_time;
+  double _lookup_table_size;
+  std::string _motion_model_for_search;
+  MotionModel _motion_model;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
+  std::mutex _mutex;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr _node;
+
+  // Subscription for parameter change
+  rclcpp::AsyncParametersClient::SharedPtr _parameters_client;
+  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr _parameter_event_sub;
 };
 
 }  // namespace nav2_smac_planner
