@@ -38,11 +38,13 @@ namespace nav2_regulated_pure_pursuit_controller
 
 RegulatedPurePursuitController::RegulatedPurePursuitController()
   :
+  tf_(nullptr),
   costmap_ros_(nullptr),
+  costmap_(nullptr),
   global_path_pub_(nullptr),
   carrot_pub_(nullptr),
   carrot_arc_pub_(nullptr),
-  _collision_checker(nullptr, 1)
+  _collision_checker(costmap_, 1)
 {
 }
 
@@ -57,7 +59,7 @@ void RegulatedPurePursuitController::configure(
   if (!node) {
     throw nav2_core::PlannerException("Unable to lock node!");
   }
-
+  RCLCPP_INFO(logger_,"saka 1");
   costmap_ros_ = costmap_ros;
   costmap_ = costmap_ros_->getCostmap();
   tf_ = tf;
@@ -190,13 +192,7 @@ void RegulatedPurePursuitController::configure(
   global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point", 1);
   carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc", 1);
-  
-  _collision_checker = GridCollisionChecker(costmap_, 1 /*for 2D, most be 1*/);
-  _collision_checker.setFootprint(
-    costmap_ros->getRobotFootprint(),
-    false /*for 2D, most use radius*/,
-    0.0 /*for 2D cost at inscribed isn't relevent*/);
-
+  RCLCPP_INFO(logger_,"saka 2");
 }
 
 void RegulatedPurePursuitController::cleanup()
@@ -272,7 +268,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   } else {
     goal_dist_tol_ = pose_tolerance.position.x;
   }
-
+  RCLCPP_INFO(logger_,"saka 3");
   // Transform path to robot base frame
   auto transformed_plan = transformGlobalPlan(pose);
 
@@ -400,12 +396,25 @@ bool RegulatedPurePursuitController::isCollisionImminent(
 {
   // Note(stevemacenski): This may be a bit unusual, but the robot_pose is in
   // odom frame and the carrot_pose is in robot base frame.
+  RCLCPP_INFO(logger_,"saka 4");
+  //_collision_checker = GridCollisionChecker(costmap_, 1 /*for 2D, most be 1*/);
+  _collision_checker.setCostmap(costmap_);
+  _collision_checker.setFootprint(
+    costmap_ros_->getRobotFootprint(),
+    true /*for 2D, most use radius*/,
+    0.0 /*for 2D cost at inscribed isn't relevent*/);
+
+  
+  RCLCPP_INFO(logger_,"saka 5");
+  RCLCPP_INFO(logger_,"saka 5 %lf , %lf ,%lf ", robot_pose.pose.position.x, robot_pose.pose.position.y, tf2::getYaw(robot_pose.pose.orientation));
 
   // check current point is OK
   if (_collision_checker.inCollision(robot_pose.pose.position.x, robot_pose.pose.position.y,
-       tf2::getYaw(robot_pose.pose.orientation),true)) {
+      tf2::getYaw(robot_pose.pose.orientation),false)) {
+    RCLCPP_INFO(logger_,"saka 6");
     return true;
   }
+  RCLCPP_INFO(logger_,"saka 6-1");
   // visualization messages
   nav_msgs::msg::Path arc_pts_msg;
   arc_pts_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
@@ -429,7 +438,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
     }
 
     i++;
-
+    RCLCPP_INFO(logger_,"saka 6");
     // apply velocity at curr_pose over distance
     curr_pose.x += projection_time * (linear_vel * cos(curr_pose.theta));
     curr_pose.y += projection_time * (linear_vel * sin(curr_pose.theta));
@@ -441,7 +450,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
     pose_msg.pose.position.z = 0.01;
     arc_pts_msg.poses.push_back(pose_msg);
 
-    if (_collision_checker.inCollision(curr_pose.x, curr_pose.y,curr_pose.theta,true) ){
+    if (_collision_checker.inCollision(curr_pose.x, curr_pose.y,curr_pose.theta,false) ){
       carrot_arc_pub_->publish(arc_pts_msg);
       RCLCPP_INFO(logger_, "inside collision checker = true ");
       return true;
@@ -643,8 +652,9 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
 double RegulatedPurePursuitController::findDirectionChange(
   const geometry_msgs::msg::PoseStamped & pose)
 {
+  RCLCPP_INFO(logger_,"saka 3");
   // Iterating through the global path to determine the position of the cusp
-  for (unsigned int pose_id = 1; pose_id < global_plan_.poses.size(); ++pose_id) {
+  for (unsigned int pose_id = 1; pose_id < global_plan_.poses.size() - 1; ++pose_id) {
     // We have two vectors for the dot product OA and AB. Determining the vectors.
     double oa_x = global_plan_.poses[pose_id].pose.position.x -
       global_plan_.poses[pose_id - 1].pose.position.x;

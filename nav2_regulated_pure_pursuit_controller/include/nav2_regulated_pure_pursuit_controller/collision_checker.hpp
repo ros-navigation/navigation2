@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 #include <vector>
+#include <string>
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 
 
@@ -21,11 +22,11 @@
 namespace nav2_regulated_pure_pursuit_controller
 {
 
-  const float UNKNOWN = 255.0;
-  const float OCCUPIED = 254.0;
-  const float INSCRIBED = 253.0;
-  const float MAX_NON_OBSTACLE = 252.0;
-  const float FREE = 0;
+  static constexpr unsigned char UNKNOWN = 255;
+  static constexpr unsigned char OCCUPIED = 254;
+  static constexpr unsigned char INSCRIBED = 253;
+  static constexpr unsigned char MAX_NON_OBSTACLE = 252;
+  static constexpr unsigned char FREE = 0;
 
 /**
  * 
@@ -49,6 +50,9 @@ public:
     num_quantizations_(num_quantizations)
   {
   }
+
+
+  
 
   /**
    * @brief Set the footprint to use with collision checker
@@ -116,6 +120,7 @@ public:
     double wx, wy;
     costmap_->mapToWorld(static_cast<double>(x), static_cast<double>(y), wx, wy);
 
+    RCLCPP_INFO(logger_,"footprint_is_radius_ %i", footprint_is_radius_);
     if (!footprint_is_radius_) {
       // if footprint, then we check for the footprint's points, but first see
       // if the robot is even potentially in an inscribed collision
@@ -125,13 +130,13 @@ public:
       if (footprint_cost_ < possible_inscribed_cost_) {
         return false;
       }
-
+      RCLCPP_INFO(logger_,"saka 30");
       // If its inscribed, in collision, or unknown in the middle,
       // no need to even check the footprint, its invalid
       if (footprint_cost_ == UNKNOWN && !traverse_unknown) {
         return true;
       }
-
+      RCLCPP_INFO(logger_,"saka 32");
       if (footprint_cost_ == INSCRIBED || footprint_cost_ == OCCUPIED) {
         return true;
       }
@@ -151,7 +156,7 @@ public:
       }
 
       footprint_cost_ = footprintCost(current_footprint);
-
+      RCLCPP_INFO(logger_,"saka 33");
       if (footprint_cost_ == UNKNOWN && traverse_unknown) {
         return false;
       }
@@ -160,16 +165,18 @@ public:
       return footprint_cost_ >= OCCUPIED;
     } else {
       // if radius, then we can check the center of the cost assuming inflation is used
+      RCLCPP_INFO(logger_,"saka 35");
       footprint_cost_ = costmap_->getCost(
-        static_cast<unsigned int>(x), static_cast<unsigned int>(y));
-
+        static_cast<unsigned int>(wx), static_cast<unsigned int>(wy));
+      RCLCPP_INFO(logger_,"footprint_cost_ %c", footprint_cost_);
       if (footprint_cost_ == UNKNOWN && traverse_unknown) {
         return false;
       }
-
+      RCLCPP_INFO(logger_,"saka 35");
       // if occupied or unknown and not to traverse unknown space
       return footprint_cost_ >= INSCRIBED;
     }
+    RCLCPP_INFO(logger_,"saka 3000");
   }
 
   /**
@@ -195,20 +202,21 @@ public:
    * @brief Get cost at footprint pose in costmap
    * @return the cost at the pose in costmap
    */
-  float getCost()
+  double getCost()
   {
     // Assumes inCollision called prior
-    return static_cast<float>(footprint_cost_);
+    return static_cast<double>(footprint_cost_);
   }
 
 protected:
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
   nav2_costmap_2d::Footprint unoriented_footprint_;
-  double footprint_cost_;
+  unsigned char footprint_cost_;
   bool footprint_is_radius_;
   unsigned int num_quantizations_;
   double bin_size_;
   double possible_inscribed_cost_{-1};
+  rclcpp::Logger logger_ {rclcpp::get_logger("RegulatedPurePursuitController")};
 };
 
 }  // namespace nav2_smac_planner

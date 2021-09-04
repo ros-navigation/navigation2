@@ -58,7 +58,8 @@ def generate_launch_description():
         package='rviz2',
         executable='rviz2',
         arguments=['-d', rviz_config_file],
-        output='screen')
+        #output='screen'
+        )
 
     namespaced_rviz_config_file = ReplaceString(
             source_file=rviz_config_file,
