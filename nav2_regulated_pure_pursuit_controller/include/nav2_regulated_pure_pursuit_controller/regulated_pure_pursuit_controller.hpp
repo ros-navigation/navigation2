@@ -33,11 +33,11 @@
 
 namespace nav2_regulated_pure_pursuit_controller
 {
-  static constexpr unsigned char UNKNOWN = 255;
-  static constexpr unsigned char OCCUPIED = 254;
-  static constexpr unsigned char INSCRIBED = 253;
-  static constexpr unsigned char MAX_NON_OBSTACLE = 252;
-  static constexpr unsigned char FREE = 0;
+const double UNKNOWN = 255;
+const double OCCUPIED = 254;
+const double INSCRIBED = 253;
+const double MAX_NON_OBSTACLE = 252;
+const double FREE = 0;
 
 /**
  * @class nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
@@ -195,7 +195,7 @@ protected:
    * @param y Pose of pose y
    * @return Whether in collision
    */
- bool inCollision(
+  bool inCollision(
     const double & x,
     const double & y,
     const double & theta,
@@ -238,7 +238,7 @@ protected:
    */
   double findDirectionChange(const geometry_msgs::msg::PoseStamped & pose);
 
-    /**
+  /**
    * @brief Set the footprint to use with collision checker
    * @param footprint The footprint to collision check against
    * @param radius Whether or not the footprint is a circle and use radius collision checking
@@ -284,7 +284,7 @@ protected:
 
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
   nav2_costmap_2d::Footprint unoriented_footprint_;
-  unsigned char footprint_cost_;
+  double footprint_cost_;
   bool footprint_is_radius_;
   unsigned int num_quantizations_;
   double bin_size_;
