@@ -21,6 +21,7 @@
 #include <memory>
 #include <algorithm>
 
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_core/controller.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
@@ -28,10 +29,15 @@
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
-#include "nav2_regulated_pure_pursuit_controller/collision_checker.hpp"
+
 
 namespace nav2_regulated_pure_pursuit_controller
 {
+  static constexpr unsigned char UNKNOWN = 255;
+  static constexpr unsigned char OCCUPIED = 254;
+  static constexpr unsigned char INSCRIBED = 253;
+  static constexpr unsigned char MAX_NON_OBSTACLE = 252;
+  static constexpr unsigned char FREE = 0;
 
 /**
  * @class nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
@@ -189,7 +195,11 @@ protected:
    * @param y Pose of pose y
    * @return Whether in collision
    */
-  bool inCollision(const double & x, const double & y);
+ bool inCollision(
+    const double & x,
+    const double & y,
+    const double & theta,
+    const bool & traverse_unknown);
 
   /**
    * @brief Cost at a point
@@ -228,6 +238,16 @@ protected:
    */
   double findDirectionChange(const geometry_msgs::msg::PoseStamped & pose);
 
+    /**
+   * @brief Set the footprint to use with collision checker
+   * @param footprint The footprint to collision check against
+   * @param radius Whether or not the footprint is a circle and use radius collision checking
+   */
+  void setFootprint(
+    const nav2_costmap_2d::Footprint & footprint,
+    const bool & radius,
+    const double & possible_inscribed_cost);
+
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
@@ -262,12 +282,20 @@ protected:
   double goal_dist_tol_;
   bool allow_reversing_;
 
+  std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
+  nav2_costmap_2d::Footprint unoriented_footprint_;
+  unsigned char footprint_cost_;
+  bool footprint_is_radius_;
+  unsigned int num_quantizations_;
+  double bin_size_;
+  double possible_inscribed_cost_{-1};
+
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
-  GridCollisionChecker _collision_checker;
+  nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *> _collision_checker;
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller
