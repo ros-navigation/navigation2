@@ -225,7 +225,7 @@ SafetyZone::detectPoints(
         side--;
       }
     }
-    // checking if point is on same side of all edge vectors of safety zone in anti/clockwise direction
+    // checking if point is on same side of all edges
     if (side == num_sides_of_polygon || side == (-1)*num_sides_of_polygon) {
       RCLCPP_INFO(logger_, "Yes");
       points_inside++;
@@ -250,6 +250,6 @@ SafetyZone::timerCallback()
       speed_limit_pub_->publish(std::move(msg));
     }
     sensor_data.pop();
-  } 
+  }
 }
 }  // namespace nav2_safety_nodes
