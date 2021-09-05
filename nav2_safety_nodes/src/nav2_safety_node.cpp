@@ -12,8 +12,10 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2/convert.h"
 #include "tf2_ros/buffer.h"
+
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
+#include "nav2_msgs/msg/speed_limit.hpp"
 #include "nav2_util/string_utils.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_safety_nodes/nav2_safety_node.hpp"
@@ -30,7 +32,7 @@ SafetyZone::SafetyZone()
   RCLCPP_INFO(logger_, "Creating Safety Polygon");
 
   // Vector of string for multiple LaserScan topics
-  const std::vector<std::string> scan_topics{};
+  const std::vector<std::string> scan{};
   // pass polygon parameters at string
   declare_parameter("safety_polygon", std::string("[]"));
   declare_parameter("zone_action", rclcpp::ParameterValue(0.0));
@@ -38,7 +40,8 @@ SafetyZone::SafetyZone()
   declare_parameter("zone_num_pts", rclcpp::ParameterValue(1));
   declare_parameter("base_frame", std::string("base_link"));
   declare_parameter("tf_tolerance", rclcpp::ParameterValue(0.01));
-  declare_parameter("scan_topics", scan_topics);
+  declare_parameter("scan_topics", scan);
+  declare_parameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
 }
 
 SafetyZone::~SafetyZone()
@@ -61,6 +64,7 @@ SafetyZone::on_activate(const rclcpp_lifecycle::State & /*state*/)
   initPubSub();
   safety_polygon_pub_->on_activate();
   point_cloud_pub_->on_activate();
+  speed_limit_pub_->on_activate();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -70,6 +74,7 @@ SafetyZone::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(logger_, "Deactivating");
   safety_polygon_pub_->on_deactivate();
   point_cloud_pub_->on_deactivate();
+  speed_limit_pub_->on_deactivate();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -79,6 +84,7 @@ SafetyZone::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(logger_, "Cleaning up");
   safety_polygon_pub_.reset();
   point_cloud_pub_.reset();
+  speed_limit_pub_.reset();
   timer_.reset();
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -95,7 +101,7 @@ void
 SafetyZone::getParameters()
 {
   RCLCPP_DEBUG(logger_, " getParameters");
-
+  std::string speed_limit_topic;
   // Get all of the required parameters
   safety_polygon_ = get_parameter("safety_polygon").as_string();
   zone_action_ = get_parameter("zone_action").as_double();
@@ -104,6 +110,7 @@ SafetyZone::getParameters()
   base_frame_ = get_parameter("base_frame").as_string();
   tf_tolerance_ = get_parameter("tf_tolerance").as_double();
   scan_topics_ = get_parameter("scan_topics").as_string_array();
+  speed_limit_topic_ = get_parameter("speed_limit_topic").as_string();
 
   // If the safety_polygon has been specified, it must be in the correct format
   if (safety_polygon_ != "" && safety_polygon_ != "[]") {
@@ -142,31 +149,41 @@ SafetyZone::initPubSub()
   // Pointcloud publisher
   point_cloud_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>(
     "cloud", rclcpp::SensorDataQoS());
+  // Velocity publisher
+  speed_limit_pub_ = create_publisher<nav2_msgs::msg::SpeedLimit>(
+    speed_limit_topic_, rclcpp::QoS(10));
+
   // Multiple Laserscan subscribers
-  scan_subscribers_.resize(scan_topics_.size());
-  reverse(scan_subscribers_.begin(), scan_subscribers_.end());
+  scan_subscribers_.reserve(scan_topics_.size());
   RCLCPP_INFO(logger_, "Subscribing to scan topics");
   for (unsigned int i = 0; i < scan_topics_.size(); i++) {
     scan_subscribers_.push_back(
       create_subscription<sensor_msgs::msg::LaserScan>(
         scan_topics_[i].c_str(), rclcpp::SystemDefaultsQoS(),
-        std::bind(&SafetyZone::laser_callback, this, std::placeholders::_1)));
+        std::bind(&SafetyZone::laserCallback, this, std::placeholders::_1)));
   }
   // Timer -> 10hzs
   timer_ = create_wall_timer(
-    100ms, std::bind(&SafetyZone::timer_callback, this));
+    100ms, std::bind(&SafetyZone::timerCallback, this));
   RCLCPP_INFO(logger_, "Subscribed to scan topics");
 }
 
 void
-SafetyZone::laser_callback(
+SafetyZone::laserCallback(
   const sensor_msgs::msg::LaserScan::SharedPtr message)
 {
   // project the laser into a point cloud
   const sensor_msgs::msg::PointCloud2::SharedPtr cloud;
-  projector_.projectLaser(*message, *cloud);
 
-  // Transform cloud if necessary
+   try {
+    projector_.projectLaser(*message, *cloud);
+  } catch (...) {
+    RCLCPP_WARN(
+      logger_,
+      "Unable to project laser into cloud");
+  }
+
+  // Transform the cloud if necessary
   if (!base_frame_.empty() && cloud->header.frame_id != base_frame_) {
     try {
       *cloud = tf2_->transform(*cloud, base_frame_, tf2::durationFromSec(tf_tolerance_));
@@ -180,21 +197,13 @@ SafetyZone::laser_callback(
   }
 }
 
-double
-SafetyZone::dotProduct(
-  const Eigen::Vector3d & pt1,
-  const Eigen::Vector3d & pt2)
-{
-  return pt1[0] * pt2[1] - pt1[1] * pt2[0];
-}
-
 // Function for detecting if cloud points are inside safety polygon or not
 int
 SafetyZone::detectPoints(
-  sensor_msgs::msg::PointCloud2 cloud,
+  const sensor_msgs::msg::PointCloud2 &cloud,
   std::vector<geometry_msgs::msg::Point> safety_zone)
 {
-  int pointsInside = 0;
+  int points_inside = 0;
   int side = 0;
   const int num_sides_of_polygon = safety_zone.size();
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
@@ -209,38 +218,38 @@ SafetyZone::detectPoints(
       geometry_msgs::msg::Point b = safety_zone[(i + 1) % num_sides_of_polygon];
       Eigen::Vector3d affine_segment = {b.x - a.x, b.y - a.y, b.z - a.z};
       Eigen::Vector3d affine_point = {px - a.x, py - a.y, pz - a.z};
-      double x = dotProduct(affine_segment, affine_point);
+      double x = affine_segment.dot(affine_point);
       if (x > 0) {
         side++;
       } else {
         side--;
       }
     }
-    if (side % num_sides_of_polygon == 0) {
+    // checking if point is on same side of all edge vectors of safety zone in anti/clockwise direction
+    if (side == num_sides_of_polygon || side == (-1)*num_sides_of_polygon) {
       RCLCPP_INFO(logger_, "Yes");
-      pointsInside++;
+      points_inside++;
     } else {
       RCLCPP_INFO(logger_, "No");
     }
   }
-  return pointsInside;
+  return points_inside;
 }
 
 void
-SafetyZone::timer_callback()
+SafetyZone::timerCallback()
 {
-  int num_pts = 0;
-  point_cloud_pub_->publish(std::move(sensor_data.front()));
-  RCLCPP_INFO(
-    logger_, "Published safety polygon");
-
-  num_pts = detectPoints(sensor_data.front(), safety_zone);
-  while (!sensor_data.empty()) {
-    sensor_data.pop();
-    if (num_pts >= zone_num_pts_) {
-      break;
+  std::unique_ptr<nav2_msgs::msg::SpeedLimit> msg =
+    std::make_unique<nav2_msgs::msg::SpeedLimit>();
+  while (!sensor_data.empty())
+  {
+    if (detectPoints(sensor_data.front(), safety_zone) >= zone_num_pts_) {
+      msg->header.frame_id = base_frame_;
+      msg->header.stamp = clock_->now();
+      msg->speed_limit = zone_action_;
+      speed_limit_pub_->publish(std::move(msg));
     }
-  }
+    sensor_data.pop();
+  } 
 }
-
 }  // namespace nav2_safety_nodes

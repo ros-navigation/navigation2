@@ -15,14 +15,13 @@
 #include "tf2_ros/create_timer_ros.h"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.h"
 
-
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "laser_geometry/laser_geometry.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
+#include "nav2_msgs/msg/speed_limit.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/string_utils.hpp"
-
 namespace nav2_safety_nodes
 {
 class SafetyZone : public nav2_util::LifecycleNode
@@ -83,6 +82,7 @@ public:
 protected:
     // The local node
     std::vector<geometry_msgs::msg::Point> safety_zone;
+    rclcpp::Clock::SharedPtr clock_;
     /**
      * @brief Get parameters for node
      */
@@ -94,6 +94,7 @@ protected:
     std::string base_frame_;   ///< The frame_id of the robot base
     double tf_tolerance_{};
     std::vector<std::string> scan_topics_;
+    std::string speed_limit_topic_;
 
     /**
      * @brief Initialize required ROS transformations
@@ -114,19 +115,22 @@ protected:
       safety_polygon_pub_;
     rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr 
       point_cloud_pub_;
-    std::vector<std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan>>> scan_subscribers_;
+    rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::SpeedLimit>::SharedPtr 
+      speed_limit_pub_;
+    std::vector<std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan>>> 
+      scan_subscribers_;
     rclcpp::TimerBase::SharedPtr timer_;
     
     /**
      * @brief Action server callbacks
      */
-    void timer_callback();
+    void timerCallback();
 
     /**
      * @brief  A callback to handle buffering LaserScan messages
      * @param message The message returned from a message notifier
      */
-    void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr message);
+    void laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr message);
     
     double dotProduct(const Eigen::Vector3d &pt1,
         const Eigen::Vector3d &pt2);
@@ -137,7 +141,7 @@ protected:
      * @return Number of points Inside
      */
     int detectPoints(
-      sensor_msgs::msg::PointCloud2 cloud,
+      const sensor_msgs::msg::PointCloud2 &cloud,
       std::vector<geometry_msgs::msg::Point> safety_zone);
 
 };
