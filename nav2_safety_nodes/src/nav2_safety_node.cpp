@@ -197,6 +197,12 @@ SafetyZone::laserCallback(
   }
 }
 
+double 
+SafetyZone::dotProduct(const Eigen::Vector3d &pt1,
+    const Eigen::Vector3d &pt2){
+    return pt1[0]*pt2[1]-pt1[1]*pt2[0];
+}
+
 // Function for detecting if cloud points are inside safety polygon or not
 int
 SafetyZone::detectPoints(
@@ -204,8 +210,8 @@ SafetyZone::detectPoints(
   std::vector<geometry_msgs::msg::Point> safety_zone)
 {
   int points_inside = 0;
-  int side = 0;
-  const int num_sides_of_polygon = safety_zone.size();
+  int count_same_side_results = 0, on_edge = 0;
+  const int n = safety_zone.size();
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
   sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
@@ -213,20 +219,22 @@ SafetyZone::detectPoints(
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
     double px = *iter_x, py = *iter_y, pz = *iter_z;
     // iterating through polygon points
-    for (int i = 0; i < num_sides_of_polygon; ++i) {
+    for (int i = 0; i < n; ++i) {
       geometry_msgs::msg::Point a = safety_zone[i];
-      geometry_msgs::msg::Point b = safety_zone[(i + 1) % num_sides_of_polygon];
+      geometry_msgs::msg::Point b = safety_zone[(i + 1) % n];
       Eigen::Vector3d affine_segment = {b.x - a.x, b.y - a.y, b.z - a.z};
       Eigen::Vector3d affine_point = {px - a.x, py - a.y, pz - a.z};
-      double x = affine_segment.dot(affine_point);
+      double x = dotProduct(affine_segment, affine_point);
       if (x > 0) {
-        side++;
+        count_same_side_results++;
+      } else if (x<0) {
+        count_same_side_results--;
       } else {
-        side--;
+        on_edge++;
       }
     }
     // checking if point is on same side of all edges
-    if (side == num_sides_of_polygon || side == (-1)*num_sides_of_polygon) {
+    if (count_same_side_results == n || count_same_side_results == (-1)*n || on_edge == 2) {
       RCLCPP_INFO(logger_, "Yes");
       points_inside++;
     } else {
