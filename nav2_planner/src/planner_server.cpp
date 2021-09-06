@@ -510,4 +510,14 @@ PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
   }
 }
 
+void PlannerServer::isPathValid(const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request, 
+                   std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
+{
+  //Need to implement
+  nav_msgs::msg::Path path = request->path;
+  std_msgs::msg::Bool msgData;
+  msgData.data = true; 
+  response->response = msgData; 
+}
+
 }  // namespace nav2_planner
