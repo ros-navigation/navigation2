@@ -4,20 +4,6 @@
 #include <string>
 #include <utility>
 
-#include "rclcpp/rclcpp.hpp"
-#include "visualization_msgs/msg/marker.hpp"
-#include "geometry_msgs/msg/point.hpp"
-#include "tf2_ros/transform_listener.h"
-#include "nav2_util/lifecycle_node.hpp"
-#include "pluginlib/class_list_macros.hpp"
-#include "tf2/convert.h"
-#include "tf2_ros/buffer.h"
-
-#include "sensor_msgs/msg/point_cloud2.hpp"
-#include "sensor_msgs/point_cloud2_iterator.hpp"
-#include "nav2_msgs/msg/speed_limit.hpp"
-#include "nav2_util/string_utils.hpp"
-#include "nav2_util/node_utils.hpp"
 #include "nav2_safety_nodes/nav2_safety_node.hpp"
 
 using namespace std::chrono_literals;
