@@ -183,7 +183,7 @@ SafetyZone::laserCallback(
   }
 }
 
-double 
+double
 SafetyZone::dotProduct(const Eigen::Vector3d &pt1,
     const Eigen::Vector3d &pt2){
     return pt1[0]*pt2[1]-pt1[1]*pt2[0];
@@ -213,7 +213,7 @@ SafetyZone::detectPoints(
       double x = dotProduct(affine_segment, affine_point);
       if (x > 0) {
         count_same_side_results++;
-      } else if (x<0) {
+      } else if (x < 0) {
         count_same_side_results--;
       } else {
         on_edge++;
