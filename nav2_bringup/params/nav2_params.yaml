@@ -26,7 +26,7 @@ amcl:
     recovery_alpha_fast: 0.0
     recovery_alpha_slow: 0.0
     resample_interval: 1
-    robot_model_type: "differential"
+    robot_model_type: "nav2_amcl::DifferentialMotionModel"
     save_pose_rate: 0.5
     sigma_hit: 0.2
     tf_broadcast: true
@@ -38,6 +38,8 @@ amcl:
     z_rand: 0.5
     z_short: 0.05
     scan_topic: scan
+    seperation_between_the_wheels: 2
+   
 
 amcl_map_client:
   ros__parameters:
