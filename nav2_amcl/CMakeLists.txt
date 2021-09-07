@@ -15,7 +15,7 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
-
+find_package(pluginlib REQUIRED)
 nav2_package()
 
 include_directories(
@@ -27,7 +27,7 @@ check_symbol_exists(drand48 stdlib.h HAVE_DRAND48)
 
 add_subdirectory(src/pf)
 add_subdirectory(src/map)
-add_subdirectory(src/motion_model)
+#add_subdirectory(src/motion_model)
 add_subdirectory(src/sensors)
 
 set(executable_name amcl)
@@ -43,6 +43,9 @@ add_library(${library_name} SHARED
 )
 
 target_include_directories(${library_name} PRIVATE src/include)
+target_include_directories(${executable_name} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
 if(HAVE_DRAND48)
   target_compile_definitions(${library_name} PRIVATE "HAVE_DRAND48")
 endif()
@@ -60,6 +63,7 @@ set(dependencies
   tf2
   nav2_util
   nav2_msgs
+  "pluginlib"
 )
 
 ament_target_dependencies(${executable_name}
@@ -75,7 +79,7 @@ ament_target_dependencies(${library_name}
 )
 
 target_link_libraries(${library_name}
-  map_lib motions_lib sensors_lib
+  map_lib sensors_lib
 )
 
 install(TARGETS ${library_name}
@@ -101,7 +105,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name} pf_lib sensors_lib motions_lib map_lib)
+ament_export_libraries(${library_name} pf_lib sensors_lib map_lib)
 ament_export_dependencies(${dependencies})
 
 ament_package()
