@@ -43,7 +43,7 @@ void RegulatedPurePursuitController::configure(
 {
   auto node = parent.lock();
   if (!node) {
-    throw std::runtime_error("Unable to lock node!");
+    throw nav2_core::PlannerException("Unable to lock node!");
   }
 
   costmap_ros_ = costmap_ros;
@@ -314,7 +314,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // Collision checking on this velocity heading
   if (isCollisionImminent(pose, linear_vel, angular_vel)) {
-    throw std::runtime_error("RegulatedPurePursuitController detected collision ahead!");
+    throw nav2_core::PlannerException("RegulatedPurePursuitController detected collision ahead!");
   }
 
   // populate and return message
