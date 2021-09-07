@@ -1,0 +1,11 @@
+<library path="amcl_plugins">
+  <class type="nav2_amcl::OmniMotionModel" base_class_type="nav2_amcl::MotionModel">
+    <description>This is a omni plugin.</description>
+  </class>
+  <class type="nav2_amcl::DifferentialMotionModel" base_class_type="nav2_amcl::MotionModel">
+    <description>This is a differential plugin.</description>
+  </class>
+  <class type="nav2_amcl::DifferentialMotionModelNew" base_class_type="nav2_amcl::MotionModel">
+    <description>This is a differentialnew plugin.</description>
+  </class>
+</library>
