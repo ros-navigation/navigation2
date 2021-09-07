@@ -190,7 +190,7 @@ protected:
     const double &, const double &);
 
   /**
-   * @brief Whether point is in collision
+   * @brief Whether point or footprint is in collision
    * @param x Pose of pose x
    * @param y Pose of pose y
    * @return Whether in collision
@@ -198,16 +198,18 @@ protected:
   bool inCollision(
     const double & x,
     const double & y,
-    const double & theta,
     const bool & traverse_unknown);
-  
+
   /**
-   * @brief Whether point is in collision
+   * @brief checks for collision at projected pose
    * @param x Pose of pose x
    * @param y Pose of pose y
+   * @param theta orientation of Yaw
+   * @param footprint_spec footprint of the robot unoriented
+   * @param traverse_unknown ignore UNKNOWN cost (255) as obstuctle
    * @return Whether in collision
    */
-  bool inCollision(
+  bool checkCollision(
     const double & x,
     const double & y,
     const double & theta,
@@ -253,11 +255,11 @@ protected:
   /**
    * @brief Set the footprint to use with collision checker
    * @param footprint The footprint to collision check against
-   * @param radius Whether or not the footprint is a circle and use radius collision checking
+   * @param isCircular Whether or not the footprint is a circle and use radius collision checking
    */
   void setFootprint(
     const nav2_costmap_2d::Footprint & footprint,
-    const bool & radius,
+    const bool & isCircular,
     const double & possible_inscribed_cost);
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -293,22 +295,19 @@ protected:
   double rotate_to_heading_min_angle_;
   double goal_dist_tol_;
   bool allow_reversing_;
-
-  std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
-  nav2_costmap_2d::Footprint unoriented_footprint_;
   double footprint_cost_;
-  bool footprint_is_radius_;
-  unsigned int num_quantizations_{1};
-  double bin_size_;
+  bool footprint_is_circular_;
   double possible_inscribed_cost_{-1};
-  nav2_costmap_2d::Footprint oriented_footprint;
 
+  nav2_costmap_2d::Footprint unoriented_footprint_;
+  nav2_costmap_2d::Footprint oriented_footprint_;
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
-  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>> _collision_checker;
+  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
+  _collision_checker;
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller
