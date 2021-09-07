@@ -39,6 +39,7 @@ amcl:
     z_short: 0.05
     scan_topic: scan
     seperation_between_the_wheels: 2
+    cmd_vel_topic: "/cmd_vel"
    
 
 amcl_map_client:
