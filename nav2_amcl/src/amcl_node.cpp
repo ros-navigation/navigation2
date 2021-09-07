@@ -234,12 +234,12 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   initParameters();
   initTransforms();
+  initParticleFilter();
+  initLaserScan();
   initMessageFilters();
   initPubSub();
   initServices();
   initOdometry();
-  initParticleFilter();
-  initLaserScan();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
