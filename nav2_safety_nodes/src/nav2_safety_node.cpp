@@ -161,7 +161,7 @@ SafetyZone::laserCallback(
   // project the laser into a point cloud
   const sensor_msgs::msg::PointCloud2::SharedPtr cloud;
 
-   try {
+  try {
     projector_.projectLaser(*message, *cloud);
   } catch (...) {
     RCLCPP_WARN(
@@ -184,15 +184,17 @@ SafetyZone::laserCallback(
 }
 
 double
-SafetyZone::dotProduct(const Eigen::Vector3d &pt1,
-    const Eigen::Vector3d &pt2){
-    return pt1[0]*pt2[1]-pt1[1]*pt2[0];
+SafetyZone::dotProduct(
+  const Eigen::Vector3d & pt1,
+  const Eigen::Vector3d & pt2)
+{
+  return pt1[0] * pt2[1] - pt1[1] * pt2[0];
 }
 
 // Function for detecting if cloud points are inside safety polygon or not
 int
 SafetyZone::detectPoints(
-  const sensor_msgs::msg::PointCloud2 &cloud,
+  const sensor_msgs::msg::PointCloud2 & cloud,
   std::vector<geometry_msgs::msg::Point> safety_zone)
 {
   int points_inside = 0;
@@ -220,7 +222,7 @@ SafetyZone::detectPoints(
       }
     }
     // checking if point is on same side of all edges
-    if (count_same_side_results == n || count_same_side_results == (-1)*n || on_edge == 2) {
+    if (count_same_side_results == n || count_same_side_results == (-1) * n || on_edge == 2) {
       RCLCPP_INFO(logger_, "Yes");
       points_inside++;
     } else {
@@ -235,8 +237,7 @@ SafetyZone::timerCallback()
 {
   std::unique_ptr<nav2_msgs::msg::SpeedLimit> msg =
     std::make_unique<nav2_msgs::msg::SpeedLimit>();
-  while (!sensor_data.empty())
-  {
+  while (!sensor_data.empty()) {
     if (detectPoints(sensor_data.front(), safety_zone) >= zone_num_pts_) {
       msg->header.frame_id = base_frame_;
       msg->header.stamp = clock_->now();
