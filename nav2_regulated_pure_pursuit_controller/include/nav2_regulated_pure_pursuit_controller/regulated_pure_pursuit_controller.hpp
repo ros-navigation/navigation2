@@ -200,7 +200,19 @@ protected:
     const double & y,
     const double & theta,
     const bool & traverse_unknown);
-
+  
+  /**
+   * @brief Whether point is in collision
+   * @param x Pose of pose x
+   * @param y Pose of pose y
+   * @return Whether in collision
+   */
+  bool inCollision(
+    const double & x,
+    const double & y,
+    const double & theta,
+    const nav2_costmap_2d::Footprint & footprint_spec,
+    const bool & traverse_unknown);
   /**
    * @brief Cost at a point
    * @param x Pose of pose x
@@ -286,16 +298,17 @@ protected:
   nav2_costmap_2d::Footprint unoriented_footprint_;
   double footprint_cost_;
   bool footprint_is_radius_;
-  unsigned int num_quantizations_;
+  unsigned int num_quantizations_{1};
   double bin_size_;
   double possible_inscribed_cost_{-1};
+  nav2_costmap_2d::Footprint oriented_footprint;
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
-  nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *> _collision_checker;
+  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>> _collision_checker;
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller
