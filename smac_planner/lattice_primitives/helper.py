@@ -35,6 +35,6 @@ def interpolate_yaws(start_angle, end_angle, left_turn, steps):
             end_angle -= 2 * np.pi
 
     yaws = np.linspace(start_angle, end_angle, steps)
-    yaws = normalize_angle(yaws)
+    yaws = np.vectorize(normalize_angle)(yaws)
 
     return yaws
