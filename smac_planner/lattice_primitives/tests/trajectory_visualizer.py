@@ -27,13 +27,18 @@ trajectory_file_path = cur_file_path.parent.parent / "output.json"
 
 
 trajectory_data = read_trajectories_data(trajectory_file_path)
+min_x = min([min([pose[0] for pose in primitive["poses"]]) for primitive in trajectory_data["primitives"]])
+max_x = max([max([pose[0] for pose in primitive["poses"]]) for primitive in trajectory_data["primitives"]])
+
+min_y = min([min([pose[1] for pose in primitive["poses"]]) for primitive in trajectory_data["primitives"]])
+max_y = max([max([pose[1] for pose in primitive["poses"]]) for primitive in trajectory_data["primitives"]])
 
 for primitive in trajectory_data["primitives"]:
     arrow_length = (primitive["arc_length"] +
                     primitive["straight_length"]) / len(primitive["poses"])
 
     if arrow_length == 0:
-        arrow_length = 1
+        arrow_length = max_x / len(primitive["poses"])
 
     xs = [pose[0] for pose in primitive["poses"]]
     ys = [pose[1] for pose in primitive["poses"]]
@@ -47,8 +52,8 @@ for primitive in trajectory_data["primitives"]:
 
     left_x, right_x = plt.xlim()
     left_y, right_y = plt.ylim()
-    plt.xlim(left_x - 1.5*arrow_length, right_x + 1.5*arrow_length)
-    plt.ylim(left_y - 1.5*arrow_length, right_y + 1.5*arrow_length)
+    plt.xlim(1.2*min_x, 1.2*max_x)
+    plt.ylim(1.2*min_y, 1.2*max_y)
 
     plt.title(f'Trajectory ID: {primitive["trajectory_id"]}')
     plt.figtext(
