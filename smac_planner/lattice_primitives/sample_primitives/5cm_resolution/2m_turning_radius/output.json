@@ -1,6 +1,6 @@
 {
 	"version": 1.0,
-	"date_generated": "2021-08-26",
+	"date_generated": "2021-09-07",
 	"lattice_metadata": {
 		"motion_model": "ackermann",
 		"turning_radius": 2,
