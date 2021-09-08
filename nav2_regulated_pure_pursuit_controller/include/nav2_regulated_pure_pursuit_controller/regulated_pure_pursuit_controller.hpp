@@ -190,17 +190,6 @@ protected:
     const double &, const double &);
 
   /**
-   * @brief Whether point or footprint is in collision
-   * @param x Pose of pose x
-   * @param y Pose of pose y
-   * @return Whether in collision
-   */
-  bool inCollision(
-    const double & x,
-    const double & y,
-    const bool & traverse_unknown);
-
-  /**
    * @brief checks for collision at projected pose
    * @param x Pose of pose x
    * @param y Pose of pose y
@@ -209,7 +198,7 @@ protected:
    * @param traverse_unknown ignore UNKNOWN cost (255) as obstuctle
    * @return Whether in collision
    */
-  bool checkCollision(
+  bool inCollision(
     const double & x,
     const double & y,
     const double & theta,

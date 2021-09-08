@@ -402,7 +402,8 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   // odom frame and the carrot_pose is in robot base frame.
   // check current point is OK
   if (inCollision(
-      robot_pose.pose.position.x, robot_pose.pose.position.y, false))
+      robot_pose.pose.position.x, robot_pose.pose.position.y,
+      tf2::getYaw(robot_pose.pose.orientation), unoriented_footprint_, false))
   {
     return true;
   }
@@ -441,7 +442,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
     arc_pts_msg.poses.push_back(pose_msg);
 
     // check for collision at the projected pose
-    if (checkCollision(curr_pose.x, curr_pose.y, curr_pose.theta, unoriented_footprint_, false)) {
+    if (inCollision(curr_pose.x, curr_pose.y, curr_pose.theta, unoriented_footprint_, false)) {
       carrot_arc_pub_->publish(arc_pts_msg);
       return true;
     }
@@ -453,59 +454,6 @@ bool RegulatedPurePursuitController::isCollisionImminent(
 }
 
 bool RegulatedPurePursuitController::inCollision(
-  const double & x, const double & y, const bool & traverse_unknown)
-{
-// Assumes setFootprint already set
-  unsigned int wx, wy;
-
-  if (!costmap_->worldToMap(x, y, wx, wy)) {
-    RCLCPP_WARN_THROTTLE(
-      logger_, *(clock_), 30000,
-      "The dimensions of the costmap is too small to successfully check for "
-      "collisions as far ahead as requested. Proceed at your own risk, slow the robot, or "
-      "increase your costmap size.");
-    return false;
-  }
-
-  if (!footprint_is_circular_) {
-    // if footprint, then we check for the footprint's points, but first see
-    // if the robot is even potentially in an inscribed collision
-    footprint_cost_ = _collision_checker->pointCost(wx, wy);
-
-    if (footprint_cost_ < possible_inscribed_cost_) {
-      return false;
-    }
-    // If its inscribed, in collision, or unknown in the middle,
-    // no need to even check the footprint, its invalid
-    if (footprint_cost_ == UNKNOWN && !traverse_unknown) {
-      return true;
-    }
-    if (footprint_cost_ == INSCRIBED || footprint_cost_ == OCCUPIED) {
-      return true;
-    }
-
-    costmap_ros_->getOrientedFootprint(oriented_footprint_);
-    footprint_cost_ = _collision_checker->footprintCost(oriented_footprint_);
-    if (footprint_cost_ == UNKNOWN && traverse_unknown) {
-      return false;
-    }
-
-    // if occupied or unknown and not to traverse unknown space
-    return footprint_cost_ >= OCCUPIED;
-  } else {
-    // if radius, then we can check the center of the cost assuming inflation is used
-    footprint_cost_ = _collision_checker->pointCost(wx, wy);
-
-    if (footprint_cost_ == UNKNOWN && traverse_unknown) {
-      return false;
-    }
-
-    // if occupied or unknown and not to traverse unknown space
-    return footprint_cost_ >= INSCRIBED;
-  }
-}
-
-bool RegulatedPurePursuitController::checkCollision(
   const double & x,
   const double & y,
   const double & theta,
