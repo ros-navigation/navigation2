@@ -45,6 +45,7 @@ void RegulatedPurePursuitController::configure(
   if (!node) {
     throw nav2_core::PlannerException("Unable to lock node!");
   }
+
   costmap_ros_ = costmap_ros;
   costmap_ = costmap_ros_->getCostmap();
   tf_ = tf;
@@ -261,6 +262,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   } else {
     goal_dist_tol_ = pose_tolerance.position.x;
   }
+
   // Transform path to robot base frame
   auto transformed_plan = transformGlobalPlan(pose);
 
@@ -388,6 +390,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
 {
   // Note(stevemacenski): This may be a bit unusual, but the robot_pose is in
   // odom frame and the carrot_pose is in robot base frame.
+
   // check current point is OK
   if (inCollision(
       robot_pose.pose.position.x, robot_pose.pose.position.y,
@@ -411,6 +414,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   curr_pose.theta = tf2::getYaw(robot_pose.pose.orientation);
 
   int i = 1;
+
   while (true) {
     // only forward simulate within time requested
     if (i * projection_time > max_allowed_time_to_collision_) {

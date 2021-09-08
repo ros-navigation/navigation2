@@ -30,7 +30,6 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 
-
 namespace nav2_regulated_pure_pursuit_controller
 {
 const double UNKNOWN = 255;
