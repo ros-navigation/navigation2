@@ -420,14 +420,12 @@ class TrajectoryGenerator:
         if m1 == 0:
             # If line 1 has gradient 0 then it is the x-axis.
 
-            def perp_line2(x):
-                return -1 / m2 * (x - x2) + y2
+            perp_line2 = lambda x : -1 / m2 * (x - x2) + y2
 
             circle_center = np.array([x1, perp_line2(x1)])
         elif m2 == 0:
 
-            def perp_line1(x):
-                return -1 / m1 * (x - x1) + y1
+            perp_line1 = lambda x: -1 / m1 * (x - x1) + y1
 
             circle_center = np.array([x2, perp_line1(x2)])
         else:
