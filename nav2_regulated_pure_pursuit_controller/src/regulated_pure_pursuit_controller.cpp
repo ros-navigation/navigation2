@@ -19,7 +19,6 @@
 #include <memory>
 #include <utility>
 
-
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_core/exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
