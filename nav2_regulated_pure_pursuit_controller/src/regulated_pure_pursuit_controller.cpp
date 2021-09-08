@@ -37,18 +37,6 @@ using namespace nav2_costmap_2d;  // NOLINT
 namespace nav2_regulated_pure_pursuit_controller
 {
 
-RegulatedPurePursuitController::RegulatedPurePursuitController()
-: tf_(nullptr),
-  costmap_ros_(nullptr),
-  costmap_(nullptr),
-  global_path_pub_(nullptr),
-  carrot_pub_(nullptr),
-  carrot_arc_pub_(nullptr)
-{
-}
-
-RegulatedPurePursuitController::~RegulatedPurePursuitController() {}
-
 void RegulatedPurePursuitController::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,

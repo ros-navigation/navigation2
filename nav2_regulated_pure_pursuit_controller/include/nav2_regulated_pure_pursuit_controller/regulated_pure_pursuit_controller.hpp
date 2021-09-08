@@ -49,12 +49,12 @@ public:
   /**
    * @brief Constructor for nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
    */
-  RegulatedPurePursuitController();
+  RegulatedPurePursuitController() = default;
 
   /**
    * @brief Destrructor for nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
    */
-  ~RegulatedPurePursuitController();
+  ~RegulatedPurePursuitController() override = default;
 
   /**
    * @brief Configure controller state machine
