@@ -45,11 +45,24 @@ ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time
 
 ### Terminal 3: Launch Nav2
 
+normal bringup
+
 ```bash
 source /opt/ros/dashing/setup.bash
 ros2 launch nav2_bringup bringup_launch.py use_sim_time:=True autostart:=True \
 map:=<full/path/to/map.yaml>
 ```
+
+manual composed bringup
+
+```bash
+source /opt/ros/dashing/setup.bash
+ros2 launch nav2_bringup manual_composed_bringup_launch.py use_sim_time:=True autostart:=True \
+map:=<full/path/to/map.yaml>
+```
+
+* composed bringup is based on [ROS2 Composition](https://docs.ros.org/en/galactic/Tutorials/Composition.html), which is useful for embedded systems users that need to make optimizations due to harsh resource constraints.
+* some discussions about performance improvement could be found at https://discourse.ros.org/t/nav2-composition/22175
 
 ### Terminal 4: Run RViz with Nav2 config file
 
