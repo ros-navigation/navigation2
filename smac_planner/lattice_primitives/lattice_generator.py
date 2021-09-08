@@ -1,29 +1,39 @@
 from collections import defaultdict
+from enum import Enum
 
 import numpy as np
+from rtree import index
 
-from helper import angle_difference, interpolate_yaws, normalize_angle
-from motion_model import MotionModel
+from helper import angle_difference, interpolate_yaws
 from trajectory import Trajectory, TrajectoryParameters, TrajectoryPath
 from trajectory_generator import TrajectoryGenerator
 
-from rtree import index
-
 
 class LatticeGenerator:
-    def __init__(self, config):
+    class MotionModel(Enum):
+        ACKERMANN = 1
+        DIFF = 2
+        OMNI = 3
+
+    class Flip(Enum):
+        X = 1
+        Y = 2
+        BOTH = 3
+    
+    def __init__(self, config: dict):
         self.trajectory_generator = TrajectoryGenerator(config)
         self.grid_resolution = config["grid_resolution"]
         self.turning_radius = config["turning_radius"]
         self.stopping_threshold = config["stopping_threshold"]
         self.num_of_headings = config["num_of_headings"]
+        self.headings = self.get_heading_discretization(config["num_of_headings"])
 
-        self.motion_model = MotionModel[config["motion_model"].upper()]
+        self.motion_model = self.MotionModel[config["motion_model"].upper()]
 
         self.DISTANCE_THRESHOLD = 0.5 * self.grid_resolution
         self.ROTATION_THRESHOLD = 0.5 * (2 * np.pi / self.num_of_headings)
 
-    def get_coords_at_level(self, level):
+    def get_coords_at_level(self, level: int) -> np.array:
         positions = []
 
         max_point_coord = self.grid_resolution * level
@@ -42,8 +52,8 @@ class LatticeGenerator:
 
         return np.array(positions)
 
-    def get_heading_discretization(self):
-        max_val = int((((self.num_of_headings + 4) / 4) - 1) / 2)
+    def get_heading_discretization(self, number_of_headings) -> list:
+        max_val = int((((number_of_headings + 4) / 4) - 1) / 2)
 
         outer_edge_x = []
         outer_edge_y = []
@@ -56,7 +66,7 @@ class LatticeGenerator:
                 outer_edge_y += [i, i]
                 outer_edge_x += [-max_val, max_val]
 
-        return [np.arctan2(j, i) for i, j in zip(outer_edge_x, outer_edge_y)]
+        return sorted([np.arctan2(j, i) for i, j in zip(outer_edge_x, outer_edge_y)])
 
     def point_to_line_distance(self, p1, p2, q):
         """
@@ -105,21 +115,13 @@ class LatticeGenerator:
                 ):
                     return False
 
-            # for prior_end_pose in minimal_spanning_trajectories:
-            #     # TODO: point_to_line_distance gives direct distance which means the distance_threshold represents a circle
-            #     # around each point. Change so that we calculate manhattan distance? <- d_t will represent a box instead
-            #     if self.point_to_line_distance(p1, p2, prior_end_pose[:-1]) < distance_threshold \
-            #             and angle_difference(yaw, prior_end_pose[-1]) < rotation_threshold:
-            #         return False
-
         return True
 
     def compute_min_trajectory_length(self):
-        # Compute arc length for a turn that moves from 0 degrees to the minimum heading difference
 
-        headings = sorted(self.get_heading_discretization())
+        # Compute arc length for a turn that moves from 0 degrees to the minimum heading difference
         heading_diff = [
-            abs(headings[i + 1] - headings[i]) for i in range(len(headings) - 1)
+            abs(self.headings[i + 1] - self.headings[i]) for i in range(len(self.headings) - 1)
         ]
 
         return self.turning_radius * min(heading_diff)
@@ -127,10 +129,8 @@ class LatticeGenerator:
     def generate_minimal_spanning_set(self):
         quadrant1_end_poses = defaultdict(list)
 
-        heading_discretization = self.get_heading_discretization()
-
         initial_headings = sorted(
-            list(filter(lambda x: 0 <= x and x <= np.pi / 2, heading_discretization))
+            list(filter(lambda x: 0 <= x and x <= np.pi / 2, self.headings))
         )
 
         min_trajectory_length = self.compute_min_trajectory_length()
@@ -145,7 +145,7 @@ class LatticeGenerator:
 
             # To get target headings: sort headings radially and remove those that are more than 90 degrees away
             target_headings = sorted(
-                heading_discretization, key=lambda x: (abs(x - start_heading), -x)
+                self.headings, key=lambda x: (abs(x - start_heading), -x)
             )
             target_headings = list(
                 filter(lambda x: abs(start_heading - x) <= np.pi / 2, target_headings)
@@ -195,6 +195,22 @@ class LatticeGenerator:
 
         return self.create_complete_minimal_spanning_set(quadrant1_end_poses)
 
+    def flip_angle(self, angle, flip_type):
+        angle_idx = self.headings.index(angle)
+
+        # TODO: Neesd to convert from any quadrant to any other quadrant
+
+        if flip_type == self.Flip.X:
+            heading_idx = (self.num_of_headings / 2 - 1) - angle_idx - 1
+        elif flip_type == self.Flip.Y:
+            heading_idx = self.num_of_headings - angle_idx - 2
+        elif flip_type == self.Flip.BOTH:
+            heading_idx = (angle_idx - (self.num_of_headings / 2)) % self.num_of_headings
+        else:
+            raise Exception(f'Unsupported flip type: {flip_type}')
+
+        return self.headings[int(heading_idx)]
+
     def create_complete_minimal_spanning_set(self, single_quadrant_minimal_set):
         # Generate the paths for trajectories in all quadrants
         all_trajectories = defaultdict(list)
@@ -206,147 +222,138 @@ class LatticeGenerator:
 
                 # Prevent double adding trajectories that lie on axes (i.e. start and end angle are either both 0 or both pi/2)
                 if start_angle == 0 and end_angle == 0:
-                    quadrant1_start_angle = 0.0
-                    quadrant3_start_angle = -np.pi
+                    unflipped_start_angle = 0.0
+                    flipped_x_start_angle = np.pi
 
-                    quadrant1_end_angle = 0.0
-                    quadrant3_end_angle = -np.pi
+                    unflipped_end_angle = 0.0
+                    flipped_x_end_angle = np.pi
 
-                    quadrant1_trajectory = (
+                    unflipped_trajectory = (
                         self.trajectory_generator.generate_trajectory(
                             np.array([x, y]),
-                            quadrant1_start_angle,
-                            quadrant1_end_angle,
+                            unflipped_start_angle,
+                            unflipped_end_angle,
                             self.grid_resolution,
                         )
                     )
-                    quadrant3_trajectory = (
+                    flipped_x_trajectory = (
                         self.trajectory_generator.generate_trajectory(
                             np.array([-x, -y]),
-                            quadrant3_start_angle,
-                            quadrant3_end_angle,
+                            flipped_x_start_angle,
+                            flipped_x_end_angle,
                             self.grid_resolution,
                         )
                     )
 
                     all_trajectories[
-                        quadrant1_trajectory.parameters.start_angle
-                    ].append(quadrant1_trajectory)
+                        unflipped_trajectory.parameters.start_angle
+                    ].append(unflipped_trajectory)
 
                     all_trajectories[
-                        quadrant3_trajectory.parameters.start_angle
-                    ].append(quadrant3_trajectory)
+                        flipped_x_trajectory.parameters.start_angle
+                    ].append(flipped_x_trajectory)
+
                 elif abs(start_angle) == np.pi / 2 and abs(end_angle) == np.pi / 2:
-                    quadrant2_start_angle = np.pi / 2
-                    quadrant4_start_angle = -np.pi / 2
+                    unflipped_start_angle = np.pi / 2
+                    flipped_y_start_angle = -np.pi / 2
 
-                    quadrant2_end_angle = np.pi / 2
-                    quadrant4_end_angle = -np.pi / 2
+                    unflipped_end_angle = np.pi / 2
+                    flipped_y_end_angle = -np.pi / 2
 
-                    quadrant2_trajectory = (
+                    unflipped_trajectory = (
                         self.trajectory_generator.generate_trajectory(
                             np.array([-x, y]),
-                            quadrant2_start_angle,
-                            quadrant2_end_angle,
+                            unflipped_start_angle,
+                            unflipped_end_angle,
                             self.grid_resolution,
                         )
                     )
 
-                    quadrant4_trajectory = (
+                    flipped_y_trajectory = (
                         self.trajectory_generator.generate_trajectory(
                             np.array([x, -y]),
-                            quadrant4_start_angle,
-                            quadrant4_end_angle,
+                            flipped_y_start_angle,
+                            flipped_y_end_angle,
                             self.grid_resolution,
                         )
                     )
 
                     all_trajectories[
-                        quadrant2_trajectory.parameters.start_angle
-                    ].append(quadrant2_trajectory)
+                        unflipped_trajectory.parameters.start_angle
+                    ].append(unflipped_trajectory)
                     all_trajectories[
-                        quadrant4_trajectory.parameters.start_angle
-                    ].append(quadrant4_trajectory)
+                        flipped_y_trajectory.parameters.start_angle
+                    ].append(flipped_y_trajectory)
                 else:
-                    quadrant1_start_angle = start_angle
-                    quadrant2_start_angle = (
-                        normalize_angle(np.pi - start_angle)
-                        if start_angle != 0
-                        else -np.pi
-                    )
-                    quadrant3_start_angle = normalize_angle(start_angle - np.pi)
-                    quadrant4_start_angle = (
-                        normalize_angle(-start_angle) if start_angle != 0 else 0.0
-                    )
+                    unflipped_start_angle = start_angle
+                    flipped_x_start_angle = self.flip_angle(start_angle, self.Flip.X)
+                    flipped_y_start_angle = self.flip_angle(start_angle, self.Flip.Y)
+                    flipped_xy_start_angle = self.flip_angle(start_angle, self.Flip.BOTH)
 
-                    quadrant1_end_angle = end_angle
-                    quadrant2_end_angle = (
-                        normalize_angle(np.pi - end_angle) if end_angle != 0 else -np.pi
-                    )
-                    quadrant3_end_angle = normalize_angle(end_angle - np.pi)
-                    quadrant4_end_angle = (
-                        normalize_angle(-end_angle) if end_angle != 0 else 0.0
-                    )
+                    unflipped_end_angle = end_angle
+                    flipped_x_end_angle = self.flip_angle(end_angle, self.Flip.X)
+                    flipped_y_end_angle = self.flip_angle(end_angle, self.Flip.Y)
+                    flipped_xy_end_angle = self.flip_angle(end_angle, self.Flip.BOTH)
 
                     # Generate trajectories for all quadrants and use the grid separation as step distance
-                    quadrant1_trajectory = (
+                    unflipped_trajectory = (
                         self.trajectory_generator.generate_trajectory(
                             np.array([x, y]),
-                            quadrant1_start_angle,
-                            quadrant1_end_angle,
+                            unflipped_start_angle,
+                            unflipped_end_angle,
                             self.grid_resolution,
                         )
                     )
-                    quadrant2_trajectory = (
+                    flipped_x_trajectory = (
                         self.trajectory_generator.generate_trajectory(
                             np.array([-x, y]),
-                            quadrant2_start_angle,
-                            quadrant2_end_angle,
+                            flipped_x_start_angle,
+                            flipped_x_end_angle,
                             self.grid_resolution,
                         )
                     )
-                    quadrant3_trajectory = (
-                        self.trajectory_generator.generate_trajectory(
-                            np.array([-x, -y]),
-                            quadrant3_start_angle,
-                            quadrant3_end_angle,
-                            self.grid_resolution,
-                        )
-                    )
-                    quadrant4_trajectory = (
+                    flipped_y_trajectory = (
                         self.trajectory_generator.generate_trajectory(
                             np.array([x, -y]),
-                            quadrant4_start_angle,
-                            quadrant4_end_angle,
+                            flipped_y_start_angle,
+                            flipped_y_end_angle,
+                            self.grid_resolution,
+                        )
+                    )
+                    flipped_xy_trajectory = (
+                        self.trajectory_generator.generate_trajectory(
+                            np.array([-x, -y]),
+                            flipped_xy_start_angle,
+                            flipped_xy_end_angle,
                             self.grid_resolution,
                         )
                     )
 
                     all_trajectories[
-                        quadrant1_trajectory.parameters.start_angle
-                    ].append(quadrant1_trajectory)
+                        unflipped_trajectory.parameters.start_angle
+                    ].append(unflipped_trajectory)
                     all_trajectories[
-                        quadrant2_trajectory.parameters.start_angle
-                    ].append(quadrant2_trajectory)
+                        flipped_x_trajectory.parameters.start_angle
+                    ].append(flipped_x_trajectory)
                     all_trajectories[
-                        quadrant3_trajectory.parameters.start_angle
-                    ].append(quadrant3_trajectory)
+                        flipped_y_trajectory.parameters.start_angle
+                    ].append(flipped_y_trajectory)
                     all_trajectories[
-                        quadrant4_trajectory.parameters.start_angle
-                    ].append(quadrant4_trajectory)
+                        flipped_xy_trajectory.parameters.start_angle
+                    ].append(flipped_xy_trajectory)
 
         return all_trajectories
 
     def handle_motion_model(self, spanning_set):
 
-        if self.motion_model == MotionModel.ACKERMANN:
+        if self.motion_model == self.MotionModel.ACKERMANN:
             return spanning_set
 
-        elif self.motion_model == MotionModel.DIFF:
+        elif self.motion_model == self.MotionModel.DIFF:
             diff_spanning_set = self.add_in_place_turns(spanning_set)
             return diff_spanning_set
 
-        elif self.motion_model == MotionModel.OMNI:
+        elif self.motion_model == self.MotionModel.OMNI:
             omni_spanning_set = self.add_in_place_turns(spanning_set)
             omni_spanning_set = self.add_horizontal_motions(omni_spanning_set)
             return omni_spanning_set
@@ -398,53 +405,40 @@ class LatticeGenerator:
         return spanning_set
 
     def add_horizontal_motions(self, spanning_set):
-        min_trajectory_length = self.compute_min_trajectory_length()
-        steps = int(np.round(min_trajectory_length / self.grid_resolution))
 
-        for start_angle in spanning_set.keys():
-            left_shift_xs = np.linspace(
-                0, min_trajectory_length * np.cos(start_angle + np.pi / 2), steps
-            )
-            left_shift_ys = np.linspace(
-                0, min_trajectory_length * np.sin(start_angle + np.pi / 2), steps
-            )
+        idx_offset = int(self.num_of_headings / 4)
 
-            right_shift_xs = np.linspace(
-                0, min_trajectory_length * np.cos(start_angle - np.pi / 2), steps
-            )
-            right_shift_ys = np.linspace(
-                0, min_trajectory_length * np.sin(start_angle - np.pi / 2), steps
-            )
+        for idx, angle in enumerate(self.headings):
+            left_angle_idx = int((idx + idx_offset) % self.num_of_headings)
+            left_angle = self.headings[left_angle_idx]
+            left_trajectories = spanning_set[left_angle]
+            left_straight_trajectory = next(t for t in left_trajectories if t.parameters.end_angle == left_angle)
 
-            yaws = np.full(steps, start_angle, dtype=np.float64)
+            right_angle_idx = int((idx - idx_offset) % self.num_of_headings)
+            right_angle = self.headings[right_angle_idx]
+            right_trajectories = spanning_set[right_angle]
+            right_straight_trajectory = next(t for t in right_trajectories if t.parameters.end_angle == right_angle)
 
-            left_end_point = np.array([left_shift_xs[-1], left_shift_ys[-1]])
-            left_shift_params = TrajectoryParameters.no_arc(
-                end_point=left_end_point,
-                start_angle=start_angle,
-                end_angle=start_angle,
-                left_turn=True,
-            )
+            yaws = np.full(len(left_straight_trajectory.path.xs), angle, dtype=np.float64)
 
-            right_end_point = np.array([right_shift_xs[-1], right_shift_ys[-1]])
-            right_shift_params = TrajectoryParameters.no_arc(
-                end_point=right_end_point,
-                start_angle=start_angle,
-                end_angle=start_angle,
-                left_turn=False,
-            )
+            parmas_l = left_straight_trajectory.parameters
+            left_motion_parameters = TrajectoryParameters(parmas_l.turning_radius, parmas_l.x_offset, parmas_l.y_offset, parmas_l.end_point, angle, angle, parmas_l.left_turn, parmas_l.start_to_arc_distance, parmas_l.arc_to_end_distance)
+
+            params_r = right_straight_trajectory.parameters
+            right_motion_parameters = TrajectoryParameters(params_r.turning_radius, params_r.x_offset, params_r.y_offset, params_r.end_point, angle, angle, params_r.left_turn, params_r.start_to_arc_distance, params_r.arc_to_end_distance)
 
             left_motion = Trajectory(
-                parameters=left_shift_params,
-                path=TrajectoryPath(xs=left_shift_xs, ys=left_shift_ys, yaws=yaws),
-            )
-            right_motion = Trajectory(
-                parameters=right_shift_params,
-                path=TrajectoryPath(xs=right_shift_xs, ys=right_shift_ys, yaws=yaws),
+                parameters=left_motion_parameters,
+                path=TrajectoryPath(xs=left_straight_trajectory.path.xs, ys=left_straight_trajectory.path.ys, yaws=yaws),
             )
 
-            spanning_set[start_angle].append(left_motion)
-            spanning_set[start_angle].append(right_motion)
+            right_motion = Trajectory(
+                parameters=right_motion_parameters,
+                path=TrajectoryPath(xs=right_straight_trajectory.path.xs, ys=right_straight_trajectory.path.ys, yaws=yaws),
+            )
+
+            spanning_set[angle].append(left_motion)
+            spanning_set[angle].append(right_motion)
 
         return spanning_set
 
