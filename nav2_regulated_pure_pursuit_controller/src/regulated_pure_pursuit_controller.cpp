@@ -738,8 +738,6 @@ void RegulatedPurePursuitController::setFootprint(
     return;
   }
 
-  costmap_ros_->getOrientedFootprint(oriented_footprint_);
-
   unoriented_footprint_ = footprint;
 }
 

@@ -289,7 +289,6 @@ protected:
   double possible_inscribed_cost_{-1};
 
   nav2_costmap_2d::Footprint unoriented_footprint_;
-  nav2_costmap_2d::Footprint oriented_footprint_;
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
