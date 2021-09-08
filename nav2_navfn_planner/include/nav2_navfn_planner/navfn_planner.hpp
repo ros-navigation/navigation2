@@ -30,6 +30,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav2_navfn_planner
 {
@@ -205,7 +206,7 @@ protected:
   std::string global_frame_, name_;
 
   // Whether or not the planner should be allowed to plan through unknown space
-  bool allow_unknown_;
+  bool allow_unknown_, use_final_approach_orientation_;
 
   // If the goal is obstructed, the tolerance specifies how many meters the planner
   // can relax the constraint in x and y before failing

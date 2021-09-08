@@ -89,7 +89,7 @@ public:
 
 protected:
   /**
-   * @brief Callback executed when a paramter change is detected
+   * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */
   void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
@@ -110,6 +110,7 @@ protected:
   bool _allow_unknown;
   int _max_iterations;
   int _max_on_approach_iterations;
+  bool _use_final_approach_orientation;
   SearchInfo _search_info;
   std::string _motion_model_for_search;
   MotionModel _motion_model;

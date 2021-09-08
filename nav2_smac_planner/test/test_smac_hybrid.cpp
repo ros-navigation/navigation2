@@ -79,3 +79,61 @@ TEST(SmacTest, test_smac_se2)
   costmap_ros.reset();
   nodeSE2.reset();
 }
+
+TEST(SmacTest, test_smac_se2_reconfigure)
+{
+  rclcpp_lifecycle::LifecycleNode::SharedPtr nodeSE2 =
+    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSE2Test");
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  auto planner = std::make_unique<nav2_smac_planner::SmacPlannerHybrid>();
+  planner->configure(nodeSE2, "test", nullptr, costmap_ros);
+  planner->activate();
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    nodeSE2->get_node_base_interface(), nodeSE2->get_node_topics_interface(),
+    nodeSE2->get_node_graph_interface(),
+    nodeSE2->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.downsample_costmap", true),
+      rclcpp::Parameter("test.downsampling_factor", 2),
+      rclcpp::Parameter("test.angle_quantization_bins", 100),
+      rclcpp::Parameter("test.allow_unknown", false),
+      rclcpp::Parameter("test.max_iterations", -1),
+      rclcpp::Parameter("test.minimum_turning_radius", 1.0),
+      rclcpp::Parameter("test.cache_obstacle_heuristic", true),
+      rclcpp::Parameter("test.reverse_penalty", 5.0),
+      rclcpp::Parameter("test.change_penalty", 1.0),
+      rclcpp::Parameter("test.non_straight_penalty", 2.0),
+      rclcpp::Parameter("test.cost_penalty", 2.0),
+      rclcpp::Parameter("test.analytic_expansion_ratio", 4.0),
+      rclcpp::Parameter("test.max_planning_time", 10.0),
+      rclcpp::Parameter("test.lookup_table_size", 30.0),
+      rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP"))});
+
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(nodeSE2->get_parameter("test.downsample_costmap").as_bool(), true);
+  EXPECT_EQ(nodeSE2->get_parameter("test.downsampling_factor").as_int(), 2);
+  EXPECT_EQ(nodeSE2->get_parameter("test.angle_quantization_bins").as_int(), 100);
+  EXPECT_EQ(nodeSE2->get_parameter("test.allow_unknown").as_bool(), false);
+  EXPECT_EQ(nodeSE2->get_parameter("test.max_iterations").as_int(), -1);
+  EXPECT_EQ(nodeSE2->get_parameter("test.minimum_turning_radius").as_double(), 1.0);
+  EXPECT_EQ(nodeSE2->get_parameter("test.cache_obstacle_heuristic").as_bool(), true);
+  EXPECT_EQ(nodeSE2->get_parameter("test.reverse_penalty").as_double(), 5.0);
+  EXPECT_EQ(nodeSE2->get_parameter("test.change_penalty").as_double(), 1.0);
+  EXPECT_EQ(nodeSE2->get_parameter("test.non_straight_penalty").as_double(), 2.0);
+  EXPECT_EQ(nodeSE2->get_parameter("test.cost_penalty").as_double(), 2.0);
+  EXPECT_EQ(nodeSE2->get_parameter("test.analytic_expansion_ratio").as_double(), 4.0);
+  EXPECT_EQ(nodeSE2->get_parameter("test.max_planning_time").as_double(), 10.0);
+  EXPECT_EQ(nodeSE2->get_parameter("test.lookup_table_size").as_double(), 30.0);
+  EXPECT_EQ(
+    nodeSE2->get_parameter("test.motion_model_for_search").as_string(),
+    std::string("REEDS_SHEPP"));
+}
