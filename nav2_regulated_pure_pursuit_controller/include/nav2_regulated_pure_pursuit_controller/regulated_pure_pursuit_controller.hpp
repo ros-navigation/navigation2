@@ -241,16 +241,6 @@ protected:
    */
   double findDirectionChange(const geometry_msgs::msg::PoseStamped & pose);
 
-  /**
-   * @brief Set the footprint to use with collision checker
-   * @param footprint The footprint to collision check against
-   * @param isCircular Whether or not the footprint is a circle and use radius collision checking
-   */
-  void setFootprint(
-    const nav2_costmap_2d::Footprint & footprint,
-    const bool & isCircular,
-    const double & possible_inscribed_cost);
-
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
@@ -285,7 +275,6 @@ protected:
   double goal_dist_tol_;
   bool allow_reversing_;
   double footprint_cost_;
-  bool footprint_is_circular_;
   double possible_inscribed_cost_{-1};
 
   nav2_costmap_2d::Footprint unoriented_footprint_;

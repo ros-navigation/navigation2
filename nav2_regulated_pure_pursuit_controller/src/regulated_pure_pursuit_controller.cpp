@@ -197,7 +197,8 @@ void RegulatedPurePursuitController::configure(
   _collision_checker->setCostmap(costmap_);
 
   // setup robot footprint
-  setFootprint(costmap_ros_->getRobotFootprint(), false, 0.0);
+  unoriented_footprint_ = costmap_ros_->getRobotFootprint();
+  possible_inscribed_cost_ = 0.0;
 }
 
 void RegulatedPurePursuitController::cleanup()
@@ -472,40 +473,27 @@ bool RegulatedPurePursuitController::inCollision(
     return false;
   }
 
-  if (!footprint_is_circular_) {
-    // if footprint, then we check for the footprint's points, but first see
-    // if the robot is even potentially in an inscribed collision
-    footprint_cost_ = _collision_checker->pointCost(wx, wy);
-    if (footprint_cost_ < possible_inscribed_cost_) {
-      return false;
-    }
-    // If its inscribed, in collision, or unknown in the middle,
-    // no need to even check the footprint, its invalid
-    if (footprint_cost_ == UNKNOWN && !traverse_unknown) {
-      return true;
-    }
-    if (footprint_cost_ == INSCRIBED || footprint_cost_ == OCCUPIED) {
-      return true;
-    }
-
-    footprint_cost_ = _collision_checker->footprintCostAtPose(x, y, theta, footprint_spec);
-    if (footprint_cost_ == UNKNOWN && traverse_unknown) {
-      return false;
-    }
-
-    // if occupied or unknown and not to traverse unknown space
-    return footprint_cost_ >= OCCUPIED;
-  } else {
-    // if radius, then we can check the center of the cost assuming inflation is used
-    footprint_cost_ = _collision_checker->pointCost(wx, wy);
-
-    if (footprint_cost_ == UNKNOWN && traverse_unknown) {
-      return false;
-    }
-
-    // if occupied or unknown and not to traverse unknown space
-    return footprint_cost_ >= INSCRIBED;
+  // if the robot is even potentially in an inscribed collision
+  footprint_cost_ = _collision_checker->pointCost(wx, wy);
+  if (footprint_cost_ < possible_inscribed_cost_) {
+    return false;
   }
+  // If its inscribed, in collision, or unknown in the middle,
+  // no need to even check the footprint, its invalid
+  if (footprint_cost_ == UNKNOWN && !traverse_unknown) {
+    return true;
+  }
+  if (footprint_cost_ == INSCRIBED || footprint_cost_ == OCCUPIED) {
+    return true;
+  }
+
+  footprint_cost_ = _collision_checker->footprintCostAtPose(x, y, theta, footprint_spec);
+  if (footprint_cost_ == UNKNOWN && traverse_unknown) {
+    return false;
+  }
+
+  // if occupied or unknown and not to traverse unknown space
+  return footprint_cost_ >= OCCUPIED;
 }
 
 double RegulatedPurePursuitController::costAtPose(const double & x, const double & y)
@@ -718,27 +706,6 @@ bool RegulatedPurePursuitController::transformPose(
     RCLCPP_ERROR(logger_, "Exception in transformPose: %s", ex.what());
   }
   return false;
-}
-
-void RegulatedPurePursuitController::setFootprint(
-  const nav2_costmap_2d::Footprint & footprint,
-  const bool & isCircular,
-  const double & possible_inscribed_cost)
-{
-  possible_inscribed_cost_ = possible_inscribed_cost;
-  footprint_is_circular_ = isCircular;
-
-  // Use radius, no caching required
-  if (isCircular) {
-    return;
-  }
-
-  // No change, no updates required
-  if (footprint == unoriented_footprint_) {
-    return;
-  }
-
-  unoriented_footprint_ = footprint;
 }
 
 }  // namespace nav2_regulated_pure_pursuit_controller
