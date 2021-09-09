@@ -183,7 +183,7 @@ void RegulatedPurePursuitController::configure(
   collision_checker_ = std::make_unique<nav2_costmap_2d::
       FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_);
   collision_checker_->setCostmap(costmap_);
-  traverse_unknown = false;
+  traverse_unknown = true;
 }
 
 void RegulatedPurePursuitController::cleanup()
