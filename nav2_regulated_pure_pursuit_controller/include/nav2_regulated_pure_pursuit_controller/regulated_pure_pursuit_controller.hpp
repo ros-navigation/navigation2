@@ -188,8 +188,6 @@ protected:
    * @param x Pose of pose x
    * @param y Pose of pose y
    * @param theta orientation of Yaw
-   * @param footprint_spec footprint of the robot unoriented
-   * @param traverse_unknown ignore UNKNOWN cost (255) as obstuctle
    * @return Whether in collision
    */
   bool inCollision(
@@ -266,6 +264,7 @@ protected:
   double rotate_to_heading_min_angle_;
   double goal_dist_tol_;
   bool allow_reversing_;
+  bool traverse_unknown;
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;

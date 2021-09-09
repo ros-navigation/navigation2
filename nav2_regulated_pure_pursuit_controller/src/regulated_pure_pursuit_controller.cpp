@@ -183,6 +183,7 @@ void RegulatedPurePursuitController::configure(
   collision_checker_ = std::make_unique<nav2_costmap_2d::
       FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_);
   collision_checker_->setCostmap(costmap_);
+  traverse_unknown = false;
 }
 
 void RegulatedPurePursuitController::cleanup()
@@ -460,7 +461,7 @@ bool RegulatedPurePursuitController::inCollision(
 
   double footprint_cost_ = collision_checker_->footprintCostAtPose(
     x, y, theta, costmap_ros_->getRobotFootprint());
-  if (footprint_cost_ == static_cast<double>(NO_INFORMATION)) {
+  if (footprint_cost_ == static_cast<double>(NO_INFORMATION) && traverse_unknown) {
     return false;
   }
 
