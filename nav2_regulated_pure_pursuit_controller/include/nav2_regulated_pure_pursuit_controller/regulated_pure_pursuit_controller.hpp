@@ -32,11 +32,6 @@
 
 namespace nav2_regulated_pure_pursuit_controller
 {
-const double UNKNOWN = 255;
-const double OCCUPIED = 254;
-const double INSCRIBED = 253;
-const double MAX_NON_OBSTACLE = 252;
-const double FREE = 0;
 
 /**
  * @class nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
@@ -200,9 +195,7 @@ protected:
   bool inCollision(
     const double & x,
     const double & y,
-    const double & theta,
-    const nav2_costmap_2d::Footprint & footprint_spec,
-    const bool & traverse_unknown);
+    const double & theta);
   /**
    * @brief Cost at a point
    * @param x Pose of pose x
@@ -273,17 +266,14 @@ protected:
   double rotate_to_heading_min_angle_;
   double goal_dist_tol_;
   bool allow_reversing_;
-  double footprint_cost_;
-  double possible_inscribed_cost_{-1};
 
-  nav2_costmap_2d::Footprint unoriented_footprint_;
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
   std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
-  _collision_checker;
+  collision_checker_;
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller

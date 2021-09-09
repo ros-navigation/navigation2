@@ -180,13 +180,9 @@ void RegulatedPurePursuitController::configure(
   carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc", 1);
 
   // initialize collision checker and set costmap
-  _collision_checker = std::make_unique<nav2_costmap_2d::
+  collision_checker_ = std::make_unique<nav2_costmap_2d::
       FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_);
-  _collision_checker->setCostmap(costmap_);
-
-  // setup robot footprint
-  unoriented_footprint_ = costmap_ros_->getRobotFootprint();
-  possible_inscribed_cost_ = 0.0;
+  collision_checker_->setCostmap(costmap_);
 }
 
 void RegulatedPurePursuitController::cleanup()
@@ -394,7 +390,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   // check current point is OK
   if (inCollision(
       robot_pose.pose.position.x, robot_pose.pose.position.y,
-      tf2::getYaw(robot_pose.pose.orientation), unoriented_footprint_, false))
+      tf2::getYaw(robot_pose.pose.orientation)))
   {
     return true;
   }
@@ -434,7 +430,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
     arc_pts_msg.poses.push_back(pose_msg);
 
     // check for collision at the projected pose
-    if (inCollision(curr_pose.x, curr_pose.y, curr_pose.theta, unoriented_footprint_, false)) {
+    if (inCollision(curr_pose.x, curr_pose.y, curr_pose.theta)) {
       carrot_arc_pub_->publish(arc_pts_msg);
       return true;
     }
@@ -448,9 +444,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
 bool RegulatedPurePursuitController::inCollision(
   const double & x,
   const double & y,
-  const double & theta,
-  const nav2_costmap_2d::Footprint & footprint_spec,
-  const bool & traverse_unknown)
+  const double & theta)
 {
 // Assumes setFootprint already set
   unsigned int wx, wy;
@@ -464,27 +458,14 @@ bool RegulatedPurePursuitController::inCollision(
     return false;
   }
 
-  // if the robot is even potentially in an inscribed collision
-  footprint_cost_ = _collision_checker->pointCost(wx, wy);
-  if (footprint_cost_ < possible_inscribed_cost_) {
-    return false;
-  }
-  // If its inscribed, in collision, or unknown in the middle,
-  // no need to even check the footprint, its invalid
-  if (footprint_cost_ == UNKNOWN && !traverse_unknown) {
-    return true;
-  }
-  if (footprint_cost_ == INSCRIBED || footprint_cost_ == OCCUPIED) {
-    return true;
-  }
-
-  footprint_cost_ = _collision_checker->footprintCostAtPose(x, y, theta, footprint_spec);
-  if (footprint_cost_ == UNKNOWN && traverse_unknown) {
+  double footprint_cost_ = collision_checker_->footprintCostAtPose(
+    x, y, theta, costmap_ros_->getRobotFootprint());
+  if (footprint_cost_ == static_cast<double>(NO_INFORMATION)) {
     return false;
   }
 
   // if occupied or unknown and not to traverse unknown space
-  return footprint_cost_ >= OCCUPIED;
+  return footprint_cost_ >= static_cast<double>(LETHAL_OBSTACLE);
 }
 
 double RegulatedPurePursuitController::costAtPose(const double & x, const double & y)
