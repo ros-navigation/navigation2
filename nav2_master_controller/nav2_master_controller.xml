@@ -1,0 +1,10 @@
+<class_libraries>
+    <library path="nav2_master_controller">
+        <class type="nav2_master_controller::MasterController" base_class_type="nav2_core::Controller">
+            <description>
+                nav2_master_controller
+            </description>
+        </class>
+    </library>
+</class_libraries>
+
