@@ -183,7 +183,6 @@ void RegulatedPurePursuitController::configure(
   collision_checker_ = std::make_unique<nav2_costmap_2d::
       FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_);
   collision_checker_->setCostmap(costmap_);
-  traverse_unknown = true;
 }
 
 void RegulatedPurePursuitController::cleanup()
@@ -411,7 +410,6 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   curr_pose.theta = tf2::getYaw(robot_pose.pose.orientation);
 
   int i = 1;
-
   while (true) {
     // only forward simulate within time requested
     if (i * projection_time > max_allowed_time_to_collision_) {
@@ -419,6 +417,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
     }
 
     i++;
+
     // apply velocity at curr_pose over distance
     curr_pose.x += projection_time * (linear_vel * cos(curr_pose.theta));
     curr_pose.y += projection_time * (linear_vel * sin(curr_pose.theta));
@@ -448,9 +447,9 @@ bool RegulatedPurePursuitController::inCollision(
   const double & theta)
 {
 // Assumes setFootprint already set
-  unsigned int wx, wy;
+  unsigned int mx, my;
 
-  if (!costmap_->worldToMap(x, y, wx, wy)) {
+  if (!costmap_->worldToMap(x, y, mx, my)) {
     RCLCPP_WARN_THROTTLE(
       logger_, *(clock_), 30000,
       "The dimensions of the costmap is too small to successfully check for "
@@ -459,14 +458,16 @@ bool RegulatedPurePursuitController::inCollision(
     return false;
   }
 
-  double footprint_cost_ = collision_checker_->footprintCostAtPose(
+  double footprint_cost = collision_checker_->footprintCostAtPose(
     x, y, theta, costmap_ros_->getRobotFootprint());
-  if (footprint_cost_ == static_cast<double>(NO_INFORMATION) && traverse_unknown) {
+  if (footprint_cost == static_cast<double>(NO_INFORMATION) &&
+    costmap_ros_->getLayeredCostmap()->isTrackingUnknown())
+  {
     return false;
   }
 
   // if occupied or unknown and not to traverse unknown space
-  return footprint_cost_ >= static_cast<double>(LETHAL_OBSTACLE);
+  return footprint_cost >= static_cast<double>(LETHAL_OBSTACLE);
 }
 
 double RegulatedPurePursuitController::costAtPose(const double & x, const double & y)
