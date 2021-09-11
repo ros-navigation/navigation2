@@ -46,15 +46,6 @@ public:
   /**
    * @brief A constructor for LifeCycleMangerClient
    * @param name Managed node name
-   * @param ns Service node namespace
-   */
-  explicit LifecycleManagerClient(
-    const std::string & name,
-    const std::string & ns = "");
-
-  /**
-   * @brief A constructor for LifeCycleMangerClient
-   * @param name Managed node name
    * @param parent_node Node that execute the service calls
    */
   explicit LifecycleManagerClient(

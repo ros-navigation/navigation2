@@ -38,9 +38,7 @@ GoalPoseUpdater GoalUpdater;
 
 Nav2Panel::Nav2Panel(QWidget * parent)
 : Panel(parent),
-  server_timeout_(100),
-  client_nav_("lifecycle_manager_navigation"),
-  client_loc_("lifecycle_manager_localization")
+  server_timeout_(100)
 {
   // Create the control button and its tooltip
 
@@ -276,6 +274,14 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulatedNTPTransition->setTargetState(idle_);
   accumulated_nav_through_poses_->addTransition(accumulatedNTPTransition);
 
+  auto options = rclcpp::NodeOptions().arguments(
+    {"--ros-args --remap __node:=navigation_dialog_action_client"});
+  client_node_ = std::make_shared<rclcpp::Node>("_", options);
+
+  client_nav_ = std::make_shared<nav2_lifecycle_manager::LifecycleManagerClient>(
+    "lifecycle_manager_navigation", client_node_);
+  client_loc_ = std::make_shared<nav2_lifecycle_manager::LifecycleManagerClient>(
+    "lifecycle_manager_localization", client_node_);
   initial_thread_ = new InitialThread(client_nav_, client_loc_);
   connect(initial_thread_, &InitialThread::finished, initial_thread_, &QObject::deleteLater);
 
@@ -344,10 +350,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   main_layout->setContentsMargins(10, 10, 10, 10);
   setLayout(main_layout);
-
-  auto options = rclcpp::NodeOptions().arguments(
-    {"--ros-args --remap __node:=navigation_dialog_action_client"});
-  client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   navigation_action_client_ =
     rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
@@ -437,12 +439,12 @@ Nav2Panel::onPause()
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::pause,
-      &client_nav_, std::placeholders::_1), server_timeout_);
+      client_nav_.get(), std::placeholders::_1), server_timeout_);
   QFuture<void> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::pause,
-      &client_loc_, std::placeholders::_1), server_timeout_);
+      client_loc_.get(), std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -452,12 +454,12 @@ Nav2Panel::onResume()
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::resume,
-      &client_nav_, std::placeholders::_1), server_timeout_);
+      client_nav_.get(), std::placeholders::_1), server_timeout_);
   QFuture<void> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::resume,
-      &client_loc_, std::placeholders::_1), server_timeout_);
+      client_loc_.get(), std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -467,12 +469,12 @@ Nav2Panel::onStartup()
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::startup,
-      &client_nav_, std::placeholders::_1), server_timeout_);
+      client_nav_.get(), std::placeholders::_1), server_timeout_);
   QFuture<void> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::startup,
-      &client_loc_, std::placeholders::_1), server_timeout_);
+      client_loc_.get(), std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -482,12 +484,12 @@ Nav2Panel::onShutdown()
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::reset,
-      &client_nav_, std::placeholders::_1), server_timeout_);
+      client_nav_.get(), std::placeholders::_1), server_timeout_);
   QFuture<void> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::reset,
-      &client_loc_, std::placeholders::_1), server_timeout_);
+      client_loc_.get(), std::placeholders::_1), server_timeout_);
   timer_.stop();
 }
 

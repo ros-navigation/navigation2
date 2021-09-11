@@ -6,7 +6,7 @@
 # docker build -t nav2:latest \
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./
-ARG FROM_IMAGE=osrf/ros2:testing
+ARG FROM_IMAGE=ros:rolling
 ARG UNDERLAY_WS=/opt/underlay_ws
 ARG OVERLAY_WS=/opt/overlay_ws
 
@@ -57,7 +57,7 @@ RUN apt-get update && \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
     && pip3 install \
       fastcov \
-      git+https://github.com/ruffsl/colcon-cache.git@c1cedadc1ac6131fe825d075526ed4ae8e1b473c \
+      git+https://github.com/ruffsl/colcon-cache.git@1d6ae5745ac3e124bb46c3a636439dbc02af77dd \
       git+https://github.com/ruffsl/colcon-clean.git@87dee2dd1e47c2b97ac6d8300f76e3f607d19ef6 \
     && rosdep update \
     && rm -rf /var/lib/apt/lists/*
@@ -79,15 +79,13 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 # build underlay source
 COPY --from=cacher $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache"
-ARG FAIL_ON_BUILD_FAILURE=True
-ARG CCACHE_DIR=".ccache"
+ARG CCACHE_DIR="$UNDERLAY_WS/.ccache"
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon cache lock && \
     colcon build \
       --symlink-install \
       --mixin $UNDERLAY_MIXINS \
-      --event-handlers console_direct+ \
-    || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
+      --event-handlers console_direct+
 
 # install overlay dependencies
 ARG OVERLAY_WS
@@ -109,12 +107,12 @@ FROM builder AS tester
 # build overlay source
 COPY --from=cacher $OVERLAY_WS ./
 ARG OVERLAY_MIXINS="release ccache"
+ARG CCACHE_DIR="$OVERLAY_WS/.ccache"
 RUN . $UNDERLAY_WS/install/setup.sh && \
     colcon cache lock && \
     colcon build \
       --symlink-install \
-      --mixin $OVERLAY_MIXINS \
-    || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
+      --mixin $OVERLAY_MIXINS
 
 # source overlay from entrypoint
 RUN sed --in-place \

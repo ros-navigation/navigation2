@@ -96,14 +96,14 @@ class BasicNavigator(Node):
         goal_msg = NavigateThroughPoses.Goal()
         goal_msg.poses = poses
 
-        self.info('Navigating with ' + str(len(goal_msg.poses)) + ' goals.' + '...')
+        self.info(f'Navigating with {len(goal_msg.poses)} goals....')
         send_goal_future = self.nav_through_poses_client.send_goal_async(goal_msg,
                                                                          self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error('Goal with ' + str(len(poses)) + ' poses was rejected!')
+            self.error(f'Goal with {len(poses)} poses was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -142,14 +142,14 @@ class BasicNavigator(Node):
         goal_msg = FollowWaypoints.Goal()
         goal_msg.poses = poses
 
-        self.info('Following ' + str(len(goal_msg.poses)) + ' goals.' + '...')
+        self.info(f'Following {len(goal_msg.poses)} goals....')
         send_goal_future = self.follow_waypoints_client.send_goal_async(goal_msg,
                                                                         self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error('Following ' + str(len(poses)) + ' waypoints request was rejected!')
+            self.error(f'Following {len(poses)} waypoints request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -172,7 +172,7 @@ class BasicNavigator(Node):
         if self.result_future.result():
             self.status = self.result_future.result().status
             if self.status != GoalStatus.STATUS_SUCCEEDED:
-                self.debug('Goal with failed with status code: {0}'.format(self.status))
+                self.debug(f'Goal with failed with status code: {self.status}')
                 return True
         else:
             # Timed out, still processing, not complete yet
@@ -227,7 +227,7 @@ class BasicNavigator(Node):
         rclpy.spin_until_future_complete(self, self.result_future)
         self.status = self.result_future.result().status
         if self.status != GoalStatus.STATUS_SUCCEEDED:
-            self.warn('Getting path failed with status code: {0}'.format(self.status))
+            self.warn(f'Getting path failed with status code: {self.status}')
             return None
 
         return self.result_future.result().result.path
@@ -255,7 +255,7 @@ class BasicNavigator(Node):
         rclpy.spin_until_future_complete(self, self.result_future)
         self.status = self.result_future.result().status
         if self.status != GoalStatus.STATUS_SUCCEEDED:
-            self.warn('Getting path failed with status code: {0}'.format(self.status))
+            self.warn(f'Getting path failed with status code: {self.status}')
             return None
 
         return self.result_future.result().result.path
@@ -322,10 +322,10 @@ class BasicNavigator(Node):
         self.info('Starting up lifecycle nodes based on lifecycle_manager.')
         for srv_name, srv_type in self.get_service_names_and_types():
             if srv_type[0] == 'nav2_msgs/srv/ManageLifecycleNodes':
-                self.info('Starting up ' + srv_name)
+                self.info(f'Starting up {srv_name}')
                 mgr_client = self.create_client(ManageLifecycleNodes, srv_name)
                 while not mgr_client.wait_for_service(timeout_sec=1.0):
-                    self.info(srv_name + ' service not available, waiting...')
+                    self.info(f'{srv_name} service not available, waiting...')
                 req = ManageLifecycleNodes.Request()
                 req.command = ManageLifecycleNodes.Request().STARTUP
                 future = mgr_client.call_async(req)
@@ -346,10 +346,10 @@ class BasicNavigator(Node):
         self.info('Shutting down lifecycle nodes based on lifecycle_manager.')
         for srv_name, srv_type in self.get_service_names_and_types():
             if srv_type[0] == 'nav2_msgs/srv/ManageLifecycleNodes':
-                self.info('Shutting down ' + srv_name)
+                self.info(f'Shutting down {srv_name}')
                 mgr_client = self.create_client(ManageLifecycleNodes, srv_name)
                 while not mgr_client.wait_for_service(timeout_sec=1.0):
-                    self.info(srv_name + ' service not available, waiting...')
+                    self.info(f'{srv_name} service not available, waiting...')
                 req = ManageLifecycleNodes.Request()
                 req.command = ManageLifecycleNodes.Request().SHUTDOWN
                 future = mgr_client.call_async(req)
@@ -359,21 +359,21 @@ class BasicNavigator(Node):
 
     def _waitForNodeToActivate(self, node_name):
         # Waits for the node within the tester namespace to become active
-        self.debug('Waiting for ' + node_name + ' to become active..')
-        node_service = node_name + '/get_state'
+        self.debug(f'Waiting for {node_name} to become active..')
+        node_service = f'{node_name}/get_state'
         state_client = self.create_client(GetState, node_service)
         while not state_client.wait_for_service(timeout_sec=1.0):
-            self.info(node_service + ' service not available, waiting...')
+            self.info(f'{node_service} service not available, waiting...')
 
         req = GetState.Request()
         state = 'unknown'
         while state != 'active':
-            self.debug('Getting ' + node_name + ' state...')
+            self.debug(f'Getting {node_name} state...')
             future = state_client.call_async(req)
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
                 state = future.result().current_state.label
-                self.debug('Result of get_state: %s' % state)
+                self.debug(f'Result of get_state: {state}')
             time.sleep(2)
         return
 

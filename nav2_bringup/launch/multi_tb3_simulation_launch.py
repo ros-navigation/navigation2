@@ -13,11 +13,11 @@
 # limitations under the License.
 
 """
-Example for spawing multiple robots in Gazebo.
+Example for spawning multiple robots in Gazebo.
 
 This is an example on how to create a launch file for spawning multiple robots into Gazebo
 and launch multiple instances of the navigation stack, each controlling one robot.
-The robots co-exist on a shared environment and are controlled by independent nav stacks
+The robots co-exist on a shared environment and are controlled by independent nav stacks.
 """
 
 import os
@@ -39,8 +39,10 @@ def generate_launch_description():
 
     # Names and poses of the robots
     robots = [
-        {'name': 'robot1', 'x_pose': 0.0, 'y_pose': 0.5, 'z_pose': 0.01},
-        {'name': 'robot2', 'x_pose': 0.0, 'y_pose': -0.5, 'z_pose': 0.01}]
+        {'name': 'robot1', 'x_pose': 0.0, 'y_pose': 0.5, 'z_pose': 0.01,
+                           'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0},
+        {'name': 'robot2', 'x_pose': 0.0, 'y_pose': -0.5, 'z_pose': 0.01,
+                           'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0}]
 
     # Simulation settings
     world = LaunchConfiguration('world')
@@ -100,30 +102,16 @@ def generate_launch_description():
         default_value='True',
         description='Whether to start RVIZ')
 
-    # Start Gazebo with plugin providing the robot spawing service
+    # Start Gazebo with plugin providing the robot spawning service
     start_gazebo_cmd = ExecuteProcess(
-        cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_factory.so', world],
+        cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_init.so',
+                                     '-s', 'libgazebo_ros_factory.so', world],
         output='screen')
-
-    # Define commands for spawing the robots into Gazebo
-    spawn_robots_cmds = []
-    for robot in robots:
-        spawn_robots_cmds.append(
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch',
-                                                           'spawn_tb3_launch.py')),
-                launch_arguments={
-                                  'x_pose': TextSubstitution(text=str(robot['x_pose'])),
-                                  'y_pose': TextSubstitution(text=str(robot['y_pose'])),
-                                  'z_pose': TextSubstitution(text=str(robot['z_pose'])),
-                                  'robot_name': robot['name'],
-                                  'turtlebot_type': TextSubstitution(text='waffle')
-                                  }.items()))
 
     # Define commands for launching the navigation instances
     nav_instances_cmds = []
     for robot in robots:
-        params_file = LaunchConfiguration(robot['name'] + '_params_file')
+        params_file = LaunchConfiguration(f"{robot['name']}_params_file")
 
         group = GroupAction([
             IncludeLaunchDescription(
@@ -148,7 +136,14 @@ def generate_launch_description():
                                   'use_rviz': 'False',
                                   'use_simulator': 'False',
                                   'headless': 'False',
-                                  'use_robot_state_pub': use_robot_state_pub}.items()),
+                                  'use_robot_state_pub': use_robot_state_pub,
+                                  'x_pose': TextSubstitution(text=str(robot['x_pose'])),
+                                  'y_pose': TextSubstitution(text=str(robot['y_pose'])),
+                                  'z_pose': TextSubstitution(text=str(robot['z_pose'])),
+                                  'roll': TextSubstitution(text=str(robot['roll'])),
+                                  'pitch': TextSubstitution(text=str(robot['pitch'])),
+                                  'yaw': TextSubstitution(text=str(robot['yaw'])),
+                                  'robot_name':TextSubstitution(text=robot['name']), }.items()),
 
             LogInfo(
                 condition=IfCondition(log_settings),
@@ -188,9 +183,6 @@ def generate_launch_description():
 
     # Add the actions to start gazebo, robots and simulations
     ld.add_action(start_gazebo_cmd)
-
-    for spawn_robot_cmd in spawn_robots_cmds:
-        ld.add_action(spawn_robot_cmd)
 
     for simulation_instance_cmd in nav_instances_cmds:
         ld.add_action(simulation_instance_cmd)

@@ -73,8 +73,19 @@ public:
 
   virtual ~DWBLocalPlanner() {}
 
+  /**
+   * @brief Activate lifecycle node
+   */
   void activate() override;
+
+  /**
+   * @brief Deactivate lifecycle node
+   */
   void deactivate() override;
+
+  /**
+   * @brief Cleanup lifecycle node
+   */
   void cleanup() override;
 
   /**
