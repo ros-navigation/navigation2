@@ -224,7 +224,7 @@ protected:
   /// @brief Used to project laser scans into point clouds
   laser_geometry::LaserProjection projector_;
   /// @brief Used for the observation message filters
-  std::vector<std::shared_ptr<message_filters::SubscriberBase<>>> observation_subscribers_;
+  std::vector<std::shared_ptr<message_filters::SubscriberBase>> observation_subscribers_;
   /// @brief Used to make sure that transforms are available for each sensor
   std::vector<std::shared_ptr<tf2_ros::MessageFilterBase>> observation_notifiers_;
   /// @brief Used to store observations from various sensors
