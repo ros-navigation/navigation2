@@ -1134,6 +1134,13 @@ AmclNode::initParameters()
     max_particles_ = min_particles_;
   }
 
+  if (resample_interval_ <= 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set resample_interval to be zero or negtive,"
+      " this isn't allowed so it will be set to default value to 1.");
+    resample_interval_ = 1;
+  }
+
   if (always_reset_initial_pose_) {
     initial_pose_is_known_ = false;
   }
