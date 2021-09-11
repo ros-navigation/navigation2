@@ -410,6 +410,7 @@
 
       <ros>
         <!-- <namespace>/tb3</namespace> -->
+        <remapping>/tf:=tf</remapping>
       </ros>
 
       <update_rate>30</update_rate>

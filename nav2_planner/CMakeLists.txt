@@ -52,8 +52,6 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 add_executable(${executable_name}
   src/main.cpp
 )
@@ -63,9 +61,6 @@ target_link_libraries(${executable_name} ${library_name})
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
-
-# prevent pluginlib from using boost
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib

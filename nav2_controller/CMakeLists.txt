@@ -32,8 +32,6 @@ add_library(${library_name}
   src/nav2_controller.cpp
 )
 
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 set(dependencies
   angles
   rclcpp
@@ -49,26 +47,17 @@ set(dependencies
 
 add_library(simple_progress_checker SHARED plugins/simple_progress_checker.cpp)
 ament_target_dependencies(simple_progress_checker ${dependencies})
-# prevent pluginlib from using boost
-target_compile_definitions(simple_progress_checker PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 add_library(simple_goal_checker SHARED plugins/simple_goal_checker.cpp)
 ament_target_dependencies(simple_goal_checker ${dependencies})
-# prevent pluginlib from using boost
-target_compile_definitions(simple_goal_checker PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 add_library(stopped_goal_checker SHARED plugins/stopped_goal_checker.cpp)
 target_link_libraries(stopped_goal_checker simple_goal_checker)
 ament_target_dependencies(stopped_goal_checker ${dependencies})
-# prevent pluginlib from using boost
-target_compile_definitions(stopped_goal_checker PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
-
-# prevent pluginlib from using boost
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -110,6 +99,7 @@ ament_export_libraries(simple_progress_checker
   simple_goal_checker
   stopped_goal_checker
   ${library_name})
+ament_export_dependencies(${dependencies})
 pluginlib_export_plugin_description_file(nav2_core plugins.xml)
 
 ament_package()

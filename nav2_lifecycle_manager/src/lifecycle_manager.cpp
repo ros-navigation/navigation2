@@ -31,8 +31,8 @@ using nav2_util::LifecycleServiceClient;
 namespace nav2_lifecycle_manager
 {
 
-LifecycleManager::LifecycleManager()
-: Node("lifecycle_manager")
+LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
+: Node("lifecycle_manager", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -49,18 +49,18 @@ LifecycleManager::LifecycleManager()
   bond_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::duration<double>(bond_timeout_s));
 
+  callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
   manager_srv_ = create_service<ManageLifecycleNodes>(
     get_name() + std::string("/manage_nodes"),
-    std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3));
+    std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3),
+    rmw_qos_profile_services_default,
+    callback_group_);
 
   is_active_srv_ = create_service<std_srvs::srv::Trigger>(
     get_name() + std::string("/is_active"),
-    std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3));
-
-  auto bond_options = rclcpp::NodeOptions().arguments(
-    {"--ros-args", "-r", std::string("__node:=") + get_name() + "_bond_client", "--"});
-  bond_client_node_ = std::make_shared<rclcpp::Node>("_", bond_options);
-  bond_node_thread_ = std::make_unique<nav2_util::NodeThread>(bond_client_node_);
+    std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3),
+    rmw_qos_profile_services_default,
+    callback_group_);
 
   transition_state_map_[Transition::TRANSITION_CONFIGURE] = State::PRIMARY_STATE_INACTIVE;
   transition_state_map_[Transition::TRANSITION_CLEANUP] = State::PRIMARY_STATE_UNCONFIGURED;
@@ -84,12 +84,17 @@ LifecycleManager::LifecycleManager()
       if (autostart_) {
         startup();
       }
-    });
+    },
+    callback_group_);
+  auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor->add_callback_group(callback_group_, get_node_base_interface());
+  service_thread_ = std::make_unique<nav2_util::NodeThread>(executor);
 }
 
 LifecycleManager::~LifecycleManager()
 {
   RCLCPP_INFO(get_logger(), "Destroying %s", get_name());
+  service_thread_.reset();
 }
 
 void
@@ -154,7 +159,7 @@ LifecycleManager::createBondConnection(const std::string & node_name)
 
   if (bond_map_.find(node_name) == bond_map_.end() && bond_timeout_.count() > 0.0) {
     bond_map_[node_name] =
-      std::make_shared<bond::Bond>("bond", node_name, bond_client_node_);
+      std::make_shared<bond::Bond>("bond", node_name, shared_from_this());
     bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
     bond_map_[node_name]->setHeartbeatPeriod(0.10);
     bond_map_[node_name]->start();
@@ -317,7 +322,8 @@ LifecycleManager::createBondTimer()
 
   bond_timer_ = this->create_wall_timer(
     200ms,
-    std::bind(&LifecycleManager::checkBondConnections, this));
+    std::bind(&LifecycleManager::checkBondConnections, this),
+    callback_group_);
 }
 
 void

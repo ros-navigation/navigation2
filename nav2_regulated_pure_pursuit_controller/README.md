@@ -22,6 +22,8 @@ In order to simply book-keeping, the global path is continuously pruned to the c
 
 Finally, the lookahead point will be given to the pure pursuit algorithm which finds the curvature of the path required to drive the robot to the lookahead point. This curvature is then applied to the velocity commands to allow the robot to drive.
 
+Note that a pure pursuit controller is that, it "purely" pursues the path without interest or concern about dynamic obstacles. Therefore, this controller should only be used when paired with a path planner that can generate a path the robot can follow. For a circular (or can be treated as circular) robot, this can really be any planner since you can leverage the particle / inflation relationship in planning. For a "large" robot for the environment or general non-circular robots, this must be something kinematically feasible, like the Smac Planner, such that the path is followable.
+
 ![Lookahead algorithm](./doc/lookahead_algorithm.png)
 
 ## Regulated Pure Pursuit Features

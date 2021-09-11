@@ -108,8 +108,8 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[os.path.join(os.getenv('TEST_DIR'), os.getenv('TESTER')),
-             '-r', '-2.0', '-0.5', '0.0', '2.0',
-             '-e', 'True'],
+             '-r', '-200000.0', '-200000.0', '0.0', '2.0',
+             '-e', 'False'],
         name='tester_node',
         output='screen')
 

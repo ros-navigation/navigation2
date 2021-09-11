@@ -52,8 +52,8 @@ def generate_launch_description():
 
     # Launch Gazebo server for simulation
     start_gazebo_cmd = ExecuteProcess(
-            cmd=['gzserver', '-s', 'libgazebo_ros_factory.so',
-                 '--minimal_comms', world],
+            cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
+                 '-s', 'libgazebo_ros_factory.so', '--minimal_comms', world],
             output='screen')
 
     # Define commands for spawing the robots into Gazebo
@@ -61,17 +61,20 @@ def generate_launch_description():
     for robot in robots:
         spawn_robots_cmds.append(
             Node(
-                package='nav2_gazebo_spawner',
-                executable='nav2_gazebo_spawner',
+                package='gazebo_ros',
+                executable='spawn_entity.py',
                 output='screen',
                 arguments=[
-                    '--robot_name', TextSubstitution(text=robot['name']),
-                    '--robot_namespace', TextSubstitution(text=robot['name']),
-                    '--sdf', TextSubstitution(text=sdf),
+                    '-entity', TextSubstitution(text=robot['name']),
+                    '-robot_namespace', TextSubstitution(text=robot['name']),
+                    '-file', TextSubstitution(text=sdf),
                     '-x', TextSubstitution(text=str(robot['x_pose'])),
                     '-y', TextSubstitution(text=str(robot['y_pose'])),
                     '-z', TextSubstitution(text=str(robot['z_pose']))]
             ))
+
+    with open(urdf, 'r') as infp:
+        robot_description = infp.read()
 
     # Define commands for launching the robot state publishers
     robot_state_pubs_cmds = []
@@ -82,14 +85,13 @@ def generate_launch_description():
                 executable='robot_state_publisher',
                 namespace=TextSubstitution(text=robot['name']),
                 output='screen',
-                parameters=[{'use_sim_time': 'True'}],
-                remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')],
-                arguments=[urdf]))
+                parameters=[{'use_sim_time': True, 'robot_description': robot_description}],
+                remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')]))
 
     # Define commands for launching the navigation instances
     nav_instances_cmds = []
     for robot in robots:
-        params_file = eval(robot['name'] + '_params_file')
+        params_file = eval(f"{robot['name']}_params_file")
 
         group = GroupAction([
             # Instances use the robot's name for namespace
@@ -127,9 +129,10 @@ def main(argv=sys.argv[1:]):
 
     # TODO(orduno) remove duplicated definition of robots on `generate_launch_description`
     test1_action = ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
+        cmd=[os.path.join(os.getenv('TEST_DIR'), os.getenv('TESTER')),
              '-rs', 'robot1', '0.0', '0.5', '1.0', '0.5',
-             '-rs', 'robot2', '0.0', '-0.5', '1.0', '-0.5'],
+             '-rs', 'robot2', '0.0', '-0.5', '1.0', '-0.5',
+             '-e', 'True'],
         name='tester_node',
         output='screen')
 

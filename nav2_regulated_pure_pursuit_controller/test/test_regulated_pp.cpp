@@ -16,6 +16,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <limits>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -85,11 +86,17 @@ public:
   void applyConstraintsWrapper(
     const double & dist_error, const double & lookahead_dist,
     const double & curvature, const geometry_msgs::msg::Twist & curr_speed,
-    const double & pose_cost, double & linear_vel)
+    const double & pose_cost, double & linear_vel, double & sign)
   {
     return applyConstraints(
       dist_error, lookahead_dist, curvature, curr_speed, pose_cost,
-      linear_vel);
+      linear_vel, sign);
+  }
+
+  double findDirectionChangeWrapper(
+    const geometry_msgs::msg::PoseStamped & pose)
+  {
+    return findDirectionChange(pose);
   }
 };
 
@@ -142,6 +149,32 @@ TEST(RegulatedPurePursuitTest, createCarrotMsg)
   EXPECT_EQ(rtn->point.x, 1.0);
   EXPECT_EQ(rtn->point.y, 12.0);
   EXPECT_EQ(rtn->point.z, 0.01);
+}
+
+TEST(RegulatedPurePursuitTest, findDirectionChange)
+{
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 1.0;
+  pose.pose.position.y = 0.0;
+
+  nav_msgs::msg::Path path;
+  path.poses.resize(3);
+  path.poses[0].pose.position.x = 1.0;
+  path.poses[0].pose.position.y = 1.0;
+  path.poses[1].pose.position.x = 2.0;
+  path.poses[1].pose.position.y = 2.0;
+  path.poses[2].pose.position.x = -1.0;
+  path.poses[2].pose.position.y = -1.0;
+  ctrl->setPlan(path);
+  auto rtn = ctrl->findDirectionChangeWrapper(pose);
+  EXPECT_EQ(rtn, sqrt(5.0));
+
+  path.poses[2].pose.position.x = 3.0;
+  path.poses[2].pose.position.y = 3.0;
+  ctrl->setPlan(path);
+  rtn = ctrl->findDirectionChangeWrapper(pose);
+  EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
 
 TEST(RegulatedPurePursuitTest, lookaheadAPI)
@@ -286,6 +319,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   geometry_msgs::msg::Twist curr_speed;
   double pose_cost = 0.0;
   double linear_vel = 0.0;
+  double sign = 1.0;
 
   // since costmaps here are bogus, we can't access them
   ctrl->resetVelocityApproachScaling();
@@ -294,7 +328,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   curr_speed.linear.x = 0.25;
   ctrl->applyConstraintsWrapper(
     dist_error, lookahead_dist, curvature, curr_speed, pose_cost,
-    linear_vel);
+    linear_vel, sign);
   EXPECT_EQ(linear_vel, 0.25);  // min set speed
 
   linear_vel = 1.0;
@@ -302,7 +336,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   curr_speed.linear.x = 0.5;
   ctrl->applyConstraintsWrapper(
     dist_error, lookahead_dist, curvature, curr_speed, pose_cost,
-    linear_vel);
+    linear_vel, sign);
   EXPECT_NEAR(linear_vel, 0.5, 0.01);  // lower by curvature
 
   linear_vel = 1.0;
@@ -310,7 +344,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   curr_speed.linear.x = 0.25;
   ctrl->applyConstraintsWrapper(
     dist_error, lookahead_dist, curvature, curr_speed, pose_cost,
-    linear_vel);
+    linear_vel, sign);
   EXPECT_NEAR(linear_vel, 0.25, 0.01);  // min out by curvature
 
 

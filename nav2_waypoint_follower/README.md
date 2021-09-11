@@ -1,6 +1,6 @@
 # Nav2 Waypoint Follower
 
-The Nav2 waypoint follower is an example application of how to use the navigation action to complete some sort of orchestrated task. In this example, that task is to take a given set of waypoints and navigate to a set of positions in the order provided in the action request. The last waypoint in the waypoint array is the final position.
+The Nav2 waypoint follower is an example application of how to use the navigation action to complete some sort of orchestrated task. In this example, that task is to take a given set of waypoints and navigate to a set of positions in the order provided in the action request. The last waypoint in the waypoint array is the final position. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/).
 
 The package exposes the `follow_waypoints` action server of type `nav2_msgs/FollowWaypoints`.
  It is given an array of waypoints to visit, gives feedback about the current index of waypoint it is processing, and returns a list of waypoints it was unable to complete.

@@ -110,6 +110,7 @@ VoxelLayer::~VoxelLayer()
 
 void VoxelLayer::matchSize()
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   ObstacleLayer::matchSize();
   voxel_grid_.resize(size_x_, size_y_, size_z_);
   assert(voxel_grid_.sizeX() == size_x_ && voxel_grid_.sizeY() == size_y_);
