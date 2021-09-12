@@ -8,7 +8,6 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -30,8 +29,6 @@ link_libraries(stdc++fs)
 include_directories(
   include
 )
-# prevent pluginlib from using boost
-# target_compile_definitions(nav2_safety_nodes_core PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 add_library(nav2_safety_node_core SHARED
   src/nav2_safety_node.cpp
@@ -65,11 +62,9 @@ target_link_libraries(nav2_safety_node
   nav2_safety_node_core
 )
 
-
 ament_target_dependencies(nav2_safety_node
   ${dependencies}
 )
-
 
 install(TARGETS
 nav2_safety_node_core 
@@ -80,13 +75,6 @@ ARCHIVE DESTINATION lib)
 install(TARGETS
 nav2_safety_node 
 RUNTIME DESTINATION lib/${PROJECT_NAME}
-)
-
-
-# Install launch files.
-install(DIRECTORY
-  launch
-  DESTINATION share/${PROJECT_NAME}/
 )
 
 install(DIRECTORY include/
@@ -104,7 +92,6 @@ if(BUILD_detect_testING)
   ament_lint_auto_find_detect_test_dependencies()
 
 endif()
-
 
 ament_export_include_directories(include)
 ament_export_libraries(nav2_safety_node_core)

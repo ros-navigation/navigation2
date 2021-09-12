@@ -51,8 +51,8 @@ std::vector<std::vector<float>> parseVVF(const std::string & input, std::string 
  * Format should be bracketed array of arrays of floats, like so: [[1.0, 2.2], [3.3, 4.2], ...]
  *
  */
-bool makeVectorPointsFromString(const std::string & safety_zone_str,
-  std::vector<geometry_msgs::msg::Point> & safety_zone); 
+bool makeVectorPointsFromString(const std::string & pts_str,
+  std::vector<geometry_msgs::msg::Point> & vec_pts); 
 
 }  // namespace nav2_util
 
