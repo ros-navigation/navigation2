@@ -118,7 +118,7 @@ public:
   {
     if (!request_sent_) {
       on_tick();
-      future_result_ = service_client_->async_send_request(request_);
+      future_result_ = service_client_->async_send_request(request_).share();
       sent_time_ = node_->now();
       request_sent_ = true;
     }
