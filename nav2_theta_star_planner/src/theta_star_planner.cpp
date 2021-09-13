@@ -52,13 +52,20 @@ void ThetaStarPlanner::configure(
     node, name_ + ".w_traversal_cost", rclcpp::ParameterValue(2.0));
   node->get_parameter(name_ + ".w_traversal_cost", planner_->w_traversal_cost_);
 
+<<<<<<< HEAD
+  planner_->w_heuristic_cost_ = planner_->w_euc_cost_ < 1.0 ? planner_->w_euc_cost_ : 1.0;
+=======
   nav2_util::declare_parameter_if_not_declared(
     node, name_ + ".w_heuristic_cost", rclcpp::ParameterValue(1.0));
   node->get_parameter(name_ + ".w_heuristic_cost", planner_->w_heuristic_cost_);
+<<<<<<< HEAD
+=======
+>>>>>>> 9047f74111e7c07dfe33e87de7a8fd5146a634b8
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".use_final_approach_orientation", use_final_approach_orientation_);
+>>>>>>> d47aba651ffa89225aaa006f05a59f87478aecf2
 }
 
 void ThetaStarPlanner::cleanup()
@@ -83,11 +90,13 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
 {
   nav_msgs::msg::Path global_path;
   auto start_time = std::chrono::steady_clock::now();
+<<<<<<< HEAD
+=======
 
   // Corner case of start and goal beeing on the same cell
   unsigned int mx_start, my_start, mx_goal, my_goal;
   planner_->costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start);
-  planner_->costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx_goal, my_goal);
+  planner_->costmap_->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal);
   if (mx_start == mx_goal && my_start == my_goal) {
     if (planner_->costmap_->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
       RCLCPP_WARN(logger_, "Failed to create a unique pose path because of obstacles");
@@ -110,11 +119,14 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
     return global_path;
   }
 
+>>>>>>> d47aba651ffa89225aaa006f05a59f87478aecf2
   planner_->setStartAndGoal(start, goal);
   RCLCPP_DEBUG(
     logger_, "Got the src and dst... (%i, %i) && (%i, %i)",
     planner_->src_.x, planner_->src_.y, planner_->dst_.x, planner_->dst_.y);
   getPlan(global_path);
+<<<<<<< HEAD
+=======
 
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
   // previous pose to set the orientation to the 'final approach' orientation of the robot so
@@ -136,9 +148,10 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
     }
   }
 
+>>>>>>> d47aba651ffa89225aaa006f05a59f87478aecf2
   auto stop_time = std::chrono::steady_clock::now();
   auto dur = std::chrono::duration_cast<std::chrono::microseconds>(stop_time - start_time);
-  RCLCPP_DEBUG(logger_, "the time taken for pointy is : %i", static_cast<int>(dur.count()));
+  RCLCPP_DEBUG(logger_, "the time taken is : %i", static_cast<int>(dur.count()));
   RCLCPP_DEBUG(logger_, "the nodes_opened are:  %i", planner_->nodes_opened);
   return global_path;
 }
