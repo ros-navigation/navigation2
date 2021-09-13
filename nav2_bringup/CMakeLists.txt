@@ -15,9 +15,9 @@ find_package(nav2_lifecycle_manager REQUIRED)
 
 nav2_package()
 
-set(executable_name loc_and_nav)
+set(executable_name composed_bringup)
 add_executable(${executable_name}
-  src/loc_and_nav.cpp
+  src/composed_bringup.cpp
 )
 
 set(dependencies

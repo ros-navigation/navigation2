@@ -26,6 +26,20 @@
 #include "nav2_bt_navigator/bt_navigator.hpp"
 #include "nav2_waypoint_follower/waypoint_follower.hpp"
 
+// in this manually composed node, a bunch of single threaded executors is used instead of
+// 1 large multithreaded executor, because 1 large multithreaded executor consumes higher CPU.
+// you could find more details here https://discourse.ros.org/t/nav2-composition/22175/10.
+//
+// rclcpp intra-process comms couldn't be enabled to get efficient communication, because
+// it's still kind of under development currently, and QoS limitations (e.g. transient-local
+// isn't supported) make some Nav2 Nodes couldn't enable rclcpp intra-process comms, you
+// could find more details here https://github.com/ros2/rclcpp/issues/1753.
+//
+// this is an example for the default nav2 servers and bring up in localization mode, It is
+// our expectation for an application specific thing you're mirroring nav2_bringup package
+// and modifying it for your sp. maps/robots/bringup needs so this is an applied and working
+// demonstration for the default system bringup ONLY.
+
 template<typename NodeT>
 std::shared_ptr<std::thread> create_spin_thread(NodeT & node)
 {

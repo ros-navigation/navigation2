@@ -19,7 +19,8 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.actions import (DeclareLaunchArgument, ExecuteProcess,
+                            IncludeLaunchDescription, GroupAction)
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
@@ -39,6 +40,7 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
+    use_composition = LaunchConfiguration('use_composition')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
@@ -100,6 +102,10 @@ def generate_launch_description():
     declare_autostart_cmd = DeclareLaunchArgument(
         'autostart', default_value='true',
         description='Automatically startup the nav2 stack')
+
+    declare_use_composition_cmd = DeclareLaunchArgument(
+        'use_composition', default_value='False',
+        description='Whether to use manually composed bringup')
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config_file',
@@ -192,16 +198,29 @@ def generate_launch_description():
                           'use_namespace': use_namespace,
                           'rviz_config': rviz_config_file}.items())
 
-    bringup_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(launch_dir, 'bringup_launch.py')),
-        launch_arguments={'namespace': namespace,
-                          'use_namespace': use_namespace,
-                          'slam': slam,
-                          'map': map_yaml_file,
-                          'use_sim_time': use_sim_time,
-                          'params_file': params_file,
-                          'autostart': autostart}.items())
+    bringup_cmd = GroupAction([
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(launch_dir, 'composed_bringup_launch.py')),
+            condition=IfCondition(use_composition),
+            launch_arguments={'namespace': namespace,
+                              'use_namespace': use_namespace,
+                              'map': map_yaml_file,
+                              'use_sim_time': use_sim_time,
+                              'params_file': params_file,
+                              'autostart': autostart}.items()),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(launch_dir, 'bringup_launch.py')),
+            condition=IfCondition(PythonExpression(['not ', use_composition])),
+            launch_arguments={'namespace': namespace,
+                              'use_namespace': use_namespace,
+                              'slam': slam,
+                              'map': map_yaml_file,
+                              'use_sim_time': use_sim_time,
+                              'params_file': params_file,
+                              'autostart': autostart}.items()),
+    ])
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -214,6 +233,7 @@ def generate_launch_description():
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_use_composition_cmd)
 
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_simulator_cmd)
