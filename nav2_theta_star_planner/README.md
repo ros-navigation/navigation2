@@ -51,7 +51,6 @@ The parameters of the planner are :
 - ` .how_many_corners ` : to choose between 4-connected and 8-connected graph expansions, the accepted values are 4 and 8
 - ` .w_euc_cost ` : weight applied on the length of the path. 
 - ` .w_traversal_cost ` : it tunes how harshly the nodes of high cost are penalised. From the above g(neigh) equation you can see that the cost-aware component of the cost function forms a parabolic curve, thus this parameter would, on increasing its value, make that curve steeper allowing for a greater differentiation (as the delta of costs would increase, when the graph becomes steep) among the nodes of different costs.
-- `w_heuristic_cost ` : it has been provided to have an admissible heuristic; it is **not** a user configurable parameter
 Below are the default values of the parameters :
 ```
 planner_server:
@@ -73,6 +72,8 @@ Before starting off, do note that the costmap_cost(curr,neigh) component after b
 This planner uses the costs associated with each cell from the `global_costmap` as a measure of the point's proximity to the obstacles. Providing a gentle potential field that covers the entirety of the region (thus leading to only small pocket like regions of cost = 0) is recommended in order to achieve paths that pass through the middle of the spaces. A good starting point could be to set the `inflation_layer`'s parameters as - `cost_scaling_factor: 10.0`, `inflation_radius: 5.5` and then decrease the value of `cost_scaling_factor` to achieve the said potential field.
 
 Providing a gentle potential field over the region allows the planner to exchange the increase in path lengths for a decrease in the accumulated traversal cost, thus leading to an increase in the distance from the obstacles. This around a corner allows for naturally smoothing the turns and removes the requirement for an external path smoother.
+
+`w_heuristic_cost` is an internal setting that is not user changable. It has been provided to have an admissible heuristic, restricting its value to the minimum of `w_euc_cost` and `1.0` to make sure the heuristic and travel costs are admissible and consistent.
 
 To begin with, you can set the parameters to its default values and then try increasing the value of `w_traversal_cost` to achieve those middling paths, but this would adversly make the paths less taut. So it is recommend ed that you simultaneously tune the value of `w_euc_cost`. Increasing `w_euc_cost` increases the tautness of the path, which leads to more straight line like paths (any-angled paths). Do note that the query time from the planner would increase for higher values of `w_traversal_cost` as more nodes would have to be expanded to lower the cost of the path, to counteract this you may also try setting `w_euc_cost` to a higher value and check if it reduces the query time.
 
