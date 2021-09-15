@@ -116,7 +116,7 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
     logger_, "Got the src and dst... (%i, %i) && (%i, %i)",
     planner_->src_.x, planner_->src_.y, planner_->dst_.x, planner_->dst_.y);
   getPlan(global_path);
-  global_path.poses.push_back(goal);
+  global_path.poses.back().pose.orientation = goal.pose.orientation;
 
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
   // previous pose to set the orientation to the 'final approach' orientation of the robot so
