@@ -394,6 +394,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   {
     return true;
   }
+
   // visualization messages
   nav_msgs::msg::Path arc_pts_msg;
   arc_pts_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
@@ -446,7 +447,6 @@ bool RegulatedPurePursuitController::inCollision(
   const double & y,
   const double & theta)
 {
-// Assumes setFootprint already set
   unsigned int mx, my;
 
   if (!costmap_->worldToMap(x, y, mx, my)) {
