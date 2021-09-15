@@ -575,11 +575,11 @@ typename AStarAlgorithm<NodeT>::AnalyticExpansionNodes AStarAlgorithm<NodeT>::ge
     node->motion_table.state_space->interpolate(from(), to(), i / num_intervals, s());
     reals = s.reals();
     angle = reals[2] / node->motion_table.bin_size;
-    while (angle >= node->motion_table.num_angle_quantization_float) {
-      angle -= node->motion_table.num_angle_quantization_float;
-    }
     while (angle < 0.0) {
       angle += node->motion_table.num_angle_quantization_float;
+    }
+    while (angle >= node->motion_table.num_angle_quantization_float) {
+      angle -= node->motion_table.num_angle_quantization_float;
     }
     // Turn the pose into a node, and check if it is valid
     index = NodeT::getIndex(
