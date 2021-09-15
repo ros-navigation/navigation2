@@ -71,6 +71,7 @@ ControllerServer::~ControllerServer()
   progress_checker_.reset();
   goal_checkers_.clear();
   controllers_.clear();
+  costmap_thread_.reset();
 }
 
 nav2_util::CallbackReturn

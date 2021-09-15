@@ -23,7 +23,7 @@ namespace nav2_util
 {
 /**
  * @class nav2_util::NodeThread
- * @brief A background thread to process node callbacks
+ * @brief A background thread to process node/executor callbacks
  */
 class NodeThread
 {
@@ -33,6 +33,12 @@ public:
    * @param node_base Interface to Node to spin in thread
    */
   explicit NodeThread(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base);
+
+  /**
+   * @brief A background thread to process executor's callbacks constructor
+   * @param executor Interface to executor to spin in thread
+   */
+  explicit NodeThread(rclcpp::executors::SingleThreadedExecutor::SharedPtr executor);
 
   /**
    * @brief A background thread to process node callbacks constructor
@@ -51,7 +57,7 @@ public:
 protected:
   rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_;
   std::unique_ptr<std::thread> thread_;
-  rclcpp::executors::SingleThreadedExecutor executor_;
+  rclcpp::Executor::SharedPtr executor_;
 };
 
 }  // namespace nav2_util

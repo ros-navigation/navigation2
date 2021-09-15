@@ -102,7 +102,8 @@ def generate_launch_description():
 
     # Start Gazebo with plugin providing the robot spawing service
     start_gazebo_cmd = ExecuteProcess(
-        cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_factory.so', world],
+        cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_init.so',
+                                     '-s', 'libgazebo_ros_factory.so', world],
         output='screen')
 
     # Define commands for spawing the robots into Gazebo
@@ -123,7 +124,7 @@ def generate_launch_description():
     # Define commands for launching the navigation instances
     nav_instances_cmds = []
     for robot in robots:
-        params_file = LaunchConfiguration(robot['name'] + '_params_file')
+        params_file = LaunchConfiguration(f"{robot['name']}_params_file")
 
         group = GroupAction([
             IncludeLaunchDescription(

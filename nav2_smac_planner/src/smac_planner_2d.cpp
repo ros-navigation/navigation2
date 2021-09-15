@@ -19,12 +19,15 @@
 #include <algorithm>
 
 #include "nav2_smac_planner/smac_planner_2d.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 // #define BENCHMARK_TESTING
 
 namespace nav2_smac_planner
 {
 using namespace std::chrono;  // NOLINT
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
 
 SmacPlanner2D::SmacPlanner2D()
 : _a_star(nullptr),
@@ -47,18 +50,13 @@ void SmacPlanner2D::configure(
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
+  _node = parent;
   auto node = parent.lock();
   _logger = node->get_logger();
   _clock = node->get_clock();
   _costmap = costmap_ros->getCostmap();
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
-
-  bool allow_unknown;
-  int max_iterations;
-  int max_on_approach_iterations;
-  SearchInfo search_info;
-  std::string motion_model_for_search;
 
   // General planner params
   nav2_util::declare_parameter_if_not_declared(
@@ -72,17 +70,20 @@ void SmacPlanner2D::configure(
   node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cost_travel_multiplier", rclcpp::ParameterValue(2.0));
-  node->get_parameter(name + ".cost_travel_multiplier", search_info.cost_penalty);
+  node->get_parameter(name + ".cost_travel_multiplier", _search_info.cost_penalty);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
-  node->get_parameter(name + ".allow_unknown", allow_unknown);
+  node->get_parameter(name + ".allow_unknown", _allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
-  node->get_parameter(name + ".max_iterations", max_iterations);
+  node->get_parameter(name + ".max_iterations", _max_iterations);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
-  node->get_parameter(name + ".max_on_approach_iterations", max_on_approach_iterations);
+  node->get_parameter(name + ".max_on_approach_iterations", _max_on_approach_iterations);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".use_final_approach_orientation", _use_final_approach_orientation);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(1.0));
@@ -90,28 +91,28 @@ void SmacPlanner2D::configure(
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("MOORE")));
-  node->get_parameter(name + ".motion_model_for_search", motion_model_for_search);
-  MotionModel motion_model = fromString(motion_model_for_search);
-  if (motion_model == MotionModel::UNKNOWN) {
+  node->get_parameter(name + ".motion_model_for_search", _motion_model_for_search);
+  _motion_model = fromString(_motion_model_for_search);
+  if (_motion_model == MotionModel::UNKNOWN) {
     RCLCPP_WARN(
       _logger,
       "Unable to get MotionModel search type. Given '%s', "
       "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
-      motion_model_for_search.c_str());
+      _motion_model_for_search.c_str());
   }
 
-  if (max_on_approach_iterations <= 0) {
+  if (_max_on_approach_iterations <= 0) {
     RCLCPP_INFO(
       _logger, "On approach iteration selected as <= 0, "
       "disabling tolerance and on approach iterations.");
-    max_on_approach_iterations = std::numeric_limits<int>::max();
+    _max_on_approach_iterations = std::numeric_limits<int>::max();
   }
 
-  if (max_iterations <= 0) {
+  if (_max_iterations <= 0) {
     RCLCPP_INFO(
       _logger, "maximum iteration selected as <= 0, "
       "disabling maximum iterations.");
-    max_iterations = std::numeric_limits<int>::max();
+    _max_iterations = std::numeric_limits<int>::max();
   }
 
   // Initialize collision checker
@@ -122,11 +123,11 @@ void SmacPlanner2D::configure(
     0.0 /*for 2D cost at inscribed isn't relevent*/);
 
   // Initialize A* template
-  _a_star = std::make_unique<AStarAlgorithm<Node2D>>(motion_model, search_info);
+  _a_star = std::make_unique<AStarAlgorithm<Node2D>>(_motion_model, _search_info);
   _a_star->initialize(
-    allow_unknown,
-    max_iterations,
-    max_on_approach_iterations,
+    _allow_unknown,
+    _max_iterations,
+    _max_on_approach_iterations,
     0.0 /*unused for 2D*/,
     1.0 /*unused for 2D*/);
 
@@ -146,13 +147,23 @@ void SmacPlanner2D::configure(
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
+  // Setup callback for changes to parameters.
+  _parameters_client = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(),
+    node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  _parameter_event_sub = _parameters_client->on_parameter_event(
+    std::bind(&SmacPlanner2D::on_parameter_event_callback, this, _1));
+
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlanner2D with "
     "tolerance %.2f, maximum iterations %i, "
     "max on approach iterations %i, and %s. Using motion model: %s.",
-    _name.c_str(), _tolerance, max_iterations, max_on_approach_iterations,
-    allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
-    toString(motion_model).c_str());
+    _name.c_str(), _tolerance, _max_iterations, _max_on_approach_iterations,
+    _allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
+    toString(_motion_model).c_str());
 }
 
 void SmacPlanner2D::activate()
@@ -184,8 +195,10 @@ void SmacPlanner2D::cleanup()
     _name.c_str());
   _a_star.reset();
   _smoother.reset();
-  _costmap_downsampler->on_cleanup();
-  _costmap_downsampler.reset();
+  if (_costmap_downsampler) {
+    _costmap_downsampler->on_cleanup();
+    _costmap_downsampler.reset();
+  }
   _raw_plan_publisher.reset();
 }
 
@@ -193,6 +206,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
+  std::lock_guard<std::mutex> lock_reinit(_mutex);
   steady_clock::time_point a = steady_clock::now();
 
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
@@ -208,13 +222,13 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point
-  unsigned int mx, my;
-  costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
-  _a_star->setStart(mx, my, 0);
+  unsigned int mx_start, my_start, mx_goal, my_goal;
+  costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start);
+  _a_star->setStart(mx_start, my_start, 0);
 
   // Set goal point
-  costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
-  _a_star->setGoal(mx, my, 0);
+  costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal);
+  _a_star->setGoal(mx_goal, my_goal, 0);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -227,6 +241,23 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   pose.pose.orientation.y = 0.0;
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
+
+  // Corner case of start and goal beeing on the same cell
+  if (mx_start == mx_goal && my_start == my_goal) {
+    if (costmap->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+      RCLCPP_WARN(_logger, "Failed to create a unique pose path because of obstacles");
+      return plan;
+    }
+    pose.pose = start.pose;
+    // if we have a different start and goal orientation, set the unique path pose to the goal
+    // orientation, unless use_final_approach_orientation=true where we need it to be the start
+    // orientation to avoid movement from the local planner
+    if (start.pose.orientation != goal.pose.orientation && !_use_final_approach_orientation) {
+      pose.pose.orientation = goal.pose.orientation;
+    }
+    plan.poses.push_back(pose);
+    return plan;
+  }
 
   // Compute plan
   Node2D::CoordinateVector path;
@@ -282,7 +313,127 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     _smoother->smooth(plan, costmap, time_remaining);
   }
 
+
+  // If use_final_approach_orientation=true, interpolate the last pose orientation from the
+  // previous pose to set the orientation to the 'final approach' orientation of the robot so
+  // it does not rotate.
+  // And deal with corner case of plan of length 1
+  // If use_final_approach_orientation=false (default), override last pose orientation to match goal
+  size_t plan_size = plan.poses.size();
+  if (_use_final_approach_orientation) {
+    if (plan_size == 1) {
+      plan.poses.back().pose.orientation = start.pose.orientation;
+    } else if (plan_size > 1) {
+      double dx, dy, theta;
+      auto last_pose = plan.poses.back().pose.position;
+      auto approach_pose = plan.poses[plan_size - 2].pose.position;
+      dx = last_pose.x - approach_pose.x;
+      dy = last_pose.y - approach_pose.y;
+      theta = atan2(dy, dx);
+      plan.poses.back().pose.orientation =
+        nav2_util::geometry_utils::orientationAroundZAxis(theta);
+    }
+  } else if (plan_size > 0) {
+    plan.poses.back().pose.orientation = goal.pose.orientation;
+  }
+
   return plan;
+}
+
+void SmacPlanner2D::on_parameter_event_callback(
+  const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+{
+  std::lock_guard<std::mutex> lock_reinit(_mutex);
+
+  bool reinit_a_star = false;
+  bool reinit_downsampler = false;
+
+  for (auto & changed_parameter : event->changed_parameters) {
+    const auto & type = changed_parameter.value.type;
+    const auto & name = changed_parameter.name;
+    const auto & value = changed_parameter.value;
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == _name + ".tolerance") {
+        _tolerance = static_cast<float>(value.double_value);
+      } else if (name == _name + ".cost_travel_multiplier") {
+        reinit_a_star = true;
+        _search_info.cost_penalty = value.double_value;
+      } else if (name == _name + ".max_planning_time") {
+        _max_planning_time = value.double_value;
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == _name + ".downsample_costmap") {
+        reinit_downsampler = true;
+        _downsample_costmap = value.bool_value;
+      } else if (name == _name + ".allow_unknown") {
+        reinit_a_star = true;
+        _allow_unknown = value.bool_value;
+      } else if (name == _name + ".use_final_approach_orientation") {
+        _use_final_approach_orientation = value.bool_value;
+      }
+    } else if (type == ParameterType::PARAMETER_INTEGER) {
+      if (name == _name + ".downsampling_factor") {
+        reinit_downsampler = true;
+        _downsampling_factor = value.integer_value;
+      } else if (name == _name + ".max_iterations") {
+        reinit_a_star = true;
+        _max_iterations = value.integer_value;
+        if (_max_iterations <= 0) {
+          RCLCPP_INFO(
+            _logger, "maximum iteration selected as <= 0, "
+            "disabling maximum iterations.");
+          _max_iterations = std::numeric_limits<int>::max();
+        }
+      } else if (name == _name + ".max_on_approach_iterations") {
+        reinit_a_star = true;
+        _max_on_approach_iterations = value.integer_value;
+        if (_max_on_approach_iterations <= 0) {
+          RCLCPP_INFO(
+            _logger, "On approach iteration selected as <= 0, "
+            "disabling tolerance and on approach iterations.");
+          _max_on_approach_iterations = std::numeric_limits<int>::max();
+        }
+      }
+    } else if (type == ParameterType::PARAMETER_STRING) {
+      if (name == _name + ".motion_model_for_search") {
+        reinit_a_star = true;
+        _motion_model = fromString(value.string_value);
+        if (_motion_model == MotionModel::UNKNOWN) {
+          RCLCPP_WARN(
+            _logger,
+            "Unable to get MotionModel search type. Given '%s', "
+            "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
+            _motion_model_for_search.c_str());
+        }
+      }
+    }
+  }
+
+  // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
+  if (reinit_a_star || reinit_downsampler) {
+    // Re-Initialize A* template
+    if (reinit_a_star) {
+      _a_star = std::make_unique<AStarAlgorithm<Node2D>>(_motion_model, _search_info);
+      _a_star->initialize(
+        _allow_unknown,
+        _max_iterations,
+        _max_on_approach_iterations,
+        0.0 /*unused for 2D*/,
+        1.0 /*unused for 2D*/);
+    }
+
+    // Re-Initialize costmap downsampler
+    if (reinit_downsampler) {
+      if (_downsample_costmap && _downsampling_factor > 1) {
+        auto node = _node.lock();
+        std::string topic_name = "downsampled_costmap";
+        _costmap_downsampler = std::make_unique<CostmapDownsampler>();
+        _costmap_downsampler->on_configure(
+          node, _global_frame, topic_name, _costmap, _downsampling_factor);
+      }
+    }
+  }
 }
 
 }  // namespace nav2_smac_planner

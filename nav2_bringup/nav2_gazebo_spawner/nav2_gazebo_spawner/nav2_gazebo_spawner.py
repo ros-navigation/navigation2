@@ -37,7 +37,8 @@ def main():
     parser.add_argument('-z', type=float, default=0,
                         help='the z component of the initial position [meters]')
     parser.add_argument('-k', '--timeout', type=float, default=10.0,
-                        help="Seconds to wait. Block until the future is complete if negative. Don't wait if 0.")
+                        help="Seconds to wait. Block until the future is complete if negative. \
+                            Don't wait if 0.")
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-t', '--turtlebot_type', type=str,
@@ -67,7 +68,7 @@ def main():
     if args.turtlebot_type is not None:
         sdf_file_path = os.path.join(
             get_package_share_directory('turtlebot3_gazebo'), 'models',
-            'turtlebot3_{}'.format(args.turtlebot_type), 'model.sdf')
+            f'turtlebot3_{args.turtlebot_type}', 'model.sdf')
     else:
         sdf_file_path = args.sdf
 
@@ -78,8 +79,7 @@ def main():
     tree = ET.parse(sdf_file_path)
     root = tree.getroot()
     for plugin in root.iter('plugin'):
-        # TODO(orduno) Handle case if an sdf file from non-turtlebot is provided
-        if 'turtlebot3_diff_drive' in plugin.attrib.values():
+        if 'ros_diff_drive' in plugin.get('filename'):
             # The only plugin we care for now is 'diff_drive' which is
             # broadcasting a transform between`odom` and `base_footprint`
             break
@@ -87,7 +87,7 @@ def main():
     if args.robot_namespace:
         ros_params = plugin.find('ros')
         ros_tf_remap = ET.SubElement(ros_params, 'remapping')
-        ros_tf_remap.text = '/tf:=/' + args.robot_namespace + '/tf'
+        ros_tf_remap.text = f'/tf:=/{args.robot_namespace}/tf'
 
     # Set data for request
     request = SpawnEntity.Request()
@@ -102,10 +102,10 @@ def main():
     future = client.call_async(request)
     rclpy.spin_until_future_complete(node, future, timeout_sec=args.timeout)
     if future.result() is not None:
-        print('response: %r' % future.result())
+        print(f'response: {future.result()!r}')
     else:
         raise RuntimeError(
-            'exception while calling service: %r' % future.exception())
+            f'exception while calling service: {future.exception()!r}')
 
     node.get_logger().info('Done! Shutting down node.')
     node.destroy_node()

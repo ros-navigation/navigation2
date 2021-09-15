@@ -52,9 +52,14 @@ void ThetaStarPlanner::configure(
     node, name_ + ".w_traversal_cost", rclcpp::ParameterValue(2.0));
   node->get_parameter(name_ + ".w_traversal_cost", planner_->w_traversal_cost_);
 
+  planner_->w_heuristic_cost_ = planner_->w_euc_cost_ < 1.0 ? planner_->w_euc_cost_ : 1.0;
   nav2_util::declare_parameter_if_not_declared(
     node, name_ + ".w_heuristic_cost", rclcpp::ParameterValue(1.0));
   node->get_parameter(name_ + ".w_heuristic_cost", planner_->w_heuristic_cost_);
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".use_final_approach_orientation", use_final_approach_orientation_);
 }
 
 void ThetaStarPlanner::cleanup()
@@ -79,14 +84,63 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
 {
   nav_msgs::msg::Path global_path;
   auto start_time = std::chrono::steady_clock::now();
+
+  // Corner case of start and goal beeing on the same cell
+  unsigned int mx_start, my_start, mx_goal, my_goal;
+  planner_->costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start);
+  planner_->costmap_->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal);
+  if (mx_start == mx_goal && my_start == my_goal) {
+    if (planner_->costmap_->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+      RCLCPP_WARN(logger_, "Failed to create a unique pose path because of obstacles");
+      return global_path;
+    }
+    global_path.header.stamp = clock_->now();
+    global_path.header.frame_id = global_frame_;
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header = global_path.header;
+    pose.pose.position.z = 0.0;
+
+    pose.pose = start.pose;
+    // if we have a different start and goal orientation, set the unique path pose to the goal
+    // orientation, unless use_final_approach_orientation=true where we need it to be the start
+    // orientation to avoid movement from the local planner
+    if (start.pose.orientation != goal.pose.orientation && !use_final_approach_orientation_) {
+      pose.pose.orientation = goal.pose.orientation;
+    }
+    global_path.poses.push_back(pose);
+    return global_path;
+  }
+
   planner_->setStartAndGoal(start, goal);
   RCLCPP_DEBUG(
     logger_, "Got the src and dst... (%i, %i) && (%i, %i)",
     planner_->src_.x, planner_->src_.y, planner_->dst_.x, planner_->dst_.y);
   getPlan(global_path);
+  global_path.poses.back().pose.orientation = goal.pose.orientation;
+
+  // If use_final_approach_orientation=true, interpolate the last pose orientation from the
+  // previous pose to set the orientation to the 'final approach' orientation of the robot so
+  // it does not rotate.
+  // And deal with corner case of plan of length 1
+  if (use_final_approach_orientation_) {
+    size_t plan_size = global_path.poses.size();
+    if (plan_size == 1) {
+      global_path.poses.back().pose.orientation = start.pose.orientation;
+    } else if (plan_size > 1) {
+      double dx, dy, theta;
+      auto last_pose = global_path.poses.back().pose.position;
+      auto approach_pose = global_path.poses[plan_size - 2].pose.position;
+      dx = last_pose.x - approach_pose.x;
+      dy = last_pose.y - approach_pose.y;
+      theta = atan2(dy, dx);
+      global_path.poses.back().pose.orientation =
+        nav2_util::geometry_utils::orientationAroundZAxis(theta);
+    }
+  }
+
   auto stop_time = std::chrono::steady_clock::now();
   auto dur = std::chrono::duration_cast<std::chrono::microseconds>(stop_time - start_time);
-  RCLCPP_DEBUG(logger_, "the time taken for pointy is : %i", static_cast<int>(dur.count()));
+  RCLCPP_DEBUG(logger_, "the time taken is : %i", static_cast<int>(dur.count()));
   RCLCPP_DEBUG(logger_, "the nodes_opened are:  %i", planner_->nodes_opened);
   return global_path;
 }
@@ -113,15 +167,14 @@ nav_msgs::msg::Path ThetaStarPlanner::linearInterpolation(
 {
   nav_msgs::msg::Path pa;
 
+  geometry_msgs::msg::PoseStamped p1;
   for (unsigned int j = 0; j < raw_path.size() - 1; j++) {
-    geometry_msgs::msg::PoseStamped p;
     coordsW pt1 = raw_path[j];
-    p.pose.position.x = pt1.x;
-    p.pose.position.y = pt1.y;
-    pa.poses.push_back(p);
+    p1.pose.position.x = pt1.x;
+    p1.pose.position.y = pt1.y;
+    pa.poses.push_back(p1);
 
     coordsW pt2 = raw_path[j + 1];
-    geometry_msgs::msg::PoseStamped p1;
     double distance = std::hypot(pt2.x - pt1.x, pt2.y - pt1.y);
     int loops = static_cast<int>(distance / dist_bw_points);
     double sin_alpha = (pt2.y - pt1.y) / distance;
@@ -132,6 +185,7 @@ nav_msgs::msg::Path ThetaStarPlanner::linearInterpolation(
       pa.poses.push_back(p1);
     }
   }
+
   return pa;
 }
 
