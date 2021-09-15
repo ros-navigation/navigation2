@@ -5,6 +5,7 @@ find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -50,6 +51,7 @@ endif()
 set(dependencies
   rclcpp
   rclcpp_lifecycle
+  rclcpp_components
   message_filters
   tf2_geometry_msgs
   geometry_msgs
@@ -77,6 +79,8 @@ ament_target_dependencies(${library_name}
 target_link_libraries(${library_name}
   map_lib motions_lib sensors_lib
 )
+
+rclcpp_components_register_nodes(${library_name} "nav2_amcl::AmclNode")
 
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib

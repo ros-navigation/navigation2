@@ -7,6 +7,7 @@ find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
@@ -61,6 +62,7 @@ set(map_io_dependencies
 set(map_server_dependencies
   rclcpp
   rclcpp_lifecycle
+  rclcpp_components
   nav_msgs
   nav2_msgs
   yaml_cpp_vendor
@@ -122,6 +124,9 @@ if(WIN32)
   target_compile_definitions(${map_io_library_name} PRIVATE
     YAML_CPP_DLL)
 endif()
+
+rclcpp_components_register_nodes(${library_name} "nav2_map_server::MapSaver")
+rclcpp_components_register_nodes(${library_name} "nav2_map_server::MapServer")
 
 install(TARGETS
     ${library_name} ${map_io_library_name}
