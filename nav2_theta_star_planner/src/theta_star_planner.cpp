@@ -117,7 +117,7 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
     planner_->src_.x, planner_->src_.y, planner_->dst_.x, planner_->dst_.y);
   getPlan(global_path);
   global_path.poses.push_back(goal);
-  
+
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
   // previous pose to set the orientation to the 'final approach' orientation of the robot so
   // it does not rotate.
@@ -166,15 +166,15 @@ nav_msgs::msg::Path ThetaStarPlanner::linearInterpolation(
   const double & dist_bw_points)
 {
   nav_msgs::msg::Path pa;
-   
+
   geometry_msgs::msg::PoseStamped p1;
-  for (unsigned int j = 0; j < raw_path.size() - 1; j++) {    
+  for (unsigned int j = 0; j < raw_path.size() - 1; j++) {
     coordsW pt1 = raw_path[j];
     p1.pose.position.x = pt1.x;
     p1.pose.position.y = pt1.y;
     pa.poses.push_back(p1);
 
-    coordsW pt2 = raw_path[j + 1];    
+    coordsW pt2 = raw_path[j + 1];
     double distance = std::hypot(pt2.x - pt1.x, pt2.y - pt1.y);
     int loops = static_cast<int>(distance / dist_bw_points);
     double sin_alpha = (pt2.y - pt1.y) / distance;
@@ -185,7 +185,7 @@ nav_msgs::msg::Path ThetaStarPlanner::linearInterpolation(
       pa.poses.push_back(p1);
     }
   }
-   
+
   return pa;
 }
 
