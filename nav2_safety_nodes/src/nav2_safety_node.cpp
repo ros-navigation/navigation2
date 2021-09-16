@@ -98,9 +98,9 @@ SafetyZone::on_activate(const rclcpp_lifecycle::State & /*state*/)
         scan_topics_[i].c_str(), rclcpp::SystemDefaultsQoS(),
         std::bind(&SafetyZone::laserCallback, this, std::placeholders::_1)));
   }
-  auto update_frequency_s_ = std::chrono::duration<double>(update_frequency_);
+  auto update_frequency_s = std::chrono::duration<double>(update_frequency_);
   timer_ = create_wall_timer(
-  update_frequency_s_, std::bind(&SafetyZone::timerCallback, this));
+  update_frequency_s, std::bind(&SafetyZone::timerCallback, this));
   RCLCPP_INFO(logger_, "Subscribed to scan topics");
   safety_polygon_pub_->on_activate();
   speed_limit_pub_->on_activate();
@@ -113,6 +113,9 @@ SafetyZone::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(logger_, "Deactivating");
   safety_polygon_pub_->on_deactivate();
   speed_limit_pub_->on_deactivate();
+  for (unsigned int i = 0; i < scan_subscribers_.size(); i++){
+    scan_subscribers_[i].reset();
+  }
   timer_->cancel();
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -123,9 +126,6 @@ SafetyZone::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(logger_, "Cleaning up");
   safety_polygon_pub_.reset();
   speed_limit_pub_.reset();
-  for (unsigned int i = 0; i < scan_subscribers_.size(); i++){
-    scan_subscribers_[i].reset();
-  }
   timer_.reset();
   return nav2_util::CallbackReturn::SUCCESS;
 }
