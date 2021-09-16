@@ -34,6 +34,8 @@ add_library(nav2_safety_node_core SHARED
   src/nav2_safety_node.cpp
 )
 
+set(library_name nav2_safety_nodes)
+
 set(dependencies
   rclcpp
   rclcpp_lifecycle
@@ -80,6 +82,13 @@ RUNTIME DESTINATION lib/${PROJECT_NAME}
 install(DIRECTORY include/
   DESTINATION include/
 )
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_gtest REQUIRED)
+  add_subdirectory(test)
+endif()
 
 if(BUILD_detect_testING)
   find_package(ament_lint_auto REQUIRED)

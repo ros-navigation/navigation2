@@ -5,6 +5,7 @@
   <version>1.0.6</version>
   <description>A Navigation safety node server</description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
+  <maintainer email="saurabhpowar1823@gmail.com">Saurabh Suresh Powar</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

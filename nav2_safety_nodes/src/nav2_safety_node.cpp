@@ -1,4 +1,4 @@
-// Copyright (c) 2021
+// Copyright (c) 2021, Saurabh Suresh Powar
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ SafetyZone::SafetyZone()
 : nav2_util::LifecycleNode("SafetyZone", "", false)
 {
   logger_ = get_logger();
-  RCLCPP_INFO(logger_, "Creating Safety Polygon");
+  RCLCPP_INFO(logger_, "Creating Safety Zone Polygon Node");
 
   // Vector of string for multiple LaserScan topics
   const std::vector<std::string> scan_topics{"scan"};
@@ -64,12 +64,9 @@ SafetyZone::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // If the safety_polygon has been specified, it must be in the correct format
   if (safety_polygon_ != "" && safety_polygon_ != "[]") {
     // Polygon parameter has been specified, polygon -> point vector(safety_zone)
-    std::vector<geometry_msgs::msg::Point> safety_zone_;
-    /// string of polygon points and returns a polygon vector
     nav2_util::makeVectorPointsFromString(safety_polygon_, safety_zone_);
   } else {
-    // Polygon provided but invalid, so stay with the radius
-    throw std::invalid_argument("The safety_polygon is invalid");
+    throw std::runtime_error("The safety_polygon is invalid");
   }
 
   // Initialize transform listener and broadcaster
@@ -88,28 +85,25 @@ SafetyZone::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(logger_, "Activating");
   // Create the publishers and subscribers
   safety_polygon_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
-    "published_polygon", rclcpp::SystemDefaultsQoS());
+    "safety_zone", rclcpp::SystemDefaultsQoS());
   // Velocity publisher
   speed_limit_pub_ = create_publisher<nav2_msgs::msg::SpeedLimit>(
     speed_limit_topic_, rclcpp::QoS(10));
   // Multiple Laserscan subscribers
   scan_subscribers_.reserve(scan_topics_.size());
-  RCLCPP_INFO(logger_, "Subscribing to scan topics");
   for (unsigned int i = 0; i < scan_topics_.size(); i++) {
+    RCLCPP_INFO(logger_, "Subscribing to %s topic", scan_topics_[i].c_str());
     scan_subscribers_.push_back(
       create_subscription<sensor_msgs::msg::LaserScan>(
         scan_topics_[i].c_str(), rclcpp::SystemDefaultsQoS(),
         std::bind(&SafetyZone::laserCallback, this, std::placeholders::_1)));
   }
-  // Timer -> 10hzs
-  auto update_frequency_s = std::chrono::duration<double>(update_frequency_);
-  auto update_frequency_ms = std::chrono::duration_cast<std::chrono::milliseconds>(update_frequency_s);
+  auto update_frequency_s_ = std::chrono::duration<double>(update_frequency_);
   timer_ = create_wall_timer(
-  update_frequency_ms, std::bind(&SafetyZone::timerCallback, this));
+  update_frequency_s_, std::bind(&SafetyZone::timerCallback, this));
   RCLCPP_INFO(logger_, "Subscribed to scan topics");
   safety_polygon_pub_->on_activate();
   speed_limit_pub_->on_activate();
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -129,6 +123,9 @@ SafetyZone::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(logger_, "Cleaning up");
   safety_polygon_pub_.reset();
   speed_limit_pub_.reset();
+  for (unsigned int i = 0; i < scan_subscribers_.size(); i++){
+    scan_subscribers_[i].reset();
+  }
   timer_.reset();
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -151,6 +148,7 @@ SafetyZone::laserCallback(
     projector_.projectLaser(*message, cloud);
   } catch (...) {
     RCLCPP_WARN(logger_, "Unable to project laser into cloud");
+    return;
   }
 
   // Transform the cloud if necessary
@@ -181,19 +179,18 @@ SafetyZone::detectPoints(
   const sensor_msgs::msg::PointCloud2 & cloud,
   const std::vector<geometry_msgs::msg::Point> & safety_zone)
 {
-  int points_inside = 0;
-  int count_same_side_results = 0, on_edge = 0;
-  const int n = safety_zone.size();
+  int num_points_in_zone = 0;
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
   sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
   // iterating through cloud points
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
     double px = *iter_x, py = *iter_y, pz = *iter_z;
+    int count_same_side_results = 0, on_edge = 0;
     // iterating through polygon points
-    for (int i = 0; i < n; ++i) {
+    for (int i = 0; i < int(safety_zone.size()); ++i) {
       geometry_msgs::msg::Point vertex = safety_zone[i];
-      geometry_msgs::msg::Point next_vertex = safety_zone[(i + 1) % n];
+      geometry_msgs::msg::Point next_vertex = safety_zone[(i + 1) % safety_zone.size()];
       Eigen::Vector3d affine_segment = {next_vertex.x - vertex.x, next_vertex.y - vertex.y, next_vertex.z - vertex.z};
       Eigen::Vector3d affine_point = {px - vertex.x, py - vertex.y, pz - vertex.z};
       double dot = dotProduct(affine_segment, affine_point);
@@ -206,11 +203,11 @@ SafetyZone::detectPoints(
       }
     }
     // checking if point is on same side of all edges
-    if (count_same_side_results == n || count_same_side_results == (-1) * n || on_edge == 2) {
-      points_inside++;
+    if (abs(count_same_side_results == int(safety_zone.size())) || on_edge == 2) {
+      num_points_in_zone++;
     }
   }
-  return points_inside;
+  return num_points_in_zone;
 }
 
 void
