@@ -19,14 +19,15 @@ class LatticeGenerator:
         X = 1
         Y = 2
         BOTH = 3
-    
+
     def __init__(self, config: dict):
         self.trajectory_generator = TrajectoryGenerator(config)
         self.grid_resolution = config["grid_resolution"]
         self.turning_radius = config["turning_radius"]
         self.stopping_threshold = config["stopping_threshold"]
         self.num_of_headings = config["num_of_headings"]
-        self.headings = self.get_heading_discretization(config["num_of_headings"])
+        self.headings = \
+            self.get_heading_discretization(config["num_of_headings"])
 
         self.motion_model = self.MotionModel[config["motion_model"].upper()]
 
@@ -34,6 +35,22 @@ class LatticeGenerator:
         self.ROTATION_THRESHOLD = 0.5 * (2 * np.pi / self.num_of_headings)
 
     def get_coords_at_level(self, level: int) -> np.array:
+        """
+        Uses the grid resolution to calculate the valid end points
+        at a discrete interval (i.e. level) away from the origin.
+
+        Parameters
+        ----------
+        level: int
+            The number of discrete intervals of grid resolution
+            away from the origin to generate the end points at
+
+        Returns
+        -------
+        np.array
+            An array of coordinates
+        """
+
         positions = []
 
         max_point_coord = self.grid_resolution * level
@@ -52,7 +69,23 @@ class LatticeGenerator:
 
         return np.array(positions)
 
-    def get_heading_discretization(self, number_of_headings) -> list:
+    def get_heading_discretization(self, number_of_headings: int) -> list:
+        """
+        Calculates the heading discretization based on the number of headings.
+        Does not uniformly generate headings but instead generates a set of
+        discrete headings that is better suited for straight line trajectories.
+
+        Parameters
+        ----------
+        number_of_headings: int
+            The number of headings to discretize a 360 degree turn into
+
+        Returns
+        -------
+        list
+            A list of headings in radians
+        """
+
         max_val = int((((number_of_headings + 4) / 4) - 1) / 2)
 
         outer_edge_x = []
@@ -66,12 +99,32 @@ class LatticeGenerator:
                 outer_edge_y += [i, i]
                 outer_edge_x += [-max_val, max_val]
 
-        return sorted([np.arctan2(j, i) for i, j in zip(outer_edge_x, outer_edge_y)])
+        return sorted([np.arctan2(j, i) for i, j in
+                       zip(outer_edge_x, outer_edge_y)])
 
-    def point_to_line_distance(self, p1, p2, q):
+    def point_to_line_distance(
+        self,
+        p1: np.array,
+        p2: np.array,
+        q: np.array
+    ) -> float:
         """
-        Return minimum distance from q to line segment defined by p1, p2.
-            Projects q onto line segment p1, p2 and returns the distance
+        Returns the shortest distance from a point to a line segment
+
+        Parameters
+        ----------
+        p1: np.array(2,)
+            Start point of line segment
+        p2: np.array(2,)
+            End point of line segment
+        q: np.array(2,)
+            Point to get distance away from line of
+
+        Returns
+        -------
+        float
+            The shortest distance between q and line segment p1p2
+
         """
 
         # Get back the l2-norm without the square root
@@ -86,7 +139,28 @@ class LatticeGenerator:
 
         return np.linalg.norm(q - projected_point)
 
-    def is_minimal_trajectory(self, trajectory: Trajectory, prior_end_poses):
+    def is_minimal_trajectory(
+        self,
+        trajectory: Trajectory,
+        prior_end_poses: index.Rtree
+    ) -> bool:
+        """
+        Determines wheter a trajectory is a minimal trajectory.
+
+        Uses an RTree for speedup.
+
+        Parameters
+        ----------
+        trajectory: Trajectory
+            The trajectory to check
+        prior_end_poses: RTree
+            An RTree holding the current minimal set of trajectories
+
+        Returns
+        -------
+        bool
+            True if the trajectory is a minimal trajectory otherwise false
+        """
 
         for x1, y1, x2, y2, yaw in zip(
             trajectory.path.xs[:-1],
@@ -117,16 +191,42 @@ class LatticeGenerator:
 
         return True
 
-    def compute_min_trajectory_length(self):
+    def compute_min_trajectory_length(self) -> float:
+        """
+        Computes the minimum trajectory length possible given the
+        user supplied parameters. The minimum trajectory length is
+        defined as the length needed for the sharpest possible turn
+        to move from 0 degrees to the next discrete heading. Since
+        the distance between headings is not uniform we take the smallest
+        possible difference.
 
-        # Compute arc length for a turn that moves from 0 degrees to the minimum heading difference
+        Returns
+        -------
+        float
+            The minimal length of a trajectory
+        """
+
+        # Compute arc length for a turn that moves from 0 degrees to
+        # the minimum heading difference
         heading_diff = [
-            abs(self.headings[i + 1] - self.headings[i]) for i in range(len(self.headings) - 1)
+            abs(self.headings[i + 1] - self.headings[i])
+            for i in range(len(self.headings) - 1)
         ]
 
         return self.turning_radius * min(heading_diff)
 
-    def generate_minimal_spanning_set(self):
+    def generate_minimal_spanning_set(self) -> dict:
+        """
+        Generates the minimal spanning set by iterating over all possible
+        trajectories and keeping only those that are part of the minimal set.
+
+        Returns
+        -------
+        dict
+            A dictionary where the key is the start_angle and the value is
+            a list of trajectories that begin at that angle
+        """
+
         quadrant1_end_poses = defaultdict(list)
 
         initial_headings = sorted(
@@ -134,7 +234,8 @@ class LatticeGenerator:
         )
 
         min_trajectory_length = self.compute_min_trajectory_length()
-        start_level = int(np.round(min_trajectory_length / self.grid_resolution))
+        start_level = int(np.round(min_trajectory_length
+                                   / self.grid_resolution))
 
         for start_heading in initial_headings:
             iterations_without_trajectory = 0
@@ -143,12 +244,14 @@ class LatticeGenerator:
 
             current_level = start_level
 
-            # To get target headings: sort headings radially and remove those that are more than 90 degrees away
+            # To get target headings: sort headings radially and remove those
+            # that are more than 90 degrees away
             target_headings = sorted(
                 self.headings, key=lambda x: (abs(x - start_heading), -x)
             )
             target_headings = list(
-                filter(lambda x: abs(start_heading - x) <= np.pi / 2, target_headings)
+                filter(lambda x: abs(start_heading - x) <= np.pi / 2,
+                       target_headings)
             )
 
             while iterations_without_trajectory < self.stopping_threshold:
@@ -159,34 +262,53 @@ class LatticeGenerator:
 
                 for target_point in positions:
                     for target_heading in target_headings:
-                        # Use 10% of grid separation for finer granularity when checking if trajectory overlaps another already seen trajectory
-                        trajectory = self.trajectory_generator.generate_trajectory(
-                            target_point,
-                            start_heading,
-                            target_heading,
-                            0.1 * self.grid_resolution,
-                        )
+                        # Use 10% of grid separation for finer granularity
+                        # when checking if trajectory overlaps another already
+                        # seen trajectory
+                        trajectory = \
+                            self.trajectory_generator.generate_trajectory(
+                                target_point,
+                                start_heading,
+                                target_heading,
+                                0.1 * self.grid_resolution,
+                            )
 
                         if trajectory is not None:
-                            # Check if path overlaps something in minimal spanning set
-                            if self.is_minimal_trajectory(trajectory, prior_end_poses):
+                            # Check if path overlaps something in minimal
+                            # spanning set
+                            if self.is_minimal_trajectory(
+                                trajectory,
+                                prior_end_poses
+                            ):
+
+                                # Add end pose to minimal set
                                 new_end_pose = np.array(
-                                    [target_point[0], target_point[1], target_heading]
+                                    [
+                                        target_point[0],
+                                        target_point[1],
+                                        target_heading
+                                    ]
                                 )
 
-                                left_bb = target_point[0] - self.DISTANCE_THRESHOLD
-                                right_bb = target_point[0] + self.DISTANCE_THRESHOLD
-                                bottom_bb = target_point[1] - self.DISTANCE_THRESHOLD
-                                top_bb = target_point[1] + self.DISTANCE_THRESHOLD
+                                quadrant1_end_poses[start_heading].append(
+                                    (target_point, target_heading)
+                                )
+
+                                # Create a new bounding box in the RTree
+                                # for this trajectory
+                                left_bb = target_point[0] - \
+                                    self.DISTANCE_THRESHOLD
+                                right_bb = target_point[0] + \
+                                    self.DISTANCE_THRESHOLD
+                                bottom_bb = target_point[1] - \
+                                    self.DISTANCE_THRESHOLD
+                                top_bb = target_point[1] + \
+                                    self.DISTANCE_THRESHOLD
 
                                 prior_end_poses.insert(
                                     0,
                                     (left_bb, bottom_bb, right_bb, top_bb),
                                     new_end_pose,
-                                )
-
-                                quadrant1_end_poses[start_heading].append(
-                                    (target_point, target_heading)
                                 )
 
                                 iterations_without_trajectory = 0
@@ -195,32 +317,69 @@ class LatticeGenerator:
 
         return self.create_complete_minimal_spanning_set(quadrant1_end_poses)
 
-    def flip_angle(self, angle, flip_type):
-        angle_idx = self.headings.index(angle)
+    def flip_angle(self, angle: float, flip_type: Flip) -> float:
+        """
+        Returns the angle in self.headings that is the appropriate flip of it
 
-        # TODO: Neesd to convert from any quadrant to any other quadrant
+        Parameters
+        ----------
+        angle: float
+            The angle to flip
+        flip_type: Flip
+            Whether to flip in X, Y or both axes
+
+        Returns
+        -------
+        float
+            The angle in self.heading that is the appropriate flip
+        """
+
+        angle_idx = self.headings.index(angle)
 
         if flip_type == self.Flip.X:
             heading_idx = (self.num_of_headings / 2 - 1) - angle_idx - 1
         elif flip_type == self.Flip.Y:
             heading_idx = self.num_of_headings - angle_idx - 2
         elif flip_type == self.Flip.BOTH:
-            heading_idx = (angle_idx - (self.num_of_headings / 2)) % self.num_of_headings
+            heading_idx = (angle_idx - (self.num_of_headings / 2)) % \
+                self.num_of_headings
         else:
             raise Exception(f'Unsupported flip type: {flip_type}')
 
         return self.headings[int(heading_idx)]
 
-    def create_complete_minimal_spanning_set(self, single_quadrant_minimal_set):
+    def create_complete_minimal_spanning_set(
+        self,
+        single_quadrant_minimal_set: dict
+    ) -> dict:
+        """
+        Takes a minimal set for a single quadrant and flips all trajectories
+        to properly create the full minimal spanning set
+
+        Parameters
+        ----------
+        single_quadrant_minimal_set: dict
+            The minimal set for the +x, +y quadrant
+
+        Returns
+        -------
+        dict
+            The complete minimal spanning set containing the trajectories
+            in all quadrants
+        """
+
         # Generate the paths for trajectories in all quadrants
         all_trajectories = defaultdict(list)
 
         for start_angle in single_quadrant_minimal_set.keys():
 
-            for end_point, end_angle in single_quadrant_minimal_set[start_angle]:
+            for end_point, end_angle in \
+                    single_quadrant_minimal_set[start_angle]:
+
                 x, y = end_point
 
-                # Prevent double adding trajectories that lie on axes (i.e. start and end angle are either both 0 or both pi/2)
+                # Prevent double adding trajectories that lie on axes
+                # (i.e. start and end angle are either both 0 or both pi/2)
                 if start_angle == 0 and end_angle == 0:
                     unflipped_start_angle = 0.0
                     flipped_x_start_angle = np.pi
@@ -253,7 +412,8 @@ class LatticeGenerator:
                         flipped_x_trajectory.parameters.start_angle
                     ].append(flipped_x_trajectory)
 
-                elif abs(start_angle) == np.pi / 2 and abs(end_angle) == np.pi / 2:
+                elif abs(start_angle) == np.pi / 2 and abs(end_angle) \
+                        == np.pi / 2:
                     unflipped_start_angle = np.pi / 2
                     flipped_y_start_angle = -np.pi / 2
 
@@ -284,18 +444,38 @@ class LatticeGenerator:
                     all_trajectories[
                         flipped_y_trajectory.parameters.start_angle
                     ].append(flipped_y_trajectory)
+
                 else:
                     unflipped_start_angle = start_angle
-                    flipped_x_start_angle = self.flip_angle(start_angle, self.Flip.X)
-                    flipped_y_start_angle = self.flip_angle(start_angle, self.Flip.Y)
-                    flipped_xy_start_angle = self.flip_angle(start_angle, self.Flip.BOTH)
+                    flipped_x_start_angle = self.flip_angle(
+                        start_angle,
+                        self.Flip.X
+                    )
+                    flipped_y_start_angle = self.flip_angle(
+                        start_angle,
+                        self.Flip.Y
+                    )
+                    flipped_xy_start_angle = self.flip_angle(
+                        start_angle,
+                        self.Flip.BOTH
+                    )
 
                     unflipped_end_angle = end_angle
-                    flipped_x_end_angle = self.flip_angle(end_angle, self.Flip.X)
-                    flipped_y_end_angle = self.flip_angle(end_angle, self.Flip.Y)
-                    flipped_xy_end_angle = self.flip_angle(end_angle, self.Flip.BOTH)
+                    flipped_x_end_angle = self.flip_angle(
+                        end_angle,
+                        self.Flip.X
+                    )
+                    flipped_y_end_angle = self.flip_angle(
+                        end_angle,
+                        self.Flip.Y
+                    )
+                    flipped_xy_end_angle = self.flip_angle(
+                        end_angle,
+                        self.Flip.BOTH
+                    )
 
-                    # Generate trajectories for all quadrants and use the grid separation as step distance
+                    # Generate trajectories for all quadrants and use
+                    # the grid separation as step distance
                     unflipped_trajectory = (
                         self.trajectory_generator.generate_trajectory(
                             np.array([x, y]),
@@ -344,7 +524,27 @@ class LatticeGenerator:
 
         return all_trajectories
 
-    def handle_motion_model(self, spanning_set):
+    def handle_motion_model(self, spanning_set: dict) -> dict:
+        """
+        Adds the appropriate motions for the user supplied motion model
+
+        Ackerman => No additional trajectories
+
+        Diff => In place turns to the right and left
+
+        Omni => Diff + Sliding movements to right and left
+
+        Parameters
+        ----------
+        spanning set: dict
+            The minimal spanning set
+
+        Returns
+        -------
+        dict
+            The minimal spanning set with additional trajectories based
+            on the motion model
+        """
 
         if self.motion_model == self.MotionModel.ACKERMANN:
             return spanning_set
@@ -359,10 +559,27 @@ class LatticeGenerator:
             return omni_spanning_set
 
         else:
-            print(f"No handling implemented for Motion Model: {self.motion_model}")
+            print(f"No handling implemented for Motion Model: " +
+                  "{self.motion_model}")
             raise NotImplementedError
 
-    def add_in_place_turns(self, spanning_set):
+    def add_in_place_turns(self, spanning_set: dict) -> dict:
+        """
+        Adds in place turns to the left and right by a single
+        angular heading step
+
+        Parameters
+        ----------
+        spanning_set: dict
+            The minimal spanning set
+
+        Returns
+        -------
+        dict
+            The minimal spanning set containing additional in place turns
+            for each start angle
+        """
+
         all_angles = sorted(list(spanning_set.keys()))
 
         for idx, start_angle in enumerate(all_angles):
@@ -385,26 +602,66 @@ class LatticeGenerator:
                 left_turn=False,
             )
 
-            # Calculate number of steps needed to rotate by roughly 10 degrees for each pose
+            # Calculate number of steps needed to rotate by roughly 10 degrees
+            # for each pose
             angle_dif = angle_difference(start_angle, next_angle)
             steps = int(round(angle_dif / np.deg2rad(10))) + 1
 
             position = np.full(steps, 0)
-            left_yaws = interpolate_yaws(start_angle, next_angle, True, steps)
-            right_yaws = interpolate_yaws(start_angle, prev_angle, False, steps)
+            left_yaws = interpolate_yaws(
+                start_angle,
+                next_angle,
+                True,
+                steps
+            )
+            right_yaws = interpolate_yaws(
+                start_angle,
+                prev_angle,
+                False,
+                steps
+            )
 
-            left_turn_path = TrajectoryPath(xs=position, ys=position, yaws=left_yaws)
-            right_turn_path = TrajectoryPath(xs=position, ys=position, yaws=right_yaws)
+            left_turn_path = TrajectoryPath(
+                xs=position,
+                ys=position,
+                yaws=left_yaws
+            )
+            right_turn_path = TrajectoryPath(
+                xs=position,
+                ys=position,
+                yaws=right_yaws
+            )
 
-            left_turn = Trajectory(parameters=left_turn_params, path=left_turn_path)
-            right_turn = Trajectory(parameters=right_turn_params, path=right_turn_path)
+            left_turn = Trajectory(
+                parameters=left_turn_params,
+                path=left_turn_path
+            )
+            right_turn = Trajectory(
+                parameters=right_turn_params,
+                path=right_turn_path
+            )
 
             spanning_set[start_angle].append(left_turn)
             spanning_set[start_angle].append(right_turn)
 
         return spanning_set
 
-    def add_horizontal_motions(self, spanning_set):
+    def add_horizontal_motions(self, spanning_set: dict) -> dict:
+        """
+        Adds horizontal sliding motions at an angle of 90 degreess
+        to the right and left of each start angle
+
+        Parameters
+        ----------
+        spanning_set: dict
+            The minimal spanning set
+
+        Returns
+        -------
+        dict
+            The minimal spanning set containing additional sliding motions
+            for each start angle
+        """
 
         idx_offset = int(self.num_of_headings / 4)
 
@@ -412,29 +669,65 @@ class LatticeGenerator:
             left_angle_idx = int((idx + idx_offset) % self.num_of_headings)
             left_angle = self.headings[left_angle_idx]
             left_trajectories = spanning_set[left_angle]
-            left_straight_trajectory = next(t for t in left_trajectories if t.parameters.end_angle == left_angle)
+            left_straight_trajectory = \
+                next(t for t in left_trajectories if t.parameters.end_angle
+                     == left_angle)
 
             right_angle_idx = int((idx - idx_offset) % self.num_of_headings)
             right_angle = self.headings[right_angle_idx]
             right_trajectories = spanning_set[right_angle]
-            right_straight_trajectory = next(t for t in right_trajectories if t.parameters.end_angle == right_angle)
+            right_straight_trajectory = \
+                next(t for t in right_trajectories if t.parameters.end_angle
+                     == right_angle)
 
-            yaws = np.full(len(left_straight_trajectory.path.xs), angle, dtype=np.float64)
+            yaws = np.full(
+                len(left_straight_trajectory.path.xs),
+                angle,
+                dtype=np.float64
+            )
 
             parmas_l = left_straight_trajectory.parameters
-            left_motion_parameters = TrajectoryParameters(parmas_l.turning_radius, parmas_l.x_offset, parmas_l.y_offset, parmas_l.end_point, angle, angle, parmas_l.left_turn, parmas_l.start_to_arc_distance, parmas_l.arc_to_end_distance)
+            left_motion_parameters = TrajectoryParameters(
+                parmas_l.turning_radius,
+                parmas_l.x_offset,
+                parmas_l.y_offset,
+                parmas_l.end_point,
+                angle,
+                angle,
+                parmas_l.left_turn,
+                parmas_l.start_to_arc_distance,
+                parmas_l.arc_to_end_distance
+            )
 
             params_r = right_straight_trajectory.parameters
-            right_motion_parameters = TrajectoryParameters(params_r.turning_radius, params_r.x_offset, params_r.y_offset, params_r.end_point, angle, angle, params_r.left_turn, params_r.start_to_arc_distance, params_r.arc_to_end_distance)
+            right_motion_parameters = TrajectoryParameters(
+                params_r.turning_radius,
+                params_r.x_offset,
+                params_r.y_offset,
+                params_r.end_point,
+                angle,
+                angle,
+                params_r.left_turn,
+                params_r.start_to_arc_distance,
+                params_r.arc_to_end_distance
+            )
 
             left_motion = Trajectory(
                 parameters=left_motion_parameters,
-                path=TrajectoryPath(xs=left_straight_trajectory.path.xs, ys=left_straight_trajectory.path.ys, yaws=yaws),
+                path=TrajectoryPath(
+                    xs=left_straight_trajectory.path.xs,
+                    ys=left_straight_trajectory.path.ys,
+                    yaws=yaws
+                ),
             )
 
             right_motion = Trajectory(
                 parameters=right_motion_parameters,
-                path=TrajectoryPath(xs=right_straight_trajectory.path.xs, ys=right_straight_trajectory.path.ys, yaws=yaws),
+                path=TrajectoryPath(
+                    xs=right_straight_trajectory.path.xs,
+                    ys=right_straight_trajectory.path.ys,
+                    yaws=yaws
+                ),
             )
 
             spanning_set[angle].append(left_motion)
@@ -443,6 +736,16 @@ class LatticeGenerator:
         return spanning_set
 
     def run(self):
+        """
+        Runs the lattice generator
+
+        Returns
+        -------
+        dict
+            The minimal spanning set including additional motions for the
+            specified motion model
+        """
+
         complete_spanning_set = self.generate_minimal_spanning_set()
 
         return self.handle_motion_model(complete_spanning_set)
