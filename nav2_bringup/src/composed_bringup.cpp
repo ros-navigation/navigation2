@@ -35,10 +35,10 @@
 // isn't supported) make some Nav2 Nodes couldn't enable rclcpp intra-process comms, you
 // could find more details here https://github.com/ros2/rclcpp/issues/1753.
 //
-// this is an example for the default nav2 servers and bring up in localization mode, It is
-// our expectation for an application specific thing you're mirroring nav2_bringup package
-// and modifying it for your sp. maps/robots/bringup needs so this is an applied and working
-// demonstration for the default system bringup ONLY.
+// this is an example of manual composition for the default nav2 servers, It is our expectation
+// for an application specific thing you're mirroring nav2_bringup package and modifying it for
+// your sp. maps/robots/bringup needs so this is an applied and working demonstration for the
+// default system bringup ONLY.
 
 template<typename NodeT>
 std::shared_ptr<std::thread> create_spin_thread(NodeT & node)
@@ -55,20 +55,6 @@ std::shared_ptr<std::thread> create_spin_thread(NodeT & node)
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-
-  // localiztion nodes
-  std::vector<std::string> localiztion_node_names;
-  auto map_node = std::make_shared<nav2_map_server::MapServer>();
-  localiztion_node_names.push_back(map_node->get_name());
-  auto amcl_node = std::make_shared<nav2_amcl::AmclNode>();
-  localiztion_node_names.push_back(amcl_node->get_name());
-  // lifecycle manager of localiztion
-  auto loc_manager_options = rclcpp::NodeOptions();
-  loc_manager_options.arguments(
-    {"--ros-args", "-r", std::string("__node:=") + "lifecycle_manager_localization", "--"});
-  loc_manager_options.append_parameter_override("node_names", localiztion_node_names);
-  auto lifecycle_manager_localization_node =
-    std::make_shared<nav2_lifecycle_manager::LifecycleManager>(loc_manager_options);
 
   // navigation nodes
   std::vector<std::string> navigation_node_names;
@@ -92,9 +78,6 @@ int main(int argc, char ** argv)
 
   // spin threads
   std::vector<std::shared_ptr<std::thread>> threads;
-  threads.push_back(create_spin_thread(map_node));
-  threads.push_back(create_spin_thread(amcl_node));
-  threads.push_back(create_spin_thread(lifecycle_manager_localization_node));
   threads.push_back(create_spin_thread(controller_node));
   threads.push_back(create_spin_thread(planner_node));
   threads.push_back(create_spin_thread(recoveries_node));
