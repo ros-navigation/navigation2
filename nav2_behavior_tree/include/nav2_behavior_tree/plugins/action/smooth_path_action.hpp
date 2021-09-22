@@ -61,9 +61,11 @@ public:
     return providedBasicPorts(
       {
         BT::OutputPort<nav_msgs::msg::Path>("path_out", "Path smoothed by SmootherServer node"),
+        BT::OutputPort<double>("smoothing_duration", "Time taken to smooth path"),
+        BT::OutputPort<bool>(
+          "was_completed", "True if smoothing was not interrupted by max_smoothing_duration limit"),
         BT::InputPort<nav_msgs::msg::Path>("path_in", "Path to be smoothed"),
-        BT::InputPort<geometry_msgs::msg::PoseStamped>(
-          "start", "Start pose of the path if overriding current robot pose"),
+        BT::InputPort<double>("max_smoothing_duration", 1.0, "Maximum smoothing duration"),
         BT::InputPort<std::string>("smoother_id", ""),
       });
   }

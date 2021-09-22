@@ -25,9 +25,9 @@
 #include "nav2_core/smoother.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "tf2_ros/transform_listener.h"
+#include "nav2_costmap_2d/footprint_subscriber.hpp"
+#include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_msgs/action/smooth_path.hpp"
-#include "nav_2d_utils/odom_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -68,6 +68,11 @@ protected:
    * plugin
    */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Loads smoother plugins from parameter file
+   * @return bool if successfully loaded the plugins
+   */
+  bool loadSmootherPlugins();
   /**
    * @brief Activates member variables
    *
@@ -133,22 +138,9 @@ protected:
    */
   bool findSmootherId(const std::string & c_name, std::string & name);
 
-  /**
-   * @brief Finds local section of path around robot
-   * @param goal Goal received from action server
-   */
-  void findLocalSection(const std::shared_ptr<const typename Action::Goal> &goal, std::size_t &begin, std::size_t &end);
-
-  /**
-   * @brief Distance between two poses. Uses angular_distance_weight param to include angular distance.
-   * @param path Path received from action server
-   */
-  double poseDistance(const geometry_msgs::msg::PoseStamped &pose1, const geometry_msgs::msg::PoseStamped &pose2);
-
-  // The smoother needs a costmap subscriber and uses tf to acquire current robot pose
-  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  // Transforms
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
 
   // Publishers and subscribers
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
@@ -162,13 +154,12 @@ protected:
   std::vector<std::string> smoother_types_;
   std::string smoother_ids_concat_, current_smoother_;
 
-  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
+  // Utilities
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
 
-  double optimization_length_;
-  double optimization_length_backwards_;
-  double transform_tolerance_;
-  double angular_distance_weight_;
-  std::string robot_frame_id_;
+  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
 
 };
 

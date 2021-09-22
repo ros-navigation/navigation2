@@ -41,12 +41,22 @@ SmootherServer::SmootherServer()
 {
   RCLCPP_INFO(get_logger(), "Creating smoother server");
 
+  declare_parameter(
+    "costmap_topic",
+    rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+  declare_parameter(
+    "footprint_topic",
+    rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
+  declare_parameter(
+    "global_frame",
+    rclcpp::ParameterValue(std::string("map")));
+  declare_parameter(
+    "robot_base_frame",
+    rclcpp::ParameterValue(std::string("base_link")));
+  declare_parameter(
+    "transform_tolerance",
+    rclcpp::ParameterValue(0.1));
   declare_parameter("smoother_plugins", default_ids_);
-  declare_parameter("optimization_length", rclcpp::ParameterValue(8.0));
-  declare_parameter("optimization_length_backwards", rclcpp::ParameterValue(4.0));
-  declare_parameter("angular_distance_weight", rclcpp::ParameterValue(0.2));
-  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.5));
-  declare_parameter("robot_frame_id", rclcpp::ParameterValue("base_footprint"));
 
   // // Launch a thread to run the costmap node
   // costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
@@ -68,11 +78,6 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
 
   get_parameter("smoother_plugins", smoother_ids_);
-  get_parameter("optimization_length", optimization_length_);
-  get_parameter("optimization_length_backwards", optimization_length_backwards_);
-  get_parameter("transform_tolerance", transform_tolerance_);
-  get_parameter("robot_frame_id", robot_frame_id_);
-  get_parameter("angular_distance_weight", angular_distance_weight_);
   if (smoother_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
       nav2_util::declare_parameter_if_not_declared(
@@ -81,18 +86,50 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
     }
   }
 
-  // Create the transform-related objects
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(rclcpp_node_->get_clock());
+  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    rclcpp_node_->get_node_base_interface(),
-    rclcpp_node_->get_node_timers_interface());
-  tf_buffer_->setCreateTimerInterface(timer_interface);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    get_node_base_interface(),
+    get_node_timers_interface());
+  tf_->setCreateTimerInterface(timer_interface);
+  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
-  // The costmap node is used in the implementation of the controller
-  costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
-    shared_from_this(), "global_costmap/costmap_raw");
+  std::string costmap_topic, footprint_topic;
+  double transform_tolerance;
+  this->get_parameter("costmap_topic", costmap_topic);
+  this->get_parameter("footprint_topic", footprint_topic);
+  this->get_parameter("transform_tolerance", transform_tolerance);
+  costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
+    shared_from_this(), costmap_topic);
+  footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
+    shared_from_this(), footprint_topic, 1.0);
+
+  std::string global_frame, robot_base_frame;
+  get_parameter("global_frame", global_frame);
+  get_parameter("robot_base_frame", robot_base_frame);
+  collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+    *costmap_sub_, *footprint_sub_, *tf_, this->get_name(),
+    global_frame, robot_base_frame, transform_tolerance);
   
+  if (!loadSmootherPlugins()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
+  // Initialize pubs & subs
+  plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan_smoothed", 1);
+
+  // Create the action server that we implement with our smoothPath method
+  action_server_ = std::make_unique<ActionServer>(
+    rclcpp_node_, "smooth_path",
+    std::bind(&SmootherServer::smoothPlan, this));
+
+  return nav2_util::CallbackReturn::SUCCESS;
+}
+
+bool
+SmootherServer::loadSmootherPlugins()
+{
+  auto node = shared_from_this();
+
   smoother_types_.resize(smoother_ids_.size());
 
   for (size_t i = 0; i != smoother_ids_.size(); i++) {
@@ -105,13 +142,13 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
         smoother_ids_[i].c_str(), smoother_types_[i].c_str());
       smoother->configure(
         node, smoother_ids_[i],
-        tf_buffer_, costmap_sub_);
+        tf_, costmap_sub_, footprint_sub_);
       smoothers_.insert({smoother_ids_[i], smoother});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
         get_logger(),
         "Failed to create smoother. Exception: %s", ex.what());
-      return nav2_util::CallbackReturn::FAILURE;
+      return false;
     }
   }
 
@@ -123,15 +160,7 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
     get_logger(),
     "Smoother Server has %s smoothers available.", smoother_ids_concat_.c_str());
 
-  // Initialize pubs & subs
-  plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan_smoothed", 1);
-
-  // Create the action server that we implement with our smoothPath method
-  action_server_ = std::make_unique<ActionServer>(
-    rclcpp_node_, "smooth_path",
-    std::bind(&SmootherServer::smoothPlan, this));
-
-  return nav2_util::CallbackReturn::SUCCESS;
+  return true;
 }
 
 nav2_util::CallbackReturn
@@ -188,8 +217,11 @@ SmootherServer::on_cleanup(const rclcpp_lifecycle::State &)
   // Release any allocated resources
   action_server_.reset();
   plan_publisher_.reset();
-  tf_buffer_.reset();
-  tf_listener_.reset();
+  tf_.reset();
+  transform_listener_.reset();
+  footprint_sub_.reset();
+  costmap_sub_.reset();
+  collision_checker_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -242,112 +274,40 @@ void SmootherServer::smoothPlan()
       return;
     }
 
+    // Perform smoothing
     auto goal = action_server_->get_current_goal();
-    std::size_t local_section_begin, local_section_end;
-    findLocalSection(goal, local_section_begin, local_section_end);
-
-    auto start_time = steady_clock_.now();
-
-    // optimize path section
     result->path = goal->path;
-    result->path.poses.erase(result->path.poses.begin() + local_section_begin, result->path.poses.begin() + local_section_end);
-    nav_msgs::msg::Path local_section;
-    local_section.header = goal->path.header;
-    local_section.poses = std::vector<geometry_msgs::msg::PoseStamped>(goal->path.poses.begin() + local_section_begin,
-                                                                       goal->path.poses.begin() + local_section_end);
-    auto optimized_local_section = smoothers_[current_smoother_]->smoothPath(local_section).poses;
-    result->path.poses.insert(result->path.poses.begin() + local_section_begin, optimized_local_section.begin(), optimized_local_section.end());
-    result->path.header.stamp = now();
+    auto start_time = steady_clock_.now();
+    result->was_completed = smoothers_[current_smoother_]->smooth(result->path, goal->max_smoothing_duration);
+    result->smoothing_duration = steady_clock_.now() - start_time;
 
-    auto cycle_duration = steady_clock_.now() - start_time;
-    result->optimization_time = cycle_duration;
-
-    RCLCPP_DEBUG(get_logger(), "Smoother succeeded (time: %lf), setting result", rclcpp::Duration(result->optimization_time).seconds());
     plan_publisher_->publish(result->path);
+
+    RCLCPP_INFO(get_logger(), "Collision check");
+
+    // Check for collisions
+    geometry_msgs::msg::Pose2D pose2d;
+    bool updateCostmap = true;
+    for (const auto &pose : result->path.poses) {
+      pose2d.x = pose.pose.position.x;
+      pose2d.y = pose.pose.position.y;
+      pose2d.theta = tf2::getYaw(pose.pose.orientation);
+
+      if (!collision_checker_->isCollisionFree(pose2d, updateCostmap)) {
+        RCLCPP_ERROR(get_logger(), "Smoothed path leads to a collision at x: %lf, y: %lf, theta: %lf", pose2d.x, pose2d.y, pose2d.theta);
+        action_server_->terminate_current(result);
+        return;
+      }
+      updateCostmap = false;
+    }
+
+    RCLCPP_INFO(get_logger(), "Smoother succeeded (time: %lf), setting result", rclcpp::Duration(result->smoothing_duration).seconds());
 
     action_server_->succeeded_current(result);
   } catch (nav2_core::PlannerException & e) {
     RCLCPP_ERROR(this->get_logger(), e.what());
     action_server_->terminate_current();
     return;
-  }
-}
-
-double SmootherServer::poseDistance(const geometry_msgs::msg::PoseStamped &pose1, const geometry_msgs::msg::PoseStamped &pose2) {
-  double dx = pose1.pose.position.x - pose2.pose.position.x;
-  double dy = pose1.pose.position.y - pose2.pose.position.y;
-  tf2::Quaternion q1;
-  tf2::convert(pose1.pose.orientation, q1);
-  tf2::Quaternion q2;
-  tf2::convert(pose2.pose.orientation, q2);
-  double da = angular_distance_weight_*std::abs(q1.angleShortestPath(q2));
-  return std::sqrt(dx * dx + dy * dy + da * da);
-}
-
-void SmootherServer::findLocalSection(const std::shared_ptr<const typename Action::Goal> &goal, std::size_t &begin, std::size_t &end)
-{
-  RCLCPP_DEBUG(
-    get_logger(),
-    "Providing path to the smoother %s", current_smoother_.c_str());
-  
-  const nav_msgs::msg::Path &path = goal->path;
-
-  if (path.poses.empty()) {
-    throw nav2_core::PlannerException("Invalid path, Path is empty.");
-  }
-
-  geometry_msgs::msg::PoseStamped robot_pose;
-  if (goal->use_start) {
-    robot_pose = goal->start;
-  }
-  else {
-    try {
-      rclcpp::Duration tolerance(rclcpp::Duration::from_seconds(transform_tolerance_));
-      geometry_msgs::msg::TransformStamped transform =
-        tf_buffer_->lookupTransform(costmap_sub_->getHeader().frame_id, robot_frame_id_, now(), tolerance);
-      robot_pose.header = transform.header;
-      robot_pose.pose.position.x = transform.transform.translation.x;
-      robot_pose.pose.position.y = transform.transform.translation.y;
-      robot_pose.pose.position.z = transform.transform.translation.z;
-      robot_pose.pose.orientation = transform.transform.rotation;
-    } catch (tf2::TransformException &ex) {
-      std::stringstream ss;
-      ss << "Could not find transform between " << robot_frame_id_ << " and " << costmap_sub_->getHeader().frame_id << ": " << ex.what();
-      throw nav2_core::PlannerException(ss.str());
-    }
-  }
-
-  if (optimization_length_ > 0) {
-    // find the closest pose on the path
-    auto current_pose =
-      nav2_util::geometry_utils::min_by(
-        path.poses.begin(), path.poses.end(),
-        [&robot_pose, this](const geometry_msgs::msg::PoseStamped & ps) {
-          return poseDistance(robot_pose, ps);
-        });
-    
-    // expand forwards to extract desired length
-    double length = 0;
-    end = current_pose - path.poses.begin();
-    while ((int)end < (int)path.poses.size()-1 && length < optimization_length_) {
-      length += std::hypot(path.poses[end+1].pose.position.x - path.poses[end].pose.position.x,
-                           path.poses[end+1].pose.position.y - path.poses[end].pose.position.y);
-      end++;
-    }
-    end++; // end is exclusive
-
-    // expand backwards to extract desired length
-    begin = current_pose - path.poses.begin();
-    length = 0;
-    while (begin > 0 && length < optimization_length_backwards_) {
-      length += std::hypot(path.poses[begin+1].pose.position.x - path.poses[begin].pose.position.x,
-                           path.poses[begin+1].pose.position.y - path.poses[begin].pose.position.y);
-      begin--;
-    }
-  }
-  else {
-    begin = 0;
-    end = path.poses.size();
   }
 }
 

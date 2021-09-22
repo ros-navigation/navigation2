@@ -1,11 +1,11 @@
 #goal definition
-nav_msgs/Path path
-geometry_msgs/PoseStamped start
-string smoother_id
-bool use_start # If false, use current robot pose as path start, if true, use start above instead
+nav_msgs/Path path #input path
+string smoother_id #plugin to use
+builtin_interfaces/Duration max_smoothing_duration #max time for smoothing
 ---
 #result definition
-nav_msgs/Path path
-builtin_interfaces/Duration optimization_time
+nav_msgs/Path path #output smoothed path
+builtin_interfaces/Duration smoothing_duration #how much time was spent smoothing
+bool was_completed #did smoothing complete successfully in the time allotted
 ---
 #feedback

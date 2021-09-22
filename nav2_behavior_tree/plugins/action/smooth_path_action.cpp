@@ -33,14 +33,16 @@ void SmoothPathAction::on_tick()
 {
   getInput("path_in", goal_.path);
   getInput("smoother_id", goal_.smoother_id);
-  if (getInput("start", goal_.start)) {
-    goal_.use_start = true;
-  }
+  double max_smoothing_duration;
+  getInput("max_smoothing_duration", max_smoothing_duration);
+  goal_.max_smoothing_duration = rclcpp::Duration::from_seconds(max_smoothing_duration);
 }
 
 BT::NodeStatus SmoothPathAction::on_success()
 {
   setOutput("path_out", result_.result->path);
+  setOutput("smoothing_duration", rclcpp::Duration(result_.result->smoothing_duration).seconds());
+  setOutput("was_completed", result_.result->was_completed);
   return BT::NodeStatus::SUCCESS;
 }
 
