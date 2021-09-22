@@ -230,12 +230,12 @@ MotionPoses HybridMotionTable::getProjections(const NodeHybrid * node)
     const float & node_heading = node->pose.theta;
     float new_heading = node_heading + motion_model._theta;
 
-    if (new_heading >= num_angle_quantization_float) {
-      new_heading -= num_angle_quantization_float;
-    }
-
     if (new_heading < 0.0) {
       new_heading += num_angle_quantization_float;
+    }
+
+    if (new_heading >= num_angle_quantization_float) {
+      new_heading -= num_angle_quantization_float;
     }
 
     projection_list.emplace_back(

@@ -234,12 +234,12 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   initParameters();
   initTransforms();
+  initParticleFilter();
+  initLaserScan();
   initMessageFilters();
   initPubSub();
   initServices();
   initOdometry();
-  initParticleFilter();
-  initLaserScan();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -1134,6 +1134,13 @@ AmclNode::initParameters()
     max_particles_ = min_particles_;
   }
 
+  if (resample_interval_ <= 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set resample_interval to be zero or negtive,"
+      " this isn't allowed so it will be set to default value to 1.");
+    resample_interval_ = 1;
+  }
+
   if (always_reset_initial_pose_) {
     initial_pose_is_known_ = false;
   }
@@ -1369,3 +1376,10 @@ AmclNode::initLaserScan()
 }
 
 }  // namespace nav2_amcl
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_amcl::AmclNode)
