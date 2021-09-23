@@ -25,25 +25,23 @@
 #include "nav2_core/smoother.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
+#include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "nav2_msgs/action/smooth_path.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/simple_action_server.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "pluginlib/class_loader.hpp"
+#include "nav2_util/simple_action_server.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "pluginlib/class_loader.hpp"
 
-namespace nav2_smoother
-{
+namespace nav2_smoother {
 
 /**
  * @class nav2_smoother::SmootherServer
  * @brief This class hosts variety of plugins of different algorithms to
- * complete control tasks from the exposed SmoothPath action server.
+ * smooth or refine a path from the exposed SmoothPath action server.
  */
-class SmootherServer : public nav2_util::LifecycleNode
-{
+class SmootherServer : public nav2_util::LifecycleNode {
 public:
   using SmootherMap = std::unordered_map<std::string, nav2_core::Smoother::Ptr>;
 
@@ -124,8 +122,8 @@ protected:
   void smoothPlan();
 
   /**
-   * @brief Wait for costmap to be valid with updated sensor data or repopulate after a
-   * clearing recovery. Blocks until true without timeout.
+   * @brief Wait for costmap to be valid with updated sensor data or repopulate
+   * after a clearing recovery. Blocks until true without timeout.
    */
   void waitForCostmap();
 
@@ -144,7 +142,7 @@ protected:
 
   // Publishers and subscribers
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
-  
+
   // Smoother Plugins
   pluginlib::ClassLoader<nav2_core::Smoother> lp_loader_;
   SmootherMap smoothers_;
@@ -160,9 +158,8 @@ protected:
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
 
   rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
-
 };
 
-}  // namespace nav2_smoother
+} // namespace nav2_smoother
 
-#endif  // NAV2_SMOOTHER__NAV2_SMOOTHER_HPP_
+#endif // NAV2_SMOOTHER__NAV2_SMOOTHER_HPP_

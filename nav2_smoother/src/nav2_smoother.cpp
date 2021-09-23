@@ -14,48 +14,40 @@
 // limitations under the License.
 
 #include <chrono>
-#include <vector>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
-#include <limits>
+#include <vector>
 
 #include "nav2_core/exceptions.hpp"
+#include "nav2_smoother/nav2_smoother.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav_2d_utils/tf_help.hpp"
-#include "nav2_util/node_utils.hpp"
-#include "nav2_util/geometry_utils.hpp"
-#include "nav2_smoother/nav2_smoother.hpp"
 #include "tf2_ros/create_timer_ros.h"
 
 using namespace std::chrono_literals;
 
-namespace nav2_smoother
-{
+namespace nav2_smoother {
 
 SmootherServer::SmootherServer()
-: LifecycleNode("smoother_server", "", true),
-  lp_loader_("nav2_core", "nav2_core::Smoother"),
-  default_ids_{"SmoothPath"},
-  default_types_{"nav2_smoother::CeresCostawareSmoother"}
-{
+    : LifecycleNode("smoother_server", "", true),
+      lp_loader_("nav2_core", "nav2_core::Smoother"),
+      default_ids_{"SmoothPath"}, default_types_{
+                                      "nav2_smoother::CeresCostawareSmoother"} {
   RCLCPP_INFO(get_logger(), "Creating smoother server");
 
-  declare_parameter(
-    "costmap_topic",
-    rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
-  declare_parameter(
-    "footprint_topic",
-    rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
-  declare_parameter(
-    "global_frame",
-    rclcpp::ParameterValue(std::string("map")));
-  declare_parameter(
-    "robot_base_frame",
-    rclcpp::ParameterValue(std::string("base_link")));
-  declare_parameter(
-    "transform_tolerance",
-    rclcpp::ParameterValue(0.1));
+  declare_parameter("costmap_topic", rclcpp::ParameterValue(std::string(
+                                         "global_costmap/costmap_raw")));
+  declare_parameter("footprint_topic",
+                    rclcpp::ParameterValue(
+                        std::string("global_costmap/published_footprint")));
+  declare_parameter("global_frame", rclcpp::ParameterValue(std::string("map")));
+  declare_parameter("robot_base_frame",
+                    rclcpp::ParameterValue(std::string("base_link")));
+  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter("smoother_plugins", default_ids_);
 
   // // Launch a thread to run the costmap node
@@ -64,15 +56,13 @@ SmootherServer::SmootherServer()
   RCLCPP_INFO(get_logger(), "Smoother server created");
 }
 
-SmootherServer::~SmootherServer()
-{
+SmootherServer::~SmootherServer() {
   smoothers_.clear();
   // costmap_thread_.reset();
 }
 
 nav2_util::CallbackReturn
-SmootherServer::on_configure(const rclcpp_lifecycle::State &)
-{
+SmootherServer::on_configure(const rclcpp_lifecycle::State &) {
   auto node = shared_from_this();
 
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
@@ -81,15 +71,14 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
   if (smoother_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
       nav2_util::declare_parameter_if_not_declared(
-        node, default_ids_[i] + ".plugin",
-        rclcpp::ParameterValue(default_types_[i]));
+          node, default_ids_[i] + ".plugin",
+          rclcpp::ParameterValue(default_types_[i]));
     }
   }
 
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    get_node_base_interface(),
-    get_node_timers_interface());
+      get_node_base_interface(), get_node_timers_interface());
   tf_->setCreateTimerInterface(timer_interface);
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
@@ -99,17 +88,18 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
   this->get_parameter("footprint_topic", footprint_topic);
   this->get_parameter("transform_tolerance", transform_tolerance);
   costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
-    shared_from_this(), costmap_topic);
+      shared_from_this(), costmap_topic);
   footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
-    shared_from_this(), footprint_topic, 1.0);
+      shared_from_this(), footprint_topic, 1.0);
 
   std::string global_frame, robot_base_frame;
   get_parameter("global_frame", global_frame);
   get_parameter("robot_base_frame", robot_base_frame);
-  collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-    *costmap_sub_, *footprint_sub_, *tf_, this->get_name(),
-    global_frame, robot_base_frame, transform_tolerance);
-  
+  collision_checker_ =
+      std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+          *costmap_sub_, *footprint_sub_, *tf_, this->get_name(), global_frame,
+          robot_base_frame, transform_tolerance);
+
   if (!loadSmootherPlugins()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
@@ -119,35 +109,31 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
 
   // Create the action server that we implement with our smoothPath method
   action_server_ = std::make_unique<ActionServer>(
-    rclcpp_node_, "smooth_path",
-    std::bind(&SmootherServer::smoothPlan, this));
+      rclcpp_node_, "smooth_path",
+      std::bind(&SmootherServer::smoothPlan, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-bool
-SmootherServer::loadSmootherPlugins()
-{
+bool SmootherServer::loadSmootherPlugins() {
   auto node = shared_from_this();
 
   smoother_types_.resize(smoother_ids_.size());
 
   for (size_t i = 0; i != smoother_ids_.size(); i++) {
     try {
-      smoother_types_[i] = nav2_util::get_plugin_type_param(node, smoother_ids_[i]);
+      smoother_types_[i] =
+          nav2_util::get_plugin_type_param(node, smoother_ids_[i]);
       nav2_core::Smoother::Ptr smoother =
-        lp_loader_.createUniqueInstance(smoother_types_[i]);
-      RCLCPP_INFO(
-        get_logger(), "Created smoother : %s of type %s",
-        smoother_ids_[i].c_str(), smoother_types_[i].c_str());
-      smoother->configure(
-        node, smoother_ids_[i],
-        tf_, costmap_sub_, footprint_sub_);
+          lp_loader_.createUniqueInstance(smoother_types_[i]);
+      RCLCPP_INFO(get_logger(), "Created smoother : %s of type %s",
+                  smoother_ids_[i].c_str(), smoother_types_[i].c_str());
+      smoother->configure(node, smoother_ids_[i], tf_, costmap_sub_,
+                          footprint_sub_);
       smoothers_.insert({smoother_ids_[i], smoother});
-    } catch (const pluginlib::PluginlibException & ex) {
-      RCLCPP_FATAL(
-        get_logger(),
-        "Failed to create smoother. Exception: %s", ex.what());
+    } catch (const pluginlib::PluginlibException &ex) {
+      RCLCPP_FATAL(get_logger(), "Failed to create smoother. Exception: %s",
+                   ex.what());
       return false;
     }
   }
@@ -156,22 +142,20 @@ SmootherServer::loadSmootherPlugins()
     smoother_ids_concat_ += smoother_ids_[i] + std::string(" ");
   }
 
-  RCLCPP_INFO(
-    get_logger(),
-    "Smoother Server has %s smoothers available.", smoother_ids_concat_.c_str());
+  RCLCPP_INFO(get_logger(), "Smoother Server has %s smoothers available.",
+              smoother_ids_concat_.c_str());
 
   return true;
 }
 
 nav2_util::CallbackReturn
-SmootherServer::on_activate(const rclcpp_lifecycle::State &)
-{
+SmootherServer::on_activate(const rclcpp_lifecycle::State &) {
   RCLCPP_INFO(get_logger(), "Activating");
 
   RCLCPP_INFO(get_logger(), "Checking transform");
   rclcpp::Rate r(2);
 
-  plan_publisher_->on_activate();  
+  plan_publisher_->on_activate();
   SmootherMap::iterator it;
   for (it = smoothers_.begin(); it != smoothers_.end(); ++it) {
     it->second->activate();
@@ -185,8 +169,7 @@ SmootherServer::on_activate(const rclcpp_lifecycle::State &)
 }
 
 nav2_util::CallbackReturn
-SmootherServer::on_deactivate(const rclcpp_lifecycle::State &)
-{
+SmootherServer::on_deactivate(const rclcpp_lifecycle::State &) {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   action_server_->deactivate();
@@ -203,8 +186,7 @@ SmootherServer::on_deactivate(const rclcpp_lifecycle::State &)
 }
 
 nav2_util::CallbackReturn
-SmootherServer::on_cleanup(const rclcpp_lifecycle::State &)
-{
+SmootherServer::on_cleanup(const rclcpp_lifecycle::State &) {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
   // Cleanup the helper classes
@@ -227,28 +209,26 @@ SmootherServer::on_cleanup(const rclcpp_lifecycle::State &)
 }
 
 nav2_util::CallbackReturn
-SmootherServer::on_shutdown(const rclcpp_lifecycle::State &)
-{
+SmootherServer::on_shutdown(const rclcpp_lifecycle::State &) {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-bool SmootherServer::findSmootherId(
-  const std::string & c_name,
-  std::string & current_smoother)
-{
+bool SmootherServer::findSmootherId(const std::string &c_name,
+                                    std::string &current_smoother) {
   if (smoothers_.find(c_name) == smoothers_.end()) {
     if (smoothers_.size() == 1 && c_name.empty()) {
-      RCLCPP_WARN_ONCE(
-        get_logger(), "No smoother was specified in action call."
-        " Server will use only plugin loaded %s. "
-        "This warning will appear once.", smoother_ids_concat_.c_str());
+      RCLCPP_WARN_ONCE(get_logger(),
+                       "No smoother was specified in action call."
+                       " Server will use only plugin loaded %s. "
+                       "This warning will appear once.",
+                       smoother_ids_concat_.c_str());
       current_smoother = smoothers_.begin()->first;
     } else {
-      RCLCPP_ERROR(
-        get_logger(), "SmoothPath called with smoother name %s, "
-        "which does not exist. Available smoothers are: %s.",
-        c_name.c_str(), smoother_ids_concat_.c_str());
+      RCLCPP_ERROR(get_logger(),
+                   "SmoothPath called with smoother name %s, "
+                   "which does not exist. Available smoothers are: %s.",
+                   c_name.c_str(), smoother_ids_concat_.c_str());
       return false;
     }
   } else {
@@ -259,8 +239,7 @@ bool SmootherServer::findSmootherId(
   return true;
 }
 
-void SmootherServer::smoothPlan()
-{
+void SmootherServer::smoothPlan() {
   RCLCPP_INFO(get_logger(), "Received a goal, smoothing.");
 
   auto result = std::make_shared<Action::Result>();
@@ -278,7 +257,8 @@ void SmootherServer::smoothPlan()
     auto goal = action_server_->get_current_goal();
     result->path = goal->path;
     auto start_time = steady_clock_.now();
-    result->was_completed = smoothers_[current_smoother_]->smooth(result->path, goal->max_smoothing_duration);
+    result->was_completed = smoothers_[current_smoother_]->smooth(
+        result->path, goal->max_smoothing_duration);
     result->smoothing_duration = steady_clock_.now() - start_time;
 
     plan_publisher_->publish(result->path);
@@ -294,21 +274,25 @@ void SmootherServer::smoothPlan()
       pose2d.theta = tf2::getYaw(pose.pose.orientation);
 
       if (!collision_checker_->isCollisionFree(pose2d, updateCostmap)) {
-        RCLCPP_ERROR(get_logger(), "Smoothed path leads to a collision at x: %lf, y: %lf, theta: %lf", pose2d.x, pose2d.y, pose2d.theta);
+        RCLCPP_ERROR(
+            get_logger(),
+            "Smoothed path leads to a collision at x: %lf, y: %lf, theta: %lf",
+            pose2d.x, pose2d.y, pose2d.theta);
         action_server_->terminate_current(result);
         return;
       }
       updateCostmap = false;
     }
 
-    RCLCPP_INFO(get_logger(), "Smoother succeeded (time: %lf), setting result", rclcpp::Duration(result->smoothing_duration).seconds());
+    RCLCPP_INFO(get_logger(), "Smoother succeeded (time: %lf), setting result",
+                rclcpp::Duration(result->smoothing_duration).seconds());
 
     action_server_->succeeded_current(result);
-  } catch (nav2_core::PlannerException & e) {
+  } catch (nav2_core::PlannerException &e) {
     RCLCPP_ERROR(this->get_logger(), e.what());
     action_server_->terminate_current();
     return;
   }
 }
 
-}  // namespace nav2_smoother
+} // namespace nav2_smoother

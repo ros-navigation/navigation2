@@ -64,7 +64,7 @@ public:
   /**
    * @brief Returns the obstacle footprint score for a particular pose
    */
-  double scorePose(const geometry_msgs::msg::Pose2D & pose, bool updateCostmap);
+  double scorePose(const geometry_msgs::msg::Pose2D & pose, bool updateCostmap = true);
   /**
    * @brief Returns if a pose is collision free
    */

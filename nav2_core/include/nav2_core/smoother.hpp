@@ -72,7 +72,7 @@ public:
    *
    * @param path In-out path to be smoothed
    * @param max_time Maximum duration smoothing should take
-   * @return Smoothed path
+   * @return If smoothing was completed (true) or interrupted by time limit (false)
    */
   virtual bool smooth(
     nav_msgs::msg::Path & path,
