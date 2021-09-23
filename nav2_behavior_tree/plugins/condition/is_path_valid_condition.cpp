@@ -1,30 +1,28 @@
-
 #include <string>
 #include "nav2_behavior_tree/plugins/condition/is_path_valid_condition.hpp"
 
 
 namespace nav2_behavior_tree
 {
-ValidPathCondition::ValidPathCondition(
+IsPathValidCondition::IsPathValidCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  client = node_->create_client<nav2_msgs::srv::IsPathValid>("is_path_valid");
 }
 
-BT::NodeStatus ValidPathCondition::tick()
+BT::NodeStatus IsPathValidCondition::tick()
 {
 
-  // Grab the path
   nav_msgs::msg::Path path;
   getInput("path", path);
 
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
 
-  request->path = path; 
+  request->path = path;
 
-  //To be implemented
   auto result = client->async_send_request(request);
   // Wait for the result.
   if (rclcpp::spin_until_future_complete(node_, result) ==
@@ -32,8 +30,7 @@ BT::NodeStatus ValidPathCondition::tick()
   {
     RCLCPP_DEBUG(node_->get_logger(), "Got response");
 
-    if( result.get()->response.data )
-    {
+    if (result.get()->is_valid) {
       return BT::NodeStatus::SUCCESS;
     }
     return BT::NodeStatus::FAILURE;
@@ -43,10 +40,11 @@ BT::NodeStatus ValidPathCondition::tick()
   }
 }
 
+
 } // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::ValidPathCondition>("ValidPathCondition");
+  factory.registerNodeType<nav2_behavior_tree::IsPathValidCondition>("IsPathValid");
 }

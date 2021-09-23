@@ -11,19 +11,19 @@ namespace nav2_behavior_tree
  * @brief A BT::ConditionNode that returns SUCCESS
  * if the path is still valid and returns FAILURE otherwise
  */
-class ValidPathCondition : public BT::ConditionNode
+class IsPathValidCondition : public BT::ConditionNode
 {
 public:
   /**
-   * @brief A constructor for nav2_behavior_tree::ValidPathCondition
+   * @brief A constructor for nav2_behavior_tree::IsPathValidCondition
    * @param condition_name Name for the XML tag for this node
    * @param conf BT node configuration
    */
-  ValidPathCondition(
+  IsPathValidCondition(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf);
 
-  ValidPathCondition() = delete;
+  IsPathValidCondition() = delete;
 
   /**
    * @brief The main override required by a BT action

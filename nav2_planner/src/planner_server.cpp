@@ -62,6 +62,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
 
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
+
 }
 
 PlannerServer::~PlannerServer()
@@ -146,6 +147,12 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     nullptr,
     std::chrono::milliseconds(500),
     true);
+
+  is_path_valid_service = shared_from_this()->create_service<nav2_msgs::srv::IsPathValid>(
+    "is_path_valid",
+    std::bind(
+      &PlannerServer::isPathValid, this,
+      std::placeholders::_1, std::placeholders::_2));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -510,14 +517,24 @@ PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
   }
 }
 
-void PlannerServer::isPathValid(const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request, 
-                   std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
+void PlannerServer::isPathValid(
+  const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
+  std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
 {
-  //Need to implement
-  nav_msgs::msg::Path path = request->path;
-  std_msgs::msg::Bool msgData;
-  msgData.data = true; 
-  response->response = msgData; 
+  unsigned int threshold = 10;
+  unsigned int mx = 0;
+  unsigned int my = 0;
+
+  response->is_valid = true;
+  for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
+    costmap_->worldToMap(
+      request->path.poses[i].pose.position.x, request->path.poses[i].pose.position.y,
+      mx, my);
+    if (static_cast<double>(costmap_->getCost(mx, my)) > threshold) {
+      response->is_valid = false;
+      response->invalid_pose_indices.push_back(i);
+    }
+  }
 }
 
 }  // namespace nav2_planner

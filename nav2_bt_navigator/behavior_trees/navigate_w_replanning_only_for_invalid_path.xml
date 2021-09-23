@@ -1,0 +1,17 @@
+<!--
+  This Behavior Tree replans the global path when it becomes invalid
+-->
+
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <PipelineSequence name="NavigateWithReplanning">
+        <Sequence>
+            <IsPathValid>
+            <RateController hz="1.0">
+                <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+            </RateController>
+        <Sequence/>
+      <FollowPath path="{path}"  controller_id="FollowPath"/>
+    </PipelineSequence>
+  </BehaviorTree>
+</root>
