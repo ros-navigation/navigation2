@@ -36,7 +36,7 @@
 // could find more details here https://github.com/ros2/rclcpp/issues/1753.
 //
 // This is an example of manual composition for the default nav2 servers, It is our expectation
-// for an application specific thing you're mirroring nav2_bringup package and modifying it for
+// for an application you're mirroring nav2_bringup package and modifying it for
 // your sp. maps/robots/bringup needs. This is an applied and working demonstration for the
 // default system bringup ONLY.
 
