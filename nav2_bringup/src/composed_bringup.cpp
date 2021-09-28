@@ -28,7 +28,7 @@
 
 // in this manually composed node, a bunch of single threaded executors is used instead of
 // 1 large multithreaded executor, because 1 large multithreaded executor consumes higher CPU.
-// you could find more details here https://discourse.ros.org/t/nav2-composition/22175/10.
+// You could find more details here https://discourse.ros.org/t/nav2-composition/22175/10.
 //
 // rclcpp intra-process comms couldn't be enabled to get efficient communication, because
 // it's still under development currently, and QoS limitations (e.g. transient-local
