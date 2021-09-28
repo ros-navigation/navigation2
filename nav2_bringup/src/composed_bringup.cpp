@@ -32,7 +32,7 @@
 //
 // rclcpp intra-process comms couldn't be enabled to get efficient communication, because
 // it's still under development currently, and QoS limitations (e.g. transient-local
-// isn't supported) make some Nav2 Nodes couldn't enable rclcpp intra-process comms, you
+// isn't supported) make some Nav2 Nodes unanable to use intra-process comms, you
 // could find more details here https://github.com/ros2/rclcpp/issues/1753.
 //
 // This is an example of manual composition for the default nav2 servers, It is our expectation
