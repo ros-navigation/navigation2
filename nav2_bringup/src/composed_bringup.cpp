@@ -35,7 +35,7 @@
 // isn't supported) make some Nav2 Nodes couldn't enable rclcpp intra-process comms, you
 // could find more details here https://github.com/ros2/rclcpp/issues/1753.
 //
-// this is an example of manual composition for the default nav2 servers, It is our expectation
+// This is an example of manual composition for the default nav2 servers, It is our expectation
 // for an application specific thing you're mirroring nav2_bringup package and modifying it for
 // your sp. maps/robots/bringup needs so this is an applied and working demonstration for the
 // default system bringup ONLY.
