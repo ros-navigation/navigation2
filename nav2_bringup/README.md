@@ -6,7 +6,7 @@ This is a very flexible example for nav2 bring up that can be modified for diffe
 
 Usual robot stacks will have a `<robot_name>_nav` package with config/bringup files and this is that for the general case to base a specific robot system off of.
 
-Composed bringup (based on  [ROS2 Composition](https://docs.ros.org/en/galactic/Tutorials/Composition.html) ) is optional for user, in other word, compose all Nav2 nodes in a single process instead of launching these nodes separately, which is useful for embedded systems users that need to make optimizations due to harsh resource constraints.  
+Composed bringup (based on  [ROS2 Composition](https://docs.ros.org/en/galactic/Tutorials/Composition.html)) is optional for users. It can be used to compose all Nav2 nodes in a single process instead of launching these nodes separately, which is useful for embedded systems users that need to make optimizations due to harsh resource constraints.  
 
 * Some discussions about performance improvement of composed bringup could be found here: https://discourse.ros.org/t/nav2-composition/22175.
 * Currently, manual composition is used in this package. Dynamic composition is more flexible than manual composition, but is not currently applied in nav2 due to various issues, you could find more details here: https://github.com/ros-planning/navigation2/issues/2147.
