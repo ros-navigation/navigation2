@@ -54,21 +54,22 @@ ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time
 
 ### Terminal 3: Launch Nav2
 
-normal bringup
+Normal Bringup
 
 ```bash
 source /opt/ros/dashing/setup.bash
-ros2 launch nav2_bringup bringup_launch.py use_sim_time:=True autostart:=True \
+ros2 launch nav2_bringup bringup_launch.py use_sim_time:=True autostart:=True use_composition:=False\
 map:=<full/path/to/map.yaml>
 ```
 
-manually composed bringup
+Manually Composed Bringup
 
 ```bash
 source /opt/ros/dashing/setup.bash
-ros2 launch nav2_bringup composed_bringup_launch.py use_sim_time:=True autostart:=True \
+ros2 launch nav2_bringup bringup_launch.py use_sim_time:=True autostart:=True use_composition:=True\
 map:=<full/path/to/map.yaml>
 ```
+* `use_composition` is True by default
 
 ### Terminal 4: Run RViz with Nav2 config file
 
