@@ -296,13 +296,15 @@ recoveries_server:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
-    recovery_plugins: ["spin", "backup", "wait"]
+    recovery_plugins: ["spin", "backup", "wait", "assistedteleop"]
     spin:
       plugin: "nav2_recoveries/Spin"
     backup:
       plugin: "nav2_recoveries/BackUp"
     wait:
       plugin: "nav2_recoveries/Wait"
+    assistedteleop:
+      plugin: "nav2_recoveries/AssistedTeleop"
     global_frame: odom
     robot_base_frame: base_link
     transform_timeout: 0.1

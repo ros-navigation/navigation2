@@ -16,4 +16,10 @@
 	    <description></description>
 	  </class>
 	</library>
+
+	<library path="nav2_assisted_teleop_recovery">
+	  <class name="nav2_recoveries/AssistedTeleop" type="nav2_recoveries::AssistedTeleop" base_class_type="nav2_core::Recovery">
+	    <description></description>
+	  </class>
+	</library>
 </class_libraries>
