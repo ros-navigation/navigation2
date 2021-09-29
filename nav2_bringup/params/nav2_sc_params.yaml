@@ -129,7 +129,7 @@ controller_server:
       yaw_goal_tolerance: 0.05
 
     FollowPath:
-      plugin: "nav2_master_controller::MasterController"
+      plugin: "nav2_shim_controller::ShimController"
       lookahead_dist: 0.4
       max_angular_vel: 0.8
       max_linear_vel: 0.26

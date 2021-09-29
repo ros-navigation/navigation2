@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>nav2_master_controller</name>
+  <name>nav2_shim_controller</name>
   <version>1.0.0</version>
   <description>Master Controller</description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <maintainer email="shrijitsingh99@gmail.com">Shrijit Singh</maintainer>
-  <maintainer email="melkobrodov@gmail.com">Shrijit Singh</maintainer>
+  <maintainer email="melkobrodov@gmail.com">Alex Melkobrodov</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

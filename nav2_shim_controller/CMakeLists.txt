@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_master_controller)
+project(nav2_shim_controller)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -35,10 +35,10 @@ set(dependencies
   tf2
 )
 
-set(library_name nav2_master_controller)
+set(library_name nav2_shim_controller)
 
 add_library(${library_name} SHARED
-        src/master_controller.cpp)
+        src/shim_controller.cpp)
 
 ament_target_dependencies(${library_name}
   ${dependencies}
@@ -66,7 +66,7 @@ ament_export_include_directories(include)
 ament_export_libraries(${library_name})
 ament_export_dependencies(${dependencies})
 
-pluginlib_export_plugin_description_file(nav2_core nav2_master_controller.xml)
+pluginlib_export_plugin_description_file(nav2_core ${library_name}.xml)
 
 
 ament_package()

@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MASTER_CONTROLLER__MASTER_CONTROLLER_HPP_
-#define NAV2_MASTER_CONTROLLER__MASTER_CONTROLLER_HPP_
+#ifndef NAV2_SHIM_CONTROLLER__SHIM_CONTROLLER_HPP_
+#define NAV2_SHIM_CONTROLLER__SHIM_CONTROLLER_HPP_
 
 #include <string>
 #include <vector>
@@ -30,25 +30,25 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 
-namespace nav2_master_controller
+namespace nav2_shim_controller
 {
 
 /**
- * @class nav2_master_controller::MasterController
- * @brief Regulated master controller plugin
+ * @class nav2_shim_controller::ShimController
+ * @brief Shim controller plugin
  */
-class MasterController : public nav2_core::Controller
+class ShimController : public nav2_core::Controller
 {
 public:
   /**
-   * @brief Constructor for nav2_master_controller::MasterController
+   * @brief Constructor for nav2_shim_controller::ShimController
    */
-  MasterController() = default;
+  ShimController() = default;
 
   /**
-   * @brief Destrructor for nav2_master_controller::MasterController
+   * @brief Destrructor for nav2_shim_controller::ShimController
    */
-  ~MasterController() override = default;
+  ~ShimController() override = default;
 
   /**
    * @brief Configure controller state machine
@@ -78,16 +78,17 @@ public:
   void deactivate() override;
 
   /**
-   * @brief Compute the best command given the current pose and velocity, with possible debug information
+   * @brief Controller computeVelocityCommands - calculates the best command given the current pose and velocity
    *
-   * Same as above computeVelocityCommands, but with debug results.
-   * If the results pointer is not null, additional information about the twists
-   * evaluated will be in results after the call.
+   * It is presumed that the global plan is already set.
    *
-   * @param pose      Current robot pose
-   * @param velocity  Current robot velocity
-   * @param goal_checker   Ptr to the goal checker for this task in case useful in computing commands
-   * @return          Best command
+   * This is mostly a wrapper for the protected computeVelocityCommands
+   * function which has additional debugging info.
+   *
+   * @param pose Current robot pose
+   * @param velocity Current robot velocity
+   * @param goal_checker Pointer to the current goal checker the task is utilizing
+   * @return The best command for the robot to drive
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
@@ -165,13 +166,27 @@ protected:
     double & angular_vel,
     const double & angle_to_path, const geometry_msgs::msg::TwistStamped & curr_speed);
 
+  /**
+   * @brief Сalculates the best command given the current pose and velocity and the global plan
+   *
+   * Depending on which plan is set and which angular threshold, this function decides whether the robot should
+   * turn to the planned path or the default plugin should be executed
+   *
+   * @param pose Current robot pose
+   * @param velocity Current robot velocity
+   * @return The best command for the robot to drive
+   */
+  geometry_msgs::msg::TwistStamped calcCmdVel(
+    const geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::Twist & velocity);
+
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
-  rclcpp::Logger logger_ {rclcpp::get_logger("MasterController")};
+  rclcpp::Logger logger_ {rclcpp::get_logger("ShimController")};
 
-  double desired_linear_vel_, base_desired_linear_vel_;
+  double desired_linear_vel_;
   double lookahead_dist_;
   double max_angular_vel_;
   double max_linear_vel_;
@@ -185,6 +200,7 @@ protected:
   bool use_dynamic_threshold_;
   std::string default_plugin_name;
   geometry_msgs::msg::TwistStamped prev_cmd_vel;
+  nav2_core::GoalChecker * goal_checker_;
 
   nav_msgs::msg::Path global_plan_;
 
@@ -192,6 +208,6 @@ protected:
   std::shared_ptr<Controller> default_plugin;
 };
 
-}  // namespace nav2_master_controller
+}  // namespace nav2_shim_controller
 
-#endif  // NAV2_MASTER_CONTROLLER__MASTER_CONTROLLER_HPP_
+#endif  // NAV2_SHIM_CONTROLLER__SHIM_CONTROLLER_HPP_

@@ -20,7 +20,7 @@
 #include <memory>
 #include <utility>
 
-#include "nav2_master_controller/master_controller.hpp"
+#include "nav2_shim_controller/shim_controller.hpp"
 #include "nav2_core/exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -34,10 +34,10 @@ using nav2_util::declare_parameter_if_not_declared;
 using nav2_util::geometry_utils::euclidean_distance;
 using namespace nav2_costmap_2d;  // NOLINT
 
-namespace nav2_master_controller
+namespace nav2_shim_controller
 {
 
-void MasterController::configure(
+void ShimController::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
@@ -83,6 +83,7 @@ void MasterController::configure(
   node->get_parameter(plugin_name_ + ".max_angular_accel", max_angular_accel_);
   node->get_parameter(plugin_name_ + ".max_angular_vel", max_angular_vel_);
   node->get_parameter(plugin_name_ + ".max_linear_vel", max_linear_vel_);
+  desired_linear_vel_ = max_linear_vel_;
   node->get_parameter(plugin_name_ + ".max_angle_threshold", max_angle_threshold_);
   node->get_parameter(plugin_name_ + ".lookahead_dist", lookahead_dist_);
   node->get_parameter(plugin_name_ + ".use_rotate_to_heading", use_rotate_to_heading_);
@@ -104,7 +105,7 @@ void MasterController::configure(
       default_plugin->configure(node, default_plugin_name, tf_, costmap_ros_);
     } catch (const std::exception & e) {
       RCLCPP_ERROR(logger_, "Couldn't initialize default plugin! %s", e.what());
-      throw;
+      throw nav2_core::PlannerException("Unable to load default plugin!");
     }
     RCLCPP_INFO(logger_, "Initialized default plugin \"%s\"", default_plugin_name.c_str());
   } else {
@@ -113,51 +114,59 @@ void MasterController::configure(
   }
 }
 
-void MasterController::cleanup()
+void ShimController::cleanup()
 {
   RCLCPP_INFO(
     logger_,
     "Cleaning up controller: %s of type"
-    " master_controller::MasterController",
+    " shim_controller::ShimController",
     plugin_name_.c_str());
 
   if (default_plugin) {default_plugin->cleanup();}
 }
 
-void MasterController::activate()
+void ShimController::activate()
 {
   RCLCPP_INFO(
     logger_,
     "Activating controller: %s of type "
-    "master_controller::MasterController",
+    "shim_controller::ShimController",
     plugin_name_.c_str());
   if (default_plugin) {default_plugin->activate();}
 }
 
-void MasterController::deactivate()
+void ShimController::deactivate()
 {
   RCLCPP_INFO(
     logger_,
     "Deactivating controller: %s of type "
-    "master_controller::MasterController",
+    "shim_controller::ShimController",
     plugin_name_.c_str());
 
   if (default_plugin) {default_plugin->deactivate();}
 }
 
-geometry_msgs::msg::TwistStamped MasterController::computeVelocityCommands(
+geometry_msgs::msg::TwistStamped ShimController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & speed,
   nav2_core::GoalChecker * goal_checker)
 {
+  goal_checker_ = goal_checker;
+  return calcCmdVel(pose, speed);
+}
+
+geometry_msgs::msg::TwistStamped ShimController::calcCmdVel(
+  const geometry_msgs::msg::PoseStamped & pose,
+  const geometry_msgs::msg::Twist & speed)
+{
   // Update for the current goal checker's state
   geometry_msgs::msg::Pose pose_tolerance;
   geometry_msgs::msg::Twist vel_tolerance;
-  if (!goal_checker->getTolerances(pose_tolerance, vel_tolerance)) {
-    RCLCPP_WARN(logger_, "Unable to retrieve goal checker's tolerances!");
-  } else {
+  if (goal_checker_ && goal_checker_->getTolerances(pose_tolerance, vel_tolerance)) {
     goal_dist_tol_ = pose_tolerance.position.x;
     goal_yaw_tol_ = tf2::getYaw(pose_tolerance.orientation);
+  } else {
+    RCLCPP_WARN(logger_, "Unable to retrieve goal checker's tolerances!");
   }
 
   // Transform path to robot base frame
@@ -174,6 +183,11 @@ geometry_msgs::msg::TwistStamped MasterController::computeVelocityCommands(
   cmd_vel.header = pose.header;
   double max_thresh = max_angle_threshold_;
   if (use_dynamic_threshold_) {
+    // Calculates dynamic angular threshold.
+    // 1) If the current speed = 0 the threshold is the minimum, it helps to turn the robot exactly
+    //  on the planned path when receiving a plan or re-planning the path.
+    // 2) If the current speed = maximum speed threshold is maximum, this allows the default planner
+    //  to avoid obstacles without switching to a turn to the planned path.
     max_thresh = std::max(
       goal_yaw_tol_,
       max_angle_threshold_ * (fabs(speed.linear.x) / max_linear_vel_));
@@ -195,14 +209,15 @@ geometry_msgs::msg::TwistStamped MasterController::computeVelocityCommands(
       rotate_to_path = true;
     }
   }
+
   if (default_plugin && !rotate_to_path && !rotate_to_heading) {
-    cmd_vel = default_plugin->computeVelocityCommands(pose, speed, goal_checker);
+    cmd_vel = default_plugin->computeVelocityCommands(pose, speed, goal_checker_);
   }
   prev_cmd_vel = cmd_vel;
   return cmd_vel;
 }
 
-bool MasterController::shouldRotateToPath(
+bool ShimController::shouldRotateToPath(
   const geometry_msgs::msg::PoseStamped & carrot_pose, double & angle_to_path,
   const double & angle_thresh)
 {
@@ -212,7 +227,7 @@ bool MasterController::shouldRotateToPath(
 }
 
 
-bool MasterController::shouldRotateToGoalHeading(
+bool ShimController::shouldRotateToGoalHeading(
   const geometry_msgs::msg::PoseStamped & carrot_pose)
 {
   // Whether we should rotate robot to goal heading
@@ -220,7 +235,7 @@ bool MasterController::shouldRotateToGoalHeading(
   return dist_to_goal < goal_dist_tol_;
 }
 
-void MasterController::rotateToHeading(
+void ShimController::rotateToHeading(
   double & angular_vel,
   const double & angle_to_path, const geometry_msgs::msg::TwistStamped & curr_speed)
 {
@@ -249,7 +264,7 @@ void MasterController::rotateToHeading(
     deceleration_angle);
 }
 
-geometry_msgs::msg::PoseStamped MasterController::getLookAheadPoint(
+geometry_msgs::msg::PoseStamped ShimController::getLookAheadPoint(
   const double & lookahead_dist,
   const nav_msgs::msg::Path & transformed_plan)
 {
@@ -267,20 +282,32 @@ geometry_msgs::msg::PoseStamped MasterController::getLookAheadPoint(
   return *goal_pose_it;
 }
 
-void MasterController::setPlan(const nav_msgs::msg::Path & path)
+void ShimController::setPlan(const nav_msgs::msg::Path & path)
 {
   global_plan_ = path;
   if (default_plugin) {default_plugin->setPlan(global_plan_);}
 }
 
-void MasterController::setSpeedLimit(
+void ShimController::setSpeedLimit(
   const double & speed_limit,
   const bool & percentage)
 {
+  if (speed_limit == nav2_costmap_2d::NO_SPEED_LIMIT) {
+    // Restore default value
+    desired_linear_vel_ = max_linear_vel_;
+  } else {
+    if (percentage) {
+      // Speed limit is expressed in % from maximum speed of robot
+      desired_linear_vel_ = max_linear_vel_ * speed_limit / 100.0;
+    } else {
+      // Speed limit is expressed in absolute value
+      desired_linear_vel_ = speed_limit;
+    }
+  }
   if (default_plugin) {default_plugin->setSpeedLimit(speed_limit, percentage);}
 }
 
-nav_msgs::msg::Path MasterController::transformGlobalPlan(
+nav_msgs::msg::Path ShimController::transformGlobalPlan(
   const geometry_msgs::msg::PoseStamped & pose)
 {
   if (global_plan_.poses.empty()) {
@@ -294,9 +321,8 @@ nav_msgs::msg::Path MasterController::transformGlobalPlan(
   }
 
   // We'll discard points on the plan that are outside the local costmap
-  nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
-  const double max_costmap_dim = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY());
-  const double max_transform_dist = max_costmap_dim * costmap->getResolution() / 2.0;
+  const double max_costmap_dim = std::max(costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
+  const double max_transform_dist = max_costmap_dim * costmap_->getResolution() / 2.0;
 
   // First find the closest pose on the path to the robot
   auto transformation_begin =
@@ -343,7 +369,7 @@ nav_msgs::msg::Path MasterController::transformGlobalPlan(
   return transformed_plan;
 }
 
-bool MasterController::transformPose(
+bool ShimController::transformPose(
   const std::string frame,
   const geometry_msgs::msg::PoseStamped & in_pose,
   geometry_msgs::msg::PoseStamped & out_pose) const
@@ -354,8 +380,8 @@ bool MasterController::transformPose(
   }
 
   try {
-    tf_->transform(in_pose, out_pose, frame, transform_tolerance_);
     out_pose.header.frame_id = frame;
+    tf_->transform(in_pose, out_pose, frame, transform_tolerance_);
     return true;
   } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(logger_, "Exception in transformPose: %s", ex.what());
@@ -363,9 +389,9 @@ bool MasterController::transformPose(
   return false;
 }
 
-}  // namespace nav2_master_controller
+}  // namespace nav2_shim_controller
 
 // Register this controller as a nav2_core plugin
 PLUGINLIB_EXPORT_CLASS(
-  nav2_master_controller::MasterController,
+  nav2_shim_controller::ShimController,
   nav2_core::Controller)

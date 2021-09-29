@@ -1,0 +1,10 @@
+<class_libraries>
+    <library path="nav2_shim_controller">
+        <class type="nav2_shim_controller::ShimController" base_class_type="nav2_core::Controller">
+            <description>
+                nav2_shim_controller
+            </description>
+        </class>
+    </library>
+</class_libraries>
+
