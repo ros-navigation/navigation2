@@ -338,7 +338,6 @@ rcl_interfaces::msg::SetParametersResult
 SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
   auto result = rcl_interfaces::msg::SetParametersResult();
-  RCLCPP_INFO_STREAM(_logger, "Param callback, size: " << parameters.size());
   std::lock_guard<std::mutex> lock_reinit(_mutex);
 
   bool reinit_a_star = false;
