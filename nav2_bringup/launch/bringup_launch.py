@@ -124,8 +124,7 @@ def generate_launch_description():
                               'map': map_yaml_file,
                               'use_sim_time': use_sim_time,
                               'autostart': autostart,
-                              'params_file': params_file,
-                              'use_lifecycle_mgr': 'false'}.items()),
+                              'params_file': params_file}.items()),
 
         Node(
             condition=IfCondition(use_composition),
