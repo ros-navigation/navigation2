@@ -147,7 +147,7 @@ void SmacPlanner2D::configure(
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
-  // Add callback for dynamic parametrs
+  // Add callback for dynamic parameters
   dyn_params_handler = node->add_on_set_parameters_callback(
     std::bind(&SmacPlanner2D::dynamicParametersCallback, this, _1));
 
