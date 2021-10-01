@@ -60,7 +60,7 @@
     <visual>
       <origin xyz="-0.064 0 0.0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://turtlebot3_description/meshes/bases/waffle_base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://turtlebot3_gazebo/models/turtlebot3_common/meshes/waffle_base.dae" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="light_black"/>
     </visual>
@@ -92,7 +92,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="1.57 0 0"/>
       <geometry>
-        <mesh filename="package://turtlebot3_description/meshes/wheels/left_tire.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://turtlebot3_gazebo/models/turtlebot3_common/meshes/tire.dae" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="dark"/>
     </visual>
@@ -124,7 +124,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="1.57 0 0"/>
       <geometry>
-        <mesh filename="package://turtlebot3_description/meshes/wheels/right_tire.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://turtlebot3_gazebo/models/turtlebot3_common/meshes/tire.dae" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="dark"/>
     </visual>
@@ -209,7 +209,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://turtlebot3_description/meshes/sensors/lds.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://turtlebot3_gazebo/models/turtlebot3_common/meshes/lds.dae" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="dark"/>
     </visual>
@@ -240,7 +240,7 @@
     <visual>
      <origin xyz="0 0 0" rpy="1.57 0 1.57"/>
       <geometry>
-       <mesh filename="package://turtlebot3_description/meshes/sensors/r200.dae" />
+        <mesh filename="package://turtlebot3_gazebo/models/turtlebot3_common/meshes/r200.dae" />
       </geometry>
     </visual>
     <collision>
