@@ -78,11 +78,11 @@ AssistedTeleop::configure(
 
   nav2_util::declare_parameter_if_not_declared(
     node,
-    "cmd_vel_topic", rclcpp::ParameterValue(std::string("cmd_vel_topic")));
+    "cmd_vel_topic", rclcpp::ParameterValue(std::string("cmd_vel")));
 
   nav2_util::declare_parameter_if_not_declared(
     node,
-    "input_vel_topic", rclcpp::ParameterValue(std::string("cmd_vel")));
+    "input_vel_topic", rclcpp::ParameterValue(std::string("cmd_vel_input")));
 
   node->get_parameter("global_frame", global_frame_);
   node->get_parameter("robot_base_frame", robot_base_frame_);
@@ -118,8 +118,9 @@ AssistedTeleop::vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
   angular_vel_ = msg->angular.z;
   if (go) {
     if (!checkCollision()) {
-      moveRobot();
+      RCLCPP_INFO(logger_, "Reducing velocity by a factor of %.2f", scaling_factor);
     }
+    moveRobot();
   }
 }
 
@@ -191,11 +192,11 @@ AssistedTeleop::moveRobot()
   cmd_vel->linear.y = speed_y;
   cmd_vel->angular.z = angular_vel_ / scaling_factor;
 
-  if (cmd_vel->linear.x < linear_velocity_threshold_) {
+  if (std::fabs(cmd_vel->linear.x) < linear_velocity_threshold_) {
     stopRobot();
+  } else {
+    vel_pub_->publish(std::move(cmd_vel));
   }
-
-  vel_pub_->publish(std::move(cmd_vel));
 }
 
 void AssistedTeleop::execute()

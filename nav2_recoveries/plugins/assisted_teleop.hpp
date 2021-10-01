@@ -46,8 +46,7 @@ class AssistedTeleop : public nav2_core::Recovery
 {
 public:
   using AssistedTeleopAction = nav2_msgs::action::AssistedTeleop;
-  using ActionServer = nav2_util::SimpleActionServer<AssistedTeleopAction,
-      rclcpp_lifecycle::LifecycleNode>;
+  using ActionServer = nav2_util::SimpleActionServer<AssistedTeleopAction>;
 
   /**
    * @brief AsistedTeleop constructor
@@ -59,9 +58,14 @@ public:
   {
   }
 
+  /**
+   * @brief AsistedTeleop destructor
+   */
   ~AssistedTeleop() = default;
 
-  // configure the server and Assisted Teleop Action on lifecycle setup
+  /**
+   * @brief configure the server and Assisted Teleop Action on lifecycle setup
+   */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
