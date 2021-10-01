@@ -158,8 +158,9 @@ AssistedTeleop::projectPose(
 bool
 AssistedTeleop::checkCollision()
 {
+  double hypot = std::hypot(speed_x, speed_y, angular_vel_);
   const double dt =
-    (speed_x != 0) ? (costmap_ros_->getResolution() / std::fabs(speed_x)) : projection_time_;
+    (hypot != 0) ? (costmap_ros_->getResolution() / std::fabs(hypot)) : projection_time_;
   int loopcount = 1;
 
   while (true) {
@@ -189,10 +190,11 @@ AssistedTeleop::moveRobot()
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
 
   cmd_vel->linear.x = speed_x / scaling_factor;
-  cmd_vel->linear.y = speed_y;
+  cmd_vel->linear.y = speed_y / scaling_factor;
   cmd_vel->angular.z = angular_vel_ / scaling_factor;
+  double hypot = std::hypot(cmd_vel->linear.x, cmd_vel->linear.y, cmd_vel->angular.z);
 
-  if (std::fabs(cmd_vel->linear.x) < linear_velocity_threshold_) {
+  if (std::fabs(hypot) < linear_velocity_threshold_) {
     stopRobot();
   } else {
     vel_pub_->publish(std::move(cmd_vel));
