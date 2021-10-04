@@ -232,6 +232,7 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
   rclcpp::Logger logger_ {rclcpp::get_logger("RegulatedPurePursuitController")};
+  rclcpp::Clock::SharedPtr clock_;
 
   double desired_linear_vel_, base_desired_linear_vel_;
   double lookahead_dist_;

@@ -104,8 +104,8 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(wait_at_waypoint photo_at_waypoint input_at_waypoint)
-
+ament_export_libraries(wait_at_waypoint photo_at_waypoint input_at_waypoint ${library_name})
+ament_export_dependencies(${dependencies})
 pluginlib_export_plugin_description_file(nav2_waypoint_follower plugins.xml)
 
 ament_package()
