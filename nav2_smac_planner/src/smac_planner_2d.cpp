@@ -147,10 +147,6 @@ void SmacPlanner2D::configure(
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
-  // Add callback for dynamic parameters
-  dyn_params_handler = node->add_on_set_parameters_callback(
-    std::bind(&SmacPlanner2D::dynamicParametersCallback, this, _1));
-
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlanner2D with "
     "tolerance %.2f, maximum iterations %i, "
@@ -169,6 +165,10 @@ void SmacPlanner2D::activate()
   if (_costmap_downsampler) {
     _costmap_downsampler->on_activate();
   }
+  auto node = _node.lock();
+  // Add callback for dynamic parametrs
+  dyn_params_handler = node->add_on_set_parameters_callback(
+    std::bind(&SmacPlanner2D::dynamicParametersCallback, this, _1));
 }
 
 void SmacPlanner2D::deactivate()
@@ -180,6 +180,7 @@ void SmacPlanner2D::deactivate()
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
   }
+  dyn_params_handler.reset();
 }
 
 void SmacPlanner2D::cleanup()
@@ -337,7 +338,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 rcl_interfaces::msg::SetParametersResult
 SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
-  auto result = rcl_interfaces::msg::SetParametersResult();
+  rcl_interfaces::msg::SetParametersResult result;
   std::lock_guard<std::mutex> lock_reinit(_mutex);
 
   bool reinit_a_star = false;
