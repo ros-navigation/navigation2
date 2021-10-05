@@ -188,6 +188,7 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     std::istreambuf_iterator<char>(xml_file),
     std::istreambuf_iterator<char>());
 
+  RCLCPP_INFO(logger_, "Loading: BT file");
   // Create the Behavior Tree from the XML input
   tree_ = bt_->createTreeFromText(xml_string, blackboard_);
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
@@ -204,6 +205,7 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     }
   }
 
+  RCLCPP_INFO(logger_, "Loading: Done");
   return true;
 }
 

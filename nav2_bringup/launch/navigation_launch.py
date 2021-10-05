@@ -53,10 +53,10 @@ def generate_launch_description():
         'autostart': autostart}
 
     configured_params = RewrittenYaml(
-            source_file=params_file,
-            root_key=namespace,
-            param_rewrites=param_substitutions,
-            convert_types=True)
+        source_file=params_file,
+        root_key=namespace,
+        param_rewrites=param_substitutions,
+        convert_types=True)
 
     return LaunchDescription([
         # Set env var to print messages to stdout immediately
@@ -76,13 +76,14 @@ def generate_launch_description():
 
         DeclareLaunchArgument(
             'params_file',
-            default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+            default_value=os.path.join(
+                bringup_dir, 'params', 'nav2_params.yaml'),
             description='Full path to the ROS2 parameters file to use'),
 
         Node(
             package='nav2_controller',
             executable='controller_server',
-            output='screen',
+            output='log',
             parameters=[configured_params],
             remappings=remappings),
 
@@ -90,7 +91,7 @@ def generate_launch_description():
             package='nav2_planner',
             executable='planner_server',
             name='planner_server',
-            output='screen',
+            output='log',
             parameters=[configured_params],
             remappings=remappings),
 
@@ -98,7 +99,7 @@ def generate_launch_description():
             package='nav2_recoveries',
             executable='recoveries_server',
             name='recoveries_server',
-            output='screen',
+            output='log',
             parameters=[configured_params],
             remappings=remappings),
 
@@ -114,7 +115,7 @@ def generate_launch_description():
             package='nav2_waypoint_follower',
             executable='waypoint_follower',
             name='waypoint_follower',
-            output='screen',
+            output='log',
             parameters=[configured_params],
             remappings=remappings),
 
@@ -122,7 +123,7 @@ def generate_launch_description():
             package='nav2_lifecycle_manager',
             executable='lifecycle_manager',
             name='lifecycle_manager_navigation',
-            output='screen',
+            output='log',
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
                         {'node_names': lifecycle_nodes}]),

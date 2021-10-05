@@ -83,7 +83,8 @@ public:
       "nav2_remove_passed_goals_action_bt_node",
       "nav2_planner_selector_bt_node",
       "nav2_controller_selector_bt_node",
-      "nav2_goal_checker_selector_bt_node"
+      "nav2_goal_checker_selector_bt_node",
+      "nav2_is_path_valid_condition_bt_node"
     };
     for (const auto & p : plugin_libs) {
       factory_.registerFromPlugin(BT::SharedLibrary::getOSName(p));

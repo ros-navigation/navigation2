@@ -16,30 +16,30 @@ IsPathValidCondition::IsPathValidCondition(
 BT::NodeStatus IsPathValidCondition::tick()
 {
 
-  nav_msgs::msg::Path path;
-  getInput("path", path);
+  // nav_msgs::msg::Path path;
+  // getInput("path", path);
 
-  auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
+  // auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
 
-  request->path = path;
+  // request->path = path;
+  // RCLCPP_INFO(node_->get_logger(), "Ticking is path valid node");
+  // auto result = client->async_send_request(request);
+  // // Wait for the result.
+  // if (rclcpp::spin_until_future_complete(node_, result) ==
+  //   rclcpp::FutureReturnCode::SUCCESS)
+  // {
+  //   RCLCPP_DEBUG(node_->get_logger(), "Got response");
 
-  auto result = client->async_send_request(request);
-  // Wait for the result.
-  if (rclcpp::spin_until_future_complete(node_, result) ==
-    rclcpp::FutureReturnCode::SUCCESS)
-  {
-    RCLCPP_DEBUG(node_->get_logger(), "Got response");
-
-    if (result.get()->is_valid) {
-      return BT::NodeStatus::SUCCESS;
-    }
-    return BT::NodeStatus::FAILURE;
-  } else {
-    RCLCPP_DEBUG(node_->get_logger(), "No response");
-    return BT::NodeStatus::FAILURE;
-  }
+  //   if (result.get()->is_valid) {
+  //     return BT::NodeStatus::SUCCESS;
+  //   }
+  //   return BT::NodeStatus::FAILURE;
+  // } else {
+  //   RCLCPP_DEBUG(node_->get_logger(), "No response");
+  //   return BT::NodeStatus::FAILURE;
+  // }
+  return BT::NodeStatus::SUCCESS;
 }
-
 
 } // namespace nav2_behavior_tree
 
