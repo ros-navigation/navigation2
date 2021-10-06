@@ -179,8 +179,8 @@ private:
      * @brief Creates a lookup table for binary thresholding
      *
      * The table size is equal to groups_sizes.size()
-     * Lookup table[i] = filled_cell_value if groups_sizes[i] >= threshold,
-     * empty_cell_value in other case
+     * Lookup table[i] = OBSTACLE_CELL if groups_sizes[i] >= threshold,
+     * FREE_SPACE in other case
    */
   std::vector<uint8_t> makeLookupTable(
     const std::vector<uint16_t> & groups_sizes, uint16_t threshold) const;
@@ -232,8 +232,6 @@ private:
   size_t minimal_group_size{};
   // The border value of group size. Groups of this and larger size will be kept
   ConnectivityType group_connectivity_type{ConnectivityType::Way8};
-  const uint8_t empty_cell_value = 0;
-  const uint8_t filled_cell_value = 255;
 };
 
 template<class SourceElement, class TargetElement, class Converter>

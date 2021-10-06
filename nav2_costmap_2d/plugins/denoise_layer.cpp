@@ -30,6 +30,7 @@
 
 namespace nav2_costmap_2d
 {
+static constexpr unsigned char OBSTACLE_CELL = 255;
 
 void
 DenoiseLayer::reset()
@@ -152,11 +153,11 @@ void
 DenoiseLayer::removeGroups(cv::Mat & image) const
 {
   // Creates image binary (the same type and size as image)
-  // binary[i,j] = filled_cell_value if image[i,j] == filled_cell_value,
-  // empty_cell_value in other cases
+  // binary[i,j] = OBSTACLE_CELL if image[i,j] == OBSTACLE_CELL,
+  // FREE_SPACE in other cases
   cv::Mat binary;
   cv::threshold(
-    image, binary, filled_cell_value - 1, filled_cell_value, cv::ThresholdTypes::THRESH_BINARY);
+    image, binary, OBSTACLE_CELL - 1, OBSTACLE_CELL, cv::ThresholdTypes::THRESH_BINARY);
 
   // Creates an image in which each group is labeled with a unique code
   cv::Mat labels;
@@ -180,7 +181,7 @@ DenoiseLayer::removeGroups(cv::Mat & image) const
   const std::vector<uint8_t> lookup_table = makeLookupTable(groups_sizes, minimal_group_size);
   convert<uint16_t, uint8_t>(
     labels, image, [&lookup_table, this](uint16_t src, uint8_t & trg) {
-      if (trg == filled_cell_value) {  // This check is required for non-binary input image
+      if (trg == OBSTACLE_CELL) {  // This check is required for non-binary input image
         trg = lookup_table[src];
       }
     });
@@ -234,13 +235,13 @@ DenoiseLayer::calculateHistogram(const cv::Mat & image, uint16_t image_max, uint
 std::vector<uint8_t>
 DenoiseLayer::makeLookupTable(const std::vector<uint16_t> & groups_sizes, uint16_t threshold) const
 {
-  std::vector<uint8_t> lookup_table(groups_sizes.size(), empty_cell_value);
+  std::vector<uint8_t> lookup_table(groups_sizes.size(), FREE_SPACE);
 
   auto transform_fn = [&threshold, this](uint16_t bin_value) {
       if (bin_value >= threshold) {
-        return filled_cell_value;
+        return OBSTACLE_CELL;
       }
-      return empty_cell_value;
+      return FREE_SPACE;
     };
   std::transform(groups_sizes.begin(), groups_sizes.end(), lookup_table.begin(), transform_fn);
   return lookup_table;
@@ -261,9 +262,9 @@ DenoiseLayer::removeSinglePixels(cv::Mat & image) const
 
   convert<uint8_t, uint8_t>(
     max_neighbors_image, image, [this](uint8_t maxNeighbor, uint8_t & img) {
-      // img == filled_cell_value is required for non-binary input image
-      if (maxNeighbor != filled_cell_value && img == filled_cell_value) {
-        img = empty_cell_value;
+      // img == OBSTACLE_CELL is required for non-binary input image
+      if (maxNeighbor != OBSTACLE_CELL && img == OBSTACLE_CELL) {
+        img = FREE_SPACE;
       }
     });
 }
