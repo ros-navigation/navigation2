@@ -41,7 +41,8 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
   default_ids_{"GridBased"},
   default_types_{"nav2_navfn_planner/NavfnPlanner"},
-  costmap_(nullptr)
+  costmap_(nullptr),
+  aSwitch(false)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -164,6 +165,12 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->activate();
   }
+
+  is_path_valid_service = shared_from_this()->create_service<nav2_msgs::srv::IsPathValid>(
+    "is_path_valid",
+    std::bind(
+      &PlannerServer::isPathValid, this,
+      std::placeholders::_1, std::placeholders::_2));
 
   // create bond connection
   createBond();
@@ -510,4 +517,35 @@ PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
   }
 }
 
-}  // namespace nav2_planner
+void PlannerServer::isPathValid(
+  const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
+  std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
+{
+  unsigned int mx = 0;
+  unsigned int my = 0;
+
+  response->is_valid = true;
+
+  if (request->path.poses.empty() ) {
+    response->is_valid = false;
+  }
+
+  for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
+    costmap_->worldToMap(
+      request->path.poses[i].pose.position.x, request->path.poses[i].pose.position.y,
+      mx, my);
+    if (static_cast<double>(costmap_->getCost(mx, my)) >= nav2_costmap_2d::LETHAL_OBSTACLE) {
+      response->is_valid = false;
+    }
+  }
+}
+// (void)request;
+
+// if (aSwitch) {
+//   response->is_valid = true;
+// } else {
+//   response->is_valid = false;
+//   aSwitch = true;
+// }
+
+}   // namespace nav2_planner

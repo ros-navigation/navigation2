@@ -57,7 +57,7 @@ NavigateToPoseNavigator::getDefaultBTFilepath(
     std::string pkg_share_dir =
       ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
     std::string tree_file = pkg_share_dir +
-      "/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml";
+      "/behavior_trees/navigate_w_replanning_distance.xml";
     node->declare_parameter("default_nav_to_pose_bt_xml", tree_file);
   }
   node->get_parameter("default_nav_to_pose_bt_xml", default_bt_xml_filename);

@@ -70,17 +70,20 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
-        default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
+        default_value=os.path.join(
+            bringup_dir, 'maps', 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
     declare_robot1_params_file_cmd = DeclareLaunchArgument(
         'robot1_params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_multirobot_params_1.yaml'),
+        default_value=os.path.join(
+            bringup_dir, 'params', 'nav2_multirobot_params_1.yaml'),
         description='Full path to the ROS2 parameters file to use for robot1 launched nodes')
 
     declare_robot2_params_file_cmd = DeclareLaunchArgument(
         'robot2_params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_multirobot_params_2.yaml'),
+        default_value=os.path.join(
+            bringup_dir, 'params', 'nav2_multirobot_params_2.yaml'),
         description='Full path to the ROS2 parameters file to use for robot2 launched nodes')
 
     declare_autostart_cmd = DeclareLaunchArgument(
@@ -89,7 +92,8 @@ def generate_launch_description():
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config',
-        default_value=os.path.join(bringup_dir, 'rviz', 'nav2_namespaced_view.rviz'),
+        default_value=os.path.join(
+            bringup_dir, 'rviz', 'nav2_namespaced_view.rviz'),
         description='Full path to the RVIZ config file to use.')
 
     declare_use_robot_state_pub_cmd = DeclareLaunchArgument(
@@ -116,12 +120,12 @@ def generate_launch_description():
         group = GroupAction([
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                        os.path.join(launch_dir, 'rviz_launch.py')),
+                    os.path.join(launch_dir, 'rviz_launch.py')),
                 condition=IfCondition(use_rviz),
                 launch_arguments={
-                                  'namespace': TextSubstitution(text=robot['name']),
-                                  'use_namespace': 'True',
-                                  'rviz_config': rviz_config_file}.items()),
+                    'namespace': TextSubstitution(text=robot['name']),
+                    'use_namespace': 'True',
+                    'rviz_config': rviz_config_file}.items()),
 
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(bringup_dir,
@@ -135,7 +139,7 @@ def generate_launch_description():
                                   'autostart': autostart,
                                   'use_rviz': 'False',
                                   'use_simulator': 'False',
-                                  'headless': 'False',
+                                  'headless': 'True',
                                   'use_robot_state_pub': use_robot_state_pub,
                                   'x_pose': TextSubstitution(text=str(robot['x_pose'])),
                                   'y_pose': TextSubstitution(text=str(robot['y_pose'])),
