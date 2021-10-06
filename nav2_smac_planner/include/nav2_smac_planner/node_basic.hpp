@@ -29,6 +29,7 @@
 
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
+#include "nav2_smac_planner/node_lattice.hpp"
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
@@ -55,14 +56,14 @@ public:
   {
   }
 
-  typename NodeT::Coordinates pose;  // Used by NodeHybrid
+  typename NodeT::Coordinates pose;  // Used by NodeHybrid and NodeLattice
   NodeT * graph_node_ptr;
   unsigned int index;
 };
 
 template class NodeBasic<Node2D>;
 template class NodeBasic<NodeHybrid>;
-
+template class NodeBasic<NodeLattice>;
 }  // namespace nav2_smac_planner
 
 #endif  // NAV2_SMAC_PLANNER__NODE_BASIC_HPP_
