@@ -82,8 +82,11 @@ DenoiseLayer::onInitialize()
   // Pixels connectivity type
   declareParameter("group_connectivity_type", rclcpp::ParameterValue(8));
 
-  // node != nullptr. If node_ is nullptr, declareParameter (...) will throw
   const auto node = node_.lock();
+
+  if (!node) {
+    throw std::runtime_error("DenoiseLayer::onInitialize: Failed to lock node");
+  }
   node->get_parameter(name_ + "." + "enabled", enabled_);
 
   auto getInt = [&](const std::string & parameter_name) {
