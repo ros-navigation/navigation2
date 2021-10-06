@@ -24,47 +24,57 @@
 #include "behaviortree_cpp_v3/action_node.h"
 #include "tf2_ros/buffer.h"
 
-namespace nav2_behavior_tree {
+namespace nav2_behavior_tree
+{
 
 /**
  * @brief A BT::ActionNodeBase to shorten path by some distance
  */
-class TruncatePathLocal : public BT::AsyncActionNode {
+class TruncatePathLocal : public BT::AsyncActionNode
+{
 public:
   /**
    * @brief A nav2_behavior_tree::TruncatePathLocal constructor
    * @param xml_tag_name Name for the XML tag for this node
    * @param conf BT node configuration
    */
-  TruncatePathLocal(const std::string &xml_tag_name,
-                    const BT::NodeConfiguration &conf);
+  TruncatePathLocal(
+    const std::string & xml_tag_name,
+    const BT::NodeConfiguration & conf);
 
   /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
-  static BT::PortsList providedPorts() {
+  static BT::PortsList providedPorts()
+  {
     return {
-        BT::InputPort<nav_msgs::msg::Path>("input_path", "Original Path"),
-        BT::OutputPort<nav_msgs::msg::Path>(
-            "output_path", "Path truncated to a certain distance around robot"),
-        BT::InputPort<double>("distance_forward", 8.0,
-                              "Distance in forward direction"),
-        BT::InputPort<double>("distance_backward", 4.0,
-                              "Distance in backward direction"),
-        BT::InputPort<std::string>("robot_frame", "base_link",
-                                   "Robot base frame id. If empty, 'pose' "
-                                   "parameter is used instead of robot pose"),
-        BT::InputPort<std::string>("global_frame", "map",
-                                   "Global frame id. If empty, 'pose' "
-                                   "parameter is used instead of robot pose"),
-        BT::InputPort<double>("transform_tolerance", 0.2,
-                              "Transform lookup tolerance"),
-        BT::InputPort<geometry_msgs::msg::PoseStamped>(
-            "pose", "Manually specified robot pose to be used alternatively to "
-                    "robot frame lookup."),
-        BT::InputPort<double>("angular_distance_weight", 0.2,
-                              "Transform lookup tolerance"),
+      BT::InputPort<nav_msgs::msg::Path>("input_path", "Original Path"),
+      BT::OutputPort<nav_msgs::msg::Path>(
+        "output_path", "Path truncated to a certain distance around robot"),
+      BT::InputPort<double>(
+        "distance_forward", 8.0,
+        "Distance in forward direction"),
+      BT::InputPort<double>(
+        "distance_backward", 4.0,
+        "Distance in backward direction"),
+      BT::InputPort<std::string>(
+        "robot_frame", "base_link",
+        "Robot base frame id. If empty, 'pose' "
+        "parameter is used instead of robot pose"),
+      BT::InputPort<std::string>(
+        "global_frame", "map",
+        "Global frame id. If empty, 'pose' "
+        "parameter is used instead of robot pose"),
+      BT::InputPort<double>(
+        "transform_tolerance", 0.2,
+        "Transform lookup tolerance"),
+      BT::InputPort<geometry_msgs::msg::PoseStamped>(
+        "pose", "Manually specified robot pose to be used alternatively to "
+        "robot frame lookup."),
+      BT::InputPort<double>(
+        "angular_distance_weight", 0.2,
+        "Transform lookup tolerance"),
     };
   }
 
@@ -80,13 +90,14 @@ private:
    */
   BT::NodeStatus tick() override;
 
-  static double poseDistance(const geometry_msgs::msg::PoseStamped &pose1,
-                             const geometry_msgs::msg::PoseStamped &pose2,
-                             const double angular_distance_weight);
+  static double poseDistance(
+    const geometry_msgs::msg::PoseStamped & pose1,
+    const geometry_msgs::msg::PoseStamped & pose2,
+    const double angular_distance_weight);
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 };
 
-} // namespace nav2_behavior_tree
+}  // namespace nav2_behavior_tree
 
-#endif // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__TRUNCATE_PATH_LOCAL_ACTION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__TRUNCATE_PATH_LOCAL_ACTION_HPP_

@@ -16,6 +16,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "behaviortree_cpp_v3/decorator_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -26,17 +27,21 @@
 
 #include "nav2_behavior_tree/plugins/action/truncate_path_local_action.hpp"
 
-namespace nav2_behavior_tree {
+namespace nav2_behavior_tree
+{
 
-TruncatePathLocal::TruncatePathLocal(const std::string &name,
-                                     const BT::NodeConfiguration &conf)
-    : BT::AsyncActionNode(name, conf) {
+TruncatePathLocal::TruncatePathLocal(
+  const std::string & name,
+  const BT::NodeConfiguration & conf)
+: BT::AsyncActionNode(name, conf)
+{
   tf_buffer_ =
-      config().blackboard->template get<std::shared_ptr<tf2_ros::Buffer>>(
-          "tf_buffer");
+    config().blackboard->template get<std::shared_ptr<tf2_ros::Buffer>>(
+    "tf_buffer");
 }
 
-inline BT::NodeStatus TruncatePathLocal::tick() {
+inline BT::NodeStatus TruncatePathLocal::tick()
+{
   setStatus(BT::NodeStatus::RUNNING);
 
   nav_msgs::msg::Path path;
@@ -57,8 +62,9 @@ inline BT::NodeStatus TruncatePathLocal::tick() {
   if (robot_frame.empty() || global_frame.empty()) {
     getInput("pose", pose);
   } else {
-    nav2_util::getCurrentPose(pose, *tf_buffer_, global_frame, robot_frame,
-                              transform_tolerance);
+    nav2_util::getCurrentPose(
+      pose, *tf_buffer_, global_frame, robot_frame,
+      transform_tolerance);
 
     if (isHaltRequested()) {
       return BT::NodeStatus::IDLE;
@@ -72,45 +78,48 @@ inline BT::NodeStatus TruncatePathLocal::tick() {
 
   // find the closest pose on the path
   auto current_pose = nav2_util::geometry_utils::min_by(
-      path.poses.begin(), path.poses.end(),
-      [&pose,
-       angular_distance_weight](const geometry_msgs::msg::PoseStamped &ps) {
-        return poseDistance(pose, ps, angular_distance_weight);
-      });
+    path.poses.begin(), path.poses.end(),
+    [&pose,
+    angular_distance_weight](const geometry_msgs::msg::PoseStamped & ps) {
+      return poseDistance(pose, ps, angular_distance_weight);
+    });
 
   // expand forwards to extract desired length
   double length = 0;
   auto end = current_pose - path.poses.begin();
-  while ((int)end < (int)path.poses.size() - 1 && length < distance_forward) {
+  while (static_cast<int>(end) < static_cast<int>(path.poses.size() - 1) && length < distance_forward) {
     length += std::hypot(
-        path.poses[end + 1].pose.position.x - path.poses[end].pose.position.x,
-        path.poses[end + 1].pose.position.y - path.poses[end].pose.position.y);
+      path.poses[end + 1].pose.position.x - path.poses[end].pose.position.x,
+      path.poses[end + 1].pose.position.y - path.poses[end].pose.position.y);
     end++;
   }
-  end++; // end is exclusive
+  end++;  // end is exclusive
 
   // expand backwards to extract desired length
   auto begin = current_pose - path.poses.begin();
   length = 0;
   while (begin > 0 && length < distance_backward) {
-    length += std::hypot(path.poses[begin + 1].pose.position.x -
-                             path.poses[begin].pose.position.x,
-                         path.poses[begin + 1].pose.position.y -
-                             path.poses[begin].pose.position.y);
+    length += std::hypot(
+      path.poses[begin + 1].pose.position.x -
+      path.poses[begin].pose.position.x,
+      path.poses[begin + 1].pose.position.y -
+      path.poses[begin].pose.position.y);
     begin--;
   }
 
   path.poses = std::vector<geometry_msgs::msg::PoseStamped>(
-      path.poses.begin() + begin, path.poses.begin() + end);
+    path.poses.begin() + begin, path.poses.begin() + end);
   setOutput("output_path", path);
 
   return BT::NodeStatus::SUCCESS;
 }
 
 double
-TruncatePathLocal::poseDistance(const geometry_msgs::msg::PoseStamped &pose1,
-                                const geometry_msgs::msg::PoseStamped &pose2,
-                                const double angular_distance_weight) {
+TruncatePathLocal::poseDistance(
+  const geometry_msgs::msg::PoseStamped & pose1,
+  const geometry_msgs::msg::PoseStamped & pose2,
+  const double angular_distance_weight)
+{
   double dx = pose1.pose.position.x - pose2.pose.position.x;
   double dy = pose1.pose.position.y - pose2.pose.position.y;
   tf2::Quaternion q1;
@@ -121,10 +130,10 @@ TruncatePathLocal::poseDistance(const geometry_msgs::msg::PoseStamped &pose1,
   return std::sqrt(dx * dx + dy * dy + da * da);
 }
 
-} // namespace nav2_behavior_tree
+}  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory) {
   factory.registerNodeType<nav2_behavior_tree::TruncatePathLocal>(
-      "TruncatePathLocal");
+    "TruncatePathLocal");
 }
