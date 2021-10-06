@@ -61,7 +61,6 @@ void SmacPlannerLattice::configure(
   int angle_quantizations;
   int lookup_table_size;
   SearchInfo search_info;
-  std::string motion_model_for_search;
 
   // General planner params
   nav2_util::declare_parameter_if_not_declared(
@@ -106,6 +105,9 @@ void SmacPlannerLattice::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".lookup_table_size", rclcpp::ParameterValue(20.0));
   node->get_parameter(name + ".lookup_table_size", lookup_table_size);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".allow_reverse_expansion", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".allow_reverse_expansion", search_info.allow_reverse_expansion);
 
   LatticeMetadata metadata = LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
   _angle_quantizations = metadata.first;

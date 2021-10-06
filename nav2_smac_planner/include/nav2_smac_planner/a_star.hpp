@@ -26,6 +26,7 @@
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 
+#include "nav2_smac_planner/analytic_expansion.hpp"
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/node_lattice.hpp"
@@ -52,27 +53,6 @@ public:
   typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef typename NodeVector::iterator NeighborIterator;
   typedef std::function<bool (const unsigned int &, NodeT * &)> NodeGetter;
-
-  /**
-   * @struct nav2_smac_planner::AnalyticExpansionNodes
-   * @brief Analytic expansion nodes and associated metadata
-   */
-
-  struct AnalyticExpansionNode
-  {
-    AnalyticExpansionNode(
-      NodePtr & node_in,
-      Coordinates & initial_coords_in,
-      Coordinates & proposed_coords_in)
-    : node(node_in), initial_coords(initial_coords_in), proposed_coords(proposed_coords_in)
-    {}
-
-    NodePtr node;
-    Coordinates initial_coords;
-    Coordinates proposed_coords;
-  };
-
-  typedef std::vector<AnalyticExpansionNode> AnalyticExpansionNodes;
 
   /**
    * @struct nav2_smac_planner::NodeComparator
@@ -259,31 +239,6 @@ protected:
    */
   inline void clearGraph();
 
-  /**
-   * @brief Attempt an analytic path completion
-   * @return Node pointer reference to goal node if successful, else
-   * return nullptr
-   */
-  NodePtr tryAnalyticExpansion(
-    const NodePtr & current_node,
-    const NodeGetter & getter, int & iterations, int & best_cost);
-
-  /**
-   * @brief Perform an analytic path expansion to the goal
-   * @param node The node to start the analytic path from
-   * @param getter The function object that gets valid nodes from the graph
-   * @return A set of analytically expanded nodes to the goal from current node, if possible
-   */
-  AnalyticExpansionNodes getAnalyticPath(const NodePtr & node, const NodeGetter & getter);
-
-  /**
-   * @brief Takes final analytic expansion and appends to current expanded node
-   * @param node The node to start the analytic path from
-   * @param expanded_nodes Expanded nodes to append to end of current search path
-   * @return Node pointer to goal node if successful, else return nullptr
-   */
-  NodePtr setAnalyticPath(const NodePtr & node, const AnalyticExpansionNodes & expanded_nodes);
-
   bool _traverse_unknown;
   int _max_iterations;
   int _max_on_approach_iterations;
@@ -305,6 +260,7 @@ protected:
 
   GridCollisionChecker * _collision_checker;
   nav2_costmap_2d::Costmap2D * _costmap;
+  std::unique_ptr<AnalyticExpansion<NodeT>> _expander;
 };
 
 }  // namespace nav2_smac_planner

@@ -90,6 +90,7 @@ struct LatticeMotionTable
   float non_straight_penalty;
   float cost_penalty;
   float reverse_penalty;
+  bool allow_reverse_expansion;
   ompl::base::StateSpacePtr state_space;
   std::vector<TrigValues> trig_values;
   std::string current_lattice_filepath;

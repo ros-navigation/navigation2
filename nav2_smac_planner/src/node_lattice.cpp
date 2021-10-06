@@ -58,6 +58,7 @@ void LatticeMotionTable::initMotionModel(
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
   current_lattice_filepath = search_info.lattice_filepath;
+  allow_reverse_expansion = search_info.allow_reverse_expansion;
 
   // TODO(Matt) read in file, precompute based on orientation bins for lookup at runtime
   // file is `search_info.lattice_filepath`, to be read in from plugin and provided here.
@@ -69,10 +70,13 @@ void LatticeMotionTable::initMotionModel(
 
   // TODO(Matt) populate num_angle_quantization, size_x, min_turning_radius, trig_values,
   // all of the member variables of LatticeMotionTable
+
+  // TODO use allow_reverse_expansion to set state_space to dubins/reeds-shepp
 }
 
 MotionPoses LatticeMotionTable::getProjections(const NodeLattice * node)
 {
+  // TODO use allow_reverse_expansion to get forward or inverse pair as well
   return MotionPoses();  // TODO(Matt) lookup at run time the primitives to use at node
 }
 
