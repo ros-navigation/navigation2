@@ -69,6 +69,8 @@ set(dependencies
 add_library(${library_name} SHARED
   src/smac_planner_hybrid.cpp
   src/a_star.cpp
+  src/collision_checker.cpp
+  src/smoother.cpp
   src/analytic_expansion.cpp
   src/node_hybrid.cpp
   src/node_lattice.cpp
@@ -87,6 +89,8 @@ ament_target_dependencies(${library_name}
 add_library(${library_name}_2d SHARED
   src/smac_planner_2d.cpp
   src/a_star.cpp
+  src/smoother.cpp
+  src/collision_checker.cpp
   src/analytic_expansion.cpp
   src/node_hybrid.cpp
   src/node_lattice.cpp
@@ -105,6 +109,8 @@ ament_target_dependencies(${library_name}_2d
 add_library(${library_name}_lattice SHARED
   src/smac_planner_lattice.cpp
   src/a_star.cpp
+  src/smoother.cpp
+  src/collision_checker.cpp
   src/analytic_expansion.cpp
   src/node_hybrid.cpp
   src/node_lattice.cpp
