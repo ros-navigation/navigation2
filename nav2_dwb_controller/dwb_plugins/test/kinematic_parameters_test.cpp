@@ -34,6 +34,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "dwb_plugins/kinematic_parameters.hpp"
@@ -46,9 +47,9 @@ class KinematicsHandlerTest : public dwb_plugins::KinematicsHandler
 {
 public:
   void simulate_event(
-    const ParameterEvent::SharedPtr event)
+    std::vector<rclcpp::Parameter> parameters)
   {
-    on_parameter_event_callback(event);
+    dynamicParametersCallback(parameters);
   }
 };
 
@@ -58,82 +59,40 @@ TEST(KinematicParameters, SetAllParameters) {
   KinematicsHandlerTest kh;
   kh.initialize(node, nodeName);
 
-  rcl_interfaces::msg::ParameterEvent event;
-  Parameter p_minX, p_maxX, p_minY, p_maxY, p_accX, p_decelX, p_accY, p_decelY, p_minSpeedXY,
-    p_maxSpeedXY, p_maxTheta, p_accTheta, p_decelTheta, p_minSpeedTheta;
+  std::vector<rclcpp::Parameter> parameters;
+  rclcpp::Parameter
+    p_minX(nodeName + ".min_vel_x", 12.34),
+    p_maxX(nodeName + ".max_vel_x", 23.45),
+    p_minY(nodeName + ".min_vel_y", 34.56),
+    p_maxY(nodeName + ".max_vel_y", 45.67),
+    p_accX(nodeName + ".acc_lim_x", 56.78),
+    p_decelX(nodeName + ".acc_lim_y", 67.89),
+    p_accY(nodeName + ".decel_lim_x", 78.90),
+    p_decelY(nodeName + ".decel_lim_y", 89.01),
+    p_minSpeedXY(nodeName + ".min_speed_xy", 90.12),
+    p_maxSpeedXY(nodeName + ".max_speed_xy", 123.456),
+    p_maxTheta(nodeName + ".max_vel_theta", 345.678),
+    p_accTheta(nodeName + ".acc_lim_theta", 34.567),
+    p_decelTheta(nodeName + ".decel_lim_theta", 456.789),
+    p_minSpeedTheta(nodeName + ".min_speed_theta", 567.890);
 
-  p_minX.name = nodeName + ".min_vel_x";
-  p_minX.value.set__double_value(12.34);
-  p_minX.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
+  parameters.push_back(p_minX);
+  parameters.push_back(p_minX);
+  parameters.push_back(p_maxX);
+  parameters.push_back(p_minY);
+  parameters.push_back(p_maxY);
+  parameters.push_back(p_accX);
+  parameters.push_back(p_accY);
+  parameters.push_back(p_decelX);
+  parameters.push_back(p_decelY);
+  parameters.push_back(p_minSpeedXY);
+  parameters.push_back(p_maxSpeedXY);
+  parameters.push_back(p_maxTheta);
+  parameters.push_back(p_accTheta);
+  parameters.push_back(p_decelTheta);
+  parameters.push_back(p_minSpeedTheta);
 
-  p_maxX.name = nodeName + ".max_vel_x";
-  p_maxX.value.set__double_value(23.45);
-  p_maxX.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
-
-  p_minY.name = nodeName + ".min_vel_y";
-  p_minY.value.set__double_value(34.56);
-  p_minY.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
-
-  p_maxY.name = nodeName + ".max_vel_y";
-  p_maxY.value.set__double_value(45.67);
-  p_maxY.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
-
-  p_accX.name = nodeName + ".acc_lim_x";
-  p_accX.value.set__double_value(56.78);
-  p_accX.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
-
-  p_accY.name = nodeName + ".acc_lim_y";
-  p_accY.value.set__double_value(67.89);
-  p_accY.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
-
-  p_decelX.name = nodeName + ".decel_lim_x";
-  p_decelX.value.set__double_value(78.90);
-  p_decelX.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
-
-  p_decelY.name = nodeName + ".decel_lim_y";
-  p_decelY.value.set__double_value(89.01);
-  p_decelY.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
-
-  p_minSpeedXY.name = nodeName + ".min_speed_xy";
-  p_minSpeedXY.value.set__double_value(90.12);
-  p_minSpeedXY.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
-
-  p_maxSpeedXY.name = nodeName + ".max_speed_xy";
-  p_maxSpeedXY.value.set__double_value(123.456);
-  p_maxSpeedXY.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
-
-  p_maxTheta.name = nodeName + ".max_vel_theta";
-  p_maxTheta.value.set__double_value(345.678);
-  p_maxTheta.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
-
-  p_accTheta.name = nodeName + ".acc_lim_theta";
-  p_accTheta.value.set__double_value(234.567);
-  p_accTheta.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
-
-  p_decelTheta.name = nodeName + ".decel_lim_theta";
-  p_decelTheta.value.set__double_value(456.789);
-  p_decelTheta.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
-
-  p_minSpeedTheta.name = nodeName + ".min_speed_theta";
-  p_minSpeedTheta.value.set__double_value(567.890);
-  p_minSpeedTheta.value.set__type(rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE);
-
-  event.changed_parameters.push_back(p_minX);
-  event.changed_parameters.push_back(p_maxX);
-  event.changed_parameters.push_back(p_minY);
-  event.changed_parameters.push_back(p_maxY);
-  event.changed_parameters.push_back(p_accX);
-  event.changed_parameters.push_back(p_accY);
-  event.changed_parameters.push_back(p_decelX);
-  event.changed_parameters.push_back(p_decelY);
-  event.changed_parameters.push_back(p_minSpeedXY);
-  event.changed_parameters.push_back(p_maxSpeedXY);
-  event.changed_parameters.push_back(p_maxTheta);
-  event.changed_parameters.push_back(p_accTheta);
-  event.changed_parameters.push_back(p_decelTheta);
-  event.changed_parameters.push_back(p_minSpeedTheta);
-
-  kh.simulate_event(std::make_shared<ParameterEvent>(event));
+  kh.simulate_event(parameters);
 
   dwb_plugins::KinematicParameters kp = kh.getKinematics();
 

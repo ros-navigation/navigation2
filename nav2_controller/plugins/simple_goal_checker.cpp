@@ -35,6 +35,7 @@
 #include <memory>
 #include <string>
 #include <limits>
+#include <vector>
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
@@ -83,20 +84,15 @@ void SimpleGoalChecker::initialize(
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 
-  // Setup callback for changes to parameters.
-  parameters_client_ = std::make_shared<rclcpp::AsyncParametersClient>(
-    node->get_node_base_interface(),
-    node->get_node_topics_interface(),
-    node->get_node_graph_interface(),
-    node->get_node_services_interface());
-
-  parameter_event_sub_ = parameters_client_->on_parameter_event(
-    std::bind(&SimpleGoalChecker::on_parameter_event_callback, this, _1));
+  // Add callback for dynamic parameters
+  dyn_params_handler = node->add_on_set_parameters_callback(
+    std::bind(&SimpleGoalChecker::dynamicParametersCallback, this, _1));
 }
 
 void SimpleGoalChecker::reset()
 {
   check_xy_ = true;
+  dyn_params_handler.reset();
 }
 
 bool SimpleGoalChecker::isGoalReached(
@@ -144,28 +140,29 @@ bool SimpleGoalChecker::getTolerances(
   return true;
 }
 
-void
-SimpleGoalChecker::on_parameter_event_callback(
-  const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+rcl_interfaces::msg::SetParametersResult
+SimpleGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
-  for (auto & changed_parameter : event->changed_parameters) {
-    const auto & type = changed_parameter.value.type;
-    const auto & name = changed_parameter.name;
-    const auto & value = changed_parameter.value;
+  rcl_interfaces::msg::SetParametersResult result;
+  for (auto & parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == plugin_name_ + ".xy_goal_tolerance") {
-        xy_goal_tolerance_ = value.double_value;
+        xy_goal_tolerance_ = parameter.as_double();
         xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
       } else if (name == plugin_name_ + ".yaw_goal_tolerance") {
-        yaw_goal_tolerance_ = value.double_value;
+        yaw_goal_tolerance_ = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".stateful") {
-        stateful_ = value.bool_value;
+        stateful_ = parameter.as_bool();
       }
     }
   }
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_controller
