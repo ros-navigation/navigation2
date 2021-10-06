@@ -56,7 +56,6 @@ DenoiseLayer::updateCosts(
   if (!enabled_) {
     return;
   }
-  std::unique_lock<std::recursive_mutex> lock(*master_grid.getMutex());
 
   unsigned char * master_array = master_grid.getCharMap();
   const int step = static_cast<int>(master_grid.getSizeInCellsX());
