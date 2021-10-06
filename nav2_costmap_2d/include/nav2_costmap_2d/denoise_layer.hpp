@@ -27,8 +27,6 @@
 
 #include "nav2_costmap_2d/layer.hpp"
 
-class DenoiseLayerTester;  // For test some private methods using gtest
-
 namespace nav2_costmap_2d
 {
 /**
@@ -38,7 +36,7 @@ namespace nav2_costmap_2d
  */
 class DenoiseLayer : public Layer
 {
-  friend class ::DenoiseLayerTester;  // For test some private methods using gtest
+  friend class DenoiseLayerTester;  // For test some private methods using gtest
 
 private:
   /// Pixels connectivity type (is the way in which pixels in image relate to

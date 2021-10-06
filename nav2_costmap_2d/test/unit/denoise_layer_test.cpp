@@ -30,6 +30,8 @@
 
 #include "nav2_costmap_2d/denoise_layer.hpp"
 
+namespace nav2_costmap_2d
+{
 /**
  * @brief nav2_costmap_2d::DenoiseLayer class wrapper
  *
@@ -121,6 +123,10 @@ public:
 private:
   nav2_costmap_2d::DenoiseLayer denoise_;
 };
+
+}
+
+using namespace nav2_costmap_2d;
 
 TEST_F(DenoiseLayerTester, checkEqualImagesSize) {
   const cv::Mat a(3, 2, CV_8UC1);
