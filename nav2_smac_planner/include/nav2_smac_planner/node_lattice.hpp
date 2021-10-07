@@ -80,12 +80,24 @@ struct LatticeMotionTable
    */
   static LatticeMetadata getLatticeMetadata(const std::string & lattice_filepath);
 
+  /**
+   * @brief Get the angular bin to use from a raw orientation
+   * @param theta Angle in radians
+   * @return bin index of closest angle to request
+   */
+  unsigned int getClosestAngularBin(const double & theta);
+
+  /**
+   * @brief Get the raw orientation from an angular bin
+   * @param bin_idx Index of the bin
+   * @return Raw orientation in radians
+   */
+  float getAngleFromBin(const unsigned int & bin_idx);
+
   MotionPoses projections;
   unsigned int size_x;
   unsigned int num_angle_quantization;
-  float num_angle_quantization_float;
   float min_turning_radius;
-  float bin_size;
   float change_penalty;
   float non_straight_penalty;
   float cost_penalty;
@@ -302,13 +314,7 @@ public:
     const float & lookup_table_dim,
     const MotionModel & motion_model,
     const unsigned int & dim_3_size,
-    const SearchInfo & search_info)
-  {
-    // State Lattice and Hybrid-A* share this heuristics
-    NodeHybrid::precomputeDistanceHeuristic(
-      lookup_table_dim, motion_model, dim_3_size,
-      search_info);
-  }
+    const SearchInfo & search_info);
 
   /**
    * @brief Compute the wavefront heuristic
@@ -366,6 +372,9 @@ public:
   NodeLattice * parent;
   Coordinates pose;
   static LatticeMotionTable motion_table;
+  // Dubin / Reeds-Shepp lookup and size for dereferencing
+  static LookupTable dist_heuristic_lookup_table;
+  static float size_lookup;
 
 private:
   float _cell_cost;

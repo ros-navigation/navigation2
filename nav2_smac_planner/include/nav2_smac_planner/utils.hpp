@@ -62,6 +62,20 @@ inline geometry_msgs::msg::Quaternion getWorldOrientation(
 }
 
 /**
+* @brief Create quaternion from radians
+* @param theta continuous bin coordinates angle
+* @return quaternion orientation in map frame
+*/
+inline geometry_msgs::msg::Quaternion getWorldOrientation(
+  const float & theta)
+{
+  // theta is in radians already
+  tf2::Quaternion q;
+  q.setEuler(0.0, 0.0, theta);
+  return tf2::toMsg(q);
+}
+
+/**
 * @brief Find the min cost of the inflation decay function for which the robot MAY be
 * in collision in any orientation
 * @param costmap Costmap2DROS to get minimum inscribed cost (e.g. 128 in inflation layer documentation)

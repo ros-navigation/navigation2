@@ -17,6 +17,27 @@
 namespace nav2_smac_planner
 {
 
+GridCollisionChecker::GridCollisionChecker(
+  nav2_costmap_2d::Costmap2D * costmap,
+  unsigned int num_quantizations)
+: FootprintCollisionChecker(costmap)
+{
+  // Convert number of regular bins into angles
+  float bin_size = 2 * M_PI / static_cast<float>(num_quantizations);
+  angles_.reserve(num_quantizations);
+  for (unsigned int i = 0; i != num_quantizations; i++) {
+    angles_.push_back(bin_size * i);
+  }
+}
+
+GridCollisionChecker::GridCollisionChecker(
+  nav2_costmap_2d::Costmap2D * costmap,
+  std::vector<float> & angles)
+: FootprintCollisionChecker(costmap),
+  angles_(angles)
+{
+}
+
 void GridCollisionChecker::setFootprint(
   const nav2_costmap_2d::Footprint & footprint,
   const bool & radius,
@@ -35,16 +56,15 @@ void GridCollisionChecker::setFootprint(
     return;
   }
 
-  bin_size_ = 2.0 * M_PI / static_cast<double>(num_quantizations_);
-  oriented_footprints_.reserve(num_quantizations_);
+  oriented_footprints_.reserve(angles_.size());
   double sin_th, cos_th;
   geometry_msgs::msg::Point new_pt;
   const unsigned int footprint_size = footprint.size();
 
   // Precompute the orientation bins for checking to use
-  for (unsigned int i = 0; i != num_quantizations_; i++) {
-    sin_th = sin(i * bin_size_);
-    cos_th = cos(i * bin_size_);
+  for (unsigned int i = 0; i != angles_.size(); i++) {
+    sin_th = sin(angles_[i]);
+    cos_th = cos(angles_[i]);
     nav2_costmap_2d::Footprint oriented_footprint;
     oriented_footprint.reserve(footprint_size);
 
@@ -63,7 +83,7 @@ void GridCollisionChecker::setFootprint(
 bool GridCollisionChecker::inCollision(
   const float & x,
   const float & y,
-  const float & theta,
+  const float & angle_bin,
   const bool & traverse_unknown)
 {
   // Assumes setFootprint already set
@@ -93,7 +113,6 @@ bool GridCollisionChecker::inCollision(
     // if possible inscribed, need to check actual footprint pose.
     // Use precomputed oriented footprints are done on initialization,
     // offset by translation value to collision check
-    int angle_bin = theta / bin_size_;
     geometry_msgs::msg::Point new_pt;
     const nav2_costmap_2d::Footprint & oriented_footprint = oriented_footprints_[angle_bin];
     nav2_costmap_2d::Footprint current_footprint;

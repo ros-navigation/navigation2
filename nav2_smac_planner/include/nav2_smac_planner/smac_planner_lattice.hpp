@@ -87,6 +87,20 @@ public:
     const geometry_msgs::msg::PoseStamped & goal) override;
 
 protected:
+  /**
+   * @brief Get the angular bin to use from a raw orientation
+   * @param theta Angle in radians
+   * @return bin index of closest angle to request
+   */
+  unsigned int getClosestAngularBin(const double & theta);
+
+  /**
+   * @brief Get the raw orientation from an angular bin
+   * @param bin_idx Index of the bin
+   * @return Raw orientation in radians
+   */
+  float getAngleFromBin(const unsigned int & bin_idx);
+
   std::unique_ptr<AStarAlgorithm<NodeLattice>> _a_star;
   GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;
@@ -94,11 +108,10 @@ protected:
   rclcpp::Logger _logger{rclcpp::get_logger("SmacPlannerLattice")};
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
+  LatticeMetadata _metadata;
   std::string _global_frame, _name;
   float _tolerance;
   int _downsampling_factor;
-  unsigned int _angle_quantizations;
-  double _angle_bin_size;
   bool _downsample_costmap;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   double _max_planning_time;

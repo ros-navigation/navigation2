@@ -58,7 +58,6 @@ void SmacPlannerLattice::configure(
 
   bool allow_unknown;
   int max_iterations;
-  int angle_quantizations;
   int lookup_table_size;
   SearchInfo search_info;
 
@@ -109,10 +108,9 @@ void SmacPlannerLattice::configure(
     node, name + ".allow_reverse_expansion", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".allow_reverse_expansion", search_info.allow_reverse_expansion);
 
-  LatticeMetadata metadata = LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
-  _angle_quantizations = metadata.first;
-  _angle_bin_size = 2.0 * M_PI / static_cast<double>(_angle_quantizations);
-  float min_turning_radius = metadata.second;
+  _metadata = LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
+  unsigned int angle_quantizations = _metadata.first; // TODO delete
+  float min_turning_radius = _metadata.second;
 
   MotionModel motion_model = MotionModel::STATE_LATTICE;
 
@@ -128,7 +126,7 @@ void SmacPlannerLattice::configure(
     static_cast<float>(_costmap->getResolution() * _downsampling_factor);
 
   // Initialize collision checker
-  _collision_checker = GridCollisionChecker(_costmap, _angle_quantizations);
+  _collision_checker = GridCollisionChecker(_costmap, angle_quantizations); //TODO give it a vector of angles from getLatticeMetadata()
   _collision_checker.setFootprint(
     costmap_ros->getRobotFootprint(),
     costmap_ros->getUseRadius(),
@@ -141,7 +139,7 @@ void SmacPlannerLattice::configure(
     max_iterations,
     std::numeric_limits<int>::max(),
     lookup_table_dim,
-    _angle_quantizations);
+    angle_quantizations); // TODO give this vector of angles size from getLatticeMetadata()
 
   // Initialize path smoother
   SmootherParams params;
@@ -202,6 +200,28 @@ void SmacPlannerLattice::cleanup()
   _raw_plan_publisher.reset();
 }
 
+unsigned int getClosestAngularBin(const double & theta)
+{
+  // TODO
+  // float min_dist = std::numeric_limits<double>::max;
+  // unsigned int closest_idx = 0;
+  // float dist = 0.0;
+  // for (unsigned int i = 0; i != _metadata.heading_angles.size(); i++) {
+  //   dist = fabs(theta - _metadata.heading_angles[i]);
+  //   if (dist < min_dist) {
+  //     min_dist = dist;
+  //     closest_idx = i;
+  //   }
+  // }
+  // return closest_idx;
+}
+
+float getAngleFromBin(const unsigned int & bin_idx)
+{
+  //TODO
+  // return _metadata.heading_angles[bin_idx]; 
+}
+
 nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
@@ -223,21 +243,11 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   // Set starting point, in A* bin search coordinates
   unsigned int mx, my;
   costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
-  double orientation_bin = tf2::getYaw(start.pose.orientation) / _angle_bin_size;
-  while (orientation_bin < 0.0) {
-    orientation_bin += static_cast<float>(_angle_quantizations);
-  }
-  unsigned int orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setStart(mx, my, orientation_bin_id);
+  _a_star->setStart(mx, my, getClosestAngularBin(tf2::getYaw(start.pose.orientation)));
 
   // Set goal point, in A* bin search coordinates
   costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
-  orientation_bin = tf2::getYaw(goal.pose.orientation) / _angle_bin_size;
-  while (orientation_bin < 0.0) {
-    orientation_bin += static_cast<float>(_angle_quantizations);
-  }
-  orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setGoal(mx, my, orientation_bin_id);
+  _a_star->setGoal(mx, my, getClosestAngularBin(tf2::getYaw(goal.pose.orientation)));
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -280,7 +290,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   plan.poses.reserve(path.size());
   for (int i = path.size() - 1; i >= 0; --i) {
     pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
-    pose.pose.orientation = getWorldOrientation(path[i].theta, _angle_bin_size);
+    pose.pose.orientation = getWorldOrientation(getAngleFromBin(path[i].theta));
     plan.poses.push_back(pose);
   }
 

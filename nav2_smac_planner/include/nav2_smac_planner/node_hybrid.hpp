@@ -115,6 +115,20 @@ struct HybridMotionTable
    */
   MotionPoses getProjections(const NodeHybrid * node);
 
+  /**
+   * @brief Get the angular bin to use from a raw orientation
+   * @param theta Angle in radians
+   * @return bin index of closest angle to request
+   */
+  unsigned int getClosestAngularBin(const double & theta);
+
+  /**
+   * @brief Get the raw orientation from an angular bin
+   * @param bin_idx Index of the bin
+   * @return Raw orientation in radians
+   */
+  float getAngleFromBin(const unsigned int & bin_idx);
+
   MotionPoses projections;
   unsigned int size_x;
   unsigned int num_angle_quantization;

@@ -122,10 +122,10 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
     node->motion_table.state_space), s(node->motion_table.state_space);
   from[0] = node->pose.x;
   from[1] = node->pose.y;
-  from[2] = node->pose.theta * node->motion_table.bin_size;
+  from[2] = node->motion_table.getAngleFromBin(node->pose.theta);
   to[0] = goal->pose.x;
   to[1] = goal->pose.y;
-  to[2] = goal->pose.theta * node->motion_table.bin_size;
+  to[2] = node->motion_table.getAngleFromBin(goal->pose.theta);
 
   float d = node->motion_table.state_space->distance(from(), to());
 
@@ -138,6 +138,7 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
   // num_intervals == 0
   possible_nodes.reserve(num_intervals);  // We won't store this node or the goal
   std::vector<double> reals;
+  double theta;
 
   // Pre-allocate
   NodePtr prev(node);
@@ -151,13 +152,11 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
   for (float i = 1; i < num_intervals; i++) {
     node->motion_table.state_space->interpolate(from(), to(), i / num_intervals, s());
     reals = s.reals();
-    angle = reals[2] / node->motion_table.bin_size;
-    while (angle < 0.0) {
-      angle += node->motion_table.num_angle_quantization_float;
-    }
-    while (angle >= node->motion_table.num_angle_quantization_float) {
-      angle -= node->motion_table.num_angle_quantization_float;
-    }
+    // Make sure in range [0, 2PI)
+    theta = (reals[2] < 0.0) ? (reals[2] + 2.0 * M_PI) : reals[2];
+    theta = (theta > 2.0 * M_PI) ? (theta - 2.0 * M_PI) : theta;
+    angle = node->motion_table.getClosestAngularBin(theta);
+
     // Turn the pose into a node, and check if it is valid
     index = NodeT::getIndex(
       static_cast<unsigned int>(reals[0]),

@@ -35,6 +35,8 @@ namespace nav2_smac_planner
 
 // defining static member for all instance to share
 LatticeMotionTable NodeLattice::motion_table;
+float NodeLattice::size_lookup = 25;
+LookupTable NodeLattice::dist_heuristic_lookup_table;
 
 // Each of these tables are the projected motion models through
 // time and space applied to the search on the current node in
@@ -88,6 +90,28 @@ LatticeMetadata LatticeMotionTable::getLatticeMetadata(const std::string & latti
   return {0 /*num bins*/, 0 /*turning rad*/};
 }
 
+unsigned int LatticeMotionTable::getClosestAngularBin(const double & theta)
+{
+  // TODO
+  // float min_dist = std::numeric_limits<double>::max;
+  // unsigned int closest_idx = 0;
+  // float dist = 0.0;
+  // for (unsigned int i = 0; i != primitive_headings.size(); i++) {
+  //   dist = fabs(theta - primitive_headings[i]);
+  //   if (dist < min_dist) {
+  //     min_dist = dist;
+  //     closest_idx = i;
+  //   }
+  // }
+  // return closest_idx;
+}
+
+float LatticeMotionTable::getAngleFromBin(const unsigned int & bin_idx)
+{
+  //TODO
+  // return primitive_headings[bin_idx]; 
+}
+
 NodeLattice::NodeLattice(const unsigned int index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),
@@ -121,7 +145,7 @@ bool NodeLattice::isNodeValid(
   // TODO(steve) if primitive longer than 1.5 cells, then we need to split into 1 cell
   // increments and collision check across them
   if (collision_checker->inCollision(
-      this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
+      this->pose.x, this->pose.y, this->pose.theta /*bin number*/, traverse_unknown))
   {
     return false;
   }
@@ -145,6 +169,22 @@ float NodeLattice::getHeuristicCost(
   const float distance_heuristic =
     getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
   return std::max(obstacle_heuristic, distance_heuristic);
+}
+
+void NodeLattice::initMotionModel(
+  const MotionModel & motion_model,
+  unsigned int & size_x,
+  unsigned int & /*size_y*/,
+  unsigned int & /*num_angle_quantization*/,
+  SearchInfo & search_info)
+{
+  if (motion_model != MotionModel::STATE_LATTICE) {
+    throw std::runtime_error(
+            "Invalid motion model for Lattice node. Please select"
+            " STATE_LATTICE and provide a valid lattice file.");
+  }
+
+  motion_table.initMotionModel(size_x, search_info);
 }
 
 float NodeLattice::getDistanceHeuristic(
@@ -181,8 +221,8 @@ float NodeLattice::getDistanceHeuristic(
   // to apply the distance heuristic. Since the lookup table is contains only the positive
   // X axis, we mirror the Y and theta values across the X axis to find the heuristic values.
   float motion_heuristic = 0.0;
-  const int floored_size = floor(NodeHybrid::size_lookup / 2.0);
-  const int ceiling_size = ceil(NodeHybrid::size_lookup / 2.0);
+  const int floored_size = floor(size_lookup / 2.0);
+  const int ceiling_size = ceil(size_lookup / 2.0);
   const float mirrored_relative_y = abs(node_coords_relative.y);
   if (abs(node_coords_relative.x) < floored_size && mirrored_relative_y < floored_size) {
     // Need to mirror angle if Y coordinate was mirrored
@@ -198,35 +238,63 @@ float NodeLattice::getDistanceHeuristic(
       x_pos * ceiling_size * motion_table.num_angle_quantization +
       y_pos * motion_table.num_angle_quantization +
       theta_pos;
-    motion_heuristic = NodeHybrid::dist_heuristic_lookup_table[index];
+    motion_heuristic = dist_heuristic_lookup_table[index];
   } else if (obstacle_heuristic == 0.0) {
     static ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
     to[0] = goal_coords.x;
     to[1] = goal_coords.y;
-    to[2] = goal_coords.theta * motion_table.num_angle_quantization;
+    to[2] = motion_table.getAngleFromBin(goal_coords.theta);
     from[0] = node_coords.x;
     from[1] = node_coords.y;
-    from[2] = node_coords.theta * motion_table.num_angle_quantization;
+    from[2] = motion_table.getAngleFromBin(node_coords.theta);
     motion_heuristic = motion_table.state_space->distance(from(), to());
   }
 
   return motion_heuristic;
 }
 
-void NodeLattice::initMotionModel(
+void NodeLattice::precomputeDistanceHeuristic(
+  const float & lookup_table_dim,
   const MotionModel & motion_model,
-  unsigned int & size_x,
-  unsigned int & /*size_y*/,
-  unsigned int & /*num_angle_quantization*/,
-  SearchInfo & search_info)
+  const unsigned int & dim_3_size,
+  const SearchInfo & search_info)
 {
-  if (motion_model != MotionModel::STATE_LATTICE) {
-    throw std::runtime_error(
-            "Invalid motion model for Lattice node. Please select"
-            " STATE_LATTICE and provide a valid lattice file.");
+  // Dubin or Reeds-Shepp shortest distances
+  if (!search_info.allow_reverse_expansion) {
+    motion_table.state_space = std::make_unique<ompl::base::DubinsStateSpace>(
+      search_info.minimum_turning_radius);
+  } else {
+    motion_table.state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
+      search_info.minimum_turning_radius);
   }
 
-  motion_table.initMotionModel(size_x, search_info);
+  ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
+  to[0] = 0.0;
+  to[1] = 0.0;
+  to[2] = 0.0;
+  size_lookup = lookup_table_dim;
+  float motion_heuristic = 0.0;
+  unsigned int index = 0;
+  int dim_3_size_int = static_cast<int>(dim_3_size);
+
+  // Create a lookup table of Dubin/Reeds-Shepp distances in a window around the goal
+  // to help drive the search towards admissible approaches. Deu to symmetries in the
+  // Heuristic space, we need to only store 2 of the 4 quadrants and simply mirror
+  // around the X axis any relative node lookup. This reduces memory overhead and increases
+  // the size of a window a platform can store in memory.
+  dist_heuristic_lookup_table.resize(size_lookup * ceil(size_lookup / 2.0) * dim_3_size_int);
+  for (float x = ceil(-size_lookup / 2.0); x <= floor(size_lookup / 2.0); x += 1.0) {
+    for (float y = 0.0; y <= floor(size_lookup / 2.0); y += 1.0) {
+      for (int heading = 0; heading != dim_3_size_int; heading++) {
+        from[0] = x;
+        from[1] = y;
+        from[2] = motion_table.getAngleFromBin(heading);
+        motion_heuristic = motion_table.state_space->distance(from(), to());
+        dist_heuristic_lookup_table[index] = motion_heuristic;
+        index++;
+      }
+    }
+  }
 }
 
 void NodeLattice::getNeighbors(

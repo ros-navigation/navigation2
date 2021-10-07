@@ -247,6 +247,16 @@ MotionPoses HybridMotionTable::getProjections(const NodeHybrid * node)
   return projection_list;
 }
 
+unsigned int HybridMotionTable::getClosestAngularBin(const double & theta)
+{
+  return static_cast<unsigned int>(floor(theta / bin_size));
+}
+
+float HybridMotionTable::getAngleFromBin(const unsigned int & bin_idx)
+{
+  return bin_idx * bin_size;
+}
+
 NodeHybrid::NodeHybrid(const unsigned int index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),
@@ -280,7 +290,7 @@ bool NodeHybrid::isNodeValid(
   GridCollisionChecker * collision_checker)
 {
   if (collision_checker->inCollision(
-      this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
+      this->pose.x, this->pose.y, this->pose.theta /*bin number*/, traverse_unknown))
   {
     return false;
   }

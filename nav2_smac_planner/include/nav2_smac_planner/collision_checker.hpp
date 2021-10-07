@@ -31,17 +31,25 @@ class GridCollisionChecker
 public:
   /**
    * @brief A constructor for nav2_smac_planner::GridCollisionChecker
+   * for use when regular bin intervals are appropriate
    * @param costmap The costmap to collision check against
    * @param num_quantizations The number of quantizations to precompute footprint
    * orientations for to speed up collision checking
    */
   GridCollisionChecker(
     nav2_costmap_2d::Costmap2D * costmap,
-    unsigned int num_quantizations)
-  : FootprintCollisionChecker(costmap),
-    num_quantizations_(num_quantizations)
-  {
-  }
+    unsigned int num_quantizations);
+
+  /**
+   * @brief A constructor for nav2_smac_planner::GridCollisionChecker
+   * for use when irregular bin intervals are appropriate
+   * @param costmap The costmap to collision check against
+   * @param angles The vector of possible angle bins to precompute for
+   * orientations for to speed up collision checking, in radians
+   */
+  GridCollisionChecker(
+    nav2_costmap_2d::Costmap2D * costmap,
+    std::vector<float> & angles);
 
   /**
    * @brief Set the footprint to use with collision checker
@@ -57,7 +65,7 @@ public:
    * @brief Check if in collision with costmap and footprint at pose
    * @param x X coordinate of pose to check against
    * @param y Y coordinate of pose to check against
-   * @param theta Angle of pose to check against
+   * @param theta Angle bin number of pose to check against (NOT radians)
    * @param traverse_unknown Whether or not to traverse in unknown space
    * @return boolean if in collision or not.
    */
@@ -88,8 +96,7 @@ protected:
   nav2_costmap_2d::Footprint unoriented_footprint_;
   double footprint_cost_;
   bool footprint_is_radius_;
-  unsigned int num_quantizations_;
-  double bin_size_;
+  std::vector<float> angles_;
   double possible_inscribed_cost_{-1};
 };
 
