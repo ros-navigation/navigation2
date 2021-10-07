@@ -3,7 +3,7 @@ project(nav2_rviz_plugins)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -37,6 +37,8 @@ set(nav2_rviz_plugins_headers_to_moc
   include/nav2_rviz_plugins/goal_common
   include/nav2_rviz_plugins/goal_tool.hpp
   include/nav2_rviz_plugins/nav2_panel.hpp
+  include/nav2_rviz_plugins/particle_cloud_display/flat_weighted_arrows_array.hpp
+  include/nav2_rviz_plugins/particle_cloud_display/particle_cloud_display.hpp
 )
 
 include_directories(
@@ -48,6 +50,8 @@ set(library_name ${PROJECT_NAME})
 add_library(${library_name} SHARED
   src/goal_tool.cpp
   src/nav2_panel.cpp
+  src/particle_cloud_display/flat_weighted_arrows_array.cpp
+  src/particle_cloud_display/particle_cloud_display.cpp
   ${nav2_rviz_plugins_headers_to_moc}
 )
 
@@ -86,9 +90,6 @@ target_link_libraries(${library_name}
 # which is appropriate when building the dll but not consuming it.
 # TODO: Make this specific to this project (not rviz default plugins)
 target_compile_definitions(${library_name} PRIVATE "RVIZ_DEFAULT_PLUGINS_BUILDING_LIBRARY")
-
-# prevent pluginlib from using boost
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 pluginlib_export_plugin_description_file(rviz_common plugins_description.xml)
 

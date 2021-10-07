@@ -6,12 +6,6 @@ test_dump_params:
     # Additional constraints:       
     # Read-only:                    False
 
-    param_not_set:                  NOT_SET
-    # Range:                        N/A
-    # Description:                  not set
-    # Additional constraints:       
-    # Read-only:                    False
-
     param_bool:                     True
     # Range:                        N/A
     # Description:                  boolean

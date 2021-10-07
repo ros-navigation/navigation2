@@ -369,3 +369,41 @@ TEST_F(TestNode, testRepeatedResets) {
         plugin->reset();
       }));
 }
+
+
+/**
+ * Test for ray tracing free space
+ */
+TEST_F(TestNode, testRaytracing) {
+  tf2_ros::Buffer tf(node_->get_clock());
+
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = nullptr;
+  addStaticLayer(layers, tf, node_, slayer);
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
+  addObstacleLayer(layers, tf, node_, olayer);
+
+  addObservation(olayer, 0.0, 0.0, MAX_Z / 2, 0, 0, MAX_Z / 2);
+
+  // This actually puts the LETHAL (254) point in the costmap at (0,0)
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+  // printMap(*(layers.getCostmap()));
+
+  int lethal_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  ASSERT_EQ(lethal_count, 1);
+
+  addObservation(olayer, 1.0, 1.0, MAX_Z / 2, 0, 0, MAX_Z / 2, true, true, 100.0, 5.0, 100.0, 5.0);
+
+  // This actually puts the LETHAL (254) point in the costmap at (0,0)
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+  // printMap(*(layers.getCostmap()));
+
+  // New observation should not be recorded as min_range is higher than obstacle range
+  lethal_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  ASSERT_EQ(lethal_count, 1);
+
+}

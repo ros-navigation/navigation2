@@ -31,20 +31,50 @@
 namespace recovery_server
 {
 
+/**
+ * @class recovery_server::RecoveryServer
+ * @brief An server hosting a map of recovery plugins
+ */
 class RecoveryServer : public nav2_util::LifecycleNode
 {
 public:
-  RecoveryServer();
+  /**
+   * @brief A constructor for recovery_server::RecoveryServer
+   * @param options Additional options to control creation of the node.
+   */
+  explicit RecoveryServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~RecoveryServer();
 
-  void loadRecoveryPlugins();
+  /**
+   * @brief Loads recovery plugins from parameter file
+   * @return bool if successfully loaded the plugins
+   */
+  bool loadRecoveryPlugins();
 
 protected:
-  // Implement the lifecycle interface
+  /**
+   * @brief Configure lifecycle server
+   */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Activate lifecycle server
+   */
   nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Deactivate lifecycle server
+   */
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Cleanup lifecycle server
+   */
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Shutdown lifecycle server
+   */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   std::shared_ptr<tf2_ros::Buffer> tf_;

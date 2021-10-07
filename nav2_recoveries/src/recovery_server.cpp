@@ -22,8 +22,8 @@
 namespace recovery_server
 {
 
-RecoveryServer::RecoveryServer()
-: LifecycleNode("recoveries_server", "", true),
+RecoveryServer::RecoveryServer(const rclcpp::NodeOptions & options)
+: LifecycleNode("recoveries_server", "", false, options),
   plugin_loader_("nav2_core", "nav2_core::Recovery"),
   default_ids_{"spin", "backup", "wait"},
   default_types_{"nav2_recoveries/Spin", "nav2_recoveries/BackUp", "nav2_recoveries/Wait"}
@@ -90,13 +90,15 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     global_frame, robot_base_frame, transform_tolerance_);
 
   recovery_types_.resize(recovery_ids_.size());
-  loadRecoveryPlugins();
+  if (!loadRecoveryPlugins()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 
-void
+bool
 RecoveryServer::loadRecoveryPlugins()
 {
   auto node = shared_from_this();
@@ -114,9 +116,11 @@ RecoveryServer::loadRecoveryPlugins()
         get_logger(), "Failed to create recovery %s of type %s."
         " Exception: %s", recovery_ids_[i].c_str(), recovery_types_[i].c_str(),
         ex.what());
-      exit(-1);
+      return false;
     }
   }
+
+  return true;
 }
 
 nav2_util::CallbackReturn
@@ -178,3 +182,10 @@ RecoveryServer::on_shutdown(const rclcpp_lifecycle::State &)
 }
 
 }  // end namespace recovery_server
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(recovery_server::RecoveryServer)

@@ -80,9 +80,13 @@ protected:
   double min_vel_y_{0};
   double max_vel_x_{0};
   double max_vel_y_{0};
+  double base_max_vel_x_{0};
+  double base_max_vel_y_{0};
   double max_vel_theta_{0};
+  double base_max_vel_theta_{0};
   double min_speed_xy_{0};
   double max_speed_xy_{0};
+  double base_max_speed_xy_{0};
   double min_speed_theta_{0};
   double acc_lim_x_{0};
   double acc_lim_y_{0};
@@ -108,6 +112,8 @@ public:
   void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & plugin_name);
 
   inline KinematicParameters getKinematics() {return *kinematics_.load();}
+
+  void setSpeedLimit(const double & speed_limit, const bool & percentage);
 
   using Ptr = std::shared_ptr<KinematicsHandler>;
 

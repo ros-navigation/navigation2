@@ -52,9 +52,6 @@ add_library(nav2_costmap_2d_core SHARED
   plugins/costmap_filters/costmap_filter.cpp
 )
 
-# prevent pluginlib from using boost
-target_compile_definitions(nav2_costmap_2d_core PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 set(dependencies
   geometry_msgs
   laser_geometry
@@ -98,6 +95,7 @@ target_link_libraries(layers
 
 add_library(filters SHARED
   plugins/costmap_filters/keepout_filter.cpp
+  plugins/costmap_filters/speed_filter.cpp
 )
 ament_target_dependencies(filters
   ${dependencies}

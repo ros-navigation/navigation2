@@ -33,16 +33,16 @@ class WaypointFollowerTest(Node):
     def __init__(self):
         super().__init__(node_name='nav2_waypoint_tester', namespace='')
         self.waypoints = None
-        self.action_client = ActionClient(self, FollowWaypoints, 'FollowWaypoints')
+        self.action_client = ActionClient(self, FollowWaypoints, 'follow_waypoints')
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
                                                       'initialpose', 10)
         self.initial_pose_received = False
         self.goal_handle = None
 
         pose_qos = QoSProfile(
-          durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
-          reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_RELIABLE,
-          history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+          durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+          reliability=QoSReliabilityPolicy.RELIABLE,
+          history=QoSHistoryPolicy.KEEP_LAST,
           depth=1)
 
         self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
@@ -76,7 +76,7 @@ class WaypointFollowerTest(Node):
             return False
 
         while not self.action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg("'FollowWaypoints' action server not available, waiting...")
+            self.info_msg("'follow_waypoints' action server not available, waiting...")
 
         action_request = FollowWaypoints.Goal()
         action_request.poses = self.waypoints
@@ -86,8 +86,8 @@ class WaypointFollowerTest(Node):
         try:
             rclpy.spin_until_future_complete(self, send_goal_future)
             self.goal_handle = send_goal_future.result()
-        except Exception as e:
-            self.error_msg('Service call failed %r' % (e,))
+        except Exception as e:  # noqa: B902
+            self.error_msg(f'Service call failed {e!r}')
 
         if not self.goal_handle.accepted:
             self.error_msg('Goal rejected')
@@ -99,16 +99,16 @@ class WaypointFollowerTest(Node):
 
         get_result_future = self.goal_handle.get_result_async()
 
-        self.info_msg("Waiting for 'FollowWaypoints' action to complete")
+        self.info_msg("Waiting for 'follow_waypoints' action to complete")
         try:
             rclpy.spin_until_future_complete(self, get_result_future)
             status = get_result_future.result().status
             result = get_result_future.result().result
-        except Exception as e:
-            self.error_msg('Service call failed %r' % (e,))
+        except Exception as e:  # noqa: B902
+            self.error_msg(f'Service call failed {e!r}')
 
         if status != GoalStatus.STATUS_SUCCEEDED:
-            self.info_msg('Goal failed with status code: {0}'.format(status))
+            self.info_msg(f'Goal failed with status code: {status}')
             return False
         if len(result.missed_waypoints) > 0:
             self.info_msg('Goal failed to process all waypoints,'
@@ -125,12 +125,12 @@ class WaypointFollowerTest(Node):
         self.info_msg('Shutting down')
 
         self.action_client.destroy()
-        self.info_msg('Destroyed FollowWaypoints action client')
+        self.info_msg('Destroyed follow_waypoints action client')
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(transition_service + ' service not available, waiting...')
+            self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -138,15 +138,15 @@ class WaypointFollowerTest(Node):
         try:
             rclpy.spin_until_future_complete(self, future)
             future.result()
-        except Exception as e:
-            self.error_msg('%s service call failed %r' % (transition_service, e,))
+        except Exception as e:  # noqa: B902
+            self.error_msg(f'{transition_service} service call failed {e!r}')
 
-        self.info_msg('{} finished'.format(transition_service))
+        self.info_msg(f'{transition_service} finished')
 
         transition_service = 'lifecycle_manager_localization/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(transition_service + ' service not available, waiting...')
+            self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -154,10 +154,10 @@ class WaypointFollowerTest(Node):
         try:
             rclpy.spin_until_future_complete(self, future)
             future.result()
-        except Exception as e:
-            self.error_msg('%s service call failed %r' % (transition_service, e,))
+        except Exception as e:  # noqa: B902
+            self.error_msg(f'{transition_service} service call failed {e!r}')
 
-        self.info_msg('{} finished'.format(transition_service))
+        self.info_msg(f'{transition_service} finished')
 
     def cancel_goal(self):
         cancel_future = self.goal_handle.cancel_goal_async()

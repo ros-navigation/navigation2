@@ -27,6 +27,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "nav2_msgs/action/follow_path.hpp"
+#include "nav2_msgs/msg/speed_limit.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/simple_action_server.hpp"
@@ -47,11 +48,13 @@ class ControllerServer : public nav2_util::LifecycleNode
 {
 public:
   using ControllerMap = std::unordered_map<std::string, nav2_core::Controller::Ptr>;
+  using GoalCheckerMap = std::unordered_map<std::string, nav2_core::GoalChecker::Ptr>;
 
   /**
    * @brief Constructor for nav2_controller::ControllerServer
+   * @param options Additional options to control creation of the node.
    */
-  ControllerServer();
+  explicit ControllerServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
    * @brief Destructor for nav2_controller::ControllerServer
    */
@@ -130,6 +133,15 @@ protected:
   bool findControllerId(const std::string & c_name, std::string & name);
 
   /**
+   * @brief Find the valid goal checker ID name for the specified parameter
+   *
+   * @param c_name The goal checker name
+   * @param name Reference to the name to use for goal checking if any valid available
+   * @return bool Whether it found a valid goal checker to use
+   */
+  bool findGoalCheckerId(const std::string & c_name, std::string & name);
+
+  /**
    * @brief Assigns path to controller
    * @param path Path received from action server
    */
@@ -196,6 +208,7 @@ protected:
   // Publishers and subscribers
   std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
+  rclcpp::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_sub_;
 
   // Progress Checker Plugin
   pluginlib::ClassLoader<nav2_core::ProgressChecker> progress_checker_loader_;
@@ -207,11 +220,12 @@ protected:
 
   // Goal Checker Plugin
   pluginlib::ClassLoader<nav2_core::GoalChecker> goal_checker_loader_;
-  nav2_core::GoalChecker::Ptr goal_checker_;
-  std::string default_goal_checker_id_;
-  std::string default_goal_checker_type_;
-  std::string goal_checker_id_;
-  std::string goal_checker_type_;
+  GoalCheckerMap goal_checkers_;
+  std::vector<std::string> default_goal_checker_ids_;
+  std::vector<std::string> default_goal_checker_types_;
+  std::vector<std::string> goal_checker_ids_;
+  std::vector<std::string> goal_checker_types_;
+  std::string goal_checker_ids_concat_, current_goal_checker_;
 
   // Controller Plugins
   pluginlib::ClassLoader<nav2_core::Controller> lp_loader_;
@@ -227,8 +241,23 @@ protected:
   double min_y_velocity_threshold_;
   double min_theta_velocity_threshold_;
 
+  double failure_tolerance_;
+
   // Whether we've published the single controller warning yet
   geometry_msgs::msg::Pose end_pose_;
+
+  // Last time the controller generated a valid command
+  rclcpp::Time last_valid_cmd_time_;
+
+  // Current path container
+  nav_msgs::msg::Path current_path_;
+
+private:
+  /**
+    * @brief Callback for speed limiting messages
+    * @param msg Shared pointer to nav2_msgs::msg::SpeedLimit
+    */
+  void speedLimitCallback(const nav2_msgs::msg::SpeedLimit::SharedPtr msg);
 };
 
 }  // namespace nav2_controller

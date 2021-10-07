@@ -26,9 +26,12 @@ mark_threshold: 0
 #END VOXEL STUFF
 
 transform_tolerance: 0.3
-obstacle_range: 2.5
+obstacle_max_range: 2.5
+obstacle_min_range: 0.0
 max_obstacle_height: 2.0
-raytrace_range: 3.0
+raytrace_max_range: 3.0
+raytrace_min_range: 0.0
+
 footprint: [[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.46, 0.0], [0.325, -0.325]]
 #robot_radius: 0.46
 footprint_padding: 0.01

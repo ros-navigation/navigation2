@@ -199,6 +199,10 @@ InflationLayer::updateCosts(
   // box min_i...max_j, by the amount cell_inflation_radius_.  Cells
   // up to that distance outside the box can still influence the costs
   // stored in cells inside the box.
+  const int base_min_i = min_i;
+  const int base_min_j = min_j;
+  const int base_max_i = max_i;
+  const int base_max_j = max_j;
   min_i -= static_cast<int>(cell_inflation_radius_);
   min_j -= static_cast<int>(cell_inflation_radius_);
   max_i += static_cast<int>(cell_inflation_radius_);
@@ -251,12 +255,21 @@ InflationLayer::updateCosts(
       // assign the cost associated with the distance from an obstacle to the cell
       unsigned char cost = costLookup(mx, my, sx, sy);
       unsigned char old_cost = master_array[index];
-      if (old_cost == NO_INFORMATION &&
-        (inflate_unknown_ ? (cost > FREE_SPACE) : (cost >= INSCRIBED_INFLATED_OBSTACLE)))
+      // In order to avoid artifacts appeared out of boundary areas
+      // when some layer is going after inflation_layer,
+      // we need to apply inflation_layer only to inside of given bounds
+      if (static_cast<int>(mx) >= base_min_i &&
+        static_cast<int>(my) >= base_min_j &&
+        static_cast<int>(mx) < base_max_i &&
+        static_cast<int>(my) < base_max_j)
       {
-        master_array[index] = cost;
-      } else {
-        master_array[index] = std::max(old_cost, cost);
+        if (old_cost == NO_INFORMATION &&
+          (inflate_unknown_ ? (cost > FREE_SPACE) : (cost >= INSCRIBED_INFLATED_OBSTACLE)))
+        {
+          master_array[index] = cost;
+        } else {
+          master_array[index] = std::max(old_cost, cost);
+        }
       }
 
       // attempt to put the neighbors of the current cell onto the inflation list
@@ -279,6 +292,8 @@ InflationLayer::updateCosts(
     dist.clear();
     dist.reserve(200);
   }
+
+  current_ = true;
 }
 
 /**

@@ -31,38 +31,36 @@ using nav2_util::LifecycleServiceClient;
 namespace nav2_lifecycle_manager
 {
 
-LifecycleManager::LifecycleManager()
-: Node("lifecycle_manager")
+LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
+: Node("lifecycle_manager", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
   // The list of names is parameterized, allowing this module to be used with a different set
   // of nodes
-  declare_parameter("node_names");
+  declare_parameter("node_names", rclcpp::PARAMETER_STRING_ARRAY);
   declare_parameter("autostart", rclcpp::ParameterValue(false));
-  declare_parameter("bond_timeout_ms", 4000);
+  declare_parameter("bond_timeout", 4.0);
 
   node_names_ = get_parameter("node_names").as_string_array();
   get_parameter("autostart", autostart_);
-  int bond_timeout_int;
-  get_parameter("bond_timeout_ms", bond_timeout_int);
-  bond_timeout_ = std::chrono::milliseconds(bond_timeout_int);
+  double bond_timeout_s;
+  get_parameter("bond_timeout", bond_timeout_s);
+  bond_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::duration<double>(bond_timeout_s));
 
+  callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
   manager_srv_ = create_service<ManageLifecycleNodes>(
     get_name() + std::string("/manage_nodes"),
-    std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3));
+    std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3),
+    rmw_qos_profile_services_default,
+    callback_group_);
 
   is_active_srv_ = create_service<std_srvs::srv::Trigger>(
     get_name() + std::string("/is_active"),
-    std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3));
-
-  auto service_options = rclcpp::NodeOptions().arguments(
-    {"--ros-args", "-r", std::string("__node:=") + get_name() + "_service_client", "--"});
-  auto bond_options = rclcpp::NodeOptions().arguments(
-    {"--ros-args", "-r", std::string("__node:=") + get_name() + "_bond_client", "--"});
-  service_client_node_ = std::make_shared<rclcpp::Node>("_", service_options);
-  bond_client_node_ = std::make_shared<rclcpp::Node>("_", bond_options);
-  bond_node_thread_ = std::make_unique<nav2_util::NodeThread>(bond_client_node_);
+    std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3),
+    rmw_qos_profile_services_default,
+    callback_group_);
 
   transition_state_map_[Transition::TRANSITION_CONFIGURE] = State::PRIMARY_STATE_INACTIVE;
   transition_state_map_[Transition::TRANSITION_CLEANUP] = State::PRIMARY_STATE_UNCONFIGURED;
@@ -78,16 +76,25 @@ LifecycleManager::LifecycleManager()
   transition_label_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] =
     std::string("Shutting down ");
 
-  createLifecycleServiceClients();
-
-  if (autostart_) {
-    startup();
-  }
+  init_timer_ = this->create_wall_timer(
+    std::chrono::nanoseconds(10),
+    [this]() -> void {
+      init_timer_->cancel();
+      createLifecycleServiceClients();
+      if (autostart_) {
+        startup();
+      }
+    },
+    callback_group_);
+  auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor->add_callback_group(callback_group_, get_node_base_interface());
+  service_thread_ = std::make_unique<nav2_util::NodeThread>(executor);
 }
 
 LifecycleManager::~LifecycleManager()
 {
   RCLCPP_INFO(get_logger(), "Destroying %s", get_name());
+  service_thread_.reset();
 }
 
 void
@@ -130,7 +137,7 @@ LifecycleManager::createLifecycleServiceClients()
   message("Creating and initializing lifecycle service clients");
   for (auto & node_name : node_names_) {
     node_map_[node_name] =
-      std::make_shared<LifecycleServiceClient>(node_name, service_client_node_);
+      std::make_shared<LifecycleServiceClient>(node_name, shared_from_this());
   }
 }
 
@@ -152,7 +159,7 @@ LifecycleManager::createBondConnection(const std::string & node_name)
 
   if (bond_map_.find(node_name) == bond_map_.end() && bond_timeout_.count() > 0.0) {
     bond_map_[node_name] =
-      std::make_shared<bond::Bond>("bond", node_name, bond_client_node_);
+      std::make_shared<bond::Bond>("bond", node_name, shared_from_this());
     bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
     bond_map_[node_name]->setHeartbeatPeriod(0.10);
     bond_map_[node_name]->start();
@@ -315,7 +322,8 @@ LifecycleManager::createBondTimer()
 
   bond_timer_ = this->create_wall_timer(
     200ms,
-    std::bind(&LifecycleManager::checkBondConnections, this));
+    std::bind(&LifecycleManager::checkBondConnections, this),
+    callback_group_);
 }
 
 void
@@ -367,3 +375,10 @@ LifecycleManager::message(const std::string & msg)
 }
 
 }  // namespace nav2_lifecycle_manager
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_lifecycle_manager::LifecycleManager)

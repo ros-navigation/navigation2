@@ -5,7 +5,7 @@
 
 # To use this script, make sure you have the colcon plugins installed according
 # to the instructions above. Then build ros2_ws and navstack_dependencies_ws.
-# Source the navstack_dependencies_ws and then cd to the navigation2_ws.
+# Source the navstack_dependencies_ws and then cd to the nav2_ws.
 #
 # Run this script by invoking navigation2/tools/run_sanitizers
 # Afterwards, there should be two files in the root of the workspace:

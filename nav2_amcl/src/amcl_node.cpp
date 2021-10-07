@@ -35,7 +35,7 @@
 #include "nav2_util/string_utils.hpp"
 #include "nav2_amcl/sensors/laser/laser.hpp"
 #include "tf2/convert.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/LinearMath/Transform.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/message_filter.h"
@@ -57,8 +57,8 @@ namespace nav2_amcl
 {
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
-AmclNode::AmclNode()
-: nav2_util::LifecycleNode("amcl", "", true)
+AmclNode::AmclNode(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("amcl", "", true, options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -234,12 +234,12 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   initParameters();
   initTransforms();
+  initParticleFilter();
+  initLaserScan();
   initMessageFilters();
   initPubSub();
   initServices();
   initOdometry();
-  initParticleFilter();
-  initLaserScan();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -274,13 +274,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Lifecycle publishers must be explicitly activated
   pose_pub_->on_activate();
-  particlecloud_pub_->on_activate();
   particle_cloud_pub_->on_activate();
-
-  RCLCPP_WARN(
-    get_logger(),
-    "Publishing the particle cloud as geometry_msgs/PoseArray msg is deprecated, "
-    "will be published as nav2_msgs/ParticleCloud in the future");
 
   first_pose_sent_ = false;
 
@@ -318,7 +312,6 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   // Lifecycle publishers must be explicitly deactivated
   pose_pub_->on_deactivate();
-  particlecloud_pub_->on_deactivate();
   particle_cloud_pub_->on_deactivate();
 
   // destroy bond connection
@@ -342,8 +335,10 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   laser_scan_sub_.reset();
 
   // Map
-  map_free(map_);
-  map_ = nullptr;
+  if (map_ != NULL) {
+    map_free(map_);
+    map_ = nullptr;
+  }
   first_map_received_ = false;
   free_space_indices.resize(0);
 
@@ -354,7 +349,6 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   // PubSub
   pose_pub_.reset();
-  particlecloud_pub_.reset();
   particle_cloud_pub_.reset();
 
   // Odometry
@@ -406,7 +400,7 @@ AmclNode::checkLaserReceived()
     RCLCPP_WARN(
       get_logger(), "Laser scan has not been received"
       " (and thus no pose updates have been published)."
-      " Verify that data is being published on the %s topic.", scan_topic_);
+      " Verify that data is being published on the %s topic.", scan_topic_.c_str());
     return;
   }
 
@@ -415,7 +409,7 @@ AmclNode::checkLaserReceived()
     RCLCPP_WARN(
       get_logger(), "No laser scan received (and thus no pose updates have been published) for %f"
       " seconds.  Verify that data is being published on the %s topic.",
-      d.nanoseconds() * 1e-9, scan_topic_);
+      d.nanoseconds() * 1e-9, scan_topic_.c_str());
   }
 }
 
@@ -873,19 +867,15 @@ AmclNode::publishParticleCloud(const pf_sample_set_t * set)
   cloud_with_weights_msg->header.frame_id = global_frame_id_;
   cloud_with_weights_msg->particles.resize(set->sample_count);
 
-  auto cloud_msg = std::make_unique<geometry_msgs::msg::PoseArray>();
-  cloud_msg->header.stamp = this->now();
-  cloud_msg->header.frame_id = global_frame_id_;
-  cloud_msg->poses.resize(set->sample_count);
   for (int i = 0; i < set->sample_count; i++) {
-    cloud_msg->poses[i].position.x = set->samples[i].pose.v[0];
-    cloud_msg->poses[i].position.y = set->samples[i].pose.v[1];
-    cloud_msg->poses[i].position.z = 0;
-    cloud_msg->poses[i].orientation = orientationAroundZAxis(set->samples[i].pose.v[2]);
-    cloud_with_weights_msg->particles[i].pose = (*cloud_msg).poses[i];
+    cloud_with_weights_msg->particles[i].pose.position.x = set->samples[i].pose.v[0];
+    cloud_with_weights_msg->particles[i].pose.position.y = set->samples[i].pose.v[1];
+    cloud_with_weights_msg->particles[i].pose.position.z = 0;
+    cloud_with_weights_msg->particles[i].pose.orientation = orientationAroundZAxis(
+      set->samples[i].pose.v[2]);
     cloud_with_weights_msg->particles[i].weight = set->samples[i].weight;
   }
-  particlecloud_pub_->publish(std::move(cloud_msg));
+
   particle_cloud_pub_->publish(std::move(cloud_with_weights_msg));
 }
 
@@ -940,7 +930,7 @@ AmclNode::publishAmclPose(
   if (!initial_pose_is_known_) {
     if (checkElapsedTime(2s, last_time_printed_msg_)) {
       RCLCPP_WARN(
-        get_logger(), "ACML cannot publish a pose or update the transform. "
+        get_logger(), "AMCL cannot publish a pose or update the transform. "
         "Please set the initial pose...");
       last_time_printed_msg_ = now();
     }
@@ -1117,12 +1107,38 @@ AmclNode::initParameters()
   last_time_printed_msg_ = now();
 
   // Semantic checks
+  if (laser_likelihood_max_dist_ < 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set laser_likelihood_max_dist to be negtive,"
+      " this isn't allowed so it will be set to default value 2.0.");
+    laser_likelihood_max_dist_ = 2.0;
+  }
+  if (max_particles_ < 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set max_particles to be negtive,"
+      " this isn't allowed so it will be set to default value 2000.");
+    max_particles_ = 2000;
+  }
+
+  if (min_particles_ < 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set min_particles to be negtive,"
+      " this isn't allowed so it will be set to default value 500.");
+    min_particles_ = 500;
+  }
 
   if (min_particles_ > max_particles_) {
     RCLCPP_WARN(
       get_logger(), "You've set min_particles to be greater than max particles,"
       " this isn't allowed so max_particles will be set to min_particles.");
     max_particles_ = min_particles_;
+  }
+
+  if (resample_interval_ <= 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set resample_interval to be zero or negtive,"
+      " this isn't allowed so it will be set to default value to 1.");
+    resample_interval_ = 1;
   }
 
   if (always_reset_initial_pose_) {
@@ -1251,7 +1267,7 @@ AmclNode::initMessageFilters()
     rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
 
   laser_scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-    *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_);
+    *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_, transform_tolerance_);
 
   laser_scan_connection_ = laser_scan_filter_->registerCallback(
     std::bind(
@@ -1263,10 +1279,6 @@ void
 AmclNode::initPubSub()
 {
   RCLCPP_INFO(get_logger(), "initPubSub");
-
-  particlecloud_pub_ = create_publisher<geometry_msgs::msg::PoseArray>(
-    "particlecloud",
-    rclcpp::SensorDataQoS());
 
   particle_cloud_pub_ = create_publisher<nav2_msgs::msg::ParticleCloud>(
     "particle_cloud",
@@ -1364,3 +1376,10 @@ AmclNode::initLaserScan()
 }
 
 }  // namespace nav2_amcl
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_amcl::AmclNode)

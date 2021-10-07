@@ -22,6 +22,7 @@
 #include "lifecycle_msgs/srv/change_state.hpp"
 #include "lifecycle_msgs/srv/get_state.hpp"
 #include "nav2_util/service_client.hpp"
+#include "nav2_util/node_utils.hpp"
 
 namespace nav2_util
 {

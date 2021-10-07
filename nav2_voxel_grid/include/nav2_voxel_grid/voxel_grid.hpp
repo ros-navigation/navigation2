@@ -200,12 +200,12 @@ public:
     unsigned int max_length = UINT_MAX);
   void clearVoxelLine(
     double x0, double y0, double z0, double x1, double y1, double z1,
-    unsigned int max_length = UINT_MAX);
+    unsigned int max_length = UINT_MAX, unsigned int min_length = 0);
   void clearVoxelLineInMap(
     double x0, double y0, double z0, double x1, double y1, double z1, unsigned char * map_2d,
     unsigned int unknown_threshold, unsigned int mark_threshold,
     unsigned char free_cost = 0, unsigned char unknown_cost = 255,
-    unsigned int max_length = UINT_MAX);
+    unsigned int max_length = UINT_MAX, unsigned int min_length = 0);
 
   VoxelStatus getVoxel(unsigned int x, unsigned int y, unsigned int z);
 
@@ -223,11 +223,25 @@ public:
   template<class ActionType>
   inline void raytraceLine(
     ActionType at, double x0, double y0, double z0,
-    double x1, double y1, double z1, unsigned int max_length = UINT_MAX)
+    double x1, double y1, double z1, unsigned int max_length = UINT_MAX,
+    unsigned int min_length = 0)
   {
-    int dx = int(x1) - int(x0);  // NOLINT
-    int dy = int(y1) - int(y0);  // NOLINT
-    int dz = int(z1) - int(z0);  // NOLINT
+    // we need to chose how much to scale our dominant dimension, based on the
+    // maximum length of the line
+    double dist = sqrt((x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1) + (z0 - z1) * (z0 - z1));
+    if ((unsigned int)(dist) < min_length) {
+      return;
+    }
+    double scale = std::min(1.0, max_length / dist);
+
+    // Updating starting point to the point at distance min_length from the initial point
+    double min_x0 = x0 + (x1 - x0) / dist * min_length;
+    double min_y0 = y0 + (y1 - y0) / dist * min_length;
+    double min_z0 = z0 + (z1 - z0) / dist * min_length;
+
+    int dx = int(x1) - int(min_x0);  // NOLINT
+    int dy = int(y1) - int(min_y0);  // NOLINT
+    int dz = int(z1) - int(min_z0);  // NOLINT
 
     unsigned int abs_dx = abs(dx);
     unsigned int abs_dy = abs(dy);
@@ -237,16 +251,11 @@ public:
     int offset_dy = sign(dy) * size_x_;
     int offset_dz = sign(dz);
 
-    unsigned int z_mask = ((1 << 16) | 1) << (unsigned int)z0;
-    unsigned int offset = (unsigned int)y0 * size_x_ + (unsigned int)x0;
+    unsigned int z_mask = ((1 << 16) | 1) << (unsigned int)min_z0;
+    unsigned int offset = (unsigned int)min_y0 * size_x_ + (unsigned int)min_x0;
 
     GridOffset grid_off(offset);
     ZOffset z_off(z_mask);
-
-    // we need to chose how much to scale our dominant dimension, based on the
-    // maximum length of the line
-    double dist = sqrt((x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1) + (z0 - z1) * (z0 - z1));
-    double scale = std::min(1.0, max_length / dist);
 
     // is x dominant
     if (abs_dx >= max(abs_dy, abs_dz)) {

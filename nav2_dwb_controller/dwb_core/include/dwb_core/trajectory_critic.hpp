@@ -38,6 +38,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <utility>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -93,8 +94,8 @@ public:
    */
   void initialize(
     const nav2_util::LifecycleNode::SharedPtr & nh,
-    std::string & name,
-    std::string & ns,
+    const std::string & name,
+    const std::string & ns,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
   {
     node_ = nh;
@@ -166,7 +167,7 @@ public:
    *
    * @param pc PointCloud to add channels to
    */
-  virtual void addCriticVisualization(sensor_msgs::msg::PointCloud &) {}
+  virtual void addCriticVisualization(std::vector<std::pair<std::string, std::vector<float>>> &) {}
 
   std::string getName()
   {

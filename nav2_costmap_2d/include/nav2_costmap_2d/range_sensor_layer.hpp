@@ -47,12 +47,16 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "sensor_msgs/msg/range.hpp"
 
 namespace nav2_costmap_2d
 {
 
+/**
+ * @class RangeSensorLayer
+ * @brief Takes in IR/Sonar/similar point measurement sensors and populates in costmap
+ */
 class RangeSensorLayer : public CostmapLayer
 {
 public:
@@ -63,44 +67,132 @@ public:
     ALL
   };
 
+  /**
+   * @brief A constructor
+   */
   RangeSensorLayer();
 
+  /**
+   * @brief Initialization process of layer on startup
+   */
   virtual void onInitialize();
+
+  /**
+   * @brief Update the bounds of the master costmap by this layer's update dimensions
+   * @param robot_x X pose of robot
+   * @param robot_y Y pose of robot
+   * @param robot_yaw Robot orientation
+   * @param min_x X min map coord of the window to update
+   * @param min_y Y min map coord of the window to update
+   * @param max_x X max map coord of the window to update
+   * @param max_y Y max map coord of the window to update
+   */
   virtual void updateBounds(
     double robot_x, double robot_y, double robot_yaw,
     double * min_x, double * min_y, double * max_x, double * max_y);
+
+  /**
+   * @brief Update the costs in the master costmap in the window
+   * @param master_grid The master costmap grid to update
+   * @param min_x X min map coord of the window to update
+   * @param min_y Y min map coord of the window to update
+   * @param max_x X max map coord of the window to update
+   * @param max_y Y max map coord of the window to update
+   */
   virtual void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid, int min_i,
     int min_j, int max_i, int max_j);
+
+  /**
+   * @brief Reset this costmap
+   */
   virtual void reset();
+
+  /**
+   * @brief Deactivate the layer
+   */
   virtual void deactivate();
+
+  /**
+   * @brief Activate the layer
+   */
   virtual void activate();
 
+  /**
+   * @brief If clearing operations should be processed on this layer or not
+   */
+  virtual bool isClearable() {return true;}
+
+  /**
+   * @brief Handle an incoming Range message to populate into costmap
+   */
   void bufferIncomingRangeMsg(const sensor_msgs::msg::Range::SharedPtr range_message);
 
 private:
+  /**
+   * @brief Processes all sensors into the costmap buffered from callbacks
+   */
   void updateCostmap();
+  /**
+   * @brief Update the actual costmap with the values processed
+   */
   void updateCostmap(sensor_msgs::msg::Range & range_message, bool clear_sensor_cone);
 
+  /**
+   * @brief Process general incoming range sensor data. If min=max ranges,
+   * fixed processor callback is used, else uses variable callback
+   */
   void processRangeMsg(sensor_msgs::msg::Range & range_message);
+  /**
+    * @brief Process fixed range incoming range sensor data
+    */
   void processFixedRangeMsg(sensor_msgs::msg::Range & range_message);
+  /**
+    * @brief Process variable range incoming range sensor data
+    */
   void processVariableRangeMsg(sensor_msgs::msg::Range & range_message);
 
+  /**
+   * @brief Reset the angle min/max x, and min/max y values
+   */
   void resetRange();
 
+  /**
+   * @brief Get the gamma value for an angle, theta
+   */
   inline double gamma(double theta);
+  /**
+   * @brief Get the delta value for an angle, phi
+   */
   inline double delta(double phi);
+  /**
+   * @brief Apply the sensor model of the layer for range sensors
+   */
   inline double sensor_model(double r, double phi, double theta);
 
+  /**
+   * @brief Get angles
+   */
   inline void get_deltas(double angle, double * dx, double * dy);
+
+  /**
+   * @brief Update the cost in a cell with information
+   */
   inline void update_cell(
     double ox, double oy, double ot,
     double r, double nx, double ny, bool clear);
 
+  /**
+   * @brief Find probability value of a cost
+   */
   inline double to_prob(unsigned char c)
   {
     return static_cast<double>(c) / nav2_costmap_2d::LETHAL_OBSTACLE;
   }
+
+  /**
+   * @brief Find cost value of a probability
+   */
   inline unsigned char to_cost(double p)
   {
     return static_cast<unsigned char>(p * nav2_costmap_2d::LETHAL_OBSTACLE);
@@ -116,6 +208,7 @@ private:
 
   double clear_threshold_, mark_threshold_;
   bool clear_on_max_reading_;
+  bool was_reset_;
 
   tf2::Duration transform_tolerance_;
   double no_readings_timeout_;
@@ -124,11 +217,17 @@ private:
   std::vector<rclcpp::Subscription<sensor_msgs::msg::Range>::SharedPtr> range_subs_;
   double min_x_, min_y_, max_x_, max_y_;
 
+  /**
+   * @brief Find the area of 3 points of a triangle
+   */
   float area(int x1, int y1, int x2, int y2, int x3, int y3)
   {
     return fabs((x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2.0);
   }
 
+  /**
+   * @brief Find the cross product of 3 vectors, A,B,C
+   */
   int orient2d(int Ax, int Ay, int Bx, int By, int Cx, int Cy)
   {
     return (Bx - Ax) * (Cy - Ay) - (By - Ay) * (Cx - Ax);

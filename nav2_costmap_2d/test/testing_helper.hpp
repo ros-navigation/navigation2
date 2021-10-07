@@ -30,16 +30,6 @@
 
 const double MAX_Z(1.0);
 
-void setValues(nav2_costmap_2d::Costmap2D & costmap, const unsigned char * map)
-{
-  int index = 0;
-  for (unsigned int i = 0; i < costmap.getSizeInCellsY(); i++) {
-    for (unsigned int j = 0; j < costmap.getSizeInCellsX(); j++) {
-      costmap.setCost(j, i, map[index]);
-    }
-  }
-}
-
 char printableCost(unsigned char cost)
 {
   switch (cost) {
@@ -110,7 +100,11 @@ void addRangeLayer(
 
 void addObservation(
   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer, double x, double y, double z = 0.0,
-  double ox = 0.0, double oy = 0.0, double oz = MAX_Z, bool marking = true, bool clearing = true)
+  double ox = 0.0, double oy = 0.0, double oz = MAX_Z, bool marking = true, bool clearing = true,
+  double raytrace_max_range = 100.0,
+  double raytrace_min_range = 0.0,
+  double obstacle_max_range = 100.0,
+  double obstacle_min_range = 0.0)
 {
   sensor_msgs::msg::PointCloud2 cloud;
   sensor_msgs::PointCloud2Modifier modifier(cloud);
@@ -128,8 +122,8 @@ void addObservation(
   p.y = oy;
   p.z = oz;
 
-  // obstacle range = raytrace range = 100.0
-  nav2_costmap_2d::Observation obs(p, cloud, 100.0, 100.0);
+  nav2_costmap_2d::Observation obs(p, cloud, obstacle_max_range, obstacle_min_range,
+    raytrace_max_range, raytrace_min_range);
   olayer->addStaticObservation(obs, marking, clearing);
 }
 

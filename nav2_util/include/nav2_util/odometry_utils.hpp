@@ -52,11 +52,40 @@ public:
     double filter_duration = 0.3,
     const std::string & odom_topic = "odom");
 
+  /**
+   * @brief Overloadded Constructor for nav_util::LifecycleNode parent
+   * that subscribes to an Odometry topic
+   * @param parent NodeHandle for creating subscriber
+   * @param filter_duration Duration for odom history (seconds)
+   * @param odom_topic Topic on which odometry should be received
+   */
+  explicit OdomSmoother(
+    const nav2_util::LifecycleNode::WeakPtr & parent,
+    double filter_duration = 0.3,
+    const std::string & odom_topic = "odom");
+
+  /**
+   * @brief Get twist msg from smoother
+   * @return twist Twist msg
+   */
   inline geometry_msgs::msg::Twist getTwist() {return vel_smooth_.twist;}
+
+  /**
+   * @brief Get twist stamped msg from smoother
+   * @return twist TwistStamped msg
+   */
   inline geometry_msgs::msg::TwistStamped getTwistStamped() {return vel_smooth_;}
 
 protected:
+  /**
+   * @brief Callback of odometry subscriber to process
+   * @param msg Odometry msg to smooth
+   */
   void odomCallback(nav_msgs::msg::Odometry::SharedPtr msg);
+
+  /**
+   * @brief Update internal state of the smoother after getting new data
+   */
   void updateState();
 
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;

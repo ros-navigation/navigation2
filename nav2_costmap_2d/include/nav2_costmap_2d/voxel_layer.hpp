@@ -55,38 +55,90 @@
 namespace nav2_costmap_2d
 {
 
+/**
+ * @class VoxelLayer
+ * @brief Takes laser and pointcloud data to populate a 3D voxel representation of the environment
+ */
 class VoxelLayer : public ObstacleLayer
 {
 public:
+  /**
+   * @brief Voxel Layer constructor
+   */
   VoxelLayer()
   : voxel_grid_(0, 0, 0)
   {
     costmap_ = NULL;  // this is the unsigned char* member of parent class's parent class Costmap2D
   }
 
+  /**
+   * @brief Voxel Layer destructor
+   */
   virtual ~VoxelLayer();
 
+  /**
+   * @brief Initialization process of layer on startup
+   */
   virtual void onInitialize();
+
+  /**
+   * @brief Update the bounds of the master costmap by this layer's update dimensions
+   * @param robot_x X pose of robot
+   * @param robot_y Y pose of robot
+   * @param robot_yaw Robot orientation
+   * @param min_x X min map coord of the window to update
+   * @param min_y Y min map coord of the window to update
+   * @param max_x X max map coord of the window to update
+   * @param max_y Y max map coord of the window to update
+   */
   virtual void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
     double * min_y,
     double * max_x,
     double * max_y);
 
+  /**
+   * @brief Update the layer's origin to a new pose, often when in a rolling costmap
+   */
   void updateOrigin(double new_origin_x, double new_origin_y);
+
+  /**
+   * @brief If layer is discretely populated
+   */
   bool isDiscretized()
   {
     return true;
   }
+
+  /**
+   * @brief Match the size of the master costmap
+   */
   virtual void matchSize();
+
+  /**
+   * @brief Reset this costmap
+   */
   virtual void reset();
 
+  /**
+   * @brief If clearing operations should be processed on this layer or not
+   */
+  virtual bool isClearable() {return true;}
+
 protected:
+  /**
+   * @brief Reset internal maps
+   */
   virtual void resetMaps();
 
 private:
-  void reconfigureCB();
+  /**
+   * @brief Clear any non-lethal cost columns
+   */
   void clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info);
+  /**
+   * @brief Use raycasting between 2 points to clear freespace
+   */
   virtual void raytraceFreespace(
     const nav2_costmap_2d::Observation & clearing_observation,
     double * min_x, double * min_y,
@@ -98,8 +150,12 @@ private:
   nav2_voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
   int unknown_threshold_, mark_threshold_, size_z_;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr clearing_endpoints_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+    clearing_endpoints_pub_;
 
+  /**
+   * @brief Covert world coordinates into map coordinates
+   */
   inline bool worldToMap3DFloat(
     double wx, double wy, double wz, double & mx, double & my,
     double & mz)
@@ -117,6 +173,9 @@ private:
     return false;
   }
 
+  /**
+   * @brief Covert world coordinates into map coordinates
+   */
   inline bool worldToMap3D(
     double wx, double wy, double wz, unsigned int & mx, unsigned int & my,
     unsigned int & mz)
@@ -136,6 +195,9 @@ private:
     return false;
   }
 
+  /**
+   * @brief Covert map coordinates into world coordinates
+   */
   inline void mapToWorld3D(
     unsigned int mx, unsigned int my, unsigned int mz, double & wx,
     double & wy,
@@ -147,11 +209,17 @@ private:
     wz = origin_z_ + (mz + 0.5) * z_resolution_;
   }
 
+  /**
+   * @brief Find L2 norm distance in 3D
+   */
   inline double dist(double x0, double y0, double z0, double x1, double y1, double z1)
   {
     return sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0) + (z1 - z0) * (z1 - z0));
   }
 
+  /**
+   * @brief Get the height of the voxel sizes in meters
+   */
   double getSizeInMetersZ() const
   {
     return (size_z_ - 1 + 0.5) * z_resolution_;

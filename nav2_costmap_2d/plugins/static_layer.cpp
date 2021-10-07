@@ -44,7 +44,7 @@
 
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2/convert.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::StaticLayer, nav2_costmap_2d::Layer)
 
@@ -116,6 +116,7 @@ void
 StaticLayer::reset()
 {
   has_updated_data_ = true;
+  current_ = false;
 }
 
 void
@@ -431,6 +432,7 @@ StaticLayer::updateCosts(
     }
   }
   update_in_progress_.store(false);
+  current_ = true;
 }
 
 }  // namespace nav2_costmap_2d
