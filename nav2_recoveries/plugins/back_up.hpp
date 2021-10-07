@@ -76,6 +76,8 @@ protected:
   geometry_msgs::msg::PoseStamped initial_pose_;
   double command_x_;
   double command_speed_;
+  rclcpp::Duration command_time_allowance_{0,0};
+  rclcpp::Time end_time_;
   double simulate_ahead_time_;
 
   BackUpAction::Feedback::SharedPtr feedback_;
