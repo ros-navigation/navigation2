@@ -58,7 +58,6 @@ public:
 
   /**
    * @brief Reports that no expansion is required
-   *
    * The method is called to ask the plugin: which area of costmap it needs to update.
    * A layer is essentially a filter, so it never needs to expand bounds.
    */
@@ -69,14 +68,13 @@ public:
 
   /**
    * @brief Filters noise-induced obstacles in the selected region of the costmap
-   *
    * The method is called when costmap recalculation is required.
    * It updates the costmap within its window bounds.
    * @param master_grid The master costmap grid to update
-   * \param min_x X min map coord of the window to update
-   * \param min_y Y min map coord of the window to update
-   * \param max_x X max map coord of the window to update
-   * \param max_y Y max map coord of the window to update
+   * @param min_x X min map coord of the window to update
+   * @param min_y Y min map coord of the window to update
+   * @param max_x X max map coord of the window to update
+   * @param max_y Y max map coord of the window to update
    */
   void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid,
@@ -85,7 +83,6 @@ public:
 protected:
   /**
    * @brief Initializes the layer on startup
-   *
    * This method is called at the end of plugin initialization.
    * Reads plugin parameters from a config file
    */
@@ -96,12 +93,12 @@ private:
      * @brief Removes from the image single obstacles (white pixels) or small obstacles groups
      *
      * Pixels less than 255 will be interpreted as background (free space), 255 - as obstacles.
-     * Replaces groups of obstacles smaller than minimal_group_size to free space.
+     * Replaces groups of obstacles smaller than minimal_group_size_ to free space.
      * Groups connectivity type is determined by the connectivity parameter.
      *
-     * If minimal_group_size is 1 or 0, it does nothing
+     * If minimal_group_size_ is 1 or 0, it does nothing
      * (all standalone obstacles will be preserved, since it satisfies this condition).
-     * If minimal_group_size equals 2, performs fast filtering based on the dilation operation.
+     * If minimal_group_size_ equals 2, performs fast filtering based on the dilation operation.
      * Otherwise, it performs a slower segmentation-based operation.
      *
      * @param image source single channel image with depth CV_8U.
@@ -110,10 +107,9 @@ private:
   void denoise(cv::Mat & image) const;
 
   /**
-     * @brief Removes from the image groups of white pixels smaller than minimal_group_size
-     *
+     * @brief Removes from the image groups of white pixels smaller than minimal_group_size_
      * Segments the image into groups of connected pixels
-     * Replace pixels in groups whose size smaller than minimal_group_size to zero value (background)
+     * Replace pixels in groups whose size smaller than minimal_group_size_ to zero value (background)
      * @param image source single channel binary image with depth CV_8U
      * @throw std::logic_error in case inner logic errors
      * @warning If image.empty() or image.type() != CV_8UC1, the behavior is undefined
@@ -122,8 +118,7 @@ private:
 
   /**
      * @brief Removes from the image freestanding single white pixels
-     *
-     * Works similarly to removeGroups with minimal_group_size = 2, but about 10x faster
+     * Works similarly to removeGroups with minimal_group_size_ = 2, but about 10x faster
      * @param image source single channel binary image with depth CV_8U
      * @throw std::logic_error in case inner logic errors
      * @warning If image.empty() or image.type() != CV_8UC1, the behavior is undefined
@@ -155,7 +150,6 @@ private:
 
   /**
      * @brief Convert each pixel of source image to target by lookup table
-     *
      * Perform target[i,j] = table[ source[i,j] ]
      * @param source source single channel image with depth CV_16UC1
      * @param target source single channel image with depth CV_8UC1
@@ -170,7 +164,6 @@ private:
 
   /**
      * @brief Creates a lookup table for binary thresholding
-     *
      * The table size is equal to groups_sizes.size()
      * Lookup table[i] = OBSTACLE_CELL if groups_sizes[i] >= threshold,
      * FREE_SPACE in other case
@@ -222,9 +215,9 @@ private:
 
 private:
   // Pixels connectivity type. Determines how pixels belonging to the same group can be arranged
-  size_t minimal_group_size{};
+  size_t minimal_group_size_{};
   // The border value of group size. Groups of this and larger size will be kept
-  ConnectivityType group_connectivity_type{ConnectivityType::Way8};
+  ConnectivityType group_connectivity_type_{ConnectivityType::Way8};
 };
 
 template<class SourceElement, class TargetElement, class Converter>

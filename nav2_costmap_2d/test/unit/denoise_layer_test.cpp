@@ -63,21 +63,21 @@ public:
 
   void removeSinglePixels(cv::Mat & image, ConnectivityType connectivity)
   {
-    denoise_.group_connectivity_type = connectivity;
+    denoise_.group_connectivity_type_ = connectivity;
     denoise_.removeSinglePixels(image);
   }
 
   void removeGroups(cv::Mat & image, ConnectivityType connectivity, size_t minimal_group_size)
   {
-    denoise_.group_connectivity_type = connectivity;
-    denoise_.minimal_group_size = minimal_group_size;
+    denoise_.group_connectivity_type_ = connectivity;
+    denoise_.minimal_group_size_ = minimal_group_size;
     denoise_.removeGroups(image);
   }
 
   void denoise(cv::Mat & image, ConnectivityType connectivity, size_t minimal_group_size)
   {
-    denoise_.group_connectivity_type = connectivity;
-    denoise_.minimal_group_size = minimal_group_size;
+    denoise_.group_connectivity_type_ = connectivity;
+    denoise_.minimal_group_size_ = minimal_group_size;
     denoise_.denoise(image);
   }
 
@@ -102,14 +102,14 @@ public:
     nav2_costmap_2d::DenoiseLayer & d, ConnectivityType connectivity, size_t minimal_group_size)
   {
     d.enabled_ = true;
-    d.group_connectivity_type = connectivity;
-    d.minimal_group_size = minimal_group_size;
+    d.group_connectivity_type_ = connectivity;
+    d.minimal_group_size_ = minimal_group_size;
   }
 
   static std::tuple<bool, DenoiseLayerTester::ConnectivityType, size_t> getParameters(
     const nav2_costmap_2d::DenoiseLayer & d)
   {
-    return std::make_tuple(d.enabled_, d.group_connectivity_type, d.minimal_group_size);
+    return std::make_tuple(d.enabled_, d.group_connectivity_type_, d.minimal_group_size_);
   }
 
 private:
