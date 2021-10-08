@@ -157,7 +157,7 @@ bool Spin::isCollisionFree(
   const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
   geometry_msgs::msg::Pose2D init_pose = pose2d;
   bool updateCostmap = true;
-  
+
   while (cycle_count < max_cycle_count) {
     sim_position_change = cmd_vel->angular.z * (cycle_count / cycle_frequency_);
     pose2d.theta = init_pose.theta + sim_position_change;

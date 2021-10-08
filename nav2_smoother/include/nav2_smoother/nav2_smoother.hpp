@@ -34,14 +34,16 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "pluginlib/class_loader.hpp"
 
-namespace nav2_smoother {
+namespace nav2_smoother
+{
 
 /**
  * @class nav2_smoother::SmootherServer
  * @brief This class hosts variety of plugins of different algorithms to
  * smooth or refine a path from the exposed SmoothPath action server.
  */
-class SmootherServer : public nav2_util::LifecycleNode {
+class SmootherServer : public nav2_util::LifecycleNode
+{
 public:
   using SmootherMap = std::unordered_map<std::string, nav2_core::Smoother::Ptr>;
 
@@ -160,6 +162,6 @@ protected:
   rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
 };
 
-} // namespace nav2_smoother
+}  // namespace nav2_smoother
 
-#endif // NAV2_SMOOTHER__NAV2_SMOOTHER_HPP_
+#endif  // NAV2_SMOOTHER__NAV2_SMOOTHER_HPP_

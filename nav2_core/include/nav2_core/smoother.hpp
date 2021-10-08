@@ -79,6 +79,6 @@ public:
     const rclcpp::Duration & max_time) = 0;
 };
 
-}  // namespace nav2_smoother
+}  // namespace nav2_core
 
 #endif  // NAV2_SMOOTHER__SMOOTHER_HPP_
