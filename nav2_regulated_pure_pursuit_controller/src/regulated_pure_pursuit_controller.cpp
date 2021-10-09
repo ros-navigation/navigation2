@@ -411,9 +411,8 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   curr_pose.theta = tf2::getYaw(robot_pose.pose.orientation);
 
   // compute distace to goal to stop collision checking when closer to goal
-  auto last_id = global_plan_.poses.size() - 1;
-  double dx = global_plan_.poses[last_id].pose.position.x - robot_pose.pose.position.x;
-  double dy = global_plan_.poses[last_id].pose.position.y - robot_pose.pose.position.y;
+  double dx = global_plan_.poses.back().pose.position.x - robot_pose.pose.position.x;
+  double dy = global_plan_.poses.back().pose.position.y - robot_pose.pose.position.y;
   double dist_to_goal = std::hypot(dx, dy);
 
   int i = 1;
