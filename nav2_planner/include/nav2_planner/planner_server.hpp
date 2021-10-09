@@ -201,8 +201,10 @@ protected:
   void computePlanThroughPoses();
 
   /**
-    * @brief The service callback to determine if the is still valid
-    */
+   * @brief The service callback to determine if the path is still valid
+   * @param request to the service
+   * @param response from the service
+   */
   void isPathValid(
     const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
     std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response);
@@ -239,7 +241,6 @@ protected:
 
   //Service to deterime if the path is valid
   rclcpp::Service<nav2_msgs::srv::IsPathValid>::SharedPtr is_path_valid_service;
-  bool aSwitch;
 };
 
 }  // namespace nav2_planner

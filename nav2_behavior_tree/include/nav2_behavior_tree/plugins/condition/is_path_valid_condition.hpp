@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Aitor Miguel Blanco
+// Copyright (c) 2021 Joshua Wallace
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,6 @@
 #ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_PATH_VALID_CONDITION_HPP_
 #define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_PATH_VALID_CONDITION_HPP_
 
-#include <string>
-#include <vector>
-
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp_v3/condition_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -27,8 +24,8 @@ namespace nav2_behavior_tree
 {
 
 /**
- * @brief A BT::ConditionNode that returns SUCCESS when goal is
- * updated on the blackboard and FAILURE otherwise
+ * @brief A BT::ConditionNode that returns SUCCESS when the IsPathValid
+ * service returns true and FAILURE otherwise
  */
 class IsPathValidCondition : public BT::ConditionNode
 {
@@ -56,10 +53,8 @@ public:
    */
   static BT::PortsList providedPorts()
   {
-
-
     return {
-      BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow")
+      BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check")
     };
   }
 

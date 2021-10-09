@@ -41,8 +41,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
   default_ids_{"GridBased"},
   default_types_{"nav2_navfn_planner/NavfnPlanner"},
-  costmap_(nullptr),
-  aSwitch(false)
+  costmap_(nullptr)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -528,24 +527,18 @@ void PlannerServer::isPathValid(
 
   if (request->path.poses.empty() ) {
     response->is_valid = false;
-  }
-
-  for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
-    costmap_->worldToMap(
-      request->path.poses[i].pose.position.x, request->path.poses[i].pose.position.y,
-      mx, my);
-    if (static_cast<double>(costmap_->getCost(mx, my)) >= nav2_costmap_2d::LETHAL_OBSTACLE) {
-      response->is_valid = false;
+  } else {
+    for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
+      costmap_->worldToMap(
+        request->path.poses[i].pose.position.x,
+        request->path.poses[i].pose.position.y, mx, my);
+      if (static_cast<unsigned int>(costmap_->getCost(mx, my)) >=
+        nav2_costmap_2d::LETHAL_OBSTACLE)
+      {
+        response->is_valid = false;
+      }
     }
   }
 }
-// (void)request;
-
-// if (aSwitch) {
-//   response->is_valid = true;
-// } else {
-//   response->is_valid = false;
-//   aSwitch = true;
-// }
 
 }   // namespace nav2_planner
