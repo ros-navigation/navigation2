@@ -72,7 +72,6 @@ bool SimpleProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose
 void SimpleProgressChecker::reset()
 {
   baseline_pose_set_ = false;
-  dyn_params_handler.reset();
 }
 
 void SimpleProgressChecker::reset_baseline_pose(const geometry_msgs::msg::Pose2D & pose)

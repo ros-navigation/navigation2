@@ -92,7 +92,6 @@ void SimpleGoalChecker::initialize(
 void SimpleGoalChecker::reset()
 {
   check_xy_ = true;
-  dyn_params_handler.reset();
 }
 
 bool SimpleGoalChecker::isGoalReached(
