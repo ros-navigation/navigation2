@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_behavior_tree/plugins/condition/is_path_valid_condition.hpp"
+#include <chrono>
 
 namespace nav2_behavior_tree
 {
@@ -35,8 +36,8 @@ BT::NodeStatus IsPathValidCondition::tick()
 
   request->path = path;
   auto result = client->async_send_request(request);
-  // Wait for the result.
-  if (rclcpp::spin_until_future_complete(node_, result) ==
+
+  if (rclcpp::spin_until_future_complete(node_, result, std::chrono::milliseconds(1)) ==
     rclcpp::FutureReturnCode::SUCCESS)
   {
     if (result.get()->is_valid) {
