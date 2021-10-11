@@ -87,19 +87,6 @@ public:
     const geometry_msgs::msg::PoseStamped & goal) override;
 
 protected:
-  /**
-   * @brief Get the angular bin to use from a raw orientation
-   * @param theta Angle in radians
-   * @return bin index of closest angle to request
-   */
-  unsigned int getClosestAngularBin(const double & theta);
-
-  /**
-   * @brief Get the raw orientation from an angular bin
-   * @param bin_idx Index of the bin
-   * @return Raw orientation in radians
-   */
-  float getAngleFromBin(const unsigned int & bin_idx);
 
   std::unique_ptr<AStarAlgorithm<NodeLattice>> _a_star;
   GridCollisionChecker _collision_checker;

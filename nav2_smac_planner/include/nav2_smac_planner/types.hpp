@@ -88,6 +88,66 @@ struct SmootherParams
   double w_smooth_;
 };
 
+/**
+ * @struct nav2_smac_planner::MotionPose
+ * @brief A struct for poses in motion primitives
+ */
+struct MotionPose
+{
+  /**
+   * @brief A constructor for nav2_smac_planner::MotionPose
+   */
+  MotionPose() {}
+
+  /**
+   * @brief A constructor for nav2_smac_planner::MotionPose
+   * @param x X pose
+   * @param y Y pose
+   * @param theta Angle of pose
+   */
+  MotionPose(const float & x, const float & y, const float & theta)
+  : _x(x), _y(y), _theta(theta)
+  {}
+
+  float _x;
+  float _y;
+  float _theta;
+};
+
+typedef std::vector<MotionPose> MotionPoses;
+
+/**
+ * @struct nav2_smac_planner::LatticeMetadata
+ * @brief A struct of all lattice metadata
+ */
+struct LatticeMetadata
+{
+  float min_turning_radius;
+  float primitive_resolution;
+  float grid_resolution;
+  float max_length; 
+  unsigned int number_of_headings; 
+  std::string output_file; 
+  std::vector<float> heading_angles; 
+  unsigned int number_of_trajectories; 
+};
+
+/**
+ * @struct nav2_smac_planner::MotionPrimitive
+ * @brief A struct of all motion primitive data
+ */
+struct MotionPrimitive
+{
+  unsigned int trajectory_id;
+  float start_angle;
+  float end_angle;
+  float turning_radius;
+  float trajectory_length;
+  float arc_length;
+  float straight_length;
+  MotionPoses poses;
+};
+
 }  // namespace nav2_smac_planner
 
 #endif  // NAV2_SMAC_PLANNER__TYPES_HPP_

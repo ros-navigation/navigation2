@@ -25,6 +25,7 @@
 #include <utility>
 #include <limits>
 #include <string>
+#include <nlohmann/json.hpp>
 
 #include "ompl/base/StateSpace.h"
 
@@ -32,6 +33,7 @@
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
+#include "nav2_smac_planner/utils.hpp"
 
 namespace nav2_smac_planner
 {
@@ -39,8 +41,6 @@ namespace nav2_smac_planner
 // forward declare
 class NodeLattice;
 class NodeHybrid;
-
-typedef std::pair<unsigned int, double> LatticeMetadata;
 
 /**
  * @struct nav2_smac_planner::LatticeMotionTable
@@ -69,7 +69,7 @@ struct LatticeMotionTable
    * @param node Ptr to NodeLattice
    * @return A set of motion poses
    */
-  MotionPoses getProjections(const NodeLattice * node);
+  MotionPoses getMotionPrimitives(const NodeLattice * node);
 
   /**
    * @brief Get file metadata needed
@@ -94,18 +94,18 @@ struct LatticeMotionTable
    */
   float getAngleFromBin(const unsigned int & bin_idx);
 
-  MotionPoses projections;
   unsigned int size_x;
   unsigned int num_angle_quantization;
-  float min_turning_radius;
   float change_penalty;
   float non_straight_penalty;
   float cost_penalty;
   float reverse_penalty;
   bool allow_reverse_expansion;
+  std::vector<std::vector<MotionPrimitive>> motion_primitives;
   ompl::base::StateSpacePtr state_space;
   std::vector<TrigValues> trig_values;
   std::string current_lattice_filepath;
+  LatticeMetadata lattice_metadata;
 };
 
 /**

@@ -21,6 +21,7 @@
 #include <queue>
 #include <limits>
 #include <string>
+#include <fstream>
 
 #include "ompl/base/ScopedState.h"
 #include "ompl/base/spaces/DubinsStateSpace.h"
@@ -62,54 +63,126 @@ void LatticeMotionTable::initMotionModel(
   current_lattice_filepath = search_info.lattice_filepath;
   allow_reverse_expansion = search_info.allow_reverse_expansion;
 
-  // TODO(Matt) read in file, precompute based on orientation bins for lookup at runtime
-  // file is `search_info.lattice_filepath`, to be read in from plugin and provided here.
+  // Get the metadata about this minimum control set
+  lattice_metadata = getLatticeMetadata(current_lattice_filepath);
+  std::ifstream latticeFile(current_lattice_filepath);
+  if(!latticeFile.is_open()) {
+    throw std::runtime_error("Could not open lattice file");
+  }
+  nlohmann::json json;
+  latticeFile >> json;
+  num_angle_quantization = lattice_metadata.number_of_headings;
 
-  // TODO(Matt) create a state_space with the max turning rad primitive within the file
-  // (or another -- mid?)
-  // to use for analytic expansions and heuristic generation. Potentially make both an
-  // extreme and a passive one?
+  if (!state_space) {
+    if (!allow_reverse_expansion) {
+      state_space = std::make_unique<ompl::base::DubinsStateSpace>(
+        lattice_metadata.min_turning_radius);
+    } else {
+      state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
+        lattice_metadata.min_turning_radius);
+    }
+  }
 
-  // TODO(Matt) populate num_angle_quantization, size_x, min_turning_radius, trig_values,
-  // all of the member variables of LatticeMotionTable
+  // Populate the motion primitives at each heading angle
+  float prev_start_angle = 0.0;
+  std::vector<MotionPrimitive> primitives; 
+  nlohmann::json json_primitives = json["primitives"];
+  for(unsigned int i = 0; i < json_primitives.size(); ++i) {
+    MotionPrimitive new_primitive; 
+    fromJsonToMotionPrimitive(json_primitives[i], new_primitive); 
 
-  // TODO use allow_reverse_expansion to set state_space to dubins/reeds-shepp
+    if(prev_start_angle != new_primitive.start_angle) {
+      motion_primitives.push_back(primitives);
+      primitives.clear(); 
+      prev_start_angle = new_primitive.start_angle;
+    }
+    primitives.push_back(new_primitive); 
+  }
+  motion_primitives.push_back(primitives);
+
+  // Populate useful precomputed values to be leveraged
+  trig_values.reserve(lattice_metadata.number_of_headings);
+  for(unsigned int i = 0; i < lattice_metadata.heading_angles.size(); ++i) {
+    trig_values.emplace_back(
+      cos(lattice_metadata.heading_angles[i]),
+      sin(lattice_metadata.heading_angles[i]));
+  }
 }
 
-MotionPoses LatticeMotionTable::getProjections(const NodeLattice * node)
+MotionPoses LatticeMotionTable::getMotionPrimitives(const NodeLattice * node)
 {
-  // TODO use allow_reverse_expansion to get forward or inverse pair as well
-  return MotionPoses();  // TODO(Matt) lookup at run time the primitives to use at node
+  // TODO get full, include primitive ID, somehow communicate more than just an end pose?
+  // we will likely want to know the motion primitive index (0-104)
+  //That the lattice node will store for the backtrace 
+
+  std::vector<MotionPrimitive> & prims_at_heading = motion_primitives[node->pose.theta];
+  MotionPoses primitive_projection_list; 
+  primitive_projection_list.reserve(prims_at_heading.size());
+
+  std::vector<MotionPrimitive>::const_iterator it;
+  for(it = prims_at_heading.begin(); it != prims_at_heading.end(); ++it) {
+    const MotionPose & end_pose = it->poses.back(); 
+    primitive_projection_list.emplace_back(
+      node->pose.x + (end_pose._x / lattice_metadata.grid_resolution),
+      node->pose.y + (end_pose._y / lattice_metadata.grid_resolution),
+      it->end_angle /*this is the ending angular bin*/);
+  }
+
+  if (allow_reverse_expansion) {
+    // Find heading bin of the reverse expansion
+    double reserve_heading = node->pose.theta - (num_angle_quantization / 2);
+    if (reserve_heading < 0) {
+      reserve_heading += num_angle_quantization;
+    }
+    if (reserve_heading > num_angle_quantization) {
+      reserve_heading -= num_angle_quantization;
+    }
+    prims_at_heading = motion_primitives[reserve_heading];
+    std::vector<MotionPrimitive>::const_iterator it;
+    for(it = prims_at_heading.begin(); it != prims_at_heading.end(); ++it) {
+      const MotionPose & end_pose = it->poses.back(); 
+      primitive_projection_list.emplace_back(
+        node->pose.x + (end_pose._x / lattice_metadata.grid_resolution),
+        node->pose.y + (end_pose._y / lattice_metadata.grid_resolution),
+        it->end_angle /*this is the ending angular bin*/);
+    }
+  }
+
+  return primitive_projection_list;
 }
 
 LatticeMetadata LatticeMotionTable::getLatticeMetadata(const std::string & lattice_filepath)
 {
-  // TODO(Matt) from this file extract and return the number of angle bins and
-  // turning radius in global coordinates, respectively.
-  // world coordinates meaning meters, not cells
-  return {0 /*num bins*/, 0 /*turning rad*/};
+  std::ifstream lattice_file(lattice_filepath);
+  if(!lattice_file.is_open()) {
+    throw std::runtime_error("Could not open lattice file!");
+  }
+
+  nlohmann::json j;
+  lattice_file >> j;
+  LatticeMetadata metadata;
+  fromJsonToMetaData(j["latticeMetadata"], metadata);
+  return metadata;
 }
 
 unsigned int LatticeMotionTable::getClosestAngularBin(const double & theta)
 {
-  // TODO
-  // float min_dist = std::numeric_limits<double>::max;
-  // unsigned int closest_idx = 0;
-  // float dist = 0.0;
-  // for (unsigned int i = 0; i != primitive_headings.size(); i++) {
-  //   dist = fabs(theta - primitive_headings[i]);
-  //   if (dist < min_dist) {
-  //     min_dist = dist;
-  //     closest_idx = i;
-  //   }
-  // }
-  // return closest_idx;
+  float min_dist = std::numeric_limits<float>::max();
+  unsigned int closest_idx = 0;
+  float dist = 0.0;
+  for (unsigned int i = 0; i != lattice_metadata.heading_angles.size(); i++) {
+    dist = fabs(theta - lattice_metadata.heading_angles[i]);
+    if (dist < min_dist) {
+      min_dist = dist;
+      closest_idx = i;
+    }
+  }
+  return closest_idx;
 }
 
 float LatticeMotionTable::getAngleFromBin(const unsigned int & bin_idx)
 {
-  //TODO
-  // return primitive_headings[bin_idx]; 
+  return lattice_metadata.heading_angles[bin_idx];
 }
 
 NodeLattice::NodeLattice(const unsigned int index)
@@ -206,10 +279,11 @@ float NodeLattice::getDistanceHeuristic(
   const float dy = node_coords.y - goal_coords.y;
 
   double dtheta_bin = node_coords.theta - goal_coords.theta;
+  if (dtheta_bin < 0) {
+    dtheta_bin += motion_table.num_angle_quantization;
+  }
   if (dtheta_bin > motion_table.num_angle_quantization) {
     dtheta_bin -= motion_table.num_angle_quantization;
-  } else if (dtheta_bin < 0) {
-    dtheta_bin += motion_table.num_angle_quantization;
   }
 
   Coordinates node_coords_relative(
@@ -306,13 +380,13 @@ void NodeLattice::getNeighbors(
   unsigned int index = 0;
   NodePtr neighbor = nullptr;
   Coordinates initial_node_coords;
-  const MotionPoses motion_projections = motion_table.getProjections(this);
+  const MotionPoses motion_primitives = motion_table.getMotionPrimitives(this);
 
-  for (unsigned int i = 0; i != motion_projections.size(); i++) {
+  for (unsigned int i = 0; i != motion_primitives.size(); i++) {
     index = NodeLattice::getIndex(
-      static_cast<unsigned int>(motion_projections[i]._x),
-      static_cast<unsigned int>(motion_projections[i]._y),
-      static_cast<unsigned int>(motion_projections[i]._theta));
+      static_cast<unsigned int>(motion_primitives[i]._x),
+      static_cast<unsigned int>(motion_primitives[i]._y),
+      static_cast<unsigned int>(motion_primitives[i]._theta));
 
     if (NeighborGetter(index, neighbor) && !neighbor->wasVisited()) {
       // For State Lattice, the poses are exact bin increments and the pose
@@ -322,9 +396,9 @@ void NodeLattice::getNeighbors(
       // collision checking, and backtracing (even if not strictly necessary).
       neighbor->setPose(
         Coordinates(
-          motion_projections[i]._x,
-          motion_projections[i]._y,
-          motion_projections[i]._theta));
+          motion_primitives[i]._x,
+          motion_primitives[i]._y,
+          motion_primitives[i]._theta));
       if (neighbor->isNodeValid(traverse_unknown, collision_checker)) {
         neighbor->setMotionPrimitiveIndex(i);
         neighbors.push_back(neighbor);

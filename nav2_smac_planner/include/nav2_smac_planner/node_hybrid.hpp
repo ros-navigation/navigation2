@@ -38,36 +38,6 @@ namespace nav2_smac_planner
 typedef std::vector<float> LookupTable;
 typedef std::pair<double, double> TrigValues;
 
-// Need seperate pose struct for motion table operations
-
-/**
- * @struct nav2_smac_planner::MotionPose
- * @brief A struct for poses in motion primitives
- */
-struct MotionPose
-{
-  /**
-   * @brief A constructor for nav2_smac_planner::MotionPose
-   */
-  MotionPose() {}
-
-  /**
-   * @brief A constructor for nav2_smac_planner::MotionPose
-   * @param x X pose
-   * @param y Y pose
-   * @param theta Angle of pose
-   */
-  MotionPose(const float & x, const float & y, const float & theta)
-  : _x(x), _y(y), _theta(theta)
-  {}
-
-  float _x;
-  float _y;
-  float _theta;
-};
-
-typedef std::vector<MotionPose> MotionPoses;
-
 // Must forward declare
 class NodeHybrid;
 

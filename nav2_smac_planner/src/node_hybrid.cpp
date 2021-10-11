@@ -520,10 +520,11 @@ float NodeHybrid::getDistanceHeuristic(
   const float dy = node_coords.y - goal_coords.y;
 
   double dtheta_bin = node_coords.theta - goal_coords.theta;
+  if (dtheta_bin < 0) {
+    dtheta_bin += motion_table.num_angle_quantization;
+  }
   if (dtheta_bin > motion_table.num_angle_quantization) {
     dtheta_bin -= motion_table.num_angle_quantization;
-  } else if (dtheta_bin < 0) {
-    dtheta_bin += motion_table.num_angle_quantization;
   }
 
   Coordinates node_coords_relative(

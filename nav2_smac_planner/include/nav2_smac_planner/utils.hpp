@@ -118,6 +118,58 @@ inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DRO
   return result;
 }
 
+/**
+ * @brief convert json to lattice metadata 
+ * @param[in] json json object
+ * @param[out] lattice meta data 
+ */
+inline void fromJsonToMetaData(const nlohmann::json & json, LatticeMetadata & lattice_metadata)
+{
+  json.at("turningRadius").get_to(lattice_metadata.min_turning_radius);
+  json.at("stepDistance").get_to(lattice_metadata.primitive_resolution);
+  json.at("gridSeparation").get_to(lattice_metadata.grid_resolution);
+  json.at("maxLength").get_to(lattice_metadata.max_length);
+  json.at("numberOfHeadings").get_to(lattice_metadata.number_of_headings);
+  json.at("outputFile").get_to(lattice_metadata.output_file);
+  json.at("headingAngles").get_to(lattice_metadata.heading_angles);
+  json.at("numberOfTrajectories").get_to(lattice_metadata.number_of_trajectories);
+}
+
+/**
+ * @brief convert json to pose 
+ * @param[in] json json object
+ * @param[out] pose 
+ */
+inline void fromJsonToPose(const nlohmann::json & json, MotionPose & pose)
+{
+  pose._x = json[0];
+  pose._y = json[1];
+  pose._theta = json[2];
+}
+
+/**
+ * @brief convert json to motion primitive
+ * @param[in] json json object 
+ * @param[out] motion primitive
+ */
+inline void fromJsonToMotionPrimitive(
+  const nlohmann::json & json, MotionPrimitive & motion_primitive)
+{
+  json.at("trajectoryId").get_to(motion_primitive.trajectory_id);
+  json.at("startAngle").get_to(motion_primitive.start_angle);
+  json.at("endAngle").get_to(motion_primitive.end_angle);   
+  json.at("radius").get_to(motion_primitive.turning_radius);
+  json.at("trajectoryLength").get_to(motion_primitive.trajectory_length);
+  json.at("arcLength").get_to(motion_primitive.arc_length);
+  json.at("straightLength").get_to(motion_primitive.straight_length);
+
+  for(unsigned int i = 0; i < json["poses"].size(); i++) {
+    MotionPose pose;
+    fromJsonToPose(json["poses"][i], pose);
+    motion_primitive.poses.push_back(pose);
+  }
+}
+
 }  // namespace nav2_smac_planner
 
 #endif  // NAV2_SMAC_PLANNER__UTILS_HPP_
