@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+// Copyright (c) 2021 Marwan TAHER and Khaled SAAD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,31 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_LOCALIZATION__PARTICLE_FILTER_HPP_
-#define NAV2_LOCALIZATION__PARTICLE_FILTER_HPP_
-
-#include <vector>
+#include "nav2_localization/plugins/particle_filters/mcl.hpp"
 
 namespace nav2_localization
 {
-struct particle
-{
-  // pose
-  double weight;
-};
+  MCL::MCL()
+  {
+      // TODO
+  }
+  
+  geometry_msgs::msg::TransformStamped MCL::estimatePose()
+  {
 
-class ParticleFilter
-{
-public:
-  // TODO(unassigned): Pass initial pose
-  explicit ParticleFilter(const int & initial_number_of_particles);
-  void update();
-  void resample();
-  // TODO(unassigned): Type? get_most_likely_pose();
-
-private:
-  std::vector<particle> particles_;
-};
-}  // namespace nav2_localization
-
-#endif  // NAV2_LOCALIZATION__PARTICLE_FILTER_HPP_
+  }
+}   // namesape nav2_localization
