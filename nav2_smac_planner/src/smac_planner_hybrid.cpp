@@ -164,6 +164,7 @@ void SmacPlannerHybrid::configure(
     _allow_unknown,
     _max_iterations,
     std::numeric_limits<int>::max(),
+    _max_planning_time,
     _lookup_table_dim,
     _angle_quantizations);
 
@@ -375,6 +376,7 @@ void SmacPlannerHybrid::on_parameter_event_callback(
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == _name + ".max_planning_time") {
+        reinit_a_star = true;
         _max_planning_time = value.double_value;
       } else if (name == _name + ".lookup_table_size") {
         reinit_a_star = true;
@@ -475,6 +477,7 @@ void SmacPlannerHybrid::on_parameter_event_callback(
         _allow_unknown,
         _max_iterations,
         std::numeric_limits<int>::max(),
+        _max_planning_time,
         _lookup_table_dim,
         _angle_quantizations);
     }
