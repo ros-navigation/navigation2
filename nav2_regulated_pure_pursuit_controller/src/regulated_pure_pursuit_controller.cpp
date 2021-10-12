@@ -416,7 +416,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   double dist_to_goal = std::hypot(dx, dy);
 
   int i = 1;
-  while (dist_to_goal > linear_vel * max_allowed_time_to_collision_) {
+  while (dist_to_goal > desired_linear_vel_ * max_allowed_time_to_collision_) {
     // only forward simulate within time requested
     if (i * projection_time > max_allowed_time_to_collision_) {
       break;
