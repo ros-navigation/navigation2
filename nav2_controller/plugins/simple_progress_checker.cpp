@@ -16,6 +16,7 @@
 #include <cmath>
 #include <string>
 #include <memory>
+#include <vector>
 #include "nav2_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -49,15 +50,9 @@ void SimpleProgressChecker::initialize(
   node->get_parameter_or(plugin_name + ".movement_time_allowance", time_allowance_param, 10.0);
   time_allowance_ = rclcpp::Duration::from_seconds(time_allowance_param);
 
-  // Setup callback for changes to parameters.
-  parameters_client_ = std::make_shared<rclcpp::AsyncParametersClient>(
-    node->get_node_base_interface(),
-    node->get_node_topics_interface(),
-    node->get_node_graph_interface(),
-    node->get_node_services_interface());
-
-  parameter_event_sub_ = parameters_client_->on_parameter_event(
-    std::bind(&SimpleProgressChecker::on_parameter_event_callback, this, _1));
+  // Add callback for dynamic parameters
+  dyn_params_handler = node->add_on_set_parameters_callback(
+    std::bind(&SimpleProgressChecker::dynamicParametersCallback, this, _1));
 }
 
 bool SimpleProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
@@ -101,23 +96,24 @@ static double pose_distance(
   return std::hypot(dx, dy);
 }
 
-void
-SimpleProgressChecker::on_parameter_event_callback(
-  const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+rcl_interfaces::msg::SetParametersResult
+SimpleProgressChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
-  for (auto & changed_parameter : event->changed_parameters) {
-    const auto & type = changed_parameter.value.type;
-    const auto & name = changed_parameter.name;
-    const auto & value = changed_parameter.value;
+  rcl_interfaces::msg::SetParametersResult result;
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == plugin_name_ + ".required_movement_radius") {
-        radius_ = value.double_value;
+        radius_ = parameter.as_double();
       } else if (name == plugin_name_ + ".movement_time_allowance") {
-        time_allowance_ = rclcpp::Duration::from_seconds(value.double_value);
+        time_allowance_ = rclcpp::Duration::from_seconds(parameter.as_double());
       }
     }
   }
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_controller

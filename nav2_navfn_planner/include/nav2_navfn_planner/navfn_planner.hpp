@@ -215,15 +215,18 @@ protected:
   // Whether to use the astar planner or default dijkstras
   bool use_astar_;
 
-  // Subscription for parameter change
-  rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
-  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
+  // parent node weak ptr
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler;
 
   /**
    * @brief Callback executed when a paramter change is detected
-   * @param event ParameterEvent message
+   * @param parameters list of changed parameters
    */
-  void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 };
 
 }  // namespace nav2_navfn_planner

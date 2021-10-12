@@ -69,6 +69,7 @@ NavfnPlanner::configure(
   costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();
 
+  node_ = parent;
   auto node = parent.lock();
   clock_ = node->get_clock();
   logger_ = node->get_logger();
@@ -93,16 +94,6 @@ NavfnPlanner::configure(
   planner_ = std::make_unique<NavFn>(
     costmap_->getSizeInCellsX(),
     costmap_->getSizeInCellsY());
-
-  // Setup callback for changes to parameters.
-  parameters_client_ = std::make_shared<rclcpp::AsyncParametersClient>(
-    node->get_node_base_interface(),
-    node->get_node_topics_interface(),
-    node->get_node_graph_interface(),
-    node->get_node_services_interface());
-
-  parameter_event_sub_ = parameters_client_->on_parameter_event(
-    std::bind(&NavfnPlanner::on_parameter_event_callback, this, _1));
 }
 
 void
@@ -111,6 +102,10 @@ NavfnPlanner::activate()
   RCLCPP_INFO(
     logger_, "Activating plugin %s of type NavfnPlanner",
     name_.c_str());
+  // Add callback for dynamic parameters
+  auto node = node_.lock();
+  dyn_params_handler = node->add_on_set_parameters_callback(
+    std::bind(&NavfnPlanner::dynamicParametersCallback, this, _1));
 }
 
 void
@@ -119,6 +114,7 @@ NavfnPlanner::deactivate()
   RCLCPP_INFO(
     logger_, "Deactivating plugin %s of type NavfnPlanner",
     name_.c_str());
+  dyn_params_handler.reset();
 }
 
 void
@@ -528,29 +524,30 @@ NavfnPlanner::clearRobotCell(unsigned int mx, unsigned int my)
   costmap_->setCost(mx, my, nav2_costmap_2d::FREE_SPACE);
 }
 
-void
-NavfnPlanner::on_parameter_event_callback(
-  const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+rcl_interfaces::msg::SetParametersResult
+NavfnPlanner::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
-  for (auto & changed_parameter : event->changed_parameters) {
-    const auto & type = changed_parameter.value.type;
-    const auto & name = changed_parameter.name;
-    const auto & value = changed_parameter.value;
+  rcl_interfaces::msg::SetParametersResult result;
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == name_ + ".tolerance") {
-        tolerance_ = value.double_value;
+        tolerance_ = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == name_ + ".use_astar") {
-        use_astar_ = value.bool_value;
+        use_astar_ = parameter.as_bool();
       } else if (name == name_ + ".allow_unknown") {
-        allow_unknown_ = value.bool_value;
+        allow_unknown_ = parameter.as_bool();
       } else if (name == name_ + ".use_final_approach_orientation") {
-        use_final_approach_orientation_ = value.bool_value;
+        use_final_approach_orientation_ = parameter.as_bool();
       }
     }
   }
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_navfn_planner
