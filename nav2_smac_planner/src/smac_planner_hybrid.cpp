@@ -164,6 +164,7 @@ void SmacPlannerHybrid::configure(
     _allow_unknown,
     _max_iterations,
     std::numeric_limits<int>::max(),
+    _max_planning_time,
     _lookup_table_dim,
     _angle_quantizations);
 
@@ -370,6 +371,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == _name + ".max_planning_time") {
+        reinit_a_star = true;
         _max_planning_time = parameter.as_double();
       } else if (name == _name + ".lookup_table_size") {
         reinit_a_star = true;
@@ -470,6 +472,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         _allow_unknown,
         _max_iterations,
         std::numeric_limits<int>::max(),
+        _max_planning_time,
         _lookup_table_dim,
         _angle_quantizations);
     }
