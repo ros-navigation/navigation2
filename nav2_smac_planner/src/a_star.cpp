@@ -332,8 +332,53 @@ bool AStarAlgorithm<Node2D>::backtracePath(NodePtr node, CoordinateVector & path
   return path.size() > 0;
 }
 
-template<typename NodeT>
-bool AStarAlgorithm<NodeT>::backtracePath(NodePtr node, CoordinateVector & path)
+template<>
+bool AStarAlgorithm<NodeLattice>::backtracePath(NodePtr node, CoordinateVector & path)
+{
+  if (!node->parent) {
+    return false;
+  }
+
+  NodePtr current_node = node;
+  MotionPrimitive * prim = nullptr;
+  const float & grid_resolution = NodeLattice::motion_table.lattice_metadata.grid_resolution;
+
+  while (current_node->parent) {
+    prim = current_node->getMotionPrimitive();
+    // if motion primitive is valid, then was searched (rather than analytically expanded),
+    // include dense path of subpoints making up the primitive at grid resolution
+    if (prim) {
+      Coordinates initial_pose, prim_pose;
+      initial_pose.x = current_node->pose.x - (prim->poses.back()._x / grid_resolution);
+      initial_pose.y = current_node->pose.y - (prim->poses.back()._y / grid_resolution);
+      initial_pose.theta = NodeLattice::motion_table.getAngleFromBin(prim->start_angle); /*rad*/
+
+      for (auto it = prim->poses.rbegin(); it != prim->poses.rend(); ++it) {
+        // Convert primitive pose into grid space if it should be checked
+        prim_pose.x = initial_pose.x + (it->_x / grid_resolution);
+        prim_pose.y = initial_pose.y + (it->_y / grid_resolution);
+        prim_pose.theta = initial_pose.theta + it->_theta; /*rad*/
+        if (prim_pose.theta < 0.0) {
+          prim_pose.theta += 2.0 * M_PI;
+        }
+        if (prim_pose.theta > 2.0 * M_PI) {
+          prim_pose.theta -= 2.0 * M_PI;
+        }
+        path.push_back(prim_pose);
+      }
+    } else {
+      path.push_back(current_node->pose);
+      // Convert angle to radians
+      path.back().theta = NodeLattice::motion_table.getAngleFromBin(path.back().theta);
+    }
+    current_node = current_node->parent;
+  }
+
+  return path.size() > 0;
+}
+
+template<>
+bool AStarAlgorithm<NodeHybrid>::backtracePath(NodePtr node, CoordinateVector & path)
 {
   if (!node->parent) {
     return false;
@@ -343,6 +388,8 @@ bool AStarAlgorithm<NodeT>::backtracePath(NodePtr node, CoordinateVector & path)
 
   while (current_node->parent) {
     path.push_back(current_node->pose);
+    // Convert angle to radians
+    path.back().theta = NodeHybrid::motion_table.getAngleFromBin(path.back().theta);
     current_node = current_node->parent;
   }
 

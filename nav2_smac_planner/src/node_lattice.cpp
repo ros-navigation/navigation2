@@ -109,27 +109,13 @@ void LatticeMotionTable::initMotionModel(
   }
 }
 
-MotionPoses LatticeMotionTable::getMotionPrimitives(const NodeLattice * node)
+MotionPrimitives LatticeMotionTable::getMotionPrimitives(const NodeLattice * node)
 {
-  // TODO get full, include primitive ID, somehow communicate more than just an end pose?
-  // we will likely want to know the motion primitive index (0-104)
-  //That the lattice node will store for the backtrace 
-
-  std::vector<MotionPrimitive> & prims_at_heading = motion_primitives[node->pose.theta];
-  MotionPoses primitive_projection_list; 
-  primitive_projection_list.reserve(prims_at_heading.size());
-
-  std::vector<MotionPrimitive>::const_iterator it;
-  for(it = prims_at_heading.begin(); it != prims_at_heading.end(); ++it) {
-    const MotionPose & end_pose = it->poses.back(); 
-    primitive_projection_list.emplace_back(
-      node->pose.x + (end_pose._x / lattice_metadata.grid_resolution),
-      node->pose.y + (end_pose._y / lattice_metadata.grid_resolution),
-      it->end_angle /*this is the ending angular bin*/);
-  }
+  MotionPrimitives & prims_at_heading = motion_primitives[node->pose.theta];
+  MotionPrimitives primitive_projection_list = prims_at_heading; 
 
   if (allow_reverse_expansion) {
-    // Find heading bin of the reverse expansion
+    // Find normalized heading bin of the reverse expansion
     double reserve_heading = node->pose.theta - (num_angle_quantization / 2);
     if (reserve_heading < 0) {
       reserve_heading += num_angle_quantization;
@@ -137,15 +123,12 @@ MotionPoses LatticeMotionTable::getMotionPrimitives(const NodeLattice * node)
     if (reserve_heading > num_angle_quantization) {
       reserve_heading -= num_angle_quantization;
     }
+
     prims_at_heading = motion_primitives[reserve_heading];
-    std::vector<MotionPrimitive>::const_iterator it;
-    for(it = prims_at_heading.begin(); it != prims_at_heading.end(); ++it) {
-      const MotionPose & end_pose = it->poses.back(); 
-      primitive_projection_list.emplace_back(
-        node->pose.x + (end_pose._x / lattice_metadata.grid_resolution),
-        node->pose.y + (end_pose._y / lattice_metadata.grid_resolution),
-        it->end_angle /*this is the ending angular bin*/);
-    }
+    primitive_projection_list.insert(
+      primitive_projection_list.end(),
+      prims_at_heading.begin(),
+      prims_at_heading.end());
   }
 
   return primitive_projection_list;
@@ -180,7 +163,7 @@ unsigned int LatticeMotionTable::getClosestAngularBin(const double & theta)
   return closest_idx;
 }
 
-float LatticeMotionTable::getAngleFromBin(const unsigned int & bin_idx)
+float & LatticeMotionTable::getAngleFromBin(const unsigned int & bin_idx)
 {
   return lattice_metadata.heading_angles[bin_idx];
 }
@@ -191,7 +174,8 @@ NodeLattice::NodeLattice(const unsigned int index)
   _cell_cost(std::numeric_limits<float>::quiet_NaN()),
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
-  _was_visited(false)
+  _was_visited(false),
+  _motion_primitive(nullptr)
 {
 }
 
@@ -209,21 +193,69 @@ void NodeLattice::reset()
   pose.x = 0.0f;
   pose.y = 0.0f;
   pose.theta = 0.0f;
+  _motion_primitive = nullptr;
 }
 
 bool NodeLattice::isNodeValid(
   const bool & traverse_unknown,
-  GridCollisionChecker * collision_checker)
+  GridCollisionChecker * collision_checker,
+  MotionPrimitive * motion_primitive)
 {
-  // TODO(steve) if primitive longer than 1.5 cells, then we need to split into 1 cell
-  // increments and collision check across them
+  // Check primitive end pose
+  // Convert grid quantization of primitives to radians, then collision checker quantization
+  static const double bin_size = 2.0 * M_PI / collision_checker->getPrecomputedAngles().size();
+  const double & angle = motion_table.getAngleFromBin(this->pose.theta) / bin_size;
   if (collision_checker->inCollision(
-      this->pose.x, this->pose.y, this->pose.theta /*bin number*/, traverse_unknown))
+      this->pose.x, this->pose.y, angle /*bin in collision checker*/, traverse_unknown))
   {
     return false;
   }
 
-  _cell_cost = collision_checker->getCost();
+  // Set the cost of a node to the highest cost across the primitive
+  float max_cell_cost = collision_checker->getCost();
+
+  // If valid motion primitives are set, check intermediary poses > 1 cell apart
+  if (motion_primitive) {
+    const float & grid_resolution = motion_table.lattice_metadata.grid_resolution;
+    const float & resolution_diag_sq = 2.0 * grid_resolution * grid_resolution;
+    MotionPose last_pose(1e9, 1e9, 1e9), pose_dist(0.0, 0.0, 0.0);
+
+    // Back out the initial node starting point to move motion primitive relative to
+    MotionPose initial_pose, prim_pose;
+    initial_pose._x = this->pose.x - (motion_primitive->poses.back()._x / grid_resolution);
+    initial_pose._y = this->pose.y - (motion_primitive->poses.back()._y / grid_resolution);
+    initial_pose._theta = motion_table.getAngleFromBin(motion_primitive->start_angle); /*rad*/
+
+    for (auto it = motion_primitive->poses.begin(); it != motion_primitive->poses.end(); ++it) {
+      // poses are in metric coordinates from (0, 0), not grid space yet
+      pose_dist = *it - last_pose;
+      // Avoid square roots by (hypot(x, y) > res) == (x*x+y*y > diag*diag)
+      if (pose_dist._x * pose_dist._x + pose_dist._y * pose_dist._y > resolution_diag_sq) {
+        last_pose = *it;
+        // Convert primitive pose into grid space if it should be checked
+        prim_pose._x = initial_pose._x + (it->_x / grid_resolution);
+        prim_pose._y = initial_pose._y + (it->_y / grid_resolution);
+        prim_pose._theta = initial_pose._theta + it->_theta; /*rad*/
+        if (prim_pose._theta < 0.0) {
+          prim_pose._theta += 2.0 * M_PI;
+        }
+        if (prim_pose._theta > 2.0 * M_PI) {
+          prim_pose._theta -= 2.0 * M_PI;
+        }
+        if (collision_checker->inCollision(
+            prim_pose._x,
+            prim_pose._y,
+            prim_pose._theta / bin_size /*bin in collision checker*/,
+            traverse_unknown))
+        {
+          return false;
+        }
+        max_cell_cost = std::max(max_cell_cost, collision_checker->getCost());
+      }
+    }
+  }
+
+  _cell_cost = max_cell_cost;
   return true;
 }
 
@@ -379,29 +411,36 @@ void NodeLattice::getNeighbors(
 {
   unsigned int index = 0;
   NodePtr neighbor = nullptr;
-  Coordinates initial_node_coords;
-  const MotionPoses motion_primitives = motion_table.getMotionPrimitives(this);
+  Coordinates initial_node_coords, motion_projection;
+  MotionPrimitives motion_primitives = motion_table.getMotionPrimitives(this);
+  const float & grid_resolution = motion_table.lattice_metadata.grid_resolution;
 
   for (unsigned int i = 0; i != motion_primitives.size(); i++) {
+    const MotionPose & end_pose = motion_primitives[i].poses.back();
+    motion_projection.x = this->pose.x + (end_pose._x / grid_resolution);
+    motion_projection.y = this->pose.y + (end_pose._y / grid_resolution);
+    motion_projection.theta = motion_primitives[i].end_angle /*this is the ending angular bin*/;
     index = NodeLattice::getIndex(
-      static_cast<unsigned int>(motion_primitives[i]._x),
-      static_cast<unsigned int>(motion_primitives[i]._y),
-      static_cast<unsigned int>(motion_primitives[i]._theta));
+      static_cast<unsigned int>(motion_projection.x),
+      static_cast<unsigned int>(motion_projection.y),
+      static_cast<unsigned int>(motion_projection.theta));
 
     if (NeighborGetter(index, neighbor) && !neighbor->wasVisited()) {
-      // For State Lattice, the poses are exact bin increments and the pose
-      // can be derived from the index alone.
-      // However, we store them as if they were continuous so that it may be
-      // leveraged by the analytic expansion tool to accelerate goal approaches,
-      // collision checking, and backtracing (even if not strictly necessary).
+      // Cache the initial pose in case it was visited but valid
+      // don't want to disrupt continuous coordinate expansion
+      initial_node_coords = neighbor->pose;
       neighbor->setPose(
         Coordinates(
-          motion_primitives[i]._x,
-          motion_primitives[i]._y,
-          motion_primitives[i]._theta));
-      if (neighbor->isNodeValid(traverse_unknown, collision_checker)) {
-        neighbor->setMotionPrimitiveIndex(i);
+          motion_projection.x,
+          motion_projection.y,
+          motion_projection.theta));
+      // Using a special isNodeValid API here, giving the motion primitive to use to
+      // validity check the transition of the current node to the new node over
+      if (neighbor->isNodeValid(traverse_unknown, collision_checker, &motion_primitives[i])) {
+        neighbor->setMotionPrimitive(&motion_primitives[i]);
         neighbors.push_back(neighbor);
+      } else {
+        neighbor->setPose(initial_node_coords);
       }
     }
   }

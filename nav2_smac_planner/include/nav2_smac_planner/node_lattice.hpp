@@ -69,7 +69,7 @@ struct LatticeMotionTable
    * @param node Ptr to NodeLattice
    * @return A set of motion poses
    */
-  MotionPoses getMotionPrimitives(const NodeLattice * node);
+  MotionPrimitives getMotionPrimitives(const NodeLattice * node);
 
   /**
    * @brief Get file metadata needed
@@ -92,7 +92,7 @@ struct LatticeMotionTable
    * @param bin_idx Index of the bin
    * @return Raw orientation in radians
    */
-  float getAngleFromBin(const unsigned int & bin_idx);
+  float & getAngleFromBin(const unsigned int & bin_idx);
 
   unsigned int size_x;
   unsigned int num_angle_quantization;
@@ -157,21 +157,21 @@ public:
   void reset();
 
   /**
-   * @brief Sets the motion primitive index used to achieve node in search
-   * @param reference to motion primitive idx
+   * @brief Sets the motion primitive used to achieve node in search
+   * @param pointer to motion primitive
    */
-  inline void setMotionPrimitiveIndex(const unsigned int & idx)
+  inline void setMotionPrimitive(MotionPrimitive * prim)
   {
-    _motion_primitive_index = idx;
+    _motion_primitive = prim;
   }
 
   /**
-   * @brief Gets the motion primitive index used to achieve node in search
-   * @return reference to motion primitive idx
+   * @brief Gets the motion primitive used to achieve node in search
+   * @return pointer to motion primitive
    */
-  inline unsigned int & getMotionPrimitiveIndex()
+  inline MotionPrimitive * getMotionPrimitive()
   {
-    return _motion_primitive_index;
+    return _motion_primitive;
   }
 
   /**
@@ -230,9 +230,15 @@ public:
   /**
    * @brief Check if this node is valid
    * @param traverse_unknown If we can explore unknown nodes on the graph
+   * @param collision_checker Collision checker object to aid in validity checking
+   * @param primitive Optional argument if needing to check over a primitive
+   * not only a terminal pose
    * @return whether this node is valid and collision free
    */
-  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker * collision_checker);
+  bool isNodeValid(
+    const bool & traverse_unknown,
+    GridCollisionChecker * collision_checker,
+    MotionPrimitive * primitive = nullptr);
 
   /**
    * @brief Get traversal cost of parent node to child node
@@ -381,7 +387,7 @@ private:
   float _accumulated_cost;
   unsigned int _index;
   bool _was_visited;
-  unsigned int _motion_primitive_index;
+  MotionPrimitive * _motion_primitive;
 };
 
 }  // namespace nav2_smac_planner

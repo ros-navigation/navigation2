@@ -47,9 +47,9 @@ public:
    * @param angles The vector of possible angle bins to precompute for
    * orientations for to speed up collision checking, in radians
    */
-  GridCollisionChecker(
-    nav2_costmap_2d::Costmap2D * costmap,
-    std::vector<float> & angles);
+  // GridCollisionChecker(
+  //   nav2_costmap_2d::Costmap2D * costmap,
+  //   std::vector<float> & angles);
 
   /**
    * @brief Set the footprint to use with collision checker
@@ -90,6 +90,15 @@ public:
    * @return the cost at the pose in costmap
    */
   float getCost();
+
+  /**
+   * @brief Get the angles of the precomputed footprint orientations
+   * @return the ordered vector of angles corresponding to footprints 
+   */
+  std::vector<float> & getPrecomputedAngles()
+  {
+    return angles_;
+  }
 
 protected:
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;

@@ -47,21 +47,6 @@ inline geometry_msgs::msg::Pose getWorldCoords(
 }
 
 /**
-* @brief Create quaternion from A* coord bins
-* @param theta continuous bin coordinates angle
-* @return quaternion orientation in map frame
-*/
-inline geometry_msgs::msg::Quaternion getWorldOrientation(
-  const float & theta,
-  const float & bin_size)
-{
-  // theta is in continuous bin coordinates, must convert to world orientation
-  tf2::Quaternion q;
-  q.setEuler(0.0, 0.0, theta * static_cast<double>(bin_size));
-  return tf2::toMsg(q);
-}
-
-/**
 * @brief Create quaternion from radians
 * @param theta continuous bin coordinates angle
 * @return quaternion orientation in map frame

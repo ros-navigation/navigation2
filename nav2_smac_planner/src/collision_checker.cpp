@@ -30,13 +30,13 @@ GridCollisionChecker::GridCollisionChecker(
   }
 }
 
-GridCollisionChecker::GridCollisionChecker(
-  nav2_costmap_2d::Costmap2D * costmap,
-  std::vector<float> & angles)
-: FootprintCollisionChecker(costmap),
-  angles_(angles)
-{
-}
+// GridCollisionChecker::GridCollisionChecker(
+//   nav2_costmap_2d::Costmap2D * costmap,
+//   std::vector<float> & angles)
+// : FootprintCollisionChecker(costmap),
+//   angles_(angles)
+// {
+// }
 
 void GridCollisionChecker::setFootprint(
   const nav2_costmap_2d::Footprint & footprint,

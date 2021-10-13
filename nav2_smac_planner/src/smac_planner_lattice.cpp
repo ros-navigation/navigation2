@@ -122,8 +122,14 @@ void SmacPlannerLattice::configure(
     static_cast<float>(lookup_table_size) /
     static_cast<float>(_costmap->getResolution() * _downsampling_factor);
 
-  // Initialize collision checker
-  _collision_checker = GridCollisionChecker(_costmap, _metadata.heading_angles);
+  // Initialize collision checker using 72 evenly sized bins instead of the lattice
+  // heading angles. This is done so that we have precomputed angles every 5 degrees.
+  // If we used the sparse lattice headings (usually 16), then when we attempt to collision
+  // check for intermediary points of the primitives, we're forced to round to one of the 16
+  // increments causing "wobbly" checks that could cause larger robots to virtually show collisions
+  // in valid configurations. This approximation helps to bound orientation error for all checks
+  // in exchange for slight inaccuracies in the collision headings in terminal search states. 
+  _collision_checker = GridCollisionChecker(_costmap, 72u);
   _collision_checker.setFootprint(
     costmap_ros->getRobotFootprint(),
     costmap_ros->getUseRadius(),
@@ -269,8 +275,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   plan.poses.reserve(path.size());
   for (int i = path.size() - 1; i >= 0; --i) {
     pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
-    pose.pose.orientation = getWorldOrientation(
-      NodeLattice::motion_table.getAngleFromBin(path[i].theta));
+    pose.pose.orientation = getWorldOrientation(path[i].theta);
     plan.poses.push_back(pose);
   }
 

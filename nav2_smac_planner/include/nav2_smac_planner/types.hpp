@@ -109,6 +109,11 @@ struct MotionPose
   : _x(x), _y(y), _theta(theta)
   {}
 
+  MotionPose operator-(const MotionPose & p2)
+  {
+    return MotionPose(this->_x - p2._x, this->_y - p2._y, this->_theta - p2._theta);
+  }
+
   float _x;
   float _y;
   float _theta;
@@ -147,6 +152,8 @@ struct MotionPrimitive
   float straight_length;
   MotionPoses poses;
 };
+
+typedef std::vector<MotionPrimitive> MotionPrimitives;
 
 }  // namespace nav2_smac_planner
 
