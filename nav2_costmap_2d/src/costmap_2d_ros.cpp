@@ -278,8 +278,6 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  topic_set_footprint_.clear();
-
   layered_costmap_.reset();
 
   tf_listener_.reset();
@@ -383,8 +381,7 @@ void
 Costmap2DROS::setRobotFootprintPolygon(
   const geometry_msgs::msg::Polygon::SharedPtr footprint)
 {
-  topic_set_footprint_ = toPointVector(footprint);
-  setRobotFootprint(topic_set_footprint_);
+  setRobotFootprint(toPointVector(footprint));
 }
 
 void
@@ -617,18 +614,9 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
         }
       } else if (name == "footprint_padding") {
         footprint_padding_ = parameter.as_double();
-        // Reset the footprint
-        if (topic_set_footprint_.empty()) {
-          if (use_radius_) {
-            setRobotFootprint(makeFootprintFromRadius(robot_radius_));
-          } else {
-            std::vector<geometry_msgs::msg::Point> new_footprint;
-            makeFootprintFromString(footprint_, new_footprint);
-            setRobotFootprint(new_footprint);
-          }
-        } else {
-          setRobotFootprint(topic_set_footprint_);
-        }
+        padded_footprint_ = unpadded_footprint_;
+        padFootprint(padded_footprint_, footprint_padding_);
+        layered_costmap_->setFootprint(padded_footprint_);
       } else if (name == "transform_tolerance") {
         transform_tolerance_ = parameter.as_double();
       } else if (name == "publish_frequency") {
@@ -661,7 +649,6 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
         footprint_ = parameter.as_string();
         std::vector<geometry_msgs::msg::Point> new_footprint;
         if (makeFootprintFromString(footprint_, new_footprint)) {
-          topic_set_footprint_.clear();
           setRobotFootprint(new_footprint);
         }
       }

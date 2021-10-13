@@ -332,7 +332,6 @@ protected:
   void getParameters();
   bool always_send_full_costmap_{false};
   std::string footprint_;
-  std::vector<geometry_msgs::msg::Point> topic_set_footprint_;
   float footprint_padding_{0};
   std::string global_frame_;       ///< The global frame for the costmap
   int map_height_meters_{0};
