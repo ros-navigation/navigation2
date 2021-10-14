@@ -63,7 +63,7 @@ char * dirname(char * path)
   /* Replace all "\" with "/" */
   char * c = path;
   while (*c != '\0') {
-    if (*c == '\\') *c = '/';
+    if (*c == '\\') {*c = '/';}
     ++c;
   }
 
