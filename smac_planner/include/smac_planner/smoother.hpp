@@ -106,7 +106,8 @@ public:
     _options.max_solver_time_in_seconds = params.max_time;
 
 #ifdef _MSC_VER
-    std::vector<double> parameters(path.size() * 2);
+    std::vector<double> parametersVec(path.size() * 2);
+    double* parameters = parametersVec.data();
 #else
     double parameters[path.size() * 2];  // NOLINT
 #endif
@@ -117,11 +118,7 @@ public:
 
     ceres::GradientProblemSolver::Summary summary;
     ceres::GradientProblem problem(new UnconstrainedSmootherCostFunction(&path, costmap, params));
-#ifdef _MSC_VER
-    ceres::Solve(_options, problem, parameters.data(), &summary);
-#else
     ceres::Solve(_options, problem, parameters, &summary);
-#endif
 
     if (_debug) {
       std::cout << summary.FullReport() << '\n';
