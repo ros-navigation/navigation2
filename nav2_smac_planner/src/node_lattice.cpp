@@ -175,7 +175,8 @@ NodeLattice::NodeLattice(const unsigned int index)
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
   _was_visited(false),
-  _motion_primitive(nullptr)
+  _motion_primitive(nullptr),
+  _backwards(false)
 {
 }
 
@@ -194,6 +195,7 @@ void NodeLattice::reset()
   pose.y = 0.0f;
   pose.theta = 0.0f;
   _motion_primitive = nullptr;
+  _backwards = false;
 }
 
 bool NodeLattice::isNodeValid(
@@ -261,7 +263,56 @@ bool NodeLattice::isNodeValid(
 
 float NodeLattice::getTraversalCost(const NodePtr & child)
 {
-  return 0.0;  // TODO(josh): cost of different angles, changing, nonstraight, backwards, distance
+  const float normalized_cost = child->getCost() / 252.0;
+  if (std::isnan(normalized_cost)) {
+    throw std::runtime_error(
+            "Node attempted to get traversal "
+            "cost without a known collision cost!");
+  }
+
+  // this is the first node
+  MotionPrimitive * prim = this->getMotionPrimitive();
+  MotionPrimitive * transition_prim = child->getMotionPrimitive();
+  if (prim == nullptr) {
+    return transition_prim->trajectory_length;
+  }
+
+  // Note(stevemacenski): `travel_cost_raw` at one point contained a term:
+  // `+ motion_table.cost_penalty * normalized_cost;`
+  // It has been removed, but we may want to readdress this point and determine
+  // the technically and theoretically correctness of that choice. I feel technically speaking
+  // that term has merit, but it doesn't seem to impact performance or path quality.
+  // W/o it lowers the travel cost, which would drive the heuristics up proportionally where I
+  // would expect it to plan much faster in all cases, but I only see it in some cases. Since
+  // this term would weight against moving to high cost zones, I would expect to see more smooth
+  // central motion, but I only see it in some cases, possibly because the obstacle heuristic is
+  // already driving the robot away from high cost areas; implicitly handling this. However,
+  // then I would expect that not adding it here would make it unbalanced enough that path quality
+  // would suffer, which I did not see in my limited experimentation, possibly due to the smoother.
+  float travel_cost = 0.0;
+  float travel_cost_raw = transition_prim->trajectory_length;
+
+  if (transition_prim->arc_length < 0.001) {
+    // New motion is a straight motion, no additional costs to be applied
+    travel_cost = travel_cost_raw;
+  } else {
+    if (prim->left == transition_prim->left) {
+      // Turning motion but keeps in same general direction: encourages to commit to actions
+      travel_cost = travel_cost_raw * motion_table.non_straight_penalty;
+    } else {
+      // Turning motion and velocity directions: penalizes wiggling. 
+      travel_cost = travel_cost_raw *
+        (motion_table.non_straight_penalty + motion_table.change_penalty);
+    }
+  }
+
+  // If backwards flag is set, this primitive is moving in reverse
+  if (this->isBackward()) {
+    // reverse direction
+    travel_cost *= motion_table.reverse_penalty;
+  }
+
+  return travel_cost;
 }
 
 float NodeLattice::getHeuristicCost(
@@ -415,6 +466,14 @@ void NodeLattice::getNeighbors(
   MotionPrimitives motion_primitives = motion_table.getMotionPrimitives(this);
   const float & grid_resolution = motion_table.lattice_metadata.grid_resolution;
 
+  unsigned int direction_change_idx = 1e9;
+  for (unsigned int i = 0; i != motion_primitives.size(); i++) {
+    if (motion_primitives[0].start_angle != motion_primitives[i].start_angle) {
+      direction_change_idx = i;
+      break;
+    }
+  }
+
   for (unsigned int i = 0; i != motion_primitives.size(); i++) {
     const MotionPose & end_pose = motion_primitives[i].poses.back();
     motion_projection.x = this->pose.x + (end_pose._x / grid_resolution);
@@ -438,6 +497,12 @@ void NodeLattice::getNeighbors(
       // validity check the transition of the current node to the new node over
       if (neighbor->isNodeValid(traverse_unknown, collision_checker, &motion_primitives[i])) {
         neighbor->setMotionPrimitive(&motion_primitives[i]);
+        // Marking if this search was obtained in the reverse direction
+        if ((!this->isBackward() && i >= direction_change_idx) || 
+            (this->isBackward() && i <= direction_change_idx))
+        {
+          neighbor->backwards();
+        }
         neighbors.push_back(neighbor);
       } else {
         neighbor->setPose(initial_node_coords);

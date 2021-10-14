@@ -228,6 +228,23 @@ public:
   }
 
   /**
+   * @brief Sets that this primitive is moving in reverse
+   */
+  inline void backwards()
+  {
+    _backwards = true;
+  }
+
+  /**
+   * @brief Gets if this primitive is moving in reverse
+   * @return backwards If moving in reverse
+   */
+  inline bool & isBackward()
+  {
+    return _backwards;
+  }
+
+  /**
    * @brief Check if this node is valid
    * @param traverse_unknown If we can explore unknown nodes on the graph
    * @param collision_checker Collision checker object to aid in validity checking
@@ -388,6 +405,7 @@ private:
   unsigned int _index;
   bool _was_visited;
   MotionPrimitive * _motion_primitive;
+  bool _backwards;
 };
 
 }  // namespace nav2_smac_planner
