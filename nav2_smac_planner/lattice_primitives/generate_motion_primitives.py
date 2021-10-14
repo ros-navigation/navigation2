@@ -1,7 +1,7 @@
-import enum
-import time
+import argparse
 import json
 import logging
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -15,24 +15,55 @@ logger = logging.getLogger(__name__)
 
 VERSION = 1.0
 
+def handle_arg_parsing():
+    """
+    Handles the parsing of arguments
+
+    Returns
+    -------
+    argparse.Namespace
+        An object containing all parsed arguments
+    """
+
+    parser = argparse.ArgumentParser(description="Generate motion primitives for Nav2's State Lattice Planner")
+    parser.add_argument('--config', type=Path, default="./config.json", help="The config file containing the parameters to be used")
+
+    return parser.parse_args()
+
 def create_heading_angle_list(minimal_set_trajectories: dict) -> list:
+    """
+    Creates a sorted list of heading angles from the minimal trajectory set
+
+    Parameters
+    ----------
+    minimal_set_trajectories: dict
+        The minimal spanning set
+
+    Returns
+    -------
+    list
+        A sorted list of heading angles
+    """
+
     heading_angles = set([angle for angle in minimal_set_trajectories.keys()])
     return sorted(
         list(heading_angles), key=lambda x: (x < 0, x)
     )
 
-def read_config() -> dict:
+def read_config(config_path) -> dict:
     """
     Reads in the user defined parameters via JSON
+
+    Parameters
+    ----------
+    config_path: Path
+        Path to the config file
 
     Returns
     -------
     dict
         Dictionary containing the user defined parameters
     """
-
-    cur_dir = Path(__file__).parent
-    config_path = cur_dir / "config.json"
 
     with open(config_path) as config_file:
         config = json.load(config_file)
@@ -180,7 +211,9 @@ def save_visualizations(minimal_set_trajectories: dict) -> None:
 
 
 if __name__ == "__main__":
-    config = read_config()
+
+    args = handle_arg_parsing()
+    config = read_config(args.config)
 
     start = time.time()
     lattice_gen = LatticeGenerator(config)
