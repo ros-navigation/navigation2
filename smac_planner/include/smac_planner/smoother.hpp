@@ -106,8 +106,8 @@ public:
     _options.max_solver_time_in_seconds = params.max_time;
 
 #ifdef _MSC_VER
-    std::vector<double> parametersVec(path.size() * 2);
-    double* parameters = parametersVec.data();
+    std::vector<double> parameters_vec(path.size() * 2);
+    double * parameters = parameters_vec.data();
 #else
     double parameters[path.size() * 2];  // NOLINT
 #endif
