@@ -5,6 +5,7 @@
 - **[Setup](#setup)**
 - **[Usage](#usage)**
 - **[Parameters](#parameters)**
+- **[Output file structure](#output-file-structure)**
 - **[How it Works](#how-it-works)**
 </br>
 
@@ -23,30 +24,32 @@ pip install -r requirements.txt
 ## Usage
 Run the primitive generator by using the following command
 ```
-python3 generate_motion_primitives.py
+python3 generate_motion_primitives.py [--config]
 ```
 
-To adjust the settings to fit your particular needs you can edit the parameters in the [config.json](config.json) file.
+To adjust the settings to fit your particular needs you can edit the parameters in the [config.json](config.json) file. Alternatively, you can create your own file and pass it in using the --config flag.
 
 ## Parameters ##
-**motion_model** (string, default="ackermann")
+Note: None of these parameters have defaults. They all must be specified through the [config.json](config.json) file.
+
+**motion_model** (string)
     
 The type of motion model used. Accepted values:
-- `Ackermann`: Only forward moving trajectories
-- `Diff`: Forward moving trajectories + rotation in place by a single angular bin
-- `Omni`: Forward moving trajectories + rotation in place by a single angular bin + sideways sliding motions
+- `ackermann`: Only forward and reversing trajectories
+- `diff`: Forward moving trajectories + rotation in place by a single angular bin
+- `omni`: Forward moving trajectories + rotation in place by a single angular bin + sideways sliding motions
 </br>
 </br>
 
 **turning_radius** (float)
 
-The minimum turning radius of the robot (in metres)
+The minimum turning radius of the robot (in meters)
 </br>
 </br>
 
 **grid_resolution** (float)
 
-The resolution of the grid (in metres) used to create the lattice. If the grid resolution is too large for the turning radius then the generator will not return a good result. This is clearly seen in the 5cm resolution/2m turning radius sample.
+The resolution of the grid (in meters) used to create the lattice. If the grid resolution is too large for the turning radius then the generator will not return a good result. This is clearly seen in the 5cm resolution/2m turning radius sample.
 </br>
 </br>
 
@@ -67,6 +70,51 @@ Number of discrete angular headings used. Restricted to multiples of 8 greater t
 The name of the file where the generated trajectories will be saved to.
 </br>
 </br>
+
+## Output file structure
+The output file is a JSON file and contains the following fields:
+
+**version**
+
+The version number of the lattice generator that created the output file
+
+**date_generated**
+
+The date the output file was generated. Format: YYYY-MM-DD
+
+**lattice_metadata**
+
+A dictionary that contains information about the generated lattice. Most of this data comes from the config file used when generating the primitives. More information on each field is given in the [Parameters](#parameters) section. Includes the following fields:
+- **motion_model**
+- **turning_radius** (meters)
+- **grid_resolution** (meters)
+- **stopping_threshold**
+- **num_of_headings**
+- **output_file**
+- **heading_angles**
+    - A list of the heading angles (in radians) that are used in the primitives
+- **number_of_trajectories**
+    - The total number of trajectories contained in the output file
+
+**primitives**
+
+A list of dictionaries where each dictionary represents an individual motion primitive. Each motion primitive contains the following fields:
+- **trajectory_id**
+    - The id associated with the primitive
+- **start_angle_index**
+    - The start angle of the primitive represented as an index for the heading_angle list given in the lattice_metadata
+- **end_angle_index**
+    - The end angle of the primitive represented as an index for the heading_angle list given in the lattice_metadata
+- **trajectory_radius** (meters)
+    - The radius of the circle that was used to create the arc portion of a primitive. trajectory_radius is 0 if the primitive is purely a straight line
+- **trajectory_length** (meters)
+    - The length of the primitive
+- **arc_length** (meters)
+    - The length of the arc portion of a primitive. arc_length is 0 if the primitive is a straight line
+- **straight_length** (meters)
+    - The length of the straight line portion of a primitive. straight_length is 0 if the primitive is a pure arc.
+- **poses**
+    - A list where each entry is a list containing three values: x, y, and yaw (radians)
 
 ## How it works
 This section describes how the various portions of the generation algorithm works.
