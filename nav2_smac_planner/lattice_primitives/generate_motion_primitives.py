@@ -1,3 +1,4 @@
+import enum
 import time
 import json
 import logging
@@ -14,6 +15,11 @@ logger = logging.getLogger(__name__)
 
 VERSION = 1.0
 
+def create_heading_angle_list(minimal_set_trajectories: dict) -> list:
+    heading_angles = set([angle for angle in minimal_set_trajectories.keys()])
+    return sorted(
+        list(heading_angles), key=lambda x: (x < 0, x)
+    )
 
 def read_config() -> dict:
     """
@@ -62,10 +68,7 @@ def create_header(config: dict, minimal_set_trajectories: dict) -> dict:
     for key, value in config.items():
         header_dict["lattice_metadata"][key] = value
 
-    heading_angles = set([angle for angle in minimal_set_trajectories.keys()])
-    header_dict["lattice_metadata"]["heading_angles"] = sorted(
-        list(heading_angles), key=lambda x: (x < 0, x)
-    )
+    header_dict["lattice_metadata"]["heading_angles"] = create_heading_angle_list(minimal_set_trajectories)
 
     return header_dict
 
@@ -86,6 +89,9 @@ def write_to_json(minimal_set_trajectories: dict, config: dict) -> None:
 
     trajectory_start_angles = list(minimal_set_trajectories.keys())
 
+    heading_angle_list = create_heading_angle_list(minimal_set_trajectories)
+    heading_lookup = {angle:idx for idx,angle in enumerate(heading_angle_list)}
+
     idx = 0
     for start_angle in sorted(trajectory_start_angles,
                               key=lambda x: (x < 0, x)):
@@ -97,8 +103,8 @@ def write_to_json(minimal_set_trajectories: dict, config: dict) -> None:
 
             traj_info = dict()
             traj_info["trajectory_id"] = idx
-            traj_info["start_angle"] = trajectory.parameters.start_angle
-            traj_info["end_angle"] = trajectory.parameters.end_angle
+            traj_info["start_angle_index"] = heading_lookup[trajectory.parameters.start_angle]
+            traj_info["end_angle_index"] = heading_lookup[trajectory.parameters.end_angle]
             traj_info["trajectory_radius"] = \
                 trajectory.parameters.turning_radius
             traj_info["trajectory_length"] = round(

@@ -33,6 +33,8 @@ max_x = max([max([pose[0] for pose in primitive["poses"]]) for primitive in traj
 min_y = min([min([pose[1] for pose in primitive["poses"]]) for primitive in trajectory_data["primitives"]])
 max_y = max([max([pose[1] for pose in primitive["poses"]]) for primitive in trajectory_data["primitives"]])
 
+heading_angles = trajectory_data["lattice_metadata"]["heading_angles"]
+
 for primitive in trajectory_data["primitives"]:
     arrow_length = (primitive["arc_length"] +
                     primitive["straight_length"]) / len(primitive["poses"])
@@ -55,8 +57,11 @@ for primitive in trajectory_data["primitives"]:
     plt.xlim(1.2*min_x, 1.2*max_x)
     plt.ylim(1.2*min_y, 1.2*max_y)
 
+    start_angle = np.rad2deg(heading_angles[primitive["start_angle_index"]])
+    end_angle = np.rad2deg(heading_angles[primitive["end_angle_index"]])
+
     plt.title(f'Trajectory ID: {primitive["trajectory_id"]}')
     plt.figtext(
-        0.7, 0.9, f'Start: {np.rad2deg(primitive["start_angle"])}\nEnd: {np.rad2deg(primitive["end_angle"])}')
+        0.7, 0.9, f'Start: {start_angle}\nEnd: {end_angle}')
 
     plt.show()
