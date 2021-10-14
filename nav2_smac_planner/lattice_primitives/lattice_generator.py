@@ -34,16 +34,16 @@ class LatticeGenerator:
         self.DISTANCE_THRESHOLD = 0.5 * self.grid_resolution
         self.ROTATION_THRESHOLD = 0.5 * (2 * np.pi / self.num_of_headings)
 
-    def get_coords_at_level(self, level: int) -> np.array:
+    def get_wave_front_points(self, pos: int) -> np.array:
         """
-        Uses the grid resolution to calculate the valid end points
-        at a discrete interval (i.e. level) away from the origin.
+        Uses the grid resolution to calculate the valid end points that lie
+        on a wave front at a discrete interval (i.e. pos) away from the origin.
 
         Parameters
         ----------
-        level: int
+        pos: int
             The number of discrete intervals of grid resolution
-            away from the origin to generate the end points at
+            away from the origin to generate the wave points at
 
         Returns
         -------
@@ -53,9 +53,9 @@ class LatticeGenerator:
 
         positions = []
 
-        max_point_coord = self.grid_resolution * level
+        max_point_coord = self.grid_resolution * pos
 
-        for i in range(level):
+        for i in range(pos):
             varying_point_coord = self.grid_resolution * i
 
             # Varying y-coord
@@ -234,7 +234,7 @@ class LatticeGenerator:
         )
 
         min_trajectory_length = self.compute_min_trajectory_length()
-        start_level = int(np.round(min_trajectory_length
+        wave_front_start_pos = int(np.round(min_trajectory_length
                                    / self.grid_resolution))
 
         for start_heading in initial_headings:
@@ -242,7 +242,7 @@ class LatticeGenerator:
 
             prior_end_poses = index.Index()
 
-            current_level = start_level
+            wave_front_cur_pos = wave_front_start_pos
 
             # To get target headings: sort headings radially and remove those
             # that are more than 90 degrees away
@@ -257,8 +257,8 @@ class LatticeGenerator:
             while iterations_without_trajectory < self.stopping_threshold:
                 iterations_without_trajectory += 1
 
-                # Generate x,y coordinates for current level
-                positions = self.get_coords_at_level(current_level)
+                # Generate x,y coordinates for current wave front
+                positions = self.get_wave_front_points(wave_front_cur_pos)
 
                 for target_point in positions:
                     for target_heading in target_headings:
@@ -313,7 +313,7 @@ class LatticeGenerator:
 
                                 iterations_without_trajectory = 0
 
-                current_level += 1
+                wave_front_cur_pos += 1
 
         return self.create_complete_minimal_spanning_set(quadrant1_end_poses)
 
