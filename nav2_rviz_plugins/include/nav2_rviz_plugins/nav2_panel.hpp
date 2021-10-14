@@ -17,6 +17,7 @@
 
 #include <QtWidgets>
 #include <QBasicTimer>
+#undef NO_ERROR
 
 #include <memory>
 #include <string>
