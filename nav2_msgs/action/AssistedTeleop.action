@@ -1,8 +1,5 @@
 #goal definition
-builtin_interfaces/Duration time
+builtin_interfaces/Time time
 ---
 #result definition
-builtin_interfaces/Duration total_elapsed_time
----
-#feedback
-builtin_interfaces/Duration time_left
+builtin_interfaces/Time total_elapsed_time

@@ -17,20 +17,28 @@
 #include <memory>
 #include <utility>
 #include <string>
+#include <vector>
 
 #include "assisted_teleop.hpp"
 #include "nav2_msgs/action/assisted_teleop.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "geometry_msgs/msg/vector3_stamped.hpp"
 
 namespace nav2_recoveries
 {
 using namespace std::chrono_literals; //NOLINT
+
+AssistedTeleop::AssistedTeleop()
+: action_server_(nullptr),
+  cycle_frequency_(10.0)
+{
+}
+
 void
 AssistedTeleop::cleanup()
 {
   action_server_.reset();
   vel_pub_.reset();
-  vel_sub_.reset();
   costmap_sub_.reset();
 }
 
@@ -41,7 +49,6 @@ AssistedTeleop::activate()
 
   vel_pub_->on_activate();
   action_server_->activate();
-  enabled_ = true;
 }
 
 void
@@ -49,7 +56,6 @@ AssistedTeleop::deactivate()
 {
   vel_pub_->on_deactivate();
   action_server_->deactivate();
-  enabled_ = false;
 }
 
 void
@@ -60,13 +66,13 @@ AssistedTeleop::configure(
 {
   node_ = parent;
   auto node = node_.lock();
-
   logger_ = node->get_logger();
 
   RCLCPP_INFO(logger_, "Configuring %s", name.c_str());
 
   recovery_name_ = name;
   tf_ = tf;
+  collision_checker_ = collision_checker;
 
   nav2_util::declare_parameter_if_not_declared(
     node,
@@ -88,7 +94,7 @@ AssistedTeleop::configure(
   node->get_parameter("robot_base_frame", robot_base_frame_);
   node->get_parameter("transform_tolerance", transform_tolerance_);
   node->get_parameter("projection_time", projection_time_);
-  node->get_parameter("linear_velocity_threshold_", linear_velocity_threshold_);
+  node->get_parameter("linear_velocity_threshold", linear_velocity_threshold_);
   node->get_parameter("cmd_vel_topic", cmd_vel_topic_);
   node->get_parameter("input_vel_topic", input_vel_topic_);
 
@@ -106,95 +112,87 @@ AssistedTeleop::configure(
   action_server_ = std::make_shared<ActionServer>(
     node, recovery_name_,
     std::bind(&AssistedTeleop::execute, this));
-
-  collision_checker_ = collision_checker;
 }
 
 void
 AssistedTeleop::vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-  speed_x = msg->linear.x;
-  speed_y = msg->linear.y;
-  angular_vel_ = msg->angular.z;
-  if (go) {
-    if (!checkCollision()) {
-      RCLCPP_INFO(logger_, "Reducing velocity by a factor of %.2f", scaling_factor);
-    }
-    moveRobot();
-  }
+  double angular_vel = msg->angular.z;
+  geometry_msgs::msg::Vector3Stamped twist_speed;
+  twist_speed.vector.x = msg->linear.x;
+  twist_speed.vector.y = msg->linear.y;
+  twist_speed.vector.z = 0;
+  tf2::doTransform(twist_speed, twist_speed, transform);
+  moveRobot(computeVelocity(twist_speed, angular_vel));
 }
 
-bool
-AssistedTeleop::updatePose()
+void
+AssistedTeleop::projectPose(
+  geometry_msgs::msg::Vector3Stamped & twist_speed,
+  double angular_vel, double projection_time, geometry_msgs::msg::Pose2D & projected_pose)
 {
+  // Project Pose by time increment
+  projected_pose.x += projection_time * (
+    twist_speed.vector.x * cos(projected_pose.theta));
+  projected_pose.y += projection_time * (
+    twist_speed.vector.y * sin(projected_pose.theta));
+  projected_pose.theta += projection_time *
+    angular_vel;
+}
+
+geometry_msgs::msg::Twist::UniquePtr
+AssistedTeleop::computeVelocity(
+  geometry_msgs::msg::Vector3Stamped & twist_speed, double angular_vel)
+{
+  auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
+  geometry_msgs::msg::Pose2D projected_pose;
+
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
     RCLCPP_ERROR(logger_, "Current robot pose is not available.");
-    return false;
   }
   projected_pose.x = current_pose.pose.position.x;
   projected_pose.y = current_pose.pose.position.y;
   projected_pose.theta = tf2::getYaw(
     current_pose.pose.orientation);
-  return true;
-}
 
-void
-AssistedTeleop::projectPose(
-  double speed_x, double speed_y,
-  double angular_vel_, double projection_time)
-{
-  // Project Pose by time increment
-  projected_pose.x += projection_time * (
-    speed_x * cos(projected_pose.theta));
-  projected_pose.y += projection_time * (
-    speed_y * sin(projected_pose.theta));
-  projected_pose.theta += projection_time *
-    angular_vel_;
-}
+  cmd_vel->linear.x = twist_speed.vector.x;
+  cmd_vel->linear.y = twist_speed.vector.y;
+  cmd_vel->angular.z = angular_vel;
 
-bool
-AssistedTeleop::checkCollision()
-{
-  double hypot = std::hypot(speed_x, speed_y, angular_vel_);
-  const double dt =
-    (hypot != 0) ? (costmap_ros_->getResolution() / std::fabs(hypot)) : projection_time_;
+  double linear_vel = std::fabs(std::hypot(cmd_vel->linear.x, cmd_vel->linear.y));
+  const double dt = costmap_ros_->getResolution() / linear_vel;
   int loopcount = 1;
+  double scaling_factor = 1;
 
   while (true) {
-    if (updatePose()) {
-      double time_to_collision = loopcount * dt;
-      if (time_to_collision >= projection_time_) {
-        scaling_factor = 1;
-        break;
-      }
-      scaling_factor = projection_time_ / (time_to_collision);
-      loopcount++;
+    double time_to_collision = loopcount * dt;
+    if (time_to_collision >= projection_time_) {
+      break;
+    } else {
+      scaling_factor = projection_time_ / time_to_collision;
 
-      projectPose(speed_x, speed_y, angular_vel_, time_to_collision);
+      projectPose(twist_speed, angular_vel, time_to_collision, projected_pose);
 
       if (!collision_checker_->isCollisionFree(projected_pose)) {
         RCLCPP_WARN(logger_, "Collision approaching in %.2f seconds", time_to_collision);
-        return false;
+        cmd_vel->linear.x /= scaling_factor;
+        cmd_vel->linear.y /= scaling_factor;
+        cmd_vel->angular.z /= scaling_factor;
+        break;
       }
     }
+    loopcount++;
   }
-  return true;
+  return cmd_vel;
 }
 
 void
-AssistedTeleop::moveRobot()
+AssistedTeleop::moveRobot(geometry_msgs::msg::Twist::UniquePtr cmd_vel)
 {
-  auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
-
-  cmd_vel->linear.x = speed_x / scaling_factor;
-  cmd_vel->linear.y = speed_y / scaling_factor;
-  cmd_vel->angular.z = angular_vel_ / scaling_factor;
-  double hypot = std::hypot(cmd_vel->linear.x, cmd_vel->linear.y, cmd_vel->angular.z);
-
-  if (std::fabs(hypot) < linear_velocity_threshold_) {
+  if (std::fabs(std::hypot(cmd_vel->linear.x, cmd_vel->linear.y)) < linear_velocity_threshold_) {
     stopRobot();
   } else {
     vel_pub_->publish(std::move(cmd_vel));
@@ -205,43 +203,34 @@ void AssistedTeleop::execute()
 {
   RCLCPP_INFO(logger_, "Attempting %s", recovery_name_.c_str());
 
-  if (!enabled_) {
-    RCLCPP_WARN(
-      logger_,
-      "Called while inactive, ignoring request.");
-    return;
-  }
-
+  auto node = node_.lock();
   // Log a message every second
-  {
-    auto node = node_.lock();
-    if (!node) {
-      throw std::runtime_error{"Failed to lock node"};
-    }
-
-    auto timer = node->create_wall_timer(
-      1s,
-      [&]()
-      {RCLCPP_INFO(logger_, "%s running...", recovery_name_.c_str());});
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
   }
 
-  auto start_time = steady_clock_.now();
+  auto timer = node->create_wall_timer(
+    1s,
+    [&]()
+    {RCLCPP_INFO(logger_, "%s running...", recovery_name_.c_str());});
 
-  // Initialize the ActionT goal, feedback and result
+  transform = tf_->lookupTransform("odom", "base_link", node->now());
+
+  auto start_time = node->now();
+
+  // Initialize the ActionT goal and result
   auto at_goal = action_server_->get_current_goal();
-  auto feedback_ = std::make_shared<AssistedTeleopAction::Feedback>();
   auto result = std::make_shared<AssistedTeleopAction::Result>();
 
   rclcpp::WallRate loop_rate(cycle_frequency_);
-  assisted_teleop_end_ = std::chrono::steady_clock::now() +
-    rclcpp::Duration(at_goal->time).to_chrono<std::chrono::nanoseconds>();
+  auto assisted_teleop_end_ = (node->now() + at_goal->time).nanoseconds();
 
   while (rclcpp::ok()) {
     if (action_server_->is_cancel_requested()) {
       RCLCPP_INFO(logger_, "Canceling %s", recovery_name_.c_str());
-      go = false;
       stopRobot();
-      result->total_elapsed_time = steady_clock_.now() - start_time;
+      vel_sub_.reset();
+      result->total_elapsed_time = node->now() - start_time;
       action_server_->terminate_all(result);
       return;
     }
@@ -252,28 +241,23 @@ void AssistedTeleop::execute()
         " however feature is currently not implemented. Aborting and stopping.",
         recovery_name_.c_str());
       stopRobot();
-      result->total_elapsed_time = steady_clock_.now() - start_time;
+      vel_sub_.reset();
+      result->total_elapsed_time = node->now() - start_time;
       action_server_->terminate_current(result);
       return;
     }
 
-    auto current_point = std::chrono::steady_clock::now();
+    auto current_point = node->now().nanoseconds();
 
     auto time_left =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(
-      assisted_teleop_end_ - current_point).count();
-
-    feedback_->time_left = rclcpp::Duration(
-      rclcpp::Duration::from_nanoseconds(time_left));
-
-    action_server_->publish_feedback(feedback_);
+      assisted_teleop_end_ - current_point;
 
     // Enable recovery behavior if we haven't run out of time
     if (time_left > 0) {
-      go = true;
       costmap_ros_ = costmap_sub_->getCostmap();
     } else {
-      go = false;
+      vel_sub_.reset();
+      result->total_elapsed_time = node->now() - start_time;
       action_server_->succeeded_current(result);
       RCLCPP_INFO(
         logger_,
@@ -293,7 +277,6 @@ void AssistedTeleop::stopRobot()
 
   vel_pub_->publish(std::move(cmd_vel));
 }
-
 }  // namespace nav2_recoveries
 
 #include "pluginlib/class_list_macros.hpp"

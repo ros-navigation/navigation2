@@ -51,12 +51,7 @@ public:
   /**
    * @brief AsistedTeleop constructor
    */
-  AssistedTeleop()
-  : action_server_(nullptr),
-    cycle_frequency_(10.0),
-    enabled_(false)
-  {
-  }
+  AssistedTeleop();
 
   /**
    * @brief AsistedTeleop destructor
@@ -71,69 +66,33 @@ public:
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker) override;
 
-  // Cleanup server on lifecycle transition
-  void cleanup() override;
-
   // Activate server on lifecycle transition
   void activate() override;
 
   // Deactivate server on lifecycle transition
   void deactivate() override;
 
+  // Cleanup server on lifecycle transition
+  void cleanup() override;
+
 protected:
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
-
-  // Action Server
-  std::shared_ptr<ActionServer> action_server_;
-
-  // Publishers and Subscribers
-  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr vel_sub_;
-  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
-
-  // User defined parameters
-  double projection_time_;
-  double cycle_frequency_;
-  double linear_velocity_threshold_;
-  double enabled_;
-  double transform_tolerance_;
-  std::string global_frame_;
-  std::string robot_base_frame_;
-  std::string cmd_vel_topic_;
-  std::string input_vel_topic_;
-
-  geometry_msgs::msg::PoseStamped current_pose;
-  geometry_msgs::msg::Pose2D projected_pose;
-  std::string recovery_name_;
-  std::chrono::time_point<std::chrono::steady_clock> assisted_teleop_end_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ros_;
-
-  // Parameters for Assisted Teleop
-  bool go = false;
-  double scaling_factor = 1;
-  double speed_x = 0.0, speed_y = 0.0, angular_vel_ = 0.0;
-
   // Clock
   rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
 
   // Logger
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_recoveries")};
 
-  /**
-   * @brief Utility function to obtain robot pose
-   * @return bool indicating availability of pose
-   */
-  bool updatePose();
 
   /**
    * @brief Utility function to project robot pose
-   * @param speed_x linear speed in X
-   * @param speed_y linear speed in y
-   * @param speed_x angular speed about Z
+   * @param twist_speed linear speed of robot
+   * @param angular_vel angular speed about Z
+   * @param projection_time time increment to project the pose
+   * @param projected_pose Pose projected by given linear and angular speeds
    */
-  void projectPose(double speed_x, double speed_y, double angular_vel_, double projection_time);
+  void projectPose(
+    geometry_msgs::msg::Vector3Stamped & twist_speed, double angular_vel,
+    double projection_time, geometry_msgs::msg::Pose2D & projected_pose);
 
   /**
    * @brief Callback function for velocity subscriber
@@ -142,14 +101,18 @@ protected:
   void vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
 
   /**
-   * @brief Check if pose is collision free
+   * @brief Performs velocity reduction if a collision is imminent
+   * @param twist_speed linear speed of robot
+   * @param angular_vel angular speed about Z
    */
-  bool checkCollision();
+  geometry_msgs::msg::Twist::UniquePtr computeVelocity(
+    geometry_msgs::msg::Vector3Stamped & twist_speed, double angular_vel);
 
   /**
    * @brief Move robot by specified velocity
+   * @param cmd_vel Velocity with which to move the robot
    */
-  void moveRobot();
+  void moveRobot(geometry_msgs::msg::Twist::UniquePtr cmd_vel);
 
   /**
    * @brief Main execution callbacks for the action server, enable's recovery's specific behavior as it waits for timeout
@@ -160,6 +123,36 @@ protected:
    * @brief Stops the robot with a commanded velocity
    */
   void stopRobot();
+
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+
+  // Action Server
+  std::shared_ptr<ActionServer> action_server_;
+
+  // Publishers and Subscribers
+  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr vel_sub_;
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
+
+  // User defined parameters
+  double projection_time_;
+  double cycle_frequency_;
+  double linear_velocity_threshold_;
+  double transform_tolerance_;
+  std::string global_frame_;
+  std::string robot_base_frame_;
+  std::string cmd_vel_topic_;
+  std::string input_vel_topic_;
+
+  geometry_msgs::msg::PoseStamped current_pose;
+  std::string recovery_name_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ros_;
+  geometry_msgs::msg::TransformStamped transform;
+
+  // Parameters for Assisted Teleop
+  double scaling_factor = 1;
 };
 
 }  // namespace nav2_recoveries
