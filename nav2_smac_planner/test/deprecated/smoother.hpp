@@ -105,8 +105,13 @@ public:
   {
     _options.max_solver_time_in_seconds = params.max_time;
 
-    double parameters[path.size() * 2];  // NOLINT
-    for (uint i = 0; i != path.size(); i++) {
+#ifdef _MSC_VER
+      std::vector<double> parametersVec(path.size() * 2);
+      double* parameters = parametersVec.data();
+#else
+      double parameters[path.size() * 2];  // NOLINT
+#endif
+    for (unsigned int i = 0; i != path.size(); i++) {
       parameters[2 * i] = path[i][0];
       parameters[2 * i + 1] = path[i][1];
     }
@@ -123,7 +128,7 @@ public:
       return false;
     }
 
-    for (uint i = 0; i != path.size(); i++) {
+    for (unsigned int i = 0; i != path.size(); i++) {
       path[i][0] = parameters[2 * i];
       path[i][1] = parameters[2 * i + 1];
     }
