@@ -84,8 +84,8 @@ nav2_costmap_2d::Costmap2D * CostmapDownsampler::downsample(
   }
 
   // Assign costs
-  for (uint i = 0; i < _downsampled_size_x; ++i) {
-    for (uint j = 0; j < _downsampled_size_y; ++j) {
+  for (unsigned int i = 0; i < _downsampled_size_x; ++i) {
+    for (unsigned int j = 0; j < _downsampled_size_y; ++j) {
       setCostOfCell(i, j);
     }
   }
@@ -122,12 +122,12 @@ void CostmapDownsampler::setCostOfCell(
   unsigned int x_offset = new_mx * _downsampling_factor;
   unsigned int y_offset = new_my * _downsampling_factor;
 
-  for (uint i = 0; i < _downsampling_factor; ++i) {
+  for (unsigned int i = 0; i < _downsampling_factor; ++i) {
     mx = x_offset + i;
     if (mx >= _size_x) {
       continue;
     }
-    for (uint j = 0; j < _downsampling_factor; ++j) {
+    for (unsigned int j = 0; j < _downsampling_factor; ++j) {
       my = y_offset + j;
       if (my >= _size_y) {
         continue;

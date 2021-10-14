@@ -340,7 +340,7 @@ nav_msgs::msg::Path SmacPlanner::createPlan(
 
   // populate final path
   // TODO(stevemacenski): set orientation to tangent of path
-  for (uint i = 0; i != path_world.size(); i++) {
+  for (unsigned int i = 0; i != path_world.size(); i++) {
     pose.pose.position.x = path_world[i][0];
     pose.pose.position.y = path_world[i][1];
     plan.poses[i] = pose;
