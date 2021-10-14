@@ -32,7 +32,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
 if(MSVC)
   add_compile_definitions(_USE_MATH_DEFINES)
-endif()
+else()
   add_compile_options(-O3 -Wextra -Wdeprecated -fPIC)
 endif()
 
