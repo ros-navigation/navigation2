@@ -17,6 +17,7 @@ Example for spawing multiple robots in Gazebo.
 
 This is an example on how to create a launch file for spawning multiple robots into Gazebo
 and launch multiple instances of the navigation stack, each controlling one robot.
+
 The robots co-exist on a shared environment and are controlled by independent nav stacks
 """
 
