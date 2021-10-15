@@ -15,7 +15,7 @@ pull_request_rules:
     actions:
       backport:
         branches:
-          - foxy
+          - foxy-devel
 
   - name: delete head branch after merge
     conditions:
@@ -26,6 +26,7 @@ pull_request_rules:
   - name: ask to resolve conflict
     conditions:
       - conflict
+      - author!=@mergify
     actions:
         comment:
           message: This pull request is in conflict. Could you fix it @{{author}}?
@@ -57,6 +58,8 @@ pull_request_rules:
   - name: Removed maintainer checklist
     conditions:
       - "-body~=(?m)^ #### For Maintainers: <!-- DO NOT EDIT OR REMOVE -->"
+      - author!=@stevemacenski
+      - author!=@mergify
     actions:
         comment:
           message: |
