@@ -16,3 +16,10 @@ pull_request_rules:
       backport:
         branches:
           - foxy
+
+  - name: delete head branch after merge
+    conditions:
+      - merged
+    actions:
+      delete_head_branch:
+ 
