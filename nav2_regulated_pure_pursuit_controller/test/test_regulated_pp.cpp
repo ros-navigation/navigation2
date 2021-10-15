@@ -383,7 +383,6 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   // EXPECT_NEAR(linear_vel, 0.5, 0.01);
 }
 
-
 TEST(RegulatedPurePursuitTest, testDynamicParameter)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("Smactest");
@@ -391,8 +390,8 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   costmap->on_configure(rclcpp_lifecycle::State());
   auto ctrl =
     std::make_unique<nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController>();
-  std::string name = "test";
-  ctrl->configure(node, name, nullptr, costmap);
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  ctrl->configure(node, "test", tf, costmap);
   ctrl->activate();
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -421,7 +420,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.use_velocity_scaled_lookahead_dist", false),
       rclcpp::Parameter("test.use_regulated_linear_velocity_scaling", false),
       rclcpp::Parameter("test.use_cost_regulated_linear_velocity_scaling", false),
-      rclcpp::Parameter("test.use_approach_vel_scaling", false),
+      rclcpp::Parameter("test.use_approach_linear_velocity_scaling", false),
       rclcpp::Parameter("test.allow_reversing", false),
       rclcpp::Parameter("test.use_rotate_to_heading", false)});
 
@@ -450,8 +449,8 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.use_regulated_linear_velocity_scaling").as_bool(), false);
   EXPECT_EQ(
     node->get_parameter(
-    "test.use_cost_regulated_linear_velocity_scaling").as_bool(), false);
-  EXPECT_EQ(node->get_parameter("test.use_approach_vel_scaling").as_bool(), false);
+      "test.use_cost_regulated_linear_velocity_scaling").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.use_approach_linear_velocity_scaling").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.allow_reversing").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
 }
