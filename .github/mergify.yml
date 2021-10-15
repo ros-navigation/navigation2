@@ -1,7 +1,7 @@
 pull_request_rules:
   - name: backport to galactic at reviewers discretion
     conditions:
-      - base=rolling
+      - base=main
       - "label=backport-galactic"
     actions:
       backport:
@@ -10,7 +10,7 @@ pull_request_rules:
 
   - name: backport to foxy at reviewers discretion
     conditions:
-      - base=rolling
+      - base=main
       - "label=backport-foxy"
     actions:
       backport:
@@ -33,6 +33,8 @@ pull_request_rules:
   - name: development targets main branch
     conditions:
       - base!=main
+      - author!=@stevemacenski
+      - author!=@mergify
     actions:
         comment:
           message: |
@@ -44,8 +46,8 @@ pull_request_rules:
     conditions:
       - base=main
       - or:
-        - check-failure="debug_build"
-        - check-failure="release_build"
+        - "check-failure=ci/circleci: debug_build"
+        - "check-failure=ci/circleci: release_build"
     actions:
         comment:
           message: |
@@ -54,7 +56,7 @@ pull_request_rules:
 
   - name: Removed maintainer checklist
     conditions:
-      - -body~=(?m)^ For Maintainers
+      - "-body~=(?m)^ #### For Maintainers: <!-- DO NOT EDIT OR REMOVE -->"
     actions:
         comment:
           message: |
