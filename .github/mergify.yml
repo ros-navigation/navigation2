@@ -26,7 +26,6 @@ pull_request_rules:
   - name: ask to resolve conflict
     conditions:
       - conflict
-      - author!=@stevemacenski
     actions:
         comment:
           message: This pull request is in conflict. Could you fix it @{{author}}?
@@ -34,7 +33,6 @@ pull_request_rules:
   - name: development targets main branch
     conditions:
       - base!=main
-      - author!=@stevemacenski
     actions:
         comment:
           message: |
@@ -57,7 +55,6 @@ pull_request_rules:
   - name: Removed maintainer checklist
     conditions:
       - -body~=(?m)^ For Maintainers
-      - author!=@stevemacenski
     actions:
         comment:
           message: |
