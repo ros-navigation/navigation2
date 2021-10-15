@@ -1,8 +1,11 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>dwb_critics</name>
+  <name>dwb_plugins</name>
   <version>1.0.6</version>
-  <description>The dwb_critics package</description>
+  <description>
+      Standard implementations of the GoalChecker
+      and TrajectoryGenerators for dwb_core
+  </description>
   <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
   <license>BSD-3-Clause</license>
 
@@ -10,15 +13,12 @@
   <build_depend>nav2_common</build_depend>
 
   <depend>angles</depend>
-  <depend>nav2_costmap_2d</depend>
-  <depend>nav2_util</depend>
-  <depend>costmap_queue</depend>
   <depend>dwb_core</depend>
-  <depend>geometry_msgs</depend>
   <depend>nav_2d_msgs</depend>
   <depend>nav_2d_utils</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
+  <depend>nav2_util</depend>
   <depend>sensor_msgs</depend>
 
   <test_depend>ament_lint_common</test_depend>
@@ -26,6 +26,6 @@
   <test_depend>ament_cmake_gtest</test_depend>
 
   <export>
-      <build_type>ament_cmake</build_type>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

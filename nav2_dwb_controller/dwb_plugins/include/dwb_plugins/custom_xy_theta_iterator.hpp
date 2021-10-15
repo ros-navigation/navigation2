@@ -32,58 +32,51 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DWB_CRITICS__JOY_HPP_
-#define DWB_CRITICS__JOY_HPP_
+#ifndef DWB_PLUGINS__CUSTOM_XY_THETA_ITERATOR_HPP_
+#define DWB_PLUGINS__CUSTOM_XY_THETA_ITERATOR_HPP_
 
+#include <memory>
 #include <string>
-#include <vector>
-#include <utility>
 
-#include "dwb_core/trajectory_critic.hpp"
-#include <sensor_msgs/msg/joy.hpp>
+#include "dwb_plugins/velocity_iterator.hpp"
+#include "dwb_plugins/one_d_velocity_iterator.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
-namespace dwb_critics
+namespace dwb_plugins
 {
-/**
- * @class BaseObstacleCritic
- * @brief Uses costmap 2d to assign negative costs if a circular robot would collide at any point of the trajectory.
- *
- * This class can only be used to figure out if a circular robot is in collision. If the cell corresponding
- * with any of the poses in the Trajectory is an obstacle, inscribed obstacle or unknown, it will return a
- * negative cost. Otherwise it will return either the final pose's cost, or the sum of all poses, depending
- * on the sum_scores parameter.
- *
- * Other classes (like ObstacleFootprintCritic) can do more advanced checking for collisions.
- */
-class JoyCritic : public dwb_core::TrajectoryCritic
+class CustomXYThetaIterator : public VelocityIterator
 {
 public:
-  void onInit() override;
-  double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
-
-  void debrief(const nav_2d_msgs::msg::Twist2D & twist) override;
-
+  CustomXYThetaIterator()
+  : kinematics_handler_(nullptr), x_it_(nullptr), y_it_(nullptr), th_it_(nullptr) {}
+  void initialize(
+    const nav2_util::LifecycleNode::SharedPtr & nh,
+    KinematicsHandler::Ptr kinematics,
+    const std::string & plugin_name) override;
+  void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity, double dt) override;
+  bool hasMoreTwists() override;
+  nav_2d_msgs::msg::Twist2D nextTwist() override;
 
 protected:
-  bool sum_scores_;
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr subscription_;
-  void topic_callback(const sensor_msgs::msg::Joy::SharedPtr msg);
-  double x_;
-  double y_;
-  double x_raw;
-  double y_raw;
-  int button;
-  double decay_;
-  double factor;
-  
-  double linear_scale_;
-  double linear_min_;
-  double linear_max_;
+  /**
+   * @brief Check to see whether the combined x/y/theta velocities are valid
+   * @return True if the magnitude hypot(x,y) and theta are within the robot's absolute limits
+   *
+   * This is based on three parameters: min_speed_xy, max_speed_xy and min_speed_theta.
+   * The speed is valid if
+   *  1) The combined magnitude hypot(x,y) is less than max_speed_xy (or max_speed_xy is negative)
+   *  AND
+   *  2) min_speed_xy is negative or min_speed_theta is negative or
+   *     hypot(x,y) is greater than min_speed_xy or fabs(theta) is greater than min_speed_theta.
+   */
+  bool isValidSpeed(double x, double y, double theta);
+  virtual bool isValidVelocity();
+  void iterateToValidVelocity();
+  int vx_samples_, vy_samples_, vtheta_samples_;
+  KinematicsHandler::Ptr kinematics_handler_;
 
-  double angular_scale_;
-  double angular_min_;
-  double angular_max_;
+  std::shared_ptr<OneDVelocityIterator> x_it_, y_it_, th_it_;
 };
-}  // namespace dwb_critics
+}  // namespace dwb_plugins
 
-#endif  // DWB_CRITICS__BASE_OBSTACLE_HPP_
+#endif  // DWB_PLUGINS__XY_THETA_ITERATOR_HPP_
