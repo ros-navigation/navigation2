@@ -31,6 +31,7 @@ BehaviorTreeEngine::BehaviorTreeEngine(const std::vector<std::string> & plugin_l
   for (const auto & p : plugin_libraries) {
     factory_.registerFromPlugin(loader.getOSName(p));
   }
+  fdfsdsd
 }
 
 BtStatus
