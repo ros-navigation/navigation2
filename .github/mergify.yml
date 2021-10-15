@@ -46,8 +46,8 @@ pull_request_rules:
     conditions:
       - base=main
       - or:
-        - check-failure='ci/circleci: debug_build'
-        - check-failure='ci/circleci: release_build'
+        - check-failure=ci/circleci: debug_build
+        - check-failure=ci/circleci: release_build
     actions:
         comment:
           message: |
