@@ -44,6 +44,7 @@
 #include "nav2_navfn_planner/navfn.hpp"
 
 #include <algorithm>
+#include <vector>
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_navfn_planner
