@@ -17,6 +17,7 @@
 #include <string>
 #include <limits>
 #include <memory>
+#include <vector>
 #include <utility>
 
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
@@ -207,7 +208,8 @@ void RegulatedPurePursuitController::activate()
   // Add callback for dynamic parameters
   auto node = node_.lock();
   dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&RegulatedPurePursuitController::dynamicParametersCallback,
+    std::bind(
+      &RegulatedPurePursuitController::dynamicParametersCallback,
       this, std::placeholders::_1));
 }
 
@@ -726,7 +728,7 @@ RegulatedPurePursuitController::dynamicParametersCallback(
         cost_scaling_gain_ = parameter.as_double();
       } else if (name == plugin_name_ + ".regulated_linear_scaling_min_radius") {
         regulated_linear_scaling_min_radius_ = parameter.as_double();
-      } else if (name == plugin_name_ + ".transform_tolerance_") {
+      } else if (name == plugin_name_ + ".transform_tolerance") {
         double transform_tolerance = parameter.as_double();
         transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
       } else if (name == plugin_name_ + ".regulated_linear_scaling_min_speed") {
