@@ -38,5 +38,23 @@
       <description>Penalize trajectories with rotational velocities
       </description>
     </class>
+    <class type="dwb_critics::KeepVelocityCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Keep current velocity type
+      </description>
+    </class>
+    <class type="dwb_critics::AlignCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Proper alignment critic
+      </description>
+    </class>
+    <class type="dwb_critics::JoyCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Critic that prefers trajectories leading towards the joystick direction
+      </description>
+    </class>
+    <class type="dwb_critics::PosCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Critic that prefers trajectories leading towards the joystick direction
+      </description>
+    </class>
+
+
   </library>
 </class_libraries>

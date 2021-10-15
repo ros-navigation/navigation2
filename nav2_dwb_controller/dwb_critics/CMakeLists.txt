@@ -34,6 +34,10 @@ add_library(${PROJECT_NAME} SHARED
     src/prefer_forward.cpp
     src/rotate_to_goal.cpp
     src/twirling.cpp
+    src/keep_velocity.cpp
+    src/align.cpp
+    src/joy_critic.cpp
+    src/pos_critic.cpp
 )
 
 # prevent pluginlib from using boost
