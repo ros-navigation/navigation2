@@ -219,7 +219,7 @@ protected:
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
 
   // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   /**
    * @brief Callback executed when a paramter change is detected

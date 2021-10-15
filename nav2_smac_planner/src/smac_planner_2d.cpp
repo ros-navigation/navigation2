@@ -168,7 +168,7 @@ void SmacPlanner2D::activate()
   }
   auto node = _node.lock();
   // Add callback for dynamic parameters
-  dyn_params_handler = node->add_on_set_parameters_callback(
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&SmacPlanner2D::dynamicParametersCallback, this, _1));
 }
 
@@ -181,7 +181,7 @@ void SmacPlanner2D::deactivate()
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
   }
-  dyn_params_handler.reset();
+  dyn_params_handler_.reset();
 }
 
 void SmacPlanner2D::cleanup()

@@ -115,7 +115,7 @@ void KinematicsHandler::initialize(
   kinematics.base_max_vel_theta_ = kinematics.max_vel_theta_;
 
   // Add callback for dynamic parameters
-  dyn_params_handler = nh->add_on_set_parameters_callback(
+  dyn_params_handler_ = nh->add_on_set_parameters_callback(
     std::bind(&KinematicsHandler::dynamicParametersCallback, this, _1));
 
   kinematics.min_speed_xy_sq_ = kinematics.min_speed_xy_ * kinematics.min_speed_xy_;
