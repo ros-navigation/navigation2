@@ -29,7 +29,7 @@ pull_request_rules:
       - author!=@stevemacenski
     actions:
         comment:
-          message: This pull request is in conflict. Could you fix it @{{author}}? 🙏
+          message: This pull request is in conflict. Could you fix it @{{author}}?
 
   - name: development targets main branch
     conditions:
@@ -46,8 +46,8 @@ pull_request_rules:
     conditions:
       - base=main
       - or:
-        - check-failure="ci/circleci: debug_build"
-        - check-failure="ci/circleci: release_build"
+        - check-failure="debug_build"
+        - check-failure="release_build"
     actions:
         comment:
           message: |
