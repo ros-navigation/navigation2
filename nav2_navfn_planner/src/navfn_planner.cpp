@@ -104,7 +104,7 @@ NavfnPlanner::activate()
     name_.c_str());
   // Add callback for dynamic parameters
   auto node = node_.lock();
-  dyn_params_handler = node->add_on_set_parameters_callback(
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&NavfnPlanner::dynamicParametersCallback, this, _1));
 }
 
@@ -114,7 +114,7 @@ NavfnPlanner::deactivate()
   RCLCPP_INFO(
     logger_, "Deactivating plugin %s of type NavfnPlanner",
     name_.c_str());
-  dyn_params_handler.reset();
+  dyn_params_handler_.reset();
 }
 
 void

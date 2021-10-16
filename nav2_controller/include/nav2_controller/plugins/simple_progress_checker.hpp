@@ -63,7 +63,7 @@ protected:
 
   bool baseline_pose_set_{false};
   // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
   std::string plugin_name_;
 
   /**

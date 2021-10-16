@@ -85,7 +85,7 @@ void SimpleGoalChecker::initialize(
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 
   // Add callback for dynamic parameters
-  dyn_params_handler = node->add_on_set_parameters_callback(
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&SimpleGoalChecker::dynamicParametersCallback, this, _1));
 }
 

@@ -75,7 +75,7 @@ void StoppedGoalChecker::initialize(
   node->get_parameter(plugin_name + ".trans_stopped_velocity", trans_stopped_velocity_);
 
   // Add callback for dynamic parameters
-  dyn_params_handler = node->add_on_set_parameters_callback(
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&StoppedGoalChecker::dynamicParametersCallback, this, _1));
 }
 

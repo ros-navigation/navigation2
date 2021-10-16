@@ -51,7 +51,7 @@ void SimpleProgressChecker::initialize(
   time_allowance_ = rclcpp::Duration::from_seconds(time_allowance_param);
 
   // Add callback for dynamic parameters
-  dyn_params_handler = node->add_on_set_parameters_callback(
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&SimpleProgressChecker::dynamicParametersCallback, this, _1));
 }
 
