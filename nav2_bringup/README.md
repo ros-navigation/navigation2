@@ -1,6 +1,15 @@
 # nav2_bringup
 
-The `nav2_bringup` package is an example bringup system for Nav2 applications.
+The `nav2_bringup` package is an example bringup system for Nav2 applications. 
+
+This is a very flexible example for nav2 bringup that can be modified for different maps/robots/hardware/worlds/etc. It is our expectation for an application specific robot system that you're mirroring `nav2_bringup` package and modifying it for your specific maps/robots/bringup needs. This is an applied and working demonstration for the default system bringup with many options that can be easily modified. 
+
+Usual robot stacks will have a `<robot_name>_nav` package with config/bringup files and this is that for the general case to base a specific robot system off of.
+
+Composed bringup (based on  [ROS2 Composition](https://docs.ros.org/en/galactic/Tutorials/Composition.html)) is optional for users. It can be used to compose all Nav2 nodes in a single process instead of launching these nodes separately, which is useful for embedded systems users that need to make optimizations due to harsh resource constraints.  
+
+* Some discussions about performance improvement of composed bringup could be found here: https://discourse.ros.org/t/nav2-composition/22175.
+* Currently, manual composition is used in this package. Dynamic composition is more flexible than manual composition, but is not currently applied in nav2 due to various issues, you could find more details here: https://github.com/ros-planning/navigation2/issues/2147.
 
 ### Pre-requisites:
 * [Install ROS 2](https://index.ros.org/doc/ros2/Installation/Dashing/)
@@ -45,11 +54,22 @@ ros2 launch turtlebot3_bringup turtlebot3_state_publisher.launch.py use_sim_time
 
 ### Terminal 3: Launch Nav2
 
+Normal Bringup
+
 ```bash
 source /opt/ros/dashing/setup.bash
-ros2 launch nav2_bringup bringup_launch.py use_sim_time:=True autostart:=True \
+ros2 launch nav2_bringup bringup_launch.py use_sim_time:=True autostart:=True use_composition:=False\
 map:=<full/path/to/map.yaml>
 ```
+
+Manually Composed Bringup
+
+```bash
+source /opt/ros/dashing/setup.bash
+ros2 launch nav2_bringup bringup_launch.py use_sim_time:=True autostart:=True use_composition:=True\
+map:=<full/path/to/map.yaml>
+```
+* `use_composition` is True by default
 
 ### Terminal 4: Run RViz with Nav2 config file
 
@@ -79,6 +99,7 @@ ros2 launch nav2_bringup tb3_simulation_launch.py <settings>
 Where `<settings>` can used to replace any of the default options, for example:
 
 ```
+use_composition:=<True or False>
 world:=<full/path/to/gazebo.world>
 map:=<full/path/to/map.yaml>
 rviz_config_file:=<full/path/to/rviz_config.rviz>

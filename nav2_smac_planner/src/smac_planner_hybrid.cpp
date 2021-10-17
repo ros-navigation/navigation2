@@ -164,6 +164,7 @@ void SmacPlannerHybrid::configure(
     _allow_unknown,
     _max_iterations,
     std::numeric_limits<int>::max(),
+    _max_planning_time,
     _lookup_table_dim,
     _angle_quantizations);
 
@@ -183,16 +184,6 @@ void SmacPlannerHybrid::configure(
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
-  // Setup callback for changes to parameters.
-  _parameters_client = std::make_shared<rclcpp::AsyncParametersClient>(
-    node->get_node_base_interface(),
-    node->get_node_topics_interface(),
-    node->get_node_graph_interface(),
-    node->get_node_services_interface());
-
-  _parameter_event_sub = _parameters_client->on_parameter_event(
-    std::bind(&SmacPlannerHybrid::on_parameter_event_callback, this, _1));
-
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlannerHybrid with "
     "maximum iterations %i, and %s. Using motion model: %s.",
@@ -210,6 +201,10 @@ void SmacPlannerHybrid::activate()
   if (_costmap_downsampler) {
     _costmap_downsampler->on_activate();
   }
+  auto node = _node.lock();
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&SmacPlannerHybrid::dynamicParametersCallback, this, _1));
 }
 
 void SmacPlannerHybrid::deactivate()
@@ -221,6 +216,7 @@ void SmacPlannerHybrid::deactivate()
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
   }
+  dyn_params_handler_.reset();
 }
 
 void SmacPlannerHybrid::cleanup()
@@ -263,6 +259,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   while (orientation_bin < 0.0) {
     orientation_bin += static_cast<float>(_angle_quantizations);
   }
+  // This is needed to handle precision issues
+  if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
+    orientation_bin -= static_cast<float>(_angle_quantizations);
+  }
   unsigned int orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
   _a_star->setStart(mx, my, orientation_bin_id);
 
@@ -271,6 +271,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   orientation_bin = tf2::getYaw(goal.pose.orientation) / _angle_bin_size;
   while (orientation_bin < 0.0) {
     orientation_bin += static_cast<float>(_angle_quantizations);
+  }
+  // This is needed to handle precision issues
+  if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
+    orientation_bin -= static_cast<float>(_angle_quantizations);
   }
   orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
   _a_star->setGoal(mx, my, orientation_bin_id);
@@ -350,9 +354,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   return plan;
 }
 
-void SmacPlannerHybrid::on_parameter_event_callback(
-  const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+rcl_interfaces::msg::SetParametersResult
+SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
+  rcl_interfaces::msg::SetParametersResult result;
   std::lock_guard<std::mutex> lock_reinit(_mutex);
 
   bool reinit_collision_checker = false;
@@ -360,56 +365,56 @@ void SmacPlannerHybrid::on_parameter_event_callback(
   bool reinit_downsampler = false;
   bool reinit_smoother = false;
 
-  for (auto & changed_parameter : event->changed_parameters) {
-    const auto & type = changed_parameter.value.type;
-    const auto & name = changed_parameter.name;
-    const auto & value = changed_parameter.value;
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == _name + ".max_planning_time") {
-        _max_planning_time = value.double_value;
+        reinit_a_star = true;
+        _max_planning_time = parameter.as_double();
       } else if (name == _name + ".lookup_table_size") {
         reinit_a_star = true;
-        _lookup_table_size = value.double_value;
+        _lookup_table_size = parameter.as_double();
       } else if (name == _name + ".minimum_turning_radius") {
         reinit_a_star = true;
         reinit_smoother = true;
-        _search_info.minimum_turning_radius = static_cast<float>(value.double_value);
+        _search_info.minimum_turning_radius = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".reverse_penalty") {
         reinit_a_star = true;
-        _search_info.reverse_penalty = static_cast<float>(value.double_value);
+        _search_info.reverse_penalty = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".change_penalty") {
         reinit_a_star = true;
-        _search_info.change_penalty = static_cast<float>(value.double_value);
+        _search_info.change_penalty = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".non_straight_penalty") {
         reinit_a_star = true;
-        _search_info.non_straight_penalty = static_cast<float>(value.double_value);
+        _search_info.non_straight_penalty = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".cost_penalty") {
         reinit_a_star = true;
-        _search_info.cost_penalty = static_cast<float>(value.double_value);
+        _search_info.cost_penalty = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".analytic_expansion_ratio") {
         reinit_a_star = true;
-        _search_info.analytic_expansion_ratio = static_cast<float>(value.double_value);
+        _search_info.analytic_expansion_ratio = static_cast<float>(parameter.as_double());
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == _name + ".downsample_costmap") {
         reinit_downsampler = true;
-        _downsample_costmap = value.bool_value;
+        _downsample_costmap = parameter.as_bool();
       } else if (name == _name + ".allow_unknown") {
         reinit_a_star = true;
-        _allow_unknown = value.bool_value;
+        _allow_unknown = parameter.as_bool();
       } else if (name == _name + ".cache_obstacle_heuristic") {
         reinit_a_star = true;
-        _search_info.cache_obstacle_heuristic = value.bool_value;
+        _search_info.cache_obstacle_heuristic = parameter.as_bool();
       }
     } else if (type == ParameterType::PARAMETER_INTEGER) {
       if (name == _name + ".downsampling_factor") {
         reinit_a_star = true;
         reinit_downsampler = true;
-        _downsampling_factor = value.integer_value;
+        _downsampling_factor = parameter.as_int();
       } else if (name == _name + ".max_iterations") {
         reinit_a_star = true;
-        _max_iterations = value.integer_value;
+        _max_iterations = parameter.as_int();
         if (_max_iterations <= 0) {
           RCLCPP_INFO(
             _logger, "maximum iteration selected as <= 0, "
@@ -419,14 +424,14 @@ void SmacPlannerHybrid::on_parameter_event_callback(
       } else if (name == _name + ".angle_quantization_bins") {
         reinit_collision_checker = true;
         reinit_a_star = true;
-        int angle_quantizations = value.integer_value;
+        int angle_quantizations = parameter.as_int();
         _angle_bin_size = 2.0 * M_PI / angle_quantizations;
         _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
       }
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == _name + ".motion_model_for_search") {
         reinit_a_star = true;
-        _motion_model = fromString(value.string_value);
+        _motion_model = fromString(parameter.as_string());
         if (_motion_model == MotionModel::UNKNOWN) {
           RCLCPP_WARN(
             _logger,
@@ -467,6 +472,7 @@ void SmacPlannerHybrid::on_parameter_event_callback(
         _allow_unknown,
         _max_iterations,
         std::numeric_limits<int>::max(),
+        _max_planning_time,
         _lookup_table_dim,
         _angle_quantizations);
     }
@@ -500,6 +506,8 @@ void SmacPlannerHybrid::on_parameter_event_callback(
       _smoother->initialize(minimum_turning_radius_global_coords);
     }
   }
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_smac_planner

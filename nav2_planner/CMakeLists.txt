@@ -6,6 +6,7 @@ find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
@@ -31,6 +32,7 @@ set(dependencies
   rclcpp
   rclcpp_action
   rclcpp_lifecycle
+  rclcpp_components
   std_msgs
   visualization_msgs
   nav2_util
@@ -61,6 +63,8 @@ target_link_libraries(${executable_name} ${library_name})
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
+
+rclcpp_components_register_nodes(${library_name} "nav2_planner::PlannerServer")
 
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib

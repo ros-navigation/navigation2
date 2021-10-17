@@ -42,6 +42,7 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   const SearchInfo & search_info)
 : _traverse_unknown(true),
   _max_iterations(0),
+  _max_planning_time(0),
   _x_size(0),
   _y_size(0),
   _search_info(search_info),
@@ -63,12 +64,14 @@ void AStarAlgorithm<NodeT>::initialize(
   const bool & allow_unknown,
   int & max_iterations,
   const int & max_on_approach_iterations,
+  const double & max_planning_time,
   const float & lookup_table_size,
   const unsigned int & dim_3_size)
 {
   _traverse_unknown = allow_unknown;
   _max_iterations = max_iterations;
   _max_on_approach_iterations = max_on_approach_iterations;
+  _max_planning_time = max_planning_time;
   NodeT::precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size, _search_info);
   _dim3_size = dim_3_size;
 }
@@ -78,12 +81,14 @@ void AStarAlgorithm<Node2D>::initialize(
   const bool & allow_unknown,
   int & max_iterations,
   const int & max_on_approach_iterations,
+  const double & max_planning_time,
   const float & /*lookup_table_size*/,
   const unsigned int & dim_3_size)
 {
   _traverse_unknown = allow_unknown;
   _max_iterations = max_iterations;
   _max_on_approach_iterations = max_on_approach_iterations;
+  _max_planning_time = max_planning_time;
 
   if (dim_3_size != 1) {
     throw std::runtime_error("Node type Node2D cannot be given non-1 dim 3 quantization.");
@@ -211,6 +216,7 @@ bool AStarAlgorithm<NodeT>::createPath(
   CoordinateVector & path, int & iterations,
   const float & tolerance)
 {
+  steady_clock::time_point start_time = steady_clock::now();
   _tolerance = tolerance;
   _best_heuristic_node = {std::numeric_limits<float>::max(), 0};
   clearQueue();
@@ -248,6 +254,15 @@ bool AStarAlgorithm<NodeT>::createPath(
     };
 
   while (iterations < getMaxIterations() && !_queue.empty()) {
+    // Check for planning timeout only on every Nth iteration
+    if (iterations % _timing_interval == 0) {
+      std::chrono::duration<double> planning_duration =
+        std::chrono::duration_cast<std::chrono::duration<double>>(steady_clock::now() - start_time);
+      if (static_cast<double>(planning_duration.count()) >= _max_planning_time) {
+        return false;
+      }
+    }
+
     // 1) Pick Nbest from O s.t. min(f(Nbest)), remove from queue
     current_node = getNextNode();
 
@@ -575,11 +590,11 @@ typename AStarAlgorithm<NodeT>::AnalyticExpansionNodes AStarAlgorithm<NodeT>::ge
     node->motion_table.state_space->interpolate(from(), to(), i / num_intervals, s());
     reals = s.reals();
     angle = reals[2] / node->motion_table.bin_size;
-    while (angle >= node->motion_table.num_angle_quantization_float) {
-      angle -= node->motion_table.num_angle_quantization_float;
-    }
     while (angle < 0.0) {
       angle += node->motion_table.num_angle_quantization_float;
+    }
+    while (angle >= node->motion_table.num_angle_quantization_float) {
+      angle -= node->motion_table.num_angle_quantization_float;
     }
     // Turn the pose into a node, and check if it is valid
     index = NodeT::getIndex(

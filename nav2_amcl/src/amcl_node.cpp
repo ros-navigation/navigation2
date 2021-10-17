@@ -930,7 +930,7 @@ AmclNode::publishAmclPose(
   if (!initial_pose_is_known_) {
     if (checkElapsedTime(2s, last_time_printed_msg_)) {
       RCLCPP_WARN(
-        get_logger(), "ACML cannot publish a pose or update the transform. "
+        get_logger(), "AMCL cannot publish a pose or update the transform. "
         "Please set the initial pose...");
       last_time_printed_msg_ = now();
     }
@@ -1376,3 +1376,10 @@ AmclNode::initLaserScan()
 }
 
 }  // namespace nav2_amcl
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_amcl::AmclNode)
