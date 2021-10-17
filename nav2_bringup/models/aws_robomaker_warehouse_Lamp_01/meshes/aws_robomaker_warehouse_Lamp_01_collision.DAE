@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset><contributor><author></author><authoring_tool>FBX COLLADA exporter</authoring_tool><comments></comments></contributor><created>2019-04-04T08:27:36Z</created><keywords></keywords><modified>2019-04-04T08:27:36Z</modified><revision></revision><subject></subject><title></title><unit meter="0.010000" name="centimeter"></unit><up_axis>Z_UP</up_axis></asset>
+  <library_geometries>
+    <geometry id="aws_robomaker_warehouse_Lamp_01_collision-lib" name="aws_robomaker_warehouse_Lamp_01_collisionMesh">
+      <mesh>
+        <source id="aws_robomaker_warehouse_Lamp_01_collision-POSITION">
+          <float_array id="aws_robomaker_warehouse_Lamp_01_collision-POSITION-array" count="24">
+-51.220013 -75.723572 -50.385498
+51.220005 -75.723572 -50.385498
+-51.220013 75.723572 -50.385498
+51.220005 75.723572 -50.385498
+-51.220005 -75.723572 50.385498
+51.220013 -75.723572 50.385498
+-51.220005 75.723572 50.385498
+51.220013 75.723572 50.385498
+</float_array>
+          <technique_common>
+            <accessor source="#aws_robomaker_warehouse_Lamp_01_collision-POSITION-array" count="8" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="aws_robomaker_warehouse_Lamp_01_collision-Normal0">
+          <float_array id="aws_robomaker_warehouse_Lamp_01_collision-Normal0-array" count="108">
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 -1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+</float_array>
+          <technique_common>
+            <accessor source="#aws_robomaker_warehouse_Lamp_01_collision-Normal0-array" count="36" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="aws_robomaker_warehouse_Lamp_01_collision-UV0">
+          <float_array id="aws_robomaker_warehouse_Lamp_01_collision-UV0-array" count="48">
+1.000000 0.000000
+0.000000 0.000000
+1.000000 1.000000
+0.000000 1.000000
+0.000000 0.000000
+1.000000 0.000000
+0.000000 1.000000
+1.000000 1.000000
+0.000000 0.000000
+1.000000 0.000000
+0.000000 1.000000
+1.000000 1.000000
+0.000000 0.000000
+1.000000 0.000000
+0.000000 1.000000
+1.000000 1.000000
+0.000000 0.000000
+1.000000 0.000000
+0.000000 1.000000
+1.000000 1.000000
+0.000000 0.000000
+1.000000 0.000000
+0.000000 1.000000
+1.000000 1.000000
+</float_array>
+          <technique_common>
+            <accessor source="#aws_robomaker_warehouse_Lamp_01_collision-UV0-array" count="24" stride="2">
+              <param name="S" type="float"/>
+              <param name="T" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="aws_robomaker_warehouse_Lamp_01_collision-VERTEX">
+          <input semantic="POSITION" source="#aws_robomaker_warehouse_Lamp_01_collision-POSITION"/>
+        </vertices>
+        <triangles count="12"><input semantic="VERTEX" offset="0" source="#aws_robomaker_warehouse_Lamp_01_collision-VERTEX"/><input semantic="NORMAL" offset="1" source="#aws_robomaker_warehouse_Lamp_01_collision-Normal0"/><input semantic="TEXCOORD" offset="2" set="0" source="#aws_robomaker_warehouse_Lamp_01_collision-UV0"/><p> 1 0 1 0 1 0 3 2 3 0 3 0 2 4 2 3 5 3 7 6 7 6 7 6 4 8 4 7 9 7 4 10 4 5 11 5 4 12 10 1 13 9 5 14 11 1 15 9 4 16 10 0 17 8 7 18 15 5 19 14 1 20 12 7 21 15 1 22 12 3 23 13 6 24 19 7 25 18 3 26 16 6 27 19 3 28 16 2 29 17 4 30 23 6 31 22 2 32 20 4 33 23 2 34 20 0 35 21</p></triangles>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_visual_scenes>
+    <visual_scene id="aws_robomaker_warehouse_Lamp_01_collision" name="aws_robomaker_warehouse_Lamp_01_collision">
+      <node name="aws_robomaker_warehouse_Lamp_01_collision" id="aws_robomaker_warehouse_Lamp_01_collision" sid="aws_robomaker_warehouse_Lamp_01_collision"><matrix sid="matrix">-0.999000 -0.000000 -0.000000 0.087481 -0.000000 0.000000 0.998995 0.000494 0.000000 1.002288 -0.000000 1325.909302 0.000000 0.000000 0.000000 1.000000</matrix><instance_geometry url="#aws_robomaker_warehouse_Lamp_01_collision-lib"/><extra><technique profile="FCOLLADA"><visibility>1.000000</visibility></technique></extra></node>
+      <extra><technique profile="MAX3D"><frame_rate>30.000000</frame_rate></technique><technique profile="FCOLLADA"><start_time>0.000000</start_time><end_time>3.333333</end_time></technique></extra>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#aws_robomaker_warehouse_Lamp_01_collision"></instance_visual_scene>
+  </scene>
+</COLLADA>

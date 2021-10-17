@@ -265,7 +265,7 @@ _commands:
                 --packages-select ${TEST_PACKAGES} \
                 --base-select test_result
 
-              . install/setup.sh
+              source install/setup.sh
               set -o xtrace
               colcon test \
                 --packages-select ${TEST_PACKAGES}

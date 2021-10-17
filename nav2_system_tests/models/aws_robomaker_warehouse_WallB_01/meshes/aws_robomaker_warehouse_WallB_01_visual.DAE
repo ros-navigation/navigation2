@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset><contributor><author></author><authoring_tool>FBX COLLADA exporter</authoring_tool><comments></comments></contributor><created>2019-05-24T10:55:29Z</created><keywords></keywords><modified>2019-05-24T10:55:29Z</modified><revision></revision><subject></subject><title></title><unit meter="0.010000" name="centimeter"></unit><up_axis>Z_UP</up_axis></asset>
+  <library_images>
+    <image id="Map #1123124519-image" name="Map #1123124519"><init_from>../materials/textures/aws_robomaker_warehouse_WallB_01.png</init_from></image>
+  </library_images>
+  <library_materials>
+    <material id="Material #946556" name="Material #946556">
+      <instance_effect url="#Material #946556-fx"/>
+    </material>
+  </library_materials>
+  <library_effects>
+    <effect id="Material #946556-fx" name="Material #946556">
+      <profile_COMMON>
+        <technique sid="standard">
+          <phong>
+            <emission>
+              <color sid="emission">0.000000  0.000000 0.000000 1.000000</color>
+            </emission>
+            <ambient>
+              <color sid="ambient">0.588000  0.588000 0.588000 1.000000</color>
+            </ambient>
+            <diffuse>
+              <texture texture="Map #1123124519-image" texcoord="CHANNEL0">
+                <extra>
+                  <technique profile="MAYA">
+                    <wrapU sid="wrapU0">TRUE</wrapU>
+                    <wrapV sid="wrapV0">TRUE</wrapV>
+                    <blend_mode>ADD</blend_mode>
+                  </technique>
+                </extra>
+              </texture>
+            </diffuse>
+            <specular>
+              <color sid="specular">0.000000  0.000000 0.000000 1.000000</color>
+            </specular>
+            <shininess>
+              <float sid="shininess">2.000000</float>
+            </shininess>
+            <reflective>
+              <color sid="reflective">0.000000  0.000000 0.000000 1.000000</color>
+            </reflective>
+            <reflectivity>
+              <float sid="reflectivity">1.000000</float>
+            </reflectivity>
+            <transparent opaque="RGB_ZERO">
+              <color sid="transparent">1.000000  1.000000 1.000000 1.000000</color>
+            </transparent>
+            <transparency>
+              <float sid="transparency">0.000000</float>
+            </transparency>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_geometries>
+    <geometry id="aws_robomaker_warehouse_WallB_01_visual-lib" name="aws_robomaker_warehouse_WallB_01_visualMesh">
+      <mesh>
+        <source id="aws_robomaker_warehouse_WallB_01_visual-POSITION">
+          <float_array id="aws_robomaker_warehouse_WallB_01_visual-POSITION-array" count="57">
+699.023682 1045.333252 0.000000
+-699.023315 1045.333130 0.000000
+699.023682 1045.333252 901.986084
+-699.023315 1045.333130 901.986084
+685.143066 1032.083740 0.000000
+685.143066 1045.333252 901.986084
+685.143066 1032.083740 901.986084
+699.023682 -1045.333130 0.000000
+699.023682 -1045.333130 901.986084
+685.143066 -1032.083618 901.986084
+699.023682 -1032.083618 901.986084
+685.143066 -1032.083618 0.000000
+-699.023315 -1045.333130 0.000000
+-699.023315 -1045.333130 901.986084
+-686.135132 -1032.083618 901.986084
+-686.135132 -1045.333130 901.986084
+-686.135132 -1032.083618 0.000000
+-686.135132 1032.083618 901.986084
+-686.135193 1032.083618 0.000000
+</float_array>
+          <technique_common>
+            <accessor source="#aws_robomaker_warehouse_WallB_01_visual-POSITION-array" count="19" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="aws_robomaker_warehouse_WallB_01_visual-Normal0">
+          <float_array id="aws_robomaker_warehouse_WallB_01_visual-Normal0-array" count="270">
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+-1.000000 0.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 0.000000
+0.000000 -1.000000 -0.000000
+0.000000 -1.000000 -0.000000
+0.000000 -1.000000 -0.000000
+-0.000000 1.000000 -0.000000
+-0.000000 1.000000 -0.000000
+-0.000000 1.000000 -0.000000
+-0.000000 1.000000 -0.000000
+-0.000000 1.000000 -0.000000
+-0.000000 1.000000 -0.000000
+-0.000000 1.000000 -0.000000
+-0.000000 1.000000 -0.000000
+-0.000000 1.000000 -0.000000
+1.000000 0.000000 -0.000000
+1.000000 0.000000 -0.000000
+1.000000 0.000000 -0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+1.000000 0.000000 0.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+</float_array>
+          <technique_common>
+            <accessor source="#aws_robomaker_warehouse_WallB_01_visual-Normal0-array" count="90" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="aws_robomaker_warehouse_WallB_01_visual-UV0">
+          <float_array id="aws_robomaker_warehouse_WallB_01_visual-UV0-array" count="128">
+1.423979 0.041268
+1.432463 0.041268
+1.432463 0.050156
+1.423979 0.050156
+0.657583 2.277837
+0.657583 2.286321
+0.080013 2.286321
+0.080013 2.277837
+0.133948 0.068165
+0.142837 0.068165
+0.142837 0.645734
+0.133948 0.645734
+1.439517 0.041268
+1.448001 0.041268
+1.448001 0.618837
+1.439517 0.618837
+0.080013 2.898408
+1.020908 0.068165
+1.432463 0.928227
+1.020908 0.645734
+1.423979 0.928227
+0.080013 2.320839
+0.080014 0.956087
+0.657583 0.956087
+0.102230 0.050156
+0.102230 0.041268
+1.538820 1.910483
+0.093746 0.050156
+1.401763 2.320839
+0.080014 0.947603
+0.093746 0.041268
+0.657583 0.947603
+1.401763 2.898408
+0.102230 0.928227
+0.961250 1.910483
+0.093746 0.928227
+2.778234 0.618837
+0.102230 0.936480
+2.154409 1.980973
+0.093746 0.936480
+0.961250 1.901595
+1.576840 1.980973
+1.432463 0.936480
+1.576841 0.659224
+1.423979 0.936480
+1.029160 0.068165
+1.029160 0.645734
+2.154409 0.659224
+1.538820 1.901595
+0.961250 1.023523
+1.538820 1.023523
+0.961250 1.015271
+1.538820 1.015271
+2.769750 0.618837
+2.769750 0.041268
+2.778234 0.041268
+2.181874 2.869334
+1.604305 2.869334
+1.604305 1.991262
+2.181875 1.991262
+2.167332 1.537295
+2.167332 0.659224
+2.744901 0.659224
+2.744901 1.537295
+</float_array>
+          <technique_common>
+            <accessor source="#aws_robomaker_warehouse_WallB_01_visual-UV0-array" count="64" stride="2">
+              <param name="S" type="float"/>
+              <param name="T" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="aws_robomaker_warehouse_WallB_01_visual-VERTEX">
+          <input semantic="POSITION" source="#aws_robomaker_warehouse_WallB_01_visual-POSITION"/>
+        </vertices>
+        <triangles count="30" material="Material #946556"><input semantic="VERTEX" offset="0" source="#aws_robomaker_warehouse_WallB_01_visual-VERTEX"/><input semantic="NORMAL" offset="1" source="#aws_robomaker_warehouse_WallB_01_visual-Normal0"/><input semantic="TEXCOORD" offset="2" set="0" source="#aws_robomaker_warehouse_WallB_01_visual-UV0"/><p> 6 0 3 2 1 1 5 2 2 5 3 2 17 4 20 6 5 3 2 6 1 6 7 3 10 8 25 10 9 22 0 10 5 2 11 6 7 12 31 10 13 22 8 14 29 10 15 22 7 16 31 0 17 5 13 18 36 3 19 15 1 20 12 13 21 36 1 22 12 12 23 55 17 24 20 5 25 2 3 26 42 10 27 25 9 28 24 8 29 30 10 30 25 6 31 3 9 32 24 9 33 32 6 34 16 4 35 21 9 36 32 4 37 21 11 38 28 15 39 49 7 40 26 8 41 34 12 42 52 15 43 49 13 44 51 15 45 49 12 46 52 7 47 26 9 48 24 14 49 33 15 50 35 15 51 35 14 52 33 13 53 39 14 54 59 9 55 56 11 56 57 14 57 59 11 58 57 16 59 58 17 60 63 4 61 61 6 62 62 4 63 61 17 64 63 18 65 60 5 66 10 1 67 45 3 68 46 0 69 8 5 70 10 2 71 11 5 72 10 0 73 8 1 74 45 14 75 43 18 76 38 17 77 41 18 78 38 14 79 43 16 80 47 9 81 24 15 82 35 8 83 30 3 84 42 13 85 39 17 86 20 17 87 20 13 88 39 14 89 33</p></triangles>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_animations>
+    <animation id="aws_robomaker_warehouse_WallB_01_visual-anim" name="aws_robomaker_warehouse_WallB_01_visual"><animation><source id="aws_robomaker_warehouse_WallB_01_visual-Matrix-animation-input"><float_array id="aws_robomaker_warehouse_WallB_01_visual-Matrix-animation-input-array" count="0">
+</float_array><technique_common><accessor source="#aws_robomaker_warehouse_WallB_01_visual-Matrix-animation-input-array" count="0"><param name="TIME" type="float"/></accessor></technique_common></source><source id="aws_robomaker_warehouse_WallB_01_visual-Matrix-animation-output-transform"><float_array id="aws_robomaker_warehouse_WallB_01_visual-Matrix-animation-output-transform-array" count="0">
+</float_array><technique_common><accessor source="#aws_robomaker_warehouse_WallB_01_visual-Matrix-animation-output-transform-array" count="0" stride="16"><param type="float4x4"/></accessor></technique_common></source><source id="aws_robomaker_warehouse_WallB_01_visual-Interpolations"><Name_array id="aws_robomaker_warehouse_WallB_01_visual-Interpolations-array" count="0">
+</Name_array><technique_common><accessor source="#aws_robomaker_warehouse_WallB_01_visual-Interpolations-array" count="0"><param type="name"/></accessor></technique_common></source><sampler id="aws_robomaker_warehouse_WallB_01_visual-Matrix-animation-transform"><input semantic="INPUT" source="#aws_robomaker_warehouse_WallB_01_visual-Matrix-animation-input"/><input semantic="OUTPUT" source="#aws_robomaker_warehouse_WallB_01_visual-Matrix-animation-output-transform"/><input semantic="INTERPOLATION" source="#aws_robomaker_warehouse_WallB_01_visual-Interpolations"/></sampler><channel source="#aws_robomaker_warehouse_WallB_01_visual-Matrix-animation-transform" target="aws_robomaker_warehouse_WallB_01_visual/matrix"/></animation></animation>
+  </library_animations>
+  <library_visual_scenes>
+    <visual_scene id="aws_robomaker_warehouse_WallB_01_visual" name="aws_robomaker_warehouse_WallB_01_visual">
+      <node name="aws_robomaker_warehouse_WallB_01_visual" id="aws_robomaker_warehouse_WallB_01_visual" layer="zhenghe" sid="aws_robomaker_warehouse_WallB_01_visual"><matrix sid="matrix">1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000</matrix><instance_geometry url="#aws_robomaker_warehouse_WallB_01_visual-lib"><bind_material><technique_common><instance_material symbol="Material #946556" target="#Material #946556"/></technique_common></bind_material></instance_geometry><extra><technique profile="FCOLLADA"><visibility>1.000000</visibility></technique></extra></node>
+      <extra><technique profile="MAX3D"><frame_rate>30.000000</frame_rate></technique><technique profile="FCOLLADA"><start_time>0.000000</start_time><end_time>3.333333</end_time></technique></extra>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#aws_robomaker_warehouse_WallB_01_visual"></instance_visual_scene>
+  </scene>
+</COLLADA>
