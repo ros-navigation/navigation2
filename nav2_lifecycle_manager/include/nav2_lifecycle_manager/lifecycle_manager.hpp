@@ -18,6 +18,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -52,9 +53,9 @@ public:
   ~LifecycleManager();
 
 protected:
-  // The ROS node to create bond
-  rclcpp::Node::SharedPtr bond_client_node_;
-  std::unique_ptr<nav2_util::NodeThread> bond_node_thread_;
+  // Callback group used by services and timers
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  std::unique_ptr<nav2_util::NodeThread> service_thread_;
 
   // The services provided by this node
   rclcpp::Service<ManageLifecycleNodes>::SharedPtr manager_srv_;

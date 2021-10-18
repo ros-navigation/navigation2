@@ -59,9 +59,10 @@ FootprintSubscriber::getFootprint(
     return false;
   }
 
+  auto current_footprint = std::atomic_load(&footprint_);
   footprint = toPointVector(
-    std::make_shared<geometry_msgs::msg::Polygon>(footprint_->polygon));
-  auto & footprint_stamp = footprint_->header.stamp;
+    std::make_shared<geometry_msgs::msg::Polygon>(current_footprint->polygon));
+  auto & footprint_stamp = current_footprint->header.stamp;
 
   if (stamp - footprint_stamp > valid_footprint_timeout) {
     return false;
@@ -89,7 +90,7 @@ FootprintSubscriber::getFootprint(
 void
 FootprintSubscriber::footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg)
 {
-  footprint_ = msg;
+  std::atomic_store(&footprint_, msg);
   if (!footprint_received_) {
     footprint_received_ = true;
   }

@@ -43,7 +43,7 @@ void RegulatedPurePursuitController::configure(
 {
   auto node = parent.lock();
   if (!node) {
-    throw std::runtime_error("Unable to lock node!");
+    throw nav2_core::PlannerException("Unable to lock node!");
   }
 
   costmap_ros_ = costmap_ros;
@@ -51,6 +51,7 @@ void RegulatedPurePursuitController::configure(
   tf_ = tf;
   plugin_name_ = name;
   logger_ = node->get_logger();
+  clock_ = node->get_clock();
 
   double transform_tolerance = 0.1;
   double control_frequency = 20.0;
@@ -314,7 +315,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // Collision checking on this velocity heading
   if (isCollisionImminent(pose, linear_vel, angular_vel)) {
-    throw std::runtime_error("RegulatedPurePursuitController detected collision ahead!");
+    throw nav2_core::PlannerException("RegulatedPurePursuitController detected collision ahead!");
   }
 
   // populate and return message
@@ -394,7 +395,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   pose_msg.header.frame_id = arc_pts_msg.header.frame_id;
   pose_msg.header.stamp = arc_pts_msg.header.stamp;
 
-  const double projection_time = costmap_->getResolution() / linear_vel;
+  const double projection_time = costmap_->getResolution() / fabs(linear_vel);
 
   geometry_msgs::msg::Pose2D curr_pose;
   curr_pose.x = robot_pose.pose.position.x;
@@ -436,7 +437,15 @@ bool RegulatedPurePursuitController::isCollisionImminent(
 bool RegulatedPurePursuitController::inCollision(const double & x, const double & y)
 {
   unsigned int mx, my;
-  costmap_->worldToMap(x, y, mx, my);
+
+  if (!costmap_->worldToMap(x, y, mx, my)) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *(clock_), 30000,
+      "The dimensions of the costmap is too small to successfully check for "
+      "collisions as far ahead as requested. Proceed at your own risk, slow the robot, or "
+      "increase your costmap size.");
+    return false;
+  }
 
   unsigned char cost = costmap_->getCost(mx, my);
 
@@ -450,7 +459,16 @@ bool RegulatedPurePursuitController::inCollision(const double & x, const double 
 double RegulatedPurePursuitController::costAtPose(const double & x, const double & y)
 {
   unsigned int mx, my;
-  costmap_->worldToMap(x, y, mx, my);
+
+  if (!costmap_->worldToMap(x, y, mx, my)) {
+    RCLCPP_FATAL(
+      logger_,
+      "The dimensions of the costmap is too small to fully include your robot's footprint, "
+      "thusly the robot cannot proceed further");
+    throw nav2_core::PlannerException(
+            "RegulatedPurePursuitController: Dimensions of the costmap are too small "
+            "to encapsulate the robot footprint at current speeds!");
+  }
 
   unsigned char cost = costmap_->getCost(mx, my);
   return static_cast<double>(cost);
@@ -606,7 +624,7 @@ double RegulatedPurePursuitController::findDirectionChange(
   const geometry_msgs::msg::PoseStamped & pose)
 {
   // Iterating through the global path to determine the position of the cusp
-  for (unsigned int pose_id = 1; pose_id < global_plan_.poses.size(); ++pose_id) {
+  for (unsigned int pose_id = 1; pose_id < global_plan_.poses.size() - 1; ++pose_id) {
     // We have two vectors for the dot product OA and AB. Determining the vectors.
     double oa_x = global_plan_.poses[pose_id].pose.position.x -
       global_plan_.poses[pose_id - 1].pose.position.x;

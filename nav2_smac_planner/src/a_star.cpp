@@ -329,7 +329,7 @@ bool AStarAlgorithm<Node2D>::backtracePath(NodePtr node, CoordinateVector & path
     current_node = current_node->parent;
   }
 
-  return path.size() > 1;
+  return path.size() > 0;
 }
 
 template<typename NodeT>
@@ -346,7 +346,7 @@ bool AStarAlgorithm<NodeT>::backtracePath(NodePtr node, CoordinateVector & path)
     current_node = current_node->parent;
   }
 
-  return path.size() > 1;
+  return path.size() > 0;
 }
 
 template<typename NodeT>
@@ -557,7 +557,9 @@ typename AStarAlgorithm<NodeT>::AnalyticExpansionNodes AStarAlgorithm<NodeT>::ge
   unsigned int num_intervals = std::floor(d / sqrt_2);
 
   AnalyticExpansionNodes possible_nodes;
-  possible_nodes.reserve(num_intervals - 1);  // We won't store this node or the goal
+  // When "from" and "to" are zero or one cell away,
+  // num_intervals == 0
+  possible_nodes.reserve(num_intervals);  // We won't store this node or the goal
   std::vector<double> reals;
 
   // Pre-allocate
@@ -573,11 +575,11 @@ typename AStarAlgorithm<NodeT>::AnalyticExpansionNodes AStarAlgorithm<NodeT>::ge
     node->motion_table.state_space->interpolate(from(), to(), i / num_intervals, s());
     reals = s.reals();
     angle = reals[2] / node->motion_table.bin_size;
-    while (angle >= node->motion_table.num_angle_quantization_float) {
-      angle -= node->motion_table.num_angle_quantization_float;
-    }
     while (angle < 0.0) {
       angle += node->motion_table.num_angle_quantization_float;
+    }
+    while (angle >= node->motion_table.num_angle_quantization_float) {
+      angle -= node->motion_table.num_angle_quantization_float;
     }
     // Turn the pose into a node, and check if it is valid
     index = NodeT::getIndex(
