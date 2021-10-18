@@ -16,6 +16,9 @@
 #include <ompl/base/spaces/DubinsStateSpace.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
 
+#include <algorithm>
+#include <vector>
+
 #include "nav2_smac_planner/analytic_expansion.hpp"
 
 namespace nav2_smac_planner
@@ -226,7 +229,8 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalytic
 }
 
 template<>
-typename AnalyticExpansion<Node2D>::AnalyticExpansionNodes AnalyticExpansion<Node2D>::getAnalyticPath(
+typename AnalyticExpansion<Node2D>::AnalyticExpansionNodes AnalyticExpansion<Node2D>::
+getAnalyticPath(
   const NodePtr & node,
   const NodePtr & goal,
   const NodeGetter & node_getter)

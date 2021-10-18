@@ -66,7 +66,7 @@ void LatticeMotionTable::initMotionModel(
   // Get the metadata about this minimum control set
   lattice_metadata = getLatticeMetadata(current_lattice_filepath);
   std::ifstream latticeFile(current_lattice_filepath);
-  if(!latticeFile.is_open()) {
+  if (!latticeFile.is_open()) {
     throw std::runtime_error("Could not open lattice file");
   }
   nlohmann::json json;
@@ -85,24 +85,24 @@ void LatticeMotionTable::initMotionModel(
 
   // Populate the motion primitives at each heading angle
   float prev_start_angle = 0.0;
-  std::vector<MotionPrimitive> primitives; 
+  std::vector<MotionPrimitive> primitives;
   nlohmann::json json_primitives = json["primitives"];
-  for(unsigned int i = 0; i < json_primitives.size(); ++i) {
-    MotionPrimitive new_primitive; 
-    fromJsonToMotionPrimitive(json_primitives[i], new_primitive); 
+  for (unsigned int i = 0; i < json_primitives.size(); ++i) {
+    MotionPrimitive new_primitive;
+    fromJsonToMotionPrimitive(json_primitives[i], new_primitive);
 
-    if(prev_start_angle != new_primitive.start_angle) {
+    if (prev_start_angle != new_primitive.start_angle) {
       motion_primitives.push_back(primitives);
-      primitives.clear(); 
+      primitives.clear();
       prev_start_angle = new_primitive.start_angle;
     }
-    primitives.push_back(new_primitive); 
+    primitives.push_back(new_primitive);
   }
   motion_primitives.push_back(primitives);
 
   // Populate useful precomputed values to be leveraged
   trig_values.reserve(lattice_metadata.number_of_headings);
-  for(unsigned int i = 0; i < lattice_metadata.heading_angles.size(); ++i) {
+  for (unsigned int i = 0; i < lattice_metadata.heading_angles.size(); ++i) {
     trig_values.emplace_back(
       cos(lattice_metadata.heading_angles[i]),
       sin(lattice_metadata.heading_angles[i]));
@@ -112,7 +112,7 @@ void LatticeMotionTable::initMotionModel(
 MotionPrimitives LatticeMotionTable::getMotionPrimitives(const NodeLattice * node)
 {
   MotionPrimitives & prims_at_heading = motion_primitives[node->pose.theta];
-  MotionPrimitives primitive_projection_list = prims_at_heading; 
+  MotionPrimitives primitive_projection_list = prims_at_heading;
 
   if (allow_reverse_expansion) {
     // Find normalized heading bin of the reverse expansion
@@ -137,14 +137,14 @@ MotionPrimitives LatticeMotionTable::getMotionPrimitives(const NodeLattice * nod
 LatticeMetadata LatticeMotionTable::getLatticeMetadata(const std::string & lattice_filepath)
 {
   std::ifstream lattice_file(lattice_filepath);
-  if(!lattice_file.is_open()) {
+  if (!lattice_file.is_open()) {
     throw std::runtime_error("Could not open lattice file!");
   }
 
   nlohmann::json j;
   lattice_file >> j;
   LatticeMetadata metadata;
-  fromJsonToMetaData(j["latticeMetadata"], metadata);
+  fromJsonToMetaData(j["lattice_metadata"], metadata);
   return metadata;
 }
 
@@ -296,11 +296,11 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
     // New motion is a straight motion, no additional costs to be applied
     travel_cost = travel_cost_raw;
   } else {
-    if (prim->left == transition_prim->left) {
+    if (prim->left_turn == transition_prim->left_turn) {
       // Turning motion but keeps in same general direction: encourages to commit to actions
       travel_cost = travel_cost_raw * motion_table.non_straight_penalty;
     } else {
-      // Turning motion and velocity directions: penalizes wiggling. 
+      // Turning motion and velocity directions: penalizes wiggling.
       travel_cost = travel_cost_raw *
         (motion_table.non_straight_penalty + motion_table.change_penalty);
     }
@@ -498,8 +498,8 @@ void NodeLattice::getNeighbors(
       if (neighbor->isNodeValid(traverse_unknown, collision_checker, &motion_primitives[i])) {
         neighbor->setMotionPrimitive(&motion_primitives[i]);
         // Marking if this search was obtained in the reverse direction
-        if ((!this->isBackward() && i >= direction_change_idx) || 
-            (this->isBackward() && i <= direction_change_idx))
+        if ((!this->isBackward() && i >= direction_change_idx) ||
+          (this->isBackward() && i <= direction_change_idx))
         {
           neighbor->backwards();
         }

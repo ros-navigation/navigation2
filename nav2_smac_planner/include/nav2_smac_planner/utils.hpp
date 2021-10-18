@@ -104,26 +104,25 @@ inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DRO
 }
 
 /**
- * @brief convert json to lattice metadata 
+ * @brief convert json to lattice metadata
  * @param[in] json json object
- * @param[out] lattice meta data 
+ * @param[out] lattice meta data
  */
 inline void fromJsonToMetaData(const nlohmann::json & json, LatticeMetadata & lattice_metadata)
 {
-  json.at("turningRadius").get_to(lattice_metadata.min_turning_radius);
-  json.at("stepDistance").get_to(lattice_metadata.primitive_resolution);
-  json.at("gridSeparation").get_to(lattice_metadata.grid_resolution);
-  json.at("maxLength").get_to(lattice_metadata.max_length);
-  json.at("numberOfHeadings").get_to(lattice_metadata.number_of_headings);
-  json.at("outputFile").get_to(lattice_metadata.output_file);
-  json.at("headingAngles").get_to(lattice_metadata.heading_angles);
-  json.at("numberOfTrajectories").get_to(lattice_metadata.number_of_trajectories);
+  json.at("turning_radius").get_to(lattice_metadata.min_turning_radius);
+  json.at("grid_resolution").get_to(lattice_metadata.grid_resolution);
+  json.at("num_of_headings").get_to(lattice_metadata.number_of_headings);
+  json.at("output_file").get_to(lattice_metadata.output_file);
+  json.at("heading_angles").get_to(lattice_metadata.heading_angles);
+  json.at("number_of_trajectories").get_to(lattice_metadata.number_of_trajectories);
+  json.at("motion_model").get_to(lattice_metadata.motion_model);
 }
 
 /**
- * @brief convert json to pose 
+ * @brief convert json to pose
  * @param[in] json json object
- * @param[out] pose 
+ * @param[out] pose
  */
 inline void fromJsonToPose(const nlohmann::json & json, MotionPose & pose)
 {
@@ -134,21 +133,26 @@ inline void fromJsonToPose(const nlohmann::json & json, MotionPose & pose)
 
 /**
  * @brief convert json to motion primitive
- * @param[in] json json object 
+ * @param[in] json json object
  * @param[out] motion primitive
  */
 inline void fromJsonToMotionPrimitive(
   const nlohmann::json & json, MotionPrimitive & motion_primitive)
 {
-  json.at("trajectoryId").get_to(motion_primitive.trajectory_id);
-  json.at("startAngle").get_to(motion_primitive.start_angle);
-  json.at("endAngle").get_to(motion_primitive.end_angle);   
-  json.at("radius").get_to(motion_primitive.turning_radius);
-  json.at("trajectoryLength").get_to(motion_primitive.trajectory_length);
-  json.at("arcLength").get_to(motion_primitive.arc_length);
-  json.at("straightLength").get_to(motion_primitive.straight_length);
+  json.at("trajectory_id").get_to(motion_primitive.trajectory_id);
+  json.at("start_angle_index").get_to(motion_primitive.start_angle);
+  json.at("end_angle_index").get_to(motion_primitive.end_angle);
+  json.at("trajectory_radius").get_to(motion_primitive.turning_radius);
+  json.at("trajectory_length").get_to(motion_primitive.trajectory_length);
+  json.at("arc_length").get_to(motion_primitive.arc_length);
+  json.at("straight_length").get_to(motion_primitive.straight_length);
+  try {
+    json.at("left_turn").get_to(motion_primitive.left_turn);
+  } catch (...) {
+    /*TODO for actual*/
+  }
 
-  for(unsigned int i = 0; i < json["poses"].size(); i++) {
+  for (unsigned int i = 0; i < json["poses"].size(); i++) {
     MotionPose pose;
     fromJsonToPose(json["poses"][i], pose);
     motion_primitive.poses.push_back(pose);

@@ -87,7 +87,6 @@ public:
     const geometry_msgs::msg::PoseStamped & goal) override;
 
 protected:
-
   std::unique_ptr<AStarAlgorithm<NodeLattice>> _a_star;
   GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;

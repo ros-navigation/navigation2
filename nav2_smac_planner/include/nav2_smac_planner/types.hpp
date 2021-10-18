@@ -128,13 +128,12 @@ typedef std::vector<MotionPose> MotionPoses;
 struct LatticeMetadata
 {
   float min_turning_radius;
-  float primitive_resolution;
   float grid_resolution;
-  float max_length; 
-  unsigned int number_of_headings; 
-  std::string output_file; 
-  std::vector<float> heading_angles; 
-  unsigned int number_of_trajectories; 
+  unsigned int number_of_headings;
+  std::string output_file;
+  std::vector<float> heading_angles;
+  unsigned int number_of_trajectories;
+  std::string motion_model;
 };
 
 /**
@@ -150,6 +149,7 @@ struct MotionPrimitive
   float trajectory_length;
   float arc_length;
   float straight_length;
+  bool left_turn;
   MotionPoses poses;
 };
 

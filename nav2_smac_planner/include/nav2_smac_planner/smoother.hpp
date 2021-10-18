@@ -74,13 +74,15 @@ protected:
    * @param dim Dimension ID of interest
    * @return dim value
    */
-  inline double getFieldByDim(const geometry_msgs::msg::PoseStamped & msg, const unsigned int & dim);
+  inline double getFieldByDim(
+    const geometry_msgs::msg::PoseStamped & msg,
+    const unsigned int & dim);
 
   /**
    * @brief Set the field value for a given dimension
    * @param msg Current pose to sample
    * @param dim Dimension ID of interest
-   * @param value to set the dimention to for the pose 
+   * @param value to set the dimention to for the pose
    */
   inline void setFieldByDim(
     geometry_msgs::msg::PoseStamped & msg, const unsigned int dim,

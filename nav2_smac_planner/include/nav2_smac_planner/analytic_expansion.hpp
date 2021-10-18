@@ -16,6 +16,7 @@
 #define NAV2_SMAC_PLANNER__ANALYTIC_EXPANSION_HPP_
 
 #include <string>
+#include <vector>
 
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
@@ -30,7 +31,6 @@ template<typename NodeT>
 class AnalyticExpansion
 {
 public:
-
   typedef NodeT * NodePtr;
   typedef typename NodeT::Coordinates Coordinates;
   typedef std::function<bool (const unsigned int &, NodeT * &)> NodeGetter;
@@ -95,7 +95,9 @@ public:
    * @param getter The function object that gets valid nodes from the graph
    * @return A set of analytically expanded nodes to the goal from current node, if possible
    */
-  AnalyticExpansionNodes getAnalyticPath(const NodePtr & node, const NodePtr & goal, const NodeGetter & getter);
+  AnalyticExpansionNodes getAnalyticPath(
+    const NodePtr & node, const NodePtr & goal,
+    const NodeGetter & getter);
 
   /**
    * @brief Takes final analytic expansion and appends to current expanded node
@@ -104,7 +106,9 @@ public:
    * @param expanded_nodes Expanded nodes to append to end of current search path
    * @return Node pointer to goal node if successful, else return nullptr
    */
-  NodePtr setAnalyticPath(const NodePtr & node, const NodePtr & goal, const AnalyticExpansionNodes & expanded_nodes);
+  NodePtr setAnalyticPath(
+    const NodePtr & node, const NodePtr & goal,
+    const AnalyticExpansionNodes & expanded_nodes);
 
 protected:
   MotionModel _motion_model;

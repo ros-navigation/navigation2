@@ -93,7 +93,7 @@ public:
 
   /**
    * @brief Get the angles of the precomputed footprint orientations
-   * @return the ordered vector of angles corresponding to footprints 
+   * @return the ordered vector of angles corresponding to footprints
    */
   std::vector<float> & getPrecomputedAngles()
   {
