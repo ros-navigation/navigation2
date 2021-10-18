@@ -26,7 +26,7 @@
   <depend>eigen3_cmake_module</depend>
   <depend>eigen</depend>
   <depend>ompl</depend>
-  <depend>nlohmann_json</depend>
+  <depend>nlohmann-json-dev</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

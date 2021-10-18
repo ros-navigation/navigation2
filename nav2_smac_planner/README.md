@@ -14,24 +14,27 @@ It also introduces the following basic building blocks:
 We have users reporting using this on:
 - Delivery robots
 - Industrial robots
+- Vertical farming
 
 ## Introduction
 
-The `nav2_smac_planner` package contains an optimized templated A* search algorithm used to create multiple A\*-based planners for multiple types of robot platforms. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). We support **circular** differential-drive and omni-directional drive robots using the `SmacPlanner2D` planner which implements a cost-aware A\* planner. We support **cars, car-like, and ackermann vehicles** using the `SmacPlannerHybrid` plugin which implements a Hybrid-A\* planner.  We support **non-circular, arbitrary shaped** differntial drive and omnidirectional vehicles using the `SmacPlannerLattice` plugin which implements a State Lattice planner. These plugins are also useful for curvature constrained planning, like when planning robot at high speeds to make sure they don't flip over or otherwise skid out of control. It is also applicable to non-round robots (such as large rectangular or arbitrary shaped robots of differential/omnidirectional drivetrains) that need pose-based collision checking.
+The `nav2_smac_planner` package contains an optimized templated A* search algorithm used to create multiple A\*-based planners for multiple types of robot platforms. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). We support **circular** differential-drive and omni-directional drive robots using the `SmacPlanner2D` planner which implements a cost-aware A\* planner. We support **legged, cars, car-like, and ackermann vehicles** using the `SmacPlannerHybrid` plugin which implements a Hybrid-A\* planner.  We support **non-circular, arbitrary shaped, any model vehicles** using the `SmacPlannerLattice` plugin which implements a State Lattice planner. It contains control sets and generators for ackermann, legged, differential drive and omnidirectional vehicles, but you may provide your own for another robot type or to have different planning behaviors. The last two plugins are also useful for curvature constrained planning, like when planning robot at high speeds to make sure they don't flip over or otherwise skid out of control. It is also applicable to non-round robots (such as large rectangular or arbitrary shaped robots of differential/omnidirectional drivetrains) that need pose-based collision checking.
 
 The `SmacPlannerHybrid` implements the Hybrid-A* planner as proposed in [Practical Search Techniques in Path Planning for Autonomous Driving](https://ai.stanford.edu/~ddolgov/papers/dolgov_gpp_stair08.pdf), including hybrid searching, gradient descent smoothing, analytic expansions and hueristic functions.
 
-The `SmacPlannerLattice` fully-implements the State Lattice planner with smoothing. While we do not implement it precisely the same way as [Optimal, Smooth, Nonholonomic MobileRobot Motion Planning in State Lattices](https://www.ri.cmu.edu/pub_files/pub4/pivtoraiko_mihail_2007_1/pivtoraiko_mihail_2007_1.pdf) (with control sets found using [Generating Near Minimal Spanning Control Sets for Constrained Motion Planning in Discrete State Spaces](https://www.ri.cmu.edu/pub_files/pub4/pivtoraiko_mihail_2005_1/pivtoraiko_mihail_2005_1.pdf)), it is sufficiently similar it may be used as a good reference. Additional optimizations for on-approach analytic expansions and simplier heuristic functions were used, largely matching those of Hybrid-A\*.
+The `SmacPlannerLattice` implements the State Lattice planner with smoothing. While we do not implement it precisely the same way as [Optimal, Smooth, Nonholonomic MobileRobot Motion Planning in State Lattices](https://www.ri.cmu.edu/pub_files/pub4/pivtoraiko_mihail_2007_1/pivtoraiko_mihail_2007_1.pdf) (with control sets found using [Generating Near Minimal Spanning Control Sets for Constrained Motion Planning in Discrete State Spaces](https://www.ri.cmu.edu/pub_files/pub4/pivtoraiko_mihail_2005_1/pivtoraiko_mihail_2005_1.pdf)), it is sufficiently similar it may be used as a good reference. Additional optimizations for on-approach analytic expansions and simplier heuristic functions were used, largely matching those of Hybrid-A\*.
 
 In summary...
 
 The `SmacPlannerHybrid` is designed to work with:
 - Ackermann, car, and car-like robots
 - High speed or curvature constrained robots (as to not flip over, skid, or dump load at high speeds)
-- Arbitrary shaped, non-circular differential or omnidirectional robots requiring SE2 collision checking with constrained curvatures
+- Arbitrary shaped, non-circular differential or omnidirectional robots requiring kinematically feasible planning with SE2 collision checking
+- Legged robots
 
 The `SmacPlannerLattice` is designed to work with:
-- Arbitrary shaped, non-circular differential or omnidirectional robots requiring SE2 collision checking using the full capabilities of the drivetrain
+- Arbitrary shaped, non-circular robots requiring kinematically feasible planning with SE2 collision checking using the full capabilities of the drivetrain
+- Flexibility to use other robot model types or with provided non-circular differental, ackermann, and omni support
 
 The `SmacPlanner2D` is designed to work with:
 - Circular, differential or omnidirectional robots
@@ -39,13 +42,13 @@ The `SmacPlanner2D` is designed to work with:
 
 ## Features 
 
-We further improve in the following ways:
+We further improve on Hybrid-A\* in the following ways:
 - Remove need for upsampling by searching with 10x smaller motion primitives (same as their upsampling ratio).
 - Multi-resolution search allowing planning to occur at a coarser resolution for wider spaces (O(N^2) faster).
 - Cost-aware penalty functions in search resulting in far smoother plans (further reducing requirement to smooth).
-- Gradient descent smoother
+- Gradient-descent, basic but fast smoother
 - Faster planning than original paper by highly optimizing the template A\* algorithm.
-- Faster planning via precomputed heuristic, motion primitive, and other values.
+- Faster planning via custom precomputed heuristic, motion primitive, and other values.
 - Automatically adjusted search motion model sizes by motion model, costmap resolution, and bin sizing.
 - Closest path on approach within tolerance if exact path cannot be found or in invalid space.
 - Multi-model hybrid searching including Dubin and Reeds-Shepp models. More models may be trivially added.
@@ -111,7 +114,8 @@ planner_server:
       non_straight_penalty: 1.50          # For Hybrid nodes: penalty to apply if motion is non-straight, must be => 1
       cost_penalty: 1.7                   # For Hybrid nodes: penalty to apply to higher cost areas when adding into the obstacle map dynamic programming distance expansion heuristic. This drives the robot more towards the center of passages. A value between 1.3 - 3.5 is reasonable.
       lookup_table_size: 20               # For Hybrid nodes: Size of the dubin/reeds-sheep distance window to cache, in meters.
-      cache_obstacle_heuristic: True      # For Hybrid nodes: Cache the obstacle map dynamic programming distance expansion heuristic between subsiquent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.     
+      cache_obstacle_heuristic: True      # For Hybrid nodes: Cache the obstacle map dynamic programming distance expansion heuristic between subsiquent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.  
+      allow_reverse_expansion: False      # For Lattice nodes: Whether to expand state lattice graph in forward primitives or reverse as well, will double the branching factor at each step.   
       smoother:
         max_iterations: 1000
         w_smooth: 0.3
