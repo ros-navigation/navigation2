@@ -187,19 +187,31 @@ public:
     // check the future goal handle
     if (future_goal_handle_) {
       auto elapsed = (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
-      if (!is_future_goal_handle_complete(elapsed)) {
-        // return RUNNING if there is still some time before timeout happens
-        if (elapsed < server_timeout_) {
-          return BT::NodeStatus::RUNNING;
+      try {
+        if (!is_future_goal_handle_complete(elapsed)) {
+          // return RUNNING if there is still some time before timeout happens
+          if (elapsed < server_timeout_) {
+            return BT::NodeStatus::RUNNING;
+          }
+          // if server has taken more time to respond than the specified timeout value return FAILURE
+          RCLCPP_WARN(
+            node_->get_logger(),
+            "Timed out while waiting for action server to acknowledge goal request for %s",
+            action_name_.c_str());
+          future_goal_handle_.reset();
+          return BT::NodeStatus::FAILURE;
         }
-        // if server has taken more time to respond than the specified timeout value return FAILURE
-        RCLCPP_WARN(
-          node_->get_logger(),
-          "Timed out while waiting for action server to acknowledge goal request for %s",
-          action_name_.c_str());
-        future_goal_handle_.reset();
-        return BT::NodeStatus::FAILURE;
+      } catch (const std::runtime_error & e) {
+        if (e.what() == std::string("send_goal failed") ||
+            e.what() == std::string("Goal was rejected by the action server"))
+        {
+          return BT::NodeStatus::FAILURE;
+        } else {
+          // Internal exception to propogate to the tree
+          throw e;
+        }
       }
+
     }
 
     // The following code corresponds to the "RUNNING" loop
@@ -214,16 +226,27 @@ public:
         goal_updated_ = false;
         send_new_goal();
         auto elapsed = (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
-        if (!is_future_goal_handle_complete(elapsed)) {
-          if (elapsed < server_timeout_) {
-            return BT::NodeStatus::RUNNING;
+        try {
+          if (!is_future_goal_handle_complete(elapsed)) {
+            if (elapsed < server_timeout_) {
+              return BT::NodeStatus::RUNNING;
+            }
+            RCLCPP_WARN(
+              node_->get_logger(),
+              "Timed out while waiting for action server to acknowledge goal request for %s",
+              action_name_.c_str());
+            future_goal_handle_.reset();
+            return BT::NodeStatus::FAILURE;
           }
-          RCLCPP_WARN(
-            node_->get_logger(),
-            "Timed out while waiting for action server to acknowledge goal request for %s",
-            action_name_.c_str());
-          future_goal_handle_.reset();
-          return BT::NodeStatus::FAILURE;
+        } catch (const std::runtime_error & e) {
+          if (e.what() == std::string("send_goal failed") ||
+              e.what() == std::string("Goal was rejected by the action server"))
+          {
+            return BT::NodeStatus::FAILURE;
+          } else {
+            // Internal exception to propogate to the tree
+            throw e;
+          }
         }
       }
 
