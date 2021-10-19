@@ -60,7 +60,7 @@ public:
 
 private:
   rclcpp::Node::SharedPtr node_;
-  rclcpp::Client<nav2_msgs::srv::IsPathValid>::SharedPtr client;
+  rclcpp::Client<nav2_msgs::srv::IsPathValid>::SharedPtr client_;
 };
 
 }  // namespace nav2_behavior_tree

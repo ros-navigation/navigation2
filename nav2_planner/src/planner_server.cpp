@@ -165,7 +165,7 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
     it->second->activate();
   }
 
-  is_path_valid_service = shared_from_this()->create_service<nav2_msgs::srv::IsPathValid>(
+  is_path_valid_service_ = shared_from_this()->create_service<nav2_msgs::srv::IsPathValid>(
     "is_path_valid",
     std::bind(
       &PlannerServer::isPathValid, this,
