@@ -203,7 +203,7 @@ public:
         }
       } catch (const std::runtime_error & e) {
         if (e.what() == std::string("send_goal failed") ||
-            e.what() == std::string("Goal was rejected by the action server"))
+          e.what() == std::string("Goal was rejected by the action server"))
         {
           return BT::NodeStatus::FAILURE;
         } else {
@@ -240,7 +240,7 @@ public:
           }
         } catch (const std::runtime_error & e) {
           if (e.what() == std::string("send_goal failed") ||
-              e.what() == std::string("Goal was rejected by the action server"))
+            e.what() == std::string("Goal was rejected by the action server"))
           {
             return BT::NodeStatus::FAILURE;
           } else {
