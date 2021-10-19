@@ -24,7 +24,6 @@
 
 #include "../../test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/is_path_valid_condition.hpp"
-#include <iostream>
 
 using namespace std::chrono;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
