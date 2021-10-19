@@ -193,7 +193,7 @@ public:
           if (elapsed < server_timeout_) {
             return BT::NodeStatus::RUNNING;
           }
-          // if server has taken more time to respond than the specified timeout value return FAILURE
+          // if server has taken more time than the specified timeout value return FAILURE
           RCLCPP_WARN(
             node_->get_logger(),
             "Timed out while waiting for action server to acknowledge goal request for %s",
@@ -211,7 +211,6 @@ public:
           throw e;
         }
       }
-
     }
 
     // The following code corresponds to the "RUNNING" loop
