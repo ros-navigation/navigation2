@@ -33,6 +33,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "tf2/utils.h"
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 namespace nav2_smac_planner
 {
@@ -92,7 +93,8 @@ protected:
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */
-  void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
   std::unique_ptr<AStarAlgorithm<Node2D>> _a_star;
   GridCollisionChecker _collision_checker;
@@ -117,9 +119,8 @@ protected:
   std::mutex _mutex;
   rclcpp_lifecycle::LifecycleNode::WeakPtr _node;
 
-  // Subscription for parameter change
-  rclcpp::AsyncParametersClient::SharedPtr _parameters_client;
-  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr _parameter_event_sub;
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 };
 
 }  // namespace nav2_smac_planner

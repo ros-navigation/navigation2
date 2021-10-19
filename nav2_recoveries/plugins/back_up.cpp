@@ -59,6 +59,9 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
   // Silently ensure that both the speed and direction are positive.
   command_x_ = std::fabs(command->target.x);
   command_speed_ = std::fabs(command->speed);
+  command_time_allowance_ = command->time_allowance;
+
+  end_time_ = steady_clock_.now() + command_time_allowance_;
 
   if (!nav2_util::getCurrentPose(
       initial_pose_, *tf_, global_frame_, robot_base_frame_,
@@ -73,6 +76,15 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 
 Status BackUp::onCycleUpdate()
 {
+  rclcpp::Duration time_remaining = end_time_ - steady_clock_.now();
+  if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
+    stopRobot();
+    RCLCPP_WARN(
+      logger_,
+      "Exceeded time allowance before reaching the BackUp goal - Exiting BackUp");
+    return Status::FAILED;
+  }
+
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, global_frame_, robot_base_frame_,
