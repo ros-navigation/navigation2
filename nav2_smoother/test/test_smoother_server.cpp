@@ -18,6 +18,8 @@
 #include <iostream>
 #include <future>
 #include <thread>
+#include <algorithm>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -59,7 +61,6 @@ public:
     nav_msgs::msg::Path & path,
     const rclcpp::Duration & max_time)
   {
-
     assert(path.poses.size() == 2);
 
     auto max_time_ms = max_time.to_chrono<std::chrono::milliseconds>();
@@ -161,8 +162,8 @@ public:
   {
     auto result = SmootherServer::on_configure(state);
     assert(
-      result == nav2_util::CallbackReturn::SUCCESS && smoother_ids_.empty() && smoother_types_.empty() &&
-      smoothers_.empty());
+      result == nav2_util::CallbackReturn::SUCCESS &&
+      smoother_ids_.empty() && smoother_types_.empty() && smoothers_.empty());
 
     // Create dummy subscribers and collision checker
     auto node = shared_from_this();
@@ -175,7 +176,8 @@ public:
     collision_checker_ =
       std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
       *costmap_sub_, *footprint_sub_, *tf_,
-      node->get_name(), "base_link", "base_link"); // global frame = robot frame to avoid tf lookup
+      node->get_name(),
+      "base_link", "base_link");  // global frame = robot frame to avoid tf lookup
 
     // Create dummy smoother
     smoother_ids_.push_back("DummySmoothPath");
@@ -188,7 +190,6 @@ public:
 
     return result;
   }
-
 };
 
 // Define a test class to hold the context for the tests
