@@ -27,6 +27,8 @@ namespace nav2_smac_planner
 {
 
 using namespace std::chrono;  // NOLINT
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
 
 SmacPlannerHybrid::SmacPlannerHybrid()
 : _a_star(nullptr),
@@ -49,19 +51,16 @@ void SmacPlannerHybrid::configure(
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
+  _node = parent;
   auto node = parent.lock();
   _logger = node->get_logger();
   _clock = node->get_clock();
   _costmap = costmap_ros->getCostmap();
+  _costmap_ros = costmap_ros;
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
 
-  bool allow_unknown;
-  int max_iterations;
   int angle_quantizations;
-  double lookup_table_size;
-  SearchInfo search_info;
-  std::string motion_model_for_search;
 
   // General planner params
   nav2_util::declare_parameter_if_not_declared(
@@ -79,93 +78,94 @@ void SmacPlannerHybrid::configure(
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
-  node->get_parameter(name + ".allow_unknown", allow_unknown);
+  node->get_parameter(name + ".allow_unknown", _allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
-  node->get_parameter(name + ".max_iterations", max_iterations);
+  node->get_parameter(name + ".max_iterations", _max_iterations);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
-  node->get_parameter(name + ".minimum_turning_radius", search_info.minimum_turning_radius);
+  node->get_parameter(name + ".minimum_turning_radius", _search_info.minimum_turning_radius);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".cache_obstacle_heuristic", search_info.cache_obstacle_heuristic);
+  node->get_parameter(name + ".cache_obstacle_heuristic", _search_info.cache_obstacle_heuristic);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".reverse_penalty", rclcpp::ParameterValue(2.0));
-  node->get_parameter(name + ".reverse_penalty", search_info.reverse_penalty);
+  node->get_parameter(name + ".reverse_penalty", _search_info.reverse_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".change_penalty", rclcpp::ParameterValue(0.15));
-  node->get_parameter(name + ".change_penalty", search_info.change_penalty);
+  node->get_parameter(name + ".change_penalty", _search_info.change_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.50));
-  node->get_parameter(name + ".non_straight_penalty", search_info.non_straight_penalty);
+  node->get_parameter(name + ".non_straight_penalty", _search_info.non_straight_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cost_penalty", rclcpp::ParameterValue(1.7));
-  node->get_parameter(name + ".cost_penalty", search_info.cost_penalty);
+  node->get_parameter(name + ".cost_penalty", _search_info.cost_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(3.5));
-  node->get_parameter(name + ".analytic_expansion_ratio", search_info.analytic_expansion_ratio);
+  node->get_parameter(name + ".analytic_expansion_ratio", _search_info.analytic_expansion_ratio);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(5.0));
   node->get_parameter(name + ".max_planning_time", _max_planning_time);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".lookup_table_size", rclcpp::ParameterValue(20.0));
-  node->get_parameter(name + ".lookup_table_size", lookup_table_size);
+  node->get_parameter(name + ".lookup_table_size", _lookup_table_size);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
-  node->get_parameter(name + ".motion_model_for_search", motion_model_for_search);
-  MotionModel motion_model = fromString(motion_model_for_search);
-  if (motion_model == MotionModel::UNKNOWN) {
+  node->get_parameter(name + ".motion_model_for_search", _motion_model_for_search);
+  _motion_model = fromString(_motion_model_for_search);
+  if (_motion_model == MotionModel::UNKNOWN) {
     RCLCPP_WARN(
       _logger,
       "Unable to get MotionModel search type. Given '%s', "
       "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP, STATE_LATTICE.",
-      motion_model_for_search.c_str());
+      _motion_model_for_search.c_str());
   }
 
-  if (max_iterations <= 0) {
+  if (_max_iterations <= 0) {
     RCLCPP_INFO(
       _logger, "maximum iteration selected as <= 0, "
       "disabling maximum iterations.");
-    max_iterations = std::numeric_limits<int>::max();
+    _max_iterations = std::numeric_limits<int>::max();
   }
 
   // convert to grid coordinates
-  const double minimum_turning_radius_global_coords = search_info.minimum_turning_radius;
-  search_info.minimum_turning_radius =
-    search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
-  float lookup_table_dim =
-    static_cast<float>(lookup_table_size) /
+  const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
+  _search_info.minimum_turning_radius =
+    _search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
+  _lookup_table_dim =
+    static_cast<float>(_lookup_table_size) /
     static_cast<float>(_costmap->getResolution() * _downsampling_factor);
 
   // Make sure its a whole number
-  lookup_table_dim = static_cast<float>(static_cast<int>(lookup_table_dim));
+  _lookup_table_dim = static_cast<float>(static_cast<int>(_lookup_table_dim));
 
   // Make sure its an odd number
-  if (static_cast<int>(lookup_table_dim) % 2 == 0) {
+  if (static_cast<int>(_lookup_table_dim) % 2 == 0) {
     RCLCPP_INFO(
       _logger,
       "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd",
-      lookup_table_dim);
-    lookup_table_dim += 1.0;
+      _lookup_table_dim);
+    _lookup_table_dim += 1.0;
   }
 
   // Initialize collision checker
   _collision_checker = GridCollisionChecker(_costmap, _angle_quantizations);
   _collision_checker.setFootprint(
-    costmap_ros->getRobotFootprint(),
-    costmap_ros->getUseRadius(),
-    findCircumscribedCost(costmap_ros));
+    _costmap_ros->getRobotFootprint(),
+    _costmap_ros->getUseRadius(),
+    findCircumscribedCost(_costmap_ros));
 
   // Initialize A* template
-  _a_star = std::make_unique<AStarAlgorithm<NodeHybrid>>(motion_model, search_info);
+  _a_star = std::make_unique<AStarAlgorithm<NodeHybrid>>(_motion_model, _search_info);
   _a_star->initialize(
-    allow_unknown,
-    max_iterations,
+    _allow_unknown,
+    _max_iterations,
     std::numeric_limits<int>::max(),
-    lookup_table_dim,
+    _max_planning_time,
+    _lookup_table_dim,
     _angle_quantizations);
 
   // Initialize path smoother
@@ -176,8 +176,8 @@ void SmacPlannerHybrid::configure(
 
   // Initialize costmap downsampler
   if (_downsample_costmap && _downsampling_factor > 1) {
-    std::string topic_name = "downsampled_costmap";
     _costmap_downsampler = std::make_unique<CostmapDownsampler>();
+    std::string topic_name = "downsampled_costmap";
     _costmap_downsampler->on_configure(
       node, _global_frame, topic_name, _costmap, _downsampling_factor);
   }
@@ -187,9 +187,9 @@ void SmacPlannerHybrid::configure(
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlannerHybrid with "
     "maximum iterations %i, and %s. Using motion model: %s.",
-    _name.c_str(), max_iterations,
-    allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
-    toString(motion_model).c_str());
+    _name.c_str(), _max_iterations,
+    _allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
+    toString(_motion_model).c_str());
 }
 
 void SmacPlannerHybrid::activate()
@@ -201,6 +201,10 @@ void SmacPlannerHybrid::activate()
   if (_costmap_downsampler) {
     _costmap_downsampler->on_activate();
   }
+  auto node = _node.lock();
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&SmacPlannerHybrid::dynamicParametersCallback, this, _1));
 }
 
 void SmacPlannerHybrid::deactivate()
@@ -212,6 +216,7 @@ void SmacPlannerHybrid::deactivate()
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
   }
+  dyn_params_handler_.reset();
 }
 
 void SmacPlannerHybrid::cleanup()
@@ -232,6 +237,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
+  std::lock_guard<std::mutex> lock_reinit(_mutex);
   steady_clock::time_point a = steady_clock::now();
 
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
@@ -253,6 +259,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   while (orientation_bin < 0.0) {
     orientation_bin += static_cast<float>(_angle_quantizations);
   }
+  // This is needed to handle precision issues
+  if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
+    orientation_bin -= static_cast<float>(_angle_quantizations);
+  }
   unsigned int orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
   _a_star->setStart(mx, my, orientation_bin_id);
 
@@ -261,6 +271,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   orientation_bin = tf2::getYaw(goal.pose.orientation) / _angle_bin_size;
   while (orientation_bin < 0.0) {
     orientation_bin += static_cast<float>(_angle_quantizations);
+  }
+  // This is needed to handle precision issues
+  if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
+    orientation_bin -= static_cast<float>(_angle_quantizations);
   }
   orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
   _a_star->setGoal(mx, my, orientation_bin_id);
@@ -338,6 +352,162 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 #endif
 
   return plan;
+}
+
+rcl_interfaces::msg::SetParametersResult
+SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  std::lock_guard<std::mutex> lock_reinit(_mutex);
+
+  bool reinit_collision_checker = false;
+  bool reinit_a_star = false;
+  bool reinit_downsampler = false;
+  bool reinit_smoother = false;
+
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == _name + ".max_planning_time") {
+        reinit_a_star = true;
+        _max_planning_time = parameter.as_double();
+      } else if (name == _name + ".lookup_table_size") {
+        reinit_a_star = true;
+        _lookup_table_size = parameter.as_double();
+      } else if (name == _name + ".minimum_turning_radius") {
+        reinit_a_star = true;
+        reinit_smoother = true;
+        _search_info.minimum_turning_radius = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".reverse_penalty") {
+        reinit_a_star = true;
+        _search_info.reverse_penalty = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".change_penalty") {
+        reinit_a_star = true;
+        _search_info.change_penalty = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".non_straight_penalty") {
+        reinit_a_star = true;
+        _search_info.non_straight_penalty = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".cost_penalty") {
+        reinit_a_star = true;
+        _search_info.cost_penalty = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".analytic_expansion_ratio") {
+        reinit_a_star = true;
+        _search_info.analytic_expansion_ratio = static_cast<float>(parameter.as_double());
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == _name + ".downsample_costmap") {
+        reinit_downsampler = true;
+        _downsample_costmap = parameter.as_bool();
+      } else if (name == _name + ".allow_unknown") {
+        reinit_a_star = true;
+        _allow_unknown = parameter.as_bool();
+      } else if (name == _name + ".cache_obstacle_heuristic") {
+        reinit_a_star = true;
+        _search_info.cache_obstacle_heuristic = parameter.as_bool();
+      }
+    } else if (type == ParameterType::PARAMETER_INTEGER) {
+      if (name == _name + ".downsampling_factor") {
+        reinit_a_star = true;
+        reinit_downsampler = true;
+        _downsampling_factor = parameter.as_int();
+      } else if (name == _name + ".max_iterations") {
+        reinit_a_star = true;
+        _max_iterations = parameter.as_int();
+        if (_max_iterations <= 0) {
+          RCLCPP_INFO(
+            _logger, "maximum iteration selected as <= 0, "
+            "disabling maximum iterations.");
+          _max_iterations = std::numeric_limits<int>::max();
+        }
+      } else if (name == _name + ".angle_quantization_bins") {
+        reinit_collision_checker = true;
+        reinit_a_star = true;
+        int angle_quantizations = parameter.as_int();
+        _angle_bin_size = 2.0 * M_PI / angle_quantizations;
+        _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
+      }
+    } else if (type == ParameterType::PARAMETER_STRING) {
+      if (name == _name + ".motion_model_for_search") {
+        reinit_a_star = true;
+        _motion_model = fromString(parameter.as_string());
+        if (_motion_model == MotionModel::UNKNOWN) {
+          RCLCPP_WARN(
+            _logger,
+            "Unable to get MotionModel search type. Given '%s', "
+            "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
+            _motion_model_for_search.c_str());
+        }
+      }
+    }
+  }
+
+  // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
+  if (reinit_a_star || reinit_downsampler || reinit_collision_checker || reinit_smoother) {
+    // convert to grid coordinates
+    const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
+    _search_info.minimum_turning_radius =
+      _search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
+    _lookup_table_dim =
+      static_cast<float>(_lookup_table_size) /
+      static_cast<float>(_costmap->getResolution() * _downsampling_factor);
+
+    // Make sure its a whole number
+    _lookup_table_dim = static_cast<float>(static_cast<int>(_lookup_table_dim));
+
+    // Make sure its an odd number
+    if (static_cast<int>(_lookup_table_dim) % 2 == 0) {
+      RCLCPP_INFO(
+        _logger,
+        "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd",
+        _lookup_table_dim);
+      _lookup_table_dim += 1.0;
+    }
+
+    // Re-Initialize A* template
+    if (reinit_a_star) {
+      _a_star = std::make_unique<AStarAlgorithm<NodeHybrid>>(_motion_model, _search_info);
+      _a_star->initialize(
+        _allow_unknown,
+        _max_iterations,
+        std::numeric_limits<int>::max(),
+        _max_planning_time,
+        _lookup_table_dim,
+        _angle_quantizations);
+    }
+
+    // Re-Initialize costmap downsampler
+    if (reinit_downsampler) {
+      if (_downsample_costmap && _downsampling_factor > 1) {
+        auto node = _node.lock();
+        std::string topic_name = "downsampled_costmap";
+        _costmap_downsampler = std::make_unique<CostmapDownsampler>();
+        _costmap_downsampler->on_configure(
+          node, _global_frame, topic_name, _costmap, _downsampling_factor);
+      }
+    }
+
+    // Re-Initialize collision checker
+    if (reinit_collision_checker) {
+      _collision_checker = GridCollisionChecker(_costmap, _angle_quantizations);
+      _collision_checker.setFootprint(
+        _costmap_ros->getRobotFootprint(),
+        _costmap_ros->getUseRadius(),
+        findCircumscribedCost(_costmap_ros));
+    }
+
+    // Re-Initialize smoother
+    if (reinit_smoother) {
+      auto node = _node.lock();
+      SmootherParams params;
+      params.get(node, _name);
+      _smoother = std::make_unique<Smoother>(params);
+      _smoother->initialize(minimum_turning_radius_global_coords);
+    }
+  }
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_smac_planner

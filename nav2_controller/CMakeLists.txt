@@ -7,6 +7,7 @@ find_package(nav2_common REQUIRED)
 find_package(angles REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
@@ -28,7 +29,7 @@ add_executable(${executable_name}
 
 set(library_name ${executable_name}_core)
 
-add_library(${library_name}
+add_library(${library_name} SHARED
   src/nav2_controller.cpp
 )
 
@@ -36,6 +37,7 @@ set(dependencies
   angles
   rclcpp
   rclcpp_action
+  rclcpp_components
   std_msgs
   nav2_msgs
   nav_2d_utils
@@ -74,6 +76,8 @@ ament_target_dependencies(${executable_name}
 )
 
 target_link_libraries(${executable_name} ${library_name})
+
+rclcpp_components_register_nodes(${library_name} "nav2_controller::ControllerServer")
 
 install(TARGETS simple_progress_checker simple_goal_checker stopped_goal_checker ${library_name}
   ARCHIVE DESTINATION lib
