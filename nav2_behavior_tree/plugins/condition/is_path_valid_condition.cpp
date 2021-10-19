@@ -31,13 +31,14 @@ BT::NodeStatus IsPathValidCondition::tick()
 {
   nav_msgs::msg::Path path;
   getInput("path", path);
+  getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
 
   request->path = path;
   auto result = client_->async_send_request(request);
 
-  if (rclcpp::spin_until_future_complete(node_, result, std::chrono::milliseconds(5)) ==
+  if (rclcpp::spin_until_future_complete(node_, result, server_timeout_) ==
     rclcpp::FutureReturnCode::SUCCESS)
   {
     if (result.get()->is_valid) {

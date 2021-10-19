@@ -54,13 +54,18 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check")
+      BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
+      BT::InputPort<std::chrono::milliseconds>("server_timeout")
     };
   }
 
 private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Client<nav2_msgs::srv::IsPathValid>::SharedPtr client_;
+  // The timeout value while waiting for a responce from the 
+  // is path valid service
+  std::chrono::milliseconds server_timeout_;
+
 };
 
 }  // namespace nav2_behavior_tree
