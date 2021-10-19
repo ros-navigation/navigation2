@@ -34,7 +34,7 @@ namespace nav2_smoother
 {
 
 SmootherServer::SmootherServer()
-: LifecycleNode("smoother_server", "", true),
+: LifecycleNode("smoother_server", "", false),
   lp_loader_("nav2_core", "nav2_core::Smoother"),
   default_ids_{"SmoothPath"}, default_types_{
     "nav2_smoother::CeresCostawareSmoother"}
@@ -55,25 +55,19 @@ SmootherServer::SmootherServer()
     rclcpp::ParameterValue(std::string("base_link")));
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter("smoother_plugins", default_ids_);
-
-  // // Launch a thread to run the costmap node
-  // costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
-
-  RCLCPP_INFO(get_logger(), "Smoother server created");
 }
 
 SmootherServer::~SmootherServer()
 {
   smoothers_.clear();
-  // costmap_thread_.reset();
 }
 
 nav2_util::CallbackReturn
 SmootherServer::on_configure(const rclcpp_lifecycle::State &)
 {
-  auto node = shared_from_this();
-
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
+
+  auto node = shared_from_this();
 
   get_parameter("smoother_plugins", smoother_ids_);
   if (smoother_ids_ == default_ids_) {
@@ -117,8 +111,12 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
 
   // Create the action server that we implement with our smoothPath method
   action_server_ = std::make_unique<ActionServer>(
-    rclcpp_node_, "smooth_path",
-    std::bind(&SmootherServer::smoothPlan, this));
+    shared_from_this(),
+    "smooth_path",
+    std::bind(&SmootherServer::smoothPlan, this),
+    nullptr,
+    std::chrono::milliseconds(500),
+    true);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -165,9 +163,6 @@ nav2_util::CallbackReturn
 SmootherServer::on_activate(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Activating");
-
-  RCLCPP_INFO(get_logger(), "Checking transform");
-  rclcpp::Rate r(2);
 
   plan_publisher_->on_activate();
   SmootherMap::iterator it;
@@ -262,6 +257,8 @@ bool SmootherServer::findSmootherId(
 
 void SmootherServer::smoothPlan()
 {
+  auto start_time = steady_clock_.now();
+
   RCLCPP_INFO(get_logger(), "Received a goal, smoothing.");
 
   auto result = std::make_shared<Action::Result>();
@@ -278,32 +275,40 @@ void SmootherServer::smoothPlan()
     // Perform smoothing
     auto goal = action_server_->get_current_goal();
     result->path = goal->path;
-    auto start_time = steady_clock_.now();
     result->was_completed = smoothers_[current_smoother_]->smooth(
       result->path, goal->max_smoothing_duration);
     result->smoothing_duration = steady_clock_.now() - start_time;
 
+    if (!result->was_completed) {
+      RCLCPP_INFO(
+        get_logger(),
+        "Smoother %s did not complete smoothing in specified time limit"
+        "(%lf seconds) and was interrupted after %lf seconds",
+        current_smoother_.c_str(),
+        rclcpp::Duration(goal->max_smoothing_duration).seconds(),
+        rclcpp::Duration(result->smoothing_duration).seconds());
+    }
     plan_publisher_->publish(result->path);
 
-    RCLCPP_INFO(get_logger(), "Collision check");
-
     // Check for collisions
-    geometry_msgs::msg::Pose2D pose2d;
-    bool updateCostmap = true;
-    for (const auto & pose : result->path.poses) {
-      pose2d.x = pose.pose.position.x;
-      pose2d.y = pose.pose.position.y;
-      pose2d.theta = tf2::getYaw(pose.pose.orientation);
+    if (goal->check_for_collisions) {
+      geometry_msgs::msg::Pose2D pose2d;
+      bool updateCostmap = true;
+      for (const auto & pose : result->path.poses) {
+        pose2d.x = pose.pose.position.x;
+        pose2d.y = pose.pose.position.y;
+        pose2d.theta = tf2::getYaw(pose.pose.orientation);
 
-      if (!collision_checker_->isCollisionFree(pose2d, updateCostmap)) {
-        RCLCPP_ERROR(
-          get_logger(),
-          "Smoothed path leads to a collision at x: %lf, y: %lf, theta: %lf",
-          pose2d.x, pose2d.y, pose2d.theta);
-        action_server_->terminate_current(result);
-        return;
+        if (!collision_checker_->isCollisionFree(pose2d, updateCostmap)) {
+          RCLCPP_ERROR(
+            get_logger(),
+            "Smoothed path leads to a collision at x: %lf, y: %lf, theta: %lf",
+            pose2d.x, pose2d.y, pose2d.theta);
+          action_server_->terminate_current(result);
+          return;
+        }
+        updateCostmap = false;
       }
-      updateCostmap = false;
     }
 
     RCLCPP_INFO(

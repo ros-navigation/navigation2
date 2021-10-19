@@ -65,6 +65,7 @@ bt_navigator:
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
     - nav2_compute_path_through_poses_action_bt_node
+    - nav2_smooth_path_action_bt_node
     - nav2_follow_path_action_bt_node
     - nav2_back_up_action_bt_node
     - nav2_spin_action_bt_node
@@ -288,6 +289,15 @@ planner_server:
       allow_unknown: true
 
 planner_server_rclcpp_node:
+  ros__parameters:
+    use_sim_time: True
+
+smoother_server:
+  ros__parameters:
+    use_sim_time: True
+    smoother_plugins: []
+
+smoother_server_rclcpp_node:
   ros__parameters:
     use_sim_time: True
 

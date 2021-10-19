@@ -31,16 +31,17 @@ SmoothPathAction::SmoothPathAction(
 
 void SmoothPathAction::on_tick()
 {
-  getInput("path_in", goal_.path);
+  getInput("unsmoothed_path", goal_.path);
   getInput("smoother_id", goal_.smoother_id);
   double max_smoothing_duration;
   getInput("max_smoothing_duration", max_smoothing_duration);
   goal_.max_smoothing_duration = rclcpp::Duration::from_seconds(max_smoothing_duration);
+  getInput("check_for_collisions", goal_.check_for_collisions);
 }
 
 BT::NodeStatus SmoothPathAction::on_success()
 {
-  setOutput("path_out", result_.result->path);
+  setOutput("smoothed_path", result_.result->path);
   setOutput("smoothing_duration", rclcpp::Duration(result_.result->smoothing_duration).seconds());
   setOutput("was_completed", result_.result->was_completed);
   return BT::NodeStatus::SUCCESS;

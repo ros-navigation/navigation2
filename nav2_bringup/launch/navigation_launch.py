@@ -87,6 +87,14 @@ def generate_launch_description():
             remappings=remappings),
 
         Node(
+            package='nav2_smoother',
+            executable='smoother_server',
+            name='smoother_server',
+            output='screen',
+            parameters=[configured_params],
+            remappings=remappings),
+
+        Node(
             package='nav2_planner',
             executable='planner_server',
             name='planner_server',
