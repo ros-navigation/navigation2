@@ -10,6 +10,7 @@
     <Action ID="BackUp">
       <input_port name="backup_dist">Distance to backup</input_port>
       <input_port name="backup_speed">Speed at which to backup</input_port>
+      <input_port name="time_allowance">Allowed time for reversing</input_port>
     </Action>
 
     <Action ID="ClearEntireCostmap">
@@ -38,9 +39,12 @@
 
     <Action ID="SmoothPath">
       <input_port name="smoother_id" default="SmoothPath"/>
-      <input_port name="path_in">Path to be smoothed</input_port>
-      <output_port name="path_out">Smoothed path</output_port>
-      <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
+      <input_port name="unsmoothed_path">Path to be smoothed</input_port>
+      <input_port name="max_smoothing_duration">Maximum smoothing duration</input_port>
+      <input_port name="check_for_collisions">Bool if collision check should be performed</input_port>
+      <output_port name="smoothed_path">Smoothed path</output_port>
+      <output_port name="smoothing_duration">Smoothing duration</output_port>
+      <output_port name="was_completed">True if smoothing was not interrupted by time limit</output_port>
     </Action>
 
     <Action ID="FollowPath">
@@ -86,6 +90,7 @@
 
     <Action ID="Spin">
       <input_port name="spin_dist">Spin distance</input_port>
+      <input_port name="time_allowance">Allowed time for spinning</input_port>
     </Action>
 
     <Action ID="Wait">

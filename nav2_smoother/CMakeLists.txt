@@ -55,9 +55,6 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-# prevent pluginlib from using boost
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -92,6 +89,8 @@ install(DIRECTORY include/
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_gtest REQUIRED)
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

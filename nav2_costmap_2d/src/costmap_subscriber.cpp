@@ -53,14 +53,6 @@ std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
   return costmap_;
 }
 
-std_msgs::msg::Header CostmapSubscriber::getHeader()
-{
-  if (!costmap_received_) {
-    throw std::runtime_error("Costmap is not available");
-  }
-  return costmap_msg_->header;
-}
-
 void CostmapSubscriber::toCostmap2D()
 {
 

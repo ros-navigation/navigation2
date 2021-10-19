@@ -110,9 +110,6 @@ protected:
   using Action = nav2_msgs::action::SmoothPath;
   using ActionServer = nav2_util::SimpleActionServer<Action>;
 
-  // Our action server implements the SmoothPath action
-  std::unique_ptr<ActionServer> action_server_;
-
   /**
    * @brief SmoothPath action server callback. Handles action server updates and
    * spins server until goal is reached
@@ -124,12 +121,6 @@ protected:
   void smoothPlan();
 
   /**
-   * @brief Wait for costmap to be valid with updated sensor data or repopulate
-   * after a clearing recovery. Blocks until true without timeout.
-   */
-  void waitForCostmap();
-
-  /**
    * @brief Find the valid smoother ID name for the given request
    *
    * @param c_name The requested smoother name
@@ -137,6 +128,9 @@ protected:
    * @return bool Whether it found a valid smoother to use
    */
   bool findSmootherId(const std::string & c_name, std::string & name);
+
+  // Our action server implements the SmoothPath action
+  std::unique_ptr<ActionServer> action_server_;
 
   // Transforms
   std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -159,7 +153,7 @@ protected:
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
 
-  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
+  rclcpp::Clock steady_clock_;
 };
 
 }  // namespace nav2_smoother

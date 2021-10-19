@@ -17,6 +17,7 @@
 #include <string>
 #include <limits>
 #include <memory>
+#include <vector>
 #include <utility>
 
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
@@ -32,6 +33,7 @@ using std::abs;
 using nav2_util::declare_parameter_if_not_declared;
 using nav2_util::geometry_utils::euclidean_distance;
 using namespace nav2_costmap_2d;  // NOLINT
+using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_regulated_pure_pursuit_controller
 {
@@ -42,6 +44,7 @@ void RegulatedPurePursuitController::configure(
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
 {
   auto node = parent.lock();
+  node_ = parent;
   if (!node) {
     throw nav2_core::PlannerException("Unable to lock node!");
   }
@@ -202,6 +205,12 @@ void RegulatedPurePursuitController::activate()
   global_path_pub_->on_activate();
   carrot_pub_->on_activate();
   carrot_arc_pub_->on_activate();
+  // Add callback for dynamic parameters
+  auto node = node_.lock();
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &RegulatedPurePursuitController::dynamicParametersCallback,
+      this, std::placeholders::_1));
 }
 
 void RegulatedPurePursuitController::deactivate()
@@ -214,6 +223,7 @@ void RegulatedPurePursuitController::deactivate()
   global_path_pub_->on_deactivate();
   carrot_pub_->on_deactivate();
   carrot_arc_pub_->on_deactivate();
+  dyn_params_handler_.reset();
 }
 
 std::unique_ptr<geometry_msgs::msg::PointStamped> RegulatedPurePursuitController::createCarrotMsg(
@@ -245,6 +255,8 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   const geometry_msgs::msg::Twist & speed,
   nav2_core::GoalChecker * goal_checker)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+
   // Update for the current goal checker's state
   geometry_msgs::msg::Pose pose_tolerance;
   geometry_msgs::msg::Twist vel_tolerance;
@@ -395,7 +407,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   pose_msg.header.frame_id = arc_pts_msg.header.frame_id;
   pose_msg.header.stamp = arc_pts_msg.header.stamp;
 
-  const double projection_time = costmap_->getResolution() / linear_vel;
+  const double projection_time = costmap_->getResolution() / fabs(linear_vel);
 
   geometry_msgs::msg::Pose2D curr_pose;
   curr_pose.x = robot_pose.pose.position.x;
@@ -666,6 +678,97 @@ bool RegulatedPurePursuitController::transformPose(
     RCLCPP_ERROR(logger_, "Exception in transformPose: %s", ex.what());
   }
   return false;
+}
+
+
+rcl_interfaces::msg::SetParametersResult
+RegulatedPurePursuitController::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == plugin_name_ + ".inflation_cost_scaling_factor") {
+        if (parameter.as_double() <= 0.0) {
+          RCLCPP_WARN(
+            logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
+            "it should be >0. Ignoring parameter update.");
+          continue;
+        }
+        inflation_cost_scaling_factor_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".desired_linear_vel") {
+        desired_linear_vel_ = parameter.as_double();
+        base_desired_linear_vel_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".lookahead_dist") {
+        lookahead_dist_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_lookahead_dist") {
+        max_lookahead_dist_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".min_lookahead_dist") {
+        min_lookahead_dist_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".lookahead_time") {
+        lookahead_time_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".rotate_to_heading_angular_vel") {
+        rotate_to_heading_angular_vel_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_linear_accel") {
+        max_linear_accel_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_linear_decel") {
+        max_linear_decel_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".min_approach_linear_velocity") {
+        min_approach_linear_velocity_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_allowed_time_to_collision") {
+        max_allowed_time_to_collision_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".cost_scaling_dist") {
+        cost_scaling_dist_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".cost_scaling_gain") {
+        cost_scaling_gain_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".regulated_linear_scaling_min_radius") {
+        regulated_linear_scaling_min_radius_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".transform_tolerance") {
+        double transform_tolerance = parameter.as_double();
+        transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
+      } else if (name == plugin_name_ + ".regulated_linear_scaling_min_speed") {
+        regulated_linear_scaling_min_speed_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_angular_accel") {
+        max_angular_accel_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".rotate_to_heading_min_angle") {
+        rotate_to_heading_min_angle_ = parameter.as_double();
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {
+        use_velocity_scaled_lookahead_dist_ = parameter.as_bool();
+      } else if (name == plugin_name_ + ".use_regulated_linear_velocity_scaling") {
+        use_regulated_linear_velocity_scaling_ = parameter.as_bool();
+      } else if (name == plugin_name_ + ".use_cost_regulated_linear_velocity_scaling") {
+        use_cost_regulated_linear_velocity_scaling_ = parameter.as_bool();
+      } else if (name == plugin_name_ + ".use_approach_vel_scaling") {
+        use_approach_vel_scaling_ = parameter.as_bool();
+      } else if (name == plugin_name_ + ".use_rotate_to_heading") {
+        if (parameter.as_bool() && allow_reversing_) {
+          RCLCPP_WARN(
+            logger_, "Both use_rotate_to_heading and allow_reversing "
+            "parameter cannot be set to true. Rejecting parameter update.");
+          continue;
+        }
+        use_rotate_to_heading_ = parameter.as_bool();
+      } else if (name == plugin_name_ + ".allow_reversing") {
+        if (use_rotate_to_heading_ && parameter.as_bool()) {
+          RCLCPP_WARN(
+            logger_, "Both use_rotate_to_heading and allow_reversing "
+            "parameter cannot be set to true. Rejecting parameter update.");
+          continue;
+        }
+        allow_reversing_ = parameter.as_bool();
+      }
+    }
+  }
+
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_regulated_pure_pursuit_controller
