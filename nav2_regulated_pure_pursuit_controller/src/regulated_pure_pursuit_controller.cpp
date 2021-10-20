@@ -77,10 +77,6 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".desired_linear_vel", rclcpp::ParameterValue(0.5));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_linear_accel", rclcpp::ParameterValue(2.5));
-  declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_linear_decel", rclcpp::ParameterValue(2.5));
-  declare_parameter_if_not_declared(
     node, plugin_name_ + ".lookahead_dist", rclcpp::ParameterValue(0.6));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".min_lookahead_dist", rclcpp::ParameterValue(0.3));
@@ -125,8 +121,12 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".goal_dist_tol", rclcpp::ParameterValue(0.25));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
+<<<<<<< HEAD
   node->get_parameter(plugin_name_ + ".max_linear_accel", max_linear_accel_);
   node->get_parameter(plugin_name_ + ".max_linear_decel", max_linear_decel_);
+=======
+  base_desired_linear_vel_ = desired_linear_vel_;
+>>>>>>> c65532f7 (removing kinematic limiting from RPP (#2631))
   node->get_parameter(plugin_name_ + ".lookahead_dist", lookahead_dist_);
   node->get_parameter(plugin_name_ + ".min_lookahead_dist", min_lookahead_dist_);
   node->get_parameter(plugin_name_ + ".max_lookahead_dist", max_lookahead_dist_);
@@ -416,8 +416,13 @@ double RegulatedPurePursuitController::costAtPose(const double & x, const double
 
 void RegulatedPurePursuitController::applyConstraints(
   const double & dist_error, const double & lookahead_dist,
+<<<<<<< HEAD
   const double & curvature, const geometry_msgs::msg::Twist & curr_speed,
   const double & pose_cost, double & linear_vel)
+=======
+  const double & curvature, const geometry_msgs::msg::Twist & /*curr_speed*/,
+  const double & pose_cost, double & linear_vel, double & sign)
+>>>>>>> c65532f7 (removing kinematic limiting from RPP (#2631))
 {
   double curvature_vel = linear_vel;
   double cost_vel = linear_vel;
@@ -463,12 +468,18 @@ void RegulatedPurePursuitController::applyConstraints(
     linear_vel = std::min(linear_vel, approach_vel);
   }
 
+<<<<<<< HEAD
   // Limit linear velocities to be valid and kinematically feasible, v = v0 + a * dt
   double & dt = control_duration_;
   const double max_feasible_linear_speed = curr_speed.linear.x + max_linear_accel_ * dt;
   const double min_feasible_linear_speed = curr_speed.linear.x - max_linear_decel_ * dt;
   linear_vel = clamp(linear_vel, min_feasible_linear_speed, max_feasible_linear_speed);
   linear_vel = clamp(linear_vel, 0.0, desired_linear_vel_);
+=======
+  // Limit linear velocities to be valid
+  linear_vel = std::clamp(fabs(linear_vel), 0.0, desired_linear_vel_);
+  linear_vel = sign * linear_vel;
+>>>>>>> c65532f7 (removing kinematic limiting from RPP (#2631))
 }
 
 void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
@@ -561,7 +572,98 @@ bool RegulatedPurePursuitController::transformPose(
   return false;
 }
 
+<<<<<<< HEAD
 }  // namespace nav2_pure_pursuit_controller
+=======
+
+rcl_interfaces::msg::SetParametersResult
+RegulatedPurePursuitController::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == plugin_name_ + ".inflation_cost_scaling_factor") {
+        if (parameter.as_double() <= 0.0) {
+          RCLCPP_WARN(
+            logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
+            "it should be >0. Ignoring parameter update.");
+          continue;
+        }
+        inflation_cost_scaling_factor_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".desired_linear_vel") {
+        desired_linear_vel_ = parameter.as_double();
+        base_desired_linear_vel_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".lookahead_dist") {
+        lookahead_dist_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_lookahead_dist") {
+        max_lookahead_dist_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".min_lookahead_dist") {
+        min_lookahead_dist_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".lookahead_time") {
+        lookahead_time_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".rotate_to_heading_angular_vel") {
+        rotate_to_heading_angular_vel_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".min_approach_linear_velocity") {
+        min_approach_linear_velocity_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_allowed_time_to_collision") {
+        max_allowed_time_to_collision_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".cost_scaling_dist") {
+        cost_scaling_dist_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".cost_scaling_gain") {
+        cost_scaling_gain_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".regulated_linear_scaling_min_radius") {
+        regulated_linear_scaling_min_radius_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".transform_tolerance") {
+        double transform_tolerance = parameter.as_double();
+        transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
+      } else if (name == plugin_name_ + ".regulated_linear_scaling_min_speed") {
+        regulated_linear_scaling_min_speed_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_angular_accel") {
+        max_angular_accel_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".rotate_to_heading_min_angle") {
+        rotate_to_heading_min_angle_ = parameter.as_double();
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {
+        use_velocity_scaled_lookahead_dist_ = parameter.as_bool();
+      } else if (name == plugin_name_ + ".use_regulated_linear_velocity_scaling") {
+        use_regulated_linear_velocity_scaling_ = parameter.as_bool();
+      } else if (name == plugin_name_ + ".use_cost_regulated_linear_velocity_scaling") {
+        use_cost_regulated_linear_velocity_scaling_ = parameter.as_bool();
+      } else if (name == plugin_name_ + ".use_approach_vel_scaling") {
+        use_approach_vel_scaling_ = parameter.as_bool();
+      } else if (name == plugin_name_ + ".use_rotate_to_heading") {
+        if (parameter.as_bool() && allow_reversing_) {
+          RCLCPP_WARN(
+            logger_, "Both use_rotate_to_heading and allow_reversing "
+            "parameter cannot be set to true. Rejecting parameter update.");
+          continue;
+        }
+        use_rotate_to_heading_ = parameter.as_bool();
+      } else if (name == plugin_name_ + ".allow_reversing") {
+        if (use_rotate_to_heading_ && parameter.as_bool()) {
+          RCLCPP_WARN(
+            logger_, "Both use_rotate_to_heading and allow_reversing "
+            "parameter cannot be set to true. Rejecting parameter update.");
+          continue;
+        }
+        allow_reversing_ = parameter.as_bool();
+      }
+    }
+  }
+
+  result.successful = true;
+  return result;
+}
+
+}  // namespace nav2_regulated_pure_pursuit_controller
+>>>>>>> c65532f7 (removing kinematic limiting from RPP (#2631))
 
 // Register this controller as a nav2_core plugin
 PLUGINLIB_EXPORT_CLASS(

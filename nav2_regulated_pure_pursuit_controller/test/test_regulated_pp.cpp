@@ -322,3 +322,74 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   // ctrl->applyConstraintsWrapper(dist_error, lookahead_dist, curvature, curr_speed, pose_cost, linear_vel);
   // EXPECT_NEAR(linear_vel, 0.5, 0.01);
 }
+<<<<<<< HEAD
+=======
+
+TEST(RegulatedPurePursuitTest, testDynamicParameter)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("Smactest");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap->on_configure(rclcpp_lifecycle::State());
+  auto ctrl =
+    std::make_unique<nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController>();
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  ctrl->configure(node, "test", tf, costmap);
+  ctrl->activate();
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.desired_linear_vel", 1.0),
+      rclcpp::Parameter("test.lookahead_dist", 7.0),
+      rclcpp::Parameter("test.max_lookahead_dist", 7.0),
+      rclcpp::Parameter("test.min_lookahead_dist", 6.0),
+      rclcpp::Parameter("test.lookahead_time", 1.8),
+      rclcpp::Parameter("test.rotate_to_heading_angular_vel", 18.0),
+      rclcpp::Parameter("test.min_approach_linear_velocity", 1.0),
+      rclcpp::Parameter("test.max_allowed_time_to_collision", 2.0),
+      rclcpp::Parameter("test.cost_scaling_dist", 2.0),
+      rclcpp::Parameter("test.cost_scaling_gain", 4.0),
+      rclcpp::Parameter("test.regulated_linear_scaling_min_radius", 10.0),
+      rclcpp::Parameter("test.transform_tolerance", 30.0),
+      rclcpp::Parameter("test.max_angular_accel", 3.0),
+      rclcpp::Parameter("test.rotate_to_heading_min_angle", 0.7),
+      rclcpp::Parameter("test.regulated_linear_scaling_min_speed", 4.0),
+      rclcpp::Parameter("test.use_velocity_scaled_lookahead_dist", false),
+      rclcpp::Parameter("test.use_regulated_linear_velocity_scaling", false),
+      rclcpp::Parameter("test.use_cost_regulated_linear_velocity_scaling", false),
+      rclcpp::Parameter("test.use_approach_linear_velocity_scaling", false),
+      rclcpp::Parameter("test.allow_reversing", false),
+      rclcpp::Parameter("test.use_rotate_to_heading", false)});
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(node->get_parameter("test.desired_linear_vel").as_double(), 1.0);
+  EXPECT_EQ(node->get_parameter("test.lookahead_dist").as_double(), 7.0);
+  EXPECT_EQ(node->get_parameter("test.max_lookahead_dist").as_double(), 7.0);
+  EXPECT_EQ(node->get_parameter("test.min_lookahead_dist").as_double(), 6.0);
+  EXPECT_EQ(node->get_parameter("test.lookahead_time").as_double(), 1.8);
+  EXPECT_EQ(node->get_parameter("test.rotate_to_heading_angular_vel").as_double(), 18.0);
+  EXPECT_EQ(node->get_parameter("test.min_approach_linear_velocity").as_double(), 1.0);
+  EXPECT_EQ(node->get_parameter("test.max_allowed_time_to_collision").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.cost_scaling_dist").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.cost_scaling_gain").as_double(), 4.0);
+  EXPECT_EQ(node->get_parameter("test.regulated_linear_scaling_min_radius").as_double(), 10.0);
+  EXPECT_EQ(node->get_parameter("test.transform_tolerance").as_double(), 30.0);
+  EXPECT_EQ(node->get_parameter("test.max_angular_accel").as_double(), 3.0);
+  EXPECT_EQ(node->get_parameter("test.rotate_to_heading_min_angle").as_double(), 0.7);
+  EXPECT_EQ(node->get_parameter("test.regulated_linear_scaling_min_speed").as_double(), 4.0);
+  EXPECT_EQ(node->get_parameter("test.use_velocity_scaled_lookahead_dist").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.use_regulated_linear_velocity_scaling").as_bool(), false);
+  EXPECT_EQ(
+    node->get_parameter(
+      "test.use_cost_regulated_linear_velocity_scaling").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.use_approach_linear_velocity_scaling").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.allow_reversing").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
+}
+>>>>>>> c65532f7 (removing kinematic limiting from RPP (#2631))
