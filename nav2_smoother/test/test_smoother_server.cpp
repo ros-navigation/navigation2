@@ -252,6 +252,7 @@ protected:
   void TearDown() override
   {
     smoother_server_->deactivate();
+    smoother_server_->cleanup();
     smoother_server_->shutdown();
   }
 
