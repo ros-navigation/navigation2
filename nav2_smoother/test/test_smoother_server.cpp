@@ -89,6 +89,24 @@ private:
   std::chrono::system_clock::time_point start_time_;
 };
 
+// Mocked class loader
+void onPluginDeletion(nav2_core::Smoother * obj)
+{
+  if (nullptr != obj) {
+    delete (obj);
+  }
+}
+
+template<>
+pluginlib::UniquePtr<nav2_core::Smoother> pluginlib::ClassLoader<nav2_core::Smoother>::
+createUniqueInstance(const std::string &)
+{
+  return std::unique_ptr<nav2_core::Smoother,
+           class_loader::ClassLoader::DeleterType<nav2_core::Smoother>>(
+    new DummySmoother(),
+    onPluginDeletion);
+}
+
 class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
 {
 public:
@@ -160,9 +178,7 @@ public:
   on_configure(const rclcpp_lifecycle::State & state)
   {
     auto result = SmootherServer::on_configure(state);
-    assert(
-      result == nav2_util::CallbackReturn::SUCCESS &&
-      smoother_ids_.empty() && smoother_types_.empty() && smoothers_.empty());
+    assert(result == nav2_util::CallbackReturn::SUCCESS);
 
     // Create dummy subscribers and collision checker
     auto node = shared_from_this();
@@ -177,15 +193,6 @@ public:
       *costmap_sub_, *footprint_sub_, *tf_,
       node->get_name(),
       "base_link", "base_link");  // global frame = robot frame to avoid tf lookup
-
-    // Create dummy smoother
-    smoother_ids_.push_back("DummySmoothPath");
-    smoother_types_.push_back("DummySmoother");
-    nav2_core::Smoother::Ptr smoother = std::make_shared<DummySmoother>();
-    smoother->configure(
-      shared_from_this(), smoother_ids_[0], tf_, costmap_sub_,
-      footprint_sub_);
-    smoothers_.insert({smoother_ids_[0], smoother});
 
     return result;
   }
@@ -206,6 +213,13 @@ protected:
       "LifecycleSmootherTestNode", rclcpp::NodeOptions());
 
     smoother_server_ = std::make_shared<DummySmootherServer>();
+    smoother_server_->set_parameter(
+      rclcpp::Parameter(
+        "smoother_plugins",
+        rclcpp::ParameterValue(std::vector<std::string>(1, "DummySmoothPath"))));
+    smoother_server_->declare_parameter(
+      "DummySmoothPath.plugin",
+      rclcpp::ParameterValue(std::string("DummySmoother")));
     smoother_server_->configure();
     smoother_server_->activate();
 
