@@ -36,7 +36,7 @@ namespace nav2_smoother
 SmootherServer::SmootherServer()
 : LifecycleNode("smoother_server", "", false),
   lp_loader_("nav2_core", "nav2_core::Smoother"),
-  default_ids_{"SmoothPath"}, default_types_{
+  default_ids_{}, default_types_{
     "nav2_smoother::CeresCostawareSmoother"}
 {
   RCLCPP_INFO(get_logger(), "Creating smoother server");
@@ -65,7 +65,7 @@ SmootherServer::~SmootherServer()
 nav2_util::CallbackReturn
 SmootherServer::on_configure(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "Configuring controller interface");
+  RCLCPP_INFO(get_logger(), "Configuring smoother server");
 
   auto node = shared_from_this();
 
@@ -259,7 +259,7 @@ void SmootherServer::smoothPlan()
 {
   auto start_time = steady_clock_.now();
 
-  RCLCPP_INFO(get_logger(), "Received a goal, smoothing.");
+  RCLCPP_INFO(get_logger(), "Received a path to smooth.");
 
   auto result = std::make_shared<Action::Result>();
   try {
@@ -311,7 +311,7 @@ void SmootherServer::smoothPlan()
       }
     }
 
-    RCLCPP_INFO(
+    RCLCPP_DEBUG(
       get_logger(), "Smoother succeeded (time: %lf), setting result",
       rclcpp::Duration(result->smoothing_duration).seconds());
 

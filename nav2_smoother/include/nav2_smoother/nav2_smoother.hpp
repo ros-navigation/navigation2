@@ -51,6 +51,7 @@ public:
    * @brief Constructor for nav2_smoother::SmootherServer
    */
   SmootherServer();
+
   /**
    * @brief Destructor for nav2_smoother::SmootherServer
    */
@@ -68,11 +69,13 @@ protected:
    * plugin
    */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+
   /**
    * @brief Loads smoother plugins from parameter file
    * @return bool if successfully loaded the plugins
    */
   bool loadSmootherPlugins();
+
   /**
    * @brief Activates member variables
    *
@@ -82,6 +85,7 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+
   /**
    * @brief Deactivates member variables
    *
@@ -91,6 +95,7 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+
   /**
    * @brief Calls clean up states and resets member variables.
    *
@@ -100,6 +105,7 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+
   /**
    * @brief Called when in Shutdown state
    * @param state LifeCycle Node's state

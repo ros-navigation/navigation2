@@ -26,6 +26,7 @@
 
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_core/smoother.hpp"
+#include "nav2_core/exceptions.hpp"
 #include "nav2_msgs/action/smooth_path.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
 #include "tf2_ros/create_timer_ros.h"
@@ -63,6 +64,10 @@ public:
   {
     assert(path.poses.size() == 2);
 
+    if (path.poses.front() == path.poses.back()) {
+      throw nav2_core::PlannerException("Start and goal pose must differ");
+    }
+
     auto max_time_ms = max_time.to_chrono<std::chrono::milliseconds>();
     std::this_thread::sleep_for(std::min(max_time_ms, 100ms));
 
@@ -83,6 +88,40 @@ private:
   std::string command_;
   std::chrono::system_clock::time_point start_time_;
 };
+
+// Mocked class loader
+void onPluginDeletion(nav2_core::Smoother * obj)
+{
+  if (nullptr != obj) {
+    delete (obj);
+  }
+}
+
+template<>
+pluginlib::UniquePtr<nav2_core::Smoother> pluginlib::ClassLoader<nav2_core::Smoother>::
+createUniqueInstance(const std::string & lookup_name)
+{
+  if (lookup_name != "DummySmoother") {
+    // original method body
+    if (!isClassLoaded(lookup_name)) {
+      loadLibraryForClass(lookup_name);
+    }
+    try {
+      std::string class_type = getClassType(lookup_name);
+      pluginlib::UniquePtr<nav2_core::Smoother> obj =
+        lowlevel_class_loader_.createUniqueInstance<nav2_core::Smoother>(class_type);
+      return obj;
+    } catch (const class_loader::CreateClassException & ex) {
+      throw pluginlib::CreateClassException(ex.what());
+    }
+  }
+
+  // mocked plugin creation
+  return std::unique_ptr<nav2_core::Smoother,
+           class_loader::ClassLoader::DeleterType<nav2_core::Smoother>>(
+    new DummySmoother(),
+    onPluginDeletion);
+}
 
 class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
 {
@@ -151,19 +190,13 @@ public:
 class DummySmootherServer : public nav2_smoother::SmootherServer
 {
 public:
-  DummySmootherServer()
-  {
-    // don't load default smoothers via pluginlib
-    set_parameter(rclcpp::Parameter("smoother_plugins", std::vector<std::string>()));
-  }
-
   nav2_util::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & state)
   {
     auto result = SmootherServer::on_configure(state);
-    assert(
-      result == nav2_util::CallbackReturn::SUCCESS &&
-      smoother_ids_.empty() && smoother_types_.empty() && smoothers_.empty());
+    if (result != nav2_util::CallbackReturn::SUCCESS) {
+      return result;
+    }
 
     // Create dummy subscribers and collision checker
     auto node = shared_from_this();
@@ -178,15 +211,6 @@ public:
       *costmap_sub_, *footprint_sub_, *tf_,
       node->get_name(),
       "base_link", "base_link");  // global frame = robot frame to avoid tf lookup
-
-    // Create dummy smoother
-    smoother_ids_.push_back("DummySmoothPath");
-    smoother_types_.push_back("DummySmoother");
-    nav2_core::Smoother::Ptr smoother = std::make_shared<DummySmoother>();
-    smoother->configure(
-      shared_from_this(), smoother_ids_[0], tf_, costmap_sub_,
-      footprint_sub_);
-    smoothers_.insert({smoother_ids_[0], smoother});
 
     return result;
   }
@@ -207,6 +231,13 @@ protected:
       "LifecycleSmootherTestNode", rclcpp::NodeOptions());
 
     smoother_server_ = std::make_shared<DummySmootherServer>();
+    smoother_server_->set_parameter(
+      rclcpp::Parameter(
+        "smoother_plugins",
+        rclcpp::ParameterValue(std::vector<std::string>(1, "DummySmoothPath"))));
+    smoother_server_->declare_parameter(
+      "DummySmoothPath.plugin",
+      rclcpp::ParameterValue(std::string("DummySmoother")));
     smoother_server_->configure();
     smoother_server_->activate();
 
@@ -218,7 +249,11 @@ protected:
     std::cout << "Setup complete." << std::endl;
   }
 
-  void TearDown() override {}
+  void TearDown() override
+  {
+    smoother_server_->deactivate();
+    smoother_server_->shutdown();
+  }
 
   bool sendGoal(
     std::string smoother_id, double x_start, double y_start, double x_goal,
@@ -292,9 +327,9 @@ TEST_F(SmootherTest, testingSuccess)
   SUCCEED();
 }
 
-TEST_F(SmootherTest, testingFailureOnInvalidPlugin)
+TEST_F(SmootherTest, testingFailureOnInvalidSmootherId)
 {
-  ASSERT_TRUE(sendGoal("InvalidPlugin", 0.0, 0.0, 1.0, 0.0, 500ms, true));
+  ASSERT_TRUE(sendGoal("InvalidSmoother", 0.0, 0.0, 1.0, 0.0, 500ms, true));
   auto result = getResult();
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
   SUCCEED();
@@ -317,6 +352,14 @@ TEST_F(SmootherTest, testingIncomplete)
   SUCCEED();
 }
 
+TEST_F(SmootherTest, testingFailureOnException)
+{
+  ASSERT_TRUE(sendGoal("DummySmoothPath", 0.0, 0.0, 0.0, 0.0, 500ms, true));
+  auto result = getResult();
+  EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
+  SUCCEED();
+}
+
 TEST_F(SmootherTest, testingFailureOnCollision)
 {
   ASSERT_TRUE(sendGoal("DummySmoothPath", -4.0, 0.0, 0.0, 0.0, 500ms, true));
@@ -330,6 +373,36 @@ TEST_F(SmootherTest, testingCollisionCheckDisabled)
   ASSERT_TRUE(sendGoal("DummySmoothPath", -4.0, 0.0, 0.0, 0.0, 500ms, false));
   auto result = getResult();
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
+  SUCCEED();
+}
+
+TEST_F(SmootherTest, testingConfigureSuccessOnValidSmootherPlugin)
+{
+  auto smoother_server = std::make_shared<DummySmootherServer>();
+  smoother_server->set_parameter(
+    rclcpp::Parameter(
+      "smoother_plugins",
+      rclcpp::ParameterValue(std::vector<std::string>(1, "DummySmoothPath"))));
+  smoother_server->declare_parameter(
+    "DummySmoothPath.plugin",
+    rclcpp::ParameterValue(std::string("DummySmoother")));
+  auto state = smoother_server->configure();
+  EXPECT_EQ(state.id(), 2);  // 1 on failure, 2 on success
+  SUCCEED();
+}
+
+TEST_F(SmootherTest, testingConfigureFailureOnInvalidSmootherPlugin)
+{
+  auto smoother_server = std::make_shared<DummySmootherServer>();
+  smoother_server->set_parameter(
+    rclcpp::Parameter(
+      "smoother_plugins",
+      rclcpp::ParameterValue(std::vector<std::string>(1, "DummySmoothPath"))));
+  smoother_server->declare_parameter(
+    "DummySmoothPath.plugin",
+    rclcpp::ParameterValue(std::string("InvalidSmootherPlugin")));
+  auto state = smoother_server->configure();
+  EXPECT_EQ(state.id(), 1);  // 1 on failure, 2 on success
   SUCCEED();
 }
 

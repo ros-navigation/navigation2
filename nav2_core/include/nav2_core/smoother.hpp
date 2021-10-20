@@ -63,7 +63,7 @@ public:
   virtual void activate() = 0;
 
   /**
-   * @brief Method to deactivste smoother and any threads involved in execution.
+   * @brief Method to deactivate smoother and any threads involved in execution.
    */
   virtual void deactivate() = 0;
 
@@ -81,4 +81,4 @@ public:
 
 }  // namespace nav2_core
 
-#endif  // NAV2_SMOOTHER__SMOOTHER_HPP_
+#endif  // NAV2_CORE__SMOOTHER_HPP_
