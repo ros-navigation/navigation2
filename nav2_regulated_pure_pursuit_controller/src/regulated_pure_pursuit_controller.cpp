@@ -517,7 +517,7 @@ void RegulatedPurePursuitController::applyConstraints(
     linear_vel = std::min(linear_vel, approach_vel);
   }
 
-  // Limit linear velocities to be valid and kinematically feasible, v = v0 + a * dt
+  // Limit linear velocities to be valid
   linear_vel = std::clamp(fabs(linear_vel), 0.0, desired_linear_vel_);
   linear_vel = sign * linear_vel;
 }
@@ -656,7 +656,6 @@ bool RegulatedPurePursuitController::transformPose(
   }
   return false;
 }
-
 }  // namespace nav2_regulated_pure_pursuit_controller
 
 // Register this controller as a nav2_core plugin
