@@ -387,7 +387,7 @@ TEST_F(SmootherTest, testingConfigureSuccessOnValidSmootherPlugin)
     "DummySmoothPath.plugin",
     rclcpp::ParameterValue(std::string("DummySmoother")));
   auto state = smoother_server->configure();
-  EXPECT_EQ(state.id(), 2); // 1 on failure, 2 on success
+  EXPECT_EQ(state.id(), 2);  // 1 on failure, 2 on success
   SUCCEED();
 }
 
@@ -402,7 +402,7 @@ TEST_F(SmootherTest, testingConfigureFailureOnInvalidSmootherPlugin)
     "DummySmoothPath.plugin",
     rclcpp::ParameterValue(std::string("InvalidSmootherPlugin")));
   auto state = smoother_server->configure();
-  EXPECT_EQ(state.id(), 1); // 1 on failure, 2 on success
+  EXPECT_EQ(state.id(), 1);  // 1 on failure, 2 on success
   SUCCEED();
 }
 
