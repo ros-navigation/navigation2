@@ -26,6 +26,7 @@
 
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_core/smoother.hpp"
+#include "nav2_core/exceptions.hpp"
 #include "nav2_msgs/action/smooth_path.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
 #include "tf2_ros/create_timer_ros.h"
@@ -62,6 +63,9 @@ public:
     const rclcpp::Duration & max_time)
   {
     assert(path.poses.size() == 2);
+
+    if (path.poses.front() == path.poses.back())
+      throw nav2_core::PlannerException("Start and goal pose must differ");
 
     auto max_time_ms = max_time.to_chrono<std::chrono::milliseconds>();
     std::this_thread::sleep_for(std::min(max_time_ms, 100ms));
@@ -151,12 +155,6 @@ public:
 class DummySmootherServer : public nav2_smoother::SmootherServer
 {
 public:
-  DummySmootherServer()
-  {
-    // don't load default smoothers via pluginlib
-    set_parameter(rclcpp::Parameter("smoother_plugins", std::vector<std::string>()));
-  }
-
   nav2_util::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & state)
   {
@@ -207,6 +205,8 @@ protected:
       "LifecycleSmootherTestNode", rclcpp::NodeOptions());
 
     smoother_server_ = std::make_shared<DummySmootherServer>();
+    // don't load default smoothers via pluginlib
+    smoother_server_->set_parameter(rclcpp::Parameter("smoother_plugins", std::vector<std::string>()));
     smoother_server_->configure();
     smoother_server_->activate();
 
@@ -218,7 +218,10 @@ protected:
     std::cout << "Setup complete." << std::endl;
   }
 
-  void TearDown() override {}
+  void TearDown() override {
+    smoother_server_->deactivate();
+    smoother_server_->shutdown();
+  }
 
   bool sendGoal(
     std::string smoother_id, double x_start, double y_start, double x_goal,
@@ -314,6 +317,14 @@ TEST_F(SmootherTest, testingIncomplete)
   auto result = getResult();
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
   EXPECT_FALSE(result.result->was_completed);
+  SUCCEED();
+}
+
+TEST_F(SmootherTest, testingFailureOnException)
+{
+  ASSERT_TRUE(sendGoal("DummySmoothPath", 0.0, 0.0, 0.0, 0.0, 500ms, true));
+  auto result = getResult();
+  EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
   SUCCEED();
 }
 

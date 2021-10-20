@@ -36,8 +36,6 @@ add_library(${library_name}
   src/nav2_smoother.cpp
 )
 
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 set(dependencies
   angles
   rclcpp
