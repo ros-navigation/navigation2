@@ -13,7 +13,6 @@ find_package(pluginlib REQUIRED)
 find_package(tf2 REQUIRED)
 
 nav2_package()
-set(CMAKE_CXX_STANDARD 17)
 
 include_directories(
   include
