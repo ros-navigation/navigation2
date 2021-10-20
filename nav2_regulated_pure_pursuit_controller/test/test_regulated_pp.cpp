@@ -406,8 +406,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.min_lookahead_dist", 6.0),
       rclcpp::Parameter("test.lookahead_time", 1.8),
       rclcpp::Parameter("test.rotate_to_heading_angular_vel", 18.0),
-      rclcpp::Parameter("test.max_linear_accel", 0.5),
-      rclcpp::Parameter("test.max_linear_decel", 0.5),
       rclcpp::Parameter("test.min_approach_linear_velocity", 1.0),
       rclcpp::Parameter("test.max_allowed_time_to_collision", 2.0),
       rclcpp::Parameter("test.cost_scaling_dist", 2.0),
@@ -434,8 +432,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.min_lookahead_dist").as_double(), 6.0);
   EXPECT_EQ(node->get_parameter("test.lookahead_time").as_double(), 1.8);
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_angular_vel").as_double(), 18.0);
-  EXPECT_EQ(node->get_parameter("test.max_linear_accel").as_double(), 0.5);
-  EXPECT_EQ(node->get_parameter("test.max_linear_decel").as_double(), 0.5);
   EXPECT_EQ(node->get_parameter("test.min_approach_linear_velocity").as_double(), 1.0);
   EXPECT_EQ(node->get_parameter("test.max_allowed_time_to_collision").as_double(), 2.0);
   EXPECT_EQ(node->get_parameter("test.cost_scaling_dist").as_double(), 2.0);
