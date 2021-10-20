@@ -105,7 +105,7 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
-  
+
   /**
    * @brief Called when in Shutdown state
    * @param state LifeCycle Node's state

@@ -64,8 +64,9 @@ public:
   {
     assert(path.poses.size() == 2);
 
-    if (path.poses.front() == path.poses.back())
+    if (path.poses.front() == path.poses.back()) {
       throw nav2_core::PlannerException("Start and goal pose must differ");
+    }
 
     auto max_time_ms = max_time.to_chrono<std::chrono::milliseconds>();
     std::this_thread::sleep_for(std::min(max_time_ms, 100ms));
@@ -206,7 +207,10 @@ protected:
 
     smoother_server_ = std::make_shared<DummySmootherServer>();
     // don't load default smoothers via pluginlib
-    smoother_server_->set_parameter(rclcpp::Parameter("smoother_plugins", std::vector<std::string>()));
+    smoother_server_->set_parameter(
+      rclcpp::Parameter(
+        "smoother_plugins",
+        std::vector<std::string>()));
     smoother_server_->configure();
     smoother_server_->activate();
 
@@ -218,7 +222,8 @@ protected:
     std::cout << "Setup complete." << std::endl;
   }
 
-  void TearDown() override {
+  void TearDown() override
+  {
     smoother_server_->deactivate();
     smoother_server_->shutdown();
   }

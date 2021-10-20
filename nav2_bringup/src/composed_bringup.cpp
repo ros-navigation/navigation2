@@ -62,7 +62,6 @@ int main(int argc, char ** argv)
   auto controller_node = std::make_shared<nav2_controller::ControllerServer>();
   navigation_node_names.push_back(controller_node->get_name());
   auto smoother_node = std::make_shared<nav2_smoother::SmootherServer>();
-  navigation_node_names.push_back(smoother_node->get_name());
   auto planner_node = std::make_shared<nav2_planner::PlannerServer>();
   navigation_node_names.push_back(planner_node->get_name());
   auto recoveries_node = std::make_shared<recovery_server::RecoveryServer>();
