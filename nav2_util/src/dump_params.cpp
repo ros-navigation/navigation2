@@ -14,7 +14,9 @@
 
 #include <iomanip>
 #include <iostream>
+#ifndef _WIN32
 #include <libgen.h>
+#endif
 #include <memory>
 #include <sstream>
 #include <string>

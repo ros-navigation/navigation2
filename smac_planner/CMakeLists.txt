@@ -31,7 +31,9 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
-add_compile_options(-O3 -Wextra -Wdeprecated -fPIC)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-O3 -Wextra -Wdeprecated -fPIC)
+endif()
 
 include_directories(
   include
@@ -41,6 +43,9 @@ include_directories(
 )
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+if(MSVC)
+  add_compile_definitions(_USE_MATH_DEFINES)
+endif()
 
 set(library_name smac_planner)
 
