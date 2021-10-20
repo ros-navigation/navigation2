@@ -54,17 +54,17 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_cmake_pytest REQUIRED)
 
-  # add_subdirectory(src/behavior_tree)
-  # add_subdirectory(src/planning)
-  # add_subdirectory(src/localization)
-  # add_subdirectory(src/system)
-   add_subdirectory(src/system_failure)
-  # add_subdirectory(src/updown)
-  # add_subdirectory(src/waypoint_follower)
-  # add_subdirectory(src/recoveries/spin)
-  # add_subdirectory(src/recoveries/wait)
-  # add_subdirectory(src/recoveries/backup)
-  # add_subdirectory(src/costmap_filters)
+  # add_subdirectory(src/behavior_tree) # OK
+  # add_subdirectory(src/planning) # OK
+  # add_subdirectory(src/localization) # OK
+  # add_subdirectory(src/system) # OK
+  # add_subdirectory(src/system_failure) # OK
+  # add_subdirectory(src/updown) # OK
+  # add_subdirectory(src/waypoint_follower) # OK
+  # add_subdirectory(src/recoveries/spin) # OK
+  # add_subdirectory(src/recoveries/wait) # OK
+  # add_subdirectory(src/recoveries/backup) # FAIL
+  # add_subdirectory(src/costmap_filters) # FAIL
   install(DIRECTORY maps models worlds DESTINATION share/${PROJECT_NAME})
 
   ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/nav2_system_tests.dsv.in")

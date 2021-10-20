@@ -33,7 +33,7 @@ ament_add_test(test_planner_costmaps
   ENV
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
     TEST_EXECUTABLE=$<TARGET_FILE:${test_planner_costmaps_exec}>
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.pgm
+    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.png
 )
 
 ament_add_test(test_planner_random
@@ -43,7 +43,7 @@ ament_add_test(test_planner_random
   ENV
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
     TEST_EXECUTABLE=$<TARGET_FILE:${test_planner_random_exec}>
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.pgm
+    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.png
 )
 
 ament_add_gtest(test_planner_plugins
