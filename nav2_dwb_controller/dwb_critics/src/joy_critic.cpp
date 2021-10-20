@@ -127,20 +127,23 @@ void JoyCritic::debrief(const nav_2d_msgs::msg::Twist2D & twist)
 }
 void JoyCritic::topic_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
 {
-  x_raw = x_raw + (1-decay_) * (msg->axes[0] - x_raw);
-  y_raw = y_raw + (1-decay_) * (msg->axes[1] - y_raw);
   button = msg->buttons[0];
+
   if(button == 1)
+  {
     factor = 100;
-  if(x_raw<0)
-    x_ = -(x_raw * angular_min_);
-  else
-    x_ = (x_raw * angular_max_);
-  if(y_raw<0)
-    y_ = -(y_raw * linear_min_);
-  else
-    y_ = y_raw * linear_max_;
-  
+    x_raw = x_raw + (1-decay_) * (msg->axes[0] - x_raw);
+    y_raw = y_raw + (1-decay_) * (msg->axes[1] - y_raw);
+    
+    if(x_raw<0)
+      x_ = -(x_raw * angular_min_);
+    else
+      x_ = (x_raw * angular_max_);
+    if(y_raw<0)
+      y_ = -(y_raw * linear_min_);
+    else
+      y_ = y_raw * linear_max_;
+  }  
 }
 
 
