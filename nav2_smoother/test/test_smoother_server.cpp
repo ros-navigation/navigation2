@@ -206,11 +206,6 @@ protected:
       "LifecycleSmootherTestNode", rclcpp::NodeOptions());
 
     smoother_server_ = std::make_shared<DummySmootherServer>();
-    // don't load default smoothers via pluginlib
-    smoother_server_->set_parameter(
-      rclcpp::Parameter(
-        "smoother_plugins",
-        std::vector<std::string>()));
     smoother_server_->configure();
     smoother_server_->activate();
 

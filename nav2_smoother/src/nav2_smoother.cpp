@@ -36,7 +36,7 @@ namespace nav2_smoother
 SmootherServer::SmootherServer()
 : LifecycleNode("smoother_server", "", false),
   lp_loader_("nav2_core", "nav2_core::Smoother"),
-  default_ids_{"SmoothPath"}, default_types_{
+  default_ids_{}, default_types_{
     "nav2_smoother::CeresCostawareSmoother"}
 {
   RCLCPP_INFO(get_logger(), "Creating smoother server");
