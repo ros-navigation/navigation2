@@ -14,6 +14,8 @@
 
 #include "nav2_behavior_tree/plugins/condition/is_path_valid_condition.hpp"
 #include <chrono>
+#include <memory>
+#include <string>
 
 namespace nav2_behavior_tree
 {
@@ -42,9 +44,11 @@ BT::NodeStatus IsPathValidCondition::tick()
     rclcpp::FutureReturnCode::SUCCESS)
   {
     if (result.get()->is_valid) {
+      RCLCPP_INFO(node_->get_logger(), "Is Path Valid: Success");
       return BT::NodeStatus::SUCCESS;
     }
   }
+  RCLCPP_INFO(node_->get_logger(), "Is Path Valid: Failure");
   return BT::NodeStatus::FAILURE;
 }
 

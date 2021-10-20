@@ -16,6 +16,7 @@
 #include <chrono>
 #include <memory>
 #include <set>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
