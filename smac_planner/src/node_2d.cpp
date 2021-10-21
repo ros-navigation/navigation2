@@ -136,10 +136,23 @@ void Node2D::getNeighbors(
   // rather than a small inflation around the obstacles
   int index;
   NodePtr neighbor;
+<<<<<<< HEAD:smac_planner/src/node_2d.cpp
   int node_i = node->getIndex();
+=======
+  int node_i = this->getIndex();
+  const Coordinates parent = getCoords(this->getIndex());
+  Coordinates child;
+>>>>>>> 10420bac (Resolving 2574: Smac 2D on map (#2588)):nav2_smac_planner/src/node_2d.cpp
 
   for (unsigned int i = 0; i != _neighbors_grid_offsets.size(); ++i) {
     index = node_i + _neighbors_grid_offsets[i];
+
+    // Check for wrap around conditions
+    child = getCoords(index);
+    if (fabs(parent.x - child.x) > 1 || fabs(parent.y - child.y) > 1) {
+      continue;
+    }
+
     if (NeighborGetter(index, neighbor)) {
       if (neighbor->isNodeValid(traverse_unknown, collision_checker) && !neighbor->wasVisited()) {
         neighbors.push_back(neighbor);
