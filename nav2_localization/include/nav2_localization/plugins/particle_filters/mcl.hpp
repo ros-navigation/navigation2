@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include "nav2_localization/interfaces/particle_filter_base.hpp"
 
-#ifndef NAV2_LOCALIZATION__PLUGINS__PARTICLE_FILTERS__MCL
-#define NAV2_LOCALIZATION__PLUGINS__PARTICLE_FILTERS__MCL
+#ifndef NAV2_LOCALIZATION__PLUGINS__PARTICLE_FILTERS__MCL_HPP_
+#define NAV2_LOCALIZATION__PLUGINS__PARTICLE_FILTERS__MCL_HPP_
+
+#include "nav2_localization/interfaces/particle_filter_base.hpp"
 
 namespace nav2_localization
 {
@@ -23,8 +24,24 @@ class MCL : public nav2_localization::ParticleFilter
 {
 public:
     MCL();
-    geometry_msgs::msg::TransformStamped estimatePose() override;
-};
-}   // namesape nav2_localization
+    nav_msgs::msg::Odometry estimatePose(
+        const nav_msgs::msg::Odometry & curr_odom,
+        const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan) override;
 
-#endif // NAV2_LOCALIZATION__PLUGINS__PARTICLE_FILTERS__MCL
+protected:
+    /**
+    * @brief
+    * Resamples and updates the particle set using low variance resampling
+    */
+
+    void lowVarianceResample();
+
+    /**
+    * @brief
+    * Calculates the pose mean and covariance from the particle set
+    */
+    nav_msgs::msg::Odometry getMeanPose();
+};
+}  // namespace nav2_localization
+
+#endif  // NAV2_LOCALIZATION__PLUGINS__PARTICLE_FILTERS__MCL_HPP_
