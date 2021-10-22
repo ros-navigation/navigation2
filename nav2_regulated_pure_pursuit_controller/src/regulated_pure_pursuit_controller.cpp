@@ -77,10 +77,6 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".desired_linear_vel", rclcpp::ParameterValue(0.5));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_linear_accel", rclcpp::ParameterValue(2.5));
-  declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_linear_decel", rclcpp::ParameterValue(2.5));
-  declare_parameter_if_not_declared(
     node, plugin_name_ + ".lookahead_dist", rclcpp::ParameterValue(0.6));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".min_lookahead_dist", rclcpp::ParameterValue(0.3));
@@ -125,8 +121,6 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".goal_dist_tol", rclcpp::ParameterValue(0.25));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
-  node->get_parameter(plugin_name_ + ".max_linear_accel", max_linear_accel_);
-  node->get_parameter(plugin_name_ + ".max_linear_decel", max_linear_decel_);
   node->get_parameter(plugin_name_ + ".lookahead_dist", lookahead_dist_);
   node->get_parameter(plugin_name_ + ".min_lookahead_dist", min_lookahead_dist_);
   node->get_parameter(plugin_name_ + ".max_lookahead_dist", max_lookahead_dist_);
@@ -416,7 +410,7 @@ double RegulatedPurePursuitController::costAtPose(const double & x, const double
 
 void RegulatedPurePursuitController::applyConstraints(
   const double & dist_error, const double & lookahead_dist,
-  const double & curvature, const geometry_msgs::msg::Twist & curr_speed,
+  const double & curvature, const geometry_msgs::msg::Twist & /*curr_speed*/,
   const double & pose_cost, double & linear_vel)
 {
   double curvature_vel = linear_vel;
@@ -464,10 +458,6 @@ void RegulatedPurePursuitController::applyConstraints(
   }
 
   // Limit linear velocities to be valid and kinematically feasible, v = v0 + a * dt
-  double & dt = control_duration_;
-  const double max_feasible_linear_speed = curr_speed.linear.x + max_linear_accel_ * dt;
-  const double min_feasible_linear_speed = curr_speed.linear.x - max_linear_decel_ * dt;
-  linear_vel = clamp(linear_vel, min_feasible_linear_speed, max_feasible_linear_speed);
   linear_vel = clamp(linear_vel, 0.0, desired_linear_vel_);
 }
 
