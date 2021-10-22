@@ -24,7 +24,7 @@
 // Types
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
@@ -51,31 +51,29 @@ public:
      * @param scan Current measurement
      * @return Estimation of the current position
      */
-  virtual geometry_msgs::msg::TransformStamped solve(
-    const geometry_msgs::msg::TransformStamped & curr_odom,
+  virtual nav_msgs::msg::Odometry estimatePose(
+    const nav_msgs::msg::Odometry & curr_odom,
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan) = 0;
 
   /**
    * @brief Initializes the filter being used with a given pose
    * @param pose The pose at which to initialize the filter
    */
-  virtual void initFilter(
-    const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & pose) = 0;
+  void initFilter(const geometry_msgs::msg::Pose & pose)
+  {
+    prev_estimate_.pose.pose = pose;
+  }
 
   /**
-     * @brief Configures the solver, during the "Configuring" state of the parent lifecycle node.
-     * @param node Pointer to the parent lifecycle node
-   * @param motionSampler The Sample Motion Model to use
-   * @param matcher The 2D Matcher to use
-   * @param odom Initial odometry
-   * @param pose Initial pose
-     */
+  * @brief Configures the solver, during the "Configuring" state of the parent lifecycle node.
+  * @param node Pointer to the parent lifecycle node
+  * @param motionSampler The Sample Motion Model to use
+  * @param matcher The 2D Matcher to use
+  */
   virtual void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
     SampleMotionModel::Ptr & motionSampler,
-    Matcher2d::Ptr & matcher,
-    const geometry_msgs::msg::TransformStamped & odom,
-    const geometry_msgs::msg::TransformStamped & pose) = 0;
+    Matcher2d::Ptr & matcher) = 0;
 
   /**
      * @brief Activates the solver, during the "Activating" state of the parent lifecycle node.
@@ -88,16 +86,15 @@ public:
   virtual void deactivate() = 0;
 
   /**
-     * @brief Cleans up the solver, during the "Cleaningup" state of the parent lifecycle node.
+     * @brief Cleans up the solver, during the "Cleaning up" state of the parent lifecycle node.
      */
   virtual void cleanup() = 0;
 
 protected:
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
-  SampleMotionModel::Ptr motionSampler_;
+  SampleMotionModel::Ptr motion_sampler_;
   Matcher2d::Ptr matcher_;
-  geometry_msgs::msg::TransformStamped prev_odom_;  // Previous pose odometry-based estimation
-  geometry_msgs::msg::TransformStamped prev_pose_;  // Previous pose estimation
+  nav_msgs::msg::Odometry prev_estimate_;  // Previous estimation
 };
 }  // namespace nav2_localization
 
