@@ -25,22 +25,17 @@ MotionModel::createMotionModel(
   std::string & type, double alpha1, double alpha2,
   double alpha3, double alpha4, double alpha5)
 {
-
    pluginlib::ClassLoader<nav2_amcl::MotionModel> poly_loader("nav2_amcl", "nav2_amcl::MotionModel");
+   
    try
    {
-   
-   std::shared_ptr<nav2_amcl::MotionModel> motion_model_= poly_loader.createSharedInstance(type);
-   motion_model_->initialize(alpha1, alpha2, alpha3, alpha4, alpha5);
-   return motion_model_;
+     std::shared_ptr<nav2_amcl::MotionModel> motion_model_= poly_loader.createSharedInstance(type);
+     motion_model_->initialize(alpha1, alpha2, alpha3, alpha4, alpha5);
+     return motion_model_;
    }
-   
    catch(pluginlib::PluginlibException& ex)
-  {
-    
-    return nullptr;
-  }
-
+   {
+     return nullptr;
+   }
 }
-
 } // namespace nav2_amcl
