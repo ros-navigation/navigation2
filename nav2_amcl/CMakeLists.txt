@@ -50,57 +50,6 @@ target_include_directories(${library_name} PRIVATE src/include)
 target_include_directories(${executable_name} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-  
-  
-add_library(differential_motion_model src/motion_model/differential_motion_model.cpp)
-target_include_directories(differential_motion_model PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(
-  differential_motion_model
-  "pluginlib"
-)
-
-
-target_compile_definitions(differential_motion_model PRIVATE "DIFFERENTIAL_MOTION_MODEL_BUILDING_LIBRARY")
-
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
-install(
-  TARGETS differential_motion_model
-  EXPORT export_nav2_amcl
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
-add_library(omni_motion_model src/motion_model/omni_motion_model.cpp)
-target_include_directories(omni_motion_model PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(
-  omni_motion_model
-  "pluginlib"
-)
-
-pluginlib_export_plugin_description_file(nav2_amcl plugins.xml)
-
-target_compile_definitions(omni_motion_model PRIVATE "OMNI_MOTION_MODEL_BUILDING_LIBRARY")
-
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
-install(
-  TARGETS omni_motion_model
-  EXPORT export_nav2_amcl
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
 
 if(HAVE_DRAND48)
   target_compile_definitions(${library_name} PRIVATE "HAVE_DRAND48")
@@ -120,8 +69,16 @@ set(dependencies
   tf2
   nav2_util
   nav2_msgs
-  "pluginlib"
+  pluginlib
 )
+
+add_library(motion_models SHARED
+  src/motion_model/differential_motion_model.cpp
+  src/motion_model/omni_motion_model.cpp)
+
+ament_target_dependencies(motion_models
+  ${dependencies}
+)  
 
 ament_target_dependencies(${executable_name}
   ${dependencies}
@@ -136,10 +93,17 @@ ament_target_dependencies(${library_name}
 )
 
 target_link_libraries(${library_name}
-  map_lib motions_lib sensors_lib
+  map_lib motions_lib sensors_lib motion_models
 )
 
 rclcpp_components_register_nodes(${library_name} "nav2_amcl::AmclNode")
+
+
+install(TARGETS motion_models
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
 
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
@@ -164,7 +128,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name} pf_lib sensors_lib motions_lib map_lib differential_motion_model omni_motion_model)
+ament_export_libraries(${library_name} pf_lib sensors_lib motions_lib map_lib motion_models)
 ament_export_dependencies(${dependencies})
-
+pluginlib_export_plugin_description_file(nav2_amcl plugins.xml)
 ament_package()
