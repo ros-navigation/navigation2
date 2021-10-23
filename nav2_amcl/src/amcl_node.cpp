@@ -35,7 +35,7 @@
 #include "nav2_util/string_utils.hpp"
 #include "nav2_amcl/sensors/laser/laser.hpp"
 #include "tf2/convert.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/LinearMath/Transform.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/message_filter.h"
@@ -299,7 +299,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // create bond connection
-  //createBond();
+  createBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -316,7 +316,7 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   particle_cloud_pub_->on_deactivate();
 
   // destroy bond connection
-  //destroyBond();
+  destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
