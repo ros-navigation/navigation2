@@ -24,10 +24,14 @@ pip install -r requirements.txt
 ## Usage
 Run the primitive generator by using the following command
 ```
-python3 generate_motion_primitives.py [--config]
+python3 generate_motion_primitives.py [--config] [--output] [--visualizations]
 ```
 
 To adjust the settings to fit your particular needs you can edit the parameters in the [config.json](config.json) file. Alternatively, you can create your own file and pass it in using the --config flag.
+
+The output file can be specified by passing in a path with the --output flag. The default is set to save in a file called output.json in the same directory as this README.
+
+The directory to save the visualizations can be specified by passing in a path with the --visualizations flag.
 
 ## Parameters ##
 Note: None of these parameters have defaults. They all must be specified through the [config.json](config.json) file.
@@ -65,12 +69,6 @@ Number of discrete angular headings used. Restricted to multiples of 8 greater t
 </br>
 </br>
 
-**output_file** (string)
-
-The name of the file where the generated trajectories will be saved to.
-</br>
-</br>
-
 ## Output file structure
 The output file is a JSON file and contains the following fields:
 
@@ -90,7 +88,6 @@ A dictionary that contains information about the generated lattice. Most of this
 - **grid_resolution** (meters)
 - **stopping_threshold**
 - **num_of_headings**
-- **output_file**
 - **heading_angles**
     - A list of the heading angles (in radians) that are used in the primitives
 - **number_of_trajectories**
@@ -105,6 +102,8 @@ A list of dictionaries where each dictionary represents an individual motion pri
     - The start angle of the primitive represented as an index for the heading_angle list given in the lattice_metadata
 - **end_angle_index**
     - The end angle of the primitive represented as an index for the heading_angle list given in the lattice_metadata
+- **left_turn**
+    - A boolean value that is true if the path curves to the left. Straight paths default to true.
 - **trajectory_radius** (meters)
     - The radius of the circle that was used to create the arc portion of a primitive. trajectory_radius is 0 if the primitive is purely a straight line
 - **trajectory_length** (meters)

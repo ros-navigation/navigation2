@@ -41,7 +41,12 @@ def handle_arg_parsing():
     """
 
     parser = argparse.ArgumentParser(description="Generate motion primitives for Nav2's State Lattice Planner")
-    parser.add_argument('--config', type=Path, default="./config.json", help="The config file containing the parameters to be used")
+    parser.add_argument('--config', type=Path, default="./config.json", \
+        help="The config file containing the parameters to be used")
+    parser.add_argument('--output', type=Path, default="./output.json", \
+        help="The output file containing the trajectory data")
+    parser.add_argument('--visualizations', type=Path, default="./visualizations", \
+        help="The output folder where the visualizations of the trajectories will be saved")
 
     return parser.parse_args()
 
@@ -114,12 +119,15 @@ def create_header(config: dict, minimal_set_trajectories: dict) -> dict:
     for key, value in config.items():
         header_dict["lattice_metadata"][key] = value
 
-    header_dict["lattice_metadata"]["heading_angles"] = create_heading_angle_list(minimal_set_trajectories)
+    heading_angles = create_heading_angle_list(minimal_set_trajectories)
+    adjusted_heading_angles = [angle + 2*np.pi if angle < 0 else angle for angle in heading_angles]
+
+    header_dict["lattice_metadata"]["heading_angles"] = adjusted_heading_angles
 
     return header_dict
 
 
-def write_to_json(minimal_set_trajectories: dict, config: dict) -> None:
+def write_to_json(output_path: Path, minimal_set_trajectories: dict, config: dict) -> None:
     """
     Writes the minimal spanning set to an output file
 
@@ -151,6 +159,7 @@ def write_to_json(minimal_set_trajectories: dict, config: dict) -> None:
             traj_info["trajectory_id"] = idx
             traj_info["start_angle_index"] = heading_lookup[trajectory.parameters.start_angle]
             traj_info["end_angle_index"] = heading_lookup[trajectory.parameters.end_angle]
+            traj_info["left_turn"] = bool(trajectory.parameters.left_turn)
             traj_info["trajectory_radius"] = \
                 trajectory.parameters.turning_radius
             traj_info["trajectory_length"] = round(
@@ -172,13 +181,11 @@ def write_to_json(minimal_set_trajectories: dict, config: dict) -> None:
 
     output_dict["lattice_metadata"]["number_of_trajectories"] = idx
 
-    output_path = Path(__file__).parent / config["output_file"]
-
     with open(output_path, "w") as output_file:
         json.dump(output_dict, output_file, indent="\t")
 
 
-def save_visualizations(minimal_set_trajectories: dict) -> None:
+def save_visualizations(visualizations_folder: Path, minimal_set_trajectories: dict) -> None:
     """
     Draws the visualizations for every trajectory from the minimal spanning set
     and saves it as an image
@@ -189,7 +196,7 @@ def save_visualizations(minimal_set_trajectories: dict) -> None:
         The minimal spanning set
     """
 
-    visualizations_folder = Path(__file__).parent / "visualizations"
+    # Create the directory if it doesnt exist
     visualizations_folder.mkdir(exist_ok=True)
 
     for start_angle in minimal_set_trajectories.keys():
@@ -235,5 +242,5 @@ if __name__ == "__main__":
     minimal_set_trajectories = lattice_gen.run()
     print(f"Finished Generating. Took {time.time() - start} seconds")
 
-    write_to_json(minimal_set_trajectories, config)
-    save_visualizations(minimal_set_trajectories)
+    write_to_json(args.output, minimal_set_trajectories, config)
+    save_visualizations(args.visualizations, minimal_set_trajectories)
