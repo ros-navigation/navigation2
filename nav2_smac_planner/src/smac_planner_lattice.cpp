@@ -56,9 +56,11 @@ void SmacPlannerLattice::configure(
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
 
+  RCLCPP_INFO(_logger, "Configuring %s of type SmacPlannerLattice", name.c_str());
+
   bool allow_unknown;
   int max_iterations;
-  int lookup_table_size;
+  double lookup_table_size;
   SearchInfo search_info;
 
   // General planner params
@@ -121,6 +123,18 @@ void SmacPlannerLattice::configure(
   float lookup_table_dim =
     static_cast<float>(lookup_table_size) /
     static_cast<float>(_costmap->getResolution() * _downsampling_factor);
+
+  // Make sure its a whole number
+  lookup_table_dim = static_cast<float>(static_cast<int>(lookup_table_dim));
+
+  // Make sure its an odd number
+  if (static_cast<int>(lookup_table_dim) % 2 == 0) {
+    RCLCPP_INFO(
+      _logger,
+      "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd",
+      lookup_table_dim);
+    lookup_table_dim += 1.0;
+  }
 
   // Initialize collision checker using 72 evenly sized bins instead of the lattice
   // heading angles. This is done so that we have precomputed angles every 5 degrees.

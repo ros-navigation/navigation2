@@ -113,7 +113,6 @@ inline void fromJsonToMetaData(const nlohmann::json & json, LatticeMetadata & la
   json.at("turning_radius").get_to(lattice_metadata.min_turning_radius);
   json.at("grid_resolution").get_to(lattice_metadata.grid_resolution);
   json.at("num_of_headings").get_to(lattice_metadata.number_of_headings);
-  json.at("output_file").get_to(lattice_metadata.output_file);
   json.at("heading_angles").get_to(lattice_metadata.heading_angles);
   json.at("number_of_trajectories").get_to(lattice_metadata.number_of_trajectories);
   json.at("motion_model").get_to(lattice_metadata.motion_model);

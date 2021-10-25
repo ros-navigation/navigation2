@@ -58,6 +58,8 @@ void SmacPlanner2D::configure(
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
 
+  RCLCPP_INFO(_logger, "Configuring %s of type SmacPlanner2D", name.c_str());
+
   // General planner params
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".tolerance", rclcpp::ParameterValue(0.125));

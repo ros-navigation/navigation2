@@ -130,7 +130,6 @@ struct LatticeMetadata
   float min_turning_radius;
   float grid_resolution;
   unsigned int number_of_headings;
-  std::string output_file;
   std::vector<float> heading_angles;
   unsigned int number_of_trajectories;
   std::string motion_model;

@@ -49,7 +49,6 @@ TEST(NodeLatticeTest, parser_test)
   EXPECT_NEAR(metaData.min_turning_radius, 0.5, 0.001);
   EXPECT_NEAR(metaData.grid_resolution, 0.05, 0.001);
   EXPECT_NEAR(metaData.number_of_headings, 16, 0.01);
-  EXPECT_EQ(metaData.output_file, "output.json");
   EXPECT_NEAR(metaData.heading_angles[0], 0.0, 0.01);
   EXPECT_EQ(metaData.number_of_trajectories, 80u);
   EXPECT_EQ(metaData.motion_model, std::string("ackermann"));

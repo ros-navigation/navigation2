@@ -60,6 +60,8 @@ void SmacPlannerHybrid::configure(
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
 
+  RCLCPP_INFO(_logger, "Configuring %s of type SmacPlannerHybrid", name.c_str());
+
   int angle_quantizations;
 
   // General planner params

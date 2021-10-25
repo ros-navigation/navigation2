@@ -237,7 +237,7 @@ bool NodeLattice::isNodeValid(
         // Convert primitive pose into grid space if it should be checked
         prim_pose._x = initial_pose._x + (it->_x / grid_resolution);
         prim_pose._y = initial_pose._y + (it->_y / grid_resolution);
-        prim_pose._theta = initial_pose._theta + it->_theta; /*rad*/
+        prim_pose._theta = it->_theta; /*rad*/ // TODO  initial_pose._theta + 
         if (prim_pose._theta < 0.0) {
           prim_pose._theta += 2.0 * M_PI;
         }
@@ -424,6 +424,7 @@ void NodeLattice::precomputeDistanceHeuristic(
     motion_table.state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
       search_info.minimum_turning_radius);
   }
+  motion_table.lattice_metadata = LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
 
   ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
   to[0] = 0.0;
