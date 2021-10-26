@@ -47,10 +47,6 @@ add_library(${library_name} SHARED
 
 target_include_directories(${library_name} PRIVATE src/include)
 
-target_include_directories(${executable_name} PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-
 if(HAVE_DRAND48)
   target_compile_definitions(${library_name} PRIVATE "HAVE_DRAND48")
 endif()
