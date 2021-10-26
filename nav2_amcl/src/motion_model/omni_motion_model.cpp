@@ -19,29 +19,26 @@
  *
  */
 
-#include <sys/types.h>
-#include <math.h>
-#include <algorithm>
-#include <pluginlib/class_list_macros.hpp>
-#include "nav2_amcl/motion_model/motion_model.hpp"
-#include "nav2_amcl/angleutils.hpp"
+#include "nav2_amcl/motion_model/omni_motion_model.hpp"
 
 namespace nav2_amcl
 {
-class OmniMotionModel : public nav2_amcl::MotionModel
+
+void
+OmniMotionModel::initialize(double alpha1, double alpha2,double alpha3, double alpha4,
+double alpha5)
 {
-public:
-  void initialize(double alpha1, double alpha2,double alpha3, double alpha4, double alpha5) override
-  {
-    alpha1_ = alpha1;
-    alpha2_ = alpha2;
-    alpha3_ = alpha3;
-    alpha4_ = alpha4;
-    alpha5_ = alpha5;
-  }
-  
-  void odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_vector_t & delta) override
-  {
+  alpha1_ = alpha1;
+  alpha2_ = alpha2;
+  alpha3_ = alpha3;
+  alpha4_ = alpha4;
+  alpha5_ = alpha5;
+}
+
+void 
+OmniMotionModel::odometryUpdate(pf_t * pf, const pf_vector_t & pose,
+  const pf_vector_t & delta) 
+{
     // Compute the new sample poses
     pf_sample_set_t * set;
 
@@ -87,13 +84,9 @@ public:
         delta_strafe_hat * cs_bearing);
       sample->pose.v[2] += delta_rot_hat;
   }
-  }
-private:
-  double alpha1_;
-  double alpha2_;
-  double alpha3_;
-  double alpha4_;
-  double alpha5_;
-};
+}
+
 } // namespace nav2_amcl
-PLUGINLIB_EXPORT_CLASS(nav2_amcl::OmniMotionModel,nav2_amcl::MotionModel)
+
+#include <pluginlib/class_list_macros.hpp>
+PLUGINLIB_EXPORT_CLASS(nav2_amcl::OmniMotionModel, nav2_amcl::MotionModel)
