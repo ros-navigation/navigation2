@@ -44,8 +44,9 @@ public:
    * @param alpha5 error parameters, see documentation
    * @return MotionModel A pointer to the motion model it created
    */
-  virtual void initialize(double alpha1, double alpha2,double alpha3, double alpha4,
-  double alpha5) = 0;
+  virtual void initialize(
+    double alpha1, double alpha2,double alpha3, double alpha4,
+    double alpha5) = 0;
 
   /**
    * @brief Update on new odometry data
