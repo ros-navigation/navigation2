@@ -25,8 +25,9 @@ namespace nav2_amcl
 {
 
 void
-DifferentialMotionModel::initialize(double alpha1, double alpha2,double alpha3, double alpha4,
-double alpha5)
+DifferentialMotionModel::initialize(
+  double alpha1, double alpha2,double alpha3, double alpha4,
+  double alpha5)
 {
   alpha1_ = alpha1;
   alpha2_ = alpha2;
@@ -36,8 +37,9 @@ double alpha5)
 }
 
 void
-DifferentialMotionModel::odometryUpdate(pf_t * pf, const pf_vector_t & pose,
- const pf_vector_t & delta)
+DifferentialMotionModel::odometryUpdate(
+  pf_t * pf, const pf_vector_t & pose,
+  const pf_vector_t & delta)
 {
   // Compute the new sample poses
   pf_sample_set_t * set;
