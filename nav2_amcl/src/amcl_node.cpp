@@ -1334,7 +1334,7 @@ AmclNode::initOdometry()
   }
 
   motion_model_ = nav2_amcl::MotionModel::createMotionModel(
-     robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
+    robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
 
   latest_odom_pose_ = geometry_msgs::msg::PoseStamped();
 }
