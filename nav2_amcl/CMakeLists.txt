@@ -74,7 +74,7 @@ add_library(motion_models SHARED
 
 ament_target_dependencies(motion_models
   ${dependencies}
-)  
+)
 
 ament_target_dependencies(${executable_name}
   ${dependencies}
