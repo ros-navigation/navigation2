@@ -15,10 +15,11 @@
 #ifndef NAV2_COSTMAP_2D__DENOISE_LAYER_HPP_
 #define NAV2_COSTMAP_2D__DENOISE_LAYER_HPP_
 
-#include <opencv2/core/core.hpp>
 #include <vector>
+#include <memory>
 
 #include "nav2_costmap_2d/layer.hpp"
+#include "nav2_costmap_2d/image_processing.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -30,17 +31,6 @@ namespace nav2_costmap_2d
 class DenoiseLayer : public Layer
 {
   friend class DenoiseLayerTester;  // For test some private methods using gtest
-
-private:
-  /// Pixels connectivity type (is the way in which pixels in image relate to
-  /// their neighbors)
-  enum class ConnectivityType: int
-  {
-    /// neighbors pixels are connected horizontally and vertically
-    Way4 = 4,
-    /// neighbors pixels are connected horizontally, vertically and diagonally
-    Way8 = 8
-  };
 
 public:
   DenoiseLayer() = default;
@@ -100,141 +90,35 @@ private:
      * (all standalone obstacles will be preserved, since it satisfies this condition).
      * If minimal_group_size_ equals 2, performs fast filtering based on the dilation operation.
      * Otherwise, it performs a slower segmentation-based operation.
-     *
-     * @param image source single channel image with depth CV_8U.
      * @throw std::logic_error in case inner logic errors
    */
-  void denoise(cv::Mat & image) const;
+  void denoise(Image<uint8_t> & image) const;
 
   /**
      * @brief Removes from the image groups of white pixels smaller than minimal_group_size_
      * Segments the image into groups of connected pixels
      * Replace pixels in groups whose size smaller than minimal_group_size_ to zero value (background)
-     * @param image source single channel binary image with depth CV_8U
      * @throw std::logic_error in case inner logic errors
-     * @warning If image.empty() or image.type() != CV_8UC1, the behavior is undefined
+     * @warning If image.empty() the behavior is undefined
    */
-  void removeGroups(cv::Mat & image) const;
+  void removeGroups(Image<uint8_t> & image) const;
 
   /**
      * @brief Removes from the image freestanding single white pixels
      * Works similarly to removeGroups with minimal_group_size_ = 2, but about 10x faster
-     * @param image source single channel binary image with depth CV_8U
      * @throw std::logic_error in case inner logic errors
-     * @warning If image.empty() or image.type() != CV_8UC1, the behavior is undefined
+     * @warning If image.empty() the behavior is undefined
    */
-  void removeSinglePixels(cv::Mat & image) const;
-
-  /**
-     * @brief Calculate truncated histogram of image.
-     *
-     * Creates a histogram of image_max bins.
-     * Bin with index i keep min of (<count of the number of pixels with value i>, bin_max).
-     * This truncation avoids overflow and is acceptable in the problem being solved.
-     * For example, the image may have 100'000 pixels equal to 0
-     * (100'000 > std::numeric_limits<uint16_t>). In this case, an overflow will occur when
-     * calculating a traditional histogram with bins of the uint16_t type. But in this function,
-     * the bin value will increase to the bin_max value, then stop. Overflow will not happen.
-     *
-     * Faster (because simpler) than cv::calcHist
-     * @param image source single channel image with depth CV_16U
-     * @param image_max max image pixel value
-     * @param bin_max max histogram bin value
-     * @return vector of histogram bins
-     * @throw std::logic_error if image.type() != CV_16UC1
-     * @warning If source contains a pixel with a value, large then image_max,
-     * the behavior is undefined
-   */
-  std::vector<uint16_t> calculateHistogram(
-    const cv::Mat & image, uint16_t image_max, uint16_t bin_max) const;
-
-  /**
-     * @brief Convert each pixel of source image to target by lookup table
-     * Perform target[i,j] = table[ source[i,j] ]
-     * @param source source single channel image with depth CV_16UC1
-     * @param target source single channel image with depth CV_8UC1
-     * @param table lookup table
-     * @throw std::logic_error if the source and target of different sizes
-     * @throw std::logic_error if source.type() != CV_16UC1 or target.type() != CV_8UC1
-     * @warning If table.size() not more then max pixel value of source image,
-     * the behavior is undefined
-   */
-  void applyLookupTable(
-    const cv::Mat & source, cv::Mat & target, const std::vector<uint8_t> & table) const;
-
-  /**
-     * @brief Creates a lookup table for binary thresholding
-     * The table size is equal to groups_sizes.size()
-     * Lookup table[i] = OBSTACLE_CELL if groups_sizes[i] >= threshold,
-     * FREE_SPACE in other case
-   */
-  std::vector<uint8_t> makeLookupTable(
-    const std::vector<uint16_t> & groups_sizes, uint16_t threshold) const;
-
-  /**
-     * @brief Convert each pixel of source to corresponding pixel of target using a custom function
-     *
-     * The source and target must be the same size.
-     * For calculation of new target value the operation can use source value and
-     * an optionally current target value.
-     * This function call operation(source[i, j], target[i, j]) for each pixel
-     * where target[i, j] is mutable
-     * @tparam SourceElement type of source pixel
-     * @tparam TargetElement type of target pixel
-     * @tparam Converter function object.
-     * Signature should be equivalent to the following:
-     * void fn(const SourceElement& src, TargetElement& trg)
-     * @param source input image with SourceElement-type pixels
-     * @param target output image with TargetElement-type pixels
-     * @param operation the binary operation op is applied to pairs of pixels:
-     * first (const) from source and second (mutable) from target
-     * @throw std::logic_error if the source and target of different sizes
-     * @warning If SourceElement/TargetElement type does not match the source/target image type,
-     * the behavior is undefined
-   */
-  template<class SourceElement, class TargetElement, class Converter>
-  void convert(const cv::Mat & source, cv::Mat & target, Converter operation) const;
-
-  /**
-     * @brief Checks that the image type is as expected
-     * @param image the image to be checked
-     * @param cv_type expected image type
-     * @param error_prefix prefix of the exception text that will be thrown is types are different
-     * @throw std::logic_error if the image type and cv_type are different
-     * @warning If error_prefix is nullptr, the behavior is undefined
-   */
-  void checkImageType(const cv::Mat & image, int cv_type, const char * error_prefix) const;
-
-  /**
-     * @brief Checks that the a.size() == b.size()
-     * @param error_prefix prefix of the exception text that will be thrown is sizes are different
-     * @throw std::logic_error if the images sizes are different
-     * @warning If error_prefix is nullptr, the behavior is undefined
-   */
-  void checkImagesSizesEqual(const cv::Mat & a, const cv::Mat & b, const char * error_prefix) const;
+  void removeSinglePixels(Image<uint8_t> & image) const;
 
 private:
   // Pixels connectivity type. Determines how pixels belonging to the same group can be arranged
   size_t minimal_group_size_{};
   // The border value of group size. Groups of this and larger size will be kept
   ConnectivityType group_connectivity_type_{ConnectivityType::Way8};
+  // Additional memory buffer
+  mutable std::unique_ptr<MemoryBuffer> buffer;
 };
-
-template<class SourceElement, class TargetElement, class Converter>
-void DenoiseLayer::convert(const cv::Mat & source, cv::Mat & target, Converter operation) const
-{
-  checkImagesSizesEqual(source, target, "DenoiseLayer::convert. The source and target");
-
-  for (int row = 0; row < source.rows; ++row) {
-    const auto src_begin = source.ptr<const SourceElement>(row);
-    const auto src_end = src_begin + source.cols;
-    auto trg = target.ptr<TargetElement>(row);
-
-    for (auto src = src_begin; src != src_end; ++src, ++trg) {
-      operation(*src, *trg);
-    }
-  }
-}
 
 }  // namespace nav2_costmap_2d
 

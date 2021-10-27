@@ -14,7 +14,6 @@
 
 #include "nav2_costmap_2d/denoise_layer.hpp"
 
-#include <opencv2/imgproc/imgproc.hpp>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -34,6 +33,8 @@ DenoiseLayer::onInitialize()
   declareParameter("minimal_group_size", rclcpp::ParameterValue(2));
   // Pixels connectivity type
   declareParameter("group_connectivity_type", rclcpp::ParameterValue(8));
+  // Max additional memory amount
+  declareParameter("memory_usage_mb", rclcpp::ParameterValue(0));
 
   const auto node = node_.lock();
 
@@ -76,6 +77,15 @@ DenoiseLayer::onInitialize()
       group_connectivity_type_param);
     this->group_connectivity_type_ = ConnectivityType::Way8;
   }
+
+  int memory_usage_mb = getInt("memory_usage_mb");
+  size_t memory_usage = std::numeric_limits<size_t>::max();
+
+  if (memory_usage_mb > 0) {
+    const size_t byteToMb = 1024 * 1024;
+    memory_usage = size_t(memory_usage_mb) * byteToMb;
+  }
+  buffer = std::make_unique<MemoryBuffer>(memory_usage);
   current_ = true;
 }
 
@@ -105,11 +115,17 @@ DenoiseLayer::updateCosts(
     return;
   }
 
+  if (min_x >= max_x || min_y >= max_y) {
+    return;
+  }
+
+  // wrap roi_image over existing costmap2d buffer
   unsigned char * master_array = master_grid.getCharMap();
   const int step = static_cast<int>(master_grid.getSizeInCellsX());
 
-  const cv::Size roi_size {max_x - min_x, max_y - min_y};
-  cv::Mat roi_image(roi_size, CV_8UC1, static_cast<void *>(master_array + min_x), step);
+  const size_t width = max_x - min_x;
+  const size_t height = max_y - min_y;
+  Image<uint8_t> roi_image(height, width, master_array + min_x, step);
 
   try {
     denoise(roi_image);
@@ -121,10 +137,8 @@ DenoiseLayer::updateCosts(
 }
 
 void
-DenoiseLayer::denoise(cv::Mat & image) const
+DenoiseLayer::denoise(Image<uint8_t> & image) const
 {
-  checkImageType(image, CV_8UC1, "DenoiseLayer::denoise");
-
   if (image.empty()) {
     return;
   }
@@ -142,119 +156,75 @@ DenoiseLayer::denoise(cv::Mat & image) const
   }
 }
 
-void
-DenoiseLayer::removeGroups(cv::Mat & image) const
+template<ConnectivityType connectivity, class Label>
+void removeGroupsImpl(Image<uint8_t> & image, MemoryBuffer & buffer, size_t minimal_group_size)
 {
-  // Creates image binary (the same type and size as image)
-  // binary[i,j] = OBSTACLE_CELL if image[i,j] == OBSTACLE_CELL,
-  // FREE_SPACE in other cases
-  cv::Mat binary;
-  cv::threshold(
-    image, binary, OBSTACLE_CELL - 1, OBSTACLE_CELL, cv::ThresholdTypes::THRESH_BINARY);
-
-  // Creates an image in which each group is labeled with a unique code
-  cv::Mat labels;
-  // There is an simple alternative: connectedComponentsWithStats.
-  // But cv::connectedComponents + calculateHistogram is about 20% faster
-  const uint16_t groups_count = static_cast<uint16_t>(
-    cv::connectedComponents(binary, labels, static_cast<int>(group_connectivity_type_), CV_16U)
-  );
+  // Creates an image labels in which each obstacles group is labeled with a unique code
+  auto components = ConnectedComponents<connectivity, Label>::detect(image, buffer);
+  const Label groups_count = components.second;
+  const Image<Label> & labels = components.first;
 
   // Calculates the size of each group.
   // Group size is equal to the number of pixels with the same label
-  const auto max_label_value = groups_count - 1;  // It's safe. groups_count always non-zero
-  std::vector<uint16_t> groups_sizes = calculateHistogram(
-    labels, max_label_value, minimal_group_size_ + 1);
+  const Label max_label_value = groups_count - 1;  // It's safe. groups_count always non-zero
+  std::vector<size_t> groups_sizes = histogram(
+    labels, max_label_value, minimal_group_size + 1);
+
   // The group of pixels labeled 0 corresponds to empty map cells.
   // Zero bin of the histogram is equal to the number of pixels in this group.
   // Because the values of empty map cells should not be changed, we will reset this bin
   groups_sizes.front() = 0;  // don't change image background value
 
+  // lookup_table[i] = OBSTACLE_CELL if groups_sizes[i] >= minimal_group_size, FREE_SPACE in other case
+  std::vector<uint8_t> lookup_table(groups_sizes.size());
+  auto transform_fn = [&minimal_group_size](size_t bin_value) {
+      return bin_value < minimal_group_size ? FREE_SPACE : OBSTACLE_CELL;
+    };
+  std::transform(groups_sizes.begin(), groups_sizes.end(), lookup_table.begin(), transform_fn);
+
   // Replace the pixel values from the small groups to background code
-  const std::vector<uint8_t> lookup_table = makeLookupTable(groups_sizes, minimal_group_size_);
-  convert<uint16_t, uint8_t>(
-    labels, image, [&lookup_table, this](uint16_t src, uint8_t & trg) {
+  labels.convert(
+    image, [&lookup_table](Label src, uint8_t & trg) {
       if (trg == OBSTACLE_CELL) {  // This check is required for non-binary input image
         trg = lookup_table[src];
       }
     });
 }
 
-void
-DenoiseLayer::checkImageType(const cv::Mat & image, int cv_type, const char * error_prefix) const
+template<ConnectivityType connectivity>
+void removeGroupsPickLabelType(
+  Image<uint8_t> & image, MemoryBuffer & buffer,
+  size_t minimal_group_size)
 {
-  if (image.type() != cv_type) {
-    std::string description = std::string(error_prefix) + " expected image type " +
-      std::to_string(cv_type) + " but got " + std::to_string(image.type());
-    throw std::logic_error(description);
+  if (ConnectedComponents<connectivity, uint32_t>::optimalBufferSize(image) <= buffer.capacity()) {
+    removeGroupsImpl<connectivity, uint32_t>(image, buffer, minimal_group_size);
+  } else {
+    removeGroupsImpl<connectivity, uint16_t>(image, buffer, minimal_group_size);
   }
 }
 
 void
-DenoiseLayer::checkImagesSizesEqual(
-  const cv::Mat & a, const cv::Mat & b, const char * error_prefix) const
+DenoiseLayer::removeGroups(Image<uint8_t> & image) const
 {
-  if (a.size() != b.size()) {
-    std::string description = std::string(error_prefix) + " images sizes are different";
-    throw std::logic_error(description);
+  if (group_connectivity_type_ == ConnectivityType::Way4) {
+    removeGroupsPickLabelType<ConnectivityType::Way4>(image, *buffer, minimal_group_size_);
+  } else {
+    removeGroupsPickLabelType<ConnectivityType::Way8>(image, *buffer, minimal_group_size_);
   }
-}
-
-std::vector<uint16_t>
-DenoiseLayer::calculateHistogram(const cv::Mat & image, uint16_t image_max, uint16_t bin_max) const
-{
-  checkImageType(image, CV_16UC1, "DenoiseLayer::calculateHistogram");
-
-  if (image.empty()) {
-    return {};
-  }
-  std::vector<uint16_t> histogram(image_max + 1);
-
-  // Increases the bin value corresponding to the pixel by one
-  auto add_pixel_value = [&histogram, bin_max](uint8_t pixel) {
-      auto & h = histogram[pixel];
-      h = std::min(uint16_t(h + 1), bin_max);
-    };
-
-  // Loops through all pixels in the image and updates the histogram at each iteration
-  for (int row = 0; row < image.rows; ++row) {
-    auto input_line_begin = image.ptr<const uint16_t>(row);
-    auto input_line_end = input_line_begin + image.cols;
-    std::for_each(input_line_begin, input_line_end, add_pixel_value);
-  }
-  return histogram;
-}
-
-std::vector<uint8_t>
-DenoiseLayer::makeLookupTable(const std::vector<uint16_t> & groups_sizes, uint16_t threshold) const
-{
-  std::vector<uint8_t> lookup_table(groups_sizes.size(), FREE_SPACE);
-
-  auto transform_fn = [&threshold, this](uint16_t bin_value) {
-      if (bin_value >= threshold) {
-        return OBSTACLE_CELL;
-      }
-      return FREE_SPACE;
-    };
-  std::transform(groups_sizes.begin(), groups_sizes.end(), lookup_table.begin(), transform_fn);
-  return lookup_table;
 }
 
 void
-DenoiseLayer::removeSinglePixels(cv::Mat & image) const
+DenoiseLayer::removeSinglePixels(Image<uint8_t> & image) const
 {
-  const int shape_code = group_connectivity_type_ == ConnectivityType::Way4 ?
-    cv::MorphShapes::MORPH_CROSS : cv::MorphShapes::MORPH_RECT;
-  cv::Mat shape = cv::getStructuringElement(shape_code, {3, 3});
-  shape.at<uint8_t>(1, 1) = 0;
-
-  cv::Mat max_neighbors_image;
   // Building a map of 4 or 8-connected neighbors.
   // The pixel of the map is 255 if there is an obstacle nearby
-  cv::dilate(image, max_neighbors_image, shape);
+  uint8_t * buf = buffer->get<uint8_t>(image.rows() * image.columns());
+  Image<uint8_t> max_neighbors_image(image.rows(), image.columns(), buf, image.columns());
 
-  convert<uint8_t, uint8_t>(
-    max_neighbors_image, image, [this](uint8_t maxNeighbor, uint8_t & img) {
+  dilate(image, max_neighbors_image, group_connectivity_type_);
+
+  max_neighbors_image.convert(
+    image, [this](uint8_t maxNeighbor, uint8_t & img) {
       // img == OBSTACLE_CELL is required for non-binary input image
       if (maxNeighbor != OBSTACLE_CELL && img == OBSTACLE_CELL) {
         img = FREE_SPACE;
