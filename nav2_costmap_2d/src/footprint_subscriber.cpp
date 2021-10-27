@@ -68,7 +68,17 @@ FootprintSubscriber::getFootprint(
     return false;
   }
 
+  stamp = footprint_stamp;
+
   return true;
+}
+
+bool
+FootprintSubscriber::getFootprint(
+  std::vector<geometry_msgs::msg::Point> & footprint,
+  rclcpp::Time & stamp)
+{
+  return getFootprint(footprint, stamp, footprint_timeout_);
 }
 
 bool

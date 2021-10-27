@@ -33,6 +33,7 @@ namespace nav2_costmap_2d
 {
 
 CostmapTopicCollisionChecker::CostmapTopicCollisionChecker(
+  const nav2_util::LifecycleNode::WeakPtr & parent,
   CostmapSubscriber & costmap_sub,
   FootprintSubscriber & footprint_sub,
   tf2_ros::Buffer & tf,
@@ -49,6 +50,8 @@ CostmapTopicCollisionChecker::CostmapTopicCollisionChecker(
   transform_tolerance_(transform_tolerance),
   collision_checker_(nullptr)
 {
+  auto node = parent.lock();
+  clock_ = node->get_clock();
 }
 
 bool CostmapTopicCollisionChecker::isCollisionFree(
@@ -92,12 +95,13 @@ double CostmapTopicCollisionChecker::scorePose(
 Footprint CostmapTopicCollisionChecker::getFootprint(const geometry_msgs::msg::Pose2D & pose)
 {
   Footprint footprint;
-  if (!footprint_sub_.getFootprint(footprint)) {
+  rclcpp::Time stamp(0L, clock_->get_clock_type());
+  if (!footprint_sub_.getFootprint(footprint, stamp)) {
     throw CollisionCheckerException("Current footprint not available.");
   }
 
   Footprint footprint_spec;
-  unorientFootprint(footprint, footprint_spec);
+  unorientFootprint(footprint, footprint_spec, stamp);
   transformFootprint(pose.x, pose.y, pose.theta, footprint_spec, footprint);
 
   return footprint;
@@ -105,12 +109,13 @@ Footprint CostmapTopicCollisionChecker::getFootprint(const geometry_msgs::msg::P
 
 void CostmapTopicCollisionChecker::unorientFootprint(
   const std::vector<geometry_msgs::msg::Point> & oriented_footprint,
-  std::vector<geometry_msgs::msg::Point> & reset_footprint)
+  std::vector<geometry_msgs::msg::Point> & reset_footprint,
+  const rclcpp::Time &stamp)
 {
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, tf_, global_frame_, robot_base_frame_,
-      transform_tolerance_))
+      transform_tolerance_, stamp))
   {
     throw CollisionCheckerException("Robot pose unavailable.");
   }

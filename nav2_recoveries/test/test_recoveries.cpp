@@ -128,7 +128,7 @@ protected:
       node_lifecycle_, footprint_topic, 1.0);
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_ =
       std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-      *costmap_sub_, *footprint_sub_, *tf_buffer_,
+      node_lifecycle_, *costmap_sub_, *footprint_sub_, *tf_buffer_,
       node_lifecycle_->get_name(), "odom");
 
     recovery_ = std::make_shared<DummyRecovery>();

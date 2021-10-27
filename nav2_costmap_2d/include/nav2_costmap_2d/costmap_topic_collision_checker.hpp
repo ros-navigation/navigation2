@@ -49,6 +49,7 @@ public:
    * @brief A constructor
    */
   CostmapTopicCollisionChecker(
+    const nav2_util::LifecycleNode::WeakPtr & parent,
     CostmapSubscriber & costmap_sub,
     FootprintSubscriber & footprint_sub,
     tf2_ros::Buffer & tf,
@@ -70,15 +71,16 @@ public:
    */
   bool isCollisionFree(const geometry_msgs::msg::Pose2D & pose);
 
-protected:
-  /**
-   * @brief Set a new footprint
-   */
-  void unorientFootprint(const Footprint & oriented_footprint, Footprint & reset_footprint);
   /**
    * @brief Get a footprint at a set pose
    */
   Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose);
+
+protected:
+  /**
+   * @brief Set a new footprint
+   */
+  void unorientFootprint(const Footprint & oriented_footprint, Footprint & reset_footprint, const rclcpp::Time &stamp);
 
   // Name used for logging
   std::string name_;
@@ -89,6 +91,7 @@ protected:
   FootprintSubscriber & footprint_sub_;
   double transform_tolerance_;
   FootprintCollisionChecker<std::shared_ptr<Costmap2D>> collision_checker_;
+  rclcpp::Clock::SharedPtr clock_;
 };
 
 }  // namespace nav2_costmap_2d

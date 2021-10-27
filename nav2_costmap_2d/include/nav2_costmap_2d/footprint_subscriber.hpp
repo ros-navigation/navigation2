@@ -60,9 +60,14 @@ public:
     std::vector<geometry_msgs::msg::Point> & footprint,
     rclcpp::Duration & valid_footprint_timeout);
   /**
-   * @brief Returns an oriented robot footprint without timeout
+   * @brief Returns an oriented robot footprint using timeout specified in constructor
    */
   bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint);
+
+  /**
+   * @brief Returns an oriented robot footprint and stamp using timeout specified in constructor
+   */
+  bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint, rclcpp::Time & stamp);
 
   /**
    * @brief Returns an oriented robot footprint at stamped time.
