@@ -26,7 +26,7 @@ namespace nav2_amcl
 
 void
 DifferentialMotionModel::initialize(
-  double alpha1, double alpha2,double alpha3, double alpha4,
+  double alpha1, double alpha2, double alpha3, double alpha4,
   double alpha5)
 {
   alpha1_ = alpha1;
