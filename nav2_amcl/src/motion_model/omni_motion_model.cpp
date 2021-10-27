@@ -26,7 +26,7 @@ namespace nav2_amcl
 
 void
 OmniMotionModel::initialize(
-  double alpha1, double alpha2,double alpha3, double alpha4,
+  double alpha1, double alpha2, double alpha3, double alpha4,
   double alpha5)
 {
   alpha1_ = alpha1;
@@ -36,10 +36,10 @@ OmniMotionModel::initialize(
   alpha5_ = alpha5;
 }
 
-void 
+void
 OmniMotionModel::odometryUpdate(
   pf_t * pf, const pf_vector_t & pose,
-  const pf_vector_t & delta) 
+  const pf_vector_t & delta)
 {
   // Compute the new sample poses
   pf_sample_set_t * set;
