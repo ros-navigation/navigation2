@@ -45,7 +45,7 @@ public:
    * @return MotionModel A pointer to the motion model it created
    */
   virtual void initialize(
-    double alpha1, double alpha2,double alpha3, double alpha4,
+    double alpha1, double alpha2, double alpha3, double alpha4,
     double alpha5) = 0;
 
   /**
