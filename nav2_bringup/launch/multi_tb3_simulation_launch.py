@@ -27,7 +27,6 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
-    ExecuteProcess,
     GroupAction,
     IncludeLaunchDescription,
     LogInfo,
@@ -63,10 +62,6 @@ def generate_launch_description():
             "yaw": 0.0,
         },
     ]
-
-    # Simulation settings
-    world = LaunchConfiguration("world")
-    simulator = LaunchConfiguration("simulator")
 
     # On this example all robots are launched with the same settings
     map_yaml_file = LaunchConfiguration("map")
