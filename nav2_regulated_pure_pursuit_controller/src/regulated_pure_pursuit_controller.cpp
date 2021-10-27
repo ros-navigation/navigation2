@@ -427,19 +427,24 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   double dy = global_plan_.poses.back().pose.position.y - robot_pose.pose.position.y;
   double dist_to_goal = std::hypot(dx, dy);
 
-  int i = 1;
-  while (dist_to_goal > desired_linear_vel_ * max_allowed_time_to_collision_) {
-    // only forward simulate within time requested
-    if (i * projection_time > max_allowed_time_to_collision_) {
-      break;
-    }
 
+  // only forward simulate within time requested
+  int i = 1;
+  while (i * projection_time < max_allowed_time_to_collision_) {
     i++;
 
     // apply velocity at curr_pose over distance
     curr_pose.x += projection_time * (linear_vel * cos(curr_pose.theta));
     curr_pose.y += projection_time * (linear_vel * sin(curr_pose.theta));
     curr_pose.theta += projection_time * angular_vel;
+
+    dx = global_plan_.poses.back().pose.position.x - curr_pose.x;
+    dy = global_plan_.poses.back().pose.position.y - curr_pose.y;
+    dist_to_goal = std::hypot(dx, dy);
+
+    if (dist_to_goal < 2 * costmap_->getResolution()) {
+      break;
+    }
 
     // store it for visualization
     pose_msg.pose.position.x = curr_pose.x;
