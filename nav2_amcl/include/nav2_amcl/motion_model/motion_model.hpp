@@ -33,7 +33,7 @@ class MotionModel
 {
 public:
   virtual ~MotionModel() = default;
-  
+
   /**
    * @brief An factory to create motion models
    * @param type Type of motion model to create in factory
