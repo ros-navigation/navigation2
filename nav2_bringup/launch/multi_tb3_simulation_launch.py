@@ -138,20 +138,6 @@ def generate_launch_description():
         "use_rviz", default_value="True", description="Whether to start RVIZ"
     )
 
-    # Start Gazebo with plugin providing the robot spawning service
-    start_gazebo_cmd = ExecuteProcess(
-        cmd=[
-            simulator,
-            "--verbose",
-            "-s",
-            "libgazebo_ros_init.so",
-            "-s",
-            "libgazebo_ros_factory.so",
-            world,
-        ],
-        output="screen",
-    )
-
     # Define commands for launching the navigation instances
     nav_instances_cmds = []
     for robot in robots:
@@ -240,9 +226,6 @@ def generate_launch_description():
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)
-
-    # Add the actions to start gazebo, robots and simulations
-    # ld.add_action(start_gazebo_cmd)
 
     for simulation_instance_cmd in nav_instances_cmds:
         ld.add_action(simulation_instance_cmd)

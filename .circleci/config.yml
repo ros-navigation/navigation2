@@ -265,7 +265,9 @@ _commands:
                 --packages-select ${TEST_PACKAGES} \
                 --base-select test_result
 
+              echo $AMENT_PREFIX_PATH
               source install/setup.sh
+              echo $AMENT_PREFIX_PATH
               set -o xtrace
               colcon test \
                 --packages-select ${TEST_PACKAGES}
