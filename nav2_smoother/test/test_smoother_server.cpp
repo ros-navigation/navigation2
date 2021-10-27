@@ -190,6 +190,16 @@ public:
 class DummySmootherServer : public nav2_smoother::SmootherServer
 {
 public:
+  DummySmootherServer()
+  {
+    // Override defaults
+    default_ids_.clear();
+    default_ids_.resize(1, "SmoothPath");
+    set_parameter(rclcpp::Parameter("smoother_plugins", default_ids_));
+    default_types_.clear();
+    default_types_.resize(1, "DummySmoother");
+  }
+
   nav2_util::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & state)
   {
@@ -217,6 +227,10 @@ public:
 };
 
 // Define a test class to hold the context for the tests
+
+class SmootherConfigTest : public ::testing::Test
+{
+};
 
 class SmootherTest : public ::testing::Test
 {
@@ -252,6 +266,7 @@ protected:
   void TearDown() override
   {
     smoother_server_->deactivate();
+    smoother_server_->cleanup();
     smoother_server_->shutdown();
   }
 
@@ -376,7 +391,7 @@ TEST_F(SmootherTest, testingCollisionCheckDisabled)
   SUCCEED();
 }
 
-TEST_F(SmootherTest, testingConfigureSuccessOnValidSmootherPlugin)
+TEST_F(SmootherConfigTest, testingConfigureSuccessWithValidSmootherPlugin)
 {
   auto smoother_server = std::make_shared<DummySmootherServer>();
   smoother_server->set_parameter(
@@ -391,7 +406,7 @@ TEST_F(SmootherTest, testingConfigureSuccessOnValidSmootherPlugin)
   SUCCEED();
 }
 
-TEST_F(SmootherTest, testingConfigureFailureOnInvalidSmootherPlugin)
+TEST_F(SmootherConfigTest, testingConfigureFailureWithInvalidSmootherPlugin)
 {
   auto smoother_server = std::make_shared<DummySmootherServer>();
   smoother_server->set_parameter(
@@ -403,6 +418,14 @@ TEST_F(SmootherTest, testingConfigureFailureOnInvalidSmootherPlugin)
     rclcpp::ParameterValue(std::string("InvalidSmootherPlugin")));
   auto state = smoother_server->configure();
   EXPECT_EQ(state.id(), 1);  // 1 on failure, 2 on success
+  SUCCEED();
+}
+
+TEST_F(SmootherConfigTest, testingConfigureSuccessWithDefaultPlugin)
+{
+  auto smoother_server = std::make_shared<DummySmootherServer>();
+  auto state = smoother_server->configure();
+  EXPECT_EQ(state.id(), 2);  // 1 on failure, 2 on success
   SUCCEED();
 }
 
