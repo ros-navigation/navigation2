@@ -120,7 +120,7 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
-             '-t', 'speed', '-r', '-2.0', '-0.5', '0.0', '-0.5'],
+             '-t', 'speed', '-r', '0.0', '0.0', '1.0', '5.0'],
         name='tester_node',
         output='screen')
 

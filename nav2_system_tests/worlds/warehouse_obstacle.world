@@ -273,7 +273,7 @@
     </light>
 
     <model name="turtlebot3_waffle"> 
-      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <pose>-0.1 1.5 0.0 0.0 0.0 0.0</pose>
 
       <link name="base_footprint"/>
 
@@ -784,7 +784,7 @@
     </model>
 
     <model name='cardboard_box'>
-      <pose frame=''>-1.0 0.6 0.15 0 -0 0</pose>
+      <pose frame=''>0.3 -2.0 0.15 0 -0 0</pose>
 
       <link name='cardboard_box_link'>
         <inertial>
