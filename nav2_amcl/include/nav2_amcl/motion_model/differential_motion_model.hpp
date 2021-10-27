@@ -36,8 +36,8 @@ class DifferentialMotionModel : public nav2_amcl::MotionModel
 {
 public:
   virtual void initialize(
-   double alpha1, double alpha2,double alpha3, double alpha4,
-   double alpha5);
+    double alpha1, double alpha2, double alpha3, double alpha4,
+    double alpha5);
   virtual void odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_vector_t & delta);
   
 private:
