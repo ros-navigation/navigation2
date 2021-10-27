@@ -128,6 +128,7 @@ void SmacPlanner2D::configure(
     _allow_unknown,
     _max_iterations,
     _max_on_approach_iterations,
+    _max_planning_time,
     0.0 /*unused for 2D*/,
     1.0 /*unused for 2D*/);
 
@@ -166,8 +167,8 @@ void SmacPlanner2D::activate()
     _costmap_downsampler->on_activate();
   }
   auto node = _node.lock();
-  // Add callback for dynamic parametrs
-  dyn_params_handler = node->add_on_set_parameters_callback(
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&SmacPlanner2D::dynamicParametersCallback, this, _1));
 }
 
@@ -180,7 +181,7 @@ void SmacPlanner2D::deactivate()
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
   }
-  dyn_params_handler.reset();
+  dyn_params_handler_.reset();
 }
 
 void SmacPlanner2D::cleanup()
@@ -355,6 +356,7 @@ SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
         reinit_a_star = true;
         _search_info.cost_penalty = parameter.as_double();
       } else if (name == _name + ".max_planning_time") {
+        reinit_a_star = true;
         _max_planning_time = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
@@ -414,6 +416,7 @@ SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
         _allow_unknown,
         _max_iterations,
         _max_on_approach_iterations,
+        _max_planning_time,
         0.0 /*unused for 2D*/,
         1.0 /*unused for 2D*/);
     }

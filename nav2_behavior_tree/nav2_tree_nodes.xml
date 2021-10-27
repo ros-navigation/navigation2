@@ -10,6 +10,7 @@
     <Action ID="BackUp">
       <input_port name="backup_dist">Distance to backup</input_port>
       <input_port name="backup_speed">Speed at which to backup</input_port>
+      <input_port name="time_allowance">Allowed time for reversing</input_port>
     </Action>
 
     <Action ID="ClearEntireCostmap">
@@ -79,6 +80,7 @@
 
     <Action ID="Spin">
       <input_port name="spin_dist">Spin distance</input_port>
+      <input_port name="time_allowance">Allowed time for spinning</input_port>
     </Action>
 
     <Action ID="Wait">
