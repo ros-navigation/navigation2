@@ -51,7 +51,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
   const NodeGetter & getter, int & analytic_iterations,
   int & closest_distance)
 {
-  // This must be a NodeHybrid or NodeLattice if we are using these motion models
+  // This must be a valid motion model for analytic expansion to be attempted
   if (_motion_model == MotionModel::DUBIN || _motion_model == MotionModel::REEDS_SHEPP ||
     _motion_model == MotionModel::STATE_LATTICE)
   {
@@ -206,10 +206,11 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalytic
   const NodePtr & goal_node,
   const AnalyticExpansionNodes & expanded_nodes)
 {
-  // Legitimate final path - set the parent relationships & poses
+  // Legitimate final path - set the parent relationships, states, and poses
   NodePtr prev = node;
   for (const auto & node_pose : expanded_nodes) {
     const auto & n = node_pose.node;
+    cleanNode(n);
     if (!n->wasVisited() && n->getIndex() != goal_node->getIndex()) {
       // Make sure this node has not been visited by the regular algorithm.
       // If it has been, there is the (slight) chance that it is in the path we are expanding
@@ -226,6 +227,18 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalytic
     goal_node->visited();
   }
   return goal_node;
+}
+
+template<>
+void AnalyticExpansion<NodeLattice>::cleanNode(const NodePtr & node)
+{
+  node->setMotionPrimitive(nullptr);
+}
+
+template<typename NodeT>
+void AnalyticExpansion<NodeT>::cleanNode(const NodePtr & /*expanded_nodes*/)
+{
+  return;
 }
 
 template<>

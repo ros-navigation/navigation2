@@ -60,6 +60,7 @@ public:
   NodeT * graph_node_ptr;
   MotionPrimitive * prim_ptr;  // Used by NodeLattice
   unsigned int index, motion_index;
+  bool backward;
 };
 
 template class NodeBasic<Node2D>;

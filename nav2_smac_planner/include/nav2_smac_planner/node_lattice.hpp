@@ -162,7 +162,7 @@ public:
    * @brief Sets the motion primitive used to achieve node in search
    * @param pointer to motion primitive
    */
-  inline void setMotionPrimitive(MotionPrimitive * & prim)
+  inline void setMotionPrimitive(MotionPrimitive * prim)
   {
     _motion_primitive = prim;
   }
@@ -232,9 +232,9 @@ public:
   /**
    * @brief Sets that this primitive is moving in reverse
    */
-  inline void backwards()
+  inline void backwards(bool back = true)
   {
-    _backwards = true;
+    _backwards = back;
   }
 
   /**

@@ -141,7 +141,7 @@ bool GridCollisionChecker::inCollision(
     }
 
     // if occupied or unknown and not to traverse unknown space
-    return footprint_cost_ >= INSCRIBED;
+    return static_cast<double>(footprint_cost_) >= INSCRIBED;
   }
 }
 

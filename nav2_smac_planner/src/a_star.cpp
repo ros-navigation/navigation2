@@ -440,6 +440,7 @@ typename AStarAlgorithm<NodeLattice>::NodePtr AStarAlgorithm<NodeLattice>::getNe
   if (!node.graph_node_ptr->wasVisited()) {
     node.graph_node_ptr->pose = node.pose;
     node.graph_node_ptr->setMotionPrimitive(node.prim_ptr);
+    node.graph_node_ptr->backwards(node.backward);
   }
 
   return node.graph_node_ptr;
@@ -460,6 +461,7 @@ void AStarAlgorithm<NodeLattice>::addNode(const float & cost, NodePtr & node)
   queued_node.pose = node->pose;
   queued_node.graph_node_ptr = node;
   queued_node.prim_ptr = node->getMotionPrimitive();
+  queued_node.backward = node->isBackward();
   _queue.emplace(cost, queued_node);
 }
 

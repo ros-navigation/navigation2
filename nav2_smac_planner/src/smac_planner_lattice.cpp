@@ -111,7 +111,8 @@ void SmacPlannerLattice::configure(
   node->get_parameter(name + ".allow_reverse_expansion", search_info.allow_reverse_expansion);
 
   _metadata = LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
-  search_info.minimum_turning_radius = _metadata.min_turning_radius;
+  search_info.minimum_turning_radius =
+    _metadata.min_turning_radius / (_costmap->getResolution() * _downsampling_factor);
   MotionModel motion_model = MotionModel::STATE_LATTICE;
 
   if (max_iterations <= 0) {

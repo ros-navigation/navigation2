@@ -110,6 +110,13 @@ public:
     const NodePtr & node, const NodePtr & goal,
     const AnalyticExpansionNodes & expanded_nodes);
 
+  /**
+   * @brief Takes an expanded nodes to clean up, if necessary, of any state
+   * information that may be poluting it from a prior search iteration
+   * @param expanded_nodes Expanded node to clean up from search
+   */
+  void cleanNode(const NodePtr & nodes);
+
 protected:
   MotionModel _motion_model;
   SearchInfo _search_info;
