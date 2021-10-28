@@ -29,6 +29,7 @@
 #include <string>
 
 #include "ompl/base/StateSpace.h"
+#include "angles/angles.h"
 
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/types.hpp"
@@ -70,7 +71,7 @@ struct LatticeMotionTable
    * @param node Ptr to NodeLattice
    * @return A set of motion poses
    */
-  MotionPrimitives getMotionPrimitives(const NodeLattice * node);
+  MotionPrimitivePtrs getMotionPrimitives(const NodeLattice * node);
 
   /**
    * @brief Get file metadata needed
@@ -161,7 +162,7 @@ public:
    * @brief Sets the motion primitive used to achieve node in search
    * @param pointer to motion primitive
    */
-  inline void setMotionPrimitive(MotionPrimitive * prim)
+  inline void setMotionPrimitive(MotionPrimitive * & prim)
   {
     _motion_primitive = prim;
   }
@@ -170,7 +171,7 @@ public:
    * @brief Gets the motion primitive used to achieve node in search
    * @return pointer to motion primitive
    */
-  inline MotionPrimitive * getMotionPrimitive()
+  inline MotionPrimitive * & getMotionPrimitive()
   {
     return _motion_primitive;
   }

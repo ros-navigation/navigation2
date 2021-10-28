@@ -21,6 +21,7 @@ find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(angles REQUIRED)
 find_package(ompl REQUIRED)
 find_package(OpenMP REQUIRED)
 
@@ -62,6 +63,7 @@ set(dependencies
   nav2_costmap_2d
   nav2_core
   pluginlib
+  angles
   eigen3_cmake_module
 )
 

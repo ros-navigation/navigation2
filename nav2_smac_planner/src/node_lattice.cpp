@@ -1,5 +1,4 @@
-// Copyright (c) 2020, Samsung Research America
-// Copyright (c) 2020, Applied Electric Vehicles Pty Ltd
+// Copyright (c) 2021, Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -109,10 +108,13 @@ void LatticeMotionTable::initMotionModel(
   }
 }
 
-MotionPrimitives LatticeMotionTable::getMotionPrimitives(const NodeLattice * node)
+MotionPrimitivePtrs LatticeMotionTable::getMotionPrimitives(const NodeLattice * node)
 {
   MotionPrimitives & prims_at_heading = motion_primitives[node->pose.theta];
-  MotionPrimitives primitive_projection_list = prims_at_heading;
+  MotionPrimitivePtrs primitive_projection_list;
+  for (unsigned int i = 0; i != prims_at_heading.size(); i++) {
+    primitive_projection_list.push_back(&prims_at_heading[i]);
+  }
 
   if (allow_reverse_expansion) {
     // Find normalized heading bin of the reverse expansion
@@ -125,10 +127,9 @@ MotionPrimitives LatticeMotionTable::getMotionPrimitives(const NodeLattice * nod
     }
 
     prims_at_heading = motion_primitives[reserve_heading];
-    primitive_projection_list.insert(
-      primitive_projection_list.end(),
-      prims_at_heading.begin(),
-      prims_at_heading.end());
+    for (unsigned int i = 0; i != prims_at_heading.size(); i++) {
+      primitive_projection_list.push_back(&prims_at_heading[i]);
+    }
   }
 
   return primitive_projection_list;
@@ -154,7 +155,7 @@ unsigned int LatticeMotionTable::getClosestAngularBin(const double & theta)
   unsigned int closest_idx = 0;
   float dist = 0.0;
   for (unsigned int i = 0; i != lattice_metadata.heading_angles.size(); i++) {
-    dist = fabs(theta - lattice_metadata.heading_angles[i]);
+    dist = fabs(angles::shortest_angular_distance(theta, lattice_metadata.heading_angles[i]));
     if (dist < min_dist) {
       min_dist = dist;
       closest_idx = i;
@@ -226,7 +227,7 @@ bool NodeLattice::isNodeValid(
     MotionPose initial_pose, prim_pose;
     initial_pose._x = this->pose.x - (motion_primitive->poses.back()._x / grid_resolution);
     initial_pose._y = this->pose.y - (motion_primitive->poses.back()._y / grid_resolution);
-    initial_pose._theta = motion_table.getAngleFromBin(motion_primitive->start_angle); /*rad*/
+    initial_pose._theta = motion_table.getAngleFromBin(motion_primitive->start_angle);
 
     for (auto it = motion_primitive->poses.begin(); it != motion_primitive->poses.end(); ++it) {
       // poses are in metric coordinates from (0, 0), not grid space yet
@@ -237,13 +238,7 @@ bool NodeLattice::isNodeValid(
         // Convert primitive pose into grid space if it should be checked
         prim_pose._x = initial_pose._x + (it->_x / grid_resolution);
         prim_pose._y = initial_pose._y + (it->_y / grid_resolution);
-        prim_pose._theta = it->_theta; /*rad*/ // TODO  initial_pose._theta + 
-        if (prim_pose._theta < 0.0) {
-          prim_pose._theta += 2.0 * M_PI;
-        }
-        if (prim_pose._theta > 2.0 * M_PI) {
-          prim_pose._theta -= 2.0 * M_PI;
-        }
+        prim_pose._theta = it->_theta;
         if (collision_checker->inCollision(
             prim_pose._x,
             prim_pose._y,
@@ -464,22 +459,23 @@ void NodeLattice::getNeighbors(
   unsigned int index = 0;
   NodePtr neighbor = nullptr;
   Coordinates initial_node_coords, motion_projection;
-  MotionPrimitives motion_primitives = motion_table.getMotionPrimitives(this);
+  MotionPrimitivePtrs motion_primitives = motion_table.getMotionPrimitives(this);
   const float & grid_resolution = motion_table.lattice_metadata.grid_resolution;
 
   unsigned int direction_change_idx = 1e9;
   for (unsigned int i = 0; i != motion_primitives.size(); i++) {
-    if (motion_primitives[0].start_angle != motion_primitives[i].start_angle) {
+    if (motion_primitives[0]->start_angle != motion_primitives[i]->start_angle) {
       direction_change_idx = i;
       break;
     }
   }
 
   for (unsigned int i = 0; i != motion_primitives.size(); i++) {
-    const MotionPose & end_pose = motion_primitives[i].poses.back();
+    const MotionPose & end_pose = motion_primitives[i]->poses.back();
     motion_projection.x = this->pose.x + (end_pose._x / grid_resolution);
     motion_projection.y = this->pose.y + (end_pose._y / grid_resolution);
-    motion_projection.theta = motion_primitives[i].end_angle /*this is the ending angular bin*/;
+    motion_projection.theta = motion_primitives[i]->end_angle /*this is the ending angular bin*/;
+
     index = NodeLattice::getIndex(
       static_cast<unsigned int>(motion_projection.x),
       static_cast<unsigned int>(motion_projection.y),
@@ -496,8 +492,9 @@ void NodeLattice::getNeighbors(
           motion_projection.theta));
       // Using a special isNodeValid API here, giving the motion primitive to use to
       // validity check the transition of the current node to the new node over
-      if (neighbor->isNodeValid(traverse_unknown, collision_checker, &motion_primitives[i])) {
-        neighbor->setMotionPrimitive(&motion_primitives[i]);
+      if (neighbor->isNodeValid(traverse_unknown, collision_checker, motion_primitives[i])) {
+        neighbor->setMotionPrimitive(motion_primitives[i]);
+
         // Marking if this search was obtained in the reverse direction
         if ((!this->isBackward() && i >= direction_change_idx) ||
           (this->isBackward() && i <= direction_change_idx))

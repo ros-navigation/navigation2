@@ -58,7 +58,8 @@ public:
 
   typename NodeT::Coordinates pose;  // Used by NodeHybrid and NodeLattice
   NodeT * graph_node_ptr;
-  unsigned int index;
+  MotionPrimitive * prim_ptr;  // Used by NodeLattice
+  unsigned int index, motion_index;
 };
 
 template class NodeBasic<Node2D>;

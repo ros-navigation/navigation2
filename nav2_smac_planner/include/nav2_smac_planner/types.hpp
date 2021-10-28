@@ -153,6 +153,7 @@ struct MotionPrimitive
 };
 
 typedef std::vector<MotionPrimitive> MotionPrimitives;
+typedef std::vector<MotionPrimitive *> MotionPrimitivePtrs;
 
 }  // namespace nav2_smac_planner
 

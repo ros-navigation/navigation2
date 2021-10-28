@@ -103,12 +103,12 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 
   nav2_smac_planner::NodeLattice aNode(0);
   aNode.setPose(nav2_smac_planner::NodeHybrid::Coordinates(0, 0, 0));
-  nav2_smac_planner::MotionPrimitives projections =
+  nav2_smac_planner::MotionPrimitivePtrs projections =
     nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(&aNode);
 
-  EXPECT_NEAR(projections[0].poses.back()._x, 0.5, 0.01);
-  EXPECT_NEAR(projections[0].poses.back()._y, -0.35, 0.01);
-  EXPECT_NEAR(projections[0].poses.back()._theta, -1.107, 0.01);
+  EXPECT_NEAR(projections[0]->poses.back()._x, 0.5, 0.01);
+  EXPECT_NEAR(projections[0]->poses.back()._y, -0.35, 0.01);
+  EXPECT_NEAR(projections[0]->poses.back()._theta, -1.107, 0.01);
 
   EXPECT_NEAR(
     nav2_smac_planner::NodeLattice::motion_table.getLatticeMetadata(

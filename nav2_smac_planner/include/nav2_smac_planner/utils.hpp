@@ -145,11 +145,7 @@ inline void fromJsonToMotionPrimitive(
   json.at("trajectory_length").get_to(motion_primitive.trajectory_length);
   json.at("arc_length").get_to(motion_primitive.arc_length);
   json.at("straight_length").get_to(motion_primitive.straight_length);
-  try {
-    json.at("left_turn").get_to(motion_primitive.left_turn);
-  } catch (...) {
-    /*TODO for actual*/
-  }
+  json.at("left_turn").get_to(motion_primitive.left_turn);
 
   for (unsigned int i = 0; i < json["poses"].size(); i++) {
     MotionPose pose;
