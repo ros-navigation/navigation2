@@ -22,7 +22,6 @@
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/smoother.hpp"
 #include "nav2_smac_planner/utils.hpp"
-#include "nav2_smac_planner/costmap_downsampler.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -93,12 +92,9 @@ protected:
   rclcpp::Clock::SharedPtr _clock;
   rclcpp::Logger _logger{rclcpp::get_logger("SmacPlannerLattice")};
   nav2_costmap_2d::Costmap2D * _costmap;
-  std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
   LatticeMetadata _metadata;
   std::string _global_frame, _name;
   float _tolerance;
-  int _downsampling_factor;
-  bool _downsample_costmap;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   double _max_planning_time;
 };

@@ -32,8 +32,7 @@ SmacPlannerLattice::SmacPlannerLattice()
 : _a_star(nullptr),
   _collision_checker(nullptr, 1),
   _smoother(nullptr),
-  _costmap(nullptr),
-  _costmap_downsampler(nullptr)
+  _costmap(nullptr)
 {
 }
 
@@ -64,13 +63,6 @@ void SmacPlannerLattice::configure(
   SearchInfo search_info;
 
   // General planner params
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".downsample_costmap", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".downsample_costmap", _downsample_costmap);
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
-  node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
-
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".allow_unknown", allow_unknown);
@@ -112,7 +104,7 @@ void SmacPlannerLattice::configure(
 
   _metadata = LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
   search_info.minimum_turning_radius =
-    _metadata.min_turning_radius / (_costmap->getResolution() * _downsampling_factor);
+    _metadata.min_turning_radius / (_costmap->getResolution());
   MotionModel motion_model = MotionModel::STATE_LATTICE;
 
   if (max_iterations <= 0) {
@@ -124,7 +116,7 @@ void SmacPlannerLattice::configure(
 
   float lookup_table_dim =
     static_cast<float>(lookup_table_size) /
-    static_cast<float>(_costmap->getResolution() * _downsampling_factor);
+    static_cast<float>(_costmap->getResolution());
 
   // Make sure its a whole number
   lookup_table_dim = static_cast<float>(static_cast<int>(lookup_table_dim));
@@ -166,14 +158,6 @@ void SmacPlannerLattice::configure(
   _smoother = std::make_unique<Smoother>(params);
   _smoother->initialize(_metadata.min_turning_radius);
 
-  // Initialize costmap downsampler
-  if (_downsample_costmap && _downsampling_factor > 1) {
-    std::string topic_name = "downsampled_costmap";
-    _costmap_downsampler = std::make_unique<CostmapDownsampler>();
-    _costmap_downsampler->on_configure(
-      node, _global_frame, topic_name, _costmap, _downsampling_factor);
-  }
-
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
   RCLCPP_INFO(
@@ -191,9 +175,6 @@ void SmacPlannerLattice::activate()
     _logger, "Activating plugin %s of type SmacPlannerLattice",
     _name.c_str());
   _raw_plan_publisher->on_activate();
-  if (_costmap_downsampler) {
-    _costmap_downsampler->on_activate();
-  }
 }
 
 void SmacPlannerLattice::deactivate()
@@ -202,9 +183,6 @@ void SmacPlannerLattice::deactivate()
     _logger, "Deactivating plugin %s of type SmacPlannerLattice",
     _name.c_str());
   _raw_plan_publisher->on_deactivate();
-  if (_costmap_downsampler) {
-    _costmap_downsampler->on_deactivate();
-  }
 }
 
 void SmacPlannerLattice::cleanup()
@@ -214,8 +192,6 @@ void SmacPlannerLattice::cleanup()
     _name.c_str());
   _a_star.reset();
   _smoother.reset();
-  _costmap_downsampler->on_cleanup();
-  _costmap_downsampler.reset();
   _raw_plan_publisher.reset();
 }
 
@@ -227,25 +203,18 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
 
-  // Downsample costmap, if required
-  nav2_costmap_2d::Costmap2D * costmap = _costmap;
-  if (_costmap_downsampler) {
-    costmap = _costmap_downsampler->downsample(_downsampling_factor);
-    _collision_checker.setCostmap(costmap);
-  }
-
   // Set collision checker and costmap information
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates
   unsigned int mx, my;
-  costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
+  _costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
   _a_star->setStart(
     mx, my,
     NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(start.pose.orientation)));
 
   // Set goal point, in A* bin search coordinates
-  costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
+  _costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
   _a_star->setGoal(
     mx, my,
     NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation)));
@@ -290,7 +259,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   // Convert to world coordinates
   plan.poses.reserve(path.size());
   for (int i = path.size() - 1; i >= 0; --i) {
-    pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
+    pose.pose = getWorldCoords(path[i].x, path[i].y, _costmap);
     pose.pose.orientation = getWorldOrientation(path[i].theta);
     plan.poses.push_back(pose);
   }

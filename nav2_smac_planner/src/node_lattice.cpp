@@ -316,7 +316,8 @@ float NodeLattice::getHeuristicCost(
   const nav2_costmap_2d::Costmap2D * costmap)
 {
   // get obstacle heuristic value
-  const float obstacle_heuristic = getObstacleHeuristic(node_coords, goal_coords);
+  const float obstacle_heuristic = getObstacleHeuristic(
+    node_coords, goal_coords, motion_table.cost_penalty);
   const float distance_heuristic =
     getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
   return std::max(obstacle_heuristic, distance_heuristic);

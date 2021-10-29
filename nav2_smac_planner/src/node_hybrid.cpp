@@ -355,7 +355,8 @@ float NodeHybrid::getHeuristicCost(
   const Coordinates & goal_coords,
   const nav2_costmap_2d::Costmap2D * /*costmap*/)
 {
-  const float obstacle_heuristic = getObstacleHeuristic(node_coords, goal_coords);
+  const float obstacle_heuristic = getObstacleHeuristic(
+    node_coords, goal_coords, motion_table.cost_penalty);
   const float dist_heuristic = getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
   return std::max(obstacle_heuristic, dist_heuristic);
 }
@@ -422,7 +423,8 @@ void NodeHybrid::resetObstacleHeuristic(
 
 float NodeHybrid::getObstacleHeuristic(
   const Coordinates & node_coords,
-  const Coordinates & goal_coords)
+  const Coordinates & goal_coords,
+  const double & cost_penalty)
 {
   // If already expanded, return the cost
   unsigned int size_x = sampled_costmap->getSizeInCellsX();
@@ -473,7 +475,7 @@ float NodeHybrid::getObstacleHeuristic(
       new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
       cost = static_cast<float>(sampled_costmap->getCost(idx));
       travel_cost =
-        ((i <= 3) ? 1.0 : sqrt_2) + (motion_table.cost_penalty * cost / 252.0);
+        ((i <= 3) ? 1.0 : sqrt_2) + (cost_penalty * cost / 252.0);
       current_accumulated_cost = last_accumulated_cost + travel_cost;
 
       // if neighbor path is better and non-lethal, set new cost and add to queue

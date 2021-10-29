@@ -362,9 +362,10 @@ public:
    */
   static float getObstacleHeuristic(
     const Coordinates & node_coords,
-    const Coordinates & goal_coords)
+    const Coordinates & goal_coords,
+    const double & cost_penalty)
   {
-    return NodeHybrid::getObstacleHeuristic(node_coords, goal_coords);
+    return NodeHybrid::getObstacleHeuristic(node_coords, goal_coords, cost_penalty);
   }
 
   /**

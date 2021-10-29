@@ -379,7 +379,8 @@ public:
    */
   static float getObstacleHeuristic(
     const Coordinates & node_coords,
-    const Coordinates & goal_coords);
+    const Coordinates & goal_coords,
+    const double & cost_penalty);
 
   /**
    * @brief Compute the Distance heuristic
