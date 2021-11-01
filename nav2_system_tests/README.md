@@ -1,36 +1,14 @@
 # System Tests
 
-The package provides tests for [components](#1.-Component-Testing), [subsystems](#2.-Subsystem-Testing) and full [system](#3.-System-Testing) integration.
+The package provides tests for Component-Testing, Subsystem-Testing, and Full-System integration. Its main goal is to provide a location for smoke and integration tests of the navigation system to ensure that things are working properly on a high level. Unit and specific subsystem testing happens in the packages specific to those algorithms.  
 
-Unit tests are not included, these should be provided within each component or package.
+Most tests in this package will spin up Gazebo instances of a robot in an environment to have the robot complete some task in the space while tracking a specific modules results.  Some examples include 
 
-## 1. Component Testing
-Test a component's ROS API (Pub/Sub/Service).
+- System tests of a robot in a sandbox environment trying navigate to pose, navigate through poses, and waypoint following navigation types
+- Random planning of thousands of paths in a generated environment to ensure default planners are working properly
+- Testing the system can be brought up and down on the lifecycle transitions successfully multiple times
+- Testing that the keepout and speed restricted zones work in a practical environment without going into keepout zones and slowing in speed restricted areas
+- Testing recovery behaviors in a sandbox environment to ensure they trigger and complete collision checking properly
+- Testing system failures are properly recorded and can be recovered from
 
-- [Global Planning](src/planning/README.md)
-
-- Controller
-
-- [Localization](src/localization/README.md)
-
-- World Model
-
-- Costmaps
-
-## 2. Subsystem Testing
-Test the integration of several components and subsystems.
-
-- Support modules (Mapping, Perception, Prediction, Localization
-
-- Navigation core (Navigator, Planner, Controller)
-
-- Support modules and navigation core
-
-- Command chain (Mission Planning, Mission Execution, Navigation System, Robot Interface)
-
-## 3. System Testing
-Test the lifecycle startup and shutdown of nodes.
- - [Updown Test](src/updown/README.md)
-
-Test the integration of all subsystems.
- - [System Test](src/system/README.md)
+This is primarily for use in Nav2 CI to establish a high degree of maintainer confidence when merging in large architectural changes to the Nav2 project. However, this is also useful to test installs of Nav2 locally or for additional information.
