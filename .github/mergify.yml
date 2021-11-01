@@ -34,7 +34,7 @@ pull_request_rules:
   - name: development targets main branch
     conditions:
       - base!=main
-      - author!=stevemacenski
+      - author!=SteveMacenski
       - author!=mergify
     actions:
         comment:
@@ -57,8 +57,8 @@ pull_request_rules:
 
   - name: Removed maintainer checklist
     conditions:
-      - "-body~=(?m)^ #### For Maintainers: <!-- DO NOT EDIT OR REMOVE -->"
-      - author!=stevemacenski
+      - "-body~=(?m)^#### For Maintainers: <!-- DO NOT EDIT OR REMOVE -->"
+      - author!=SteveMacenski
       - author!=mergify
     actions:
         comment:
