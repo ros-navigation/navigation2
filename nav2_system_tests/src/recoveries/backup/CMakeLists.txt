@@ -17,6 +17,7 @@ ament_add_test(test_backup_recovery
   ENV
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.yaml
     TEST_EXECUTABLE=$<TARGET_FILE:${test_backup_recovery_exec}>
-    TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/warehouse.world
+    TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
+    TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
 )

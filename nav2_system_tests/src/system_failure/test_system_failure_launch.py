@@ -36,72 +36,99 @@ from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-    map_yaml_file = os.getenv("TEST_MAP")
-    world = os.getenv("TEST_WORLD")
-
-    bt_navigator_xml = os.path.join(
-        get_package_share_directory("nav2_bt_navigator"),
-        "behavior_trees",
-        os.getenv("BT_NAVIGATOR_XML"),
+    map_yaml_file = os.getenv('TEST_MAP')
+    aws_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
+    world = os.path.join(
+        aws_dir,
+        'worlds',
+        'small_warehouse',
+        'small_warehouse.world'
     )
 
-    bringup_dir = get_package_share_directory("nav2_bringup")
-    params_file = os.path.join(bringup_dir, "params", "nav2_params.yaml")
+    bt_navigator_xml = os.path.join(
+        get_package_share_directory('nav2_bt_navigator'),
+        'behavior_trees',
+        os.getenv('BT_NAVIGATOR_XML'),
+    )
+
+    bringup_dir = get_package_share_directory('nav2_bringup')
+    params_file = os.path.join(bringup_dir, 'params', 'nav2_params.yaml')
 
     # Replace the `use_astar` setting on the params file
     param_substitutions = {
-        "planner_server.ros__parameters.GridBased.use_astar": "False"
+        'planner_server.ros__parameters.GridBased.use_astar': 'False'
     }
     configured_params = RewrittenYaml(
         source_file=params_file,
-        root_key="",
+        root_key='',
         param_rewrites=param_substitutions,
         convert_types=True,
     )
 
     context = LaunchContext()
     new_yaml = configured_params.perform(context)
+
+    urdf = os.getenv('TEST_URDF')
+    with open(urdf, 'r') as infp:
+        robot_description = infp.read()
     return LaunchDescription(
         [
-            SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1"),
-            SetEnvironmentVariable("RCUTILS_LOGGING_USE_STDOUT", "1"),
+            SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+            SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
             # Launch gazebo server for simulation
             ExecuteProcess(
-                cmd=[
-                    "gzserver",
-                    "-s",
-                    "libgazebo_ros_init.so",
-                    "--minimal_comms",
-                    world,
+                cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
+                     '-s', 'libgazebo_ros_factory.so', world],
+                cwd=[aws_dir],
+                output='screen'),
+
+            Node(
+                package='robot_state_publisher',
+                executable='robot_state_publisher',
+                name='robot_state_publisher',
+                output='screen',
+                parameters=[
+                    {'use_sim_time': True, 'robot_description': robot_description}
                 ],
-                output="screen",
             ),
-            # TODO(orduno) Launch the robot state publisher instead
-            #              using a local copy of TB3 urdf file
+
             Node(
-                package="tf2_ros",
-                executable="static_transform_publisher",
-                output="screen",
-                arguments=["0", "0", "0", "0", "0", "0", "base_footprint", "base_link"],
-            ),
-            Node(
-                package="tf2_ros",
-                executable="static_transform_publisher",
-                output="screen",
-                arguments=["0", "0", "0", "0", "0", "0", "base_link", "base_scan"],
+                package='gazebo_ros',
+                executable='spawn_entity.py',
+                output='screen',
+                arguments=[
+                    '-entity',
+                    'turtlebot3_waffle',
+                    '-file',
+                    os.getenv('TEST_MODEL'),
+                    '-robot_namespace',
+                    '',
+                    '-x',
+                    '-2.0',
+                    '-y',
+                    '-0.5',
+                    '-z',
+                    '0.01',
+                    '-R',
+                    '0.0',
+                    '-P',
+                    '0.0',
+                    '-Y',
+                    '0.0',
+                ],
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    os.path.join(bringup_dir, "launch", "bringup_launch.py")
+                    os.path.join(bringup_dir, 'launch', 'bringup_launch.py')
                 ),
                 launch_arguments={
-                    "namespace": "",
-                    "use_namespace": "False",
-                    "map": map_yaml_file,
-                    "use_sim_time": "True",
-                    "params_file": new_yaml,
-                    "bt_xml_file": bt_navigator_xml,
-                    "autostart": "True",
+                    'namespace': '',
+                    'use_namespace': 'False',
+                    'map': map_yaml_file,
+                    'use_sim_time': 'True',
+                    'params_file': new_yaml,
+                    'bt_xml_file': bt_navigator_xml,
+                    'autostart': 'True',
                 }.items(),
             ),
         ]
@@ -113,15 +140,15 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[
-            os.path.join(os.getenv("TEST_DIR"), "tester_node.py"),
-            "-r",
-            "-2.0",
-            "-0.5",
-            "100.0",
-            "100.0",
+            os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
+            '-r',
+            '-2.0',
+            '-0.5',
+            '100.0',
+            '100.0',
         ],
-        name="tester_node",
-        output="screen",
+        name='tester_node',
+        output='screen',
     )
 
     lts = LaunchTestService()
@@ -131,5 +158,5 @@ def main(argv=sys.argv[1:]):
     return lts.run(ls)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

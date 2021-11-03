@@ -17,6 +17,8 @@
 import os
 import sys
 
+from ament_index_python.packages import get_package_share_directory
+
 from launch import LaunchDescription
 from launch import LaunchService
 import launch.actions
@@ -28,21 +30,53 @@ from launch_testing.legacy import LaunchTestService
 def main(argv=sys.argv[1:]):
     mapFile = os.getenv('TEST_MAP')
     testExecutable = os.getenv('TEST_EXECUTABLE')
-    world = os.getenv('TEST_WORLD')
+    aws_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
+    world = os.path.join(
+        aws_dir,
+        'worlds',
+        'small_warehouse',
+        'small_warehouse.world'
+    )
 
+    urdf = os.getenv('TEST_URDF')
+    with open(urdf, 'r') as infp:
+        robot_description = infp.read()
     launch_gazebo = launch.actions.ExecuteProcess(
-        cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '--minimal_comms', world],
+        cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so', world],
+        cwd=[aws_dir],
         output='screen')
-    link_footprint = launch_ros.actions.Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
+    launch_robot_description = launch_ros.actions.Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'])
-    footprint_scan = launch_ros.actions.Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
+        parameters=[
+            {'use_sim_time': True, 'robot_description': robot_description}
+        ])
+    launch_spawn_entity = launch_ros.actions.Node(
+        package='gazebo_ros',
+        executable='spawn_entity.py',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'])
+        arguments=[
+            '-entity',
+            'turtlebot3_waffle',
+            '-file',
+            os.getenv('TEST_MODEL'),
+            '-robot_namespace',
+            '',
+            '-x',
+            '0.0',
+            '-y',
+            '0.0',
+            '-z',
+            '0.01',
+            '-R',
+            '0.0',
+            '-P',
+            '0.0',
+            '-Y',
+            '0.0',
+        ])
     run_map_server = launch_ros.actions.Node(
         package='nav2_map_server',
         executable='map_server',
@@ -59,7 +93,7 @@ def main(argv=sys.argv[1:]):
         name='lifecycle_manager',
         output='screen',
         parameters=[{'node_names': ['map_server', 'amcl']}, {'autostart': True}])
-    ld = LaunchDescription([launch_gazebo, link_footprint, footprint_scan,
+    ld = LaunchDescription([launch_gazebo, launch_robot_description, launch_spawn_entity,
                             run_map_server, run_amcl, run_lifecycle_manager])
 
     test1_action = ExecuteProcess(

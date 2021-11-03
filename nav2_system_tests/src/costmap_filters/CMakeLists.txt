@@ -7,7 +7,8 @@ ament_add_test(test_keepout_filter
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.yaml
     TEST_MASK=${PROJECT_SOURCE_DIR}/maps/warehouse_keepout_mask.yaml
-    TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/warehouse.world
+    TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
+    TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
     ASTAR=False
 )
@@ -21,7 +22,8 @@ ament_add_test(test_speed_filter_global
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.yaml
     TEST_MASK=${PROJECT_SOURCE_DIR}/maps/warehouse_speed_mask.yaml
-    TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/warehouse.world
+    TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
+    TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model
     PARAMS_FILE=${CMAKE_CURRENT_SOURCE_DIR}/speed_global_params.yaml
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
     ASTAR=False
@@ -36,7 +38,8 @@ ament_add_test(test_speed_filter_local
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.yaml
     TEST_MASK=${PROJECT_SOURCE_DIR}/maps/warehouse_speed_mask.yaml
-    TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/warehouse.world
+    TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
+    TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model
     PARAMS_FILE=${CMAKE_CURRENT_SOURCE_DIR}/speed_local_params.yaml
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
     ASTAR=False

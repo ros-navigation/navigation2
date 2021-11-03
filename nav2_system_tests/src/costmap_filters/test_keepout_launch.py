@@ -34,7 +34,13 @@ from nav2_common.launch import RewrittenYaml
 def generate_launch_description():
     map_yaml_file = os.getenv('TEST_MAP')
     filter_mask_file = os.getenv('TEST_MASK')
-    world = os.getenv('TEST_WORLD')
+    aws_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
+    world = os.path.join(
+        aws_dir,
+        'worlds',
+        'small_warehouse',
+        'small_warehouse.world',
+    )
 
     bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
                                     'behavior_trees',
@@ -57,6 +63,9 @@ def generate_launch_description():
 
     context = LaunchContext()
     new_yaml = configured_params.perform(context)
+    urdf = os.getenv('TEST_URDF')
+    with open(urdf, 'r') as infp:
+        robot_description = infp.read()
     return LaunchDescription([
         SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
         SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
@@ -65,21 +74,44 @@ def generate_launch_description():
         ExecuteProcess(
             cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
                  '-s', 'libgazebo_ros_factory.so', world],
+            cwd=[aws_dir],
             output='screen'),
 
-        # TODO(orduno) Launch the robot state publisher instead
-        #              using a local copy of TB3 urdf file
         Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
+            package='robot_state_publisher',
+            executable='robot_state_publisher',
+            name='robot_state_publisher',
             output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link']),
+            parameters=[
+                {'use_sim_time': True, 'robot_description': robot_description}
+            ],
+        ),
 
         Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
+            package='gazebo_ros',
+            executable='spawn_entity.py',
             output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan']),
+            arguments=[
+                '-entity',
+                'turtlebot3_waffle',
+                '-file',
+                os.getenv('TEST_MODEL'),
+                '-robot_namespace',
+                '',
+                '-x',
+                '0.0',
+                '-y',
+                '0.0',
+                '-z',
+                '0.01',
+                '-R',
+                '0.0',
+                '-P',
+                '0.0',
+                '-Y',
+                '0.0',
+            ],
+        ),
 
         Node(
             package='nav2_lifecycle_manager',

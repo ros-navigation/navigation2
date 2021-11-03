@@ -180,7 +180,7 @@ def main(argv=sys.argv[1:]):
     time.sleep(10)
 
     wps = [[-0.52, -0.54], [0.58, -0.55], [0.58, 0.52]]
-    starting_pose = [-2.0, -0.5]
+    starting_pose = [0.0, 0.0]
 
     test = WaypointFollowerTest()
     test.setWaypoints(wps)

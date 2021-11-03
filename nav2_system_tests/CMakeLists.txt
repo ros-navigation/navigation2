@@ -67,8 +67,6 @@ if(BUILD_TESTING)
   add_subdirectory(src/costmap_filters)
   install(DIRECTORY maps models worlds DESTINATION share/${PROJECT_NAME})
 
-  ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/nav2_system_tests.dsv.in")
-
 endif()
 
 ament_package()
