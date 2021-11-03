@@ -104,6 +104,36 @@ inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DRO
   return result;
 }
 
+/**
+ * @brief Checks for the cusp(s) position(s)
+ * @param path Path in which to look for cusps
+ * @return Cusps' indices plus initial and final path poses' indices
+ */
+inline std::vector<unsigned int> findDirectionChange(const nav_msgs::msg::Path & path)
+{
+  std::vector<unsigned int> cusps_id;
+  cusps_id.push_back(0);
+  // Iterating through the path to determine the position of the cusp
+  for (unsigned int pose_id = 1; pose_id < path.poses.size() - 1; ++pose_id) {
+    // We have two vectors for the dot product OA and AB. Determining the vectors.
+    double oa_x = path.poses[pose_id].pose.position.x -
+      path.poses[pose_id - 1].pose.position.x;
+    double oa_y = path.poses[pose_id].pose.position.y -
+      path.poses[pose_id - 1].pose.position.y;
+    double ab_x = path.poses[pose_id + 1].pose.position.x -
+      path.poses[pose_id].pose.position.x;
+    double ab_y = path.poses[pose_id + 1].pose.position.y -
+      path.poses[pose_id].pose.position.y;
+
+    /* Checking for the existance of cusp, in the path, using the dot product. */
+    if ( (oa_x * ab_x) + (oa_y * ab_y) < 0.0) {
+      cusps_id.push_back(pose_id);
+    }
+  }
+  cusps_id.push_back(path.poses.size() - 1);
+  return cusps_id;
+}
+
 }  // namespace nav2_smac_planner
 
 #endif  // NAV2_SMAC_PLANNER__UTILS_HPP_
