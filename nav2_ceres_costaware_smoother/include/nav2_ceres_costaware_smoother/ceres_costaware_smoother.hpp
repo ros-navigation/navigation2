@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RTV_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_
-#define RTV_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_
+#ifndef nav2_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_
+#define nav2_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_
 
 #include <string>
 #include <vector>
@@ -23,30 +23,30 @@
 #include <algorithm>
 
 #include "nav2_core/smoother.hpp"
-#include "rtv_ceres_costaware_smoother/smoother.hpp"
+#include "nav2_ceres_costaware_smoother/smoother.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 
-namespace rtv_ceres_costaware_smoother
+namespace nav2_ceres_costaware_smoother
 {
 
 /**
- * @class rtv_ceres_costaware_smoother::CeresCostawareSmoother
+ * @class nav2_ceres_costaware_smoother::CeresCostawareSmoother
  * @brief Regulated pure pursuit controller plugin
  */
 class CeresCostawareSmoother : public nav2_core::Smoother
 {
 public:
   /**
-   * @brief Constructor for rtv_ceres_costaware_smoother::CeresCostawareSmoother
+   * @brief Constructor for nav2_ceres_costaware_smoother::CeresCostawareSmoother
    */
   CeresCostawareSmoother() = default;
 
   /**
-   * @brief Destrructor for rtv_ceres_costaware_smoother::CeresCostawareSmoother
+   * @brief Destrructor for nav2_ceres_costaware_smoother::CeresCostawareSmoother
    */
   ~CeresCostawareSmoother() override = default;
 
@@ -95,12 +95,12 @@ protected:
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   rclcpp::Logger logger_ {rclcpp::get_logger("CeresCostawareSmoother")};
 
-  std::unique_ptr<rtv_ceres_costaware_smoother::Smoother> _smoother;
+  std::unique_ptr<nav2_ceres_costaware_smoother::Smoother> _smoother;
   SmootherParams _smoother_params;
   OptimizerParams _optimizer_params;
 
 };
 
-}  // namespace rtv_ceres_costaware_smoother
+}  // namespace nav2_ceres_costaware_smoother
 
-#endif  // RTV_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_
+#endif  // nav2_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_

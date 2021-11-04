@@ -19,7 +19,7 @@
 #include <memory>
 #include <utility>
 
-#include "rtv_ceres_costaware_smoother/ceres_costaware_smoother.hpp"
+#include "nav2_ceres_costaware_smoother/ceres_costaware_smoother.hpp"
 #include "nav2_core/exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -32,7 +32,7 @@ using nav2_util::declare_parameter_if_not_declared;
 using nav2_util::geometry_utils::euclidean_distance;
 using namespace nav2_costmap_2d;  // NOLINT
 
-namespace rtv_ceres_costaware_smoother
+namespace nav2_ceres_costaware_smoother
 {
 
 template<typename T>
@@ -61,7 +61,7 @@ void CeresCostawareSmoother::configure(
     node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.2));
   node->get_parameter(name + ".minimum_turning_radius", minimum_turning_radius);
 
-  _smoother = std::make_unique<rtv_ceres_costaware_smoother::Smoother>();
+  _smoother = std::make_unique<nav2_ceres_costaware_smoother::Smoother>();
   _optimizer_params.get(node.get(), name);
   _smoother_params.get(node.get(), name);
   _smoother_params.max_curvature = 1.0f / minimum_turning_radius;
@@ -77,7 +77,7 @@ void CeresCostawareSmoother::cleanup()
   RCLCPP_INFO(
     logger_,
     "Cleaning up controller: %s of type"
-    " rtv_ceres_costaware_smoother::CeresCostawareSmoother",
+    " nav2_ceres_costaware_smoother::CeresCostawareSmoother",
     plugin_name_.c_str());
 }
 
@@ -86,7 +86,7 @@ void CeresCostawareSmoother::activate()
   RCLCPP_INFO(
     logger_,
     "Activating controller: %s of type "
-    "rtv_ceres_costaware_smoother::CeresCostawareSmoother",
+    "nav2_ceres_costaware_smoother::CeresCostawareSmoother",
     plugin_name_.c_str());
 }
 
@@ -95,7 +95,7 @@ void CeresCostawareSmoother::deactivate()
   RCLCPP_INFO(
     logger_,
     "Deactivating controller: %s of type "
-    "rtv_ceres_costaware_smoother::CeresCostawareSmoother",
+    "nav2_ceres_costaware_smoother::CeresCostawareSmoother",
     plugin_name_.c_str());
 }
 
@@ -162,9 +162,9 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
   return true;
 }
 
-}  // namespace rtv_ceres_costaware_smoother
+}  // namespace nav2_ceres_costaware_smoother
 
 // Register this smoother as a nav2_core plugin
 PLUGINLIB_EXPORT_CLASS(
-  rtv_ceres_costaware_smoother::CeresCostawareSmoother,
+  nav2_ceres_costaware_smoother::CeresCostawareSmoother,
   nav2_core::Smoother)

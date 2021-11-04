@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef RTV_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
-#define RTV_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
+#ifndef nav2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
+#define nav2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
 
 #include <cmath>
 #include <vector>
@@ -23,12 +23,12 @@
 #include <queue>
 #include <utility>
 
-#include "rtv_ceres_costaware_smoother/smoother_cost_function.hpp"
+#include "nav2_ceres_costaware_smoother/smoother_cost_function.hpp"
 
 #include "ceres/ceres.h"
 #include "Eigen/Core"
 
-namespace rtv_ceres_costaware_smoother
+namespace nav2_ceres_costaware_smoother
 {
 
 /**
@@ -303,4 +303,4 @@ private:
 
 }  // namespace nav2_smac_planner
 
-#endif  // RTV_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
+#endif  // nav2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_

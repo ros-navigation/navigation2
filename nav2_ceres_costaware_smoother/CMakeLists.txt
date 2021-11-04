@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(rtv_ceres_costaware_smoother)
+project(nav2_ceres_costaware_smoother)
 
 set(CMAKE_BUILD_TYPE Release) # significant Ceres optimization speedup
 
@@ -21,7 +21,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 nav2_package()
 
-set(library_name rtv_ceres_costaware_smoother)
+set(library_name nav2_ceres_costaware_smoother)
 
 include_directories(
   include
@@ -78,6 +78,6 @@ ament_export_include_directories(include)
 ament_export_libraries(${library_name})
 ament_export_dependencies(${dependencies})
 
-pluginlib_export_plugin_description_file(nav2_core rtv_ceres_costaware_smoother.xml)
+pluginlib_export_plugin_description_file(nav2_core nav2_ceres_costaware_smoother.xml)
 
 ament_package()

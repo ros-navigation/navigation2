@@ -11,7 +11,7 @@ smoother_server:
     optimization_length_backwards: 5.0
 
     SmoothPath:
-      plugin: "rtv_ceres_costaware_smoother/CeresCostawareSmoother"
+      plugin: "nav2_ceres_costaware_smoother/CeresCostawareSmoother"
       minimum_turning_radius: 0.40
       w_curve: 30.0                 # weight to minimize curvature of path
       w_dist: 0.0                   # weight to bind path to original as optional replacement for cost weight
