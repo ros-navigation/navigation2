@@ -61,8 +61,10 @@ bt_navigator:
     # They can be set here or via a RewrittenYaml remap from a parent launch file to Nav2.
     # if enable_groot_monitoring is set to True, ports need to be different for each robot !!
     enable_groot_monitoring: False
-    groot_zmq_publisher_port: 1789
-    groot_zmq_server_port: 1887
+    pose_groot_publisher_port: 1666
+    pose_groot_server_port: 1667
+    poses_groot_publisher_port: 1668
+    poses_groot_server_port: 1669
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
     - nav2_compute_path_through_poses_action_bt_node
@@ -185,7 +187,7 @@ local_costmap:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
         scan:
-          topic: /robot2/scan
+          topic: /robot1/scan
           max_obstacle_height: 2.0
           clearing: True
           marking: True
@@ -212,7 +214,7 @@ global_costmap:
       obstacle_layer:
         enabled: True
         scan:
-          topic: /robot2/scan
+          topic: /robot1/scan
           max_obstacle_height: 2.0
           clearing: True
           marking: True
@@ -275,3 +277,13 @@ recoveries_server:
 robot_state_publisher:
   ros__parameters:
     use_sim_time: True
+
+waypoint_follower:
+  ros__parameters:
+    loop_rate: 20
+    stop_on_failure: false
+    waypoint_task_executor_plugin: "wait_at_waypoint"   
+    wait_at_waypoint:
+      plugin: "nav2_waypoint_follower::WaitAtWaypoint"
+      enabled: True
+      waypoint_pause_duration: 200

@@ -47,11 +47,14 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/execution_timer.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/create_timer_ros.h"
 #include "nav2_util/robot_utils.hpp"
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 using namespace std::chrono_literals;
+using std::placeholders::_1;
+using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
@@ -242,6 +245,10 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   start();
 
+  // Add callback for dynamic parameters
+  dyn_params_handler = this->add_on_set_parameters_callback(
+    std::bind(&Costmap2DROS::dynamicParametersCallback, this, _1));
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -250,6 +257,7 @@ Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
+  dyn_params_handler.reset();
   costmap_publisher_->on_deactivate();
   footprint_pub_->on_deactivate();
 
@@ -585,6 +593,76 @@ Costmap2DROS::transformPoseToGlobalFrame(
       input_pose, transformed_pose, *tf_buffer_,
       global_frame_, transform_tolerance_);
   }
+}
+
+rcl_interfaces::msg::SetParametersResult
+Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+{
+  auto result = rcl_interfaces::msg::SetParametersResult();
+  bool resize_map = false;
+
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == "robot_radius") {
+        robot_radius_ = parameter.as_double();
+        // Set the footprint
+        if (use_radius_) {
+          setRobotFootprint(makeFootprintFromRadius(robot_radius_));
+        }
+      } else if (name == "footprint_padding") {
+        footprint_padding_ = parameter.as_double();
+        padded_footprint_ = unpadded_footprint_;
+        padFootprint(padded_footprint_, footprint_padding_);
+        layered_costmap_->setFootprint(padded_footprint_);
+      } else if (name == "transform_tolerance") {
+        transform_tolerance_ = parameter.as_double();
+      } else if (name == "publish_frequency") {
+        map_publish_frequency_ = parameter.as_double();
+        if (map_publish_frequency_ > 0) {
+          publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);
+        } else {
+          publish_cycle_ = rclcpp::Duration(-1s);
+        }
+      } else if (name == "resolution") {
+        resize_map = true;
+        resolution_ = parameter.as_double();
+      } else if (name == "origin_x") {
+        resize_map = true;
+        origin_x_ = parameter.as_double();
+      } else if (name == "origin_y") {
+        resize_map = true;
+        origin_y_ = parameter.as_double();
+      }
+    } else if (type == ParameterType::PARAMETER_INTEGER) {
+      if (name == "width") {
+        resize_map = true;
+        map_width_meters_ = parameter.as_int();
+      } else if (name == "height") {
+        resize_map = true;
+        map_height_meters_ = parameter.as_int();
+      }
+    } else if (type == ParameterType::PARAMETER_STRING) {
+      if (name == "footprint") {
+        footprint_ = parameter.as_string();
+        std::vector<geometry_msgs::msg::Point> new_footprint;
+        if (makeFootprintFromString(footprint_, new_footprint)) {
+          setRobotFootprint(new_footprint);
+        }
+      }
+    }
+  }
+
+  if (resize_map && !layered_costmap_->isSizeLocked()) {
+    layered_costmap_->resizeMap(
+      (unsigned int)(map_width_meters_ / resolution_),
+      (unsigned int)(map_height_meters_ / resolution_), resolution_, origin_x_, origin_y_);
+  }
+
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_costmap_2d

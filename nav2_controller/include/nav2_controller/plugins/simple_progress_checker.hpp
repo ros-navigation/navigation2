@@ -16,6 +16,7 @@
 #define NAV2_CONTROLLER__PLUGINS__SIMPLE_PROGRESS_CHECKER_HPP_
 
 #include <string>
+#include <vector>
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_core/progress_checker.hpp"
@@ -61,16 +62,16 @@ protected:
   rclcpp::Time baseline_time_;
 
   bool baseline_pose_set_{false};
-  // Subscription for parameter change
-  rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
-  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
   std::string plugin_name_;
 
   /**
    * @brief Callback executed when a paramter change is detected
-   * @param event ParameterEvent message
+   * @param parameters list of changed parameters
    */
-  void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 };
 }  // namespace nav2_controller
 

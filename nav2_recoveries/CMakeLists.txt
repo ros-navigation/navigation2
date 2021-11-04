@@ -6,6 +6,7 @@ find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_behavior_tree REQUIRED)
 find_package(nav2_util REQUIRED)
@@ -31,6 +32,7 @@ set(dependencies
   rclcpp
   rclcpp_action
   rclcpp_lifecycle
+  rclcpp_components
   std_msgs
   nav2_util
   nav2_behavior_tree
@@ -53,9 +55,6 @@ ament_target_dependencies(nav2_spin_recovery
   ${dependencies}
 )
 
-# prevent pluginlib from using boost
-target_compile_definitions(nav2_spin_recovery PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 add_library(nav2_backup_recovery SHARED
   plugins/back_up.cpp
 )
@@ -63,9 +62,6 @@ add_library(nav2_backup_recovery SHARED
 ament_target_dependencies(nav2_backup_recovery
   ${dependencies}
 )
-
-# prevent pluginlib from using boost
-target_compile_definitions(nav2_backup_recovery PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 add_library(nav2_wait_recovery SHARED
   plugins/wait.cpp
@@ -75,22 +71,16 @@ ament_target_dependencies(nav2_wait_recovery
   ${dependencies}
 )
 
-# prevent pluginlib from using boost
-target_compile_definitions(nav2_wait_recovery PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 pluginlib_export_plugin_description_file(nav2_core recovery_plugin.xml)
 
 # Library
-add_library(${library_name}
+add_library(${library_name} SHARED
   src/recovery_server.cpp
 )
 
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
-
-# prevent pluginlib from using boost
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 # Executable
 add_executable(${executable_name}
@@ -103,6 +93,7 @@ ament_target_dependencies(${executable_name}
   ${dependencies}
 )
 
+rclcpp_components_register_nodes(${library_name} "recovery_server::RecoveryServer")
 
 install(TARGETS ${library_name}
                 nav2_backup_recovery

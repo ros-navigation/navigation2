@@ -35,9 +35,6 @@ set(library_name nav2_regulated_pure_pursuit_controller)
 add_library(${library_name} SHARED
         src/regulated_pure_pursuit_controller.cpp)
 
-# prevent pluginlib from using boost
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 ament_target_dependencies(${library_name}
   ${dependencies}
 )

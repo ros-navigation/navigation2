@@ -26,7 +26,7 @@
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 #include "tf2/LinearMath/Quaternion.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_util/node_utils.hpp"
 
 using namespace std::chrono_literals;
@@ -91,11 +91,24 @@ Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
   RCLCPP_INFO(
     logger_, "Turning %0.2f for spin recovery.",
     cmd_yaw_);
+
+  command_time_allowance_ = command->time_allowance;
+  end_time_ = steady_clock_.now() + command_time_allowance_;
+
   return Status::SUCCEEDED;
 }
 
 Status Spin::onCycleUpdate()
 {
+  rclcpp::Duration time_remaining = end_time_ - steady_clock_.now();
+  if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
+    stopRobot();
+    RCLCPP_WARN(
+      logger_,
+      "Exceeded time allowance before reaching the Spin goal - Exiting Spin");
+    return Status::FAILED;
+  }
+
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, global_frame_, robot_base_frame_,

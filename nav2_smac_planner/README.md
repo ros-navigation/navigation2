@@ -14,6 +14,8 @@ We have users reporting using this on:
 - Delivery robots
 - Industrial robots
 
+See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-smac-planner.html) for additional parameter descriptions.
+
 ## Introduction
 
 The `nav2_smac_planner` package contains an optimized templated A* search algorithm used to create multiple A\*-based planners for multiple types of robot platforms. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). We support **circular** differential-drive and omni-directional drive robots using the `SmacPlanner2D` planner which implements a cost-aware A\* planner. We support **cars, car-like, and ackermann vehicles** using the `SmacPlannerHybrid` plugin which implements a Hybrid-A\* planner. These plugins are also useful for curvature constrained planning, like when planning robot at high speeds to make sure they don't flip over or otherwise skid out of control. It is also applicable to non-round robots (such as large rectangular or arbitrary shaped robots of differential/omnidirectional drivetrains) that need pose-based collision checking.
@@ -53,7 +55,7 @@ All of these features (multi-resolution, models, smoother, etc) are also availab
 
 The 2D A\* implementation also does not have any of the weird artifacts introduced by the gradient wavefront-based 2D A\* implementation in the NavFn Planner. While this 2D A\* planner is slightly slower, I believe it's well worth the increased quality in paths. Though the `SmacPlanner2D` is grid-based, any reasonable local trajectory planner - including those supported by Nav2 - will not have any issue with grid-based plans.
 
-Note: In prior releases, a CG smoother largely implementing the original Hybrid-A\* paper's. However, this smoother failed to consistently provide useful results, took too much compute time, and was deprecated. While smoothing a path 95% of the time seems like a "good" solution, we need something far more reliable for practical use. Since we are working with mobile robots and not autonomous cars at 60 mph, we can take some different liberties in smoothing knowing that our local trajectory planners are pretty smart. If you are looking for it, it now lives in the `test/` directory in a depreciated folder. This smoother has been replaced by a B-Spline inspired solution which is faster, far more consistent, and simpler to understand. While this smoother is **not** cost-aware, we have added cost-aware penalty functions in the planners themselves to push the plans away from high-cost spaces and we do check for validity of smoothed sections to ensure feasibility.
+Note: In prior releases, a CG smoother largely implementing the original Hybrid-A\* paper's. However, this smoother failed to consistently provide useful results, took too much compute time, and was deprecated. While smoothing a path 95% of the time seems like a "good" solution, we need something far more reliable for practical use. Since we are working with mobile robots and not autonomous cars at 60 mph, we can take some different liberties in smoothing knowing that our local trajectory planners are pretty smart. If you are looking for it, it now lives in the `test/` directory in a depreciated folder. This smoother has been replaced by a simpler optimization inspired solution which is faster, far more consistent, and simpler to understand. While this smoother is **not** cost-aware, we have added cost-aware penalty functions in the planners themselves to push the plans away from high-cost spaces and we do check for validity of smoothed sections to ensure feasibility. It will through terminate when paths become in collision with the environment.
 
 ## Metrics
 
@@ -97,8 +99,6 @@ planner_server:
       max_planning_time: 3.5              # max time in s for planner to plan, smooth, and upsample. Will scale maximum smoothing and upsampling times based on remaining time after planning.
       motion_model_for_search: "DUBIN"    # 2D Moore, Von Neumann; Hybrid Dubin, Redds-Shepp; State Lattice set internally
       cost_travel_multiplier: 2.0         # For 2D: Cost multiplier to apply to search to steer away from high cost areas. Larger values will place in the center of aisles more exactly (if non-`FREE` cost potential field exists) but take slightly longer to compute. To optimize for speed, a value of 1.0 is reasonable. A reasonable tradeoff value is 2.0. A value of 0.0 effective disables steering away from obstacles and acts like a naive binary search A*.
-      angle_quantization_bins: 64         # For Hybrid nodes: Number of angle bins for search, must be 1 for 2D node (no angle search)
-      minimum_turning_radius: 0.40        # For Hybrid nodes: minimum turning radius in m of path / vehicle
       angle_quantization_bins: 64         # For Hybrid/Lattice nodes: Number of angle bins for search, must be 1 for 2D node (no angle search)
       analytic_expansion_ratio: 3.5       # For Hybrid/Lattice nodes: The ratio to attempt analytic expansions during search for final approach.
       minimum_turning_radius: 0.40        # For Hybrid/Lattice nodes: minimum turning radius in m of path / vehicle
