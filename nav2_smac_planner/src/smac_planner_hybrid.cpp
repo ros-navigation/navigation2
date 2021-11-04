@@ -341,24 +341,19 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   // Smooth plan
   // Check if there are any cusps and if so, split path to avoid smoothing cusps
-  if (num_iterations > 1)
-  {
+  if (num_iterations > 1) {
     std::vector<unsigned int> cusps_id = findDirectionChange(plan);
-    if (cusps_id.size() < 3 && plan.poses.size() > 6)
-    {
+    if (cusps_id.size() < 3 && plan.poses.size() > 6) {
         _smoother->smooth(plan, costmap, time_remaining);
-    }
-    else
-    {
-      for (unsigned int i = 1; i < cusps_id.size(); ++i)
-      {
-        if (cusps_id[i] - cusps_id[i-1] > 6)
-        {
+    } else {
+      for (unsigned int i = 1; i < cusps_id.size(); ++i) {
+        if (cusps_id[i] - cusps_id[i - 1] > 6) {
           nav_msgs::msg::Path subpath;
           subpath.header = plan.header;
-          std::copy(plan.poses.begin() + cusps_id[i - 1],
+          std::copy(
++            plan.poses.begin() + cusps_id[i - 1],
             plan.poses.begin() + cusps_id[i] + 1, std::back_inserter(subpath.poses));
-          _smoother->smooth(subpath, costmap, floor(time_remaining/(cusps_id.size() - 1)));
+          _smoother->smooth(subpath, costmap, floor(time_remaining / (cusps_id.size() - 1)));
         }
       }
     }
