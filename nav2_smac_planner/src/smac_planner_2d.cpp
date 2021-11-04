@@ -148,16 +148,6 @@ void SmacPlanner2D::configure(
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
-  // Setup callback for changes to parameters.
-  _parameters_client = std::make_shared<rclcpp::AsyncParametersClient>(
-    node->get_node_base_interface(),
-    node->get_node_topics_interface(),
-    node->get_node_graph_interface(),
-    node->get_node_services_interface());
-
-  _parameter_event_sub = _parameters_client->on_parameter_event(
-    std::bind(&SmacPlanner2D::on_parameter_event_callback, this, _1));
-
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlanner2D with "
     "tolerance %.2f, maximum iterations %i, "
