@@ -74,7 +74,8 @@ public:
         "robot frame lookup."),
       BT::InputPort<double>(
         "angular_distance_weight", 0.2,
-        "Transform lookup tolerance"),
+        "Weight of angular distance relative to positional distance when "
+        "finding which path pose is closest to robot"),
     };
   }
 

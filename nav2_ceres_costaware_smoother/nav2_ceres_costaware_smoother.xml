@@ -1,0 +1,7 @@
+<class_libraries>
+  <library path="rtv_ceres_costaware_smoother">
+    <class name="rtv_ceres_costaware_smoother/CeresCostawareSmoother" type="rtv_ceres_costaware_smoother::CeresCostawareSmoother" base_class_type="nav2_core::Smoother">
+      <description>Increases smoothness and distance from obstacles of a path using Ceres solver optimization</description>
+    </class>
+  </library>
+</class_libraries>
