@@ -101,9 +101,6 @@ ament_target_dependencies(${library_name}_2d
   ${dependencies}
 )
 
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-target_compile_definitions(${library_name}_2d PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 pluginlib_export_plugin_description_file(nav2_core smac_plugin.xml)
 pluginlib_export_plugin_description_file(nav2_core smac_plugin_2d.xml)
 

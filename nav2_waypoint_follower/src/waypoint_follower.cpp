@@ -24,8 +24,8 @@
 namespace nav2_waypoint_follower
 {
 
-WaypointFollower::WaypointFollower()
-: nav2_util::LifecycleNode("WaypointFollower", "", false),
+WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("waypoint_follower", "", false, options),
   waypoint_task_executor_loader_("nav2_waypoint_follower",
     "nav2_core::WaypointTaskExecutor")
 {
@@ -306,3 +306,10 @@ WaypointFollower::goalResponseCallback(
 }
 
 }  // namespace nav2_waypoint_follower
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_waypoint_follower::WaypointFollower)

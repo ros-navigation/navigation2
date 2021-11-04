@@ -6,6 +6,7 @@ find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_behavior_tree REQUIRED)
@@ -35,6 +36,7 @@ set(dependencies
   rclcpp
   rclcpp_action
   rclcpp_lifecycle
+  rclcpp_components
   std_msgs
   geometry_msgs
   nav2_behavior_tree
@@ -62,6 +64,8 @@ target_link_libraries(${executable_name} ${library_name})
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
+
+rclcpp_components_register_nodes(${library_name} "nav2_bt_navigator::BtNavigator")
 
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib

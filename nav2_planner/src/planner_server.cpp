@@ -36,8 +36,8 @@ using namespace std::chrono_literals;
 namespace nav2_planner
 {
 
-PlannerServer::PlannerServer()
-: nav2_util::LifecycleNode("nav2_planner", "", true),
+PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("planner_server", "", false, options),
   gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
   default_ids_{"GridBased"},
   default_types_{"nav2_navfn_planner/NavfnPlanner"},
@@ -132,14 +132,20 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   // Create the action servers for path planning to a pose and through poses
   action_server_pose_ = std::make_unique<ActionServerToPose>(
-    rclcpp_node_,
+    shared_from_this(),
     "compute_path_to_pose",
-    std::bind(&PlannerServer::computePlan, this));
+    std::bind(&PlannerServer::computePlan, this),
+    nullptr,
+    std::chrono::milliseconds(500),
+    true);
 
   action_server_poses_ = std::make_unique<ActionServerThroughPoses>(
-    rclcpp_node_,
+    shared_from_this(),
     "compute_path_through_poses",
-    std::bind(&PlannerServer::computePlanThroughPoses, this));
+    std::bind(&PlannerServer::computePlanThroughPoses, this),
+    nullptr,
+    std::chrono::milliseconds(500),
+    true);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -505,3 +511,10 @@ PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
 }
 
 }  // namespace nav2_planner
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_planner::PlannerServer)

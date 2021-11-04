@@ -91,9 +91,6 @@ target_link_libraries(${library_name}
 # TODO: Make this specific to this project (not rviz default plugins)
 target_compile_definitions(${library_name} PRIVATE "RVIZ_DEFAULT_PLUGINS_BUILDING_LIBRARY")
 
-# prevent pluginlib from using boost
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 pluginlib_export_plugin_description_file(rviz_common plugins_description.xml)
 
 install(

@@ -2,6 +2,26 @@ version: 2.1
 
 _commands:
   common_commands: &common_commands
+    ccache_stats:
+      description: "CCache Stats"
+      parameters:
+        workspace:
+          type: string
+        when:
+          type: string
+          default: on_success
+      steps:
+        - run:
+            name: CCache Stats
+            working_directory: << parameters.workspace >>
+            environment:
+              CCACHE_DIR: << parameters.workspace >>/.ccache
+            command: |
+              ccache -s # show stats
+              ccache -z # zero stats
+              ccache -V # show version
+              ccache -p # show config
+            when: << parameters.when >>
     restore_from_cache:
       description: "Restore From Cache"
       parameters:
@@ -13,12 +33,12 @@ _commands:
         - restore_cache:
             name: Restore Cache << parameters.key >>
             keys:
-              - "<< parameters.key >>-v1\
+              - "<< parameters.key >>-v3\
                 -{{ arch }}\
                 -{{ .Branch }}\
                 -{{ .Environment.CIRCLE_PR_NUMBER }}\
                 -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
-              - "<< parameters.key >>-v1\
+              - "<< parameters.key >>-v3\
                 -{{ arch }}\
                 -main\
                 -<no value>\
@@ -38,13 +58,14 @@ _commands:
       steps:
         - save_cache:
             name: Save Cache << parameters.key >>
-            key: "<< parameters.key >>-v1\
+            key: "<< parameters.key >>-v3\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
               -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}\
               -{{ epoch }}"
             paths:
+              - << parameters.path >>/.ccache
               - << parameters.path >>/build
               - << parameters.path >>/install
               - << parameters.path >>/log
@@ -62,28 +83,23 @@ _commands:
             working_directory: << parameters.workspace >>
             command: |
               . << parameters.underlay >>/install/setup.sh
+              AMENT_PREFIX_PATH=$(echo "$AMENT_PREFIX_PATH" | \
+                sed -e 's|:/opt/ros/'$ROS_DISTRO'$||')
+              if [ "$AMENT_PREFIX_PATH" == "/opt/ros/$ROS_DISTRO" ]
+              then
+                unset AMENT_PREFIX_PATH
+              fi
+
               cat << parameters.underlay >>/lockfile.txt > lockfile.txt
               vcs export --exact << parameters.underlay >>/src | \
                 (echo vcs_export && cat) >> lockfile.txt
               sha256sum $PWD/lockfile.txt >> lockfile.txt
+
               apt-get update
-              rosdep update
-
-              # workarround for OMPL and rosdep
-              # https://github.com/ompl/ompl/issues/753
-              # Prevent searching $ROS_WS/install given it's too big for rosdep
-
-              if [ "$ROS_WS" == "<< parameters.underlay >>" ]; then
-                underlay_ws=""
-              else
-                underlay_ws=<< parameters.underlay >>/src
-              fi
-              echo underlay_ws = $underlay_ws
-
+              rosdep update --rosdistro $ROS_DISTRO
               dependencies=$(
                 rosdep install -q -y \
                   --from-paths src \
-                    $underlay_ws \
                   --ignore-src \
                   --skip-keys " \
                     slam_toolbox \
@@ -92,7 +108,7 @@ _commands:
                 awk '$1 ~ /^resolution\:/' | \
                 awk -F'[][]' '{print $2}' | \
                 tr -d \, | xargs -n1 | sort -u | xargs)
-              dpkg -s $dependencies | \
+              dpkg --list dpkg $dependencies | \
                 (echo workspace_dependencies && cat) >> lockfile.txt
               sha256sum $PWD/lockfile.txt >> lockfile.txt
     setup_workspace:
@@ -118,9 +134,14 @@ _commands:
         - when:
             condition: << parameters.build >>
             steps:
+              - ccache_stats:
+                  workspace: << parameters.workspace >>
+                  when: always
               - run:
                   name: Build Workspace | << parameters.workspace >>
                   working_directory: << parameters.workspace >>
+                  environment:
+                    CCACHE_DIR: << parameters.workspace >>/.ccache
                   command: |
                     colcon cache lock
 
@@ -162,10 +183,17 @@ _commands:
                     fi
                     echo BUILD_PACKAGES: $BUILD_PACKAGES
 
+                    colcon clean packages --yes \
+                      --packages-select ${BUILD_PACKAGES} \
+                      --base-select install
+
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
                       --mixin << parameters.mixins >>
+              - ccache_stats:
+                  workspace: << parameters.workspace >>
+                  when: always
               - save_to_cache:
                   key: << parameters.key >>
                   path: << parameters.workspace >>
@@ -233,6 +261,10 @@ _commands:
                 | xargs)
               echo TEST_PACKAGES: $TEST_PACKAGES
 
+              colcon clean packages --yes \
+                --packages-select ${TEST_PACKAGES} \
+                --base-select test_result
+
               . install/setup.sh
               set -o xtrace
               colcon test \
@@ -254,43 +286,10 @@ _commands:
             when: always
         - store_artifacts:
             path: << parameters.workspace >>/log/test
-        - run:
-            name: Copy Test Results
-            working_directory: << parameters.workspace >>
-            command: |
-              mkdir test_results/
-              cp -rH build/*/test_results/* test_results
-            when: always
         - store_test_results:
             path: << parameters.workspace >>/test_results
         - store_artifacts:
             path: << parameters.workspace >>/test_results
-    check_apt_updates:
-      description: "Check apt updates"
-      parameters:
-        sourcelist:
-          type: string
-      steps:
-        - run:
-            command: |
-              apt-get update \
-                -o Dir::Etc::sourcelist="<< parameters.sourcelist >>"
-              apt-get --simulate upgrade \
-                -o Dir::Etc::sourcelist="<< parameters.sourcelist >>" \
-                | grep "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded." \
-                && echo "No apt updates" || exit 1
-    trigger_dockerhub_url:
-      description: "Trigger Dockerhub URL"
-      parameters:
-        data:
-          type: string
-      steps:
-        - run:
-            when: on_fail
-            command: |
-              curl -H "Content-Type: application/json" \
-                --data '<< parameters.data >>' \
-                -X POST ${DOCKERHUB_TRIGGER_URL}
 
 _steps:
   pre_checkout: &pre_checkout
@@ -299,14 +298,16 @@ _steps:
       command: |
         mkdir -p $ROS_WS/src && cd $ROS_WS
         ln -s /opt/ros/$ROS_DISTRO install
+
         echo $CACHE_NONCE | \
           (echo cache_nonce && cat) >> lockfile.txt
         sha256sum $PWD/lockfile.txt >> lockfile.txt
+
         TZ=utc stat -c '%y' /ros_entrypoint.sh | \
           (echo ros_entrypoint && cat) >> lockfile.txt
         sha256sum $PWD/lockfile.txt >> lockfile.txt
-        mv ~/.ccache $CCACHE_DIR
-        rm -rf $OVERLAY_WS/src
+
+        rm -rf $OVERLAY_WS/*
   on_checkout: &on_checkout
     checkout:
       path: src/navigation2
@@ -329,18 +330,6 @@ _steps:
     install_dependencies:
       underlay: /opt/ros_ws
       workspace: /opt/underlay_ws
-  restore_ccache: &restore_ccache
-    restore_from_cache:
-      key: ccache
-      workspace: /opt/underlay_ws
-  ccache_stats: &ccache_stats
-    run:
-      name: CCache Stats
-      command: |
-        ccache -s # show stats
-        ccache -z # zero stats
-        ccache -V # show version
-        ccache -p # show config
   setup_underlay_workspace: &setup_underlay_workspace
     setup_workspace: &setup_workspace_underlay
       key: underlay_ws
@@ -365,15 +354,6 @@ _steps:
     setup_workspace:
       <<: *setup_workspace_overlay
       build: false
-  store_ccache_logs: &store_ccache_logs
-    store_artifacts:
-        path: /tmp/ccache.log
-  save_ccache: &save_ccache
-    save_to_cache:
-      key: ccache
-      workspace: /opt/underlay_ws
-      path: /tmp/.ccache
-      when: always
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
       key: overlay_ws
@@ -394,23 +374,11 @@ _steps:
         codecov_version=$(grep -o 'VERSION=\"[0-9\.]*\"' codecov | cut -d'"' -f2)
         shasum -a 512 -c <(curl -s "https://raw.githubusercontent.com/codecov/codecov-bash/${codecov_version}/SHA512SUM" | grep -w "codecov")
         bash codecov \
-          -f "lcov/project_coverage.info" \
+          -f "lcov/total_coverage.info" \
           -R "src/navigation2" \
-          -t "${CODECOV_TOKEN}" \
-          -n "${CIRCLE_BUILD_NUM}" \
           -F "project" \
           -Z || echo 'Codecov upload failed'
       when: always
-  check_ros2_updates: &check_ros2_updates
-    check_apt_updates:
-        sourcelist: sources.list.d/ros2.list
-  trigger_dockerhub_build: &trigger_dockerhub_build
-    trigger_dockerhub_url:
-        data: |
-          {
-            "source_type": "Branch",
-            "source_name": "main"
-          }
 
 commands:
   <<: *common_commands
@@ -424,18 +392,12 @@ commands:
     description: "Setup Dependencies"
     steps:
       - *install_underlay_dependencies
-      - *restore_ccache
-      - *ccache_stats
       - *setup_underlay_workspace
-      - *ccache_stats
       - *install_overlay_dependencies
   build_source:
     description: "Build Source"
     steps:
       - *setup_overlay_workspace
-      - *store_ccache_logs
-      - *ccache_stats
-      - *save_ccache
   restore_build:
     description: "Restore Build"
     steps:
@@ -456,11 +418,6 @@ commands:
     steps:
       - *collect_overlay_coverage
       - *upload_overlay_coverage
-  trigger_dockerhub:
-    description: "Trigger DockerHub"
-    steps:
-      - *check_ros2_updates
-      - *trigger_dockerhub_build
 
 _environments:
   common_environment: &common_environment
@@ -468,7 +425,6 @@ _environments:
     UNDERLAY_WS: "/opt/underlay_ws"
     OVERLAY_WS: "/opt/overlay_ws"
     UNDERLAY_MIXINS: "release ccache"
-    CCACHE_DIR: "/tmp/.ccache"
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
     MAKEFLAGS: "-j 2 -l 2 "
@@ -480,7 +436,7 @@ _environments:
 executors:
   debug_exec:
     docker:
-      - image: rosplanning/navigation2:main.debug
+      - image: ghcr.io/ros-planning/navigation2:main
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
@@ -488,7 +444,7 @@ executors:
       OVERLAY_MIXINS: "debug ccache coverage-gcc"
   release_exec:
     docker:
-      - image: rosplanning/navigation2:main.release
+      - image: ghcr.io/ros-planning/navigation2:main
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
@@ -533,10 +489,6 @@ jobs:
       - restore_build
       - test_build:
           cache_test: << parameters.cache_test >>
-  rebuild_dockerhub:
-    executor: release_exec
-    steps:
-      - trigger_dockerhub
 
 workflows:
   version: 2
@@ -571,16 +523,6 @@ workflows:
     triggers:
       - schedule:
           cron: "0 13 * * *"
-          filters:
-            branches:
-              only:
-                - main
-  dockerhub:
-    jobs:
-      - rebuild_dockerhub
-    triggers:
-      - schedule:
-          cron: "0 7 * * *"
           filters:
             branches:
               only:

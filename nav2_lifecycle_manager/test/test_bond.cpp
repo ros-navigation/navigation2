@@ -130,7 +130,8 @@ TEST(LifecycleBondTest, POSITIVE)
   // let the lifecycle server come up
   rclcpp::Rate(1).sleep();
 
-  nav2_lifecycle_manager::LifecycleManagerClient client("lifecycle_manager_test");
+  auto node = std::make_shared<rclcpp::Node>("lifecycle_manager_test_service_client");
+  nav2_lifecycle_manager::LifecycleManagerClient client("lifecycle_manager_test", node);
 
   // create node, should be up now
   auto fixture = TestFixture(true, "bond_tester");
@@ -169,7 +170,8 @@ TEST(LifecycleBondTest, POSITIVE)
 
 TEST(LifecycleBondTest, NEGATIVE)
 {
-  nav2_lifecycle_manager::LifecycleManagerClient client("lifecycle_manager_test");
+  auto node = std::make_shared<rclcpp::Node>("lifecycle_manager_test_service_client");
+  nav2_lifecycle_manager::LifecycleManagerClient client("lifecycle_manager_test", node);
 
   // create node, now without bond setup to connect to. Should fail because no bond
   auto fixture = TestFixture(false, "bond_tester");

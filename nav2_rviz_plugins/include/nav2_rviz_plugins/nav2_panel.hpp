@@ -31,7 +31,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rviz_common/panel.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
@@ -122,8 +122,8 @@ private:
   NavThroughPosesGoalHandle::SharedPtr nav_through_poses_goal_handle_;
 
   // The client used to control the nav2 stack
-  nav2_lifecycle_manager::LifecycleManagerClient client_nav_;
-  nav2_lifecycle_manager::LifecycleManagerClient client_loc_;
+  std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_nav_;
+  std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_loc_;
 
   QPushButton * start_reset_button_{nullptr};
   QPushButton * pause_resume_button_{nullptr};
@@ -194,8 +194,8 @@ public:
   using SystemStatus = nav2_lifecycle_manager::SystemStatus;
 
   explicit InitialThread(
-    nav2_lifecycle_manager::LifecycleManagerClient & client_nav,
-    nav2_lifecycle_manager::LifecycleManagerClient & client_loc)
+    std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> & client_nav,
+    std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> & client_loc)
   : client_nav_(client_nav), client_loc_(client_loc)
   {}
 
@@ -206,14 +206,14 @@ public:
 
     while (status_nav == SystemStatus::TIMEOUT) {
       if (status_nav == SystemStatus::TIMEOUT) {
-        status_nav = client_nav_.is_active(std::chrono::seconds(1));
+        status_nav = client_nav_->is_active(std::chrono::seconds(1));
       }
     }
 
     // try to communicate twice, might not actually be up if in SLAM mode
     bool tried_loc_bringup_once = false;
     while (status_loc == SystemStatus::TIMEOUT) {
-      status_loc = client_loc_.is_active(std::chrono::seconds(1));
+      status_loc = client_loc_->is_active(std::chrono::seconds(1));
       if (tried_loc_bringup_once) {
         break;
       }
@@ -240,8 +240,8 @@ signals:
   void localizationInactive();
 
 private:
-  nav2_lifecycle_manager::LifecycleManagerClient client_nav_;
-  nav2_lifecycle_manager::LifecycleManagerClient client_loc_;
+  std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_nav_;
+  std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_loc_;
 };
 
 }  // namespace nav2_rviz_plugins

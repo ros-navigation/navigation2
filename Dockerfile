@@ -26,15 +26,23 @@ COPY ./ ./navigation2
 
 # copy manifests for caching
 WORKDIR /opt
-RUN mkdir -p /tmp/opt && \
-    find ./ -name "package.xml" | \
-      xargs cp --parents -t /tmp/opt && \
-    find ./ -name "COLCON_IGNORE" | \
-      xargs cp --parents -t /tmp/opt || true
+RUN find . -name "src" -type d \
+      -mindepth 1 -maxdepth 2 -printf '%P\n' \
+      | xargs -I % mkdir -p /tmp/opt/% && \
+    find . -name "package.xml" \
+      | xargs cp --parents -t /tmp/opt && \
+    find . -name "COLCON_IGNORE" \
+      | xargs cp --parents -t /tmp/opt || true
 
 # multi-stage for building
 FROM $FROM_IMAGE AS builder
+
+# config dependencies install
 ARG DEBIAN_FRONTEND=noninteractive
+RUN echo '\
+APT::Install-Recommends "0";\n\
+APT::Install-Suggests "0";\n\
+' > /etc/apt/apt.conf.d/01norecommend
 
 # install CI dependencies
 ARG RTI_NC_LICENSE_ACCEPTED=yes
@@ -48,12 +56,15 @@ RUN apt-get update && \
       ros-$ROS_DISTRO-rmw-connextdds \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
     && pip3 install \
-      git+https://github.com/ruffsl/colcon-cache.git@13c424c3a455ae04d1a4176a54c49a9d20c9dca0 \
+      fastcov \
+      git+https://github.com/ruffsl/colcon-cache.git@1d6ae5745ac3e124bb46c3a636439dbc02af77dd \
+      git+https://github.com/ruffsl/colcon-clean.git@87dee2dd1e47c2b97ac6d8300f76e3f607d19ef6 \
     && rosdep update \
     && rm -rf /var/lib/apt/lists/*
 
 # install underlay dependencies
 ARG UNDERLAY_WS
+ENV UNDERLAY_WS $UNDERLAY_WS
 WORKDIR $UNDERLAY_WS
 COPY --from=cacher /tmp/$UNDERLAY_WS ./
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
@@ -68,42 +79,42 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 # build underlay source
 COPY --from=cacher $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache"
-ARG FAIL_ON_BUILD_FAILURE=True
+ARG CCACHE_DIR="$UNDERLAY_WS/.ccache"
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon cache lock && \
     colcon build \
       --symlink-install \
       --mixin $UNDERLAY_MIXINS \
-      --event-handlers console_direct+ \
-    || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
+      --event-handlers console_direct+
 
 # install overlay dependencies
 ARG OVERLAY_WS
+ENV OVERLAY_WS $OVERLAY_WS
 WORKDIR $OVERLAY_WS
 COPY --from=cacher /tmp/$OVERLAY_WS ./
 RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
-        $UNDERLAY_WS/src \
       --skip-keys " \
         slam_toolbox \
         "\
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
+# multi-stage for testing
+FROM builder AS tester
+
 # build overlay source
 COPY --from=cacher $OVERLAY_WS ./
 ARG OVERLAY_MIXINS="release ccache"
+ARG CCACHE_DIR="$OVERLAY_WS/.ccache"
 RUN . $UNDERLAY_WS/install/setup.sh && \
     colcon cache lock && \
     colcon build \
       --symlink-install \
-      --mixin $OVERLAY_MIXINS \
-    || ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1)
+      --mixin $OVERLAY_MIXINS
 
 # source overlay from entrypoint
-ENV UNDERLAY_WS $UNDERLAY_WS
-ENV OVERLAY_WS $OVERLAY_WS
 RUN sed --in-place \
       's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
       /ros_entrypoint.sh

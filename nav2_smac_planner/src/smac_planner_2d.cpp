@@ -128,6 +128,7 @@ void SmacPlanner2D::configure(
     _allow_unknown,
     _max_iterations,
     _max_on_approach_iterations,
+    _max_planning_time,
     0.0 /*unused for 2D*/,
     1.0 /*unused for 2D*/);
 
@@ -175,6 +176,10 @@ void SmacPlanner2D::activate()
   if (_costmap_downsampler) {
     _costmap_downsampler->on_activate();
   }
+  auto node = _node.lock();
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&SmacPlanner2D::dynamicParametersCallback, this, _1));
 }
 
 void SmacPlanner2D::deactivate()
@@ -186,6 +191,7 @@ void SmacPlanner2D::deactivate()
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
   }
+  dyn_params_handler_.reset();
 }
 
 void SmacPlanner2D::cleanup()
@@ -340,45 +346,46 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   return plan;
 }
 
-void SmacPlanner2D::on_parameter_event_callback(
-  const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+rcl_interfaces::msg::SetParametersResult
+SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
+  rcl_interfaces::msg::SetParametersResult result;
   std::lock_guard<std::mutex> lock_reinit(_mutex);
 
   bool reinit_a_star = false;
   bool reinit_downsampler = false;
 
-  for (auto & changed_parameter : event->changed_parameters) {
-    const auto & type = changed_parameter.value.type;
-    const auto & name = changed_parameter.name;
-    const auto & value = changed_parameter.value;
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == _name + ".tolerance") {
-        _tolerance = static_cast<float>(value.double_value);
+        _tolerance = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".cost_travel_multiplier") {
         reinit_a_star = true;
-        _search_info.cost_penalty = value.double_value;
+        _search_info.cost_penalty = parameter.as_double();
       } else if (name == _name + ".max_planning_time") {
-        _max_planning_time = value.double_value;
+        reinit_a_star = true;
+        _max_planning_time = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == _name + ".downsample_costmap") {
         reinit_downsampler = true;
-        _downsample_costmap = value.bool_value;
+        _downsample_costmap = parameter.as_bool();
       } else if (name == _name + ".allow_unknown") {
         reinit_a_star = true;
-        _allow_unknown = value.bool_value;
+        _allow_unknown = parameter.as_bool();
       } else if (name == _name + ".use_final_approach_orientation") {
-        _use_final_approach_orientation = value.bool_value;
+        _use_final_approach_orientation = parameter.as_bool();
       }
     } else if (type == ParameterType::PARAMETER_INTEGER) {
       if (name == _name + ".downsampling_factor") {
         reinit_downsampler = true;
-        _downsampling_factor = value.integer_value;
+        _downsampling_factor = parameter.as_int();
       } else if (name == _name + ".max_iterations") {
         reinit_a_star = true;
-        _max_iterations = value.integer_value;
+        _max_iterations = parameter.as_int();
         if (_max_iterations <= 0) {
           RCLCPP_INFO(
             _logger, "maximum iteration selected as <= 0, "
@@ -387,7 +394,7 @@ void SmacPlanner2D::on_parameter_event_callback(
         }
       } else if (name == _name + ".max_on_approach_iterations") {
         reinit_a_star = true;
-        _max_on_approach_iterations = value.integer_value;
+        _max_on_approach_iterations = parameter.as_int();
         if (_max_on_approach_iterations <= 0) {
           RCLCPP_INFO(
             _logger, "On approach iteration selected as <= 0, "
@@ -398,7 +405,7 @@ void SmacPlanner2D::on_parameter_event_callback(
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == _name + ".motion_model_for_search") {
         reinit_a_star = true;
-        _motion_model = fromString(value.string_value);
+        _motion_model = fromString(parameter.as_string());
         if (_motion_model == MotionModel::UNKNOWN) {
           RCLCPP_WARN(
             _logger,
@@ -419,6 +426,7 @@ void SmacPlanner2D::on_parameter_event_callback(
         _allow_unknown,
         _max_iterations,
         _max_on_approach_iterations,
+        _max_planning_time,
         0.0 /*unused for 2D*/,
         1.0 /*unused for 2D*/);
     }
@@ -434,6 +442,8 @@ void SmacPlanner2D::on_parameter_event_callback(
       }
     }
   }
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_smac_planner

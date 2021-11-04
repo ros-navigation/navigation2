@@ -52,8 +52,9 @@ public:
 
   /**
    * @brief Constructor for nav2_controller::ControllerServer
+   * @param options Additional options to control creation of the node.
    */
-  ControllerServer();
+  explicit ControllerServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
    * @brief Destructor for nav2_controller::ControllerServer
    */

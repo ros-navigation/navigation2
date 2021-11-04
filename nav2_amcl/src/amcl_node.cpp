@@ -35,7 +35,7 @@
 #include "nav2_util/string_utils.hpp"
 #include "nav2_amcl/sensors/laser/laser.hpp"
 #include "tf2/convert.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/LinearMath/Transform.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/message_filter.h"
@@ -57,8 +57,8 @@ namespace nav2_amcl
 {
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
-AmclNode::AmclNode()
-: nav2_util::LifecycleNode("amcl", "", true)
+AmclNode::AmclNode(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("amcl", "", true, options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -930,7 +930,7 @@ AmclNode::publishAmclPose(
   if (!initial_pose_is_known_) {
     if (checkElapsedTime(2s, last_time_printed_msg_)) {
       RCLCPP_WARN(
-        get_logger(), "ACML cannot publish a pose or update the transform. "
+        get_logger(), "AMCL cannot publish a pose or update the transform. "
         "Please set the initial pose...");
       last_time_printed_msg_ = now();
     }
@@ -1376,3 +1376,10 @@ AmclNode::initLaserScan()
 }
 
 }  // namespace nav2_amcl
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_amcl::AmclNode)
