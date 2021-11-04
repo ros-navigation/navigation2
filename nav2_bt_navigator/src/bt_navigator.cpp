@@ -72,6 +72,11 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
   declare_parameter("odom_topic", std::string("odom"));
+  declare_parameter("enable_groot_monitoring", false);
+  declare_parameter("pose_groot_publisher_port", 1666);
+  declare_parameter("pose_groot_server_port", 1667);
+  declare_parameter("poses_groot_publisher_port", 1668);
+  declare_parameter("poses_groot_server_port", 1669);
 }
 
 BtNavigator::~BtNavigator()
@@ -112,11 +117,21 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     return nav2_util::CallbackReturn::FAILURE;
   }
 
+  pose_navigator_->getActionServer()->setGrootMonitoring(
+    get_parameter("enable_groot_monitoring").as_bool(),
+    get_parameter("pose_groot_publisher_port").as_int(),
+    get_parameter("pose_groot_server_port").as_int());
+
   if (!poses_navigator_->on_configure(
       shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
+
+  poses_navigator_->getActionServer()->setGrootMonitoring(
+    get_parameter("enable_groot_monitoring").as_bool(),
+    get_parameter("poses_groot_publisher_port").as_int(),
+    get_parameter("poses_groot_server_port").as_int());
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(shared_from_this(), 0.3);
@@ -182,3 +197,10 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 }  // namespace nav2_bt_navigator
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_bt_navigator::BtNavigator)

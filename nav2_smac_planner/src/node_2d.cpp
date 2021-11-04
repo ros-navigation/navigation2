@@ -135,9 +135,18 @@ void Node2D::getNeighbors(
   int index;
   NodePtr neighbor;
   int node_i = this->getIndex();
+  const Coordinates parent = getCoords(this->getIndex());
+  Coordinates child;
 
   for (unsigned int i = 0; i != _neighbors_grid_offsets.size(); ++i) {
     index = node_i + _neighbors_grid_offsets[i];
+
+    // Check for wrap around conditions
+    child = getCoords(index);
+    if (fabs(parent.x - child.x) > 1 || fabs(parent.y - child.y) > 1) {
+      continue;
+    }
+
     if (NeighborGetter(index, neighbor)) {
       if (neighbor->isNodeValid(traverse_unknown, collision_checker) && !neighbor->wasVisited()) {
         neighbors.push_back(neighbor);
