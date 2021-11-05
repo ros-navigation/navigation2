@@ -351,7 +351,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
           nav_msgs::msg::Path subpath;
           subpath.header = plan.header;
           std::copy(
-+            plan.poses.begin() + cusps_id[i - 1],
+            plan.poses.begin() + cusps_id[i - 1],
             plan.poses.begin() + cusps_id[i] + 1, std::back_inserter(subpath.poses));
           _smoother->smooth(subpath, costmap, floor(time_remaining / (cusps_id.size() - 1)));
         }
