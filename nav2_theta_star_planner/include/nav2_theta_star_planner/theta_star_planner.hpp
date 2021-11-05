@@ -62,7 +62,14 @@ protected:
   std::string global_frame_, name_;
   bool use_final_approach_orientation_;
 
+  // parent node weak ptr
+  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node_;
+  
   std::unique_ptr<theta_star::ThetaStar> planner_;
+
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+
 
   /**
    * @brief the function responsible for calling the algorithm and retrieving a path from it
@@ -79,6 +86,13 @@ protected:
   static nav_msgs::msg::Path linearInterpolation(
     const std::vector<coordsW> & raw_path,
     const double & dist_bw_points);
+
+  /**
+   * @brief Callback executed when a paramter change is detected
+   * @param parameters list of changed parameters
+   */
+  rcl_interfaces::msg::SetParametersResult 
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 };
 }   //  namespace nav2_theta_star_planner
 
