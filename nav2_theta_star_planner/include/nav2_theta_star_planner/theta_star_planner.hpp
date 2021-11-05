@@ -34,6 +34,8 @@
 #include "nav2_theta_star_planner/theta_star.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
+using rcl_interfaces::msg::ParameterType;
+
 namespace nav2_theta_star_planner
 {
 
