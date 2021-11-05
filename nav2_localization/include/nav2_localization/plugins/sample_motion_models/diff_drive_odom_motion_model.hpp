@@ -28,10 +28,10 @@ namespace nav2_localization
 class DiffDriveOdomMotionModel : public SampleMotionModel
 {
 public:
-  geometry_msgs::msg::TransformStamped getMostLikelyPose(
-    const geometry_msgs::msg::TransformStamped & prev_odom,
-    const geometry_msgs::msg::TransformStamped & curr_odom,
-    const geometry_msgs::msg::TransformStamped & prev_pose) override;
+  geometry_msgs::msg::Pose getMostLikelyPose(
+    const nav_msgs::msg::Odometry & prev_odom,
+    const nav_msgs::msg::Odometry & curr_odom,
+    const geometry_msgs::msg::Pose & prev_pose) override;
 
   void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) override;
   void activate() override;
@@ -45,10 +45,10 @@ protected:
     : rot_1_(rot_1), trans_(trans), rot_2_(rot_2) {}
     double rot_1_, trans_, rot_2_;
   };
-
+  
   MotionComponents calculateIdealMotionComponents(
-    const geometry_msgs::msg::TransformStamped & prev,
-    const geometry_msgs::msg::TransformStamped & curr
+    const geometry_msgs::msg::Pose & prev,
+    const geometry_msgs::msg::Pose & curr
   );
   double calculateNoisyRot(const double & rot, const double & trans);
   double calculateNoisyTrans(const double & rot1, const double & trans, const double & rot2);

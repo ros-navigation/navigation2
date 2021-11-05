@@ -38,10 +38,10 @@ public:
    * @param prev_pose The robot's pose estimation at the previous time step.
    * @return The most likely pose of the robot at the current time step, based on the model's estimation.
    */
-  virtual geometry_msgs::msg::TransformStamped getMostLikelyPose(
-    const geometry_msgs::msg::TransformStamped & prev_odom,
-    const geometry_msgs::msg::TransformStamped & curr_odom,
-    const geometry_msgs::msg::TransformStamped & prev_pose) = 0;
+  virtual geometry_msgs::msg::Pose getMostLikelyPose(
+    const nav_msgs::msg::Odometry & prev_odom,
+    const nav_msgs::msg::Odometry & curr_odom,
+    const geometry_msgs::msg::Pose & prev_pose) = 0;
 
   /**
    * @brief Configures the model, during the "Configuring" state of the parent lifecycle node.
