@@ -66,7 +66,7 @@ protected:
 
   // parent node weak ptr
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node_;
-  
+
   std::unique_ptr<theta_star::ThetaStar> planner_;
 
   // Dynamic parameters handler
@@ -93,7 +93,7 @@ protected:
    * @brief Callback executed when a paramter change is detected
    * @param parameters list of changed parameters
    */
-  rcl_interfaces::msg::SetParametersResult 
+  rcl_interfaces::msg::SetParametersResult
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 };
 }   //  namespace nav2_theta_star_planner
