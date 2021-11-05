@@ -25,6 +25,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
@@ -51,17 +52,19 @@ public:
      * @param scan Current measurement
      * @return Estimation of the current position
      */
-  virtual nav_msgs::msg::Odometry estimatePose(
+  virtual geometry_msgs::msg::PoseWithCovarianceStamped estimatePose(
     const nav_msgs::msg::Odometry & curr_odom,
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan) = 0;
 
   /**
    * @brief Initializes the filter being used with a given pose
-   * @param pose The pose at which to initialize the filter
+   * @param init_pose The pose at which to initialize the robot pose
+   * @param init_odom The odometry at the initial estimated pose
    */
-  void initFilter(const geometry_msgs::msg::Pose & pose)
+  void initFilter(const geometry_msgs::msg::Pose & init_pose, const nav_msgs::msg::Odometry & init_odom)
   {
-    prev_estimate_.pose.pose = pose;
+    prev_pose_.pose.pose = init_pose;
+    prev_odom_ = init_odom;
   }
 
   /**
@@ -94,7 +97,8 @@ protected:
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   SampleMotionModel::Ptr motion_sampler_;
   Matcher2d::Ptr matcher_;
-  nav_msgs::msg::Odometry prev_estimate_;  // Previous estimation
+  nav_msgs::msg::Odometry prev_odom_;  // Previous odometry
+  geometry_msgs::msg::PoseWithCovarianceStamped prev_pose_;  // Previous pose estimation
 };
 }  // namespace nav2_localization
 
