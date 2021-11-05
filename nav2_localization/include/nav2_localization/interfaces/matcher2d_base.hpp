@@ -16,7 +16,7 @@
 #define NAV2_LOCALIZATION__INTERFACES__MATCHER2D_BASE_HPP_
 
 #include <memory>  // For shared_ptr<>
-#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -45,7 +45,7 @@ public:
    */
   virtual double getScanProbability(
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan,
-    const geometry_msgs::msg::TransformStamped & curr_pose) = 0;
+    const geometry_msgs::msg::Pose & curr_pose) = 0;
 
   /**
    * @brief Sets the map of the environment, against which the matcher will compare sensor readings.

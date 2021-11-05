@@ -30,7 +30,7 @@ public:
 
   double getScanProbability(
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan,
-    const geometry_msgs::msg::TransformStamped & curr_pose) override;
+    const geometry_msgs::msg::Pose & curr_pose) override;
   void setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr & map) override;
   void setSensorPose(const geometry_msgs::msg::TransformStamped & sensor_pose) override;
   void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) override;

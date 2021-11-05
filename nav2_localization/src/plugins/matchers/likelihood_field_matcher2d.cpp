@@ -47,7 +47,7 @@ void LikelihoodFieldMatcher2d::configure(const rclcpp_lifecycle::LifecycleNode::
 
 double LikelihoodFieldMatcher2d::getScanProbability(
   const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan,
-  const geometry_msgs::msg::TransformStamped & curr_pose)
+  const geometry_msgs::msg::Pose & curr_pose)
 {
   // Get scan data from pointcloud
   std::vector<double> ranges;
@@ -80,7 +80,7 @@ double LikelihoodFieldMatcher2d::getScanProbability(
   double z_max = *max_element(ranges.begin(), ranges.end());
 
   double q = 1;  // Probability of curr_pose given scan
-  double theta = tf2::getYaw(curr_pose.transform.rotation);  // Robot's orientation
+  double theta = tf2::getYaw(curr_pose.orientation);  // Robot's orientation
 
   // In case the user specifies more beams than is available
   int max_number_of_beams = std::min(max_number_of_beams_, valid_beams);
@@ -93,12 +93,12 @@ double LikelihoodFieldMatcher2d::getScanProbability(
   for (int i = 0; i < valid_beams; i += beams_to_skip) {
     // Map the beam end-point onto the map
     double beam_angle = tf2::getYaw(sensor_pose_.transform.rotation) + angles[i];
-    double x_z_kt = curr_pose.transform.translation.x +
+    double x_z_kt = curr_pose.position.x +
       sensor_pose_.transform.translation.x * cos(theta) -
       sensor_pose_.transform.translation.y * sin(theta) +
       ranges[i] *
       cos(theta + beam_angle);
-    double y_z_kt = curr_pose.transform.translation.y +
+    double y_z_kt = curr_pose.position.y +
       sensor_pose_.transform.translation.y * cos(theta) +
       sensor_pose_.transform.translation.x * sin(theta) +
       ranges[i] *
