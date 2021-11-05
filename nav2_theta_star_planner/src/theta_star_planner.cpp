@@ -26,7 +26,9 @@ void ThetaStarPlanner::configure(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   planner_ = std::make_unique<theta_star::ThetaStar>();
-  auto node = parent.lock();
+
+  parent_node_ = parent;
+  auto node = parent_node_.lock();
   logger_ = node->get_logger();
   clock_ = node->get_clock();
   name_ = name;
@@ -71,6 +73,10 @@ void ThetaStarPlanner::cleanup()
 void ThetaStarPlanner::activate()
 {
   RCLCPP_INFO(logger_, "Activating plugin %s of type nav2_theta_star_planner", name_.c_str());
+  // Add callback for dynamic parameters
+  auto node = parent_node_.lock();
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&ThetaStarPlanner::dynamicParametersCallback, this, std::placeholders::_1));
 }
 
 void ThetaStarPlanner::deactivate()
@@ -187,6 +193,31 @@ nav_msgs::msg::Path ThetaStarPlanner::linearInterpolation(
   }
 
   return pa;
+}
+
+rcl_interfaces::msg::SetParametersResult
+ThetaStarPlanner::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
+
+    if (type == ParameterType::PARAMETER_INTEGER) {
+      if (name == name_ + ".how_many_corners") {
+        planner_->how_many_corners_ = parameter.as_int();
+      }
+    } else if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == name_ + ".w_euc_cost") {
+        planner_->w_euc_cost_ = parameter.as_double();
+      } else if (name == name_ + ".w_traversal_cost") {
+        planner_->w_traversal_cost_ = parameter.as_double();
+      }
+    }
+  }
+
+  result.successful = true;
+  return result;
 }
 
 
