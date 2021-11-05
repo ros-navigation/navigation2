@@ -45,16 +45,35 @@ protected:
   int particles_count_;  // Number of particles
   double particles_spread_radius_;  // Initial particles spread radius
   double particles_spread_yaw_;  // Initial particles yaw spread
+  double weights_sum_; // Sum of the particle weights
   std::vector<Particle> particles_;
 
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
     SampleMotionModel::Ptr & motion_sampler,
-    Matcher2d::Ptr & matcher) override;
+    Matcher2d::Ptr & matcher);
 
-  void initFilter(const geometry_msgs::msg::Pose & pose);
+  void initFilter(const geometry_msgs::msg::Pose & init_pose, const nav_msgs::msg::Odometry & init_odom);
 
-  void initParticles(const geometry_msgs::msg::Pose & inital_pose);
+  /**
+  * @brief
+  * MCL implementation
+  */
+  geometry_msgs::msg::PoseWithCovarianceStamped estimatePose(
+    const nav_msgs::msg::Odometry & curr_odom,
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan) override;
+
+  /**
+  * @brief
+  * Resamples and updates the particle set using low variance resampling
+  */
+  void resample();
+
+  /**
+  * @brief
+  * Calculates the pose mean and covariance from the particle set
+  */
+  geometry_msgs::msg::PoseWithCovarianceStamped getMeanPose();
 };
 }  // namespace nav2_localization
 
