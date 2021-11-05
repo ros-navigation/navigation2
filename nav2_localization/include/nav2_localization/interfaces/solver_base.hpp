@@ -73,10 +73,15 @@ public:
   * @param motionSampler The Sample Motion Model to use
   * @param matcher The 2D Matcher to use
   */
-  virtual void configure(
+  void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
     SampleMotionModel::Ptr & motionSampler,
-    Matcher2d::Ptr & matcher) = 0;
+    Matcher2d::Ptr & matcher)
+  {
+    node_ = node;
+    motion_sampler_ = motionSampler;
+    matcher_ = matcher;
+  }
 
   /**
      * @brief Activates the solver, during the "Activating" state of the parent lifecycle node.
