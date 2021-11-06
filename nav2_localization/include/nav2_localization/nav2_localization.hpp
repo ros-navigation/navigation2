@@ -27,6 +27,7 @@
 #include "nav2_localization/interfaces/solver_base.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "message_filters/subscriber.h"
+#include "message_filters/time_synchronizer.h"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "tf2_ros/message_filter.h"
@@ -131,15 +132,21 @@ protected:
 
   /**
    * @brief Callback when the scan is received
+   * @param odometry pointer to the received odometry message
    * @param scan pointer to the received PointCloud2 message
    */
-  void scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr scan);
+  void sensorsReceived(
+    nav_msgs::msg::Odometry::ConstSharedPtr odometry,
+    sensor_msgs::msg::PointCloud2::ConstSharedPtr scan);
 
   /**
    * @brief Callback when the initial pose of the robot is received
-   * @param msg pointer to the received pose
+   * @param odom pointer to the received odometry
+   * @param init_pose pointer to the received pose
    */
-  void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+  void initialPoseReceived(
+    nav_msgs::msg::Odometry::ConstSharedPtr odom,
+    geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr init_pose);
 
   // Map
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
@@ -147,6 +154,9 @@ protected:
 
   // Scan
   std::string scan_topic_;
+
+  // Odometry
+  std::string odom_topic_;
 
   // Transforms
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
@@ -160,6 +170,12 @@ protected:
   // Message filters
   std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
   std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> scan_sub_;
+  std::shared_ptr<message_filters::Subscriber<nav_msgs::msg::Odometry>> odom_sub_;
+  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::Pose>> initial_pose_sub_;
+  std::shared_ptr<message_filters::TimeSynchronizer<nav_msgs::msg::Odometry,
+    geometry_msgs::msg::Pose>> initial_pose_sync_filter_sub_;
+  std::shared_ptr<message_filters::TimeSynchronizer<nav_msgs::msg::Odometry,
+    sensor_msgs::msg::PointCloud2>> sensors_sync_filter_sub_;
   std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
   std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>> scan_filter_;
   message_filters::Connection laser_scan_connection_;
@@ -192,8 +208,6 @@ protected:
   std::vector<std::string> localization_ids_;
 
   // Initial pose
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
-    initial_pose_sub_;
   bool initial_pose_set_;
 };
 
