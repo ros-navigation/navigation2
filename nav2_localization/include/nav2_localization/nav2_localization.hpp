@@ -132,12 +132,12 @@ protected:
 
   /**
    * @brief Callback when the scan is received
-   * @param odometry pointer to the received odometry message
    * @param scan pointer to the received PointCloud2 message
+   * @param odom pointer to the received odometry message
    */
   void sensorsReceived(
-    nav_msgs::msg::Odometry::ConstSharedPtr odometry,
-    sensor_msgs::msg::PointCloud2::ConstSharedPtr scan);
+    sensor_msgs::msg::PointCloud2::ConstSharedPtr scan,
+    nav_msgs::msg::Odometry::ConstSharedPtr odom);
 
   /**
    * @brief Callback when the initial pose of the robot is received
@@ -145,8 +145,8 @@ protected:
    * @param init_pose pointer to the received pose
    */
   void initialPoseReceived(
-    nav_msgs::msg::Odometry::ConstSharedPtr odom,
-    geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr init_pose);
+    geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr init_pose,
+    nav_msgs::msg::Odometry::ConstSharedPtr odom);
 
   // Map
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
@@ -171,11 +171,12 @@ protected:
   std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
   std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> scan_sub_;
   std::shared_ptr<message_filters::Subscriber<nav_msgs::msg::Odometry>> odom_sub_;
-  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::Pose>> initial_pose_sub_;
-  std::shared_ptr<message_filters::TimeSynchronizer<nav_msgs::msg::Odometry,
-    geometry_msgs::msg::Pose>> initial_pose_sync_filter_sub_;
-  std::shared_ptr<message_filters::TimeSynchronizer<nav_msgs::msg::Odometry,
-    sensor_msgs::msg::PointCloud2>> sensors_sync_filter_sub_;
+  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped>>
+  initial_pose_sub_;
+  std::shared_ptr<message_filters::TimeSynchronizer<geometry_msgs::msg::PoseWithCovarianceStamped,
+    nav_msgs::msg::Odometry>> initial_pose_sync_filter_sub_;
+  std::shared_ptr<message_filters::TimeSynchronizer<sensor_msgs::msg::PointCloud2,
+    nav_msgs::msg::Odometry>> sensors_sync_filter_sub_;
   std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
   std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>> scan_filter_;
   message_filters::Connection laser_scan_connection_;

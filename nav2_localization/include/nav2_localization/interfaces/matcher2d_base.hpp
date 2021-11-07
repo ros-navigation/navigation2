@@ -17,6 +17,7 @@
 
 #include <memory>  // For shared_ptr<>
 #include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
