@@ -41,6 +41,10 @@ public:
   using Ptr = std::shared_ptr<nav2_localization::ParticleFilter>;
   ParticleFilter();
 
+  void activate(){};
+  void deactivate(){};
+  void cleanup(){};
+
 protected:
   int particles_count_;  // Number of particles
   double particles_spread_radius_;  // Initial particles spread radius
@@ -57,17 +61,15 @@ protected:
 
   /**
   * @brief
-  * MCL implementation
-  */
-  geometry_msgs::msg::PoseWithCovarianceStamped estimatePose(
-    const nav_msgs::msg::Odometry & curr_odom,
-    const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan) override;
-
-  /**
-  * @brief
   * Resamples and updates the particle set using low variance resampling
   */
   void resample();
+
+  /**
+  * @brief
+  * Publish particles for visualization
+  */
+  void visualize_particles();
 
   /**
   * @brief
