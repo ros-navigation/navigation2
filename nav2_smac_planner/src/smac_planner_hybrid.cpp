@@ -340,7 +340,9 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 #endif
 
   // Smooth plan
-  _smoother->smooth(plan, costmap, time_remaining);
+  if (num_iterations > 1 && plan.poses.size() > 6) {
+    _smoother->smooth(plan, costmap, time_remaining);
+  }
 
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point c = steady_clock::now();
