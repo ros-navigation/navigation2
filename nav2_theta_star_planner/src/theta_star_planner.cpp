@@ -54,9 +54,6 @@ void ThetaStarPlanner::configure(
   node->get_parameter(name_ + ".w_traversal_cost", planner_->w_traversal_cost_);
 
   planner_->w_heuristic_cost_ = planner_->w_euc_cost_ < 1.0 ? planner_->w_euc_cost_ : 1.0;
-  nav2_util::declare_parameter_if_not_declared(
-    node, name_ + ".w_heuristic_cost", rclcpp::ParameterValue(1.0));
-  node->get_parameter(name_ + ".w_heuristic_cost", planner_->w_heuristic_cost_);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));
@@ -212,6 +209,10 @@ ThetaStarPlanner::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       } else if (name == name_ + ".w_traversal_cost") {
         planner_->w_traversal_cost_ = parameter.as_double();
       }
+    } else if (type == ParameterType::PARAMETER_BOOLEAN)
+    {
+      if(name == name_ + ".use_final_approach_orientation")
+        planner_->use_final_approach_orientation_ = parameter.as_bool();
     }
   }
 
