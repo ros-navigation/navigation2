@@ -6,4 +6,4 @@ A smoothing module implementing the `nav2_behavior_tree::SmoothPath` interface i
 
 See the [Navigation Plugin list](https://navigation.ros.org/plugins/index.html) for a list of the currently known and available smoother plugins. 
 
-See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-smoother-server.html) for additional parameter descriptions and a [tutorial about writing smoother plugins](https://navigation.ros.org/plugin_tutorials/docs/writing_new_nav2smoother_plugin.html).
+See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-smoother-server.html) for additional parameter descriptions.
