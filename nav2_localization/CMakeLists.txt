@@ -11,6 +11,7 @@ find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -26,6 +27,7 @@ set(dependencies
   geometry_msgs
   pluginlib
   nav2_util
+  nav2_msgs
   nav_2d_utils
   message_filters
   sensor_msgs

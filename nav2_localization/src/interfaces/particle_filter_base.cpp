@@ -6,6 +6,8 @@
 #include "tf2/utils.h"
 #include "tf2/LinearMath/Quaternion.h"
 
+#include "nav2_msgs/msg/particle.hpp"
+
 #include "nav2_localization/interfaces/particle_filter_base.hpp"
 
 namespace nav2_localization
@@ -19,6 +21,12 @@ void ParticleFilter::configure(
 {
   Solver::configure(node, motionSampler, matcher);
 
+  particle_cloud_pub_ = node_->create_publisher<nav2_msgs::msg::ParticleCloud>(
+    "particle_cloud", rclcpp::SensorDataQoS());
+
+  particles_poses_pub_ = node_->create_publisher<geometry_msgs::msg::PoseArray>(
+    "particlecloud", rclcpp::SensorDataQoS());
+
   node_->declare_parameter("particles_count", 500);
   node_->declare_parameter("initialization_radius", 1.0);
   node_->declare_parameter("particles_spread_yaw", 1.57);
@@ -26,6 +34,12 @@ void ParticleFilter::configure(
   node_->get_parameter("particles_count_", particles_count_);
   node_->get_parameter("particles_spread_radius", particles_spread_radius_);
   node_->get_parameter("particles_spread_yaw", particles_spread_yaw_);
+}
+
+void ParticleFilter::activate()
+{
+  particle_cloud_pub_->on_activate();
+  particles_poses_pub_->on_activate();
 }
 
 void ParticleFilter::initFilter(const geometry_msgs::msg::Pose & init_pose, const nav_msgs::msg::Odometry & init_odom)
@@ -78,6 +92,29 @@ void ParticleFilter::resample()
   }
 
   particles_ = sampled_particles;
+}
+
+void ParticleFilter::visualize_particles()
+{
+  nav2_msgs::msg::ParticleCloud particle_cloud_msg;
+  particle_cloud_msg.header.frame_id = "map";
+  particle_cloud_msg.header.stamp = node_->now();
+
+  geometry_msgs::msg::PoseArray particles_poses_msg;
+  particles_poses_msg.header.frame_id = "map";
+  particles_poses_msg.header.stamp = node_->now();
+
+  for (const auto & particle : particles_) {
+    particles_poses_msg.poses.push_back(particle.pose_);
+
+    nav2_msgs::msg::Particle temp_particle;
+    temp_particle.pose = particle.pose_;
+    temp_particle.weight = particle.weight_;
+    particle_cloud_msg.particles.push_back(temp_particle);
+  }
+
+  particles_poses_pub_->publish(particles_poses_msg);
+  particle_cloud_pub_->publish(particle_cloud_msg);
 }
 
 geometry_msgs::msg::PoseWithCovarianceStamped ParticleFilter::getMeanPose()

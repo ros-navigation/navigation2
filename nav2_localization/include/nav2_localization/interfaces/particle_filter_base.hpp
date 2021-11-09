@@ -20,7 +20,8 @@
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
-
+#include "geometry_msgs/msg/pose_array.hpp"
+#include "nav2_msgs/msg/particle_cloud.hpp"
 #include "nav2_localization/interfaces/solver_base.hpp"
 
 namespace nav2_localization
@@ -41,9 +42,9 @@ public:
   using Ptr = std::shared_ptr<nav2_localization::ParticleFilter>;
   ParticleFilter();
 
-  void activate(){};
-  void deactivate(){};
-  void cleanup(){};
+  void activate();
+  void deactivate() {}
+  void cleanup() {}
 
 protected:
   int particles_count_;  // Number of particles
@@ -76,6 +77,10 @@ protected:
   * Calculates the pose mean and covariance from the particle set
   */
   geometry_msgs::msg::PoseWithCovarianceStamped getMeanPose();
+
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::ParticleCloud>::SharedPtr particle_cloud_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
+    particles_poses_pub_;
 };
 }  // namespace nav2_localization
 
