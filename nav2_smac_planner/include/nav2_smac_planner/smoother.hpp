@@ -72,8 +72,31 @@ public:
     nav_msgs::msg::Path & path,
     const nav2_costmap_2d::Costmap2D * costmap,
     const double & max_time,
-    const bool do_refinement = true)
+    const bool do_refinement = true, const bool single_dir_segment = false)
   {
+    if (!single_dir_segment) {
+      // Check if there are any cusps and if so, split path to avoid smoothing cusps
+      // findDirectionChange returns initial and final path poses' indices plus cusps', if any
+      std::vector<unsigned int> cusps_id = findDirectionChange(path);
+      std::cout << "Found " << cusps_id.size() - 2 << " cusp(s) on current path" << std::endl;
+      if (cusps_id.size() < 3 && path.poses.size() > 6) {
+        // cusps_id < 3 means that the vector only contains initial and final path poses' indices
+        // i.e. no cusps in between were found
+          _smoother->smooth(path, costmap, time_remaining, do_refinement, true);
+      } else {
+        for (unsigned int i = 1; i < cusps_id.size(); ++i) {
+          if (cusps_id[i] - cusps_id[i - 1] > 6) {
+            nav_msgs::msg::Path subpath;
+            subpath.header = path.header;
+            std::copy(
+              path.poses.begin() + cusps_id[i - 1],
+              path.poses.begin() + cusps_id[i] + 1, std::back_inserter(subpath.poses));
+            std::cout << "Smoothing path segment [" << cusps_id[i-1] << ", " << cusps_id[i] << "]. Segment size = " << subpath.poses.size()<< std::endl;
+            _smoother->smooth(subpath, costmap, floor(time_remaining / (cusps_id.size() - 1)), do_refinement, true);
+          }
+        }
+      }
+    }
     using namespace std::chrono;  // NOLINT
     steady_clock::time_point a = steady_clock::now();
     rclcpp::Duration max_dur = rclcpp::Duration::from_seconds(max_time);
