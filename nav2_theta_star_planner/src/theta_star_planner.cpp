@@ -211,7 +211,9 @@ ThetaStarPlanner::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if(name == name_ + ".use_final_approach_orientation")
+      {
         use_final_approach_orientation_ = parameter.as_bool();
+      }
     }
   }
 
