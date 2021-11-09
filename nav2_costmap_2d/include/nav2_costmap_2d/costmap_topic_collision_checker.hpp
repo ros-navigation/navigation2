@@ -69,6 +69,10 @@ public:
    * @brief Returns if a pose is collision free
    */
   bool isCollisionFree(const geometry_msgs::msg::Pose2D & pose);
+  /**
+   * @brief Returns costmap resolution
+   */
+  double getCostmapResolution();
 
 protected:
   /**

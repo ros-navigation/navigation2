@@ -56,7 +56,7 @@ public:
   /**
    * @brief AsistedTeleop destructor
    */
-  ~AssistedTeleop() = default;
+  virtual ~AssistedTeleop() = default;
 
   /**
    * @brief configure the server and Assisted Teleop Action on lifecycle setup
@@ -76,9 +76,6 @@ public:
   void cleanup() override;
 
 protected:
-  // Clock
-  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
-
   // Logger
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_recoveries")};
 
@@ -98,7 +95,7 @@ protected:
    * @brief Callback function for velocity subscriber
    * @param msg received Twist message
    */
-  void vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
+  void velCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
 
   /**
    * @brief Performs velocity reduction if a collision is imminent
@@ -134,7 +131,6 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr vel_sub_;
-  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
 
   // User defined parameters
   double projection_time_;
@@ -146,13 +142,7 @@ protected:
   std::string cmd_vel_topic_;
   std::string input_vel_topic_;
 
-  geometry_msgs::msg::PoseStamped current_pose;
   std::string recovery_name_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ros_;
-  geometry_msgs::msg::TransformStamped transform;
-
-  // Parameters for Assisted Teleop
-  double scaling_factor = 1;
 };
 
 }  // namespace nav2_recoveries

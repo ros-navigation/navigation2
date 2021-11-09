@@ -39,7 +39,6 @@ AssistedTeleop::cleanup()
 {
   action_server_.reset();
   vel_pub_.reset();
-  costmap_sub_.reset();
 }
 
 void
@@ -98,16 +97,7 @@ AssistedTeleop::configure(
   node->get_parameter("cmd_vel_topic", cmd_vel_topic_);
   node->get_parameter("input_vel_topic", input_vel_topic_);
 
-  vel_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
-    input_vel_topic_, rclcpp::SystemDefaultsQoS(),
-    std::bind(
-      &AssistedTeleop::vel_callback,
-      this, std::placeholders::_1));
-
   vel_pub_ = node->create_publisher<geometry_msgs::msg::Twist>(cmd_vel_topic_, 1);
-
-  costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
-    node_, "local_costmap/costmap_raw");
 
   action_server_ = std::make_shared<ActionServer>(
     node, recovery_name_,
@@ -115,14 +105,13 @@ AssistedTeleop::configure(
 }
 
 void
-AssistedTeleop::vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
+AssistedTeleop::velCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
   double angular_vel = msg->angular.z;
   geometry_msgs::msg::Vector3Stamped twist_speed;
   twist_speed.vector.x = msg->linear.x;
   twist_speed.vector.y = msg->linear.y;
   twist_speed.vector.z = 0;
-  tf2::doTransform(twist_speed, twist_speed, transform);
   moveRobot(computeVelocity(twist_speed, angular_vel));
 }
 
@@ -133,9 +122,11 @@ AssistedTeleop::projectPose(
 {
   // Project Pose by time increment
   projected_pose.x += projection_time * (
-    twist_speed.vector.x * cos(projected_pose.theta));
-  projected_pose.y += projection_time * (
+    twist_speed.vector.x * cos(projected_pose.theta) +
     twist_speed.vector.y * sin(projected_pose.theta));
+  projected_pose.y += projection_time * (
+    twist_speed.vector.x * sin(projected_pose.theta) +
+    twist_speed.vector.y * cos(projected_pose.theta));
   projected_pose.theta += projection_time *
     angular_vel;
 }
@@ -146,7 +137,7 @@ AssistedTeleop::computeVelocity(
 {
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
   geometry_msgs::msg::Pose2D projected_pose;
-
+  geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
@@ -163,7 +154,7 @@ AssistedTeleop::computeVelocity(
   cmd_vel->angular.z = angular_vel;
 
   double linear_vel = std::fabs(std::hypot(cmd_vel->linear.x, cmd_vel->linear.y));
-  const double dt = costmap_ros_->getResolution() / linear_vel;
+  const double dt = collision_checker_->getCostmapResolution() / linear_vel;
   int loopcount = 1;
   double scaling_factor = 1;
 
@@ -214,7 +205,6 @@ void AssistedTeleop::execute()
     [&]()
     {RCLCPP_INFO(logger_, "%s running...", recovery_name_.c_str());});
 
-  transform = tf_->lookupTransform("odom", "base_link", node->now());
 
   auto start_time = node->now();
 
@@ -224,6 +214,12 @@ void AssistedTeleop::execute()
 
   rclcpp::WallRate loop_rate(cycle_frequency_);
   auto assisted_teleop_end_ = (node->now() + at_goal->time).nanoseconds();
+
+  vel_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
+    input_vel_topic_, rclcpp::SystemDefaultsQoS(),
+    std::bind(
+      &AssistedTeleop::velCallback,
+      this, std::placeholders::_1));
 
   while (rclcpp::ok()) {
     if (action_server_->is_cancel_requested()) {
@@ -253,9 +249,7 @@ void AssistedTeleop::execute()
       assisted_teleop_end_ - current_point;
 
     // Enable recovery behavior if we haven't run out of time
-    if (time_left > 0) {
-      costmap_ros_ = costmap_sub_->getCostmap();
-    } else {
+    if (time_left < 0) {
       vel_sub_.reset();
       result->total_elapsed_time = node->now() - start_time;
       action_server_->succeeded_current(result);
