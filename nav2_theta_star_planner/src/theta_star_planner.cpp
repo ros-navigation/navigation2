@@ -209,10 +209,10 @@ ThetaStarPlanner::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       } else if (name == name_ + ".w_traversal_cost") {
         planner_->w_traversal_cost_ = parameter.as_double();
       }
-    } else if (type == ParameterType::PARAMETER_BOOLEAN)
+    } else if (type == ParameterType::PARAMETER_BOOL)
     {
       if(name == name_ + ".use_final_approach_orientation")
-        planner_->use_final_approach_orientation_ = parameter.as_bool();
+        use_final_approach_orientation_ = parameter.as_bool();
     }
   }
 
