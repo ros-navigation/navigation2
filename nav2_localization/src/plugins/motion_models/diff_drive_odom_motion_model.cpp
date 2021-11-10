@@ -132,16 +132,16 @@ void DiffDriveOdomMotionModel::configure(const rclcpp_lifecycle::LifecycleNode::
 {
   node_ = node;
 
+  node_->declare_parameter("rot_rot_noise", 0.2);
+  node_->declare_parameter("trans_rot_noise", 0.2);
+  node_->declare_parameter("trans_trans_noise", 0.2);
+  node_->declare_parameter("rot_trans_noise", 0.2);
+
   // set noise parameters
   node_->get_parameter("rot_rot_noise", rot_rot_noise_parm_);
   node_->get_parameter("trans_rot_noise", trans_rot_noise_parm_);
   node_->get_parameter("trans_trans_noise", trans_trans_noise_parm_);
   node_->get_parameter("rot_trans_noise", rot_trans_noise_param_);
-
-  node_->declare_parameter("rot_rot_noise", 0.2);
-  node_->declare_parameter("trans_rot_noise", 0.2);
-  node_->declare_parameter("trans_trans_noise", 0.2);
-  node_->declare_parameter("rot_trans_noise", 0.2);
 
   std::random_device rand_device;
   rand_num_gen_ = std::make_shared<std::mt19937>(rand_device());
