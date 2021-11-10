@@ -102,10 +102,14 @@ nav2_util::CallbackReturn LocalizationServer::on_cleanup(const rclcpp_lifecycle:
 {
   initial_pose_sub_.reset();
 
-  // Scan
-  scan_connection_.disconnect();
-  scan_filter_.reset();
-  scan_sub_.reset();
+  // msg filter subscribers
+  odom_sub_.reset();
+  laser_scan_sub_.reset();
+  pointcloud_sub_.reset();
+
+  // msg filter sync
+  laser_odom_sync_.reset();
+  pointcloud_odom_sync_.reset();
 
   // Transforms
   tf_broadcaster_.reset();
@@ -149,47 +153,32 @@ void LocalizationServer::initTransforms()
 
 void LocalizationServer::initMessageFilters()
 {
-  // LaserScan msg
-  // laser_scan_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
-  //   rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
-
-  // laser_scan_filter_ = std::make_shared<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-  //   *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_);
-
-  // laser_scan_connection_ = laser_scan_filter_->registerCallback(
-  //   std::bind(
-  //     &LocalizationServer::laserReceived,
-  //     this, std::placeholders::_1));
-
-  // PointCloud msg
-  scan_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(
-    rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
-
   // odometry subscriber
   odom_sub_ = std::make_shared<message_filters::Subscriber<nav_msgs::msg::Odometry>>(
     rclcpp_node_.get(), odom_topic_, rmw_qos_profile_sensor_data);
 
-  // Initial manual pose subscriber
-  initial_pose_sub_ =
-    std::make_shared<message_filters::Subscriber<geometry_msgs::msg::PoseWithCovarianceStamped>>(
-    rclcpp_node_.get(), "initialpose");
+  // LaserScan msg
+  laser_scan_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
+    rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
 
-  // Pose initialization and odometry sync message filter
-  initial_pose_sync_filter_sub_ = std::make_shared<message_filters::TimeSynchronizer<
-        geometry_msgs::msg::PoseWithCovarianceStamped, nav_msgs::msg::Odometry>>(
-    *initial_pose_sub_, *odom_sub_, 1);
+  laser_odom_sync_ = std::make_shared<message_filters::Synchronizer<laser_odom_policy>>(
+    laser_odom_policy(3), *laser_scan_sub_, *odom_sub_);
 
-  initial_pose_sync_filter_sub_->registerCallback(
+  laser_odom_sync_->registerCallback(
     std::bind(
-      &LocalizationServer::initialPoseReceived,
+      &LocalizationServer::laserReceived,
       this, std::placeholders::_1, std::placeholders::_2));
 
-  // Odometry and pointcloud sync message filter
-  sensors_sync_filter_sub_ = std::make_shared<message_filters::TimeSynchronizer<
-        sensor_msgs::msg::PointCloud2, nav_msgs::msg::Odometry>>(
-    *scan_sub_, *odom_sub_, 1);
+  // PointCloud msg
+  pointcloud_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(
+    rclcpp_node_.get(), pointcloud_topic_, rmw_qos_profile_sensor_data);
 
-  sensors_sync_filter_sub_->registerCallback(
+  // Odometry and pointcloud sync message filter
+  pointcloud_odom_sync_ =
+    std::make_shared<message_filters::Synchronizer<pointcloud_odom_policy>>(
+    pointcloud_odom_policy(3), *pointcloud_sub_, *odom_sub_);
+
+  pointcloud_odom_sync_->registerCallback(
     std::bind(
       &LocalizationServer::sensorsReceived,
       this, std::placeholders::_1, std::placeholders::_2));
@@ -201,9 +190,9 @@ void LocalizationServer::initPubSub()
     "map", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&LocalizationServer::mapReceived, this, std::placeholders::_1));
 
-  // initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-  //   "initialpose", rclcpp::SystemDefaultsQoS(),
-  //   std::bind(&LocalizationServer::initialPoseReceived, this, std::placeholders::_1));
+  initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    "initialpose", rclcpp::SystemDefaultsQoS(),
+    std::bind(&LocalizationServer::initialPoseReceived, this, std::placeholders::_1));
 }
 
 void LocalizationServer::initPlugins()
@@ -256,23 +245,23 @@ void LocalizationServer::initPlugins()
 }
 
 void LocalizationServer::initialPoseReceived(
-  const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr init_pose,
-  const nav_msgs::msg::Odometry::ConstSharedPtr odom)
+  geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr init_pose)
 {
   solver_->initFilter(init_pose->pose.pose, *odom);
   initial_pose_set_ = true;
   RCLCPP_INFO(get_logger(), "Solver initialized");
 }
 
-// void
-// LocalizationServer::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
-// {
-//   sensor_msgs::msg::PointCloud2 scan;
-//   laser_to_pc_projector_.projectLaser(*laser_scan, scan);
-//   std::shared_ptr<sensor_msgs::msg::PointCloud2> scan_ptr;
-//   scan_ptr = std::make_shared<sensor_msgs::msg::PointCloud2>(scan);
-//   sensorsReceived(scan_ptr);
-// }
+void LocalizationServer::laserReceived(
+  sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan,
+  nav_msgs::msg::Odometry::ConstSharedPtr odom)
+{
+  sensor_msgs::msg::PointCloud2 scan;
+  laser_to_pc_projector_.projectLaser(*laser_scan, scan);
+  std::shared_ptr<sensor_msgs::msg::PointCloud2> scan_ptr;
+  scan_ptr = std::make_shared<sensor_msgs::msg::PointCloud2>(scan);
+  sensorsReceived(scan_ptr, odom);
+}
 
 void LocalizationServer::sensorsReceived(
   sensor_msgs::msg::PointCloud2::ConstSharedPtr scan,
