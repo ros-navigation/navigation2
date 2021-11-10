@@ -28,6 +28,7 @@ namespace nav2_localization
 LocalizationServer::LocalizationServer()
 : nav2_util::LifecycleNode("localization_server", "", true),
   initial_pose_set_(false),
+  initial_odom_set_(false),
   sample_motion_model_loader_("nav2_localization", "nav2_localization::SampleMotionModel"),
   default_sample_motion_model_id_("DiffDriveOdomMotionModel"),
   matcher2d_loader_("nav2_localization", "nav2_localization::Matcher2d"),
@@ -247,7 +248,7 @@ void LocalizationServer::initPlugins()
 void LocalizationServer::initialPoseReceived(
   geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr init_pose)
 {
-  solver_->initFilter(init_pose->pose.pose, *odom);
+  solver_->initPose(init_pose->pose.pose);
   initial_pose_set_ = true;
   RCLCPP_INFO(get_logger(), "Solver initialized");
 }
@@ -271,6 +272,11 @@ void LocalizationServer::sensorsReceived(
   // we don't want our callbacks to fire until we're in the active state
   if ((!get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) ||
     (!initial_pose_set_)) {return;}
+
+  if (!initial_odom_set_) {
+    solver_->initOdom(*odom);
+    initial_odom_set_ = true;
+  }
 
   geometry_msgs::msg::TransformStamped odom_to_base_msg;
   try {

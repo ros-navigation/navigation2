@@ -56,9 +56,9 @@ protected:
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
     SampleMotionModel::Ptr & motion_sampler,
-    Matcher2d::Ptr & matcher);
+    Matcher2d::Ptr & matcher) override;
 
-  void initFilter(const geometry_msgs::msg::Pose & init_pose, const nav_msgs::msg::Odometry & init_odom);
+  void initPose(const geometry_msgs::msg::Pose & init_pose) override;
 
   /**
   * @brief

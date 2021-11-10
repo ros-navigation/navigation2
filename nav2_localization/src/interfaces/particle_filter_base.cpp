@@ -42,9 +42,9 @@ void ParticleFilter::activate()
   particles_poses_pub_->on_activate();
 }
 
-void ParticleFilter::initFilter(const geometry_msgs::msg::Pose & init_pose, const nav_msgs::msg::Odometry & init_odom)
+void ParticleFilter::initPose(const geometry_msgs::msg::Pose & init_pose)
 {
-  Solver::initFilter(init_pose, init_odom);
+  Solver::initPose(init_pose);
 
   // Initialize particles randomly around init_pose within a radius particles_spread_radius_
   geometry_msgs::msg::Pose temp_pose;

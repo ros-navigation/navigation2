@@ -212,6 +212,7 @@ protected:
 
   // Initial pose
   bool initial_pose_set_;
+  bool initial_odom_set_;
 };
 
 }  // namespace nav2_localization

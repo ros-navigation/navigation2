@@ -59,11 +59,18 @@ public:
   /**
    * @brief Initializes the filter being used with a given pose
    * @param init_pose The pose at which to initialize the robot pose
-   * @param init_odom The odometry at the initial estimated pose
    */
-  void initFilter(const geometry_msgs::msg::Pose & init_pose, const nav_msgs::msg::Odometry & init_odom)
+  virtual void initPose(const geometry_msgs::msg::Pose & init_pose)
   {
     prev_pose_.pose.pose = init_pose;
+  }
+
+  /**
+   * @brief Initializes the filter being used with a given pose
+   * @param init_odom The odometry at the initial estimated pose
+   */
+  void initOdom(const nav_msgs::msg::Odometry & init_odom)
+  {
     prev_odom_ = init_odom;
   }
 
@@ -73,7 +80,7 @@ public:
   * @param motionSampler The Sample Motion Model to use
   * @param matcher The 2D Matcher to use
   */
-  void configure(
+  virtual void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
     SampleMotionModel::Ptr & motionSampler,
     Matcher2d::Ptr & matcher)
