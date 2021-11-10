@@ -31,7 +31,7 @@ void ParticleFilter::configure(
   node_->declare_parameter("initialization_radius", 1.0);
   node_->declare_parameter("particles_spread_yaw", 1.57);
 
-  node_->get_parameter("particles_count_", particles_count_);
+  node_->get_parameter("particles_count", particles_count_);
   node_->get_parameter("particles_spread_radius", particles_spread_radius_);
   node_->get_parameter("particles_spread_yaw", particles_spread_yaw_);
 }
