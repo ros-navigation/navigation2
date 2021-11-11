@@ -416,12 +416,6 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   curr_pose.y = robot_pose.pose.position.y;
   curr_pose.theta = tf2::getYaw(robot_pose.pose.orientation);
 
-  // compute distace to goal to stop collision checking when closer to goal
-  double dx = global_plan_.poses.back().pose.position.x - robot_pose.pose.position.x;
-  double dy = global_plan_.poses.back().pose.position.y - robot_pose.pose.position.y;
-  double dist_to_goal = std::hypot(dx, dy);
-
-
   // only forward simulate within time requested
   int i = 1;
   while (i * projection_time < max_allowed_time_to_collision_) {
@@ -431,14 +425,6 @@ bool RegulatedPurePursuitController::isCollisionImminent(
     curr_pose.x += projection_time * (linear_vel * cos(curr_pose.theta));
     curr_pose.y += projection_time * (linear_vel * sin(curr_pose.theta));
     curr_pose.theta += projection_time * angular_vel;
-
-    dx = global_plan_.poses.back().pose.position.x - curr_pose.x;
-    dy = global_plan_.poses.back().pose.position.y - curr_pose.y;
-    dist_to_goal = std::hypot(dx, dy);
-
-    if (dist_to_goal < costmap_->getResolution()) {
-      break;
-    }
 
     // store it for visualization
     pose_msg.pose.position.x = curr_pose.x;
