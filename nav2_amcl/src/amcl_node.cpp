@@ -42,6 +42,7 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
+#include "nav2_amcl/motion_model/motion_model.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -1332,9 +1333,8 @@ AmclNode::initOdometry()
     init_cov_[2] = last_published_pose_.pose.covariance[35];
   }
 
-  motion_model_ = std::unique_ptr<nav2_amcl::MotionModel>(
-    nav2_amcl::MotionModel::createMotionModel(
-      robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
+  motion_model_ = nav2_amcl::MotionModel::createMotionModel(
+    robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
 
   latest_odom_pose_ = geometry_msgs::msg::PoseStamped();
 }

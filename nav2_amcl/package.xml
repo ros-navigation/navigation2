@@ -35,7 +35,7 @@
   <depend>nav2_msgs</depend>
   <depend>launch_ros</depend>
   <depend>launch_testing</depend>
-
+  <depend>pluginlib</depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
 

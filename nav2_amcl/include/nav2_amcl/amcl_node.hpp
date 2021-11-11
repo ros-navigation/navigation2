@@ -214,7 +214,7 @@ protected:
    * @brief Initialize odometry
    */
   void initOdometry();
-  std::unique_ptr<nav2_amcl::MotionModel> motion_model_;
+  std::shared_ptr<nav2_amcl::MotionModel> motion_model_;
   geometry_msgs::msg::PoseStamped latest_odom_pose_;
   geometry_msgs::msg::PoseWithCovarianceStamped last_published_pose_;
   double init_pose_[3];  // Initial robot pose
