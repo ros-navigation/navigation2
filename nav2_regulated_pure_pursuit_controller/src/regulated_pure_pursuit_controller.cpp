@@ -293,18 +293,10 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     (carrot_pose.pose.position.x * carrot_pose.pose.position.x) +
     (carrot_pose.pose.position.y * carrot_pose.pose.position.y);
 
-  // similarly find dist^2 to half of look_ahead_point to smooth the curvature
-  auto mid_pose = getLookAheadPoint(lookahead_dist / 2.0, transformed_plan);
-  const double mid_dist2 =
-    (mid_pose.pose.position.x * mid_pose.pose.position.x) +
-    (mid_pose.pose.position.y * mid_pose.pose.position.y);
-
   // Find curvature of circle (k = 1 / R)
   double curvature = 0.0;
   if (carrot_dist2 > 0.001) {
     curvature = 2.0 * carrot_pose.pose.position.y / carrot_dist2;
-    auto curvature2 = 2.0 * mid_pose.pose.position.y / mid_dist2;
-    curvature = (curvature + curvature2) / 2.0;
   }
 
   // Setting the velocity direction
