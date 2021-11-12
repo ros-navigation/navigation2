@@ -28,7 +28,7 @@ void ParticleFilter::configure(
     "particlecloud", rclcpp::SensorDataQoS());
 
   node_->declare_parameter("particles_count", 500);
-  node_->declare_parameter("initialization_radius", 1.0);
+  node_->declare_parameter("particles_spread_radius", 0.4);
   node_->declare_parameter("particles_spread_yaw", 1.57);
 
   node_->get_parameter("particles_count", particles_count_);
@@ -52,17 +52,16 @@ void ParticleFilter::initPose(const geometry_msgs::msg::PoseWithCovarianceStampe
   for (int i = 0; i < particles_count_; i++) {
     std::random_device rand_device;
     std::mt19937 gen(rand_device());
-    std::uniform_real_distribution<> pose_dist;
-    std::uniform_real_distribution<> yaw_dist(-particles_spread_yaw_, particles_spread_yaw_);
+    std::uniform_real_distribution<double> pose_dist(-1, 1);
+    std::uniform_real_distribution<double> yaw_dist(-particles_spread_yaw_, particles_spread_yaw_);
 
-    // Get (x, y) coordinates that fall inside a circle of radius particles_spread_radius_
-    do {
-      temp_pose.position.x = init_pose.position.x + particles_spread_radius_ * pose_dist(gen);
-      temp_pose.position.y = init_pose.position.y + particles_spread_radius_ * pose_dist(gen);
-    } while (pow(temp_pose.position.x, 2) + pow(temp_pose.position.y, 2)
-            < pow(particles_spread_radius_, 2));
+    temp_pose.position.x = init_pose.pose.pose.position.x + particles_spread_radius_ *
+      pose_dist(gen);
+    temp_pose.position.y = init_pose.pose.pose.position.y + particles_spread_radius_ *
+      pose_dist(gen);
 
-    double yaw = tf2::getYaw(init_pose.orientation) + yaw_dist(gen);
+    double yaw = tf2::getYaw(init_pose.pose.pose.orientation) + particles_spread_yaw_ *
+      yaw_dist(gen);
 
     tf2::Quaternion quat;
     quat.setRPY(0.0, 0.0, yaw);
