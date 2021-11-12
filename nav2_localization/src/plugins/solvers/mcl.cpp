@@ -1,3 +1,7 @@
+#include "angles/angles.h"
+
+#include "tf2/utils.h"
+
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_localization/plugins/solvers/mcl.hpp"
 
@@ -13,10 +17,13 @@ geometry_msgs::msg::PoseWithCovarianceStamped MCL::estimatePose(
 
   // TODO(marwan99): Add more resampling throttling methods e.g. frequency.
   // TODO(marwan99): Make dist threshold a parameter
-  bool do_resmaple = false;
+  bool do_resmaple = true;  // Set to false to enable throtelling 
   double delta_x = prev_odom_.pose.pose.position.x - curr_odom.pose.pose.position.x;
   double delta_y = prev_odom_.pose.pose.position.y - curr_odom.pose.pose.position.y;
-  if (delta_x * delta_x + delta_y * delta_y > 0.01) {
+  double delta_yaw = angles::normalize_angle(
+    tf2::getYaw(prev_odom_.pose.pose.orientation) - 
+    tf2::getYaw(curr_odom.pose.pose.orientation));
+  if (delta_x * delta_x + delta_y * delta_y > 0.01 || delta_yaw > 0.25) {
     do_resmaple = true;
   }
 
