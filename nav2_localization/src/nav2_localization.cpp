@@ -276,33 +276,22 @@ void LocalizationServer::sensorsReceived(
   if (!initial_odom_set_) {
     solver_->initOdom(*odom);
     initial_odom_set_ = true;
-  }
 
-  geometry_msgs::msg::TransformStamped odom_to_base_msg;
-  try {
-    odom_to_base_msg = tf_buffer_->lookupTransform(
-      odom_frame_id_,
-      base_frame_id_,
-      scan->header.stamp,
-      transform_tolerance_);
-  } catch (const tf2::TransformException & e) {
-    RCLCPP_ERROR(get_logger(), "%s", e.what());
+    geometry_msgs::msg::TransformStamped sensor_pose;
+    try {
+      sensor_pose = tf_buffer_->lookupTransform(
+        scan->header.frame_id,
+        base_frame_id_,
+        scan->header.stamp,
+        transform_tolerance_);
+    } catch (const tf2::TransformException & e) {
+      RCLCPP_ERROR(get_logger(), "%s", e.what());
+      return;
+    }
+    matcher2d_->setSensorPose(sensor_pose);
+
     return;
   }
-
-  // TODO(unassigned): should this run only once?
-  geometry_msgs::msg::TransformStamped sensor_pose;
-  try {
-    sensor_pose = tf_buffer_->lookupTransform(
-      base_frame_id_,
-      scan->header.frame_id,
-      scan->header.stamp,
-      transform_tolerance_);
-  } catch (const tf2::TransformException & e) {
-    RCLCPP_ERROR(get_logger(), "%s", e.what());
-    return;
-  }
-  matcher2d_->setSensorPose(sensor_pose);
 
   // The estimated robot's pose in the global frame
   geometry_msgs::msg::PoseWithCovarianceStamped base_link_global_pose_cov = solver_->estimatePose(*odom, scan);
