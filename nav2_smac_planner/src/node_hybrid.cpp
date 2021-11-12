@@ -313,20 +313,9 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
     return NodeHybrid::travel_distance_cost;
   }
 
-  // Note(stevemacenski): `travel_cost_raw` at one point contained a term:
-  // `+ motion_table.cost_penalty * normalized_cost;`
-  // It has been removed, but we may want to readdress this point and determine
-  // the technically and theoretically correctness of that choice. I feel technically speaking
-  // that term has merit, but it doesn't seem to impact performance or path quality.
-  // W/o it lowers the travel cost, which would drive the heuristics up proportionally where I
-  // would expect it to plan much faster in all cases, but I only see it in some cases. Since
-  // this term would weight against moving to high cost zones, I would expect to see more smooth
-  // central motion, but I only see it in some cases, possibly because the obstacle heuristic is
-  // already driving the robot away from high cost areas; implicitly handling this. However,
-  // then I would expect that not adding it here would make it unbalanced enough that path quality
-  // would suffer, which I did not see in my limited experimentation, possibly due to the smoother.
   float travel_cost = 0.0;
-  float travel_cost_raw = NodeHybrid::travel_distance_cost;
+  float travel_cost_raw =
+    NodeHybrid::travel_distance_cost + (motion_table.cost_penalty * normalized_cost);
 
   if (child->getMotionPrimitiveIndex() == 0 || child->getMotionPrimitiveIndex() == 3) {
     // New motion is a straight motion, no additional costs to be applied
@@ -475,7 +464,7 @@ float NodeHybrid::getObstacleHeuristic(
       new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
       cost = static_cast<float>(sampled_costmap->getCost(idx));
       travel_cost =
-        ((i <= 3) ? 1.0 : sqrt_2) + (cost_penalty * cost / 252.0);
+        ((i <= 3) ? 1.0 : sqrt_2) + (((i <= 3) ? 1.0 : sqrt_2) * cost_penalty * cost / 252.0);
       current_accumulated_cost = last_accumulated_cost + travel_cost;
 
       // if neighbor path is better and non-lethal, set new cost and add to queue

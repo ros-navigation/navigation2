@@ -80,13 +80,13 @@ void SmacPlannerLattice::configure(
     node, name + ".reverse_penalty", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".reverse_penalty", search_info.reverse_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".change_penalty", rclcpp::ParameterValue(0.15));
+    node, name + ".change_penalty", rclcpp::ParameterValue(0.05));
   node->get_parameter(name + ".change_penalty", search_info.change_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.50));
+    node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.05));
   node->get_parameter(name + ".non_straight_penalty", search_info.non_straight_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".cost_penalty", rclcpp::ParameterValue(1.7));
+    node, name + ".cost_penalty", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".cost_penalty", search_info.cost_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(3.5));
@@ -281,7 +281,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
   // Smooth plan
   if (num_iterations > 1 && plan.poses.size() > 6) {
-    _smoother->smooth(plan, costmap, time_remaining);
+    _smoother->smooth(plan, _costmap, time_remaining);
   }
 
 #ifdef BENCHMARK_TESTING

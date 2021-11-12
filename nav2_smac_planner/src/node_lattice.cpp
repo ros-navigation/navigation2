@@ -268,24 +268,14 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
   // this is the first node
   MotionPrimitive * prim = this->getMotionPrimitive();
   MotionPrimitive * transition_prim = child->getMotionPrimitive();
+  const float prim_length =
+    transition_prim->trajectory_length / motion_table.lattice_metadata.grid_resolution;
   if (prim == nullptr) {
-    return transition_prim->trajectory_length;
+    return prim_length;
   }
 
-  // Note(stevemacenski): `travel_cost_raw` at one point contained a term:
-  // `+ motion_table.cost_penalty * normalized_cost;`
-  // It has been removed, but we may want to readdress this point and determine
-  // the technically and theoretically correctness of that choice. I feel technically speaking
-  // that term has merit, but it doesn't seem to impact performance or path quality.
-  // W/o it lowers the travel cost, which would drive the heuristics up proportionally where I
-  // would expect it to plan much faster in all cases, but I only see it in some cases. Since
-  // this term would weight against moving to high cost zones, I would expect to see more smooth
-  // central motion, but I only see it in some cases, possibly because the obstacle heuristic is
-  // already driving the robot away from high cost areas; implicitly handling this. However,
-  // then I would expect that not adding it here would make it unbalanced enough that path quality
-  // would suffer, which I did not see in my limited experimentation, possibly due to the smoother.
   float travel_cost = 0.0;
-  float travel_cost_raw = transition_prim->trajectory_length;
+  float travel_cost_raw = prim_length + (prim_length * motion_table.cost_penalty * normalized_cost);
 
   if (transition_prim->arc_length < 0.001) {
     // New motion is a straight motion, no additional costs to be applied
