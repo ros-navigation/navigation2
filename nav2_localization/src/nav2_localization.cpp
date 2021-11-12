@@ -47,7 +47,7 @@ LocalizationServer::LocalizationServer()
   declare_parameter("solver_id", default_solver_id_);
   declare_parameter("scan_topic", "scan");
   declare_parameter("odom_frame_id", "odom");
-  declare_parameter("base_frame_id", "base_link");
+  declare_parameter("base_frame_id", "base_footprint");
   declare_parameter("map_frame_id", "map");
   declare_parameter("transform_tolerance", 1.0);
   declare_parameter("localization_plugins", default_ids_);
@@ -165,7 +165,7 @@ void LocalizationServer::initMessageFilters()
     rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
 
   laser_odom_sync_ = std::make_shared<message_filters::Synchronizer<laser_odom_policy>>(
-    laser_odom_policy(3), *laser_scan_sub_, *odom_sub_);
+    laser_odom_policy(1), *laser_scan_sub_, *odom_sub_);
 
   laser_odom_sync_->registerCallback(
     std::bind(
@@ -179,7 +179,7 @@ void LocalizationServer::initMessageFilters()
   // Odometry and pointcloud sync message filter
   pointcloud_odom_sync_ =
     std::make_shared<message_filters::Synchronizer<pointcloud_odom_policy>>(
-    pointcloud_odom_policy(3), *pointcloud_sub_, *odom_sub_);
+    pointcloud_odom_policy(1), *pointcloud_sub_, *odom_sub_);
 
   pointcloud_odom_sync_->registerCallback(
     std::bind(

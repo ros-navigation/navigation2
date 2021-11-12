@@ -27,7 +27,7 @@ void ParticleFilter::configure(
     "particle_cloud", rclcpp::SensorDataQoS());
 
   particles_poses_pub_ = node_->create_publisher<geometry_msgs::msg::PoseArray>(
-    "particlecloud", rclcpp::SensorDataQoS());
+    "particles_poses", rclcpp::SensorDataQoS());
 
   node_->declare_parameter("particles_count", 500);
   node_->declare_parameter("particles_spread_radius", 0.4);
@@ -103,6 +103,7 @@ void ParticleFilter::resample()
 
 void ParticleFilter::visualize_particles()
 {
+  // TODO(marwan99): Pass global frame id to solvers
   nav2_msgs::msg::ParticleCloud particle_cloud_msg;
   particle_cloud_msg.header.frame_id = "map";
   particle_cloud_msg.header.stamp = node_->now();
