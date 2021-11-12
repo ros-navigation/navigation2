@@ -3,6 +3,8 @@
 
 #include <random>
 
+#include "angles/angles.h"
+
 #include "tf2/utils.h"
 #include "tf2/LinearMath/Quaternion.h"
 
@@ -125,6 +127,7 @@ void ParticleFilter::visualize_particles()
 geometry_msgs::msg::PoseWithCovarianceStamped ParticleFilter::getMeanPose()
 {
   double mean_x = 0, mean_y = 0, mean_yaw = 0;
+  double weights_sum = 0;
 
   for (auto particle : particles_) {
     mean_x += particle.weight_ * particle.pose_.position.x;
@@ -132,11 +135,12 @@ geometry_msgs::msg::PoseWithCovarianceStamped ParticleFilter::getMeanPose()
 
     double yaw = tf2::getYaw(particle.pose_.orientation);
     mean_yaw += particle.weight_ * yaw;
+    weights_sum += particle.weight_;
   }
 
-  mean_x /= particles_count_;
-  mean_y /= particles_count_;
-  mean_yaw /= particles_count_;
+  mean_x /= weights_sum;
+  mean_y /= weights_sum;
+  mean_yaw /= weights_sum;
 
   double cov_x = 0, cov_y = 0, cov_yaw = 0;
   for (auto particle : particles_) {
@@ -157,7 +161,7 @@ geometry_msgs::msg::PoseWithCovarianceStamped ParticleFilter::getMeanPose()
   estimated_odom.pose.pose.position.y = mean_y;
 
   tf2::Quaternion quat;
-  quat.setRPY(0.0, 0.0, mean_yaw);
+  quat.setRPY(0.0, 0.0, angles::normalize_angle(mean_yaw));
   estimated_odom.pose.pose.orientation = tf2::toMsg(quat);
 
   estimated_odom.pose.covariance = {cov_x, 0, 0, 0, 0, 0,
