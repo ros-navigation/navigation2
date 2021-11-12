@@ -294,18 +294,26 @@ void LocalizationServer::sensorsReceived(
   }
 
   // The estimated robot's pose in the global frame
-  geometry_msgs::msg::PoseWithCovarianceStamped base_link_global_pose_cov = solver_->estimatePose(*odom, scan);
+  geometry_msgs::msg::PoseWithCovarianceStamped
+    base_global_pose = solver_->estimatePose(*odom, scan);
 
-  geometry_msgs::msg::Pose base_link_global_pose = base_link_global_pose_cov.pose.pose;
-
-  tf2::Stamped<tf2::Transform> odom_to_base_tf;
-  tf2::fromMsg(odom_to_base_msg, odom_to_base_tf);
-
+  // Publish map to odom TF
   tf2::Transform map_to_base_tf;
-  tf2::fromMsg(base_link_global_pose, map_to_base_tf);
+  tf2::fromMsg(base_global_pose.pose.pose, map_to_base_tf);
+
+  geometry_msgs::msg::TransformStamped base_to_map_msg;
+  base_to_map_msg.header.stamp = scan->header.stamp;
+  base_to_map_msg.header.frame_id = base_frame_id_;
+  base_to_map_msg.transform = tf2::toMsg(map_to_base_tf.inverse());
+
+  geometry_msgs::msg::TransformStamped odom_to_map_msg;
+  tf_buffer_->transform(base_to_map_msg, odom_to_map_msg, odom_frame_id_, transform_tolerance_);
+
+  tf2::Transform odom_to_map_tf;
+  tf2::fromMsg(odom_to_map_msg.transform, odom_to_map_tf);
 
   geometry_msgs::msg::TransformStamped map_to_odom_msg;
-  map_to_odom_msg.transform = tf2::toMsg(odom_to_base_tf.inverseTimes(map_to_base_tf));
+  map_to_odom_msg.transform = tf2::toMsg(odom_to_map_tf.inverse());
   map_to_odom_msg.header.stamp =
     tf2_ros::toMsg(tf2_ros::fromMsg(scan->header.stamp) + transform_tolerance_);
   map_to_odom_msg.header.frame_id = map_frame_id_;
