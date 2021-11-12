@@ -70,20 +70,26 @@ void ParticleFilter::initPose(const geometry_msgs::msg::PoseWithCovarianceStampe
 
     particles_.push_back(Particle(temp_pose, 1));
   }
+
+  visualize_particles();
 }
 
 void ParticleFilter::resample()
 {
   std::vector<Particle> sampled_particles;
 
+  double particle_count_dtype = static_cast<double>(particles_count_);
+
   std::random_device rand_device;
   std::mt19937 gen(rand_device());
-  std::uniform_real_distribution<> dist;
+  std::uniform_real_distribution<double> dist(0, 1 / particle_count_dtype);
 
   double c = particles_[0].weight_;
+  double r = dist(gen);
 
-  for (int i = 0; i < particles_count_; i++) {
-    double u = dist(gen) + i / particles_count_;
+  int i = 0;
+  for (int m = 0; m < particles_count_; m++) {
+    double u = r + (m / particle_count_dtype);
     while (u > c) {
       i++;
       c += particles_[i].weight_;
