@@ -213,6 +213,9 @@ protected:
   // Initial pose
   bool initial_pose_set_;
   bool initial_odom_set_;
+
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
+    estimated_pose_pub_;
 };
 
 }  // namespace nav2_localization

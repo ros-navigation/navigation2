@@ -90,6 +90,8 @@ nav2_util::CallbackReturn LocalizationServer::on_activate(const rclcpp_lifecycle
   matcher2d_->activate();
   solver_->activate();
 
+  estimated_pose_pub_->on_activate();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -194,6 +196,9 @@ void LocalizationServer::initPubSub()
   initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", rclcpp::SystemDefaultsQoS(),
     std::bind(&LocalizationServer::initialPoseReceived, this, std::placeholders::_1));
+
+  estimated_pose_pub_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    "estimated_pose", rclcpp::SystemDefaultsQoS());
 }
 
 void LocalizationServer::initPlugins()
@@ -296,6 +301,11 @@ void LocalizationServer::sensorsReceived(
   // The estimated robot's pose in the global frame
   geometry_msgs::msg::PoseWithCovarianceStamped
     base_global_pose = solver_->estimatePose(*odom, scan);
+
+ // Publish estimated pose for covariance visualization
+  base_global_pose.header.stamp = scan->header.stamp;
+  base_global_pose.header.frame_id = map_frame_id_;
+  estimated_pose_pub_->publish(base_global_pose);
 
   // Publish map to odom TF
   tf2::Transform map_to_base_tf;
