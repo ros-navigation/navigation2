@@ -248,7 +248,7 @@ void LocalizationServer::initPlugins()
 void LocalizationServer::initialPoseReceived(
   geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr init_pose)
 {
-  solver_->initPose(init_pose->pose.pose);
+  solver_->initPose(*init_pose);
   initial_pose_set_ = true;
   RCLCPP_INFO(get_logger(), "Solver initialized");
 }

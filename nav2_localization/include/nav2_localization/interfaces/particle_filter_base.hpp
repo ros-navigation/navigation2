@@ -58,7 +58,7 @@ protected:
     SampleMotionModel::Ptr & motion_sampler,
     Matcher2d::Ptr & matcher) override;
 
-  void initPose(const geometry_msgs::msg::Pose & init_pose) override;
+  void initPose(const geometry_msgs::msg::PoseWithCovarianceStamped & init_pose) override;
 
   /**
   * @brief

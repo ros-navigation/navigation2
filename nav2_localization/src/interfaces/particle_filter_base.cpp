@@ -42,7 +42,7 @@ void ParticleFilter::activate()
   particles_poses_pub_->on_activate();
 }
 
-void ParticleFilter::initPose(const geometry_msgs::msg::Pose & init_pose)
+void ParticleFilter::initPose(const geometry_msgs::msg::PoseWithCovarianceStamped & init_pose)
 {
   Solver::initPose(init_pose);
 

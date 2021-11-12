@@ -60,9 +60,9 @@ public:
    * @brief Initializes the filter being used with a given pose
    * @param init_pose The pose at which to initialize the robot pose
    */
-  virtual void initPose(const geometry_msgs::msg::Pose & init_pose)
+  virtual void initPose(const geometry_msgs::msg::PoseWithCovarianceStamped & init_pose)
   {
-    prev_pose_.pose.pose = init_pose;
+    prev_pose_= init_pose;
   }
 
   /**
