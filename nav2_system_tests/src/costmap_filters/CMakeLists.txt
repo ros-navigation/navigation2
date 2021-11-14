@@ -5,7 +5,6 @@ ament_add_test(test_keepout_filter
   TIMEOUT 180
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.yaml
     TEST_MASK=${PROJECT_SOURCE_DIR}/maps/warehouse_keepout_mask.yaml
     TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
     TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model
@@ -20,7 +19,6 @@ ament_add_test(test_speed_filter_global
   TIMEOUT 180
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.yaml
     TEST_MASK=${PROJECT_SOURCE_DIR}/maps/warehouse_speed_mask.yaml
     TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
     TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model
@@ -36,7 +34,6 @@ ament_add_test(test_speed_filter_local
   TIMEOUT 180
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.yaml
     TEST_MASK=${PROJECT_SOURCE_DIR}/maps/warehouse_speed_mask.yaml
     TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
     TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model

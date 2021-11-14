@@ -162,6 +162,7 @@ void PlannerTester::loadDefaultMap()
   nav2_map_server::MapMode mode = nav2_map_server::MapMode::Trinary;
 
   std::string file_path = "";
+  // TODO(lucabonamini): use aws_warehouse directory
   char const * path = getenv("TEST_MAP");
   if (path == NULL) {
     throw std::runtime_error(

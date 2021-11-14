@@ -5,7 +5,6 @@ ament_add_test(test_bt_navigator
   TIMEOUT 180
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.yaml
     TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
     TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
@@ -22,7 +21,6 @@ ament_add_test(test_bt_navigator_with_wrong_init_pose
   TIMEOUT 180
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.yaml
     TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
     TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
@@ -39,7 +37,6 @@ ament_add_test(test_bt_navigator_with_dijkstra
   TIMEOUT 180
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.yaml
     TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
     TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
@@ -56,7 +53,6 @@ ament_add_test(test_bt_navigator_with_groot_monitoring
   TIMEOUT 180
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.yaml
     TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
     TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
@@ -74,7 +70,6 @@ ament_add_test(test_dynamic_obstacle
   TIMEOUT 180
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.yaml
     TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
     TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
@@ -91,7 +86,6 @@ ament_add_test(test_nav_through_poses
   TIMEOUT 180
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/warehouse.yaml
     TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
     TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model
     BT_NAVIGATOR_XML=navigate_through_poses_w_replanning_and_recovery.xml

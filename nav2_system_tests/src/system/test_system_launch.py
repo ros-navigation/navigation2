@@ -32,14 +32,9 @@ from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-    map_yaml_file = os.getenv('TEST_MAP')
     aws_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
-    world = os.path.join(
-        aws_dir,
-        'worlds',
-        'small_warehouse',
-        'small_warehouse.world'
-    )
+    map_yaml_file = os.path.join(aws_dir, 'maps', '005', 'map.yaml')
+    world = os.path.join(aws_dir, 'worlds', 'small_warehouse', 'small_warehouse.world')
 
     bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
                                     'behavior_trees',
@@ -71,7 +66,6 @@ def generate_launch_description():
         convert_types=True)
 
     new_yaml = configured_params.perform(context)
-
     urdf = os.getenv('TEST_URDF')
     with open(urdf, 'r') as infp:
         robot_description = infp.read()
@@ -81,8 +75,8 @@ def generate_launch_description():
 
         # Launch gazebo server for simulation
         ExecuteProcess(
-            cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
-                 '-s', 'libgazebo_ros_factory.so', world],
+            cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so',
+                 world],
             cwd=[aws_dir],
             output='screen'),
 
@@ -93,34 +87,16 @@ def generate_launch_description():
             output='screen',
             parameters=[
                 {'use_sim_time': True, 'robot_description': robot_description}
-            ],
-        ),
+            ]),
 
         Node(
             package='gazebo_ros',
             executable='spawn_entity.py',
             output='screen',
-            arguments=[
-                '-entity',
-                'turtlebot3_waffle',
-                '-file',
-                os.getenv('TEST_MODEL'),
-                '-robot_namespace',
-                '',
-                '-x',
-                '-0.1',
-                '-y',
-                '1.5',
-                '-z',
-                '0.01',
-                '-R',
-                '0.0',
-                '-P',
-                '0.0',
-                '-Y',
-                '0.0',
-            ],
-        ),
+            arguments=['-entity', 'turtlebot3_waffle', '-file', os.getenv('TEST_MODEL'),
+                       '-robot_namespace', '', '-x', '0.0', '-y', '0.0', '-z', '0.01',
+                       '-R', '0.0', '-P', '0.0', '-Y', '0.0']),
+
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(bringup_dir, 'launch', 'bringup_launch.py')),
@@ -139,7 +115,7 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[os.path.join(os.getenv('TEST_DIR'), os.getenv('TESTER')),
-             '-r', '-0.1', '1.5', '0.5', '-3.0',
+             '-r', '0.0', '0.0', '0.0', '2.0',
              '-e', 'True'],
         name='tester_node',
         output='screen')

@@ -276,8 +276,8 @@ void SpinRecoveryTester::sendInitialPose()
   geometry_msgs::msg::PoseWithCovarianceStamped pose;
   pose.header.frame_id = "map";
   pose.header.stamp = rclcpp::Time();
-  pose.pose.pose.position.x = -2.0;
-  pose.pose.pose.position.y = -0.5;
+  pose.pose.pose.position.x = 0.0;
+  pose.pose.pose.position.y = 0.0;
   pose.pose.pose.position.z = 0.0;
   pose.pose.pose.orientation.x = 0.0;
   pose.pose.pose.orientation.y = 0.0;

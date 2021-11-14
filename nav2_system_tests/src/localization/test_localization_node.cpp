@@ -101,8 +101,8 @@ void TestAmclPose::initTestPose()
 {
   testPose_.header.frame_id = "map";
   testPose_.header.stamp = rclcpp::Time();
-  testPose_.pose.pose.position.x = -2.0;
-  testPose_.pose.pose.position.y = -0.5;
+  testPose_.pose.pose.position.x = 0.0;
+  testPose_.pose.pose.position.y = 0.0;
   testPose_.pose.pose.position.z = 0.0;
   testPose_.pose.pose.orientation.x = 0.0;
   testPose_.pose.pose.orientation.y = 0.0;

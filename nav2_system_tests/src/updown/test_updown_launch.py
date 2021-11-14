@@ -27,9 +27,8 @@ def generate_launch_description():
     # Configuration parameters for the launch
     launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
 
-    map_yaml_file = os.path.join(
-        get_package_share_directory('nav2_system_tests'), 'maps/warehouse.yaml'
-    )
+    aws_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
+    map_yaml_file = os.path.join(aws_dir, 'maps', '005', 'map.yaml')
 
     # Specify the actions
     start_tf_cmd_1 = Node(
