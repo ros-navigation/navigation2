@@ -9,7 +9,7 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
-#include "nav2_localization/interfaces/particle_filter_base.hpp"
+#include "nav2_localization/plugins/solvers/particle_filter_base.hpp"
 
 namespace nav2_localization
 {

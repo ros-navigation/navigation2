@@ -18,8 +18,8 @@
 #include <memory>  // For shared_ptr<>
 
 // Other Interfaces
-#include "nav2_localization/interfaces/sample_motion_model_base.hpp"
-#include "nav2_localization/interfaces/matcher2d_base.hpp"
+#include "nav2_localization/plugins/sample_motion_models/sample_motion_model_base.hpp"
+#include "nav2_localization/plugins/matchers/matcher2d_base.hpp"
 
 // Types
 #include "geometry_msgs/msg/transform_stamped.hpp"

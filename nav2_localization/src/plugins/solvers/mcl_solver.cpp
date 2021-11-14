@@ -3,7 +3,7 @@
 #include "tf2/utils.h"
 
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_localization/plugins/solvers/mcl.hpp"
+#include "nav2_localization/plugins/solvers/mcl_solver.hpp"
 
 namespace nav2_localization
 {

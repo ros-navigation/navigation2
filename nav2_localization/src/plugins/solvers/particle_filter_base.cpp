@@ -10,7 +10,7 @@
 
 #include "nav2_msgs/msg/particle.hpp"
 
-#include "nav2_localization/interfaces/particle_filter_base.hpp"
+#include "nav2_localization/plugins/solvers/particle_filter_base.hpp"
 
 namespace nav2_localization
 {

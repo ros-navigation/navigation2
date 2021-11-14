@@ -17,7 +17,7 @@
 
 #include <vector>  // For vector<>
 #include <unordered_map>
-#include "nav2_localization/interfaces/matcher2d_base.hpp"
+#include "nav2_localization/plugins/matchers/matcher2d_base.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 namespace nav2_localization

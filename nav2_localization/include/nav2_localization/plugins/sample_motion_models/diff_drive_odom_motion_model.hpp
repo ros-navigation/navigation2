@@ -18,7 +18,7 @@
 #include <random>
 #include <memory>
 
-#include "nav2_localization/interfaces/sample_motion_model_base.hpp"
+#include "nav2_localization/plugins/sample_motion_models/sample_motion_model_base.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"

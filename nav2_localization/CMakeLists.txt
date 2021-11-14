@@ -58,8 +58,8 @@ ament_target_dependencies(matcher2d
 )
 
 add_library(solver SHARED
-  src/interfaces/particle_filter_base.cpp
-  src/plugins/solvers/mcl.cpp
+  src/plugins/solvers/particle_filter_base.cpp
+  src/plugins/solvers/mcl_solver.cpp
 )
 
 ament_target_dependencies(solver

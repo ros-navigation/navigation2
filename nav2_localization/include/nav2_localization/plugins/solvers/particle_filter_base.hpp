@@ -22,7 +22,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "nav2_msgs/msg/particle_cloud.hpp"
-#include "nav2_localization/interfaces/solver_base.hpp"
+#include "nav2_localization/plugins/solvers/solver_base.hpp"
 
 namespace nav2_localization
 {
