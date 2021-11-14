@@ -55,10 +55,10 @@ public:
   virtual void setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr & map) = 0;
 
   /**
-   * @brief Sets the pose of the sensor relative to the center of the robot's base.
-   * @param sensor_pose The pose of the sensor relative to the center of the robot's base
+   * @brief Sets the tf of the sensor relative to the center of the robot's base.
+   * @param sensor_tf The tf of the sensor relative to the center of the robot's base
    */
-  virtual void setSensorPose(const geometry_msgs::msg::TransformStamped & sensor_pose) = 0;
+  virtual void setSensorTf(const geometry_msgs::msg::TransformStamped & sensor_tf) = 0;
 
   /**
      * @brief Configures the model, during the "Configuring" state of the parent lifecycle node.
@@ -84,7 +84,7 @@ public:
 protected:
   nav2_util::LifecycleNode::SharedPtr node_;
   nav_msgs::msg::OccupancyGrid::SharedPtr map_;  // 2D grid map of the environment
-  geometry_msgs::msg::TransformStamped sensor_pose_;  // Sensor pose relative to the robot's base
+  geometry_msgs::msg::TransformStamped sensor_tf_;  // Sensor tf relative to the robot's base
 };
 }  // namespace nav2_localization
 

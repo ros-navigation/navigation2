@@ -92,15 +92,15 @@ double LikelihoodFieldMatcher2d::getScanProbability(
   //  - The points should be inside the range of the sensor (advisable check in charge of the user).
   for (int i = 0; i < valid_beams; i += beams_to_skip) {
     // Map the beam end-point onto the map
-    double beam_angle = tf2::getYaw(sensor_pose_.transform.rotation) + angles[i];
+    double beam_angle = tf2::getYaw(sensor_tf_.transform.rotation) + angles[i];
     double x_z_kt = curr_pose.position.x +
-      sensor_pose_.transform.translation.x * cos(theta) -
-      sensor_pose_.transform.translation.y * sin(theta) +
+      sensor_tf_.transform.translation.x * cos(theta) -
+      sensor_tf_.transform.translation.y * sin(theta) +
       ranges[i] *
       cos(theta + beam_angle);
     double y_z_kt = curr_pose.position.y +
-      sensor_pose_.transform.translation.y * cos(theta) +
-      sensor_pose_.transform.translation.x * sin(theta) +
+      sensor_tf_.transform.translation.y * cos(theta) +
+      sensor_tf_.transform.translation.x * sin(theta) +
       ranges[i] *
       sin(theta + beam_angle);
 
@@ -255,10 +255,10 @@ void LikelihoodFieldMatcher2d::DFS(
   }
 }
 
-void LikelihoodFieldMatcher2d::setSensorPose(
-  const geometry_msgs::msg::TransformStamped & sensor_pose)
+void LikelihoodFieldMatcher2d::setSensorTf(
+  const geometry_msgs::msg::TransformStamped & sensor_tf)
 {
-  sensor_pose_ = sensor_pose;
+  sensor_tf_ = sensor_tf;
 }
 }  // namespace nav2_localization
 

@@ -282,18 +282,18 @@ void LocalizationServer::sensorsReceived(
     solver_->initOdom(*odom);
     initial_odom_set_ = true;
 
-    geometry_msgs::msg::TransformStamped sensor_pose;
+    geometry_msgs::msg::TransformStamped sensor_tf;
     try {
-      sensor_pose = tf_buffer_->lookupTransform(
-        scan->header.frame_id,
+      sensor_tf = tf_buffer_->lookupTransform(
         base_frame_id_,
+        scan->header.frame_id,
         scan->header.stamp,
         transform_tolerance_);
     } catch (const tf2::TransformException & e) {
       RCLCPP_ERROR(get_logger(), "%s", e.what());
       return;
     }
-    matcher2d_->setSensorPose(sensor_pose);
+    matcher2d_->setSensorTf(sensor_tf);
 
     return;
   }
