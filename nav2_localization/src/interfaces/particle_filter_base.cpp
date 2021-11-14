@@ -149,7 +149,7 @@ geometry_msgs::msg::PoseWithCovarianceStamped ParticleFilter::getMeanPose()
     cov_y += (particle.pose_.position.y - mean_y) * (particle.pose_.position.y - mean_y);
 
     double yaw = tf2::getYaw(particle.pose_.orientation);
-    cov_yaw += (yaw - mean_y) * (yaw - mean_y);
+    cov_yaw += (yaw - mean_yaw) * (yaw - mean_yaw);
   }
 
   cov_x /= particles_count_;
@@ -162,7 +162,7 @@ geometry_msgs::msg::PoseWithCovarianceStamped ParticleFilter::getMeanPose()
   estimated_odom.pose.pose.position.y = mean_y;
 
   tf2::Quaternion quat;
-  quat.setRPY(0.0, 0.0, angles::normalize_angle(mean_yaw));
+  quat.setRPY(0.0, 0.0, mean_yaw);
   estimated_odom.pose.pose.orientation = tf2::toMsg(quat);
 
   estimated_odom.pose.covariance = {cov_x, 0, 0, 0, 0, 0,
