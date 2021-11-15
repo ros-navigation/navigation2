@@ -2,6 +2,7 @@
 #include <math.h>
 
 #include <random>
+#include <vector>
 
 #include "angles/angles.h"
 
@@ -125,36 +126,56 @@ void ParticleFilter::visualize_particles()
   particle_cloud_pub_->publish(particle_cloud_msg);
 }
 
+// TODO(marwan99): Expand to work for 3D as well.
 geometry_msgs::msg::PoseWithCovarianceStamped ParticleFilter::getMeanPose()
 {
-  double mean_x = 0, mean_y = 0, mean_yaw = 0;
+  // Calculate mean of the particle distribution
+  // Angles mean is calculated using circular mean
+  // https://en.wikipedia.org/wiki/Circular_mean
+  double mean_x = 0, mean_y = 0;
+  double mean_yaw_sin = 0, mean_yaw_cos = 0;
   double weights_sum = 0;
+
+  std::vector<double> yaw_sin, yaw_cos;
 
   for (auto particle : particles_) {
     mean_x += particle.weight_ * particle.pose_.position.x;
     mean_y += particle.weight_ * particle.pose_.position.y;
 
     double yaw = tf2::getYaw(particle.pose_.orientation);
-    mean_yaw += particle.weight_ * yaw;
+    yaw_sin.push_back(std::sin(yaw));
+    yaw_cos.push_back(std::cos(yaw));
+    mean_yaw_sin += particle.weight_ * yaw_sin.back();
+    mean_yaw_cos += particle.weight_ * yaw_cos.back();
+
     weights_sum += particle.weight_;
   }
 
   mean_x /= weights_sum;
   mean_y /= weights_sum;
-  mean_yaw /= weights_sum;
 
-  double cov_x = 0, cov_y = 0, cov_yaw = 0;
-  for (auto particle : particles_) {
-    cov_x += (particle.pose_.position.x - mean_x) * (particle.pose_.position.x - mean_x);
-    cov_y += (particle.pose_.position.y - mean_y) * (particle.pose_.position.y - mean_y);
+  mean_yaw_sin /= weights_sum;
+  mean_yaw_cos /= weights_sum;
 
-    double yaw = tf2::getYaw(particle.pose_.orientation);
-    cov_yaw += (yaw - mean_yaw) * (yaw - mean_yaw);
+  // Calculate covariance of the particle distribution
+  double cov_x = 0, cov_y = 0, cov_yaw_sin = 0, cov_yaw_cos = 0;
+  for (int i = 0; i < particles_.size(); i++) {
+    cov_x += (particles_[i].pose_.position.x - mean_x) * (particles_[i].pose_.position.x - mean_x);
+    cov_y += (particles_[i].pose_.position.y - mean_y) * (particles_[i].pose_.position.y - mean_y);
+
+    cov_yaw_sin += (yaw_sin[i] - mean_yaw_sin) * (yaw_sin[i] - mean_yaw_sin);
+    cov_yaw_cos += (yaw_cos[i] - mean_yaw_cos) * (yaw_cos[i] - mean_yaw_cos);
   }
 
   cov_x /= particles_count_;
   cov_y /= particles_count_;
-  cov_yaw /= particles_count_;
+
+  cov_yaw_sin /= particles_count_;
+  cov_yaw_cos /= particles_count_;
+
+  // Circular variance calculation
+  // https://en.wikipedia.org/wiki/Directional_statistics#Measures_of_location_and_spread
+  double cov_yaw = 1 - sqrt(cov_yaw_sin * cov_yaw_sin + cov_yaw_cos * cov_yaw_cos);
 
   geometry_msgs::msg::PoseWithCovarianceStamped estimated_odom;
 
@@ -162,10 +183,11 @@ geometry_msgs::msg::PoseWithCovarianceStamped ParticleFilter::getMeanPose()
   estimated_odom.pose.pose.position.y = mean_y;
 
   tf2::Quaternion quat;
-  quat.setRPY(0.0, 0.0, mean_yaw);
+  quat.setRPY(0.0, 0.0, atan2(mean_yaw_sin, mean_yaw_cos));
   estimated_odom.pose.pose.orientation = tf2::toMsg(quat);
 
-  estimated_odom.pose.covariance = {cov_x, 0, 0, 0, 0, 0,
+  estimated_odom.pose.covariance = {
+    cov_x, 0, 0, 0, 0, 0,
     0, cov_y, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0,
