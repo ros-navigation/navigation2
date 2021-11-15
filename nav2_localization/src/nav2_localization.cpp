@@ -34,11 +34,11 @@ LocalizationServer::LocalizationServer()
   matcher2d_loader_("nav2_localization", "nav2_localization::Matcher2d"),
   default_matcher2d_id_("LikelihoodFieldMatcher2d"),
   solver_loader_("nav2_localization", "nav2_localization::Solver"),
-  default_solver_id_("MCL"),
+  default_solver_id_("MCLSolver"),
   default_types_{
     "nav2_localization::DiffDriveOdomMotionModel",
     "nav2_localization::LikelihoodFieldMatcher2d",
-    "nav2_localization::MCL"}
+    "nav2_localization::MCLSolver"}
 {
   RCLCPP_INFO(get_logger(), "Creating localization server");
 
@@ -47,7 +47,7 @@ LocalizationServer::LocalizationServer()
   declare_parameter("solver_id", default_solver_id_);
   declare_parameter("scan_topic", "scan");
   declare_parameter("odom_frame_id", "odom");
-  declare_parameter("base_frame_id", "base_footprint");
+  declare_parameter("base_frame_id", "base_link");
   declare_parameter("map_frame_id", "map");
   declare_parameter("transform_tolerance", 1.0);
   declare_parameter("localization_plugins", default_ids_);
@@ -169,7 +169,7 @@ void LocalizationServer::initMessageFilters()
 
   laser_odom_sync_->registerCallback(
     std::bind(
-      &LocalizationServer::laserReceived,
+      &LocalizationServer::laserAndOdomReceived,
       this, std::placeholders::_1, std::placeholders::_2));
 
   // PointCloud msg
@@ -183,7 +183,7 @@ void LocalizationServer::initMessageFilters()
 
   pointcloud_odom_sync_->registerCallback(
     std::bind(
-      &LocalizationServer::sensorsReceived,
+      &LocalizationServer::ponitCloudAndOdomReceived,
       this, std::placeholders::_1, std::placeholders::_2));
 }
 
@@ -258,7 +258,7 @@ void LocalizationServer::initialPoseReceived(
   RCLCPP_INFO(get_logger(), "Solver initialized");
 }
 
-void LocalizationServer::laserReceived(
+void LocalizationServer::laserAndOdomReceived(
   sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan,
   nav_msgs::msg::Odometry::ConstSharedPtr odom)
 {
@@ -266,10 +266,10 @@ void LocalizationServer::laserReceived(
   laser_to_pc_projector_.projectLaser(*laser_scan, scan);
   std::shared_ptr<sensor_msgs::msg::PointCloud2> scan_ptr;
   scan_ptr = std::make_shared<sensor_msgs::msg::PointCloud2>(scan);
-  sensorsReceived(scan_ptr, odom);
+  ponitCloudAndOdomReceived(scan_ptr, odom);
 }
 
-void LocalizationServer::sensorsReceived(
+void LocalizationServer::ponitCloudAndOdomReceived(
   sensor_msgs::msg::PointCloud2::ConstSharedPtr scan,
   nav_msgs::msg::Odometry::ConstSharedPtr odom)
 {
@@ -300,16 +300,16 @@ void LocalizationServer::sensorsReceived(
 
   // The estimated robot's pose in the global frame
   geometry_msgs::msg::PoseWithCovarianceStamped
-    base_global_pose = solver_->estimatePose(*odom, scan);
+    base_map_pose = solver_->estimatePose(*odom, scan);
 
- // Publish estimated pose for covariance visualization
-  base_global_pose.header.stamp = scan->header.stamp;
-  base_global_pose.header.frame_id = map_frame_id_;
-  estimated_pose_pub_->publish(base_global_pose);
+  // Publish estimated pose for covariance visualization
+  base_map_pose.header.stamp = scan->header.stamp;
+  base_map_pose.header.frame_id = map_frame_id_;
+  estimated_pose_pub_->publish(base_map_pose);
 
   // Publish map to odom TF
   tf2::Transform map_to_base_tf;
-  tf2::fromMsg(base_global_pose.pose.pose, map_to_base_tf);
+  tf2::fromMsg(base_map_pose.pose.pose, map_to_base_tf);
 
   geometry_msgs::msg::TransformStamped base_to_map_msg;
   base_to_map_msg.header.stamp = scan->header.stamp;

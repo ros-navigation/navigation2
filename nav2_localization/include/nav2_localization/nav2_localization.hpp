@@ -129,7 +129,7 @@ protected:
    * @brief Callback when a LaserScan is received. It will convert it to a PC and use the callback for generic scans
    * @param scan pointer to the received LaserScan message
    */
-  void laserReceived(
+  void laserAndOdomReceived(
     sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan,
     nav_msgs::msg::Odometry::ConstSharedPtr odom);
 
@@ -138,7 +138,7 @@ protected:
    * @param scan pointer to the received PointCloud2 message
    * @param odom pointer to the received odometry message
    */
-  void sensorsReceived(
+  void ponitCloudAndOdomReceived(
     sensor_msgs::msg::PointCloud2::ConstSharedPtr scan,
     nav_msgs::msg::Odometry::ConstSharedPtr odom);
 

@@ -1,7 +1,5 @@
-
-
-#ifndef NAV2_LOCALIZATION__SOLVER__MCL_HPP_
-#define NAV2_LOCALIZATION__SOLVER__MCL_HPP_
+#ifndef NAV2_LOCALIZATION__SOLVER__MCLSolver_HPP_
+#define NAV2_LOCALIZATION__SOLVER__MCLSolver_HPP_
 
 #include <memory>
 #include <vector>
@@ -14,14 +12,14 @@
 namespace nav2_localization
 {
 
-class MCL : public ParticleFilter
+class MCLSolver : public ParticleFilterSolver
 {
 public:
-  MCL();
+  MCLSolver();
 
   /**
   * @brief
-  * MCL implementation
+  * MCLSolver implementation
   */
   geometry_msgs::msg::PoseWithCovarianceStamped estimatePose(
     const nav_msgs::msg::Odometry & curr_odom,
@@ -29,4 +27,4 @@ public:
 };
 }  // namespace nav2_localization
 
-#endif  // NAV2_LOCALIZATION__SOLVER__MCL_HPP_
+#endif  // NAV2_LOCALIZATION__SOLVER__MCLSolver_HPP_

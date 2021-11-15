@@ -36,11 +36,11 @@ public:
   double weight_;
 };
 
-class ParticleFilter : public Solver
+class ParticleFilterSolver : public Solver
 {
 public:
-  using Ptr = std::shared_ptr<nav2_localization::ParticleFilter>;
-  ParticleFilter();
+  using Ptr = std::shared_ptr<nav2_localization::ParticleFilterSolver>;
+  ParticleFilterSolver();
 
   void activate();
   void deactivate() {}
@@ -48,9 +48,9 @@ public:
 
 protected:
   int particles_count_;  // Number of particles
-  double particles_spread_radius_;  // Initial particles spread radius
-  double particles_spread_yaw_;  // Initial particles yaw spread
-  double weights_sum_; // Sum of the particle weights
+  double particles_init_radius_sd_;  // Initial particles radius standard deviation
+  double particles_init_yaw_sd_;  // Initial particles yaw standard deviation
+  double weights_sum_;  // Sum of the particle weights
   std::vector<Particle> particles_;
 
   void configure(

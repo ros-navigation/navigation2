@@ -18,13 +18,13 @@ localization_server:
     prior_mu_y: 0.0
     num_particles: 2000
     num_dimensions: 3
-    localization_plugins: ["DiffDriveOdomMotionModel", "LikelihoodFieldMatcher2d", "MCL"]
+    localization_plugins: ["DiffDriveOdomMotionModel", "LikelihoodFieldMatcher2d", "MCLSolver"]
     DiffDriveOdomMotionModel:
       plugin: "nav2_localization::DiffDriveOdomMotionModel"
     LikelihoodFieldMatcher2d:
       plugin: "nav2_localization::LikelihoodFieldMatcher2d"
-    MCL:
-      plugin: "nav2_localization::MCL"
+    MCLSolver:
+      plugin: "nav2_localization::MCLSolver"
 
 localization_server_rclcpp_node:
   ros__parameters:

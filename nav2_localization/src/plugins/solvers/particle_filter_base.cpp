@@ -15,15 +15,16 @@
 
 namespace nav2_localization
 {
-ParticleFilter::ParticleFilter() {}
+ParticleFilterSolver::ParticleFilterSolver() {}
 
-void ParticleFilter::configure(
+void ParticleFilterSolver::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
   SampleMotionModel::Ptr & motionSampler,
   Matcher2d::Ptr & matcher)
 {
   Solver::configure(node, motionSampler, matcher);
 
+  // TODO(marwan99): Remove particles_poses_pub_ once merged with upstream main
   particle_cloud_pub_ = node_->create_publisher<nav2_msgs::msg::ParticleCloud>(
     "particle_cloud", rclcpp::SensorDataQoS());
 
@@ -31,40 +32,37 @@ void ParticleFilter::configure(
     "particles_poses", rclcpp::SensorDataQoS());
 
   node_->declare_parameter("particles_count", 500);
-  node_->declare_parameter("particles_spread_radius", 0.4);
-  node_->declare_parameter("particles_spread_yaw", 1.57);
+  node_->declare_parameter("particles_init_radius_sd", 0.2);
+  node_->declare_parameter("particles_init_yaw_sd", 0.2);
 
   node_->get_parameter("particles_count", particles_count_);
-  node_->get_parameter("particles_spread_radius", particles_spread_radius_);
-  node_->get_parameter("particles_spread_yaw", particles_spread_yaw_);
+  node_->get_parameter("particles_init_radius_sd", particles_init_radius_sd_);
+  node_->get_parameter("particles_init_yaw_sd", particles_init_yaw_sd_);
 }
 
-void ParticleFilter::activate()
+void ParticleFilterSolver::activate()
 {
   particle_cloud_pub_->on_activate();
   particles_poses_pub_->on_activate();
 }
 
-void ParticleFilter::initPose(const geometry_msgs::msg::PoseWithCovarianceStamped & init_pose)
+void ParticleFilterSolver::initPose(const geometry_msgs::msg::PoseWithCovarianceStamped & init_pose)
 {
   Solver::initPose(init_pose);
 
-  // Initialize particles randomly around init_pose within a radius particles_spread_radius_
+  // Initialize particles randomly around init_pose within a radius particles_init_radius_
   geometry_msgs::msg::Pose temp_pose;
 
   for (int i = 0; i < particles_count_; i++) {
     std::random_device rand_device;
     std::mt19937 gen(rand_device());
-    std::uniform_real_distribution<double> pose_dist(-1, 1);
-    std::uniform_real_distribution<double> yaw_dist(-particles_spread_yaw_, particles_spread_yaw_);
+    std::normal_distribution<double> pose_dist(0, particles_init_radius_sd_);
+    std::normal_distribution<double> yaw_dist(0, particles_init_yaw_sd_);
 
-    temp_pose.position.x = init_pose.pose.pose.position.x + particles_spread_radius_ *
-      pose_dist(gen);
-    temp_pose.position.y = init_pose.pose.pose.position.y + particles_spread_radius_ *
-      pose_dist(gen);
+    temp_pose.position.x = init_pose.pose.pose.position.x + pose_dist(gen);
+    temp_pose.position.y = init_pose.pose.pose.position.y + pose_dist(gen);
 
-    double yaw = tf2::getYaw(init_pose.pose.pose.orientation) + particles_spread_yaw_ *
-      yaw_dist(gen);
+    double yaw = tf2::getYaw(init_pose.pose.pose.orientation) + yaw_dist(gen);
 
     tf2::Quaternion quat;
     quat.setRPY(0.0, 0.0, yaw);
@@ -76,7 +74,9 @@ void ParticleFilter::initPose(const geometry_msgs::msg::PoseWithCovarianceStampe
   visualize_particles();
 }
 
-void ParticleFilter::resample()
+// TODO(all): Discuss where resample should live
+// Current suggestions are ParticleFilterSolver, MCLSolver or as plugin.
+void ParticleFilterSolver::resample()
 {
   std::vector<Particle> sampled_particles;
 
@@ -102,7 +102,7 @@ void ParticleFilter::resample()
   particles_ = sampled_particles;
 }
 
-void ParticleFilter::visualize_particles()
+void ParticleFilterSolver::visualize_particles()
 {
   // TODO(marwan99): Pass global frame id to solvers
   nav2_msgs::msg::ParticleCloud particle_cloud_msg;
@@ -127,7 +127,7 @@ void ParticleFilter::visualize_particles()
 }
 
 // TODO(marwan99): Expand to work for 3D as well.
-geometry_msgs::msg::PoseWithCovarianceStamped ParticleFilter::getMeanPose()
+geometry_msgs::msg::PoseWithCovarianceStamped ParticleFilterSolver::getMeanPose()
 {
   // Calculate mean of the particle distribution
   // Angles mean is calculated using circular mean
