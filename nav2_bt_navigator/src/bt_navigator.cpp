@@ -244,89 +244,99 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 void
 BtNavigator::navigateToPose()
 {
-  initializeGoalPose();
+  try {
+    initializeGoalPose();
 
-  auto is_canceling = [this]() {
-      if (action_server_ == nullptr) {
-        RCLCPP_DEBUG(get_logger(), "Action server unavailable. Canceling.");
-        return true;
-      }
+    auto is_canceling = [this]() {
+        if (action_server_ == nullptr) {
+          RCLCPP_DEBUG(get_logger(), "Action server unavailable. Canceling.");
+          return true;
+        }
 
-      if (!action_server_->is_server_active()) {
-        RCLCPP_DEBUG(get_logger(), "Action server is inactive. Canceling.");
-        return true;
-      }
+        if (!action_server_->is_server_active()) {
+          RCLCPP_DEBUG(get_logger(), "Action server is inactive. Canceling.");
+          return true;
+        }
 
-      return action_server_->is_cancel_requested();
-    };
+        return action_server_->is_cancel_requested();
+      };
 
-  std::string bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
+    std::string bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
 
-  // Empty id in request is default for backward compatibility
-  bt_xml_filename = bt_xml_filename == "" ? default_bt_xml_filename_ : bt_xml_filename;
+    // Empty id in request is default for backward compatibility
+    bt_xml_filename = bt_xml_filename == "" ? default_bt_xml_filename_ : bt_xml_filename;
 
-  if (!loadBehaviorTree(bt_xml_filename)) {
-    RCLCPP_ERROR(
-      get_logger(), "BT file not found: %s. Navigation canceled.",
-      bt_xml_filename.c_str());
-    action_server_->terminate_current();
-    return;
-  }
+    if (!loadBehaviorTree(bt_xml_filename)) {
+      RCLCPP_ERROR(
+        get_logger(), "BT file not found: %s. Navigation canceled.",
+        bt_xml_filename.c_str());
+      action_server_->terminate_current();
+      return;
+    }
 
-  RosTopicLogger topic_logger(client_node_, tree_);
-  std::shared_ptr<Action::Feedback> feedback_msg = std::make_shared<Action::Feedback>();
+    RosTopicLogger topic_logger(client_node_, tree_);
+    std::shared_ptr<Action::Feedback> feedback_msg = std::make_shared<Action::Feedback>();
 
-  auto on_loop = [&]() {
-      if (action_server_->is_preempt_requested()) {
-        RCLCPP_INFO(get_logger(), "Received goal preemption request");
-        action_server_->accept_pending_goal();
-        initializeGoalPose();
-      }
-      topic_logger.flush();
-
-      // action server feedback (pose, duration of task,
-      // number of recoveries, and distance remaining to goal)
-      nav2_util::getCurrentPose(
-        feedback_msg->current_pose, *tf_, global_frame_, robot_frame_, transform_tolerance_);
-
-      geometry_msgs::msg::PoseStamped goal_pose;
-      blackboard_->get("goal", goal_pose);
-
-      feedback_msg->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
-        feedback_msg->current_pose.pose, goal_pose.pose);
-
-      int recovery_count = 0;
-      blackboard_->get<int>("number_recoveries", recovery_count);
-      feedback_msg->number_of_recoveries = recovery_count;
-      feedback_msg->navigation_time = now() - start_time_;
-      action_server_->publish_feedback(feedback_msg);
-    };
-
-  // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
-  // Make sure that the Bt is not in a running state from a previous execution
-  // note: if all the ControlNodes are implemented correctly, this is not needed.
-  bt_->haltAllActions(tree_.rootNode());
-
-  switch (rc) {
-    case nav2_behavior_tree::BtStatus::SUCCEEDED:
-      RCLCPP_INFO(get_logger(), "Navigation succeeded");
-      action_server_->succeeded_current();
-      break;
-
-    case nav2_behavior_tree::BtStatus::FAILED:
-      RCLCPP_ERROR(get_logger(), "Navigation failed");
+    auto on_loop = [&]() {
       try {
-        action_server_->terminate_current();
-      } catch (const std::exception & ex) {
-        RCLCPP_ERROR(get_logger(), "Failed to terminate action after BT sent failed status: %s", ex.what());
-      }
-      break;
+        if (action_server_->is_preempt_requested()) {
+          RCLCPP_INFO(get_logger(), "Received goal preemption request");
+          action_server_->accept_pending_goal();
+          initializeGoalPose();
+        }
+        topic_logger.flush();
 
-    case nav2_behavior_tree::BtStatus::CANCELED:
-      RCLCPP_INFO(get_logger(), "Navigation canceled");
-      action_server_->terminate_all();
-      break;
+        // action server feedback (pose, duration of task,
+        // number of recoveries, and distance remaining to goal)
+        nav2_util::getCurrentPose(
+          feedback_msg->current_pose, *tf_, global_frame_, robot_frame_, transform_tolerance_);
+
+        geometry_msgs::msg::PoseStamped goal_pose;
+        blackboard_->get("goal", goal_pose);
+
+        feedback_msg->distance_remaining = nav2_util::geometry_utils::euclidean_distance(
+          feedback_msg->current_pose.pose, goal_pose.pose);
+
+        int recovery_count = 0;
+        blackboard_->get<int>("number_recoveries", recovery_count);
+        feedback_msg->number_of_recoveries = recovery_count;
+        feedback_msg->navigation_time = now() - start_time_;
+        action_server_->publish_feedback(feedback_msg);
+      } catch (...) {
+        RCLCPP_ERROR(get_logger(), "Failed to terminate action after undefined exception was caught. BT sent failed status");
+        action_server_->terminate_all();
+      }
+    };
+
+    // Execute the BT that was previously created in the configure step
+    nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
+    // Make sure that the Bt is not in a running state from a previous execution
+    // note: if all the ControlNodes are implemented correctly, this is not needed.
+    bt_->haltAllActions(tree_.rootNode());
+
+    switch (rc) {
+      case nav2_behavior_tree::BtStatus::SUCCEEDED:
+        RCLCPP_INFO(get_logger(), "Navigation succeeded");
+        action_server_->succeeded_current();
+        break;
+
+      case nav2_behavior_tree::BtStatus::FAILED:
+        RCLCPP_ERROR(get_logger(), "Navigation failed");
+        try {
+          action_server_->terminate_current();
+        } catch (const std::exception & ex) {
+          RCLCPP_ERROR(get_logger(), "Failed to terminate action after BT sent failed status: %s", ex.what());
+        }
+        break;
+
+      case nav2_behavior_tree::BtStatus::CANCELED:
+        RCLCPP_INFO(get_logger(), "Navigation canceled");
+        action_server_->terminate_all();
+        break;
+    }
+  } catch (...) {
+    RCLCPP_ERROR(get_logger(), "Failed to terminate action after undefined exception was caught. BT sent failed status");
+    action_server_->terminate_all();
   }
 }
 

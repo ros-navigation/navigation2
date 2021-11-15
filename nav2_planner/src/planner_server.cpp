@@ -271,6 +271,12 @@ PlannerServer::computePlan()
     // TODO(orduno): provide information about fail error to parent task,
     //               for example: couldn't get costmap update
     action_server_->terminate_current();
+  } catch (...) {
+    RCLCPP_WARN(
+      get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
+      goal->planner_id.c_str(), goal->pose.pose.position.x,
+      goal->pose.pose.position.y);
+    action_server_->terminate_current();
   }
 }
 

@@ -311,6 +311,11 @@ void ControllerServer::computeControl()
     publishZeroVelocity();
     action_server_->terminate_current();
     return;
+  } catch (...) {
+    RCLCPP_ERROR(this->get_logger(), "Uncaught exception: stopping robot and terminating action.");
+    publishZeroVelocity();
+    action_server_->terminate_current();
+    return;
   }
 
   RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
@@ -348,27 +353,21 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
 void ControllerServer::computeAndPublishVelocity()
 {
   geometry_msgs::msg::PoseStamped pose;
-
   if (!getRobotPose(pose)) {
     throw nav2_core::PlannerException("Failed to obtain robot pose");
   }
-
   if (!progress_checker_->check(pose)) {
     throw nav2_core::PlannerException("Failed to make progress");
   }
-
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
-
   auto cmd_vel_2d =
     controllers_[current_controller_]->computeVelocityCommands(
     pose,
     nav_2d_utils::twist2Dto3D(twist));
-
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);
   feedback->distance_to_goal = nav2_util::geometry_utils::euclidean_distance(end_pose_, pose.pose);
   action_server_->publish_feedback(feedback);
-
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);
 }
