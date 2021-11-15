@@ -77,37 +77,27 @@ def generate_launch_description():
 
     declare_robot1_params_file_cmd = DeclareLaunchArgument(
         'robot1_params_file',
-        default_value=os.path.join(
-            bringup_dir, 'params', 'nav2_multirobot_params_1.yaml'
-        ),
-        description='Full path to the ROS2 parameters file to use for robot1 launched nodes',
-    )
+        default_value=os.path.join(bringup_dir, 'params', 'nav2_multirobot_params_1.yaml'),
+        description='Full path to the ROS2 parameters file to use for robot1 launched nodes')
 
     declare_robot2_params_file_cmd = DeclareLaunchArgument(
         'robot2_params_file',
-        default_value=os.path.join(
-            bringup_dir, 'params', 'nav2_multirobot_params_2.yaml'
-        ),
-        description='Full path to the ROS2 parameters file to use for robot2 launched nodes',
-    )
+        default_value=os.path.join(bringup_dir, 'params', 'nav2_multirobot_params_2.yaml'),
+        description='Full path to the ROS2 parameters file to use for robot2 launched nodes')
 
     declare_autostart_cmd = DeclareLaunchArgument(
-        'autostart',
-        default_value='false',
-        description='Automatically startup the stacks',
-    )
+        'autostart', default_value='false',
+        description='Automatically startup the stacks')
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config',
         default_value=os.path.join(bringup_dir, 'rviz', 'nav2_namespaced_view.rviz'),
-        description='Full path to the RVIZ config file to use.',
-    )
+        description='Full path to the RVIZ config file to use.')
 
     declare_use_robot_state_pub_cmd = DeclareLaunchArgument(
         'use_robot_state_pub',
         default_value='True',
-        description='Whether to start the robot state publisher',
-    )
+        description='Whether to start the robot state publisher')
 
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz',
