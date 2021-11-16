@@ -86,11 +86,14 @@ public:
    * @param max_on_approach_iterations Maximum number of iterations before returning a valid
    * path once within thresholds to refine path
    * comes at more compute time but smoother paths.
+   * @param max_planning_time Maximum time (in seconds) to wait for a plan, createPath returns
+   * false after this timeout
    */
   void initialize(
     const bool & allow_unknown,
     int & max_iterations,
     const int & max_on_approach_iterations,
+    const double & max_planning_time,
     const float & lookup_table_size,
     const unsigned int & dim_3_size);
 
@@ -231,9 +234,12 @@ protected:
    */
   inline void clearGraph();
 
+  int _timing_interval = 5000;
+
   bool _traverse_unknown;
   int _max_iterations;
   int _max_on_approach_iterations;
+  double _max_planning_time;
   float _tolerance;
   unsigned int _x_size;
   unsigned int _y_size;

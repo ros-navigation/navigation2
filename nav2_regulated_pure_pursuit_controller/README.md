@@ -14,6 +14,8 @@ This controller has been measured to run at well over 1 kHz on a modern intel pr
   <img src="https://user-images.githubusercontent.com/14944147/102563918-3cd49d80-408f-11eb-8e03-b472815a05d8.gif">
 </p>
 
+See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-regulated-pp.html) for additional parameter descriptions.
+
 ## Pure Pursuit Basics
 
 The Pure Pursuit algorithm has been in use for over 30 years. You can read more about the details of the pure pursuit controller in its [introduction paper](http://www.enseignement.polytechnique.fr/profs/informatique/Eric.Goubault/MRIS/coulter_r_craig_1992_1.pdf). The core idea is to find a point on the path in front of the robot and find the linear and angular velocity to help drive towards it. Once it moves forward, a new point is selected, and the process repeats until the end of the path. The distance used to find the point to drive towards is the `lookahead` distance. 

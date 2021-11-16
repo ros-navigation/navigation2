@@ -60,6 +60,13 @@ char * dirname(char * path)
     return path;
   }
 
+  /* Replace all "\" with "/" */
+  char * c = path;
+  while (*c != '\0') {
+    if (*c == '\\') {*c = '/';}
+    ++c;
+  }
+
   /* Find last '/'.  */
   last_slash = path != NULL ? strrchr(path, '/') : NULL;
 

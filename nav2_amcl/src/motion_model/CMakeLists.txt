@@ -5,6 +5,7 @@ add_library(motions_lib SHARED
 )
 target_link_libraries(motions_lib pf_lib)
 ament_target_dependencies(motions_lib
+  pluginlib
   nav2_util
 )
 

@@ -20,7 +20,9 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <mutex>
 
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_core/controller.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
@@ -183,13 +185,16 @@ protected:
     const double &, const double &);
 
   /**
-   * @brief Whether point is in collision
+   * @brief checks for collision at projected pose
    * @param x Pose of pose x
    * @param y Pose of pose y
+   * @param theta orientation of Yaw
    * @return Whether in collision
    */
-  bool inCollision(const double & x, const double & y);
-
+  bool inCollision(
+    const double & x,
+    const double & y,
+    const double & theta);
   /**
    * @brief Cost at a point
    * @param x Pose of pose x
@@ -227,6 +232,14 @@ protected:
    */
   double findDirectionChange(const geometry_msgs::msg::PoseStamped & pose);
 
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
@@ -240,8 +253,6 @@ protected:
   double max_lookahead_dist_;
   double min_lookahead_dist_;
   double lookahead_time_;
-  double max_linear_accel_;
-  double max_linear_decel_;
   bool use_velocity_scaled_lookahead_dist_;
   tf2::Duration transform_tolerance_;
   bool use_approach_vel_scaling_;
@@ -266,6 +277,12 @@ protected:
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
+  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
+  collision_checker_;
+
+  // Dynamic parameters handler
+  std::mutex mutex_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller

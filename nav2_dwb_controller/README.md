@@ -1,37 +1,16 @@
-# Local Planner
+# DWB Controller
 
-## Local Planner under ROS 1
+The DWB controller is the successor to the base local planner and DWA controllers in ROS 1. It was created in ROS 1 by David Lu!! at Locus Robotics as part of the `robot_navigation` project. It was then ported to ROS 2 for use in Nav2 as its critic-based controller algorithm.
 
-Under ROS 1, the navigation stack provides a `BaseLocalPlanner` interface
-used by `MoveBase`. The `BaseLocalPlanner` component is expected to take a path and current position and produce a command velocity. The most commonly used implementation of the local planner uses the DWA algorithm, however, the Trajectory Rollout algorithm is also available in the ROS 1 navigation stack.
+DWB improves on DWA in a few major ways:
 
-The navigation repository provides two implementations of the DWA algorithm: `base_local_planner` and `dwa_local_planner`. In addition, there is another DWA based planner in the [Robot Navigation repository](https://github.com/locusrobotics/robot_navigation) called DWB. The `dwa_local_planner` was meant to replace `base_local_planner` and provides a better DWA algorithm, but failed to
-provide the Trajectory Rollout algorithm, so was unable to completely replace
-`base_local_planner`.
+- It implements plugin-based critics to allow users to specify new critic functions to use in the system. They can be dynamically reconfigured, reweighted, and tuned to gain very particular behavior in your robot system.
+- It implements plugin-based trajectory generation techniques, so that users can generate trajectories any number of ways and for any number of types of vehicles
+- Includes a number of plugin implementations for common use
 
-DWB was meant to replace both the planners in the navigation repository and provides
-an implementation of both DWA and Trajectory Rollout.
+It is possible to tune DWB to gain both DWA and base local planner behaviors, as well as expansions using new plugins for totally use-case specific behaviors. The current trajectory generator plugins work for omnidirectional and differential drive robots, though an ackermann generator would be trivial to add. The current critic plugins work for both circular and non-circular robots and include many of the cost functions needed to build a path tracking system with various attributes.
 
-![Local Planner Structure](./images/LocalPlanner.svg "Local planner structure under ROS 1")
-
-## Migrating to ROS 2
-
-Rather than continue with 3 overlapping implementations of DWA, the DWB planner
-was chosen to use as the default controller plugin.
-
-The advantages of DWB were:
-* it was designed with backwards compatibility with the other controllers
-* it was designed with clear extension points and modularity
-
-## Changes to DWB
-
-For the most part, the DWB codebase is unchanged, other than what was required for ROS2 and the `nav2_core` interface for Controllers.
-
-![ROS 1 DWB Structure](./images/DWB_Structure_Simplified.svg "ROS 1 DWB Structure")
-
-## New local planner interface
-
-See `nav2_core` `Controller` interface, which defines an interface for the controller plugins. These plugins are loaded into the `nav2_controller_server` to compute control commands from requests to the ROS2 action server.
+See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-dwb-controller.html) for additional parameter descriptions.
 
 ## DWB Plugins
 
@@ -51,15 +30,6 @@ loaded at a time.
 * **StandardTrajectoryGenerator** - This is similar to the trajectory rollout
   algorithm used in base_local_planner in ROS 1.
 * **LimitedAccelGenerator** - This is similar to DWA used in ROS 1.
-
-### Goal Checker Plugins
-
-These plugins check whether we have reached the goal or not. Again, only one can
-be loaded at a time.
-
-* **SimpleGoalChecker** - This checks whether the robot has reached the goal pose
-* **StoppedGoalChecker** - This checks whether the robot has reached the goal pose
-  and come to a stop.
 
 ### Critic Plugins
 
