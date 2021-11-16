@@ -343,6 +343,7 @@ bool AStarAlgorithm<NodeLattice>::backtracePath(NodePtr node, CoordinateVector &
   NodePtr current_node = node;
   MotionPrimitive * prim = nullptr;
   const float & grid_resolution = NodeLattice::motion_table.lattice_metadata.grid_resolution;
+  const float pi_2 = 2.0 * M_PI;
 
   while (current_node->parent) {
     prim = current_node->getMotionPrimitive();
@@ -357,7 +358,13 @@ bool AStarAlgorithm<NodeLattice>::backtracePath(NodePtr node, CoordinateVector &
         // Convert primitive pose into grid space if it should be checked
         prim_pose.x = initial_pose.x + (it->_x / grid_resolution);
         prim_pose.y = initial_pose.y + (it->_y / grid_resolution);
-        prim_pose.theta = it->_theta;
+        // If reversing, invert the angle because the robot is backing into the primitive
+        // not driving forward with it
+        if (current_node->isBackward()) {
+          prim_pose.theta = std::fmod(it->_theta + M_PI, pi_2);
+        } else {
+          prim_pose.theta = it->_theta;
+        }
         path.push_back(prim_pose);
       }
     } else {

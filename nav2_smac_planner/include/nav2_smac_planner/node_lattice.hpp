@@ -241,7 +241,7 @@ public:
    * @brief Gets if this primitive is moving in reverse
    * @return backwards If moving in reverse
    */
-  inline bool & isBackward()
+  inline bool isBackward()
   {
     return _backwards;
   }
@@ -252,12 +252,15 @@ public:
    * @param collision_checker Collision checker object to aid in validity checking
    * @param primitive Optional argument if needing to check over a primitive
    * not only a terminal pose
+   * @param is_backwards Optional argument if needed to check if prim expansion is
+   * in reverse
    * @return whether this node is valid and collision free
    */
   bool isNodeValid(
     const bool & traverse_unknown,
     GridCollisionChecker * collision_checker,
-    MotionPrimitive * primitive = nullptr);
+    MotionPrimitive * primitive = nullptr,
+    bool is_backwards = false);
 
   /**
    * @brief Get traversal cost of parent node to child node

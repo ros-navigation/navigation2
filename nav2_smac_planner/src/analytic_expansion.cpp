@@ -224,6 +224,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalytic
   }
   if (goal_node != prev) {
     goal_node->parent = prev;
+    cleanNode(goal_node);
     goal_node->visited();
   }
   return goal_node;

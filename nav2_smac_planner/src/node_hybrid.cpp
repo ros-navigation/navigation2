@@ -331,7 +331,7 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
     }
   }
 
-  if (getMotionPrimitiveIndex() > 2) {
+  if (child->getMotionPrimitiveIndex() > 2) {
     // reverse direction
     travel_cost *= motion_table.reverse_penalty;
   }

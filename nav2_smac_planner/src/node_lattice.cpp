@@ -21,6 +21,7 @@
 #include <limits>
 #include <string>
 #include <fstream>
+#include <cmath>
 
 #include "ompl/base/ScopedState.h"
 #include "ompl/base/spaces/DubinsStateSpace.h"
@@ -126,9 +127,9 @@ MotionPrimitivePtrs LatticeMotionTable::getMotionPrimitives(const NodeLattice * 
       reserve_heading -= num_angle_quantization;
     }
 
-    prims_at_heading = motion_primitives[reserve_heading];
-    for (unsigned int i = 0; i != prims_at_heading.size(); i++) {
-      primitive_projection_list.push_back(&prims_at_heading[i]);
+    MotionPrimitives & prims_at_reverse_heading = motion_primitives[reserve_heading];
+    for (unsigned int i = 0; i != prims_at_reverse_heading.size(); i++) {
+      primitive_projection_list.push_back(&prims_at_reverse_heading[i]);
     }
   }
 
@@ -202,7 +203,8 @@ void NodeLattice::reset()
 bool NodeLattice::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker,
-  MotionPrimitive * motion_primitive)
+  MotionPrimitive * motion_primitive,
+  bool is_backwards)
 {
   // Check primitive end pose
   // Convert grid quantization of primitives to radians, then collision checker quantization
@@ -219,6 +221,7 @@ bool NodeLattice::isNodeValid(
 
   // If valid motion primitives are set, check intermediary poses > 1 cell apart
   if (motion_primitive) {
+    const float pi_2 = 2.0 * M_PI;
     const float & grid_resolution = motion_table.lattice_metadata.grid_resolution;
     const float & resolution_diag_sq = 2.0 * grid_resolution * grid_resolution;
     MotionPose last_pose(1e9, 1e9, 1e9), pose_dist(0.0, 0.0, 0.0);
@@ -238,7 +241,13 @@ bool NodeLattice::isNodeValid(
         // Convert primitive pose into grid space if it should be checked
         prim_pose._x = initial_pose._x + (it->_x / grid_resolution);
         prim_pose._y = initial_pose._y + (it->_y / grid_resolution);
-        prim_pose._theta = it->_theta;
+        // If reversing, invert the angle because the robot is backing into the primitive
+        // not driving forward with it
+        if (is_backwards) {
+          prim_pose._theta = std::fmod(it->_theta + M_PI, pi_2);
+        } else {
+          prim_pose._theta = it->_theta;
+        }
         if (collision_checker->inCollision(
             prim_pose._x,
             prim_pose._y,
@@ -292,7 +301,7 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
   }
 
   // If backwards flag is set, this primitive is moving in reverse
-  if (this->isBackward()) {
+  if (child->isBackward()) {
     // reverse direction
     travel_cost *= motion_table.reverse_penalty;
   }
@@ -448,6 +457,8 @@ void NodeLattice::getNeighbors(
   NodeVector & neighbors)
 {
   unsigned int index = 0;
+  float angle;
+  bool backwards = false;
   NodePtr neighbor = nullptr;
   Coordinates initial_node_coords, motion_projection;
   MotionPrimitivePtrs motion_primitives = motion_table.getMotionPrimitives(this);
@@ -476,20 +487,37 @@ void NodeLattice::getNeighbors(
       // Cache the initial pose in case it was visited but valid
       // don't want to disrupt continuous coordinate expansion
       initial_node_coords = neighbor->pose;
+      // if i >= idx, then we're in a reversing primitive. In that situation,
+      // the orientation of the robot is mirrored from what it would otherwise
+      // appear to be from the motion primitives file. We want to take this into
+      // account in case the robot base footprint is asymmetric.
+      backwards = false;
+      angle = motion_projection.theta;
+      if (i >= direction_change_idx) {
+        backwards = true;
+        angle = motion_projection.theta - (motion_table.num_angle_quantization / 2);
+        if (angle < 0) {
+          angle += motion_table.num_angle_quantization;
+        }
+        if (angle > motion_table.num_angle_quantization) {
+          angle -= motion_table.num_angle_quantization;
+        }
+      }
+
       neighbor->setPose(
         Coordinates(
           motion_projection.x,
           motion_projection.y,
-          motion_projection.theta));
+          angle));
+
       // Using a special isNodeValid API here, giving the motion primitive to use to
       // validity check the transition of the current node to the new node over
-      if (neighbor->isNodeValid(traverse_unknown, collision_checker, motion_primitives[i])) {
+      if (neighbor->isNodeValid(
+        traverse_unknown, collision_checker, motion_primitives[i], backwards))
+      {
         neighbor->setMotionPrimitive(motion_primitives[i]);
-
         // Marking if this search was obtained in the reverse direction
-        if ((!this->isBackward() && i >= direction_change_idx) ||
-          (this->isBackward() && i <= direction_change_idx))
-        {
+        if (backwards) {
           neighbor->backwards();
         }
         neighbors.push_back(neighbor);
