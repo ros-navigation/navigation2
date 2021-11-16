@@ -27,6 +27,7 @@ namespace nav2_smac_planner
 {
 
 using namespace std::chrono;  // NOLINT
+using rcl_interfaces::msg::ParameterType;
 
 SmacPlannerLattice::SmacPlannerLattice()
 : _a_star(nullptr),
@@ -48,74 +49,71 @@ void SmacPlannerLattice::configure(
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
+  _node = parent;
   auto node = parent.lock();
   _logger = node->get_logger();
   _clock = node->get_clock();
   _costmap = costmap_ros->getCostmap();
+  _costmap_ros = costmap_ros;
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
 
   RCLCPP_INFO(_logger, "Configuring %s of type SmacPlannerLattice", name.c_str());
 
-  bool allow_unknown;
-  int max_iterations;
-  double lookup_table_size;
-  SearchInfo search_info;
-
   // General planner params
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
-  node->get_parameter(name + ".allow_unknown", allow_unknown);
+  node->get_parameter(name + ".allow_unknown", _allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
-  node->get_parameter(name + ".max_iterations", max_iterations);
+  node->get_parameter(name + ".max_iterations", _max_iterations);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".lattice_filepath", rclcpp::ParameterValue(std::string("")));
-  node->get_parameter(name + ".lattice_filepath", search_info.lattice_filepath);
+  node->get_parameter(name + ".lattice_filepath", _search_info.lattice_filepath);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".cache_obstacle_heuristic", search_info.cache_obstacle_heuristic);
+  node->get_parameter(name + ".cache_obstacle_heuristic", _search_info.cache_obstacle_heuristic);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".reverse_penalty", rclcpp::ParameterValue(2.0));
-  node->get_parameter(name + ".reverse_penalty", search_info.reverse_penalty);
+  node->get_parameter(name + ".reverse_penalty", _search_info.reverse_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".change_penalty", rclcpp::ParameterValue(0.05));
-  node->get_parameter(name + ".change_penalty", search_info.change_penalty);
+  node->get_parameter(name + ".change_penalty", _search_info.change_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.05));
-  node->get_parameter(name + ".non_straight_penalty", search_info.non_straight_penalty);
+  node->get_parameter(name + ".non_straight_penalty", _search_info.non_straight_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cost_penalty", rclcpp::ParameterValue(2.0));
-  node->get_parameter(name + ".cost_penalty", search_info.cost_penalty);
+  node->get_parameter(name + ".cost_penalty", _search_info.cost_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(3.5));
-  node->get_parameter(name + ".analytic_expansion_ratio", search_info.analytic_expansion_ratio);
+  node->get_parameter(name + ".analytic_expansion_ratio", _search_info.analytic_expansion_ratio);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(5.0));
   node->get_parameter(name + ".max_planning_time", _max_planning_time);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".lookup_table_size", rclcpp::ParameterValue(20.0));
-  node->get_parameter(name + ".lookup_table_size", lookup_table_size);
+  node->get_parameter(name + ".lookup_table_size", _lookup_table_size);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_reverse_expansion", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".allow_reverse_expansion", search_info.allow_reverse_expansion);
+  node->get_parameter(name + ".allow_reverse_expansion", _search_info.allow_reverse_expansion);
 
-  _metadata = LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
-  search_info.minimum_turning_radius =
+  _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
+  _search_info.minimum_turning_radius =
     _metadata.min_turning_radius / (_costmap->getResolution());
-  MotionModel motion_model = MotionModel::STATE_LATTICE;
+  _motion_model = MotionModel::STATE_LATTICE;
 
-  if (max_iterations <= 0) {
+  if (_max_iterations <= 0) {
     RCLCPP_INFO(
       _logger, "maximum iteration selected as <= 0, "
       "disabling maximum iterations.");
-    max_iterations = std::numeric_limits<int>::max();
+    _max_iterations = std::numeric_limits<int>::max();
   }
 
   float lookup_table_dim =
-    static_cast<float>(lookup_table_size) /
+    static_cast<float>(_lookup_table_size) /
     static_cast<float>(_costmap->getResolution());
 
   // Make sure its a whole number
@@ -144,10 +142,10 @@ void SmacPlannerLattice::configure(
     findCircumscribedCost(costmap_ros));
 
   // Initialize A* template
-  _a_star = std::make_unique<AStarAlgorithm<NodeLattice>>(motion_model, search_info);
+  _a_star = std::make_unique<AStarAlgorithm<NodeLattice>>(_motion_model, _search_info);
   _a_star->initialize(
-    allow_unknown,
-    max_iterations,
+    _allow_unknown,
+    _max_iterations,
     std::numeric_limits<int>::max(),
     _max_planning_time,
     lookup_table_dim,
@@ -165,9 +163,9 @@ void SmacPlannerLattice::configure(
     _logger, "Configured plugin %s of type SmacPlannerLattice with "
     "maximum iterations %i, "
     "and %s. Using motion model: %s. State lattice file: %s.",
-    _name.c_str(), max_iterations,
-    allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
-    toString(motion_model).c_str(), search_info.lattice_filepath.c_str());
+    _name.c_str(), _max_iterations,
+    _allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
+    toString(_motion_model).c_str(), _search_info.lattice_filepath.c_str());
 }
 
 void SmacPlannerLattice::activate()
@@ -176,6 +174,10 @@ void SmacPlannerLattice::activate()
     _logger, "Activating plugin %s of type SmacPlannerLattice",
     _name.c_str());
   _raw_plan_publisher->on_activate();
+  auto node = _node.lock();
+  // Add callback for dynamic parameters
+  _dyn_params_handler = node->add_on_set_parameters_callback(
+    std::bind(&SmacPlannerLattice::dynamicParametersCallback, this, std::placeholders::_1));
 }
 
 void SmacPlannerLattice::deactivate()
@@ -184,6 +186,7 @@ void SmacPlannerLattice::deactivate()
     _logger, "Deactivating plugin %s of type SmacPlannerLattice",
     _name.c_str());
   _raw_plan_publisher->on_deactivate();
+  _dyn_params_handler.reset();
 }
 
 void SmacPlannerLattice::cleanup()
@@ -200,6 +203,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
+  std::lock_guard<std::mutex> lock_reinit(_mutex);
   steady_clock::time_point a = steady_clock::now();
 
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
@@ -293,6 +297,138 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 #endif
 
   return plan;
+}
+
+rcl_interfaces::msg::SetParametersResult
+SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  std::lock_guard<std::mutex> lock_reinit(_mutex);
+
+  bool reinit_collision_checker = false;
+  bool reinit_a_star = false;
+  bool reinit_smoother = false;
+
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == _name + ".max_planning_time") {
+        reinit_a_star = true;
+        _max_planning_time = parameter.as_double();
+      } else if (name == _name + ".lookup_table_size") {
+        reinit_a_star = true;
+        _lookup_table_size = parameter.as_double();
+      } else if (name == _name + ".minimum_turning_radius") {
+        reinit_a_star = true;
+        reinit_smoother = true;
+        _search_info.minimum_turning_radius = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".reverse_penalty") {
+        reinit_a_star = true;
+        _search_info.reverse_penalty = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".change_penalty") {
+        reinit_a_star = true;
+        _search_info.change_penalty = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".non_straight_penalty") {
+        reinit_a_star = true;
+        _search_info.non_straight_penalty = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".cost_penalty") {
+        reinit_a_star = true;
+        _search_info.cost_penalty = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".analytic_expansion_ratio") {
+        reinit_a_star = true;
+        _search_info.analytic_expansion_ratio = static_cast<float>(parameter.as_double());
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == _name + ".allow_unknown") {
+        reinit_a_star = true;
+        _allow_unknown = parameter.as_bool();
+      } else if (name == _name + ".cache_obstacle_heuristic") {
+        reinit_a_star = true;
+        _search_info.cache_obstacle_heuristic = parameter.as_bool();
+      } else if (name == _name + ".allow_reverse_expansion") {
+        reinit_a_star = true;
+        _search_info.allow_reverse_expansion = parameter.as_bool();
+      }
+    } else if (type == ParameterType::PARAMETER_INTEGER) {
+      if (name == _name + ".max_iterations") {
+        reinit_a_star = true;
+        _max_iterations = parameter.as_int();
+        if (_max_iterations <= 0) {
+          RCLCPP_INFO(
+            _logger, "maximum iteration selected as <= 0, "
+            "disabling maximum iterations.");
+          _max_iterations = std::numeric_limits<int>::max();
+        }
+      }
+    } else if (type == ParameterType::PARAMETER_STRING) {
+      if (name == _name + ".lattice_filepath") {
+        reinit_a_star = true;
+        reinit_smoother = true;
+        _search_info.lattice_filepath = parameter.as_string();
+        _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
+        _search_info.minimum_turning_radius =
+          _metadata.min_turning_radius / (_costmap->getResolution());
+      }
+    }
+  }
+
+  // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
+  if (reinit_a_star || reinit_collision_checker || reinit_smoother) {
+    // convert to grid coordinates
+    const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
+    _search_info.minimum_turning_radius =
+      _search_info.minimum_turning_radius / (_costmap->getResolution());
+    float lookup_table_dim =
+      static_cast<float>(_lookup_table_size) /
+      static_cast<float>(_costmap->getResolution());
+
+    // Make sure its a whole number
+    lookup_table_dim = static_cast<float>(static_cast<int>(lookup_table_dim));
+
+    // Make sure its an odd number
+    if (static_cast<int>(lookup_table_dim) % 2 == 0) {
+      RCLCPP_INFO(
+        _logger,
+        "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd",
+        lookup_table_dim);
+      lookup_table_dim += 1.0;
+    }
+
+    // Re-Initialize A* template
+    if (reinit_a_star) {
+      _a_star = std::make_unique<AStarAlgorithm<NodeLattice>>(_motion_model, _search_info);
+      _a_star->initialize(
+        _allow_unknown,
+        _max_iterations,
+        std::numeric_limits<int>::max(),
+        _max_planning_time,
+        lookup_table_dim,
+        _metadata.number_of_headings);
+    }
+
+    // Re-Initialize collision checker
+    if (reinit_collision_checker) {
+      _collision_checker = GridCollisionChecker(_costmap, 72u);
+      _collision_checker.setFootprint(
+        _costmap_ros->getRobotFootprint(),
+        _costmap_ros->getUseRadius(),
+        findCircumscribedCost(_costmap_ros));
+    }
+
+    // Re-Initialize smoother
+    if (reinit_smoother) {
+      auto node = _node.lock();
+      SmootherParams params;
+      params.get(node, _name);
+      _smoother = std::make_unique<Smoother>(params);
+      _smoother->initialize(_metadata.min_turning_radius);
+    }
+  }
+
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_smac_planner

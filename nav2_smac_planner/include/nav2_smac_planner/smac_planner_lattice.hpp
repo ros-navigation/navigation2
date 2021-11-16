@@ -86,17 +86,35 @@ public:
     const geometry_msgs::msg::PoseStamped & goal) override;
 
 protected:
+  /**
+   * @brief Callback executed when a paramter change is detected
+   * @param parameters list of changed parameters
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
   std::unique_ptr<AStarAlgorithm<NodeLattice>> _a_star;
   GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;
   rclcpp::Clock::SharedPtr _clock;
   rclcpp::Logger _logger{rclcpp::get_logger("SmacPlannerLattice")};
   nav2_costmap_2d::Costmap2D * _costmap;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> _costmap_ros;
+  MotionModel _motion_model;
   LatticeMetadata _metadata;
   std::string _global_frame, _name;
+  SearchInfo _search_info;
+  bool _allow_unknown;
+  int _max_iterations;
   float _tolerance;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   double _max_planning_time;
+  double _lookup_table_size;
+  std::mutex _mutex;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr _node;
+
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr _dyn_params_handler;
 };
 
 }  // namespace nav2_smac_planner
