@@ -149,6 +149,7 @@ void SmacPlannerLattice::configure(
     allow_unknown,
     max_iterations,
     std::numeric_limits<int>::max(),
+    _max_planning_time,
     lookup_table_dim,
     _metadata.number_of_headings);
 
