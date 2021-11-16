@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_LOCALIZATION__INTERFACES__PARTICLE_FILTER_BASE_HPP_
-#define NAV2_LOCALIZATION__INTERFACES__PARTICLE_FILTER_BASE_HPP_
+#ifndef NAV2_LOCALIZATION__PLUGINS__SOLVERS__PARTICLE_FILTER_BASE_HPP_
+#define NAV2_LOCALIZATION__PLUGINS__SOLVERS__PARTICLE_FILTER_BASE_HPP_
 
 #include <memory>
 #include <vector>
@@ -78,10 +78,11 @@ protected:
   */
   geometry_msgs::msg::PoseWithCovarianceStamped getMeanPose();
 
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::ParticleCloud>::SharedPtr particle_cloud_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::ParticleCloud>::SharedPtr
+    particle_cloud_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
     particles_poses_pub_;
 };
 }  // namespace nav2_localization
 
-#endif  // NAV2_LOCALIZATION__INTERFACES__PARTICLE_FILTER_BASE_HPP_
+#endif  // NAV2_LOCALIZATION__PLUGINS__SOLVERS__PARTICLE_FILTER_BASE_HPP_

@@ -33,7 +33,9 @@ geometry_msgs::msg::Pose DiffDriveOdomMotionModel::getMostLikelyPose(
   const nav_msgs::msg::Odometry & curr_odom,
   const geometry_msgs::msg::Pose & prev_pose)
 {
-  MotionComponents ideal_motion_components = calculateIdealMotionComponents(prev_odom.pose.pose, curr_odom.pose.pose);
+  MotionComponents ideal_motion_components = calculateIdealMotionComponents(
+    prev_odom.pose.pose,
+    curr_odom.pose.pose);
 
   double rot_1_hat = calculateNoisyRot(
     ideal_motion_components.rot_1_,

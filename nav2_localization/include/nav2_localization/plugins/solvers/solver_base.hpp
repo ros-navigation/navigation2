@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_LOCALIZATION__INTERFACES__SOLVER_BASE_HPP_
-#define NAV2_LOCALIZATION__INTERFACES__SOLVER_BASE_HPP_
+#ifndef NAV2_LOCALIZATION__PLUGINS__SOLVERS__SOLVER_BASE_HPP_
+#define NAV2_LOCALIZATION__PLUGINS__SOLVERS__SOLVER_BASE_HPP_
 
 #include <memory>  // For shared_ptr<>
 
-// Other Interfaces
+// Other PLUGINS
 #include "nav2_localization/plugins/sample_motion_models/sample_motion_model_base.hpp"
 #include "nav2_localization/plugins/matchers/matcher2d_base.hpp"
 
@@ -62,7 +62,7 @@ public:
    */
   virtual void initPose(const geometry_msgs::msg::PoseWithCovarianceStamped & init_pose)
   {
-    prev_pose_= init_pose;
+    prev_pose_ = init_pose;
   }
 
   /**
@@ -114,4 +114,4 @@ protected:
 };
 }  // namespace nav2_localization
 
-#endif  // NAV2_LOCALIZATION__INTERFACES__SOLVER_BASE_HPP_
+#endif  // NAV2_LOCALIZATION__PLUGINS__SOLVERS__SOLVER_BASE_HPP_

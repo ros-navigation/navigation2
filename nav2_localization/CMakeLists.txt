@@ -68,7 +68,7 @@ ament_target_dependencies(solver
 
 ## Declare executable
 add_executable(${PROJECT_NAME}
-  src/nav2_localization.cpp  
+  src/nav2_localization.cpp
   src/main.cpp
 )
 

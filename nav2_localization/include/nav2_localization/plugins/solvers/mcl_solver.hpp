@@ -1,5 +1,5 @@
-#ifndef NAV2_LOCALIZATION__SOLVER__MCLSolver_HPP_
-#define NAV2_LOCALIZATION__SOLVER__MCLSolver_HPP_
+#ifndef NAV2_LOCALIZATION__PLUGINS__SOLVERS__MCL_SOLVER_HPP_
+#define NAV2_LOCALIZATION__PLUGINS__SOLVERS__MCL_SOLVER_HPP_
 
 #include <memory>
 #include <vector>
@@ -27,4 +27,4 @@ public:
 };
 }  // namespace nav2_localization
 
-#endif  // NAV2_LOCALIZATION__SOLVER__MCLSolver_HPP_
+#endif  // NAV2_LOCALIZATION__PLUGINS__SOLVERS__MCL_SOLVER_HPP_

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_LOCALIZATION__INTERFACES__MATCHER2D_BASE_HPP_
-#define NAV2_LOCALIZATION__INTERFACES__MATCHER2D_BASE_HPP_
+#ifndef NAV2_LOCALIZATION__PLUGINS__MATCHERS__MATCHER2D_BASE_HPP_
+#define NAV2_LOCALIZATION__PLUGINS__MATCHERS__MATCHER2D_BASE_HPP_
 
 #include <memory>  // For shared_ptr<>
 #include "geometry_msgs/msg/pose.hpp"
@@ -88,4 +88,4 @@ protected:
 };
 }  // namespace nav2_localization
 
-#endif  // NAV2_LOCALIZATION__INTERFACES__MATCHER2D_BASE_HPP_
+#endif  // NAV2_LOCALIZATION__PLUGINS__MATCHERS__MATCHER2D_BASE_HPP_

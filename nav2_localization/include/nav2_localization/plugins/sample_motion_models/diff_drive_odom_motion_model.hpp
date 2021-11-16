@@ -45,7 +45,7 @@ protected:
     : rot_1_(rot_1), trans_(trans), rot_2_(rot_2) {}
     double rot_1_, trans_, rot_2_;
   };
-  
+
   MotionComponents calculateIdealMotionComponents(
     const geometry_msgs::msg::Pose & prev,
     const geometry_msgs::msg::Pose & curr
