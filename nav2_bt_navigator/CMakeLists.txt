@@ -16,6 +16,10 @@ find_package(std_srvs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(tf2_ros REQUIRED)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebugInfo")
+  find_package(backward_ros REQUIRED)
+endif ()
+
 nav2_package()
 
 include_directories(

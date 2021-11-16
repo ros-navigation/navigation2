@@ -243,14 +243,31 @@ protected:
     try {
       goal_result_available_ = false;
       auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
+
       send_goal_options.result_callback =
         [this](const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result) {
           // TODO(#1652): a work around until rcl_action interface is updated
           // if goal ids are not matched, the older goal call this callback so ignore the result
           // if matched, it must be processed (including aborted)
-          if (this->goal_handle_->get_goal_id() == result.goal_id) {
-            goal_result_available_ = true;
-            result_ = result;
+          if (!goal_handle_) {
+            if (node_) {
+              RCLCPP_ERROR(
+                node_->get_logger(), "Goal handle couldn't be retrieved when trying to see if result had same ID.", action_name_.c_str()
+              );
+            } else {
+              RCLCPP_ERROR(
+                rclcpp::get_logger("rclcpp"), "Goal handle couldn't be retrieved when trying to see if result had same ID.", action_name_.c_str()
+              );
+            }
+          } else {
+            if (this->goal_handle_->get_goal_id() == result.goal_id) {
+              goal_result_available_ = true;
+              result_ = result;
+            } else {
+              RCLCPP_WARN(
+                node_->get_logger(), "Found result for %s but goal id and result id didn't match, the result is from an older goal.", action_name_.c_str()
+              );
+            }
           }
         };
 
@@ -263,6 +280,7 @@ protected:
       }
 
       goal_handle_ = future_goal_handle.get();
+
       if (!goal_handle_) {
         RCLCPP_ERROR(
             node_->get_logger(), "Goal was rejected by action server %s", action_name_.c_str());
@@ -272,6 +290,11 @@ protected:
     } catch (const std::exception & ex) {
       RCLCPP_ERROR(
         node_->get_logger(), "New goal for action [%s] was received failed with exception: %s", action_name_.c_str(), ex.what()
+      );
+      return BT::NodeStatus::FAILURE;
+    } catch (...) {
+      RCLCPP_ERROR(
+        node_->get_logger(), "New goal for action [%s] was received failed with unknown exception.", action_name_.c_str()
       );
       return BT::NodeStatus::FAILURE;
     }

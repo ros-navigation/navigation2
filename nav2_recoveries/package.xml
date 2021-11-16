@@ -23,6 +23,7 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nav2_costmap_2d</build_depend>
   <build_depend>nav2_core</build_depend>
+  <build_depend>backward_ros</build_depend>
   <build_depend>pluginlib</build_depend>
 
   <exec_depend>rclcpp</exec_depend>

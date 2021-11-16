@@ -18,6 +18,10 @@ find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(pluginlib REQUIRED)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebugInfo")
+  find_package(backward_ros REQUIRED)
+endif ()
+
 nav2_package()
 
 include_directories(

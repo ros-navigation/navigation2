@@ -17,6 +17,7 @@
   <build_depend>rclcpp</build_depend>
   <build_depend>rclcpp_action</build_depend>
   <build_depend>rclcpp_lifecycle</build_depend>
+  <build_depend>backward_ros</build_depend>
   <build_depend>behaviortree_cpp_v3</build_depend>
   <build_depend>builtin_interfaces</build_depend>
   <build_depend>geometry_msgs</build_depend>
@@ -32,6 +33,7 @@
   <build_depend>lifecycle_msgs</build_depend>
   <build_depend>nav2_common</build_depend>
 
+  <exec_depend>backward_ros</exec_depend>
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>rclcpp_action</exec_depend>
   <exec_depend>rclcpp_lifecycle</exec_depend>
