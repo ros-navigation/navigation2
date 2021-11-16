@@ -86,15 +86,15 @@ void ParticleFilterSolver::resample()
   std::mt19937 gen(rand_device());
   std::uniform_real_distribution<double> dist(0, 1 / particle_count_dtype);
 
-  double c = particles_[0].weight_;
-  double r = dist(gen);
+  double weights_sum = particles_[0].weight_;
+  double rand_seed = dist(gen);
 
   int i = 0;
   for (int m = 0; m < particles_count_; m++) {
-    double u = r + (m / particle_count_dtype);
-    while (u > c) {
+    double u = rand_seed + (m / particle_count_dtype);
+    while (u > weights_sum) {
       i++;
-      c += particles_[i].weight_;
+      weights_sum += particles_[i].weight_;
     }
     sampled_particles.push_back(particles_[i]);
   }
