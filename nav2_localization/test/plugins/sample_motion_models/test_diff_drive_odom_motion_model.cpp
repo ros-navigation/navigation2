@@ -19,7 +19,6 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2/utils.h"
 
 using nav2_localization::DiffDriveOdomMotionModel;
@@ -32,17 +31,32 @@ protected:
     epsilon = 1e-4;
   }
 
-  geometry_msgs::msg::TransformStamped createTransformStampedMsg(
+  geometry_msgs::msg::Pose createPoseMsg(
     const double x, const double y, const double theta)
   {
-    geometry_msgs::msg::TransformStamped result;
-    result.transform.translation.x = x;
-    result.transform.translation.y = y;
-    result.transform.translation.z = 0.0;
+    geometry_msgs::msg::Pose result;
+    result.position.x = x;
+    result.position.y = y;
+    result.position.z = 0.0;
 
     tf2::Quaternion angle;
     angle.setRPY(0.0, 0.0, theta);
-    result.transform.rotation = tf2::toMsg(angle);
+    result.orientation = tf2::toMsg(angle);
+
+    return result;
+  }
+
+  nav_msgs::msg::Odometry createOdomMsg(
+    const double x, const double y, const double theta)
+  {
+    nav_msgs::msg::Odometry result;
+    result.pose.pose.position.x = x;
+    result.pose.pose.position.y = y;
+    result.pose.pose.position.z = 0.0;
+
+    tf2::Quaternion angle;
+    angle.setRPY(0.0, 0.0, theta);
+    result.pose.pose.orientation = tf2::toMsg(angle);
 
     return result;
   }
@@ -53,8 +67,8 @@ protected:
 TEST_F(DiffDriveTestFixture, IdealMotionTest)
 {
   // no motion
-  geometry_msgs::msg::TransformStamped prev = createTransformStampedMsg(2.0, 2.0, 0.0);
-  geometry_msgs::msg::TransformStamped curr = createTransformStampedMsg(2.0, 2.0, 0.0);
+  geometry_msgs::msg::Pose prev = createPoseMsg(2.0, 2.0, 0.0);
+  geometry_msgs::msg::Pose curr = createPoseMsg(2.0, 2.0, 0.0);
   MotionComponents motion_components = calculateIdealMotionComponents(prev, curr);
 
   EXPECT_NEAR(motion_components.rot_1_, 0.0, epsilon);
@@ -62,8 +76,8 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   EXPECT_NEAR(motion_components.rot_2_, 0.0, epsilon);
 
   // forward motion
-  prev = createTransformStampedMsg(0.0, 2.0, 0.0);
-  curr = createTransformStampedMsg(2.0, 2.0, 0.0);
+  prev = createPoseMsg(0.0, 2.0, 0.0);
+  curr = createPoseMsg(2.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   EXPECT_NEAR(motion_components.rot_1_, 0.0, epsilon);
@@ -71,8 +85,8 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   EXPECT_NEAR(motion_components.rot_2_, 0.0, epsilon);
 
   // backward motion
-  prev = createTransformStampedMsg(2.0, 2.0, 0.0);
-  curr = createTransformStampedMsg(0.0, 2.0, 0.0);
+  prev = createPoseMsg(2.0, 2.0, 0.0);
+  curr = createPoseMsg(0.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   EXPECT_NEAR(motion_components.rot_1_, 0.0, epsilon);
@@ -80,16 +94,16 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   EXPECT_NEAR(motion_components.rot_2_, 0.0, epsilon);
 
   // side motion
-  prev = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(0.0, -2.0, 0.0);
+  prev = createPoseMsg(0.0, 0.0, 0.0);
+  curr = createPoseMsg(0.0, -2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   EXPECT_NEAR(motion_components.rot_1_, -M_PI_2, epsilon);
   EXPECT_NEAR(motion_components.trans_, 2.0, epsilon);
   EXPECT_NEAR(motion_components.rot_2_, M_PI_2, epsilon);
 
-  prev = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(0.0, 2.0, 0.0);
+  prev = createPoseMsg(0.0, 0.0, 0.0);
+  curr = createPoseMsg(0.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   EXPECT_NEAR(motion_components.rot_1_, M_PI_2, epsilon);
@@ -98,8 +112,8 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
 
   // on-the-spot rotation
   // counter clockwise
-  prev = createTransformStampedMsg(2.0, 2.0, 0.0);
-  curr = createTransformStampedMsg(2.0, 2.0, M_PI_2);
+  prev = createPoseMsg(2.0, 2.0, 0.0);
+  curr = createPoseMsg(2.0, 2.0, M_PI_2);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   EXPECT_NEAR(motion_components.rot_1_, 0.0, epsilon);
@@ -107,8 +121,8 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   EXPECT_NEAR(motion_components.rot_2_, M_PI_2, epsilon);
 
   // clockwise
-  prev = createTransformStampedMsg(2.0, 2.0, 0.0);
-  curr = createTransformStampedMsg(2.0, 2.0, -M_PI_2);
+  prev = createPoseMsg(2.0, 2.0, 0.0);
+  curr = createPoseMsg(2.0, 2.0, -M_PI_2);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   EXPECT_NEAR(motion_components.rot_1_, 0.0, epsilon);
@@ -117,8 +131,8 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
 
   // diagonal motion
   // top left
-  prev = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(2.0, 2.0, 0.0);
+  prev = createPoseMsg(0.0, 0.0, 0.0);
+  curr = createPoseMsg(2.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   EXPECT_NEAR(motion_components.rot_1_, M_PI_4, epsilon);
@@ -126,8 +140,8 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   EXPECT_NEAR(motion_components.rot_2_, -M_PI_4, epsilon);
 
   // bottom left
-  prev = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(-2.0, 2.0, 0.0);
+  prev = createPoseMsg(0.0, 0.0, 0.0);
+  curr = createPoseMsg(-2.0, 2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   EXPECT_NEAR(motion_components.rot_1_, -M_PI_4, epsilon);
@@ -135,8 +149,8 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   EXPECT_NEAR(motion_components.rot_2_, M_PI_4, epsilon);
 
   // top right
-  prev = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(2.0, -2.0, 0.0);
+  prev = createPoseMsg(0.0, 0.0, 0.0);
+  curr = createPoseMsg(2.0, -2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   EXPECT_NEAR(motion_components.rot_1_, -M_PI_4, epsilon);
@@ -144,8 +158,8 @@ TEST_F(DiffDriveTestFixture, IdealMotionTest)
   EXPECT_NEAR(motion_components.rot_2_, M_PI_4, epsilon);
 
   // bottom right
-  prev = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr = createTransformStampedMsg(-2.0, -2.0, 0.0);
+  prev = createPoseMsg(0.0, 0.0, 0.0);
+  curr = createPoseMsg(-2.0, -2.0, 0.0);
   motion_components = calculateIdealMotionComponents(prev, curr);
 
   EXPECT_NEAR(motion_components.rot_1_, M_PI_4, epsilon);
@@ -357,143 +371,143 @@ TEST_F(DiffDriveTestFixture, MostLikelyPoseTest)
   rot_trans_noise_param_ = 0.0;
 
   // forward motion
-  auto prev_odom = createTransformStampedMsg(0.0, 0.0, 0.0);
-  auto curr_odom = createTransformStampedMsg(2.0, 0.0, 0.0);
-  auto prev_pose = createTransformStampedMsg(0.0, 0.0, 0.0);
+  auto prev_odom = createOdomMsg(0.0, 0.0, 0.0);
+  auto curr_odom = createOdomMsg(2.0, 0.0, 0.0);
+  auto prev_pose = createPoseMsg(0.0, 0.0, 0.0);
 
-  auto expected_pose = createTransformStampedMsg(2.0, 0.0, 0.0);
+  auto expected_pose = createPoseMsg(2.0, 0.0, 0.0);
   auto actual_pose = getMostLikelyPose(prev_odom, curr_odom, prev_pose);
   double expected_angle = 0.0;
-  double actual_angle = tf2::getYaw(actual_pose.transform.rotation);
+  double actual_angle = tf2::getYaw(actual_pose.orientation);
 
-  EXPECT_NEAR(expected_pose.transform.translation.x, actual_pose.transform.translation.x, epsilon);
-  EXPECT_NEAR(expected_pose.transform.translation.y, actual_pose.transform.translation.y, epsilon);
+  EXPECT_NEAR(expected_pose.position.x, actual_pose.position.x, epsilon);
+  EXPECT_NEAR(expected_pose.position.y, actual_pose.position.y, epsilon);
   EXPECT_NEAR(expected_angle, actual_angle, epsilon);
 
   // backward motion
-  prev_odom = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr_odom = createTransformStampedMsg(-2.0, 0.0, 0.0);
-  prev_pose = createTransformStampedMsg(0.0, 0.0, 0.0);
+  prev_odom = createOdomMsg(0.0, 0.0, 0.0);
+  curr_odom = createOdomMsg(-2.0, 0.0, 0.0);
+  prev_pose = createPoseMsg(0.0, 0.0, 0.0);
 
-  expected_pose = createTransformStampedMsg(-2.0, 0.0, 0.0);
+  expected_pose = createPoseMsg(-2.0, 0.0, 0.0);
   actual_pose = getMostLikelyPose(prev_odom, curr_odom, prev_pose);
   expected_angle = 0.0;
-  actual_angle = tf2::getYaw(actual_pose.transform.rotation);
+  actual_angle = tf2::getYaw(actual_pose.orientation);
 
-  EXPECT_NEAR(expected_pose.transform.translation.x, actual_pose.transform.translation.x, epsilon);
-  EXPECT_NEAR(expected_pose.transform.translation.y, actual_pose.transform.translation.y, epsilon);
+  EXPECT_NEAR(expected_pose.position.x, actual_pose.position.x, epsilon);
+  EXPECT_NEAR(expected_pose.position.y, actual_pose.position.y, epsilon);
   EXPECT_NEAR(expected_angle, actual_angle, epsilon);
 
   // side motion - right
-  prev_odom = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr_odom = createTransformStampedMsg(0.0, -2.0, 0.0);
-  prev_pose = createTransformStampedMsg(0.0, 0.0, 0.0);
+  prev_odom = createOdomMsg(0.0, 0.0, 0.0);
+  curr_odom = createOdomMsg(0.0, -2.0, 0.0);
+  prev_pose = createPoseMsg(0.0, 0.0, 0.0);
 
-  expected_pose = createTransformStampedMsg(0.0, -2.0, 0.0);
+  expected_pose = createPoseMsg(0.0, -2.0, 0.0);
   actual_pose = getMostLikelyPose(prev_odom, curr_odom, prev_pose);
   expected_angle = 0.0;
-  actual_angle = tf2::getYaw(actual_pose.transform.rotation);
+  actual_angle = tf2::getYaw(actual_pose.orientation);
 
-  EXPECT_NEAR(expected_pose.transform.translation.x, actual_pose.transform.translation.x, epsilon);
-  EXPECT_NEAR(expected_pose.transform.translation.y, actual_pose.transform.translation.y, epsilon);
+  EXPECT_NEAR(expected_pose.position.x, actual_pose.position.x, epsilon);
+  EXPECT_NEAR(expected_pose.position.y, actual_pose.position.y, epsilon);
   EXPECT_NEAR(expected_angle, actual_angle, epsilon);
 
   // side motion - left
-  prev_odom = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr_odom = createTransformStampedMsg(0.0, 2.0, 0.0);
-  prev_pose = createTransformStampedMsg(0.0, 0.0, 0.0);
+  prev_odom = createOdomMsg(0.0, 0.0, 0.0);
+  curr_odom = createOdomMsg(0.0, 2.0, 0.0);
+  prev_pose = createPoseMsg(0.0, 0.0, 0.0);
 
-  expected_pose = createTransformStampedMsg(0.0, 2.0, 0.0);
+  expected_pose = createPoseMsg(0.0, 2.0, 0.0);
   actual_pose = getMostLikelyPose(prev_odom, curr_odom, prev_pose);
   expected_angle = 0.0;
-  actual_angle = tf2::getYaw(actual_pose.transform.rotation);
+  actual_angle = tf2::getYaw(actual_pose.orientation);
 
-  EXPECT_NEAR(expected_pose.transform.translation.x, actual_pose.transform.translation.x, epsilon);
-  EXPECT_NEAR(expected_pose.transform.translation.y, actual_pose.transform.translation.y, epsilon);
+  EXPECT_NEAR(expected_pose.position.x, actual_pose.position.x, epsilon);
+  EXPECT_NEAR(expected_pose.position.y, actual_pose.position.y, epsilon);
   EXPECT_NEAR(expected_angle, actual_angle, epsilon);
 
   // CCW rotation
-  prev_odom = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr_odom = createTransformStampedMsg(0.0, 0.0, M_PI_4);
-  prev_pose = createTransformStampedMsg(0.0, 0.0, 0.0);
+  prev_odom = createOdomMsg(0.0, 0.0, 0.0);
+  curr_odom = createOdomMsg(0.0, 0.0, M_PI_4);
+  prev_pose = createPoseMsg(0.0, 0.0, 0.0);
 
-  expected_pose = createTransformStampedMsg(0.0, 0.0, M_PI_4);
+  expected_pose = createPoseMsg(0.0, 0.0, M_PI_4);
   actual_pose = getMostLikelyPose(prev_odom, curr_odom, prev_pose);
   expected_angle = M_PI_4;
-  actual_angle = tf2::getYaw(actual_pose.transform.rotation);
+  actual_angle = tf2::getYaw(actual_pose.orientation);
 
-  EXPECT_NEAR(expected_pose.transform.translation.x, actual_pose.transform.translation.x, epsilon);
-  EXPECT_NEAR(expected_pose.transform.translation.y, actual_pose.transform.translation.y, epsilon);
+  EXPECT_NEAR(expected_pose.position.x, actual_pose.position.x, epsilon);
+  EXPECT_NEAR(expected_pose.position.y, actual_pose.position.y, epsilon);
   EXPECT_NEAR(expected_angle, actual_angle, epsilon);
 
   // CW rotation
-  prev_odom = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr_odom = createTransformStampedMsg(0.0, 0.0, -M_PI_4);
-  prev_pose = createTransformStampedMsg(0.0, 0.0, 0.0);
+  prev_odom = createOdomMsg(0.0, 0.0, 0.0);
+  curr_odom = createOdomMsg(0.0, 0.0, -M_PI_4);
+  prev_pose = createPoseMsg(0.0, 0.0, 0.0);
 
-  expected_pose = createTransformStampedMsg(0.0, 0.0, -M_PI_4);
+  expected_pose = createPoseMsg(0.0, 0.0, -M_PI_4);
   actual_pose = getMostLikelyPose(prev_odom, curr_odom, prev_pose);
   expected_angle = -M_PI_4;
-  actual_angle = tf2::getYaw(actual_pose.transform.rotation);
+  actual_angle = tf2::getYaw(actual_pose.orientation);
 
-  EXPECT_NEAR(expected_pose.transform.translation.x, actual_pose.transform.translation.x, epsilon);
-  EXPECT_NEAR(expected_pose.transform.translation.y, actual_pose.transform.translation.y, epsilon);
+  EXPECT_NEAR(expected_pose.position.x, actual_pose.position.x, epsilon);
+  EXPECT_NEAR(expected_pose.position.y, actual_pose.position.y, epsilon);
   EXPECT_NEAR(expected_angle, actual_angle, epsilon);
 
   // diagonal motion - top left
-  prev_odom = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr_odom = createTransformStampedMsg(2.0, 2.0, 0.0);
-  prev_pose = createTransformStampedMsg(0.0, 0.0, 0.0);
+  prev_odom = createOdomMsg(0.0, 0.0, 0.0);
+  curr_odom = createOdomMsg(2.0, 2.0, 0.0);
+  prev_pose = createPoseMsg(0.0, 0.0, 0.0);
 
-  expected_pose = createTransformStampedMsg(2.0, 2.0, 0.0);
+  expected_pose = createPoseMsg(2.0, 2.0, 0.0);
   actual_pose = getMostLikelyPose(prev_odom, curr_odom, prev_pose);
   expected_angle = 0.0;
-  actual_angle = tf2::getYaw(actual_pose.transform.rotation);
+  actual_angle = tf2::getYaw(actual_pose.orientation);
 
-  EXPECT_NEAR(expected_pose.transform.translation.x, actual_pose.transform.translation.x, epsilon);
-  EXPECT_NEAR(expected_pose.transform.translation.y, actual_pose.transform.translation.y, epsilon);
+  EXPECT_NEAR(expected_pose.position.x, actual_pose.position.x, epsilon);
+  EXPECT_NEAR(expected_pose.position.y, actual_pose.position.y, epsilon);
   EXPECT_NEAR(expected_angle, actual_angle, epsilon);
 
   // diagonal motion - bottom left
-  prev_odom = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr_odom = createTransformStampedMsg(-2.0, 2.0, 0.0);
-  prev_pose = createTransformStampedMsg(0.0, 0.0, 0.0);
+  prev_odom = createOdomMsg(0.0, 0.0, 0.0);
+  curr_odom = createOdomMsg(-2.0, 2.0, 0.0);
+  prev_pose = createPoseMsg(0.0, 0.0, 0.0);
 
-  expected_pose = createTransformStampedMsg(-2.0, 2.0, 0.0);
+  expected_pose = createPoseMsg(-2.0, 2.0, 0.0);
   actual_pose = getMostLikelyPose(prev_odom, curr_odom, prev_pose);
   expected_angle = 0.0;
-  actual_angle = tf2::getYaw(actual_pose.transform.rotation);
+  actual_angle = tf2::getYaw(actual_pose.orientation);
 
-  EXPECT_NEAR(expected_pose.transform.translation.x, actual_pose.transform.translation.x, epsilon);
-  EXPECT_NEAR(expected_pose.transform.translation.y, actual_pose.transform.translation.y, epsilon);
+  EXPECT_NEAR(expected_pose.position.x, actual_pose.position.x, epsilon);
+  EXPECT_NEAR(expected_pose.position.y, actual_pose.position.y, epsilon);
   EXPECT_NEAR(expected_angle, actual_angle, epsilon);
 
   // diagonal motion - top right
-  prev_odom = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr_odom = createTransformStampedMsg(2.0, -2.0, 0.0);
-  prev_pose = createTransformStampedMsg(0.0, 0.0, 0.0);
+  prev_odom = createOdomMsg(0.0, 0.0, 0.0);
+  curr_odom = createOdomMsg(2.0, -2.0, 0.0);
+  prev_pose = createPoseMsg(0.0, 0.0, 0.0);
 
-  expected_pose = createTransformStampedMsg(2.0, -2.0, 0.0);
+  expected_pose = createPoseMsg(2.0, -2.0, 0.0);
   actual_pose = getMostLikelyPose(prev_odom, curr_odom, prev_pose);
   expected_angle = 0.0;
-  actual_angle = tf2::getYaw(actual_pose.transform.rotation);
+  actual_angle = tf2::getYaw(actual_pose.orientation);
 
-  EXPECT_NEAR(expected_pose.transform.translation.x, actual_pose.transform.translation.x, epsilon);
-  EXPECT_NEAR(expected_pose.transform.translation.y, actual_pose.transform.translation.y, epsilon);
+  EXPECT_NEAR(expected_pose.position.x, actual_pose.position.x, epsilon);
+  EXPECT_NEAR(expected_pose.position.y, actual_pose.position.y, epsilon);
   EXPECT_NEAR(expected_angle, actual_angle, epsilon);
 
   // diagonal motion - bottom right
-  prev_odom = createTransformStampedMsg(0.0, 0.0, 0.0);
-  curr_odom = createTransformStampedMsg(-2.0, -2.0, 0.0);
-  prev_pose = createTransformStampedMsg(0.0, 0.0, 0.0);
+  prev_odom = createOdomMsg(0.0, 0.0, 0.0);
+  curr_odom = createOdomMsg(-2.0, -2.0, 0.0);
+  prev_pose = createPoseMsg(0.0, 0.0, 0.0);
 
-  expected_pose = createTransformStampedMsg(-2.0, -2.0, 0.0);
+  expected_pose = createPoseMsg(-2.0, -2.0, 0.0);
   actual_pose = getMostLikelyPose(prev_odom, curr_odom, prev_pose);
   expected_angle = 0.0;
-  actual_angle = tf2::getYaw(actual_pose.transform.rotation);
+  actual_angle = tf2::getYaw(actual_pose.orientation);
 
-  EXPECT_NEAR(expected_pose.transform.translation.x, actual_pose.transform.translation.x, epsilon);
-  EXPECT_NEAR(expected_pose.transform.translation.y, actual_pose.transform.translation.y, epsilon);
+  EXPECT_NEAR(expected_pose.position.x, actual_pose.position.x, epsilon);
+  EXPECT_NEAR(expected_pose.position.y, actual_pose.position.y, epsilon);
   EXPECT_NEAR(expected_angle, actual_angle, epsilon);
 }
 
