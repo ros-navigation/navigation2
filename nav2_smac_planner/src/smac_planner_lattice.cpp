@@ -74,7 +74,7 @@ void SmacPlannerLattice::configure(
     node, name + ".lattice_filepath", rclcpp::ParameterValue(std::string("")));
   node->get_parameter(name + ".lattice_filepath", search_info.lattice_filepath);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(true));
+    node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".cache_obstacle_heuristic", search_info.cache_obstacle_heuristic);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".reverse_penalty", rclcpp::ParameterValue(2.0));

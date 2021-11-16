@@ -398,6 +398,13 @@ public:
     const bool & traverse_unknown,
     NodeVector & neighbors);
 
+  /**
+   * @brief Set the starting pose for planning, as a node index
+   * @param path Reference to a vector of indicies of generated path
+   * @return whether the path was able to be backtraced
+   */
+  bool backtracePath(CoordinateVector & path);
+
   NodeLattice * parent;
   Coordinates pose;
   static LatticeMotionTable motion_table;

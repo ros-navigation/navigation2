@@ -65,7 +65,7 @@ void SmacPlanner2D::configure(
     node, name + ".tolerance", rclcpp::ParameterValue(0.125));
   _tolerance = static_cast<float>(node->get_parameter(name + ".tolerance").as_double());
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".downsample_costmap", rclcpp::ParameterValue(true));
+    node, name + ".downsample_costmap", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".downsample_costmap", _downsample_costmap);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
@@ -88,7 +88,7 @@ void SmacPlanner2D::configure(
   node->get_parameter(name + ".use_final_approach_orientation", _use_final_approach_orientation);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".max_planning_time", rclcpp::ParameterValue(1.0));
+    node, name + ".max_planning_time", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".max_planning_time", _max_planning_time);
 
   nav2_util::declare_parameter_if_not_declared(

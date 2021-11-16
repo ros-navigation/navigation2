@@ -56,6 +56,21 @@ public:
   {
   }
 
+  /**
+   * @brief Take a NodeBasic and populate it with any necessary state
+   * cached in the queue for NodeT.
+   * @param node NodeT ptr to populate metadata into NodeBasic
+   */
+  void populateSearchNode(NodeT * & node);
+
+  /**
+   * @brief Take a NodeBasic and populate it with any necessary state
+   * cached in the queue for NodeTs.
+   * @param node Search node (basic) object to initialize internal node
+   * with state
+   */
+  void processSearchNode();
+
   typename NodeT::Coordinates pose;  // Used by NodeHybrid and NodeLattice
   NodeT * graph_node_ptr;
   MotionPrimitive * prim_ptr;  // Used by NodeLattice
@@ -63,9 +78,6 @@ public:
   bool backward;
 };
 
-template class NodeBasic<Node2D>;
-template class NodeBasic<NodeHybrid>;
-template class NodeBasic<NodeLattice>;
 }  // namespace nav2_smac_planner
 
 #endif  // NAV2_SMAC_PLANNER__NODE_BASIC_HPP_

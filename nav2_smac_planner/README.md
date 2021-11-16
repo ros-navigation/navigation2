@@ -69,11 +69,15 @@ Note: In prior releases, a CG smoother largely implementing the original Hybrid-
 The original Hybrid-A\* implementation boasted planning times of 50-300ms for planning across 102,400 cell maps with 72 angular bins. We see much faster results in our evaluations:
 
 - **2-20ms** for planning across 147,456 (1.4x larger) cell maps with 72 angular bins.
-- **30-120ms** for planning across 344,128 (3.3x larger) cell map with 72 angular bins.
+- **30-200ms** for planning across 344,128 (3.3x larger) cell map with 72 angular bins.
 
-For example, the following path (roughly 85 meters) path took 33ms to compute.
+An example of the 3 planners can be seen below, planning a roughly 75 m path.
+- 2D A* computed the path in 243ms (Panel 1)
+- Hybrid-A* computed the path in 144ms (Panel 2)
+- State Lattice computed the path in 113ms (Panel 3)
+- For reference: NavFn compute the path in 146ms, including some nasty path discontinuity artifacts
 
-![alt text](test/path.png)
+![alt text](test/3planners.png)
 
 ## Design
 

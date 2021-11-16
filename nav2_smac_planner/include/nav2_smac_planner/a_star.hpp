@@ -208,14 +208,6 @@ protected:
   inline bool isGoal(NodePtr & node);
 
   /**
-   * @brief Set the starting pose for planning, as a node index
-   * @param node Node pointer to the goal node to backtrace
-   * @param path Reference to a vector of indicies of generated path
-   * @return whether the path was able to be backtraced
-   */
-  bool backtracePath(NodePtr node, CoordinateVector & path);
-
-  /**
    * @brief Get cost of heuristic of node
    * @param node Node index current
    * @param node Node index of new

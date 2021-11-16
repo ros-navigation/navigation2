@@ -78,6 +78,7 @@ add_library(${library_name} SHARED
   src/node_lattice.cpp
   src/costmap_downsampler.cpp
   src/node_2d.cpp
+  src/node_basic.cpp
 )
 
 target_link_libraries(${library_name} ${OMPL_LIBRARIES} ${OpenMP_LIBRARIES}  OpenMP::OpenMP_CXX)
@@ -98,6 +99,7 @@ add_library(${library_name}_2d SHARED
   src/node_lattice.cpp
   src/costmap_downsampler.cpp
   src/node_2d.cpp
+  src/node_basic.cpp
 )
 
 target_link_libraries(${library_name}_2d ${OMPL_LIBRARIES})
@@ -118,6 +120,7 @@ add_library(${library_name}_lattice SHARED
   src/node_lattice.cpp
   src/costmap_downsampler.cpp
   src/node_2d.cpp
+  src/node_basic.cpp
 )
 
 target_link_libraries(${library_name}_lattice ${OMPL_LIBRARIES})

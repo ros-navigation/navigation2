@@ -272,12 +272,12 @@ bool AStarAlgorithm<NodeT>::createPath(
 
     // 3) Check if we're at the goal, backtrace if required
     if (isGoal(current_node)) {
-      return backtracePath(current_node, path);
+      return current_node->backtracePath(path);
     } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
       approach_iterations++;
       if (approach_iterations >= getOnApproachMaxIterations()) {
-        return backtracePath(&_graph.at(_best_heuristic_node.second), path);
+        return _graph.at(_best_heuristic_node.second).backtracePath(path);
       }
     }
 
@@ -313,91 +313,6 @@ bool AStarAlgorithm<NodeT>::isGoal(NodePtr & node)
   return node == getGoal();
 }
 
-template<>
-bool AStarAlgorithm<Node2D>::backtracePath(NodePtr node, CoordinateVector & path)
-{
-  if (!node->parent) {
-    return false;
-  }
-
-  NodePtr current_node = node;
-
-  while (current_node->parent) {
-    path.push_back(
-      Node2D::getCoords(
-        current_node->getIndex(), getSizeX(), getSizeDim3()));
-    current_node = current_node->parent;
-  }
-
-  return path.size() > 0;
-}
-
-template<>
-bool AStarAlgorithm<NodeLattice>::backtracePath(NodePtr node, CoordinateVector & path)
-{
-  if (!node->parent) {
-    return false;
-  }
-
-  Coordinates initial_pose, prim_pose;
-  NodePtr current_node = node;
-  MotionPrimitive * prim = nullptr;
-  const float & grid_resolution = NodeLattice::motion_table.lattice_metadata.grid_resolution;
-  const float pi_2 = 2.0 * M_PI;
-
-  while (current_node->parent) {
-    prim = current_node->getMotionPrimitive();
-    // if motion primitive is valid, then was searched (rather than analytically expanded),
-    // include dense path of subpoints making up the primitive at grid resolution
-    if (prim) {
-      initial_pose.x = current_node->pose.x - (prim->poses.back()._x / grid_resolution);
-      initial_pose.y = current_node->pose.y - (prim->poses.back()._y / grid_resolution);
-      initial_pose.theta = NodeLattice::motion_table.getAngleFromBin(prim->start_angle);
-
-      for (auto it = prim->poses.crbegin(); it != prim->poses.crend(); ++it) {
-        // Convert primitive pose into grid space if it should be checked
-        prim_pose.x = initial_pose.x + (it->_x / grid_resolution);
-        prim_pose.y = initial_pose.y + (it->_y / grid_resolution);
-        // If reversing, invert the angle because the robot is backing into the primitive
-        // not driving forward with it
-        if (current_node->isBackward()) {
-          prim_pose.theta = std::fmod(it->_theta + M_PI, pi_2);
-        } else {
-          prim_pose.theta = it->_theta;
-        }
-        path.push_back(prim_pose);
-      }
-    } else {
-      // For analytic expansion nodes where there is no valid motion primitive
-      path.push_back(current_node->pose);
-      path.back().theta = NodeLattice::motion_table.getAngleFromBin(path.back().theta);
-    }
-
-    current_node = current_node->parent;
-  }
-
-  return path.size() > 0;
-}
-
-template<>
-bool AStarAlgorithm<NodeHybrid>::backtracePath(NodePtr node, CoordinateVector & path)
-{
-  if (!node->parent) {
-    return false;
-  }
-
-  NodePtr current_node = node;
-
-  while (current_node->parent) {
-    path.push_back(current_node->pose);
-    // Convert angle to radians
-    path.back().theta = NodeHybrid::motion_table.getAngleFromBin(path.back().theta);
-    current_node = current_node->parent;
-  }
-
-  return path.size() > 0;
-}
-
 template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr & AStarAlgorithm<NodeT>::getStart()
 {
@@ -410,75 +325,20 @@ typename AStarAlgorithm<NodeT>::NodePtr & AStarAlgorithm<NodeT>::getGoal()
   return _goal;
 }
 
-template<>
-typename AStarAlgorithm<Node2D>::NodePtr AStarAlgorithm<Node2D>::getNextNode()
+template<typename NodeT>
+typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::getNextNode()
 {
-  NodeBasic<Node2D> node = _queue.top().second;
+  NodeBasic<NodeT> node = _queue.top().second;
   _queue.pop();
+  node.processSearchNode();
   return node.graph_node_ptr;
 }
 
-template<>
-typename AStarAlgorithm<NodeHybrid>::NodePtr AStarAlgorithm<NodeHybrid>::getNextNode()
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::addNode(const float & cost, NodePtr & node)
 {
-  NodeBasic<NodeHybrid> node = _queue.top().second;
-  _queue.pop();
-
-  // We only want to override the node's pose if it has not yet been visited
-  // to prevent the case that a node has been queued multiple times and
-  // a new branch is overriding one of lower cost already visited.
-  if (!node.graph_node_ptr->wasVisited()) {
-    node.graph_node_ptr->pose = node.pose;
-    node.graph_node_ptr->setMotionPrimitiveIndex(node.motion_index);
-  }
-
-  return node.graph_node_ptr;
-}
-
-template<>
-typename AStarAlgorithm<NodeLattice>::NodePtr AStarAlgorithm<NodeLattice>::getNextNode()
-{
-  NodeBasic<NodeLattice> node = _queue.top().second;
-  _queue.pop();
-
-  // We only want to override the node's pose/primitive if it has not yet been visited
-  // to prevent the case that a node has been queued multiple times and
-  // a new branch is overriding one of lower cost already visited.
-  if (!node.graph_node_ptr->wasVisited()) {
-    node.graph_node_ptr->pose = node.pose;
-    node.graph_node_ptr->setMotionPrimitive(node.prim_ptr);
-    node.graph_node_ptr->backwards(node.backward);
-  }
-
-  return node.graph_node_ptr;
-}
-
-template<>
-void AStarAlgorithm<Node2D>::addNode(const float & cost, NodePtr & node)
-{
-  NodeBasic<Node2D> queued_node(node->getIndex());
-  queued_node.graph_node_ptr = node;
-  _queue.emplace(cost, queued_node);
-}
-
-template<>
-void AStarAlgorithm<NodeLattice>::addNode(const float & cost, NodePtr & node)
-{
-  NodeBasic<NodeLattice> queued_node(node->getIndex());
-  queued_node.pose = node->pose;
-  queued_node.graph_node_ptr = node;
-  queued_node.prim_ptr = node->getMotionPrimitive();
-  queued_node.backward = node->isBackward();
-  _queue.emplace(cost, queued_node);
-}
-
-template<>
-void AStarAlgorithm<NodeHybrid>::addNode(const float & cost, NodePtr & node)
-{
-  NodeBasic<NodeHybrid> queued_node(node->getIndex());
-  queued_node.pose = node->pose;
-  queued_node.graph_node_ptr = node;
-  queued_node.motion_index = node->getMotionPrimitiveIndex();
+  NodeBasic<NodeT> queued_node(node->getIndex());
+  queued_node.populateSearchNode(node);
   _queue.emplace(cost, queued_node);
 }
 

@@ -647,4 +647,22 @@ void NodeHybrid::getNeighbors(
   }
 }
 
+bool NodeHybrid::backtracePath(CoordinateVector & path)
+{
+  if (!this->parent) {
+    return false;
+  }
+
+  NodePtr current_node = this;
+
+  while (current_node->parent) {
+    path.push_back(current_node->pose);
+    // Convert angle to radians
+    path.back().theta = NodeHybrid::motion_table.getAngleFromBin(path.back().theta);
+    current_node = current_node->parent;
+  }
+
+  return path.size() > 0;
+}
+
 }  // namespace nav2_smac_planner
