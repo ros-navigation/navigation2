@@ -1,20 +1,21 @@
 # Smac Planner
 
-The SmacPlanner is a plugin for the Nav2 Planner server. It includes currently 2 distinct plugins:
-- `SmacPlannerHybrid`: a highly optimized fully reconfigurable Hybrid-A* implementation supporting Dubin and Reeds-Shepp models (ackermann and car models).
- - `SmacPlannerLattice`: a highly optimized fully reconfigurable State Lattice implementation supporting Differential and Omnidirectionl models.
+The SmacPlanner is a plugin for the Nav2 Planner server. It includes currently 3 distinct plugins:
+- `SmacPlannerHybrid`: a highly optimized fully reconfigurable Hybrid-A* implementation supporting Dubin and Reeds-Shepp models (legged, ackermann and car models).
+ - `SmacPlannerLattice`: a highly optimized fully reconfigurable State Lattice implementation supporting configurable minimum control sets, with provided control sets for Ackermann, Legged, Differential and Omnidirectional models.
 - `SmacPlanner2D`: a highly optimized fully reconfigurable grid-based A* implementation supporting Moore and Von Neumann models.
 
 It also introduces the following basic building blocks:
 - `CostmapDownsampler`: A library to take in a costmap object and downsample it to another resolution.
-- `AStar`: A generic and highly optimized A* template library used by the planning plugins to search. Template implementations are provided for grid-A*, SE2 Hybrid-A*, and SE2 State Lattice planning. Additional template for 3D planning also could be made available.
+- `AStar`: A generic and highly optimized A* template library used by the planning plugins to search. Additional template for  planning also could be made available using it.
 - `CollisionChecker`: Collision check based on a robot's radius or footprint.
-- `Smoother`: A path smoother to smooth out 2D, Hybrid-A\*, and State Lattice paths.
+- `Smoother`: A simple path smoother to smooth out 2D, Hybrid-A\*, and State Lattice paths.
 
 We have users reporting using this on:
 - Delivery robots
 - Industrial robots
 - Vertical farming
+- Solar farms
 
 ## Introduction
 
