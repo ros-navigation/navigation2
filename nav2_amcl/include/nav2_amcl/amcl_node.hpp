@@ -40,6 +40,7 @@
 #include "std_srvs/srv/empty.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
+#include "pluginlib/class_loader.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -219,6 +220,8 @@ protected:
   geometry_msgs::msg::PoseWithCovarianceStamped last_published_pose_;
   double init_pose_[3];  // Initial robot pose
   double init_cov_[3];
+  pluginlib::ClassLoader<nav2_amcl::MotionModel> plugin_loader_{"nav2_amcl",
+    "nav2_amcl::MotionModel"};
   /*
    * @brief Get robot pose in odom frame using TF
    */

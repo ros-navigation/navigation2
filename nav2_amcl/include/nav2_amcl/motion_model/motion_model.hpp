@@ -56,19 +56,6 @@ public:
    */
   virtual void odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_vector_t & delta) = 0;
 
-  /**
-   * @brief An factory to create motion models
-   * @param type Type of motion model to create in factory
-   * @param alpha1 error parameters, see documentation
-   * @param alpha2 error parameters, see documentation
-   * @param alpha3 error parameters, see documentation
-   * @param alpha4 error parameters, see documentation
-   * @param alpha5 error parameters, see documentation
-   * @return MotionModel A pointer to the motion model it created
-   */
-  static std::shared_ptr<nav2_amcl::MotionModel> createMotionModel(
-    std::string & type, double alpha1, double alpha2,
-    double alpha3, double alpha4, double alpha5);
 };
 }  // namespace nav2_amcl
 
