@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+// Copyright (c) 2021 Khaled SAAD, Jose M. TORRES-CAMARA and Marwan TAHER
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
