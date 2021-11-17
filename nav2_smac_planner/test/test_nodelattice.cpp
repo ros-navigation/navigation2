@@ -28,7 +28,7 @@ using json = nlohmann::json;
 TEST(NodeLatticeTest, parser_test)
 {
   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath = pkg_share_dir + "/output.json";
+  std::string filePath = pkg_share_dir + "/default_model.json";
   std::ifstream myJsonFile(filePath);
 
   ASSERT_TRUE(myJsonFile.is_open());
@@ -83,7 +83,7 @@ TEST(NodeLatticeTest, parser_test)
 TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 {
   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath = pkg_share_dir + "/output.json";
+  std::string filePath = pkg_share_dir + "/default_model.json";
 
   nav2_smac_planner::SearchInfo info;
   info.minimum_turning_radius = 1.1;
@@ -120,7 +120,7 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 TEST(NodeLatticeTest, test_node_lattice_conversions)
 {
   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath = pkg_share_dir + "/output.json";
+  std::string filePath = pkg_share_dir + "/default_model.json";
 
   nav2_smac_planner::SearchInfo info;
   info.minimum_turning_radius = 1.1;
@@ -154,7 +154,7 @@ TEST(NodeLatticeTest, test_node_lattice_conversions)
 TEST(NodeLatticeTest, test_node_lattice)
 {
   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath = pkg_share_dir + "/output.json";
+  std::string filePath = pkg_share_dir + "/default_model.json";
 
   nav2_smac_planner::SearchInfo info;
   info.minimum_turning_radius = 1.1;
@@ -227,7 +227,7 @@ TEST(NodeLatticeTest, test_node_lattice)
 TEST(NodeLatticeTest, test_get_neighbors)
 {
   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath = pkg_share_dir + "/output.json";
+  std::string filePath = pkg_share_dir + "/default_model.json";
 
   nav2_smac_planner::SearchInfo info;
   info.minimum_turning_radius = 1.1;

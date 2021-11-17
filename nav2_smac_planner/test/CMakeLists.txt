@@ -104,4 +104,4 @@ ament_target_dependencies(test_lattice_node ${dependencies})
 
 target_link_libraries(test_lattice_node ${library_name})
 
-install(FILES output.json DESTINATION share/${PROJECT_NAME})
+install(FILES default_model.json DESTINATION share/${PROJECT_NAME})

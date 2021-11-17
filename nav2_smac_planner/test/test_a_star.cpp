@@ -177,7 +177,7 @@ TEST(AStarTest, test_a_star_lattice)
   info.reverse_penalty = 2.0;
   info.analytic_expansion_ratio = 3.5;
   info.lattice_filepath =
-    ament_index_cpp::get_package_share_directory("nav2_smac_planner") + "/output.json";
+    ament_index_cpp::get_package_share_directory("nav2_smac_planner") + "/default_model.json";
   info.minimum_turning_radius = 8;  // in grid coordinates 0.4/0.05
   unsigned int size_theta = 16;
   info.cost_penalty = 2.0;
