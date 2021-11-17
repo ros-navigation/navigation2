@@ -134,7 +134,7 @@ ament_target_dependencies(${library_name}_lattice
   ${dependencies}
 )
 
-pluginlib_export_plugin_description_file(nav2_core smac_plugin.xml)
+pluginlib_export_plugin_description_file(nav2_core smac_plugin_hybrid.xml)
 pluginlib_export_plugin_description_file(nav2_core smac_plugin_2d.xml)
 pluginlib_export_plugin_description_file(nav2_core smac_plugin_lattice.xml)
 

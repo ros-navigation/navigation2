@@ -36,6 +36,8 @@
 
   <export>
     <build_type>ament_cmake</build_type>
-    <nav2_core plugin="${prefix}/global_planner_plugin.xml" />
+    <nav2_core plugin="${prefix}/smac_plugin_hybrid.xml" />
+    <nav2_core plugin="${prefix}/smac_plugin_2d.xml" />
+    <nav2_core plugin="${prefix}/smac_plugin_lattice.xml" />
   </export>
 </package>
