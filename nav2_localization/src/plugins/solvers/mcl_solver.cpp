@@ -19,14 +19,14 @@ geometry_msgs::msg::PoseWithCovarianceStamped MCLSolver::estimatePose(
   // TODO(marwan99): Make dist threshold a parameter
   // TODO(marwan99): Fix resampling condition
   bool do_resmaple = true;  // Set to false to enable throtelling
-  double delta_x = prev_odom_.pose.pose.position.x - curr_odom.pose.pose.position.x;
-  double delta_y = prev_odom_.pose.pose.position.y - curr_odom.pose.pose.position.y;
-  double delta_yaw = abs(
-    tf2::getYaw(prev_odom_.pose.pose.orientation) -
-    tf2::getYaw(curr_odom.pose.pose.orientation));
-  if (delta_x * delta_x + delta_y * delta_y > 0.01 || delta_yaw > 0.1) {
-    do_resmaple = true;
-  }
+  // double delta_x = prev_odom_.pose.pose.position.x - curr_odom.pose.pose.position.x;
+  // double delta_y = prev_odom_.pose.pose.position.y - curr_odom.pose.pose.position.y;
+  // double delta_yaw = abs(
+  //   tf2::getYaw(prev_odom_.pose.pose.orientation) -
+  //   tf2::getYaw(curr_odom.pose.pose.orientation));
+  // if (delta_x * delta_x + delta_y * delta_y > 0.01 || delta_yaw > 0.1) {
+  //   do_resmaple = true;
+  // }
 
   weights_sum_ = 0;
 
