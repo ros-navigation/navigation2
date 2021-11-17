@@ -115,6 +115,7 @@ struct HybridMotionTable
    */
   MotionPoses getProjections(const NodeHybrid * node);
 
+  MotionModel motion_model = MotionModel::UNKNOWN;
   MotionPoses projections;
   unsigned int size_x;
   unsigned int num_angle_quantization;
