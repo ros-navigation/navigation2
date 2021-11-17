@@ -7,6 +7,7 @@
   <maintainer email="josemigueltorrescamara@gmail.com">Jose Miguel TORRES CAMARA</maintainer>
   <maintainer email="khaledsoultan63@gmail.com">Khaled SAAD</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve MACENSKI</maintainer>
+  <maintainer email="marokhaled99@gmail.com">Marwan TAHER</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -16,6 +17,7 @@
   <depend>geometry_msgs</depend>
   <depend>pluginlib</depend>
   <depend>nav2_util</depend>
+  <depend>nav2_msgs</depend>
   <depend>nav_2d_utils</depend>
   <depend>message_filters</depend>
   <depend>sensor_msgs</depend>

@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+// Copyright (c) 2021 Khaled SAAD, Jose M. TORRES-CAMARA and Marwan TAHER
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 #include <algorithm>
 
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_localization/interfaces/sample_motion_model_base.hpp"
+#include "nav2_localization/plugins/sample_motion_models/sample_motion_model_base.hpp"
 #include "nav2_localization/plugins/sample_motion_models/diff_drive_odom_motion_model.hpp"
 #include "angles/angles.h"
 #include "tf2/convert.h"
@@ -28,12 +28,14 @@
 namespace nav2_localization
 {
 
-geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose(
-  const geometry_msgs::msg::TransformStamped & prev_odom,
-  const geometry_msgs::msg::TransformStamped & curr_odom,
-  const geometry_msgs::msg::TransformStamped & prev_pose)
+geometry_msgs::msg::Pose DiffDriveOdomMotionModel::getMostLikelyPose(
+  const nav_msgs::msg::Odometry & prev_odom,
+  const nav_msgs::msg::Odometry & curr_odom,
+  const geometry_msgs::msg::Pose & prev_pose)
 {
-  MotionComponents ideal_motion_components = calculateIdealMotionComponents(prev_odom, curr_odom);
+  MotionComponents ideal_motion_components = calculateIdealMotionComponents(
+    prev_odom.pose.pose,
+    curr_odom.pose.pose);
 
   double rot_1_hat = calculateNoisyRot(
     ideal_motion_components.rot_1_,
@@ -46,35 +48,35 @@ geometry_msgs::msg::TransformStamped DiffDriveOdomMotionModel::getMostLikelyPose
     ideal_motion_components.rot_2_,
     ideal_motion_components.trans_);
 
-  double x = prev_pose.transform.translation.x;
-  double y = prev_pose.transform.translation.y;
-  double theta = tf2::getYaw(prev_pose.transform.rotation);
+  double x = prev_pose.position.x;
+  double y = prev_pose.position.y;
+  double theta = tf2::getYaw(prev_pose.orientation);
 
-  geometry_msgs::msg::TransformStamped estimated_pose;
-  estimated_pose.transform.translation.x =
+  geometry_msgs::msg::Pose estimated_pose;
+  estimated_pose.position.x =
     x + trans_hat * cos(theta + rot_1_hat);
-  estimated_pose.transform.translation.y =
+  estimated_pose.position.y =
     y + trans_hat * sin(theta + rot_1_hat);
 
   tf2::Quaternion theta_prime_quat;
   double theta_prime = theta + rot_1_hat + rot_2_hat;
   theta_prime_quat.setRPY(0.0, 0.0, theta_prime);
-  estimated_pose.transform.rotation = tf2::toMsg(theta_prime_quat);
+  estimated_pose.orientation = tf2::toMsg(theta_prime_quat);
 
   return estimated_pose;
 }
 
 DiffDriveOdomMotionModel::MotionComponents DiffDriveOdomMotionModel::calculateIdealMotionComponents(
-  const geometry_msgs::msg::TransformStamped & prev,
-  const geometry_msgs::msg::TransformStamped & curr)
+  const geometry_msgs::msg::Pose & prev,
+  const geometry_msgs::msg::Pose & curr)
 {
-  double x = prev.transform.translation.x;
-  double y = prev.transform.translation.y;
-  double theta = tf2::getYaw(prev.transform.rotation);
+  double x = prev.position.x;
+  double y = prev.position.y;
+  double theta = tf2::getYaw(prev.orientation);
 
-  double x_prime = curr.transform.translation.x;
-  double y_prime = curr.transform.translation.y;
-  double theta_prime = tf2::getYaw(curr.transform.rotation);
+  double x_prime = curr.position.x;
+  double y_prime = curr.position.y;
+  double theta_prime = tf2::getYaw(curr.orientation);
 
   double trans = hypot(x_prime - x, y_prime - y);
 
@@ -132,16 +134,16 @@ void DiffDriveOdomMotionModel::configure(const rclcpp_lifecycle::LifecycleNode::
 {
   node_ = node;
 
+  node_->declare_parameter("rot_rot_noise", 0.2);
+  node_->declare_parameter("trans_rot_noise", 0.2);
+  node_->declare_parameter("trans_trans_noise", 0.2);
+  node_->declare_parameter("rot_trans_noise", 0.2);
+
   // set noise parameters
   node_->get_parameter("rot_rot_noise", rot_rot_noise_parm_);
   node_->get_parameter("trans_rot_noise", trans_rot_noise_parm_);
   node_->get_parameter("trans_trans_noise", trans_trans_noise_parm_);
   node_->get_parameter("rot_trans_noise", rot_trans_noise_param_);
-
-  node_->declare_parameter("rot_rot_noise", 0.2);
-  node_->declare_parameter("trans_rot_noise", 0.2);
-  node_->declare_parameter("trans_trans_noise", 0.2);
-  node_->declare_parameter("rot_trans_noise", 0.2);
 
   std::random_device rand_device;
   rand_num_gen_ = std::make_shared<std::mt19937>(rand_device());

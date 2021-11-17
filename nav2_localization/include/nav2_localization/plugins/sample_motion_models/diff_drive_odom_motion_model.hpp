@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+// Copyright (c) 2021 Khaled SAAD, Jose M. TORRES-CAMARA and Marwan TAHER
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 #include <random>
 #include <memory>
 
-#include "nav2_localization/interfaces/sample_motion_model_base.hpp"
+#include "nav2_localization/plugins/sample_motion_models/sample_motion_model_base.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -28,10 +28,10 @@ namespace nav2_localization
 class DiffDriveOdomMotionModel : public SampleMotionModel
 {
 public:
-  geometry_msgs::msg::TransformStamped getMostLikelyPose(
-    const geometry_msgs::msg::TransformStamped & prev_odom,
-    const geometry_msgs::msg::TransformStamped & curr_odom,
-    const geometry_msgs::msg::TransformStamped & prev_pose) override;
+  geometry_msgs::msg::Pose getMostLikelyPose(
+    const nav_msgs::msg::Odometry & prev_odom,
+    const nav_msgs::msg::Odometry & curr_odom,
+    const geometry_msgs::msg::Pose & prev_pose) override;
 
   void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) override;
   void activate() override;
@@ -47,8 +47,8 @@ protected:
   };
 
   MotionComponents calculateIdealMotionComponents(
-    const geometry_msgs::msg::TransformStamped & prev,
-    const geometry_msgs::msg::TransformStamped & curr
+    const geometry_msgs::msg::Pose & prev,
+    const geometry_msgs::msg::Pose & curr
   );
   double calculateNoisyRot(const double & rot, const double & trans);
   double calculateNoisyTrans(const double & rot1, const double & trans, const double & rot2);

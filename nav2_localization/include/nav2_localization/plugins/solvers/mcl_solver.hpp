@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+// Copyright (c) 2021 Marwan TAHER and Khaled SAAD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,33 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_LOCALIZATION__PARTICLE_FILTER_HPP_
-#define NAV2_LOCALIZATION__PARTICLE_FILTER_HPP_
+#ifndef NAV2_LOCALIZATION__PLUGINS__SOLVERS__MCL_SOLVER_HPP_
+#define NAV2_LOCALIZATION__PLUGINS__SOLVERS__MCL_SOLVER_HPP_
 
+#include <memory>
 #include <vector>
+
+#include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
+
+#include "nav2_localization/plugins/solvers/particle_filter_base.hpp"
 
 namespace nav2_localization
 {
 
-class Particle
+class MCLSolver : public ParticleFilterSolver
 {
 public:
-  Particle(const geometry_msgs::msg::TransformStamped &inital_pose, const double &initial_weight) : pose_(inital_pose), weight_(initial_weight) {};
-  geometry_msgs::msg::TransformStamped pose_;
-  double weight_;
-};
+  MCLSolver();
 
-class ParticleFilter
-{
-public:
-  using Ptr = std::shared_ptr<nav2_localization::ParticleFilter>;
-  explicit ParticleFilter(const int & initial_number_of_particles);
-  virtual geometry_msgs::msg::TransformStamped estimatePose() = 0;
-
-private:
-  std::vector<Particle> particles_;
+  /**
+  * @brief
+  * MCLSolver implementation
+  */
+  geometry_msgs::msg::PoseWithCovarianceStamped estimatePose(
+    const nav_msgs::msg::Odometry & curr_odom,
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan) override;
 };
 }  // namespace nav2_localization
 
-#endif  // NAV2_LOCALIZATION__PARTICLE_FILTER_HPP_
+#endif  // NAV2_LOCALIZATION__PLUGINS__SOLVERS__MCL_SOLVER_HPP_

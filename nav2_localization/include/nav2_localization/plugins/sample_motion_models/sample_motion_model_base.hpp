@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+// Copyright (c) 2021 Khaled SAAD, Jose M. TORRES-CAMARA and Marwan TAHER
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_LOCALIZATION__INTERFACES__SAMPLE_MOTION_MODEL_BASE_HPP_
-#define NAV2_LOCALIZATION__INTERFACES__SAMPLE_MOTION_MODEL_BASE_HPP_
+#ifndef NAV2_LOCALIZATION__PLUGINS__SAMPLE_MOTION_MODELS__SAMPLE_MOTION_MODEL_BASE_HPP_
+#define NAV2_LOCALIZATION__PLUGINS__SAMPLE_MOTION_MODELS__SAMPLE_MOTION_MODEL_BASE_HPP_
 
 #include <memory>  // For shared_ptr<>
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -38,10 +38,10 @@ public:
    * @param prev_pose The robot's pose estimation at the previous time step.
    * @return The most likely pose of the robot at the current time step, based on the model's estimation.
    */
-  virtual geometry_msgs::msg::TransformStamped getMostLikelyPose(
-    const geometry_msgs::msg::TransformStamped & prev_odom,
-    const geometry_msgs::msg::TransformStamped & curr_odom,
-    const geometry_msgs::msg::TransformStamped & prev_pose) = 0;
+  virtual geometry_msgs::msg::Pose getMostLikelyPose(
+    const nav_msgs::msg::Odometry & prev_odom,
+    const nav_msgs::msg::Odometry & curr_odom,
+    const geometry_msgs::msg::Pose & prev_pose) = 0;
 
   /**
    * @brief Configures the model, during the "Configuring" state of the parent lifecycle node.
@@ -69,4 +69,4 @@ protected:
 };
 }  // namespace nav2_localization
 
-#endif  // NAV2_LOCALIZATION__INTERFACES__SAMPLE_MOTION_MODEL_BASE_HPP_
+#endif  // NAV2_LOCALIZATION__PLUGINS__SAMPLE_MOTION_MODELS__SAMPLE_MOTION_MODEL_BASE_HPP_

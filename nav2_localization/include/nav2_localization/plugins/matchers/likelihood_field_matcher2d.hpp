@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Jose M. TORRES-CAMARA and Khaled SAAD
+// Copyright (c) 2021 Jose M. TORRES-CAMARA, Khaled SAAD and Marwan TAHER
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 
 #include <vector>  // For vector<>
 #include <unordered_map>
-#include "nav2_localization/interfaces/matcher2d_base.hpp"
+#include "nav2_localization/plugins/matchers/matcher2d_base.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 namespace nav2_localization
@@ -30,9 +30,9 @@ public:
 
   double getScanProbability(
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr & scan,
-    const geometry_msgs::msg::TransformStamped & curr_pose) override;
+    const geometry_msgs::msg::Pose & curr_pose) override;
   void setMap(const nav_msgs::msg::OccupancyGrid::SharedPtr & map) override;
-  void setSensorPose(const geometry_msgs::msg::TransformStamped & sensor_pose) override;
+  void setSensorTf(const geometry_msgs::msg::TransformStamped & sensor_tf) override;
   void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) override;
   void activate() override;
   void deactivate() override;

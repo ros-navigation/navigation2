@@ -7,7 +7,7 @@ localization_server:
     trans_rot_noise: 0.2
     trans_trans_noise: 0.2
     rot_trans_noise: 0.2
-    max_likelihood_distace: 2.0
+    max_likelihood_distance: 2.0
     sigma_hit: 0.2
     max_number_of_beams: 60
     z_max: 0.05
@@ -18,13 +18,13 @@ localization_server:
     prior_mu_y: 0.0
     num_particles: 2000
     num_dimensions: 3
-    localization_plugins: ["DiffDriveOdomMotionModel", "LikelihoodFieldMatcher2d", "MCLSolver2d"]
+    localization_plugins: ["DiffDriveOdomMotionModel", "LikelihoodFieldMatcher2d", "MCLSolver"]
     DiffDriveOdomMotionModel:
       plugin: "nav2_localization::DiffDriveOdomMotionModel"
     LikelihoodFieldMatcher2d:
       plugin: "nav2_localization::LikelihoodFieldMatcher2d"
-    MCLSolver2d:
-      plugin: "nav2_localization::MCLSolver2d"
+    MCLSolver:
+      plugin: "nav2_localization::MCLSolver"
 
 localization_server_rclcpp_node:
   ros__parameters:

@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Khaled SAAD and Jose M. TORRES-CAMARA
+// Copyright (c) 2021 Khaled SAAD, Jose M. TORRES-CAMARA and Marwan TAHER
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,11 +22,13 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
 #include "pluginlib/class_loader.hpp"
-#include "nav2_localization/interfaces/sample_motion_model_base.hpp"
-#include "nav2_localization/interfaces/matcher2d_base.hpp"
-#include "nav2_localization/interfaces/solver_base.hpp"
+#include "nav2_localization/plugins/sample_motion_models/sample_motion_model_base.hpp"
+#include "nav2_localization/plugins/matchers/matcher2d_base.hpp"
+#include "nav2_localization/plugins/solvers/solver_base.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "message_filters/subscriber.h"
+#include "message_filters/synchronizer.h"
+#include "message_filters/sync_policies/approximate_time.h"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "tf2_ros/message_filter.h"
@@ -127,26 +129,37 @@ protected:
    * @brief Callback when a LaserScan is received. It will convert it to a PC and use the callback for generic scans
    * @param scan pointer to the received LaserScan message
    */
-  void laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan);
+  void laserAndOdomReceived(
+    sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan,
+    nav_msgs::msg::Odometry::ConstSharedPtr odom);
 
   /**
    * @brief Callback when the scan is received
    * @param scan pointer to the received PointCloud2 message
+   * @param odom pointer to the received odometry message
    */
-  void scanReceived(sensor_msgs::msg::PointCloud2::ConstSharedPtr scan);
+  void ponitCloudAndOdomReceived(
+    sensor_msgs::msg::PointCloud2::ConstSharedPtr scan,
+    nav_msgs::msg::Odometry::ConstSharedPtr odom);
 
   /**
    * @brief Callback when the initial pose of the robot is received
-   * @param msg pointer to the received pose
+   * @param init_pose pointer to the received pose
    */
-  void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+  void initialPoseReceived(
+    geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr init_pose);
+
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
+    initial_pose_sub_;
 
   // Map
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
   bool first_map_received_{false};
 
-  // Scan
+  // Parameters
   std::string scan_topic_;
+  std::string odom_topic_;
+  std::string pointcloud_topic_;
 
   // Transforms
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
@@ -158,12 +171,18 @@ protected:
   tf2::Duration transform_tolerance_;
 
   // Message filters
+  std::shared_ptr<message_filters::Subscriber<nav_msgs::msg::Odometry>> odom_sub_;
   std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
-  std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> scan_sub_;
-  std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
-  std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>> scan_filter_;
-  message_filters::Connection laser_scan_connection_;
-  message_filters::Connection scan_connection_;
+  std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> pointcloud_sub_;
+
+  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::LaserScan,
+      nav_msgs::msg::Odometry> laser_odom_policy;
+  std::shared_ptr<message_filters::Synchronizer<laser_odom_policy>> laser_odom_sync_;
+
+  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::PointCloud2,
+      nav_msgs::msg::Odometry> pointcloud_odom_policy;
+  std::shared_ptr<message_filters::Synchronizer<pointcloud_odom_policy>> pointcloud_odom_sync_;
+
   laser_geometry::LaserProjection laser_to_pc_projector_;
 
   // Sample Motion Model Plugin
@@ -192,9 +211,11 @@ protected:
   std::vector<std::string> localization_ids_;
 
   // Initial pose
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
-    initial_pose_sub_;
   bool initial_pose_set_;
+  bool initial_odom_set_;
+
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
+    estimated_pose_pub_;
 };
 
 }  // namespace nav2_localization
