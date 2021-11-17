@@ -66,7 +66,8 @@ void HybridMotionTable::initDubin(
 
   // if nothing changed, no need to re-compute primitives
   if (num_angle_quantization_in == num_angle_quantization &&
-    min_turning_radius == search_info.minimum_turning_radius)
+    min_turning_radius == search_info.minimum_turning_radius &&
+    motion_model == MotionModel::DUBIN)
   {
     return;
   }
@@ -74,6 +75,7 @@ void HybridMotionTable::initDubin(
   num_angle_quantization = num_angle_quantization_in;
   num_angle_quantization_float = static_cast<float>(num_angle_quantization);
   min_turning_radius = search_info.minimum_turning_radius;
+  motion_model = MotionModel::DUBIN;
 
   // angle must meet 3 requirements:
   // 1) be increment of quantized bin size
@@ -115,9 +117,7 @@ void HybridMotionTable::initDubin(
   projections.emplace_back(delta_x, -delta_y, -increments);  // Right
 
   // Create the correct OMPL state space
-  if (!state_space) {
-    state_space = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius);
-  }
+  state_space = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius);
 
   // Precompute projection deltas
   delta_xs.resize(projections.size());
@@ -158,7 +158,8 @@ void HybridMotionTable::initReedsShepp(
 
   // if nothing changed, no need to re-compute primitives
   if (num_angle_quantization_in == num_angle_quantization &&
-    min_turning_radius == search_info.minimum_turning_radius)
+    min_turning_radius == search_info.minimum_turning_radius &&
+    motion_model == MotionModel::REEDS_SHEPP)
   {
     return;
   }
@@ -166,6 +167,7 @@ void HybridMotionTable::initReedsShepp(
   num_angle_quantization = num_angle_quantization_in;
   num_angle_quantization_float = static_cast<float>(num_angle_quantization);
   min_turning_radius = search_info.minimum_turning_radius;
+  motion_model = MotionModel::REEDS_SHEPP;
 
   float angle = 2.0 * asin(sqrt(2.0) / (2 * min_turning_radius));
   bin_size =
@@ -191,10 +193,7 @@ void HybridMotionTable::initReedsShepp(
   projections.emplace_back(-delta_x, -delta_y, increments);  // Backward + Right
 
   // Create the correct OMPL state space
-  if (!state_space) {
-    state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
-      min_turning_radius);
-  }
+  state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(min_turning_radius);
 
   // Precompute projection deltas
   delta_xs.resize(projections.size());
