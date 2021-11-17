@@ -16,6 +16,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <limits>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -23,8 +24,10 @@
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
+#include "nav2_smac_planner/node_lattice.hpp"
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "ament_index_cpp/get_package_share_directory.hpp"
 
 class RclCppFixture
 {
@@ -159,6 +162,59 @@ TEST(AStarTest, test_a_star_se2)
   // check path is the right size and collision free
   EXPECT_EQ(num_it, 352);
   EXPECT_EQ(path.size(), 73u);
+  for (unsigned int i = 0; i != path.size(); i++) {
+    EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
+  }
+
+  delete costmapA;
+}
+
+TEST(AStarTest, test_a_star_lattice)
+{
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 0.05;
+  info.non_straight_penalty = 1.05;
+  info.reverse_penalty = 2.0;
+  info.analytic_expansion_ratio = 3.5;
+  info.lattice_filepath =
+    ament_index_cpp::get_package_share_directory("nav2_smac_planner") + "/output.json";
+  info.minimum_turning_radius = 8;  // in grid coordinates 0.4/0.05
+  unsigned int size_theta = 16;
+  info.cost_penalty = 2.0;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeLattice> a_star(
+    nav2_smac_planner::MotionModel::STATE_LATTICE, info);
+  int max_iterations = 10000;
+  float tolerance = 10.0;
+  int it_on_approach = 10;
+  double max_planning_time = 120.0;
+  int num_it = 0;
+
+  a_star.initialize(
+    false, max_iterations, std::numeric_limits<int>::max(), max_planning_time, 401, size_theta);
+
+  nav2_costmap_2d::Costmap2D * costmapA =
+    new nav2_costmap_2d::Costmap2D(100, 100, 0.05, 0.0, 0.0, 0);
+  // island in the middle of lethal cost to cross
+  for (unsigned int i = 20; i <= 30; ++i) {
+    for (unsigned int j = 20; j <= 30; ++j) {
+      costmapA->setCost(i, j, 254);
+    }
+  }
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, size_theta);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+
+  // functional case testing
+  a_star.setCollisionChecker(checker.get());
+  a_star.setStart(5u, 5u, 0u);
+  a_star.setGoal(40u, 40u, 1u);
+  nav2_smac_planner::NodeLattice::CoordinateVector path;
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
+
+  // check path is the right size and collision free
+  EXPECT_EQ(num_it, 14);
+  EXPECT_EQ(path.size(), 49u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }
