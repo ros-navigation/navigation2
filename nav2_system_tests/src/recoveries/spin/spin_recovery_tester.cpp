@@ -57,7 +57,9 @@ SpinRecoveryTester::SpinRecoveryTester()
   publisher_ =
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
   fake_costmap_publisher_ =
-    node_->create_publisher<nav2_msgs::msg::Costmap>("local_costmap/costmap_raw", 10);
+    node_->create_publisher<nav2_msgs::msg::Costmap>(
+      "local_costmap/costmap_raw",
+      rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),

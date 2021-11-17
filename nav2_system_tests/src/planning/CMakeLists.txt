@@ -48,6 +48,7 @@ ament_add_test(test_planner_random
 
 ament_add_gtest(test_planner_plugins
   test_planner_plugins.cpp
+  TIMEOUT 10
 )
 
 ament_target_dependencies(test_planner_plugins rclcpp geometry_msgs nav2_msgs ${dependencies})

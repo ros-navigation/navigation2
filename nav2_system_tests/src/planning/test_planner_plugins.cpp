@@ -73,6 +73,8 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
   // Test WITH use_final_approach_orientation
   // expecting end path pose orientation to be equal to approach orientation
   // which in the one pose corner case should be the start pose orientation
+  obj->declare_parameter(
+    "GridBased.use_final_approach_orientation", rclcpp::ParameterValue(true));
   obj->set_parameter(rclcpp::Parameter("GridBased.use_final_approach_orientation", true));
   obj->onConfigure(state);
 
