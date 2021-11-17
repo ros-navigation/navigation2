@@ -239,7 +239,6 @@ void AnalyticExpansion<NodeLattice>::cleanNode(const NodePtr & node)
 template<typename NodeT>
 void AnalyticExpansion<NodeT>::cleanNode(const NodePtr & /*expanded_nodes*/)
 {
-  return;
 }
 
 template<>

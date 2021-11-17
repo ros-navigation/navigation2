@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 #include <limits>
 #include "nav2_smac_planner/node_lattice.hpp"
 #include "gtest/gtest.h"
@@ -93,6 +94,7 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
   info.analytic_expansion_ratio = 1;
   info.lattice_filepath = filePath;
   info.cache_obstacle_heuristic = true;
+  info.allow_reverse_expansion = false;
 
   unsigned int x = 100;
   unsigned int y = 100;
@@ -163,6 +165,7 @@ TEST(NodeLatticeTest, test_node_lattice)
   info.analytic_expansion_ratio = 1;
   info.lattice_filepath = filePath;
   info.cache_obstacle_heuristic = true;
+  info.allow_reverse_expansion = true;
 
   unsigned int x = 100;
   unsigned int y = 100;
@@ -216,6 +219,53 @@ TEST(NodeLatticeTest, test_node_lattice)
   EXPECT_EQ(testC.pose.x, 10.0);
   EXPECT_EQ(testC.pose.y, 5.0);
   EXPECT_EQ(testC.pose.theta, 4);
+
+  delete costmapA;
+}
+
+
+TEST(NodeLatticeTest, test_get_neighbors)
+{
+  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string filePath = pkg_share_dir + "/output.json";
+
+  nav2_smac_planner::SearchInfo info;
+  info.minimum_turning_radius = 1.1;
+  info.non_straight_penalty = 1;
+  info.change_penalty = 1;
+  info.reverse_penalty = 1;
+  info.cost_penalty = 1;
+  info.analytic_expansion_ratio = 1;
+  info.lattice_filepath = filePath;
+  info.cache_obstacle_heuristic = true;
+  info.allow_reverse_expansion = true;
+
+  unsigned int x = 100;
+  unsigned int y = 100;
+  unsigned int angle_quantization = 16;
+
+  nav2_smac_planner::NodeLattice::initMotionModel(
+    nav2_smac_planner::MotionModel::STATE_LATTICE, x, y, angle_quantization, info);
+
+  nav2_smac_planner::NodeLattice node(49);
+
+  nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
+    10, 10, 0.05, 0.0, 0.0, 0);
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 72);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+
+  std::function<bool(const unsigned int &, nav2_smac_planner::NodeLattice * &)> neighborGetter =
+    [&, this](const unsigned int & index, nav2_smac_planner::NodeLattice * & neighbor_rtn) -> bool
+    {
+      // because we don't return a real object
+      return false;
+    };
+
+  nav2_smac_planner::NodeLattice::NodeVector neighbors;
+  node.getNeighbors(neighborGetter, checker.get(), false, neighbors);
+  // should be empty since totally invalid
+  EXPECT_EQ(neighbors.size(), 0u);
 
   delete costmapA;
 }

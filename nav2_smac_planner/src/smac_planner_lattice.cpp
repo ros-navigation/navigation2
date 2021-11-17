@@ -305,7 +305,6 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
   rcl_interfaces::msg::SetParametersResult result;
   std::lock_guard<std::mutex> lock_reinit(_mutex);
 
-  bool reinit_collision_checker = false;
   bool reinit_a_star = false;
   bool reinit_smoother = false;
 
@@ -320,10 +319,6 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       } else if (name == _name + ".lookup_table_size") {
         reinit_a_star = true;
         _lookup_table_size = parameter.as_double();
-      } else if (name == _name + ".minimum_turning_radius") {
-        reinit_a_star = true;
-        reinit_smoother = true;
-        _search_info.minimum_turning_radius = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".reverse_penalty") {
         reinit_a_star = true;
         _search_info.reverse_penalty = static_cast<float>(parameter.as_double());
@@ -375,7 +370,7 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
   }
 
   // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
-  if (reinit_a_star || reinit_collision_checker || reinit_smoother) {
+  if (reinit_a_star || reinit_smoother) {
     // convert to grid coordinates
     const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
     _search_info.minimum_turning_radius =
@@ -396,6 +391,15 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       lookup_table_dim += 1.0;
     }
 
+    // Re-Initialize smoother
+    if (reinit_smoother) {
+      auto node = _node.lock();
+      SmootherParams params;
+      params.get(node, _name);
+      _smoother = std::make_unique<Smoother>(params);
+      _smoother->initialize(_metadata.min_turning_radius);
+    }
+
     // Re-Initialize A* template
     if (reinit_a_star) {
       _a_star = std::make_unique<AStarAlgorithm<NodeLattice>>(_motion_model, _search_info);
@@ -406,24 +410,6 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
         _max_planning_time,
         lookup_table_dim,
         _metadata.number_of_headings);
-    }
-
-    // Re-Initialize collision checker
-    if (reinit_collision_checker) {
-      _collision_checker = GridCollisionChecker(_costmap, 72u);
-      _collision_checker.setFootprint(
-        _costmap_ros->getRobotFootprint(),
-        _costmap_ros->getUseRadius(),
-        findCircumscribedCost(_costmap_ros));
-    }
-
-    // Re-Initialize smoother
-    if (reinit_smoother) {
-      auto node = _node.lock();
-      SmootherParams params;
-      params.get(node, _name);
-      _smoother = std::make_unique<Smoother>(params);
-      _smoother->initialize(_metadata.min_turning_radius);
     }
   }
 
