@@ -36,6 +36,16 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
+// Simple wrapper to be able to call a private member
+class LatticeWrap : public nav2_smac_planner::SmacPlannerLattice
+{
+public:
+  void callDynamicParams(std::vector<rclcpp::Parameter> parameters)
+  {
+    dynamicParametersCallback(parameters);
+  }
+};
+
 // SMAC smoke tests for plugin-level issues rather than algorithms
 // (covered by more extensively testing in other files)
 // System tests in nav2_system_tests will actually plan with this work
@@ -87,7 +97,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
-  auto planner = std::make_unique<nav2_smac_planner::SmacPlannerLattice>();
+  auto planner = std::make_unique<LatticeWrap>();
   try {
     // Expect to throw due to invalid prims file in param
     planner->configure(nodeLattice, "test", nullptr, costmap_ros);
@@ -111,7 +121,6 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.analytic_expansion_ratio", 4.0),
       rclcpp::Parameter("test.max_planning_time", 10.0),
       rclcpp::Parameter("test.lookup_table_size", 30.0),
-      rclcpp::Parameter("test.lattice_filepath", std::string("HI")),
       rclcpp::Parameter("test.allow_reverse_expansion", true)});
 
   try {
@@ -123,4 +132,9 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       results);
   } catch (...) {
   }
+
+  // So instead, lets call manually on a change
+  std::vector<rclcpp::Parameter> parameters;
+  parameters.push_back(rclcpp::Parameter("test.lattice_filepath", std::string("HI")));
+  EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
 }
