@@ -419,7 +419,8 @@ void NodeLattice::precomputeDistanceHeuristic(
     motion_table.state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
       search_info.minimum_turning_radius);
   }
-  motion_table.lattice_metadata = LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
+  motion_table.lattice_metadata =
+    LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
 
   ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
   to[0] = 0.0;
@@ -513,7 +514,7 @@ void NodeLattice::getNeighbors(
       // Using a special isNodeValid API here, giving the motion primitive to use to
       // validity check the transition of the current node to the new node over
       if (neighbor->isNodeValid(
-        traverse_unknown, collision_checker, motion_primitives[i], backwards))
+          traverse_unknown, collision_checker, motion_primitives[i], backwards))
       {
         neighbor->setMotionPrimitive(motion_primitives[i]);
         // Marking if this search was obtained in the reverse direction

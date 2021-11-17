@@ -39,7 +39,7 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 
 using namespace std::chrono_literals;
-using namespace std::chrono;
+using namespace std::chrono;  // NOLINT
 using nav2_util::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
