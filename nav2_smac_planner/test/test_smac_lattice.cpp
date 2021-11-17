@@ -57,7 +57,11 @@ TEST(SmacTest, test_smac_lattice)
   goal.pose.position.y = 1.0;
   goal.pose.orientation.w = 1.0;
   auto planner = std::make_unique<nav2_smac_planner::SmacPlannerLattice>();
-  planner->configure(nodeLattice, "test", nullptr, costmap_ros);
+  try {
+    // Expect to throw due to invalid prims file in param
+    planner->configure(nodeLattice, "test", nullptr, costmap_ros);
+  } catch (...) {
+  }
   planner->activate();
 
   try {
@@ -84,7 +88,11 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
   auto planner = std::make_unique<nav2_smac_planner::SmacPlannerLattice>();
-  planner->configure(nodeLattice, "test", nullptr, costmap_ros);
+  try {
+    // Expect to throw due to invalid prims file in param
+    planner->configure(nodeLattice, "test", nullptr, costmap_ros);
+  } catch (...) {
+  }
   planner->activate();
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(

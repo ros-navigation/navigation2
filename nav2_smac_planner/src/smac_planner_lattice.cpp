@@ -57,6 +57,7 @@ void SmacPlannerLattice::configure(
   _costmap_ros = costmap_ros;
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
+  _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
   RCLCPP_INFO(_logger, "Configuring %s of type SmacPlannerLattice", name.c_str());
 
@@ -68,8 +69,10 @@ void SmacPlannerLattice::configure(
     node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
   node->get_parameter(name + ".max_iterations", _max_iterations);
 
+  // Default to a well rounded model: 16 bin, 0.4m turning radius, ackermann model
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".lattice_filepath", rclcpp::ParameterValue(std::string("")));
+    node, name + ".lattice_filepath", rclcpp::ParameterValue(
+      ament_index_cpp::get_package_share_directory("nav2_smac_planner") + "/output.json"));
   node->get_parameter(name + ".lattice_filepath", _search_info.lattice_filepath);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
@@ -156,8 +159,6 @@ void SmacPlannerLattice::configure(
   params.get(node, name);
   _smoother = std::make_unique<Smoother>(params);
   _smoother->initialize(_metadata.min_turning_radius);
-
-  _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlannerLattice with "
