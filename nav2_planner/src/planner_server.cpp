@@ -198,18 +198,26 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
   action_server_pose_.reset();
+  RCLCPP_INFO(get_logger(), "Cleaning upA");
   action_server_poses_.reset();
+  RCLCPP_INFO(get_logger(), "Cleaning upB");
   plan_publisher_.reset();
+  RCLCPP_INFO(get_logger(), "Cleaning upC");
   tf_.reset();
+  RCLCPP_INFO(get_logger(), "Cleaning upD");
   costmap_ros_->on_cleanup(state);
+  RCLCPP_INFO(get_logger(), "Cleaning upE");
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
+    RCLCPP_INFO(get_logger(), "Cleaning upF");
     it->second->cleanup();
   }
+  RCLCPP_INFO(get_logger(), "Cleaning upG");
   planners_.clear();
+  RCLCPP_INFO(get_logger(), "Cleaning upH");
   costmap_ = nullptr;
-
+  RCLCPP_INFO(get_logger(), "Cleaning upI");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
