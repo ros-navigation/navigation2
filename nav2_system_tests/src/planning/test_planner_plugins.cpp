@@ -170,11 +170,6 @@ TEST(testPluginMap, ThetaStarVerySmallPath)
   testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.00001);
 }
 
-TEST(testPluginMap, ThetaStarBelowCostmapResolution)
-{
-  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.09);
-}
-
 TEST(testPluginMap, ThetaStarJustAboveCostmapResolution)
 {
   testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.102);
@@ -183,6 +178,11 @@ TEST(testPluginMap, ThetaStarJustAboveCostmapResolution)
 TEST(testPluginMap, ThetaStarAboveCostmapResolution)
 {
   testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 1.5);
+}
+
+TEST(testPluginMap, ThetaStarBelowCostmapResolution)
+{
+  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.09);
 }
 
 int main(int argc, char ** argv)
