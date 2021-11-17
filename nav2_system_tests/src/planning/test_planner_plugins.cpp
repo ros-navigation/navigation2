@@ -76,6 +76,9 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
   obj->set_parameter(rclcpp::Parameter("GridBased.use_final_approach_orientation", true));
   obj->onConfigure(state);
 
+  geometry_msgs::msg::PoseStamped start;
+  geometry_msgs::msg::PoseStamped goal;
+
   start.pose.position.x = 0.5;
   start.pose.position.y = 0.5;
   start.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI_2);
@@ -86,7 +89,7 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
   goal.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI);
   goal.header.frame_id = "map";
 
-  path = obj->getPlan(start, goal, "GridBased");
+  auto path = obj->getPlan(start, goal, "GridBased");
   EXPECT_GT((int)path.poses.size(), 0);
 
   int path_size = path.poses.size();
