@@ -44,6 +44,7 @@ public:
     if (!spin_recovery_tester->isActive()) {
       spin_recovery_tester->activate();
     }
+    std::this_thread::sleep_for(2000ms);
   }
 
   static void TearDownTestCase()
