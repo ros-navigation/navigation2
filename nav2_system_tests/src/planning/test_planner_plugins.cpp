@@ -61,7 +61,8 @@ void testSmallPathValidityAndOrientation(std::string plugin, double length)
   auto path = obj->getPlan(start, goal, "GridBased");
   EXPECT_GT((int)path.poses.size(), 0);
   EXPECT_NEAR(tf2::getYaw(path.poses.back().pose.orientation), -M_PI, 0.01);
-  obj->onCleanup(state);
+  // obj->onCleanup(state);
+  obj.reset();
 }
 
 void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
@@ -108,7 +109,8 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
       atan2(dy, dx),
       0.01);
   }
-  obj->onCleanup(state);
+  // obj->onCleanup(state);
+  obj.reset();
 }
 
 TEST(testPluginMap, Failures)

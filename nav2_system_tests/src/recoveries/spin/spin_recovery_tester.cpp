@@ -186,7 +186,7 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     {
       sendFakeOdom(command_yaw);
       sendFakeCostmap(target_yaw);
-      rclcpp::sleep_for(std::chrono::milliseconds(5));
+      rclcpp::sleep_for(std::chrono::milliseconds(10));
     }
     sendFakeOdom(target_yaw);
     sendFakeCostmap(target_yaw);
