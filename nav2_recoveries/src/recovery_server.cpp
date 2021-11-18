@@ -55,7 +55,7 @@ RecoveryServer::RecoveryServer(const rclcpp::NodeOptions & options)
     rclcpp::ParameterValue(0.1));
   declare_parameter(
     "footprint_tolerance",
-    rclcpp::ParameterValue(std::numeric_limits<double>::infinity()));
+    rclcpp::ParameterValue(1.0));
 }
 
 

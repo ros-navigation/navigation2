@@ -71,16 +71,16 @@ public:
    */
   bool isCollisionFree(const geometry_msgs::msg::Pose2D & pose);
 
-  /**
-   * @brief Get a footprint at a set pose
-   */
-  Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose);
-
 protected:
   /**
    * @brief Set a new footprint
    */
   void unorientFootprint(const Footprint & oriented_footprint, Footprint & reset_footprint, const rclcpp::Time &stamp);
+
+  /**
+   * @brief Get a footprint at a set pose
+   */
+  Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose);
 
   // Name used for logging
   std::string name_;
