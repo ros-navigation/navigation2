@@ -155,6 +155,13 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     "Init Yaw is %lf",
     fabs(tf2::getYaw(initial_pose.pose.orientation)));
   RCLCPP_INFO(node_->get_logger(), "Before sending goal");
+
+  // Intialize fake costmap
+  if (make_fake_costmap_) {
+    sendFakeCostmap(target_yaw);
+    sendFakeOdom(0.0);
+  }
+
   auto goal_handle_future = client_ptr_->async_send_goal(goal_msg);
 
   if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
