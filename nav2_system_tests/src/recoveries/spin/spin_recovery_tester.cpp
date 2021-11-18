@@ -162,6 +162,8 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     sendFakeOdom(0.0);
   }
 
+  rclcpp::spin_some(node_);
+
   auto goal_handle_future = client_ptr_->async_send_goal(goal_msg);
 
   if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
