@@ -107,6 +107,7 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
   auto costmap = costmap_sub_->getCostmap();
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
+  // populate smoother input with (x, y, forward/reverse dir)
   std::vector<Eigen::Vector3d> path_world;
   path_world.reserve(path.poses.size());
   Eigen::Vector2d start_dir;
@@ -118,12 +119,12 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
     tf2::fromMsg(pose.orientation, q);
     double angle = q.getAngle()*sign(q.getZ());
     Eigen::Vector2d orientation(cos(angle), sin(angle));
-    Eigen::Vector2d mvmt(pos_next.x - pose.position.x, pos_next.y - pose.position.y);
     if (i == (int)path.poses.size()-1) {
       path_world.emplace_back(pose.position.x, pose.position.y, path_world.back()[2]);
       end_dir = orientation;
     }
     else {
+      Eigen::Vector2d mvmt(pos_next.x - pose.position.x, pos_next.y - pose.position.y);
       bool reversing = _smoother_params.reversing_enabled && orientation.dot(mvmt) < 0;
       path_world.emplace_back(pose.position.x, pose.position.y, reversing ? -1 : 1);
       if (i == 0)

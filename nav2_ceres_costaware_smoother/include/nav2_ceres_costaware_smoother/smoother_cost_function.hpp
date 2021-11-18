@@ -29,75 +29,14 @@
 #include "Eigen/Core"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_ceres_costaware_smoother/options.hpp"
-
-#define EPSILON_DOUBLE 0.0001
-#define EPSILON (T)EPSILON_DOUBLE
+#include "nav2_ceres_costaware_smoother/utils.hpp"
 
 namespace nav2_ceres_costaware_smoother
 {
-
-template <typename T>
-inline Eigen::Matrix<T, 2, 1> arcCenter(
-  Eigen::Matrix<T, 2, 1> p1,
-  Eigen::Matrix<T, 2, 1> p,
-  Eigen::Matrix<T, 2, 1> p2,
-  int forced_dot_sign = 0)
-{
-  Eigen::Matrix<T, 2, 1> d1 = p - p1;
-  Eigen::Matrix<T, 2, 1> d2 = p2 - p;
-  
-  if (forced_dot_sign < 0 || (forced_dot_sign == 0 && d1.dot(d2) < (T)0)) {
-    d2 = -d2;
-    p2 = p + d2;
-  }
-
-  T det = d1[0]*d2[1] - d1[1]*d2[0];
-  if (ceres::abs(det) < (T)1e-4) { // straight line
-    return Eigen::Matrix<T, 2, 1>((T)std::numeric_limits<double>::infinity(), (T)std::numeric_limits<double>::infinity());
-  }
-
-  // circle center is at the intersection of the mirror axes of the segments: http://paulbourke.net/geometry/circlesphere/
-  // intersection: https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Intersection%20of%20two%20lines
-  Eigen::Matrix<T, 2, 1> mid1 = (p1 + p)/(T)2;
-  Eigen::Matrix<T, 2, 1> mid2 = (p + p2)/(T)2;
-  Eigen::Matrix<T, 2, 1> n1(-d1[1], d1[0]);
-  Eigen::Matrix<T, 2, 1> n2(-d2[1], d2[0]);
-  T det1 = (mid1[0] + n1[0])*mid1[1] - (mid1[1] + n1[1])*mid1[0];
-  T det2 = (mid2[0] + n2[0])*mid2[1] - (mid2[1] + n2[1])*mid2[0];
-  Eigen::Matrix<T, 2, 1> center((det1*n2[0] - det2*n1[0])/det, (det1*n2[1] - det2*n1[1])/det);
-  return center;
-}
-
-template <typename T>
-inline Eigen::Matrix<T, 2, 1> tangentDir(
-  Eigen::Matrix<T, 2, 1> p1,
-  Eigen::Matrix<T, 2, 1> p,
-  Eigen::Matrix<T, 2, 1> p2,
-  int forced_dot_sign = 0)
-{
-  Eigen::Matrix<T, 2, 1> center = arcCenter(p1, p, p2, forced_dot_sign);
-  if (ceres::IsInfinite(center[0])) {  // straight line
-    Eigen::Matrix<T, 2, 1> d1 = p - p1;
-    Eigen::Matrix<T, 2, 1> d2 = p2 - p;
-    
-    if (forced_dot_sign < 0 || (forced_dot_sign == 0 && d1.dot(d2) < (T)0)) {
-      d2 = -d2;
-      p2 = p + d2;
-      // // changed from forward movement to reverse or vice versa - use average direction towards p
-      // Eigen::Matrix<T, 2, 1> tangent_dir = d1.norm()*d1 - d2.norm()*d2;
-      // return tangent_dir;
-    }
-    
-    return Eigen::Matrix<T, 2, 1>(p2[0] - p1[0], p2[1] - p1[1]);
-  }
-  
-  return Eigen::Matrix<T, 2, 1>(center[1] - p[1], p[0] - center[0]); // prependicular to (p - center)
-}
-
 /**
  * @struct nav2_ceres_costaware_smoother::SmootherCostFunction
  * @brief Cost function for path smoothing with multiple terms
- * including curvature, smoothness, collision, and avoid obstacles.
+ * including curvature, smoothness, distance from original and obstacle avoidance.
  */
 class SmootherCostFunction
 {
@@ -205,8 +144,8 @@ protected:
    * @brief Cost function term for smooth paths
    * @param weight Weight to apply to function
    * @param pt Point Xi for evaluation
-   * @param pt Point Xi+1 for calculating Xi's cost
-   * @param pt Point Xi-1 for calculating Xi's cost
+   * @param pt_p Point Xi+1 for calculating Xi's cost
+   * @param pt_m Point Xi-1 for calculating Xi's cost
    * @param r Residual (cost) of term
    */
   template <typename T>
@@ -227,8 +166,8 @@ protected:
    * @brief Cost function term for maximum curved paths
    * @param weight Weight to apply to function
    * @param pt Point Xi for evaluation
-   * @param pt Point Xi+1 for calculating Xi's cost
-   * @param pt Point Xi-1 for calculating Xi's cost
+   * @param pt_p Point Xi+1 for calculating Xi's cost
+   * @param pt_m Point Xi-1 for calculating Xi's cost
    * @param curvature_params A struct to cache computations for the jacobian to use
    * @param r Residual (cost) of term
    */
@@ -241,45 +180,14 @@ protected:
     CurvatureComputations<T> & curvature_params,
     T & r) const
   {
-    curvature_params.valid = true;
-    // curvature_params.delta_xi = Eigen::Matrix<T, 2, 1>(pt[0] - pt_m[0], pt[1] - pt_m[1]);
-    // curvature_params.delta_xi_p = Eigen::Matrix<T, 2, 1>(pt_p[0] - pt[0], pt_p[1] - pt[1]);
-    // if (_next_to_last_length_ratio < 0)
-    //   curvature_params.delta_xi_p = -curvature_params.delta_xi_p;
-    // curvature_params.delta_xi_norm = curvature_params.delta_xi.norm();
-    // curvature_params.delta_xi_p_norm = curvature_params.delta_xi_p.norm();
-    // if (curvature_params.delta_xi_norm < EPSILON || curvature_params.delta_xi_p_norm < EPSILON ||
-    //   ceres::IsNaN(curvature_params.delta_xi_p_norm) || ceres::IsNaN(curvature_params.delta_xi_norm) ||
-    //   ceres::IsInfinite(curvature_params.delta_xi_p_norm) || ceres::IsInfinite(curvature_params.delta_xi_norm))
-    // {
-    //   // ensure we have non-nan values returned
-    //   curvature_params.valid = false;
-    //   return;
-    // }
-
-    // const T & delta_xi_by_xi_p =
-    //   curvature_params.delta_xi_norm * curvature_params.delta_xi_p_norm;
-    // T projection =
-    //   curvature_params.delta_xi.dot(curvature_params.delta_xi_p) / delta_xi_by_xi_p;
-    // if (ceres::abs((T)1 - projection) < EPSILON || ceres::abs(projection + (T)1) < EPSILON) {
-    //   projection = (T)1.0;
-    // }
-
-    // curvature_params.delta_phi_i = ceres::acos(projection);
-    // curvature_params.turning_rad = curvature_params.delta_phi_i / curvature_params.delta_xi_norm;
-
     Eigen::Matrix<T, 2, 1> center = arcCenter(pt_m, pt, pt_p, _next_to_last_length_ratio < 0 ? -1 : 1);
     if (ceres::IsInfinite(center[0])) {
-      // Quadratic penalty need not apply
-      curvature_params.valid = false;
       return;
     }
     T turning_rad = (pt - center).norm();
     curvature_params.ki_minus_kmax = (T)1.0/turning_rad - _params.max_curvature;
 
-    if (curvature_params.ki_minus_kmax <= EPSILON) {
-      // Quadratic penalty need not apply
-      curvature_params.valid = false;
+    if (curvature_params.ki_minus_kmax <= (T)EPSILON) {
       return;
     }
 
@@ -323,7 +231,15 @@ protected:
     double origy = _costmap->getOriginY();
     double res = _costmap->getResolution();
 
-    if (!_params.cost_check_points.empty()) {
+    if (_params.cost_check_points.empty()) {
+      T interpx = (pt[0] - (T)origx) / (T)res - (T)0.5;
+      T interpy = (pt[1] - (T)origy) / (T)res - (T)0.5;
+      T value;
+      _interpolate_costmap->Evaluate(interpy, interpx, &value);
+      
+      r += (T)weight * value * value;  // objective function value
+    }
+    else {
       Eigen::Matrix<T, 2, 1> dir = tangentDir(pt_m1, pt, pt_p1, _next_to_last_length_ratio < 0 ? -1 : 1);
       dir.normalize();
       if (((pt_p1 - pt).dot(dir) < (T)0) != _reversing)
@@ -342,14 +258,6 @@ protected:
 
         r += (T)weight * (T)_params.cost_check_points[i+2] * value * value;
       }
-    }
-    else {
-      T interpx = (pt[0] - (T)origx) / (T)res - (T)0.5;
-      T interpy = (pt[1] - (T)origy) / (T)res - (T)0.5;
-      T value;
-      _interpolate_costmap->Evaluate(interpy, interpx, &value);
-      
-      r += (T)weight * value * value;  // objective function value
     }
   }
 

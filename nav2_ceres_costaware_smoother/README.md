@@ -21,7 +21,7 @@ smoother_server:
       dir_change_length: 1.5        # length of the section around direction change in which nodes use w_cost_dir_change instead of w_cost
       cost_scaling_factor: 1.6      # this should match the inflation layer's parameter
       input_downsampling_factor: 3  # every n-th node of the path is taken. Useful for speed-up
-      cost_check_points: [-0.185, 0.0, 1.0] # points of robot footprint to grab costmap weight from. Useful for assymetric robot footprints. Format: [x, y, weight]
+      cost_check_points: [-0.185, 0.0, 1.0] # points of robot footprint to grab costmap weight from. Useful for assymetric robot footprints. Format: [x1, y1, weight1, x2, y2, weight2, ...]
 
       optimizer:
         max_time: 10.0                # maximum compute time for smoother

@@ -41,7 +41,7 @@ set(dependencies
   pluginlib
 )
 
-add_library(${library_name} SHARED plugins/ceres_costaware_smoother.cpp)
+add_library(${library_name} SHARED src/ceres_costaware_smoother.cpp)
 target_link_libraries(${library_name} ${CERES_LIBRARIES})
 # prevent pluginlib from using boost
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
@@ -54,7 +54,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
-  add_subdirectory(plugins/test)
+  add_subdirectory(test)
 endif()
 
 install(

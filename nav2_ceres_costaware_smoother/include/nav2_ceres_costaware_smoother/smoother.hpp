@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "nav2_ceres_costaware_smoother/smoother_cost_function.hpp"
+#include "nav2_ceres_costaware_smoother/utils.hpp"
 
 #include "ceres/ceres.h"
 #include "Eigen/Core"
@@ -55,14 +56,8 @@ public:
   void initialize(const OptimizerParams params)
   {
     _debug = params.debug;
+
     // General Params
-
-    // 2 most valid options: STEEPEST_DESCENT, NONLINEAR_CONJUGATE_GRADIENT
-    _options.line_search_direction_type = ceres::NONLINEAR_CONJUGATE_GRADIENT;
-    _options.line_search_type = ceres::WOLFE;
-    _options.nonlinear_conjugate_gradient_type = ceres::POLAK_RIBIERE;
-    _options.line_search_interpolation_type = ceres::CUBIC;
-
     _options.linear_solver_type = ceres::DENSE_QR;
 
     _options.max_num_iterations = params.max_iterations;
@@ -71,6 +66,20 @@ public:
     _options.function_tolerance = params.fn_tol;
     _options.gradient_tolerance = params.gradient_tol;
     _options.parameter_tolerance = params.param_tol;
+
+    if (_debug) {
+      _options.minimizer_progress_to_stdout = true;
+      _options.logging_type = ceres::LoggingType::PER_MINIMIZER_ITERATION;
+    } else {
+      _options.logging_type = ceres::SILENT;
+    }
+
+    // Line search params (unused with current solver type)
+    // 2 most valid options: STEEPEST_DESCENT, NONLINEAR_CONJUGATE_GRADIENT
+    _options.line_search_direction_type = ceres::NONLINEAR_CONJUGATE_GRADIENT;
+    _options.line_search_type = ceres::WOLFE;
+    _options.nonlinear_conjugate_gradient_type = ceres::POLAK_RIBIERE;
+    _options.line_search_interpolation_type = ceres::CUBIC;
 
     _options.min_line_search_step_size = params.advanced.min_line_search_step_size;
     _options.max_num_line_search_step_size_iterations =
@@ -84,18 +93,13 @@ public:
     _options.line_search_sufficient_curvature_decrease =
       params.advanced.line_search_sufficient_curvature_decrease;
     _options.max_line_search_step_expansion = params.advanced.max_line_search_step_expansion;
-
-    if (_debug) {
-      _options.minimizer_progress_to_stdout = true;
-      _options.logging_type = ceres::LoggingType::PER_MINIMIZER_ITERATION;
-    } else {
-      _options.logging_type = ceres::SILENT;
-    }
   }
 
   /**
    * @brief Smoother method
    * @param path Reference to path
+   * @param start_dir Orientation of the first pose
+   * @param end_dir Orientation of the last pose
    * @param costmap Pointer to minimal costmap
    * @param params parameters weights
    * @return If smoothing was successful
@@ -107,38 +111,39 @@ public:
     nav2_costmap_2d::Costmap2D * costmap,
     const SmootherParams & params)
   {
-    //path always has at least 2 points
+    // Path has always at least 2 points
     CHECK(path.size() >= 2) << "Path must have at least 2 points";
 
     _options.max_solver_time_in_seconds = params.max_time;
 
+    // Build problem
     ceres::Problem problem;
 
+    // Create residual blocks
     const double dir_change_half_length = params.dir_change_length/2;
     ceres::LossFunction* loss_function = NULL;
     std::vector<Eigen::Vector3d> pathOptim = path;
     std::vector<bool> optimized(path.size());
     int prelast_i = -1;
     int last_i = 0;
-    double last_direction = 1; // to avoid compiler warning, actually was_reversing is always initialized during the first iteration
+    double last_direction = pathOptim[0][2];
     bool last_had_direction_change = false;
     bool last_is_reversing = false;
     std::deque<std::pair<double, SmootherCostFunction *>> potential_dir_change_funcs;
-    double last_segment_len = EPSILON_DOUBLE;
+    double last_segment_len = EPSILON;
     double current_segment_len = 0;
     double potential_dir_change_funcs_len = 0;
     double len_since_dir_change = std::numeric_limits<double>::infinity();
 
-    // Create residual blocks
-    for (int i = 0; i < (int)pathOptim.size(); i++) {
+    for (int i = 1; i < (int)pathOptim.size(); i++) {
       auto &pt = pathOptim[i];
       bool direction_change = false;
       if (i != (int)pathOptim.size()-1) {
         direction_change = pt[2]*last_direction < 0;
         last_direction = pt[2];
 
-        // downsample if pose can be skipped (no forward/reverse direction change)
-        if (i == 0 || (!direction_change && i > 1 && i < (int)pathOptim.size()-2 && (i - last_i) < params.input_downsampling_factor))
+        // skip to downsample if can be skipped (no forward/reverse direction change)
+        if (!direction_change && i > 1 && i < (int)pathOptim.size()-2 && (i - last_i) < params.input_downsampling_factor)
           continue;
       }
 
@@ -177,12 +182,12 @@ public:
       prelast_i = last_i;
       last_i = i;
       len_since_dir_change += current_segment_len;
-      last_segment_len = std::max(EPSILON_DOUBLE, current_segment_len);
+      last_segment_len = std::max(EPSILON, current_segment_len);
       current_segment_len = 0;
     }
 
-    // first two and last two points are constant (to keep start and end direction)
     if (problem.NumParameterBlocks() > 4) {
+      // first two and last two points are constant (to keep start and end direction)
       problem.SetParameterBlockConstant(pathOptim.front().data());
       problem.SetParameterBlockConstant(pathOptim[1].data());
       problem.SetParameterBlockConstant(pathOptim[pathOptim.size()-2].data());
@@ -203,14 +208,14 @@ public:
       RCLCPP_INFO(rclcpp::get_logger("smoother_server"), "Nothing to optimize");
 
     // Populate path, assign orientations, interpolate dropped poses
-    path.resize(1); // keep the first point although not optimized
+    path.resize(1); // keep the first point
     path.back()[2] = atan2(start_dir[1], start_dir[0]);
     if (params.output_upsampling_factor > 1)
       path.reserve(params.output_upsampling_factor*(pathOptim.size() - 1) + 1);
     last_i = 0;
     prelast_i = -1;
     Eigen::Vector2d prelast_dir = start_dir;
-    for (int i = 1; i <= (int)pathOptim.size(); i++)
+    for (int i = 1; i <= (int)pathOptim.size(); i++) {
       if (i == (int)pathOptim.size() || optimized[i]) {
         if (prelast_i != -1) {
           Eigen::Vector2d last_dir;
@@ -225,6 +230,13 @@ public:
               last.block<2, 1>(0, 0),
               current.block<2, 1>(0, 0),
               prelast[2]*last[2]);
+            Eigen::Vector2d arc_center = arcCenter<double>(
+              prelast.block<2, 1>(0, 0),
+              last.block<2, 1>(0, 0),
+              current.block<2, 1>(0, 0),
+              prelast[2]*last[2]);
+            RCLCPP_INFO(rclcpp::get_logger("smoother_server"), "Arc radius: %lf", (last.block<2, 1>(0, 0) - arc_center).norm());
+            
             last_dir = 
               tangent_dir.dot((current - last).block<2, 1>(0, 0)*last[2]) >= 0
                 ? tangent_dir
@@ -270,16 +282,18 @@ public:
         prelast_i = last_i;
         last_i = i;
       }
+    }
 
     return true;
   }
 
+private:
   /*
     Piecewise cubic bezier curve as defined by Adobe in Postscript
     The two end points are p0 and p3
     Their associated control points are p1 and p2
   */
-  Eigen::Vector2d cubicBezier(Eigen::Vector2d &p0, Eigen::Vector2d &p1, Eigen::Vector2d &p2, Eigen::Vector2d &p3, double mu)
+  static Eigen::Vector2d cubicBezier(Eigen::Vector2d &p0, Eigen::Vector2d &p1, Eigen::Vector2d &p2, Eigen::Vector2d &p3, double mu)
   {
     Eigen::Vector2d a,b,c,p;
 
@@ -296,7 +310,6 @@ public:
     return(p);
   }
 
-private:
   bool _debug;
   ceres::Solver::Options _options;
 };
