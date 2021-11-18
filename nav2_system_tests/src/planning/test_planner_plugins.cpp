@@ -61,14 +61,38 @@ void testSmallPathValidityAndOrientation(std::string plugin, double length)
   auto path = obj->getPlan(start, goal, "GridBased");
   EXPECT_GT((int)path.poses.size(), 0);
   EXPECT_NEAR(tf2::getYaw(path.poses.back().pose.orientation), -M_PI, 0.01);
-  obj->onCleanup(state);
+  // obj->onCleanup(state);
+  obj.reset();
+}
+
+void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
+{
+  auto obj = std::make_shared<nav2_system_tests::NavFnPlannerTester>();
+  rclcpp_lifecycle::State state;
+  obj->set_parameter(rclcpp::Parameter("GridBased.plugin", plugin));
 
   // Test WITH use_final_approach_orientation
   // expecting end path pose orientation to be equal to approach orientation
   // which in the one pose corner case should be the start pose orientation
+  obj->declare_parameter(
+    "GridBased.use_final_approach_orientation", rclcpp::ParameterValue(true));
   obj->set_parameter(rclcpp::Parameter("GridBased.use_final_approach_orientation", true));
   obj->onConfigure(state);
-  path = obj->getPlan(start, goal, "GridBased");
+
+  geometry_msgs::msg::PoseStamped start;
+  geometry_msgs::msg::PoseStamped goal;
+
+  start.pose.position.x = 0.5;
+  start.pose.position.y = 0.5;
+  start.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI_2);
+  start.header.frame_id = "map";
+
+  goal.pose.position.x = 0.5;
+  goal.pose.position.y = start.pose.position.y + length;
+  goal.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI);
+  goal.header.frame_id = "map";
+
+  auto path = obj->getPlan(start, goal, "GridBased");
   EXPECT_GT((int)path.poses.size(), 0);
 
   int path_size = path.poses.size();
@@ -85,7 +109,8 @@ void testSmallPathValidityAndOrientation(std::string plugin, double length)
       atan2(dy, dx),
       0.01);
   }
-  obj->onCleanup(state);
+  // obj->onCleanup(state);
+  obj.reset();
 }
 
 TEST(testPluginMap, Failures)
@@ -115,9 +140,19 @@ TEST(testPluginMap, Smac2dEqualStartGoal)
   testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.0);
 }
 
+TEST(testPluginMap, Smac2dEqualStartGoalN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_smac_planner/SmacPlanner2D", 0.0);
+}
+
 TEST(testPluginMap, Smac2dVerySmallPath)
 {
   testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.00001);
+}
+
+TEST(testPluginMap, Smac2dVerySmallPathN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_smac_planner/SmacPlanner2D", 0.00001);
 }
 
 TEST(testPluginMap, Smac2dBelowCostmapResolution)
@@ -125,9 +160,19 @@ TEST(testPluginMap, Smac2dBelowCostmapResolution)
   testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.09);
 }
 
+TEST(testPluginMap, Smac2dBelowCostmapResolutionN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_smac_planner/SmacPlanner2D", 0.09);
+}
+
 TEST(testPluginMap, Smac2dJustAboveCostmapResolution)
 {
   testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.102);
+}
+
+TEST(testPluginMap, Smac2dJustAboveCostmapResolutionN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_smac_planner/SmacPlanner2D", 0.102);
 }
 
 TEST(testPluginMap, Smac2dAboveCostmapResolution)
@@ -135,9 +180,19 @@ TEST(testPluginMap, Smac2dAboveCostmapResolution)
   testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 1.5);
 }
 
+TEST(testPluginMap, Smac2dAboveCostmapResolutionN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_smac_planner/SmacPlanner2D", 1.5);
+}
+
 TEST(testPluginMap, NavFnEqualStartGoal)
 {
   testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.0);
+}
+
+TEST(testPluginMap, NavFnEqualStartGoalN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_navfn_planner/NavfnPlanner", 0.0);
 }
 
 TEST(testPluginMap, NavFnVerySmallPath)
@@ -145,9 +200,19 @@ TEST(testPluginMap, NavFnVerySmallPath)
   testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.00001);
 }
 
+TEST(testPluginMap, NavFnVerySmallPathN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_navfn_planner/NavfnPlanner", 0.00001);
+}
+
 TEST(testPluginMap, NavFnBelowCostmapResolution)
 {
   testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.09);
+}
+
+TEST(testPluginMap, NavFnBelowCostmapResolutionN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_navfn_planner/NavfnPlanner", 0.09);
 }
 
 TEST(testPluginMap, NavFnJustAboveCostmapResolution)
@@ -155,9 +220,19 @@ TEST(testPluginMap, NavFnJustAboveCostmapResolution)
   testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.102);
 }
 
+TEST(testPluginMap, NavFnJustAboveCostmapResolutionN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_navfn_planner/NavfnPlanner", 0.102);
+}
+
 TEST(testPluginMap, NavFnAboveCostmapResolution)
 {
   testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 1.5);
+}
+
+TEST(testPluginMap, NavFnAboveCostmapResolutionN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_navfn_planner/NavfnPlanner", 1.5);
 }
 
 TEST(testPluginMap, ThetaStarEqualStartGoal)
@@ -165,9 +240,29 @@ TEST(testPluginMap, ThetaStarEqualStartGoal)
   testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.0);
 }
 
+TEST(testPluginMap, ThetaStarEqualStartGoalN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.0);
+}
+
 TEST(testPluginMap, ThetaStarVerySmallPath)
 {
   testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.00001);
+}
+
+TEST(testPluginMap, ThetaStarVerySmallPathN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.00001);
+}
+
+TEST(testPluginMap, ThetaStarBelowCostmapResolution)
+{
+  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.09);
+}
+
+TEST(testPluginMap, ThetaStarBelowCostmapResolutionN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.09);
 }
 
 TEST(testPluginMap, ThetaStarJustAboveCostmapResolution)
@@ -175,14 +270,19 @@ TEST(testPluginMap, ThetaStarJustAboveCostmapResolution)
   testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.102);
 }
 
+TEST(testPluginMap, ThetaStarJustAboveCostmapResolutionN)
+{
+  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.102);
+}
+
 TEST(testPluginMap, ThetaStarAboveCostmapResolution)
 {
   testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 1.5);
 }
 
-TEST(testPluginMap, ThetaStarBelowCostmapResolution)
+TEST(testPluginMap, ThetaStarAboveCostmapResolutionN)
 {
-  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.09);
+  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner/ThetaStarPlanner", 1.5);
 }
 
 int main(int argc, char ** argv)
