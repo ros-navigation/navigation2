@@ -162,7 +162,7 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     sendFakeOdom(0.0);
   }
 
-  rclcpp::spin_some(node_);
+  rclcpp::sleep_for(std::chrono::milliseconds(100));
 
   auto goal_handle_future = client_ptr_->async_send_goal(goal_msg);
 
@@ -328,7 +328,7 @@ void SpinRecoveryTester::sendFakeOdom(float angle)
 
   geometry_msgs::msg::PolygonStamped footprint;
   footprint.header.frame_id = "odom";
-  footprint.header.stamp = rclcpp::Time();
+  footprint.header.stamp = node_->now();
   footprint.polygon.points.resize(4);
   footprint.polygon.points[0].x = 0.22;
   footprint.polygon.points[0].y = 0.22;
