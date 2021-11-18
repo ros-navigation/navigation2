@@ -75,7 +75,9 @@ protected:
   /**
    * @brief Set a new footprint
    */
-  void unorientFootprint(const Footprint & oriented_footprint, Footprint & reset_footprint, const rclcpp::Time &stamp);
+  void unorientFootprint(
+    const Footprint & oriented_footprint, Footprint & reset_footprint,
+    const rclcpp::Time & stamp);
 
   /**
    * @brief Get a footprint at a set pose

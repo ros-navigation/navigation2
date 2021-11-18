@@ -110,7 +110,7 @@ Footprint CostmapTopicCollisionChecker::getFootprint(const geometry_msgs::msg::P
 void CostmapTopicCollisionChecker::unorientFootprint(
   const std::vector<geometry_msgs::msg::Point> & oriented_footprint,
   std::vector<geometry_msgs::msg::Point> & reset_footprint,
-  const rclcpp::Time &stamp)
+  const rclcpp::Time & stamp)
 {
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
