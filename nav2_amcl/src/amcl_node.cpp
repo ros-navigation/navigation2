@@ -245,29 +245,6 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void
-AmclNode::waitForTransforms()
-{
-  std::string tf_error;
-
-  RCLCPP_INFO(get_logger(), "Checking that transform thread is ready");
-
-  while (rclcpp::ok() &&
-    !tf_buffer_->canTransform(
-      global_frame_id_, odom_frame_id_, tf2::TimePointZero,
-      transform_tolerance_, &tf_error))
-  {
-    RCLCPP_INFO(
-      get_logger(), "Timed out waiting for transform from %s to %s"
-      " to become available, tf error: %s",
-      odom_frame_id_.c_str(), global_frame_id_.c_str(), tf_error.c_str());
-
-    // The error string will accumulate and errors will typically be the same, so the last
-    // will do for the warning above. Reset the string here to avoid accumulation.
-    tf_error.clear();
-  }
-}
-
 nav2_util::CallbackReturn
 AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
@@ -392,26 +369,6 @@ AmclNode::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
-}
-
-void
-AmclNode::checkLaserReceived()
-{
-  if (last_laser_received_ts_.nanoseconds() == 0) {
-    RCLCPP_WARN(
-      get_logger(), "Laser scan has not been received"
-      " (and thus no pose updates have been published)."
-      " Verify that data is being published on the %s topic.", scan_topic_.c_str());
-    return;
-  }
-
-  rclcpp::Duration d = now() - last_laser_received_ts_;
-  if (d.nanoseconds() * 1e-9 > laser_check_interval_.count()) {
-    RCLCPP_WARN(
-      get_logger(), "No laser scan received (and thus no pose updates have been published) for %f"
-      " seconds.  Verify that data is being published on the %s topic.",
-      d.nanoseconds() * 1e-9, scan_topic_.c_str());
-  }
 }
 
 bool
