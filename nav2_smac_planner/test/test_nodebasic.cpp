@@ -25,6 +25,7 @@
 #include "nav2_smac_planner/node_basic.hpp"
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
+#include "nav2_smac_planner/node_lattice.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 
 class RclCppFixture
@@ -46,4 +47,9 @@ TEST(NodeBasicTest, test_node_basic)
 
   EXPECT_EQ(node2.index, 100u);
   EXPECT_EQ(node2.graph_node_ptr, nullptr);
+
+  nav2_smac_planner::NodeBasic<nav2_smac_planner::NodeLattice> node3(200);
+
+  EXPECT_EQ(node3.index, 200u);
+  EXPECT_EQ(node3.graph_node_ptr, nullptr);
 }

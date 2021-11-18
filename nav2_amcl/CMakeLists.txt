@@ -16,6 +16,8 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(ament_cmake_ros REQUIRED)
 
 nav2_package()
 
@@ -44,6 +46,7 @@ add_library(${library_name} SHARED
 )
 
 target_include_directories(${library_name} PRIVATE src/include)
+
 if(HAVE_DRAND48)
   target_compile_definitions(${library_name} PRIVATE "HAVE_DRAND48")
 endif()
@@ -62,6 +65,7 @@ set(dependencies
   tf2
   nav2_util
   nav2_msgs
+  pluginlib
 )
 
 ament_target_dependencies(${executable_name}
@@ -77,7 +81,7 @@ ament_target_dependencies(${library_name}
 )
 
 target_link_libraries(${library_name}
-  map_lib motions_lib sensors_lib
+  map_lib pf_lib sensors_lib
 )
 
 rclcpp_components_register_nodes(${library_name} "nav2_amcl::AmclNode")
@@ -107,5 +111,5 @@ endif()
 ament_export_include_directories(include)
 ament_export_libraries(${library_name} pf_lib sensors_lib motions_lib map_lib)
 ament_export_dependencies(${dependencies})
-
+pluginlib_export_plugin_description_file(nav2_amcl plugins.xml)
 ament_package()

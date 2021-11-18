@@ -39,6 +39,7 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 
 using namespace std::chrono_literals;
+using namespace std::chrono;  // NOLINT
 using nav2_util::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
@@ -180,8 +181,7 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point b = steady_clock::now();
   duration<double> time_span = duration_cast<duration<double>>(b - a);
-  std::cout << "It took " << time_span.count() * 1000 <<
-    " milliseconds with " << num_iterations << " iterations." << std::endl;
+  std::cout << "It took " << time_span.count() * 1000 << std::endl;
 #endif
 
   return path;

@@ -42,6 +42,7 @@ struct SearchInfo
   float analytic_expansion_ratio;
   std::string lattice_filepath;
   bool cache_obstacle_heuristic;
+  bool allow_reverse_expansion;
 };
 
 /**
@@ -86,6 +87,73 @@ struct SmootherParams
   double w_data_;
   double w_smooth_;
 };
+
+/**
+ * @struct nav2_smac_planner::MotionPose
+ * @brief A struct for poses in motion primitives
+ */
+struct MotionPose
+{
+  /**
+   * @brief A constructor for nav2_smac_planner::MotionPose
+   */
+  MotionPose() {}
+
+  /**
+   * @brief A constructor for nav2_smac_planner::MotionPose
+   * @param x X pose
+   * @param y Y pose
+   * @param theta Angle of pose
+   */
+  MotionPose(const float & x, const float & y, const float & theta)
+  : _x(x), _y(y), _theta(theta)
+  {}
+
+  MotionPose operator-(const MotionPose & p2)
+  {
+    return MotionPose(this->_x - p2._x, this->_y - p2._y, this->_theta - p2._theta);
+  }
+
+  float _x;
+  float _y;
+  float _theta;
+};
+
+typedef std::vector<MotionPose> MotionPoses;
+
+/**
+ * @struct nav2_smac_planner::LatticeMetadata
+ * @brief A struct of all lattice metadata
+ */
+struct LatticeMetadata
+{
+  float min_turning_radius;
+  float grid_resolution;
+  unsigned int number_of_headings;
+  std::vector<float> heading_angles;
+  unsigned int number_of_trajectories;
+  std::string motion_model;
+};
+
+/**
+ * @struct nav2_smac_planner::MotionPrimitive
+ * @brief A struct of all motion primitive data
+ */
+struct MotionPrimitive
+{
+  unsigned int trajectory_id;
+  float start_angle;
+  float end_angle;
+  float turning_radius;
+  float trajectory_length;
+  float arc_length;
+  float straight_length;
+  bool left_turn;
+  MotionPoses poses;
+};
+
+typedef std::vector<MotionPrimitive> MotionPrimitives;
+typedef std::vector<MotionPrimitive *> MotionPrimitivePtrs;
 
 }  // namespace nav2_smac_planner
 
