@@ -92,6 +92,9 @@ private:
   // Publisher to publish fake costmap raw
   rclcpp::Publisher<nav2_msgs::msg::Costmap>::SharedPtr fake_costmap_publisher_;
 
+  // Publisher to publish fake costmap footprint
+  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr fake_footprint_publisher_;
+
   // Subscriber for amcl pose
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
 
