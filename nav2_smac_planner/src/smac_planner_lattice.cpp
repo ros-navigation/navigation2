@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Samsung Research America
+// Copyright (c) 2021, Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 #include <limits>
 
 #include "Eigen/Core"
-#include "nav2_smac_planner/smac_planner_hybrid.hpp"
+#include "nav2_smac_planner/smac_planner_lattice.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -28,25 +28,23 @@ namespace nav2_smac_planner
 
 using namespace std::chrono;  // NOLINT
 using rcl_interfaces::msg::ParameterType;
-using std::placeholders::_1;
 
-SmacPlannerHybrid::SmacPlannerHybrid()
+SmacPlannerLattice::SmacPlannerLattice()
 : _a_star(nullptr),
   _collision_checker(nullptr, 1),
   _smoother(nullptr),
-  _costmap(nullptr),
-  _costmap_downsampler(nullptr)
+  _costmap(nullptr)
 {
 }
 
-SmacPlannerHybrid::~SmacPlannerHybrid()
+SmacPlannerLattice::~SmacPlannerLattice()
 {
   RCLCPP_INFO(
-    _logger, "Destroying plugin %s of type SmacPlannerHybrid",
+    _logger, "Destroying plugin %s of type SmacPlannerLattice",
     _name.c_str());
 }
 
-void SmacPlannerHybrid::configure(
+void SmacPlannerLattice::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
@@ -59,25 +57,11 @@ void SmacPlannerHybrid::configure(
   _costmap_ros = costmap_ros;
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
+  _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
-  RCLCPP_INFO(_logger, "Configuring %s of type SmacPlannerHybrid", name.c_str());
-
-  int angle_quantizations;
+  RCLCPP_INFO(_logger, "Configuring %s of type SmacPlannerLattice", name.c_str());
 
   // General planner params
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".downsample_costmap", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".downsample_costmap", _downsample_costmap);
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
-  node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
-
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".angle_quantization_bins", rclcpp::ParameterValue(72));
-  node->get_parameter(name + ".angle_quantization_bins", angle_quantizations);
-  _angle_bin_size = 2.0 * M_PI / angle_quantizations;
-  _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
-
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".allow_unknown", _allow_unknown);
@@ -85,9 +69,11 @@ void SmacPlannerHybrid::configure(
     node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
   node->get_parameter(name + ".max_iterations", _max_iterations);
 
+  // Default to a well rounded model: 16 bin, 0.4m turning radius, ackermann model
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
-  node->get_parameter(name + ".minimum_turning_radius", _search_info.minimum_turning_radius);
+    node, name + ".lattice_filepath", rclcpp::ParameterValue(
+      ament_index_cpp::get_package_share_directory("nav2_smac_planner") + "/default_model.json"));
+  node->get_parameter(name + ".lattice_filepath", _search_info.lattice_filepath);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".cache_obstacle_heuristic", _search_info.cache_obstacle_heuristic);
@@ -95,10 +81,10 @@ void SmacPlannerHybrid::configure(
     node, name + ".reverse_penalty", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".reverse_penalty", _search_info.reverse_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".change_penalty", rclcpp::ParameterValue(0.20));
+    node, name + ".change_penalty", rclcpp::ParameterValue(0.05));
   node->get_parameter(name + ".change_penalty", _search_info.change_penalty);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.25));
+    node, name + ".non_straight_penalty", rclcpp::ParameterValue(1.05));
   node->get_parameter(name + ".non_straight_penalty", _search_info.non_straight_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cost_penalty", rclcpp::ParameterValue(2.0));
@@ -113,18 +99,14 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".lookup_table_size", rclcpp::ParameterValue(20.0));
   node->get_parameter(name + ".lookup_table_size", _lookup_table_size);
-
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
-  node->get_parameter(name + ".motion_model_for_search", _motion_model_for_search);
-  _motion_model = fromString(_motion_model_for_search);
-  if (_motion_model == MotionModel::UNKNOWN) {
-    RCLCPP_WARN(
-      _logger,
-      "Unable to get MotionModel search type. Given '%s', "
-      "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP, STATE_LATTICE.",
-      _motion_model_for_search.c_str());
-  }
+    node, name + ".allow_reverse_expansion", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".allow_reverse_expansion", _search_info.allow_reverse_expansion);
+
+  _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
+  _search_info.minimum_turning_radius =
+    _metadata.min_turning_radius / (_costmap->getResolution());
+  _motion_model = MotionModel::STATE_LATTICE;
 
   if (_max_iterations <= 0) {
     RCLCPP_INFO(
@@ -133,109 +115,92 @@ void SmacPlannerHybrid::configure(
     _max_iterations = std::numeric_limits<int>::max();
   }
 
-  // convert to grid coordinates
-  const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
-  _search_info.minimum_turning_radius =
-    _search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
-  _lookup_table_dim =
+  float lookup_table_dim =
     static_cast<float>(_lookup_table_size) /
-    static_cast<float>(_costmap->getResolution() * _downsampling_factor);
+    static_cast<float>(_costmap->getResolution());
 
   // Make sure its a whole number
-  _lookup_table_dim = static_cast<float>(static_cast<int>(_lookup_table_dim));
+  lookup_table_dim = static_cast<float>(static_cast<int>(lookup_table_dim));
 
   // Make sure its an odd number
-  if (static_cast<int>(_lookup_table_dim) % 2 == 0) {
+  if (static_cast<int>(lookup_table_dim) % 2 == 0) {
     RCLCPP_INFO(
       _logger,
       "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd",
-      _lookup_table_dim);
-    _lookup_table_dim += 1.0;
+      lookup_table_dim);
+    lookup_table_dim += 1.0;
   }
 
-  // Initialize collision checker
-  _collision_checker = GridCollisionChecker(_costmap, _angle_quantizations);
+  // Initialize collision checker using 72 evenly sized bins instead of the lattice
+  // heading angles. This is done so that we have precomputed angles every 5 degrees.
+  // If we used the sparse lattice headings (usually 16), then when we attempt to collision
+  // check for intermediary points of the primitives, we're forced to round to one of the 16
+  // increments causing "wobbly" checks that could cause larger robots to virtually show collisions
+  // in valid configurations. This approximation helps to bound orientation error for all checks
+  // in exchange for slight inaccuracies in the collision headings in terminal search states.
+  _collision_checker = GridCollisionChecker(_costmap, 72u);
   _collision_checker.setFootprint(
-    _costmap_ros->getRobotFootprint(),
-    _costmap_ros->getUseRadius(),
-    findCircumscribedCost(_costmap_ros));
+    costmap_ros->getRobotFootprint(),
+    costmap_ros->getUseRadius(),
+    findCircumscribedCost(costmap_ros));
 
   // Initialize A* template
-  _a_star = std::make_unique<AStarAlgorithm<NodeHybrid>>(_motion_model, _search_info);
+  _a_star = std::make_unique<AStarAlgorithm<NodeLattice>>(_motion_model, _search_info);
   _a_star->initialize(
     _allow_unknown,
     _max_iterations,
     std::numeric_limits<int>::max(),
     _max_planning_time,
-    _lookup_table_dim,
-    _angle_quantizations);
+    lookup_table_dim,
+    _metadata.number_of_headings);
 
   // Initialize path smoother
   SmootherParams params;
   params.get(node, name);
   _smoother = std::make_unique<Smoother>(params);
-  _smoother->initialize(minimum_turning_radius_global_coords);
-
-  // Initialize costmap downsampler
-  if (_downsample_costmap && _downsampling_factor > 1) {
-    _costmap_downsampler = std::make_unique<CostmapDownsampler>();
-    std::string topic_name = "downsampled_costmap";
-    _costmap_downsampler->on_configure(
-      node, _global_frame, topic_name, _costmap, _downsampling_factor);
-  }
-
-  _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
+  _smoother->initialize(_metadata.min_turning_radius);
 
   RCLCPP_INFO(
-    _logger, "Configured plugin %s of type SmacPlannerHybrid with "
-    "maximum iterations %i, and %s. Using motion model: %s.",
+    _logger, "Configured plugin %s of type SmacPlannerLattice with "
+    "maximum iterations %i, "
+    "and %s. Using motion model: %s. State lattice file: %s.",
     _name.c_str(), _max_iterations,
     _allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
-    toString(_motion_model).c_str());
+    toString(_motion_model).c_str(), _search_info.lattice_filepath.c_str());
 }
 
-void SmacPlannerHybrid::activate()
+void SmacPlannerLattice::activate()
 {
   RCLCPP_INFO(
-    _logger, "Activating plugin %s of type SmacPlannerHybrid",
+    _logger, "Activating plugin %s of type SmacPlannerLattice",
     _name.c_str());
   _raw_plan_publisher->on_activate();
-  if (_costmap_downsampler) {
-    _costmap_downsampler->on_activate();
-  }
   auto node = _node.lock();
   // Add callback for dynamic parameters
   _dyn_params_handler = node->add_on_set_parameters_callback(
-    std::bind(&SmacPlannerHybrid::dynamicParametersCallback, this, _1));
+    std::bind(&SmacPlannerLattice::dynamicParametersCallback, this, std::placeholders::_1));
 }
 
-void SmacPlannerHybrid::deactivate()
+void SmacPlannerLattice::deactivate()
 {
   RCLCPP_INFO(
-    _logger, "Deactivating plugin %s of type SmacPlannerHybrid",
+    _logger, "Deactivating plugin %s of type SmacPlannerLattice",
     _name.c_str());
   _raw_plan_publisher->on_deactivate();
-  if (_costmap_downsampler) {
-    _costmap_downsampler->on_deactivate();
-  }
   _dyn_params_handler.reset();
 }
 
-void SmacPlannerHybrid::cleanup()
+void SmacPlannerLattice::cleanup()
 {
   RCLCPP_INFO(
-    _logger, "Cleaning up plugin %s of type SmacPlannerHybrid",
+    _logger, "Cleaning up plugin %s of type SmacPlannerLattice",
     _name.c_str());
   _a_star.reset();
   _smoother.reset();
-  if (_costmap_downsampler) {
-    _costmap_downsampler->on_cleanup();
-    _costmap_downsampler.reset();
-  }
   _raw_plan_publisher.reset();
 }
 
-nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
+nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
@@ -244,42 +209,21 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
 
-  // Downsample costmap, if required
-  nav2_costmap_2d::Costmap2D * costmap = _costmap;
-  if (_costmap_downsampler) {
-    costmap = _costmap_downsampler->downsample(_downsampling_factor);
-    _collision_checker.setCostmap(costmap);
-  }
-
   // Set collision checker and costmap information
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates
   unsigned int mx, my;
-  costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
-  double orientation_bin = tf2::getYaw(start.pose.orientation) / _angle_bin_size;
-  while (orientation_bin < 0.0) {
-    orientation_bin += static_cast<float>(_angle_quantizations);
-  }
-  // This is needed to handle precision issues
-  if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
-    orientation_bin -= static_cast<float>(_angle_quantizations);
-  }
-  unsigned int orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setStart(mx, my, orientation_bin_id);
+  _costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
+  _a_star->setStart(
+    mx, my,
+    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(start.pose.orientation)));
 
   // Set goal point, in A* bin search coordinates
-  costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
-  orientation_bin = tf2::getYaw(goal.pose.orientation) / _angle_bin_size;
-  while (orientation_bin < 0.0) {
-    orientation_bin += static_cast<float>(_angle_quantizations);
-  }
-  // This is needed to handle precision issues
-  if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
-    orientation_bin -= static_cast<float>(_angle_quantizations);
-  }
-  orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setGoal(mx, my, orientation_bin_id);
+  _costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
+  _a_star->setGoal(
+    mx, my,
+    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation)));
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -294,11 +238,11 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   pose.pose.orientation.w = 1.0;
 
   // Compute plan
-  NodeHybrid::CoordinateVector path;
+  NodeLattice::CoordinateVector path;
   int num_iterations = 0;
   std::string error;
   try {
-    if (!_a_star->createPath(path, num_iterations, 0.0)) {
+    if (!_a_star->createPath(path, num_iterations, 0 /*no tolerance*/)) {
       if (num_iterations < _a_star->getMaxIterations()) {
         error = std::string("no valid path found");
       } else {
@@ -321,7 +265,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   // Convert to world coordinates
   plan.poses.reserve(path.size());
   for (int i = path.size() - 1; i >= 0; --i) {
-    pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
+    pose.pose = getWorldCoords(path[i].x, path[i].y, _costmap);
     pose.pose.orientation = getWorldOrientation(path[i].theta);
     plan.poses.push_back(pose);
   }
@@ -343,7 +287,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   // Smooth plan
   if (num_iterations > 1 && plan.poses.size() > 6) {
-    _smoother->smooth(plan, costmap, time_remaining);
+    _smoother->smooth(plan, _costmap, time_remaining);
   }
 
 #ifdef BENCHMARK_TESTING
@@ -357,14 +301,12 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 }
 
 rcl_interfaces::msg::SetParametersResult
-SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   std::lock_guard<std::mutex> lock_reinit(_mutex);
 
-  bool reinit_collision_checker = false;
   bool reinit_a_star = false;
-  bool reinit_downsampler = false;
   bool reinit_smoother = false;
 
   for (auto parameter : parameters) {
@@ -378,10 +320,6 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       } else if (name == _name + ".lookup_table_size") {
         reinit_a_star = true;
         _lookup_table_size = parameter.as_double();
-      } else if (name == _name + ".minimum_turning_radius") {
-        reinit_a_star = true;
-        reinit_smoother = true;
-        _search_info.minimum_turning_radius = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".reverse_penalty") {
         reinit_a_star = true;
         _search_info.reverse_penalty = static_cast<float>(parameter.as_double());
@@ -399,22 +337,18 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         _search_info.analytic_expansion_ratio = static_cast<float>(parameter.as_double());
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
-      if (name == _name + ".downsample_costmap") {
-        reinit_downsampler = true;
-        _downsample_costmap = parameter.as_bool();
-      } else if (name == _name + ".allow_unknown") {
+      if (name == _name + ".allow_unknown") {
         reinit_a_star = true;
         _allow_unknown = parameter.as_bool();
       } else if (name == _name + ".cache_obstacle_heuristic") {
         reinit_a_star = true;
         _search_info.cache_obstacle_heuristic = parameter.as_bool();
+      } else if (name == _name + ".allow_reverse_expansion") {
+        reinit_a_star = true;
+        _search_info.allow_reverse_expansion = parameter.as_bool();
       }
     } else if (type == ParameterType::PARAMETER_INTEGER) {
-      if (name == _name + ".downsampling_factor") {
-        reinit_a_star = true;
-        reinit_downsampler = true;
-        _downsampling_factor = parameter.as_int();
-      } else if (name == _name + ".max_iterations") {
+      if (name == _name + ".max_iterations") {
         reinit_a_star = true;
         _max_iterations = parameter.as_int();
         if (_max_iterations <= 0) {
@@ -423,80 +357,39 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
             "disabling maximum iterations.");
           _max_iterations = std::numeric_limits<int>::max();
         }
-      } else if (name == _name + ".angle_quantization_bins") {
-        reinit_collision_checker = true;
-        reinit_a_star = true;
-        int angle_quantizations = parameter.as_int();
-        _angle_bin_size = 2.0 * M_PI / angle_quantizations;
-        _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
       }
     } else if (type == ParameterType::PARAMETER_STRING) {
-      if (name == _name + ".motion_model_for_search") {
+      if (name == _name + ".lattice_filepath") {
         reinit_a_star = true;
-        _motion_model = fromString(parameter.as_string());
-        if (_motion_model == MotionModel::UNKNOWN) {
-          RCLCPP_WARN(
-            _logger,
-            "Unable to get MotionModel search type. Given '%s', "
-            "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
-            _motion_model_for_search.c_str());
-        }
+        reinit_smoother = true;
+        _search_info.lattice_filepath = parameter.as_string();
+        _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
+        _search_info.minimum_turning_radius =
+          _metadata.min_turning_radius / (_costmap->getResolution());
       }
     }
   }
 
   // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
-  if (reinit_a_star || reinit_downsampler || reinit_collision_checker || reinit_smoother) {
+  if (reinit_a_star || reinit_smoother) {
     // convert to grid coordinates
     const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
     _search_info.minimum_turning_radius =
-      _search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
-    _lookup_table_dim =
+      _search_info.minimum_turning_radius / (_costmap->getResolution());
+    float lookup_table_dim =
       static_cast<float>(_lookup_table_size) /
-      static_cast<float>(_costmap->getResolution() * _downsampling_factor);
+      static_cast<float>(_costmap->getResolution());
 
     // Make sure its a whole number
-    _lookup_table_dim = static_cast<float>(static_cast<int>(_lookup_table_dim));
+    lookup_table_dim = static_cast<float>(static_cast<int>(lookup_table_dim));
 
     // Make sure its an odd number
-    if (static_cast<int>(_lookup_table_dim) % 2 == 0) {
+    if (static_cast<int>(lookup_table_dim) % 2 == 0) {
       RCLCPP_INFO(
         _logger,
         "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd",
-        _lookup_table_dim);
-      _lookup_table_dim += 1.0;
-    }
-
-    // Re-Initialize A* template
-    if (reinit_a_star) {
-      _a_star = std::make_unique<AStarAlgorithm<NodeHybrid>>(_motion_model, _search_info);
-      _a_star->initialize(
-        _allow_unknown,
-        _max_iterations,
-        std::numeric_limits<int>::max(),
-        _max_planning_time,
-        _lookup_table_dim,
-        _angle_quantizations);
-    }
-
-    // Re-Initialize costmap downsampler
-    if (reinit_downsampler) {
-      if (_downsample_costmap && _downsampling_factor > 1) {
-        auto node = _node.lock();
-        std::string topic_name = "downsampled_costmap";
-        _costmap_downsampler = std::make_unique<CostmapDownsampler>();
-        _costmap_downsampler->on_configure(
-          node, _global_frame, topic_name, _costmap, _downsampling_factor);
-      }
-    }
-
-    // Re-Initialize collision checker
-    if (reinit_collision_checker) {
-      _collision_checker = GridCollisionChecker(_costmap, _angle_quantizations);
-      _collision_checker.setFootprint(
-        _costmap_ros->getRobotFootprint(),
-        _costmap_ros->getUseRadius(),
-        findCircumscribedCost(_costmap_ros));
+        lookup_table_dim);
+      lookup_table_dim += 1.0;
     }
 
     // Re-Initialize smoother
@@ -505,9 +398,22 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       SmootherParams params;
       params.get(node, _name);
       _smoother = std::make_unique<Smoother>(params);
-      _smoother->initialize(minimum_turning_radius_global_coords);
+      _smoother->initialize(_metadata.min_turning_radius);
+    }
+
+    // Re-Initialize A* template
+    if (reinit_a_star) {
+      _a_star = std::make_unique<AStarAlgorithm<NodeLattice>>(_motion_model, _search_info);
+      _a_star->initialize(
+        _allow_unknown,
+        _max_iterations,
+        std::numeric_limits<int>::max(),
+        _max_planning_time,
+        lookup_table_dim,
+        _metadata.number_of_headings);
     }
   }
+
   result.successful = true;
   return result;
 }
@@ -515,4 +421,4 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
 }  // namespace nav2_smac_planner
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_smac_planner::SmacPlannerHybrid, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_smac_planner::SmacPlannerLattice, nav2_core::GlobalPlanner)

@@ -26,8 +26,10 @@
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 
+#include "nav2_smac_planner/analytic_expansion.hpp"
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
+#include "nav2_smac_planner/node_lattice.hpp"
 #include "nav2_smac_planner/node_basic.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"
@@ -51,27 +53,6 @@ public:
   typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef typename NodeVector::iterator NeighborIterator;
   typedef std::function<bool (const unsigned int &, NodeT * &)> NodeGetter;
-
-  /**
-   * @struct nav2_smac_planner::AnalyticExpansionNodes
-   * @brief Analytic expansion nodes and associated metadata
-   */
-
-  struct AnalyticExpansionNode
-  {
-    AnalyticExpansionNode(
-      NodePtr & node_in,
-      Coordinates & initial_coords_in,
-      Coordinates & proposed_coords_in)
-    : node(node_in), initial_coords(initial_coords_in), proposed_coords(proposed_coords_in)
-    {}
-
-    NodePtr node;
-    Coordinates initial_coords;
-    Coordinates proposed_coords;
-  };
-
-  typedef std::vector<AnalyticExpansionNode> AnalyticExpansionNodes;
 
   /**
    * @struct nav2_smac_planner::NodeComparator
@@ -230,14 +211,6 @@ protected:
   inline bool isGoal(NodePtr & node);
 
   /**
-   * @brief Set the starting pose for planning, as a node index
-   * @param node Node pointer to the goal node to backtrace
-   * @param path Reference to a vector of indicies of generated path
-   * @return whether the path was able to be backtraced
-   */
-  bool backtracePath(NodePtr node, CoordinateVector & path);
-
-  /**
    * @brief Get cost of heuristic of node
    * @param node Node index current
    * @param node Node index of new
@@ -260,31 +233,6 @@ protected:
    * @brief Clear graph of nodes searched
    */
   inline void clearGraph();
-
-  /**
-   * @brief Attempt an analytic path completion
-   * @return Node pointer reference to goal node if successful, else
-   * return nullptr
-   */
-  NodePtr tryAnalyticExpansion(
-    const NodePtr & current_node,
-    const NodeGetter & getter, int & iterations, int & best_cost);
-
-  /**
-   * @brief Perform an analytic path expansion to the goal
-   * @param node The node to start the analytic path from
-   * @param getter The function object that gets valid nodes from the graph
-   * @return A set of analytically expanded nodes to the goal from current node, if possible
-   */
-  AnalyticExpansionNodes getAnalyticPath(const NodePtr & node, const NodeGetter & getter);
-
-  /**
-   * @brief Takes final analytic expansion and appends to current expanded node
-   * @param node The node to start the analytic path from
-   * @param expanded_nodes Expanded nodes to append to end of current search path
-   * @return Node pointer to goal node if successful, else return nullptr
-   */
-  NodePtr setAnalyticPath(const NodePtr & node, const AnalyticExpansionNodes & expanded_nodes);
 
   int _timing_interval = 5000;
 
@@ -310,6 +258,7 @@ protected:
 
   GridCollisionChecker * _collision_checker;
   nav2_costmap_2d::Costmap2D * _costmap;
+  std::unique_ptr<AnalyticExpansion<NodeT>> _expander;
 };
 
 }  // namespace nav2_smac_planner

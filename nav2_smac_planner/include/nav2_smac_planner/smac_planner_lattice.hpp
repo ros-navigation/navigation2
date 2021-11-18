@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Samsung Research America
+// Copyright (c) 2021, Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_SMAC_PLANNER__SMAC_PLANNER_HYBRID_HPP_
-#define NAV2_SMAC_PLANNER__SMAC_PLANNER_HYBRID_HPP_
+#ifndef NAV2_SMAC_PLANNER__SMAC_PLANNER_LATTICE_HPP_
+#define NAV2_SMAC_PLANNER__SMAC_PLANNER_LATTICE_HPP_
 
 #include <memory>
 #include <vector>
@@ -22,7 +22,6 @@
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/smoother.hpp"
 #include "nav2_smac_planner/utils.hpp"
-#include "nav2_smac_planner/costmap_downsampler.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -36,18 +35,18 @@
 namespace nav2_smac_planner
 {
 
-class SmacPlannerHybrid : public nav2_core::GlobalPlanner
+class SmacPlannerLattice : public nav2_core::GlobalPlanner
 {
 public:
   /**
    * @brief constructor
    */
-  SmacPlannerHybrid();
+  SmacPlannerLattice();
 
   /**
    * @brief destructor
    */
-  ~SmacPlannerHybrid();
+  ~SmacPlannerLattice();
 
   /**
    * @brief Configuring plugin
@@ -94,29 +93,23 @@ protected:
   rcl_interfaces::msg::SetParametersResult
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
-  std::unique_ptr<AStarAlgorithm<NodeHybrid>> _a_star;
+  std::unique_ptr<AStarAlgorithm<NodeLattice>> _a_star;
   GridCollisionChecker _collision_checker;
   std::unique_ptr<Smoother> _smoother;
   rclcpp::Clock::SharedPtr _clock;
-  rclcpp::Logger _logger{rclcpp::get_logger("SmacPlannerHybrid")};
+  rclcpp::Logger _logger{rclcpp::get_logger("SmacPlannerLattice")};
   nav2_costmap_2d::Costmap2D * _costmap;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> _costmap_ros;
-  std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
+  MotionModel _motion_model;
+  LatticeMetadata _metadata;
   std::string _global_frame, _name;
-  float _lookup_table_dim;
-  float _tolerance;
-  bool _downsample_costmap;
-  int _downsampling_factor;
-  double _angle_bin_size;
-  unsigned int _angle_quantizations;
+  SearchInfo _search_info;
   bool _allow_unknown;
   int _max_iterations;
-  SearchInfo _search_info;
+  float _tolerance;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   double _max_planning_time;
   double _lookup_table_size;
-  std::string _motion_model_for_search;
-  MotionModel _motion_model;
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   std::mutex _mutex;
   rclcpp_lifecycle::LifecycleNode::WeakPtr _node;
 
@@ -126,4 +119,4 @@ protected:
 
 }  // namespace nav2_smac_planner
 
-#endif  // NAV2_SMAC_PLANNER__SMAC_PLANNER_HYBRID_HPP_
+#endif  // NAV2_SMAC_PLANNER__SMAC_PLANNER_LATTICE_HPP_
