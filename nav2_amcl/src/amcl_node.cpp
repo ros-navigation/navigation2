@@ -174,7 +174,7 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "resample_interval", rclcpp::ParameterValue(1),
     "Number of filter updates required before resampling");
 
-  add_parameter("robot_model_type", rclcpp::ParameterValue(std::string("differential")));
+  add_parameter("robot_model_type", rclcpp::ParameterValue("nav2_amcl::DifferentialMotionModel"));
 
   add_parameter(
     "save_pose_rate", rclcpp::ParameterValue(0.5),
