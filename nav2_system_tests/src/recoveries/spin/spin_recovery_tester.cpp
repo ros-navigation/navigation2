@@ -58,8 +58,8 @@ SpinRecoveryTester::SpinRecoveryTester()
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
   fake_costmap_publisher_ =
     node_->create_publisher<nav2_msgs::msg::Costmap>(
-      "local_costmap/costmap_raw",
-      rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    "local_costmap/costmap_raw",
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
@@ -186,7 +186,7 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     {
       sendFakeOdom(command_yaw);
       sendFakeCostmap(target_yaw);
-      rclcpp::sleep_for(std::chrono::milliseconds(1));
+      rclcpp::sleep_for(std::chrono::milliseconds(5));
     }
     sendFakeOdom(target_yaw);
     sendFakeCostmap(target_yaw);
