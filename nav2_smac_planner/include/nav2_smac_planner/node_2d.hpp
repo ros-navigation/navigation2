@@ -260,6 +260,13 @@ public:
     const bool & traverse_unknown,
     NodeVector & neighbors);
 
+  /**
+   * @brief Set the starting pose for planning, as a node index
+   * @param path Reference to a vector of indicies of generated path
+   * @return whether the path was able to be backtraced
+   */
+  bool backtracePath(CoordinateVector & path);
+
   Node2D * parent;
   static float cost_travel_multiplier;
   static std::vector<int> _neighbors_grid_offsets;

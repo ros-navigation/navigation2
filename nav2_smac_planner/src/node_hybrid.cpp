@@ -246,6 +246,16 @@ MotionPoses HybridMotionTable::getProjections(const NodeHybrid * node)
   return projection_list;
 }
 
+unsigned int HybridMotionTable::getClosestAngularBin(const double & theta)
+{
+  return static_cast<unsigned int>(floor(theta / bin_size));
+}
+
+float HybridMotionTable::getAngleFromBin(const unsigned int & bin_idx)
+{
+  return bin_idx * bin_size;
+}
+
 NodeHybrid::NodeHybrid(const unsigned int index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),
@@ -279,7 +289,7 @@ bool NodeHybrid::isNodeValid(
   GridCollisionChecker * collision_checker)
 {
   if (collision_checker->inCollision(
-      this->pose.x, this->pose.y, this->pose.theta * motion_table.bin_size, traverse_unknown))
+      this->pose.x, this->pose.y, this->pose.theta /*bin number*/, traverse_unknown))
   {
     return false;
   }
@@ -302,20 +312,9 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
     return NodeHybrid::travel_distance_cost;
   }
 
-  // Note(stevemacenski): `travel_cost_raw` at one point contained a term:
-  // `+ motion_table.cost_penalty * normalized_cost;`
-  // It has been removed, but we may want to readdress this point and determine
-  // the technically and theoretically correctness of that choice. I feel technically speaking
-  // that term has merit, but it doesn't seem to impact performance or path quality.
-  // W/o it lowers the travel cost, which would drive the heuristics up proportionally where I
-  // would expect it to plan much faster in all cases, but I only see it in some cases. Since
-  // this term would weight against moving to high cost zones, I would expect to see more smooth
-  // central motion, but I only see it in some cases, possibly because the obstacle heuristic is
-  // already driving the robot away from high cost areas; implicitly handling this. However,
-  // then I would expect that not adding it here would make it unbalanced enough that path quality
-  // would suffer, which I did not see in my limited experimentation, possibly due to the smoother.
   float travel_cost = 0.0;
-  float travel_cost_raw = NodeHybrid::travel_distance_cost;
+  float travel_cost_raw =
+    NodeHybrid::travel_distance_cost + (motion_table.cost_penalty * normalized_cost);
 
   if (child->getMotionPrimitiveIndex() == 0 || child->getMotionPrimitiveIndex() == 3) {
     // New motion is a straight motion, no additional costs to be applied
@@ -331,7 +330,7 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
     }
   }
 
-  if (getMotionPrimitiveIndex() > 2) {
+  if (child->getMotionPrimitiveIndex() > 2) {
     // reverse direction
     travel_cost *= motion_table.reverse_penalty;
   }
@@ -344,7 +343,8 @@ float NodeHybrid::getHeuristicCost(
   const Coordinates & goal_coords,
   const nav2_costmap_2d::Costmap2D * /*costmap*/)
 {
-  const float obstacle_heuristic = getObstacleHeuristic(node_coords, goal_coords);
+  const float obstacle_heuristic = getObstacleHeuristic(
+    node_coords, goal_coords, motion_table.cost_penalty);
   const float dist_heuristic = getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
   return std::max(obstacle_heuristic, dist_heuristic);
 }
@@ -411,7 +411,8 @@ void NodeHybrid::resetObstacleHeuristic(
 
 float NodeHybrid::getObstacleHeuristic(
   const Coordinates & node_coords,
-  const Coordinates & goal_coords)
+  const Coordinates & goal_coords,
+  const double & cost_penalty)
 {
   // If already expanded, return the cost
   unsigned int size_x = sampled_costmap->getSizeInCellsX();
@@ -462,7 +463,7 @@ float NodeHybrid::getObstacleHeuristic(
       new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
       cost = static_cast<float>(sampled_costmap->getCost(idx));
       travel_cost =
-        ((i <= 3) ? 1.0 : sqrt_2) + (motion_table.cost_penalty * cost / 252.0);
+        ((i <= 3) ? 1.0 : sqrt_2) + (((i <= 3) ? 1.0 : sqrt_2) * cost_penalty * cost / 252.0);
       current_accumulated_cost = last_accumulated_cost + travel_cost;
 
       // if neighbor path is better and non-lethal, set new cost and add to queue
@@ -509,10 +510,11 @@ float NodeHybrid::getDistanceHeuristic(
   const float dy = node_coords.y - goal_coords.y;
 
   double dtheta_bin = node_coords.theta - goal_coords.theta;
+  if (dtheta_bin < 0) {
+    dtheta_bin += motion_table.num_angle_quantization;
+  }
   if (dtheta_bin > motion_table.num_angle_quantization) {
     dtheta_bin -= motion_table.num_angle_quantization;
-  } else if (dtheta_bin < 0) {
-    dtheta_bin += motion_table.num_angle_quantization;
   }
 
   Coordinates node_coords_relative(
@@ -642,6 +644,24 @@ void NodeHybrid::getNeighbors(
       }
     }
   }
+}
+
+bool NodeHybrid::backtracePath(CoordinateVector & path)
+{
+  if (!this->parent) {
+    return false;
+  }
+
+  NodePtr current_node = this;
+
+  while (current_node->parent) {
+    path.push_back(current_node->pose);
+    // Convert angle to radians
+    path.back().theta = NodeHybrid::motion_table.getAngleFromBin(path.back().theta);
+    current_node = current_node->parent;
+  }
+
+  return path.size() > 0;
 }
 
 }  // namespace nav2_smac_planner
