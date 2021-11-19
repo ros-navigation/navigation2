@@ -52,10 +52,11 @@ CostmapTopicCollisionChecker::CostmapTopicCollisionChecker(
 }
 
 bool CostmapTopicCollisionChecker::isCollisionFree(
-  const geometry_msgs::msg::Pose2D & pose)
+  const geometry_msgs::msg::Pose2D & pose,
+  bool updateCostmap)
 {
   try {
-    if (scorePose(pose) >= LETHAL_OBSTACLE) {
+    if (scorePose(pose, updateCostmap) >= LETHAL_OBSTACLE) {
       return false;
     }
     return true;
@@ -72,12 +73,15 @@ bool CostmapTopicCollisionChecker::isCollisionFree(
 }
 
 double CostmapTopicCollisionChecker::scorePose(
-  const geometry_msgs::msg::Pose2D & pose)
+  const geometry_msgs::msg::Pose2D & pose,
+  bool updateCostmap)
 {
-  try {
-    collision_checker_.setCostmap(costmap_sub_.getCostmap());
-  } catch (const std::runtime_error & e) {
-    throw CollisionCheckerException(e.what());
+  if (updateCostmap) {
+    try {
+      collision_checker_.setCostmap(costmap_sub_.getCostmap());
+    } catch (const std::runtime_error & e) {
+      throw CollisionCheckerException(e.what());
+    }
   }
 
   unsigned int cell_x, cell_y;
