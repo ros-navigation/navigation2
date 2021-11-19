@@ -121,7 +121,7 @@ protected:
   rclcpp_lifecycle::LifecycleNode::WeakPtr _node;
 
   // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr _dyn_params_handler;
 };
 
 }  // namespace nav2_smac_planner

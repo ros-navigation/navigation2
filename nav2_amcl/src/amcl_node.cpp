@@ -174,7 +174,7 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "resample_interval", rclcpp::ParameterValue(1),
     "Number of filter updates required before resampling");
 
-  add_parameter("robot_model_type", rclcpp::ParameterValue(std::string("differential")));
+  add_parameter("robot_model_type", rclcpp::ParameterValue("nav2_amcl::DifferentialMotionModel"));
 
   add_parameter(
     "save_pose_rate", rclcpp::ParameterValue(0.5),
@@ -1332,9 +1332,8 @@ AmclNode::initOdometry()
     init_cov_[2] = last_published_pose_.pose.covariance[35];
   }
 
-  motion_model_ = std::unique_ptr<nav2_amcl::MotionModel>(
-    nav2_amcl::MotionModel::createMotionModel(
-      robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
+  motion_model_ = plugin_loader_.createSharedInstance(robot_model_type_);
+  motion_model_->initialize(alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
 
   latest_odom_pose_ = geometry_msgs::msg::PoseStamped();
 }

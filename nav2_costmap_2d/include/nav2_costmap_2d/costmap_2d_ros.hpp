@@ -359,6 +359,16 @@ protected:
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
 
   std::unique_ptr<ClearCostmapService> clear_costmap_service_;
+
+  // Dynamic parameters handler
+  OnSetParametersCallbackHandle::SharedPtr dyn_params_handler;
+
+  /**
+   * @brief Callback executed when a paramter change is detected
+   * @param parameters list of changed parameters
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 };
 
 }  // namespace nav2_costmap_2d

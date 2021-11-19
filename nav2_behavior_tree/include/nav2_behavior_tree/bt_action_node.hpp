@@ -183,41 +183,17 @@ public:
       send_new_goal();
     }
 
-    // if new goal was sent and action server has not yet responded
-    // check the future goal handle
-    if (future_goal_handle_) {
-      auto elapsed = (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
-      if (!is_future_goal_handle_complete(elapsed)) {
-        // return RUNNING if there is still some time before timeout happens
-        if (elapsed < server_timeout_) {
-          return BT::NodeStatus::RUNNING;
-        }
-        // if server has taken more time to respond than the specified timeout value return FAILURE
-        RCLCPP_WARN(
-          node_->get_logger(),
-          "Timed out while waiting for action server to acknowledge goal request for %s",
-          action_name_.c_str());
-        future_goal_handle_.reset();
-        return BT::NodeStatus::FAILURE;
-      }
-    }
-
-    // The following code corresponds to the "RUNNING" loop
-    if (rclcpp::ok() && !goal_result_available_) {
-      // user defined callback. May modify the value of "goal_updated_"
-      on_wait_for_result();
-
-      auto goal_status = goal_handle_->get_status();
-      if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
-        goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
-      {
-        goal_updated_ = false;
-        send_new_goal();
+    try {
+      // if new goal was sent and action server has not yet responded
+      // check the future goal handle
+      if (future_goal_handle_) {
         auto elapsed = (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
         if (!is_future_goal_handle_complete(elapsed)) {
+          // return RUNNING if there is still some time before timeout happens
           if (elapsed < server_timeout_) {
             return BT::NodeStatus::RUNNING;
           }
+          // if server has taken more time than the specified timeout value return FAILURE
           RCLCPP_WARN(
             node_->get_logger(),
             "Timed out while waiting for action server to acknowledge goal request for %s",
@@ -227,12 +203,48 @@ public:
         }
       }
 
-      callback_group_executor_.spin_some();
+      // The following code corresponds to the "RUNNING" loop
+      if (rclcpp::ok() && !goal_result_available_) {
+        // user defined callback. May modify the value of "goal_updated_"
+        on_wait_for_result();
 
-      // check if, after invoking spin_some(), we finally received the result
-      if (!goal_result_available_) {
-        // Yield this Action, returning RUNNING
-        return BT::NodeStatus::RUNNING;
+        auto goal_status = goal_handle_->get_status();
+        if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
+          goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
+        {
+          goal_updated_ = false;
+          send_new_goal();
+          auto elapsed = (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
+          if (!is_future_goal_handle_complete(elapsed)) {
+            if (elapsed < server_timeout_) {
+              return BT::NodeStatus::RUNNING;
+            }
+            RCLCPP_WARN(
+              node_->get_logger(),
+              "Timed out while waiting for action server to acknowledge goal request for %s",
+              action_name_.c_str());
+            future_goal_handle_.reset();
+            return BT::NodeStatus::FAILURE;
+          }
+        }
+
+        callback_group_executor_.spin_some();
+
+        // check if, after invoking spin_some(), we finally received the result
+        if (!goal_result_available_) {
+          // Yield this Action, returning RUNNING
+          return BT::NodeStatus::RUNNING;
+        }
+      }
+    } catch (const std::runtime_error & e) {
+      if (e.what() == std::string("send_goal failed") ||
+        e.what() == std::string("Goal was rejected by the action server"))
+      {
+        // Action related failure that should not fail the tree, but the node
+        return BT::NodeStatus::FAILURE;
+      } else {
+        // Internal exception to propogate to the tree
+        throw e;
       }
     }
 
