@@ -82,7 +82,13 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
       init_timer_->cancel();
       createLifecycleServiceClients();
       if (autostart_) {
-        startup();
+        init_timer_ = this->create_wall_timer(
+          0s,
+          [this]() -> void {
+            init_timer_->cancel();
+            startup();
+          },
+          callback_group_);
       }
     });
   auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
