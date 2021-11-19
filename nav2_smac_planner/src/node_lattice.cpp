@@ -60,6 +60,11 @@ void LatticeMotionTable::initMotionModel(
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
+  change_reverse_penalty = search_info.change_reverse_penalty;
+  max_analytic_expansion_cost_subelevation = search_info.max_analytic_expansion_cost_subelevation;
+  max_analytic_expansion_length = search_info.max_analytic_expansion_length;
+  obstacle_heuristic_enabled = search_info.obstacle_heuristic_enabled;
+  obstacle_heuristic_admissible = search_info.obstacle_heuristic_admissible;
   current_lattice_filepath = search_info.lattice_filepath;
   allow_reverse_expansion = search_info.allow_reverse_expansion;
 
@@ -72,6 +77,8 @@ void LatticeMotionTable::initMotionModel(
   nlohmann::json json;
   latticeFile >> json;
   num_angle_quantization = lattice_metadata.number_of_headings;
+  float bin_size = 2.0f * static_cast<float>(M_PI) / static_cast<float>(num_angle_quantization);
+  max_analytic_expansion_angle_range = search_info.max_analytic_expansion_angle_range / bin_size;
 
   if (!state_space) {
     if (!allow_reverse_expansion) {
