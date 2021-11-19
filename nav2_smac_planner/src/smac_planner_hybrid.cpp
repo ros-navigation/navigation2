@@ -132,6 +132,9 @@ void SmacPlannerHybrid::configure(
   }
 
   // convert to grid coordinates
+  if (!_downsample_costmap) {
+    _downsampling_factor = 1;
+  }
   const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
   _search_info.minimum_turning_radius =
     _search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
@@ -449,6 +452,9 @@ void SmacPlannerHybrid::on_parameter_event_callback(
   // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
   if (reinit_a_star || reinit_downsampler || reinit_collision_checker || reinit_smoother) {
     // convert to grid coordinates
+    if (!_downsample_costmap) {
+      _downsampling_factor = 1;
+    }
     const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
     _search_info.minimum_turning_radius =
       _search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
