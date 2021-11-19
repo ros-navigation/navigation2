@@ -96,7 +96,7 @@ TEST(NodeHybridTest, test_node_hybrid)
   EXPECT_NEAR(testB.getTraversalCost(&testA), 2.506f, 0.01);
   // opposite forward/reverse direction as parent, testB
   testA.setMotionPrimitiveIndex(3);
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 3.341f, 0.01);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 5.430f, 0.01);
   // both reverse, testB
   testB.setMotionPrimitiveIndex(3);
   EXPECT_NEAR(testB.getTraversalCost(&testA), 4.177f, 0.01);
