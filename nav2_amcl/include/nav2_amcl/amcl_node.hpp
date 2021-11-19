@@ -149,10 +149,6 @@ protected:
   bool sent_first_transform_{false};
   bool latest_tf_valid_{false};
   tf2::Transform latest_tf_;
-  /*
-   * @brief Wait for transformation required to operate (laser to base)
-   */
-  void waitForTransforms();
 
   // Message filters
   /*
@@ -260,11 +256,7 @@ protected:
   std::vector<bool> lasers_update_;
   std::map<std::string, int> frame_to_laser_;
   rclcpp::Time last_laser_received_ts_;
-  /*
-   * @brief Check if a laser has been received
-   */
-  void checkLaserReceived();
-  std::chrono::seconds laser_check_interval_;  // TODO(mjeronimo): not initialized
+
   /*
    * @brief Check if sufficient time has elapsed to get an update
    */
