@@ -433,7 +433,7 @@ void NodeHybrid::resetObstacleHeuristic(
   // erosion of path quality after even modest smoothing. The error would be no more
   // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
     std::weak_ptr<nav2_util::LifecycleNode> ptr;
-    downsampler.on_configure(ptr, "fake_frame", "fake_topic", costmap, 2.0, true);
+    downsampler.on_configure(ptr, "fake_frame", "fake_topic", costmap, 2.0, false);
     downsampler.on_activate();
     sampled_costmap = downsampler.downsample(2.0);
   }
