@@ -54,6 +54,7 @@ SmootherServer::SmootherServer()
     "robot_base_frame",
     rclcpp::ParameterValue(std::string("base_link")));
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
+  declare_parameter("footprint_tolerance", rclcpp::ParameterValue(1.0));
   declare_parameter("smoother_plugins", default_ids_);
 }
 
@@ -85,22 +86,23 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
   std::string costmap_topic, footprint_topic;
-  double transform_tolerance;
+  double transform_tolerance, footprint_tolerance;
   this->get_parameter("costmap_topic", costmap_topic);
   this->get_parameter("footprint_topic", footprint_topic);
   this->get_parameter("transform_tolerance", transform_tolerance);
+  this->get_parameter("footprint_tolerance", footprint_tolerance);
   costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
     shared_from_this(), costmap_topic);
   footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
-    shared_from_this(), footprint_topic, 1.0);
+    shared_from_this(), footprint_topic, footprint_tolerance);
 
   std::string global_frame, robot_base_frame;
   get_parameter("global_frame", global_frame);
   get_parameter("robot_base_frame", robot_base_frame);
   collision_checker_ =
     std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-    *costmap_sub_, *footprint_sub_, *tf_, this->get_name(), global_frame,
-    robot_base_frame, transform_tolerance);
+    shared_from_this(), *costmap_sub_, *footprint_sub_, *tf_, this->get_name(),
+    global_frame, robot_base_frame, transform_tolerance);
 
   if (!loadSmootherPlugins()) {
     return nav2_util::CallbackReturn::FAILURE;

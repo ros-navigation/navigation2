@@ -218,7 +218,7 @@ public:
       node, "footprint_topic", 10.0);
     collision_checker_ =
       std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-      *costmap_sub_, *footprint_sub_, *tf_,
+      shared_from_this(), *costmap_sub_, *footprint_sub_, *tf_,
       node->get_name(),
       "base_link", "base_link");  // global frame = robot frame to avoid tf lookup
 
