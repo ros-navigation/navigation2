@@ -22,6 +22,7 @@
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>nav2_recoveries</exec_depend>
   <exec_depend>nav2_planner</exec_depend>
+  <exec_depend>nav2_smoother</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav2_navfn_planner</exec_depend>
   <exec_depend>nav2_rviz_plugins</exec_depend>
