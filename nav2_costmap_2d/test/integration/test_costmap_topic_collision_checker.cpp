@@ -175,13 +175,14 @@ public:
 
   bool testPose(double x, double y, double theta)
   {
-    publishPose(x, y, theta);
+    rclcpp::Time stamp = now();
+    publishPose(x, y, theta, stamp);
     geometry_msgs::msg::Pose2D pose;
     pose.x = x;
     pose.y = y;
     pose.theta = theta;
 
-    setPose(x, y, theta);
+    setPose(x, y, theta, stamp);
     publishFootprint();
     publishCostmap();
     rclcpp::sleep_for(std::chrono::milliseconds(1000));
@@ -198,23 +199,25 @@ public:
   }
 
 protected:
-  void setPose(double x, double y, double theta)
+  void setPose(double x, double y, double theta, const rclcpp::Time & stamp)
   {
     x_ = x;
     y_ = y;
     yaw_ = theta;
+    stamp_ = stamp;
 
     current_pose_.pose.position.x = x_;
     current_pose_.pose.position.y = y_;
     current_pose_.pose.position.z = 0;
     current_pose_.pose.orientation = orientationAroundZAxis(yaw_);
+    current_pose_.header.stamp = stamp;
   }
 
   void publishFootprint()
   {
     geometry_msgs::msg::PolygonStamped oriented_footprint;
     oriented_footprint.header.frame_id = global_frame_;
-    oriented_footprint.header.stamp = now();
+    oriented_footprint.header.stamp = stamp_;
     nav2_costmap_2d::transformFootprint(x_, y_, yaw_, footprint_, oriented_footprint);
     footprint_sub_->setFootprint(
       std::make_shared<geometry_msgs::msg::PolygonStamped>(oriented_footprint));
@@ -227,11 +230,11 @@ protected:
       std::make_shared<nav2_msgs::msg::Costmap>(toCostmapMsg(layers_->getCostmap())));
   }
 
-  void publishPose(double x, double y, double /*theta*/)
+  void publishPose(double x, double y, double /*theta*/, const rclcpp::Time & stamp)
   {
     geometry_msgs::msg::TransformStamped tf_stamped;
     tf_stamped.header.frame_id = "map";
-    tf_stamped.header.stamp = now() + rclcpp::Duration(1.0ns);
+    tf_stamped.header.stamp = stamp;
     tf_stamped.child_frame_id = "base_link";
     tf_stamped.transform.translation.x = x;
     tf_stamped.transform.translation.y = y;
@@ -251,7 +254,7 @@ protected:
 
     nav2_msgs::msg::Costmap costmap_msg;
     costmap_msg.header.frame_id = global_frame_;
-    costmap_msg.header.stamp = now();
+    costmap_msg.header.stamp = stamp_;
     costmap_msg.metadata.layer = "master";
     costmap_msg.metadata.resolution = resolution;
     costmap_msg.metadata.size_x = costmap->getSizeInCellsX();
@@ -280,6 +283,7 @@ protected:
   nav2_costmap_2d::LayeredCostmap * layers_{nullptr};
   std::string global_frame_;
   double x_, y_, yaw_;
+  rclcpp::Time stamp_;
   geometry_msgs::msg::PoseStamped current_pose_;
   std::vector<geometry_msgs::msg::Point> footprint_;
 };
@@ -305,7 +309,7 @@ protected:
   std::shared_ptr<TestCollisionChecker> collision_checker_;
 };
 
-TEST_F(TestNode, uknownSpace)
+TEST_F(TestNode, unknownSpace)
 {
   collision_checker_->setFootprint(0, 1);
 

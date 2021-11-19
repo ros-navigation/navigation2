@@ -95,7 +95,7 @@ double CostmapTopicCollisionChecker::scorePose(
 Footprint CostmapTopicCollisionChecker::getFootprint(const geometry_msgs::msg::Pose2D & pose)
 {
   Footprint footprint;
-  rclcpp::Time stamp(0L, clock_->get_clock_type());
+  rclcpp::Time stamp = clock_->now();
   if (!footprint_sub_.getFootprint(footprint, stamp)) {
     throw CollisionCheckerException("Current footprint not available.");
   }
