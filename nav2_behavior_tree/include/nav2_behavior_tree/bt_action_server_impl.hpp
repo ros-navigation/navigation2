@@ -117,6 +117,10 @@ bool BtActionServer<ActionT>::on_configure()
 template<class ActionT>
 bool BtActionServer<ActionT>::on_activate()
 {
+  if (!loadBehaviorTree(default_bt_xml_filename_)) {
+    RCLCPP_ERROR(logger_, "Error loading XML file: %s", default_bt_xml_filename_.c_str());
+    return false;
+  }
   action_server_->activate();
   return true;
 }
