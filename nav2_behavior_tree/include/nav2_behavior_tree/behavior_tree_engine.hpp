@@ -84,24 +84,6 @@ public:
     BT::Blackboard::Ptr blackboard);
 
   /**
-   * @brief Add groot monitor to publish BT status changes
-   * @param tree BT to monitor
-   * @param publisher_port ZMQ publisher port for the Groot monitor
-   * @param server_port ZMQ server port for the Groot monitor
-   * @param max_msg_per_second Maximum number of messages that can be sent per second
-   */
-  void addGrootMonitoring(
-    BT::Tree * tree,
-    uint16_t publisher_port,
-    uint16_t server_port,
-    uint16_t max_msg_per_second = 25);
-
-  /**
-   * @brief Reset groot monitor
-   */
-  void resetGrootMonitor();
-
-  /**
    * @brief Function to explicitly reset all BT nodes to initial state
    * @param root_node Pointer to BT root node
    */
@@ -110,8 +92,6 @@ public:
 protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
-
-  static inline std::unique_ptr<BT::PublisherZMQ> groot_monitor_;
 };
 
 }  // namespace nav2_behavior_tree
