@@ -16,7 +16,6 @@
 
 import argparse
 import math
-import os
 import sys
 import time
 
@@ -37,7 +36,6 @@ from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.qos import QoSProfile
 
-import zmq
 
 
 class NavTester(Node):
