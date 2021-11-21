@@ -22,6 +22,7 @@
   <depend>angles</depend>
   <depend>geometry_msgs</depend>
   <depend>laser_geometry</depend>
+  <depend>backward_ros</depend>
   <depend>map_msgs</depend>
   <depend>message_filters</depend>
   <depend>nav2_msgs</depend>
