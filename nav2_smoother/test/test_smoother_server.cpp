@@ -161,11 +161,11 @@ public:
   DummyFootprintSubscriber(
     nav2_util::LifecycleNode::SharedPtr node,
     const std::string & topic_name,
-    double footprint_timeout)
-  : FootprintSubscriber(node, topic_name, footprint_timeout)
+    tf2_ros::Buffer & tf_)
+  : FootprintSubscriber(node, topic_name, tf_)
   {
     auto footprint = std::make_shared<geometry_msgs::msg::PolygonStamped>();
-    footprint->header.frame_id = "base_link";
+    footprint->header.frame_id = "base_link";  // global frame = robot frame to avoid tf lookup
     footprint->header.stamp = node->get_clock()->now();
     geometry_msgs::msg::Point32 point;
     point.x = -0.2f;
@@ -215,12 +215,11 @@ public:
       node, "costmap_topic");
     footprint_sub_ =
       std::make_shared<DummyFootprintSubscriber>(
-      node, "footprint_topic", 10.0);
+      node, "footprint_topic", *tf_);
     collision_checker_ =
       std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-      shared_from_this(), *costmap_sub_, *footprint_sub_, *tf_,
-      node->get_name(),
-      "base_link", "base_link");  // global frame = robot frame to avoid tf lookup
+      *costmap_sub_, *footprint_sub_,
+      node->get_name());
 
     return result;
   }

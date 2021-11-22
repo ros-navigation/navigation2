@@ -29,11 +29,6 @@
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
-#include "nav2_util/robot_utils.hpp"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
-#pragma GCC diagnostic pop
 
 namespace nav2_costmap_2d
 {
@@ -49,14 +44,10 @@ public:
    * @brief A constructor
    */
   CostmapTopicCollisionChecker(
-    const nav2_util::LifecycleNode::WeakPtr & parent,
     CostmapSubscriber & costmap_sub,
     FootprintSubscriber & footprint_sub,
-    tf2_ros::Buffer & tf,
-    std::string name = "collision_checker",
-    std::string global_frame = "map",
-    std::string robot_base_frame = "base_link",
-    double transform_tolerance = 0.1);
+    std::string name = "collision_checker");
+
   /**
    * @brief A destructor
    */
@@ -73,25 +64,14 @@ public:
 
 protected:
   /**
-   * @brief Set a new footprint
-   */
-  void unorientFootprint(
-    const Footprint & oriented_footprint, Footprint & reset_footprint,
-    const rclcpp::Time & stamp);
-
-  /**
    * @brief Get a footprint at a set pose
    */
   Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose);
 
   // Name used for logging
   std::string name_;
-  std::string global_frame_;
-  std::string robot_base_frame_;
-  tf2_ros::Buffer & tf_;
   CostmapSubscriber & costmap_sub_;
   FootprintSubscriber & footprint_sub_;
-  double transform_tolerance_;
   FootprintCollisionChecker<std::shared_ptr<Costmap2D>> collision_checker_;
   rclcpp::Clock::SharedPtr clock_;
 };

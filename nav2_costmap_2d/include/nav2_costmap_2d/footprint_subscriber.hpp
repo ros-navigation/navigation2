@@ -21,6 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -38,7 +39,9 @@ public:
   FootprintSubscriber(
     const nav2_util::LifecycleNode::WeakPtr & parent,
     const std::string & topic_name,
-    const double & footprint_timeout);
+    tf2_ros::Buffer & tf,
+    std::string robot_base_frame = "base_link",
+    double transform_timeout = 0.1);
 
   /**
    * @brief A constructor
@@ -46,7 +49,9 @@ public:
   FootprintSubscriber(
     const rclcpp::Node::WeakPtr & parent,
     const std::string & topic_name,
-    const double & footprint_timeout);
+    tf2_ros::Buffer & tf,
+    std::string robot_base_frame = "base_link",
+    double transform_timeout = 0.1);
 
   /**
    * @brief A destructor
@@ -54,39 +59,38 @@ public:
   ~FootprintSubscriber() {}
 
   /**
-   * @brief Returns an oriented robot footprint at current time.
+   * @brief Returns the latest robot footprint, in the form as received from topic (oriented).
+   *
+   * @param footprint Output param. Latest received footprint
+   * @param footprint_header Output param. Header associated with the footprint
+   * @return False if no footprint has been received
    */
-  bool getFootprint(
+  bool getFootprintRaw(
     std::vector<geometry_msgs::msg::Point> & footprint,
-    rclcpp::Duration & valid_footprint_timeout);
-  /**
-   * @brief Returns an oriented robot footprint using timeout specified in constructor
-   */
-  bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint);
+    std_msgs::msg::Header & footprint_header);
 
   /**
-   * @brief Returns an oriented robot footprint and stamp using timeout specified in constructor
+   * @brief Returns the latest robot footprint, transformed into robot base frame (unoriented).
+   *
+   * @param footprint Output param. Latest received footprint, unoriented
+   * @param footprint_header Output param. Header associated with the footprint
+   * @return False if no footprint has been received or if transformation failed
    */
-  bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint, rclcpp::Time & stamp);
-
-  /**
-   * @brief Returns an oriented robot footprint at stamped time.
-   */
-  bool getFootprint(
+  bool getFootprintInRobotFrame(
     std::vector<geometry_msgs::msg::Point> & footprint,
-    rclcpp::Time & stamp, rclcpp::Duration valid_footprint_timeout);
+    std_msgs::msg::Header & footprint_header);
 
 protected:
-  rclcpp::Clock::SharedPtr clock_;
-
   /**
    * @brief Callback to process new footprint updates.
    */
   void footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg);
 
   std::string topic_name_;
+  tf2_ros::Buffer & tf_;
+  std::string robot_base_frame_;
+  double transform_timeout_;
   bool footprint_received_{false};
-  rclcpp::Duration footprint_timeout_;
   geometry_msgs::msg::PolygonStamped::SharedPtr footprint_;
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_sub_;
 };
