@@ -62,6 +62,7 @@ void SmacPlannerLattice::configure(
   RCLCPP_INFO(_logger, "Configuring %s of type SmacPlannerLattice", name.c_str());
 
   // General planner params
+  double analytic_expansion_max_length_m;
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".allow_unknown", _allow_unknown);
@@ -94,7 +95,9 @@ void SmacPlannerLattice::configure(
   node->get_parameter(name + ".analytic_expansion_ratio", _search_info.analytic_expansion_ratio);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_max_length", rclcpp::ParameterValue(3.0));
-  node->get_parameter(name + ".analytic_expansion_max_length", _search_info.analytic_expansion_max_length);
+  node->get_parameter(name + ".analytic_expansion_max_length", analytic_expansion_max_length_m);
+  _search_info.analytic_expansion_max_length =
+    analytic_expansion_max_length_m / _costmap->getResolution();
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(5.0));
@@ -338,6 +341,10 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       } else if (name == _name + ".analytic_expansion_ratio") {
         reinit_a_star = true;
         _search_info.analytic_expansion_ratio = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".analytic_expansion_max_length") {
+        reinit_a_star = true;
+        _search_info.analytic_expansion_max_length =
+          static_cast<float>(parameter.as_double()) / _costmap->getResolution();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == _name + ".allow_unknown") {
