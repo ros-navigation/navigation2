@@ -17,7 +17,6 @@ find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
-find_package(ament_cmake_ros REQUIRED)
 
 nav2_package()
 
