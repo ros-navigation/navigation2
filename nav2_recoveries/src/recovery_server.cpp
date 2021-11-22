@@ -45,6 +45,9 @@ RecoveryServer::RecoveryServer(const rclcpp::NodeOptions & options)
   }
 
   declare_parameter(
+    "global_frame",
+    rclcpp::ParameterValue(std::string("odom")));
+  declare_parameter(
     "robot_base_frame",
     rclcpp::ParameterValue(std::string("base_link")));
   declare_parameter(

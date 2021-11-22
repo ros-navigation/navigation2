@@ -49,7 +49,6 @@ SmootherServer::SmootherServer()
     "footprint_topic",
     rclcpp::ParameterValue(
       std::string("global_costmap/published_footprint")));
-  declare_parameter("global_frame", rclcpp::ParameterValue(std::string("map")));
   declare_parameter(
     "robot_base_frame",
     rclcpp::ParameterValue(std::string("base_link")));
