@@ -7,6 +7,7 @@ find_package(nav2_common REQUIRED)
 find_package(angles REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
@@ -40,6 +41,7 @@ set(dependencies
   angles
   rclcpp
   rclcpp_action
+  rclcpp_components
   std_msgs
   nav2_msgs
   nav_2d_utils

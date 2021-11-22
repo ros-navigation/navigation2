@@ -12,6 +12,7 @@
   <depend>angles</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
+  <depend>rclcpp_components</depend>
   <depend>std_msgs</depend>
   <depend>nav2_util</depend>
   <depend>nav2_msgs</depend>
