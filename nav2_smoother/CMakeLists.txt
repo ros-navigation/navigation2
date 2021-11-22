@@ -68,6 +68,8 @@ ament_target_dependencies(${executable_name}
 
 target_link_libraries(${executable_name} ${library_name})
 
+rclcpp_components_register_nodes(${library_name} "nav2_smoother::SmootherServer")
+
 install(
   TARGETS
     ${library_name}
