@@ -67,7 +67,7 @@ def generate_launch_description():
     declare_simulator_cmd = DeclareLaunchArgument(
         'simulator',
         default_value='gazebo',
-        description='The simulator to use (gazebo or gzserver)',
+        description='The simulator to use (gazebo or gzserver)'
     )
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
