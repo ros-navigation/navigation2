@@ -118,7 +118,7 @@ void transformFootprint(
   for (unsigned int i = 0; i < footprint_spec.size(); ++i) {
     double new_x = x + (footprint_spec[i].x * cos_th - footprint_spec[i].y * sin_th);
     double new_y = y + (footprint_spec[i].x * sin_th + footprint_spec[i].y * cos_th);
-    geometry_msgs::msg::Point &new_pt = oriented_footprint[i];
+    geometry_msgs::msg::Point & new_pt = oriented_footprint[i];
     new_pt.x = new_x;
     new_pt.y = new_y;
   }
