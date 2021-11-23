@@ -412,8 +412,9 @@ bool RegulatedPurePursuitController::isCollisionImminent(
     // theta_min = 2.0 * sin ((res/2) / r_max)
     // via isosceles triangle r_max-r_max-resolution,
     // dividing by angular_velocity gives us a timestep.
+    double max_radius = costmap_ros_->getLayeredCostmap()->getCircumscribedRadius();
     projection_time =
-      2.0 * sin((costmap_->getResolution() / 2) / 0.25 /*TODO radius*/) / fabs(angular_vel);
+      2.0 * sin((costmap_->getResolution() / 2) / max_radius) / fabs(angular_vel);
   } else {
     // Normal path tracking
     projection_time = costmap_->getResolution() / fabs(linear_vel);
