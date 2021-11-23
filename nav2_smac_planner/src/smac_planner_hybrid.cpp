@@ -63,6 +63,7 @@ void SmacPlannerHybrid::configure(
   RCLCPP_INFO(_logger, "Configuring %s of type SmacPlannerHybrid", name.c_str());
 
   int angle_quantizations;
+  double analytic_expansion_max_length_m;
 
   // General planner params
   nav2_util::declare_parameter_if_not_declared(
@@ -106,6 +107,11 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(3.5));
   node->get_parameter(name + ".analytic_expansion_ratio", _search_info.analytic_expansion_ratio);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".analytic_expansion_max_length", rclcpp::ParameterValue(3.0));
+  node->get_parameter(name + ".analytic_expansion_max_length", analytic_expansion_max_length_m);
+  _search_info.analytic_expansion_max_length =
+    analytic_expansion_max_length_m / _costmap->getResolution();
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(5.0));
@@ -400,6 +406,10 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       } else if (name == _name + ".analytic_expansion_ratio") {
         reinit_a_star = true;
         _search_info.analytic_expansion_ratio = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".analytic_expansion_max_length") {
+        reinit_a_star = true;
+        _search_info.analytic_expansion_max_length =
+          static_cast<float>(parameter.as_double()) / _costmap->getResolution();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == _name + ".downsample_costmap") {
