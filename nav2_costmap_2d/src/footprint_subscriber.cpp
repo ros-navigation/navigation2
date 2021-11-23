@@ -30,11 +30,11 @@ FootprintSubscriber::FootprintSubscriber(
   const std::string & topic_name,
   tf2_ros::Buffer & tf,
   std::string robot_base_frame,
-  double transform_timeout)
+  double transform_tolerance)
 : topic_name_(topic_name),
   tf_(tf),
   robot_base_frame_(robot_base_frame),
-  transform_timeout_(transform_timeout)
+  transform_tolerance_(transform_tolerance)
 {
   auto node = parent.lock();
   footprint_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
@@ -47,11 +47,11 @@ FootprintSubscriber::FootprintSubscriber(
   const std::string & topic_name,
   tf2_ros::Buffer & tf,
   std::string robot_base_frame,
-  double transform_timeout)
+  double transform_tolerance)
 : topic_name_(topic_name),
   tf_(tf),
   robot_base_frame_(robot_base_frame),
-  transform_timeout_(transform_timeout)
+  transform_tolerance_(transform_tolerance)
 {
   auto node = parent.lock();
   footprint_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
@@ -88,7 +88,7 @@ FootprintSubscriber::getFootprintInRobotFrame(
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, tf_, footprint_header.frame_id, robot_base_frame_,
-      transform_timeout_, footprint_header.stamp))
+      transform_tolerance_, footprint_header.stamp))
   {
     return false;
   }

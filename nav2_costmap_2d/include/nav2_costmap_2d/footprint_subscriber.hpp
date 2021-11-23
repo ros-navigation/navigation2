@@ -41,7 +41,7 @@ public:
     const std::string & topic_name,
     tf2_ros::Buffer & tf,
     std::string robot_base_frame = "base_link",
-    double transform_timeout = 0.1);
+    double transform_tolerance = 0.1);
 
   /**
    * @brief A constructor
@@ -51,7 +51,7 @@ public:
     const std::string & topic_name,
     tf2_ros::Buffer & tf,
     std::string robot_base_frame = "base_link",
-    double transform_timeout = 0.1);
+    double transform_tolerance = 0.1);
 
   /**
    * @brief A destructor
@@ -89,7 +89,7 @@ protected:
   std::string topic_name_;
   tf2_ros::Buffer & tf_;
   std::string robot_base_frame_;
-  double transform_timeout_;
+  double transform_tolerance_;
   bool footprint_received_{false};
   geometry_msgs::msg::PolygonStamped::SharedPtr footprint_;
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_sub_;

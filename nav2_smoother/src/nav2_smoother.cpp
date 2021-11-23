@@ -84,11 +84,10 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
   std::string costmap_topic, footprint_topic, robot_base_frame;
-  double transform_tolerance, footprint_tolerance;
+  double transform_tolerance;
   this->get_parameter("costmap_topic", costmap_topic);
   this->get_parameter("footprint_topic", footprint_topic);
   this->get_parameter("transform_tolerance", transform_tolerance);
-  this->get_parameter("footprint_tolerance", footprint_tolerance);
   this->get_parameter("robot_base_frame", robot_base_frame);
   costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
     shared_from_this(), costmap_topic);

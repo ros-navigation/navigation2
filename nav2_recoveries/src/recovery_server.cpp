@@ -51,7 +51,7 @@ RecoveryServer::RecoveryServer(const rclcpp::NodeOptions & options)
     "robot_base_frame",
     rclcpp::ParameterValue(std::string("base_link")));
   declare_parameter(
-    "transform_timeout",
+    "transform_tolerance",
     rclcpp::ParameterValue(0.1));
 }
 
@@ -74,15 +74,15 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
   std::string costmap_topic, footprint_topic, robot_base_frame;
-  double transform_timeout;
+  double transform_tolerance;
   this->get_parameter("costmap_topic", costmap_topic);
   this->get_parameter("footprint_topic", footprint_topic);
-  this->get_parameter("transform_timeout", transform_timeout);
+  this->get_parameter("transform_tolerance", transform_tolerance);
   this->get_parameter("robot_base_frame", robot_base_frame);
   costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
     shared_from_this(), costmap_topic);
   footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-    shared_from_this(), footprint_topic, *tf_, robot_base_frame, transform_timeout);
+    shared_from_this(), footprint_topic, *tf_, robot_base_frame, transform_tolerance);
 
   collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
     *costmap_sub_, *footprint_sub_, this->get_name());
