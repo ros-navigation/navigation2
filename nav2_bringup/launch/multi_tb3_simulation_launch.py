@@ -72,7 +72,7 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
-        default_value=os.path.join(aws_dir, 'maps', '005', 'map.yaml'),
+        default_value=os.path.join(bringup_dir, 'maps', 'warehouse.yaml'),
         description='Full path to map file to load')
 
     declare_robot1_params_file_cmd = DeclareLaunchArgument(
