@@ -730,7 +730,7 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
         existing_cost = obstacle_heuristic_lookup_table[new_idx];
         if (existing_cost < 0.0) {
           travel_cost =
-            ((i <= 3) ? 1.0 : sqrt_2) + (cost_penalty * cost / 252.0);
+            ((i <= 3) ? 1.0 : sqrt_2)*(1.0 + (cost_penalty * cost / 252.0));
           new_cost = c_cost + travel_cost;
           if (existing_cost == -1.0f || -2.0f - existing_cost > new_cost) {
             obstacle_heuristic_lookup_table[new_idx] = -2.0f - new_cost;
