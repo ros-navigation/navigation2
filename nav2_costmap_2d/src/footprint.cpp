@@ -112,14 +112,15 @@ void transformFootprint(
   std::vector<geometry_msgs::msg::Point> & oriented_footprint)
 {
   // build the oriented footprint at a given location
-  oriented_footprint.clear();
+  oriented_footprint.resize(footprint_spec.size());
   double cos_th = cos(theta);
   double sin_th = sin(theta);
   for (unsigned int i = 0; i < footprint_spec.size(); ++i) {
-    geometry_msgs::msg::Point new_pt;
-    new_pt.x = x + (footprint_spec[i].x * cos_th - footprint_spec[i].y * sin_th);
-    new_pt.y = y + (footprint_spec[i].x * sin_th + footprint_spec[i].y * cos_th);
-    oriented_footprint.push_back(new_pt);
+    double new_x = x + (footprint_spec[i].x * cos_th - footprint_spec[i].y * sin_th);
+    double new_y = y + (footprint_spec[i].x * sin_th + footprint_spec[i].y * cos_th);
+    geometry_msgs::msg::Point &new_pt = oriented_footprint[i];
+    new_pt.x = new_x;
+    new_pt.y = new_y;
   }
 }
 

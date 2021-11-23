@@ -86,14 +86,12 @@ double CostmapTopicCollisionChecker::scorePose(
 
 Footprint CostmapTopicCollisionChecker::getFootprint(const geometry_msgs::msg::Pose2D & pose)
 {
-  Footprint footprint_spec;
+  Footprint footprint;
   std_msgs::msg::Header header;
-  if (!footprint_sub_.getFootprintInRobotFrame(footprint_spec, header)) {
+  if (!footprint_sub_.getFootprintInRobotFrame(footprint, header)) {
     throw CollisionCheckerException("Current footprint not available.");
   }
-
-  Footprint footprint;
-  transformFootprint(pose.x, pose.y, pose.theta, footprint_spec, footprint);
+  transformFootprint(pose.x, pose.y, pose.theta, footprint, footprint);
 
   return footprint;
 }
