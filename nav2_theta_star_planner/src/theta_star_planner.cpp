@@ -116,14 +116,17 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
     logger_, "Got the src and dst... (%i, %i) && (%i, %i)",
     planner_->src_.x, planner_->src_.y, planner_->dst_.x, planner_->dst_.y);
   getPlan(global_path);
-  global_path.poses.back().pose.orientation = goal.pose.orientation;
+  // check if a plan is generated
+  size_t plan_size = global_path.poses.size();
+  if (plan_size > 0) {
+    global_path.poses.back().pose.orientation = goal.pose.orientation;
+  }
 
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
   // previous pose to set the orientation to the 'final approach' orientation of the robot so
   // it does not rotate.
   // And deal with corner case of plan of length 1
   if (use_final_approach_orientation_) {
-    size_t plan_size = global_path.poses.size();
     if (plan_size == 1) {
       global_path.poses.back().pose.orientation = start.pose.orientation;
     } else if (plan_size > 1) {
