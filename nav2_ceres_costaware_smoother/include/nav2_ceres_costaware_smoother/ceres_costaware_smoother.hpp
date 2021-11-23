@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef nav2_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_
-#define nav2_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_
+#ifndef NAV2_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_
+#define NAV2_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_
 
 #include <string>
 #include <vector>
@@ -103,4 +103,4 @@ protected:
 
 }  // namespace nav2_ceres_costaware_smoother
 
-#endif  // nav2_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_
+#endif  // NAV2_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_

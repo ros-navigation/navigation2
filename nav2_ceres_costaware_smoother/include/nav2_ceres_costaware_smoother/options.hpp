@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef nav2_CERES_COSTAWARE_SMOOTHER__OPTIONS_HPP_
-#define nav2_CERES_COSTAWARE_SMOOTHER__OPTIONS_HPP_
+#ifndef NAV2_CERES_COSTAWARE_SMOOTHER__OPTIONS_HPP_
+#define NAV2_CERES_COSTAWARE_SMOOTHER__OPTIONS_HPP_
 
 #include <string>
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -235,4 +235,4 @@ struct OptimizerParams
 
 }  // namespace nav2_smac_planner
 
-#endif  // nav2_CERES_COSTAWARE_SMOOTHER__OPTIONS_HPP_
+#endif  // NAV2_CERES_COSTAWARE_SMOOTHER__OPTIONS_HPP_

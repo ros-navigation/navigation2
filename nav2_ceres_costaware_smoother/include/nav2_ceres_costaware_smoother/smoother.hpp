@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef nav2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
-#define nav2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
+#ifndef NAV2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
+#define NAV2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
 
 #include <cmath>
 #include <vector>
@@ -316,4 +316,4 @@ private:
 
 }  // namespace nav2_smac_planner
 
-#endif  // nav2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
+#endif  // NAV2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
