@@ -33,8 +33,8 @@ using namespace std::chrono_literals;
 namespace nav2_smoother
 {
 
-SmootherServer::SmootherServer()
-: LifecycleNode("smoother_server", "", false),
+SmootherServer::SmootherServer(const rclcpp::NodeOptions & options)
+: LifecycleNode("smoother_server", "", false, options),
   lp_loader_("nav2_core", "nav2_core::Smoother"),
   default_ids_{}, default_types_{
     "nav2_smoother::CeresCostawareSmoother"}

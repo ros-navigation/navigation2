@@ -48,9 +48,10 @@ public:
   using SmootherMap = std::unordered_map<std::string, nav2_core::Smoother::Ptr>;
 
   /**
-   * @brief Constructor for nav2_smoother::SmootherServer
+   * @brief A constructor for nav2_smoother::SmootherServer
+   * @param options Additional options to control creation of the node.
    */
-  SmootherServer();
+  explicit SmootherServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   /**
    * @brief Destructor for nav2_smoother::SmootherServer
