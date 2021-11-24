@@ -24,6 +24,9 @@
 namespace nav2_waypoint_follower
 {
 
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
+
 WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("waypoint_follower", "", false, options),
   waypoint_task_executor_loader_("nav2_waypoint_follower",
@@ -100,6 +103,11 @@ WaypointFollower::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
 
   action_server_->activate();
+
+  auto node = shared_from_this();
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&WaypointFollower::dynamicParametersCallback, this, _1));
 
   // create bond connection
   createBond();
@@ -303,6 +311,31 @@ WaypointFollower::goalResponseCallback(
       "navigate_to_pose action client failed to send goal to server.");
     current_goal_status_ = ActionStatus::FAILED;
   }
+}
+
+rcl_interfaces::msg::SetParametersResult
+WaypointFollower::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+{
+  // No need to lock function, runs on same callback group as action, cannot run at the same time.
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
+
+    if (type == ParameterType::PARAMETER_INTEGER) {
+      if (name == "loop_rate") {
+        loop_rate_ = parameter.as_int();
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == "stop_on_failure") {
+        stop_on_failure_ = parameter.as_bool();
+      }
+    }
+  }
+
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_waypoint_follower
