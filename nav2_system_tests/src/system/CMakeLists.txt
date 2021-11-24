@@ -72,6 +72,7 @@ ament_add_test(test_dynamic_obstacle
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
     TEST_URDF=${PROJECT_SOURCE_DIR}/urdf/turtlebot3_waffle.urdf
     TEST_MODEL=${PROJECT_SOURCE_DIR}/worlds/waffle.model
+    TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/warehouse_obstacle.world
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
     TESTER=nav_to_pose_tester_node.py
     ASTAR=False
