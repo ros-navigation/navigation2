@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 #include <cmath>
 
+#include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/image_processing.hpp"
 #include "image_tests_helper.hpp"
 
@@ -118,9 +119,23 @@ protected:
   MemoryBuffer buffer;
 };
 
+bool isBackground(uint8_t pixel)
+{
+  return pixel != LETHAL_OBSTACLE && pixel != NO_INFORMATION;
+}
+
+TEST_F(ConnectedComponentsTester, smallBufferTest) {
+  Image<uint8_t> input(3, 3);
+  MemoryBuffer small_buffer(1);
+  ASSERT_THROW(
+    (ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
+      input, small_buffer, isBackground)), std::logic_error);
+}
+
 TEST_F(ConnectedComponentsTester, way4EmptyTest) {
   Image<uint8_t> input;
-  const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(input, buffer);
+  const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
+    input, buffer, isBackground);
   ASSERT_EQ(result.second, uint8_t(0));
 }
 
@@ -129,7 +144,8 @@ TEST_F(ConnectedComponentsTester, way4SinglePixelTest) {
     Image<uint8_t> input(1, 1);
     input.at(0, 0) = 0;
 
-    const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(input, buffer);
+    const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
+      input, buffer, isBackground);
 
     ASSERT_EQ(result.first.at(0, 0), 0);
     ASSERT_EQ(result.second, 1);
@@ -138,7 +154,8 @@ TEST_F(ConnectedComponentsTester, way4SinglePixelTest) {
     Image<uint8_t> input(1, 1);
     input.at(0, 0) = 255;
 
-    const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(input, buffer);
+    const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
+      input, buffer, isBackground);
 
     ASSERT_EQ(result.first.at(0, 0), 1);
     ASSERT_EQ(result.second, 2);
@@ -151,7 +168,8 @@ TEST_F(ConnectedComponentsTester, way4ImageSmallTest) {
     input.at(0, 0) = 0;
     input.at(0, 1) = 255;
 
-    const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(input, buffer);
+    const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
+      input, buffer, isBackground);
 
     ASSERT_EQ(result.second, uint8_t(2));
     ASSERT_EQ(result.first.at(0, 0), 0);
@@ -162,7 +180,8 @@ TEST_F(ConnectedComponentsTester, way4ImageSmallTest) {
     input.at(0, 0) = 0;
     input.at(1, 0) = 255;
 
-    const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(input, buffer);
+    const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
+      input, buffer, isBackground);
 
     ASSERT_EQ(result.second, uint8_t(2));
     ASSERT_EQ(result.first.at(0, 0), 0);
@@ -186,7 +205,7 @@ TEST_F(ConnectedComponentsTester, way4LabelsOverflowTest) {
 
   ASSERT_THROW(
     (ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
-      input, buffer)),
+      input, buffer, isBackground)),
     std::logic_error);
 }
 
@@ -234,7 +253,8 @@ TEST_F(ConnectedComponentsTester, way4ImageStepsTest) {
     ".xx."
     "xx.."
     "....");
-  auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(input, buffer);
+  auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
+    input, buffer, isBackground);
 
   ASSERT_EQ(result.second, uint8_t(2));
   ASSERT_TRUE(isEqualLabels(result.first, expected_labels));
@@ -267,7 +287,8 @@ TEST_F(ConnectedComponentsTester, way8ImageStepsTest) {
     ".....b"
     "....b.", makeLabelsMap('b'));
 
-  auto result = ConnectedComponents<ConnectivityType::Way8, uint8_t>::detect(input, buffer);
+  auto result = ConnectedComponents<ConnectivityType::Way8, uint8_t>::detect(
+    input, buffer, isBackground);
 
   ASSERT_EQ(result.second, uint8_t(3));
   ASSERT_TRUE(isEqualLabels(result.first, expected_labels));
@@ -287,7 +308,8 @@ TEST_F(ConnectedComponentsTester, way4ImageSieveTest) {
     ".i.j."
     "k.l.m", makeLabelsMap('m'));
 
-  auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(input, buffer);
+  auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
+    input, buffer, isBackground);
 
   ASSERT_EQ(result.second, uint8_t(14));
   ASSERT_TRUE(isEqualLabels(result.first, expected_labels));
@@ -309,7 +331,7 @@ bool fingerTest(MemoryBuffer & buffer)
     "a.b.c"
     "a.b.c", makeLabelsMap('c'));
 
-  auto result = ConnectedComponents<connectivity, uint8_t>::detect(input, buffer);
+  auto result = ConnectedComponents<connectivity, uint8_t>::detect(input, buffer, isBackground);
 
   return result.second == 4 && isEqualLabels(result.first, expected_labels);
 }
@@ -342,7 +364,7 @@ bool spiralTest(MemoryBuffer & buffer)
     ".x....x"
     ".xxxxxx");
 
-  auto result = ConnectedComponents<connectivity, uint8_t>::detect(input, buffer);
+  auto result = ConnectedComponents<connectivity, uint8_t>::detect(input, buffer, isBackground);
   return result.second == 2 && isEqualLabels(result.first, expected_labels);
 }
 

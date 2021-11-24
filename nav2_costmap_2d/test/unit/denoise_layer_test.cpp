@@ -183,7 +183,7 @@ TEST_F(DenoiseLayerTester, removeSinglePixelsFromExtremelySmallImage) {
 
 TEST_F(DenoiseLayerTester, removeSinglePixelsFromNonBinary) {
   Image<uint8_t> in(3, 3);
-  in.fill(254);
+  in.fill(253);
   in.at(1, 1) = 255;
 
   Image<uint8_t> exp = in.clone();
@@ -282,7 +282,7 @@ TEST_F(DenoiseLayerTester, removePixelsGroupFromExtremelySmallImage) {
 
 TEST_F(DenoiseLayerTester, removePixelsGroupFromNonBinary) {
   Image<uint8_t> in(3, 3);
-  in.fill(254);
+  in.fill(253);
   in.at(1, 1) = 255;
 
   Image<uint8_t> exp = in.clone();

@@ -22,7 +22,10 @@
 
 namespace nav2_costmap_2d
 {
-static constexpr unsigned char OBSTACLE_CELL = 255;
+bool isBackground(uint8_t pixel)
+{
+  return pixel != LETHAL_OBSTACLE && pixel != NO_INFORMATION;
+}
 
 void
 DenoiseLayer::onInitialize()
@@ -160,7 +163,7 @@ template<ConnectivityType connectivity, class Label>
 void removeGroupsImpl(Image<uint8_t> & image, MemoryBuffer & buffer, size_t minimal_group_size)
 {
   // Creates an image labels in which each obstacles group is labeled with a unique code
-  auto components = ConnectedComponents<connectivity, Label>::detect(image, buffer);
+  auto components = ConnectedComponents<connectivity, Label>::detect(image, buffer, isBackground);
   const Label groups_count = components.second;
   const Image<Label> & labels = components.first;
 
@@ -175,18 +178,20 @@ void removeGroupsImpl(Image<uint8_t> & image, MemoryBuffer & buffer, size_t mini
   // Because the values of empty map cells should not be changed, we will reset this bin
   groups_sizes.front() = 0;  // don't change image background value
 
-  // lookup_table[i] = OBSTACLE_CELL if groups_sizes[i] >= minimal_group_size, FREE_SPACE in other case
-  std::vector<uint8_t> lookup_table(groups_sizes.size());
+  // noise_labels_table[i] = true if group with label i is noise
+  std::vector<bool> noise_labels_table(groups_sizes.size());
   auto transform_fn = [&minimal_group_size](size_t bin_value) {
-      return bin_value < minimal_group_size ? FREE_SPACE : OBSTACLE_CELL;
+      return bin_value < minimal_group_size;
     };
-  std::transform(groups_sizes.begin(), groups_sizes.end(), lookup_table.begin(), transform_fn);
+  std::transform(
+    groups_sizes.begin(), groups_sizes.end(), noise_labels_table.begin(),
+    transform_fn);
 
   // Replace the pixel values from the small groups to background code
   labels.convert(
-    image, [&lookup_table](Label src, uint8_t & trg) {
-      if (trg == OBSTACLE_CELL) {  // This check is required for non-binary input image
-        trg = lookup_table[src];
+    image, [&noise_labels_table](Label src, uint8_t & trg) {
+      if (!isBackground(trg) && noise_labels_table[src]) {
+        trg = 0;
       }
     });
 }
@@ -225,8 +230,7 @@ DenoiseLayer::removeSinglePixels(Image<uint8_t> & image) const
 
   max_neighbors_image.convert(
     image, [this](uint8_t maxNeighbor, uint8_t & img) {
-      // img == OBSTACLE_CELL is required for non-binary input image
-      if (maxNeighbor != OBSTACLE_CELL && img == OBSTACLE_CELL) {
+      if (!isBackground(img) && isBackground(maxNeighbor)) {
         img = FREE_SPACE;
       }
     });

@@ -162,7 +162,10 @@ public:
    * For example, for an image of one pixel equal to 255, the total number of labels == 2.
    * Two labels (0, 1) have been counted, although label 0 is not used)
    */
-  static std::pair<Image<Label>, Label> detect(const Image<uint8_t> & image, MemoryBuffer & buffer);
+  template<class IsBg>
+  static std::pair<Image<Label>, Label> detect(
+    const Image<uint8_t> & image, MemoryBuffer & buffer,
+    IsBg && is_background);
   /**
    * @brief Return the upper bound of the memory buffer for detecting connected components
    * @param image input image
@@ -170,9 +173,11 @@ public:
   static size_t optimalBufferSize(const Image<uint8_t> & image);
 
 private:
+  template<class IsBg>
   static Label detectImpl(
     const Image<uint8_t> & image, Image<Label> & labels,
-    imgproc_impl::EquivalenceLabelTrees<Label> & label_trees);
+    imgproc_impl::EquivalenceLabelTrees<Label> & label_trees,
+    IsBg && is_background);
 };
 
 // Implementation
@@ -526,12 +531,6 @@ private:
   Label next_free;
 };
 
-/// @brief Return true if pixel_value is background code
-inline bool is_bg(uint8_t pixel_value)
-{
-  return pixel_value < 255;
-}
-
 /// @brief The specializations of this class provide the definition of the pixel label
 template<ConnectivityType connectivity>
 struct ProcessPixel;
@@ -549,9 +548,10 @@ struct ProcessPixel<ConnectivityType::Way8>
    * @param label output label window
    * @param eqTrees union-find structure
    */
-  template<class ImageWindow, class LabelsWindow, class Label>
+  template<class ImageWindow, class LabelsWindow, class Label, class IsBg>
   static void pass(
-    ImageWindow & image, LabelsWindow & label, EquivalenceLabelTrees<Label> & eqTrees)
+    ImageWindow & image, LabelsWindow & label, EquivalenceLabelTrees<Label> & eqTrees,
+    IsBg && is_bg)
   {
     Label & current = label.e();
 
@@ -601,9 +601,10 @@ struct ProcessPixel<ConnectivityType::Way4>
    * @param label output label window
    * @param eqTrees union-find structure
    */
-  template<class ImageWindow, class LabelsWindow, class Label>
+  template<class ImageWindow, class LabelsWindow, class Label, class IsBg>
   static void pass(
-    ImageWindow & image, LabelsWindow & label, EquivalenceLabelTrees<Label> & eqTrees)
+    ImageWindow & image, LabelsWindow & label, EquivalenceLabelTrees<Label> & eqTrees,
+    IsBg && is_bg)
   {
     Label & current = label.e();
 
@@ -765,8 +766,9 @@ Image<uint8_t> getShape(ConnectivityType connectivity)
 }  // namespace imgproc_impl
 
 template<ConnectivityType connectivity, class Label>
+template<class IsBg>
 std::pair<Image<Label>, Label> ConnectedComponents<connectivity, Label>::detect(
-  const Image<uint8_t> & image, MemoryBuffer & buffer)
+  const Image<uint8_t> & image, MemoryBuffer & buffer, IsBg && is_background)
 {
   using namespace imgproc_impl;
   const size_t pixels = image.rows() * image.columns();
@@ -791,15 +793,17 @@ std::pair<Image<Label>, Label> ConnectedComponents<connectivity, Label>::detect(
   Label * labels_block = buffer_block + pixels;
   Image<Label> labels(image.rows(), image.columns(), image_buffer, image.columns());
   EquivalenceLabelTrees<Label> label_trees(labels_block, labels_buffer_size);
-  const Label total_labels = detectImpl(image, labels, label_trees);
+  const Label total_labels = detectImpl(image, labels, label_trees, is_background);
   return std::make_pair(labels, total_labels);
 }
 
 template<ConnectivityType connectivity, class Label>
+template<class IsBg>
 Label
 ConnectedComponents<connectivity, Label>::detectImpl(
   const Image<uint8_t> & image, Image<Label> & labels,
-  imgproc_impl::EquivalenceLabelTrees<Label> & label_trees)
+  imgproc_impl::EquivalenceLabelTrees<Label> & label_trees,
+  IsBg && is_background)
 {
   using namespace imgproc_impl;
   using PixelPass = ProcessPixel<connectivity>;
@@ -811,7 +815,7 @@ ConnectedComponents<connectivity, Label>::detectImpl(
     auto lbl = makeSafeWindow<Label>(nullptr, labels.row(0), image.columns());
 
     for (; &img.e() < image.row(0) + image.columns(); img.next(), lbl.next()) {
-      PixelPass::pass(img, lbl, label_trees);
+      PixelPass::pass(img, lbl, label_trees, is_background);
     }
   }
 
@@ -826,7 +830,7 @@ ConnectedComponents<connectivity, Label>::detectImpl(
     // scan column 0
     {
       auto img = makeSafeWindow(up, current, image.columns());
-      PixelPass::pass(img, label_mask, label_trees);
+      PixelPass::pass(img, label_mask, label_trees, is_background);
     }
 
     // scan columns 1, 2... image.columns() - 2
@@ -836,7 +840,7 @@ ConnectedComponents<connectivity, Label>::detectImpl(
     const uint8_t * current_line_last = current + image.columns() - 1;
 
     for (; &img.e() < current_line_last; img.next(), label_mask.next()) {
-      PixelPass::pass(img, label_mask, label_trees);
+      PixelPass::pass(img, label_mask, label_trees, is_background);
     }
 
     // scan last column
@@ -845,7 +849,7 @@ ConnectedComponents<connectivity, Label>::detectImpl(
       auto last_label = makeSafeWindow(
         labels.row(row), labels.row(row + 1),
         image.columns(), image.columns() - 1);
-      PixelPass::pass(last_img, last_label, label_trees);
+      PixelPass::pass(last_img, last_label, label_trees, is_background);
     }
   }
 
