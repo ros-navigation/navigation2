@@ -289,13 +289,13 @@ void SmootherServer::smoothPlan()
     // Check for collisions
     if (goal->check_for_collisions) {
       geometry_msgs::msg::Pose2D pose2d;
-      bool updateCostmap = true;
+      bool fetch_data = true;
       for (const auto & pose : result->path.poses) {
         pose2d.x = pose.pose.position.x;
         pose2d.y = pose.pose.position.y;
         pose2d.theta = tf2::getYaw(pose.pose.orientation);
 
-        if (!collision_checker_->isCollisionFree(pose2d, updateCostmap)) {
+        if (!collision_checker_->isCollisionFree(pose2d, fetch_data)) {
           RCLCPP_ERROR(
             get_logger(),
             "Smoothed path leads to a collision at x: %lf, y: %lf, theta: %lf",
@@ -303,7 +303,7 @@ void SmootherServer::smoothPlan()
           action_server_->terminate_current(result);
           return;
         }
-        updateCostmap = false;
+        fetch_data = false;
       }
     }
 

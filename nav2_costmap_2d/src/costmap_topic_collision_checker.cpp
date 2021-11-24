@@ -44,10 +44,10 @@ CostmapTopicCollisionChecker::CostmapTopicCollisionChecker(
 
 bool CostmapTopicCollisionChecker::isCollisionFree(
   const geometry_msgs::msg::Pose2D & pose,
-  bool updateCostmap)
+  bool fetch_costmap_and_footprint)
 {
   try {
-    if (scorePose(pose, updateCostmap) >= LETHAL_OBSTACLE) {
+    if (scorePose(pose, fetch_costmap_and_footprint) >= LETHAL_OBSTACLE) {
       return false;
     }
     return true;
@@ -65,9 +65,9 @@ bool CostmapTopicCollisionChecker::isCollisionFree(
 
 double CostmapTopicCollisionChecker::scorePose(
   const geometry_msgs::msg::Pose2D & pose,
-  bool updateCostmap)
+  bool fetch_costmap_and_footprint)
 {
-  if (updateCostmap) {
+  if (fetch_costmap_and_footprint) {
     try {
       collision_checker_.setCostmap(costmap_sub_.getCostmap());
     } catch (const std::runtime_error & e) {
@@ -81,17 +81,21 @@ double CostmapTopicCollisionChecker::scorePose(
     throw IllegalPoseException(name_, "Pose Goes Off Grid.");
   }
 
-  return collision_checker_.footprintCost(getFootprint(pose));
+  return collision_checker_.footprintCost(getFootprint(pose, fetch_costmap_and_footprint));
 }
 
-Footprint CostmapTopicCollisionChecker::getFootprint(const geometry_msgs::msg::Pose2D & pose)
+Footprint CostmapTopicCollisionChecker::getFootprint(
+  const geometry_msgs::msg::Pose2D & pose,
+  bool fetch)
 {
-  Footprint footprint;
-  std_msgs::msg::Header header;
-  if (!footprint_sub_.getFootprintInRobotFrame(footprint, header)) {
-    throw CollisionCheckerException("Current footprint not available.");
+  if (fetch) {
+    std_msgs::msg::Header header;
+    if (!footprint_sub_.getFootprintInRobotFrame(footprint_, header)) {
+      throw CollisionCheckerException("Current footprint not available.");
+    }
   }
-  transformFootprint(pose.x, pose.y, pose.theta, footprint, footprint);
+  Footprint footprint;
+  transformFootprint(pose.x, pose.y, pose.theta, footprint_, footprint);
 
   return footprint;
 }

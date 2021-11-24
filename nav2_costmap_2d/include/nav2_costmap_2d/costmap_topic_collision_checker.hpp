@@ -56,17 +56,21 @@ public:
   /**
    * @brief Returns the obstacle footprint score for a particular pose
    */
-  double scorePose(const geometry_msgs::msg::Pose2D & pose, bool updateCostmap = true);
+  double scorePose(
+    const geometry_msgs::msg::Pose2D & pose,
+    bool fetch_costmap_and_footprint = true);
   /**
    * @brief Returns if a pose is collision free
    */
-  bool isCollisionFree(const geometry_msgs::msg::Pose2D & pose, bool updateCostmap = true);
+  bool isCollisionFree(
+    const geometry_msgs::msg::Pose2D & pose,
+    bool fetch_costmap_and_footprint = true);
 
 protected:
   /**
    * @brief Get a footprint at a set pose
    */
-  Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose);
+  Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose, bool fetch);
 
   // Name used for logging
   std::string name_;
@@ -74,6 +78,7 @@ protected:
   FootprintSubscriber & footprint_sub_;
   FootprintCollisionChecker<std::shared_ptr<Costmap2D>> collision_checker_;
   rclcpp::Clock::SharedPtr clock_;
+  Footprint footprint_;
 };
 
 }  // namespace nav2_costmap_2d
