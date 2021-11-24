@@ -213,7 +213,7 @@ protected:
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
   // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr _dyn_params_handler;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   // Planner
   PlannerMap planners_;

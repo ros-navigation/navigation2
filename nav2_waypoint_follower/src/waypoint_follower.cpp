@@ -121,6 +121,7 @@ WaypointFollower::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   action_server_->deactivate();
+  dyn_params_handler_.reset();
 
   // destroy bond connection
   destroyBond();

@@ -169,7 +169,7 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
   // Add callback for dynamic parameters
-  _dyn_params_handler = node->add_on_set_parameters_callback(
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&PlannerServer::dynamicParametersCallback, this, _1));
 
   // create bond connection
@@ -192,6 +192,8 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & state)
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->deactivate();
   }
+
+  dyn_params_handler_.reset();
 
   // destroy bond connection
   destroyBond();
