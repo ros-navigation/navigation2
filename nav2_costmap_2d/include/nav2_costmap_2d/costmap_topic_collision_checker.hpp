@@ -55,12 +55,21 @@ public:
 
   /**
    * @brief Returns the obstacle footprint score for a particular pose
+   *
+   * @param pose Pose to get score at
+   * @param fetch_costmap_and_footprint Defaults to true. When checking with multiple poses at once,
+   * data should be fetched in the first check but fetching can be skipped in consequent checks for speedup
    */
   double scorePose(
     const geometry_msgs::msg::Pose2D & pose,
     bool fetch_costmap_and_footprint = true);
+
   /**
    * @brief Returns if a pose is collision free
+   *
+   * @param pose Pose to check collision at
+   * @param fetch_costmap_and_footprint Defaults to true. When checking with multiple poses at once,
+   * data should be fetched in the first check but fetching can be skipped in consequent checks for speedup
    */
   bool isCollisionFree(
     const geometry_msgs::msg::Pose2D & pose,
@@ -69,8 +78,12 @@ public:
 protected:
   /**
    * @brief Get a footprint at a set pose
+   *
+   * @param pose Pose to get footprint at
+   * @param fetch_latest_footprint Defaults to true. When checking with multiple poses at once,
+   * footprint should be fetched in the first check but fetching can be skipped in consequent checks for speedup
    */
-  Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose, bool fetch);
+  Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose, bool fetch_latest_footprint);
 
   // Name used for logging
   std::string name_;
