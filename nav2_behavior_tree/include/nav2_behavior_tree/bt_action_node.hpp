@@ -43,8 +43,8 @@ public:
       config().blackboard->get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
-    RCLCPP_INFO(node_->get_logger(), "Action Name: %s\nServer Timeout: %d", 
-                action_name_.c_str(), server_timeout_);
+    RCLCPP_DEBUG(node_->get_logger(), "Action Name: %s\nServer Timeout: %d", 
+               action_name_.c_str(), server_timeout_);
     
     // Initialize the input and output messages
     goal_ = typename ActionT::Goal();
@@ -57,7 +57,7 @@ public:
     createActionClient(action_name_);
 
     // Give the derive class a chance to do any initialization
-    RCLCPP_INFO(node_->get_logger(), "\"%s\" BtActionNode initialized", xml_tag_name.c_str());
+    RCLCPP_DEBUG(node_->get_logger(), "\"%s\" BtActionNode initialized", xml_tag_name.c_str());
   }
 
   BtActionNode() = delete;
@@ -73,7 +73,7 @@ public:
     action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name);
     if (action_client_ != nullptr) {
       // Make sure the server is actually there before continuing
-      RCLCPP_INFO(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
+      RCLCPP_DEBUG(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
       try {
         action_client_->wait_for_action_server();
       } catch (const std::exception & ex) { 
@@ -265,7 +265,8 @@ protected:
               result_ = result;
             } else {
               RCLCPP_WARN(
-                node_->get_logger(), "Found result for %s but goal id and result id didn't match, the result is from an older goal.", action_name_.c_str()
+                node_->get_logger(), "Found result for %s but goal id [id=%s] and result id [id=%s] didn't match, the result is from an older goal.", 
+                action_name_.c_str(), rclcpp_action::to_string(this->goal_handle_->get_goal_id()), rclcpp_action::to_string(result.goal_id)
               );
             }
           }

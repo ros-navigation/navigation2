@@ -149,10 +149,10 @@ bool
 BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
 {
   // Use previous BT if it is the existing one
-  if (current_bt_xml_filename_ == bt_xml_filename) {
-    RCLCPP_DEBUG(get_logger(), "BT will not be reloaded as the given xml is already loaded");
-    return true;
-  }
+  // if (current_bt_xml_filename_ == bt_xml_filename) {
+  //   RCLCPP_DEBUG(get_logger(), "BT will not be reloaded as the given xml is already loaded");
+  //   return true;
+  // }
 
   // if a new tree is created, than the ZMQ Publisher must be destroyed
   bt_->resetGrootMonitor();
@@ -266,6 +266,8 @@ BtNavigator::navigateToPose()
     // Empty id in request is default for backward compatibility
     bt_xml_filename = bt_xml_filename == "" ? default_bt_xml_filename_ : bt_xml_filename;
 
+    RCLCPP_INFO(get_logger(), "Configurating Behavior Tree...");
+
     if (!loadBehaviorTree(bt_xml_filename)) {
       RCLCPP_ERROR(
         get_logger(), "BT file not found: %s. Navigation canceled.",
@@ -307,6 +309,8 @@ BtNavigator::navigateToPose()
         action_server_->terminate_all();
       }
     };
+
+    RCLCPP_INFO(get_logger(), "Tree Ready, Running...");
 
     // Execute the BT that was previously created in the configure step
     nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
