@@ -32,9 +32,19 @@ public:
 
 protected:
   void execute(
-    const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::BackUp>>)
+    const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::BackUp>>
+    goal_handle)
   override
-  {}
+  {
+    nav2_msgs::action::BackUp::Result::SharedPtr result =
+      std::make_shared<nav2_msgs::action::BackUp::Result>();
+    bool return_success = getReturnSuccess();
+    if (return_success) {
+      goal_handle->succeed(result);
+    } else {
+      goal_handle->abort(result);
+    }
+  }
 };
 
 class BackUpActionTestFixture : public ::testing::Test
@@ -54,8 +64,10 @@ public:
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
       "server_timeout",
+      std::chrono::milliseconds(20));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("path_updated", false);
     config_->blackboard->set<bool>("initial_pose_received", false);
     config_->blackboard->set<int>("number_recoveries", 0);
 
@@ -114,7 +126,7 @@ TEST_F(BackUpActionTestFixture, test_ports)
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<double>("backup_dist"), -0.15);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("backup_dist"), 0.15);
   EXPECT_EQ(tree_->rootNode()->getInput<double>("backup_speed"), 0.025);
 
   xml_txt =
@@ -136,13 +148,46 @@ TEST_F(BackUpActionTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <BackUp backup_dist="2" backup_speed="-0.26" />
+            <BackUp backup_dist="2" backup_speed="0.26" />
         </BehaviorTree>
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
+
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
+    tree_->rootNode()->executeTick();
+  }
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
+
+  auto goal = action_server_->getCurrentGoal();
+  EXPECT_EQ(goal->target.x, 2.0);
+  EXPECT_EQ(goal->speed, 0.26f);
+}
+
+TEST_F(BackUpActionTestFixture, test_failure)
+{
+  std::string xml_txt =
+    R"(
+      <root main_tree_to_execute = "MainTree" >
+        <BehaviorTree ID="MainTree">
+            <BackUp backup_dist="2" backup_speed="0.26" />
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  action_server_->setReturnSuccess(false);
+  EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
+
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS &&
+    tree_->rootNode()->status() != BT::NodeStatus::FAILURE)
+  {
+    tree_->rootNode()->executeTick();
+  }
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
 
   auto goal = action_server_->getCurrentGoal();

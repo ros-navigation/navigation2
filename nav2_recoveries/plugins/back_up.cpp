@@ -37,28 +37,37 @@ BackUp::~BackUp()
 
 void BackUp::onConfigure()
 {
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   nav2_util::declare_parameter_if_not_declared(
-    node_,
+    node,
     "simulate_ahead_time", rclcpp::ParameterValue(2.0));
-  node_->get_parameter("simulate_ahead_time", simulate_ahead_time_);
+  node->get_parameter("simulate_ahead_time", simulate_ahead_time_);
 }
 
 Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 {
   if (command->target.y != 0.0 || command->target.z != 0.0) {
     RCLCPP_INFO(
-      node_->get_logger(), "Backing up in Y and Z not supported, "
-      "will only move in X.");
+      logger_,
+      "Backing up in Y and Z not supported, will only move in X.");
   }
 
-  command_x_ = command->target.x;
-  command_speed_ = command->speed;
+  // Silently ensure that both the speed and direction are positive.
+  command_x_ = std::fabs(command->target.x);
+  command_speed_ = std::fabs(command->speed);
+  command_time_allowance_ = command->time_allowance;
+
+  end_time_ = steady_clock_.now() + command_time_allowance_;
 
   if (!nav2_util::getCurrentPose(
       initial_pose_, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR(node_->get_logger(), "Initial robot pose is not available.");
+    RCLCPP_ERROR(logger_, "Initial robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -67,12 +76,21 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 
 Status BackUp::onCycleUpdate()
 {
+  rclcpp::Duration time_remaining = end_time_ - steady_clock_.now();
+  if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
+    stopRobot();
+    RCLCPP_WARN(
+      logger_,
+      "Exceeded time allowance before reaching the BackUp goal - Exiting BackUp");
+    return Status::FAILED;
+  }
+
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+    RCLCPP_ERROR(logger_, "Current robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -83,7 +101,7 @@ Status BackUp::onCycleUpdate()
   feedback_->distance_traveled = distance;
   action_server_->publish_feedback(feedback_);
 
-  if (distance >= abs(command_x_)) {
+  if (distance >= command_x_) {
     stopRobot();
     return Status::SUCCEEDED;
   }
@@ -92,7 +110,7 @@ Status BackUp::onCycleUpdate()
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
   cmd_vel->linear.y = 0.0;
   cmd_vel->angular.z = 0.0;
-  command_x_ < 0 ? cmd_vel->linear.x = -command_speed_ : cmd_vel->linear.x = command_speed_;
+  cmd_vel->linear.x = -command_speed_;
 
   geometry_msgs::msg::Pose2D pose2d;
   pose2d.x = current_pose.pose.position.x;
@@ -101,8 +119,8 @@ Status BackUp::onCycleUpdate()
 
   if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
     stopRobot();
-    RCLCPP_WARN(node_->get_logger(), "Collision Ahead - Exiting BackUp");
-    return Status::SUCCEEDED;
+    RCLCPP_WARN(logger_, "Collision Ahead - Exiting BackUp");
+    return Status::FAILED;
   }
 
   vel_pub_->publish(std::move(cmd_vel));
@@ -120,19 +138,23 @@ bool BackUp::isCollisionFree(
   double sim_position_change;
   const double diff_dist = abs(command_x_) - distance;
   const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
+  geometry_msgs::msg::Pose2D init_pose = pose2d;
+  bool updateCostmap = true;
 
   while (cycle_count < max_cycle_count) {
     sim_position_change = cmd_vel->linear.x * (cycle_count / cycle_frequency_);
-    pose2d.x += sim_position_change;
+    pose2d.x = init_pose.x + sim_position_change * cos(init_pose.theta);
+    pose2d.y = init_pose.y + sim_position_change * sin(init_pose.theta);
     cycle_count++;
 
     if (diff_dist - abs(sim_position_change) <= 0.) {
       break;
     }
 
-    if (!collision_checker_->isCollisionFree(pose2d)) {
+    if (!collision_checker_->isCollisionFree(pose2d, updateCostmap)) {
       return false;
     }
+    updateCostmap = false;
   }
   return true;
 }

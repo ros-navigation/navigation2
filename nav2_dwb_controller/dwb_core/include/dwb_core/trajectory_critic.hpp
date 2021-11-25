@@ -38,6 +38,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <utility>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -93,20 +94,20 @@ public:
    */
   void initialize(
     const nav2_util::LifecycleNode::SharedPtr & nh,
-    std::string & name,
-    std::string & ns,
+    const std::string & name,
+    const std::string & ns,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
   {
+    node_ = nh;
     name_ = name;
     costmap_ros_ = costmap_ros;
-    nh_ = nh;
     dwb_plugin_name_ = ns;
-    if (!nh_->has_parameter(dwb_plugin_name_ + "." + name_ + ".scale")) {
-      nh_->declare_parameter(
+    if (!nh->has_parameter(dwb_plugin_name_ + "." + name_ + ".scale")) {
+      nh->declare_parameter(
         dwb_plugin_name_ + "." + name_ + ".scale",
         rclcpp::ParameterValue(1.0));
     }
-    nh_->get_parameter(dwb_plugin_name_ + "." + name_ + ".scale", scale_);
+    nh->get_parameter(dwb_plugin_name_ + "." + name_ + ".scale", scale_);
     onInit();
   }
   virtual void onInit() {}
@@ -166,7 +167,7 @@ public:
    *
    * @param pc PointCloud to add channels to
    */
-  virtual void addCriticVisualization(sensor_msgs::msg::PointCloud &) {}
+  virtual void addCriticVisualization(std::vector<std::pair<std::string, std::vector<float>>> &) {}
 
   std::string getName()
   {
@@ -181,7 +182,7 @@ protected:
   std::string dwb_plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   double scale_;
-  nav2_util::LifecycleNode::SharedPtr nh_;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
 };
 
 }  // namespace dwb_core

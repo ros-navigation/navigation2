@@ -51,23 +51,44 @@ namespace nav2_costmap_2d
 {
 class LayeredCostmap;
 
-class Layer  // TODO(mjeronimo): public nav2_util::LifecycleHelperInterface
+/**
+ * @class Layer
+ * @brief Abstract class for layered costmap plugin implementations
+ */
+class Layer
 {
 public:
+  /**
+   * @brief A constructor
+   */
   Layer();
+  /**
+   * @brief A destructor
+   */
   virtual ~Layer() {}
 
-  // TODO(mjeronimo): should the following functions changed to a lifecycle-style interface?
+  /**
+   * @brief Initialization process of layer on startup
+   */
   void initialize(
     LayeredCostmap * parent,
     std::string name,
     tf2_ros::Buffer * tf,
-    nav2_util::LifecycleNode::SharedPtr node,
+    const nav2_util::LifecycleNode::WeakPtr & node,
     rclcpp::Node::SharedPtr client_node,
     rclcpp::Node::SharedPtr rclcpp_node);
-  virtual void deactivate() {} /** @brief Stop publishers. */
-  virtual void activate() {}   /** @brief Restart publishers if they've been stopped. */
+  /** @brief Stop publishers. */
+  virtual void deactivate() {}
+  /** @brief Restart publishers if they've been stopped. */
+  virtual void activate() {}
+  /**
+   * @brief Reset this costmap
+   */
   virtual void reset() = 0;
+  /**
+   * @brief If clearing operations should be processed on this layer or not
+   */
+  virtual bool isClearable() = 0;
 
   /**
    * @brief This is called by the LayeredCostmap to poll this plugin as to how
@@ -98,7 +119,7 @@ public:
    * changes (via LayeredCostmap::setFootprint()).  Override to be
    * notified of changes to the robot's footprint. */
   virtual void onFootprintChanged() {}
-
+  /** @brief Get the name of the costmap layer */
   std::string getName() const
   {
     return name_;
@@ -123,18 +144,27 @@ public:
   const std::vector<geometry_msgs::msg::Point> & getFootprint() const;
 
   /** @brief Convenience functions for declaring ROS parameters */
-  void declareParameter(const std::string & param_name, const rclcpp::ParameterValue & value);
+  void declareParameter(
+    const std::string & param_name,
+    const rclcpp::ParameterValue & value);
+  /** @brief Convenience functions for declaring ROS parameters */
+  void declareParameter(
+    const std::string & param_name,
+    const rclcpp::ParameterType & param_type);
+  /** @brief Convenience functions for declaring ROS parameters */
   bool hasParameter(const std::string & param_name);
-  void undeclareAllParameters();
+  /** @brief Convenience functions for declaring ROS parameters */
   std::string getFullName(const std::string & param_name);
 
 protected:
   LayeredCostmap * layered_costmap_;
   std::string name_;
   tf2_ros::Buffer * tf_;
-  nav2_util::LifecycleNode::SharedPtr node_;
   rclcpp::Node::SharedPtr client_node_;
   rclcpp::Node::SharedPtr rclcpp_node_;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
 
   /** @brief This is called at the end of initialize().  Override to
    * implement subclass-specific initialization.

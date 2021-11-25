@@ -39,7 +39,7 @@ Costmap::Costmap(
 {
   if (lethal_threshold_ < 0. || lethal_threshold_ > 100.) {
     RCLCPP_WARN(
-      node_->get_logger(), "Costmap: Lethal threshold set to %.2f, it should be within"
+      node_->get_logger(), "Costmap: Lethal threshold set to %d, it should be within"
       " bounds 0-100. This could result in potential collisions!", lethal_threshold_);
     // lethal_threshold_ = std::max(std::min(lethal_threshold_, 100), 0);
   }

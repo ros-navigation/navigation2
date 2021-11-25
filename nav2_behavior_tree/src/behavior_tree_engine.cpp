@@ -1,4 +1,5 @@
 // Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2020 Florian Gramss
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,8 +21,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp_v3/utils/shared_library.h"
-
-using namespace std::chrono_literals;
 
 namespace nav2_behavior_tree
 {
@@ -45,30 +44,59 @@ BehaviorTreeEngine::run(
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes
-  while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
-    if (cancelRequested()) {
-      tree->rootNode()->halt();
-      return BtStatus::CANCELED;
+  try {
+    while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
+      if (cancelRequested()) {
+        tree->rootNode()->halt();
+        return BtStatus::CANCELED;
+      }
+
+      result = tree->tickRoot();
+
+      onLoop();
+
+      loopRate.sleep();
     }
-
-    result = tree->tickRoot();
-
-    onLoop();
-
-    loopRate.sleep();
+  } catch (const std::exception & ex) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("BehaviorTreeEngine"),
+      "Behavior tree threw exception: %s. Exiting with failure.", ex.what());
+    return BtStatus::FAILED;
   }
 
   return (result == BT::NodeStatus::SUCCESS) ? BtStatus::SUCCEEDED : BtStatus::FAILED;
 }
 
 BT::Tree
-BehaviorTreeEngine::buildTreeFromText(
+BehaviorTreeEngine::createTreeFromText(
   const std::string & xml_string,
   BT::Blackboard::Ptr blackboard)
 {
-  BT::XMLParser p(factory_);
-  p.loadFromText(xml_string);
-  return p.instantiateTree(blackboard);
+  return factory_.createTreeFromText(xml_string, blackboard);
+}
+
+BT::Tree
+BehaviorTreeEngine::createTreeFromFile(
+  const std::string & file_path,
+  BT::Blackboard::Ptr blackboard)
+{
+  return factory_.createTreeFromFile(file_path, blackboard);
+}
+
+// In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
+void
+BehaviorTreeEngine::haltAllActions(BT::TreeNode * root_node)
+{
+  // this halt signal should propagate through the entire tree.
+  root_node->halt();
+
+  // but, just in case...
+  auto visitor = [](BT::TreeNode * node) {
+      if (node->status() == BT::NodeStatus::RUNNING) {
+        node->halt();
+      }
+    };
+  BT::applyRecursiveVisitor(root_node, visitor);
 }
 
 }  // namespace nav2_behavior_tree

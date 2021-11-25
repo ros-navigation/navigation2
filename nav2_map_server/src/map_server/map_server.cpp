@@ -62,20 +62,19 @@ using namespace std::placeholders;
 namespace nav2_map_server
 {
 
-MapServer::MapServer()
-: nav2_util::LifecycleNode("map_server")
+MapServer::MapServer(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("map_server", "", false, options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare the node parameters
-  declare_parameter("yaml_filename");
+  declare_parameter("yaml_filename", rclcpp::PARAMETER_STRING);
   declare_parameter("topic_name", "map");
   declare_parameter("frame_id", "map");
 }
 
 MapServer::~MapServer()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn
@@ -129,6 +128,9 @@ MapServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
   occ_pub_->publish(std::move(occ_grid));
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -138,6 +140,9 @@ MapServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   occ_pub_->on_deactivate();
+
+  // destroy bond connection
+  destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -151,13 +156,6 @@ MapServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   occ_service_.reset();
   load_map_service_.reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-MapServer::on_error(const rclcpp_lifecycle::State & /*state*/)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -237,3 +235,10 @@ void MapServer::updateMsgHeader()
 }
 
 }  // namespace nav2_map_server
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_map_server::MapServer)

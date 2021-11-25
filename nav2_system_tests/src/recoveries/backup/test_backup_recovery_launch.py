@@ -47,7 +47,8 @@ def generate_launch_description():
         convert_types=True)
 
     return LaunchDescription([
-        SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
+        SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+        SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
 
         # Launch gazebo server for simulation
         ExecuteProcess(
@@ -59,13 +60,13 @@ def generate_launch_description():
         #              using a local copy of TB3 urdf file
         Node(
             package='tf2_ros',
-            node_executable='static_transform_publisher',
+            executable='static_transform_publisher',
             output='screen',
             arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link']),
 
         Node(
             package='tf2_ros',
-            node_executable='static_transform_publisher',
+            executable='static_transform_publisher',
             output='screen',
             arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan']),
 

@@ -30,17 +30,15 @@ BackUpAction::BackUpAction(
   getInput("backup_dist", dist);
   double speed;
   getInput("backup_speed", speed);
-
-  // silently fix, vector direction determined by distance sign
-  if (speed < 0.0) {
-    speed *= -1.0;
-  }
+  double time_allowance;
+  getInput("time_allowance", time_allowance);
 
   // Populate the input message
   goal_.target.x = dist;
   goal_.target.y = 0.0;
   goal_.target.z = 0.0;
   goal_.speed = speed;
+  goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
 }
 
 void BackUpAction::on_tick()

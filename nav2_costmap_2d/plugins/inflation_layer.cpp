@@ -40,6 +40,8 @@
 #include <limits>
 #include <map>
 #include <vector>
+#include <algorithm>
+#include <utility>
 
 #include "nav2_costmap_2d/costmap_math.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
@@ -63,12 +65,19 @@ InflationLayer::InflationLayer()
   inflate_around_unknown_(false),
   cell_inflation_radius_(0),
   cached_cell_inflation_radius_(0),
+  resolution_(0),
   cache_length_(0),
   last_min_x_(std::numeric_limits<double>::lowest()),
   last_min_y_(std::numeric_limits<double>::lowest()),
   last_max_x_(std::numeric_limits<double>::max()),
   last_max_y_(std::numeric_limits<double>::max())
 {
+  access_ = new mutex_t();
+}
+
+InflationLayer::~InflationLayer()
+{
+  delete access_;
 }
 
 void
@@ -80,11 +89,17 @@ InflationLayer::onInitialize()
   declareParameter("inflate_unknown", rclcpp::ParameterValue(false));
   declareParameter("inflate_around_unknown", rclcpp::ParameterValue(false));
 
-  node_->get_parameter(name_ + "." + "enabled", enabled_);
-  node_->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
-  node_->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
-  node_->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
-  node_->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
+  {
+    auto node = node_.lock();
+    if (!node) {
+      throw std::runtime_error{"Failed to lock node"};
+    }
+    node->get_parameter(name_ + "." + "enabled", enabled_);
+    node->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
+    node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
+    node->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
+    node->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
+  }
 
   current_ = true;
   seen_.clear();
@@ -146,8 +161,7 @@ InflationLayer::onFootprintChanged()
   need_reinflation_ = true;
 
   RCLCPP_DEBUG(
-    rclcpp::get_logger(
-      "nav2_costmap_2d"), "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
+    logger_, "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
     " inscribed_radius_ = %.3f, inflation_radius_ = %.3f",
     layered_costmap_->getFootprint().size(), inscribed_radius_, inflation_radius_);
 }
@@ -158,14 +172,15 @@ InflationLayer::updateCosts(
   int max_i,
   int max_j)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!enabled_ || (cell_inflation_radius_ == 0)) {
     return;
   }
 
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)
-  for (auto & dist:inflation_cells_) {
+  for (auto & dist : inflation_cells_) {
     RCLCPP_FATAL_EXPRESSION(
-      rclcpp::get_logger("nav2_costmap_2d"),
+      logger_,
       !dist.empty(), "The inflation list must be empty at the beginning of inflation");
   }
 
@@ -174,8 +189,7 @@ InflationLayer::updateCosts(
 
   if (seen_.size() != size_x * size_y) {
     RCLCPP_WARN(
-      rclcpp::get_logger(
-        "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ vector size is wrong");
+      logger_, "InflationLayer::updateCosts(): seen_ vector size is wrong");
     seen_ = std::vector<bool>(size_x * size_y, false);
   }
 
@@ -185,6 +199,10 @@ InflationLayer::updateCosts(
   // box min_i...max_j, by the amount cell_inflation_radius_.  Cells
   // up to that distance outside the box can still influence the costs
   // stored in cells inside the box.
+  const int base_min_i = min_i;
+  const int base_min_j = min_j;
+  const int base_max_i = max_i;
+  const int base_max_j = max_j;
   min_i -= static_cast<int>(cell_inflation_radius_);
   min_j -= static_cast<int>(cell_inflation_radius_);
   max_i += static_cast<int>(cell_inflation_radius_);
@@ -215,9 +233,10 @@ InflationLayer::updateCosts(
   // Process cells by increasing distance; new cells are appended to the
   // corresponding distance bin, so they
   // can overtake previously inserted but farther away cells
-  for (const auto & dist_bin: inflation_cells_) {
+  for (const auto & dist_bin : inflation_cells_) {
     for (std::size_t i = 0; i < dist_bin.size(); ++i) {
-      // Do not use iterator or for-range based loops to iterate though dist_bin, since it's size might
+      // Do not use iterator or for-range based loops to
+      // iterate though dist_bin, since it's size might
       // change when a new cell is enqueued, invalidating all iterators
       unsigned int index = dist_bin[i].index_;
 
@@ -236,12 +255,21 @@ InflationLayer::updateCosts(
       // assign the cost associated with the distance from an obstacle to the cell
       unsigned char cost = costLookup(mx, my, sx, sy);
       unsigned char old_cost = master_array[index];
-      if (old_cost == NO_INFORMATION &&
-        (inflate_unknown_ ? (cost > FREE_SPACE) : (cost >= INSCRIBED_INFLATED_OBSTACLE)))
+      // In order to avoid artifacts appeared out of boundary areas
+      // when some layer is going after inflation_layer,
+      // we need to apply inflation_layer only to inside of given bounds
+      if (static_cast<int>(mx) >= base_min_i &&
+        static_cast<int>(my) >= base_min_j &&
+        static_cast<int>(mx) < base_max_i &&
+        static_cast<int>(my) < base_max_j)
       {
-        master_array[index] = cost;
-      } else {
-        master_array[index] = std::max(old_cost, cost);
+        if (old_cost == NO_INFORMATION &&
+          (inflate_unknown_ ? (cost > FREE_SPACE) : (cost >= INSCRIBED_INFLATED_OBSTACLE)))
+        {
+          master_array[index] = cost;
+        } else {
+          master_array[index] = std::max(old_cost, cost);
+        }
       }
 
       // attempt to put the neighbors of the current cell onto the inflation list
@@ -260,10 +288,12 @@ InflationLayer::updateCosts(
     }
   }
 
-  for (auto & dist:inflation_cells_) {
+  for (auto & dist : inflation_cells_) {
     dist.clear();
     dist.reserve(200);
   }
+
+  current_ = true;
 }
 
 /**
@@ -302,6 +332,7 @@ InflationLayer::enqueue(
 void
 InflationLayer::computeCaches()
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (cell_inflation_radius_ == 0) {
     return;
   }

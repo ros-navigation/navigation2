@@ -27,17 +27,45 @@ namespace nav2_recoveries
 {
 using SpinAction = nav2_msgs::action::Spin;
 
+/**
+ * @class nav2_recoveries::Spin
+ * @brief An action server recovery for spinning in
+ */
 class Spin : public Recovery<SpinAction>
 {
 public:
+  /**
+   * @brief A constructor for nav2_recoveries::Spin
+   */
   Spin();
   ~Spin();
 
+  /**
+   * @brief Initialization to run behavior
+   * @param command Goal to execute
+   * @return Status of recovery
+   */
   Status onRun(const std::shared_ptr<const SpinAction::Goal> command) override;
+
+  /**
+   * @brief Configuration of recovery action
+   */
   void onConfigure() override;
+
+  /**
+   * @brief Loop function to run behavior
+   * @return Status of recovery
+   */
   Status onCycleUpdate() override;
 
 protected:
+  /**
+   * @brief Check if pose is collision free
+   * @param distance Distance to check forward
+   * @param cmd_vel current commanded velocity
+   * @param pose2d Current pose
+   * @return is collision free or not
+   */
   bool isCollisionFree(
     const double & distance,
     geometry_msgs::msg::Twist * cmd_vel,
@@ -52,6 +80,8 @@ protected:
   double prev_yaw_;
   double relative_yaw_;
   double simulate_ahead_time_;
+  rclcpp::Duration command_time_allowance_{0, 0};
+  rclcpp::Time end_time_;
 };
 
 }  // namespace nav2_recoveries

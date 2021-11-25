@@ -1,11 +1,15 @@
 # nav2_behavior_tree
 
-The nav2_behavior_tree module provides:
-* A C++ template class for integrating ROS2 actions into Behavior Trees,
-* Navigation-specific behavior tree nodes, and
-* a generic BehaviorTreeEngine class that simplifies the integration of BT processing into ROS2 nodes.
+This module is used by the nav2_bt_navigator to implement a ROS2 node that executes navigation Behavior Trees for either navigation or autonomy systems. The nav2_behavior_tree module uses the [Behavior-Tree.CPP library](https://github.com/BehaviorTree/BehaviorTree.CPP) for the core Behavior Tree processing.
 
-This module is used by the nav2_bt_navigator to implement a ROS2 node that executes navigation Behavior Trees. The nav2_behavior_tree module uses the [Behavior-Tree.CPP library](https://github.com/BehaviorTree/BehaviorTree.CPP) for the core Behavior Tree processing.
+The nav2_behavior_tree module provides:
+* A C++ template class for easily integrating ROS2 actions and services into Behavior Trees,
+* Navigation-specific behavior tree nodes, and
+* a generic BehaviorTreeEngine class that simplifies the integration of BT processing into ROS2 nodes for navigation or higher-level autonomy applications.
+
+See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-bt-xml.html) for additional parameter descriptions and a list of XML nodes made available in this package. Also review the [Nav2 Behavior Tree Explanation](https://navigation.ros.org/behavior_trees/index.html) pages explaining more context on the default behavior trees and examples provided in this package. A [tutorial](https://navigation.ros.org/plugin_tutorials/docs/writing_new_bt_plugin.html) is also provided to explain how to create a simple BT plugin.
+
+See the [Navigation Plugin list](https://navigation.ros.org/plugins/index.html) for a list of the currently known and available planner plugins. 
 
 ## The bt_action_node Template and the Behavior Tree Engine
 
@@ -58,26 +62,5 @@ The BehaviorTree engine has a run method that accepts an XML description of a BT
 ```
 
 See the code in the [BT Navigator](../nav2_bt_navigator/src/bt_navigator.cpp) for an example usage of the BehaviorTreeEngine.
-
-## Navigation-Specific Behavior Tree Nodes
-
-The nav2_behavior_tree package provides several navigation-specific nodes that are pre-registered and can be included in Behavior Trees.
-
-| BT Node   |      Type      |  Description |
-|----------|:-------------|------|
-| Backup |  Action | Invokes the BackUp ROS2 action server, which causes the robot to back up to a specific pose. This is used in nav2 Behavior Trees as a recovery behavior. The nav2_recoveries module implements the BackUp action server. |
-| ComputePathToPose |    Action   | Invokes the ComputePathToPose ROS2 action server, which is implemented by the nav2_planner module. The server address can be remapped using the `server_name` input port. |
-| FollowPath | Action |Invokes the FollowPath ROS2 action server, which is implemented by the controller plugin modules loaded. The server address can be remapped using the `server_name` input port. |
-| GoalReached | Condition | Checks the distance to the goal, if the distance to goal is less than the pre-defined threshold, the tree returns SUCCESS, otherwise it returns FAILURE. |
-| IsStuck | Condition | Determines if the robot is not progressing towards the goal. If the robot is stuck and not progressing, the condition returns SUCCESS, otherwise it returns FAILURE. |
-| TransformAvailable | Condition | Checks if a TF transform is available. Returns failure if it cannot be found. Once found, it will always return success. Useful for initial condition checks. |
-| GoalUpdated | Condition | Checks if the global navigation goal has changed in the blackboard. Returns failure if the goal is the same, if it changes, it returns success. |
-| NavigateToPose | Action | Invokes the NavigateToPose ROS2 action server, which is implemented by the bt_navigator module. |
-| RateController | Decorator | A node that throttles the tick rate for its child. The tick rate can be supplied to the node as a parameter. The node returns RUNNING when it is not ticking its child. Currently, in the navigation stack, the `RateController` is used to adjust the rate at which the `ComputePathToPose` and `GoalReached` nodes are ticked. |
-| DistanceController | Decorator | A node that controls the tick rate for its child based on the distance traveled. The distance to be traveled before replanning can be supplied to the node as a parameter. The node returns RUNNING when it is not ticking its child. Currently, in the navigation stack, the `DistanceController` is used to adjust the rate at which the `ComputePathToPose` and `GoalReached` nodes are ticked. |
-| SpeedController | Decorator | A node that controls the tick rate for its child based on the current robot speed. This decorator offers the most flexibility as the user can set the minimum/maximum tick rate which is adjusted according to the current robot speed. |
-| RecoveryNode | Control | The RecoveryNode is a control flow node with two children.  It returns SUCCESS if and only if the first child returns SUCCESS. The second child will be executed only if the first child returns FAILURE. If the second child SUCCEEDS, then the first child will be executed again. The user can specify how many times the recovery actions should be taken before returning FAILURE. In nav2, the RecoveryNode is included in Behavior Trees to implement recovery actions upon failures.
-| Spin | Action | Invokes the Spin ROS2 action server, which is implemented by the nav2_recoveries module. This action is using in nav2 Behavior Trees as a recovery behavior. |
-| PipelineSequence | Control | Ticks the first child till it succeeds, then ticks the first and second children till the second one succeeds. It then ticks the first, second, and third children until the third succeeds, and so on, and so on. If at any time a child returns RUNNING, that doesn't change the behavior. If at any time a child returns FAILURE, that stops all children and returns FAILURE overall.|
 
 For more information about the behavior tree nodes that are available in the default BehaviorTreeCPP library, see documentation here: https://www.behaviortree.dev/bt_basics/

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>dwb_critics</name>
-  <version>0.4.1</version>
+  <version>1.0.0</version>
   <description>The dwb_critics package</description>
   <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
   <license>BSD-3-Clause</license>
@@ -23,6 +23,7 @@
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
 
   <export>
       <build_type>ament_cmake</build_type>
