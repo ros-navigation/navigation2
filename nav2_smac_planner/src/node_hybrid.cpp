@@ -75,7 +75,6 @@ void HybridMotionTable::initDubin(
   reverse_penalty = search_info.reverse_penalty;
   change_reverse_penalty = search_info.change_reverse_penalty;
   max_analytic_expansion_cost_subelevation = search_info.max_analytic_expansion_cost_subelevation;
-  max_analytic_expansion_length = search_info.max_analytic_expansion_length;
   obstacle_heuristic_enabled = search_info.obstacle_heuristic_enabled;
   obstacle_heuristic_admissible = search_info.obstacle_heuristic_admissible;
 
@@ -176,7 +175,6 @@ void HybridMotionTable::initReedsShepp(
   reverse_penalty = search_info.reverse_penalty;
   change_reverse_penalty = search_info.change_reverse_penalty;
   max_analytic_expansion_cost_subelevation = search_info.max_analytic_expansion_cost_subelevation;
-  max_analytic_expansion_length = search_info.max_analytic_expansion_length;
   obstacle_heuristic_enabled = search_info.obstacle_heuristic_enabled;
   obstacle_heuristic_admissible = search_info.obstacle_heuristic_admissible;
 

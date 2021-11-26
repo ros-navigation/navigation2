@@ -237,7 +237,6 @@ TEST(AStarTest, test_a_star_lattice)
   info.change_reverse_penalty = 0.0;
   info.max_analytic_expansion_angle_range = std::numeric_limits<float>::infinity();
   info.max_analytic_expansion_cost_subelevation = std::numeric_limits<float>::infinity();
-  info.max_analytic_expansion_length = std::numeric_limits<float>::infinity();
   info.obstacle_heuristic_enabled = true;
   info.obstacle_heuristic_admissible = false;
   info.non_straight_penalty = 1.05;
