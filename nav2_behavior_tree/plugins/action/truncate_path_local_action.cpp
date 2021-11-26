@@ -33,7 +33,7 @@ namespace nav2_behavior_tree
 TruncatePathLocal::TruncatePathLocal(
   const std::string & name,
   const BT::NodeConfiguration & conf)
-: BT::AsyncActionNode(name, conf)
+: BT::ActionNodeBase(name, conf)
 {
   tf_buffer_ =
     config().blackboard->template get<std::shared_ptr<tf2_ros::Buffer>>(
@@ -60,14 +60,17 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   getInput("angular_distance_weight", angular_distance_weight);
 
   if (robot_frame.empty() || global_frame.empty()) {
-    getInput("pose", pose);
+    if (!getInput("pose", pose)) {
+      RCLCPP_ERROR(
+        config().blackboard->get<rclcpp::Node::SharedPtr>("node")->get_logger(),
+        "No pose specified for %s", name().c_str());
+      return BT::NodeStatus::FAILURE;
+    }
   } else {
-    nav2_util::getCurrentPose(
-      pose, *tf_buffer_, global_frame, robot_frame,
-      transform_tolerance);
-
-    if (isHaltRequested()) {
-      return BT::NodeStatus::IDLE;
+    if (!nav2_util::getCurrentPose(
+        pose, *tf_buffer_, global_frame, robot_frame,
+        transform_tolerance)) {
+      return BT::NodeStatus::FAILURE;
     }
   }
 

@@ -30,7 +30,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ActionNodeBase to shorten path by some distance
  */
-class TruncatePathLocal : public BT::AsyncActionNode
+class TruncatePathLocal : public BT::ActionNodeBase
 {
 public:
   /**

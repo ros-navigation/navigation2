@@ -57,7 +57,6 @@ public:
   {
     _debug = params.debug;
 
-    // General Params
     _options.linear_solver_type = ceres::DENSE_QR;
 
     _options.max_num_iterations = params.max_iterations;
@@ -73,26 +72,6 @@ public:
     } else {
       _options.logging_type = ceres::SILENT;
     }
-
-    // Line search params (unused with current solver type)
-    // 2 most valid options: STEEPEST_DESCENT, NONLINEAR_CONJUGATE_GRADIENT
-    _options.line_search_direction_type = ceres::NONLINEAR_CONJUGATE_GRADIENT;
-    _options.line_search_type = ceres::WOLFE;
-    _options.nonlinear_conjugate_gradient_type = ceres::POLAK_RIBIERE;
-    _options.line_search_interpolation_type = ceres::CUBIC;
-
-    _options.min_line_search_step_size = params.advanced.min_line_search_step_size;
-    _options.max_num_line_search_step_size_iterations =
-      params.advanced.max_num_line_search_step_size_iterations;
-    _options.line_search_sufficient_function_decrease =
-      params.advanced.line_search_sufficient_function_decrease;
-    _options.max_line_search_step_contraction = params.advanced.max_line_search_step_contraction;
-    _options.min_line_search_step_contraction = params.advanced.min_line_search_step_contraction;
-    _options.max_num_line_search_direction_restarts =
-      params.advanced.max_num_line_search_direction_restarts;
-    _options.line_search_sufficient_curvature_decrease =
-      params.advanced.line_search_sufficient_curvature_decrease;
-    _options.max_line_search_step_expansion = params.advanced.max_line_search_step_expansion;
   }
 
   /**
@@ -230,12 +209,6 @@ public:
               last.block<2, 1>(0, 0),
               current.block<2, 1>(0, 0),
               prelast[2]*last[2]);
-            Eigen::Vector2d arc_center = arcCenter<double>(
-              prelast.block<2, 1>(0, 0),
-              last.block<2, 1>(0, 0),
-              current.block<2, 1>(0, 0),
-              prelast[2]*last[2]);
-            RCLCPP_INFO(rclcpp::get_logger("smoother_server"), "Arc radius: %lf", (last.block<2, 1>(0, 0) - arc_center).norm());
             
             last_dir = 
               tangent_dir.dot((current - last).block<2, 1>(0, 0)*last[2]) >= 0
