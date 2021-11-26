@@ -72,6 +72,7 @@ void SmacPlannerHybrid::configure(
   RCLCPP_INFO(_logger, "Configuring %s of type SmacPlannerHybrid", name.c_str());
 
   int angle_quantizations;
+  double analytic_expansion_max_length_m;
 
   // General planner params
   nav2_util::declare_parameter_if_not_declared(
@@ -118,6 +119,11 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(3.5));
   node->get_parameter(name + ".analytic_expansion_ratio", _search_info.analytic_expansion_ratio);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".analytic_expansion_max_length", rclcpp::ParameterValue(3.0));
+  node->get_parameter(name + ".analytic_expansion_max_length", analytic_expansion_max_length_m);
+  _search_info.analytic_expansion_max_length =
+    analytic_expansion_max_length_m / _costmap->getResolution();
   // default is inf to preserve original behavior. If confirmed to be used, M_PI*0.32 is a good default
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_analytic_expansion_angle_range", rclcpp::ParameterValue(std::numeric_limits<double>::infinity()));
@@ -126,9 +132,6 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_analytic_expansion_cost_subelevation", rclcpp::ParameterValue(std::numeric_limits<double>::infinity()));
   node->get_parameter(name + ".max_analytic_expansion_cost_subelevation", _search_info.max_analytic_expansion_cost_subelevation);
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".max_analytic_expansion_length", rclcpp::ParameterValue(std::numeric_limits<double>::infinity()));
-  node->get_parameter(name + ".max_analytic_expansion_length", _search_info.max_analytic_expansion_length);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".obstacle_heuristic_enabled", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".obstacle_heuristic_enabled", _search_info.obstacle_heuristic_enabled);
@@ -163,6 +166,9 @@ void SmacPlannerHybrid::configure(
   }
 
   // convert to grid coordinates
+  if (!_downsample_costmap) {
+    _downsampling_factor = 1;
+  }
   const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
   _search_info.minimum_turning_radius =
     _search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
@@ -522,6 +528,10 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       } else if (name == _name + ".analytic_expansion_ratio") {
         reinit_a_star = true;
         _search_info.analytic_expansion_ratio = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".analytic_expansion_max_length") {
+        reinit_a_star = true;
+        _search_info.analytic_expansion_max_length =
+          static_cast<float>(parameter.as_double()) / _costmap->getResolution();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == _name + ".downsample_costmap") {
@@ -573,6 +583,9 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
   // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
   if (reinit_a_star || reinit_downsampler || reinit_collision_checker || reinit_smoother) {
     // convert to grid coordinates
+    if (!_downsample_costmap) {
+      _downsampling_factor = 1;
+    }
     const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
     _search_info.minimum_turning_radius =
       _search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);

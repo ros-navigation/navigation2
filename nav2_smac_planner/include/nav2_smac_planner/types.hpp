@@ -39,11 +39,11 @@ struct SearchInfo
   float change_penalty;
   float reverse_penalty;
   float cost_penalty;
-  float analytic_expansion_ratio;
   float change_reverse_penalty;
+  float analytic_expansion_ratio;
+  float analytic_expansion_max_length;
   float max_analytic_expansion_angle_range;
   float max_analytic_expansion_cost_subelevation;
-  float max_analytic_expansion_length;
   std::string lattice_filepath;
   bool obstacle_heuristic_enabled;
   bool obstacle_heuristic_admissible;

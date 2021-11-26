@@ -77,15 +77,20 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
     std::string("Shutting down ");
 
   init_timer_ = this->create_wall_timer(
-    std::chrono::nanoseconds(10),
+    0s,
     [this]() -> void {
       init_timer_->cancel();
       createLifecycleServiceClients();
       if (autostart_) {
-        startup();
+        init_timer_ = this->create_wall_timer(
+          0s,
+          [this]() -> void {
+            init_timer_->cancel();
+            startup();
+          },
+          callback_group_);
       }
-    },
-    callback_group_);
+    });
   auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor->add_callback_group(callback_group_, get_node_base_interface());
   service_thread_ = std::make_unique<nav2_util::NodeThread>(executor);

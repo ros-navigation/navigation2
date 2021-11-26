@@ -80,8 +80,6 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".min_approach_linear_velocity", rclcpp::ParameterValue(0.05));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".use_approach_linear_velocity_scaling", rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_allowed_time_to_collision", rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_regulated_linear_velocity_scaling", rclcpp::ParameterValue(true));
@@ -123,9 +121,6 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(
     plugin_name_ + ".min_approach_linear_velocity",
     min_approach_linear_velocity_);
-  node->get_parameter(
-    plugin_name_ + ".use_approach_linear_velocity_scaling",
-    use_approach_vel_scaling_);
   node->get_parameter(
     plugin_name_ + ".max_allowed_time_to_collision",
     max_allowed_time_to_collision_);
@@ -409,7 +404,21 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   pose_msg.header.frame_id = arc_pts_msg.header.frame_id;
   pose_msg.header.stamp = arc_pts_msg.header.stamp;
 
-  const double projection_time = costmap_->getResolution() / fabs(linear_vel);
+  double projection_time = 0.0;
+  if (fabs(linear_vel) < 0.01 && fabs(angular_vel) > 0.01) {
+    // rotating to heading at goal or toward path
+    // Equation finds the angular distance required for the largest
+    // part of the robot radius to move to another costmap cell:
+    // theta_min = 2.0 * sin ((res/2) / r_max)
+    // via isosceles triangle r_max-r_max-resolution,
+    // dividing by angular_velocity gives us a timestep.
+    double max_radius = costmap_ros_->getLayeredCostmap()->getCircumscribedRadius();
+    projection_time =
+      2.0 * sin((costmap_->getResolution() / 2) / max_radius) / fabs(angular_vel);
+  } else {
+    // Normal path tracking
+    projection_time = costmap_->getResolution() / fabs(linear_vel);
+  }
 
   geometry_msgs::msg::Pose2D curr_pose;
   curr_pose.x = robot_pose.pose.position.x;
@@ -529,7 +538,7 @@ void RegulatedPurePursuitController::applyConstraints(
   // This expression is eq. to (1) holding time to goal, t, constant using the theoretical
   // lookahead distance and proposed velocity and (2) using t with the actual lookahead
   // distance to scale the velocity (e.g. t = lookahead / velocity, v = carrot / t).
-  if (use_approach_vel_scaling_ && dist_error > 2.0 * costmap_->getResolution()) {
+  if (dist_error > 2.0 * costmap_->getResolution()) {
     double velocity_scaling = 1.0 - (dist_error / lookahead_dist);
     double unbounded_vel = approach_vel * velocity_scaling;
     if (unbounded_vel < min_approach_linear_velocity_) {
@@ -743,8 +752,6 @@ RegulatedPurePursuitController::dynamicParametersCallback(
         use_regulated_linear_velocity_scaling_ = parameter.as_bool();
       } else if (name == plugin_name_ + ".use_cost_regulated_linear_velocity_scaling") {
         use_cost_regulated_linear_velocity_scaling_ = parameter.as_bool();
-      } else if (name == plugin_name_ + ".use_approach_vel_scaling") {
-        use_approach_vel_scaling_ = parameter.as_bool();
       } else if (name == plugin_name_ + ".use_rotate_to_heading") {
         if (parameter.as_bool() && allow_reversing_) {
           RCLCPP_WARN(

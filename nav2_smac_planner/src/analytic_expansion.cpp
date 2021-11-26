@@ -144,7 +144,11 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
   to[2] = node->motion_table.getAngleFromBin(goal->pose.theta);
 
   float d = node->motion_table.state_space->distance(from(), to());
-  if (d * _collision_checker->getCostmap()->getResolution() > node->motion_table.max_analytic_expansion_length) {
+  // If the length is too far, exit. This prevents unsafe shortcutting of paths
+  // into higher cost areas far out from the goal itself, let search to the work of getting
+  // close before the analytic expansion brings it home. This should never be smaller than
+  // 4-5x the minimum turning radius being used, or planning times will begin to spike.
+  if (d > _search_info.analytic_expansion_max_length) {
     return AnalyticExpansionNodes();
   }
 
