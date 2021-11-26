@@ -166,6 +166,17 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
   nav_msgs::msg::Path path = planner_2d->createPlan(start, goal);
   EXPECT_GT(static_cast<int>(path.poses.size()), 0);
 
+  // test if the goal is unsafe
+  for (int i = 7; i <= 14; i++) {
+    for (int j = 7; j <= 14; j++) {
+      costmap_ros->getCostmap()->setCost(i, j, 254);
+    }
+  }
+  goal.pose.position.x = 1.0;
+  goal.pose.position.y = 1.0;
+  path = planner_2d->createPlan(start, goal);
+  EXPECT_EQ(static_cast<int>(path.poses.size()), 0);
+
   planner_2d->deactivate();
   planner_2d->cleanup();
 

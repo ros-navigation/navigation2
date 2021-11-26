@@ -113,6 +113,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.analytic_expansion_ratio", 4.0),
       rclcpp::Parameter("test.max_planning_time", 10.0),
       rclcpp::Parameter("test.lookup_table_size", 30.0),
+      rclcpp::Parameter("test.analytic_expansion_max_length", 42.0),
       rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP"))});
 
   rclcpp::spin_until_future_complete(
@@ -133,6 +134,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(nodeSE2->get_parameter("test.analytic_expansion_ratio").as_double(), 4.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.max_planning_time").as_double(), 10.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.lookup_table_size").as_double(), 30.0);
+  EXPECT_EQ(nodeSE2->get_parameter("test.analytic_expansion_max_length").as_double(), 42.0);
   EXPECT_EQ(
     nodeSE2->get_parameter("test.motion_model_for_search").as_string(),
     std::string("REEDS_SHEPP"));
