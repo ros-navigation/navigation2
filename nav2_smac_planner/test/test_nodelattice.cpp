@@ -262,7 +262,7 @@ TEST(NodeLatticeTest, test_get_neighbors)
       return false;
     };
 
-  nav2_smac_planner::NodeLattice::NodeVector neighbors;
+  nav2_smac_planner::NodeLattice::NodeCandidateVector neighbors;
   node.getNeighbors(neighborGetter, checker.get(), false, neighbors);
   // should be empty since totally invalid
   EXPECT_EQ(neighbors.size(), 0u);

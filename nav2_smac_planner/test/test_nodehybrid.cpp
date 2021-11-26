@@ -209,7 +209,7 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
       return false;
     };
 
-  nav2_smac_planner::NodeHybrid::NodeVector neighbors;
+  nav2_smac_planner::NodeHybrid::NodeCandidateVector neighbors;
   node->getNeighbors(neighborGetter, checker.get(), false, neighbors);
   delete node;
 

@@ -217,9 +217,13 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalytic
   // Legitimate final path - set the parent relationships, states, and poses
   NodePtr prev = node;
   for (const auto & node_pose : expanded_nodes) {
-    const auto & n = node_pose.node;
+    auto n = node_pose.node;
     cleanNode(n);
-    if (!n->wasVisited() && n->getIndex() != goal_node->getIndex()) {
+    if (n->getIndex() != goal_node->getIndex()) {
+      if (n->wasVisited()) {
+        n = new NodeT(-1);
+        _detached_nodes.push_back(n);
+      }
       // Make sure this node has not been visited by the regular algorithm.
       // If it has been, there is the (slight) chance that it is in the path we are expanding
       // from, so we should skip it.
@@ -236,6 +240,13 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalytic
     goal_node->visited();
   }
   return goal_node;
+}
+
+template<typename NodeT>
+void AnalyticExpansion<NodeT>::cleanup() {
+  for (NodePtr node : _detached_nodes)
+    delete node;
+  _detached_nodes.clear();
 }
 
 template<>

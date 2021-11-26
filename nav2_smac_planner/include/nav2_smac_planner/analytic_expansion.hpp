@@ -117,12 +117,15 @@ public:
    */
   void cleanNode(const NodePtr & nodes);
 
+  void cleanup();
+
 protected:
   MotionModel _motion_model;
   SearchInfo _search_info;
   bool _traverse_unknown;
   unsigned int _dim_3_size;
   GridCollisionChecker * _collision_checker;
+  std::list<NodePtr> _detached_nodes;
 };
 
 }  // namespace nav2_smac_planner

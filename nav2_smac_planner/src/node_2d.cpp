@@ -119,7 +119,7 @@ void Node2D::getNeighbors(
   std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> & NeighborGetter,
   GridCollisionChecker * collision_checker,
   const bool & traverse_unknown,
-  NodeVector & neighbors)
+  NodeCandidateVector & neighbors)
 {
   // NOTE(stevemacenski): Irritatingly, the order here matters. If you start in free
   // space and then expand 8-connected, the first set of neighbors will be all cost
@@ -149,7 +149,7 @@ void Node2D::getNeighbors(
 
     if (NeighborGetter(index, neighbor)) {
       if (neighbor->isNodeValid(traverse_unknown, collision_checker) && !neighbor->wasVisited()) {
-        neighbors.push_back(neighbor);
+        neighbors.emplace_back(neighbor, child);
       }
     }
   }

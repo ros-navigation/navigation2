@@ -613,7 +613,7 @@ void NodeHybrid::getNeighbors(
   std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> & NeighborGetter,
   GridCollisionChecker * collision_checker,
   const bool & traverse_unknown,
-  NodeVector & neighbors)
+  NodeCandidateVector & neighbors)
 {
   unsigned int index = 0;
   NodePtr neighbor = nullptr;
@@ -638,7 +638,7 @@ void NodeHybrid::getNeighbors(
           motion_projections[i]._theta));
       if (neighbor->isNodeValid(traverse_unknown, collision_checker)) {
         neighbor->setMotionPrimitiveIndex(i);
-        neighbors.push_back(neighbor);
+        neighbors.emplace_back(neighbor, initial_node_coords);
       } else {
         neighbor->setPose(initial_node_coords);
       }
