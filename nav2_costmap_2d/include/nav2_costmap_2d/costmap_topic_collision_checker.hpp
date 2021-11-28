@@ -83,7 +83,7 @@ protected:
    * @param fetch_latest_footprint Defaults to true. When checking with multiple poses at once,
    * footprint should be fetched in the first check but fetching can be skipped in consequent checks for speedup
    */
-  Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose, bool fetch_latest_footprint);
+  Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose, bool fetch_latest_footprint = true);
 
   // Name used for logging
   std::string name_;
