@@ -334,6 +334,8 @@ bool PlannerServer::validatePath(
 void
 PlannerServer::computePlanThroughPoses()
 {
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+
   auto start_time = steady_clock_.now();
 
   // Initialize the ComputePathToPose goal and result
@@ -422,6 +424,8 @@ PlannerServer::computePlanThroughPoses()
 void
 PlannerServer::computePlan()
 {
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+
   auto start_time = steady_clock_.now();
 
   // Initialize the ComputePathToPose goal and result
@@ -521,7 +525,7 @@ PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
 rcl_interfaces::msg::SetParametersResult
 PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
-  // No need to lock function, runs on same callback group as action, cannot run at the same time.
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {

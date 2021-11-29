@@ -20,6 +20,7 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <mutex>
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -214,6 +215,7 @@ protected:
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  std::mutex dynamic_params_lock_;
 
   // Planner
   PlannerMap planners_;

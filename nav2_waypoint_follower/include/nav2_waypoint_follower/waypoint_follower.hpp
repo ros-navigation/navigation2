@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
@@ -125,6 +126,7 @@ protected:
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  std::mutex dynamic_params_lock_;
 
   // Our action server
   std::unique_ptr<ActionServer> action_server_;

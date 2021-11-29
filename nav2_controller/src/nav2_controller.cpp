@@ -343,6 +343,7 @@ bool ControllerServer::findGoalCheckerId(
 
 void ControllerServer::computeControl()
 {
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
 
   try {
@@ -590,7 +591,7 @@ void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::Shar
 rcl_interfaces::msg::SetParametersResult
 ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
-  // No need to lock function, runs on same callback group as action, cannot run at the same time.
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {

@@ -150,6 +150,8 @@ WaypointFollower::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 void
 WaypointFollower::followWaypoints()
 {
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+
   auto goal = action_server_->get_current_goal();
   auto feedback = std::make_shared<ActionT::Feedback>();
   auto result = std::make_shared<ActionT::Result>();
@@ -317,7 +319,7 @@ WaypointFollower::goalResponseCallback(
 rcl_interfaces::msg::SetParametersResult
 WaypointFollower::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
-  // No need to lock function, runs on same callback group as action, cannot run at the same time.
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {

@@ -20,6 +20,7 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <mutex>
 
 #include "nav2_core/controller.hpp"
 #include "nav2_core/progress_checker.hpp"
@@ -210,6 +211,7 @@ protected:
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  std::mutex dynamic_params_lock_;
 
   // The controller needs a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
