@@ -53,6 +53,8 @@ BackupRecoveryTester::BackupRecoveryTester()
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&BackupRecoveryTester::amclPoseCallback, this, std::placeholders::_1));
+
+  stamp_ = node_->now();
 }
 
 BackupRecoveryTester::~BackupRecoveryTester()
@@ -195,7 +197,7 @@ void BackupRecoveryTester::sendInitialPose()
 {
   geometry_msgs::msg::PoseWithCovarianceStamped pose;
   pose.header.frame_id = "map";
-  pose.header.stamp = rclcpp::Time();
+  pose.header.stamp = stamp_;
   pose.pose.pose.position.x = -0.2;
   pose.pose.pose.position.y = 1.5;
   pose.pose.pose.position.z = 0.0;

@@ -100,7 +100,7 @@ void KeepoutFilter::filterInfoCallback(
   }
 
   // Checking that base and multiplier are set to their default values
-  if (msg->base != BASE_DEFAULT or msg->multiplier != MULTIPLIER_DEFAULT) {
+  if (msg->base != BASE_DEFAULT || msg->multiplier != MULTIPLIER_DEFAULT) {
     RCLCPP_ERROR(
       logger_,
       "KeepoutFilter: For proper use of keepout filter base and multiplier"

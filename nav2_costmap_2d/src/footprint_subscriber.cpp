@@ -17,6 +17,10 @@
 #include <memory>
 
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#include "tf2/utils.h"
+#pragma GCC diagnostic pop
 
 namespace nav2_costmap_2d
 {
@@ -24,12 +28,15 @@ namespace nav2_costmap_2d
 FootprintSubscriber::FootprintSubscriber(
   const nav2_util::LifecycleNode::WeakPtr & parent,
   const std::string & topic_name,
-  const double & footprint_timeout)
+  tf2_ros::Buffer & tf,
+  std::string robot_base_frame,
+  double transform_tolerance)
 : topic_name_(topic_name),
-  footprint_timeout_(rclcpp::Duration::from_seconds(footprint_timeout))
+  tf_(tf),
+  robot_base_frame_(robot_base_frame),
+  transform_tolerance_(transform_tolerance)
 {
   auto node = parent.lock();
-  clock_ = node->get_clock();
   footprint_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
     topic_name, rclcpp::SystemDefaultsQoS(),
     std::bind(&FootprintSubscriber::footprint_callback, this, std::placeholders::_1));
@@ -38,22 +45,24 @@ FootprintSubscriber::FootprintSubscriber(
 FootprintSubscriber::FootprintSubscriber(
   const rclcpp::Node::WeakPtr & parent,
   const std::string & topic_name,
-  const double & footprint_timeout)
+  tf2_ros::Buffer & tf,
+  std::string robot_base_frame,
+  double transform_tolerance)
 : topic_name_(topic_name),
-  footprint_timeout_(rclcpp::Duration::from_seconds(footprint_timeout))
+  tf_(tf),
+  robot_base_frame_(robot_base_frame),
+  transform_tolerance_(transform_tolerance)
 {
   auto node = parent.lock();
-  clock_ = node->get_clock();
   footprint_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
     topic_name, rclcpp::SystemDefaultsQoS(),
     std::bind(&FootprintSubscriber::footprint_callback, this, std::placeholders::_1));
 }
 
 bool
-FootprintSubscriber::getFootprint(
+FootprintSubscriber::getFootprintRaw(
   std::vector<geometry_msgs::msg::Point> & footprint,
-  rclcpp::Time & stamp,
-  rclcpp::Duration valid_footprint_timeout)
+  std_msgs::msg::Header & footprint_header)
 {
   if (!footprint_received_) {
     return false;
@@ -62,29 +71,40 @@ FootprintSubscriber::getFootprint(
   auto current_footprint = std::atomic_load(&footprint_);
   footprint = toPointVector(
     std::make_shared<geometry_msgs::msg::Polygon>(current_footprint->polygon));
-  auto & footprint_stamp = current_footprint->header.stamp;
-
-  if (stamp - footprint_stamp > valid_footprint_timeout) {
-    return false;
-  }
+  footprint_header = current_footprint->header;
 
   return true;
 }
 
 bool
-FootprintSubscriber::getFootprint(
+FootprintSubscriber::getFootprintInRobotFrame(
   std::vector<geometry_msgs::msg::Point> & footprint,
-  rclcpp::Duration & valid_footprint_timeout)
+  std_msgs::msg::Header & footprint_header)
 {
-  rclcpp::Time t = clock_->now();
-  return getFootprint(footprint, t, valid_footprint_timeout);
-}
+  if (!getFootprintRaw(footprint, footprint_header)) {
+    return false;
+  }
 
-bool
-FootprintSubscriber::getFootprint(
-  std::vector<geometry_msgs::msg::Point> & footprint)
-{
-  return getFootprint(footprint, footprint_timeout_);
+  geometry_msgs::msg::PoseStamped current_pose;
+  if (!nav2_util::getCurrentPose(
+      current_pose, tf_, footprint_header.frame_id, robot_base_frame_,
+      transform_tolerance_, footprint_header.stamp))
+  {
+    return false;
+  }
+
+  double x = current_pose.pose.position.x;
+  double y = current_pose.pose.position.y;
+  double theta = tf2::getYaw(current_pose.pose.orientation);
+
+  std::vector<geometry_msgs::msg::Point> temp;
+  transformFootprint(-x, -y, 0, footprint, temp);
+  transformFootprint(0, 0, -theta, temp, footprint);
+
+  footprint_header.frame_id = robot_base_frame_;
+  footprint_header.stamp = current_pose.header.stamp;
+
+  return true;
 }
 
 void

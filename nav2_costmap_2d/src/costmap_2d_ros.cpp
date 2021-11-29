@@ -466,8 +466,7 @@ Costmap2DROS::updateMap()
       layered_costmap_->updateMap(x, y, yaw);
 
       auto footprint = std::make_unique<geometry_msgs::msg::PolygonStamped>();
-      footprint->header.frame_id = global_frame_;
-      footprint->header.stamp = now();
+      footprint->header = pose.header;
       transformFootprint(x, y, yaw, padded_footprint_, *footprint);
 
       RCLCPP_DEBUG(get_logger(), "Publishing footprint");
