@@ -40,7 +40,7 @@ WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
     this, std::string("waypoint_task_executor_plugin"),
     rclcpp::ParameterValue(std::string("wait_at_waypoint")));
   nav2_util::declare_parameter_if_not_declared(
-    this, std::string("waypoint_task_executor_plugin.plugin"),
+    this, std::string("wait_at_waypoint.plugin"),
     rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));
 }
 

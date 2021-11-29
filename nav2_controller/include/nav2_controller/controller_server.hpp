@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_
-#define NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_
+#ifndef NAV2_CONTROLLER__CONTROLLER_SERVER_HPP_
+#define NAV2_CONTROLLER__CONTROLLER_SERVER_HPP_
 
 #include <memory>
 #include <string>
@@ -274,4 +274,4 @@ private:
 
 }  // namespace nav2_controller
 
-#endif  // NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_
+#endif  // NAV2_CONTROLLER__CONTROLLER_SERVER_HPP_
