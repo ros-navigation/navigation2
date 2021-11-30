@@ -70,12 +70,12 @@ void ParticleFilterSolver::initPose(const geometry_msgs::msg::PoseWithCovariance
   // Initialize particles randomly around init_pose within a radius particles_init_radius_
   geometry_msgs::msg::Pose temp_pose;
 
-  for (int i = 0; i < particles_count_; i++) {
-    std::random_device rand_device;
-    std::mt19937 gen(rand_device());
-    std::normal_distribution<double> pose_dist(0, particles_init_radius_sd_);
-    std::normal_distribution<double> yaw_dist(0, particles_init_yaw_sd_);
+  std::random_device rand_device;
+  std::mt19937 gen(rand_device());
+  std::normal_distribution<double> pose_dist(0, particles_init_radius_sd_);
+  std::normal_distribution<double> yaw_dist(0, particles_init_yaw_sd_);
 
+  for (int i = 0; i < particles_count_; i++) {
     temp_pose.position.x = init_pose.pose.pose.position.x + pose_dist(gen);
     temp_pose.position.y = init_pose.pose.pose.position.y + pose_dist(gen);
 
