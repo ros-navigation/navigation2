@@ -18,7 +18,7 @@
 #include "nav2_util/string_utils.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/create_timer_ros.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 
@@ -59,7 +59,8 @@ LocalizationServer::~LocalizationServer()
   RCLCPP_INFO(get_logger(), "Destroying");
 }
 
-nav2_util::CallbackReturn LocalizationServer::on_configure(const rclcpp_lifecycle::State & state)
+nav2_util::CallbackReturn LocalizationServer::on_configure(
+  const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring localization interface");
 
@@ -84,7 +85,7 @@ nav2_util::CallbackReturn LocalizationServer::on_configure(const rclcpp_lifecycl
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn LocalizationServer::on_activate(const rclcpp_lifecycle::State & state)
+nav2_util::CallbackReturn LocalizationServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   sample_motion_model_->activate();
   matcher2d_->activate();
@@ -92,16 +93,24 @@ nav2_util::CallbackReturn LocalizationServer::on_activate(const rclcpp_lifecycle
 
   estimated_pose_pub_->on_activate();
 
+  // create bond connection
+  createBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn LocalizationServer::on_deactivate(const rclcpp_lifecycle::State & state)
+nav2_util::CallbackReturn LocalizationServer::on_deactivate(
+  const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
+
+  // destroy bond connection
+  destroyBond();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn LocalizationServer::on_cleanup(const rclcpp_lifecycle::State & state)
+nav2_util::CallbackReturn LocalizationServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   initial_pose_sub_.reset();
 
@@ -127,7 +136,7 @@ nav2_util::CallbackReturn LocalizationServer::on_cleanup(const rclcpp_lifecycle:
 }
 
 
-nav2_util::CallbackReturn LocalizationServer::on_shutdown(const rclcpp_lifecycle::State &)
+nav2_util::CallbackReturn LocalizationServer::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
@@ -275,7 +284,7 @@ void LocalizationServer::ponitCloudAndOdomReceived(
 {
   // Since the sensor data is continually being published by the simulator or robot,
   // we don't want our callbacks to fire until we're in the active state
-  if ((!get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) ||
+  if ((get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) ||
     (!initial_pose_set_)) {return;}
 
   if (!initial_odom_set_) {

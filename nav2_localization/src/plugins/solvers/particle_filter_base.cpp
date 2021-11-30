@@ -20,6 +20,9 @@
 
 #include "angles/angles.h"
 
+// "tf2_geometry_msgs/tf2_geometry_msgs.hpp" MUST be included
+//  before "tf2/utils.h" to avoid undefined symbol during runtime
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
 #include "tf2/LinearMath/Quaternion.h"
 
@@ -173,7 +176,7 @@ geometry_msgs::msg::PoseWithCovarianceStamped ParticleFilterSolver::getMeanPose(
 
   // Calculate covariance of the particle distribution
   double cov_x = 0, cov_y = 0, cov_yaw_sin = 0, cov_yaw_cos = 0;
-  for (int i = 0; i < particles_.size(); i++) {
+  for (std::size_t i = 0; i < particles_.size(); i++) {
     cov_x += (particles_[i].pose_.position.x - mean_x) * (particles_[i].pose_.position.x - mean_x);
     cov_y += (particles_[i].pose_.position.y - mean_y) * (particles_[i].pose_.position.y - mean_y);
 
