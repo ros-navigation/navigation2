@@ -264,6 +264,11 @@ _commands:
               colcon clean packages --yes \
                 --packages-select ${TEST_PACKAGES} \
                 --base-select test_result
+              colcon clean packages --yes \
+                --packages-select ${TEST_PACKAGES} \
+                --base-select build \
+                --clean-match \
+                  "*.gcda"
 
               . install/setup.sh
               set -o xtrace
