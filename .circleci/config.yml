@@ -69,6 +69,7 @@ _commands:
               - << parameters.path >>/build
               - << parameters.path >>/install
               - << parameters.path >>/log
+              - << parameters.path >>/test_results
             when: << parameters.when >>
     install_dependencies:
       description: "Install Dependencies"
