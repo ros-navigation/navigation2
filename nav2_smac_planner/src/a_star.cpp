@@ -234,7 +234,7 @@ bool AStarAlgorithm<NodeT>::createPath(
   NodePtr neighbor = nullptr;
   NodePtr expansion_result = nullptr;
   float g_cost = 0.0;
-  NodeCandidateVector neighbors;
+  NodeVector neighbors;
   int approach_iterations = 0;
   NeighborIterator neighbor_iterator;
   int analytic_iterations = 0;
@@ -307,7 +307,7 @@ bool AStarAlgorithm<NodeT>::createPath(
     for (neighbor_iterator = neighbors.begin();
       neighbor_iterator != neighbors.end(); ++neighbor_iterator)
     {
-      neighbor = neighbor_iterator->first;
+      neighbor = *neighbor_iterator;
 
       // 4.1) Compute the cost to go to this node
       g_cost = current_node->getAccumulatedCost() + current_node->getTraversalCost(neighbor);
@@ -319,9 +319,6 @@ bool AStarAlgorithm<NodeT>::createPath(
 
         // 4.3) Add to queue with heuristic cost
         addNode(g_cost + getHeuristicCost(neighbor), neighbor);
-      }
-      else {
-        neighbor->setPose(neighbor_iterator->second);
       }
     }
   }

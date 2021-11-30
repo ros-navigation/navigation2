@@ -47,12 +47,11 @@ class AStarAlgorithm
 public:
   typedef NodeT * NodePtr;
   typedef std::unordered_map<unsigned int, NodeT> Graph;
+  typedef std::vector<NodePtr> NodeVector;
   typedef std::pair<float, NodeBasic<NodeT>> NodeElement;
   typedef typename NodeT::Coordinates Coordinates;
   typedef typename NodeT::CoordinateVector CoordinateVector;
-  typedef std::pair<NodePtr, Coordinates> NodeCandidate;
-  typedef std::vector<NodeCandidate> NodeCandidateVector;
-  typedef typename NodeCandidateVector::iterator NeighborIterator;
+  typedef typename NodeVector::iterator NeighborIterator;
   typedef std::function<bool (const unsigned int &, NodeT * &)> NodeGetter;
 
   /**

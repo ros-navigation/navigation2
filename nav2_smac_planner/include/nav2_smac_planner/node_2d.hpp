@@ -27,6 +27,7 @@
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "nav2_smac_planner/node_hybrid.hpp"
 
 namespace nav2_smac_planner
 {
@@ -40,6 +41,7 @@ class Node2D
 public:
   typedef Node2D * NodePtr;
   typedef std::unique_ptr<std::vector<Node2D>> Graph;
+  typedef std::vector<NodePtr> NodeVector;
 
   /**
    * @class nav2_smac_planner::Node2D::Coordinates
@@ -55,8 +57,6 @@ public:
     float x, y;
   };
   typedef std::vector<Coordinates> CoordinateVector;
-  typedef std::pair<NodePtr, Coordinates> NodeCandidate;
-  typedef std::vector<NodeCandidate> NodeCandidateVector;
 
   /**
    * @brief A constructor for nav2_smac_planner::Node2D
@@ -219,8 +219,6 @@ public:
     return Coordinates(index % size_x, index / size_x);
   }
 
-  void setPose(Coordinates &) {}
-
   /**
    * @brief Get cost of heuristic of node
    * @param node Node index current
@@ -260,7 +258,7 @@ public:
     std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> & validity_checker,
     GridCollisionChecker * collision_checker,
     const bool & traverse_unknown,
-    NodeCandidateVector & neighbors);
+    NodeVector & neighbors);
 
   /**
    * @brief Set the starting pose for planning, as a node index

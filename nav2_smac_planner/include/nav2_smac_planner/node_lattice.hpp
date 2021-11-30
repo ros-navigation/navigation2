@@ -122,8 +122,6 @@ public:
   typedef std::vector<NodePtr> NodeVector;
   typedef NodeHybrid::Coordinates Coordinates;
   typedef NodeHybrid::CoordinateVector CoordinateVector;
-  typedef std::pair<NodePtr, Coordinates> NodeCandidate;
-  typedef std::vector<NodeCandidate> NodeCandidateVector;
 
   /**
    * @brief A constructor for nav2_smac_planner::NodeLattice
@@ -398,7 +396,7 @@ public:
     nav2_smac_planner::NodeLattice * &)> & validity_checker,
     GridCollisionChecker * collision_checker,
     const bool & traverse_unknown,
-    NodeCandidateVector & neighbors);
+    NodeVector & neighbors);
 
   /**
    * @brief Set the starting pose for planning, as a node index

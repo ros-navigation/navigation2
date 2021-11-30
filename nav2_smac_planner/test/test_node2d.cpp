@@ -141,7 +141,7 @@ TEST(Node2DTest, test_node_2d_neighbors)
       return false;
     };
 
-  nav2_smac_planner::Node2D::NodeCandidateVector neighbors;
+  nav2_smac_planner::Node2D::NodeVector neighbors;
   node->getNeighbors(neighborGetter, checker.get(), false, neighbors);
   delete node;
 
