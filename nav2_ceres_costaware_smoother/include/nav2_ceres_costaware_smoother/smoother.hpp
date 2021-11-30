@@ -200,10 +200,10 @@ public:
           Eigen::Vector2d last_dir;
           auto &prelast = pathOptim[prelast_i];
           auto &last = pathOptim[last_i];
-          auto &current = pathOptim[i];
 
           // Compute orientation of last
           if (i < (int)pathOptim.size()) {
+            auto &current = pathOptim[i];
             Eigen::Vector2d tangent_dir = tangentDir<double>(
               prelast.block<2, 1>(0, 0),
               last.block<2, 1>(0, 0),
@@ -216,8 +216,9 @@ public:
                 : -tangent_dir;
             last_dir.normalize();
           }
-          else
+          else {
             last_dir = end_dir;
+          }
           double last_angle = atan2(last_dir[1], last_dir[0]);
 
           // Interpolate poses between prelast and last

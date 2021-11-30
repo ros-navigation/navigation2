@@ -33,6 +33,19 @@
 
 namespace nav2_ceres_costaware_smoother
 {
+
+template <typename T>
+struct DoubleOnlyLogger {
+  // template<typename... ArgTypes>
+  static void log(const char*, T, T, T, T, T, T, T) {
+  }
+};
+
+template <>
+void DoubleOnlyLogger<double>::log(const char* format, double a1, double a2, double a3, double a4, double a5, double a6, double a7) {
+  RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), format, a1, a2, a3, a4, a5, a6, a7);
+}
+
 /**
  * @struct nav2_ceres_costaware_smoother::SmootherCostFunction
  * @brief Cost function for path smoothing with multiple terms
@@ -209,7 +222,10 @@ protected:
     const Eigen::Matrix<T, 2, 1> & xi_original,
     T & r) const
   {
-    r += (T)weight * (xi - xi_original).dot(xi - xi_original);  // objective function value
+    // if (weight != 0)
+    //   DoubleOnlyLogger<T>::log("w: %lf, xi: %lf %lf, orig: %lf %lf, dist: %lf, res: %lf",
+    //     (T)weight, xi[0], xi[1], xi_original[0], xi_original[1], (xi - xi_original).norm(), (T)weight * (xi - xi_original).squaredNorm());
+    r += (T)weight * (xi - xi_original).squaredNorm();  // objective function value
   }
 
   /**
@@ -261,7 +277,7 @@ protected:
     }
   }
 
-  const Eigen::Vector2d &_original_pos;
+  const Eigen::Vector2d _original_pos;
   double _next_to_last_length_ratio;
   bool _reversing;
   nav2_costmap_2d::Costmap2D * _costmap{nullptr};

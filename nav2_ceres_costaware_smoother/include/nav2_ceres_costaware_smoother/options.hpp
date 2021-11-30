@@ -46,11 +46,16 @@ struct SmootherParams
     std::string local_name = name + std::string(".");
 
     // Smoother params
+    double minimum_turning_radius;
     nav2_util::declare_parameter_if_not_declared(
-      node, local_name + "w_curve", rclcpp::ParameterValue(1.5));
+      node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
+    node->get_parameter(name + ".minimum_turning_radius", minimum_turning_radius);
+    max_curvature = 1.0f / minimum_turning_radius;
+    nav2_util::declare_parameter_if_not_declared(
+      node, local_name + "w_curve", rclcpp::ParameterValue(30.0));
     node->get_parameter(local_name + "w_curve", curvature_weight);
     nav2_util::declare_parameter_if_not_declared(
-      node, local_name + "w_cost", rclcpp::ParameterValue(0.0));
+      node, local_name + "w_cost", rclcpp::ParameterValue(0.015));
     node->get_parameter(local_name + "w_cost", costmap_weight);
     nav2_util::declare_parameter_if_not_declared(
       node, local_name + "w_cost_dir_change", rclcpp::ParameterValue(costmap_weight));

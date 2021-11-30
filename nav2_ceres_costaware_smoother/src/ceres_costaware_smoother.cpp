@@ -56,20 +56,12 @@ void CeresCostawareSmoother::configure(
   plugin_name_ = name;
   logger_ = node->get_logger();
   
-  double minimum_turning_radius;
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.2));
-  node->get_parameter(name + ".minimum_turning_radius", minimum_turning_radius);
-
   _smoother = std::make_unique<nav2_ceres_costaware_smoother::Smoother>();
   _optimizer_params.get(node.get(), name);
   _smoother_params.get(node.get(), name);
-  _smoother_params.max_curvature = 1.0f / minimum_turning_radius;
   _smoother_params.max_time = _optimizer_params.max_time;
   _smoother->initialize(_optimizer_params);
 
-  declare_parameter_if_not_declared(
-    node, plugin_name_ + ".base_footprint_frame", rclcpp::ParameterValue("base_footprint"));
 }
 
 void CeresCostawareSmoother::cleanup()
@@ -112,9 +104,8 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
   path_world.reserve(path.poses.size());
   Eigen::Vector2d start_dir;
   Eigen::Vector2d end_dir;
-  for (int i = 0; i < (int)path.poses.size()-1; i++) {
+  for (int i = 0; i < (int)path.poses.size(); i++) {
     auto &pose = path.poses[i].pose;
-    auto &pos_next = path.poses[i+1].pose.position;
     tf2::Quaternion q;
     tf2::fromMsg(pose.orientation, q);
     double angle = q.getAngle()*sign(q.getZ());
@@ -124,6 +115,7 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
       end_dir = orientation;
     }
     else {
+      auto &pos_next = path.poses[i+1].pose.position;
       Eigen::Vector2d mvmt(pos_next.x - pose.position.x, pos_next.y - pose.position.y);
       bool reversing = _smoother_params.reversing_enabled && orientation.dot(mvmt) < 0;
       path_world.emplace_back(pose.position.x, pose.position.y, reversing ? -1 : 1);
@@ -144,13 +136,11 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
   }
 
   // populate final path
-  geometry_msgs::msg::PoseStamped lastPose = path.poses.back();
-  path.poses.resize(1);
+  path.poses.clear();
   path.poses.reserve(path_world.size());
   geometry_msgs::msg::PoseStamped pose;
   pose.header = path.poses.front().header;
-  for (int i = 1; i < (int)path_world.size()-1; i++) {
-    const auto &pw = path_world[i];
+  for (auto &pw : path_world) {
     pose.pose.position.x = pw[0];
     pose.pose.position.y = pw[1];
     pose.pose.orientation.z = sin(pw[2]/2);
@@ -158,7 +148,6 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
 
     path.poses.push_back(pose);
   }
-  path.poses.push_back(lastPose);
 
   return true;
 }
