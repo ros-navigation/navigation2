@@ -186,6 +186,11 @@ _commands:
                     colcon clean packages --yes \
                       --packages-select ${BUILD_PACKAGES} \
                       --base-select install
+                    colcon clean packages --yes \
+                      --packages-select ${BUILD_PACKAGES} \
+                      --base-select build \
+                      --clean-match \
+                        "*.gcno"
 
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
