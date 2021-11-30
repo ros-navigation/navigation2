@@ -249,6 +249,13 @@ void AnalyticExpansion<NodeT>::cleanNode(const NodePtr & /*expanded_nodes*/)
 {
 }
 
+template<typename NodeT>
+void AnalyticExpansion<NodeT>::cleanup() {
+  for (auto &node : _detached_nodes)
+    delete node;
+  _detached_nodes.clear();
+}
+
 template<>
 typename AnalyticExpansion<Node2D>::AnalyticExpansionNodes AnalyticExpansion<Node2D>::
 getAnalyticPath(
