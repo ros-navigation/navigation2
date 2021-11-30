@@ -220,6 +220,13 @@ _commands:
             name: Test Workspace | << parameters.workspace >>
             working_directory: << parameters.workspace >>
             command: |
+              TEST_UNPASSED=$(
+                colcon list \
+                  --names-only \
+                  --packages-skip-test-passed \
+                | xargs)
+              echo TEST_UNPASSED: $TEST_UNPASSED
+
               TEST_FAILURES=$(
                 colcon list \
                   --names-only \
@@ -236,13 +243,15 @@ _commands:
               echo TEST_INVALID: $TEST_INVALID
 
               TEST_PACKAGES=""
-              if [ -n "$TEST_FAILURES" ] || \
+              if [ -n "$TEST_UNPASSED" ] || \
+                 [ -n "$TEST_FAILURES" ] || \
                  [ -n "$TEST_INVALID" ]
               then
                 TEST_PACKAGES=$(
                   colcon list \
                     --names-only \
                     --packages-above \
+                      $TEST_UNPASSED \
                       $TEST_FAILURES \
                       $TEST_INVALID)
               fi
