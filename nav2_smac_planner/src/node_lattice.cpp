@@ -518,9 +518,7 @@ void NodeLattice::getNeighbors(
       {
         neighbor->setMotionPrimitive(motion_primitives[i]);
         // Marking if this search was obtained in the reverse direction
-        if (backwards) {
-          neighbor->backwards();
-        }
+        neighbor->backwards(backwards);
         neighbors.push_back(neighbor);
       } else {
         neighbor->setPose(initial_node_coords);
