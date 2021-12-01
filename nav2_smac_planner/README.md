@@ -118,8 +118,8 @@ planner_server:
       analytic_expansion_max_length: 3.0    # For Hybrid/Lattice nodes: The maximum length of the analytic expansion to be considered valid to prevent unsafe shortcutting (in meters). This should be scaled with minimum turning radius and be no less than 4-5x the minimum radius
       minimum_turning_radius: 0.40        # For Hybrid/Lattice nodes: minimum turning radius in m of path / vehicle
       reverse_penalty: 2.1                # For Reeds-Shepp model: penalty to apply if motion is reversing, must be => 1
-      change_penalty: 0.20                # For Hybrid nodes: penalty to apply if motion is changing directions, must be >= 0
-      non_straight_penalty: 1.25          # For Hybrid nodes: penalty to apply if motion is non-straight, must be => 1
+      change_penalty: 0.0                 # For Hybrid nodes: penalty to apply if motion is changing directions, must be >= 0
+      non_straight_penalty: 1.20          # For Hybrid nodes: penalty to apply if motion is non-straight, must be => 1
       cost_penalty: 2.0                   # For Hybrid nodes: penalty to apply to higher cost areas when adding into the obstacle map dynamic programming distance expansion heuristic. This drives the robot more towards the center of passages. A value between 1.3 - 3.5 is reasonable.
       lookup_table_size: 20               # For Hybrid nodes: Size of the dubin/reeds-sheep distance window to cache, in meters.
       cache_obstacle_heuristic: True      # For Hybrid nodes: Cache the obstacle map dynamic programming distance expansion heuristic between subsiquent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.  
@@ -176,7 +176,7 @@ Remember, the global costmap is **only** there to provide an environment for the
 
 The penalty function defaults are tuned for all of the planners based on a 5cm costmap. While some change in this should not largely impact default behavior, it may be good to tune for your specific application and needs. The default values were tuned to have decent out of the box behavior for a large number of platforms and resolutions. In most situations, you should not need to play with them. 
 
-**However**, due to the nature of the State Lattice planner being able to use any number of custom generated minimum control sets, this planner may require more tuning to get good behavior. The defaults for State Lattice were generated using the 5cm Ackermann files you can find in this package as initial examples.
+**However**, due to the nature of the State Lattice planner being able to use any number of custom generated minimum control sets, this planner may require more tuning to get good behavior. The defaults for State Lattice were generated using the 5cm Ackermann files you can find in this package as initial examples. After a change in formulation for the Hybrid-A* planner, the default of change penalty off seems to produce good results, but please tune to your application need and run-time speed requirements.
 
 When tuning, the "reasonable" range for each penalty is listed below. While you may obviously tune outside of these ranges, I've found that they offer a good trade-off and outside of these ranges behaviors get suboptimal quickly.
 - Cost: 1.7 - 6.0
