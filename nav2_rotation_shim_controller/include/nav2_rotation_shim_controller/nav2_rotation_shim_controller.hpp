@@ -124,10 +124,13 @@ protected:
    * @brief Rotates the robot to the rough heading
    * @param angular_distance Angular distance to the goal remaining
    * @param pose Starting pose of robot
+   * @param velocity Starting velocity of robot
    * @return Twist command for rotation to rough heading
    */
   geometry_msgs::msg::TwistStamped computeRotateToHeadingCommand(
-    const double & angular_distance, const geometry_msgs::msg::PoseStamped & pose);
+    const double & angular_distance,
+    const geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::Twist & velocity);
 
   /**
    * @brief Callback executed when a parameter change is detected
@@ -148,7 +151,8 @@ protected:
   bool path_updated_;
   nav_msgs::msg::Path current_path_;
   double forward_sampling_distance_, angular_dist_threshold_;
-  double rotate_to_heading_angular_vel_;
+  double rotate_to_heading_angular_vel_, max_angular_accel_;
+  double control_duration_;
 
   // Dynamic parameters handler
   std::mutex mutex_;

@@ -70,9 +70,10 @@ public:
   geometry_msgs::msg::TwistStamped
   computeRotateToHeadingCommandWrapper(
     const double & param,
-    const geometry_msgs::msg::PoseStamped & pose)
+    const geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::Twist & velocity)
   {
-    return computeRotateToHeadingCommand(param, pose);
+    return computeRotateToHeadingCommand(param, pose, velocity);
   }
 };
 
@@ -195,10 +196,13 @@ TEST(RotationShimControllerTest, rotationAndTransformTests)
   path.poses[3].pose.position.y = 10.0;
   controller->setPlan(path);
 
+  const geometry_msgs::msg::Twist velocity;
   EXPECT_EQ(
-    controller->computeRotateToHeadingCommandWrapper(0.7, path.poses[0]).twist.angular.z, 1.8);
+    controller->computeRotateToHeadingCommandWrapper(
+      0.7, path.poses[0], velocity).twist.angular.z, 1.8);
   EXPECT_EQ(
-    controller->computeRotateToHeadingCommandWrapper(-0.7, path.poses[0]).twist.angular.z, -1.8);
+    controller->computeRotateToHeadingCommandWrapper(
+      -0.7, path.poses[0], velocity).twist.angular.z, -1.8);
 
   // in base_link, so should pass through values without issue
   geometry_msgs::msg::PoseStamped pt;
@@ -328,6 +332,7 @@ TEST(RotationShimControllerTest, testDynamicParameter)
     {rclcpp::Parameter("test.angular_dist_threshold", 7.0),
       rclcpp::Parameter("test.forward_sampling_distance", 7.0),
       rclcpp::Parameter("test.rotate_to_heading_angular_vel", 7.0),
+      rclcpp::Parameter("test.max_angular_accel", 7.0),
       rclcpp::Parameter("test.primary_controller", std::string("HI"))});
 
   rclcpp::spin_until_future_complete(
@@ -337,4 +342,5 @@ TEST(RotationShimControllerTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.angular_dist_threshold").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.forward_sampling_distance").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_angular_vel").as_double(), 7.0);
+  EXPECT_EQ(node->get_parameter("test.max_angular_accel").as_double(), 7.0);
 }

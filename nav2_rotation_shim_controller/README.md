@@ -36,6 +36,7 @@ See its [Configuration Guide Page](https://navigation.ros.org/configuration/pack
 | `forward_sampling_distance` | Forward distance, in meters, along path to select a sampling point to use to approximate path heading | 
 | `rotate_to_heading_angular_vel` | Angular rotational velocity, in rad/s, to rotate to the path heading | 
 | `primary_controller` | Internal controller plugin to use for actual control behavior after rotating to heading | 
+| `max_angular_accel` | Maximum angular acceleration for rotation to heading | 
 
 Example fully-described XML with default parameter values:
 
@@ -66,6 +67,7 @@ controller_server:
       angular_dist_threshold: 0.610865
       forward_sampling_distance: 0.5
       rotate_to_heading_angular_vel: 1.8
+      max_angular_accel: 3.2
 
       # DWB parameters
       ...

@@ -48,12 +48,15 @@ void RotationShimController::configure(
   clock_ = node->get_clock();
 
   std::string primary_controller;
+  double control_frequency;
   nav2_util::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".angular_dist_threshold", rclcpp::ParameterValue(0.610865));  // 35 deg
+    node, plugin_name_ + ".angular_dist_threshold", rclcpp::ParameterValue(0.785));  // 45 deg
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".forward_sampling_distance", rclcpp::ParameterValue(0.5));
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.8));
+  nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".primary_controller", rclcpp::PARAMETER_STRING);
 
@@ -62,7 +65,10 @@ void RotationShimController::configure(
   node->get_parameter(
     plugin_name_ + ".rotate_to_heading_angular_vel",
     rotate_to_heading_angular_vel_);
+  node->get_parameter(plugin_name_ + ".max_angular_accel", max_angular_accel_);
   primary_controller = node->get_parameter(plugin_name_ + ".primary_controller").as_string();
+  node->get_parameter("controller_frequency", control_frequency);
+  control_duration_ = 1.0 / control_frequency;
 
   try {
     primary_controller_ = lp_loader_.createUniqueInstance(primary_controller);
@@ -137,7 +143,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
         RCLCPP_DEBUG(
           logger_,
           "Robot is not within the new path's rough heading, rotating to heading...");
-        return computeRotateToHeadingCommand(angular_distance_to_heading, pose);
+        return computeRotateToHeadingCommand(angular_distance_to_heading, pose, velocity);
       } else {
         RCLCPP_DEBUG(
           logger_,
@@ -172,6 +178,8 @@ geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt()
     dx = current_path_.poses[i].pose.position.x - start.position.x;
     dy = current_path_.poses[i].pose.position.y - start.position.y;
     if (hypot(dx, dy) >= forward_sampling_distance_) {
+      current_path_.poses[i].header.frame_id = current_path_.header.frame_id;
+      current_path_.poses[i].header.stamp = clock_->now();  // Get current time transformation
       return current_path_.poses[i];
     }
   }
@@ -195,12 +203,18 @@ RotationShimController::transformPoseToBaseFrame(const geometry_msgs::msg::PoseS
 geometry_msgs::msg::TwistStamped
 RotationShimController::computeRotateToHeadingCommand(
   const double & angular_distance_to_heading,
-  const geometry_msgs::msg::PoseStamped & pose)
+  const geometry_msgs::msg::PoseStamped & pose,
+  const geometry_msgs::msg::Twist & velocity)
 {
   geometry_msgs::msg::TwistStamped cmd_vel;
   cmd_vel.header = pose.header;
-  double sign = angular_distance_to_heading > 0.0 ? 1.0 : -1.0;
-  cmd_vel.twist.angular.z = sign * rotate_to_heading_angular_vel_;
+  const double sign = angular_distance_to_heading > 0.0 ? 1.0 : -1.0;
+  const double angular_vel = sign * rotate_to_heading_angular_vel_;
+  const double & dt = control_duration_;
+  const double min_feasible_angular_speed = velocity.angular.z - max_angular_accel_ * dt;
+  const double max_feasible_angular_speed = velocity.angular.z + max_angular_accel_ * dt;
+  cmd_vel.twist.angular.z =
+    std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
   return cmd_vel;
 }
 
@@ -233,6 +247,8 @@ RotationShimController::dynamicParametersCallback(std::vector<rclcpp::Parameter>
         forward_sampling_distance_ = parameter.as_double();
       } else if (name == plugin_name_ + ".rotate_to_heading_angular_vel") {
         rotate_to_heading_angular_vel_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_angular_accel") {
+        max_angular_accel_ = parameter.as_double();
       }
     }
   }
