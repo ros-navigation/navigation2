@@ -1,19 +1,3 @@
-
-todo
-	- make sure you can get params for the other controller types
-	- collision detection
-	- test actually works
-
-	- migration guide
-	- configuration guide
-	- tutorial
-
-
-should remove initial rotate in place from RPP?  tell people to use this instead. Would that simplify one of those settings that can be on at the same time as this?
-
-
-
-
 # Nav2 Rotation Shim Controller
 
 This is a controller (local trajectory planner) that implements a "shim" controller plugin. It was developed by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). 
