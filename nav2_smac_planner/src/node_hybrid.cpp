@@ -422,19 +422,19 @@ void NodeHybrid::resetObstacleHeuristic(
   nav2_costmap_2d::Costmap2D * costmap,
   const unsigned int & goal_x, const unsigned int & goal_y)
 {
-  if (motion_table.obstacle_heuristic_admissible) {
-    sampled_costmap = costmap;
-  }
-  else {
+  // if (motion_table.obstacle_heuristic_admissible) {
+  //   sampled_costmap = costmap;
+  // }
+  // else {
   // Downsample costmap 2x to compute a sparse obstacle heuristic. This speeds up
   // the planner considerably to search through 75% less cells with no detectable
   // erosion of path quality after even modest smoothing. The error would be no more
   // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
-    std::weak_ptr<nav2_util::LifecycleNode> ptr;
-    downsampler.on_configure(ptr, "fake_frame", "fake_topic", costmap, 2.0, false);
-    downsampler.on_activate();
-    sampled_costmap = downsampler.downsample(2.0);
-  }
+  std::weak_ptr<nav2_util::LifecycleNode> ptr;
+  downsampler.on_configure(ptr, "fake_frame", "fake_topic", costmap, 2.0, motion_table.obstacle_heuristic_admissible);
+  downsampler.on_activate();
+  sampled_costmap = downsampler.downsample(2.0);
+  // }
 
   RCLCPP_INFO(rclcpp::get_logger("planner_server"), "Reset");
 
@@ -650,13 +650,12 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
 
   int size_x = sampled_costmap->getSizeInCellsX();
   // Divided by 2 due to downsampled costmap.
-  const int start_y = ceil(node_coords.y);// / 2.0);
-  const int start_x = ceil(node_coords.x);// / 2.0);
+  const int start_y = floor(node_coords.y / 2.0);
+  const int start_x = floor(node_coords.x / 2.0);
   const int start_index = start_y * size_x + start_x;
   const float & starting_cost = obstacle_heuristic_lookup_table[start_index];
   if (starting_cost >= 0.0f) {
-    node_points[start_index].intensity = /*2.0 * */starting_cost;
-    return /*2.0 * */starting_cost;
+    return 2.0 * starting_cost;
   }
 
   const int size_x_int = static_cast<int>(size_x);
@@ -667,8 +666,8 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
     size_x_int + 1, size_x_int - 1,  // upper diagonals
     -size_x_int + 1, -size_x_int - 1};  // lower diagonals
   
-  const int goal_x = ceil(goal_coords.x);// / 2.0);
-  const int goal_y = ceil(goal_coords.y);// / 2.0);
+  const int goal_x = floor(goal_coords.x / 2.0);
+  const int goal_y = floor(goal_coords.y / 2.0);
   const int goal_index = goal_y * size_x + goal_x;
   if (astar_2d_first_run) {
     astar_2d_first_run = false;
@@ -753,8 +752,7 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
   // RCLCPP_INFO(rclcpp::get_logger("planner_server"), "Run: %d (%d %d -> %d %d (%d/%d) = %f), expansions: %d (total: %d), queue size: %d, time: %lf (%lf + %lf, total: %lf) ms",
   //   run_number, start_x, start_y, goal_x, goal_y, goal_index, (int)astar_2d_h_table.size(), obstacle_heuristic_lookup_table[start_index], expansions_cnt, total_expansions_cnt, (int)astar_2d_queue.size(), time, time_init, time - time_init, total_time);
 
-  node_points[start_index].intensity = /*2.0 * */starting_cost;
-  return /*2.0 * */starting_cost;
+  return 2.0 * starting_cost;
 }
 
 float NodeHybrid::getDistanceHeuristic(
