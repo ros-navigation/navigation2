@@ -74,7 +74,3 @@ controller_server:
       ...
       ...
 ```
-
-## Notes to users
-
-The rotation to heading is done with a constant velocity, e.g. `rotate_to_heading_angular_vel`. As always, it is recommended you use a velocity smoother before passing commands off to your motor controllers to execute (unless your motor controller has the kinematic parameters of your platform to smooth out commands to be feasible within required bounds).
