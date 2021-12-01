@@ -19,11 +19,8 @@ The Rotation Shim Controller is suitable for:
 
 This plugin implements the `nav2_core::Controller` interface allowing it to be used across the navigation stack as a local trajectory planner in the controller server's action server (`controller_server`). It will host an internal plugin of your actual path tracker (e.g. MPPI, RPP, DWB, TEB, etc) that will be used after the robot has rotated to the rough starting heading of the path.
 
-# TODO run time + video
-The Rotation Shim Controller has been measured to run at well over 1 kHz on a modern intel processor.
-
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/14944147/102563918-3cd49d80-408f-11eb-8e03-b472815a05d8.gif">
+  <img src="https://user-images.githubusercontent.com/14944147/144323291-29e24521-674a-41f5-8a91-732121b26b47.gif">
 </p>
 
 See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-rotation-shim-controller.html) for additional parameter descriptions.
@@ -64,7 +61,7 @@ controller_server:
     FollowPath:
       plugin: "nav2_rotation_shim_controller::RotationShimController"
       primary_controller: "dwb_core::DWBLocalPlanner"
-      angular_dist_threshold: 0.610865
+      angular_dist_threshold: 0.785
       forward_sampling_distance: 0.5
       rotate_to_heading_angular_vel: 1.8
       max_angular_accel: 3.2
