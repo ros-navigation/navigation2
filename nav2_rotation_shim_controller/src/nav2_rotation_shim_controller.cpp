@@ -83,6 +83,10 @@ void RotationShimController::configure(
   }
 
   primary_controller_->configure(parent, name, tf, costmap_ros);
+
+  // initialize collision checker and set costmap
+  collision_checker_ = std::make_unique<nav2_costmap_2d::
+      FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_ros->getCostmap());
 }
 
 void RotationShimController::activate()
@@ -153,8 +157,9 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
     } catch (const std::runtime_error & e) {
       RCLCPP_DEBUG(
         logger_,
-        "Rotation Shim Controller was unable to find a sampling point"
-        " or TF failed to transform into base frame! what(): %s", e.what());
+        "Rotation Shim Controller was unable to find a sampling point,"
+        " a rotational collision was detected, or TF failed to transform"
+        " into base frame! what(): %s", e.what());
       path_updated_ = false;
     }
   }
@@ -215,7 +220,48 @@ RotationShimController::computeRotateToHeadingCommand(
   const double max_feasible_angular_speed = velocity.angular.z + max_angular_accel_ * dt;
   cmd_vel.twist.angular.z =
     std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
+
+  isCollisionFree(cmd_vel, angular_distance_to_heading, pose);
   return cmd_vel;
+}
+
+void RotationShimController::isCollisionFree(
+  const geometry_msgs::msg::TwistStamped & cmd_vel,
+  const double & angular_distance_to_heading,
+  const geometry_msgs::msg::PoseStamped & pose)
+{
+  // Simulate rotation ahead by time in control frequency increments
+  double simulated_time = 0.0;
+  double initial_yaw = tf2::getYaw(pose.pose.orientation);
+  double yaw = 0.0;
+  double footprint_cost = 0.0;
+  double remaining_rotation_before_thresh =
+    fabs(angular_distance_to_heading) - angular_dist_threshold_;
+
+  while (simulated_time < 1.0 /*TODO param: readme, dynamic, declare, docs*/) {
+    simulated_time += control_duration_;
+    yaw = initial_yaw + cmd_vel.twist.angular.z * simulated_time;
+
+    // Stop simulating past the point it would be passed onto the primary controller
+    if (angles::shortest_angular_distance(yaw, initial_yaw) >= remaining_rotation_before_thresh) {
+      break;
+    }
+
+    using namespace nav2_costmap_2d;  // NOLINT
+    footprint_cost = collision_checker_->footprintCostAtPose(
+      pose.pose.position.x, pose.pose.position.y,
+      yaw, costmap_ros_->getRobotFootprint());
+
+    if (footprint_cost == static_cast<double>(NO_INFORMATION) &&
+      costmap_ros_->getLayeredCostmap()->isTrackingUnknown())
+    {
+      throw std::runtime_error("RotationShimController detected a potential collision ahead!");
+    }
+
+    if (footprint_cost >= static_cast<double>(LETHAL_OBSTACLE)) {
+      throw std::runtime_error("RotationShimController detected collision ahead!");
+    }
+  }
 }
 
 void RotationShimController::setPlan(const nav_msgs::msg::Path & path)

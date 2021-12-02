@@ -29,6 +29,8 @@
 #include "nav2_core/controller.hpp"
 #include "nav2_core/exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
+#include "angles/angles.h"
 
 namespace nav2_rotation_shim_controller
 {
@@ -133,6 +135,17 @@ protected:
     const geometry_msgs::msg::Twist & velocity);
 
   /**
+   * @brief Checks if rotation is safe
+   * @param cmd_vel Velocity to check over
+   * @param angular_distance_to_heading Angular distance to heading requested
+   * @param pose Starting pose of robot
+   */
+  void isCollisionFree(
+    const geometry_msgs::msg::TwistStamped & cmd_vel,
+    const double & angular_distance_to_heading,
+    const geometry_msgs::msg::PoseStamped & pose);
+
+  /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */
@@ -145,6 +158,8 @@ protected:
   rclcpp::Logger logger_ {rclcpp::get_logger("RotationShimController")};
   rclcpp::Clock::SharedPtr clock_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
+  collision_checker_;
 
   pluginlib::ClassLoader<nav2_core::Controller> lp_loader_;
   nav2_core::Controller::Ptr primary_controller_;
