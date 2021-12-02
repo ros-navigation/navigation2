@@ -39,6 +39,7 @@
 #### For Maintainers: <!-- DO NOT EDIT OR REMOVE -->
 - [ ] Check that any new parameters added are updated in navigation.ros.org
 - [ ] Check that any significant change is added to the migration guide
+- [ ] Check that any new features **OR** changes to existing behaviors are reflected in the tuning guide
 - [ ] Check that any new functions have Doxygen added
 - [ ] Check that any new features have test coverage
 - [ ] Check that any new plugins is added to the plugins page
