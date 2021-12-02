@@ -337,6 +337,7 @@ TEST(RotationShimControllerTest, testDynamicParameter)
       rclcpp::Parameter("test.forward_sampling_distance", 7.0),
       rclcpp::Parameter("test.rotate_to_heading_angular_vel", 7.0),
       rclcpp::Parameter("test.max_angular_accel", 7.0),
+      rclcpp::Parameter("test.simulate_ahead_time", 7.0),
       rclcpp::Parameter("test.primary_controller", std::string("HI"))});
 
   rclcpp::spin_until_future_complete(
@@ -347,4 +348,5 @@ TEST(RotationShimControllerTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.forward_sampling_distance").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_angular_vel").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.max_angular_accel").as_double(), 7.0);
+  EXPECT_EQ(node->get_parameter("test.simulate_ahead_time").as_double(), 7.0);
 }
