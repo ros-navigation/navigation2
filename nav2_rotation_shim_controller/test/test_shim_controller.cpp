@@ -204,6 +204,10 @@ TEST(RotationShimControllerTest, rotationAndTransformTests)
     controller->computeRotateToHeadingCommandWrapper(
       -0.7, path.poses[0], velocity).twist.angular.z, -1.8);
 
+  EXPECT_EQ(
+    controller->computeRotateToHeadingCommandWrapper(
+      0.87, path.poses[0], velocity).twist.angular.z, 1.8);
+
   // in base_link, so should pass through values without issue
   geometry_msgs::msg::PoseStamped pt;
   pt.pose.position.x = 100.0;
