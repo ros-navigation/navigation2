@@ -167,7 +167,7 @@ protected:
   nav_msgs::msg::Path current_path_;
   double forward_sampling_distance_, angular_dist_threshold_;
   double rotate_to_heading_angular_vel_, max_angular_accel_;
-  double control_duration_;
+  double control_duration_, simulate_ahead_time_;
 
   // Dynamic parameters handler
   std::mutex mutex_;

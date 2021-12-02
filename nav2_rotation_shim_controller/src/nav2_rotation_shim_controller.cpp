@@ -58,6 +58,8 @@ void RotationShimController::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
   nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name_ + ".simulate_ahead_time", rclcpp::ParameterValue(1.0));
+  nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".primary_controller", rclcpp::PARAMETER_STRING);
 
   node->get_parameter(plugin_name_ + ".angular_dist_threshold", angular_dist_threshold_);
@@ -66,6 +68,8 @@ void RotationShimController::configure(
     plugin_name_ + ".rotate_to_heading_angular_vel",
     rotate_to_heading_angular_vel_);
   node->get_parameter(plugin_name_ + ".max_angular_accel", max_angular_accel_);
+  node->get_parameter(plugin_name_ + ".simulate_ahead_time", simulate_ahead_time_);
+
   primary_controller = node->get_parameter(plugin_name_ + ".primary_controller").as_string();
   node->get_parameter("controller_frequency", control_frequency);
   control_duration_ = 1.0 / control_frequency;
@@ -238,7 +242,7 @@ void RotationShimController::isCollisionFree(
   double remaining_rotation_before_thresh =
     fabs(angular_distance_to_heading) - angular_dist_threshold_;
 
-  while (simulated_time < 1.0 /*TODO param: readme, dynamic, declare, docs*/) {
+  while (simulated_time < simulate_ahead_time_) {
     simulated_time += control_duration_;
     yaw = initial_yaw + cmd_vel.twist.angular.z * simulated_time;
 
@@ -295,6 +299,8 @@ RotationShimController::dynamicParametersCallback(std::vector<rclcpp::Parameter>
         rotate_to_heading_angular_vel_ = parameter.as_double();
       } else if (name == plugin_name_ + ".max_angular_accel") {
         max_angular_accel_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".simulate_ahead_time") {
+        simulate_ahead_time_ = parameter.as_double();
       }
     }
   }

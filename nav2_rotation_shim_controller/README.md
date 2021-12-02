@@ -34,6 +34,7 @@ See its [Configuration Guide Page](https://navigation.ros.org/configuration/pack
 | `rotate_to_heading_angular_vel` | Angular rotational velocity, in rad/s, to rotate to the path heading | 
 | `primary_controller` | Internal controller plugin to use for actual control behavior after rotating to heading | 
 | `max_angular_accel` | Maximum angular acceleration for rotation to heading | 
+| `simulate_ahead_time` | Time in seconds to forward simulate a rotation command to check for collisions. If a collision is found, forwards control back to the primary controller plugin. | 
 
 Example fully-described XML with default parameter values:
 
@@ -65,6 +66,7 @@ controller_server:
       forward_sampling_distance: 0.5
       rotate_to_heading_angular_vel: 1.8
       max_angular_accel: 3.2
+      simulate_ahead_time: 1.0
 
       # DWB parameters
       ...
