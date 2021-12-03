@@ -20,6 +20,7 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <mutex>
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -204,6 +205,17 @@ protected:
    * @param path Reference to Global Path
    */
   void publishPlan(const nav_msgs::msg::Path & path);
+
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  std::mutex dynamic_params_lock_;
 
   // Planner
   PlannerMap planners_;

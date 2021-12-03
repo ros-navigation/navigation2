@@ -35,28 +35,19 @@ namespace nav2_costmap_2d
 CostmapTopicCollisionChecker::CostmapTopicCollisionChecker(
   CostmapSubscriber & costmap_sub,
   FootprintSubscriber & footprint_sub,
-  tf2_ros::Buffer & tf,
-  std::string name,
-  std::string global_frame,
-  std::string robot_base_frame,
-  double transform_tolerance)
+  std::string name)
 : name_(name),
-  global_frame_(global_frame),
-  robot_base_frame_(robot_base_frame),
-  tf_(tf),
   costmap_sub_(costmap_sub),
   footprint_sub_(footprint_sub),
-  transform_tolerance_(transform_tolerance),
   collision_checker_(nullptr)
-{
-}
+{}
 
 bool CostmapTopicCollisionChecker::isCollisionFree(
   const geometry_msgs::msg::Pose2D & pose,
-  bool updateCostmap)
+  bool fetch_costmap_and_footprint)
 {
   try {
-    if (scorePose(pose, updateCostmap) >= LETHAL_OBSTACLE) {
+    if (scorePose(pose, fetch_costmap_and_footprint) >= LETHAL_OBSTACLE) {
       return false;
     }
     return true;
@@ -74,9 +65,9 @@ bool CostmapTopicCollisionChecker::isCollisionFree(
 
 double CostmapTopicCollisionChecker::scorePose(
   const geometry_msgs::msg::Pose2D & pose,
-  bool updateCostmap)
+  bool fetch_costmap_and_footprint)
 {
-  if (updateCostmap) {
+  if (fetch_costmap_and_footprint) {
     try {
       collision_checker_.setCostmap(costmap_sub_.getCostmap());
     } catch (const std::runtime_error & e) {
@@ -90,43 +81,23 @@ double CostmapTopicCollisionChecker::scorePose(
     throw IllegalPoseException(name_, "Pose Goes Off Grid.");
   }
 
-  return collision_checker_.footprintCost(getFootprint(pose));
+  return collision_checker_.footprintCost(getFootprint(pose, fetch_costmap_and_footprint));
 }
 
-Footprint CostmapTopicCollisionChecker::getFootprint(const geometry_msgs::msg::Pose2D & pose)
+Footprint CostmapTopicCollisionChecker::getFootprint(
+  const geometry_msgs::msg::Pose2D & pose,
+  bool fetch_latest_footprint)
 {
-  Footprint footprint;
-  if (!footprint_sub_.getFootprint(footprint)) {
-    throw CollisionCheckerException("Current footprint not available.");
+  if (fetch_latest_footprint) {
+    std_msgs::msg::Header header;
+    if (!footprint_sub_.getFootprintInRobotFrame(footprint_, header)) {
+      throw CollisionCheckerException("Current footprint not available.");
+    }
   }
-
-  Footprint footprint_spec;
-  unorientFootprint(footprint, footprint_spec);
-  transformFootprint(pose.x, pose.y, pose.theta, footprint_spec, footprint);
+  Footprint footprint;
+  transformFootprint(pose.x, pose.y, pose.theta, footprint_, footprint);
 
   return footprint;
 }
-
-void CostmapTopicCollisionChecker::unorientFootprint(
-  const std::vector<geometry_msgs::msg::Point> & oriented_footprint,
-  std::vector<geometry_msgs::msg::Point> & reset_footprint)
-{
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, tf_, global_frame_, robot_base_frame_,
-      transform_tolerance_))
-  {
-    throw CollisionCheckerException("Robot pose unavailable.");
-  }
-
-  double x = current_pose.pose.position.x;
-  double y = current_pose.pose.position.y;
-  double theta = tf2::getYaw(current_pose.pose.orientation);
-
-  Footprint temp;
-  transformFootprint(-x, -y, 0, oriented_footprint, temp);
-  transformFootprint(0, 0, -theta, temp, reset_footprint);
-}
-
 
 }  // namespace nav2_costmap_2d
