@@ -142,6 +142,9 @@ protected:
     return result;
   }
 
+  typedef std::function<double(int i, const Eigen::Vector3d &prev_p, const Eigen::Vector3d &p, const Eigen::Vector3d &next_p)> QualityCriterion3;
+  typedef std::function<double(int i, const Eigen::Vector3d &prev_p, const Eigen::Vector3d &p)> QualityCriterion2;
+  typedef std::function<double(int i, const Eigen::Vector3d &p)> QualityCriterion1;
   /**
    * @brief Path improvement assessment method
    * @param input Smoother input path
@@ -152,7 +155,7 @@ protected:
   double assessPathImprovement(
     const std::vector<Eigen::Vector3d> &input,
     const std::vector<Eigen::Vector3d> &output,
-    const std::function<double(int i, const Eigen::Vector3d &prev_p, const Eigen::Vector3d &p, const Eigen::Vector3d &next_p)> &criterion)
+    const QualityCriterion3 &criterion)
   {
     double total_input_crit = 0.0;
     for (size_t i = 1; i < input.size()-1; i++) {
@@ -183,7 +186,7 @@ protected:
   double assessPathImprovement(
     const std::vector<Eigen::Vector3d> &input,
     const std::vector<Eigen::Vector3d> &output,
-    const std::function<double(int i, const Eigen::Vector3d &prev_p, const Eigen::Vector3d &p)> &criterion)
+    const QualityCriterion2 &criterion)
   {
     double total_input_crit = 0.0;
     for (size_t i = 1; i < input.size(); i++) {
@@ -212,7 +215,7 @@ protected:
   double assessPathImprovement(
     const std::vector<Eigen::Vector3d> &input,
     const std::vector<Eigen::Vector3d> &output,
-    const std::function<double(int i, const Eigen::Vector3d &p)> &criterion)
+    const QualityCriterion1 &criterion)
   {
     double total_input_crit = 0.0;
     for (size_t i = 0; i < input.size(); i++) {
@@ -233,11 +236,33 @@ protected:
     return (1.0 - total_output_crit/total_input_crit)*100;
   }
 
+  std::vector<Eigen::Vector3d> zigZaggedPath(const std::vector<Eigen::Vector3d> &input, double offset) {
+    auto output = input;
+    for (size_t i = 1; i < input.size()-1; i++) {
+      // add offset prependicular to path
+      Eigen::Vector2d direction = (input[i+1].block<2, 1>(0, 0) - input[i-1].block<2, 1>(0, 0)).normalized();
+      output[i].block<2, 1>(0, 0) += Eigen::Vector2d(direction[1], -direction[0])*offset*(i%2 == 0 ? 1.0 : -1.0);
+    }
+    return output;
+  }
+
   std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_lifecycle_;
   std::shared_ptr<nav2_ceres_costaware_smoother::CeresCostawareSmoother> smoother_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+
+  int cusp_i_ = -1;
+  QualityCriterion3 mvmt_smoothness_criterion_ =
+    [this](int i, const Eigen::Vector3d &prev_p, const Eigen::Vector3d &p, const Eigen::Vector3d &next_p) {
+      Eigen::Vector2d prev_mvmt = p.block<2, 1>(0, 0) - prev_p.block<2, 1>(0, 0);
+      Eigen::Vector2d next_mvmt = next_p.block<2, 1>(0, 0) - p.block<2, 1>(0, 0);
+      if (i == cusp_i_)
+        next_mvmt = -next_mvmt;
+      RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "prev_mvmt: %lf %lf, next_mvmt: %lf %lf",
+        prev_mvmt[0], prev_mvmt[1], next_mvmt[0], next_mvmt[1]);
+      return (next_mvmt - prev_mvmt).norm();
+    };
 };
 
 TEST_F(SmootherTest, testingSmoothness)
@@ -258,23 +283,12 @@ TEST_F(SmootherTest, testingSmoothness)
     , {0.3, 0.2, M_PI/2}
     , {0.3, 0.3, M_PI/2}
     };
-  int cusp_i = -1;
 
   std::vector<Eigen::Vector3d> smoothed_path;
   ASSERT_TRUE(smoothPath(sharp_turn_90, smoothed_path));
 
-  auto mvmt_smoothness_criterion =
-    [&cusp_i](int i, const Eigen::Vector3d &prev_p, const Eigen::Vector3d &p, const Eigen::Vector3d &next_p) {
-      Eigen::Vector2d prev_mvmt = p.block<2, 1>(0, 0) - prev_p.block<2, 1>(0, 0);
-      Eigen::Vector2d next_mvmt = next_p.block<2, 1>(0, 0) - p.block<2, 1>(0, 0);
-      if (i == cusp_i)
-        next_mvmt = -next_mvmt;
-      RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "prev_mvmt: %lf %lf, next_mvmt: %lf %lf",
-        prev_mvmt[0], prev_mvmt[1], next_mvmt[0], next_mvmt[1]);
-      return (next_mvmt - prev_mvmt).norm();
-    };
   double mvmt_smoothness_improvement =
-    assessPathImprovement(sharp_turn_90, smoothed_path, mvmt_smoothness_criterion);
+    assessPathImprovement(sharp_turn_90, smoothed_path, mvmt_smoothness_criterion_);
   ASSERT_GT(mvmt_smoothness_improvement, 0.0);
   ASSERT_NEAR(mvmt_smoothness_improvement, 80.0, 1.0);
 
@@ -303,12 +317,12 @@ TEST_F(SmootherTest, testingSmoothness)
     , {0.6, -0.5, M_PI/2}
     , {0.6, -0.6, M_PI/2}
     };
-  cusp_i = 6;
+  cusp_i_ = 6;
 
   ASSERT_TRUE(smoothPath(sharp_turn_90_then_reverse, smoothed_path));
 
   mvmt_smoothness_improvement =
-    assessPathImprovement(sharp_turn_90_then_reverse, smoothed_path, mvmt_smoothness_criterion);
+    assessPathImprovement(sharp_turn_90_then_reverse, smoothed_path, mvmt_smoothness_criterion_);
   ASSERT_GT(mvmt_smoothness_improvement, 0.0);
   ASSERT_NEAR(mvmt_smoothness_improvement, 60.5, 1.0);
 
@@ -361,6 +375,8 @@ TEST_F(SmootherTest, testingAnchoringToOriginalPath)
     assessPathImprovement(smoothed_path, smoothed_path_anchored, origin_similarity_criterion);
   ASSERT_GT(origin_similarity_improvement, 0.0);
   ASSERT_NEAR(origin_similarity_improvement, 70.3, 1.0);
+
+  SUCCEED();
 }
 
 TEST_F(SmootherTest, testingMaxCurvature)
@@ -390,6 +406,11 @@ TEST_F(SmootherTest, testingMaxCurvature)
 
   std::vector<Eigen::Vector3d> smoothed_path;
   ASSERT_TRUE(smoothPath(radius_0_3_turn_90, smoothed_path));
+
+  // we don't expect result to be smoother than original as w_smooth is too low
+  // but let's check for large discontinuities using a well chosen upper bound
+  auto upper_bound = zigZaggedPath(radius_0_3_turn_90, 0.01);
+  ASSERT_GT(assessPathImprovement(upper_bound, smoothed_path, mvmt_smoothness_criterion_), 0.0);
 
   // smoothed path points should form a circle with radius 0.4
   for (size_t i = 1; i < smoothed_path.size()-1; i++) {
@@ -422,6 +443,12 @@ TEST_F(SmootherTest, testingMaxCurvature)
 
   ASSERT_TRUE(smoothPath(radius_0_3_turn_90_then_reverse_turn_90, smoothed_path));
 
+  // we don't expect result to be smoother than original as w_smooth is too low
+  // but let's check for large discontinuities using a well chosen upper bound
+  cusp_i_ = 8;
+  upper_bound = zigZaggedPath(radius_0_3_turn_90_then_reverse_turn_90, 0.01);
+  ASSERT_GT(assessPathImprovement(upper_bound, smoothed_path, mvmt_smoothness_criterion_), 0.0);
+
   // smoothed path points should form a circle with radius 0.4 for both forward and reverse movements
   for (size_t i = 1; i < smoothed_path.size()-1; i++) {
     auto &p = smoothed_path[i];
@@ -434,45 +461,7 @@ TEST_F(SmootherTest, testingMaxCurvature)
 
 TEST_F(SmootherTest, testingObstacleAvoidance)
 {
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000.0));
-  // set w_curve to 0.0 so that the whole job is upon w_smooth
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 0.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost_dir_change", 0.0));
-
-  // first set w_dist to 0.0 to generate an unanchored smoothed path
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_dist", 0.0));
-  reloadParams();
-
-  std::vector<Eigen::Vector3d> sharp_turn_90 =
-    { {0, 0, 0}
-    , {0.1, 0, 0}
-    , {0.2, 0, 0}
-    , {0.3, 0, M_PI/4}
-    , {0.3, 0.1, M_PI/2}
-    , {0.3, 0.2, M_PI/2}
-    , {0.3, 0.3, M_PI/2}
-    };
-
-  std::vector<Eigen::Vector3d> smoothed_path;
-  ASSERT_TRUE(smoothPath(sharp_turn_90, smoothed_path));
-
-  // then update w_dist and compare the results
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_dist", 30.0));
-  reloadParams();
-
-  std::vector<Eigen::Vector3d> smoothed_path_anchored;
-  ASSERT_TRUE(smoothPath(sharp_turn_90, smoothed_path_anchored));
-
-  auto origin_similarity_criterion =
-    [&sharp_turn_90](int i, const Eigen::Vector3d &p) {
-      RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "orig: %lf %lf", sharp_turn_90[i][0], sharp_turn_90[i][1]);
-      return (p.block<2, 1>(0, 0) - sharp_turn_90[i].block<2, 1>(0, 0)).norm();
-    };
-  double origin_similarity_improvement =
-    assessPathImprovement(smoothed_path, smoothed_path_anchored, origin_similarity_criterion);
-  ASSERT_GT(origin_similarity_improvement, 0.0);
-  ASSERT_NEAR(origin_similarity_improvement, 70.3, 1.0);
+  SUCCEED();
 }
 
 int main(int argc, char ** argv)
