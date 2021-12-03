@@ -69,11 +69,6 @@ public:
     const unsigned int & dim_3_size);
 
   /**
-   * @brief Destructor for analytic expansion object
-   */
-  ~AnalyticExpansion();
-
-  /**
    * @brief Sets the collision checker and costmap to use in expansion validation
    * @param collision_checker Collision checker to use
    */
@@ -124,17 +119,12 @@ public:
   void cleanNode(const NodePtr & nodes);
 
 protected:
-  /**
-   * @brief Deallocates detached nodes previously created in setAnalyticPath
-   */
-  void cleanupDetachedNodes();
-
   MotionModel _motion_model;
   SearchInfo _search_info;
   bool _traverse_unknown;
   unsigned int _dim_3_size;
   GridCollisionChecker * _collision_checker;
-  std::list<NodePtr> _detached_nodes;
+  std::list<std::unique_ptr<NodeT>> _detached_nodes;
 };
 
 }  // namespace nav2_smac_planner

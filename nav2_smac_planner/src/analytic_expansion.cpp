@@ -39,12 +39,6 @@ AnalyticExpansion<NodeT>::AnalyticExpansion(
 }
 
 template<typename NodeT>
-AnalyticExpansion<NodeT>::~AnalyticExpansion()
-{
-  cleanupDetachedNodes();
-}
-
-template<typename NodeT>
 void AnalyticExpansion<NodeT>::setCollisionChecker(
   GridCollisionChecker * collision_checker)
 {
@@ -220,7 +214,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalytic
   const NodePtr & goal_node,
   const AnalyticExpansionNodes & expanded_nodes)
 {
-  cleanupDetachedNodes();
+  _detached_nodes.clear();
   // Legitimate final path - set the parent relationships, states, and poses
   NodePtr prev = node;
   for (const auto & node_pose : expanded_nodes) {
@@ -228,8 +222,8 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalytic
     cleanNode(n);
     if (n->getIndex() != goal_node->getIndex()) {
       if (n->wasVisited()) {
-        n = new NodeT(-1);
-        _detached_nodes.push_back(n);
+        _detached_nodes.push_back(std::make_unique<NodeT>(-1));
+        n = &*_detached_nodes.back();
       }
       n->parent = prev;
       n->pose = node_pose.proposed_coords;
@@ -254,15 +248,6 @@ void AnalyticExpansion<NodeLattice>::cleanNode(const NodePtr & node)
 template<typename NodeT>
 void AnalyticExpansion<NodeT>::cleanNode(const NodePtr & /*expanded_nodes*/)
 {
-}
-
-template<typename NodeT>
-void AnalyticExpansion<NodeT>::cleanupDetachedNodes()
-{
-  for (auto & node : _detached_nodes) {
-    delete node;
-  }
-  _detached_nodes.clear();
 }
 
 template<>
