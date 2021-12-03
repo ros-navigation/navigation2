@@ -223,7 +223,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalytic
     if (n->getIndex() != goal_node->getIndex()) {
       if (n->wasVisited()) {
         _detached_nodes.push_back(std::make_unique<NodeT>(-1));
-        n = &*_detached_nodes.back();
+        n = _detached_nodes.back().get();
       }
       n->parent = prev;
       n->pose = node_pose.proposed_coords;
