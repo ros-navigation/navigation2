@@ -39,6 +39,11 @@ AnalyticExpansion<NodeT>::AnalyticExpansion(
 }
 
 template<typename NodeT>
+AnalyticExpansion<NodeT>::~AnalyticExpansion() {
+  cleanupDetachedNodes();
+}
+
+template<typename NodeT>
 void AnalyticExpansion<NodeT>::setCollisionChecker(
   GridCollisionChecker * collision_checker)
 {
@@ -214,6 +219,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalytic
   const NodePtr & goal_node,
   const AnalyticExpansionNodes & expanded_nodes)
 {
+  cleanupDetachedNodes();
   // Legitimate final path - set the parent relationships, states, and poses
   NodePtr prev = node;
   for (const auto & node_pose : expanded_nodes) {
@@ -250,7 +256,7 @@ void AnalyticExpansion<NodeT>::cleanNode(const NodePtr & /*expanded_nodes*/)
 }
 
 template<typename NodeT>
-void AnalyticExpansion<NodeT>::cleanup() {
+void AnalyticExpansion<NodeT>::cleanupDetachedNodes() {
   for (auto &node : _detached_nodes)
     delete node;
   _detached_nodes.clear();

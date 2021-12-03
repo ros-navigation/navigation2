@@ -287,16 +287,12 @@ bool AStarAlgorithm<NodeT>::createPath(
 
     // 3) Check if we're at the goal, backtrace if required
     if (isGoal(current_node)) {
-      bool success = current_node->backtracePath(path);
-      _expander->cleanup();
-      return success;
+      return current_node->backtracePath(path);
     } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
       approach_iterations++;
       if (approach_iterations >= getOnApproachMaxIterations()) {
-        bool success = _graph.at(_best_heuristic_node.second).backtracePath(path);
-        _expander->cleanup();
-        return success;
+        return _graph.at(_best_heuristic_node.second).backtracePath(path);
       }
     }
 

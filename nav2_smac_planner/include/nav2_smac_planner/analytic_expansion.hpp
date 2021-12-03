@@ -68,6 +68,11 @@ public:
     const unsigned int & dim_3_size);
 
   /**
+   * @brief Destructor for analytic expansion object
+   */
+  ~AnalyticExpansion();
+
+  /**
    * @brief Sets the collision checker and costmap to use in expansion validation
    * @param collision_checker Collision checker to use
    */
@@ -117,9 +122,13 @@ public:
    */
   void cleanNode(const NodePtr & nodes);
 
-  void cleanup();
-
 protected:
+
+  /**
+   * @brief Deallocates detached nodes previously created in setAnalyticPath
+   */
+  void cleanupDetachedNodes();
+
   MotionModel _motion_model;
   SearchInfo _search_info;
   bool _traverse_unknown;
