@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <memory>
 
 #include "nav2_smac_planner/analytic_expansion.hpp"
 
