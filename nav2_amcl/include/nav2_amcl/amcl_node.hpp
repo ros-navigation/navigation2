@@ -238,6 +238,7 @@ protected:
    */
   static pf_vector_t uniformPoseGenerator(void * arg);
   pf_t * pf_{nullptr};
+  std::mutex pf_mutex_;
   bool pf_init_;
   pf_vector_t pf_odom_pose_;
   int resample_count_{0};
