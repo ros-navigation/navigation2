@@ -225,10 +225,11 @@ protected:
   // To publish BT logs
   std::unique_ptr<RosTopicLogger> topic_logger_;
 
-  // Parameters for Groot monitoring
-  bool enable_groot_monitoring_;
-  int groot_zmq_publisher_port_;
-  int groot_zmq_server_port_;
+  // Duration for each iteration of BT execution
+  std::chrono::milliseconds bt_loop_duration_;
+
+  // Default timeout value while waiting for response from a server
+  std::chrono::milliseconds default_server_timeout_;
 
   // User-provided callbacks
   OnGoalReceivedCallback on_goal_received_callback_;

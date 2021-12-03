@@ -74,7 +74,7 @@ private:
   /**
    * @brief Function to perform some user-defined operation on tick
    */
-  BT::NodeStatus tick();
+  BT::NodeStatus tick() override;
 
   /**
    * @brief callback function for the controller_selector topic
@@ -88,6 +88,8 @@ private:
   std::string last_selected_controller_;
 
   rclcpp::Node::SharedPtr node_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 
   std::string topic_name_;
 };

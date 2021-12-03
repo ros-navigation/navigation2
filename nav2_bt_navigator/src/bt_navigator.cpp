@@ -28,14 +28,15 @@
 namespace nav2_bt_navigator
 {
 
-BtNavigator::BtNavigator()
-: nav2_util::LifecycleNode("bt_navigator", "", false)
+BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("bt_navigator", "", false, options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
   const std::vector<std::string> plugin_libs = {
     "nav2_compute_path_to_pose_action_bt_node",
     "nav2_compute_path_through_poses_action_bt_node",
+    "nav2_smooth_path_action_bt_node",
     "nav2_follow_path_action_bt_node",
     "nav2_back_up_action_bt_node",
     "nav2_spin_action_bt_node",
@@ -61,9 +62,10 @@ BtNavigator::BtNavigator()
     "nav2_is_battery_low_condition_bt_node",
     "nav2_navigate_through_poses_action_bt_node",
     "nav2_navigate_to_pose_action_bt_node",
-    "nav2_remove_passed_goals_action_bt_node"
+    "nav2_remove_passed_goals_action_bt_node",
     "nav2_planner_selector_bt_node",
-    "nav2_controller_selector_bt_node"
+    "nav2_controller_selector_bt_node",
+    "nav2_goal_checker_selector_bt_node"
   };
 
   declare_parameter("plugin_lib_names", plugin_libs);
@@ -181,3 +183,10 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 }  // namespace nav2_bt_navigator
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_bt_navigator::BtNavigator)

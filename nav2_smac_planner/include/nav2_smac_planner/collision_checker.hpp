@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
-
+#include <vector>
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_smac_planner/constants.hpp"
 
@@ -31,30 +31,41 @@ class GridCollisionChecker
 public:
   /**
    * @brief A constructor for nav2_smac_planner::GridCollisionChecker
+   * for use when regular bin intervals are appropriate
    * @param costmap The costmap to collision check against
+   * @param num_quantizations The number of quantizations to precompute footprint
+   * orientations for to speed up collision checking
    */
   GridCollisionChecker(
-    nav2_costmap_2d::Costmap2D * costmap)
-  : FootprintCollisionChecker(costmap)
-  {
-  }
+    nav2_costmap_2d::Costmap2D * costmap,
+    unsigned int num_quantizations);
+
+  /**
+   * @brief A constructor for nav2_smac_planner::GridCollisionChecker
+   * for use when irregular bin intervals are appropriate
+   * @param costmap The costmap to collision check against
+   * @param angles The vector of possible angle bins to precompute for
+   * orientations for to speed up collision checking, in radians
+   */
+  // GridCollisionChecker(
+  //   nav2_costmap_2d::Costmap2D * costmap,
+  //   std::vector<float> & angles);
 
   /**
    * @brief Set the footprint to use with collision checker
    * @param footprint The footprint to collision check against
    * @param radius Whether or not the footprint is a circle and use radius collision checking
    */
-  void setFootprint(const nav2_costmap_2d::Footprint & footprint, const bool & radius)
-  {
-    unoriented_footprint_ = footprint;
-    footprint_is_radius_ = radius;
-  }
+  void setFootprint(
+    const nav2_costmap_2d::Footprint & footprint,
+    const bool & radius,
+    const double & possible_inscribed_cost);
 
   /**
    * @brief Check if in collision with costmap and footprint at pose
    * @param x X coordinate of pose to check against
    * @param y Y coordinate of pose to check against
-   * @param theta Angle of pose to check against
+   * @param theta Angle bin number of pose to check against (NOT radians)
    * @param traverse_unknown Whether or not to traverse in unknown space
    * @return boolean if in collision or not.
    */
@@ -62,69 +73,40 @@ public:
     const float & x,
     const float & y,
     const float & theta,
-    const bool & traverse_unknown)
-  {
-    // Assumes setFootprint already set
-    double wx, wy;
-    costmap_->mapToWorld(static_cast<double>(x), static_cast<double>(y), wx, wy);
+    const bool & traverse_unknown);
 
-    if (!footprint_is_radius_) {
-      // if footprint, then we check for the footprint's points, but first see
-      // if the robot is even potentially in an inscribed collision
-      footprint_cost_ = costmap_->getCost(
-        static_cast<unsigned int>(x), static_cast<unsigned int>(y));
-
-      if (footprint_cost_ < POSSIBLY_INSCRIBED) {
-        return false;
-      }
-
-      // If its inscribed, in collision, or unknown in the middle,
-      // no need to even check the footprint, its invalid
-      if (footprint_cost_ == UNKNOWN && !traverse_unknown) {
-        return true;
-      }
-
-      if (footprint_cost_ == INSCRIBED || footprint_cost_ == OCCUPIED) {
-        return true;
-      }
-
-      // if possible inscribed, need to check actual footprint pose
-      footprint_cost_ = footprintCostAtPose(
-        wx, wy, static_cast<double>(theta), unoriented_footprint_);
-      if (footprint_cost_ == UNKNOWN && traverse_unknown) {
-        return false;
-      }
-
-      // if occupied or unknown and not to traverse unknown space
-      return footprint_cost_ >= INSCRIBED;
-    } else {
-      // if radius, then we can check the center of the cost assuming inflation is used
-      footprint_cost_ = costmap_->getCost(
-        static_cast<unsigned int>(x), static_cast<unsigned int>(y));
-
-      if (footprint_cost_ == UNKNOWN && traverse_unknown) {
-        return false;
-      }
-
-      // if occupied or unknown and not to traverse unknown space
-      return footprint_cost_ >= INSCRIBED;
-    }
-  }
+  /**
+   * @brief Check if in collision with costmap and footprint at pose
+   * @param i Index to search collision status of
+   * @param traverse_unknown Whether or not to traverse in unknown space
+   * @return boolean if in collision or not.
+   */
+  bool inCollision(
+    const unsigned int & i,
+    const bool & traverse_unknown);
 
   /**
    * @brief Get cost at footprint pose in costmap
    * @return the cost at the pose in costmap
    */
-  float getCost()
+  float getCost();
+
+  /**
+   * @brief Get the angles of the precomputed footprint orientations
+   * @return the ordered vector of angles corresponding to footprints
+   */
+  std::vector<float> & getPrecomputedAngles()
   {
-    // Assumes inCollision called prior
-    return static_cast<float>(footprint_cost_);
+    return angles_;
   }
 
 protected:
+  std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
   nav2_costmap_2d::Footprint unoriented_footprint_;
   double footprint_cost_;
   bool footprint_is_radius_;
+  std::vector<float> angles_;
+  double possible_inscribed_cost_{-1};
 };
 
 }  // namespace nav2_smac_planner

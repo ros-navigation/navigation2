@@ -30,6 +30,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav2_navfn_planner
 {
@@ -205,7 +206,7 @@ protected:
   std::string global_frame_, name_;
 
   // Whether or not the planner should be allowed to plan through unknown space
-  bool allow_unknown_;
+  bool allow_unknown_, use_final_approach_orientation_;
 
   // If the goal is obstructed, the tolerance specifies how many meters the planner
   // can relax the constraint in x and y before failing
@@ -214,15 +215,18 @@ protected:
   // Whether to use the astar planner or default dijkstras
   bool use_astar_;
 
-  // Subscription for parameter change
-  rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
-  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
+  // parent node weak ptr
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   /**
    * @brief Callback executed when a paramter change is detected
-   * @param event ParameterEvent message
+   * @param parameters list of changed parameters
    */
-  void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 };
 
 }  // namespace nav2_navfn_planner

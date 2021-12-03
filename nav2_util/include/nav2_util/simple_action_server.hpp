@@ -24,6 +24,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "nav2_util/node_thread.hpp"
 
 namespace nav2_util
 {
@@ -32,7 +33,7 @@ namespace nav2_util
  * @class nav2_util::SimpleActionServer
  * @brief An action server wrapper to make applications simpler using Actions
  */
-template<typename ActionT, typename nodeT = rclcpp::Node>
+template<typename ActionT>
 class SimpleActionServer
 {
 public:
@@ -54,19 +55,24 @@ public:
    * @param action_name Name of the action to call
    * @param execute_callback Execution  callback function of Action
    * @param server_timeout Timeout to to react to stop or preemption requests
+   * @param spin_thread Whether to spin with a dedicated thread internally
+   * @param options Options to pass to the underlying rcl_action_server_t
    */
+  template<typename NodeT>
   explicit SimpleActionServer(
-    typename nodeT::SharedPtr node,
+    NodeT node,
     const std::string & action_name,
     ExecuteCallback execute_callback,
     CompletionCallback completion_callback = nullptr,
-    std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500))
+    std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
+    bool spin_thread = false,
+    const rcl_action_server_options_t & options = rcl_action_server_get_default_options())
   : SimpleActionServer(
       node->get_node_base_interface(),
       node->get_node_clock_interface(),
       node->get_node_logging_interface(),
       node->get_node_waitables_interface(),
-      action_name, execute_callback, completion_callback, server_timeout)
+      action_name, execute_callback, completion_callback, server_timeout, spin_thread, options)
   {}
 
   /**
@@ -75,6 +81,8 @@ public:
    * @param action_name Name of the action to call
    * @param execute_callback Execution  callback function of Action
    * @param server_timeout Timeout to to react to stop or preemption requests
+   * @param spin_thread Whether to spin with a dedicated thread internally
+   * @param options Options to pass to the underlying rcl_action_server_t
    */
   explicit SimpleActionServer(
     rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
@@ -84,7 +92,9 @@ public:
     const std::string & action_name,
     ExecuteCallback execute_callback,
     CompletionCallback completion_callback = nullptr,
-    std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500))
+    std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
+    bool spin_thread = false,
+    const rcl_action_server_options_t & options = rcl_action_server_get_default_options())
   : node_base_interface_(node_base_interface),
     node_clock_interface_(node_clock_interface),
     node_logging_interface_(node_logging_interface),
@@ -92,9 +102,14 @@ public:
     action_name_(action_name),
     execute_callback_(execute_callback),
     completion_callback_(completion_callback),
-    server_timeout_(server_timeout)
+    server_timeout_(server_timeout),
+    spin_thread_(spin_thread)
   {
     using namespace std::placeholders;  // NOLINT
+    if (spin_thread_) {
+      callback_group_ = node_base_interface->create_callback_group(
+        rclcpp::CallbackGroupType::MutuallyExclusive, false);
+    }
     action_server_ = rclcpp_action::create_server<ActionT>(
       node_base_interface_,
       node_clock_interface_,
@@ -103,7 +118,14 @@ public:
       action_name_,
       std::bind(&SimpleActionServer::handle_goal, this, _1, _2),
       std::bind(&SimpleActionServer::handle_cancel, this, _1),
-      std::bind(&SimpleActionServer::handle_accepted, this, _1));
+      std::bind(&SimpleActionServer::handle_accepted, this, _1),
+      options,
+      callback_group_);
+    if (spin_thread_) {
+      executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+      executor_->add_callback_group(callback_group_, node_base_interface_);
+      executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
+    }
   }
 
   /**
@@ -485,6 +507,10 @@ protected:
   std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> pending_handle_;
 
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
+  bool spin_thread_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_{nullptr};
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
+  std::unique_ptr<nav2_util::NodeThread> executor_thread_;
 
   /**
    * @brief Generate an empty result object for an action type

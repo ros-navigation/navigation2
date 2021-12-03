@@ -24,8 +24,10 @@
 #include <utility>
 #include <functional>
 
+#include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "nav2_smac_planner/node_hybrid.hpp"
 
 namespace nav2_smac_planner
 {
@@ -58,10 +60,9 @@ public:
 
   /**
    * @brief A constructor for nav2_smac_planner::Node2D
-   * @param cost_in The costmap cost at this node
    * @param index The index of this node for self-reference
    */
-  explicit Node2D(unsigned char & cost_in, const unsigned int index);
+  explicit Node2D(const unsigned int index);
 
   /**
    * @brief A destructor for nav2_smac_planner::Node2D
@@ -80,9 +81,8 @@ public:
 
   /**
    * @brief Reset method for new search
-   * @param cost_in The costmap cost at this node
    */
-  void reset(const unsigned char & cost);
+  void reset();
   /**
    * @brief Gets the accumulated cost at this node
    * @return accumulated cost
@@ -96,7 +96,7 @@ public:
    * @brief Sets the accumulated cost at this node
    * @param reference to accumulated cost
    */
-  inline void setAccumulatedCost(const float cost_in)
+  inline void setAccumulatedCost(const float & cost_in)
   {
     _accumulated_cost = cost_in;
   }
@@ -108,6 +108,15 @@ public:
   inline float & getCost()
   {
     return _cell_cost;
+  }
+
+  /**
+   * @brief Gets the costmap cost at this node
+   * @return costmap cost
+   */
+  inline void setCost(const float & cost)
+  {
+    _cell_cost = cost;
   }
 
   /**
@@ -160,7 +169,7 @@ public:
    * @param collision_checker Pointer to collision checker object
    * @return whether this node is valid and collision free
    */
-  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker collision_checker);
+  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker * collision_checker);
 
   /**
    * @brief get traversal cost from this node to child node
@@ -200,39 +209,66 @@ public:
   }
 
   /**
+   * @brief Get index
+   * @param Index Index of point
+   * @return coordinates of point
+   */
+  static inline Coordinates getCoords(const unsigned int & index)
+  {
+    const unsigned int & size_x = _neighbors_grid_offsets[3];
+    return Coordinates(index % size_x, index / size_x);
+  }
+
+  /**
    * @brief Get cost of heuristic of node
    * @param node Node index current
    * @param node Node index of new
+   * @param costmap Costmap ptr to use
    * @return Heuristic cost between the nodes
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates);
+    const Coordinates & goal_coordinates,
+    const nav2_costmap_2d::Costmap2D * costmap);
 
   /**
    * @brief Initialize the neighborhood to be used in A*
    * We support 4-connect (VON_NEUMANN) and 8-connect (MOORE)
-   * @param x_size_uint The total x size to find neighbors
    * @param neighborhood The desired neighborhood type
+   * @param x_size_uint The total x size to find neighbors
+   * @param y_size The total y size to find neighbors
+   * @param num_angle_quantization Number of quantizations, must be 0
+   * @param search_info Search parameters, unused by 2D node
    */
-  static void initNeighborhood(
-    const unsigned int & x_size_uint,
-    const MotionModel & neighborhood);
+  static void initMotionModel(
+    const MotionModel & motion_model,
+    unsigned int & size_x,
+    unsigned int & size_y,
+    unsigned int & num_angle_quantization,
+    SearchInfo & search_info);
+
   /**
    * @brief Retrieve all valid neighbors of a node.
-   * @param node Pointer to the node we are currently exploring in A*
-   * @param graph Reference to graph to discover new nodes
+   * @param validity_checker Functor for state validity checking
+   * @param collision_checker Collision checker to use
+   * @param traverse_unknown If unknown costs are valid to traverse
    * @param neighbors Vector of neighbors to be filled
    */
-  static void getNeighbors(
-    NodePtr & node,
+  void getNeighbors(
     std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> & validity_checker,
-    GridCollisionChecker collision_checker,
+    GridCollisionChecker * collision_checker,
     const bool & traverse_unknown,
     NodeVector & neighbors);
 
+  /**
+   * @brief Set the starting pose for planning, as a node index
+   * @param path Reference to a vector of indicies of generated path
+   * @return whether the path was able to be backtraced
+   */
+  bool backtracePath(CoordinateVector & path);
+
   Node2D * parent;
-  static double neutral_cost;
+  static float cost_travel_multiplier;
   static std::vector<int> _neighbors_grid_offsets;
 
 private:

@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
@@ -57,8 +58,9 @@ public:
 
   /**
    * @brief A constructor for nav2_waypoint_follower::WaypointFollower class
+   * @param options Additional options to control creation of the node.
    */
-  WaypointFollower();
+  explicit WaypointFollower(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
    * @brief A destructor for nav2_waypoint_follower::WaypointFollower class
    */
@@ -115,10 +117,21 @@ protected:
    */
   void goalResponseCallback(const rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr & goal);
 
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+
   // Our action server
   std::unique_ptr<ActionServer> action_server_;
   ActionClient::SharedPtr nav_to_pose_client_;
-  rclcpp::Node::SharedPtr client_node_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future_goal_handle_;
   bool stop_on_failure_;
   ActionStatus current_goal_status_;

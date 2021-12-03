@@ -40,8 +40,9 @@ class RecoveryServer : public nav2_util::LifecycleNode
 public:
   /**
    * @brief A constructor for recovery_server::RecoveryServer
+   * @param options Additional options to control creation of the node.
    */
-  RecoveryServer();
+  explicit RecoveryServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~RecoveryServer();
 
   /**
@@ -91,8 +92,6 @@ protected:
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
-
-  double transform_tolerance_;
 };
 
 }  // namespace recovery_server

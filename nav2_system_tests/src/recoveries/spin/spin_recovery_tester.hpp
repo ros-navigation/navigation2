@@ -37,7 +37,7 @@
 #include "geometry_msgs/msg/quaternion.hpp"
 
 #include "tf2/utils.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
@@ -79,6 +79,7 @@ private:
   bool is_active_;
   bool initial_pose_received_;
   bool make_fake_costmap_;
+  rclcpp::Time stamp_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;

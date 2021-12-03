@@ -50,9 +50,6 @@ def generate_launch_description():
     if (os.getenv('ASTAR') == 'True'):
         param_substitutions.update({'use_astar': 'True'})
 
-    if (os.getenv('GROOT_MONITORING') == 'True'):
-        param_substitutions.update({'enable_groot_monitoring': 'True'})
-
     param_substitutions.update(
         {'planner_server.ros__parameters.GridBased.plugin': os.getenv('PLANNER')})
     param_substitutions.update(
@@ -108,7 +105,8 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[os.path.join(os.getenv('TEST_DIR'), os.getenv('TESTER')),
-             '-r', '-2.0', '-0.5', '0.0', '2.0'],
+             '-r', '-2.0', '-0.5', '0.0', '2.0',
+             '-e', 'True'],
         name='tester_node',
         output='screen')
 

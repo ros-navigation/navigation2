@@ -57,6 +57,9 @@ list(APPEND plugin_libs nav2_compute_path_to_pose_action_bt_node)
 add_library(nav2_compute_path_through_poses_action_bt_node SHARED plugins/action/compute_path_through_poses_action.cpp)
 list(APPEND plugin_libs nav2_compute_path_through_poses_action_bt_node)
 
+add_library(nav2_smooth_path_action_bt_node SHARED plugins/action/smooth_path_action.cpp)
+list(APPEND plugin_libs nav2_smooth_path_action_bt_node)
+
 add_library(nav2_follow_path_action_bt_node SHARED plugins/action/follow_path_action.cpp)
 list(APPEND plugin_libs nav2_follow_path_action_bt_node)
 
@@ -140,6 +143,9 @@ list(APPEND plugin_libs nav2_planner_selector_bt_node)
 
 add_library(nav2_controller_selector_bt_node SHARED plugins/action/controller_selector_node.cpp)
 list(APPEND plugin_libs nav2_controller_selector_bt_node)
+
+add_library(nav2_goal_checker_selector_bt_node SHARED plugins/action/goal_checker_selector_node.cpp)
+list(APPEND plugin_libs nav2_goal_checker_selector_bt_node)
 
 foreach(bt_plugin ${plugin_libs})
   ament_target_dependencies(${bt_plugin} ${dependencies})

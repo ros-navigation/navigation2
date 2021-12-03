@@ -57,11 +57,17 @@ SpinRecoveryTester::SpinRecoveryTester()
   publisher_ =
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
   fake_costmap_publisher_ =
-    node_->create_publisher<nav2_msgs::msg::Costmap>("local_costmap/costmap_raw", 10);
+    node_->create_publisher<nav2_msgs::msg::Costmap>(
+    "local_costmap/costmap_raw",
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  fake_footprint_publisher_ = node_->create_publisher<geometry_msgs::msg::PolygonStamped>(
+    "local_costmap/published_footprint", rclcpp::SystemDefaultsQoS());
 
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&SpinRecoveryTester::amclPoseCallback, this, std::placeholders::_1));
+
+  stamp_ = node_->now();
 }
 
 SpinRecoveryTester::~SpinRecoveryTester()
@@ -151,6 +157,15 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     "Init Yaw is %lf",
     fabs(tf2::getYaw(initial_pose.pose.orientation)));
   RCLCPP_INFO(node_->get_logger(), "Before sending goal");
+
+  // Intialize fake costmap
+  if (make_fake_costmap_) {
+    sendFakeCostmap(target_yaw);
+    sendFakeOdom(0.0);
+  }
+
+  rclcpp::sleep_for(std::chrono::milliseconds(100));
+
   auto goal_handle_future = client_ptr_->async_send_goal(goal_msg);
 
   if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
@@ -250,7 +265,7 @@ void SpinRecoveryTester::sendFakeCostmap(float angle)
   nav2_msgs::msg::Costmap fake_costmap;
 
   fake_costmap.header.frame_id = "odom";
-  fake_costmap.header.stamp = rclcpp::Time();
+  fake_costmap.header.stamp = stamp_;
   fake_costmap.metadata.layer = "master";
   fake_costmap.metadata.resolution = .1;
   fake_costmap.metadata.size_x = 100;
@@ -275,7 +290,7 @@ void SpinRecoveryTester::sendInitialPose()
 {
   geometry_msgs::msg::PoseWithCovarianceStamped pose;
   pose.header.frame_id = "map";
-  pose.header.stamp = rclcpp::Time();
+  pose.header.stamp = stamp_;
   pose.pose.pose.position.x = -2.0;
   pose.pose.pose.position.y = -0.5;
   pose.pose.pose.position.z = 0.0;
@@ -298,7 +313,7 @@ void SpinRecoveryTester::sendFakeOdom(float angle)
 {
   geometry_msgs::msg::TransformStamped transformStamped;
 
-  transformStamped.header.stamp = rclcpp::Time();
+  transformStamped.header.stamp = stamp_;
   transformStamped.header.frame_id = "odom";
   transformStamped.child_frame_id = "base_link";
   transformStamped.transform.translation.x = 0.0;
@@ -312,6 +327,20 @@ void SpinRecoveryTester::sendFakeOdom(float angle)
   transformStamped.transform.rotation.w = q.w();
 
   tf_broadcaster_->sendTransform(transformStamped);
+
+  geometry_msgs::msg::PolygonStamped footprint;
+  footprint.header.frame_id = "odom";
+  footprint.header.stamp = stamp_;
+  footprint.polygon.points.resize(4);
+  footprint.polygon.points[0].x = 0.22;
+  footprint.polygon.points[0].y = 0.22;
+  footprint.polygon.points[1].x = 0.22;
+  footprint.polygon.points[1].y = -0.22;
+  footprint.polygon.points[2].x = -0.22;
+  footprint.polygon.points[2].y = -0.22;
+  footprint.polygon.points[3].x = -0.22;
+  footprint.polygon.points[3].y = 0.22;
+  fake_footprint_publisher_->publish(footprint);
 }
 void SpinRecoveryTester::amclPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)

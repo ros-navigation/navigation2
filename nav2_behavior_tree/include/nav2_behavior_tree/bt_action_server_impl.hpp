@@ -53,14 +53,11 @@ BtActionServer<ActionT>::BtActionServer(
   clock_ = node->get_clock();
 
   // Declare this node's parameters
-  if (!node->has_parameter("enable_groot_monitoring")) {
-    node->declare_parameter("enable_groot_monitoring", true);
+  if (!node->has_parameter("bt_loop_duration")) {
+    node->declare_parameter("bt_loop_duration", 10);
   }
-  if (!node->has_parameter("groot_zmq_publisher_port")) {
-    node->declare_parameter("groot_zmq_publisher_port", 1666);
-  }
-  if (!node->has_parameter("groot_zmq_server_port")) {
-    node->declare_parameter("groot_zmq_server_port", 1667);
+  if (!node->has_parameter("default_server_timeout")) {
+    node->declare_parameter("default_server_timeout", 20);
   }
 }
 
@@ -76,11 +73,16 @@ bool BtActionServer<ActionT>::on_configure()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  // use suffix '_rclcpp_node' to keep parameter file consistency #1773
+  // Name client node after action name
+  std::string client_node_name = action_name_;
+  std::replace(client_node_name.begin(), client_node_name.end(), '/', '_');
+  // Use suffix '_rclcpp_node' to keep parameter file consistency #1773
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args",
-      "-r", std::string("__node:=") + node->get_name() + "_rclcpp_node",
+      "-r",
+      std::string("__node:=") + std::string(node->get_name()) + client_node_name + "_rclcpp_node",
       "--"});
+
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
@@ -91,6 +93,13 @@ bool BtActionServer<ActionT>::on_configure()
     node->get_node_waitables_interface(),
     action_name_, std::bind(&BtActionServer<ActionT>::executeCallback, this));
 
+  // Get parameters for BT timeouts
+  int timeout;
+  node->get_parameter("bt_loop_duration", timeout);
+  bt_loop_duration_ = std::chrono::milliseconds(timeout);
+  node->get_parameter("default_server_timeout", timeout);
+  default_server_timeout_ = std::chrono::milliseconds(timeout);
+
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
 
@@ -99,12 +108,8 @@ bool BtActionServer<ActionT>::on_configure()
 
   // Put items on the blackboard
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
-  blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
-
-  // Get parameter for monitoring with Groot via ZMQ Publisher
-  node->get_parameter("enable_groot_monitoring", enable_groot_monitoring_);
-  node->get_parameter("groot_zmq_publisher_port", groot_zmq_publisher_port_);
-  node->get_parameter("groot_zmq_server_port", groot_zmq_server_port_);
+  blackboard_->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
+  blackboard_->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
 
   return true;
 }
@@ -137,7 +142,6 @@ bool BtActionServer<ActionT>::on_cleanup()
   current_bt_xml_filename_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_.rootNode());
-  bt_->resetGrootMonitor();
   bt_.reset();
   return true;
 }
@@ -153,9 +157,6 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml is already loaded");
     return true;
   }
-
-  // if a new tree is created, than the ZMQ Publisher must be destroyed
-  bt_->resetGrootMonitor();
 
   // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(filename);
@@ -174,17 +175,6 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
 
   current_bt_xml_filename_ = filename;
-
-  // Enable monitoring with Groot
-  if (enable_groot_monitoring_) {
-    // optionally add max_msg_per_second = 25 (default) here
-    try {
-      bt_->addGrootMonitoring(&tree_, groot_zmq_publisher_port_, groot_zmq_server_port_);
-    } catch (const std::logic_error & e) {
-      RCLCPP_ERROR(logger_, "ZMQ already enabled, Error: %s", e.what());
-    }
-  }
-
   return true;
 }
 
@@ -217,7 +207,7 @@ void BtActionServer<ActionT>::executeCallback()
     };
 
   // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling);
+  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling, bt_loop_duration_);
 
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.

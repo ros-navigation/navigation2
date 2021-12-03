@@ -20,7 +20,9 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <mutex>
 
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_core/controller.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
@@ -183,13 +185,16 @@ protected:
     const double &, const double &);
 
   /**
-   * @brief Whether point is in collision
+   * @brief checks for collision at projected pose
    * @param x Pose of pose x
    * @param y Pose of pose y
+   * @param theta orientation of Yaw
    * @return Whether in collision
    */
-  bool inCollision(const double & x, const double & y);
-
+  bool inCollision(
+    const double & x,
+    const double & y,
+    const double & theta);
   /**
    * @brief Cost at a point
    * @param x Pose of pose x
@@ -210,7 +215,7 @@ protected:
   void applyConstraints(
     const double & dist_error, const double & lookahead_dist,
     const double & curvature, const geometry_msgs::msg::Twist & speed,
-    const double & pose_cost, double & linear_vel);
+    const double & pose_cost, double & linear_vel, double & sign);
 
   /**
    * @brief Get lookahead point
@@ -220,11 +225,27 @@ protected:
    */
   geometry_msgs::msg::PoseStamped getLookAheadPoint(const double &, const nav_msgs::msg::Path &);
 
+  /**
+   * @brief checks for the cusp position
+   * @param pose Pose input to determine the cusp position
+   * @return robot distance from the cusp
+   */
+  double findDirectionChange(const geometry_msgs::msg::PoseStamped & pose);
+
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
   rclcpp::Logger logger_ {rclcpp::get_logger("RegulatedPurePursuitController")};
+  rclcpp::Clock::SharedPtr clock_;
 
   double desired_linear_vel_, base_desired_linear_vel_;
   double lookahead_dist_;
@@ -232,11 +253,8 @@ protected:
   double max_lookahead_dist_;
   double min_lookahead_dist_;
   double lookahead_time_;
-  double max_linear_accel_;
-  double max_linear_decel_;
   bool use_velocity_scaled_lookahead_dist_;
   tf2::Duration transform_tolerance_;
-  bool use_approach_vel_scaling_;
   double min_approach_linear_velocity_;
   double control_duration_;
   double max_allowed_time_to_collision_;
@@ -251,12 +269,19 @@ protected:
   double max_angular_accel_;
   double rotate_to_heading_min_angle_;
   double goal_dist_tol_;
+  bool allow_reversing_;
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
+  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
+  collision_checker_;
+
+  // Dynamic parameters handler
+  std::mutex mutex_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller

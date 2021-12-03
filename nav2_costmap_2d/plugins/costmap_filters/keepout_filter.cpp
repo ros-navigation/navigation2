@@ -39,7 +39,7 @@
 #include <memory>
 #include <algorithm>
 #include "tf2/convert.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
@@ -100,7 +100,7 @@ void KeepoutFilter::filterInfoCallback(
   }
 
   // Checking that base and multiplier are set to their default values
-  if (msg->base != BASE_DEFAULT or msg->multiplier != MULTIPLIER_DEFAULT) {
+  if (msg->base != BASE_DEFAULT || msg->multiplier != MULTIPLIER_DEFAULT) {
     RCLCPP_ERROR(
       logger_,
       "KeepoutFilter: For proper use of keepout filter base and multiplier"

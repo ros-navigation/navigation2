@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Samsung Research America
+// Copyright (c) 2021, Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,18 +22,18 @@
 #include <queue>
 #include <utility>
 
+#include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_smac_planner/types.hpp"
-#include "nav2_smac_planner/smoother_cost_function.hpp"
-
-#include "ceres/ceres.h"
-#include "Eigen/Core"
+#include "nav2_smac_planner/constants.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "nav_msgs/msg/path.hpp"
 
 namespace nav2_smac_planner
 {
 
 /**
  * @class nav2_smac_planner::Smoother
- * @brief A Conjugate Gradient 2D path smoother implementation
+ * @brief A path smoother implementation
  */
 class Smoother
 {
@@ -41,7 +41,7 @@ public:
   /**
    * @brief A constructor for nav2_smac_planner::Smoother
    */
-  Smoother() {}
+  explicit Smoother(const SmootherParams & params);
 
   /**
    * @brief A destructor for nav2_smac_planner::Smoother
@@ -50,90 +50,60 @@ public:
 
   /**
    * @brief Initialization of the smoother
-   * @param params OptimizerParam struct
+   * @param min_turning_radius Minimum turning radius (m)
    */
-  void initialize(const OptimizerParams params)
-  {
-    _debug = params.debug;
-
-    // General Params
-
-    // 2 most valid options: STEEPEST_DESCENT, NONLINEAR_CONJUGATE_GRADIENT
-    _options.line_search_direction_type = ceres::NONLINEAR_CONJUGATE_GRADIENT;
-    _options.line_search_type = ceres::WOLFE;
-    _options.nonlinear_conjugate_gradient_type = ceres::POLAK_RIBIERE;
-    _options.line_search_interpolation_type = ceres::CUBIC;
-
-    _options.max_num_iterations = params.max_iterations;
-    _options.max_solver_time_in_seconds = params.max_time;
-
-    _options.function_tolerance = params.fn_tol;
-    _options.gradient_tolerance = params.gradient_tol;
-    _options.parameter_tolerance = params.param_tol;
-
-    _options.min_line_search_step_size = params.advanced.min_line_search_step_size;
-    _options.max_num_line_search_step_size_iterations =
-      params.advanced.max_num_line_search_step_size_iterations;
-    _options.line_search_sufficient_function_decrease =
-      params.advanced.line_search_sufficient_function_decrease;
-    _options.max_line_search_step_contraction = params.advanced.max_line_search_step_contraction;
-    _options.min_line_search_step_contraction = params.advanced.min_line_search_step_contraction;
-    _options.max_num_line_search_direction_restarts =
-      params.advanced.max_num_line_search_direction_restarts;
-    _options.line_search_sufficient_curvature_decrease =
-      params.advanced.line_search_sufficient_curvature_decrease;
-    _options.max_line_search_step_expansion = params.advanced.max_line_search_step_expansion;
-
-    if (_debug) {
-      _options.minimizer_progress_to_stdout = true;
-    } else {
-      _options.logging_type = ceres::SILENT;
-    }
-  }
+  void initialize(const double & min_turning_radius);
 
   /**
    * @brief Smoother method
    * @param path Reference to path
    * @param costmap Pointer to minimal costmap
-   * @param smoother parameters weights
+   * @param max_time Maximum time to compute, stop early if over limit
    * @return If smoothing was successful
    */
   bool smooth(
-    std::vector<Eigen::Vector2d> & path,
-    nav2_costmap_2d::Costmap2D * costmap,
-    const SmootherParams & params)
-  {
-    _options.max_solver_time_in_seconds = params.max_time;
+    nav_msgs::msg::Path & path,
+    const nav2_costmap_2d::Costmap2D * costmap,
+    const double & max_time,
+    const bool do_refinement = true);
 
-    double parameters[path.size() * 2];  // NOLINT
-    for (uint i = 0; i != path.size(); i++) {
-      parameters[2 * i] = path[i][0];
-      parameters[2 * i + 1] = path[i][1];
-    }
+protected:
+  /**
+   * @brief Get the field value for a given dimension
+   * @param msg Current pose to sample
+   * @param dim Dimension ID of interest
+   * @return dim value
+   */
+  inline double getFieldByDim(
+    const geometry_msgs::msg::PoseStamped & msg,
+    const unsigned int & dim);
 
-    ceres::GradientProblemSolver::Summary summary;
-    ceres::GradientProblem problem(new UnconstrainedSmootherCostFunction(&path, costmap, params));
-    ceres::Solve(_options, problem, parameters, &summary);
+  /**
+   * @brief Set the field value for a given dimension
+   * @param msg Current pose to sample
+   * @param dim Dimension ID of interest
+   * @param value to set the dimention to for the pose
+   */
+  inline void setFieldByDim(
+    geometry_msgs::msg::PoseStamped & msg, const unsigned int dim,
+    const double & value);
 
-    if (_debug) {
-      std::cout << summary.FullReport() << '\n';
-    }
+  /**
+   * @brief Get the instantaneous curvature valud
+   * @param path Path to find curvature in
+   * @param i idx in path to find it for
+   * @return curvature
+   */
+  inline double getCurvature(const nav_msgs::msg::Path & path, const unsigned int i);
 
-    if (!summary.IsSolutionUsable() || summary.initial_cost - summary.final_cost <= 0.0) {
-      return false;
-    }
+  /**
+   * @brief For a given path, update the path point orientations based on smoothing
+   * @param path Path to approximate the path orientation in
+   */
+  inline void updateApproximatePathOrientations(nav_msgs::msg::Path & path);
 
-    for (uint i = 0; i != path.size(); i++) {
-      path[i][0] = parameters[2 * i];
-      path[i][1] = parameters[2 * i + 1];
-    }
-
-    return true;
-  }
-
-private:
-  bool _debug;
-  ceres::GradientProblemSolver::Options _options;
+  double min_turning_rad_, tolerance_, data_w_, smooth_w_;
+  int max_its_;
 };
 
 }  // namespace nav2_smac_planner

@@ -35,7 +35,7 @@
 #include "nav2_util/string_utils.hpp"
 #include "nav2_amcl/sensors/laser/laser.hpp"
 #include "tf2/convert.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/LinearMath/Transform.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/message_filter.h"
@@ -57,8 +57,8 @@ namespace nav2_amcl
 {
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
-AmclNode::AmclNode()
-: nav2_util::LifecycleNode("amcl", "", true)
+AmclNode::AmclNode(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("amcl", "", true, options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -174,7 +174,7 @@ AmclNode::AmclNode()
     "resample_interval", rclcpp::ParameterValue(1),
     "Number of filter updates required before resampling");
 
-  add_parameter("robot_model_type", rclcpp::ParameterValue(std::string("differential")));
+  add_parameter("robot_model_type", rclcpp::ParameterValue("nav2_amcl::DifferentialMotionModel"));
 
   add_parameter(
     "save_pose_rate", rclcpp::ParameterValue(0.5),
@@ -234,37 +234,14 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   initParameters();
   initTransforms();
+  initParticleFilter();
+  initLaserScan();
   initMessageFilters();
   initPubSub();
   initServices();
   initOdometry();
-  initParticleFilter();
-  initLaserScan();
 
   return nav2_util::CallbackReturn::SUCCESS;
-}
-
-void
-AmclNode::waitForTransforms()
-{
-  std::string tf_error;
-
-  RCLCPP_INFO(get_logger(), "Checking that transform thread is ready");
-
-  while (rclcpp::ok() &&
-    !tf_buffer_->canTransform(
-      global_frame_id_, odom_frame_id_, tf2::TimePointZero,
-      transform_tolerance_, &tf_error))
-  {
-    RCLCPP_INFO(
-      get_logger(), "Timed out waiting for transform from %s to %s"
-      " to become available, tf error: %s",
-      odom_frame_id_.c_str(), global_frame_id_.c_str(), tf_error.c_str());
-
-    // The error string will accumulate and errors will typically be the same, so the last
-    // will do for the warning above. Reset the string here to avoid accumulation.
-    tf_error.clear();
-  }
 }
 
 nav2_util::CallbackReturn
@@ -335,8 +312,10 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   laser_scan_sub_.reset();
 
   // Map
-  map_free(map_);
-  map_ = nullptr;
+  if (map_ != NULL) {
+    map_free(map_);
+    map_ = nullptr;
+  }
   first_map_received_ = false;
   free_space_indices.resize(0);
 
@@ -389,26 +368,6 @@ AmclNode::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
-}
-
-void
-AmclNode::checkLaserReceived()
-{
-  if (last_laser_received_ts_.nanoseconds() == 0) {
-    RCLCPP_WARN(
-      get_logger(), "Laser scan has not been received"
-      " (and thus no pose updates have been published)."
-      " Verify that data is being published on the %s topic.", scan_topic_.c_str());
-    return;
-  }
-
-  rclcpp::Duration d = now() - last_laser_received_ts_;
-  if (d.nanoseconds() * 1e-9 > laser_check_interval_.count()) {
-    RCLCPP_WARN(
-      get_logger(), "No laser scan received (and thus no pose updates have been published) for %f"
-      " seconds.  Verify that data is being published on the %s topic.",
-      d.nanoseconds() * 1e-9, scan_topic_.c_str());
-  }
 }
 
 bool
@@ -502,6 +461,8 @@ AmclNode::globalLocalizationCallback(
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
 {
+  std::lock_guard<std::mutex> lock(pf_mutex_);
+
   RCLCPP_INFO(get_logger(), "Initializing with uniform distribution");
 
   pf_init_model(
@@ -526,6 +487,8 @@ AmclNode::nomotionUpdateCallback(
 void
 AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
+  std::lock_guard<std::mutex> lock(pf_mutex_);
+
   RCLCPP_INFO(get_logger(), "initialPoseReceived");
 
   if (msg->header.frame_id == "") {
@@ -623,6 +586,8 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 void
 AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
+  std::lock_guard<std::mutex> lock(pf_mutex_);
+
   // Since the sensor data is continually being published by the simulator or robot,
   // we don't want our callbacks to fire until we're in the active state
   if (!active_) {return;}
@@ -928,7 +893,7 @@ AmclNode::publishAmclPose(
   if (!initial_pose_is_known_) {
     if (checkElapsedTime(2s, last_time_printed_msg_)) {
       RCLCPP_WARN(
-        get_logger(), "ACML cannot publish a pose or update the transform. "
+        get_logger(), "AMCL cannot publish a pose or update the transform. "
         "Please set the initial pose...");
       last_time_printed_msg_ = now();
     }
@@ -1105,12 +1070,38 @@ AmclNode::initParameters()
   last_time_printed_msg_ = now();
 
   // Semantic checks
+  if (laser_likelihood_max_dist_ < 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set laser_likelihood_max_dist to be negtive,"
+      " this isn't allowed so it will be set to default value 2.0.");
+    laser_likelihood_max_dist_ = 2.0;
+  }
+  if (max_particles_ < 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set max_particles to be negtive,"
+      " this isn't allowed so it will be set to default value 2000.");
+    max_particles_ = 2000;
+  }
+
+  if (min_particles_ < 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set min_particles to be negtive,"
+      " this isn't allowed so it will be set to default value 500.");
+    min_particles_ = 500;
+  }
 
   if (min_particles_ > max_particles_) {
     RCLCPP_WARN(
       get_logger(), "You've set min_particles to be greater than max particles,"
       " this isn't allowed so max_particles will be set to min_particles.");
     max_particles_ = min_particles_;
+  }
+
+  if (resample_interval_ <= 0) {
+    RCLCPP_WARN(
+      get_logger(), "You've set resample_interval to be zero or negtive,"
+      " this isn't allowed so it will be set to default value to 1.");
+    resample_interval_ = 1;
   }
 
   if (always_reset_initial_pose_) {
@@ -1239,7 +1230,7 @@ AmclNode::initMessageFilters()
     rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
 
   laser_scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-    *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_);
+    *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_, transform_tolerance_);
 
   laser_scan_connection_ = laser_scan_filter_->registerCallback(
     std::bind(
@@ -1304,9 +1295,8 @@ AmclNode::initOdometry()
     init_cov_[2] = last_published_pose_.pose.covariance[35];
   }
 
-  motion_model_ = std::unique_ptr<nav2_amcl::MotionModel>(
-    nav2_amcl::MotionModel::createMotionModel(
-      robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
+  motion_model_ = plugin_loader_.createSharedInstance(robot_model_type_);
+  motion_model_->initialize(alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
 
   latest_odom_pose_ = geometry_msgs::msg::PoseStamped();
 }
@@ -1348,3 +1338,10 @@ AmclNode::initLaserScan()
 }
 
 }  // namespace nav2_amcl
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_amcl::AmclNode)

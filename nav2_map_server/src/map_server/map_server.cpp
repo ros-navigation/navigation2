@@ -62,8 +62,8 @@ using namespace std::placeholders;
 namespace nav2_map_server
 {
 
-MapServer::MapServer()
-: nav2_util::LifecycleNode("map_server")
+MapServer::MapServer(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("map_server", "", false, options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -235,3 +235,10 @@ void MapServer::updateMsgHeader()
 }
 
 }  // namespace nav2_map_server
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_map_server::MapServer)

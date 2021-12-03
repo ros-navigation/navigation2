@@ -48,18 +48,24 @@ void CostmapDownsampler::on_configure(
     _downsampled_size_x, _downsampled_size_y, _downsampled_resolution,
     _costmap->getOriginX(), _costmap->getOriginY(), UNKNOWN);
 
-  _downsampled_costmap_pub = std::make_unique<nav2_costmap_2d::Costmap2DPublisher>(
-    node, _downsampled_costmap.get(), global_frame, topic_name, false);
+  if (!node.expired()) {
+    _downsampled_costmap_pub = std::make_unique<nav2_costmap_2d::Costmap2DPublisher>(
+      node, _downsampled_costmap.get(), global_frame, topic_name, false);
+  }
 }
 
 void CostmapDownsampler::on_activate()
 {
-  _downsampled_costmap_pub->on_activate();
+  if (_downsampled_costmap_pub) {
+    _downsampled_costmap_pub->on_activate();
+  }
 }
 
 void CostmapDownsampler::on_deactivate()
 {
-  _downsampled_costmap_pub->on_deactivate();
+  if (_downsampled_costmap_pub) {
+    _downsampled_costmap_pub->on_deactivate();
+  }
 }
 
 void CostmapDownsampler::on_cleanup()
@@ -84,13 +90,15 @@ nav2_costmap_2d::Costmap2D * CostmapDownsampler::downsample(
   }
 
   // Assign costs
-  for (uint i = 0; i < _downsampled_size_x; ++i) {
-    for (uint j = 0; j < _downsampled_size_y; ++j) {
+  for (unsigned int i = 0; i < _downsampled_size_x; ++i) {
+    for (unsigned int j = 0; j < _downsampled_size_y; ++j) {
       setCostOfCell(i, j);
     }
   }
 
-  _downsampled_costmap_pub->publishCostmap();
+  if (_downsampled_costmap_pub) {
+    _downsampled_costmap_pub->publishCostmap();
+  }
   return _downsampled_costmap.get();
 }
 
@@ -122,12 +130,12 @@ void CostmapDownsampler::setCostOfCell(
   unsigned int x_offset = new_mx * _downsampling_factor;
   unsigned int y_offset = new_my * _downsampling_factor;
 
-  for (uint i = 0; i < _downsampling_factor; ++i) {
+  for (unsigned int i = 0; i < _downsampling_factor; ++i) {
     mx = x_offset + i;
     if (mx >= _size_x) {
       continue;
     }
-    for (uint j = 0; j < _downsampling_factor; ++j) {
+    for (unsigned int j = 0; j < _downsampling_factor; ++j) {
       my = y_offset + j;
       if (my >= _size_y) {
         continue;

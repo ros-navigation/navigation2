@@ -110,6 +110,7 @@ VoxelLayer::~VoxelLayer()
 
 void VoxelLayer::matchSize()
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   ObstacleLayer::matchSize();
   voxel_grid_.resize(size_x_, size_y_, size_z_);
   assert(voxel_grid_.sizeX() == size_x_ && voxel_grid_.sizeY() == size_y_);
@@ -332,13 +333,11 @@ void VoxelLayer::raytraceFreespace(
     publish_clearing_points = (node->count_subscribers("clearing_endpoints") > 0);
   }
 
-  if (publish_clearing_points) {
-    clearing_endpoints_->data.clear();
-    clearing_endpoints_->width = clearing_observation.cloud_->width;
-    clearing_endpoints_->height = clearing_observation.cloud_->height;
-    clearing_endpoints_->is_dense = true;
-    clearing_endpoints_->is_bigendian = false;
-  }
+  clearing_endpoints_->data.clear();
+  clearing_endpoints_->width = clearing_observation.cloud_->width;
+  clearing_endpoints_->height = clearing_observation.cloud_->height;
+  clearing_endpoints_->is_dense = true;
+  clearing_endpoints_->is_bigendian = false;
 
   sensor_msgs::PointCloud2Modifier modifier(*clearing_endpoints_);
   modifier.setPointCloud2Fields(
