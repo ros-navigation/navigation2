@@ -27,9 +27,21 @@
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "angles/angles.h"
+#include "tf2/utils.h"
 
 namespace nav2_smac_planner
 {
+
+/**
+ * @class nav2_smac_planner::PathSegment
+ * @brief A segment of a path in start/end indices
+ */
+struct PathSegment
+{
+  unsigned int start;
+  unsigned int end;
+};
 
 /**
  * @class nav2_smac_planner::Smoother
@@ -55,7 +67,7 @@ public:
   void initialize(const double & min_turning_radius);
 
   /**
-   * @brief Smoother method
+   * @brief Smoother API method
    * @param path Reference to path
    * @param costmap Pointer to minimal costmap
    * @param max_time Maximum time to compute, stop early if over limit
@@ -68,6 +80,19 @@ public:
     const bool do_refinement = true);
 
 protected:
+  /**
+   * @brief Smoother method - does the smoothing on a segment
+   * @param path Reference to path
+   * @param costmap Pointer to minimal costmap
+   * @param max_time Maximum time to compute, stop early if over limit
+   * @return If smoothing was successful
+   */
+  bool smoothImpl(
+    nav_msgs::msg::Path & path,
+    const nav2_costmap_2d::Costmap2D * costmap,
+    const double & max_time,
+    const bool do_refinement = true);
+
   /**
    * @brief Get the field value for a given dimension
    * @param msg Current pose to sample
@@ -89,6 +114,14 @@ protected:
     const double & value);
 
   /**
+   * @brief Finds the starting and end indices of path segments where
+   * the robot is traveling in the same direction (e.g. forward vs reverse)
+   * @param path Path in which to look for cusps
+   * @return Set of index pairs for each segment of the path in a given direction
+   */
+  std::vector<PathSegment> findDirectionalPathSegments(const nav_msgs::msg::Path & path);
+
+  /**
    * @brief Get the instantaneous curvature valud
    * @param path Path to find curvature in
    * @param i idx in path to find it for
@@ -104,6 +137,7 @@ protected:
 
   double min_turning_rad_, tolerance_, data_w_, smooth_w_;
   int max_its_;
+  bool is_holonomic_;
 };
 
 }  // namespace nav2_smac_planner
