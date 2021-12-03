@@ -169,7 +169,7 @@ TEST(AStarTest, test_a_star_se2)
   }
   // no skipped nodes
   for (unsigned int i = 1; i != path.size(); i++) {
-    EXPECT_LT(hypotf(path[i].x - path[i-1].x, path[i].y - path[i-1].y), 2.1f);
+    EXPECT_LT(hypotf(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y), 2.1f);
   }
 
   delete costmapA;
@@ -227,7 +227,7 @@ TEST(AStarTest, test_a_star_lattice)
   }
   // no skipped nodes
   for (unsigned int i = 1; i != path.size(); i++) {
-    EXPECT_LT(hypotf(path[i].x - path[i-1].x, path[i].y - path[i-1].y), 2.1f);
+    EXPECT_LT(hypotf(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y), 2.1f);
   }
 
   delete costmapA;

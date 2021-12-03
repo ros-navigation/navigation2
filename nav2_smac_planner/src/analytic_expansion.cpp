@@ -39,7 +39,8 @@ AnalyticExpansion<NodeT>::AnalyticExpansion(
 }
 
 template<typename NodeT>
-AnalyticExpansion<NodeT>::~AnalyticExpansion() {
+AnalyticExpansion<NodeT>::~AnalyticExpansion()
+{
   cleanupDetachedNodes();
 }
 
@@ -256,9 +257,11 @@ void AnalyticExpansion<NodeT>::cleanNode(const NodePtr & /*expanded_nodes*/)
 }
 
 template<typename NodeT>
-void AnalyticExpansion<NodeT>::cleanupDetachedNodes() {
-  for (auto &node : _detached_nodes)
+void AnalyticExpansion<NodeT>::cleanupDetachedNodes()
+{
+  for (auto & node : _detached_nodes) {
     delete node;
+  }
   _detached_nodes.clear();
 }
 

@@ -17,6 +17,7 @@
 
 #include <string>
 #include <vector>
+#include <list>
 
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
@@ -123,7 +124,6 @@ public:
   void cleanNode(const NodePtr & nodes);
 
 protected:
-
   /**
    * @brief Deallocates detached nodes previously created in setAnalyticPath
    */
