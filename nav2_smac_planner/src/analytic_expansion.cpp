@@ -225,11 +225,11 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalytic
   for (const auto & node_pose : expanded_nodes) {
     const auto & n = node_pose.node;
     cleanNode(n);
-    if (!n->wasVisited() && n->getIndex() != goal_node->getIndex()) {
-      // Make sure this node has not been visited by the regular algorithm.
-      // If it has been, there is the (slight) chance that it is in the path we are expanding
-      // from, so we should skip it.
-      // Skipping to the next node will still create a kinematically feasible path.
+    if (n->getIndex() != goal_node->getIndex()) {
+      if (n->wasVisited()) {
+        n = new NodeT(-1);
+        _detached_nodes.push_back(n);
+      }
       n->parent = prev;
       n->pose = node_pose.proposed_coords;
       n->visited();
