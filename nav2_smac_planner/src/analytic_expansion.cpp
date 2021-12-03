@@ -223,7 +223,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalytic
   // Legitimate final path - set the parent relationships, states, and poses
   NodePtr prev = node;
   for (const auto & node_pose : expanded_nodes) {
-    const auto & n = node_pose.node;
+    auto n = node_pose.node;
     cleanNode(n);
     if (n->getIndex() != goal_node->getIndex()) {
       if (n->wasVisited()) {
