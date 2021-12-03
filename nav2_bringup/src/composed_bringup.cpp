@@ -19,7 +19,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_map_server/map_server.hpp"
 #include "nav2_amcl/amcl_node.hpp"
-#include "nav2_controller/nav2_controller.hpp"
+#include "nav2_controller/controller_server.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
 #include "nav2_planner/planner_server.hpp"
 #include "nav2_recoveries/recovery_server.hpp"
