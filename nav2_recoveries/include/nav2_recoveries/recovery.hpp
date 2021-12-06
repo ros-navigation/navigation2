@@ -30,6 +30,10 @@
 #include "nav2_util/simple_action_server.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_core/recovery.hpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#include "tf2/utils.h"
+#pragma GCC diagnostic pop
 
 namespace nav2_recoveries
 {

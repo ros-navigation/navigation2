@@ -33,12 +33,12 @@ _commands:
         - restore_cache:
             name: Restore Cache << parameters.key >>
             keys:
-              - "<< parameters.key >>-v4\
+              - "<< parameters.key >>-v6\
                 -{{ arch }}\
                 -{{ .Branch }}\
                 -{{ .Environment.CIRCLE_PR_NUMBER }}\
                 -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
-              - "<< parameters.key >>-v4\
+              - "<< parameters.key >>-v6\
                 -{{ arch }}\
                 -main\
                 -<no value>\
@@ -58,7 +58,7 @@ _commands:
       steps:
         - save_cache:
             name: Save Cache << parameters.key >>
-            key: "<< parameters.key >>-v4\
+            key: "<< parameters.key >>-v6\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
@@ -69,6 +69,7 @@ _commands:
               - << parameters.path >>/build
               - << parameters.path >>/install
               - << parameters.path >>/log
+              - << parameters.path >>/test_results
             when: << parameters.when >>
     install_dependencies:
       description: "Install Dependencies"
@@ -220,6 +221,13 @@ _commands:
             name: Test Workspace | << parameters.workspace >>
             working_directory: << parameters.workspace >>
             command: |
+              TEST_UNPASSED=$(
+                colcon list \
+                  --names-only \
+                  --packages-skip-test-passed \
+                | xargs)
+              echo TEST_UNPASSED: $TEST_UNPASSED
+
               TEST_FAILURES=$(
                 colcon list \
                   --names-only \
@@ -236,13 +244,15 @@ _commands:
               echo TEST_INVALID: $TEST_INVALID
 
               TEST_PACKAGES=""
-              if [ -n "$TEST_FAILURES" ] || \
+              if [ -n "$TEST_UNPASSED" ] || \
+                 [ -n "$TEST_FAILURES" ] || \
                  [ -n "$TEST_INVALID" ]
               then
                 TEST_PACKAGES=$(
                   colcon list \
                     --names-only \
                     --packages-above \
+                      $TEST_UNPASSED \
                       $TEST_FAILURES \
                       $TEST_INVALID)
               fi
@@ -264,6 +274,11 @@ _commands:
               colcon clean packages --yes \
                 --packages-select ${TEST_PACKAGES} \
                 --base-select test_result
+              colcon clean packages --yes \
+                --packages-select ${TEST_PACKAGES} \
+                --base-select build \
+                --clean-match \
+                  "*.gcda"
 
               . install/setup.sh
               set -o xtrace

@@ -26,11 +26,12 @@ namespace nav2_util
 bool getCurrentPose(
   geometry_msgs::msg::PoseStamped & global_pose,
   tf2_ros::Buffer & tf_buffer, const std::string global_frame,
-  const std::string robot_frame, const double transform_timeout)
+  const std::string robot_frame, const double transform_timeout,
+  const rclcpp::Time stamp)
 {
   tf2::toMsg(tf2::Transform::getIdentity(), global_pose.pose);
   global_pose.header.frame_id = robot_frame;
-  global_pose.header.stamp = rclcpp::Time();
+  global_pose.header.stamp = stamp;
 
   return transformPoseInTargetFrame(
     global_pose, global_pose, tf_buffer, global_frame, transform_timeout);

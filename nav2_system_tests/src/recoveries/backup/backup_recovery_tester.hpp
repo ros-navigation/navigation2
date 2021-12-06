@@ -68,6 +68,7 @@ private:
 
   bool is_active_;
   bool initial_pose_received_;
+  rclcpp::Time stamp_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;

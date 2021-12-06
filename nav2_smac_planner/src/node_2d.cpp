@@ -155,4 +155,21 @@ void Node2D::getNeighbors(
   }
 }
 
+bool Node2D::backtracePath(CoordinateVector & path)
+{
+  if (!this->parent) {
+    return false;
+  }
+
+  NodePtr current_node = this;
+
+  while (current_node->parent) {
+    path.push_back(
+      Node2D::getCoords(current_node->getIndex()));
+    current_node = current_node->parent;
+  }
+
+  return path.size() > 0;
+}
+
 }  // namespace nav2_smac_planner
