@@ -237,7 +237,7 @@ double RegulatedPurePursuitController::getLookAheadDistance(const geometry_msgs:
   // Else, use the static look ahead distance
   double lookahead_dist = lookahead_dist_;
   if (use_velocity_scaled_lookahead_dist_) {
-    lookahead_dist = speed.linear.x * lookahead_time_;
+    lookahead_dist = fabs(speed.linear.x) * lookahead_time_;
     lookahead_dist = std::clamp(lookahead_dist, min_lookahead_dist_, max_lookahead_dist_);
   }
 

@@ -17,6 +17,8 @@
 
 #include <string>
 #include <vector>
+#include <list>
+#include <memory>
 
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
@@ -123,6 +125,7 @@ protected:
   bool _traverse_unknown;
   unsigned int _dim_3_size;
   GridCollisionChecker * _collision_checker;
+  std::list<std::unique_ptr<NodeT>> _detached_nodes;
 };
 
 }  // namespace nav2_smac_planner
