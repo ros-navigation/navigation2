@@ -35,7 +35,7 @@ def generate_launch_description():
     aws_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
     map_yaml_file = os.path.join(aws_dir, 'maps', '005', 'map.yaml')
     filter_mask_file = os.getenv('TEST_MASK')
-    world = os.path.join(aws_dir, 'worlds', 'small_warehouse', 'small_warehouse.world')
+    world = os.path.join(aws_dir, 'worlds', 'no_roof_small_warehouse', 'no_roof_small_warehouse.world')
 
     bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
                                     'behavior_trees',
@@ -66,7 +66,7 @@ def generate_launch_description():
         # Launch gazebo server for simulation
         ExecuteProcess(
             cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so',
-                 world],
+                 '--minimal_comms', world],
             cwd=[aws_dir],
             output='screen'),
 

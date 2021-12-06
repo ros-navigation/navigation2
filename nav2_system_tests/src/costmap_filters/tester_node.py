@@ -139,7 +139,7 @@ class NavTester(Node):
         elif self.test_type == TestType.SPEED:
             self.speed_it = 0
             # Expected chain of speed limits
-            self.limits = [49.0, 0.0]
+            self.limits = [50.0, 0.0]
             # Permissive array: all received speed limits must match to "limits" from above
             self.limit_passed = [False, False]
             self.plan_sub = self.create_subscription(SpeedLimit, 'speed_limit',

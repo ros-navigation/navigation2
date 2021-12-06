@@ -38,7 +38,7 @@ def generate_launch_description():
     if not os.getenv('TEST_WORLD'):
         world = os.getenv('TEST_WORLD')
     else:
-        world = os.path.join(aws_dir, 'worlds', 'small_warehouse', 'small_warehouse.world')
+        world = os.path.join(aws_dir, 'worlds', 'no_roof_small_warehouse', 'no_roof_small_warehouse.world')
 
     bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
                                     'behavior_trees',
@@ -79,7 +79,7 @@ def generate_launch_description():
         # Launch gazebo server for simulation
         ExecuteProcess(
             cmd=['gazebo', '-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so',
-                 world],
+                 '--minimal_comms', world],
             cwd=[aws_dir],
             output='screen'),
 
