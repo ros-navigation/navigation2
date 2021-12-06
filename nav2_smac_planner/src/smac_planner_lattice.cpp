@@ -282,8 +282,8 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
     pose.pose = getWorldCoords(path[i].x, path[i].y, _costmap);
     pose.pose.orientation = getWorldOrientation(path[i].theta);
     if (fabs(pose.pose.position.x - last_pose.pose.position.x) < 1e-4 &&
-        fabs(pose.pose.position.y - last_pose.pose.position.y) < 1e-4 &&
-        fabs(tf2::getYaw(pose.pose.orientation) - tf2::getYaw(last_pose.pose.orientation)) < 1e-4)
+      fabs(pose.pose.position.y - last_pose.pose.position.y) < 1e-4 &&
+      fabs(tf2::getYaw(pose.pose.orientation) - tf2::getYaw(last_pose.pose.orientation)) < 1e-4)
     {
       RCLCPP_DEBUG(
         _logger,

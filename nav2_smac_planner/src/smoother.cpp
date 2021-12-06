@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <vector>
 #include "nav2_smac_planner/smoother.hpp"
 
 namespace nav2_smac_planner
