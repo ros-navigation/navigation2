@@ -27,7 +27,8 @@ def generate_launch_description():
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
 
     map_yaml_file = os.path.join(warehouse_dir, 'maps', '005', 'map.yaml')
-    world = os.path.join(warehouse_dir, 'worlds', 'no_roof_small_warehouse', 'no_roof_small_warehouse.world')
+    world = os.path.join(warehouse_dir, 'worlds', 'no_roof_small_warehouse',
+                         'no_roof_small_warehouse.world')
 
     # start the simulation
     start_gazebo_server_cmd = ExecuteProcess(

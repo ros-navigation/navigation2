@@ -135,7 +135,8 @@ def generate_launch_description():
 
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        default_value=os.path.join(aws_dir, 'worlds', 'no_roof_small_warehouse', 'no_roof_small_warehouse.world'),
+        default_value=os.path.join(aws_dir, 'worlds', 'no_roof_small_warehouse',
+                                   'no_roof_small_warehouse.world'),
         description='Full path to world model file to load')
 
     declare_robot_name_cmd = DeclareLaunchArgument(

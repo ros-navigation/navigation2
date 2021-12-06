@@ -34,7 +34,8 @@ from nav2_common.launch import RewrittenYaml
 def generate_launch_description():
     aws_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
     map_yaml_file = os.path.join(aws_dir, 'maps', '005', 'map.yaml')
-    world = os.path.join(aws_dir, 'worlds', 'no_roof_small_warehouse', 'no_roof_small_warehouse.world')
+    world = os.path.join(aws_dir, 'worlds', 'no_roof_small_warehouse',
+                         'no_roof_small_warehouse.world')
 
     bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
                                     'behavior_trees',
