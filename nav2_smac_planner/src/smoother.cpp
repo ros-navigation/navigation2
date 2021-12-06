@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <vector>
 #include "nav2_smac_planner/smoother.hpp"
 
 namespace nav2_smac_planner
 {
+using namespace nav2_util::geometry_utils;  // NOLINT
+using namespace std::chrono;  // NOLINT
 
 Smoother::Smoother(const SmootherParams & params)
 {
@@ -23,6 +26,7 @@ Smoother::Smoother(const SmootherParams & params)
   max_its_ = params.max_its_;
   data_w_ = params.w_data_;
   smooth_w_ = params.w_smooth_;
+  is_holonomic_ = params.holonomic_;
 }
 
 void Smoother::initialize(const double & min_turning_radius)
@@ -30,14 +34,48 @@ void Smoother::initialize(const double & min_turning_radius)
   min_turning_rad_ = min_turning_radius;
 }
 
-
 bool Smoother::smooth(
   nav_msgs::msg::Path & path,
   const nav2_costmap_2d::Costmap2D * costmap,
   const double & max_time,
   const bool do_refinement)
 {
-  using namespace std::chrono;  // NOLINT
+  steady_clock::time_point start = steady_clock::now();
+  double time_remaining = max_time;
+  bool success = true;
+  nav_msgs::msg::Path curr_path_segment;
+  curr_path_segment.header = path.header;
+  std::vector<PathSegment> path_segments = findDirectionalPathSegments(path);
+
+  for (unsigned int i = 0; i != path_segments.size(); i++) {
+    if (path_segments[i].end - path_segments[i].start > 6) {
+      curr_path_segment.poses.clear();
+      std::copy(
+        path.poses.begin() + path_segments[i].start,
+        path.poses.begin() + path_segments[i].end + 1,
+        std::back_inserter(curr_path_segment.poses));
+
+      steady_clock::time_point now = steady_clock::now();
+      time_remaining = max_time - duration_cast<duration<double>>(now - start).count();
+      success = success && smoothImpl(curr_path_segment, costmap, time_remaining, do_refinement);
+
+      // Assemble the path changes to the main path
+      std::copy(
+        curr_path_segment.poses.begin(),
+        curr_path_segment.poses.end(),
+        path.poses.begin() + path_segments[i].start);
+    }
+  }
+
+  return success;
+}
+
+bool Smoother::smoothImpl(
+  nav_msgs::msg::Path & path,
+  const nav2_costmap_2d::Costmap2D * costmap,
+  const double & max_time,
+  const bool do_refinement)
+{
   steady_clock::time_point a = steady_clock::now();
   rclcpp::Duration max_dur = rclcpp::Duration::from_seconds(max_time);
 
@@ -128,7 +166,7 @@ bool Smoother::smooth(
   // Lets do additional refinement, it shouldn't take more than a couple milliseconds
   // but really puts the path quality over the top.
   if (do_refinement) {
-    smooth(new_path, costmap, max_time, false);
+    smoothImpl(new_path, costmap, max_time, false);
   }
 
   for (unsigned int i = 3; i != path_size - 3; i++) {
@@ -137,7 +175,7 @@ bool Smoother::smooth(
         rclcpp::get_logger("SmacPlannerSmoother"),
         "Smoothing process resulted in an infeasible curvature somewhere on the path. "
         "This is most likely at the end point boundary conditions which will be further "
-        "refined as a perfect curve as you approach the goal. If this becomes a practical "
+        "refined as a perfect curve as you approafch the goal. If this becomes a practical "
         "issue for you, please file a ticket mentioning this message.");
       updateApproximatePathOrientations(new_path);
       path = new_path;
@@ -175,6 +213,46 @@ void Smoother::setFieldByDim(
   }
 }
 
+std::vector<PathSegment> Smoother::findDirectionalPathSegments(const nav_msgs::msg::Path & path)
+{
+  std::vector<PathSegment> segments;
+  PathSegment curr_segment;
+  curr_segment.start = 0;
+
+  // If holonomic, no directional changes and
+  // may have abrupt angular changes from naive grid search
+  if (is_holonomic_) {
+    curr_segment.end = path.poses.size() - 1;
+    segments.push_back(curr_segment);
+    return segments;
+  }
+
+  // Iterating through the path to determine the position of the cusp
+  for (unsigned int idx = 1; idx < path.poses.size() - 1; ++idx) {
+    // We have two vectors for the dot product OA and AB. Determining the vectors.
+    double oa_x = path.poses[idx].pose.position.x -
+      path.poses[idx - 1].pose.position.x;
+    double oa_y = path.poses[idx].pose.position.y -
+      path.poses[idx - 1].pose.position.y;
+    double ab_x = path.poses[idx + 1].pose.position.x -
+      path.poses[idx].pose.position.x;
+    double ab_y = path.poses[idx + 1].pose.position.y -
+      path.poses[idx].pose.position.y;
+
+    // Checking for the existance of cusp, in the path, using the dot product.
+    double dot_product = (oa_x * ab_x) + (oa_y * ab_y);
+    if (dot_product < 0.0) {
+      curr_segment.end = idx;
+      segments.push_back(curr_segment);
+      curr_segment.start = idx;
+    }
+  }
+
+  curr_segment.end = path.poses.size() - 1;
+  segments.push_back(curr_segment);
+  return segments;
+}
+
 double Smoother::getCurvature(const nav_msgs::msg::Path & path, const unsigned int i)
 {
   // k = 1 / r = acos(delta_phi) / |xi|, where delta_phi = (xi dot xi+1) / (|xi| * |xi+1|)
@@ -198,12 +276,33 @@ double Smoother::getCurvature(const nav_msgs::msg::Path & path, const unsigned i
 
 void Smoother::updateApproximatePathOrientations(nav_msgs::msg::Path & path)
 {
-  using namespace nav2_util::geometry_utils;  // NOLINT
-  double dx, dy, theta;
+  double dx, dy, theta, pt_yaw;
+  bool reverse = false;
+
+  // Find if this path segment is in reverse
+  dx = path.poses[2].pose.position.x - path.poses[1].pose.position.x;
+  dy = path.poses[2].pose.position.y - path.poses[1].pose.position.y;
+  theta = atan2(dy, dx);
+  pt_yaw = tf2::getYaw(path.poses[1].pose.orientation);
+  if (!is_holonomic_ && fabs(angles::shortest_angular_distance(pt_yaw, theta)) > M_PI_2) {
+    reverse = true;
+  }
+
   for (unsigned int i = 0; i != path.poses.size() - 1; i++) {
     dx = path.poses[i + 1].pose.position.x - path.poses[i].pose.position.x;
     dy = path.poses[i + 1].pose.position.y - path.poses[i].pose.position.y;
     theta = atan2(dy, dx);
+
+    // If points are overlapping, pass
+    if (fabs(dx) < 1e-4 && fabs(dy) < 1e-4) {
+      continue;
+    }
+
+    // Flip the angle if this path segment is in reverse
+    if (reverse) {
+      theta += M_PI;  // orientationAroundZAxis will normalize
+    }
+
     path.poses[i].pose.orientation = orientationAroundZAxis(theta);
   }
 }

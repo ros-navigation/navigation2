@@ -137,6 +137,7 @@ void SmacPlanner2D::configure(
   // Initialize path smoother
   SmootherParams params;
   params.get(node, name);
+  params.holonomic_ = true;  // So smoother will treat this as a grid search
   _smoother = std::make_unique<Smoother>(params);
   _smoother->initialize(1e-50 /*No valid minimum turning radius for 2D*/);
 
@@ -310,7 +311,6 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   if (plan.poses.size() > 6) {
     _smoother->smooth(plan, costmap, time_remaining);
   }
-
 
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
   // previous pose to set the orientation to the 'final approach' orientation of the robot so
