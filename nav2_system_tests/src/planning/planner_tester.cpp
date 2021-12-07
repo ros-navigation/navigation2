@@ -161,16 +161,13 @@ void PlannerTester::loadDefaultMap()
 
   nav2_map_server::MapMode mode = nav2_map_server::MapMode::Trinary;
 
-  std::string file_path = "";
-  // TODO(lucabonamini): use aws_warehouse directory
-  char const * path = getenv("TEST_MAP");
-  if (path == NULL) {
+  std::string map_dir = ament_index_cpp::get_package_share_directory("aws_robomaker_small_warehouse_world");
+  if (map_dir.empty()) {
     throw std::runtime_error(
-            "Path to map image file"
-            " has not been specified in environment variable `TEST_MAP`.");
-  } else {
-    file_path = std::string(path);
+            "Unable to find map directory provided.");
   }
+
+  std::string file_path = map_dir + "/maps/005/map_rotated.png";
 
   RCLCPP_INFO(this->get_logger(), "Loading map with file_path: %s", file_path.c_str());
 

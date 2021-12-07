@@ -21,6 +21,8 @@
 #include <thread>
 #include <algorithm>
 
+#include <ament_index_cpp/get_package_share_directory.hpp>
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
