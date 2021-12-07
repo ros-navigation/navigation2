@@ -31,6 +31,10 @@ IsPathValidCondition::IsPathValidCondition(
 
 BT::NodeStatus IsPathValidCondition::tick()
 {
+  if (status() == BT::NodeStatus::IDLE) {
+    RCLCPP_INFO(node_->get_logger(), "Is Path Valid: IDLE");
+  }
+
   nav_msgs::msg::Path path;
   getInput("path", path);
   getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);

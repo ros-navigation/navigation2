@@ -1,13 +1,27 @@
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <PipelineSequence name="NavigateWithReplanning">
-      <ReactiveFallback>
-        <IsPathValid path="{path}"/>
-        <DistanceController distance="1.0">
-          <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
-        </DistanceController>
+      <ReactiveFallback> 
+        <ReactiveSequence>
+          <Inverter>
+            <GlobalUpdatedGoal/>
+          </Inverter>
+          <IsPathValid path="{path}"/>
+        </ReactiveSequence>
+        <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
       </ReactiveFallback>
-      <FollowPath path="{path}"  controller_id="FollowPath"/>
+      <FollowPath path="{path}" controller_id="FollowPath"/>
     </PipelineSequence>
   </BehaviorTree>
 </root>
+
+<!-- <root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <PipelineSequence name="NavigateWithReplanning">
+        <RateController hz="1.0">
+          <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+        </RateController>
+      <FollowPath path="{path}"  controller_id="FollowPath"/>
+    </PipelineSequence>
+  </BehaviorTree>
+</root> -->

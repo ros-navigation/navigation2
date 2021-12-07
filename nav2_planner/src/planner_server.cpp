@@ -528,7 +528,28 @@ void PlannerServer::isPathValid(
   if (request->path.poses.empty() ) {
     response->is_valid = false;
   } else {
-    for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
+    geometry_msgs::msg::PoseStamped current_pose;
+    unsigned int closest_pose_index = 0;
+    if (costmap_ros_->getRobotPose(current_pose)) {
+      tf2::Vector3 curr_position(current_pose.pose.position.x,
+        current_pose.pose.position.y,
+        current_pose.pose.position.z);
+      // Find index of pose closest to the robot
+      float closest_distance = 0;
+      for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
+
+        tf2::Vector3 path_point(request->path.poses[i].pose.position.x,
+          request->path.poses[i].pose.position.y,
+          request->path.poses[i].pose.position.z);
+
+        if (tf2::tf2Distance(curr_position, path_point) < closest_distance) {
+          closest_pose_index = i;
+          closest_distance = tf2::tf2Distance(curr_position, path_point);
+        }
+      }
+    }
+
+    for (unsigned int i = closest_pose_index; i < request->path.poses.size(); ++i) {
       costmap_->worldToMap(
         request->path.poses[i].pose.position.x,
         request->path.poses[i].pose.position.y, mx, my);
@@ -540,8 +561,7 @@ void PlannerServer::isPathValid(
     }
   }
 }
-
-}  // namespace nav2_planner
+} // namespace nav2_planner
 
 #include "rclcpp_components/register_node_macro.hpp"
 
