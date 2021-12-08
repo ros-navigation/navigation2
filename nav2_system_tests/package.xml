@@ -30,6 +30,7 @@
   <build_depend>launch_ros</build_depend>
   <build_depend>launch_testing</build_depend>
   <build_depend>nav2_planner</build_depend>
+  <build_depend>aws_robomaker_small_warehouse_world</build_depend>
 
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>launch_testing</exec_depend>
@@ -53,6 +54,7 @@
   <exec_depend>lcov</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>nav2_planner</exec_depend>
+  <exec_depend>aws_robomaker_small_warehouse_world</exec_depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
