@@ -181,6 +181,14 @@ protected:
     nav_msgs::msg::Path & path,
     const nav2_costmap_2d::Costmap2D * costmap);
 
+  /**
+   * @brief Given a set of boundary expansion, find the one which is shortest
+   * such that it is least likely to contain a loop-de-loop when working with
+   * close-by primitive markers. Instead, select a further away marker which
+   * generates a shorter `
+   * @param boundary_expansions Set of boundary expansions
+   * @return Idx of the shorest boundary expansion option
+   */
   unsigned int findShortestBoundaryExpansionIdx(const BoundaryExpansions & boundary_expansions);
 
   /**
