@@ -170,7 +170,9 @@ void SmacPlannerLattice::configure(
     SmootherParams params;
     params.get(node, name);
     _smoother = std::make_unique<Smoother>(params);
-    _smoother->initialize(_metadata.min_turning_radius);
+    MotionModel smoother_motion_model =
+      _search_info.allow_reverse_expansion ? MotionModel::REEDS_SHEPP : MotionModel::DUBIN;
+    _smoother->initialize(_metadata.min_turning_radius, smoother_motion_model);
   }
 
   RCLCPP_INFO(
@@ -311,7 +313,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 #endif
 
   // Smooth plan
-  if (_smoother && num_iterations > 1 && plan.poses.size() > 6) {
+  if (_smoother && num_iterations > 1) {
     _smoother->smooth(plan, _costmap, time_remaining);
   }
 
@@ -374,6 +376,7 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
         _search_info.cache_obstacle_heuristic = parameter.as_bool();
       } else if (name == _name + ".allow_reverse_expansion") {
         reinit_a_star = true;
+        reinit_smoother = true;
         _search_info.allow_reverse_expansion = parameter.as_bool();
       } else if (name == _name + ".smooth_path") {
         if (parameter.as_bool()) {
@@ -435,7 +438,9 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       SmootherParams params;
       params.get(node, _name);
       _smoother = std::make_unique<Smoother>(params);
-      _smoother->initialize(_metadata.min_turning_radius);
+      MotionModel smoother_motion_model =
+        _search_info.allow_reverse_expansion ? MotionModel::REEDS_SHEPP : MotionModel::DUBIN;
+      _smoother->initialize(_metadata.min_turning_radius, smoother_motion_model);
     }
 
     // Re-Initialize A* template

@@ -29,6 +29,8 @@
 #include "nav_msgs/msg/path.hpp"
 #include "angles/angles.h"
 #include "tf2/utils.h"
+#include "ompl/base/StateSpace.h"
+#include "ompl/base/spaces/DubinsStateSpace.h"
 
 namespace nav2_smac_planner
 {
@@ -42,6 +44,39 @@ struct PathSegment
   unsigned int start;
   unsigned int end;
 };
+
+/**
+ * @struct nav2_smac_planner::BoundaryPoints
+ * @brief Set of boundary condition points from expansion
+ */
+struct BoundaryPoints
+{
+  double x;
+  double y;
+  double theta;
+  /**
+   * @brief A constructor for BoundaryPoints
+   */
+  BoundaryPoints(double & x_in, double & y_in, double & theta_in)
+  : x(x_in), y(y_in), theta(theta_in)
+  {}
+};
+
+/**
+ * @struct nav2_smac_planner::BoundaryExpansion
+ * @brief Boundary expansion state
+ */
+struct BoundaryExpansion
+{
+  double path_end_idx{0.0};
+  double path_length{0.0};
+  std::vector<BoundaryPoints> pts;
+  bool in_collision{false};
+};
+
+typedef std::vector<BoundaryExpansion> BoundaryExpansions;
+typedef std::vector<geometry_msgs::msg::PoseStamped>::iterator PathIterator;
+typedef std::vector<geometry_msgs::msg::PoseStamped>::reverse_iterator ReversePathIterator;
 
 /**
  * @class nav2_smac_planner::Smoother
@@ -63,8 +98,11 @@ public:
   /**
    * @brief Initialization of the smoother
    * @param min_turning_radius Minimum turning radius (m)
+   * @param motion_model Motion model type
    */
-  void initialize(const double & min_turning_radius);
+  void initialize(
+    const double & min_turning_radius,
+    MotionModel motion_model = MotionModel::UNKNOWN);
 
   /**
    * @brief Smoother API method
@@ -76,8 +114,7 @@ public:
   bool smooth(
     nav_msgs::msg::Path & path,
     const nav2_costmap_2d::Costmap2D * costmap,
-    const double & max_time,
-    const bool do_refinement = true);
+    const double & max_time);
 
 protected:
   /**
@@ -90,8 +127,7 @@ protected:
   bool smoothImpl(
     nav_msgs::msg::Path & path,
     const nav2_costmap_2d::Costmap2D * costmap,
-    const double & max_time,
-    const bool do_refinement = true);
+    const double & max_time);
 
   /**
    * @brief Get the field value for a given dimension
@@ -122,12 +158,53 @@ protected:
   std::vector<PathSegment> findDirectionalPathSegments(const nav_msgs::msg::Path & path);
 
   /**
-   * @brief Get the instantaneous curvature valud
-   * @param path Path to find curvature in
-   * @param i idx in path to find it for
-   * @return curvature
+   * @brief Enforced minimum curvature boundary conditions on plan output
+   * the robot is traveling in the same direction (e.g. forward vs reverse)
+   * @param start_pose Start pose of the feasible path to maintain
+   * @param path Path to modify for curvature constraints on start / end of path
+   * @param costmap Costmap to check for collisions
    */
-  inline double getCurvature(const nav_msgs::msg::Path & path, const unsigned int i);
+  void enforceStartBoundaryConditions(
+    const geometry_msgs::msg::Pose & start_pose,
+    nav_msgs::msg::Path & path,
+    const nav2_costmap_2d::Costmap2D * costmap);
+
+  /**
+   * @brief Enforced minimum curvature boundary conditions on plan output
+   * the robot is traveling in the same direction (e.g. forward vs reverse)
+   * @param end_pose End pose of the feasible path to maintain
+   * @param path Path to modify for curvature constraints on start / end of path
+   * @param costmap Costmap to check for collisions
+   */
+  void enforceEndBoundaryConditions(
+    const geometry_msgs::msg::Pose & end_pose,
+    nav_msgs::msg::Path & path,
+    const nav2_costmap_2d::Costmap2D * costmap);
+
+  unsigned int findShortestBoundaryExpansionIdx(const BoundaryExpansions & boundary_expansions);
+
+  /**
+   * @brief Populate a motion model expansion from start->end into expansion
+   * @param start Start pose of the feasible path to maintain
+   * @param end End pose of the feasible path to maintain
+   * @param expansion Expansion object to populate
+   * @param costmap Costmap to check for collisions
+   */
+  void findBoundaryExpansion(
+    const geometry_msgs::msg::Pose & start,
+    const geometry_msgs::msg::Pose & end,
+    BoundaryExpansion & expansion,
+    const nav2_costmap_2d::Costmap2D * costmap);
+
+  /**
+   * @brief Generates boundary expansions with end idx at least strategic
+   * distances away, using either Reverse or (Forward) Path Iterators.
+   * @param start iterator to start search in path for
+   * @param end iterator to end search for
+   * @return Boundary expansions with end idxs populated
+   */
+  template<typename IteratorT>
+  BoundaryExpansions generateBoundaryExpansionPoints(IteratorT start, IteratorT end);
 
   /**
    * @brief For a given path, update the path point orientations based on smoothing
@@ -136,8 +213,10 @@ protected:
   inline void updateApproximatePathOrientations(nav_msgs::msg::Path & path);
 
   double min_turning_rad_, tolerance_, data_w_, smooth_w_;
-  int max_its_;
-  bool is_holonomic_;
+  int max_its_, refinement_ctr_;
+  bool is_holonomic_, do_refinement_;
+  MotionModel motion_model_;
+  ompl::base::StateSpacePtr state_space_;
 };
 
 }  // namespace nav2_smac_planner
