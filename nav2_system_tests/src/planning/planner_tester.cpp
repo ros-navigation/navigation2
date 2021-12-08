@@ -161,7 +161,8 @@ void PlannerTester::loadDefaultMap()
 
   nav2_map_server::MapMode mode = nav2_map_server::MapMode::Trinary;
 
-  std::string map_dir = ament_index_cpp::get_package_share_directory("aws_robomaker_small_warehouse_world");
+  std::string map_dir = ament_index_cpp::get_package_share_directory(
+    "aws_robomaker_small_warehouse_world");
   if (map_dir.empty()) {
     throw std::runtime_error(
             "Unable to find map directory provided.");

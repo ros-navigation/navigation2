@@ -15,13 +15,13 @@
 #ifndef PLANNING__PLANNER_TESTER_HPP_
 #define PLANNING__PLANNER_TESTER_HPP_
 
+#include <ament_index_cpp/get_package_share_directory.hpp>
+
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
 #include <thread>
 #include <algorithm>
-
-#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
