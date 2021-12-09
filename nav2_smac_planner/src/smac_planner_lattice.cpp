@@ -374,7 +374,6 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
         _search_info.cache_obstacle_heuristic = parameter.as_bool();
       } else if (name == _name + ".allow_reverse_expansion") {
         reinit_a_star = true;
-        reinit_smoother = true;
         _search_info.allow_reverse_expansion = parameter.as_bool();
       } else if (name == _name + ".smooth_path") {
         if (parameter.as_bool()) {
