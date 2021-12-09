@@ -69,7 +69,8 @@ bool Smoother::smooth(
       // Smooth path segment naively
       const geometry_msgs::msg::Pose start_pose = curr_path_segment.poses.front().pose;
       const geometry_msgs::msg::Pose end_pose = curr_path_segment.poses.back().pose;
-      bool local_success = smoothImpl(curr_path_segment, reversing_segment, costmap, time_remaining);
+      bool local_success =
+        smoothImpl(curr_path_segment, reversing_segment, costmap, time_remaining);
       success = success && local_success;
 
       // Enforce boundary conditions
@@ -248,7 +249,9 @@ std::vector<PathSegment> Smoother::findDirectionalPathSegments(const nav_msgs::m
   return segments;
 }
 
-void Smoother::updateApproximatePathOrientations(nav_msgs::msg::Path & path, bool & reversing_segment)
+void Smoother::updateApproximatePathOrientations(
+  nav_msgs::msg::Path & path,
+  bool & reversing_segment)
 {
   double dx, dy, theta, pt_yaw;
   reversing_segment = false;
@@ -391,12 +394,6 @@ BoundaryExpansions Smoother::generateBoundaryExpansionPoints(IteratorT start, It
   return boundary_expansions;
 }
 
-
-// TODO(sm) extensive testing and analysis
-  // TODO occasional failures still where it does the full loop - guard against / fix
-  // TODO(sm) tune + with gains + tolerances + refinement
-// TODO(sm) add param to migration and configuration guides for smac
-
 void Smoother::enforceStartBoundaryConditions(
   const geometry_msgs::msg::Pose & start_pose,
   nav_msgs::msg::Path & path,
@@ -415,9 +412,13 @@ void Smoother::enforceStartBoundaryConditions(
     }
 
     if (!reversing_segment) {
-      findBoundaryExpansion(start_pose, path.poses[expansion.path_end_idx].pose, expansion, costmap);
+      findBoundaryExpansion(
+        start_pose, path.poses[expansion.path_end_idx].pose, expansion,
+        costmap);
     } else {
-      findBoundaryExpansion(path.poses[expansion.path_end_idx].pose, start_pose, expansion, costmap);
+      findBoundaryExpansion(
+        path.poses[expansion.path_end_idx].pose, start_pose, expansion,
+        costmap);
     }
   }
 

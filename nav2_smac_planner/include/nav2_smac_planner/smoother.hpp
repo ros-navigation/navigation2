@@ -225,7 +225,9 @@ protected:
    * @param path Path to approximate the path orientation in
    * @param reversing_segment Return if this is a reversing segment
    */
-  inline void updateApproximatePathOrientations(nav_msgs::msg::Path & path, bool & reversing_segment);
+  inline void updateApproximatePathOrientations(
+    nav_msgs::msg::Path & path,
+    bool & reversing_segment);
 
   double min_turning_rad_, tolerance_, data_w_, smooth_w_;
   int max_its_, refinement_ctr_;
