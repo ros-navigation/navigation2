@@ -62,24 +62,25 @@ public:
    * @param reversing Whether the path segment after this node represents reversing motion.
    * @param costmap A costmap to get values for collision and obstacle avoidance
    * @param params Optimization weights and parameters 
-   * @param costmap_weight Costmap cost weight. Can be params.costmap_weight or params.dir_change_costmap_weight
+   * @param costmap_weight Costmap cost weight. Can be params.costmap_weight or params.cusp_costmap_weight
    */
   SmootherCostFunction(
     const Eigen::Vector2d &_original_pos,
     double next_to_last_length_ratio,
     bool reversing,
-    nav2_costmap_2d::Costmap2D * costmap,
+    const nav2_costmap_2d::Costmap2D * costmap,
+    const std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>> &costmap_interpolator,
     const SmootherParams & params,
     double costmap_weight)
   : _original_pos(_original_pos),
     _next_to_last_length_ratio(next_to_last_length_ratio),
     _reversing(reversing),
-    _costmap(costmap),
     _params(params),
-    _costmap_weight(costmap_weight)
+    _costmap_weight(costmap_weight),
+    _costmap_origin(costmap->getOriginX(), costmap->getOriginY()),
+    _costmap_resolution(costmap->getResolution()),
+    _costmap_interpolator(costmap_interpolator)
   {
-    _costmap_grid.reset(new ceres::Grid2D<u_char>(costmap->getCharMap(), 0, costmap->getSizeInCellsY(), 0, costmap->getSizeInCellsX()));
-    _interpolate_costmap.reset(new ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>(*_costmap_grid));
   }
 
   ceres::CostFunction* AutoDiff() {
@@ -243,15 +244,10 @@ protected:
     const Eigen::Matrix<T, 2, 1> &pt_m1,
     T & r) const
   {
-    double origx = _costmap->getOriginX();
-    double origy = _costmap->getOriginY();
-    double res = _costmap->getResolution();
-
     if (_params.cost_check_points.empty()) {
-      T interpx = (pt[0] - (T)origx) / (T)res - (T)0.5;
-      T interpy = (pt[1] - (T)origy) / (T)res - (T)0.5;
+      Eigen::Matrix<T, 2, 1> interp_pos = (pt - _costmap_origin.template cast<T>()) / (T)_costmap_resolution;
       T value;
-      _interpolate_costmap->Evaluate(interpy, interpx, &value);
+      _costmap_interpolator->Evaluate(interp_pos[0] - (T)0.5, interp_pos[1] - (T)0.5, &value);
       
       r += (T)weight * value * value;  // objective function value
     }
@@ -266,11 +262,10 @@ protected:
                   (T)0, (T)0, (T)1;
       for (size_t i = 0; i < _params.cost_check_points.size(); i += 3) {
         Eigen::Matrix<T, 3, 1> ccpt((T)_params.cost_check_points[i], (T)_params.cost_check_points[i+1], (T)1);
-        auto ccptWorld = transform*ccpt;
-        T interpx = (ccptWorld[0] - (T)origx) / (T)res - (T)0.5;
-        T interpy = (ccptWorld[1] - (T)origy) / (T)res - (T)0.5;
+        auto ccpt_world = (transform*ccpt).template block<2, 1>(0, 0);
+        Eigen::Matrix<T, 2, 1> interp_pos = (ccpt_world - _costmap_origin.template cast<T>()) / (T)_costmap_resolution;
         T value;
-        _interpolate_costmap->Evaluate(interpy, interpx, &value);
+        _costmap_interpolator->Evaluate(interp_pos[0] - (T)0.5, interp_pos[1] - (T)0.5, &value);
 
         r += (T)weight * (T)_params.cost_check_points[i+2] * value * value;
       }
@@ -280,11 +275,11 @@ protected:
   const Eigen::Vector2d _original_pos;
   double _next_to_last_length_ratio;
   bool _reversing;
-  nav2_costmap_2d::Costmap2D * _costmap{nullptr};
   SmootherParams _params;
   double _costmap_weight;
-  std::unique_ptr<ceres::Grid2D<u_char>> _costmap_grid;
-  std::unique_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>> _interpolate_costmap;
+  Eigen::Vector2d _costmap_origin;
+  double _costmap_resolution;
+  std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>> _costmap_interpolator;
 };
 
 }  // namespace nav2_smac_planner

@@ -91,10 +91,20 @@ protected:
       node_lifecycle_, "costmap_topic");
 
     smoother_ = std::make_shared<CeresCostawareSmoother>();
+
     smoother_->configure(
       node_lifecycle_, "SmoothPath", tf_buffer_, costmap_sub_,
       std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>());
     smoother_->activate();
+
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000.0));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.minimum_turning_radius", 0.4));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 30.0));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_dist", 0.0));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", -1.0));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost_cusp", 0.04));
+    reloadParams();
   }
 
   void TearDown() override
@@ -267,11 +277,8 @@ protected:
 
 TEST_F(SmootherTest, testingSmoothness)
 {
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000.0));
   // set w_curve to 0.0 so that the whole job is upon w_smooth
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 0.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost_dir_change", 0.0));
   reloadParams();
 
   std::vector<Eigen::Vector3d> sharp_turn_90 =
@@ -337,13 +344,9 @@ TEST_F(SmootherTest, testingSmoothness)
 TEST_F(SmootherTest, testingAnchoringToOriginalPath)
 {
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 30.0));
-  // set w_curve to 0.0 so that the whole job is upon w_smooth
+  // set w_curve to 0.0, we don't care about turning radius in this test...
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 0.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost_dir_change", 0.0));
-
-  // first set w_dist to 0.0 to generate an unanchored smoothed path
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_dist", 0.0));
+  // first keep w_dist at 0.0 to generate an unanchored smoothed path
   reloadParams();
 
   std::vector<Eigen::Vector3d> sharp_turn_90 =
@@ -381,12 +384,9 @@ TEST_F(SmootherTest, testingAnchoringToOriginalPath)
 
 TEST_F(SmootherTest, testingMaxCurvature)
 {
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.minimum_turning_radius", 0.4));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 30.0));
   // set w_smooth to a small value so that the whole job is upon w_curve
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 0.3));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost_dir_change", 0.0));
   reloadParams();
 
   // smoother should increase radius from infeasible 0.3 to feasible 0.4

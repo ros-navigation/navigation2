@@ -17,8 +17,8 @@ smoother_server:
       w_dist: 0.0                   # weight to bind path to original as optional replacement for cost weight
       w_smooth: 15000.0             # weight to maximize smoothness of path
       w_cost: 0.015                 # weight to steer robot away from collision and cost
-      w_cost_dir_change: 0.08       # higher weight during forward/reverse direction change which is often accompanied with dangerous rotations
-      dir_change_length: 1.5        # length of the section around direction change in which nodes use w_cost_dir_change instead of w_cost
+      w_cost_cusp: 0.08       # higher weight during forward/reverse direction change which is often accompanied with dangerous rotations
+      cusp_zone_length: 1.5        # length of the section around direction change in which nodes use w_cost_cusp instead of w_cost
       cost_scaling_factor: 1.6      # this should match the inflation layer's parameter
       input_downsampling_factor: 3  # every n-th node of the path is taken. Useful for speed-up
       cost_check_points: [-0.185, 0.0, 1.0] # points of robot footprint to grab costmap weight from. Useful for assymetric robot footprints. Format: [x1, y1, weight1, x2, y2, weight2, ...]

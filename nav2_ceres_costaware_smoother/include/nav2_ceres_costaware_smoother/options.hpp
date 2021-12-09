@@ -58,11 +58,11 @@ struct SmootherParams
       node, local_name + "w_cost", rclcpp::ParameterValue(0.015));
     node->get_parameter(local_name + "w_cost", costmap_weight);
     nav2_util::declare_parameter_if_not_declared(
-      node, local_name + "w_cost_dir_change", rclcpp::ParameterValue(costmap_weight));
-    node->get_parameter(local_name + "w_cost_dir_change", dir_change_costmap_weight);
+      node, local_name + "w_cost_cusp", rclcpp::ParameterValue(0.04));
+    node->get_parameter(local_name + "w_cost_cusp", cusp_costmap_weight);
     nav2_util::declare_parameter_if_not_declared(
-      node, local_name + "dir_change_length", rclcpp::ParameterValue(1.5));
-    node->get_parameter(local_name + "dir_change_length", dir_change_length);
+      node, local_name + "cusp_zone_length", rclcpp::ParameterValue(-1.0));
+    node->get_parameter(local_name + "cusp_zone_length", cusp_zone_length);
     nav2_util::declare_parameter_if_not_declared(
       node, local_name + "w_dist", rclcpp::ParameterValue(0.0));
     node->get_parameter(local_name + "w_dist", distance_weight);
@@ -93,8 +93,8 @@ struct SmootherParams
 
   double smooth_weight{0.0};
   double costmap_weight{0.0};
-  double dir_change_costmap_weight{0.0};
-  double dir_change_length{0.0};
+  double cusp_costmap_weight{0.0};
+  double cusp_zone_length{0.0};
   double distance_weight{0.0};
   double curvature_weight{0.0};
   double max_curvature{0.0};

@@ -68,7 +68,7 @@ void CeresCostawareSmoother::cleanup()
 {
   RCLCPP_INFO(
     logger_,
-    "Cleaning up controller: %s of type"
+    "Cleaning up smoother: %s of type"
     " nav2_ceres_costaware_smoother::CeresCostawareSmoother",
     plugin_name_.c_str());
 }
@@ -77,7 +77,7 @@ void CeresCostawareSmoother::activate()
 {
   RCLCPP_INFO(
     logger_,
-    "Activating controller: %s of type "
+    "Activating smoother: %s of type "
     "nav2_ceres_costaware_smoother::CeresCostawareSmoother",
     plugin_name_.c_str());
 }
@@ -86,7 +86,7 @@ void CeresCostawareSmoother::deactivate()
 {
   RCLCPP_INFO(
     logger_,
-    "Deactivating controller: %s of type "
+    "Deactivating smoother: %s of type "
     "nav2_ceres_costaware_smoother::CeresCostawareSmoother",
     plugin_name_.c_str());
 }
