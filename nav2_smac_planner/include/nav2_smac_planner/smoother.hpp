@@ -51,15 +51,16 @@ struct PathSegment
  */
 struct BoundaryPoints
 {
-  double x;
-  double y;
-  double theta;
   /**
    * @brief A constructor for BoundaryPoints
    */
   BoundaryPoints(double & x_in, double & y_in, double & theta_in)
   : x(x_in), y(y_in), theta(theta_in)
   {}
+
+  double x;
+  double y;
+  double theta;
 };
 
 /**
