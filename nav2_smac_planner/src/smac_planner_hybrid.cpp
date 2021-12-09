@@ -188,7 +188,7 @@ void SmacPlannerHybrid::configure(
     SmootherParams params;
     params.get(node, name);
     _smoother = std::make_unique<Smoother>(params);
-    _smoother->initialize(minimum_turning_radius_global_coords, _motion_model);
+    _smoother->initialize(minimum_turning_radius_global_coords);
   }
 
   // Initialize costmap downsampler
@@ -460,7 +460,6 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == _name + ".motion_model_for_search") {
         reinit_a_star = true;
-        reinit_smoother = true;
         _motion_model = fromString(parameter.as_string());
         if (_motion_model == MotionModel::UNKNOWN) {
           RCLCPP_WARN(
@@ -536,7 +535,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       SmootherParams params;
       params.get(node, _name);
       _smoother = std::make_unique<Smoother>(params);
-      _smoother->initialize(minimum_turning_radius_global_coords, _motion_model);
+      _smoother->initialize(minimum_turning_radius_global_coords);
     }
   }
   result.successful = true;

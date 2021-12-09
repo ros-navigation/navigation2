@@ -170,9 +170,7 @@ void SmacPlannerLattice::configure(
     SmootherParams params;
     params.get(node, name);
     _smoother = std::make_unique<Smoother>(params);
-    MotionModel smoother_motion_model =
-      _search_info.allow_reverse_expansion ? MotionModel::REEDS_SHEPP : MotionModel::DUBIN;
-    _smoother->initialize(_metadata.min_turning_radius, smoother_motion_model);
+    _smoother->initialize(_metadata.min_turning_radius);
   }
 
   RCLCPP_INFO(
@@ -438,9 +436,7 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       SmootherParams params;
       params.get(node, _name);
       _smoother = std::make_unique<Smoother>(params);
-      MotionModel smoother_motion_model =
-        _search_info.allow_reverse_expansion ? MotionModel::REEDS_SHEPP : MotionModel::DUBIN;
-      _smoother->initialize(_metadata.min_turning_radius, smoother_motion_model);
+      _smoother->initialize(_metadata.min_turning_radius);
     }
 
     // Re-Initialize A* template

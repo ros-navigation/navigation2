@@ -101,8 +101,7 @@ public:
    * @param motion_model Motion model type
    */
   void initialize(
-    const double & min_turning_radius,
-    MotionModel motion_model = MotionModel::UNKNOWN);
+    const double & min_turning_radius);
 
   /**
    * @brief Smoother API method
@@ -120,12 +119,14 @@ protected:
   /**
    * @brief Smoother method - does the smoothing on a segment
    * @param path Reference to path
+   * @param reversing_segment Return if this is a reversing segment
    * @param costmap Pointer to minimal costmap
    * @param max_time Maximum time to compute, stop early if over limit
    * @return If smoothing was successful
    */
   bool smoothImpl(
     nav_msgs::msg::Path & path,
+    bool & reversing_segment,
     const nav2_costmap_2d::Costmap2D * costmap,
     const double & max_time);
 
@@ -163,11 +164,13 @@ protected:
    * @param start_pose Start pose of the feasible path to maintain
    * @param path Path to modify for curvature constraints on start / end of path
    * @param costmap Costmap to check for collisions
+   * @param reversing_segment Whether this path segment is in reverse
    */
   void enforceStartBoundaryConditions(
     const geometry_msgs::msg::Pose & start_pose,
     nav_msgs::msg::Path & path,
-    const nav2_costmap_2d::Costmap2D * costmap);
+    const nav2_costmap_2d::Costmap2D * costmap,
+    const bool & reversing_segment);
 
   /**
    * @brief Enforced minimum curvature boundary conditions on plan output
@@ -175,11 +178,13 @@ protected:
    * @param end_pose End pose of the feasible path to maintain
    * @param path Path to modify for curvature constraints on start / end of path
    * @param costmap Costmap to check for collisions
+   * @param reversing_segment Whether this path segment is in reverse
    */
   void enforceEndBoundaryConditions(
     const geometry_msgs::msg::Pose & end_pose,
     nav_msgs::msg::Path & path,
-    const nav2_costmap_2d::Costmap2D * costmap);
+    const nav2_costmap_2d::Costmap2D * costmap,
+    const bool & reversing_segment);
 
   /**
    * @brief Given a set of boundary expansion, find the one which is shortest
@@ -197,6 +202,7 @@ protected:
    * @param end End pose of the feasible path to maintain
    * @param expansion Expansion object to populate
    * @param costmap Costmap to check for collisions
+   * @param reversing_segment Whether this path segment is in reverse
    */
   void findBoundaryExpansion(
     const geometry_msgs::msg::Pose & start,
@@ -217,8 +223,9 @@ protected:
   /**
    * @brief For a given path, update the path point orientations based on smoothing
    * @param path Path to approximate the path orientation in
+   * @param reversing_segment Return if this is a reversing segment
    */
-  inline void updateApproximatePathOrientations(nav_msgs::msg::Path & path);
+  inline void updateApproximatePathOrientations(nav_msgs::msg::Path & path, bool & reversing_segment);
 
   double min_turning_rad_, tolerance_, data_w_, smooth_w_;
   int max_its_, refinement_ctr_;

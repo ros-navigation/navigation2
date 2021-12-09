@@ -34,17 +34,10 @@ Smoother::Smoother(const SmootherParams & params)
   do_refinement_ = params.do_refinement_;
 }
 
-void Smoother::initialize(const double & min_turning_radius, MotionModel motion_model)
+void Smoother::initialize(const double & min_turning_radius)
 {
   min_turning_rad_ = min_turning_radius;
-  motion_model_ = motion_model;
-  if (motion_model_ == MotionModel::REEDS_SHEPP) {
-    state_space_ =
-      std::make_unique<ompl::base::ReedsSheppStateSpace>(min_turning_rad_);
-  } else {
-    state_space_ =
-      std::make_unique<ompl::base::DubinsStateSpace>(min_turning_rad_);
-  }
+  state_space_ = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_rad_);
 }
 
 bool Smoother::smooth(
@@ -55,7 +48,7 @@ bool Smoother::smooth(
   refinement_ctr_ = 0;
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time;
-  bool success = true;
+  bool success = true, reversing_segment;
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
   std::vector<PathSegment> path_segments = findDirectionalPathSegments(path);
@@ -76,13 +69,13 @@ bool Smoother::smooth(
       // Smooth path segment naively
       const geometry_msgs::msg::Pose start_pose = curr_path_segment.poses.front().pose;
       const geometry_msgs::msg::Pose end_pose = curr_path_segment.poses.back().pose;
-      bool local_success = smoothImpl(curr_path_segment, costmap, time_remaining);
+      bool local_success = smoothImpl(curr_path_segment, reversing_segment, costmap, time_remaining);
       success = success && local_success;
 
       // Enforce boundary conditions
       if (!is_holonomic_ && local_success) {
-        enforceStartBoundaryConditions(start_pose, curr_path_segment, costmap);
-        enforceEndBoundaryConditions(end_pose, curr_path_segment, costmap);
+        enforceStartBoundaryConditions(start_pose, curr_path_segment, costmap, reversing_segment);
+        enforceEndBoundaryConditions(end_pose, curr_path_segment, costmap, reversing_segment);
       }
 
       // Assemble the path changes to the main path
@@ -98,6 +91,7 @@ bool Smoother::smooth(
 
 bool Smoother::smoothImpl(
   nav_msgs::msg::Path & path,
+  bool & reversing_segment,
   const nav2_costmap_2d::Costmap2D * costmap,
   const double & max_time)
 {
@@ -123,7 +117,7 @@ bool Smoother::smoothImpl(
         rclcpp::get_logger("SmacPlannerSmoother"),
         "Number of iterations has exceeded limit of %i.", max_its_);
       path = last_path;
-      updateApproximatePathOrientations(path);
+      updateApproximatePathOrientations(path, reversing_segment);
       return false;
     }
 
@@ -135,7 +129,7 @@ bool Smoother::smoothImpl(
         rclcpp::get_logger("SmacPlannerSmoother"),
         "Smoothing time exceeded allowed duration of %0.2f.", max_time);
       path = last_path;
-      updateApproximatePathOrientations(path);
+      updateApproximatePathOrientations(path, reversing_segment);
       return false;
     }
 
@@ -169,7 +163,7 @@ bool Smoother::smoothImpl(
           "Smoothing process resulted in an infeasible collision. "
           "Returning the last path before the infeasibility was introduced.");
         path = last_path;
-        updateApproximatePathOrientations(path);
+        updateApproximatePathOrientations(path, reversing_segment);
         return false;
       }
     }
@@ -181,10 +175,10 @@ bool Smoother::smoothImpl(
   // but really puts the path quality over the top.
   if (do_refinement_ && refinement_ctr_ < 3) {
     refinement_ctr_++;
-    smoothImpl(new_path, costmap, max_time);
+    smoothImpl(new_path, reversing_segment, costmap, max_time);
   }
 
-  updateApproximatePathOrientations(new_path);
+  updateApproximatePathOrientations(new_path, reversing_segment);
   path = new_path;
   return true;
 }
@@ -254,10 +248,10 @@ std::vector<PathSegment> Smoother::findDirectionalPathSegments(const nav_msgs::m
   return segments;
 }
 
-void Smoother::updateApproximatePathOrientations(nav_msgs::msg::Path & path)
+void Smoother::updateApproximatePathOrientations(nav_msgs::msg::Path & path, bool & reversing_segment)
 {
   double dx, dy, theta, pt_yaw;
-  bool reverse = false;
+  reversing_segment = false;
 
   // Find if this path segment is in reverse
   dx = path.poses[2].pose.position.x - path.poses[1].pose.position.x;
@@ -265,7 +259,7 @@ void Smoother::updateApproximatePathOrientations(nav_msgs::msg::Path & path)
   theta = atan2(dy, dx);
   pt_yaw = tf2::getYaw(path.poses[1].pose.orientation);
   if (!is_holonomic_ && fabs(angles::shortest_angular_distance(pt_yaw, theta)) > M_PI_2) {
-    reverse = true;
+    reversing_segment = true;
   }
 
   for (unsigned int i = 0; i != path.poses.size() - 1; i++) {
@@ -279,7 +273,7 @@ void Smoother::updateApproximatePathOrientations(nav_msgs::msg::Path & path)
     }
 
     // Flip the angle if this path segment is in reverse
-    if (reverse) {
+    if (reversing_segment) {
       theta += M_PI;  // orientationAroundZAxis will normalize
     }
 
@@ -397,16 +391,17 @@ BoundaryExpansions Smoother::generateBoundaryExpansionPoints(IteratorT start, It
   return boundary_expansions;
 }
 
-// TODO(sm) Seeing situation where smoother smoothes so much it backs up first on what was otherwise a dubin move
 
-// TODO(sm) tune + with gains / tolerances + refinement
-// TODO(sm) add param to migration and configuration guides for smac
 // TODO(sm) extensive testing and analysis
+  // TODO occasional failures still where it does the full loop - guard against / fix
+  // TODO(sm) tune + with gains + tolerances + refinement
+// TODO(sm) add param to migration and configuration guides for smac
 
 void Smoother::enforceStartBoundaryConditions(
   const geometry_msgs::msg::Pose & start_pose,
   nav_msgs::msg::Path & path,
-  const nav2_costmap_2d::Costmap2D * costmap)
+  const nav2_costmap_2d::Costmap2D * costmap,
+  const bool & reversing_segment)
 {
   // Find range of points for testing
   BoundaryExpansions boundary_expansions =
@@ -419,7 +414,11 @@ void Smoother::enforceStartBoundaryConditions(
       continue;
     }
 
-    findBoundaryExpansion(start_pose, path.poses[expansion.path_end_idx].pose, expansion, costmap);
+    if (!reversing_segment) {
+      findBoundaryExpansion(start_pose, path.poses[expansion.path_end_idx].pose, expansion, costmap);
+    } else {
+      findBoundaryExpansion(path.poses[expansion.path_end_idx].pose, start_pose, expansion, costmap);
+    }
   }
 
   unsigned int best_expansion_idx = findShortestBoundaryExpansionIdx(boundary_expansions);
@@ -429,6 +428,9 @@ void Smoother::enforceStartBoundaryConditions(
 
   // Override values to match curve
   BoundaryExpansion & best_expansion = boundary_expansions[best_expansion_idx];
+  if (reversing_segment) {
+    std::reverse(best_expansion.pts.begin(), best_expansion.pts.end());
+  }
   for (unsigned int i = 0; i != best_expansion.pts.size(); i++) {
     path.poses[i].pose.position.x = best_expansion.pts[i].x;
     path.poses[i].pose.position.y = best_expansion.pts[i].y;
@@ -439,7 +441,8 @@ void Smoother::enforceStartBoundaryConditions(
 void Smoother::enforceEndBoundaryConditions(
   const geometry_msgs::msg::Pose & end_pose,
   nav_msgs::msg::Path & path,
-  const nav2_costmap_2d::Costmap2D * costmap)
+  const nav2_costmap_2d::Costmap2D * costmap,
+  const bool & reversing_segment)
 {
   // Find range of points for testing
   BoundaryExpansions boundary_expansions =
@@ -453,7 +456,11 @@ void Smoother::enforceEndBoundaryConditions(
       continue;
     }
     expansion_starting_idx = path.poses.size() - expansion.path_end_idx - 1;
-    findBoundaryExpansion(path.poses[expansion_starting_idx].pose, end_pose, expansion, costmap);
+    if (!reversing_segment) {
+      findBoundaryExpansion(path.poses[expansion_starting_idx].pose, end_pose, expansion, costmap);
+    } else {
+      findBoundaryExpansion(end_pose, path.poses[expansion_starting_idx].pose, expansion, costmap);
+    }
   }
 
   unsigned int best_expansion_idx = findShortestBoundaryExpansionIdx(boundary_expansions);
@@ -463,6 +470,9 @@ void Smoother::enforceEndBoundaryConditions(
 
   // Override values to match curve
   BoundaryExpansion & best_expansion = boundary_expansions[best_expansion_idx];
+  if (reversing_segment) {
+    std::reverse(best_expansion.pts.begin(), best_expansion.pts.end());
+  }
   expansion_starting_idx = path.poses.size() - best_expansion.path_end_idx - 1;
   for (unsigned int i = 0; i != best_expansion.pts.size(); i++) {
     path.poses[expansion_starting_idx + i].pose.position.x = best_expansion.pts[i].x;
