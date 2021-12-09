@@ -70,7 +70,8 @@ struct BoundaryPoints
 struct BoundaryExpansion
 {
   double path_end_idx{0.0};
-  double path_length{0.0};
+  double expansion_path_length{0.0};
+  double original_path_length{0.0};
   std::vector<BoundaryPoints> pts;
   bool in_collision{false};
 };

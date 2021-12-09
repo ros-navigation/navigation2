@@ -265,6 +265,7 @@ void Smoother::updateApproximatePathOrientations(
     reversing_segment = true;
   }
 
+  // Find the angle relative the path position vectors
   for (unsigned int i = 0; i != path.poses.size() - 1; i++) {
     dx = path.poses[i + 1].pose.position.x - path.poses[i].pose.position.x;
     dy = path.poses[i + 1].pose.position.y - path.poses[i].pose.position.y;
@@ -293,12 +294,12 @@ unsigned int Smoother::findShortestBoundaryExpansionIdx(
   double min_length = 1e9;
   int shortest_boundary_expansion_idx = 1e9;
   for (unsigned int idx = 0; idx != boundary_expansions.size(); idx++) {
-    if (boundary_expansions[idx].path_length<min_length &&
+    if (boundary_expansions[idx].expansion_path_length<min_length &&
       !boundary_expansions[idx].in_collision &&
       boundary_expansions[idx].path_end_idx>0.0 &&
-      boundary_expansions[idx].path_length > 0.0)
+      boundary_expansions[idx].expansion_path_length > 0.0)
     {
-      min_length = boundary_expansions[idx].path_length;
+      min_length = boundary_expansions[idx].expansion_path_length;
       shortest_boundary_expansion_idx = idx;
     }
   }
@@ -322,6 +323,18 @@ void Smoother::findBoundaryExpansion(
   to[2] = tf2::getYaw(end.orientation);
 
   double d = state_space_->distance(from(), to());
+
+  // If this path is too long compared to the original,
+  // then this is probably a loop-de-loop, treat as invalid.
+  // 2.0 selected from prinicipled selection of boundary test points
+  // r, 2 * r, r * PI, and 2 * PI * r. If there is a loop, it will be
+  // approximately 2 * PI * r, which is 2 * PI > r, PI > 2 * r, and 2 > r * PI.
+  // For all but the last backup test point, a loop would be approximately
+  // 2x greater than any of the selections.
+  if (d > 2.0 * expansion.original_path_length) {
+    return;
+  }
+
   std::vector<double> reals;
   double theta(0.0), x(0.0), y(0.0), x_m(0.0), y_m(0.0);
 
@@ -340,14 +353,12 @@ void Smoother::findBoundaryExpansion(
     costmap->worldToMap(x, y, mx, my);
     if (costmap->getCost(i) >= INSCRIBED) {
       expansion.in_collision = true;
-      x_m = x;
-      y_m = y;
-      continue;
+      return;
     }
 
     // Integrate path length
     if (i > 0) {
-      expansion.path_length += hypot(x - x_m, y - y_m);
+      expansion.expansion_path_length += hypot(x - x_m, y - y_m);
     }
     x_m = x;
     y_m = y;
@@ -383,6 +394,7 @@ BoundaryExpansions Smoother::generateBoundaryExpansionPoints(IteratorT start, It
 
     if (curr_dist >= distances[curr_dist_idx]) {
       boundary_expansions[curr_dist_idx].path_end_idx = iter - start;
+      boundary_expansions[curr_dist_idx].original_path_length = curr_dist;
       curr_dist_idx++;
     }
 
@@ -422,6 +434,7 @@ void Smoother::enforceStartBoundaryConditions(
     }
   }
 
+  // Find the shortest kinematically feasible boundary expansion
   unsigned int best_expansion_idx = findShortestBoundaryExpansionIdx(boundary_expansions);
   if (best_expansion_idx > boundary_expansions.size()) {
     return;
@@ -464,6 +477,7 @@ void Smoother::enforceEndBoundaryConditions(
     }
   }
 
+  // Find the shortest kinematically feasible boundary expansion
   unsigned int best_expansion_idx = findShortestBoundaryExpansionIdx(boundary_expansions);
   if (best_expansion_idx > boundary_expansions.size()) {
     return;
