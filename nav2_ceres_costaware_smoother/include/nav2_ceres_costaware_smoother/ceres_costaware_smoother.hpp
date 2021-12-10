@@ -28,7 +28,6 @@
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
-#include "std_msgs/msg/float64_multi_array.hpp"
 
 namespace nav2_ceres_costaware_smoother
 {

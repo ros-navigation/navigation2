@@ -12,6 +12,7 @@
 #include "tf2_ros/create_timer_ros.h"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "angles/angles.h"
 
 #include "nav2_ceres_costaware_smoother/ceres_costaware_smoother.hpp"
@@ -67,6 +68,13 @@ public:
     costmap_received_ = true;
   }
 };
+
+geometry_msgs::msg::Point pointMsg(double x, double y) {
+  geometry_msgs::msg::Point point;
+  point.x = x;
+  point.y = y;
+  return point;
+}
 
 class SmootherTest : public ::testing::Test
 {
@@ -159,7 +167,7 @@ protected:
    * @brief Path improvement assessment method
    * @param input Smoother input path
    * @param output Smoother output path
-   * @param criterion Criterion of path quality. Total path quality = sum(criterion(data[i])^2)/count(data)
+   * @param criterion Criterion of path quality. Total path quality = sqrt(sum(criterion(data[i])^2)/count(data))
    * @return Percentage of improvement (relative to input path quality)
    */
   double assessPathImprovement(
@@ -173,7 +181,7 @@ protected:
       total_input_crit += input_crit*input_crit;
       RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "input p: %lf %lf, c: %lf, total: %lf", input[i][0], input[i][1], input_crit, total_input_crit);
     }
-    total_input_crit /= input.size() - 2;
+    total_input_crit = sqrt(total_input_crit/(input.size() - 2));
 
     double total_output_crit = 0.0;
     for (size_t i = 1; i < output.size()-1; i++) {
@@ -181,7 +189,7 @@ protected:
       total_output_crit += output_crit*output_crit;
       RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "output p: %lf %lf, c: %lf, total: %lf", output[i][0], output[i][1], output_crit, total_output_crit);
     }
-    total_output_crit /= output.size() - 2;
+    total_output_crit = sqrt(total_output_crit/(input.size() - 2));
 
     return (1.0 - total_output_crit/total_input_crit)*100;
   }
@@ -190,7 +198,7 @@ protected:
    * @brief Path improvement assessment method
    * @param input Smoother input path
    * @param output Smoother output path
-   * @param criterion Criterion of path quality. Total path quality = sum(criterion(data[i])^2)/count(data)
+   * @param criterion Criterion of path quality. Total path quality = sqrt(sum(criterion(data[i])^2)/count(data))
    * @return Percentage of improvement (relative to input path quality)
    */
   double assessPathImprovement(
@@ -203,14 +211,14 @@ protected:
       double input_crit = criterion(i, input[i-1], input[i]);
       total_input_crit += input_crit*input_crit;
     }
-    total_input_crit /= input.size() - 1;
+    total_input_crit = sqrt(total_input_crit/(input.size() - 1));
 
     double total_output_crit = 0.0;
     for (size_t i = 1; i < output.size(); i++) {
       double output_crit = criterion(i, output[i-1], output[i]);
       total_output_crit += output_crit*output_crit;
     }
-    total_output_crit /= output.size() - 1;
+    total_output_crit = sqrt(total_output_crit/(output.size() - 1));
 
     return (1.0 - total_output_crit/total_input_crit)*100;
   }
@@ -219,7 +227,7 @@ protected:
    * @brief Path improvement assessment method
    * @param input Smoother input path
    * @param output Smoother output path
-   * @param criterion Criterion of path quality. Total path quality = sum(criterion(data[i])^2)/count(data)
+   * @param criterion Criterion of path quality. Total path quality = sqrt(sum(criterion(data[i])^2)/count(data))
    * @return Percentage of improvement (relative to input path quality)
    */
   double assessPathImprovement(
@@ -233,7 +241,7 @@ protected:
       total_input_crit += input_crit*input_crit;
       RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "input p: %lf %lf, c: %lf, total: %lf", input[i][0], input[i][1], input_crit, total_input_crit);
     }
-    total_input_crit /= input.size();
+    total_input_crit = sqrt(total_input_crit/input.size());
 
     double total_output_crit = 0.0;
     for (size_t i = 0; i < output.size(); i++) {
@@ -241,7 +249,7 @@ protected:
       total_output_crit += output_crit*output_crit;
       RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "output p: %lf %lf, c: %lf, total: %lf", output[i][0], output[i][1], output_crit, total_output_crit);
     }
-    total_output_crit /= output.size();
+    total_output_crit = sqrt(total_output_crit/output.size());
 
     return (1.0 - total_output_crit/total_input_crit)*100;
   }
@@ -269,8 +277,8 @@ protected:
       Eigen::Vector2d next_mvmt = next_p.block<2, 1>(0, 0) - p.block<2, 1>(0, 0);
       if (i == cusp_i_)
         next_mvmt = -next_mvmt;
-      RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "prev_mvmt: %lf %lf, next_mvmt: %lf %lf",
-        prev_mvmt[0], prev_mvmt[1], next_mvmt[0], next_mvmt[1]);
+      // RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "prev_mvmt: %lf %lf, next_mvmt: %lf %lf",
+      //   prev_mvmt[0], prev_mvmt[1], next_mvmt[0], next_mvmt[1]);
       return (next_mvmt - prev_mvmt).norm();
     };
 };
@@ -297,7 +305,7 @@ TEST_F(SmootherTest, testingSmoothness)
   double mvmt_smoothness_improvement =
     assessPathImprovement(sharp_turn_90, smoothed_path, mvmt_smoothness_criterion_);
   ASSERT_GT(mvmt_smoothness_improvement, 0.0);
-  ASSERT_NEAR(mvmt_smoothness_improvement, 80.0, 1.0);
+  ASSERT_NEAR(mvmt_smoothness_improvement, 55.3, 1.0);
 
   auto orientation_smoothness_criterion =
     [] (int, const Eigen::Vector3d &prev_p, const Eigen::Vector3d &p) {
@@ -306,7 +314,7 @@ TEST_F(SmootherTest, testingSmoothness)
   double orientation_smoothness_improvement =
     assessPathImprovement(sharp_turn_90, smoothed_path, orientation_smoothness_criterion);
   ASSERT_GT(orientation_smoothness_improvement, 0.0);
-  ASSERT_NEAR(orientation_smoothness_improvement, 62.0, 1.0);
+  ASSERT_NEAR(orientation_smoothness_improvement, 38.7, 1.0);
 
   // path with a cusp
   std::vector<Eigen::Vector3d> sharp_turn_90_then_reverse =
@@ -331,12 +339,12 @@ TEST_F(SmootherTest, testingSmoothness)
   mvmt_smoothness_improvement =
     assessPathImprovement(sharp_turn_90_then_reverse, smoothed_path, mvmt_smoothness_criterion_);
   ASSERT_GT(mvmt_smoothness_improvement, 0.0);
-  ASSERT_NEAR(mvmt_smoothness_improvement, 60.5, 1.0);
+  ASSERT_NEAR(mvmt_smoothness_improvement, 37.2, 1.0);
 
   orientation_smoothness_improvement =
     assessPathImprovement(sharp_turn_90_then_reverse, smoothed_path, orientation_smoothness_criterion);
   ASSERT_GT(orientation_smoothness_improvement, 0.0);
-  ASSERT_NEAR(orientation_smoothness_improvement, 48.9, 1.0);
+  ASSERT_NEAR(orientation_smoothness_improvement, 28.5, 1.0);
 
   SUCCEED();
 }
@@ -377,7 +385,7 @@ TEST_F(SmootherTest, testingAnchoringToOriginalPath)
   double origin_similarity_improvement =
     assessPathImprovement(smoothed_path, smoothed_path_anchored, origin_similarity_criterion);
   ASSERT_GT(origin_similarity_improvement, 0.0);
-  ASSERT_NEAR(origin_similarity_improvement, 70.3, 1.0);
+  ASSERT_NEAR(origin_similarity_improvement, 45.5, 1.0);
 
   SUCCEED();
 }
@@ -387,6 +395,8 @@ TEST_F(SmootherTest, testingMaxCurvature)
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 30.0));
   // set w_smooth to a small value so that the whole job is upon w_curve
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 0.3));
+  // let's give the smoother more time since w_smooth is so small
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.max_iterations", 500));
   reloadParams();
 
   // smoother should increase radius from infeasible 0.3 to feasible 0.4
@@ -461,6 +471,51 @@ TEST_F(SmootherTest, testingMaxCurvature)
 
 TEST_F(SmootherTest, testingObstacleAvoidance)
 {
+  auto costmap = costmap_sub_->getCostmap();
+  nav2_costmap_2d::FootprintCollisionChecker collision_checker(costmap);
+  nav2_costmap_2d::Footprint footprint;
+
+  auto cost_avoidance_criterion =
+    [&collision_checker, &footprint](int, const Eigen::Vector3d &p) {
+      return collision_checker.footprintCostAtPose(p[0], p[1], p[2], footprint);
+    };
+
+  // a symmetric footprint (diff-drive with 4 actuated wheels)
+  footprint.push_back(pointMsg(0.4, 0.25));
+  footprint.push_back(pointMsg(-0.4, 0.25));
+  footprint.push_back(pointMsg(-0.4, -0.25));
+  footprint.push_back(pointMsg(0.4, -0.25));
+
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
+  reloadParams();
+
+  std::vector<Eigen::Vector3d> straight_near_obstacle =
+    { {0.05, 0.05, 0}
+    , {0.45, 0.05, 0}
+    , {0.85, 0.05, 0}
+    , {1.25, 0.05, 0}
+    , {1.65, 0.05, 0}
+    , {2.05, 0.05, 0}
+    , {2.45, 0.05, 0}
+    , {2.85, 0.05, 0}
+    , {3.25, 0.05, 0}
+    , {3.65, 0.05, 0}
+    , {4.05, 0.05, 0}
+    };
+
+  std::vector<Eigen::Vector3d> smoothed_path;
+  ASSERT_TRUE(smoothPath(straight_near_obstacle, smoothed_path));
+
+  // we don't expect result to be smoother than original as original straight line was 100% smooth
+  // but let's check for large discontinuities using a well chosen upper bound
+  auto upper_bound = zigZaggedPath(straight_near_obstacle, 0.01);
+  ASSERT_GT(assessPathImprovement(upper_bound, smoothed_path, mvmt_smoothness_criterion_), 0.0);
+
+  double cost_avoidance_improvement = assessPathImprovement(straight_near_obstacle, smoothed_path, cost_avoidance_criterion);
+  ASSERT_GT(cost_avoidance_improvement, 0.0);
+  ASSERT_NEAR(cost_avoidance_improvement, 12.9, 1.0);
+  
   SUCCEED();
 }
 

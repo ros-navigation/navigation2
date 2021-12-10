@@ -39,6 +39,9 @@ struct DoubleOnlyLogger {
   // template<typename... ArgTypes>
   static void log(const char*, T, T, T, T, T, T, T) {
   }
+
+  static void log(const char*, T, T, T, T, T, const nav2_costmap_2d::Costmap2D*) {
+  }
 };
 
 template <>
@@ -46,6 +49,11 @@ void DoubleOnlyLogger<double>::log(const char* format, double a1, double a2, dou
   RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), format, a1, a2, a3, a4, a5, a6, a7);
 }
 
+template <>
+void DoubleOnlyLogger<double>::log(const char* format, double a1, double a2, double a3, double a4, double a5, const nav2_costmap_2d::Costmap2D* costmap) {
+  RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), format, a1, a2, a3, a4, a5,
+    (double)costmap->getCost(a3 - 0.5, a4 - 0.5), (double)costmap->getCharMap()[(int)(a4 - 0.5)*costmap->getSizeInCellsX() + (int)(a3 - 0.5)]);
+}
 /**
  * @struct nav2_ceres_costaware_smoother::SmootherCostFunction
  * @brief Cost function for path smoothing with multiple terms
@@ -92,40 +100,6 @@ public:
   }
 
   /**
-   * @struct CurvatureComputations
-   * @brief Cache common computations between the curvature terms to minimize recomputations
-   */
-  template <typename T>
-  struct CurvatureComputations
-  {
-    /**
-     * @brief A constructor for nav2_smac_planner::CurvatureComputations
-     */
-    CurvatureComputations()
-    {
-      valid = true;
-    }
-
-    bool valid;
-    /**
-     * @brief Check if result is valid for penalty
-     * @return is valid (non-nan, non-inf, and turning angle > max)
-     */
-    bool isValid()
-    {
-      return valid;
-    }
-
-    Eigen::Matrix<T, 2, 1> delta_xi{0.0, 0.0};
-    Eigen::Matrix<T, 2, 1> delta_xi_p{0.0, 0.0};
-    T delta_xi_norm{0};
-    T delta_xi_p_norm{0};
-    T delta_phi_i{0};
-    T turning_rad{0};
-    T ki_minus_kmax{0};
-  };
-
-  /**
    * @brief Smoother cost function evaluation
    * @param p X, Y coords of current point
    * @param p_p1 X, Y coords of next point
@@ -141,12 +115,9 @@ public:
     Eigen::Map<Eigen::Matrix<T, 4, 1> > residual(p_residual);
     residual.setZero();
 
-    // cache some computations between the residual and jacobian
-    CurvatureComputations<T> curvature_params;
-
     // compute cost
     addSmoothingResidual<T>(_params.smooth_weight, xi, xi_p1, xi_m1, residual[0]);//cost_raw);
-    addCurvatureResidual<T>(_params.curvature_weight, xi, xi_p1, xi_m1, curvature_params, residual[1]);//cost_raw);
+    addCurvatureResidual<T>(_params.curvature_weight, xi, xi_p1, xi_m1, residual[1]);//cost_raw);
     addDistanceResidual<T>(_params.distance_weight, xi, _original_pos.template cast<T>(), residual[2]);//cost_raw);
     addCostResidual<T>(_costmap_weight, xi, xi_p1, xi_m1, residual[3]);//cost_raw);
 
@@ -191,7 +162,6 @@ protected:
     const Eigen::Matrix<T, 2, 1> & pt,
     const Eigen::Matrix<T, 2, 1> & pt_p,
     const Eigen::Matrix<T, 2, 1> & pt_m,
-    CurvatureComputations<T> & curvature_params,
     T & r) const
   {
     Eigen::Matrix<T, 2, 1> center = arcCenter(pt_m, pt, pt_p, _next_to_last_length_ratio < 0 ? -1 : 1);
@@ -199,14 +169,13 @@ protected:
       return;
     }
     T turning_rad = (pt - center).norm();
-    curvature_params.ki_minus_kmax = (T)1.0/turning_rad - _params.max_curvature;
+    T ki_minus_kmax = (T)1.0/turning_rad - _params.max_curvature;
 
-    if (curvature_params.ki_minus_kmax <= (T)EPSILON) {
+    if (ki_minus_kmax <= (T)EPSILON) {
       return;
     }
 
-    r += (T)weight *
-      curvature_params.ki_minus_kmax * curvature_params.ki_minus_kmax;  // objective function value
+    r += (T)weight * ki_minus_kmax * ki_minus_kmax;  // objective function value
   }
 
   /**
@@ -247,8 +216,9 @@ protected:
     if (_params.cost_check_points.empty()) {
       Eigen::Matrix<T, 2, 1> interp_pos = (pt - _costmap_origin.template cast<T>()) / (T)_costmap_resolution;
       T value;
-      _costmap_interpolator->Evaluate(interp_pos[0] - (T)0.5, interp_pos[1] - (T)0.5, &value);
-      
+      _costmap_interpolator->Evaluate(interp_pos[1] - (T)0.5, interp_pos[0] - (T)0.5, &value);
+      // DoubleOnlyLogger<T>::log("%lf %lf (%lf %lf): %lf (%lf, %lf)", pt[0], pt[1], interp_pos[0] - (T)0.5, interp_pos[1] - (T)0.5, value,
+      //   _costmap);
       r += (T)weight * value * value;  // objective function value
     }
     else {
@@ -265,7 +235,7 @@ protected:
         auto ccpt_world = (transform*ccpt).template block<2, 1>(0, 0);
         Eigen::Matrix<T, 2, 1> interp_pos = (ccpt_world - _costmap_origin.template cast<T>()) / (T)_costmap_resolution;
         T value;
-        _costmap_interpolator->Evaluate(interp_pos[0] - (T)0.5, interp_pos[1] - (T)0.5, &value);
+        _costmap_interpolator->Evaluate(interp_pos[1] - (T)0.5, interp_pos[0] - (T)0.5, &value);
 
         r += (T)weight * (T)_params.cost_check_points[i+2] * value * value;
       }

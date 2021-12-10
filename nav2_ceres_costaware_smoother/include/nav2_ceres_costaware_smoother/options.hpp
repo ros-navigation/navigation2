@@ -142,7 +142,7 @@ struct OptimizerParams
       node, local_name + "gradient_tol", rclcpp::ParameterValue(1e-10));
     node->get_parameter(local_name + "gradient_tol", gradient_tol);
     nav2_util::declare_parameter_if_not_declared(
-      node, local_name + "max_iterations", rclcpp::ParameterValue(500));
+      node, local_name + "max_iterations", rclcpp::ParameterValue(100));
     node->get_parameter(local_name + "max_iterations", max_iterations);
     nav2_util::declare_parameter_if_not_declared(
       node, local_name + "max_time", rclcpp::ParameterValue(0.100));

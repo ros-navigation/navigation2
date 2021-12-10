@@ -222,7 +222,7 @@ private:
   }
 
   /**
-   * @brief Populate to path, upsampling
+   * @brief Populate optimized points to path, assigning orientations and upsampling poses using cubic bezier
    * @param path_optim Path with optimized points
    * @param optimized False for points skipped by downsampling
    * @param start_dir Orientation of the first pose
@@ -238,7 +238,7 @@ private:
     const SmootherParams & params,
     std::vector<Eigen::Vector3d> & path)
   {
-    // Populate path, assign orientations, interpolate dropped poses
+    // Populate path, assign orientations, interpolate skipped/upsampled poses
     path.clear();
     path.emplace_back(path_optim[0][0], path_optim[0][1], atan2(start_dir[1], start_dir[0]));
     if (params.output_upsampling_factor > 1)

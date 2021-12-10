@@ -9,11 +9,9 @@ find_package(nav2_common REQUIRED)
 find_package(angles REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(nav_2d_utils REQUIRED)
-find_package(nav_2d_msgs REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 
@@ -32,10 +30,8 @@ set(dependencies
   angles
   rclcpp
   rclcpp_action
-  std_msgs
   nav2_msgs
-  nav_2d_utils
-  nav_2d_msgs
+  nav2_costmap_2d
   nav2_util
   nav2_core
   pluginlib
