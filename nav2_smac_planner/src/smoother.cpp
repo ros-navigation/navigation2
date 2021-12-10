@@ -14,7 +14,6 @@
 
 #include <ompl/base/ScopedState.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
-#include <ompl/base/spaces/ReedsSheppStateSpace.h>
 #include <vector>
 #include <memory>
 #include "nav2_smac_planner/smoother.hpp"
@@ -68,7 +67,7 @@ bool Smoother::smooth(
 
       // Smooth path segment naively
       const geometry_msgs::msg::Pose start_pose = curr_path_segment.poses.front().pose;
-      const geometry_msgs::msg::Pose end_pose = curr_path_segment.poses.back().pose;
+      const geometry_msgs::msg::Pose goal_pose = curr_path_segment.poses.back().pose;
       bool local_success =
         smoothImpl(curr_path_segment, reversing_segment, costmap, time_remaining);
       success = success && local_success;
@@ -76,7 +75,7 @@ bool Smoother::smooth(
       // Enforce boundary conditions
       if (!is_holonomic_ && local_success) {
         enforceStartBoundaryConditions(start_pose, curr_path_segment, costmap, reversing_segment);
-        enforceEndBoundaryConditions(end_pose, curr_path_segment, costmap, reversing_segment);
+        enforceEndBoundaryConditions(goal_pose, curr_path_segment, costmap, reversing_segment);
       }
 
       // Assemble the path changes to the main path
@@ -323,10 +322,9 @@ void Smoother::findBoundaryExpansion(
   to[2] = tf2::getYaw(end.orientation);
 
   double d = state_space_->distance(from(), to());
-
-  // If this path is too long compared to the original,
-  // then this is probably a loop-de-loop, treat as invalid.
-  // 2.0 selected from prinicipled selection of boundary test points
+  // If this path is too long compared to the original, then this is probably
+  // a loop-de-loop, treat as invalid as to not deviate too far from the original path.
+  // 2.0 selected from prinicipled choice of boundary test points
   // r, 2 * r, r * PI, and 2 * PI * r. If there is a loop, it will be
   // approximately 2 * PI * r, which is 2 * PI > r, PI > 2 * r, and 2 > r * PI.
   // For all but the last backup test point, a loop would be approximately
@@ -336,10 +334,12 @@ void Smoother::findBoundaryExpansion(
   }
 
   std::vector<double> reals;
-  double theta(0.0), x(0.0), y(0.0), x_m(0.0), y_m(0.0);
+  double theta(0.0), x(0.0), y(0.0);
+  double x_m = start.position.x;
+  double y_m = start.position.y;
 
   // Get intermediary poses
-  for (double i = 0; i < expansion.path_end_idx; i++) {
+  for (double i = 0; i <= expansion.path_end_idx; i++) {
     state_space_->interpolate(from(), to(), i / expansion.path_end_idx, s());
     reals = s.reals();
     // Make sure in range [0, 2PI)
@@ -351,15 +351,12 @@ void Smoother::findBoundaryExpansion(
     // Check for collision
     unsigned int mx, my;
     costmap->worldToMap(x, y, mx, my);
-    if (costmap->getCost(i) >= INSCRIBED) {
+    if (static_cast<float>(costmap->getCost(mx, my)) >= INSCRIBED) {
       expansion.in_collision = true;
-      return;
     }
 
     // Integrate path length
-    if (i > 0) {
-      expansion.expansion_path_length += hypot(x - x_m, y - y_m);
-    }
+    expansion.expansion_path_length += hypot(x - x_m, y - y_m);
     x_m = x;
     y_m = y;
 
