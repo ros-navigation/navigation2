@@ -162,7 +162,7 @@ void pf_update_sensor(pf_t * pf, pf_sensor_model_fn_t sensor_fn, void * sensor_d
 void pf_update_resample(pf_t * pf);
 
 // Compute the CEP statistics (mean and variance).
-void pf_get_cep_stats(pf_t * pf, pf_vector_t * mean, double * var);
+// void pf_get_cep_stats(pf_t * pf, pf_vector_t * mean, double * var);
 
 // Compute the statistics for a particular cluster.  Returns 0 if
 // there is no such cluster.
@@ -181,7 +181,7 @@ void pf_draw_samples(pf_t * pf, struct _rtk_fig_t * fig, int max_samples);
 void pf_draw_hist(pf_t * pf, struct _rtk_fig_t * fig);
 
 // Draw the CEP statistics
-void pf_draw_cep_stats(pf_t * pf, struct _rtk_fig_t * fig);
+// void pf_draw_cep_stats(pf_t * pf, struct _rtk_fig_t * fig);
 
 // Draw the cluster statistics
 void pf_draw_cluster_stats(pf_t * pf, struct _rtk_fig_t * fig);
