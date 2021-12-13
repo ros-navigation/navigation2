@@ -439,7 +439,7 @@ _environments:
     ROS_WS: "/opt/ros_ws"
     UNDERLAY_WS: "/opt/underlay_ws"
     OVERLAY_WS: "/opt/overlay_ws"
-    UNDERLAY_MIXINS: "release ccache"
+    UNDERLAY_MIXINS: "release ccache lld"
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
     MAKEFLAGS: "-j 2 -l 2 "
@@ -456,7 +456,7 @@ executors:
     environment:
       <<: *common_environment
       CACHE_NONCE: "Debug"
-      OVERLAY_MIXINS: "debug ccache coverage-gcc"
+      OVERLAY_MIXINS: "debug ccache coverage-gcc lld"
   release_exec:
     docker:
       - image: ghcr.io/ros-planning/navigation2:main
@@ -464,7 +464,7 @@ executors:
     environment:
       <<: *common_environment
       CACHE_NONCE: "Release"
-      OVERLAY_MIXINS: "release ccache"
+      OVERLAY_MIXINS: "release ccache lld"
 
 _jobs:
   job_test: &job_test
