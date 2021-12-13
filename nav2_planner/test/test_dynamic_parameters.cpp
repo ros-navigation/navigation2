@@ -77,4 +77,14 @@ TEST(WPTest, test_dynamic_parameters)
     results);
 
   EXPECT_EQ(planner->get_parameter("expected_planner_frequency").as_double(), 100.0);
+
+  // test edge case for = 0
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("expected_planner_frequency", -1.0)});
+
+  rclcpp::spin_until_future_complete(
+    planner->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(planner->get_parameter("expected_planner_frequency").as_double(), -1.0);
 }

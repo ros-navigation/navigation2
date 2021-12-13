@@ -92,7 +92,42 @@ class NavTester(Node):
 
         self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
         goal_msg = NavigateThroughPoses.Goal()
-        goal_msg.poses = [self.getStampedPoseMsg(self.goal_pose)]
+        second_pose = Pose()
+        second_pose.position.x = 0.5
+        second_pose.position.y = 0.5
+        goal_msg.poses = [self.getStampedPoseMsg(self.goal_pose),
+                          self.getStampedPoseMsg(self.goal_pose)]
+
+        self.info_msg('Sending goal request...')
+        send_goal_future = self.action_client.send_goal_async(goal_msg)
+
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        goal_handle = send_goal_future.result()
+
+        if not goal_handle.accepted:
+            self.error_msg('Goal rejected')
+            return False
+
+        self.info_msg('Goal accepted')
+        get_result_future = goal_handle.get_result_async()
+
+        self.info_msg("Waiting for 'NavigateToPose' action to complete")
+        rclpy.spin_until_future_complete(self, get_result_future)
+        status = get_result_future.result().status
+        if status != GoalStatus.STATUS_SUCCEEDED:
+            self.info_msg(f'Goal failed with status code: {status}')
+            return False
+
+        self.info_msg('Goal succeeded!')
+        return True
+
+    def runFakeNavigateAction(self):
+        # Sends a `NavToPose` action request and waits for completion
+        self.info_msg("Waiting for 'NavigateThroughPoses' action server")
+        while not self.action_client.wait_for_server(timeout_sec=1.0):
+            self.info_msg("'NavigateThroughPoses' action server not available, waiting...")
+
+        goal_msg = NavigateThroughPoses.Goal()
 
         self.info_msg('Sending goal request...')
         send_goal_future = self.action_client.send_goal_async(goal_msg)
@@ -194,6 +229,8 @@ def run_all_tests(robot_tester):
         robot_tester.wait_for_initial_pose()
         robot_tester.wait_for_node_active('bt_navigator')
         result = robot_tester.runNavigateAction()
+        # Test empty navigation request
+        result = result and not robot_tester.runFakeNavigateAction()
 
     # Add more tests here if desired
 
