@@ -308,9 +308,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 #endif
 
   // Smooth plan
-  if (plan.poses.size() > 6) {
-    _smoother->smooth(plan, costmap, time_remaining);
-  }
+  _smoother->smooth(plan, costmap, time_remaining);
 
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
   // previous pose to set the orientation to the 'final approach' orientation of the robot so

@@ -357,7 +357,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 #endif
 
   // Smooth plan
-  if (_smoother && num_iterations > 1 && plan.poses.size() > 6) {
+  if (_smoother && num_iterations > 1) {
     _smoother->smooth(plan, costmap, time_remaining);
   }
 

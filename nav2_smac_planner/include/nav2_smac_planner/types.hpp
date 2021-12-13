@@ -82,6 +82,9 @@ struct SmootherParams
     nav2_util::declare_parameter_if_not_declared(
       node, local_name + "w_smooth", rclcpp::ParameterValue(0.3));
     node->get_parameter(local_name + "w_smooth", w_smooth_);
+    nav2_util::declare_parameter_if_not_declared(
+      node, local_name + "do_refinement", rclcpp::ParameterValue(true));
+    node->get_parameter(local_name + "do_refinement", do_refinement_);
   }
 
   double tolerance_;
@@ -89,6 +92,7 @@ struct SmootherParams
   double w_data_;
   double w_smooth_;
   bool holonomic_;
+  bool do_refinement_;
 };
 
 /**

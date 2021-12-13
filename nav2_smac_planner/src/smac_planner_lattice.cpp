@@ -311,7 +311,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 #endif
 
   // Smooth plan
-  if (_smoother && num_iterations > 1 && plan.poses.size() > 6) {
+  if (_smoother && num_iterations > 1) {
     _smoother->smooth(plan, _costmap, time_remaining);
   }
 
