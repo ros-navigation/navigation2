@@ -133,10 +133,6 @@ protected:
 
 private:
   /**
-   * @brief Clear any non-lethal cost columns
-   */
-  void clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info);
-  /**
    * @brief Use raycasting between 2 points to clear freespace
    */
   virtual void raytraceFreespace(
