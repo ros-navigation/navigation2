@@ -48,6 +48,8 @@ An unintended tertiary benefit of scaling the linear velocities by curvature is 
 
 Mixing the proximity and curvature regulated linear velocities with the time-scaled collision checker, we see a near-perfect combination allowing the regulated pure pursuit algorithm to handle high starting deviations from the path and navigate collision-free in tight spaces without overshoot. 
 
+Note: The maximum allowed time to collision is thresholded by the lookahead point, starting in Humble. This is such that collision checking isn't significantly overshooting the path, which can cause issues in constrained environments. For example, if there were a straight-line path going towards a wall that then turned left, if this parameter was set to high, then it would detect a collision past the point of actual robot intended motion. Thusly, if a robot is moving fast, selecting further out lookahead points is not only a matter of behavioral stability for Pure Pursuit, but also gives a robot further predictive collision detection capabilities. The max allowable time parameter is still in place for slow commands, as described in detail above.
+
 ## Configuration
 
 | Parameter | Description | 
@@ -64,7 +66,7 @@ Mixing the proximity and curvature regulated linear velocities with the time-sca
 | `use_velocity_scaled_lookahead_dist` | Whether to use the velocity scaled lookahead distances or constant `lookahead_distance` | 
 | `min_approach_linear_velocity` | The minimum velocity threshold to apply when approaching the goal | 
 | `use_approach_linear_velocity_scaling` | Whether to scale the linear velocity down on approach to the goal for a smooth stop | 
-| `max_allowed_time_to_collision` | The time to project a velocity command to check for collisions | 
+| `max_allowed_time_to_collision_up_to_carrot` | The time to project a velocity command to check for collisions, limited to maximum distance of lookahead distance selected | 
 | `use_regulated_linear_velocity_scaling` | Whether to use the regulated features for curvature | 
 | `use_cost_regulated_linear_velocity_scaling` | Whether to use the regulated features for proximity to obstacles | 
 | `cost_scaling_dist` | The minimum distance from an obstacle to trigger the scaling of linear velocity, if `use_cost_regulated_linear_velocity_scaling` is enabled. The value set should be smaller or equal to the `inflation_radius` set in the inflation layer of costmap, since inflation is used to compute the distance from obstacles | 
@@ -113,7 +115,7 @@ controller_server:
       use_velocity_scaled_lookahead_dist: false
       min_approach_linear_velocity: 0.05
       use_approach_linear_velocity_scaling: true
-      max_allowed_time_to_collision: 1.0
+      max_allowed_time_to_collision_up_to_carrot: 1.0
       use_regulated_linear_velocity_scaling: true
       use_cost_regulated_linear_velocity_scaling: false
       regulated_linear_scaling_min_radius: 0.9
@@ -131,7 +133,7 @@ controller_server:
 | Topic  | Type | Description | 
 |-----|----|----|
 | `lookahead_point`  | `geometry_msgs/PointStamped` | The current lookahead point on the path | 
-| `lookahead_arc`  | `nav_msgs/Path` | The drivable arc between the robot and the carrot. Arc length depends on `max_allowed_time_to_collision`, forward simulating from the robot pose at the commanded `Twist` by that time. In a collision state, the last published arc will be the points leading up to, and including, the first point in collision. | 
+| `lookahead_arc`  | `nav_msgs/Path` | The drivable arc between the robot and the carrot. Arc length depends on `max_allowed_time_to_collision_up_to_carrot`, forward simulating from the robot pose at the commanded `Twist` by that time. In a collision state, the last published arc will be the points leading up to, and including, the first point in collision. | 
 
 Note: The `lookahead_arc` is also a really great speed indicator, when "full" to carrot or max time, you know you're at full speed. If 20% less, you can tell the robot is approximately 20% below maximum speed. Think of it as the collision checking bounds but also a speed guage.
 
