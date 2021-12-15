@@ -47,7 +47,7 @@ APT::Install-Suggests "0";\n\
 # install CI dependencies
 ARG RTI_NC_LICENSE_ACCEPTED=yes
 RUN apt-get update && \
-    apt-get upgrade -y && \
+    apt-get upgrade -y --with-new-pkgs && \
     apt-get install -y \
       ccache \
       lcov \
