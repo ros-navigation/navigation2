@@ -80,7 +80,8 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".min_approach_linear_velocity", rclcpp::ParameterValue(0.05));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot", rclcpp::ParameterValue(1.0));
+    node, plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
+    rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_regulated_linear_velocity_scaling", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
