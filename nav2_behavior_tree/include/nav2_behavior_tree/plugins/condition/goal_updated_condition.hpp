@@ -18,8 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
-
 #include "behaviortree_cpp_v3/condition_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
@@ -60,7 +58,6 @@ public:
   }
 
 private:
-  rclcpp::Node::SharedPtr node_;
   geometry_msgs::msg::PoseStamped goal_;
   std::vector<geometry_msgs::msg::PoseStamped> goals_;
 };

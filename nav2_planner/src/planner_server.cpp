@@ -27,6 +27,7 @@
 #include "builtin_interfaces/msg/duration.hpp"
 #include "nav2_util/costmap.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 
 #include "nav2_planner/planner_server.hpp"
@@ -529,27 +530,47 @@ void PlannerServer::isPathValid(
     response->is_valid = false;
   } else {
     geometry_msgs::msg::PoseStamped current_pose;
-    unsigned int closest_pose_index = 0;
+    unsigned int closest_point_index = 0;
     if (costmap_ros_->getRobotPose(current_pose)) {
-      tf2::Vector3 curr_position(current_pose.pose.position.x,
-        current_pose.pose.position.y,
-        current_pose.pose.position.z);
-      // Find index of pose closest to the robot
-      float closest_distance = 0;
+      float closest_distance = std::numeric_limits<float>::max();
+      float current_distance = std::numeric_limits<float>::max();
+      float prev_distance = std::numeric_limits<float>::max();
+      unsigned int increasing_distance_counter = 0;
+      const unsigned int MAX_INCREASE = 3;
+      geometry_msgs::msg::Point current_point;
+      current_point = current_pose.pose.position;
       for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
+        geometry_msgs::msg::Point path_point;
+        path_point.x = request->path.poses[i].pose.position.x;
+        path_point.y = request->path.poses[i].pose.position.y;
+        path_point.z = request->path.poses[i].pose.position.z;
 
-        tf2::Vector3 path_point(request->path.poses[i].pose.position.x,
-          request->path.poses[i].pose.position.y,
-          request->path.poses[i].pose.position.z);
+        current_distance = nav2_util::geometry_utils::euclidean_distance(
+          current_point,
+          path_point);
 
-        if (tf2::tf2Distance(curr_position, path_point) < closest_distance) {
-          closest_pose_index = i;
-          closest_distance = tf2::tf2Distance(curr_position, path_point);
+        if (current_distance < closest_distance) {
+          closest_point_index = i;
+          closest_distance = current_distance;
+        }
+
+        if (current_distance > prev_distance) {
+          increasing_distance_counter++;
+        } else {
+          increasing_distance_counter = 0;
+        }
+
+        if (increasing_distance_counter > MAX_INCREASE) {
+          break;
         }
       }
     }
 
-    for (unsigned int i = closest_pose_index; i < request->path.poses.size(); ++i) {
+    /**
+     * The lethal check starts at the closest point to avoid points that have already been passed
+     * and may have become occupied
+     */
+    for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
       costmap_->worldToMap(
         request->path.poses[i].pose.position.x,
         request->path.poses[i].pose.position.y, mx, my);

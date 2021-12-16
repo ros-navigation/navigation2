@@ -31,9 +31,6 @@ IsPathValidCondition::IsPathValidCondition(
 
 BT::NodeStatus IsPathValidCondition::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
-    RCLCPP_INFO(node_->get_logger(), "Is Path Valid: IDLE");
-  }
 
   nav_msgs::msg::Path path;
   getInput("path", path);
@@ -48,11 +45,9 @@ BT::NodeStatus IsPathValidCondition::tick()
     rclcpp::FutureReturnCode::SUCCESS)
   {
     if (result.get()->is_valid) {
-      RCLCPP_INFO(node_->get_logger(), "Is Path Valid: Success");
       return BT::NodeStatus::SUCCESS;
     }
   }
-  RCLCPP_INFO(node_->get_logger(), "Is Path Valid: Failure");
   return BT::NodeStatus::FAILURE;
 }
 

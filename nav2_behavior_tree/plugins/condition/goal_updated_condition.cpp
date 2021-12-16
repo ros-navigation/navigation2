@@ -23,17 +23,13 @@ GoalUpdatedCondition::GoalUpdatedCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf)
-{
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-}
+{}
 
 BT::NodeStatus GoalUpdatedCondition::tick()
 {
-  RCLCPP_INFO(node_->get_logger(), "Goal updated: Ticked");
   if (status() == BT::NodeStatus::IDLE) {
     config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", goals_);
     config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", goal_);
-    RCLCPP_INFO(node_->get_logger(), "Goal updated: BT::STATUS IDLE, return failure");
     return BT::NodeStatus::FAILURE;
   }
 
@@ -45,11 +41,9 @@ BT::NodeStatus GoalUpdatedCondition::tick()
   if (goal_ != current_goal || goals_ != current_goals) {
     goal_ = current_goal;
     goals_ = current_goals;
-    RCLCPP_INFO(node_->get_logger(), "Goal updated: SUCCESS");
     return BT::NodeStatus::SUCCESS;
   }
 
-  RCLCPP_INFO(node_->get_logger(), "Goal updated: FAILURE");
   return BT::NodeStatus::FAILURE;
 }
 

@@ -30,7 +30,6 @@ GloballyUpdatedGoalCondition::GloballyUpdatedGoalCondition(
 
 BT::NodeStatus GloballyUpdatedGoalCondition::tick()
 {
-  RCLCPP_INFO(node_->get_logger(), "Goal updated: Ticked");
   if (first_time) {
     first_time = false;
     config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", goals_);
@@ -46,7 +45,6 @@ BT::NodeStatus GloballyUpdatedGoalCondition::tick()
   if (goal_ != current_goal || goals_ != current_goals) {
     goal_ = current_goal;
     goals_ = current_goals;
-    RCLCPP_INFO(node_->get_logger(), "Goal updated: SUCCESS");
     return BT::NodeStatus::SUCCESS;
   }
 
