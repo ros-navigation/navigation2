@@ -39,6 +39,7 @@ struct SearchInfo
   float change_penalty;
   float reverse_penalty;
   float cost_penalty;
+  float rotation_penalty;
   float analytic_expansion_ratio;
   float analytic_expansion_max_length;
   std::string lattice_filepath;
