@@ -58,7 +58,7 @@ NavigateToPoseNavigator::getDefaultBTFilepath(
   node->declare_parameter<std::string>(
     "default_nav_to_pose_bt_xml",
     pkg_share_dir +
-    "/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml");
+    "/behavior_trees/navigate_w_replanning_only_if_path_becomes_invalid.xml");
   node->get_parameter("default_nav_to_pose_bt_xml", default_bt_xml_filename);
 
   return default_bt_xml_filename;

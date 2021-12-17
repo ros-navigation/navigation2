@@ -15,6 +15,8 @@
 #ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GLOBALLY_UPDATED_GOAL_CONDITION_HPP_
 #define  NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GLOBALLY_UPDATED_GOAL_CONDITION_HPP_
 
+#include <string>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -65,7 +67,7 @@ private:
   std::vector<geometry_msgs::msg::PoseStamped> goals_;
 };
 
-} //namespace nav2_behavior_tree
+}  // namespace nav2_behavior_tree
 
 
-#endif //NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GLOBALLY_UPDATED_GOAL_CONDITION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GLOBALLY_UPDATED_GOAL_CONDITION_HPP_

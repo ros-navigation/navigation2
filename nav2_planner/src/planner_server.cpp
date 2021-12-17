@@ -540,41 +540,25 @@ void PlannerServer::isPathValid(
 
   if (request->path.poses.empty() ) {
     response->is_valid = false;
-  } else {
-    geometry_msgs::msg::PoseStamped current_pose;
-    unsigned int closest_point_index = 0;
-    if (costmap_ros_->getRobotPose(current_pose)) {
-      float closest_distance = std::numeric_limits<float>::max();
-      float current_distance = std::numeric_limits<float>::max();
-      float prev_distance = std::numeric_limits<float>::max();
-      unsigned int increasing_distance_counter = 0;
-      const unsigned int MAX_INCREASE = 3;
-      geometry_msgs::msg::Point current_point;
-      current_point = current_pose.pose.position;
-      for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
-        geometry_msgs::msg::Point path_point;
-        path_point.x = request->path.poses[i].pose.position.x;
-        path_point.y = request->path.poses[i].pose.position.y;
-        path_point.z = request->path.poses[i].pose.position.z;
+    return;
+  }
 
-        current_distance = nav2_util::geometry_utils::euclidean_distance(
-          current_point,
-          path_point);
+  geometry_msgs::msg::PoseStamped current_pose;
+  unsigned int closest_point_index = 0;
+  if (costmap_ros_->getRobotPose(current_pose)) {
+    float current_distance = std::numeric_limits<float>::max();
+    float closest_distance = current_distance;
+    geometry_msgs::msg::Point current_point = current_pose.pose.position;
+    for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
+      geometry_msgs::msg::Point path_point = request->path.poses[i].pose.position;
 
-        if (current_distance < closest_distance) {
-          closest_point_index = i;
-          closest_distance = current_distance;
-        }
+      current_distance = nav2_util::geometry_utils::euclidean_distance(
+        current_point,
+        path_point);
 
-        if (current_distance > prev_distance) {
-          increasing_distance_counter++;
-        } else {
-          increasing_distance_counter = 0;
-        }
-
-        if (increasing_distance_counter > MAX_INCREASE) {
-          break;
-        }
+      if (current_distance < closest_distance) {
+        closest_point_index = i;
+        closest_distance = current_distance;
       }
     }
 
