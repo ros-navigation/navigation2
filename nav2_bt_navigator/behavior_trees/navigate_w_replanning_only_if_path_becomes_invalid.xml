@@ -1,3 +1,7 @@
+
+<!--
+  This Behavior Tree replans the global path only if the path becomes invalid
+-->
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <PipelineSequence name="NavigateWithReplanning">
