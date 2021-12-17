@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <mutex>
 
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_core/controller.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
@@ -177,20 +178,25 @@ protected:
    * @param carrot_pose Pose of carrot
    * @param linear_vel linear velocity to forward project
    * @param angular_vel angular velocity to forward project
+   * @param carrot_dist Distance to the carrot for PP
    * @return Whether collision is imminent
    */
   bool isCollisionImminent(
     const geometry_msgs::msg::PoseStamped &,
-    const double &, const double &);
+    const double &, const double &,
+    const double &);
 
   /**
-   * @brief Whether point is in collision
+   * @brief checks for collision at projected pose
    * @param x Pose of pose x
    * @param y Pose of pose y
+   * @param theta orientation of Yaw
    * @return Whether in collision
    */
-  bool inCollision(const double & x, const double & y);
-
+  bool inCollision(
+    const double & x,
+    const double & y,
+    const double & theta);
   /**
    * @brief Cost at a point
    * @param x Pose of pose x
@@ -249,14 +255,11 @@ protected:
   double max_lookahead_dist_;
   double min_lookahead_dist_;
   double lookahead_time_;
-  double max_linear_accel_;
-  double max_linear_decel_;
   bool use_velocity_scaled_lookahead_dist_;
   tf2::Duration transform_tolerance_;
-  bool use_approach_vel_scaling_;
   double min_approach_linear_velocity_;
   double control_duration_;
-  double max_allowed_time_to_collision_;
+  double max_allowed_time_to_collision_up_to_carrot_;
   bool use_regulated_linear_velocity_scaling_;
   bool use_cost_regulated_linear_velocity_scaling_;
   double cost_scaling_dist_;
@@ -275,6 +278,8 @@ protected:
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
+  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
+  collision_checker_;
 
   // Dynamic parameters handler
   std::mutex mutex_;

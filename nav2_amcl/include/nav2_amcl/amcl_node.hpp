@@ -40,6 +40,7 @@
 #include "std_srvs/srv/empty.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
+#include "pluginlib/class_loader.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -148,10 +149,6 @@ protected:
   bool sent_first_transform_{false};
   bool latest_tf_valid_{false};
   tf2::Transform latest_tf_;
-  /*
-   * @brief Wait for transformation required to operate (laser to base)
-   */
-  void waitForTransforms();
 
   // Message filters
   /*
@@ -214,11 +211,13 @@ protected:
    * @brief Initialize odometry
    */
   void initOdometry();
-  std::unique_ptr<nav2_amcl::MotionModel> motion_model_;
+  std::shared_ptr<nav2_amcl::MotionModel> motion_model_;
   geometry_msgs::msg::PoseStamped latest_odom_pose_;
   geometry_msgs::msg::PoseWithCovarianceStamped last_published_pose_;
   double init_pose_[3];  // Initial robot pose
   double init_cov_[3];
+  pluginlib::ClassLoader<nav2_amcl::MotionModel> plugin_loader_{"nav2_amcl",
+    "nav2_amcl::MotionModel"};
   /*
    * @brief Get robot pose in odom frame using TF
    */
@@ -239,6 +238,7 @@ protected:
    */
   static pf_vector_t uniformPoseGenerator(void * arg);
   pf_t * pf_{nullptr};
+  std::mutex pf_mutex_;
   bool pf_init_;
   pf_vector_t pf_odom_pose_;
   int resample_count_{0};
@@ -257,11 +257,7 @@ protected:
   std::vector<bool> lasers_update_;
   std::map<std::string, int> frame_to_laser_;
   rclcpp::Time last_laser_received_ts_;
-  /*
-   * @brief Check if a laser has been received
-   */
-  void checkLaserReceived();
-  std::chrono::seconds laser_check_interval_;  // TODO(mjeronimo): not initialized
+
   /*
    * @brief Check if sufficient time has elapsed to get an update
    */

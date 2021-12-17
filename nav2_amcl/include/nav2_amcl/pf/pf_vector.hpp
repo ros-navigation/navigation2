@@ -55,7 +55,7 @@ pf_vector_t pf_vector_zero();
 // int pf_vector_finite(pf_vector_t a);
 
 // Print a vector
-void pf_vector_fprintf(pf_vector_t s, FILE * file, const char * fmt);
+// void pf_vector_fprintf(pf_vector_t s, FILE * file, const char * fmt);
 
 // Simple vector addition
 // pf_vector_t pf_vector_add(pf_vector_t a, pf_vector_t b);
@@ -77,7 +77,7 @@ pf_matrix_t pf_matrix_zero();
 // int pf_matrix_finite(pf_matrix_t a);
 
 // Print a matrix
-void pf_matrix_fprintf(pf_matrix_t s, FILE * file, const char * fmt);
+// void pf_matrix_fprintf(pf_matrix_t s, FILE * file, const char * fmt);
 
 // Compute the matrix inverse.  Will also return the determinant,
 // which should be checked for underflow (indicated singular matrix).

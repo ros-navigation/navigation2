@@ -47,17 +47,16 @@ inline geometry_msgs::msg::Pose getWorldCoords(
 }
 
 /**
-* @brief Create quaternion from A* coord bins
+* @brief Create quaternion from radians
 * @param theta continuous bin coordinates angle
 * @return quaternion orientation in map frame
 */
 inline geometry_msgs::msg::Quaternion getWorldOrientation(
-  const float & theta,
-  const float & bin_size)
+  const float & theta)
 {
-  // theta is in continuous bin coordinates, must convert to world orientation
+  // theta is in radians already
   tf2::Quaternion q;
-  q.setEuler(0.0, 0.0, theta * static_cast<double>(bin_size));
+  q.setEuler(0.0, 0.0, theta);
   return tf2::toMsg(q);
 }
 
@@ -102,6 +101,57 @@ inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DRO
   }
 
   return result;
+}
+
+/**
+ * @brief convert json to lattice metadata
+ * @param[in] json json object
+ * @param[out] lattice meta data
+ */
+inline void fromJsonToMetaData(const nlohmann::json & json, LatticeMetadata & lattice_metadata)
+{
+  json.at("turning_radius").get_to(lattice_metadata.min_turning_radius);
+  json.at("grid_resolution").get_to(lattice_metadata.grid_resolution);
+  json.at("num_of_headings").get_to(lattice_metadata.number_of_headings);
+  json.at("heading_angles").get_to(lattice_metadata.heading_angles);
+  json.at("number_of_trajectories").get_to(lattice_metadata.number_of_trajectories);
+  json.at("motion_model").get_to(lattice_metadata.motion_model);
+}
+
+/**
+ * @brief convert json to pose
+ * @param[in] json json object
+ * @param[out] pose
+ */
+inline void fromJsonToPose(const nlohmann::json & json, MotionPose & pose)
+{
+  pose._x = json[0];
+  pose._y = json[1];
+  pose._theta = json[2];
+}
+
+/**
+ * @brief convert json to motion primitive
+ * @param[in] json json object
+ * @param[out] motion primitive
+ */
+inline void fromJsonToMotionPrimitive(
+  const nlohmann::json & json, MotionPrimitive & motion_primitive)
+{
+  json.at("trajectory_id").get_to(motion_primitive.trajectory_id);
+  json.at("start_angle_index").get_to(motion_primitive.start_angle);
+  json.at("end_angle_index").get_to(motion_primitive.end_angle);
+  json.at("trajectory_radius").get_to(motion_primitive.turning_radius);
+  json.at("trajectory_length").get_to(motion_primitive.trajectory_length);
+  json.at("arc_length").get_to(motion_primitive.arc_length);
+  json.at("straight_length").get_to(motion_primitive.straight_length);
+  json.at("left_turn").get_to(motion_primitive.left_turn);
+
+  for (unsigned int i = 0; i < json["poses"].size(); i++) {
+    MotionPose pose;
+    fromJsonToPose(json["poses"][i], pose);
+    motion_primitive.poses.push_back(pose);
+  }
 }
 
 }  // namespace nav2_smac_planner

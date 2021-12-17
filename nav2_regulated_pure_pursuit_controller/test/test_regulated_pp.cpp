@@ -52,7 +52,6 @@ public:
   void setVelocityScaledLookAhead() {use_velocity_scaled_lookahead_dist_ = true;}
   void setCostRegulationScaling() {use_cost_regulated_linear_velocity_scaling_ = true;}
   void resetVelocityRegulationScaling() {use_regulated_linear_velocity_scaling_ = false;}
-  void resetVelocityApproachScaling() {use_approach_vel_scaling_ = false;}
 
   double getLookAheadDistanceWrapper(const geometry_msgs::msg::Twist & twist)
   {
@@ -184,6 +183,8 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
   ctrl->configure(node, name, tf, costmap);
 
   geometry_msgs::msg::Twist twist;
@@ -242,6 +243,8 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
   ctrl->configure(node, name, tf, costmap);
 
   // shouldRotateToPath
@@ -311,6 +314,8 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
   ctrl->configure(node, name, tf, costmap);
 
   double dist_error = 0.0;
@@ -320,9 +325,6 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   double pose_cost = 0.0;
   double linear_vel = 0.0;
   double sign = 1.0;
-
-  // since costmaps here are bogus, we can't access them
-  ctrl->resetVelocityApproachScaling();
 
   // test curvature regulation (default)
   curr_speed.linear.x = 0.25;
@@ -406,10 +408,8 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.min_lookahead_dist", 6.0),
       rclcpp::Parameter("test.lookahead_time", 1.8),
       rclcpp::Parameter("test.rotate_to_heading_angular_vel", 18.0),
-      rclcpp::Parameter("test.max_linear_accel", 0.5),
-      rclcpp::Parameter("test.max_linear_decel", 0.5),
       rclcpp::Parameter("test.min_approach_linear_velocity", 1.0),
-      rclcpp::Parameter("test.max_allowed_time_to_collision", 2.0),
+      rclcpp::Parameter("test.max_allowed_time_to_collision_up_to_carrot", 2.0),
       rclcpp::Parameter("test.cost_scaling_dist", 2.0),
       rclcpp::Parameter("test.cost_scaling_gain", 4.0),
       rclcpp::Parameter("test.regulated_linear_scaling_min_radius", 10.0),
@@ -420,7 +420,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.use_velocity_scaled_lookahead_dist", false),
       rclcpp::Parameter("test.use_regulated_linear_velocity_scaling", false),
       rclcpp::Parameter("test.use_cost_regulated_linear_velocity_scaling", false),
-      rclcpp::Parameter("test.use_approach_linear_velocity_scaling", false),
       rclcpp::Parameter("test.allow_reversing", false),
       rclcpp::Parameter("test.use_rotate_to_heading", false)});
 
@@ -434,10 +433,10 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.min_lookahead_dist").as_double(), 6.0);
   EXPECT_EQ(node->get_parameter("test.lookahead_time").as_double(), 1.8);
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_angular_vel").as_double(), 18.0);
-  EXPECT_EQ(node->get_parameter("test.max_linear_accel").as_double(), 0.5);
-  EXPECT_EQ(node->get_parameter("test.max_linear_decel").as_double(), 0.5);
   EXPECT_EQ(node->get_parameter("test.min_approach_linear_velocity").as_double(), 1.0);
-  EXPECT_EQ(node->get_parameter("test.max_allowed_time_to_collision").as_double(), 2.0);
+  EXPECT_EQ(
+    node->get_parameter(
+      "test.max_allowed_time_to_collision_up_to_carrot").as_double(), 2.0);
   EXPECT_EQ(node->get_parameter("test.cost_scaling_dist").as_double(), 2.0);
   EXPECT_EQ(node->get_parameter("test.cost_scaling_gain").as_double(), 4.0);
   EXPECT_EQ(node->get_parameter("test.regulated_linear_scaling_min_radius").as_double(), 10.0);
@@ -450,7 +449,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(
     node->get_parameter(
       "test.use_cost_regulated_linear_velocity_scaling").as_bool(), false);
-  EXPECT_EQ(node->get_parameter("test.use_approach_linear_velocity_scaling").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.allow_reversing").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
 }

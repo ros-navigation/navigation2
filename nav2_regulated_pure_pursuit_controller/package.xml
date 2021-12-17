@@ -26,6 +26,7 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <nav2_core plugin="${prefix}/nav2_regulated_pure_pursuit_controller.xml" />
   </export>
 
 </package>

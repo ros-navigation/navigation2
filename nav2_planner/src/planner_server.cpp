@@ -33,6 +33,8 @@
 #include "nav2_planner/planner_server.hpp"
 
 using namespace std::chrono_literals;
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
 
 namespace nav2_planner
 {
@@ -172,6 +174,11 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
       &PlannerServer::isPathValid, this,
       std::placeholders::_1, std::placeholders::_2));
 
+  auto node = shared_from_this();
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&PlannerServer::dynamicParametersCallback, this, _1));
+
   // create bond connection
   createBond();
 
@@ -192,6 +199,8 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & state)
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->deactivate();
   }
+
+  dyn_params_handler_.reset();
 
   // destroy bond connection
   destroyBond();
@@ -216,7 +225,6 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   }
   planners_.clear();
   costmap_ = nullptr;
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -333,6 +341,8 @@ bool PlannerServer::validatePath(
 void
 PlannerServer::computePlanThroughPoses()
 {
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+
   auto start_time = steady_clock_.now();
 
   // Initialize the ComputePathToPose goal and result
@@ -421,6 +431,8 @@ PlannerServer::computePlanThroughPoses()
 void
 PlannerServer::computePlan()
 {
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+
   auto start_time = steady_clock_.now();
 
   // Initialize the ComputePathToPose goal and result
@@ -582,7 +594,37 @@ void PlannerServer::isPathValid(
     }
   }
 }
-} // namespace nav2_planner
+
+rcl_interfaces::msg::SetParametersResult
+PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+{
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == "expected_planner_frequency") {
+        if (parameter.as_double() > 0) {
+          max_planner_duration_ = 1 / parameter.as_double();
+        } else {
+          RCLCPP_WARN(
+            get_logger(),
+            "The expected planner frequency parameter is %.4f Hz. The value should to be greater"
+            " than 0.0 to turn on duration overrrun warning messages", parameter.as_double());
+          max_planner_duration_ = 0.0;
+        }
+      }
+    }
+  }
+
+  result.successful = true;
+  return result;
+}
+
+}  // namespace nav2_planner
 
 #include "rclcpp_components/register_node_macro.hpp"
 

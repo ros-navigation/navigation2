@@ -34,7 +34,7 @@ pull_request_rules:
   - name: development targets main branch
     conditions:
       - base!=main
-      - author!=stevemacenski
+      - author!=SteveMacenski
       - author!=mergify
     actions:
         comment:
@@ -57,8 +57,8 @@ pull_request_rules:
 
   - name: Removed maintainer checklist
     conditions:
-      - "-body~=(?m)^ #### For Maintainers: <!-- DO NOT EDIT OR REMOVE -->"
-      - author!=stevemacenski
+      - "-body~=^.*#### For Maintainers: <!-- DO NOT EDIT OR REMOVE -->.*$"
+      - author!=SteveMacenski
       - author!=mergify
     actions:
         comment:
@@ -66,6 +66,7 @@ pull_request_rules:
             @{{author}}, please properly fill in PR template in the future. @stevemacenski, use this instead. 
             - [ ] Check that any new parameters added are updated in navigation.ros.org
             - [ ] Check that any significant change is added to the migration guide
+            - [ ] Check that any new features **OR** changes to existing behaviors are reflected in the tuning guide
             - [ ] Check that any new functions have Doxygen added
             - [ ] Check that any new features have test coverage
             - [ ] Check that any new plugins is added to the plugins page

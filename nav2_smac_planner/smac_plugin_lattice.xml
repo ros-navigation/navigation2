@@ -1,0 +1,5 @@
+<library path="nav2_smac_planner_lattice">
+	<class name="nav2_smac_planner/SmacPlannerLattice" type="nav2_smac_planner::SmacPlannerLattice" base_class_type="nav2_core::GlobalPlanner">
+	  <description>State Lattice SMAC planner</description>
+	</class>
+</library>
