@@ -141,8 +141,8 @@ def generate_launch_description():
             description='Full path to the ROS2 parameters file to use'),
 
         DeclareLaunchArgument(
-            'use_composition', default_value='false',
-            description='Use composed bringup if true'),
+            'use_composition', default_value='False',
+            description='Use composed bringup if True'),
 
         DeclareLaunchArgument(
             'container_name', default_value='nav2_container',
