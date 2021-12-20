@@ -23,6 +23,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose
 from nav2_msgs.action import FollowWaypoints, NavigateThroughPoses, NavigateToPose
+from nav2_msgs.action import FollowPath 
 from nav2_msgs.srv import ClearEntireCostmap, GetCostmap, LoadMap, ManageLifecycleNodes
 
 import rclpy
@@ -66,6 +67,8 @@ class BasicNavigator(Node):
                                                         'compute_path_to_pose')
         self.compute_path_through_poses_client = ActionClient(self, ComputePathThroughPoses,
                                                               'compute_path_through_poses')
+        self.follow_path_controller_client = ActionClient(self, FollowPath,
+                                                                'follow_path')
         self.localization_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
                                                               'amcl_pose',
                                                               self._amclPoseCallback,
@@ -231,6 +234,32 @@ class BasicNavigator(Node):
             return None
 
         return self.result_future.result().result.path
+    
+    def followPath(self, path):
+        """ Follow a given path"""
+        self.debug("Waiting for 'FollowPath' action server")
+        while not self.follow_path_controller_client.wait_for_server(timeout_sec=1.0):
+            self.info("'FollowPath' action server not available, waiting...")
+
+        goal_msg = FollowPath.Goal()
+        goal_msg.path = path
+
+        self.info('Executing path...')
+        send_goal_future = self.follow_path_controller_client.send_goal_async(goal_msg, 
+                                                                              self._feedbackCallback)
+        self.info('goal_sent')
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        self.goal_handle = send_goal_future.result()
+        
+        
+        if not self.goal_handle.accepted:
+            self.error('Follow path was rejected!')
+            return False
+        self.info('goal handle accepted')
+        self.result_future = self.goal_handle.get_result_async()
+        print(self.result_future.result())
+        return True
+        
 
     def getPathThroughPoses(self, start, goals):
         """Send a `ComputePathThroughPoses` action request."""
