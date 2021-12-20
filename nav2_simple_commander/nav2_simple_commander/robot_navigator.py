@@ -247,17 +247,15 @@ class BasicNavigator(Node):
         self.info('Executing path...')
         send_goal_future = self.follow_path_controller_client.send_goal_async(goal_msg, 
                                                                               self._feedbackCallback)
-        self.info('goal_sent')
+        
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
-        
         
         if not self.goal_handle.accepted:
             self.error('Follow path was rejected!')
             return False
-        self.info('goal handle accepted')
+    
         self.result_future = self.goal_handle.get_result_async()
-        print(self.result_future.result())
         return True
         
 

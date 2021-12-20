@@ -60,13 +60,14 @@ def main():
     i = 0
     while not navigator.isNavComplete():
 
-        i = i + 1
+        i += 1 
         feedback = navigator.getFeedback()
-        print(feedback)
+        if feedback and i % 5 == 0:
+            print('Estimated distance remaining to goal position: ' +'{0:.3f}'.format(feedback.distance_to_goal)
+                  + '\nCurrent speed of the robot: '+ '{0:.3f}'.format(feedback.speed))
 
     # Do something depending on the return code
     result = navigator.getResult()
-    print(result)
     if result == NavigationResult.SUCCEEDED:
         print('Goal succeeded!')
     elif result == NavigationResult.CANCELED:
