@@ -13,9 +13,12 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
+#include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "angles/angles.h"
 
 #include "nav2_ceres_costaware_smoother/ceres_costaware_smoother.hpp"
+
+#include "geometry_msgs/msg/pose_array.hpp"
 
 using namespace nav2_ceres_costaware_smoother;
 
@@ -86,7 +89,7 @@ protected:
   {
     node_lifecycle_ =
       std::make_shared<rclcpp_lifecycle::LifecycleNode>(
-      "LifecycleRecoveryTestNode", rclcpp::NodeOptions());
+      "CostawareSmootherTestNode", rclcpp::NodeOptions());
 
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_lifecycle_->get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -97,6 +100,19 @@ protected:
     costmap_sub_ =
       std::make_shared<DummyCostmapSubscriber>(
       node_lifecycle_, "costmap_topic");
+
+    path_poses_pub_ = node_lifecycle_->create_publisher<geometry_msgs::msg::PoseArray>("/plan_poses_optimized", 100);
+    path_poses_pub_cmp_ = node_lifecycle_->create_publisher<geometry_msgs::msg::PoseArray>("/plan_poses_optimized_cmp", 100);
+    path_poses_pub_orig_ = node_lifecycle_->create_publisher<geometry_msgs::msg::PoseArray>("/plan_poses_original", 100);
+    costmap_pub_ = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(node_lifecycle_, costmap_sub_->getCostmap().get(), "map", "/costmap", true);
+
+    node_lifecycle_->configure();
+    node_lifecycle_->activate();
+    path_poses_pub_->on_activate();
+    path_poses_pub_cmp_->on_activate();
+    path_poses_pub_orig_->on_activate();
+    costmap_pub_->on_activate();
+
 
     smoother_ = std::make_shared<CeresCostawareSmoother>();
 
@@ -112,6 +128,10 @@ protected:
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", -1.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost_cusp", 0.04));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.input_downsampling_factor", 1));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.output_upsampling_factor", 1));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.reversing_enabled", true));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cost_check_points", std::vector<double>()));
     reloadParams();
   }
 
@@ -119,6 +139,11 @@ protected:
   {
     smoother_->deactivate();
     smoother_->cleanup();
+    path_poses_pub_->on_deactivate();
+    path_poses_pub_cmp_->on_deactivate();
+    path_poses_pub_orig_->on_deactivate();
+    costmap_pub_->on_deactivate();
+    node_lifecycle_->deactivate();
   }
 
   void reloadParams()
@@ -131,7 +156,7 @@ protected:
     smoother_->activate();
   }
 
-  bool smoothPath(const std::vector<Eigen::Vector3d> &input, std::vector<Eigen::Vector3d> &output)
+  bool smoothPath(const std::vector<Eigen::Vector3d> &input, std::vector<Eigen::Vector3d> &output, bool publish = false, bool cmp = false)
   {
     nav_msgs::msg::Path path;
     path.poses.reserve(input.size());
@@ -144,7 +169,27 @@ protected:
       path.poses.push_back(pose);
     }
 
+    if (publish && !path.poses.empty()) {
+      geometry_msgs::msg::PoseArray poses;
+      poses.header.frame_id = "map";
+      poses.header.stamp = node_lifecycle_->get_clock()->now();
+      for (auto &p : path.poses)
+        poses.poses.push_back(p.pose);
+      path_poses_pub_orig_->publish(poses);
+      costmap_pub_->publishCostmap();
+    }
+
     bool result = smoother_->smooth(path, rclcpp::Duration::from_seconds(1.0));
+
+    if (publish && !path.poses.empty()) {
+      geometry_msgs::msg::PoseArray poses;
+      poses.header.frame_id = "map";
+      poses.header.stamp = node_lifecycle_->get_clock()->now();
+      for (auto &p : path.poses)
+        poses.poses.push_back(p.pose);
+      auto &pub = cmp ? path_poses_pub_cmp_ : path_poses_pub_;
+      pub->publish(poses);
+    }
     
     output.clear();
     output.reserve(path.poses.size());
@@ -173,21 +218,22 @@ protected:
   double assessPathImprovement(
     const std::vector<Eigen::Vector3d> &input,
     const std::vector<Eigen::Vector3d> &output,
-    const QualityCriterion3 &criterion)
+    const QualityCriterion3 &criterion,
+    const QualityCriterion3 *criterion_out = nullptr)
   {
+    if (!criterion_out)
+      criterion_out = &criterion;
     double total_input_crit = 0.0;
     for (size_t i = 1; i < input.size()-1; i++) {
       double input_crit = criterion(i, input[i-1], input[i], input[i+1]);
       total_input_crit += input_crit*input_crit;
-      RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "input p: %lf %lf, c: %lf, total: %lf", input[i][0], input[i][1], input_crit, total_input_crit);
     }
     total_input_crit = sqrt(total_input_crit/(input.size() - 2));
 
     double total_output_crit = 0.0;
     for (size_t i = 1; i < output.size()-1; i++) {
-      double output_crit = criterion(i, output[i-1], output[i], output[i+1]);
+      double output_crit = (*criterion_out)(i, output[i-1], output[i], output[i+1]);
       total_output_crit += output_crit*output_crit;
-      RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "output p: %lf %lf, c: %lf, total: %lf", output[i][0], output[i][1], output_crit, total_output_crit);
     }
     total_output_crit = sqrt(total_output_crit/(input.size() - 2));
 
@@ -204,8 +250,11 @@ protected:
   double assessPathImprovement(
     const std::vector<Eigen::Vector3d> &input,
     const std::vector<Eigen::Vector3d> &output,
-    const QualityCriterion2 &criterion)
+    const QualityCriterion2 &criterion,
+    const QualityCriterion2 *criterion_out = nullptr)
   {
+    if (!criterion_out)
+      criterion_out = &criterion;
     double total_input_crit = 0.0;
     for (size_t i = 1; i < input.size(); i++) {
       double input_crit = criterion(i, input[i-1], input[i]);
@@ -215,7 +264,7 @@ protected:
 
     double total_output_crit = 0.0;
     for (size_t i = 1; i < output.size(); i++) {
-      double output_crit = criterion(i, output[i-1], output[i]);
+      double output_crit = (*criterion_out)(i, output[i-1], output[i]);
       total_output_crit += output_crit*output_crit;
     }
     total_output_crit = sqrt(total_output_crit/(output.size() - 1));
@@ -233,25 +282,53 @@ protected:
   double assessPathImprovement(
     const std::vector<Eigen::Vector3d> &input,
     const std::vector<Eigen::Vector3d> &output,
-    const QualityCriterion1 &criterion)
+    const QualityCriterion1 &criterion,
+    const QualityCriterion1 *criterion_out = nullptr)
   {
+    if (!criterion_out)
+      criterion_out = &criterion;
     double total_input_crit = 0.0;
     for (size_t i = 0; i < input.size(); i++) {
       double input_crit = criterion(i, input[i]);
       total_input_crit += input_crit*input_crit;
-      RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "input p: %lf %lf, c: %lf, total: %lf", input[i][0], input[i][1], input_crit, total_input_crit);
     }
     total_input_crit = sqrt(total_input_crit/input.size());
 
     double total_output_crit = 0.0;
     for (size_t i = 0; i < output.size(); i++) {
-      double output_crit = criterion(i, output[i]);
+      double output_crit = (*criterion_out)(i, output[i]);
       total_output_crit += output_crit*output_crit;
-      RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "output p: %lf %lf, c: %lf, total: %lf", output[i][0], output[i][1], output_crit, total_output_crit);
     }
     total_output_crit = sqrt(total_output_crit/output.size());
 
     return (1.0 - total_output_crit/total_input_crit)*100;
+  }
+
+  /**
+   * @brief Worst pose improvement assessment method
+   * @param input Smoother input path
+   * @param output Smoother output path
+   * @param criterion Criterion of path quality. Total path quality = max(criterion(data[i]))
+   * @return Percentage of improvement (relative to input path quality)
+   */
+  double assessWorstPoseImprovement(
+    const std::vector<Eigen::Vector3d> &input,
+    const std::vector<Eigen::Vector3d> &output,
+    const QualityCriterion1 &criterion)
+  {
+    double max_input_crit = 0.0;
+    for (size_t i = 0; i < input.size(); i++) {
+      double input_crit = criterion(i, input[i]);
+      max_input_crit = std::max(max_input_crit, input_crit);
+    }
+
+    double max_output_crit = 0.0;
+    for (size_t i = 0; i < output.size(); i++) {
+      double output_crit = criterion(i, output[i]);
+      max_output_crit = std::max(max_output_crit, output_crit);
+    }
+
+    return (1.0 - max_output_crit/max_input_crit)*100;
   }
 
   std::vector<Eigen::Vector3d> zigZaggedPath(const std::vector<Eigen::Vector3d> &input, double offset) {
@@ -270,6 +347,11 @@ protected:
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
 
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr path_poses_pub_orig_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr path_poses_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr path_poses_pub_cmp_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DPublisher> costmap_pub_;
+
   int cusp_i_ = -1;
   QualityCriterion3 mvmt_smoothness_criterion_ =
     [this](int i, const Eigen::Vector3d &prev_p, const Eigen::Vector3d &p, const Eigen::Vector3d &next_p) {
@@ -277,8 +359,6 @@ protected:
       Eigen::Vector2d next_mvmt = next_p.block<2, 1>(0, 0) - p.block<2, 1>(0, 0);
       if (i == cusp_i_)
         next_mvmt = -next_mvmt;
-      // RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "prev_mvmt: %lf %lf, next_mvmt: %lf %lf",
-      //   prev_mvmt[0], prev_mvmt[1], next_mvmt[0], next_mvmt[1]);
       return (next_mvmt - prev_mvmt).norm();
     };
 };
@@ -379,7 +459,6 @@ TEST_F(SmootherTest, testingAnchoringToOriginalPath)
 
   auto origin_similarity_criterion =
     [&sharp_turn_90](int i, const Eigen::Vector3d &p) {
-      RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "orig: %lf %lf", sharp_turn_90[i][0], sharp_turn_90[i][1]);
       return (p.block<2, 1>(0, 0) - sharp_turn_90[i].block<2, 1>(0, 0)).norm();
     };
   double origin_similarity_improvement =
@@ -515,8 +594,286 @@ TEST_F(SmootherTest, testingObstacleAvoidance)
   double cost_avoidance_improvement = assessPathImprovement(straight_near_obstacle, smoothed_path, cost_avoidance_criterion);
   ASSERT_GT(cost_avoidance_improvement, 0.0);
   ASSERT_NEAR(cost_avoidance_improvement, 12.9, 1.0);
+}
+
+TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
+{
+  auto costmap = costmap_sub_->getCostmap();
+  nav2_costmap_2d::FootprintCollisionChecker collision_checker(costmap);
+  nav2_costmap_2d::Footprint footprint;
+
+  auto cost_avoidance_criterion =
+    [&collision_checker, &footprint](int, const Eigen::Vector3d &p) {
+      return collision_checker.footprintCostAtPose(p[0], p[1], p[2], footprint);
+    };
   
+  // path with a cusp
+  std::vector<Eigen::Vector3d> cusp_near_obstacle =
+    { {0.05, 0.05, 0}
+    , {0.15, 0.05, 0}
+    , {0.25, 0.05, 0}
+    , {0.35, 0.05, 0}
+    , {0.45, 0.05, 0}
+    , {0.55, 0.05, 0}
+    , {0.65, 0.05, 0}
+    , {0.75, 0.05, 0}
+    , {0.85, 0.05, 0}
+    , {0.95, 0.05, 0}
+    , {1.05, 0.05, 0}
+    , {1.15, 0.05, 0}
+    , {1.25, 0.05, 0}
+    , {1.25 + 0.4*sin(M_PI/12), 0.4*(1 - cos(M_PI/12)) + 0.05, M_PI/12}
+    , {1.25 + 0.4*sin(M_PI*2/12), 0.4*(1 - cos(M_PI*2/12)) + 0.05, M_PI*2/12}
+    , {1.25 + 0.4*sin(M_PI*3/12), 0.4*(1 - cos(M_PI*3/12)) + 0.05, M_PI*3/12}
+    , {1.25 + 0.4*sin(M_PI*4/12), 0.4*(1 - cos(M_PI*4/12)) + 0.05, M_PI*4/12}
+    , {1.25 + 0.4*sin(M_PI*5/12), 0.4*(1 - cos(M_PI*5/12)) + 0.05, M_PI*5/12}
+    , {1.65, 0.45, M_PI/2}
+    , {2.05 - 0.4*sin(M_PI*5/12), 0.4*(1 - cos(M_PI*5/12)) + 0.05, M_PI*7/12}
+    , {2.05 - 0.4*sin(M_PI*4/12), 0.4*(1 - cos(M_PI*4/12)) + 0.05, M_PI*8/12}
+    , {2.05 - 0.4*sin(M_PI*3/12), 0.4*(1 - cos(M_PI*3/12)) + 0.05, M_PI*9/12}
+    , {2.05 - 0.4*sin(M_PI*2/12), 0.4*(1 - cos(M_PI*2/12)) + 0.05, M_PI*10/12}
+    , {2.05 - 0.4*sin(M_PI/12), 0.4*(1 - cos(M_PI/12)) + 0.05, M_PI*11/12}
+    , {2.05, 0.05, M_PI}
+    , {2.15, 0.05, M_PI}
+    , {2.25, 0.05, M_PI}
+    , {2.35, 0.05, M_PI}
+    , {2.45, 0.05, M_PI}
+    , {2.55, 0.05, M_PI}
+    , {2.65, 0.05, M_PI}
+    , {2.75, 0.05, M_PI}
+    , {2.85, 0.05, M_PI}
+    , {2.95, 0.05, M_PI}
+    , {3.05, 0.05, M_PI}
+    , {3.15, 0.05, M_PI}
+    , {3.25, 0.05, M_PI}
+    , {3.35, 0.05, M_PI}
+    , {3.45, 0.05, M_PI}
+    , {3.55, 0.05, M_PI}
+    , {3.65, 0.05, M_PI}
+    , {3.75, 0.05, M_PI}
+    , {3.85, 0.05, M_PI}
+    , {3.95, 0.05, M_PI}
+    , {4.05, 0.05, M_PI}
+    };
+  cusp_i_ = 18;
+
+  // we don't expect result to be smoother than original
+  // but let's check for large discontinuities using a well chosen upper bound
+  auto upper_bound = zigZaggedPath(cusp_near_obstacle, 0.01);
+
+  /////////////////////////////////////////////////////
+  // testing option to pay extra attention near cusps
+
+  // extra attention near cusps option is more significant with a long footprint
+  footprint.clear();
+  footprint.push_back(pointMsg(0.4, 0.2));
+  footprint.push_back(pointMsg(-0.4, 0.2));
+  footprint.push_back(pointMsg(-0.4, -0.2));
+  footprint.push_back(pointMsg(0.4, -0.2));
+
+  // first smooth with homogeneous w_cost to compare
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
+  // higher w_curve significantly decreases convergence speed here
+  // path feasibility can be restored by subsequent resmoothing with higher w_curve
+  // TODO: tune ceres optimizer to "converge" faster, see http://ceres-solver.org/nnls_solving.html
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 1.0));
+  // let's have more iterations so that the improvement is more significant
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.max_iterations", 500));
+  reloadParams();
+
+  std::vector<Eigen::Vector3d> smoothed_path;
+  ASSERT_TRUE(smoothPath(cusp_near_obstacle, smoothed_path, true, true));
+  ASSERT_GT(assessPathImprovement(upper_bound, smoothed_path, mvmt_smoothness_criterion_), 0.0);
+  double cost_avoidance_improvement_simple = assessPathImprovement(cusp_near_obstacle, smoothed_path, cost_avoidance_criterion);
+  ASSERT_GT(cost_avoidance_improvement_simple, 0.0);
+  ASSERT_NEAR(cost_avoidance_improvement_simple, 42.6, 1.0);
+  double worst_cost_improvement_simple = assessWorstPoseImprovement(cusp_near_obstacle, smoothed_path, cost_avoidance_criterion);
+  RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "Cost avoidance improvement (cusp, simple): %lf, %lf",
+    cost_avoidance_improvement_simple, worst_cost_improvement_simple);
+  ASSERT_GE(worst_cost_improvement_simple, 0.0);
+
+
+  // then update parameters so that robot is not so afraid of obstacles
+  // during simple movement but pays extra attention during rotations near cusps
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0052));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost_cusp", 0.027));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", 2.5));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.fn_tol", 1e-15));
+  reloadParams();
+
+  std::vector<Eigen::Vector3d> smoothed_path_ecc;
+  ASSERT_TRUE(smoothPath(cusp_near_obstacle, smoothed_path_ecc, true, false));
+  ASSERT_GT(assessPathImprovement(upper_bound, smoothed_path_ecc, mvmt_smoothness_criterion_), 0.0);
+  double cost_avoidance_improvement_extra_careful_cusp = assessPathImprovement(cusp_near_obstacle, smoothed_path_ecc, cost_avoidance_criterion);
+  ASSERT_GT(cost_avoidance_improvement_extra_careful_cusp, 0.0);
+  ASSERT_NEAR(cost_avoidance_improvement_extra_careful_cusp, 44.2, 1.0);
+  double worst_cost_improvement_extra_careful_cusp = assessWorstPoseImprovement(cusp_near_obstacle, smoothed_path_ecc, cost_avoidance_criterion);
+  RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "Cost avoidance improvement (cusp, ecc): %lf, %lf",
+    cost_avoidance_improvement_extra_careful_cusp, worst_cost_improvement_extra_careful_cusp);
+  ASSERT_GE(worst_cost_improvement_extra_careful_cusp, 0.0);
+  ASSERT_GE(worst_cost_improvement_extra_careful_cusp, worst_cost_improvement_simple);
+  ASSERT_GT(cost_avoidance_improvement_extra_careful_cusp, cost_avoidance_improvement_simple);
+
+  // although extra careful cusp optimization avoids cost better than simple one,
+  // overall the path doesn't need to deflect so much from original, since w_cost is smaller
+  // and thus the obstacles are avoided mostly in dangerous zones around cusps
+  auto origin_similarity_criterion =
+    [&cusp_near_obstacle](int i, const Eigen::Vector3d &p) {
+      return (p.block<2, 1>(0, 0) - cusp_near_obstacle[i].block<2, 1>(0, 0)).norm();
+    };
+  double origin_similarity_improvement =
+    assessPathImprovement(smoothed_path, smoothed_path_ecc, origin_similarity_criterion);
+  RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "Original similarity improvement (cusp, ecc vs. simple): %lf",
+    origin_similarity_improvement);
+  ASSERT_GT(origin_similarity_improvement, 0.0);
+  ASSERT_NEAR(origin_similarity_improvement, 0.06, 0.02);
+
+
+  /////////////////////////////////////////////////////
+  // testing asymmetric footprint options
+
+  // (diff-drive with 2 actuated wheels and 2 caster wheels)
+  footprint.clear();
+  footprint.push_back(pointMsg(0.15, 0.2));
+  footprint.push_back(pointMsg(-0.65, 0.2));
+  footprint.push_back(pointMsg(-0.65, -0.2));
+  footprint.push_back(pointMsg(0.15, -0.2));
+
+  // reset parameters back to homogeneous and shift cost check point to the center of the footprint
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 1.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", -1.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cost_check_points",
+    std::vector<double>({-0.25, 0.0, 1.0}) // x, y, weight
+  ));
+  reloadParams();
+
+  // cost improvement is different for path smoothed by original optimizer since the footprint has changed
+  cost_avoidance_improvement_simple = assessPathImprovement(cusp_near_obstacle, smoothed_path, cost_avoidance_criterion);
+  worst_cost_improvement_simple = assessWorstPoseImprovement(cusp_near_obstacle, smoothed_path, cost_avoidance_criterion);
+  ASSERT_GT(cost_avoidance_improvement_simple, 0.0);
+  RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "Cost avoidance improvement (cusp_shifted, simple): %lf, %lf",
+    cost_avoidance_improvement_simple, worst_cost_improvement_simple);
+  ASSERT_NEAR(cost_avoidance_improvement_simple, 40.2, 1.0);
+
+  // now smooth using the new optimizer with cost check point shifted
+  std::vector<Eigen::Vector3d> smoothed_path_scc;
+  ASSERT_TRUE(smoothPath(cusp_near_obstacle, smoothed_path_scc));
+  ASSERT_GT(assessPathImprovement(upper_bound, smoothed_path_scc, mvmt_smoothness_criterion_), 0.0);
+  double cost_avoidance_improvement_shifted_cost_check = assessPathImprovement(cusp_near_obstacle, smoothed_path_scc, cost_avoidance_criterion);
+  ASSERT_GT(cost_avoidance_improvement_shifted_cost_check, 0.0);
+  ASSERT_NEAR(cost_avoidance_improvement_shifted_cost_check, 40.4, 1.0);
+  double worst_cost_improvement_shifted_cost_check = assessWorstPoseImprovement(cusp_near_obstacle, smoothed_path_scc, cost_avoidance_criterion);
+  RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "Cost avoidance improvement (cusp_shifted, scc): %lf, %lf",
+    cost_avoidance_improvement_shifted_cost_check, worst_cost_improvement_shifted_cost_check);
+  ASSERT_GE(worst_cost_improvement_shifted_cost_check, 0.0);
+  ASSERT_GE(worst_cost_improvement_shifted_cost_check, worst_cost_improvement_simple);
+  ASSERT_GT(cost_avoidance_improvement_shifted_cost_check, cost_avoidance_improvement_simple);
+
+  ////////////////////////////////////////
+  // compare also with extra careful cusp
+
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0052));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost_cusp", 0.027));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", 2.5));
+  // we need much more iterations here since it's a more complicated problem
+  // TODO: tune ceres optimizer to "converge" faster, see http://ceres-solver.org/nnls_solving.html
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.max_iterations", 1500));
+  reloadParams();
+
+  std::vector<Eigen::Vector3d> smoothed_path_scce;
+  ASSERT_TRUE(smoothPath(cusp_near_obstacle, smoothed_path_scce));
+  ASSERT_GT(assessPathImprovement(upper_bound, smoothed_path_scce, mvmt_smoothness_criterion_), 0.0);
+  double cost_avoidance_improvement_shifted_extra = assessPathImprovement(cusp_near_obstacle, smoothed_path_scce, cost_avoidance_criterion);
+  double worst_cost_improvement_shifted_extra = assessWorstPoseImprovement(cusp_near_obstacle, smoothed_path_scce, cost_avoidance_criterion);
+  RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "Cost avoidance improvement (cusp_shifted, scce): %lf, %lf",
+    cost_avoidance_improvement_shifted_extra, worst_cost_improvement_shifted_extra);
+  ASSERT_NEAR(cost_avoidance_improvement_shifted_extra, 49.1, 1.0);
+  ASSERT_GE(worst_cost_improvement_shifted_extra, 0.0);
+
+  // resmooth extra careful cusp with same conditions (higher max_iterations)
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cost_check_points", std::vector<double>()));
+  reloadParams();
+
+  ASSERT_TRUE(smoothPath(cusp_near_obstacle, smoothed_path_ecc));
+  cost_avoidance_improvement_extra_careful_cusp = assessPathImprovement(cusp_near_obstacle, smoothed_path_ecc, cost_avoidance_criterion);
+  worst_cost_improvement_extra_careful_cusp = assessWorstPoseImprovement(cusp_near_obstacle, smoothed_path_ecc, cost_avoidance_criterion);
+  ASSERT_GT(cost_avoidance_improvement_extra_careful_cusp, 0.0);
+  RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), "Cost avoidance improvement (cusp_shifted, ecc): %lf, %lf",
+    cost_avoidance_improvement_extra_careful_cusp, worst_cost_improvement_extra_careful_cusp);
+  ASSERT_NEAR(cost_avoidance_improvement_extra_careful_cusp, 48.5, 1.0);
+  ASSERT_GT(cost_avoidance_improvement_shifted_extra, cost_avoidance_improvement_extra_careful_cusp);
+  // worst cost improvement is a bit lower but only by 5% so it's not a big deal
+  ASSERT_GE(worst_cost_improvement_shifted_extra, worst_cost_improvement_extra_careful_cusp - 6.0);
+
   SUCCEED();
+}
+
+TEST_F(SmootherTest, testingDownsamplingUpsampling)
+{
+  // path with a cusp
+  std::vector<Eigen::Vector3d> sharp_turn_90_then_reverse =
+    { {0, 0, 0}
+    , {0.1, 0, 0}
+    , {0.2, 0, 0}
+    , {0.3, 0, 0}
+    , {0.4, 0, 0}
+    , {0.5, 0, 0}
+    , {0.6, 0, M_PI/4}
+    , {0.6, -0.1, M_PI/2}
+    , {0.6, -0.2, M_PI/2}
+    , {0.6, -0.3, M_PI/2}
+    , {0.6, -0.4, M_PI/2}
+    , {0.6, -0.5, M_PI/2}
+    , {0.6, -0.6, M_PI/2}
+    };
+  cusp_i_ = 6;
+
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.input_downsampling_factor", 2));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.output_upsampling_factor", 0));  // downsample only
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.reversing_enabled", false));
+  reloadParams();
+  std::vector<Eigen::Vector3d> smoothed_path_downsampled;
+  ASSERT_TRUE(smoothPath(sharp_turn_90_then_reverse, smoothed_path_downsampled));
+  ASSERT_EQ(smoothed_path_downsampled.size(), 8u); // first two, last two and every 2nd pose between them
+
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.reversing_enabled", true));
+  reloadParams();
+  ASSERT_TRUE(smoothPath(sharp_turn_90_then_reverse, smoothed_path_downsampled));
+  ASSERT_EQ(smoothed_path_downsampled.size(), 9u); // same but downsampling is reset on cusp
+
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.output_upsampling_factor", 1));  // upsample to original size
+  reloadParams();
+  std::vector<Eigen::Vector3d> smoothed_path;
+  ASSERT_TRUE(smoothPath(sharp_turn_90_then_reverse, smoothed_path));
+  ASSERT_EQ(smoothed_path.size(), sharp_turn_90_then_reverse.size());
+
+  cusp_i_ = 4;  // for downsampled path
+  int cusp_i_out = 6;  // for upsampled path
+  QualityCriterion3 mvmt_smoothness_criterion_out =
+    [&cusp_i_out](int i, const Eigen::Vector3d &prev_p, const Eigen::Vector3d &p, const Eigen::Vector3d &next_p) {
+      Eigen::Vector2d prev_mvmt = p.block<2, 1>(0, 0) - prev_p.block<2, 1>(0, 0);
+      Eigen::Vector2d next_mvmt = next_p.block<2, 1>(0, 0) - p.block<2, 1>(0, 0);
+      if (i == cusp_i_out)
+        next_mvmt = -next_mvmt;
+      return (next_mvmt - prev_mvmt).norm();
+    };
+
+  double smoothness_improvement = assessPathImprovement(smoothed_path_downsampled, smoothed_path, mvmt_smoothness_criterion_, &mvmt_smoothness_criterion_out);
+  // more poses -> smoother path
+  ASSERT_GT(smoothness_improvement, 0.0);
+  ASSERT_NEAR(smoothness_improvement, 65.7, 1.0);
+
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.output_upsampling_factor", 2));  // upsample above original size
+  reloadParams();
+  ASSERT_TRUE(smoothPath(sharp_turn_90_then_reverse, smoothed_path));
+  ASSERT_EQ(smoothed_path.size(), sharp_turn_90_then_reverse.size()*2 - 1);  // every pose except last produces 2 poses
+  cusp_i_out = 12;  // for upsampled path
+  smoothness_improvement = assessPathImprovement(smoothed_path_downsampled, smoothed_path, mvmt_smoothness_criterion_, &mvmt_smoothness_criterion_out);
+  // even more poses -> even smoother path
+  ASSERT_GT(smoothness_improvement, 0.0);
+  ASSERT_NEAR(smoothness_improvement, 83.7, 1.0);
 }
 
 int main(int argc, char ** argv)

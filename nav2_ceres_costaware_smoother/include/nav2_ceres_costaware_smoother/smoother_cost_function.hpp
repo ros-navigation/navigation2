@@ -99,6 +99,10 @@ public:
     _costmap_weight = costmap_weight;
   }
 
+  double costmapWeight() {
+    return _costmap_weight;
+  }
+
   /**
    * @brief Smoother cost function evaluation
    * @param p X, Y coords of current point

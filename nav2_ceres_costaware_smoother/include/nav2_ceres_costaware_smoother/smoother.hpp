@@ -102,6 +102,8 @@ public:
       // solve the problem
       ceres::Solver::Summary summary;
       ceres::Solve(_options, &problem, &summary);
+      if (_debug)
+        RCLCPP_INFO(rclcpp::get_logger("smoother_server"), "%s", summary.FullReport().c_str());
       if (!summary.IsSolutionUsable() || summary.initial_cost - summary.final_cost < 0.0) {
         return false;
       }
@@ -143,6 +145,7 @@ private:
     ceres::LossFunction* loss_function = NULL;
     path_optim = path;
     optimized = std::vector<bool>(path.size());
+    optimized[0] = true;
     int prelast_i = -1;
     int last_i = 0;
     double last_direction = path_optim[0][2];
@@ -177,8 +180,15 @@ private:
 
       // update cusp zone costmap weights
       if (is_cusp) {
-        for (auto &f : potential_cusp_funcs)
-          f.second->setCostmapWeight(params.cusp_costmap_weight);
+        double len_to_cusp = current_segment_len;
+        for (int i = potential_cusp_funcs.size()-1; i >= 0; i--) {
+          auto &f = potential_cusp_funcs[i];
+          double new_weight =
+            params.cusp_costmap_weight*(1.0 - len_to_cusp/cusp_half_length) + params.costmap_weight*len_to_cusp/cusp_half_length;
+          if (std::abs(new_weight - params.cusp_costmap_weight) < std::abs(f.second->costmapWeight() - params.cusp_costmap_weight))
+            f.second->setCostmapWeight(new_weight);
+          len_to_cusp += f.first;
+        }
         potential_cusp_funcs_len = 0;
         potential_cusp_funcs.clear();
         len_since_cusp = 0;
@@ -195,11 +205,13 @@ private:
               costmap,
               costmap_interpolator,
               params,
-              is_in_cusp_zone ? params.cusp_costmap_weight : params.costmap_weight);
+              is_in_cusp_zone
+                ? params.cusp_costmap_weight*(1.0 - len_since_cusp/cusp_half_length) + params.costmap_weight*len_since_cusp/cusp_half_length
+                : params.costmap_weight);
         problem.AddResidualBlock(cost_function->AutoDiff(), loss_function, path_optim[last_i].data(), pt.data(), path_optim[prelast_i].data());
         
-        if (!is_in_cusp_zone)
-          potential_cusp_funcs.emplace_back(current_segment_len, cost_function);
+        // if (!is_in_cusp_zone)
+        potential_cusp_funcs.emplace_back(current_segment_len, cost_function);
       }
 
       // shift current to last and last to pre-last

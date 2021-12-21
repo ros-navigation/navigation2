@@ -21,7 +21,12 @@ smoother_server:
       cusp_zone_length: 1.5         # length of the section around cusp in which nodes use w_cost_cusp instead of w_cost (-1.0 to disable w_cost_cusp)
       cost_scaling_factor: 1.6      # this should match the inflation layer's parameter
       input_downsampling_factor: 3  # every n-th node of the path is taken. Useful for speed-up
-      cost_check_points: [-0.185, 0.0, 1.0] # points of robot footprint to grab costmap weight from. Useful for assymetric robot footprints. Format: [x1, y1, weight1, x2, y2, weight2, ...]
+
+      # WARNING: Although can be relevant for asymmetric robot footprints (e.g. diff drive with 2 actuated and 2 caster wheels),
+      # this parameter introduces many local minima to optimization function, making it harder to converge. If decided to be used,
+      # then it should be done with caution and much higher max_iterations number
+      # (see test/test_costaware_smoother.cpp:testingObstacleAvoidanceNearCusps)
+      # cost_check_points: [-0.185, 0.0, 1.0] # points of robot footprint to grab costmap weight from. Format: [x1, y1, weight1, x2, y2, weight2, ...]
 
       optimizer:
         max_time: 10.0                # maximum compute time for smoother

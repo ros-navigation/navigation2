@@ -70,9 +70,6 @@ struct SmootherParams
       node, local_name + "w_smooth", rclcpp::ParameterValue(15000.0));
     node->get_parameter(local_name + "w_smooth", smooth_weight);
     nav2_util::declare_parameter_if_not_declared(
-      node, local_name + "cost_scaling_factor", rclcpp::ParameterValue(10.0));
-    node->get_parameter(local_name + "cost_scaling_factor", costmap_factor);
-    nav2_util::declare_parameter_if_not_declared(
       node, local_name + "cost_check_points", rclcpp::ParameterValue(std::vector<double>()));
     node->get_parameter(local_name + "cost_check_points", cost_check_points);
     nav2_util::declare_parameter_if_not_declared(
@@ -98,7 +95,6 @@ struct SmootherParams
   double distance_weight{0.0};
   double curvature_weight{0.0};
   double max_curvature{0.0};
-  double costmap_factor{0.0};
   double max_time{2.0};
   int input_downsampling_factor{1};
   int output_upsampling_factor{1};

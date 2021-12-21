@@ -136,10 +136,10 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
   }
 
   // populate final path
-  path.poses.clear();
-  path.poses.reserve(path_world.size());
   geometry_msgs::msg::PoseStamped pose;
   pose.header = path.poses.front().header;
+  path.poses.clear();
+  path.poses.reserve(path_world.size());
   for (auto &pw : path_world) {
     pose.pose.position.x = pw[0];
     pose.pose.position.y = pw[1];
