@@ -60,7 +60,7 @@ public:
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
     const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> & costmap_sub,
-    const std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> &footprint_sub) override;
+    const std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> & footprint_sub) override;
 
   /**
    * @brief Cleanup controller state machine
@@ -97,7 +97,6 @@ protected:
   std::unique_ptr<nav2_ceres_costaware_smoother::Smoother> _smoother;
   SmootherParams _smoother_params;
   OptimizerParams _optimizer_params;
-
 };
 
 }  // namespace nav2_ceres_costaware_smoother

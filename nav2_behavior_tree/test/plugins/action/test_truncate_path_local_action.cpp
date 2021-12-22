@@ -1,5 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
-// Copyright (c) 2020 Francisco Martin Rico
+// Copyright (c) 2021 RoboTech Vision
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,7 +34,7 @@ public:
   {
     bt_node_ = std::make_shared<nav2_behavior_tree::TruncatePathLocal>(
       "truncate_path_local", *config_);
-    
+
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
       {
@@ -45,9 +44,9 @@ public:
     try {
       factory_->registerBuilder<nav2_behavior_tree::TruncatePathLocal>(
         "TruncatePathLocal", builder);
+    } catch (BT::BehaviorTreeException const &) {
+      // ignoring multiple registrations of TruncatePathLocal
     }
-    catch (BT::BehaviorTreeException const &) {} // ignore multiple registrations of TruncatePathLocal
-    
   }
 
   void TearDown() override
@@ -56,7 +55,8 @@ public:
     tree_.reset();
   }
 
-  static geometry_msgs::msg::PoseStamped poseMsg(double x, double y, double orientation) {
+  static geometry_msgs::msg::PoseStamped poseMsg(double x, double y, double orientation)
+  {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = x;
     pose.pose.position.y = y;
@@ -69,7 +69,8 @@ protected:
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-std::shared_ptr<nav2_behavior_tree::TruncatePathLocal> TruncatePathLocalTestFixture::bt_node_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::TruncatePathLocal> TruncatePathLocalTestFixture::bt_node_ =
+  nullptr;
 std::shared_ptr<BT::Tree> TruncatePathLocalTestFixture::tree_ = nullptr;
 
 TEST_F(TruncatePathLocalTestFixture, test_tick)
@@ -100,31 +101,33 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
   path.header.frame_id = "map";
 
   // this is a loop to make it harder for robot to find the proper closest pose
-  path.poses.push_back(poseMsg(-0.3, -1.2, -M_PI*3/2));
+  path.poses.push_back(poseMsg(-0.3, -1.2, -M_PI * 3 / 2));
   // the position is closest to robot but orientation is different
-  path.poses.push_back(poseMsg(-0.3, 0.0, -M_PI*3/2));
+  path.poses.push_back(poseMsg(-0.3, 0.0, -M_PI * 3 / 2));
   path.poses.push_back(poseMsg(-0.5, 1.0, -M_PI));
-  path.poses.push_back(poseMsg(-1.5, 1.0, -M_PI/2));
+  path.poses.push_back(poseMsg(-1.5, 1.0, -M_PI / 2));
   path.poses.push_back(poseMsg(-1.5, 0.0, 0.0));
 
   // this is the correct path section for the first match
   path.poses.push_back(poseMsg(-0.5, 0.0, 0.0));
   path.poses.push_back(poseMsg(0.4, 0.0, 0.0));
   path.poses.push_back(poseMsg(1.5, 0.0, 0.0));
-  path.poses.push_back(poseMsg(1.5, 1.0, M_PI/2));
+  path.poses.push_back(poseMsg(1.5, 1.0, M_PI / 2));
 
   // this is a loop to make it harder for robot to find the proper closest pose
   path.poses.push_back(poseMsg(0.5, 1.0, M_PI));
   // the position is closest to robot but orientation is different
-  path.poses.push_back(poseMsg(0.3, 0.0, M_PI*3/2));
-  path.poses.push_back(poseMsg(0.3, -1.0, M_PI*3/2));
+  path.poses.push_back(poseMsg(0.3, 0.0, M_PI * 3 / 2));
+  path.poses.push_back(poseMsg(0.3, -1.0, M_PI * 3 / 2));
 
   EXPECT_EQ(path.poses.size(), 12u);
 
   config_->blackboard->set("path", path);
 
   // tick until node succeeds
-  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE) {
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS &&
+    tree_->rootNode()->status() != BT::NodeStatus::FAILURE)
+  {
     tree_->rootNode()->executeTick();
   }
 
@@ -142,11 +145,13 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
 
   /////////////////////////////////////////
   // should match the first loop crossing
-  config_->blackboard->set("pose", poseMsg(0.0, 0.0, M_PI/2));
+  config_->blackboard->set("pose", poseMsg(0.0, 0.0, M_PI / 2));
 
   tree_->haltTree();
   // tick until node succeeds
-  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE) {
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS &&
+    tree_->rootNode()->status() != BT::NodeStatus::FAILURE)
+  {
     tree_->rootNode()->executeTick();
   }
   config_->blackboard->get("truncated_path", truncated_path);
@@ -162,11 +167,13 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
 
   /////////////////////////////////////////
   // should match the last loop crossing
-  config_->blackboard->set("pose", poseMsg(0.0, 0.0, -M_PI/2));
+  config_->blackboard->set("pose", poseMsg(0.0, 0.0, -M_PI / 2));
 
   tree_->haltTree();
   // tick until node succeeds
-  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE) {
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS &&
+    tree_->rootNode()->status() != BT::NodeStatus::FAILURE)
+  {
     tree_->rootNode()->executeTick();
   }
   config_->blackboard->get("truncated_path", truncated_path);
@@ -213,7 +220,9 @@ TEST_F(TruncatePathLocalTestFixture, test_success_on_empty_path)
   config_->blackboard->set("path", path);
 
   // tick until node succeeds
-  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE) {
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS &&
+    tree_->rootNode()->status() != BT::NodeStatus::FAILURE)
+  {
     tree_->rootNode()->executeTick();
   }
   nav_msgs::msg::Path truncated_path;
@@ -253,7 +262,9 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_no_pose)
   config_->blackboard->set("path", path);
 
   // tick until node succeeds
-  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE) {
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS &&
+    tree_->rootNode()->status() != BT::NodeStatus::FAILURE)
+  {
     tree_->rootNode()->executeTick();
   }
   nav_msgs::msg::Path truncated_path;
@@ -292,7 +303,9 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_invalid_robot_frame)
   config_->blackboard->set("path", path);
 
   // tick until node succeeds
-  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE) {
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS &&
+    tree_->rootNode()->status() != BT::NodeStatus::FAILURE)
+  {
     tree_->rootNode()->executeTick();
   }
   nav_msgs::msg::Path truncated_path;

@@ -34,25 +34,37 @@
 namespace nav2_ceres_costaware_smoother
 {
 
-template <typename T>
-struct DoubleOnlyLogger {
+template<typename T>
+struct DoubleOnlyLogger
+{
   // template<typename... ArgTypes>
-  static void log(const char*, T, T, T, T, T, T, T) {
+  static void log(const char *, T, T, T, T, T, T, T)
+  {
   }
 
-  static void log(const char*, T, T, T, T, T, const nav2_costmap_2d::Costmap2D*) {
+  static void log(const char *, T, T, T, T, T, const nav2_costmap_2d::Costmap2D *)
+  {
   }
 };
 
-template <>
-void DoubleOnlyLogger<double>::log(const char* format, double a1, double a2, double a3, double a4, double a5, double a6, double a7) {
+template<>
+void DoubleOnlyLogger<double>::log(
+  const char * format, double a1, double a2, double a3, double a4,
+  double a5, double a6, double a7)
+{
   RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), format, a1, a2, a3, a4, a5, a6, a7);
 }
 
-template <>
-void DoubleOnlyLogger<double>::log(const char* format, double a1, double a2, double a3, double a4, double a5, const nav2_costmap_2d::Costmap2D* costmap) {
-  RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), format, a1, a2, a3, a4, a5,
-    (double)costmap->getCost(a3 - 0.5, a4 - 0.5), (double)costmap->getCharMap()[(int)(a4 - 0.5)*costmap->getSizeInCellsX() + (int)(a3 - 0.5)]);
+template<>
+void DoubleOnlyLogger<double>::log(
+  const char * format, double a1, double a2, double a3, double a4,
+  double a5, const nav2_costmap_2d::Costmap2D * costmap)
+{
+  RCLCPP_INFO(
+    rclcpp::get_logger("ceres_smoother"), format, a1, a2, a3, a4, a5,
+    (double)costmap->getCost(a3 - 0.5, a4 - 0.5),
+    (double)costmap->getCharMap()[(int)(a4 - 0.5) * costmap->getSizeInCellsX() +
+    (int)(a3 - 0.5)]);
 }
 /**
  * @struct nav2_ceres_costaware_smoother::SmootherCostFunction
@@ -69,15 +81,15 @@ public:
    *  Negative if one of them represents reversing motion.
    * @param reversing Whether the path segment after this node represents reversing motion.
    * @param costmap A costmap to get values for collision and obstacle avoidance
-   * @param params Optimization weights and parameters 
+   * @param params Optimization weights and parameters
    * @param costmap_weight Costmap cost weight. Can be params.costmap_weight or params.cusp_costmap_weight
    */
   SmootherCostFunction(
-    const Eigen::Vector2d &_original_pos,
+    const Eigen::Vector2d & _original_pos,
     double next_to_last_length_ratio,
     bool reversing,
     const nav2_costmap_2d::Costmap2D * costmap,
-    const std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>> &costmap_interpolator,
+    const std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>> & costmap_interpolator,
     const SmootherParams & params,
     double costmap_weight)
   : _original_pos(_original_pos),
@@ -91,15 +103,18 @@ public:
   {
   }
 
-  ceres::CostFunction* AutoDiff() {
-    return (new ceres::AutoDiffCostFunction<SmootherCostFunction, 4, 2, 2, 2>(this));
+  ceres::CostFunction * AutoDiff()
+  {
+    return new ceres::AutoDiffCostFunction<SmootherCostFunction, 4, 2, 2, 2>(this);
   }
 
-  void setCostmapWeight(double costmap_weight) {
+  void setCostmapWeight(double costmap_weight)
+  {
     _costmap_weight = costmap_weight;
   }
 
-  double costmapWeight() {
+  double costmapWeight()
+  {
     return _costmap_weight;
   }
 
@@ -111,19 +126,24 @@ public:
    * @param p_residual array of output residuals (smoothing, curvature, distance, cost)
    * @return if successful in computing values
    */
-  template <typename T>
-  bool operator()(const T* const p, const T* const p_p1, const T* const p_m1, T* p_residual) const {
-    Eigen::Map<const Eigen::Matrix<T, 2, 1> > xi(p);
-    Eigen::Map<const Eigen::Matrix<T, 2, 1> > xi_p1(p_p1);
-    Eigen::Map<const Eigen::Matrix<T, 2, 1> > xi_m1(p_m1);
-    Eigen::Map<Eigen::Matrix<T, 4, 1> > residual(p_residual);
+  template<typename T>
+  bool operator()(
+    const T * const p, const T * const p_p1, const T * const p_m1,
+    T * p_residual) const
+  {
+    Eigen::Map<const Eigen::Matrix<T, 2, 1>> xi(p);
+    Eigen::Map<const Eigen::Matrix<T, 2, 1>> xi_p1(p_p1);
+    Eigen::Map<const Eigen::Matrix<T, 2, 1>> xi_m1(p_m1);
+    Eigen::Map<Eigen::Matrix<T, 4, 1>> residual(p_residual);
     residual.setZero();
 
     // compute cost
-    addSmoothingResidual<T>(_params.smooth_weight, xi, xi_p1, xi_m1, residual[0]);//cost_raw);
-    addCurvatureResidual<T>(_params.curvature_weight, xi, xi_p1, xi_m1, residual[1]);//cost_raw);
-    addDistanceResidual<T>(_params.distance_weight, xi, _original_pos.template cast<T>(), residual[2]);//cost_raw);
-    addCostResidual<T>(_costmap_weight, xi, xi_p1, xi_m1, residual[3]);//cost_raw);
+    addSmoothingResidual<T>(_params.smooth_weight, xi, xi_p1, xi_m1, residual[0]);
+    addCurvatureResidual<T>(_params.curvature_weight, xi, xi_p1, xi_m1, residual[1]);
+    addDistanceResidual<T>(
+      _params.distance_weight, xi,
+      _original_pos.template cast<T>(), residual[2]);
+    addCostResidual<T>(_costmap_weight, xi, xi_p1, xi_m1, residual[3]);
 
     return true;
   }
@@ -137,7 +157,7 @@ protected:
    * @param pt_m Point Xi-1 for calculating Xi's cost
    * @param r Residual (cost) of term
    */
-  template <typename T>
+  template<typename T>
   inline void addSmoothingResidual(
     const double & weight,
     const Eigen::Matrix<T, 2, 1> & pt,
@@ -147,7 +167,7 @@ protected:
   {
     Eigen::Matrix<T, 2, 1> d_pt_p = pt_p - pt;
     Eigen::Matrix<T, 2, 1> d_pt_m = pt - pt_m;
-    Eigen::Matrix<T, 2, 1> d_pt_diff = _next_to_last_length_ratio*d_pt_p - d_pt_m;
+    Eigen::Matrix<T, 2, 1> d_pt_diff = _next_to_last_length_ratio * d_pt_p - d_pt_m;
     r += (T)weight * d_pt_diff.dot(d_pt_diff);    // objective function value
   }
 
@@ -160,7 +180,7 @@ protected:
    * @param curvature_params A struct to cache computations for the jacobian to use
    * @param r Residual (cost) of term
    */
-  template <typename T>
+  template<typename T>
   inline void addCurvatureResidual(
     const double & weight,
     const Eigen::Matrix<T, 2, 1> & pt,
@@ -168,12 +188,14 @@ protected:
     const Eigen::Matrix<T, 2, 1> & pt_m,
     T & r) const
   {
-    Eigen::Matrix<T, 2, 1> center = arcCenter(pt_m, pt, pt_p, _next_to_last_length_ratio < 0 ? -1 : 1);
+    Eigen::Matrix<T, 2, 1> center = arcCenter(
+      pt_m, pt, pt_p,
+      _next_to_last_length_ratio < 0 ? -1 : 1);
     if (ceres::IsInfinite(center[0])) {
       return;
     }
     T turning_rad = (pt - center).norm();
-    T ki_minus_kmax = (T)1.0/turning_rad - _params.max_curvature;
+    T ki_minus_kmax = (T)1.0 / turning_rad - _params.max_curvature;
 
     if (ki_minus_kmax <= (T)EPSILON) {
       return;
@@ -189,16 +211,13 @@ protected:
    * @param xi_original original point Xi for evaluation
    * @param r Residual (cost) of term
    */
-  template <typename T>
+  template<typename T>
   inline void addDistanceResidual(
     const double & weight,
     const Eigen::Matrix<T, 2, 1> & xi,
     const Eigen::Matrix<T, 2, 1> & xi_original,
     T & r) const
   {
-    // if (weight != 0)
-    //   DoubleOnlyLogger<T>::log("w: %lf, xi: %lf %lf, orig: %lf %lf, dist: %lf, res: %lf",
-    //     (T)weight, xi[0], xi[1], xi_original[0], xi_original[1], (xi - xi_original).norm(), (T)weight * (xi - xi_original).squaredNorm());
     r += (T)weight * (xi - xi_original).squaredNorm();  // objective function value
   }
 
@@ -209,39 +228,43 @@ protected:
    * @param params computed values to reduce overhead
    * @param r Residual (cost) of term
    */
-  template <typename T>
+  template<typename T>
   inline void addCostResidual(
     const double & weight,
-    const Eigen::Matrix<T, 2, 1> &pt,
-    const Eigen::Matrix<T, 2, 1> &pt_p1,
-    const Eigen::Matrix<T, 2, 1> &pt_m1,
+    const Eigen::Matrix<T, 2, 1> & pt,
+    const Eigen::Matrix<T, 2, 1> & pt_p1,
+    const Eigen::Matrix<T, 2, 1> & pt_m1,
     T & r) const
   {
     if (_params.cost_check_points.empty()) {
-      Eigen::Matrix<T, 2, 1> interp_pos = (pt - _costmap_origin.template cast<T>()) / (T)_costmap_resolution;
+      Eigen::Matrix<T, 2,
+        1> interp_pos = (pt - _costmap_origin.template cast<T>()) / (T)_costmap_resolution;
       T value;
       _costmap_interpolator->Evaluate(interp_pos[1] - (T)0.5, interp_pos[0] - (T)0.5, &value);
-      // DoubleOnlyLogger<T>::log("%lf %lf (%lf %lf): %lf (%lf, %lf)", pt[0], pt[1], interp_pos[0] - (T)0.5, interp_pos[1] - (T)0.5, value,
-      //   _costmap);
       r += (T)weight * value * value;  // objective function value
-    }
-    else {
-      Eigen::Matrix<T, 2, 1> dir = tangentDir(pt_m1, pt, pt_p1, _next_to_last_length_ratio < 0 ? -1 : 1);
+    } else {
+      Eigen::Matrix<T, 2, 1> dir = tangentDir(
+        pt_m1, pt, pt_p1,
+        _next_to_last_length_ratio < 0 ? -1 : 1);
       dir.normalize();
-      if (((pt_p1 - pt).dot(dir) < (T)0) != _reversing)
+      if (((pt_p1 - pt).dot(dir) < (T)0) != _reversing) {
         dir = -dir;
+      }
       Eigen::Matrix<T, 3, 3> transform;
       transform << dir[0], -dir[1], pt[0],
-                  dir[1], dir[0], pt[1],
-                  (T)0, (T)0, (T)1;
+        dir[1], dir[0], pt[1],
+      (T)0, (T)0, (T)1;
       for (size_t i = 0; i < _params.cost_check_points.size(); i += 3) {
-        Eigen::Matrix<T, 3, 1> ccpt((T)_params.cost_check_points[i], (T)_params.cost_check_points[i+1], (T)1);
-        auto ccpt_world = (transform*ccpt).template block<2, 1>(0, 0);
-        Eigen::Matrix<T, 2, 1> interp_pos = (ccpt_world - _costmap_origin.template cast<T>()) / (T)_costmap_resolution;
+        Eigen::Matrix<T, 3, 1> ccpt((T)_params.cost_check_points[i],
+          (T)_params.cost_check_points[i + 1], (T)1);
+        auto ccpt_world = (transform * ccpt).template block<2, 1>(0, 0);
+        Eigen::Matrix<T, 2,
+          1> interp_pos = (ccpt_world - _costmap_origin.template cast<T>()) /
+          (T)_costmap_resolution;
         T value;
         _costmap_interpolator->Evaluate(interp_pos[1] - (T)0.5, interp_pos[0] - (T)0.5, &value);
 
-        r += (T)weight * (T)_params.cost_check_points[i+2] * value * value;
+        r += (T)weight * (T)_params.cost_check_points[i + 2] * value * value;
       }
     }
   }
@@ -256,6 +279,6 @@ protected:
   std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>> _costmap_interpolator;
 };
 
-}  // namespace nav2_smac_planner
+}  // namespace nav2_ceres_costaware_smoother
 
 #endif  // NAV2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_COST_FUNCTION_HPP_

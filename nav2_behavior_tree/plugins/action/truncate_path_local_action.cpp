@@ -1,5 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
-// Copyright (c) 2020 Francisco Martin Rico
+// Copyright (c) 2021 RoboTech Vision
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,7 +66,8 @@ inline BT::NodeStatus TruncatePathLocal::tick()
     }
     if (!nav2_util::getCurrentPose(
         pose, *tf_buffer_, path.header.frame_id, robot_frame,
-        transform_tolerance)) {
+        transform_tolerance))
+    {
       return BT::NodeStatus::FAILURE;
     }
   }
@@ -88,7 +88,9 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   // expand forwards to extract desired length
   double length = 0;
   auto end = current_pose - path.poses.begin();
-  while (static_cast<int>(end) < static_cast<int>(path.poses.size() - 1) && length <= distance_forward) {
+  while (static_cast<int>(end) < static_cast<int>(path.poses.size() - 1) &&
+    length <= distance_forward)
+  {
     length += std::hypot(
       path.poses[end + 1].pose.position.x - path.poses[end].pose.position.x,
       path.poses[end + 1].pose.position.y - path.poses[end].pose.position.y);

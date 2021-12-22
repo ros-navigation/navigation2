@@ -22,6 +22,9 @@
 #include <memory>
 #include <queue>
 #include <utility>
+#include <deque>
+#include <limits>
+#include <algorithm>
 
 #include "nav2_ceres_costaware_smoother/smoother_cost_function.hpp"
 #include "nav2_ceres_costaware_smoother/utils.hpp"
@@ -102,14 +105,15 @@ public:
       // solve the problem
       ceres::Solver::Summary summary;
       ceres::Solve(_options, &problem, &summary);
-      if (_debug)
+      if (_debug) {
         RCLCPP_INFO(rclcpp::get_logger("smoother_server"), "%s", summary.FullReport().c_str());
+      }
       if (!summary.IsSolutionUsable() || summary.initial_cost - summary.final_cost < 0.0) {
         return false;
       }
-    }
-    else
+    } else {
       RCLCPP_INFO(rclcpp::get_logger("smoother_server"), "Path too short to optimize");
+    }
 
     upsampleAndPopulate(path_optim, optimized, start_dir, end_dir, params, path);
 
@@ -117,7 +121,6 @@ public:
   }
 
 private:
-
   /**
    * @brief Build problem method
    * @param path Reference to path
@@ -132,17 +135,19 @@ private:
     const std::vector<Eigen::Vector3d> & path,
     const nav2_costmap_2d::Costmap2D * costmap,
     const SmootherParams & params,
-    ceres::Problem &problem,
+    ceres::Problem & problem,
     std::vector<Eigen::Vector3d> & path_optim,
-    std::vector<bool> &optimized)
+    std::vector<bool> & optimized)
   {
     // Create costmap grid
-    _costmap_grid = std::make_shared<ceres::Grid2D<u_char>>(costmap->getCharMap(), 0, costmap->getSizeInCellsY(), 0, costmap->getSizeInCellsX());
-    auto costmap_interpolator = std::make_shared<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>>(*_costmap_grid);
+    _costmap_grid = std::make_shared<ceres::Grid2D<u_char>>(
+      costmap->getCharMap(), 0, costmap->getSizeInCellsY(), 0, costmap->getSizeInCellsX());
+    auto costmap_interpolator = std::make_shared<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>>(
+      *_costmap_grid);
 
     // Create residual blocks
-    const double cusp_half_length = params.cusp_zone_length/2;
-    ceres::LossFunction* loss_function = NULL;
+    const double cusp_half_length = params.cusp_zone_length / 2;
+    ceres::LossFunction * loss_function = NULL;
     path_optim = path;
     optimized = std::vector<bool>(path.size());
     optimized[0] = true;
@@ -156,19 +161,23 @@ private:
     double potential_cusp_funcs_len = 0;
     double len_since_cusp = std::numeric_limits<double>::infinity();
 
-    for (int i = 1; i < (int)path_optim.size(); i++) {
-      auto &pt = path_optim[i];
+    for (size_t i = 1; i < path_optim.size(); i++) {
+      auto & pt = path_optim[i];
       bool is_cusp = false;
-      if (i != (int)path_optim.size()-1) {
-        is_cusp = pt[2]*last_direction < 0;
+      if (i != path_optim.size() - 1) {
+        is_cusp = pt[2] * last_direction < 0;
         last_direction = pt[2];
 
         // skip to downsample if can be skipped (no forward/reverse direction change)
-        if (!is_cusp && i > 1 && i < (int)path_optim.size()-2 && (i - last_i) < params.input_downsampling_factor)
+        if (!is_cusp && i > 1 && i < path_optim.size() - 2 &&
+          (i - last_i) < params.input_downsampling_factor)
+        {
           continue;
+        }
       }
 
-      // keep distance inequalities between poses (some might have been downsampled while others might not)
+      // keep distance inequalities between poses
+      // (some might have been downsampled while others might not)
       double current_segment_len = (path_optim[i] - path_optim[last_i]).block<2, 1>(0, 0).norm();
 
       // forget cost functions which don't have chance to be part of a cusp zone
@@ -181,12 +190,16 @@ private:
       // update cusp zone costmap weights
       if (is_cusp) {
         double len_to_cusp = current_segment_len;
-        for (int i = potential_cusp_funcs.size()-1; i >= 0; i--) {
-          auto &f = potential_cusp_funcs[i];
+        for (int i = potential_cusp_funcs.size() - 1; i >= 0; i--) {
+          auto & f = potential_cusp_funcs[i];
           double new_weight =
-            params.cusp_costmap_weight*(1.0 - len_to_cusp/cusp_half_length) + params.costmap_weight*len_to_cusp/cusp_half_length;
-          if (std::abs(new_weight - params.cusp_costmap_weight) < std::abs(f.second->costmapWeight() - params.cusp_costmap_weight))
+            params.cusp_costmap_weight * (1.0 - len_to_cusp / cusp_half_length) +
+            params.costmap_weight * len_to_cusp / cusp_half_length;
+          if (std::abs(new_weight - params.cusp_costmap_weight) <
+            std::abs(f.second->costmapWeight() - params.cusp_costmap_weight))
+          {
             f.second->setCostmapWeight(new_weight);
+          }
           len_to_cusp += f.first;
         }
         potential_cusp_funcs_len = 0;
@@ -197,20 +210,27 @@ private:
       // add cost function
       optimized[i] = true;
       if (prelast_i != -1) {
-        bool is_in_cusp_zone = len_since_cusp <= cusp_half_length;
-        SmootherCostFunction *cost_function = new SmootherCostFunction(
-              path[last_i].template block<2, 1>(0, 0),
-              (last_was_cusp ? -1 : 1)*last_segment_len/current_segment_len,
-              last_is_reversing,
-              costmap,
-              costmap_interpolator,
-              params,
-              is_in_cusp_zone
-                ? params.cusp_costmap_weight*(1.0 - len_since_cusp/cusp_half_length) + params.costmap_weight*len_since_cusp/cusp_half_length
-                : params.costmap_weight);
-        problem.AddResidualBlock(cost_function->AutoDiff(), loss_function, path_optim[last_i].data(), pt.data(), path_optim[prelast_i].data());
-        
-        // if (!is_in_cusp_zone)
+        double costmap_weight = params.costmap_weight;
+        if (len_since_cusp <= cusp_half_length) {
+          costmap_weight =
+            params.cusp_costmap_weight * (1.0 - len_since_cusp / cusp_half_length) +
+            params.costmap_weight * len_since_cusp / cusp_half_length;
+        }
+        SmootherCostFunction * cost_function = new SmootherCostFunction(
+          path[last_i].template block<2, 1>(
+            0,
+            0),
+          (last_was_cusp ? -1 : 1) * last_segment_len / current_segment_len,
+          last_is_reversing,
+          costmap,
+          costmap_interpolator,
+          params,
+          costmap_weight
+        );
+        problem.AddResidualBlock(
+          cost_function->AutoDiff(), loss_function,
+          path_optim[last_i].data(), pt.data(), path_optim[prelast_i].data());
+
         potential_cusp_funcs.emplace_back(current_segment_len, cost_function);
       }
 
@@ -223,12 +243,13 @@ private:
       last_segment_len = std::max(EPSILON, current_segment_len);
     }
 
-    if (problem.NumParameterBlocks() <= 4)
-      return false; // nothing to optimize
+    if (problem.NumParameterBlocks() <= 4) {
+      return false;  // nothing to optimize
+    }
     // first two and last two points are constant (to keep start and end direction)
     problem.SetParameterBlockConstant(path_optim.front().data());
     problem.SetParameterBlockConstant(path_optim[1].data());
-    problem.SetParameterBlockConstant(path_optim[path_optim.size()-2].data());
+    problem.SetParameterBlockConstant(path_optim[path_optim.size() - 2].data());
     problem.SetParameterBlockConstant(path_optim.back().data());
     return true;
   }
@@ -244,7 +265,7 @@ private:
    */
   void upsampleAndPopulate(
     const std::vector<Eigen::Vector3d> & path_optim,
-    const std::vector<bool> &optimized,
+    const std::vector<bool> & optimized,
     const Eigen::Vector2d & start_dir,
     const Eigen::Vector2d & end_dir,
     const SmootherParams & params,
@@ -253,48 +274,48 @@ private:
     // Populate path, assign orientations, interpolate skipped/upsampled poses
     path.clear();
     path.emplace_back(path_optim[0][0], path_optim[0][1], atan2(start_dir[1], start_dir[0]));
-    if (params.output_upsampling_factor > 1)
-      path.reserve(params.output_upsampling_factor*(path_optim.size() - 1) + 1);
+    if (params.output_upsampling_factor > 1) {
+      path.reserve(params.output_upsampling_factor * (path_optim.size() - 1) + 1);
+    }
     int last_i = 0;
     int prelast_i = -1;
     Eigen::Vector2d prelast_dir = start_dir;
-    for (int i = 1; i <= (int)path_optim.size(); i++) {
-      if (i == (int)path_optim.size() || optimized[i]) {
+    for (int i = 1; i <= static_cast<int>(path_optim.size()); i++) {
+      if (i == static_cast<int>(path_optim.size()) || optimized[i]) {
         if (prelast_i != -1) {
           Eigen::Vector2d last_dir;
-          auto &prelast = path_optim[prelast_i];
-          auto &last = path_optim[last_i];
+          auto & prelast = path_optim[prelast_i];
+          auto & last = path_optim[last_i];
 
           // Compute orientation of last
-          if (i < (int)path_optim.size()) {
-            auto &current = path_optim[i];
+          if (i < static_cast<int>(path_optim.size())) {
+            auto & current = path_optim[i];
             Eigen::Vector2d tangent_dir = tangentDir<double>(
               prelast.block<2, 1>(0, 0),
               last.block<2, 1>(0, 0),
               current.block<2, 1>(0, 0),
-              prelast[2]*last[2]);
-            
-            last_dir = 
-              tangent_dir.dot((current - last).block<2, 1>(0, 0)*last[2]) >= 0
-                ? tangent_dir
-                : -tangent_dir;
+              prelast[2] * last[2]);
+
+            last_dir =
+              tangent_dir.dot((current - last).block<2, 1>(0, 0) * last[2]) >= 0 ?
+              tangent_dir :
+              -tangent_dir;
             last_dir.normalize();
-          }
-          else {
+          } else {
             last_dir = end_dir;
           }
           double last_angle = atan2(last_dir[1], last_dir[0]);
 
           // Interpolate poses between prelast and last
-          int interp_cnt = (last_i - prelast_i)*params.output_upsampling_factor - 1;
+          int interp_cnt = (last_i - prelast_i) * params.output_upsampling_factor - 1;
           if (interp_cnt > 0) {
             Eigen::Vector2d lastp = last.block<2, 1>(0, 0);
             Eigen::Vector2d prelastp = prelast.block<2, 1>(0, 0);
             double dist = (lastp - prelastp).norm();
-            Eigen::Vector2d p1 = prelastp + prelast_dir*dist*0.4*prelast[2];
-            Eigen::Vector2d p2 = lastp - last_dir*dist*0.4*prelast[2];
+            Eigen::Vector2d p1 = prelastp + prelast_dir * dist * 0.4 * prelast[2];
+            Eigen::Vector2d p2 = lastp - last_dir * dist * 0.4 * prelast[2];
             for (int j = 1; j <= interp_cnt; j++) {
-              double interp = j/(double)(interp_cnt + 1);
+              double interp = j / static_cast<double>(interp_cnt + 1);
               Eigen::Vector2d p = cubicBezier(prelastp, p1, p2, lastp, interp);
               path.emplace_back(p[0], p[1], 0.0);
             }
@@ -302,16 +323,16 @@ private:
           path.emplace_back(last[0], last[1], last_angle);
 
           // Assign orientations to interpolated points
-          for (int j = path.size() - 1 - interp_cnt; j < (int)path.size() - 1; j++) {
+          for (size_t j = path.size() - 1 - interp_cnt; j < path.size() - 1; j++) {
             Eigen::Vector2d tangent_dir = tangentDir<double>(
-              path[j-1].block<2, 1>(0, 0),
+              path[j - 1].block<2, 1>(0, 0),
               path[j].block<2, 1>(0, 0),
-              path[j+1].block<2, 1>(0, 0),
+              path[j + 1].block<2, 1>(0, 0),
               1.0);
-            tangent_dir = 
-              tangent_dir.dot((path[j+1] - path[j]).block<2, 1>(0, 0)*prelast[2]) >= 0
-                ? tangent_dir
-                : -tangent_dir;
+            tangent_dir =
+              tangent_dir.dot((path[j + 1] - path[j]).block<2, 1>(0, 0) * prelast[2]) >= 0 ?
+              tangent_dir :
+              -tangent_dir;
             path[j][2] = atan2(tangent_dir[1], tangent_dir[0]);
           }
 
@@ -328,9 +349,11 @@ private:
     The two end points are p0 and p3
     Their associated control points are p1 and p2
   */
-  static Eigen::Vector2d cubicBezier(Eigen::Vector2d &p0, Eigen::Vector2d &p1, Eigen::Vector2d &p2, Eigen::Vector2d &p3, double mu)
+  static Eigen::Vector2d cubicBezier(
+    Eigen::Vector2d & p0, Eigen::Vector2d & p1,
+    Eigen::Vector2d & p2, Eigen::Vector2d & p3, double mu)
   {
-    Eigen::Vector2d a,b,c,p;
+    Eigen::Vector2d a, b, c, p;
 
     c[0] = 3 * (p1[0] - p0[0]);
     c[1] = 3 * (p1[1] - p0[1]);
@@ -342,7 +365,7 @@ private:
     p[0] = a[0] * mu * mu * mu + b[0] * mu * mu + c[0] * mu + p0[0];
     p[1] = a[1] * mu * mu * mu + b[1] * mu * mu + c[1] * mu + p0[1];
 
-    return(p);
+    return p;
   }
 
   bool _debug;
@@ -350,6 +373,6 @@ private:
   std::shared_ptr<ceres::Grid2D<u_char>> _costmap_grid;
 };
 
-}  // namespace nav2_smac_planner
+}  // namespace nav2_ceres_costaware_smoother
 
 #endif  // NAV2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_

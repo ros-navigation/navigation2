@@ -17,6 +17,7 @@
 #define NAV2_CERES_COSTAWARE_SMOOTHER__OPTIONS_HPP_
 
 #include <string>
+#include <vector>
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_util/node_utils.hpp"
 
@@ -81,9 +82,12 @@ struct SmootherParams
     nav2_util::declare_parameter_if_not_declared(
       node, local_name + "reversing_enabled", rclcpp::ParameterValue(true));
     node->get_parameter(local_name + "reversing_enabled", reversing_enabled);
-    if (cost_check_points.size()%3 != 0) {
-      RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),
-        "cost_check_points parameter must contain values as follows: [x1, y1, weight1, x2, y2, weight2, ...]");
+    if (cost_check_points.size() % 3 != 0) {
+      RCLCPP_ERROR(
+        rclcpp::get_logger(
+          "rclcpp"),
+        "cost_check_points parameter must contain values as follows: "
+        "[x1, y1, weight1, x2, y2, weight2, ...]");
       rclcpp::shutdown();
     }
   }
@@ -157,6 +161,6 @@ struct OptimizerParams
   double gradient_tol;  // Ceres default: 1e-10
 };
 
-}  // namespace nav2_smac_planner
+}  // namespace nav2_ceres_costaware_smoother
 
 #endif  // NAV2_CERES_COSTAWARE_SMOOTHER__OPTIONS_HPP_
