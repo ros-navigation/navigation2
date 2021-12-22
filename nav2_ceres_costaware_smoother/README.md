@@ -35,10 +35,4 @@ smoother_server:
         gradient_tol: 5e3
         fn_tol: 1.0e-15
         param_tol: 1.0e-20
-        advanced:
-          min_line_search_step_size: 1.0e-9
-          max_num_line_search_step_size_iterations: 20
-          line_search_sufficient_function_decrease: 1.0e-3
-          max_num_line_search_direction_restarts: 20
-          max_line_search_step_expansion: 10
 ```
