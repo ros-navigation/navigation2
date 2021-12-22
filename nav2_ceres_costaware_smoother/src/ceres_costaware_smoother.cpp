@@ -55,7 +55,6 @@ void CeresCostawareSmoother::configure(
   _smoother = std::make_unique<nav2_ceres_costaware_smoother::Smoother>();
   _optimizer_params.get(node.get(), name);
   _smoother_params.get(node.get(), name);
-  _smoother_params.max_time = _optimizer_params.max_time;
   _smoother->initialize(_optimizer_params);
 }
 

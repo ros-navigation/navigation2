@@ -99,7 +99,7 @@ struct SmootherParams
   double distance_weight{0.0};
   double curvature_weight{0.0};
   double max_curvature{0.0};
-  double max_time{2.0};
+  double max_time{10.0}; // adjusted by action goal, not by parameters 
   int input_downsampling_factor{1};
   int output_upsampling_factor{1};
   bool reversing_enabled{true};
@@ -115,7 +115,6 @@ struct OptimizerParams
   OptimizerParams()
   : debug(false),
     max_iterations(50),
-    max_time(1e4),
     param_tol(1e-8),
     fn_tol(1e-6),
     gradient_tol(1e-10)
@@ -145,16 +144,12 @@ struct OptimizerParams
       node, local_name + "max_iterations", rclcpp::ParameterValue(100));
     node->get_parameter(local_name + "max_iterations", max_iterations);
     nav2_util::declare_parameter_if_not_declared(
-      node, local_name + "max_time", rclcpp::ParameterValue(0.100));
-    node->get_parameter(local_name + "max_time", max_time);
-    nav2_util::declare_parameter_if_not_declared(
       node, local_name + "debug_optimizer", rclcpp::ParameterValue(false));
     node->get_parameter(local_name + "debug_optimizer", debug);
   }
 
   bool debug;
   int max_iterations;  // Ceres default: 50
-  double max_time;  // Ceres default: 1e4
 
   double param_tol;  // Ceres default: 1e-8
   double fn_tol;  // Ceres default: 1e-6

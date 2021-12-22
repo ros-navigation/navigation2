@@ -205,7 +205,7 @@ protected:
       costmap_pub_->publishCostmap();
     }
 
-    bool result = smoother_->smooth(path, rclcpp::Duration::from_seconds(1.0));
+    bool result = smoother_->smooth(path, rclcpp::Duration::from_seconds(10.0));
 
     if (publish && !path.poses.empty()) {
       geometry_msgs::msg::PoseArray poses;

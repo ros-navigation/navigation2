@@ -63,7 +63,6 @@ public:
     _options.linear_solver_type = ceres::DENSE_QR;
 
     _options.max_num_iterations = params.max_iterations;
-    _options.max_solver_time_in_seconds = params.max_time;
 
     _options.function_tolerance = params.fn_tol;
     _options.gradient_tolerance = params.gradient_tol;
