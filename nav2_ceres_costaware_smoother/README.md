@@ -29,7 +29,6 @@ smoother_server:
       # cost_check_points: [-0.185, 0.0, 1.0]  # points of robot footprint to grab costmap weight from. Format: [x1, y1, weight1, x2, y2, weight2, ...]
 
       optimizer:
-        max_time: 10.0                # maximum compute time for smoother
         max_iterations: 70            # max iterations of smoother
         debug_optimizer: false        # print debug info
         gradient_tol: 5e3
