@@ -60,18 +60,13 @@ public:
         "Distance in backward direction"),
       BT::InputPort<std::string>(
         "robot_frame", "base_link",
-        "Robot base frame id. If empty, 'pose' "
-        "parameter is used instead of robot pose"),
-      BT::InputPort<std::string>(
-        "global_frame", "map",
-        "Global frame id. If empty, 'pose' "
-        "parameter is used instead of robot pose"),
+        "Robot base frame id"),
       BT::InputPort<double>(
         "transform_tolerance", 0.2,
         "Transform lookup tolerance"),
       BT::InputPort<geometry_msgs::msg::PoseStamped>(
-        "pose", "Manually specified robot pose to be used alternatively to "
-        "robot frame lookup."),
+        "pose", "Manually specified pose to be used"
+        "if overriding current robot pose"),
       BT::InputPort<double>(
         "angular_distance_weight", 0.2,
         "Weight of angular distance relative to positional distance when "

@@ -24,62 +24,52 @@
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 
-#include "../../test_action_server.hpp"
+#include "../../test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/action/truncate_path_local_action.hpp"
 
 
-class TruncatePathLocalTestFixture : public ::testing::Test
+class TruncatePathLocalTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
-  static void SetUpTestCase()
+  void SetUp() override
   {
-    node_ = std::make_shared<rclcpp::Node>("change_goal_test_fixture");
-    factory_ = std::make_shared<BT::BehaviorTreeFactory>();
-
-    config_ = new BT::NodeConfiguration();
-
-    // Create the blackboard that will be shared by all of the nodes in the tree
-    config_->blackboard = BT::Blackboard::create();
-    // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
-      "node",
-      node_);
-
+    bt_node_ = std::make_shared<nav2_behavior_tree::TruncatePathLocal>(
+      "truncate_path_local", *config_);
+    
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
       {
         return std::make_unique<nav2_behavior_tree::TruncatePathLocal>(
           name, config);
       };
-
-    factory_->registerBuilder<nav2_behavior_tree::TruncatePathLocal>(
-      "TruncatePathLocal", builder);
-  }
-
-  static void TearDownTestCase()
-  {
-    delete config_;
-    config_ = nullptr;
-    node_.reset();
-    factory_.reset();
+    try {
+      factory_->registerBuilder<nav2_behavior_tree::TruncatePathLocal>(
+        "TruncatePathLocal", builder);
+    }
+    catch (BT::BehaviorTreeException const &) {} // ignore multiple registrations of TruncatePathLocal
+    
   }
 
   void TearDown() override
   {
+    bt_node_.reset();
     tree_.reset();
   }
 
+  static geometry_msgs::msg::PoseStamped poseMsg(double x, double y, double orientation) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = x;
+    pose.pose.position.y = y;
+    pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(orientation);
+    return pose;
+  }
+
 protected:
-  static rclcpp::Node::SharedPtr node_;
-  static BT::NodeConfiguration * config_;
-  static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
+  static std::shared_ptr<nav2_behavior_tree::TruncatePathLocal> bt_node_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr TruncatePathLocalTestFixture::node_ = nullptr;
-
-BT::NodeConfiguration * TruncatePathLocalTestFixture::config_ = nullptr;
-std::shared_ptr<BT::BehaviorTreeFactory> TruncatePathLocalTestFixture::factory_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::TruncatePathLocal> TruncatePathLocalTestFixture::bt_node_ = nullptr;
 std::shared_ptr<BT::Tree> TruncatePathLocalTestFixture::tree_ = nullptr;
 
 TEST_F(TruncatePathLocalTestFixture, test_tick)
@@ -89,7 +79,16 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-          <TruncatePathLocal distance="1.0" input_path="{path}" output_path="{truncated_path}"/>
+          <TruncatePathLocal
+            distance_forward="2.0"
+            distance_backward="1.0"
+            robot_frame="base_link"
+            transform_tolerance="0.2"
+            angular_distance_weight="0.2"
+            pose="{pose}"
+            input_path="{path}"
+            output_path="{truncated_path}"
+          />.
         </BehaviorTree>
       </root>)";
 
@@ -98,46 +97,209 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
   // create new goal and set it on blackboard
   nav_msgs::msg::Path path;
   path.header.stamp = node_->now();
+  path.header.frame_id = "map";
 
-  geometry_msgs::msg::PoseStamped pose;
-  pose.pose.position.x = 0;
-  pose.pose.position.y = 0;
-  pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
-  path.poses.push_back(pose);
+  // this is a loop to make it harder for robot to find the proper closest pose
+  path.poses.push_back(poseMsg(-0.3, -1.2, -M_PI*3/2));
+  // the position is closest to robot but orientation is different
+  path.poses.push_back(poseMsg(-0.3, 0.0, -M_PI*3/2));
+  path.poses.push_back(poseMsg(-0.5, 1.0, -M_PI));
+  path.poses.push_back(poseMsg(-1.5, 1.0, -M_PI/2));
+  path.poses.push_back(poseMsg(-1.5, 0.0, 0.0));
 
-  pose.pose.position.x = 0.5;
-  pose.pose.position.y = 0.0;
-  path.poses.push_back(pose);
+  // this is the correct path section for the first match
+  path.poses.push_back(poseMsg(-0.5, 0.0, 0.0));
+  path.poses.push_back(poseMsg(0.4, 0.0, 0.0));
+  path.poses.push_back(poseMsg(1.5, 0.0, 0.0));
+  path.poses.push_back(poseMsg(1.5, 1.0, M_PI/2));
 
-  pose.pose.position.x = 0.9;
-  pose.pose.position.y = 0.0;
-  path.poses.push_back(pose);
+  // this is a loop to make it harder for robot to find the proper closest pose
+  path.poses.push_back(poseMsg(0.5, 1.0, M_PI));
+  // the position is closest to robot but orientation is different
+  path.poses.push_back(poseMsg(0.3, 0.0, M_PI*3/2));
+  path.poses.push_back(poseMsg(0.3, -1.0, M_PI*3/2));
 
-  pose.pose.position.x = 1.5;
-  pose.pose.position.y = 0.5;
-  path.poses.push_back(pose);
-
-  EXPECT_EQ(path.poses.size(), 4u);
+  EXPECT_EQ(path.poses.size(), 12u);
 
   config_->blackboard->set("path", path);
 
   // tick until node succeeds
-  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE) {
     tree_->rootNode()->executeTick();
   }
 
   nav_msgs::msg::Path truncated_path;
   config_->blackboard->get("truncated_path", truncated_path);
 
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_NE(path, truncated_path);
+  ASSERT_GE(truncated_path.poses.size(), 1u);
+  EXPECT_EQ(truncated_path.poses.size(), 3u);
+  EXPECT_EQ(truncated_path.poses.front().pose.position.x, -0.5);
+  EXPECT_EQ(truncated_path.poses.front().pose.position.y, 0.0);
+  EXPECT_EQ(truncated_path.poses.back().pose.position.x, 1.5);
+  EXPECT_EQ(truncated_path.poses.back().pose.position.y, 0.0);
+
+  /////////////////////////////////////////
+  // should match the first loop crossing
+  config_->blackboard->set("pose", poseMsg(0.0, 0.0, M_PI/2));
+
+  tree_->haltTree();
+  // tick until node succeeds
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE) {
+    tree_->rootNode()->executeTick();
+  }
+  config_->blackboard->get("truncated_path", truncated_path);
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_NE(path, truncated_path);
+  ASSERT_GE(truncated_path.poses.size(), 1u);
   EXPECT_EQ(truncated_path.poses.size(), 2u);
+  EXPECT_EQ(truncated_path.poses.front().pose.position.x, -0.3);
+  EXPECT_EQ(truncated_path.poses.front().pose.position.y, 0.0);
+  EXPECT_EQ(truncated_path.poses.back().pose.position.x, -0.5);
+  EXPECT_EQ(truncated_path.poses.back().pose.position.y, 1.0);
 
-  double r, p, y;
-  tf2::Quaternion q;
-  tf2::fromMsg(truncated_path.poses.back().pose.orientation, q);
-  tf2::Matrix3x3(q).getRPY(r, p, y);
+  /////////////////////////////////////////
+  // should match the last loop crossing
+  config_->blackboard->set("pose", poseMsg(0.0, 0.0, -M_PI/2));
 
-  EXPECT_NEAR(y, 0.463, 0.001);
+  tree_->haltTree();
+  // tick until node succeeds
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE) {
+    tree_->rootNode()->executeTick();
+  }
+  config_->blackboard->get("truncated_path", truncated_path);
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_NE(path, truncated_path);
+  ASSERT_GE(truncated_path.poses.size(), 1u);
+  EXPECT_EQ(truncated_path.poses.size(), 2u);
+  EXPECT_EQ(truncated_path.poses.front().pose.position.x, 0.3);
+  EXPECT_EQ(truncated_path.poses.front().pose.position.y, 0.0);
+  EXPECT_EQ(truncated_path.poses.back().pose.position.x, 0.3);
+  EXPECT_EQ(truncated_path.poses.back().pose.position.y, -1.0);
+
+  SUCCEED();
+}
+
+TEST_F(TruncatePathLocalTestFixture, test_success_on_empty_path)
+{
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root main_tree_to_execute = "MainTree" >
+        <BehaviorTree ID="MainTree">
+          <TruncatePathLocal
+            distance_forward="2.0"
+            distance_backward="1.0"
+            robot_frame="base_link"
+            transform_tolerance="0.2"
+            angular_distance_weight="0.2"
+            pose="{pose}"
+            input_path="{path}"
+            output_path="{truncated_path}"
+          />.
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // create new goal and set it on blackboard
+  nav_msgs::msg::Path path;
+  path.header.stamp = node_->now();
+  path.header.frame_id = "map";
+
+  config_->blackboard->set("path", path);
+
+  // tick until node succeeds
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE) {
+    tree_->rootNode()->executeTick();
+  }
+  nav_msgs::msg::Path truncated_path;
+  config_->blackboard->get("truncated_path", truncated_path);
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(path, truncated_path);
+  SUCCEED();
+}
+
+TEST_F(TruncatePathLocalTestFixture, test_failure_on_no_pose)
+{
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root main_tree_to_execute = "MainTree" >
+        <BehaviorTree ID="MainTree">
+          <TruncatePathLocal
+            distance_forward="2.0"
+            distance_backward="1.0"
+            transform_tolerance="0.2"
+            angular_distance_weight="0.2"
+            robot_frame="{robot_frame}"
+            input_path="{path}"
+            output_path="{truncated_path}"
+          />.
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // create new goal and set it on blackboard
+  nav_msgs::msg::Path path;
+  path.header.stamp = node_->now();
+  path.header.frame_id = "map";
+
+  config_->blackboard->set("path", path);
+
+  // tick until node succeeds
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE) {
+    tree_->rootNode()->executeTick();
+  }
+  nav_msgs::msg::Path truncated_path;
+  config_->blackboard->get("truncated_path", truncated_path);
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
+  SUCCEED();
+}
+
+TEST_F(TruncatePathLocalTestFixture, test_failure_on_invalid_robot_frame)
+{
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root main_tree_to_execute = "MainTree" >
+        <BehaviorTree ID="MainTree">
+          <TruncatePathLocal
+            distance_forward="2.0"
+            distance_backward="1.0"
+            transform_tolerance="0.2"
+            robot_frame="invalid_frame"
+            angular_distance_weight="0.2"
+            input_path="{path}"
+            output_path="{truncated_path}"
+          />.
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // create new goal and set it on blackboard
+  nav_msgs::msg::Path path;
+  path.header.stamp = node_->now();
+  path.header.frame_id = "map";
+
+  config_->blackboard->set("path", path);
+
+  // tick until node succeeds
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS && tree_->rootNode()->status() != BT::NodeStatus::FAILURE) {
+    tree_->rootNode()->executeTick();
+  }
+  nav_msgs::msg::Path truncated_path;
+  config_->blackboard->get("truncated_path", truncated_path);
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
+  SUCCEED();
 }
 
 int main(int argc, char ** argv)

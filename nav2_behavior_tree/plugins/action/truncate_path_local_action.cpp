@@ -47,7 +47,7 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   nav_msgs::msg::Path path;
   double distance_forward, distance_backward;
   double transform_tolerance;
-  std::string robot_frame, global_frame;
+  std::string robot_frame;
   geometry_msgs::msg::PoseStamped pose;
   double angular_distance_weight;
 
@@ -56,19 +56,17 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   getInput("distance_backward", distance_backward);
   getInput("transform_tolerance", transform_tolerance);
   getInput("robot_frame", robot_frame);
-  getInput("global_frame", global_frame);
   getInput("angular_distance_weight", angular_distance_weight);
 
-  if (robot_frame.empty() || global_frame.empty()) {
-    if (!getInput("pose", pose)) {
+  if (!getInput("pose", pose)) {
+    if (!getInput("robot_frame", robot_frame)) {
       RCLCPP_ERROR(
         config().blackboard->get<rclcpp::Node::SharedPtr>("node")->get_logger(),
-        "No pose specified for %s", name().c_str());
+        "Neither pose nor robot_frame specified for %s", name().c_str());
       return BT::NodeStatus::FAILURE;
     }
-  } else {
     if (!nav2_util::getCurrentPose(
-        pose, *tf_buffer_, global_frame, robot_frame,
+        pose, *tf_buffer_, path.header.frame_id, robot_frame,
         transform_tolerance)) {
       return BT::NodeStatus::FAILURE;
     }
@@ -90,24 +88,29 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   // expand forwards to extract desired length
   double length = 0;
   auto end = current_pose - path.poses.begin();
-  while (static_cast<int>(end) < static_cast<int>(path.poses.size() - 1) && length < distance_forward) {
+  while (static_cast<int>(end) < static_cast<int>(path.poses.size() - 1) && length <= distance_forward) {
     length += std::hypot(
       path.poses[end + 1].pose.position.x - path.poses[end].pose.position.x,
       path.poses[end + 1].pose.position.y - path.poses[end].pose.position.y);
     end++;
   }
-  end++;  // end is exclusive
+  if (length <= distance_forward) {
+    end++;  // add last path pose
+  }
 
   // expand backwards to extract desired length
   auto begin = current_pose - path.poses.begin();
   length = 0;
-  while (begin > 0 && length < distance_backward) {
+  while (begin > 0 && length <= distance_backward) {
     length += std::hypot(
-      path.poses[begin + 1].pose.position.x -
+      path.poses[begin - 1].pose.position.x -
       path.poses[begin].pose.position.x,
-      path.poses[begin + 1].pose.position.y -
+      path.poses[begin - 1].pose.position.y -
       path.poses[begin].pose.position.y);
     begin--;
+  }
+  if (length > distance_backward) {
+    begin++;
   }
 
   path.poses = std::vector<geometry_msgs::msg::PoseStamped>(
