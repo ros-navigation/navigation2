@@ -170,7 +170,7 @@ private:
 
         // skip to downsample if can be skipped (no forward/reverse direction change)
         if (!is_cusp && i > 1 && i < path_optim.size() - 2 &&
-          (i - last_i) < params.input_downsampling_factor)
+          static_cast<int>(i - last_i) < params.input_downsampling_factor)
         {
           continue;
         }
