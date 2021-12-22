@@ -77,7 +77,7 @@ TEST(NodeLatticeTest, parser_test)
 
   EXPECT_NEAR(myPrimitives[0].poses[1]._x, 0.05284, 0.01);
   EXPECT_NEAR(myPrimitives[0].poses[1]._y, -0.00266, 0.01);
-  EXPECT_NEAR(myPrimitives[0].poses[1]._theta, -0.10064988343582648, 0.01);
+  EXPECT_NEAR(myPrimitives[0].poses[1]._theta, -0.10064988343582648, 0.015);
 }
 
 TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
@@ -94,7 +94,7 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
   info.analytic_expansion_ratio = 1;
   info.lattice_filepath = filePath;
   info.cache_obstacle_heuristic = true;
-  info.allow_reverse_expansion = false;
+  info.allow_reverse_expansion = true;
 
   unsigned int x = 100;
   unsigned int y = 100;

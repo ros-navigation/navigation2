@@ -63,12 +63,17 @@ void SmacPlannerLattice::configure(
 
   // General planner params
   double analytic_expansion_max_length_m;
+  bool smooth_path;
+
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".allow_unknown", _allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
   node->get_parameter(name + ".max_iterations", _max_iterations);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".smooth_path", rclcpp::ParameterValue(true));
+  node->get_parameter(name + ".smooth_path", smooth_path);
 
   // Default to a well rounded model: 16 bin, 0.4m turning radius, ackermann model
   nav2_util::declare_parameter_if_not_declared(
@@ -161,10 +166,12 @@ void SmacPlannerLattice::configure(
     _metadata.number_of_headings);
 
   // Initialize path smoother
-  SmootherParams params;
-  params.get(node, name);
-  _smoother = std::make_unique<Smoother>(params);
-  _smoother->initialize(_metadata.min_turning_radius);
+  if (smooth_path) {
+    SmootherParams params;
+    params.get(node, name);
+    _smoother = std::make_unique<Smoother>(params);
+    _smoother->initialize(_metadata.min_turning_radius);
+  }
 
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlannerLattice with "
@@ -270,9 +277,21 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
   // Convert to world coordinates
   plan.poses.reserve(path.size());
+  geometry_msgs::msg::PoseStamped last_pose = pose;
   for (int i = path.size() - 1; i >= 0; --i) {
     pose.pose = getWorldCoords(path[i].x, path[i].y, _costmap);
     pose.pose.orientation = getWorldOrientation(path[i].theta);
+    if (fabs(pose.pose.position.x - last_pose.pose.position.x) < 1e-4 &&
+      fabs(pose.pose.position.y - last_pose.pose.position.y) < 1e-4 &&
+      fabs(tf2::getYaw(pose.pose.orientation) - tf2::getYaw(last_pose.pose.orientation)) < 1e-4)
+    {
+      RCLCPP_DEBUG(
+        _logger,
+        "Removed a path from the path due to replication. "
+        "Make sure your minimum control set does not contain duplicate values!");
+      continue;
+    }
+    last_pose = pose;
     plan.poses.push_back(pose);
   }
 
@@ -292,7 +311,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 #endif
 
   // Smooth plan
-  if (num_iterations > 1 && plan.poses.size() > 6) {
+  if (_smoother && num_iterations > 1) {
     _smoother->smooth(plan, _costmap, time_remaining);
   }
 
@@ -356,6 +375,12 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       } else if (name == _name + ".allow_reverse_expansion") {
         reinit_a_star = true;
         _search_info.allow_reverse_expansion = parameter.as_bool();
+      } else if (name == _name + ".smooth_path") {
+        if (parameter.as_bool()) {
+          reinit_smoother = true;
+        } else {
+          _smoother.reset();
+        }
       }
     } else if (type == ParameterType::PARAMETER_INTEGER) {
       if (name == _name + ".max_iterations") {
@@ -371,7 +396,9 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == _name + ".lattice_filepath") {
         reinit_a_star = true;
-        reinit_smoother = true;
+        if (_smoother) {
+          reinit_smoother = true;
+        }
         _search_info.lattice_filepath = parameter.as_string();
         _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
         _search_info.minimum_turning_radius =

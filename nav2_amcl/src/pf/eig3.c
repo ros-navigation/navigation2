@@ -13,11 +13,6 @@
 static int n = 3;
 #endif
 
-static double hypot2(double x, double y)
-{
-  return sqrt(x * x + y * y);
-}
-
 // Symmetric Householder reduction to tridiagonal form.
 
 static void tred2(double V[n][n], double d[n], double e[n])
@@ -177,7 +172,7 @@ static void tql2(double V[n][n], double d[n], double e[n])
 
         g = d[l];
         p = (d[l + 1] - g) / (2.0 * e[l]);
-        r = hypot2(p, 1.0);
+        r = hypot(p, 1.0);
         if (p < 0) {
           r = -r;
         }
@@ -205,7 +200,7 @@ static void tql2(double V[n][n], double d[n], double e[n])
           s2 = s;
           g = c * e[i];
           h = c * p;
-          r = hypot2(p, e[i]);
+          r = hypot(p, e[i]);
           e[i + 1] = s * r;
           s = e[i] / r;
           c = p / r;

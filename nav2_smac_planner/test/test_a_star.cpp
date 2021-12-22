@@ -167,6 +167,10 @@ TEST(AStarTest, test_a_star_se2)
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }
+  // no skipped nodes
+  for (unsigned int i = 1; i != path.size(); i++) {
+    EXPECT_LT(hypotf(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y), 2.1f);
+  }
 
   delete costmapA;
 }
@@ -216,10 +220,14 @@ TEST(AStarTest, test_a_star_lattice)
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
 
   // check path is the right size and collision free
-  EXPECT_EQ(num_it, 22);
-  EXPECT_EQ(path.size(), 50u);
+  EXPECT_EQ(num_it, 14);
+  EXPECT_EQ(path.size(), 47u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
+  }
+  // no skipped nodes
+  for (unsigned int i = 1; i != path.size(); i++) {
+    EXPECT_LT(hypotf(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y), 2.1f);
   }
 
   delete costmapA;
