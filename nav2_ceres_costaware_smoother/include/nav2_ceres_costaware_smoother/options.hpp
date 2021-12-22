@@ -99,7 +99,7 @@ struct SmootherParams
   double distance_weight{0.0};
   double curvature_weight{0.0};
   double max_curvature{0.0};
-  double max_time{10.0}; // adjusted by action goal, not by parameters 
+  double max_time{10.0};  // adjusted by action goal, not by parameters
   int input_downsampling_factor{1};
   int output_upsampling_factor{1};
   bool reversing_enabled{true};
