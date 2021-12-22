@@ -1,0 +1,32 @@
+# All settings not listed here will use the Doxygen default values.
+
+PROJECT_NAME           = "nav2_tracetools"
+PROJECT_NUMBER         = master
+PROJECT_BRIEF          = "LTTng tracing provider wrapper for navigation2 ROS 2 meta-package."
+
+INPUT                  = ./include
+
+RECURSIVE              = YES
+OUTPUT_DIRECTORY       = doc_output
+
+EXTRACT_ALL            = YES
+SORT_MEMBER_DOCS       = NO
+
+GENERATE_LATEX         = NO
+
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+PREDEFINED             = \
+    "TRACETOOLS_PUBLIC="
+
+EXCLUDE_SYMBOLS        = \
+    "DECLARE_TRACEPOINT" \
+    "_demangle_symbol" \
+    "_get_symbol_funcptr"
+
+# Tag files that do not exist will produce a warning and cross-project linking will not work.
+TAGFILES += "../../../../../doxygen_tag_files/cppreference-doxygen-web.tag.xml=http://en.cppreference.com/w/"
+# Uncomment to generate tag files for cross-project linking.
+#   (path relative to workspace dir: doxygen_tag_files/$PACKAGE_NAME.tag)
+#GENERATE_TAGFILE = "../../../../../doxygen_tag_files/tracetools.tag"

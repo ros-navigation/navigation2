@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>nav2_tracetools</name>
+  <version>0.1.0</version>
+  <description>
+    LTTng tracing provider wrapper for navigation2 ROS 2 meta-package.
+  </description>
+  <maintainer email="v.mayoralv@gmail.com">Víctor Mayoral-Vilches</maintainer>
+  <license>Apache 2.0</license>
+  <author email="v.mayoralv@gmail.com">Víctor Mayoral-Vilches</author>
+
+  <buildtool_depend>ament_cmake_ros</buildtool_depend>
+  <buildtool_depend>pkg-config</buildtool_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
