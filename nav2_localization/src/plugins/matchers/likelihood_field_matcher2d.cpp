@@ -147,14 +147,12 @@ void LikelihoodFieldMatcher2d::preComputeLikelihoodField()
   std::vector<int> occupied_cells;
 
   // Identify all the occupied cells
-  for (auto index = 0; static_cast<std::size_t>(index) < map_->info.width * map_->info.height;
-    index++)
-  {
-    if (map_->data[index] == 100) {      // The cell is occupied
-      pre_computed_likelihood_field_[index] = 0.0;
-      occupied_cells.push_back(index);
+  for (auto idx = 0; static_cast<std::size_t>(idx) < map_->info.width * map_->info.height; idx++) {
+    if (map_->data[idx] == 100) {      // The cell is occupied
+      pre_computed_likelihood_field_[idx] = 0.0;
+      occupied_cells.push_back(idx);
     } else {
-      pre_computed_likelihood_field_[index] = max_likelihood_distace_;
+      pre_computed_likelihood_field_[idx] = max_likelihood_distace_;
     }
   }
 
