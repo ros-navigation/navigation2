@@ -19,6 +19,10 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+
+// "tf2_geometry_msgs/tf2_geometry_msgs.hpp" MUST be included
+//  before "tf2/utils.h" to avoid undefined reference linking errors
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
 
 using nav2_localization::DiffDriveOdomMotionModel;

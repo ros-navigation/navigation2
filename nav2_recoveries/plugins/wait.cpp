@@ -44,7 +44,7 @@ Status Wait::onCycleUpdate()
   auto time_left =
     std::chrono::duration_cast<std::chrono::nanoseconds>(wait_end_ - current_point).count();
 
-  feedback_->time_left = rclcpp::Duration(time_left);
+  feedback_->time_left = rclcpp::Duration(rclcpp::Duration::from_nanoseconds(time_left));
   action_server_->publish_feedback(feedback_);
 
   if (time_left > 0) {

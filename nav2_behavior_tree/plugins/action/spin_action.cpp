@@ -28,7 +28,10 @@ SpinAction::SpinAction(
 {
   double dist;
   getInput("spin_dist", dist);
+  double time_allowance;
+  getInput("time_allowance", time_allowance);
   goal_.target_yaw = dist;
+  goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
 }
 
 void SpinAction::on_tick()

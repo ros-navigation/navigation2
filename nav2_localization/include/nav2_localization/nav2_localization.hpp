@@ -185,6 +185,10 @@ protected:
 
   laser_geometry::LaserProjection laser_to_pc_projector_;
 
+  // Initial pose and odom states
+  bool initial_pose_set_;
+  bool initial_odom_set_;
+
   // Sample Motion Model Plugin
   pluginlib::ClassLoader<nav2_localization::SampleMotionModel> sample_motion_model_loader_;
   nav2_localization::SampleMotionModel::Ptr sample_motion_model_;
@@ -209,10 +213,6 @@ protected:
   std::vector<std::string> default_ids_;
   std::vector<std::string> default_types_;
   std::vector<std::string> localization_ids_;
-
-  // Initial pose
-  bool initial_pose_set_;
-  bool initial_odom_set_;
 
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     estimated_pose_pub_;

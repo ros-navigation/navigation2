@@ -37,8 +37,9 @@ class MapSaver : public nav2_util::LifecycleNode
 public:
   /**
    * @brief Constructor for the nav2_map_server::MapSaver
+   * @param options Additional options to control creation of the node.
    */
-  MapSaver();
+  explicit MapSaver(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   /**
    * @brief Destructor for the nav2_map_server::MapServer
@@ -86,12 +87,6 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when Error is raised
-   * @param state Lifecycle Node's state
-   * @return Success or Failure
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Map saving service callback
@@ -109,6 +104,8 @@ protected:
   // Default values for map thresholds
   double free_thresh_default_;
   double occupied_thresh_default_;
+  // param for handling QoS configuration
+  bool map_subscribe_transient_local_;
 
   // The name of the service for saving a map from topic
   const std::string save_map_service_name_{"save_map"};

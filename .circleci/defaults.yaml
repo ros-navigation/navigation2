@@ -1,0 +1,16 @@
+_common: &common
+  "test-result-base": "test_results"
+
+"clean.packages":
+  <<: *common
+"build":
+  <<: *common
+  "executor": "parallel"
+  "parallel-workers": 2
+  "symlink-install": true
+"test":
+  <<: *common
+  "executor": "parallel"
+  "parallel-workers": 1
+"test-result":
+  <<: *common

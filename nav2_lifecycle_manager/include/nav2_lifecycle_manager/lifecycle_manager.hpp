@@ -18,14 +18,17 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
 #include "nav2_util/lifecycle_service_client.hpp"
+#include "nav2_util/node_thread.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
 #include "std_srvs/srv/trigger.hpp"
+#include "bondcpp/bond.hpp"
 
 namespace nav2_lifecycle_manager
 {
@@ -34,7 +37,7 @@ using nav2_msgs::srv::ManageLifecycleNodes;
 /**
  * @class nav2_lifecycle_manager::LifecycleManager
  * @brief Implements service interface to transition the lifecycle nodes of
- * Navigation2 stack. It receives transition request and then uses lifecycle
+ * Nav2 stack. It receives transition request and then uses lifecycle
  * interface to change lifecycle node's state.
  */
 class LifecycleManager : public rclcpp::Node
@@ -42,16 +45,18 @@ class LifecycleManager : public rclcpp::Node
 public:
   /**
    * @brief A constructor for nav2_lifecycle_manager::LifecycleManager
+   * @param options Additional options to control creation of the node.
    */
-  LifecycleManager();
+  explicit LifecycleManager(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
    * @brief A destructor for nav2_lifecycle_manager::LifecycleManager
    */
   ~LifecycleManager();
 
 protected:
-  // The ROS node to use when calling lifecycle services
-  rclcpp::Node::SharedPtr service_client_node_;
+  // Callback group used by services and timers
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  std::unique_ptr<nav2_util::NodeThread> service_thread_;
 
   // The services provided by this node
   rclcpp::Service<ManageLifecycleNodes>::SharedPtr manager_srv_;
@@ -121,10 +126,37 @@ protected:
    */
   void destroyLifecycleServiceClients();
 
+  // Support function for creating bond timer
+  /**
+   * @brief Support function for creating bond timer
+   */
+  void createBondTimer();
+
+  // Support function for creating bond connection
+  /**
+   * @brief Support function for creating bond connections
+   */
+  bool createBondConnection(const std::string & node_name);
+
+  // Support function for killing bond connections
+  /**
+   * @brief Support function for killing bond connections
+   */
+  void destroyBondTimer();
+
+  // Support function for checking on bond connections
+  /**
+   * @ brief Support function for checking on bond connections
+   * will take down system if there's something non-responsive
+   */
+  void checkBondConnections();
+
   /**
    * @brief For a node, transition to the new target state
    */
-  bool changeStateForNode(const std::string & node_name, std::uint8_t transition);
+  bool changeStateForNode(
+    const std::string & node_name,
+    std::uint8_t transition);
 
   /**
    * @brief For each node in the map, transition to the new target state
@@ -136,6 +168,14 @@ protected:
    * @brief Helper function to highlight the output on the console
    */
   void message(const std::string & msg);
+
+  // Timer thread to look at bond connections
+  rclcpp::TimerBase::SharedPtr init_timer_;
+  rclcpp::TimerBase::SharedPtr bond_timer_;
+  std::chrono::milliseconds bond_timeout_;
+
+  // A map of all nodes to check bond connection
+  std::map<std::string, std::shared_ptr<bond::Bond>> bond_map_;
 
   // A map of all nodes to be controlled
   std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map_;

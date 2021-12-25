@@ -20,6 +20,9 @@
 
 #include "angles/angles.h"
 
+// "tf2_geometry_msgs/tf2_geometry_msgs.hpp" MUST be included
+//  before "tf2/utils.h" to avoid undefined symbol during runtime
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
 #include "tf2/LinearMath/Quaternion.h"
 
@@ -67,12 +70,12 @@ void ParticleFilterSolver::initPose(const geometry_msgs::msg::PoseWithCovariance
   // Initialize particles randomly around init_pose within a radius particles_init_radius_
   geometry_msgs::msg::Pose temp_pose;
 
-  for (int i = 0; i < particles_count_; i++) {
-    std::random_device rand_device;
-    std::mt19937 gen(rand_device());
-    std::normal_distribution<double> pose_dist(0, particles_init_radius_sd_);
-    std::normal_distribution<double> yaw_dist(0, particles_init_yaw_sd_);
+  std::random_device rand_device;
+  std::mt19937 gen(rand_device());
+  std::normal_distribution<double> pose_dist(0, particles_init_radius_sd_);
+  std::normal_distribution<double> yaw_dist(0, particles_init_yaw_sd_);
 
+  for (int i = 0; i < particles_count_; i++) {
     temp_pose.position.x = init_pose.pose.pose.position.x + pose_dist(gen);
     temp_pose.position.y = init_pose.pose.pose.position.y + pose_dist(gen);
 
@@ -173,7 +176,7 @@ geometry_msgs::msg::PoseWithCovarianceStamped ParticleFilterSolver::getMeanPose(
 
   // Calculate covariance of the particle distribution
   double cov_x = 0, cov_y = 0, cov_yaw_sin = 0, cov_yaw_cos = 0;
-  for (int i = 0; i < particles_.size(); i++) {
+  for (std::size_t i = 0; i < particles_.size(); i++) {
     cov_x += (particles_[i].pose_.position.x - mean_x) * (particles_[i].pose_.position.x - mean_x);
     cov_y += (particles_[i].pose_.position.y - mean_y) * (particles_[i].pose_.position.y - mean_y);
 

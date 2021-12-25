@@ -26,13 +26,20 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "angles/angles.h"
 #include "nav2_msgs/action/spin.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/node_thread.hpp"
+#include "geometry_msgs/msg/point32.hpp"
+#include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
 
 #include "tf2/utils.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 
 namespace nav2_system_tests
@@ -64,18 +71,29 @@ public:
 private:
   void sendInitialPose();
 
+  void sendFakeCostmap(float angle);
+  void sendFakeOdom(float angle);
+
   void amclPoseCallback(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr);
 
   bool is_active_;
   bool initial_pose_received_;
+  bool make_fake_costmap_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   rclcpp::Node::SharedPtr node_;
 
   // Publisher to publish initial pose
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr publisher_;
+
+  // Publisher to publish fake costmap raw
+  rclcpp::Publisher<nav2_msgs::msg::Costmap>::SharedPtr fake_costmap_publisher_;
+
+  // Publisher to publish fake costmap footprint
+  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr fake_footprint_publisher_;
 
   // Subscriber for amcl pose
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;

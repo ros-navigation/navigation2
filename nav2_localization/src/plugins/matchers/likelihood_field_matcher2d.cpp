@@ -22,8 +22,12 @@
 #include "nav2_localization/plugins/matchers/matcher2d_base.hpp"
 #include "nav2_localization/plugins/matchers/likelihood_field_matcher2d.hpp"
 #include "nav2_localization/map_utils.hpp"
-#include "tf2/utils.h"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
+
+// "tf2_geometry_msgs/tf2_geometry_msgs.hpp" MUST be included
+//  before "tf2/utils.h" to avoid undefined symbol during runtime
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2/utils.h"
 
 namespace nav2_localization
 {
@@ -112,7 +116,7 @@ double LikelihoodFieldMatcher2d::getScanProbability(
 
     // Get the likelihood field probability at that endpoint
     double dist_prob;
-    if (map_index < 0 || map_index >= map_->data.size()) {
+    if (map_index < 0 || static_cast<std::size_t>(map_index) >= map_->data.size()) {
       dist_prob = max_likelihood_dist_prob_;
     } else {
       dist_prob = pre_computed_likelihood_field_[map_index];
@@ -143,12 +147,12 @@ void LikelihoodFieldMatcher2d::preComputeLikelihoodField()
   std::vector<int> occupied_cells;
 
   // Identify all the occupied cells
-  for (auto index = 0; index < map_->info.width * map_->info.height; index++) {
-    if (map_->data[index] == 100) {      // The cell is occupied
-      pre_computed_likelihood_field_[index] = 0.0;
-      occupied_cells.push_back(index);
+  for (auto idx = 0; static_cast<std::size_t>(idx) < map_->info.width * map_->info.height; idx++) {
+    if (map_->data[idx] == 100) {      // The cell is occupied
+      pre_computed_likelihood_field_[idx] = 0.0;
+      occupied_cells.push_back(idx);
     } else {
-      pre_computed_likelihood_field_[index] = max_likelihood_distace_;
+      pre_computed_likelihood_field_[idx] = max_likelihood_distace_;
     }
   }
 
@@ -159,7 +163,7 @@ void LikelihoodFieldMatcher2d::preComputeLikelihoodField()
   }
 
   // Apply zero-mean norrmal distribution
-  for (auto index = 0; index < map_->info.width * map_->info.height; index++) {
+  for (std::size_t index = 0; index < map_->info.width * map_->info.height; index++) {
     pre_computed_likelihood_field_[index] =
       (1.0 / (sqrt(2 * M_PI) * sigma_hit_)) *
       exp(

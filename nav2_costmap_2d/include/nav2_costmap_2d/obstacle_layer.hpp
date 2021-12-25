@@ -61,28 +61,76 @@
 namespace nav2_costmap_2d
 {
 
+/**
+ * @class ObstacleLayer
+ * @brief Takes in laser and pointcloud data to populate into 2D costmap
+ */
 class ObstacleLayer : public CostmapLayer
 {
 public:
+  /**
+   * @brief A constructor
+   */
   ObstacleLayer()
   {
     costmap_ = NULL;  // this is the unsigned char* member of parent class Costmap2D.
   }
 
+  /**
+   * @brief A destructor
+   */
   virtual ~ObstacleLayer();
+  /**
+   * @brief Initialization process of layer on startup
+   */
   virtual void onInitialize();
+  /**
+   * @brief Update the bounds of the master costmap by this layer's update dimensions
+   * @param robot_x X pose of robot
+   * @param robot_y Y pose of robot
+   * @param robot_yaw Robot orientation
+   * @param min_x X min map coord of the window to update
+   * @param min_y Y min map coord of the window to update
+   * @param max_x X max map coord of the window to update
+   * @param max_y Y max map coord of the window to update
+   */
   virtual void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
     double * min_y,
     double * max_x,
     double * max_y);
+  /**
+   * @brief Update the costs in the master costmap in the window
+   * @param master_grid The master costmap grid to update
+   * @param min_x X min map coord of the window to update
+   * @param min_y Y min map coord of the window to update
+   * @param max_x X max map coord of the window to update
+   * @param max_y Y max map coord of the window to update
+   */
   virtual void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j);
 
-  virtual void activate();
+  /**
+   * @brief Deactivate the layer
+   */
   virtual void deactivate();
+
+  /**
+   * @brief Activate the layer
+   */
+  virtual void activate();
+
+  /**
+   * @brief Reset this costmap
+   */
   virtual void reset();
+
+  /**
+   * @brief If clearing operations should be processed on this layer or not
+   */
+  virtual bool isClearable() {return true;}
+
   /**
    * @brief triggers the update of observations buffer
    */
@@ -150,14 +198,20 @@ protected:
     double * max_x,
     double * max_y);
 
+  /**
+   * @brief Process update costmap with raytracing the window bounds
+   */
   void updateRaytraceBounds(
-    double ox, double oy, double wx, double wy, double range,
+    double ox, double oy, double wx, double wy, double max_range, double min_range,
     double * min_x, double * min_y,
     double * max_x,
     double * max_y);
 
   std::vector<geometry_msgs::msg::Point> transformed_footprint_;
   bool footprint_clearing_enabled_;
+  /**
+   * @brief Clear costmap layer info below the robot's footprint
+   */
   void updateFootprint(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
     double * min_y,
@@ -170,7 +224,7 @@ protected:
   /// @brief Used to project laser scans into point clouds
   laser_geometry::LaserProjection projector_;
   /// @brief Used for the observation message filters
-  std::vector<std::shared_ptr<message_filters::SubscriberBase>> observation_subscribers_;
+  std::vector<std::shared_ptr<message_filters::SubscriberBase<>>> observation_subscribers_;
   /// @brief Used to make sure that transforms are available for each sensor
   std::vector<std::shared_ptr<tf2_ros::MessageFilterBase>> observation_notifiers_;
   /// @brief Used to store observations from various sensors
@@ -185,6 +239,7 @@ protected:
   std::vector<nav2_costmap_2d::Observation> static_marking_observations_;
 
   bool rolling_window_;
+  bool was_reset_;
   int combination_method_;
 };
 

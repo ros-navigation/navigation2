@@ -1,18 +1,27 @@
 version: 2.1
-orbs:
-  codecov: codecov/codecov@1.0.5
 
-references:
-  common_environment: &common_environment
-    ROS_WS: "/opt/ros_ws"
-    UNDERLAY_WS: "/opt/underlay_ws"
-    OVERLAY_WS: "/opt/overlay_ws"
-    CCACHE_LOGFILE: "/tmp/ccache.log"
-    CCACHE_MAXSIZE: "200M"
-    MAKEFLAGS: "-j 1 -l 2"
-    RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED: "1"
-    RETEST_UNTIL_PASS: "2"
+_commands:
   common_commands: &common_commands
+    ccache_stats:
+      description: "CCache Stats"
+      parameters:
+        workspace:
+          type: string
+        when:
+          type: string
+          default: on_success
+      steps:
+        - run:
+            name: CCache Stats
+            working_directory: << parameters.workspace >>
+            environment:
+              CCACHE_DIR: << parameters.workspace >>/.ccache
+            command: |
+              ccache -s # show stats
+              ccache -z # zero stats
+              ccache -V # show version
+              ccache -p # show config
+            when: << parameters.when >>
     restore_from_cache:
       description: "Restore From Cache"
       parameters:
@@ -23,11 +32,17 @@ references:
       steps:
         - restore_cache:
             name: Restore Cache << parameters.key >>
-            key: "<< parameters.key >>-v1\
-              -{{ arch }}\
-              -{{ .Branch }}\
-              -{{ .Environment.CIRCLE_PR_NUMBER }}\
-              -{{ checksum  \"<< parameters.workspace >>/checksum.txt\" }}"
+            keys:
+              - "<< parameters.key >>-v3\
+                -{{ arch }}\
+                -{{ .Branch }}\
+                -{{ .Environment.CIRCLE_PR_NUMBER }}\
+                -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
+              - "<< parameters.key >>-v3\
+                -{{ arch }}\
+                -main\
+                -<no value>\
+                -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
     save_to_cache:
       description: "Save To Cache"
       parameters:
@@ -43,14 +58,17 @@ references:
       steps:
         - save_cache:
             name: Save Cache << parameters.key >>
-            key: "<< parameters.key >>-v1\
+            key: "<< parameters.key >>-v3\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
-              -{{ checksum  \"<< parameters.workspace >>/checksum.txt\" }}\
+              -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}\
               -{{ epoch }}"
             paths:
-              - << parameters.path >>
+              - << parameters.path >>/.ccache
+              - << parameters.path >>/build
+              - << parameters.path >>/install
+              - << parameters.path >>/log
             when: << parameters.when >>
     install_dependencies:
       description: "Install Dependencies"
@@ -65,12 +83,20 @@ references:
             working_directory: << parameters.workspace >>
             command: |
               . << parameters.underlay >>/install/setup.sh
-              cat << parameters.underlay >>/checksum.txt > checksum.txt
-              vcs export --exact src | \
-                (echo vcs_export && cat) >> checksum.txt
-              sha256sum $PWD/checksum.txt >> checksum.txt
+              AMENT_PREFIX_PATH=$(echo "$AMENT_PREFIX_PATH" | \
+                sed -e 's|:/opt/ros/'$ROS_DISTRO'$||')
+              if [ "$AMENT_PREFIX_PATH" == "/opt/ros/$ROS_DISTRO" ]
+              then
+                unset AMENT_PREFIX_PATH
+              fi
+
+              cat << parameters.underlay >>/lockfile.txt > lockfile.txt
+              vcs export --exact << parameters.underlay >>/src | \
+                (echo vcs_export && cat) >> lockfile.txt
+              sha256sum $PWD/lockfile.txt >> lockfile.txt
+
               apt-get update
-              rosdep update
+              rosdep update --rosdistro $ROS_DISTRO
               dependencies=$(
                 rosdep install -q -y \
                   --from-paths src \
@@ -82,9 +108,9 @@ references:
                 awk '$1 ~ /^resolution\:/' | \
                 awk -F'[][]' '{print $2}' | \
                 tr -d \, | xargs -n1 | sort -u | xargs)
-              dpkg -s $dependencies | \
-                (echo workspace_dependencies && cat) >> checksum.txt
-              sha256sum $PWD/checksum.txt >> checksum.txt
+              dpkg --list dpkg $dependencies | \
+                (echo workspace_dependencies && cat) >> lockfile.txt
+              sha256sum $PWD/lockfile.txt >> lockfile.txt
     setup_workspace:
       description: "Setup Workspace"
       parameters:
@@ -101,32 +127,78 @@ references:
           type: boolean
       steps:
         - store_artifacts:
-            path: << parameters.workspace >>/checksum.txt
+            path: << parameters.workspace >>/lockfile.txt
         - restore_from_cache:
             key: << parameters.key >>
             workspace: << parameters.workspace >>
         - when:
             condition: << parameters.build >>
             steps:
+              - ccache_stats:
+                  workspace: << parameters.workspace >>
+                  when: always
               - run:
                   name: Build Workspace | << parameters.workspace >>
                   working_directory: << parameters.workspace >>
+                  environment:
+                    CCACHE_DIR: << parameters.workspace >>/.ccache
                   command: |
-                    if [ -d install ] && [ ! -f build_failed ]
+                    colcon cache lock
+
+                    BUILD_UNFINISHED=$(
+                      colcon list \
+                        --names-only \
+                        --packages-skip-build-finished \
+                      | xargs)
+                    echo BUILD_UNFINISHED: $BUILD_UNFINISHED
+
+                    BUILD_FAILED=$(
+                      colcon list \
+                        --names-only \
+                        --packages-select-build-failed \
+                      | xargs)
+                    echo BUILD_FAILED: $BUILD_FAILED
+
+                    BUILD_INVALID=$(
+                      colcon list \
+                        --names-only \
+                        --packages-select-cache-invalid \
+                        --packages-select-cache-key build \
+                      | xargs)
+                    echo BUILD_INVALID: $BUILD_INVALID
+
+                    BUILD_PACKAGES=""
+                    if [ -n "$BUILD_UNFINISHED" ] || \
+                       [ -n "$BUILD_FAILED" ] || \
+                       [ -n "$BUILD_INVALID" ]
                     then
-                      echo "Skipping Build"
-                    else
-                      . << parameters.underlay >>/install/setup.sh
-                      rm -rf build install log
-                      colcon build \
-                        --symlink-install \
-                        --mixin << parameters.mixins >>
-                      rm -f build_failed
+                      BUILD_PACKAGES=$(
+                        colcon list \
+                          --names-only \
+                          --packages-above \
+                            $BUILD_UNFINISHED \
+                            $BUILD_FAILED \
+                            $BUILD_INVALID \
+                        | xargs)
                     fi
+                    echo BUILD_PACKAGES: $BUILD_PACKAGES
+
+                    colcon clean packages --yes \
+                      --packages-select ${BUILD_PACKAGES} \
+                      --base-select install
+
+                    . << parameters.underlay >>/install/setup.sh
+                    colcon build \
+                      --packages-select ${BUILD_PACKAGES} \
+                      --mixin << parameters.mixins >>
+              - ccache_stats:
+                  workspace: << parameters.workspace >>
+                  when: always
               - save_to_cache:
                   key: << parameters.key >>
                   path: << parameters.workspace >>
                   workspace: << parameters.workspace >>
+                  when: always
               - run:
                   name: Copy Build Logs
                   working_directory: << parameters.workspace >>
@@ -137,31 +209,76 @@ references:
     test_workspace:
       description: "Test Workspace"
       parameters:
+        key:
+          type: string
         workspace:
           type: string
+        cache_test:
+          type: boolean
       steps:
         - run:
             name: Test Workspace | << parameters.workspace >>
             working_directory: << parameters.workspace >>
             command: |
-              . install/setup.sh
+              TEST_FAILURES=$(
+                colcon list \
+                  --names-only \
+                  --packages-select-test-failures \
+                | xargs)
+              echo TEST_FAILURES: $TEST_FAILURES
+
+              TEST_INVALID=$(
+                colcon list \
+                  --names-only \
+                  --packages-select-cache-invalid \
+                  --packages-select-cache-key test \
+                | xargs)
+              echo TEST_INVALID: $TEST_INVALID
+
+              TEST_PACKAGES=""
+              if [ -n "$TEST_FAILURES" ] || \
+                 [ -n "$TEST_INVALID" ]
+              then
+                TEST_PACKAGES=$(
+                  colcon list \
+                    --names-only \
+                    --packages-above \
+                      $TEST_FAILURES \
+                      $TEST_INVALID)
+              fi
+              if ( ! << parameters.cache_test >> )
+              then
+                TEST_PACKAGES=$(
+                  colcon list \
+                    --names-only)
+              fi
               TEST_PACKAGES=$(
-                colcon list --names-only | \
-                  circleci tests split \
-                    --split-by=timings \
-                    --timings-type=classname \
-                    --show-counts | \
-                  xargs)
+                echo $TEST_PACKAGES \
+                | circleci tests split \
+                  --split-by=timings \
+                  --timings-type=classname \
+                  --show-counts \
+                | xargs)
+              echo TEST_PACKAGES: $TEST_PACKAGES
+
+              colcon clean packages --yes \
+                --packages-select ${TEST_PACKAGES} \
+                --base-select test_result
+
+              . install/setup.sh
               set -o xtrace
               colcon test \
                 --packages-select ${TEST_PACKAGES}
-              colcon test \
-                --packages-select ${TEST_PACKAGES} \
-                --packages-select-test-failures \
-                --retest-until-pass ${RETEST_UNTIL_PASS} \
-                --ctest-args --test-regex "test_.*"
               colcon test-result \
                 --verbose
+        - when:
+            condition: << parameters.cache_test >>
+            steps:
+              - save_to_cache:
+                  key: << parameters.key >>
+                  path: << parameters.workspace >>
+                  workspace: << parameters.workspace >>
+                  when: always
         - run:
             name: Copy Test Logs
             working_directory: << parameters.workspace >>
@@ -169,29 +286,27 @@ references:
             when: always
         - store_artifacts:
             path: << parameters.workspace >>/log/test
-        - run:
-            name: Copy Test Results
-            working_directory: << parameters.workspace >>
-            command: |
-              mkdir test_results/
-              cp -rH build/*/test_results/* test_results
-            when: always
         - store_test_results:
             path: << parameters.workspace >>/test_results
         - store_artifacts:
             path: << parameters.workspace >>/test_results
+
+_steps:
   pre_checkout: &pre_checkout
     run:
       name: Pre Checkout
       command: |
-        mkdir -p $ROS_WS && cd $ROS_WS
+        mkdir -p $ROS_WS/src && cd $ROS_WS
         ln -s /opt/ros/$ROS_DISTRO install
+
         echo $CACHE_NONCE | \
-          (echo cache_nonce && cat) >> checksum.txt
-        sha256sum $PWD/checksum.txt >> checksum.txt
+          (echo cache_nonce && cat) >> lockfile.txt
+        sha256sum $PWD/lockfile.txt >> lockfile.txt
+
         TZ=utc stat -c '%y' /ros_entrypoint.sh | \
-          (echo ros_entrypoint && cat) >> checksum.txt
-        sha256sum $PWD/checksum.txt >> checksum.txt
+          (echo ros_entrypoint && cat) >> lockfile.txt
+        sha256sum $PWD/lockfile.txt >> lockfile.txt
+
         rm -rf $OVERLAY_WS/*
   on_checkout: &on_checkout
     checkout:
@@ -200,34 +315,21 @@ references:
     run:
       name: Post Checkout
       command: |
+        cp $OVERLAY_WS/src/navigation2/.circleci/defaults.yaml $COLCON_DEFAULTS_FILE
         if ! cmp \
-          $OVERLAY_WS/src/navigation2/tools/ros2_dependencies.repos \
-          $UNDERLAY_WS/ros2_dependencies.repos >/dev/null 2>&1
+          $OVERLAY_WS/src/navigation2/tools/underlay.repos \
+          $UNDERLAY_WS/underlay.repos >/dev/null 2>&1
         then
-          echo "Cleaning Underlay"
-          rm -rf $UNDERLAY_WS/*
-          cp $OVERLAY_WS/src/navigation2/tools/ros2_dependencies.repos \
-            $UNDERLAY_WS/ros2_dependencies.repos
-          mkdir -p $UNDERLAY_WS/src
+          echo "Importing Underlay"
+          cp $OVERLAY_WS/src/navigation2/tools/underlay.repos \
+            $UNDERLAY_WS/underlay.repos
           vcs import $UNDERLAY_WS/src \
-            < $UNDERLAY_WS/ros2_dependencies.repos
+            < $UNDERLAY_WS/underlay.repos
         fi
   install_underlay_dependencies: &install_underlay_dependencies
     install_dependencies:
       underlay: /opt/ros_ws
       workspace: /opt/underlay_ws
-  restore_ccache: &restore_ccache
-    restore_from_cache:
-      key: ccache
-      workspace: /opt/underlay_ws
-  ccache_stats: &ccache_stats
-    run:
-      name: CCache Stats
-      command: |
-        ccache -s # show stats
-        ccache -z # zero stats
-        ccache -V # show version
-        ccache -p # show config
   setup_underlay_workspace: &setup_underlay_workspace
     setup_workspace: &setup_workspace_underlay
       key: underlay_ws
@@ -252,18 +354,11 @@ references:
     setup_workspace:
       <<: *setup_workspace_overlay
       build: false
-  store_ccache_logs: &store_ccache_logs
-    store_artifacts:
-        path: /tmp/ccache.log
-  save_ccache: &save_ccache
-    save_to_cache:
-      key: ccache
-      workspace: /opt/underlay_ws
-      path: ~/.ccache
-      when: always
   test_overlay_workspace: &test_overlay_workspace
     test_workspace:
+      key: overlay_ws
       workspace: /opt/overlay_ws
+      cache_test: << parameters.cache_test >>
   collect_overlay_coverage: &collect_overlay_coverage
     run:
       name: Collect Code Coverage
@@ -271,9 +366,18 @@ references:
       command: src/navigation2/tools/code_coverage_report.bash ci
       when: always
   upload_overlay_coverage: &upload_overlay_coverage
-    codecov/upload:
-      file: lcov/project_coverage.info
-      flags: project
+    run:
+      name: Upload Code Coverage
+      working_directory: /opt/overlay_ws
+      command: |
+        curl -s https://codecov.io/bash > codecov
+        codecov_version=$(grep -o 'VERSION=\"[0-9\.]*\"' codecov | cut -d'"' -f2)
+        shasum -a 512 -c <(curl -s "https://raw.githubusercontent.com/codecov/codecov-bash/${codecov_version}/SHA512SUM" | grep -w "codecov")
+        bash codecov \
+          -f "lcov/total_coverage.info" \
+          -R "src/navigation2" \
+          -F "project" \
+          -Z || echo 'Codecov upload failed'
       when: always
 
 commands:
@@ -288,18 +392,12 @@ commands:
     description: "Setup Dependencies"
     steps:
       - *install_underlay_dependencies
-      - *restore_ccache
-      - *ccache_stats
       - *setup_underlay_workspace
-      - *ccache_stats
       - *install_overlay_dependencies
   build_source:
     description: "Build Source"
     steps:
       - *setup_overlay_workspace
-      - *store_ccache_logs
-      - *ccache_stats
-      - *save_ccache
   restore_build:
     description: "Restore Build"
     steps:
@@ -310,6 +408,9 @@ commands:
       - *restore_overlay_workspace
   test_build:
     description: "Test Build"
+    parameters:
+      cache_test:
+        type: boolean
     steps:
       - *test_overlay_workspace
   report_coverage:
@@ -318,25 +419,50 @@ commands:
       - *collect_overlay_coverage
       - *upload_overlay_coverage
 
+_environments:
+  common_environment: &common_environment
+    ROS_WS: "/opt/ros_ws"
+    UNDERLAY_WS: "/opt/underlay_ws"
+    OVERLAY_WS: "/opt/overlay_ws"
+    UNDERLAY_MIXINS: "release ccache"
+    CCACHE_LOGFILE: "/tmp/ccache.log"
+    CCACHE_MAXSIZE: "200M"
+    MAKEFLAGS: "-j 2 -l 2 "
+    COLCON_DEFAULTS_FILE: "/tmp/defaults.yaml"
+    RCUTILS_LOGGING_BUFFERED_STREAM: "0"
+    RCUTILS_LOGGING_USE_STDOUT: "0"
+    DEBIAN_FRONTEND: "noninteractive"
+
 executors:
   debug_exec:
     docker:
-      - image: rosplanning/navigation2:master.debug
+      - image: ghcr.io/ros-planning/navigation2:main
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
       CACHE_NONCE: "Debug"
       OVERLAY_MIXINS: "debug ccache coverage-gcc"
-      UNDERLAY_MIXINS: "release ccache"
   release_exec:
     docker:
-      - image: rosplanning/navigation2:master.release
+      - image: ghcr.io/ros-planning/navigation2:main
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
       CACHE_NONCE: "Release"
       OVERLAY_MIXINS: "release ccache"
-      UNDERLAY_MIXINS: "release ccache"
+
+_jobs:
+  job_test: &job_test
+    parameters:
+      cache_test:
+        type: boolean
+        default: false
+      rmw:
+        default: "rmw_cyclonedds_cpp"
+        type: string
+    parallelism: 1
+    environment:
+      RMW_IMPLEMENTATION: << parameters.rmw >>
 
 jobs:
   debug_build: &debug_build
@@ -349,30 +475,20 @@ jobs:
     executor: release_exec
     <<: *debug_build
   debug_test:
+    <<: *job_test
     executor: debug_exec
-    parallelism: 1
     steps:
       - restore_build
-      - test_build
+      - test_build:
+          cache_test: << parameters.cache_test >>
       - report_coverage
-  release_test: &release_test
+  release_test:
+    <<: *job_test
     executor: release_exec
-    parallelism: 1
     steps:
       - restore_build
-      - test_build
-  test_rmw_connext_cpp:
-    <<: *release_test
-    environment:
-      RMW_IMPLEMENTATION: "rmw_connext_cpp"
-  test_rmw_cyclonedds_cpp:
-    <<: *release_test
-    environment:
-      RMW_IMPLEMENTATION: "rmw_cyclonedds_cpp"
-  test_rmw_fastrtps_cpp:
-    <<: *release_test
-    environment:
-      RMW_IMPLEMENTATION: "rmw_fastrtps_cpp"
+      - test_build:
+          cache_test: << parameters.cache_test >>
 
 workflows:
   version: 2
@@ -382,10 +498,12 @@ workflows:
       - debug_test:
           requires:
             - debug_build
+          cache_test: true
       - release_build
       - release_test:
           requires:
             - release_build
+          cache_test: true
   nightly:
     jobs:
       - debug_build
@@ -393,19 +511,19 @@ workflows:
           requires:
             - debug_build
       - release_build
-      # - test_rmw_connext_cpp:
-      #     requires:
-      #       - release_build
-      - test_rmw_cyclonedds_cpp:
+      - release_test:
           requires:
             - release_build
-      - test_rmw_fastrtps_cpp:
-          requires:
-            - release_build
+          matrix:
+            parameters:
+              rmw:
+                - rmw_connextdds
+                - rmw_cyclonedds_cpp
+                - rmw_fastrtps_cpp
     triggers:
       - schedule:
-          cron: "0 0 * * *"
+          cron: "0 13 * * *"
           filters:
             branches:
               only:
-                - master
+                - main

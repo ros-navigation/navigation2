@@ -26,25 +26,41 @@ FollowPathAction::FollowPathAction(
   const BT::NodeConfiguration & conf)
 : BtActionNode<nav2_msgs::action::FollowPath>(xml_tag_name, action_name, conf)
 {
-  config().blackboard->set("path_updated", false);
 }
 
 void FollowPathAction::on_tick()
 {
   getInput("path", goal_.path);
   getInput("controller_id", goal_.controller_id);
+  getInput("goal_checker_id", goal_.goal_checker_id);
 }
 
 void FollowPathAction::on_wait_for_result()
 {
-  // Check if the goal has been updated
-  if (config().blackboard->get<bool>("path_updated")) {
-    // Reset the flag in the blackboard
-    config().blackboard->set("path_updated", false);
+  // Grab the new path
+  nav_msgs::msg::Path new_path;
+  getInput("path", new_path);
 
-    // Grab the new goal and set the flag so that we send the new goal to
+  // Check if it is not same with the current one
+  if (goal_.path != new_path) {
     // the action server on the next loop iteration
-    getInput("path", goal_.path);
+    goal_.path = new_path;
+    goal_updated_ = true;
+  }
+
+  std::string new_controller_id;
+  getInput("controller_id", new_controller_id);
+
+  if (goal_.controller_id != new_controller_id) {
+    goal_.controller_id = new_controller_id;
+    goal_updated_ = true;
+  }
+
+  std::string new_goal_checker_id;
+  getInput("goal_checker_id", new_goal_checker_id);
+
+  if (goal_.goal_checker_id != new_goal_checker_id) {
+    goal_.goal_checker_id = new_goal_checker_id;
     goal_updated_ = true;
   }
 }

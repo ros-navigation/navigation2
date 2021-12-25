@@ -9,10 +9,12 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(bondcpp REQUIRED)
 
 nav2_package()
 
@@ -35,9 +37,11 @@ set(dependencies
   rclcpp
   rclcpp_action
   rclcpp_lifecycle
+  rclcpp_components
   std_msgs
   std_srvs
   tf2_geometry_msgs
+  bondcpp
 )
 
 ament_target_dependencies(${library_name}
@@ -55,6 +59,8 @@ target_link_libraries(lifecycle_manager
 ament_target_dependencies(lifecycle_manager
   ${dependencies}
 )
+
+rclcpp_components_register_nodes(${library_name} "nav2_lifecycle_manager::LifecycleManager")
 
 install(TARGETS
   ${library_name}

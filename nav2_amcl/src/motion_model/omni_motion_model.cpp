@@ -19,17 +19,13 @@
  *
  */
 
-#include <sys/types.h>
-#include <math.h>
-#include <algorithm>
-
-#include "nav2_amcl/motion_model/motion_model.hpp"
-#include "nav2_amcl/angleutils.hpp"
+#include "nav2_amcl/motion_model/omni_motion_model.hpp"
 
 namespace nav2_amcl
 {
 
-OmniMotionModel::OmniMotionModel(
+void
+OmniMotionModel::initialize(
   double alpha1, double alpha2, double alpha3, double alpha4,
   double alpha5)
 {
@@ -41,7 +37,9 @@ OmniMotionModel::OmniMotionModel(
 }
 
 void
-OmniMotionModel::odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_vector_t & delta)
+OmniMotionModel::odometryUpdate(
+  pf_t * pf, const pf_vector_t & pose,
+  const pf_vector_t & delta)
 {
   // Compute the new sample poses
   pf_sample_set_t * set;
@@ -90,4 +88,7 @@ OmniMotionModel::odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_ve
   }
 }
 
-}  // namespace nav2_amcl
+} // namespace nav2_amcl
+
+#include <pluginlib/class_list_macros.hpp>
+PLUGINLIB_EXPORT_CLASS(nav2_amcl::OmniMotionModel, nav2_amcl::MotionModel)

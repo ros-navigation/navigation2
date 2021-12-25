@@ -153,7 +153,7 @@ void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov);
 void pf_init_model(pf_t * pf, pf_init_model_fn_t init_fn, void * init_data);
 
 // Update the filter with some new action
-void pf_update_action(pf_t * pf, pf_action_model_fn_t action_fn, void * action_data);
+// void pf_update_action(pf_t * pf, pf_action_model_fn_t action_fn, void * action_data);
 
 // Update the filter with some new sensor observation
 void pf_update_sensor(pf_t * pf, pf_sensor_model_fn_t sensor_fn, void * sensor_data);

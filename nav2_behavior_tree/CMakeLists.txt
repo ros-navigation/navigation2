@@ -6,9 +6,9 @@ find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
@@ -31,6 +31,7 @@ set(dependencies
   rclcpp_action
   rclcpp_lifecycle
   geometry_msgs
+  sensor_msgs
   nav2_msgs
   nav_msgs
   behaviortree_cpp_v3
@@ -52,6 +53,12 @@ ament_target_dependencies(${library_name}
 
 add_library(nav2_compute_path_to_pose_action_bt_node SHARED plugins/action/compute_path_to_pose_action.cpp)
 list(APPEND plugin_libs nav2_compute_path_to_pose_action_bt_node)
+
+add_library(nav2_compute_path_through_poses_action_bt_node SHARED plugins/action/compute_path_through_poses_action.cpp)
+list(APPEND plugin_libs nav2_compute_path_through_poses_action_bt_node)
+
+add_library(nav2_smooth_path_action_bt_node SHARED plugins/action/smooth_path_action.cpp)
+list(APPEND plugin_libs nav2_smooth_path_action_bt_node)
 
 add_library(nav2_follow_path_action_bt_node SHARED plugins/action/follow_path_action.cpp)
 list(APPEND plugin_libs nav2_follow_path_action_bt_node)
@@ -89,6 +96,9 @@ list(APPEND plugin_libs nav2_distance_traveled_condition_bt_node)
 add_library(nav2_initial_pose_received_condition_bt_node SHARED plugins/condition/initial_pose_received_condition.cpp)
 list(APPEND plugin_libs nav2_initial_pose_received_condition_bt_node)
 
+add_library(nav2_is_battery_low_condition_bt_node SHARED plugins/condition/is_battery_low_condition.cpp)
+list(APPEND plugin_libs nav2_is_battery_low_condition_bt_node)
+
 add_library(nav2_reinitialize_global_localization_service_bt_node SHARED plugins/action/reinitialize_global_localization_service.cpp)
 list(APPEND plugin_libs nav2_reinitialize_global_localization_service_bt_node)
 
@@ -101,17 +111,41 @@ list(APPEND plugin_libs nav2_distance_controller_bt_node)
 add_library(nav2_speed_controller_bt_node SHARED plugins/decorator/speed_controller.cpp)
 list(APPEND plugin_libs nav2_speed_controller_bt_node)
 
+add_library(nav2_truncate_path_action_bt_node SHARED plugins/action/truncate_path_action.cpp)
+list(APPEND plugin_libs nav2_truncate_path_action_bt_node)
+
+add_library(nav2_goal_updater_node_bt_node SHARED plugins/decorator/goal_updater_node.cpp)
+list(APPEND plugin_libs nav2_goal_updater_node_bt_node)
+
 add_library(nav2_recovery_node_bt_node SHARED plugins/control/recovery_node.cpp)
 list(APPEND plugin_libs nav2_recovery_node_bt_node)
 
 add_library(nav2_navigate_to_pose_action_bt_node SHARED plugins/action/navigate_to_pose_action.cpp)
 list(APPEND plugin_libs nav2_navigate_to_pose_action_bt_node)
 
+add_library(nav2_navigate_through_poses_action_bt_node SHARED plugins/action/navigate_through_poses_action.cpp)
+list(APPEND plugin_libs nav2_navigate_through_poses_action_bt_node)
+
+add_library(nav2_remove_passed_goals_action_bt_node SHARED plugins/action/remove_passed_goals_action.cpp)
+list(APPEND plugin_libs nav2_remove_passed_goals_action_bt_node)
+
 add_library(nav2_pipeline_sequence_bt_node SHARED plugins/control/pipeline_sequence.cpp)
 list(APPEND plugin_libs nav2_pipeline_sequence_bt_node)
 
 add_library(nav2_round_robin_node_bt_node SHARED plugins/control/round_robin_node.cpp)
 list(APPEND plugin_libs nav2_round_robin_node_bt_node)
+
+add_library(nav2_single_trigger_bt_node SHARED plugins/decorator/single_trigger_node.cpp)
+list(APPEND plugin_libs nav2_single_trigger_bt_node)
+
+add_library(nav2_planner_selector_bt_node SHARED plugins/action/planner_selector_node.cpp)
+list(APPEND plugin_libs nav2_planner_selector_bt_node)
+
+add_library(nav2_controller_selector_bt_node SHARED plugins/action/controller_selector_node.cpp)
+list(APPEND plugin_libs nav2_controller_selector_bt_node)
+
+add_library(nav2_goal_checker_selector_bt_node SHARED plugins/action/goal_checker_selector_node.cpp)
+list(APPEND plugin_libs nav2_goal_checker_selector_bt_node)
 
 foreach(bt_plugin ${plugin_libs})
   ament_target_dependencies(${bt_plugin} ${dependencies})

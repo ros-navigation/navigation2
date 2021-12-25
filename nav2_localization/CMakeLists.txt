@@ -3,38 +3,37 @@ project(nav2_localization)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(laser_geometry REQUIRED)
+find_package(message_filters REQUIRED)
 find_package(nav2_common REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(nav2_util REQUIRED)
+find_package(nav_2d_utils REQUIRED)
+find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(nav2_util REQUIRED)
-find_package(nav2_msgs REQUIRED)
-find_package(nav_2d_utils REQUIRED)
-find_package(message_filters REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
-find_package(laser_geometry REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+
+nav2_package()
 
 set(dependencies
+  geometry_msgs
+  laser_geometry
+  message_filters
+  nav2_msgs
+  nav2_util
+  nav_2d_utils
+  pluginlib
   rclcpp
   rclcpp_lifecycle
-  tf2_geometry_msgs
-  nav_msgs
-  geometry_msgs
-  pluginlib
-  nav2_util
-  nav2_msgs
-  nav_2d_utils
-  message_filters
   sensor_msgs
-  tf2_ros
   tf2
-  nav2_msgs
-  laser_geometry
+  tf2_geometry_msgs
+  tf2_ros
 )
 
 include_directories(include)

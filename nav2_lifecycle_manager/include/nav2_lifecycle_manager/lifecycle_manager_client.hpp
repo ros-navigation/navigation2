@@ -26,6 +26,7 @@
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
 #include "std_srvs/srv/trigger.hpp"
+#include "nav2_util/service_client.hpp"
 
 namespace nav2_lifecycle_manager
 {
@@ -44,35 +45,39 @@ class LifecycleManagerClient
 public:
   /**
    * @brief A constructor for LifeCycleMangerClient
+   * @param name Managed node name
+   * @param parent_node Node that execute the service calls
    */
-  explicit LifecycleManagerClient(const std::string & name);
+  explicit LifecycleManagerClient(
+    const std::string & name,
+    std::shared_ptr<rclcpp::Node> parent_node);
 
   // Client-side interface to the Nav2 lifecycle manager
   /**
    * @brief Make start up service call
    * @return true or false
    */
-  bool startup();
+  bool startup(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Make shutdown service call
    * @return true or false
    */
-  bool shutdown();
+  bool shutdown(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Make pause service call
    * @return true or false
    */
-  bool pause();
+  bool pause(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Make resume service call
    * @return true or false
    */
-  bool resume();
+  bool resume(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Make reset service call
    * @return true or false
    */
-  bool reset();
+  bool reset(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Check if lifecycle node manager server is active
    * @return ACTIVE or INACTIVE or TIMEOUT
@@ -103,13 +108,15 @@ protected:
    * @brief A generic method used to call startup, shutdown, etc.
    * @param command
    */
-  bool callService(uint8_t command);
+  bool callService(
+    uint8_t command,
+    const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
 
   // The node to use for the service call
   rclcpp::Node::SharedPtr node_;
 
-  rclcpp::Client<ManageLifecycleNodes>::SharedPtr manager_client_;
-  rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr is_active_client_;
+  std::shared_ptr<nav2_util::ServiceClient<ManageLifecycleNodes>> manager_client_;
+  std::shared_ptr<nav2_util::ServiceClient<std_srvs::srv::Trigger>> is_active_client_;
   std::string manage_service_name_;
   std::string active_service_name_;
 };

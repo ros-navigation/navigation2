@@ -14,6 +14,9 @@
 
 #include "angles/angles.h"
 
+// "tf2_geometry_msgs/tf2_geometry_msgs.hpp" MUST be included
+//  before "tf2/utils.h" to avoid undefined symbol during runtime
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
 
 #include "pluginlib/class_list_macros.hpp"

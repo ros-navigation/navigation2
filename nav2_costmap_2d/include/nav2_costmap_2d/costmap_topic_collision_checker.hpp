@@ -37,10 +37,17 @@
 
 namespace nav2_costmap_2d
 {
-
+/**
+ * @class CostmapTopicCollisionChecker
+ * @brief Using a costmap via a ros topic, this object is used to
+ * find if robot poses are in collision with the costmap environment
+ */
 class CostmapTopicCollisionChecker
 {
 public:
+  /**
+   * @brief A constructor
+   */
   CostmapTopicCollisionChecker(
     CostmapSubscriber & costmap_sub,
     FootprintSubscriber & footprint_sub,
@@ -49,15 +56,28 @@ public:
     std::string global_frame = "map",
     std::string robot_base_frame = "base_link",
     double transform_tolerance = 0.1);
-
+  /**
+   * @brief A destructor
+   */
   ~CostmapTopicCollisionChecker() = default;
 
-  // Returns the obstacle footprint score for a particular pose
-  double scorePose(const geometry_msgs::msg::Pose2D & pose);
-  bool isCollisionFree(const geometry_msgs::msg::Pose2D & pose);
+  /**
+   * @brief Returns the obstacle footprint score for a particular pose
+   */
+  double scorePose(const geometry_msgs::msg::Pose2D & pose, bool updateCostmap = true);
+  /**
+   * @brief Returns if a pose is collision free
+   */
+  bool isCollisionFree(const geometry_msgs::msg::Pose2D & pose, bool updateCostmap = true);
 
 protected:
+  /**
+   * @brief Set a new footprint
+   */
   void unorientFootprint(const Footprint & oriented_footprint, Footprint & reset_footprint);
+  /**
+   * @brief Get a footprint at a set pose
+   */
   Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose);
 
   // Name used for logging
@@ -68,7 +88,7 @@ protected:
   CostmapSubscriber & costmap_sub_;
   FootprintSubscriber & footprint_sub_;
   double transform_tolerance_;
-  FootprintCollisionChecker collision_checker_;
+  FootprintCollisionChecker<std::shared_ptr<Costmap2D>> collision_checker_;
 };
 
 }  // namespace nav2_costmap_2d

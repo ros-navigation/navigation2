@@ -238,14 +238,14 @@ int pf_update_converged(pf_t * pf)
 }
 
 // Update the filter with some new action
-void pf_update_action(pf_t * pf, pf_action_model_fn_t action_fn, void * action_data)
-{
-  pf_sample_set_t * set;
+// void pf_update_action(pf_t * pf, pf_action_model_fn_t action_fn, void * action_data)
+// {
+//   pf_sample_set_t * set;
 
-  set = pf->sets + pf->current_set;
+//   set = pf->sets + pf->current_set;
 
-  (*action_fn)(action_data, set);
-}
+//   (*action_fn)(action_data, set);
+// }
 
 // Update the filter with some new sensor observation
 void pf_update_sensor(pf_t * pf, pf_sensor_model_fn_t sensor_fn, void * sensor_data)

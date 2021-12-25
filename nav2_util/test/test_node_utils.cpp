@@ -88,6 +88,7 @@ TEST(DeclareParameterIfNotDeclared, DeclareParameterIfNotDeclared)
 
 TEST(GetPluginTypeParam, GetPluginTypeParam)
 {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   auto node = std::make_shared<rclcpp::Node>("test_node");
   node->declare_parameter("Foo.plugin", "bar");
   ASSERT_EQ(get_plugin_type_param(node, "Foo"), "bar");

@@ -38,8 +38,9 @@ class MapServer : public nav2_util::LifecycleNode
 public:
   /**
    * @brief A constructor for nav2_map_server::MapServer
+   * @param options Additional options to control creation of the node.
    */
-  MapServer();
+  explicit MapServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   /**
    * @brief A Destructor for nav2_map_server::MapServer
@@ -77,12 +78,6 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-  /**
-   * @brief Called when Error is raised
-   * @param state Lifecycle Node's state
-   * @return Success or Failure
-   */
-  nav2_util::CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Load the map YAML, image from map file name and

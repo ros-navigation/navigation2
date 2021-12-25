@@ -43,12 +43,19 @@ enum class Status : int8_t
 
 using namespace std::chrono_literals;  //NOLINT
 
+/**
+ * @class nav2_recoveries::Recovery
+ * @brief An action server recovery base class implementing the action server and basic factory.
+ */
 template<typename ActionT>
 class Recovery : public nav2_core::Recovery
 {
 public:
-  using ActionServer = nav2_util::SimpleActionServer<ActionT, rclcpp_lifecycle::LifecycleNode>;
+  using ActionServer = nav2_util::SimpleActionServer<ActionT>;
 
+  /**
+   * @brief A Recovery constructor
+   */
   Recovery()
   : action_server_(nullptr),
     cycle_frequency_(10.0),
@@ -85,33 +92,39 @@ public:
   {
   }
 
+  // configure the server on lifecycle setup
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker) override
   {
-    RCLCPP_INFO(parent->get_logger(), "Configuring %s", name.c_str());
-
     node_ = parent;
+    auto node = node_.lock();
+
+    logger_ = node->get_logger();
+
+    RCLCPP_INFO(logger_, "Configuring %s", name.c_str());
+
     recovery_name_ = name;
     tf_ = tf;
 
-    node_->get_parameter("cycle_frequency", cycle_frequency_);
-    node_->get_parameter("global_frame", global_frame_);
-    node_->get_parameter("robot_base_frame", robot_base_frame_);
-    node_->get_parameter("transform_tolerance", transform_tolerance_);
+    node->get_parameter("cycle_frequency", cycle_frequency_);
+    node->get_parameter("global_frame", global_frame_);
+    node->get_parameter("robot_base_frame", robot_base_frame_);
+    node->get_parameter("transform_tolerance", transform_tolerance_);
 
     action_server_ = std::make_shared<ActionServer>(
-      node_, recovery_name_,
+      node, recovery_name_,
       std::bind(&Recovery::execute, this));
 
     collision_checker_ = collision_checker;
 
-    vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+    vel_pub_ = node->template create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
     onConfigure();
   }
 
+  // Cleanup server on lifecycle transition
   void cleanup() override
   {
     action_server_.reset();
@@ -119,22 +132,27 @@ public:
     onCleanup();
   }
 
+  // Activate server on lifecycle transition
   void activate() override
   {
-    RCLCPP_INFO(node_->get_logger(), "Activating %s", recovery_name_.c_str());
+    RCLCPP_INFO(logger_, "Activating %s", recovery_name_.c_str());
 
     vel_pub_->on_activate();
+    action_server_->activate();
     enabled_ = true;
   }
 
+  // Deactivate server on lifecycle transition
   void deactivate() override
   {
     vel_pub_->on_deactivate();
+    action_server_->deactivate();
     enabled_ = false;
   }
 
 protected:
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+
   std::string recovery_name_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
   std::shared_ptr<ActionServer> action_server_;
@@ -150,36 +168,53 @@ protected:
   // Clock
   rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
 
+  // Logger
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_recoveries")};
+
+  // Main execution callbacks for the action server implementation calling the recovery's
+  // onRun and cycle functions to execute a specific behavior
   void execute()
   {
-    RCLCPP_INFO(node_->get_logger(), "Attempting %s", recovery_name_.c_str());
+    RCLCPP_INFO(logger_, "Attempting %s", recovery_name_.c_str());
 
     if (!enabled_) {
-      RCLCPP_WARN(node_->get_logger(), "Called while inactive, ignoring request.");
+      RCLCPP_WARN(
+        logger_,
+        "Called while inactive, ignoring request.");
       return;
     }
 
     if (onRun(action_server_->get_current_goal()) != Status::SUCCEEDED) {
-      RCLCPP_INFO(node_->get_logger(), "Initial checks failed for %s", recovery_name_.c_str());
+      RCLCPP_INFO(
+        logger_,
+        "Initial checks failed for %s", recovery_name_.c_str());
       action_server_->terminate_current();
       return;
     }
 
     // Log a message every second
-    auto timer = node_->create_wall_timer(
-      1s,
-      [&]() {RCLCPP_INFO(node_->get_logger(), "%s running...", recovery_name_.c_str());});
+    {
+      auto node = node_.lock();
+      if (!node) {
+        throw std::runtime_error{"Failed to lock node"};
+      }
+
+      auto timer = node->create_wall_timer(
+        1s,
+        [&]()
+        {RCLCPP_INFO(logger_, "%s running...", recovery_name_.c_str());});
+    }
 
     auto start_time = steady_clock_.now();
 
     // Initialize the ActionT result
     auto result = std::make_shared<typename ActionT::Result>();
 
-    rclcpp::Rate loop_rate(cycle_frequency_);
+    rclcpp::WallRate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
       if (action_server_->is_cancel_requested()) {
-        RCLCPP_INFO(node_->get_logger(), "Canceling %s", recovery_name_.c_str());
+        RCLCPP_INFO(logger_, "Canceling %s", recovery_name_.c_str());
         stopRobot();
         result->total_elapsed_time = steady_clock_.now() - start_time;
         action_server_->terminate_all(result);
@@ -189,7 +224,7 @@ protected:
       // TODO(orduno) #868 Enable preempting a Recovery on-the-fly without stopping
       if (action_server_->is_preempt_requested()) {
         RCLCPP_ERROR(
-          node_->get_logger(), "Received a preemption request for %s,"
+          logger_, "Received a preemption request for %s,"
           " however feature is currently not implemented. Aborting and stopping.",
           recovery_name_.c_str());
         stopRobot();
@@ -200,13 +235,15 @@ protected:
 
       switch (onCycleUpdate()) {
         case Status::SUCCEEDED:
-          RCLCPP_INFO(node_->get_logger(), "%s completed successfully", recovery_name_.c_str());
+          RCLCPP_INFO(
+            logger_,
+            "%s completed successfully", recovery_name_.c_str());
           result->total_elapsed_time = steady_clock_.now() - start_time;
           action_server_->succeeded_current(result);
           return;
 
         case Status::FAILED:
-          RCLCPP_WARN(node_->get_logger(), "%s failed", recovery_name_.c_str());
+          RCLCPP_WARN(logger_, "%s failed", recovery_name_.c_str());
           result->total_elapsed_time = steady_clock_.now() - start_time;
           action_server_->terminate_current(result);
           return;
@@ -220,6 +257,7 @@ protected:
     }
   }
 
+  // Stop the robot with a commanded velocity
   void stopRobot()
   {
     auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();

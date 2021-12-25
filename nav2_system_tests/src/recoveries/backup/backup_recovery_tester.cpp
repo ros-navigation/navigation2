@@ -131,7 +131,7 @@ bool BackupRecoveryTester::defaultBackupRecoveryTest(
   auto goal_handle_future = client_ptr_->async_send_goal(goal_msg);
 
   if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(node_->get_logger(), "send goal call failed :(");
     return false;
@@ -148,7 +148,7 @@ bool BackupRecoveryTester::defaultBackupRecoveryTest(
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for result");
   if (rclcpp::spin_until_future_complete(node_, result_future) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(node_->get_logger(), "get result call failed :(");
     return false;
