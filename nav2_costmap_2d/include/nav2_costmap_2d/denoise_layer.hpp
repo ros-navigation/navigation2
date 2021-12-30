@@ -15,9 +15,6 @@
 #ifndef NAV2_COSTMAP_2D__DENOISE_LAYER_HPP_
 #define NAV2_COSTMAP_2D__DENOISE_LAYER_HPP_
 
-#include <vector>
-#include <memory>
-
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/image_processing.hpp"
 
@@ -116,8 +113,10 @@ private:
   size_t minimal_group_size_{};
   // The border value of group size. Groups of this and larger size will be kept
   ConnectivityType group_connectivity_type_{ConnectivityType::Way8};
-  // Additional memory buffer
-  mutable std::unique_ptr<MemoryBuffer> buffer;
+  // Memory buffer for temporal image
+  mutable MemoryBuffer buffer;
+  // Implementing the removal of grouped noise
+  imgproc_impl::GroupsRemover groupsRemover;
 };
 
 }  // namespace nav2_costmap_2d

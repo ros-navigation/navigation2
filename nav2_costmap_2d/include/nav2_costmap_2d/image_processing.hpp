@@ -77,12 +77,6 @@ histogram(const Image<T> & image, T image_max, Bin bin_max)
 class MemoryBuffer
 {
 public:
-  /**
-   * @brief Creates an object with the fixed maximum capacity. Doesn't perform allocations
-   * @param capacity buffer capacity in bytes
-   */
-  inline MemoryBuffer(size_t capacity)
-  : capacity_{capacity} {}
   /// @brief Free memory allocated for the buffer
   inline ~MemoryBuffer() {reset();}
   /**
@@ -91,12 +85,10 @@ public:
    * The returned pointer is valid until the next call to get() or destructor.
    * @tparam T type of element
    * @param count number of elements
-   * @throw std::logic_error if buffer size limited and sizeof(T) * count > capacity
+   * @throw std::bad_alloc or any other exception thrown by allocator
    */
   template<class T>
   T * get(std::size_t count);
-  /// @brief Return the buffer capacity in bytes
-  inline size_t capacity() {return capacity_;}
 
 private:
   inline void reset();
@@ -105,7 +97,6 @@ private:
 private:
   void * data{};
   size_t size{};
-  size_t capacity_{};
 };
 
 // forward declarations
@@ -138,47 +129,35 @@ inline void dilate(
   morphology_operation(input, output, getShape(connectivity), aggregate);
 }
 
-template<ConnectivityType connectivity, class Label>
-class ConnectedComponents
-{
-public:
-  /**
-   * @brief Compute the connected components labeled image of binary image
-   * Implements the SAUF algorithm
-   * (Two Strategies to Speed up Connected Component Labeling Algorithms
-   * Kesheng Wu, Ekow Otoo, Kenji Suzuki).
-   * @tparam connectivity pixels connectivity type
-   * @tparam Label integer type of label
-   * @param image input image. Pixels less than 255 will be interpreted as background
-   * @param buffer memory block that will be used to store the result (labeled image)
-   * and the internal buffer for labels trees
-   * @throw std::logic_error in case of insufficient memory on labels integer overflow
-   * @return pair(labeled image, total number of labels)
-   * Labeled image has the same size as image. Label 0 represents the background label,
-   * labels [1, <return value> - 1] - separate components.
-   * Total number of labels == 0 for empty image.
-   * In other cases, label 0 is always counted,
-   * even if there is no background in the image.
-   * For example, for an image of one pixel equal to 255, the total number of labels == 2.
-   * Two labels (0, 1) have been counted, although label 0 is not used)
-   */
-  template<class IsBg>
-  static std::pair<Image<Label>, Label> detect(
-    const Image<uint8_t> & image, MemoryBuffer & buffer,
-    IsBg && is_background);
-  /**
-   * @brief Return the upper bound of the memory buffer for detecting connected components
-   * @param image input image
-   */
-  static size_t optimalBufferSize(const Image<uint8_t> & image);
-
-private:
-  template<class IsBg>
-  static Label detectImpl(
-    const Image<uint8_t> & image, Image<Label> & labels,
-    imgproc_impl::EquivalenceLabelTrees<Label> & label_trees,
-    IsBg && is_background);
-};
+/**
+* @brief Compute the connected components labeled image of binary image
+* Implements the SAUF algorithm
+* (Two Strategies to Speed up Connected Component Labeling Algorithms
+* Kesheng Wu, Ekow Otoo, Kenji Suzuki).
+* @tparam connectivity pixels connectivity type
+* @tparam Label integer type of label
+* @tparam IsBg functor with signature bool (uint8_t)
+* @param image input image. Pixels less than 255 will be interpreted as background
+* @param buffer memory block that will be used to store the result (labeled image)
+* and the internal buffer for labels trees
+* @param label_trees union-find data structure
+* @param is_background returns true if the passed pixel value is background
+* @throw LabelOverflow if all possible values of the Label type are used and
+* it is impossible to create a new unique
+* @return pair(labeled image, total number of labels)
+* Labeled image has the same size as image. Label 0 represents the background label,
+* labels [1, <return value> - 1] - separate components.
+* Total number of labels == 0 for empty image.
+* In other cases, label 0 is always counted,
+* even if there is no background in the image.
+* For example, for an image of one pixel equal to 255, the total number of labels == 2.
+* Two labels (0, 1) have been counted, although label 0 is not used)
+*/
+template<ConnectivityType connectivity, class Label, class IsBg>
+std::pair<Image<Label>, Label> connectedComponents(
+  const Image<uint8_t> & image, MemoryBuffer & buffer,
+  imgproc_impl::EquivalenceLabelTrees<Label> & label_trees,
+  IsBg && is_background);
 
 // Implementation
 
@@ -191,12 +170,6 @@ T * MemoryBuffer::get(std::size_t count)
     "T alignment is more than the fundamental alignment of the platform");
 
   const size_t required_bytes = sizeof(T) * count;
-
-  // throw if buffer limited and required_bytes exceeds the limit
-  if (required_bytes > capacity_) {
-    throw std::logic_error(
-            "MemoryBuffer::get: The requested block amount exceeds the maximum allowed");
-  }
 
   if (size < required_bytes) {
     allocate(required_bytes);
@@ -377,6 +350,17 @@ Window<T> makeUnsafeWindow(const T * up_row, const T * down_row)
   return {dropConst(up_row), dropConst(down_row)};
 }
 
+struct EquivalenceLabelTreesBase
+{
+  virtual ~EquivalenceLabelTreesBase() = default;
+};
+
+struct LabelOverflow : public std::runtime_error
+{
+  LabelOverflow(const std::string & message)
+  : std::runtime_error(message) {}
+};
+
 /**
  * @brief Union-find data structure
  * Implementation of union-find data structure, described in reference article.
@@ -385,74 +369,48 @@ Window<T> makeUnsafeWindow(const T * up_row, const T * down_row)
  * @tparam Label integer type of label
  */
 template<class Label>
-class EquivalenceLabelTrees
+class EquivalenceLabelTrees : public EquivalenceLabelTreesBase
 {
 public:
   /**
-   * @brief Construct object. Initialize labels buffer
-   * @param labels_buffer pointer to labels buffer
-   * @param buffer_size the size of labels buffer
-   * @throw std::logic_error if buffer_size == 0
-   */
-  EquivalenceLabelTrees(Label * labels_buffer, size_t buffer_size)
-  {
-    if (buffer_size == 0) {
-      throw std::logic_error("EquivalenceLabelTrees: empty buffer is not allowed");
-    }
-    labels = labels_buffer;
-    // Label 0 is reserved for the background pixels, i.e. *labels_begin is always 0
-    *labels = 0;
-    next_free = 1;
-    // Number of labels cannot exceed std::numeric_limits<Label>::max()
-    labels_size = static_cast<Label>(
-      std::min(buffer_size, size_t(std::numeric_limits<Label>::max()))
-    );
-  }
-  /**
-   * @brief Defines the upper bound for the number of labels
+   * @brief Reset labels tree to initial state
    * @param rows number of image rows
    * @param columns number of image columns
    * @param connectivity pixels connectivity type
-   * @return max labels count
    */
-  static size_t max_labels(const size_t rows, const size_t columns, ConnectivityType connectivity)
+  void reset(const size_t rows, const size_t columns, ConnectivityType connectivity)
   {
+    // Trying to reserve memory with a margin
+    const size_t max_labels_count = maxLabels(rows, columns, connectivity);
+    // Number of labels cannot exceed std::numeric_limits<Label>::max()
+    labels_size = static_cast<Label>(
+      std::min(max_labels_count, size_t(std::numeric_limits<Label>::max()))
+    );
 
-    size_t max_labels{};
-
-    if (connectivity == ConnectivityType::Way4) {
-      /* The maximum of individual components will be reached in the chessboard image,
-       * where the white cells correspond to zero pixels */
-      max_labels = (rows * columns) / 2 + 1;
-    } else {
-      /* The maximum of individual components will be reached in image like this:
-       * x.x.x.x~
-       * .......~
-       * x.x.x.x~
-       * .......~
-       * x.x.x.x~
-       * ~
-       * where 'x' - pixel with code 255, '.' - pixel with code [0, 254],
-       * '~' - row continuation in the same style */
-      max_labels = (rows * columns) / 3 + 1;
+    try {
+      labels.reserve(max_labels_count);
+    } catch (...) {
+      // ignore any exception
+      // perhaps the entire requested amount of memory will not be required
     }
-    ++max_labels; // add zero label
-    max_labels = std::min(max_labels, size_t(std::numeric_limits<Label>::max()));
-    return max_labels;
+
+    // Label 0 is reserved for the background pixels, i.e. labels[0] is always 0
+    labels = {0};
+    next_free = 1;
   }
+
   /**
    * @brief Return next unused label
-   * @throw std::logic_error if all labels values already
+   * @throw LabelOverflow if all possible labels already used
    * @return label
    */
   Label makeLabel()
   {
-    // Check the labels array out of bounds.
-    // At the same time, this check ensures that the next_free counter does not overflow.
+    // Check the next_free counter does not overflow.
     if (next_free == labels_size) {
-      throw std::logic_error("EquivalenceLabelTrees: Can't create new label");
+      throw LabelOverflow("EquivalenceLabelTrees: Can't create new label");
     }
-    labels[next_free] = next_free;
+    labels.push_back(next_free);
     return next_free++;
   }
 
@@ -480,8 +438,10 @@ public:
    * @brief Convert union-find trees to labels lookup table
    * @return pair(labels lookup table, unique labels count)
    * @warning This method invalidate EquivalenceLabelTrees inner state
+   * @warning Returns an internal buffer that will be invalidated
+   * on subsequent calls to the methods of EquivalenceLabelTrees
    */
-  std::pair<const Label *, Label> getLabels()
+  const std::vector<Label> & getLabels()
   {
     Label k = 1;
     for (Label i = 1; i < next_free; ++i) {
@@ -493,10 +453,43 @@ public:
         ++k;
       }
     }
-    return std::make_pair(labels, k);
+    labels.resize(k);
+    return labels;
   }
 
 private:
+  /**
+   * @brief Defines the upper bound for the number of labels
+   * @param rows number of image rows
+   * @param columns number of image columns
+   * @param connectivity pixels connectivity type
+   * @return max labels count
+   */
+  static size_t maxLabels(const size_t rows, const size_t columns, ConnectivityType connectivity)
+  {
+    size_t max_labels{};
+
+    if (connectivity == ConnectivityType::Way4) {
+      /* The maximum of individual components will be reached in the chessboard image,
+       * where the white cells correspond to zero pixels */
+      max_labels = (rows * columns) / 2 + 1;
+    } else {
+      /* The maximum of individual components will be reached in image like this:
+       * x.x.x.x~
+       * .......~
+       * x.x.x.x~
+       * .......~
+       * x.x.x.x~
+       * ~
+       * where 'x' - pixel with code 255, '.' - pixel with code [0, 254],
+       * '~' - row continuation in the same style */
+      max_labels = (rows * columns) / 3 + 1;
+    }
+    ++max_labels; // add zero label
+    max_labels = std::min(max_labels, size_t(std::numeric_limits<Label>::max()));
+    return max_labels;
+  }
+
   /// @brief Find the root of the tree of node i
   Label findRoot(Label i)
   {
@@ -526,9 +519,9 @@ private:
    * index: 0|1|2|3|4|5
    * value: 0|1|1|1|3|3
    */
-  Label * labels;
-  Label labels_size;
-  Label next_free;
+  std::vector<Label> labels;
+  Label labels_size{};
+  Label next_free{};
 };
 
 /// @brief The specializations of this class provide the definition of the pixel label
@@ -547,6 +540,7 @@ struct ProcessPixel<ConnectivityType::Way8>
    * @param image input image window. Image data will not be changed. De facto, image is a const ref
    * @param label output label window
    * @param eqTrees union-find structure
+   * @throw LabelOverflow if all possible labels already used
    */
   template<class ImageWindow, class LabelsWindow, class Label, class IsBg>
   static void pass(
@@ -600,6 +594,7 @@ struct ProcessPixel<ConnectivityType::Way4>
    * @param image input image window. Image data will not be changed. De facto, image is a const ref
    * @param label output label window
    * @param eqTrees union-find structure
+   * @throw LabelOverflow if all possible labels already used
    */
   template<class ImageWindow, class LabelsWindow, class Label, class IsBg>
   static void pass(
@@ -696,6 +691,74 @@ void probeRows(
 }
 
 /**
+ * @brief Implementation details for connectedComponents
+ * \sa connectedComponents
+ */
+template<ConnectivityType connectivity, class Label, class IsBg>
+Label connectedComponentsImpl(
+  const Image<uint8_t> & image, Image<Label> & labels,
+  imgproc_impl::EquivalenceLabelTrees<Label> & label_trees, const IsBg & is_background)
+{
+  using namespace imgproc_impl;
+  using PixelPass = ProcessPixel<connectivity>;
+
+  // scanning phase
+  // scan row 0
+  {
+    auto img = makeSafeWindow<uint8_t>(nullptr, image.row(0), image.columns());
+    auto lbl = makeSafeWindow<Label>(nullptr, labels.row(0), image.columns());
+
+    for (; &img.e() < image.row(0) + image.columns(); img.next(), lbl.next()) {
+      PixelPass::pass(img, lbl, label_trees, is_background);
+    }
+  }
+
+  // scan rows 1, 2, ...
+  for (size_t row = 0; row < image.rows() - 1; ++row) {
+    // we can safely ignore checks label_mask for first column
+    Window<Label> label_mask{labels.row(row), labels.row(row + 1)};
+
+    auto up = image.row(row);
+    auto current = image.row(row + 1);
+
+    // scan column 0
+    {
+      auto img = makeSafeWindow(up, current, image.columns());
+      PixelPass::pass(img, label_mask, label_trees, is_background);
+    }
+
+    // scan columns 1, 2... image.columns() - 2
+    label_mask.next();
+
+    auto img = makeUnsafeWindow(std::next(up), std::next(current));
+    const uint8_t * current_line_last = current + image.columns() - 1;
+
+    for (; &img.e() < current_line_last; img.next(), label_mask.next()) {
+      PixelPass::pass(img, label_mask, label_trees, is_background);
+    }
+
+    // scan last column
+    if (image.columns() > 1) {
+      auto last_img = makeSafeWindow(up, current, image.columns(), image.columns() - 1);
+      auto last_label = makeSafeWindow(
+        labels.row(row), labels.row(row + 1),
+        image.columns(), image.columns() - 1);
+      PixelPass::pass(last_img, last_label, label_trees, is_background);
+    }
+  }
+
+  // analysis phase
+  const std::vector<Label> & labels_map = label_trees.getLabels();
+
+  // labeling phase
+  labels.forEach(
+    [&](Label & l) {
+      l = labels_map[l];
+    });
+  return labels_map.size();
+}
+
+/**
  * @brief Perform morphological operations
  * @tparam AggregateFn function object.
  * Signature should be equivalent to the following:
@@ -763,12 +826,130 @@ Image<uint8_t> getShape(ConnectivityType connectivity)
   return shape;
 }
 
+class GroupsRemover
+{
+public:
+  GroupsRemover()
+  {
+    label_trees_ = std::make_unique<imgproc_impl::EquivalenceLabelTrees<uint16_t>>();
+  }
+  template<class IsBg>
+  void removeGroups(
+    Image<uint8_t> & image, MemoryBuffer & buffer,
+    ConnectivityType group_connectivity_type, size_t minimal_group_size,
+    const IsBg & is_background) const
+  {
+    if (group_connectivity_type == ConnectivityType::Way4) {
+      removeGroupsPickLabelType<ConnectivityType::Way4>(
+        image, buffer, minimal_group_size,
+        is_background);
+    } else {
+      removeGroupsPickLabelType<ConnectivityType::Way8>(
+        image, buffer, minimal_group_size,
+        is_background);
+    }
+  }
+
+private:
+  template<ConnectivityType connectivity, class Label, class IsBg>
+  bool tryRemoveGroupsWithLabelType(
+    Image<uint8_t> & image, MemoryBuffer & buffer, size_t minimal_group_size,
+    imgproc_impl::EquivalenceLabelTrees<Label> & label_trees,
+    const IsBg & is_background,
+    bool throw_on_label_overflow) const
+  {
+    bool success{};
+    try {
+      removeGroupsImpl<connectivity>(image, buffer, label_trees, minimal_group_size, is_background);
+      success = true;
+    } catch (imgproc_impl::LabelOverflow &) {
+      if (throw_on_label_overflow) {
+        throw;
+      }
+    }
+    return success;
+  }
+
+  template<ConnectivityType connectivity, class IsBg>
+  void removeGroupsPickLabelType(
+    Image<uint8_t> & image, MemoryBuffer & buffer,
+    size_t minimal_group_size, const IsBg & is_background) const
+  {
+    bool success{};
+    auto label_trees16 =
+      dynamic_cast<imgproc_impl::EquivalenceLabelTrees<uint16_t> *>(label_trees_.get());
+
+    if (label_trees16) {
+      success = tryRemoveGroupsWithLabelType<connectivity>(
+        image, buffer, minimal_group_size,
+        *label_trees16, is_background, false);
+    }
+
+    if (!success) {
+      auto label_trees32 =
+        dynamic_cast<imgproc_impl::EquivalenceLabelTrees<uint32_t> *>(label_trees_.get());
+
+      if (!label_trees32) {
+        label_trees_ = std::make_unique<imgproc_impl::EquivalenceLabelTrees<uint32_t>>();
+        label_trees32 =
+          dynamic_cast<imgproc_impl::EquivalenceLabelTrees<uint32_t> *>(label_trees_.get());
+      }
+      tryRemoveGroupsWithLabelType<connectivity>(
+        image, buffer, minimal_group_size, *label_trees32,
+        is_background, true);
+    }
+  }
+
+  template<ConnectivityType connectivity, class Label, class IsBg>
+  void removeGroupsImpl(
+    Image<uint8_t> & image, MemoryBuffer & buffer,
+    imgproc_impl::EquivalenceLabelTrees<Label> & label_trees, size_t minimal_group_size,
+    const IsBg & is_background) const
+  {
+    // Creates an image labels in which each obstacles group is labeled with a unique code
+    auto components = connectedComponents<connectivity>(image, buffer, label_trees, is_background);
+    const Label groups_count = components.second;
+    const Image<Label> & labels = components.first;
+
+    // Calculates the size of each group.
+    // Group size is equal to the number of pixels with the same label
+    const Label max_label_value = groups_count - 1;  // It's safe. groups_count always non-zero
+    std::vector<size_t> groups_sizes = histogram(
+      labels, max_label_value, size_t(minimal_group_size + 1));
+
+    // The group of pixels labeled 0 corresponds to empty map cells.
+    // Zero bin of the histogram is equal to the number of pixels in this group.
+    // Because the values of empty map cells should not be changed, we will reset this bin
+    groups_sizes.front() = 0;  // don't change image background value
+
+    // noise_labels_table[i] = true if group with label i is noise
+    std::vector<bool> noise_labels_table(groups_sizes.size());
+    auto transform_fn = [&minimal_group_size](size_t bin_value) {
+        return bin_value < minimal_group_size;
+      };
+    std::transform(
+      groups_sizes.begin(), groups_sizes.end(), noise_labels_table.begin(),
+      transform_fn);
+
+    // Replace the pixel values from the small groups to background code
+    labels.convert(
+      image, [&](Label src, uint8_t & trg) {
+        if (!is_background(trg) && noise_labels_table[src]) {
+          trg = 0;
+        }
+      });
+  }
+
+private:
+  mutable std::unique_ptr<imgproc_impl::EquivalenceLabelTreesBase> label_trees_;
+};
+
 }  // namespace imgproc_impl
 
-template<ConnectivityType connectivity, class Label>
-template<class IsBg>
-std::pair<Image<Label>, Label> ConnectedComponents<connectivity, Label>::detect(
-  const Image<uint8_t> & image, MemoryBuffer & buffer, IsBg && is_background)
+template<ConnectivityType connectivity, class Label, class IsBg>
+std::pair<Image<Label>, Label> connectedComponents(
+  const Image<uint8_t> & image, MemoryBuffer & buffer,
+  imgproc_impl::EquivalenceLabelTrees<Label> & label_trees, const IsBg & is_background)
 {
   using namespace imgproc_impl;
   const size_t pixels = image.rows() * image.columns();
@@ -776,103 +957,14 @@ std::pair<Image<Label>, Label> ConnectedComponents<connectivity, Label>::detect(
   if (pixels == 0) {
     return {Image<Label>{}, 0};
   }
-  const size_t labels_image_bytes = pixels * sizeof(Label);
 
-  if (buffer.capacity() <= labels_image_bytes) {
-    throw std::logic_error("connectedComponents(): Not enough memory");
-  }
-
-  const size_t rest_buffer_bytes = buffer.capacity() - labels_image_bytes;
-  const size_t max_labels = EquivalenceLabelTrees<Label>::max_labels(
-    image.rows(), image.columns(), connectivity);
-
-  const size_t labels_buffer_size = std::min(max_labels, rest_buffer_bytes / sizeof(Label));
-  Label * buffer_block = buffer.get<Label>(pixels + labels_buffer_size);
-
-  Label * image_buffer = buffer_block;
-  Label * labels_block = buffer_block + pixels;
+  Label * image_buffer = buffer.get<Label>(pixels);
   Image<Label> labels(image.rows(), image.columns(), image_buffer, image.columns());
-  EquivalenceLabelTrees<Label> label_trees(labels_block, labels_buffer_size);
-  const Label total_labels = detectImpl(image, labels, label_trees, is_background);
+  label_trees.reset(image.rows(), image.columns(), connectivity);
+  const Label total_labels = connectedComponentsImpl<connectivity>(
+    image, labels, label_trees,
+    is_background);
   return std::make_pair(labels, total_labels);
-}
-
-template<ConnectivityType connectivity, class Label>
-template<class IsBg>
-Label
-ConnectedComponents<connectivity, Label>::detectImpl(
-  const Image<uint8_t> & image, Image<Label> & labels,
-  imgproc_impl::EquivalenceLabelTrees<Label> & label_trees,
-  IsBg && is_background)
-{
-  using namespace imgproc_impl;
-  using PixelPass = ProcessPixel<connectivity>;
-
-  // scanning phase
-  // scan row 0
-  {
-    auto img = makeSafeWindow<uint8_t>(nullptr, image.row(0), image.columns());
-    auto lbl = makeSafeWindow<Label>(nullptr, labels.row(0), image.columns());
-
-    for (; &img.e() < image.row(0) + image.columns(); img.next(), lbl.next()) {
-      PixelPass::pass(img, lbl, label_trees, is_background);
-    }
-  }
-
-  // scan rows 1, 2, ...
-  for (size_t row = 0; row < image.rows() - 1; ++row) {
-    // we can safely ignore checks label_mask for first column
-    Window<Label> label_mask{labels.row(row), labels.row(row + 1)};
-
-    auto up = image.row(row);
-    auto current = image.row(row + 1);
-
-    // scan column 0
-    {
-      auto img = makeSafeWindow(up, current, image.columns());
-      PixelPass::pass(img, label_mask, label_trees, is_background);
-    }
-
-    // scan columns 1, 2... image.columns() - 2
-    label_mask.next();
-
-    auto img = makeUnsafeWindow(std::next(up), std::next(current));
-    const uint8_t * current_line_last = current + image.columns() - 1;
-
-    for (; &img.e() < current_line_last; img.next(), label_mask.next()) {
-      PixelPass::pass(img, label_mask, label_trees, is_background);
-    }
-
-    // scan last column
-    if (image.columns() > 1) {
-      auto last_img = makeSafeWindow(up, current, image.columns(), image.columns() - 1);
-      auto last_label = makeSafeWindow(
-        labels.row(row), labels.row(row + 1),
-        image.columns(), image.columns() - 1);
-      PixelPass::pass(last_img, last_label, label_trees, is_background);
-    }
-  }
-
-  // analysis phase
-  auto labels_and_count = label_trees.getLabels();
-  const Label * labels_map = labels_and_count.first;
-  const Label labels_count = labels_and_count.second;
-
-  // labeling phase
-  labels.forEach(
-    [&](Label & l) {
-      l = labels_map[l];
-    });
-  return labels_count;
-}
-
-template<ConnectivityType connectivity, class Label>
-size_t ConnectedComponents<connectivity, Label>::optimalBufferSize(const Image<uint8_t> & image)
-{
-  const size_t labels_image_bytes = image.rows() * image.columns() * sizeof(Label);
-  const size_t labels_trees_bytes = imgproc_impl::EquivalenceLabelTrees<Label>::max_labels(
-    image.rows(), image.columns(), connectivity) * sizeof(Label);
-  return labels_image_bytes + labels_trees_bytes;
 }
 
 }  // namespace nav2_costmap_2d

@@ -35,7 +35,6 @@ class DenoiseLayerTester : public ::testing::Test
 public:
   void removeSinglePixels(Image<uint8_t> & image, ConnectivityType connectivity)
   {
-    denoise_.buffer = std::make_unique<MemoryBuffer>(std::numeric_limits<size_t>::max());
     denoise_.group_connectivity_type_ = connectivity;
     denoise_.removeSinglePixels(image);
   }
@@ -44,7 +43,6 @@ public:
     Image<uint8_t> & image, ConnectivityType connectivity,
     size_t minimal_group_size)
   {
-    denoise_.buffer = std::make_unique<MemoryBuffer>(std::numeric_limits<size_t>::max());
     denoise_.group_connectivity_type_ = connectivity;
     denoise_.minimal_group_size_ = minimal_group_size;
     denoise_.removeGroups(image);
@@ -52,7 +50,6 @@ public:
 
   void denoise(Image<uint8_t> & image, ConnectivityType connectivity, size_t minimal_group_size)
   {
-    denoise_.buffer = std::make_unique<MemoryBuffer>(std::numeric_limits<size_t>::max());
     denoise_.group_connectivity_type_ = connectivity;
     denoise_.minimal_group_size_ = minimal_group_size;
     denoise_.denoise(image);
@@ -81,7 +78,6 @@ public:
     d.enabled_ = true;
     d.group_connectivity_type_ = connectivity;
     d.minimal_group_size_ = minimal_group_size;
-    d.buffer = std::make_unique<MemoryBuffer>(std::numeric_limits<size_t>::max());
   }
 
   static std::tuple<bool, ConnectivityType, size_t> getParameters(

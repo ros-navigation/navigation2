@@ -22,13 +22,6 @@
 using namespace nav2_costmap_2d;
 using namespace imgproc_impl;
 
-TEST(MemoryBuffer, complexTest) {
-  MemoryBuffer buf(2);
-  ASSERT_EQ(buf.capacity(), 2ul);
-  ASSERT_NO_THROW(buf.get<u_int16_t>(1));
-  ASSERT_THROW(buf.get<u_int16_t>(2), std::logic_error);
-}
-
 TEST(BorderConstant, outOfBoundsAccess) {
   // check access to nullptr row (up)
   {
@@ -86,16 +79,17 @@ TEST(Histogram, calculateHistogramOfEmpty) {
 
 
 TEST(EquivalenceLabelTrees, newLabelsTest) {
-  std::array<uint8_t, 4> buffer{};
-  EquivalenceLabelTrees<uint8_t> eq(buffer.data(), buffer.size());
+  EquivalenceLabelTrees<uint8_t> eq;
+  eq.reset(10, 10, ConnectivityType::Way4);
   ASSERT_EQ(eq.makeLabel(), 1);
   ASSERT_EQ(eq.makeLabel(), 2);
   ASSERT_EQ(eq.makeLabel(), 3);
 }
 
 TEST(EquivalenceLabelTrees, unionTest) {
-  std::array<uint8_t, 6> buffer{};
-  EquivalenceLabelTrees<uint8_t> eq(buffer.data(), buffer.size());
+  EquivalenceLabelTrees<uint8_t> eq;
+  eq.reset(10, 10, ConnectivityType::Way4);
+
   // create 5 single nodes
   for (size_t i = 1; i < 6; ++i) {
     eq.makeLabel();
@@ -106,17 +100,11 @@ TEST(EquivalenceLabelTrees, unionTest) {
   ASSERT_EQ(eq.unionTrees(2, 5), 1);
 }
 
-TEST(EquivalenceLabelTrees, emptyBuffer) {
-  ASSERT_THROW(EquivalenceLabelTrees<uint8_t>(nullptr, 0), std::logic_error);
-}
-
 struct ConnectedComponentsTester : public ::testing::Test
 {
-  ConnectedComponentsTester()
-  : buffer(1024 * 1024) {}
-
 protected:
   MemoryBuffer buffer;
+  imgproc_impl::EquivalenceLabelTrees<uint8_t> label_trees;
 };
 
 bool isBackground(uint8_t pixel)
@@ -124,18 +112,11 @@ bool isBackground(uint8_t pixel)
   return pixel != LETHAL_OBSTACLE && pixel != NO_INFORMATION;
 }
 
-TEST_F(ConnectedComponentsTester, smallBufferTest) {
-  Image<uint8_t> input(3, 3);
-  MemoryBuffer small_buffer(1);
-  ASSERT_THROW(
-    (ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
-      input, small_buffer, isBackground)), std::logic_error);
-}
-
 TEST_F(ConnectedComponentsTester, way4EmptyTest) {
   Image<uint8_t> input;
-  const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
-    input, buffer, isBackground);
+  const auto result = connectedComponents<ConnectivityType::Way4>(
+    input, buffer, label_trees,
+    isBackground);
   ASSERT_EQ(result.second, uint8_t(0));
 }
 
@@ -144,8 +125,9 @@ TEST_F(ConnectedComponentsTester, way4SinglePixelTest) {
     Image<uint8_t> input(1, 1);
     input.at(0, 0) = 0;
 
-    const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
-      input, buffer, isBackground);
+    const auto result = connectedComponents<ConnectivityType::Way4>(
+      input, buffer, label_trees,
+      isBackground);
 
     ASSERT_EQ(result.first.at(0, 0), 0);
     ASSERT_EQ(result.second, 1);
@@ -154,8 +136,9 @@ TEST_F(ConnectedComponentsTester, way4SinglePixelTest) {
     Image<uint8_t> input(1, 1);
     input.at(0, 0) = 255;
 
-    const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
-      input, buffer, isBackground);
+    const auto result = connectedComponents<ConnectivityType::Way4>(
+      input, buffer, label_trees,
+      isBackground);
 
     ASSERT_EQ(result.first.at(0, 0), 1);
     ASSERT_EQ(result.second, 2);
@@ -168,8 +151,9 @@ TEST_F(ConnectedComponentsTester, way4ImageSmallTest) {
     input.at(0, 0) = 0;
     input.at(0, 1) = 255;
 
-    const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
-      input, buffer, isBackground);
+    const auto result = connectedComponents<ConnectivityType::Way4>(
+      input, buffer, label_trees,
+      isBackground);
 
     ASSERT_EQ(result.second, uint8_t(2));
     ASSERT_EQ(result.first.at(0, 0), 0);
@@ -180,8 +164,9 @@ TEST_F(ConnectedComponentsTester, way4ImageSmallTest) {
     input.at(0, 0) = 0;
     input.at(1, 0) = 255;
 
-    const auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
-      input, buffer, isBackground);
+    const auto result = connectedComponents<ConnectivityType::Way4>(
+      input, buffer, label_trees,
+      isBackground);
 
     ASSERT_EQ(result.second, uint8_t(2));
     ASSERT_EQ(result.first.at(0, 0), 0);
@@ -204,9 +189,8 @@ TEST_F(ConnectedComponentsTester, way4LabelsOverflowTest) {
     });
 
   ASSERT_THROW(
-    (ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
-      input, buffer, isBackground)),
-    std::logic_error);
+    (connectedComponents<ConnectivityType::Way4>(input, buffer, label_trees, isBackground)),
+    LabelOverflow);
 }
 
 template<class T>
@@ -253,8 +237,9 @@ TEST_F(ConnectedComponentsTester, way4ImageStepsTest) {
     ".xx."
     "xx.."
     "....");
-  auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
-    input, buffer, isBackground);
+  const auto result = connectedComponents<ConnectivityType::Way4>(
+    input, buffer, label_trees,
+    isBackground);
 
   ASSERT_EQ(result.second, uint8_t(2));
   ASSERT_TRUE(isEqualLabels(result.first, expected_labels));
@@ -287,8 +272,9 @@ TEST_F(ConnectedComponentsTester, way8ImageStepsTest) {
     ".....b"
     "....b.", makeLabelsMap('b'));
 
-  auto result = ConnectedComponents<ConnectivityType::Way8, uint8_t>::detect(
-    input, buffer, isBackground);
+  const auto result = connectedComponents<ConnectivityType::Way8>(
+    input, buffer, label_trees,
+    isBackground);
 
   ASSERT_EQ(result.second, uint8_t(3));
   ASSERT_TRUE(isEqualLabels(result.first, expected_labels));
@@ -308,15 +294,16 @@ TEST_F(ConnectedComponentsTester, way4ImageSieveTest) {
     ".i.j."
     "k.l.m", makeLabelsMap('m'));
 
-  auto result = ConnectedComponents<ConnectivityType::Way4, uint8_t>::detect(
-    input, buffer, isBackground);
+  const auto result = connectedComponents<ConnectivityType::Way4>(
+    input, buffer, label_trees,
+    isBackground);
 
   ASSERT_EQ(result.second, uint8_t(14));
   ASSERT_TRUE(isEqualLabels(result.first, expected_labels));
 }
 
 template<ConnectivityType connectivity>
-bool fingerTest(MemoryBuffer & buffer)
+bool fingerTest(MemoryBuffer & buffer, imgproc_impl::EquivalenceLabelTrees<uint8_t> & label_trees)
 {
   const Image<uint8_t> input = imageFromString<uint8_t>(
     "....."
@@ -331,21 +318,21 @@ bool fingerTest(MemoryBuffer & buffer)
     "a.b.c"
     "a.b.c", makeLabelsMap('c'));
 
-  auto result = ConnectedComponents<connectivity, uint8_t>::detect(input, buffer, isBackground);
+  const auto result = connectedComponents<connectivity>(input, buffer, label_trees, isBackground);
 
   return result.second == 4 && isEqualLabels(result.first, expected_labels);
 }
 
 TEST_F(ConnectedComponentsTester, way4ImageFingerTest) {
-  ASSERT_TRUE(fingerTest<ConnectivityType::Way4>(buffer));
+  ASSERT_TRUE(fingerTest<ConnectivityType::Way4>(buffer, label_trees));
 }
 
 TEST_F(ConnectedComponentsTester, way8ImageFingerTest) {
-  ASSERT_TRUE(fingerTest<ConnectivityType::Way8>(buffer));
+  ASSERT_TRUE(fingerTest<ConnectivityType::Way8>(buffer, label_trees));
 }
 
 template<ConnectivityType connectivity>
-bool spiralTest(MemoryBuffer & buffer)
+bool spiralTest(MemoryBuffer & buffer, imgproc_impl::EquivalenceLabelTrees<uint8_t> & label_trees)
 {
   const Image<uint8_t> input = imageFromString<uint8_t>(
     ".xxxxxx"
@@ -364,16 +351,16 @@ bool spiralTest(MemoryBuffer & buffer)
     ".x....x"
     ".xxxxxx");
 
-  auto result = ConnectedComponents<connectivity, uint8_t>::detect(input, buffer, isBackground);
+  const auto result = connectedComponents<connectivity>(input, buffer, label_trees, isBackground);
   return result.second == 2 && isEqualLabels(result.first, expected_labels);
 }
 
 TEST_F(ConnectedComponentsTester, way4ImageSpiralTest) {
-  ASSERT_TRUE(spiralTest<ConnectivityType::Way4>(buffer));
+  ASSERT_TRUE(spiralTest<ConnectivityType::Way4>(buffer, label_trees));
 }
 
 TEST_F(ConnectedComponentsTester, way8ImageSpiralTest) {
-  ASSERT_TRUE(spiralTest<ConnectivityType::Way8>(buffer));
+  ASSERT_TRUE(spiralTest<ConnectivityType::Way8>(buffer, label_trees));
 }
 
 const Image<uint8_t> crossShape = []() {

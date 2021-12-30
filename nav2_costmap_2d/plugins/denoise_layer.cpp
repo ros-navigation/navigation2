@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <memory>
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -36,8 +37,6 @@ DenoiseLayer::onInitialize()
   declareParameter("minimal_group_size", rclcpp::ParameterValue(2));
   // Pixels connectivity type
   declareParameter("group_connectivity_type", rclcpp::ParameterValue(8));
-  // Max additional memory amount
-  declareParameter("memory_usage_mb", rclcpp::ParameterValue(0));
 
   const auto node = node_.lock();
 
@@ -80,15 +79,6 @@ DenoiseLayer::onInitialize()
       group_connectivity_type_param);
     this->group_connectivity_type_ = ConnectivityType::Way8;
   }
-
-  int memory_usage_mb = getInt("memory_usage_mb");
-  size_t memory_usage = std::numeric_limits<size_t>::max();
-
-  if (memory_usage_mb > 0) {
-    const size_t byteToMb = 1024 * 1024;
-    memory_usage = size_t(memory_usage_mb) * byteToMb;
-  }
-  buffer = std::make_unique<MemoryBuffer>(memory_usage);
   current_ = true;
 }
 
@@ -159,63 +149,12 @@ DenoiseLayer::denoise(Image<uint8_t> & image) const
   }
 }
 
-template<ConnectivityType connectivity, class Label>
-void removeGroupsImpl(Image<uint8_t> & image, MemoryBuffer & buffer, size_t minimal_group_size)
-{
-  // Creates an image labels in which each obstacles group is labeled with a unique code
-  auto components = ConnectedComponents<connectivity, Label>::detect(image, buffer, isBackground);
-  const Label groups_count = components.second;
-  const Image<Label> & labels = components.first;
-
-  // Calculates the size of each group.
-  // Group size is equal to the number of pixels with the same label
-  const Label max_label_value = groups_count - 1;  // It's safe. groups_count always non-zero
-  std::vector<size_t> groups_sizes = histogram(
-    labels, max_label_value, minimal_group_size + 1);
-
-  // The group of pixels labeled 0 corresponds to empty map cells.
-  // Zero bin of the histogram is equal to the number of pixels in this group.
-  // Because the values of empty map cells should not be changed, we will reset this bin
-  groups_sizes.front() = 0;  // don't change image background value
-
-  // noise_labels_table[i] = true if group with label i is noise
-  std::vector<bool> noise_labels_table(groups_sizes.size());
-  auto transform_fn = [&minimal_group_size](size_t bin_value) {
-      return bin_value < minimal_group_size;
-    };
-  std::transform(
-    groups_sizes.begin(), groups_sizes.end(), noise_labels_table.begin(),
-    transform_fn);
-
-  // Replace the pixel values from the small groups to background code
-  labels.convert(
-    image, [&noise_labels_table](Label src, uint8_t & trg) {
-      if (!isBackground(trg) && noise_labels_table[src]) {
-        trg = 0;
-      }
-    });
-}
-
-template<ConnectivityType connectivity>
-void removeGroupsPickLabelType(
-  Image<uint8_t> & image, MemoryBuffer & buffer,
-  size_t minimal_group_size)
-{
-  if (ConnectedComponents<connectivity, uint32_t>::optimalBufferSize(image) <= buffer.capacity()) {
-    removeGroupsImpl<connectivity, uint32_t>(image, buffer, minimal_group_size);
-  } else {
-    removeGroupsImpl<connectivity, uint16_t>(image, buffer, minimal_group_size);
-  }
-}
-
 void
 DenoiseLayer::removeGroups(Image<uint8_t> & image) const
 {
-  if (group_connectivity_type_ == ConnectivityType::Way4) {
-    removeGroupsPickLabelType<ConnectivityType::Way4>(image, *buffer, minimal_group_size_);
-  } else {
-    removeGroupsPickLabelType<ConnectivityType::Way8>(image, *buffer, minimal_group_size_);
-  }
+  groupsRemover.removeGroups(
+    image, buffer, group_connectivity_type_, minimal_group_size_,
+    isBackground);
 }
 
 void
@@ -223,7 +162,7 @@ DenoiseLayer::removeSinglePixels(Image<uint8_t> & image) const
 {
   // Building a map of 4 or 8-connected neighbors.
   // The pixel of the map is 255 if there is an obstacle nearby
-  uint8_t * buf = buffer->get<uint8_t>(image.rows() * image.columns());
+  uint8_t * buf = buffer.get<uint8_t>(image.rows() * image.columns());
   Image<uint8_t> max_neighbors_image(image.rows(), image.columns(), buf, image.columns());
 
   dilate(image, max_neighbors_image, group_connectivity_type_);
