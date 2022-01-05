@@ -237,7 +237,7 @@ private:
   inline void enqueue(
     unsigned int index, unsigned int mx, unsigned int my,
     unsigned int src_x, unsigned int src_y);
-  
+
   /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message

@@ -414,10 +414,10 @@ InflationLayer::generateIntegerDistances()
   return level;
 }
 
- /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
-   */
+/**
+  * @brief Callback executed when a parameter change is detected
+  * @param event ParameterEvent message
+  */
 rcl_interfaces::msg::SetParametersResult
 InflationLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
@@ -428,34 +428,24 @@ InflationLayer::dynamicParametersCallback(
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    
-    
+
+
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if(param_name == name_ + "." + "inflation_radius" )
-      {
+      if (param_name == name_ + "." + "inflation_radius") {
         inflation_radius_ = parameter.as_double();
         cell_inflation_radius_ = cellDistance(inflation_radius_);
         need_reinflation_ = true;
         computeCaches();
 
-      }
-      else if(param_name == name_ + "." + "cost_scaling_factor")
-      {
+      } else if (param_name == name_ + "." + "cost_scaling_factor") {
         cost_scaling_factor_ = parameter.as_double();
       }
-    }
-    else if(param_type == ParameterType::PARAMETER_BOOL)
-    {
-      if(param_name == name_ + "." + "enabled")
-      {
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
-      }
-      else if(param_name == name_ + "." + "inflate_unknown")
-      {
+      } else if (param_name == name_ + "." + "inflate_unknown") {
         inflate_unknown_ = parameter.as_bool();
-      }
-      else if(param_name == name_ + "." + "inflate_around_unknown")
-      {
+      } else if (param_name == name_ + "." + "inflate_around_unknown") {
         inflate_around_unknown_ = parameter.as_bool();
       }
     }
