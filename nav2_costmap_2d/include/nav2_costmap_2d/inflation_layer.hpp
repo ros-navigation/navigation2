@@ -237,6 +237,13 @@ private:
   inline void enqueue(
     unsigned int index, unsigned int mx, unsigned int my,
     unsigned int src_x, unsigned int src_y);
+  
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
   double inflation_radius_, inscribed_radius_, cost_scaling_factor_;
   bool inflate_unknown_, inflate_around_unknown_;
@@ -257,6 +264,8 @@ private:
   // Indicates that the entire costmap should be reinflated next time around.
   bool need_reinflation_;
   mutex_t * access_;
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 };
 
 }  // namespace nav2_costmap_2d

@@ -53,6 +53,7 @@ PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::InflationLayer, nav2_costmap_2d::Layer)
 using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
 using nav2_costmap_2d::NO_INFORMATION;
+using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
@@ -77,6 +78,7 @@ InflationLayer::InflationLayer()
 
 InflationLayer::~InflationLayer()
 {
+  dyn_params_handler_.reset();
   delete access_;
 }
 
@@ -108,6 +110,11 @@ InflationLayer::onInitialize()
   need_reinflation_ = false;
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   matchSize();
+
+  dyn_params_handler_ = node_->add_on_set_parameters_callback(
+    std::bind(
+      &InflationLayer::dynamicParametersCallback,
+      this, std::placeholders::_1));
 }
 
 void
@@ -405,6 +412,58 @@ InflationLayer::generateIntegerDistances()
 
   distance_matrix_ = distance_matrix;
   return level;
+}
+
+ /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+rcl_interfaces::msg::SetParametersResult
+InflationLayer::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    
+    
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if(param_name == name_ + "." + "inflation_radius" )
+      {
+        inflation_radius_ = parameter.as_double();
+        cell_inflation_radius_ = cellDistance(inflation_radius_);
+        need_reinflation_ = true;
+        computeCaches();
+
+      }
+      else if(param_name == name_ + "." + "cost_scaling_factor")
+      {
+        cost_scaling_factor_ = parameter.as_double();
+      }
+    }
+    else if(param_type == ParameterType::PARAMETER_BOOL)
+    {
+      if(param_name == name_ + "." + "enabled")
+      {
+        enabled_ = parameter.as_bool();
+      }
+      else if(param_name == name_ + "." + "inflate_unknown")
+      {
+        inflate_unknown_ = parameter.as_bool();
+      }
+      else if(param_name == name_ + "." + "inflate_around_unknown")
+      {
+        inflate_around_unknown_ = parameter.as_bool();
+      }
+    }
+
+  }
+  result.successful = true;
+  parameters.clear();
+  return result;
 }
 
 }  // namespace nav2_costmap_2d
