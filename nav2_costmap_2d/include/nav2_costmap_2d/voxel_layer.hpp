@@ -232,7 +232,7 @@ private:
   // Dynamic parameters handler
   std::mutex mutex_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-  
+
 };
 
 }  // namespace nav2_costmap_2d
