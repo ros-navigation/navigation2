@@ -36,9 +36,9 @@ inline BT::NodeStatus IsNewPathShorter::tick()
   getInput("path", new_path);
   getInput("allowed_goal_distance_proximity", allowed_goal_distance_proximity);
 
-  // Check if it is not same with the current one
+  // Check if the old path is not same with the current one
   if (new_path != old_path && old_path.poses.size() != 0 && new_path.poses.size() != 0) {
-    // the action server on the next loop iteration
+    // Calculate and compare the old and the new path length, given the goal proximity
     if ( (nav2_util::geometry_utils::calculate_path_length(new_path, 0) -
       nav2_util::geometry_utils::calculate_path_length(
         old_path,
