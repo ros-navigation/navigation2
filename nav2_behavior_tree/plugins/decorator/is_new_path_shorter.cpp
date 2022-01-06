@@ -10,7 +10,7 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions &&
+// See the License for the specific language governing permissions and
 // limitations under the License.
 
 #include <string>
@@ -29,6 +29,12 @@ IsNewPathShorter::IsNewPathShorter(
 : BT::RetryNode(name, conf)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+
+  // Initializing the paths
+  new_path.poses.resize(1);
+  new_path.poses[0].pose.position.x = 0.0;
+  old_path.poses.resize(1);
+  old_path.poses[0].pose.position.x = 0.0;
 }
 
 inline BT::NodeStatus IsNewPathShorter::tick()
