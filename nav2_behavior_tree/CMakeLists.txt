@@ -17,6 +17,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav2_controller REQUIRED)
 
 nav2_package()
 
@@ -41,6 +42,7 @@ set(dependencies
   std_msgs
   std_srvs
   nav2_util
+  nav2_controller
 )
 
 add_library(${library_name} SHARED
@@ -53,6 +55,9 @@ ament_target_dependencies(${library_name}
 
 add_library(nav2_compute_path_to_pose_action_bt_node SHARED plugins/action/compute_path_to_pose_action.cpp)
 list(APPEND plugin_libs nav2_compute_path_to_pose_action_bt_node)
+
+add_library(nav2_controller_cancel_bt_node SHARED plugins/action/controller_cancel_node.cpp)
+list(APPEND plugin_libs nav2_controller_cancel_bt_node)
 
 add_library(nav2_compute_path_through_poses_action_bt_node SHARED plugins/action/compute_path_through_poses_action.cpp)
 list(APPEND plugin_libs nav2_compute_path_through_poses_action_bt_node)
@@ -101,6 +106,9 @@ list(APPEND plugin_libs nav2_is_battery_low_condition_bt_node)
 
 add_library(nav2_reinitialize_global_localization_service_bt_node SHARED plugins/action/reinitialize_global_localization_service.cpp)
 list(APPEND plugin_libs nav2_reinitialize_global_localization_service_bt_node)
+
+add_library(nav2_is_new_path_shorter_bt_node SHARED plugins/decorator/is_new_path_shorter.cpp)
+list(APPEND plugin_libs nav2_is_new_path_shorter_bt_node)
 
 add_library(nav2_rate_controller_bt_node SHARED plugins/decorator/rate_controller.cpp)
 list(APPEND plugin_libs nav2_rate_controller_bt_node)
