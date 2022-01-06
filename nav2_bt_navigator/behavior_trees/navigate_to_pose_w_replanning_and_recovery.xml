@@ -17,13 +17,23 @@
             </ReactiveFallback>
           </RecoveryNode>
         </RateController>
-        <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{path}" controller_id="FollowPath"/>
-          <ReactiveFallback name="FollowPathRecoveryFallback">
-            <GoalUpdated/>
-            <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
-          </ReactiveFallback>
-        </RecoveryNode>
+        <ReactiveSequence name="MonitorAndFollowPath">
+          <IsNewPathShorter path="{path}" allowed_goal_distance_proximity="1e999">
+            <RetryUntilSuccessful num_attempts="1">
+              <SequenceStar name="CancelingControlAndWait">
+                <CancelControl name="ControlCancel" service_name="/controller_server/change_state"/>
+                <Wait wait_duration="5"/>
+              </SequenceStar>
+            </RetryUntilSuccessful>
+          </IsNewPathShorter>
+          <RecoveryNode number_of_retries="1" name="FollowPath">
+            <FollowPath path="{path}" controller_id="FollowPath"/>
+            <ReactiveFallback name="FollowPathRecoveryFallback">
+              <GoalUpdated/>
+              <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+            </ReactiveFallback>
+          </RecoveryNode>
+        </ReactiveSequence>
       </PipelineSequence>
       <ReactiveFallback name="RecoveryFallback">
         <GoalUpdated/>
