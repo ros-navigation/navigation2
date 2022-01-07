@@ -467,3 +467,42 @@ TEST_F(TestNode, testDynParamsSetVoxel)
   costmap->on_shutdown(rclcpp_lifecycle::State());
 
 }
+
+
+/**
+ * Test dynamic parameter setting of static layer
+ */
+TEST_F(TestNode, testDynParamsSetStatic)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("static_dyn_param_test");
+
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  costmap->set_parameter(rclcpp::Parameter("global_frame", std::string("base_link")));
+  costmap->on_configure(rclcpp_lifecycle::State());
+
+  costmap->on_activate(rclcpp_lifecycle::State());
+
+  auto parameter_client = std::make_shared<rclcpp::AsyncParametersClient>(
+    costmap->get_node_base_interface(), costmap->get_node_topics_interface(),
+    costmap->get_node_graph_interface(),
+    costmap->get_node_services_interface());
+
+  auto results = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("static_layer.transform_tolerance", 1.0),
+    rclcpp::Parameter("static_layer.enabled", false)
+  });
+
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(costmap->get_parameter("static_layer.transform_tolerance").as_double(), 1.0);
+  EXPECT_EQ(costmap->get_parameter("static_layer.enabled").as_bool(), false);
+
+  costmap->on_deactivate(rclcpp_lifecycle::State());
+  costmap->on_cleanup(rclcpp_lifecycle::State());
+  costmap->on_shutdown(rclcpp_lifecycle::State());
+
+}
