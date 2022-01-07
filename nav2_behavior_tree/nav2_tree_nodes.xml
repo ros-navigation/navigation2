@@ -13,6 +13,10 @@
       <input_port name="time_allowance">Allowed time for reversing</input_port>
     </Action>
 
+    <Action ID="CancelControl">
+      <input_port name="service_name">Service name to cancel the controller server</input_port>
+    </Action>
+
     <Action ID="ClearEntireCostmap">
       <input_port name="service_name">Service name</input_port>
     </Action>
@@ -161,6 +165,11 @@
       <input_port name="min_speed">Minimum speed</input_port>
       <input_port name="max_speed">Maximum speed</input_port>
       <input_port name="filter_duration">Duration (secs) for velocity smoothing filter</input_port>
+    </Decorator>
+
+    <Decorator ID="IsNewPathShorter">
+      <input_port name="path">Path to follow</input_port>
+      <input_port name="allowed_goal_distance_proximity">allowed distance of the goal from the robot</input_port>
     </Decorator>
 
   </TreeNodesModel>
