@@ -28,7 +28,7 @@ namespace nav2_behavior_tree
 
 /**
  * @brief The ControllerCancel behavior is used for the transtition of the controller
- * to the cancel lifecycle state.
+ * to the shutdown lifecycle state.
  */
 class ControllerCancel : public BtServiceNode<lifecycle_msgs::srv::ChangeState>
 {
