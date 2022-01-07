@@ -42,6 +42,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "../testing_helper.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 using std::begin;
 using std::end;
@@ -405,5 +406,64 @@ TEST_F(TestNode, testRaytracing) {
   lethal_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::LETHAL_OBSTACLE);
 
   ASSERT_EQ(lethal_count, 1);
+}
+
+/**
+ * Test dynamic parameter setting of voxel layer
+ */
+TEST_F(TestNode, testDynParamsSetVoxel)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("voxel_dyn_param_test");
+
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  // Add voxel layer
+  std::vector<std::string> plugins_str;
+  plugins_str.push_back("voxel_layer");
+  costmap->set_parameter(rclcpp::Parameter("plugins", plugins_str));
+  costmap->declare_parameter(
+    "voxel_layer.plugin",
+    rclcpp::ParameterValue(std::string("nav2_costmap_2d::VoxelLayer")));
+
+  costmap->set_parameter(rclcpp::Parameter("global_frame", std::string("base_link")));
+  costmap->on_configure(rclcpp_lifecycle::State());
+
+  costmap->on_activate(rclcpp_lifecycle::State());
+
+  auto parameter_client = std::make_shared<rclcpp::AsyncParametersClient>(
+    costmap->get_node_base_interface(), costmap->get_node_topics_interface(),
+    costmap->get_node_graph_interface(),
+    costmap->get_node_services_interface());
+
+  auto results = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("voxel_layer.combination_method", 0),
+    rclcpp::Parameter("voxel_layer.mark_threshold", 1),
+    rclcpp::Parameter("voxel_layer.unknown_threshold", 10),
+    rclcpp::Parameter("voxel_layer.z_resolution", 0.4),
+    rclcpp::Parameter("voxel_layer.origin_z", 1.0),
+    rclcpp::Parameter("voxel_layer.z_voxels", 14),
+    rclcpp::Parameter("voxel_layer.max_obstacle_height", 4.0),
+    rclcpp::Parameter("voxel_layer.footprint_clearing_enabled", false),
+    rclcpp::Parameter("voxel_layer.enabled", false)
+  });
+
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(costmap->get_parameter("voxel_layer.combination_method").as_int(), 0);
+  EXPECT_EQ(costmap->get_parameter("voxel_layer.mark_threshold").as_int(), 1);
+  EXPECT_EQ(costmap->get_parameter("voxel_layer.unknown_threshold").as_int(), 10);
+  EXPECT_EQ(costmap->get_parameter("voxel_layer.z_resolution").as_double(), 0.4);
+  EXPECT_EQ(costmap->get_parameter("voxel_layer.origin_z").as_double(), 1.0);
+  EXPECT_EQ(costmap->get_parameter("voxel_layer.z_voxels").as_int(), 14);
+  EXPECT_EQ(costmap->get_parameter("voxel_layer.max_obstacle_height").as_double(), 4.0);
+  EXPECT_EQ(costmap->get_parameter("voxel_layer.footprint_clearing_enabled").as_bool(), false);
+  EXPECT_EQ(costmap->get_parameter("voxel_layer.enabled").as_bool(), false);
+
+  costmap->on_deactivate(rclcpp_lifecycle::State());
+  costmap->on_cleanup(rclcpp_lifecycle::State());
+  costmap->on_shutdown(rclcpp_lifecycle::State());
 
 }
