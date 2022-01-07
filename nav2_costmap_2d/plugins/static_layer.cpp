@@ -51,6 +51,7 @@ PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::StaticLayer, nav2_costmap_2d::Layer)
 using nav2_costmap_2d::NO_INFORMATION;
 using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::FREE_SPACE;
+using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
@@ -110,6 +111,7 @@ StaticLayer::activate()
 void
 StaticLayer::deactivate()
 {
+  dyn_params_handler_.reset();
 }
 
 void
@@ -162,6 +164,12 @@ StaticLayer::getParameters()
   update_in_progress_.store(false);
 
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
+
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node_->add_on_set_parameters_callback(
+    std::bind(
+      &StaticLayer::dynamicParametersCallback,
+      this, std::placeholders::_1));
 }
 
 void
@@ -372,6 +380,7 @@ StaticLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int min_i, int min_j, int max_i, int max_j)
 {
+  std::lock_guard<std::mutex> lock_reinit(dyn_param_mutex_);
   if (!enabled_) {
     update_in_progress_.store(false);
     return;
@@ -433,6 +442,43 @@ StaticLayer::updateCosts(
   }
   update_in_progress_.store(false);
   current_ = true;
+}
+
+/**
+  * @brief Callback executed when a parameter change is detected
+  * @param event ParameterEvent message
+  */
+rcl_interfaces::msg::SetParametersResult
+StaticLayer::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  std::lock_guard<std::mutex> lock_reinit(dyn_param_mutex_);
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + "." + "transform_tolerance") {
+        transform_tolerance_ = tf2::durationFromSec(parameter.as_double());
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == name_ + "." + "enabled") {
+        enabled_ = parameter.as_bool();
+      }
+    } else if (param_name == name_ + "." + "map_subscribe_transient_local" ||
+      param_name == name_ + "." + "map_topic" ||
+      param_name == name_ + "." + "subscribe_to_updates")
+    {
+      RCLCPP_WARN(
+        node_->get_logger(), "%s is not a dynamic parameter "
+        "cannot be changed while running. Rejecting parameter update.", param_name);
+    }
+
+  }
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_costmap_2d

@@ -468,7 +468,10 @@ void VoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
   delete[] local_voxel_map;
 }
 
-
+/**
+  * @brief Callback executed when a parameter change is detected
+  * @param event ParameterEvent message
+  */
 rcl_interfaces::msg::SetParametersResult
 VoxelLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
