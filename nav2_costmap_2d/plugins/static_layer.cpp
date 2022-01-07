@@ -459,7 +459,14 @@ StaticLayer::dynamicParametersCallback(
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
 
-    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+    if (param_name == name_ + "." + "map_subscribe_transient_local" ||
+      param_name == name_ + "." + "map_topic" ||
+      param_name == name_ + "." + "subscribe_to_updates")
+    {
+      RCLCPP_WARN(
+        node_->get_logger(), "%s is not a dynamic parameter "
+        "cannot be changed while running. Rejecting parameter update.", param_name.c_str());
+    } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "transform_tolerance") {
         transform_tolerance_ = tf2::durationFromSec(parameter.as_double());
       }
@@ -467,13 +474,6 @@ StaticLayer::dynamicParametersCallback(
       if (param_name == name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
       }
-    } else if (param_name == name_ + "." + "map_subscribe_transient_local" ||
-      param_name == name_ + "." + "map_topic" ||
-      param_name == name_ + "." + "subscribe_to_updates")
-    {
-      RCLCPP_WARN(
-        node_->get_logger(), "%s is not a dynamic parameter "
-        "cannot be changed while running. Rejecting parameter update.", param_name);
     }
 
   }
