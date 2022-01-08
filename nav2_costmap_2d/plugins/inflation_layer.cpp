@@ -425,34 +425,66 @@ InflationLayer::dynamicParametersCallback(
   rcl_interfaces::msg::SetParametersResult result;
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
+  struct paramChange
+  {
+    bool inflation_radius : 1;
+    bool cost_scaling_factor : 1;
+    bool enabled : 1;
+    bool inflate_unknown : 1;
+    bool inflate_around_unknown : 1;
+  } paramChange_s{0, 0, 0, 0, 0};
+
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
 
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "inflation_radius") {
+      if (param_name == name_ + "." + "inflation_radius" &&
+        inflation_radius_ != parameter.as_double())
+      {
         inflation_radius_ = parameter.as_double();
+        paramChange_s.inflation_radius = true;
         cell_inflation_radius_ = cellDistance(inflation_radius_);
-        need_reinflation_ = true;
-        computeCaches();
 
-      } else if (param_name == name_ + "." + "cost_scaling_factor") {
+      } else if (param_name == name_ + "." + "cost_scaling_factor" &&
+        cost_scaling_factor_ != parameter.as_double())
+      {
         cost_scaling_factor_ = parameter.as_double();
+        paramChange_s.cost_scaling_factor = true;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled") {
+      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
-      } else if (param_name == name_ + "." + "inflate_unknown") {
+        paramChange_s.enabled = true;
+        RCLCPP_INFO(node_->get_logger(), "Updated!");
+      } else if (param_name == name_ + "." + "inflate_unknown" &&
+        inflate_unknown_ != parameter.as_bool())
+      {
         inflate_unknown_ = parameter.as_bool();
-      } else if (param_name == name_ + "." + "inflate_around_unknown") {
+        paramChange_s.inflate_unknown = true;
+      } else if (param_name == name_ + "." + "inflate_around_unknown" &&
+        inflate_around_unknown_ != parameter.as_bool())
+      {
         inflate_around_unknown_ = parameter.as_bool();
+        paramChange_s.inflate_around_unknown = true;
       }
     }
 
   }
+
+  if (paramChange_s.enabled || paramChange_s.inflate_unknown ||
+    paramChange_s.inflate_around_unknown || paramChange_s.inflation_radius ||
+    paramChange_s.cost_scaling_factor)
+  {
+    need_reinflation_ = true;
+  }
+
+  if (paramChange_s.inflation_radius || paramChange_s.cost_scaling_factor) {
+    computeCaches();
+  }
+
   result.successful = true;
-  parameters.clear();
   return result;
 }
 
