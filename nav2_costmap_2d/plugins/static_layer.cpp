@@ -166,7 +166,7 @@ StaticLayer::getParameters()
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 
   // Add callback for dynamic parameters
-  dyn_params_handler_ = node_->add_on_set_parameters_callback(
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
       &StaticLayer::dynamicParametersCallback,
       this, std::placeholders::_1));
@@ -464,7 +464,7 @@ StaticLayer::dynamicParametersCallback(
       param_name == name_ + "." + "subscribe_to_updates")
     {
       RCLCPP_WARN(
-        node_->get_logger(), "%s is not a dynamic parameter "
+        logger_, "%s is not a dynamic parameter "
         "cannot be changed while running. Rejecting parameter update.", param_name.c_str());
     } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "transform_tolerance") {

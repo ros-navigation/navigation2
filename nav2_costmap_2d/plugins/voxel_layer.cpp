@@ -105,7 +105,7 @@ void VoxelLayer::onInitialize()
   matchSize();
 
   // Add callback for dynamic parameters
-  dyn_params_handler_ = node_->add_on_set_parameters_callback(
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
       &VoxelLayer::dynamicParametersCallback,
       this, std::placeholders::_1));
@@ -499,7 +499,7 @@ VoxelLayer::dynamicParametersCallback(
         footprint_clearing_enabled_ = parameter.as_bool();
       } else if (param_name == name_ + "." + "publish_voxel_map") {
         RCLCPP_WARN(
-          node_->get_logger(), "publish voxel map is not a dynamic parameter "
+          logger_, "publish voxel map is not a dynamic parameter "
           "cannot be changed while running. Rejecting parameter update.");
         continue;
       }

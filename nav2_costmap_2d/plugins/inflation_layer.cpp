@@ -101,6 +101,11 @@ InflationLayer::onInitialize()
     node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
     node->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
     node->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
+
+    dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &InflationLayer::dynamicParametersCallback,
+      this, std::placeholders::_1));
   }
 
   current_ = true;
@@ -111,10 +116,6 @@ InflationLayer::onInitialize()
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   matchSize();
 
-  dyn_params_handler_ = node_->add_on_set_parameters_callback(
-    std::bind(
-      &InflationLayer::dynamicParametersCallback,
-      this, std::placeholders::_1));
 }
 
 void
@@ -457,7 +458,6 @@ InflationLayer::dynamicParametersCallback(
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
         paramChange_s.enabled = true;
-        RCLCPP_INFO(node_->get_logger(), "Updated!");
       } else if (param_name == name_ + "." + "inflate_unknown" &&
         inflate_unknown_ != parameter.as_bool())
       {
