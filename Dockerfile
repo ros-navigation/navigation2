@@ -51,6 +51,7 @@ RUN apt-get update && \
     apt-get install -y \
       ccache \
       lcov \
+      lld \
       python3-pip \
       ros-$ROS_DISTRO-rmw-fastrtps-cpp \
       ros-$ROS_DISTRO-rmw-connextdds \
@@ -58,8 +59,10 @@ RUN apt-get update && \
     && pip3 install \
       fastcov \
       git+https://github.com/ruffsl/colcon-cache.git@a937541bfc496c7a267db7ee9d6cceca61e470ca \
-      git+https://github.com/ruffsl/colcon-clean.git@65f9be369b396c13e604a9272a5ed4fe77895700 \
+      git+https://github.com/ruffsl/colcon-clean.git@a7f1074d1ebc1a54a6508625b117974f2672f2a9 \
     && rosdep update \
+    && colcon mixin update \
+    && colcon metadata update \
     && rm -rf /var/lib/apt/lists/*
 
 # install underlay dependencies
