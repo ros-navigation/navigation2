@@ -42,6 +42,8 @@ ServerHandler::ServerHandler()
     node_, "backup");
   ntp_server = std::make_unique<DummyActionServer<nav2_msgs::action::ComputePathThroughPoses>>(
     node_, "compute_path_through_poses");
+  change_state_server = std::make_unique<DummyService<lifecycle_msgs::srv::ChangeState>>(
+    node_, "controller_server/change_state");
 }
 
 ServerHandler::~ServerHandler()
@@ -80,6 +82,7 @@ void ServerHandler::reset() const
 {
   clear_global_costmap_server->reset();
   clear_local_costmap_server->reset();
+  change_state_server->reset();
   compute_path_to_pose_server->reset();
   follow_path_server->reset();
   spin_server->reset();

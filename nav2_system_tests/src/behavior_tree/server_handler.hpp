@@ -30,6 +30,8 @@
 #include "nav2_msgs/action/back_up.hpp"
 #include "nav2_msgs/action/wait.hpp"
 #include "nav2_msgs/action/compute_path_through_poses.hpp"
+#include "lifecycle_msgs/srv/change_state.hpp"
+
 
 #include "geometry_msgs/msg/point_stamped.hpp"
 
@@ -88,6 +90,7 @@ public:
 public:
   std::unique_ptr<DummyService<nav2_msgs::srv::ClearEntireCostmap>> clear_local_costmap_server;
   std::unique_ptr<DummyService<nav2_msgs::srv::ClearEntireCostmap>> clear_global_costmap_server;
+  std::unique_ptr<DummyService<lifecycle_msgs::srv::ChangeState>> change_state_server;
   std::unique_ptr<ComputePathToPoseActionServer> compute_path_to_pose_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::FollowPath>> follow_path_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::Spin>> spin_server;
