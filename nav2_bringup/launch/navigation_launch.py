@@ -64,6 +64,36 @@ def generate_launch_description():
             param_rewrites=param_substitutions,
             convert_types=True)
 
+    stdout_linebuf_envvar = SetEnvironmentVariable(
+        'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
+
+    declare_namespace_cmd = DeclareLaunchArgument(
+        'namespace',
+        default_value='',
+        description='Top-level namespace')
+
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation (Gazebo) clock if true')
+
+    declare_params_file_cmd = DeclareLaunchArgument(
+        'params_file',
+        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+        description='Full path to the ROS2 parameters file to use for all launched nodes')
+
+    declare_autostart_cmd = DeclareLaunchArgument(
+        'autostart', default_value='true',
+        description='Automatically startup the nav2 stack')
+
+    declare_use_composition_cmd = DeclareLaunchArgument(
+        'use_composition', default_value='False',
+        description='Use composed bringup if True')
+
+    declare_container_name_cmd = DeclareLaunchArgument(
+        'container_name', default_value='nav2_container',
+        description='the name of conatiner that nodes will load in if use composition')
+
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
@@ -169,36 +199,22 @@ def generate_launch_description():
         ],
     )
 
-    return LaunchDescription([
-        # Set env var to print messages to stdout immediately
-        SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+    # Create the launch description and populate
+    ld = LaunchDescription()
 
-        DeclareLaunchArgument(
-            'namespace', default_value='',
-            description='Top-level namespace'),
+    # Set environment variables
+    ld.add_action(stdout_linebuf_envvar)
 
-        DeclareLaunchArgument(
-            'use_sim_time', default_value='false',
-            description='Use simulation (Gazebo) clock if true'),
+    # Declare the launch options
+    ld.add_action(declare_namespace_cmd)
+    ld.add_action(declare_use_sim_time_cmd)
+    ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_use_composition_cmd)
+    ld.add_action(declare_container_name_cmd)
 
-        DeclareLaunchArgument(
-            'autostart', default_value='true',
-            description='Automatically startup the nav2 stack'),
+    # Add the actions to launch all of the navigation nodes
+    ld.add_action(load_nodes)
+    ld.add_action(load_composable_nodes)
 
-        DeclareLaunchArgument(
-            'params_file',
-            default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
-            description='Full path to the ROS2 parameters file to use'),
-
-        DeclareLaunchArgument(
-            'use_composition', default_value='False',
-            description='Use composed bringup if True'),
-
-        DeclareLaunchArgument(
-            'container_name', default_value='nav2_container',
-            description='the name of conatiner that nodes will load in if use composition'),
-
-        load_nodes,
-
-        load_composable_nodes,
-    ])
+    return ld
