@@ -391,7 +391,7 @@ _steps:
         bash codecov \
           -f "lcov/total_coverage.info" \
           -R "src/navigation2" \
-          -F "project" \
+          -n "$RMW_IMPLEMENTATION" \
           -Z || echo 'Codecov upload failed'
       when: always
 
@@ -485,12 +485,6 @@ jobs:
       - restore_build
       - test_build:
           cache_test: << parameters.cache_test >>
-  coverage_test:
-    <<: *release_test
-    steps:
-      - restore_build
-      - test_build:
-          cache_test: << parameters.cache_test >>
       - report_coverage
 
 workflows:
@@ -498,16 +492,13 @@ workflows:
   build_and_test:
     jobs:
       - release_build
-      - coverage_test:
+      - release_test:
           requires:
             - release_build
           cache_test: true
   nightly:
     jobs:
       - release_build
-      - coverage_test:
-          requires:
-            - release_build
       - release_test:
           requires:
             - release_build
@@ -515,6 +506,7 @@ workflows:
             parameters:
               rmw:
                 - rmw_connextdds
+                - rmw_cyclonedds_cpp
                 - rmw_fastrtps_cpp
     triggers:
       - schedule:
