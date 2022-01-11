@@ -449,14 +449,6 @@ _environments:
     DEBIAN_FRONTEND: "noninteractive"
 
 executors:
-  debug_exec:
-    docker:
-      - image: ghcr.io/ros-planning/navigation2:main
-    working_directory: /opt/overlay_ws
-    environment:
-      <<: *common_environment
-      CACHE_NONCE: "Debug"
-      OVERLAY_MIXINS: "debug ccache coverage-gcc lld"
   release_exec:
     docker:
       - image: ghcr.io/ros-planning/navigation2:main
@@ -464,7 +456,7 @@ executors:
     environment:
       <<: *common_environment
       CACHE_NONCE: "Release"
-      OVERLAY_MIXINS: "release ccache lld"
+      OVERLAY_MIXINS: "release ccache coverage-gcc lld"
 
 _jobs:
   job_test: &job_test
@@ -480,52 +472,42 @@ _jobs:
       RMW_IMPLEMENTATION: << parameters.rmw >>
 
 jobs:
-  debug_build: &debug_build
-    executor: debug_exec
+  release_build: &release_build
+    executor: release_exec
     steps:
       - checkout_source
       - setup_dependencies
       - build_source
-  release_build:
-    executor: release_exec
-    <<: *debug_build
-  debug_test:
+  release_test: &release_test
     <<: *job_test
-    executor: debug_exec
+    executor: release_exec
+    steps:
+      - restore_build
+      - test_build:
+          cache_test: << parameters.cache_test >>
+  coverage_test:
+    <<: *release_test
     steps:
       - restore_build
       - test_build:
           cache_test: << parameters.cache_test >>
       - report_coverage
-  release_test:
-    <<: *job_test
-    executor: release_exec
-    steps:
-      - restore_build
-      - test_build:
-          cache_test: << parameters.cache_test >>
 
 workflows:
   version: 2
   build_and_test:
     jobs:
-      - debug_build
-      - debug_test:
-          requires:
-            - debug_build
-          cache_test: true
       - release_build
-      - release_test:
+      - coverage_test:
           requires:
             - release_build
           cache_test: true
   nightly:
     jobs:
-      - debug_build
-      - debug_test:
-          requires:
-            - debug_build
       - release_build
+      - coverage_test:
+          requires:
+            - release_build
       - release_test:
           requires:
             - release_build
@@ -533,7 +515,6 @@ workflows:
             parameters:
               rmw:
                 - rmw_connextdds
-                - rmw_cyclonedds_cpp
                 - rmw_fastrtps_cpp
     triggers:
       - schedule:
