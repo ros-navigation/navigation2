@@ -34,7 +34,7 @@ class IsNewPathShorterTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("goal_updater_test_fixture");
+    node_ = std::make_shared<rclcpp::Node>("is_new_path_shorter_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();

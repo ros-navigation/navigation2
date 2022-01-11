@@ -36,7 +36,7 @@ class CancelControlTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("controller_cancel_text_fixture");
+    node_ = std::make_shared<rclcpp::Node>("controller_cancel_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
     config_ = new BT::NodeConfiguration();
 
