@@ -86,6 +86,11 @@ public:
     return std::make_tuple(d.enabled_, d.group_connectivity_type_, d.minimal_group_size_);
   }
 
+protected:
+  std::vector<uint8_t> image_buffer_bytes;
+  std::vector<uint8_t> image_buffer_bytes2;
+  std::vector<uint8_t> image_buffer_bytes3;
+
 private:
   nav2_costmap_2d::DenoiseLayer denoise_;
 };
@@ -99,13 +104,13 @@ TEST_F(DenoiseLayerTester, removeSinglePixels4way) {
     "x.x."
     "x..x"
     ".x.."
-    "xx.x");
+    "xx.x", image_buffer_bytes);
   const auto exp = imageFromString<uint8_t>(
     "x..."
     "x..."
     ".x.."
-    "xx..");
-  auto out = in.clone();
+    "xx..", image_buffer_bytes2);
+  auto out = clone(in, image_buffer_bytes3);
   removeSinglePixels(out, ConnectivityType::Way4);
 
   ASSERT_TRUE(isEqual(out, exp)) <<
@@ -119,14 +124,14 @@ TEST_F(DenoiseLayerTester, removeSinglePixels8way) {
     "x.x."
     "x..x"
     ".x.."
-    "xx.x");
+    "xx.x", image_buffer_bytes);
   const auto exp = imageFromString<uint8_t>(
     "x.x."
     "x..x"
     ".x.."
-    "xx..");
+    "xx..", image_buffer_bytes2);
 
-  auto out = in.clone();
+  auto out = clone(in, image_buffer_bytes3);
   removeSinglePixels(out, ConnectivityType::Way8);
 
   ASSERT_TRUE(isEqual(out, exp)) <<
@@ -138,11 +143,11 @@ TEST_F(DenoiseLayerTester, removeSinglePixels8way) {
 TEST_F(DenoiseLayerTester, removeSinglePixelsFromExtremelySmallImage) {
   {
     const auto in = imageFromString<uint8_t>(
-      "x");
+      "x", image_buffer_bytes);
     const auto exp = imageFromString<uint8_t>(
-      ".");
+      ".", image_buffer_bytes2);
 
-    auto out = in.clone();
+    auto out = clone(in, image_buffer_bytes3);
     removeSinglePixels(out, ConnectivityType::Way8);
 
     ASSERT_TRUE(isEqual(out, exp));
@@ -151,12 +156,12 @@ TEST_F(DenoiseLayerTester, removeSinglePixelsFromExtremelySmallImage) {
   {
     const auto in = imageFromString<uint8_t>(
       "x."
-      ".x");
+      ".x", image_buffer_bytes);
     const auto exp = imageFromString<uint8_t>(
       "x."
-      ".x");
+      ".x", image_buffer_bytes2);
 
-    auto out = in.clone();
+    auto out = clone(in, image_buffer_bytes3);
     removeSinglePixels(out, ConnectivityType::Way8);
 
     ASSERT_TRUE(isEqual(out, exp));
@@ -165,12 +170,12 @@ TEST_F(DenoiseLayerTester, removeSinglePixelsFromExtremelySmallImage) {
   {
     const auto in = imageFromString<uint8_t>(
       "x."
-      ".x");
+      ".x", image_buffer_bytes);
     const auto exp = imageFromString<uint8_t>(
       ".."
-      "..");
+      "..", image_buffer_bytes2);
 
-    auto out = in.clone();
+    auto out = clone(in, image_buffer_bytes3);
     removeSinglePixels(out, ConnectivityType::Way4);
 
     ASSERT_TRUE(isEqual(out, exp));
@@ -178,14 +183,13 @@ TEST_F(DenoiseLayerTester, removeSinglePixelsFromExtremelySmallImage) {
 }
 
 TEST_F(DenoiseLayerTester, removeSinglePixelsFromNonBinary) {
-  Image<uint8_t> in(3, 3);
-  in.fill(253);
-  in.at(1, 1) = 255;
+  image_buffer_bytes.assign(9, 253);
+  Image<uint8_t> in = make_image<uint8_t>(3, 3, image_buffer_bytes);
+  in.row(1)[1] = 255;
+  Image<uint8_t> exp = clone(in, image_buffer_bytes2);
+  exp.row(1)[1] = 0;
 
-  Image<uint8_t> exp = in.clone();
-  exp.at(1, 1) = 0;
-
-  auto out = in.clone();
+  auto out = clone(in, image_buffer_bytes3);
   removeSinglePixels(out, ConnectivityType::Way4);
 
   ASSERT_TRUE(isEqual(out, exp)) <<
@@ -202,7 +206,7 @@ TEST_F(DenoiseLayerTester, removePixelsGroup4way) {
     "x......"
     "...x.xx"
     "xxx..xx"
-    "....xx.");
+    "....xx.", image_buffer_bytes);
   const auto exp = imageFromString<uint8_t>(
     ".xx...."
     "..x...."
@@ -210,9 +214,9 @@ TEST_F(DenoiseLayerTester, removePixelsGroup4way) {
     "......."
     ".....xx"
     "xxx..xx"
-    "....xx.");
+    "....xx.", image_buffer_bytes2);
 
-  auto out = in.clone();
+  auto out = clone(in, image_buffer_bytes3);
   removeGroups(out, ConnectivityType::Way4, 3);
 
   ASSERT_TRUE(isEqual(out, exp)) <<
@@ -229,7 +233,7 @@ TEST_F(DenoiseLayerTester, removePixelsGroup8way) {
     "x......"
     "...x.xx"
     "xxx..xx"
-    "....xx.");
+    "....xx.", image_buffer_bytes);
   const auto exp = imageFromString<uint8_t>(
     ".xx..xx"
     "..x.x.."
@@ -237,9 +241,9 @@ TEST_F(DenoiseLayerTester, removePixelsGroup8way) {
     "......."
     "...x.xx"
     "xxx..xx"
-    "....xx.");
+    "....xx.", image_buffer_bytes2);
 
-  auto out = in.clone();
+  auto out = clone(in, image_buffer_bytes3);
   removeGroups(out, ConnectivityType::Way8, 3);
 
   ASSERT_TRUE(isEqual(out, exp)) <<
@@ -251,11 +255,11 @@ TEST_F(DenoiseLayerTester, removePixelsGroup8way) {
 TEST_F(DenoiseLayerTester, removePixelsGroupFromExtremelySmallImage) {
   {
     const auto in = imageFromString<uint8_t>(
-      "x");
+      "x", image_buffer_bytes);
     const auto exp = imageFromString<uint8_t>(
-      ".");
+      ".", image_buffer_bytes2);
 
-    auto out = in.clone();
+    auto out = clone(in, image_buffer_bytes3);
     removeGroups(out, ConnectivityType::Way8, 3);
 
     ASSERT_TRUE(isEqual(out, exp));
@@ -264,12 +268,12 @@ TEST_F(DenoiseLayerTester, removePixelsGroupFromExtremelySmallImage) {
   {
     const auto in = imageFromString<uint8_t>(
       "x."
-      ".x");
+      ".x", image_buffer_bytes);
     const auto exp = imageFromString<uint8_t>(
       ".."
-      "..");
+      "..", image_buffer_bytes2);
 
-    auto out = in.clone();
+    auto out = clone(in, image_buffer_bytes3);
     removeGroups(out, ConnectivityType::Way8, 3);
 
     ASSERT_TRUE(isEqual(out, exp));
@@ -277,14 +281,14 @@ TEST_F(DenoiseLayerTester, removePixelsGroupFromExtremelySmallImage) {
 }
 
 TEST_F(DenoiseLayerTester, removePixelsGroupFromNonBinary) {
-  Image<uint8_t> in(3, 3);
-  in.fill(253);
-  in.at(1, 1) = 255;
+  image_buffer_bytes.assign(9, 253);
+  Image<uint8_t> in = make_image<uint8_t>(3, 3, image_buffer_bytes);
+  in.row(1)[1] = 255;
 
-  Image<uint8_t> exp = in.clone();
-  exp.at(1, 1) = 0;
+  Image<uint8_t> exp = clone(in, image_buffer_bytes2);
+  exp.row(1)[1] = 0;
 
-  auto out = in.clone();
+  auto out = clone(in, image_buffer_bytes3);
   removeGroups(out, ConnectivityType::Way4, 2);
 
   ASSERT_TRUE(isEqual(out, exp)) <<
@@ -297,13 +301,13 @@ TEST_F(DenoiseLayerTester, denoiseSingles) {
   const auto in = imageFromString<uint8_t>(
     "xx."
     "..."
-    "..x");
+    "..x", image_buffer_bytes);
   const auto exp = imageFromString<uint8_t>(
     "xx."
     "..."
-    "...");
+    "...", image_buffer_bytes2);
 
-  auto out = in.clone();
+  auto out = clone(in, image_buffer_bytes3);
   denoise(out, ConnectivityType::Way4, 2);
 
   ASSERT_TRUE(isEqual(out, exp)) <<
@@ -316,13 +320,13 @@ TEST_F(DenoiseLayerTester, denoiseGroups) {
   const auto in = imageFromString<uint8_t>(
     "xx."
     "x.x"
-    "..x");
+    "..x", image_buffer_bytes);
   const auto exp = imageFromString<uint8_t>(
     "xx."
     "x.."
-    "...");
+    "...", image_buffer_bytes2);
 
-  auto out = in.clone();
+  auto out = clone(in, image_buffer_bytes3);
   denoise(out, ConnectivityType::Way4, 3);
 
   ASSERT_TRUE(isEqual(out, exp)) <<
@@ -338,7 +342,7 @@ TEST_F(DenoiseLayerTester, denoiseEmpty) {
 }
 
 TEST_F(DenoiseLayerTester, denoiseNothing) {
-  Image<uint8_t> in(1, 1);
+  Image<uint8_t> in = make_image<uint8_t>(1, 1, image_buffer_bytes);
 
   ASSERT_NO_THROW(denoise(in, ConnectivityType::Way4, 1));
 }

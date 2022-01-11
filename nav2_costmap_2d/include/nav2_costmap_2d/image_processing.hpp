@@ -32,46 +32,6 @@ enum class ConnectivityType: int
 };
 
 /**
- * @brief Calculate truncated histogram of image.
- *
- * Creates a histogram of image_max bins.
- * Bin with index i keep min of (<count of the number of pixels with value i>, bin_max).
- * This truncation avoids overflow and is acceptable in the problem being solved.
- * For example, the image with pixel type uint16_t may have 100'000 pixels equal to 0
- * (100'000 > std::numeric_limits<uint16_t>). In this case, an overflow will occur when
- * calculating a traditional histogram with bins of the uint16_t type. But in this function,
- * the bin value will increase to the bin_max value, then stop. Overflow will not happen.
- * @tparam T image pixel type
- * @param image source image
- * @param image_max max image pixel value
- * @param bin_max max histogram bin value
- * @return vector of histogram bins
- * @warning If source contains a pixel with a value, large then image_max,
- * the behavior is undefined
-*/
-template<class T, class Bin>
-std::vector<Bin> histogram(const Image<T> & image, T image_max, Bin bin_max);
-
-template<class T, class Bin>
-std::vector<Bin>
-histogram(const Image<T> & image, T image_max, Bin bin_max)
-{
-  if (image.empty()) {
-    return {};
-  }
-  std::vector<Bin> histogram(size_t(image_max) + 1);
-
-  // Increases the bin value corresponding to the pixel by one
-  auto add_pixel_value = [&histogram, bin_max](T pixel) {
-      auto & h = histogram[pixel];
-      h = std::min(Bin(h + 1), bin_max);
-    };
-
-  image.forEach(add_pixel_value);
-  return histogram;
-}
-
-/**
  * @brief A memory buffer that can grow to an upper-bounded capacity
  */
 class MemoryBuffer
@@ -109,7 +69,8 @@ template<class AggregateFn>
 void morphology_operation(
   const Image<uint8_t> & input, Image<uint8_t> & output,
   const Image<uint8_t> & shape, AggregateFn aggregate);
-inline Image<uint8_t> getShape(ConnectivityType connectivity);
+using ShapeBuffer3x3 = std::array<uint8_t, 9>;
+inline Image<uint8_t> getShape(ShapeBuffer3x3 & buffer, ConnectivityType connectivity);
 } // namespace imgproc_impl
 
 /**
@@ -126,7 +87,8 @@ inline void dilate(
   auto aggregate = [](std::initializer_list<uint8_t> lst) {
       return std::max(lst);
     };
-  morphology_operation(input, output, getShape(connectivity), aggregate);
+  ShapeBuffer3x3 shape_buffer;
+  morphology_operation(input, output, getShape(shape_buffer, connectivity), aggregate);
 }
 
 /**
@@ -192,6 +154,43 @@ void MemoryBuffer::allocate(size_t bytes)
 
 namespace imgproc_impl
 {
+
+/**
+ * @brief Calculate truncated histogram of image.
+ *
+ * Creates a histogram of image_max bins.
+ * Bin with index i keep min of (<count of the number of pixels with value i>, bin_max).
+ * This truncation avoids overflow and is acceptable in the problem being solved.
+ * For example, the image with pixel type uint16_t may have 100'000 pixels equal to 0
+ * (100'000 > std::numeric_limits<uint16_t>). In this case, an overflow will occur when
+ * calculating a traditional histogram with bins of the uint16_t type. But in this function,
+ * the bin value will increase to the bin_max value, then stop. Overflow will not happen.
+ * @tparam T image pixel type
+ * @param image source image
+ * @param image_max max image pixel value
+ * @param bin_max max histogram bin value
+ * @return vector of histogram bins
+ * @warning If source contains a pixel with a value, large then image_max,
+ * the behavior is undefined
+*/
+template<class T, class Bin>
+std::vector<Bin>
+histogram(const Image<T> & image, T image_max, Bin bin_max)
+{
+  if (image.empty()) {
+    return {};
+  }
+  std::vector<Bin> histogram(size_t(image_max) + 1);
+
+  // Increases the bin value corresponding to the pixel by one
+  auto add_pixel_value = [&histogram, bin_max](T pixel) {
+      auto & h = histogram[pixel];
+      h = std::min(Bin(h + 1), bin_max);
+    };
+
+  image.forEach(add_pixel_value);
+  return histogram;
+}
 
 /**
    * @brief Boundary case object stub. Used as parameter of class Window.
@@ -809,21 +808,14 @@ void morphology_operation(
 }
 
 /// @brief Return structuring element 3x3 image by predefined figure type
-Image<uint8_t> getShape(ConnectivityType connectivity)
+Image<uint8_t> getShape(ShapeBuffer3x3 & buffer, ConnectivityType connectivity)
 {
-  Image<uint8_t> shape(3, 3);
-
   if (connectivity == ConnectivityType::Way8) {
-    shape.fill(255);
-    shape.at(1, 1) = 0;
+    buffer = {255, 255, 255, 255, 0, 255, 255, 255, 255};
   } else {
-    shape.fill(0);
-    shape.at(1, 0) = 255;
-    shape.at(1, 2) = 255;
-    shape.at(0, 1) = 255;
-    shape.at(2, 1) = 255;
+    buffer = {0, 255, 0, 255, 0, 255, 0, 255, 0};
   }
-  return shape;
+  return Image<uint8_t>(3, 3, buffer.data(), 3);
 }
 
 class GroupsRemover

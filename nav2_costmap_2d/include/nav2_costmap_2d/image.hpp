@@ -16,7 +16,6 @@
 #define NAV2_COSTMAP_2D__IMAGE_HPP_
 
 #include <cstddef>
-#include <memory>
 #include <stdexcept>
 
 namespace nav2_costmap_2d
@@ -47,13 +46,6 @@ public:
   Image(size_t rows, size_t columns, T * data, size_t step);
 
   /**
-   * @brief Create image
-   * @param rows number of image rows
-   * @param columns number of image columns
-   */
-  Image(size_t rows, size_t columns);
-
-  /**
    * @brief Create image referencing to the other
    * Share image data between new and old object.
    * Changing data in a new object will affect the given one and vice versa
@@ -64,23 +56,6 @@ public:
    * @brief Create image from the other (move constructor)
    */
   Image(Image && other) noexcept;
-
-  /**
-   * @brief Create copy of image
-   */
-  Image clone() const;
-
-  /**
-   * @brief Create new image referencing to this image part
-   * Share image data between new and old object.
-   * Changing data in a new object will affect the given one and vice versa
-   * @param top first row of image part
-   * @param left first column of image part
-   * @param rows number of part rows
-   * @param columns number of part columns
-   * @throw std::logic_error if part out of image bounds
-   */
-  Image part(size_t top, size_t left, size_t rows, size_t columns);
 
   /// @return number of image rows
   size_t rows() const {return rows_;}
@@ -95,15 +70,6 @@ public:
   size_t step() const {return step_;}
 
   /**
-   * @return image pixel
-   * @warning If row/column exceed the image bounds, the behavior is undefined
-   */
-  T & at(size_t row, size_t column);
-
-  /// @overload
-  const T & at(size_t row, size_t column) const;
-
-  /**
    * @return pointer to first pixel of row
    * @warning If row >= rows(), the behavior is undefined
    */
@@ -111,9 +77,6 @@ public:
 
   /// @overload
   const T * row(size_t row) const;
-
-  /// @brief Fill the image with pixels value
-  void fill(T value);
 
   /**
    * @brief Read (and modify, if need) each pixel sequentially
@@ -155,7 +118,6 @@ public:
   void convert(Image<TargetElement> & target, Converter && converter) const;
 
 private:
-  std::shared_ptr<T[]> data_;
   T * data_start_{};
   size_t rows_{};
   size_t columns_{};
@@ -166,67 +128,18 @@ template<class T>
 Image<T>::Image(size_t rows, size_t columns, T * data, size_t step)
 : rows_{rows}, columns_{columns}, step_{step}
 {
-  auto empty_deleter = [](T *) { /* do nothing. This object does not own data_ */};
-  data_ = std::shared_ptr<T[]>(data, empty_deleter);
   data_start_ = data;
 }
 
 template<class T>
-Image<T>::Image(size_t rows, size_t columns)
-: rows_{rows}, columns_{columns}, step_{columns}
-{
-  // Before C++20 we can't call std::make_shared<T[]>...
-  data_ = std::make_unique<T[]>(rows * columns); // it's ok if rows * columns == 0
-  data_start_ = data_.get();
-}
-
-template<class T>
 Image<T>::Image(Image & other)
-: data_{other.data_}, data_start_{other.data_start_},
+: data_start_{other.data_start_},
   rows_{other.rows_}, columns_{other.columns_}, step_{other.step_} {}
 
 template<class T>
 Image<T>::Image(Image && other) noexcept
-: data_{std::move(other.data_)}, data_start_{other.data_start_},
+: data_start_{other.data_start_},
   rows_{other.rows_}, columns_{other.columns_}, step_{other.step_} {}
-
-template<class T>
-Image<T> Image<T>::clone() const
-{
-  Image<T> clone(rows(), columns());
-  convert(
-    clone, [](const T & src, T & trg) {
-      trg = src;
-    });
-  return clone;
-}
-
-template<class T>
-Image<T> Image<T>::part(size_t top, size_t left, size_t rows, size_t columns)
-{
-  if (top + rows > this->rows() || left + columns > this->columns()) {
-    throw std::logic_error("Image::part. Part is out of image bounds");
-  }
-
-  if (rows == 0 || columns == 0) {
-    throw std::logic_error("Image::part. Trying to request empty part");
-  }
-  Image img(rows, columns, &at(top, left), step_);
-  img.data_ = this->data_; // overwrite shared pointer to this object member
-  return img;
-}
-
-template<class T>
-T & Image<T>::at(size_t row, size_t column)
-{
-  return const_cast<T &>( static_cast<const Image<T> &>(*this).at(row, column) );
-}
-
-template<class T>
-const T & Image<T>::at(size_t row, size_t column) const
-{
-  return *(this->row(row) + column);
-}
 
 template<class T>
 T * Image<T>::row(size_t row)
@@ -238,12 +151,6 @@ template<class T>
 const T * Image<T>::row(size_t row) const
 {
   return data_start_ + row * step_;
-}
-
-template<class T>
-void Image<T>::fill(T value)
-{
-  forEach([&](T & v) {v = value;});
 }
 
 template<class T>

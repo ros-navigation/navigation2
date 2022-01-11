@@ -15,24 +15,25 @@
 #include <gtest/gtest.h>
 
 #include "nav2_costmap_2d/image.hpp"
+#include "image_tests_helper.hpp"
 
 using namespace nav2_costmap_2d;
 
-TEST(Image, emptyProps) {
+struct ImageTester : public ::testing::Test
+{
+protected:
+  std::vector<uint8_t> image_buffer_bytes;
+  std::vector<uint16_t> image_buffer_words;
+};
+
+TEST_F(ImageTester, emptyProps) {
   Image<uint8_t> empty;
   ASSERT_EQ(empty.rows(), 0ul);
   ASSERT_EQ(empty.columns(), 0ul);
   ASSERT_EQ(empty.step(), 0ul);
 }
 
-TEST(Image, props) {
-  Image<uint8_t> image(3, 2);
-  ASSERT_EQ(image.rows(), 3ul);
-  ASSERT_EQ(image.columns(), 2ul);
-  ASSERT_EQ(image.step(), 2ul);
-}
-
-TEST(Image, memoryAccess) {
+TEST_F(ImageTester, memoryAccess) {
   std::array<uint8_t, 7> buffer{};
   for (uint8_t i = 0; i < buffer.size(); ++i) {
     buffer[i] = i;
@@ -42,15 +43,10 @@ TEST(Image, memoryAccess) {
 
   ASSERT_EQ(wrapper.row(0), buffer.data());
   ASSERT_EQ(wrapper.row(1), buffer.data() + 4);
-
-  for (uint8_t i = 0; i < 3; ++i) {
-    ASSERT_EQ(wrapper.at(0, i), i);
-    ASSERT_EQ(wrapper.at(1, i), i + 4);
-  }
 }
 
-TEST(Image, forEach) {
-  Image<uint8_t> image(3, 2);
+TEST_F(ImageTester, forEach) {
+  Image<uint8_t> image = make_image(3, 2, image_buffer_bytes);
   const uint8_t non_zero_initial_value = 42;
   uint8_t current(non_zero_initial_value);
 
@@ -61,16 +57,15 @@ TEST(Image, forEach) {
 
   for (size_t i = 0; i < image.rows(); ++i) {
     for (size_t j = 0; j < image.columns(); ++j) {
-      ASSERT_EQ(image.at(i, j), non_zero_initial_value + i * image.columns() + j);
+      ASSERT_EQ(image.row(i)[j], non_zero_initial_value + i * image.columns() + j);
     }
   }
 }
 
-TEST(Image, convert) {
-  std::array<uint16_t, 6> src = {1, 2, 3, 4, 5, 6};
-  const Image<uint16_t> source(2, 3, src.data(), 3);
-  std::array<uint8_t, 6> trg = {};
-  Image<uint8_t> target(2, 3, trg.data(), 3);
+TEST_F(ImageTester, convert) {
+  image_buffer_words = {1, 2, 3, 4, 5, 6};
+  Image<uint16_t> source = make_image(2, 3, image_buffer_words);
+  Image<uint8_t> target = make_image(2, 3, image_buffer_bytes);
 
   source.convert(
     target, [](uint16_t s, uint8_t & t) {
@@ -78,19 +73,19 @@ TEST(Image, convert) {
     });
 
   const std::array<uint8_t, 6> expected = {2, 4, 6, 8, 10, 12};
-  ASSERT_TRUE(std::equal(expected.begin(), expected.end(), trg.begin()));
+  ASSERT_TRUE(std::equal(expected.begin(), expected.end(), image_buffer_bytes.begin()));
 }
 
-TEST(Image, convertDifferentSizes) {
-  const Image<uint16_t> source(2, 3);
-  Image<uint8_t> target(3, 2);
+TEST_F(ImageTester, convertDifferentSizes) {
+  Image<uint16_t> source = make_image(2, 3, image_buffer_words);
+  Image<uint8_t> target = make_image(3, 2, image_buffer_bytes);
   auto do_nothing = [](uint16_t /*src*/, uint8_t & /*trg*/) {};
 
   // Extra parentheses need to protect commas in template arguments
   ASSERT_THROW((source.convert(target, do_nothing)), std::logic_error);
 }
 
-TEST(Image, convertEmptyImages) {
+TEST_F(ImageTester, convertEmptyImages) {
   const Image<uint16_t> source;
   Image<uint8_t> target;
   auto shouldn_t_be_called = [](uint16_t /*src*/, uint8_t & /*trg*/) {
@@ -100,72 +95,16 @@ TEST(Image, convertEmptyImages) {
   ASSERT_NO_THROW((source.convert(target, shouldn_t_be_called)));
 }
 
-TEST(Image, convertWrongSize) {
-  const Image<uint16_t> source(2, 3);
+TEST_F(ImageTester, convertWrongSize) {
+  Image<uint16_t> source = make_image(2, 3, image_buffer_words);
 
-  auto do_nothing = [](uint16_t /*src*/, uint16_t & /*trg*/) {};
+  auto do_nothing = [](uint16_t /*src*/, uint8_t & /*trg*/) {};
   {
-    Image<uint16_t> target(3, 3);
+    Image<uint8_t> target = make_image(3, 3, image_buffer_bytes);
     ASSERT_THROW((source.convert(target, do_nothing)), std::logic_error);
   }
   {
-    Image<uint16_t> target(2, 2);
+    Image<uint8_t> target = make_image(2, 2, image_buffer_bytes);
     ASSERT_THROW((source.convert(target, do_nothing)), std::logic_error);
   }
-}
-
-TEST(Image, part) {
-  Image<uint8_t> image(5, 4);
-  image.forEach(
-    [&](uint8_t & pixel) {
-      pixel = 0;
-    });
-
-  image.part(1, 1, 3, 2).forEach(
-    [](uint8_t & pixel) {
-      pixel = 255;
-    });
-
-  using BytesVec = std::vector<uint8_t>;
-  auto rowAsVec = [&image](size_t row) {
-      return BytesVec(image.row(row), image.row(row) + 4);
-    };
-
-  ASSERT_EQ(rowAsVec(0), BytesVec({0, 0, 0, 0}));
-  ASSERT_EQ(rowAsVec(1), BytesVec({0, 255, 255, 0}));
-  ASSERT_EQ(rowAsVec(2), BytesVec({0, 255, 255, 0}));
-  ASSERT_EQ(rowAsVec(3), BytesVec({0, 255, 255, 0}));
-  ASSERT_EQ(rowAsVec(4), BytesVec({0, 0, 0, 0}));
-}
-
-TEST(Image, emptyPart) {
-  Image<uint8_t> image(5, 5);
-  ASSERT_THROW(image.part(1, 1, 0, 1), std::logic_error);
-  ASSERT_THROW(image.part(1, 1, 1, 0), std::logic_error);
-}
-
-TEST(Image, outOfBoundsPart) {
-  Image<uint8_t> image(5, 5);
-  ASSERT_THROW(image.part(3, 3, 2, 4), std::logic_error);
-  ASSERT_THROW(image.part(3, 3, 4, 2), std::logic_error);
-}
-
-TEST(Image, cloneEmpty) {
-  Image<uint16_t> a;
-  auto b = a.clone();
-
-  ASSERT_TRUE(b.empty());
-}
-
-TEST(Image, clone) {
-  std::array<uint16_t, 6> data = {1, 2, 3, 4, 5, 6};
-  Image<uint16_t> a(3, 2, data.data(), 2);
-  auto b = a.clone();
-
-  auto iter = data.begin();
-  b.forEach(
-    [&iter](uint16_t v) {
-      ASSERT_EQ(v, *iter);
-      ++iter;
-    });
 }

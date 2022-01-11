@@ -18,11 +18,33 @@
 #include "nav2_costmap_2d/image.hpp"
 #include <cmath>
 #include <string>
+#include <vector>
 #include <map>
 #include <stdexcept>
 
 namespace nav2_costmap_2d
 {
+template<class T>
+Image<T> make_image(size_t rows, size_t columns, std::vector<T> & buffer)
+{
+  buffer.resize(rows * columns);
+  return Image<T>(rows, columns, buffer.data(), columns);
+}
+
+template<class T>
+Image<T> clone(const Image<T> & source, std::vector<T> & buffer)
+{
+  buffer.resize(source.rows() * source.columns());
+  Image<T> result(source.rows(), source.columns(), buffer.data(), source.columns());
+
+  for (size_t row = 0; row < source.rows(); ++row) {
+    for (size_t column = 0; column < source.columns(); ++column) {
+      result.row(row)[column] = source.row(row)[column];
+    }
+  }
+  return result;
+}
+
 /**
  * @brief Decodes image from a string
  *
@@ -39,7 +61,7 @@ namespace nav2_costmap_2d
  */
 template<class T>
 Image<T> imageFromString(
-  const std::string & s,
+  const std::string & s, std::vector<T> & buffer,
   const std::map<char, T> & codes = {{'.', 0}, {'x', 255}})
 {
   const int side_size = static_cast<int>(std::sqrt(s.size()));
@@ -47,7 +69,7 @@ Image<T> imageFromString(
   if (size_t(side_size) * side_size != s.size()) {
     throw std::logic_error("Test data error: parseBinaryMatrix: Unexpected input string size");
   }
-  Image<T> image(side_size, side_size);
+  Image<T> image = make_image(side_size, side_size, buffer);
   auto iter = s.begin();
   image.forEach(
     [&](T & pixel) {
@@ -74,7 +96,7 @@ inline bool isEqual(const Image<uint8_t> & a, const Image<uint8_t> & b)
 
   for (size_t row = 0; row < a.rows() && equal; ++row) {
     for (size_t column = 0; column < a.columns() && equal; ++column) {
-      equal = a.at(row, column) == b.at(row, column);
+      equal = a.row(row)[column] == b.row(row)[column];
     }
   }
   return equal;
@@ -85,7 +107,7 @@ std::ostream & operator<<(std::ostream & out, const Image<T> & image)
 {
   for (size_t i = 0; i < image.rows(); ++i) {
     for (size_t j = 0; j < image.columns(); ++j) {
-      out << int64_t(image.at(i, j)) << " ";
+      out << int64_t(image.row(i)[j]) << " ";
     }
     out << std::endl;
   }
