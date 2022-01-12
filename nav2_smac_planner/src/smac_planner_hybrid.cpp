@@ -73,6 +73,7 @@ void SmacPlannerHybrid::configure(
 
   int angle_quantizations;
   double analytic_expansion_max_length_m;
+  bool smooth_path;
 
   // General planner params
   nav2_util::declare_parameter_if_not_declared(
@@ -94,6 +95,9 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
   node->get_parameter(name + ".max_iterations", _max_iterations);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".smooth_path", rclcpp::ParameterValue(true));
+  node->get_parameter(name + ".smooth_path", smooth_path);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
@@ -206,10 +210,12 @@ void SmacPlannerHybrid::configure(
     _angle_quantizations);
 
   // Initialize path smoother
-  SmootherParams params;
-  params.get(node, name);
-  _smoother = std::make_unique<Smoother>(params);
-  _smoother->initialize(minimum_turning_radius_global_coords);
+  if (smooth_path) {
+    SmootherParams params;
+    params.get(node, name);
+    _smoother = std::make_unique<Smoother>(params);
+    _smoother->initialize(minimum_turning_radius_global_coords);
+  }
 
   // Initialize costmap downsampler
   if (_downsample_costmap && _downsampling_factor > 1) {
@@ -473,7 +479,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 #endif
 
   // Smooth plan
-  if (num_iterations > 1 && plan.poses.size() > 6) {
+  if (_smoother && num_iterations > 1) {
     _smoother->smooth(plan, costmap, time_remaining);
   }
 
@@ -511,7 +517,9 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         _lookup_table_size = parameter.as_double();
       } else if (name == _name + ".minimum_turning_radius") {
         reinit_a_star = true;
-        reinit_smoother = true;
+        if (_smoother) {
+          reinit_smoother = true;
+        }
         _search_info.minimum_turning_radius = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".reverse_penalty") {
         reinit_a_star = true;
@@ -543,6 +551,12 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       } else if (name == _name + ".cache_obstacle_heuristic") {
         reinit_a_star = true;
         _search_info.cache_obstacle_heuristic = parameter.as_bool();
+      } else if (name == _name + ".smooth_path") {
+        if (parameter.as_bool()) {
+          reinit_smoother = true;
+        } else {
+          _smoother.reset();
+        }
       }
     } else if (type == ParameterType::PARAMETER_INTEGER) {
       if (name == _name + ".downsampling_factor") {

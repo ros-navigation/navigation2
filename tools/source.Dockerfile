@@ -15,7 +15,7 @@
 # Use `--no-cache` to break the local docker build cache.
 # Use `--pull` to pull the latest parent image from the remote registry.
 # Use `--target=<stage_name>` to build stages not used for final stage.
-# 
+#
 # We're only building on top of a ros2 devel image to get the basics
 # prerequisites installed such as the apt source, rosdep, etc. We don't want to
 # actually use any of the ros release packages. Instead we are going to build
@@ -82,6 +82,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
       ccache \
       libasio-dev \
       libtinyxml2-dev \
+      lld \
     && rosdep update
 
 ENV ROS_VERSION=2 \
@@ -105,7 +106,7 @@ FROM ros2_depender AS ros2_builder
 
 # build ros2 source
 COPY --from=cacher $ROS2_WS ./
-ARG ROS2_MIXINS="release ccache"
+ARG ROS2_MIXINS="release ccache lld"
 RUN --mount=type=cache,target=/root/.ccache \
     colcon build \
       --symlink-install \
@@ -152,7 +153,7 @@ COPY --from=ros2_builder $ROS2_WS $ROS2_WS
 
 # build underlay source
 COPY --from=cacher $UNDERLAY_WS ./
-ARG UNDERLAY_MIXINS="release ccache"
+ARG UNDERLAY_MIXINS="release ccache lld"
 RUN --mount=type=cache,target=/root/.ccache \
     . $ROS2_WS/install/setup.sh && \
     colcon build \
@@ -203,7 +204,7 @@ COPY --from=underlay_builder $UNDERLAY_WS $UNDERLAY_WS
 
 # build overlay source
 COPY --from=cacher $OVERLAY_WS ./
-ARG OVERLAY_MIXINS="release ccache"
+ARG OVERLAY_MIXINS="release ccache lld"
 RUN --mount=type=cache,target=/root/.ccache \
     . $UNDERLAY_WS/install/setup.sh && \
     colcon build \

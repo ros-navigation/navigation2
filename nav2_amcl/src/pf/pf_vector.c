@@ -63,16 +63,16 @@ pf_vector_t pf_vector_zero()
 
 
 // Print a vector
-void pf_vector_fprintf(pf_vector_t a, FILE * file, const char * fmt)
-{
-  int i;
+// void pf_vector_fprintf(pf_vector_t a, FILE * file, const char * fmt)
+// {
+//   int i;
 
-  for (i = 0; i < 3; i++) {
-    fprintf(file, fmt, a.v[i]);
-    fprintf(file, " ");
-  }
-  fprintf(file, "\n");
-}
+//   for (i = 0; i < 3; i++) {
+//     fprintf(file, fmt, a.v[i]);
+//     fprintf(file, " ");
+//   }
+//   fprintf(file, "\n");
+// }
 
 
 // // Simple vector addition
@@ -163,18 +163,18 @@ pf_matrix_t pf_matrix_zero()
 
 
 // Print a matrix
-void pf_matrix_fprintf(pf_matrix_t a, FILE * file, const char * fmt)
-{
-  int i, j;
+// void pf_matrix_fprintf(pf_matrix_t a, FILE * file, const char * fmt)
+// {
+//   int i, j;
 
-  for (i = 0; i < 3; i++) {
-    for (j = 0; j < 3; j++) {
-      fprintf(file, fmt, a.m[i][j]);
-      fprintf(file, " ");
-    }
-    fprintf(file, "\n");
-  }
-}
+//   for (i = 0; i < 3; i++) {
+//     for (j = 0; j < 3; j++) {
+//       fprintf(file, fmt, a.m[i][j]);
+//       fprintf(file, " ");
+//     }
+//     fprintf(file, "\n");
+//   }
+// }
 
 
 /*

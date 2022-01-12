@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <memory>
 
 #include "nav2_smac_planner/analytic_expansion.hpp"
 
@@ -254,16 +255,17 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalytic
   const NodePtr & goal_node,
   const AnalyticExpansionNodes & expanded_nodes)
 {
+  _detached_nodes.clear();
   // Legitimate final path - set the parent relationships, states, and poses
   NodePtr prev = node;
   for (const auto & node_pose : expanded_nodes) {
-    const auto & n = node_pose.node;
+    auto n = node_pose.node;
     cleanNode(n);
-    if (!n->wasVisited() && n->getIndex() != goal_node->getIndex()) {
-      // Make sure this node has not been visited by the regular algorithm.
-      // If it has been, there is the (slight) chance that it is in the path we are expanding
-      // from, so we should skip it.
-      // Skipping to the next node will still create a kinematically feasible path.
+    if (n->getIndex() != goal_node->getIndex()) {
+      if (n->wasVisited()) {
+        _detached_nodes.push_back(std::make_unique<NodeT>(-1));
+        n = _detached_nodes.back().get();
+      }
       n->parent = prev;
       n->pose = node_pose.proposed_coords;
       n->visited();

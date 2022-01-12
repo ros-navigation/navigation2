@@ -178,11 +178,13 @@ protected:
    * @param carrot_pose Pose of carrot
    * @param linear_vel linear velocity to forward project
    * @param angular_vel angular velocity to forward project
+   * @param carrot_dist Distance to the carrot for PP
    * @return Whether collision is imminent
    */
   bool isCollisionImminent(
     const geometry_msgs::msg::PoseStamped &,
-    const double &, const double &);
+    const double &, const double &,
+    const double &);
 
   /**
    * @brief checks for collision at projected pose
@@ -257,7 +259,7 @@ protected:
   tf2::Duration transform_tolerance_;
   double min_approach_linear_velocity_;
   double control_duration_;
-  double max_allowed_time_to_collision_;
+  double max_allowed_time_to_collision_up_to_carrot_;
   bool use_regulated_linear_velocity_scaling_;
   bool use_cost_regulated_linear_velocity_scaling_;
   double cost_scaling_dist_;

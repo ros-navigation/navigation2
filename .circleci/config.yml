@@ -33,12 +33,12 @@ _commands:
         - restore_cache:
             name: Restore Cache << parameters.key >>
             keys:
-              - "<< parameters.key >>-v6\
+              - "<< parameters.key >>-v8\
                 -{{ arch }}\
                 -{{ .Branch }}\
                 -{{ .Environment.CIRCLE_PR_NUMBER }}\
                 -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
-              - "<< parameters.key >>-v6\
+              - "<< parameters.key >>-v8\
                 -{{ arch }}\
                 -main\
                 -<no value>\
@@ -58,7 +58,7 @@ _commands:
       steps:
         - save_cache:
             name: Save Cache << parameters.key >>
-            key: "<< parameters.key >>-v6\
+            key: "<< parameters.key >>-v8\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
@@ -391,7 +391,7 @@ _steps:
         bash codecov \
           -f "lcov/total_coverage.info" \
           -R "src/navigation2" \
-          -F "project" \
+          -n "$RMW_IMPLEMENTATION" \
           -Z || echo 'Codecov upload failed'
       when: always
 
@@ -439,7 +439,7 @@ _environments:
     ROS_WS: "/opt/ros_ws"
     UNDERLAY_WS: "/opt/underlay_ws"
     OVERLAY_WS: "/opt/overlay_ws"
-    UNDERLAY_MIXINS: "release ccache"
+    UNDERLAY_MIXINS: "release ccache lld"
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
     MAKEFLAGS: "-j 2 -l 2 "
@@ -449,14 +449,6 @@ _environments:
     DEBIAN_FRONTEND: "noninteractive"
 
 executors:
-  debug_exec:
-    docker:
-      - image: ghcr.io/ros-planning/navigation2:main
-    working_directory: /opt/overlay_ws
-    environment:
-      <<: *common_environment
-      CACHE_NONCE: "Debug"
-      OVERLAY_MIXINS: "debug ccache coverage-gcc"
   release_exec:
     docker:
       - image: ghcr.io/ros-planning/navigation2:main
@@ -464,7 +456,7 @@ executors:
     environment:
       <<: *common_environment
       CACHE_NONCE: "Release"
-      OVERLAY_MIXINS: "release ccache"
+      OVERLAY_MIXINS: "release ccache coverage-gcc lld"
 
 _jobs:
   job_test: &job_test
@@ -480,40 +472,25 @@ _jobs:
       RMW_IMPLEMENTATION: << parameters.rmw >>
 
 jobs:
-  debug_build: &debug_build
-    executor: debug_exec
+  release_build: &release_build
+    executor: release_exec
     steps:
       - checkout_source
       - setup_dependencies
       - build_source
-  release_build:
-    executor: release_exec
-    <<: *debug_build
-  debug_test:
+  release_test: &release_test
     <<: *job_test
-    executor: debug_exec
+    executor: release_exec
     steps:
       - restore_build
       - test_build:
           cache_test: << parameters.cache_test >>
       - report_coverage
-  release_test:
-    <<: *job_test
-    executor: release_exec
-    steps:
-      - restore_build
-      - test_build:
-          cache_test: << parameters.cache_test >>
 
 workflows:
   version: 2
   build_and_test:
     jobs:
-      - debug_build
-      - debug_test:
-          requires:
-            - debug_build
-          cache_test: true
       - release_build
       - release_test:
           requires:
@@ -521,10 +498,6 @@ workflows:
           cache_test: true
   nightly:
     jobs:
-      - debug_build
-      - debug_test:
-          requires:
-            - debug_build
       - release_build
       - release_test:
           requires:

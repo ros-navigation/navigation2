@@ -97,6 +97,19 @@ target_link_libraries(test_smac_lattice
   ${library_name}_lattice
 )
 
+# Test SMAC Smoother
+ament_add_gtest(test_smoother
+  test_smoother.cpp
+)
+ament_target_dependencies(test_smoother
+  ${dependencies}
+)
+target_link_libraries(test_smoother
+  ${library_name}_lattice
+  ${library_name}
+  ${library_name}_2d
+)
+
 #Test Lattice node
 ament_add_gtest(test_lattice_node test_nodelattice.cpp)
 
