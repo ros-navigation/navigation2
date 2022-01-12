@@ -128,14 +128,6 @@ void SmacPlannerHybrid::configure(
   node->get_parameter(name + ".analytic_expansion_max_length", analytic_expansion_max_length_m);
   _search_info.analytic_expansion_max_length =
     analytic_expansion_max_length_m / _costmap->getResolution();
-  // default is inf to preserve original behavior. If confirmed to be used, M_PI*0.32 is a good default
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".max_analytic_expansion_angle_range", rclcpp::ParameterValue(std::numeric_limits<double>::infinity()));
-  node->get_parameter(name + ".max_analytic_expansion_angle_range", _search_info.max_analytic_expansion_angle_range);
-  // default is inf to preserve original behavior. If confirmed to be used, 0.15 is a good default
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".max_analytic_expansion_cost_subelevation", rclcpp::ParameterValue(std::numeric_limits<double>::infinity()));
-  node->get_parameter(name + ".max_analytic_expansion_cost_subelevation", _search_info.max_analytic_expansion_cost_subelevation);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(5.0));

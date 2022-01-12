@@ -124,19 +124,6 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
 {
   static ompl::base::ScopedState<> from(node->motion_table.state_space), to(
     node->motion_table.state_space), s(node->motion_table.state_space);
-  
-  float delta_theta = goal->pose.theta - node->pose.theta;
-  if (delta_theta < -static_cast<float>(node->motion_table.num_angle_quantization)/2)
-    delta_theta += static_cast<float>(node->motion_table.num_angle_quantization);
-  else if (delta_theta > static_cast<float>(node->motion_table.num_angle_quantization)/2)
-    delta_theta -= static_cast<float>(node->motion_table.num_angle_quantization);
-  if (std::abs(delta_theta) > node->motion_table.max_analytic_expansion_angle_range) {
-    return AnalyticExpansionNodes();
-  }
-  float min_angle, max_angle, current_angle = min_angle = max_angle = node->pose.theta;
-  // Assuming the first node has already been validated
-  float min_cell_cost, max_cell_cost = min_cell_cost = node->getCost() / 252.0;
-
   from[0] = node->pose.x;
   from[1] = node->pose.y;
   from[2] = node->motion_table.getAngleFromBin(node->pose.theta);
@@ -145,6 +132,7 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
   to[2] = node->motion_table.getAngleFromBin(goal->pose.theta);
 
   float d = node->motion_table.state_space->distance(from(), to());
+
   // If the length is too far, exit. This prevents unsafe shortcutting of paths
   // into higher cost areas far out from the goal itself, let search to the work of getting
   // close before the analytic expansion brings it home. This should never be smaller than
@@ -181,20 +169,6 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
     theta = (theta > 2.0 * M_PI) ? (theta - 2.0 * M_PI) : theta;
     angle = node->motion_table.getClosestAngularBin(theta);
 
-    float delta_angle = angle - current_angle;
-    while (delta_angle >= static_cast<float>(node->motion_table.num_angle_quantization)/2)
-      delta_angle -= static_cast<float>(node->motion_table.num_angle_quantization);
-    while (delta_angle <= -static_cast<float>(node->motion_table.num_angle_quantization)/2)
-      delta_angle += static_cast<float>(node->motion_table.num_angle_quantization);
-    current_angle += delta_angle;
-    min_angle = std::min(min_angle, current_angle);
-    max_angle = std::max(max_angle, current_angle);
-    if (max_angle - min_angle > node->motion_table.max_analytic_expansion_angle_range) {
-      // Abort
-      failure = true;
-      break;
-    }
-
     // Turn the pose into a node, and check if it is valid
     index = NodeT::getIndex(
       static_cast<unsigned int>(reals[0]),
@@ -206,20 +180,6 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
       proposed_coordinates = {static_cast<float>(reals[0]), static_cast<float>(reals[1]), angle};
       next->setPose(proposed_coordinates);
       if (next->isNodeValid(_traverse_unknown, _collision_checker) && next != prev) {
-        // Check for max subelevation
-        float cost = next->getCost() / 252.0;
-        if (cost < min_cell_cost) {
-          min_cell_cost = cost;
-          if (max_cell_cost - min_cell_cost > node->motion_table.max_analytic_expansion_cost_subelevation) {
-            // Abort
-            next->setPose(initial_node_coords);
-            failure = true;
-            break;
-          }
-        }
-        else if (cost > max_cell_cost)
-          max_cell_cost = cost; // don't check, we don't want to discard cost superelevations
-        
         // Save the node, and its previous coordinates in case we need to abort
         possible_nodes.emplace_back(next, initial_node_coords, proposed_coordinates);
         prev = next;

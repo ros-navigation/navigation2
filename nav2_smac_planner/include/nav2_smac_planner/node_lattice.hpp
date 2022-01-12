@@ -102,8 +102,6 @@ struct LatticeMotionTable
   float non_straight_penalty;
   float cost_penalty;
   float reverse_penalty;
-  float max_analytic_expansion_angle_range;
-  float max_analytic_expansion_cost_subelevation;
   bool obstacle_heuristic_admissible;
   bool allow_reverse_expansion;
   std::vector<std::vector<MotionPrimitive>> motion_primitives;

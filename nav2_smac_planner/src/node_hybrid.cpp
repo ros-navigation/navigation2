@@ -73,7 +73,6 @@ void HybridMotionTable::initDubin(
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
-  max_analytic_expansion_cost_subelevation = search_info.max_analytic_expansion_cost_subelevation;
   obstacle_heuristic_admissible = search_info.obstacle_heuristic_admissible;
 
   // if nothing changed, no need to re-compute primitives
@@ -81,7 +80,6 @@ void HybridMotionTable::initDubin(
     min_turning_radius == search_info.minimum_turning_radius &&
     motion_model == MotionModel::DUBIN)
   {
-    max_analytic_expansion_angle_range = search_info.max_analytic_expansion_angle_range / bin_size;
     return;
   }
 
@@ -105,8 +103,6 @@ void HybridMotionTable::initDubin(
   // And since its based on the minimum chord, we need to make sure its always larger
   bin_size =
     2.0f * static_cast<float>(M_PI) / static_cast<float>(num_angle_quantization);
-
-  max_analytic_expansion_angle_range = search_info.max_analytic_expansion_angle_range / bin_size;
 
   float increments;
   if (angle < bin_size) {
@@ -171,7 +167,6 @@ void HybridMotionTable::initReedsShepp(
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
-  max_analytic_expansion_cost_subelevation = search_info.max_analytic_expansion_cost_subelevation;
   obstacle_heuristic_admissible = search_info.obstacle_heuristic_admissible;
 
   // if nothing changed, no need to re-compute primitives
@@ -179,7 +174,6 @@ void HybridMotionTable::initReedsShepp(
     min_turning_radius == search_info.minimum_turning_radius &&
     motion_model == MotionModel::REEDS_SHEPP)
   {
-    max_analytic_expansion_angle_range = search_info.max_analytic_expansion_angle_range / bin_size;
     return;
   }
 
@@ -191,8 +185,6 @@ void HybridMotionTable::initReedsShepp(
   float angle = 2.0 * asin(sqrt(2.0) / (2 * min_turning_radius));
   bin_size =
     2.0f * static_cast<float>(M_PI) / static_cast<float>(num_angle_quantization);
-
-  max_analytic_expansion_angle_range = search_info.max_analytic_expansion_angle_range / bin_size;
 
   float increments;
   if (angle < bin_size) {

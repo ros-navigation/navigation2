@@ -129,8 +129,6 @@ TEST(AStarTest, test_a_star_se2)
   info.minimum_turning_radius = 8;  // in grid coordinates
   info.analytic_expansion_max_length = 20.0;  // in grid coordinates
   info.analytic_expansion_ratio = 3.5;
-  info.max_analytic_expansion_angle_range = std::numeric_limits<float>::infinity();
-  info.max_analytic_expansion_cost_subelevation = std::numeric_limits<float>::infinity();
   unsigned int size_theta = 72;
   info.cost_penalty = 1.7;
   nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
@@ -175,70 +173,12 @@ TEST(AStarTest, test_a_star_se2)
   }
 
   delete costmapA;
-
-  // reinitialize a_star with analytic expansion constraints
-  info.max_analytic_expansion_angle_range = M_PI*0.32;
-  info.max_analytic_expansion_cost_subelevation = 0.15;
-  
-  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star_2(
-    nav2_smac_planner::MotionModel::DUBIN, info);
-
-  nav2_costmap_2d::Costmap2D * costmapB =
-  new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0.0, 0.0, 150);
-  // island in the middle of lethal cost to cross
-  for (unsigned int i = 40; i <= 60; ++i) {
-    for (unsigned int j = 0; j < 100; ++j) {
-      costmapB->setCost(i, j, 0);
-    }
-  }
-
-  a_star_2.initialize(false, max_iterations, it_on_approach, max_planning_time, 401, size_theta);
-  checker = std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapB, size_theta);
-  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
-  a_star_2.setCollisionChecker(checker.get());
-
-  nav2_smac_planner::NodeHybrid dummy_node(0), dummy_node2(1);
-  bool using_dummy_node2 = 0; // to avoid failure on (next != prev) condition
-  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid>::NodeGetter neighborGetter =
-    [&, this](const unsigned int & index, nav2_smac_planner::NodeHybrid *& neighbor_rtn) -> bool
-    {
-      neighbor_rtn = (using_dummy_node2 = !using_dummy_node2) ? &dummy_node2 : &dummy_node;
-      return true;
-    };
-
-  // analytic expansion constraints ok for start node
-  a_star_2.setCollisionChecker(checker.get()); // clearGraph()
-  a_star_2.setStart(20, 50, 0u);
-  a_star_2.setGoal(30u, 50, 0u);
-  num_it = 0;
-  EXPECT_TRUE(a_star_2.createPath(path, num_it, tolerance));
-  EXPECT_EQ(num_it, 1);
-
-  // max subelevation constraint broken for start node (wait for a safer place to find analytic path from)
-  a_star_2.setCollisionChecker(checker.get()); // clearGraph()
-  a_star_2.setStart(20, 50, 0u);
-  a_star_2.setGoal(80u, 50, 0u);
-  num_it = 0;
-  EXPECT_TRUE(a_star_2.createPath(path, num_it, tolerance));
-  EXPECT_GT(num_it, 1);
-
-  // max angle range constraint broken for start node (wait for a less complicated maneuver)
-  a_star_2.setCollisionChecker(checker.get()); // clearGraph()
-  a_star_2.setStart(20, 50, 0u);
-  a_star_2.setGoal(30u, 50, 36u);
-  num_it = 0;
-  EXPECT_TRUE(a_star_2.createPath(path, num_it, tolerance));
-  EXPECT_GT(num_it, 1);
-
-  delete costmapB;
 }
 
 TEST(AStarTest, test_a_star_lattice)
 {
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.05;
-  info.max_analytic_expansion_angle_range = std::numeric_limits<float>::infinity();
-  info.max_analytic_expansion_cost_subelevation = std::numeric_limits<float>::infinity();
   info.obstacle_heuristic_admissible = false;
   info.non_straight_penalty = 1.05;
   info.reverse_penalty = 2.0;
@@ -303,8 +243,6 @@ TEST(AStarTest, test_se2_single_pose_path)
   info.minimum_turning_radius = 8;  // in grid coordinates
   info.analytic_expansion_max_length = 20.0;  // in grid coordinates
   info.analytic_expansion_ratio = 3.5;
-  info.max_analytic_expansion_angle_range = std::numeric_limits<float>::infinity();
-  info.max_analytic_expansion_cost_subelevation = std::numeric_limits<float>::infinity();
   info.obstacle_heuristic_admissible = false;
   unsigned int size_theta = 72;
   info.cost_penalty = 1.7;
