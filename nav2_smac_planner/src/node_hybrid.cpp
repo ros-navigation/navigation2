@@ -403,29 +403,20 @@ void NodeHybrid::resetObstacleHeuristic(
   unsigned int size = sampled_costmap->getSizeInCellsX() * sampled_costmap->getSizeInCellsY();
   if (obstacle_heuristic_lookup_table.size() == size) {
     // must reset all values
-    if (motion_table.obstacle_heuristic_admissible) {
-      std::fill(
-        obstacle_heuristic_lookup_table.begin(),
-        obstacle_heuristic_lookup_table.end(), -1.0f);
-    } else {
-      std::fill(
-        obstacle_heuristic_lookup_table.begin(),
-        obstacle_heuristic_lookup_table.end(), 0.0f);
-    }
+    std::fill(
+      obstacle_heuristic_lookup_table.begin(),
+      obstacle_heuristic_lookup_table.end(), 0.0f);
   } else {
     unsigned int obstacle_size = obstacle_heuristic_lookup_table.size();
+    obstacle_heuristic_lookup_table.resize(size, 0.0);
+    // must reset values for non-constructed indices
+    std::fill_n(
+      obstacle_heuristic_lookup_table.begin(), obstacle_size, 0.0);
     if (motion_table.obstacle_heuristic_admissible) {
-      obstacle_heuristic_lookup_table.resize(size, -1.0f);
-      std::fill_n(
-        obstacle_heuristic_lookup_table.begin(), obstacle_size, -1.0f);
       astar_2d_h_table.resize(size, -1.0f);
-      std::fill_n(
-        astar_2d_h_table.begin(), obstacle_size, -1.0f);
-    } else {
-      obstacle_heuristic_lookup_table.resize(size, 0.0);
       // must reset values for non-constructed indices
       std::fill_n(
-        obstacle_heuristic_lookup_table.begin(), obstacle_size, 0.0);
+        astar_2d_h_table.begin(), obstacle_size, -1.0f);
     }
   }
 
@@ -531,7 +522,7 @@ inline float distanceHeuristic2D(
   int x = std::abs(idx % size_x - goal_x);
   int y = std::abs(idx / size_x - goal_y);
   float & table_value = NodeHybrid::astar_2d_h_table[y * size_x + x];
-  return table_value == -1.0f ? table_value = std::hypotf(x, y) : table_value;
+  return table_value < 0.0f ? table_value = std::hypotf(x, y) : table_value;
 }
 
 float NodeHybrid::getObstacleHeuristicAdmissible(
@@ -545,7 +536,8 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
   const int start_x = floor(node_coords.x / 2.0);
   const int start_index = start_y * size_x + start_x;
   const float & starting_cost = obstacle_heuristic_lookup_table[start_index];
-  if (starting_cost >= 0.0f) {
+  if (starting_cost > 0.0f) {
+    // costs are doubled due to downsampling
     return 2.0 * starting_cost;
   }
 
@@ -567,14 +559,14 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
       distanceHeuristic2D(
         goal_index, size_x, start_x,
         start_y), goal_index);
-    obstacle_heuristic_lookup_table[goal_index] = -2.0f;
+
+    // initialize goal cell with a very small value to differentiate it from 0.0 (~uninitialized)
+    // the negative value means the cell is in the open set
+    obstacle_heuristic_lookup_table[goal_index] = -0.00001f;
   } else {
     for (auto & n : astar_2d_queue) {
-      n.first = -2.0f - obstacle_heuristic_lookup_table[n.second] + distanceHeuristic2D(
-        n.second,
-        size_x,
-        start_x,
-        start_y);
+      n.first = -obstacle_heuristic_lookup_table[n.second] +
+        distanceHeuristic2D(n.second, size_x, start_x, start_y);
     }
     std::make_heap(astar_2d_queue.begin(), astar_2d_queue.end(), AStar2DComparator{});
   }
@@ -589,11 +581,13 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
     std::pop_heap(astar_2d_queue.begin(), astar_2d_queue.end(), AStar2DComparator{});
     astar_2d_queue.pop_back();
     c_cost = obstacle_heuristic_lookup_table[c.second];
-    if (c_cost >= 0.0f) {
+    if (c_cost > 0.0f) {
+      // cell has been processed and closed, no further cost improvements
+      // are mathematically possible thanks to euclidean heuristic consistency
       continue;
     }
-    c_cost = -2.0f - c_cost;
-    obstacle_heuristic_lookup_table[c.second] = c_cost;
+    c_cost = -c_cost;
+    obstacle_heuristic_lookup_table[c.second] = c_cost;  // set a positive value to close the cell
 
     my_idx = c.second / size_x;
     mx_idx = c.second - (my_idx * size_x);
@@ -620,8 +614,9 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
           travel_cost =
             ((i <= 3) ? 1.0 : sqrt_2) * (1.0 + (cost_penalty * cost / 252.0));
           new_cost = c_cost + travel_cost;
-          if (existing_cost == -1.0f || -2.0f - existing_cost > new_cost) {
-            obstacle_heuristic_lookup_table[new_idx] = -2.0f - new_cost;
+          if (-existing_cost > new_cost) {
+            // the negative value means the cell is in the open set
+            obstacle_heuristic_lookup_table[new_idx] = -new_cost;
             astar_2d_queue.emplace_back(
               new_cost +
               distanceHeuristic2D(new_idx, size_x, start_x, start_y), new_idx);
@@ -636,6 +631,7 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
     }
   }
 
+  // costs are doubled due to downsampling
   return 2.0 * starting_cost;
 }
 
