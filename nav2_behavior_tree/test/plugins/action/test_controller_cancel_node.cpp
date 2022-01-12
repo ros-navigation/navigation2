@@ -122,6 +122,5 @@ int main(int argc, char ** argv)
   rclcpp::shutdown();
   server_thread.join();
 
-
   return all_successful;
 }
