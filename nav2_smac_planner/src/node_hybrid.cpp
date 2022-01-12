@@ -46,13 +46,6 @@ LookupTable NodeHybrid::astar_2d_h_table;
 bool NodeHybrid::astar_2d_first_run;
 AStar2DQueue NodeHybrid::astar_2d_queue;
 
-int NodeHybrid::run_number;
-int NodeHybrid::total_expansions_cnt;
-double NodeHybrid::total_time;
-double NodeHybrid::total_time_init;
-std::vector<PointXYZI> NodeHybrid::node_points;
-std::vector<PointXYZI> NodeHybrid::map_points;
-
 // Each of these tables are the projected motion models through
 // time and space applied to the search on the current node in
 // continuous map-coordinates (e.g. not meters but partial map cells)
@@ -418,13 +411,6 @@ void NodeHybrid::resetObstacleHeuristic(
         obstacle_heuristic_lookup_table.begin(),
         obstacle_heuristic_lookup_table.end(), 0.0f);
     }
-    std::fill(
-      node_points.begin(),
-      node_points.end(), PointXYZI());
-    std::fill(
-      map_points.begin(),
-      map_points.end(), PointXYZI());
-
   } else {
     unsigned int obstacle_size = obstacle_heuristic_lookup_table.size();
     if (motion_table.obstacle_heuristic_admissible) {
@@ -441,27 +427,7 @@ void NodeHybrid::resetObstacleHeuristic(
       std::fill_n(
         obstacle_heuristic_lookup_table.begin(), obstacle_size, 0.0);
     }
-    node_points.resize(size, PointXYZI());
-    std::fill_n(
-      node_points.begin(), obstacle_size, PointXYZI());
-    map_points.resize(size, PointXYZI());
-    std::fill_n(
-      map_points.begin(), obstacle_size, PointXYZI());
   }
-
-  unsigned int size_x = sampled_costmap->getSizeInCellsX();
-  unsigned int size_y = sampled_costmap->getSizeInCellsY();
-  double orig_x = sampled_costmap->getOriginX();
-  double orig_y = sampled_costmap->getOriginY();
-  double res = sampled_costmap->getResolution();
-  for (unsigned int y = 0; y < size_y; y++)
-    for (unsigned int x = 0; x < size_x; x++) {
-      int idx = y*size_x + x;
-      map_points[idx].x = orig_x + res*x;
-      map_points[idx].y = orig_y + res*y;
-      node_points[idx].x = map_points[idx].x;
-      node_points[idx].y = map_points[idx].y;
-    }
 
   // Set initial goal point to queue from. Divided by 2 due to downsampled costmap.
   if (motion_table.obstacle_heuristic_admissible) {
@@ -475,14 +441,6 @@ void NodeHybrid::resetObstacleHeuristic(
     obstacle_heuristic_queue.emplace(
       ceil(goal_y / 2.0) * sampled_costmap->getSizeInCellsX() + ceil(goal_x / 2.0));
   }
-
-  RCLCPP_INFO(rclcpp::get_logger("planner_server"), "Last search: runs: %d, expansions: %d, queue size: %d, time: %lf (%lf + %lf) ms",
-    run_number, total_expansions_cnt, (int)astar_2d_queue.size(), total_time, total_time_init, total_time - total_time_init);
-
-  run_number = 1;
-  total_expansions_cnt = 0;
-  total_time = 0;
-  total_time_init = 0;
 }
 
 float NodeHybrid::getObstacleHeuristic(
@@ -490,7 +448,6 @@ float NodeHybrid::getObstacleHeuristic(
   const Coordinates & goal_coords,
   const double & cost_penalty)
 {
-  steady_clock::time_point a = steady_clock::now();
   // If already expanded, return the cost
   unsigned int size_x = sampled_costmap->getSizeInCellsX();
   // Divided by 2 due to downsampled costmap.
@@ -498,7 +455,6 @@ float NodeHybrid::getObstacleHeuristic(
   const float & starting_cost = obstacle_heuristic_lookup_table[start_index];
   if (starting_cost > 0.0) {
     // costs are doubled due to downsampling
-    node_points[start_index].intensity = 2.0 * starting_cost;
     return 2.0 * starting_cost;
   }
 
@@ -521,8 +477,6 @@ float NodeHybrid::getObstacleHeuristic(
     size_x_int + 1, size_x_int - 1,  // upper diagonals
     -size_x_int + 1, -size_x_int - 1};  // lower diagonals
 
-  int expansions_cnt = 0;
-
   while (!obstacle_heuristic_queue.empty()) {
     // get next one
     idx = obstacle_heuristic_queue.front();
@@ -531,21 +485,9 @@ float NodeHybrid::getObstacleHeuristic(
 
 
     if (idx == start_index) {
-      total_expansions_cnt += expansions_cnt;
-      steady_clock::time_point c = steady_clock::now();
-      duration<double> time_span = duration_cast<duration<double>>(c - a);
-      double time = time_span.count()*1000;
-      total_time += time;
-      RCLCPP_INFO(rclcpp::get_logger("planner_server"), "Run: %d, expansions: %d (total: %d), queue size: %d, time: %lf (total: %lf) ms",
-        run_number, expansions_cnt, total_expansions_cnt, (int)obstacle_heuristic_queue.size(), time, total_time);
-      run_number++;
       // costs are doubled due to downsampling
       return 2.0 * last_accumulated_cost;
     }
-
-    expansions_cnt++;
-
-    map_points[idx].intensity += 1.0f;
 
     my_idx = idx / size_x;
     mx_idx = idx - (my_idx * size_x);
@@ -579,17 +521,7 @@ float NodeHybrid::getObstacleHeuristic(
     }
   }
 
-  total_expansions_cnt += expansions_cnt;
-  steady_clock::time_point c = steady_clock::now();
-  duration<double> time_span = duration_cast<duration<double>>(c - a);
-  double time = time_span.count()*1000;
-  total_time += time;
-  RCLCPP_INFO(rclcpp::get_logger("planner_server"), "Run: %d, expansions: %d (total: %d), queue size: %d, time: %lf (total: %lf) ms",
-    run_number, expansions_cnt, total_expansions_cnt, (int)obstacle_heuristic_queue.size(), time, total_time);
-  run_number++;
-
   // costs are doubled due to downsampling
-  node_points[start_index].intensity = 2.0 * starting_cost;
   return 2.0 * obstacle_heuristic_lookup_table[start_index];
 }
 
@@ -605,8 +537,6 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
   const Coordinates & goal_coords,
   const double & cost_penalty)
 {
-  steady_clock::time_point a = steady_clock::now();
-
   int size_x = sampled_costmap->getSizeInCellsX();
   // Divided by 2 due to downsampled costmap.
   const int start_y = floor(node_coords.y / 2.0);
@@ -637,21 +567,15 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
   else {
     for (auto &n : astar_2d_queue) {
       n.first = -2.0f - obstacle_heuristic_lookup_table[n.second] + distanceHeuristic2D(n.second, size_x, start_x, start_y);
-      map_points[n.second].intensity += 0.5f;
     }
     std::make_heap(astar_2d_queue.begin(), astar_2d_queue.end(), AStar2DComparator{});
-    run_number++;
   }
 
   float c_cost, cost, travel_cost, new_cost, existing_cost;
   int mx, my, mx_idx, my_idx;
   int new_idx = 0;
   const float sqrt_2 = sqrt(2);
-  int expansions_cnt = 0;
 
-  steady_clock::time_point b = steady_clock::now();
-  duration<double> time_span_init = duration_cast<duration<double>>(b - a);
-  
   while (!astar_2d_queue.empty()) {
     AStar2DElement c = astar_2d_queue.front();
     std::pop_heap(astar_2d_queue.begin(), astar_2d_queue.end(), AStar2DComparator{});
@@ -661,7 +585,6 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
       continue;
     c_cost = -2.0f - c_cost;
     obstacle_heuristic_lookup_table[c.second] = c_cost;
-    map_points[c.second].intensity += 1.0f;
 
     my_idx = c.second / size_x;
     mx_idx = c.second - (my_idx * size_x);
@@ -696,20 +619,10 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
         }
       }
     }
-    expansions_cnt++;
+
     if (c.second == start_index)
       break;
   }
-
-  total_expansions_cnt += expansions_cnt;
-  steady_clock::time_point c = steady_clock::now();
-  duration<double> time_span = duration_cast<duration<double>>(c - a);
-  double time = time_span.count()*1000;
-  total_time += time;
-  double time_init = time_span_init.count()*1000;
-  total_time_init += time_init;
-  // RCLCPP_INFO(rclcpp::get_logger("planner_server"), "Run: %d (%d %d -> %d %d (%d/%d) = %f), expansions: %d (total: %d), queue size: %d, time: %lf (%lf + %lf, total: %lf) ms",
-  //   run_number, start_x, start_y, goal_x, goal_y, goal_index, (int)astar_2d_h_table.size(), obstacle_heuristic_lookup_table[start_index], expansions_cnt, total_expansions_cnt, (int)astar_2d_queue.size(), time, time_init, time - time_init, total_time);
 
   return 2.0 * starting_cost;
 }

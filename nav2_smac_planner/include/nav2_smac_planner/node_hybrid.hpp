@@ -38,21 +38,6 @@ namespace nav2_smac_planner
 typedef std::vector<float> LookupTable;
 typedef std::pair<double, double> TrigValues;
 
-// BENCHMARKING
-struct PointXYZI {
-  float x = 0, y = 0, z = 0, intensity = 0;
-
-  PointXYZI(float x, float y, float z, float intensity) {
-    this->x = x;
-    this->y = y;
-    this->z = z;
-    this->intensity = intensity;
-  }
-
-  PointXYZI() {}
-};
-
-
 typedef std::pair<float, int> AStar2DElement;
 struct AStar2DComparator
 {
@@ -481,14 +466,6 @@ public:
   // Dubin / Reeds-Shepp lookup and size for dereferencing
   static LookupTable dist_heuristic_lookup_table;
   static float size_lookup;
-
-  // BENCHMARKING
-  static int run_number;
-  static int total_expansions_cnt;
-  static double total_time;
-  static double total_time_init;
-  static std::vector<PointXYZI> map_points;
-  static std::vector<PointXYZI> node_points;
 
 private:
   float _cell_cost;
