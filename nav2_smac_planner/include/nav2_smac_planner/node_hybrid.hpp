@@ -394,7 +394,7 @@ public:
     const Coordinates & node_coords,
     const Coordinates & goal_coords,
     const double & cost_penalty);
-  
+
   /**
    * @brief Compute the Obstacle heuristic, adhering A* admissibility rule
    * @param node_coords Coordinates to get heuristic at

@@ -85,7 +85,9 @@ void SmacPlannerLattice::configure(
   node->get_parameter(name + ".cache_obstacle_heuristic", _search_info.cache_obstacle_heuristic);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".obstacle_heuristic_admissible", rclcpp::ParameterValue(true));
-  node->get_parameter(name + ".obstacle_heuristic_admissible", _search_info.obstacle_heuristic_admissible);
+  node->get_parameter(
+    name + ".obstacle_heuristic_admissible",
+    _search_info.obstacle_heuristic_admissible);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".reverse_penalty", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".reverse_penalty", _search_info.reverse_penalty);

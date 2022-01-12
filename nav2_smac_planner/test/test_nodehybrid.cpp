@@ -177,7 +177,7 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
 
   nav2_smac_planner::NodeHybrid testB(1);
   testB.pose.x = 90;
-  testB.pose.y = 51; //goal is a bit closer to the high-cost passage
+  testB.pose.y = 51;  // goal is a bit closer to the high-cost passage
   testB.pose.theta = 0;
 
   // first block the high-cost passage to make sure the cost spreads through the better path
@@ -185,7 +185,10 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
     costmapA->setCost(50, j, 254);
   }
   nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(costmapA, testB.pose.x, testB.pose.y);
-  float wide_passage_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(testA.pose, testB.pose, info.cost_penalty);
+  float wide_passage_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristicAdmissible(
+    testA.pose,
+    testB.pose,
+    info.cost_penalty);
 
   // then unblock it to check if cost remains the same
   // (it should, since the unblocked narrow path will have higher cost than the wide one
@@ -194,11 +197,12 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
     costmapA->setCost(50, j, 250);
   }
   nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(costmapA, testB.pose.x, testB.pose.y);
-  float two_passages_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(testA.pose, testB.pose, info.cost_penalty);
+  float two_passages_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristicAdmissible(
+    testA.pose,
+    testB.pose,
+    info.cost_penalty);
 
-  printf("wp: %f, tp: %f\n", wide_passage_cost, two_passages_cost);
-
-  EXPECT_EQ(wide_passage_cost, two_passages_cost); // FAILURE
+  EXPECT_EQ(wide_passage_cost, two_passages_cost);
 
   delete costmapA;
 }

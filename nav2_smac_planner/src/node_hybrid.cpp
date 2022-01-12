@@ -351,10 +351,10 @@ float NodeHybrid::getHeuristicCost(
   const Coordinates & goal_coords,
   const nav2_costmap_2d::Costmap2D * /*costmap*/)
 {
-  const float obstacle_heuristic = 
-      motion_table.obstacle_heuristic_admissible
-        ? getObstacleHeuristicAdmissible(node_coords, goal_coords, motion_table.cost_penalty)
-        : getObstacleHeuristic(node_coords, goal_coords, motion_table.cost_penalty);
+  const float obstacle_heuristic =
+    motion_table.obstacle_heuristic_admissible ?
+    getObstacleHeuristicAdmissible(node_coords, goal_coords, motion_table.cost_penalty) :
+    getObstacleHeuristic(node_coords, goal_coords, motion_table.cost_penalty);
   const float dist_heuristic = getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
   return std::max(obstacle_heuristic, dist_heuristic);
 }
@@ -393,7 +393,9 @@ void NodeHybrid::resetObstacleHeuristic(
   // erosion of path quality after even modest smoothing. The error would be no more
   // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
   std::weak_ptr<nav2_util::LifecycleNode> ptr;
-  downsampler.on_configure(ptr, "fake_frame", "fake_topic", costmap, 2.0, motion_table.obstacle_heuristic_admissible);
+  downsampler.on_configure(
+    ptr, "fake_frame", "fake_topic", costmap, 2.0,
+    motion_table.obstacle_heuristic_admissible);
   downsampler.on_activate();
   sampled_costmap = downsampler.downsample(2.0);
 
@@ -405,8 +407,7 @@ void NodeHybrid::resetObstacleHeuristic(
       std::fill(
         obstacle_heuristic_lookup_table.begin(),
         obstacle_heuristic_lookup_table.end(), -1.0f);
-    }
-    else {
+    } else {
       std::fill(
         obstacle_heuristic_lookup_table.begin(),
         obstacle_heuristic_lookup_table.end(), 0.0f);
@@ -420,8 +421,7 @@ void NodeHybrid::resetObstacleHeuristic(
       astar_2d_h_table.resize(size, -1.0f);
       std::fill_n(
         astar_2d_h_table.begin(), obstacle_size, -1.0f);
-    }
-    else {
+    } else {
       obstacle_heuristic_lookup_table.resize(size, 0.0);
       // must reset values for non-constructed indices
       std::fill_n(
@@ -433,9 +433,8 @@ void NodeHybrid::resetObstacleHeuristic(
   if (motion_table.obstacle_heuristic_admissible) {
     astar_2d_first_run = true;
     astar_2d_queue.clear();
-    astar_2d_queue.reserve(sampled_costmap->getSizeInCellsX()*sampled_costmap->getSizeInCellsY());
-  }
-  else {
+    astar_2d_queue.reserve(sampled_costmap->getSizeInCellsX() * sampled_costmap->getSizeInCellsY());
+  } else {
     std::queue<unsigned int> q;
     std::swap(obstacle_heuristic_queue, q);
     obstacle_heuristic_queue.emplace(
@@ -525,10 +524,13 @@ float NodeHybrid::getObstacleHeuristic(
   return 2.0 * obstacle_heuristic_lookup_table[start_index];
 }
 
-inline float distanceHeuristic2D(const int idx, const int size_x, const int goal_x, const int goal_y) {
-  int x = std::abs(idx%size_x - goal_x);
-  int y = std::abs(idx/size_x - goal_y);
-  float &table_value = NodeHybrid::astar_2d_h_table[y*size_x + x];
+inline float distanceHeuristic2D(
+  const int idx, const int size_x, const int goal_x,
+  const int goal_y)
+{
+  int x = std::abs(idx % size_x - goal_x);
+  int y = std::abs(idx / size_x - goal_y);
+  float & table_value = NodeHybrid::astar_2d_h_table[y * size_x + x];
   return table_value == -1.0f ? table_value = std::hypotf(x, y) : table_value;
 }
 
@@ -554,19 +556,25 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
     size_x_int, -size_x_int,  // up down
     size_x_int + 1, size_x_int - 1,  // upper diagonals
     -size_x_int + 1, -size_x_int - 1};  // lower diagonals
-  
+
   const int goal_x = floor(goal_coords.x / 2.0);
   const int goal_y = floor(goal_coords.y / 2.0);
   const int goal_index = goal_y * size_x + goal_x;
   if (astar_2d_first_run) {
     astar_2d_first_run = false;
 
-    astar_2d_queue.emplace_back(distanceHeuristic2D(goal_index, size_x, start_x, start_y), goal_index);
+    astar_2d_queue.emplace_back(
+      distanceHeuristic2D(
+        goal_index, size_x, start_x,
+        start_y), goal_index);
     obstacle_heuristic_lookup_table[goal_index] = -2.0f;
-  }
-  else {
-    for (auto &n : astar_2d_queue) {
-      n.first = -2.0f - obstacle_heuristic_lookup_table[n.second] + distanceHeuristic2D(n.second, size_x, start_x, start_y);
+  } else {
+    for (auto & n : astar_2d_queue) {
+      n.first = -2.0f - obstacle_heuristic_lookup_table[n.second] + distanceHeuristic2D(
+        n.second,
+        size_x,
+        start_x,
+        start_y);
     }
     std::make_heap(astar_2d_queue.begin(), astar_2d_queue.end(), AStar2DComparator{});
   }
@@ -581,8 +589,9 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
     std::pop_heap(astar_2d_queue.begin(), astar_2d_queue.end(), AStar2DComparator{});
     astar_2d_queue.pop_back();
     c_cost = obstacle_heuristic_lookup_table[c.second];
-    if (c_cost >= 0.0f)
+    if (c_cost >= 0.0f) {
       continue;
+    }
     c_cost = -2.0f - c_cost;
     obstacle_heuristic_lookup_table[c.second] = c_cost;
 
@@ -609,19 +618,22 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
         existing_cost = obstacle_heuristic_lookup_table[new_idx];
         if (existing_cost < 0.0) {
           travel_cost =
-            ((i <= 3) ? 1.0 : sqrt_2)*(1.0 + (cost_penalty * cost / 252.0));
+            ((i <= 3) ? 1.0 : sqrt_2) * (1.0 + (cost_penalty * cost / 252.0));
           new_cost = c_cost + travel_cost;
           if (existing_cost == -1.0f || -2.0f - existing_cost > new_cost) {
             obstacle_heuristic_lookup_table[new_idx] = -2.0f - new_cost;
-            astar_2d_queue.emplace_back(new_cost + distanceHeuristic2D(new_idx, size_x, start_x, start_y), new_idx);
+            astar_2d_queue.emplace_back(
+              new_cost +
+              distanceHeuristic2D(new_idx, size_x, start_x, start_y), new_idx);
             std::push_heap(astar_2d_queue.begin(), astar_2d_queue.end(), AStar2DComparator{});
           }
         }
       }
     }
 
-    if (c.second == start_index)
+    if (c.second == start_index) {
       break;
+    }
   }
 
   return 2.0 * starting_cost;

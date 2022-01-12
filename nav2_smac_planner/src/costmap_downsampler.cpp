@@ -142,7 +142,10 @@ void CostmapDownsampler::setCostOfCell(
       if (my >= _size_y) {
         continue;
       }
-      cost = _use_min_cost_neighbor ? std::min(cost, _costmap->getCost(mx, my)) : std::max(cost, _costmap->getCost(mx, my));
+      cost = _use_min_cost_neighbor ? std::min(cost, _costmap->getCost(mx, my)) : std::max(
+        cost, _costmap->getCost(
+          mx,
+          my));
     }
   }
 
