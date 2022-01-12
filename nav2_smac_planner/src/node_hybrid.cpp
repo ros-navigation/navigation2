@@ -610,11 +610,11 @@ float NodeHybrid::getObstacleHeuristicAdmissible(
         }
 
         existing_cost = obstacle_heuristic_lookup_table[new_idx];
-        if (existing_cost < 0.0) {
+        if (existing_cost <= 0.0f) {
           travel_cost =
-            ((i <= 3) ? 1.0 : sqrt_2) * (1.0 + (cost_penalty * cost / 252.0));
+            ((i <= 3) ? 1.0f : sqrt_2) * (1.0f + (cost_penalty * cost / 252.0f));
           new_cost = c_cost + travel_cost;
-          if (-existing_cost > new_cost) {
+          if (existing_cost == 0.0f || -existing_cost > new_cost) {
             // the negative value means the cell is in the open set
             obstacle_heuristic_lookup_table[new_idx] = -new_cost;
             astar_2d_queue.emplace_back(

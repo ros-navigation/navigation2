@@ -139,10 +139,10 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   info.reverse_penalty = 2.0;
   info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
   info.cost_penalty = 1.7;
+  info.obstacle_heuristic_admissible = true;
   unsigned int size_x = 100;
   unsigned int size_y = 100;
   unsigned int size_theta = 72;
-
 
   nav2_smac_planner::NodeHybrid::initMotionModel(
     nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
@@ -189,6 +189,8 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
     testA.pose,
     testB.pose,
     info.cost_penalty);
+
+  EXPECT_NEAR(wide_passage_cost, 91.1f, 0.1f);
 
   // then unblock it to check if cost remains the same
   // (it should, since the unblocked narrow path will have higher cost than the wide one
