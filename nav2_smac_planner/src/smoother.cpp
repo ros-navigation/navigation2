@@ -46,7 +46,7 @@ bool Smoother::smooth(
 {
   // by-pass path orientations approximation when skipping smac smoother
   if (max_its_ == 0) {
-    return true;
+    return false;
   }
 
   refinement_ctr_ = 0;

@@ -151,6 +151,9 @@ TEST(SmootherTest, test_full_smoother)
 
   // Failure mode: not enough iterations to complete
   params.max_its_ = 0;
+  auto smoother_bypass = std::make_unique<SmootherWrapper>(params);
+  EXPECT_FALSE(smoother_bypass->smooth(plan, costmap, maxtime));
+  params.max_its_ = 1;
   auto smoother_failure = std::make_unique<SmootherWrapper>(params);
   EXPECT_FALSE(smoother_failure->smooth(plan, costmap, maxtime));
 
