@@ -131,7 +131,6 @@ TEST(AStarTest, test_a_star_se2)
   info.analytic_expansion_ratio = 3.5;
   info.max_analytic_expansion_angle_range = std::numeric_limits<float>::infinity();
   info.max_analytic_expansion_cost_subelevation = std::numeric_limits<float>::infinity();
-  info.obstacle_heuristic_enabled = true;
   unsigned int size_theta = 72;
   info.cost_penalty = 1.7;
   nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
@@ -241,7 +240,6 @@ TEST(AStarTest, test_a_star_lattice)
   info.change_reverse_penalty = 0.0;
   info.max_analytic_expansion_angle_range = std::numeric_limits<float>::infinity();
   info.max_analytic_expansion_cost_subelevation = std::numeric_limits<float>::infinity();
-  info.obstacle_heuristic_enabled = true;
   info.obstacle_heuristic_admissible = false;
   info.non_straight_penalty = 1.05;
   info.reverse_penalty = 2.0;
@@ -308,7 +306,6 @@ TEST(AStarTest, test_se2_single_pose_path)
   info.analytic_expansion_ratio = 3.5;
   info.max_analytic_expansion_angle_range = std::numeric_limits<float>::infinity();
   info.max_analytic_expansion_cost_subelevation = std::numeric_limits<float>::infinity();
-  info.obstacle_heuristic_enabled = true;
   info.obstacle_heuristic_admissible = false;
   unsigned int size_theta = 72;
   info.cost_penalty = 1.7;

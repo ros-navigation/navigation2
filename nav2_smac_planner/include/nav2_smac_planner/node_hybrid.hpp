@@ -38,10 +38,6 @@ namespace nav2_smac_planner
 typedef std::vector<float> LookupTable;
 typedef std::pair<double, double> TrigValues;
 
-typedef std::pair<double, double> DSKey;
-typedef std::pair<std::pair<double, double>, int> DSKeyVal;
-typedef std::multimap<DSKey, int> DSQueue;
-
 // BENCHMARKING
 struct PointXYZI {
   float x = 0, y = 0, z = 0, intensity = 0;
@@ -67,8 +63,6 @@ struct AStar2DComparator
 };
 
 typedef std::vector<AStar2DElement> AStar2DQueue;
-
-// Need seperate pose struct for motion table operations
 
 // Must forward declare
 class NodeHybrid;
@@ -145,7 +139,6 @@ struct HybridMotionTable
   float change_reverse_penalty;
   float max_analytic_expansion_angle_range;
   float max_analytic_expansion_cost_subelevation;
-  bool obstacle_heuristic_enabled;
   bool obstacle_heuristic_admissible;
   ompl::base::StateSpacePtr state_space;
   std::vector<std::vector<double>> delta_xs;
@@ -421,7 +414,7 @@ public:
     const double & cost_penalty);
   
   /**
-   * @brief Compute the Obstacle heuristic, following A* admissibility rule
+   * @brief Compute the Obstacle heuristic, adhering A* admissibility rule
    * @param node_coords Coordinates to get heuristic at
    * @param goal_coords Coordinates to compute heuristic to
    * @return heuristic Heuristic value
@@ -485,10 +478,6 @@ public:
   static LookupTable astar_2d_h_table;
   static bool astar_2d_first_run;
   static AStar2DQueue astar_2d_queue;
-  static int run_number;
-  static int total_expansions_cnt;
-  static double total_time;
-  static double total_time_init;
 
   static nav2_costmap_2d::Costmap2D * sampled_costmap;
   static CostmapDownsampler downsampler;
@@ -497,6 +486,10 @@ public:
   static float size_lookup;
 
   // BENCHMARKING
+  static int run_number;
+  static int total_expansions_cnt;
+  static double total_time;
+  static double total_time_init;
   static std::vector<PointXYZI> map_points;
   static std::vector<PointXYZI> node_points;
 

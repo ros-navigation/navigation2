@@ -45,11 +45,11 @@ CostmapDownsampler NodeHybrid::downsampler;
 LookupTable NodeHybrid::astar_2d_h_table;
 bool NodeHybrid::astar_2d_first_run;
 AStar2DQueue NodeHybrid::astar_2d_queue;
+
 int NodeHybrid::run_number;
 int NodeHybrid::total_expansions_cnt;
 double NodeHybrid::total_time;
 double NodeHybrid::total_time_init;
-
 std::vector<PointXYZI> NodeHybrid::node_points;
 std::vector<PointXYZI> NodeHybrid::map_points;
 
@@ -75,7 +75,6 @@ void HybridMotionTable::initDubin(
   reverse_penalty = search_info.reverse_penalty;
   change_reverse_penalty = search_info.change_reverse_penalty;
   max_analytic_expansion_cost_subelevation = search_info.max_analytic_expansion_cost_subelevation;
-  obstacle_heuristic_enabled = search_info.obstacle_heuristic_enabled;
   obstacle_heuristic_admissible = search_info.obstacle_heuristic_admissible;
 
   // if nothing changed, no need to re-compute primitives
@@ -175,7 +174,6 @@ void HybridMotionTable::initReedsShepp(
   reverse_penalty = search_info.reverse_penalty;
   change_reverse_penalty = search_info.change_reverse_penalty;
   max_analytic_expansion_cost_subelevation = search_info.max_analytic_expansion_cost_subelevation;
-  obstacle_heuristic_enabled = search_info.obstacle_heuristic_enabled;
   obstacle_heuristic_admissible = search_info.obstacle_heuristic_admissible;
 
   // if nothing changed, no need to re-compute primitives
@@ -338,19 +336,6 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
     return NodeHybrid::travel_distance_cost;
   }
 
-  // Note(stevemacenski): `travel_cost_raw` at one point contained a term:
-  // `+ motion_table.cost_penalty * normalized_cost;`
-  // It has been removed, but we may want to readdress this point and determine
-  // the technically and theoretically correctness of that choice. I feel technically speaking
-  // that term has merit, but it doesn't seem to impact performance or path quality.
-  // W/o it lowers the travel cost, which would drive the heuristics up proportionally where I
-  // would expect it to plan much faster in all cases, but I only see it in some cases. Since
-  // this term would weight against moving to high cost zones, I would expect to see more smooth
-  // central motion, but I only see it in some cases, possibly because the obstacle heuristic is
-  // already driving the robot away from high cost areas; implicitly handling this. However,
-  // then I would expect that not adding it here would make it unbalanced enough that path quality
-  // would suffer, which I did not see in my limited experimentation, possibly due to the smoother.
-
   float travel_cost = 0.0;
   float travel_cost_raw =
     NodeHybrid::travel_distance_cost +
@@ -387,7 +372,9 @@ float NodeHybrid::getHeuristicCost(
   const nav2_costmap_2d::Costmap2D * /*costmap*/)
 {
   const float obstacle_heuristic = 
-      motion_table.obstacle_heuristic_enabled ? getObstacleHeuristic(node_coords, goal_coords, motion_table.cost_penalty) : 0.0;
+      motion_table.obstacle_heuristic_admissible
+        ? getObstacleHeuristicAdmissible(node_coords, goal_coords, motion_table.cost_penalty)
+        : getObstacleHeuristic(node_coords, goal_coords, motion_table.cost_penalty);
   const float dist_heuristic = getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
   return std::max(obstacle_heuristic, dist_heuristic);
 }
@@ -421,10 +408,6 @@ void NodeHybrid::resetObstacleHeuristic(
   nav2_costmap_2d::Costmap2D * costmap,
   const unsigned int & goal_x, const unsigned int & goal_y)
 {
-  // if (motion_table.obstacle_heuristic_admissible) {
-  //   sampled_costmap = costmap;
-  // }
-  // else {
   // Downsample costmap 2x to compute a sparse obstacle heuristic. This speeds up
   // the planner considerably to search through 75% less cells with no detectable
   // erosion of path quality after even modest smoothing. The error would be no more
@@ -433,9 +416,6 @@ void NodeHybrid::resetObstacleHeuristic(
   downsampler.on_configure(ptr, "fake_frame", "fake_topic", costmap, 2.0, motion_table.obstacle_heuristic_admissible);
   downsampler.on_activate();
   sampled_costmap = downsampler.downsample(2.0);
-  // }
-
-  RCLCPP_INFO(rclcpp::get_logger("planner_server"), "Reset");
 
   // Clear lookup table
   unsigned int size = sampled_costmap->getSizeInCellsX() * sampled_costmap->getSizeInCellsY();
@@ -524,8 +504,6 @@ float NodeHybrid::getObstacleHeuristic(
   const double & cost_penalty)
 {
   steady_clock::time_point a = steady_clock::now();
-  if (motion_table.obstacle_heuristic_admissible)
-    return getObstacleHeuristicAdmissible(node_coords, goal_coords, cost_penalty);
   // If already expanded, return the cost
   unsigned int size_x = sampled_costmap->getSizeInCellsX();
   // Divided by 2 due to downsampled costmap.
@@ -629,11 +607,6 @@ float NodeHybrid::getObstacleHeuristic(
 }
 
 inline float distanceHeuristic2D(const int idx, const int size_x, const int goal_x, const int goal_y) {
-  // float &table_value = NodeHybrid::ds_h_table[idx];
-  // if (table_value != -1.0)
-  //   return table_value;
-  // else
-  //   return table_value = std::hypotf(idx%size_x - goal_x, idx/size_x - goal_y);
   int x = std::abs(idx%size_x - goal_x);
   int y = std::abs(idx/size_x - goal_y);
   float &table_value = NodeHybrid::astar_2d_h_table[y*size_x + x];
