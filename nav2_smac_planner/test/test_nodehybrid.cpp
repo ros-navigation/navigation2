@@ -37,7 +37,6 @@ TEST(NodeHybridTest, test_node_hybrid)
 {
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.1;
-  info.change_reverse_penalty = 0.6;
   info.non_straight_penalty = 1.1;
   info.reverse_penalty = 2.0;
   info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
@@ -94,18 +93,12 @@ TEST(NodeHybridTest, test_node_hybrid)
   // opposite direction as parent, testB
   testA.setMotionPrimitiveIndex(2);
   EXPECT_NEAR(testB.getTraversalCost(&testA), 2.506f, 0.01);
-  // opposite forward/reverse direction as parent, testB
-  testA.setMotionPrimitiveIndex(3);
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 5.430f, 0.01);
-  // both reverse, testB
-  testB.setMotionPrimitiveIndex(3);
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 4.177f, 0.01);
 
   // will throw because never collision checked testB
   EXPECT_THROW(testA.getTraversalCost(&testB), std::runtime_error);
 
   // check motion primitives
-  EXPECT_EQ(testA.getMotionPrimitiveIndex(), 3u);
+  EXPECT_EQ(testA.getMotionPrimitiveIndex(), 2u);
 
   // check operator== works on index
   nav2_smac_planner::NodeHybrid testC(49);
@@ -142,7 +135,6 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
 {
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.1;
-  info.change_reverse_penalty = 0.6;
   info.non_straight_penalty = 1.1;
   info.reverse_penalty = 2.0;
   info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap

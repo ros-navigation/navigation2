@@ -237,7 +237,6 @@ TEST(AStarTest, test_a_star_lattice)
 {
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.05;
-  info.change_reverse_penalty = 0.0;
   info.max_analytic_expansion_angle_range = std::numeric_limits<float>::infinity();
   info.max_analytic_expansion_cost_subelevation = std::numeric_limits<float>::infinity();
   info.obstacle_heuristic_admissible = false;

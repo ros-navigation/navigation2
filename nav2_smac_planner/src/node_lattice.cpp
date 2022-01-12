@@ -60,7 +60,6 @@ void LatticeMotionTable::initMotionModel(
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
-  change_reverse_penalty = search_info.change_reverse_penalty;
   max_analytic_expansion_cost_subelevation = search_info.max_analytic_expansion_cost_subelevation;
   obstacle_heuristic_admissible = search_info.obstacle_heuristic_admissible;
   current_lattice_filepath = search_info.lattice_filepath;
