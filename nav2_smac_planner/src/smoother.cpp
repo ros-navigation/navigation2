@@ -44,6 +44,11 @@ bool Smoother::smooth(
   const nav2_costmap_2d::Costmap2D * costmap,
   const double & max_time)
 {
+  // by-pass path orientations approximation when skipping smac smoother
+  if (max_its_ == 0) {
+    return true;
+  }
+
   refinement_ctr_ = 0;
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time;
@@ -95,10 +100,6 @@ bool Smoother::smoothImpl(
   const nav2_costmap_2d::Costmap2D * costmap,
   const double & max_time)
 {
-  // by-pass path orientations approximation when skipping smac smoother
-  if (max_its_ == 0)
-    return true;
-
   steady_clock::time_point a = steady_clock::now();
   rclcpp::Duration max_dur = rclcpp::Duration::from_seconds(max_time);
 
