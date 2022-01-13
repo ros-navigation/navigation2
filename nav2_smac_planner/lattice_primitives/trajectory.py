@@ -55,12 +55,17 @@ class TrajectoryPath:
     ys: np.array
     yaws: np.array
 
+
     def __add__(self, rhs):
+        if self.xs is None:
+            return rhs
+
         xs = np.concatenate((self.xs, rhs.xs))
         ys = np.concatenate((self.ys, rhs.ys))
         yaws = np.concatenate((self.yaws, rhs.yaws))
 
         return TrajectoryPath(xs, ys, yaws)
+
 
     def to_output_format(self):
         output_xs = self.xs.round(5)
@@ -74,6 +79,22 @@ class TrajectoryPath:
         stacked = np.vstack([output_xs, output_ys, output_yaws]).transpose()
 
         return stacked.tolist()
+
+
+    def remove_start(self):
+        if np.round(self.xs[0], 5) == 0 and np.round(self.ys[0], 5) == 0:
+            new_xs = self.xs[1:]
+            new_ys = self.ys[1:]
+            new_yaws = self.yaws[1:]
+
+            return TrajectoryPath(new_xs, new_ys, new_yaws)
+        else:
+            return self
+
+
+    @staticmethod
+    def empty():
+        return TrajectoryPath(None, None, None)
 
 
 @dataclass(frozen=True)
