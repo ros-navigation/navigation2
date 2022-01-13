@@ -52,3 +52,7 @@ def interpolate_yaws(start_angle, end_angle, left_turn, steps):
     yaws = np.vectorize(normalize_angle)(yaws)
 
     return yaws
+
+
+def get_rotation_matrix(angle):
+    return np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
