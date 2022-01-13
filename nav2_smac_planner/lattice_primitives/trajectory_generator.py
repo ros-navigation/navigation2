@@ -13,28 +13,32 @@
 # limitations under the License. Reserved.
 
 import logging
-from typing import Union
+from typing import Tuple, Union
 
 import numpy as np
 
-from helper import interpolate_yaws
+from helper import get_rotation_matrix, interpolate_yaws
 from trajectory import Trajectory, TrajectoryParameters, TrajectoryPath
 
 logger = logging.getLogger(__name__)
 
 
+import matplotlib.pyplot as plt
+
 class TrajectoryGenerator:
     def __init__(self, config: dict):
         self.turning_radius = config["turning_radius"]
 
+
     def _create_arc_path(
         self,
         trajectory_params: TrajectoryParameters,
-        primitive_resolution: float
-    ) -> TrajectoryPath:
+        primitive_resolution: float,
+        distance_offset: float
+    ) -> Tuple[TrajectoryPath, float]:
         """
         Create arc trajectory using the following parameterization:
-            r(t) = <R cos(t - pi/2) + a, R sin(t - pi/2) + b>
+            r(t) = <R * cos(t - pi/2) + a, R * sin(t - pi/2) + b>
 
             R = radius
             a = x offset
@@ -51,36 +55,62 @@ class TrajectoryGenerator:
             The parameters that describe the arc to create
         primitive_resolution: float
             The distance between sampled points along the arc
+        distance_offset: float
+            The distance to adjust the starting point of the arc by.
+            This value is used to ensure that the spacing between the 
+            previous trajectory point and the start of the arc is still 
+            roughly equal to the primitive resolution.
 
         Returns
         -------
         TrajectoryPath
             A trajectory path built only from the arc portion of the
             trajectory parameters
+        float
+            The distance that remains between the actual generated end point
+            of the arc and the desired end point. This value arises from the
+            fact that we are attempting to represent the arc as a set of
+            discrete points each spaced out by a distance equal to the primitive
+            resolution.
         """
 
-        steps = int(round(trajectory_params.arc_length / primitive_resolution))
+        # Calculate number of steps needed and the distance that remains 
+        # between the last generated point and the end point
+        steps = int((trajectory_params.arc_length - distance_offset) // primitive_resolution)
+        remaining_distance = (trajectory_params.arc_length - distance_offset) - steps * primitive_resolution
+
+        # Need to convert distance offset to an angle offset due to how we parametrize the arc
+        angle_offset = distance_offset / trajectory_params.turning_radius
 
         start_angle = trajectory_params.start_angle
         end_angle = trajectory_params.end_angle
+
+        angle_spacing = primitive_resolution / trajectory_params.turning_radius
 
         # The -pi/pi boundary presents a problem so ensure that
         # both angles have the same sign if we are on the boundary
         if abs(start_angle) == np.pi:
             start_angle = np.copysign(start_angle, end_angle)
-
         if abs(end_angle) == np.pi:
             end_angle = np.copysign(end_angle, start_angle)
 
+        # Need to add angle offset if its a left turn and subtract if its a right turn
+        if trajectory_params.left_turn:
+            start_angle += angle_offset
+        else:
+            start_angle -= angle_offset
+
         yaws = interpolate_yaws(
-            start_angle, end_angle, trajectory_params.left_turn, steps
+            start_angle, end_angle, trajectory_params.left_turn, steps + 1
         )
 
         if trajectory_params.left_turn:
             if start_angle > end_angle:
                 end_angle += 2 * np.pi
 
-            ts = np.linspace(start_angle, end_angle, steps)
+            # Calculate points using
+            # r(t) = <R * cos(t - pi/2) + a, R * sin(t - pi/2) + b>
+            ts = angle_spacing * np.arange(0, steps + 1) + start_angle
             xs = (
                 trajectory_params.turning_radius * np.cos(ts - np.pi / 2)
                 + trajectory_params.x_offset
@@ -90,13 +120,17 @@ class TrajectoryGenerator:
                 + trajectory_params.y_offset
             )
         else:
+            # Right turns go the opposite way across the arc, so we 
+            # need to invert the angles and adjust the parametrization
             start_angle = -start_angle
             end_angle = -end_angle
 
             if start_angle > end_angle:
                 end_angle += 2 * np.pi
 
-            ts = np.linspace(start_angle, end_angle, steps)
+            # Calculate points using
+            # r(t) = <R * -cos(t + pi/2) + a, R * sin(t + pi/2) + b>
+            ts = angle_spacing * np.arange(0, steps + 1) + start_angle
             xs = (
                 trajectory_params.turning_radius * -np.cos(ts + np.pi / 2)
                 + trajectory_params.x_offset
@@ -106,15 +140,18 @@ class TrajectoryGenerator:
                 + trajectory_params.y_offset
             )
 
-        return TrajectoryPath(xs, ys, yaws)
+        return TrajectoryPath(xs, ys, yaws), remaining_distance
+
 
     def _create_line_path(
         self,
-        trajectory_params: TrajectoryParameters,
+        distance,
+        line_angle,
         start_point: np.array,
         end_point: np.array,
         primitive_resolution: float,
-    ) -> TrajectoryPath:
+        distance_offset: float
+    ) -> Tuple[TrajectoryPath, float]:
         """
         Create straight line trajectory from (x1, y1) to (x2, y2)
 
@@ -128,30 +165,51 @@ class TrajectoryGenerator:
             [x, y] coordinate of end point
         primitive_resolution: float
             The distance between sampled points along the line
+        distance_offset: float
+            The distance to adjust the starting point of the line by.
+            This value is used to ensure that the spacing between the 
+            previous trajectory point and the start of the line is still 
+            roughly equal to the primitive resolution.
 
         Returns
         -------
         TrajectoryPath
             A straight line path from (x1, y1) to (x2, y2)
+        float
+            The distance that remains between the actual generated end point
+            of the line and the desired end point. This value arises from the
+            fact that we are attempting to represent the line as a set of
+            discrete points each spaced out by a distance equal to the primitive
+            resolution.
         """
 
-        if start_point[0] == 0 and start_point[1] == 0:
-            distance = trajectory_params.start_to_arc_distance
-            line_angle = trajectory_params.start_angle
+        # Calculate number of steps needed and the distance that remains 
+        # between the last generated point and the end point
+        steps = int((distance - distance_offset) // primitive_resolution)
+        remaining_distance = (distance - distance_offset) - (primitive_resolution * steps)
+
+        # Compute the direction vector that points from start point to end point
+        # and has a length of primitve_resolution
+        dir_vec = (end_point - start_point).astype("float").reshape(2, 1)
+        dir_vec /= np.linalg.norm(dir_vec)
+        dir_vec *= primitive_resolution
+
+        # Create the points along the path by multiplying the step number 
+        # by the direction vector and adding the start point
+        if steps == 0:
+            step_numbers = np.array([1])
         else:
-            distance = trajectory_params.arc_to_end_distance
-            line_angle = trajectory_params.end_angle
+            step_numbers = np.arange(1, steps + 1)
 
-        steps = max(int(round(distance / primitive_resolution)), 2)
+        points = dir_vec * step_numbers + start_point.reshape(2,1)
+        xs = points[0, :]
+        ys = points[1, :]
 
-        ts = np.linspace(0, 1, steps)
-
-        xs = (1 - ts) * start_point[0] + ts * end_point[0]
-        ys = (1 - ts) * start_point[1] + ts * end_point[1]
-
+        # yaw is always the same angle since its a straight line
         yaws = np.full(xs.shape, line_angle, dtype=np.float64)
 
-        return TrajectoryPath(xs, ys, yaws)
+        return TrajectoryPath(xs, ys, yaws), remaining_distance
+
 
     def _create_path(
         self,
@@ -176,47 +234,92 @@ class TrajectoryGenerator:
         """
 
         if trajectory_params.turning_radius > 0:
-            final_trajectory = self._create_arc_path(
-                trajectory_params, primitive_resolution
-            )
+            final_trajectory = TrajectoryPath.empty()
+            remaining_distance = 0
 
-            if trajectory_params.start_to_arc_distance > 0:
+            # Create straight line path from start to arc if needed
+            if trajectory_params.start_to_arc_distance > primitive_resolution:
                 start_point = np.array([0, 0])
-                end_point = \
-                    np.array([final_trajectory.xs[0], final_trajectory.ys[0]])
 
-                start_to_arc_trajectory = self._create_line_path(
-                    trajectory_params,
+                # Calculate the end point of the path
+                rot_matrix = get_rotation_matrix(trajectory_params.start_angle)
+                end_point = rot_matrix @ np.array([[trajectory_params.start_to_arc_distance], [0]])
+                end_point = end_point.flatten()          
+
+                start_to_arc_trajectory, remaining_distance = self._create_line_path(
+                    trajectory_params.start_to_arc_distance,
+                    trajectory_params.start_angle,
                     start_point,
                     end_point,
-                    primitive_resolution
+                    primitive_resolution,
+                    0
                 )
+                
+                final_trajectory += start_to_arc_trajectory
 
-                final_trajectory = start_to_arc_trajectory + final_trajectory
+            # The distance between two points should always be primitive_resolution
+            # so we calculate the offset needed based on the previous generated point
+            # (or leave it as 0 if the last point was at the correct end point)
+            distance_offset = primitive_resolution - remaining_distance if remaining_distance > 0 else 0
 
-            if trajectory_params.arc_to_end_distance > 0:
+            # Calculate the arc portion of the path
+            arc_path, remaining_distance = self._create_arc_path(trajectory_params, primitive_resolution, distance_offset)
+            final_trajectory += arc_path
+
+            # Create straight line path from arc to end if needed
+            if trajectory_params.arc_to_end_distance > primitive_resolution:
                 start_point = np.array(
                     [final_trajectory.xs[-1], final_trajectory.ys[-1]]
                 )
-                arc_to_end_trajectory = self._create_line_path(
-                    trajectory_params,
+
+                distance_offset = primitive_resolution - remaining_distance if remaining_distance > 0 else 0
+                arc_to_end_trajectory, remaining_distance = self._create_line_path(
+                    trajectory_params.arc_to_end_distance,
+                    trajectory_params.end_angle,
                     start_point,
                     trajectory_params.end_point,
                     primitive_resolution,
+                    distance_offset
                 )
 
-                final_trajectory = final_trajectory + arc_to_end_trajectory
+                final_trajectory += arc_to_end_trajectory
 
-            return final_trajectory
         else:
             # No arc in path therefore its only a straight line
             start_point = np.array([0, 0])
-            return self._create_line_path(
-                trajectory_params,
+            line_path, remaining_distance = self._create_line_path(
+                trajectory_params.start_to_arc_distance,
+                trajectory_params.start_angle,
                 start_point,
                 trajectory_params.end_point,
                 primitive_resolution,
+                0
             )
+
+            final_trajectory = line_path
+
+        # Due to discretization issues we need to force the last point to be the end point
+        traj_end = np.array([final_trajectory.xs[-1], final_trajectory.ys[-1]])
+        dist_to_end = np.linalg.norm(traj_end - trajectory_params.end_point)
+
+        # If the last point in the generated path is closer than half a primtiive_resolution 
+        # to the end we just change it to lie on the end. Otherwise we add in a new point to 
+        # the path that lies at the end.
+        if dist_to_end < 0.5 * primitive_resolution:
+            final_trajectory.xs[-1] = trajectory_params.end_point[0]
+            final_trajectory.ys[-1] = trajectory_params.end_point[1]
+            final_trajectory.yaws[-1] = trajectory_params.end_angle
+        else:
+            end = TrajectoryPath(np.array([trajectory_params.end_point[0]]), 
+                                 np.array([trajectory_params.end_point[1]]), 
+                                 np.array([trajectory_params.end_angle]))
+            final_trajectory += end
+
+        # Remove the start point (i.e. 0,0)
+        final_trajectory = final_trajectory.remove_start()
+
+        return final_trajectory
+
 
     def _get_intersection_point(
         self, m1: float, c1: float, m2: float, c2: float
@@ -249,6 +352,7 @@ class TrajectoryGenerator:
 
         return np.array([x_point, line1(x_point)])
 
+
     def _is_left_turn(
         self,
         intersection_point: np.array,
@@ -276,12 +380,13 @@ class TrajectoryGenerator:
 
         return det >= 0
 
+
     def _is_dir_vec_correct(
         self, point1: np.array, point2: np.array, line_angle: float
     ) -> bool:
         """
         Checks whether the vector from point 1 -> point 2 shares the
-        same direction as line angle
+        same gradient as line_angle
 
         Parameters
         ----------
@@ -308,7 +413,7 @@ class TrajectoryGenerator:
 
         direction_vec_from_gradient = np.array([1, m])
 
-        # Handle when line angle is in quadrant 2/3 and when angle is 90
+        # Handle when line angle is in quadrant 2 or 3 and when angle is 90
         if abs(line_angle) > np.pi / 2:
             direction_vec_from_gradient = np.array([-1, m])
         elif abs(line_angle) == np.pi / 2:
@@ -324,6 +429,7 @@ class TrajectoryGenerator:
             return True
         else:
             return False
+
 
     def _calculate_trajectory_params(
         self, end_point: np.array, start_angle: float, end_angle: float
@@ -342,8 +448,6 @@ class TrajectoryGenerator:
                 - If I is too close to (0,0) or the end point then
                 no arc greater than the turning radius will reach
                 from (0,0) to end point
-
-
 
         If two segments from the same exterior point are tangent to
         a circle then they are congruent
@@ -400,13 +504,11 @@ class TrajectoryGenerator:
                 )
 
             else:
-                logger.info(
-                    f"No trajectory possible for equivalent start and " +
-                    "end angles that also passes through p = {x2, y2}"
+                logger.debug(
+                    'No trajectory possible for equivalent start and ' +
+                    f'end angles that also passes through p = {x2, y2}'
                 )
                 return None
-
-        angle_between_lines = np.pi - abs(end_angle - start_angle)
 
         # Find intersection point of the lines 1 and 2
         intersection_point = \
@@ -415,7 +517,7 @@ class TrajectoryGenerator:
         # Check that the vector from (0,0) to intersection point agrees
         # with the angle of line 1
         if not self._is_dir_vec_correct(q, intersection_point, start_angle):
-            logger.info(
+            logger.debug(
                 "No trajectory possible since intersection point occurs " +
                 "before start point on line 1"
             )
@@ -424,7 +526,7 @@ class TrajectoryGenerator:
         # Check that the vector from intersection point to p agrees with
         # the angle of line 2
         if not self._is_dir_vec_correct(intersection_point, p, end_angle):
-            logger.info(
+            logger.debug(
                 "No trajectory possible since intersection point occurs " +
                 "after end point on line 2"
             )
@@ -436,7 +538,16 @@ class TrajectoryGenerator:
         # Calculate distance between point q = (0,0) and intersection point
         dist_q = round(np.linalg.norm(q - intersection_point), 5)
 
-        # Turn the turning radius into a minimum valid distance
+        # Calculate the angle between start angle and end angle lines
+        angle_between_lines = np.pi - abs(end_angle - start_angle)
+
+        # The closer p and q are to the intersection point the smaller
+        # the turning radius will be. However, we have a constraint on how
+        # small this turning radius can get. To calculate the minimum allowed
+        # distance we draw a right triangle with height equal to the constrained
+        # radius and angle opposite the height leg as half the angle between the
+        # start and end angle lines. The minimum valid distance is then the 
+        # base of this triangle.
         min_valid_distance = round(
             self.turning_radius / np.tan(angle_between_lines / 2), 5
         )
@@ -444,7 +555,7 @@ class TrajectoryGenerator:
         # Both the distance of p along line 2 and intersection point along
         # line 1 must be greater than the minimum valid distance
         if dist_p < min_valid_distance or dist_q < min_valid_distance:
-            logger.info(
+            logger.debug(
                 "No trajectory possible where radius is larger than " +
                 "minimum turning radius"
             )
@@ -457,7 +568,7 @@ class TrajectoryGenerator:
             vec_line2 /= np.linalg.norm(vec_line2)
             p = intersection_point + dist_q * vec_line2
 
-            arc_to_end_distance = dist_p - dist_q
+            arc_to_end_distance = (dist_p - dist_q).round(5)
 
         elif dist_q > dist_p:
             # Find new point q on line 1 that is equidistant away from
@@ -467,7 +578,7 @@ class TrajectoryGenerator:
 
             q = intersection_point + dist_p * vec_line1
 
-            start_to_arc_distance = dist_q - dist_p
+            start_to_arc_distance = (dist_q - dist_p).round(5)
 
         x1, y1 = q
         x2, y2 = p
@@ -496,12 +607,12 @@ class TrajectoryGenerator:
             )
 
         # The circles radius is the length from the center to point p (or q)
-        radius = round(np.linalg.norm(circle_center - p), 4)
-        x_offset = round(circle_center[0], 4)
-        y_offset = round(circle_center[1], 4)
+        radius = np.linalg.norm(circle_center - p).round(5)
+        x_offset = circle_center[0].round(5)
+        y_offset = circle_center[1].round(5)
 
         if radius < self.turning_radius:
-            logger.info(
+            logger.debug(
                 f"Calculated circle radius is smaller than allowed turning " +
                 "radius: r = {radius}, min_radius = {self.turning_radius}"
             )
@@ -521,9 +632,10 @@ class TrajectoryGenerator:
             arc_to_end_distance,
         )
 
+
     def generate_trajectory(
         self,
-        end_point: float,
+        end_point: np.array,
         start_angle: float,
         end_angle: float,
         primitive_resolution: float,
@@ -562,3 +674,16 @@ class TrajectoryGenerator:
             self._create_path(trajectory_params, primitive_resolution)
 
         return Trajectory(trajectory_path, trajectory_params)
+
+if __name__ == "__main__":
+    test = TrajectoryGenerator({"turning_radius": 0.5})
+
+    end_point = np.array([0.15, 0.2])
+    start_angle = 0.7853981633974483
+    end_angle = 1.1071487177940904
+
+    traj = test.generate_trajectory(end_point, start_angle, end_angle, 0.05)
+
+    plt.plot(traj.path.xs, traj.path.ys, 'x')
+    plt.axis("equal")
+    plt.show()
