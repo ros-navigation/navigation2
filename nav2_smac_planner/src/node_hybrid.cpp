@@ -180,7 +180,6 @@ void HybridMotionTable::initReedsShepp(
   float angle = 2.0 * asin(sqrt(2.0) / (2 * min_turning_radius));
   bin_size =
     2.0f * static_cast<float>(M_PI) / static_cast<float>(num_angle_quantization);
-
   float increments;
   if (angle < bin_size) {
     increments = 1.0f;
@@ -407,7 +406,7 @@ void NodeHybrid::resetObstacleHeuristic(
     // must reset all values
     std::fill(
       obstacle_heuristic_lookup_table.begin(),
-      obstacle_heuristic_lookup_table.end(), 0.0f);
+      obstacle_heuristic_lookup_table.end(), 0.0);
   } else {
     unsigned int obstacle_size = obstacle_heuristic_lookup_table.size();
     obstacle_heuristic_lookup_table.resize(size, 0.0);

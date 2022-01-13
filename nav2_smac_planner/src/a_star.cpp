@@ -31,7 +31,6 @@ using namespace std::chrono;  // NOLINT
 namespace nav2_smac_planner
 {
 
-
 template<typename NodeT>
 AStarAlgorithm<NodeT>::AStarAlgorithm(
   const MotionModel & motion_model,
