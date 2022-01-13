@@ -161,6 +161,7 @@ void HybridMotionTable::initReedsShepp(
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
+  travel_distance_reward = 1.0f - search_info.retrospective_penalty;
   obstacle_heuristic_admissible = search_info.obstacle_heuristic_admissible;
 
   // if nothing changed, no need to re-compute primitives
@@ -322,7 +323,7 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
 
   float travel_cost = 0.0;
   float travel_cost_raw =
-    NodeHybrid::travel_distance_cost * travel_distance_reward +
+    NodeHybrid::travel_distance_cost * motion_table.travel_distance_reward +
     (NodeHybrid::travel_distance_cost * motion_table.cost_penalty * normalized_cost);
 
   if (child->getMotionPrimitiveIndex() == 0 || child->getMotionPrimitiveIndex() == 3) {

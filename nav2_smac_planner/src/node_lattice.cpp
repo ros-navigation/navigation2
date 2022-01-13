@@ -287,7 +287,7 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
 
   float travel_cost = 0.0;
   float travel_cost_raw =
-    prim_length * travel_distance_reward +
+    prim_length * motion_table.travel_distance_reward +
     (prim_length * motion_table.cost_penalty * normalized_cost);
 
   if (transition_prim->arc_length < 0.001) {
