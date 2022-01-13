@@ -49,6 +49,7 @@ public:
    * @param topic_name The name of the topic to publish the downsampled costmap
    * @param costmap The costmap we want to downsample
    * @param downsampling_factor Multiplier for the costmap resolution
+   * @param use_min_cost_neighbor If true, min function is used instead of max for downsampling
    */
   void on_configure(
     const nav2_util::LifecycleNode::WeakPtr & node,

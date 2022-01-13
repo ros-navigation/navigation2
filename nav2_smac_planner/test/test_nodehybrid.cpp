@@ -41,6 +41,8 @@ TEST(NodeHybridTest, test_node_hybrid)
   info.reverse_penalty = 2.0;
   info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
   info.cost_penalty = 1.7;
+  info.retrospective_penalty = 0.0;
+  info.obstacle_heuristic_admissible = false;
   unsigned int size_x = 10;
   unsigned int size_y = 10;
   unsigned int size_theta = 72;
@@ -139,6 +141,7 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   info.reverse_penalty = 2.0;
   info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
   info.cost_penalty = 1.7;
+  info.retrospective_penalty = 0.0;
   info.obstacle_heuristic_admissible = true;
   unsigned int size_x = 100;
   unsigned int size_y = 100;
@@ -216,6 +219,8 @@ TEST(NodeHybridTest, test_node_debin_neighbors)
   info.non_straight_penalty = 1.4;
   info.reverse_penalty = 2.1;
   info.minimum_turning_radius = 4;  // 0.2 in grid coordinates
+  info.retrospective_penalty = 0.0;
+  info.obstacle_heuristic_admissible = false;
   unsigned int size_x = 100;
   unsigned int size_y = 100;
   unsigned int size_theta = 72;
@@ -244,6 +249,8 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
   info.non_straight_penalty = 1.4;
   info.reverse_penalty = 2.1;
   info.minimum_turning_radius = 8;  // 0.4 in grid coordinates
+  info.retrospective_penalty = 0.0;
+  info.obstacle_heuristic_admissible = false;
   unsigned int size_x = 100;
   unsigned int size_y = 100;
   unsigned int size_theta = 72;
