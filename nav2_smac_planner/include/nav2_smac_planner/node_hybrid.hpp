@@ -121,6 +121,7 @@ struct HybridMotionTable
   float non_straight_penalty;
   float cost_penalty;
   float reverse_penalty;
+  float travel_distance_reward;
   bool obstacle_heuristic_admissible;
   ompl::base::StateSpacePtr state_space;
   std::vector<std::vector<double>> delta_xs;

@@ -60,6 +60,7 @@ void LatticeMotionTable::initMotionModel(
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
+  travel_distance_reward = 1.0f - search_info.retrospective_penalty;
   obstacle_heuristic_admissible = search_info.obstacle_heuristic_admissible;
   current_lattice_filepath = search_info.lattice_filepath;
   allow_reverse_expansion = search_info.allow_reverse_expansion;
@@ -285,7 +286,9 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
   }
 
   float travel_cost = 0.0;
-  float travel_cost_raw = prim_length + (prim_length * motion_table.cost_penalty * normalized_cost);
+  float travel_cost_raw =
+    prim_length * travel_distance_reward +
+    (prim_length * motion_table.cost_penalty * normalized_cost);
 
   if (transition_prim->arc_length < 0.001) {
     // New motion is a straight motion, no additional costs to be applied
