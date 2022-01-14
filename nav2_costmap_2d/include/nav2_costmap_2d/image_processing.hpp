@@ -235,7 +235,7 @@ public:
     if (up_row_start_ == nullptr) {
       return zero_;
     }
-    return replaceBounds(v, up_row_start_, up_row_end_);
+    return replaceOutOfBounds(v, up_row_start_, up_row_end_);
   }
 
   /**
@@ -244,11 +244,15 @@ public:
    */
   T & down(T * v)
   {
-    return replaceBounds(v, down_row_start_, down_row_end_);
+    return replaceOutOfBounds(v, down_row_start_, down_row_end_);
   }
 
 private:
-  T & replaceBounds(T * v, const T * begin, const T * end)
+  /**
+   * @brief Replaces an out-of-bounds pointer with a pointer to 0
+   * @return a dereferenced pointer or a reference to 0 if the pointer is out of range
+   */
+  T & replaceOutOfBounds(T * v, const T * begin, const T * end)
   {
     if (v < begin || v >= end) {
       return zero_;
