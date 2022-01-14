@@ -25,7 +25,8 @@ namespace nav2_costmap_2d
 {
 bool isBackground(uint8_t pixel)
 {
-  return pixel != LETHAL_OBSTACLE && pixel != NO_INFORMATION;
+  return pixel != LETHAL_OBSTACLE && pixel != NO_INFORMATION &&
+         pixel != INSCRIBED_INFLATED_OBSTACLE;
 }
 
 void
