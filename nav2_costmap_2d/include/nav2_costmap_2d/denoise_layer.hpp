@@ -114,9 +114,9 @@ private:
   // The border value of group size. Groups of this and larger size will be kept
   ConnectivityType group_connectivity_type_{ConnectivityType::Way8};
   // Memory buffer for temporal image
-  mutable MemoryBuffer buffer;
+  mutable MemoryBuffer buffer_;
   // Implementing the removal of grouped noise
-  imgproc_impl::GroupsRemover groupsRemover;
+  imgproc_impl::GroupsRemover groups_remover_;
 };
 
 }  // namespace nav2_costmap_2d

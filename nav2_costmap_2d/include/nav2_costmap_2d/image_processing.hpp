@@ -55,8 +55,8 @@ private:
   inline void allocate(size_t bytes);
 
 private:
-  void * data{};
-  size_t size{};
+  void * data_{};
+  size_t size_{};
 };
 
 // forward declarations
@@ -66,11 +66,12 @@ template<class Label>
 class EquivalenceLabelTrees;
 
 template<class AggregateFn>
-void morphology_operation(
+void morphologyOperation(
   const Image<uint8_t> & input, Image<uint8_t> & output,
   const Image<uint8_t> & shape, AggregateFn aggregate);
+
 using ShapeBuffer3x3 = std::array<uint8_t, 9>;
-inline Image<uint8_t> getShape(ShapeBuffer3x3 & buffer, ConnectivityType connectivity);
+inline Image<uint8_t> createShape(ShapeBuffer3x3 & buffer, ConnectivityType connectivity);
 } // namespace imgproc_impl
 
 /**
@@ -88,7 +89,7 @@ inline void dilate(
       return std::max(lst);
     };
   ShapeBuffer3x3 shape_buffer;
-  morphology_operation(input, output, getShape(shape_buffer, connectivity), aggregate);
+  morphologyOperation(input, output, createShape(shape_buffer, connectivity), aggregate);
 }
 
 /**
@@ -112,7 +113,7 @@ inline void dilate(
 * Total number of labels == 0 for empty image.
 * In other cases, label 0 is always counted,
 * even if there is no background in the image.
-* For example, for an image of one pixel equal to 255, the total number of labels == 2.
+* For example, for an image of one background pixel, the total number of labels == 2.
 * Two labels (0, 1) have been counted, although label 0 is not used)
 */
 template<ConnectivityType connectivity, class Label, class IsBg>
@@ -133,23 +134,23 @@ T * MemoryBuffer::get(std::size_t count)
 
   const size_t required_bytes = sizeof(T) * count;
 
-  if (size < required_bytes) {
+  if (size_ < required_bytes) {
     allocate(required_bytes);
   }
-  return static_cast<T *>(data);
+  return static_cast<T *>(data_);
 }
 
 void MemoryBuffer::reset()
 {
-  ::operator delete(data);
-  size = 0;
+  ::operator delete(data_);
+  size_ = 0;
 }
 
 void MemoryBuffer::allocate(size_t bytes)
 {
   reset();
-  data = ::operator new(bytes);
-  this->size = bytes;
+  data_ = ::operator new(bytes);
+  size_ = bytes;
 }
 
 namespace imgproc_impl
@@ -193,11 +194,11 @@ histogram(const Image<T> & image, T image_max, Bin bin_max)
 }
 
 /**
-   * @brief Boundary case object stub. Used as parameter of class Window.
-   * Dereferences a pointer to a pixel without any checks
-   * @tparam T image pixel type
-   * @sa BorderConstant
-   */
+ * @brief Boundary case object stub. Used as parameter of class Window.
+ * Dereferences a pointer to a pixel without any checks
+ * @tparam T image pixel type
+ * @sa BorderConstant
+ */
 template<class T>
 struct AsIs
 {
@@ -222,19 +223,19 @@ public:
    * @param columns number of pixels in both rows
    */
   BorderConstant(const T * up_row_start, const T * down_row_start, size_t columns)
-  : up_row_start{up_row_start}, up_row_end{up_row_start + columns},
-    down_row_start{down_row_start}, down_row_end{down_row_start + columns} {}
+  : up_row_start_{up_row_start}, up_row_end_{up_row_start + columns},
+    down_row_start_{down_row_start}, down_row_end_{down_row_start + columns} {}
 
   /**
-   * @brief Return ref to pixel or to zero value if up_row_start is nullptr or the pointer is out of bounds
+   * @brief Return ref to pixel or to zero value if up_row_start_ is nullptr or the pointer is out of bounds
    * @param v pointer to pixel
    */
   T & up(T * v)
   {
-    if (up_row_start == nullptr) {
-      return zero;
+    if (up_row_start_ == nullptr) {
+      return zero_;
     }
-    return replace_bounds(v, up_row_start, up_row_end);
+    return replaceBounds(v, up_row_start_, up_row_end_);
   }
 
   /**
@@ -243,23 +244,23 @@ public:
    */
   T & down(T * v)
   {
-    return replace_bounds(v, down_row_start, down_row_end);
+    return replaceBounds(v, down_row_start_, down_row_end_);
   }
 
 private:
-  T & replace_bounds(T * v, const T * begin, const T * end)
+  T & replaceBounds(T * v, const T * begin, const T * end)
   {
     if (v < begin || v >= end) {
-      return zero;
+      return zero_;
     }
     return *v;
   }
 
-  const T * up_row_start;
-  const T * up_row_end;
-  const T * down_row_start;
-  const T * down_row_end;
-  T zero{};
+  const T * up_row_start_;
+  const T * up_row_end_;
+  const T * down_row_start_;
+  const T * down_row_end_;
+  T zero_{};
 };
 
 /**
@@ -284,25 +285,25 @@ public:
    * @param border boundary case object
    */
   inline Window(T * up_row, T * down_row, Border<T> border = {})
-  : up_row{up_row}, down_row{down_row}, border{border} {}
+  : up_row_{up_row}, down_row_{down_row}, border_{border} {}
 
-  inline T & a() {return border.up(up_row - 1);}
-  inline T & b() {return border.up(up_row);}
-  inline T & c() {return border.up(up_row + 1);}
-  inline T & d() {return border.down(down_row - 1);}
-  inline T & e() {return border.down(down_row);}
+  inline T & a() {return border_.up(up_row_ - 1);}
+  inline T & b() {return border_.up(up_row_);}
+  inline T & c() {return border_.up(up_row_ + 1);}
+  inline T & d() {return border_.down(down_row_ - 1);}
+  inline T & e() {return border_.down(down_row_);}
 
   /// @brief Shifts the window to the right
   inline void next()
   {
-    ++up_row;
-    ++down_row;
+    ++up_row_;
+    ++down_row_;
   }
 
 private:
-  T * up_row;
-  T * down_row;
-  Border<T> border;
+  T * up_row_;
+  T * down_row_;
+  Border<T> border_;
 };
 
 /// @brief Discards const
@@ -382,20 +383,20 @@ public:
     // Trying to reserve memory with a margin
     const size_t max_labels_count = maxLabels(rows, columns, connectivity);
     // Number of labels cannot exceed std::numeric_limits<Label>::max()
-    labels_size = static_cast<Label>(
+    labels_size_ = static_cast<Label>(
       std::min(max_labels_count, size_t(std::numeric_limits<Label>::max()))
     );
 
     try {
-      labels.reserve(max_labels_count);
+      labels_.reserve(max_labels_count);
     } catch (...) {
       // ignore any exception
       // perhaps the entire requested amount of memory will not be required
     }
 
     // Label 0 is reserved for the background pixels, i.e. labels[0] is always 0
-    labels = {0};
-    next_free = 1;
+    labels_ = {0};
+    next_free_ = 1;
   }
 
   /**
@@ -405,12 +406,12 @@ public:
    */
   Label makeLabel()
   {
-    // Check the next_free counter does not overflow.
-    if (next_free == labels_size) {
+    // Check the next_free_ counter does not overflow.
+    if (next_free_ == labels_size_) {
       throw LabelOverflow("EquivalenceLabelTrees: Can't create new label");
     }
-    labels.push_back(next_free);
-    return next_free++;
+    labels_.push_back(next_free_);
+    return next_free_++;
   }
 
   /**
@@ -443,17 +444,17 @@ public:
   const std::vector<Label> & getLabels()
   {
     Label k = 1;
-    for (Label i = 1; i < next_free; ++i) {
+    for (Label i = 1; i < next_free_; ++i) {
 
-      if (labels[i] < i) {
-        labels[i] = labels[labels[i]];
+      if (labels_[i] < i) {
+        labels_[i] = labels_[labels_[i]];
       } else {
-        labels[i] = k;
+        labels_[i] = k;
         ++k;
       }
     }
-    labels.resize(k);
-    return labels;
+    labels_.resize(k);
+    return labels_;
   }
 
 private:
@@ -470,7 +471,7 @@ private:
 
     if (connectivity == ConnectivityType::Way4) {
       /* The maximum of individual components will be reached in the chessboard image,
-       * where the white cells correspond to zero pixels */
+       * where the white cells correspond to obstacle pixels */
       max_labels = (rows * columns) / 2 + 1;
     } else {
       /* The maximum of individual components will be reached in image like this:
@@ -480,7 +481,7 @@ private:
        * .......~
        * x.x.x.x~
        * ~
-       * where 'x' - pixel with code 255, '.' - pixel with code [0, 254],
+       * where 'x' - pixel with obstacle, '.' - background pixel,
        * '~' - row continuation in the same style */
       max_labels = (rows * columns) / 3 + 1;
     }
@@ -493,19 +494,19 @@ private:
   Label findRoot(Label i)
   {
     Label root = i;
-    for (; labels[root] < root; root = labels[root]) { /*do nothing*/}
+    for (; labels_[root] < root; root = labels_[root]) { /*do nothing*/}
     return root;
   }
 
   /// @brief Set the root of the tree of node i
   void setRoot(Label i, Label root)
   {
-    while (labels[i] < i) {
-      auto j = labels[i];
-      labels[i] = root;
+    while (labels_[i] < i) {
+      auto j = labels_[i];
+      labels_[i] = root;
       i = j;
     }
-    labels[i] = root;
+    labels_[i] = root;
   }
 
 private:
@@ -518,9 +519,9 @@ private:
    * index: 0|1|2|3|4|5
    * value: 0|1|1|1|3|3
    */
-  std::vector<Label> labels;
-  Label labels_size{};
-  Label next_free{};
+  std::vector<Label> labels_;
+  Label labels_size_{};
+  Label next_free_{};
 };
 
 /// @brief The specializations of this class provide the definition of the pixel label
@@ -538,12 +539,12 @@ struct ProcessPixel<ConnectivityType::Way8>
    * @tparam Label integer type of label
    * @param image input image window. Image data will not be changed. De facto, image is a const ref
    * @param label output label window
-   * @param eqTrees union-find structure
+   * @param eq_trees union-find structure
    * @throw LabelOverflow if all possible labels already used
    */
   template<class ImageWindow, class LabelsWindow, class Label, class IsBg>
   static void pass(
-    ImageWindow & image, LabelsWindow & label, EquivalenceLabelTrees<Label> & eqTrees,
+    ImageWindow & image, LabelsWindow & label, EquivalenceLabelTrees<Label> & eq_trees,
     IsBg && is_bg)
   {
     Label & current = label.e();
@@ -555,10 +556,10 @@ struct ProcessPixel<ConnectivityType::Way8>
       } else {
         if (!is_bg(image.c())) {
           if (!is_bg(image.a())) {
-            current = eqTrees.unionTrees(label.c(), label.a());
+            current = eq_trees.unionTrees(label.c(), label.a());
           } else {
             if (!is_bg(image.d())) {
-              current = eqTrees.unionTrees(label.c(), label.d());
+              current = eq_trees.unionTrees(label.c(), label.d());
             } else {
               current = label.c();
             }
@@ -570,7 +571,7 @@ struct ProcessPixel<ConnectivityType::Way8>
             if (!is_bg(image.d())) {
               current = label.d();
             } else {
-              current = eqTrees.makeLabel();
+              current = eq_trees.makeLabel();
             }
           }
         }
@@ -592,12 +593,12 @@ struct ProcessPixel<ConnectivityType::Way4>
    * @tparam Label integer type of label
    * @param image input image window. Image data will not be changed. De facto, image is a const ref
    * @param label output label window
-   * @param eqTrees union-find structure
+   * @param eq_trees union-find structure
    * @throw LabelOverflow if all possible labels already used
    */
   template<class ImageWindow, class LabelsWindow, class Label, class IsBg>
   static void pass(
-    ImageWindow & image, LabelsWindow & label, EquivalenceLabelTrees<Label> & eqTrees,
+    ImageWindow & image, LabelsWindow & label, EquivalenceLabelTrees<Label> & eq_trees,
     IsBg && is_bg)
   {
     Label & current = label.e();
@@ -606,7 +607,7 @@ struct ProcessPixel<ConnectivityType::Way4>
     if (!is_bg(image.e())) {
       if (!is_bg(image.b())) {
         if (!is_bg(image.d())) {
-          current = eqTrees.unionTrees(label.d(), label.b());
+          current = eq_trees.unionTrees(label.d(), label.b());
         } else {
           current = label.b();
         }
@@ -614,7 +615,7 @@ struct ProcessPixel<ConnectivityType::Way4>
         if (!is_bg(image.d())) {
           current = label.d();
         } else {
-          current = eqTrees.makeLabel();
+          current = eq_trees.makeLabel();
         }
       }
     } else {
@@ -772,17 +773,17 @@ Label connectedComponentsImpl(
  * shape size is not equal to 3x3
  */
 template<class AggregateFn>
-void morphology_operation(
+void morphologyOperation(
   const Image<uint8_t> & input, Image<uint8_t> & output,
   const Image<uint8_t> & shape, AggregateFn aggregate)
 {
   if (input.rows() != output.rows() || input.columns() != output.columns()) {
     throw std::logic_error(
-            "morphology_operation: the sizes of the input and output images are different");
+            "morphologyOperation: the sizes of the input and output images are different");
   }
 
   if (shape.rows() != 3 || shape.columns() != 3) {
-    throw std::logic_error("morphology_operation: wrong shape size");
+    throw std::logic_error("morphologyOperation: wrong shape size");
   }
 
   if (input.empty()) {
@@ -807,8 +808,11 @@ void morphology_operation(
   }
 }
 
-/// @brief Return structuring element 3x3 image by predefined figure type
-Image<uint8_t> getShape(ShapeBuffer3x3 & buffer, ConnectivityType connectivity)
+/**
+ * @brief Return structuring element 3x3 image by predefined figure type
+ * value 0 = ignore pixel, 255 = use pixel.
+ */
+Image<uint8_t> createShape(ShapeBuffer3x3 & buffer, ConnectivityType connectivity)
 {
   if (connectivity == ConnectivityType::Way8) {
     buffer = {255, 255, 255, 255, 0, 255, 255, 255, 255};

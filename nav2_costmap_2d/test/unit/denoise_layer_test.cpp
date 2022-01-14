@@ -184,7 +184,7 @@ TEST_F(DenoiseLayerTester, removeSinglePixelsFromExtremelySmallImage) {
 
 TEST_F(DenoiseLayerTester, removeSinglePixelsFromNonBinary) {
   image_buffer_bytes.assign(9, 253);
-  Image<uint8_t> in = make_image<uint8_t>(3, 3, image_buffer_bytes);
+  Image<uint8_t> in = makeImage<uint8_t>(3, 3, image_buffer_bytes);
   in.row(1)[1] = 255;
   Image<uint8_t> exp = clone(in, image_buffer_bytes2);
   exp.row(1)[1] = 0;
@@ -282,7 +282,7 @@ TEST_F(DenoiseLayerTester, removePixelsGroupFromExtremelySmallImage) {
 
 TEST_F(DenoiseLayerTester, removePixelsGroupFromNonBinary) {
   image_buffer_bytes.assign(9, 253);
-  Image<uint8_t> in = make_image<uint8_t>(3, 3, image_buffer_bytes);
+  Image<uint8_t> in = makeImage<uint8_t>(3, 3, image_buffer_bytes);
   in.row(1)[1] = 255;
 
   Image<uint8_t> exp = clone(in, image_buffer_bytes2);
@@ -342,7 +342,7 @@ TEST_F(DenoiseLayerTester, denoiseEmpty) {
 }
 
 TEST_F(DenoiseLayerTester, denoiseNothing) {
-  Image<uint8_t> in = make_image<uint8_t>(1, 1, image_buffer_bytes);
+  Image<uint8_t> in = makeImage<uint8_t>(1, 1, image_buffer_bytes);
 
   ASSERT_NO_THROW(denoise(in, ConnectivityType::Way4, 1));
 }

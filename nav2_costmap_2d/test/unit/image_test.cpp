@@ -46,7 +46,7 @@ TEST_F(ImageTester, memoryAccess) {
 }
 
 TEST_F(ImageTester, forEach) {
-  Image<uint8_t> image = make_image(3, 2, image_buffer_bytes);
+  Image<uint8_t> image = makeImage(3, 2, image_buffer_bytes);
   const uint8_t non_zero_initial_value = 42;
   uint8_t current(non_zero_initial_value);
 
@@ -64,8 +64,8 @@ TEST_F(ImageTester, forEach) {
 
 TEST_F(ImageTester, convert) {
   image_buffer_words = {1, 2, 3, 4, 5, 6};
-  Image<uint16_t> source = make_image(2, 3, image_buffer_words);
-  Image<uint8_t> target = make_image(2, 3, image_buffer_bytes);
+  Image<uint16_t> source = makeImage(2, 3, image_buffer_words);
+  Image<uint8_t> target = makeImage(2, 3, image_buffer_bytes);
 
   source.convert(
     target, [](uint16_t s, uint8_t & t) {
@@ -77,8 +77,8 @@ TEST_F(ImageTester, convert) {
 }
 
 TEST_F(ImageTester, convertDifferentSizes) {
-  Image<uint16_t> source = make_image(2, 3, image_buffer_words);
-  Image<uint8_t> target = make_image(3, 2, image_buffer_bytes);
+  Image<uint16_t> source = makeImage(2, 3, image_buffer_words);
+  Image<uint8_t> target = makeImage(3, 2, image_buffer_bytes);
   auto do_nothing = [](uint16_t /*src*/, uint8_t & /*trg*/) {};
 
   // Extra parentheses need to protect commas in template arguments
@@ -96,15 +96,15 @@ TEST_F(ImageTester, convertEmptyImages) {
 }
 
 TEST_F(ImageTester, convertWrongSize) {
-  Image<uint16_t> source = make_image(2, 3, image_buffer_words);
+  Image<uint16_t> source = makeImage(2, 3, image_buffer_words);
 
   auto do_nothing = [](uint16_t /*src*/, uint8_t & /*trg*/) {};
   {
-    Image<uint8_t> target = make_image(3, 3, image_buffer_bytes);
+    Image<uint8_t> target = makeImage(3, 3, image_buffer_bytes);
     ASSERT_THROW((source.convert(target, do_nothing)), std::logic_error);
   }
   {
-    Image<uint8_t> target = make_image(2, 2, image_buffer_bytes);
+    Image<uint8_t> target = makeImage(2, 2, image_buffer_bytes);
     ASSERT_THROW((source.convert(target, do_nothing)), std::logic_error);
   }
 }

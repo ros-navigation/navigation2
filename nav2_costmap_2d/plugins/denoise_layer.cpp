@@ -59,25 +59,26 @@ DenoiseLayer::onInitialize()
       "DenoiseLayer::onInitialize(): param minimal_group_size: %i."
       " A value of 1 or less means that all map cells will be left as they are.",
       minimal_group_size_param);
-    this->minimal_group_size_ = 1;
+    minimal_group_size_ = 1;
   } else {
-    this->minimal_group_size_ = static_cast<size_t>(minimal_group_size_param);
+    minimal_group_size_ = static_cast<size_t>(minimal_group_size_param);
   }
 
   const int group_connectivity_type_param = getInt("group_connectivity_type");
 
   if (group_connectivity_type_param == 4) {
-    this->group_connectivity_type_ = ConnectivityType::Way4;
-  } else if (group_connectivity_type_param == 8) {
-    this->group_connectivity_type_ = ConnectivityType::Way8;
+    group_connectivity_type_ = ConnectivityType::Way4;
   } else {
-    RCLCPP_WARN(
-      logger_, "DenoiseLayer::onInitialize(): param group_connectivity_type: %i."
-      " Possible values are  4 (neighbors pixels are connected horizontally and vertically) "
-      "or 8 (neighbors pixels are connected horizontally, vertically and diagonally)."
-      "The default value 8 will be used",
-      group_connectivity_type_param);
-    this->group_connectivity_type_ = ConnectivityType::Way8;
+    group_connectivity_type_ = ConnectivityType::Way8;
+
+    if (group_connectivity_type_param != 8) {
+      RCLCPP_WARN(
+        logger_, "DenoiseLayer::onInitialize(): param group_connectivity_type: %i."
+        " Possible values are  4 (neighbors pixels are connected horizontally and vertically) "
+        "or 8 (neighbors pixels are connected horizontally, vertically and diagonally)."
+        "The default value 8 will be used",
+        group_connectivity_type_param);
+    }
   }
   current_ = true;
 }
@@ -152,8 +153,8 @@ DenoiseLayer::denoise(Image<uint8_t> & image) const
 void
 DenoiseLayer::removeGroups(Image<uint8_t> & image) const
 {
-  groupsRemover.removeGroups(
-    image, buffer, group_connectivity_type_, minimal_group_size_,
+  groups_remover_.removeGroups(
+    image, buffer_, group_connectivity_type_, minimal_group_size_,
     isBackground);
 }
 
@@ -162,7 +163,7 @@ DenoiseLayer::removeSinglePixels(Image<uint8_t> & image) const
 {
   // Building a map of 4 or 8-connected neighbors.
   // The pixel of the map is 255 if there is an obstacle nearby
-  uint8_t * buf = buffer.get<uint8_t>(image.rows() * image.columns());
+  uint8_t * buf = buffer_.get<uint8_t>(image.rows() * image.columns());
   Image<uint8_t> max_neighbors_image(image.rows(), image.columns(), buf, image.columns());
 
   dilate(image, max_neighbors_image, group_connectivity_type_);

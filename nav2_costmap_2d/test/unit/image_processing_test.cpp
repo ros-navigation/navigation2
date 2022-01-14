@@ -25,10 +25,10 @@ using namespace imgproc_impl;
 struct ImageProcTester : public ::testing::Test
 {
 protected:
-  std::vector<uint8_t> image_buffer_bytes;
-  std::vector<uint8_t> image_buffer_bytes2;
-  std::vector<uint8_t> image_buffer_bytes3;
-  std::vector<uint16_t> image_buffer_words;
+  std::vector<uint8_t> image_buffer_bytes_;
+  std::vector<uint8_t> image_buffer_bytes2_;
+  std::vector<uint8_t> image_buffer_bytes3_;
+  std::vector<uint16_t> image_buffer_words_;
 };
 
 TEST(BorderConstant, outOfBoundsAccess) {
@@ -42,20 +42,20 @@ TEST(BorderConstant, outOfBoundsAccess) {
   {
     std::array<uint8_t, 3> data = {1, 2, 3};
     BorderConstant<uint8_t> c(data.data(), data.data(), 2);
-    auto leftOutOfBounds = std::prev(data.data());
-    auto rightOutOfBounds = data.data() + data.size();
+    auto left_out_of_bounds = std::prev(data.data());
+    auto right_out_of_bounds = data.data() + data.size();
 
-    ASSERT_EQ(c.up(leftOutOfBounds), uint8_t(0));
-    ASSERT_EQ(c.up(rightOutOfBounds), uint8_t(0));
+    ASSERT_EQ(c.up(left_out_of_bounds), uint8_t(0));
+    ASSERT_EQ(c.up(right_out_of_bounds), uint8_t(0));
 
-    ASSERT_EQ(c.down(leftOutOfBounds), uint8_t(0));
-    ASSERT_EQ(c.down(rightOutOfBounds), uint8_t(0));
+    ASSERT_EQ(c.down(left_out_of_bounds), uint8_t(0));
+    ASSERT_EQ(c.down(right_out_of_bounds), uint8_t(0));
   }
 }
 
 TEST_F(ImageProcTester, calculateHistogramWithoutTruncation) {
-  image_buffer_words = {0, 2, 1, 0, 3, 4, 1, 2, 0};
-  Image<uint16_t> image = make_image(3, 3, image_buffer_words);
+  image_buffer_words_ = {0, 2, 1, 0, 3, 4, 1, 2, 0};
+  Image<uint16_t> image = makeImage(3, 3, image_buffer_words_);
   const uint16_t max_bin_size = 3;  // three zeros
   const uint16_t max_value = 4;
   const auto hist = histogram(image, max_value, max_bin_size);
@@ -66,8 +66,8 @@ TEST_F(ImageProcTester, calculateHistogramWithoutTruncation) {
 }
 
 TEST_F(ImageProcTester, calculateHistogramWithTruncation) {
-  image_buffer_words = {0, 2, 1, 0, 3, 4, 1, 2, 0};
-  Image<uint16_t> image = make_image(3, 3, image_buffer_words);
+  image_buffer_words_ = {0, 2, 1, 0, 3, 4, 1, 2, 0};
+  Image<uint16_t> image = makeImage(3, 3, image_buffer_words_);
   const uint16_t max_bin_size = 2;
   const uint16_t max_value = 4;
   const auto hist = histogram(image, max_value, max_bin_size);
@@ -119,8 +119,8 @@ protected:
   bool spiralTest();
 
 protected:
-  MemoryBuffer buffer;
-  imgproc_impl::EquivalenceLabelTrees<uint8_t> label_trees;
+  MemoryBuffer buffer_;
+  imgproc_impl::EquivalenceLabelTrees<uint8_t> label_trees_;
 };
 
 bool isBackground(uint8_t pixel)
@@ -131,18 +131,18 @@ bool isBackground(uint8_t pixel)
 TEST_F(ConnectedComponentsTester, way4EmptyTest) {
   Image<uint8_t> empty;
   const auto result = connectedComponents<ConnectivityType::Way4>(
-    empty, buffer, label_trees,
+    empty, buffer_, label_trees_,
     isBackground);
   ASSERT_EQ(result.second, uint8_t(0));
 }
 
 TEST_F(ConnectedComponentsTester, way4SinglePixelTest) {
-  Image<uint8_t> input = make_image(1, 1, image_buffer_bytes);
+  Image<uint8_t> input = makeImage(1, 1, image_buffer_bytes_);
   {
     input.row(0)[0] = 0;
 
     const auto result = connectedComponents<ConnectivityType::Way4>(
-      input, buffer, label_trees,
+      input, buffer_, label_trees_,
       isBackground);
 
     ASSERT_EQ(result.first.row(0)[0], 0);
@@ -152,7 +152,7 @@ TEST_F(ConnectedComponentsTester, way4SinglePixelTest) {
     input.row(0)[0] = 255;
 
     const auto result = connectedComponents<ConnectivityType::Way4>(
-      input, buffer, label_trees,
+      input, buffer_, label_trees_,
       isBackground);
 
     ASSERT_EQ(result.first.row(0)[0], 1);
@@ -162,12 +162,12 @@ TEST_F(ConnectedComponentsTester, way4SinglePixelTest) {
 
 TEST_F(ConnectedComponentsTester, way4ImageSmallTest) {
   {
-    Image<uint8_t> input = make_image(1, 2, image_buffer_bytes);
+    Image<uint8_t> input = makeImage(1, 2, image_buffer_bytes_);
     input.row(0)[0] = 0;
     input.row(0)[1] = 255;
 
     const auto result = connectedComponents<ConnectivityType::Way4>(
-      input, buffer, label_trees,
+      input, buffer_, label_trees_,
       isBackground);
 
     ASSERT_EQ(result.second, uint8_t(2));
@@ -175,12 +175,12 @@ TEST_F(ConnectedComponentsTester, way4ImageSmallTest) {
     ASSERT_EQ(result.first.row(0)[1], 1);
   }
   {
-    Image<uint8_t> input = make_image(2, 1, image_buffer_bytes);
+    Image<uint8_t> input = makeImage(2, 1, image_buffer_bytes_);
     input.row(0)[0] = 0;
     input.row(1)[0] = 255;
 
     const auto result = connectedComponents<ConnectivityType::Way4>(
-      input, buffer, label_trees,
+      input, buffer_, label_trees_,
       isBackground);
 
     ASSERT_EQ(result.second, uint8_t(2));
@@ -191,7 +191,7 @@ TEST_F(ConnectedComponentsTester, way4ImageSmallTest) {
 
 TEST_F(ConnectedComponentsTester, way4LabelsOverflowTest) {
   // big chessboard image
-  Image<uint8_t> input = make_image(32, 17, image_buffer_bytes);
+  Image<uint8_t> input = makeImage(32, 17, image_buffer_bytes_);
   uint8_t v = 255;
   input.forEach(
     [&v](uint8_t & pixel) {
@@ -204,7 +204,7 @@ TEST_F(ConnectedComponentsTester, way4LabelsOverflowTest) {
     });
 
   ASSERT_THROW(
-    (connectedComponents<ConnectivityType::Way4>(input, buffer, label_trees, isBackground)),
+    (connectedComponents<ConnectivityType::Way4>(input, buffer_, label_trees_, isBackground)),
     LabelOverflow);
 }
 
@@ -246,14 +246,14 @@ TEST_F(ConnectedComponentsTester, way4ImageStepsTest) {
     "..xx"
     ".xx."
     "xx.."
-    "....", image_buffer_bytes);
+    "....", image_buffer_bytes_);
   const Image<uint8_t> expected_labels = imageFromString<uint8_t>(
     "..xx"
     ".xx."
     "xx.."
-    "....", image_buffer_bytes2);
+    "....", image_buffer_bytes2_);
   const auto result = connectedComponents<ConnectivityType::Way4>(
-    input, buffer, label_trees,
+    input, buffer_, label_trees_,
     isBackground);
 
   ASSERT_EQ(result.second, uint8_t(2));
@@ -278,17 +278,17 @@ TEST_F(ConnectedComponentsTester, way8ImageStepsTest) {
     "xx...."
     "...xx."
     ".....x"
-    "....x.", image_buffer_bytes);
+    "....x.", image_buffer_bytes_);
   const Image<uint8_t> expected_labels = imageFromString<uint8_t>(
     "....aa"
     "..aa.."
     "aa...."
     "...bb."
     ".....b"
-    "....b.", image_buffer_bytes2, makeLabelsMap('b'));
+    "....b.", image_buffer_bytes2_, makeLabelsMap('b'));
 
   const auto result = connectedComponents<ConnectivityType::Way8>(
-    input, buffer, label_trees,
+    input, buffer_, label_trees_,
     isBackground);
 
   ASSERT_EQ(result.second, uint8_t(3));
@@ -301,16 +301,16 @@ TEST_F(ConnectedComponentsTester, way4ImageSieveTest) {
     ".x.x."
     "x.x.x"
     ".x.x."
-    "x.x.x", image_buffer_bytes);
+    "x.x.x", image_buffer_bytes_);
   const Image<uint8_t> expected_labels = imageFromString<uint8_t>(
     "a.b.c"
     ".d.e."
     "f.g.h"
     ".i.j."
-    "k.l.m", image_buffer_bytes2, makeLabelsMap('m'));
+    "k.l.m", image_buffer_bytes2_, makeLabelsMap('m'));
 
   const auto result = connectedComponents<ConnectivityType::Way4>(
-    input, buffer, label_trees,
+    input, buffer_, label_trees_,
     isBackground);
 
   ASSERT_EQ(result.second, uint8_t(14));
@@ -325,15 +325,15 @@ bool ConnectedComponentsTester::fingerTest()
     "....x"
     "..x.x"
     "x.x.x"
-    "x.x.x", image_buffer_bytes);
+    "x.x.x", image_buffer_bytes_);
   const Image<uint8_t> expected_labels = imageFromString<uint8_t>(
     "....."
     "....c"
     "..b.c"
     "a.b.c"
-    "a.b.c", image_buffer_bytes2, makeLabelsMap('c'));
+    "a.b.c", image_buffer_bytes2_, makeLabelsMap('c'));
 
-  const auto result = connectedComponents<connectivity>(input, buffer, label_trees, isBackground);
+  const auto result = connectedComponents<connectivity>(input, buffer_, label_trees_, isBackground);
 
   return result.second == 4 && isEqualLabels(result.first, expected_labels);
 }
@@ -356,7 +356,7 @@ bool ConnectedComponentsTester::spiralTest()
     ".x..x.x"
     ".x.xx.x"
     ".x....x"
-    ".xxxxxx", image_buffer_bytes);
+    ".xxxxxx", image_buffer_bytes_);
   const Image<uint8_t> expected_labels = imageFromString<uint8_t>(
     ".xxxxxx"
     "......x"
@@ -364,9 +364,9 @@ bool ConnectedComponentsTester::spiralTest()
     ".x..x.x"
     ".x.xx.x"
     ".x....x"
-    ".xxxxxx", image_buffer_bytes2);
+    ".xxxxxx", image_buffer_bytes2_);
 
-  const auto result = connectedComponents<connectivity>(input, buffer, label_trees, isBackground);
+  const auto result = connectedComponents<connectivity>(input, buffer_, label_trees_, isBackground);
   return result.second == 2 && isEqualLabels(result.first, expected_labels);
 }
 
@@ -378,53 +378,53 @@ TEST_F(ConnectedComponentsTester, way8ImageSpiralTest) {
   ASSERT_TRUE(spiralTest<ConnectivityType::Way8>());
 }
 
-ShapeBuffer3x3 shapeBuffer{};
-const Image<uint8_t> crossShape = getShape(shapeBuffer, ConnectivityType::Way4);
+ShapeBuffer3x3 shape_buffer{};
+const Image<uint8_t> cross_shape = createShape(shape_buffer, ConnectivityType::Way4);
 
 uint8_t max_list(std::initializer_list<uint8_t> lst)
 {
   return std::max(lst);
 }
 
-TEST(morphology_operation, emptyImage) {
+TEST_F(ImageProcTester, emptyImage) {
   Image<uint8_t> input;
   Image<uint8_t> output;
 
-  ASSERT_NO_THROW(morphology_operation(input, output, crossShape, max_list));
+  ASSERT_NO_THROW(morphologyOperation(input, output, cross_shape, max_list));
 }
 
 TEST_F(ImageProcTester, wrongShapeSize) {
-  Image<uint8_t> input = make_image(1, 1, image_buffer_bytes);
-  Image<uint8_t> output = make_image(1, 1, image_buffer_bytes2);
+  Image<uint8_t> input = makeImage(1, 1, image_buffer_bytes_);
+  Image<uint8_t> output = makeImage(1, 1, image_buffer_bytes2_);
   ASSERT_THROW(
-    morphology_operation(input, output, make_image(2, 2, image_buffer_bytes3), max_list),
+    morphologyOperation(input, output, makeImage(2, 2, image_buffer_bytes3_), max_list),
     std::logic_error);
 }
 
 TEST_F(ImageProcTester, wrongSize) {
-  Image<uint8_t> input = make_image(3, 2, image_buffer_bytes);
+  Image<uint8_t> input = makeImage(3, 2, image_buffer_bytes_);
 
   {
-    Image<uint8_t> output = make_image(2, 2, image_buffer_bytes2);
+    Image<uint8_t> output = makeImage(2, 2, image_buffer_bytes2_);
     ASSERT_THROW(
-      morphology_operation(input, output, crossShape, max_list),
+      morphologyOperation(input, output, cross_shape, max_list),
       std::logic_error);
   }
 
   {
-    Image<uint8_t> output = make_image(3, 3, image_buffer_bytes2);
+    Image<uint8_t> output = makeImage(3, 3, image_buffer_bytes2_);
     ASSERT_THROW(
-      morphology_operation(input, output, crossShape, max_list),
+      morphologyOperation(input, output, cross_shape, max_list),
       std::logic_error);
   }
 }
 
 TEST_F(ImageProcTester, singlePixelImage) {
-  image_buffer_bytes = {255};
-  Image<uint8_t> input = make_image(1, 1, image_buffer_bytes);
-  Image<uint8_t> output = make_image(1, 1, image_buffer_bytes2);
+  image_buffer_bytes_ = {255};
+  Image<uint8_t> input = makeImage(1, 1, image_buffer_bytes_);
+  Image<uint8_t> output = makeImage(1, 1, image_buffer_bytes2_);
 
-  morphology_operation(input, output, crossShape, max_list);
+  morphologyOperation(input, output, cross_shape, max_list);
 
   ASSERT_EQ(output.row(0)[0], 0);
 }
@@ -434,15 +434,15 @@ TEST_F(ImageProcTester, cornersImage) {
     "x..x"
     "...."
     "...."
-    "x..x", image_buffer_bytes);
+    "x..x", image_buffer_bytes_);
   Image<uint8_t> expected = imageFromString<uint8_t>(
     ".xx."
     "x..x"
     "x..x"
-    ".xx.", image_buffer_bytes2);
-  Image<uint8_t> output = make_image(input.rows(), input.columns(), image_buffer_bytes3);
+    ".xx.", image_buffer_bytes2_);
+  Image<uint8_t> output = makeImage(input.rows(), input.columns(), image_buffer_bytes3_);
 
-  morphology_operation(input, output, crossShape, max_list);
+  morphologyOperation(input, output, cross_shape, max_list);
 
   ASSERT_TRUE(isEqual(output, expected));
 }
@@ -452,15 +452,15 @@ TEST_F(ImageProcTester, horizontalBordersImage) {
     "x..x"
     "x..x"
     "x..x"
-    "x..x", image_buffer_bytes);
+    "x..x", image_buffer_bytes_);
   Image<uint8_t> expected = imageFromString<uint8_t>(
     "xxxx"
     "xxxx"
     "xxxx"
-    "xxxx", image_buffer_bytes2);
-  Image<uint8_t> output = make_image(input.rows(), input.columns(), image_buffer_bytes3);
+    "xxxx", image_buffer_bytes2_);
+  Image<uint8_t> output = makeImage(input.rows(), input.columns(), image_buffer_bytes3_);
 
-  morphology_operation(input, output, crossShape, max_list);
+  morphologyOperation(input, output, cross_shape, max_list);
 
   ASSERT_TRUE(isEqual(output, expected));
 }
@@ -470,15 +470,15 @@ TEST_F(ImageProcTester, verticalBordersImage) {
     "xxxx"
     "...."
     "...."
-    "xxxx", image_buffer_bytes);
+    "xxxx", image_buffer_bytes_);
   Image<uint8_t> expected = imageFromString<uint8_t>(
     "xxxx"
     "xxxx"
     "xxxx"
-    "xxxx", image_buffer_bytes2);
-  Image<uint8_t> output = make_image(input.rows(), input.columns(), image_buffer_bytes3);
+    "xxxx", image_buffer_bytes2_);
+  Image<uint8_t> output = makeImage(input.rows(), input.columns(), image_buffer_bytes3_);
 
-  morphology_operation(input, output, crossShape, max_list);
+  morphologyOperation(input, output, cross_shape, max_list);
 
   ASSERT_TRUE(isEqual(output, expected));
 }

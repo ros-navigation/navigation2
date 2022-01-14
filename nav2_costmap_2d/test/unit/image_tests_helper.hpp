@@ -25,7 +25,7 @@
 namespace nav2_costmap_2d
 {
 template<class T>
-Image<T> make_image(size_t rows, size_t columns, std::vector<T> & buffer)
+Image<T> makeImage(size_t rows, size_t columns, std::vector<T> & buffer)
 {
   buffer.resize(rows * columns);
   return Image<T>(rows, columns, buffer.data(), columns);
@@ -69,7 +69,7 @@ Image<T> imageFromString(
   if (size_t(side_size) * side_size != s.size()) {
     throw std::logic_error("Test data error: parseBinaryMatrix: Unexpected input string size");
   }
-  Image<T> image = make_image(side_size, side_size, buffer);
+  Image<T> image = makeImage(side_size, side_size, buffer);
   auto iter = s.begin();
   image.forEach(
     [&](T & pixel) {
