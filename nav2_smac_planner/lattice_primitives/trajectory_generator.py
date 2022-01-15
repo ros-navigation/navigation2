@@ -29,45 +29,34 @@ class TrajectoryGenerator:
     def _get_arc_point(
         self,
         trajectory_params: TrajectoryParameters,
-        t
-    ):
+        t: float
+    ) -> Tuple[float, float, float]:
         """
-        Get points on the arc trajectory using the following parameterization:
+        Get point on the arc trajectory using the following parameterization:
             r(t) = <R * cos(t - pi/2) + a, R * sin(t - pi/2) + b>
 
             R = radius
             a = x offset
             b = y offset
 
-        This parameterization has the property that start_t represents
-        the slope angle of the start point of the curve
-        (represented in radians) and end_t represents the slope angle
-        of the end point of the curve.
-
         Parameters
         ----------
         trajectory_params: TrajectoryParameters
             The parameters that describe the arc to create
-        primitive_resolution: float
-            The distance between sampled points along the arc
-        distance_offset: float
-            The distance to adjust the starting point of the arc by.
-            This value is used to ensure that the spacing between the 
-            previous trajectory point and the start of the arc is still 
-            roughly equal to the primitive resolution.
+        t: float
+            A value between 0 - 1 that denotes where along the arc
+            to calculate the point
 
         Returns
         -------
-        TrajectoryPath
-            A trajectory path built only from the arc portion of the
-            trajectory parameters
-        float
-            The distance that remains between the actual generated end point
-            of the arc and the desired end point. This value arises from the
-            fact that we are attempting to represent the arc as a set of
-            discrete points each spaced out by a distance equal to the primitive
-            resolution.
+        x: float
+            x coordinate of generated point
+        y: float
+            y coordinate of generated point
+        yaw: float
+            angle of tangent line to arc at point (x,y)
         """
+        
         start_angle = trajectory_params.start_angle
 
         arc_dist = t * trajectory_params.arc_length
@@ -86,6 +75,8 @@ class TrajectoryGenerator:
                 + trajectory_params.y_offset
             )
 
+            yaw = t
+
         else:
             # Right turns go the opposite way across the arc, so we 
             # need to invert the angles and adjust the parametrization
@@ -102,12 +93,38 @@ class TrajectoryGenerator:
                 trajectory_params.turning_radius * np.sin(t + np.pi / 2)
                 + trajectory_params.y_offset
             )
-            t = -t
 
-        return x, y, t
+            yaw = -t
+
+        return x, y, yaw
 
 
-    def _get_line_point(self, start_point, end_point, t):
+    def _get_line_point(self, start_point: np.array, end_point: np.array, t: float) -> Tuple[float, float]:
+        """
+        Get point on a line segment using the following parameterization:
+            r(t) = p + t * (q - p)
+
+            p = start point
+            q = end point
+
+        Parameters
+        ----------
+        start_point: np.array(2,)
+            Starting point of the line segment
+        end_point: np.array(2,)
+            End point of the line segment
+        t: float
+            A value between 0 - 1 that denotes where along the segment
+            to calculate the point
+
+        Returns
+        -------
+        x: float
+            x coordinate of generated point
+        y: float
+            y coordinate of generated point
+        """
+
         return start_point + t * (end_point - start_point)
 
 
@@ -118,14 +135,17 @@ class TrajectoryGenerator:
     ) -> TrajectoryPath:
         """
         Create the full trajectory path that is represented by the
-        given trajectory parameters
+        given trajectory parameters.
 
         Parameters
         ----------
         trajectory_params: TrajectoryParameters
             The parameters that describe the trajectory to create
         primitive_resolution: float
-            The distance between sampled points along the line
+            The desired distance between sampled points along the line.
+            This value is not strictly adhered to as the path may not
+            be neatly divisible, however the spacing will be as close
+            as possible.
 
         Returns
         -------
@@ -148,16 +168,22 @@ class TrajectoryGenerator:
         yaws = []
 
         for i in range(1, number_of_steps + 1):
+
+            # This prevents cur_t going over 1 due to rounding issues in t_step
             cur_t = min(cur_t, 1)
 
+            # Handle the initial straight line segment
             if cur_t <= transition_points[0]:
                 line_t = cur_t / transition_points[0]
                 x, y = self._get_line_point(np.array([0, 0]), trajectory_params.arc_start_point, line_t)
                 yaw = trajectory_params.start_angle
 
+            # Handle the arc
             elif cur_t <= transition_points[1]:
                 arc_t = (cur_t - transition_points[0]) / (transition_points[1] - transition_points[0])
                 x, y, yaw = self._get_arc_point(trajectory_params, arc_t)
+
+            # Handle the end straight line segment
             else:
                 line_t = (cur_t - transition_points[1]) / (1 - transition_points[1])
                 x, y = self._get_line_point(trajectory_params.arc_end_point, trajectory_params.end_point, line_t)
@@ -166,6 +192,7 @@ class TrajectoryGenerator:
             xs.append(x)
             ys.append(y)
             yaws.append(yaw)
+
             cur_t += t_step
 
         # Convert to numpy arrays
@@ -174,6 +201,7 @@ class TrajectoryGenerator:
         yaws = np.array(yaws)
 
         # The last point may be slightly off due to rounding issues
+        # so we correct the last point to be exactly the end point
         xs[-1], ys[-1] = trajectory_params.end_point
         yaws[-1] = trajectory_params.end_angle
 
