@@ -29,24 +29,30 @@ class TrajectoryParameters:
     end_angle: float
     left_turn: bool
 
-    start_to_arc_distance: float
-    arc_to_end_distance: float
+    arc_start_point: float
+    arc_end_point: float
 
     @property
     def arc_length(self):
         return self.turning_radius * angle_difference(self.start_angle, self.end_angle, self.left_turn)
 
     @property
+    def start_straight_length(self):
+        return np.linalg.norm(self.arc_start_point)
+
+    @property
+    def end_straight_length(self):
+        return np.linalg.norm(self.end_point - self.arc_end_point)
+
+    @property
     def total_length(self):
-        return self.arc_length + self.start_to_arc_distance + self.arc_to_end_distance
+        return self.arc_length + self.start_straight_length + self.end_straight_length
 
     @staticmethod
-    def no_arc(end_point, start_angle, end_angle, left_turn):
-        line_distance = np.linalg.norm(end_point)
-
+    def no_arc(end_point, start_angle, end_angle):
         return TrajectoryParameters(turning_radius=0.0, x_offset=0.0, y_offset=0.0, end_point=end_point,
-                                    start_angle=start_angle, end_angle=end_angle, left_turn=left_turn,
-                                    start_to_arc_distance=line_distance, arc_to_end_distance=0.0)
+                                    start_angle=start_angle, end_angle=end_angle, left_turn=True,
+                                    arc_start_point=end_point, arc_end_point=end_point)
 
 
 @dataclass(frozen=True)
@@ -79,22 +85,6 @@ class TrajectoryPath:
         stacked = np.vstack([output_xs, output_ys, output_yaws]).transpose()
 
         return stacked.tolist()
-
-
-    def remove_start(self):
-        if np.round(self.xs[0], 5) == 0 and np.round(self.ys[0], 5) == 0:
-            new_xs = self.xs[1:]
-            new_ys = self.ys[1:]
-            new_yaws = self.yaws[1:]
-
-            return TrajectoryPath(new_xs, new_ys, new_yaws)
-        else:
-            return self
-
-
-    @staticmethod
-    def empty():
-        return TrajectoryPath(None, None, None)
 
 
 @dataclass(frozen=True)

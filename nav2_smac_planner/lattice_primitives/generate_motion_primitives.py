@@ -170,8 +170,8 @@ def write_to_json(output_path: Path, minimal_set_trajectories: dict, config: dic
                 5
             )
             traj_info["straight_length"] = round(
-                trajectory.parameters.start_to_arc_distance
-                + trajectory.parameters.arc_to_end_distance,
+                trajectory.parameters.start_straight_length
+                + trajectory.parameters.end_straight_length,
                 5,
             )
             traj_info["poses"] = trajectory.path.to_output_format()
