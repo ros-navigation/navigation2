@@ -380,7 +380,7 @@ StaticLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int min_i, int min_j, int max_i, int max_j)
 {
-  std::lock_guard<std::mutex> lock_reinit(dyn_param_mutex_);
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!enabled_) {
     update_in_progress_.store(false);
     return;
@@ -453,7 +453,7 @@ StaticLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
-  std::lock_guard<std::mutex> lock_reinit(dyn_param_mutex_);
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -478,6 +478,7 @@ StaticLayer::dynamicParametersCallback(
         width_ = size_x_;
         height_ = size_y_;
         has_updated_data_ = true;
+        current_ = false;
       }
     }
 

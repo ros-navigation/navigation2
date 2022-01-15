@@ -187,7 +187,6 @@ private:
   nav_msgs::msg::OccupancyGrid::SharedPtr map_buffer_;
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-  std::mutex dyn_param_mutex_;
 };
 
 }  // namespace nav2_costmap_2d

@@ -121,6 +121,7 @@ InflationLayer::onInitialize()
 void
 InflationLayer::matchSize()
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   nav2_costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
   resolution_ = costmap->getResolution();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
@@ -133,6 +134,7 @@ InflationLayer::updateBounds(
   double /*robot_x*/, double /*robot_y*/, double /*robot_yaw*/, double * min_x,
   double * min_y, double * max_x, double * max_y)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (need_reinflation_) {
     last_min_x_ = *min_x;
     last_min_y_ = *min_y;
@@ -163,6 +165,7 @@ InflationLayer::updateBounds(
 void
 InflationLayer::onFootprintChanged()
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   inscribed_radius_ = layered_costmap_->getInscribedRadius();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   computeCaches();
@@ -423,17 +426,10 @@ rcl_interfaces::msg::SetParametersResult
 InflationLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
+  static bool need_cache_recompute = false;
+
   rcl_interfaces::msg::SetParametersResult result;
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-
-  struct paramChange
-  {
-    bool inflation_radius : 1;
-    bool cost_scaling_factor : 1;
-    bool enabled : 1;
-    bool inflate_unknown : 1;
-    bool inflate_around_unknown : 1;
-  } paramChange_s{0, 0, 0, 0, 0};
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -445,43 +441,39 @@ InflationLayer::dynamicParametersCallback(
         inflation_radius_ != parameter.as_double())
       {
         inflation_radius_ = parameter.as_double();
-        paramChange_s.inflation_radius = true;
         cell_inflation_radius_ = cellDistance(inflation_radius_);
-
+        need_reinflation_ = true;
+        need_cache_recompute = true;
       } else if (param_name == name_ + "." + "cost_scaling_factor" &&
         cost_scaling_factor_ != parameter.as_double())
       {
         cost_scaling_factor_ = parameter.as_double();
-        paramChange_s.cost_scaling_factor = true;
+        need_reinflation_ = true;
+        need_cache_recompute = true;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
-        paramChange_s.enabled = true;
+        need_reinflation_ = true;
+        current_ = false; 
       } else if (param_name == name_ + "." + "inflate_unknown" &&
         inflate_unknown_ != parameter.as_bool())
       {
         inflate_unknown_ = parameter.as_bool();
-        paramChange_s.inflate_unknown = true;
+        need_reinflation_ = true;
       } else if (param_name == name_ + "." + "inflate_around_unknown" &&
         inflate_around_unknown_ != parameter.as_bool())
       {
         inflate_around_unknown_ = parameter.as_bool();
-        paramChange_s.inflate_around_unknown = true;
+        need_reinflation_ = true;
       }
     }
 
   }
 
-  if (paramChange_s.enabled || paramChange_s.inflate_unknown ||
-    paramChange_s.inflate_around_unknown || paramChange_s.inflation_radius ||
-    paramChange_s.cost_scaling_factor)
-  {
-    need_reinflation_ = true;
-  }
-
-  if (paramChange_s.inflation_radius || paramChange_s.cost_scaling_factor) {
+  if (need_cache_recompute) {
     computeCaches();
+    need_cache_recompute = false;
   }
 
   result.successful = true;
