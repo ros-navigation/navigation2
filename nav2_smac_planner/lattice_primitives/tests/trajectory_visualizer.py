@@ -57,8 +57,11 @@ for primitive in trajectory_data["primitives"]:
     if arrow_length == 0:
         arrow_length = max_x / len(primitive["poses"])
 
-    xs = [pose[0] for pose in primitive["poses"]]
-    ys = [pose[1] for pose in primitive["poses"]]
+    xs = np.array([pose[0] for pose in primitive["poses"]])
+    ys = np.array([pose[1] for pose in primitive["poses"]])
+
+    lengths = np.sqrt((xs[1:] - xs[:-1])**2 + (ys[1:] - ys[:-1])**2)
+    print("Distances between points: ", lengths)
 
     for x, y, yaw in primitive["poses"]:
         plot_arrow(x, y, yaw, length=arrow_length)
