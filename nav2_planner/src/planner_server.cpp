@@ -168,13 +168,14 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
     it->second->activate();
   }
 
-  is_path_valid_service_ = shared_from_this()->create_service<nav2_msgs::srv::IsPathValid>(
+  auto node = shared_from_this();
+
+  is_path_valid_service_ = node->create_service<nav2_msgs::srv::IsPathValid>(
     "is_path_valid",
     std::bind(
       &PlannerServer::isPathValid, this,
       std::placeholders::_1, std::placeholders::_2));
 
-  auto node = shared_from_this();
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&PlannerServer::dynamicParametersCallback, this, _1));
@@ -533,12 +534,9 @@ void PlannerServer::isPathValid(
   const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
   std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
 {
-  unsigned int mx = 0;
-  unsigned int my = 0;
-
   response->is_valid = true;
 
-  if (request->path.poses.empty() ) {
+  if (request->path.poses.empty()) {
     response->is_valid = false;
     return;
   }
@@ -566,13 +564,21 @@ void PlannerServer::isPathValid(
      * The lethal check starts at the closest point to avoid points that have already been passed
      * and may have become occupied
      */
+    unsigned int mx = 0;
+    unsigned int my = 0;
     for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
       costmap_->worldToMap(
         request->path.poses[i].pose.position.x,
         request->path.poses[i].pose.position.y, mx, my);
-      if (static_cast<unsigned int>(costmap_->getCost(mx, my)) >=
-        nav2_costmap_2d::LETHAL_OBSTACLE)
-      {
+      unsigned int cost = costmap_->getCost(mx, my);
+
+      bool allow_unknown = false;
+      // TODO(jwallace42) not sure how to effectively get the name of the plugin 
+      // node->get_parameter(name + ".allow_unknown", allow_unknown);
+      if (!allow_unknown && cost == nav2_costmap_2d::NO_INFORMATION) {
+        response->is_valid = false;
+      } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || 
+                 cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
         response->is_valid = false;
       }
     }
