@@ -231,7 +231,6 @@ private:
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-
 };
 
 }  // namespace nav2_costmap_2d
