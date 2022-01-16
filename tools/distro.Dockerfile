@@ -7,7 +7,7 @@
 # Example build command:
 # export DOCKER_BUILDKIT=1
 # export FROM_IMAGE="ros:rolling"
-# export OVERLAY_MIXINS="release ccache"
+# export OVERLAY_MIXINS="release ccache lld"
 # docker build -t nav2:rolling \
 #   --build-arg FROM_IMAGE \
 #   --build-arg OVERLAY_MIXINS \
@@ -56,6 +56,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -q -y \
       ccache \
       lcov \
+      lld \
     && rosdep update
 
 # install overlay dependencies
@@ -72,7 +73,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
 
 # build overlay source
 COPY --from=cacher $OVERLAY_WS/src ./src
-ARG OVERLAY_MIXINS="release ccache"
+ARG OVERLAY_MIXINS="release ccache lld"
 RUN --mount=type=cache,target=/root/.ccache \
     . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon build \
