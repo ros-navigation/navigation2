@@ -523,8 +523,7 @@ VoxelLayer::dynamicParametersCallback(
 
   }
 
-  if(resize_map_needed)
-  {
+  if (resize_map_needed) {
     matchSize();
     resize_map_needed = false;
   }
