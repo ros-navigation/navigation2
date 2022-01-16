@@ -230,7 +230,6 @@ private:
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
   // Dynamic parameters handler
-  std::mutex mutex_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
 };

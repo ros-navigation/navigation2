@@ -145,7 +145,7 @@ void VoxelLayer::updateBounds(
   double robot_x, double robot_y, double robot_yaw, double * min_x,
   double * min_y, double * max_x, double * max_y)
 {
-  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
   if (rolling_window_) {
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
@@ -476,8 +476,9 @@ rcl_interfaces::msg::SetParametersResult
 VoxelLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
+  static bool resize_map_needed = false;
   rcl_interfaces::msg::SetParametersResult result;
-  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -489,8 +490,10 @@ VoxelLayer::dynamicParametersCallback(
         max_obstacle_height_ = parameter.as_double();
       } else if (param_name == name_ + "." + "origin_z") {
         origin_z_ = parameter.as_double();
+        resize_map_needed = true;
       } else if (param_name == name_ + "." + "z_resolution") {
         z_resolution_ = parameter.as_double();
+        resize_map_needed = true;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled") {
@@ -508,6 +511,7 @@ VoxelLayer::dynamicParametersCallback(
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "z_voxels") {
         size_z_ = parameter.as_int();
+        resize_map_needed = true;
       } else if (param_name == name_ + "." + "unknown_threshold") {
         unknown_threshold_ = parameter.as_int() + (VOXEL_BITS - size_z_);
       } else if (param_name == name_ + "." + "mark_threshold") {
@@ -519,7 +523,11 @@ VoxelLayer::dynamicParametersCallback(
 
   }
 
-  matchSize();
+  if(resize_map_needed)
+  {
+    matchSize();
+    resize_map_needed = false;
+  }
 
   result.successful = true;
   return result;
