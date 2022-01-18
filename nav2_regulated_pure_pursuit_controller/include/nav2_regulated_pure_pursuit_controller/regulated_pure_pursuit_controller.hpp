@@ -21,7 +21,6 @@
 #include <memory>
 #include <algorithm>
 
-#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_core/controller.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
@@ -184,16 +183,14 @@ protected:
     const double &, const double &);
 
   /**
-   * @brief checks for collision at projected pose
+   * @brief Whether point is in collision
    * @param x Pose of pose x
    * @param y Pose of pose y
    * @param theta orientation of Yaw
    * @return Whether in collision
    */
-  bool inCollision(
-    const double & x,
-    const double & y,
-    const double & theta);
+  bool inCollision(const double & x, const double & y);
+
   /**
    * @brief Cost at a point
    * @param x Pose of pose x
@@ -268,8 +265,6 @@ protected:
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
-  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
-  collision_checker_;
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller
