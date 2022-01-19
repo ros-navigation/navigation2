@@ -572,8 +572,9 @@ void PlannerServer::isPathValid(
         request->path.poses[i].pose.position.y, mx, my);
       unsigned int cost = costmap_->getCost(mx, my);
 
-      if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || 
-          cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
+      if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+      {
         response->is_valid = false;
       }
     }

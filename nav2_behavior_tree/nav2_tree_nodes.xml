@@ -134,7 +134,7 @@
 
     <Condition ID="IsPathValidCondition">
       <input_port name="path"> Path to validate </input_port>
-      <inport_port name="server_timeout"> Server timeout </input_port>
+      <input_port name="server_timeout"> Server timeout </input_port>
     </Condition>
 
     <!-- ############################### CONTROL NODES ################################ -->
