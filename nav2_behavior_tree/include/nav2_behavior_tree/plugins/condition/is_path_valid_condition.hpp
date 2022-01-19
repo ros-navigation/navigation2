@@ -58,7 +58,7 @@ public:
   {
     return {
       BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
-      BT::InputPort<std::chrono::milliseconds>("server_timeout")
+      BT::InputPort<int>("server_timeout_ms", 10, "Timeout for waiting for service response [ms]")
     };
   }
 
