@@ -572,13 +572,8 @@ void PlannerServer::isPathValid(
         request->path.poses[i].pose.position.y, mx, my);
       unsigned int cost = costmap_->getCost(mx, my);
 
-      bool allow_unknown = false;
-      // TODO(jwallace42) not sure how to effectively get the name of the plugin 
-      // node->get_parameter(name + ".allow_unknown", allow_unknown);
-      if (!allow_unknown && cost == nav2_costmap_2d::NO_INFORMATION) {
-        response->is_valid = false;
-      } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || 
-                 cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
+      if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || 
+          cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
         response->is_valid = false;
       }
     }
