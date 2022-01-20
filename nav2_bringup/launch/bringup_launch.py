@@ -112,7 +112,7 @@ def generate_launch_description():
             condition=IfCondition(use_composition),
             name='nav2_container',
             package='rclcpp_components',
-            executable='component_container_mt',
+            executable='component_container_isolated',
             parameters=[configured_params, {'autostart': autostart}],
             remappings=remappings,
             output='screen'),
