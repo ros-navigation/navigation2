@@ -53,19 +53,19 @@ The minimum turning radius of the robot (in meters)
 
 **grid_resolution** (float)
 
-The resolution of the grid (in meters) used to create the lattice. If the grid resolution is too large for the turning radius then the generator will not return a good result. This is clearly seen in the 5cm resolution/2m turning radius sample.
+The resolution of the grid (in meters) used to create the lattice. If the grid resolution is too large for the turning radius then the generator will not return a good result.
 </br>
 </br>
 
 **stopping_threshold** (float)
 
-Number of consecutive iterations without a valid trajectory before stopping.
+Number of consecutive iterations without a valid trajectory before stopping the search.
 </br>
 </br>
 
 **num_of_headings** (float)
 
-Number of discrete angular headings used. Restricted to multiples of 8 greater than or equal to 8. Angles are not generated uniformly but instead generated in a way to facilitate straight lines. See [angle discretization](#angle-discretization) for more details.
+Number of discrete angular headings used. Due to the way discretization is done this number should be restricted to multiples of 8. Angles are not generated uniformly but instead generated in a way to facilitate straight lines. See [angle discretization](#angle-discretization) for more details.
 </br>
 </br>
 
@@ -123,7 +123,7 @@ Dividing a full turn into uniform angular headings presents several problems. Th
 
 ![ ](docs/angle_discretization.png)
 
-The image shows how the angular headings are generated. The same idea can be extended to a higher number of headings. As a result, the number of headings parameter is restricted to multiples of 8 greater than or equal to 8.  
+The image shows how the angular headings are generated. The same idea can be extended to a higher number of headings. As a result, the number of headings parameter is restricted to multiples of 8.  
 
 ### Trajectory Generator
 1. Create two lines. Line 1 passes through start point with angle of start angle, and line 2 passes through the end point with angle of end angle
@@ -134,7 +134,7 @@ The image shows how the angular headings are generated. The same idea can be ext
 
 4. If d1 and d2 are equal then proceed to step 5. Otherwise, create intermediate points for each line that are min(d1, d2) distance away along the lines from I. So there should be an intermediate point on line 1 and an intermediate point on line 2. One of these intermediate points should align with either the origin or the end point by nature of how the distance was calculated.
 
-5. Create perpindicular lines for each line that pass through the respective intermediate points. The intersection of these perpindicular lines is the centre of the circle whose arc represents the curved portion of the trajectory.
+5. Create perpindicular lines for line 1 and line 2 that pass through the respective intermediate points. The intersection of these perpindicular lines is the centre of the circle whose arc represents the curved portion of the trajectory.
 
 6. Finally, if needed append straight segments to the path to ensure we start at the origin and end at the end point.
 
@@ -145,14 +145,24 @@ There are several checks we need to make to ensure a valid trajectory is generat
 - The radius of the generated trajectory must be less than the user supplied minimum turning radius
 
 ### Lattice Generator
-The lattice generator follows closely the generation of the control set as described in [Generating Near Minimal Control Sets for Constrained Motion Planning in Discrete State Spaces](https://www.ri.cmu.edu/pub_files/pub4/pivtoraiko_mihail_2005_1/pivtoraiko_mihail_2005_1.pdf). A brief outline is given below:
+The lattice generator is generally based on the generation of the control set as described in [Generating Near Minimal Control Sets for Constrained Motion Planning in Discrete State Spaces](https://www.ri.cmu.edu/pub_files/pub4/pivtoraiko_mihail_2005_1/pivtoraiko_mihail_2005_1.pdf). However, some changes were made to the above method. A brief outline of the implemented method is given below:
 
-1. All paths to states one unit from the origin are generated, then two units, and so on.
+1. Create a wavefront that begins a minimum trajectory length away from the origin.
 
-2. When a path is generated it is checked to ensure it does not pass close enough to another path. If it does it is removed, otherwise it remains in the set
+    - The minimum trajectory length is defined as the length a trajectory needs to move from one discrete heading to the next. (Since the headings are not separated equally we use the smallest heading change)
 
-    - Close is defined to be within 0.5 * grid resolution for length and 0.5 * average angular bin size for angular rotation
+2. Generate paths to all points on this wavefront for all possible end heading angles.
 
-3. Steps 1-2 are continued until all trajectories at a certain distance are being removed. The generator will continue for a few more iterations untill N iterations have been completed with no new trajectories. At this point the generator terminates and returns the computed minimal set.
+3. When a path is generated it is checked to ensure it does not pass "close" to another path. If it does it is removed, otherwise it remains in the set
 
-    - The number N is defined by the stopping_threshold parameter
+    - "Close" is defined to be within half the grid resolution for length and half the average angular bin size for angular rotation
+
+4. Steps 2-3 are repeated for the next wavefront which is a grid resolution step further away from the origin.
+
+5. Steps 1-4 are repeated untill all trajectories are being removed. The generator will continue for a few more wavefront steps until N wavefronts have been searched with no new trajectories. At this point the generator terminates and returns the computed minimal set.
+
+    - The number N is the stopping_threshold parameter
+
+6. Steps 1-5 are repeated for all possible start angles between 0 and 90.
+
+7. The resulting control set will only contain trajectories in quadrant 1. To get the final control set we exploit symmetry across the axess and flip the trajectories in different ways.
