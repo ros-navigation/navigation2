@@ -606,14 +606,12 @@ class LatticeGenerator:
             left_turn_params = TrajectoryParameters.no_arc(
                 end_point=np.array([0, 0]),
                 start_angle=start_angle,
-                end_angle=next_angle,
-                left_turn=True,
+                end_angle=next_angle
             )
             right_turn_params = TrajectoryParameters.no_arc(
                 end_point=np.array([0, 0]),
                 start_angle=start_angle,
-                end_angle=prev_angle,
-                left_turn=False,
+                end_angle=prev_angle
             )
 
             # Calculate number of steps needed to rotate by roughly 10 degrees
@@ -709,8 +707,8 @@ class LatticeGenerator:
                 angle,
                 angle,
                 parmas_l.left_turn,
-                parmas_l.start_to_arc_distance,
-                parmas_l.arc_to_end_distance
+                parmas_l.arc_start_point,
+                parmas_l.arc_end_point
             )
 
             params_r = right_straight_trajectory.parameters
@@ -722,8 +720,8 @@ class LatticeGenerator:
                 angle,
                 angle,
                 params_r.left_turn,
-                params_r.start_to_arc_distance,
-                params_r.arc_to_end_distance
+                parmas_l.arc_start_point,
+                parmas_l.arc_end_point
             )
 
             left_motion = Trajectory(
