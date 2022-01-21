@@ -96,6 +96,9 @@ void SmacPlannerLattice::configure(
     node, name + ".cost_penalty", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".cost_penalty", _search_info.cost_penalty);
   nav2_util::declare_parameter_if_not_declared(
+    node, name + ".rotation_penalty", rclcpp::ParameterValue(5.0));
+  node->get_parameter(name + ".rotation_penalty", _search_info.rotation_penalty);
+  nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(3.5));
   node->get_parameter(name + ".analytic_expansion_ratio", _search_info.analytic_expansion_ratio);
   nav2_util::declare_parameter_if_not_declared(
@@ -357,6 +360,9 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       } else if (name == _name + ".cost_penalty") {
         reinit_a_star = true;
         _search_info.cost_penalty = static_cast<float>(parameter.as_double());
+      } else if (name == _name + ".rotation_penalty") {
+        reinit_a_star = true;
+        _search_info.rotation_penalty = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".analytic_expansion_ratio") {
         reinit_a_star = true;
         _search_info.analytic_expansion_ratio = static_cast<float>(parameter.as_double());
