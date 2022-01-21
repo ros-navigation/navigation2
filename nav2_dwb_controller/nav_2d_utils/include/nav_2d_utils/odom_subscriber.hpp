@@ -45,6 +45,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/node_utils.hpp"
 
+using rcl_interfaces::msg::ParameterType;
+
 namespace nav_2d_utils
 {
 
@@ -65,16 +67,20 @@ public:
     nav2_util::LifecycleNode::SharedPtr nh,
     std::string default_topic = "odom")
   {
+    nh_ = nh;
     nav2_util::declare_parameter_if_not_declared(
       nh, "odom_topic", rclcpp::ParameterValue(default_topic));
 
-    std::string odom_topic;
-    nh->get_parameter_or("odom_topic", odom_topic, default_topic);
+    nh->get_parameter_or("odom_topic", odom_topic_, default_topic);
     odom_sub_ =
       nh->create_subscription<nav_msgs::msg::Odometry>(
-      odom_topic,
+      odom_topic_,
       rclcpp::SystemDefaultsQoS(),
       std::bind(&OdomSubscriber::odomCallback, this, std::placeholders::_1));
+
+    // Add callback for dynamic parameters
+    dyn_params_handler = nh->add_on_set_parameters_callback(
+      std::bind(&OdomSubscriber::dynamicParametersCallback, this, std::placeholders::_1));
   }
 
   inline nav_2d_msgs::msg::Twist2D getTwist() {return odom_vel_.velocity;}
@@ -91,9 +97,38 @@ protected:
     odom_vel_.velocity.theta = msg->twist.twist.angular.z;
   }
 
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+  {
+    rcl_interfaces::msg::SetParametersResult result;
+    for (auto & parameter : parameters) {
+      const auto & type = parameter.get_type();
+      const auto & name = parameter.get_name();
+
+      if (type == ParameterType::PARAMETER_STRING) {
+        if (name == "odom_topic") {
+          odom_sub_.reset();
+          odom_topic_ = parameter.as_string();
+          auto node = nh_.lock();
+          odom_sub_ =
+            node->create_subscription<nav_msgs::msg::Odometry>(
+            odom_topic_,
+            rclcpp::SystemDefaultsQoS(),
+            std::bind(&OdomSubscriber::odomCallback, this, std::placeholders::_1));
+        }
+      }
+    }
+    result.successful = true;
+    return result;
+  }
+
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   nav_2d_msgs::msg::Twist2DStamped odom_vel_;
   std::mutex odom_mutex_;
+  nav2_util::LifecycleNode::WeakPtr nh_;
+  std::string odom_topic_;
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler;
 };
 
 }  // namespace nav_2d_utils
