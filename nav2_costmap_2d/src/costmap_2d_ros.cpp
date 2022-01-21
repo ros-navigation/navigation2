@@ -650,6 +650,28 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
         if (makeFootprintFromString(footprint_, new_footprint)) {
           setRobotFootprint(new_footprint);
         }
+      } else if (name == "robot_base_frame") {
+        // First, make sure that the transform between the robot base frame
+        // and the global frame is available
+        std::string tf_error;
+
+        RCLCPP_INFO(get_logger(), "Checking transform");
+        rclcpp::Rate r(2);
+        while (rclcpp::ok() &&
+          !tf_buffer_->canTransform(
+            global_frame_, parameter.as_string(), tf2::TimePointZero, &tf_error))
+        {
+          RCLCPP_INFO(
+            get_logger(), "Timed out waiting for transform from %s to %s"
+            " to become available, tf error: %s",
+            parameter.as_string().c_str(), global_frame_.c_str(), tf_error.c_str());
+
+          // The error string will accumulate and errors will typically be the same, so the last
+          // will do for the warning above. Reset the string here to avoid accumulation
+          tf_error.clear();
+          r.sleep();
+        }
+        robot_base_frame_ = parameter.as_string();
       }
     }
   }
