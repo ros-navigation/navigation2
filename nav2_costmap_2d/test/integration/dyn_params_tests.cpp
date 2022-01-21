@@ -71,6 +71,7 @@ TEST(DynParamTestNode, testDynParamsSet)
     rclcpp::Parameter(
       "footprint",
       "[[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.46, 0.0], [0.325, -0.325]]"),
+    rclcpp::Parameter("robot_base_frame", "test_frame"),
   });
 
   rclcpp::spin_some(costmap->get_node_base_interface());
@@ -87,6 +88,7 @@ TEST(DynParamTestNode, testDynParamsSet)
   EXPECT_EQ(
     costmap->get_parameter("footprint").as_string(),
     "[[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.46, 0.0], [0.325, -0.325]]");
+  EXPECT_EQ(costmap->get_parameter("footprint").as_string(), "test_frame");
 
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
