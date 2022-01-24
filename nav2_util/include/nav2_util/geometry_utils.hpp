@@ -19,6 +19,7 @@
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/pose2_d.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -87,6 +88,22 @@ inline double euclidean_distance(
 }
 
 /**
+ * @brief Get the L2 distance between 2 geometry_msgs::Pose2D
+ * @param pos1 First pose
+ * @param pos1 Second pose
+ * @return double L2 distance
+ */
+inline double euclidean_distance(
+  const geometry_msgs::msg::Pose2D & pos1,
+  const geometry_msgs::msg::Pose2D & pos2)
+{
+  double dx = pos1.x - pos2.x;
+  double dy = pos1.y - pos2.y;
+
+  return std::sqrt(dx * dx + dy * dy );
+}
+
+/**
  * Find element in iterator with the minimum calculated value
  */
 template<typename Iter, typename Getter>
@@ -106,6 +123,25 @@ inline Iter min_by(Iter begin, Iter end, Getter getCompareVal)
   }
   return lowest_it;
 }
+
+/**
+ * Find first element in iterator that is greater integrated distance than comparevalue
+ */
+template<typename Iter, typename Getter>
+inline Iter first_element_beyond(Iter begin, Iter end, Getter getCompareVal)
+{ 
+  if (begin == end) {
+    return end;
+  }
+  Getter dist = 0.0;
+  for (Iter it = begin; it != end - 1; it++ ){
+    dist += euclidean_distance(*it, *(it + 1));
+    if (dist> getCompareVal){
+      return it +1 ;      
+    }
+  }
+  return end;
+  }
 
 /**
  * @brief Calculate the length of the provided path, starting at the provided index
