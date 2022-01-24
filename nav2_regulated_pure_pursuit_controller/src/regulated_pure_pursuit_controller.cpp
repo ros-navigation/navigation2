@@ -601,9 +601,9 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   const double max_costmap_dim = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY());
   const double max_transform_dist = max_costmap_dim * costmap->getResolution() / 2.0;
 
-  auto lookahead_element = 
+  auto lookahead_element =
     nav2_util::geometry_utils::first_element_beyond(
-    global_plan_.poses.begin(), global_plan_.poses.end(),lookahead_dist_);
+    global_plan_.poses.begin(), global_plan_.poses.end(), lookahead_dist_);
 
   // First find the closest pose on the path to the robot
   auto transformation_begin =
@@ -614,9 +614,9 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
     });
 
   // Find points upto max_transform_dist so we only transform them.
-  auto transformation_end = 
+  auto transformation_end =
     nav2_util::geometry_utils::first_element_beyond(
-    transformation_begin, global_plan_.poses.end(),max_transform_dist);
+    transformation_begin, global_plan_.poses.end(), max_transform_dist);
 
   // Lambda to transform a PoseStamped from global frame to local
   auto transformGlobalPoseToLocal = [&](const auto & global_plan_pose) {

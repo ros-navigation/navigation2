@@ -54,6 +54,7 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 
 using nav2_util::declare_parameter_if_not_declared;
+using nav2_util::geometry_utils::euclidean_distance;
 
 namespace dwb_core
 {
@@ -487,7 +488,7 @@ DWBLocalPlanner::transformGlobalPlan(
   // from the robot using integrated distance
   auto prune_point = nav2_util::geometry_utils::first_element_beyond(
     global_plan_.poses.begin(), global_plan_.poses.end(), prune_dist);
-  
+
   // Find the first pose in the plan (upto prune_point) that's less than transform_start_threshold
   // from the robot.
   auto transformation_begin = std::find_if(
@@ -498,7 +499,7 @@ DWBLocalPlanner::transformGlobalPlan(
 
   // Find the first pose in the end of the plan that's further than transform_end_threshold
   // from the robot using integrated distance
-  auto transformation_end = 
+  auto transformation_end =
     nav2_util::geometry_utils::first_element_beyond(
     transformation_begin, global_plan_.poses.end(), transform_end_threshold);
 
