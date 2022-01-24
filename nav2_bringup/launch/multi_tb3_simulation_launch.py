@@ -36,12 +36,13 @@ def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
+    aws_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
 
     # Names and poses of the robots
     robots = [
-        {'name': 'robot1', 'x_pose': 0.0, 'y_pose': 0.5, 'z_pose': 0.01,
+        {'name': 'robot1', 'x_pose': 1.80, 'y_pose': 2.20, 'z_pose': 0.01,
                            'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0},
-        {'name': 'robot2', 'x_pose': 0.0, 'y_pose': -0.5, 'z_pose': 0.01,
+        {'name': 'robot2', 'x_pose': -3.50, 'y_pose': 9.0, 'z_pose': 0.01,
                            'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0}]
 
     # Simulation settings
@@ -60,7 +61,8 @@ def generate_launch_description():
     # Declare the launch arguments
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        default_value=os.path.join(bringup_dir, 'worlds', 'world_only.model'),
+        default_value=os.path.join(aws_dir, 'worlds', 'no_roof_small_warehouse',
+            'no_roof_small_warehouse.world'),
         description='Full path to world file to load')
 
     declare_simulator_cmd = DeclareLaunchArgument(
@@ -70,7 +72,7 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
-        default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
+        default_value=os.path.join(aws_dir, 'maps', '005', 'map.yaml'),
         description='Full path to map file to load')
 
     declare_robot1_params_file_cmd = DeclareLaunchArgument(
@@ -101,12 +103,6 @@ def generate_launch_description():
         'use_rviz',
         default_value='True',
         description='Whether to start RVIZ')
-
-    # Start Gazebo with plugin providing the robot spawning service
-    start_gazebo_cmd = ExecuteProcess(
-        cmd=[simulator, '--verbose', '-s', 'libgazebo_ros_init.so',
-                                     '-s', 'libgazebo_ros_factory.so', world],
-        output='screen')
 
     # Define commands for launching the navigation instances
     nav_instances_cmds = []
@@ -180,9 +176,6 @@ def generate_launch_description():
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)
-
-    # Add the actions to start gazebo, robots and simulations
-    ld.add_action(start_gazebo_cmd)
 
     for simulation_instance_cmd in nav_instances_cmds:
         ld.add_action(simulation_instance_cmd)
