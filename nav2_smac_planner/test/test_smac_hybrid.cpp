@@ -54,8 +54,6 @@ TEST(SmacTest, test_smac_se2)
   nodeSE2->set_parameter(rclcpp::Parameter("test.downsample_costmap", true));
   nodeSE2->declare_parameter("test.downsampling_factor", 2);
   nodeSE2->set_parameter(rclcpp::Parameter("test.downsampling_factor", 2));
-  nodeSE2->declare_parameter("test.obstacle_heuristic_admissible", false);
-  nodeSE2->set_parameter(rclcpp::Parameter("test.obstacle_heuristic_admissible", false));
 
   geometry_msgs::msg::PoseStamped start, goal;
   start.pose.position.x = 0.0;
@@ -108,7 +106,6 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.max_iterations", -1),
       rclcpp::Parameter("test.minimum_turning_radius", 1.0),
       rclcpp::Parameter("test.cache_obstacle_heuristic", true),
-      rclcpp::Parameter("test.obstacle_heuristic_admissible", false),
       rclcpp::Parameter("test.reverse_penalty", 5.0),
       rclcpp::Parameter("test.change_penalty", 1.0),
       rclcpp::Parameter("test.non_straight_penalty", 2.0),
@@ -132,7 +129,6 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(nodeSE2->get_parameter("test.max_iterations").as_int(), -1);
   EXPECT_EQ(nodeSE2->get_parameter("test.minimum_turning_radius").as_double(), 1.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.cache_obstacle_heuristic").as_bool(), true);
-  EXPECT_EQ(nodeSE2->get_parameter("test.obstacle_heuristic_admissible").as_bool(), false);
   EXPECT_EQ(nodeSE2->get_parameter("test.reverse_penalty").as_double(), 5.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.change_penalty").as_double(), 1.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.non_straight_penalty").as_double(), 2.0);

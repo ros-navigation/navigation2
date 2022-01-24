@@ -128,7 +128,6 @@ TEST(AStarTest, test_a_star_se2)
   info.reverse_penalty = 2.0;
   info.minimum_turning_radius = 8;  // in grid coordinates
   info.retrospective_penalty = 0.0;
-  info.obstacle_heuristic_admissible = false;
   info.analytic_expansion_max_length = 20.0;  // in grid coordinates
   info.analytic_expansion_ratio = 3.5;
   unsigned int size_theta = 72;
@@ -181,11 +180,9 @@ TEST(AStarTest, test_a_star_lattice)
 {
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.05;
-  info.obstacle_heuristic_admissible = false;
   info.non_straight_penalty = 1.05;
   info.reverse_penalty = 2.0;
   info.retrospective_penalty = 0.0;
-  info.obstacle_heuristic_admissible = false;
   info.analytic_expansion_ratio = 3.5;
   info.lattice_filepath =
     ament_index_cpp::get_package_share_directory("nav2_smac_planner") + "/default_model.json";
@@ -248,7 +245,6 @@ TEST(AStarTest, test_se2_single_pose_path)
   info.minimum_turning_radius = 8;  // in grid coordinates
   info.analytic_expansion_max_length = 20.0;  // in grid coordinates
   info.analytic_expansion_ratio = 3.5;
-  info.obstacle_heuristic_admissible = false;
   unsigned int size_theta = 72;
   info.cost_penalty = 1.7;
   nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(

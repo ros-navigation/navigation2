@@ -43,7 +43,6 @@ struct SearchInfo
   float analytic_expansion_ratio;
   float analytic_expansion_max_length;
   std::string lattice_filepath;
-  bool obstacle_heuristic_admissible;
   bool cache_obstacle_heuristic;
   bool allow_reverse_expansion;
 };

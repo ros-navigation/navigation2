@@ -42,7 +42,6 @@ TEST(NodeHybridTest, test_node_hybrid)
   info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
   info.cost_penalty = 1.7;
   info.retrospective_penalty = 0.0;
-  info.obstacle_heuristic_admissible = false;
   unsigned int size_x = 10;
   unsigned int size_y = 10;
   unsigned int size_theta = 72;
@@ -142,7 +141,6 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
   info.cost_penalty = 1.7;
   info.retrospective_penalty = 0.0;
-  info.obstacle_heuristic_admissible = true;
   unsigned int size_x = 100;
   unsigned int size_y = 100;
   unsigned int size_theta = 72;
@@ -187,8 +185,9 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   for (unsigned int j = 61; j <= 70; ++j) {
     costmapA->setCost(50, j, 254);
   }
-  nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(costmapA, testB.pose.x, testB.pose.y);
-  float wide_passage_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristicAdmissible(
+  nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(
+    costmapA, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
+  float wide_passage_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(
     testA.pose,
     testB.pose,
     info.cost_penalty);
@@ -201,8 +200,9 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   for (unsigned int j = 61; j <= 70; ++j) {
     costmapA->setCost(50, j, 250);
   }
-  nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(costmapA, testB.pose.x, testB.pose.y);
-  float two_passages_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristicAdmissible(
+  nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(costmapA,
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
+  float two_passages_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(
     testA.pose,
     testB.pose,
     info.cost_penalty);
@@ -220,7 +220,6 @@ TEST(NodeHybridTest, test_node_debin_neighbors)
   info.reverse_penalty = 2.1;
   info.minimum_turning_radius = 4;  // 0.2 in grid coordinates
   info.retrospective_penalty = 0.0;
-  info.obstacle_heuristic_admissible = false;
   unsigned int size_x = 100;
   unsigned int size_y = 100;
   unsigned int size_theta = 72;
@@ -250,7 +249,6 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
   info.reverse_penalty = 2.1;
   info.minimum_turning_radius = 8;  // 0.4 in grid coordinates
   info.retrospective_penalty = 0.0;
-  info.obstacle_heuristic_admissible = false;
   unsigned int size_x = 100;
   unsigned int size_y = 100;
   unsigned int size_theta = 72;

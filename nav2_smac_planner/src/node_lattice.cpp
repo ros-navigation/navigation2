@@ -61,7 +61,6 @@ void LatticeMotionTable::initMotionModel(
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
   travel_distance_reward = 1.0f - search_info.retrospective_penalty;
-  obstacle_heuristic_admissible = search_info.obstacle_heuristic_admissible;
   current_lattice_filepath = search_info.lattice_filepath;
   allow_reverse_expansion = search_info.allow_reverse_expansion;
 

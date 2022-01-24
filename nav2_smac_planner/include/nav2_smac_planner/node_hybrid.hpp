@@ -38,16 +38,16 @@ namespace nav2_smac_planner
 typedef std::vector<float> LookupTable;
 typedef std::pair<double, double> TrigValues;
 
-typedef std::pair<float, int> AStar2DElement;
-struct AStar2DComparator
+typedef std::pair<float, unsigned int> ObstacleHeuristicElement;
+struct ObstacleHeuristicComparator
 {
-  bool operator()(const AStar2DElement & a, const AStar2DElement & b) const
+  bool operator()(const ObstacleHeuristicElement & a, const ObstacleHeuristicElement & b) const
   {
     return a.first > b.first;
   }
 };
 
-typedef std::vector<AStar2DElement> AStar2DQueue;
+typedef std::vector<ObstacleHeuristicElement> ObstacleHeuristicQueue;
 
 // Must forward declare
 class NodeHybrid;
@@ -122,7 +122,6 @@ struct HybridMotionTable
   float cost_penalty;
   float reverse_penalty;
   float travel_distance_reward;
-  bool obstacle_heuristic_admissible;
   ompl::base::StateSpacePtr state_space;
   std::vector<std::vector<double>> delta_xs;
   std::vector<std::vector<double>> delta_ys;
@@ -397,17 +396,6 @@ public:
     const double & cost_penalty);
 
   /**
-   * @brief Compute the Obstacle heuristic, adhering A* admissibility rule
-   * @param node_coords Coordinates to get heuristic at
-   * @param goal_coords Coordinates to compute heuristic to
-   * @return heuristic Heuristic value
-   */
-  static float getObstacleHeuristicAdmissible(
-    const Coordinates & node_coords,
-    const Coordinates & goal_coords,
-    const double & cost_penalty);
-
-  /**
    * @brief Compute the Distance heuristic
    * @param node_coords Coordinates to get heuristic at
    * @param goal_coords Coordinates to compute heuristic to
@@ -427,6 +415,7 @@ public:
    */
   static void resetObstacleHeuristic(
     nav2_costmap_2d::Costmap2D * costmap,
+    const unsigned int & start_x, const unsigned int & start_y,
     const unsigned int & goal_x, const unsigned int & goal_y);
 
   /**
@@ -457,10 +446,7 @@ public:
   static HybridMotionTable motion_table;
   // Wavefront lookup and queue for continuing to expand as needed
   static LookupTable obstacle_heuristic_lookup_table;
-  static std::queue<unsigned int> obstacle_heuristic_queue;
-  static LookupTable astar_2d_h_table;
-  static bool astar_2d_first_run;
-  static AStar2DQueue astar_2d_queue;
+  static ObstacleHeuristicQueue obstacle_heuristic_queue;
 
   static nav2_costmap_2d::Costmap2D * sampled_costmap;
   static CostmapDownsampler downsampler;

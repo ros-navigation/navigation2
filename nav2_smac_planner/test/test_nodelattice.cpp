@@ -94,7 +94,6 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
   info.retrospective_penalty = 0.0;
   info.analytic_expansion_ratio = 1;
   info.lattice_filepath = filePath;
-  info.obstacle_heuristic_admissible = false;
   info.cache_obstacle_heuristic = true;
   info.allow_reverse_expansion = true;
 
@@ -133,7 +132,6 @@ TEST(NodeLatticeTest, test_node_lattice_conversions)
   info.retrospective_penalty = 0.0;
   info.analytic_expansion_ratio = 1;
   info.lattice_filepath = filePath;
-  info.obstacle_heuristic_admissible = false;
   info.cache_obstacle_heuristic = true;
 
   unsigned int x = 100;
@@ -169,7 +167,6 @@ TEST(NodeLatticeTest, test_node_lattice)
   info.retrospective_penalty = 0.0;
   info.analytic_expansion_ratio = 1;
   info.lattice_filepath = filePath;
-  info.obstacle_heuristic_admissible = false;
   info.cache_obstacle_heuristic = true;
   info.allow_reverse_expansion = true;
 
@@ -244,7 +241,6 @@ TEST(NodeLatticeTest, test_get_neighbors)
   info.analytic_expansion_ratio = 1;
   info.retrospective_penalty = 0.0;
   info.lattice_filepath = filePath;
-  info.obstacle_heuristic_admissible = false;
   info.cache_obstacle_heuristic = true;
   info.allow_reverse_expansion = true;
 

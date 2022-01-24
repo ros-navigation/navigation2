@@ -114,7 +114,6 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
     {rclcpp::Parameter("test.allow_unknown", false),
       rclcpp::Parameter("test.max_iterations", -1),
       rclcpp::Parameter("test.cache_obstacle_heuristic", true),
-      rclcpp::Parameter("test.obstacle_heuristic_admissible", false),
       rclcpp::Parameter("test.reverse_penalty", 5.0),
       rclcpp::Parameter("test.change_penalty", 1.0),
       rclcpp::Parameter("test.non_straight_penalty", 2.0),
