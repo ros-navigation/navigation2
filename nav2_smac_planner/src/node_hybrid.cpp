@@ -93,7 +93,6 @@ void HybridMotionTable::initDubin(
   // And since its based on the minimum chord, we need to make sure its always larger
   bin_size =
     2.0f * static_cast<float>(M_PI) / static_cast<float>(num_angle_quantization);
-
   float increments;
   if (angle < bin_size) {
     increments = 1.0f;
