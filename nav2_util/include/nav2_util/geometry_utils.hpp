@@ -137,7 +137,7 @@ inline Iter first_element_beyond(Iter begin, Iter end, Getter getCompareVal)
   for (Iter it = begin; it != end - 1; it++ ){
     dist += euclidean_distance(*it, *(it + 1));
     if (dist> getCompareVal){
-      return it +1 ;      
+      return it + 1;
     }
   }
   return end;
