@@ -267,15 +267,10 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
 
-  // Check for reverse driving
-  if (allow_reversing_) {
-    // Cusp check
-    double dist_to_direction_change = findDirectionChange(pose);
-
-    // if the lookahead distance is further than the cusp, use the cusp distance instead
-    if (dist_to_direction_change < lookahead_dist) {
-      lookahead_dist = dist_to_direction_change;
-    }
+  // if the lookahead distance is further than the cusp, use the cusp distance instead
+  double dist_to_direction_change = findDirectionChange(pose);
+  if (dist_to_direction_change < lookahead_dist) {
+    lookahead_dist = dist_to_direction_change;
   }
 
   auto carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan);
@@ -606,20 +601,22 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   const double max_costmap_dim = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY());
   const double max_transform_dist = max_costmap_dim * costmap->getResolution() / 2.0;
 
+  auto lookahead_element = 
+    nav2_util::geometry_utils::first_element_beyond(
+    global_plan_.poses.begin(), global_plan_.poses.end(),lookahead_dist_);
+
   // First find the closest pose on the path to the robot
   auto transformation_begin =
     nav2_util::geometry_utils::min_by(
-    global_plan_.poses.begin(), global_plan_.poses.end(),
+    global_plan_.poses.begin(), lookahead_element,
     [&robot_pose](const geometry_msgs::msg::PoseStamped & ps) {
       return euclidean_distance(robot_pose, ps);
     });
 
-  // Find points definitely outside of the costmap so we won't transform them.
-  auto transformation_end = std::find_if(
-    transformation_begin, end(global_plan_.poses),
-    [&](const auto & global_plan_pose) {
-      return euclidean_distance(robot_pose, global_plan_pose) > max_transform_dist;
-    });
+  // Find points upto max_transform_dist so we only transform them.
+  auto transformation_end = 
+    nav2_util::geometry_utils::first_element_beyond(
+    transformation_begin, global_plan_.poses.end(),max_transform_dist);
 
   // Lambda to transform a PoseStamped from global frame to local
   auto transformGlobalPoseToLocal = [&](const auto & global_plan_pose) {
