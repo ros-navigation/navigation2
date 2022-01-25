@@ -17,11 +17,16 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from trajectory import Trajectory, TrajectoryParameters, TrajectoryPath
+from trajectory import Trajectory, TrajectoryParameters, Path
 
 logger = logging.getLogger(__name__)
 
 class TrajectoryGenerator:
+    '''
+    Handles all the logic for generating a trajectory to a given point
+    given certain parameters.
+    '''
+
     def __init__(self, config: dict):
         self.turning_radius = config["turning_radius"]
 
@@ -132,7 +137,7 @@ class TrajectoryGenerator:
         self,
         trajectory_params: TrajectoryParameters,
         primitive_resolution: float
-    ) -> TrajectoryPath:
+    ) -> Path:
         """
         Create the full trajectory path that is represented by the
         given trajectory parameters.
@@ -205,7 +210,7 @@ class TrajectoryGenerator:
         xs[-1], ys[-1] = trajectory_params.end_point
         yaws[-1] = trajectory_params.end_angle
 
-        return TrajectoryPath(xs, ys, yaws)
+        return Path(xs, ys, yaws)
 
 
     def _get_intersection_point(

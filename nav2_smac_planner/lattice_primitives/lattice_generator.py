@@ -19,17 +19,32 @@ import numpy as np
 from rtree import index
 
 from helper import angle_difference, interpolate_yaws
-from trajectory import Trajectory, TrajectoryParameters, TrajectoryPath
+from trajectory import Trajectory, TrajectoryParameters, Path
 from trajectory_generator import TrajectoryGenerator
 
 
 class LatticeGenerator:
+    '''
+    Handles all the logic for computing the minimal control set of a vehicle given its parameters.
+    Includes handling the propogating and searching along wavefronts as well as determining if 
+    a trajectory is part of the minimal set based on previously added trajectories.
+    '''
+
     class MotionModel(Enum):
+        '''
+        An Enum used for determining the motion model to use
+        '''
+        
         ACKERMANN = 1
         DIFF = 2
         OMNI = 3
 
     class Flip(Enum):
+        '''
+        An Enum used for determining how a trajectory should be flipped when
+        exploiting symmetry to copy trajectories from the first quadrant
+        '''
+
         X = 1
         Y = 2
         BOTH = 3
@@ -283,6 +298,8 @@ class LatticeGenerator:
             while iterations_without_trajectory < self.stopping_threshold:
                 iterations_without_trajectory += 1
 
+                print(iterations_without_trajectory)
+
                 # Generate x,y coordinates for current wave front
                 positions = self._get_wave_front_points(wave_front_cur_pos)
 
@@ -414,7 +431,7 @@ class LatticeGenerator:
                     unflipped_end_angle = 0.0
                     flipped_x_end_angle = np.pi
 
-                    # Generate trajectories from calculated paramters
+                    # Generate trajectories from calculated parameters
                     unflipped_trajectory = (
                         self.trajectory_generator.generate_trajectory(
                             np.array([x, y]),
@@ -448,7 +465,7 @@ class LatticeGenerator:
                     unflipped_end_angle = np.pi / 2
                     flipped_y_end_angle = -np.pi / 2
 
-                    # Generate trajectories from calculated paramters
+                    # Generate trajectories from calculated parameters
                     unflipped_trajectory = (
                         self.trajectory_generator.generate_trajectory(
                             np.array([-x, y]),
@@ -503,7 +520,7 @@ class LatticeGenerator:
                         self.Flip.BOTH
                     )
 
-                    # Generate trajectories from calculated paramters
+                    # Generate trajectories from calculated parameters
                     unflipped_trajectory = (
                         self.trajectory_generator.generate_trajectory(
                             np.array([x, y]),
@@ -647,12 +664,12 @@ class LatticeGenerator:
                 steps
             )
 
-            left_turn_path = TrajectoryPath(
+            left_turn_path = Path(
                 xs=position,
                 ys=position,
                 yaws=left_yaws
             )
-            right_turn_path = TrajectoryPath(
+            right_turn_path = Path(
                 xs=position,
                 ys=position,
                 yaws=right_yaws
@@ -753,7 +770,7 @@ class LatticeGenerator:
 
             left_motion = Trajectory(
                 parameters=left_motion_parameters,
-                path=TrajectoryPath(
+                path=Path(
                     xs=left_straight_trajectory.path.xs,
                     ys=left_straight_trajectory.path.ys,
                     yaws=yaws
@@ -762,7 +779,7 @@ class LatticeGenerator:
 
             right_motion = Trajectory(
                 parameters=right_motion_parameters,
-                path=TrajectoryPath(
+                path=Path(
                     xs=right_straight_trajectory.path.xs,
                     ys=right_straight_trajectory.path.ys,
                     yaws=yaws

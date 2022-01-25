@@ -22,6 +22,10 @@ STEP_DISTANCE = 0.1
 
 
 class TestTrajectoryGenerator(unittest.TestCase):
+    '''
+    Contains the unit tests for ensuring that the TrajectoryGenerator is working
+    correctly
+    '''
 
     def setUp(self) -> None:
         config = {"turning_radius": TURNING_RADIUS}
