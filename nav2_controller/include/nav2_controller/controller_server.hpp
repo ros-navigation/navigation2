@@ -256,7 +256,7 @@ protected:
   double failure_tolerance_;
 
   // Whether we've published the single controller warning yet
-  geometry_msgs::msg::Pose end_pose_;
+  geometry_msgs::msg::PoseStamped end_pose_;
 
   // Last time the controller generated a valid command
   rclcpp::Time last_valid_cmd_time_;

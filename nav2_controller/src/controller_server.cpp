@@ -429,18 +429,14 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   }
   controllers_[current_controller_]->setPlan(path);
 
-  auto end_pose = path.poses.back();
-  end_pose.header.frame_id = path.header.frame_id;
-  rclcpp::Duration tolerance(rclcpp::Duration::from_seconds(costmap_ros_->getTransformTolerance()));
-  nav_2d_utils::transformPose(
-    costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
-    end_pose, end_pose, tolerance);
+  end_pose_ = path.poses.back();
+  end_pose_.header.frame_id = path.header.frame_id;
   goal_checkers_[current_goal_checker_]->reset();
 
   RCLCPP_DEBUG(
     get_logger(), "Path end point is (%.2f, %.2f)",
-    end_pose.pose.position.x, end_pose.pose.position.y);
-  end_pose_ = end_pose.pose;
+    end_pose_.pose.position.x, end_pose_.pose.position.y);
+
   current_path_ = path;
 }
 
@@ -567,7 +563,16 @@ bool ControllerServer::isGoalReached()
 
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
   geometry_msgs::msg::Twist velocity = nav_2d_utils::twist2Dto3D(twist);
-  return goal_checkers_[current_goal_checker_]->isGoalReached(pose.pose, end_pose_, velocity);
+
+  geometry_msgs::msg::PoseStamped transformed_end_pose;
+  rclcpp::Duration tolerance(rclcpp::Duration::from_seconds(costmap_ros_->getTransformTolerance()));
+  nav_2d_utils::transformPose(
+    costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
+    end_pose_, transformed_end_pose, tolerance);
+
+  return goal_checkers_[current_goal_checker_]->isGoalReached(
+    pose.pose, transformed_end_pose.pose,
+    velocity);
 }
 
 bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)

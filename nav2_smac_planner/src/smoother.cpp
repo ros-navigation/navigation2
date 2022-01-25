@@ -241,6 +241,16 @@ std::vector<PathSegment> Smoother::findDirectionalPathSegments(const nav_msgs::m
       segments.push_back(curr_segment);
       curr_segment.start = idx;
     }
+
+    // Checking for the existance of a differential rotation in place.
+    double cur_theta = tf2::getYaw(path.poses[idx].pose.orientation);
+    double next_theta = tf2::getYaw(path.poses[idx + 1].pose.orientation);
+    double dtheta = angles::shortest_angular_distance(cur_theta, next_theta);
+    if (fabs(ab_x) < 1e-4 && fabs(ab_y) < 1e-4 && fabs(dtheta) > 1e-4) {
+      curr_segment.end = idx;
+      segments.push_back(curr_segment);
+      curr_segment.start = idx;
+    }
   }
 
   curr_segment.end = path.poses.size() - 1;

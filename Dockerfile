@@ -1,8 +1,8 @@
 # This dockerfile can be configured via --build-arg
 # Build context must be the /navigation2 root folder for COPY.
 # Example build command:
-# export UNDERLAY_MIXINS="debug ccache"
-# export OVERLAY_MIXINS="debug ccache coverage-gcc"
+# export UNDERLAY_MIXINS="debug ccache lld"
+# export OVERLAY_MIXINS="debug ccache coverage-gcc lld"
 # docker build -t nav2:latest \
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./
@@ -51,6 +51,7 @@ RUN apt-get update && \
     apt-get install -y \
       ccache \
       lcov \
+      lld \
       python3-pip \
       ros-$ROS_DISTRO-rmw-fastrtps-cpp \
       ros-$ROS_DISTRO-rmw-connextdds \
@@ -58,8 +59,10 @@ RUN apt-get update && \
     && pip3 install \
       fastcov \
       git+https://github.com/ruffsl/colcon-cache.git@a937541bfc496c7a267db7ee9d6cceca61e470ca \
-      git+https://github.com/ruffsl/colcon-clean.git@65f9be369b396c13e604a9272a5ed4fe77895700 \
+      git+https://github.com/ruffsl/colcon-clean.git@a7f1074d1ebc1a54a6508625b117974f2672f2a9 \
     && rosdep update \
+    && colcon mixin update \
+    && colcon metadata update \
     && rm -rf /var/lib/apt/lists/*
 
 # install underlay dependencies
@@ -78,7 +81,7 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 
 # build underlay source
 COPY --from=cacher $UNDERLAY_WS ./
-ARG UNDERLAY_MIXINS="release ccache"
+ARG UNDERLAY_MIXINS="release ccache lld"
 ARG CCACHE_DIR="$UNDERLAY_WS/.ccache"
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon cache lock && \
@@ -106,7 +109,7 @@ FROM builder AS tester
 
 # build overlay source
 COPY --from=cacher $OVERLAY_WS ./
-ARG OVERLAY_MIXINS="release ccache"
+ARG OVERLAY_MIXINS="release ccache lld"
 ARG CCACHE_DIR="$OVERLAY_WS/.ccache"
 RUN . $UNDERLAY_WS/install/setup.sh && \
     colcon cache lock && \
