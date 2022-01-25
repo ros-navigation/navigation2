@@ -103,6 +103,7 @@ struct LatticeMotionTable
   float cost_penalty;
   float reverse_penalty;
   float travel_distance_reward;
+  float rotation_penalty;
   bool allow_reverse_expansion;
   std::vector<std::vector<MotionPrimitive>> motion_primitives;
   ompl::base::StateSpacePtr state_space;

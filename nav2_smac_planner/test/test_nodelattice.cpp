@@ -71,13 +71,13 @@ TEST(NodeLatticeTest, parser_test)
   EXPECT_NEAR(myPrimitives[0].arc_length, 0.58225, 0.01);
   EXPECT_NEAR(myPrimitives[0].straight_length, 0.06631, 0.01);
 
-  EXPECT_NEAR(myPrimitives[0].poses[0]._x, 0.0, 0.01);
-  EXPECT_NEAR(myPrimitives[0].poses[0]._y, 0.0, 0.01);
-  EXPECT_NEAR(myPrimitives[0].poses[0]._theta, 0.0, 0.01);
+  EXPECT_NEAR(myPrimitives[0].poses[0]._x, 0.04981, 0.01);
+  EXPECT_NEAR(myPrimitives[0].poses[0]._y, -0.00236, 0.01);
+  EXPECT_NEAR(myPrimitives[0].poses[0]._theta, -0.0948654249597968, 0.01);
 
-  EXPECT_NEAR(myPrimitives[0].poses[1]._x, 0.05284, 0.01);
-  EXPECT_NEAR(myPrimitives[0].poses[1]._y, -0.00266, 0.01);
-  EXPECT_NEAR(myPrimitives[0].poses[1]._theta, -0.10064988343582648, 0.015);
+  EXPECT_NEAR(myPrimitives[0].poses[1]._x, 0.09917, 0.01);
+  EXPECT_NEAR(myPrimitives[0].poses[1]._y, -0.00944, 0.01);
+  EXPECT_NEAR(myPrimitives[0].poses[1]._theta, -0.1897308499195936, 0.015);
 }
 
 TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)

@@ -234,7 +234,7 @@ print_yaml(
       std::cout << "    # " << std::left << std::setw(fw) << "Additional constraints: " <<
         param_descriptors[i].additional_constraints << "\n";
       std::cout << "    # " << std::left << std::setw(fw) << "Read-only: " <<
-      (param_descriptors[i].read_only ? "True" : "False") << "\n";
+        (param_descriptors[i].read_only ? "True" : "False") << "\n";
 
       std::cout << std::endl;
     }
@@ -287,7 +287,7 @@ print_markdown(
       std::cout << "|" <<
         param_descriptors[i].description << "|" <<
         param_descriptors[i].additional_constraints << "|" <<
-      (param_descriptors[i].read_only ? "True" : "False");
+        (param_descriptors[i].read_only ? "True" : "False");
     }
 
     // End the parameter

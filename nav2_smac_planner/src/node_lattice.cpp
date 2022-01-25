@@ -63,6 +63,7 @@ void LatticeMotionTable::initMotionModel(
   travel_distance_reward = 1.0f - search_info.retrospective_penalty;
   current_lattice_filepath = search_info.lattice_filepath;
   allow_reverse_expansion = search_info.allow_reverse_expansion;
+  rotation_penalty = search_info.rotation_penalty;
 
   // Get the metadata about this minimum control set
   lattice_metadata = getLatticeMetadata(current_lattice_filepath);
@@ -284,10 +285,14 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
     return prim_length;
   }
 
+  // Pure rotation in place 1 angular bin in either direction
+  if (transition_prim->trajectory_length < 1e-4) {
+    return motion_table.rotation_penalty * (1.0 + motion_table.cost_penalty * normalized_cost);
+  }
+
   float travel_cost = 0.0;
-  float travel_cost_raw =
-    prim_length * motion_table.travel_distance_reward +
-    (prim_length * motion_table.cost_penalty * normalized_cost);
+  float travel_cost_raw = prim_length *
+    (motion_table.travel_distance_reward + motion_table.cost_penalty * normalized_cost);
 
   if (transition_prim->arc_length < 0.001) {
     // New motion is a straight motion, no additional costs to be applied
