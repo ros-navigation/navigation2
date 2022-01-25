@@ -21,6 +21,23 @@ from helper import angle_difference
 
 @dataclass(frozen=True)
 class TrajectoryParameters:
+    '''
+    A dataclass that holds all the required data needed when generating the path for
+    a calculated trajectory
+
+    turning_radius: The radius of the circle used to generate the arc of the path
+    x_offset: The x coordinate of the circle used to generate the arc of the path
+    y_offset: They y coordinate of the circle used to generate the arc of the path
+    end_point: The end coordinate of the path
+    start_angle: The starting angle of the path 
+        - given in radians from -pi to pi where 0 radians is along the positive x axis
+    end_angle: The end angle of the path
+        - given in radians from -pi to pi where 0 radians is along the positive x axis
+    left_turn: Whether the arc in the path turns to the left
+    arc_start_point: Coordinates of the starting position of the arc
+    arc_end_point: Coordinates of the ending position of the arc
+    '''
+
     turning_radius: float
     x_offset: float
     y_offset: float
@@ -56,7 +73,15 @@ class TrajectoryParameters:
 
 
 @dataclass(frozen=True)
-class TrajectoryPath:
+class Path:
+    '''
+    A dataclass that holds the generated poses for a given trajectory
+
+    xs: X coordinates of poses along trajectory
+    ys: Y coordinates of poses along trajectory
+    yaws: Yaws of poses along trajectory
+    '''
+
     xs: np.array
     ys: np.array
     yaws: np.array
@@ -70,7 +95,7 @@ class TrajectoryPath:
         ys = np.concatenate((self.ys, rhs.ys))
         yaws = np.concatenate((self.yaws, rhs.yaws))
 
-        return TrajectoryPath(xs, ys, yaws)
+        return Path(xs, ys, yaws)
 
 
     def to_output_format(self):
@@ -89,5 +114,12 @@ class TrajectoryPath:
 
 @dataclass(frozen=True)
 class Trajectory:
-    path: TrajectoryPath
+    '''
+    A dataclass that holds the path and parameters for a trajectory
+    
+    path: The Path that represents the trajectory
+    parameters: The TrajectoryParameters that represent the trajectory
+    '''
+
+    path: Path
     parameters: TrajectoryParameters
