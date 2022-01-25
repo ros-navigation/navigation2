@@ -164,7 +164,7 @@ TEST(NodeLatticeTest, test_node_lattice)
   info.change_penalty = 1;
   info.reverse_penalty = 1;
   info.cost_penalty = 1;
-  info.retrospective_penalty = 0.0;
+  info.retrospective_penalty = 0.1;
   info.analytic_expansion_ratio = 1;
   info.lattice_filepath = filePath;
   info.cache_obstacle_heuristic = true;

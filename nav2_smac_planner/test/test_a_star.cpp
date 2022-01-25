@@ -127,7 +127,7 @@ TEST(AStarTest, test_a_star_se2)
   info.non_straight_penalty = 1.1;
   info.reverse_penalty = 2.0;
   info.minimum_turning_radius = 8;  // in grid coordinates
-  info.retrospective_penalty = 0.0;
+  info.retrospective_penalty = 0.015;
   info.analytic_expansion_max_length = 20.0;  // in grid coordinates
   info.analytic_expansion_ratio = 3.5;
   unsigned int size_theta = 72;
@@ -163,8 +163,8 @@ TEST(AStarTest, test_a_star_se2)
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
 
   // check path is the right size and collision free
-  EXPECT_EQ(num_it, 3827);
-  EXPECT_EQ(path.size(), 61u);
+  EXPECT_EQ(num_it, 3222);
+  EXPECT_EQ(path.size(), 62u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }
@@ -182,7 +182,7 @@ TEST(AStarTest, test_a_star_lattice)
   info.change_penalty = 0.05;
   info.non_straight_penalty = 1.05;
   info.reverse_penalty = 2.0;
-  info.retrospective_penalty = 0.0;
+  info.retrospective_penalty = 0.2;
   info.analytic_expansion_ratio = 3.5;
   info.lattice_filepath =
     ament_index_cpp::get_package_share_directory("nav2_smac_planner") + "/default_model.json";
@@ -222,8 +222,8 @@ TEST(AStarTest, test_a_star_lattice)
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
 
   // check path is the right size and collision free
-  EXPECT_EQ(num_it, 14);
-  EXPECT_EQ(path.size(), 47u);
+  EXPECT_EQ(num_it, 20);
+  EXPECT_EQ(path.size(), 48u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }

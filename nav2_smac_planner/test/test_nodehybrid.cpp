@@ -41,7 +41,7 @@ TEST(NodeHybridTest, test_node_hybrid)
   info.reverse_penalty = 2.0;
   info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
   info.cost_penalty = 1.7;
-  info.retrospective_penalty = 0.0;
+  info.retrospective_penalty = 0.1;
   unsigned int size_x = 10;
   unsigned int size_y = 10;
   unsigned int size_theta = 72;
@@ -84,16 +84,17 @@ TEST(NodeHybridTest, test_node_hybrid)
   // check traversal cost computation
   // simulated first node, should return neutral cost
   EXPECT_NEAR(testB.getTraversalCost(&testA), 2.088, 0.1);
-  // now with straight motion, cost is 0, so will be sqrt(2) as well
+  // now with straight motion, cost is 0, so will be neutral as well
+  // but now reduced by retrospective penalty (10%)
   testB.setMotionPrimitiveIndex(1);
   testA.setMotionPrimitiveIndex(0);
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.088, 0.1);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.088 * 0.9, 0.1);
   // same direction as parent, testB
   testA.setMotionPrimitiveIndex(1);
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.297f, 0.01);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.297f * 0.9, 0.01);
   // opposite direction as parent, testB
   testA.setMotionPrimitiveIndex(2);
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.506f, 0.01);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.506f * 0.9, 0.01);
 
   // will throw because never collision checked testB
   EXPECT_THROW(testA.getTraversalCost(&testB), std::runtime_error);
@@ -200,7 +201,8 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   for (unsigned int j = 61; j <= 70; ++j) {
     costmapA->setCost(50, j, 250);
   }
-  nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(costmapA,
+  nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(
+    costmapA,
     testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
   float two_passages_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(
     testA.pose,

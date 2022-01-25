@@ -490,10 +490,14 @@ float NodeHybrid::getObstacleHeuristic(
     // find neighbors
     for (unsigned int i = 0; i != neighborhood.size(); i++) {
       new_idx = static_cast<unsigned int>(static_cast<int>(c.second) + neighborhood[i]);
-      cost = static_cast<float>(sampled_costmap->getCost(new_idx));
 
       // if neighbor path is better and non-lethal, set new cost and add to queue
-      if (new_idx > 0 && new_idx < size_x * size_y && cost < INSCRIBED) {
+      if (new_idx > 0 && new_idx < size_x * size_y) {
+        cost = static_cast<float>(sampled_costmap->getCost(new_idx));
+        if (cost >= INSCRIBED) {
+          continue;
+        }
+
         my = new_idx / size_x;
         mx = new_idx - (my * size_x);
 
