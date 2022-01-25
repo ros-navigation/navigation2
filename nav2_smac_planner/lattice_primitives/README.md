@@ -10,7 +10,7 @@
 </br>
 
 ## About
-The scripts in this folder are used to generate the motion primitives for the state lattice planner. An example of the trajectories for a grid resolution of 5cm and turning radius of 0.5m is shown below.
+The scripts in this folder are used to generate the minimum control set for the state lattice planner. This work is based on [Generating Near Minimal Control Sets for Constrained Motion Planning in Discrete State Spaces](https://www.ri.cmu.edu/pub_files/pub4/pivtoraiko_mihail_2005_1/pivtoraiko_mihail_2005_1.pdf). An example of the trajectories for a grid resolution of 5cm and turning radius of 0.5m is shown below.
 
 ![ ](docs/all_trajectories.png)
 
@@ -47,25 +47,25 @@ The type of motion model used. Accepted values:
 
 **turning_radius** (float)
 
-The minimum turning radius of the robot (in meters)
+The minimum turning radius of the robot (in meters). Typical values for a service robot range from 0.4 to 1.0m.
 </br>
 </br>
 
 **grid_resolution** (float)
 
-The resolution of the grid (in meters) used to create the lattice. If the grid resolution is too large for the turning radius then the generator will not return a good result.
+The resolution of the grid (in meters) used to create the lattice. If the grid resolution is too large proportionally to the turning radius then the generator will not return a good result. This should be the same as your costmap resolution.
 </br>
 </br>
 
 **stopping_threshold** (float)
 
-Number of consecutive iterations without a valid trajectory before stopping the search.
+Number of consecutive iterations without a valid trajectory before stopping the search. A value too low may mean that you stop searching too early. A value too high will cause the search to take longer. We found that stopping after 5 iterations produced the best results.
 </br>
 </br>
 
 **num_of_headings** (float)
 
-Number of discrete angular headings used. Due to the way discretization is done this number should be restricted to multiples of 8. Angles are not generated uniformly but instead generated in a way to facilitate straight lines. See [angle discretization](#angle-discretization) for more details.
+Number of discrete angular headings used. Due to the way discretization is done this number should be restricted to multiples of 8. Angles are not generated uniformly but instead generated in a way to facilitate straight lines. See [angle discretization](#angle-discretization) for more details. We believe 16 headings is a good number for most use cases.
 </br>
 </br>
 
