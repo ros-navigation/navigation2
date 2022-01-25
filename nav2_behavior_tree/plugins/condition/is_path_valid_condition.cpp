@@ -34,7 +34,7 @@ BT::NodeStatus IsPathValidCondition::tick()
   nav_msgs::msg::Path path;
   getInput("path", path);
 
-  int server_timeout; 
+  int server_timeout;
   getInput<int>("server_timeout_ms", server_timeout);
   server_timeout_ = std::chrono::milliseconds(server_timeout);
 
