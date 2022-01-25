@@ -503,6 +503,21 @@ DWBLocalPlanner::transformGlobalPlan(
     nav2_util::geometry_utils::first_element_beyond(
     transformation_begin, global_plan_.poses.end(), transform_end_threshold);
 
+  for (auto it = transformation_begin + 1; it != transformation_end - 1; ++it) {
+    double oa_x = it->x - (it -1 )->x;
+    double oa_y = it->y - (it - 1)->y;
+    double ab_x = (it + 1)->x - it->x;
+    double ab_y = (it + 1)->y - it->y;
+
+    if ( (oa_x * ab_x) + (oa_y * ab_y) < 0.0) {
+      transformation_end = it;
+      break;
+    }
+  }
+
+ RCLCPP_INFO(logger_, "gg %li %li %li", transformation_begin-global_plan_.poses.begin(),
+     transformation_end-global_plan_.poses.begin(), global_plan_.poses.end()-global_plan_.poses.begin());
+
   // Transform the near part of the global plan into the robot's frame of reference.
   nav_2d_msgs::msg::Path2D transformed_plan;
   transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
