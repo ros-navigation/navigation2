@@ -98,6 +98,7 @@ void SmacPlannerLattice::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".retrospective_penalty", rclcpp::ParameterValue(0.015));
   node->get_parameter(name + ".retrospective_penalty", _search_info.retrospective_penalty);
+  nav2_util::declare_parameter_if_not_declared(
     node, name + ".rotation_penalty", rclcpp::ParameterValue(5.0));
   node->get_parameter(name + ".rotation_penalty", _search_info.rotation_penalty);
   nav2_util::declare_parameter_if_not_declared(
