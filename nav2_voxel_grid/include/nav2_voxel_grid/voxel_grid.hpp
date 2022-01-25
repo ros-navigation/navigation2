@@ -233,16 +233,16 @@ public:
       return;
     }
     double scale, min_x0, min_y0, min_z0;
-    if(dist > 0.0){
+    if (dist > 0.0) {
       scale = std::min(1.0, max_length / dist);
 
       // Updating starting point to the point at distance min_length from the initial point
       min_x0 = x0 + (x1 - x0) / dist * min_length;
       min_y0 = y0 + (y1 - y0) / dist * min_length;
       min_z0 = z0 + (z1 - z0) / dist * min_length;
-    }
-    // dist can be 0 if [x0, y0, z0]==[x1, y1, z1]. In this case only this voxel should be processed.
-    else{
+    } else {
+      // dist can be 0 if [x0, y0, z0]==[x1, y1, z1].
+      // In this case only this voxel should be processed.
       scale = 1.0;
       min_x0 = x0;
       min_y0 = y0;
