@@ -50,6 +50,9 @@ TEST(DynParamTestNode, testDynParamsSet)
   t.header.frame_id = "map";
   t.child_frame_id = "base_link";
   tf_broadcaster_->sendTransform(t);
+  t.header.frame_id = "map";
+  t.child_frame_id = "test_frame";
+  tf_broadcaster_->sendTransform(t);
 
   costmap->on_activate(rclcpp_lifecycle::State());
 
@@ -57,7 +60,7 @@ TEST(DynParamTestNode, testDynParamsSet)
     node->shared_from_this(),
     "/test_costmap/test_costmap",
     rmw_qos_profile_parameters);
-  auto results = parameter_client->set_parameters_atomically(
+  auto results1 = parameter_client->set_parameters_atomically(
   {
     rclcpp::Parameter("robot_radius", 1.234),
     rclcpp::Parameter("footprint_padding", 2.345),
@@ -74,6 +77,12 @@ TEST(DynParamTestNode, testDynParamsSet)
     rclcpp::Parameter("robot_base_frame", "test_frame"),
   });
 
+  // Try setting robot_base_frame to an invalid frame, should be rejected
+  auto results2 = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("robot_base_frame", "wrong_test_frame"),
+  });
+
   rclcpp::spin_some(costmap->get_node_base_interface());
 
   EXPECT_EQ(costmap->get_parameter("robot_radius").as_double(), 1.234);
@@ -88,7 +97,7 @@ TEST(DynParamTestNode, testDynParamsSet)
   EXPECT_EQ(
     costmap->get_parameter("footprint").as_string(),
     "[[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.46, 0.0], [0.325, -0.325]]");
-  EXPECT_EQ(costmap->get_parameter("footprint").as_string(), "test_frame");
+  EXPECT_EQ(costmap->get_parameter("robot_base_frame").as_string(), "test_frame");
 
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
