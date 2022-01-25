@@ -17,7 +17,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
@@ -25,19 +25,26 @@ from launch_ros.actions import Node
 def generate_launch_description():
     warehouse_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
-    python_commander_dir = get_package_share_directory('nav2_simple_commander')
+    gazebo_ros = get_package_share_directory('gazebo_ros')
 
     map_yaml_file = os.path.join(warehouse_dir, 'maps', '005', 'map.yaml')
-    world = os.path.join(python_commander_dir, 'warehouse.world')
+
+    declare_world_cmd = DeclareLaunchArgument(
+        'world',
+        default_value=os.path.join(warehouse_dir, 'worlds', 'no_roof_small_warehouse',
+            'no_roof_small_warehouse.world'),
+        description='Full path to world model file to load')
 
     # start the simulation
-    start_gazebo_server_cmd = ExecuteProcess(
-        cmd=['gzserver', '-s', 'libgazebo_ros_factory.so', world],
-        cwd=[warehouse_dir], output='screen')
+    start_gazebo_server_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py'))
+    )
 
-    start_gazebo_client_cmd = ExecuteProcess(
-        cmd=['gzclient'],
-        cwd=[warehouse_dir], output='screen')
+    start_gazebo_client_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(gazebo_ros, 'launch', 'gzclient.launch.py'))
+    )
 
     urdf = os.path.join(nav2_bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
     start_robot_state_publisher_cmd = Node(
@@ -68,6 +75,7 @@ def generate_launch_description():
         output='screen')
 
     ld = LaunchDescription()
+    ld.add_action(declare_world_cmd)
     ld.add_action(start_gazebo_server_cmd)
     ld.add_action(start_gazebo_client_cmd)
     ld.add_action(start_robot_state_publisher_cmd)
