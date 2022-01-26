@@ -498,7 +498,7 @@ float NodeHybrid::getObstacleHeuristic(
       new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
 
       // if neighbor path is better and non-lethal, set new cost and add to queue
-      if (new_idx >= 0 && new_idx < size_x * size_y) {
+      if (new_idx < size_x * size_y) {
         cost = static_cast<float>(sampled_costmap->getCost(new_idx));
         if (cost >= INSCRIBED) {
           continue;
