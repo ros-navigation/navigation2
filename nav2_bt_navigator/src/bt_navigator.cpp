@@ -93,7 +93,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   global_frame_ = get_parameter("global_frame").as_string();
   robot_frame_ = get_parameter("robot_base_frame").as_string();
   transform_tolerance_ = get_parameter("transform_tolerance").as_double();
-
+  odom_topic_ = get_parameter("odom_topic").as_string();
   // Libraries to pull plugins (BT Nodes) from
   auto plugin_lib_names = get_parameter("plugin_lib_names").as_string_array();
 
@@ -119,7 +119,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Odometry smoother object for getting current speed
-  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(shared_from_this(), 0.3);
+  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(shared_from_this(), 0.3, odom_topic_);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
