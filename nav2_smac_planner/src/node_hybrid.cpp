@@ -435,6 +435,7 @@ float NodeHybrid::getObstacleHeuristic(
   const Coordinates & goal_coords,
   const double & cost_penalty)
 {
+  // If already expanded, return the cost
   const unsigned int size_x = sampled_costmap->getSizeInCellsX();
   // Divided by 2 due to downsampled costmap.
   const unsigned int start_y = floor(node_coords.y / 2.0);
@@ -446,13 +447,11 @@ float NodeHybrid::getObstacleHeuristic(
     return 2.0 * requested_node_cost;
   }
 
-  const int size_x_int = static_cast<int>(size_x);
-  const unsigned int size_y = sampled_costmap->getSizeInCellsY();
-
-  const std::vector<int> neighborhood = {1, -1,  // left right
-    size_x_int, -size_x_int,  // up down
-    size_x_int + 1, size_x_int - 1,  // upper diagonals
-    -size_x_int + 1, -size_x_int - 1};  // lower diagonals
+  // If not, expand until it is included. This dynamic programming ensures that
+  // we only expand the MINIMUM spanning set of the costmap per planning request.
+  // Rather than naively expanding the entire (potentially massive) map for a limited
+  // path, we only expand to the extent required for the furthest expansion in the
+  // search-planning request that dynamically updates during search as needed.
 
   // start_x and start_y have changed since last call
   // we need to recompute 2D distance heuristic and reprioritize queue
@@ -464,35 +463,42 @@ float NodeHybrid::getObstacleHeuristic(
     obstacle_heuristic_queue.begin(), obstacle_heuristic_queue.end(),
     ObstacleHeuristicComparator{});
 
-  float c_cost, cost, travel_cost, new_cost, existing_cost;
-  unsigned int mx, my, mx_idx, my_idx;
-  unsigned int new_idx = 0;
+  const int size_x_int = static_cast<int>(size_x);
+  const unsigned int size_y = sampled_costmap->getSizeInCellsY();
   const float sqrt_2 = sqrt(2);
+  float c_cost, cost, travel_cost, new_cost, existing_cost;
+  unsigned int idx, mx, my, mx_idx, my_idx;
+  unsigned int new_idx = 0;
+
+  const std::vector<int> neighborhood = {1, -1,  // left right
+    size_x_int, -size_x_int,  // up down
+    size_x_int + 1, size_x_int - 1,  // upper diagonals
+    -size_x_int + 1, -size_x_int - 1};  // lower diagonals
 
   while (!obstacle_heuristic_queue.empty()) {
-    ObstacleHeuristicElement c = obstacle_heuristic_queue.front();
+    idx = obstacle_heuristic_queue.front().second;
     std::pop_heap(
       obstacle_heuristic_queue.begin(), obstacle_heuristic_queue.end(),
       ObstacleHeuristicComparator{});
     obstacle_heuristic_queue.pop_back();
-    c_cost = obstacle_heuristic_lookup_table[c.second];
+    c_cost = obstacle_heuristic_lookup_table[idx];
     if (c_cost > 0.0f) {
       // cell has been processed and closed, no further cost improvements
       // are mathematically possible thanks to euclidean distance heuristic consistency
       continue;
     }
     c_cost = -c_cost;
-    obstacle_heuristic_lookup_table[c.second] = c_cost;  // set a positive value to close the cell
+    obstacle_heuristic_lookup_table[idx] = c_cost;  // set a positive value to close the cell
 
-    my_idx = c.second / size_x;
-    mx_idx = c.second - (my_idx * size_x);
+    my_idx = idx / size_x;
+    mx_idx = idx - (my_idx * size_x);
 
     // find neighbors
     for (unsigned int i = 0; i != neighborhood.size(); i++) {
-      new_idx = static_cast<unsigned int>(static_cast<int>(c.second) + neighborhood[i]);
+      new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
 
       // if neighbor path is better and non-lethal, set new cost and add to queue
-      if (new_idx > 0 && new_idx < size_x * size_y) {
+      if (new_idx >= 0 && new_idx < size_x * size_y) {
         cost = static_cast<float>(sampled_costmap->getCost(new_idx));
         if (cost >= INSCRIBED) {
           continue;
@@ -526,7 +532,7 @@ float NodeHybrid::getObstacleHeuristic(
       }
     }
 
-    if (c.second == start_index) {
+    if (idx == start_index) {
       break;
     }
   }
