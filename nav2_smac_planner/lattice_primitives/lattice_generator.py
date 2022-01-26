@@ -298,8 +298,6 @@ class LatticeGenerator:
             while iterations_without_trajectory < self.stopping_threshold:
                 iterations_without_trajectory += 1
 
-                print(iterations_without_trajectory)
-
                 # Generate x,y coordinates for current wave front
                 positions = self._get_wave_front_points(wave_front_cur_pos)
 
