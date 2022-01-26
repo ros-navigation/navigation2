@@ -24,9 +24,11 @@
 #include "nav_2d_utils/tf_help.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_controller/nav2_controller.hpp"
+#include "nav2_controller/controller_server.hpp"
 
 using namespace std::chrono_literals;
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
 
 namespace nav2_controller
 {
@@ -223,6 +225,11 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & state)
   vel_publisher_->on_activate();
   action_server_->activate();
 
+  auto node = shared_from_this();
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&ControllerServer::dynamicParametersCallback, this, _1));
+
   // create bond connection
   createBond();
 
@@ -243,6 +250,7 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & state)
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
+  dyn_params_handler_.reset();
 
   // destroy bond connection
   destroyBond();
@@ -335,6 +343,7 @@ bool ControllerServer::findGoalCheckerId(
 
 void ControllerServer::computeControl()
 {
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
 
   try {
@@ -420,18 +429,14 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   }
   controllers_[current_controller_]->setPlan(path);
 
-  auto end_pose = path.poses.back();
-  end_pose.header.frame_id = path.header.frame_id;
-  rclcpp::Duration tolerance(rclcpp::Duration::from_seconds(costmap_ros_->getTransformTolerance()));
-  nav_2d_utils::transformPose(
-    costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
-    end_pose, end_pose, tolerance);
+  end_pose_ = path.poses.back();
+  end_pose_.header.frame_id = path.header.frame_id;
   goal_checkers_[current_goal_checker_]->reset();
 
   RCLCPP_DEBUG(
     get_logger(), "Path end point is (%.2f, %.2f)",
-    end_pose.pose.position.x, end_pose.pose.position.y);
-  end_pose_ = end_pose.pose;
+    end_pose_.pose.position.x, end_pose_.pose.position.y);
+
   current_path_ = path;
 }
 
@@ -558,7 +563,16 @@ bool ControllerServer::isGoalReached()
 
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
   geometry_msgs::msg::Twist velocity = nav_2d_utils::twist2Dto3D(twist);
-  return goal_checkers_[current_goal_checker_]->isGoalReached(pose.pose, end_pose_, velocity);
+
+  geometry_msgs::msg::PoseStamped transformed_end_pose;
+  rclcpp::Duration tolerance(rclcpp::Duration::from_seconds(costmap_ros_->getTransformTolerance()));
+  nav_2d_utils::transformPose(
+    costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
+    end_pose_, transformed_end_pose, tolerance);
+
+  return goal_checkers_[current_goal_checker_]->isGoalReached(
+    pose.pose, transformed_end_pose.pose,
+    velocity);
 }
 
 bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)
@@ -577,6 +591,35 @@ void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::Shar
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
     it->second->setSpeedLimit(msg->speed_limit, msg->percentage);
   }
+}
+
+rcl_interfaces::msg::SetParametersResult
+ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+{
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == "controller_frequency") {
+        controller_frequency_ = parameter.as_double();
+      } else if (name == "min_x_velocity_threshold") {
+        min_x_velocity_threshold_ = parameter.as_double();
+      } else if (name == "min_y_velocity_threshold") {
+        min_y_velocity_threshold_ = parameter.as_double();
+      } else if (name == "min_theta_velocity_threshold") {
+        min_theta_velocity_threshold_ = parameter.as_double();
+      } else if (name == "failure_tolerance") {
+        failure_tolerance_ = parameter.as_double();
+      }
+    }
+  }
+
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_controller

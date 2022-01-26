@@ -108,7 +108,8 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
       rclcpp::Parameter("test.downsampling_factor", 2),
       rclcpp::Parameter("test.max_iterations", -1),
       rclcpp::Parameter("test.max_on_approach_iterations", -1),
-      rclcpp::Parameter("test.motion_model_for_search", "UNKNOWN")});
+      rclcpp::Parameter("test.motion_model_for_search", "UNKNOWN"),
+      rclcpp::Parameter("test.use_final_approach_orientation", false)});
 
   rclcpp::spin_until_future_complete(
     node2D->get_node_base_interface(),
@@ -123,6 +124,7 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
   EXPECT_EQ(node2D->get_parameter("test.allow_unknown").as_bool(), false);
   EXPECT_EQ(node2D->get_parameter("test.downsampling_factor").as_int(), 2);
   EXPECT_EQ(node2D->get_parameter("test.max_iterations").as_int(), -1);
+  EXPECT_EQ(node2D->get_parameter("test.use_final_approach_orientation").as_bool(), false);
   EXPECT_EQ(
     node2D->get_parameter("test.max_on_approach_iterations").as_int(),
     -1);

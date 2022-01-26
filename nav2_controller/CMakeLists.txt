@@ -30,7 +30,7 @@ add_executable(${executable_name}
 set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
-  src/nav2_controller.cpp
+  src/controller_server.cpp
 )
 
 set(dependencies
@@ -95,7 +95,9 @@ install(DIRECTORY include/
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
   ament_lint_auto_find_test_dependencies()
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

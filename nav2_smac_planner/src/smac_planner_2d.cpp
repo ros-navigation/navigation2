@@ -58,12 +58,14 @@ void SmacPlanner2D::configure(
   _name = name;
   _global_frame = costmap_ros->getGlobalFrameID();
 
+  RCLCPP_INFO(_logger, "Configuring %s of type SmacPlanner2D", name.c_str());
+
   // General planner params
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".tolerance", rclcpp::ParameterValue(0.125));
   _tolerance = static_cast<float>(node->get_parameter(name + ".tolerance").as_double());
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".downsample_costmap", rclcpp::ParameterValue(true));
+    node, name + ".downsample_costmap", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".downsample_costmap", _downsample_costmap);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
@@ -86,7 +88,7 @@ void SmacPlanner2D::configure(
   node->get_parameter(name + ".use_final_approach_orientation", _use_final_approach_orientation);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".max_planning_time", rclcpp::ParameterValue(1.0));
+    node, name + ".max_planning_time", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".max_planning_time", _max_planning_time);
 
   nav2_util::declare_parameter_if_not_declared(
@@ -128,12 +130,14 @@ void SmacPlanner2D::configure(
     _allow_unknown,
     _max_iterations,
     _max_on_approach_iterations,
+    _max_planning_time,
     0.0 /*unused for 2D*/,
     1.0 /*unused for 2D*/);
 
   // Initialize path smoother
   SmootherParams params;
   params.get(node, name);
+  params.holonomic_ = true;  // So smoother will treat this as a grid search
   _smoother = std::make_unique<Smoother>(params);
   _smoother->initialize(1e-50 /*No valid minimum turning radius for 2D*/);
 
@@ -166,8 +170,8 @@ void SmacPlanner2D::activate()
     _costmap_downsampler->on_activate();
   }
   auto node = _node.lock();
-  // Add callback for dynamic parametrs
-  dyn_params_handler = node->add_on_set_parameters_callback(
+  // Add callback for dynamic parameters
+  _dyn_params_handler = node->add_on_set_parameters_callback(
     std::bind(&SmacPlanner2D::dynamicParametersCallback, this, _1));
 }
 
@@ -180,7 +184,7 @@ void SmacPlanner2D::deactivate()
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
   }
-  dyn_params_handler.reset();
+  _dyn_params_handler.reset();
 }
 
 void SmacPlanner2D::cleanup()
@@ -304,10 +308,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 #endif
 
   // Smooth plan
-  if (plan.poses.size() > 6) {
-    _smoother->smooth(plan, costmap, time_remaining);
-  }
-
+  _smoother->smooth(plan, costmap, time_remaining);
 
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
   // previous pose to set the orientation to the 'final approach' orientation of the robot so
@@ -355,6 +356,7 @@ SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
         reinit_a_star = true;
         _search_info.cost_penalty = parameter.as_double();
       } else if (name == _name + ".max_planning_time") {
+        reinit_a_star = true;
         _max_planning_time = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
@@ -414,6 +416,7 @@ SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
         _allow_unknown,
         _max_iterations,
         _max_on_approach_iterations,
+        _max_planning_time,
         0.0 /*unused for 2D*/,
         1.0 /*unused for 2D*/);
     }

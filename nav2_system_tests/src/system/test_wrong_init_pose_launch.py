@@ -50,9 +50,6 @@ def generate_launch_description():
     if (os.getenv('ASTAR') == 'True'):
         param_substitutions.update({'use_astar': 'True'})
 
-    if (os.getenv('GROOT_MONITORING') == 'True'):
-        param_substitutions.update({'enable_groot_monitoring': 'True'})
-
     param_substitutions.update(
         {'planner_server.ros__parameters.GridBased.plugin': os.getenv('PLANNER')})
     param_substitutions.update(
@@ -99,7 +96,8 @@ def generate_launch_description():
                               'use_sim_time': 'True',
                               'params_file': new_yaml,
                               'bt_xml_file': bt_navigator_xml,
-                              'autostart': 'True'}.items()),
+                              'autostart': 'True',
+                              'use_composition': 'False'}.items()),
     ])
 
 

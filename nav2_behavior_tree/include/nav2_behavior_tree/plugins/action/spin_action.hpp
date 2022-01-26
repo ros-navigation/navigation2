@@ -53,7 +53,8 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<double>("spin_dist", 1.57, "Spin distance")
+        BT::InputPort<double>("spin_dist", 1.57, "Spin distance"),
+        BT::InputPort<double>("time_allowance", 10.0, "Allowed time for spinning")
       });
   }
 };

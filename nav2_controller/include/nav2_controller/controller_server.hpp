@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_
-#define NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_
+#ifndef NAV2_CONTROLLER__CONTROLLER_SERVER_HPP_
+#define NAV2_CONTROLLER__CONTROLLER_SERVER_HPP_
 
 #include <memory>
 #include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <mutex>
 
 #include "nav2_core/controller.hpp"
 #include "nav2_core/progress_checker.hpp"
@@ -201,6 +202,17 @@ protected:
     return twist_thresh;
   }
 
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  std::mutex dynamic_params_lock_;
+
   // The controller needs a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::unique_ptr<nav2_util::NodeThread> costmap_thread_;
@@ -244,7 +256,7 @@ protected:
   double failure_tolerance_;
 
   // Whether we've published the single controller warning yet
-  geometry_msgs::msg::Pose end_pose_;
+  geometry_msgs::msg::PoseStamped end_pose_;
 
   // Last time the controller generated a valid command
   rclcpp::Time last_valid_cmd_time_;
@@ -262,4 +274,4 @@ private:
 
 }  // namespace nav2_controller
 
-#endif  // NAV2_CONTROLLER__NAV2_CONTROLLER_HPP_
+#endif  // NAV2_CONTROLLER__CONTROLLER_SERVER_HPP_

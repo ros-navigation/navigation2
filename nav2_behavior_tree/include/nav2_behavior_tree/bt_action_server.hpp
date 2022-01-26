@@ -231,11 +231,6 @@ protected:
   // Default timeout value while waiting for response from a server
   std::chrono::milliseconds default_server_timeout_;
 
-  // Parameters for Groot monitoring
-  bool enable_groot_monitoring_;
-  int groot_zmq_publisher_port_;
-  int groot_zmq_server_port_;
-
   // User-provided callbacks
   OnGoalReceivedCallback on_goal_received_callback_;
   OnLoopCallback on_loop_callback_;

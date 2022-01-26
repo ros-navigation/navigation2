@@ -59,15 +59,6 @@ BtActionServer<ActionT>::BtActionServer(
   if (!node->has_parameter("default_server_timeout")) {
     node->declare_parameter("default_server_timeout", 20);
   }
-  if (!node->has_parameter("enable_groot_monitoring")) {
-    node->declare_parameter("enable_groot_monitoring", false);
-  }
-  if (!node->has_parameter("groot_zmq_publisher_port")) {
-    node->declare_parameter("groot_zmq_publisher_port", 1666);
-  }
-  if (!node->has_parameter("groot_zmq_server_port")) {
-    node->declare_parameter("groot_zmq_server_port", 1667);
-  }
 }
 
 template<class ActionT>
@@ -101,11 +92,6 @@ bool BtActionServer<ActionT>::on_configure()
     node->get_node_logging_interface(),
     node->get_node_waitables_interface(),
     action_name_, std::bind(&BtActionServer<ActionT>::executeCallback, this));
-
-  // Get parameter for monitoring with Groot via ZMQ Publisher
-  node->get_parameter("enable_groot_monitoring", enable_groot_monitoring_);
-  node->get_parameter("groot_zmq_publisher_port", groot_zmq_publisher_port_);
-  node->get_parameter("groot_zmq_server_port", groot_zmq_server_port_);
 
   // Get parameters for BT timeouts
   int timeout;
@@ -156,7 +142,6 @@ bool BtActionServer<ActionT>::on_cleanup()
   current_bt_xml_filename_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_.rootNode());
-  bt_->resetGrootMonitor();
   bt_.reset();
   return true;
 }
@@ -172,9 +157,6 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml is already loaded");
     return true;
   }
-
-  // if a new tree is created, than the ZMQ Publisher must be destroyed
-  bt_->resetGrootMonitor();
 
   // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(filename);
@@ -193,17 +175,6 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
 
   current_bt_xml_filename_ = filename;
-
-  // Enable monitoring with Groot
-  if (enable_groot_monitoring_) {
-    // optionally add max_msg_per_second = 25 (default) here
-    try {
-      bt_->addGrootMonitoring(&tree_, groot_zmq_publisher_port_, groot_zmq_server_port_);
-    } catch (const std::logic_error & e) {
-      RCLCPP_ERROR(logger_, "ZMQ already enabled, Error: %s", e.what());
-    }
-  }
-
   return true;
 }
 

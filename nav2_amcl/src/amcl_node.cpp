@@ -174,7 +174,7 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "resample_interval", rclcpp::ParameterValue(1),
     "Number of filter updates required before resampling");
 
-  add_parameter("robot_model_type", rclcpp::ParameterValue(std::string("differential")));
+  add_parameter("robot_model_type", rclcpp::ParameterValue("nav2_amcl::DifferentialMotionModel"));
 
   add_parameter(
     "save_pose_rate", rclcpp::ParameterValue(0.5),
@@ -242,29 +242,6 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   initOdometry();
 
   return nav2_util::CallbackReturn::SUCCESS;
-}
-
-void
-AmclNode::waitForTransforms()
-{
-  std::string tf_error;
-
-  RCLCPP_INFO(get_logger(), "Checking that transform thread is ready");
-
-  while (rclcpp::ok() &&
-    !tf_buffer_->canTransform(
-      global_frame_id_, odom_frame_id_, tf2::TimePointZero,
-      transform_tolerance_, &tf_error))
-  {
-    RCLCPP_INFO(
-      get_logger(), "Timed out waiting for transform from %s to %s"
-      " to become available, tf error: %s",
-      odom_frame_id_.c_str(), global_frame_id_.c_str(), tf_error.c_str());
-
-    // The error string will accumulate and errors will typically be the same, so the last
-    // will do for the warning above. Reset the string here to avoid accumulation.
-    tf_error.clear();
-  }
 }
 
 nav2_util::CallbackReturn
@@ -393,26 +370,6 @@ AmclNode::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void
-AmclNode::checkLaserReceived()
-{
-  if (last_laser_received_ts_.nanoseconds() == 0) {
-    RCLCPP_WARN(
-      get_logger(), "Laser scan has not been received"
-      " (and thus no pose updates have been published)."
-      " Verify that data is being published on the %s topic.", scan_topic_.c_str());
-    return;
-  }
-
-  rclcpp::Duration d = now() - last_laser_received_ts_;
-  if (d.nanoseconds() * 1e-9 > laser_check_interval_.count()) {
-    RCLCPP_WARN(
-      get_logger(), "No laser scan received (and thus no pose updates have been published) for %f"
-      " seconds.  Verify that data is being published on the %s topic.",
-      d.nanoseconds() * 1e-9, scan_topic_.c_str());
-  }
-}
-
 bool
 AmclNode::checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time last_time)
 {
@@ -504,6 +461,8 @@ AmclNode::globalLocalizationCallback(
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
 {
+  std::lock_guard<std::mutex> lock(pf_mutex_);
+
   RCLCPP_INFO(get_logger(), "Initializing with uniform distribution");
 
   pf_init_model(
@@ -528,6 +487,8 @@ AmclNode::nomotionUpdateCallback(
 void
 AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
+  std::lock_guard<std::mutex> lock(pf_mutex_);
+
   RCLCPP_INFO(get_logger(), "initialPoseReceived");
 
   if (msg->header.frame_id == "") {
@@ -625,6 +586,8 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 void
 AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
+  std::lock_guard<std::mutex> lock(pf_mutex_);
+
   // Since the sensor data is continually being published by the simulator or robot,
   // we don't want our callbacks to fire until we're in the active state
   if (!active_) {return;}
@@ -1332,9 +1295,8 @@ AmclNode::initOdometry()
     init_cov_[2] = last_published_pose_.pose.covariance[35];
   }
 
-  motion_model_ = std::unique_ptr<nav2_amcl::MotionModel>(
-    nav2_amcl::MotionModel::createMotionModel(
-      robot_model_type_, alpha1_, alpha2_, alpha3_, alpha4_, alpha5_));
+  motion_model_ = plugin_loader_.createSharedInstance(robot_model_type_);
+  motion_model_->initialize(alpha1_, alpha2_, alpha3_, alpha4_, alpha5_);
 
   latest_odom_pose_ = geometry_msgs::msg::PoseStamped();
 }

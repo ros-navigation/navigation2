@@ -69,7 +69,7 @@ void CostmapLayer::clearArea(int start_x, int start_y, int end_x, int end_y, boo
     bool xrange = x > start_x && x < end_x;
 
     for (int y = 0; y < static_cast<int>(getSizeInCellsY()); y++) {
-      if ((xrange && y > start_y && y < end_y) != invert) {
+      if ((xrange && y > start_y && y < end_y) == invert) {
         continue;
       }
       int index = getIndex(x, y);

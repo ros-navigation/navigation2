@@ -245,59 +245,6 @@ void VoxelLayer::updateBounds(
   updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 }
 
-void VoxelLayer::clearNonLethal(
-  double wx, double wy, double w_size_x, double w_size_y,
-  bool clear_no_info)
-{
-  // get the cell coordinates of the center point of the window
-  unsigned int mx, my;
-  if (!worldToMap(wx, wy, mx, my)) {
-    return;
-  }
-
-  // compute the bounds of the window
-  double start_x = wx - w_size_x / 2;
-  double start_y = wy - w_size_y / 2;
-  double end_x = start_x + w_size_x;
-  double end_y = start_y + w_size_y;
-
-  // scale the window based on the bounds of the costmap
-  start_x = std::max(origin_x_, start_x);
-  start_y = std::max(origin_y_, start_y);
-
-  end_x = std::min(origin_x_ + getSizeInMetersX(), end_x);
-  end_y = std::min(origin_y_ + getSizeInMetersY(), end_y);
-
-  // get the map coordinates of the bounds of the window
-  unsigned int map_sx, map_sy, map_ex, map_ey;
-
-  // check for legality just in case
-  if (!worldToMap(start_x, start_y, map_sx, map_sy) || !worldToMap(end_x, end_y, map_ex, map_ey)) {
-    return;
-  }
-
-  // we know that we want to clear all non-lethal obstacles in this
-  // window to get it ready for inflation
-  unsigned int index = getIndex(map_sx, map_sy);
-  unsigned char * current = &costmap_[index];
-  for (unsigned int j = map_sy; j <= map_ey; ++j) {
-    for (unsigned int i = map_sx; i <= map_ex; ++i) {
-      // if the cell is a lethal obstacle... we'll keep it and queue it,
-      // otherwise... we'll clear it
-      if (*current != LETHAL_OBSTACLE) {
-        if (clear_no_info || *current != NO_INFORMATION) {
-          *current = FREE_SPACE;
-          voxel_grid_.clearVoxelColumn(index);
-        }
-      }
-      current++;
-      index++;
-    }
-    current += size_x_ - (map_ex - map_sx) - 1;
-    index += size_x_ - (map_ex - map_sx) - 1;
-  }
-}
-
 void VoxelLayer::raytraceFreespace(
   const Observation & clearing_observation, double * min_x,
   double * min_y,
@@ -333,13 +280,11 @@ void VoxelLayer::raytraceFreespace(
     publish_clearing_points = (node->count_subscribers("clearing_endpoints") > 0);
   }
 
-  if (publish_clearing_points) {
-    clearing_endpoints_->data.clear();
-    clearing_endpoints_->width = clearing_observation.cloud_->width;
-    clearing_endpoints_->height = clearing_observation.cloud_->height;
-    clearing_endpoints_->is_dense = true;
-    clearing_endpoints_->is_bigendian = false;
-  }
+  clearing_endpoints_->data.clear();
+  clearing_endpoints_->width = clearing_observation.cloud_->width;
+  clearing_endpoints_->height = clearing_observation.cloud_->height;
+  clearing_endpoints_->is_dense = true;
+  clearing_endpoints_->is_bigendian = false;
 
   sensor_msgs::PointCloud2Modifier modifier(*clearing_endpoints_);
   modifier.setPointCloud2Fields(
