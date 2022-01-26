@@ -22,12 +22,11 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+import constants
 from lattice_generator import LatticeGenerator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-VERSION = 1.0
 
 
 def handle_arg_parsing():
@@ -110,7 +109,7 @@ def create_header(config: dict, minimal_set_trajectories: dict) -> dict:
     """
 
     header_dict = {
-        "version": VERSION,
+        "version": constants.VERSION,
         "date_generated": datetime.today().strftime("%Y-%m-%d"),
         "lattice_metadata": dict(),
         "primitives": [],
