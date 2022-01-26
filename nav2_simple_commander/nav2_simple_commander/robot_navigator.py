@@ -67,7 +67,7 @@ class BasicNavigator(Node):
                                                         'compute_path_to_pose')
         self.compute_path_through_poses_client = ActionClient(self, ComputePathThroughPoses,
                                                               'compute_path_through_poses')
-        self.follow_path_controller_client = ActionClient(self, FollowPath,
+        self.follow_path_client = ActionClient(self, FollowPath,
                                                                 'follow_path')
         self.localization_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
                                                               'amcl_pose',
@@ -238,15 +238,15 @@ class BasicNavigator(Node):
     def followPath(self, path):
         """ Follow a given path"""
         self.debug("Waiting for 'FollowPath' action server")
-        while not self.follow_path_controller_client.wait_for_server(timeout_sec=1.0):
+        while not self.follow_path_client.wait_for_server(timeout_sec=1.0):
             self.info("'FollowPath' action server not available, waiting...")
 
         goal_msg = FollowPath.Goal()
         goal_msg.path = path
 
         self.info('Executing path...')
-        send_goal_future = self.follow_path_controller_client.send_goal_async(goal_msg, 
-                                                                              self._feedbackCallback)
+        send_goal_future = self.follow_path_client.send_goal_async(goal_msg, 
+                                                                    self._feedbackCallback)
         
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()

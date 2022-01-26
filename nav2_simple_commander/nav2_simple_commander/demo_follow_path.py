@@ -19,7 +19,7 @@ import rclpy
 from rclpy.duration import Duration
 
 """
-Basic navigation demo to go to follow path
+Basic navigation demo to follow a given path 
 """
 
 
@@ -38,8 +38,6 @@ def main():
     initial_pose.pose.orientation.w = 0.0
     navigator.setInitialPose(initial_pose)
     
-    # 0.420710951089859,
-    # 0.3707107603549957
     # Wait for navigation to fully activate, since autostarting nav2
     navigator.waitUntilNav2Active()
 
@@ -47,19 +45,25 @@ def main():
     goal_pose = PoseStamped()
     goal_pose.header.frame_id = 'map'
     goal_pose.header.stamp = navigator.get_clock().now().to_msg()
-    goal_pose.pose.position.x = -4.0
-    goal_pose.pose.position.y = -4.0
+    goal_pose.pose.position.x = -3.0
+    goal_pose.pose.position.y = -2.0
     goal_pose.pose.orientation.w = 1.0
 
-    # sanity check a valid path exists
+    # Sanity check a valid path exists
     path = navigator.getPath(initial_pose, goal_pose)
-    #print(path)
-
+    
+    # Follow path
     navigator.followPath(path)
 
     i = 0
     while not navigator.isNavComplete():
+        ################################################
+        #
+        # Implement some code here for your application!
+        #
+        ################################################
 
+        # Do something with the feedback
         i += 1 
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
