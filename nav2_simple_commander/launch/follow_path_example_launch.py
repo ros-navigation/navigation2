@@ -63,7 +63,7 @@ def generate_launch_description():
     # start the demo autonomy task
     demo_cmd = Node(
         package='nav2_simple_commander',
-        executable='demo_follow_path',
+        executable='example_follow_path',
         emulate_tty=True,
         output='screen')
 
