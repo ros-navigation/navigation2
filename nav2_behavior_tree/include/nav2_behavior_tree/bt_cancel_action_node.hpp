@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Pradheep Padmanabhan, Neobotix GmbH
+// Copyright (c) 2022 Neobotix GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,11 +17,14 @@
 
 #include <memory>
 #include <string>
+#include <chrono>
 
 #include "behaviortree_cpp_v3/action_node.h"
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
+
+using namespace std::literals;
 
 namespace nav2_behavior_tree
 {
@@ -53,8 +56,6 @@ public:
     callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
     // Get the required items from the blackboard
-    bt_loop_duration_ =
-      config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
     server_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
@@ -108,6 +109,10 @@ public:
     return basic;
   }
 
+  void halt()
+  {
+  }
+
   /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
@@ -115,21 +120,6 @@ public:
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts({});
-  }
-
-  /**
-   * @brief Function to perform some user-defined operation on tick
-   * Could do dynamic checks, such as getting updates to values on the blackboard
-   */
-  virtual void on_tick()
-  {
-  }
-
-  /**
-   * @brief The other (optional) override required by a BT action.
-   */
-  void halt() override
-  {
   }
 
   /**
@@ -141,14 +131,12 @@ public:
     // setting the status to RUNNING to notify the BT Loggers (if any)
     setStatus(BT::NodeStatus::RUNNING);
 
-    // user defined callback
-    on_tick();
-
     // Cancel all the goals specified before 10ms from current time
     // to avoid async communication error
-    rclcpp::Time goal_expiry_time_(rclcpp::Clock().now().nanoseconds() - 10000000,
-      RCL_ROS_TIME);
-    auto future_cancel = action_client_->async_cancel_goals_before(goal_expiry_time_);
+
+    rclcpp::Time goal_expiry_time = node_->now() - 10ms;
+
+    auto future_cancel = action_client_->async_cancel_goals_before(goal_expiry_time);
 
     if (callback_group_executor_.spin_until_future_complete(future_cancel, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
@@ -174,8 +162,6 @@ protected:
   // new action goal is canceled
   std::chrono::milliseconds server_timeout_;
 
-  // The timeout value for BT loop execution
-  std::chrono::milliseconds bt_loop_duration_;
 };
 
 }  // namespace nav2_behavior_tree
