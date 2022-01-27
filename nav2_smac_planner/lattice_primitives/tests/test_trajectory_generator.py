@@ -1,4 +1,4 @@
-# Copyright (c) 2021, Matthew Booker 
+# Copyright (c) 2021, Matthew Booker
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,13 +22,10 @@ STEP_DISTANCE = 0.1
 
 
 class TestTrajectoryGenerator(unittest.TestCase):
-    '''
-    Contains the unit tests for ensuring that the TrajectoryGenerator is working
-    correctly
-    '''
+    """Contains the unit tests for the TrajectoryGenerator."""
 
     def setUp(self) -> None:
-        config = {"turning_radius": TURNING_RADIUS}
+        config = {'turning_radius': TURNING_RADIUS}
         self.trajectory_generator = TrajectoryGenerator(config)
 
     def test_generate_trajectory_only_arc(self):
