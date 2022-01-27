@@ -67,8 +67,11 @@ class LatticeGenerator:
 
     def _get_wave_front_points(self, pos: int) -> np.array:
         """
-        Use the grid resolution to calculate the valid end points that lie \
-        on a wave front at a discrete interval away from the origin.
+        Calculate the end points that lie on the wave front.
+
+        Uses the user supplied grid resolution to calculate the
+        valid end points that lie on a wave front at a discrete
+        interval away from the origin.
 
         Args:
         pos: int
@@ -221,14 +224,12 @@ class LatticeGenerator:
 
     def _compute_min_trajectory_length(self) -> float:
         """
-        Compute the minimum trajectory length possible given the \
-        user supplied parameters.
+        Compute the minimum trajectory length for the given parameters.
 
-        The minimum trajectory length is
-        defined as the length needed for the sharpest possible turn
-        to move from 0 degrees to the next discrete heading. Since
-        the distance between headings is not uniform we take the smallest
-        possible difference.
+        The minimum trajectory length is defined as the length needed
+        for the sharpest possible turn to move from 0 degrees to the next
+        discrete heading. Since the distance between headings is not uniform
+        we take the smallest possible difference.
 
         Returns
         -------
@@ -247,8 +248,10 @@ class LatticeGenerator:
 
     def _generate_minimal_spanning_set(self) -> dict:
         """
-        Generate the minimal spanning set by iterating over all possible \
-        trajectories and keeping only those that are part of the minimal set.
+        Generate the minimal spanning set.
+
+        Iteratves over all possible trajectories and keeps only those that
+        are part of the minimal set.
 
         Returns
         -------
@@ -375,8 +378,11 @@ class LatticeGenerator:
         self, single_quadrant_minimal_set: dict
     ) -> dict:
         """
-        Take a minimal set for a single quadrant and flip all trajectories \
-        to properly create the full minimal spanning set.
+        Create the full minimal spanning set from a single quadrant set.
+
+        Exploits the symmetry between the quadrants to create the full set.
+        This is done by flipping every trajectory in the first quadrant across
+        either the X-axis, Y-axis, or both axes.
 
         Args:
         single_quadrant_minimal_set: dict
@@ -567,8 +573,10 @@ class LatticeGenerator:
 
     def _add_in_place_turns(self, spanning_set: dict) -> dict:
         """
-        Add in place turns to the left and right by a single \
-        angular heading step.
+        Add in place turns to the spanning set.
+
+        In place turns are trajectories with only a rotational component and
+        only shift a single angular heading step
 
         Args:
         spanning_set: dict
@@ -623,11 +631,11 @@ class LatticeGenerator:
 
     def _add_horizontal_motions(self, spanning_set: dict) -> dict:
         """
-        Add horizontal sliding motions at an angle of 90 degreess \
-            to the right and left of each start angle.
+        Add horizontal sliding motions to the spanning set.
 
-        The yaw of these trajectories is the same as the start angle for which
-        it is generated.
+        The horizontal sliding motions are simply straight line trajectories
+        at 90 degrees to every start angle in the spanning set. The yaw of these
+        trajectories is the same as the start angle for which it is generated.
 
         Args:
         spanning_set: dict

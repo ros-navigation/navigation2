@@ -135,8 +135,7 @@ class TrajectoryGenerator:
         self, trajectory_params: TrajectoryParameters, primitive_resolution: float
     ) -> Path:
         """
-        Create the full trajectory path that is represented by the \
-        given trajectory parameters.
+        Create the full trajectory path from the given trajectory parameters.
 
         Args
         ----
@@ -223,8 +222,9 @@ class TrajectoryGenerator:
         self, m1: float, c1: float, m2: float, c2: float
     ) -> np.array:
         """
-        Get the intersection point of two lines described by m1 * x + c1 \
-        and m2 * x + c2.
+        Get the intersection point of two lines.
+
+        The two lines are described by m1 * x + c1 and m2 * x + c2.
 
         Args
         ----
@@ -252,7 +252,9 @@ class TrajectoryGenerator:
 
     def _is_left_turn(self, intersection_point: np.array, end_point: np.array) -> bool:
         """
-        Use the determinant to determine whether the arc formed by \
+        Determine if a trajectory will be a left turn.
+
+        Uses the determinant to determine whether the arc formed by the
         intersection and end point turns left or right.
 
         Args
@@ -278,8 +280,10 @@ class TrajectoryGenerator:
         self, point1: np.array, point2: np.array, line_angle: float
     ) -> bool:
         """
-        Check whether the vector from point 1 -> point 2 shares the \
-        same gradient as line_angle.
+        Check that the direction vector agrees with the line angle.
+
+        The direction vector is defined as the vector from point 1 to
+        point 2.
 
         Args
         ----
@@ -326,9 +330,11 @@ class TrajectoryGenerator:
         self, end_point: np.array, start_angle: float, end_angle: float
     ) -> Union[TrajectoryParameters, None]:
         """
-        Calculate the trajectory parameters for a circle passing through (0,0) \
-        with a heading of start_angle and subsequently passing through point p \
-        with heading of end_angle.
+        Calculate the parameters for a trajectory with the desired constraints.
+
+        The trajectory may consist of an arc and at most two line segments.
+        A straight trajectory will consist of a single line segment. Similarly,
+        a purely curving trajectory will only consist of an arc.
 
         Idea:
             1. Extend a line from (0,0) with angle of start_angle
@@ -525,8 +531,10 @@ class TrajectoryGenerator:
         primitive_resolution: float,
     ) -> Union[Trajectory, None]:
         """
-        Create a trajectory from (0,0, start_angle) to (end_point, end_angle) \
-        with points spaced primitive_resolution apart.
+        Create a trajectory from (0,0, start_angle) to (end_point, end_angle).
+
+        The trajectory will consist of a path that contains discrete points
+        that are spaced primitive_resolution apart.
 
         Args
         ----

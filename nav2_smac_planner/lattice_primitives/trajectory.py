@@ -22,8 +22,7 @@ import numpy as np
 @dataclass(frozen=True)
 class TrajectoryParameters:
     """
-    A dataclass that holds all the required data needed when generating the \
-        path for a calculated trajectory.
+    A dataclass that holds the data needed to create the path for a trajectory.
 
     turning_radius: The radius of the circle used to generate
         the arc of the path

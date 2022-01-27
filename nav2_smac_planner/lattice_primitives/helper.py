@@ -33,8 +33,7 @@ def normalize_angle(angle):
 
 def angle_difference(angle_1, angle_2, left_turn=None):
     """
-    Calculate the difference between two angles, taking into \
-    account the direction of turn between them.
+    Calculate the difference between two angles based on a given direction.
 
     Args:
     angle_1: float
