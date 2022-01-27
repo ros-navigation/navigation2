@@ -100,7 +100,7 @@ inline double euclidean_distance(
   double dx = pos1.x - pos2.x;
   double dy = pos1.y - pos2.y;
 
-  return std::sqrt(dx * dx + dy * dy );
+  return std::sqrt(dx * dx + dy * dy);
 }
 
 /**
@@ -129,19 +129,19 @@ inline Iter min_by(Iter begin, Iter end, Getter getCompareVal)
  */
 template<typename Iter, typename Getter>
 inline Iter first_element_beyond(Iter begin, Iter end, Getter getCompareVal)
-{ 
+{
   if (begin == end) {
     return end;
   }
   Getter dist = 0.0;
-  for (Iter it = begin; it != end - 1; it++ ){
+  for (Iter it = begin; it != end - 1; it++){
     dist += euclidean_distance(*it, *(it + 1));
     if (dist> getCompareVal){
       return it + 1;
     }
   }
   return end;
-  }
+}
 
 /**
  * @brief Calculate the length of the provided path, starting at the provided index
