@@ -515,9 +515,6 @@ DWBLocalPlanner::transformGlobalPlan(
     }
   }
 
- RCLCPP_INFO(logger_, "gg %li %li %li", transformation_begin-global_plan_.poses.begin(),
-     transformation_end-global_plan_.poses.begin(), global_plan_.poses.end()-global_plan_.poses.begin());
-
   // Transform the near part of the global plan into the robot's frame of reference.
   nav_2d_msgs::msg::Path2D transformed_plan;
   transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
