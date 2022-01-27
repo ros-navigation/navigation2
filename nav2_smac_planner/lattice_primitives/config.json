@@ -1,0 +1,7 @@
+{
+    "motion_model": "ackermann",
+    "turning_radius": 0.5,
+    "grid_resolution": 0.05,
+    "stopping_threshold": 5,
+    "num_of_headings": 16
+}
