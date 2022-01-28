@@ -33,11 +33,9 @@ public:
 protected:
   void execute(
     const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::FollowPath>>
-    goal_handle)
+  )
   {
-    while (!goal_handle->is_canceling()) {
-      // waiting here until goal cancels
-    }
+    std::this_thread::sleep_for(10ms);
   }
 };
 
