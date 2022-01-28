@@ -504,7 +504,7 @@ DWBLocalPlanner::transformGlobalPlan(
     transformation_begin, global_plan_.poses.end(), transform_end_threshold);
 
   for (auto it = transformation_begin + 1; it != transformation_end - 1; ++it) {
-    double oa_x = it->x - (it -1 )->x;
+    double oa_x = it->x - (it - 1 )->x;
     double oa_y = it->y - (it - 1)->y;
     double ab_x = (it + 1)->x - it->x;
     double ab_y = (it + 1)->y - it->y;
