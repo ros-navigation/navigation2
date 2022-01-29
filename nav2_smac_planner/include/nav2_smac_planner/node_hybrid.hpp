@@ -38,6 +38,17 @@ namespace nav2_smac_planner
 typedef std::vector<float> LookupTable;
 typedef std::pair<double, double> TrigValues;
 
+typedef std::pair<float, unsigned int> ObstacleHeuristicElement;
+struct ObstacleHeuristicComparator
+{
+  bool operator()(const ObstacleHeuristicElement & a, const ObstacleHeuristicElement & b) const
+  {
+    return a.first > b.first;
+  }
+};
+
+typedef std::vector<ObstacleHeuristicElement> ObstacleHeuristicQueue;
+
 // Must forward declare
 class NodeHybrid;
 
@@ -110,6 +121,7 @@ struct HybridMotionTable
   float non_straight_penalty;
   float cost_penalty;
   float reverse_penalty;
+  float travel_distance_reward;
   ompl::base::StateSpacePtr state_space;
   std::vector<std::vector<double>> delta_xs;
   std::vector<std::vector<double>> delta_ys;
@@ -403,6 +415,7 @@ public:
    */
   static void resetObstacleHeuristic(
     nav2_costmap_2d::Costmap2D * costmap,
+    const unsigned int & start_x, const unsigned int & start_y,
     const unsigned int & goal_x, const unsigned int & goal_y);
 
   /**
@@ -433,7 +446,8 @@ public:
   static HybridMotionTable motion_table;
   // Wavefront lookup and queue for continuing to expand as needed
   static LookupTable obstacle_heuristic_lookup_table;
-  static std::queue<unsigned int> obstacle_heuristic_queue;
+  static ObstacleHeuristicQueue obstacle_heuristic_queue;
+
   static nav2_costmap_2d::Costmap2D * sampled_costmap;
   static CostmapDownsampler downsampler;
   // Dubin / Reeds-Shepp lookup and size for dereferencing
