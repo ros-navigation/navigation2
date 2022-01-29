@@ -157,7 +157,7 @@ bool Smoother::smoothImpl(
         cost = static_cast<float>(costmap->getCost(mx, my));
       }
 
-      if (cost > MAX_NON_OBSTACLE) {
+      if (cost > MAX_NON_OBSTACLE && cost != UNKNOWN) {
         RCLCPP_DEBUG(
           rclcpp::get_logger("SmacPlannerSmoother"),
           "Smoothing process resulted in an infeasible collision. "
@@ -173,7 +173,7 @@ bool Smoother::smoothImpl(
 
   // Lets do additional refinement, it shouldn't take more than a couple milliseconds
   // but really puts the path quality over the top.
-  if (do_refinement_ && refinement_ctr_ < 3) {
+  if (do_refinement_ && refinement_ctr_ < 4) {
     refinement_ctr_++;
     smoothImpl(new_path, reversing_segment, costmap, max_time);
   }
