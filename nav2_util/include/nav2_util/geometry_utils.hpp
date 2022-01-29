@@ -100,7 +100,7 @@ inline double euclidean_distance(
   double dx = pos1.x - pos2.x;
   double dy = pos1.y - pos2.y;
 
-  return std::sqrt(dx * dx + dy * dy);
+  return hypot(dx, dy);
 }
 
 /**
