@@ -57,6 +57,9 @@ public:
     config_ = new BT::NodeConfiguration();
     config_->blackboard = BT::Blackboard::create();
     config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "server_timeout",
+      std::chrono::milliseconds(10));
     factory_->registerNodeType<nav2_behavior_tree::IsPathValidCondition>("IsPathValid");
   }
 
