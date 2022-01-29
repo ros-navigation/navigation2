@@ -14,7 +14,7 @@
           </ReactiveSequence>
           <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
         </Fallback>
-      <RateController/>
+      </RateController>
       <FollowPath path="{path}" controller_id="FollowPath"/>
     </PipelineSequence>
   </BehaviorTree>
