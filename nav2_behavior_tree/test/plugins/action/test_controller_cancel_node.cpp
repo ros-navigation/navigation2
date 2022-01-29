@@ -33,9 +33,12 @@ public:
 protected:
   void execute(
     const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::FollowPath>>
-  )
+    goal_handle)
   {
-    std::this_thread::sleep_for(10ms);
+    while (!goal_handle->is_canceling()) {
+      // waiting here until goal cancels
+      std::this_thread::sleep_for(std::chrono::milliseconds(15));
+    }
   }
 };
 
@@ -130,7 +133,7 @@ TEST_F(CancelControllerActionTestFixture, test_ports)
   client_->async_send_goal(goal_msg, send_goal_options);
 
   // Adding a sleep so that the goal is indeed older than 10ms as described in our abstract class
-  std::this_thread::sleep_for(15ms);
+  std::this_thread::sleep_for(std::chrono::milliseconds(15));
 
   // Executing tick
   tree_->rootNode()->executeTick();

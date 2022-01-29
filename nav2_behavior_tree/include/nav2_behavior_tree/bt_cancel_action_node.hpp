@@ -24,8 +24,6 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
 
-using namespace std::literals;
-
 namespace nav2_behavior_tree
 {
 
@@ -134,7 +132,7 @@ public:
     // Cancel all the goals specified before 10ms from current time
     // to avoid async communication error
 
-    rclcpp::Time goal_expiry_time = node_->now() - 10ms;
+    rclcpp::Time goal_expiry_time = node_->now() - std::chrono::milliseconds(10);
 
     auto future_cancel = action_client_->async_cancel_goals_before(goal_expiry_time);
 
@@ -161,7 +159,6 @@ protected:
   // The timeout value while waiting for response from a server when a
   // new action goal is canceled
   std::chrono::milliseconds server_timeout_;
-
 };
 
 }  // namespace nav2_behavior_tree
