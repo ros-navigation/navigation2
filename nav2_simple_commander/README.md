@@ -20,7 +20,9 @@ The methods provided by the basic navigator are shown below, with inputs and exp
 | goThroughPoses(poses)             | Requests the robot to drive through a set of poses (list of `PoseStamped`).|
 | goToPose(pose)                    | Requests the robot to drive to a pose (`PoseStamped`).                     |
 | followWaypoints(poses)            | Requests the robot to follow a set of waypoints (list of `PoseStamped`). This will execute the specific `TaskExecutor` at each pose.   |
-| cancelNav()                       | Cancel an ongoing `goThroughPoses` `goToPose` or `followWaypoints` request.|
+| spin(spin_dist, time_allowance)   | Requests the robot to performs an in-place rotation by a given angle.      |
+| backup(backup_dist, backup_speed, time_allowance) | Requests the robot to back up by a given distance.         |
+| cancelNav()                       | Cancel an ongoing `goThroughPoses`, `goToPose` or `followWaypoints` request.|
 | isNavComplete()                   | Checks if navigation is complete yet, times out at `100ms`.  Returns `True` if completed and `False` if still going.                  |
 | getFeedback()                     | Gets feedback from navigation task, returns action server feedback object. |
 | getResult()				        | Gets final result of navigation task, to be called after `isNavComplete` returns `True`. Returns action server result object. |
