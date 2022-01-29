@@ -27,15 +27,15 @@ IsPathValidCondition::IsPathValidCondition(
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   client_ = node_->create_client<nav2_msgs::srv::IsPathValid>("is_path_valid");
+
+  server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
+  getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 }
 
 BT::NodeStatus IsPathValidCondition::tick()
 {
   nav_msgs::msg::Path path;
   getInput("path", path);
-
-  server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
-  getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
 
