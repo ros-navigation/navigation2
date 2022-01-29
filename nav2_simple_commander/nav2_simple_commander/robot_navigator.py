@@ -18,9 +18,12 @@ from enum import Enum
 import time
 
 from action_msgs.msg import GoalStatus
+from builtin_interfaces.msg import Duration
+from geometry_msgs.msg import Point
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
+from nav2_msgs.action import BackUp, Spin
 from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose
 from nav2_msgs.action import FollowWaypoints, NavigateThroughPoses, NavigateToPose
 from nav2_msgs.srv import ClearEntireCostmap, GetCostmap, LoadMap, ManageLifecycleNodes
@@ -66,6 +69,8 @@ class BasicNavigator(Node):
                                                         'compute_path_to_pose')
         self.compute_path_through_poses_client = ActionClient(self, ComputePathThroughPoses,
                                                               'compute_path_through_poses')
+        self.spin_client = ActionClient(self, Spin, 'spin')
+        self.backup_client = ActionClient(self, BackUp, 'backup')
         self.localization_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
                                                               'amcl_pose',
                                                               self._amclPoseCallback,
@@ -150,6 +155,47 @@ class BasicNavigator(Node):
 
         if not self.goal_handle.accepted:
             self.error(f'Following {len(poses)} waypoints request was rejected!')
+            return False
+
+        self.result_future = self.goal_handle.get_result_async()
+        return True
+
+    def spin(self, spin_dist=1.57, time_allowance=10):
+        self.debug("Waiting for 'Spin' action server")
+        while not self.spin_client.wait_for_server(timeout_sec=1.0):
+            self.info("'Spin' action server not available, waiting...")
+        goal_msg = Spin.Goal()
+        goal_msg.target_yaw = spin_dist
+        goal_msg.time_allowance = Duration(sec=time_allowance)
+
+        self.info(f'Spinning to angle {goal_msg.target_yaw}....')
+        send_goal_future = self.spin_client.send_goal_async(goal_msg, self._feedbackCallback)
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        self.goal_handle = send_goal_future.result()
+
+        if not self.goal_handle.accepted:
+            self.error('Spin request was rejected!')
+            return False
+
+        self.result_future = self.goal_handle.get_result_async()
+        return True
+
+    def backup(self, backup_dist=0.15, backup_speed=0.025, time_allowance=10):
+        self.debug("Waiting for 'Backup' action server")
+        while not self.backup_client.wait_for_server(timeout_sec=1.0):
+            self.info("'Backup' action server not available, waiting...")
+        goal_msg = BackUp.Goal()
+        goal_msg.target = Point(x=backup_dist)
+        goal_msg.speed = backup_speed
+        goal_msg.time_allowance = Duration(sec=time_allowance)
+
+        self.info(f'Backing up {goal_msg.target.x} m at {goal_msg.speed} m/s....')
+        send_goal_future = self.backup_client.send_goal_async(goal_msg, self._feedbackCallback)
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        self.goal_handle = send_goal_future.result()
+
+        if not self.goal_handle.accepted:
+            self.error('Backup request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
