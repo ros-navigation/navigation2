@@ -36,7 +36,7 @@ steps:
 - name: unit-tests validation
   image: quay.io/logivations/ml_all:latest
   commands:
-  - pwd
+  - pwd && ls
   - cd /data/workspace && git clone https://github.com/logivations/deep_cv.git
   - cd /data/workspace/deep_cv && pytest -v --color=yes --forked -n 2 --ignore-glob=**/disabled_tests/* lv/
   environment:
