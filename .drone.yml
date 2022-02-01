@@ -11,13 +11,14 @@ clone:
   disable: true
 
 steps:
-- name: git checkout
+- name: git checkout deep_cv repo
   image: drone/git
   commands:
   - pwd
   - git clone https://github.com/logivations/deep_cv.git -b ${DRONE_PULL_REQUEST} ||  git clone https://github.com/logivations/deep_cv.git
   - sed -i  "/ARG NAV2_DEFAULT_BRANCH=/c\ARG NAV2_DEFAULT_BRANCH=${DRONE_PULL_REQUEST}" /deep_cv/docker/MlAllDockerfile
   - ls && pwd
+
 
 
 - name: Build ml_all docker image for pull request
@@ -39,6 +40,8 @@ steps:
       from_secret: DOCKER_QUAY_USERNAME
     password:
       from_secret: DOCKER_QUAY_PASSWORD
+  depends_on:
+  - git checkout deep_cv repo
 
 - name: unit-tests validation
   image: quay.io/logivations/ml_all:latest
