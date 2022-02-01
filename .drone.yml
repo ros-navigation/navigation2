@@ -15,7 +15,7 @@ steps:
   image: docker:git
   commands:
   - pwd
-  - git clone https://github.com/logivations/deep_cv.git
+  - export DRONE_NETRC_MACHINE=github.com && export DRONE_NETRC_USERNAME=maksym.zubrytskyi@logivations.com && export DRONE_NETRC_PASSWORD=${DRONE_SECRET_PLUGIN_TOKEN}
   - echo "we are here"
   - git clone https://github.com/logivations/deep_cv.git -b ${DRONE_PULL_REQUEST} ||  git clone https://github.com/logivations/deep_cv.git
   - sed -i  "/ARG NAV2_DEFAULT_BRANCH=/c\ARG NAV2_DEFAULT_BRANCH=${DRONE_PULL_REQUEST}" /deep_cv/docker/MlAllDockerfile
