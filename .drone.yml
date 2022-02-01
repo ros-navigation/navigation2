@@ -11,12 +11,19 @@ clone:
   disable: true
 
 steps:
-- name: Build ml_all docker image for pull request
-  image: plugins/docker
+- name: git checkout
+  image: plugins/github-release
   commands:
   - pwd
   - git clone https://github.com/logivations/deep_cv.git -b ${DRONE_PULL_REQUEST} ||  git clone https://github.com/logivations/deep_cv.git
   - sed -i  "/ARG NAV2_DEFAULT_BRANCH=/c\ARG NAV2_DEFAULT_BRANCH=${DRONE_PULL_REQUEST}" /deep_cv/docker/MlAllDockerfile
+  - ls && pwd
+
+
+- name: Build ml_all docker image for pull request
+  image: plugins/docker
+  commands:
+  - pwd && ls
   volumes:
   - name: dockersock
     path: /var/run/docker.sock
