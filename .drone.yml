@@ -1,0 +1,57 @@
+---
+# This pipeline chain  would be used on each open pull request to build new ml_all docker image and validate unit tests
+kind: pipeline
+name: PR validation build
+
+platform:
+  arch: amd64
+  os: linux
+
+clone:
+  disable: true
+
+steps:
+- name: Build ml_all docker image for pull request
+  image: plugins/docker
+  commands:
+  - git clone https://github.com/logivations/deep_cv.git -b ${DRONE_PULL_REQUEST}
+  - sed -i  "/ARG NAV2_DEFAULT_BRANCH=/c\ARG NAV2_DEFAULT_BRANCH=${DRONE_PULL_REQUEST}" /deep_cv/docker/MlAllDockerfile
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  settings:
+    dockerfile: deep_cv/docker/MlAllDockerfile
+    context: deep_cv/docker/
+    registry: quay.io
+    repo: quay.io/logivations/ml_all
+    privileged: true
+    tags:
+      - nav2_${DRONE_PULL_REQUEST}
+    username:
+      from_secret: DOCKER_QUAY_USERNAME
+    password:
+      from_secret: DOCKER_QUAY_PASSWORD
+
+- name: unit-tests validation
+  image: quay.io/logivations/ml_all:latest
+  commands:
+  - pwd
+  - cd /data/workspace && git clone https://github.com/logivations/deep_cv.git
+  - cd /data/workspace/deep_cv && pytest -v --color=yes --forked -n 2 --ignore-glob=**/disabled_tests/* lv/
+  environment:
+    NVIDIA_VISIBLE_DEVICES: all
+  depends_on:
+  - Build ml_all docker image for pull request
+
+trigger:
+  event:
+    include:
+    - pull_request
+
+volumes:
+- name: dockersock
+  host:
+    path: /var/run/docker.sock
+
+image_pull_secrets:
+- dockerconfig_prd
