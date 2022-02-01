@@ -12,7 +12,7 @@ clone:
 
 steps:
 - name: git checkout deep_cv repo
-  image: drone/git
+  image: docker:git
   commands:
   - pwd
   - git clone https://github.com/logivations/deep_cv.git -b ${DRONE_PULL_REQUEST} ||  git clone https://github.com/logivations/deep_cv.git
