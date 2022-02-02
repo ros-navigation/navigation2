@@ -27,6 +27,7 @@
 #include "builtin_interfaces/msg/duration.hpp"
 #include "nav2_util/costmap.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 
 #include "nav2_planner/planner_server.hpp"
@@ -168,6 +169,13 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
   }
 
   auto node = shared_from_this();
+
+  is_path_valid_service_ = node->create_service<nav2_msgs::srv::IsPathValid>(
+    "is_path_valid",
+    std::bind(
+      &PlannerServer::isPathValid, this,
+      std::placeholders::_1, std::placeholders::_2));
+
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&PlannerServer::dynamicParametersCallback, this, _1));
@@ -519,6 +527,57 @@ PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
   auto msg = std::make_unique<nav_msgs::msg::Path>(path);
   if (plan_publisher_->is_activated() && plan_publisher_->get_subscription_count() > 0) {
     plan_publisher_->publish(std::move(msg));
+  }
+}
+
+void PlannerServer::isPathValid(
+  const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
+  std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
+{
+  response->is_valid = true;
+
+  if (request->path.poses.empty()) {
+    response->is_valid = false;
+    return;
+  }
+
+  geometry_msgs::msg::PoseStamped current_pose;
+  unsigned int closest_point_index = 0;
+  if (costmap_ros_->getRobotPose(current_pose)) {
+    float current_distance = std::numeric_limits<float>::max();
+    float closest_distance = current_distance;
+    geometry_msgs::msg::Point current_point = current_pose.pose.position;
+    for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
+      geometry_msgs::msg::Point path_point = request->path.poses[i].pose.position;
+
+      current_distance = nav2_util::geometry_utils::euclidean_distance(
+        current_point,
+        path_point);
+
+      if (current_distance < closest_distance) {
+        closest_point_index = i;
+        closest_distance = current_distance;
+      }
+    }
+
+    /**
+     * The lethal check starts at the closest point to avoid points that have already been passed
+     * and may have become occupied
+     */
+    unsigned int mx = 0;
+    unsigned int my = 0;
+    for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
+      costmap_->worldToMap(
+        request->path.poses[i].pose.position.x,
+        request->path.poses[i].pose.position.y, mx, my);
+      unsigned int cost = costmap_->getCost(mx, my);
+
+      if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+      {
+        response->is_valid = false;
+      }
+    }
   }
 }
 

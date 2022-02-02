@@ -38,6 +38,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_core/global_planner.hpp"
+#include "nav2_msgs/srv/is_path_valid.hpp"
 
 namespace nav2_planner
 {
@@ -201,6 +202,15 @@ protected:
   void computePlanThroughPoses();
 
   /**
+   * @brief The service callback to determine if the path is still valid
+   * @param request to the service
+   * @param response from the service
+   */
+  void isPathValid(
+    const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
+    std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response);
+
+  /**
    * @brief Publish a path for visualization purposes
    * @param path Reference to Global Path
    */
@@ -240,6 +250,9 @@ protected:
 
   // Publishers for the path
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
+
+  // Service to deterime if the path is valid
+  rclcpp::Service<nav2_msgs::srv::IsPathValid>::SharedPtr is_path_valid_service_;
 };
 
 }  // namespace nav2_planner

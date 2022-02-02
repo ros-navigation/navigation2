@@ -118,6 +118,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.change_penalty", 1.0),
       rclcpp::Parameter("test.non_straight_penalty", 2.0),
       rclcpp::Parameter("test.cost_penalty", 2.0),
+      rclcpp::Parameter("test.retrospective_penalty", 0.2),
       rclcpp::Parameter("test.analytic_expansion_ratio", 4.0),
       rclcpp::Parameter("test.max_planning_time", 10.0),
       rclcpp::Parameter("test.lookup_table_size", 30.0),

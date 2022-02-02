@@ -62,9 +62,11 @@ public:
       "nav2_wait_action_bt_node",
       "nav2_clear_costmap_service_bt_node",
       "nav2_is_stuck_condition_bt_node",
+      "nav2_is_path_valid_condition_bt_node",
       "nav2_goal_reached_condition_bt_node",
       "nav2_initial_pose_received_condition_bt_node",
       "nav2_goal_updated_condition_bt_node",
+      "nav2_globally_updated_goal_condition_bt_node",
       "nav2_reinitialize_global_localization_service_bt_node",
       "nav2_rate_controller_bt_node",
       "nav2_distance_controller_bt_node",
@@ -84,7 +86,8 @@ public:
       "nav2_remove_passed_goals_action_bt_node",
       "nav2_planner_selector_bt_node",
       "nav2_controller_selector_bt_node",
-      "nav2_goal_checker_selector_bt_node"
+      "nav2_goal_checker_selector_bt_node",
+      "nav2_controller_cancel_bt_node"
     };
     for (const auto & p : plugin_libs) {
       factory_.registerFromPlugin(BT::SharedLibrary::getOSName(p));
