@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <rclcpp/rclcpp.hpp>
 #include <memory>
+#include <rclcpp/rclcpp.hpp>
 #include "nav2_amcl/amcl_node.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
@@ -101,8 +101,8 @@ void TestAmclPose::initTestPose()
 {
   testPose_.header.frame_id = "map";
   testPose_.header.stamp = rclcpp::Time();
-  testPose_.pose.pose.position.x = -2.0;
-  testPose_.pose.pose.position.y = -0.5;
+  testPose_.pose.pose.position.x = 1.80;
+  testPose_.pose.pose.position.y = 2.20;
   testPose_.pose.pose.position.z = 0.0;
   testPose_.pose.pose.orientation.x = 0.0;
   testPose_.pose.pose.orientation.y = 0.0;
