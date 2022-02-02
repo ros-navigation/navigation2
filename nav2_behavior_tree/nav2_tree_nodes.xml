@@ -13,6 +13,10 @@
       <input_port name="time_allowance">Allowed time for reversing</input_port>
     </Action>
 
+    <Action ID="CancelControl">
+      <input_port name="service_name">Service name to cancel the controller server</input_port>
+    </Action>
+    
     <Action ID="ClearEntireCostmap">
       <input_port name="service_name">Service name</input_port>
     </Action>
