@@ -115,6 +115,8 @@
 
     <Condition ID="GoalUpdated"/>
 
+    <Condition ID="GloballyUpdatedGoalCondition"/>
+
     <Condition ID="IsBatteryLow">
       <input_port name="min_battery">Min battery % or voltage before triggering</input_port>
       <input_port name="battery_topic">Topic for battery info</input_port>
@@ -133,6 +135,12 @@
 
     <Condition ID="InitialPoseReceived">
     </Condition>
+
+    <Condition ID="IsPathValidCondition">
+      <input_port name="path"> Path to validate </input_port>
+      <input_port name="server_timeout"> Server timeout </input_port>
+    </Condition>
+
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
 
