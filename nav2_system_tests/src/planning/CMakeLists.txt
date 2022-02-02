@@ -31,9 +31,7 @@ ament_add_test(test_planner_costmaps
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_planner_costmaps_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
-    TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
     TEST_EXECUTABLE=$<TARGET_FILE:${test_planner_costmaps_exec}>
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map.pgm
 )
 
 ament_add_test(test_planner_random
@@ -41,9 +39,7 @@ ament_add_test(test_planner_random
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_planner_random_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   ENV
-    TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
     TEST_EXECUTABLE=$<TARGET_FILE:${test_planner_random_exec}>
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map.pgm
 )
 
 ament_add_gtest(test_planner_plugins

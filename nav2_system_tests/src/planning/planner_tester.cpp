@@ -29,6 +29,8 @@
 #include "nav2_map_server/map_io.hpp"
 #include "nav2_msgs/msg/costmap_meta_data.hpp"
 
+#include <ament_index_cpp/get_package_share_directory.hpp>
+
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
 using nav2_util::Costmap;
@@ -161,14 +163,13 @@ void PlannerTester::loadDefaultMap()
 
   nav2_map_server::MapMode mode = nav2_map_server::MapMode::Trinary;
 
-  std::string file_path = "";
-  char const * path = getenv("TEST_MAP");
-  if (path == NULL) {
+  std::string aws_dir = ament_index_cpp::get_package_share_directory(
+    "aws_robomaker_small_warehouse_world");
+  std::string file_path = aws_dir + "/maps/005/map_rotated.png";
+  if (file_path.empty()) {
     throw std::runtime_error(
             "Path to map image file"
-            " has not been specified in environment variable `TEST_MAP`.");
-  } else {
-    file_path = std::string(path);
+            " has not been set correctly.");
   }
 
   RCLCPP_INFO(this->get_logger(), "Loading map with file_path: %s", file_path.c_str());
