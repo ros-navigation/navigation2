@@ -22,7 +22,8 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch import LaunchService
-from launch.actions import ExecuteProcess, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_context import LaunchContext
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
@@ -32,8 +33,9 @@ from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-    map_yaml_file = os.getenv('TEST_MAP')
-    world = os.getenv('TEST_WORLD')
+    aws_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
+    gazebo_ros = get_package_share_directory('gazebo_ros')
+    map_yaml_file = os.path.join(aws_dir, 'maps', '005', 'map.yaml')
 
     bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
                                     'behavior_trees',
@@ -57,11 +59,17 @@ def generate_launch_description():
         SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
         SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
 
+        DeclareLaunchArgument(
+            'world',
+            default_value=os.path.join(aws_dir, 'worlds', 'no_roof_small_warehouse',
+                                       'no_roof_small_warehouse.world'),
+            description='Full path to world model file to load'),
+
         # Launch gazebo server for simulation
-        ExecuteProcess(
-            cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
-                 '--minimal_comms', world],
-            output='screen'),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py'))
+        ),
 
         # TODO(orduno) Launch the robot state publisher instead
         #              using a local copy of TB3 urdf file
@@ -95,7 +103,7 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
-             '-r', '-2.0', '-0.5', '100.0', '100.0'],
+             '-r', '0.0', '0.0', '100.0', '100.0'],
         name='tester_node',
         output='screen')
 
