@@ -29,7 +29,8 @@ def generate_launch_description():
         get_package_share_directory('nav2_bringup'), 'launch')
 
     map_yaml_file = os.path.join(
-        get_package_share_directory('nav2_system_tests'), 'maps/map_circular.yaml')
+        get_package_share_directory('aws_robomaker_small_warehouse_world'),
+        'maps', '005', 'map.yaml')
 
     # Specify the actions
     start_tf_cmd_1 = Node(
