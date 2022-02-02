@@ -35,13 +35,13 @@ namespace nav2_smac_planner
 
 // defining static member for all instance to share
 LookupTable NodeHybrid::obstacle_heuristic_lookup_table;
-std::queue<unsigned int> NodeHybrid::obstacle_heuristic_queue;
 double NodeHybrid::travel_distance_cost = sqrt(2);
 HybridMotionTable NodeHybrid::motion_table;
 float NodeHybrid::size_lookup = 25;
 LookupTable NodeHybrid::dist_heuristic_lookup_table;
 nav2_costmap_2d::Costmap2D * NodeHybrid::sampled_costmap = nullptr;
 CostmapDownsampler NodeHybrid::downsampler;
+ObstacleHeuristicQueue NodeHybrid::obstacle_heuristic_queue;
 
 // Each of these tables are the projected motion models through
 // time and space applied to the search on the current node in
@@ -63,6 +63,7 @@ void HybridMotionTable::initDubin(
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
+  travel_distance_reward = 1.0f - search_info.retrospective_penalty;
 
   // if nothing changed, no need to re-compute primitives
   if (num_angle_quantization_in == num_angle_quantization &&
@@ -155,6 +156,7 @@ void HybridMotionTable::initReedsShepp(
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
+  travel_distance_reward = 1.0f - search_info.retrospective_penalty;
 
   // if nothing changed, no need to re-compute primitives
   if (num_angle_quantization_in == num_angle_quantization &&
@@ -314,7 +316,8 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
 
   float travel_cost = 0.0;
   float travel_cost_raw =
-    NodeHybrid::travel_distance_cost * (1.0 + motion_table.cost_penalty * normalized_cost);
+    NodeHybrid::travel_distance_cost *
+    (motion_table.travel_distance_reward + motion_table.cost_penalty * normalized_cost);
 
   if (child->getMotionPrimitiveIndex() == 0 || child->getMotionPrimitiveIndex() == 3) {
     // New motion is a straight motion, no additional costs to be applied
@@ -343,8 +346,8 @@ float NodeHybrid::getHeuristicCost(
   const Coordinates & goal_coords,
   const nav2_costmap_2d::Costmap2D * /*costmap*/)
 {
-  const float obstacle_heuristic = getObstacleHeuristic(
-    node_coords, goal_coords, motion_table.cost_penalty);
+  const float obstacle_heuristic =
+    getObstacleHeuristic(node_coords, goal_coords, motion_table.cost_penalty);
   const float dist_heuristic = getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
   return std::max(obstacle_heuristic, dist_heuristic);
 }
@@ -374,8 +377,18 @@ void NodeHybrid::initMotionModel(
   travel_distance_cost = motion_table.projections[0]._x;
 }
 
+inline float distanceHeuristic2D(
+  const unsigned int idx, const unsigned int size_x,
+  const unsigned int target_x, const unsigned int target_y)
+{
+  return std::hypotf(
+    static_cast<int>(idx % size_x) - static_cast<int>(target_x),
+    static_cast<int>(idx / size_x) - static_cast<int>(target_y));
+}
+
 void NodeHybrid::resetObstacleHeuristic(
   nav2_costmap_2d::Costmap2D * costmap,
+  const unsigned int & start_x, const unsigned int & start_y,
   const unsigned int & goal_x, const unsigned int & goal_y)
 {
   // Downsample costmap 2x to compute a sparse obstacle heuristic. This speeds up
@@ -383,7 +396,7 @@ void NodeHybrid::resetObstacleHeuristic(
   // erosion of path quality after even modest smoothing. The error would be no more
   // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
   std::weak_ptr<nav2_util::LifecycleNode> ptr;
-  downsampler.on_configure(ptr, "fake_frame", "fake_topic", costmap, 2.0);
+  downsampler.on_configure(ptr, "fake_frame", "fake_topic", costmap, 2.0, true);
   downsampler.on_activate();
   sampled_costmap = downsampler.downsample(2.0);
 
@@ -402,11 +415,19 @@ void NodeHybrid::resetObstacleHeuristic(
       obstacle_heuristic_lookup_table.begin(), obstacle_size, 0.0);
   }
 
+  obstacle_heuristic_queue.clear();
+  obstacle_heuristic_queue.reserve(
+    sampled_costmap->getSizeInCellsX() * sampled_costmap->getSizeInCellsY());
+
   // Set initial goal point to queue from. Divided by 2 due to downsampled costmap.
-  std::queue<unsigned int> q;
-  std::swap(obstacle_heuristic_queue, q);
-  obstacle_heuristic_queue.emplace(
-    ceil(goal_y / 2.0) * sampled_costmap->getSizeInCellsX() + ceil(goal_x / 2.0));
+  const unsigned int size_x = sampled_costmap->getSizeInCellsX();
+  const unsigned int goal_index = floor(goal_y / 2.0) * size_x + floor(goal_x / 2.0);
+  obstacle_heuristic_queue.emplace_back(
+    distanceHeuristic2D(goal_index, size_x, start_x, start_y), goal_index);
+
+  // initialize goal cell with a very small value to differentiate it from 0.0 (~uninitialized)
+  // the negative value means the cell is in the open set
+  obstacle_heuristic_lookup_table[goal_index] = -0.00001f;
 }
 
 float NodeHybrid::getObstacleHeuristic(
@@ -415,13 +436,15 @@ float NodeHybrid::getObstacleHeuristic(
   const double & cost_penalty)
 {
   // If already expanded, return the cost
-  unsigned int size_x = sampled_costmap->getSizeInCellsX();
+  const unsigned int size_x = sampled_costmap->getSizeInCellsX();
   // Divided by 2 due to downsampled costmap.
-  const unsigned int start_index = ceil(node_coords.y / 2.0) * size_x + ceil(node_coords.x / 2.0);
-  const float & starting_cost = obstacle_heuristic_lookup_table[start_index];
-  if (starting_cost > 0.0) {
+  const unsigned int start_y = floor(node_coords.y / 2.0);
+  const unsigned int start_x = floor(node_coords.x / 2.0);
+  const unsigned int start_index = start_y * size_x + start_x;
+  const float & requested_node_cost = obstacle_heuristic_lookup_table[start_index];
+  if (requested_node_cost > 0.0f) {
     // costs are doubled due to downsampling
-    return 2.0 * starting_cost;
+    return 2.0 * requested_node_cost;
   }
 
   // If not, expand until it is included. This dynamic programming ensures that
@@ -429,14 +452,23 @@ float NodeHybrid::getObstacleHeuristic(
   // Rather than naively expanding the entire (potentially massive) map for a limited
   // path, we only expand to the extent required for the furthest expansion in the
   // search-planning request that dynamically updates during search as needed.
+
+  // start_x and start_y have changed since last call
+  // we need to recompute 2D distance heuristic and reprioritize queue
+  for (auto & n : obstacle_heuristic_queue) {
+    n.first = -obstacle_heuristic_lookup_table[n.second] +
+      distanceHeuristic2D(n.second, size_x, start_x, start_y);
+  }
+  std::make_heap(
+    obstacle_heuristic_queue.begin(), obstacle_heuristic_queue.end(),
+    ObstacleHeuristicComparator{});
+
   const int size_x_int = static_cast<int>(size_x);
   const unsigned int size_y = sampled_costmap->getSizeInCellsY();
   const float sqrt_2 = sqrt(2);
-  unsigned int mx, my, mx_idx, my_idx;
-  unsigned int idx = 0, new_idx = 0;
-  float last_accumulated_cost = 0.0, travel_cost = 0.0;
-  float heuristic_cost = 0.0, current_accumulated_cost = 0.0;
-  float cost = 0.0, existing_cost = 0.0;
+  float c_cost, cost, travel_cost, new_cost, existing_cost;
+  unsigned int idx, mx, my, mx_idx, my_idx;
+  unsigned int new_idx = 0;
 
   const std::vector<int> neighborhood = {1, -1,  // left right
     size_x_int, -size_x_int,  // up down
@@ -444,16 +476,19 @@ float NodeHybrid::getObstacleHeuristic(
     -size_x_int + 1, -size_x_int - 1};  // lower diagonals
 
   while (!obstacle_heuristic_queue.empty()) {
-    // get next one
-    idx = obstacle_heuristic_queue.front();
-    obstacle_heuristic_queue.pop();
-    last_accumulated_cost = obstacle_heuristic_lookup_table[idx];
-
-
-    if (idx == start_index) {
-      // costs are doubled due to downsampling
-      return 2.0 * last_accumulated_cost;
+    idx = obstacle_heuristic_queue.front().second;
+    std::pop_heap(
+      obstacle_heuristic_queue.begin(), obstacle_heuristic_queue.end(),
+      ObstacleHeuristicComparator{});
+    obstacle_heuristic_queue.pop_back();
+    c_cost = obstacle_heuristic_lookup_table[idx];
+    if (c_cost > 0.0f) {
+      // cell has been processed and closed, no further cost improvements
+      // are mathematically possible thanks to euclidean distance heuristic consistency
+      continue;
     }
+    c_cost = -c_cost;
+    obstacle_heuristic_lookup_table[idx] = c_cost;  // set a positive value to close the cell
 
     my_idx = idx / size_x;
     mx_idx = idx - (my_idx * size_x);
@@ -461,13 +496,14 @@ float NodeHybrid::getObstacleHeuristic(
     // find neighbors
     for (unsigned int i = 0; i != neighborhood.size(); i++) {
       new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
-      cost = static_cast<float>(sampled_costmap->getCost(idx));
-      travel_cost =
-        ((i <= 3) ? 1.0 : sqrt_2) + (((i <= 3) ? 1.0 : sqrt_2) * cost_penalty * cost / 252.0);
-      current_accumulated_cost = last_accumulated_cost + travel_cost;
 
       // if neighbor path is better and non-lethal, set new cost and add to queue
-      if (new_idx > 0 && new_idx < size_x * size_y && cost < INSCRIBED) {
+      if (new_idx < size_x * size_y) {
+        cost = static_cast<float>(sampled_costmap->getCost(new_idx));
+        if (cost >= INSCRIBED) {
+          continue;
+        }
+
         my = new_idx / size_x;
         mx = new_idx - (my * size_x);
 
@@ -479,16 +515,31 @@ float NodeHybrid::getObstacleHeuristic(
         }
 
         existing_cost = obstacle_heuristic_lookup_table[new_idx];
-        if (existing_cost == 0.0 || existing_cost > current_accumulated_cost) {
-          obstacle_heuristic_lookup_table[new_idx] = current_accumulated_cost;
-          obstacle_heuristic_queue.emplace(new_idx);
+        if (existing_cost <= 0.0f) {
+          travel_cost =
+            ((i <= 3) ? 1.0f : sqrt_2) * (1.0f + (cost_penalty * cost / 252.0f));
+          new_cost = c_cost + travel_cost;
+          if (existing_cost == 0.0f || -existing_cost > new_cost) {
+            // the negative value means the cell is in the open set
+            obstacle_heuristic_lookup_table[new_idx] = -new_cost;
+            obstacle_heuristic_queue.emplace_back(
+              new_cost + distanceHeuristic2D(new_idx, size_x, start_x, start_y), new_idx);
+            std::push_heap(
+              obstacle_heuristic_queue.begin(), obstacle_heuristic_queue.end(),
+              ObstacleHeuristicComparator{});
+          }
         }
       }
     }
+
+    if (idx == start_index) {
+      break;
+    }
   }
 
+  // return requested_node_cost which has been updated by the search
   // costs are doubled due to downsampling
-  return 2.0 * obstacle_heuristic_lookup_table[start_index];
+  return 2.0 * requested_node_cost;
 }
 
 float NodeHybrid::getDistanceHeuristic(

@@ -17,9 +17,12 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
-from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
+from launch_ros.actions import LoadComposableNodes
+from launch_ros.descriptions import ComposableNode
 from nav2_common.launch import RewrittenYaml
 
 
@@ -31,6 +34,8 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
+    use_composition = LaunchConfiguration('use_composition')
+    container_name = LaunchConfiguration('container_name')
 
     lifecycle_nodes = ['controller_server',
                        'smoother_server',
@@ -59,81 +64,157 @@ def generate_launch_description():
             param_rewrites=param_substitutions,
             convert_types=True)
 
-    return LaunchDescription([
-        # Set env var to print messages to stdout immediately
-        SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+    stdout_linebuf_envvar = SetEnvironmentVariable(
+        'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
 
-        DeclareLaunchArgument(
-            'namespace', default_value='',
-            description='Top-level namespace'),
+    declare_namespace_cmd = DeclareLaunchArgument(
+        'namespace',
+        default_value='',
+        description='Top-level namespace')
 
-        DeclareLaunchArgument(
-            'use_sim_time', default_value='false',
-            description='Use simulation (Gazebo) clock if true'),
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation (Gazebo) clock if true')
 
-        DeclareLaunchArgument(
-            'autostart', default_value='true',
-            description='Automatically startup the nav2 stack'),
+    declare_params_file_cmd = DeclareLaunchArgument(
+        'params_file',
+        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+        description='Full path to the ROS2 parameters file to use for all launched nodes')
 
-        DeclareLaunchArgument(
-            'params_file',
-            default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
-            description='Full path to the ROS2 parameters file to use'),
+    declare_autostart_cmd = DeclareLaunchArgument(
+        'autostart', default_value='true',
+        description='Automatically startup the nav2 stack')
 
-        Node(
-            package='nav2_controller',
-            executable='controller_server',
-            output='screen',
-            parameters=[configured_params],
-            remappings=remappings),
+    declare_use_composition_cmd = DeclareLaunchArgument(
+        'use_composition', default_value='False',
+        description='Use composed bringup if True')
 
-        Node(
-            package='nav2_smoother',
-            executable='smoother_server',
-            name='smoother_server',
-            output='screen',
-            parameters=[configured_params],
-            remappings=remappings),
+    declare_container_name_cmd = DeclareLaunchArgument(
+        'container_name', default_value='nav2_container',
+        description='the name of conatiner that nodes will load in if use composition')
 
-        Node(
-            package='nav2_planner',
-            executable='planner_server',
-            name='planner_server',
-            output='screen',
-            parameters=[configured_params],
-            remappings=remappings),
+    load_nodes = GroupAction(
+        condition=IfCondition(PythonExpression(['not ', use_composition])),
+        actions=[
+            Node(
+                package='nav2_controller',
+                executable='controller_server',
+                output='screen',
+                parameters=[configured_params],
+                remappings=remappings),
+            Node(
+                package='nav2_smoother',
+                executable='smoother_server',
+                name='smoother_server',
+                output='screen',
+                parameters=[configured_params],
+                remappings=remappings),
+            Node(
+                package='nav2_planner',
+                executable='planner_server',
+                name='planner_server',
+                output='screen',
+                parameters=[configured_params],
+                remappings=remappings),
+            Node(
+                package='nav2_recoveries',
+                executable='recoveries_server',
+                name='recoveries_server',
+                output='screen',
+                parameters=[configured_params],
+                remappings=remappings),
+            Node(
+                package='nav2_bt_navigator',
+                executable='bt_navigator',
+                name='bt_navigator',
+                output='screen',
+                parameters=[configured_params],
+                remappings=remappings),
+            Node(
+                package='nav2_waypoint_follower',
+                executable='waypoint_follower',
+                name='waypoint_follower',
+                output='screen',
+                parameters=[configured_params],
+                remappings=remappings),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_navigation',
+                output='screen',
+                parameters=[{'use_sim_time': use_sim_time},
+                            {'autostart': autostart},
+                            {'node_names': lifecycle_nodes}]),
+        ]
+    )
 
-        Node(
-            package='nav2_recoveries',
-            executable='recoveries_server',
-            name='recoveries_server',
-            output='screen',
-            parameters=[configured_params],
-            remappings=remappings),
+    load_composable_nodes = LoadComposableNodes(
+        condition=IfCondition(use_composition),
+        target_container=container_name,
+        composable_node_descriptions=[
+            ComposableNode(
+                package='nav2_controller',
+                plugin='nav2_controller::ControllerServer',
+                name='controller_server',
+                parameters=[configured_params],
+                remappings=remappings),
+            ComposableNode(
+                package='nav2_smoother',
+                plugin='nav2_smoother::SmootherServer',
+                name='smoother_server',
+                parameters=[configured_params],
+                remappings=remappings),
+            ComposableNode(
+                package='nav2_planner',
+                plugin='nav2_planner::PlannerServer',
+                name='planner_server',
+                parameters=[configured_params],
+                remappings=remappings),
+            ComposableNode(
+                package='nav2_recoveries',
+                plugin='recovery_server::RecoveryServer',
+                name='recoveries_server',
+                parameters=[configured_params],
+                remappings=remappings),
+            ComposableNode(
+                package='nav2_bt_navigator',
+                plugin='nav2_bt_navigator::BtNavigator',
+                name='bt_navigator',
+                parameters=[configured_params],
+                remappings=remappings),
+            ComposableNode(
+                package='nav2_waypoint_follower',
+                plugin='nav2_waypoint_follower::WaypointFollower',
+                name='waypoint_follower',
+                parameters=[configured_params],
+                remappings=remappings),
+            ComposableNode(
+                package='nav2_lifecycle_manager',
+                plugin='nav2_lifecycle_manager::LifecycleManager',
+                name='lifecycle_manager_navigation',
+                parameters=[{'use_sim_time': use_sim_time,
+                             'autostart': autostart,
+                             'node_names': lifecycle_nodes}]),
+        ],
+    )
 
-        Node(
-            package='nav2_bt_navigator',
-            executable='bt_navigator',
-            name='bt_navigator',
-            output='screen',
-            parameters=[configured_params],
-            remappings=remappings),
+    # Create the launch description and populate
+    ld = LaunchDescription()
 
-        Node(
-            package='nav2_waypoint_follower',
-            executable='waypoint_follower',
-            name='waypoint_follower',
-            output='screen',
-            parameters=[configured_params],
-            remappings=remappings),
+    # Set environment variables
+    ld.add_action(stdout_linebuf_envvar)
 
-        Node(
-            package='nav2_lifecycle_manager',
-            executable='lifecycle_manager',
-            name='lifecycle_manager_navigation',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time},
-                        {'autostart': autostart},
-                        {'node_names': lifecycle_nodes}]),
+    # Declare the launch options
+    ld.add_action(declare_namespace_cmd)
+    ld.add_action(declare_use_sim_time_cmd)
+    ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_use_composition_cmd)
+    ld.add_action(declare_container_name_cmd)
 
-    ])
+    # Add the actions to launch all of the navigation nodes
+    ld.add_action(load_nodes)
+    ld.add_action(load_composable_nodes)
+
+    return ld

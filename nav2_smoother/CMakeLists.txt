@@ -6,6 +6,7 @@ find_package(nav2_core REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(angles REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
@@ -32,13 +33,14 @@ add_executable(${executable_name}
 
 set(library_name ${executable_name}_core)
 
-add_library(${library_name}
+add_library(${library_name} SHARED
   src/nav2_smoother.cpp
 )
 
 set(dependencies
   angles
   rclcpp
+  rclcpp_components
   rclcpp_action
   std_msgs
   nav2_msgs
@@ -67,6 +69,8 @@ ament_target_dependencies(${executable_name}
 )
 
 target_link_libraries(${executable_name} ${library_name})
+
+rclcpp_components_register_nodes(${library_name} "nav2_smoother::SmootherServer")
 
 install(
   TARGETS
