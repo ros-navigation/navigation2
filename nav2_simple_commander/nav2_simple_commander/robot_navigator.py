@@ -185,7 +185,7 @@ class BasicNavigator(Node):
         while not self.backup_client.wait_for_server(timeout_sec=1.0):
             self.info("'Backup' action server not available, waiting...")
         goal_msg = BackUp.Goal()
-        goal_msg.target = Point(x=backup_dist)
+        goal_msg.target = Point(x=float(backup_dist))
         goal_msg.speed = backup_speed
         goal_msg.time_allowance = Duration(sec=time_allowance)
 
