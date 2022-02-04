@@ -41,6 +41,7 @@ TEST(NodeHybridTest, test_node_hybrid)
   info.reverse_penalty = 2.0;
   info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
   info.cost_penalty = 1.7;
+  info.retrospective_penalty = 0.1;
   unsigned int size_x = 10;
   unsigned int size_y = 10;
   unsigned int size_theta = 72;
@@ -83,16 +84,17 @@ TEST(NodeHybridTest, test_node_hybrid)
   // check traversal cost computation
   // simulated first node, should return neutral cost
   EXPECT_NEAR(testB.getTraversalCost(&testA), 2.088, 0.1);
-  // now with straight motion, cost is 0, so will be sqrt(2) as well
+  // now with straight motion, cost is 0, so will be neutral as well
+  // but now reduced by retrospective penalty (10%)
   testB.setMotionPrimitiveIndex(1);
   testA.setMotionPrimitiveIndex(0);
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.088, 0.1);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.088 * 0.9, 0.1);
   // same direction as parent, testB
   testA.setMotionPrimitiveIndex(1);
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.297f, 0.01);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.297f * 0.9, 0.01);
   // opposite direction as parent, testB
   testA.setMotionPrimitiveIndex(2);
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.506f, 0.01);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.506f * 0.9, 0.01);
 
   // will throw because never collision checked testB
   EXPECT_THROW(testA.getTraversalCost(&testB), std::runtime_error);
@@ -131,6 +133,87 @@ TEST(NodeHybridTest, test_node_hybrid)
   delete costmapA;
 }
 
+TEST(NodeHybridTest, test_obstacle_heuristic)
+{
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 0.1;
+  info.non_straight_penalty = 1.1;
+  info.reverse_penalty = 2.0;
+  info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
+  info.cost_penalty = 1.7;
+  info.retrospective_penalty = 0.0;
+  unsigned int size_x = 100;
+  unsigned int size_y = 100;
+  unsigned int size_theta = 72;
+
+  nav2_smac_planner::NodeHybrid::initMotionModel(
+    nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
+
+  nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
+    100, 100, 0.1, 0.0, 0.0, 0);
+  // island in the middle of lethal cost to cross
+  for (unsigned int i = 20; i <= 80; ++i) {
+    for (unsigned int j = 40; j <= 60; ++j) {
+      costmapA->setCost(i, j, 254);
+    }
+  }
+  // path on the right is narrow and thus with high cost
+  for (unsigned int i = 20; i <= 80; ++i) {
+    for (unsigned int j = 61; j <= 70; ++j) {
+      costmapA->setCost(i, j, 250);
+    }
+  }
+  for (unsigned int i = 20; i <= 80; ++i) {
+    for (unsigned int j = 71; j < 100; ++j) {
+      costmapA->setCost(i, j, 254);
+    }
+  }
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 72);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+
+  nav2_smac_planner::NodeHybrid testA(0);
+  testA.pose.x = 10;
+  testA.pose.y = 50;
+  testA.pose.theta = 0;
+
+  nav2_smac_planner::NodeHybrid testB(1);
+  testB.pose.x = 90;
+  testB.pose.y = 51;  // goal is a bit closer to the high-cost passage
+  testB.pose.theta = 0;
+
+  // first block the high-cost passage to make sure the cost spreads through the better path
+  for (unsigned int j = 61; j <= 70; ++j) {
+    costmapA->setCost(50, j, 254);
+  }
+  nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(
+    costmapA, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
+  float wide_passage_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(
+    testA.pose,
+    testB.pose,
+    info.cost_penalty);
+
+  EXPECT_NEAR(wide_passage_cost, 91.1f, 0.1f);
+
+  // then unblock it to check if cost remains the same
+  // (it should, since the unblocked narrow path will have higher cost than the wide one
+  //  and thus lower bound of the path cost should be unchanged)
+  for (unsigned int j = 61; j <= 70; ++j) {
+    costmapA->setCost(50, j, 250);
+  }
+  nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(
+    costmapA,
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
+  float two_passages_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(
+    testA.pose,
+    testB.pose,
+    info.cost_penalty);
+
+  EXPECT_EQ(wide_passage_cost, two_passages_cost);
+
+  delete costmapA;
+}
+
 TEST(NodeHybridTest, test_node_debin_neighbors)
 {
   nav2_smac_planner::SearchInfo info;
@@ -138,6 +221,7 @@ TEST(NodeHybridTest, test_node_debin_neighbors)
   info.non_straight_penalty = 1.4;
   info.reverse_penalty = 2.1;
   info.minimum_turning_radius = 4;  // 0.2 in grid coordinates
+  info.retrospective_penalty = 0.0;
   unsigned int size_x = 100;
   unsigned int size_y = 100;
   unsigned int size_theta = 72;
@@ -166,6 +250,7 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
   info.non_straight_penalty = 1.4;
   info.reverse_penalty = 2.1;
   info.minimum_turning_radius = 8;  // 0.4 in grid coordinates
+  info.retrospective_penalty = 0.0;
   unsigned int size_x = 100;
   unsigned int size_y = 100;
   unsigned int size_theta = 72;
