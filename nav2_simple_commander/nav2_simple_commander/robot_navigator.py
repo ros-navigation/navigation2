@@ -23,7 +23,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose
 from nav2_msgs.action import FollowWaypoints, NavigateThroughPoses, NavigateToPose
-from nav2_msgs.action import FollowPath 
+from nav2_msgs.action import FollowPath
 from nav2_msgs.srv import ClearEntireCostmap, GetCostmap, LoadMap, ManageLifecycleNodes
 
 import rclpy
@@ -167,19 +167,18 @@ class BasicNavigator(Node):
         goal_msg.path = path
 
         self.info('Executing path...')
-        send_goal_future = self.follow_path_client.send_goal_async(goal_msg, 
-                                                                    self._feedbackCallback)
-        
+        send_goal_future = self.follow_path_client.send_goal_async(goal_msg,
+                                                                   self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
-        
+
         if not self.goal_handle.accepted:
             self.error('Follow path was rejected!')
             return False
-    
+
         self.result_future = self.goal_handle.get_result_async()
         return True
-    
+
     def cancelNav(self):
         """Cancel pending navigation request of any type."""
         self.info('Canceling current goal.')
@@ -256,8 +255,6 @@ class BasicNavigator(Node):
             return None
 
         return self.result_future.result().result.path
-    
-        
 
     def getPathThroughPoses(self, start, goals):
         """Send a `ComputePathThroughPoses` action request."""

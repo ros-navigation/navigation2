@@ -16,10 +16,10 @@
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
 import rclpy
-from rclpy.duration import Duration
+
 
 """
-Basic navigation demo to follow a given path 
+Basic navigation demo to follow a given path
 """
 
 
@@ -37,7 +37,7 @@ def main():
     initial_pose.pose.orientation.z = 1.0
     initial_pose.pose.orientation.w = 0.0
     navigator.setInitialPose(initial_pose)
-    
+
     # Wait for navigation to fully activate, since autostarting nav2
     navigator.waitUntilNav2Active()
 
@@ -51,7 +51,7 @@ def main():
 
     # Sanity check a valid path exists
     path = navigator.getPath(initial_pose, goal_pose)
-    
+
     # Follow path
     navigator.followPath(path)
 
@@ -64,11 +64,13 @@ def main():
         ################################################
 
         # Do something with the feedback
-        i += 1 
+        i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
-            print('Estimated distance remaining to goal position: ' +'{0:.3f}'.format(feedback.distance_to_goal)
-                  + '\nCurrent speed of the robot: '+ '{0:.3f}'.format(feedback.speed))
+            print('Estimated distance remaining to goal position: ' +
+                  '{0:.3f}'.format(feedback.distance_to_goal) +
+                  '\nCurrent speed of the robot: ' +
+                  '{0:.3f}'.format(feedback.speed))
 
     # Do something depending on the return code
     result = navigator.getResult()
