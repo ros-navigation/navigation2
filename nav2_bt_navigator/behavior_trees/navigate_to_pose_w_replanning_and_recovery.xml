@@ -11,13 +11,29 @@
         <RateController hz="1.0">
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
-            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+            <ReactiveFallback name="ComputePathToPoseRecoveryFallback">
+              <GoalUpdated/>
+              <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+            </ReactiveFallback>
           </RecoveryNode>
         </RateController>
-        <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{path}" controller_id="FollowPath"/>
-          <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
-        </RecoveryNode>
+        <ReactiveSequence name="MonitorAndFollowPath">
+          <IsPathLongerOnApproach path="{path}" prox_leng="1e999" length_factor="1.0">
+            <RetryUntilSuccessful num_attempts="1">
+              <SequenceStar name="CancelingControlAndWait">
+                <CancelControl name="ControlCancel"/>
+                <Wait wait_duration="5"/>
+              </SequenceStar>
+            </RetryUntilSuccessful>
+          </IsPathLongerOnApproach>
+          <RecoveryNode number_of_retries="1" name="FollowPath">
+            <FollowPath path="{path}" controller_id="FollowPath"/>
+            <ReactiveFallback name="FollowPathRecoveryFallback">
+              <GoalUpdated/>
+              <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+            </ReactiveFallback>
+          </RecoveryNode>
+        </ReactiveSequence>
       </PipelineSequence>
       <ReactiveFallback name="RecoveryFallback">
         <GoalUpdated/>

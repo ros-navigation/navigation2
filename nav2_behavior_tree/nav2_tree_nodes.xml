@@ -175,5 +175,10 @@
       <input_port name="filter_duration">Duration (secs) for velocity smoothing filter</input_port>
     </Decorator>
 
+    <Decorator ID="IsPathLongerOnApproach">
+      <input_port name="prox_leng">Proximity length (m) for the path to be longer on approach</input_port>
+      <input_port name="length_factor">Length factor to check if the path is significantly longer </input_port>
+    </Decorator>
+
   </TreeNodesModel>
 </root>
