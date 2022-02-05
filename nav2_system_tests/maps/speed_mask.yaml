@@ -1,7 +1,7 @@
-image: speed_mask.pgm
+image: speed_mask.png
 mode: scale
 resolution: 0.050000
-origin: [-10.000000, -10.000000, 0.000000]
+origin: [-7.000000, -10.500000, 0.000000]
 negate: 0
 occupied_thresh: 0.99
 free_thresh: 0.01

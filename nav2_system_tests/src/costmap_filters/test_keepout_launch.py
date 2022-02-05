@@ -22,19 +22,22 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch import LaunchService
-from launch.actions import ExecuteProcess, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_context import LaunchContext
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
 from launch_testing.legacy import LaunchTestService
 
 from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-    map_yaml_file = os.getenv('TEST_MAP')
+    aws_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
+    gazebo_ros = get_package_share_directory('gazebo_ros')
+    map_yaml_file = os.path.join(aws_dir, 'maps', '005', 'map.yaml')
     filter_mask_file = os.getenv('TEST_MASK')
-    world = os.getenv('TEST_WORLD')
 
     bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
                                     'behavior_trees',
@@ -57,15 +60,52 @@ def generate_launch_description():
 
     context = LaunchContext()
     new_yaml = configured_params.perform(context)
+
+    robot_name = LaunchConfiguration('robot_name')
+    robot_sdf = LaunchConfiguration('robot_sdf')
+    pose = {'x': LaunchConfiguration('x_pose', default='0.0'),
+            'y': LaunchConfiguration('y_pose', default='0.0'),
+            'z': LaunchConfiguration('z_pose', default='0.01'),
+            'R': LaunchConfiguration('roll', default='0.00'),
+            'P': LaunchConfiguration('pitch', default='0.00'),
+            'Y': LaunchConfiguration('yaw', default='0.00')}
+
     return LaunchDescription([
         SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
         SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
 
+        DeclareLaunchArgument(
+            'robot_sdf',
+            default_value=os.path.join(bringup_dir, 'worlds', 'waffle.model'),
+            description='Full path to robot sdf file to spawn the robot in gazebo'),
+
+        DeclareLaunchArgument(
+            'world',
+            default_value=os.path.join(aws_dir, 'worlds', 'no_roof_small_warehouse',
+                                       'no_roof_small_warehouse.world'),
+            description='Full path to world model file to load'),
+
+        DeclareLaunchArgument(
+            'robot_name',
+            default_value='turtlebot3_waffle',
+            description='name of the robot'),
+
         # Launch gazebo server for simulation
-        ExecuteProcess(
-            cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
-                 '--minimal_comms', world],
-            output='screen'),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py'))
+        ),
+
+        Node(
+            package='gazebo_ros',
+            executable='spawn_entity.py',
+            output='screen',
+            arguments=[
+                '-entity', robot_name,
+                '-file', robot_sdf,
+                '-robot_namespace', '',
+                '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
+                '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']]),
 
         # TODO(orduno) Launch the robot state publisher instead
         #              using a local copy of TB3 urdf file
@@ -129,7 +169,7 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
-             '-t', 'keepout', '-r', '-2.0', '-0.5', '0.0', '-0.5'],
+             '-t', 'keepout', '-r', '0.0', '0.0', '1.0', '5.0'],
         name='tester_node',
         output='screen')
 
