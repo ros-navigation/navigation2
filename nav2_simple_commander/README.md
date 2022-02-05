@@ -22,11 +22,11 @@ The methods provided by the basic navigator are shown below, with inputs and exp
 | followWaypoints(poses)            | Requests the robot to follow a set of waypoints (list of `PoseStamped`). This will execute the specific `TaskExecutor` at each pose.   |
 | spin(spin_dist, time_allowance)   | Requests the robot to performs an in-place rotation by a given angle.      |
 | backup(backup_dist, backup_speed, time_allowance) | Requests the robot to back up by a given distance.         |
-| cancelNav()                       | Cancel an ongoing `goThroughPoses`, `goToPose` or `followWaypoints` request.|
+| cancelTask()                       | Cancel an ongoing task request.|
 | followPath(path)                  | Requests the robot to follow a path from a starting to a goal `PoseStamped`, `nav_msgs/Path`.     |
-| isNavComplete()                   | Checks if navigation is complete yet, times out at `100ms`.  Returns `True` if completed and `False` if still going.                  |
-| getFeedback()                     | Gets feedback from navigation task, returns action server feedback object. |
-| getResult()				        | Gets final result of navigation task, to be called after `isNavComplete` returns `True`. Returns action server result object. |
+| isTaskComplete()                   | Checks if task is complete yet, times out at `100ms`.  Returns `True` if completed and `False` if still going.                  |
+| getFeedback()                     | Gets feedback from task, returns action server feedback object. |
+| getResult()				        | Gets final result of task, to be called after `isTaskComplete` returns `True`. Returns action server result object. |
 | getPath(start, goal)              | Gets a path from a starting to a goal `PoseStamped`, `nav_msgs/Path`.      |
 | getPathThroughPoses(start, goals) | Gets a path through a starting to a set of goals, a list of `PoseStamped`, `nav_msgs/Path`. |
 | changeMap(map_filepath)           | Requests a change from the current map to `map_filepath`'s yaml.           |
@@ -54,10 +54,10 @@ nav.setInitialPose(init_pose)
 nav.waitUntilNav2Active() # if autostarted, else use `lifecycleStartup()`
 ...
 nav.goToPose(goal_pose)
-while not nav.isNavComplete():
+while not nav.isTaskComplete():
 	feedback = nav.getFeedback()
 	if feedback.navigation_duration > 600:
-		nav.cancelNav()
+		nav.cancelTask()
 ...
 result = nav.getResult()
 if result == NavigationResult.SUCCEEDED:

@@ -107,7 +107,7 @@ def main():
 
             # Some navigation timeout to demo cancellation
             if now - nav_start > Duration(seconds=600.0):
-                navigator.cancelNav()
+                navigator.cancelTask()
 
             # Some follow waypoints request change to demo preemption
             if now - nav_start > Duration(seconds=35.0):

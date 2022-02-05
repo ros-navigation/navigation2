@@ -86,7 +86,7 @@ def main():
                 # Some failure mode, must stop since the robot is clearly stuck
                 if Duration.from_msg(feedback.navigation_time) > Duration(seconds=180.0):
                     print('Navigation has exceeded timeout of 180s, canceling request.')
-                    navigator.cancelNav()
+                    navigator.cancelTask()
 
         # If at end of route, reverse the route to restart
         security_route.reverse()

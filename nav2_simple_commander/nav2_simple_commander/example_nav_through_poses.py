@@ -106,7 +106,7 @@ def main():
 
             # Some navigation timeout to demo cancellation
             if Duration.from_msg(feedback.navigation_time) > Duration(seconds=600.0):
-                navigator.cancelNav()
+                navigator.cancelTask()
 
             # Some navigation request change to demo preemption
             if Duration.from_msg(feedback.navigation_time) > Duration(seconds=35.0):

@@ -225,7 +225,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def cancelNav(self):
+    def cancelTask(self):
         """Cancel pending navigation request of any type."""
         self.info('Canceling current goal.')
         if self.result_future:
