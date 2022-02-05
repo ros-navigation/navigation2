@@ -23,6 +23,7 @@ The methods provided by the basic navigator are shown below, with inputs and exp
 | spin(spin_dist, time_allowance)   | Requests the robot to performs an in-place rotation by a given angle.      |
 | backup(backup_dist, backup_speed, time_allowance) | Requests the robot to back up by a given distance.         |
 | cancelNav()                       | Cancel an ongoing `goThroughPoses`, `goToPose` or `followWaypoints` request.|
+| followPath(path)                  | Requests the robot to follow a path from a starting to a goal `PoseStamped`, `nav_msgs/Path`.     |
 | isNavComplete()                   | Checks if navigation is complete yet, times out at `100ms`.  Returns `True` if completed and `False` if still going.                  |
 | getFeedback()                     | Gets feedback from navigation task, returns action server feedback object. |
 | getResult()				        | Gets final result of navigation task, to be called after `isNavComplete` returns `True`. Returns action server result object. |
@@ -104,8 +105,8 @@ The `nav2_simple_commander` has a few examples to highlight the API functions av
 
 - `example_nav_to_pose.py` - Demonstrates the navigate to pose capabilities of the navigator, as well as a number of auxiliary methods.
 - `example_nav_through_poses.py` - Demonstrates the navigate through poses capabilities of the navigator, as well as a number of auxiliary methods.
-- `example_waypoint_follower.py` - Demonstrates the waypoint following capabilities of the navigator, as well as a number of auxiliary methods required.
-
+- `example_waypoint_follower.py` - Demonstrates the waypoint following capabilities of the navigator, as well as a number of auxiliary methods.
+- `example_follow_path.py` - Demonstrates the path following capabilities of the navigator, as well as a number of auxiliary methods.
 ## Demos
 
 The `nav2_simple_commander` has a few demonstrations to highlight a couple of simple autonomy applications you can build using the `nav2_simple_commander` API:

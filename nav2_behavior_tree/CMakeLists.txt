@@ -57,6 +57,9 @@ list(APPEND plugin_libs nav2_compute_path_to_pose_action_bt_node)
 add_library(nav2_compute_path_through_poses_action_bt_node SHARED plugins/action/compute_path_through_poses_action.cpp)
 list(APPEND plugin_libs nav2_compute_path_through_poses_action_bt_node)
 
+add_library(nav2_controller_cancel_bt_node SHARED plugins/action/controller_cancel_node.cpp)
+list(APPEND plugin_libs nav2_controller_cancel_bt_node)
+
 add_library(nav2_smooth_path_action_bt_node SHARED plugins/action/smooth_path_action.cpp)
 list(APPEND plugin_libs nav2_smooth_path_action_bt_node)
 
@@ -84,8 +87,14 @@ list(APPEND plugin_libs nav2_transform_available_condition_bt_node)
 add_library(nav2_goal_reached_condition_bt_node SHARED plugins/condition/goal_reached_condition.cpp)
 list(APPEND plugin_libs nav2_goal_reached_condition_bt_node)
 
+add_library(nav2_globally_updated_goal_condition_bt_node SHARED plugins/condition/globally_updated_goal_condition.cpp)
+list(APPEND plugin_libs nav2_globally_updated_goal_condition_bt_node)
+
 add_library(nav2_goal_updated_condition_bt_node SHARED plugins/condition/goal_updated_condition.cpp)
 list(APPEND plugin_libs nav2_goal_updated_condition_bt_node)
+
+add_library(nav2_is_path_valid_condition_bt_node SHARED plugins/condition/is_path_valid_condition.cpp)
+list(APPEND plugin_libs nav2_is_path_valid_condition_bt_node)
 
 add_library(nav2_time_expired_condition_bt_node SHARED plugins/condition/time_expired_condition.cpp)
 list(APPEND plugin_libs nav2_time_expired_condition_bt_node)

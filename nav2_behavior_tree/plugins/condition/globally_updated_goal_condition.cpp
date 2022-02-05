@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Aitor Miguel Blanco
+// Copyright (c) 2021 Joshua Wallace
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
 #include <vector>
-#include "nav2_behavior_tree/plugins/condition/goal_updated_condition.hpp"
+#include <string>
+
+#include "nav2_behavior_tree/plugins/condition/globally_updated_goal_condition.hpp"
 
 namespace nav2_behavior_tree
 {
 
-GoalUpdatedCondition::GoalUpdatedCondition(
+GloballyUpdatedGoalCondition::GloballyUpdatedGoalCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf)
-{}
-
-BT::NodeStatus GoalUpdatedCondition::tick()
+: BT::ConditionNode(condition_name, conf),
+  first_time(true)
 {
-  if (status() == BT::NodeStatus::IDLE) {
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+}
+
+BT::NodeStatus GloballyUpdatedGoalCondition::tick()
+{
+  if (first_time) {
+    first_time = false;
     config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", goals_);
     config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", goal_);
     return BT::NodeStatus::FAILURE;
@@ -52,5 +57,5 @@ BT::NodeStatus GoalUpdatedCondition::tick()
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::GoalUpdatedCondition>("GoalUpdated");
+  factory.registerNodeType<nav2_behavior_tree::GloballyUpdatedGoalCondition>("GlobalUpdatedGoal");
 }
