@@ -84,7 +84,6 @@ def main():
         print('Inspection of shelves complete! Returning to start...')
     elif result == NavigationResult.CANCELED:
         print('Inspection of shelving was canceled. Returning to start...')
-        exit(1)
     elif result == NavigationResult.FAILED:
         print('Inspection of shelving failed! Returning to start...')
 

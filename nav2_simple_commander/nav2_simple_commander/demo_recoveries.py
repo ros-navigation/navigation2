@@ -90,7 +90,6 @@ def main():
         print('Dead end confirmed! Returning to start...')
     elif result == NavigationResult.CANCELED:
         print('Recovery was canceled. Returning to start...')
-        exit(1)
     elif result == NavigationResult.FAILED:
         print('Recovering from dead end failed! Returning to start...')
 
