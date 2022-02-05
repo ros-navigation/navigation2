@@ -20,9 +20,9 @@ from rclpy.duration import Duration
 
 
 """
-Basic stock inspection demo. In this demonstration, the expectation
-is that there are cameras or RFID sensors mounted on the robots
-collecting information about stock quantity and location.
+Basic recoveries demo. In this demonstration, the robot navigates
+to a dead-end where recoveries such as backup and spin are used
+to get out of it.
 """
 
 
@@ -64,6 +64,7 @@ def main():
             )
 
     # Robot hit a dead end, back it up
+    print('Robot hit a dead end, backing up...')
     navigator.backup(backup_dist=0.5, backup_speed=0.1)
 
     i = 0
@@ -74,6 +75,7 @@ def main():
             print(f'Distance traveled: {feedback.distance_traveled}')
 
     # Turn it around
+    print('Spinning robot around...')
     navigator.spin(spin_dist=3.14)
 
     i = 0
