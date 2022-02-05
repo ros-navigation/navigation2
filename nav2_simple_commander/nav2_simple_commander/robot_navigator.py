@@ -23,6 +23,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose
 from nav2_msgs.action import FollowWaypoints, NavigateThroughPoses, NavigateToPose
+from nav2_msgs.action import FollowPath
 from nav2_msgs.srv import ClearEntireCostmap, GetCostmap, LoadMap, ManageLifecycleNodes
 
 import rclpy
@@ -62,6 +63,7 @@ class BasicNavigator(Node):
                                                      'navigate_through_poses')
         self.nav_to_pose_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
         self.follow_waypoints_client = ActionClient(self, FollowWaypoints, 'follow_waypoints')
+        self.follow_path_client = ActionClient(self, FollowPath, 'follow_path')
         self.compute_path_to_pose_client = ActionClient(self, ComputePathToPose,
                                                         'compute_path_to_pose')
         self.compute_path_through_poses_client = ActionClient(self, ComputePathThroughPoses,
@@ -150,6 +152,28 @@ class BasicNavigator(Node):
 
         if not self.goal_handle.accepted:
             self.error(f'Following {len(poses)} waypoints request was rejected!')
+            return False
+
+        self.result_future = self.goal_handle.get_result_async()
+        return True
+
+    def followPath(self, path):
+        """Send a `FollowPath` action request."""
+        self.debug("Waiting for 'FollowPath' action server")
+        while not self.follow_path_client.wait_for_server(timeout_sec=1.0):
+            self.info("'FollowPath' action server not available, waiting...")
+
+        goal_msg = FollowPath.Goal()
+        goal_msg.path = path
+
+        self.info('Executing path...')
+        send_goal_future = self.follow_path_client.send_goal_async(goal_msg,
+                                                                   self._feedbackCallback)
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        self.goal_handle = send_goal_future.result()
+
+        if not self.goal_handle.accepted:
+            self.error('Follow path was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
