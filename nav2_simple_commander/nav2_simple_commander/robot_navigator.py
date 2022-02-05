@@ -233,7 +233,7 @@ class BasicNavigator(Node):
             rclpy.spin_until_future_complete(self, future)
         return
 
-    def isNavComplete(self):
+    def isTaskComplete(self):
         """Check if the navigation request of any type is complete yet."""
         if not self.result_future:
             # task was cancelled or completed

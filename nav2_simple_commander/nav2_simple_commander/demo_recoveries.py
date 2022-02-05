@@ -54,7 +54,7 @@ def main():
     navigator.goToPose(goal_pose)
 
     i = 0
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
@@ -67,7 +67,7 @@ def main():
     navigator.backup(backup_dist=0.5, backup_speed=0.1)
 
     i = 0
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
@@ -77,7 +77,7 @@ def main():
     navigator.spin(spin_dist=3.14)
 
     i = 0
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
@@ -94,7 +94,7 @@ def main():
 
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
     navigator.goToPose(initial_pose)
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         pass
 
     exit(0)

@@ -82,7 +82,7 @@ def main():
     # (e.x. queue up future tasks or detect person for fine-tuned positioning)
     # Simply print information for workers on the robot's ETA for the demonstation
     i = 0
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
@@ -113,7 +113,7 @@ def main():
         print(f'Task at {request_item_location} failed!')
         exit(-1)
 
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         pass
 
     exit(0)

@@ -72,7 +72,7 @@ def main():
     # Do something during our route (e.x. AI to analyze stock information or upload to the cloud)
     # Simply the current waypoint ID for the demonstation
     i = 0
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
@@ -91,7 +91,7 @@ def main():
     # go back to start
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
     navigator.goToPose(initial_pose)
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         pass
 
     exit(0)

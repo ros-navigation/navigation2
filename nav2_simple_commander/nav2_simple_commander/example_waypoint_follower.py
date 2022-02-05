@@ -90,7 +90,7 @@ def main():
     navigator.followWaypoints(goal_poses)
 
     i = 0
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         ################################################
         #
         # Implement some code here for your application!

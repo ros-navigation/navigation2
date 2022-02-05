@@ -68,7 +68,7 @@ def main():
     navigator.goToPose(goal_pose)
 
     i = 0
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         ################################################
         #
         # Implement some code here for your application!

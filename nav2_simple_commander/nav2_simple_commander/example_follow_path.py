@@ -56,7 +56,7 @@ def main():
     navigator.followPath(path)
 
     i = 0
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         ################################################
         #
         # Implement some code here for your application!

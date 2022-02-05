@@ -75,7 +75,7 @@ def main():
         # Do something during our route (e.x. AI detection on camera images for anomalies)
         # Simply print ETA for the demonstation
         i = 0
-        while not navigator.isNavComplete():
+        while not navigator.isTaskComplete():
             i += 1
             feedback = navigator.getFeedback()
             if feedback and i % 5 == 0:
