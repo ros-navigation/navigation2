@@ -60,11 +60,11 @@ while not nav.isTaskComplete():
 		nav.cancelTask()
 ...
 result = nav.getResult()
-if result == NavigationResult.SUCCEEDED:
+if result == TaskResult.SUCCEEDED:
     print('Goal succeeded!')
-elif result == NavigationResult.CANCELED:
+elif result == TaskResult.CANCELED:
     print('Goal was canceled!')
-elif result == NavigationResult.FAILED:
+elif result == TaskResult.FAILED:
     print('Goal failed!')
 ```
 

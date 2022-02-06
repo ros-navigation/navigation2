@@ -36,7 +36,7 @@ from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy
 
 
-class NavigationResult(Enum):
+class TaskResult(Enum):
     UNKNOWN = 0
     SUCCEEDED = 1
     CANCELED = 2
@@ -258,13 +258,13 @@ class BasicNavigator(Node):
     def getResult(self):
         """Get the pending action result message."""
         if self.status == GoalStatus.STATUS_SUCCEEDED:
-            return NavigationResult.SUCCEEDED
+            return TaskResult.SUCCEEDED
         elif self.status == GoalStatus.STATUS_ABORTED:
-            return NavigationResult.FAILED
+            return TaskResult.FAILED
         elif self.status == GoalStatus.STATUS_CANCELED:
-            return NavigationResult.CANCELED
+            return TaskResult.CANCELED
         else:
-            return NavigationResult.UNKNOWN
+            return TaskResult.UNKNOWN
 
     def waitUntilNav2Active(self):
         """Block until the full navigation system is up and running."""

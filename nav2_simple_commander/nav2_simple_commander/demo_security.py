@@ -16,7 +16,7 @@
 from copy import deepcopy
 
 from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 
 import rclpy
 from rclpy.duration import Duration
@@ -92,12 +92,12 @@ def main():
         security_route.reverse()
 
         result = navigator.getResult()
-        if result == NavigationResult.SUCCEEDED:
+        if result == TaskResult.SUCCEEDED:
             print('Route complete! Restarting...')
-        elif result == NavigationResult.CANCELED:
+        elif result == TaskResult.CANCELED:
             print('Security route was canceled, exiting.')
             exit(1)
-        elif result == NavigationResult.FAILED:
+        elif result == TaskResult.FAILED:
             print('Security route failed! Restarting from other side...')
 
     exit(0)

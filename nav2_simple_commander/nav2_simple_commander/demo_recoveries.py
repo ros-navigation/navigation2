@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
 from rclpy.duration import Duration
 
@@ -86,11 +86,11 @@ def main():
             print(f'Spin angle traveled: {feedback.angular_distance_traveled}')
 
     result = navigator.getResult()
-    if result == NavigationResult.SUCCEEDED:
+    if result == TaskResult.SUCCEEDED:
         print('Dead end confirmed! Returning to start...')
-    elif result == NavigationResult.CANCELED:
+    elif result == TaskResult.CANCELED:
         print('Recovery was canceled. Returning to start...')
-    elif result == NavigationResult.FAILED:
+    elif result == TaskResult.FAILED:
         print('Recovering from dead end failed! Returning to start...')
 
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()

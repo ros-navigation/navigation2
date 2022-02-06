@@ -16,7 +16,7 @@
 from copy import deepcopy
 
 from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
 
 """
@@ -80,11 +80,11 @@ def main():
                   str(feedback.current_waypoint + 1) + '/' + str(len(inspection_points)))
 
     result = navigator.getResult()
-    if result == NavigationResult.SUCCEEDED:
+    if result == TaskResult.SUCCEEDED:
         print('Inspection of shelves complete! Returning to start...')
-    elif result == NavigationResult.CANCELED:
+    elif result == TaskResult.CANCELED:
         print('Inspection of shelving was canceled. Returning to start...')
-    elif result == NavigationResult.FAILED:
+    elif result == TaskResult.FAILED:
         print('Inspection of shelving failed! Returning to start...')
 
     # go back to start
