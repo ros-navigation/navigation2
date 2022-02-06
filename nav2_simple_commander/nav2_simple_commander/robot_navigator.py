@@ -25,8 +25,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import BackUp, Spin
 from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose
-from nav2_msgs.action import FollowWaypoints, NavigateThroughPoses, NavigateToPose
-from nav2_msgs.action import FollowPath
+from nav2_msgs.action import FollowPath, FollowWaypoints, NavigateThroughPoses, NavigateToPose
 from nav2_msgs.srv import ClearEntireCostmap, GetCostmap, LoadMap, ManageLifecycleNodes
 
 import rclpy
