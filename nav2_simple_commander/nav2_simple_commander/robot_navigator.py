@@ -226,7 +226,7 @@ class BasicNavigator(Node):
 
     def cancelTask(self):
         """Cancel pending task request of any type."""
-        self.info('Canceling current goal.')
+        self.info('Canceling current task.')
         if self.result_future:
             future = self.goal_handle.cancel_goal_async()
             rclpy.spin_until_future_complete(self, future)
@@ -241,13 +241,13 @@ class BasicNavigator(Node):
         if self.result_future.result():
             self.status = self.result_future.result().status
             if self.status != GoalStatus.STATUS_SUCCEEDED:
-                self.debug(f'Goal with failed with status code: {self.status}')
+                self.debug(f'Task with failed with status code: {self.status}')
                 return True
         else:
             # Timed out, still processing, not complete yet
             return False
 
-        self.debug('Goal succeeded!')
+        self.debug('Task succeeded!')
         return True
 
     def getFeedback(self):
