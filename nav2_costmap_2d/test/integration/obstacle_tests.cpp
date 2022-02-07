@@ -413,8 +413,6 @@ TEST_F(TestNode, testRaytracing) {
  */
 TEST_F(TestNode, testDynParamsSetVoxel)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("voxel_dyn_param_test");
-
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
 
   // Add voxel layer
@@ -445,7 +443,8 @@ TEST_F(TestNode, testDynParamsSetVoxel)
     rclcpp::Parameter("voxel_layer.z_voxels", 14),
     rclcpp::Parameter("voxel_layer.max_obstacle_height", 4.0),
     rclcpp::Parameter("voxel_layer.footprint_clearing_enabled", false),
-    rclcpp::Parameter("voxel_layer.enabled", false)
+    rclcpp::Parameter("voxel_layer.enabled", false),
+    rclcpp::Parameter("voxel_layer.publish_voxel_map", true)
   });
 
   rclcpp::spin_until_future_complete(
@@ -461,6 +460,7 @@ TEST_F(TestNode, testDynParamsSetVoxel)
   EXPECT_EQ(costmap->get_parameter("voxel_layer.max_obstacle_height").as_double(), 4.0);
   EXPECT_EQ(costmap->get_parameter("voxel_layer.footprint_clearing_enabled").as_bool(), false);
   EXPECT_EQ(costmap->get_parameter("voxel_layer.enabled").as_bool(), false);
+  EXPECT_EQ(costmap->get_parameter("voxel_layer.publish_voxel_map").as_bool(), true);
 
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
@@ -474,8 +474,6 @@ TEST_F(TestNode, testDynParamsSetVoxel)
  */
 TEST_F(TestNode, testDynParamsSetStatic)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("static_dyn_param_test");
-
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
 
   costmap->set_parameter(rclcpp::Parameter("global_frame", std::string("base_link")));
@@ -491,7 +489,10 @@ TEST_F(TestNode, testDynParamsSetStatic)
   auto results = parameter_client->set_parameters_atomically(
   {
     rclcpp::Parameter("static_layer.transform_tolerance", 1.0),
-    rclcpp::Parameter("static_layer.enabled", false)
+    rclcpp::Parameter("static_layer.enabled", false),
+    rclcpp::Parameter("static_layer.map_subscribe_transient_local", false),
+    rclcpp::Parameter("static_layer.map_topic", "dynamic_topic"),
+    rclcpp::Parameter("static_layer.subscribe_to_updates", true)
   });
 
   rclcpp::spin_until_future_complete(
@@ -500,6 +501,9 @@ TEST_F(TestNode, testDynParamsSetStatic)
 
   EXPECT_EQ(costmap->get_parameter("static_layer.transform_tolerance").as_double(), 1.0);
   EXPECT_EQ(costmap->get_parameter("static_layer.enabled").as_bool(), false);
+  EXPECT_EQ(costmap->get_parameter("static_layer.map_subscribe_transient_local").as_bool(), false);
+  EXPECT_EQ(costmap->get_parameter("static_layer.map_topic").as_string(), "dynamic_topic");
+  EXPECT_EQ(costmap->get_parameter("static_layer.subscribe_to_updates").as_bool(), true);
 
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());

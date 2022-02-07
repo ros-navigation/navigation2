@@ -476,9 +476,9 @@ rcl_interfaces::msg::SetParametersResult
 VoxelLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
-  static bool resize_map_needed = false;
-  rcl_interfaces::msg::SetParametersResult result;
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  rcl_interfaces::msg::SetParametersResult result;
+  bool resize_map_needed = false;
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -525,7 +525,6 @@ VoxelLayer::dynamicParametersCallback(
 
   if (resize_map_needed) {
     matchSize();
-    resize_map_needed = false;
   }
 
   result.successful = true;

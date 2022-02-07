@@ -425,10 +425,11 @@ rcl_interfaces::msg::SetParametersResult
 InflationLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
-  static bool need_cache_recompute = false;
 
-  rcl_interfaces::msg::SetParametersResult result;
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  rcl_interfaces::msg::SetParametersResult result;
+
+  bool need_cache_recompute = false;
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -471,7 +472,6 @@ InflationLayer::dynamicParametersCallback(
 
   if (need_cache_recompute) {
     computeCaches();
-    need_cache_recompute = false;
   }
 
   result.successful = true;

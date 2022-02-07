@@ -608,8 +608,6 @@ TEST_F(TestNode, testInflation3)
  */
 TEST_F(TestNode, testDynParamsSet)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("inflation_dyn_param_test");
-
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
 
   costmap->set_parameter(rclcpp::Parameter("global_frame", std::string("base_link")));

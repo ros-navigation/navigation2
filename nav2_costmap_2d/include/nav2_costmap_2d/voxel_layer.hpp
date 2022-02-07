@@ -51,7 +51,6 @@
 #include <message_filters/subscriber.h>
 #include <nav2_costmap_2d/obstacle_layer.hpp>
 #include <nav2_voxel_grid/voxel_grid.hpp>
-#include <mutex>
 
 namespace nav2_costmap_2d
 {
