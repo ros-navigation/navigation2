@@ -16,10 +16,13 @@
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
+from rclpy.duration import Duration
 
 
 """
-Basic navigation demo to follow a given path
+Basic recoveries demo. In this demonstration, the robot navigates
+to a dead-end where recoveries such as backup and spin are used
+to get out of it.
 """
 
 
@@ -38,52 +41,62 @@ def main():
     initial_pose.pose.orientation.w = 0.0
     navigator.setInitialPose(initial_pose)
 
-    # Wait for navigation to fully activate, since autostarting nav2
+    # Wait for navigation to fully activate
     navigator.waitUntilNav2Active()
 
-    # Go to our demos first goal pose
     goal_pose = PoseStamped()
     goal_pose.header.frame_id = 'map'
     goal_pose.header.stamp = navigator.get_clock().now().to_msg()
-    goal_pose.pose.position.x = -3.0
-    goal_pose.pose.position.y = -2.0
+    goal_pose.pose.position.x = 6.13
+    goal_pose.pose.position.y = 1.90
     goal_pose.pose.orientation.w = 1.0
 
-    # Sanity check a valid path exists
-    path = navigator.getPath(initial_pose, goal_pose)
-
-    # Follow path
-    navigator.followPath(path)
+    navigator.goToPose(goal_pose)
 
     i = 0
     while not navigator.isTaskComplete():
-        ################################################
-        #
-        # Implement some code here for your application!
-        #
-        ################################################
-
-        # Do something with the feedback
         i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
-            print('Estimated distance remaining to goal position: ' +
-                  '{0:.3f}'.format(feedback.distance_to_goal) +
-                  '\nCurrent speed of the robot: ' +
-                  '{0:.3f}'.format(feedback.speed))
+            print(
+                f'Estimated time of arrival to destination is: \
+                {Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9}'
+            )
 
-    # Do something depending on the return code
+    # Robot hit a dead end, back it up
+    print('Robot hit a dead end, backing up...')
+    navigator.backup(backup_dist=0.5, backup_speed=0.1)
+
+    i = 0
+    while not navigator.isTaskComplete():
+        i += 1
+        feedback = navigator.getFeedback()
+        if feedback and i % 5 == 0:
+            print(f'Distance traveled: {feedback.distance_traveled}')
+
+    # Turn it around
+    print('Spinning robot around...')
+    navigator.spin(spin_dist=3.14)
+
+    i = 0
+    while not navigator.isTaskComplete():
+        i += 1
+        feedback = navigator.getFeedback()
+        if feedback and i % 5 == 0:
+            print(f'Spin angle traveled: {feedback.angular_distance_traveled}')
+
     result = navigator.getResult()
     if result == TaskResult.SUCCEEDED:
-        print('Goal succeeded!')
+        print('Dead end confirmed! Returning to start...')
     elif result == TaskResult.CANCELED:
-        print('Goal was canceled!')
+        print('Recovery was canceled. Returning to start...')
     elif result == TaskResult.FAILED:
-        print('Goal failed!')
-    else:
-        print('Goal has an invalid return status!')
+        print('Recovering from dead end failed! Returning to start...')
 
-    navigator.lifecycleShutdown()
+    initial_pose.header.stamp = navigator.get_clock().now().to_msg()
+    navigator.goToPose(initial_pose)
+    while not navigator.isTaskComplete():
+        pass
 
     exit(0)
 

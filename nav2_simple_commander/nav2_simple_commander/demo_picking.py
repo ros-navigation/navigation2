@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 
 import rclpy
 from rclpy.duration import Duration
@@ -82,7 +82,7 @@ def main():
     # (e.x. queue up future tasks or detect person for fine-tuned positioning)
     # Simply print information for workers on the robot's ETA for the demonstation
     i = 0
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
@@ -92,7 +92,7 @@ def main():
                   + ' seconds.')
 
     result = navigator.getResult()
-    if result == NavigationResult.SUCCEEDED:
+    if result == TaskResult.SUCCEEDED:
         print('Got product from ' + request_item_location +
               '! Bringing product to shipping destination (' + request_destination + ')...')
         shipping_destination = PoseStamped()
@@ -104,16 +104,16 @@ def main():
         shipping_destination.pose.orientation.w = 0.0
         navigator.goToPose(shipping_destination)
 
-    elif result == NavigationResult.CANCELED:
+    elif result == TaskResult.CANCELED:
         print(f'Task at {request_item_location} was canceled. Returning to staging point...')
         initial_pose.header.stamp = navigator.get_clock().now().to_msg()
         navigator.goToPose(initial_pose)
 
-    elif result == NavigationResult.FAILED:
+    elif result == TaskResult.FAILED:
         print(f'Task at {request_item_location} failed!')
         exit(-1)
 
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         pass
 
     exit(0)

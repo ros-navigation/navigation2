@@ -32,6 +32,7 @@ setup(
                 'demo_picking = nav2_simple_commander.demo_picking:main',
                 'demo_inspection = nav2_simple_commander.demo_inspection:main',
                 'demo_security = nav2_simple_commander.demo_security:main',
+                'demo_recoveries = nav2_simple_commander.demo_recoveries:main',
         ],
     },
 )
