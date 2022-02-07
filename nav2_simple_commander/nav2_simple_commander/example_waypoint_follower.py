@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
 from rclpy.duration import Duration
 
@@ -90,7 +90,7 @@ def main():
     navigator.followWaypoints(goal_poses)
 
     i = 0
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         ################################################
         #
         # Implement some code here for your application!
@@ -107,7 +107,7 @@ def main():
 
             # Some navigation timeout to demo cancellation
             if now - nav_start > Duration(seconds=600.0):
-                navigator.cancelNav()
+                navigator.cancelTask()
 
             # Some follow waypoints request change to demo preemption
             if now - nav_start > Duration(seconds=35.0):
@@ -124,11 +124,11 @@ def main():
 
     # Do something depending on the return code
     result = navigator.getResult()
-    if result == NavigationResult.SUCCEEDED:
+    if result == TaskResult.SUCCEEDED:
         print('Goal succeeded!')
-    elif result == NavigationResult.CANCELED:
+    elif result == TaskResult.CANCELED:
         print('Goal was canceled!')
-    elif result == NavigationResult.FAILED:
+    elif result == TaskResult.FAILED:
         print('Goal failed!')
     else:
         print('Goal has an invalid return status!')

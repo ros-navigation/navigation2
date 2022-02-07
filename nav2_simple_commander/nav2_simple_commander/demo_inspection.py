@@ -16,7 +16,7 @@
 from copy import deepcopy
 
 from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
 
 """
@@ -72,7 +72,7 @@ def main():
     # Do something during our route (e.x. AI to analyze stock information or upload to the cloud)
     # Simply the current waypoint ID for the demonstation
     i = 0
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
@@ -80,18 +80,17 @@ def main():
                   str(feedback.current_waypoint + 1) + '/' + str(len(inspection_points)))
 
     result = navigator.getResult()
-    if result == NavigationResult.SUCCEEDED:
+    if result == TaskResult.SUCCEEDED:
         print('Inspection of shelves complete! Returning to start...')
-    elif result == NavigationResult.CANCELED:
+    elif result == TaskResult.CANCELED:
         print('Inspection of shelving was canceled. Returning to start...')
-        exit(1)
-    elif result == NavigationResult.FAILED:
+    elif result == TaskResult.FAILED:
         print('Inspection of shelving failed! Returning to start...')
 
     # go back to start
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
     navigator.goToPose(initial_pose)
-    while not navigator.isNavComplete():
+    while not navigator.isTaskComplete():
         pass
 
     exit(0)
