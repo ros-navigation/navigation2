@@ -273,7 +273,7 @@ class BasicNavigator(Node):
         self.info('Nav2 is ready for use!')
         return
 
-    def getPath(self, start, goal):
+    def getPath(self, start, goal, planner_id=None):
         """Send a `ComputePathToPose` action request."""
         self.debug("Waiting for 'ComputePathToPose' action server")
         while not self.compute_path_to_pose_client.wait_for_server(timeout_sec=1.0):
@@ -282,6 +282,8 @@ class BasicNavigator(Node):
         goal_msg = ComputePathToPose.Goal()
         goal_msg.goal = goal
         goal_msg.start = start
+        if planner_id is not None:
+            goal_msg.planner_id = planner_id
 
         self.info('Getting path...')
         send_goal_future = self.compute_path_to_pose_client.send_goal_async(goal_msg)
