@@ -603,6 +603,8 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   const double max_costmap_extent = max_costmap_dim * costmap->getResolution() / 2.0;
   const double max_transform_dist = std::min(max_costmap_extent, dist_to_direction_change);
 
+  // TODO(aposhian): for long paths, this might get computationally expensive to do all the time,
+  // and we should be able to cache the results of this distance accumulation
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_element_beyond(
     global_plan_.poses.begin(), global_plan_.poses.end(), dist_to_direction_change);

@@ -116,7 +116,9 @@ protected:
    * @param pose pose to transform
    * @return Path in new frame
    */
-  nav_msgs::msg::Path transformGlobalPlan(const geometry_msgs::msg::PoseStamped & pose);
+  nav_msgs::msg::Path transformGlobalPlan(
+    const geometry_msgs::msg::PoseStamped & pose,
+    double dist_to_direction_change);
 
   /**
    * @brief Transform a pose to another frame.
