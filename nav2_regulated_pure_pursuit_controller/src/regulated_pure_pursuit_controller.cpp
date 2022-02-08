@@ -261,14 +261,15 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     goal_dist_tol_ = pose_tolerance.position.x;
   }
 
+  double dist_to_direction_change = findDirectionChange(pose);
+
   // Transform path to robot base frame
-  auto transformed_plan = transformGlobalPlan(pose);
+  auto transformed_plan = transformGlobalPlan(pose, dist_to_direction_change);
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
 
   // if the lookahead distance is further than the cusp, use the cusp distance instead
-  double dist_to_direction_change = findDirectionChange(pose);
   if (dist_to_direction_change < lookahead_dist) {
     lookahead_dist = dist_to_direction_change;
   }
@@ -584,7 +585,7 @@ void RegulatedPurePursuitController::setSpeedLimit(
 }
 
 nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
-  const geometry_msgs::msg::PoseStamped & pose)
+  const geometry_msgs::msg::PoseStamped & pose, double dist_to_direction_change)
 {
   if (global_plan_.poses.empty()) {
     throw nav2_core::PlannerException("Received plan with zero length");
@@ -599,21 +600,24 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   // We'll discard points on the plan that are outside the local costmap
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   const double max_costmap_dim = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY());
-  const double max_transform_dist = max_costmap_dim * costmap->getResolution() / 2.0;
+  const double max_costmap_extent = max_costmap_dim * costmap->getResolution() / 2.0;
+  const double max_transform_dist = std::min(max_costmap_extent, dist_to_direction_change);
 
-  auto lookahead_element =
+  auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_element_beyond(
-    global_plan_.poses.begin(), global_plan_.poses.end(), lookahead_dist_);
+    global_plan_.poses.begin(), global_plan_.poses.end(), dist_to_direction_change);
 
   // First find the closest pose on the path to the robot
+  // bounded by when the path turns around (if it does) so we don't get a pose from a later
+  // portion of the path
   auto transformation_begin =
     nav2_util::geometry_utils::min_by(
-    global_plan_.poses.begin(), lookahead_element,
+    global_plan_.poses.begin(), closest_pose_upper_bound,
     [&robot_pose](const geometry_msgs::msg::PoseStamped & ps) {
       return euclidean_distance(robot_pose, ps);
     });
 
-  // Find points upto max_transform_dist so we only transform them.
+  // Find points up to max_transform_dist so we only transform them.
   auto transformation_end =
     nav2_util::geometry_utils::first_element_beyond(
     transformation_begin, global_plan_.poses.end(), max_transform_dist);
