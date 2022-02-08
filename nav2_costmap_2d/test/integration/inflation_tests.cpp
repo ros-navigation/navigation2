@@ -602,7 +602,6 @@ TEST_F(TestNode, testInflation3)
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 4u);
 }
 
-
 /**
  * Test dynamic parameter setting of inflation layer
  */
@@ -642,5 +641,4 @@ TEST_F(TestNode, testDynParamsSet)
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
   costmap->on_shutdown(rclcpp_lifecycle::State());
-
 }

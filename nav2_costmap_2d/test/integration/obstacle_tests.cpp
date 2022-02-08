@@ -465,9 +465,7 @@ TEST_F(TestNode, testDynParamsSetVoxel)
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
   costmap->on_shutdown(rclcpp_lifecycle::State());
-
 }
-
 
 /**
  * Test dynamic parameter setting of static layer
@@ -508,5 +506,4 @@ TEST_F(TestNode, testDynParamsSetStatic)
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
   costmap->on_shutdown(rclcpp_lifecycle::State());
-
 }

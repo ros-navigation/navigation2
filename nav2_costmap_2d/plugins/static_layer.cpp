@@ -452,7 +452,6 @@ rcl_interfaces::msg::SetParametersResult
 StaticLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
-
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   rcl_interfaces::msg::SetParametersResult result;
 
