@@ -1,0 +1,8 @@
+#goal definition
+nav2_msgs/OrientedNavSatFix[] gps_poses
+---
+#result definition
+int32[] missed_waypoints
+---
+#feedback
+uint32 current_waypoint

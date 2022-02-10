@@ -1,0 +1,2 @@
+sensor_msgs/NavSatFix position
+geometry_msgs/Quaternion orientation
