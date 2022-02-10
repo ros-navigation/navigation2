@@ -67,6 +67,14 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     false);
   callback_group_executor_.add_callback_group(callback_group_, get_node_base_interface());
 
+  std::vector<std::string> new_args = rclcpp::NodeOptions().arguments();
+  new_args.push_back("--ros-args");
+  new_args.push_back("-r");
+  new_args.push_back(std::string("__node:=") + this->get_name() + "_rclcpp_node");
+  new_args.push_back("--");
+  client_node_ = std::make_shared<rclcpp::Node>(
+    "_", "", rclcpp::NodeOptions().arguments(new_args));
+
   nav_to_pose_client_ = rclcpp_action::create_client<ClientT>(
     get_node_base_interface(),
     get_node_graph_interface(),
