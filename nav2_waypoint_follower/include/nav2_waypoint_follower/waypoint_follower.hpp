@@ -30,13 +30,14 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/string_utils.hpp"
 #include "nav2_msgs/action/follow_gps_waypoints.hpp"
 #include "nav2_util/service_client.hpp"
 #include "nav2_core/waypoint_task_executor.hpp"
 
 #include "robot_localization/srv/from_ll.hpp"
 #include "tf2_ros/buffer.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/transform_listener.h"
 
 namespace nav2_waypoint_follower
@@ -181,6 +182,8 @@ protected:
   std::vector<int> failed_ids_;
   int loop_rate_;
   bool stop_on_failure_;
+  std::string global_frame_id_{"map"};
+  std::string utm_frame_id_{"utm"};
 
   /**
    * @brief Callback executed when a parameter change is detected

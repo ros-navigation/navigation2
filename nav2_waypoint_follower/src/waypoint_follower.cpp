@@ -37,6 +37,8 @@ WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
   declare_parameter("stop_on_failure", true);
   declare_parameter("loop_rate", 20);
   declare_parameter("transform_tolerance", 0.1);
+  declare_parameter("global_frame_id", global_frame_id_);
+  declare_parameter("utm_frame_id", utm_frame_id_);
 
   nav2_util::declare_parameter_if_not_declared(
     this, std::string("waypoint_task_executor_plugin"),
@@ -44,6 +46,9 @@ WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
   nav2_util::declare_parameter_if_not_declared(
     this, std::string("wait_at_waypoint.plugin"),
     rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));
+  
+  global_frame_id_ = nav2_util::strip_leading_slash(global_frame_id_);
+  utm_frame_id_ = nav2_util::strip_leading_slash(utm_frame_id_);
 }
 
 WaypointFollower::~WaypointFollower()
@@ -437,6 +442,8 @@ WaypointFollower::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
 
   result.successful = true;
   return result;
+}
+
 std::vector<geometry_msgs::msg::PoseStamped>
 WaypointFollower::convertGPSPoses2MapPoses(
   const std::vector<nav2_msgs::msg::OrientedNavSatFix> & gps_poses,
@@ -479,28 +486,25 @@ WaypointFollower::convertGPSPoses2MapPoses(
       // Map to Identity , where actually it might not be
       geometry_msgs::msg::TransformStamped utm_to_map_transform;
       try {
-        utm_to_map_transform = tf_buffer_->lookupTransform("utm", "map", tf2::TimePointZero);
+        utm_to_map_transform = tf_buffer_->lookupTransform(utm_frame_id_, global_frame_id_, tf2::TimePointZero);
       } catch (tf2::TransformException & ex) {
         RCLCPP_ERROR(
           parent_node->get_logger(),
-          "Exception in getting utm -> map transform: %s",
-          ex.what());
+          "Exception in getting %s -> %s transform: %s",
+          utm_frame_id_.c_str(), global_frame_id_.c_str(), ex.what());
       }
-      tf2::Quaternion utm_to_map_quat;
-      tf2::fromMsg(utm_to_map_transform.transform.rotation, utm_to_map_quat);
-      double roll, pitch, yaw;
-      tf2::Matrix3x3 m(utm_to_map_quat); m.getRPY(roll, pitch, yaw);
       // we need to consider the possible yaw_offset between utm and map here,
       // rotate x , y with amount of yaw
-      double x = response->map_point.x;
-      double y = response->map_point.y;
-      double x_dot = x * std::cos(yaw) - y * std::sin(yaw);
-      double y_dot = x * std::sin(yaw) + y * std::cos(yaw);
+      tf2::Quaternion utm_to_map_quat;
+      tf2::fromMsg(utm_to_map_transform.transform.rotation, utm_to_map_quat);
+      const tf2::Matrix3x3 m(utm_to_map_quat);
+      const tf2::Vector3 point({response->map_point.x, response->map_point.y, response->map_point.z});
+      auto corrected_point = m*point;
       geometry_msgs::msg::PoseStamped curr_pose_map_frame;
-      curr_pose_map_frame.header.frame_id = "map";
+      curr_pose_map_frame.header.frame_id = global_frame_id_;
       curr_pose_map_frame.header.stamp = parent_node->now();
-      curr_pose_map_frame.pose.position.x = x_dot;
-      curr_pose_map_frame.pose.position.y = y_dot;
+      curr_pose_map_frame.pose.position.x = corrected_point[0];
+      curr_pose_map_frame.pose.position.y = corrected_point[1];
       curr_pose_map_frame.pose.position.z = response->map_point.z;
       curr_pose_map_frame.pose.orientation = curr_oriented_navsat_fix.orientation;
       poses_in_map_frame_vector.push_back(curr_pose_map_frame);
