@@ -1,5 +1,5 @@
 #goal definition
-# nav2_msgs/OrientedNavSatFix[] gps_poses
+# geographic_msgs/GeoPose[] gps_poses
 geographic_msgs/GeoPose[] gps_poses
 ---
 #result definition

@@ -23,7 +23,6 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_msgs/msg/oriented_nav_sat_fix.hpp"
 #include "geographic_msgs/msg/geo_pose.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
