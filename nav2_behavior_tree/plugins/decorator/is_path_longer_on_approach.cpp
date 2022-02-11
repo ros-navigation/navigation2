@@ -67,8 +67,8 @@ inline BT::NodeStatus IsPathLongerOnApproach::tick()
     first_time_ = false;
   }
 
-  // Check if the old path is not same with the current one
-  // Calculate and compare the old and the new path length, given the goal proximity
+  // Check if the path is updated and valid, compare the old and the new path length,
+  // given the goal proximity and check if the new path is longer
   if (isPathUpdated(new_path_, old_path_) && isRobotInGoalProximity(old_path_, prox_leng_) &&
     isNewPathLonger(new_path_, old_path_, length_factor_) && !first_time_)
   {
