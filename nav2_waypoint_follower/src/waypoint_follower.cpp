@@ -446,7 +446,7 @@ WaypointFollower::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
 
 std::vector<geometry_msgs::msg::PoseStamped>
 WaypointFollower::convertGPSPoses2MapPoses(
-  const std::vector<nav2_msgs::msg::OrientedNavSatFix> & gps_poses,
+  const std::vector<geographic_msgs::msg::GeoPose> & gps_poses,
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & parent_node,
   const std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> & fromll_client)
 {
@@ -454,12 +454,12 @@ WaypointFollower::convertGPSPoses2MapPoses(
 
   std::vector<geometry_msgs::msg::PoseStamped> poses_in_map_frame_vector;
   int waypoint_index = 0;
-  for (auto && curr_oriented_navsat_fix : gps_poses) {
+  for (auto && curr_geopose : gps_poses) {
     auto request = std::make_shared<robot_localization::srv::FromLL::Request>();
     auto response = std::make_shared<robot_localization::srv::FromLL::Response>();
-    request->ll_point.latitude = curr_oriented_navsat_fix.position.latitude;
-    request->ll_point.longitude = curr_oriented_navsat_fix.position.longitude;
-    request->ll_point.altitude = curr_oriented_navsat_fix.position.altitude;
+    request->ll_point.latitude = curr_geopose.position.latitude;
+    request->ll_point.longitude = curr_geopose.position.longitude;
+    request->ll_point.altitude = curr_geopose.position.altitude;
 
     fromll_client->wait_for_service((std::chrono::seconds(1)));
     if (!fromll_client->invoke(request, response)) {
@@ -506,7 +506,7 @@ WaypointFollower::convertGPSPoses2MapPoses(
       curr_pose_map_frame.pose.position.x = corrected_point[0];
       curr_pose_map_frame.pose.position.y = corrected_point[1];
       curr_pose_map_frame.pose.position.z = response->map_point.z;
-      curr_pose_map_frame.pose.orientation = curr_oriented_navsat_fix.orientation;
+      curr_pose_map_frame.pose.orientation = curr_geopose.orientation;
       poses_in_map_frame_vector.push_back(curr_pose_map_frame);
     }
     waypoint_index++;

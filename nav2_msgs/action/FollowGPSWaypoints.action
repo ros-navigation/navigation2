@@ -1,5 +1,6 @@
 #goal definition
-nav2_msgs/OrientedNavSatFix[] gps_poses
+# nav2_msgs/OrientedNavSatFix[] gps_poses
+geographic_msgs/GeoPose[] gps_poses
 ---
 #result definition
 int32[] missed_waypoints

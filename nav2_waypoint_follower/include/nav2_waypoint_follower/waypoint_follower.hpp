@@ -24,6 +24,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_msgs/msg/oriented_nav_sat_fix.hpp"
+#include "geographic_msgs/msg/geo_pose.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/action/follow_waypoints.hpp"
@@ -169,7 +170,7 @@ protected:
  * @return std::vector<geometry_msgs::msg::PoseStamped>
  */
   std::vector<geometry_msgs::msg::PoseStamped> convertGPSPoses2MapPoses(
-    const std::vector<nav2_msgs::msg::OrientedNavSatFix> & gps_poses,
+    const std::vector<geographic_msgs::msg::GeoPose> & gps_poses,
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & parent_node,
     const
     std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> & fromll_client);
