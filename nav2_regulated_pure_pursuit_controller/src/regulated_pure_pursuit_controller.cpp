@@ -607,7 +607,7 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   // and we should be able to cache the results of this distance accumulation
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_element_beyond(
-    global_plan_.poses.begin(), global_plan_.poses.end(), dist_to_direction_change);
+    global_plan_.poses.begin(), global_plan_.poses.end(), max_transform_dist);
 
   // First find the closest pose on the path to the robot
   // bounded by when the path turns around (if it does) so we don't get a pose from a later
