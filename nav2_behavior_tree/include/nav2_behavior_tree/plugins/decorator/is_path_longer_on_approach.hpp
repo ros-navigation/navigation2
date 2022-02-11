@@ -48,12 +48,13 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
+      BT::InputPort<nav_msgs::msg::Path>("new_path", "New Planned Path"),
+      BT::InputPort<nav_msgs::msg::Path>("old_path", "Old Planned Path"),
       BT::InputPort<double>(
-        "prox_leng", 1.0,
-        "Proximity length (m) for the path to be longer on approach"),
+        "prox_leng", 5.0,
+        "Integrated path length proximity to the goal pose to apply the behavior (m)"),
       BT::InputPort<double>(
-        "length_factor", 1.0,
+        "length_factor", 2.0,
         "Length factor to check if the path is significantly longer"),
     };
   }
@@ -63,6 +64,39 @@ public:
    * @return BT::NodeStatus Status of tick execution
    */
   BT::NodeStatus tick() override;
+
+private:
+  /**
+   * @brief Checks if the global path is updated
+   * @param new_path new path to the goal
+   * @param old_path current path to the goal
+   * @return whether the path is updated for the current goal
+   */
+  bool isPathUpdated(
+    nav_msgs::msg::Path & new_path,
+    nav_msgs::msg::Path & old_path);
+
+  /**
+   * @brief Checks if the robot is in the goal proximity
+   * @param old_path current path to the goal
+   * @param prox_leng proximity length from the goal
+   * @return whether the robot is in the goal proximity
+   */
+  bool isRobotInGoalProximity(
+    nav_msgs::msg::Path & old_path,
+    double & prox_leng);
+
+  /**
+   * @brief Checks if the new path is longer
+   * @param new_path new path to the goal
+   * @param old_path current path to the goal
+   * @param length_factor multipler for path length check
+   * @return whether the new path is longer
+   */
+  bool isNewPathLonger(
+    nav_msgs::msg::Path & new_path,
+    nav_msgs::msg::Path & old_path,
+    double & length_factor);
 
 private:
   nav_msgs::msg::Path new_path_;

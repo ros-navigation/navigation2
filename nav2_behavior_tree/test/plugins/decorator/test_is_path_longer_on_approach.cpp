@@ -85,12 +85,13 @@ std::shared_ptr<BT::Tree> IsPathLongerOnApproachTestFixture::tree_ = nullptr;
 
 TEST_F(IsPathLongerOnApproachTestFixture, test_tick)
 {
+  // Success test
   // create tree
   std::string xml_txt =
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-          <IsPathLongerOnApproach path="{path}" prox_leng="16.0" length_factor="1.0">
+          <IsPathLongerOnApproach new_path="{path}" prox_leng="5.0" length_factor="2.0">
             <AlwaysSuccess/>
           </IsPathLongerOnApproach>
         </BehaviorTree>
@@ -109,6 +110,40 @@ TEST_F(IsPathLongerOnApproachTestFixture, test_tick)
 
   tree_->rootNode()->executeTick();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+
+  // Failure test
+  // create tree
+  xml_txt =
+    R"(
+      <root main_tree_to_execute = "MainTree" >
+        <BehaviorTree ID="MainTree">
+          <IsPathLongerOnApproach new_path="{path}" old_path="{old_path}" prox_leng="20.0" length_factor="1.0">
+            <AlwaysFailure/>
+          </IsPathLongerOnApproach>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // set new path on blackboard
+  new_path.poses.resize(11);
+  for (unsigned int i = 0; i <= new_path.poses.size(); i++) {
+    // Assuming distance between waypoints to be 1.5m
+    new_path.poses[i].pose.position.x = 1.5 * i;
+  }
+  config_->blackboard->set<nav_msgs::msg::Path>("path", new_path);
+
+  // set old path on blackboard
+  nav_msgs::msg::Path old_path;
+  old_path.poses.resize(5);
+  for (unsigned int i = 1; i <= old_path.poses.size(); i++) {
+    // Assuming distance between waypoints to be 3.0m
+    old_path.poses[i - 1].pose.position.x = 3.0 * i;
+  }
+  config_->blackboard->set<nav_msgs::msg::Path>("old_path", old_path);
+
+  tree_->rootNode()->executeTick();
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
 }
 
 int main(int argc, char ** argv)

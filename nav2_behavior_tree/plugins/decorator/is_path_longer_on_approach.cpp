@@ -30,36 +30,61 @@ IsPathLongerOnApproach::IsPathLongerOnApproach(
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 }
 
+bool IsPathLongerOnApproach::isPathUpdated(
+  nav_msgs::msg::Path & new_path,
+  nav_msgs::msg::Path & old_path)
+{
+  return new_path != old_path && old_path.poses.size() != 0 &&
+         new_path.poses.size() != 0 &&
+         old_path.poses.back() == new_path.poses.back();
+}
+
+bool IsPathLongerOnApproach::isRobotInGoalProximity(
+  nav_msgs::msg::Path & old_path,
+  double & prox_leng)
+{
+  return nav2_util::geometry_utils::calculate_path_length(old_path, 0) < prox_leng;
+}
+
+bool IsPathLongerOnApproach::isNewPathLonger(
+  nav_msgs::msg::Path & new_path,
+  nav_msgs::msg::Path & old_path,
+  double & length_factor)
+{
+  return nav2_util::geometry_utils::calculate_path_length(new_path, 0) >
+         length_factor * nav2_util::geometry_utils::calculate_path_length(
+    old_path, 0);
+}
+
 inline BT::NodeStatus IsPathLongerOnApproach::tick()
 {
-  getInput("path", new_path_);
+  getInput("new_path", new_path_);
+  getInput("old_path", old_path_);
   getInput("prox_leng", prox_leng_);
   getInput("length_factor", length_factor_);
 
+  if (old_path_.poses.size() != 0) {
+    first_time_ = false;
+  }
+
   // Check if the old path is not same with the current one
-  if (new_path_ != old_path_ && old_path_.poses.size() != 0 && new_path_.poses.size() != 0) {
-    // Calculate and compare the old and the new path length, given the goal proximity
-    if ( (nav2_util::geometry_utils::calculate_path_length(new_path_, 0) >= prox_leng_) &&
-      (nav2_util::geometry_utils::calculate_path_length(new_path_, 0) >=
-      length_factor_ * nav2_util::geometry_utils::calculate_path_length(
-        old_path_, 0)
-      ) && (old_path_.poses.back() == new_path_.poses.back()) && !first_time_)
-    {
-      const BT::NodeStatus child_state = child_node_->executeTick();
-      switch (child_state) {
-        case BT::NodeStatus::RUNNING:
-          return BT::NodeStatus::RUNNING;
-        case BT::NodeStatus::SUCCESS:
-          first_time_ = true;
-          return BT::NodeStatus::SUCCESS;
-        case BT::NodeStatus::FAILURE:
-          return BT::NodeStatus::FAILURE;
-        default:
-          return BT::NodeStatus::FAILURE;
-      }
+  // Calculate and compare the old and the new path length, given the goal proximity
+  if (isPathUpdated(new_path_, old_path_) && isRobotInGoalProximity(old_path_, prox_leng_) &&
+    isNewPathLonger(new_path_, old_path_, length_factor_) && !first_time_)
+  {
+    const BT::NodeStatus child_state = child_node_->executeTick();
+    switch (child_state) {
+      case BT::NodeStatus::RUNNING:
+        return BT::NodeStatus::RUNNING;
+      case BT::NodeStatus::SUCCESS:
+        first_time_ = true;
+        return BT::NodeStatus::SUCCESS;
+      case BT::NodeStatus::FAILURE:
+        return BT::NodeStatus::FAILURE;
+      default:
+        return BT::NodeStatus::FAILURE;
     }
   }
-  first_time_ = false;
   old_path_ = new_path_;
   return BT::NodeStatus::SUCCESS;
 }

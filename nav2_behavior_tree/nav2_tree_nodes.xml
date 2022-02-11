@@ -176,6 +176,8 @@
     </Decorator>
 
     <Decorator ID="IsPathLongerOnApproach">
+      <input_port name="new_path">New Planned Path</input_port>
+      <input_port name="old_path">Old Planned Path</input_port>
       <input_port name="prox_leng">Proximity length (m) for the path to be longer on approach</input_port>
       <input_port name="length_factor">Length factor to check if the path is significantly longer </input_port>
     </Decorator>
