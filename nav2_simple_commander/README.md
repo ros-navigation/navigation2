@@ -35,7 +35,7 @@ The methods provided by the basic navigator are shown below, with inputs and exp
 | clearGlobalCostmap()              | Clears the global costmap.                                                 |
 | getGlobalCostmap()                | Returns the global costmap, `nav2_msgs/Costmap`                            |
 | getLocalCostmap()                 | Returns the local costmap, `nav2_msgs/Costmap`                             |
-| waitUntilNav2Active()             | Blocks until Nav2 is completely online and lifecycle nodes are in the active state. To be used in conjunction with autostart or external lifecycle bringup.  |
+| waitUntilNav2Active(navigator='bt_navigator, localizer='amcl') | Blocks until Nav2 is completely online and lifecycle nodes are in the active state. To be used in conjunction with autostart or external lifecycle bringup. Custom navigator and localizer nodes can be specified  |
 | lifecycleStartup()                | Sends a request to all lifecycle management servers to bring them into the active state, to be used if autostart is `false` and you want this program to control Nav2's lifecycle. |
 | lifecycleShutdown()               | Sends a request to all lifecycle management servers to shut them down.     |
 
