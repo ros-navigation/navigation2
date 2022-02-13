@@ -61,7 +61,8 @@ public:
   geometry_msgs::msg::PoseStamped getLookAheadPointWrapper(
     const double & dist, const nav_msgs::msg::Path & path)
   {
-    return getLookAheadPoint(dist, path);
+    double remaining_path_length;
+    return getLookAheadPoint(dist, path, remaining_path_length);
   }
 
   bool shouldRotateToPathWrapper(

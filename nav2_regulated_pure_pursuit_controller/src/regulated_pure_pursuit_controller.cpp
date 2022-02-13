@@ -420,7 +420,7 @@ void RegulatedPurePursuitController::rotateToHeading(
 
 geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoint(
   const double & lookahead_dist,
-  const nav_msgs::msg::Path & transformed_plan)
+  const nav_msgs::msg::Path & transformed_plan, double & remaining_path_length)
 {
   // Find the first pose which is at a distance greater than the lookahead distance
   auto goal_pose_it = std::find_if(
@@ -432,6 +432,11 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
   if (goal_pose_it == transformed_plan.poses.end()) {
     goal_pose_it = std::prev(transformed_plan.poses.end());
   }
+
+  size_t lookahead_index = std::distance(transformed_plan.poses.begin(), goal_pose_it);
+  remaining_path_length = nav2_util::geometry_utils::calculate_path_length(
+    transformed_plan,
+    lookahead_index);
 
   return *goal_pose_it;
 }
