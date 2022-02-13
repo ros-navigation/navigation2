@@ -351,6 +351,16 @@ PlannerServer::computePlanThroughPoses()
   auto result = std::make_shared<ActionThroughPoses::Result>();
   nav_msgs::msg::Path concat_path;
 
+  // By default we will use last default planner id
+  std::string current_planner_id = default_ids_.back();
+
+  if(goal->planner_ids.size() != goal->goals.size() && goal->planner_ids.size() != 0 && goal->planner_ids.size() != 1){
+    RCLCPP_WARN(
+      get_logger(),
+      "Compute path through poses requested with a planner_ids array length mismatch. It should be either 0 - use default, 1 - use one for all, or length should be equal to the number of goals. Current Planner Ids len %d, goal len %d", goal->planner_ids.size(), goal->goals.size());
+    action_server_poses_->terminate_current();
+  }
+
   try {
     if (isServerInactive(action_server_poses_) || isCancelRequested(action_server_poses_)) {
       return;
@@ -389,12 +399,20 @@ PlannerServer::computePlanThroughPoses()
       if (!transformPosesToGlobalFrame(action_server_poses_, curr_start, curr_goal)) {
         return;
       }
+      
+      // Check if size 1 - use specified, if 0 then we use default that was assigned above, otherwise assign corresponding planner_id
+      if(goal->planner_ids.size() == 1){
+        current_planner_id = goal->planner_ids[0];
+      }
+      else if(goal->planner_ids.size() != 0){
+        current_planner_id = goal->planner_ids[i];
+      }
 
       // Get plan from start -> goal
-      nav_msgs::msg::Path curr_path = getPlan(curr_start, curr_goal, goal->planner_id);
+      nav_msgs::msg::Path curr_path = getPlan(curr_start, curr_goal, current_planner_id);
 
       // check path for validity
-      if (!validatePath(action_server_poses_, curr_goal, curr_path, goal->planner_id)) {
+      if (!validatePath(action_server_poses_, curr_goal, curr_path, current_planner_id)) {
         return;
       }
 
@@ -423,7 +441,7 @@ PlannerServer::computePlanThroughPoses()
     RCLCPP_WARN(
       get_logger(),
       "%s plugin failed to plan through %li points with final goal (%.2f, %.2f): \"%s\"",
-      goal->planner_id.c_str(), goal->goals.size(), goal->goals.back().pose.position.x,
+      current_planner_id.c_str(), goal->goals.size(), goal->goals.back().pose.position.x,
       goal->goals.back().pose.position.y, ex.what());
     action_server_poses_->terminate_current();
   }

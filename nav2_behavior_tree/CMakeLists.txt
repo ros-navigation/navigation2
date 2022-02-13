@@ -156,6 +156,9 @@ list(APPEND plugin_libs nav2_controller_selector_bt_node)
 add_library(nav2_goal_checker_selector_bt_node SHARED plugins/action/goal_checker_selector_node.cpp)
 list(APPEND plugin_libs nav2_goal_checker_selector_bt_node)
 
+add_library(nav2_remove_passed_goals_with_multiple_planners_bt_node SHARED plugins/action/remove_passed_goals_with_multiple_planners_action.cpp)
+list(APPEND plugin_libs nav2_remove_passed_goals_with_multiple_planners_bt_node)
+
 foreach(bt_plugin ${plugin_libs})
   ament_target_dependencies(${bt_plugin} ${dependencies})
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)

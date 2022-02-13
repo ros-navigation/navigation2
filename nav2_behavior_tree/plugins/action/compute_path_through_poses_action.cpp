@@ -32,7 +32,7 @@ ComputePathThroughPosesAction::ComputePathThroughPosesAction(
 void ComputePathThroughPosesAction::on_tick()
 {
   getInput("goals", goal_.goals);
-  getInput("planner_id", goal_.planner_id);
+  getInput("planner_ids", goal_.planner_ids);
   if (getInput("start", goal_.start)) {
     goal_.use_start = true;
   }
