@@ -404,18 +404,22 @@ bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
 }
 
 void RegulatedPurePursuitController::rotateToHeading(
-  double & linear_vel, double & angular_vel,
-  const double & angle_to_path, const geometry_msgs::msg::Twist & curr_speed)
+  double & /*linear_vel*/, double & /*angular_vel*/,
+  const double & angle_to_path, const geometry_msgs::msg::Twist & /*curr_speed*/)
 {
   // Rotate in place using max angular velocity / acceleration possible
-  linear_vel = 0.0;
-  const double sign = angle_to_path > 0.0 ? 1.0 : -1.0;
-  angular_vel = sign * rotate_to_heading_angular_vel_;
+  angle_profile_input_.control_interface = ruckig::ControlInterface::Position;
+  angle_profile_input_.max_velocity = {rotate_to_heading_angular_vel_};
+  angle_profile_input_.current_position = {robot_angle_};
+  angle_profile_input_.target_position = {
+    robot_angle_ + angle_to_path};
+  angle_profile_input_.target_velocity = {0.0};
 
-  const double & dt = control_duration_;
-  const double min_feasible_angular_speed = curr_speed.angular.z - max_angular_accel_ * dt;
-  const double max_feasible_angular_speed = curr_speed.angular.z + max_angular_accel_ * dt;
-  angular_vel = std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
+  // Switch distance profile to velocity mode and keep it at zero
+  distance_profile_input_.control_interface = ruckig::ControlInterface::Velocity;
+  distance_profile_input_.target_velocity = {0.0};
+
+  rotating_ = true;
 }
 
 geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoint(
