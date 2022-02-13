@@ -387,7 +387,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // Make sure we're in compliance with basic constraints
   double angle_to_heading;
-  if (shouldRotateToGoalHeading(carrot_pose) && !rotating_) {
+  if (shouldRotateToGoalHeading(carrot_pose, lookahead_dist) && !rotating_) {
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
   } else if (shouldRotateToPath(carrot_pose, angle_to_heading) && !rotating_) {
@@ -463,11 +463,12 @@ bool RegulatedPurePursuitController::shouldRotateToPath(
 }
 
 bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
-  const geometry_msgs::msg::PoseStamped & carrot_pose)
+  const geometry_msgs::msg::PoseStamped & carrot_pose, const double & lookahead_dist)
 {
   // Whether we should rotate robot to goal heading
-  double dist_to_goal = std::hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
-  return use_rotate_to_heading_ && dist_to_goal < goal_dist_tol_;
+  double carrot_dist = std::hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
+  return use_rotate_to_heading_ && carrot_dist < goal_dist_tol_ &&
+   fabs(lookahead_dist - carrot_dist) > goal_dist_tol_;
 }
 
 void RegulatedPurePursuitController::rotateToHeading(

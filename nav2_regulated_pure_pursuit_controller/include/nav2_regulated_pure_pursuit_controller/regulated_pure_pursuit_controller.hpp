@@ -158,9 +158,11 @@ protected:
   /**
    * @brief Whether robot should rotate to final goal orientation
    * @param carrot_pose current lookahead point
+   * @param lookahead_dist current lookahead distance
    * @return Whether should rotate to goal heading
    */
-  bool shouldRotateToGoalHeading(const geometry_msgs::msg::PoseStamped & carrot_pose);
+  bool shouldRotateToGoalHeading(
+    const geometry_msgs::msg::PoseStamped & carrot_pose, const double & lookahead_dist);
 
   /**
    * @brief Create a smooth and kinematically smoothed rotation command
