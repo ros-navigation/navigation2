@@ -314,6 +314,25 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     goal_dist_tol_ = pose_tolerance.position.x;
   }
 
+  // Note(angstrem98): Controller needs to reset internal states in case goal has been calcelled.
+  // Current controller API does not have a callback if this happens, so we reset if controller has
+  // been inactive long enough.
+  rclcpp::Time t = clock_->now();
+  // If controller was interrupted, reset internal states
+  if ((t - system_time_).seconds() >= 4 * control_duration_) {
+    distance_profile_output_.new_position = {0.0};
+    distance_profile_output_.new_velocity = {0.0};
+    distance_profile_output_.new_acceleration = {0.0};
+    distance_profile_output_.pass_to_input(distance_profile_input_);
+
+    angle_profile_output_.new_position = {tf2::getYaw(pose.pose.orientation)};
+    angle_profile_output_.new_velocity = {0.0};
+    angle_profile_output_.new_acceleration = {0.0};
+    angle_profile_output_.pass_to_input(angle_profile_input_);
+  }
+  system_time_ = t;
+
+
   // Transform path to robot base frame
   auto transformed_plan = transformGlobalPlan(pose);
 
@@ -331,7 +350,8 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     }
   }
 
-  auto carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan);
+  double remaining_path_length;
+  auto carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan, remaining_path_length);
   carrot_pub_->publish(createCarrotMsg(carrot_pose));
 
   double linear_vel, angular_vel;
@@ -348,6 +368,11 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     curvature = 2.0 * carrot_pose.pose.position.y / carrot_dist2;
   }
 
+  double carrot_dist = sqrt(carrot_dist2);
+  if (remaining_path_length < carrot_dist) {
+    remaining_path_length = carrot_dist;
+  }
+
   // Setting the velocity direction
   double sign = 1.0;
   if (allow_reversing_) {
@@ -356,13 +381,23 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   linear_vel = desired_linear_vel_;
 
+  distance_profile_input_.max_velocity = {desired_linear_vel_};
+
+  robot_angle_ = tf2::getYaw(pose.pose.orientation);
+
   // Make sure we're in compliance with basic constraints
   double angle_to_heading;
-  if (shouldRotateToGoalHeading(carrot_pose)) {
+  if (shouldRotateToGoalHeading(carrot_pose) && !rotating_) {
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
-  } else if (shouldRotateToPath(carrot_pose, angle_to_heading)) {
-    rotateToHeading(linear_vel, angular_vel, angle_to_heading, speed);
+  } else if (shouldRotateToPath(carrot_pose, angle_to_heading) && !rotating_) {
+    // multiply heading min angle by 0.1 so we rotate just enough
+    rotateToHeading(
+      linear_vel, angular_vel, angle_to_heading - rotate_to_heading_min_angle_ * 0.1, speed);
+  } else if (rotating_) {
+    if (angle_profile_result_ == ruckig::Result::Finished) {
+      rotating_ = false;
+    }
   } else {
     applyConstraints(
       fabs(lookahead_dist - sqrt(carrot_dist2)),
@@ -371,19 +406,51 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
     // Apply curvature to angular velocity after constraining linear velocity
     angular_vel = linear_vel * curvature;
+
+    distance_profile_input_.control_interface = ruckig::ControlInterface::Position;
+    distance_profile_input_.target_position = {
+      distance_profile_input_.current_position[0] + sign * remaining_path_length};
+    distance_profile_input_.max_velocity = {fabs(linear_vel)};
+
+    angle_profile_input_.control_interface = ruckig::ControlInterface::Velocity;
+    angle_profile_input_.target_velocity = {angular_vel};
+  }
+
+  // Calculate next step for motion profiles
+  distance_profile_result_ = distance_profile_->update(
+    distance_profile_input_, distance_profile_output_);
+  angle_profile_result_ = angle_profile_->update(angle_profile_input_, angle_profile_output_);
+
+  double linear_vel_command = 0.0;
+  double angular_vel_command = 0.0;
+
+  if (distance_profile_result_ == ruckig::Result::Working) {
+    distance_profile_output_.pass_to_input(distance_profile_input_);
+  }
+
+  if (angle_profile_result_ == ruckig::Result::Working) {
+    angle_profile_output_.pass_to_input(angle_profile_input_);
+  }
+
+  linear_vel_command = distance_profile_output_.new_velocity[0];
+  if (angle_profile_input_.control_interface == ruckig::ControlInterface::Velocity) {
+    angular_vel_command = angle_profile_output_.new_velocity[0];
+  } else {
+    // proportional controller for robot angle when we are in position mode
+    angular_vel_command = kp_angle_ * angleNormalize(
+      angle_profile_output_.new_position[0] - robot_angle_);
   }
 
   // Collision checking on this velocity heading
-  const double & carrot_dist = hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
-  if (isCollisionImminent(pose, linear_vel, angular_vel, carrot_dist)) {
+  if (isCollisionImminent(pose, linear_vel_command, angular_vel_command, carrot_dist)) {
     throw nav2_core::PlannerException("RegulatedPurePursuitController detected collision ahead!");
   }
 
   // populate and return message
   geometry_msgs::msg::TwistStamped cmd_vel;
   cmd_vel.header = pose.header;
-  cmd_vel.twist.linear.x = linear_vel;
-  cmd_vel.twist.angular.z = angular_vel;
+  cmd_vel.twist.linear.x = linear_vel_command;
+  cmd_vel.twist.angular.z = angular_vel_command;
   return cmd_vel;
 }
 
@@ -762,6 +829,17 @@ bool RegulatedPurePursuitController::transformPose(
   return false;
 }
 
+double RegulatedPurePursuitController::angleNormalize(double angle)
+{
+  while (angle > M_PI) {
+    angle -= 2.0 * M_PI;
+  }
+  while (angle < -M_PI) {
+    angle += 2.0 * M_PI;
+  }
+
+  return angle;
+}
 
 rcl_interfaces::msg::SetParametersResult
 RegulatedPurePursuitController::dynamicParametersCallback(
