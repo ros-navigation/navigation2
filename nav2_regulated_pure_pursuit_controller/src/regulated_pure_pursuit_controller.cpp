@@ -63,6 +63,16 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".desired_linear_vel", rclcpp::ParameterValue(0.5));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_linear_accel", rclcpp::ParameterValue(2.5));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_linear_decel", rclcpp::ParameterValue(2.5));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_linear_jerk", rclcpp::ParameterValue(0.5));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_angular_jerk", rclcpp::ParameterValue(120.0));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".kp_angle", rclcpp::ParameterValue(3.0));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".lookahead_dist", rclcpp::ParameterValue(0.6));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".min_lookahead_dist", rclcpp::ParameterValue(0.3));
@@ -105,9 +115,15 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_reversing", rclcpp::ParameterValue(false));
+  
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   base_desired_linear_vel_ = desired_linear_vel_;
+  node->get_parameter(plugin_name_ + ".max_linear_accel", max_linear_accel_);
+  node->get_parameter(plugin_name_ + ".max_linear_decel", max_linear_decel_);
+  node->get_parameter(plugin_name_ + ".max_linear_jerk", max_linear_jerk_);
+  node->get_parameter(plugin_name_ + ".max_angular_jerk", max_angular_jerk_);
+  node->get_parameter(plugin_name_ + ".kp_angle", kp_angle_);
   node->get_parameter(plugin_name_ + ".lookahead_dist", lookahead_dist_);
   node->get_parameter(plugin_name_ + ".min_lookahead_dist", min_lookahead_dist_);
   node->get_parameter(plugin_name_ + ".max_lookahead_dist", max_lookahead_dist_);
