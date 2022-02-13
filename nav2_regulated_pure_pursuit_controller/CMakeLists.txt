@@ -11,6 +11,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(ruckig REQUIRED)
 
 nav2_package()
 set(CMAKE_CXX_STANDARD 17)
@@ -28,13 +29,14 @@ set(dependencies
   nav2_util
   nav2_core
   tf2
+  ruckig
 )
 
 set(library_name nav2_regulated_pure_pursuit_controller)
 
 add_library(${library_name} SHARED
         src/regulated_pure_pursuit_controller.cpp)
-
+target_link_libraries(${library_name} ruckig::ruckig)
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
