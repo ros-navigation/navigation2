@@ -115,7 +115,7 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_reversing", rclcpp::ParameterValue(false));
-  
+
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   base_desired_linear_vel_ = desired_linear_vel_;
@@ -230,7 +230,7 @@ void RegulatedPurePursuitController::activate()
     std::bind(
       &RegulatedPurePursuitController::dynamicParametersCallback,
       this, std::placeholders::_1));
-  
+
   // Distance Motion Profile
   distance_profile_input_.max_velocity = {desired_linear_vel_};
   distance_profile_input_.max_acceleration = {max_linear_accel_};
@@ -468,7 +468,7 @@ bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
   // Whether we should rotate robot to goal heading
   double carrot_dist = std::hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
   return use_rotate_to_heading_ && carrot_dist < goal_dist_tol_ &&
-   fabs(lookahead_dist - carrot_dist) > goal_dist_tol_;
+         fabs(lookahead_dist - carrot_dist) > goal_dist_tol_;
 }
 
 void RegulatedPurePursuitController::rotateToHeading(
