@@ -192,6 +192,11 @@ void RegulatedPurePursuitController::configure(
   collision_checker_ = std::make_unique<nav2_costmap_2d::
       FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_);
   collision_checker_->setCostmap(costmap_);
+
+  distance_profile_ = new ruckig::Ruckig<1>{control_duration_};
+  angle_profile_ = new ruckig::Ruckig<1>{control_duration_};
+
+  system_time_ = clock_->now();
 }
 
 void RegulatedPurePursuitController::cleanup()
@@ -204,6 +209,9 @@ void RegulatedPurePursuitController::cleanup()
   global_path_pub_.reset();
   carrot_pub_.reset();
   carrot_arc_pub_.reset();
+
+  delete distance_profile_;
+  delete angle_profile_;
 }
 
 void RegulatedPurePursuitController::activate()
@@ -222,6 +230,35 @@ void RegulatedPurePursuitController::activate()
     std::bind(
       &RegulatedPurePursuitController::dynamicParametersCallback,
       this, std::placeholders::_1));
+  
+  // Distance Motion Profile
+  distance_profile_input_.max_velocity = {desired_linear_vel_};
+  distance_profile_input_.max_acceleration = {max_linear_accel_};
+  distance_profile_input_.min_acceleration = {-max_linear_decel_};
+  distance_profile_input_.max_jerk = {max_linear_jerk_};
+  distance_profile_input_.target_position = {0.0};
+  distance_profile_input_.target_velocity = {0.0};
+  // Reset current state
+  distance_profile_input_.control_interface = ruckig::ControlInterface::Position;
+  distance_profile_output_.new_position = {0.0};
+  distance_profile_output_.new_velocity = {0.0};
+  distance_profile_output_.new_acceleration = {0.0};
+  distance_profile_output_.pass_to_input(distance_profile_input_);
+
+  // Angle Motion Profile
+  angle_profile_input_.max_velocity = {rotate_to_heading_angular_vel_};
+  angle_profile_input_.max_acceleration = {max_angular_accel_};
+  angle_profile_input_.max_jerk = {max_angular_jerk_};
+  angle_profile_input_.target_position = {0.0};
+  angle_profile_input_.target_velocity = {0.0};
+  // Reset current state
+  angle_profile_input_.control_interface = ruckig::ControlInterface::Velocity;
+  angle_profile_output_.new_position = {0.0};
+  angle_profile_output_.new_velocity = {0.0};
+  angle_profile_output_.new_acceleration = {0.0};
+  angle_profile_output_.pass_to_input(angle_profile_input_);
+
+  rotating_ = false;
 }
 
 void RegulatedPurePursuitController::deactivate()
