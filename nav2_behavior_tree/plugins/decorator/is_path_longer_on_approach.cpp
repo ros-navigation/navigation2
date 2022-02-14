@@ -77,7 +77,6 @@ inline BT::NodeStatus IsPathLongerOnApproach::tick()
       case BT::NodeStatus::RUNNING:
         return BT::NodeStatus::RUNNING;
       case BT::NodeStatus::SUCCESS:
-        first_time_ = true;
         return BT::NodeStatus::SUCCESS;
       case BT::NodeStatus::FAILURE:
         return BT::NodeStatus::FAILURE;

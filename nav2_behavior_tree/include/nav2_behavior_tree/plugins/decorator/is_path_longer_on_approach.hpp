@@ -51,7 +51,7 @@ public:
       BT::InputPort<nav_msgs::msg::Path>("new_path", "New Planned Path"),
       BT::InputPort<nav_msgs::msg::Path>("old_path", "Old Planned Path"),
       BT::InputPort<double>(
-        "prox_leng", 5.0,
+        "prox_leng", 3.0,
         "Integrated path length proximity to the goal pose to apply the behavior (m)"),
       BT::InputPort<double>(
         "length_factor", 2.0,

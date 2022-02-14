@@ -1,8 +1,11 @@
 
 <!--
   This Behavior Tree replans the global path periodically at 1 Hz and it also has
-  recovery actions specific to planning / control as well as general system issues.
+  recovery actions specific to planning / control as well as general system issues. 
   This will be continuous if a kinematically valid planner is selected.
+  Additionally it has a feature to wait near the goal to have a new valid plan 
+  if the old plan becomes invalid before trying to drive significantly 
+  around by a length factor.
 -->
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
