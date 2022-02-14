@@ -125,11 +125,8 @@ protected:
    * @param feedback
    * @param result
    */
-  template<typename T, typename V, typename Z>
-  void followWaypointsLogic(
-    const T & action_server,
-    const V & feedback,
-    const Z & result);
+    template <typename T, typename V, typename Z>
+    void followWaypointsHandler(const T& action_server, const V& feedback, const Z& result);
 
   /**
    * @brief Action server callbacks
@@ -159,20 +156,15 @@ protected:
   template<typename T>
   void goalResponseCallback(const T & goal);
 
-/**
- * @brief given some gps_poses, converts them to map frame using robot_localization's service `fromLL`.
- *        Constructs a vector of stamped poses in map frame and returns them.
- *
- * @param gps_poses
- * @param parent_node
- * @param fromll_client
- * @return std::vector<geometry_msgs::msg::PoseStamped>
- */
-  std::vector<geometry_msgs::msg::PoseStamped> convertGPSPoses2MapPoses(
-    const std::vector<geographic_msgs::msg::GeoPose> & gps_poses,
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & parent_node,
-    const
-    std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> & fromll_client);
+    /**
+     * @brief given some gps_poses, converts them to map frame using robot_localization's service `fromLL`.
+     *        Constructs a vector of stamped poses in map frame and returns them.
+     *
+     * @param gps_poses
+     * @return std::vector<geometry_msgs::msg::PoseStamped>
+     */
+    std::vector<geometry_msgs::msg::PoseStamped> convertGPSPosesToMapPoses(
+        const std::vector<geographic_msgs::msg::GeoPose>& gps_poses);
 
   template<typename T>
   std::vector<geometry_msgs::msg::PoseStamped> getLatestGoalPoses(const T & action_server);

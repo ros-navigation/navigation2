@@ -107,6 +107,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_logging_interface(),
     get_node_waitables_interface(),
     "follow_gps_waypoints", std::bind(&WaypointFollower::followGPSWaypointsCallback, this));
+
   // used for transfroming orientation of GPS poses to map frame
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -197,15 +198,14 @@ std::vector<geometry_msgs::msg::PoseStamped> WaypointFollower::getLatestGoalPose
     poses = action_server->get_current_goal()->poses;
   } else {
     // If GPS waypoint following callback was called, we build here
-    poses = convertGPSPoses2MapPoses(
-      action_server->get_current_goal()->gps_poses, shared_from_this(),
-      from_ll_to_map_client_);
+    poses = convertGPSPosesToMapPoses(
+      action_server->get_current_goal()->gps_poses);
   }
   return poses;
 }
 
 template<typename T, typename V, typename Z>
-void WaypointFollower::followWaypointsLogic(
+void WaypointFollower::followWaypointsHandler(
   const T & action_server,
   const V & feedback,
   const Z & result)
@@ -370,7 +370,7 @@ void WaypointFollower::followWaypointsCallback()
   auto feedback = std::make_shared<ActionT::Feedback>();
   auto result = std::make_shared<ActionT::Result>();
 
-  followWaypointsLogic<std::unique_ptr<ActionServer>,
+  followWaypointsHandler<std::unique_ptr<ActionServer>,
     ActionT::Feedback::SharedPtr,
     ActionT::Result::SharedPtr>(
     action_server_,
@@ -382,7 +382,7 @@ void WaypointFollower::followGPSWaypointsCallback()
   auto feedback = std::make_shared<ActionTGPS::Feedback>();
   auto result = std::make_shared<ActionTGPS::Result>();
 
-  followWaypointsLogic<std::unique_ptr<ActionServerGPS>,
+  followWaypointsHandler<std::unique_ptr<ActionServerGPS>,
     ActionTGPS::Feedback::SharedPtr,
     ActionTGPS::Result::SharedPtr>(
     gps_action_server_,
@@ -447,12 +447,10 @@ WaypointFollower::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
 }
 
 std::vector<geometry_msgs::msg::PoseStamped>
-WaypointFollower::convertGPSPoses2MapPoses(
-  const std::vector<geographic_msgs::msg::GeoPose> & gps_poses,
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & parent_node,
-  const std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> & fromll_client)
+WaypointFollower::convertGPSPosesToMapPoses(
+  const std::vector<geographic_msgs::msg::GeoPose> & gps_poses)
 {
-  RCLCPP_INFO(parent_node->get_logger(), "Converting GPS waypoints to %s Frame..", 
+  RCLCPP_INFO(this->get_logger(), "Converting GPS waypoints to %s Frame..", 
         global_frame_id_.c_str());
 
   std::vector<geometry_msgs::msg::PoseStamped> poses_in_map_frame_vector;
@@ -464,16 +462,16 @@ WaypointFollower::convertGPSPoses2MapPoses(
     request->ll_point.longitude = curr_geopose.position.longitude;
     request->ll_point.altitude = curr_geopose.position.altitude;
 
-    fromll_client->wait_for_service((std::chrono::seconds(1)));
-    if (!fromll_client->invoke(request, response)) {
+    from_ll_to_map_client_->wait_for_service((std::chrono::seconds(1)));
+    if (!from_ll_to_map_client_->invoke(request, response)) {
       RCLCPP_ERROR(
-        parent_node->get_logger(),
+        this->get_logger(),
         "fromLL service of robot_localization could not convert %i th GPS waypoint to"
         "%s frame, going to skip this point!"
         "Make sure you have run navsat_transform_node of robot_localization", waypoint_index, global_frame_id_.c_str());
       if (stop_on_failure_) {
         RCLCPP_ERROR(
-          parent_node->get_logger(),
+          this->get_logger(),
           "Conversion of %i th GPS waypoint to"
           "%s frame failed and stop_on_failure is set to true"
           "Not going to execute any of waypoints, exiting with failure!", waypoint_index, global_frame_id_.c_str());
@@ -481,7 +479,7 @@ WaypointFollower::convertGPSPoses2MapPoses(
       }
       continue;
     } else {
-      // fromll_client converted the point from LL to Map frames
+      // from_ll_to_map_client_ converted the point from LL to Map frames
       // but it actually did not consider the possible yaw offset between utm and map frames ;
       // "https://github.com/cra-ros-pkg/robot_localization/blob/
       // 79162b2ac53a112c51d23859c499e8438cf9938e/src/navsat_transform.cpp#L394"
@@ -492,7 +490,7 @@ WaypointFollower::convertGPSPoses2MapPoses(
         utm_to_map_transform = tf_buffer_->lookupTransform(utm_frame_id_, global_frame_id_, tf2::TimePointZero);
       } catch (tf2::TransformException & ex) {
         RCLCPP_ERROR(
-          parent_node->get_logger(),
+          this->get_logger(),
           "Exception in getting %s -> %s transform: %s",
           utm_frame_id_.c_str(), global_frame_id_.c_str(), ex.what());
       }
@@ -505,7 +503,7 @@ WaypointFollower::convertGPSPoses2MapPoses(
       auto corrected_point = m*point;
       geometry_msgs::msg::PoseStamped curr_pose_map_frame;
       curr_pose_map_frame.header.frame_id = global_frame_id_;
-      curr_pose_map_frame.header.stamp = parent_node->now();
+      curr_pose_map_frame.header.stamp = this->now();
       curr_pose_map_frame.pose.position.x = corrected_point[0];
       curr_pose_map_frame.pose.position.y = corrected_point[1];
       curr_pose_map_frame.pose.position.z = response->map_point.z;
@@ -515,7 +513,7 @@ WaypointFollower::convertGPSPoses2MapPoses(
     waypoint_index++;
   }
   RCLCPP_INFO(
-    parent_node->get_logger(),
+    this->get_logger(),
     "Converted all %i GPS waypoint to %s frame",
     static_cast<int>(poses_in_map_frame_vector.size()), global_frame_id_.c_str());
   return poses_in_map_frame_vector;

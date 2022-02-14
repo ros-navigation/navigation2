@@ -1,5 +1,4 @@
 #goal definition
-# geographic_msgs/GeoPose[] gps_poses
 geographic_msgs/GeoPose[] gps_poses
 ---
 #result definition
