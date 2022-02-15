@@ -48,8 +48,7 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<nav_msgs::msg::Path>("new_path", "New Planned Path"),
-      BT::InputPort<nav_msgs::msg::Path>("old_path", "Old Planned Path"),
+      BT::InputPort<nav_msgs::msg::Path>("path", "Planned Path"),
       BT::InputPort<double>(
         "prox_leng", 3.0,
         "Integrated path length proximity to the goal pose to apply the behavior (m)"),

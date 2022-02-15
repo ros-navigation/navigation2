@@ -58,14 +58,9 @@ bool IsPathLongerOnApproach::isNewPathLonger(
 
 inline BT::NodeStatus IsPathLongerOnApproach::tick()
 {
-  getInput("new_path", new_path_);
-  getInput("old_path", old_path_);
+  getInput("path", new_path_);
   getInput("prox_leng", prox_leng_);
   getInput("length_factor", length_factor_);
-
-  if (old_path_.poses.size() != 0) {
-    first_time_ = false;
-  }
 
   // Check if the path is updated and valid, compare the old and the new path length,
   // given the goal proximity and check if the new path is longer
@@ -77,6 +72,7 @@ inline BT::NodeStatus IsPathLongerOnApproach::tick()
       case BT::NodeStatus::RUNNING:
         return BT::NodeStatus::RUNNING;
       case BT::NodeStatus::SUCCESS:
+        first_time_ = true;
         return BT::NodeStatus::SUCCESS;
       case BT::NodeStatus::FAILURE:
         return BT::NodeStatus::FAILURE;
@@ -84,6 +80,7 @@ inline BT::NodeStatus IsPathLongerOnApproach::tick()
         return BT::NodeStatus::FAILURE;
     }
   }
+  first_time_ = false;
   old_path_ = new_path_;
   return BT::NodeStatus::SUCCESS;
 }
