@@ -95,6 +95,7 @@ protected:
   std::string robot_frame_;
   std::string global_frame_;
   double transform_tolerance_;
+  std::string odom_topic_;
 
   // Spinning transform that can be used by the BT nodes
   std::shared_ptr<tf2_ros::Buffer> tf_;
