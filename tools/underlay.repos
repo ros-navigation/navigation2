@@ -11,10 +11,6 @@ repositories:
   #   type: git
   #   url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
   #   version: ros2
-  # ros-perception/image_common:
-  #   type: git
-  #   url: https://github.com/ros-perception/image_common.git
-  #   version: ros2
   # ros-perception/vision_opencv:
   #   type: git
   #   url: https://github.com/ros-perception/vision_opencv.git

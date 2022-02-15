@@ -197,7 +197,7 @@ protected:
 
   // Our action server for GPS waypoint following
   std::unique_ptr<ActionServerGPS> gps_action_server_;
-  std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL>> from_ll_to_map_client_;
+  std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL, std::shared_ptr<nav2_util::LifecycleNode>>> from_ll_to_map_client_;
   double transform_tolerance_;
 
   // Task Execution At Waypoint Plugin
