@@ -46,7 +46,7 @@ steps:
     - Update Dockerfile with nav2 PR branch
 
 ---
-# 1. 3/4 Run unit tests validation on each open pull request
+# 1. 2/2 Run unit tests validation on each open pull request
 kind: pipeline
 type: exec
 name: PR validation run unit tests
@@ -69,6 +69,7 @@ depends_on:
 steps:
 - name: Start docker container
   commands:
+  - docker rm -f ${DRONE_COMMIT} || true
   - docker pull quay.io/logivations/ml_all:drone_nav2_${DRONE_PULL_REQUEST}
   - docker run -dti --name ${DRONE_COMMIT}  --gpus=all -e NVIDIA_VISIBLE_DEVICES=all -e PYTHONHASHSEED=0 -v /opt/data/DeepCVTest:/data/DeepCVTest -v /opt/data/ml_models/:/data/ml_models -v  $(pwd):/data/workspace/deep_cv quay.io/logivations/ml_all:drone_nav2_${DRONE_PULL_REQUEST}
 
