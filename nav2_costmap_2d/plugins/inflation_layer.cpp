@@ -439,7 +439,6 @@ InflationLayer::dynamicParametersCallback(
         inflation_radius_ != parameter.as_double())
       {
         inflation_radius_ = parameter.as_double();
-        cell_inflation_radius_ = cellDistance(inflation_radius_);
         need_reinflation_ = true;
         need_cache_recompute = true;
       } else if (param_name == name_ + "." + "cost_scaling_factor" &&
@@ -470,7 +469,7 @@ InflationLayer::dynamicParametersCallback(
   }
 
   if (need_cache_recompute) {
-    computeCaches();
+    matchSize();
   }
 
   result.successful = true;
