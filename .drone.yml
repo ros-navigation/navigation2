@@ -73,7 +73,6 @@ steps:
   - docker pull quay.io/logivations/ml_all:drone_nav2_${DRONE_PULL_REQUEST}
   - docker run -dti --name ${DRONE_COMMIT}  --gpus=all -e NVIDIA_VISIBLE_DEVICES=all -e PYTHONHASHSEED=0 -v /opt/data/DeepCVTest:/data/DeepCVTest -v /opt/data/ml_models/:/data/ml_models -v  $(pwd):/data/workspace/deep_cv quay.io/logivations/ml_all:drone_nav2_${DRONE_PULL_REQUEST}
 
-
 - name: Start unit tests
   commands:
   - docker exec ${DRONE_COMMIT} bash -ic "export TEAMCITY=TRUE; export ROS_LOCALHOST_ONLY=1; export CYCLONEDDS_URI=/data/workspace/deep_cv/scripts/agv/cyclonedds_open_network.xml; cd /data/workspace/deep_cv; pytest -v --color=yes --forked -n 2 --ignore-glob=**/disabled_tests/* lv/"
