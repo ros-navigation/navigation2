@@ -286,7 +286,7 @@ bool PlannerServer::getStartPose(
   typename std::shared_ptr<const typename T::Goal> goal,
   geometry_msgs::msg::PoseStamped & start)
 {
-  if (goal->use_start) {
+  if (true) {
     start = goal->start;
   } else if (!costmap_ros_->getRobotPose(start)) {
     action_server->terminate_current();
