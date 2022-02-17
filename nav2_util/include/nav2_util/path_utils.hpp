@@ -33,7 +33,7 @@ class PathSegment
 {
 public:
   virtual void append(nav_msgs::msg::Path & path, double spacing) const = 0;
-  virtual ~PathSegment();
+  virtual ~PathSegment() {}
 };
 
 class Arc : public PathSegment
@@ -41,7 +41,6 @@ class Arc : public PathSegment
 public:
   explicit Arc(double radius, double radians)
   : radius_(radius), radians_(radians) {}
-  virtual ~Arc();
   void append(nav_msgs::msg::Path & path, double spacing) const override;
 
 private:
@@ -54,7 +53,6 @@ class Straight : public PathSegment
 public:
   explicit Straight(double length)
   : length_(length) {}
-  virtual ~Straight();
   void append(nav_msgs::msg::Path & path, double spacing) const override;
 
 private:
@@ -105,8 +103,8 @@ public:
 
 nav_msgs::msg::Path generate_path(
   geometry_msgs::msg::PoseStamped start,
-  std::initializer_list<std::unique_ptr<PathSegment>> segments,
-  double spacing);
+  double spacing,
+  std::initializer_list<std::unique_ptr<PathSegment>> segments);
 
 }  // namespace nav2_util
 

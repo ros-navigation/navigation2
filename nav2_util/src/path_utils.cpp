@@ -65,8 +65,8 @@ void Arc::append(nav_msgs::msg::Path & path, double spacing) const
 
 nav_msgs::msg::Path generate_path(
   geometry_msgs::msg::PoseStamped start,
-  std::initializer_list<std::unique_ptr<PathSegment>> segments,
-  double spacing)
+  double spacing,
+  std::initializer_list<std::unique_ptr<PathSegment>> segments)
 {
   nav_msgs::msg::Path path;
   path.poses.push_back(start);

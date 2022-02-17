@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/path_utils.hpp"
 #include "gtest/gtest.h"
@@ -19,15 +21,26 @@
 using namespace std::chrono;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
+using namespace nav2_util;
 
-TEST(PathUtils, test_should_fail)
+TEST(PathUtils, test_generate_straight)
 {
-  FAIL();
+  geometry_msgs::msg::PoseStamped start;
+  start.header.frame_id = "test_frame";
+
+  auto path = generate_path(
+    start, 1.0, {
+    std::make_unique<Straight>(1.0)
+  });
+  EXPECT_EQ(path.poses.size(), 2u);
+  for (const auto & pose : path.poses) {
+    EXPECT_EQ(pose.header.frame_id, start.header.frame_id);
+  }
+  EXPECT_DOUBLE_EQ(path.poses[0].pose.position.x, 0.0);
+  EXPECT_DOUBLE_EQ(path.poses[0].pose.position.y, 0.0);
+  EXPECT_DOUBLE_EQ(path.poses[0].pose.position.z, 0.0);
+
+  EXPECT_DOUBLE_EQ(path.poses[1].pose.position.x, 1.0);
+  EXPECT_DOUBLE_EQ(path.poses[1].pose.position.y, 0.0);
+  EXPECT_DOUBLE_EQ(path.poses[1].pose.position.z, 0.0);
 }
