@@ -37,6 +37,10 @@ ament_add_gtest(test_odometry_utils test_odometry_utils.cpp)
 ament_target_dependencies(test_odometry_utils nav_msgs geometry_msgs)
 target_link_libraries(test_odometry_utils ${library_name})
 
+ament_add_gtest(test_path_utils test_path_utils.cpp)
+ament_target_dependencies(test_path_utils tf2 tf2_geometry_msgs nav_msgs geometry_msgs)
+target_link_libraries(test_path_utils ${library_name})
+
 ament_add_gtest(test_robot_utils test_robot_utils.cpp)
 ament_target_dependencies(test_robot_utils geometry_msgs)
 target_link_libraries(test_robot_utils ${library_name})
