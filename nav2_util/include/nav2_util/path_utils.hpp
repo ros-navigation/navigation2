@@ -63,14 +63,14 @@ class LeftTurn : public Arc
 {
 public:
   explicit LeftTurn(double radius)
-  : Arc(radius, M_PI_4) {}
+  : Arc(radius, M_PI_2) {}
 };
 
 class RightTurn : public Arc
 {
 public:
   explicit RightTurn(double radius)
-  : Arc(radius, -M_PI_4) {}
+  : Arc(radius, -M_PI_2) {}
 };
 
 class LeftTurnAround : public Arc

@@ -23,6 +23,14 @@ using namespace std::chrono_literals;  // NOLINT
 
 using namespace nav2_util;
 
+class RclCppFixture
+{
+public:
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
+};
+RclCppFixture g_rclcppfixture;
+
 TEST(PathUtils, test_generate_straight)
 {
   geometry_msgs::msg::PoseStamped start;
@@ -55,13 +63,13 @@ TEST(PathUtils, test_generate_straight)
 TEST(PathUtils, test_generate_all)
 {
   geometry_msgs::msg::PoseStamped start;
-  start.header.frame_id = "test_frame";
+  start.header.frame_id = "map";
 
   constexpr double spacing = 0.1;
 
   auto path = generate_path(
     start, spacing, {
-    std::make_unique<Straight>(1.0),
+    std::make_unique<Straight>(2.0),
     std::make_unique<LeftTurn>(1.0),
     std::make_unique<RightTurn>(1.0),
     std::make_unique<LeftTurnAround>(1.0),
@@ -70,6 +78,16 @@ TEST(PathUtils, test_generate_all)
     std::make_unique<RightCircle>(1.0),
     std::make_unique<Arc>(1.0, M_2_PI), // another circle
   });
+  auto node = std::make_shared<rclcpp::Node>("test_node");
+  auto pub = rclcpp::create_publisher<nav_msgs::msg::Path>(
+    node,
+    "/test_path",
+    rclcpp::QoS(10)
+  );
+  while (true) {
+    sleep(1);
+    pub->publish(path);
+  }
   constexpr double expected_path_length = 1.0 + M_PI_2 + M_PI_2 + M_PI + 3 * (M_2_PI);
   EXPECT_NEAR(path.poses.size(), 1 + static_cast<std::size_t>(expected_path_length / spacing), 5);
   for (const auto & pose : path.poses) {

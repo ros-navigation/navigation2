@@ -23,21 +23,23 @@ namespace nav2_util
 
 void append_transform_to_path(
   nav_msgs::msg::Path & path,
-  tf2::Transform & transform)
+  tf2::Transform & relative_transform)
 {
   // Add a new empty pose
   path.poses.emplace_back();
   // Get the previous, last pose (after the emplace_back so the reference isn't invalidated)
   auto & previous_pose = *(path.poses.end() - 2);
   auto & new_pose = path.poses.back();
-  geometry_msgs::msg::TransformStamped transform_msg(tf2::toMsg(
-      tf2::Stamped<tf2::Transform>(
-        transform, tf2::getTimestamp(previous_pose), tf2::getFrameId(previous_pose))));
-  tf2::doTransform(
-    previous_pose,
-    new_pose,
-    transform_msg
-  );
+
+  // get map_transform of previous_pose
+  tf2::Transform map_transform;
+  tf2::fromMsg(previous_pose.pose, map_transform);
+
+  tf2::Transform full_transform;
+  full_transform.mult(map_transform, relative_transform);
+
+  tf2::toMsg(full_transform, new_pose.pose);
+  new_pose.header.frame_id = previous_pose.header.frame_id;
 }
 
 void Straight::append(nav_msgs::msg::Path & path, double spacing) const
@@ -50,6 +52,11 @@ void Straight::append(nav_msgs::msg::Path & path, double spacing) const
   }
 }
 
+double chord_length(double radius, double radians)
+{
+  return 2 * radius * sin(radians / 2);
+}
+
 void Arc::append(nav_msgs::msg::Path & path, double spacing) const
 {
   double length = radius_ * std::abs(radians_);
@@ -57,7 +64,7 @@ void Arc::append(nav_msgs::msg::Path & path, double spacing) const
   double radians_per_step = radians_ / num_points;
   tf2::Transform transform(
     tf2::Quaternion(tf2::Vector3(0.0, 0.0, 1.0), radians_per_step),
-    tf2::Vector3(radius_ * cos(radians_per_step), radius_ * sin(radians_per_step), 0.0));
+    tf2::Vector3(chord_length(radius_, std::abs(radians_per_step)), 0.0, 0.0));
   path.poses.reserve(path.poses.size() + num_points);
   for (size_t i = 0; i < num_points; ++i) {
     append_transform_to_path(path, transform);
@@ -70,6 +77,7 @@ nav_msgs::msg::Path generate_path(
   std::initializer_list<std::unique_ptr<PathSegment>> segments)
 {
   nav_msgs::msg::Path path;
+  path.header = start.header;
   path.poses.push_back(start);
   for (const auto & segment : segments) {
     segment->append(path, spacing);
