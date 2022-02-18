@@ -77,28 +77,28 @@ class LeftTurnAround : public Arc
 {
 public:
   explicit LeftTurnAround(double radius)
-  : Arc(radius, M_1_PI) {}
+  : Arc(radius, M_PI) {}
 };
 
 class RightTurnAround : public Arc
 {
 public:
   explicit RightTurnAround(double radius)
-  : Arc(radius, -M_1_PI) {}
+  : Arc(radius, -M_PI) {}
 };
 
 class LeftCircle : public Arc
 {
 public:
   explicit LeftCircle(double radius)
-  : Arc(radius, M_2_PI) {}
+  : Arc(radius, 2.0 * M_PI) {}
 };
 
 class RightCircle : public Arc
 {
 public:
   explicit RightCircle(double radius)
-  : Arc(radius, -M_2_PI) {}
+  : Arc(radius, -2.0 * M_PI) {}
 };
 
 nav_msgs::msg::Path generate_path(
