@@ -44,8 +44,7 @@ void Straight::append(nav_msgs::msg::Path & path, double spacing) const
 {
   auto num_points = std::floor(length_ / spacing);
   path.poses.reserve(path.poses.size() + num_points);
-  tf2::Transform translation;
-  translation.setOrigin(tf2::Vector3(spacing, 0.0, 0.0));
+  tf2::Transform translation(tf2::Quaternion::getIdentity(), tf2::Vector3(spacing, 0.0, 0.0));
   for (size_t i = 1; i <= num_points; ++i) {
     append_transform_to_path(path, translation);
   }
