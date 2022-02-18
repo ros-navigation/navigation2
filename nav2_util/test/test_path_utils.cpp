@@ -52,6 +52,46 @@ TEST(PathUtils, test_generate_straight)
   EXPECT_NEAR(path.poses[2].pose.position.z, 0.0, 0.1);
 }
 
+TEST(PathUtils, test_half_turn)
+{
+  // Start at a more interesting place, turned the other way
+  geometry_msgs::msg::PoseStamped start;
+  start.header.frame_id = "map";
+  start.pose.position.x = 1.0;
+  start.pose.position.y = -1.0;
+  start.pose.orientation.x = 0.0;
+  start.pose.orientation.y = 0.0;
+  start.pose.orientation.z = 1.0;
+  start.pose.orientation.w = 0.0;
+
+  constexpr double spacing = 0.1;
+  constexpr double radius = 2.0;
+
+  auto path = generate_path(
+    start, spacing, {
+    std::make_unique<RightTurnAround>(radius),
+  });
+  constexpr double expected_path_length = M_PI * radius;
+  EXPECT_NEAR(path.poses.size(), 1 + static_cast<std::size_t>(expected_path_length / spacing), 10);
+  for (const auto & pose : path.poses) {
+    EXPECT_EQ(pose.header.frame_id, start.header.frame_id);
+  }
+
+  // Check the last pose
+  auto & last_pose = path.poses.back();
+  auto & last_position = last_pose.pose.position;
+  EXPECT_NEAR(last_position.x, 1.0, 0.2);
+  EXPECT_NEAR(last_position.y, 3.0, 0.2);
+  EXPECT_DOUBLE_EQ(last_position.z, 0.0);
+
+  // Should be facing forward now
+  auto & last_orientation = last_pose.pose.orientation;
+  EXPECT_NEAR(last_orientation.x, 0.0, 0.1);
+  EXPECT_NEAR(last_orientation.y, 0.0, 0.1);
+  EXPECT_NEAR(last_orientation.z, 0.0, 0.1);
+  EXPECT_NEAR(last_orientation.w, 1.0, 0.1);
+}
+
 TEST(PathUtils, test_generate_all)
 {
   geometry_msgs::msg::PoseStamped start;
