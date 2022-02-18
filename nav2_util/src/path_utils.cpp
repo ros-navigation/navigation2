@@ -25,15 +25,17 @@ void append_transform_to_path(
   nav_msgs::msg::Path & path,
   tf2::Transform & transform)
 {
-  auto & last_pose = path.poses.back();
+  // Add a new empty pose
+  path.poses.emplace_back();
+  // Get the previous, last pose (after the emplace_back so the reference isn't invalidated)
+  auto & previous_pose = *(path.poses.end() - 2);
+  auto & new_pose = path.poses.back();
   geometry_msgs::msg::TransformStamped transform_msg(tf2::toMsg(
       tf2::Stamped<tf2::Transform>(
-        transform, tf2::getTimestamp(last_pose), tf2::getFrameId(last_pose))));
-  path.poses.emplace_back();
-  auto & pose_stamped = path.poses.back();
+        transform, tf2::getTimestamp(previous_pose), tf2::getFrameId(previous_pose))));
   tf2::doTransform(
-    last_pose,
-    pose_stamped,
+    previous_pose,
+    new_pose,
     transform_msg
   );
 }
