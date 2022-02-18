@@ -52,7 +52,7 @@ void Straight::append(nav_msgs::msg::Path & path, double spacing) const
 
 void Arc::append(nav_msgs::msg::Path & path, double spacing) const
 {
-  double length = radius_ * radians_;
+  double length = radius_ * std::abs(radians_);
   size_t num_points = std::floor(length / spacing);
   double radians_per_step = radians_ / num_points;
   tf2::Transform transform(

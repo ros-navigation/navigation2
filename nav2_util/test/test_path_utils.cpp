@@ -35,7 +35,7 @@ TEST(PathUtils, test_generate_straight)
     start, spacing, {
     std::make_unique<Straight>(path_length)
   });
-  EXPECT_EQ(path.poses.size(), static_cast<std::size_t>(path_length / spacing));
+  EXPECT_EQ(path.poses.size(), 3u);
   for (const auto & pose : path.poses) {
     EXPECT_EQ(pose.header.frame_id, start.header.frame_id);
   }
@@ -43,13 +43,13 @@ TEST(PathUtils, test_generate_straight)
   EXPECT_DOUBLE_EQ(path.poses[0].pose.position.y, 0.0);
   EXPECT_DOUBLE_EQ(path.poses[0].pose.position.z, 0.0);
 
-  EXPECT_DOUBLE_EQ(path.poses[1].pose.position.x, 1.0);
-  EXPECT_DOUBLE_EQ(path.poses[1].pose.position.y, 0.0);
-  EXPECT_DOUBLE_EQ(path.poses[1].pose.position.z, 0.0);
+  EXPECT_NEAR(path.poses[1].pose.position.x, 1.0, 0.1);
+  EXPECT_NEAR(path.poses[1].pose.position.y, 0.0, 0.1);
+  EXPECT_NEAR(path.poses[1].pose.position.z, 0.0, 0.1);
 
-  EXPECT_DOUBLE_EQ(path.poses[1].pose.position.x, 2.0);
-  EXPECT_DOUBLE_EQ(path.poses[1].pose.position.y, 0.0);
-  EXPECT_DOUBLE_EQ(path.poses[1].pose.position.z, 0.0);
+  EXPECT_NEAR(path.poses[2].pose.position.x, 2.0, 0.1);
+  EXPECT_NEAR(path.poses[2].pose.position.y, 0.0, 0.1);
+  EXPECT_NEAR(path.poses[2].pose.position.z, 0.0, 0.1);
 }
 
 TEST(PathUtils, test_generate_all)
@@ -71,12 +71,14 @@ TEST(PathUtils, test_generate_all)
     std::make_unique<Arc>(1.0, M_2_PI), // another circle
   });
   constexpr double expected_path_length = 1.0 + M_PI_2 + M_PI_2 + M_PI + 3 * (M_2_PI);
-  EXPECT_NEAR(path.poses.size(), static_cast<std::size_t>(expected_path_length / spacing), 1.0);
+  EXPECT_NEAR(path.poses.size(), 1 + static_cast<std::size_t>(expected_path_length / spacing), 5);
   for (const auto & pose : path.poses) {
     EXPECT_EQ(pose.header.frame_id, start.header.frame_id);
   }
-  auto& last_pose = path.poses.back();
-  auto& last_position = last_pose.pose.position;
+
+  // Check the last pose
+  auto & last_pose = path.poses.back();
+  auto & last_position = last_pose.pose.position;
   EXPECT_NEAR(last_position.x, 3.0, 0.5);
   EXPECT_NEAR(last_position.y, 6.0, 0.5);
   EXPECT_DOUBLE_EQ(last_position.z, 0.0);
