@@ -26,6 +26,9 @@
 namespace nav2_util
 {
 
+namespace path_building_blocks
+{
+
 /**
  * Build human-readable test paths
  */
@@ -101,10 +104,13 @@ public:
   : Arc(radius, -2.0 * M_PI) {}
 };
 
+
+} // namespace path_building_blocks
+
 nav_msgs::msg::Path generate_path(
   geometry_msgs::msg::PoseStamped start,
   double spacing,
-  std::initializer_list<std::unique_ptr<PathSegment>> segments);
+  std::initializer_list<std::unique_ptr<path_building_blocks::PathSegment>> segments);
 
 }  // namespace nav2_util
 

@@ -17,7 +17,7 @@
 #include "nav2_util/path_utils.hpp"
 #include "gtest/gtest.h"
 
-using namespace nav2_util;
+using namespace nav2_util::path_building_blocks; // NOLINT
 
 TEST(PathUtils, test_generate_straight)
 {
@@ -27,7 +27,7 @@ TEST(PathUtils, test_generate_straight)
   constexpr double path_length = 2.0;
   constexpr double spacing = 1.0;
 
-  auto path = generate_path(
+  auto path = nav2_util::generate_path(
     start, spacing, {
     std::make_unique<Straight>(path_length)
   });
@@ -63,7 +63,7 @@ TEST(PathUtils, test_half_turn)
   constexpr double spacing = 0.1;
   constexpr double radius = 2.0;
 
-  auto path = generate_path(
+  auto path = nav2_util::generate_path(
     start, spacing, {
     std::make_unique<RightTurnAround>(radius),
   });
@@ -95,7 +95,7 @@ TEST(PathUtils, test_generate_all)
 
   constexpr double spacing = 0.1;
 
-  auto path = generate_path(
+  auto path = nav2_util::generate_path(
     start, spacing, {
     std::make_unique<Straight>(1.0),
     std::make_unique<LeftTurn>(1.0),

@@ -21,6 +21,9 @@
 namespace nav2_util
 {
 
+namespace path_building_blocks
+{
+
 void append_transform_to_path(
   nav_msgs::msg::Path & path,
   tf2::Transform & relative_transform)
@@ -71,10 +74,12 @@ void Arc::append(nav_msgs::msg::Path & path, double spacing) const
   }
 }
 
+}  // namespace path_building_blocks
+
 nav_msgs::msg::Path generate_path(
   geometry_msgs::msg::PoseStamped start,
   double spacing,
-  std::initializer_list<std::unique_ptr<PathSegment>> segments)
+  std::initializer_list<std::unique_ptr<path_building_blocks::PathSegment>> segments)
 {
   nav_msgs::msg::Path path;
   path.header = start.header;
