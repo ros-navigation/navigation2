@@ -14,12 +14,8 @@
 
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_util/path_utils.hpp"
 #include "gtest/gtest.h"
-
-using namespace std::chrono;  // NOLINT
-using namespace std::chrono_literals;  // NOLINT
 
 using namespace nav2_util;
 
