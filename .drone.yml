@@ -1,47 +1,12 @@
 ---
-# This pipeline chain  would be used on each open pull request to build new ml_all docker image and validate unit tests
+# 1. 1/2 Starting docker build with custom tag
 kind: pipeline
-name: PR validation build
+type: docker
+name: PR validation build docker image
 
 platform:
   arch: amd64
   os: linux
-
-clone:
-  disable: true
-
-steps:
-- name: Build ml_all docker image for pull request
-  image: plugins/docker
-  commands:
-  - git clone https://github.com/logivations/deep_cv.git -b ${DRONE_PULL_REQUEST}
-  - sed -i  "/ARG NAV2_DEFAULT_BRANCH=/c\ARG NAV2_DEFAULT_BRANCH=${DRONE_PULL_REQUEST}" /deep_cv/docker/MlAllDockerfile
-  volumes:
-  - name: dockersock
-    path: /var/run/docker.sock
-  settings:
-    dockerfile: deep_cv/docker/MlAllDockerfile
-    context: deep_cv/docker/
-    registry: quay.io
-    repo: quay.io/logivations/ml_all
-    privileged: true
-    tags:
-      - nav2_${DRONE_PULL_REQUEST}
-    username:
-      from_secret: DOCKER_QUAY_USERNAME
-    password:
-      from_secret: DOCKER_QUAY_PASSWORD
-
-- name: unit-tests validation
-  image: quay.io/logivations/ml_all:latest
-  commands:
-  - pwd
-  - cd /data/workspace && git clone https://github.com/logivations/deep_cv.git
-  - cd /data/workspace/deep_cv && pytest -v --color=yes --forked -n 2 --ignore-glob=**/disabled_tests/* lv/
-  environment:
-    NVIDIA_VISIBLE_DEVICES: all
-  depends_on:
-  - Build ml_all docker image for pull request
 
 trigger:
   event:
@@ -53,5 +18,65 @@ volumes:
   host:
     path: /var/run/docker.sock
 
+
+steps:
+- name: Update Dockerfile with nav2 PR branch
+  commands: 
+  - sed
+  - sed -i  "/ARG NAV2_DEFAULT_BRANCH=/c\ARG NAV2_DEFAULT_BRANCH=${DRONE_SOURCE_BRANCH}" docker/MlAllDockerfile
+
+- name: Build ml_all docker image for pull request
+  image: plugins/docker
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  settings:
+    dockerfile: docker/MlAllDockerfile
+    context: docker/
+    registry: quay.io
+    repo: quay.io/logivations/ml_all
+    privileged: true
+    tags:
+      - drone_nav2_${DRONE_PULL_REQUEST}
+    username:
+      from_secret: DOCKER_QUAY_USERNAME
+    password:
+      from_secret: DOCKER_QUAY_PASSWORD
+    depends_on:
+    - Update Dockerfile with nav2 PR branch
+
+---
+# 1. 2/2 Run unit tests validation on each open pull request
+kind: pipeline
+type: exec
+name: PR validation run unit tests
+
+platform:
+  arch: amd64
+  os: linux
+
+trigger:
+  event:
+    include:
+    - pull_request
+
 image_pull_secrets:
 - dockerconfig_prd
+
+depends_on:
+- PR validation build docker image
+
+steps:
+- name: Start docker container
+  commands:
+  - docker rm -f ${DRONE_COMMIT} || true
+  - docker pull quay.io/logivations/ml_all:drone_nav2_${DRONE_PULL_REQUEST}
+  - docker run -dti --name ${DRONE_COMMIT}  --gpus=all -e NVIDIA_VISIBLE_DEVICES=all -e PYTHONHASHSEED=0 -v /opt/data/DeepCVTest:/data/DeepCVTest -v /opt/data/ml_models/:/data/ml_models -v  $(pwd):/data/workspace/deep_cv quay.io/logivations/ml_all:drone_nav2_${DRONE_PULL_REQUEST}
+
+- name: Start unit tests
+  commands:
+  - docker exec ${DRONE_COMMIT} bash -ic "export TEAMCITY=TRUE; export ROS_LOCALHOST_ONLY=1; export CYCLONEDDS_URI=/data/workspace/deep_cv/scripts/agv/cyclonedds_open_network.xml; cd /data/workspace/deep_cv; pytest -v --color=yes --forked -n 2 --ignore-glob=**/disabled_tests/* lv/"
+
+- name: Remove docker container
+  commands:
+  - docker rm -f ${DRONE_COMMIT}
