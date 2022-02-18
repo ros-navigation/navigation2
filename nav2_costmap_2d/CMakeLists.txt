@@ -17,10 +17,12 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rmw REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(vision_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
+find_package(image_geometry REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(angles REQUIRED)
 
@@ -47,10 +49,14 @@ add_library(nav2_costmap_2d_core SHARED
   src/footprint.cpp
   src/costmap_layer.cpp
   src/observation_buffer.cpp
+  src/ray_tracer.cpp
   src/clear_costmap_service.cpp
   src/footprint_collision_checker.cpp
   plugins/costmap_filters/costmap_filter.cpp
 )
+
+# prevent pluginlib from using boost
+target_compile_definitions(nav2_costmap_2d_core PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 set(dependencies
   geometry_msgs
@@ -66,10 +72,12 @@ set(dependencies
   rclcpp_lifecycle
   sensor_msgs
   std_msgs
+  vision_msgs
   tf2
   tf2_geometry_msgs
   tf2_ros
   tf2_sensor_msgs
+  image_geometry
   visualization_msgs
   angles
 )
@@ -85,6 +93,7 @@ add_library(layers SHARED
   src/observation_buffer.cpp
   plugins/voxel_layer.cpp
   plugins/range_sensor_layer.cpp
+  plugins/semantic_segmentation_layer.cpp
 )
 ament_target_dependencies(layers
   ${dependencies}
