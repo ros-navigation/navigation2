@@ -122,7 +122,7 @@ inline std::vector<std::string> convertFromString(const StringView key)
   // 7 real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   std::vector<std::string> string_parts;
-  for (auto& part: parts){
+  for (auto & part : parts) {
     string_parts.push_back({part.begin(), part.end()});
   }
 

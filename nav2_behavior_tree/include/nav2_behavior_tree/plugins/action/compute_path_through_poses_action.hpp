@@ -68,7 +68,7 @@ public:
           "Destinations to plan through"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>(
           "start", "Start pose of the path if overriding current robot pose"),
-        BT::InputPort<std::string>("planner_ids", ""),
+        BT::InputPort<std::vector<std::string>>("planner_ids", ""),
       });
   }
 };
