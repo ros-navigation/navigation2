@@ -3,7 +3,8 @@ ament_add_gtest(test_execution_timer test_execution_timer.cpp)
 ament_add_gtest(test_node_utils test_node_utils.cpp)
 target_link_libraries(test_node_utils ${library_name})
 
-find_package(std_srvs)
+find_package(std_srvs REQUIRED)
+find_package(test_msgs REQUIRED)
 
 ament_add_gtest(test_service_client test_service_client.cpp)
 ament_target_dependencies(test_service_client std_srvs)
