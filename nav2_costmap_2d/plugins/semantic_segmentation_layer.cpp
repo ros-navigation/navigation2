@@ -216,7 +216,7 @@ void SemanticSegmentationLayer::segmentationCb(vision_msgs::msg::SemanticSegment
         return;
     }
     tf_->transform(max_range_point_, max_range_point_cam_frame, latest_segmentation_message.header.frame_id, transform_tolerance_);
-    tracer_.worldToImage(max_range_point_cam_frame)
+    // cv::Point2d point_on_max_range = tracer_.worldToImage(max_range_point_cam_frame);
 }
 
 void SemanticSegmentationLayer::updateCostmap(vision_msgs::msg::SemanticSegmentation& msg)
