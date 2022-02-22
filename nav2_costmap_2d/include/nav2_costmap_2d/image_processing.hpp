@@ -695,6 +695,70 @@ void probeRows(
 }
 
 /**
+ * @brief Perform morphological operations
+ * @tparam AggregateFn function object.
+ * Signature should be equivalent to the following:
+ * uint8_t fn(std::initializer_list<uint8_t> in),
+ * where in - result of overlaying the shape on the neighborhood of source pixel
+ * @param input input image
+ * @param output output image
+ * @param shape structuring element image with size 3x3.
+ * Should only contain values 0 (ignore neighborhood pixel) or 255 (use pixel).
+ * @param aggregate neighborhood pixels aggregator
+ * @throw std::logic_error if the sizes of the input and output images are different or
+ * shape size is not equal to 3x3
+ */
+template<class AggregateFn>
+void morphologyOperation(
+  const Image<uint8_t> & input, Image<uint8_t> & output,
+  const Image<uint8_t> & shape, AggregateFn aggregate)
+{
+  if (input.rows() != output.rows() || input.columns() != output.columns()) {
+    throw std::logic_error(
+            "morphologyOperation: the sizes of the input and output images are different");
+  }
+
+  if (shape.rows() != 3 || shape.columns() != 3) {
+    throw std::logic_error("morphologyOperation: wrong shape size");
+  }
+
+  if (input.empty()) {
+    return;
+  }
+
+  // Simple write the pixel of the output image (first pass only)
+  auto set = [&](uint8_t & res, std::initializer_list<uint8_t> lst) {res = aggregate(lst);};
+  // Update the pixel of the output image
+  auto update = [&](uint8_t & res, std::initializer_list<uint8_t> lst) {
+      res = aggregate({res, aggregate(lst)});
+    };
+
+  // Apply the second shape row
+  probeRows(input.row(0), output.row(0), input.rows(), input.columns(), shape.row(1), set);
+
+  if (input.rows() > 1) {
+    // Apply the first (top) shape row
+    probeRows(input.row(0), output.row(1), input.rows() - 1, input.columns(), shape.row(0), update);
+    // Apply the last shape row
+    probeRows(input.row(1), output.row(0), input.rows() - 1, input.columns(), shape.row(2), update);
+  }
+}
+
+/**
+ * @brief Return structuring element 3x3 image by predefined figure type
+ * value 0 = ignore pixel, 255 = use pixel.
+ */
+Image<uint8_t> createShape(ShapeBuffer3x3 & buffer, ConnectivityType connectivity)
+{
+  if (connectivity == ConnectivityType::Way8) {
+    buffer = {255, 255, 255, 255, 0, 255, 255, 255, 255};
+  } else {
+    buffer = {0, 255, 0, 255, 0, 255, 0, 255, 0};
+  }
+  return Image<uint8_t>(3, 3, buffer.data(), 3);
+}
+
+/**
  * @brief Implementation details for connectedComponents
  * \sa connectedComponents
  */
@@ -762,70 +826,6 @@ Label connectedComponentsImpl(
   return labels_map.size();
 }
 
-/**
- * @brief Perform morphological operations
- * @tparam AggregateFn function object.
- * Signature should be equivalent to the following:
- * uint8_t fn(std::initializer_list<uint8_t> in),
- * where in - result of overlaying the shape on the neighborhood of source pixel
- * @param input input image
- * @param output output image
- * @param shape structuring element image with size 3x3.
- * Should only contain values 0 (ignore neighborhood pixel) or 255 (use pixel).
- * @param aggregate neighborhood pixels aggregator
- * @throw std::logic_error if the sizes of the input and output images are different or
- * shape size is not equal to 3x3
- */
-template<class AggregateFn>
-void morphologyOperation(
-  const Image<uint8_t> & input, Image<uint8_t> & output,
-  const Image<uint8_t> & shape, AggregateFn aggregate)
-{
-  if (input.rows() != output.rows() || input.columns() != output.columns()) {
-    throw std::logic_error(
-            "morphologyOperation: the sizes of the input and output images are different");
-  }
-
-  if (shape.rows() != 3 || shape.columns() != 3) {
-    throw std::logic_error("morphologyOperation: wrong shape size");
-  }
-
-  if (input.empty()) {
-    return;
-  }
-
-  // Simple write the pixel of the output image (first pass only)
-  auto set = [&](uint8_t & res, std::initializer_list<uint8_t> lst) {res = aggregate(lst);};
-  // Update the pixel of the output image
-  auto update = [&](uint8_t & res, std::initializer_list<uint8_t> lst) {
-      res = aggregate({res, aggregate(lst)});
-    };
-
-  // Apply the second shape row
-  probeRows(input.row(0), output.row(0), input.rows(), input.columns(), shape.row(1), set);
-
-  if (input.rows() > 1) {
-    // Apply the first (top) shape row
-    probeRows(input.row(0), output.row(1), input.rows() - 1, input.columns(), shape.row(0), update);
-    // Apply the last shape row
-    probeRows(input.row(1), output.row(0), input.rows() - 1, input.columns(), shape.row(2), update);
-  }
-}
-
-/**
- * @brief Return structuring element 3x3 image by predefined figure type
- * value 0 = ignore pixel, 255 = use pixel.
- */
-Image<uint8_t> createShape(ShapeBuffer3x3 & buffer, ConnectivityType connectivity)
-{
-  if (connectivity == ConnectivityType::Way8) {
-    buffer = {255, 255, 255, 255, 0, 255, 255, 255, 255};
-  } else {
-    buffer = {0, 255, 0, 255, 0, 255, 0, 255, 0};
-  }
-  return Image<uint8_t>(3, 3, buffer.data(), 3);
-}
-
 class GroupsRemover
 {
 public:
@@ -851,25 +851,6 @@ public:
   }
 
 private:
-  template<ConnectivityType connectivity, class Label, class IsBg>
-  bool tryRemoveGroupsWithLabelType(
-    Image<uint8_t> & image, MemoryBuffer & buffer, size_t minimal_group_size,
-    imgproc_impl::EquivalenceLabelTrees<Label> & label_trees,
-    const IsBg & is_background,
-    bool throw_on_label_overflow) const
-  {
-    bool success{};
-    try {
-      removeGroupsImpl<connectivity>(image, buffer, label_trees, minimal_group_size, is_background);
-      success = true;
-    } catch (imgproc_impl::LabelOverflow &) {
-      if (throw_on_label_overflow) {
-        throw;
-      }
-    }
-    return success;
-  }
-
   template<ConnectivityType connectivity, class IsBg>
   void removeGroupsPickLabelType(
     Image<uint8_t> & image, MemoryBuffer & buffer,
@@ -898,6 +879,25 @@ private:
         image, buffer, minimal_group_size, *label_trees32,
         is_background, true);
     }
+  }
+
+  template<ConnectivityType connectivity, class Label, class IsBg>
+  bool tryRemoveGroupsWithLabelType(
+    Image<uint8_t> & image, MemoryBuffer & buffer, size_t minimal_group_size,
+    imgproc_impl::EquivalenceLabelTrees<Label> & label_trees,
+    const IsBg & is_background,
+    bool throw_on_label_overflow) const
+  {
+    bool success{};
+    try {
+      removeGroupsImpl<connectivity>(image, buffer, label_trees, minimal_group_size, is_background);
+      success = true;
+    } catch (imgproc_impl::LabelOverflow &) {
+      if (throw_on_label_overflow) {
+        throw;
+      }
+    }
+    return success;
   }
 
   template<ConnectivityType connectivity, class Label, class IsBg>
