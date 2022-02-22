@@ -392,7 +392,7 @@ public:
     );
 
     try {
-      labels_.reserve(max_labels_count);
+      labels_.reserve(labels_size_);
     } catch (...) {
       // ignore any exception
       // perhaps the entire requested amount of memory will not be required
