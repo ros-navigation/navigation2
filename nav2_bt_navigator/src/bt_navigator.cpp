@@ -123,9 +123,6 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     return nav2_util::CallbackReturn::FAILURE;
   }
 
-  // Odometry smoother object for getting current speed
-  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(shared_from_this(), 0.3, odom_topic_);
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
