@@ -409,7 +409,7 @@ public:
   }
 
   /**
-   * @brief Return next unused label
+   * @brief Creates new next unused label and returns it back
    * @throw LabelOverflow if all possible labels already used
    * @return label
    */
