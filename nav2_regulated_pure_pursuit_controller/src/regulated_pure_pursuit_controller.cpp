@@ -105,6 +105,9 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_reversing", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_distance_between_iterations",
+    rclcpp::ParameterValue(std::numeric_limits<double>::max));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   base_desired_linear_vel_ = desired_linear_vel_;
@@ -147,6 +150,9 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(plugin_name_ + ".max_angular_accel", max_angular_accel_);
   node->get_parameter(plugin_name_ + ".allow_reversing", allow_reversing_);
   node->get_parameter("controller_frequency", control_frequency);
+  node->get_parameter(
+    plugin_name_ + ".max_distance_between_iterations",
+    max_distance_between_iterations_);
 
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
   control_duration_ = 1.0 / control_frequency;
@@ -232,7 +238,8 @@ std::unique_ptr<geometry_msgs::msg::PointStamped> RegulatedPurePursuitController
   return carrot_msg;
 }
 
-double RegulatedPurePursuitController::getLookAheadDistance(const geometry_msgs::msg::Twist & speed)
+double RegulatedPurePursuitController::getLookAheadDistance(
+  const geometry_msgs::msg::Twist & speed)
 {
   // If using velocity-scaled look ahead distances, find and clamp the dist
   // Else, use the static look ahead distance
@@ -261,13 +268,13 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     goal_dist_tol_ = pose_tolerance.position.x;
   }
 
-  double dist_to_cusp = findCusp(pose);
-
   // Transform path to robot base frame
-  auto transformed_plan = transformGlobalPlan(pose, dist_to_cusp);
+  auto transformed_plan = transformGlobalPlan(pose);
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
+
+  double dist_to_cusp = findCusp(pose);
 
   // if the lookahead distance is further than the cusp, use the cusp distance instead
   if (dist_to_cusp < lookahead_dist) {
@@ -585,7 +592,7 @@ void RegulatedPurePursuitController::setSpeedLimit(
 }
 
 nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
-  const geometry_msgs::msg::PoseStamped & pose, double dist_to_cusp)
+  const geometry_msgs::msg::PoseStamped & pose)
 {
   if (global_plan_.poses.empty()) {
     throw nav2_core::PlannerException("Received plan with zero length");
@@ -602,14 +609,9 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   const double max_costmap_dim = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY());
   const double max_costmap_extent = max_costmap_dim * costmap->getResolution() / 2.0;
 
-  // Find the first pose that turns in the opposite direction from the first pose
-  findPathUpToTurn(global_plan_, M_PI);
-
-  const double max_transform_dist = std::min(max_costmap_extent, dist_to_cusp);
-
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_element_beyond(
-    global_plan_.poses.begin(), global_plan_.poses.end(), max_transform_dist);
+    global_plan_.poses.begin(), global_plan_.poses.end(), max_distance_between_iterations_);
 
   // First find the closest pose on the path to the robot
   // bounded by when the path turns around (if it does) so we don't get a pose from a later
@@ -622,9 +624,11 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
     });
 
   // Find points up to max_transform_dist so we only transform them.
-  auto transformation_end =
-    nav2_util::geometry_utils::first_element_beyond(
-    transformation_begin, global_plan_.poses.end(), max_transform_dist);
+  auto transformation_end = std::find_if(
+    transformation_begin, global_plan_.poses.end(),
+    [&](const auto & pose) {
+      return euclidean_distance(pose, robot_pose) > max_costmap_extent;
+    });
 
   // Lambda to transform a PoseStamped from global frame to local
   auto transformGlobalPoseToLocal = [&](const auto & global_plan_pose) {
@@ -683,22 +687,6 @@ double RegulatedPurePursuitController::findCusp(
   }
 
   return std::numeric_limits<double>::max();
-}
-
-std::vector<geometry_msgs::msg::PoseStamped>::iterator findPathUpToTurn(
-  const nav_msgs::msg::Path & path,
-  double angle)
-{
-  tf2::Quaternion starting_orientation;
-  tf2::fromMsg(path.poses.begin()->pose.orientation, starting_orientation);
-  return std::find_if(
-    path.poses.begin(), path.poses.end(),
-    [](const auto& pose) {
-      tf2::Quaternion quat;
-      tf2::fromMsg(pose.pose.orientation, quat);
-      return quat.angleShortestPath(starting_orientation) > angle;
-    }
-  );
 }
 
 bool RegulatedPurePursuitController::transformPose(

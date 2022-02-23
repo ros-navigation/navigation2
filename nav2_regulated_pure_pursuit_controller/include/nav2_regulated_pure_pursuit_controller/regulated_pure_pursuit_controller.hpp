@@ -115,13 +115,11 @@ protected:
    * @brief Transforms global plan into same frame as pose and clips poses ineligible for lookaheadPoint
    * Points ineligible to be selected as a lookahead point if they are any of the following:
    * - Outside the local_costmap (collision avoidance cannot be assured)
-   * - Beyond a "cusp": a change from forward to reverse or vice-versa
    * @param pose pose to transform
    * @return Path in new frame
    */
   nav_msgs::msg::Path transformGlobalPlan(
-    const geometry_msgs::msg::PoseStamped & pose,
-    double dist_to_cusp);
+    const geometry_msgs::msg::PoseStamped & pose);
 
   /**
    * @brief Transform a pose to another frame.
@@ -277,6 +275,7 @@ protected:
   double rotate_to_heading_min_angle_;
   double goal_dist_tol_;
   bool allow_reversing_;
+  double max_distance_between_iterations_;
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
