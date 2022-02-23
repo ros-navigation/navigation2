@@ -34,14 +34,14 @@ protected:
 TEST(BorderConstant, outOfBoundsAccess) {
   // check access to nullptr row (up)
   {
-    BorderConstant<uint8_t> c(nullptr, nullptr, 2);
+    out_of_bounds_policy::ReplaceToZero<uint8_t> c(nullptr, nullptr, 2);
     uint8_t * any_non_null = reinterpret_cast<uint8_t *>(&c);
     ASSERT_EQ(c.up(any_non_null), uint8_t(0));
   }
   // check out of bounds access
   {
     std::array<uint8_t, 3> data = {1, 2, 3};
-    BorderConstant<uint8_t> c(data.data(), data.data(), 2);
+    out_of_bounds_policy::ReplaceToZero<uint8_t> c(data.data(), data.data(), 2);
     auto left_out_of_bounds = std::prev(data.data());
     auto right_out_of_bounds = data.data() + data.size();
 

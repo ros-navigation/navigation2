@@ -193,14 +193,17 @@ histogram(const Image<T> & image, T image_max, Bin bin_max)
   return histogram;
 }
 
+namespace out_of_bounds_policy
+{
+
 /**
  * @brief Boundary case object stub. Used as parameter of class Window.
  * Dereferences a pointer to a pixel without any checks
  * @tparam T image pixel type
- * @sa BorderConstant
+ * @sa ReplaceToZero
  */
 template<class T>
-struct AsIs
+struct DoNothing
 {
   T & up(T * v) const {return *v;}
   T & down(T * v) const {return *v;}
@@ -210,10 +213,10 @@ struct AsIs
  * @brief Boundary case object. Used as parameter of class Window.
  * Dereferences a pointer to a existing pixel. If the pixel is out of bounds, it returns a ref to 0.
  * @tparam T image pixel type
- * @sa AsIs
+ * @sa DoNothing
  */
 template<class T>
-class BorderConstant
+class ReplaceToZero
 {
 public:
   /**
@@ -222,7 +225,7 @@ public:
    * @param down_row_start pointer to the first pixel of down row
    * @param columns number of pixels in both rows
    */
-  BorderConstant(const T * up_row_start, const T * down_row_start, size_t columns)
+  ReplaceToZero(const T * up_row_start, const T * down_row_start, size_t columns)
   : up_row_start_{up_row_start}, up_row_end_{up_row_start + columns},
     down_row_start_{down_row_start}, down_row_end_{down_row_start + columns} {}
 
@@ -267,6 +270,8 @@ private:
   T zero_{};
 };
 
+}  // namespace out_of_bounds_policy
+
 /**
  * @brief Forward scan mask sliding window
  * Provides an interface for access to neighborhood of the current pixel
@@ -276,9 +281,9 @@ private:
  * |d|e| |
  * | | | |
  * @tparam T image pixel type
- * @tparam Border optional check of access to pixels outside the image boundary (AsIs or BorderConstant)
+ * @tparam Border optional check of access to pixels outside the image boundary (DoNothing or ReplaceToZero)
  */
-template<class T, template<class> class Border = AsIs>
+template<class T, template<class> class Border>
 class Window
 {
 public:
@@ -331,12 +336,12 @@ T * dropConst(const T * ptr)
  * But probably code bloat is the bigger evil
  */
 template<class T>
-Window<T, BorderConstant> makeSafeWindow(
+Window<T, out_of_bounds_policy::ReplaceToZero> makeSafeWindow(
   const T * up_row, const T * down_row, size_t columns, size_t offset = 0)
 {
   return {
     dropConst(up_row) + offset, dropConst(down_row) + offset,
-    BorderConstant<T>{up_row, down_row, columns}
+    out_of_bounds_policy::ReplaceToZero<T>{up_row, down_row, columns}
   };
 }
 
@@ -349,7 +354,7 @@ Window<T, BorderConstant> makeSafeWindow(
  * @warning Breaks the constant guarantees. See warning in makeSafeWindow
  */
 template<class T>
-Window<T> makeUnsafeWindow(const T * up_row, const T * down_row)
+Window<T, out_of_bounds_policy::DoNothing> makeUnsafeWindow(const T * up_row, const T * down_row)
 {
   return {dropConst(up_row), dropConst(down_row)};
 }
@@ -538,8 +543,8 @@ struct ProcessPixel<ConnectivityType::Way8>
 {
   /**
    * @brief Set the label of the current pixel image.e() based on labels in its neighborhood
-   * @tparam ImageWindow Window parameterized by class AsIs or BorderConstant
-   * @tparam LabelsWindow Window parameterized by class AsIs or BorderConstant
+   * @tparam ImageWindow Window parameterized by class DoNothing or ReplaceToZero
+   * @tparam LabelsWindow Window parameterized by class DoNothing or ReplaceToZero
    * @tparam Label integer type of label
    * @param image input image window. Image data will not be changed. De facto, image is a const ref
    * @param label output label window
@@ -592,8 +597,8 @@ struct ProcessPixel<ConnectivityType::Way4>
 {
   /**
    * @brief Set the label of the current pixel image.e() based on labels in its neighborhood
-   * @tparam ImageWindow Window parameterized by class AsIs or BorderConstant
-   * @tparam LabelsWindow Window parameterized by class AsIs or BorderConstant
+   * @tparam ImageWindow Window parameterized by class DoNothing or ReplaceToZero
+   * @tparam LabelsWindow Window parameterized by class DoNothing or ReplaceToZero
    * @tparam Label integer type of label
    * @param image input image window. Image data will not be changed. De facto, image is a const ref
    * @param label output label window
@@ -784,7 +789,7 @@ Label connectedComponentsImpl(
   // scan rows 1, 2, ...
   for (size_t row = 0; row < image.rows() - 1; ++row) {
     // we can safely ignore checks label_mask for first column
-    Window<Label> label_mask{labels.row(row), labels.row(row + 1)};
+    Window<Label, out_of_bounds_policy::DoNothing> label_mask{labels.row(row), labels.row(row + 1)};
 
     auto up = image.row(row);
     auto current = image.row(row + 1);
