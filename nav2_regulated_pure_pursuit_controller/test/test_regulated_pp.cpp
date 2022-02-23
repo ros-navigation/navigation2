@@ -92,16 +92,10 @@ public:
       linear_vel, sign);
   }
 
-  std::vector<geometry_msgs::msg::PoseStamped>::iterator findCuspWrapper()
+  double findCuspWrapper(
+    const geometry_msgs::msg::PoseStamped & pose)
   {
-    return findCusp();
-  }
-
-  double integratedDistanceToPoseWrapper(
-    const nav_msgs::msg::Path & path,
-    const std::vector<geometry_msgs::msg::PoseStamped>::iterator iterator)
-  {
-    return integratedDistanceToPose(path, iterator);
+    return findCusp(pose);
   }
 };
 
@@ -172,15 +166,13 @@ TEST(RegulatedPurePursuitTest, findCusp)
   path.poses[2].pose.position.x = -1.0;
   path.poses[2].pose.position.y = -1.0;
   ctrl->setPlan(path);
-  auto cusp = ctrl->findCuspWrapper();
-  auto rtn = ctrl->integratedDistanceToPoseWrapper(path, cusp);
+  auto rtn = ctrl->findCuspWrapper(pose);
   EXPECT_EQ(rtn, sqrt(5.0));
 
   path.poses[2].pose.position.x = 3.0;
   path.poses[2].pose.position.y = 3.0;
   ctrl->setPlan(path);
-  cusp = ctrl->findCuspWrapper();
-  rtn = ctrl->integratedDistanceToPoseWrapper(path, cusp);
+  rtn = ctrl->findCuspWrapper(pose);
   EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
 
