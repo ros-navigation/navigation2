@@ -104,27 +104,6 @@ inline double euclidean_distance(
 }
 
 /**
- * Find element in iterator with the minimum calculated value
- */
-template<typename Iter, typename Getter>
-inline Iter min_by(Iter begin, Iter end, Getter getCompareVal)
-{
-  if (begin == end) {
-    return end;
-  }
-  auto lowest = getCompareVal(*begin);
-  Iter lowest_it = begin;
-  for (Iter it = ++begin; it != end; ++it) {
-    auto comp = getCompareVal(*it);
-    if (comp < lowest) {
-      lowest = comp;
-      lowest_it = it;
-    }
-  }
-  return lowest_it;
-}
-
-/**
  * Find first element in iterator that is greater integrated distance than comparevalue
  */
 template<typename Iter, typename Getter>
@@ -134,13 +113,41 @@ inline Iter first_element_beyond(Iter begin, Iter end, Getter getCompareVal)
     return end;
   }
   Getter dist = 0.0;
-  for (Iter it = begin; it != end - 1; it++) {
+  for (auto it = begin; it != end - 1; it++) {
     dist += euclidean_distance(*it, *(it + 1));
     if (dist > getCompareVal) {
       return it + 1;
     }
   }
   return end;
+}
+
+// Using more than one iterator type allows for mixing const and non-const iterators
+template<typename Iter1, typename Iter2, typename Value, typename BinaryOp>
+inline Value accumulate_window(Iter1 begin, Iter2 end, Value init, BinaryOp window)
+{
+  // Check this so we don't call std::next on end
+  if (begin == end) {
+    return init;
+  }
+  Value accumulator = init;
+  for (auto i = std::next(begin); i != end; ++i) {
+    auto prev = std::prev(i);
+    accumulator += window(prev, i);
+  }
+  return accumulator;
+}
+
+// Using more than one iterator type allows for mixing const and non-const iterators
+template<typename Iter1, typename Iter2>
+inline double calculate_path_length(Iter1 begin, Iter2 end)
+{
+  return accumulate_window(
+    begin, end,
+    0.0,
+    [](const auto & pose1, const auto & pose2) -> double {
+      return euclidean_distance(*pose1, *pose2);
+    });
 }
 
 /**
@@ -153,14 +160,7 @@ inline Iter first_element_beyond(Iter begin, Iter end, Getter getCompareVal)
  */
 inline double calculate_path_length(const nav_msgs::msg::Path & path, size_t start_index = 0)
 {
-  if (start_index + 1 >= path.poses.size()) {
-    return 0.0;
-  }
-  double path_length = 0.0;
-  for (size_t idx = start_index; idx < path.poses.size() - 1; ++idx) {
-    path_length += euclidean_distance(path.poses[idx].pose, path.poses[idx + 1].pose);
-  }
-  return path_length;
+  return calculate_path_length(path.poses.begin() + start_index, path.poses.end());
 }
 
 }  // namespace geometry_utils

@@ -19,6 +19,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <numeric>
 
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_core/exceptions.hpp"
@@ -232,7 +233,8 @@ std::unique_ptr<geometry_msgs::msg::PointStamped> RegulatedPurePursuitController
   return carrot_msg;
 }
 
-double RegulatedPurePursuitController::getLookAheadDistance(const geometry_msgs::msg::Twist & speed)
+double RegulatedPurePursuitController::getLookAheadDistance(
+  const geometry_msgs::msg::Twist & speed)
 {
   // If using velocity-scaled look ahead distances, find and clamp the dist
   // Else, use the static look ahead distance
@@ -261,13 +263,14 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     goal_dist_tol_ = pose_tolerance.position.x;
   }
 
-  double dist_to_cusp = findCusp(pose);
+  auto cusp_pose_it = findCusp();
+
+  double lookahead_dist = getLookAheadDistance(speed);
 
   // Transform path to robot base frame
-  auto transformed_plan = transformGlobalPlan(pose, dist_to_cusp);
+  auto transformed_plan = transformGlobalPlan(pose, cusp_pose_it, lookahead_dist);
 
-  // Find look ahead distance and point on path and publish
-  double lookahead_dist = getLookAheadDistance(speed);
+  double dist_to_cusp = integratedDistanceToPose(transformed_plan, cusp_pose_it);
 
   // if the lookahead distance is further than the cusp, use the cusp distance instead
   if (dist_to_cusp < lookahead_dist) {
@@ -366,10 +369,8 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
   const nav_msgs::msg::Path & transformed_plan)
 {
   // Find the first pose which is at a distance greater than the lookahead distance
-  auto goal_pose_it = std::find_if(
-    transformed_plan.poses.begin(), transformed_plan.poses.end(), [&](const auto & ps) {
-      return hypot(ps.pose.position.x, ps.pose.position.y) >= lookahead_dist;
-    });
+  auto goal_pose_it = nav2_util::geometry_utils::first_element_beyond(
+    transformed_plan.poses.begin(), transformed_plan.poses.end(), lookahead_dist);
 
   // If the no pose is not far enough, take the last pose
   if (goal_pose_it == transformed_plan.poses.end()) {
@@ -585,7 +586,9 @@ void RegulatedPurePursuitController::setSpeedLimit(
 }
 
 nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
-  const geometry_msgs::msg::PoseStamped & pose, double dist_to_cusp)
+  const geometry_msgs::msg::PoseStamped & pose,
+  const std::vector<geometry_msgs::msg::PoseStamped>::iterator cusp_it,
+  double lookahead_distance)
 {
   if (global_plan_.poses.empty()) {
     throw nav2_core::PlannerException("Received plan with zero length");
@@ -602,29 +605,31 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   const double max_costmap_dim = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY());
   const double max_costmap_extent = max_costmap_dim * costmap->getResolution() / 2.0;
 
-  // Find the first pose that turns in the opposite direction from the first pose
-  findPathUpToTurn(global_plan_, M_PI);
-
-  const double max_transform_dist = std::min(max_costmap_extent, dist_to_cusp);
-
+  // This bound is based on the assumption that the robot can't have traveled very far
+  // since the last iteration, and that when the global_plan was first passed, the robot
+  // was intended to start at the beginning.
+  // lookahead distance should be a pretty good proxy for this bound.
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_element_beyond(
-    global_plan_.poses.begin(), global_plan_.poses.end(), max_transform_dist);
+    global_plan_.poses.begin(), global_plan_.poses.end(), lookahead_distance);
 
-  // First find the closest pose on the path to the robot
-  // bounded by when the path turns around (if it does) so we don't get a pose from a later
-  // portion of the path
   auto transformation_begin =
-    nav2_util::geometry_utils::min_by(
+    std::min_element(
     global_plan_.poses.begin(), closest_pose_upper_bound,
-    [&robot_pose](const geometry_msgs::msg::PoseStamped & ps) {
-      return euclidean_distance(robot_pose, ps);
+    [&robot_pose](const auto & pose1, const auto & pose2) {
+      return euclidean_distance(robot_pose, pose1) < euclidean_distance(robot_pose, pose2);
     });
 
-  // Find points up to max_transform_dist so we only transform them.
+  auto first_pose_after_cusp = cusp_it != global_plan_.poses.end() ? std::next(cusp_it) : cusp_it;
+
+  // Find points within the local costmap up to the cusp pose
   auto transformation_end =
-    nav2_util::geometry_utils::first_element_beyond(
-    transformation_begin, global_plan_.poses.end(), max_transform_dist);
+    std::find_if(
+    transformation_begin, first_pose_after_cusp,
+    [&](const auto & pose) -> bool {
+      // This is constraining us to the biggest circle we can fit inside the local costmap
+      return euclidean_distance(pose, robot_pose) > max_costmap_extent;
+    });
 
   // Lambda to transform a PoseStamped from global frame to local
   auto transformGlobalPoseToLocal = [&](const auto & global_plan_pose) {
@@ -638,9 +643,10 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
 
   // Transform the near part of the global plan into the robot's frame of reference.
   nav_msgs::msg::Path transformed_plan;
+  transformed_plan.poses.resize(std::distance(transformation_begin, transformation_end));
   std::transform(
     transformation_begin, transformation_end,
-    std::back_inserter(transformed_plan.poses),
+    transformed_plan.poses.begin(),
     transformGlobalPoseToLocal);
   transformed_plan.header.frame_id = costmap_ros_->getBaseFrameID();
   transformed_plan.header.stamp = robot_pose.header.stamp;
@@ -657,48 +663,35 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   return transformed_plan;
 }
 
-double RegulatedPurePursuitController::findCusp(
-  const geometry_msgs::msg::PoseStamped & pose)
+std::vector<geometry_msgs::msg::PoseStamped>::iterator RegulatedPurePursuitController::findCusp()
 {
   // Iterating through the global path to determine the position of the cusp
-  for (unsigned int pose_id = 1; pose_id < global_plan_.poses.size() - 1; ++pose_id) {
+  for (auto a = std::next(global_plan_.poses.begin()); a != std::prev(global_plan_.poses.end());
+    ++a)
+  {
+    auto o = std::prev(a);
+    auto b = std::next(a);
     // We have two vectors for the dot product OA and AB. Determining the vectors.
-    double oa_x = global_plan_.poses[pose_id].pose.position.x -
-      global_plan_.poses[pose_id - 1].pose.position.x;
-    double oa_y = global_plan_.poses[pose_id].pose.position.y -
-      global_plan_.poses[pose_id - 1].pose.position.y;
-    double ab_x = global_plan_.poses[pose_id + 1].pose.position.x -
-      global_plan_.poses[pose_id].pose.position.x;
-    double ab_y = global_plan_.poses[pose_id + 1].pose.position.y -
-      global_plan_.poses[pose_id].pose.position.y;
+    double oa_x = a->pose.position.x - o->pose.position.x;
+    double oa_y = a->pose.position.y - o->pose.position.y;
+    double ab_x = b->pose.position.x - a->pose.position.x;
+    double ab_y = b->pose.position.y - a->pose.position.y;
 
-    /* Checking for the existance of cusp, in the path, using the dot product
-    and determine it's distance from the robot. If there is no cusp in the path,
-    then just determine the distance to the goal location. */
+    // Checking for the existance of cusp, in the path, using the dot product
     if ( (oa_x * ab_x) + (oa_y * ab_y) < 0.0) {
-      auto x = global_plan_.poses[pose_id].pose.position.x - pose.pose.position.x;
-      auto y = global_plan_.poses[pose_id].pose.position.y - pose.pose.position.y;
-      return hypot(x, y);  // returning the distance if there is a cusp
+      return a;
     }
   }
 
-  return std::numeric_limits<double>::max();
+  return global_plan_.poses.end();
 }
 
-std::vector<geometry_msgs::msg::PoseStamped>::iterator findPathUpToTurn(
+double RegulatedPurePursuitController::integratedDistanceToPose(
   const nav_msgs::msg::Path & path,
-  double angle)
+  std::vector<geometry_msgs::msg::PoseStamped>::iterator pose_it)
 {
-  tf2::Quaternion starting_orientation;
-  tf2::fromMsg(path.poses.begin()->pose.orientation, starting_orientation);
-  return std::find_if(
-    path.poses.begin(), path.poses.end(),
-    [](const auto& pose) {
-      tf2::Quaternion quat;
-      tf2::fromMsg(pose.pose.orientation, quat);
-      return quat.angleShortestPath(starting_orientation) > angle;
-    }
-  );
+  auto after_pose_it = pose_it != path.poses.end() ? std::next(pose_it) : pose_it;
+  return nav2_util::geometry_utils::calculate_path_length(path.poses.begin(), after_pose_it);
 }
 
 bool RegulatedPurePursuitController::transformPose(

@@ -116,12 +116,14 @@ protected:
    * Points ineligible to be selected as a lookahead point if they are any of the following:
    * - Outside the local_costmap (collision avoidance cannot be assured)
    * - Beyond a "cusp": a change from forward to reverse or vice-versa
-   * @param pose pose to transform
+   * @param pose pose to transform from
+   * @param cusp_it iterator to pose in global_plan where the first cusp appears
    * @return Path in new frame
    */
   nav_msgs::msg::Path transformGlobalPlan(
     const geometry_msgs::msg::PoseStamped & pose,
-    double dist_to_cusp);
+    const std::vector<geometry_msgs::msg::PoseStamped>::iterator cusp_it,
+    double lookahead_distance);
 
   /**
    * @brief Transform a pose to another frame.
@@ -233,11 +235,15 @@ protected:
   geometry_msgs::msg::PoseStamped getLookAheadPoint(const double &, const nav_msgs::msg::Path &);
 
   /**
-   * @brief checks for the cusp position
+   * @brief Find the first cusp position in the global_plan_
    * @param pose Pose input to determine the cusp position
-   * @return robot distance from the cusp
+   * @return iterator to the pose on the cusp
    */
-  double findCusp(const geometry_msgs::msg::PoseStamped & pose);
+  std::vector<geometry_msgs::msg::PoseStamped>::iterator findCusp();
+
+  double integratedDistanceToPose(
+    const nav_msgs::msg::Path &,
+    const std::vector<geometry_msgs::msg::PoseStamped>::iterator);
 
   /**
    * @brief Callback executed when a parameter change is detected
