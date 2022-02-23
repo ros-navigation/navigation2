@@ -92,10 +92,10 @@ public:
       linear_vel, sign);
   }
 
-  double findDirectionChangeWrapper(
+  double findCuspWrapper(
     const geometry_msgs::msg::PoseStamped & pose)
   {
-    return findDirectionChange(pose);
+    return findCusp(pose);
   }
 };
 
@@ -150,7 +150,7 @@ TEST(RegulatedPurePursuitTest, createCarrotMsg)
   EXPECT_EQ(rtn->point.z, 0.01);
 }
 
-TEST(RegulatedPurePursuitTest, findDirectionChange)
+TEST(RegulatedPurePursuitTest, findCusp)
 {
   auto ctrl = std::make_shared<BasicAPIRPP>();
   geometry_msgs::msg::PoseStamped pose;
@@ -166,13 +166,13 @@ TEST(RegulatedPurePursuitTest, findDirectionChange)
   path.poses[2].pose.position.x = -1.0;
   path.poses[2].pose.position.y = -1.0;
   ctrl->setPlan(path);
-  auto rtn = ctrl->findDirectionChangeWrapper(pose);
+  auto rtn = ctrl->findCuspWrapper(pose);
   EXPECT_EQ(rtn, sqrt(5.0));
 
   path.poses[2].pose.position.x = 3.0;
   path.poses[2].pose.position.y = 3.0;
   ctrl->setPlan(path);
-  rtn = ctrl->findDirectionChangeWrapper(pose);
+  rtn = ctrl->findCuspWrapper(pose);
   EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
 

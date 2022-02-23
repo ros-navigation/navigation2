@@ -261,17 +261,17 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     goal_dist_tol_ = pose_tolerance.position.x;
   }
 
-  double dist_to_direction_change = findDirectionChange(pose);
+  double dist_to_cusp = findCusp(pose);
 
   // Transform path to robot base frame
-  auto transformed_plan = transformGlobalPlan(pose, dist_to_direction_change);
+  auto transformed_plan = transformGlobalPlan(pose, dist_to_cusp);
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
 
   // if the lookahead distance is further than the cusp, use the cusp distance instead
-  if (dist_to_direction_change < lookahead_dist) {
-    lookahead_dist = dist_to_direction_change;
+  if (dist_to_cusp < lookahead_dist) {
+    lookahead_dist = dist_to_cusp;
   }
 
   auto carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan);
@@ -585,7 +585,7 @@ void RegulatedPurePursuitController::setSpeedLimit(
 }
 
 nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
-  const geometry_msgs::msg::PoseStamped & pose, double dist_to_direction_change)
+  const geometry_msgs::msg::PoseStamped & pose, double dist_to_cusp)
 {
   if (global_plan_.poses.empty()) {
     throw nav2_core::PlannerException("Received plan with zero length");
@@ -601,7 +601,11 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   const double max_costmap_dim = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY());
   const double max_costmap_extent = max_costmap_dim * costmap->getResolution() / 2.0;
-  const double max_transform_dist = std::min(max_costmap_extent, dist_to_direction_change);
+
+  // Find the first pose that turns in the opposite direction from the first pose
+  findPathUpToTurn(global_plan_, M_PI);
+
+  const double max_transform_dist = std::min(max_costmap_extent, dist_to_cusp);
 
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_element_beyond(
@@ -653,7 +657,7 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   return transformed_plan;
 }
 
-double RegulatedPurePursuitController::findDirectionChange(
+double RegulatedPurePursuitController::findCusp(
   const geometry_msgs::msg::PoseStamped & pose)
 {
   // Iterating through the global path to determine the position of the cusp
@@ -679,6 +683,22 @@ double RegulatedPurePursuitController::findDirectionChange(
   }
 
   return std::numeric_limits<double>::max();
+}
+
+std::vector<geometry_msgs::msg::PoseStamped>::iterator findPathUpToTurn(
+  const nav_msgs::msg::Path & path,
+  double angle)
+{
+  tf2::Quaternion starting_orientation;
+  tf2::fromMsg(path.poses.begin()->pose.orientation, starting_orientation);
+  return std::find_if(
+    path.poses.begin(), path.poses.end(),
+    [](const auto& pose) {
+      tf2::Quaternion quat;
+      tf2::fromMsg(pose.pose.orientation, quat);
+      return quat.angleShortestPath(starting_orientation) > angle;
+    }
+  );
 }
 
 bool RegulatedPurePursuitController::transformPose(
