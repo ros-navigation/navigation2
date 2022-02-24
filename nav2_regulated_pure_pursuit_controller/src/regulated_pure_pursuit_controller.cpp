@@ -107,7 +107,7 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".allow_reversing", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_distance_between_iterations",
-    rclcpp::ParameterValue(std::numeric_limits<double>::max));
+    rclcpp::ParameterValue(10000.0));  // something really big
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   base_desired_linear_vel_ = desired_linear_vel_;
