@@ -401,7 +401,7 @@ AmclNode::checkLaserReceived()
     RCLCPP_WARN(
       get_logger(), "Laser scan has not been received"
       " (and thus no pose updates have been published)."
-      " Verify that data is being published on the %s topic.", scan_topic_);
+      " Verify that data is being published on the %s topic.", scan_topic_.c_str());
     return;
   }
 
@@ -410,7 +410,7 @@ AmclNode::checkLaserReceived()
     RCLCPP_WARN(
       get_logger(), "No laser scan received (and thus no pose updates have been published) for %f"
       " seconds.  Verify that data is being published on the %s topic.",
-      d.nanoseconds() * 1e-9, scan_topic_);
+      d.nanoseconds() * 1e-9, scan_topic_.c_str());
   }
 }
 
@@ -505,6 +505,8 @@ AmclNode::globalLocalizationCallback(
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
 {
+  std::lock_guard<std::mutex> lock(pf_mutex_);
+
   RCLCPP_INFO(get_logger(), "Initializing with uniform distribution");
 
   pf_init_model(
@@ -529,6 +531,8 @@ AmclNode::nomotionUpdateCallback(
 void
 AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
+  std::lock_guard<std::mutex> lock(pf_mutex_);
+
   RCLCPP_INFO(get_logger(), "initialPoseReceived");
 
   if (msg->header.frame_id == "") {
@@ -626,6 +630,8 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 void
 AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
+  std::lock_guard<std::mutex> lock(pf_mutex_);
+
   // Since the sensor data is continually being published by the simulator or robot,
   // we don't want our callbacks to fire until we're in the active state
   if (!active_) {return;}
@@ -1246,7 +1252,7 @@ AmclNode::initMessageFilters()
     rclcpp_node_.get(), scan_topic_, rmw_qos_profile_sensor_data);
 
   laser_scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-    *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_);
+    *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_, transform_tolerance_);
 
   laser_scan_connection_ = laser_scan_filter_->registerCallback(
     std::bind(

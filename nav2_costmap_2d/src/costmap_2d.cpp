@@ -212,6 +212,11 @@ unsigned char Costmap2D::getCost(unsigned int mx, unsigned int my) const
   return costmap_[getIndex(mx, my)];
 }
 
+unsigned char Costmap2D::getCost(unsigned int undex) const
+{
+  return costmap_[undex];
+}
+
 void Costmap2D::setCost(unsigned int mx, unsigned int my, unsigned char cost)
 {
   costmap_[getIndex(mx, my)] = cost;
@@ -430,7 +435,7 @@ void Costmap2D::convexFillCells(
 
     MapLocation pt;
     // loop though cells in the column
-    for (unsigned int y = min_pt.y; y < max_pt.y; ++y) {
+    for (unsigned int y = min_pt.y; y <= max_pt.y; ++y) {
       pt.x = x;
       pt.y = y;
       polygon_cells.push_back(pt);

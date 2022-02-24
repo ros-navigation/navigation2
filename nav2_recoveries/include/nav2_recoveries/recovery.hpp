@@ -107,7 +107,7 @@ public:
 
     collision_checker_ = collision_checker;
 
-    vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+    vel_pub_ = node_->template create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
     onConfigure();
   }
@@ -175,7 +175,7 @@ protected:
     // Initialize the ActionT result
     auto result = std::make_shared<typename ActionT::Result>();
 
-    rclcpp::Rate loop_rate(cycle_frequency_);
+    rclcpp::WallRate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
       if (action_server_->is_cancel_requested()) {

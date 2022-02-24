@@ -54,6 +54,8 @@
       <input_port name="parent">Parent frame for transform</input_port>
     </Condition>
 
+    <Condition ID="GoalUpdated"/>
+
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
 
@@ -72,6 +74,11 @@
       <input_port name="distance">Distance</input_port>
     </Decorator>
 
+    <Decorator ID="GoalUpdater">
+      <input_port name="input_goal">Original goal in</input_port>
+      <output_port name="output_goal">Output goal set by subscription</output_port>
+    </Decorator>
+    
     <Decorator ID="SpeedController">
       <input_port name="min_rate">Minimum rate</input_port>
       <input_port name="max_rate">Maximum rate</input_port>

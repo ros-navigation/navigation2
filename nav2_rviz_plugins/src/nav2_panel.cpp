@@ -34,7 +34,9 @@ using nav2_util::geometry_utils::orientationAroundZAxis;
 GoalPoseUpdater GoalUpdater;
 
 Nav2Panel::Nav2Panel(QWidget * parent)
-: Panel(parent), client_nav_("lifecycle_manager_navigation"),
+: Panel(parent),
+  server_timeout_(10),
+  client_nav_("lifecycle_manager_navigation"),
   client_loc_("lifecycle_manager_localization")
 {
   // Create the control button and its tooltip
@@ -115,7 +117,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   // State entered when navigate_to_pose action is not active
   accumulating_ = new QState();
   accumulating_->setObjectName("accumulating");
-  accumulating_->assignProperty(start_reset_button_, "text", "Reset");
+  accumulating_->assignProperty(start_reset_button_, "text", "Cancel Waypoint Mode");
   accumulating_->assignProperty(start_reset_button_, "toolTip", cancel_waypoint_msg);
   accumulating_->assignProperty(start_reset_button_, "enabled", true);
 
@@ -128,6 +130,18 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulating_->assignProperty(navigation_mode_button_, "toolTip", waypoint_goal_msg);
 
   accumulated_ = new QState();
+  accumulated_->setObjectName("accumulated");
+  accumulated_->assignProperty(start_reset_button_, "text", "Cancel");
+  accumulated_->assignProperty(start_reset_button_, "toolTip", cancel_msg);
+  accumulated_->assignProperty(start_reset_button_, "enabled", true);
+
+  accumulated_->assignProperty(pause_resume_button_, "text", "Pause");
+  accumulated_->assignProperty(pause_resume_button_, "enabled", false);
+  accumulated_->assignProperty(pause_resume_button_, "toolTip", pause_msg);
+
+  accumulated_->assignProperty(navigation_mode_button_, "text", "Start Navigation");
+  accumulated_->assignProperty(navigation_mode_button_, "enabled", false);
+  accumulated_->assignProperty(navigation_mode_button_, "toolTip", waypoint_goal_msg);
 
   // State entered to cancel the navigate_to_pose action
   canceled_ = new QState();
@@ -183,12 +197,12 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->addTransition(navigation_mode_button_, SIGNAL(clicked()), accumulating_);
   accumulating_->addTransition(navigation_mode_button_, SIGNAL(clicked()), accumulated_);
   accumulating_->addTransition(start_reset_button_, SIGNAL(clicked()), idle_);
+  accumulated_->addTransition(start_reset_button_, SIGNAL(clicked()), canceled_);
 
   // Internal state transitions
   canceled_->addTransition(canceled_, SIGNAL(entered()), idle_);
   reset_->addTransition(reset_, SIGNAL(entered()), initial_);
   resumed_->addTransition(resumed_, SIGNAL(entered()), idle_);
-  accumulated_->addTransition(accumulated_, SIGNAL(entered()), idle_);
 
   // Pause/Resume button click transitions
   idle_->addTransition(pause_resume_button_, SIGNAL(clicked()), paused_);
@@ -202,6 +216,15 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   ROSActionQTransition * runningTransition = new ROSActionQTransition(QActionState::ACTIVE);
   runningTransition->setTargetState(idle_);
   running_->addTransition(runningTransition);
+
+  ROSActionQTransition * idleAccumulatedTransition =
+    new ROSActionQTransition(QActionState::INACTIVE);
+  idleAccumulatedTransition->setTargetState(accumulated_);
+  idle_->addTransition(idleAccumulatedTransition);
+
+  ROSActionQTransition * accumulatedTransition = new ROSActionQTransition(QActionState::ACTIVE);
+  accumulatedTransition->setTargetState(idle_);
+  accumulated_->addTransition(accumulatedTransition);
 
   initial_thread_ = new InitialThread(client_nav_, client_loc_);
   connect(initial_thread_, &InitialThread::finished, initial_thread_, &QObject::deleteLater);
@@ -316,12 +339,12 @@ Nav2Panel::onPause()
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::pause,
-      &client_nav_));
+      &client_nav_, std::placeholders::_1), server_timeout_);
   QFuture<void> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::pause,
-      &client_loc_));
+      &client_loc_, std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -331,12 +354,12 @@ Nav2Panel::onResume()
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::resume,
-      &client_nav_));
+      &client_nav_, std::placeholders::_1), server_timeout_);
   QFuture<void> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::resume,
-      &client_loc_));
+      &client_loc_, std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -346,12 +369,12 @@ Nav2Panel::onStartup()
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::startup,
-      &client_nav_));
+      &client_nav_, std::placeholders::_1), server_timeout_);
   QFuture<void> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::startup,
-      &client_loc_));
+      &client_loc_, std::placeholders::_1), server_timeout_);
 }
 
 void
@@ -361,12 +384,12 @@ Nav2Panel::onShutdown()
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::reset,
-      &client_nav_));
+      &client_nav_, std::placeholders::_1), server_timeout_);
   QFuture<void> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::reset,
-      &client_loc_));
+      &client_loc_, std::placeholders::_1), server_timeout_);
   timer_.stop();
 }
 
@@ -405,20 +428,22 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
 void
 Nav2Panel::onCancelButtonPressed()
 {
-  if (state_machine_.configuration().contains(accumulating_)) {
+  if (waypoint_follower_goal_handle_) {
     auto future_cancel =
       waypoint_follower_action_client_->async_cancel_goal(waypoint_follower_goal_handle_);
 
-    if (rclcpp::spin_until_future_complete(client_node_, future_cancel) !=
+    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel waypoint follower");
       return;
     }
-  } else {
+  }
+
+  if (navigation_goal_handle_) {
     auto future_cancel = navigation_action_client_->async_cancel_goal(navigation_goal_handle_);
 
-    if (rclcpp::spin_until_future_complete(client_node_, future_cancel) !=
+    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel goal");
@@ -446,7 +471,7 @@ Nav2Panel::onAccumulating()
 void
 Nav2Panel::timerEvent(QTimerEvent * event)
 {
-  if (state_machine_.configuration().contains(accumulating_)) {
+  if (state_machine_.configuration().contains(accumulated_)) {
     if (event->timerId() == timer_.timerId()) {
       if (!waypoint_follower_goal_handle_) {
         RCLCPP_DEBUG(client_node_->get_logger(), "Waiting for Goal");
@@ -522,7 +547,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 
   auto future_goal_handle =
     waypoint_follower_action_client_->async_send_goal(waypoint_follower_goal_, send_goal_options);
-  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
+  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle, server_timeout_) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
@@ -562,7 +587,7 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
 
   auto future_goal_handle =
     navigation_action_client_->async_send_goal(navigation_goal_, send_goal_options);
-  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle) !=
+  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle, server_timeout_) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");

@@ -18,4 +18,12 @@ repositories:
   ros-perception/vision_opencv:
     type: git
     url: https://github.com/ros-perception/vision_opencv.git
-    version: 062ddf81182e5ee77215982fdae7630ad8e3d53f
+    version: ros2
+  ros/bond_core:
+    type: git
+    url: https://github.com/ros/bond_core.git
+    version: ros2
+  ompl/ompl:
+    type: git
+    url: https://github.com/ompl/ompl.git
+    version: 1.5.0

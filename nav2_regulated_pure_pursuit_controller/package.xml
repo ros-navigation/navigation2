@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>nav2_regulated_pure_pursuit_controller</name>
+  <version>0.4.7</version>
+  <description>Regulated Pure Pursuit Controller</description>
+  <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
+  <maintainer email="shrijitsingh99@gmail.com">Shrijit Singh</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>nav2_common</depend>
+  <depend>nav2_core</depend>
+  <depend>nav2_util</depend>
+  <depend>nav2_costmap_2d</depend>
+  <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav2_msgs</depend>
+  <depend>pluginlib</depend>
+  <depend>tf2</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+
+</package>

@@ -138,5 +138,6 @@ ament_export_libraries(${library_name}
   nav2_spin_recovery
   nav2_wait_recovery
 )
+ament_export_definitions("PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 ament_package()
