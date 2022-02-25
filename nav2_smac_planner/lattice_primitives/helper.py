@@ -17,7 +17,7 @@ import numpy as np
 
 def normalize_angle(angle):
     """
-    Normalize the angle to between [-pi, pi).
+    Normalize the angle to between (-pi, pi].
 
     Args:
     angle: float
@@ -28,8 +28,13 @@ def normalize_angle(angle):
     The normalized angle in the range [-pi,pi)
 
     """
-    return (angle + np.pi) % (2 * np.pi) - np.pi
+    while angle > np.pi:
+        angle -= 2*np.pi
 
+    while angle < -np.pi:
+        angle += 2*np.pi
+
+    return angle
 
 def angle_difference(angle_1, angle_2, left_turn=None):
     """
