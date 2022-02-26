@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_map_server)
+add_compile_options(-g)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules)
 

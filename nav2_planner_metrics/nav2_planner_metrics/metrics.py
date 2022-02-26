@@ -32,6 +32,7 @@ from random import seed
 from random import randint
 from random import uniform
 
+from transforms3d.euler import euler2quat
 
 def getPlannerResults(navigator, initial_pose, goal_pose, planners):
     results = []
@@ -54,11 +55,11 @@ def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
             start.pose.position.y = row*res
 
             yaw = uniform(0,1) * 2*math.pi
-            quad = get_quaternion_from_euler(0.0, 0.0, yaw)
-            start.pose.orientation.x = quad[0] 
-            start.pose.orientation.y = quad[1]
-            start.pose.orientation.z = quad[2]
-            start.pose.orientation.w = quad[3]
+            quad = euler2quat(0.0, 0.0, yaw)
+            start.pose.orientation.w = quad[0]
+            start.pose.orientation.x = quad[1]
+            start.pose.orientation.y = quad[2]
+            start.pose.orientation.z = quad[3]
             break
     return start
 
@@ -83,34 +84,13 @@ def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
             goal.pose.position.y = goal_y
 
             yaw = uniform(0,1) * 2*math.pi
-            quad = get_quaternion_from_euler(0.0, 0.0, yaw)
-            goal.pose.orientation.x = quad[0] 
-            goal.pose.orientation.y = quad[1]
-            goal.pose.orientation.z = quad[2]
-            goal.pose.orientation.w = quad[3]
+            quad = euler2quat(0.0, 0.0, yaw)
+            goal.pose.orientation.w = quad[0]
+            goal.pose.orientation.x = quad[1]
+            goal.pose.orientation.y = quad[2]
+            goal.pose.orientation.z = quad[3]
             break
     return goal
-
-def get_quaternion_from_euler(roll, pitch, yaw):
-    quad = []
-    """
-    Convert an Euler angle to a quaternion.
-    
-    Input
-        :param roll: The roll (rotation around x-axis) angle in radians.
-        :param pitch: The pitch (rotation around y-axis) angle in radians.
-        :param yaw: The yaw (rotation around z-axis) angle in radians.
-    
-    Output
-        :return qx, qy, qz, qw: The orientation in quaternion [x,y,z,w] format
-    """
-    qx = np.sin(roll/2) * np.cos(pitch/2) * np.cos(yaw/2) - np.cos(roll/2) * np.sin(pitch/2) * np.sin(yaw/2)
-    qy = np.cos(roll/2) * np.sin(pitch/2) * np.cos(yaw/2) + np.sin(roll/2) * np.cos(pitch/2) * np.sin(yaw/2)
-    qz = np.cos(roll/2) * np.cos(pitch/2) * np.sin(yaw/2) - np.sin(roll/2) * np.sin(pitch/2) * np.cos(yaw/2)
-    qw = np.cos(roll/2) * np.cos(pitch/2) * np.cos(yaw/2) + np.sin(roll/2) * np.sin(pitch/2) * np.sin(yaw/2)
-    quad = [qx, qy, qz, qw]
-    return quad
-
 
 def main():
     rclpy.init()
@@ -123,8 +103,8 @@ def main():
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
     initial_pose.pose.position.x = 1.0
     initial_pose.pose.position.y = 1.0
-    initial_pose.pose.orientation.z = 0.999913
-    initial_pose.pose.orientation.w = 0.0131738
+    initial_pose.pose.orientation.z = 0.0
+    initial_pose.pose.orientation.w = 1.0
     navigator.setInitialPose(initial_pose)
 
     # Wait for navigation to fully activate
@@ -135,20 +115,50 @@ def main():
     costmap = np.asarray(costmap_msg.data)
     costmap.resize(costmap_msg.metadata.size_y, costmap_msg.metadata.size_x)
 
-    # planners = ['NavFn', 'SmacLattice', 'Smac2D', 'SmacHybrid']
-    planners = ['SmacLattice']
+    planners = ['NavFn', 'SmacLattice', 'Smac2D', 'SmacHybrid']
+    #planners = ['SmacLattice']
     max_cost = 210
-    side_buffer = 10
+    side_buffer = 100
     time_stamp = navigator.get_clock().now().to_msg()
     results = []
-    for i in range(100):
-        start = getRandomStart(costmap, max_cost, side_buffer, time_stamp, costmap_msg.metadata.resolution)
-        goal = getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, costmap_msg.metadata.resolution)
-        result = getPlannerResults(navigator, start, goal, planners)
-        if len(result) == len(planners):  
-            results.append(result)
-        else:
-            print("One of the planners was invalid")
+    seed(33)
+
+    # random_pairs = 1000
+    # for i in range(random_pairs):
+    #     print("Cycle: ", i, "out of: ",random_pairs)
+    #     start = getRandomStart(costmap, max_cost, side_buffer, time_stamp, costmap_msg.metadata.resolution)
+    #     goal = getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, costmap_msg.metadata.resolution)
+    #     print("Start", start)
+    #     print("Goal", goal)
+    #     result = getPlannerResults(navigator, start, goal, planners)
+    #     if len(result) == len(planners):  
+    #         results.append(result)
+    #     else:
+    #         print("One of the planners was invalid")
+
+
+    start = PoseStamped()
+    start.pose.position.x = 2.0
+    start.pose.position.y = 2.0
+    start.pose.orientation.w = 1.0
+    start.pose.orientation.z = 0.0
+    start.header.stamp = navigator.get_clock().now().to_msg()
+    start.header.frame_id = 'map'
+
+    goal = PoseStamped()
+    goal.pose.position.x = 98.0
+    goal.pose.position.y = 55.0
+    goal.pose.orientation.w = 0.998559889111465
+    goal.pose.orientation.z = 0.05364837236765668
+    goal.header.stamp = navigator.get_clock().now().to_msg()
+    goal.header.frame_id = 'map'
+    
+    results = []
+    result = getPlannerResults(navigator, start, goal, planners)
+    if len(result) == len(planners):  
+        results.append(result)
+    else:
+        print("One of the planners was invalid")
 
     print("Write Results...")
     nav2_planner_metrics_dir = get_package_share_directory('nav2_planner_metrics')
@@ -156,7 +166,7 @@ def main():
         pickle.dump(results, f, pickle.HIGHEST_PROTOCOL)
 
     with open(os.path.join(nav2_planner_metrics_dir, 'costmap.pickle'), 'wb') as f:
-        pickle.dump(costmap, f, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(costmap_msg, f, pickle.HIGHEST_PROTOCOL)
 
     with open(os.path.join(nav2_planner_metrics_dir, 'planners.pickle'), 'wb') as f:
         pickle.dump(planners, f, pickle.HIGHEST_PROTOCOL)
