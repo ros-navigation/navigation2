@@ -91,7 +91,7 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
       --symlink-install \
       --mixin \
         $OVERLAY_MIXINS \
-      --packages-select $(cat ./minimal_repos.txt) \
+      --packages-select $(cat ./minimal_repos.txt) nav_2d_msgs nav_2d_utils \
     || touch build_failed && \
     if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
       exit 1; \
