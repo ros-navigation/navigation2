@@ -89,6 +89,9 @@ protected:
   poses_navigator_;
   nav2_bt_navigator::NavigatorMuxer plugin_muxer_;
 
+  // Odometry smoother object
+  std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
+
   // Metrics for feedback
   std::string robot_frame_;
   std::string global_frame_;
