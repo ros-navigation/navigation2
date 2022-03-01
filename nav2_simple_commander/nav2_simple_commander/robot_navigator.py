@@ -93,7 +93,7 @@ class BasicNavigator(Node):
         self.initial_pose = initial_pose
         self._setInitialPose()
 
-    def goThroughPoses(self, poses):
+    def goThroughPoses(self, poses, behavior_tree=''):
         """Send a `NavThroughPoses` action request."""
         self.debug("Waiting for 'NavigateThroughPoses' action server")
         while not self.nav_through_poses_client.wait_for_server(timeout_sec=1.0):
@@ -101,6 +101,7 @@ class BasicNavigator(Node):
 
         goal_msg = NavigateThroughPoses.Goal()
         goal_msg.poses = poses
+        goal_msg.behavior_tree = behavior_tree
 
         self.info(f'Navigating with {len(goal_msg.poses)} goals....')
         send_goal_future = self.nav_through_poses_client.send_goal_async(goal_msg,
@@ -115,7 +116,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def goToPose(self, pose):
+    def goToPose(self, pose, behavior_tree=''):
         """Send a `NavToPose` action request."""
         self.debug("Waiting for 'NavigateToPose' action server")
         while not self.nav_to_pose_client.wait_for_server(timeout_sec=1.0):
@@ -123,6 +124,7 @@ class BasicNavigator(Node):
 
         goal_msg = NavigateToPose.Goal()
         goal_msg.pose = pose
+        goal_msg.behavior_tree = behavior_tree
 
         self.info('Navigating to goal: ' + str(pose.pose.position.x) + ' ' +
                   str(pose.pose.position.y) + '...')
@@ -202,7 +204,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def followPath(self, path):
+    def followPath(self, path, controller_id='', goal_checker_id=''):
         """Send a `FollowPath` action request."""
         self.debug("Waiting for 'FollowPath' action server")
         while not self.follow_path_client.wait_for_server(timeout_sec=1.0):
@@ -210,6 +212,8 @@ class BasicNavigator(Node):
 
         goal_msg = FollowPath.Goal()
         goal_msg.path = path
+        goal_msg.controller_id = controller_id
+        goal_msg.goal_checker_id = goal_checker_id
 
         self.info('Executing path...')
         send_goal_future = self.follow_path_client.send_goal_async(goal_msg,
@@ -274,17 +278,17 @@ class BasicNavigator(Node):
         self.info('Nav2 is ready for use!')
         return
 
-    def getPath(self, start, goal, planner_id=None):
+    def getPath(self, start, goal, planner_id='', use_start=False):
         """Send a `ComputePathToPose` action request."""
         self.debug("Waiting for 'ComputePathToPose' action server")
         while not self.compute_path_to_pose_client.wait_for_server(timeout_sec=1.0):
             self.info("'ComputePathToPose' action server not available, waiting...")
 
         goal_msg = ComputePathToPose.Goal()
-        goal_msg.goal = goal
         goal_msg.start = start
-        if planner_id is not None:
-            goal_msg.planner_id = planner_id
+        goal_msg.goal = goal
+        goal_msg.planner_id = planner_id
+        goal_msg.use_start = use_start
 
         self.info('Getting path...')
         send_goal_future = self.compute_path_to_pose_client.send_goal_async(goal_msg)
@@ -304,15 +308,17 @@ class BasicNavigator(Node):
 
         return self.result_future.result().result.path
 
-    def getPathThroughPoses(self, start, goals):
+    def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
         """Send a `ComputePathThroughPoses` action request."""
         self.debug("Waiting for 'ComputePathThroughPoses' action server")
         while not self.compute_path_through_poses_client.wait_for_server(timeout_sec=1.0):
             self.info("'ComputePathThroughPoses' action server not available, waiting...")
 
         goal_msg = ComputePathThroughPoses.Goal()
-        goal_msg.goals = goals
         goal_msg.start = start
+        goal_msg.goals = goals
+        goal_msg.planner_id = planner_id
+        goal_msg.use_start = use_start
 
         self.info('Getting path...')
         send_goal_future = self.compute_path_through_poses_client.send_goal_async(goal_msg)
