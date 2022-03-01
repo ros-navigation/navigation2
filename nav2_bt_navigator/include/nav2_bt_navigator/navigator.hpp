@@ -20,6 +20,7 @@
 #include <vector>
 #include <mutex>
 
+#include "nav2_util/odometry_utils.hpp"
 #include "tf2_ros/buffer.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -287,7 +288,7 @@ protected:
    * @param Method to configure resources.
    */
   virtual bool configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/
+    rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/,
     std::shared_ptr<nav2_util::OdomSmoother> /*odom_smoother*/)
   {
     return true;
