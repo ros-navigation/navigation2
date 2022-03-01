@@ -25,6 +25,7 @@
 #include "nav2_util/path_utils.hpp"
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "nav2_core/exceptions.hpp"
 
 class RclCppFixture
 {
@@ -641,4 +642,46 @@ TEST_F(TransformGlobalPlanTest, transform_start_selection)
   EXPECT_NEAR(transformed_plan.poses.size(), global_plan.poses.size() / 2, 1);
   EXPECT_NEAR(transformed_plan.poses[0].pose.position.x, 0.0, 0.5);
   EXPECT_NEAR(transformed_plan.poses[0].pose.position.y, 0.0, 0.5);
+}
+
+// This should throw an exception when all poses are outside of the costmap
+TEST_F(TransformGlobalPlanTest, all_poses_outside_of_costmap)
+{
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = COSTMAP_FRAME;
+  robot_pose.header.stamp = transform_time_;
+  // far away from the path
+  robot_pose.pose.position.x = 1000.0;
+  robot_pose.pose.position.y = 1000.0;
+  robot_pose.pose.position.z = 0.0;
+  // Could set orientation going the other way, but RPP doesn't care
+  constexpr double spacing = 0.1;
+  constexpr double circle_radius = 2.0; // diameter 4
+
+  // A "normal" costmap
+  // the max_costmap_extent should be 50m
+  configure_costmap(10u, 0.1);
+  // This should just be at least half the circumference: pi*r ~= 6
+  constexpr double max_distance_between_iterations = 10.0;
+  configure_controller(max_distance_between_iterations);
+  setup_transforms(robot_pose.pose.position);
+
+  // Set up test path;
+
+  geometry_msgs::msg::PoseStamped start_of_path;
+  start_of_path.header.frame_id = PATH_FRAME;
+  start_of_path.header.stamp = transform_time_;
+  start_of_path.pose.position.x = 0.0;
+  start_of_path.pose.position.y = 0.0;
+  start_of_path.pose.position.z = 0.0;
+
+  auto global_plan = nav2_util::generate_path(
+    start_of_path, spacing, {
+    std::make_unique<nav2_util::path_building_blocks::LeftCircle>(circle_radius)
+  });
+
+  ctrl_->setPlan(global_plan);
+
+  // Transform the plan
+  EXPECT_THROW(ctrl_->transformGlobalPlanWrapper(robot_pose), nav2_core::PlannerException);
 }
