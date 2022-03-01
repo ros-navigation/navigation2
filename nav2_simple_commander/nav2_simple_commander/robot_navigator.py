@@ -301,7 +301,7 @@ class BasicNavigator(Node):
             self.warn(f'Getting path failed with status code: {self.status}')
             return None
 
-        return self.result_future.result().result
+        return self.result_future.result().result.path
 
     def getPathThroughPoses(self, start, goals):
         """Send a `ComputePathThroughPoses` action request."""
