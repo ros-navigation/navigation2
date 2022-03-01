@@ -187,7 +187,7 @@ local_costmap:
       width: 3
       height: 3
       resolution: 0.05
-      robot_radius: 0.5
+      robot_radius: 0.22
       plugins: ["voxel_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
@@ -254,8 +254,8 @@ global_costmap:
         map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 1.0
-        inflation_radius: 5.5
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.55
       always_send_full_costmap: True
   global_costmap_client:
     ros__parameters:
@@ -281,31 +281,12 @@ planner_server:
   ros__parameters:
     expected_planner_frequency: 20.0
     use_sim_time: True
-    planner_plugins: ["NavFn", "Smac2D", "SmacHybrid", "SmacLattice", "OMPL", "SBPL"]
-    NavFn:
+    planner_plugins: ["GridBased"]
+    GridBased:
       plugin: "nav2_navfn_planner/NavfnPlanner"
       tolerance: 0.5
       use_astar: false
       allow_unknown: true
-    Smac2D:
-      plugin: "nav2_smac_planner/SmacPlanner2D"
-      tolerance: 0.5
-    SmacHybrid:
-      plugin: "nav2_smac_planner/SmacPlannerHybrid"
-      tolerance: 0.5
-      motion_model_for_search: REEDS_SHEPP
-    SmacLattice:
-      plugin: "nav2_smac_planner/SmacPlannerLattice"
-      tolerance: 0.5
-      allow_unknown: true
-      allow_reverse_expansion: true
-    OMPL:
-      plugin: "nav2_ompl_planner/OMPLPlanner"
-      tolerance: 0.5
-    SBPL:
-      plugin: "nav2_sbpl_lattice_planner/SBPLLatticePlanner"
-      tolerance: 0.5
-      primitive_filename: "/home/josh/Downloads/default_primitives.txt"
 
 planner_server_rclcpp_node:
   ros__parameters:
