@@ -3,9 +3,9 @@
 <package format="3">
   <name>nav2_planner_metrics</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="josho.wallace@gmail.com">josh</maintainer>
-  <license>TODO: License declaration</license>
+  <description>Generates planner metrics and analyze the results</description>
+  <maintainer email="josho.wallace@gmail.com">Joshua Wallace</maintainer>
+  <license>Apache-2.0</license>
 
   <exec_depend>python-enum34</exec_depend>
   <exec_depend>rclpy</exec_depend>

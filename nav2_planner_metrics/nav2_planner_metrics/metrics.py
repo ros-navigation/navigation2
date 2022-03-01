@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Copyright 2022 Samsung Research America
+# Copyright 2022 Joshua Wallace
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ from random import randint
 from random import uniform
 
 from transforms3d.euler import euler2quat
+
+#Note: Map origin is assumed to be (0,0)
 
 def getPlannerResults(navigator, initial_pose, goal_pose, planners):
     results = []
