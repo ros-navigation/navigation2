@@ -463,6 +463,11 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
 class TransformGlobalPlanTest : public ::testing::Test
 {
 protected:
+  static void SetUpTestSuite()
+  {
+    rclcpp::init(0, nullptr);
+  }
+
   void SetUp() override
   {
     ctrl_ = std::make_shared<BasicAPIRPP>();
@@ -471,16 +476,27 @@ protected:
     costmap_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   }
 
-  void configure_costmap(double width, double resolution)
+  static void TearDownTestSuite()
+  {
+    rclcpp::shutdown();
+  }
+
+  void configure_costmap(uint16_t width, double resolution)
   {
     constexpr char costmap_frame[] = "test_costmap_frame";
     constexpr char robot_frame[] = "test_robot_frame";
 
-    costmap_->set_parameter(rclcpp::Parameter("global_frame", costmap_frame));
-    costmap_->set_parameter(rclcpp::Parameter("robot_base_frame", robot_frame));
-    costmap_->set_parameter(rclcpp::Parameter("width", width));
-    costmap_->set_parameter(rclcpp::Parameter("height", width));
-    costmap_->set_parameter(rclcpp::Parameter("resolution", resolution));
+    auto results = costmap_->set_parameters(
+    {
+      rclcpp::Parameter("global_frame", costmap_frame),
+      rclcpp::Parameter("robot_base_frame", robot_frame),
+      rclcpp::Parameter("width", width),
+      rclcpp::Parameter("height", width),
+      rclcpp::Parameter("resolution", resolution)
+    });
+    for (const auto & result : results) {
+      EXPECT_TRUE(result.successful) << result.reason;
+    }
 
     rclcpp_lifecycle::State state;
     costmap_->on_configure(state);
@@ -495,10 +511,13 @@ protected:
     ctrl_->configure(node_, plugin_name, tf_buffer_, costmap_);
   }
 
-  void setup_transforms()
+  void setup_transforms(geometry_msgs::msg::Point & robot_position)
   {
     transform_time_ = node_->get_clock()->now();
     // Note: transforms go parent to child
+
+    // We will have a separate path and costmap frame for completeness,
+    // but we will leave them cooincident for convenience.
     geometry_msgs::msg::TransformStamped path_to_costmap;
     path_to_costmap.header.frame_id = PATH_FRAME;
     path_to_costmap.header.stamp = transform_time_;
@@ -511,9 +530,9 @@ protected:
     costmap_to_robot.header.frame_id = COSTMAP_FRAME;
     costmap_to_robot.header.stamp = transform_time_;
     costmap_to_robot.child_frame_id = ROBOT_FRAME;
-    costmap_to_robot.transform.translation.x = -0.1;
-    costmap_to_robot.transform.translation.y = 0.0;
-    costmap_to_robot.transform.translation.z = 0.0;
+    costmap_to_robot.transform.translation.x = robot_position.x;
+    costmap_to_robot.transform.translation.y = robot_position.y;
+    costmap_to_robot.transform.translation.z = robot_position.z;
 
     tf2_msgs::msg::TFMessage tf_message;
     tf_message.transforms = {
@@ -537,22 +556,24 @@ protected:
   rclcpp::Time transform_time_;
 };
 
+// This tests that not only should nothing get pruned on a costmap
+// that contains the entire global_plan, and also that it doesn't skip to the end of the path
+// which is closer to the robot pose than the start.
 TEST_F(TransformGlobalPlanTest, no_pruning_on_large_costmap)
 {
-  // A really big costmap
-  // the max_costmap_extent should be 50m
-  configure_costmap(1000.0, 0.1);
-  configure_controller(5.0);
-  setup_transforms();
-
-  // Set up test path;
-
   geometry_msgs::msg::PoseStamped robot_pose;
   robot_pose.header.frame_id = COSTMAP_FRAME;
   robot_pose.header.stamp = transform_time_;
   robot_pose.pose.position.x = -0.1;
   robot_pose.pose.position.y = 0.0;
   robot_pose.pose.position.z = 0.0;
+  // A really big costmap
+  // the max_costmap_extent should be 50m
+  configure_costmap(100u, 0.1);
+  configure_controller(5.0);
+  setup_transforms(robot_pose.pose.position);
+
+  // Set up test path;
 
   geometry_msgs::msg::PoseStamped start_of_path;
   start_of_path.header.frame_id = PATH_FRAME;
@@ -575,4 +596,49 @@ TEST_F(TransformGlobalPlanTest, no_pruning_on_large_costmap)
 
   auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
   EXPECT_EQ(transformed_plan.poses.size(), global_plan.poses.size());
+}
+
+// This plan shouldn't get pruned because of the costmap,
+// but should be half pruned because it is halfway around the circle
+TEST_F(TransformGlobalPlanTest, transform_start_selection)
+{
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = COSTMAP_FRAME;
+  robot_pose.header.stamp = transform_time_;
+  robot_pose.pose.position.x = 0.0;
+  robot_pose.pose.position.y = 4.0;  // on the other side of the circle
+  robot_pose.pose.position.z = 0.0;
+  // Could set orientation going the other way, but RPP doesn't care
+  constexpr double spacing = 0.1;
+  constexpr double circle_radius = 2.0; // diameter 4
+
+  // A really big costmap
+  // the max_costmap_extent should be 50m
+  configure_costmap(100u, 0.1);
+  // This should just be at least half the circumference: pi*r ~= 6
+  constexpr double max_distance_between_iterations = 10.0;
+  configure_controller(max_distance_between_iterations);
+  setup_transforms(robot_pose.pose.position);
+
+  // Set up test path;
+
+  geometry_msgs::msg::PoseStamped start_of_path;
+  start_of_path.header.frame_id = PATH_FRAME;
+  start_of_path.header.stamp = transform_time_;
+  start_of_path.pose.position.x = 0.0;
+  start_of_path.pose.position.y = 0.0;
+  start_of_path.pose.position.z = 0.0;
+
+  auto global_plan = nav2_util::generate_path(
+    start_of_path, spacing, {
+    std::make_unique<nav2_util::path_building_blocks::LeftCircle>(circle_radius)
+  });
+
+  ctrl_->setPlan(global_plan);
+
+  // Transform the plan
+  auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
+  EXPECT_NEAR(transformed_plan.poses.size(), global_plan.poses.size() / 2, 1);
+  EXPECT_NEAR(transformed_plan.poses[0].pose.position.x, 0.0, 0.5);
+  EXPECT_NEAR(transformed_plan.poses[0].pose.position.y, 0.0, 0.5);
 }

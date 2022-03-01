@@ -606,8 +606,9 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
 
   // We'll discard points on the plan that are outside the local costmap
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
-  const double max_costmap_dim = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY());
-  const double max_costmap_extent = max_costmap_dim * costmap->getResolution() / 2.0;
+  const double max_costmap_dim_meters = std::max(
+    costmap->getSizeInMetersX(), costmap->getSizeInMetersX());
+  const double max_costmap_extent = max_costmap_dim_meters / 2.0;
 
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_element_beyond(
