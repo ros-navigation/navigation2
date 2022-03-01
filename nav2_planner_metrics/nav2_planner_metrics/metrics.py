@@ -115,43 +115,25 @@ def main():
     costmap = np.asarray(costmap_msg.data)
     costmap.resize(costmap_msg.metadata.size_y, costmap_msg.metadata.size_x)
 
-    planners = ['NavFn', 'SmacLattice', 'Smac2D', 'SmacHybrid']
-    #planners = ['SmacLattice']
+    planners = ['NavFn', 'SmacLattice', 'Smac2D', 'SmacHybrid', 'SBPL', 'OMPL']
     max_cost = 210
     side_buffer = 100
     time_stamp = navigator.get_clock().now().to_msg()
     results = []
     seed(33)
 
-    # random_pairs = 1000
-    # for i in range(random_pairs):
-    #     print("Cycle: ", i, "out of: ",random_pairs)
-    #     start = getRandomStart(costmap, max_cost, side_buffer, time_stamp, costmap_msg.metadata.resolution)
-    #     goal = getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, costmap_msg.metadata.resolution)
-    #     print("Start", start)
-    #     print("Goal", goal)
-    #     result = getPlannerResults(navigator, start, goal, planners)
-    #     if len(result) == len(planners):  
-    #         results.append(result)
-    #     else:
-    #         print("One of the planners was invalid")
-
-
-    start = PoseStamped()
-    start.pose.position.x = 2.0
-    start.pose.position.y = 2.0
-    start.pose.orientation.w = 1.0
-    start.pose.orientation.z = 0.0
-    start.header.stamp = navigator.get_clock().now().to_msg()
-    start.header.frame_id = 'map'
-
-    goal = PoseStamped()
-    goal.pose.position.x = 98.0
-    goal.pose.position.y = 55.0
-    goal.pose.orientation.w = 0.998559889111465
-    goal.pose.orientation.z = 0.05364837236765668
-    goal.header.stamp = navigator.get_clock().now().to_msg()
-    goal.header.frame_id = 'map'
+    random_pairs = 100
+    for i in range(random_pairs):
+        print("Cycle: ", i, "out of: ",random_pairs)
+        start = getRandomStart(costmap, max_cost, side_buffer, time_stamp, costmap_msg.metadata.resolution)
+        goal = getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, costmap_msg.metadata.resolution)
+        print("Start", start)
+        print("Goal", goal)
+        result = getPlannerResults(navigator, start, goal, planners)
+        if len(result) == len(planners):  
+            results.append(result)
+        else:
+            print("One of the planners was invalid")
     
     results = []
     result = getPlannerResults(navigator, start, goal, planners)

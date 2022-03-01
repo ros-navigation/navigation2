@@ -281,7 +281,7 @@ planner_server:
   ros__parameters:
     expected_planner_frequency: 20.0
     use_sim_time: True
-    planner_plugins: ["NavFn", "Smac2D", "SmacHybrid", "SmacLattice"]
+    planner_plugins: ["NavFn", "Smac2D", "SmacHybrid", "SmacLattice", "OMPL", "SBPL"]
     NavFn:
       plugin: "nav2_navfn_planner/NavfnPlanner"
       tolerance: 0.5
@@ -299,6 +299,13 @@ planner_server:
       tolerance: 0.5
       allow_unknown: true
       allow_reverse_expansion: true
+    OMPL:
+      plugin: "nav2_ompl_planner/OMPLPlanner"
+      tolerance: 0.5
+    SBPL:
+      plugin: "nav2_sbpl_lattice_planner/SBPLLatticePlanner"
+      tolerance: 0.5
+      primitive_filename: "/home/josh/Downloads/default_primitives.txt"
 
 planner_server_rclcpp_node:
   ros__parameters:
