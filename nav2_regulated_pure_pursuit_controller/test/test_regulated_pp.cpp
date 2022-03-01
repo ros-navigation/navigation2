@@ -685,3 +685,48 @@ TEST_F(TransformGlobalPlanTest, all_poses_outside_of_costmap)
   // Transform the plan
   EXPECT_THROW(ctrl_->transformGlobalPlanWrapper(robot_pose), nav2_core::PlannerException);
 }
+
+// Should shortcut the circle if the circle is shorter than max_distance_between_iterations
+TEST_F(TransformGlobalPlanTest, good_circle_shortcut)
+{
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = COSTMAP_FRAME;
+  robot_pose.header.stamp = transform_time_;
+  // far away from the path
+  robot_pose.pose.position.x = -0.1;
+  robot_pose.pose.position.y = 0.0;
+  robot_pose.pose.position.z = 0.0;
+  // Could set orientation going the other way, but RPP doesn't care
+  constexpr double spacing = 0.1;
+  constexpr double circle_radius = 2.0; // diameter 4
+
+  // A "normal" costmap
+  // the max_costmap_extent should be 50m
+  configure_costmap(100u, 0.1);
+  // This should just be at least the circumference: 2*pi*r ~= 12
+  constexpr double max_distance_between_iterations = 15.0;
+  configure_controller(max_distance_between_iterations);
+  setup_transforms(robot_pose.pose.position);
+
+  // Set up test path;
+
+  geometry_msgs::msg::PoseStamped start_of_path;
+  start_of_path.header.frame_id = PATH_FRAME;
+  start_of_path.header.stamp = transform_time_;
+  start_of_path.pose.position.x = 0.0;
+  start_of_path.pose.position.y = 0.0;
+  start_of_path.pose.position.z = 0.0;
+
+  auto global_plan = nav2_util::generate_path(
+    start_of_path, spacing, {
+    std::make_unique<nav2_util::path_building_blocks::LeftCircle>(circle_radius)
+  });
+
+  ctrl_->setPlan(global_plan);
+
+  // Transform the plan
+  auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
+  EXPECT_NEAR(transformed_plan.poses.size(), 1, 1);
+  EXPECT_NEAR(transformed_plan.poses[0].pose.position.x, 0.0, 0.5);
+  EXPECT_NEAR(transformed_plan.poses[0].pose.position.y, 0.0, 0.5);
+}
