@@ -23,6 +23,7 @@ GRID_RESOLUTION = 0.05
 STOPPING_THRESHOLD = 5
 NUM_OF_HEADINGS = 16
 
+
 class TestLatticeGenerator(unittest.TestCase):
     """Contains the unit tests for the TrajectoryGenerator."""
 
@@ -39,7 +40,7 @@ class TestLatticeGenerator(unittest.TestCase):
 
     def test_minimal_set_angles_in_correct_range(self):
         # Test that angles always lie within -pi to pi
-        
+
         for start_angle in self.minimal_set.keys():
             for trajectory in self.minimal_set[start_angle]:
                 for angle in trajectory.path.yaws:
@@ -51,7 +52,7 @@ class TestLatticeGenerator(unittest.TestCase):
 
         for start_angle in self.minimal_set.keys():
             for trajectory in self.minimal_set[start_angle]:
-                
+
                 self.assertGreaterEqual(trajectory.parameters.arc_length, 0)
                 self.assertGreaterEqual(trajectory.parameters.start_straight_length, 0)
                 self.assertGreaterEqual(trajectory.parameters.end_straight_length, 0)
@@ -62,7 +63,7 @@ class TestLatticeGenerator(unittest.TestCase):
 
         for start_angle in self.minimal_set.keys():
             for trajectory in self.minimal_set[start_angle]:
-                
+
                 end_point_x = trajectory.path.xs[-1]
                 end_point_y = trajectory.path.ys[-1]
 
@@ -74,13 +75,14 @@ class TestLatticeGenerator(unittest.TestCase):
 
     def test_minimal_set_end_angle_is_correct(self):
         # Test that end angle agrees with the end angle parameter
-        
+
         for start_angle in self.minimal_set.keys():
             for trajectory in self.minimal_set[start_angle]:
-                
+
                 end_point_angle = trajectory.path.yaws[-1]
-                
+
                 self.assertEqual(end_point_angle, trajectory.parameters.end_angle)
+
 
 if __name__ == '__main__':
     unittest.main()

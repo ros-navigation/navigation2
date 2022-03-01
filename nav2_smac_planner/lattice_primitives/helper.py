@@ -36,6 +36,7 @@ def normalize_angle(angle):
 
     return angle
 
+
 def angle_difference(angle_1, angle_2, left_turn=None):
     """
     Calculate the difference between two angles based on a given direction.
