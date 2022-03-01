@@ -460,103 +460,123 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
 }
 
-TEST(RegulatedPurePursuitTest, transformGlobalPlan)
+class TransformGlobalPlanTest : public ::testing::Test
 {
-  auto ctrl = std::make_shared<BasicAPIRPP>();
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
-  std::string name = "PathFollower";
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-
-  // Configure costmap
-
-  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
-
-  constexpr double costmap_width = 5.0;  // meters
-  constexpr char costmap_frame[] = "test_costmap_frame";
-  constexpr char robot_frame[] = "test_robot_frame";
-  constexpr double costmap_resolution = 0.05;  // meters
-
-  costmap->set_parameter(rclcpp::Parameter("global_frame", costmap_frame));
-  costmap->set_parameter(rclcpp::Parameter("robot_base_frame", robot_frame));
-  costmap->set_parameter(rclcpp::Parameter("width", costmap_width));
-  costmap->set_parameter(rclcpp::Parameter("height", costmap_width));
-  costmap->set_parameter(rclcpp::Parameter("resolution", costmap_resolution));
-
-  rclcpp_lifecycle::State state;
-  costmap->on_configure(state);
-
-  // Configure controller
-
-  constexpr double max_distance_between_iterations = 2.0;  // meters
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".max_distance_between_iterations",
-    rclcpp::ParameterValue(max_distance_between_iterations));
-  ctrl->configure(node, name, tf, costmap);
-
-  // Set up transforms
-  // Note: transforms go parent to child
-
-  constexpr char path_frame[] = "test_path_frame";
-  geometry_msgs::msg::TransformStamped world_to_path;
-  world_to_path.header.frame_id = "world";
-  world_to_path.header.stamp = node->get_clock()->now();
-  world_to_path.child_frame_id = path_frame;
-  world_to_path.transform.translation.x = 0.0;
-  world_to_path.transform.translation.y = 0.0;
-  world_to_path.transform.translation.z = 0.0;
-
-  geometry_msgs::msg::TransformStamped path_to_costmap;
-  path_to_costmap.header.frame_id = path_frame;
-  path_to_costmap.header.stamp = node->get_clock()->now();
-  path_to_costmap.child_frame_id = costmap_frame;
-  path_to_costmap.transform.translation.x = 0.0;
-  path_to_costmap.transform.translation.y = 0.0;
-  path_to_costmap.transform.translation.z = 0.0;
-
-  geometry_msgs::msg::TransformStamped costmap_to_robot;
-  costmap_to_robot.header.frame_id = costmap_frame;
-  costmap_to_robot.header.stamp = node->get_clock()->now();
-  costmap_to_robot.child_frame_id = robot_frame;
-  costmap_to_robot.transform.translation.x = -0.1;
-  costmap_to_robot.transform.translation.y = 0.0;
-  costmap_to_robot.transform.translation.z = 0.0;
-
-  tf2_msgs::msg::TFMessage tf_message;
-  tf_message.transforms = {
-    world_to_path,
-    path_to_costmap,
-    costmap_to_robot
-  };
-  for (const auto transform : tf_message.transforms) {
-    tf->setTransform(transform, "test", false);
+protected:
+  static void SetUp() override
+  {
+    ctrl_ = std::make_shared<BasicAPIRPP>();
+    node_ = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   }
+
+  void configure_costmap(double width)
+  {
+    constexpr double costmap_width = width;  // meters
+    constexpr char costmap_frame[] = "test_costmap_frame";
+    constexpr char robot_frame[] = "test_robot_frame";
+    constexpr double costmap_resolution = 0.05;  // meters
+
+    costmap_->set_parameter(rclcpp::Parameter("global_frame", costmap_frame));
+    costmap_->set_parameter(rclcpp::Parameter("robot_base_frame", robot_frame));
+    costmap_->set_parameter(rclcpp::Parameter("width", costmap_width));
+    costmap_->set_parameter(rclcpp::Parameter("height", costmap_width));
+    costmap_->set_parameter(rclcpp::Parameter("resolution", costmap_resolution));
+
+    rclcpp_lifecycle::State state;
+    costmap_->on_configure(state);
+  }
+
+  void configure_controller(double max_distance_between_iterations)
+  {
+    constexpr std::string plugin_name = "test_rpp";
+    nav2_util::declare_parameter_if_not_declared(
+      node, plugin_name + ".max_distance_between_iterations",
+      rclcpp::ParameterValue(max_distance_between_iterations));
+    ctrl->configure(node, plugin_name, tf_, costmap);
+  }
+
+  void setup_transforms()
+  {
+    // geometry_msgs::msg::TransformStamped world_to_path;
+    // world_to_path.header.frame_id = "world";
+    // world_to_path.header.stamp = node->get_clock()->now();
+    // world_to_path.child_frame_id = path_frame;
+    // world_to_path.transform.translation.x = 0.0;
+    // world_to_path.transform.translation.y = 0.0;
+    // world_to_path.transform.translation.z = 0.0;
+
+    // Note: transforms go parent to child
+    geometry_msgs::msg::TransformStamped path_to_costmap;
+    path_to_costmap.header.frame_id = PATH_FRAME;
+    path_to_costmap.header.stamp = node->get_clock()->now();
+    path_to_costmap.child_frame_id = COSTMAP_FRAME;
+    path_to_costmap.transform.translation.x = 0.0;
+    path_to_costmap.transform.translation.y = 0.0;
+    path_to_costmap.transform.translation.z = 0.0;
+
+    geometry_msgs::msg::TransformStamped costmap_to_robot;
+    costmap_to_robot.header.frame_id = COSTMAP_FRAME;
+    costmap_to_robot.header.stamp = node->get_clock()->now();
+    costmap_to_robot.child_frame_id = ROBOT_FRAME;
+    costmap_to_robot.transform.translation.x = -0.1;
+    costmap_to_robot.transform.translation.y = 0.0;
+    costmap_to_robot.transform.translation.z = 0.0;
+
+    tf2_msgs::msg::TFMessage tf_message;
+    tf_message.transforms = {
+      // world_to_path,
+      path_to_costmap,
+      costmap_to_robot
+    };
+    for (const auto transform : tf_message.transforms) {
+      tf_buffer_->setTransform(transform, "test", false);
+    }
+  }
+
+  static constexpr char PATH_FRAME[] = "test_path_frame";
+  static constexpr char COSTMAP_FRAME[] = "test_costmap_frame";
+  static constexpr char ROBOT_FRAME[] = "test_robot_frame";
+
+  std::shared_ptr<BasicAPIRPP> ctrl_;
+  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+};
+
+TEST_F(TransformGlobalPlanTest, no_pruning)
+{
+  configure_costmap(100.0);
+  configure_controller(5.0);
+  setup_transforms();
 
   // Set up test path;
 
   geometry_msgs::msg::PoseStamped robot_pose;
-  robot_pose.header.frame_id = costmap_frame;
+  robot_pose.header.frame_id = COSTMAP_FRAME;
   robot_pose.pose.position.x = costmap_to_robot.transform.translation.x;
   robot_pose.pose.position.y = costmap_to_robot.transform.translation.y;
   robot_pose.pose.position.z = costmap_to_robot.transform.translation.z;
 
   geometry_msgs::msg::PoseStamped start_of_path;
-  start_of_path.header.frame_id = path_frame;
+  start_of_path.header.frame_id = PATH_FRAME;
   start_of_path.pose.position.x = 0.0;
   start_of_path.pose.position.y = 0.0;
   start_of_path.pose.position.z = 0.0;
 
   constexpr double spacing = 0.1;
-  constexpr double circle_radius = costmap_width / 3.0;
+  constexpr double circle_radius = 2.0;
 
   auto global_plan = nav2_util::generate_path(
     start_of_path, spacing, {
     std::make_unique<nav2_util::path_building_blocks::LeftCircle>(circle_radius)
   });
 
-  ctrl->setPlan(global_plan);
+  ctrl_->setPlan(global_plan);
 
   // Transform the plan
 
-  auto transformed_plan = ctrl->transformGlobalPlanWrapper(robot_pose);
+  auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
   EXPECT_EQ(transformed_plan.poses.size(), global_plan.poses.size());
 }
