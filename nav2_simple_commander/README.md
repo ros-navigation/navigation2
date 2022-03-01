@@ -15,18 +15,18 @@ The methods provided by the basic navigator are shown below, with inputs and exp
 | Robot Navigator Method            | Description                                                                |
 | --------------------------------- | -------------------------------------------------------------------------- |
 | setInitialPose(initial_pose)      | Sets the initial pose (`PoseStamped`) of the robot to localization.        |
-| goThroughPoses(poses)             | Requests the robot to drive through a set of poses (list of `PoseStamped`).|
-| goToPose(pose)                    | Requests the robot to drive to a pose (`PoseStamped`).                     |
+| goThroughPoses(poses, behavior_tree='') | Requests the robot to drive through a set of poses (list of `PoseStamped`).|
+| goToPose(pose, behavior_tree='')  | Requests the robot to drive to a pose (`PoseStamped`).                     |
 | followWaypoints(poses)            | Requests the robot to follow a set of waypoints (list of `PoseStamped`). This will execute the specific `TaskExecutor` at each pose.   |
-| followPath(path)                  | Requests the robot to follow a path from a starting to a goal `PoseStamped`, `nav_msgs/Path`.     |
-| spin(spin_dist, time_allowance)   | Requests the robot to performs an in-place rotation by a given angle.      |
-| backup(backup_dist, backup_speed, time_allowance) | Requests the robot to back up by a given distance.         |
+| followPath(path, controller_id='', goal_checker_id='') | Requests the robot to follow a path from a starting to a goal `PoseStamped`, `nav_msgs/Path`.     |
+| spin(spin_dist=1.57, time_allowance=10)   | Requests the robot to performs an in-place rotation by a given angle.      |
+| backup(backup_dist=0.15, backup_speed=0.025, time_allowance=10) | Requests the robot to back up by a given distance.         |
 | cancelTask()                       | Cancel an ongoing task request.|
 | isTaskComplete()                   | Checks if task is complete yet, times out at `100ms`.  Returns `True` if completed and `False` if still going.                  |
 | getFeedback()                     | Gets feedback from task, returns action server feedback object. |
 | getResult()				        | Gets final result of task, to be called after `isTaskComplete` returns `True`. Returns action server result object. |
-| getPath(start, goal)              | Gets a path from a starting to a goal `PoseStamped`, `nav_msgs/Path`.      |
-| getPathThroughPoses(start, goals) | Gets a path through a starting to a set of goals, a list of `PoseStamped`, `nav_msgs/Path`. |
+| getPath(start, goal, planner_id='', use_start=False) | Gets a path from a starting to a goal `PoseStamped`, `nav_msgs/Path`.      |
+| getPathThroughPoses(start, goals, planner_id='', use_start=False) | Gets a path through a starting to a set of goals, a list of `PoseStamped`, `nav_msgs/Path`. |
 | changeMap(map_filepath)           | Requests a change from the current map to `map_filepath`'s yaml.           |
 | clearAllCostmaps()                | Clears both the global and local costmaps.                                 |
 | clearLocalCostmap()               | Clears the local costmap.                                                  |
