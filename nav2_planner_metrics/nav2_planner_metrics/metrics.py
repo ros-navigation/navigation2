@@ -16,16 +16,11 @@
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator
 import rclpy
-from rclpy.node import Node
-from rclpy.duration import Duration
-from rcl_interfaces.msg import ParameterValue, ParameterType, Parameter
-from rcl_interfaces.srv import SetParameters
 from ament_index_python.packages import get_package_share_directory
-import time
 
 import math
-import os 
-import pickle 
+import os
+import pickle
 import numpy as np
 
 from random import seed
@@ -34,7 +29,8 @@ from random import uniform
 
 from transforms3d.euler import euler2quat
 
-#Note: Map origin is assumed to be (0,0)
+# Note: Map origin is assumed to be (0,0)
+
 
 def getPlannerResults(navigator, initial_pose, goal_pose, planners):
     results = []
@@ -43,6 +39,7 @@ def getPlannerResults(navigator, initial_pose, goal_pose, planners):
         if path is not None:
             results.append(path)
     return results
+
 
 def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
     start = PoseStamped()
@@ -56,7 +53,7 @@ def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
             start.pose.position.x = col*res
             start.pose.position.y = row*res
 
-            yaw = uniform(0,1) * 2*math.pi
+            yaw = uniform(0, 1) * 2*math.pi
             quad = euler2quat(0.0, 0.0, yaw)
             start.pose.orientation.w = quad[0]
             start.pose.orientation.x = quad[1]
@@ -64,6 +61,7 @@ def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
             start.pose.orientation.z = quad[3]
             break
     return start
+
 
 def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
     goal = PoseStamped()
@@ -73,19 +71,19 @@ def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
         row = randint(side_buffer, costmap.shape[0]-side_buffer)
         col = randint(side_buffer, costmap.shape[1]-side_buffer)
 
-        start_x = start.pose.position.x 
+        start_x = start.pose.position.x
         start_y = start.pose.position.y
         goal_x = col*res
         goal_y = row*res
         x_diff = goal_x - start_x
         y_diff = goal_y - start_y
-        dist = math.sqrt( x_diff ** 2 + y_diff ** 2)
+        dist = math.sqrt(x_diff ** 2 + y_diff ** 2)
 
         if costmap[row, col] < max_cost and dist > 3.0:
             goal.pose.position.x = goal_x
             goal.pose.position.y = goal_y
 
-            yaw = uniform(0,1) * 2*math.pi
+            yaw = uniform(0, 1) * 2*math.pi
             quad = euler2quat(0.0, 0.0, yaw)
             goal.pose.orientation.w = quad[0]
             goal.pose.orientation.x = quad[1]
@@ -93,6 +91,7 @@ def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
             goal.pose.orientation.z = quad[3]
             break
     return goal
+
 
 def main():
     rclpy.init()
@@ -112,7 +111,7 @@ def main():
     # Wait for navigation to fully activate
     navigator.waitUntilNav2Active()
 
-    #Get the costmap for plotting and start/goal validation
+    # Get the costmap for start/goal validation
     costmap_msg = navigator.getGlobalCostmap()
     costmap = np.asarray(costmap_msg.data)
     costmap.resize(costmap_msg.metadata.size_y, costmap_msg.metadata.size_x)
@@ -125,21 +124,22 @@ def main():
     seed(33)
 
     random_pairs = 100
+    res = costmap_msg.metadata.resolution
     for i in range(random_pairs):
-        print("Cycle: ", i, "out of: ",random_pairs)
-        start = getRandomStart(costmap, max_cost, side_buffer, time_stamp, costmap_msg.metadata.resolution)
-        goal = getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, costmap_msg.metadata.resolution)
+        print("Cycle: ", i, "out of: ", random_pairs)
+        start = getRandomStart(costmap, max_cost, side_buffer, time_stamp, res)
+        goal = getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res)
         print("Start", start)
         print("Goal", goal)
         result = getPlannerResults(navigator, start, goal, planners)
-        if len(result) == len(planners):  
+        if len(result) == len(planners):
             results.append(result)
         else:
             print("One of the planners was invalid")
 
     print("Write Results...")
     nav2_planner_metrics_dir = get_package_share_directory('nav2_planner_metrics')
-    with open(os.path.join(nav2_planner_metrics_dir, 'results.pickle'),'wb') as f:
+    with open(os.path.join(nav2_planner_metrics_dir, 'results.pickle'), 'wb') as f:
         pickle.dump(results, f, pickle.HIGHEST_PROTOCOL)
 
     with open(os.path.join(nav2_planner_metrics_dir, 'costmap.pickle'), 'wb') as f:
@@ -151,6 +151,7 @@ def main():
 
     navigator.lifecycleShutdown()
     exit(0)
+
 
 if __name__ == '__main__':
     main()
