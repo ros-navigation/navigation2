@@ -471,17 +471,16 @@ protected:
     costmap_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   }
 
-  void configure_costmap(double width)
+  void configure_costmap(double width, double resolution)
   {
     constexpr char costmap_frame[] = "test_costmap_frame";
     constexpr char robot_frame[] = "test_robot_frame";
-    constexpr double costmap_resolution = 0.05;  // meters
 
     costmap_->set_parameter(rclcpp::Parameter("global_frame", costmap_frame));
     costmap_->set_parameter(rclcpp::Parameter("robot_base_frame", robot_frame));
     costmap_->set_parameter(rclcpp::Parameter("width", width));
     costmap_->set_parameter(rclcpp::Parameter("height", width));
-    costmap_->set_parameter(rclcpp::Parameter("resolution", costmap_resolution));
+    costmap_->set_parameter(rclcpp::Parameter("resolution", resolution));
 
     rclcpp_lifecycle::State state;
     costmap_->on_configure(state);
@@ -538,9 +537,11 @@ protected:
   rclcpp::Time transform_time_;
 };
 
-TEST_F(TransformGlobalPlanTest, no_pruning)
+TEST_F(TransformGlobalPlanTest, no_pruning_on_large_costmap)
 {
-  configure_costmap(100.0);
+  // A really big costmap
+  // the max_costmap_extent should be 50m
+  configure_costmap(1000.0, 0.1);
   configure_controller(5.0);
   setup_transforms();
 
@@ -561,7 +562,7 @@ TEST_F(TransformGlobalPlanTest, no_pruning)
   start_of_path.pose.position.z = 0.0;
 
   constexpr double spacing = 0.1;
-  constexpr double circle_radius = 2.0;
+  constexpr double circle_radius = 1.0;
 
   auto global_plan = nav2_util::generate_path(
     start_of_path, spacing, {
