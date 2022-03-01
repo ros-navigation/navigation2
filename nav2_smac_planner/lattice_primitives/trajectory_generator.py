@@ -569,39 +569,3 @@ class TrajectoryGenerator:
         trajectory_path = self._create_path(trajectory_params, primitive_resolution)
 
         return Trajectory(trajectory_path, trajectory_params)
-
-if __name__ == "__main__":
-    test = TrajectoryGenerator({"turning_radius":0.5})
-    heading_angles = np.array([
-			0.0,
-			0.4636476090008061,
-			0.7853981633974483,
-			1.1071487177940904,
-			1.5707963267948966,
-			2.0344439357957027,
-			2.356194490192345,
-			2.677945044588987,
-			3.141592653589793,
-			3.6052402625905993,
-			3.9269908169872414,
-			4.2487413713838835,
-			4.71238898038469,
-			5.176036589385496,
-			5.497787143782138,
-			5.81953769817878
-		])
-
-    heading_angles[9:] -= 2 * np.pi
-
-    end_point = np.array([-0.5, -0.35])
-    start_angle = heading_angles[8]
-    end_angle = heading_angles[11]
-
-    a = test.generate_trajectory(end_point, start_angle, end_angle, 0.05)
-
-    import matplotlib.pyplot as plt
-
-    print(a.path.yaws)
-
-    plt.plot(a.path.xs, a.path.ys)
-    plt.show()
