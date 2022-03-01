@@ -115,7 +115,7 @@ def main():
     costmap = np.asarray(costmap_msg.data)
     costmap.resize(costmap_msg.metadata.size_y, costmap_msg.metadata.size_x)
 
-    planners = ['NavFn', 'SmacLattice', 'Smac2D', 'SmacHybrid', 'SBPL', 'OMPL']
+    planners = ['NavFn']
     max_cost = 210
     side_buffer = 100
     time_stamp = navigator.get_clock().now().to_msg()
@@ -134,13 +134,6 @@ def main():
             results.append(result)
         else:
             print("One of the planners was invalid")
-    
-    results = []
-    result = getPlannerResults(navigator, start, goal, planners)
-    if len(result) == len(planners):  
-        results.append(result)
-    else:
-        print("One of the planners was invalid")
 
     print("Write Results...")
     nav2_planner_metrics_dir = get_package_share_directory('nav2_planner_metrics')
