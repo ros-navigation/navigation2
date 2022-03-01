@@ -286,7 +286,7 @@ bool PlannerServer::getStartPose(
   typename std::shared_ptr<const typename T::Goal> goal,
   geometry_msgs::msg::PoseStamped & start)
 {
-  if (true) {
+  if (goal->use_start) {
     start = goal->start;
   } else if (!costmap_ros_->getRobotPose(start)) {
     action_server->terminate_current();
@@ -461,10 +461,7 @@ PlannerServer::computePlan()
       return;
     }
 
-    auto planning_start = steady_clock_.now();
     result->path = getPlan(start, goal_pose, goal->planner_id);
-    auto planning_duration = steady_clock_.now() - planning_start;
-    result->planning_time = planning_duration;
 
     if (!validatePath(action_server_pose_, goal_pose, result->path, goal->planner_id)) {
       return;
@@ -474,7 +471,7 @@ PlannerServer::computePlan()
     publishPlan(result->path);
 
     auto cycle_duration = steady_clock_.now() - start_time;
-    // result->planning_time = cycle_duration;
+    result->planning_time = cycle_duration;
 
     if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
       RCLCPP_WARN(
