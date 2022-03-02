@@ -464,22 +464,12 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
 class TransformGlobalPlanTest : public ::testing::Test
 {
 protected:
-  static void SetUpTestSuite()
-  {
-    rclcpp::init(0, nullptr);
-  }
-
   void SetUp() override
   {
     ctrl_ = std::make_shared<BasicAPIRPP>();
     node_ = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
     costmap_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
-  }
-
-  static void TearDownTestSuite()
-  {
-    rclcpp::shutdown();
   }
 
   void configure_costmap(uint16_t width, double resolution)
