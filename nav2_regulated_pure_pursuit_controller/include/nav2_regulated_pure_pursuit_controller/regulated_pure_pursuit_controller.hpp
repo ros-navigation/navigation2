@@ -238,6 +238,12 @@ protected:
   double findCusp(const geometry_msgs::msg::PoseStamped & pose);
 
   /**
+   * Get the greatest extent of the costmap in meters from the center.
+   * @return max of distance from center in meters to edge of costmap
+   */
+  double getCostmapMaxExtent() const;
+
+  /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */

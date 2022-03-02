@@ -116,6 +116,7 @@ TEST(RegulatedPurePursuitTest, basicAPI)
 
   // instantiate
   auto ctrl = std::make_shared<BasicAPIRPP>();
+  costmap->on_configure(rclcpp_lifecycle::State());
   ctrl->configure(node, name, tf, costmap);
   ctrl->activate();
   ctrl->deactivate();

@@ -107,7 +107,7 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".allow_reversing", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_distance_between_iterations",
-    rclcpp::ParameterValue(10000.0));  // something really big
+    rclcpp::ParameterValue(getCostmapMaxExtent()));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   base_desired_linear_vel_ = desired_linear_vel_;
@@ -605,10 +605,7 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   }
 
   // We'll discard points on the plan that are outside the local costmap
-  nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
-  const double max_costmap_dim_meters = std::max(
-    costmap->getSizeInMetersX(), costmap->getSizeInMetersX());
-  const double max_costmap_extent = max_costmap_dim_meters / 2.0;
+  double max_costmap_extent = getCostmapMaxExtent();
 
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_element_beyond(
@@ -708,6 +705,13 @@ bool RegulatedPurePursuitController::transformPose(
     RCLCPP_ERROR(logger_, "Exception in transformPose: %s", ex.what());
   }
   return false;
+}
+
+double RegulatedPurePursuitController::getCostmapMaxExtent() const
+{
+  const double max_costmap_dim_meters = std::max(
+    costmap_->getSizeInMetersX(), costmap_->getSizeInMetersX());
+  return max_costmap_dim_meters / 2.0;
 }
 
 
