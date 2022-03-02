@@ -611,7 +611,7 @@ TEST_F(TransformGlobalPlanTest, transform_start_selection)
   robot_pose.pose.position.z = 0.0;
   // Could set orientation going the other way, but RPP doesn't care
   constexpr double spacing = 0.1;
-  constexpr double circle_radius = 2.0; // diameter 4
+  constexpr double circle_radius = 2.0;  // diameter 4
 
   // A really big costmap
   // the max_costmap_extent should be 50m
@@ -656,7 +656,7 @@ TEST_F(TransformGlobalPlanTest, all_poses_outside_of_costmap)
   robot_pose.pose.position.z = 0.0;
   // Could set orientation going the other way, but RPP doesn't care
   constexpr double spacing = 0.1;
-  constexpr double circle_radius = 2.0; // diameter 4
+  constexpr double circle_radius = 2.0;  // diameter 4
 
   // A "normal" costmap
   // the max_costmap_extent should be 50m
@@ -698,7 +698,7 @@ TEST_F(TransformGlobalPlanTest, good_circle_shortcut)
   robot_pose.pose.position.z = 0.0;
   // Could set orientation going the other way, but RPP doesn't care
   constexpr double spacing = 0.1;
-  constexpr double circle_radius = 2.0; // diameter 4
+  constexpr double circle_radius = 2.0;  // diameter 4
 
   // A "normal" costmap
   // the max_costmap_extent should be 50m
