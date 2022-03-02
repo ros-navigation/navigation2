@@ -730,3 +730,96 @@ TEST_F(TransformGlobalPlanTest, good_circle_shortcut)
   EXPECT_NEAR(transformed_plan.poses[0].pose.position.x, 0.0, 0.5);
   EXPECT_NEAR(transformed_plan.poses[0].pose.position.y, 0.0, 0.5);
 }
+
+// Simple costmap pruning on a straight line
+TEST_F(TransformGlobalPlanTest, costmap_pruning)
+{
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = COSTMAP_FRAME;
+  robot_pose.header.stamp = transform_time_;
+  // far away from the path
+  robot_pose.pose.position.x = -0.1;
+  robot_pose.pose.position.y = 0.0;
+  robot_pose.pose.position.z = 0.0;
+  // Could set orientation going the other way, but RPP doesn't care
+  constexpr double spacing = 1.0;
+
+  // A "normal" costmap
+  // the max_costmap_extent should be 50m
+  configure_costmap(20u, 0.5);
+  constexpr double max_distance_between_iterations = 10.0;
+  configure_controller(max_distance_between_iterations);
+  setup_transforms(robot_pose.pose.position);
+
+  // Set up test path;
+
+  geometry_msgs::msg::PoseStamped start_of_path;
+  start_of_path.header.frame_id = PATH_FRAME;
+  start_of_path.header.stamp = transform_time_;
+  start_of_path.pose.position.x = 0.0;
+  start_of_path.pose.position.y = 0.0;
+  start_of_path.pose.position.z = 0.0;
+
+  constexpr double path_length = 100.0;
+
+  auto global_plan = nav2_util::generate_path(
+    start_of_path, spacing, {
+    std::make_unique<nav2_util::path_building_blocks::Straight>(path_length)
+  });
+
+  ctrl_->setPlan(global_plan);
+
+  // Transform the plan
+  auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
+  EXPECT_NEAR(transformed_plan.poses.size(), 10u, 1);
+  EXPECT_NEAR(transformed_plan.poses[0].pose.position.x, 0.0, 0.5);
+  EXPECT_NEAR(transformed_plan.poses[0].pose.position.y, 0.0, 0.5);
+}
+
+// Should prune out later portions of the path that come back into the costmap
+TEST_F(TransformGlobalPlanTest, prune_after_leaving_costmap)
+{
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = COSTMAP_FRAME;
+  robot_pose.header.stamp = transform_time_;
+  // far away from the path
+  robot_pose.pose.position.x = -0.1;
+  robot_pose.pose.position.y = 0.0;
+  robot_pose.pose.position.z = 0.0;
+  // Could set orientation going the other way, but RPP doesn't care
+  constexpr double spacing = 1.0;
+
+  // A "normal" costmap
+  // the max_costmap_extent should be 50m
+  configure_costmap(20u, 0.5);
+  constexpr double max_distance_between_iterations = 10.0;
+  configure_controller(max_distance_between_iterations);
+  setup_transforms(robot_pose.pose.position);
+
+  // Set up test path;
+
+  geometry_msgs::msg::PoseStamped start_of_path;
+  start_of_path.header.frame_id = PATH_FRAME;
+  start_of_path.header.stamp = transform_time_;
+  start_of_path.pose.position.x = 0.0;
+  start_of_path.pose.position.y = 0.0;
+  start_of_path.pose.position.z = 0.0;
+
+  constexpr double path_length = 100.0;
+
+  auto global_plan = nav2_util::generate_path(
+    start_of_path, spacing, {
+    std::make_unique<nav2_util::path_building_blocks::Straight>(path_length),
+    std::make_unique<nav2_util::path_building_blocks::LeftTurnAround>(1.0),
+    std::make_unique<nav2_util::path_building_blocks::Straight>(path_length)
+  });
+
+  ctrl_->setPlan(global_plan);
+
+  // Transform the plan
+  auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
+  // This should be essentially the same as the regular straight path
+  EXPECT_NEAR(transformed_plan.poses.size(), 10u, 1);
+  EXPECT_NEAR(transformed_plan.poses[0].pose.position.x, 0.0, 0.5);
+  EXPECT_NEAR(transformed_plan.poses[0].pose.position.y, 0.0, 0.5);
+}
