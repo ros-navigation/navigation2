@@ -25,11 +25,11 @@
 namespace nav2_costmap_2d
 {
 /**
- * @class RayTracer
+ * @class RayCaster
  * @brief Takes in camera calibration data and traces pixels over a given plane
  */
     
-class RayTracer
+class RayCaster
 {
 public:
     /**
@@ -42,12 +42,12 @@ public:
    * @param  sensor_frame The frame of the origin of the sensor, can be left blank to be read from the messages
    * @param  tf_tolerance The amount of time to wait for a transform to be available when setting a new global frame
    */
-    RayTracer();
+    RayCaster();
 
     /**
    * @brief  Destructor... cleans up
    */
-    ~RayTracer(){};
+    ~RayCaster(){};
 
     void initialize(
         rclcpp::Node::SharedPtr & parent_node,
@@ -56,22 +56,18 @@ public:
         bool use_pointcloud,
         tf2_ros::Buffer * tf2_buffer,
         std::string global_frame,
-        std::string sensor_frame,
         tf2::Duration tf_tolerance,
         double max_trace_distance
         );
 
-    // geometry_msgs::msg::Point rayTracePixel(cv::Point& pixel);
-    std::vector<geometry_msgs::msg::Point> rayTracePixels(std::vector<cv::Point>& pixels);
+    bool worldToImage(geometry_msgs::msg::PointStamped& point, cv::Point2d& pixel);
 
-    cv::Point2d worldToImage(geometry_msgs::msg::PointStamped& point);
-
-    geometry_msgs::msg::PointStamped imageToGroundPlane(cv::Point& pixel, std::string& target_frame);
+    bool imageToGroundPlane(cv::Point2d& pixel, geometry_msgs::msg::PointStamped& point);
     
 
 private:
 
-geometry_msgs::msg::Point intersectWithGroundPlane(Eigen::Isometry3d camera_to_ground_tf, cv::Point3d cv_ray);
+    geometry_msgs::msg::PointStamped rayToPointStamped(cv::Point3d& ray_end, std::string& frame_id);
 
     void cameraInfoCb(sensor_msgs::msg::CameraInfo::SharedPtr msg);
 
@@ -94,6 +90,8 @@ geometry_msgs::msg::Point intersectWithGroundPlane(Eigen::Isometry3d camera_to_g
 
     sensor_msgs::msg::PointCloud2 pointcloud_msg_;
     image_geometry::PinholeCameraModel camera_model_ = image_geometry::PinholeCameraModel();
+
+    geometry_msgs::msg::PointStamped camera_origin_;
 
 };
 

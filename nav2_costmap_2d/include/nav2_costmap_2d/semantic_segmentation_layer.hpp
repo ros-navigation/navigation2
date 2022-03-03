@@ -43,16 +43,19 @@
 #ifndef SEMANTIC_SEGMENTATION_LAYER_HPP_
 #define SEMANTIC_SEGMENTATION_LAYER_HPP_
 
+#include "rclcpp/rclcpp.hpp"
+
 #include "nav2_costmap_2d/layer.hpp"
+#include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
-#include "nav2_costmap_2d/ray_tracer.hpp"
+#include "nav2_costmap_2d/ray_caster.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "vision_msgs/msg/semantic_segmentation.hpp"
 #include "opencv2/core.hpp"
 
 namespace nav2_costmap_2d {
 
-class SemanticSegmentationLayer : public nav2_costmap_2d::Layer
+class SemanticSegmentationLayer : public CostmapLayer
 {
    public:
     SemanticSegmentationLayer();
@@ -62,7 +65,7 @@ class SemanticSegmentationLayer : public nav2_costmap_2d::Layer
                               double* max_x, double* max_y);
     virtual void updateCosts(nav2_costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j);
 
-    virtual void reset() { return; }
+    virtual void reset();
 
     virtual void onFootprintChanged();
 
@@ -71,29 +74,17 @@ class SemanticSegmentationLayer : public nav2_costmap_2d::Layer
    private:
     void segmentationCb(vision_msgs::msg::SemanticSegmentation::SharedPtr msg);
 
-    void updateCostmap(vision_msgs::msg::SemanticSegmentation& msg);
+    RayCaster tracer_;
 
-    void extractPolygons(vision_msgs::msg::SemanticSegmentation& msg);
-
-    RayTracer tracer_;
-    double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
     rclcpp::Subscription<vision_msgs::msg::SemanticSegmentation>::SharedPtr semantic_segmentation_sub_;
 
     vision_msgs::msg::SemanticSegmentation latest_segmentation_message;
-    geometry_msgs::msg::TransformStamped transform_at_message;
-    geometry_msgs::msg::PointStamped max_range_point_;
 
     std::string global_frame_;
-    std::string robot_base_frame_;
-    tf2::Duration transform_tolerance_;
 
-    // Indicates that the entire gradient should be recalculated next time.
-    bool need_recalculation_;
+    bool rolling_window_;
+    bool was_reset_;
 
-    // Size of gradient in cells
-    int GRADIENT_SIZE = 20;
-    // Step of increasing cost per one cell in gradient
-    int GRADIENT_FACTOR = 10;
 };
 
 }  // namespace nav2_costmap_2d

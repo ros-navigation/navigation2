@@ -53,10 +53,6 @@ using nav2_costmap_2d::NO_INFORMATION;
 namespace nav2_costmap_2d {
 
 SemanticSegmentationLayer::SemanticSegmentationLayer()
-    : last_min_x_(-std::numeric_limits<float>::max())
-    , last_min_y_(-std::numeric_limits<float>::max())
-    , last_max_x_(std::numeric_limits<float>::max())
-    , last_max_y_(std::numeric_limits<float>::max())
 {
 }
 
@@ -65,75 +61,93 @@ SemanticSegmentationLayer::SemanticSegmentationLayer()
 // of need_recalculation_ variable.
 void SemanticSegmentationLayer::onInitialize()
 {
+    current_ = true;
+    was_reset_ = false;
     auto node = node_.lock();
     if (!node)
     {
         throw std::runtime_error{"Failed to lock node"};
     }
     std::string segmentation_topic, camera_info_topic, pointcloud_topic;
+    bool use_pointcloud;
+    double max_lookahead_distance;
+
     declareParameter("enabled", rclcpp::ParameterValue(true));
     node->get_parameter(name_ + "." + "enabled", enabled_);
-    declareParameter("segmentation_topic", rclcpp::ParameterValue(true));
+    declareParameter("use_pointcloud", rclcpp::ParameterValue(false));
+    node->get_parameter(name_ + "." + "use_pointcloud", use_pointcloud);
+    declareParameter("max_lookahead_distance", rclcpp::ParameterValue(3.0));
+    node->get_parameter(name_ + "." + "max_lookahead_distance", max_lookahead_distance);
+    declareParameter("segmentation_topic", rclcpp::ParameterValue(""));
     node->get_parameter(name_ + "." + "segmentation_topic", segmentation_topic);
-    declareParameter("camera_info_topic", rclcpp::ParameterValue(true));
+    declareParameter("camera_info_topic", rclcpp::ParameterValue(""));
     node->get_parameter(name_ + "." + "camera_info_topic", camera_info_topic);
-    declareParameter("pointcloud_topic", rclcpp::ParameterValue(true));
+    declareParameter("pointcloud_topic", rclcpp::ParameterValue(""));
     node->get_parameter(name_ + "." + "pointcloud_topic", pointcloud_topic);
 
-    max_range_point_.point.x = 5.0;
-    max_range_point_.header.frame_id = robot_base_frame_;
+    global_frame_ = layered_costmap_->getGlobalFrameID();
+    rolling_window_ = layered_costmap_->isRolling();
+
+    matchSize();
 
     semantic_segmentation_sub_ = node->create_subscription<vision_msgs::msg::SemanticSegmentation>(segmentation_topic, rclcpp::SensorDataQoS(), std::bind(&SemanticSegmentationLayer::segmentationCb, this, std::placeholders::_1));
 
-    tracer_.initialize(rclcpp_node_, camera_info_topic, pointcloud_topic, false, tf_, "base_link", "camera", tf2::Duration(0), 10.0);
+    tracer_.initialize(rclcpp_node_, camera_info_topic, pointcloud_topic, use_pointcloud, tf_, global_frame_, tf2::Duration(0), max_lookahead_distance);
 
-    need_recalculation_ = false;
-    current_ = true;
 }
 
 // The method is called to ask the plugin: which area of costmap it needs to update.
 // Inside this method window bounds are re-calculated if need_recalculation_ is true
 // and updated independently on its value.
-void SemanticSegmentationLayer::updateBounds(double /*robot_x*/, double /*robot_y*/, double /*robot_yaw*/,
+void SemanticSegmentationLayer::updateBounds(double robot_x, double robot_y, double /*robot_yaw*/,
                                              double* min_x, double* min_y, double* max_x, double* max_y)
 {
-    if (need_recalculation_)
-    {
-        last_min_x_ = *min_x;
-        last_min_y_ = *min_y;
-        last_max_x_ = *max_x;
-        last_max_y_ = *max_y;
-        // For some reason when I make these -<double>::max() it does not
-        // work with Costmap2D::worldToMapEnforceBounds(), so I'm using
-        // -<float>::max() instead.
-        *min_x = -std::numeric_limits<float>::max();
-        *min_y = -std::numeric_limits<float>::max();
-        *max_x = std::numeric_limits<float>::max();
-        *max_y = std::numeric_limits<float>::max();
-        need_recalculation_ = false;
+    if (rolling_window_) {
+        updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
     }
-    else
+    if (!enabled_) {
+        current_ = true;
+        return;
+    } 
+    vision_msgs::msg::SemanticSegmentation current_segmentation = latest_segmentation_message;
+    int touched_cells = 0;
+    for(size_t v = 0; v < current_segmentation.height; v=v+5)
     {
-        double tmp_min_x = last_min_x_;
-        double tmp_min_y = last_min_y_;
-        double tmp_max_x = last_max_x_;
-        double tmp_max_y = last_max_y_;
-        last_min_x_ = *min_x;
-        last_min_y_ = *min_y;
-        last_max_x_ = *max_x;
-        last_max_y_ = *max_y;
-        *min_x = std::min(tmp_min_x, *min_x);
-        *min_y = std::min(tmp_min_y, *min_y);
-        *max_x = std::max(tmp_max_x, *max_x);
-        *max_y = std::max(tmp_max_y, *max_y);
+        for(size_t u = 0; u < current_segmentation.width; u=u+5){
+            uint8_t pixel = current_segmentation.data[v*current_segmentation.width+u];
+            cv::Point2d pixel_idx;
+            pixel_idx.x = u;
+            pixel_idx.y = v;
+            geometry_msgs::msg::PointStamped world_point;
+            if(!tracer_.imageToGroundPlane(pixel_idx, world_point))
+            {
+                RCLCPP_DEBUG(logger_, "Could not raycast");
+                continue;
+            }
+            unsigned int mx, my;
+            if(!worldToMap(world_point.point.x, world_point.point.y, mx, my))
+            {
+                RCLCPP_DEBUG(logger_, "Computing map coords failed");
+                continue;
+            }
+            unsigned int index = getIndex(mx, my);
+            if(pixel!= 1){
+                costmap_[index] = 100;
+            }else{
+                costmap_[index] = 0;
+            }
+            touch(world_point.point.x, world_point.point.y, min_x, min_y, max_x, max_y);
+            touched_cells++;
+        }
     }
+    // RCLCPP_INFO(logger_, "touched %i cells", touched_cells);
+    
 }
 
 // The method is called when footprint was changed.
 // Here it just resets need_recalculation_ variable.
 void SemanticSegmentationLayer::onFootprintChanged()
 {
-    need_recalculation_ = true;
 
     RCLCPP_DEBUG(rclcpp::get_logger("nav2_costmap_2d"),
                  "SemanticSegmentationLayer::onFootprintChanged(): num footprint points: %lu",
@@ -152,109 +166,33 @@ void SemanticSegmentationLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_g
         return;
     }
 
-    // master_array - is a direct pointer to the resulting master_grid.
-    // master_grid - is a resulting costmap combined from all layers.
-    // By using this pointer all layers will be overwritten!
-    // To work with costmap layer and merge it with other costmap layers,
-    // please use costmap_ pointer instead (this is pointer to current
-    // costmap layer grid) and then call one of updates methods:
-    // - updateWithAddition()
-    // - updateWithMax()
-    // - updateWithOverwrite()
-    // - updateWithTrueOverwrite()
-    // In this case using master_array pointer is equal to modifying local costmap_
-    // pointer and then calling updateWithTrueOverwrite():
-    unsigned char* master_array = master_grid.getCharMap();
-    unsigned int size_x = master_grid.getSizeInCellsX(), size_y = master_grid.getSizeInCellsY();
-
-    // {min_i, min_j} - {max_i, max_j} - are update-window coordinates.
-    // These variables are used to update the costmap only within this window
-    // avoiding the updates of whole area.
-    //
-    // Fixing window coordinates with map size if necessary.
-    min_i = std::max(0, min_i);
-    min_j = std::max(0, min_j);
-    max_i = std::min(static_cast<int>(size_x), max_i);
-    max_j = std::min(static_cast<int>(size_y), max_j);
-
-    // Simply computing one-by-one cost per each cell
-    int gradient_index;
-    for (int j = min_j; j < max_j; j++)
-    {
-        // Reset gradient_index each time when reaching the end of re-calculated window
-        // by OY axis.
-        gradient_index = 0;
-        for (int i = min_i; i < max_i; i++)
-        {
-            int index = master_grid.getIndex(i, j);
-            // setting the gradient cost
-            unsigned char cost = (LETHAL_OBSTACLE - gradient_index * GRADIENT_FACTOR) % 255;
-            if (gradient_index <= GRADIENT_SIZE)
-            {
-                gradient_index++;
-            }
-            else
-            {
-                gradient_index = 0;
-            }
-            master_array[index] = cost;
-        }
+    if (!current_ && was_reset_) {
+        was_reset_ = false;
+        current_ = true;
     }
+    // (void) max_j;
+    // (void) master_grid;
+    // (void) min_i;
+    // (void) max_i;
+    // (void) min_j;
+    if(!costmap_)
+    {
+        return;
+    }
+    // RCLCPP_INFO(logger_, "Updating costmap");
+    updateWithOverwrite(master_grid, min_i, min_j, max_i, max_j);
 }
 
 void SemanticSegmentationLayer::segmentationCb(vision_msgs::msg::SemanticSegmentation::SharedPtr msg)
 {
     latest_segmentation_message = *msg;
-    // updateCostmap(latest_segmentation_message);
-    geometry_msgs::msg::PointStamped max_range_point_cam_frame;
-    if (!tf_->canTransform(
-      latest_segmentation_message.header.frame_id, robot_base_frame_, tf2_ros::fromMsg(latest_segmentation_message.header.stamp)))
-    {
-        RCLCPP_INFO(
-        logger_, "Range sensor layer can't transform from %s to %s",
-        global_frame_.c_str(), latest_segmentation_message.header.frame_id.c_str());
-        return;
-    }
-    tf_->transform(max_range_point_, max_range_point_cam_frame, latest_segmentation_message.header.frame_id, transform_tolerance_);
-    // cv::Point2d point_on_max_range = tracer_.worldToImage(max_range_point_cam_frame);
 }
 
-void SemanticSegmentationLayer::updateCostmap(vision_msgs::msg::SemanticSegmentation& msg)
+void SemanticSegmentationLayer::reset()
 {
-    cv::Mat mask_image(msg.width, msg.height, CV_8U);
-    mask_image.setTo(msg.data);
-    std::vector<std::vector<cv::Point>> contours;
-    std::vector<cv::Vec4i> hierarchy;
-    std::map<int, std::vector<geometry_msgs::msg::Point>> bird_view_polygons;
-    cv::findContours(mask_image, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
-    std::map<int, std::string> class_map;
-    for(auto& class_type : msg.class_map)
-    {
-        class_map[class_type.class_id] = class_type.class_name;
-        // cv::Mat
-    }
-    // for(auto& contour : contours)
-    // {
-
-    // }
-    for(unsigned i = 0; i < msg.data.size(); i++){
-        if(msg.data[i] == 0)
-        {
-            continue;
-        }
-        else if(msg.data[i] == 1)
-        {
-            int mx, my;
-            (void) mx;
-            (void) my;
-            // if(worldToMap(tracer_->Ray))
-        }
-    }
-}
-
-void SemanticSegmentationLayer::extractPolygons(vision_msgs::msg::SemanticSegmentation& msg)
-{
-    (void) msg;
+    resetMaps();
+    current_ = false;
+    was_reset_ = true;
 }
 
 }  // namespace nav2_costmap_2d
