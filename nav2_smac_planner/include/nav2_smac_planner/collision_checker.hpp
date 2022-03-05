@@ -100,6 +100,16 @@ public:
     return angles_;
   }
 
+private:
+  /**
+   * @brief Check if value outside the range
+   * @param min Minimum value of the range
+   * @param max Maximum value of the range
+   * @param value the value to check if it is within the range
+   * @return boolean if in range or not
+   */
+  bool outsideRange(float min, unsigned int max, float value);
+
 protected:
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
   nav2_costmap_2d::Footprint unoriented_footprint_;
