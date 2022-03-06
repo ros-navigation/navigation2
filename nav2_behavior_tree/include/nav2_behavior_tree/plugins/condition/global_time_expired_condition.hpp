@@ -1,4 +1,3 @@
-
 // Copyright (c) 2022 Joshua Wallace
 // Copyright (c) 2019 Intel Corporation
 //
