@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
   For instructions on using Groot and description of the following BehaviorTree nodes,
-  please refer to the groot_instructions.md and REAMDE.md respectively located in the 
+  please refer to the groot_instructions.md and REAMDE.md respectively located in the
   nav2_behavior_tree package.
 -->
 <root>
@@ -16,7 +16,7 @@
     <Action ID="CancelControl">
       <input_port name="service_name">Service name to cancel the controller server</input_port>
     </Action>
-    
+
     <Action ID="ClearEntireCostmap">
       <input_port name="service_name">Service name</input_port>
     </Action>
@@ -130,6 +130,11 @@
     </Condition>
 
     <Condition ID="TimeExpired">
+      <input_port name="seconds">Time to check if expired</input_port>
+    </Condition>
+
+
+    <Condition ID="GlobalTimeExpired">
       <input_port name="seconds">Time to check if expired</input_port>
     </Condition>
 

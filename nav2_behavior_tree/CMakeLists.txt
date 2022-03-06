@@ -99,6 +99,10 @@ list(APPEND plugin_libs nav2_is_path_valid_condition_bt_node)
 add_library(nav2_time_expired_condition_bt_node SHARED plugins/condition/time_expired_condition.cpp)
 list(APPEND plugin_libs nav2_time_expired_condition_bt_node)
 
+
+add_library(nav2_global_time_expired_condition_bt_node SHARED plugins/condition/global_time_expired_condition.cpp)
+list(APPEND plugin_libs nav2_global_time_expired_condition_bt_node)
+
 add_library(nav2_distance_traveled_condition_bt_node SHARED plugins/condition/distance_traveled_condition.cpp)
 list(APPEND plugin_libs nav2_distance_traveled_condition_bt_node)
 

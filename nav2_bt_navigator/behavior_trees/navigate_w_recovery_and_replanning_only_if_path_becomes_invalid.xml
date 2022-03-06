@@ -10,8 +10,11 @@
       <PipelineSequence name="NavigateWithReplanning">
         <RateController hz="1.0">
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
-            <Fallback> 
+            <Fallback>
               <ReactiveSequence>
+                <Inverter>
+                  <GlobalTimeExpired/>
+                </Inverter>
                 <Inverter>
                   <GlobalUpdatedGoal/>
                 </Inverter>
