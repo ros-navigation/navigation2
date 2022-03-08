@@ -49,11 +49,18 @@
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/ray_caster.hpp"
+#include "nav2_costmap_2d/object_buffer.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "vision_msgs/msg/semantic_segmentation.hpp"
 #include "opencv2/core.hpp"
 
 namespace nav2_costmap_2d {
+
+struct MessageTf 
+{
+    vision_msgs::msg::SemanticSegmentation message;
+    geometry_msgs::msg::Transform transform;
+};
 
 class SemanticSegmentationLayer : public CostmapLayer
 {
@@ -74,7 +81,9 @@ class SemanticSegmentationLayer : public CostmapLayer
    private:
     void segmentationCb(vision_msgs::msg::SemanticSegmentation::SharedPtr msg);
 
-    RayCaster tracer_;
+    RayCaster ray_caster_;
+
+    std::shared_ptr<ObjectBuffer<MessageTf>> msg_buffer_;
 
     rclcpp::Subscription<vision_msgs::msg::SemanticSegmentation>::SharedPtr semantic_segmentation_sub_;
 

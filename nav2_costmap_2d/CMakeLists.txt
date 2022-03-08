@@ -53,6 +53,7 @@ add_library(nav2_costmap_2d_core SHARED
   src/clear_costmap_service.cpp
   src/footprint_collision_checker.cpp
   plugins/costmap_filters/costmap_filter.cpp
+  include/nav2_costmap_2d/object_buffer.hpp
 )
 
 # prevent pluginlib from using boost

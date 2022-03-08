@@ -70,7 +70,7 @@ void SemanticSegmentationLayer::onInitialize()
     }
     std::string segmentation_topic, camera_info_topic, pointcloud_topic;
     bool use_pointcloud;
-    double max_lookahead_distance;
+    double max_lookahead_distance, observation_keep_time;
 
     declareParameter("enabled", rclcpp::ParameterValue(true));
     node->get_parameter(name_ + "." + "enabled", enabled_);
@@ -84,6 +84,7 @@ void SemanticSegmentationLayer::onInitialize()
     node->get_parameter(name_ + "." + "camera_info_topic", camera_info_topic);
     declareParameter("pointcloud_topic", rclcpp::ParameterValue(""));
     node->get_parameter(name_ + "." + "pointcloud_topic", pointcloud_topic);
+    node->get_parameter(name_ + "." + "observation_persistence", observation_keep_time);
 
     global_frame_ = layered_costmap_->getGlobalFrameID();
     rolling_window_ = layered_costmap_->isRolling();
@@ -92,8 +93,10 @@ void SemanticSegmentationLayer::onInitialize()
 
     semantic_segmentation_sub_ = node->create_subscription<vision_msgs::msg::SemanticSegmentation>(segmentation_topic, rclcpp::SensorDataQoS(), std::bind(&SemanticSegmentationLayer::segmentationCb, this, std::placeholders::_1));
 
-    tracer_.initialize(rclcpp_node_, camera_info_topic, pointcloud_topic, use_pointcloud, tf_, global_frame_, tf2::Duration(0), max_lookahead_distance);
+    ray_caster_.initialize(rclcpp_node_, camera_info_topic, pointcloud_topic, use_pointcloud, tf_, global_frame_, tf2::Duration(0), max_lookahead_distance);
 
+    msg_buffer_ = std::make_shared<ObjectBuffer<MessageTf>>(node, observation_keep_time);
+    
 }
 
 // The method is called to ask the plugin: which area of costmap it needs to update.
@@ -119,7 +122,7 @@ void SemanticSegmentationLayer::updateBounds(double robot_x, double robot_y, dou
             pixel_idx.x = u;
             pixel_idx.y = v;
             geometry_msgs::msg::PointStamped world_point;
-            if(!tracer_.imageToGroundPlane(pixel_idx, world_point))
+            if(!ray_caster_.imageToGroundPlane(pixel_idx, world_point))
             {
                 RCLCPP_DEBUG(logger_, "Could not raycast");
                 continue;
@@ -185,7 +188,25 @@ void SemanticSegmentationLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_g
 
 void SemanticSegmentationLayer::segmentationCb(vision_msgs::msg::SemanticSegmentation::SharedPtr msg)
 {
-    latest_segmentation_message = *msg;
+    // latest_segmentation_message = *msg;
+    geometry_msgs::msg::Transform current_transform;
+    try
+    {
+        current_transform = tf_->lookupTransform(msg->header.frame_id, global_frame_, msg->header.stamp).transform;
+    }
+    catch (tf2::TransformException & ex) {
+        // if an exception occurs, we need to remove the empty observation from the list
+        RCLCPP_ERROR(
+        logger_,
+        "TF Exception that should never happen for sensor frame: %s, cloud frame: %s, %s",
+        msg->header.frame_id.c_str(),
+        global_frame_.c_str(), ex.what());
+        return;
+    }
+    MessageTf message_tf;
+    message_tf.message = *msg;
+    message_tf.transform = current_transform;
+    msg_buffer_->bufferObject(message_tf, msg->header.stamp);
 }
 
 void SemanticSegmentationLayer::reset()

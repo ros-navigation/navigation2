@@ -2,8 +2,6 @@
 #define NAV2_COSTMAP_2D__RAY_TRACER_HPP_
 
 #include <vector>
-#include <Eigen/Core>
-#include <Eigen/Geometry>
 
 #include "image_geometry/pinhole_camera_model.h"
 #include "nav2_util/lifecycle_node.hpp"
@@ -13,12 +11,11 @@
 #include "opencv2/core.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
-#include "message_filters/subscriber.h"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "tf2/convert.h"
-#include "tf2_eigen/tf2_eigen.hpp"
+
 
 
 
