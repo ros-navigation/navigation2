@@ -13,7 +13,7 @@
             <Fallback>
               <ReactiveSequence>
                 <Inverter>
-                  <GlobalTimeExpired/>
+                  <GlobalTimeExpired seconds="15"/>
                 </Inverter>
                 <Inverter>
                   <GlobalUpdatedGoal/>
