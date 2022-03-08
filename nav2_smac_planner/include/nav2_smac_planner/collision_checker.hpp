@@ -108,7 +108,7 @@ private:
    * @param value the value to check if it is within the range
    * @return boolean if in range or not
    */
-  bool outsideRange(float min, unsigned int max, float value);
+  bool outsideRange(const unsigned int & max, const float & value);
 
 protected:
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
