@@ -24,17 +24,17 @@
 
 #include "../../test_behavior_tree_fixture.hpp"
 #include "../../test_dummy_tree_node.hpp"
-#include "nav2_behavior_tree/plugins/decorator/is_path_longer_on_approach.hpp"
+#include "nav2_behavior_tree/plugins/decorator/path_longer_on_approach.hpp"
 
 using namespace std::chrono;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
-class IsPathLongerOnApproachTestFixture : public ::testing::Test
+class PathLongerOnApproachTestFixture : public ::testing::Test
 {
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("is_path_longer_on_approach_test_fixture");
+    node_ = std::make_shared<rclcpp::Node>("path_longer_on_approach_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -49,12 +49,12 @@ public:
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
       {
-        return std::make_unique<nav2_behavior_tree::IsPathLongerOnApproach>(
+        return std::make_unique<nav2_behavior_tree::PathLongerOnApproach>(
           name, config);
       };
 
-    factory_->registerBuilder<nav2_behavior_tree::IsPathLongerOnApproach>(
-      "IsPathLongerOnApproach", builder);
+    factory_->registerBuilder<nav2_behavior_tree::PathLongerOnApproach>(
+      "PathLongerOnApproach", builder);
   }
 
   static void TearDownTestCase()
@@ -77,13 +77,13 @@ protected:
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr IsPathLongerOnApproachTestFixture::node_ = nullptr;
+rclcpp::Node::SharedPtr PathLongerOnApproachTestFixture::node_ = nullptr;
 
-BT::NodeConfiguration * IsPathLongerOnApproachTestFixture::config_ = nullptr;
-std::shared_ptr<BT::BehaviorTreeFactory> IsPathLongerOnApproachTestFixture::factory_ = nullptr;
-std::shared_ptr<BT::Tree> IsPathLongerOnApproachTestFixture::tree_ = nullptr;
+BT::NodeConfiguration * PathLongerOnApproachTestFixture::config_ = nullptr;
+std::shared_ptr<BT::BehaviorTreeFactory> PathLongerOnApproachTestFixture::factory_ = nullptr;
+std::shared_ptr<BT::Tree> PathLongerOnApproachTestFixture::tree_ = nullptr;
 
-TEST_F(IsPathLongerOnApproachTestFixture, test_tick)
+TEST_F(PathLongerOnApproachTestFixture, test_tick)
 {
   // Success test
   // create tree
@@ -91,9 +91,9 @@ TEST_F(IsPathLongerOnApproachTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-          <IsPathLongerOnApproach path="{path}" prox_leng="5.0" length_factor="2.0">
+          <PathLongerOnApproach path="{path}" prox_len="5.0" length_factor="2.0">
             <AlwaysSuccess/>
-          </IsPathLongerOnApproach>
+          </PathLongerOnApproach>
         </BehaviorTree>
       </root>)";
 
@@ -117,9 +117,9 @@ TEST_F(IsPathLongerOnApproachTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-          <IsPathLongerOnApproach path="{path}" prox_leng="20.0" length_factor="1.0">
+          <PathLongerOnApproach path="{path}" prox_len="20.0" length_factor="1.0">
             <AlwaysFailure/>
-          </IsPathLongerOnApproach>
+          </PathLongerOnApproach>
         </BehaviorTree>
       </root>)";
 

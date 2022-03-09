@@ -126,8 +126,8 @@ list(APPEND plugin_libs nav2_truncate_path_action_bt_node)
 add_library(nav2_goal_updater_node_bt_node SHARED plugins/decorator/goal_updater_node.cpp)
 list(APPEND plugin_libs nav2_goal_updater_node_bt_node)
 
-add_library(nav2_is_path_longer_on_approach_bt_node SHARED plugins/decorator/is_path_longer_on_approach.cpp)
-list(APPEND plugin_libs nav2_is_path_longer_on_approach_bt_node)
+add_library(nav2_path_longer_on_approach_bt_node SHARED plugins/decorator/path_longer_on_approach.cpp)
+list(APPEND plugin_libs nav2_path_longer_on_approach_bt_node)
 
 add_library(nav2_recovery_node_bt_node SHARED plugins/control/recovery_node.cpp)
 list(APPEND plugin_libs nav2_recovery_node_bt_node)

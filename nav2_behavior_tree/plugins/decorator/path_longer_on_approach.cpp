@@ -17,12 +17,12 @@
 #include <vector>
 #include "nav2_util/geometry_utils.hpp"
 
-#include "nav2_behavior_tree/plugins/decorator/is_path_longer_on_approach.hpp"
+#include "nav2_behavior_tree/plugins/decorator/path_longer_on_approach.hpp"
 
 namespace nav2_behavior_tree
 {
 
-IsPathLongerOnApproach::IsPathLongerOnApproach(
+PathLongerOnApproach::PathLongerOnApproach(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf)
@@ -30,7 +30,7 @@ IsPathLongerOnApproach::IsPathLongerOnApproach(
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 }
 
-bool IsPathLongerOnApproach::isPathUpdated(
+bool PathLongerOnApproach::isPathUpdated(
   nav_msgs::msg::Path & new_path,
   nav_msgs::msg::Path & old_path)
 {
@@ -39,14 +39,14 @@ bool IsPathLongerOnApproach::isPathUpdated(
          old_path.poses.back() == new_path.poses.back();
 }
 
-bool IsPathLongerOnApproach::isRobotInGoalProximity(
+bool PathLongerOnApproach::isRobotInGoalProximity(
   nav_msgs::msg::Path & old_path,
   double & prox_leng)
 {
   return nav2_util::geometry_utils::calculate_path_length(old_path, 0) < prox_leng;
 }
 
-bool IsPathLongerOnApproach::isNewPathLonger(
+bool PathLongerOnApproach::isNewPathLonger(
   nav_msgs::msg::Path & new_path,
   nav_msgs::msg::Path & old_path,
   double & length_factor)
@@ -56,15 +56,15 @@ bool IsPathLongerOnApproach::isNewPathLonger(
     old_path, 0);
 }
 
-inline BT::NodeStatus IsPathLongerOnApproach::tick()
+inline BT::NodeStatus PathLongerOnApproach::tick()
 {
   getInput("path", new_path_);
-  getInput("prox_leng", prox_leng_);
+  getInput("prox_len", prox_len_);
   getInput("length_factor", length_factor_);
 
   // Check if the path is updated and valid, compare the old and the new path length,
   // given the goal proximity and check if the new path is longer
-  if (isPathUpdated(new_path_, old_path_) && isRobotInGoalProximity(old_path_, prox_leng_) &&
+  if (isPathUpdated(new_path_, old_path_) && isRobotInGoalProximity(old_path_, prox_len_) &&
     isNewPathLonger(new_path_, old_path_, length_factor_) && !first_time_)
   {
     const BT::NodeStatus child_state = child_node_->executeTick();
@@ -90,5 +90,5 @@ inline BT::NodeStatus IsPathLongerOnApproach::tick()
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::IsPathLongerOnApproach>("IsPathLongerOnApproach");
+  factory.registerNodeType<nav2_behavior_tree::PathLongerOnApproach>("PathLongerOnApproach");
 }

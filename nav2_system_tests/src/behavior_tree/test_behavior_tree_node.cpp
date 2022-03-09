@@ -88,7 +88,7 @@ public:
       "nav2_controller_selector_bt_node",
       "nav2_goal_checker_selector_bt_node",
       "nav2_controller_cancel_bt_node",
-      "nav2_is_path_longer_on_approach_bt_node"
+      "nav2_path_longer_on_approach_bt_node"
     };
     for (const auto & p : plugin_libs) {
       factory_.registerFromPlugin(BT::SharedLibrary::getOSName(p));
