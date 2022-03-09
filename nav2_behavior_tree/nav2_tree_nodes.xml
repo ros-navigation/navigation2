@@ -134,7 +134,7 @@
     </Condition>
 
 
-    <Condition ID="GlobalTimeExpired">
+    <Condition ID="PathExpiringTimer">
       <input_port name="seconds">Time to check if expired</input_port>
     </Condition>
 

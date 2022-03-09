@@ -1,5 +1,4 @@
 // Copyright (c) 2022 Joshua Wallace
-// Copyright (c) 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,19 +28,19 @@ namespace nav2_behavior_tree
  * @brief A BT::ConditionNode that returns SUCCESS every time a specified
  * time period passes and FAILURE otherwise
  */
-class GlobalTimeExpiredCondition : public BT::ConditionNode
+class PathExpiringTimerCondition : public BT::ConditionNode
 {
 public:
   /**
-   * @brief A constructor for nav2_behavior_tree::GlobalTimeExpiredCondition
+   * @brief A constructor for nav2_behavior_tree::PathExpiringTimerCondition
    * @param condition_name Name for the XML tag for this node
    * @param conf BT node configuration
    */
-  GlobalTimeExpiredCondition(
+  PathExpiringTimerCondition(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf);
 
-  GlobalTimeExpiredCondition() = delete;
+  PathExpiringTimerCondition() = delete;
 
   /**
    * @brief The main override required by a BT action
@@ -64,7 +63,7 @@ public:
 private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Time start_;
-  nav_msgs::msg::Path prev_path;
+  nav_msgs::msg::Path prev_path_;
   double period_;
   bool first_time;
 };

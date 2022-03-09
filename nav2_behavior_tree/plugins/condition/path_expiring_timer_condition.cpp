@@ -17,12 +17,12 @@
 
 #include "behaviortree_cpp_v3/condition_node.h"
 
-#include "nav2_behavior_tree/plugins/condition/global_time_expired_condition.hpp"
+#include "nav2_behavior_tree/plugins/condition/path_expiring_timer_condition.hpp"
 
 namespace nav2_behavior_tree
 {
 
-GlobalTimeExpiredCondition::GlobalTimeExpiredCondition(
+PathExpiringTimerCondition::PathExpiringTimerCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
@@ -34,10 +34,10 @@ GlobalTimeExpiredCondition::GlobalTimeExpiredCondition(
   start_ = node_->now();
 }
 
-BT::NodeStatus GlobalTimeExpiredCondition::tick()
+BT::NodeStatus PathExpiringTimerCondition::tick()
 {
   if (first_time) {
-    getInput("path", prev_path);
+    getInput("path", prev_path_);
     first_time = false;
     start_ = node_->now();
     return BT::NodeStatus::FAILURE;
@@ -48,8 +48,9 @@ BT::NodeStatus GlobalTimeExpiredCondition::tick()
   getInput("path", path);
 
   // Reset timer if the path has been updated
-  if(prev_path != path)
+  if(prev_path_ != path)
   {
+    prev_path_ = path;
     start_ = node_->now();
   }
 
@@ -72,5 +73,5 @@ BT::NodeStatus GlobalTimeExpiredCondition::tick()
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::GlobalTimeExpiredCondition>("GlobalTimeExpired");
+  factory.registerNodeType<nav2_behavior_tree::PathExpiringTimerCondition>("PathExpiringTimer");
 }

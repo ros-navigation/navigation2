@@ -21,17 +21,17 @@
 #include "nav2_util/robot_utils.hpp"
 
 #include "../../test_behavior_tree_fixture.hpp"
-#include "nav2_behavior_tree/plugins/condition/global_time_expired_condition.hpp"
+#include "nav2_behavior_tree/plugins/condition/path_expiring_timer_condition.hpp"
 
 using namespace std::chrono;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
-class GlobalTimeExpiredConditionTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+class PathExpiringTimerConditionTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
   void SetUp()
   {
-    bt_node_ = std::make_shared<nav2_behavior_tree::GlobalTimeExpiredCondition>(
+    bt_node_ = std::make_shared<nav2_behavior_tree::PathExpiringTimerCondition>(
       "time_expired", *config_);
   }
 
@@ -41,13 +41,13 @@ public:
   }
 
 protected:
-  static std::shared_ptr<nav2_behavior_tree::GlobalTimeExpiredCondition> bt_node_;
+  static std::shared_ptr<nav2_behavior_tree::PathExpiringTimerCondition> bt_node_;
 };
 
-std::shared_ptr<nav2_behavior_tree::GlobalTimeExpiredCondition>
-GlobalTimeExpiredConditionTestFixture::bt_node_ = nullptr;
+std::shared_ptr<nav2_behavior_tree::PathExpiringTimerCondition>
+PathExpiringTimerConditionTestFixture::bt_node_ = nullptr;
 
-TEST_F(GlobalTimeExpiredConditionTestFixture, test_behavior)
+TEST_F(PathExpiringTimerConditionTestFixture, test_behavior)
 {
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
