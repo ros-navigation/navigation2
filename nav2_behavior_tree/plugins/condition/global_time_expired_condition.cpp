@@ -37,9 +37,20 @@ GlobalTimeExpiredCondition::GlobalTimeExpiredCondition(
 BT::NodeStatus GlobalTimeExpiredCondition::tick()
 {
   if (first_time) {
+    getInput("path", prev_path);
     first_time = false;
     start_ = node_->now();
     return BT::NodeStatus::FAILURE;
+  }
+
+  // Grab the new path
+  nav_msgs::msg::Path path;
+  getInput("path", path);
+
+  // Reset timer if the path has been updated
+  if(prev_path != path)
+  {
+    start_ = node_->now();
   }
 
   // Determine how long its been since we've started this iteration

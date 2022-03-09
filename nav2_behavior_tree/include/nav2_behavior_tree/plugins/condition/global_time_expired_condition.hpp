@@ -20,6 +20,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp_v3/condition_node.h"
+#include "nav_msgs/msg/path.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -55,13 +56,15 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("seconds", 1.0, "Seconds")
+      BT::InputPort<double>("seconds", 1.0, "Seconds"),
+      BT::InputPort<nav_msgs::msg::Path>("path")
     };
   }
 
 private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Time start_;
+  nav_msgs::msg::Path prev_path;
   double period_;
   bool first_time;
 };
