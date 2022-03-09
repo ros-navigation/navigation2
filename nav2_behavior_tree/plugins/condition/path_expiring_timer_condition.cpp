@@ -48,8 +48,7 @@ BT::NodeStatus PathExpiringTimerCondition::tick()
   getInput("path", path);
 
   // Reset timer if the path has been updated
-  if(prev_path_ != path)
-  {
+  if (prev_path_ != path) {
     prev_path_ = path;
     start_ = node_->now();
   }

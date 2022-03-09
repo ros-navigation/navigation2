@@ -33,6 +33,8 @@ public:
   {
     bt_node_ = std::make_shared<nav2_behavior_tree::PathExpiringTimerCondition>(
       "time_expired", *config_);
+    // nav_msgs::msg::Path path;
+    // config_->blackboard->set<nav_msgs::msg::Path>("path", path);
   }
 
   void TearDown()
@@ -42,13 +44,16 @@ public:
 
 protected:
   static std::shared_ptr<nav2_behavior_tree::PathExpiringTimerCondition> bt_node_;
+  static BT::NodeConfiguration * config_;
 };
 
 std::shared_ptr<nav2_behavior_tree::PathExpiringTimerCondition>
 PathExpiringTimerConditionTestFixture::bt_node_ = nullptr;
+BT::NodeConfiguration * PathExpiringTimerConditionTestFixture::config_ = nullptr;
 
 TEST_F(PathExpiringTimerConditionTestFixture, test_behavior)
 {
+  EXPECT_EQ(1, 1);
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
@@ -60,6 +65,14 @@ TEST_F(PathExpiringTimerConditionTestFixture, test_behavior)
       EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
     }
   }
+
+  // place a new path on the blackboard
+  nav_msgs::msg::Path path;
+  path.poses[0].pose.position.x = 1.0;
+
+  config_->blackboard->set<nav_msgs::msg::Path>("path", path);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 }
 
 int main(int argc, char ** argv)
