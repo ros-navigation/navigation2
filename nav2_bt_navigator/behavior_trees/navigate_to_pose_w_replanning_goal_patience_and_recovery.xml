@@ -18,14 +18,14 @@
           </RecoveryNode>
         </RateController>
         <ReactiveSequence name="MonitorAndFollowPath">
-          <IsPathLongerOnApproach path="{path}" prox_leng="0.0" length_factor="1.0">
+          <PathLongerOnApproach path="{path}" prox_len="3.0" length_factor="2.0">
             <RetryUntilSuccessful num_attempts="1">
               <SequenceStar name="CancelingControlAndWait">
                 <CancelControl name="ControlCancel"/>
                 <Wait wait_duration="5"/>
               </SequenceStar>
             </RetryUntilSuccessful>
-          </IsPathLongerOnApproach>
+          </PathLongerOnApproach>
           <RecoveryNode number_of_retries="1" name="FollowPath">
             <FollowPath path="{path}" controller_id="FollowPath"/>
             <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
