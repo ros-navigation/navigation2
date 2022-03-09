@@ -391,9 +391,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
   } else if (shouldRotateToPath(carrot_pose, angle_to_heading) && !rotating_) {
-    // multiply heading min angle by 0.1 so we rotate just enough
-    rotateToHeading(
-      linear_vel, angular_vel, angle_to_heading - rotate_to_heading_min_angle_ * 0.1, speed);
+    rotateToHeading(linear_vel, angular_vel, angle_to_heading, speed);
   } else if (rotating_) {
     if (angle_profile_result_ == ruckig::Result::Finished) {
       rotating_ = false;
