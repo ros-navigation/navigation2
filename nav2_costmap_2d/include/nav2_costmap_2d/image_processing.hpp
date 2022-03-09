@@ -751,14 +751,28 @@ void morphologyOperation(
 
 /**
  * @brief Return structuring element 3x3 image by predefined figure type
- * value 0 = ignore pixel, 255 = use pixel.
+ * @details Used in morphologyOperation
  */
 Image<uint8_t> createShape(ShapeBuffer3x3 & buffer, ConnectivityType connectivity)
 {
+  /**
+   * Shape - a binary matrix that is used as a mask. Each element of which is one of two values:
+   * code u - the corresponding pixel of the image will be used
+   * code i - the corresponding pixel of the image will be ignored
+   */
+  static constexpr uint8_t u = 255;
+  static constexpr uint8_t i = 0;
+
   if (connectivity == ConnectivityType::Way8) {
-    buffer = {255, 255, 255, 255, 0, 255, 255, 255, 255};
+    buffer = {
+      u, u, u,
+      u, i, u,
+      u, u, u};
   } else {
-    buffer = {0, 255, 0, 255, 0, 255, 0, 255, 0};
+    buffer = {
+      i, u, i,
+      u, i, u,
+      i, u, i};
   }
   return Image<uint8_t>(3, 3, buffer.data(), 3);
 }
