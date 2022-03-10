@@ -30,14 +30,6 @@ def normalize_angle(angle):
     """
     while angle > np.pi:
         angle -= 2*np.pi
-<<<<<<< HEAD
-
-    while angle < -np.pi:
-        angle += 2*np.pi
-
-    return angle
-=======
->>>>>>> Changed normalize_angle to exclude -pi and include pi
 
     while angle < -np.pi:
         angle += 2*np.pi
