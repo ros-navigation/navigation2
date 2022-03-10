@@ -114,6 +114,7 @@ protected:
   SearchInfo _search_info;
   double _max_planning_time;
   double _lookup_table_size;
+  double _minimum_turning_radius_global_coords;
   std::string _motion_model_for_search;
   MotionModel _motion_model;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;

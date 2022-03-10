@@ -419,9 +419,8 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
   // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
   if (reinit_a_star || reinit_smoother) {
     // convert to grid coordinates
-    const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
     _search_info.minimum_turning_radius =
-      _search_info.minimum_turning_radius / (_costmap->getResolution());
+      _metadata.min_turning_radius / (_costmap->getResolution());
     float lookup_table_dim =
       static_cast<float>(_lookup_table_size) /
       static_cast<float>(_costmap->getResolution());

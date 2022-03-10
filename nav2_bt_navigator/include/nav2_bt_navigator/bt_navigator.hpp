@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/odometry_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
@@ -90,7 +91,7 @@ protected:
   nav2_bt_navigator::NavigatorMuxer plugin_muxer_;
 
   // Odometry smoother object
-  std::unique_ptr<nav2_util::OdomSmoother> odom_smoother_;
+  std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 
   // Metrics for feedback
   std::string robot_frame_;
