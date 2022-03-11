@@ -79,7 +79,7 @@ void SmacPlannerLattice::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".lattice_filepath", rclcpp::ParameterValue(
       ament_index_cpp::get_package_share_directory("nav2_smac_planner") + 
-        "/sample_primitives/5cm_resolution/0.5m _turning_radius/ackermann/output.json"));
+        "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann/output.json"));
   node->get_parameter(name + ".lattice_filepath", _search_info.lattice_filepath);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
