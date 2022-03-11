@@ -89,7 +89,7 @@ void DWBLocalPlanner::configure(
     rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, dwb_plugin_name_ + ".prune_distance",
-    rclcpp::ParameterValue(1.0));
+    rclcpp::ParameterValue(2.0));
   declare_parameter_if_not_declared(
     node, dwb_plugin_name_ + ".debug_trajectory_details",
     rclcpp::ParameterValue(false));
