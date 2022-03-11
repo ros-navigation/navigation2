@@ -77,6 +77,7 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 | `use_rotate_to_heading` | Whether to enable rotating to rough heading and goal orientation when using holonomic planners. Recommended on for all robot types except ackermann, which cannot rotate in place. | 
 | `rotate_to_heading_min_angle` | The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if `use_rotate_to_heading` is enabled. | 
 | `max_angular_accel` | Maximum allowable angular acceleration while rotating to heading, if enabled | 
+| `max_robot_pose_search_dist` | Maximum integrated distance along the path to bound the search for the closest pose to the robot | 
 
 Example fully-described XML with default parameter values:
 
@@ -123,6 +124,7 @@ controller_server:
       use_rotate_to_heading: true
       rotate_to_heading_min_angle: 0.785
       max_angular_accel: 3.2
+      max_robot_pose_search_dist: 10.0
       cost_scaling_dist: 0.3
       cost_scaling_gain: 1.0
       inflation_cost_scaling_factor: 3.0
