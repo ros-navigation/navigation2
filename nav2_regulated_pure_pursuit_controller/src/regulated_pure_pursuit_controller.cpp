@@ -608,7 +608,7 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   double max_costmap_extent = getCostmapMaxExtent();
 
   auto closest_pose_upper_bound =
-    nav2_util::geometry_utils::first_element_beyond(
+    nav2_util::geometry_utils::first_after_integrated_distance(
     global_plan_.poses.begin(), global_plan_.poses.end(), max_robot_pose_search_dist_);
 
   // First find the closest pose on the path to the robot

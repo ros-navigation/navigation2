@@ -486,7 +486,7 @@ DWBLocalPlanner::transformGlobalPlan(
 
   // Find the first pose in the global plan that's further than prune distance
   // from the robot using integrated distance
-  auto prune_point = nav2_util::geometry_utils::first_element_beyond(
+  auto prune_point = nav2_util::geometry_utils::first_after_integrated_distance(
     global_plan_.poses.begin(), global_plan_.poses.end(), prune_dist);
 
   // Find the first pose in the plan (upto prune_point) that's less than transform_start_threshold
@@ -500,7 +500,7 @@ DWBLocalPlanner::transformGlobalPlan(
   // Find the first pose in the end of the plan that's further than transform_end_threshold
   // from the robot using integrated distance
   auto transformation_end =
-    nav2_util::geometry_utils::first_element_beyond(
+    nav2_util::geometry_utils::first_after_integrated_distance(
     transformation_begin, global_plan_.poses.end(), transform_end_threshold);
 
   for (auto it = transformation_begin + 1; it != transformation_end - 1; ++it) {

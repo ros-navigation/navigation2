@@ -128,7 +128,7 @@ inline Iter min_by(Iter begin, Iter end, Getter getCompareVal)
  * Find first element in iterator that is greater integrated distance than comparevalue
  */
 template<typename Iter, typename Getter>
-inline Iter first_element_beyond(Iter begin, Iter end, Getter getCompareVal)
+inline Iter first_after_integrated_distance(Iter begin, Iter end, Getter getCompareVal)
 {
   if (begin == end) {
     return end;
