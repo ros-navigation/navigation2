@@ -136,6 +136,7 @@
 
     <Condition ID="PathExpiringTimer">
       <input_port name="seconds">Time to check if expired</input_port>
+      <input_port name="path">Check if path has been updated to enable timer reset</input_port>
     </Condition>
 
     <Condition ID="InitialPoseReceived">

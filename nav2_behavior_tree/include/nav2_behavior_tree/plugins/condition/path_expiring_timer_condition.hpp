@@ -65,7 +65,7 @@ private:
   rclcpp::Time start_;
   nav_msgs::msg::Path prev_path_;
   double period_;
-  bool first_time;
+  bool first_time_;
 };
 
 }  // namespace nav2_behavior_tree

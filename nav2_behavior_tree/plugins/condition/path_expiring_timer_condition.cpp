@@ -27,18 +27,17 @@ PathExpiringTimerCondition::PathExpiringTimerCondition(
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
   period_(1.0),
-  first_time(true)
+  first_time_(true)
 {
   getInput("seconds", period_);
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  start_ = node_->now();
 }
 
 BT::NodeStatus PathExpiringTimerCondition::tick()
 {
-  if (first_time) {
+  if (first_time_) {
     getInput("path", prev_path_);
-    first_time = false;
+    first_time_ = false;
     start_ = node_->now();
     return BT::NodeStatus::FAILURE;
   }
