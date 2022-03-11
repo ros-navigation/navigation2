@@ -494,12 +494,12 @@ protected:
     costmap_->on_configure(state);
   }
 
-  void configure_controller(double max_distance_between_iterations)
+  void configure_controller(double max_robot_pose_search_dist)
   {
     std::string plugin_name = "test_rpp";
     nav2_util::declare_parameter_if_not_declared(
-      node_, plugin_name + ".max_distance_between_iterations",
-      rclcpp::ParameterValue(max_distance_between_iterations));
+      node_, plugin_name + ".max_robot_pose_search_dist",
+      rclcpp::ParameterValue(max_robot_pose_search_dist));
     ctrl_->configure(node_, plugin_name, tf_buffer_, costmap_);
   }
 
@@ -608,8 +608,8 @@ TEST_F(TransformGlobalPlanTest, transform_start_selection)
   // the max_costmap_extent should be 50m
   configure_costmap(100u, 0.1);
   // This should just be at least half the circumference: pi*r ~= 6
-  constexpr double max_distance_between_iterations = 10.0;
-  configure_controller(max_distance_between_iterations);
+  constexpr double max_robot_pose_search_dist = 10.0;
+  configure_controller(max_robot_pose_search_dist);
   setup_transforms(robot_pose.pose.position);
 
   // Set up test path;
@@ -653,8 +653,8 @@ TEST_F(TransformGlobalPlanTest, all_poses_outside_of_costmap)
   // the max_costmap_extent should be 50m
   configure_costmap(10u, 0.1);
   // This should just be at least half the circumference: pi*r ~= 6
-  constexpr double max_distance_between_iterations = 10.0;
-  configure_controller(max_distance_between_iterations);
+  constexpr double max_robot_pose_search_dist = 10.0;
+  configure_controller(max_robot_pose_search_dist);
   setup_transforms(robot_pose.pose.position);
 
   // Set up test path;
@@ -677,7 +677,7 @@ TEST_F(TransformGlobalPlanTest, all_poses_outside_of_costmap)
   EXPECT_THROW(ctrl_->transformGlobalPlanWrapper(robot_pose), nav2_core::PlannerException);
 }
 
-// Should shortcut the circle if the circle is shorter than max_distance_between_iterations
+// Should shortcut the circle if the circle is shorter than max_robot_pose_search_dist
 TEST_F(TransformGlobalPlanTest, good_circle_shortcut)
 {
   geometry_msgs::msg::PoseStamped robot_pose;
@@ -695,8 +695,8 @@ TEST_F(TransformGlobalPlanTest, good_circle_shortcut)
   // the max_costmap_extent should be 50m
   configure_costmap(100u, 0.1);
   // This should just be at least the circumference: 2*pi*r ~= 12
-  constexpr double max_distance_between_iterations = 15.0;
-  configure_controller(max_distance_between_iterations);
+  constexpr double max_robot_pose_search_dist = 15.0;
+  configure_controller(max_robot_pose_search_dist);
   setup_transforms(robot_pose.pose.position);
 
   // Set up test path;
@@ -738,8 +738,8 @@ TEST_F(TransformGlobalPlanTest, costmap_pruning)
   // A "normal" costmap
   // the max_costmap_extent should be 50m
   configure_costmap(20u, 0.5);
-  constexpr double max_distance_between_iterations = 10.0;
-  configure_controller(max_distance_between_iterations);
+  constexpr double max_robot_pose_search_dist = 10.0;
+  configure_controller(max_robot_pose_search_dist);
   setup_transforms(robot_pose.pose.position);
 
   // Set up test path;
@@ -783,8 +783,8 @@ TEST_F(TransformGlobalPlanTest, prune_after_leaving_costmap)
   // A "normal" costmap
   // the max_costmap_extent should be 50m
   configure_costmap(20u, 0.5);
-  constexpr double max_distance_between_iterations = 10.0;
-  configure_controller(max_distance_between_iterations);
+  constexpr double max_robot_pose_search_dist = 10.0;
+  configure_controller(max_robot_pose_search_dist);
   setup_transforms(robot_pose.pose.position);
 
   // Set up test path;

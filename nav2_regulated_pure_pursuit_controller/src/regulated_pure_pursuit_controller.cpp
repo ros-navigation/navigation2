@@ -106,7 +106,7 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_reversing", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_distance_between_iterations",
+    node, plugin_name_ + ".max_robot_pose_search_dist",
     rclcpp::ParameterValue(getCostmapMaxExtent()));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
@@ -151,8 +151,8 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(plugin_name_ + ".allow_reversing", allow_reversing_);
   node->get_parameter("controller_frequency", control_frequency);
   node->get_parameter(
-    plugin_name_ + ".max_distance_between_iterations",
-    max_distance_between_iterations_);
+    plugin_name_ + ".max_robot_pose_search_dist",
+    max_robot_pose_search_dist_);
 
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
   control_duration_ = 1.0 / control_frequency;
@@ -609,7 +609,7 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
 
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_element_beyond(
-    global_plan_.poses.begin(), global_plan_.poses.end(), max_distance_between_iterations_);
+    global_plan_.poses.begin(), global_plan_.poses.end(), max_robot_pose_search_dist_);
 
   // First find the closest pose on the path to the robot
   // bounded by when the path turns around (if it does) so we don't get a pose from a later
