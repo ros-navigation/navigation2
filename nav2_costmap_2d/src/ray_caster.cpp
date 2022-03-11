@@ -56,6 +56,7 @@ bool RayCaster::worldToImage(geometry_msgs::msg::PointStamped& point, cv::Point2
 
 bool RayCaster::imageToGroundPlane(cv::Point2d& pixel, geometry_msgs::msg::PointStamped& point)
 {
+    // (void) sensor_to_world_tf;
     if (!tf2_buffer_->canTransform(
         global_frame_, sensor_frame_, tf2_ros::fromMsg(point.header.stamp)))
     {
@@ -91,6 +92,40 @@ bool RayCaster::imageToGroundPlane(cv::Point2d& pixel, geometry_msgs::msg::Point
     return true;
 }
 
+bool RayCaster::imageToGroundPlaneLookup(cv::Point2d& pixel, geometry_msgs::msg::PointStamped& point, geometry_msgs::msg::TransformStamped sensor_to_world_tf)
+{
+    if(!ready_to_raytrace_)
+    {
+        RCLCPP_WARN_THROTTLE(parent_node_->get_logger(), *parent_node_->get_clock(), 10000, "Not ready to raytrace");
+        return false;
+    }
+    if (!tf2_buffer_->canTransform(
+        global_frame_, sensor_frame_, tf2_ros::fromMsg(point.header.stamp)))
+    {
+        RCLCPP_ERROR_THROTTLE(
+        parent_node_->get_logger(), *parent_node_->get_clock(), 10000, "Ray caster can't transform from %s to %s",
+        sensor_frame_.c_str(), point.header.frame_id.c_str());
+        return false;
+    }
+    geometry_msgs::msg::PointStamped point_sensor_frame = caster_lookup_table_.at(pixel.y*img_width_+pixel.x);
+    if(point_sensor_frame.point.z > max_trace_distance_)
+    {
+        RCLCPP_DEBUG(parent_node_->get_logger(),"Point falls further than the max trace distance, will not raycast");
+        return false;
+    }
+    if(point_sensor_frame.point.z < 0.0)
+    {
+        RCLCPP_DEBUG(parent_node_->get_logger(),"Point falls falls behind the camera, will not raycast");
+        return false;
+    }
+    geometry_msgs::msg::PointStamped point_world_frame;
+    tf2::doTransform(
+      point_sensor_frame, point_world_frame, sensor_to_world_tf);
+    // tf2_buffer_->transform(point_sensor_frame, point_world_frame, global_frame_, tf_tolerance_);
+    point = point_world_frame;
+    return true;
+}
+
 geometry_msgs::msg::PointStamped RayCaster::rayToPointStamped(cv::Point3d& ray_end, std::string& frame_id)
 {
     geometry_msgs::msg::PointStamped point;
@@ -118,11 +153,57 @@ void RayCaster::cameraInfoCb(sensor_msgs::msg::CameraInfo::SharedPtr msg)
     camera_model_.fromCameraInfo(*msg);
     sensor_frame_ = msg->header.frame_id; 
     camera_origin_.header.frame_id = sensor_frame_;
+    img_width_ = msg->width;
+    img_height_ = msg->height;
+    if(!computeLookupTable(msg->header.stamp))
+    {
+        RCLCPP_WARN(parent_node_->get_logger(), "Could not compute lookup table");
+        return;
+    }
     camera_info_sub_.reset();
     ready_to_raytrace_ = true;
     RCLCPP_INFO(parent_node_->get_logger(), "Received camera info message. Ready to raycast");
 }
 
+
+bool RayCaster::computeLookupTable(builtin_interfaces::msg::Time & time_msg)
+{
+    if (!tf2_buffer_->canTransform(
+        global_frame_, sensor_frame_, tf2_ros::fromMsg(time_msg)))
+    {
+        RCLCPP_ERROR_THROTTLE(
+        parent_node_->get_logger(), *parent_node_->get_clock(), 10000, "Ray caster can't transform from %s to %s",
+        sensor_frame_.c_str(), global_frame_.c_str());
+        return false;
+    }
+    caster_lookup_table_.clear();
+    caster_lookup_table_.reserve(img_width_*img_height_);
+    for(size_t v = 0; v < img_height_; v++)
+    {
+        for(size_t u = 0; u < img_width_; u++)
+        {
+            cv::Point2d pixel;
+            pixel.x = u;
+            pixel.y = v;
+            cv::Point3d cv_ray = camera_model_.projectPixelTo3dRay(pixel);
+            geometry_msgs::msg::PointStamped ray_end_sensor_frame = rayToPointStamped(cv_ray, sensor_frame_);
+            geometry_msgs::msg::PointStamped ray_end_world_frame;
+            geometry_msgs::msg::PointStamped camera_position_world_frame;
+            tf2_buffer_->transform(ray_end_sensor_frame, ray_end_world_frame, global_frame_, tf_tolerance_);
+            tf2_buffer_->transform(camera_origin_, camera_position_world_frame, global_frame_, tf_tolerance_);
+            double ray_scale_factor = -camera_position_world_frame.point.z/(ray_end_world_frame.point.z - camera_position_world_frame.point.z);
+            geometry_msgs::msg::PointStamped intersection;
+            intersection.header.frame_id = global_frame_;
+            intersection.point.x = camera_position_world_frame.point.x + ray_scale_factor*(ray_end_world_frame.point.x - camera_position_world_frame.point.x);
+            intersection.point.y = camera_position_world_frame.point.y + ray_scale_factor*(ray_end_world_frame.point.y - camera_position_world_frame.point.y);
+            intersection.point.z = camera_position_world_frame.point.z + ray_scale_factor*(ray_end_world_frame.point.z - camera_position_world_frame.point.z);
+            geometry_msgs::msg::PointStamped intersection_camera_frame = tf2_buffer_->transform(intersection, sensor_frame_);
+            caster_lookup_table_.emplace_back(intersection_camera_frame);
+        }
+    }
+    RCLCPP_INFO(parent_node_->get_logger(), "Lookup table computed successfully");
+    return true;
+}
 
 
 

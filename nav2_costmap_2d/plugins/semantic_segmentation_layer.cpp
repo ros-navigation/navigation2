@@ -74,6 +74,8 @@ void SemanticSegmentationLayer::onInitialize()
 
     declareParameter("enabled", rclcpp::ParameterValue(true));
     node->get_parameter(name_ + "." + "enabled", enabled_);
+    declareParameter("combination_method", rclcpp::ParameterValue(1));
+    node->get_parameter(name_ + "." + "combination_method", combination_method_);
     declareParameter("use_pointcloud", rclcpp::ParameterValue(false));
     node->get_parameter(name_ + "." + "use_pointcloud", use_pointcloud);
     declareParameter("max_lookahead_distance", rclcpp::ParameterValue(3.0));
@@ -84,6 +86,7 @@ void SemanticSegmentationLayer::onInitialize()
     node->get_parameter(name_ + "." + "camera_info_topic", camera_info_topic);
     declareParameter("pointcloud_topic", rclcpp::ParameterValue(""));
     node->get_parameter(name_ + "." + "pointcloud_topic", pointcloud_topic);
+    declareParameter("observation_persistence", rclcpp::ParameterValue(0.0));
     node->get_parameter(name_ + "." + "observation_persistence", observation_keep_time);
 
     global_frame_ = layered_costmap_->getGlobalFrameID();
@@ -112,37 +115,77 @@ void SemanticSegmentationLayer::updateBounds(double robot_x, double robot_y, dou
         current_ = true;
         return;
     } 
-    vision_msgs::msg::SemanticSegmentation current_segmentation = latest_segmentation_message;
-    int touched_cells = 0;
-    for(size_t v = 0; v < current_segmentation.height; v=v+5)
-    {
-        for(size_t u = 0; u < current_segmentation.width; u=u+5){
-            uint8_t pixel = current_segmentation.data[v*current_segmentation.width+u];
-            cv::Point2d pixel_idx;
-            pixel_idx.x = u;
-            pixel_idx.y = v;
-            geometry_msgs::msg::PointStamped world_point;
-            if(!ray_caster_.imageToGroundPlane(pixel_idx, world_point))
-            {
-                RCLCPP_DEBUG(logger_, "Could not raycast");
-                continue;
+    std::vector<MessageTf> segmentations;
+    msg_buffer_->getObjects(segmentations);
+    int processed_msgs = 0;
+    for(auto& segmentation : segmentations){
+        int touched_cells = 0;
+        for(size_t v = 0; v < segmentation.message.height; v=v+2)
+        {
+            for(size_t u = 0; u < segmentation.message.width; u=u+2){
+                uint8_t pixel = segmentation.message.data[v*segmentation.message.width+u];
+                cv::Point2d pixel_idx;
+                pixel_idx.x = u;
+                pixel_idx.y = v;
+                geometry_msgs::msg::PointStamped world_point;
+                if(!ray_caster_.imageToGroundPlaneLookup(pixel_idx, world_point, segmentation.transform))
+                {
+                    RCLCPP_DEBUG(logger_, "Could not raycast");
+                    continue;
+                }
+                unsigned int mx, my;
+                if(!worldToMap(world_point.point.x, world_point.point.y, mx, my))
+                {
+                    RCLCPP_DEBUG(logger_, "Computing map coords failed");
+                    continue;
+                }
+                unsigned int index = getIndex(mx, my);
+                if(pixel!= 1){
+                    costmap_[index] = 100;
+                }else{
+                    costmap_[index] = 0;
+                }
+                touch(world_point.point.x, world_point.point.y, min_x, min_y, max_x, max_y);
+                touched_cells++;
             }
-            unsigned int mx, my;
-            if(!worldToMap(world_point.point.x, world_point.point.y, mx, my))
-            {
-                RCLCPP_DEBUG(logger_, "Computing map coords failed");
-                continue;
-            }
-            unsigned int index = getIndex(mx, my);
-            if(pixel!= 1){
-                costmap_[index] = 100;
-            }else{
-                costmap_[index] = 0;
-            }
-            touch(world_point.point.x, world_point.point.y, min_x, min_y, max_x, max_y);
-            touched_cells++;
         }
+        processed_msgs++;
     }
+    if(processed_msgs>0)
+    {
+        RCLCPP_INFO(logger_, "Processed %i segmentations", processed_msgs);
+    }
+    // vision_msgs::msg::SemanticSegmentation current_segmentation = latest_segmentation_message;
+    // int touched_cells = 0;
+    // for(size_t v = 0; v < current_segmentation.height; v=v+5)
+    // {
+    //     for(size_t u = 0; u < current_segmentation.width; u=u+5){
+    //         uint8_t pixel = current_segmentation.data[v*current_segmentation.width+u];
+    //         cv::Point2d pixel_idx;
+    //         pixel_idx.x = u;
+    //         pixel_idx.y = v;
+    //         geometry_msgs::msg::PointStamped world_point;
+    //         if(!ray_caster_.imageToGroundPlane(pixel_idx, world_point))
+    //         {
+    //             RCLCPP_DEBUG(logger_, "Could not raycast");
+    //             continue;
+    //         }
+    //         unsigned int mx, my;
+    //         if(!worldToMap(world_point.point.x, world_point.point.y, mx, my))
+    //         {
+    //             RCLCPP_DEBUG(logger_, "Computing map coords failed");
+    //             continue;
+    //         }
+    //         unsigned int index = getIndex(mx, my);
+    //         if(pixel!= 1){
+    //             costmap_[index] = 100;
+    //         }else{
+    //             costmap_[index] = 0;
+    //         }
+    //         touch(world_point.point.x, world_point.point.y, min_x, min_y, max_x, max_y);
+    //         touched_cells++;
+    //     }
+    // }
     // RCLCPP_INFO(logger_, "touched %i cells", touched_cells);
     
 }
@@ -183,16 +226,25 @@ void SemanticSegmentationLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_g
         return;
     }
     // RCLCPP_INFO(logger_, "Updating costmap");
-    updateWithOverwrite(master_grid, min_i, min_j, max_i, max_j);
+    switch (combination_method_) {
+    case 0:  // Overwrite
+      updateWithOverwrite(master_grid, min_i, min_j, max_i, max_j);
+      break;
+    case 1:  // Maximum
+      updateWithMax(master_grid, min_i, min_j, max_i, max_j);
+      break;
+    default:  // Nothing
+      break;
+    }
 }
 
 void SemanticSegmentationLayer::segmentationCb(vision_msgs::msg::SemanticSegmentation::SharedPtr msg)
 {
     // latest_segmentation_message = *msg;
-    geometry_msgs::msg::Transform current_transform;
+    geometry_msgs::msg::TransformStamped current_transform;
     try
     {
-        current_transform = tf_->lookupTransform(msg->header.frame_id, global_frame_, msg->header.stamp).transform;
+        current_transform = tf_->lookupTransform(global_frame_, msg->header.frame_id, msg->header.stamp);
     }
     catch (tf2::TransformException & ex) {
         // if an exception occurs, we need to remove the empty observation from the list
@@ -207,6 +259,7 @@ void SemanticSegmentationLayer::segmentationCb(vision_msgs::msg::SemanticSegment
     message_tf.message = *msg;
     message_tf.transform = current_transform;
     msg_buffer_->bufferObject(message_tf, msg->header.stamp);
+    RCLCPP_INFO(logger_, "msg buffered");
 }
 
 void SemanticSegmentationLayer::reset()

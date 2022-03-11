@@ -59,7 +59,7 @@ namespace nav2_costmap_2d {
 struct MessageTf 
 {
     vision_msgs::msg::SemanticSegmentation message;
-    geometry_msgs::msg::Transform transform;
+    geometry_msgs::msg::TransformStamped transform;
 };
 
 class SemanticSegmentationLayer : public CostmapLayer
@@ -93,7 +93,7 @@ class SemanticSegmentationLayer : public CostmapLayer
 
     bool rolling_window_;
     bool was_reset_;
-
+    int combination_method_;
 };
 
 }  // namespace nav2_costmap_2d

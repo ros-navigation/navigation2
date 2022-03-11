@@ -70,12 +70,11 @@ class ObjectBuffer
   {
     // first... let's make sure that we don't have any stale objects
     purgeStaleObjects();
-
     // now we'll just copy the objects for the caller
     for (auto obs_it = objects_list_.begin(); obs_it != objects_list_.end(); ++obs_it) {
       objects.push_back(obs_it->object);
     }
-    objects.clear();
+    objects_list_.clear();
   }
 
 
@@ -89,7 +88,7 @@ class ObjectBuffer
     {
       // if we're keeping objects for no time... then we'll only keep one object
       auto obj_it = objects_list_.begin();
-      if(object_keep_time_ == rclcpp::Duration(0.0)){
+      if(object_keep_time_ == rclcpp::Duration::from_seconds(0.0)){
         objects_list_.erase(++obj_it, objects_list_.end());
         return;
       }
@@ -111,10 +110,7 @@ class ObjectBuffer
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
   const rclcpp::Duration object_keep_time_;
-  std::string global_frame_;
-  std::string sensor_frame_;
   std::list<TimedObject<ObjectT>> objects_list_;
-  tf2::Duration tf_tolerance_;
 };
 
 } // namespace nav2_costmap_2d

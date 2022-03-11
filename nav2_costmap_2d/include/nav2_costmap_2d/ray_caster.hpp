@@ -60,6 +60,8 @@ public:
     bool worldToImage(geometry_msgs::msg::PointStamped& point, cv::Point2d& pixel);
 
     bool imageToGroundPlane(cv::Point2d& pixel, geometry_msgs::msg::PointStamped& point);
+
+    bool imageToGroundPlaneLookup(cv::Point2d& pixel, geometry_msgs::msg::PointStamped& point, geometry_msgs::msg::TransformStamped sensor_to_world_tf);
     
 
 private:
@@ -69,6 +71,8 @@ private:
     void cameraInfoCb(sensor_msgs::msg::CameraInfo::SharedPtr msg);
 
     void pointCloudCb(sensor_msgs::msg::PointCloud2::SharedPtr msg);
+
+    bool computeLookupTable(builtin_interfaces::msg::Time & time_msg);
     
     rclcpp::Node::SharedPtr parent_node_;
     std::string global_frame_;
@@ -77,8 +81,11 @@ private:
     std::string camera_info_topic_name_;
     std::string aligned_pc2_topic_name_;
     tf2::Duration tf_tolerance_;
+    std::vector<geometry_msgs::msg::PointStamped> caster_lookup_table_;
     bool use_pointcloud_;
     double max_trace_distance_;
+    size_t img_width_;
+    size_t img_height_;
     
     bool ready_to_raytrace_ = false;
     
