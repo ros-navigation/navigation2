@@ -100,7 +100,7 @@ inline void dilate(
 * @tparam connectivity pixels connectivity type
 * @tparam Label integer type of label
 * @tparam IsBg functor with signature bool (uint8_t)
-* @param image input image. Pixels less than 255 will be interpreted as background
+* @param image input image
 * @param buffer memory block that will be used to store the result (labeled image)
 * and the internal buffer for labels trees
 * @param label_trees union-find data structure
