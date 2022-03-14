@@ -14,8 +14,8 @@
 //
 // Author: Adam Aposhian
 
-#ifndef NAV2_UTIL__PATH_UTILS_HPP_
-#define NAV2_UTIL__PATH_UTILS_HPP_
+#ifndef PATH_UTILS__PATH_UTILS_HPP_
+#define PATH_UTILS__PATH_UTILS_HPP_
 
 #include <cmath>
 #include <initializer_list>
@@ -23,10 +23,7 @@
 
 #include "nav_msgs/msg/path.hpp"
 
-namespace nav2_util
-{
-
-namespace path_building_blocks
+namespace path_utils
 {
 
 /**
@@ -104,14 +101,11 @@ public:
   : Arc(radius, -2.0 * M_PI) {}
 };
 
-
-} // namespace path_building_blocks
-
 nav_msgs::msg::Path generate_path(
   geometry_msgs::msg::PoseStamped start,
   double spacing,
-  std::initializer_list<std::unique_ptr<path_building_blocks::PathSegment>> segments);
+  std::initializer_list<std::unique_ptr<PathSegment>> segments);
 
-}  // namespace nav2_util
+}  // namespace path_utils
 
-#endif  // NAV2_UTIL__PATH_UTILS_HPP_
+#endif  // PATH_UTILS__PATH_UTILS_HPP_

@@ -14,14 +14,11 @@
 
 #include <memory>
 
-#include "nav2_util/path_utils.hpp"
+#include "path_utils.hpp"
 
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
-namespace nav2_util
-{
-
-namespace path_building_blocks
+namespace path_utils
 {
 
 void append_transform_to_path(
@@ -74,12 +71,10 @@ void Arc::append(nav_msgs::msg::Path & path, double spacing) const
   }
 }
 
-}  // namespace path_building_blocks
-
 nav_msgs::msg::Path generate_path(
   geometry_msgs::msg::PoseStamped start,
   double spacing,
-  std::initializer_list<std::unique_ptr<path_building_blocks::PathSegment>> segments)
+  std::initializer_list<std::unique_ptr<PathSegment>> segments)
 {
   nav_msgs::msg::Path path;
   path.header = start.header;
@@ -90,4 +85,4 @@ nav_msgs::msg::Path generate_path(
   return path;
 }
 
-}  // namespace nav2_util
+}  // namespace path_utils

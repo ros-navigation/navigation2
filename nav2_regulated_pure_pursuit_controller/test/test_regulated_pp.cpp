@@ -22,7 +22,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/path_utils.hpp"
+#include "path_utils/path_utils.hpp"
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_core/exceptions.hpp"
@@ -577,9 +577,9 @@ TEST_F(TransformGlobalPlanTest, no_pruning_on_large_costmap)
   constexpr double spacing = 0.1;
   constexpr double circle_radius = 1.0;
 
-  auto global_plan = nav2_util::generate_path(
+  auto global_plan = path_utils::generate_path(
     start_of_path, spacing, {
-    std::make_unique<nav2_util::path_building_blocks::LeftCircle>(circle_radius)
+    std::make_unique<path_utils::LeftCircle>(circle_radius)
   });
 
   ctrl_->setPlan(global_plan);
@@ -621,9 +621,9 @@ TEST_F(TransformGlobalPlanTest, transform_start_selection)
   start_of_path.pose.position.y = 0.0;
   start_of_path.pose.position.z = 0.0;
 
-  auto global_plan = nav2_util::generate_path(
+  auto global_plan = path_utils::generate_path(
     start_of_path, spacing, {
-    std::make_unique<nav2_util::path_building_blocks::LeftCircle>(circle_radius)
+    std::make_unique<path_utils::LeftCircle>(circle_radius)
   });
 
   ctrl_->setPlan(global_plan);
@@ -666,9 +666,9 @@ TEST_F(TransformGlobalPlanTest, all_poses_outside_of_costmap)
   start_of_path.pose.position.y = 0.0;
   start_of_path.pose.position.z = 0.0;
 
-  auto global_plan = nav2_util::generate_path(
+  auto global_plan = path_utils::generate_path(
     start_of_path, spacing, {
-    std::make_unique<nav2_util::path_building_blocks::LeftCircle>(circle_radius)
+    std::make_unique<path_utils::LeftCircle>(circle_radius)
   });
 
   ctrl_->setPlan(global_plan);
@@ -708,9 +708,9 @@ TEST_F(TransformGlobalPlanTest, good_circle_shortcut)
   start_of_path.pose.position.y = 0.0;
   start_of_path.pose.position.z = 0.0;
 
-  auto global_plan = nav2_util::generate_path(
+  auto global_plan = path_utils::generate_path(
     start_of_path, spacing, {
-    std::make_unique<nav2_util::path_building_blocks::LeftCircle>(circle_radius)
+    std::make_unique<path_utils::LeftCircle>(circle_radius)
   });
 
   ctrl_->setPlan(global_plan);
@@ -753,9 +753,9 @@ TEST_F(TransformGlobalPlanTest, costmap_pruning)
 
   constexpr double path_length = 100.0;
 
-  auto global_plan = nav2_util::generate_path(
+  auto global_plan = path_utils::generate_path(
     start_of_path, spacing, {
-    std::make_unique<nav2_util::path_building_blocks::Straight>(path_length)
+    std::make_unique<path_utils::Straight>(path_length)
   });
 
   ctrl_->setPlan(global_plan);
@@ -798,11 +798,11 @@ TEST_F(TransformGlobalPlanTest, prune_after_leaving_costmap)
 
   constexpr double path_length = 100.0;
 
-  auto global_plan = nav2_util::generate_path(
+  auto global_plan = path_utils::generate_path(
     start_of_path, spacing, {
-    std::make_unique<nav2_util::path_building_blocks::Straight>(path_length),
-    std::make_unique<nav2_util::path_building_blocks::LeftTurnAround>(1.0),
-    std::make_unique<nav2_util::path_building_blocks::Straight>(path_length)
+    std::make_unique<path_utils::Straight>(path_length),
+    std::make_unique<path_utils::LeftTurnAround>(1.0),
+    std::make_unique<path_utils::Straight>(path_length)
   });
 
   ctrl_->setPlan(global_plan);
