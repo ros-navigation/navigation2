@@ -235,7 +235,7 @@ protected:
    * @param pose Pose input to determine the cusp position
    * @return robot distance from the cusp
    */
-  double findCusp(const geometry_msgs::msg::PoseStamped & pose);
+  double findVelocitySignChange(const geometry_msgs::msg::PoseStamped & pose);
 
   /**
    * Get the greatest extent of the costmap in meters from the center.

@@ -274,7 +274,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
 
-  double dist_to_cusp = findCusp(pose);
+  double dist_to_cusp = findVelocitySignChange(pose);
 
   // if the lookahead distance is further than the cusp, use the cusp distance instead
   if (dist_to_cusp < lookahead_dist) {
@@ -659,7 +659,7 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   return transformed_plan;
 }
 
-double RegulatedPurePursuitController::findCusp(
+double RegulatedPurePursuitController::findVelocitySignChange(
   const geometry_msgs::msg::PoseStamped & pose)
 {
   // Iterating through the global path to determine the position of the cusp

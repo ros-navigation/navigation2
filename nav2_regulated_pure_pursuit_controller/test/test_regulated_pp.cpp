@@ -94,10 +94,10 @@ public:
       linear_vel, sign);
   }
 
-  double findCuspWrapper(
+  double findVelocitySignChangeWrapper(
     const geometry_msgs::msg::PoseStamped & pose)
   {
-    return findCusp(pose);
+    return findVelocitySignChange(pose);
   }
 
   nav_msgs::msg::Path transformGlobalPlanWrapper(
@@ -159,7 +159,7 @@ TEST(RegulatedPurePursuitTest, createCarrotMsg)
   EXPECT_EQ(rtn->point.z, 0.01);
 }
 
-TEST(RegulatedPurePursuitTest, findCusp)
+TEST(RegulatedPurePursuitTest, findVelocitySignChange)
 {
   auto ctrl = std::make_shared<BasicAPIRPP>();
   geometry_msgs::msg::PoseStamped pose;
@@ -175,13 +175,13 @@ TEST(RegulatedPurePursuitTest, findCusp)
   path.poses[2].pose.position.x = -1.0;
   path.poses[2].pose.position.y = -1.0;
   ctrl->setPlan(path);
-  auto rtn = ctrl->findCuspWrapper(pose);
+  auto rtn = ctrl->findVelocitySignChangeWrapper(pose);
   EXPECT_EQ(rtn, sqrt(5.0));
 
   path.poses[2].pose.position.x = 3.0;
   path.poses[2].pose.position.y = 3.0;
   ctrl->setPlan(path);
-  rtn = ctrl->findCuspWrapper(pose);
+  rtn = ctrl->findVelocitySignChangeWrapper(pose);
   EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
 
