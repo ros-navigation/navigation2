@@ -15,7 +15,6 @@
 #include <gtest/gtest.h>
 #include <cmath>
 
-#include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/image_processing.hpp"
 #include "image_tests_helper.hpp"
 
@@ -118,15 +117,17 @@ protected:
   template<ConnectivityType connectivity>
   bool spiralTest();
 
+  inline static bool isBackground(uint8_t pixel)
+  {
+    return pixel == BACKGROUND_CODE;
+  }
+
 protected:
   MemoryBuffer buffer_;
   imgproc_impl::EquivalenceLabelTrees<uint8_t> label_trees_;
+  static const uint8_t BACKGROUND_CODE = 0;
+  static const uint8_t FOREGROUND_CODE = 255;
 };
-
-bool isBackground(uint8_t pixel)
-{
-  return pixel != LETHAL_OBSTACLE && pixel != NO_INFORMATION;
-}
 
 TEST_F(ConnectedComponentsTester, way4EmptyTest) {
   Image<uint8_t> empty;
@@ -139,7 +140,7 @@ TEST_F(ConnectedComponentsTester, way4EmptyTest) {
 TEST_F(ConnectedComponentsTester, way4SinglePixelTest) {
   Image<uint8_t> input = makeImage(1, 1, image_buffer_bytes_);
   {
-    input.row(0)[0] = 0;
+    input.row(0)[0] = BACKGROUND_CODE;
 
     const auto result = connectedComponents<ConnectivityType::Way4>(
       input, buffer_, label_trees_,
@@ -149,7 +150,7 @@ TEST_F(ConnectedComponentsTester, way4SinglePixelTest) {
     ASSERT_EQ(result.second, 1);
   }
   {
-    input.row(0)[0] = 255;
+    input.row(0)[0] = FOREGROUND_CODE;
 
     const auto result = connectedComponents<ConnectivityType::Way4>(
       input, buffer_, label_trees_,
@@ -163,8 +164,8 @@ TEST_F(ConnectedComponentsTester, way4SinglePixelTest) {
 TEST_F(ConnectedComponentsTester, way4ImageSmallTest) {
   {
     Image<uint8_t> input = makeImage(1, 2, image_buffer_bytes_);
-    input.row(0)[0] = 0;
-    input.row(0)[1] = 255;
+    input.row(0)[0] = BACKGROUND_CODE;
+    input.row(0)[1] = FOREGROUND_CODE;
 
     const auto result = connectedComponents<ConnectivityType::Way4>(
       input, buffer_, label_trees_,
@@ -176,8 +177,8 @@ TEST_F(ConnectedComponentsTester, way4ImageSmallTest) {
   }
   {
     Image<uint8_t> input = makeImage(2, 1, image_buffer_bytes_);
-    input.row(0)[0] = 0;
-    input.row(1)[0] = 255;
+    input.row(0)[0] = BACKGROUND_CODE;
+    input.row(1)[0] = FOREGROUND_CODE;
 
     const auto result = connectedComponents<ConnectivityType::Way4>(
       input, buffer_, label_trees_,
@@ -192,14 +193,14 @@ TEST_F(ConnectedComponentsTester, way4ImageSmallTest) {
 TEST_F(ConnectedComponentsTester, way4LabelsOverflowTest) {
   // big chessboard image
   Image<uint8_t> input = makeImage(32, 17, image_buffer_bytes_);
-  uint8_t v = 255;
+  uint8_t v = FOREGROUND_CODE;
   input.forEach(
     [&v](uint8_t & pixel) {
       pixel = v;
-      if (v == 0) {
-        v = 255;
+      if (v == BACKGROUND_CODE) {
+        v = FOREGROUND_CODE;
       } else {
-        v = 0;
+        v = BACKGROUND_CODE;
       }
     });
 
