@@ -274,11 +274,15 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
 
-  double dist_to_cusp = findVelocitySignChange(pose);
+  // Check for reverse driving
+  if (allow_reversing_) {
+    // Cusp check
+    double dist_to_cusp = findVelocitySignChange(pose);
 
-  // if the lookahead distance is further than the cusp, use the cusp distance instead
-  if (dist_to_cusp < lookahead_dist) {
-    lookahead_dist = dist_to_cusp;
+    // if the lookahead distance is further than the cusp, use the cusp distance instead
+    if (dist_to_cusp < lookahead_dist) {
+      lookahead_dist = dist_to_cusp;
+    }
   }
 
   auto carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan);
