@@ -66,8 +66,9 @@ inline BT::NodeStatus PathLongerOnApproach::tick()
     // Reset the starting point since we're starting a new iteration of
     // PathLongerOnApproach (moving from IDLE to RUNNING)
     first_time_ = true;
-    return BT::NodeStatus::RUNNING;
   }
+
+  setStatus(BT::NodeStatus::RUNNING);
 
   // Check if the path is updated and valid, compare the old and the new path length,
   // given the goal proximity and check if the new path is longer
