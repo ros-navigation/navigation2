@@ -103,7 +103,7 @@ private:
   double prox_len_ = std::numeric_limits<double>::max();
   double length_factor_ = std::numeric_limits<double>::max();
   rclcpp::Node::SharedPtr node_;
-  bool first_time_ = false;
+  bool first_time_ = true;
 };
 
 }  // namespace nav2_behavior_tree

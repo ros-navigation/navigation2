@@ -62,10 +62,17 @@ inline BT::NodeStatus PathLongerOnApproach::tick()
   getInput("prox_len", prox_len_);
   getInput("length_factor", length_factor_);
 
+  if (status() == BT::NodeStatus::IDLE) {
+    // Reset the starting point since we're starting a new iteration of
+    // PathLongerOnApproach (moving from IDLE to RUNNING)
+    first_time_ = true;
+    return BT::NodeStatus::RUNNING;
+  }
+
   // Check if the path is updated and valid, compare the old and the new path length,
   // given the goal proximity and check if the new path is longer
   if (isPathUpdated(new_path_, old_path_) && isRobotInGoalProximity(old_path_, prox_len_) &&
-    isNewPathLonger(new_path_, old_path_, length_factor_) && first_time_)
+    isNewPathLonger(new_path_, old_path_, length_factor_) && !first_time_)
   {
     const BT::NodeStatus child_state = child_node_->executeTick();
     switch (child_state) {
@@ -83,7 +90,7 @@ inline BT::NodeStatus PathLongerOnApproach::tick()
     }
   }
   old_path_ = new_path_;
-  first_time_ = true;
+  first_time_ = false;
   return BT::NodeStatus::SUCCESS;
 }
 
