@@ -43,7 +43,7 @@ NavigateThroughPosesNavigator::configure(
   path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
 
   // Odometry smoother object for getting current speed
-  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(node, 0.3);
+  odom_smoother_ = odom_smoother;
 
   return true;
 }

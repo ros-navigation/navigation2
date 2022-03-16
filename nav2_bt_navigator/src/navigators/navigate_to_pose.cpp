@@ -24,7 +24,8 @@ namespace nav2_bt_navigator
 
 bool
 NavigateToPoseNavigator::configure(
-  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node)
+  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
+  std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
 {
   start_time_ = rclcpp::Time(0);
   auto node = parent_node.lock();
@@ -42,7 +43,7 @@ NavigateToPoseNavigator::configure(
   path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
 
   // Odometry smoother object for getting current speed
-  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(node, 0.3);
+  odom_smoother_ = odom_smoother;
 
   self_client_ = rclcpp_action::create_client<ActionT>(node, getName());
 
