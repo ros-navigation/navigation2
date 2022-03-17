@@ -82,8 +82,8 @@ RUN --mount=type=cache,target=/var/cache/apt \
       ccache \
       libasio-dev \
       libtinyxml2-dev \
-      lld \
-    && rosdep update
+      lld
+    # && rosdep update
 
 ENV ROS_VERSION=2 \
     ROS_PYTHON_VERSION=3

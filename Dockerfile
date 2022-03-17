@@ -60,7 +60,7 @@ RUN apt-get update && \
       fastcov \
       git+https://github.com/ruffsl/colcon-cache.git@a937541bfc496c7a267db7ee9d6cceca61e470ca \
       git+https://github.com/ruffsl/colcon-clean.git@a7f1074d1ebc1a54a6508625b117974f2672f2a9 \
-    && rosdep update \
+    # && rosdep update \
     && colcon mixin update \
     && colcon metadata update \
     && rm -rf /var/lib/apt/lists/*

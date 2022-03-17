@@ -56,8 +56,8 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -q -y \
       ccache \
       lcov \
-      lld \
-    && rosdep update
+      lld
+    # && rosdep update
 
 # install overlay dependencies
 ARG OVERLAY_WS
