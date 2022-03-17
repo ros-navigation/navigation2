@@ -38,15 +38,6 @@ class TestLatticeGenerator(unittest.TestCase):
 
         self.minimal_set = lattice_gen.run()
 
-    def test_minimal_set_angles_in_correct_range(self):
-        # Test that angles always lie within -pi to pi
-
-        for start_angle in self.minimal_set.keys():
-            for trajectory in self.minimal_set[start_angle]:
-                for angle in trajectory.path.yaws:
-                    self.assertGreaterEqual(angle, -np.pi)
-                    self.assertLessEqual(angle, np.pi)
-
     def test_minimal_set_lengths_are_positive(self):
         # Test that lengths are all positive
 
@@ -83,6 +74,17 @@ class TestLatticeGenerator(unittest.TestCase):
 
                 self.assertEqual(end_point_angle, trajectory.parameters.end_angle)
 
+    def test_output_angles_in_correct_range(self):
+        # Test that the outputted angles always lie within 0 to 2*pi
+
+        for start_angle in self.minimal_set.keys():
+            for trajectory in self.minimal_set[start_angle]:
+                
+                output = trajectory.path.to_output_format()
+
+                for x, y, angle in output:
+                    self.assertGreaterEqual(angle, 0)
+                    self.assertLessEqual(angle, 2*np.pi)
 
 if __name__ == '__main__':
     unittest.main()

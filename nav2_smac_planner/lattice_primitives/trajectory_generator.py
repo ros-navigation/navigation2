@@ -30,8 +30,6 @@ class TrajectoryGenerator:
         """Init TrajectoryGenerator using the user supplied config."""
         self.turning_radius = config['turning_radius']
 
-        self.vectorized_normalize_angle = np.vectorize(normalize_angle)
-
     def _get_arc_point(
         self, trajectory_params: TrajectoryParameters, t: float
     ) -> Tuple[float, float, float]:
@@ -212,7 +210,7 @@ class TrajectoryGenerator:
         # Convert to numpy arrays
         xs = np.array(xs)
         ys = np.array(ys)
-        yaws = self.vectorized_normalize_angle(np.array(yaws))
+        yaws = np.array(yaws)
 
         # The last point may be slightly off due to rounding issues
         # so we correct the last point to be exactly the end point
