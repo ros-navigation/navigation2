@@ -107,6 +107,11 @@ private:
      * @warning If image.empty() the behavior is undefined
    */
   void removeSinglePixels(Image<uint8_t> & image) const;
+  /**
+   * @brief Separates image pixels into objects and background
+   * @return true if the pixel value is not an obstacle code. False in other case
+   */
+  bool isBackground(uint8_t pixel) const;
 
 private:
   // Pixels connectivity type. Determines how pixels belonging to the same group can be arranged
@@ -117,6 +122,8 @@ private:
   mutable MemoryBuffer buffer_;
   // Implementing the removal of grouped noise
   imgproc_impl::GroupsRemover groups_remover_;
+  // Interpret NO_INFORMATION code as obstacle
+  bool no_information_is_obstacle_{};
 };
 
 }  // namespace nav2_costmap_2d

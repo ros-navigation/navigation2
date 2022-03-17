@@ -23,11 +23,6 @@
 
 namespace nav2_costmap_2d
 {
-bool isBackground(uint8_t pixel)
-{
-  return pixel != LETHAL_OBSTACLE && pixel != NO_INFORMATION &&
-         pixel != INSCRIBED_INFLATED_OBSTACLE;
-}
 
 void
 DenoiseLayer::onInitialize()
@@ -113,6 +108,7 @@ DenoiseLayer::updateCosts(
   if (min_x >= max_x || min_y >= max_y) {
     return;
   }
+  no_information_is_obstacle_ = master_grid.getDefaultValue() != NO_INFORMATION;
 
   // wrap roi_image over existing costmap2d buffer
   unsigned char * master_array = master_grid.getCharMap();
@@ -156,7 +152,7 @@ DenoiseLayer::removeGroups(Image<uint8_t> & image) const
 {
   groups_remover_.removeGroups(
     image, buffer_, group_connectivity_type_, minimal_group_size_,
-    isBackground);
+    [this](uint8_t pixel) {return isBackground(pixel);});
 }
 
 void
@@ -175,6 +171,15 @@ DenoiseLayer::removeSinglePixels(Image<uint8_t> & image) const
         img = FREE_SPACE;
       }
     });
+}
+
+bool DenoiseLayer::isBackground(uint8_t pixel) const
+{
+  bool is_obstacle =
+    pixel == LETHAL_OBSTACLE ||
+    pixel == INSCRIBED_INFLATED_OBSTACLE ||
+    (pixel == NO_INFORMATION && no_information_is_obstacle_);
+  return !is_obstacle;
 }
 
 }  // namespace nav2_costmap_2d

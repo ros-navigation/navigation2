@@ -33,6 +33,11 @@ namespace nav2_costmap_2d
 class DenoiseLayerTester : public ::testing::Test
 {
 public:
+  void SetUp() override
+  {
+    denoise_.no_information_is_obstacle_ = true;
+  }
+
   void removeSinglePixels(Image<uint8_t> & image, ConnectivityType connectivity)
   {
     denoise_.group_connectivity_type_ = connectivity;
@@ -385,7 +390,8 @@ TEST_F(DenoiseLayerTester, updateCostsIfDisabled) {
 
 TEST_F(DenoiseLayerTester, updateCosts) {
   nav2_costmap_2d::DenoiseLayer layer;
-  nav2_costmap_2d::Costmap2D costmap(1, 1, 1., 0., 0., 255);
+  nav2_costmap_2d::Costmap2D costmap(1, 1, 1., 0., 0.);
+  costmap.setCost(0, 0, 255);
   DenoiseLayerTester::configure(layer, ConnectivityType::Way4, 2);
 
   layer.updateCosts(costmap, 0, 0, 1, 1);
