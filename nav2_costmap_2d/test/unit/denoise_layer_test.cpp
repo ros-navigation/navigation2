@@ -188,11 +188,12 @@ TEST_F(DenoiseLayerTester, removeSinglePixelsFromExtremelySmallImage) {
 }
 
 TEST_F(DenoiseLayerTester, removeSinglePixelsFromNonBinary) {
+  // buffer for 9 pixels with neutral (between FREE_SPACE and INSCRIBED_INFLATED_OBSTACLE) value
   image_buffer_bytes.assign(9, 250);
   Image<uint8_t> in = makeImage<uint8_t>(3, 3, image_buffer_bytes);
-  in.row(1)[1] = 255;
+  in.row(1)[1] = NO_INFORMATION;
   Image<uint8_t> exp = clone(in, image_buffer_bytes2);
-  exp.row(1)[1] = 0;
+  exp.row(1)[1] = FREE_SPACE;
 
   auto out = clone(in, image_buffer_bytes3);
   removeSinglePixels(out, ConnectivityType::Way4);
@@ -286,6 +287,7 @@ TEST_F(DenoiseLayerTester, removePixelsGroupFromExtremelySmallImage) {
 }
 
 TEST_F(DenoiseLayerTester, removePixelsGroupFromNonBinary) {
+  // buffer for 9 pixels with neutral (between FREE_SPACE and INSCRIBED_INFLATED_OBSTACLE) value
   image_buffer_bytes.assign(9, 250);
   Image<uint8_t> in = makeImage<uint8_t>(3, 3, image_buffer_bytes);
   in.row(1)[1] = 255;
@@ -391,12 +393,12 @@ TEST_F(DenoiseLayerTester, updateCostsIfDisabled) {
 TEST_F(DenoiseLayerTester, updateCosts) {
   nav2_costmap_2d::DenoiseLayer layer;
   nav2_costmap_2d::Costmap2D costmap(1, 1, 1., 0., 0.);
-  costmap.setCost(0, 0, 255);
+  costmap.setCost(0, 0, NO_INFORMATION);
   DenoiseLayerTester::configure(layer, ConnectivityType::Way4, 2);
 
   layer.updateCosts(costmap, 0, 0, 1, 1);
 
-  ASSERT_EQ(costmap.getCost(0), 0);
+  ASSERT_EQ(costmap.getCost(0), FREE_SPACE);
 }
 
 // Copy paste from declare_parameter_test.cpp
