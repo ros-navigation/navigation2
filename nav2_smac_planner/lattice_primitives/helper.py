@@ -17,7 +17,7 @@ import numpy as np
 
 def normalize_angle(angle):
     """
-    Normalize the angle to between (-pi, pi].
+    Normalize the angle to between [0, pi).
 
     Args:
     angle: float
@@ -28,10 +28,10 @@ def normalize_angle(angle):
     The normalized angle in the range [-pi,pi)
 
     """
-    while angle > np.pi:
+    while angle >= 2*np.pi:
         angle -= 2*np.pi
 
-    while angle < -np.pi:
+    while angle < 0:
         angle += 2*np.pi
 
     return angle
