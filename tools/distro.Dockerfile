@@ -13,7 +13,7 @@
 #   --build-arg OVERLAY_MIXINS \
 #   -f distro.Dockerfile ../
 
-ARG FROM_IMAGE=ros:rolling
+ARG FROM_IMAGE=ros:rolling-ros-base-focal
 ARG OVERLAY_WS=/opt/overlay_ws
 
 # multi-stage for caching
