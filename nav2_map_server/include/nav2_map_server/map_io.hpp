@@ -22,6 +22,9 @@
 
 #include "nav2_map_server/map_mode.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "grid_map_ros/grid_map_ros.hpp"
+#include "grid_map_ros/GridMapRosConverter.hpp"
+#include "grid_map_msgs/msg/grid_map.hpp"
 
 /* Map input part */
 
@@ -97,6 +100,11 @@ struct SaveParameters
 bool saveMapToFile(
   const nav_msgs::msg::OccupancyGrid & map,
   const SaveParameters & save_parameters);
+
+bool saveMapToFile(
+  const grid_map_msgs::msg::GridMap & map,
+  const SaveParameters & save_parameters);
+
 
 }  // namespace nav2_map_server
 

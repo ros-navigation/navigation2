@@ -495,7 +495,13 @@ void tryWriteMapToFile(
     std::cout << "[INFO] [map_io]: Writing map occupancy data to " << mapdatafile << std::endl;
     image.write(mapdatafile);
   }
+}
 
+void WriteMetadataToFile(
+  const nav_msgs::msg::OccupancyGrid & map,
+  const SaveParameters & save_parameters)
+{
+  std::string mapdatafile = save_parameters.map_file_name + "." + save_parameters.image_format;
   std::string mapmetadatafile = save_parameters.map_file_name + ".yaml";
   {
     std::ofstream yaml(mapmetadatafile);
@@ -541,10 +547,57 @@ bool saveMapToFile(
     checkSaveParameters(save_parameters_loc);
 
     tryWriteMapToFile(map, save_parameters_loc);
+    WriteMetadataToFile(map, save_parameters_loc);
   } catch (std::exception & e) {
     std::cout << "[ERROR] [map_io]: Failed to write map for reason: " << e.what() << std::endl;
     return false;
   }
+  return true;
+}
+
+bool saveMapToFile(
+  const grid_map_msgs::msg::GridMap & map,
+  const SaveParameters & save_parameters)
+{
+  // Local copy of SaveParameters that might be modified by checkSaveParameters()
+  SaveParameters save_parameters_loc = save_parameters;
+  checkSaveParameters(save_parameters_loc);
+
+  grid_map::GridMap gridmap;
+  grid_map::GridMapRosConverter::fromMessage(map, gridmap, {"occupancy", "elevation"});
+
+  nav_msgs::msg::OccupancyGrid occ_grid;
+  grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "occupancy", 0.0, 254.0, occ_grid);
+  nav_msgs::msg::OccupancyGrid ele_grid;
+  grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "elevation", -5.0, 5.0, ele_grid);
+
+  try {
+    // Checking map parameters for consistency
+    checkSaveParameters(save_parameters_loc);
+    save_parameters_loc.map_file_name = "occ_" + save_parameters_loc.map_file_name;
+
+    tryWriteMapToFile(occ_grid, save_parameters_loc);
+  } catch (std::exception & e) {
+    std::cout << "[ERROR] [map_io]: Failed to write map for reason: " << e.what() << std::endl;
+    return false;
+  }
+
+    try {
+    // Checking map parameters for consistency
+    save_parameters_loc = save_parameters;
+    checkSaveParameters(save_parameters_loc);
+    save_parameters_loc.map_file_name = "ele_" + save_parameters_loc.map_file_name;
+
+    tryWriteMapToFile(ele_grid, save_parameters_loc);
+  } catch (std::exception & e) {
+    std::cout << "[ERROR] [map_io]: Failed to write map for reason: " << e.what() << std::endl;
+    return false;
+  }
+
+  save_parameters_loc = save_parameters;
+  checkSaveParameters(save_parameters_loc);
+  WriteMetadataToFile(occ_grid, save_parameters_loc);
+
   return true;
 }
 

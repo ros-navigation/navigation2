@@ -144,35 +144,65 @@ bool MapSaver::saveMapTopicToFile(
   std::string map_topic_loc = map_topic;
   SaveParameters save_parameters_loc = save_parameters;
 
-  RCLCPP_INFO(
-    get_logger(), "Saving map from \'%s\' topic to \'%s\' file",
-    map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
+  // Correct map_topic_loc if necessary
+  if (map_topic_loc == "") {
+    map_topic_loc = "map";
+    RCLCPP_WARN(
+      get_logger(), "Map topic unspecified. Map messages will be read from \'%s\' topic",
+      map_topic_loc.c_str());
+  }
 
+  bool elevation_map = false;
+  auto topic_info = get_publishers_info_by_topic(map_topic_loc);
+
+  if (!topic_info.empty()) {
+    if (topic_info[0].topic_type() == "nav_msgs/msg/OccupancyGrid") {
+      elevation_map = false;
+      RCLCPP_INFO(
+        get_logger(), "Saving map (occupancy) from \'%s\' topic to \'%s\' file",
+        map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
+    } else if (topic_info[0].topic_type() == "grid_map_msgs/msg/GridMap") {
+      elevation_map = true;
+      RCLCPP_INFO(
+        get_logger(), "Saving map (occupancy + elevation) from \'%s\' topic to \'%s\' file",
+        map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
+    } else {
+      RCLCPP_ERROR(get_logger(), "Unsupported topic type [%s]", topic_info[0].topic_type().c_str());
+      return false;
+    }
+  } else {
+    RCLCPP_ERROR(get_logger(), "Map topic not found [%s]", map_topic_loc.c_str());
+    return false;
+  }
+
+  // Set default for MapSaver node thresholds parameters
+  if (save_parameters_loc.free_thresh == 0.0) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Free threshold unspecified. Setting it to default value: %f",
+      free_thresh_default_);
+    save_parameters_loc.free_thresh = free_thresh_default_;
+  }
+  if (save_parameters_loc.occupied_thresh == 0.0) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Occupied threshold unspecified. Setting it to default value: %f",
+      occupied_thresh_default_);
+    save_parameters_loc.occupied_thresh = occupied_thresh_default_;
+  }
+
+  if (elevation_map) {
+    return saveGridmapTopicToFile(map_topic_loc, save_parameters_loc);
+  } else {
+    return saveOccGridTopicToFile(map_topic_loc, save_parameters_loc);
+  }
+}
+
+bool MapSaver::saveOccGridTopicToFile(
+  const std::string & map_topic,
+  const SaveParameters & save_parameters)
+{std::cerr << "===> saveOccGridTopicToFile" << std::endl;
   try {
-    // Correct map_topic_loc if necessary
-    if (map_topic_loc == "") {
-      map_topic_loc = "map";
-      RCLCPP_WARN(
-        get_logger(), "Map topic unspecified. Map messages will be read from \'%s\' topic",
-        map_topic_loc.c_str());
-    }
-
-    // Set default for MapSaver node thresholds parameters
-    if (save_parameters_loc.free_thresh == 0.0) {
-      RCLCPP_WARN(
-        get_logger(),
-        "Free threshold unspecified. Setting it to default value: %f",
-        free_thresh_default_);
-      save_parameters_loc.free_thresh = free_thresh_default_;
-    }
-    if (save_parameters_loc.occupied_thresh == 0.0) {
-      RCLCPP_WARN(
-        get_logger(),
-        "Occupied threshold unspecified. Setting it to default value: %f",
-        occupied_thresh_default_);
-      save_parameters_loc.occupied_thresh = occupied_thresh_default_;
-    }
-
     std::promise<nav_msgs::msg::OccupancyGrid::SharedPtr> prom;
     std::future<nav_msgs::msg::OccupancyGrid::SharedPtr> future_result = prom.get_future();
     // A callback function that receives map message from subscribed topic
@@ -195,8 +225,9 @@ bool MapSaver::saveMapTopicToFile(
 
     auto option = rclcpp::SubscriptionOptions();
     option.callback_group = callback_group;
+
     auto map_sub = create_subscription<nav_msgs::msg::OccupancyGrid>(
-      map_topic_loc, map_qos, mapCallback, option);
+      map_topic, map_qos, mapCallback, option);
 
     // Create SingleThreadedExecutor to spin map_sub in callback_group
     rclcpp::executors::SingleThreadedExecutor executor;
@@ -212,7 +243,70 @@ bool MapSaver::saveMapTopicToFile(
     map_sub.reset();
     // Map message received. Saving it to file
     nav_msgs::msg::OccupancyGrid::SharedPtr map_msg = future_result.get();
-    if (saveMapToFile(*map_msg, save_parameters_loc)) {
+    if (saveMapToFile(*map_msg, save_parameters)) {
+      RCLCPP_INFO(get_logger(), "Map saved successfully");
+      return true;
+    } else {
+      RCLCPP_ERROR(get_logger(), "Failed to save the map");
+      return false;
+    }
+  } catch (std::exception & e) {
+    RCLCPP_ERROR(get_logger(), "Failed to save the map: %s", e.what());
+    return false;
+  }
+
+  return false;
+}
+
+
+bool MapSaver::saveGridmapTopicToFile(
+  const std::string & map_topic,
+  const SaveParameters & save_parameters)
+{
+  std::cerr << "===> saveGridmapTopicToFile" << std::endl;
+  try {
+    std::promise<grid_map_msgs::msg::GridMap::SharedPtr> prom;
+    std::future<grid_map_msgs::msg::GridMap::SharedPtr> future_result = prom.get_future();
+    // A callback function that receives map message from subscribed topic
+    auto mapCallback = [&prom](
+      const grid_map_msgs::msg::GridMap::SharedPtr msg) -> void {
+        prom.set_value(msg);
+      };
+
+    rclcpp::QoS map_qos(10);  // initialize to default
+    if (map_subscribe_transient_local_) {
+      map_qos.transient_local();
+      map_qos.reliable();
+      map_qos.keep_last(1);
+    }
+
+    // Create new CallbackGroup for map_sub
+    auto callback_group = create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
+
+    auto option = rclcpp::SubscriptionOptions();
+    option.callback_group = callback_group;
+
+    auto map_sub = create_subscription<grid_map_msgs::msg::GridMap>(
+      map_topic, map_qos, mapCallback, option);
+
+    // Create SingleThreadedExecutor to spin map_sub in callback_group
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_callback_group(callback_group, get_node_base_interface());
+    // Spin until map message received
+    auto timeout = save_map_timeout_->to_chrono<std::chrono::nanoseconds>();
+    auto status = executor.spin_until_future_complete(future_result, timeout);
+    if (status != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR(get_logger(), "Failed to spin map subscription");
+      return false;
+    }
+    // map_sub is no more needed
+    map_sub.reset();
+    // Map message received. Saving it to file
+    grid_map_msgs::msg::GridMap::SharedPtr map_msg = future_result.get();
+
+    if (saveMapToFile(*map_msg, save_parameters)) {
       RCLCPP_INFO(get_logger(), "Map saved successfully");
       return true;
     } else {

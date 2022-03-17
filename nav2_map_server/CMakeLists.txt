@@ -3,6 +3,8 @@ project(nav2_map_server)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules)
 
+set(CMAKE_BUILD_TYPE debug)
+
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -14,6 +16,9 @@ find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(GRAPHICSMAGICKCPP REQUIRED)
+find_package(grid_map_ros REQUIRED)
+find_package(grid_map_msgs REQUIRED)
+find_package(grid_map_core REQUIRED)
 
 nav2_package()
 
@@ -56,7 +61,10 @@ set(map_io_dependencies
   yaml_cpp_vendor
   nav_msgs
   nav2_util
-  tf2)
+  tf2
+  grid_map_ros
+  grid_map_msgs
+  grid_map_core)
 
 set(map_server_dependencies
   rclcpp
@@ -65,14 +73,20 @@ set(map_server_dependencies
   nav2_msgs
   yaml_cpp_vendor
   std_msgs
-  nav2_util)
+  nav2_util
+  grid_map_ros
+  grid_map_msgs
+  grid_map_core)
 
 set(map_saver_dependencies
   rclcpp
   rclcpp_lifecycle
   nav_msgs
   nav2_msgs
-  nav2_util)
+  nav2_util
+  grid_map_ros
+  grid_map_msgs
+  grid_map_core)
 
 ament_target_dependencies(${map_server_executable}
   ${map_server_dependencies})

@@ -22,6 +22,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/srv/save_map.hpp"
+#include "grid_map_ros/grid_map_ros.hpp"
+#include "grid_map_msgs/msg/grid_map.hpp"
 
 #include "map_io.hpp"
 
@@ -97,6 +99,14 @@ protected:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::SaveMap::Request> request,
     std::shared_ptr<nav2_msgs::srv::SaveMap::Response> response);
+
+  bool saveOccGridTopicToFile(
+    const std::string & map_topic,
+    const SaveParameters & save_parameters);
+
+  bool saveGridmapTopicToFile(
+    const std::string & map_topic,
+    const SaveParameters & save_parameters);
 
   // The timeout for saving the map in service
   std::shared_ptr<rclcpp::Duration> save_map_timeout_;
