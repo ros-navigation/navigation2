@@ -103,6 +103,8 @@ _commands:
                   --from-paths src \
                   --ignore-src \
                   --skip-keys " \
+                    gazebo11 \
+                    libgazebo11-dev \
                     slam_toolbox \
                     " \
                   --verbose | \

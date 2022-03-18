@@ -79,6 +79,8 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && rosdep install -q -y \
       --from-paths src \
       --skip-keys " \
+        gazebo11 \
+        libgazebo11-dev \
         slam_toolbox \
         " \
       --ignore-src \
@@ -107,6 +109,8 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && rosdep install -q -y \
       --from-paths src \
       --skip-keys " \
+        gazebo11 \
+        libgazebo11-dev \
         slam_toolbox \
         "\
       --ignore-src \
