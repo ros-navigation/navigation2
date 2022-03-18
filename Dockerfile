@@ -53,6 +53,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get install -y \
       ccache \
       lcov \
+      libgazebo-dev \
       lld \
       python3-pip \
       ros-$ROS_DISTRO-rmw-fastrtps-cpp \
