@@ -56,6 +56,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
       libgazebo-dev \
       lld \
       python3-pip \
+      python3.9-dev \
       ros-$ROS_DISTRO-rmw-fastrtps-cpp \
       ros-$ROS_DISTRO-rmw-connextdds \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
