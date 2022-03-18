@@ -34,38 +34,6 @@
 namespace nav2_ceres_costaware_smoother
 {
 
-template<typename T>
-struct DoubleOnlyLogger
-{
-  // template<typename... ArgTypes>
-  static void log(const char *, T, T, T, T, T, T, T)
-  {
-  }
-
-  static void log(const char *, T, T, T, T, T, const nav2_costmap_2d::Costmap2D *)
-  {
-  }
-};
-
-template<>
-void DoubleOnlyLogger<double>::log(
-  const char * format, double a1, double a2, double a3, double a4,
-  double a5, double a6, double a7)
-{
-  RCLCPP_INFO(rclcpp::get_logger("ceres_smoother"), format, a1, a2, a3, a4, a5, a6, a7);
-}
-
-template<>
-void DoubleOnlyLogger<double>::log(
-  const char * format, double a1, double a2, double a3, double a4,
-  double a5, const nav2_costmap_2d::Costmap2D * costmap)
-{
-  RCLCPP_INFO(
-    rclcpp::get_logger("ceres_smoother"), format, a1, a2, a3, a4, a5,
-    (double)costmap->getCost(a3 - 0.5, a4 - 0.5),
-    (double)costmap->getCharMap()[(int)(a4 - 0.5) * costmap->getSizeInCellsX() +
-    (int)(a3 - 0.5)]);
-}
 /**
  * @struct nav2_ceres_costaware_smoother::SmootherCostFunction
  * @brief Cost function for path smoothing with multiple terms
