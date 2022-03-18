@@ -46,7 +46,9 @@ APT::Install-Suggests "0";\n\
 
 # install CI dependencies
 ARG RTI_NC_LICENSE_ACCEPTED=yes
-RUN apt-get update && \
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \
+    apt-get update && \
     apt-get upgrade -y --with-new-pkgs && \
     apt-get install -y \
       ccache \
@@ -70,7 +72,9 @@ ARG UNDERLAY_WS
 ENV UNDERLAY_WS $UNDERLAY_WS
 WORKDIR $UNDERLAY_WS
 COPY --from=cacher /tmp/$UNDERLAY_WS ./
-RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \
+    . /opt/ros/$ROS_DISTRO/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
       --skip-keys " \
@@ -83,7 +87,8 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 COPY --from=cacher $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache lld"
 ARG CCACHE_DIR="$UNDERLAY_WS/.ccache"
-RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+RUN --mount=type=cache,target=/root/.ccache \
+    . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon cache lock && \
     colcon build \
       --symlink-install \
@@ -95,7 +100,9 @@ ARG OVERLAY_WS
 ENV OVERLAY_WS $OVERLAY_WS
 WORKDIR $OVERLAY_WS
 COPY --from=cacher /tmp/$OVERLAY_WS ./
-RUN . $UNDERLAY_WS/install/setup.sh && \
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \
+    . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
       --skip-keys " \
@@ -111,7 +118,8 @@ FROM builder AS tester
 COPY --from=cacher $OVERLAY_WS ./
 ARG OVERLAY_MIXINS="release ccache lld"
 ARG CCACHE_DIR="$OVERLAY_WS/.ccache"
-RUN . $UNDERLAY_WS/install/setup.sh && \
+RUN --mount=type=cache,target=/root/.ccache \
+    . $UNDERLAY_WS/install/setup.sh && \
     colcon cache lock && \
     colcon build \
       --symlink-install \
