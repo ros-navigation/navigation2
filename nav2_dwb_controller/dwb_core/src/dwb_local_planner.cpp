@@ -499,21 +499,11 @@ DWBLocalPlanner::transformGlobalPlan(
 
   // Find the first pose in the end of the plan that's further than transform_end_threshold
   // from the robot using integrated distance
-  auto transformation_end =
-    nav2_util::geometry_utils::first_after_integrated_distance(
-    transformation_begin, global_plan_.poses.end(), transform_end_threshold);
-
-  for (auto it = transformation_begin + 1; it != transformation_end - 1; ++it) {
-    double oa_x = it->x - (it - 1 )->x;
-    double oa_y = it->y - (it - 1)->y;
-    double ab_x = (it + 1)->x - it->x;
-    double ab_y = (it + 1)->y - it->y;
-
-    if ( (oa_x * ab_x) + (oa_y * ab_y) < 0.0) {
-      transformation_end = it;
-      break;
-    }
-  }
+  auto transformation_end = std::find_if(
+    transformation_begin, global_plan_.poses.end(),
+    [&](const auto & pose) {
+      return euclidean_distance(pose, robot_pose.pose) > transform_end_threshold;
+    });
 
   // Transform the near part of the global plan into the robot's frame of reference.
   nav_2d_msgs::msg::Path2D transformed_plan;
