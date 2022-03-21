@@ -298,7 +298,7 @@ protected:
    */
   virtual bool configure(
     rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/,
-    std::shared_ptr<nav2_util::OdomSmoother> /*odom_smoother*/)
+    std::shared_ptr<nav2_util::OdomSmoother>/*odom_smoother*/)
   {
     return true;
   }
