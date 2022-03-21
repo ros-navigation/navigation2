@@ -63,6 +63,9 @@ list(APPEND plugin_libs nav2_controller_cancel_bt_node)
 add_library(nav2_wait_cancel_bt_node SHARED plugins/action/wait_cancel_node.cpp)
 list(APPEND plugin_libs nav2_wait_cancel_bt_node)
 
+add_library(nav2_spin_cancel_bt_node SHARED plugins/action/spin_cancel_node.cpp)
+list(APPEND plugin_libs nav2_spin_cancel_bt_node)
+
 add_library(nav2_smooth_path_action_bt_node SHARED plugins/action/smooth_path_action.cpp)
 list(APPEND plugin_libs nav2_smooth_path_action_bt_node)
 
