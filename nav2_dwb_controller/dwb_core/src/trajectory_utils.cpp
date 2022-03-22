@@ -36,9 +36,9 @@
 
 #include <cmath>
 
-#include <rclcpp/duration.hpp>
+#include "rclcpp/duration.hpp"
 
-#include <dwb_core/exceptions.hpp>
+#include "dwb_core/exceptions.hpp"
 
 namespace dwb_core
 {

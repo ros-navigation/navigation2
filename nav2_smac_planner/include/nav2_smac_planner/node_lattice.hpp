@@ -27,7 +27,7 @@
 #include <limits>
 #include <string>
 
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"
 #include "ompl/base/StateSpace.h"
 #include "angles/angles.h"
 
