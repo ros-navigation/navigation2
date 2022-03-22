@@ -15,9 +15,8 @@
 #ifndef NAV2_SMAC_PLANNER__NODE_LATTICE_HPP_
 #define NAV2_SMAC_PLANNER__NODE_LATTICE_HPP_
 
-#include <nlohmann/json.hpp>
-
 #include <math.h>
+
 #include <vector>
 #include <cmath>
 #include <iostream>
@@ -28,6 +27,7 @@
 #include <limits>
 #include <string>
 
+#include <nlohmann/json.hpp>
 #include "ompl/base/StateSpace.h"
 #include "angles/angles.h"
 
