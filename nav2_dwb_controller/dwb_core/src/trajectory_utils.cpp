@@ -33,9 +33,12 @@
  */
 
 #include <dwb_core/trajectory_utils.hpp>
-#include <dwb_core/exceptions.hpp>
-#include <rclcpp/duration.hpp>
+
 #include <cmath>
+
+#include <rclcpp/duration.hpp>
+
+#include <dwb_core/exceptions.hpp>
 
 namespace dwb_core
 {
