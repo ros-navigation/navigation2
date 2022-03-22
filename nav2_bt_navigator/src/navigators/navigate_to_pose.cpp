@@ -24,19 +24,26 @@ namespace nav2_bt_navigator
 
 bool
 NavigateToPoseNavigator::configure(
-  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node)
+  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
+  std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
 {
   start_time_ = rclcpp::Time(0);
   auto node = parent_node.lock();
-  node->declare_parameter("goal_blackboard_id", std::string("goal"));
+
+  if (!node->has_parameter("goal_blackboard_id")) {
+    node->declare_parameter("goal_blackboard_id", std::string("goal"));
+  }
+
   goal_blackboard_id_ = node->get_parameter("goal_blackboard_id").as_string();
+
   if (!node->has_parameter("path_blackboard_id")) {
     node->declare_parameter("path_blackboard_id", std::string("path"));
   }
+
   path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
 
   // Odometry smoother object for getting current speed
-  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(node, 0.3);
+  odom_smoother_ = odom_smoother;
 
   self_client_ = rclcpp_action::create_client<ActionT>(node, getName());
 
@@ -53,12 +60,16 @@ NavigateToPoseNavigator::getDefaultBTFilepath(
 {
   std::string default_bt_xml_filename;
   auto node = parent_node.lock();
-  std::string pkg_share_dir =
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
-  node->declare_parameter<std::string>(
-    "default_nav_to_pose_bt_xml",
-    pkg_share_dir +
-    "/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml");
+  
+  if (!node->has_parameter("default_nav_to_pose_bt_xml")) {
+    std::string pkg_share_dir =
+      ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+    node->declare_parameter<std::string>(
+      "default_nav_to_pose_bt_xml",
+      pkg_share_dir +
+      "/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml");
+  }
+  
   node->get_parameter("default_nav_to_pose_bt_xml", default_bt_xml_filename);
 
   return default_bt_xml_filename;

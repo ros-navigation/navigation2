@@ -1,5 +1,7 @@
+find_package(test_msgs REQUIRED)
+
 ament_add_gtest(test_bt_action_node test_bt_action_node.cpp)
-ament_target_dependencies(test_bt_action_node ${dependencies})
+ament_target_dependencies(test_bt_action_node ${dependencies} test_msgs)
 
 ament_add_gtest(test_action_spin_action test_spin_action.cpp)
 target_link_libraries(test_action_spin_action nav2_spin_action_bt_node)
@@ -16,6 +18,18 @@ ament_target_dependencies(test_action_wait_action ${dependencies})
 ament_add_gtest(test_action_controller_cancel_action test_controller_cancel_node.cpp)
 target_link_libraries(test_action_controller_cancel_action nav2_controller_cancel_bt_node)
 ament_target_dependencies(test_action_controller_cancel_action ${dependencies})
+
+ament_add_gtest(test_action_wait_cancel_action test_wait_cancel_node.cpp)
+target_link_libraries(test_action_wait_cancel_action nav2_wait_cancel_bt_node)
+ament_target_dependencies(test_action_wait_cancel_action ${dependencies})
+
+ament_add_gtest(test_action_spin_cancel_action test_spin_cancel_node.cpp)
+target_link_libraries(test_action_spin_cancel_action nav2_spin_cancel_bt_node)
+ament_target_dependencies(test_action_spin_cancel_action ${dependencies})
+
+ament_add_gtest(test_action_back_up_cancel_action test_back_up_cancel_node.cpp)
+target_link_libraries(test_action_back_up_cancel_action nav2_back_up_cancel_bt_node)
+ament_target_dependencies(test_action_back_up_cancel_action ${dependencies})
 
 ament_add_gtest(test_action_clear_costmap_service test_clear_costmap_service.cpp)
 target_link_libraries(test_action_clear_costmap_service nav2_clear_costmap_service_bt_node)

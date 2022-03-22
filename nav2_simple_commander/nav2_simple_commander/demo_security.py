@@ -16,7 +16,7 @@
 from copy import deepcopy
 
 from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator, NavigationResult
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 
 import rclpy
 from rclpy.duration import Duration
@@ -75,7 +75,7 @@ def main():
         # Do something during our route (e.x. AI detection on camera images for anomalies)
         # Simply print ETA for the demonstation
         i = 0
-        while not navigator.isNavComplete():
+        while not navigator.isTaskComplete():
             i += 1
             feedback = navigator.getFeedback()
             if feedback and i % 5 == 0:
@@ -86,18 +86,18 @@ def main():
                 # Some failure mode, must stop since the robot is clearly stuck
                 if Duration.from_msg(feedback.navigation_time) > Duration(seconds=180.0):
                     print('Navigation has exceeded timeout of 180s, canceling request.')
-                    navigator.cancelNav()
+                    navigator.cancelTask()
 
         # If at end of route, reverse the route to restart
         security_route.reverse()
 
         result = navigator.getResult()
-        if result == NavigationResult.SUCCEEDED:
+        if result == TaskResult.SUCCEEDED:
             print('Route complete! Restarting...')
-        elif result == NavigationResult.CANCELED:
+        elif result == TaskResult.CANCELED:
             print('Security route was canceled, exiting.')
             exit(1)
-        elif result == NavigationResult.FAILED:
+        elif result == TaskResult.FAILED:
             print('Security route failed! Restarting from other side...')
 
     exit(0)
