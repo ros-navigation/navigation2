@@ -1,0 +1,10 @@
+CompileFlags:
+  Add: [ -std=c++17 ]
+  Compiler: g++
+
+Diagnostics:
+  ClangTidy:
+    Add: modernize*
+    Remove: modernize-use-trailing-return-type
+    Remove: altera-unroll-loops
+    Remove: modernize-use-nodiscard
