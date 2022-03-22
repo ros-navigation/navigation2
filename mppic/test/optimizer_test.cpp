@@ -1,3 +1,4 @@
+// Copyright 2022 FastSense, Samsung Research
 #include "gtest/gtest.h"
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
@@ -71,7 +72,7 @@ TEST(MPPIOptimizer, OptimizerTestDiffFootprint)
   printMapWithTrajectoryAndGoal(*costmap, trajectory, goal_point);
 #endif
   EXPECT_TRUE(!inCollision(trajectory, *costmap));
-  EXPECT_TRUE(isGoalReached(trajectory, *costmap, goal_point));
+  EXPECT_FALSE(isGoalReached(trajectory, *costmap, goal_point));
 }
 
 TEST(MPPIOptimizer, OptimizerTestOmniCircle)
@@ -120,5 +121,5 @@ TEST(MPPIOptimizer, OptimizerTestOmniCircle)
   printMapWithTrajectoryAndGoal(*costmap, trajectory, goal_point);
 #endif
   EXPECT_TRUE(!inCollision(trajectory, *costmap));
-  EXPECT_TRUE(isGoalReached(trajectory, *costmap, goal_point));
+  EXPECT_FALSE(isGoalReached(trajectory, *costmap, goal_point));
 }

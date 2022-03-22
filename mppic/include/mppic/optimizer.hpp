@@ -1,6 +1,9 @@
+// Copyright 2022 FastSense, Samsung Research
 #ifndef MPPIC__OPTIMIZER_HPP_
 #define MPPIC__OPTIMIZER_HPP_
 
+#include <string>
+#include <memory>
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 
@@ -145,6 +148,6 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };
 
-} // namespace mppi
+}  // namespace mppi
 
-#endif // MPPIC__OPTIMIZER_HPP_
+#endif  // MPPIC__OPTIMIZER_HPP_

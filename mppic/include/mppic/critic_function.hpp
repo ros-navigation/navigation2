@@ -1,7 +1,10 @@
+// Copyright 2022 FastSense, Samsung Research
 #ifndef MPPIC__CRITIC_FUNCTION_HPP_
 #define MPPIC__CRITIC_FUNCTION_HPP_
 
 #include <string>
+#include <memory>
+
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xmath.hpp>
 #include <xtensor/xnorm.hpp>
@@ -76,6 +79,6 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };
 
-} // namespace mppi::critics
+}  // namespace mppi::critics
 
 #endif  // MPPIC__CRITIC_FUNCTION_HPP_

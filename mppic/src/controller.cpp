@@ -1,3 +1,4 @@
+// Copyright 2022 FastSense, Samsung Research
 #include <stdint.h>
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "mppic/controller.hpp"
@@ -110,7 +111,7 @@ void Controller::setSpeedLimit(const double & speed_limit, const bool & percenta
   optimizer_.setControlConstraints(constraints);
 }
 
-} // namespace mppi
+}  // namespace mppi
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(mppi::Controller, nav2_core::Controller)

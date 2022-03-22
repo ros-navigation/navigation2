@@ -1,7 +1,9 @@
+// Copyright 2022 FastSense, Samsung Research
 #ifndef MPPIC__TRAJECTORY_VISUALIZER_HPP_
 #define MPPIC__TRAJECTORY_VISUALIZER_HPP_
 
 #include <memory>
+#include <string>
 #include <xtensor/xtensor.hpp>
 
 #include "nav_msgs/msg/path.hpp"
@@ -52,6 +54,6 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };
 
-} // namespace mppi
+}  // namespace mppi
 
 #endif  // MPPIC__TRAJECTORY_VISUALIZER_HPP_

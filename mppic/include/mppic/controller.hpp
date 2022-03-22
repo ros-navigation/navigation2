@@ -1,5 +1,9 @@
+// Copyright 2022 FastSense, Samsung Research
 #ifndef MPPIC__CONTROLLER_HPP_
 #define MPPIC__CONTROLLER_HPP_
+
+#include <string>
+#include <memory>
 
 #include "mppic/path_handler.hpp"
 #include "mppic/optimizer.hpp"
@@ -56,6 +60,6 @@ protected:
   double base_x_vel_, base_y_vel_, base_theta_vel_;
 };
 
-} // namespace mppi
+}  // namespace mppi
 
 #endif  // MPPIC__CONTROLLER_HPP_

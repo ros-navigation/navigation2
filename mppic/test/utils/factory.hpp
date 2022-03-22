@@ -1,6 +1,9 @@
+// Copyright 2022 FastSense, Samsung Research
 #pragma once
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -25,7 +28,7 @@ auto setHeader(auto && msg, auto node, std::string frame)
   msg.header.frame_id = frame;
   msg.header.stamp = time;
 }
-} // namespace detail
+}  // namespace detail
 
 rclcpp::NodeOptions getOptimizerOptions(TestOptimizerSettings s)
 {
@@ -98,7 +101,6 @@ mppi::Optimizer getDummyOptimizer(auto node, auto costmap_ros)
 
 mppi::Controller getDummyController(auto node, auto tf_buffer, auto costmap_ros)
 {
-
   auto controller = mppi::Controller();
   std::weak_ptr<rclcpp_lifecycle::LifecycleNode> weak_ptr_node{node};
 

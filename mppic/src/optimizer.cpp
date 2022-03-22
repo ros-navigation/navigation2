@@ -1,5 +1,4 @@
-#include "mppic/optimizer.hpp"
-
+// Copyright 2022 FastSense, Samsung Research
 #include <limits>
 #include <memory>
 #include <string>
@@ -42,7 +41,6 @@ void Optimizer::getParams()
   auto node = parent_.lock();
 
   auto getParam = utils::getParamGetter(node, name_);
-  auto getParentParam = utils::getParamGetter(node, "");
 
   getParam(model_dt_, "model_dt", 0.1);
   getParam(time_steps_, "time_steps", 15);
@@ -57,7 +55,10 @@ void Optimizer::getParams()
   getParam(vy_std_, "vy_std", 0.1);
   getParam(wz_std_, "wz_std", 0.3);
   getParam(control_sequence_shift_offset_, "control_sequence_shift_offset", 1);
-  getParentParam(controller_frequency_, "controller_frequency", 0.0);
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "controller_frequency", rclcpp::ParameterValue(0.0));
+  node->get_parameter("controller_frequency", controller_frequency_);
 
   std::string motion_model_name;
   getParam(motion_model_name, "motion_model", std::string("DiffDrive"));
@@ -118,7 +119,7 @@ void Optimizer::shiftControlSequence()
     return;
   }
 
-  using namespace xt::placeholders;
+  using namespace xt::placeholders;  // NOLINT
   xt::view(
     control_sequence_.data,
     xt::range(_, -control_sequence_shift_offset_), xt::all()) =
@@ -194,7 +195,7 @@ void Optimizer::updateInitialStateVelocities(
 
 void Optimizer::propagateStateVelocitiesFromInitials(auto & state) const
 {
-  using namespace xt::placeholders;
+  using namespace xt::placeholders;  // NOLINT
 
   for (size_t i = 0; i < time_steps_ - 1; i++) {
     auto curr_state = xt::view(state.data, xt::all(), i);
@@ -224,7 +225,7 @@ xt::xtensor<double, 2> Optimizer::evalTrajectoryFromControlSequence(
 xt::xtensor<double, 3> Optimizer::integrateStateVelocities(
   const auto & state, const geometry_msgs::msg::PoseStamped & pose) const
 {
-  using namespace xt::placeholders;
+  using namespace xt::placeholders;  // NOLINT
 
   auto w = state.getVelocitiesWZ();
   double initial_yaw = tf2::getYaw(pose.pose.orientation);

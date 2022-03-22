@@ -1,8 +1,11 @@
+// Copyright 2022 FastSense, Samsung Research
 #ifndef MPPIC__UTILS_HPP_
 #define MPPIC__UTILS_HPP_
 
 #include <algorithm>
 #include <chrono>
+#include <string>
+
 #include <xtensor/xarray.hpp>
 #include <xtensor/xnorm.hpp>
 #include <xtensor/xview.hpp>

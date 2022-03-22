@@ -1,11 +1,12 @@
+// Copyright 2022 FastSense, Samsung Research
 #pragma once
-
-#include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 #include <algorithm>
 #include <iostream>
 #include <rclcpp/executors.hpp>
+
+#include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 #include "config.hpp"
 #include "factory.hpp"
@@ -89,19 +90,19 @@ void print_info(TestOptimizerSettings os, TestPathSettings ps)
 {
   std::cout <<
     "Parameters of MPPI Planner:" <<
-      "Points in path " << ps.poses_count << "\n" <<
-      "Iteration_count " << os.iteration_count << "\n" <<
-      "Time_steps " << os.time_steps << "\n" <<
-      "Motion model " << os.motion_model << "\n"
-      "Is footprint considering " << os.consider_footprint << "\n" << std::endl;
+    "Points in path " << ps.poses_count << "\n" <<
+    "Iteration_count " << os.iteration_count << "\n" <<
+    "Time_steps " << os.time_steps << "\n" <<
+    "Motion model " << os.motion_model << "\n"
+    "Is footprint considering " << os.consider_footprint << "\n" << std::endl;
 }
 
 void print_info(TestOptimizerSettings os, unsigned int poses_count)
 {
   std::cout <<
     "Points in path " << poses_count << "\niteration_count " << os.iteration_count
-                      << "\ntime_steps " << os.time_steps
-                      << "\nMotion model : " << os.motion_model << std::endl;
+            << "\ntime_steps " << os.time_steps
+            << "\nMotion model : " << os.motion_model << std::endl;
 }
 
 void addObstacle(nav2_costmap_2d::Costmap2D * costmap, TestObstaclesSettings s)

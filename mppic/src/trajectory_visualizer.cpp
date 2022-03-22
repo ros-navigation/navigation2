@@ -1,3 +1,4 @@
+// Copyright 2022 FastSense, Samsung Research
 #include <memory>
 
 #include "mppic/trajectory_visualizer.hpp"
@@ -146,4 +147,4 @@ std_msgs::msg::ColorRGBA TrajectoryVisualizer::createColor(float r, float g, flo
   return color;
 }
 
-} // namespace mppi
+}  // namespace mppi

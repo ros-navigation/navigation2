@@ -1,5 +1,10 @@
+// Copyright 2022 FastSense, Samsung Research
 #ifndef MPPIC__CRITIC_MANAGER_HPP_
 #define MPPIC__CRITIC_MANAGER_HPP_
+
+#include <string>
+#include <vector>
+#include <memory>
 
 #include <pluginlib/class_loader.hpp>
 #include <xtensor/xtensor.hpp>
@@ -55,6 +60,6 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };
 
-} // namespace mppi
+}  // namespace mppi
 
-#endif // MPPIC__CRITIC_MANAGER_HPP_
+#endif  // MPPIC__CRITIC_MANAGER_HPP_

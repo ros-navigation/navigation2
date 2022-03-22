@@ -1,4 +1,7 @@
+// Copyright 2022 FastSense, Samsung Research
 #pragma once
+#include <vector>
+#include <string>
 #include <rclcpp/rclcpp.hpp>
 
 struct TestOptimizerSettings
@@ -58,10 +61,12 @@ void setUpOptimizerParams(
   bool /*consider_footprint*/, std::vector<rclcpp::Parameter> & params_,
   std::string node_name = std::string("dummy"))
 {
+  double dummy_freq = 10.0;
   params_.emplace_back(rclcpp::Parameter(node_name + ".iteration_count", iter));
   params_.emplace_back(rclcpp::Parameter(node_name + ".time_steps", time_steps));
   params_.emplace_back(rclcpp::Parameter(node_name + ".lookahead_dist", lookahead_dist));
   params_.emplace_back(rclcpp::Parameter(node_name + ".motion_model", motion_model));
+  params_.emplace_back(rclcpp::Parameter("controller_frequency", dummy_freq));
 
   std::string critic_scorer_name = node_name;
   params_.emplace_back(
@@ -75,5 +80,7 @@ void setUpControllerParams(
   bool visualize, std::vector<rclcpp::Parameter> & params_,
   std::string node_name = std::string("dummy"))
 {
+  double dummy_freq = 10.0;
   params_.emplace_back(rclcpp::Parameter(node_name + ".visualize", visualize));
+  params_.emplace_back(rclcpp::Parameter("controller_frequency", dummy_freq));
 }

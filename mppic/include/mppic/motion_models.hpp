@@ -1,5 +1,6 @@
-#ifndef MPPIC__OPTIMIZATION__MOTION_MODELS_HPP_
-#define MPPIC__OPTIMIZATION__MOTION_MODELS_HPP_
+// Copyright 2022 FastSense, Samsung Research
+#ifndef MPPIC__MOTION_MODELS_HPP_
+#define MPPIC__MOTION_MODELS_HPP_
 
 #include <cstdint>
 
@@ -35,27 +36,27 @@ public:
 class DiffDriveMotionModel : public MotionModel
 {
 public:
-  virtual bool isHolonomic() const override {return false;}
+  bool isHolonomic() const override {return false;}
 };
 
 class OmniMotionModel : public MotionModel
 {
 public:
-  virtual bool isHolonomic() const override {return true;}
+  bool isHolonomic() const override {return true;}
 };
 
 class AckermannMotionModel : public MotionModel
 {
 public:
-  virtual xt::xtensor<double, 2> predict(
+  xt::xtensor<double, 2> predict(
     const xt::xtensor<double, 2> & /*state*/, const optimization::StateIdxes & /*idx*/) override
   {
     throw std::runtime_error("Ackermann motion model not yet implemented");
   }
 
-  virtual bool isHolonomic() const override {return false;}
+  bool isHolonomic() const override {return false;}
 };
 
-} // namespace mppi
+}  // namespace mppi
 
 #endif  // MPPIC__MOTION_MODELS_HPP_

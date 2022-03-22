@@ -7,13 +7,13 @@ find_package(xtensor REQUIRED)
 set(dependencies_pkgs
   rclcpp
   nav2_common
-  pluginlib 
-  tf2 
+  pluginlib
+  tf2
   geometry_msgs
   visualization_msgs
-  nav_msgs 
-  nav2_core 
-  nav2_costmap_2d 
+  nav_msgs
+  nav2_core
+  nav2_costmap_2d
   nav2_util
   tf2_geometry_msgs
   tf2_eigen
@@ -26,7 +26,7 @@ endforeach()
 
 nav2_package()
 
-add_library(mppic SHARED 
+add_library(mppic SHARED
   src/controller.cpp
   src/critic_manager.cpp
   src/path_handler.cpp
@@ -34,7 +34,7 @@ add_library(mppic SHARED
   src/optimizer.cpp
 )
 
-add_library(critics SHARED 
+add_library(critics SHARED
   src/critics/approx_reference_trajectory_critic.cpp
   src/critics/reference_trajectory_critic.cpp
   src/critics/goal_angle_critic.cpp

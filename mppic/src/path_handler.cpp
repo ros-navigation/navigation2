@@ -1,3 +1,4 @@
+// Copyright 2022 FastSense, Samsung Research
 #include "mppic/path_handler.hpp"
 
 #include "mppic/utils.hpp"

@@ -1,3 +1,4 @@
+// Copyright 2022 FastSense, Samsung Research
 #include "mppic/critics/approx_reference_trajectory_critic.hpp"
 
 namespace mppi::critics

@@ -1,3 +1,4 @@
+// Copyright 2022 FastSense, Samsung Research
 #include "gtest/gtest.h"
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>

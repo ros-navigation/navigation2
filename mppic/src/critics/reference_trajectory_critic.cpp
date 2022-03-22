@@ -1,3 +1,4 @@
+// Copyright 2022 FastSense, Samsung Research
 #include "mppic/critics/reference_trajectory_critic.hpp"
 
 #include <xtensor/xfixed.hpp>
@@ -34,7 +35,7 @@ xt::xtensor<double, 1>
 ReferenceTrajectoryCritic::meanDistancesFromTrajectoriesPointsToReferenceSegments(
   const xt::xtensor<double, 3> & trajectories, const xt::xtensor<double, 2> & reference_path)
 {
-  using namespace xt::placeholders;
+  using namespace xt::placeholders;  // NOLINT
 
   size_t trajectories_count = trajectories.shape()[0];
   size_t trajectories_points_count = trajectories.shape()[1];
@@ -57,7 +58,7 @@ ReferenceTrajectoryCritic::meanDistancesFromTrajectoriesPointsToReferenceSegment
              P2_P1_norm_sq(s);
     };
 
-  static constexpr double eps = static_cast<double>(1e-3); // meters
+  static constexpr double eps = static_cast<double>(1e-3);  // meters
   auto segment_short = P2_P1_norm_sq < eps;
   auto evaluate_dist = [&P3](xt::xtensor_fixed<double, xt::xshape<2>> P, size_t t, size_t p) {
       double dx = P(0) - P3(t, p, 0);
@@ -93,7 +94,7 @@ ReferenceTrajectoryCritic::meanDistancesFromTrajectoriesPointsToReferenceSegment
   return distances;
 }
 
-} // namespace mppi::critics
+}  // namespace mppi::critics
 
 #include <pluginlib/class_list_macros.hpp>
 

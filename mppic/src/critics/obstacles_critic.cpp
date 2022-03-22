@@ -1,3 +1,4 @@
+// Copyright 2022 FastSense, Samsung Research
 #include "mppic/critics/obstacles_critic.hpp"
 #include <xtensor/xaxis_slice_iterator.hpp>
 
@@ -90,7 +91,7 @@ double ObstaclesCritic::scoreCost(unsigned char cost_arg)
   return pow(cost * weight_, power_);
 }
 
-} // namespace mppi::critics
+}  // namespace mppi::critics
 
 #include <pluginlib/class_list_macros.hpp>
 

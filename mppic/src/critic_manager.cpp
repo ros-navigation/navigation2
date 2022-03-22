@@ -1,3 +1,4 @@
+// Copyright 2022 FastSense, Samsung Research
 #include "mppic/critic_manager.hpp"
 
 namespace mppi
@@ -70,4 +71,4 @@ xt::xtensor<double, 1> CriticManager::evalTrajectoriesScores(
   return costs;
 }
 
-} // namespace mppi
+}  // namespace mppi
