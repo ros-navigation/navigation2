@@ -24,7 +24,6 @@
   <depend>tf2</depend>
   <depend>tf2_eigen</depend>
   <depend>tf2_ros</depend>
-  <depend>python3-conan-pip</depend>
   <depend>std_msgs</depend>
 
   <exec_depend>nav2_bringup</exec_depend>
