@@ -79,12 +79,12 @@ class TestLatticeGenerator(unittest.TestCase):
 
         for start_angle in self.minimal_set.keys():
             for trajectory in self.minimal_set[start_angle]:
-                
                 output = trajectory.path.to_output_format()
 
                 for x, y, angle in output:
                     self.assertGreaterEqual(angle, 0)
                     self.assertLessEqual(angle, 2*np.pi)
+
 
 if __name__ == '__main__':
     unittest.main()

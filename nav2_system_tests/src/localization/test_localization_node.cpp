@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
 #include <gtest/gtest.h>
 #include <rclcpp/rclcpp.hpp>
-#include <memory>
 #include "nav2_amcl/amcl_node.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
