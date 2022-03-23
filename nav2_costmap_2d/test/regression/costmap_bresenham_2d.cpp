@@ -50,6 +50,7 @@ public:
     ASSERT_TRUE(off < size_);
     costmap_[off] = mark_val_;
   }
+
   inline unsigned int get(unsigned int off)
   {
     return costmap_[off];
@@ -107,29 +108,25 @@ TEST(costmap_2d, bresenham2DBoundariesCheck)
 
   // Running on (x, 0) edge
   y1 = 0;
-  for (unsigned int i = 0; i < sz_x; i++) {
-    x1 = i;
+  for (x1 = 0; x1 < sz_x; x1++) {
     ct.raytraceLine(ca, x0, y0, x1, y1, max_length, min_length);
   }
 
   // Running on (x, sz_y) edge
   y1 = sz_y - 1;
-  for (unsigned int i = 0; i < sz_x; i++) {
-    x1 = i;
+  for (x1 = 0; x1 < sz_x; x1++) {
     ct.raytraceLine(ca, x0, y0, x1, y1, max_length, min_length);
   }
 
   // Running on (0, y) edge
   x1 = 0;
-  for (unsigned int j = 0; j < sz_y; j++) {
-    y1 = j;
+  for (y1 = 0; y1 < sz_y; y1++) {
     ct.raytraceLine(ca, x0, y0, x1, y1, max_length, min_length);
   }
 
   // Running on (sz_x, y) edge
-  x1 = sz_x;
-  for (unsigned int j = 0; j < sz_y; j++) {
-    y1 = j;
+  x1 = sz_x - 1;
+  for (y1 = 0; y1 < sz_y; y1++) {
     ct.raytraceLine(ca, x0, y0, x1, y1, max_length, min_length);
   }
 }
