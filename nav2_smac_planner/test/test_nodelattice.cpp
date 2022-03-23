@@ -127,7 +127,10 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 TEST(NodeLatticeTest, test_node_lattice_conversions)
 {
   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath = pkg_share_dir + "/default_model.json";
+  std::string filePath =
+    pkg_share_dir +
+    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
+    "/output.json";
 
   nav2_smac_planner::SearchInfo info;
   info.minimum_turning_radius = 1.1;
@@ -162,7 +165,10 @@ TEST(NodeLatticeTest, test_node_lattice_conversions)
 TEST(NodeLatticeTest, test_node_lattice)
 {
   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath = pkg_share_dir + "/default_model.json";
+  std::string filePath =
+    pkg_share_dir +
+    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
+    "/output.json";
 
   nav2_smac_planner::SearchInfo info;
   info.minimum_turning_radius = 1.1;
@@ -236,7 +242,10 @@ TEST(NodeLatticeTest, test_node_lattice)
 TEST(NodeLatticeTest, test_get_neighbors)
 {
   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath = pkg_share_dir + "/default_model.json";
+  std::string filePath =
+    pkg_share_dir +
+    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
+    "/output.json";
 
   nav2_smac_planner::SearchInfo info;
   info.minimum_turning_radius = 1.1;
