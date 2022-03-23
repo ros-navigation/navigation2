@@ -314,8 +314,7 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
 
   float travel_cost = 0.0;
   float travel_cost_raw =
-    NodeHybrid::travel_distance_cost +
-    (NodeHybrid::travel_distance_cost * motion_table.cost_penalty * normalized_cost);
+    NodeHybrid::travel_distance_cost * (1.0 + motion_table.cost_penalty * normalized_cost);
 
   if (child->getMotionPrimitiveIndex() == 0 || child->getMotionPrimitiveIndex() == 3) {
     // New motion is a straight motion, no additional costs to be applied
