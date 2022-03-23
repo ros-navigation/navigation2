@@ -14,10 +14,10 @@
 
 import unittest
 
-import numpy as np
 from lattice_generator import LatticeGenerator
+import numpy as np
 
-MOTION_MODEL = "ackermann"
+MOTION_MODEL = 'ackermann'
 TURNING_RADIUS = 0.5
 GRID_RESOLUTION = 0.05
 STOPPING_THRESHOLD = 5
@@ -28,11 +28,11 @@ class TestLatticeGenerator(unittest.TestCase):
     """Contains the unit tests for the TrajectoryGenerator."""
 
     def setUp(self) -> None:
-        config = {"motion_model": MOTION_MODEL,
-                  "turning_radius": TURNING_RADIUS,
-                  "grid_resolution": GRID_RESOLUTION,
-                  "stopping_threshold": STOPPING_THRESHOLD,
-                  "num_of_headings": NUM_OF_HEADINGS}
+        config = {'motion_model': MOTION_MODEL,
+                  'turning_radius': TURNING_RADIUS,
+                  'grid_resolution': GRID_RESOLUTION,
+                  'stopping_threshold': STOPPING_THRESHOLD,
+                  'num_of_headings': NUM_OF_HEADINGS}
 
         lattice_gen = LatticeGenerator(config)
 
