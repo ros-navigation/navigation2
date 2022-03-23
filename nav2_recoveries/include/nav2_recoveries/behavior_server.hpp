@@ -32,18 +32,18 @@ namespace recovery_server
 {
 
 /**
- * @class recovery_server::RecoveryServer
+ * @class recovery_server::BehaviorServer
  * @brief An server hosting a map of recovery plugins
  */
-class RecoveryServer : public nav2_util::LifecycleNode
+class BehaviorServer : public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief A constructor for recovery_server::RecoveryServer
+   * @brief A constructor for recovery_server::BehaviorServer
    * @param options Additional options to control creation of the node.
    */
-  explicit RecoveryServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
-  ~RecoveryServer();
+  explicit BehaviorServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  ~BehaviorServer();
 
   /**
    * @brief Loads recovery plugins from parameter file

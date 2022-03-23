@@ -17,12 +17,12 @@
 #include <vector>
 #include <utility>
 #include "nav2_util/node_utils.hpp"
-#include "nav2_recoveries/recovery_server.hpp"
+#include "nav2_recoveries/behavior_server.hpp"
 
 namespace recovery_server
 {
 
-RecoveryServer::RecoveryServer(const rclcpp::NodeOptions & options)
+BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
 : LifecycleNode("recoveries_server", "", false, options),
   plugin_loader_("nav2_core", "nav2_core::Recovery"),
   default_ids_{"spin", "backup", "wait"},
@@ -56,13 +56,13 @@ RecoveryServer::RecoveryServer(const rclcpp::NodeOptions & options)
 }
 
 
-RecoveryServer::~RecoveryServer()
+BehaviorServer::~BehaviorServer()
 {
   recoveries_.clear();
 }
 
 nav2_util::CallbackReturn
-RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
+BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -97,7 +97,7 @@ RecoveryServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
 
 bool
-RecoveryServer::loadRecoveryPlugins()
+BehaviorServer::loadRecoveryPlugins()
 {
   auto node = shared_from_this();
 
@@ -122,7 +122,7 @@ RecoveryServer::loadRecoveryPlugins()
 }
 
 nav2_util::CallbackReturn
-RecoveryServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
+BehaviorServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
   std::vector<pluginlib::UniquePtr<nav2_core::Recovery>>::iterator iter;
@@ -137,7 +137,7 @@ RecoveryServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-RecoveryServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+BehaviorServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
@@ -153,7 +153,7 @@ RecoveryServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-RecoveryServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+BehaviorServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -173,7 +173,7 @@ RecoveryServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-RecoveryServer::on_shutdown(const rclcpp_lifecycle::State &)
+BehaviorServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
@@ -186,4 +186,4 @@ RecoveryServer::on_shutdown(const rclcpp_lifecycle::State &)
 // Register the component with class_loader.
 // This acts as a sort of entry point, allowing the component to be discoverable when its library
 // is being loaded into a running process.
-RCLCPP_COMPONENTS_REGISTER_NODE(recovery_server::RecoveryServer)
+RCLCPP_COMPONENTS_REGISTER_NODE(recovery_server::BehaviorServer)

@@ -75,7 +75,7 @@ pluginlib_export_plugin_description_file(nav2_core recovery_plugin.xml)
 
 # Library
 add_library(${library_name} SHARED
-  src/recovery_server.cpp
+  src/behavior_server.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -93,7 +93,7 @@ ament_target_dependencies(${executable_name}
   ${dependencies}
 )
 
-rclcpp_components_register_nodes(${library_name} "recovery_server::RecoveryServer")
+rclcpp_components_register_nodes(${library_name} "recovery_server::BehaviorServer")
 
 install(TARGETS ${library_name}
                 nav2_backup_recovery

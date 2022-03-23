@@ -173,7 +173,7 @@ def generate_launch_description():
                 remappings=remappings),
             ComposableNode(
                 package='nav2_recoveries',
-                plugin='recovery_server::RecoveryServer',
+                plugin='recovery_server::BehaviorServer',
                 name='recoveries_server',
                 parameters=[configured_params],
                 remappings=remappings),
