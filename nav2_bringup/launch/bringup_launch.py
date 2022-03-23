@@ -108,6 +108,15 @@ def generate_launch_description():
             condition=IfCondition(use_namespace),
             namespace=namespace),
 
+        Node(
+            condition=IfCondition(use_composition),
+            name='nav2_container',
+            package='rclcpp_components',
+            executable='component_container_isolated',
+            parameters=[configured_params, {'autostart': autostart}],
+            remappings=remappings,
+            output='screen'),
+
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(launch_dir, 'slam_launch.py')),
             condition=IfCondition(slam),
@@ -124,23 +133,18 @@ def generate_launch_description():
                               'map': map_yaml_file,
                               'use_sim_time': use_sim_time,
                               'autostart': autostart,
-                              'params_file': params_file}.items()),
-
-        Node(
-            condition=IfCondition(use_composition),
-            package='nav2_bringup',
-            executable='composed_bringup',
-            output='screen',
-            parameters=[configured_params, {'autostart': autostart}],
-            remappings=remappings),
+                              'params_file': params_file,
+                              'use_composition': use_composition,
+                              'container_name': 'nav2_container'}.items()),
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(launch_dir, 'navigation_launch.py')),
-            condition=IfCondition(PythonExpression(['not ', use_composition])),
             launch_arguments={'namespace': namespace,
                               'use_sim_time': use_sim_time,
                               'autostart': autostart,
-                              'params_file': params_file}.items()),
+                              'params_file': params_file,
+                              'use_composition': use_composition,
+                              'container_name': 'nav2_container'}.items()),
     ])
 
     # Create the launch description and populate

@@ -23,8 +23,7 @@ GoalUpdatedCondition::GoalUpdatedCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf)
-{
-}
+{}
 
 BT::NodeStatus GoalUpdatedCondition::tick()
 {

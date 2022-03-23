@@ -46,6 +46,8 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_goal_reached_condition_bt_node",
     "nav2_initial_pose_received_condition_bt_node",
     "nav2_goal_updated_condition_bt_node",
+    "nav2_globally_updated_goal_condition_bt_node",
+    "nav2_is_path_valid_condition_bt_node",
     "nav2_reinitialize_global_localization_service_bt_node",
     "nav2_rate_controller_bt_node",
     "nav2_distance_controller_bt_node",
@@ -66,7 +68,11 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_remove_passed_goals_action_bt_node",
     "nav2_planner_selector_bt_node",
     "nav2_controller_selector_bt_node",
-    "nav2_goal_checker_selector_bt_node"
+    "nav2_goal_checker_selector_bt_node",
+    "nav2_controller_cancel_bt_node",
+    "nav2_wait_cancel_bt_node",
+    "nav2_spin_cancel_bt_node",
+    "nav2_back_up_cancel_bt_node"
   };
 
   declare_parameter("plugin_lib_names", plugin_libs);
@@ -95,6 +101,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   global_frame_ = get_parameter("global_frame").as_string();
   robot_frame_ = get_parameter("robot_base_frame").as_string();
   transform_tolerance_ = get_parameter("transform_tolerance").as_double();
+  odom_topic_ = get_parameter("odom_topic").as_string();
 
   // Libraries to pull plugins (BT Nodes) from
   auto plugin_lib_names = get_parameter("plugin_lib_names").as_string_array();
@@ -108,20 +115,20 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   feedback_utils.robot_frame = robot_frame_;
   feedback_utils.transform_tolerance = transform_tolerance_;
 
+  // Odometry smoother object for getting current speed
+  odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(shared_from_this(), 0.3, odom_topic_);
+
   if (!pose_navigator_->on_configure(
-      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
+      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_, odom_smoother_))
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
   if (!poses_navigator_->on_configure(
-      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
+      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_, odom_smoother_))
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
-
-  // Odometry smoother object for getting current speed
-  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(shared_from_this(), 0.3);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

@@ -92,7 +92,7 @@ void SmacPlannerHybrid::configure(
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
-  node->get_parameter(name + ".minimum_turning_radius", _search_info.minimum_turning_radius);
+  node->get_parameter(name + ".minimum_turning_radius", _minimum_turning_radius_global_coords);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".cache_obstacle_heuristic", _search_info.cache_obstacle_heuristic);
@@ -108,6 +108,9 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cost_penalty", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".cost_penalty", _search_info.cost_penalty);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".retrospective_penalty", rclcpp::ParameterValue(0.015));
+  node->get_parameter(name + ".retrospective_penalty", _search_info.retrospective_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(3.5));
   node->get_parameter(name + ".analytic_expansion_ratio", _search_info.analytic_expansion_ratio);
@@ -147,9 +150,8 @@ void SmacPlannerHybrid::configure(
   if (!_downsample_costmap) {
     _downsampling_factor = 1;
   }
-  const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
   _search_info.minimum_turning_radius =
-    _search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
+    _minimum_turning_radius_global_coords / (_costmap->getResolution() * _downsampling_factor);
   _lookup_table_dim =
     static_cast<float>(_lookup_table_size) /
     static_cast<float>(_costmap->getResolution() * _downsampling_factor);
@@ -188,7 +190,7 @@ void SmacPlannerHybrid::configure(
     SmootherParams params;
     params.get(node, name);
     _smoother = std::make_unique<Smoother>(params);
-    _smoother->initialize(minimum_turning_radius_global_coords);
+    _smoother->initialize(_minimum_turning_radius_global_coords);
   }
 
   // Initialize costmap downsampler
@@ -398,7 +400,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         if (_smoother) {
           reinit_smoother = true;
         }
-        _search_info.minimum_turning_radius = static_cast<float>(parameter.as_double());
+        _minimum_turning_radius_global_coords = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".reverse_penalty") {
         reinit_a_star = true;
         _search_info.reverse_penalty = static_cast<float>(parameter.as_double());
@@ -478,9 +480,8 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
     if (!_downsample_costmap) {
       _downsampling_factor = 1;
     }
-    const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
     _search_info.minimum_turning_radius =
-      _search_info.minimum_turning_radius / (_costmap->getResolution() * _downsampling_factor);
+      _minimum_turning_radius_global_coords / (_costmap->getResolution() * _downsampling_factor);
     _lookup_table_dim =
       static_cast<float>(_lookup_table_size) /
       static_cast<float>(_costmap->getResolution() * _downsampling_factor);
@@ -535,7 +536,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       SmootherParams params;
       params.get(node, _name);
       _smoother = std::make_unique<Smoother>(params);
-      _smoother->initialize(minimum_turning_radius_global_coords);
+      _smoother->initialize(_minimum_turning_radius_global_coords);
     }
   }
   result.successful = true;

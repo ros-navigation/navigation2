@@ -6,6 +6,7 @@ find_package(nav2_core REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(angles REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -40,6 +41,7 @@ add_library(${library_name} SHARED
 set(dependencies
   angles
   rclcpp
+  rclcpp_components
   rclcpp_action
   rclcpp_components
   std_msgs

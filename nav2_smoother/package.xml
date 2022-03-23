@@ -11,6 +11,7 @@
   <build_depend>nav2_common</build_depend>
   <depend>angles</depend>
   <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
   <depend>rclcpp_action</depend>
   <depend>rclcpp_components</depend>
   <depend>std_msgs</depend>

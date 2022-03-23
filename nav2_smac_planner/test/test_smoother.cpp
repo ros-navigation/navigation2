@@ -79,6 +79,7 @@ TEST(SmootherTest, test_full_smoother)
   info.non_straight_penalty = 1.05;
   info.reverse_penalty = 2.0;
   info.cost_penalty = 2.0;
+  info.retrospective_penalty = 0.0;
   info.analytic_expansion_ratio = 3.5;
   info.minimum_turning_radius = 8;  // in grid coordinates 0.4/0.05
   info.analytic_expansion_max_length = 20.0;  // in grid coordinates

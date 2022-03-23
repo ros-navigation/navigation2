@@ -78,7 +78,8 @@ void SmacPlannerLattice::configure(
   // Default to a well rounded model: 16 bin, 0.4m turning radius, ackermann model
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".lattice_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_smac_planner") + "/default_model.json"));
+      ament_index_cpp::get_package_share_directory("nav2_smac_planner") +
+      "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann/output.json"));
   node->get_parameter(name + ".lattice_filepath", _search_info.lattice_filepath);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
@@ -95,6 +96,9 @@ void SmacPlannerLattice::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cost_penalty", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".cost_penalty", _search_info.cost_penalty);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".retrospective_penalty", rclcpp::ParameterValue(0.015));
+  node->get_parameter(name + ".retrospective_penalty", _search_info.retrospective_penalty);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".rotation_penalty", rclcpp::ParameterValue(5.0));
   node->get_parameter(name + ".rotation_penalty", _search_info.rotation_penalty);
@@ -416,9 +420,8 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
   // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
   if (reinit_a_star || reinit_smoother) {
     // convert to grid coordinates
-    const double minimum_turning_radius_global_coords = _search_info.minimum_turning_radius;
     _search_info.minimum_turning_radius =
-      _search_info.minimum_turning_radius / (_costmap->getResolution());
+      _metadata.min_turning_radius / (_costmap->getResolution());
     float lookup_table_dim =
       static_cast<float>(_lookup_table_size) /
       static_cast<float>(_costmap->getResolution());

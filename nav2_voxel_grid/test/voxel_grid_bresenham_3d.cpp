@@ -49,6 +49,10 @@ public:
     ASSERT_TRUE(off < size_);
     data_[off] = val;
   }
+  inline unsigned int operator()(unsigned int off)
+  {
+    return data_[off];
+  }
 
 private:
   uint32_t * data_;
@@ -120,6 +124,29 @@ TEST(voxel_grid, bresenham3DBoundariesCheck)
     }
     vg.raytraceLine(tv, x0, y0, z0, x1, y1, z1, max_length, min_length);
   }
+}
+
+TEST(voxel_grid, bresenham3DSamePoint)
+{
+  const int sz_x = 60;
+  const int sz_y = 60;
+  const int sz_z = 2;
+  const unsigned int max_length = 60;
+  const unsigned int min_length = 0;
+  nav2_voxel_grid::VoxelGrid vg(sz_x, sz_y, sz_z);
+  TestVoxel tv(vg.getData(), sz_x, sz_y);
+
+  // Initial point
+  const double x0 = 2.2;
+  const double y0 = 3.8;
+  const double z0 = 0.4;
+
+  unsigned int offset = static_cast<int>(y0) * sz_x + static_cast<int>(x0);
+  unsigned int val_before = tv(offset);
+  // Same point to check
+  vg.raytraceLine(tv, x0, y0, z0, x0, y0, z0, max_length, min_length);
+  unsigned int val_after = tv(offset);
+  ASSERT_FALSE(val_before == val_after);
 }
 
 int main(int argc, char ** argv)
