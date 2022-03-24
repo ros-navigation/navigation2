@@ -325,7 +325,7 @@ StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr u
       costmap_[index] = interpretValue(update->data[di++]);
     }
   }
-  
+
   has_updated_data_ = true;
 }
 
