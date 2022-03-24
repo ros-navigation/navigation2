@@ -17,6 +17,7 @@
 #include <fstream>
 #include <memory>
 #include <utility>
+#include <boost/filesystem.hpp>
 
 #include <boost/filesystem.hpp>
 

@@ -20,6 +20,7 @@
 #include <vector>
 #include <mutex>
 
+#include "nav2_util/odometry_utils.hpp"
 #include "tf2_ros/buffer.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -135,13 +136,15 @@ public:
    * @param feedback_utils Some utilities useful for navigators to have
    * @param plugin_muxer The muxing object to ensure only one navigator
    * can be active at a time
+   * @param odom_smoother Object to get current smoothed robot's speed
    * @return bool If successful
    */
   bool on_configure(
     rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
     const std::vector<std::string> & plugin_lib_names,
     const FeedbackUtils & feedback_utils,
-    nav2_bt_navigator::NavigatorMuxer * plugin_muxer)
+    nav2_bt_navigator::NavigatorMuxer * plugin_muxer,
+    std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
   {
     auto node = parent_node.lock();
     logger_ = node->get_logger();
@@ -173,7 +176,7 @@ public:
     blackboard->set<bool>("initial_pose_received", false);  // NOLINT
     blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
-    return configure(parent_node) && ok;
+    return configure(parent_node, odom_smoother) && ok;
   }
 
   /**
@@ -293,7 +296,12 @@ protected:
   /**
    * @param Method to configure resources.
    */
-  virtual bool configure(rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/) {return true;}
+  virtual bool configure(
+    rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/,
+    std::shared_ptr<nav2_util::OdomSmoother>/*odom_smoother*/)
+  {
+    return true;
+  }
 
   /**
    * @brief Method to cleanup resources.

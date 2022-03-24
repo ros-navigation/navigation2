@@ -15,8 +15,24 @@
 
     <Action ID="CancelControl">
       <input_port name="service_name">Service name to cancel the controller server</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
     </Action>
-    
+
+    <Action ID="CancelBackUp">
+      <input_port name="service_name">Service name to cancel the backup recovery</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
+    <Action ID="CancelSpin">
+      <input_port name="service_name">Service name to cancel the spin recovery</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
+    <Action ID="CancelWait">
+      <input_port name="service_name">Service name to cancel the wait recovery</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
     <Action ID="ClearEntireCostmap">
       <input_port name="service_name">Service name</input_port>
     </Action>
@@ -115,7 +131,7 @@
 
     <Condition ID="GoalUpdated"/>
 
-    <Condition ID="GloballyUpdatedGoalCondition"/>
+    <Condition ID="GlobalUpdatedGoal"/>
 
     <Condition ID="IsBatteryLow">
       <input_port name="min_battery">Min battery % or voltage before triggering</input_port>
@@ -136,7 +152,7 @@
     <Condition ID="InitialPoseReceived">
     </Condition>
 
-    <Condition ID="IsPathValidCondition">
+    <Condition ID="IsPathValid">
       <input_port name="path"> Path to validate </input_port>
       <input_port name="server_timeout"> Server timeout </input_port>
     </Condition>
