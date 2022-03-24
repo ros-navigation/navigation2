@@ -122,12 +122,42 @@ protected:
     return pixel == BACKGROUND_CODE;
   }
 
+  inline Image<uint8_t> makeChessboardLikeImage(
+    size_t rows, size_t cols,
+    std::vector<uint8_t> & buffer) const;
+
 protected:
   MemoryBuffer buffer_;
   imgproc_impl::EquivalenceLabelTrees<uint8_t> label_trees_;
   static const uint8_t BACKGROUND_CODE = 0;
   static const uint8_t FOREGROUND_CODE = 255;
 };
+
+Image<uint8_t> ConnectedComponentsTester::makeChessboardLikeImage(
+  size_t rows, size_t cols,
+  std::vector<uint8_t> & buffer) const
+{
+  Image<uint8_t> image = makeImage<uint8_t>(rows, cols, buffer);
+
+  auto inverse = [this](uint8_t v) {
+      return (v == BACKGROUND_CODE) ? FOREGROUND_CODE : BACKGROUND_CODE;
+    };
+
+  uint8_t current_value = FOREGROUND_CODE;
+  for (size_t j = 0; j < cols; ++j) {
+    *(image.row(0) + j) = current_value;
+    current_value = inverse(current_value);
+  }
+
+  for (size_t i = 1; i < rows; ++i) {
+    auto up = image.row(i - 1);
+    auto current = image.row(i);
+    for (size_t j = 0; j < cols; ++j, ++up, ++current) {
+      *current = inverse(*up);
+    }
+  }
+  return image;
+}
 
 TEST_F(ConnectedComponentsTester, way4EmptyTest) {
   Image<uint8_t> empty;
@@ -192,17 +222,7 @@ TEST_F(ConnectedComponentsTester, way4ImageSmallTest) {
 
 TEST_F(ConnectedComponentsTester, way4LabelsOverflowTest) {
   // big chessboard image
-  Image<uint8_t> input = makeImage(32, 17, image_buffer_bytes_);
-  uint8_t v = FOREGROUND_CODE;
-  input.forEach(
-    [&v](uint8_t & pixel) {
-      pixel = v;
-      if (v == BACKGROUND_CODE) {
-        v = FOREGROUND_CODE;
-      } else {
-        v = BACKGROUND_CODE;
-      }
-    });
+  Image<uint8_t> input = makeChessboardLikeImage(32, 17, image_buffer_bytes_);
 
   ASSERT_THROW(
     (connectedComponents<ConnectivityType::Way4>(input, buffer_, label_trees_, isBackground)),
@@ -377,6 +397,15 @@ TEST_F(ConnectedComponentsTester, way4ImageSpiralTest) {
 
 TEST_F(ConnectedComponentsTester, way8ImageSpiralTest) {
   ASSERT_TRUE(spiralTest<ConnectivityType::Way8>());
+}
+
+TEST_F(ConnectedComponentsTester, groupsRemoverUint16LabelOverflow) {
+  Image<uint8_t> image = makeChessboardLikeImage(512, 512, image_buffer_bytes_);
+  GroupsRemover remover;
+  MemoryBuffer buffer;
+  remover.removeGroups(image, buffer, ConnectivityType::Way4, 2, isBackground);
+  const auto bg = BACKGROUND_CODE;
+  image.forEach([bg](uint8_t v) {ASSERT_EQ(v, bg);});
 }
 
 ShapeBuffer3x3 shape_buffer{};
