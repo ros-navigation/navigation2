@@ -12,29 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_RECOVERIES__PLUGINS__WAIT_HPP_
-#define NAV2_RECOVERIES__PLUGINS__WAIT_HPP_
+#ifndef NAV2_BEHAVIORS__PLUGINS__WAIT_HPP_
+#define NAV2_BEHAVIORS__PLUGINS__WAIT_HPP_
 
 #include <chrono>
 #include <string>
 #include <memory>
 
-#include "nav2_recoveries/behavior.hpp"
+#include "nav2_behaviors/behavior.hpp"
 #include "nav2_msgs/action/wait.hpp"
 
-namespace nav2_recoveries
+namespace nav2_behaviors
 {
 using WaitAction = nav2_msgs::action::Wait;
 
 /**
- * @class nav2_recoveries::Wait
- * @brief An action server recovery for waiting a fixed duration
+ * @class nav2_behaviors::Wait
+ * @brief An action server behavior for waiting a fixed duration
  */
-class Wait : public Recovery<WaitAction>
+class Wait : public Behavior<WaitAction>
 {
 public:
   /**
-   * @brief A constructor for nav2_recoveries::Wait
+   * @brief A constructor for nav2_behaviors::Wait
    */
   Wait();
   ~Wait();
@@ -42,13 +42,13 @@ public:
   /**
    * @brief Initialization to run behavior
    * @param command Goal to execute
-   * @return Status of recovery
+   * @return Status of behavior
    */
   Status onRun(const std::shared_ptr<const WaitAction::Goal> command) override;
 
   /**
    * @brief Loop function to run behavior
-   * @return Status of recovery
+   * @return Status of behavior
    */
   Status onCycleUpdate() override;
 
@@ -57,6 +57,6 @@ protected:
   WaitAction::Feedback::SharedPtr feedback_;
 };
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_behaviors
 
-#endif  // NAV2_RECOVERIES__PLUGINS__WAIT_HPP_
+#endif  // NAV2_BEHAVIORS__PLUGINS__WAIT_HPP_

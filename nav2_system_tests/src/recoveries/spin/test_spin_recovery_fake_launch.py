@@ -53,7 +53,7 @@ def generate_launch_description():
             param_rewrites=param_substitutions,
             convert_types=True)
 
-    lifecycle_nodes = ['recoveries_server']
+    lifecycle_nodes = ['behavior_server']
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
@@ -122,9 +122,9 @@ def generate_launch_description():
             arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan']),
 
         Node(
-            package='nav2_recoveries',
-            executable='recoveries_server',
-            name='recoveries_server',
+            package='nav2_behaviors',
+            executable='behavior_server',
+            name='behavior_server',
             output='screen',
             parameters=[configured_params],
             remappings=remappings),

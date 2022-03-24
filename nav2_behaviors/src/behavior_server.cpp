@@ -17,16 +17,16 @@
 #include <vector>
 #include <utility>
 #include "nav2_util/node_utils.hpp"
-#include "nav2_recoveries/behavior_server.hpp"
+#include "nav2_behaviors/behavior_server.hpp"
 
 namespace behavior_server
 {
 
 BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
-: LifecycleNode("recoveries_server", "", false, options),
+: LifecycleNode("behavior_server", "", false, options),
   plugin_loader_("nav2_core", "nav2_core::Behavior"),
   default_ids_{"spin", "backup", "wait"},
-  default_types_{"nav2_recoveries/Spin", "nav2_recoveries/BackUp", "nav2_recoveries/Wait"}
+  default_types_{"nav2_behaviors/Spin", "nav2_behaviors/BackUp", "nav2_behaviors/Wait"}
 {
   declare_parameter(
     "costmap_topic",
@@ -35,10 +35,10 @@ BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
     "footprint_topic",
     rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
   declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
-  declare_parameter("recovery_plugins", default_ids_);
+  declare_parameter("behavior_plugins", default_ids_);
 
-  get_parameter("recovery_plugins", recovery_ids_);
-  if (recovery_ids_ == default_ids_) {
+  get_parameter("behavior_plugins", behavior_ids_);
+  if (behavior_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
       declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
     }
@@ -58,7 +58,7 @@ BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
 
 BehaviorServer::~BehaviorServer()
 {
-  recoveries_.clear();
+  behaviors_.clear();
 }
 
 nav2_util::CallbackReturn
@@ -87,8 +87,8 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
     *costmap_sub_, *footprint_sub_, this->get_name());
 
-  recovery_types_.resize(recovery_ids_.size());
-  if (!loadRecoveryPlugins()) {
+  behavior_types_.resize(behavior_ids_.size());
+  if (!loadBehaviorPlugins()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -97,22 +97,22 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
 
 bool
-BehaviorServer::loadRecoveryPlugins()
+BehaviorServer::loadBehaviorPlugins()
 {
   auto node = shared_from_this();
 
-  for (size_t i = 0; i != recovery_ids_.size(); i++) {
-    recovery_types_[i] = nav2_util::get_plugin_type_param(node, recovery_ids_[i]);
+  for (size_t i = 0; i != behavior_ids_.size(); i++) {
+    behavior_types_[i] = nav2_util::get_plugin_type_param(node, behavior_ids_[i]);
     try {
       RCLCPP_INFO(
-        get_logger(), "Creating recovery plugin %s of type %s",
-        recovery_ids_[i].c_str(), recovery_types_[i].c_str());
-      recoveries_.push_back(plugin_loader_.createUniqueInstance(recovery_types_[i]));
-      recoveries_.back()->configure(node, recovery_ids_[i], tf_, collision_checker_);
+        get_logger(), "Creating behavior plugin %s of type %s",
+        behavior_ids_[i].c_str(), behavior_types_[i].c_str());
+      behaviors_.push_back(plugin_loader_.createUniqueInstance(behavior_types_[i]));
+      behaviors_.back()->configure(node, behavior_ids_[i], tf_, collision_checker_);
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
-        get_logger(), "Failed to create recovery %s of type %s."
-        " Exception: %s", recovery_ids_[i].c_str(), recovery_types_[i].c_str(),
+        get_logger(), "Failed to create behavior %s of type %s."
+        " Exception: %s", behavior_ids_[i].c_str(), behavior_types_[i].c_str(),
         ex.what());
       return false;
     }
@@ -126,7 +126,7 @@ BehaviorServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
   std::vector<pluginlib::UniquePtr<nav2_core::Behavior>>::iterator iter;
-  for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
+  for (iter = behaviors_.begin(); iter != behaviors_.end(); ++iter) {
     (*iter)->activate();
   }
 
@@ -142,7 +142,7 @@ BehaviorServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   std::vector<pluginlib::UniquePtr<nav2_core::Behavior>>::iterator iter;
-  for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
+  for (iter = behaviors_.begin(); iter != behaviors_.end(); ++iter) {
     (*iter)->deactivate();
   }
 
@@ -158,11 +158,11 @@ BehaviorServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
   std::vector<pluginlib::UniquePtr<nav2_core::Behavior>>::iterator iter;
-  for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
+  for (iter = behaviors_.begin(); iter != behaviors_.end(); ++iter) {
     (*iter)->cleanup();
   }
 
-  recoveries_.clear();
+  behaviors_.clear();
   transform_listener_.reset();
   tf_.reset();
   footprint_sub_.reset();

@@ -16,7 +16,7 @@
 #include <string>
 #include <memory>
 
-#include "nav2_recoveries/behavior_server.hpp"
+#include "nav2_behaviors/behavior_server.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)

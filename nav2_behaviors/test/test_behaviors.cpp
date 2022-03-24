@@ -23,28 +23,28 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "rclcpp_action/rclcpp_action.hpp"
-#include "nav2_recoveries/behavior.hpp"
-#include "nav2_msgs/action/dummy_recovery.hpp"
+#include "nav2_behaviors/behavior.hpp"
+#include "nav2_msgs/action/dummy_behavior.hpp"
 
-using nav2_recoveries::Recovery;
-using nav2_recoveries::Status;
-using RecoveryAction = nav2_msgs::action::DummyRecovery;
-using ClientGoalHandle = rclcpp_action::ClientGoalHandle<RecoveryAction>;
+using nav2_behaviors::Behavior;
+using nav2_behaviors::Status;
+using BehaviorAction = nav2_msgs::action::DummyBehavior;
+using ClientGoalHandle = rclcpp_action::ClientGoalHandle<BehaviorAction>;
 
 using namespace std::chrono_literals;
 
 // A recovery for testing the base class
 
-class DummyRecovery : public Recovery<RecoveryAction>
+class DummyBehavior : public Behavior<BehaviorAction>
 {
 public:
-  DummyRecovery()
-  : Recovery<RecoveryAction>(),
+  DummyBehavior()
+  : Behavior<BehaviorAction>(),
     initialized_(false) {}
 
-  ~DummyRecovery() {}
+  ~DummyBehavior() {}
 
-  Status onRun(const std::shared_ptr<const RecoveryAction::Goal> goal) override
+  Status onRun(const std::shared_ptr<const BehaviorAction::Goal> goal) override
   {
     // A normal recovery would catch the command and initialize
     initialized_ = false;
@@ -92,17 +92,17 @@ private:
 
 // Define a test class to hold the context for the tests
 
-class RecoveryTest : public ::testing::Test
+class BehaviorTest : public ::testing::Test
 {
 protected:
-  RecoveryTest() {SetUp();}
-  ~RecoveryTest() {}
+  BehaviorTest() {SetUp();}
+  ~BehaviorTest() {}
 
   void SetUp()
   {
     node_lifecycle_ =
       std::make_shared<rclcpp_lifecycle::LifecycleNode>(
-      "LifecycleRecoveryTestNode", rclcpp::NodeOptions());
+      "LifecycleBehaviorTestNode", rclcpp::NodeOptions());
     node_lifecycle_->declare_parameter(
       "costmap_topic",
       rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
@@ -131,11 +131,11 @@ protected:
       *costmap_sub_, *footprint_sub_,
       node_lifecycle_->get_name());
 
-    recovery_ = std::make_shared<DummyRecovery>();
-    recovery_->configure(node_lifecycle_, "Recovery", tf_buffer_, collision_checker_);
-    recovery_->activate();
+    behavior_ = std::make_shared<DummyBehavior>();
+    behavior_->configure(node_lifecycle_, "Recovery", tf_buffer_, collision_checker_);
+    behavior_->activate();
 
-    client_ = rclcpp_action::create_client<RecoveryAction>(
+    client_ = rclcpp_action::create_client<BehaviorAction>(
       node_lifecycle_->get_node_base_interface(),
       node_lifecycle_->get_node_graph_interface(),
       node_lifecycle_->get_node_logging_interface(),
@@ -152,7 +152,7 @@ protected:
       return false;
     }
 
-    auto goal = RecoveryAction::Goal();
+    auto goal = BehaviorAction::Goal();
     goal.command.data = command;
     auto future_goal = client_->async_send_goal(goal);
 
@@ -195,58 +195,58 @@ protected:
   }
 
   std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_lifecycle_;
-  std::shared_ptr<DummyRecovery> recovery_;
-  std::shared_ptr<rclcpp_action::Client<RecoveryAction>> client_;
-  std::shared_ptr<rclcpp_action::ClientGoalHandle<RecoveryAction>> goal_handle_;
+  std::shared_ptr<DummyBehavior> behavior_;
+  std::shared_ptr<rclcpp_action::Client<BehaviorAction>> client_;
+  std::shared_ptr<rclcpp_action::ClientGoalHandle<BehaviorAction>> goal_handle_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 // Define the tests
 
-TEST_F(RecoveryTest, testingSuccess)
+TEST_F(BehaviorTest, testingSuccess)
 {
   ASSERT_TRUE(sendCommand("Testing success"));
   EXPECT_EQ(getOutcome(), Status::SUCCEEDED);
   SUCCEED();
 }
 
-TEST_F(RecoveryTest, testingFailureOnRun)
+TEST_F(BehaviorTest, testingFailureOnRun)
 {
   ASSERT_TRUE(sendCommand("Testing failure on run"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
   SUCCEED();
 }
 
-TEST_F(RecoveryTest, testingFailureOnInit)
+TEST_F(BehaviorTest, testingFailureOnInit)
 {
   ASSERT_TRUE(sendCommand("Testing failure on init"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
   SUCCEED();
 }
 
-TEST_F(RecoveryTest, testingSequentialFailures)
+TEST_F(BehaviorTest, testingSequentialFailures)
 {
   ASSERT_TRUE(sendCommand("Testing failure on run"));
   EXPECT_EQ(getOutcome(), Status::FAILED);
   SUCCEED();
 }
 
-TEST_F(RecoveryTest, testingTotalElapsedTimeIsGratherThanZeroIfStarted)
+TEST_F(BehaviorTest, testingTotalElapsedTimeIsGratherThanZeroIfStarted)
 {
   ASSERT_TRUE(sendCommand("Testing success"));
   EXPECT_GT(getResult().result->total_elapsed_time.sec, 0.0);
   SUCCEED();
 }
 
-TEST_F(RecoveryTest, testingTotalElapsedTimeIsZeroIfFailureOnInit)
+TEST_F(BehaviorTest, testingTotalElapsedTimeIsZeroIfFailureOnInit)
 {
   ASSERT_TRUE(sendCommand("Testing failure on init"));
   EXPECT_EQ(getResult().result->total_elapsed_time.sec, 0.0);
   SUCCEED();
 }
 
-TEST_F(RecoveryTest, testingTotalElapsedTimeIsZeroIfFailureOnRun)
+TEST_F(BehaviorTest, testingTotalElapsedTimeIsZeroIfFailureOnRun)
 {
   ASSERT_TRUE(sendCommand("Testing failure on run"));
   EXPECT_EQ(getResult().result->total_elapsed_time.sec, 0.0);

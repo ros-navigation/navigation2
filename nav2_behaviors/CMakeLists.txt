@@ -25,8 +25,8 @@ include_directories(
   include
 )
 
-set(library_name recoveries_server_core)
-set(executable_name recoveries_server)
+set(library_name behavior_server_core)
+set(executable_name behavior_server)
 
 set(dependencies
   rclcpp
@@ -47,27 +47,27 @@ set(dependencies
 )
 
 # plugins
-add_library(nav2_spin_recovery SHARED
+add_library(nav2_spin_behavior SHARED
   plugins/spin.cpp
 )
 
-ament_target_dependencies(nav2_spin_recovery
+ament_target_dependencies(nav2_spin_behavior
   ${dependencies}
 )
 
-add_library(nav2_backup_recovery SHARED
+add_library(nav2_backup_behavior SHARED
   plugins/back_up.cpp
 )
 
-ament_target_dependencies(nav2_backup_recovery
+ament_target_dependencies(nav2_backup_behavior
   ${dependencies}
 )
 
-add_library(nav2_wait_recovery SHARED
+add_library(nav2_wait_behavior SHARED
   plugins/wait.cpp
 )
 
-ament_target_dependencies(nav2_wait_recovery
+ament_target_dependencies(nav2_wait_behavior
   ${dependencies}
 )
 
@@ -96,9 +96,9 @@ ament_target_dependencies(${executable_name}
 rclcpp_components_register_nodes(${library_name} "behavior_server::BehaviorServer")
 
 install(TARGETS ${library_name}
-                nav2_backup_recovery
-                nav2_spin_recovery
-                nav2_wait_recovery
+                nav2_backup_behavior
+                nav2_spin_behavior
+                nav2_wait_behavior
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -125,9 +125,9 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name}
-  nav2_backup_recovery
-  nav2_spin_recovery
-  nav2_wait_recovery
+  nav2_backup_behavior
+  nav2_spin_behavior
+  nav2_wait_behavior
 )
 ament_export_dependencies(${dependencies})
 ament_package()

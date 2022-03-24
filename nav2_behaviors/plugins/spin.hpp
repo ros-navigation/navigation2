@@ -12,30 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_RECOVERIES__PLUGINS__SPIN_HPP_
-#define NAV2_RECOVERIES__PLUGINS__SPIN_HPP_
+#ifndef NAV2_BEHAVIORS__PLUGINS__SPIN_HPP_
+#define NAV2_BEHAVIORS__PLUGINS__SPIN_HPP_
 
 #include <chrono>
 #include <string>
 #include <memory>
 
-#include "nav2_recoveries/behavior.hpp"
+#include "nav2_behaviors/behavior.hpp"
 #include "nav2_msgs/action/spin.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 
-namespace nav2_recoveries
+namespace nav2_behaviors
 {
 using SpinAction = nav2_msgs::action::Spin;
 
 /**
- * @class nav2_recoveries::Spin
- * @brief An action server recovery for spinning in
+ * @class nav2_behaviors::Spin
+ * @brief An action server behavior for spinning in
  */
-class Spin : public Recovery<SpinAction>
+class Spin : public Behavior<SpinAction>
 {
 public:
   /**
-   * @brief A constructor for nav2_recoveries::Spin
+   * @brief A constructor for nav2_behaviors::Spin
    */
   Spin();
   ~Spin();
@@ -43,18 +43,18 @@ public:
   /**
    * @brief Initialization to run behavior
    * @param command Goal to execute
-   * @return Status of recovery
+   * @return Status of behavior
    */
   Status onRun(const std::shared_ptr<const SpinAction::Goal> command) override;
 
   /**
-   * @brief Configuration of recovery action
+   * @brief Configuration of behavior action
    */
   void onConfigure() override;
 
   /**
    * @brief Loop function to run behavior
-   * @return Status of recovery
+   * @return Status of behavior
    */
   Status onCycleUpdate() override;
 
@@ -84,6 +84,6 @@ protected:
   rclcpp::Time end_time_;
 };
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_behaviors
 
-#endif  // NAV2_RECOVERIES__PLUGINS__SPIN_HPP_
+#endif  // NAV2_BEHAVIORS__PLUGINS__SPIN_HPP_

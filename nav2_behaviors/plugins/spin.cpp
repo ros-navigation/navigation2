@@ -31,11 +31,11 @@
 
 using namespace std::chrono_literals;
 
-namespace nav2_recoveries
+namespace nav2_behaviors
 {
 
 Spin::Spin()
-: Recovery<SpinAction>(),
+: Behavior<SpinAction>(),
   feedback_(std::make_shared<SpinAction::Feedback>()),
   prev_yaw_(0.0)
 {
@@ -89,7 +89,7 @@ Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 
   cmd_yaw_ = command->target_yaw;
   RCLCPP_INFO(
-    logger_, "Turning %0.2f for spin recovery.",
+    logger_, "Turning %0.2f for spin behavior.",
     cmd_yaw_);
 
   command_time_allowance_ = command->time_allowance;
@@ -188,7 +188,7 @@ bool Spin::isCollisionFree(
   return true;
 }
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_behaviors
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_recoveries::Spin, nav2_core::Behavior)
+PLUGINLIB_EXPORT_CLASS(nav2_behaviors::Spin, nav2_core::Behavior)

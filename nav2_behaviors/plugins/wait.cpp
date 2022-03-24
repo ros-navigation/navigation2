@@ -18,11 +18,11 @@
 
 #include "wait.hpp"
 
-namespace nav2_recoveries
+namespace nav2_behaviors
 {
 
 Wait::Wait()
-: Recovery<WaitAction>(),
+: Behavior<WaitAction>(),
   feedback_(std::make_shared<WaitAction::Feedback>())
 {
 }
@@ -54,7 +54,7 @@ Status Wait::onCycleUpdate()
   }
 }
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_behaviors
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_recoveries::Wait, nav2_core::Behavior)
+PLUGINLIB_EXPORT_CLASS(nav2_behaviors::Wait, nav2_core::Behavior)

@@ -12,28 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_RECOVERIES__PLUGINS__BACK_UP_HPP_
-#define NAV2_RECOVERIES__PLUGINS__BACK_UP_HPP_
+#ifndef NAV2_BEHAVIORS__PLUGINS__BACK_UP_HPP_
+#define NAV2_BEHAVIORS__PLUGINS__BACK_UP_HPP_
 
 #include <chrono>
 #include <memory>
 
-#include "nav2_recoveries/behavior.hpp"
+#include "nav2_behaviors/behavior.hpp"
 #include "nav2_msgs/action/back_up.hpp"
 
-namespace nav2_recoveries
+namespace nav2_behaviors
 {
 using BackUpAction = nav2_msgs::action::BackUp;
 
 /**
- * @class nav2_recoveries::BackUp
- * @brief An action server recovery for spinning in
+ * @class nav2_behaviors::BackUp
+ * @brief An action server Behavior for spinning in
  */
-class BackUp : public Recovery<BackUpAction>
+class BackUp : public Behavior<BackUpAction>
 {
 public:
   /**
-   * @brief A constructor for nav2_recoveries::BackUp
+   * @brief A constructor for nav2_behaviors::BackUp
    */
   BackUp();
   ~BackUp();
@@ -41,13 +41,13 @@ public:
   /**
    * @brief Initialization to run behavior
    * @param command Goal to execute
-   * @return Status of recovery
+   * @return Status of behavior
    */
   Status onRun(const std::shared_ptr<const BackUpAction::Goal> command) override;
 
   /**
    * @brief Loop function to run behavior
-   * @return Status of recovery
+   * @return Status of behavior
    */
   Status onCycleUpdate() override;
 
@@ -65,7 +65,7 @@ protected:
     geometry_msgs::msg::Pose2D & pose2d);
 
   /**
-   * @brief Configuration of recovery action
+   * @brief Configuration of behavior action
    */
   void onConfigure() override;
 
@@ -83,6 +83,6 @@ protected:
   BackUpAction::Feedback::SharedPtr feedback_;
 };
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_behaviors
 
-#endif  // NAV2_RECOVERIES__PLUGINS__BACK_UP_HPP_
+#endif  // NAV2_BEHAVIORS__PLUGINS__BACK_UP_HPP_

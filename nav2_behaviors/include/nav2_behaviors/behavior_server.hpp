@@ -25,15 +25,15 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_core/behavior.hpp"
 
-#ifndef NAV2_RECOVERIES__BEHAVIOR_SERVER_HPP_
-#define NAV2_RECOVERIES__BEHAVIOR_SERVER_HPP_
+#ifndef NAV2_BEHAVIORS__BEHAVIOR_SERVER_HPP_
+#define NAV2_BEHAVIORS__BEHAVIOR_SERVER_HPP_
 
 namespace behavior_server
 {
 
 /**
  * @class behavior_server::BehaviorServer
- * @brief An server hosting a map of recovery plugins
+ * @brief An server hosting a map of behavior plugins
  */
 class BehaviorServer : public nav2_util::LifecycleNode
 {
@@ -46,10 +46,10 @@ public:
   ~BehaviorServer();
 
   /**
-   * @brief Loads recovery plugins from parameter file
+   * @brief Loads behavior plugins from parameter file
    * @return bool if successfully loaded the plugins
    */
-  bool loadRecoveryPlugins();
+  bool loadBehaviorPlugins();
 
 protected:
   /**
@@ -82,11 +82,11 @@ protected:
 
   // Plugins
   pluginlib::ClassLoader<nav2_core::Behavior> plugin_loader_;
-  std::vector<pluginlib::UniquePtr<nav2_core::Behavior>> recoveries_;
+  std::vector<pluginlib::UniquePtr<nav2_core::Behavior>> behaviors_;
   std::vector<std::string> default_ids_;
   std::vector<std::string> default_types_;
-  std::vector<std::string> recovery_ids_;
-  std::vector<std::string> recovery_types_;
+  std::vector<std::string> behavior_ids_;
+  std::vector<std::string> behavior_types_;
 
   // Utilities
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
@@ -96,4 +96,4 @@ protected:
 
 }  // namespace behavior_server
 
-#endif  // NAV2_RECOVERIES__BEHAVIOR_SERVER_HPP_
+#endif  // NAV2_BEHAVIORS__BEHAVIOR_SERVER_HPP_

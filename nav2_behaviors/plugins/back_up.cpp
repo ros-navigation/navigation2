@@ -22,11 +22,11 @@
 
 using namespace std::chrono_literals;
 
-namespace nav2_recoveries
+namespace nav2_behaviors
 {
 
 BackUp::BackUp()
-: Recovery<BackUpAction>(),
+: Behavior<BackUpAction>(),
   feedback_(std::make_shared<BackUpAction::Feedback>())
 {
 }
@@ -159,7 +159,7 @@ bool BackUp::isCollisionFree(
   return true;
 }
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_behaviors
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_recoveries::BackUp, nav2_core::Behavior)
+PLUGINLIB_EXPORT_CLASS(nav2_behaviors::BackUp, nav2_core::Behavior)

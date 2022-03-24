@@ -94,7 +94,7 @@ void SpinRecoveryTester::activate()
     sendFakeOdom(0.0);
   }
 
-  // Wait for lifecycle_manager_navigation to activate recoveries_server
+  // Wait for lifecycle_manager_navigation to activate behavior_server
   std::this_thread::sleep_for(10s);
 
   if (!client_ptr_) {

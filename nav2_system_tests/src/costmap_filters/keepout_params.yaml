@@ -54,8 +54,8 @@ bt_navigator:
     robot_base_frame: base_link
     odom_topic: /odom
     # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' are set in the launch
-    # files to allow for a commandline change default used is the 
-    # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml & 
+    # files to allow for a commandline change default used is the
+    # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml &
     # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
@@ -292,18 +292,18 @@ smoother_server:
   ros__parameters:
     use_sim_time: True
 
-recoveries_server:
+behavior_server:
   ros__parameters:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
-    recovery_plugins: ["spin", "backup", "wait"]
+    behavior_plugins: ["spin", "backup", "wait"]
     spin:
-      plugin: "nav2_recoveries/Spin"
+      plugin: "nav2_behaviors/Spin"
     backup:
-      plugin: "nav2_recoveries/BackUp"
+      plugin: "nav2_behaviors/BackUp"
     wait:
-      plugin: "nav2_recoveries/Wait"
+      plugin: "nav2_behaviors/Wait"
     global_frame: odom
     robot_base_frame: base_link
     transform_tolerance: 0.1

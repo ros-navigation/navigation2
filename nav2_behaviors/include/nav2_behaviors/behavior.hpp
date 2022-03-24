@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_RECOVERIES__RECOVERY_HPP_
-#define NAV2_RECOVERIES__RECOVERY_HPP_
+#ifndef NAV2_BEHAVIORS__BEHAVIOR_HPP_
+#define NAV2_BEHAVIORS__BEHAVIOR_HPP_
 
 #include <memory>
 #include <string>
@@ -35,7 +35,7 @@
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 
-namespace nav2_recoveries
+namespace nav2_behaviors
 {
 
 enum class Status : int8_t
@@ -48,26 +48,26 @@ enum class Status : int8_t
 using namespace std::chrono_literals;  //NOLINT
 
 /**
- * @class nav2_recoveries::Recovery
- * @brief An action server recovery base class implementing the action server and basic factory.
+ * @class nav2_behaviors::Behavior
+ * @brief An action server Behavior base class implementing the action server and basic factory.
  */
 template<typename ActionT>
-class Recovery : public nav2_core::Behavior
+class Behavior : public nav2_core::Behavior
 {
 public:
   using ActionServer = nav2_util::SimpleActionServer<ActionT>;
 
   /**
-   * @brief A Recovery constructor
+   * @brief A Behavior constructor
    */
-  Recovery()
+  Behavior()
   : action_server_(nullptr),
     cycle_frequency_(10.0),
     enabled_(false)
   {
   }
 
-  virtual ~Recovery()
+  virtual ~Behavior()
   {
   }
 
@@ -80,7 +80,7 @@ public:
   // This is the method derived classes should mainly implement
   // and will be called cyclically while it returns RUNNING.
   // Implement the behavior such that it runs some unit of work on each call
-  // and provides a status. The recovery will finish once SUCCEEDED is returned
+  // and provides a status. The Behavior will finish once SUCCEEDED is returned
   // It's up to the derived class to define the final commanded velocity.
   virtual Status onCycleUpdate() = 0;
 
@@ -109,7 +109,7 @@ public:
 
     RCLCPP_INFO(logger_, "Configuring %s", name.c_str());
 
-    recovery_name_ = name;
+    behavior_name_ = name;
     tf_ = tf;
 
     node->get_parameter("cycle_frequency", cycle_frequency_);
@@ -118,8 +118,8 @@ public:
     node->get_parameter("transform_tolerance", transform_tolerance_);
 
     action_server_ = std::make_shared<ActionServer>(
-      node, recovery_name_,
-      std::bind(&Recovery::execute, this));
+      node, behavior_name_,
+      std::bind(&Behavior::execute, this));
 
     collision_checker_ = collision_checker;
 
@@ -139,7 +139,7 @@ public:
   // Activate server on lifecycle transition
   void activate() override
   {
-    RCLCPP_INFO(logger_, "Activating %s", recovery_name_.c_str());
+    RCLCPP_INFO(logger_, "Activating %s", behavior_name_.c_str());
 
     vel_pub_->on_activate();
     action_server_->activate();
@@ -157,7 +157,7 @@ public:
 protected:
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
 
-  std::string recovery_name_;
+  std::string behavior_name_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
   std::shared_ptr<ActionServer> action_server_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
@@ -173,13 +173,13 @@ protected:
   rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
 
   // Logger
-  rclcpp::Logger logger_{rclcpp::get_logger("nav2_recoveries")};
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_behaviors")};
 
-  // Main execution callbacks for the action server implementation calling the recovery's
+  // Main execution callbacks for the action server implementation calling the Behavior's
   // onRun and cycle functions to execute a specific behavior
   void execute()
   {
-    RCLCPP_INFO(logger_, "Attempting %s", recovery_name_.c_str());
+    RCLCPP_INFO(logger_, "Attempting %s", behavior_name_.c_str());
 
     if (!enabled_) {
       RCLCPP_WARN(
@@ -191,7 +191,7 @@ protected:
     if (onRun(action_server_->get_current_goal()) != Status::SUCCEEDED) {
       RCLCPP_INFO(
         logger_,
-        "Initial checks failed for %s", recovery_name_.c_str());
+        "Initial checks failed for %s", behavior_name_.c_str());
       action_server_->terminate_current();
       return;
     }
@@ -206,7 +206,7 @@ protected:
       auto timer = node->create_wall_timer(
         1s,
         [&]()
-        {RCLCPP_INFO(logger_, "%s running...", recovery_name_.c_str());});
+        {RCLCPP_INFO(logger_, "%s running...", behavior_name_.c_str());});
     }
 
     auto start_time = steady_clock_.now();
@@ -218,19 +218,19 @@ protected:
 
     while (rclcpp::ok()) {
       if (action_server_->is_cancel_requested()) {
-        RCLCPP_INFO(logger_, "Canceling %s", recovery_name_.c_str());
+        RCLCPP_INFO(logger_, "Canceling %s", behavior_name_.c_str());
         stopRobot();
         result->total_elapsed_time = steady_clock_.now() - start_time;
         action_server_->terminate_all(result);
         return;
       }
 
-      // TODO(orduno) #868 Enable preempting a Recovery on-the-fly without stopping
+      // TODO(orduno) #868 Enable preempting a Behavior on-the-fly without stopping
       if (action_server_->is_preempt_requested()) {
         RCLCPP_ERROR(
           logger_, "Received a preemption request for %s,"
           " however feature is currently not implemented. Aborting and stopping.",
-          recovery_name_.c_str());
+          behavior_name_.c_str());
         stopRobot();
         result->total_elapsed_time = steady_clock_.now() - start_time;
         action_server_->terminate_current(result);
@@ -241,13 +241,13 @@ protected:
         case Status::SUCCEEDED:
           RCLCPP_INFO(
             logger_,
-            "%s completed successfully", recovery_name_.c_str());
+            "%s completed successfully", behavior_name_.c_str());
           result->total_elapsed_time = steady_clock_.now() - start_time;
           action_server_->succeeded_current(result);
           return;
 
         case Status::FAILED:
-          RCLCPP_WARN(logger_, "%s failed", recovery_name_.c_str());
+          RCLCPP_WARN(logger_, "%s failed", behavior_name_.c_str());
           result->total_elapsed_time = steady_clock_.now() - start_time;
           action_server_->terminate_current(result);
           return;
@@ -273,6 +273,6 @@ protected:
   }
 };
 
-}  // namespace nav2_recoveries
+}  // namespace nav2_behaviors
 
-#endif  // NAV2_RECOVERIES__RECOVERY_HPP_
+#endif  // NAV2_BEHAVIORS__BEHAVIOR_HPP_

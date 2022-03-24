@@ -1,7 +1,7 @@
-ament_add_gtest(test_recoveries
-  test_recoveries.cpp
+ament_add_gtest(test_behaviors
+  test_behaviors.cpp
 )
 
-ament_target_dependencies(test_recoveries
+ament_target_dependencies(test_behaviors
   ${dependencies}
 )
