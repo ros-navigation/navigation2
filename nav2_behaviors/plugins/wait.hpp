@@ -19,7 +19,7 @@
 #include <string>
 #include <memory>
 
-#include "nav2_recoveries/recovery.hpp"
+#include "nav2_recoveries/behavior.hpp"
 #include "nav2_msgs/action/wait.hpp"
 
 namespace nav2_recoveries

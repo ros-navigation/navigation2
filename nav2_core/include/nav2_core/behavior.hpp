@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CORE__RECOVERY_HPP_
-#define NAV2_CORE__RECOVERY_HPP_
+#ifndef NAV2_CORE__BEHAVIOR_HPP_
+#define NAV2_CORE__BEHAVIOR_HPP_
 
 #include <string>
 #include <memory>
@@ -27,18 +27,18 @@ namespace nav2_core
 {
 
 /**
- * @class Recovery
+ * @class Behavior
  * @brief Abstract interface for recoveries to adhere to with pluginlib
  */
-class Recovery
+class Behavior
 {
 public:
-  using Ptr = std::shared_ptr<Recovery>;
+  using Ptr = std::shared_ptr<Behavior>;
 
   /**
    * @brief Virtual destructor
    */
-  virtual ~Recovery() {}
+  virtual ~Behavior() {}
 
   /**
    * @param  parent pointer to user's node
@@ -57,25 +57,16 @@ public:
   virtual void cleanup() = 0;
 
   /**
-   * @brief Method to active recovery and any threads involved in execution.
+   * @brief Method to active Behavior and any threads involved in execution.
    */
   virtual void activate() = 0;
 
   /**
-   * @brief Method to deactive recovery and any threads involved in execution.
+   * @brief Method to deactive Behavior and any threads involved in execution.
    */
   virtual void deactivate() = 0;
-
-  /**
-   * @brief Method Execute recovery behavior
-   * @param  name The name of this planner
-   * @return true if successful, false is failed to execute fully
-   */
-  // TODO(stevemacenski) evaluate design for recoveries to not host
-  // their own servers and utilize a recovery server exposed action.
-  // virtual bool executeRecovery() = 0;
 };
 
 }  // namespace nav2_core
 
-#endif  // NAV2_CORE__RECOVERY_HPP_
+#endif  // NAV2_CORE__BEHAVIOR_HPP_

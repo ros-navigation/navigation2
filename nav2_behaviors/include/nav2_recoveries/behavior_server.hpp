@@ -23,23 +23,23 @@
 #include "tf2_ros/create_timer_ros.h"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_core/recovery.hpp"
+#include "nav2_core/behavior.hpp"
 
-#ifndef NAV2_RECOVERIES__RECOVERY_SERVER_HPP_
-#define NAV2_RECOVERIES__RECOVERY_SERVER_HPP_
+#ifndef NAV2_RECOVERIES__BEHAVIOR_SERVER_HPP_
+#define NAV2_RECOVERIES__BEHAVIOR_SERVER_HPP_
 
-namespace recovery_server
+namespace behavior_server
 {
 
 /**
- * @class recovery_server::BehaviorServer
+ * @class behavior_server::BehaviorServer
  * @brief An server hosting a map of recovery plugins
  */
 class BehaviorServer : public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief A constructor for recovery_server::BehaviorServer
+   * @brief A constructor for behavior_server::BehaviorServer
    * @param options Additional options to control creation of the node.
    */
   explicit BehaviorServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
@@ -81,8 +81,8 @@ protected:
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
 
   // Plugins
-  pluginlib::ClassLoader<nav2_core::Recovery> plugin_loader_;
-  std::vector<pluginlib::UniquePtr<nav2_core::Recovery>> recoveries_;
+  pluginlib::ClassLoader<nav2_core::Behavior> plugin_loader_;
+  std::vector<pluginlib::UniquePtr<nav2_core::Behavior>> recoveries_;
   std::vector<std::string> default_ids_;
   std::vector<std::string> default_types_;
   std::vector<std::string> recovery_ids_;
@@ -94,6 +94,6 @@ protected:
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
 };
 
-}  // namespace recovery_server
+}  // namespace behavior_server
 
-#endif  // NAV2_RECOVERIES__RECOVERY_SERVER_HPP_
+#endif  // NAV2_RECOVERIES__BEHAVIOR_SERVER_HPP_

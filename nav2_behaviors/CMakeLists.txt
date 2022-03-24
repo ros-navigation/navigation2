@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_recoveries)
+project(nav2_behaviors)
 
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
@@ -71,7 +71,7 @@ ament_target_dependencies(nav2_wait_recovery
   ${dependencies}
 )
 
-pluginlib_export_plugin_description_file(nav2_core recovery_plugin.xml)
+pluginlib_export_plugin_description_file(nav2_core behavior_plugin.xml)
 
 # Library
 add_library(${library_name} SHARED
@@ -93,7 +93,7 @@ ament_target_dependencies(${executable_name}
   ${dependencies}
 )
 
-rclcpp_components_register_nodes(${library_name} "recovery_server::BehaviorServer")
+rclcpp_components_register_nodes(${library_name} "behavior_server::BehaviorServer")
 
 install(TARGETS ${library_name}
                 nav2_backup_recovery
@@ -112,7 +112,7 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-install(FILES recovery_plugin.xml
+install(FILES behavior_plugin.xml
   DESTINATION share/${PROJECT_NAME}
 )
 

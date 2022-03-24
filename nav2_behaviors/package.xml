@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>nav2_recoveries</name>
+  <name>nav2_behaviors</name>
   <version>1.0.0</version>
   <description>TODO</description>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
@@ -43,6 +43,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
-    <nav2_core plugin="${prefix}/recovery_plugin.xml" />
+    <nav2_core plugin="${prefix}/behavior_plugin.xml" />
   </export>
 </package>

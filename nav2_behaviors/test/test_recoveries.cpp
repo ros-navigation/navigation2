@@ -23,7 +23,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "rclcpp_action/rclcpp_action.hpp"
-#include "nav2_recoveries/recovery.hpp"
+#include "nav2_recoveries/behavior.hpp"
 #include "nav2_msgs/action/dummy_recovery.hpp"
 
 using nav2_recoveries::Recovery;

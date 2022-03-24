@@ -19,12 +19,12 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_recoveries/behavior_server.hpp"
 
-namespace recovery_server
+namespace behavior_server
 {
 
 BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
 : LifecycleNode("recoveries_server", "", false, options),
-  plugin_loader_("nav2_core", "nav2_core::Recovery"),
+  plugin_loader_("nav2_core", "nav2_core::Behavior"),
   default_ids_{"spin", "backup", "wait"},
   default_types_{"nav2_recoveries/Spin", "nav2_recoveries/BackUp", "nav2_recoveries/Wait"}
 {
@@ -125,7 +125,7 @@ nav2_util::CallbackReturn
 BehaviorServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
-  std::vector<pluginlib::UniquePtr<nav2_core::Recovery>>::iterator iter;
+  std::vector<pluginlib::UniquePtr<nav2_core::Behavior>>::iterator iter;
   for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
     (*iter)->activate();
   }
@@ -141,7 +141,7 @@ BehaviorServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  std::vector<pluginlib::UniquePtr<nav2_core::Recovery>>::iterator iter;
+  std::vector<pluginlib::UniquePtr<nav2_core::Behavior>>::iterator iter;
   for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
     (*iter)->deactivate();
   }
@@ -157,7 +157,7 @@ BehaviorServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  std::vector<pluginlib::UniquePtr<nav2_core::Recovery>>::iterator iter;
+  std::vector<pluginlib::UniquePtr<nav2_core::Behavior>>::iterator iter;
   for (iter = recoveries_.begin(); iter != recoveries_.end(); ++iter) {
     (*iter)->cleanup();
   }
@@ -179,11 +179,11 @@ BehaviorServer::on_shutdown(const rclcpp_lifecycle::State &)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-}  // end namespace recovery_server
+}  // end namespace behavior_server
 
 #include "rclcpp_components/register_node_macro.hpp"
 
 // Register the component with class_loader.
 // This acts as a sort of entry point, allowing the component to be discoverable when its library
 // is being loaded into a running process.
-RCLCPP_COMPONENTS_REGISTER_NODE(recovery_server::BehaviorServer)
+RCLCPP_COMPONENTS_REGISTER_NODE(behavior_server::BehaviorServer)
