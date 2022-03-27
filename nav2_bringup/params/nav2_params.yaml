@@ -38,6 +38,7 @@ amcl:
     z_rand: 0.5
     z_short: 0.05
     scan_topic: scan
+    first_map_only: true
 
 amcl_map_client:
   ros__parameters:
