@@ -12,7 +12,7 @@
             <Fallback>
               <ReactiveSequence>
                 <Inverter>
-                  <PathExpiringTimer seconds="15" path="{path}"/>
+                  <PathExpiringTimer seconds="10" path="{path}"/>
                 </Inverter>
                 <Inverter>
                   <GlobalUpdatedGoal/>
