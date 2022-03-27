@@ -33,8 +33,6 @@ public:
   {
     bt_node_ = std::make_shared<nav2_behavior_tree::PathExpiringTimerCondition>(
       "time_expired", *config_);
-    // nav_msgs::msg::Path path;
-    // config_->blackboard->set<nav_msgs::msg::Path>("path", path);
   }
 
   void TearDown()
@@ -66,7 +64,7 @@ TEST_F(PathExpiringTimerConditionTestFixture, test_behavior)
     }
   }
 
-  // place a new path on the blackboard
+  // place a new path on the blackboard to reset the timer
   nav_msgs::msg::Path path;
   path.poses[0].pose.position.x = 1.0;
 
