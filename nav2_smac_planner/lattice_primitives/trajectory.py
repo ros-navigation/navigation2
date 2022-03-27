@@ -14,7 +14,7 @@
 
 from dataclasses import dataclass
 
-from helper import angle_difference
+from helper import angle_difference, normalize_angle
 
 import numpy as np
 
@@ -126,6 +126,9 @@ class Path:
         output_xs = output_xs + 0.0
         output_ys = output_ys + 0.0
         output_yaws = self.yaws + 0.0
+
+        vectorized_normalize_angle = np.vectorize(normalize_angle)
+        output_yaws = vectorized_normalize_angle(output_yaws)
 
         stacked = np.vstack([output_xs, output_ys, output_yaws]).transpose()
 

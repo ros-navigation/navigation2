@@ -69,7 +69,10 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_planner_selector_bt_node",
     "nav2_controller_selector_bt_node",
     "nav2_goal_checker_selector_bt_node",
-    "nav2_controller_cancel_bt_node"
+    "nav2_controller_cancel_bt_node",
+    "nav2_wait_cancel_bt_node",
+    "nav2_spin_cancel_bt_node",
+    "nav2_back_up_cancel_bt_node"
   };
 
   declare_parameter("plugin_lib_names", plugin_libs);
