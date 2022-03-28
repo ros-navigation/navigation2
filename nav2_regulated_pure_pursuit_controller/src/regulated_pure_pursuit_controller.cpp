@@ -391,24 +391,24 @@ geometry_msgs::msg::Point circleSegmentIntersection(
   auto dx = x2 - x1;
   auto dy = y2 - y1;
   auto dr2 = std::pow(dx, 2) + std::pow(dy, 2);
-  auto D = x1*y2 - x2*y1;
+  auto D = x1 * y2 - x2 * y1;
 
   auto intersection = [&](double sign) {
-    geometry_msgs::msg::Point p;
-    // Formula for intersection of a line with a circle centered at the origin:
-    // https://mathworld.wolfram.com/Circle-LineIntersection.html
-    // This works because the poses are transformed into the robot frame
-    double sqrt_term = std::sqrt(std::pow(r, 2) * dr2 - std::pow(D, 2));
-    p.x = (D * dy + sign * std::copysign(1.0, dy) * dx * sqrt_term) / dr2;
-    p.y = (-D * dx + sign * std::abs(dy) * sqrt_term) / dr2;
-    return p;
-  };
+      geometry_msgs::msg::Point p;
+      // Formula for intersection of a line with a circle centered at the origin:
+      // https://mathworld.wolfram.com/Circle-LineIntersection.html
+      // This works because the poses are transformed into the robot frame
+      double sqrt_term = std::sqrt(std::pow(r, 2) * dr2 - std::pow(D, 2));
+      p.x = (D * dy + sign * std::copysign(1.0, dy) * dx * sqrt_term) / dr2;
+      p.y = (-D * dx + sign * std::abs(dy) * sqrt_term) / dr2;
+      return p;
+    };
   auto [x_min, x_max] = std::minmax(x1, x2);
   auto [y_min, y_max] = std::minmax(y1, y2);
   auto in_segment = [&](geometry_msgs::msg::Point p) {
-    return x_min <= p.x && p.x <= x_max &&
-      y_min <= p.y && p.y <= y_max;
-  };
+      return x_min <= p.x && p.x <= x_max &&
+             y_min <= p.y && p.y <= y_max;
+    };
   auto intersection1 = intersection(1.0);
   if (in_segment(intersection1)) {
     return intersection1;
