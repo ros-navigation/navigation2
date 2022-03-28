@@ -168,8 +168,10 @@ private:
         last_direction = pt[2];
 
         // skip to downsample if can be skipped (no forward/reverse direction change)
-        if (!is_cusp && i > 1 && i < path_optim.size() - 2 &&
-          static_cast<int>(i - last_i) < params.input_downsampling_factor)
+        if (!is_cusp &&
+            i > (params.keep_start_orientation ? 1 : 0) &&
+            i < path_optim.size() - (params.keep_goal_orientation ? 2 : 1) &&
+            static_cast<int>(i - last_i) < params.input_downsampling_factor)
         {
           continue;
         }
@@ -242,13 +244,20 @@ private:
       last_segment_len = std::max(EPSILON, current_segment_len);
     }
 
-    if (problem.NumParameterBlocks() <= 4) {
+    int posesToOptimize = problem.NumParameterBlocks() - 2;  // minus start and goal
+    if (params.keep_goal_orientation)
+      posesToOptimize -= 1;  // minus goal orientation holder
+    if (params.keep_start_orientation)
+      posesToOptimize -= 1;  // minus start orientation holder
+    if (posesToOptimize <= 0) {
       return false;  // nothing to optimize
     }
     // first two and last two points are constant (to keep start and end direction)
     problem.SetParameterBlockConstant(path_optim.front().data());
-    problem.SetParameterBlockConstant(path_optim[1].data());
-    problem.SetParameterBlockConstant(path_optim[path_optim.size() - 2].data());
+    if (params.keep_start_orientation)
+      problem.SetParameterBlockConstant(path_optim[1].data());
+    if (params.keep_goal_orientation)
+      problem.SetParameterBlockConstant(path_optim[path_optim.size() - 2].data());
     problem.SetParameterBlockConstant(path_optim.back().data());
     return true;
   }
@@ -272,13 +281,12 @@ private:
   {
     // Populate path, assign orientations, interpolate skipped/upsampled poses
     path.clear();
-    path.emplace_back(path_optim[0][0], path_optim[0][1], atan2(start_dir[1], start_dir[0]));
     if (params.output_upsampling_factor > 1) {
       path.reserve(params.output_upsampling_factor * (path_optim.size() - 1) + 1);
     }
     int last_i = 0;
     int prelast_i = -1;
-    Eigen::Vector2d prelast_dir = start_dir;
+    Eigen::Vector2d prelast_dir;
     for (int i = 1; i <= static_cast<int>(path_optim.size()); i++) {
       if (i == static_cast<int>(path_optim.size()) || optimized[i]) {
         if (prelast_i != -1) {
@@ -300,8 +308,11 @@ private:
               tangent_dir :
               -tangent_dir;
             last_dir.normalize();
-          } else {
+          } else if (params.keep_goal_orientation) {
             last_dir = end_dir;
+          } else {
+            last_dir = (last - prelast).block<2, 1>(0, 0) * last[2];
+            last_dir.normalize();
           }
           double last_angle = atan2(last_dir[1], last_dir[0]);
 
@@ -336,6 +347,14 @@ private:
           }
 
           prelast_dir = last_dir;
+        }
+        else {  // start pose
+          auto & start = path_optim[0];
+          Eigen::Vector2d dir = params.keep_start_orientation ?
+            start_dir :
+            ((path_optim[i] - start).block<2, 1>(0, 0) * start[2]).normalized();
+          path.emplace_back(start[0], start[1], atan2(dir[1], dir[0]));
+          prelast_dir = dir;
         }
         prelast_i = last_i;
         last_i = i;

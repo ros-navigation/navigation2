@@ -82,6 +82,12 @@ struct SmootherParams
     nav2_util::declare_parameter_if_not_declared(
       node, local_name + "reversing_enabled", rclcpp::ParameterValue(true));
     node->get_parameter(local_name + "reversing_enabled", reversing_enabled);
+    nav2_util::declare_parameter_if_not_declared(
+      node, local_name + "keep_goal_orientation", rclcpp::ParameterValue(true));
+    node->get_parameter(local_name + "keep_goal_orientation", keep_goal_orientation);
+    nav2_util::declare_parameter_if_not_declared(
+      node, local_name + "keep_start_orientation", rclcpp::ParameterValue(true));
+    node->get_parameter(local_name + "keep_start_orientation", keep_start_orientation);
     if (cost_check_points.size() % 3 != 0) {
       RCLCPP_ERROR(
         rclcpp::get_logger(
@@ -103,6 +109,8 @@ struct SmootherParams
   int input_downsampling_factor{1};
   int output_upsampling_factor{1};
   bool reversing_enabled{true};
+  bool keep_goal_orientation{true};
+  bool keep_start_orientation{true};
   std::vector<double> cost_check_points{};
 };
 
