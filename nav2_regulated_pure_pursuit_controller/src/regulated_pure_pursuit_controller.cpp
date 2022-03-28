@@ -108,6 +108,9 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_robot_pose_search_dist",
     rclcpp::ParameterValue(getCostmapMaxExtent()));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".use_lookahead_point_interpolation",
+    rclcpp::ParameterValue(false));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   base_desired_linear_vel_ = desired_linear_vel_;
@@ -153,6 +156,9 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(
     plugin_name_ + ".max_robot_pose_search_dist",
     max_robot_pose_search_dist_);
+  node->get_parameter(
+    plugin_name_ + ".use_lookahead_point_interpolation",
+    use_lookahead_point_interpolation_);
 
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
   control_duration_ = 1.0 / control_frequency;

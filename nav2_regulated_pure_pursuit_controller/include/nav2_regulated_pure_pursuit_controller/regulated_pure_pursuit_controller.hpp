@@ -282,6 +282,7 @@ protected:
   double goal_dist_tol_;
   bool allow_reversing_;
   double max_robot_pose_search_dist_;
+  bool use_lookahead_point_interpolation_;
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
