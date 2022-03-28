@@ -243,6 +243,15 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
   dist = 100.0;
   pt = ctrl->getLookAheadPointWrapper(dist, path);
   EXPECT_EQ(pt.pose.position.x, 9.0);
+
+  // test interpolation
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".use_lookahead_point_interpolation",
+    rclcpp::ParameterValue(true));
+  ctrl->configure(node, name, tf, costmap);
+  dist = 3.8;
+  pt = ctrl->getLookAheadPointWrapper(dist, path);
+  EXPECT_EQ(pt.pose.position.x, 3.8);
 }
 
 TEST(RegulatedPurePursuitTest, rotateTests)
