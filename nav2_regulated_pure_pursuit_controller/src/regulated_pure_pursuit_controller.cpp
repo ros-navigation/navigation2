@@ -378,6 +378,45 @@ void RegulatedPurePursuitController::rotateToHeading(
   angular_vel = std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
 }
 
+geometry_msgs::msg::Point circleSegmentIntersection(
+  const geometry_msgs::msg::PoseStamped & p1,
+  const geometry_msgs::msg::PoseStamped & p2,
+  double r)
+{
+  auto x1 = p1.pose.position.x;
+  auto x2 = p2.pose.position.x;
+  auto y1 = p1.pose.position.y;
+  auto y2 = p2.pose.position.y;
+
+  auto dx = x2 - x1;
+  auto dy = y2 - y1;
+  auto dr2 = std::pow(dx, 2) + std::pow(dy, 2);
+  auto D = x1*y2 - x2*y1;
+
+  auto intersection = [&](double sign) {
+    geometry_msgs::msg::Point p;
+    // Formula for intersection of a line with a circle centered at the origin:
+    // https://mathworld.wolfram.com/Circle-LineIntersection.html
+    // This works because the poses are transformed into the robot frame
+    double sqrt_term = std::sqrt(std::pow(r, 2) * dr2 - std::pow(D, 2));
+    p.x = (D * dy + sign * std::copysign(1.0, dy) * dx * sqrt_term) / dr2;
+    p.y = (-D * dx + sign * std::abs(dy) * sqrt_term) / dr2;
+    return p;
+  };
+  auto [x_min, x_max] = std::minmax(x1, x2);
+  auto [y_min, y_max] = std::minmax(y1, y2);
+  auto in_segment = [&](geometry_msgs::msg::Point p) {
+    return x_min <= p.x && p.x <= x_max &&
+      y_min <= p.y && p.y <= y_max;
+  };
+  auto intersection1 = intersection(1.0);
+  if (in_segment(intersection1)) {
+    return intersection1;
+  } else {
+    return intersection(-1.0);
+  }
+}
+
 geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoint(
   const double & lookahead_dist,
   const nav_msgs::msg::Path & transformed_plan)
@@ -391,6 +430,15 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
   // If the no pose is not far enough, take the last pose
   if (goal_pose_it == transformed_plan.poses.end()) {
     goal_pose_it = std::prev(transformed_plan.poses.end());
+  } else if (use_lookahead_point_interpolation_ && goal_pose_it != transformed_plan.poses.begin()) {
+    // Because of the way we did the std::find_if, prev_pose is guaranteed to be inside the circle,
+    // and goal_pose is guaranteed to be outside the circle.
+    auto prev_pose_it = std::prev(goal_pose_it);
+    auto point = circleSegmentIntersection(*prev_pose_it, *goal_pose_it, lookahead_dist);
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.frame_id = prev_pose_it->header.frame_id;
+    pose.pose.position = point;
+    return pose;
   }
 
   return *goal_pose_it;
