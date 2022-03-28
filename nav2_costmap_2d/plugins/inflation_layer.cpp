@@ -53,6 +53,7 @@ PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::InflationLayer, nav2_costmap_2d::Layer)
 using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
 using nav2_costmap_2d::NO_INFORMATION;
+using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
@@ -77,6 +78,7 @@ InflationLayer::InflationLayer()
 
 InflationLayer::~InflationLayer()
 {
+  dyn_params_handler_.reset();
   delete access_;
 }
 
@@ -99,6 +101,11 @@ InflationLayer::onInitialize()
     node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
     node->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
     node->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
+
+    dyn_params_handler_ = node->add_on_set_parameters_callback(
+      std::bind(
+        &InflationLayer::dynamicParametersCallback,
+        this, std::placeholders::_1));
   }
 
   current_ = true;
@@ -113,6 +120,7 @@ InflationLayer::onInitialize()
 void
 InflationLayer::matchSize()
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   nav2_costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
   resolution_ = costmap->getResolution();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
@@ -125,6 +133,7 @@ InflationLayer::updateBounds(
   double /*robot_x*/, double /*robot_y*/, double /*robot_yaw*/, double * min_x,
   double * min_y, double * max_x, double * max_y)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (need_reinflation_) {
     last_min_x_ = *min_x;
     last_min_y_ = *min_y;
@@ -155,6 +164,7 @@ InflationLayer::updateBounds(
 void
 InflationLayer::onFootprintChanged()
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   inscribed_radius_ = layered_costmap_->getInscribedRadius();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   computeCaches();
@@ -405,6 +415,65 @@ InflationLayer::generateIntegerDistances()
 
   distance_matrix_ = distance_matrix;
   return level;
+}
+
+/**
+  * @brief Callback executed when a parameter change is detected
+  * @param event ParameterEvent message
+  */
+rcl_interfaces::msg::SetParametersResult
+InflationLayer::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  rcl_interfaces::msg::SetParametersResult result;
+
+  bool need_cache_recompute = false;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + "." + "inflation_radius" &&
+        inflation_radius_ != parameter.as_double())
+      {
+        inflation_radius_ = parameter.as_double();
+        need_reinflation_ = true;
+        need_cache_recompute = true;
+      } else if (param_name == name_ + "." + "cost_scaling_factor" &&
+        cost_scaling_factor_ != parameter.as_double())
+      {
+        cost_scaling_factor_ = parameter.as_double();
+        need_reinflation_ = true;
+        need_cache_recompute = true;
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
+        enabled_ = parameter.as_bool();
+        need_reinflation_ = true;
+        current_ = false;
+      } else if (param_name == name_ + "." + "inflate_unknown" &&
+        inflate_unknown_ != parameter.as_bool())
+      {
+        inflate_unknown_ = parameter.as_bool();
+        need_reinflation_ = true;
+      } else if (param_name == name_ + "." + "inflate_around_unknown" &&
+        inflate_around_unknown_ != parameter.as_bool())
+      {
+        inflate_around_unknown_ = parameter.as_bool();
+        need_reinflation_ = true;
+      }
+    }
+
+  }
+
+  if (need_cache_recompute) {
+    matchSize();
+  }
+
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_costmap_2d

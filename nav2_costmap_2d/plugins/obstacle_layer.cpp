@@ -455,6 +455,7 @@ ObstacleLayer::updateFootprint(
   double * max_x,
   double * max_y)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!footprint_clearing_enabled_) {return;}
   transformFootprint(robot_x, robot_y, robot_yaw, getFootprint(), transformed_footprint_);
 
@@ -469,6 +470,7 @@ ObstacleLayer::updateCosts(
   int max_i,
   int max_j)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!enabled_) {
     return;
   }

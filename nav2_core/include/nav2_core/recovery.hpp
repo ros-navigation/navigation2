@@ -65,15 +65,6 @@ public:
    * @brief Method to deactive recovery and any threads involved in execution.
    */
   virtual void deactivate() = 0;
-
-  /**
-   * @brief Method Execute recovery behavior
-   * @param  name The name of this planner
-   * @return true if successful, false is failed to execute fully
-   */
-  // TODO(stevemacenski) evaluate design for recoveries to not host
-  // their own servers and utilize a recovery server exposed action.
-  // virtual bool executeRecovery() = 0;
 };
 
 }  // namespace nav2_core

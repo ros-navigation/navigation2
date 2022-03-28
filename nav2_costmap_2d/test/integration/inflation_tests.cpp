@@ -46,6 +46,7 @@
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "../testing_helper.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 using geometry_msgs::msg::Point;
 using nav2_costmap_2d::CellData;
@@ -599,4 +600,45 @@ TEST_F(TestNode, testInflation3)
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::FREE_SPACE, false), 29u);
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 1u);
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 4u);
+}
+
+/**
+ * Test dynamic parameter setting of inflation layer
+ */
+TEST_F(TestNode, testDynParamsSet)
+{
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  costmap->set_parameter(rclcpp::Parameter("global_frame", std::string("base_link")));
+  costmap->on_configure(rclcpp_lifecycle::State());
+
+  costmap->on_activate(rclcpp_lifecycle::State());
+
+  auto parameter_client = std::make_shared<rclcpp::AsyncParametersClient>(
+    costmap->get_node_base_interface(), costmap->get_node_topics_interface(),
+    costmap->get_node_graph_interface(),
+    costmap->get_node_services_interface());
+
+  auto results = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("inflation_layer.inflation_radius", 0.0),
+    rclcpp::Parameter("inflation_layer.cost_scaling_factor", 0.0),
+    rclcpp::Parameter("inflation_layer.inflate_unknown", true),
+    rclcpp::Parameter("inflation_layer.inflate_around_unknown", true),
+    rclcpp::Parameter("inflation_layer.enabled", false)
+  });
+
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.inflation_radius").as_double(), 0.0);
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.cost_scaling_factor").as_double(), 0.0);
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.inflate_unknown").as_bool(), true);
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.inflate_around_unknown").as_bool(), true);
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.enabled").as_bool(), false);
+
+  costmap->on_deactivate(rclcpp_lifecycle::State());
+  costmap->on_cleanup(rclcpp_lifecycle::State());
+  costmap->on_shutdown(rclcpp_lifecycle::State());
 }
