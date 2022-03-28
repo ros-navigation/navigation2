@@ -24,74 +24,43 @@
 using nav2_system_tests::PlannerTester;
 using nav2_util::TestCostmap;
 
-
-template<class ServiceT>
-class TestClient : public rclcpp::Node
-{
-  explicit TestClient(
-    std::string client_name,
-    const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
-    : Node("test_client", options),
-    client_name_(client_name)
-  {
-    // rclcpp::Client<example_interfaces::srv::AddTwoInts>::SharedPtr client =
-    // node->create_client<example_interfaces::srv::AddTwoInts>("add_two_ints");
-
-    client_ = create_client<ServiceT>(client_name);
-    // Wait for service to be up
-
-    // while (!client_->wait_for_service(1s))
-    // {
-    //   // waiting for service to load
-    // }
-  }
-
-  protected:
-    virtual ServiceT::Respone callService(std::shared_ptr<typename ServiceT::Request> request)
-    {
-      auto result = client->async_send_request(request);
-
-      // Wait for the result.
-      if (rclcpp::spin_until_future_complete(result) ==
-        rclcpp::FutureReturnCode::SUCCESS)
-      {
-        RCLCPP_INFO(get_logger(), "Got result");
-      } else {
-        RCLCPP_ERROR_STREAM(get_logger(), "Failed to call service: " << client_name_);
-      }
-
-      return result;
-    }
-
-    typename rclcpp::Client<ServiceT>::SharedPtr client_;
-    std::string client_name_;
-};
-
 TEST(testIsPathValid, testIsPathValid)
 {
-  // auto planner_tester = std::make_shared<PlannerTester>();
+  auto planner_tester = std::make_shared<PlannerTester>();
+  planner_tester->activate();
+  // load open space cost map which is 10 by 10
+  planner_tester->loadSimpleCostmap(TestCostmap::open_space);
 
-  // planner_tester->activate();
+  // create a fake service request
+  auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
 
-  // // load open space cost map which is 10 by 10
-  // planner_tester->loadSimpleCostmap(TestCostmap::open_space);
+  nav_msgs::msg::Path path;
+  for(int i = 1; i < 10; ++i)
+  {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    pose.pose.position.y = i;
+    request->path.poses.push_back(pose);
+  }
 
-  // // create a fake service request
-  // auto is_path_valid = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
+  std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("path_valid_node");
+  auto client = node->create_client<nav2_msgs::srv::IsPathValid>("/is_path_valid");
 
-  // nav_msgs::msg::Path path;
-  // for(int i = 1; i < 10; ++i)
-  // {
-  //   geometry_msgs::msg::PoseStamped pose;
-  //   pose.pose.position.x = i;
-  //   pose.pose.position.y = i;
-  //   is_path_valid->path.poses.push_back(pose);
-  // }
+  auto result = client->async_send_request(request);
 
-  // //Need to spin this off in a different thread
-  // std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("is_path_valid_client");
-  // rclcpp::Client<nav2_msgs::srv::IsPathValid>::SharedPtr client =
-  //   node->create_client<nav2_msgs::srv::IsPathValid>("add_two_ints");
+  while(!client->wait_for_service(std::chrono::milliseconds(1000)))
+  {
+    RCLCPP_INFO(node->get_logger(), "Waiting for service");
+  }
+
+  RCLCPP_INFO(node->get_logger(), "Waiting for service complete");
+  if (rclcpp::spin_until_future_complete(node, result) ==
+    rclcpp::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_INFO(node->get_logger(), "Got result");
+  } else {
+    RCLCPP_ERROR_STREAM(node->get_logger(), "Failed to call service: ");
+  }
 
   EXPECT_EQ(0,0);
 }
@@ -103,10 +72,27 @@ int main(int argc, char ** argv)
   // initialize ROS
   rclcpp::init(argc, argv);
 
+  auto planner_tester = std::make_shared<PlannerTester>();
+
+  planner_tester->activate();
+
+  // load open space cost map which is 10 by 10
+  planner_tester->loadSimpleCostmap(TestCostmap::open_space);
+
   bool all_successful = RUN_ALL_TESTS();
+
+  // launch the planner_tester on a new thread
+  std::thread planner_thread([]() {
+    auto planner_tester = std::make_shared<PlannerTester>();
+    planner_tester->activate();
+    // load open space cost map which is 10 by 10
+    planner_tester->loadSimpleCostmap(TestCostmap::open_space);
+    rclcpp::spin(planner_tester->get_node_base_interface());
+  });
 
   // shutdown ROS
   rclcpp::shutdown();
+  planner_thread.join();
   return all_successful;
 
 
