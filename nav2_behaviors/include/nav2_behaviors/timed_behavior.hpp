@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIORS__BEHAVIOR_HPP_
-#define NAV2_BEHAVIORS__BEHAVIOR_HPP_
+#ifndef NAV2_BEHAVIORS__TIMED_BEHAVIOR_HPP_
+#define NAV2_BEHAVIORS__TIMED_BEHAVIOR_HPP_
 
 #include <memory>
 #include <string>
@@ -52,22 +52,22 @@ using namespace std::chrono_literals;  //NOLINT
  * @brief An action server Behavior base class implementing the action server and basic factory.
  */
 template<typename ActionT>
-class Behavior : public nav2_core::Behavior
+class TimedBehavior : public nav2_core::Behavior
 {
 public:
   using ActionServer = nav2_util::SimpleActionServer<ActionT>;
 
   /**
-   * @brief A Behavior constructor
+   * @brief A TimedBehavior constructor
    */
-  Behavior()
+  TimedBehavior()
   : action_server_(nullptr),
     cycle_frequency_(10.0),
     enabled_(false)
   {
   }
 
-  virtual ~Behavior()
+  virtual ~TimedBehavior()
   {
   }
 
@@ -119,7 +119,7 @@ public:
 
     action_server_ = std::make_shared<ActionServer>(
       node, behavior_name_,
-      std::bind(&Behavior::execute, this));
+      std::bind(&TimedBehavior::execute, this));
 
     collision_checker_ = collision_checker;
 
@@ -275,4 +275,4 @@ protected:
 
 }  // namespace nav2_behaviors
 
-#endif  // NAV2_BEHAVIORS__BEHAVIOR_HPP_
+#endif  // NAV2_BEHAVIORS__TIMED_BEHAVIOR_HPP_

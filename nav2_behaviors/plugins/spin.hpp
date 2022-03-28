@@ -19,7 +19,7 @@
 #include <string>
 #include <memory>
 
-#include "nav2_behaviors/behavior.hpp"
+#include "nav2_behaviors/timed_behavior.hpp"
 #include "nav2_msgs/action/spin.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 
@@ -31,7 +31,7 @@ using SpinAction = nav2_msgs::action::Spin;
  * @class nav2_behaviors::Spin
  * @brief An action server behavior for spinning in
  */
-class Spin : public Behavior<SpinAction>
+class Spin : public TimedBehavior<SpinAction>
 {
 public:
   /**

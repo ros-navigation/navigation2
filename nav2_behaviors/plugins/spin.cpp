@@ -35,7 +35,7 @@ namespace nav2_behaviors
 {
 
 Spin::Spin()
-: Behavior<SpinAction>(),
+: TimedBehavior<SpinAction>(),
   feedback_(std::make_shared<SpinAction::Feedback>()),
   prev_yaw_(0.0)
 {

@@ -19,7 +19,7 @@
 #include <string>
 #include <memory>
 
-#include "nav2_behaviors/behavior.hpp"
+#include "nav2_behaviors/timed_behavior.hpp"
 #include "nav2_msgs/action/wait.hpp"
 
 namespace nav2_behaviors
@@ -30,7 +30,7 @@ using WaitAction = nav2_msgs::action::Wait;
  * @class nav2_behaviors::Wait
  * @brief An action server behavior for waiting a fixed duration
  */
-class Wait : public Behavior<WaitAction>
+class Wait : public TimedBehavior<WaitAction>
 {
 public:
   /**

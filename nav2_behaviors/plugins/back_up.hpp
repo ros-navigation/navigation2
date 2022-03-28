@@ -18,7 +18,7 @@
 #include <chrono>
 #include <memory>
 
-#include "nav2_behaviors/behavior.hpp"
+#include "nav2_behaviors/timed_behavior.hpp"
 #include "nav2_msgs/action/back_up.hpp"
 
 namespace nav2_behaviors
@@ -29,7 +29,7 @@ using BackUpAction = nav2_msgs::action::BackUp;
  * @class nav2_behaviors::BackUp
  * @brief An action server Behavior for spinning in
  */
-class BackUp : public Behavior<BackUpAction>
+class BackUp : public TimedBehavior<BackUpAction>
 {
 public:
   /**

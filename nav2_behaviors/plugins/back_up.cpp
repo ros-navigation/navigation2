@@ -26,7 +26,7 @@ namespace nav2_behaviors
 {
 
 BackUp::BackUp()
-: Behavior<BackUpAction>(),
+: TimedBehavior<BackUpAction>(),
   feedback_(std::make_shared<BackUpAction::Feedback>())
 {
 }

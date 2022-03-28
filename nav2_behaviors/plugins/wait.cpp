@@ -22,7 +22,7 @@ namespace nav2_behaviors
 {
 
 Wait::Wait()
-: Behavior<WaitAction>(),
+: TimedBehavior<WaitAction>(),
   feedback_(std::make_shared<WaitAction::Feedback>())
 {
 }

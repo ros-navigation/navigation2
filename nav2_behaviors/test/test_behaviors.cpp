@@ -23,10 +23,10 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "rclcpp_action/rclcpp_action.hpp"
-#include "nav2_behaviors/behavior.hpp"
+#include "nav2_behaviors/timed_behavior.hpp"
 #include "nav2_msgs/action/dummy_behavior.hpp"
 
-using nav2_behaviors::Behavior;
+using nav2_behaviors::TimedBehavior;
 using nav2_behaviors::Status;
 using BehaviorAction = nav2_msgs::action::DummyBehavior;
 using ClientGoalHandle = rclcpp_action::ClientGoalHandle<BehaviorAction>;
@@ -35,11 +35,11 @@ using namespace std::chrono_literals;
 
 // A recovery for testing the base class
 
-class DummyBehavior : public Behavior<BehaviorAction>
+class DummyBehavior : public TimedBehavior<BehaviorAction>
 {
 public:
   DummyBehavior()
-  : Behavior<BehaviorAction>(),
+  : TimedBehavior<BehaviorAction>(),
     initialized_(false) {}
 
   ~DummyBehavior() {}
