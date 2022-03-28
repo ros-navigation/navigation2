@@ -471,34 +471,10 @@ WaypointFollower::convertGPSPosesToMapPoses(
       }
       continue;
     } else {
-      // from_ll_to_map_client_ converted the point from LL to Map frames
-      // but it actually did not consider the possible yaw offset between utm and map frames ;
-      // "https://github.com/cra-ros-pkg/robot_localization/blob/
-      // 79162b2ac53a112c51d23859c499e8438cf9938e/src/navsat_transform.cpp#L394"
-      // see above link on how they set rotation between UTM and
-      // Map to Identity , where actually it might not be
-      geometry_msgs::msg::TransformStamped utm_to_map_transform;
-      try {
-        utm_to_map_transform = tf_buffer_->lookupTransform(utm_frame_id_, global_frame_id_, tf2::TimePointZero);
-      } catch (tf2::TransformException & ex) {
-        RCLCPP_ERROR(
-          this->get_logger(),
-          "Exception in getting %s -> %s transform: %s",
-          utm_frame_id_.c_str(), global_frame_id_.c_str(), ex.what());
-      }
-      // we need to consider the possible yaw_offset between utm and map here,
-      // rotate x , y with amount of yaw
-      tf2::Quaternion utm_to_map_quat;
-      tf2::fromMsg(utm_to_map_transform.transform.rotation, utm_to_map_quat);
-      const tf2::Matrix3x3 m(utm_to_map_quat);
-      const tf2::Vector3 point({response->map_point.x, response->map_point.y, response->map_point.z});
-      auto corrected_point = m*point;
       geometry_msgs::msg::PoseStamped curr_pose_map_frame;
       curr_pose_map_frame.header.frame_id = global_frame_id_;
       curr_pose_map_frame.header.stamp = this->now();
-      curr_pose_map_frame.pose.position.x = corrected_point[0];
-      curr_pose_map_frame.pose.position.y = corrected_point[1];
-      curr_pose_map_frame.pose.position.z = response->map_point.z;
+      curr_pose_map_frame.pose.position = response->map_point;
       curr_pose_map_frame.pose.orientation = curr_geopose.orientation;
       poses_in_map_frame_vector.push_back(curr_pose_map_frame);
     }
