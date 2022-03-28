@@ -100,6 +100,22 @@ Then, one would invoke this process with the params file that contains the param
 $ process_with_multiple_map_servers __params:=combined_params.yaml
 ```
 
+**Attention** : map_server is now a lifecycle node and needs to be transitioned to the active state. There are several ways you can trigger that state transition. The easiest way from the command line is:
+
+
+
+```
+$ ros2 run nav2_util lifecycle_bringup map_server
+```
+
+There is an example launch file that already triggers this state. In the launch file you just need to provide the "map.yaml" file:
+
+
+```
+$ ros2 launch nav2_map_server map_server.launch.py
+```
+
+
 #### Map Saver
 
 Like in ROS1 `map_saver` could be used as CLI-executable. It was renamed to `map_saver_cli`
@@ -107,6 +123,12 @@ and could be invoked by following command:
 
 ```
 $ ros2 run nav2_map_server map_saver_cli [arguments] [--ros-args ROS remapping args]
+```
+
+There is an example launch file:
+
+```
+$ ros2 launch nav2_map_server map_saver_server.launch.py 
 ```
 
 ## Currently Supported Map Types
