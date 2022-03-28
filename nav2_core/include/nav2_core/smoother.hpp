@@ -40,7 +40,6 @@ class Smoother
 public:
   using Ptr = std::shared_ptr<nav2_core::Smoother>;
 
-
   /**
    * @brief Virtual destructor
    */
