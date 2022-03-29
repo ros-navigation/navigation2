@@ -221,7 +221,7 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
   add_parameter(
     "map_topic", rclcpp::ParameterValue("map"),
     "Topic to subscribe to in order to receive the map to localize on");
-  
+
   add_parameter(
     "first_map_only", rclcpp::ParameterValue(false),
     "Set this to true, when you want to load a new map published from the map_server");
