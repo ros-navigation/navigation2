@@ -120,8 +120,8 @@ TEST(SmootherTest, test_simple_smoother)
 
   rclcpp::Duration no_time = rclcpp::Duration::from_seconds(0.0);  // 0 seconds
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1);  // 1 second
-  EXPECT_FALSE(smoother->smooth(straight_irregular_path, no_time));  // timeout
-  EXPECT_TRUE(smoother->smooth(straight_irregular_path, max_time));  // should succeed
+  EXPECT_FALSE(smoother->smooth(straight_irregular_path, no_time));
+  EXPECT_TRUE(smoother->smooth(straight_irregular_path, max_time));
   for (uint i = 0; i != straight_irregular_path.poses.size() - 1; i++) {
     // Check distances are more evenly spaced out now
     EXPECT_LT(
@@ -157,7 +157,7 @@ TEST(SmootherTest, test_simple_smoother)
   straight_regular_path.poses[10].pose.position.x = 0.5;
   straight_regular_path.poses[10].pose.position.y = 1.0;
 
-  EXPECT_TRUE(smoother->smooth(straight_regular_path, max_time));  // should succeed
+  EXPECT_TRUE(smoother->smooth(straight_regular_path, max_time));
   for (uint i = 0; i != straight_regular_path.poses.size() - 1; i++) {
     // Check distances are still very evenly spaced
     EXPECT_NEAR(
@@ -179,20 +179,40 @@ TEST(SmootherTest, test_simple_smoother)
   straight_regular_path.poses[9].pose.position.y = 0.5;
   straight_regular_path.poses[10].pose.position.x = 0.95;
   straight_regular_path.poses[10].pose.position.y = 0.5;
-  EXPECT_TRUE(smoother->smooth(straight_regular_path, max_time));  // should succeed
+  EXPECT_TRUE(smoother->smooth(straight_regular_path, max_time));
   EXPECT_NEAR(straight_regular_path.poses[5].pose.position.x, 0.637, 0.01);
   EXPECT_NEAR(straight_regular_path.poses[5].pose.position.y, 0.353, 0.01);
 
-  // // Test that collisions are rejected TODO fails
-  // nav_msgs::msg::Path collision_path;
-  // collision_path = straight_regular_path;
-  // collision_path.poses[5].pose.position.x = 1.25;
-  // collision_path.poses[5].pose.position.y = 1.25;
-  // EXPECT_FALSE(smoother->smooth(collision_path, max_time));
+  // Test that collisions are rejected
+  nav_msgs::msg::Path collision_path;
+  collision_path.poses.resize(11);
+  collision_path.poses[0].pose.position.x = 0.0;
+  collision_path.poses[0].pose.position.y = 0.0;
+  collision_path.poses[1].pose.position.x = 0.2;
+  collision_path.poses[1].pose.position.y = 0.2;
+  collision_path.poses[2].pose.position.x = 0.4;
+  collision_path.poses[2].pose.position.y = 0.4;
+  collision_path.poses[3].pose.position.x = 0.6;
+  collision_path.poses[3].pose.position.y = 0.6;
+  collision_path.poses[4].pose.position.x = 0.8;
+  collision_path.poses[4].pose.position.y = 0.8;
+  collision_path.poses[5].pose.position.x = 1.0;
+  collision_path.poses[5].pose.position.y = 1.0;
+  collision_path.poses[6].pose.position.x = 1.1;
+  collision_path.poses[6].pose.position.y = 1.1;
+  collision_path.poses[7].pose.position.x = 1.2;
+  collision_path.poses[7].pose.position.y = 1.2;
+  collision_path.poses[8].pose.position.x = 1.3;
+  collision_path.poses[8].pose.position.y = 1.3;
+  collision_path.poses[9].pose.position.x = 1.4;
+  collision_path.poses[9].pose.position.y = 1.4;
+  collision_path.poses[10].pose.position.x = 1.5;
+  collision_path.poses[10].pose.position.y = 1.5;
+  EXPECT_FALSE(smoother->smooth(collision_path, max_time));
 
-  // test cusp / reversing segments TODO crashes
+  // test cusp / reversing segments
   nav_msgs::msg::Path reversing_path;
-  reversing_path = reversing_path;
+  reversing_path.poses.resize(11);
   reversing_path.poses[0].pose.position.x = 0.5;
   reversing_path.poses[0].pose.position.y = 0.0;
   reversing_path.poses[1].pose.position.x = 0.5;
