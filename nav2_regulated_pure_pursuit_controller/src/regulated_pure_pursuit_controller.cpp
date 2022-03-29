@@ -383,38 +383,27 @@ geometry_msgs::msg::Point circleSegmentIntersection(
   const geometry_msgs::msg::PoseStamped & p2,
   double r)
 {
-  auto x1 = p1.pose.position.x;
-  auto x2 = p2.pose.position.x;
-  auto y1 = p1.pose.position.y;
-  auto y2 = p2.pose.position.y;
+  // Formula for intersection of a line with a circle centered at the origin,
+  // modified to always return the point that is on the segment between the two points.
+  // https://mathworld.wolfram.com/Circle-LineIntersection.html
+  // This works because the poses are transformed into the robot frame.
+  // This can be derived from solving the system of equations of a line and a circle
+  // which results in something that is just a reformulation of the quadratic formula.
+  double x1 = p1.pose.position.x;
+  double x2 = p2.pose.position.x;
+  double y1 = p1.pose.position.y;
+  double y2 = p2.pose.position.y;
 
   double dx = x2 - x1;
   double dy = y2 - y1;
   double dr2 = dx * dx + dy * dy;
   double D = x1 * y2 - x2 * y1;
 
-  auto intersection = [&](double sign) {
-      geometry_msgs::msg::Point p;
-      // Formula for intersection of a line with a circle centered at the origin:
-      // https://mathworld.wolfram.com/Circle-LineIntersection.html
-      // This works because the poses are transformed into the robot frame
-      double sqrt_term = std::sqrt(r * r * dr2 - D * D);
-      p.x = (D * dy + sign * std::copysign(1.0, dy) * dx * sqrt_term) / dr2;
-      p.y = (-D * dx + sign * std::abs(dy) * sqrt_term) / dr2;
-      return p;
-    };
-  double [x_min, x_max] = std::minmax(x1, x2);
-  double [y_min, y_max] = std::minmax(y1, y2);
-  auto in_segment = [&](geometry_msgs::msg::Point p) {
-      return x_min <= p.x && p.x <= x_max &&
-             y_min <= p.y && p.y <= y_max;
-    };
-  auto intersection1 = intersection(1.0);
-  if (in_segment(intersection1)) {
-    return intersection1;
-  } else {
-    return intersection(-1.0);
-  }
+  geometry_msgs::msg::Point p;
+  double sqrt_term = std::sqrt(r * r * dr2 - D * D);
+  p.x = (D * dy * dx * sqrt_term) / dr2;
+  p.y = (-D * dx + dy * sqrt_term) / dr2;
+  return p;
 }
 
 geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoint(
