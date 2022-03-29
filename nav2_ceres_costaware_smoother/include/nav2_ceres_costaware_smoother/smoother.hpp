@@ -169,9 +169,9 @@ private:
 
         // skip to downsample if can be skipped (no forward/reverse direction change)
         if (!is_cusp &&
-            i > (params.keep_start_orientation ? 1 : 0) &&
-            i < path_optim.size() - (params.keep_goal_orientation ? 2 : 1) &&
-            static_cast<int>(i - last_i) < params.input_downsampling_factor)
+          i > (params.keep_start_orientation ? 1 : 0) &&
+          i < path_optim.size() - (params.keep_goal_orientation ? 2 : 1) &&
+          static_cast<int>(i - last_i) < params.input_downsampling_factor)
         {
           continue;
         }
@@ -245,19 +245,23 @@ private:
     }
 
     int posesToOptimize = problem.NumParameterBlocks() - 2;  // minus start and goal
-    if (params.keep_goal_orientation)
+    if (params.keep_goal_orientation) {
       posesToOptimize -= 1;  // minus goal orientation holder
-    if (params.keep_start_orientation)
+    }
+    if (params.keep_start_orientation) {
       posesToOptimize -= 1;  // minus start orientation holder
+    }
     if (posesToOptimize <= 0) {
       return false;  // nothing to optimize
     }
     // first two and last two points are constant (to keep start and end direction)
     problem.SetParameterBlockConstant(path_optim.front().data());
-    if (params.keep_start_orientation)
+    if (params.keep_start_orientation) {
       problem.SetParameterBlockConstant(path_optim[1].data());
-    if (params.keep_goal_orientation)
+    }
+    if (params.keep_goal_orientation) {
       problem.SetParameterBlockConstant(path_optim[path_optim.size() - 2].data());
+    }
     problem.SetParameterBlockConstant(path_optim.back().data());
     return true;
   }
@@ -347,8 +351,7 @@ private:
           }
 
           prelast_dir = last_dir;
-        }
-        else {  // start pose
+        } else {  // start pose
           auto & start = path_optim[0];
           Eigen::Vector2d dir = params.keep_start_orientation ?
             start_dir :

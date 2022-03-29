@@ -115,6 +115,10 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
       path_world.emplace_back(pose.position.x, pose.position.y, reversing ? -1 : 1);
       if (i == 0) {
         start_dir = orientation;
+      } else if (i == 1 && !_smoother_params.keep_start_orientation) {
+        // overwrite start forward/reverse when orientation was set to be ignored
+        // note: start_dir is overwritten inside Smoother::upsampleAndPopulate() method
+        path_world[0][2] = path_world.back()[2];
       }
     }
   }

@@ -995,6 +995,68 @@ TEST_F(SmootherTest, testingDownsamplingUpsampling)
   EXPECT_NEAR(smoothness_improvement, 83.7, 1.0);
 }
 
+TEST_F(SmootherTest, testingStartGoalOrientations)
+{
+  std::vector<Eigen::Vector3d> sharp_turn_90 =
+  {{0, 0, 0},
+    {0.1, 0, 0},
+    {0.2, 0, 0},
+    {0.3, 0, M_PI / 4},
+    {0.3, 0.1, M_PI / 2},
+    {0.3, 0.2, M_PI / 2},
+    {0.3, 0.3, M_PI / 2}
+  };
+
+  // Keep start and goal orientations (by default)
+  std::vector<Eigen::Vector3d> smoothed_path;
+  EXPECT_TRUE(smoothPath(sharp_turn_90, smoothed_path));
+
+  double mvmt_smoothness_improvement =
+    assessPathImprovement(sharp_turn_90, smoothed_path, mvmt_smoothness_criterion_);
+  EXPECT_GT(mvmt_smoothness_improvement, 0.0);
+  EXPECT_NEAR(mvmt_smoothness_improvement, 53.3, 1.0);
+  // no change in orientations
+  EXPECT_NEAR(smoothed_path.front()[2], 0, 0.001);
+  EXPECT_NEAR(smoothed_path.back()[2], M_PI / 2, 0.001);
+
+  // Overwrite start/goal orientations
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.keep_start_orientation", false));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.keep_goal_orientation", false));
+  reloadParams();
+
+  sharp_turn_90[0][2] = M_PI;  // forward/reverse of start pose should not matter
+  std::vector<Eigen::Vector3d> smoothed_path_sg_overwritten;
+  EXPECT_TRUE(smoothPath(sharp_turn_90, smoothed_path_sg_overwritten));
+
+  mvmt_smoothness_improvement =
+    assessPathImprovement(smoothed_path, smoothed_path_sg_overwritten, mvmt_smoothness_criterion_);
+  EXPECT_GT(mvmt_smoothness_improvement, 0.0);
+  EXPECT_NEAR(mvmt_smoothness_improvement, 98.3, 1.0);
+  // orientations adjusted to follow the path
+  EXPECT_NEAR(smoothed_path_sg_overwritten.front()[2], M_PI / 4, 0.1);
+  EXPECT_NEAR(smoothed_path_sg_overwritten.back()[2], M_PI / 4, 0.1);
+
+  // test short paths
+  std::vector<Eigen::Vector3d> short_screwed_path =
+  {{0, 0, M_PI * 0.25},
+    {0.1, 0, -M_PI * 0.25}
+  };
+
+  std::vector<Eigen::Vector3d> adjusted_path;
+  EXPECT_TRUE(smoothPath(short_screwed_path, adjusted_path));
+  EXPECT_NEAR(adjusted_path.front()[2], 0, 0.001);
+  EXPECT_NEAR(adjusted_path.back()[2], 0, 0.001);
+
+  short_screwed_path[0][2] = M_PI * 0.75;  // start is stronger than goal
+  EXPECT_TRUE(smoothPath(short_screwed_path, adjusted_path));
+  EXPECT_NEAR(adjusted_path.front()[2], M_PI, 0.001);
+  EXPECT_NEAR(adjusted_path.back()[2], M_PI, 0.001);
+
+  std::vector<Eigen::Vector3d> one_pose_path = {{0, 0, M_PI * 0.75}};
+  EXPECT_TRUE(smoothPath(one_pose_path, adjusted_path));
+  EXPECT_NEAR(adjusted_path.front()[2], M_PI * 0.75, 0.001);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

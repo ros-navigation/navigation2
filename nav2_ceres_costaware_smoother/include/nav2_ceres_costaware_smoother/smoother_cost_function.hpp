@@ -221,7 +221,7 @@ protected:
       Eigen::Matrix<T, 3, 3> transform;
       transform << dir[0], -dir[1], pt[0],
         dir[1], dir[0], pt[1],
-      (T)0, (T)0, (T)1;
+        (T)0, (T)0, (T)1;
       for (size_t i = 0; i < _params.cost_check_points.size(); i += 3) {
         Eigen::Matrix<T, 3, 1> ccpt((T)_params.cost_check_points[i],
           (T)_params.cost_check_points[i + 1], (T)1);
