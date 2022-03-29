@@ -390,7 +390,7 @@ geometry_msgs::msg::Point circleSegmentIntersection(
 
   auto dx = x2 - x1;
   auto dy = y2 - y1;
-  auto dr2 = std::pow(dx, 2) + std::pow(dy, 2);
+  auto dr2 = dx * dx + dy * dy;
   auto D = x1 * y2 - x2 * y1;
 
   auto intersection = [&](double sign) {
@@ -398,7 +398,7 @@ geometry_msgs::msg::Point circleSegmentIntersection(
       // Formula for intersection of a line with a circle centered at the origin:
       // https://mathworld.wolfram.com/Circle-LineIntersection.html
       // This works because the poses are transformed into the robot frame
-      double sqrt_term = std::sqrt(std::pow(r, 2) * dr2 - std::pow(D, 2));
+      double sqrt_term = std::sqrt(r * r * dr2 - D * D);
       p.x = (D * dy + sign * std::copysign(1.0, dy) * dx * sqrt_term) / dr2;
       p.y = (-D * dx + sign * std::abs(dy) * sqrt_term) / dr2;
       return p;
@@ -430,7 +430,9 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
   // If the no pose is not far enough, take the last pose
   if (goal_pose_it == transformed_plan.poses.end()) {
     goal_pose_it = std::prev(transformed_plan.poses.end());
-  } else if (use_lookahead_point_interpolation_ && goal_pose_it != transformed_plan.poses.begin()) {
+  } else if (use_lookahead_point_interpolation_ &&
+    goal_pose_it != transformed_plan.poses.begin())
+  {
     // Because of the way we did the std::find_if, prev_pose is guaranteed to be inside the circle,
     // and goal_pose is guaranteed to be outside the circle.
     auto prev_pose_it = std::prev(goal_pose_it);
