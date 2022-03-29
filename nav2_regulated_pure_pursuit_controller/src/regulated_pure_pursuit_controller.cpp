@@ -388,10 +388,10 @@ geometry_msgs::msg::Point circleSegmentIntersection(
   auto y1 = p1.pose.position.y;
   auto y2 = p2.pose.position.y;
 
-  auto dx = x2 - x1;
-  auto dy = y2 - y1;
-  auto dr2 = dx * dx + dy * dy;
-  auto D = x1 * y2 - x2 * y1;
+  double dx = x2 - x1;
+  double dy = y2 - y1;
+  double dr2 = dx * dx + dy * dy;
+  double D = x1 * y2 - x2 * y1;
 
   auto intersection = [&](double sign) {
       geometry_msgs::msg::Point p;
@@ -403,8 +403,8 @@ geometry_msgs::msg::Point circleSegmentIntersection(
       p.y = (-D * dx + sign * std::abs(dy) * sqrt_term) / dr2;
       return p;
     };
-  auto [x_min, x_max] = std::minmax(x1, x2);
-  auto [y_min, y_max] = std::minmax(y1, y2);
+  double [x_min, x_max] = std::minmax(x1, x2);
+  double [y_min, y_max] = std::minmax(y1, y2);
   auto in_segment = [&](geometry_msgs::msg::Point p) {
       return x_min <= p.x && p.x <= x_max &&
              y_min <= p.y && p.y <= y_max;
@@ -430,7 +430,7 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
   // If the no pose is not far enough, take the last pose
   if (goal_pose_it == transformed_plan.poses.end()) {
     goal_pose_it = std::prev(transformed_plan.poses.end());
-  } else if (use_lookahead_point_interpolation_ &&
+  } else if (use_lookahead_point_interpolation_ && // NOLINT cpplint and uncrustify can't agree
     goal_pose_it != transformed_plan.poses.begin())
   {
     // Because of the way we did the std::find_if, prev_pose is guaranteed to be inside the circle,
