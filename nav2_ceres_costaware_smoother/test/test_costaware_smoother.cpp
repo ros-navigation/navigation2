@@ -148,8 +148,8 @@ protected:
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", -1.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost_cusp", 0.04));
-    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.input_downsampling_factor", 1));
-    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.output_upsampling_factor", 1));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.path_downsampling_factor", 1));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.path_upsampling_factor", 1));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.reversing_enabled", true));
     node_lifecycle_->set_parameter(
       rclcpp::Parameter(
@@ -935,9 +935,9 @@ TEST_F(SmootherTest, testingDownsamplingUpsampling)
   };
   cusp_i_ = 6;
 
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.input_downsampling_factor", 2));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.path_downsampling_factor", 2));
   // downsample only
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.output_upsampling_factor", 0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.path_upsampling_factor", 0));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.reversing_enabled", false));
   reloadParams();
   std::vector<Eigen::Vector3d> smoothed_path_downsampled;
@@ -952,7 +952,7 @@ TEST_F(SmootherTest, testingDownsamplingUpsampling)
   EXPECT_EQ(smoothed_path_downsampled.size(), 9u);
 
   // upsample to original size
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.output_upsampling_factor", 1));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.path_upsampling_factor", 1));
   reloadParams();
   std::vector<Eigen::Vector3d> smoothed_path;
   EXPECT_TRUE(smoothPath(sharp_turn_90_then_reverse, smoothed_path));
@@ -980,7 +980,7 @@ TEST_F(SmootherTest, testingDownsamplingUpsampling)
   EXPECT_NEAR(smoothness_improvement, 65.7, 1.0);
 
   // upsample above original size
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.output_upsampling_factor", 2));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.path_upsampling_factor", 2));
   reloadParams();
   EXPECT_TRUE(smoothPath(sharp_turn_90_then_reverse, smoothed_path));
   // every pose except last produces 2 poses

@@ -94,9 +94,9 @@ protected:
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   rclcpp::Logger logger_ {rclcpp::get_logger("CeresCostawareSmoother")};
 
-  std::unique_ptr<nav2_ceres_costaware_smoother::Smoother> _smoother;
-  SmootherParams _smoother_params;
-  OptimizerParams _optimizer_params;
+  std::unique_ptr<nav2_ceres_costaware_smoother::Smoother> smoother_;
+  SmootherParams smoother_params_;
+  OptimizerParams optimizer_params_;
 };
 
 }  // namespace nav2_ceres_costaware_smoother

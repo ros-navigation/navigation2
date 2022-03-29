@@ -90,6 +90,16 @@
         <output_port name="output_path">Truncated path to utilize</output_port>
     </Action>
 
+    <Action ID="TruncatePathLocal">
+      <input_port name="distance_forward">Distance in forward direction</input_port>
+      <input_port name="distance_backward">Distance in backward direction</input_port>
+      <input_port name="robot_frame">Robot base frame id</input_port>
+      <input_port name="transform_tolerance">Transform lookup tolerance</input_port>
+      <input_port name="pose">Manually specified pose to be used if overriding current robot pose</input_port>
+      <input_port name="angular_distance_weight">Weight of angular distance relative to positional distance when finding which path pose is closest to robot</input_port>
+      <output_port name="output_path">Truncated path to utilize</output_port>
+    </Action>
+
     <Action ID="PlannerSelector">
         <input_port name="topic_name">Name of the topic to receive planner selection commands</input_port>
         <input_port name="default_planner">Default planner of the planner selector</input_port>

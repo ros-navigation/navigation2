@@ -19,8 +19,8 @@ smoother_server:
       w_cost: 0.015                 # weight to steer robot away from collision and cost
       w_cost_cusp: 0.04             # option to have higher weight during forward/reverse direction change which is often accompanied with dangerous rotations
       cusp_zone_length: 2.5         # length of the section around cusp in which nodes use w_cost_cusp instead of w_cost (-1.0 to disable w_cost_cusp)
-      input_downsampling_factor: 3  # every n-th node of the path is taken. Useful for speed-up
-      output_upsampling_factor: 1   # 0 - path remains downsampled, 1 - path is upsampled back to original granularity using cubic bezier, 2... - more upsampling
+      path_downsampling_factor: 3  # every n-th node of the path is taken. Useful for speed-up
+      path_upsampling_factor: 1   # 0 - path remains downsampled, 1 - path is upsampled back to original granularity using cubic bezier, 2... - more upsampling
 
       # IMPORTANT: Although can be relevant for asymmetric robot footprints (e.g. diff drive with 2 actuated and 2 caster wheels),
       # this parameter introduces additional local minima to optimization function, making it harder to converge. If decided to be used,

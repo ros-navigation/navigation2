@@ -25,6 +25,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
-    <!-- <nav2_core plugin="${prefix}/nav2_ceres_costaware_smoother.xml" /> -->
+    <nav2_core plugin="${prefix}/nav2_ceres_costaware_smoother.xml" />
   </export>
 </package>

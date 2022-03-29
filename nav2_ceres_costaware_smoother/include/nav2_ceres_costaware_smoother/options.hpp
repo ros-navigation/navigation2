@@ -74,11 +74,11 @@ struct SmootherParams
       node, local_name + "cost_check_points", rclcpp::ParameterValue(std::vector<double>()));
     node->get_parameter(local_name + "cost_check_points", cost_check_points);
     nav2_util::declare_parameter_if_not_declared(
-      node, local_name + "input_downsampling_factor", rclcpp::ParameterValue(1));
-    node->get_parameter(local_name + "input_downsampling_factor", input_downsampling_factor);
+      node, local_name + "path_downsampling_factor", rclcpp::ParameterValue(1));
+    node->get_parameter(local_name + "path_downsampling_factor", path_downsampling_factor);
     nav2_util::declare_parameter_if_not_declared(
-      node, local_name + "output_upsampling_factor", rclcpp::ParameterValue(1));
-    node->get_parameter(local_name + "output_upsampling_factor", output_upsampling_factor);
+      node, local_name + "path_upsampling_factor", rclcpp::ParameterValue(1));
+    node->get_parameter(local_name + "path_upsampling_factor", path_upsampling_factor);
     nav2_util::declare_parameter_if_not_declared(
       node, local_name + "reversing_enabled", rclcpp::ParameterValue(true));
     node->get_parameter(local_name + "reversing_enabled", reversing_enabled);
@@ -106,8 +106,8 @@ struct SmootherParams
   double curvature_weight{0.0};
   double max_curvature{0.0};
   double max_time{10.0};  // adjusted by action goal, not by parameters
-  int input_downsampling_factor{1};
-  int output_upsampling_factor{1};
+  int path_downsampling_factor{1};
+  int path_upsampling_factor{1};
   bool reversing_enabled{true};
   bool keep_goal_orientation{true};
   bool keep_start_orientation{true};

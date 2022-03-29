@@ -53,21 +53,21 @@ public:
    * @param costmap_weight Costmap cost weight. Can be params.costmap_weight or params.cusp_costmap_weight
    */
   SmootherCostFunction(
-    const Eigen::Vector2d & _original_pos,
+    const Eigen::Vector2d & original_pos,
     double next_to_last_length_ratio,
     bool reversing,
     const nav2_costmap_2d::Costmap2D * costmap,
     const std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>> & costmap_interpolator,
     const SmootherParams & params,
     double costmap_weight)
-  : _original_pos(_original_pos),
-    _next_to_last_length_ratio(next_to_last_length_ratio),
-    _reversing(reversing),
-    _params(params),
-    _costmap_weight(costmap_weight),
-    _costmap_origin(costmap->getOriginX(), costmap->getOriginY()),
-    _costmap_resolution(costmap->getResolution()),
-    _costmap_interpolator(costmap_interpolator)
+  : original_pos_(original_pos),
+    next_to_last_length_ratio_(next_to_last_length_ratio),
+    reversing_(reversing),
+    params_(params),
+    costmap_weight_(costmap_weight),
+    costmap_origin_(costmap->getOriginX(), costmap->getOriginY()),
+    costmap_resolution_(costmap->getResolution()),
+    costmap_interpolator_(costmap_interpolator)
   {
   }
 
@@ -78,12 +78,12 @@ public:
 
   void setCostmapWeight(double costmap_weight)
   {
-    _costmap_weight = costmap_weight;
+    costmap_weight_ = costmap_weight;
   }
 
-  double costmapWeight()
+  double getCostmapWeight()
   {
-    return _costmap_weight;
+    return costmap_weight_;
   }
 
   /**
@@ -106,12 +106,12 @@ public:
     residual.setZero();
 
     // compute cost
-    addSmoothingResidual<T>(_params.smooth_weight, xi, xi_p1, xi_m1, residual[0]);
-    addCurvatureResidual<T>(_params.curvature_weight, xi, xi_p1, xi_m1, residual[1]);
+    addSmoothingResidual<T>(params_.smooth_weight, xi, xi_p1, xi_m1, residual[0]);
+    addCurvatureResidual<T>(params_.curvature_weight, xi, xi_p1, xi_m1, residual[1]);
     addDistanceResidual<T>(
-      _params.distance_weight, xi,
-      _original_pos.template cast<T>(), residual[2]);
-    addCostResidual<T>(_costmap_weight, xi, xi_p1, xi_m1, residual[3]);
+      params_.distance_weight, xi,
+      original_pos_.template cast<T>(), residual[2]);
+    addCostResidual<T>(costmap_weight_, xi, xi_p1, xi_m1, residual[3]);
 
     return true;
   }
@@ -135,7 +135,7 @@ protected:
   {
     Eigen::Matrix<T, 2, 1> d_pt_p = pt_p - pt;
     Eigen::Matrix<T, 2, 1> d_pt_m = pt - pt_m;
-    Eigen::Matrix<T, 2, 1> d_pt_diff = _next_to_last_length_ratio * d_pt_p - d_pt_m;
+    Eigen::Matrix<T, 2, 1> d_pt_diff = next_to_last_length_ratio_ * d_pt_p - d_pt_m;
     r += (T)weight * d_pt_diff.dot(d_pt_diff);    // objective function value
   }
 
@@ -158,12 +158,12 @@ protected:
   {
     Eigen::Matrix<T, 2, 1> center = arcCenter(
       pt_m, pt, pt_p,
-      _next_to_last_length_ratio < 0 ? -1 : 1);
+      next_to_last_length_ratio_ < 0 ? -1 : 1);
     if (ceres::IsInfinite(center[0])) {
       return;
     }
     T turning_rad = (pt - center).norm();
-    T ki_minus_kmax = (T)1.0 / turning_rad - _params.max_curvature;
+    T ki_minus_kmax = (T)1.0 / turning_rad - params_.max_curvature;
 
     if (ki_minus_kmax <= (T)EPSILON) {
       return;
@@ -204,47 +204,47 @@ protected:
     const Eigen::Matrix<T, 2, 1> & pt_m1,
     T & r) const
   {
-    if (_params.cost_check_points.empty()) {
-      Eigen::Matrix<T, 2,
-        1> interp_pos = (pt - _costmap_origin.template cast<T>()) / (T)_costmap_resolution;
+    if (params_.cost_check_points.empty()) {
+      Eigen::Matrix<T, 2, 1> interp_pos =
+        (pt - costmap_origin_.template cast<T>()) / (T)costmap_resolution_;
       T value;
-      _costmap_interpolator->Evaluate(interp_pos[1] - (T)0.5, interp_pos[0] - (T)0.5, &value);
+      costmap_interpolator_->Evaluate(interp_pos[1] - (T)0.5, interp_pos[0] - (T)0.5, &value);
       r += (T)weight * value * value;  // objective function value
     } else {
       Eigen::Matrix<T, 2, 1> dir = tangentDir(
         pt_m1, pt, pt_p1,
-        _next_to_last_length_ratio < 0 ? -1 : 1);
+        next_to_last_length_ratio_ < 0 ? -1 : 1);
       dir.normalize();
-      if (((pt_p1 - pt).dot(dir) < (T)0) != _reversing) {
+      if (((pt_p1 - pt).dot(dir) < (T)0) != reversing_) {
         dir = -dir;
       }
       Eigen::Matrix<T, 3, 3> transform;
       transform << dir[0], -dir[1], pt[0],
         dir[1], dir[0], pt[1],
         (T)0, (T)0, (T)1;
-      for (size_t i = 0; i < _params.cost_check_points.size(); i += 3) {
-        Eigen::Matrix<T, 3, 1> ccpt((T)_params.cost_check_points[i],
-          (T)_params.cost_check_points[i + 1], (T)1);
+      for (size_t i = 0; i < params_.cost_check_points.size(); i += 3) {
+        Eigen::Matrix<T, 3, 1> ccpt((T)params_.cost_check_points[i],
+          (T)params_.cost_check_points[i + 1], (T)1);
         auto ccpt_world = (transform * ccpt).template block<2, 1>(0, 0);
         Eigen::Matrix<T, 2,
-          1> interp_pos = (ccpt_world - _costmap_origin.template cast<T>()) /
-          (T)_costmap_resolution;
+          1> interp_pos = (ccpt_world - costmap_origin_.template cast<T>()) /
+          (T)costmap_resolution_;
         T value;
-        _costmap_interpolator->Evaluate(interp_pos[1] - (T)0.5, interp_pos[0] - (T)0.5, &value);
+        costmap_interpolator_->Evaluate(interp_pos[1] - (T)0.5, interp_pos[0] - (T)0.5, &value);
 
-        r += (T)weight * (T)_params.cost_check_points[i + 2] * value * value;
+        r += (T)weight * (T)params_.cost_check_points[i + 2] * value * value;
       }
     }
   }
 
-  const Eigen::Vector2d _original_pos;
-  double _next_to_last_length_ratio;
-  bool _reversing;
-  SmootherParams _params;
-  double _costmap_weight;
-  Eigen::Vector2d _costmap_origin;
-  double _costmap_resolution;
-  std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>> _costmap_interpolator;
+  const Eigen::Vector2d original_pos_;
+  double next_to_last_length_ratio_;
+  bool reversing_;
+  SmootherParams params_;
+  double costmap_weight_;
+  Eigen::Vector2d costmap_origin_;
+  double costmap_resolution_;
+  std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>> costmap_interpolator_;
 };
 
 }  // namespace nav2_ceres_costaware_smoother

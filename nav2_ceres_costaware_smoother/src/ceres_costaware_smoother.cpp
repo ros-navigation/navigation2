@@ -29,6 +29,8 @@
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
+#include "tf2/utils.h"
+
 using nav2_util::declare_parameter_if_not_declared;
 using nav2_util::geometry_utils::euclidean_distance;
 using namespace nav2_costmap_2d;  // NOLINT
@@ -52,10 +54,10 @@ void CeresCostawareSmoother::configure(
   plugin_name_ = name;
   logger_ = node->get_logger();
 
-  _smoother = std::make_unique<nav2_ceres_costaware_smoother::Smoother>();
-  _optimizer_params.get(node.get(), name);
-  _smoother_params.get(node.get(), name);
-  _smoother->initialize(_optimizer_params);
+  smoother_ = std::make_unique<nav2_ceres_costaware_smoother::Smoother>();
+  optimizer_params_.get(node.get(), name);
+  smoother_params_.get(node.get(), name);
+  smoother_->initialize(optimizer_params_);
 }
 
 void CeresCostawareSmoother::cleanup()
@@ -91,9 +93,6 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
     return true;
   }
 
-  auto costmap = costmap_sub_->getCostmap();
-  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
-
   // populate smoother input with (x, y, forward/reverse dir)
   std::vector<Eigen::Vector3d> path_world;
   path_world.reserve(path.poses.size());
@@ -101,9 +100,7 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
   Eigen::Vector2d end_dir;
   for (size_t i = 0; i < path.poses.size(); i++) {
     auto & pose = path.poses[i].pose;
-    tf2::Quaternion q;
-    tf2::fromMsg(pose.orientation, q);
-    double angle = q.getAngle() * sign(q.getZ());
+    double angle = tf2::getYaw(pose.orientation);
     Eigen::Vector2d orientation(cos(angle), sin(angle));
     if (i == path.poses.size() - 1) {
       path_world.emplace_back(pose.position.x, pose.position.y, path_world.back()[2]);
@@ -111,11 +108,11 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
     } else {
       auto & pos_next = path.poses[i + 1].pose.position;
       Eigen::Vector2d mvmt(pos_next.x - pose.position.x, pos_next.y - pose.position.y);
-      bool reversing = _smoother_params.reversing_enabled && orientation.dot(mvmt) < 0;
+      bool reversing = smoother_params_.reversing_enabled && orientation.dot(mvmt) < 0;
       path_world.emplace_back(pose.position.x, pose.position.y, reversing ? -1 : 1);
       if (i == 0) {
         start_dir = orientation;
-      } else if (i == 1 && !_smoother_params.keep_start_orientation) {
+      } else if (i == 1 && !smoother_params_.keep_start_orientation) {
         // overwrite start forward/reverse when orientation was set to be ignored
         // note: start_dir is overwritten inside Smoother::upsampleAndPopulate() method
         path_world[0][2] = path_world.back()[2];
@@ -123,10 +120,11 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
     }
   }
 
-  _smoother_params.max_time = max_time.seconds();
+  smoother_params_.max_time = max_time.seconds();
 
   // Smooth plan
-  if (!_smoother->smooth(path_world, start_dir, end_dir, &*costmap, _smoother_params)) {
+  auto costmap = costmap_sub_->getCostmap();
+  if (!smoother_->smooth(path_world, start_dir, end_dir, costmap.get(), smoother_params_)) {
     RCLCPP_WARN(
       logger_,
       "%s: failed to smooth plan, Ceres could not find a usable solution to optimize.",

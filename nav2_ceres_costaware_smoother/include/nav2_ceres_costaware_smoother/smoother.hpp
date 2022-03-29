@@ -58,21 +58,21 @@ public:
    */
   void initialize(const OptimizerParams params)
   {
-    _debug = params.debug;
+    debug_ = params.debug;
 
-    _options.linear_solver_type = ceres::DENSE_QR;
+    options_.linear_solver_type = ceres::DENSE_QR;
 
-    _options.max_num_iterations = params.max_iterations;
+    options_.max_num_iterations = params.max_iterations;
 
-    _options.function_tolerance = params.fn_tol;
-    _options.gradient_tolerance = params.gradient_tol;
-    _options.parameter_tolerance = params.param_tol;
+    options_.function_tolerance = params.fn_tol;
+    options_.gradient_tolerance = params.gradient_tol;
+    options_.parameter_tolerance = params.param_tol;
 
-    if (_debug) {
-      _options.minimizer_progress_to_stdout = true;
-      _options.logging_type = ceres::LoggingType::PER_MINIMIZER_ITERATION;
+    if (debug_) {
+      options_.minimizer_progress_to_stdout = true;
+      options_.logging_type = ceres::LoggingType::PER_MINIMIZER_ITERATION;
     } else {
-      _options.logging_type = ceres::SILENT;
+      options_.logging_type = ceres::SILENT;
     }
   }
 
@@ -93,9 +93,11 @@ public:
     const SmootherParams & params)
   {
     // Path has always at least 2 points
-    CHECK(path.size() >= 2) << "Path must have at least 2 points";
+    if (path.size() < 2) {
+      throw std::runtime_error("Constrained smoother: Path must have at least 2 points");
+    }
 
-    _options.max_solver_time_in_seconds = params.max_time;
+    options_.max_solver_time_in_seconds = params.max_time;
 
     ceres::Problem problem;
     std::vector<Eigen::Vector3d> path_optim;
@@ -103,8 +105,8 @@ public:
     if (buildProblem(path, costmap, params, problem, path_optim, optimized)) {
       // solve the problem
       ceres::Solver::Summary summary;
-      ceres::Solve(_options, &problem, &summary);
-      if (_debug) {
+      ceres::Solve(options_, &problem, &summary);
+      if (debug_) {
         RCLCPP_INFO(rclcpp::get_logger("smoother_server"), "%s", summary.FullReport().c_str());
       }
       if (!summary.IsSolutionUsable() || summary.initial_cost - summary.final_cost < 0.0) {
@@ -139,10 +141,10 @@ private:
     std::vector<bool> & optimized)
   {
     // Create costmap grid
-    _costmap_grid = std::make_shared<ceres::Grid2D<u_char>>(
+    costmap_grid_ = std::make_shared<ceres::Grid2D<u_char>>(
       costmap->getCharMap(), 0, costmap->getSizeInCellsY(), 0, costmap->getSizeInCellsX());
     auto costmap_interpolator = std::make_shared<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>>(
-      *_costmap_grid);
+      *costmap_grid_);
 
     // Create residual blocks
     const double cusp_half_length = params.cusp_zone_length / 2;
@@ -171,7 +173,7 @@ private:
         if (!is_cusp &&
           i > (params.keep_start_orientation ? 1 : 0) &&
           i < path_optim.size() - (params.keep_goal_orientation ? 2 : 1) &&
-          static_cast<int>(i - last_i) < params.input_downsampling_factor)
+          static_cast<int>(i - last_i) < params.path_downsampling_factor)
         {
           continue;
         }
@@ -197,7 +199,7 @@ private:
             params.cusp_costmap_weight * (1.0 - len_to_cusp / cusp_half_length) +
             params.costmap_weight * len_to_cusp / cusp_half_length;
           if (std::abs(new_weight - params.cusp_costmap_weight) <
-            std::abs(f.second->costmapWeight() - params.cusp_costmap_weight))
+            std::abs(f.second->getCostmapWeight() - params.cusp_costmap_weight))
           {
             f.second->setCostmapWeight(new_weight);
           }
@@ -285,8 +287,8 @@ private:
   {
     // Populate path, assign orientations, interpolate skipped/upsampled poses
     path.clear();
-    if (params.output_upsampling_factor > 1) {
-      path.reserve(params.output_upsampling_factor * (path_optim.size() - 1) + 1);
+    if (params.path_upsampling_factor > 1) {
+      path.reserve(params.path_upsampling_factor * (path_optim.size() - 1) + 1);
     }
     int last_i = 0;
     int prelast_i = -1;
@@ -321,7 +323,7 @@ private:
           double last_angle = atan2(last_dir[1], last_dir[0]);
 
           // Interpolate poses between prelast and last
-          int interp_cnt = (last_i - prelast_i) * params.output_upsampling_factor - 1;
+          int interp_cnt = (last_i - prelast_i) * params.path_upsampling_factor - 1;
           if (interp_cnt > 0) {
             Eigen::Vector2d lastp = last.block<2, 1>(0, 0);
             Eigen::Vector2d prelastp = prelast.block<2, 1>(0, 0);
@@ -389,9 +391,9 @@ private:
     return p;
   }
 
-  bool _debug;
-  ceres::Solver::Options _options;
-  std::shared_ptr<ceres::Grid2D<u_char>> _costmap_grid;
+  bool debug_;
+  ceres::Solver::Options options_;
+  std::shared_ptr<ceres::Grid2D<u_char>> costmap_grid_;
 };
 
 }  // namespace nav2_ceres_costaware_smoother
