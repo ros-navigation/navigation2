@@ -378,7 +378,7 @@ void RegulatedPurePursuitController::rotateToHeading(
   angular_vel = std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
 }
 
-geometry_msgs::msg::Point circleSegmentIntersection(
+geometry_msgs::msg::Point RegulatedPurePursuitController::circleSegmentIntersection(
   const geometry_msgs::msg::PoseStamped & p1,
   const geometry_msgs::msg::PoseStamped & p2,
   double r)
@@ -401,7 +401,7 @@ geometry_msgs::msg::Point circleSegmentIntersection(
 
   geometry_msgs::msg::Point p;
   double sqrt_term = std::sqrt(r * r * dr2 - D * D);
-  p.x = (D * dy * dx * sqrt_term) / dr2;
+  p.x = (D * dy + dx * sqrt_term) / dr2;
   p.y = (-D * dx + dy * sqrt_term) / dr2;
   return p;
 }
