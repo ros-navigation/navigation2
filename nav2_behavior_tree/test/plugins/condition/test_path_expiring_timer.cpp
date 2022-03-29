@@ -35,9 +35,6 @@ public:
     config_ = new BT::NodeConfiguration();
     config_->blackboard = BT::Blackboard::create();
     config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
-    // nav_msgs::msg::Path path;
-    // path.poses[0].pose.position.x = 1.0;
-    // config_->blackboard->set<nav_msgs::msg::Path>("path", path);
     bt_node_ = std::make_shared<nav2_behavior_tree::PathExpiringTimerCondition>(
       "time_expired", *config_);
   }
