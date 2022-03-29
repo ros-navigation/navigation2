@@ -31,6 +31,8 @@ void SimpleSmoother::configure(
   costmap_sub_ = costmap_sub;
 
   auto node = parent.lock();
+  logger_ = node->get_logger();
+
   declare_parameter_if_not_declared(
     node, name + ".tolerance", rclcpp::ParameterValue(1e-10));
   declare_parameter_if_not_declared(
@@ -117,8 +119,8 @@ bool SimpleSmoother::smoothImpl(
 
     // Make sure the smoothing function will converge
     if (its >= max_its_) {
-      RCLCPP_DEBUG(
-        rclcpp::get_logger("SimpleSmoother"),
+      RCLCPP_WARN(
+        logger_,
         "Number of iterations has exceeded limit of %i.", max_its_);
       path = last_path;
       updateApproximatePathOrientations(path, reversing_segment);
@@ -129,8 +131,8 @@ bool SimpleSmoother::smoothImpl(
     steady_clock::time_point b = steady_clock::now();
     rclcpp::Duration timespan(duration_cast<duration<double>>(b - a));
     if (timespan > max_dur) {
-      RCLCPP_DEBUG(
-        rclcpp::get_logger("SimpleSmoother"),
+      RCLCPP_WARN(
+        logger_,
         "Smoothing time exceeded allowed duration of %0.2f.", max_time);
       path = last_path;
       updateApproximatePathOrientations(path, reversing_segment);

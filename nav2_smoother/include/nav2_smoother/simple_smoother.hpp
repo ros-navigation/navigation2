@@ -153,6 +153,7 @@ protected:
   int max_its_, refinement_ctr_;
   bool do_refinement_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
+  rclcpp::Logger logger_{rclcpp::get_logger("SimpleSmoother")};
 };
 
 }  // namespace nav2_smoother

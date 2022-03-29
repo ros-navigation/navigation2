@@ -52,7 +52,7 @@ public:
     return findDirectionalPathSegments(path);
   }
 
-  void setMaxItsToZero()
+  void setMaxItsToInvalid()
   {
     max_its_ = 0;
   }
@@ -183,39 +183,39 @@ TEST(SmootherTest, test_simple_smoother)
   EXPECT_NEAR(straight_regular_path.poses[5].pose.position.x, 0.637, 0.01);
   EXPECT_NEAR(straight_regular_path.poses[5].pose.position.y, 0.353, 0.01);
 
-  // Test that collisions are rejected
+  // // Test that collisions are rejected TODO fails
   // nav_msgs::msg::Path collision_path;
   // collision_path = straight_regular_path;
-  // collision_path.poses[10].pose.position.x = 1.25;
-  // collision_path.poses[10].pose.position.y = 1.25;
+  // collision_path.poses[5].pose.position.x = 1.25;
+  // collision_path.poses[5].pose.position.y = 1.25;
   // EXPECT_FALSE(smoother->smooth(collision_path, max_time));
 
-  // test cusp / reversing segments
-  // nav_msgs::msg::Path reversing_path;
-  // reversing_path = reversing_path;
-  // reversing_path.poses[0].pose.position.x = 0.5;
-  // reversing_path.poses[0].pose.position.y = 0.0;
-  // reversing_path.poses[1].pose.position.x = 0.5;
-  // reversing_path.poses[1].pose.position.y = 0.1;
-  // reversing_path.poses[2].pose.position.x = 0.5;
-  // reversing_path.poses[2].pose.position.y = 0.2;
-  // reversing_path.poses[3].pose.position.x = 0.5;
-  // reversing_path.poses[3].pose.position.y = 0.3;
-  // reversing_path.poses[4].pose.position.x = 0.5;
-  // reversing_path.poses[4].pose.position.y = 0.4;
-  // reversing_path.poses[5].pose.position.x = 0.5;
-  // reversing_path.poses[5].pose.position.y = 0.5;
-  // reversing_path.poses[6].pose.position.x = 0.5;
-  // reversing_path.poses[6].pose.position.y = 0.4;
-  // reversing_path.poses[7].pose.position.x = 0.5;
-  // reversing_path.poses[7].pose.position.y = 0.3;
-  // reversing_path.poses[8].pose.position.x = 0.5;
-  // reversing_path.poses[8].pose.position.y = 0.2;
-  // reversing_path.poses[9].pose.position.x = 0.5;
-  // reversing_path.poses[9].pose.position.y = 0.1;
-  // reversing_path.poses[10].pose.position.x = 0.5;
-  // reversing_path.poses[10].pose.position.y = 0.0;
-  // EXPECT_TRUE(smoother->smooth(reversing_path, max_time));
+  // test cusp / reversing segments TODO crashes
+  nav_msgs::msg::Path reversing_path;
+  reversing_path = reversing_path;
+  reversing_path.poses[0].pose.position.x = 0.5;
+  reversing_path.poses[0].pose.position.y = 0.0;
+  reversing_path.poses[1].pose.position.x = 0.5;
+  reversing_path.poses[1].pose.position.y = 0.1;
+  reversing_path.poses[2].pose.position.x = 0.5;
+  reversing_path.poses[2].pose.position.y = 0.2;
+  reversing_path.poses[3].pose.position.x = 0.5;
+  reversing_path.poses[3].pose.position.y = 0.3;
+  reversing_path.poses[4].pose.position.x = 0.5;
+  reversing_path.poses[4].pose.position.y = 0.4;
+  reversing_path.poses[5].pose.position.x = 0.5;
+  reversing_path.poses[5].pose.position.y = 0.5;
+  reversing_path.poses[6].pose.position.x = 0.5;
+  reversing_path.poses[6].pose.position.y = 0.4;
+  reversing_path.poses[7].pose.position.x = 0.5;
+  reversing_path.poses[7].pose.position.y = 0.3;
+  reversing_path.poses[8].pose.position.x = 0.5;
+  reversing_path.poses[8].pose.position.y = 0.2;
+  reversing_path.poses[9].pose.position.x = 0.5;
+  reversing_path.poses[9].pose.position.y = 0.1;
+  reversing_path.poses[10].pose.position.x = 0.5;
+  reversing_path.poses[10].pose.position.y = 0.0;
+  EXPECT_TRUE(smoother->smooth(reversing_path, max_time));
 
   // // test rotate in place
   tf2::Quaternion quat1, quat2;
@@ -229,7 +229,31 @@ TEST(SmootherTest, test_simple_smoother)
   straight_irregular_path.poses[6].pose.orientation = tf2::toMsg(quat2);
   EXPECT_TRUE(smoother->smooth(straight_irregular_path, max_time));
 
-  // // test max iterations
-  // smoother->setMaxItsToZero();
-  // EXPECT_FALSE(smoother->smooth(straight_irregular_path, max_time));
+  // test max iterations
+  smoother->setMaxItsToInvalid();
+  nav_msgs::msg::Path max_its_path;
+  max_its_path.poses.resize(11);
+  max_its_path.poses[0].pose.position.x = 0.5;
+  max_its_path.poses[0].pose.position.y = 0.0;
+  max_its_path.poses[1].pose.position.x = 0.5;
+  max_its_path.poses[1].pose.position.y = 0.1;
+  max_its_path.poses[2].pose.position.x = 0.5;
+  max_its_path.poses[2].pose.position.y = 0.2;
+  max_its_path.poses[3].pose.position.x = 0.5;
+  max_its_path.poses[3].pose.position.y = 0.3;
+  max_its_path.poses[4].pose.position.x = 0.5;
+  max_its_path.poses[4].pose.position.y = 0.4;
+  max_its_path.poses[5].pose.position.x = 0.5;
+  max_its_path.poses[5].pose.position.y = 0.5;
+  max_its_path.poses[6].pose.position.x = 0.5;
+  max_its_path.poses[6].pose.position.y = 0.6;
+  max_its_path.poses[7].pose.position.x = 0.5;
+  max_its_path.poses[7].pose.position.y = 0.7;
+  max_its_path.poses[8].pose.position.x = 0.5;
+  max_its_path.poses[8].pose.position.y = 0.8;
+  max_its_path.poses[9].pose.position.x = 0.5;
+  max_its_path.poses[9].pose.position.y = 0.9;
+  max_its_path.poses[10].pose.position.x = 0.5;
+  max_its_path.poses[10].pose.position.y = 1.0;
+  EXPECT_FALSE(smoother->smooth(max_its_path, max_time));
 }
