@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
   For instructions on using Groot and description of the following BehaviorTree nodes,
-  please refer to the groot_instructions.md and REAMDE.md respectively located in the 
+  please refer to the groot_instructions.md and REAMDE.md respectively located in the
   nav2_behavior_tree package.
 -->
 <root>
@@ -170,6 +170,12 @@
 
     <Condition ID="TimeExpired">
       <input_port name="seconds">Time to check if expired</input_port>
+    </Condition>
+
+
+    <Condition ID="PathExpiringTimer">
+      <input_port name="seconds">Time to check if expired</input_port>
+      <input_port name="path">Check if path has been updated to enable timer reset</input_port>
     </Condition>
 
     <Condition ID="InitialPoseReceived">
