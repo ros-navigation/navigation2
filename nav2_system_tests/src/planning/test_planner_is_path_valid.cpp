@@ -43,23 +43,22 @@ TEST(testIsPathValid, testIsPathValid)
     request->path.poses.push_back(pose);
   }
 
-  std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("path_valid_node");
-  auto client = node->create_client<nav2_msgs::srv::IsPathValid>("/is_path_valid");
+  auto client = planner_tester->create_client<nav2_msgs::srv::IsPathValid>("/is_path_valid");
 
   auto result = client->async_send_request(request);
 
   while(!client->wait_for_service(std::chrono::milliseconds(1000)))
   {
-    RCLCPP_INFO(node->get_logger(), "Waiting for service");
+    RCLCPP_INFO(planner_tester->get_logger(), "Waiting for service");
   }
 
-  RCLCPP_INFO(node->get_logger(), "Waiting for service complete");
-  if (rclcpp::spin_until_future_complete(node, result) ==
+  RCLCPP_INFO(planner_tester->get_logger(), "Waiting for service complete");
+  if (rclcpp::spin_until_future_complete(planner_tester, result) ==
     rclcpp::FutureReturnCode::SUCCESS)
   {
-    RCLCPP_INFO(node->get_logger(), "Got result");
+    RCLCPP_INFO(planner_tester->get_logger(), "Got result");
   } else {
-    RCLCPP_ERROR_STREAM(node->get_logger(), "Failed to call service: ");
+    RCLCPP_ERROR_STREAM(planner_tester->get_logger(), "Failed to call service: ");
   }
 
   EXPECT_EQ(0,0);
@@ -72,27 +71,10 @@ int main(int argc, char ** argv)
   // initialize ROS
   rclcpp::init(argc, argv);
 
-  auto planner_tester = std::make_shared<PlannerTester>();
-
-  planner_tester->activate();
-
-  // load open space cost map which is 10 by 10
-  planner_tester->loadSimpleCostmap(TestCostmap::open_space);
-
   bool all_successful = RUN_ALL_TESTS();
-
-  // launch the planner_tester on a new thread
-  std::thread planner_thread([]() {
-    auto planner_tester = std::make_shared<PlannerTester>();
-    planner_tester->activate();
-    // load open space cost map which is 10 by 10
-    planner_tester->loadSimpleCostmap(TestCostmap::open_space);
-    rclcpp::spin(planner_tester->get_node_base_interface());
-  });
 
   // shutdown ROS
   rclcpp::shutdown();
-  planner_thread.join();
   return all_successful;
 
 
