@@ -426,9 +426,7 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
   // If the no pose is not far enough, take the last pose
   if (goal_pose_it == transformed_plan.poses.end()) {
     goal_pose_it = std::prev(transformed_plan.poses.end());
-  } else if (use_interpolation_ && // NOLINT cpplint and uncrustify can't agree
-    goal_pose_it != transformed_plan.poses.begin())
-  {
+  } else if (use_interpolation_ && goal_pose_it != transformed_plan.poses.begin()) {
     // Find the point on the line segment between the two poses
     // that is exactly the lookahead distance away from the robot pose (the origin)
     // This can be found with a closed form for the intersection of a segment and a circle
