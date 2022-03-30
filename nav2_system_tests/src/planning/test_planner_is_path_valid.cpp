@@ -43,17 +43,15 @@ TEST(testIsPathValid, testIsPathValid)
     request->path.poses.push_back(pose);
   }
 
-  auto client = planner_tester->create_client<nav2_msgs::srv::IsPathValid>("/is_path_valid");
+  std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("service_client");
+
+  //Spin off a thread to call the service?
+  auto client = node->create_client<nav2_msgs::srv::IsPathValid>("/is_path_valid");
 
   auto result = client->async_send_request(request);
 
-  while(!client->wait_for_service(std::chrono::milliseconds(1000)))
-  {
-    RCLCPP_INFO(planner_tester->get_logger(), "Waiting for service");
-  }
-
   RCLCPP_INFO(planner_tester->get_logger(), "Waiting for service complete");
-  if (rclcpp::spin_until_future_complete(planner_tester, result) ==
+  if (rclcpp::spin_until_future_complete(node, result, std::chrono::seconds(10)) ==
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_INFO(planner_tester->get_logger(), "Got result");
