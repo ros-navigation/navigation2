@@ -109,7 +109,7 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".max_robot_pose_search_dist",
     rclcpp::ParameterValue(getCostmapMaxExtent()));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".use_lookahead_point_interpolation",
+    node, plugin_name_ + ".use_interpolation",
     rclcpp::ParameterValue(false));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
@@ -157,8 +157,8 @@ void RegulatedPurePursuitController::configure(
     plugin_name_ + ".max_robot_pose_search_dist",
     max_robot_pose_search_dist_);
   node->get_parameter(
-    plugin_name_ + ".use_lookahead_point_interpolation",
-    use_lookahead_point_interpolation_);
+    plugin_name_ + ".use_interpolation",
+    use_interpolation_);
 
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
   control_duration_ = 1.0 / control_frequency;
@@ -426,7 +426,7 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
   // If the no pose is not far enough, take the last pose
   if (goal_pose_it == transformed_plan.poses.end()) {
     goal_pose_it = std::prev(transformed_plan.poses.end());
-  } else if (use_lookahead_point_interpolation_ && // NOLINT cpplint and uncrustify can't agree
+  } else if (use_interpolation_ && // NOLINT cpplint and uncrustify can't agree
     goal_pose_it != transformed_plan.poses.begin())
   {
     // Find the point on the line segment between the two poses

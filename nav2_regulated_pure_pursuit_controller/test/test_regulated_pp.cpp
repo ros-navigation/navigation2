@@ -379,7 +379,7 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
   // test interpolation
   node->set_parameter(
     rclcpp::Parameter(
-      name + ".use_lookahead_point_interpolation",
+      name + ".use_interpolation",
       rclcpp::ParameterValue(true)));
   ctrl->configure(node, name, tf, costmap);
   dist = 3.8;
