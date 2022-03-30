@@ -43,48 +43,64 @@ inline geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle)
 }
 
 /**
- * @brief Get the L2 distance between 2 geometry_msgs::Points
+ * @brief Get the euclidean distance between 2 geometry_msgs::Points
  * @param pos1 First point
  * @param pos1 Second point
+ * @param is_3d True if a true L2 distance is desired (default false)
  * @return double L2 distance
  */
 inline double euclidean_distance(
   const geometry_msgs::msg::Point & pos1,
-  const geometry_msgs::msg::Point & pos2)
+  const geometry_msgs::msg::Point & pos2,
+  const bool is_3d = false)
 {
   double dx = pos1.x - pos2.x;
   double dy = pos1.y - pos2.y;
-  double dz = pos1.z - pos2.z;
-  return std::hypot(dx, dy, dz);
+
+  if (is_3d) {
+    double dz = pos1.z - pos2.z;
+    return std::hypot(dx, dy, dz);
+  }
+
+  return std::hypot(dx, dy);
 }
 
 /**
  * @brief Get the L2 distance between 2 geometry_msgs::Poses
  * @param pos1 First pose
  * @param pos1 Second pose
- * @return double L2 distance
+ * @param is_3d True if a true L2 distance is desired (default false)
+ * @return double euclidean distance
  */
 inline double euclidean_distance(
   const geometry_msgs::msg::Pose & pos1,
-  const geometry_msgs::msg::Pose & pos2)
+  const geometry_msgs::msg::Pose & pos2,
+  const bool is_3d = false)
 {
   double dx = pos1.position.x - pos2.position.x;
   double dy = pos1.position.y - pos2.position.y;
-  double dz = pos1.position.z - pos2.position.z;
-  return std::hypot(dx, dy, dz);
+
+  if (is_3d) {
+    double dz = pos1.position.z - pos2.position.z;
+    return std::hypot(dx, dy, dz);
+  }
+
+  return std::hypot(dx, dy);
 }
 
 /**
  * @brief Get the L2 distance between 2 geometry_msgs::PoseStamped
  * @param pos1 First pose
  * @param pos1 Second pose
+ * @param is_3d True if a true L2 distance is desired (default false)
  * @return double L2 distance
  */
 inline double euclidean_distance(
   const geometry_msgs::msg::PoseStamped & pos1,
-  const geometry_msgs::msg::PoseStamped & pos2)
+  const geometry_msgs::msg::PoseStamped & pos2,
+  const bool is_3d = false)
 {
-  return euclidean_distance(pos1.pose, pos2.pose);
+  return euclidean_distance(pos1.pose, pos2.pose, is_3d);
 }
 
 /**

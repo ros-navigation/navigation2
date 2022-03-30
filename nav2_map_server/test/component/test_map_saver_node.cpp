@@ -20,7 +20,7 @@
 #include <memory>
 #include <experimental/filesystem>  // NOLINT
 
-#include <rclcpp/rclcpp.hpp>
+#include "rclcpp/rclcpp.hpp"
 
 #include "test_constants/test_constants.h"
 #include "nav2_map_server/map_saver.hpp"

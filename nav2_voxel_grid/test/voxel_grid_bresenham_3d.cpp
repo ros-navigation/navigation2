@@ -141,7 +141,7 @@ TEST(voxel_grid, bresenham3DSamePoint)
   const double y0 = 3.8;
   const double z0 = 0.4;
 
-  unsigned int offset = int(y0) * sz_x + int(x0);
+  unsigned int offset = static_cast<int>(y0) * sz_x + static_cast<int>(x0);
   unsigned int val_before = tv(offset);
   // Same point to check
   vg.raytraceLine(tv, x0, y0, z0, x0, y0, z0, max_length, min_length);

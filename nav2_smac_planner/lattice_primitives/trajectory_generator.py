@@ -18,7 +18,6 @@ from typing import Tuple, Union
 import numpy as np
 
 from trajectory import Path, Trajectory, TrajectoryParameters
-from helper import normalize_angle
 
 logger = logging.getLogger(__name__)
 
