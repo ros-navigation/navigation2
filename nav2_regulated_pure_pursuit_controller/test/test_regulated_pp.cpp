@@ -231,41 +231,89 @@ INSTANTIATE_TEST_SUITE_P(
   InterpolationTest,
   CircleSegmentIntersectionTest,
   testing::Values(
+    // Origin to the positive X axis
     CircleSegmentIntersectionParam{
   {0.0, 0.0},
   {2.0, 0.0},
   1.0,
   {1.0, 0.0}
 },
+    // Origin to hte negative X axis
     CircleSegmentIntersectionParam{
   {0.0, 0.0},
   {-2.0, 0.0},
   1.0,
   {-1.0, 0.0}
 },
+    // Origin to the positive Y axis
     CircleSegmentIntersectionParam{
   {0.0, 0.0},
   {0.0, 2.0},
   1.0,
   {0.0, 1.0}
 },
+    // Origin to the negative Y axis
     CircleSegmentIntersectionParam{
   {0.0, 0.0},
   {0.0, -2.0},
   1.0,
   {0.0, -1.0}
 },
+    // non-origin to the X axis with non-unit circle, with the second point inside
     CircleSegmentIntersectionParam{
   {4.0, 0.0},
   {-1.0, 0.0},
   2.0,
   {2.0, 0.0}
 },
+    // non-origin to the Y axis with non-unit circle, with the second point inside
     CircleSegmentIntersectionParam{
   {0.0, 4.0},
   {0.0, -0.5},
   2.0,
   {0.0, 2.0}
+},
+    // origin to the positive X axis, on the circle
+    CircleSegmentIntersectionParam{
+  {2.0, 0.0},
+  {0.0, 0.0},
+  2.0,
+  {2.0, 0.0}
+},
+    // origin to the positive Y axis, on the circle
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {0.0, 2.0},
+  2.0,
+  {0.0, 2.0}
+},
+    // origin to the upper-right quadrant (3-4-5 triangle)
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {6.0, 8.0},
+  5.0,
+  {3.0, 4.0}
+},
+    // origin to the lower-left quadrant (3-4-5 triangle)
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {-6.0, -8.0},
+  5.0,
+  {-3.0, -4.0}
+},
+    // origin to the upper-left quadrant (3-4-5 triangle)
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {-6.0, 8.0},
+  5.0,
+  {-3.0, 4.0}
+},
+    // origin to the lower-right quadrant (3-4-5 triangle)
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {6.0, -8.0},
+  5.0,
+  {3.0, -4.0}
 }
 ));
 
