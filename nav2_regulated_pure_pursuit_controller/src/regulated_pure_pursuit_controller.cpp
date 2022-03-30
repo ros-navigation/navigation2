@@ -379,8 +379,8 @@ void RegulatedPurePursuitController::rotateToHeading(
 }
 
 geometry_msgs::msg::Point RegulatedPurePursuitController::circleSegmentIntersection(
-  const geometry_msgs::msg::PoseStamped & p1,
-  const geometry_msgs::msg::PoseStamped & p2,
+  const geometry_msgs::msg::Point & p1,
+  const geometry_msgs::msg::Point & p2,
   double r)
 {
   // Formula for intersection of a line with a circle centered at the origin,
@@ -389,10 +389,10 @@ geometry_msgs::msg::Point RegulatedPurePursuitController::circleSegmentIntersect
   // This works because the poses are transformed into the robot frame.
   // This can be derived from solving the system of equations of a line and a circle
   // which results in something that is just a reformulation of the quadratic formula.
-  double x1 = p1.pose.position.x;
-  double x2 = p2.pose.position.x;
-  double y1 = p1.pose.position.y;
-  double y2 = p2.pose.position.y;
+  double x1 = p1.x;
+  double x2 = p2.x;
+  double y1 = p1.y;
+  double y2 = p2.y;
 
   double dx = x2 - x1;
   double dy = y2 - y1;
@@ -425,7 +425,9 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
     // Because of the way we did the std::find_if, prev_pose is guaranteed to be inside the circle,
     // and goal_pose is guaranteed to be outside the circle.
     auto prev_pose_it = std::prev(goal_pose_it);
-    auto point = circleSegmentIntersection(*prev_pose_it, *goal_pose_it, lookahead_dist);
+    auto point = circleSegmentIntersection(
+      prev_pose_it->pose.position,
+      goal_pose_it->pose.position, lookahead_dist);
     geometry_msgs::msg::PoseStamped pose;
     pose.header.frame_id = prev_pose_it->header.frame_id;
     pose.pose.position = point;

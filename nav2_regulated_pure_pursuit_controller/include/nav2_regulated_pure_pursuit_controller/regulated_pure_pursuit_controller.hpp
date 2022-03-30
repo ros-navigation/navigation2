@@ -231,9 +231,9 @@ protected:
    * @param r radius of circle
    * @return point of intersection
    */
-  geometry_msgs::msg::Point circleSegmentIntersection(
-    const geometry_msgs::msg::PoseStamped & p1,
-    const geometry_msgs::msg::PoseStamped & p2,
+  static geometry_msgs::msg::Point circleSegmentIntersection(
+    const geometry_msgs::msg::Point & p1,
+    const geometry_msgs::msg::Point & p2,
     double r);
 
   /**

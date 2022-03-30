@@ -60,6 +60,14 @@ public:
     return getLookAheadDistance(twist);
   }
 
+  static geometry_msgs::msg::Point circleSegmentIntersectionWrapper(
+    const geometry_msgs::msg::Point & p1,
+    const geometry_msgs::msg::Point & p2,
+    double r)
+  {
+    return circleSegmentIntersection(p1, p2, r);
+  }
+
   geometry_msgs::msg::PoseStamped getLookAheadPointWrapper(
     const double & dist, const nav_msgs::msg::Path & path)
   {
@@ -184,6 +192,82 @@ TEST(RegulatedPurePursuitTest, findVelocitySignChange)
   rtn = ctrl->findVelocitySignChangeWrapper(pose);
   EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
+
+using CircleSegmentIntersectionParam = std::tuple<
+  std::pair<double, double>,
+  std::pair<double, double>,
+  double,
+  std::pair<double, double>
+>;
+
+class CircleSegmentIntersectionTest
+  : public ::testing::TestWithParam<CircleSegmentIntersectionParam>
+{};
+
+TEST_P(CircleSegmentIntersectionTest, circleSegmentIntersection)
+{
+  auto pair1 = std::get<0>(GetParam());
+  auto pair2 = std::get<1>(GetParam());
+  auto r = std::get<2>(GetParam());
+  auto expected_pair = std::get<3>(GetParam());
+  auto pair_to_point = [](std::pair<double, double> p) -> geometry_msgs::msg::Point {
+      geometry_msgs::msg::Point point;
+      point.x = p.first;
+      point.y = p.second;
+      point.z = 0.0;
+      return point;
+    };
+  auto p1 = pair_to_point(pair1);
+  auto p2 = pair_to_point(pair2);
+  auto actual = BasicAPIRPP::circleSegmentIntersectionWrapper(p1, p2, r);
+  auto expected_point = pair_to_point(expected_pair);
+  EXPECT_DOUBLE_EQ(actual.x, expected_point.x);
+  EXPECT_DOUBLE_EQ(actual.y, expected_point.y);
+  // Expect that the intersection point is actually r away from the origin
+  EXPECT_DOUBLE_EQ(r, std::hypot(actual.x, actual.y));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  InterpolationTest,
+  CircleSegmentIntersectionTest,
+  testing::Values(
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {2.0, 0.0},
+  1.0,
+  {1.0, 0.0}
+},
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {-2.0, 0.0},
+  1.0,
+  {-1.0, 0.0}
+},
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {0.0, 2.0},
+  1.0,
+  {0.0, 1.0}
+},
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {0.0, -2.0},
+  1.0,
+  {0.0, -1.0}
+},
+    CircleSegmentIntersectionParam{
+  {4.0, 0.0},
+  {-1.0, 0.0},
+  2.0,
+  {2.0, 0.0}
+},
+    CircleSegmentIntersectionParam{
+  {0.0, 4.0},
+  {0.0, -0.5},
+  2.0,
+  {0.0, 2.0}
+}
+));
 
 TEST(RegulatedPurePursuitTest, lookaheadAPI)
 {
