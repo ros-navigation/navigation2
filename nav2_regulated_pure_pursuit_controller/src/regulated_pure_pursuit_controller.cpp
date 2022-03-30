@@ -389,7 +389,8 @@ geometry_msgs::msg::Point RegulatedPurePursuitController::circleSegmentIntersect
   // This works because the poses are transformed into the robot frame.
   // This can be derived from solving the system of equations of a line and a circle
   // which results in something that is just a reformulation of the quadratic formula.
-  // Interactive illustration here: https://www.desmos.com/calculator/td5cwbuocd
+  // Interactive illustration in doc/circle-segment-intersection.ipynb as well as at
+  // https://www.desmos.com/calculator/td5cwbuocd
   double x1 = p1.x;
   double x2 = p2.x;
   double y1 = p1.y;
@@ -428,6 +429,9 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
   } else if (use_lookahead_point_interpolation_ && // NOLINT cpplint and uncrustify can't agree
     goal_pose_it != transformed_plan.poses.begin())
   {
+    // Find the point on the line segment between the two poses
+    // that is exactly the lookahead distance away from the robot pose (the origin)
+    // This can be found with a closed form for the intersection of a segment and a circle
     // Because of the way we did the std::find_if, prev_pose is guaranteed to be inside the circle,
     // and goal_pose is guaranteed to be outside the circle.
     auto prev_pose_it = std::prev(goal_pose_it);
@@ -436,6 +440,7 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
       goal_pose_it->pose.position, lookahead_dist);
     geometry_msgs::msg::PoseStamped pose;
     pose.header.frame_id = prev_pose_it->header.frame_id;
+    pose.header.stamp = goal_pose_it->header.stamp;
     pose.pose.position = point;
     return pose;
   }
