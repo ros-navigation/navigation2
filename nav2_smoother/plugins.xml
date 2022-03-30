@@ -1,0 +1,7 @@
+<class_libraries>
+  <library path="simple_smoother">
+    <class type="nav2_smoother::SimpleSmoother" base_class_type="nav2_core::Smoother">
+      <description>Does a simple smoothing process with collision checking</description>
+    </class>
+  </library>
+</class_libraries>
