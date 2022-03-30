@@ -325,15 +325,15 @@ private:
           // Interpolate poses between prelast and last
           int interp_cnt = (last_i - prelast_i) * params.path_upsampling_factor - 1;
           if (interp_cnt > 0) {
-            Eigen::Vector2d lastp = last.block<2, 1>(0, 0);
-            Eigen::Vector2d prelastp = prelast.block<2, 1>(0, 0);
-            double dist = (lastp - prelastp).norm();
-            Eigen::Vector2d p1 = prelastp + prelast_dir * dist * 0.4 * prelast[2];
-            Eigen::Vector2d p2 = lastp - last_dir * dist * 0.4 * prelast[2];
+            Eigen::Vector2d last_pt = last.block<2, 1>(0, 0);
+            Eigen::Vector2d prelast_pt = prelast.block<2, 1>(0, 0);
+            double dist = (last_pt - prelast_pt).norm();
+            Eigen::Vector2d pt1 = prelast_pt + prelast_dir * dist * 0.4 * prelast[2];
+            Eigen::Vector2d pt2 = last_pt - last_dir * dist * 0.4 * prelast[2];
             for (int j = 1; j <= interp_cnt; j++) {
               double interp = j / static_cast<double>(interp_cnt + 1);
-              Eigen::Vector2d p = cubicBezier(prelastp, p1, p2, lastp, interp);
-              path.emplace_back(p[0], p[1], 0.0);
+              Eigen::Vector2d pt = cubicBezier(prelast_pt, pt1, pt2, last_pt, interp);
+              path.emplace_back(pt[0], pt[1], 0.0);
             }
           }
           path.emplace_back(last[0], last[1], last_angle);
@@ -369,26 +369,26 @@ private:
 
   /*
     Piecewise cubic bezier curve as defined by Adobe in Postscript
-    The two end points are p0 and p3
-    Their associated control points are p1 and p2
+    The two end points are pt0 and pt3
+    Their associated control points are pt1 and pt2
   */
   static Eigen::Vector2d cubicBezier(
-    Eigen::Vector2d & p0, Eigen::Vector2d & p1,
-    Eigen::Vector2d & p2, Eigen::Vector2d & p3, double mu)
+    Eigen::Vector2d & pt0, Eigen::Vector2d & pt1,
+    Eigen::Vector2d & pt2, Eigen::Vector2d & pt3, double mu)
   {
-    Eigen::Vector2d a, b, c, p;
+    Eigen::Vector2d a, b, c, pt;
 
-    c[0] = 3 * (p1[0] - p0[0]);
-    c[1] = 3 * (p1[1] - p0[1]);
-    b[0] = 3 * (p2[0] - p1[0]) - c[0];
-    b[1] = 3 * (p2[1] - p1[1]) - c[1];
-    a[0] = p3[0] - p0[0] - c[0] - b[0];
-    a[1] = p3[1] - p0[1] - c[1] - b[1];
+    c[0] = 3 * (pt1[0] - pt0[0]);
+    c[1] = 3 * (pt1[1] - pt0[1]);
+    b[0] = 3 * (pt2[0] - pt1[0]) - c[0];
+    b[1] = 3 * (pt2[1] - pt1[1]) - c[1];
+    a[0] = pt3[0] - pt0[0] - c[0] - b[0];
+    a[1] = pt3[1] - pt0[1] - c[1] - b[1];
 
-    p[0] = a[0] * mu * mu * mu + b[0] * mu * mu + c[0] * mu + p0[0];
-    p[1] = a[1] * mu * mu * mu + b[1] * mu * mu + c[1] * mu + p0[1];
+    pt[0] = a[0] * mu * mu * mu + b[0] * mu * mu + c[0] * mu + pt0[0];
+    pt[1] = a[1] * mu * mu * mu + b[1] * mu * mu + c[1] * mu + pt0[1];
 
-    return p;
+    return pt;
   }
 
   bool debug_;

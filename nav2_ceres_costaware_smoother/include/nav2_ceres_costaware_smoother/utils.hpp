@@ -23,19 +23,28 @@
 namespace nav2_ceres_costaware_smoother
 {
 
+/**
+ * @brief Center of an arc between three points
+ * @param pt_prev Starting point of the arc
+ * @param pt Mid point of the arc
+ * @param pt_next Last point of the arc
+ * @param forced_dot_sign Should be -1 if pt is cusp, otherwise 1.
+ * Cuspness of pt is automatically determined if set to 0.
+ * @result position of the center or Vector2(inf, inf) for straight lines and 180 deg turns
+ */
 template<typename T>
 inline Eigen::Matrix<T, 2, 1> arcCenter(
-  Eigen::Matrix<T, 2, 1> pt_m1,
+  Eigen::Matrix<T, 2, 1> pt_prev,
   Eigen::Matrix<T, 2, 1> pt,
-  Eigen::Matrix<T, 2, 1> pt_p1,
+  Eigen::Matrix<T, 2, 1> pt_next,
   int forced_dot_sign = 0)
 {
-  Eigen::Matrix<T, 2, 1> d1 = pt - pt_m1;
-  Eigen::Matrix<T, 2, 1> d2 = pt_p1 - pt;
+  Eigen::Matrix<T, 2, 1> d1 = pt - pt_prev;
+  Eigen::Matrix<T, 2, 1> d2 = pt_next - pt;
 
   if (forced_dot_sign < 0 || (forced_dot_sign == 0 && d1.dot(d2) < (T)0)) {
     d2 = -d2;
-    pt_p1 = pt + d2;
+    pt_next = pt + d2;
   }
 
   T det = d1[0] * d2[1] - d1[1] * d2[0];
@@ -44,10 +53,12 @@ inline Eigen::Matrix<T, 2, 1> arcCenter(
       (T)std::numeric_limits<double>::infinity(), (T)std::numeric_limits<double>::infinity());
   }
 
-  // circle center is at the intersection of mirror axes of the segments: http://paulbourke.net/geometry/circlesphere/
-  // intersection: https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Intersection%20of%20two%20lines
-  Eigen::Matrix<T, 2, 1> mid1 = (pt_m1 + pt) / (T)2;
-  Eigen::Matrix<T, 2, 1> mid2 = (pt + pt_p1) / (T)2;
+  // circle center is at the intersection of mirror axes of the segments:
+  // http://paulbourke.net/geometry/circlesphere/
+  // line intersection:
+  // https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Intersection%20of%20two%20lines
+  Eigen::Matrix<T, 2, 1> mid1 = (pt_prev + pt) / (T)2;
+  Eigen::Matrix<T, 2, 1> mid2 = (pt + pt_next) / (T)2;
   Eigen::Matrix<T, 2, 1> n1(-d1[1], d1[0]);
   Eigen::Matrix<T, 2, 1> n2(-d2[1], d2[0]);
   T det1 = (mid1[0] + n1[0]) * mid1[1] - (mid1[1] + n1[1]) * mid1[0];
@@ -57,24 +68,40 @@ inline Eigen::Matrix<T, 2, 1> arcCenter(
   return center;
 }
 
+/**
+ * @brief Direction of a line which contains pt and is tangential to arc
+ * between pt_prev, pt, pt_next
+ * @param pt_prev Starting point of the arc
+ * @param pt Mid point of the arc, lying on the tangential line
+ * @param pt_next Last point of the arc
+ * @param forced_dot_sign Should be -1 if pt is cusp, otherwise 1.
+ * Cuspness of pt is automatically determined if set to 0.
+ * @result Tangential line direction.
+ * Note: the sign of tangentDir is undefined here, should be assigned in post-process
+ * depending on movement direction. Also, for speed reasons, direction vector is not normalized.
+ */
 template<typename T>
 inline Eigen::Matrix<T, 2, 1> tangentDir(
-  Eigen::Matrix<T, 2, 1> pt_m1,
+  Eigen::Matrix<T, 2, 1> pt_prev,
   Eigen::Matrix<T, 2, 1> pt,
-  Eigen::Matrix<T, 2, 1> pt_p1,
+  Eigen::Matrix<T, 2, 1> pt_next,
   int forced_dot_sign = 0)
 {
-  Eigen::Matrix<T, 2, 1> center = arcCenter(pt_m1, pt, pt_p1, forced_dot_sign);
+  Eigen::Matrix<T, 2, 1> center = arcCenter(pt_prev, pt, pt_next, forced_dot_sign);
   if (ceres::IsInfinite(center[0])) {  // straight line
-    Eigen::Matrix<T, 2, 1> d1 = pt - pt_m1;
-    Eigen::Matrix<T, 2, 1> d2 = pt_p1 - pt;
+    Eigen::Matrix<T, 2, 1> d1 = pt - pt_prev;
+    Eigen::Matrix<T, 2, 1> d2 = pt_next - pt;
 
     if (forced_dot_sign < 0 || (forced_dot_sign == 0 && d1.dot(d2) < (T)0)) {
       d2 = -d2;
-      pt_p1 = pt + d2;
+      pt_next = pt + d2;
     }
 
-    return Eigen::Matrix<T, 2, 1>(pt_p1[0] - pt_m1[0], pt_p1[1] - pt_m1[1]);
+    Eigen::Matrix<T, 2, 1> result(pt_next[0] - pt_prev[0], pt_next[1] - pt_prev[1]);
+    if (result[0] == 0.0 && result[1] == 0.0) {  // a very rare edge situation
+      return Eigen::Matrix<T, 2, 1>(d1[1], -d1[0]);
+    }
+    return result;
   }
 
   // tangent is prependicular to (pt - center)

@@ -88,30 +88,30 @@ public:
 
   /**
    * @brief Smoother cost function evaluation
-   * @param p X, Y coords of current point
-   * @param p_p1 X, Y coords of next point
-   * @param p_m1 X, Y coords of previous point
-   * @param p_residual array of output residuals (smoothing, curvature, distance, cost)
+   * @param pt X, Y coords of current point
+   * @param pt_next X, Y coords of next point
+   * @param pt_prev X, Y coords of previous point
+   * @param pt_residual array of output residuals (smoothing, curvature, distance, cost)
    * @return if successful in computing values
    */
   template<typename T>
   bool operator()(
-    const T * const p, const T * const p_p1, const T * const p_m1,
-    T * p_residual) const
+    const T * const pt, const T * const pt_next, const T * const pt_prev,
+    T * pt_residual) const
   {
-    Eigen::Map<const Eigen::Matrix<T, 2, 1>> xi(p);
-    Eigen::Map<const Eigen::Matrix<T, 2, 1>> xi_p1(p_p1);
-    Eigen::Map<const Eigen::Matrix<T, 2, 1>> xi_m1(p_m1);
-    Eigen::Map<Eigen::Matrix<T, 4, 1>> residual(p_residual);
+    Eigen::Map<const Eigen::Matrix<T, 2, 1>> xi(pt);
+    Eigen::Map<const Eigen::Matrix<T, 2, 1>> xi_next(pt_next);
+    Eigen::Map<const Eigen::Matrix<T, 2, 1>> xi_prev(pt_prev);
+    Eigen::Map<Eigen::Matrix<T, 4, 1>> residual(pt_residual);
     residual.setZero();
 
     // compute cost
-    addSmoothingResidual<T>(params_.smooth_weight, xi, xi_p1, xi_m1, residual[0]);
-    addCurvatureResidual<T>(params_.curvature_weight, xi, xi_p1, xi_m1, residual[1]);
+    addSmoothingResidual<T>(params_.smooth_weight, xi, xi_next, xi_prev, residual[0]);
+    addCurvatureResidual<T>(params_.curvature_weight, xi, xi_next, xi_prev, residual[1]);
     addDistanceResidual<T>(
       params_.distance_weight, xi,
       original_pos_.template cast<T>(), residual[2]);
-    addCostResidual<T>(costmap_weight_, xi, xi_p1, xi_m1, residual[3]);
+    addCostResidual<T>(costmap_weight_, xi, xi_next, xi_prev, residual[3]);
 
     return true;
   }
@@ -121,30 +121,30 @@ protected:
    * @brief Cost function term for smooth paths
    * @param weight Weight to apply to function
    * @param pt Point Xi for evaluation
-   * @param pt_p Point Xi+1 for calculating Xi's cost
-   * @param pt_m Point Xi-1 for calculating Xi's cost
+   * @param pt_next Point Xi+1 for calculating Xi's cost
+   * @param pt_prev Point Xi-1 for calculating Xi's cost
    * @param r Residual (cost) of term
    */
   template<typename T>
   inline void addSmoothingResidual(
     const double & weight,
     const Eigen::Matrix<T, 2, 1> & pt,
-    const Eigen::Matrix<T, 2, 1> & pt_p,
-    const Eigen::Matrix<T, 2, 1> & pt_m,
+    const Eigen::Matrix<T, 2, 1> & pt_next,
+    const Eigen::Matrix<T, 2, 1> & pt_prev,
     T & r) const
   {
-    Eigen::Matrix<T, 2, 1> d_pt_p = pt_p - pt;
-    Eigen::Matrix<T, 2, 1> d_pt_m = pt - pt_m;
-    Eigen::Matrix<T, 2, 1> d_pt_diff = next_to_last_length_ratio_ * d_pt_p - d_pt_m;
-    r += (T)weight * d_pt_diff.dot(d_pt_diff);    // objective function value
+    Eigen::Matrix<T, 2, 1> d_next = pt_next - pt;
+    Eigen::Matrix<T, 2, 1> d_prev = pt - pt_prev;
+    Eigen::Matrix<T, 2, 1> d_diff = next_to_last_length_ratio_ * d_next - d_prev;
+    r += (T)weight * d_diff.dot(d_diff);    // objective function value
   }
 
   /**
    * @brief Cost function term for maximum curved paths
    * @param weight Weight to apply to function
    * @param pt Point Xi for evaluation
-   * @param pt_p Point Xi+1 for calculating Xi's cost
-   * @param pt_m Point Xi-1 for calculating Xi's cost
+   * @param pt_next Point Xi+1 for calculating Xi's cost
+   * @param pt_prev Point Xi-1 for calculating Xi's cost
    * @param curvature_params A struct to cache computations for the jacobian to use
    * @param r Residual (cost) of term
    */
@@ -152,12 +152,12 @@ protected:
   inline void addCurvatureResidual(
     const double & weight,
     const Eigen::Matrix<T, 2, 1> & pt,
-    const Eigen::Matrix<T, 2, 1> & pt_p,
-    const Eigen::Matrix<T, 2, 1> & pt_m,
+    const Eigen::Matrix<T, 2, 1> & pt_next,
+    const Eigen::Matrix<T, 2, 1> & pt_prev,
     T & r) const
   {
     Eigen::Matrix<T, 2, 1> center = arcCenter(
-      pt_m, pt, pt_p,
+      pt_prev, pt, pt_next,
       next_to_last_length_ratio_ < 0 ? -1 : 1);
     if (ceres::IsInfinite(center[0])) {
       return;
@@ -200,8 +200,8 @@ protected:
   inline void addCostResidual(
     const double & weight,
     const Eigen::Matrix<T, 2, 1> & pt,
-    const Eigen::Matrix<T, 2, 1> & pt_p1,
-    const Eigen::Matrix<T, 2, 1> & pt_m1,
+    const Eigen::Matrix<T, 2, 1> & pt_next,
+    const Eigen::Matrix<T, 2, 1> & pt_prev,
     T & r) const
   {
     if (params_.cost_check_points.empty()) {
@@ -212,10 +212,10 @@ protected:
       r += (T)weight * value * value;  // objective function value
     } else {
       Eigen::Matrix<T, 2, 1> dir = tangentDir(
-        pt_m1, pt, pt_p1,
+        pt_prev, pt, pt_next,
         next_to_last_length_ratio_ < 0 ? -1 : 1);
       dir.normalize();
-      if (((pt_p1 - pt).dot(dir) < (T)0) != reversing_) {
+      if (((pt_next - pt).dot(dir) < (T)0) != reversing_) {
         dir = -dir;
       }
       Eigen::Matrix<T, 3, 3> transform;
