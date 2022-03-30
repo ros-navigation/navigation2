@@ -389,6 +389,7 @@ geometry_msgs::msg::Point RegulatedPurePursuitController::circleSegmentIntersect
   // This works because the poses are transformed into the robot frame.
   // This can be derived from solving the system of equations of a line and a circle
   // which results in something that is just a reformulation of the quadratic formula.
+  // Interactive illustration here: https://www.desmos.com/calculator/td5cwbuocd
   double x1 = p1.x;
   double x2 = p2.x;
   double y1 = p1.y;
@@ -399,10 +400,15 @@ geometry_msgs::msg::Point RegulatedPurePursuitController::circleSegmentIntersect
   double dr2 = dx * dx + dy * dy;
   double D = x1 * y2 - x2 * y1;
 
+  // Augmentation to only return point within segment
+  double d1 = x1 * x1 + y1 * y1;
+  double d2 = x2 * x2 + y2 * y2;
+  double dd = d2 - d1;
+
   geometry_msgs::msg::Point p;
   double sqrt_term = std::sqrt(r * r * dr2 - D * D);
-  p.x = (D * dy + dx * sqrt_term) / dr2;
-  p.y = (-D * dx + dy * sqrt_term) / dr2;
+  p.x = (D * dy + std::copysign(1.0, dd) * dx * sqrt_term) / dr2;
+  p.y = (-D * dx + std::copysign(1.0, dd) * dy * sqrt_term) / dr2;
   return p;
 }
 
