@@ -1,6 +1,5 @@
-
 <!--
-  This Behavior Tree replans the global path only if the path becomes invalid and it also has
+  This Behavior Tree replans the global path once every 15 seconds or if the path becomes invalid. It also has
   recovery actions specific to planning / control as well as general system issues.
   This will be continuous if a kinematically valid planner is selected.
 -->
@@ -8,10 +7,13 @@
   <BehaviorTree ID="MainTree">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
-        <RateController hz="1.0">
+        <RateController hz="2.0">
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <Fallback>
               <ReactiveSequence>
+                <Inverter>
+                  <PathExpiringTimer seconds="10" path="{path}"/>
+                </Inverter>
                 <Inverter>
                   <GlobalUpdatedGoal/>
                 </Inverter>

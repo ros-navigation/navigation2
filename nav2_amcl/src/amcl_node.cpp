@@ -221,6 +221,10 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
   add_parameter(
     "map_topic", rclcpp::ParameterValue("map"),
     "Topic to subscribe to in order to receive the map to localize on");
+
+  add_parameter(
+    "first_map_only", rclcpp::ParameterValue(false),
+    "Set this to true, when you want to load a new map published from the map_server");
 }
 
 AmclNode::~AmclNode()
@@ -1055,7 +1059,7 @@ AmclNode::initParameters()
   get_parameter("z_max", z_max_);
   get_parameter("z_rand", z_rand_);
   get_parameter("z_short", z_short_);
-  get_parameter("first_map_only_", first_map_only_);
+  get_parameter("first_map_only", first_map_only_);
   get_parameter("always_reset_initial_pose", always_reset_initial_pose_);
   get_parameter("scan_topic", scan_topic_);
   get_parameter("map_topic", map_topic_);
