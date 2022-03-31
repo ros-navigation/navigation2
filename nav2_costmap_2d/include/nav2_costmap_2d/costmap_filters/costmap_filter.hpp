@@ -129,7 +129,7 @@ public:
    * @brief: Initializes costmap filter. Creates subscriptions to filter-related topics
    * @param: Name of costmap filter info topic
    */
-  void initializeFilter(
+  virtual void initializeFilter(
     const std::string & filter_info_topic) = 0;
 
   /**
@@ -142,7 +142,7 @@ public:
    * @param: High window map boundary OY
    * @param: Robot 2D-pose
    */
-  void process(
+  virtual void process(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j,
     const geometry_msgs::msg::Pose2D & pose) = 0;
@@ -150,7 +150,7 @@ public:
   /**
    * @brief: Resets costmap filter. Stops all subscriptions
    */
-  void resetFilter() = 0;
+  virtual void resetFilter() = 0;
 
 protected:
   /**

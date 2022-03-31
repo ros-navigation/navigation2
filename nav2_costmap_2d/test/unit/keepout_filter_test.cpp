@@ -34,9 +34,9 @@
 
 using namespace std::chrono_literals;
 
-static const char FILTER_NAME[] = "keepout_filter";
-static const char INFO_TOPIC[] = "costmap_filter_info";
-static const char MASK_TOPIC[] = "mask";
+static const std::string FILTER_NAME = "keepout_filter";
+static const std::string INFO_TOPIC = "costmap_filter_info";
+static const std::string MASK_TOPIC = "mask";
 
 class InfoPublisher : public rclcpp::Node
 {

@@ -38,10 +38,10 @@
 
 using namespace std::chrono_literals;
 
-static const char FILTER_NAME[] = "speed_filter";
-static const char INFO_TOPIC[] = "costmap_filter_info";
-static const char MASK_TOPIC[] = "mask";
-static const char SPEED_LIMIT_TOPIC[] = "speed_limit";
+static const std::string FILTER_NAME = "speed_filter";
+static const std::string INFO_TOPIC = "costmap_filter_info";
+static const std::string MASK_TOPIC = "mask";
+static const std::string SPEED_LIMIT_TOPIC = "speed_limit";
 
 static const double NO_TRANSLATION = 0.0;
 static const double TRANSLATION_X = 1.0;
