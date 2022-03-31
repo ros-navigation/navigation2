@@ -30,6 +30,7 @@ from nav2_msgs.action import SmoothPath
 from nav2_msgs.srv import ClearEntireCostmap, GetCostmap, LoadMap, ManageLifecycleNodes
 
 import rclpy
+from rclpy.duration import Duration as rclpyDuration
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy
@@ -348,7 +349,7 @@ class BasicNavigator(Node):
 
         goal_msg = SmoothPath.Goal()
         goal_msg.path = path
-        goal_msg.max_smoothing_duration = Duration(sec=max_duration)
+        goal_msg.max_smoothing_duration = rclpyDuration(seconds=max_duration).to_msg()
         goal_msg.smoother_id = smoother_id
         goal_msg.check_for_collisions = check_for_collision
 
