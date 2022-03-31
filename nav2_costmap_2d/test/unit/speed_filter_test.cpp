@@ -38,10 +38,10 @@
 
 using namespace std::chrono_literals;
 
-static const std::string FILTER_NAME = "speed_filter";
-static const std::string INFO_TOPIC = "costmap_filter_info";
-static const std::string MASK_TOPIC = "mask";
-static const std::string SPEED_LIMIT_TOPIC = "speed_limit";
+static const char FILTER_NAME[] = "speed_filter";
+static const char INFO_TOPIC[] = "costmap_filter_info";
+static const char MASK_TOPIC[] = "mask";
+static const char SPEED_LIMIT_TOPIC[] = "speed_limit";
 
 static const double NO_TRANSLATION = 0.0;
 static const double TRANSLATION_X = 1.0;
@@ -82,7 +82,7 @@ private:
 class MaskPublisher : public rclcpp::Node
 {
 public:
-  MaskPublisher(const nav_msgs::msg::OccupancyGrid & mask)
+  explicit MaskPublisher(const nav_msgs::msg::OccupancyGrid & mask)
   : Node("mask_pub")
   {
     publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
@@ -104,7 +104,7 @@ private:
 class SpeedLimitSubscriber : public rclcpp::Node
 {
 public:
-  SpeedLimitSubscriber(const std::string & speed_limit_topic)
+  explicit SpeedLimitSubscriber(const std::string & speed_limit_topic)
   : Node("speed_limit_sub"), speed_limit_updated_(false)
   {
     subscriber_ = this->create_subscription<nav2_msgs::msg::SpeedLimit>(

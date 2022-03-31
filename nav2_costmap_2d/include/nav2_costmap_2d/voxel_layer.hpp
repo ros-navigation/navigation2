@@ -38,6 +38,9 @@
 #ifndef NAV2_COSTMAP_2D__VOXEL_LAYER_HPP_
 #define NAV2_COSTMAP_2D__VOXEL_LAYER_HPP_
 
+#include <message_filters/subscriber.h>
+#include <vector>
+
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/layer.hpp>
 #include <nav2_costmap_2d/layered_costmap.hpp>
@@ -48,7 +51,6 @@
 #include <laser_geometry/laser_geometry.hpp>
 #include <sensor_msgs/msg/point_cloud.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <message_filters/subscriber.h>
 #include <nav2_costmap_2d/obstacle_layer.hpp>
 #include <nav2_voxel_grid/voxel_grid.hpp>
 

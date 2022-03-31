@@ -35,8 +35,8 @@
  * Author: Alexey Merzlyakov
  *********************************************************************/
 
-#ifndef NAV2_COSTMAP_2D__COSTMAP_FILTER_HPP_
-#define NAV2_COSTMAP_2D__COSTMAP_FILTER_HPP_
+#ifndef NAV2_COSTMAP_2D__COSTMAP_FILTERS__COSTMAP_FILTER_HPP_
+#define NAV2_COSTMAP_2D__COSTMAP_FILTERS__COSTMAP_FILTER_HPP_
 
 #include <string>
 #include <mutex>
@@ -78,7 +78,7 @@ public:
   /**
    * @brief Initialization process of layer on startup
    */
-  virtual void onInitialize() final;
+  void onInitialize() final;
 
   /**
    * @brief Update the bounds of the master costmap by this layer's update dimensions
@@ -90,7 +90,7 @@ public:
    * @param max_x X max map coord of the window to update
    * @param max_y Y max map coord of the window to update
    */
-  virtual void updateBounds(
+  void updateBounds(
     double robot_x, double robot_y, double robot_yaw,
     double * min_x, double * min_y, double * max_x, double * max_y) final;
 
@@ -102,34 +102,34 @@ public:
    * @param max_x X max map coord of the window to update
    * @param max_y Y max map coord of the window to update
    */
-  virtual void updateCosts(
+  void updateCosts(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j) final;
 
   /**
    * @brief Activate the layer
    */
-  virtual void activate() final;
+  void activate() final;
   /**
    * @brief Deactivate the layer
    */
-  virtual void deactivate() final;
+  void deactivate() final;
   /**
    * @brief Reset the layer
    */
-  virtual void reset() final;
+  void reset() final;
 
   /**
    * @brief If clearing operations should be processed on this layer or not
    */
-  virtual bool isClearable() {return false;}
+  bool isClearable() {return false;}
 
   /** CostmapFilter API **/
   /**
    * @brief: Initializes costmap filter. Creates subscriptions to filter-related topics
    * @param: Name of costmap filter info topic
    */
-  virtual void initializeFilter(
+  void initializeFilter(
     const std::string & filter_info_topic) = 0;
 
   /**
@@ -142,7 +142,7 @@ public:
    * @param: High window map boundary OY
    * @param: Robot 2D-pose
    */
-  virtual void process(
+  void process(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j,
     const geometry_msgs::msg::Pose2D & pose) = 0;
@@ -150,7 +150,7 @@ public:
   /**
    * @brief: Resets costmap filter. Stops all subscriptions
    */
-  virtual void resetFilter() = 0;
+  void resetFilter() = 0;
 
 protected:
   /**
@@ -182,4 +182,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__COSTMAP_FILTER_HPP_
+#endif  // NAV2_COSTMAP_2D__COSTMAP_FILTERS__COSTMAP_FILTER_HPP_

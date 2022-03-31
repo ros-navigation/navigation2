@@ -485,7 +485,6 @@ VoxelLayer::dynamicParametersCallback(
     const auto & param_name = parameter.get_name();
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-
       if (param_name == name_ + "." + "max_obstacle_height") {
         max_obstacle_height_ = parameter.as_double();
       } else if (param_name == name_ + "." + "origin_z") {
@@ -520,7 +519,6 @@ VoxelLayer::dynamicParametersCallback(
         combination_method_ = parameter.as_int();
       }
     }
-
   }
 
   if (resize_map_needed) {

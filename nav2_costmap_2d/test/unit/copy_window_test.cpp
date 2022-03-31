@@ -35,8 +35,8 @@ TEST(CopyWindow, copyValidWindow)
 
   ASSERT_TRUE(dst.copyWindow(src, 2, 2, 6, 6, 0, 0));
   // Check that both marked cells were copied to destination costmap
-  ASSERT_TRUE(dst.getCost(0, 0) == 100);
-  ASSERT_TRUE(dst.getCost(3, 3) == 200);
+  ASSERT_EQ(dst.getCost(0, 0) == 100);
+  ASSERT_EQ(dst.getCost(3, 3) == 200);
 }
 
 TEST(CopyWindow, copyInvalidWindow)
