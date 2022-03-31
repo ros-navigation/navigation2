@@ -1,5 +1,5 @@
-#ifndef PORTABLE_UTILS_H
-#define PORTABLE_UTILS_H
+#ifndef PORTABLE_UTILS_H_
+#define PORTABLE_UTILS_H_
 
 #include <stdlib.h>
 
@@ -15,7 +15,7 @@ static double drand48(void)
   return ((double)rand()) / RAND_MAX;
 }
 
-static void srand48(long int seedval)
+static void srand48(int64 seedval)
 {
   srand(seedval);
 }
@@ -25,4 +25,4 @@ static void srand48(long int seedval)
 }
 #endif
 
-#endif
+#endif  // PORTABLE_UTILS_H_

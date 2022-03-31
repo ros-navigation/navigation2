@@ -88,7 +88,7 @@ OmniMotionModel::odometryUpdate(
   }
 }
 
-} // namespace nav2_amcl
+}  // namespace nav2_amcl
 
 #include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(nav2_amcl::OmniMotionModel, nav2_amcl::MotionModel)

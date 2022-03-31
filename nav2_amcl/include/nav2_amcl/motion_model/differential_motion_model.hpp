@@ -44,4 +44,4 @@ private:
   double alpha1_, alpha2_, alpha3_, alpha4_, alpha5_;
 };
 }  // namespace nav2_amcl
-#endif
+#endif  // NAV2_AMCL__MOTION_MODEL__DIFFERENTIAL_MOTION_MODEL_HPP_

@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef DIFFERENTIAL_MOTION_MODEL_HPP
-#define DIFFERENTIAL_MOTION_MODEL_HPP
+#ifndef NAV2_AMCL__MOTION_MODEL__OMNI_MOTION_MODEL_HPP_
+#define NAV2_AMCL__MOTION_MODEL__OMNI_MOTION_MODEL_HPP_
 
 #include <sys/types.h>
 #include <math.h>
@@ -44,4 +44,4 @@ private:
   double alpha1_, alpha2_, alpha3_, alpha4_, alpha5_;
 };
 }  // namespace nav2_amcl
-#endif
+#endif  // NAV2_AMCL__MOTION_MODEL__OMNI_MOTION_MODEL_HPP_
