@@ -26,6 +26,7 @@ from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import BackUp, Spin
 from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose
 from nav2_msgs.action import FollowPath, FollowWaypoints, NavigateThroughPoses, NavigateToPose
+from nav2_msgs.action import SmoothPath
 from nav2_msgs.srv import ClearEntireCostmap, GetCostmap, LoadMap, ManageLifecycleNodes
 
 import rclpy
@@ -70,6 +71,7 @@ class BasicNavigator(Node):
                                                         'compute_path_to_pose')
         self.compute_path_through_poses_client = ActionClient(self, ComputePathThroughPoses,
                                                               'compute_path_through_poses')
+        self.smoother_client = ActionClient(self, SmoothPath, 'smooth_path')
         self.spin_client = ActionClient(self, Spin, 'spin')
         self.backup_client = ActionClient(self, BackUp, 'backup')
         self.localization_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
@@ -327,6 +329,36 @@ class BasicNavigator(Node):
 
         if not self.goal_handle.accepted:
             self.error('Get path was rejected!')
+            return None
+
+        self.result_future = self.goal_handle.get_result_async()
+        rclpy.spin_until_future_complete(self, self.result_future)
+        self.status = self.result_future.result().status
+        if self.status != GoalStatus.STATUS_SUCCEEDED:
+            self.warn(f'Getting path failed with status code: {self.status}')
+            return None
+
+        return self.result_future.result().result.path
+
+    def smoothPath(self, path, smoother_id='', max_duration=2.0, check_for_collision=False):
+        """Send a `SmoothPath` action request."""
+        self.debug("Waiting for 'SmoothPath' action server")
+        while not self.smoother_client.wait_for_server(timeout_sec=1.0):
+            self.info("'SmoothPath' action server not available, waiting...")
+
+        goal_msg = SmoothPath.Goal()
+        goal_msg.path = path
+        goal_msg.max_smoothing_duration = Duration(sec=max_duration)
+        goal_msg.smoother_id = smoother_id
+        goal_msg.check_for_collisions = check_for_collision
+
+        self.info('Smoothing path...')
+        send_goal_future = self.smoother_client.send_goal_async(goal_msg)
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        self.goal_handle = send_goal_future.result()
+
+        if not self.goal_handle.accepted:
+            self.error('Smooth path was rejected!')
             return None
 
         self.result_future = self.goal_handle.get_result_async()
