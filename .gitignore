@@ -44,6 +44,7 @@ install
 # Python artifacts
 __pycache__/
 *.py[cod]
+.ipynb_checkpoints
 
 sphinx_doc/_build
 

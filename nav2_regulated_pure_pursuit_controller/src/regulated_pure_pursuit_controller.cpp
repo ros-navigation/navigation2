@@ -108,6 +108,9 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_robot_pose_search_dist",
     rclcpp::ParameterValue(getCostmapMaxExtent()));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".use_interpolation",
+    rclcpp::ParameterValue(true));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   base_desired_linear_vel_ = desired_linear_vel_;
@@ -153,6 +156,9 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(
     plugin_name_ + ".max_robot_pose_search_dist",
     max_robot_pose_search_dist_);
+  node->get_parameter(
+    plugin_name_ + ".use_interpolation",
+    use_interpolation_);
 
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
   control_duration_ = 1.0 / control_frequency;
@@ -372,6 +378,41 @@ void RegulatedPurePursuitController::rotateToHeading(
   angular_vel = std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
 }
 
+geometry_msgs::msg::Point RegulatedPurePursuitController::circleSegmentIntersection(
+  const geometry_msgs::msg::Point & p1,
+  const geometry_msgs::msg::Point & p2,
+  double r)
+{
+  // Formula for intersection of a line with a circle centered at the origin,
+  // modified to always return the point that is on the segment between the two points.
+  // https://mathworld.wolfram.com/Circle-LineIntersection.html
+  // This works because the poses are transformed into the robot frame.
+  // This can be derived from solving the system of equations of a line and a circle
+  // which results in something that is just a reformulation of the quadratic formula.
+  // Interactive illustration in doc/circle-segment-intersection.ipynb as well as at
+  // https://www.desmos.com/calculator/td5cwbuocd
+  double x1 = p1.x;
+  double x2 = p2.x;
+  double y1 = p1.y;
+  double y2 = p2.y;
+
+  double dx = x2 - x1;
+  double dy = y2 - y1;
+  double dr2 = dx * dx + dy * dy;
+  double D = x1 * y2 - x2 * y1;
+
+  // Augmentation to only return point within segment
+  double d1 = x1 * x1 + y1 * y1;
+  double d2 = x2 * x2 + y2 * y2;
+  double dd = d2 - d1;
+
+  geometry_msgs::msg::Point p;
+  double sqrt_term = std::sqrt(r * r * dr2 - D * D);
+  p.x = (D * dy + std::copysign(1.0, dd) * dx * sqrt_term) / dr2;
+  p.y = (-D * dx + std::copysign(1.0, dd) * dy * sqrt_term) / dr2;
+  return p;
+}
+
 geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoint(
   const double & lookahead_dist,
   const nav_msgs::msg::Path & transformed_plan)
@@ -385,6 +426,21 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
   // If the no pose is not far enough, take the last pose
   if (goal_pose_it == transformed_plan.poses.end()) {
     goal_pose_it = std::prev(transformed_plan.poses.end());
+  } else if (use_interpolation_ && goal_pose_it != transformed_plan.poses.begin()) {
+    // Find the point on the line segment between the two poses
+    // that is exactly the lookahead distance away from the robot pose (the origin)
+    // This can be found with a closed form for the intersection of a segment and a circle
+    // Because of the way we did the std::find_if, prev_pose is guaranteed to be inside the circle,
+    // and goal_pose is guaranteed to be outside the circle.
+    auto prev_pose_it = std::prev(goal_pose_it);
+    auto point = circleSegmentIntersection(
+      prev_pose_it->pose.position,
+      goal_pose_it->pose.position, lookahead_dist);
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.frame_id = prev_pose_it->header.frame_id;
+    pose.header.stamp = goal_pose_it->header.stamp;
+    pose.pose.position = point;
+    return pose;
   }
 
   return *goal_pose_it;
