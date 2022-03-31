@@ -33,7 +33,7 @@ using ClientGoalHandle = rclcpp_action::ClientGoalHandle<BehaviorAction>;
 
 using namespace std::chrono_literals;
 
-// A recovery for testing the base class
+// A behavior for testing the base class
 
 class DummyBehavior : public TimedBehavior<BehaviorAction>
 {
@@ -46,7 +46,7 @@ public:
 
   Status onRun(const std::shared_ptr<const BehaviorAction::Goal> goal) override
   {
-    // A normal recovery would catch the command and initialize
+    // A normal behavior would catch the command and initialize
     initialized_ = false;
     command_ = goal->command.data;
     start_time_ = std::chrono::system_clock::now();
@@ -63,7 +63,7 @@ public:
 
   Status onCycleUpdate() override
   {
-    // A normal recovery would set the robot in motion in the first call
+    // A normal behavior would set the robot in motion in the first call
     // and check for robot states on subsequent calls to check if the movement
     // was completed.
 
@@ -132,14 +132,14 @@ protected:
       node_lifecycle_->get_name());
 
     behavior_ = std::make_shared<DummyBehavior>();
-    behavior_->configure(node_lifecycle_, "Recovery", tf_buffer_, collision_checker_);
+    behavior_->configure(node_lifecycle_, "Behavior", tf_buffer_, collision_checker_);
     behavior_->activate();
 
     client_ = rclcpp_action::create_client<BehaviorAction>(
       node_lifecycle_->get_node_base_interface(),
       node_lifecycle_->get_node_graph_interface(),
       node_lifecycle_->get_node_logging_interface(),
-      node_lifecycle_->get_node_waitables_interface(), "Recovery");
+      node_lifecycle_->get_node_waitables_interface(), "Behavior");
     std::cout << "Setup complete." << std::endl;
   }
 

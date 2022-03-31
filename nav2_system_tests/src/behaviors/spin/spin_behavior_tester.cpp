@@ -22,7 +22,7 @@
 #include <sstream>
 #include <iomanip>
 
-#include "spin_recovery_tester.hpp"
+#include "spin_behavior_tester.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
@@ -30,11 +30,11 @@ using namespace std::chrono;  // NOLINT
 namespace nav2_system_tests
 {
 
-SpinRecoveryTester::SpinRecoveryTester()
+SpinBehaviorTester::SpinBehaviorTester()
 : is_active_(false),
   initial_pose_received_(false)
 {
-  node_ = rclcpp::Node::make_shared("spin_recovery_test");
+  node_ = rclcpp::Node::make_shared("spin_behavior_test");
 
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
@@ -65,19 +65,19 @@ SpinRecoveryTester::SpinRecoveryTester()
 
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&SpinRecoveryTester::amclPoseCallback, this, std::placeholders::_1));
+    std::bind(&SpinBehaviorTester::amclPoseCallback, this, std::placeholders::_1));
 
   stamp_ = node_->now();
 }
 
-SpinRecoveryTester::~SpinRecoveryTester()
+SpinBehaviorTester::~SpinBehaviorTester()
 {
   if (is_active_) {
     deactivate();
   }
 }
 
-void SpinRecoveryTester::activate()
+void SpinBehaviorTester::activate()
 {
   if (is_active_) {
     throw std::runtime_error("Trying to activate while already active");
@@ -113,7 +113,7 @@ void SpinRecoveryTester::activate()
   is_active_ = true;
 }
 
-void SpinRecoveryTester::deactivate()
+void SpinBehaviorTester::deactivate()
 {
   if (!is_active_) {
     throw std::runtime_error("Trying to deactivate while already inactive");
@@ -121,7 +121,7 @@ void SpinRecoveryTester::deactivate()
   is_active_ = false;
 }
 
-bool SpinRecoveryTester::defaultSpinRecoveryTest(
+bool SpinBehaviorTester::defaultSpinBehaviorTest(
   const float target_yaw,
   const double tolerance)
 {
@@ -130,7 +130,7 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
     return false;
   }
 
-  // Sleep to let recovery server be ready for serving in multiple runs
+  // Sleep to let behavior server be ready for serving in multiple runs
   std::this_thread::sleep_for(5s);
 
   if (make_fake_costmap_) {
@@ -260,7 +260,7 @@ bool SpinRecoveryTester::defaultSpinRecoveryTest(
   return true;
 }
 
-void SpinRecoveryTester::sendFakeCostmap(float angle)
+void SpinBehaviorTester::sendFakeCostmap(float angle)
 {
   nav2_msgs::msg::Costmap fake_costmap;
 
@@ -286,7 +286,7 @@ void SpinRecoveryTester::sendFakeCostmap(float angle)
   fake_costmap_publisher_->publish(fake_costmap);
 }
 
-void SpinRecoveryTester::sendInitialPose()
+void SpinBehaviorTester::sendInitialPose()
 {
   geometry_msgs::msg::PoseWithCovarianceStamped pose;
   pose.header.frame_id = "map";
@@ -309,7 +309,7 @@ void SpinRecoveryTester::sendInitialPose()
   RCLCPP_INFO(node_->get_logger(), "Sent initial pose");
 }
 
-void SpinRecoveryTester::sendFakeOdom(float angle)
+void SpinBehaviorTester::sendFakeOdom(float angle)
 {
   geometry_msgs::msg::TransformStamped transformStamped;
 
@@ -342,7 +342,7 @@ void SpinRecoveryTester::sendFakeOdom(float angle)
   footprint.polygon.points[3].y = 0.22;
   fake_footprint_publisher_->publish(footprint);
 }
-void SpinRecoveryTester::amclPoseCallback(
+void SpinBehaviorTester::amclPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
 {
   initial_pose_received_ = true;

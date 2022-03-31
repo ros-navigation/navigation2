@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Copyright (c) 2012 Samsung Research America
+# Copyright (c) 2019 Samsung Research America
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
-        name='test_backup_recovery_node',
+        name='test_spin_behavior_node',
         output='screen')
 
     lts = LaunchTestService()

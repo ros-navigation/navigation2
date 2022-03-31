@@ -147,7 +147,7 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
-        name='test_spin_recovery_fake_node',
+        name='test_spin_behavior_fake_node',
         output='screen')
 
     lts = LaunchTestService()

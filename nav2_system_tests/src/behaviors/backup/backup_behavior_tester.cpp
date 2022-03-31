@@ -22,7 +22,7 @@
 #include <sstream>
 #include <iomanip>
 
-#include "backup_recovery_tester.hpp"
+#include "backup_behavior_tester.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
 using namespace std::chrono_literals;
@@ -31,11 +31,11 @@ using namespace std::chrono;  // NOLINT
 namespace nav2_system_tests
 {
 
-BackupRecoveryTester::BackupRecoveryTester()
+BackupBehaviorTester::BackupBehaviorTester()
 : is_active_(false),
   initial_pose_received_(false)
 {
-  node_ = rclcpp::Node::make_shared("backup_recovery_test");
+  node_ = rclcpp::Node::make_shared("backup_behavior_test");
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -52,19 +52,19 @@ BackupRecoveryTester::BackupRecoveryTester()
 
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&BackupRecoveryTester::amclPoseCallback, this, std::placeholders::_1));
+    std::bind(&BackupBehaviorTester::amclPoseCallback, this, std::placeholders::_1));
 
   stamp_ = node_->now();
 }
 
-BackupRecoveryTester::~BackupRecoveryTester()
+BackupBehaviorTester::~BackupBehaviorTester()
 {
   if (is_active_) {
     deactivate();
   }
 }
 
-void BackupRecoveryTester::activate()
+void BackupBehaviorTester::activate()
 {
   if (is_active_) {
     throw std::runtime_error("Trying to activate while already active");
@@ -97,7 +97,7 @@ void BackupRecoveryTester::activate()
   is_active_ = true;
 }
 
-void BackupRecoveryTester::deactivate()
+void BackupBehaviorTester::deactivate()
 {
   if (!is_active_) {
     throw std::runtime_error("Trying to deactivate while already inactive");
@@ -105,7 +105,7 @@ void BackupRecoveryTester::deactivate()
   is_active_ = false;
 }
 
-bool BackupRecoveryTester::defaultBackupRecoveryTest(
+bool BackupBehaviorTester::defaultBackupBehaviorTest(
   const float target_dist,
   const double tolerance)
 {
@@ -114,7 +114,7 @@ bool BackupRecoveryTester::defaultBackupRecoveryTest(
     return false;
   }
 
-  // Sleep to let recovery server be ready for serving in multiple runs
+  // Sleep to let behavior server be ready for serving in multiple runs
   std::this_thread::sleep_for(5s);
 
   auto goal_msg = BackUp::Goal();
@@ -193,7 +193,7 @@ bool BackupRecoveryTester::defaultBackupRecoveryTest(
   return true;
 }
 
-void BackupRecoveryTester::sendInitialPose()
+void BackupBehaviorTester::sendInitialPose()
 {
   geometry_msgs::msg::PoseWithCovarianceStamped pose;
   pose.header.frame_id = "map";
@@ -216,7 +216,7 @@ void BackupRecoveryTester::sendInitialPose()
   RCLCPP_INFO(node_->get_logger(), "Sent initial pose");
 }
 
-void BackupRecoveryTester::amclPoseCallback(
+void BackupBehaviorTester::amclPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
 {
   initial_pose_received_ = true;

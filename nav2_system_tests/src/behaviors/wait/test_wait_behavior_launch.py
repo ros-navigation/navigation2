@@ -89,7 +89,7 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
-        name='test_wait_recovery_node',
+        name='test_wait_behavior_node',
         output='screen')
 
     lts = LaunchTestService()

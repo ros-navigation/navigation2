@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef RECOVERIES__WAIT__WAIT_RECOVERY_TESTER_HPP_
-#define RECOVERIES__WAIT__WAIT_RECOVERY_TESTER_HPP_
+#ifndef BEHAVIORS__WAIT__WAIT_BEHAVIOR_TESTER_HPP_
+#define BEHAVIORS__WAIT__WAIT_BEHAVIOR_TESTER_HPP_
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -39,20 +39,20 @@
 namespace nav2_system_tests
 {
 
-class WaitRecoveryTester
+class WaitBehaviorTester
 {
 public:
   using Wait = nav2_msgs::action::Wait;
   using GoalHandleWait = rclcpp_action::ClientGoalHandle<Wait>;
 
-  WaitRecoveryTester();
-  ~WaitRecoveryTester();
+  WaitBehaviorTester();
+  ~WaitBehaviorTester();
 
   // Runs a single test with given target yaw
-  bool recoveryTest(
+  bool behaviorTest(
     float time);
 
-  bool recoveryTestCancel(float time);
+  bool behaviorTestCancel(float time);
 
   void activate();
 
@@ -88,4 +88,4 @@ private:
 
 }  // namespace nav2_system_tests
 
-#endif  // RECOVERIES__WAIT__WAIT_RECOVERY_TESTER_HPP_
+#endif  // BEHAVIORS__WAIT__WAIT_BEHAVIOR_TESTER_HPP_

@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef RECOVERIES__BACKUP__BACKUP_RECOVERY_TESTER_HPP_
-#define RECOVERIES__BACKUP__BACKUP_RECOVERY_TESTER_HPP_
+#ifndef BEHAVIORS__BACKUP__BACKUP_BEHAVIOR_TESTER_HPP_
+#define BEHAVIORS__BACKUP__BACKUP_BEHAVIOR_TESTER_HPP_
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -38,17 +38,17 @@
 namespace nav2_system_tests
 {
 
-class BackupRecoveryTester
+class BackupBehaviorTester
 {
 public:
   using BackUp = nav2_msgs::action::BackUp;
   using GoalHandleBackup = rclcpp_action::ClientGoalHandle<BackUp>;
 
-  BackupRecoveryTester();
-  ~BackupRecoveryTester();
+  BackupBehaviorTester();
+  ~BackupBehaviorTester();
 
   // Runs a single test with given target yaw
-  bool defaultBackupRecoveryTest(
+  bool defaultBackupBehaviorTest(
     float target_dist,
     double tolerance = 0.1);
 
@@ -87,4 +87,4 @@ private:
 
 }  // namespace nav2_system_tests
 
-#endif  // RECOVERIES__BACKUP__BACKUP_RECOVERY_TESTER_HPP_
+#endif  // BEHAVIORS__BACKUP__BACKUP_BEHAVIOR_TESTER_HPP_

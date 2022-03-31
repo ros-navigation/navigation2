@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef RECOVERIES__SPIN__SPIN_RECOVERY_TESTER_HPP_
-#define RECOVERIES__SPIN__SPIN_RECOVERY_TESTER_HPP_
+#ifndef BEHAVIORS__SPIN__SPIN_BEHAVIOR_TESTER_HPP_
+#define BEHAVIORS__SPIN__SPIN_BEHAVIOR_TESTER_HPP_
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -45,17 +45,17 @@
 namespace nav2_system_tests
 {
 
-class SpinRecoveryTester
+class SpinBehaviorTester
 {
 public:
   using Spin = nav2_msgs::action::Spin;
   using GoalHandleSpin = rclcpp_action::ClientGoalHandle<Spin>;
 
-  SpinRecoveryTester();
-  ~SpinRecoveryTester();
+  SpinBehaviorTester();
+  ~SpinBehaviorTester();
 
   // Runs a single test with given target yaw
-  bool defaultSpinRecoveryTest(
+  bool defaultSpinBehaviorTest(
     float target_yaw,
     double tolerance = 0.1);
 
@@ -105,4 +105,4 @@ private:
 
 }  // namespace nav2_system_tests
 
-#endif  // RECOVERIES__SPIN__SPIN_RECOVERY_TESTER_HPP_
+#endif  // BEHAVIORS__SPIN__SPIN_BEHAVIOR_TESTER_HPP_

@@ -23,7 +23,7 @@
 #include <sstream>
 #include <iomanip>
 
-#include "wait_recovery_tester.hpp"
+#include "wait_behavior_tester.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
@@ -31,11 +31,11 @@ using namespace std::chrono;  // NOLINT
 namespace nav2_system_tests
 {
 
-WaitRecoveryTester::WaitRecoveryTester()
+WaitBehaviorTester::WaitBehaviorTester()
 : is_active_(false),
   initial_pose_received_(false)
 {
-  node_ = rclcpp::Node::make_shared("wait_recovery_test");
+  node_ = rclcpp::Node::make_shared("wait_behavior_test");
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -52,17 +52,17 @@ WaitRecoveryTester::WaitRecoveryTester()
 
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&WaitRecoveryTester::amclPoseCallback, this, std::placeholders::_1));
+    std::bind(&WaitBehaviorTester::amclPoseCallback, this, std::placeholders::_1));
 }
 
-WaitRecoveryTester::~WaitRecoveryTester()
+WaitBehaviorTester::~WaitBehaviorTester()
 {
   if (is_active_) {
     deactivate();
   }
 }
 
-void WaitRecoveryTester::activate()
+void WaitBehaviorTester::activate()
 {
   if (is_active_) {
     throw std::runtime_error("Trying to activate while already active");
@@ -95,7 +95,7 @@ void WaitRecoveryTester::activate()
   is_active_ = true;
 }
 
-void WaitRecoveryTester::deactivate()
+void WaitBehaviorTester::deactivate()
 {
   if (!is_active_) {
     throw std::runtime_error("Trying to deactivate while already inactive");
@@ -103,7 +103,7 @@ void WaitRecoveryTester::deactivate()
   is_active_ = false;
 }
 
-bool WaitRecoveryTester::recoveryTest(
+bool WaitBehaviorTester::behaviorTest(
   const float wait_time)
 {
   if (!is_active_) {
@@ -111,7 +111,7 @@ bool WaitRecoveryTester::recoveryTest(
     return false;
   }
 
-  // Sleep to let recovery server be ready for serving in multiple runs
+  // Sleep to let behavior server be ready for serving in multiple runs
   std::this_thread::sleep_for(5s);
 
   auto start_time = node_->now();
@@ -172,7 +172,7 @@ bool WaitRecoveryTester::recoveryTest(
   return true;
 }
 
-bool WaitRecoveryTester::recoveryTestCancel(
+bool WaitBehaviorTester::behaviorTestCancel(
   const float wait_time)
 {
   if (!is_active_) {
@@ -180,7 +180,7 @@ bool WaitRecoveryTester::recoveryTestCancel(
     return false;
   }
 
-  // Sleep to let recovery server be ready for serving in multiple runs
+  // Sleep to let behavior server be ready for serving in multiple runs
   std::this_thread::sleep_for(5s);
 
   auto start_time = node_->now();
@@ -249,7 +249,7 @@ bool WaitRecoveryTester::recoveryTestCancel(
   return false;
 }
 
-void WaitRecoveryTester::sendInitialPose()
+void WaitBehaviorTester::sendInitialPose()
 {
   geometry_msgs::msg::PoseWithCovarianceStamped pose;
   pose.header.frame_id = "map";
@@ -272,7 +272,7 @@ void WaitRecoveryTester::sendInitialPose()
   RCLCPP_INFO(node_->get_logger(), "Sent initial pose");
 }
 
-void WaitRecoveryTester::amclPoseCallback(
+void WaitBehaviorTester::amclPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
 {
   initial_pose_received_ = true;

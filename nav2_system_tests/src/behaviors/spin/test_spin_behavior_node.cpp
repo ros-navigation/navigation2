@@ -20,11 +20,11 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "spin_recovery_tester.hpp"
+#include "spin_behavior_tester.hpp"
 
 using namespace std::chrono_literals;
 
-using nav2_system_tests::SpinRecoveryTester;
+using nav2_system_tests::SpinBehaviorTester;
 
 std::string testNameGenerator(const testing::TestParamInfo<std::tuple<float, float>> & param)
 {
@@ -34,13 +34,13 @@ std::string testNameGenerator(const testing::TestParamInfo<std::tuple<float, flo
   return name;
 }
 
-class SpinRecoveryTestFixture
+class SpinBehaviorTestFixture
   : public ::testing::TestWithParam<std::tuple<float, float>>
 {
 public:
   static void SetUpTestCase()
   {
-    spin_recovery_tester = new SpinRecoveryTester();
+    spin_recovery_tester = new SpinBehaviorTester();
     if (!spin_recovery_tester->isActive()) {
       spin_recovery_tester->activate();
     }
@@ -53,12 +53,12 @@ public:
   }
 
 protected:
-  static SpinRecoveryTester * spin_recovery_tester;
+  static SpinBehaviorTester * spin_recovery_tester;
 };
 
-SpinRecoveryTester * SpinRecoveryTestFixture::spin_recovery_tester = nullptr;
+SpinBehaviorTester * SpinBehaviorTestFixture::spin_recovery_tester = nullptr;
 
-TEST_P(SpinRecoveryTestFixture, testSpinRecovery)
+TEST_P(SpinBehaviorTestFixture, testSpinRecovery)
 {
   float target_yaw = std::get<0>(GetParam());
   float tolerance = std::get<1>(GetParam());
@@ -66,7 +66,7 @@ TEST_P(SpinRecoveryTestFixture, testSpinRecovery)
   bool success = false;
   int num_tries = 3;
   for (int i = 0; i != num_tries; i++) {
-    success = success || spin_recovery_tester->defaultSpinRecoveryTest(target_yaw, tolerance);
+    success = success || spin_recovery_tester->defaultSpinBehaviorTest(target_yaw, tolerance);
     if (success) {
       break;
     }
@@ -82,7 +82,7 @@ TEST_P(SpinRecoveryTestFixture, testSpinRecovery)
 
 INSTANTIATE_TEST_SUITE_P(
   SpinRecoveryTests,
-  SpinRecoveryTestFixture,
+  SpinBehaviorTestFixture,
   ::testing::Values(
     std::make_tuple(-M_PIf32 / 6.0, 0.1),
     std::make_tuple(M_PI_4f32, 0.1),

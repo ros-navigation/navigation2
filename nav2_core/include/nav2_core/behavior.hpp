@@ -28,7 +28,7 @@ namespace nav2_core
 
 /**
  * @class Behavior
- * @brief Abstract interface for recoveries to adhere to with pluginlib
+ * @brief Abstract interface for behaviors to adhere to with pluginlib
  */
 class Behavior
 {

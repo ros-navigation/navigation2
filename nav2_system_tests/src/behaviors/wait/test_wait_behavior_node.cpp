@@ -21,11 +21,11 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "backup_recovery_tester.hpp"
+#include "wait_behavior_tester.hpp"
 
 using namespace std::chrono_literals;
 
-using nav2_system_tests::BackupRecoveryTester;
+using nav2_system_tests::WaitBehaviorTester;
 
 std::string testNameGenerator(const testing::TestParamInfo<std::tuple<float, float>> & param)
 {
@@ -35,62 +35,59 @@ std::string testNameGenerator(const testing::TestParamInfo<std::tuple<float, flo
   return name;
 }
 
-class BackupRecoveryTestFixture
+class WaitBehaviorTestFixture
   : public ::testing::TestWithParam<std::tuple<float, float>>
 {
 public:
   static void SetUpTestCase()
   {
-    backup_recovery_tester = new BackupRecoveryTester();
-    if (!backup_recovery_tester->isActive()) {
-      backup_recovery_tester->activate();
+    wait_behavior_tester = new WaitBehaviorTester();
+    if (!wait_behavior_tester->isActive()) {
+      wait_behavior_tester->activate();
     }
   }
 
   static void TearDownTestCase()
   {
-    delete backup_recovery_tester;
-    backup_recovery_tester = nullptr;
+    delete wait_behavior_tester;
+    wait_behavior_tester = nullptr;
   }
 
 protected:
-  static BackupRecoveryTester * backup_recovery_tester;
+  static WaitBehaviorTester * wait_behavior_tester;
 };
 
-BackupRecoveryTester * BackupRecoveryTestFixture::backup_recovery_tester = nullptr;
+WaitBehaviorTester * WaitBehaviorTestFixture::wait_behavior_tester = nullptr;
 
-TEST_P(BackupRecoveryTestFixture, testBackupRecovery)
+TEST_P(WaitBehaviorTestFixture, testSWaitBehavior)
 {
-  float target_dist = std::get<0>(GetParam());
-  float tolerance = std::get<1>(GetParam());
-
-  if (!backup_recovery_tester->isActive()) {
-    backup_recovery_tester->activate();
-  }
+  float wait_time = std::get<0>(GetParam());
+  float cancel = std::get<1>(GetParam());
 
   bool success = false;
-  success = backup_recovery_tester->defaultBackupRecoveryTest(target_dist, tolerance);
-
-  // if intentionally backing into an obstacle, should fail.
-  if (target_dist < -0.1) {
-    success = !success;
+  int num_tries = 3;
+  for (int i = 0; i != num_tries; i++) {
+    if (cancel == 1.0) {
+      success = success || wait_behavior_tester->behaviorTestCancel(wait_time);
+    } else {
+      success = success || wait_behavior_tester->behaviorTest(wait_time);
+    }
+    if (success) {
+      break;
+    }
   }
 
   EXPECT_EQ(true, success);
 }
 
-// TODO(stevemacenski): See issue #1779, while the 3rd test collides,
-// it returns success due to technical debt in the BT. This test will
-// remain as a reminder to update this to a `false` case once the
-// recovery server returns true values.
-
 INSTANTIATE_TEST_SUITE_P(
-  BackupRecoveryTests,
-  BackupRecoveryTestFixture,
+  WaitBehaviorTests,
+  WaitBehaviorTestFixture,
   ::testing::Values(
-    std::make_tuple(-0.05, 0.01),
-    std::make_tuple(-0.2, 0.1),
-    std::make_tuple(-2.0, 0.1)),
+    std::make_tuple(1.0, 0.0),
+    std::make_tuple(2.0, 0.0),
+    std::make_tuple(5.0, 0.0),
+    std::make_tuple(10.0, 1.0)),
   testNameGenerator);
 
 int main(int argc, char ** argv)
