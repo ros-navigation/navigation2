@@ -15,7 +15,7 @@ static double drand48(void)
   return ((double)rand()) / RAND_MAX;
 }
 
-static void srand48(int64 seedval)
+static void srand48(long int seedval)
 {
   srand(seedval);
 }
