@@ -29,37 +29,34 @@ TEST(testIsPathValid, testIsPathValid)
   auto planner_tester = std::make_shared<PlannerTester>();
   planner_tester->activate();
   // load open space cost map which is 10 by 10
-  planner_tester->loadSimpleCostmap(TestCostmap::open_space);
-
-  // create a fake service request
-  auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
+  planner_tester->loadSimpleCostmap(TestCostmap::top_left_obstacle);
 
   nav_msgs::msg::Path path;
-  for(int i = 1; i < 10; ++i)
-  {
+
+  bool is_path_valid = planner_tester->checkPathValid(path);
+  EXPECT_FALSE(is_path_valid);
+
+  for (float i = 0; i < 10; i += 0.05) {
+    for (float j = 0; j < 10; j += 0.05) {
+      geometry_msgs::msg::PoseStamped pose;
+      pose.pose.position.x = i;
+      pose.pose.position.y = j;
+      path.poses.push_back(pose);
+    }
+  }
+  is_path_valid = planner_tester->checkPathValid(path);
+  EXPECT_FALSE(is_path_valid);
+
+  path.poses.clear();
+  for (float i = 0; i < 10; i += 0.1) {
     geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = i;
+    pose.pose.position.x = 0.0;
     pose.pose.position.y = i;
-    request->path.poses.push_back(pose);
+    path.poses.push_back(pose);
   }
 
-  std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("service_client");
-
-  //Spin off a thread to call the service?
-  auto client = node->create_client<nav2_msgs::srv::IsPathValid>("/is_path_valid");
-
-  auto result = client->async_send_request(request);
-
-  RCLCPP_INFO(planner_tester->get_logger(), "Waiting for service complete");
-  if (rclcpp::spin_until_future_complete(node, result, std::chrono::seconds(10)) ==
-    rclcpp::FutureReturnCode::SUCCESS)
-  {
-    RCLCPP_INFO(planner_tester->get_logger(), "Got result");
-  } else {
-    RCLCPP_ERROR_STREAM(planner_tester->get_logger(), "Failed to call service: ");
-  }
-
-  EXPECT_EQ(0,0);
+  is_path_valid = planner_tester->checkPathValid(path);
+  EXPECT_TRUE(is_path_valid);
 }
 
 int main(int argc, char ** argv)
@@ -74,6 +71,4 @@ int main(int argc, char ** argv)
   // shutdown ROS
   rclcpp::shutdown();
   return all_successful;
-
-
 }

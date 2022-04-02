@@ -59,3 +59,5 @@ target_link_libraries(test_planner_plugins
 ament_add_gtest(test_planner_is_path_valid
               test_planner_is_path_valid.cpp
               planner_tester.cpp)
+
+ament_target_dependencies(test_planner_is_path_valid rclcpp geometry_msgs nav2_msgs ${dependencies})
