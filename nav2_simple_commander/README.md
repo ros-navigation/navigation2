@@ -29,6 +29,7 @@ The methods provided by the basic navigator are shown below, with inputs and exp
 | getResult()				        | Gets final result of task, to be called after `isTaskComplete` returns `True`. Returns action server result object. |
 | getPath(start, goal, planner_id='', use_start=False) | Gets a path from a starting to a goal `PoseStamped`, `nav_msgs/Path`.      |
 | getPathThroughPoses(start, goals, planner_id='', use_start=False) | Gets a path through a starting to a set of goals, a list of `PoseStamped`, `nav_msgs/Path`. |
+| smoothPath(path, smoother_id='', max_duration=2.0, check_for_collision=False) | Smooths a given `nav_msgs/msg/Path` path. |
 | changeMap(map_filepath)           | Requests a change from the current map to `map_filepath`'s yaml.           |
 | clearAllCostmaps()                | Clears both the global and local costmaps.                                 |
 | clearLocalCostmap()               | Clears the local costmap.                                                  |
@@ -52,6 +53,9 @@ nav = BasicNavigator()
 ...
 nav.setInitialPose(init_pose)
 nav.waitUntilNav2Active() # if autostarted, else use `lifecycleStartup()`
+...
+path = nav.getPath(init_pose, goal_pose)
+smoothed_path = nav.smoothPath(path)
 ...
 nav.goToPose(goal_pose)
 while not nav.isTaskComplete():
@@ -106,7 +110,7 @@ The `nav2_simple_commander` has a few examples to highlight the API functions av
 - `example_nav_to_pose.py` - Demonstrates the navigate to pose capabilities of the navigator, as well as a number of auxiliary methods.
 - `example_nav_through_poses.py` - Demonstrates the navigate through poses capabilities of the navigator, as well as a number of auxiliary methods.
 - `example_waypoint_follower.py` - Demonstrates the waypoint following capabilities of the navigator, as well as a number of auxiliary methods.
-- `example_follow_path.py` - Demonstrates the path following capabilities of the navigator, as well as a number of auxiliary methods.
+- `example_follow_path.py` - Demonstrates the path following capabilities of the navigator, as well as a number of auxiliary methods such as path smoothing.
 ## Demos
 
 The `nav2_simple_commander` has a few demonstrations to highlight a couple of simple autonomy applications you can build using the `nav2_simple_commander` API:
