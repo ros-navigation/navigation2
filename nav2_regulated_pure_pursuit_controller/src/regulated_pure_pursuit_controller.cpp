@@ -68,9 +68,9 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_linear_decel", rclcpp::ParameterValue(2.5));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_linear_jerk", rclcpp::ParameterValue(0.5));
+    node, plugin_name_ + ".max_linear_jerk", rclcpp::ParameterValue(10000.0));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_angular_jerk", rclcpp::ParameterValue(120.0));
+    node, plugin_name_ + ".max_angular_jerk", rclcpp::ParameterValue(10000.0));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".kp_angle", rclcpp::ParameterValue(3.0));
   declare_parameter_if_not_declared(
