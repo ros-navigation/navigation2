@@ -157,7 +157,7 @@ public:
     const unsigned int number_tests,
     const float acceptable_fail_ratio);
 
-  bool checkPathValid(nav_msgs::msg::Path & path);
+  bool isPathValid(nav_msgs::msg::Path & path);
 
 private:
   void setCostmap();

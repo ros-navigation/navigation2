@@ -397,7 +397,7 @@ TaskStatus PlannerTester::createPlan(
   return TaskStatus::FAILED;
 }
 
-bool PlannerTester::checkPathValid(nav_msgs::msg::Path & path)
+bool PlannerTester::isPathValid(nav_msgs::msg::Path & path)
 {
   // create a fake service request
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
@@ -405,7 +405,9 @@ bool PlannerTester::checkPathValid(nav_msgs::msg::Path & path)
   auto result = path_valid_client_->async_send_request(request);
 
   RCLCPP_INFO(this->get_logger(), "Waiting for service complete");
-  if (rclcpp::spin_until_future_complete(this->planner_tester_, result, std::chrono::seconds(10)) ==
+  if (rclcpp::spin_until_future_complete(
+      this->planner_tester_, result,
+      std::chrono::milliseconds(100)) ==
     rclcpp::FutureReturnCode::SUCCESS)
   {
     return result.get()->is_valid;

@@ -28,14 +28,15 @@ TEST(testIsPathValid, testIsPathValid)
 {
   auto planner_tester = std::make_shared<PlannerTester>();
   planner_tester->activate();
-  // load open space cost map which is 10 by 10
   planner_tester->loadSimpleCostmap(TestCostmap::top_left_obstacle);
 
   nav_msgs::msg::Path path;
 
-  bool is_path_valid = planner_tester->checkPathValid(path);
+  // empty path
+  bool is_path_valid = planner_tester->isPathValid(path);
   EXPECT_FALSE(is_path_valid);
 
+  // invalid path
   for (float i = 0; i < 10; i += 0.05) {
     for (float j = 0; j < 10; j += 0.05) {
       geometry_msgs::msg::PoseStamped pose;
@@ -44,9 +45,10 @@ TEST(testIsPathValid, testIsPathValid)
       path.poses.push_back(pose);
     }
   }
-  is_path_valid = planner_tester->checkPathValid(path);
+  is_path_valid = planner_tester->isPathValid(path);
   EXPECT_FALSE(is_path_valid);
 
+  // valid path
   path.poses.clear();
   for (float i = 0; i < 10; i += 0.1) {
     geometry_msgs::msg::PoseStamped pose;
@@ -54,8 +56,7 @@ TEST(testIsPathValid, testIsPathValid)
     pose.pose.position.y = i;
     path.poses.push_back(pose);
   }
-
-  is_path_valid = planner_tester->checkPathValid(path);
+  is_path_valid = planner_tester->isPathValid(path);
   EXPECT_TRUE(is_path_valid);
 }
 
