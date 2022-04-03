@@ -270,8 +270,6 @@ void RegulatedPurePursuitController::activate()
   angle_profile_output_.new_velocity = {0.0};
   angle_profile_output_.new_acceleration = {0.0};
   angle_profile_output_.pass_to_input(angle_profile_input_);
-
-  rotating_ = false;
 }
 
 void RegulatedPurePursuitController::deactivate()
@@ -339,12 +337,14 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     distance_profile_output_.new_acceleration = {0.0};
     distance_profile_output_.pass_to_input(distance_profile_input_);
 
+    distance_profile_input_.control_interface = ruckig::ControlInterface::Position;
+
     angle_profile_output_.new_position = {tf2::getYaw(pose.pose.orientation)};
     angle_profile_output_.new_velocity = {0.0};
     angle_profile_output_.new_acceleration = {0.0};
     angle_profile_output_.pass_to_input(angle_profile_input_);
 
-    rotating_ = false;
+    angle_profile_input_.control_interface = ruckig::ControlInterface::Velocity;
   }
   system_time_ = t;
 
@@ -401,33 +401,37 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   robot_angle_ = tf2::getYaw(pose.pose.orientation);
 
-  // Make sure we're in compliance with basic constraints
-  double angle_to_heading;
-  if (shouldRotateToGoalHeading(carrot_pose, lookahead_dist) && !rotating_) {
-    double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
-    rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
-  } else if (shouldRotateToPath(carrot_pose, angle_to_heading) && !rotating_) {
-    rotateToHeading(linear_vel, angular_vel, angle_to_heading, speed);
-  } else if (rotating_) {
-    if (angle_profile_result_ == ruckig::Result::Finished) {
-      rotating_ = false;
+  if (angle_profile_input_.control_interface != ruckig::ControlInterface::Position) {
+    // Make sure we're in compliance with basic constraints
+    double angle_to_heading;
+    if (shouldRotateToGoalHeading(carrot_pose, lookahead_dist)) {
+      double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
+      rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
+    } else if (shouldRotateToPath(carrot_pose, angle_to_heading)) {
+      rotateToHeading(linear_vel, angular_vel, angle_to_heading, speed);
+    } else {
+      applyConstraints(
+        fabs(lookahead_dist - sqrt(carrot_dist2)),
+        lookahead_dist, curvature, speed,
+        costAtPose(pose.pose.position.x, pose.pose.position.y), linear_vel, sign);
+
+      // Apply curvature to angular velocity after constraining linear velocity
+      angular_vel = linear_vel * curvature;
+
+      distance_profile_input_.control_interface = ruckig::ControlInterface::Position;
+      distance_profile_input_.target_position = {
+        distance_profile_input_.current_position[0] + sign * remaining_path_length};
+      distance_profile_input_.max_velocity = {fabs(linear_vel)};
+
+      angle_profile_input_.control_interface = ruckig::ControlInterface::Velocity;
+      angle_profile_input_.target_velocity = {angular_vel};
     }
   } else {
-    applyConstraints(
-      fabs(lookahead_dist - sqrt(carrot_dist2)),
-      lookahead_dist, curvature, speed,
-      costAtPose(pose.pose.position.x, pose.pose.position.y), linear_vel, sign);
-
-    // Apply curvature to angular velocity after constraining linear velocity
-    angular_vel = linear_vel * curvature;
-
-    distance_profile_input_.control_interface = ruckig::ControlInterface::Position;
-    distance_profile_input_.target_position = {
-      distance_profile_input_.current_position[0] + sign * remaining_path_length};
-    distance_profile_input_.max_velocity = {fabs(linear_vel)};
-
-    angle_profile_input_.control_interface = ruckig::ControlInterface::Velocity;
-    angle_profile_input_.target_velocity = {angular_vel};
+    // Angle profile is in Position mode - we are rotating in place
+    if (angle_profile_result_ == ruckig::Result::Finished) {
+      // If the rotation is finished we switch back to velocity mode
+      angle_profile_input_.control_interface = ruckig::ControlInterface::Velocity;
+    }
   }
 
   // Calculate next step for motion profiles
@@ -497,11 +501,9 @@ void RegulatedPurePursuitController::rotateToHeading(
     robot_angle_ + angle_to_path};
   angle_profile_input_.target_velocity = {0.0};
 
-  // Switch distance profile to velocity mode and keep it at zero
+  // Switch distance profile to velocity mode and keep it at zero - slowdown to a stop
   distance_profile_input_.control_interface = ruckig::ControlInterface::Velocity;
   distance_profile_input_.target_velocity = {0.0};
-
-  rotating_ = true;
 }
 
 geometry_msgs::msg::Point RegulatedPurePursuitController::circleSegmentIntersection(
@@ -745,7 +747,6 @@ void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
   global_plan_ = path;
 
   angle_profile_input_.control_interface = ruckig::ControlInterface::Velocity;
-  rotating_ = false;
 }
 
 void RegulatedPurePursuitController::setSpeedLimit(

@@ -303,7 +303,6 @@ protected:
   double goal_dist_tol_;
   bool allow_reversing_;
   double robot_angle_;
-  bool rotating_;
   double kp_angle_;
   double max_linear_jerk_;
   double max_angular_jerk_;
