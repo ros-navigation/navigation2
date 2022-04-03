@@ -206,8 +206,8 @@ void RegulatedPurePursuitController::configure(
       FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_);
   collision_checker_->setCostmap(costmap_);
 
-  distance_profile_ = new ruckig::Ruckig<1>{control_duration_};
-  angle_profile_ = new ruckig::Ruckig<1>{control_duration_};
+  distance_profile_ = std::make_unique<ruckig::Ruckig<1>>(control_duration_);
+  angle_profile_ = std::make_unique<ruckig::Ruckig<1>>(control_duration_);
 
   system_time_ = clock_->now();
 }
@@ -223,8 +223,8 @@ void RegulatedPurePursuitController::cleanup()
   carrot_pub_.reset();
   carrot_arc_pub_.reset();
 
-  delete distance_profile_;
-  delete angle_profile_;
+  distance_profile_.reset();
+  angle_profile_.reset();
 }
 
 void RegulatedPurePursuitController::activate()

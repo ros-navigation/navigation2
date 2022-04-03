@@ -319,12 +319,12 @@ protected:
   std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
   collision_checker_;
 
-  ruckig::Ruckig<1> * distance_profile_;
+  std::unique_ptr<ruckig::Ruckig<1>> distance_profile_;
   ruckig::InputParameter<1> distance_profile_input_;
   ruckig::OutputParameter<1> distance_profile_output_;
   ruckig::Result distance_profile_result_;
 
-  ruckig::Ruckig<1> * angle_profile_;
+  std::unique_ptr<ruckig::Ruckig<1>> angle_profile_;
   ruckig::InputParameter<1> angle_profile_input_;
   ruckig::OutputParameter<1> angle_profile_output_;
   ruckig::Result angle_profile_result_;
