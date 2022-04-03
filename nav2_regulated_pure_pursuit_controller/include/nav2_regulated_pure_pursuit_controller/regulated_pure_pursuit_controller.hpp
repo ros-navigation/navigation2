@@ -263,13 +263,6 @@ protected:
   double getCostmapMaxExtent() const;
 
   /**
-   * @brief Normalizes angle in range [-pi, pi]
-   * @param angle Angle to normalize
-   * @return Normalized angle
-   */
-  double angleNormalize(double angle);
-
-  /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */

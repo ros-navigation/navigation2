@@ -20,6 +20,7 @@
   <depend>pluginlib</depend>
   <depend>tf2</depend>
   <depend>ruckig</depend>
+  <depend>angles</depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_common</test_depend>

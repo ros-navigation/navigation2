@@ -25,6 +25,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "angles/angles/angles.h"
 
 using std::hypot;
 using std::min;
@@ -450,7 +451,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     angular_vel_command = angle_profile_output_.new_velocity[0];
   } else {
     // proportional controller for robot angle when we are in position mode
-    angular_vel_command = kp_angle_ * angleNormalize(
+    angular_vel_command = kp_angle_ * angles::normalize_angle(
       angle_profile_output_.new_position[0] - robot_angle_);
   }
 
@@ -881,17 +882,6 @@ bool RegulatedPurePursuitController::transformPose(
   return false;
 }
 
-double RegulatedPurePursuitController::angleNormalize(double angle)
-{
-  while (angle > M_PI) {
-    angle -= 2.0 * M_PI;
-  }
-  while (angle < -M_PI) {
-    angle += 2.0 * M_PI;
-  }
-
-  return angle;
-}
 double RegulatedPurePursuitController::getCostmapMaxExtent() const
 {
   const double max_costmap_dim_meters = std::max(
