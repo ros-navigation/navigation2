@@ -343,6 +343,13 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   }
   system_time_ = t;
 
+  // Set acceleration and jerk limits
+  distance_profile_input_.max_acceleration = {max_linear_accel_};
+  distance_profile_input_.min_acceleration = {-max_linear_decel_};
+  distance_profile_input_.max_jerk = {max_linear_jerk_};
+
+  angle_profile_input_.max_acceleration = {max_angular_accel_};
+  angle_profile_input_.max_jerk = {max_angular_jerk_};
 
   // Transform path to robot base frame
   auto transformed_plan = transformGlobalPlan(pose);
@@ -909,6 +916,16 @@ RegulatedPurePursuitController::dynamicParametersCallback(
       } else if (name == plugin_name_ + ".desired_linear_vel") {
         desired_linear_vel_ = parameter.as_double();
         base_desired_linear_vel_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_linear_accel") {
+        max_linear_accel_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_linear_decel") {
+        max_linear_decel_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_linear_jerk") {
+        max_linear_jerk_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_angular_jerk") {
+        max_angular_jerk_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".kp_angle") {
+        kp_angle_ = parameter.as_double();
       } else if (name == plugin_name_ + ".lookahead_dist") {
         lookahead_dist_ = parameter.as_double();
       } else if (name == plugin_name_ + ".max_lookahead_dist") {
