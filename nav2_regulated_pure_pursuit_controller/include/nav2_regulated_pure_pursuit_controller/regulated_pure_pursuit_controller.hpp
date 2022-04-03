@@ -287,7 +287,6 @@ protected:
   double lookahead_time_;
   bool use_velocity_scaled_lookahead_dist_;
   tf2::Duration transform_tolerance_;
-  double min_approach_linear_velocity_;
   double control_duration_;
   double max_allowed_time_to_collision_up_to_carrot_;
   bool use_regulated_linear_velocity_scaling_;
