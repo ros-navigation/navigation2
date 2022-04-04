@@ -48,7 +48,7 @@
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 
-#include "../include/portable_utils.h"
+#include "nav2_amcl/portable_utils.hpp"
 
 using namespace std::placeholders;
 using namespace std::chrono_literals;

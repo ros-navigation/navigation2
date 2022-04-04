@@ -11,9 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-#ifndef PORTABLE_UTILS_H_
-#define PORTABLE_UTILS_H_
+#ifndef NAV2_AMCL__PORTABLE_UTILS_HPP_
+#define NAV2_AMCL__PORTABLE_UTILS_HPP_
 
 #include <stdlib.h>
 
@@ -26,7 +25,7 @@ extern "C" {
 // Use rand, and srand for such system.
 static double drand48(void)
 {
-  return ((double)rand()) / RAND_MAX;
+  return ((double)rand()) / RAND_MAX;// NOLINT
 }
 
 static void srand48(long int seedval)// NOLINT
@@ -39,4 +38,4 @@ static void srand48(long int seedval)// NOLINT
 }
 #endif
 
-#endif  // PORTABLE_UTILS_H_
+#endif  // NAV2_AMCL__PORTABLE_UTILS_HPP_
