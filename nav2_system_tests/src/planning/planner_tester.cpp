@@ -76,6 +76,7 @@ void PlannerTester::activate()
   planner_tester_->onConfigure(state);
   publishRobotTransform();
   map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map", 1);
+  path_valid_client_ = this->create_client<nav2_msgs::srv::IsPathValid>("is_path_valid");
   rclcpp::Rate r(1);
   r.sleep();
   planner_tester_->onActivate(state);
@@ -394,6 +395,26 @@ TaskStatus PlannerTester::createPlan(
   }
 
   return TaskStatus::FAILED;
+}
+
+bool PlannerTester::isPathValid(nav_msgs::msg::Path & path)
+{
+  // create a fake service request
+  auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
+  request->path = path;
+  auto result = path_valid_client_->async_send_request(request);
+
+  RCLCPP_INFO(this->get_logger(), "Waiting for service complete");
+  if (rclcpp::spin_until_future_complete(
+      this->planner_tester_, result,
+      std::chrono::milliseconds(100)) ==
+    rclcpp::FutureReturnCode::SUCCESS)
+  {
+    return result.get()->is_valid;
+  } else {
+    RCLCPP_INFO(get_logger(), "Failed to call is_path_valid service");
+    return false;
+  }
 }
 
 bool PlannerTester::isCollisionFree(const ComputePathToPoseResult & path)
