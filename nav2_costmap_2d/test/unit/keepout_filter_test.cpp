@@ -34,9 +34,9 @@
 
 using namespace std::chrono_literals;
 
-static const std::string FILTER_NAME = "keepout_filter";
-static const std::string INFO_TOPIC = "costmap_filter_info";
-static const std::string MASK_TOPIC = "mask";
+static const char FILTER_NAME[]{"keepout_filter"};
+static const char INFO_TOPIC[]{"costmap_filter_info"};
+static const char MASK_TOPIC[]{"mask"};
 
 class InfoPublisher : public rclcpp::Node
 {
@@ -69,7 +69,7 @@ private:
 class MaskPublisher : public rclcpp::Node
 {
 public:
-  MaskPublisher(const nav_msgs::msg::OccupancyGrid & mask)
+  explicit MaskPublisher(const nav_msgs::msg::OccupancyGrid & mask)
   : Node("mask_pub")
   {
     publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
@@ -216,16 +216,18 @@ void TestNode::createKeepoutFilter(const std::string & global_frame)
   nav2_costmap_2d::LayeredCostmap layers(global_frame, false, false);
 
   node_->declare_parameter(
-    FILTER_NAME + ".transform_tolerance", rclcpp::ParameterValue(0.5));
+    std::string(FILTER_NAME) + ".transform_tolerance", rclcpp::ParameterValue(0.5));
   node_->set_parameter(
-    rclcpp::Parameter(FILTER_NAME + ".transform_tolerance", 0.5));
+    rclcpp::Parameter(std::string(FILTER_NAME) + ".transform_tolerance", 0.5));
   node_->declare_parameter(
-    FILTER_NAME + ".filter_info_topic", rclcpp::ParameterValue(INFO_TOPIC));
+    std::string(FILTER_NAME) + ".filter_info_topic", rclcpp::ParameterValue(INFO_TOPIC));
   node_->set_parameter(
-    rclcpp::Parameter(FILTER_NAME + ".filter_info_topic", INFO_TOPIC));
+    rclcpp::Parameter(std::string(FILTER_NAME) + ".filter_info_topic", INFO_TOPIC));
 
   keepout_filter_ = std::make_shared<nav2_costmap_2d::KeepoutFilter>();
-  keepout_filter_->initialize(&layers, FILTER_NAME, tf_buffer_.get(), node_, nullptr, nullptr);
+  keepout_filter_->initialize(
+    &layers, std::string(FILTER_NAME),
+    tf_buffer_.get(), node_, nullptr, nullptr);
   keepout_filter_->initializeFilter(INFO_TOPIC);
 
   // Wait until mask will be received by KeepoutFilter
