@@ -28,8 +28,7 @@ namespace nav2_ceres_costaware_smoother
  * @param pt_prev Starting point of the arc
  * @param pt Mid point of the arc
  * @param pt_next Last point of the arc
- * @param forced_dot_sign Should be -1 if pt is cusp, otherwise 1.
- * Cuspness of pt is automatically determined if set to 0.
+ * @param is_cusp True if pt is a cusp point
  * @result position of the center or Vector2(inf, inf) for straight lines and 180 deg turns
  */
 template<typename T>
@@ -37,12 +36,12 @@ inline Eigen::Matrix<T, 2, 1> arcCenter(
   Eigen::Matrix<T, 2, 1> pt_prev,
   Eigen::Matrix<T, 2, 1> pt,
   Eigen::Matrix<T, 2, 1> pt_next,
-  int forced_dot_sign = 0)
+  bool is_cusp)
 {
   Eigen::Matrix<T, 2, 1> d1 = pt - pt_prev;
   Eigen::Matrix<T, 2, 1> d2 = pt_next - pt;
 
-  if (forced_dot_sign < 0 || (forced_dot_sign == 0 && d1.dot(d2) < (T)0)) {
+  if (is_cusp) {
     d2 = -d2;
     pt_next = pt + d2;
   }
@@ -74,8 +73,7 @@ inline Eigen::Matrix<T, 2, 1> arcCenter(
  * @param pt_prev Starting point of the arc
  * @param pt Mid point of the arc, lying on the tangential line
  * @param pt_next Last point of the arc
- * @param forced_dot_sign Should be -1 if pt is cusp, otherwise 1.
- * Cuspness of pt is automatically determined if set to 0.
+ * @param is_cusp True if pt is a cusp point
  * @result Tangential line direction.
  * Note: the sign of tangentDir is undefined here, should be assigned in post-process
  * depending on movement direction. Also, for speed reasons, direction vector is not normalized.
@@ -85,14 +83,14 @@ inline Eigen::Matrix<T, 2, 1> tangentDir(
   Eigen::Matrix<T, 2, 1> pt_prev,
   Eigen::Matrix<T, 2, 1> pt,
   Eigen::Matrix<T, 2, 1> pt_next,
-  int forced_dot_sign = 0)
+  bool is_cusp)
 {
-  Eigen::Matrix<T, 2, 1> center = arcCenter(pt_prev, pt, pt_next, forced_dot_sign);
+  Eigen::Matrix<T, 2, 1> center = arcCenter(pt_prev, pt, pt_next, is_cusp);
   if (ceres::IsInfinite(center[0])) {  // straight line
     Eigen::Matrix<T, 2, 1> d1 = pt - pt_prev;
     Eigen::Matrix<T, 2, 1> d2 = pt_next - pt;
 
-    if (forced_dot_sign < 0 || (forced_dot_sign == 0 && d1.dot(d2) < (T)0)) {
+    if (is_cusp) {
       d2 = -d2;
       pt_next = pt + d2;
     }

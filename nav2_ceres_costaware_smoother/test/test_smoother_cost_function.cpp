@@ -94,32 +94,33 @@ TEST_F(Test, testingUtils)
   Eigen::Vector2d pt_next(0.0, 0.0);
 
   // test for intermediate values
-  auto center = nav2_ceres_costaware_smoother::arcCenter(pt_prev, pt, pt_next, 1);
+  auto center = nav2_ceres_costaware_smoother::arcCenter(pt_prev, pt, pt_next, false);
   // although in this situation the center would be at (0.5, 0.0),
   // cases where pt_prev == pt_next are very rare and thus unhandled
   // during the smoothing points will be separated (and thus made valid) by smoothness cost anyways
   EXPECT_EQ(center[0], std::numeric_limits<double>::infinity());
   EXPECT_EQ(center[1], std::numeric_limits<double>::infinity());
 
-  auto tangent = nav2_ceres_costaware_smoother::tangentDir(pt_prev, pt, pt_next, 1).normalized();
+  auto tangent =
+    nav2_ceres_costaware_smoother::tangentDir(pt_prev, pt, pt_next, false).normalized();
   EXPECT_NEAR(tangent[0], 0, 1e-10);
   EXPECT_NEAR(std::abs(tangent[1]), 1, 1e-10);
 
   // no rotation when mid point is a cusp
-  tangent = nav2_ceres_costaware_smoother::tangentDir(pt_prev, pt, pt_next, -1).normalized();
+  tangent = nav2_ceres_costaware_smoother::tangentDir(pt_prev, pt, pt_next, true).normalized();
   EXPECT_NEAR(std::abs(tangent[0]), 1, 1e-10);
   EXPECT_NEAR(tangent[1], 0, 1e-10);
 
   pt_prev[0] = -1.0;
   // rotation is mathematically invalid, picking direction of a shorter segment
-  tangent = nav2_ceres_costaware_smoother::tangentDir(pt_prev, pt, pt_next, -1).normalized();
+  tangent = nav2_ceres_costaware_smoother::tangentDir(pt_prev, pt, pt_next, true).normalized();
   EXPECT_NEAR(std::abs(tangent[0]), 1, 1e-10);
   EXPECT_NEAR(tangent[1], 0, 1e-10);
 
   pt_prev[0] = 0.0;
   pt_next[0] = -1.0;
   // rotation is mathematically invalid, picking direction of a shorter segment
-  tangent = nav2_ceres_costaware_smoother::tangentDir(pt_prev, pt, pt_next, -1).normalized();
+  tangent = nav2_ceres_costaware_smoother::tangentDir(pt_prev, pt, pt_next, true).normalized();
   EXPECT_NEAR(std::abs(tangent[0]), 1, 1e-10);
   EXPECT_NEAR(tangent[1], 0, 1e-10);
 }

@@ -103,12 +103,19 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
     double angle = tf2::getYaw(pose.orientation);
     Eigen::Vector2d orientation(cos(angle), sin(angle));
     if (i == path.poses.size() - 1) {
+      // Note: `reversing` indicates the direction of the segment after the point and
+      // there is no segment after the last point. Most probably the value is irrelevant, but
+      // copying it from the last but one point, just to make it defined...
       path_world.emplace_back(pose.position.x, pose.position.y, path_world.back()[2]);
       end_dir = orientation;
     } else {
       auto & pos_next = path.poses[i + 1].pose.position;
       Eigen::Vector2d mvmt(pos_next.x - pose.position.x, pos_next.y - pose.position.y);
+      // robot is considered reversing when angle between its orientation and movement direction
+      // is more than 90 degrees (i.e. dot product is less than 0)
       bool reversing = smoother_params_.reversing_enabled && orientation.dot(mvmt) < 0;
+      // we transform boolean value of "reversing" into sign of movement direction (+1 or -1)
+      // to simplify further computations
       path_world.emplace_back(pose.position.x, pose.position.y, reversing ? -1 : 1);
       if (i == 0) {
         start_dir = orientation;

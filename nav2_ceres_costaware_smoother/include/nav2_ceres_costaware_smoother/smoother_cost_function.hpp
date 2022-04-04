@@ -158,7 +158,7 @@ protected:
   {
     Eigen::Matrix<T, 2, 1> center = arcCenter(
       pt_prev, pt, pt_next,
-      next_to_last_length_ratio_ < 0 ? -1 : 1);
+      next_to_last_length_ratio_ < 0);
     if (ceres::IsInfinite(center[0])) {
       return;
     }
@@ -213,7 +213,7 @@ protected:
     } else {
       Eigen::Matrix<T, 2, 1> dir = tangentDir(
         pt_prev, pt, pt_next,
-        next_to_last_length_ratio_ < 0 ? -1 : 1);
+        next_to_last_length_ratio_ < 0);
       dir.normalize();
       if (((pt_next - pt).dot(dir) < (T)0) != reversing_) {
         dir = -dir;

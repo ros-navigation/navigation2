@@ -147,10 +147,14 @@ protected:
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_dist", 0.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", -1.0));
-    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost_cusp", 0.04));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost_cusp_multiplier", 1.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.path_downsampling_factor", 1));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.path_upsampling_factor", 1));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.reversing_enabled", true));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.keep_start_orientation", true));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.keep_goal_orientation", true));
+    node_lifecycle_->set_parameter(
+      rclcpp::Parameter("SmoothPath.optimizer.linear_solver_type", "SPARSE_NORMAL_CHOLESKY"));
     node_lifecycle_->set_parameter(
       rclcpp::Parameter(
         "SmoothPath.cost_check_points",
@@ -751,7 +755,8 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   // then update parameters so that robot is not so afraid of obstacles
   // during simple movement but pays extra attention during rotations near cusps
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0052));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost_cusp", 0.027));
+  node_lifecycle_->set_parameter(
+    rclcpp::Parameter("SmoothPath.w_cost_cusp_multiplier", 0.027 / 0.0052));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", 2.5));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.optimizer.fn_tol", 1e-15));
   reloadParams();
@@ -790,7 +795,7 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
       "ceres_smoother"), "Original similarity improvement (cusp, ecc vs. simple): %lf",
     origin_similarity_improvement);
   EXPECT_GT(origin_similarity_improvement, 0.0);
-  EXPECT_NEAR(origin_similarity_improvement, 0.06, 0.02);
+  EXPECT_NEAR(origin_similarity_improvement, 0.43, 0.02);
 
 
   /////////////////////////////////////////////////////
@@ -811,7 +816,7 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   node_lifecycle_->set_parameter(
     rclcpp::Parameter(
       "SmoothPath.cost_check_points",
-      std::vector<double>({-0.25, 0.0, 1.0})  // x, y, weight
+      std::vector<double>({-0.05, 0.0, 0.5, -0.45, 0.0, 0.5})  // x1, y1, weight1, x2, y2, weight2
   ));
   reloadParams();
 
@@ -839,7 +844,7 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
     smoothed_path_scc,
     cost_avoidance_criterion);
   EXPECT_GT(cost_avoidance_improvement_shifted_cost_check, 0.0);
-  EXPECT_NEAR(cost_avoidance_improvement_shifted_cost_check, 40.4, 1.0);
+  EXPECT_NEAR(cost_avoidance_improvement_shifted_cost_check, 42.0, 1.0);
   double worst_cost_improvement_shifted_cost_check = assessWorstPoseImprovement(
     cusp_near_obstacle,
     smoothed_path_scc,
@@ -856,7 +861,8 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   // compare also with extra careful cusp
 
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.0052));
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost_cusp", 0.027));
+  node_lifecycle_->set_parameter(
+    rclcpp::Parameter("SmoothPath.w_cost_cusp_multiplier", 0.027 / 0.0052));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", 2.5));
   // we need much more iterations here since it's a more complicated problem
   // TODO(afrixs): tune ceres optimizer to "converge" faster
@@ -881,7 +887,7 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
     rclcpp::get_logger(
       "ceres_smoother"), "Cost avoidance improvement (cusp_shifted, scce): %lf, %lf",
     cost_avoidance_improvement_shifted_extra, worst_cost_improvement_shifted_extra);
-  EXPECT_NEAR(cost_avoidance_improvement_shifted_extra, 49.1, 1.0);
+  EXPECT_NEAR(cost_avoidance_improvement_shifted_extra, 51.0, 1.0);
   EXPECT_GE(worst_cost_improvement_shifted_extra, 0.0);
 
   // resmooth extra careful cusp with same conditions (higher max_iterations)
@@ -1055,6 +1061,48 @@ TEST_F(SmootherTest, testingStartGoalOrientations)
   std::vector<Eigen::Vector3d> one_pose_path = {{0, 0, M_PI * 0.75}};
   EXPECT_TRUE(smoothPath(one_pose_path, adjusted_path));
   EXPECT_NEAR(adjusted_path.front()[2], M_PI * 0.75, 0.001);
+}
+
+TEST_F(SmootherTest, testingCostCheckPointsParamValidity)
+{
+  node_lifecycle_->set_parameter(
+    rclcpp::Parameter(
+      "SmoothPath.cost_check_points",
+      std::vector<double>()));
+  reloadParams();
+
+  node_lifecycle_->set_parameter(
+    rclcpp::Parameter(
+      "SmoothPath.cost_check_points",
+      std::vector<double>({0, 0, 0, 0, 0, 0, 0, 0, 0})));  // multiple of 3 is ok
+  reloadParams();
+
+  node_lifecycle_->set_parameter(
+    rclcpp::Parameter(
+      "SmoothPath.cost_check_points",
+      std::vector<double>({0, 0})));
+  EXPECT_THROW(reloadParams(), std::runtime_error);
+}
+
+TEST_F(SmootherTest, testingLinearSolverTypeParamValidity)
+{
+  node_lifecycle_->set_parameter(
+    rclcpp::Parameter(
+      "SmoothPath.optimizer.linear_solver_type",
+      "SPARSE_NORMAL_CHOLESKY"));
+  reloadParams();
+
+  node_lifecycle_->set_parameter(
+    rclcpp::Parameter(
+      "SmoothPath.optimizer.linear_solver_type",
+      "DENSE_QR"));
+  reloadParams();
+
+  node_lifecycle_->set_parameter(
+    rclcpp::Parameter(
+      "SmoothPath.optimizer.linear_solver_type",
+      "INVALID_SOLVER"));
+  EXPECT_THROW(reloadParams(), std::runtime_error);
 }
 
 int main(int argc, char ** argv)

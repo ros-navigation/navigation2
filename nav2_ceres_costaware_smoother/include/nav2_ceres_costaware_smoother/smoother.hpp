@@ -60,7 +60,7 @@ public:
   {
     debug_ = params.debug;
 
-    options_.linear_solver_type = ceres::DENSE_QR;
+    options_.linear_solver_type = params.solver_types.at(params.linear_solver_type);
 
     options_.max_num_iterations = params.max_iterations;
 
@@ -307,7 +307,7 @@ private:
               prelast.block<2, 1>(0, 0),
               last.block<2, 1>(0, 0),
               current.block<2, 1>(0, 0),
-              prelast[2] * last[2]);
+              prelast[2] * last[2] < 0);
 
             last_dir =
               tangent_dir.dot((current - last).block<2, 1>(0, 0) * last[2]) >= 0 ?
@@ -344,7 +344,7 @@ private:
               path[j - 1].block<2, 1>(0, 0),
               path[j].block<2, 1>(0, 0),
               path[j + 1].block<2, 1>(0, 0),
-              1.0);
+              false);
             tangent_dir =
               tangent_dir.dot((path[j + 1] - path[j]).block<2, 1>(0, 0) * prelast[2]) >= 0 ?
               tangent_dir :
