@@ -575,7 +575,7 @@ ObstacleLayer::raytraceFreespace(
       "The costmap cannot raytrace for it.",
       ox, oy,
       origin_x_, origin_y_,
-      origin_x_ + getSizeInMetersX(), origin_y_ + getSizeInMetersY(),
+      origin_x_ + getSizeInMetersX(), origin_y_ + getSizeInMetersY()
     );
     return;
   }
