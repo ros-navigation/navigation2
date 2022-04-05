@@ -779,7 +779,7 @@ Image<uint8_t> createShape(ShapeBuffer3x3 & buffer, ConnectivityType connectivit
 
 /**
  * @brief Implementation details for connectedComponents
- * \sa connectedComponents
+ * @sa connectedComponents
  */
 template<ConnectivityType connectivity, class Label, class IsBg>
 Label connectedComponentsImpl(
@@ -845,13 +845,31 @@ Label connectedComponentsImpl(
   return labels_map.size();
 }
 
+/**
+ * @brief Object to eliminate grouped noise on the image
+ * Stores a label tree that is reused
+ * @sa connectedComponents
+ */
 class GroupsRemover
 {
 public:
+  /// @brief Constructs the object and initializes the label tree
   GroupsRemover()
   {
     label_trees_ = std::make_unique<imgproc_impl::EquivalenceLabelTrees<uint16_t>>();
   }
+
+  /**
+   * @brief Calls removeGroupsPickLabelType with the Way4/Way8
+   * template parameter based on the runtime value of group_connectivity_type
+   * @tparam IsBg functor with signature bool (uint8_t)
+   * @param[in,out] image image to be denoised
+   * @param buffer dynamic memory block that will be used to store the temp labeled image
+   * @param group_connectivity_type pixels connectivity type
+   * @param minimal_group_size the border value of group size. Groups of this and larger
+   * size will be kept
+   * @param is_background returns true if the passed pixel value is background
+   */
   template<class IsBg>
   void removeGroups(
     Image<uint8_t> & image, MemoryBuffer & buffer,
@@ -870,6 +888,13 @@ public:
   }
 
 private:
+  /**
+   * @brief Calls tryRemoveGroupsWithLabelType with the label tree stored in this object.
+   * If the stored tree labels are 16 bits and the call fails,
+   * change the stored tree type to 32 bit and retry the call.
+   * @throw imgproc_impl::LabelOverflow if 32 bit label tree is not enough
+   * to complete the operation
+   */
   template<ConnectivityType connectivity, class IsBg>
   void removeGroupsPickLabelType(
     Image<uint8_t> & image, MemoryBuffer & buffer,
@@ -899,7 +924,14 @@ private:
         is_background, true);
     }
   }
-
+  /**
+   * @brief Calls removeGroupsImpl catching its exceptions if throw_on_label_overflow is true
+   * @param throw_on_label_overflow defines the policy for handling exceptions thrown
+   * from removeGroupsImpl. If throw_on_label_overflow is true, exceptions are simply
+   * rethrown. Otherwise, this function will return false on exception.
+   * @return true if removeGroupsImpl throw and throw_on_label_overflow false.
+   * False in other case
+   */
   template<ConnectivityType connectivity, class Label, class IsBg>
   bool tryRemoveGroupsWithLabelType(
     Image<uint8_t> & image, MemoryBuffer & buffer, size_t minimal_group_size,
@@ -918,7 +950,7 @@ private:
     }
     return success;
   }
-
+  /// @brief Eliminate group noise in the image
   template<ConnectivityType connectivity, class Label, class IsBg>
   void removeGroupsImpl(
     Image<uint8_t> & image, MemoryBuffer & buffer,

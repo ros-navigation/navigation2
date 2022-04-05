@@ -114,9 +114,9 @@ private:
   bool isBackground(uint8_t pixel) const;
 
 private:
-  // Pixels connectivity type. Determines how pixels belonging to the same group can be arranged
-  size_t minimal_group_size_{};
   // The border value of group size. Groups of this and larger size will be kept
+  size_t minimal_group_size_{};
+  // Pixels connectivity type. Determines how pixels belonging to the same group can be arranged
   ConnectivityType group_connectivity_type_{ConnectivityType::Way8};
   // Memory buffer for temporal image
   mutable MemoryBuffer buffer_;
