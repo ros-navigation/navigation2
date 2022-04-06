@@ -22,7 +22,7 @@
 #include <sstream>
 #include <iomanip>
 
-#include "backup_behavior_tester.hpp"
+#include "drive_on_heading_behavior_tester.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
 using namespace std::chrono_literals;

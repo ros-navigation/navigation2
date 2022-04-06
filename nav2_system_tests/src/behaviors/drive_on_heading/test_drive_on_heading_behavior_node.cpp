@@ -21,7 +21,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "backup_behavior_tester.hpp"
+#include "drive_on_heading_behavior_tester.hpp"
 
 using namespace std::chrono_literals;
 

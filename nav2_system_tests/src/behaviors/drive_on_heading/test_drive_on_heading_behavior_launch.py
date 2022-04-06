@@ -89,7 +89,7 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[testExecutable],
-        name='test_backup_behavior_node',
+        name='test_drive_on_heading_behavior_node',
         output='screen')
 
     lts = LaunchTestService()
