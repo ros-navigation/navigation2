@@ -25,17 +25,17 @@ using namespace std::chrono_literals;
 namespace nav2_behaviors
 {
 
-BackUp::BackUp()
-: TimedBehavior<BackUpAction>(),
-  feedback_(std::make_shared<BackUpAction::Feedback>())
+DriveOnHeading::DriveOnHeading()
+: TimedBehavior<DriveOnHeadingAction>(),
+  feedback_(std::make_shared<DriveOnHeadingAction::Feedback>())
 {
 }
 
-BackUp::~BackUp()
+DriveOnHeading::~DriveOnHeading()
 {
 }
 
-void BackUp::onConfigure()
+void DriveOnHeading::onConfigure()
 {
   auto node = node_.lock();
   if (!node) {
@@ -48,7 +48,7 @@ void BackUp::onConfigure()
   node->get_parameter("simulate_ahead_time", simulate_ahead_time_);
 }
 
-Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
+Status DriveOnHeading::onRun(const std::shared_ptr<const DriveOnHeadingAction::Goal> command)
 {
   if (command->target.y != 0.0 || command->target.z != 0.0) {
     RCLCPP_INFO(
@@ -74,14 +74,14 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
   return Status::SUCCEEDED;
 }
 
-Status BackUp::onCycleUpdate()
+Status DriveOnHeading::onCycleUpdate()
 {
   rclcpp::Duration time_remaining = end_time_ - steady_clock_.now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
     stopRobot();
     RCLCPP_WARN(
       logger_,
-      "Exceeded time allowance before reaching the BackUp goal - Exiting BackUp");
+      "Exceeded time allowance before reaching the DriveOnHeading goal - Exiting DriveOnHeading");
     return Status::FAILED;
   }
 
@@ -119,7 +119,7 @@ Status BackUp::onCycleUpdate()
 
   if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
     stopRobot();
-    RCLCPP_WARN(logger_, "Collision Ahead - Exiting BackUp");
+    RCLCPP_WARN(logger_, "Collision Ahead - Exiting DriveOnHeading");
     return Status::FAILED;
   }
 
@@ -128,7 +128,7 @@ Status BackUp::onCycleUpdate()
   return Status::RUNNING;
 }
 
-bool BackUp::isCollisionFree(
+bool DriveOnHeading::isCollisionFree(
   const double & distance,
   geometry_msgs::msg::Twist * cmd_vel,
   geometry_msgs::msg::Pose2D & pose2d)
@@ -162,4 +162,4 @@ bool BackUp::isCollisionFree(
 }  // namespace nav2_behaviors
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_behaviors::BackUp, nav2_core::Behavior)
+PLUGINLIB_EXPORT_CLASS(nav2_behaviors::DriveOnHeading, nav2_core::Behavior)

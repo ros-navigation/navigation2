@@ -316,7 +316,7 @@ behavior_server:
     spin:
       plugin: "nav2_behaviors/Spin"
     backup:
-      plugin: "nav2_behaviors/BackUp"
+      plugin: "nav2_behaviors/DriveOnHeading"
     wait:
       plugin: "nav2_behaviors/Wait"
     global_frame: odom

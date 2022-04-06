@@ -23,27 +23,27 @@
 
 namespace nav2_behaviors
 {
-using BackUpAction = nav2_msgs::action::BackUp;
+using DriveOnHeadingAction = nav2_msgs::action::BackUp;
 
 /**
- * @class nav2_behaviors::BackUp
+ * @class nav2_behaviors::DriveOnHeading
  * @brief An action server Behavior for spinning in
  */
-class BackUp : public TimedBehavior<BackUpAction>
+class DriveOnHeading : public TimedBehavior<DriveOnHeadingAction>
 {
 public:
   /**
-   * @brief A constructor for nav2_behaviors::BackUp
+   * @brief A constructor for nav2_behaviors::DriveOnHeading
    */
-  BackUp();
-  ~BackUp();
+  DriveOnHeading();
+  ~DriveOnHeading();
 
   /**
    * @brief Initialization to run behavior
    * @param command Goal to execute
    * @return Status of behavior
    */
-  Status onRun(const std::shared_ptr<const BackUpAction::Goal> command) override;
+  Status onRun(const std::shared_ptr<const DriveOnHeadingAction::Goal> command) override;
 
   /**
    * @brief Loop function to run behavior
@@ -80,7 +80,7 @@ protected:
   rclcpp::Time end_time_;
   double simulate_ahead_time_;
 
-  BackUpAction::Feedback::SharedPtr feedback_;
+  DriveOnHeadingAction::Feedback::SharedPtr feedback_;
 };
 
 }  // namespace nav2_behaviors
