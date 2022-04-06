@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_
-#define NAV2_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_
+#ifndef NAV2_CONSTRAINED_SMOOTHER__CONSTRAINED_SMOOTHER_HPP_
+#define NAV2_CONSTRAINED_SMOOTHER__CONSTRAINED_SMOOTHER_HPP_
 
 #include <string>
 #include <vector>
@@ -23,31 +23,31 @@
 #include <algorithm>
 
 #include "nav2_core/smoother.hpp"
-#include "nav2_ceres_costaware_smoother/smoother.hpp"
+#include "nav2_constrained_smoother/smoother.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 
-namespace nav2_ceres_costaware_smoother
+namespace nav2_constrained_smoother
 {
 
 /**
- * @class nav2_ceres_costaware_smoother::CeresCostawareSmoother
+ * @class nav2_constrained_smoother::ConstrainedSmoother
  * @brief Regulated pure pursuit controller plugin
  */
-class CeresCostawareSmoother : public nav2_core::Smoother
+class ConstrainedSmoother : public nav2_core::Smoother
 {
 public:
   /**
-   * @brief Constructor for nav2_ceres_costaware_smoother::CeresCostawareSmoother
+   * @brief Constructor for nav2_constrained_smoother::ConstrainedSmoother
    */
-  CeresCostawareSmoother() = default;
+  ConstrainedSmoother() = default;
 
   /**
-   * @brief Destrructor for nav2_ceres_costaware_smoother::CeresCostawareSmoother
+   * @brief Destrructor for nav2_constrained_smoother::ConstrainedSmoother
    */
-  ~CeresCostawareSmoother() override = default;
+  ~ConstrainedSmoother() override = default;
 
   /**
    * @brief Configure smoother parameters and member variables
@@ -92,13 +92,13 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
-  rclcpp::Logger logger_ {rclcpp::get_logger("CeresCostawareSmoother")};
+  rclcpp::Logger logger_ {rclcpp::get_logger("ConstrainedSmoother")};
 
-  std::unique_ptr<nav2_ceres_costaware_smoother::Smoother> smoother_;
+  std::unique_ptr<nav2_constrained_smoother::Smoother> smoother_;
   SmootherParams smoother_params_;
   OptimizerParams optimizer_params_;
 };
 
-}  // namespace nav2_ceres_costaware_smoother
+}  // namespace nav2_constrained_smoother
 
-#endif  // NAV2_CERES_COSTAWARE_SMOOTHER__CERES_COSTAWARE_SMOOTHER_HPP_
+#endif  // NAV2_CONSTRAINED_SMOOTHER__CONSTRAINED_SMOOTHER_HPP_

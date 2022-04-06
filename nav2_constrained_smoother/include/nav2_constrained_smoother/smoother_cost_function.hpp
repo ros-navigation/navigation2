@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_COST_FUNCTION_HPP_
-#define NAV2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_COST_FUNCTION_HPP_
+#ifndef NAV2_CONSTRAINED_SMOOTHER__SMOOTHER_COST_FUNCTION_HPP_
+#define NAV2_CONSTRAINED_SMOOTHER__SMOOTHER_COST_FUNCTION_HPP_
 
 #include <cmath>
 #include <vector>
@@ -28,14 +28,14 @@
 #include "ceres/cubic_interpolation.h"
 #include "Eigen/Core"
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_ceres_costaware_smoother/options.hpp"
-#include "nav2_ceres_costaware_smoother/utils.hpp"
+#include "nav2_constrained_smoother/options.hpp"
+#include "nav2_constrained_smoother/utils.hpp"
 
-namespace nav2_ceres_costaware_smoother
+namespace nav2_constrained_smoother
 {
 
 /**
- * @struct nav2_ceres_costaware_smoother::SmootherCostFunction
+ * @struct nav2_constrained_smoother::SmootherCostFunction
  * @brief Cost function for path smoothing with multiple terms
  * including curvature, smoothness, distance from original and obstacle avoidance.
  */
@@ -43,7 +43,7 @@ class SmootherCostFunction
 {
 public:
   /**
-   * @brief A constructor for nav2_ceres_costaware_smoother::SmootherCostFunction
+   * @brief A constructor for nav2_constrained_smoother::SmootherCostFunction
    * @param original_path Original position of the path node
    * @param next_to_last_length_ratio Ratio of next path segment compared to previous.
    *  Negative if one of them represents reversing motion.
@@ -247,6 +247,6 @@ protected:
   std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>> costmap_interpolator_;
 };
 
-}  // namespace nav2_ceres_costaware_smoother
+}  // namespace nav2_constrained_smoother
 
-#endif  // NAV2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_COST_FUNCTION_HPP_
+#endif  // NAV2_CONSTRAINED_SMOOTHER__SMOOTHER_COST_FUNCTION_HPP_

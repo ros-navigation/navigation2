@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-#include "nav2_ceres_costaware_smoother/ceres_costaware_smoother.hpp"
+#include "nav2_constrained_smoother/constrained_smoother.hpp"
 #include "nav2_core/exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -35,10 +35,10 @@ using nav2_util::declare_parameter_if_not_declared;
 using nav2_util::geometry_utils::euclidean_distance;
 using namespace nav2_costmap_2d;  // NOLINT
 
-namespace nav2_ceres_costaware_smoother
+namespace nav2_constrained_smoother
 {
 
-void CeresCostawareSmoother::configure(
+void ConstrainedSmoother::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
   const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> & costmap_sub,
@@ -54,40 +54,40 @@ void CeresCostawareSmoother::configure(
   plugin_name_ = name;
   logger_ = node->get_logger();
 
-  smoother_ = std::make_unique<nav2_ceres_costaware_smoother::Smoother>();
+  smoother_ = std::make_unique<nav2_constrained_smoother::Smoother>();
   optimizer_params_.get(node.get(), name);
   smoother_params_.get(node.get(), name);
   smoother_->initialize(optimizer_params_);
 }
 
-void CeresCostawareSmoother::cleanup()
+void ConstrainedSmoother::cleanup()
 {
   RCLCPP_INFO(
     logger_,
     "Cleaning up smoother: %s of type"
-    " nav2_ceres_costaware_smoother::CeresCostawareSmoother",
+    " nav2_constrained_smoother::ConstrainedSmoother",
     plugin_name_.c_str());
 }
 
-void CeresCostawareSmoother::activate()
+void ConstrainedSmoother::activate()
 {
   RCLCPP_INFO(
     logger_,
     "Activating smoother: %s of type "
-    "nav2_ceres_costaware_smoother::CeresCostawareSmoother",
+    "nav2_constrained_smoother::ConstrainedSmoother",
     plugin_name_.c_str());
 }
 
-void CeresCostawareSmoother::deactivate()
+void ConstrainedSmoother::deactivate()
 {
   RCLCPP_INFO(
     logger_,
     "Deactivating smoother: %s of type "
-    "nav2_ceres_costaware_smoother::CeresCostawareSmoother",
+    "nav2_constrained_smoother::ConstrainedSmoother",
     plugin_name_.c_str());
 }
 
-bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Duration & max_time)
+bool ConstrainedSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Duration & max_time)
 {
   if (path.poses.size() < 2) {
     return true;
@@ -159,9 +159,9 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
   return true;
 }
 
-}  // namespace nav2_ceres_costaware_smoother
+}  // namespace nav2_constrained_smoother
 
 // Register this smoother as a nav2_core plugin
 PLUGINLIB_EXPORT_CLASS(
-  nav2_ceres_costaware_smoother::CeresCostawareSmoother,
+  nav2_constrained_smoother::ConstrainedSmoother,
   nav2_core::Smoother)

@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
-#define NAV2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
+#ifndef NAV2_CONSTRAINED_SMOOTHER__SMOOTHER_HPP_
+#define NAV2_CONSTRAINED_SMOOTHER__SMOOTHER_HPP_
 
 #include <cmath>
 #include <vector>
@@ -26,13 +26,13 @@
 #include <limits>
 #include <algorithm>
 
-#include "nav2_ceres_costaware_smoother/smoother_cost_function.hpp"
-#include "nav2_ceres_costaware_smoother/utils.hpp"
+#include "nav2_constrained_smoother/smoother_cost_function.hpp"
+#include "nav2_constrained_smoother/utils.hpp"
 
 #include "ceres/ceres.h"
 #include "Eigen/Core"
 
-namespace nav2_ceres_costaware_smoother
+namespace nav2_constrained_smoother
 {
 
 /**
@@ -396,6 +396,6 @@ private:
   std::shared_ptr<ceres::Grid2D<u_char>> costmap_grid_;
 };
 
-}  // namespace nav2_ceres_costaware_smoother
+}  // namespace nav2_constrained_smoother
 
-#endif  // NAV2_CERES_COSTAWARE_SMOOTHER__SMOOTHER_HPP_
+#endif  // NAV2_CONSTRAINED_SMOOTHER__SMOOTHER_HPP_

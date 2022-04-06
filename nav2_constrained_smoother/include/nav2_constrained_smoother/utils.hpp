@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CERES_COSTAWARE_SMOOTHER__UTILS_HPP_
-#define NAV2_CERES_COSTAWARE_SMOOTHER__UTILS_HPP_
+#ifndef NAV2_CONSTRAINED_SMOOTHER__UTILS_HPP_
+#define NAV2_CONSTRAINED_SMOOTHER__UTILS_HPP_
 
 #include <limits>
 #include "Eigen/Core"
 
 #define EPSILON 0.0001
 
-namespace nav2_ceres_costaware_smoother
+namespace nav2_constrained_smoother
 {
 
 /**
@@ -107,6 +107,6 @@ inline Eigen::Matrix<T, 2, 1> tangentDir(
   return Eigen::Matrix<T, 2, 1>(center[1] - pt[1], pt[0] - center[0]);
 }
 
-}  // namespace nav2_ceres_costaware_smoother
+}  // namespace nav2_constrained_smoother
 
-#endif  // NAV2_CERES_COSTAWARE_SMOOTHER__UTILS_HPP_
+#endif  // NAV2_CONSTRAINED_SMOOTHER__UTILS_HPP_

@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_CERES_COSTAWARE_SMOOTHER__OPTIONS_HPP_
-#define NAV2_CERES_COSTAWARE_SMOOTHER__OPTIONS_HPP_
+#ifndef NAV2_CONSTRAINED_SMOOTHER__OPTIONS_HPP_
+#define NAV2_CONSTRAINED_SMOOTHER__OPTIONS_HPP_
 
 #include <map>
 #include <string>
@@ -23,7 +23,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "ceres/ceres.h"
 
-namespace nav2_ceres_costaware_smoother
+namespace nav2_constrained_smoother
 {
 
 /**
@@ -80,7 +80,7 @@ struct SmootherParams
     if (cost_check_points.size() % 3 != 0) {
       RCLCPP_ERROR(
         rclcpp::get_logger(
-          "ceres_costaware_smoother"),
+          "constrained_smoother"),
         "cost_check_points parameter must contain values as follows: "
         "[x1, y1, weight1, x2, y2, weight2, ...]");
       throw std::runtime_error("Invalid parameter: cost_check_points");
@@ -163,7 +163,7 @@ struct OptimizerParams
         valid_types_str << type->first;
       }
       RCLCPP_ERROR(
-        rclcpp::get_logger("ceres_costaware_smoother"),
+        rclcpp::get_logger("constrained_smoother"),
         "Invalid linear_solver_type. Valid values are %s", valid_types_str.str().c_str());
       throw std::runtime_error("Invalid parameter: linear_solver_type");
     }
@@ -197,6 +197,6 @@ struct OptimizerParams
   double gradient_tol;  // Ceres default: 1e-10
 };
 
-}  // namespace nav2_ceres_costaware_smoother
+}  // namespace nav2_constrained_smoother
 
-#endif  // NAV2_CERES_COSTAWARE_SMOOTHER__OPTIONS_HPP_
+#endif  // NAV2_CONSTRAINED_SMOOTHER__OPTIONS_HPP_

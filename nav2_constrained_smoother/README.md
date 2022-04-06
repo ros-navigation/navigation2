@@ -11,7 +11,7 @@ smoother_server:
     optimization_length_backwards: 5.0
 
     SmoothPath:
-      plugin: "nav2_ceres_costaware_smoother/CeresCostawareSmoother"
+      plugin: "nav2_constrained_smoother/ConstrainedSmoother"
       path_downsampling_factor: 3   # every n-th node of the path is taken. Useful for speed-up
       path_upsampling_factor: 1     # 0 - path remains downsampled, 1 - path is upsampled back to original granularity using cubic bezier, 2... - more upsampling
       keep_start_orientation: true  # whether to prevent the start orientation from being smoothed

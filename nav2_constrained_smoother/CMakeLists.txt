@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_ceres_costaware_smoother)
+project(nav2_constrained_smoother)
 
 set(CMAKE_BUILD_TYPE Release) # significant Ceres optimization speedup
 
@@ -19,7 +19,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 nav2_package()
 
-set(library_name nav2_ceres_costaware_smoother)
+set(library_name nav2_constrained_smoother)
 
 include_directories(
   include
@@ -37,7 +37,7 @@ set(dependencies
   pluginlib
 )
 
-add_library(${library_name} SHARED src/ceres_costaware_smoother.cpp)
+add_library(${library_name} SHARED src/constrained_smoother.cpp)
 target_link_libraries(${library_name} ${CERES_LIBRARIES})
 # prevent pluginlib from using boost
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
@@ -74,6 +74,6 @@ ament_export_include_directories(include)
 ament_export_libraries(${library_name})
 ament_export_dependencies(${dependencies})
 
-pluginlib_export_plugin_description_file(nav2_core nav2_ceres_costaware_smoother.xml)
+pluginlib_export_plugin_description_file(nav2_core nav2_constrained_smoother.xml)
 
 ament_package()

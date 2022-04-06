@@ -30,7 +30,7 @@
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "angles/angles.h"
 
-#include "nav2_ceres_costaware_smoother/ceres_costaware_smoother.hpp"
+#include "nav2_constrained_smoother/constrained_smoother.hpp"
 
 #include "geometry_msgs/msg/pose_array.hpp"
 
@@ -104,7 +104,7 @@ protected:
   {
     node_lifecycle_ =
       std::make_shared<rclcpp_lifecycle::LifecycleNode>(
-      "CostawareSmootherTestNode", rclcpp::NodeOptions());
+      "ConstrainedSmootherTestNode", rclcpp::NodeOptions());
 
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_lifecycle_->get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -134,7 +134,7 @@ protected:
     costmap_pub_->on_activate();
 
 
-    smoother_ = std::make_shared<nav2_ceres_costaware_smoother::CeresCostawareSmoother>();
+    smoother_ = std::make_shared<nav2_constrained_smoother::ConstrainedSmoother>();
 
     smoother_->configure(
       node_lifecycle_, "SmoothPath", tf_buffer_, costmap_sub_,
@@ -384,7 +384,7 @@ protected:
   }
 
   std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_lifecycle_;
-  std::shared_ptr<nav2_ceres_costaware_smoother::CeresCostawareSmoother> smoother_;
+  std::shared_ptr<nav2_constrained_smoother::ConstrainedSmoother> smoother_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;

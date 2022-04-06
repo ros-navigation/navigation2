@@ -1,11 +1,11 @@
-ament_add_gtest(test_costaware_smoother
-  test_costaware_smoother.cpp
+ament_add_gtest(test_constrained_smoother
+  test_constrained_smoother.cpp
 )
 
-target_link_libraries(test_costaware_smoother
+target_link_libraries(test_constrained_smoother
   ${library_name}
 )
-ament_target_dependencies(test_costaware_smoother
+ament_target_dependencies(test_constrained_smoother
   ${dependencies}
 )
 

@@ -23,9 +23,9 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_ceres_costaware_smoother/smoother_cost_function.hpp"
+#include "nav2_constrained_smoother/smoother_cost_function.hpp"
 
-class TestableSmootherCostFunction : nav2_ceres_costaware_smoother::SmootherCostFunction
+class TestableSmootherCostFunction : nav2_constrained_smoother::SmootherCostFunction
 {
 public:
   TestableSmootherCostFunction(
@@ -34,7 +34,7 @@ public:
     bool reversing,
     const nav2_costmap_2d::Costmap2D * costmap,
     const std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>> & costmap_interpolator,
-    const nav2_ceres_costaware_smoother::SmootherParams & params,
+    const nav2_constrained_smoother::SmootherParams & params,
     double costmap_weight)
   : SmootherCostFunction(
       original_pos, next_to_last_length_ratio, reversing,
@@ -69,7 +69,7 @@ TEST_F(Test, testingCurvatureResidual)
   TestableSmootherCostFunction fn(
     Eigen::Vector2d(1.0, 0.0), 1.0, false,
     &costmap, std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>>(),
-    nav2_ceres_costaware_smoother::SmootherParams(), 0.0
+    nav2_constrained_smoother::SmootherParams(), 0.0
   );
 
   // test for edge values
@@ -77,7 +77,7 @@ TEST_F(Test, testingCurvatureResidual)
   Eigen::Vector2d pt_other(0.0, 0.0);
   EXPECT_EQ(fn.getCurvatureResidual(0.0, pt, pt_other, pt_other), 0.0);
 
-  nav2_ceres_costaware_smoother::SmootherParams params_no_min_turning_radius;
+  nav2_constrained_smoother::SmootherParams params_no_min_turning_radius;
   params_no_min_turning_radius.max_curvature = 1.0f / 0.0;
   TestableSmootherCostFunction fn_no_min_turning_radius(
     Eigen::Vector2d(1.0, 0.0), 1.0, false,
@@ -94,7 +94,7 @@ TEST_F(Test, testingUtils)
   Eigen::Vector2d pt_next(0.0, 0.0);
 
   // test for intermediate values
-  auto center = nav2_ceres_costaware_smoother::arcCenter(pt_prev, pt, pt_next, false);
+  auto center = nav2_constrained_smoother::arcCenter(pt_prev, pt, pt_next, false);
   // although in this situation the center would be at (0.5, 0.0),
   // cases where pt_prev == pt_next are very rare and thus unhandled
   // during the smoothing points will be separated (and thus made valid) by smoothness cost anyways
@@ -102,25 +102,25 @@ TEST_F(Test, testingUtils)
   EXPECT_EQ(center[1], std::numeric_limits<double>::infinity());
 
   auto tangent =
-    nav2_ceres_costaware_smoother::tangentDir(pt_prev, pt, pt_next, false).normalized();
+    nav2_constrained_smoother::tangentDir(pt_prev, pt, pt_next, false).normalized();
   EXPECT_NEAR(tangent[0], 0, 1e-10);
   EXPECT_NEAR(std::abs(tangent[1]), 1, 1e-10);
 
   // no rotation when mid point is a cusp
-  tangent = nav2_ceres_costaware_smoother::tangentDir(pt_prev, pt, pt_next, true).normalized();
+  tangent = nav2_constrained_smoother::tangentDir(pt_prev, pt, pt_next, true).normalized();
   EXPECT_NEAR(std::abs(tangent[0]), 1, 1e-10);
   EXPECT_NEAR(tangent[1], 0, 1e-10);
 
   pt_prev[0] = -1.0;
   // rotation is mathematically invalid, picking direction of a shorter segment
-  tangent = nav2_ceres_costaware_smoother::tangentDir(pt_prev, pt, pt_next, true).normalized();
+  tangent = nav2_constrained_smoother::tangentDir(pt_prev, pt, pt_next, true).normalized();
   EXPECT_NEAR(std::abs(tangent[0]), 1, 1e-10);
   EXPECT_NEAR(tangent[1], 0, 1e-10);
 
   pt_prev[0] = 0.0;
   pt_next[0] = -1.0;
   // rotation is mathematically invalid, picking direction of a shorter segment
-  tangent = nav2_ceres_costaware_smoother::tangentDir(pt_prev, pt, pt_next, true).normalized();
+  tangent = nav2_constrained_smoother::tangentDir(pt_prev, pt, pt_next, true).normalized();
   EXPECT_NEAR(std::abs(tangent[0]), 1, 1e-10);
   EXPECT_NEAR(tangent[1], 0, 1e-10);
 }
