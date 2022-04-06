@@ -31,40 +31,40 @@ using namespace std::chrono;  // NOLINT
 namespace nav2_system_tests
 {
 
-BackupBehaviorTester::BackupBehaviorTester()
+DriveOnHeadingBehaviorTester::DriveOnHeadingBehaviorTester()
 : is_active_(false),
   initial_pose_received_(false)
 {
-  node_ = rclcpp::Node::make_shared("backup_behavior_test");
+  node_ = rclcpp::Node::make_shared("DriveOnHeading_behavior_test");
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-  client_ptr_ = rclcpp_action::create_client<BackUp>(
+  client_ptr_ = rclcpp_action::create_client<DriveOnHeading>(
     node_->get_node_base_interface(),
     node_->get_node_graph_interface(),
     node_->get_node_logging_interface(),
     node_->get_node_waitables_interface(),
-    "backup");
+    "DriveOnHeading");
 
   publisher_ =
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
 
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&BackupBehaviorTester::amclPoseCallback, this, std::placeholders::_1));
+    std::bind(&DriveOnHeadingBehaviorTester::amclPoseCallback, this, std::placeholders::_1));
 
   stamp_ = node_->now();
 }
 
-BackupBehaviorTester::~BackupBehaviorTester()
+DriveOnHeadingBehaviorTester::~DriveOnHeadingBehaviorTester()
 {
   if (is_active_) {
     deactivate();
   }
 }
 
-void BackupBehaviorTester::activate()
+void DriveOnHeadingBehaviorTester::activate()
 {
   if (is_active_) {
     throw std::runtime_error("Trying to activate while already active");
@@ -93,11 +93,11 @@ void BackupBehaviorTester::activate()
     return;
   }
 
-  RCLCPP_INFO(this->node_->get_logger(), "Backup action server is ready");
+  RCLCPP_INFO(this->node_->get_logger(), "DriveOnHeading action server is ready");
   is_active_ = true;
 }
 
-void BackupBehaviorTester::deactivate()
+void DriveOnHeadingBehaviorTester::deactivate()
 {
   if (!is_active_) {
     throw std::runtime_error("Trying to deactivate while already inactive");
@@ -105,7 +105,7 @@ void BackupBehaviorTester::deactivate()
   is_active_ = false;
 }
 
-bool BackupBehaviorTester::defaultBackupBehaviorTest(
+bool DriveOnHeadingBehaviorTester::defaultDriveOnHeadingBehaviorTest(
   const float target_dist,
   const double tolerance)
 {
@@ -117,7 +117,7 @@ bool BackupBehaviorTester::defaultBackupBehaviorTest(
   // Sleep to let behavior server be ready for serving in multiple runs
   std::this_thread::sleep_for(5s);
 
-  auto goal_msg = BackUp::Goal();
+  auto goal_msg = DriveOnHeading::Goal();
   goal_msg.target.x = target_dist;
   goal_msg.speed = 0.2;
 
@@ -139,7 +139,7 @@ bool BackupBehaviorTester::defaultBackupBehaviorTest(
     return false;
   }
 
-  rclcpp_action::ClientGoalHandle<BackUp>::SharedPtr goal_handle = goal_handle_future.get();
+  rclcpp_action::ClientGoalHandle<DriveOnHeading>::SharedPtr goal_handle = goal_handle_future.get();
   if (!goal_handle) {
     RCLCPP_ERROR(node_->get_logger(), "Goal was rejected by server");
     return false;
@@ -156,7 +156,7 @@ bool BackupBehaviorTester::defaultBackupBehaviorTest(
     return false;
   }
 
-  rclcpp_action::ClientGoalHandle<BackUp>::WrappedResult wrapped_result = result_future.get();
+  rclcpp_action::ClientGoalHandle<DriveOnHeading>::WrappedResult wrapped_result = result_future.get();
 
   switch (wrapped_result.code) {
     case rclcpp_action::ResultCode::SUCCEEDED: break;
@@ -193,7 +193,7 @@ bool BackupBehaviorTester::defaultBackupBehaviorTest(
   return true;
 }
 
-void BackupBehaviorTester::sendInitialPose()
+void DriveOnHeadingBehaviorTester::sendInitialPose()
 {
   geometry_msgs::msg::PoseWithCovarianceStamped pose;
   pose.header.frame_id = "map";
@@ -216,7 +216,7 @@ void BackupBehaviorTester::sendInitialPose()
   RCLCPP_INFO(node_->get_logger(), "Sent initial pose");
 }
 
-void BackupBehaviorTester::amclPoseCallback(
+void DriveOnHeadingBehaviorTester::amclPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
 {
   initial_pose_received_ = true;

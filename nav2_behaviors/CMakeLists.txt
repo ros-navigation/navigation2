@@ -55,11 +55,11 @@ ament_target_dependencies(nav2_spin_behavior
   ${dependencies}
 )
 
-add_library(nav2_backup_behavior SHARED
-  plugins/back_up.cpp
+add_library(nav2_drive_on_heading_behavior SHARED
+  plugins/drive_on_heading.cpp
 )
 
-ament_target_dependencies(nav2_backup_behavior
+ament_target_dependencies(nav2_drive_on_heading_behavior
   ${dependencies}
 )
 
@@ -96,7 +96,7 @@ ament_target_dependencies(${executable_name}
 rclcpp_components_register_nodes(${library_name} "behavior_server::BehaviorServer")
 
 install(TARGETS ${library_name}
-                nav2_backup_behavior
+                nav2_drive_on_heading_behavior
                 nav2_spin_behavior
                 nav2_wait_behavior
   ARCHIVE DESTINATION lib
@@ -125,7 +125,7 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name}
-  nav2_backup_behavior
+  nav2_drive_on_heading_behavior
   nav2_spin_behavior
   nav2_wait_behavior
 )

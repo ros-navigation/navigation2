@@ -5,7 +5,7 @@
 	  </class>
 	</library>
 
-	<library path="nav2_backup_behavior">
+	<library path="nav2_drive_on_heading_behavior">
 	  <class name="nav2_behaviors/DriveOnHeading" type="nav2_behaviors::DriveOnHeading" base_class_type="nav2_core::Behavior">
 	    <description></description>
 	  </class>

@@ -25,7 +25,7 @@
 
 using namespace std::chrono_literals;
 
-using nav2_system_tests::BackupBehaviorTester;
+using nav2_system_tests::DriveOnHeadingBehaviorTester;
 
 std::string testNameGenerator(const testing::TestParamInfo<std::tuple<float, float>> & param)
 {
@@ -35,41 +35,41 @@ std::string testNameGenerator(const testing::TestParamInfo<std::tuple<float, flo
   return name;
 }
 
-class BackupBehaviorTestFixture
+class DriveOnHeadingBehaviorTestFixture
   : public ::testing::TestWithParam<std::tuple<float, float>>
 {
 public:
   static void SetUpTestCase()
   {
-    backup_behavior_tester = new BackupBehaviorTester();
-    if (!backup_behavior_tester->isActive()) {
-      backup_behavior_tester->activate();
+    drive_on_heading_behavior_tester = new DriveOnHeadingBehaviorTester();
+    if (!drive_on_heading_behavior_tester->isActive()) {
+      drive_on_heading_behavior_tester->activate();
     }
   }
 
   static void TearDownTestCase()
   {
-    delete backup_behavior_tester;
-    backup_behavior_tester = nullptr;
+    delete drive_on_heading_behavior_tester;
+    drive_on_heading_behavior_tester = nullptr;
   }
 
 protected:
-  static BackupBehaviorTester * backup_behavior_tester;
+  static DriveOnHeadingBehaviorTester * drive_on_heading_behavior_tester;
 };
 
-BackupBehaviorTester * BackupBehaviorTestFixture::backup_behavior_tester = nullptr;
+DriveOnHeadingBehaviorTester * DriveOnHeadingBehaviorTestFixture::drive_on_heading_behavior_tester = nullptr;
 
-TEST_P(BackupBehaviorTestFixture, testBackupBehavior)
+TEST_P(DriveOnHeadingBehaviorTestFixture, testBackupBehavior)
 {
   float target_dist = std::get<0>(GetParam());
   float tolerance = std::get<1>(GetParam());
 
-  if (!backup_behavior_tester->isActive()) {
-    backup_behavior_tester->activate();
+  if (!drive_on_heading_behavior_tester->isActive()) {
+    drive_on_heading_behavior_tester->activate();
   }
 
   bool success = false;
-  success = backup_behavior_tester->defaultBackupBehaviorTest(target_dist, tolerance);
+  success = drive_on_heading_behavior_tester->defaultDriveOnHeadingBehaviorTest(target_dist, tolerance);
 
   // if intentionally backing into an obstacle, should fail.
   if (target_dist < -0.1) {
@@ -85,8 +85,8 @@ TEST_P(BackupBehaviorTestFixture, testBackupBehavior)
 // behavior server returns true values.
 
 INSTANTIATE_TEST_SUITE_P(
-  BackupBehaviorTests,
-  BackupBehaviorTestFixture,
+  DriveOnHeadingBehaviorTests,
+  DriveOnHeadingBehaviorTestFixture,
   ::testing::Values(
     std::make_tuple(-0.05, 0.01),
     std::make_tuple(-0.2, 0.1),

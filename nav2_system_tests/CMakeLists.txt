@@ -63,7 +63,7 @@ if(BUILD_TESTING)
   add_subdirectory(src/waypoint_follower)
   add_subdirectory(src/behaviors/spin)
   add_subdirectory(src/behaviors/wait)
-  add_subdirectory(src/behaviors/backup)
+  add_subdirectory(src/behaviors/drive_on_heading)
   add_subdirectory(src/costmap_filters)
   install(DIRECTORY maps DESTINATION share/${PROJECT_NAME})
 

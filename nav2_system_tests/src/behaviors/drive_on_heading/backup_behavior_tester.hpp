@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef BEHAVIORS__BACKUP__BACKUP_BEHAVIOR_TESTER_HPP_
-#define BEHAVIORS__BACKUP__BACKUP_BEHAVIOR_TESTER_HPP_
+#ifndef BEHAVIORS__DRIVE_ON_HEADING__DRIVE_ON_HEADING_BEHAVIOR_TESTER_HPP_
+#define BEHAVIORS__DRIVE_ON_HEADING__DRIVE_ON_HEADING_BEHAVIOR_TESTER_HPP_
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -38,17 +38,17 @@
 namespace nav2_system_tests
 {
 
-class BackupBehaviorTester
+class DriveOnHeadingBehaviorTester
 {
 public:
-  using BackUp = nav2_msgs::action::BackUp;
-  using GoalHandleBackup = rclcpp_action::ClientGoalHandle<BackUp>;
+  using DriveOnHeading = nav2_msgs::action::BackUp;
+  using GoalHandleDriveOnHeading = rclcpp_action::ClientGoalHandle<DriveOnHeading>;
 
-  BackupBehaviorTester();
-  ~BackupBehaviorTester();
+  DriveOnHeadingBehaviorTester();
+  ~DriveOnHeadingBehaviorTester();
 
   // Runs a single test with given target yaw
-  bool defaultBackupBehaviorTest(
+  bool defaultDriveOnHeadingBehaviorTest(
     float target_dist,
     double tolerance = 0.1);
 
@@ -81,10 +81,10 @@ private:
   // Subscriber for amcl pose
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
 
-  // Action client to call Backup action
-  rclcpp_action::Client<BackUp>::SharedPtr client_ptr_;
+  // Action client to call DriveOnHeading action
+  rclcpp_action::Client<DriveOnHeading>::SharedPtr client_ptr_;
 };
 
 }  // namespace nav2_system_tests
 
-#endif  // BEHAVIORS__BACKUP__BACKUP_BEHAVIOR_TESTER_HPP_
+#endif  // BEHAVIORS__DRIVE_ON_HEADING__DRIVE_ON_HEADING_BEHAVIOR_TESTER_HPP_
