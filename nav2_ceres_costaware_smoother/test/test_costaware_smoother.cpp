@@ -857,6 +857,18 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   EXPECT_GE(worst_cost_improvement_shifted_cost_check, worst_cost_improvement_simple);
   EXPECT_GT(cost_avoidance_improvement_shifted_cost_check, cost_avoidance_improvement_simple);
 
+  // same results should be achieved with unnormalized weights
+  // (testing automatic weights normalization, i.e. using avg instead of sum)
+  node_lifecycle_->set_parameter(
+    rclcpp::Parameter(
+      "SmoothPath.cost_check_points",
+      std::vector<double>({-0.05, 0.0, 1.0, -0.45, 0.0, 1.0})  // x1, y1, weight1, x2, y2, weight2
+  ));
+  reloadParams();
+  std::vector<Eigen::Vector3d> smoothed_path_scc_unnormalized;
+  EXPECT_TRUE(smoothPath(cusp_near_obstacle, smoothed_path_scc_unnormalized));
+  EXPECT_EQ(smoothed_path_scc, smoothed_path_scc_unnormalized);
+
   ////////////////////////////////////////
   // compare also with extra careful cusp
 

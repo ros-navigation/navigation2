@@ -96,6 +96,8 @@ bool CeresCostawareSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Du
   // populate smoother input with (x, y, forward/reverse dir)
   std::vector<Eigen::Vector3d> path_world;
   path_world.reserve(path.poses.size());
+  // smoother keeps record of start/end orientations so that it
+  // can use them in the final path, preventing degradation of these (often important) values
   Eigen::Vector2d start_dir;
   Eigen::Vector2d end_dir;
   for (size_t i = 0; i < path.poses.size(); i++) {

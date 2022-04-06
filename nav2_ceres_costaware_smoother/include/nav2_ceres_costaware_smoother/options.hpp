@@ -85,6 +85,14 @@ struct SmootherParams
         "[x1, y1, weight1, x2, y2, weight2, ...]");
       throw std::runtime_error("Invalid parameter: cost_check_points");
     }
+    // normalize check point weights so that their sum == 1.0
+    double check_point_weights_sum = 0.0;
+    for (size_t i = 2u; i < cost_check_points.size(); i += 3) {
+      check_point_weights_sum += cost_check_points[i];
+    }
+    for (size_t i = 2u; i < cost_check_points.size(); i += 3) {
+      cost_check_points[i] /= check_point_weights_sum;
+    }
     nav2_util::declare_parameter_if_not_declared(
       node, local_name + "path_downsampling_factor", rclcpp::ParameterValue(1));
     node->get_parameter(local_name + "path_downsampling_factor", path_downsampling_factor);
