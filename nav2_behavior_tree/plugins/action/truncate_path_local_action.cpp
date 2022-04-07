@@ -43,83 +43,114 @@ inline BT::NodeStatus TruncatePathLocal::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
 
-  nav_msgs::msg::Path path;
   double distance_forward, distance_backward;
-  double transform_tolerance;
-  std::string robot_frame;
   geometry_msgs::msg::PoseStamped pose;
   double angular_distance_weight;
+  double max_robot_pose_search_dist;
 
-  getInput("input_path", path);
   getInput("distance_forward", distance_forward);
   getInput("distance_backward", distance_backward);
-  getInput("transform_tolerance", transform_tolerance);
-  getInput("robot_frame", robot_frame);
   getInput("angular_distance_weight", angular_distance_weight);
+  getInput("max_robot_pose_search_dist", max_robot_pose_search_dist);
 
-  if (!getInput("pose", pose)) {
-    if (!getInput("robot_frame", robot_frame)) {
-      RCLCPP_ERROR(
-        config().blackboard->get<rclcpp::Node::SharedPtr>("node")->get_logger(),
-        "Neither pose nor robot_frame specified for %s", name().c_str());
-      return BT::NodeStatus::FAILURE;
-    }
-    if (!nav2_util::getCurrentPose(
-        pose, *tf_buffer_, path.header.frame_id, robot_frame,
-        transform_tolerance))
-    {
-      return BT::NodeStatus::FAILURE;
-    }
+  bool path_pruning = std::isfinite(max_robot_pose_search_dist);
+  updatePath(path_pruning);
+
+  if (!getRobotPose(path_.header.frame_id, pose)) {
+    return BT::NodeStatus::FAILURE;
   }
 
-  if (path.poses.empty()) {
-    setOutput("output_path", path);
+  if (path_.poses.empty()) {
+    setOutput("output_path", path_);
     return BT::NodeStatus::SUCCESS;
+  }
+
+  auto closest_pose_detection_end = path_.poses.end();
+  if (path_pruning) {
+    closest_pose_detection_end = nav2_util::geometry_utils::first_after_integrated_distance(
+      closest_pose_detection_begin_, path_.poses.end(), max_robot_pose_search_dist);
   }
 
   // find the closest pose on the path
   auto current_pose = nav2_util::geometry_utils::min_by(
-    path.poses.begin(), path.poses.end(),
-    [&pose,
-    angular_distance_weight](const geometry_msgs::msg::PoseStamped & ps) {
+    closest_pose_detection_begin_, closest_pose_detection_end,
+    [&pose, angular_distance_weight](const geometry_msgs::msg::PoseStamped & ps) {
       return poseDistance(pose, ps, angular_distance_weight);
     });
 
+  if (path_pruning) {
+    closest_pose_detection_begin_ = current_pose;
+  }
+
   // expand forwards to extract desired length
-  double length = 0;
-  auto end = current_pose - path.poses.begin();
-  while (static_cast<int>(end) < static_cast<int>(path.poses.size() - 1) &&
-    length <= distance_forward)
-  {
-    length += std::hypot(
-      path.poses[end + 1].pose.position.x - path.poses[end].pose.position.x,
-      path.poses[end + 1].pose.position.y - path.poses[end].pose.position.y);
-    end++;
-  }
-  if (length <= distance_forward) {
-    end++;  // add last path pose
-  }
+  auto forward_pose_it = nav2_util::geometry_utils::first_after_integrated_distance(
+    current_pose, path_.poses.end(), distance_forward);
 
   // expand backwards to extract desired length
-  auto begin = current_pose - path.poses.begin();
-  length = 0;
-  while (begin > 0 && length <= distance_backward) {
-    length += std::hypot(
-      path.poses[begin - 1].pose.position.x -
-      path.poses[begin].pose.position.x,
-      path.poses[begin - 1].pose.position.y -
-      path.poses[begin].pose.position.y);
-    begin--;
-  }
-  if (length > distance_backward) {
-    begin++;
-  }
+  // Note: current_pose + 1 is used because reverse iterator points to a cell before it
+  auto backward_pose_it = nav2_util::geometry_utils::first_after_integrated_distance(
+    std::reverse_iterator(current_pose + 1), path_.poses.rend(), distance_backward);
 
-  path.poses = std::vector<geometry_msgs::msg::PoseStamped>(
-    path.poses.begin() + begin, path.poses.begin() + end);
-  setOutput("output_path", path);
+  nav_msgs::msg::Path output_path;
+  output_path.header = path_.header;
+  output_path.poses = std::vector<geometry_msgs::msg::PoseStamped>(
+    backward_pose_it.base(), forward_pose_it);
+  setOutput("output_path", output_path);
 
   return BT::NodeStatus::SUCCESS;
+}
+
+inline void TruncatePathLocal::updatePath(bool reset_path_pruning_on_change)
+{
+  if (reset_path_pruning_on_change) {
+    nav_msgs::msg::Path new_path;
+    getInput("input_path", new_path);
+
+    // detect for changes
+    bool changed = true;
+    if (new_path.poses.size() == path_.poses.size()) {
+      changed = false;
+      for (size_t i = 0; i < new_path.poses.size(); i++) {
+        if (path_.poses[i].pose != new_path.poses[i].pose) {
+          changed = true;
+          break;
+        }
+      }
+    }
+
+    if (changed) {
+      path_ = new_path;
+      closest_pose_detection_begin_ = path_.poses.begin();
+    }
+  } else {
+    getInput("input_path", path_);
+    closest_pose_detection_begin_ = path_.poses.begin();
+  }
+}
+
+inline bool TruncatePathLocal::getRobotPose(
+  std::string path_frame_id, geometry_msgs::msg::PoseStamped & pose)
+{
+  if (!getInput("pose", pose)) {
+    std::string robot_frame;
+    if (!getInput("robot_frame", robot_frame)) {
+      RCLCPP_ERROR(
+        config().blackboard->get<rclcpp::Node::SharedPtr>("node")->get_logger(),
+        "Neither pose nor robot_frame specified for %s", name().c_str());
+      return false;
+    }
+    double transform_tolerance;
+    getInput("transform_tolerance", transform_tolerance);
+    if (!nav2_util::getCurrentPose(
+        pose, *tf_buffer_, path_frame_id, robot_frame, transform_tolerance))
+    {
+      RCLCPP_WARN(
+        config().blackboard->get<rclcpp::Node::SharedPtr>("node")->get_logger(),
+        "Failed to lookup current robot pose for %s", name().c_str());
+      return false;
+    }
+  }
+  return true;
 }
 
 double

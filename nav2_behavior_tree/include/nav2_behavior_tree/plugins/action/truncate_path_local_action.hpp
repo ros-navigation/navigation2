@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <string>
+#include <limits>
 
 #include "nav_msgs/msg/path.hpp"
 
@@ -68,9 +69,14 @@ public:
         "pose", "Manually specified pose to be used"
         "if overriding current robot pose"),
       BT::InputPort<double>(
-        "angular_distance_weight", 0.2,
-        "Weight of angular distance relative to positional distance when "
-        "finding which path pose is closest to robot"),
+        "angular_distance_weight", 0.0,
+        "Weight of angular distance relative to positional distance when finding which path "
+        "pose is closest to robot. Not applicable on paths without orientations assigned"),
+      BT::InputPort<double>(
+        "max_robot_pose_search_dist", std::numeric_limits<double>::infinity(),
+        "Maximum forward integrated distance along the path (starting from the last detected pose) "
+        "to bound the search for the closest pose to the robot. When set to infinity (default), "
+        "whole path is searched every time"),
     };
   }
 
@@ -86,12 +92,30 @@ private:
    */
   BT::NodeStatus tick() override;
 
+  /**
+   * @brief Get either specified input pose or robot pose in path frame
+   * @param path_frame_id Frame ID of path
+   * @param pose Output pose
+   * @return True if succeeded
+   */
+  bool getRobotPose(std::string path_frame_id, geometry_msgs::msg::PoseStamped & pose);
+
+  /**
+   * @brief Update path from blackboard
+   * @param reset_path_pruning_on_change True if should detect changes in path
+   * and reset path pruning whenever a change occurs
+   */
+  void updatePath(bool reset_path_pruning_on_change);
+
   static double poseDistance(
     const geometry_msgs::msg::PoseStamped & pose1,
     const geometry_msgs::msg::PoseStamped & pose2,
     const double angular_distance_weight);
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+
+  nav_msgs::msg::Path path_;
+  nav_msgs::msg::Path::_poses_type::iterator closest_pose_detection_begin_;
 };
 
 }  // namespace nav2_behavior_tree

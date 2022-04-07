@@ -96,7 +96,8 @@
       <input_port name="robot_frame">Robot base frame id</input_port>
       <input_port name="transform_tolerance">Transform lookup tolerance</input_port>
       <input_port name="pose">Manually specified pose to be used if overriding current robot pose</input_port>
-      <input_port name="angular_distance_weight">Weight of angular distance relative to positional distance when finding which path pose is closest to robot</input_port>
+      <input_port name="angular_distance_weight">Weight of angular distance relative to positional distance when finding which path pose is closest to robot. Not applicable on paths without orientations assigned</input_port>
+      <input_port name="max_robot_pose_search_dist">Maximum forward integrated distance along the path (starting from the last detected pose) to bound the search for the closest pose to the robot. When set to infinity (default), whole path is searched every time</input_port>
       <output_port name="output_path">Truncated path to utilize</output_port>
     </Action>
 
