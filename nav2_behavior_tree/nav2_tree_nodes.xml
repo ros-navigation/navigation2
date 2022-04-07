@@ -8,8 +8,8 @@
   <TreeNodesModel>
     <!-- ############################### ACTION NODES ################################# -->
     <Action ID="DriveOnHeading">
-      <input_port name="backup_dist">Distance to backup</input_port>
-      <input_port name="backup_speed">Speed at which to backup</input_port>
+      <input_port name="dist_to_travel">Distance to travel</input_port>
+      <input_port name="speed">Speed at which to travel</input_port>
       <input_port name="time_allowance">Allowed time for reversing</input_port>
       <input_port name="server_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>

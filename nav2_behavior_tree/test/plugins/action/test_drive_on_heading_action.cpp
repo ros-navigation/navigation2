@@ -127,20 +127,20 @@ TEST_F(DriveOnHeadingActionTestFixture, test_ports)
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<double>("backup_dist"), 0.15);
-  EXPECT_EQ(tree_->rootNode()->getInput<double>("backup_speed"), 0.025);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("dist_to_travel"), 0.15);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("speed"), 0.025);
 
   xml_txt =
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <DriveOnHeading backup_dist="2" backup_speed="0.26" />
+            <DriveOnHeading dist_to_travel="2" speed="0.26" />
         </BehaviorTree>
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<double>("backup_dist"), 2.0);
-  EXPECT_EQ(tree_->rootNode()->getInput<double>("backup_speed"), 0.26);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("dist_to_travel"), 2.0);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("speed"), 0.26);
 }
 
 TEST_F(DriveOnHeadingActionTestFixture, test_tick)
@@ -149,7 +149,7 @@ TEST_F(DriveOnHeadingActionTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <DriveOnHeading backup_dist="2" backup_speed="0.26" />
+            <DriveOnHeading dist_to_travel="2" speed="0.26" />
         </BehaviorTree>
       </root>)";
 
@@ -174,7 +174,7 @@ TEST_F(DriveOnHeadingActionTestFixture, test_failure)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <DriveOnHeading backup_dist="2" backup_speed="0.26" />
+            <DriveOnHeading dist_to_travel="2" speed="0.26" />
         </BehaviorTree>
       </root>)";
 

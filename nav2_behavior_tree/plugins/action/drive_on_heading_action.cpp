@@ -27,9 +27,9 @@ DriveOnHeadingAction::DriveOnHeadingAction(
 : BtActionNode<nav2_msgs::action::BackUp>(xml_tag_name, action_name, conf)
 {
   double dist;
-  getInput("backup_dist", dist);
+  getInput("dist_to_travel", dist);
   double speed;
-  getInput("backup_speed", speed);
+  getInput("speed", speed);
   double time_allowance;
   getInput("time_allowance", time_allowance);
 
