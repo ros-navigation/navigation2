@@ -20,14 +20,14 @@
 #include "behaviortree_cpp_v3/bt_factory.h"
 
 #include "../../test_action_server.hpp"
-#include "nav2_behavior_tree/plugins/action/back_up_cancel_node.hpp"
+#include "nav2_behavior_tree/plugins/action/drive_on_heading_cancel_node.hpp"
 #include "lifecycle_msgs/srv/change_state.hpp"
 
-class CancelBackUpServer : public TestActionServer<nav2_msgs::action::BackUp>
+class CancelDriveOnHeadingServer : public TestActionServer<nav2_msgs::action::BackUp>
 {
 public:
-  CancelBackUpServer()
-  : TestActionServer("back_up")
+  CancelDriveOnHeadingServer()
+  : TestActionServer("drive_on_heading_cancel")
   {}
 
 protected:
@@ -36,18 +36,18 @@ protected:
     goal_handle)
   {
     while (!goal_handle->is_canceling()) {
-      // BackUping here until goal cancels
+      // DriveOnHeadingCancel here until goal cancels
       std::this_thread::sleep_for(std::chrono::milliseconds(15));
     }
   }
 };
 
-class CancelBackUpActionTestFixture : public ::testing::Test
+class CancelDriveOnHeadingTestFixture : public ::testing::Test
 {
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("cancel_back_up_action_test_fixture");
+    node_ = std::make_shared<rclcpp::Node>("cancel_drive_on_heading_action_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -65,16 +65,18 @@ public:
       "bt_loop_duration",
       std::chrono::milliseconds(10));
     client_ = rclcpp_action::create_client<nav2_msgs::action::BackUp>(
-      node_, "back_up");
+      node_, "drive_on_heading_cancel");
 
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
       {
-        return std::make_unique<nav2_behavior_tree::BackUpCancel>(
-          name, "back_up", config);
+        return std::make_unique<nav2_behavior_tree::DriveOnHeadingCancel>(
+          name, "drive_on_heading_cancel", config);
       };
 
-    factory_->registerBuilder<nav2_behavior_tree::BackUpCancel>("CancelBackUp", builder);
+    factory_->registerBuilder<nav2_behavior_tree::DriveOnHeadingCancel>(
+      "CancelDriveOnHeading",
+      builder);
   }
 
   static void TearDownTestCase()
@@ -91,7 +93,7 @@ public:
     tree_.reset();
   }
 
-  static std::shared_ptr<CancelBackUpServer> action_server_;
+  static std::shared_ptr<CancelDriveOnHeadingServer> action_server_;
   static std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::BackUp>> client_;
 
 protected:
@@ -101,24 +103,24 @@ protected:
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr CancelBackUpActionTestFixture::node_ = nullptr;
-std::shared_ptr<CancelBackUpServer>
-CancelBackUpActionTestFixture::action_server_ = nullptr;
+rclcpp::Node::SharedPtr CancelDriveOnHeadingTestFixture::node_ = nullptr;
+std::shared_ptr<CancelDriveOnHeadingServer>
+CancelDriveOnHeadingTestFixture::action_server_ = nullptr;
 std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::BackUp>>
-CancelBackUpActionTestFixture::client_ = nullptr;
+CancelDriveOnHeadingTestFixture::client_ = nullptr;
 
-BT::NodeConfiguration * CancelBackUpActionTestFixture::config_ = nullptr;
+BT::NodeConfiguration * CancelDriveOnHeadingTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory>
-CancelBackUpActionTestFixture::factory_ = nullptr;
-std::shared_ptr<BT::Tree> CancelBackUpActionTestFixture::tree_ = nullptr;
+CancelDriveOnHeadingTestFixture::factory_ = nullptr;
+std::shared_ptr<BT::Tree> CancelDriveOnHeadingTestFixture::tree_ = nullptr;
 
-TEST_F(CancelBackUpActionTestFixture, test_ports)
+TEST_F(CancelDriveOnHeadingTestFixture, test_ports)
 {
   std::string xml_txt =
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-             <CancelBackUp name="BackUpCancel"/>
+             <CancelDriveOnHeading name="CancelDriveOnHeading"/>
         </BehaviorTree>
       </root>)";
 
@@ -131,7 +133,7 @@ TEST_F(CancelBackUpActionTestFixture, test_ports)
   // Setting target pose
   goal_msg.target.x = 0.5;
 
-  // BackUping for server and sending a goal
+  // DriveOnHeadingCancel for server and sending a goal
   client_->wait_for_action_server();
   client_->async_send_goal(goal_msg, send_goal_options);
 
@@ -155,10 +157,10 @@ int main(int argc, char ** argv)
   // initialize ROS
   rclcpp::init(argc, argv);
 
-  // initialize action server and back_up on new thread
-  CancelBackUpActionTestFixture::action_server_ = std::make_shared<CancelBackUpServer>();
+  // initialize action server and drive on new thread
+  CancelDriveOnHeadingTestFixture::action_server_ = std::make_shared<CancelDriveOnHeadingServer>();
   std::thread server_thread([]() {
-      rclcpp::spin(CancelBackUpActionTestFixture::action_server_);
+      rclcpp::spin(CancelDriveOnHeadingTestFixture::action_server_);
     });
 
   int all_successful = RUN_ALL_TESTS();

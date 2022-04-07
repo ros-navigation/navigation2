@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__BACK_UP_CANCEL_NODE_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__BACK_UP_CANCEL_NODE_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__DRIVE_ON_HEADING_CANCEL_NODE_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__DRIVE_ON_HEADING_CANCEL_NODE_HPP_
 
 #include <memory>
 #include <string>
@@ -28,7 +28,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::BackUp
  */
-class BackUpCancel : public BtCancelActionNode<nav2_msgs::action::BackUp>
+class DriveOnHeadingCancel : public BtCancelActionNode<nav2_msgs::action::BackUp>
 {
 public:
   /**
@@ -37,7 +37,7 @@ public:
    * @param action_name Action name this node creates a client for
    * @param conf BT node configuration
    */
-  BackUpCancel(
+  DriveOnHeadingCancel(
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf);
@@ -56,4 +56,4 @@ public:
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__BACK_UP_CANCEL_NODE_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__DRIVE_ON_HEADING_CANCEL_NODE_HPP_

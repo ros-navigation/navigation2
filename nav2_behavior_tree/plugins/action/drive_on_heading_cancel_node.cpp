@@ -17,12 +17,12 @@
 
 #include "std_msgs/msg/string.hpp"
 
-#include "nav2_behavior_tree/plugins/action/back_up_cancel_node.hpp"
+#include "nav2_behavior_tree/plugins/action/drive_on_heading_cancel_node.hpp"
 
 namespace nav2_behavior_tree
 {
 
-BackUpCancel::BackUpCancel(
+DriveOnHeadingCancel::DriveOnHeadingCancel(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
@@ -38,10 +38,10 @@ BT_REGISTER_NODES(factory)
   BT::NodeBuilder builder =
     [](const std::string & name, const BT::NodeConfiguration & config)
     {
-      return std::make_unique<nav2_behavior_tree::BackUpCancel>(
-        name, "backup", config);
+      return std::make_unique<nav2_behavior_tree::DriveOnHeadingCancel>(
+        name, "drive_on_heading", config);
     };
 
-  factory.registerBuilder<nav2_behavior_tree::BackUpCancel>(
-    "CancelBackUp", builder);
+  factory.registerBuilder<nav2_behavior_tree::DriveOnHeadingCancel>(
+    "CancelDriveOnHeading", builder);
 }
