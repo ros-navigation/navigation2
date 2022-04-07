@@ -409,6 +409,47 @@ TEST_F(TestNode, testRaytracing) {
 }
 
 /**
+ * Test dynamic parameter setting of obstacle layer
+ */
+TEST_F(TestNode, testDynParamsSetObstacle)
+{
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  // Add obstacle layer
+  std::vector<std::string> plugins_str;
+  plugins_str.push_back("obstacle_layer");
+  costmap->set_parameter(rclcpp::Parameter("plugins", plugins_str));
+  costmap->declare_parameter(
+    "obstacle_layer.plugin",
+    rclcpp::ParameterValue(std::string("nav2_costmap_2d::ObstacleLayer")));
+
+  costmap->set_parameter(rclcpp::Parameter("global_frame", std::string("base_link")));
+  costmap->on_configure(rclcpp_lifecycle::State());
+
+  costmap->on_activate(rclcpp_lifecycle::State());
+
+  auto parameter_client = std::make_shared<rclcpp::AsyncParametersClient>(
+    costmap->get_node_base_interface(), costmap->get_node_topics_interface(),
+    costmap->get_node_graph_interface(),
+    costmap->get_node_services_interface());
+
+  auto results = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("obstacle_layer.max_obstacle_height", 4.0)
+  });
+
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(costmap->get_parameter("obstacle_layer.max_obstacle_height").as_double(), 4.0);
+
+  costmap->on_deactivate(rclcpp_lifecycle::State());
+  costmap->on_cleanup(rclcpp_lifecycle::State());
+  costmap->on_shutdown(rclcpp_lifecycle::State());
+}
+
+/**
  * Test dynamic parameter setting of voxel layer
  */
 TEST_F(TestNode, testDynParamsSetVoxel)

@@ -55,12 +55,14 @@ using nav2_costmap_2d::FREE_SPACE;
 
 using nav2_costmap_2d::ObservationBuffer;
 using nav2_costmap_2d::Observation;
+using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
 
 ObstacleLayer::~ObstacleLayer()
 {
+  dyn_params_handler_.reset();
   for (auto & notifier : observation_notifiers_) {
     notifier.reset();
   }
@@ -93,6 +95,12 @@ void ObstacleLayer::onInitialize()
   node->get_parameter("track_unknown_space", track_unknown_space);
   node->get_parameter("transform_tolerance", transform_tolerance);
   node->get_parameter(name_ + "." + "observation_sources", topics_string);
+
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &ObstacleLayer::dynamicParametersCallback,
+      this,
+      std::placeholders::_1));
 
   RCLCPP_INFO(
     logger_,
@@ -270,6 +278,28 @@ void ObstacleLayer::onInitialize()
       observation_notifiers_.back()->setTargetFrames(target_frames);
     }
   }
+}
+
+rcl_interfaces::msg::SetParametersResult
+ObstacleLayer::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + "." + "max_obstacle_height") {
+        max_obstacle_height_ = parameter.as_double();
+      }
+    }
+  }
+
+  result.successful = true;
+  return result;
 }
 
 void
