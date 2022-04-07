@@ -435,14 +435,20 @@ TEST_F(TestNode, testDynParamsSetObstacle)
 
   auto results = parameter_client->set_parameters_atomically(
   {
-    rclcpp::Parameter("obstacle_layer.max_obstacle_height", 4.0)
+    rclcpp::Parameter("obstacle_layer.combination_method", 5),
+    rclcpp::Parameter("obstacle_layer.max_obstacle_height", 4.0),
+    rclcpp::Parameter("obstacle_layer.enabled", false),
+    rclcpp::Parameter("obstacle_layer.footprint_clearing_enabled", false)
   });
 
   rclcpp::spin_until_future_complete(
     costmap->get_node_base_interface(),
     results);
 
+  EXPECT_EQ(costmap->get_parameter("obstacle_layer.combination_method").as_int(), 5);
   EXPECT_EQ(costmap->get_parameter("obstacle_layer.max_obstacle_height").as_double(), 4.0);
+  EXPECT_EQ(costmap->get_parameter("obstacle_layer.enabled").as_bool(), false);
+  EXPECT_EQ(costmap->get_parameter("obstacle_layer.footprint_clearing_enabled").as_bool(), false);
 
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());

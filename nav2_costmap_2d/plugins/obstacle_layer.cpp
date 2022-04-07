@@ -76,7 +76,6 @@ void ObstacleLayer::onInitialize()
   // The topics that we'll subscribe to from the parameter server
   std::string topics_string;
 
-  // TODO(mjeronimo): these four are candidates for dynamic update
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(true));
   declareParameter("max_obstacle_height", rclcpp::ParameterValue(2.0));
@@ -294,6 +293,17 @@ ObstacleLayer::dynamicParametersCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "max_obstacle_height") {
         max_obstacle_height_ = parameter.as_double();
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == name_ + "." + "enabled") {
+        enabled_ = parameter.as_bool();
+        current_ = false;
+      } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
+        footprint_clearing_enabled_ = parameter.as_bool();
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == name_ + "." + "combination_method") {
+        combination_method_ = parameter.as_int();
       }
     }
   }
