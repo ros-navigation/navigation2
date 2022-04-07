@@ -294,6 +294,14 @@ public:
    */
   bool getUseRadius() {return use_radius_;}
 
+  /**
+   * @brief  Get the costmap's robot_radius_ parameter, corresponding to
+   * raidus of the robot footprint when it is defined as as circle
+   * (i.e. when use_radius_ == true).
+   * @return  robot_radius_
+   */
+  double getRobotRadius() {return robot_radius_;}
+
 protected:
   rclcpp::Node::SharedPtr client_node_;
 
