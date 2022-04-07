@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__BACK_UP_ACTION_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__BACK_UP_ACTION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__DRIVE_ON_HEADING_ACTION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__DRIVE_ON_HEADING_ACTION_HPP_
 
 #include <string>
 
@@ -26,16 +26,16 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::BackUp
  */
-class BackUpAction : public BtActionNode<nav2_msgs::action::BackUp>
+class DriveOnHeadingAction : public BtActionNode<nav2_msgs::action::BackUp>
 {
 public:
   /**
-   * @brief A constructor for nav2_behavior_tree::BackUpAction
+   * @brief A constructor for nav2_behavior_tree::DriveOnHeadingAction
    * @param xml_tag_name Name for the XML tag for this node
    * @param action_name Action name this node creates a client for
    * @param conf BT node configuration
    */
-  BackUpAction(
+  DriveOnHeadingAction(
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf);
@@ -62,4 +62,4 @@ public:
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__BACK_UP_ACTION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__DRIVE_ON_HEADING_ACTION_HPP_

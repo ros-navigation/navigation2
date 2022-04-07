@@ -21,13 +21,13 @@
 #include "behaviortree_cpp_v3/bt_factory.h"
 
 #include "../../test_action_server.hpp"
-#include "nav2_behavior_tree/plugins/action/back_up_action.hpp"
+#include "nav2_behavior_tree/plugins/action/drive_on_heading_action.hpp"
 
-class BackUpActionServer : public TestActionServer<nav2_msgs::action::BackUp>
+class DriveOnHeadingActionServer : public TestActionServer<nav2_msgs::action::BackUp>
 {
 public:
-  BackUpActionServer()
-  : TestActionServer("backup")
+  DriveOnHeadingActionServer()
+  : TestActionServer("drive_on_heading")
   {}
 
 protected:
@@ -47,12 +47,12 @@ protected:
   }
 };
 
-class BackUpActionTestFixture : public ::testing::Test
+class DriveOnHeadingActionTestFixture : public ::testing::Test
 {
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("backup_action_test_fixture");
+    node_ = std::make_shared<rclcpp::Node>("drive_on_heading_action_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
     config_ = new BT::NodeConfiguration();
 
@@ -74,11 +74,11 @@ public:
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
       {
-        return std::make_unique<nav2_behavior_tree::BackUpAction>(
-          name, "backup", config);
+        return std::make_unique<nav2_behavior_tree::DriveOnHeadingAction>(
+          name, "drive_on_heading", config);
       };
 
-    factory_->registerBuilder<nav2_behavior_tree::BackUpAction>("BackUp", builder);
+    factory_->registerBuilder<nav2_behavior_tree::DriveOnHeadingAction>("DriveOnHeading", builder);
   }
 
   static void TearDownTestCase()
@@ -100,7 +100,7 @@ public:
     tree_.reset();
   }
 
-  static std::shared_ptr<BackUpActionServer> action_server_;
+  static std::shared_ptr<DriveOnHeadingActionServer> action_server_;
 
 protected:
   static rclcpp::Node::SharedPtr node_;
@@ -109,19 +109,20 @@ protected:
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr BackUpActionTestFixture::node_ = nullptr;
-std::shared_ptr<BackUpActionServer> BackUpActionTestFixture::action_server_ = nullptr;
-BT::NodeConfiguration * BackUpActionTestFixture::config_ = nullptr;
-std::shared_ptr<BT::BehaviorTreeFactory> BackUpActionTestFixture::factory_ = nullptr;
-std::shared_ptr<BT::Tree> BackUpActionTestFixture::tree_ = nullptr;
+rclcpp::Node::SharedPtr DriveOnHeadingActionTestFixture::node_ = nullptr;
+std::shared_ptr<DriveOnHeadingActionServer>
+DriveOnHeadingActionTestFixture::action_server_ = nullptr;
+BT::NodeConfiguration * DriveOnHeadingActionTestFixture::config_ = nullptr;
+std::shared_ptr<BT::BehaviorTreeFactory> DriveOnHeadingActionTestFixture::factory_ = nullptr;
+std::shared_ptr<BT::Tree> DriveOnHeadingActionTestFixture::tree_ = nullptr;
 
-TEST_F(BackUpActionTestFixture, test_ports)
+TEST_F(DriveOnHeadingActionTestFixture, test_ports)
 {
   std::string xml_txt =
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <BackUp />
+            <DriveOnHeading />
         </BehaviorTree>
       </root>)";
 
@@ -133,7 +134,7 @@ TEST_F(BackUpActionTestFixture, test_ports)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <BackUp backup_dist="2" backup_speed="0.26" />
+            <DriveOnHeading backup_dist="2" backup_speed="0.26" />
         </BehaviorTree>
       </root>)";
 
@@ -142,13 +143,13 @@ TEST_F(BackUpActionTestFixture, test_ports)
   EXPECT_EQ(tree_->rootNode()->getInput<double>("backup_speed"), 0.26);
 }
 
-TEST_F(BackUpActionTestFixture, test_tick)
+TEST_F(DriveOnHeadingActionTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <BackUp backup_dist="2" backup_speed="0.26" />
+            <DriveOnHeading backup_dist="2" backup_speed="0.26" />
         </BehaviorTree>
       </root>)";
 
@@ -167,13 +168,13 @@ TEST_F(BackUpActionTestFixture, test_tick)
   EXPECT_EQ(goal->speed, 0.26f);
 }
 
-TEST_F(BackUpActionTestFixture, test_failure)
+TEST_F(DriveOnHeadingActionTestFixture, test_failure)
 {
   std::string xml_txt =
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <BackUp backup_dist="2" backup_speed="0.26" />
+            <DriveOnHeading backup_dist="2" backup_speed="0.26" />
         </BehaviorTree>
       </root>)";
 
@@ -203,9 +204,9 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
 
   // initialize action server and spin on new thread
-  BackUpActionTestFixture::action_server_ = std::make_shared<BackUpActionServer>();
+  DriveOnHeadingActionTestFixture::action_server_ = std::make_shared<DriveOnHeadingActionServer>();
   std::thread server_thread([]() {
-      rclcpp::spin(BackUpActionTestFixture::action_server_);
+      rclcpp::spin(DriveOnHeadingActionTestFixture::action_server_);
     });
 
   int all_successful = RUN_ALL_TESTS();

@@ -75,7 +75,7 @@ list(APPEND plugin_libs nav2_smooth_path_action_bt_node)
 add_library(nav2_follow_path_action_bt_node SHARED plugins/action/follow_path_action.cpp)
 list(APPEND plugin_libs nav2_follow_path_action_bt_node)
 
-add_library(nav2_back_up_action_bt_node SHARED plugins/action/back_up_action.cpp)
+add_library(nav2_back_up_action_bt_node SHARED plugins/action/drive_on_heading_action.cpp)
 list(APPEND plugin_libs nav2_back_up_action_bt_node)
 
 add_library(nav2_spin_action_bt_node SHARED plugins/action/spin_action.cpp)
