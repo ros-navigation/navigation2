@@ -315,7 +315,7 @@ behavior_server:
     behavior_plugins: ["spin", "drive_on_heading", "wait"]
     spin:
       plugin: "nav2_behaviors/Spin"
-    backup:
+    drive_on_heading:
       plugin: "nav2_behaviors/DriveOnHeading"
     wait:
       plugin: "nav2_behaviors/Wait"
