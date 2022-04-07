@@ -71,7 +71,8 @@ LifecycleManager::LifecycleManager()
     std::string("Shutting down ");
 
   createLifecycleServiceClients();
-
+      server_respawn_timer_ = create_wall_timer(
+        1000ms, std::bind(&LifecycleManager::server_respawn, this));
   if (autostart_) {
     startup();
   }
@@ -81,7 +82,22 @@ LifecycleManager::~LifecycleManager()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
 }
-
+  void LifecycleManager::server_respawn()
+  {
+    for (auto &node_name : node_names_)
+    {
+        if (!(node_map_[node_name]->get_state(5s) == transition_state_map_[Transition::TRANSITION_CONFIGURE]))
+        {
+        // RCLCPP_INFO(get_logger(), "TRANSITION_CONFIGURE node %s ", node_name.c_str());
+          if (!(node_map_[node_name]->get_state(5s) == transition_state_map_[Transition::TRANSITION_ACTIVATE]))
+          {
+            node_map_[node_name]->change_state(Transition::TRANSITION_CONFIGURE);
+            node_map_[node_name]->change_state(Transition::TRANSITION_ACTIVATE);
+      
+        }
+      }
+    }
+  }
 void
 LifecycleManager::managerCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,

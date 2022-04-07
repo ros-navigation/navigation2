@@ -85,6 +85,7 @@ def generate_launch_description():
             executable='map_server',
             name='map_server',
             output='screen',
+            respawn=True,
             parameters=[configured_params],
             remappings=remappings),
 
@@ -93,6 +94,7 @@ def generate_launch_description():
             executable='amcl',
             name='amcl',
             output='screen',
+            respawn=True,
             parameters=[configured_params],
             remappings=remappings),
 
@@ -101,7 +103,8 @@ def generate_launch_description():
             executable='lifecycle_manager',
             name='lifecycle_manager_localization',
             output='screen',
+            respawn=True,
             parameters=[{'use_sim_time': use_sim_time},
-                        {'autostart': autostart},
+                        {'autostart': True},
                         {'node_names': lifecycle_nodes}])
     ])
