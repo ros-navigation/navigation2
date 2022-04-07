@@ -23,7 +23,7 @@
 #include "../../test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/drive_on_heading_action.hpp"
 
-class DriveOnHeadingActionServer : public TestActionServer<nav2_msgs::action::BackUp>
+class DriveOnHeadingActionServer : public TestActionServer<nav2_msgs::action::DriveOnHeading>
 {
 public:
   DriveOnHeadingActionServer()
@@ -32,12 +32,13 @@ public:
 
 protected:
   void execute(
-    const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::BackUp>>
+    const typename std::shared_ptr<rclcpp_action::ServerGoalHandle
+    <nav2_msgs::action::DriveOnHeading>>
     goal_handle)
   override
   {
-    nav2_msgs::action::BackUp::Result::SharedPtr result =
-      std::make_shared<nav2_msgs::action::BackUp::Result>();
+    nav2_msgs::action::DriveOnHeading::Result::SharedPtr result =
+      std::make_shared<nav2_msgs::action::DriveOnHeading::Result>();
     bool return_success = getReturnSuccess();
     if (return_success) {
       goal_handle->succeed(result);
@@ -127,8 +128,9 @@ TEST_F(DriveOnHeadingActionTestFixture, test_ports)
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<double>("dist_to_travel"), 0.15);
-  EXPECT_EQ(tree_->rootNode()->getInput<double>("speed"), 0.025);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("dist_to_travel"), -0.15);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("speed"), -0.025);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("time_allowance"), 10.0);
 
   xml_txt =
     R"(

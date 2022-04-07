@@ -57,8 +57,8 @@ Status DriveOnHeading::onRun(const std::shared_ptr<const DriveOnHeadingAction::G
   }
 
   // Silently ensure that both the speed and direction are positive.
-  command_x_ = std::fabs(command->target.x);
-  command_speed_ = std::fabs(command->speed);
+  command_x_ = command->target.x;
+  command_speed_ = command->speed;
   command_time_allowance_ = command->time_allowance;
 
   end_time_ = steady_clock_.now() + command_time_allowance_;
@@ -101,7 +101,7 @@ Status DriveOnHeading::onCycleUpdate()
   feedback_->distance_traveled = distance;
   action_server_->publish_feedback(feedback_);
 
-  if (distance >= command_x_) {
+  if (distance >= std::fabs(command_x_)) {
     stopRobot();
     return Status::SUCCEEDED;
   }
@@ -110,7 +110,7 @@ Status DriveOnHeading::onCycleUpdate()
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
   cmd_vel->linear.y = 0.0;
   cmd_vel->angular.z = 0.0;
-  cmd_vel->linear.x = -command_speed_;
+  cmd_vel->linear.x = command_speed_;
 
   geometry_msgs::msg::Pose2D pose2d;
   pose2d.x = current_pose.pose.position.x;

@@ -18,7 +18,7 @@
 #include <memory>
 #include <string>
 
-#include "nav2_msgs/action/back_up.hpp"
+#include "nav2_msgs/action/drive_on_heading.hpp"
 
 #include "nav2_behavior_tree/bt_cancel_action_node.hpp"
 
@@ -26,13 +26,13 @@ namespace nav2_behavior_tree
 {
 
 /**
- * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::BackUp
+ * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::DriveOnHeading
  */
-class DriveOnHeadingCancel : public BtCancelActionNode<nav2_msgs::action::BackUp>
+class DriveOnHeadingCancel : public BtCancelActionNode<nav2_msgs::action::DriveOnHeading>
 {
 public:
   /**
-   * @brief A constructor for nav2_behavior_tree::BackUpAction
+   * @brief A constructor for nav2_behavior_tree::DriveOnHeadingCancel
    * @param xml_tag_name Name for the XML tag for this node
    * @param action_name Action name this node creates a client for
    * @param conf BT node configuration

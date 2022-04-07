@@ -4,7 +4,7 @@ The `nav2_behaviors` package implements a task server for executing behaviors.
 
 The package defines:
 - A `TimedBehavior` template which is used as a base class to implement specific timed behavior action server - but not required.
-- The `BackUp`, `Spin` and `Wait` behaviors.
+- The `DriveOnHeading`, `Spin` and `Wait` behaviors.
 
 The only required class a behavior must derive from is the `nav2_core/behavior.hpp` class, which implements the pluginlib interface the behavior server will use to dynamically load your behavior. The `nav2_behaviors/timed_behavior.hpp` derives from this class and implements a generic action server for a timed behavior behavior (e.g. calls an implmentation function on a regular time interval to compute a value) but **this is not required** if it is not helpful. A behavior does not even need to be an action if you do not wish, it may be a service or other interface. However, most motion and behavior primitives are probably long-running and make sense to be modeled as actions, so the provided `timed_behavior.hpp` helps in managing the complexity to simplify new behavior development, described more below.
 

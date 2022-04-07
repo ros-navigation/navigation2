@@ -38,7 +38,7 @@ ServerHandler::ServerHandler()
     node_, "spin");
   wait_server = std::make_unique<DummyActionServer<nav2_msgs::action::Wait>>(
     node_, "wait");
-  backup_server = std::make_unique<DummyActionServer<nav2_msgs::action::BackUp>>(
+  backup_server = std::make_unique<DummyActionServer<nav2_msgs::action::DriveOnHeading>>(
     node_, "backup");
   ntp_server = std::make_unique<DummyActionServer<nav2_msgs::action::ComputePathThroughPoses>>(
     node_, "compute_path_through_poses");

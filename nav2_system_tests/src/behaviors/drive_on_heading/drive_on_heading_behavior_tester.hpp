@@ -25,7 +25,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "angles/angles.h"
-#include "nav2_msgs/action/back_up.hpp"
+#include "nav2_msgs/action/drive_on_heading.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/node_thread.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -41,7 +41,7 @@ namespace nav2_system_tests
 class DriveOnHeadingBehaviorTester
 {
 public:
-  using DriveOnHeading = nav2_msgs::action::BackUp;
+  using DriveOnHeading = nav2_msgs::action::DriveOnHeading;
   using GoalHandleDriveOnHeading = rclcpp_action::ClientGoalHandle<DriveOnHeading>;
 
   DriveOnHeadingBehaviorTester();

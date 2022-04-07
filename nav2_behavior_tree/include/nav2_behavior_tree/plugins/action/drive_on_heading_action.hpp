@@ -18,15 +18,15 @@
 #include <string>
 
 #include "nav2_behavior_tree/bt_action_node.hpp"
-#include "nav2_msgs/action/back_up.hpp"
+#include "nav2_msgs/action/drive_on_heading.hpp"
 
 namespace nav2_behavior_tree
 {
 
 /**
- * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::BackUp
+ * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::DriveOnHeading
  */
-class DriveOnHeadingAction : public BtActionNode<nav2_msgs::action::BackUp>
+class DriveOnHeadingAction : public BtActionNode<nav2_msgs::action::DriveOnHeading>
 {
 public:
   /**
@@ -53,8 +53,8 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<double>("dist_to_travel", 0.15, "Distance to travel"),
-        BT::InputPort<double>("speed", 0.025, "Speed at which to travel"),
+        BT::InputPort<double>("dist_to_travel", -0.15, "Distance to travel"),
+        BT::InputPort<double>("speed", -0.025, "Speed at which to travel"),
         BT::InputPort<double>("time_allowance", 10.0, "Allowed time for reversing")
       });
   }

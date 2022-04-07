@@ -19,11 +19,11 @@
 #include <memory>
 
 #include "nav2_behaviors/timed_behavior.hpp"
-#include "nav2_msgs/action/back_up.hpp"
+#include "nav2_msgs/action/drive_on_heading.hpp"
 
 namespace nav2_behaviors
 {
-using DriveOnHeadingAction = nav2_msgs::action::BackUp;
+using DriveOnHeadingAction = nav2_msgs::action::DriveOnHeading;
 
 /**
  * @class nav2_behaviors::DriveOnHeading

@@ -38,7 +38,7 @@
           </Sequence>
           <Spin spin_dist="1.57"/>
           <Wait wait_duration="5"/>
-          DriveOnHeading dist_to_travel="0.30" speed="0.05"/>
+          <DriveOnHeading dist_to_travel="-0.30" speed="-0.05"/>
         </RoundRobin>
       </ReactiveFallback>
     </RecoveryNode>

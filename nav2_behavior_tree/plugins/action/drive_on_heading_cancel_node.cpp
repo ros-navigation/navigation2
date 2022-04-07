@@ -26,7 +26,7 @@ DriveOnHeadingCancel::DriveOnHeadingCancel(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: BtCancelActionNode<nav2_msgs::action::BackUp>(xml_tag_name, action_name, conf)
+: BtCancelActionNode<nav2_msgs::action::DriveOnHeading>(xml_tag_name, action_name, conf)
 {
 }
 

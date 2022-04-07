@@ -24,7 +24,7 @@ DriveOnHeadingAction::DriveOnHeadingAction(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: BtActionNode<nav2_msgs::action::BackUp>(xml_tag_name, action_name, conf)
+: BtActionNode<nav2_msgs::action::DriveOnHeading>(xml_tag_name, action_name, conf)
 {
   double dist;
   getInput("dist_to_travel", dist);

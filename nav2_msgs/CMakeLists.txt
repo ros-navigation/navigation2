@@ -30,7 +30,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/ManageLifecycleNodes.srv"
   "srv/LoadMap.srv"
   "srv/SaveMap.srv"
-  "action/BackUp.action"
+  "action/DriveOnHeading.action"
   "action/ComputePathToPose.action"
   "action/ComputePathThroughPoses.action"
   "action/SmoothPath.action"

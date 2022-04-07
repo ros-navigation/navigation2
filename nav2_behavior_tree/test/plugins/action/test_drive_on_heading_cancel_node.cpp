@@ -23,7 +23,7 @@
 #include "nav2_behavior_tree/plugins/action/drive_on_heading_cancel_node.hpp"
 #include "lifecycle_msgs/srv/change_state.hpp"
 
-class CancelDriveOnHeadingServer : public TestActionServer<nav2_msgs::action::BackUp>
+class CancelDriveOnHeadingServer : public TestActionServer<nav2_msgs::action::DriveOnHeading>
 {
 public:
   CancelDriveOnHeadingServer()
@@ -32,7 +32,8 @@ public:
 
 protected:
   void execute(
-    const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::BackUp>>
+    const typename std::shared_ptr<rclcpp_action::ServerGoalHandle
+    <nav2_msgs::action::DriveOnHeading>>
     goal_handle)
   {
     while (!goal_handle->is_canceling()) {
@@ -64,7 +65,7 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    client_ = rclcpp_action::create_client<nav2_msgs::action::BackUp>(
+    client_ = rclcpp_action::create_client<nav2_msgs::action::DriveOnHeading>(
       node_, "drive_on_heading_cancel");
 
     BT::NodeBuilder builder =
@@ -94,7 +95,7 @@ public:
   }
 
   static std::shared_ptr<CancelDriveOnHeadingServer> action_server_;
-  static std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::BackUp>> client_;
+  static std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::DriveOnHeading>> client_;
 
 protected:
   static rclcpp::Node::SharedPtr node_;
@@ -106,7 +107,7 @@ protected:
 rclcpp::Node::SharedPtr CancelDriveOnHeadingTestFixture::node_ = nullptr;
 std::shared_ptr<CancelDriveOnHeadingServer>
 CancelDriveOnHeadingTestFixture::action_server_ = nullptr;
-std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::BackUp>>
+std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::DriveOnHeading>>
 CancelDriveOnHeadingTestFixture::client_ = nullptr;
 
 BT::NodeConfiguration * CancelDriveOnHeadingTestFixture::config_ = nullptr;
@@ -125,10 +126,11 @@ TEST_F(CancelDriveOnHeadingTestFixture, test_ports)
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  auto send_goal_options = rclcpp_action::Client<nav2_msgs::action::BackUp>::SendGoalOptions();
+  auto send_goal_options = rclcpp_action::Client
+    <nav2_msgs::action::DriveOnHeading>::SendGoalOptions();
 
   // Creating a dummy goal_msg
-  auto goal_msg = nav2_msgs::action::BackUp::Goal();
+  auto goal_msg = nav2_msgs::action::DriveOnHeading::Goal();
 
   // Setting target pose
   goal_msg.target.x = 0.5;

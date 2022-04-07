@@ -20,8 +20,8 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
-    <Action ID="CancelBackUp">
-      <input_port name="service_name">Service name to cancel the backup recovery</input_port>
+    <Action ID="DriveOnHeadingCancel">
+      <input_port name="service_name">Service name to cancel the DriveOnHeading recovery</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
