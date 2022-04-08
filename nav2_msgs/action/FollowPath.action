@@ -6,6 +6,6 @@ string goal_checker_id
 #result definition
 std_msgs/Empty result
 ---
-#feedback
+#feedback definition
 float32 distance_to_goal
 float32 speed
