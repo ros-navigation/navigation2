@@ -45,7 +45,7 @@ DriveOnHeadingBehaviorTester::DriveOnHeadingBehaviorTester()
     node_->get_node_graph_interface(),
     node_->get_node_logging_interface(),
     node_->get_node_waitables_interface(),
-    "DriveOnHeading");
+    "drive_on_heading");
 
   publisher_ =
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
@@ -119,7 +119,7 @@ bool DriveOnHeadingBehaviorTester::defaultDriveOnHeadingBehaviorTest(
 
   auto goal_msg = DriveOnHeading::Goal();
   goal_msg.target.x = target_dist;
-  goal_msg.speed = 0.2;
+  goal_msg.speed = -0.2;
 
   RCLCPP_INFO(this->node_->get_logger(), "Sending goal");
 
@@ -156,7 +156,8 @@ bool DriveOnHeadingBehaviorTester::defaultDriveOnHeadingBehaviorTest(
     return false;
   }
 
-  rclcpp_action::ClientGoalHandle<DriveOnHeading>::WrappedResult wrapped_result = result_future.get();
+  rclcpp_action::ClientGoalHandle<DriveOnHeading>::WrappedResult wrapped_result =
+    result_future.get();
 
   switch (wrapped_result.code) {
     case rclcpp_action::ResultCode::SUCCEEDED: break;

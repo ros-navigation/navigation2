@@ -39,7 +39,7 @@ ServerHandler::ServerHandler()
   wait_server = std::make_unique<DummyActionServer<nav2_msgs::action::Wait>>(
     node_, "wait");
   backup_server = std::make_unique<DummyActionServer<nav2_msgs::action::DriveOnHeading>>(
-    node_, "backup");
+    node_, "drive_on_heading");
   ntp_server = std::make_unique<DummyActionServer<nav2_msgs::action::ComputePathThroughPoses>>(
     node_, "compute_path_through_poses");
 }

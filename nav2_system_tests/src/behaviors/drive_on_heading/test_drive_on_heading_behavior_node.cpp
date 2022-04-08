@@ -57,7 +57,8 @@ protected:
   static DriveOnHeadingBehaviorTester * drive_on_heading_behavior_tester;
 };
 
-DriveOnHeadingBehaviorTester * DriveOnHeadingBehaviorTestFixture::drive_on_heading_behavior_tester = nullptr;
+DriveOnHeadingBehaviorTester * DriveOnHeadingBehaviorTestFixture::drive_on_heading_behavior_tester =
+  nullptr;
 
 TEST_P(DriveOnHeadingBehaviorTestFixture, testBackupBehavior)
 {
@@ -69,7 +70,9 @@ TEST_P(DriveOnHeadingBehaviorTestFixture, testBackupBehavior)
   }
 
   bool success = false;
-  success = drive_on_heading_behavior_tester->defaultDriveOnHeadingBehaviorTest(target_dist, tolerance);
+  success = drive_on_heading_behavior_tester->defaultDriveOnHeadingBehaviorTest(
+    target_dist,
+    tolerance);
 
   // if intentionally backing into an obstacle, should fail.
   if (target_dist < -0.1) {
