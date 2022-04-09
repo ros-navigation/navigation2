@@ -17,9 +17,10 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
 
 
 def generate_launch_description():
@@ -28,23 +29,45 @@ def generate_launch_description():
     gazebo_ros = get_package_share_directory('gazebo_ros')
 
     map_yaml_file = os.path.join(warehouse_dir, 'maps', '005', 'map.yaml')
+    world=os.path.join(warehouse_dir, 'worlds', 'no_roof_small_warehouse',
+                       'no_roof_small_warehouse.world')
 
-    declare_world_cmd = DeclareLaunchArgument(
-        'world',
-        default_value=os.path.join(warehouse_dir, 'worlds', 'no_roof_small_warehouse',
-            'no_roof_small_warehouse.world'),
-        description='Full path to world model file to load')
+    robot_name = LaunchConfiguration('robot_name')
+    robot_sdf = LaunchConfiguration('robot_sdf')
+    pose = {'x': LaunchConfiguration('x_pose', default='0.0'),
+            'y': LaunchConfiguration('y_pose', default='0.0'),
+            'z': LaunchConfiguration('z_pose', default='0.01'),
+            'R': LaunchConfiguration('roll', default='0.00'),
+            'P': LaunchConfiguration('pitch', default='0.00'),
+            'Y': LaunchConfiguration('yaw', default='0.00')}
+
+    declare_robot_sdf = DeclareLaunchArgument(
+        'robot_sdf',
+        default_value=os.path.join(nav2_bringup_dir, 'worlds', 'waffle.model'),
+        description='Full path to robot sdf file to spawn the robot in gazebo')
+
+    declare_robot_name = DeclareLaunchArgument(
+        'robot_name',
+        default_value='turtlebot3_waffle',
+        description='name of the robot')
 
     # start the simulation
-    start_gazebo_server_cmd = IncludeLaunchDescription(
+    start_gazebo_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py'))
+            os.path.join(gazebo_ros, 'launch', 'gazebo.launch.py')),
+            launch_arguments={'world': world}.items()
     )
 
-    start_gazebo_client_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(gazebo_ros, 'launch', 'gzclient.launch.py'))
-    )
+    start_gazebo_spawner_cmd = Node(
+        package='gazebo_ros',
+        executable='spawn_entity.py',
+        output='screen',
+        arguments=[
+            '-entity', robot_name,
+            '-file', robot_sdf,
+            '-robot_namespace', '',
+            '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
+            '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']])
 
     urdf = os.path.join(nav2_bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
     start_robot_state_publisher_cmd = Node(
@@ -75,9 +98,10 @@ def generate_launch_description():
         output='screen')
 
     ld = LaunchDescription()
-    ld.add_action(declare_world_cmd)
-    ld.add_action(start_gazebo_server_cmd)
-    ld.add_action(start_gazebo_client_cmd)
+    ld.add_action(declare_robot_name)
+    ld.add_action(declare_robot_sdf)
+    ld.add_action(start_gazebo_cmd)
+    ld.add_action(start_gazebo_spawner_cmd)
     ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
