@@ -441,7 +441,7 @@ InflationLayer::dynamicParametersCallback(
         inflation_radius_ = parameter.as_double();
         need_reinflation_ = true;
         need_cache_recompute = true;
-      } else if (param_name == name_ + "." + "cost_scaling_factor" &&
+      } else if (param_name == name_ + "." + "cost_scaling_factor" && // NOLINT
         cost_scaling_factor_ != parameter.as_double())
       {
         cost_scaling_factor_ = parameter.as_double();
@@ -453,19 +453,18 @@ InflationLayer::dynamicParametersCallback(
         enabled_ = parameter.as_bool();
         need_reinflation_ = true;
         current_ = false;
-      } else if (param_name == name_ + "." + "inflate_unknown" &&
+      } else if (param_name == name_ + "." + "inflate_unknown" && // NOLINT
         inflate_unknown_ != parameter.as_bool())
       {
         inflate_unknown_ = parameter.as_bool();
         need_reinflation_ = true;
-      } else if (param_name == name_ + "." + "inflate_around_unknown" &&
+      } else if (param_name == name_ + "." + "inflate_around_unknown" && // NOLINT
         inflate_around_unknown_ != parameter.as_bool())
       {
         inflate_around_unknown_ = parameter.as_bool();
         need_reinflation_ = true;
       }
     }
-
   }
 
   if (need_cache_recompute) {

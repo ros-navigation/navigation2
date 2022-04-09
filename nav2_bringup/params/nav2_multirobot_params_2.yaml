@@ -85,6 +85,7 @@ bt_navigator:
     - nav2_round_robin_node_bt_node
     - nav2_transform_available_condition_bt_node
     - nav2_time_expired_condition_bt_node
+    - nav2_path_expiring_timer_condition
     - nav2_distance_traveled_condition_bt_node
     - nav2_single_trigger_bt_node
     - nav2_is_battery_low_condition_bt_node
@@ -95,6 +96,7 @@ bt_navigator:
     - nav2_controller_selector_bt_node
     - nav2_goal_checker_selector_bt_node
     - nav2_controller_cancel_bt_node
+    - nav2_path_longer_on_approach_bt_node
     - nav2_wait_cancel_bt_node
     - nav2_spin_cancel_bt_node
     - nav2_back_up_cancel_bt_node
@@ -258,18 +260,18 @@ smoother_server:
   ros__parameters:
     use_sim_time: True
 
-recoveries_server:
+behavior_server:
   ros__parameters:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
-    recovery_plugins: ["spin", "backup", "wait"]
+    behavior_plugins: ["spin", "backup", "wait"]
     spin:
-      plugin: "nav2_recoveries/Spin"
+      plugin: "nav2_behaviors/Spin"
     backup:
-      plugin: "nav2_recoveries/BackUp"
+      plugin: "nav2_behaviors/BackUp"
     wait:
-      plugin: "nav2_recoveries/Wait"
+      plugin: "nav2_behaviors/Wait"
     global_frame: odom
     robot_base_frame: base_link
     transform_tolerance: 0.1
@@ -287,7 +289,7 @@ waypoint_follower:
   ros__parameters:
     loop_rate: 20
     stop_on_failure: false
-    waypoint_task_executor_plugin: "wait_at_waypoint"   
+    waypoint_task_executor_plugin: "wait_at_waypoint"
     wait_at_waypoint:
       plugin: "nav2_waypoint_follower::WaitAtWaypoint"
       enabled: True

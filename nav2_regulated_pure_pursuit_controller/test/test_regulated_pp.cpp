@@ -60,6 +60,14 @@ public:
     return getLookAheadDistance(twist);
   }
 
+  static geometry_msgs::msg::Point circleSegmentIntersectionWrapper(
+    const geometry_msgs::msg::Point & p1,
+    const geometry_msgs::msg::Point & p2,
+    double r)
+  {
+    return circleSegmentIntersection(p1, p2, r);
+  }
+
   geometry_msgs::msg::PoseStamped getLookAheadPointWrapper(
     const double & dist, const nav_msgs::msg::Path & path)
   {
@@ -185,6 +193,130 @@ TEST(RegulatedPurePursuitTest, findVelocitySignChange)
   EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
 
+using CircleSegmentIntersectionParam = std::tuple<
+  std::pair<double, double>,
+  std::pair<double, double>,
+  double,
+  std::pair<double, double>
+>;
+
+class CircleSegmentIntersectionTest
+  : public ::testing::TestWithParam<CircleSegmentIntersectionParam>
+{};
+
+TEST_P(CircleSegmentIntersectionTest, circleSegmentIntersection)
+{
+  auto pair1 = std::get<0>(GetParam());
+  auto pair2 = std::get<1>(GetParam());
+  auto r = std::get<2>(GetParam());
+  auto expected_pair = std::get<3>(GetParam());
+  auto pair_to_point = [](std::pair<double, double> p) -> geometry_msgs::msg::Point {
+      geometry_msgs::msg::Point point;
+      point.x = p.first;
+      point.y = p.second;
+      point.z = 0.0;
+      return point;
+    };
+  auto p1 = pair_to_point(pair1);
+  auto p2 = pair_to_point(pair2);
+  auto actual = BasicAPIRPP::circleSegmentIntersectionWrapper(p1, p2, r);
+  auto expected_point = pair_to_point(expected_pair);
+  EXPECT_DOUBLE_EQ(actual.x, expected_point.x);
+  EXPECT_DOUBLE_EQ(actual.y, expected_point.y);
+  // Expect that the intersection point is actually r away from the origin
+  EXPECT_DOUBLE_EQ(r, std::hypot(actual.x, actual.y));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  InterpolationTest,
+  CircleSegmentIntersectionTest,
+  testing::Values(
+    // Origin to the positive X axis
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {2.0, 0.0},
+  1.0,
+  {1.0, 0.0}
+},
+    // Origin to hte negative X axis
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {-2.0, 0.0},
+  1.0,
+  {-1.0, 0.0}
+},
+    // Origin to the positive Y axis
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {0.0, 2.0},
+  1.0,
+  {0.0, 1.0}
+},
+    // Origin to the negative Y axis
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {0.0, -2.0},
+  1.0,
+  {0.0, -1.0}
+},
+    // non-origin to the X axis with non-unit circle, with the second point inside
+    CircleSegmentIntersectionParam{
+  {4.0, 0.0},
+  {-1.0, 0.0},
+  2.0,
+  {2.0, 0.0}
+},
+    // non-origin to the Y axis with non-unit circle, with the second point inside
+    CircleSegmentIntersectionParam{
+  {0.0, 4.0},
+  {0.0, -0.5},
+  2.0,
+  {0.0, 2.0}
+},
+    // origin to the positive X axis, on the circle
+    CircleSegmentIntersectionParam{
+  {2.0, 0.0},
+  {0.0, 0.0},
+  2.0,
+  {2.0, 0.0}
+},
+    // origin to the positive Y axis, on the circle
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {0.0, 2.0},
+  2.0,
+  {0.0, 2.0}
+},
+    // origin to the upper-right quadrant (3-4-5 triangle)
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {6.0, 8.0},
+  5.0,
+  {3.0, 4.0}
+},
+    // origin to the lower-left quadrant (3-4-5 triangle)
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {-6.0, -8.0},
+  5.0,
+  {-3.0, -4.0}
+},
+    // origin to the upper-left quadrant (3-4-5 triangle)
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {-6.0, 8.0},
+  5.0,
+  {-3.0, 4.0}
+},
+    // origin to the lower-right quadrant (3-4-5 triangle)
+    CircleSegmentIntersectionParam{
+  {0.0, 0.0},
+  {6.0, -8.0},
+  5.0,
+  {3.0, -4.0}
+}
+));
+
 TEST(RegulatedPurePursuitTest, lookaheadAPI)
 {
   auto ctrl = std::make_shared<BasicAPIRPP>();
@@ -234,7 +366,12 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
   auto pt = ctrl->getLookAheadPointWrapper(dist, path);
   EXPECT_EQ(pt.pose.position.x, 1.0);
 
-  // test getting next closest point
+  // test getting next closest point without interpolation
+  node->set_parameter(
+    rclcpp::Parameter(
+      name + ".use_interpolation",
+      rclcpp::ParameterValue(false)));
+  ctrl->configure(node, name, tf, costmap);
   dist = 3.8;
   pt = ctrl->getLookAheadPointWrapper(dist, path);
   EXPECT_EQ(pt.pose.position.x, 4.0);
@@ -243,6 +380,16 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
   dist = 100.0;
   pt = ctrl->getLookAheadPointWrapper(dist, path);
   EXPECT_EQ(pt.pose.position.x, 9.0);
+
+  // test interpolation
+  node->set_parameter(
+    rclcpp::Parameter(
+      name + ".use_interpolation",
+      rclcpp::ParameterValue(true)));
+  ctrl->configure(node, name, tf, costmap);
+  dist = 3.8;
+  pt = ctrl->getLookAheadPointWrapper(dist, path);
+  EXPECT_EQ(pt.pose.position.x, 3.8);
 }
 
 TEST(RegulatedPurePursuitTest, rotateTests)

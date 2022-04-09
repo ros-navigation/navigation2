@@ -8,4 +8,4 @@ bool use_start # If false, use current robot pose as path start, if true, use st
 nav_msgs/Path path
 builtin_interfaces/Duration planning_time
 ---
-#feedback
+#feedback definition

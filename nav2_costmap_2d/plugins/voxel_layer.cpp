@@ -275,8 +275,12 @@ void VoxelLayer::raytraceFreespace(
   if (!worldToMap3DFloat(ox, oy, oz, sensor_x, sensor_y, sensor_z)) {
     RCLCPP_WARN(
       logger_,
-      "Sensor origin: (%.2f, %.2f, %.2f), out of map bounds. The costmap can't raytrace for it.",
-      ox, oy, oz);
+      "Sensor origin at (%.2f, %.2f %.2f) is out of map bounds (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f). "
+      "The costmap cannot raytrace for it.",
+      ox, oy, oz,
+      ox + getSizeInMetersX(), oy + getSizeInMetersY(), oz + getSizeInMetersZ(),
+      origin_x_, origin_y_, origin_z_);
+
     return;
   }
 
@@ -485,7 +489,6 @@ VoxelLayer::dynamicParametersCallback(
     const auto & param_name = parameter.get_name();
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-
       if (param_name == name_ + "." + "max_obstacle_height") {
         max_obstacle_height_ = parameter.as_double();
       } else if (param_name == name_ + "." + "origin_z") {
@@ -520,7 +523,6 @@ VoxelLayer::dynamicParametersCallback(
         combination_method_ = parameter.as_int();
       }
     }
-
   }
 
   if (resize_map_needed) {

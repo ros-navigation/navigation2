@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COSTMAP_2D__TESTING_HELPER_HPP_
-#define NAV2_COSTMAP_2D__TESTING_HELPER_HPP_
+#ifndef TESTING_HELPER_HPP_
+#define TESTING_HELPER_HPP_
 
 #include <memory>
 
@@ -139,4 +139,4 @@ void addInflationLayer(
 }
 
 
-#endif  // NAV2_COSTMAP_2D__TESTING_HELPER_HPP_
+#endif  // TESTING_HELPER_HPP_

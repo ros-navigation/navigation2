@@ -18,9 +18,10 @@
 #define NAV2_AMCL__MOTION_MODEL__MOTION_MODEL_HPP_
 
 #include <string>
+#include <memory>
+
 #include "nav2_amcl/pf/pf.hpp"
 #include "nav2_amcl/pf/pf_pdf.hpp"
-#include <memory>
 
 namespace nav2_amcl
 {
@@ -55,7 +56,6 @@ public:
    * @param delta change in pose in odometry update
    */
   virtual void odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_vector_t & delta) = 0;
-
 };
 }  // namespace nav2_amcl
 

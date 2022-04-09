@@ -108,6 +108,9 @@ list(APPEND plugin_libs nav2_is_path_valid_condition_bt_node)
 add_library(nav2_time_expired_condition_bt_node SHARED plugins/condition/time_expired_condition.cpp)
 list(APPEND plugin_libs nav2_time_expired_condition_bt_node)
 
+add_library(nav2_path_expiring_timer_condition SHARED plugins/condition/path_expiring_timer_condition.cpp)
+list(APPEND plugin_libs nav2_path_expiring_timer_condition)
+
 add_library(nav2_distance_traveled_condition_bt_node SHARED plugins/condition/distance_traveled_condition.cpp)
 list(APPEND plugin_libs nav2_distance_traveled_condition_bt_node)
 
@@ -134,6 +137,9 @@ list(APPEND plugin_libs nav2_truncate_path_action_bt_node)
 
 add_library(nav2_goal_updater_node_bt_node SHARED plugins/decorator/goal_updater_node.cpp)
 list(APPEND plugin_libs nav2_goal_updater_node_bt_node)
+
+add_library(nav2_path_longer_on_approach_bt_node SHARED plugins/decorator/path_longer_on_approach.cpp)
+list(APPEND plugin_libs nav2_path_longer_on_approach_bt_node)
 
 add_library(nav2_recovery_node_bt_node SHARED plugins/control/recovery_node.cpp)
 list(APPEND plugin_libs nav2_recovery_node_bt_node)
