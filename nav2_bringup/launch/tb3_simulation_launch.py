@@ -152,13 +152,14 @@ def generate_launch_description():
 
     start_gazebo_server_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py'))
+            os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py')),
+        condition=IfCondition(PythonExpression([use_simulator]))
     )
 
     start_gazebo_client_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(gazebo_ros, 'launch', 'gzclient.launch.py')),
-        condition=IfCondition(PythonExpression(['not ', headless]))
+        condition=IfCondition(PythonExpression([use_simulator, ' and not ', headless]))
     )
 
     urdf = os.path.join(bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
