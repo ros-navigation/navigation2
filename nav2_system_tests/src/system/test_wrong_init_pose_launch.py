@@ -26,6 +26,7 @@ from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_context import LaunchContext
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 
@@ -35,6 +36,8 @@ from nav2_common.launch import RewrittenYaml
 def generate_launch_description():
     aws_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
     gazebo_ros = get_package_share_directory('gazebo_ros')
+    nav2_bringup_dir = get_package_share_directory('nav2_bringup')
+
     map_yaml_file = os.path.join(aws_dir, 'maps', '005', 'map.yaml')
 
     bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
@@ -45,6 +48,15 @@ def generate_launch_description():
     params_file = os.path.join(bringup_dir, 'params', 'nav2_params.yaml')
 
     world = LaunchConfiguration('world')
+
+    robot_name = LaunchConfiguration('robot_name')
+    robot_sdf = LaunchConfiguration('robot_sdf')
+    pose = {'x': LaunchConfiguration('x_pose', default='0.0'),
+            'y': LaunchConfiguration('y_pose', default='0.0'),
+            'z': LaunchConfiguration('z_pose', default='0.01'),
+            'R': LaunchConfiguration('roll', default='0.00'),
+            'P': LaunchConfiguration('pitch', default='0.00'),
+            'Y': LaunchConfiguration('yaw', default='0.00')}
 
     # Replace the default parameter values for testing special features
     # without having multiple params_files inside the nav2 stack
@@ -83,6 +95,27 @@ def generate_launch_description():
                 os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py')),
             launch_arguments={'world': world}.items()
         ),
+
+        DeclareLaunchArgument(
+            'robot_sdf',
+            default_value=os.path.join(nav2_bringup_dir, 'worlds', 'waffle.model'),
+            description='Full path to robot sdf file to spawn the robot in gazebo'),
+
+        DeclareLaunchArgument(
+            'robot_name',
+            default_value='turtlebot3_waffle',
+            description='name of the robot'),
+
+        Node(
+            package='gazebo_ros',
+            executable='spawn_entity.py',
+            output='screen',
+            arguments=[
+                '-entity', robot_name,
+                '-file', robot_sdf,
+                '-robot_namespace', '',
+                '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
+                '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']]),
 
         # TODO(orduno) Launch the robot state publisher instead
         #              using a local copy of TB3 urdf file

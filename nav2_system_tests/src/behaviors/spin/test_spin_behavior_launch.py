@@ -23,6 +23,7 @@ from launch import LaunchService
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 
@@ -40,6 +41,17 @@ def generate_launch_description():
 
     bringup_dir = get_package_share_directory('nav2_bringup')
     params_file = os.path.join(bringup_dir, 'params/nav2_params.yaml')
+
+    world = LaunchConfiguration('world')
+
+    robot_name = LaunchConfiguration('robot_name')
+    robot_sdf = LaunchConfiguration('robot_sdf')
+    pose = {'x': LaunchConfiguration('x_pose', default='1.80'),
+            'y': LaunchConfiguration('y_pose', default='2.20'),
+            'z': LaunchConfiguration('z_pose', default='0.01'),
+            'R': LaunchConfiguration('roll', default='0.00'),
+            'P': LaunchConfiguration('pitch', default='0.00'),
+            'Y': LaunchConfiguration('yaw', default='0.00')}
 
     # Replace the `use_astar` setting on the params file
     configured_params = RewrittenYaml(
@@ -64,6 +76,27 @@ def generate_launch_description():
                 os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py')),
             launch_arguments={'world': world}.items()
         ),
+
+        DeclareLaunchArgument(
+            'robot_sdf',
+            default_value=os.path.join(bringup_dir, 'worlds', 'waffle.model'),
+            description='Full path to robot sdf file to spawn the robot in gazebo'),
+
+        DeclareLaunchArgument(
+            'robot_name',
+            default_value='turtlebot3_waffle',
+            description='name of the robot'),
+
+        Node(
+            package='gazebo_ros',
+            executable='spawn_entity.py',
+            output='screen',
+            arguments=[
+                '-entity', robot_name,
+                '-file', robot_sdf,
+                '-robot_namespace', '',
+                '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
+                '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']]),
 
         # TODO(orduno) Launch the robot state publisher instead
         #              using a local copy of TB3 urdf file
