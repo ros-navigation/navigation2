@@ -23,8 +23,8 @@ from launch import LaunchService
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 
 from nav2_common.launch import RewrittenYaml
@@ -48,6 +48,8 @@ def generate_launch_description():
         root_key='',
         param_rewrites='',
         convert_types=True)
+
+    world = LaunchConfiguration('world')
 
     robot_name = LaunchConfiguration('robot_name')
     robot_sdf = LaunchConfiguration('robot_sdf')
@@ -81,7 +83,8 @@ def generate_launch_description():
         # Launch gazebo server for simulation
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py'))
+                os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py')),
+            launch_arguments={'world': world}.items()
         ),
 
         Node(

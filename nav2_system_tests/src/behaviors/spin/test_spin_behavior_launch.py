@@ -61,7 +61,8 @@ def generate_launch_description():
         # Launch gazebo server for simulation
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py'))
+                os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py')),
+            launch_arguments={'world': world}.items()
         ),
 
         # TODO(orduno) Launch the robot state publisher instead

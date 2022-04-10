@@ -61,6 +61,8 @@ def generate_launch_description():
     context = LaunchContext()
     new_yaml = configured_params.perform(context)
 
+    world = LaunchConfiguration('world')
+
     robot_name = LaunchConfiguration('robot_name')
     robot_sdf = LaunchConfiguration('robot_sdf')
     pose = {'x': LaunchConfiguration('x_pose', default='0.0'),
@@ -93,7 +95,8 @@ def generate_launch_description():
         # Launch gazebo server for simulation
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py'))
+                os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py')),
+            launch_arguments={'world': world}.items()
         ),
 
         Node(

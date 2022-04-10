@@ -44,6 +44,8 @@ def generate_launch_description():
     bringup_dir = get_package_share_directory('nav2_bringup')
     params_file = os.path.join(bringup_dir, 'params', 'nav2_params.yaml')
 
+    world = LaunchConfiguration('world')
+
     # Replace the default parameter values for testing special features
     # without having multiple params_files inside the nav2 stack
     context = LaunchContext()
@@ -78,6 +80,8 @@ def generate_launch_description():
         # Launch gazebo server for simulation
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
+                os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py')),
+            launch_arguments={'world': world}.items()
                 os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py'))
         ),
 

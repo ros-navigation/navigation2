@@ -55,6 +55,8 @@ def generate_launch_description():
 
     context = LaunchContext()
     new_yaml = configured_params.perform(context)
+    world = LaunchConfiguration('world')
+
     return LaunchDescription([
         SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
         SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
@@ -68,7 +70,8 @@ def generate_launch_description():
         # Launch gazebo server for simulation
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py'))
+                os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py')),
+            launch_arguments={'world': world}.items()
         ),
 
         # TODO(orduno) Launch the robot state publisher instead
