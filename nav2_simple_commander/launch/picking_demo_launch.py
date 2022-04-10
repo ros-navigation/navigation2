@@ -29,8 +29,8 @@ def generate_launch_description():
     gazebo_ros = get_package_share_directory('gazebo_ros')
 
     map_yaml_file = os.path.join(warehouse_dir, 'maps', '005', 'map.yaml')
-    world=os.path.join(warehouse_dir, 'worlds', 'no_roof_small_warehouse',
-                       'no_roof_small_warehouse.world')
+    world = os.path.join(warehouse_dir, 'worlds', 'no_roof_small_warehouse',
+                         'no_roof_small_warehouse.world')
 
     robot_name = LaunchConfiguration('robot_name')
     robot_sdf = LaunchConfiguration('robot_sdf')
@@ -55,7 +55,7 @@ def generate_launch_description():
     start_gazebo_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(gazebo_ros, 'launch', 'gazebo.launch.py')),
-            launch_arguments={'world': world}.items()
+        launch_arguments={'world': world}.items()
     )
 
     start_gazebo_spawner_cmd = Node(
