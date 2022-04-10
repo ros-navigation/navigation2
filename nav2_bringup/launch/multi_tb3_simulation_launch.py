@@ -108,7 +108,8 @@ def generate_launch_description():
     # Start Gazebo with plugin providing the robot spawning service
     start_gazebo_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py'))
+            os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py')),
+        launch_arguments={'world': world}.items()
     )
 
     # Define commands for launching the navigation instances
