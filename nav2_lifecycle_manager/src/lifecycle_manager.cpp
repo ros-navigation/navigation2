@@ -1,4 +1,5 @@
 // Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2022 Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,6 +42,8 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   declare_parameter("node_names", rclcpp::PARAMETER_STRING_ARRAY);
   declare_parameter("autostart", rclcpp::ParameterValue(false));
   declare_parameter("bond_timeout", 4.0);
+  declare_parameter("bond_respawn_max_duration", 10.0);
+  declare_parameter("attempt_respawn_reconnection", true);
 
   node_names_ = get_parameter("node_names").as_string_array();
   get_parameter("autostart", autostart_);
@@ -48,6 +51,12 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   get_parameter("bond_timeout", bond_timeout_s);
   bond_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::duration<double>(bond_timeout_s));
+
+  double respawn_timeout_s;
+  get_parameter("bond_respawn_max_duration", respawn_timeout_s);
+  bond_respawn_max_duration_ = rclcpp::Duration::from_seconds(respawn_timeout_s);
+
+  get_parameter("attempt_respawn_reconnection", attempt_respawn_reconnection_);
 
   callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
   manager_srv_ = create_service<ManageLifecycleNodes>(
@@ -365,8 +374,60 @@ LifecycleManager::checkBondConnections()
         " Shutting down related nodes.",
         node_name.c_str(), static_cast<int>(bond_timeout_.count()));
       reset();
+
+      // Initialize the bond respawn timer to check if server comes back online
+      // after a failure, within a maximum timeout period.
+      if (attempt_respawn_reconnection_) {
+        bond_respawn_timer_ = this->create_wall_timer(
+          1s,
+          std::bind(&LifecycleManager::checkBondRespawnConnection, this),
+          callback_group_);
+      }
       return;
     }
+  }
+}
+
+void
+LifecycleManager::checkBondRespawnConnection()
+{
+  // First attempt in respawn, start maximum duration to respawn
+  if (bond_respawn_start_time_.nanoseconds() == 0) {
+    bond_respawn_start_time_ = now();
+  }
+
+  // Note: system_active_ is inverted since this should be in a failure
+  // condition. If another outside user actives the system again, this should not process.
+  if (system_active_ || !rclcpp::ok() || bond_map_.empty()) {
+    bond_respawn_start_time_ = rclcpp::Time(0);
+    bond_respawn_timer_.reset();
+    return;
+  }
+
+  // Check number of live connections after a bond failure
+  int live_connections = 0;
+  const int max_live_connections = node_names_.size();
+  for (auto & node_name : node_names_) {
+    if (!rclcpp::ok()) {
+      return;
+    }
+
+    if (!bond_map_[node_name]->isBroken()) {
+      live_connections++;
+    }
+  }
+
+  // If all are alive, kill timer and retransition system to active
+  // Else, check if maximum timeout has occurred
+  if (live_connections == max_live_connections) {
+    message("Successfully re-established bond connection from a server respawn.");
+    bond_respawn_start_time_ = rclcpp::Time(0);
+    bond_respawn_timer_.reset();
+    startup();
+  } else if (now() - bond_respawn_start_time_ >= bond_respawn_max_duration_) {
+    message("Failed to re-establish bond connection from a server respawn after maximum timeout.");
+    bond_respawn_start_time_ = rclcpp::Time(0);
+    bond_respawn_timer_.reset();
   }
 }
 
@@ -382,8 +443,4 @@ LifecycleManager::message(const std::string & msg)
 }  // namespace nav2_lifecycle_manager
 
 #include "rclcpp_components/register_node_macro.hpp"
-
-// Register the component with class_loader.
-// This acts as a sort of entry point, allowing the component to be discoverable when its library
-// is being loaded into a running process.
 RCLCPP_COMPONENTS_REGISTER_NODE(nav2_lifecycle_manager::LifecycleManager)
