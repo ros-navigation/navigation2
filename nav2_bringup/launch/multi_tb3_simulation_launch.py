@@ -25,7 +25,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import (DeclareLaunchArgument, ExecuteProcess, GroupAction,
+from launch.actions import (DeclareLaunchArgument, GroupAction,
                             IncludeLaunchDescription, LogInfo)
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -48,7 +48,6 @@ def generate_launch_description():
 
     # Simulation settings
     world = LaunchConfiguration('world')
-    simulator = LaunchConfiguration('simulator')
 
     # On this example all robots are launched with the same settings
     map_yaml_file = LaunchConfiguration('map')
@@ -63,7 +62,7 @@ def generate_launch_description():
     declare_world_cmd = DeclareLaunchArgument(
         'world',
         default_value=os.path.join(aws_dir, 'worlds', 'no_roof_small_warehouse',
-            'no_roof_small_warehouse.world'),
+                                   'no_roof_small_warehouse.world'),
         description='Full path to world file to load')
 
     declare_simulator_cmd = DeclareLaunchArgument(
