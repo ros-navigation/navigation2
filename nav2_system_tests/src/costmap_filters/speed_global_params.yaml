@@ -108,7 +108,7 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     speed_limit_topic: "/speed_limit"
     progress_checker_plugin: "progress_checker"
-    goal_checker_plugin: "goal_checker"
+    goal_checker_plugins: "goal_checker"
     controller_plugins: ["FollowPath"]
 
     # Progress checker parameters
