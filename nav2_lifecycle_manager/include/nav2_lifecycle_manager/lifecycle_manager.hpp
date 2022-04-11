@@ -100,7 +100,7 @@ protected:
    * @brief Reset all the managed nodes.
    * @return true or false
    */
-  bool reset();
+  bool reset(bool hard_reset = false);
   /**
    * @brief Pause all the managed nodes.
    * @return true or false
@@ -165,12 +165,12 @@ protected:
    */
   bool changeStateForNode(
     const std::string & node_name,
-    std::uint8_t transition);
+    std::uint8_t transition, bool hard_change = false);
 
   /**
    * @brief For each node in the map, transition to the new target state
    */
-  bool changeStateForAllNodes(std::uint8_t transition);
+  bool changeStateForAllNodes(std::uint8_t transition, bool hard_change = false);
 
   // Convenience function to highlight the output on the console
   /**

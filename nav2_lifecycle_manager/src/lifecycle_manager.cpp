@@ -195,7 +195,7 @@ LifecycleManager::createBondConnection(const std::string & node_name)
 }
 
 bool
-LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t transition)
+LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t transition, bool hard_change)
 {
   message(transition_label_map_[transition] + node_name);
 
@@ -208,7 +208,7 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 
   if (transition == Transition::TRANSITION_ACTIVATE) {
     return createBondConnection(node_name);
-  } else if (transition == Transition::TRANSITION_DEACTIVATE) {
+  } else if (transition == Transition::TRANSITION_DEACTIVATE && !hard_change) {
     bond_map_.erase(node_name);
   }
 
@@ -216,20 +216,21 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 }
 
 bool
-LifecycleManager::changeStateForAllNodes(std::uint8_t transition)
+LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool hard_change)
 {
+  // Hard change will continue even if a node fails
   if (transition == Transition::TRANSITION_CONFIGURE ||
     transition == Transition::TRANSITION_ACTIVATE)
   {
     for (auto & node_name : node_names_) {
-      if (!changeStateForNode(node_name, transition)) {
+      if (!changeStateForNode(node_name, transition, hard_change) && !hard_change) {
         return false;
       }
     }
   } else {
     std::vector<std::string>::reverse_iterator rit;
     for (rit = node_names_.rbegin(); rit != node_names_.rend(); ++rit) {
-      if (!changeStateForNode(*rit, transition)) {
+      if (!changeStateForNode(*rit, transition, hard_change) && !hard_change) {
         return false;
       }
     }
@@ -276,15 +277,15 @@ LifecycleManager::shutdown()
 }
 
 bool
-LifecycleManager::reset()
+LifecycleManager::reset(bool hard_reset)
 {
   system_active_ = false;
   destroyBondTimer();
 
   message("Resetting managed nodes...");
   // Should transition in reverse order
-  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE) ||
-    !changeStateForAllNodes(Transition::TRANSITION_CLEANUP))
+  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE, hard_reset) ||
+    !changeStateForAllNodes(Transition::TRANSITION_CLEANUP, hard_reset))
   {
     RCLCPP_ERROR(get_logger(), "Failed to reset nodes: aborting reset");
     return false;
@@ -373,7 +374,7 @@ LifecycleManager::checkBondConnections()
         "CRITICAL FAILURE: SERVER %s IS DOWN after not receiving a heartbeat for %i ms."
         " Shutting down related nodes.",
         node_name.c_str(), static_cast<int>(bond_timeout_.count()));
-      reset();
+      reset(true);  // hard reset to transition all still active down
 
       // Initialize the bond respawn timer to check if server comes back online
       // after a failure, within a maximum timeout period.
@@ -382,6 +383,10 @@ LifecycleManager::checkBondConnections()
           1s,
           std::bind(&LifecycleManager::checkBondRespawnConnection, this),
           callback_group_);
+      } else {
+        // In hard resets, we don't empty the bond map, so we must manually
+        // do it after all attempts at reconnection
+        bond_map_.clear();
       }
       return;
     }
@@ -428,6 +433,9 @@ LifecycleManager::checkBondRespawnConnection()
     message("Failed to re-establish bond connection from a server respawn after maximum timeout.");
     bond_respawn_start_time_ = rclcpp::Time(0);
     bond_respawn_timer_.reset();
+    // In hard resets, we don't empty the bond map, so we must manually
+    // do it after all attempts at reconnection
+    bond_map_.clear();
   }
 }
 
