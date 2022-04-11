@@ -62,6 +62,7 @@
   <test_depend>launch_ros</test_depend>
   <test_depend>launch_testing</test_depend>
   <test_depend>python3-zmq</test_depend>
+  <test_depend>aws_robomaker_small_warehouse_world</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
