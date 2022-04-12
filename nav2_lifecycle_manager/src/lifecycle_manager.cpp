@@ -195,7 +195,7 @@ LifecycleManager::createBondConnection(const std::string & node_name)
 }
 
 bool
-LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t transition, bool hard_change)
+LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t transition)
 {
   message(transition_label_map_[transition] + node_name);
 
@@ -208,7 +208,7 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 
   if (transition == Transition::TRANSITION_ACTIVATE) {
     return createBondConnection(node_name);
-  } else if (transition == Transition::TRANSITION_DEACTIVATE && !hard_change) {
+  } else if (transition == Transition::TRANSITION_DEACTIVATE) {
     bond_map_.erase(node_name);
   }
 
@@ -223,14 +223,14 @@ LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool hard_chan
     transition == Transition::TRANSITION_ACTIVATE)
   {
     for (auto & node_name : node_names_) {
-      if (!changeStateForNode(node_name, transition, hard_change) && !hard_change) {
+      if (!changeStateForNode(node_name, transition) && !hard_change) {
         return false;
       }
     }
   } else {
     std::vector<std::string>::reverse_iterator rit;
     for (rit = node_names_.rbegin(); rit != node_names_.rend(); ++rit) {
-      if (!changeStateForNode(*rit, transition, hard_change) && !hard_change) {
+      if (!changeStateForNode(*rit, transition) && !hard_change) {
         return false;
       }
     }
@@ -383,10 +383,6 @@ LifecycleManager::checkBondConnections()
           1s,
           std::bind(&LifecycleManager::checkBondRespawnConnection, this),
           callback_group_);
-      } else {
-        // In hard resets, we don't empty the bond map, so we must manually
-        // do it after all attempts at reconnection
-        bond_map_.clear();
       }
       return;
     }
@@ -403,39 +399,41 @@ LifecycleManager::checkBondRespawnConnection()
 
   // Note: system_active_ is inverted since this should be in a failure
   // condition. If another outside user actives the system again, this should not process.
-  if (system_active_ || !rclcpp::ok() || bond_map_.empty()) {
+  if (system_active_ || !rclcpp::ok() || node_names_.empty()) {
     bond_respawn_start_time_ = rclcpp::Time(0);
     bond_respawn_timer_.reset();
     return;
   }
 
   // Check number of live connections after a bond failure
-  int live_connections = 0;
-  const int max_live_connections = node_names_.size();
+  int live_servers = 0;
+  const int max_live_servers = node_names_.size();
   for (auto & node_name : node_names_) {
     if (!rclcpp::ok()) {
       return;
     }
 
-    if (!bond_map_[node_name]->isBroken()) {
-      live_connections++;
+    try {
+      if (node_map_[node_name]->get_state(1s)) {
+        live_servers++;
+      }
+    } catch (...) {
+      std::cout << "Failed to get state" << std::endl;
+      break;
     }
   }
 
   // If all are alive, kill timer and retransition system to active
   // Else, check if maximum timeout has occurred
-  if (live_connections == max_live_connections) {
-    message("Successfully re-established bond connection from a server respawn.");
+  if (live_servers == max_live_servers) {
+    message("Successfully re-established connections from server respawns, starting back up.");
     bond_respawn_start_time_ = rclcpp::Time(0);
     bond_respawn_timer_.reset();
     startup();
   } else if (now() - bond_respawn_start_time_ >= bond_respawn_max_duration_) {
-    message("Failed to re-establish bond connection from a server respawn after maximum timeout.");
+    message("Failed to re-establish connection from a server crash after maximum timeout.");
     bond_respawn_start_time_ = rclcpp::Time(0);
     bond_respawn_timer_.reset();
-    // In hard resets, we don't empty the bond map, so we must manually
-    // do it after all attempts at reconnection
-    bond_map_.clear();
   }
 }
 

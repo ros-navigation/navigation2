@@ -165,7 +165,7 @@ protected:
    */
   bool changeStateForNode(
     const std::string & node_name,
-    std::uint8_t transition, bool hard_change = false);
+    std::uint8_t transition);
 
   /**
    * @brief For each node in the map, transition to the new target state
