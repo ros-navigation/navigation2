@@ -39,15 +39,6 @@ namespace nav2_assisted_teleop
     node->get_parameter("global_frame", global_frame_);
     node->get_parameter("robot_base_frame", robot_base_frame_);
 
-    // Note: empty frames don't cause robot_utils to error
-    // nav2_util::declare_parameter_if_not_declared(
-    //   node,
-    //   "global_frame", rclcpp::ParameterValue(std::string("global_frame")));
-
-    // nav2_util::declare_parameter_if_not_declared(
-    //   node,
-    //   "robot_base_frame", rclcpp::ParameterValue(std::string("robot_base_frame")));
-
     tf_ = tf;
     collision_checker_ = collision_checker;
   }
@@ -124,7 +115,7 @@ namespace nav2_assisted_teleop
     auto node = shared_from_this();
 
     nav2_util::declare_parameter_if_not_declared(
-      this,
+      node,
       "input_vel_topic", rclcpp::ParameterValue(std::string("input_vel_topic")));
 
     nav2_util::declare_parameter_if_not_declared(
@@ -135,12 +126,14 @@ namespace nav2_assisted_teleop
       node,
       "joystick_topic", rclcpp::ParameterValue(std::string("joystick_topic")));
 
-    declare_parameter(
+    nav2_util::declare_parameter_if_not_declared(
+      node,
     "costmap_topic", rclcpp::ParameterValue(
       std::string(
         "global_costmap/costmap_raw")));
 
-    declare_parameter(
+    nav2_util::declare_parameter_if_not_declared(
+      node,
     "footprint_topic",
     rclcpp::ParameterValue(
       std::string("global_costmap/published_footprint")));
