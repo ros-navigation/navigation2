@@ -16,7 +16,6 @@
 
 #include "nav2_assisted_teleop/nav2_assisted_teleop.hpp"
 #include "rclcpp/rclcpp.hpp"
-// #include <iostream>
 
 int main(int argc, char ** argv)
 {

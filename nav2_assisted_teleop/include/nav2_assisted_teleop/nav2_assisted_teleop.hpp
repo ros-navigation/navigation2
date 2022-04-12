@@ -164,7 +164,6 @@ protected:
   rclcpp::Logger logger_;
   std::shared_ptr<AssistedTeleop> assisted_teleop_;
 
-
   // Transforms
   std::shared_ptr<tf2_ros::Buffer> tf_;
   // std::shared_ptr<tf2_ros::TransformListener> transform_listener_;

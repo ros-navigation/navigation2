@@ -82,8 +82,8 @@ namespace nav2_assisted_teleop
         adjusted_twist.linear.x *= current_time / projection_time_;
         adjusted_twist.linear.y *= current_time / projection_time_;
         adjusted_twist.angular.z *= current_time / projection_time_;
-
         RCLCPP_WARN_STREAM(logger_, "Collision approaching in " << current_time << ". Reducing velocity");
+        break;
       }
     }
     return adjusted_twist;
@@ -99,7 +99,7 @@ namespace nav2_assisted_teleop
                                 twist.linear.x * cos(pose.theta) +
                                 twist.linear.y * sin(pose.theta));
 
-    projected_pose.x = projection_time * (
+    projected_pose.y = projection_time * (
                                 twist.linear.x * sin(pose.theta) -
                                 twist.linear.y * cos(pose.theta));
 

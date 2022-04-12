@@ -1,0 +1,8 @@
+#goal definition
+std_msgs/Empty empty
+---
+#result definition
+builtin_interfaces/Duration total_elapsed_time
+---
+#feedback
+builtin_interfaces/Duration time_spent_in_rc
