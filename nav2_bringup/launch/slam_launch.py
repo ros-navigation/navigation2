@@ -82,6 +82,7 @@ def generate_launch_description():
             executable='map_saver_server',
             output='screen',
             respawn=use_respawn,
+            respawn_delay=2.0,
             parameters=[configured_params])
 
     start_lifecycle_manager_cmd = Node(
@@ -89,7 +90,6 @@ def generate_launch_description():
             executable='lifecycle_manager',
             name='lifecycle_manager_slam',
             output='screen',
-            respawn=use_respawn,
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
                         {'node_names': lifecycle_nodes}])

@@ -107,6 +107,7 @@ def generate_launch_description():
                 executable='controller_server',
                 output='screen',
                 respawn=use_respawn,
+                respawn_delay=2.0,
                 parameters=[configured_params],
                 remappings=remappings),
             Node(
@@ -115,6 +116,7 @@ def generate_launch_description():
                 name='smoother_server',
                 output='screen',
                 respawn=use_respawn,
+                respawn_delay=2.0,
                 parameters=[configured_params],
                 remappings=remappings),
             Node(
@@ -123,6 +125,7 @@ def generate_launch_description():
                 name='planner_server',
                 output='screen',
                 respawn=use_respawn,
+                respawn_delay=2.0,
                 parameters=[configured_params],
                 remappings=remappings),
             Node(
@@ -131,6 +134,7 @@ def generate_launch_description():
                 name='behavior_server',
                 output='screen',
                 respawn=use_respawn,
+                respawn_delay=2.0,
                 parameters=[configured_params],
                 remappings=remappings),
             Node(
@@ -139,6 +143,7 @@ def generate_launch_description():
                 name='bt_navigator',
                 output='screen',
                 respawn=use_respawn,
+                respawn_delay=2.0,
                 parameters=[configured_params],
                 remappings=remappings),
             Node(
@@ -147,6 +152,7 @@ def generate_launch_description():
                 name='waypoint_follower',
                 output='screen',
                 respawn=use_respawn,
+                respawn_delay=2.0,
                 parameters=[configured_params],
                 remappings=remappings),
             Node(
@@ -154,7 +160,6 @@ def generate_launch_description():
                 executable='lifecycle_manager',
                 name='lifecycle_manager_navigation',
                 output='screen',
-                respawn=use_respawn,
                 parameters=[{'use_sim_time': use_sim_time},
                             {'autostart': autostart},
                             {'node_names': lifecycle_nodes}]),
