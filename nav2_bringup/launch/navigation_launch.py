@@ -97,7 +97,7 @@ def generate_launch_description():
 
     declare_use_respawn_cmd = DeclareLaunchArgument(
         'use_respawn', default_value='False',
-        description='Whether to use respawn if a process crashes')
+        description='Whether to respawn if a node crashes. Applied when composition is disabled.')
 
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),

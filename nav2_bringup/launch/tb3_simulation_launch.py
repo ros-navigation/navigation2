@@ -109,7 +109,7 @@ def generate_launch_description():
 
     declare_use_respawn_cmd = DeclareLaunchArgument(
         'use_respawn', default_value='False',
-        description='Whether to use respawn servers if they crash')
+        description='Whether to respawn if a node crashes. Applied when composition is disabled.')
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config_file',
