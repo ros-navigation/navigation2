@@ -34,6 +34,8 @@ LifecycleServiceClient::LifecycleServiceClient(const string & lifecycle_node_nam
   change_state_(lifecycle_node_name + "/change_state", node_),
   get_state_(lifecycle_node_name + "/get_state", node_)
 {
+  // Block until server is up
+  get_state_.wait_for_service();
 }
 
 LifecycleServiceClient::LifecycleServiceClient(
@@ -43,22 +45,31 @@ LifecycleServiceClient::LifecycleServiceClient(
   change_state_(lifecycle_node_name + "/change_state", node_),
   get_state_(lifecycle_node_name + "/get_state", node_)
 {
+  // Block until server is up
+  get_state_.wait_for_service();
 }
 
-void LifecycleServiceClient::change_state(
+bool LifecycleServiceClient::change_state(
   const uint8_t transition,
   const seconds timeout)
 {
-  change_state_.wait_for_service(timeout);
+  if (!change_state_.wait_for_service(timeout)) {
+    throw std::runtime_error("change_state service is not available!");
+  }
+
   auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
   request->transition.id = transition;
-  change_state_.invoke(request, timeout);
+  auto response = change_state_.invoke(request, timeout);
+  return response.get();
 }
 
 bool LifecycleServiceClient::change_state(
   std::uint8_t transition)
 {
-  change_state_.wait_for_service();
+  if (!change_state_.wait_for_service()) {
+    throw std::runtime_error("change_state service is not available!");
+  }
+
   auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
   auto response = std::make_shared<lifecycle_msgs::srv::ChangeState::Response>();
   request->transition.id = transition;
@@ -68,7 +79,10 @@ bool LifecycleServiceClient::change_state(
 uint8_t LifecycleServiceClient::get_state(
   const seconds timeout)
 {
-  get_state_.wait_for_service(timeout);
+  if (!get_state_.wait_for_service(timeout)) {
+    throw std::runtime_error("get_state service is not available!");
+  }
+
   auto request = std::make_shared<lifecycle_msgs::srv::GetState::Request>();
   auto result = get_state_.invoke(request, timeout);
   return result->current_state.id;

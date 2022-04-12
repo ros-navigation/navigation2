@@ -40,7 +40,7 @@ public:
   /**
    * Throws std::runtime_error on failure
    */
-  void change_state(
+  bool change_state(
     const uint8_t transition,  // takes a lifecycle_msgs::msg::Transition id
     const std::chrono::seconds timeout);
 

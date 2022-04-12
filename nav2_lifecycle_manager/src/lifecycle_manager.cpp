@@ -199,8 +199,8 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 {
   message(transition_label_map_[transition] + node_name);
 
-  if (!node_map_[node_name]->change_state(transition) ||
-    !(node_map_[node_name]->get_state() == transition_state_map_[transition]))
+  if (!node_map_[node_name]->change_state(transition, 5s) ||
+    !(node_map_[node_name]->get_state(2s) == transition_state_map_[transition]))
   {
     RCLCPP_ERROR(get_logger(), "Failed to change state for node: %s", node_name.c_str());
     return false;
@@ -223,14 +223,22 @@ LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool hard_chan
     transition == Transition::TRANSITION_ACTIVATE)
   {
     for (auto & node_name : node_names_) {
-      if (!changeStateForNode(node_name, transition) && !hard_change) {
+      try {
+        if (!changeStateForNode(node_name, transition) && !hard_change) {
+          return false;
+        }
+      } catch (const std::runtime_error & /*e*/) {
         return false;
       }
     }
   } else {
     std::vector<std::string>::reverse_iterator rit;
     for (rit = node_names_.rbegin(); rit != node_names_.rend(); ++rit) {
-      if (!changeStateForNode(*rit, transition) && !hard_change) {
+      try {
+        if (!changeStateForNode(*rit, transition) && !hard_change) {
+          return false;
+        }
+      } catch (const std::runtime_error & /*e*/) {
         return false;
       }
     }
@@ -287,12 +295,13 @@ LifecycleManager::reset(bool hard_reset)
   if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE, hard_reset) ||
     !changeStateForAllNodes(Transition::TRANSITION_CLEANUP, hard_reset))
   {
-    RCLCPP_ERROR(get_logger(), "Failed to reset nodes: aborting reset");
-    return false;
+    if (!hard_reset) {
+      RCLCPP_ERROR(get_logger(), "Failed to reset nodes: aborting reset");
+      return false;
+    }
   }
 
   message("Managed nodes have been reset");
-
   return true;
 }
 
@@ -307,8 +316,8 @@ LifecycleManager::pause()
     RCLCPP_ERROR(get_logger(), "Failed to pause nodes: aborting pause");
     return false;
   }
-  message("Managed nodes have been paused");
 
+  message("Managed nodes have been paused");
   return true;
 }
 
@@ -320,6 +329,7 @@ LifecycleManager::resume()
     RCLCPP_ERROR(get_logger(), "Failed to resume nodes: aborting resume");
     return false;
   }
+
   message("Managed nodes are active");
   system_active_ = true;
   createBondTimer();
@@ -334,7 +344,6 @@ LifecycleManager::createBondTimer()
   }
 
   message("Creating bond timer...");
-
   bond_timer_ = this->create_wall_timer(
     200ms,
     std::bind(&LifecycleManager::checkBondConnections, this),
@@ -375,6 +384,8 @@ LifecycleManager::checkBondConnections()
         " Shutting down related nodes.",
         node_name.c_str(), static_cast<int>(bond_timeout_.count()));
       reset(true);  // hard reset to transition all still active down
+      // if a server crashed, it won't get cleared due to failed transition, clear manually
+      bond_map_.clear();
 
       // Initialize the bond respawn timer to check if server comes back online
       // after a failure, within a maximum timeout period.
@@ -414,11 +425,9 @@ LifecycleManager::checkBondRespawnConnection()
     }
 
     try {
-      if (node_map_[node_name]->get_state(1s)) {
-        live_servers++;
-      }
+      node_map_[node_name]->get_state(2s);  // Only won't throw if the server exists
+      live_servers++;
     } catch (...) {
-      std::cout << "Failed to get state" << std::endl;
       break;
     }
   }

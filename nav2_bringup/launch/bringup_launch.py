@@ -105,7 +105,7 @@ def generate_launch_description():
 
     declare_use_respawn_cmd = DeclareLaunchArgument(
         'use_respawn', default_value='False',
-        description='Whether to use respawn if a process crashes')
+        description='Whether to respawn if a node crashes. Applied when composition is disabled.')
 
     # Specify the actions
     bringup_cmd_group = GroupAction([
@@ -118,7 +118,6 @@ def generate_launch_description():
             name='nav2_container',
             package='rclcpp_components',
             executable='component_container_isolated',
-            respawn=use_respawn,
             parameters=[configured_params, {'autostart': autostart}],
             remappings=remappings,
             output='screen'),
