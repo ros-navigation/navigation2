@@ -215,9 +215,6 @@ void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
   }
 
   costmap_->set_test_costmap(testCostmapType);
-  RCLCPP_INFO_STREAM(this->get_logger(), costmap_->get_properties().resolution);
-  RCLCPP_INFO_STREAM(this->get_logger(), costmap_->get_properties().size_x);
-  RCLCPP_INFO_STREAM(this->get_logger(), costmap_->get_properties().size_y);
 
   costmap_set_ = true;
   using_fake_costmap_ = true;
