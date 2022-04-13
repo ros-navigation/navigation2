@@ -25,19 +25,22 @@ using namespace std::chrono_literals;
 namespace nav2_behaviors
 {
 
-DriveOnHeading::DriveOnHeading()
+template<typename ActionT>
+DriveOnHeading<ActionT>::DriveOnHeading()
 : TimedBehavior<DriveOnHeadingAction>(),
   feedback_(std::make_shared<DriveOnHeadingAction::Feedback>())
 {
 }
 
-DriveOnHeading::~DriveOnHeading()
+template<typename ActionT>
+DriveOnHeading<ActionT>::~DriveOnHeading()
 {
 }
 
-void DriveOnHeading::onConfigure()
+template<typename ActionT>
+void DriveOnHeading<ActionT>::onConfigure()
 {
-  auto node = node_.lock();
+  auto node = this->node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
@@ -48,11 +51,12 @@ void DriveOnHeading::onConfigure()
   node->get_parameter("simulate_ahead_time", simulate_ahead_time_);
 }
 
-Status DriveOnHeading::onRun(const std::shared_ptr<const DriveOnHeadingAction::Goal> command)
+template<typename ActionT>
+Status DriveOnHeading<ActionT>::onRun(const std::shared_ptr<const DriveOnHeadingAction::Goal> command)
 {
   if (command->target.y != 0.0 || command->target.z != 0.0) {
     RCLCPP_INFO(
-      logger_,
+      this->logger_,
       "Backing up in Y and Z not supported, will only move in X.");
   }
 
@@ -61,36 +65,37 @@ Status DriveOnHeading::onRun(const std::shared_ptr<const DriveOnHeadingAction::G
   command_speed_ = command->speed;
   command_time_allowance_ = command->time_allowance;
 
-  end_time_ = steady_clock_.now() + command_time_allowance_;
+  end_time_ = this->steady_clock_.now() + command_time_allowance_;
 
   if (!nav2_util::getCurrentPose(
-      initial_pose_, *tf_, global_frame_, robot_base_frame_,
-      transform_tolerance_))
+      initial_pose_, *this->tf_, this->global_frame_, this->robot_base_frame_,
+      this->transform_tolerance_))
   {
-    RCLCPP_ERROR(logger_, "Initial robot pose is not available.");
+    RCLCPP_ERROR(this->logger_, "Initial robot pose is not available.");
     return Status::FAILED;
   }
 
   return Status::SUCCEEDED;
 }
 
-Status DriveOnHeading::onCycleUpdate()
+template<typename ActionT>
+Status DriveOnHeading<ActionT>::onCycleUpdate()
 {
-  rclcpp::Duration time_remaining = end_time_ - steady_clock_.now();
+  rclcpp::Duration time_remaining = end_time_ - this->steady_clock_.now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
-    stopRobot();
+    this->stopRobot();
     RCLCPP_WARN(
-      logger_,
+      this->logger_,
       "Exceeded time allowance before reaching the DriveOnHeading goal - Exiting DriveOnHeading");
     return Status::FAILED;
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_,
-      transform_tolerance_))
+      current_pose, *this->tf_, this->global_frame_, this->robot_base_frame_,
+      this->transform_tolerance_))
   {
-    RCLCPP_ERROR(logger_, "Current robot pose is not available.");
+    RCLCPP_ERROR(this->logger_, "Current robot pose is not available.");
     return Status::FAILED;
   }
 
@@ -99,10 +104,10 @@ Status DriveOnHeading::onCycleUpdate()
   double distance = sqrt(diff_x * diff_x + diff_y * diff_y);
 
   feedback_->distance_traveled = distance;
-  action_server_->publish_feedback(feedback_);
+  this->action_server_->publish_feedback(feedback_);
 
   if (distance >= std::fabs(command_x_)) {
-    stopRobot();
+    this->stopRobot();
     return Status::SUCCEEDED;
   }
 
@@ -118,31 +123,32 @@ Status DriveOnHeading::onCycleUpdate()
   pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
 
   if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
-    stopRobot();
-    RCLCPP_WARN(logger_, "Collision Ahead - Exiting DriveOnHeading");
+    this->stopRobot();
+    RCLCPP_WARN(this->logger_, "Collision Ahead - Exiting DriveOnHeading");
     return Status::FAILED;
   }
 
-  vel_pub_->publish(std::move(cmd_vel));
+  this->vel_pub_->publish(std::move(cmd_vel));
 
   return Status::RUNNING;
 }
 
-bool DriveOnHeading::isCollisionFree(
+template<typename ActionT>
+bool DriveOnHeading<ActionT>::isCollisionFree(
   const double & distance,
   geometry_msgs::msg::Twist * cmd_vel,
   geometry_msgs::msg::Pose2D & pose2d)
 {
-  // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments
+  // Simulate ahead by simulate_ahead_time_ in this->cycle_frequency_ increments
   int cycle_count = 0;
   double sim_position_change;
   const double diff_dist = abs(command_x_) - distance;
-  const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
+  const int max_cycle_count = static_cast<int>(this->cycle_frequency_ * simulate_ahead_time_);
   geometry_msgs::msg::Pose2D init_pose = pose2d;
   bool fetch_data = true;
 
   while (cycle_count < max_cycle_count) {
-    sim_position_change = cmd_vel->linear.x * (cycle_count / cycle_frequency_);
+    sim_position_change = cmd_vel->linear.x * (cycle_count / this->cycle_frequency_);
     pose2d.x = init_pose.x + sim_position_change * cos(init_pose.theta);
     pose2d.y = init_pose.y + sim_position_change * sin(init_pose.theta);
     cycle_count++;
@@ -151,7 +157,7 @@ bool DriveOnHeading::isCollisionFree(
       break;
     }
 
-    if (!collision_checker_->isCollisionFree(pose2d, fetch_data)) {
+    if (!this->collision_checker_->isCollisionFree(pose2d, fetch_data)) {
       return false;
     }
     fetch_data = false;
@@ -162,4 +168,4 @@ bool DriveOnHeading::isCollisionFree(
 }  // namespace nav2_behaviors
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_behaviors::DriveOnHeading, nav2_core::Behavior)
+PLUGINLIB_EXPORT_CLASS(nav2_behaviors::DriveOnHeading<nav2_behaviors::DriveOnHeadingAction>, nav2_core::Behavior)

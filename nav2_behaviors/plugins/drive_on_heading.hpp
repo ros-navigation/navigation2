@@ -29,7 +29,8 @@ using DriveOnHeadingAction = nav2_msgs::action::DriveOnHeading;
  * @class nav2_behaviors::DriveOnHeading
  * @brief An action server Behavior for spinning in
  */
-class DriveOnHeading : public TimedBehavior<DriveOnHeadingAction>
+template<typename ActionT>
+class DriveOnHeading : public TimedBehavior<ActionT>
 {
 public:
   /**
