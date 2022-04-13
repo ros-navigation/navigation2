@@ -37,25 +37,20 @@ TEST(testIsPathValid, testIsPathValid)
   EXPECT_FALSE(is_path_valid);
 
   // invalid path
-  for (float i = 0; i < 10; i += 0.05) {
-    for (float j = 0; j < 10; j += 0.05) {
-      geometry_msgs::msg::PoseStamped pose;
-      pose.pose.position.x = i;
-      pose.pose.position.y = j;
-      path.poses.push_back(pose);
-    }
-  }
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 4.0;
+  pose.pose.position.y = 4.0;
+  path.poses.push_back(pose);
+
   is_path_valid = planner_tester->isPathValid(path);
   EXPECT_FALSE(is_path_valid);
 
   // valid path
   path.poses.clear();
-  for (float i = 0; i < 10; i += 0.1) {
-    geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = 0.0;
-    pose.pose.position.y = i;
-    path.poses.push_back(pose);
-  }
+  pose.pose.position.x = 8.0;
+  pose.pose.position.y = 8.0;
+  path.poses.push_back(pose);
+
   is_path_valid = planner_tester->isPathValid(path);
   EXPECT_TRUE(is_path_valid);
 }

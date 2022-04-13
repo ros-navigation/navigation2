@@ -215,6 +215,9 @@ void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
   }
 
   costmap_->set_test_costmap(testCostmapType);
+  RCLCPP_INFO_STREAM(this->get_logger(), costmap_->get_properties().resolution);
+  RCLCPP_INFO_STREAM(this->get_logger(), costmap_->get_properties().size_x);
+  RCLCPP_INFO_STREAM(this->get_logger(), costmap_->get_properties().size_y);
 
   costmap_set_ = true;
   using_fake_costmap_ = true;
@@ -399,6 +402,7 @@ TaskStatus PlannerTester::createPlan(
 
 bool PlannerTester::isPathValid(nav_msgs::msg::Path & path)
 {
+  planner_tester_->setCostmap(costmap_.get());
   // create a fake service request
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
   request->path = path;
