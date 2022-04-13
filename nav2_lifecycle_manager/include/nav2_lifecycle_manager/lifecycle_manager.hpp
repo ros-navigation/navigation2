@@ -33,7 +33,7 @@
 
 namespace nav2_lifecycle_manager
 {
-using namespace std::chrono_literals;
+using namespace std::chrono_literals;  // NOLINT
 
 using nav2_msgs::srv::ManageLifecycleNodes;
 /**
