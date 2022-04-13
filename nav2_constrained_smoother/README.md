@@ -12,6 +12,7 @@ smoother_server:
 
     SmoothPath:
       plugin: "nav2_constrained_smoother/ConstrainedSmoother"
+      reversing_enabled: true
       path_downsampling_factor: 3   # every n-th node of the path is taken. Useful for speed-up
       path_upsampling_factor: 1     # 0 - path remains downsampled, 1 - path is upsampled back to original granularity using cubic bezier, 2... - more upsampling
       keep_start_orientation: true  # whether to prevent the start orientation from being smoothed
@@ -41,3 +42,4 @@ smoother_server:
 ```
 
 Note: Smoothing paths which contain multiple subsequent poses at one point (e.g. in-place rotations from Smac lattice planners) is currently not supported
+Note: Forward/reverse movement detection is not supported for paths containing no pose orientation information. For these paths `reversing_enabled` should be set to false
