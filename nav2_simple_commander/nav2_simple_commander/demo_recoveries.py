@@ -65,7 +65,7 @@ def main():
 
     # Robot hit a dead end, back it up
     print('Robot hit a dead end, backing up...')
-    navigator.backup(dist_to_travel=0.5, speed=0.1)
+    navigator.backup(backup_dist=0.5, backup_speed=0.1)
 
     i = 0
     while not navigator.isTaskComplete():

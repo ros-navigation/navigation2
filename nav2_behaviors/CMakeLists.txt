@@ -134,9 +134,10 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name}
-  nav2_drive_on_heading_behavior
+  nav2_backup_behavior
   nav2_spin_behavior
   nav2_wait_behavior
+  nav2_drive_on_heading_behavior
 )
 ament_export_dependencies(${dependencies})
 ament_package()
