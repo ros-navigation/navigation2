@@ -7,6 +7,14 @@
 <root>
   <TreeNodesModel>
     <!-- ############################### ACTION NODES ################################# -->
+    <Action ID="Backup">
+      <input_port name="backup_dist">Distance to backup</input_port>
+      <input_port name="backup_speed">Speed at which to backup</input_port>
+      <input_port name="time_allowance">Allowed time for reversing</input_port>
+      <input_port name="server_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
     <Action ID="DriveOnHeading">
       <input_port name="dist_to_travel">Distance to travel</input_port>
       <input_port name="speed">Speed at which to travel</input_port>
@@ -20,18 +28,23 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
+    <Action ID="CancelBackup">
+      <input_port name="service_name">Service name to cancel the backup behavior</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
     <Action ID="DriveOnHeadingCancel">
-      <input_port name="service_name">Service name to cancel the DriveOnHeading recovery</input_port>
+      <input_port name="service_name">Service name to cancel the drive on heading behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="CancelSpin">
-      <input_port name="service_name">Service name to cancel the spin recovery</input_port>
+      <input_port name="service_name">Service name to cancel the spin behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="CancelWait">
-      <input_port name="service_name">Service name to cancel the wait recovery</input_port>
+      <input_port name="service_name">Service name to cancel the wait behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 

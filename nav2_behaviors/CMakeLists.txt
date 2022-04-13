@@ -104,9 +104,10 @@ ament_target_dependencies(${executable_name}
 rclcpp_components_register_nodes(${library_name} "behavior_server::BehaviorServer")
 
 install(TARGETS ${library_name}
-                nav2_drive_on_heading_behavior
+                nav2_backup_behavior
                 nav2_spin_behavior
                 nav2_wait_behavior
+                nav2_drive_on_heading_behavior
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin

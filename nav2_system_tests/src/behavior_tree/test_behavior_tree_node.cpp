@@ -56,10 +56,9 @@ public:
       "nav2_compute_path_through_poses_action_bt_node",
       "nav2_smooth_path_action_bt_node",
       "nav2_follow_path_action_bt_node",
+      "nav2_back_up_action_bt_node",
       "nav2_spin_action_bt_node",
       "nav2_wait_action_bt_node",
-      "nav2_back_up_action_bt_node",
-      "nav2_drive_on_heading_bt_node",
       "nav2_clear_costmap_service_bt_node",
       "nav2_is_stuck_condition_bt_node",
       "nav2_is_path_valid_condition_bt_node",
@@ -248,7 +247,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
   // Goal count should be 0 since no goal is sent to all other servers
   EXPECT_EQ(server_handler->spin_server->getGoalCount(), 0);
   EXPECT_EQ(server_handler->wait_server->getGoalCount(), 0);
-  EXPECT_EQ(server_handler->drive_on_heading_server->getGoalCount(), 0);
+  EXPECT_EQ(server_handler->backup_server->getGoalCount(), 0);
   EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 0);
   EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 0);
 }
@@ -280,7 +279,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
   server_handler->follow_path_server->setFailureRanges(failureRange);
   server_handler->spin_server->setFailureRanges(failureRange);
   server_handler->wait_server->setFailureRanges(failureRange);
-  server_handler->drive_on_heading_server->setFailureRanges(failureRange);
+  server_handler->backup_server->setFailureRanges(failureRange);
 
   // Disable services
   server_handler->clear_global_costmap_server->disable();
@@ -305,7 +304,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
   // All recovery action servers were sent 1 goal
   EXPECT_EQ(server_handler->spin_server->getGoalCount(), 1);
   EXPECT_EQ(server_handler->wait_server->getGoalCount(), 1);
-  EXPECT_EQ(server_handler->drive_on_heading_server->getGoalCount(), 1);
+  EXPECT_EQ(server_handler->backup_server->getGoalCount(), 1);
 
   // Service count is 0 since the server was disabled
   EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 0);
@@ -356,7 +355,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
   // Goal count should be 0 since no goal is sent to all other servers
   EXPECT_EQ(server_handler->spin_server->getGoalCount(), 0);
   EXPECT_EQ(server_handler->wait_server->getGoalCount(), 0);
-  EXPECT_EQ(server_handler->drive_on_heading_server->getGoalCount(), 0);
+  EXPECT_EQ(server_handler->backup_server->getGoalCount(), 0);
 }
 
 /**
@@ -418,7 +417,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
   // Goal count should be 0 since only no goal is sent to all other servers
   EXPECT_EQ(server_handler->spin_server->getGoalCount(), 0);
   EXPECT_EQ(server_handler->wait_server->getGoalCount(), 0);
-  EXPECT_EQ(server_handler->drive_on_heading_server->getGoalCount(), 0);
+  EXPECT_EQ(server_handler->backup_server->getGoalCount(), 0);
 }
 
 /**
@@ -506,7 +505,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
   // Set BackUp action server to fail for the first action
   std::vector<std::pair<int, int>> backupFailureRange;
   backupFailureRange.emplace_back(std::pair<int, int>(0, 1));
-  server_handler->drive_on_heading_server->setFailureRanges(backupFailureRange);
+  server_handler->backup_server->setFailureRanges(backupFailureRange);
 
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
@@ -533,7 +532,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
   // All recovery action servers receive 2 goals
   EXPECT_EQ(server_handler->spin_server->getGoalCount(), 2);
   EXPECT_EQ(server_handler->wait_server->getGoalCount(), 2);
-  EXPECT_EQ(server_handler->drive_on_heading_server->getGoalCount(), 2);
+  EXPECT_EQ(server_handler->backup_server->getGoalCount(), 2);
 }
 
 /**
@@ -627,7 +626,7 @@ TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
 
   // All recovery action servers receive 0 goals
   EXPECT_EQ(server_handler->wait_server->getGoalCount(), 0);
-  EXPECT_EQ(server_handler->drive_on_heading_server->getGoalCount(), 0);
+  EXPECT_EQ(server_handler->backup_server->getGoalCount(), 0);
 }
 
 int main(int argc, char ** argv)

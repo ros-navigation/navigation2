@@ -38,8 +38,8 @@ ServerHandler::ServerHandler()
     node_, "spin");
   wait_server = std::make_unique<DummyActionServer<nav2_msgs::action::Wait>>(
     node_, "wait");
-  drive_on_heading_server = std::make_unique<DummyActionServer<nav2_msgs::action::DriveOnHeading>>(
-    node_, "drive_on_heading");
+  backup_server = std::make_unique<DummyActionServer<nav2_msgs::action::BackUp>>(
+    node_, "backup");
   ntp_server = std::make_unique<DummyActionServer<nav2_msgs::action::ComputePathThroughPoses>>(
     node_, "compute_path_through_poses");
 }
@@ -84,7 +84,7 @@ void ServerHandler::reset() const
   follow_path_server->reset();
   spin_server->reset();
   wait_server->reset();
-  drive_on_heading_server->reset();
+  backup_server->reset();
 }
 
 void ServerHandler::spinThread()

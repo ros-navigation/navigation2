@@ -1,8 +1,8 @@
 
 <!--
   This BT has all the functionalities of navigate_to_pose_w_replanning_and_recovery.xml,
-  with an additional feature to cancel the control closer to the goal proximity and
-  make the robot wait for a specific time, to see if the obstacle clears out before
+  with an additional feature to cancel the control closer to the goal proximity and 
+  make the robot wait for a specific time, to see if the obstacle clears out before 
   navigating along a significantly longer path to reach the goal location.
 -->
 <root main_tree_to_execute="MainTree">
@@ -39,7 +39,7 @@
           </Sequence>
           <Spin spin_dist="1.57"/>
           <Wait wait_duration="5"/>
-          <DriveOnHeading dist_to_travel="-0.30" speed="-0.05"/>
+          <BackUp backup_dist="0.30" backup_speed="0.05"/>
         </RoundRobin>
       </ReactiveFallback>
     </RecoveryNode>

@@ -186,13 +186,13 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def backup(self, dist_to_travel=0.15, speed=0.025, time_allowance=10):
+    def backup(self, backup_dist=0.15, backup_speed=0.025, time_allowance=10):
         self.debug("Waiting for 'Backup' action server")
         while not self.backup_client.wait_for_server(timeout_sec=1.0):
             self.info("'Backup' action server not available, waiting...")
         goal_msg = BackUp.Goal()
-        goal_msg.target = Point(x=float(dist_to_travel))
-        goal_msg.speed = speed
+        goal_msg.target = Point(x=float(backup_dist))
+        goal_msg.speed = backup_speed
         goal_msg.time_allowance = Duration(sec=time_allowance)
 
         self.info(f'Backing up {goal_msg.target.x} m at {goal_msg.speed} m/s....')
