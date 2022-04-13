@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2022 Neobotix GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__BACK_UP_ACTION_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__BACK_UP_ACTION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__BACK_UP_CANCEL_NODE_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__BACK_UP_CANCEL_NODE_HPP_
 
+#include <memory>
 #include <string>
 
-#include "nav2_behavior_tree/bt_action_node.hpp"
 #include "nav2_msgs/action/back_up.hpp"
+
+#include "nav2_behavior_tree/bt_cancel_action_node.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -26,7 +28,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::BackUp
  */
-class BackUpAction : public BtActionNode<nav2_msgs::action::BackUp>
+class BackUpCancel : public BtCancelActionNode<nav2_msgs::action::BackUp>
 {
 public:
   /**
@@ -35,15 +37,10 @@ public:
    * @param action_name Action name this node creates a client for
    * @param conf BT node configuration
    */
-  BackUpAction(
+  BackUpCancel(
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf);
-
-  /**
-   * @brief Function to perform some user-defined operation on tick
-   */
-  void on_tick() override;
 
   /**
    * @brief Creates list of BT ports
@@ -53,13 +50,10 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<double>("backup_dist", 0.15, "Distance to backup"),
-        BT::InputPort<double>("backup_speed", 0.025, "Speed at which to backup"),
-        BT::InputPort<double>("time_allowance", 10.0, "Allowed time for reversing")
       });
   }
 };
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__BACK_UP_ACTION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__BACK_UP_CANCEL_NODE_HPP_

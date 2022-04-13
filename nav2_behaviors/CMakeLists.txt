@@ -55,19 +55,27 @@ ament_target_dependencies(nav2_spin_behavior
   ${dependencies}
 )
 
+add_library(nav2_backup_behavior SHARED
+  plugins/back_up.cpp
+)
+
+ament_target_dependencies(nav2_backup_behavior
+  ${dependencies}
+)
+
+add_library(nav2_wait_behavior SHARED
+plugins/wait.cpp
+)
+
+ament_target_dependencies(nav2_wait_behavior
+${dependencies}
+)
+
 add_library(nav2_drive_on_heading_behavior SHARED
   plugins/drive_on_heading.cpp
 )
 
 ament_target_dependencies(nav2_drive_on_heading_behavior
-  ${dependencies}
-)
-
-add_library(nav2_wait_behavior SHARED
-  plugins/wait.cpp
-)
-
-ament_target_dependencies(nav2_wait_behavior
   ${dependencies}
 )
 
