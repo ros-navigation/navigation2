@@ -41,11 +41,6 @@ public:
     const BT::NodeConfiguration & conf);
 
   /**
-   * @brief Function to perform some user-defined operation on tick
-   */
-  void on_tick() override;
-
-  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -55,7 +50,7 @@ public:
       {
         BT::InputPort<double>("dist_to_travel", 0.15, "Distance to travel"),
         BT::InputPort<double>("speed", 0.025, "Speed at which to travel"),
-        BT::InputPort<double>("time_allowance", 10.0, "Allowed time for reversing")
+        BT::InputPort<double>("time_allowance", 10.0, "Allowed time for driving on heading")
       });
   }
 };

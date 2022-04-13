@@ -41,11 +41,6 @@ DriveOnHeadingAction::DriveOnHeadingAction(
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
 }
 
-void DriveOnHeadingAction::on_tick()
-{
-  increment_recovery_count();
-}
-
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp_v3/bt_factory.h"
