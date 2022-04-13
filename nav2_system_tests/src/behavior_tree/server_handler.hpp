@@ -92,7 +92,7 @@ public:
   std::unique_ptr<DummyActionServer<nav2_msgs::action::FollowPath>> follow_path_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::Spin>> spin_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::Wait>> wait_server;
-  std::unique_ptr<DummyActionServer<nav2_msgs::action::DriveOnHeading>> backup_server;
+  std::unique_ptr<DummyActionServer<nav2_msgs::action::DriveOnHeading>> drive_on_heading_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::ComputePathThroughPoses>> ntp_server;
 
 private:
