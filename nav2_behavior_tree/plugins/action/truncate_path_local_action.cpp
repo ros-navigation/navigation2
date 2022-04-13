@@ -54,7 +54,12 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   getInput("max_robot_pose_search_dist", max_robot_pose_search_dist);
 
   bool path_pruning = std::isfinite(max_robot_pose_search_dist);
-  updatePath(path_pruning);
+  nav_msgs::msg::Path new_path;
+  getInput("input_path", new_path);
+  if (!path_pruning || new_path != path_) {
+    path_ = new_path;
+    closest_pose_detection_begin_ = path_.poses.begin();
+  }
 
   if (!getRobotPose(path_.header.frame_id, pose)) {
     return BT::NodeStatus::FAILURE;
@@ -100,34 +105,6 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   return BT::NodeStatus::SUCCESS;
 }
 
-inline void TruncatePathLocal::updatePath(bool reset_path_pruning_on_change)
-{
-  if (reset_path_pruning_on_change) {
-    nav_msgs::msg::Path new_path;
-    getInput("input_path", new_path);
-
-    // detect for changes
-    bool changed = true;
-    if (new_path.poses.size() == path_.poses.size()) {
-      changed = false;
-      for (size_t i = 0; i < new_path.poses.size(); i++) {
-        if (path_.poses[i].pose != new_path.poses[i].pose) {
-          changed = true;
-          break;
-        }
-      }
-    }
-
-    if (changed) {
-      path_ = new_path;
-      closest_pose_detection_begin_ = path_.poses.begin();
-    }
-  } else {
-    getInput("input_path", path_);
-    closest_pose_detection_begin_ = path_.poses.begin();
-  }
-}
-
 inline bool TruncatePathLocal::getRobotPose(
   std::string path_frame_id, geometry_msgs::msg::PoseStamped & pose)
 {
@@ -161,6 +138,8 @@ TruncatePathLocal::poseDistance(
 {
   double dx = pose1.pose.position.x - pose2.pose.position.x;
   double dy = pose1.pose.position.y - pose2.pose.position.y;
+  // taking angular distance into account in addition to spatial distance
+  // (to improve picking a correct pose near cusps and loops)
   tf2::Quaternion q1;
   tf2::convert(pose1.pose.orientation, q1);
   tf2::Quaternion q2;

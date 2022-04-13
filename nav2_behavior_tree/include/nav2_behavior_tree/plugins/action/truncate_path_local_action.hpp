@@ -101,12 +101,13 @@ private:
   bool getRobotPose(std::string path_frame_id, geometry_msgs::msg::PoseStamped & pose);
 
   /**
-   * @brief Update path from blackboard
-   * @param reset_path_pruning_on_change True if should detect changes in path
-   * and reset path pruning whenever a change occurs
+   * @brief A custom pose distance method which takes angular distance into account
+   * in addition to spatial distance (to improve picking a correct pose near cusps and loops)
+   * @param pose1 Distance is computed between this pose and pose2
+   * @param pose2 Distance is computed between this pose and pose1
+   * @param angular_distance_weight Weight of angular distance relative to spatial distance
+   * (1.0 means that 1 radian of angular distance corresponds to 1 meter of spatial distance)
    */
-  void updatePath(bool reset_path_pruning_on_change);
-
   static double poseDistance(
     const geometry_msgs::msg::PoseStamped & pose1,
     const geometry_msgs::msg::PoseStamped & pose2,
