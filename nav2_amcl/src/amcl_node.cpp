@@ -51,6 +51,7 @@
 #include "nav2_amcl/portable_utils.hpp"
 
 using namespace std::placeholders;
+using rcl_interfaces::msg::ParameterType;
 using namespace std::chrono_literals;
 
 namespace nav2_amcl
@@ -294,6 +295,9 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // Lifecycle publishers must be explicitly deactivated
   pose_pub_->on_deactivate();
   particle_cloud_pub_->on_deactivate();
+
+  // reset dynamic parameter handler
+  dyn_params_handler_.reset();
 
   // destroy bond connection
   destroyBond();
@@ -1111,6 +1115,126 @@ AmclNode::initParameters()
   if (always_reset_initial_pose_) {
     initial_pose_is_known_ = false;
   }
+
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = this->add_on_set_parameters_callback(
+    std::bind(
+      &AmclNode::dynamicParametersCallback,
+      this, std::placeholders::_1));
+}
+
+/**
+  * @brief Callback executed when a parameter change is detected
+  * @param event ParameterEvent message
+  */
+rcl_interfaces::msg::SetParametersResult
+AmclNode::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == "alpha1") {
+        alpha1_ = parameter.as_double();
+    } else if (param_name == "alpha2") {
+        alpha2_ = parameter.as_double();
+    } else if (param_name == "alpha3") {
+        alpha3_ = parameter.as_double();
+    } else if (param_name == "alpha4") {
+        alpha4_ = parameter.as_double();
+    } else if (param_name == "alpha5") {
+        alpha5_ = parameter.as_double();
+    } else if (param_name == "beam_skip_distance") {
+        beam_skip_distance_ = parameter.as_double();
+    } else if (param_name == "beam_skip_error_threshold") {
+        beam_skip_error_threshold_ = parameter.as_double();
+    } else if (param_name == "beam_skip_threshold") {
+        beam_skip_threshold_ = parameter.as_double();
+    } else if (param_name == "lambda_short") {
+        lambda_short_ = parameter.as_double();
+    } else if (param_name == "laser_likelihood_max_dist") {
+        laser_likelihood_max_dist_ = parameter.as_double();
+    } else if (param_name == "laser_max_range") {
+        laser_max_range_ = parameter.as_double();
+    } else if (param_name == "laser_min_range") {
+        laser_min_range_ = parameter.as_double();
+    } else if (param_name == "pf_err") {
+        pf_err_ = parameter.as_double();
+    } else if (param_name == "pf_z") {
+        pf_z_ = parameter.as_double();
+    } else if (param_name == "recovery_alpha_fast") {
+        alpha_fast_ = parameter.as_double();
+    } else if (param_name == "recovery_alpha_slow") {
+        alpha_slow_ = parameter.as_double();
+    } else if (param_name == "save_pose_rate") {
+        save_pose_period_ = parameter.as_double();
+    } else if (param_name == "sigma_hit") {
+        sigma_hit_ = parameter.as_double();
+    } else if (param_name == "transform_tolerance") {
+        transform_tolerance_ = parameter.as_double();
+    } else if (param_name == "update_min_a") {
+        a_thresh_ = parameter.as_double();
+    } else if (param_name == "update_min_d") {
+        d_thresh_ = parameter.as_double();
+    } else if (param_name == "z_hit") {
+        z_hit_ = parameter.as_double();
+    } else if (param_name == "z_max") {
+        z_max_ = parameter.as_double();
+    } else if (param_name == "z_rand") {
+        z_rand_ = parameter.as_double();
+    } else if (param_name == "z_short") {
+        z_short_ = parameter.as_double();
+    }
+  } else if (param_type == ParameterType::PARAMETER_STRING) {
+      if (param_name == "base_frame_id") {
+        base_frame_id_ = parameter.as_string();
+    } else if (param_name == "global_frame_id") {
+        global_frame_id_ = parameter.as_string();
+    } else if (param_name == "base_frame_id") {
+        base_frame_id_ = parameter.as_string();
+    } else if (param_name == "laser_model_type") {
+        if (parameter.as_string() == "beam") {
+          sensor_model_type_ = LASER_MODEL_BEAM;
+        } else if (parameter.as_string() == "laser_model_type") {
+            sensor_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD;
+        } else if (parameter.as_string() == "laser_model_type") {
+            sensor_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD_PROB;
+        } else {
+            RCLCPP_WARN(
+              get_logger(), "Unknown laser model type \"%s\"; defaulting to likelihood_field model",
+                 tmp_model_type.c_str());
+            sensor_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD;
+        }
+      } else if (param_name == "odom_frame_id") {
+        odom_frame_id_ = parameter.as_string();
+      } else if (param_name == "scan_topic") {
+          scan_topic_ = parameter.as_string();
+      } else if (param_name == "odom_model_type") {
+        if (parameter.as_string() == "diff") {
+            robot_model_type_ = ODOM_MODEL_DIFF;
+        } else if (parameter.as_string() == "omni") {
+            robot_model_type_ = ODOM_MODEL_OMNI;
+        } else if (parameter.as_string() == "diff-corrected") {
+            robot_model_type_ = ODOM_MODEL_DIFF_CORRECTED;
+        } else if (parameter.as_string() == "omni-corrected") {
+            robot_model_type_ = ODOM_MODEL_OMNI_CORRECTED;
+        }
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == "do_beamskip") {
+        do_beamskip_ = parameter.as_bool();
+      } else if (param_name == "tf_broadcast") {
+        tf_broadcast_ = parameter.as_bool();
+      }
+    }
+  }
+
+  result.successful = true;
+  return result;
 }
 
 void
