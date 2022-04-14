@@ -44,7 +44,7 @@ public:
    * @param command Goal to execute
    * @return Status of behavior
    */
-  Status onRun(const std::shared_ptr<const DriveOnHeadingAction::Goal> command) override;
+  Status onRun(const std::shared_ptr<const typename ActionT::Goal> command) override;
 
   /**
    * @brief Loop function to run behavior

@@ -52,7 +52,7 @@ void DriveOnHeading<ActionT>::onConfigure()
 }
 
 template<typename ActionT>
-Status DriveOnHeading<ActionT>::onRun(const std::shared_ptr<const DriveOnHeadingAction::Goal> command)
+Status DriveOnHeading<ActionT>::onRun(const std::shared_ptr<const typename ActionT::Goal> command)
 {
   if (command->target.y != 0.0 || command->target.z != 0.0) {
     RCLCPP_INFO(
