@@ -64,15 +64,6 @@ param_t searchAndGetParam(
   const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & param_name,
   const param_t & default_value)
 {
-  // TODO(crdelsey): Handle searchParam
-  // std::string resolved_name;
-  // if (nh->searchParam(param_name, resolved_name))
-  // {
-  //   param_t value = 0;
-  //   nh->param(resolved_name, value, default_value);
-  //   return value;
-  // }
-  param_t value = 0;
   nav2_util::declare_parameter_if_not_declared(
     nh, param_name,
     rclcpp::ParameterValue(default_value));
