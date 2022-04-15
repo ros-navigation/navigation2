@@ -23,7 +23,6 @@
 
 namespace nav2_behaviors
 {
-using DriveOnHeadingAction = nav2_msgs::action::DriveOnHeading;
 
 /**
  * @class nav2_behaviors::DriveOnHeading
@@ -81,7 +80,7 @@ protected:
   rclcpp::Time end_time_;
   double simulate_ahead_time_;
 
-  DriveOnHeadingAction::Feedback::SharedPtr feedback_;
+  typename ActionT::Feedback::SharedPtr feedback_;
 };
 
 }  // namespace nav2_behaviors

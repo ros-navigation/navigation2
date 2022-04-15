@@ -27,8 +27,8 @@ namespace nav2_behaviors
 
 template<typename ActionT>
 DriveOnHeading<ActionT>::DriveOnHeading()
-: TimedBehavior<DriveOnHeadingAction>(),
-  feedback_(std::make_shared<DriveOnHeadingAction::Feedback>())
+: TimedBehavior<ActionT>(),
+  feedback_(std::make_shared<typename ActionT::Feedback>())
 {
 }
 
@@ -168,4 +168,4 @@ bool DriveOnHeading<ActionT>::isCollisionFree(
 }  // namespace nav2_behaviors
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_behaviors::DriveOnHeading<nav2_behaviors::DriveOnHeadingAction>, nav2_core::Behavior)
+PLUGINLIB_EXPORT_CLASS(nav2_behaviors::DriveOnHeading<nav2_msgs::action::DriveOnHeading>, nav2_core::Behavior)
