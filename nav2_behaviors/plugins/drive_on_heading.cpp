@@ -19,6 +19,7 @@
 
 #include "drive_on_heading.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_msgs/action/back_up.hpp"
 
 using namespace std::chrono_literals;
 
@@ -60,7 +61,13 @@ Status DriveOnHeading<ActionT>::onRun(const std::shared_ptr<const typename Actio
       "Backing up in Y and Z not supported, will only move in X.");
   }
 
-  // Silently ensure that both the speed and direction are positive.
+  // Ensure that both the speed and direction have the same sign
+  if( (command->target.x > 0.0) == (command->speed > 0.0) )
+  {
+    RCLCPP_ERROR(this->logger_, "Speed and command sign did not match");
+    return Status::FAILED;
+  }
+
   command_x_ = command->target.x;
   command_speed_ = command->speed;
   command_time_allowance_ = command->time_allowance;
@@ -165,7 +172,34 @@ bool DriveOnHeading<ActionT>::isCollisionFree(
   return true;
 }
 
+Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
+{
+  if (command->target.y != 0.0 || command->target.z != 0.0) {
+    RCLCPP_INFO(
+      logger_,
+      "Backing up in Y and Z not supported, will only move in X.");
+  }
+
+  // Silently ensure that both the speed and direction are negative.
+  command_x_ = -std::fabs(command->target.x);
+  command_speed_ = -std::fabs(command->speed);
+  command_time_allowance_ = command->time_allowance;
+
+  end_time_ = steady_clock_.now() + command_time_allowance_;
+
+  if (!nav2_util::getCurrentPose(
+      initial_pose_, *tf_, global_frame_, robot_base_frame_,
+      transform_tolerance_))
+  {
+    RCLCPP_ERROR(logger_, "Initial robot pose is not available.");
+    return Status::FAILED;
+  }
+
+  return Status::SUCCEEDED;
+}
+
 }  // namespace nav2_behaviors
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_behaviors::DriveOnHeading<nav2_msgs::action::DriveOnHeading>, nav2_core::Behavior)
+PLUGINLIB_EXPORT_CLASS(nav2_behaviors::BackUp, nav2_core::Behavior)

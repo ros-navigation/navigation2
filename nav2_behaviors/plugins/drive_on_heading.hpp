@@ -20,6 +20,7 @@
 
 #include "nav2_behaviors/timed_behavior.hpp"
 #include "nav2_msgs/action/drive_on_heading.hpp"
+#include "nav2_msgs/action/back_up.hpp"
 
 namespace nav2_behaviors
 {
@@ -81,6 +82,15 @@ protected:
   double simulate_ahead_time_;
 
   typename ActionT::Feedback::SharedPtr feedback_;
+};
+
+
+using BackUpAction = nav2_msgs::action::BackUp;
+
+class BackUp : public DriveOnHeading<nav2_msgs::action::BackUp>
+{
+  public:
+    Status onRun(const std::shared_ptr<const BackUpAction::Goal> command) override;
 };
 
 }  // namespace nav2_behaviors
