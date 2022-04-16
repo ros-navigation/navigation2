@@ -49,6 +49,12 @@ def generate_launch_description():
 
     world = LaunchConfiguration('world')
 
+    world_filename = os.path.join(aws_dir, 'worlds', 'no_roof_small_warehouse',
+                                  'no_roof_small_warehouse.world')
+
+    if os.getenv('TEST_WORLD') is not None:
+        world_filename = os.getenv('TEST_WORLD')
+
     robot_name = LaunchConfiguration('robot_name')
     robot_sdf = LaunchConfiguration('robot_sdf')
     pose = {'x': LaunchConfiguration('x_pose', default='1.80'),
@@ -85,14 +91,13 @@ def generate_launch_description():
 
         DeclareLaunchArgument(
             'world',
-            default_value=os.path.join(aws_dir, 'worlds', 'no_roof_small_warehouse',
-                                       'no_roof_small_warehouse.world'),
+            default_value=world_filename,
             description='Full path to world model file to load'),
 
         # Launch gazebo server for simulation
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py')),
+                os.path.join(gazebo_ros, 'launch', 'gazebo.launch.py')),
             launch_arguments={'world': world}.items()
         ),
 
@@ -149,7 +154,7 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[os.path.join(os.getenv('TEST_DIR'), os.getenv('TESTER')),
-             '-r', '1.80', '2.20', '0.0', '0.0',
+             '-r', '1.80', '2.20', '0.0', '-5.0',
              '-e', 'True'],
         name='tester_node',
         output='screen')
