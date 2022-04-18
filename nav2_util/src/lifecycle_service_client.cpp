@@ -25,6 +25,7 @@ using nav2_util::generate_internal_node;
 using std::chrono::seconds;
 using std::make_shared;
 using std::string;
+using namespace std::chrono_literals;
 
 namespace nav2_util
 {
@@ -66,7 +67,7 @@ bool LifecycleServiceClient::change_state(
 bool LifecycleServiceClient::change_state(
   std::uint8_t transition)
 {
-  if (!change_state_.wait_for_service()) {
+  if (!change_state_.wait_for_service(5s)) {
     throw std::runtime_error("change_state service is not available!");
   }
 

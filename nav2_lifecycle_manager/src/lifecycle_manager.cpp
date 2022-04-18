@@ -199,8 +199,8 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 {
   message(transition_label_map_[transition] + node_name);
 
-  if (!node_map_[node_name]->change_state(transition, 5s) ||
-    !(node_map_[node_name]->get_state(2s) == transition_state_map_[transition]))
+  if (!node_map_[node_name]->change_state(transition) ||
+    !(node_map_[node_name]->get_state() == transition_state_map_[transition]))
   {
     RCLCPP_ERROR(get_logger(), "Failed to change state for node: %s", node_name.c_str());
     return false;
@@ -227,7 +227,10 @@ LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool hard_chan
         if (!changeStateForNode(node_name, transition) && !hard_change) {
           return false;
         }
-      } catch (const std::runtime_error & /*e*/) {
+      } catch (const std::runtime_error & e) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Failed to change state for node: %s. Exception: %s.", node_name.c_str(), e.what());
         return false;
       }
     }
@@ -238,7 +241,10 @@ LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool hard_chan
         if (!changeStateForNode(*rit, transition) && !hard_change) {
           return false;
         }
-      } catch (const std::runtime_error & /*e*/) {
+      } catch (const std::runtime_error & e) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Failed to change state for node: %s. Exception: %s.", (*rit).c_str(), e.what());
         return false;
       }
     }
@@ -425,7 +431,7 @@ LifecycleManager::checkBondRespawnConnection()
     }
 
     try {
-      node_map_[node_name]->get_state(2s);  // Only won't throw if the server exists
+      node_map_[node_name]->get_state();  // Only won't throw if the server exists
       live_servers++;
     } catch (...) {
       break;
