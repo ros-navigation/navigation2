@@ -89,8 +89,8 @@ using BackUpAction = nav2_msgs::action::BackUp;
 
 class BackUp : public DriveOnHeading<nav2_msgs::action::BackUp>
 {
-  public:
-    Status onRun(const std::shared_ptr<const BackUpAction::Goal> command) override;
+public:
+  Status onRun(const std::shared_ptr<const BackUpAction::Goal> command) override;
 };
 
 }  // namespace nav2_behaviors

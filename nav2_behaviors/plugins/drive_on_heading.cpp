@@ -62,8 +62,7 @@ Status DriveOnHeading<ActionT>::onRun(const std::shared_ptr<const typename Actio
   }
 
   // Ensure that both the speed and direction have the same sign
-  if( (command->target.x > 0.0) == (command->speed > 0.0) )
-  {
+  if ( !((command->target.x > 0.0) == (command->speed > 0.0)) ) {
     RCLCPP_ERROR(this->logger_, "Speed and command sign did not match");
     return Status::FAILED;
   }
@@ -201,5 +200,6 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 }  // namespace nav2_behaviors
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_behaviors::DriveOnHeading<nav2_msgs::action::DriveOnHeading>, nav2_core::Behavior)
+PLUGINLIB_EXPORT_CLASS(
+  nav2_behaviors::DriveOnHeading<nav2_msgs::action::DriveOnHeading>, nav2_core::Behavior)
 PLUGINLIB_EXPORT_CLASS(nav2_behaviors::BackUp, nav2_core::Behavior)
