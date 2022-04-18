@@ -9,7 +9,7 @@ ament_target_dependencies(${test_drive_on_heading_behavior}
   ${dependencies}
 )
 
-ament_add_test(test_backup_recovery
+ament_add_test(test_drive_on_heading_recovery
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_drive_on_heading_behavior_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"

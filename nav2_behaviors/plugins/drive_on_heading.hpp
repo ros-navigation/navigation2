@@ -1,4 +1,4 @@
-// Copyright (c) Joshua Wallace
+// Copyright (c) 2022 Joshua Wallace
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ namespace nav2_behaviors
  * @class nav2_behaviors::DriveOnHeading
  * @brief An action server Behavior for spinning in
  */
-template<typename ActionT>
+template<typename ActionT = nav2_msgs::action::DriveOnHeading>
 class DriveOnHeading : public TimedBehavior<ActionT>
 {
 public:

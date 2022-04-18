@@ -70,7 +70,6 @@ public:
       "bt_loop_duration",
       std::chrono::milliseconds(10));
     config_->blackboard->set<bool>("initial_pose_received", false);
-    config_->blackboard->set<int>("number_recoveries", 0);
 
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
@@ -89,11 +88,6 @@ public:
     node_.reset();
     action_server_.reset();
     factory_.reset();
-  }
-
-  void SetUp() override
-  {
-    config_->blackboard->set("number_recoveries", 0);
   }
 
   void TearDown() override
@@ -156,14 +150,12 @@ TEST_F(DriveOnHeadingActionTestFixture, test_tick)
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
 
   auto goal = action_server_->getCurrentGoal();
   EXPECT_EQ(goal->target.x, 2.0);
@@ -182,7 +174,6 @@ TEST_F(DriveOnHeadingActionTestFixture, test_failure)
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   action_server_->setReturnSuccess(false);
-  EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS &&
     tree_->rootNode()->status() != BT::NodeStatus::FAILURE)
@@ -191,7 +182,6 @@ TEST_F(DriveOnHeadingActionTestFixture, test_failure)
   }
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
-  EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
 
   auto goal = action_server_->getCurrentGoal();
   EXPECT_EQ(goal->target.x, 2.0);
