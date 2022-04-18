@@ -36,7 +36,7 @@ The Regulated Pure Pursuit controller implements active collision detection. We 
 
 The regulated pure pursuit algorithm also makes use of the common variations on the pure pursuit algorithm. We implement the adaptive pure pursuit's main contribution of having velocity-scaled lookahead point distances. This helps make the controller more stable over a larger range of potential linear velocities. There are parameters for setting the lookahead gain (or lookahead time) and thresholded values for minimum and maximum.
 
-The final minor improvement we make is slowing on approach to the goal. Knowing that the optimal lookahead distance is `X`, we can take the difference in `X` and the actual distance of the lookahead point found to find the lookahead point error. During operations, the variation in this error should be exceptionally small and won't be triggered. However, at the end of the path, there are no more points at a lookahead distance away from the robot, so it uses the last point on the path. So as the robot approaches a target, its error will grow and the robot's velocity will be reduced proportional to this error until a minimum threshold. This is also tracked by the kinematic speed limits to ensure drivability.
+The final minor improvement we make is slowing on approach to the goal. Knowing the remaining path length we are able to calculate motion profile that brings us to stop on the goal point. In case of robots that are able to rotate in place, there is a proportional angle controller implemented in order to precisely track the angle setpoint.
 
 The major improvements that this work implements is the regulations on the linear velocity based on some cost functions.  They were selected to remove long-standing bad behavior within the pure pursuit algorithm. Normal Pure Pursuit has an issue with overshoot and poor handling in particularly high curvature (or extremely rapidly changing curvature) environments. It is commonly known that this will cause the robot to overshoot from the path and potentially collide with the environment. These cost functions in the Regulated Pure Pursuit algorithm were also chosen based on common requirements and needs of mobile robots uses in service, commercial, and industrial use-cases; scaling by curvature creates intuitive behavior of slowing the robot when making sharp turns and slowing when its near a potential collision so that small variations don't clip obstacles. This is also really useful when working in partially observable environments (like turning in and out of aisles / hallways often) so that you slow before a sharp turn into an unknown dynamic environment to be more conservative in case something is in the way immediately requiring a stop.
 
@@ -52,9 +52,12 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 
 | Parameter | Description | 
 |-----|----|
-| `desired_linear_vel` | The desired maximum linear velocity to use. | 
-| `max_linear_accel` | Acceleration for linear velocity | 
-| `max_linear_decel` | Deceleration for linear velocity | 
+| `desired_linear_vel` | The desired maximum linear velocity to use. |
+| `max_linear_accel` | Acceleration for linear velocity |
+| `max_linear_decel` | Deceleration for linear velocity |
+| `max_linear_jerk` | Jerk for linear velocity |
+| `max_angular_jerk` | Jerk for angular velocity |
+| `kp_angle` | Proportional regulator gain while rotating in place |
 | `lookahead_dist` | The lookahead distance to use to find the lookahead point | 
 | `min_lookahead_dist` | The minimum lookahead distance threshold when using velocity scaled lookahead distances | 
 | `max_lookahead_dist` | The maximum lookahead distance threshold when using velocity scaled lookahead distances | 
@@ -62,8 +65,6 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 | `rotate_to_heading_angular_vel` | If rotate to heading is used, this is the angular velocity to use. | 
 | `transform_tolerance` | The TF transform tolerance | 
 | `use_velocity_scaled_lookahead_dist` | Whether to use the velocity scaled lookahead distances or constant `lookahead_distance` | 
-| `min_approach_linear_velocity` | The minimum velocity threshold to apply when approaching the goal | 
-| `use_approach_linear_velocity_scaling` | Whether to scale the linear velocity down on approach to the goal for a smooth stop | 
 | `max_allowed_time_to_collision_up_to_carrot` | The time to project a velocity command to check for collisions, limited to maximum distance of lookahead distance selected | 
 | `use_regulated_linear_velocity_scaling` | Whether to use the regulated features for curvature | 
 | `use_cost_regulated_linear_velocity_scaling` | Whether to use the regulated features for proximity to obstacles | 
@@ -106,6 +107,9 @@ controller_server:
       desired_linear_vel: 0.5
       max_linear_accel: 2.5
       max_linear_decel: 2.5
+      max_linear_jerk: 10000.0
+      max_angular_jerk: 10000.0
+      kp_angle: 3.0
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9
@@ -113,8 +117,6 @@ controller_server:
       rotate_to_heading_angular_vel: 1.8
       transform_tolerance: 0.1
       use_velocity_scaled_lookahead_dist: false
-      min_approach_linear_velocity: 0.05
-      use_approach_linear_velocity_scaling: true
       max_allowed_time_to_collision_up_to_carrot: 1.0
       use_regulated_linear_velocity_scaling: true
       use_cost_regulated_linear_velocity_scaling: false
@@ -150,3 +152,5 @@ To tune to get Pure Pursuit behaviors, set all boolean parameters to false and m
 Currently, there is no rotate to goal behaviors, so it is expected that the path approach orientations are the orientations of the goal or the goal checker has been set with a generous `min_theta_velocity_threshold`. Implementations for rotating to goal heading are on the way.
 
 The choice of lookahead distances are highly dependent on robot size, responsiveness, controller update rate, and speed. Please make sure to tune this for your platform, although the `regulated` features do largely make heavy tuning of this value unnecessary. If you see wiggling, increase the distance or scale. If it's not converging as fast to the path as you'd like, decrease it.
+
+Default jerk limits are set to high values. This essentially generates trapezoidal velocity profiles and fits most of users. Advanced users can change these values but should be aware that too low jerk limits can lead to poor path tracking and oscillations.

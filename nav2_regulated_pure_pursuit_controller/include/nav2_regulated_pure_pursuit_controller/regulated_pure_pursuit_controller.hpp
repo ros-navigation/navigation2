@@ -30,6 +30,7 @@
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
+#include "ruckig/ruckig.hpp"
 
 namespace nav2_regulated_pure_pursuit_controller
 {
@@ -160,9 +161,11 @@ protected:
   /**
    * @brief Whether robot should rotate to final goal orientation
    * @param carrot_pose current lookahead point
+   * @param lookahead_dist current lookahead distance
    * @return Whether should rotate to goal heading
    */
-  bool shouldRotateToGoalHeading(const geometry_msgs::msg::PoseStamped & carrot_pose);
+  bool shouldRotateToGoalHeading(
+    const geometry_msgs::msg::PoseStamped & carrot_pose, const double & lookahead_dist);
 
   /**
    * @brief Create a smooth and kinematically smoothed rotation command
@@ -240,9 +243,11 @@ protected:
    * @brief Get lookahead point
    * @param lookahead_dist Optimal lookahead distance
    * @param path Current global path
+   * @param remaining_path_length path length from lookahead point to the end of pruned path
    * @return Lookahead point
    */
-  geometry_msgs::msg::PoseStamped getLookAheadPoint(const double &, const nav_msgs::msg::Path &);
+  geometry_msgs::msg::PoseStamped getLookAheadPoint(
+    const double &, const nav_msgs::msg::Path &, double & remaining_path_length);
 
   /**
    * @brief checks for the cusp position
@@ -273,6 +278,8 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
 
   double desired_linear_vel_, base_desired_linear_vel_;
+  double max_linear_accel_;
+  double max_linear_decel_;
   double lookahead_dist_;
   double rotate_to_heading_angular_vel_;
   double max_lookahead_dist_;
@@ -280,7 +287,6 @@ protected:
   double lookahead_time_;
   bool use_velocity_scaled_lookahead_dist_;
   tf2::Duration transform_tolerance_;
-  double min_approach_linear_velocity_;
   double control_duration_;
   double max_allowed_time_to_collision_up_to_carrot_;
   bool use_regulated_linear_velocity_scaling_;
@@ -295,6 +301,11 @@ protected:
   double rotate_to_heading_min_angle_;
   double goal_dist_tol_;
   bool allow_reversing_;
+  double robot_angle_;
+  double kp_angle_;
+  double max_linear_jerk_;
+  double max_angular_jerk_;
+  rclcpp::Time system_time_;
   double max_robot_pose_search_dist_;
   bool use_interpolation_;
 
@@ -305,6 +316,16 @@ protected:
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
   std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
   collision_checker_;
+
+  std::unique_ptr<ruckig::Ruckig<1>> distance_profile_;
+  ruckig::InputParameter<1> distance_profile_input_;
+  ruckig::OutputParameter<1> distance_profile_output_;
+  ruckig::Result distance_profile_result_;
+
+  std::unique_ptr<ruckig::Ruckig<1>> angle_profile_;
+  ruckig::InputParameter<1> angle_profile_input_;
+  ruckig::OutputParameter<1> angle_profile_output_;
+  ruckig::Result angle_profile_result_;
 
   // Dynamic parameters handler
   std::mutex mutex_;
