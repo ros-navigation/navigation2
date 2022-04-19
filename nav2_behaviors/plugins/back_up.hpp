@@ -1,4 +1,3 @@
-// Copyright (c) 2018 Intel
 // Copyright (c) 2022 Joshua Wallace
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,14 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <chrono>
-#include <ctime>
+#ifndef NAV2_BEHAVIORS__PLUGINS__BACK_UP_HPP_
+#define NAV2_BEHAVIORS__PLUGINS__BACK_UP_HPP_
+
 #include <memory>
-#include <utility>
 
 #include "drive_on_heading.hpp"
-#include "nav2_util/node_utils.hpp"
 #include "nav2_msgs/action/back_up.hpp"
 
-#include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_behaviors::DriveOnHeading<>, nav2_core::Behavior)
+using BackUpAction = nav2_msgs::action::BackUp;
+
+
+namespace nav2_behaviors
+{
+class BackUp : public DriveOnHeading<nav2_msgs::action::BackUp>
+{
+public:
+  Status onRun(const std::shared_ptr<const BackUpAction::Goal> command) override;
+};
+}
+
+#endif  // NAV2_BEHAVIORS__PLUGINS__BACK_UP_HPP_
