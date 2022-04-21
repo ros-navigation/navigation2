@@ -1,4 +1,5 @@
 // Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2022 Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,6 +42,8 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   declare_parameter("node_names", rclcpp::PARAMETER_STRING_ARRAY);
   declare_parameter("autostart", rclcpp::ParameterValue(false));
   declare_parameter("bond_timeout", 4.0);
+  declare_parameter("bond_respawn_max_duration", 10.0);
+  declare_parameter("attempt_respawn_reconnection", true);
 
   node_names_ = get_parameter("node_names").as_string_array();
   get_parameter("autostart", autostart_);
@@ -48,6 +51,12 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   get_parameter("bond_timeout", bond_timeout_s);
   bond_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::duration<double>(bond_timeout_s));
+
+  double respawn_timeout_s;
+  get_parameter("bond_respawn_max_duration", respawn_timeout_s);
+  bond_respawn_max_duration_ = rclcpp::Duration::from_seconds(respawn_timeout_s);
+
+  get_parameter("attempt_respawn_reconnection", attempt_respawn_reconnection_);
 
   callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
   manager_srv_ = create_service<ManageLifecycleNodes>(
@@ -207,20 +216,35 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 }
 
 bool
-LifecycleManager::changeStateForAllNodes(std::uint8_t transition)
+LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool hard_change)
 {
+  // Hard change will continue even if a node fails
   if (transition == Transition::TRANSITION_CONFIGURE ||
     transition == Transition::TRANSITION_ACTIVATE)
   {
     for (auto & node_name : node_names_) {
-      if (!changeStateForNode(node_name, transition)) {
+      try {
+        if (!changeStateForNode(node_name, transition) && !hard_change) {
+          return false;
+        }
+      } catch (const std::runtime_error & e) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Failed to change state for node: %s. Exception: %s.", node_name.c_str(), e.what());
         return false;
       }
     }
   } else {
     std::vector<std::string>::reverse_iterator rit;
     for (rit = node_names_.rbegin(); rit != node_names_.rend(); ++rit) {
-      if (!changeStateForNode(*rit, transition)) {
+      try {
+        if (!changeStateForNode(*rit, transition) && !hard_change) {
+          return false;
+        }
+      } catch (const std::runtime_error & e) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Failed to change state for node: %s. Exception: %s.", (*rit).c_str(), e.what());
         return false;
       }
     }
@@ -267,22 +291,23 @@ LifecycleManager::shutdown()
 }
 
 bool
-LifecycleManager::reset()
+LifecycleManager::reset(bool hard_reset)
 {
   system_active_ = false;
   destroyBondTimer();
 
   message("Resetting managed nodes...");
   // Should transition in reverse order
-  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE) ||
-    !changeStateForAllNodes(Transition::TRANSITION_CLEANUP))
+  if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE, hard_reset) ||
+    !changeStateForAllNodes(Transition::TRANSITION_CLEANUP, hard_reset))
   {
-    RCLCPP_ERROR(get_logger(), "Failed to reset nodes: aborting reset");
-    return false;
+    if (!hard_reset) {
+      RCLCPP_ERROR(get_logger(), "Failed to reset nodes: aborting reset");
+      return false;
+    }
   }
 
   message("Managed nodes have been reset");
-
   return true;
 }
 
@@ -297,8 +322,8 @@ LifecycleManager::pause()
     RCLCPP_ERROR(get_logger(), "Failed to pause nodes: aborting pause");
     return false;
   }
-  message("Managed nodes have been paused");
 
+  message("Managed nodes have been paused");
   return true;
 }
 
@@ -310,6 +335,7 @@ LifecycleManager::resume()
     RCLCPP_ERROR(get_logger(), "Failed to resume nodes: aborting resume");
     return false;
   }
+
   message("Managed nodes are active");
   system_active_ = true;
   createBondTimer();
@@ -324,7 +350,6 @@ LifecycleManager::createBondTimer()
   }
 
   message("Creating bond timer...");
-
   bond_timer_ = this->create_wall_timer(
     200ms,
     std::bind(&LifecycleManager::checkBondConnections, this),
@@ -364,9 +389,66 @@ LifecycleManager::checkBondConnections()
         "CRITICAL FAILURE: SERVER %s IS DOWN after not receiving a heartbeat for %i ms."
         " Shutting down related nodes.",
         node_name.c_str(), static_cast<int>(bond_timeout_.count()));
-      reset();
+      reset(true);  // hard reset to transition all still active down
+      // if a server crashed, it won't get cleared due to failed transition, clear manually
+      bond_map_.clear();
+
+      // Initialize the bond respawn timer to check if server comes back online
+      // after a failure, within a maximum timeout period.
+      if (attempt_respawn_reconnection_) {
+        bond_respawn_timer_ = this->create_wall_timer(
+          1s,
+          std::bind(&LifecycleManager::checkBondRespawnConnection, this),
+          callback_group_);
+      }
       return;
     }
+  }
+}
+
+void
+LifecycleManager::checkBondRespawnConnection()
+{
+  // First attempt in respawn, start maximum duration to respawn
+  if (bond_respawn_start_time_.nanoseconds() == 0) {
+    bond_respawn_start_time_ = now();
+  }
+
+  // Note: system_active_ is inverted since this should be in a failure
+  // condition. If another outside user actives the system again, this should not process.
+  if (system_active_ || !rclcpp::ok() || node_names_.empty()) {
+    bond_respawn_start_time_ = rclcpp::Time(0);
+    bond_respawn_timer_.reset();
+    return;
+  }
+
+  // Check number of live connections after a bond failure
+  int live_servers = 0;
+  const int max_live_servers = node_names_.size();
+  for (auto & node_name : node_names_) {
+    if (!rclcpp::ok()) {
+      return;
+    }
+
+    try {
+      node_map_[node_name]->get_state();  // Only won't throw if the server exists
+      live_servers++;
+    } catch (...) {
+      break;
+    }
+  }
+
+  // If all are alive, kill timer and retransition system to active
+  // Else, check if maximum timeout has occurred
+  if (live_servers == max_live_servers) {
+    message("Successfully re-established connections from server respawns, starting back up.");
+    bond_respawn_start_time_ = rclcpp::Time(0);
+    bond_respawn_timer_.reset();
+    startup();
+  } else if (now() - bond_respawn_start_time_ >= bond_respawn_max_duration_) {
+    message("Failed to re-establish connection from a server crash after maximum timeout.");
+    bond_respawn_start_time_ = rclcpp::Time(0);
+    bond_respawn_timer_.reset();
   }
 }
 
@@ -382,8 +464,4 @@ LifecycleManager::message(const std::string & msg)
 }  // namespace nav2_lifecycle_manager
 
 #include "rclcpp_components/register_node_macro.hpp"
-
-// Register the component with class_loader.
-// This acts as a sort of entry point, allowing the component to be discoverable when its library
-// is being loaded into a running process.
 RCLCPP_COMPONENTS_REGISTER_NODE(nav2_lifecycle_manager::LifecycleManager)
