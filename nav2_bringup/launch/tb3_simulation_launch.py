@@ -103,7 +103,7 @@ def generate_launch_description():
         description='Automatically startup the nav2 stack')
 
     declare_use_composition_cmd = DeclareLaunchArgument(
-        'use_composition', default_value='False',
+        'use_composition', default_value='True',
         description='Whether to use composed bringup')
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
