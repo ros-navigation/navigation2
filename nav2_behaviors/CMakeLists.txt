@@ -71,6 +71,14 @@ ament_target_dependencies(nav2_wait_behavior
   ${dependencies}
 )
 
+add_library(nav2_assisted_teleop_behavior SHARED
+  plugins/assisted_teleop.cpp
+)
+
+ament_target_dependencies(nav2_assisted_teleop_behavior
+  ${dependencies}
+)
+
 pluginlib_export_plugin_description_file(nav2_core behavior_plugin.xml)
 
 # Library
@@ -99,6 +107,7 @@ install(TARGETS ${library_name}
                 nav2_backup_behavior
                 nav2_spin_behavior
                 nav2_wait_behavior
+                nav2_assisted_teleop_behavior
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -128,6 +137,7 @@ ament_export_libraries(${library_name}
   nav2_backup_behavior
   nav2_spin_behavior
   nav2_wait_behavior
+  nav2_assisted_teleop_behavior
 )
 ament_export_dependencies(${dependencies})
 ament_package()

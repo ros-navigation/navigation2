@@ -96,6 +96,11 @@ public:
   {
   }
 
+  // an opportunity for a derived class to do something on action completion
+  virtual void onActionCompletion()
+  {
+  }
+
   // configure the server on lifecycle setup
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
@@ -222,6 +227,7 @@ protected:
         stopRobot();
         result->total_elapsed_time = steady_clock_.now() - start_time;
         action_server_->terminate_all(result);
+        onActionCompletion();
         return;
       }
 
@@ -234,6 +240,7 @@ protected:
         stopRobot();
         result->total_elapsed_time = steady_clock_.now() - start_time;
         action_server_->terminate_current(result);
+        onActionCompletion();
         return;
       }
 
@@ -244,12 +251,14 @@ protected:
             "%s completed successfully", behavior_name_.c_str());
           result->total_elapsed_time = steady_clock_.now() - start_time;
           action_server_->succeeded_current(result);
+          onActionCompletion();
           return;
 
         case Status::FAILED:
           RCLCPP_WARN(logger_, "%s failed", behavior_name_.c_str());
           result->total_elapsed_time = steady_clock_.now() - start_time;
           action_server_->terminate_current(result);
+          onActionCompletion();
           return;
 
         case Status::RUNNING:
