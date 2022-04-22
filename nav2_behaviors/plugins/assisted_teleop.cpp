@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <utility>
+
 #include "assisted_teleop.hpp"
 #include "nav2_util/node_utils.hpp"
 
 namespace nav2_behaviors
 {
-  AssistedTeleop::AssistedTeleop()
-  : TimedBehavior<AssistedTeleopAction>(),
-    feedback_(std::make_shared<AssistedTeleopAction::Feedback>())
-  {
-
-  }
+AssistedTeleop::AssistedTeleop()
+: TimedBehavior<AssistedTeleopAction>(),
+  feedback_(std::make_shared<AssistedTeleopAction::Feedback>())
+{}
 
 void AssistedTeleop::onConfigure()
 {
@@ -60,16 +60,16 @@ Status AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAction::G
   }
 
   vel_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
-  input_vel_topic_, rclcpp::SystemDefaultsQoS(),
-  std::bind(
-    &AssistedTeleop::inputVelocityCallback,
-    this, std::placeholders::_1));
+    input_vel_topic_, rclcpp::SystemDefaultsQoS(),
+    std::bind(
+      &AssistedTeleop::inputVelocityCallback,
+      this, std::placeholders::_1));
 
   joy_sub_ = node->create_subscription<sensor_msgs::msg::Joy>(
-  joystick_topic_, rclcpp::SystemDefaultsQoS(),
-  std::bind(
-    &AssistedTeleop::joyCallback,
-    this, std::placeholders::_1));
+    joystick_topic_, rclcpp::SystemDefaultsQoS(),
+    std::bind(
+      &AssistedTeleop::joyCallback,
+      this, std::placeholders::_1));
 
   return Status::SUCCEEDED;
 }
@@ -103,15 +103,13 @@ Status AssistedTeleop::onCycleUpdate()
   }
 
   // user states that teleop was successful
-  if( joy_.buttons.size() > 0 && joy_.buttons[0] > 0)
-  {
+  if (joy_.buttons.size() > 0 && joy_.buttons[0] > 0) {
     stopRobot();
     return Status::SUCCEEDED;
   }
 
   // user states that teleop failed
-  if( joy_.buttons.size() > 1 && joy_.buttons[1] > 0)
-  {
+  if (joy_.buttons.size() > 1 && joy_.buttons[1] > 0) {
     stopRobot();
     return Status::FAILED;
   }
@@ -123,68 +121,28 @@ Status AssistedTeleop::onCycleUpdate()
   return Status::RUNNING;
 }
 
-geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Twist& twist)
+geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Twist & twist)
 {
-  // TODO (jwallace42): wait for progress safety node
-
-  // geometry_msgs::msg::PoseStamped current_pose;
-  // if (!nav2_util::getCurrentPose(
-  //     current_pose, *tf_, global_frame_, robot_base_frame_,
-  //     transform_tolerance_))
-  // {
-  //   RCLCPP_ERROR(logger_, "Failed to get current pose, setting velocity to zero");
-  //   return geometry_msgs::msg::Twist();
-  // }
-
-  // geometry_msgs::msg::Pose2D current_pose_2d;
-  // current_pose_2d.x = current_pose.pose.position.x;
-  // current_pose_2d.y = current_pose.pose.position.y;
-  // current_pose_2d.theta = tf2::getYaw(current_pose.pose.orientation);
-
-  // const double linear_vel = std::fabs(std::hypot(twist.linear.x, twist.linear.y));
-  // // TODO (jwallace42): remove 0.05 constant, what if linear vel is zero?
-  // // RCLCPP_INFO(logger_, linear_vel);
-  // RCLCPP_INFO_STREAM(logger_, linear_vel);
-  // if (linear_vel == 0.0)
-  //   return twist;
-
-  // const double dt = 0.05 / linear_vel;
-
-  // geometry_msgs::msg::Pose2D projected_pose = current_pose_2d;
-  // RCLCPP_INFO_STREAM(logger_, "Intial pose: " << projected_pose.x << " " << projected_pose.y);
-  // auto adjusted_twist = twist;
-  // for(double current_time = 0; current_time < projection_time_; current_time+=dt)
-  // {
-  //   projected_pose = projectPose(projected_pose, adjusted_twist, dt);
-  //   RCLCPP_INFO_STREAM(logger_, "Projected pose: " << projected_pose.x << " " << projected_pose.y);
-
-  //   if(!collision_checker_->isCollisionFree(projected_pose))
-  //   {
-  //     adjusted_twist.linear.x *= current_time / projection_time_;
-  //     adjusted_twist.linear.y *= current_time / projection_time_;
-  //     adjusted_twist.angular.z *= current_time / projection_time_;
-  //     RCLCPP_WARN_STREAM(logger_, "Collision approaching in " << current_time << ". Reducing velocity");
-  //     break;
-  //   }
-  // }
+  // TODO(jwallace42): Waiting for safety node to be completed.
   return twist;
 }
 
-geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(geometry_msgs::msg::Pose2D pose,
-                                      geometry_msgs::msg::Twist twist,
-                                      double projection_time)
+geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
+  geometry_msgs::msg::Pose2D pose,
+  geometry_msgs::msg::Twist twist,
+  double projection_time)
 {
   geometry_msgs::msg::Pose2D projected_pose;
 
   projected_pose.x = projection_time * (
-                              twist.linear.x * cos(pose.theta) +
-                              twist.linear.y * sin(pose.theta));
+    twist.linear.x * cos(pose.theta) +
+    twist.linear.y * sin(pose.theta));
 
   projected_pose.y = projection_time * (
-                              twist.linear.x * sin(pose.theta) -
-                              twist.linear.y * cos(pose.theta));
+    twist.linear.x * sin(pose.theta) -
+    twist.linear.y * cos(pose.theta));
 
-  projected_pose.theta = projection_time*twist.angular.z;
+  projected_pose.theta = projection_time * twist.angular.z;
 
   return projected_pose;
 }
@@ -203,7 +161,7 @@ void AssistedTeleop::joyCallback(const sensor_msgs::msg::Joy msg)
   joy_.buttons = msg.buttons;
 }
 
-}  // nav2_behaviors
+}  // namespace nav2_behaviors
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_behaviors::AssistedTeleop, nav2_core::Behavior)

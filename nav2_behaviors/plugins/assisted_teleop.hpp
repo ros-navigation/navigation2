@@ -17,6 +17,7 @@
 
 #include <chrono>
 #include <memory>
+#include <string>
 
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_behaviors/timed_behavior.hpp"
@@ -63,11 +64,12 @@ protected:
    */
   void onConfigure() override;
 
-  geometry_msgs::msg::Pose2D projectPose(geometry_msgs::msg::Pose2D pose,
-                                        geometry_msgs::msg::Twist twist,
-                                        double projection_time);
+  geometry_msgs::msg::Pose2D projectPose(
+    geometry_msgs::msg::Pose2D pose,
+    geometry_msgs::msg::Twist twist,
+    double projection_time);
 
-  geometry_msgs::msg::Twist computeVelocity(geometry_msgs::msg::Twist& twist);
+  geometry_msgs::msg::Twist computeVelocity(geometry_msgs::msg::Twist & twist);
 
   /**
    * @brief Callback function for velocity subscriber
@@ -98,6 +100,6 @@ protected:
   rclcpp::Duration command_time_allowance_{0, 0};
   rclcpp::Time end_time_;
 };
-}  // nav2_behaviors
+}  // namespace nav2_behaviors
 
 #endif  // NAV2_BEHAVIORS__PLUGINS__ASSISTED_TELEOP_HPP_
