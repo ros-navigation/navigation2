@@ -138,6 +138,12 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
+    <Action ID="AssistedTeleop">
+      <input_port name="time_allowance">Allowed time for spinning</input_port>
+      <input_port name="server_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
     <!-- ############################### CONDITION NODES ############################## -->
     <Condition ID="GoalReached">
         <input_port name="goal">Destination</input_port>
