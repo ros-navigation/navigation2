@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Joshua Wallace
+// Copyright (c) 2022 Neobotix GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,27 +15,19 @@
 #include <string>
 #include <memory>
 
-#include "nav2_behavior_tree/plugins/action/assisted_teleop_action.hpp"
+#include "std_msgs/msg/string.hpp"
+
+#include "nav2_behavior_tree/plugins/action/assisted_teleop_cancel_node.hpp"
 
 namespace nav2_behavior_tree
 {
 
-AssistedTeleopAction::AssistedTeleopAction(
+AssistedTeleopCancel::AssistedTeleopCancel(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: BtActionNode<nav2_msgs::action::AssistedTeleop>(xml_tag_name, action_name, conf)
+: BtCancelActionNode<nav2_msgs::action::AssistedTeleop>(xml_tag_name, action_name, conf)
 {
-  double time_allowance;
-  getInput("time_allowance", time_allowance);
-
-  // Populate the input message
-  goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
-}
-
-void AssistedTeleopAction::on_tick()
-{
-  increment_recovery_count();
 }
 
 }  // namespace nav2_behavior_tree
@@ -46,9 +38,10 @@ BT_REGISTER_NODES(factory)
   BT::NodeBuilder builder =
     [](const std::string & name, const BT::NodeConfiguration & config)
     {
-      return std::make_unique<nav2_behavior_tree::AssistedTeleopAction>(
+      return std::make_unique<nav2_behavior_tree::AssistedTeleopCancel>(
         name, "assisted_teleop", config);
     };
 
-  factory.registerBuilder<nav2_behavior_tree::AssistedTeleopAction>("AssistedTeleop", builder);
+  factory.registerBuilder<nav2_behavior_tree::AssistedTeleopCancel>(
+    "CancelAssistedTeleop", builder);
 }
