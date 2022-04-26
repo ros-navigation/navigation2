@@ -678,7 +678,7 @@ protected:
       path_to_costmap,
       costmap_to_robot
     };
-    for (const auto transform : tf_message.transforms) {
+    for (const auto & transform : tf_message.transforms) {
       tf_buffer_->setTransform(transform, "test", false);
     }
     tf_buffer_->setUsingDedicatedThread(true);  // lying to let it do transforms
