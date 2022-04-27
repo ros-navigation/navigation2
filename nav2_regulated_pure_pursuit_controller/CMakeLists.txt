@@ -11,6 +11,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 nav2_package()
 set(CMAKE_CXX_STANDARD 17)
@@ -28,6 +29,7 @@ set(dependencies
   nav2_util
   nav2_core
   tf2
+  tf2_geometry_msgs
 )
 
 set(library_name nav2_regulated_pure_pursuit_controller)
