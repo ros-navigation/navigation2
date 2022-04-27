@@ -90,6 +90,9 @@ class BasicNavigator(Node):
         self.get_costmap_global_srv = self.create_client(GetCostmap, '/global_costmap/get_costmap')
         self.get_costmap_local_srv = self.create_client(GetCostmap, '/local_costmap/get_costmap')
 
+    def destroyNode(self):
+        self.destroy_node()
+
     def destroy_node(self):
         self.nav_through_poses_client.destroy()
         self.nav_to_pose_client.destroy()
