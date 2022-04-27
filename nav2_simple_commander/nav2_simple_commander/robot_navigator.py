@@ -87,6 +87,21 @@ class BasicNavigator(Node):
         self.get_costmap_global_srv = self.create_client(GetCostmap, '/global_costmap/get_costmap')
         self.get_costmap_local_srv = self.create_client(GetCostmap, '/local_costmap/get_costmap')
 
+    def destroyNode(self):
+        self.destroy_node()
+
+    def destroy_node(self):
+        self.nav_through_poses_client.destroy()
+        self.nav_to_pose_client.destroy()
+        self.follow_waypoints_client.destroy()
+        self.follow_path_client.destroy()
+        self.compute_path_to_pose_client.destroy()
+        self.compute_path_through_poses_client.destroy()
+        self.smoother_client.destroy()
+        self.spin_client.destroy()
+        self.backup_client.destroy()
+        super().destroy_node()
+
     def setInitialPose(self, initial_pose):
         """Set the initial pose to the localization system."""
         self.initial_pose_received = False
