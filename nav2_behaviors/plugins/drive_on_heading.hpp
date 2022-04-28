@@ -111,7 +111,7 @@ public:
 
     double diff_x = initial_pose_.pose.position.x - current_pose.pose.position.x;
     double diff_y = initial_pose_.pose.position.y - current_pose.pose.position.y;
-    double distance = sqrt(diff_x * diff_x + diff_y * diff_y);
+    double distance = hypot(diff_x * diff_x + diff_y * diff_y);
 
     feedback_->distance_traveled = distance;
     this->action_server_->publish_feedback(feedback_);
