@@ -63,12 +63,12 @@ namespace nav2_map_server
 {
 
 MapServer::MapServer(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("map_server", "", false, options)
+: nav2_util::LifecycleNode("map_server", "", false, options), grid_available_(false)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare the node parameters
-  declare_parameter("yaml_filename", rclcpp::PARAMETER_STRING);
+  declare_parameter("yaml_filename", "");
   declare_parameter("topic_name", "map");
   declare_parameter("frame_id", "map");
 }
@@ -82,19 +82,25 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  // Get the name of the YAML file to use
+  // Get the name of the YAML file to use (can be empty if no initial map should be used)
   std::string yaml_filename = get_parameter("yaml_filename").as_string();
-
   std::string topic_name = get_parameter("topic_name").as_string();
   frame_id_ = get_parameter("frame_id").as_string();
 
-  // Shared pointer to LoadMap::Response is also should be initialized
-  // in order to avoid null-pointer dereference
-  std::shared_ptr<nav2_msgs::srv::LoadMap::Response> rsp =
+  // only try to load map if parameter was set
+  if (!yaml_filename.empty()){
+    // Shared pointer to LoadMap::Response is also should be initialized
+    // in order to avoid null-pointer dereference
+    std::shared_ptr<nav2_msgs::srv::LoadMap::Response> rsp =
     std::make_shared<nav2_msgs::srv::LoadMap::Response>();
 
-  if (!loadMapResponseFromYaml(yaml_filename, rsp)) {
-    throw std::runtime_error("Failed to load map yaml file: " + yaml_filename);
+    if (!loadMapResponseFromYaml(yaml_filename, rsp)) {
+      throw std::runtime_error("Failed to load map yaml file: " + yaml_filename);
+    }
+  }else{
+    RCLCPP_INFO(get_logger(), 
+        "yaml-filename parameter is empty, set map through '%s'-service", 
+        load_map_service_name_.c_str());
   }
 
   // Make name prefix for services
@@ -125,8 +131,11 @@ MapServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Publish the map using the latched topic
   occ_pub_->on_activate();
-  auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
-  occ_pub_->publish(std::move(occ_grid));
+  if (grid_available_)
+  {
+    auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
+    occ_pub_->publish(std::move(occ_grid));
+  }
 
   // create bond connection
   createBond();
@@ -155,6 +164,7 @@ MapServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   occ_pub_.reset();
   occ_service_.reset();
   load_map_service_.reset();
+  grid_available_ = false;
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -192,6 +202,7 @@ void MapServer::loadMapCallback(
     RCLCPP_WARN(
       get_logger(),
       "Received LoadMap request but not in ACTIVE state, ignoring!");
+      response->result = response->RESULT_UNDEFINED_FAILURE;
     return;
   }
   RCLCPP_INFO(get_logger(), "Handling LoadMap request");
@@ -206,6 +217,7 @@ bool MapServer::loadMapResponseFromYaml(
   const std::string & yaml_file,
   std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response)
 {
+  grid_available_ = false;
   switch (loadMapFromYaml(yaml_file, msg_)) {
     case MAP_DOES_NOT_EXIST:
       response->result = nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
@@ -217,9 +229,10 @@ bool MapServer::loadMapResponseFromYaml(
       response->result = nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA;
       return false;
     case LOAD_MAP_SUCCESS:
-      // Correcting msg_ header when it belongs to spiecific node
+      // Correcting msg_ header when it belongs to specific node
       updateMsgHeader();
 
+      grid_available_ = true;
       response->map = msg_;
       response->result = nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS;
   }
