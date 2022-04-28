@@ -140,7 +140,7 @@ protected:
   nav_msgs::msg::OccupancyGrid msg_;
 
   // true if msg_ was initialized
-  bool grid_available_;
+  bool map_available_;
 };
 
 }  // namespace nav2_map_server

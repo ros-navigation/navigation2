@@ -95,7 +95,7 @@ $ process_with_multiple_map_servers __params:=combined_params.yaml
 ```
 
 
-The parameter for the initial map (yaml_filename) is OPTIONAL. If it is empty, no map is loaded during
+The parameter for the initial map (yaml_filename) has to be set, but an empty string can be used if no initial map should be loaded. In this case, no map is loaded during
 on_configure or published during on_activate. The _load_map_-service should the be used to load and publish a map. 
 
 
