@@ -54,9 +54,13 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<double>("time_allowance", 10.0, "Allowed time for running assisted teleop")
+        BT::InputPort<double>("time_allowance", 10.0, "Allowed time for running assisted teleop"),
+        BT::InputPort<bool>("recovery", false, "If true the recovery count will be incremented")
       });
   }
+
+  private:
+    bool recovery_;
 };
 
 }  // namespace nav2_behavior_tree

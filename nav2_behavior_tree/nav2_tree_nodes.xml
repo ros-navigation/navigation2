@@ -30,6 +30,11 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
+    <Action ID="CancelAssistedTeleop">
+      <input_port name="service_name">Service name to cancel the assisted teleop behavior</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
     <Action ID="CancelWait">
       <input_port name="service_name">Service name to cancel the wait recovery</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
@@ -140,6 +145,7 @@
 
     <Action ID="AssistedTeleop">
       <input_port name="time_allowance">Allowed time for spinning</input_port>
+      <input_port name="recovery">If true recovery count will be incremented</input_port>
       <input_port name="server_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>

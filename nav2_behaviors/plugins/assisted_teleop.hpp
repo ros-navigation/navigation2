@@ -37,8 +37,6 @@ class AssistedTeleop : public TimedBehavior<AssistedTeleopAction>
 {
 public:
   AssistedTeleop();
-  // AssistedTeleop();
-  // ~AssistedTeleop();
 
   /**
    * @brief Initialization to run behavior

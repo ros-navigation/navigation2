@@ -47,17 +47,6 @@ void AssistedTeleop::onConfigure()
   node->get_parameter("projection_time", projection_time_);
   node->get_parameter("input_vel_topic", input_vel_topic_);
   node->get_parameter("joystick_topic", joystick_topic_);
-}
-
-Status AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAction::Goal> command)
-{
-  command_time_allowance_ = command->time_allowance;
-  end_time_ = steady_clock_.now() + command_time_allowance_;
-
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
 
   vel_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
     input_vel_topic_, rclcpp::SystemDefaultsQoS(),
@@ -70,7 +59,17 @@ Status AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAction::G
     std::bind(
       &AssistedTeleop::joyCallback,
       this, std::placeholders::_1));
+}
 
+Status AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAction::Goal> command)
+{
+  command_time_allowance_ = command->time_allowance;
+  end_time_ = steady_clock_.now() + command_time_allowance_;
+
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
   return Status::SUCCEEDED;
 }
 
@@ -78,8 +77,7 @@ void AssistedTeleop::onActionCompletion()
 {
   RCLCPP_INFO(logger_, "Action completed");
   input_twist_ = geometry_msgs::msg::Twist();
-  vel_sub_.reset();
-  joy_sub_.reset();
+  joy_ = sensor_msgs::msg::Joy();
 }
 
 Status AssistedTeleop::onCycleUpdate()
