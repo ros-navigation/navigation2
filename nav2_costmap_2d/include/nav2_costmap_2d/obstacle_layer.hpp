@@ -132,6 +132,13 @@ public:
   virtual bool isClearable() {return true;}
 
   /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+  /**
    * @brief triggers the update of observations buffer
    */
   void resetBuffersLastUpdated();
@@ -233,6 +240,9 @@ protected:
   std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer>> marking_buffers_;
   /// @brief Used to store observation buffers used for clearing obstacles
   std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer>> clearing_buffers_;
+
+  /// @brief Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   // Used only for testing purposes
   std::vector<nav2_costmap_2d::Observation> static_clearing_observations_;
