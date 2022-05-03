@@ -1142,78 +1142,94 @@ AmclNode::dynamicParametersCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "alpha1") {
         alpha1_ = parameter.as_double();
-    } else if (param_name == "alpha2") {
+      } else if (param_name == "alpha2") {
         alpha2_ = parameter.as_double();
-    } else if (param_name == "alpha3") {
+      } else if (param_name == "alpha3") {
         alpha3_ = parameter.as_double();
-    } else if (param_name == "alpha4") {
+      } else if (param_name == "alpha4") {
         alpha4_ = parameter.as_double();
-    } else if (param_name == "alpha5") {
+      } else if (param_name == "alpha5") {
         alpha5_ = parameter.as_double();
-    } else if (param_name == "beam_skip_distance") {
+      } else if (param_name == "beam_skip_distance") {
         beam_skip_distance_ = parameter.as_double();
-    } else if (param_name == "beam_skip_error_threshold") {
+      } else if (param_name == "beam_skip_error_threshold") {
         beam_skip_error_threshold_ = parameter.as_double();
-    } else if (param_name == "beam_skip_threshold") {
+      } else if (param_name == "beam_skip_threshold") {
         beam_skip_threshold_ = parameter.as_double();
-    } else if (param_name == "lambda_short") {
+      } else if (param_name == "lambda_short") {
         lambda_short_ = parameter.as_double();
-    } else if (param_name == "laser_likelihood_max_dist") {
+      } else if (param_name == "laser_likelihood_max_dist") {
         laser_likelihood_max_dist_ = parameter.as_double();
-    } else if (param_name == "laser_max_range") {
+      } else if (param_name == "laser_max_range") {
         laser_max_range_ = parameter.as_double();
-    } else if (param_name == "laser_min_range") {
+      } else if (param_name == "laser_min_range") {
         laser_min_range_ = parameter.as_double();
-    } else if (param_name == "pf_err") {
+      } else if (param_name == "pf_err") {
         pf_err_ = parameter.as_double();
-    } else if (param_name == "pf_z") {
+      } else if (param_name == "pf_z") {
         pf_z_ = parameter.as_double();
-    } else if (param_name == "recovery_alpha_fast") {
+      } else if (param_name == "recovery_alpha_fast") {
         alpha_fast_ = parameter.as_double();
-    } else if (param_name == "recovery_alpha_slow") {
+      } else if (param_name == "recovery_alpha_slow") {
         alpha_slow_ = parameter.as_double();
-    } else if (param_name == "save_pose_rate") {
+      } else if (param_name == "save_pose_rate") {
         save_pose_rate = parameter.as_double();
         save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
-    } else if (param_name == "sigma_hit") {
+      } else if (param_name == "sigma_hit") {
         sigma_hit_ = parameter.as_double();
-    } else if (param_name == "transform_tolerance") {
+      } else if (param_name == "transform_tolerance") {
         tmp_tol = parameter.as_double();
         transform_tolerance_ = tf2::durationFromSec(tmp_tol);
-    } else if (param_name == "update_min_a") {
+      } else if (param_name == "update_min_a") {
         a_thresh_ = parameter.as_double();
-    } else if (param_name == "update_min_d") {
+      } else if (param_name == "update_min_d") {
         d_thresh_ = parameter.as_double();
-    } else if (param_name == "z_hit") {
+      } else if (param_name == "z_hit") {
         z_hit_ = parameter.as_double();
-    } else if (param_name == "z_max") {
+      } else if (param_name == "z_max") {
         z_max_ = parameter.as_double();
-    } else if (param_name == "z_rand") {
+      } else if (param_name == "z_rand") {
         z_rand_ = parameter.as_double();
-    } else if (param_name == "z_short") {
+      } else if (param_name == "z_short") {
         z_short_ = parameter.as_double();
-    }
-  } else if (param_type == ParameterType::PARAMETER_STRING) {
+      }
+    } else if (param_type == ParameterType::PARAMETER_STRING) {
       if (param_name == "base_frame_id") {
         base_frame_id_ = parameter.as_string();
-    } else if (param_name == "global_frame_id") {
+      } else if (param_name == "global_frame_id") {
         global_frame_id_ = parameter.as_string();
-    } else if (param_name == "base_frame_id") {
-        base_frame_id_ = parameter.as_string();
-    } else if (param_name == "laser_model_type") {
+      } else if (param_name == "map_topic") {
+        map_topic_ = parameter.as_string();
+      } else if (param_name == "laser_model_type") {
         sensor_model_type_ = parameter.as_string();
-    } else if (param_name == "odom_frame_id") {
+      } else if (param_name == "odom_frame_id") {
         odom_frame_id_ = parameter.as_string();
-    } else if (param_name == "scan_topic") {
+      } else if (param_name == "scan_topic") {
         scan_topic_ = parameter.as_string();
-    } else if (param_name == "odom_model_type") {
+      } else if (param_name == "robot_model_type") {
         robot_model_type_ = parameter.as_string();
-    } 
-  } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == "do_beamskip") {
         do_beamskip_ = parameter.as_bool();
       } else if (param_name == "tf_broadcast") {
         tf_broadcast_ = parameter.as_bool();
+      } else if (param_name == "set_initial_pose") {
+        tf_broadcast_ = parameter.as_bool();
+      } else if (param_name == "always_reset_initial_pose") {
+        tf_broadcast_ = parameter.as_bool();
+      } else if (param_name == "first_map_only") {
+        tf_broadcast_ = parameter.as_bool();
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == "max_beams") {
+        max_beams_ = parameter.as_int();
+      } else if (param_name == "max_particles") {
+        max_particles_ = parameter.as_int();
+      } else if (param_name == "min_particles") {
+        min_particles_ = parameter.as_int();
+      } else if (param_name == "resample_interval") {
+        resample_interval_ = parameter.as_int();
       }
     }
   }
