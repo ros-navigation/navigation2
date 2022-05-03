@@ -279,6 +279,13 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
     handleInitialPose(last_published_pose_);
   }
 
+  auto node = shared_from_this();
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &AmclNode::dynamicParametersCallback,
+      this, std::placeholders::_1));
+
   // create bond connection
   createBond();
 
@@ -1115,12 +1122,6 @@ AmclNode::initParameters()
   if (always_reset_initial_pose_) {
     initial_pose_is_known_ = false;
   }
-
-  // Add callback for dynamic parameters
-  dyn_params_handler_ = this->add_on_set_parameters_callback(
-    std::bind(
-      &AmclNode::dynamicParametersCallback,
-      this, std::placeholders::_1));
 }
 
 /**
@@ -1131,6 +1132,7 @@ rcl_interfaces::msg::SetParametersResult
 AmclNode::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
+  std::lock_guard<std::mutex> lock(pf_mutex_);
   rcl_interfaces::msg::SetParametersResult result;
   double save_pose_rate;
   double tmp_tol;
@@ -1440,7 +1442,6 @@ AmclNode::initParticleFilter()
     reinterpret_cast<void *>(map_));
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
-
   // Initialize the filter
   pf_vector_t pf_init_pose_mean = pf_vector_zero();
   pf_init_pose_mean.v[0] = init_pose_[0];
