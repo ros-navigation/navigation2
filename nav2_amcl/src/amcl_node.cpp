@@ -1442,6 +1442,7 @@ AmclNode::initParticleFilter()
     reinterpret_cast<void *>(map_));
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
+
   // Initialize the filter
   pf_vector_t pf_init_pose_mean = pf_vector_zero();
   pf_init_pose_mean.v[0] = init_pose_[0];
