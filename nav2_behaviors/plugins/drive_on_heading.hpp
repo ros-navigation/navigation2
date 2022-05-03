@@ -59,7 +59,7 @@ public:
     if (command->target.y != 0.0 || command->target.z != 0.0) {
       RCLCPP_INFO(
         this->logger_,
-        "Backing up in Y and Z not supported, will only move in X.");
+        "DrivingOnHeading in Y and Z not supported, will only move in X.");
     }
 
     // Ensure that both the speed and direction have the same sign

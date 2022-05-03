@@ -23,6 +23,7 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
     RCLCPP_INFO(
       logger_,
       "Backing up in Y and Z not supported, will only move in X.");
+    return Status::FAILED;
   }
 
   // Silently ensure that both the speed and direction are negative.
