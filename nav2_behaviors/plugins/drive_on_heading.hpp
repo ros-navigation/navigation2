@@ -60,6 +60,7 @@ public:
       RCLCPP_INFO(
         this->logger_,
         "DrivingOnHeading in Y and Z not supported, will only move in X.");
+      return Status::FAILED;
     }
 
     // Ensure that both the speed and direction have the same sign
@@ -92,6 +93,8 @@ public:
   Status onCycleUpdate()
   {
     rclcpp::Duration time_remaining = end_time_ - this->steady_clock_.now();
+    RCLCPP_ERROR_STREAM(this->logger_, "Time remaining" << time_remaining.seconds());
+    RCLCPP_ERROR_STREAM(this->logger_, "Time remaining" << command_time_allowance_.seconds());
     if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
       this->stopRobot();
       RCLCPP_WARN(

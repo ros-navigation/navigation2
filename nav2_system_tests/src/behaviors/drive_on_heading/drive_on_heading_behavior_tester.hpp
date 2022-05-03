@@ -49,8 +49,8 @@ public:
 
   // Runs a single test with given target yaw
   bool defaultDriveOnHeadingBehaviorTest(
-    float target_dist,
-    double tolerance = 0.1);
+    const DriveOnHeading::Goal goal_msg,
+    double tolerance);
 
   void activate();
 

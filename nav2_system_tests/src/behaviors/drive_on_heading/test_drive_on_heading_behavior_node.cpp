@@ -27,16 +27,25 @@ using namespace std::chrono_literals;
 
 using nav2_system_tests::DriveOnHeadingBehaviorTester;
 
-std::string testNameGenerator(const testing::TestParamInfo<std::tuple<float, float>> & param)
+struct TestParameters
 {
-  std::string name = std::to_string(std::abs(std::get<0>(param.param))) + "_" + std::to_string(
-    std::get<1>(param.param));
-  name.erase(std::remove(name.begin(), name.end(), '.'), name.end());
+  float x;
+  float y;
+  float speed;
+  float time_allowance;
+  float tolerance;
+};
+
+std::string testNameGenerator(const testing::TestParamInfo<TestParameters> &)
+{
+  static int test_index = 0;
+  std::string name = "DriveOnHeadingTest" + std::to_string(test_index);
+  ++test_index;
   return name;
 }
 
 class DriveOnHeadingBehaviorTestFixture
-  : public ::testing::TestWithParam<std::tuple<float, float>>
+  : public ::testing::TestWithParam<TestParameters>
 {
 public:
   static void SetUpTestCase()
@@ -62,8 +71,13 @@ DriveOnHeadingBehaviorTester * DriveOnHeadingBehaviorTestFixture::drive_on_headi
 
 TEST_P(DriveOnHeadingBehaviorTestFixture, testBackupBehavior)
 {
-  float target_dist = std::get<0>(GetParam());
-  float tolerance = std::get<1>(GetParam());
+  auto test_params = GetParam();
+  auto goal = nav2_msgs::action::DriveOnHeading::Goal();
+  goal.target.x = test_params.x;
+  goal.target.y = test_params.y;
+  goal.speed = test_params.speed;
+  goal.time_allowance.sec = test_params.time_allowance;
+  float tolerance = test_params.tolerance;
 
   if (!drive_on_heading_behavior_tester->isActive()) {
     drive_on_heading_behavior_tester->activate();
@@ -71,29 +85,36 @@ TEST_P(DriveOnHeadingBehaviorTestFixture, testBackupBehavior)
 
   bool success = false;
   success = drive_on_heading_behavior_tester->defaultDriveOnHeadingBehaviorTest(
-    target_dist,
+    goal,
     tolerance);
 
-  // if intentionally backing into an obstacle, should fail.
-  if (target_dist < -0.1) {
-    success = !success;
+  float dist_to_obstacle = 2.0f;
+  if ( ((dist_to_obstacle - std::fabs(test_params.x)) < std::fabs(goal.speed)) ||
+    std::fabs(goal.target.y) > 0 ||
+    goal.time_allowance.sec < 2.0 ||
+    !((goal.target.x > 0.0) == (goal.speed > 0.0)))
+  {
+    EXPECT_FALSE(success);
+  } else {
+    EXPECT_TRUE(success);
   }
-
-  EXPECT_EQ(true, success);
 }
 
-// TODO(stevemacenski): See issue #1779, while the 3rd test collides,
-// it returns success due to technical debt in the BT. This test will
-// remain as a reminder to update this to a `false` case once the
-// behavior server returns true values.
+std::vector<TestParameters> test_params = {TestParameters{-0.05, 0.0, -0.2, 10.0, 0.01},
+  TestParameters{-0.05, 0.1, -0.2, 10.0, 0.01},
+  TestParameters{-2.0, 0.0, -0.2, 10.0, 0.1},
+  TestParameters{-0.05, 0.0, -0.01, 1.0, 0.01},
+  TestParameters{0.05, 0.0, -0.2, 10.0, 0.01}};
 
 INSTANTIATE_TEST_SUITE_P(
   DriveOnHeadingBehaviorTests,
   DriveOnHeadingBehaviorTestFixture,
   ::testing::Values(
-    std::make_tuple(-0.05, 0.01),
-    std::make_tuple(-0.2, 0.1),
-    std::make_tuple(-2.0, 0.1)),
+    test_params[0],
+    test_params[1],
+    test_params[2],
+    test_params[3],
+    test_params[4]),
   testNameGenerator);
 
 int main(int argc, char ** argv)
