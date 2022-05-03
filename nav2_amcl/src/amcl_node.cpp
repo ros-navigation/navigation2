@@ -1132,6 +1132,8 @@ AmclNode::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
+  double save_pose_rate;
+  double tmp_tol;
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -1171,11 +1173,13 @@ AmclNode::dynamicParametersCallback(
     } else if (param_name == "recovery_alpha_slow") {
         alpha_slow_ = parameter.as_double();
     } else if (param_name == "save_pose_rate") {
-        save_pose_period_ = parameter.as_double();
+        save_pose_rate = parameter.as_double();
+        save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
     } else if (param_name == "sigma_hit") {
         sigma_hit_ = parameter.as_double();
     } else if (param_name == "transform_tolerance") {
-        transform_tolerance_ = parameter.as_double();
+        tmp_tol = parameter.as_double();
+        transform_tolerance_ = tf2::durationFromSec(tmp_tol);
     } else if (param_name == "update_min_a") {
         a_thresh_ = parameter.as_double();
     } else if (param_name == "update_min_d") {
@@ -1197,34 +1201,15 @@ AmclNode::dynamicParametersCallback(
     } else if (param_name == "base_frame_id") {
         base_frame_id_ = parameter.as_string();
     } else if (param_name == "laser_model_type") {
-        if (parameter.as_string() == "beam") {
-          sensor_model_type_ = LASER_MODEL_BEAM;
-        } else if (parameter.as_string() == "laser_model_type") {
-            sensor_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD;
-        } else if (parameter.as_string() == "laser_model_type") {
-            sensor_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD_PROB;
-        } else {
-            RCLCPP_WARN(
-              get_logger(), "Unknown laser model type \"%s\"; defaulting to likelihood_field model",
-                 tmp_model_type.c_str());
-            sensor_model_type_ = LASER_MODEL_LIKELIHOOD_FIELD;
-        }
-      } else if (param_name == "odom_frame_id") {
+        sensor_model_type_ = parameter.as_string();
+    } else if (param_name == "odom_frame_id") {
         odom_frame_id_ = parameter.as_string();
-      } else if (param_name == "scan_topic") {
-          scan_topic_ = parameter.as_string();
-      } else if (param_name == "odom_model_type") {
-        if (parameter.as_string() == "diff") {
-            robot_model_type_ = ODOM_MODEL_DIFF;
-        } else if (parameter.as_string() == "omni") {
-            robot_model_type_ = ODOM_MODEL_OMNI;
-        } else if (parameter.as_string() == "diff-corrected") {
-            robot_model_type_ = ODOM_MODEL_DIFF_CORRECTED;
-        } else if (parameter.as_string() == "omni-corrected") {
-            robot_model_type_ = ODOM_MODEL_OMNI_CORRECTED;
-        }
-      }
-    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+    } else if (param_name == "scan_topic") {
+        scan_topic_ = parameter.as_string();
+    } else if (param_name == "odom_model_type") {
+        robot_model_type_ = parameter.as_string();
+    } 
+  } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == "do_beamskip") {
         do_beamskip_ = parameter.as_bool();
       } else if (param_name == "tf_broadcast") {
