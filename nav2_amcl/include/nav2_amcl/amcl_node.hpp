@@ -27,7 +27,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <mutex>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "message_filters/subscriber.h"
