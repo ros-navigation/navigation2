@@ -1132,7 +1132,7 @@ rcl_interfaces::msg::SetParametersResult
 AmclNode::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
-  std::lock_guard<std::mutex> lock(pf_mutex_);
+  std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
   rcl_interfaces::msg::SetParametersResult result;
   double save_pose_rate;
   double tmp_tol;
@@ -1217,11 +1217,11 @@ AmclNode::dynamicParametersCallback(
       } else if (param_name == "tf_broadcast") {
         tf_broadcast_ = parameter.as_bool();
       } else if (param_name == "set_initial_pose") {
-        tf_broadcast_ = parameter.as_bool();
+        set_initial_pose_ = parameter.as_bool();
       } else if (param_name == "always_reset_initial_pose") {
-        tf_broadcast_ = parameter.as_bool();
+        always_reset_initial_pose_ = parameter.as_bool();
       } else if (param_name == "first_map_only") {
-        tf_broadcast_ = parameter.as_bool();
+        first_map_only_ = parameter.as_bool();
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == "max_beams") {
@@ -1235,6 +1235,39 @@ AmclNode::dynamicParametersCallback(
       }
     }
   }
+
+  // Checking if the minimum particles is greater than max_particles_
+  if (min_particles_ > max_particles_) {
+    RCLCPP_WARN(
+      rclcpp_node_->get_logger(),
+      "You've set min_particles to be greater than max particles,"
+      "this isn't allowed so they'll be set to be equal.");
+    max_particles_ = min_particles_;
+  }
+
+  // Re-initialize the particle filter
+  if (pf_ != NULL) {
+    pf_free(pf_);
+    pf_ = NULL;
+  }
+  initParticleFilter();
+
+  // Re-initialize the odometry
+  motion_model_.reset();
+  initOdometry();
+
+  // Re-initialize the lasers and it's filters
+  lasers_.clear();
+  lasers_update_.clear();
+  frame_to_laser_.clear();
+
+  laser_scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
+    *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_, transform_tolerance_);
+
+  laser_scan_connection_ = laser_scan_filter_->registerCallback(
+    std::bind(
+      &AmclNode::laserReceived,
+      this, std::placeholders::_1));
 
   result.successful = true;
   return result;
