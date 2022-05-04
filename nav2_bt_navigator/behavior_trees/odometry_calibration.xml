@@ -1,0 +1,18 @@
+<!--
+  This Behavior Tree drives in a square
+-->
+
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="Drive in a square">
+      <DriveOnHeading dist_to_travel="0.2" speed="0.02" time_allowance="100"/>
+      <Spin spin_dist="1.57"/>
+      <DriveOnHeading dist_to_travel="0.2" speed="0.02" time_allowance="100"/>
+      <Spin spin_dist="1.57"/>
+      <DriveOnHeading dist_to_travel="0.2" speed="0.02" time_allowance="100"/>
+      <Spin spin_dist="1.57"/>
+      <DriveOnHeading dist_to_travel="0.2" speed="0.02" time_allowance="100"/>
+      <Spin spin_dist="1.57"/>
+    </Sequence>
+  </BehaviorTree>
+</root>
