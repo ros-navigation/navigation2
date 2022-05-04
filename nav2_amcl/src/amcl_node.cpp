@@ -1137,6 +1137,10 @@ AmclNode::dynamicParametersCallback(
   double save_pose_rate;
   double tmp_tol;
 
+  bool reinit_pf = false;
+  bool reinit_odom = false;
+  bool reinit_laser = false;
+
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
@@ -1144,56 +1148,78 @@ AmclNode::dynamicParametersCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "alpha1") {
         alpha1_ = parameter.as_double();
+        reinit_odom = true;
       } else if (param_name == "alpha2") {
         alpha2_ = parameter.as_double();
+        reinit_odom = true;
       } else if (param_name == "alpha3") {
         alpha3_ = parameter.as_double();
+        reinit_odom = true;
       } else if (param_name == "alpha4") {
         alpha4_ = parameter.as_double();
+        reinit_odom = true;
       } else if (param_name == "alpha5") {
         alpha5_ = parameter.as_double();
+        reinit_odom = true;
       } else if (param_name == "beam_skip_distance") {
         beam_skip_distance_ = parameter.as_double();
+        reinit_laser = true;
       } else if (param_name == "beam_skip_error_threshold") {
         beam_skip_error_threshold_ = parameter.as_double();
+        reinit_laser = true;
       } else if (param_name == "beam_skip_threshold") {
         beam_skip_threshold_ = parameter.as_double();
+        reinit_laser = true;
       } else if (param_name == "lambda_short") {
         lambda_short_ = parameter.as_double();
+        reinit_laser = true;
       } else if (param_name == "laser_likelihood_max_dist") {
         laser_likelihood_max_dist_ = parameter.as_double();
+        reinit_laser = true;
       } else if (param_name == "laser_max_range") {
         laser_max_range_ = parameter.as_double();
+        reinit_laser = true;
       } else if (param_name == "laser_min_range") {
         laser_min_range_ = parameter.as_double();
+        reinit_laser = true;
       } else if (param_name == "pf_err") {
         pf_err_ = parameter.as_double();
+        reinit_pf = true;
       } else if (param_name == "pf_z") {
         pf_z_ = parameter.as_double();
+        reinit_pf = true;
       } else if (param_name == "recovery_alpha_fast") {
         alpha_fast_ = parameter.as_double();
+        reinit_pf = true;
       } else if (param_name == "recovery_alpha_slow") {
         alpha_slow_ = parameter.as_double();
+        reinit_pf = true;
       } else if (param_name == "save_pose_rate") {
         save_pose_rate = parameter.as_double();
         save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
       } else if (param_name == "sigma_hit") {
         sigma_hit_ = parameter.as_double();
+        reinit_laser = true;
       } else if (param_name == "transform_tolerance") {
         tmp_tol = parameter.as_double();
         transform_tolerance_ = tf2::durationFromSec(tmp_tol);
+        reinit_laser = true;
       } else if (param_name == "update_min_a") {
         a_thresh_ = parameter.as_double();
       } else if (param_name == "update_min_d") {
         d_thresh_ = parameter.as_double();
       } else if (param_name == "z_hit") {
         z_hit_ = parameter.as_double();
+        reinit_laser = true;
       } else if (param_name == "z_max") {
         z_max_ = parameter.as_double();
+        reinit_laser = true;
       } else if (param_name == "z_rand") {
         z_rand_ = parameter.as_double();
+        reinit_laser = true;
       } else if (param_name == "z_short") {
         z_short_ = parameter.as_double();
+        reinit_laser = true;
       }
     } else if (param_type == ParameterType::PARAMETER_STRING) {
       if (param_name == "base_frame_id") {
@@ -1204,16 +1230,21 @@ AmclNode::dynamicParametersCallback(
         map_topic_ = parameter.as_string();
       } else if (param_name == "laser_model_type") {
         sensor_model_type_ = parameter.as_string();
+        reinit_laser = true;
       } else if (param_name == "odom_frame_id") {
         odom_frame_id_ = parameter.as_string();
+        reinit_laser = true;
       } else if (param_name == "scan_topic") {
         scan_topic_ = parameter.as_string();
+        reinit_laser = true;
       } else if (param_name == "robot_model_type") {
         robot_model_type_ = parameter.as_string();
+        reinit_odom = true;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == "do_beamskip") {
         do_beamskip_ = parameter.as_bool();
+        reinit_laser = true;
       } else if (param_name == "tf_broadcast") {
         tf_broadcast_ = parameter.as_bool();
       } else if (param_name == "set_initial_pose") {
@@ -1226,10 +1257,13 @@ AmclNode::dynamicParametersCallback(
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == "max_beams") {
         max_beams_ = parameter.as_int();
+        reinit_laser = true;
       } else if (param_name == "max_particles") {
         max_particles_ = parameter.as_int();
+        reinit_pf = true;
       } else if (param_name == "min_particles") {
         min_particles_ = parameter.as_int();
+        reinit_pf = true;
       } else if (param_name == "resample_interval") {
         resample_interval_ = parameter.as_int();
       }
@@ -1239,35 +1273,41 @@ AmclNode::dynamicParametersCallback(
   // Checking if the minimum particles is greater than max_particles_
   if (min_particles_ > max_particles_) {
     RCLCPP_WARN(
-      rclcpp_node_->get_logger(),
+      this->get_logger(),
       "You've set min_particles to be greater than max particles,"
       "this isn't allowed so they'll be set to be equal.");
     max_particles_ = min_particles_;
   }
 
   // Re-initialize the particle filter
-  if (pf_ != NULL) {
-    pf_free(pf_);
-    pf_ = NULL;
+  if (reinit_pf) {
+    if (pf_ != NULL) {
+      pf_free(pf_);
+      pf_ = NULL;
+    }
+    initParticleFilter();
   }
-  initParticleFilter();
 
   // Re-initialize the odometry
-  motion_model_.reset();
-  initOdometry();
+  if (reinit_odom) {
+    motion_model_.reset();
+    initOdometry();
+  }
 
   // Re-initialize the lasers and it's filters
-  lasers_.clear();
-  lasers_update_.clear();
-  frame_to_laser_.clear();
+  if (reinit_laser) {
+    lasers_.clear();
+    lasers_update_.clear();
+    frame_to_laser_.clear();
 
-  laser_scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-    *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_, transform_tolerance_);
+    laser_scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
+      *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_, transform_tolerance_);
 
-  laser_scan_connection_ = laser_scan_filter_->registerCallback(
-    std::bind(
-      &AmclNode::laserReceived,
-      this, std::placeholders::_1));
+    laser_scan_connection_ = laser_scan_filter_->registerCallback(
+      std::bind(
+        &AmclNode::laserReceived,
+        this, std::placeholders::_1));
+  }
 
   result.successful = true;
   return result;
