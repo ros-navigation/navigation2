@@ -1,5 +1,5 @@
 <!--
-  This Behavior Tree drives in a square
+  his Behavior Tree drives in a square for odometry calibration experiments
 -->
 
 <root main_tree_to_execute="MainTree">
