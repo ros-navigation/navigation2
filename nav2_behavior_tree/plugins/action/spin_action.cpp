@@ -36,7 +36,10 @@ SpinAction::SpinAction(
 
 void SpinAction::on_tick()
 {
-  increment_recovery_count();
+  if (is_recovery_)
+  {
+    increment_recovery_count();
+  }
 }
 
 }  // namespace nav2_behavior_tree

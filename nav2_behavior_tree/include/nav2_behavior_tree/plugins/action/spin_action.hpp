@@ -54,9 +54,12 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<double>("spin_dist", 1.57, "Spin distance"),
-        BT::InputPort<double>("time_allowance", 10.0, "Allowed time for spinning")
+        BT::InputPort<double>("time_allowance", 10.0, "Allowed time for spinning"),
+        BT::InputPort<bool>("is_recovery", true, "True if recovery")
       });
   }
+private:
+  bool is_recovery_;
 };
 
 }  // namespace nav2_behavior_tree
