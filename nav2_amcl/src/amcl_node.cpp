@@ -1140,6 +1140,7 @@ AmclNode::dynamicParametersCallback(
   bool reinit_pf = false;
   bool reinit_odom = false;
   bool reinit_laser = false;
+  bool reinit_map = false;
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -1228,6 +1229,7 @@ AmclNode::dynamicParametersCallback(
         global_frame_id_ = parameter.as_string();
       } else if (param_name == "map_topic") {
         map_topic_ = parameter.as_string();
+        reinit_map = true;
       } else if (param_name == "laser_model_type") {
         sensor_model_type_ = parameter.as_string();
         reinit_laser = true;
@@ -1307,6 +1309,12 @@ AmclNode::dynamicParametersCallback(
       std::bind(
         &AmclNode::laserReceived,
         this, std::placeholders::_1));
+  }
+
+  // Re-initialize the map
+  if (reinit_map) {
+    map_sub_.reset();
+    initPubSub();
   }
 
   result.successful = true;
