@@ -92,7 +92,7 @@ public:
    * @brief  Constructor for a costmap from an OccupancyGrid map
    * @param  map The OccupancyGrid map to create costmap from
    */
-  Costmap2D(const nav_msgs::msg::OccupancyGrid & map);
+  explicit Costmap2D(const nav_msgs::msg::OccupancyGrid & map);
 
   /**
    * @brief  Overloaded assignment operator

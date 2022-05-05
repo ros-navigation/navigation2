@@ -36,11 +36,12 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfiguration('use_composition')
     container_name = LaunchConfiguration('container_name')
+    use_respawn = LaunchConfiguration('use_respawn')
 
     lifecycle_nodes = ['controller_server',
                        'smoother_server',
                        'planner_server',
-                       'recoveries_server',
+                       'behavior_server',
                        'bt_navigator',
                        'waypoint_follower']
 
@@ -94,6 +95,10 @@ def generate_launch_description():
         'container_name', default_value='nav2_container',
         description='the name of conatiner that nodes will load in if use composition')
 
+    declare_use_respawn_cmd = DeclareLaunchArgument(
+        'use_respawn', default_value='False',
+        description='Whether to respawn if a node crashes. Applied when composition is disabled.')
+
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
@@ -101,6 +106,8 @@ def generate_launch_description():
                 package='nav2_controller',
                 executable='controller_server',
                 output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
                 parameters=[configured_params],
                 remappings=remappings),
             Node(
@@ -108,6 +115,8 @@ def generate_launch_description():
                 executable='smoother_server',
                 name='smoother_server',
                 output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
                 parameters=[configured_params],
                 remappings=remappings),
             Node(
@@ -115,13 +124,17 @@ def generate_launch_description():
                 executable='planner_server',
                 name='planner_server',
                 output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
                 parameters=[configured_params],
                 remappings=remappings),
             Node(
-                package='nav2_recoveries',
-                executable='recoveries_server',
-                name='recoveries_server',
+                package='nav2_behaviors',
+                executable='behavior_server',
+                name='behavior_server',
                 output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
                 parameters=[configured_params],
                 remappings=remappings),
             Node(
@@ -129,6 +142,8 @@ def generate_launch_description():
                 executable='bt_navigator',
                 name='bt_navigator',
                 output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
                 parameters=[configured_params],
                 remappings=remappings),
             Node(
@@ -136,6 +151,8 @@ def generate_launch_description():
                 executable='waypoint_follower',
                 name='waypoint_follower',
                 output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
                 parameters=[configured_params],
                 remappings=remappings),
             Node(
@@ -172,9 +189,9 @@ def generate_launch_description():
                 parameters=[configured_params],
                 remappings=remappings),
             ComposableNode(
-                package='nav2_recoveries',
-                plugin='recovery_server::RecoveryServer',
-                name='recoveries_server',
+                package='nav2_behaviors',
+                plugin='behavior_server::BehaviorServer',
+                name='behavior_server',
                 parameters=[configured_params],
                 remappings=remappings),
             ComposableNode(
@@ -212,6 +229,7 @@ def generate_launch_description():
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_container_name_cmd)
+    ld.add_action(declare_use_respawn_cmd)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(load_nodes)

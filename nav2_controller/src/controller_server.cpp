@@ -344,6 +344,7 @@ bool ControllerServer::findGoalCheckerId(
 void ControllerServer::computeControl()
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
 
   try {
@@ -596,12 +597,27 @@ void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::Shar
 rcl_interfaces::msg::SetParametersResult
 ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
-  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {
     const auto & type = parameter.get_type();
     const auto & name = parameter.get_name();
+
+    // If we are trying to change the parameter of a plugin we can just skip it at this point
+    // as they handle parameter changes themselves and don't need to lock the mutex
+    if (name.find('.') != std::string::npos) {
+      continue;
+    }
+
+    if (!dynamic_params_lock_.try_lock()) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Unable to dynamically change Parameters while the controller is currently running");
+      result.successful = false;
+      result.reason =
+        "Unable to dynamically change Parameters while the controller is currently running";
+      return result;
+    }
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == "controller_frequency") {
@@ -616,6 +632,8 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
         failure_tolerance_ = parameter.as_double();
       }
     }
+
+    dynamic_params_lock_.unlock();
   }
 
   result.successful = true;

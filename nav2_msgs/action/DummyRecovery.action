@@ -1,7 +1,0 @@
-#goal definition
-std_msgs/String command
----
-#result definition
-builtin_interfaces/Duration total_elapsed_time
----
-#feedback

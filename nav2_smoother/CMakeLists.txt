@@ -27,16 +27,7 @@ include_directories(
 )
 
 set(executable_name smoother_server)
-
-add_executable(${executable_name}
-  src/main.cpp
-)
-
 set(library_name ${executable_name}_core)
-
-add_library(${library_name} SHARED
-  src/nav2_smoother.cpp
-)
 
 set(dependencies
   angles
@@ -53,9 +44,31 @@ set(dependencies
   pluginlib
 )
 
+# Main library
+add_library(${library_name} SHARED
+  src/nav2_smoother.cpp
+)
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
+
+# Main executable
+add_executable(${executable_name}
+  src/main.cpp
+)
+ament_target_dependencies(${executable_name}
+  ${dependencies}
+)
+target_link_libraries(${executable_name} ${library_name})
+
+# Simple Smoother plugin
+add_library(simple_smoother SHARED
+  src/simple_smoother.cpp
+)
+ament_target_dependencies(simple_smoother
+  ${dependencies}
+)
+pluginlib_export_plugin_description_file(nav2_core plugins.xml)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -66,17 +79,10 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 endif()
 
-ament_target_dependencies(${executable_name}
-  ${dependencies}
-)
-
-target_link_libraries(${executable_name} ${library_name})
-
 rclcpp_components_register_nodes(${library_name} "nav2_smoother::SmootherServer")
 
 install(
-  TARGETS
-    ${library_name}
+  TARGETS ${library_name} simple_smoother
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -98,8 +104,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(
-  ${library_name})
+ament_export_libraries(${library_name} simple_smoother)
 ament_export_dependencies(${dependencies})
-
 ament_package()

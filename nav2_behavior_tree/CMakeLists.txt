@@ -69,6 +69,9 @@ list(APPEND plugin_libs nav2_spin_cancel_bt_node)
 add_library(nav2_back_up_cancel_bt_node SHARED plugins/action/back_up_cancel_node.cpp)
 list(APPEND plugin_libs nav2_back_up_cancel_bt_node)
 
+add_library(nav2_drive_on_heading_cancel_bt_node SHARED plugins/action/drive_on_heading_cancel_node.cpp)
+list(APPEND plugin_libs nav2_drive_on_heading_cancel_bt_node)
+
 add_library(nav2_smooth_path_action_bt_node SHARED plugins/action/smooth_path_action.cpp)
 list(APPEND plugin_libs nav2_smooth_path_action_bt_node)
 
@@ -77,6 +80,9 @@ list(APPEND plugin_libs nav2_follow_path_action_bt_node)
 
 add_library(nav2_back_up_action_bt_node SHARED plugins/action/back_up_action.cpp)
 list(APPEND plugin_libs nav2_back_up_action_bt_node)
+
+add_library(nav2_drive_on_heading_bt_node SHARED plugins/action/drive_on_heading_action.cpp)
+list(APPEND plugin_libs nav2_drive_on_heading_bt_node)
 
 add_library(nav2_spin_action_bt_node SHARED plugins/action/spin_action.cpp)
 list(APPEND plugin_libs nav2_spin_action_bt_node)
@@ -108,6 +114,9 @@ list(APPEND plugin_libs nav2_is_path_valid_condition_bt_node)
 add_library(nav2_time_expired_condition_bt_node SHARED plugins/condition/time_expired_condition.cpp)
 list(APPEND plugin_libs nav2_time_expired_condition_bt_node)
 
+add_library(nav2_path_expiring_timer_condition SHARED plugins/condition/path_expiring_timer_condition.cpp)
+list(APPEND plugin_libs nav2_path_expiring_timer_condition)
+
 add_library(nav2_distance_traveled_condition_bt_node SHARED plugins/condition/distance_traveled_condition.cpp)
 list(APPEND plugin_libs nav2_distance_traveled_condition_bt_node)
 
@@ -137,6 +146,9 @@ list(APPEND plugin_libs nav2_truncate_path_local_action_bt_node)
 
 add_library(nav2_goal_updater_node_bt_node SHARED plugins/decorator/goal_updater_node.cpp)
 list(APPEND plugin_libs nav2_goal_updater_node_bt_node)
+
+add_library(nav2_path_longer_on_approach_bt_node SHARED plugins/decorator/path_longer_on_approach.cpp)
+list(APPEND plugin_libs nav2_path_longer_on_approach_bt_node)
 
 add_library(nav2_recovery_node_bt_node SHARED plugins/control/recovery_node.cpp)
 list(APPEND plugin_libs nav2_recovery_node_bt_node)

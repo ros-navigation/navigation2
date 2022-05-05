@@ -55,12 +55,14 @@ using nav2_costmap_2d::FREE_SPACE;
 
 using nav2_costmap_2d::ObservationBuffer;
 using nav2_costmap_2d::Observation;
+using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
 
 ObstacleLayer::~ObstacleLayer()
 {
+  dyn_params_handler_.reset();
   for (auto & notifier : observation_notifiers_) {
     notifier.reset();
   }
@@ -74,7 +76,6 @@ void ObstacleLayer::onInitialize()
   // The topics that we'll subscribe to from the parameter server
   std::string topics_string;
 
-  // TODO(mjeronimo): these four are candidates for dynamic update
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(true));
   declareParameter("max_obstacle_height", rclcpp::ParameterValue(2.0));
@@ -93,6 +94,12 @@ void ObstacleLayer::onInitialize()
   node->get_parameter("track_unknown_space", track_unknown_space);
   node->get_parameter("transform_tolerance", transform_tolerance);
   node->get_parameter(name_ + "." + "observation_sources", topics_string);
+
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &ObstacleLayer::dynamicParametersCallback,
+      this,
+      std::placeholders::_1));
 
   RCLCPP_INFO(
     logger_,
@@ -272,6 +279,38 @@ void ObstacleLayer::onInitialize()
   }
 }
 
+rcl_interfaces::msg::SetParametersResult
+ObstacleLayer::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + "." + "max_obstacle_height") {
+        max_obstacle_height_ = parameter.as_double();
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == name_ + "." + "enabled") {
+        enabled_ = parameter.as_bool();
+      } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
+        footprint_clearing_enabled_ = parameter.as_bool();
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == name_ + "." + "combination_method") {
+        combination_method_ = parameter.as_int();
+      }
+    }
+  }
+
+  result.successful = true;
+  return result;
+}
+
 void
 ObstacleLayer::laserScanCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr message,
@@ -365,6 +404,7 @@ ObstacleLayer::updateBounds(
   double robot_x, double robot_y, double robot_yaw, double * min_x,
   double * min_y, double * max_x, double * max_y)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (rolling_window_) {
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
   }
@@ -455,7 +495,6 @@ ObstacleLayer::updateFootprint(
   double * max_x,
   double * max_y)
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!footprint_clearing_enabled_) {return;}
   transformFootprint(robot_x, robot_y, robot_yaw, getFootprint(), transformed_footprint_);
 
@@ -571,8 +610,11 @@ ObstacleLayer::raytraceFreespace(
   if (!worldToMap(ox, oy, x0, y0)) {
     RCLCPP_WARN(
       logger_,
-      "Sensor origin at (%.2f, %.2f) is out of map bounds. The costmap cannot raytrace for it.",
-      ox, oy);
+      "Sensor origin at (%.2f, %.2f) is out of map bounds (%.2f, %.2f) to (%.2f, %.2f). "
+      "The costmap cannot raytrace for it.",
+      ox, oy,
+      origin_x_, origin_y_,
+      origin_x_ + getSizeInMetersX(), origin_y_ + getSizeInMetersY());
     return;
   }
 

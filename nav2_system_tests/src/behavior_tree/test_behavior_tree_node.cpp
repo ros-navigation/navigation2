@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <boost/filesystem.hpp>
-
 #include <vector>
 #include <string>
 #include <fstream>
 #include <memory>
 #include <utility>
+#include <boost/filesystem.hpp>
 
 #include "gtest/gtest.h"
 
@@ -79,6 +78,7 @@ public:
       "nav2_round_robin_node_bt_node",
       "nav2_transform_available_condition_bt_node",
       "nav2_time_expired_condition_bt_node",
+      "nav2_path_expiring_timer_condition",
       "nav2_distance_traveled_condition_bt_node",
       "nav2_single_trigger_bt_node",
       "nav2_is_battery_low_condition_bt_node",
@@ -88,7 +88,8 @@ public:
       "nav2_planner_selector_bt_node",
       "nav2_controller_selector_bt_node",
       "nav2_goal_checker_selector_bt_node",
-      "nav2_controller_cancel_bt_node"
+      "nav2_controller_cancel_bt_node",
+      "nav2_path_longer_on_approach_bt_node"
     };
     for (const auto & p : plugin_libs) {
       factory_.registerFromPlugin(BT::SharedLibrary::getOSName(p));
