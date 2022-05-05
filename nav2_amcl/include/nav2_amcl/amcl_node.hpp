@@ -132,7 +132,7 @@ protected:
   bool first_map_only_{true};
   std::atomic<bool> first_map_received_{false};
   amcl_hyp_t * initial_pose_hyp_;
-  std::recursive_mutex configuration_mutex_;
+  std::recursive_mutex mutex_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
 #if NEW_UNIFORM_SAMPLING
   static std::vector<std::pair<int, int>> free_space_indices;
@@ -238,7 +238,6 @@ protected:
    */
   static pf_vector_t uniformPoseGenerator(void * arg);
   pf_t * pf_{nullptr};
-  std::mutex pf_mutex_;
   bool pf_init_;
   pf_vector_t pf_odom_pose_;
   int resample_count_{0};
