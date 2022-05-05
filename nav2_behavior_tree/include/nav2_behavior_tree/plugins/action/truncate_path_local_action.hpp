@@ -29,7 +29,7 @@ namespace nav2_behavior_tree
 {
 
 /**
- * @brief A BT::ActionNodeBase to shorten path by some distance
+ * @brief A BT::ActionNodeBase to shorten path to some distance around robot
  */
 class TruncatePathLocal : public BT::ActionNodeBase
 {

@@ -1,4 +1,4 @@
-# Ceres Cost-Aware Smoother
+# Constrained Smoother
 
 A smoother plugin for `nav2_smoother` based on the original deprecated smoother in `nav2_smac_planner` and put into operational state by (**RoboTech Vision**)[https://robotechvision.com/]. Suitable for applications which need planned global path to be pushed away from obstacles and/or for Reeds-Shepp motion models. Example of configuration (see indoor_navigation package of this repo for a full launch configuration):
 
@@ -7,8 +7,6 @@ smoother_server:
   ros__parameters:
     use_sim_time: True
     smoother_plugins: ["SmoothPath"]
-    optimization_length: 10.0
-    optimization_length_backwards: 5.0
 
     SmoothPath:
       plugin: "nav2_constrained_smoother/ConstrainedSmoother"
@@ -18,7 +16,7 @@ smoother_server:
       keep_start_orientation: true  # whether to prevent the start orientation from being smoothed
       keep_goal_orientation: true   # whether to prevent the gpal orientation from being smoothed
       minimum_turning_radius: 0.40  # minimum turning radius the robot can perform. Can be set to 0.0 (or w_curve can be set to 0.0 with the same effect) for diff-drive/holonomic robots
-      w_curve: 30.0                 # weight to minimize curvature of path
+      w_curve: 30.0                 # weight to enforce minimum_turning_radius
       w_dist: 0.0                   # weight to bind path to original as optional replacement for cost weight
       w_smooth: 15000.0             # weight to maximize smoothness of path
       w_cost: 0.015                 # weight to steer robot away from collision and cost
