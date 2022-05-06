@@ -1251,8 +1251,6 @@ AmclNode::dynamicParametersCallback(
         tf_broadcast_ = parameter.as_bool();
       } else if (param_name == "set_initial_pose") {
         set_initial_pose_ = parameter.as_bool();
-      } else if (param_name == "always_reset_initial_pose") {
-        always_reset_initial_pose_ = parameter.as_bool();
       } else if (param_name == "first_map_only") {
         first_map_only_ = parameter.as_bool();
       }
@@ -1274,11 +1272,13 @@ AmclNode::dynamicParametersCallback(
 
   // Checking if the minimum particles is greater than max_particles_
   if (min_particles_ > max_particles_) {
-    RCLCPP_WARN(
+    RCLCPP_ERROR(
       this->get_logger(),
       "You've set min_particles to be greater than max particles,"
-      "this isn't allowed so they'll be set to be equal.");
+      " this isn't allowed.");
     max_particles_ = min_particles_;
+    result.successful = false;
+    return result;
   }
 
   // Re-initialize the particle filter
@@ -1314,7 +1314,9 @@ AmclNode::dynamicParametersCallback(
   // Re-initialize the map
   if (reinit_map) {
     map_sub_.reset();
-    initPubSub();
+    map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
+      map_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+      std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
   }
 
   result.successful = true;
