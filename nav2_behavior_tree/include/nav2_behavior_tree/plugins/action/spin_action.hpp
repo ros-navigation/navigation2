@@ -58,6 +58,7 @@ public:
         BT::InputPort<bool>("is_recovery", true, "True if recovery")
       });
   }
+
 private:
   bool is_recovery_;
 };
