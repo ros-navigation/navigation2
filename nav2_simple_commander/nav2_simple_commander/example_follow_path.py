@@ -16,10 +16,10 @@
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
-from rclpy.duration import Duration
+
 
 """
-Basic navigation demo to go to pose.
+Basic navigation demo to follow a given path
 """
 
 
@@ -38,34 +38,22 @@ def main():
     initial_pose.pose.orientation.w = 0.0
     navigator.setInitialPose(initial_pose)
 
-    # Activate navigation, if not autostarted. This should be called after setInitialPose()
-    # or this will initialize at the origin of the map and update the costmap with bogus readings.
-    # If autostart, you should `waitUntilNav2Active()` instead.
-    # navigator.lifecycleStartup()
-
     # Wait for navigation to fully activate, since autostarting nav2
     navigator.waitUntilNav2Active()
-
-    # If desired, you can change or load the map as well
-    # navigator.changeMap('/path/to/map.yaml')
-
-    # You may use the navigator to clear or obtain costmaps
-    # navigator.clearAllCostmaps()  # also have clearLocalCostmap() and clearGlobalCostmap()
-    # global_costmap = navigator.getGlobalCostmap()
-    # local_costmap = navigator.getLocalCostmap()
 
     # Go to our demos first goal pose
     goal_pose = PoseStamped()
     goal_pose.header.frame_id = 'map'
     goal_pose.header.stamp = navigator.get_clock().now().to_msg()
-    goal_pose.pose.position.x = -2.0
-    goal_pose.pose.position.y = -0.5
+    goal_pose.pose.position.x = -3.0
+    goal_pose.pose.position.y = -2.0
     goal_pose.pose.orientation.w = 1.0
 
-    # sanity check a valid path exists
-    # path = navigator.getPath(initial_pose, goal_pose)
+    # Sanity check a valid path exists
+    path = navigator.getPath(initial_pose, goal_pose)
 
-    navigator.goToPose(goal_pose)
+    # Follow path
+    navigator.followPath(path)
 
     i = 0
     while not navigator.isTaskComplete():
@@ -76,21 +64,13 @@ def main():
         ################################################
 
         # Do something with the feedback
-        i = i + 1
+        i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
-            print('Estimated time of arrival: ' + '{0:.0f}'.format(
-                  Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
-                  + ' seconds.')
-
-            # Some navigation timeout to demo cancellation
-            if Duration.from_msg(feedback.navigation_time) > Duration(seconds=600.0):
-                navigator.cancelTask()
-
-            # Some navigation request change to demo preemption
-            if Duration.from_msg(feedback.navigation_time) > Duration(seconds=18.0):
-                goal_pose.pose.position.x = -3.0
-                navigator.goToPose(goal_pose)
+            print('Estimated distance remaining to goal position: ' +
+                  '{0:.3f}'.format(feedback.distance_to_goal) +
+                  '\nCurrent speed of the robot: ' +
+                  '{0:.3f}'.format(feedback.speed))
 
     # Do something depending on the return code
     result = navigator.getResult()
