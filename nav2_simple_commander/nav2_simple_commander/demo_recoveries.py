@@ -13,16 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from copy import deepcopy
-
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
+from rclpy.duration import Duration
+
 
 """
-Basic stock inspection demo. In this demonstration, the expectation
-is that there are cameras or RFID sensors mounted on the robots
-collecting information about stock quantity and location.
+Basic recoveries demo. In this demonstration, the robot navigates
+to a dead-end where recoveries such as backup and spin are used
+to get out of it.
 """
 
 
@@ -30,18 +30,6 @@ def main():
     rclpy.init()
 
     navigator = BasicNavigator()
-
-    # Inspection route, probably read in from a file for a real application
-    # from either a map or drive and repeat.
-    inspection_route = [
-        [3.461, -0.450],
-        [5.531, -0.450],
-        [3.461, -2.200],
-        [5.531, -2.200],
-        [3.661, -4.121],
-        [5.431, -4.121],
-        [3.661, -5.850],
-        [5.431, -5.800]]
 
     # Set our demo's initial pose
     initial_pose = PoseStamped()
@@ -56,38 +44,55 @@ def main():
     # Wait for navigation to fully activate
     navigator.waitUntilNav2Active()
 
-    # Send our route
-    inspection_points = []
-    inspection_pose = PoseStamped()
-    inspection_pose.header.frame_id = 'map'
-    inspection_pose.header.stamp = navigator.get_clock().now().to_msg()
-    inspection_pose.pose.orientation.z = 1.0
-    inspection_pose.pose.orientation.w = 0.0
-    for pt in inspection_route:
-        inspection_pose.pose.position.x = pt[0]
-        inspection_pose.pose.position.y = pt[1]
-        inspection_points.append(deepcopy(inspection_pose))
-    navigator.followWaypoints(inspection_points)
+    goal_pose = PoseStamped()
+    goal_pose.header.frame_id = 'map'
+    goal_pose.header.stamp = navigator.get_clock().now().to_msg()
+    goal_pose.pose.position.x = 6.13
+    goal_pose.pose.position.y = 1.90
+    goal_pose.pose.orientation.w = 1.0
 
-    # Do something during our route (e.x. AI to analyze stock information or upload to the cloud)
-    # Simply the current waypoint ID for the demonstation
+    navigator.goToPose(goal_pose)
+
     i = 0
     while not navigator.isTaskComplete():
         i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
-            print('Executing current waypoint: ' +
-                  str(feedback.current_waypoint + 1) + '/' + str(len(inspection_points)))
+            print(
+                f'Estimated time of arrival to destination is: \
+                {Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9}'
+            )
+
+    # Robot hit a dead end, back it up
+    print('Robot hit a dead end, backing up...')
+    navigator.backup(backup_dist=0.5, backup_speed=0.1)
+
+    i = 0
+    while not navigator.isTaskComplete():
+        i += 1
+        feedback = navigator.getFeedback()
+        if feedback and i % 5 == 0:
+            print(f'Distance traveled: {feedback.distance_traveled}')
+
+    # Turn it around
+    print('Spinning robot around...')
+    navigator.spin(spin_dist=3.14)
+
+    i = 0
+    while not navigator.isTaskComplete():
+        i += 1
+        feedback = navigator.getFeedback()
+        if feedback and i % 5 == 0:
+            print(f'Spin angle traveled: {feedback.angular_distance_traveled}')
 
     result = navigator.getResult()
     if result == TaskResult.SUCCEEDED:
-        print('Inspection of shelves complete! Returning to start...')
+        print('Dead end confirmed! Returning to start...')
     elif result == TaskResult.CANCELED:
-        print('Inspection of shelving was canceled. Returning to start...')
+        print('Recovery was canceled. Returning to start...')
     elif result == TaskResult.FAILED:
-        print('Inspection of shelving failed! Returning to start...')
+        print('Recovering from dead end failed! Returning to start...')
 
-    # go back to start
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
     navigator.goToPose(initial_pose)
     while not navigator.isTaskComplete():
