@@ -1306,14 +1306,10 @@ AmclNode::dynamicParametersCallback(
     lasers_.clear();
     lasers_update_.clear();
     frame_to_laser_.clear();
+    laser_scan_connection_.disconnect();
+    laser_scan_sub_.reset();
 
-    laser_scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-      *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10, rclcpp_node_, transform_tolerance_);
-
-    laser_scan_connection_ = laser_scan_filter_->registerCallback(
-      std::bind(
-        &AmclNode::laserReceived,
-        this, std::placeholders::_1));
+    initMessageFilters();
   }
 
   // Re-initialize the map
