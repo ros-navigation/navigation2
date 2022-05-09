@@ -1133,7 +1133,7 @@ rcl_interfaces::msg::SetParametersResult
 AmclNode::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
-  std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> cfl(mutex_);
   rcl_interfaces::msg::SetParametersResult result;
   double save_pose_rate;
   double tmp_tol;
