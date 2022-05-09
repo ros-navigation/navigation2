@@ -16,6 +16,9 @@
 import os
 import sys
 
+from os import environ
+from os import pathsep
+
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
@@ -27,10 +30,28 @@ from launch_testing.legacy import LaunchTestService
 
 from nav2_common.launch import RewrittenYaml
 
+from scripts import GazeboRosPaths
+
 
 def generate_launch_description():
-    map_yaml_file = os.getenv('TEST_MAP')
-    world = os.getenv('TEST_WORLD')
+    model, plugin, media = GazeboRosPaths.get_paths()
+
+    if 'GAZEBO_MODEL_PATH' in environ:
+        model += pathsep+environ['GAZEBO_MODEL_PATH']
+    if 'GAZEBO_PLUGIN_PATH' in environ:
+        plugin += pathsep+environ['GAZEBO_PLUGIN_PATH']
+    if 'GAZEBO_RESOURCE_PATH' in environ:
+        media += pathsep+environ['GAZEBO_RESOURCE_PATH']
+
+    aws_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
+
+    env = {'GAZEBO_MODEL_PATH': model,
+           'GAZEBO_PLUGIN_PATH': plugin,
+           'GAZEBO_RESOURCE_PATH': media}
+
+    map_yaml_file = os.path.join(aws_dir, 'maps', '005', 'map.yaml')
+    world = os.path.join(aws_dir, 'worlds', 'no_roof_small_warehouse',
+                         'no_roof_small_warehouse.world')
 
     bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
                                     'behavior_trees',
@@ -52,9 +73,10 @@ def generate_launch_description():
 
         # Launch gazebo server for simulation
         ExecuteProcess(
-            cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
+            cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so',
                  '--minimal_comms', world],
-            output='screen'),
+            additional_env=env,
+            cwd=[aws_dir], output='screen'),
 
         # TODO(orduno) Launch the robot state publisher instead
         #              using a local copy of TB3 urdf file
