@@ -1137,6 +1137,9 @@ AmclNode::dynamicParametersCallback(
   double save_pose_rate;
   double tmp_tol;
 
+  int max_particles = max_particles_;
+  int min_particles = min_particles_;
+
   bool reinit_pf = false;
   bool reinit_odom = false;
   bool reinit_laser = false;
@@ -1276,7 +1279,9 @@ AmclNode::dynamicParametersCallback(
       this->get_logger(),
       "You've set min_particles to be greater than max particles,"
       " this isn't allowed.");
-    max_particles_ = min_particles_;
+    // sticking to the old values
+    max_particles_ = max_particles;
+    min_particles_ = min_particles;
     result.successful = false;
     return result;
   }
