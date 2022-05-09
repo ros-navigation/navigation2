@@ -40,7 +40,7 @@ public:
   /**
    * Throws std::runtime_error on failure
    */
-  void change_state(
+  bool change_state(
     const uint8_t transition,  // takes a lifecycle_msgs::msg::Transition id
     const std::chrono::seconds timeout);
 
@@ -51,7 +51,7 @@ public:
   /**
    * Throws std::runtime_error on failure
    */
-  uint8_t get_state(const std::chrono::seconds timeout = std::chrono::seconds::max());
+  uint8_t get_state(const std::chrono::seconds timeout = std::chrono::seconds(2));
 
 protected:
   rclcpp::Node::SharedPtr node_;

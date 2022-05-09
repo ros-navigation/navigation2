@@ -33,8 +33,8 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 
 set(nav2_rviz_plugins_headers_to_moc
-  include/nav2_rviz_plugins/goal_pose_updater
-  include/nav2_rviz_plugins/goal_common
+  include/nav2_rviz_plugins/goal_pose_updater.hpp
+  include/nav2_rviz_plugins/goal_common.hpp
   include/nav2_rviz_plugins/goal_tool.hpp
   include/nav2_rviz_plugins/nav2_panel.hpp
   include/nav2_rviz_plugins/particle_cloud_display/flat_weighted_arrows_array.hpp

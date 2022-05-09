@@ -53,8 +53,6 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 | Parameter | Description | 
 |-----|----|
 | `desired_linear_vel` | The desired maximum linear velocity to use. | 
-| `max_linear_accel` | Acceleration for linear velocity | 
-| `max_linear_decel` | Deceleration for linear velocity | 
 | `lookahead_dist` | The lookahead distance to use to find the lookahead point | 
 | `min_lookahead_dist` | The minimum lookahead distance threshold when using velocity scaled lookahead distances | 
 | `max_lookahead_dist` | The maximum lookahead distance threshold when using velocity scaled lookahead distances | 
@@ -89,7 +87,7 @@ controller_server:
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
     progress_checker_plugin: "progress_checker"
-    goal_checker_plugin: "goal_checker"
+    goal_checker_plugins: "goal_checker"
     controller_plugins: ["FollowPath"]
 
     progress_checker:
@@ -104,8 +102,6 @@ controller_server:
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
       desired_linear_vel: 0.5
-      max_linear_accel: 2.5
-      max_linear_decel: 2.5
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9

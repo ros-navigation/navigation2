@@ -31,6 +31,7 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
+    use_respawn = LaunchConfiguration('use_respawn')
 
     # Variables
     lifecycle_nodes = ['map_saver']
@@ -70,12 +71,18 @@ def generate_launch_description():
         'autostart', default_value='True',
         description='Automatically startup the nav2 stack')
 
+    declare_use_respawn_cmd = DeclareLaunchArgument(
+        'use_respawn', default_value='False',
+        description='Whether to respawn if a node crashes. Applied when composition is disabled.')
+
     # Nodes launching commands
 
     start_map_saver_server_cmd = Node(
             package='nav2_map_server',
             executable='map_saver_server',
             output='screen',
+            respawn=use_respawn,
+            respawn_delay=2.0,
             parameters=[configured_params])
 
     start_lifecycle_manager_cmd = Node(
@@ -111,6 +118,7 @@ def generate_launch_description():
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_use_respawn_cmd)
 
     # Running Map Saver Server
     ld.add_action(start_map_saver_server_cmd)

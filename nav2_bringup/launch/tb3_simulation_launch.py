@@ -42,6 +42,7 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
     use_composition = LaunchConfiguration('use_composition')
+    use_respawn = LaunchConfiguration('use_respawn')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
@@ -108,6 +109,10 @@ def generate_launch_description():
         'use_composition', default_value='True',
         description='Whether to use composed bringup')
 
+    declare_use_respawn_cmd = DeclareLaunchArgument(
+        'use_respawn', default_value='False',
+        description='Whether to respawn if a node crashes. Applied when composition is disabled.')
+
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config_file',
         default_value=os.path.join(
@@ -131,7 +136,7 @@ def generate_launch_description():
 
     declare_simulator_cmd = DeclareLaunchArgument(
         'headless',
-        default_value='False',
+        default_value='True',
         description='Whether to execute gzclient)')
 
     declare_world_cmd = DeclareLaunchArgument(
@@ -207,7 +212,8 @@ def generate_launch_description():
                           'use_sim_time': use_sim_time,
                           'params_file': params_file,
                           'autostart': autostart,
-                          'use_composition': use_composition}.items())
+                          'use_composition': use_composition,
+                          'use_respawn': use_respawn}.items())
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -230,6 +236,7 @@ def generate_launch_description():
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_robot_sdf_cmd)
+    ld.add_action(declare_use_respawn_cmd)
 
     # Add any conditioned actions
     ld.add_action(start_gazebo_server_cmd)
