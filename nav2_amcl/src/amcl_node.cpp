@@ -476,7 +476,7 @@ AmclNode::globalLocalizationCallback(
   const std::shared_ptr<std_srvs::srv::Empty::Request>/*req*/,
   std::shared_ptr<std_srvs::srv::Empty::Response>/*res*/)
 {
-  std::lock_guard<std::mutex> lock(pf_mutex_);
+  std::lock_guard<std::recursive_mutex> cfl(mutex_);
 
   RCLCPP_INFO(get_logger(), "Initializing with uniform distribution");
 
@@ -502,7 +502,7 @@ AmclNode::nomotionUpdateCallback(
 void
 AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-  std::lock_guard<std::mutex> lock(pf_mutex_);
+  std::lock_guard<std::recursive_mutex> cfl(mutex_);
 
   RCLCPP_INFO(get_logger(), "initialPoseReceived");
 
@@ -537,6 +537,7 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 void
 AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 {
+  std::lock_guard<std::recursive_mutex> cfl(mutex_);
   // In case the client sent us a pose estimate in the past, integrate the
   // intervening odometric change.
   geometry_msgs::msg::TransformStamped tx_odom;
@@ -601,7 +602,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 void
 AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 {
-  std::lock_guard<std::mutex> lock(pf_mutex_);
+  std::lock_guard<std::recursive_mutex> cfl(mutex_);
 
   // Since the sensor data is continually being published by the simulator or robot,
   // we don't want our callbacks to fire until we're in the active state
@@ -1338,7 +1339,7 @@ AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 void
 AmclNode::handleMapMessage(const nav_msgs::msg::OccupancyGrid & msg)
 {
-  std::lock_guard<std::recursive_mutex> cfl(configuration_mutex_);
+  std::lock_guard<std::recursive_mutex> cfl(mutex_);
 
   RCLCPP_INFO(
     get_logger(), "Received a %d X %d map @ %.3f m/pix",

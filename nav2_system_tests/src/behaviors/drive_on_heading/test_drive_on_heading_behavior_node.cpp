@@ -1,6 +1,5 @@
 // Copyright (c) 2020 Samsung Research
 // Copyright (c) 2020 Sarthak Mittal
-// Copyright (c) 2022 Joshua Wallace
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,74 +21,78 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "backup_behavior_tester.hpp"
-#include "nav2_msgs/action/back_up.hpp"
+#include "drive_on_heading_behavior_tester.hpp"
 
 using namespace std::chrono_literals;
 
-using nav2_system_tests::BackupBehaviorTester;
+using nav2_system_tests::DriveOnHeadingBehaviorTester;
 
 struct TestParameters
 {
   float x;
   float y;
   float speed;
+  float time_allowance;
   float tolerance;
 };
-
 
 std::string testNameGenerator(const testing::TestParamInfo<TestParameters> &)
 {
   static int test_index = 0;
-  std::string name = "BackUpTest" + std::to_string(test_index);
+  std::string name = "DriveOnHeadingTest" + std::to_string(test_index);
   ++test_index;
   return name;
 }
 
-class BackupBehaviorTestFixture
+class DriveOnHeadingBehaviorTestFixture
   : public ::testing::TestWithParam<TestParameters>
 {
 public:
   static void SetUpTestCase()
   {
-    backup_behavior_tester = new BackupBehaviorTester();
-    if (!backup_behavior_tester->isActive()) {
-      backup_behavior_tester->activate();
+    drive_on_heading_behavior_tester = new DriveOnHeadingBehaviorTester();
+    if (!drive_on_heading_behavior_tester->isActive()) {
+      drive_on_heading_behavior_tester->activate();
     }
   }
 
   static void TearDownTestCase()
   {
-    delete backup_behavior_tester;
-    backup_behavior_tester = nullptr;
+    delete drive_on_heading_behavior_tester;
+    drive_on_heading_behavior_tester = nullptr;
   }
 
 protected:
-  static BackupBehaviorTester * backup_behavior_tester;
+  static DriveOnHeadingBehaviorTester * drive_on_heading_behavior_tester;
 };
 
-BackupBehaviorTester * BackupBehaviorTestFixture::backup_behavior_tester = nullptr;
+DriveOnHeadingBehaviorTester * DriveOnHeadingBehaviorTestFixture::drive_on_heading_behavior_tester =
+  nullptr;
 
-TEST_P(BackupBehaviorTestFixture, testBackupBehavior)
+TEST_P(DriveOnHeadingBehaviorTestFixture, testBackupBehavior)
 {
   auto test_params = GetParam();
-  auto goal = nav2_msgs::action::BackUp::Goal();
+  auto goal = nav2_msgs::action::DriveOnHeading::Goal();
   goal.target.x = test_params.x;
   goal.target.y = test_params.y;
   goal.speed = test_params.speed;
+  goal.time_allowance.sec = test_params.time_allowance;
   float tolerance = test_params.tolerance;
 
-  if (!backup_behavior_tester->isActive()) {
-    backup_behavior_tester->activate();
+  if (!drive_on_heading_behavior_tester->isActive()) {
+    drive_on_heading_behavior_tester->activate();
   }
 
   bool success = false;
-  success = backup_behavior_tester->defaultBackupBehaviorTest(goal, tolerance);
+  success = drive_on_heading_behavior_tester->defaultDriveOnHeadingBehaviorTest(
+    goal,
+    tolerance);
 
   float dist_to_obstacle = 2.0f;
-
   if ( ((dist_to_obstacle - std::fabs(test_params.x)) < std::fabs(goal.speed)) ||
-    std::fabs(goal.target.y) > 0)
+    std::fabs(goal.target.y) > 0 ||
+    goal.time_allowance.sec < 2.0 ||
+    !((goal.target.x > 0.0) == (goal.speed > 0.0)))
   {
     EXPECT_FALSE(success);
   } else {
@@ -97,20 +100,22 @@ TEST_P(BackupBehaviorTestFixture, testBackupBehavior)
   }
 }
 
-std::vector<TestParameters> test_params = {TestParameters{-0.05, 0.0, -0.2, 0.01},
-  TestParameters{-0.05, 0.1, -0.2, 0.01},
-  TestParameters{-2.0, 0.0, -0.2, 0.1}};
+std::vector<TestParameters> test_params = {TestParameters{-0.05, 0.0, -0.2, 10.0, 0.01},
+  TestParameters{-0.05, 0.1, -0.2, 10.0, 0.01},
+  TestParameters{-2.0, 0.0, -0.2, 10.0, 0.1},
+  TestParameters{-0.05, 0.0, -0.01, 1.0, 0.01},
+  TestParameters{0.05, 0.0, -0.2, 10.0, 0.01}};
 
 INSTANTIATE_TEST_SUITE_P(
-  BackupBehaviorTests,
-  BackupBehaviorTestFixture,
+  DriveOnHeadingBehaviorTests,
+  DriveOnHeadingBehaviorTestFixture,
   ::testing::Values(
     test_params[0],
     test_params[1],
-    test_params[2]),
-  testNameGenerator
-);
-
+    test_params[2],
+    test_params[3],
+    test_params[4]),
+  testNameGenerator);
 
 int main(int argc, char ** argv)
 {

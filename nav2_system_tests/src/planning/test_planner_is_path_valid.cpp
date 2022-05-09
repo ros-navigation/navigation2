@@ -37,8 +37,8 @@ TEST(testIsPathValid, testIsPathValid)
   EXPECT_FALSE(is_path_valid);
 
   // invalid path
-  for (float i = 0; i < 10; i += 0.05) {
-    for (float j = 0; j < 10; j += 0.05) {
+  for (float i = 0; i < 10; i += 1.0) {
+    for (float j = 0; j < 10; j += 1.0) {
       geometry_msgs::msg::PoseStamped pose;
       pose.pose.position.x = i;
       pose.pose.position.y = j;
@@ -50,9 +50,9 @@ TEST(testIsPathValid, testIsPathValid)
 
   // valid path
   path.poses.clear();
-  for (float i = 0; i < 10; i += 0.1) {
+  for (float i = 0; i < 10; i += 1.0) {
     geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = 0.0;
+    pose.pose.position.x = 1.0;
     pose.pose.position.y = i;
     path.poses.push_back(pose);
   }

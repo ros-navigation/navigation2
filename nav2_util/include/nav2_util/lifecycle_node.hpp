@@ -189,7 +189,7 @@ protected:
   /**
    * @brief Print notifications for lifecycle node
    */
-  void print_lifecycle_node_notification();
+  void printLifecycleNodeNotification();
 
   // Whether or not to create a local rclcpp::Node which can be used for ROS2 classes that don't
   // yet support lifecycle nodes
