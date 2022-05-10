@@ -179,8 +179,8 @@ def main(argv=sys.argv[1:]):
     # wait a few seconds to make sure entire stacks are up
     time.sleep(10)
 
-    wps = [[-0.52, -0.54], [0.58, -0.55], [0.58, 0.52]]
-    starting_pose = [-2.0, -0.5]
+    wps = [[1.3, -1.5], [-0.5, -1.5], [-1.6, -3.4]]
+    starting_pose = [1.80, 2.20]
 
     test = WaypointFollowerTest()
     test.setWaypoints(wps)
