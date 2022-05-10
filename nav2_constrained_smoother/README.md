@@ -40,3 +40,5 @@ smoother_server:
 ```
 
 Note: Smoothing paths which contain multiple subsequent poses at one point (e.g. in-place rotations from Smac lattice planners) is currently not supported
+
+Note: Constrained Smoother is recommended to be used on a path with a bounded length. TruncatePathLocal BT Node can be used for extracting a relevant path section around robot (in combination with DistanceController to achieve periodicity)
