@@ -65,11 +65,6 @@ def generate_launch_description():
                                    'no_roof_small_warehouse.world'),
         description='Full path to world file to load')
 
-    declare_simulator_cmd = DeclareLaunchArgument(
-        'simulator',
-        default_value='gazebo',
-        description='The simulator to use (gazebo or gzserver)')
-
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
         default_value=os.path.join(aws_dir, 'maps', '005', 'map.yaml'),
@@ -174,7 +169,6 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     # Declare the launch options
-    ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_robot1_params_file_cmd)

@@ -62,7 +62,6 @@ ament_add_test(test_dynamic_obstacle
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
     TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/no_roof_small_warehouse_with_obstacle.world
-    GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
     TESTER=nav_to_pose_tester_node.py
     ASTAR=False
