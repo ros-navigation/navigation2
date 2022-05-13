@@ -255,9 +255,13 @@ protected:
       return false;
     }
 
-    plugin_muxer_->startNavigating(getName());
+    bool goal_accepted = goalReceived(goal);
 
-    return goalReceived(goal);
+    if (goal_accepted) {
+      plugin_muxer_->startNavigating(getName());
+    }
+
+    return goal_accepted;
   }
 
   /**
