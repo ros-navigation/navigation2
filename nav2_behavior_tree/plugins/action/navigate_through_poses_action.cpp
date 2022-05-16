@@ -35,6 +35,7 @@ void NavigateThroughPosesAction::on_tick()
       node_->get_logger(),
       "NavigateThroughPosesAction: goal not provided");
     return;
+  getInput("behavior_tree", goal_.behavior_tree);
   }
 }
 
