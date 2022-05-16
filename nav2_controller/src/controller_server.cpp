@@ -605,14 +605,17 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
 
     // If we are trying to change the parameter of a plugin we can just skip it at this point
     // as they handle parameter changes themselves and don't need to lock the mutex
-    if (name.find('.') != std::string::npos)
+    if (name.find('.') != std::string::npos) {
       continue;
+    }
 
-    if (!dynamic_params_lock_.try_lock())
-    {
-      RCLCPP_WARN(get_logger(), "Unable to dynamically change Parameters while the controller is currently running");
+    if (!dynamic_params_lock_.try_lock()) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Unable to dynamically change Parameters while the controller is currently running");
       result.successful = false;
-      result.reason = "Unable to dynamically change Parameters while the controller is currently running";
+      result.reason =
+        "Unable to dynamically change Parameters while the controller is currently running";
       return result;
     }
 

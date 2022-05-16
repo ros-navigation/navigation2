@@ -49,8 +49,8 @@ public:
 
   // Runs a single test with given target yaw
   bool defaultBackupBehaviorTest(
-    float target_dist,
-    double tolerance = 0.1);
+    const BackUp::Goal goal_msg,
+    const double tolerance);
 
   void activate();
 

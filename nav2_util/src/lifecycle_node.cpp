@@ -64,7 +64,7 @@ LifecycleNode::LifecycleNode(
     rclcpp_thread_ = std::make_unique<NodeThread>(rclcpp_node_);
   }
 
-  print_lifecycle_node_notification();
+  printLifecycleNodeNotification();
 }
 
 LifecycleNode::~LifecycleNode()
@@ -102,7 +102,7 @@ void LifecycleNode::destroyBond()
   }
 }
 
-void LifecycleNode::print_lifecycle_node_notification()
+void LifecycleNode::printLifecycleNodeNotification()
 {
   RCLCPP_INFO(
     get_logger(),

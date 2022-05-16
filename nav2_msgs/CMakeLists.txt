@@ -34,6 +34,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/BackUp.action"
   "action/ComputePathToPose.action"
   "action/ComputePathThroughPoses.action"
+  "action/DriveOnHeading.action"
   "action/SmoothPath.action"
   "action/FollowPath.action"
   "action/NavigateToPose.action"

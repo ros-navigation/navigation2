@@ -399,6 +399,7 @@ TaskStatus PlannerTester::createPlan(
 
 bool PlannerTester::isPathValid(nav_msgs::msg::Path & path)
 {
+  planner_tester_->setCostmap(costmap_.get());
   // create a fake service request
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
   request->path = path;

@@ -55,19 +55,27 @@ ament_target_dependencies(nav2_spin_behavior
   ${dependencies}
 )
 
-add_library(nav2_backup_behavior SHARED
-  plugins/back_up.cpp
-)
-
-ament_target_dependencies(nav2_backup_behavior
-  ${dependencies}
-)
-
 add_library(nav2_wait_behavior SHARED
-  plugins/wait.cpp
+plugins/wait.cpp
 )
 
 ament_target_dependencies(nav2_wait_behavior
+${dependencies}
+)
+
+add_library(nav2_drive_on_heading_behavior SHARED
+  plugins/drive_on_heading.cpp
+)
+
+ament_target_dependencies(nav2_drive_on_heading_behavior
+  ${dependencies}
+)
+
+add_library(nav2_back_up_behavior SHARED
+  plugins/back_up.cpp
+)
+
+ament_target_dependencies(nav2_back_up_behavior
   ${dependencies}
 )
 
@@ -104,10 +112,11 @@ ament_target_dependencies(${executable_name}
 rclcpp_components_register_nodes(${library_name} "behavior_server::BehaviorServer")
 
 install(TARGETS ${library_name}
-                nav2_backup_behavior
                 nav2_spin_behavior
                 nav2_wait_behavior
                 nav2_assisted_teleop_behavior
+                nav2_drive_on_heading_behavior
+                nav2_back_up_behavior
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -134,10 +143,14 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name}
-  nav2_backup_behavior
   nav2_spin_behavior
   nav2_wait_behavior
+<<<<<<< HEAD
   nav2_assisted_teleop_behavior
+=======
+  nav2_drive_on_heading_behavior
+  nav2_back_up_behavior
+>>>>>>> main
 )
 ament_export_dependencies(${dependencies})
 ament_package()
