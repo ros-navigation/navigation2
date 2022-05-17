@@ -65,11 +65,6 @@ Status AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAction::G
 {
   command_time_allowance_ = command->time_allowance;
   end_time_ = steady_clock_.now() + command_time_allowance_;
-
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
   return Status::SUCCEEDED;
 }
 
@@ -134,18 +129,16 @@ geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Tw
   projected_pose.y = current_pose.pose.position.y;
   projected_pose.theta = tf2::getYaw(current_pose.pose.orientation);
 
-  projected_pose = projectPose(projected_pose, twist, 1.0);
   const double dt = 0.01;
-
   geometry_msgs::msg::Twist scaled_twist = twist;
-  for (double time = dt; time < 1.0; time+=dt)
+  for (double time = dt; time < projection_time_; time+=dt)
   {
     projected_pose = projectPose(projected_pose, twist, dt);
 
     if (!collision_checker_->isCollisionFree(projected_pose))
     {
       RCLCPP_WARN(logger_, "Collision approaching in %.2f seconds", time);
-      double scale_factor = time / 1.0;
+      double scale_factor = time / projection_time_;
       scaled_twist.linear.x *= scale_factor;
       scaled_twist.linear.y *= scale_factor;
       scaled_twist.angular.z *= scale_factor;
@@ -177,7 +170,6 @@ geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
 
 void AssistedTeleop::inputVelocityCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-  RCLCPP_INFO(logger_, "Hit input Vel callback");
   input_twist_.linear.x = msg->linear.x;
   input_twist_.linear.y = msg->linear.y;
   input_twist_.angular.z = msg->angular.z;
@@ -185,7 +177,6 @@ void AssistedTeleop::inputVelocityCallback(const geometry_msgs::msg::Twist::Shar
 
 void AssistedTeleop::joyCallback(const sensor_msgs::msg::Joy msg)
 {
-  RCLCPP_INFO(logger_, "Hit joy callback");
   joy_.buttons = msg.buttons;
 }
 
