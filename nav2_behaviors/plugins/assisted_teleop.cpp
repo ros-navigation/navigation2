@@ -121,8 +121,38 @@ Status AssistedTeleop::onCycleUpdate()
 
 geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Twist & twist)
 {
-  // TODO(jwallace42): Waiting for safety node to be completed.
-  return twist;
+  geometry_msgs::msg::PoseStamped current_pose;
+  if (!nav2_util::getCurrentPose(
+      current_pose, *tf_, global_frame_, robot_base_frame_,
+      transform_tolerance_))
+  {
+    RCLCPP_ERROR(logger_, "Current robot pose is not available.");
+    return geometry_msgs::msg::Twist();
+  }
+  geometry_msgs::msg::Pose2D projected_pose;
+  projected_pose.x = current_pose.pose.position.x;
+  projected_pose.y = current_pose.pose.position.y;
+  projected_pose.theta = tf2::getYaw(current_pose.pose.orientation);
+
+  projected_pose = projectPose(projected_pose, twist, 1.0);
+  const double dt = 0.01;
+
+  geometry_msgs::msg::Twist scaled_twist = twist;
+  for (double time = dt; time < 1.0; time+=dt)
+  {
+    projected_pose = projectPose(projected_pose, twist, dt);
+
+    if (!collision_checker_->isCollisionFree(projected_pose))
+    {
+      RCLCPP_WARN(logger_, "Collision approaching in %.2f seconds", time);
+      double scale_factor = time / 1.0;
+      scaled_twist.linear.x *= scale_factor;
+      scaled_twist.linear.y *= scale_factor;
+      scaled_twist.angular.z *= scale_factor;
+      break;
+    }
+  }
+  return scaled_twist;
 }
 
 geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
@@ -130,17 +160,17 @@ geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
   geometry_msgs::msg::Twist twist,
   double projection_time)
 {
-  geometry_msgs::msg::Pose2D projected_pose;
+  geometry_msgs::msg::Pose2D projected_pose = pose;
 
-  projected_pose.x = projection_time * (
+  projected_pose.x += projection_time * (
     twist.linear.x * cos(pose.theta) +
     twist.linear.y * sin(pose.theta));
 
-  projected_pose.y = projection_time * (
+  projected_pose.y += projection_time * (
     twist.linear.x * sin(pose.theta) -
     twist.linear.y * cos(pose.theta));
 
-  projected_pose.theta = projection_time * twist.angular.z;
+  projected_pose.theta += projection_time * twist.angular.z;
 
   return projected_pose;
 }
