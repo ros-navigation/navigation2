@@ -60,6 +60,20 @@ public:
   }
 
   /**
+   * @brief  Copy assignment operator
+   * @param obs The observation to copy
+   */
+  Observation & operator=(const Observation & obs)
+  {
+    origin_ = obs.origin_;
+    cloud_ = new sensor_msgs::msg::PointCloud2(*(obs.cloud_));
+    obstacle_range_ = obs.obstacle_range_;
+    raytrace_range_ = obs.raytrace_range_;
+
+    return *this;
+  }
+
+  /**
    * @brief  Creates an observation from an origin point and a point cloud
    * @param origin The origin point of the observation
    * @param cloud The point cloud of the observation

@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_system_tests</name>
-  <version>0.4.3</version>
+  <version>0.4.7</version>
   <description>TODO</description>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
   <license>Apache-2.0</license>
@@ -59,6 +59,7 @@
   <test_depend>launch</test_depend>
   <test_depend>launch_ros</test_depend>
   <test_depend>launch_testing</test_depend>
+  <test_depend>python3-zmq</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

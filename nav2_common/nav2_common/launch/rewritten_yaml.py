@@ -21,131 +21,166 @@ import yaml
 import tempfile
 import launch
 
+
 class DictItemReference:
-  def __init__(self, dictionary, key):
-    self.dictionary = dictionary
-    self.dictKey = key
+    def __init__(self, dictionary, key):
+        self.dictionary = dictionary
+        self.dictKey = key
 
-  def key(self):
-      return self.dictKey
+    def key(self):
+        return self.dictKey
 
-  def setValue(self, value):
-      self.dictionary[self.dictKey] = value
+    def setValue(self, value):
+        self.dictionary[self.dictKey] = value
+
 
 class RewrittenYaml(launch.Substitution):
-  """
-  Substitution that modifies the given YAML file.
-
-  Used in launch system
-  """
-
-  def __init__(self,
-    source_file: launch.SomeSubstitutionsType,
-    param_rewrites: Dict,
-    root_key: Optional[launch.SomeSubstitutionsType] = None,
-    key_rewrites: Optional[Dict] = None,
-    convert_types = False) -> None:
-    super().__init__()
     """
-    Construct the substitution
+    Substitution that modifies the given YAML file.
 
-    :param: source_file the original YAML file to modify
-    :param: param_rewrites mappings to replace
-    :param: root_key if provided, the contents are placed under this key
-    :param: key_rewrites keys of mappings to replace
-    :param: convert_types whether to attempt converting the string to a number or boolean
+    Used in launch system
     """
 
-    from launch.utilities import normalize_to_list_of_substitutions  # import here to avoid loop
-    self.__source_file = normalize_to_list_of_substitutions(source_file)
-    self.__param_rewrites = {}
-    self.__key_rewrites = {}
-    self.__convert_types = convert_types
-    self.__root_key = None
-    for key in param_rewrites:
-        self.__param_rewrites[key] = normalize_to_list_of_substitutions(param_rewrites[key])
-    if key_rewrites is not None:
-        for key in key_rewrites:
-          self.__key_rewrites[key] = normalize_to_list_of_substitutions(key_rewrites[key])
-    if root_key is not None:
-        self.__root_key = normalize_to_list_of_substitutions(root_key)
+    def __init__(self,
+        source_file: launch.SomeSubstitutionsType,
+        param_rewrites: Dict,
+        root_key: Optional[launch.SomeSubstitutionsType] = None,
+        key_rewrites: Optional[Dict] = None,
+        convert_types = False) -> None:
+        super().__init__()
+        """
+        Construct the substitution
 
-  @property
-  def name(self) -> List[launch.Substitution]:
-    """Getter for name."""
-    return self.__source_file
+        :param: source_file the original YAML file to modify
+        :param: param_rewrites mappings to replace
+        :param: root_key if provided, the contents are placed under this key
+        :param: key_rewrites keys of mappings to replace
+        :param: convert_types whether to attempt converting the string to a number or boolean
+        """
 
-  def describe(self) -> Text:
-    """Return a description of this substitution as a string."""
-    return ''
+        from launch.utilities import normalize_to_list_of_substitutions  # import here to avoid loop
+        self.__source_file = normalize_to_list_of_substitutions(source_file)
+        self.__param_rewrites = {}
+        self.__key_rewrites = {}
+        self.__convert_types = convert_types
+        self.__root_key = None
+        for key in param_rewrites:
+            self.__param_rewrites[key] = normalize_to_list_of_substitutions(param_rewrites[key])
+        if key_rewrites is not None:
+            for key in key_rewrites:
+                self.__key_rewrites[key] = normalize_to_list_of_substitutions(key_rewrites[key])
+        if root_key is not None:
+            self.__root_key = normalize_to_list_of_substitutions(root_key)
 
-  def perform(self, context: launch.LaunchContext) -> Text:
-    yaml_filename = launch.utilities.perform_substitutions(context, self.name)
-    rewritten_yaml = tempfile.NamedTemporaryFile(mode='w', delete=False)
-    param_rewrites, keys_rewrites = self.resolve_rewrites(context)
-    data = yaml.safe_load(open(yaml_filename, 'r'))
-    self.substitute_params(data, param_rewrites)
-    self.substitute_keys(data, keys_rewrites)
-    if self.__root_key is not None:
-        root_key = launch.utilities.perform_substitutions(context, self.__root_key)
-        if root_key:
-            data = {root_key: data}
-    yaml.dump(data, rewritten_yaml)
-    rewritten_yaml.close()
-    return rewritten_yaml.name
+    @property
+    def name(self) -> List[launch.Substitution]:
+        """Getter for name."""
+        return self.__source_file
 
-  def resolve_rewrites(self, context):
-    resolved_params = {}
-    for key in self.__param_rewrites:
-      resolved_params[key] = launch.utilities.perform_substitutions(context, self.__param_rewrites[key])
-    resolved_keys = {}
-    for key in self.__key_rewrites:
-      resolved_keys[key] = launch.utilities.perform_substitutions(context, self.__key_rewrites[key])
-    return resolved_params, resolved_keys
+    def describe(self) -> Text:
+        """Return a description of this substitution as a string."""
+        return ''
 
-  def substitute_params(self, yaml, param_rewrites):
-    for key in self.getYamlLeafKeys(yaml):
-      if key.key() in param_rewrites:
-        raw_value = param_rewrites[key.key()]
-        key.setValue(self.convert(raw_value))
+    def perform(self, context: launch.LaunchContext) -> Text:
+        yaml_filename = launch.utilities.perform_substitutions(context, self.name)
+        rewritten_yaml = tempfile.NamedTemporaryFile(mode='w', delete=False)
+        param_rewrites, keys_rewrites = self.resolve_rewrites(context)
+        data = yaml.safe_load(open(yaml_filename, 'r'))
+        self.substitute_params(data, param_rewrites)
+        self.substitute_keys(data, keys_rewrites)
+        if self.__root_key is not None:
+            root_key = launch.utilities.perform_substitutions(context, self.__root_key)
+            if root_key:
+                data = {root_key: data}
+        yaml.dump(data, rewritten_yaml)
+        rewritten_yaml.close()
+        return rewritten_yaml.name
 
-  def substitute_keys(self, yaml, key_rewrites):
-    if len(key_rewrites) != 0:
-      for key, val in yaml.items():
-        if isinstance(val, dict) and key in key_rewrites:
-          new_key = key_rewrites[key]
-          yaml[new_key] = yaml[key]
-          del yaml[key]
-          self.substitute_keys(val, key_rewrites)
+    def resolve_rewrites(self, context):
+        resolved_params = {}
+        for key in self.__param_rewrites:
+            resolved_params[key] = launch.utilities.perform_substitutions(context, self.__param_rewrites[key])
+        resolved_keys = {}
+        for key in self.__key_rewrites:
+            resolved_keys[key] = launch.utilities.perform_substitutions(context, self.__key_rewrites[key])
+        return resolved_params, resolved_keys
 
-  def getYamlLeafKeys(self, yamlData):
-    try:
-      for key in yamlData.keys():
-        for k in self.getYamlLeafKeys(yamlData[key]):
-          yield k
-        yield DictItemReference(yamlData, key)
-    except AttributeError:
-      return
+    def substitute_params(self, yaml, param_rewrites):
+        # substitute leaf-only parameters
+        for key in self.getYamlLeafKeys(yaml):
+            if key.key() in param_rewrites:
+                raw_value = param_rewrites[key.key()]
+                key.setValue(self.convert(raw_value))
 
-  def convert(self, text_value):
-    if self.__convert_types:
-      # try converting to float
-      try:
-        return float(text_value)
-      except ValueError:
-        pass
+        # substitute total path parameters
+        yaml_paths = self.pathify(yaml)
+        for path in yaml_paths:
+            if path in param_rewrites:
+                # this is an absolute path (ex. 'key.keyA.keyB.val')
+                rewrite_val = param_rewrites[path]
+                yaml_keys = path.split('.')
+                yaml = self.updateYamlPathVals(yaml, yaml_keys, rewrite_val)
 
-      # try converting to int
-      try:
-        return int(text_value)
-      except ValueError:
-        pass
 
-      # try converting to bool
-      if text_value.lower() == "true":
-        return True
-      if text_value.lower() == "false":
-        return False
+    def updateYamlPathVals(self, yaml, yaml_key_list, rewrite_val):
+        for key in yaml_key_list:
+            if key == yaml_key_list[-1]:
+                yaml[key] = rewrite_val
+                break
+            key = yaml_key_list.pop(0)
+            yaml[key] = self.updateYamlPathVals(yaml.get(key, {}), yaml_key_list, rewrite_val)
 
-      #nothing else worked so fall through and return text
-    return text_value
+        return yaml
+
+    def substitute_keys(self, yaml, key_rewrites):
+        if len(key_rewrites) != 0:
+            for key, val in yaml.items():
+                if isinstance(val, dict) and key in key_rewrites:
+                    new_key = key_rewrites[key]
+                    yaml[new_key] = yaml[key]
+                    del yaml[key]
+                    self.substitute_keys(val, key_rewrites)
+
+    def getYamlLeafKeys(self, yamlData):
+        try:
+            for key in yamlData.keys():
+                for k in self.getYamlLeafKeys(yamlData[key]):
+                    yield k
+                yield DictItemReference(yamlData, key)
+        except AttributeError:
+            return
+
+    def pathify(self, d, p=None, paths=None, joinchar='.'):
+        if p is None:
+            paths = {}
+            self.pathify(d, "", paths, joinchar=joinchar)
+            return paths
+        pn = p
+        if p != "":
+            pn += '.'
+        if isinstance(d, dict):
+            for k in d:
+                v = d[k]
+                self.pathify(v, pn + k, paths, joinchar=joinchar)
+        elif isinstance(d, list):
+            for idx, e in enumerate(d):
+                self.pathify(e, pn + str(idx), paths, joinchar=joinchar)
+        else:
+            paths[p] = d
+
+    def convert(self, text_value):
+        if self.__convert_types:
+            # try converting to int or float
+            try:
+                return float(text_value) if '.' in text_value else int(text_value)
+            except ValueError:
+                pass
+
+        # try converting to bool
+        if text_value.lower() == "true":
+            return True
+        if text_value.lower() == "false":
+            return False
+
+        # nothing else worked so fall through and return text
+        return text_value

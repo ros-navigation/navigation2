@@ -266,7 +266,7 @@
           <pose>0.0 0.144 0.023 0 0 0</pose>
           <geometry>
             <mesh>
-              <uri>model://turtlebot3_waffle/meshes/left_tire.dae</uri>
+              <uri>model://turtlebot3_waffle/meshes/tire.dae</uri>
               <scale>0.001 0.001 0.001</scale>
             </mesh>
           </geometry>
@@ -324,7 +324,7 @@
           <pose>0.0 -0.144 0.023 0 0 0</pose>
           <geometry>
             <mesh>
-              <uri>model://turtlebot3_waffle/meshes/right_tire.dae</uri>
+              <uri>model://turtlebot3_waffle/meshes/tire.dae</uri>
               <scale>0.001 0.001 0.001</scale>
             </mesh>
           </geometry>
@@ -440,14 +440,6 @@
           </plugin>
         </sensor>
 
-        <collision name="collision">
-          <pose>0 0.047 -0.005 0 0 0</pose>
-          <geometry>
-            <box>
-              <size>0.008 0.130 0.022</size>
-            </box>
-          </geometry>
-        </collision>
         <pose>0.069 -0.047 0.107 0 0 0</pose>
       </link>
 
@@ -498,15 +490,6 @@
         <parent>base_link</parent>
         <child>camera_link</child>
         <pose>0.064 -0.065 0.094 0 0 0</pose>
-        <axis>
-          <xyz>0 0 1</xyz>
-        </axis>
-      </joint>
-
-      <joint name="camera_rgb_joint" type="fixed">
-        <parent>camera_link</parent>
-        <child>camera_rgb_frame</child>
-        <pose>0.005 0.018 0.013 0 0 0</pose>
         <axis>
           <xyz>0 0 1</xyz>
         </axis>

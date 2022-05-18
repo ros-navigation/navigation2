@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 #include <set>
+#include <exception>
 
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -52,13 +53,17 @@ BtNavigator::BtNavigator()
     "nav2_distance_controller_bt_node",
     "nav2_speed_controller_bt_node",
     "nav2_truncate_path_action_bt_node",
-    "nav2_change_goal_node_bt_node",
     "nav2_recovery_node_bt_node",
     "nav2_pipeline_sequence_bt_node",
     "nav2_round_robin_node_bt_node",
     "nav2_transform_available_condition_bt_node",
     "nav2_time_expired_condition_bt_node",
-    "nav2_distance_traveled_condition_bt_node"
+    "nav2_distance_traveled_condition_bt_node",
+    "nav2_rotate_action_bt_node",
+    "nav2_translate_action_bt_node",
+    "nav2_is_battery_low_condition_bt_node",
+    "nav2_goal_updater_node_bt_node",
+    "nav2_navigate_to_pose_action_bt_node",
   };
 
   // Declare this node's parameters
@@ -68,6 +73,9 @@ BtNavigator::BtNavigator()
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
   declare_parameter("odom_topic", std::string("odom"));
+  declare_parameter("enable_groot_monitoring", true);
+  declare_parameter("groot_zmq_publisher_port", 1666);
+  declare_parameter("groot_zmq_server_port", 1667);
 }
 
 BtNavigator::~BtNavigator()
@@ -146,8 +154,12 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
 {
   // Use previous BT if it is the existing one
   if (current_bt_xml_filename_ == bt_xml_filename) {
+    RCLCPP_DEBUG(get_logger(), "BT will not be reloaded as the given xml is already loaded");
     return true;
   }
+
+  // if a new tree is created, than the ZMQ Publisher must be destroyed
+  bt_->resetGrootMonitor();
 
   // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(bt_xml_filename);
@@ -161,13 +173,21 @@ BtNavigator::loadBehaviorTree(const std::string & bt_xml_filename)
     std::istreambuf_iterator<char>(xml_file),
     std::istreambuf_iterator<char>());
 
-  RCLCPP_DEBUG(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename.c_str());
-  RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string.c_str());
-
   // Create the Behavior Tree from the XML input
-  tree_ = bt_->buildTreeFromText(xml_string, blackboard_);
+  tree_ = bt_->createTreeFromText(xml_string, blackboard_);
   current_bt_xml_filename_ = bt_xml_filename;
 
+  // get parameter for monitoring with Groot via ZMQ Publisher
+  if (get_parameter("enable_groot_monitoring").as_bool()) {
+    uint16_t zmq_publisher_port = get_parameter("groot_zmq_publisher_port").as_int();
+    uint16_t zmq_server_port = get_parameter("groot_zmq_server_port").as_int();
+    // optionally add max_msg_per_second = 25 (default) here
+    try {
+      bt_->addGrootMonitoring(&tree_, zmq_publisher_port, zmq_server_port);
+    } catch (const std::logic_error & e) {
+      RCLCPP_ERROR(get_logger(), "ZMQ already enabled, Error: %s", e.what());
+    }
+  }
   return true;
 }
 
@@ -211,6 +231,7 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   current_bt_xml_filename_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_.rootNode());
+  bt_->resetGrootMonitor();
   bt_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
@@ -243,15 +264,15 @@ BtNavigator::navigateToPose()
       return action_server_->is_cancel_requested();
     };
 
-  auto bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
+  std::string bt_xml_filename = action_server_->get_current_goal()->behavior_tree;
 
   // Empty id in request is default for backward compatibility
   bt_xml_filename = bt_xml_filename == "" ? default_bt_xml_filename_ : bt_xml_filename;
 
   if (!loadBehaviorTree(bt_xml_filename)) {
     RCLCPP_ERROR(
-      get_logger(), "BT file not found: %s. Navigation canceled",
-      bt_xml_filename.c_str(), current_bt_xml_filename_.c_str());
+      get_logger(), "BT file not found: %s. Navigation canceled.",
+      bt_xml_filename.c_str());
     action_server_->terminate_current();
     return;
   }

@@ -52,27 +52,27 @@ public:
    * @brief Make start up service call
    * @return true or false
    */
-  bool startup();
+  bool startup(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Make shutdown service call
    * @return true or false
    */
-  bool shutdown();
+  bool shutdown(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Make pause service call
    * @return true or false
    */
-  bool pause();
+  bool pause(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Make resume service call
    * @return true or false
    */
-  bool resume();
+  bool resume(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Make reset service call
    * @return true or false
    */
-  bool reset();
+  bool reset(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Check if lifecycle node manager server is active
    * @return ACTIVE or INACTIVE or TIMEOUT
@@ -103,7 +103,9 @@ protected:
    * @brief A generic method used to call startup, shutdown, etc.
    * @param command
    */
-  bool callService(uint8_t command);
+  bool callService(
+    uint8_t command,
+    const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
 
   // The node to use for the service call
   rclcpp::Node::SharedPtr node_;

@@ -13,3 +13,4 @@ nav2_amcl
 nav2_rviz_plugins
 nav2_navfn_planner
 geographic_msgs
+nav2_controller

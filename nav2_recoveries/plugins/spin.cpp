@@ -150,10 +150,11 @@ bool Spin::isCollisionFree(
   int cycle_count = 0;
   double sim_position_change;
   const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
+  geometry_msgs::msg::Pose2D init_pose = pose2d;
 
   while (cycle_count < max_cycle_count) {
     sim_position_change = cmd_vel->angular.z * (cycle_count / cycle_frequency_);
-    pose2d.theta += sim_position_change;
+    pose2d.theta = init_pose.theta + sim_position_change;
     cycle_count++;
 
     if (abs(relative_yaw) - abs(sim_position_change) <= 0.) {

@@ -19,6 +19,8 @@
 // the Global Dynamic Window Approach. IEEE.
 // https://cs.stanford.edu/group/manips/publications/pdfs/Brock_1999_ICRA.pdf
 
+// #define BENCHMARK_TESTING
+
 #include "nav2_navfn_planner/navfn_planner.hpp"
 
 #include <chrono>
@@ -39,6 +41,8 @@
 
 using namespace std::chrono_literals;
 using nav2_util::declare_parameter_if_not_declared;
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
 
 namespace nav2_navfn_planner
 {
@@ -478,7 +482,30 @@ namespace nav2_navfn_planner
     costmap_->setCost(mx, my, nav2_costmap_2d::FREE_SPACE);
   }
 
-} // namespace nav2_navfn_planner
+void
+NavfnPlanner::on_parameter_event_callback(
+  const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
+{
+  for (auto & changed_parameter : event->changed_parameters) {
+    const auto & type = changed_parameter.value.type;
+    const auto & name = changed_parameter.name;
+    const auto & value = changed_parameter.value;
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == name_ + ".tolerance") {
+        tolerance_ = value.double_value;
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == name_ + ".use_astar") {
+        use_astar_ = value.bool_value;
+      } else if (name == name_ + ".allow_unknown") {
+        allow_unknown_ = value.bool_value;
+      }
+    }
+  }
+}
+
+}  // namespace nav2_navfn_planner
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_navfn_planner::NavfnPlanner, nav2_core::GlobalPlanner)

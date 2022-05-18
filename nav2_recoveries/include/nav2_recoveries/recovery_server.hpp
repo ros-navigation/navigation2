@@ -37,7 +37,7 @@ public:
   RecoveryServer();
   ~RecoveryServer();
 
-  void loadRecoveryPlugins();
+  bool loadRecoveryPlugins();
 
 protected:
   // Implement the lifecycle interface

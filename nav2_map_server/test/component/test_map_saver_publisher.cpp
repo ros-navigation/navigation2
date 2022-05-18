@@ -36,7 +36,7 @@ public:
     std::string pub_map_file = path(TEST_DIR) / path(g_valid_yaml_file);
     LOAD_MAP_STATUS status = loadMapFromYaml(pub_map_file, msg_);
     if (status != LOAD_MAP_SUCCESS) {
-      RCLCPP_ERROR(get_logger(), "Can not load %s map file", pub_map_file);
+      RCLCPP_ERROR(get_logger(), "Can not load %s map file", pub_map_file.c_str());
       return;
     }
 

@@ -142,9 +142,19 @@ namespace nav2_navfn_planner
     // can relax the constraint in x and y before failing
     double tolerance_;
 
-    // Whether to use the astar planner or default dijkstras
-    bool use_astar_;
-  };
+  // Whether to use the astar planner or default dijkstras
+  bool use_astar_;
+
+  // Subscription for parameter change
+  rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
+  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
+
+  /**
+   * @brief Callback executed when a paramter change is detected
+   * @param event ParameterEvent message
+   */
+  void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+};
 
 } // namespace nav2_navfn_planner
 

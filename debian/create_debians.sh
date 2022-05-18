@@ -52,7 +52,8 @@ PACKAGE_LIST=(
             navigation2/nav2_rviz_plugins \
             navigation2/nav2_amcl \
             navigation2/nav2_planner \
-            navigation2/nav2_navfn_planner
+            navigation2/nav2_navfn_planner \
+            navigation2/nav2_controller
 )
 
 for PACKAGE in ${PACKAGE_LIST[@]}; do
