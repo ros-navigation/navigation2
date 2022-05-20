@@ -189,7 +189,6 @@ void smootherTimer()  // TODO
     current_ = odom_smoother_->getTwist();
   }
 
-  // This lib does not work properly when angles wrap, so we need to unwind the path first TODO
   // Smooth the velocity
   Ruckig<3> smoother {1.0 / smoothing_frequency_};
   InputParameter<3> input;
@@ -202,15 +201,15 @@ void smootherTimer()  // TODO
   input.current_acceleration = {0.0, 2.5, -0.5};// TODO? open loop only?
 
   input.target_velocity = {command_->linear.x, command_->linear.y, command_->angular.z};
-  input.target_acceleration = {0.0, 0.0, 0.5};// TODO? open loop only?
+  input.target_acceleration = {0.0, 0.0, 0.0};// TODO? open loop only? 0 a good default?
   
   input.max_velocity = {max_velocity_, max_velocity_, max_velocity_};
   input.max_acceleration = {max_accel_, max_accel_, max_accel_};
-  input.max_jerk = {6.0, 6.0, 4.0}; // TODO?
+  input.max_jerk = {6.0, 6.0, 4.0}; // TODO? params
 
   input.min_velocity = {min_velocity_, min_velocity_, min_velocity_};
   input.min_acceleration = {min_accel_, min_accel_, min_accel_};
-  input.min_jerk = {6.0, 6.0, 4.0};// TODO?
+  input.min_jerk = {6.0, 6.0, 4.0};// TODO? params
 
 
   // minimum_duration? target/current position?
