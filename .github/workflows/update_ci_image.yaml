@@ -36,7 +36,7 @@ jobs:
       trigger: ${{ steps.check.outputs.trigger }}
       no_cache: ${{ steps.check.outputs.no_cache }}
     container:
-      image: ghcr.io/ros-planning/navigation2:main
+      image: ros:rolling
     steps:
       - name: "Check apt updates"
         id: check
