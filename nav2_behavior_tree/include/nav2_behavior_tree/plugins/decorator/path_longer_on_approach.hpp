@@ -20,7 +20,9 @@
 #include <limits>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "behaviortree_cpp_v3/decorator_node.h"
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_behavior_tree
 {

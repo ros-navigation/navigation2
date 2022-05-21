@@ -101,12 +101,14 @@
         <input_port name="goal">Goal</input_port>
         <input_port name="service_name">Service name</input_port>
         <input_port name="server_timeout">Server timeout</input_port>
+        <input_port name="behavior_tree">Behavior tree to run</input_port>
     </Action>
 
     <Action ID="NavigateThroughPoses">
         <input_port name="goals">Goals</input_port>
         <input_port name="service_name">Service name</input_port>
         <input_port name="server_timeout">Server timeout</input_port>
+        <input_port name="behavior_tree">Behavior tree to run</input_port>
     </Action>
 
     <Action ID="ReinitializeGlobalLocalization">
