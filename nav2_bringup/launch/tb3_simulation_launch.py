@@ -16,22 +16,40 @@
 
 import os
 
+from os import environ
+from os import pathsep
+
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.actions import IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
+from scripts import GazeboRosPaths
+
 
 def generate_launch_description():
+    model, plugin, media = GazeboRosPaths.get_paths()
+
+    if 'GAZEBO_MODEL_PATH' in environ:
+        model += pathsep+environ['GAZEBO_MODEL_PATH']
+    if 'GAZEBO_PLUGIN_PATH' in environ:
+        plugin += pathsep+environ['GAZEBO_PLUGIN_PATH']
+    if 'GAZEBO_RESOURCE_PATH' in environ:
+        media += pathsep+environ['GAZEBO_RESOURCE_PATH']
+
+    env = {'GAZEBO_MODEL_PATH': model,
+           'GAZEBO_PLUGIN_PATH': plugin,
+           'GAZEBO_RESOURCE_PATH': media}
+
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
     aws_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
-    gazebo_ros = get_package_share_directory('gazebo_ros')
 
     # Create the launch configuration variables
     slam = LaunchConfiguration('slam')
@@ -155,18 +173,20 @@ def generate_launch_description():
         default_value=os.path.join(bringup_dir, 'worlds', 'waffle.model'),
         description='Full path to robot sdf file to spawn the robot in gazebo')
 
-    start_gazebo_server_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(gazebo_ros, 'launch', 'gzserver.launch.py')),
-        condition=IfCondition(PythonExpression([use_simulator])),
-        launch_arguments={'world': world}.items()
-    )
+    # Launch gazebo server for simulation
+    start_gazebo_server_cmd = ExecuteProcess(
+        condition=IfCondition(use_simulator),
+        cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
+             '-s', 'libgazebo_ros_factory.so', world],
+        additional_env=env,
+        cwd=[aws_dir], output='screen')
 
-    start_gazebo_client_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(gazebo_ros, 'launch', 'gzclient.launch.py')),
-        condition=IfCondition(PythonExpression([use_simulator, ' and not ', headless]))
-    )
+    start_gazebo_client_cmd = ExecuteProcess(
+        condition=IfCondition(PythonExpression(
+            [use_simulator, ' and not ', headless])),
+        cmd=['gzclient'],
+        additional_env=env,
+        cwd=[aws_dir], output='screen')
 
     urdf = os.path.join(bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
     with open(urdf, 'r') as infp:
