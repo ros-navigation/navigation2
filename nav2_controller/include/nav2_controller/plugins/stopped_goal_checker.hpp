@@ -72,6 +72,8 @@ protected:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
   std::string plugin_name_;
 
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+
   /**
    * @brief Callback executed when a paramter change is detected
    * @param parameters list of changed parameters
