@@ -351,3 +351,13 @@ waypoint_follower:
 velocity_smoother:
   ros__parameters:
     use_sim_time: True
+    smoothing_frequency: 20.0
+    feedback: "OPEN_LOOP"
+    max_velocity: [0.50, 0.0, 2.5]
+    min_velocity: [-0.50, 0.0, -2.5]
+    max_accel: [2.5, 0.0, 3.2]
+    max_decel: [-2.5, 0.0, -3.2]
+    odom_topic: "odom"
+    odom_duration: 0.3
+    deadband_velocity: [0.0, 0.0, 0.0]
+    velocity_timeout: 1.0

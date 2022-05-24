@@ -3,7 +3,6 @@
 TODO
 	- docs {configuration, tutorial to use (reconfigure topics to throw + use)?}
 	- tests
-	- Add params to the yaml / defaults
 
 
 The ``nav2_velocity_smoother`` is a package containing a lifecycle-component node for smoothing velocities sent by Nav2 to robot controllers.

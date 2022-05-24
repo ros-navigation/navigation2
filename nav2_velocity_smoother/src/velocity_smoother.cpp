@@ -52,7 +52,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
   double velocity_timeout_dbl;
 
   // Smoothing metadata
-  declare_parameter_if_not_declared(node, "smoothing_frequency", rclcpp::ParameterValue(50.0));
+  declare_parameter_if_not_declared(node, "smoothing_frequency", rclcpp::ParameterValue(20.0));
   declare_parameter_if_not_declared(
     node, "feedback", rclcpp::ParameterValue(std::string("OPEN_LOOP")));
   node->get_parameter("smoothing_frequency", smoothing_frequency_);
@@ -64,9 +64,9 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
   declare_parameter_if_not_declared(
     node, "min_velocity", rclcpp::ParameterValue(std::vector<double>{-0.50, 0.0, -2.5}));
   declare_parameter_if_not_declared(
-    node, "max_accel", rclcpp::ParameterValue(std::vector<double>{1.5, 0.0, 5.0}));
+    node, "max_accel", rclcpp::ParameterValue(std::vector<double>{2.5, 0.0, 3.2}));
   declare_parameter_if_not_declared(
-    node, "max_decel", rclcpp::ParameterValue(std::vector<double>{-1.5, 0.0, -5.0}));
+    node, "max_decel", rclcpp::ParameterValue(std::vector<double>{-2.5, 0.0, -3.2}));
   node->get_parameter("max_velocity", max_velocities_);
   node->get_parameter("min_velocity", min_velocities_);
   node->get_parameter("max_accel", max_accels_);
