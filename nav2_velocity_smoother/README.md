@@ -53,14 +53,14 @@ See inline description of parameters in the `VelocitySmoother`.
 ```
 velocity_smoother:
   ros__parameters:
-  	smoothing_frequency: 50.0  # Rate to run smoother
+  	smoothing_frequency: 20.0  # Rate to run smoother
   	feedback: "OPEN_LOOP"  # Type of feedback for current speed. Open loop uses the last smoothed output. Closed loop uses robot odometry
   	max_velocity: [0.5, 0.0, 2.5]  # Maximum velocities, ordered [Vx, Vy, Vw]
  	min_velocity: [-0.5, 0.0, -2.5]  # Minimum velocities, ordered [Vx, Vy, Vw]
  	deadband_velocity: [0.0, 0.0, 0.0]  # A deadband of velocities below which they should be zero-ed out for sending to the robot base controller, ordered [Vx, Vy, Vw]
  	velocity_timeout: 1.0  # Time (s) after which if no new velocity commands are received to zero out and stop
- 	max_accel: [1.5, 0.0, 5.0]  # Maximum acceleration, ordered [Ax, Ay, Aw]
- 	max_decel: [-1.5, 0.0, -5.0]  # Maximum deceleration, ordered [Ax, Ay, Aw]
+ 	max_accel: [2.5, 0.0, 3.2]  # Maximum acceleration, ordered [Ax, Ay, Aw]
+ 	max_decel: [-2.5, 0.0, -3.2]  # Maximum deceleration, ordered [Ax, Ay, Aw]
  	odom_topic: "odom"  # Topic of odometry to use for estimating current velocities
  	odom_duration: 0.3  # Period of time (s) to sample odometry information in for velocity estimation
 ```
