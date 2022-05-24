@@ -22,7 +22,6 @@
 #include <vector>
 
 #include "nav2_util/lifecycle_node.hpp"
-#include "ruckig/ruckig.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/odometry_utils.hpp"
 
@@ -83,25 +82,70 @@ protected:
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
+  /**
+   * @brief Find the scale factor, eta, which scales axis into acceleration range
+   * @param v_curr current velocity
+   * @param v_cmd commanded velocity
+   * @param accel maximum acceleration
+   * @param decel maximum deceleration
+   * @return Scale factor, eta
+   */
+  double findEtaConstraint(const double v_curr, const double v_cmd, const double accel, const double decel);
+
+  /**
+   * @brief Apply acceleration and scale factor constraints
+   * @param v_curr current velocity
+   * @param v_cmd commanded velocity
+   * @param accel maximum acceleration
+   * @param decel maximum deceleration
+   * @param eta Scale factor
+   * @return Velocity command
+   */
+  double applyConstraints(const double v_curr, const double v_cmd, const double accel, const double decel, const double eta);
+
+  /**
+   * @brief Callback for incoming velocity commands
+   * @param msg Twist message
+   */
+  void inputCommandCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+
+  /**
+   * @brief Main worker timer function
+   */
+  void smootherTimer();
+
+  /**
+   * @brief Dynamic reconfigure callback
+   * @param parameters Parameter list to change
+   */
+  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
   // Network interfaces
-  std::unique_ptr<nav2_util::OdomSmoother> odom_sub_;
+  std::unique_ptr<nav2_util::OdomSmoother> odom_smoother_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr smoothed_cmd_pub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_sub_;
   rclcpp::TimerBase::SharedPtr timer_;
 
   rclcpp::Clock::SharedPtr clock_;
   geometry_msgs::msg::Twist last_cmd_;
+  geometry_msgs::msg::Twist::SharedPtr command_;
 
   // Parameters
   double smoothing_frequency_;
+  double odom_duration_;
+  std::string odom_topic_;
   bool open_loop_;
-  double max_velocity_;
-  double min_velocity_;
-  double max_accel_;
-  double min_accel_;
-  double deadband_velocity_;
-  rclcpp::Duration velocity_timeout_{0.0};
-}
+  bool stopped_{true};
+  std::vector<double> max_velocities_;
+  std::vector<double> min_velocities_;
+  std::vector<double> max_accels_;
+  std::vector<double> max_decels_;
+  std::vector<double> deadband_velocities_;
+  rclcpp::Duration velocity_timeout_{0, 0};
+  rclcpp::Time last_command_time_;
+
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+};
 
 }  // namespace nav2_velocity_smoother
 

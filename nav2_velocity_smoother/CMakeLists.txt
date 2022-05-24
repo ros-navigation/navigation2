@@ -2,13 +2,11 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_velocity_smoother)
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_core REQUIRED)
 find_package(nav2_common REQUIRED)
-find_package(angles REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(ruckig REQUIRED)
-find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav2_util REQUIRED)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -24,12 +22,10 @@ set(executable_name velocity_smoother)
 set(library_name ${executable_name}_core)
 
 set(dependencies
-  angles
   rclcpp
   rclcpp_components
-  std_msgs
-  nav2_msgs
-  ruckig
+  geometry_msgs
+  nav2_util
 )
 
 # Main library
@@ -75,13 +71,12 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-# TODO
-# if(BUILD_TESTING)
-#   find_package(ament_lint_auto REQUIRED)
-#   ament_lint_auto_find_test_dependencies()
-#   find_package(ament_cmake_gtest REQUIRED)
-#   add_subdirectory(test)
-# endif()
+if(BUILD_TESTING)
+ find_package(ament_lint_auto REQUIRED)
+ ament_lint_auto_find_test_dependencies()
+ find_package(ament_cmake_gtest REQUIRED)
+ add_subdirectory(test)
+endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
