@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #ifndef NAV2_VELOCITY_SMOOTHER__VELOCITY_SMOOTHER_HPP_
+#define NAV2_VELOCITY_SMOOTHER__VELOCITY_SMOOTHER_HPP_
 
 #include <chrono>
 #include <limits>
@@ -90,7 +91,9 @@ protected:
    * @param decel maximum deceleration
    * @return Scale factor, eta
    */
-  double findEtaConstraint(const double v_curr, const double v_cmd, const double accel, const double decel);
+  double findEtaConstraint(
+    const double v_curr, const double v_cmd,
+    const double accel, const double decel);
 
   /**
    * @brief Apply acceleration and scale factor constraints
@@ -101,7 +104,9 @@ protected:
    * @param eta Scale factor
    * @return Velocity command
    */
-  double applyConstraints(const double v_curr, const double v_cmd, const double accel, const double decel, const double eta);
+  double applyConstraints(
+    const double v_curr, const double v_cmd,
+    const double accel, const double decel, const double eta);
 
   /**
    * @brief Callback for incoming velocity commands
@@ -118,11 +123,13 @@ protected:
    * @brief Dynamic reconfigure callback
    * @param parameters Parameter list to change
    */
-  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(
+    std::vector<rclcpp::Parameter> parameters);
 
   // Network interfaces
   std::unique_ptr<nav2_util::OdomSmoother> odom_smoother_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr smoothed_cmd_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr
+    smoothed_cmd_pub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_sub_;
   rclcpp::TimerBase::SharedPtr timer_;
 
@@ -136,6 +143,7 @@ protected:
   std::string odom_topic_;
   bool open_loop_;
   bool stopped_{true};
+  bool scale_velocities_;
   std::vector<double> max_velocities_;
   std::vector<double> min_velocities_;
   std::vector<double> max_accels_;
