@@ -47,6 +47,31 @@ public:
    */
   ~VelocitySmoother();
 
+  /**
+   * @brief Find the scale factor, eta, which scales axis into acceleration range
+   * @param v_curr current velocity
+   * @param v_cmd commanded velocity
+   * @param accel maximum acceleration
+   * @param decel maximum deceleration
+   * @return Scale factor, eta
+   */
+  double findEtaConstraint(
+    const double v_curr, const double v_cmd,
+    const double accel, const double decel);
+
+  /**
+   * @brief Apply acceleration and scale factor constraints
+   * @param v_curr current velocity
+   * @param v_cmd commanded velocity
+   * @param accel maximum acceleration
+   * @param decel maximum deceleration
+   * @param eta Scale factor
+   * @return Velocity command
+   */
+  double applyConstraints(
+    const double v_curr, const double v_cmd,
+    const double accel, const double decel, const double eta);
+
 protected:
   /**
    * @brief Configures parameters and member variables
@@ -82,31 +107,6 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
-
-  /**
-   * @brief Find the scale factor, eta, which scales axis into acceleration range
-   * @param v_curr current velocity
-   * @param v_cmd commanded velocity
-   * @param accel maximum acceleration
-   * @param decel maximum deceleration
-   * @return Scale factor, eta
-   */
-  double findEtaConstraint(
-    const double v_curr, const double v_cmd,
-    const double accel, const double decel);
-
-  /**
-   * @brief Apply acceleration and scale factor constraints
-   * @param v_curr current velocity
-   * @param v_cmd commanded velocity
-   * @param accel maximum acceleration
-   * @param decel maximum deceleration
-   * @param eta Scale factor
-   * @return Velocity command
-   */
-  double applyConstraints(
-    const double v_curr, const double v_cmd,
-    const double accel, const double decel, const double eta);
 
   /**
    * @brief Callback for incoming velocity commands
