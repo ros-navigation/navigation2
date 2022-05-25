@@ -224,9 +224,9 @@ void VelocitySmoother::smootherTimer()
   }
 
   // Apply absolute velocity restrictions to the command
-  cmd_vel->linear.x = std::clamp(command_->linear.x, min_velocities_[0], max_velocities_[0]);
-  cmd_vel->linear.y = std::clamp(command_->linear.y, min_velocities_[1], max_velocities_[1]);
-  cmd_vel->angular.z = std::clamp(command_->angular.z, min_velocities_[2], max_velocities_[2]);
+  command_->linear.x = std::clamp(command_->linear.x, min_velocities_[0], max_velocities_[0]);
+  command_->linear.y = std::clamp(command_->linear.y, min_velocities_[1], max_velocities_[1]);
+  command_->angular.z = std::clamp(command_->angular.z, min_velocities_[2], max_velocities_[2]);
 
   // Find if any component is not within the acceleration constraints. If so, store the most
   // significant scale factor to apply to the vector <dvx, dvy, dvw>, eta, to reduce all axes

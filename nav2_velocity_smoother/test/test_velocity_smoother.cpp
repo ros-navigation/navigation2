@@ -21,6 +21,10 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_velocity_smoother/velocity_smoother.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+
+using namespace std::chrono_literals;
 
 class RclCppFixture
 {
@@ -47,6 +51,125 @@ public:
 
   void sendCommandMsg(geometry_msgs::msg::Twist::SharedPtr msg) {inputCommandCallback(msg);}
 };
+
+TEST(VelocitySmootherTest, openLoopTestTimer)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  std::vector<double> deadbands{0.2, 0.0, 0.0};
+  smoother->declare_parameter("scale_velocities", rclcpp::ParameterValue(true));
+  smoother->set_parameter(rclcpp::Parameter("scale_velocities", true));
+  smoother->declare_parameter("deadband_velocity", rclcpp::ParameterValue(deadbands));
+  smoother->set_parameter(rclcpp::Parameter("deadband_velocity", deadbands));
+  rclcpp_lifecycle::State state;
+  smoother->configure(state);
+  smoother->activate(state);
+
+  std::vector<double> linear_vels;
+  auto subscription = smoother->create_subscription<geometry_msgs::msg::Twist>(
+    "smoothed_cmd_vel",
+    1,
+    [&](geometry_msgs::msg::Twist::SharedPtr msg) {
+      linear_vels.push_back(msg->linear.x);
+    });
+
+  // Send a velocity command
+  auto cmd = std::make_shared<geometry_msgs::msg::Twist>();
+  cmd->linear.x = 1.0;  // Max is 0.5, so should threshold
+  smoother->sendCommandMsg(cmd);
+
+  // Process velocity smoothing and send updated odometry based on commands
+  auto start = smoother->now();
+  while (smoother->now() - start < 1.5s) {
+    rclcpp::spin_some(smoother->get_node_base_interface());
+  }
+
+  // Sanity check we have the approximately right number of messages for the timespan and timeout
+  EXPECT_GT(linear_vels.size(), 19u);
+  EXPECT_LT(linear_vels.size(), 30u);
+
+  // Should have last command be a stop since we timed out the command stream
+  EXPECT_EQ(linear_vels.back(), 0.0);
+
+  // From deadband, first few should be 0 until above 0.2
+  for (unsigned int i = 0; i != linear_vels.size(); i++) {
+    if (linear_vels[i] != 0) {
+      EXPECT_GT(linear_vels[i], 0.2);
+      break;
+    }
+  }
+
+  // Process to make sure stops at limit in velocity,
+  // doesn't exceed acceleration
+  for (unsigned int i = 0; i != linear_vels.size(); i++) {
+    EXPECT_TRUE(linear_vels[i] <= 0.5);
+  }
+}
+
+TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  smoother->declare_parameter("feedback", rclcpp::ParameterValue(std::string("CLOSED_LOOP")));
+  smoother->set_parameter(rclcpp::Parameter("feedback", std::string("CLOSED_LOOP")));
+  rclcpp_lifecycle::State state;
+  smoother->configure(state);
+  smoother->activate(state);
+
+  std::vector<double> linear_vels;
+  auto subscription = smoother->create_subscription<geometry_msgs::msg::Twist>(
+    "smoothed_cmd_vel",
+    1,
+    [&](geometry_msgs::msg::Twist::SharedPtr msg) {
+      linear_vels.push_back(msg->linear.x);
+    });
+
+  auto odom_pub = smoother->create_publisher<nav_msgs::msg::Odometry>("odom", 1);
+  odom_pub->on_activate();
+  nav_msgs::msg::Odometry odom_msg;
+  odom_msg.header.frame_id = "odom";
+  odom_msg.child_frame_id = "base_link";
+
+  // Fill buffer with 0 twisted-commands
+  for (unsigned int i = 0; i != 30; i++) {
+    odom_msg.header.stamp = smoother->now() + rclcpp::Duration::from_seconds(i * 0.01);
+    odom_pub->publish(odom_msg);
+  }
+
+  // Send a velocity command
+  auto cmd = std::make_shared<geometry_msgs::msg::Twist>();
+  cmd->linear.x = 1.0;  // Max is 0.5, so should threshold
+  smoother->sendCommandMsg(cmd);
+
+  // Process velocity smoothing and send updated odometry based on commands
+  auto start = smoother->now();
+  while (smoother->now() - start < 1.5s) {
+    odom_msg.header.stamp = smoother->now();
+    if (linear_vels.size() > 0) {
+      odom_msg.twist.twist.linear.x = linear_vels.back();
+    }
+    odom_pub->publish(odom_msg);
+    rclcpp::spin_some(smoother->get_node_base_interface());
+  }
+
+  // Sanity check we have the approximately right number of messages for the timespan and timeout
+  EXPECT_GT(linear_vels.size(), 19u);
+  EXPECT_LT(linear_vels.size(), 30u);
+
+  // Should have last command be a stop since we timed out the command stream
+  EXPECT_EQ(linear_vels.back(), 0.0);
+
+  // Process to make sure stops at limit in velocity,
+  // doesn't exceed acceleration
+  for (unsigned int i = 0; i != linear_vels.size(); i++) {
+    if (i > 0) {
+      double diff = linear_vels[i] - linear_vels[i - 1];
+      EXPECT_LT(diff, 0.126);  // default accel of 0.5 / 20 hz = 0.125
+    }
+
+    EXPECT_TRUE(linear_vels[i] <= 0.5);
+  }
+}
 
 TEST(VelocitySmootherTest, testfindEtaConstraint)
 {
