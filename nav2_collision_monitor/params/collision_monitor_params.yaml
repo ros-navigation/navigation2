@@ -1,0 +1,42 @@
+collision_monitor_node:
+  ros__parameters:
+    use_sim_time: True
+    base_frame_id: "base_footprint"
+    odom_topic: "/odom"
+    polygon_topic: "polygons"
+    cmd_vel_in_topic: "/cmd_vel_raw"
+    cmd_vel_out_topic: "/cmd_vel"
+    transform_tolerance: 0.1
+    max_time_shift: 10.0
+    release_step: 0.002
+    polygons: ["PolygonStop"]
+    PolygonStop:
+      type: "polygon"
+      points: [0.5, 0.5, 0.5, -0.5, -0.1, -0.5, -0.1, 0.5, 0.5, 0.5]
+      emergency_model: "stop"
+      emergency_thresh: 5
+    PolygonApp:
+      type: "polygon"
+      points: [0.15, 0.15, 0.15, -0.15, -0.15, -0.15, -0.15, 0.15, 0.15, 0.15]
+      emergency_model: "approach"
+      time_before_crash: 2.0
+    PolygonSlow:
+      type: "polygon"
+      points: [0.5, 0.5, 0.5, -0.5, -0.1, -0.5, -0.1, 0.5, 0.5, 0.5]
+      emergency_model: "slowdown"
+      emergency_thresh: 5
+      slowdown: 0.3
+    CircleStop:
+      type: "circle"
+      radius: 0.5
+      emergency_model: "stop"
+      emergency_thresh: 5
+    observation_sources: ["scan"]
+    scan:
+      type: "scan"
+      topic: "/scan"
+    pcl2:
+      type: "pcl2"
+      topic: "/intel_realsense_r200_depth/points"
+      min_z: 0.1
+      max_z: 0.5

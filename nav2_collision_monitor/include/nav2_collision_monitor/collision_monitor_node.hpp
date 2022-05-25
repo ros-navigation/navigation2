@@ -1,0 +1,187 @@
+// Copyright (c) 2022 Samsung Research Russia
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef NAV2_COLLISION_MONITOR__COLLISION_MONITOR_NODE_HPP_
+#define NAV2_COLLISION_MONITOR__COLLISION_MONITOR_NODE_HPP_
+
+#include <string>
+#include <vector>
+
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+
+#include "nav2_collision_monitor/types.hpp"
+#include "nav2_collision_monitor/polygon_base.hpp"
+#include "nav2_collision_monitor/polygon.hpp"
+#include "nav2_collision_monitor/circle.hpp"
+#include "nav2_collision_monitor/source_base.hpp"
+#include "nav2_collision_monitor/scan.hpp"
+#include "nav2_collision_monitor/pcl2.hpp"
+
+namespace nav2_collision_monitor
+{
+
+class CollisionMonitorNode : public nav2_util::LifecycleNode
+{
+public:
+  /**
+   * @brief Constructor for the nav2_collision_safery::CollisionMonitorNode.
+   * Sets class variables, declares ROS-parameters
+   */
+  CollisionMonitorNode(const std::string & node_name);
+  /**
+   * @brief Destructor for the nav2_collision_safery::CollisionMonitorNode.
+   * Deletes allocated resources
+   */
+  ~CollisionMonitorNode();
+
+protected:
+  /**
+   * @brief: Initializes and obtains ROS-parameters, creates main subscribers and publishers
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief: Activates LifecyclePublishers and main worker, creates bond connection,
+   * creates polygon publisher thread
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief: Deactivates LifecyclePublishers and main worker,
+   * resets opeartion states to their defaults, stops polygon publisher thread,
+   * destroys bond connection
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief: Resets all subscribers/publishers/threads timers,
+   * deletes allocated resources, resets velocity
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when in Shutdown state
+   * @param state Lifecycle Node's state
+   * @return Success or Failure
+   */
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+
+private:
+  // Default values
+  std::string default_base_frame_id_;
+  std::string default_odom_topic_;
+  std::string default_cmd_vel_in_topic_, default_cmd_vel_out_topic_;
+  double default_transform_tolerance_;
+  double default_max_time_shift_;
+  double default_release_step_;
+  int default_emergency_thresh_;
+  double default_slowdown_;
+  double default_time_before_crash_;
+  double default_min_z_, default_max_z_;
+
+  // Robot base frame id
+  std::string base_frame_id_;
+
+  // Transforms
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+  // Polygons
+  std::vector<std::string> polygon_names_;
+  std::vector<PolygonBase *> polygons_;
+  std::string polygon_topic_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
+  rclcpp::TimerBase::SharedPtr polygon_pub_timer_;
+  // @brief Polygons publishing routine (to be used as callback).
+  // Made for better visualization.
+  void publishPolygons();
+
+  // Data sources
+  std::vector<std::string> source_names_;
+  std::vector<SourceBase *> sources_;
+
+  // Odom callback
+  std::string odom_topic_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  // @brief Callback for odometry. Sets velocity to a given value.
+  // @param msg Incoming odom message
+  void odomCallback(nav_msgs::msg::Odometry::ConstSharedPtr msg);
+
+  // Working with velocity
+  Velocity velocity_;
+  bool velocity_valid_;
+  mutex_t velocity_mutex_;
+  // @brief Get latest detected velocity
+  // @return Latest velocity
+  Velocity getVelocity();
+  // @brief Tells whether a valid velocity was received
+  // @return Velocity is valid or not
+  bool velocityValid();
+  // @brief Resets velocity to its initial non-valid state
+  void resetVelocity();
+
+  // Input/output speed controls
+  std::string cmd_vel_in_topic_, cmd_vel_out_topic_;
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_sub_;
+  Velocity cmd_vel_in_;
+  mutex_t cmd_vel_in_mutex_;
+  // @brief Callback for input velocity
+  // @param msg Input velocity message
+  void cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg);
+  Velocity getCmdVelIn();
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
+  // @brief Published output velocity
+  // @param vel Output velocity to publish
+  void publishVelocity(const Velocity & vel);
+
+  // @brief Supporting routine obtaining all ROS-parameters
+  // @return True if all parameters were obtained or false in failure case
+  bool getParameters();
+
+  // @brief Worker main routine
+  void workerMain();
+  bool worker_active_;
+  mutex_t worker_active_mutex_;
+  // @brief Sets main worker to a given state
+  // @param worker_active State for worker (active or non-active)
+  void setWorkerActive(const bool worker_active);
+  // @brief Gets main worker state
+  // @return Curret state of main worker routine
+  bool getWorkerActive();
+
+  // Previous robot action state
+  Action ra_prev_;
+  // Gradually release normal robot operation
+  bool release_operation_;
+  // Step to increase robot speed towards to normal operation
+  double release_step_;
+
+  // @brief Resources clearing routine
+  void clearNode();
+};  // class CollisionMonitorNode
+
+}  // namespace nav2_collision_monitor
+
+#endif  // NAV2_COLLISION_MONITOR__COLLISION_MONITOR_NODE_HPP_
