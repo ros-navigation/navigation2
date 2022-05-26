@@ -58,7 +58,7 @@ velocity_smoother:
    	max_accel: [2.5, 0.0, 3.2]  # Maximum acceleration, ordered [Ax, Ay, Aw]
    	max_decel: [-2.5, 0.0, -3.2]  # Maximum deceleration, ordered [Ax, Ay, Aw]
    	odom_topic: "odom"  # Topic of odometry to use for estimating current velocities
-   	odom_duration: 0.3  # Period of time (s) to sample odometry information in for velocity estimation
+   	odom_duration: 0.1  # Period of time (s) to sample odometry information in for velocity estimation
 ```
 
 ## Topics
@@ -77,9 +77,11 @@ sudo apt-get install ros-<ros2-distro>-nav2-velocity-smoother
 
 ## Etc (Important Side Notes)
 
+Typically: if you have low rate odometry, you should use open-loop mode or set the smoothing frequency relatively similar to that of your `cmd_vel` topic. If you have high rate odometry, you can use closed-loop mode with a higher smoothing frequency since you'll have more up to date information to smooth based off of. Do not exceed the smoothing frequency to your odometry frequency in closed loop mode. Also consider the ``odom_duration`` to use relative to your odometry publication rate and noise characteristics.
+If the smoothing frequency out paces odometry or poorly selected ``odom_duration``s are used, the robot can oscillate and/or accelerate slowly due to latency in closed loop mode.
+
+When in doubt, open-loop is a reasonable choice for most users.
+
 The minimum and maximum velocities for rotation (e.g. ``Vw``) represent left and right turns. While we make it possible to specify these separately, most users would be wise to set these values the same (but signed) for rotation. Additionally, the parameters are signed, so it is important to specify maximum deceleration with negative signs to represent deceleration. Minimum velocities with negatives when moving backward, so backward movement can be restricted by setting this to ``0``.
 
 Deadband velocities are minimum thresholds, below which we set its value to `0`. This can be useful when your robot's breaking torque from stand still is non-trivial so sending very small values will pull high amounts of current.
-
-Typically: if you have low rate odometry, you should use open-loop mode or set the smoothing frequency relatively similar to that of your `cmd_vel` topic. If you have high rate odometry, you can use closed-loop mode with a higher smoothing frequency since you'll have more up to date information to smooth based off of. Do not exceed the smoothing frequency to your odometry frequency in closed loop mode.
-When in doubt, open-loop is a reasonable starting point.

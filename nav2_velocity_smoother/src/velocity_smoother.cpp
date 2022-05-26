@@ -76,7 +76,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
 
   // Get feature parameters
   declare_parameter_if_not_declared(node, "odom_topic", rclcpp::ParameterValue("odom"));
-  declare_parameter_if_not_declared(node, "odom_duration", rclcpp::ParameterValue(0.3));
+  declare_parameter_if_not_declared(node, "odom_duration", rclcpp::ParameterValue(0.1));
   declare_parameter_if_not_declared(
     node, "deadband_velocity", rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
   declare_parameter_if_not_declared(node, "velocity_timeout", rclcpp::ParameterValue(1.0));
