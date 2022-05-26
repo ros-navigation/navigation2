@@ -105,7 +105,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
   }
 
   // Setup inputs / outputs
-  smoothed_cmd_pub_ = create_publisher<geometry_msgs::msg::Twist>("smoothed_cmd_vel", 1);
+  smoothed_cmd_pub_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel_smoothed", 1);
   cmd_sub_ = create_subscription<geometry_msgs::msg::Twist>(
     "cmd_vel", rclcpp::QoS(1),
     std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1));
@@ -269,9 +269,9 @@ void VelocitySmoother::smootherTimer()
   }
 
   // Apply deadband restrictions & publish
-  cmd_vel->linear.x = cmd_vel->linear.x < deadband_velocities_[0] ? 0.0 : cmd_vel->linear.x;
-  cmd_vel->linear.y = cmd_vel->linear.y < deadband_velocities_[1] ? 0.0 : cmd_vel->linear.y;
-  cmd_vel->angular.z = cmd_vel->angular.z < deadband_velocities_[2] ? 0.0 : cmd_vel->angular.z;
+  cmd_vel->linear.x = fabs(cmd_vel->linear.x) < deadband_velocities_[0] ? 0.0 : cmd_vel->linear.x;
+  cmd_vel->linear.y = fabs(cmd_vel->linear.y) < deadband_velocities_[1] ? 0.0 : cmd_vel->linear.y;
+  cmd_vel->angular.z = fabs(cmd_vel->angular.z) < deadband_velocities_[2] ? 0.0 : cmd_vel->angular.z;
   smoothed_cmd_pub_->publish(std::move(cmd_vel));
 }
 
