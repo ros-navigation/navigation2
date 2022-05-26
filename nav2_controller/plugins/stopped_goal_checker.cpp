@@ -58,14 +58,12 @@ StoppedGoalChecker::StoppedGoalChecker()
 void StoppedGoalChecker::initialize(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name,
-  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
+  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   plugin_name_ = plugin_name;
   SimpleGoalChecker::initialize(parent, plugin_name, costmap_ros);
 
   auto node = parent.lock();
-
-  costmap_ros_ = costmap_ros;
 
   nav2_util::declare_parameter_if_not_declared(
     node,

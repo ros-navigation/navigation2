@@ -58,7 +58,7 @@ public:
   void initialize(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name,
-    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros) override;
+    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
   bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
     const geometry_msgs::msg::Twist & velocity) override;
@@ -71,8 +71,6 @@ protected:
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
   std::string plugin_name_;
-
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
 
   /**
    * @brief Callback executed when a paramter change is detected
