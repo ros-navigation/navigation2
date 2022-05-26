@@ -255,6 +255,9 @@ TEST(VelocitySmootherTest, testInvalidParams)
   smoother->declare_parameter("max_velocity", rclcpp::ParameterValue(max_vels));
   rclcpp_lifecycle::State state;
   EXPECT_THROW(smoother->configure(state), std::runtime_error);
+
+  smoother->declare_parameter("feedback", rclcpp::ParameterValue(std::string("LAWLS")));
+  EXPECT_THROW(smoother->configure(state), std::runtime_error);
 }
 
 TEST(VelocitySmootherTest, testDynamicParameter)
@@ -276,6 +279,7 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   std::vector<double> max_accel{10.0, 10.0, 10.0};
   std::vector<double> min_accel{0.0, 0.0, 0.0};
   std::vector<double> deadband{0.0, 0.0, 0.0};
+  std::vector<double> bad_test{0.0, 0.0};
 
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("smoothing_frequency", 100.0),
@@ -306,11 +310,24 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   EXPECT_EQ(smoother->get_parameter("velocity_timeout").as_double(), 4.0);
   EXPECT_EQ(smoother->get_parameter("deadband_velocity").as_double_array(), deadband);
 
+  // Test reverting
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("feedback", std::string("OPEN_LOOP"))});
   rclcpp::spin_until_future_complete(
     smoother->get_node_base_interface(), results);
   EXPECT_EQ(smoother->get_parameter("feedback").as_string(), std::string("OPEN_LOOP"));
+
+  // Test invalid change
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("feedback", std::string("LAWLS"))});
+  rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+
+  // Test invalid size
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("max_velocity", bad_test)});
+  rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
 
   // test full state after major changes
   smoother->deactivate(state);
