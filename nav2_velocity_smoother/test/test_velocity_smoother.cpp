@@ -256,7 +256,7 @@ TEST(VelocitySmootherTest, testInvalidParams)
   rclcpp_lifecycle::State state;
   EXPECT_THROW(smoother->configure(state), std::runtime_error);
 
-  smoother->declare_parameter("feedback", rclcpp::ParameterValue(std::string("LAWLS")));
+  smoother->set_parameter(rclcpp::Parameter("feedback", std::string("LAWLS")));
   EXPECT_THROW(smoother->configure(state), std::runtime_error);
 }
 
