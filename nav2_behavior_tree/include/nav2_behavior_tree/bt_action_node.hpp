@@ -137,7 +137,7 @@ public:
    * in subsequent calls to this function if no new feedback is received while waiting for a result.
    * @param feedback shared_ptr to latest feedback message, nullptr if no new feedback was received
    */
-  virtual void on_wait_for_result(std::shared_ptr<const typename ActionT::Feedback> /*feedback*/)
+  virtual void on_wait_for_result(std::shared_ptr<const typename ActionT::Feedback>/*feedback*/)
   {
   }
 
@@ -348,9 +348,9 @@ protected:
       };
     send_goal_options.feedback_callback =
       [this](typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr,
-             const std::shared_ptr<const typename ActionT::Feedback> feedback) {
-      feedback_ = feedback;
-    };
+        const std::shared_ptr<const typename ActionT::Feedback> feedback) {
+        feedback_ = feedback;
+      };
 
     future_goal_handle_ = std::make_shared<
       std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr>>(
