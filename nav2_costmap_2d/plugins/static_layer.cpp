@@ -90,16 +90,19 @@ StaticLayer::onInitialize()
     throw std::runtime_error{"Failed to lock node"};
   }
 
+  // use a dedicated callback group for map and map_update subscriber
+  auto sub_opt = rclcpp::SubscriptionOptions();
+  sub_opt.callback_group = callback_group_;
   map_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
     map_topic_, map_qos,
-    std::bind(&StaticLayer::incomingMap, this, std::placeholders::_1));
+    std::bind(&StaticLayer::incomingMap, this, std::placeholders::_1), sub_opt);
 
   if (subscribe_to_updates_) {
     RCLCPP_INFO(logger_, "Subscribing to updates");
     map_update_sub_ = node->create_subscription<map_msgs::msg::OccupancyGridUpdate>(
       map_topic_ + "_updates",
       rclcpp::SystemDefaultsQoS(),
-      std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1));
+      std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1), sub_opt);
   }
 }
 
