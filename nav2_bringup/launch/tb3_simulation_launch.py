@@ -35,16 +35,17 @@ from scripts import GazeboRosPaths
 def generate_launch_description():
     model, plugin, media = GazeboRosPaths.get_paths()
 
+    env = {}
+
     if 'GAZEBO_MODEL_PATH' in environ:
         model += pathsep+environ['GAZEBO_MODEL_PATH']
+        env['GAZEBO_MODEL_PATH'] = model
     if 'GAZEBO_PLUGIN_PATH' in environ:
         plugin += pathsep+environ['GAZEBO_PLUGIN_PATH']
+        env['GAZEBO_PLUGIN_PATH'] = plugin
     if 'GAZEBO_RESOURCE_PATH' in environ:
         media += pathsep+environ['GAZEBO_RESOURCE_PATH']
-
-    env = {'GAZEBO_MODEL_PATH': model,
-           'GAZEBO_PLUGIN_PATH': plugin,
-           'GAZEBO_RESOURCE_PATH': media}
+        env['GAZEBO_RESOURCE_PATH'] = media
 
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
