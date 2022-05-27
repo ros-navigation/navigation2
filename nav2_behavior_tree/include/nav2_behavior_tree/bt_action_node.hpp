@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <mutex>
 
 #include "behaviortree_cpp_v3/action_node.h"
 #include "nav2_util/node_utils.hpp"
@@ -133,8 +134,9 @@ public:
   /**
    * @brief Function to perform some user-defined operation after a timeout
    * waiting for a result that hasn't been received yet
+   * @param feedback shared_ptr to latest feedback message
    */
-  virtual void on_wait_for_result()
+  virtual void on_wait_for_result(std::shared_ptr<const typename ActionT::Feedback> /*feedback*/)
   {
   }
 
@@ -206,7 +208,13 @@ public:
       // The following code corresponds to the "RUNNING" loop
       if (rclcpp::ok() && !goal_result_available_) {
         // user defined callback. May modify the value of "goal_updated_"
-        on_wait_for_result();
+        on_wait_for_result(feedback_);
+
+        // reset feedback to avoid stale information
+        {
+          std::lock_guard<std::mutex> lock_guard(feedback_mutex_);
+          feedback_.reset();
+        }
 
         auto goal_status = goal_handle_->get_status();
         if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
@@ -290,6 +298,15 @@ public:
     setStatus(BT::NodeStatus::IDLE);
   }
 
+  /**
+   * @brief Getter function for latest feedback message from action server
+   * @return shared_ptr to latest feedback message
+   */
+  std::shared_ptr<const typename ActionT::Feedback> getFeedback()
+  {
+    return feedback_;
+  }
+
 protected:
   /**
    * @brief Function to check if current goal should be cancelled
@@ -340,6 +357,12 @@ protected:
           result_ = result;
         }
       };
+    send_goal_options.feedback_callback =
+      [this](typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr,
+             const std::shared_ptr<const typename ActionT::Feedback> feedback) {
+      std::lock_guard<std::mutex> lock_guard(feedback_mutex_);
+      feedback_ = feedback;
+    };
 
     future_goal_handle_ = std::make_shared<
       std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr>>(
@@ -405,6 +428,10 @@ protected:
   bool goal_result_available_{false};
   typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr goal_handle_;
   typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult result_;
+
+  // To handle feedback from action server
+  std::mutex feedback_mutex_;
+  std::shared_ptr<const typename ActionT::Feedback> feedback_;
 
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;

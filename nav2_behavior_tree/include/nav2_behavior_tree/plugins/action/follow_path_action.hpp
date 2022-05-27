@@ -48,8 +48,9 @@ public:
   /**
    * @brief Function to perform some user-defined operation after a timeout
    * waiting for a result that hasn't been received yet
+   * @param feedback shared_ptr to latest feedback message
    */
-  void on_wait_for_result() override;
+  void on_wait_for_result(std::shared_ptr<const nav2_msgs::action::FollowPath::Feedback> feedback) override;
 
   /**
    * @brief Creates list of BT ports
