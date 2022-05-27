@@ -134,7 +134,7 @@ public:
    * @brief Function to perform some user-defined operation after a timeout
    * waiting for a result that hasn't been received yet. Also provides access to
    * the latest feedback message from the action server. Feedback will be nullptr
-   * in subsequent calls to this function if no new feedback is received.
+   * in subsequent calls to this function if no new feedback is received while waiting for a result.
    * @param feedback shared_ptr to latest feedback message, nullptr if no new feedback was received
    */
   virtual void on_wait_for_result(std::shared_ptr<const typename ActionT::Feedback> /*feedback*/)
@@ -294,16 +294,6 @@ public:
     }
 
     setStatus(BT::NodeStatus::IDLE);
-  }
-
-  /**
-   * @brief Getter function for latest feedback message from action server
-   * This function returns a nullptr if no new feedback is received while waiting for a result.
-   * @return shared_ptr to latest feedback message, nullptr if no new feedback was received
-   */
-  std::shared_ptr<const typename ActionT::Feedback> getFeedback()
-  {
-    return feedback_;
   }
 
 protected:
