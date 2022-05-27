@@ -24,9 +24,9 @@ using nav2_util::declare_parameter_if_not_declared;
 
 void SimpleSmoother::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-  std::string name, const std::shared_ptr<tf2_ros::Buffer> & /*tf*/,
-  const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> & costmap_sub,
-  const std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> & /*footprint_sub*/)
+  std::string name, std::shared_ptr<tf2_ros::Buffer> /*tf*/,
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> /*footprint_sub*/)
 {
   costmap_sub_ = costmap_sub;
 

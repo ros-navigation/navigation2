@@ -58,9 +58,9 @@ public:
    */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-    std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
-    const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> & costmap_sub,
-    const std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> & footprint_sub) override;
+    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
+    std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub) override;
 
   /**
    * @brief Cleanup controller state machine

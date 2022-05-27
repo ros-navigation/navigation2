@@ -47,9 +47,9 @@ public:
 
   virtual void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr &,
-    std::string name, const std::shared_ptr<tf2_ros::Buffer> &,
-    const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> &,
-    const std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> &) = 0;
+    std::string name, std::shared_ptr<tf2_ros::Buffer>,
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>,
+    std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>) = 0;
 
   /**
    * @brief Method to cleanup resources.
