@@ -38,18 +38,19 @@ void AssistedTeleop::onConfigure()
 
   nav2_util::declare_parameter_if_not_declared(
     node,
-    "input_vel_topic", rclcpp::ParameterValue(std::string("input_vel_topic")));
+    "teleop_cmd_vel", rclcpp::ParameterValue(std::string("teleop_cmd_vel")));
 
   nav2_util::declare_parameter_if_not_declared(
     node,
     "joystick_topic", rclcpp::ParameterValue(std::string("joystick_topic")));
 
   node->get_parameter("projection_time", projection_time_);
-  node->get_parameter("input_vel_topic", input_vel_topic_);
+  std::string teleop_cmd_vel;
+  node->get_parameter("teleop_cmd_vel", teleop_cmd_vel);
   node->get_parameter("joystick_topic", joystick_topic_);
 
   vel_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
-    input_vel_topic_, rclcpp::SystemDefaultsQoS(),
+    teleop_cmd_vel, rclcpp::SystemDefaultsQoS(),
     std::bind(
       &AssistedTeleop::inputVelocityCallback,
       this, std::placeholders::_1));
@@ -86,15 +87,6 @@ Status AssistedTeleop::onCycleUpdate()
     RCLCPP_WARN(
       logger_,
       "Exceeded time allowance before reaching the Assisted Teleop goal - Exiting Assisted Teleop");
-    return Status::FAILED;
-  }
-
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_,
-      transform_tolerance_))
-  {
-    RCLCPP_ERROR(logger_, "Current robot pose is not available.");
     return Status::FAILED;
   }
 

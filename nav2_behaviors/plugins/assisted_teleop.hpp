@@ -85,7 +85,6 @@ protected:
 
   // parameters
   double projection_time_;
-  std::string input_vel_topic_;
   std::string joystick_topic_;
 
   geometry_msgs::msg::Twist input_twist_;
