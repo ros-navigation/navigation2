@@ -77,12 +77,15 @@ void AssistedTeleop::onActionCompletion()
 
 Status AssistedTeleop::onCycleUpdate()
 {
+  feedback_->current_teleop_duration = elasped_time_;
+  action_server_->publish_feedback(feedback_);
+
   rclcpp::Duration time_remaining = end_time_ - steady_clock_.now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
     stopRobot();
     RCLCPP_WARN(
       logger_,
-      "Exceeded time allowance before reaching the BackUp goal - Exiting BackUp");
+      "Exceeded time allowance before reaching the Assisted Teleop goal - Exiting Assisted Teleop");
     return Status::FAILED;
   }
 

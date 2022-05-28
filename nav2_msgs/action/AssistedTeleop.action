@@ -5,4 +5,4 @@ builtin_interfaces/Duration time_allowance
 builtin_interfaces/Duration total_elapsed_time
 ---
 #feedback
-builtin_interfaces/Duration time_spent_in_rc
+builtin_interfaces/Duration current_teleop_duration
