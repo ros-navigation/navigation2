@@ -38,6 +38,10 @@ void AssistedTeleop::onConfigure()
 
   nav2_util::declare_parameter_if_not_declared(
     node,
+    "simulation_time_step", rclcpp::ParameterValue(0.1));
+
+  nav2_util::declare_parameter_if_not_declared(
+    node,
     "teleop_cmd_vel", rclcpp::ParameterValue(std::string("teleop_cmd_vel")));
 
   nav2_util::declare_parameter_if_not_declared(
@@ -45,6 +49,7 @@ void AssistedTeleop::onConfigure()
     "joystick_topic", rclcpp::ParameterValue(std::string("joystick_topic")));
 
   node->get_parameter("projection_time", projection_time_);
+  node->get_parameter("simulation_time_step", simulation_time_step_);
   std::string teleop_cmd_vel;
   node->get_parameter("teleop_cmd_vel", teleop_cmd_vel);
   node->get_parameter("joystick_topic", joystick_topic_);
@@ -124,23 +129,35 @@ geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Tw
   projected_pose.y = current_pose.pose.position.y;
   projected_pose.theta = tf2::getYaw(current_pose.pose.orientation);
 
-  const double dt = 0.01;
+
   geometry_msgs::msg::Twist scaled_twist = twist;
-  for (double time = dt; time < projection_time_; time+=dt)
+  for (double time = simulation_time_step_; time < projection_time_; time += simulation_time_step_)
   {
-    projected_pose = projectPose(projected_pose, twist, dt);
+    projected_pose = projectPose(projected_pose, twist, simulation_time_step_);
 
     if (!collision_checker_->isCollisionFree(projected_pose))
     {
-      RCLCPP_WARN(logger_, "Collision approaching in %.2f seconds", time);
-      double scale_factor = time / projection_time_;
-      scaled_twist.linear.x *= scale_factor;
-      scaled_twist.linear.y *= scale_factor;
-      scaled_twist.angular.z *= scale_factor;
-      break;
+      if ( time == simulation_time_step_)
+      {
+        RCLCPP_WARN(logger_, "Collided on first time step, setting velocity to zero");
+        scaled_twist.linear.x *= 0.0f;
+        scaled_twist.linear.y *= 0.0f;
+        scaled_twist.angular.z *= 0.0f;
+        break;
+      }
+      else
+      {
+        RCLCPP_WARN(logger_, "Collision approaching in %.2f seconds", time);
+        double scale_factor = time / projection_time_;
+        scaled_twist.linear.x *= scale_factor;
+        scaled_twist.linear.y *= scale_factor;
+        scaled_twist.angular.z *= scale_factor;
+        break;
+      }
     }
   }
   return scaled_twist;
+
 }
 
 geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
@@ -165,9 +182,7 @@ geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
 
 void AssistedTeleop::inputVelocityCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-  input_twist_.linear.x = msg->linear.x;
-  input_twist_.linear.y = msg->linear.y;
-  input_twist_.angular.z = msg->angular.z;
+  input_twist_ = *msg;
 }
 
 void AssistedTeleop::joyCallback(const sensor_msgs::msg::Joy msg)
