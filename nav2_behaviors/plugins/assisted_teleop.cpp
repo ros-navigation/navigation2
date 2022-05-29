@@ -77,7 +77,6 @@ Status AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAction::G
 
 void AssistedTeleop::onActionCompletion()
 {
-  RCLCPP_INFO(logger_, "Action completed");
   teleop_twist_ = geometry_msgs::msg::Twist();
   joy_ = sensor_msgs::msg::Joy();
 }
