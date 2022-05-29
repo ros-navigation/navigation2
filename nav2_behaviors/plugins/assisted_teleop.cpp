@@ -92,7 +92,8 @@ Status AssistedTeleop::onCycleUpdate()
     stopRobot();
     RCLCPP_WARN_STREAM(
       logger_,
-      "Exceeded time allowance before reaching the " << behavior_name_.c_str() << "goal - Exiting " << behavior_name_.c_str());
+      "Exceeded time allowance before reaching the " << behavior_name_.c_str() <<
+        "goal - Exiting " << behavior_name_.c_str());
     return Status::FAILED;
   }
 
@@ -122,7 +123,10 @@ geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Tw
       current_pose, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR_STREAM(logger_, "Current robot pose is not available for " << behavior_name_.c_str());
+    RCLCPP_ERROR_STREAM(
+      logger_,
+      "Current robot pose is not available for " <<
+        behavior_name_.c_str());
     return geometry_msgs::msg::Twist();
   }
   geometry_msgs::msg::Pose2D projected_pose;
@@ -131,14 +135,13 @@ geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Tw
   projected_pose.theta = tf2::getYaw(current_pose.pose.orientation);
 
   geometry_msgs::msg::Twist scaled_twist = twist;
-  for (double time = simulation_time_step_; time < projection_time_; time += simulation_time_step_)
+  for (double time = simulation_time_step_; time < projection_time_;
+    time += simulation_time_step_)
   {
     projected_pose = projectPose(projected_pose, twist, simulation_time_step_);
 
-    if (!collision_checker_->isCollisionFree(projected_pose))
-    {
-      if ( time == simulation_time_step_)
-      {
+    if (!collision_checker_->isCollisionFree(projected_pose)) {
+      if (time == simulation_time_step_) {
         RCLCPP_WARN_STREAM_THROTTLE(
           logger_,
           steady_clock_,
@@ -148,9 +151,7 @@ geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Tw
         scaled_twist.linear.y = 0.0f;
         scaled_twist.angular.z = 0.0f;
         break;
-      }
-      else
-      {
+      } else {
         RCLCPP_WARN_STREAM_THROTTLE(
           logger_,
           steady_clock_,
@@ -165,12 +166,11 @@ geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Tw
     }
   }
   return scaled_twist;
-
 }
 
 geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
-  const geometry_msgs::msg::Pose2D &pose,
-  const geometry_msgs::msg::Twist &twist,
+  const geometry_msgs::msg::Pose2D & pose,
+  const geometry_msgs::msg::Twist & twist,
   double projection_time)
 {
   geometry_msgs::msg::Pose2D projected_pose = pose;
