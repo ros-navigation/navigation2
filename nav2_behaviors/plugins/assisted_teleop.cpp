@@ -50,6 +50,7 @@ void AssistedTeleop::onConfigure()
 
   node->get_parameter("projection_time", projection_time_);
   node->get_parameter("simulation_time_step", simulation_time_step_);
+
   std::string teleop_cmd_vel;
   node->get_parameter("teleop_cmd_vel", teleop_cmd_vel);
   node->get_parameter("joystick_topic", joystick_topic_);
@@ -57,7 +58,7 @@ void AssistedTeleop::onConfigure()
   vel_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
     teleop_cmd_vel, rclcpp::SystemDefaultsQoS(),
     std::bind(
-      &AssistedTeleop::inputVelocityCallback,
+      &AssistedTeleop::teleopVelocityCallback,
       this, std::placeholders::_1));
 
   joy_sub_ = node->create_subscription<sensor_msgs::msg::Joy>(
@@ -77,7 +78,7 @@ Status AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAction::G
 void AssistedTeleop::onActionCompletion()
 {
   RCLCPP_INFO(logger_, "Action completed");
-  input_twist_ = geometry_msgs::msg::Twist();
+  teleop_twist_ = geometry_msgs::msg::Twist();
   joy_ = sensor_msgs::msg::Joy();
 }
 
@@ -89,9 +90,9 @@ Status AssistedTeleop::onCycleUpdate()
   rclcpp::Duration time_remaining = end_time_ - steady_clock_.now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
     stopRobot();
-    RCLCPP_WARN(
+    RCLCPP_WARN_STREAM(
       logger_,
-      "Exceeded time allowance before reaching the Assisted Teleop goal - Exiting Assisted Teleop");
+      "Exceeded time allowance before reaching the " << behavior_name_.c_str() << "goal - Exiting " << behavior_name_.c_str());
     return Status::FAILED;
   }
 
@@ -108,7 +109,7 @@ Status AssistedTeleop::onCycleUpdate()
   }
 
   geometry_msgs::msg::Twist cmd_vel;
-  cmd_vel = computeVelocity(input_twist_);
+  cmd_vel = computeVelocity(teleop_twist_);
   vel_pub_->publish(std::move(cmd_vel));
 
   return Status::RUNNING;
@@ -121,14 +122,13 @@ geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Tw
       current_pose, *tf_, global_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR(logger_, "Current robot pose is not available.");
+    RCLCPP_ERROR_STREAM(logger_, "Current robot pose is not available for " << behavior_name_.c_str());
     return geometry_msgs::msg::Twist();
   }
   geometry_msgs::msg::Pose2D projected_pose;
   projected_pose.x = current_pose.pose.position.x;
   projected_pose.y = current_pose.pose.position.y;
   projected_pose.theta = tf2::getYaw(current_pose.pose.orientation);
-
 
   geometry_msgs::msg::Twist scaled_twist = twist;
   for (double time = simulation_time_step_; time < projection_time_; time += simulation_time_step_)
@@ -139,15 +139,23 @@ geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Tw
     {
       if ( time == simulation_time_step_)
       {
-        RCLCPP_WARN(logger_, "Collided on first time step, setting velocity to zero");
-        scaled_twist.linear.x *= 0.0f;
-        scaled_twist.linear.y *= 0.0f;
-        scaled_twist.angular.z *= 0.0f;
+        RCLCPP_WARN_STREAM_THROTTLE(
+          logger_,
+          steady_clock_,
+          500,
+          behavior_name_.c_str() << " collided on first time step, setting velocity to zero");
+        scaled_twist.linear.x = 0.0f;
+        scaled_twist.linear.y = 0.0f;
+        scaled_twist.angular.z = 0.0f;
         break;
       }
       else
       {
-        RCLCPP_WARN(logger_, "Collision approaching in %.2f seconds", time);
+        RCLCPP_WARN_STREAM_THROTTLE(
+          logger_,
+          steady_clock_,
+          500,
+          behavior_name_.c_str() << " collision approaching in " << time << " seconds");
         double scale_factor = time / projection_time_;
         scaled_twist.linear.x *= scale_factor;
         scaled_twist.linear.y *= scale_factor;
@@ -161,8 +169,8 @@ geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Tw
 }
 
 geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
-  geometry_msgs::msg::Pose2D pose,
-  geometry_msgs::msg::Twist twist,
+  const geometry_msgs::msg::Pose2D &pose,
+  const geometry_msgs::msg::Twist &twist,
   double projection_time)
 {
   geometry_msgs::msg::Pose2D projected_pose = pose;
@@ -180,9 +188,9 @@ geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
   return projected_pose;
 }
 
-void AssistedTeleop::inputVelocityCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
+void AssistedTeleop::teleopVelocityCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-  input_twist_ = *msg;
+  teleop_twist_ = *msg;
 }
 
 void AssistedTeleop::joyCallback(const sensor_msgs::msg::Joy msg)

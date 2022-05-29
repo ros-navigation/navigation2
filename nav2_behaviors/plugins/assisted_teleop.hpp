@@ -28,7 +28,6 @@ namespace nav2_behaviors
 {
 using AssistedTeleopAction = nav2_msgs::action::AssistedTeleop;
 
-
 /**
  * @class nav2_behaviors::AssistedTeleop
  * @brief An action server behavior for assisted teleop
@@ -62,18 +61,30 @@ protected:
    */
   void onConfigure() override;
 
+  /**
+   * @brief project a position
+   * @param pose initial pose to project
+   * @param twist velocity to project pose by
+   * @param projection_time time to project by
+   */
   geometry_msgs::msg::Pose2D projectPose(
-    geometry_msgs::msg::Pose2D pose,
-    geometry_msgs::msg::Twist twist,
+    const geometry_msgs::msg::Pose2D &pose,
+    const geometry_msgs::msg::Twist &twist,
     double projection_time);
 
+  /**
+   * @brief compute teleop assisted velocity
+   * @param twist teleop twist message
+   *
+   * @return geometry_mgs::msg::Twist the adjusted velocity
+   */
   geometry_msgs::msg::Twist computeVelocity(geometry_msgs::msg::Twist & twist);
 
   /**
    * @brief Callback function for velocity subscriber
    * @param msg received Twist message
    */
-  void inputVelocityCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+  void teleopVelocityCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
 
   /**
    * @brief Callback function for joy subscriber
@@ -88,7 +99,7 @@ protected:
   double simulation_time_step_;
   std::string joystick_topic_;
 
-  geometry_msgs::msg::Twist input_twist_;
+  geometry_msgs::msg::Twist teleop_twist_;
   sensor_msgs::msg::Joy joy_;
 
   // subscribers
