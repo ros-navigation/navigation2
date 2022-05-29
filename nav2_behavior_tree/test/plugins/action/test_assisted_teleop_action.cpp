@@ -147,7 +147,7 @@ TEST_F(AssistedTeleopActionTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <AssistedTeleop />
+            <AssistedTeleop recovery="true"/>
         </BehaviorTree>
       </root>)";
 
@@ -171,7 +171,7 @@ TEST_F(AssistedTeleopActionTestFixture, test_failure)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <AssistedTeleop />
+            <AssistedTeleop recovery="true"/>
         </BehaviorTree>
       </root>)";
 
