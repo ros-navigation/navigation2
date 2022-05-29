@@ -171,7 +171,7 @@ InflationLayer::onFootprintChanged()
   need_reinflation_ = true;
 
   RCLCPP_DEBUG(
-    logger_, "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
+    logger_, "InflationLayer::onFootprintChanged(): num footprint points: %zu,"
     " inscribed_radius_ = %.3f, inflation_radius_ = %.3f",
     layered_costmap_->getFootprint().size(), inscribed_radius_, inflation_radius_);
 }
