@@ -304,7 +304,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       costAtPose(pose.pose.position.x, pose.pose.position.y), linear_vel, sign);
 
     // Apply curvature to angular velocity after constraining linear velocity
-    angular_vel = linear_vel * curvature;
+    angular_vel = sign * linear_vel * curvature;
   }
 
   // Collision checking on this velocity heading
