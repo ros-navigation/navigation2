@@ -91,9 +91,25 @@ protected:
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+
   // Since the sensor data from gazebo or the robot is not lifecycle enabled, we won't
   // respond until we're in the active state
   std::atomic<bool> active_{false};
+
+  // Dedicated callback group and executor for services and subscriptions in AmclNode,
+  // in order to isolate TF timer used in message filter.
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
+  std::unique_ptr<nav2_util::NodeThread> executor_thread_;
 
   // Pose hypothesis
   typedef struct
@@ -132,7 +148,7 @@ protected:
   bool first_map_only_{true};
   std::atomic<bool> first_map_received_{false};
   amcl_hyp_t * initial_pose_hyp_;
-  std::recursive_mutex configuration_mutex_;
+  std::recursive_mutex mutex_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
 #if NEW_UNIFORM_SAMPLING
   static std::vector<std::pair<int, int>> free_space_indices;
@@ -155,7 +171,8 @@ protected:
    * @brief Initialize incoming data message subscribers and filters
    */
   void initMessageFilters();
-  std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
+  std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
+    rclcpp_lifecycle::LifecycleNode>> laser_scan_sub_;
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
   message_filters::Connection laser_scan_connection_;
 
@@ -238,7 +255,6 @@ protected:
    */
   static pf_vector_t uniformPoseGenerator(void * arg);
   pf_t * pf_{nullptr};
-  std::mutex pf_mutex_;
   bool pf_init_;
   pf_vector_t pf_odom_pose_;
   int resample_count_{0};

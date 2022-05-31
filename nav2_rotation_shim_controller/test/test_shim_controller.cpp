@@ -263,7 +263,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   pose.header.frame_id = "base_link";
   geometry_msgs::msg::Twist velocity;
   nav2_controller::SimpleGoalChecker checker;
-  checker.initialize(node, "checker");
+  checker.initialize(node, "checker", costmap);
 
   // send without setting a path - should go to RPP immediately
   // then it should throw an exception because the path is empty and invalid

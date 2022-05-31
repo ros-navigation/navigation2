@@ -146,7 +146,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_INFO(
         get_logger(), "Created goal checker : %s of type %s",
         goal_checker_ids_[i].c_str(), goal_checker_types_[i].c_str());
-      goal_checker->initialize(node, goal_checker_ids_[i]);
+      goal_checker->initialize(node, goal_checker_ids_[i], costmap_ros_);
       goal_checkers_.insert({goal_checker_ids_[i], goal_checker});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(

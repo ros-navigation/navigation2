@@ -132,9 +132,12 @@ public:
 
   /**
    * @brief Function to perform some user-defined operation after a timeout
-   * waiting for a result that hasn't been received yet
+   * waiting for a result that hasn't been received yet. Also provides access to
+   * the latest feedback message from the action server. Feedback will be nullptr
+   * in subsequent calls to this function if no new feedback is received while waiting for a result.
+   * @param feedback shared_ptr to latest feedback message, nullptr if no new feedback was received
    */
-  virtual void on_wait_for_result()
+  virtual void on_wait_for_result(std::shared_ptr<const typename ActionT::Feedback>/*feedback*/)
   {
   }
 
@@ -206,7 +209,10 @@ public:
       // The following code corresponds to the "RUNNING" loop
       if (rclcpp::ok() && !goal_result_available_) {
         // user defined callback. May modify the value of "goal_updated_"
-        on_wait_for_result();
+        on_wait_for_result(feedback_);
+
+        // reset feedback to avoid stale information
+        feedback_.reset();
 
         auto goal_status = goal_handle_->get_status();
         if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
@@ -340,6 +346,11 @@ protected:
           result_ = result;
         }
       };
+    send_goal_options.feedback_callback =
+      [this](typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr,
+        const std::shared_ptr<const typename ActionT::Feedback> feedback) {
+        feedback_ = feedback;
+      };
 
     future_goal_handle_ = std::make_shared<
       std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr>>(
@@ -405,6 +416,9 @@ protected:
   bool goal_result_available_{false};
   typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr goal_handle_;
   typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult result_;
+
+  // To handle feedback from action server
+  std::shared_ptr<const typename ActionT::Feedback> feedback_;
 
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;

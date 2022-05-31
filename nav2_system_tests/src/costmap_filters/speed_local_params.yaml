@@ -78,6 +78,7 @@ bt_navigator:
     - nav2_distance_controller_bt_node
     - nav2_speed_controller_bt_node
     - nav2_truncate_path_action_bt_node
+    - nav2_truncate_path_local_action_bt_node
     - nav2_goal_updater_node_bt_node
     - nav2_recovery_node_bt_node
     - nav2_pipeline_sequence_bt_node
@@ -110,7 +111,7 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     speed_limit_topic: "/speed_limit"
     progress_checker_plugin: "progress_checker"
-    goal_checker_plugins: "goal_checker"
+    goal_checker_plugins: ["goal_checker"]
     controller_plugins: ["FollowPath"]
 
     # Progress checker parameters
