@@ -97,7 +97,6 @@ class BasicNavigator(Node):
         self.follow_path_client.destroy()
         self.compute_path_to_pose_client.destroy()
         self.compute_path_through_poses_client.destroy()
-        self.smoother_client.destroy()
         self.spin_client.destroy()
         self.backup_client.destroy()
         super().destroy_node()
