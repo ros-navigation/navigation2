@@ -90,18 +90,18 @@ struct Data
   std::vector<Point> data;
 };
 
-enum EmergencyModel
+enum ActionType
 {
-  DO_NOTHING = 0,  // No emergency model
+  DO_NOTHING = 0,  // No action
   STOP = 1,  // Stop the robot
   SLOWDOWN = 2,  // Slowdown in percentage from current operating speed
   APPROACH = 3  // Keep constant time interval before collision
 };
 
-// Action for robot (for both emergency and non-emergency cases)
+// Action for robot
 struct Action
 {
-  EmergencyModel action_type;
+  ActionType action_type;
   Velocity req_vel;
 
   inline bool operator!=(const Action & second) const

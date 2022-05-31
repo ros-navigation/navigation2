@@ -33,24 +33,29 @@ class PolygonBase
 {
 public:
 PolygonBase();
-PolygonBase(nav2_util::LifecycleNode * node, const EmergencyModel em);
+PolygonBase(
+  const nav2_util::LifecycleNode::WeakPtr & node,
+  const std::string polygon_name,
+  const double simulation_time_step);
 virtual ~PolygonBase();
+
+bool getParameters();
 
 PolygonType getPolygonType();
 void setPolygonType(const PolygonType pt);
 
-EmergencyModel getEmergencyModel();
+ActionType getActionType();
 
-int getEmergencyThresh();
-void setEmergencyThresh(const int et);
+int getStopPoints();
+void setStopPoints(const int sp);
 
 double getSlowdown();
 void setSlowdown(const double slowdown);
 
-double getTimeBeforeCrash();
-void setTimeBeforeCrash(const double tbc);
+double getTimeBeforeCollision();
+void setTimeBeforeCollision(const double tbc);
 
-virtual void getPoly(std::vector<Point> & poly) = 0;
+virtual void getPolygon(std::vector<Point> & poly) = 0;
 
 // Returns estimated (simulated) time before collision and pose where the collision will occur.
 // If there is no collision, coll_time will be negative.
@@ -65,16 +70,19 @@ virtual bool isPointInside(const Point & point) = 0;
 
 protected:
 // Collision Monitor node
-nav2_util::LifecycleNode * node_;
+nav2_util::LifecycleNode::WeakPtr node_;
 
 PolygonType polygon_type_;
-EmergencyModel emergency_model_;
-// Maximum number of points allowed to enter inside polygon
-int emergency_thresh_;
+std::string polygon_name_;
+ActionType action_type_;
+// Minimal number of points to enter inside polygon that causing robot to stop
+int stop_points_;
 // Robot slowdown (share of its actual speed)
 double slowdown_;
-// Time before crash in seconds
-double time_before_crash_;
+// Time before collision in seconds
+double time_before_collision_;
+// Time step for robot movement simulation
+double simulation_time_step_;
 
 };  // class PolygonBase
 

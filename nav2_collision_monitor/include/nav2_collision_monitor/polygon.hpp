@@ -26,14 +26,19 @@ class Polygon : public PolygonBase
 {
 
 public:
-Polygon(nav2_util::LifecycleNode * node, const EmergencyModel em, const std::vector<Point> poly);
+Polygon(
+  const nav2_util::LifecycleNode::WeakPtr & node,
+  const std::string polygon_name,
+  const double simulation_time_step);
 virtual ~Polygon();
 
-virtual void getPoly(std::vector<Point> & poly);
+bool getParameters();
+
+virtual void getPolygon(std::vector<Point> & poly);
 
 virtual bool isPointInside(const Point & point);
 
-private:
+protected:
 std::vector<Point> poly_;
 };  // class Polygon
 

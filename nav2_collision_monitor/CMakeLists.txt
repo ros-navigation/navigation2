@@ -5,6 +5,7 @@ project(nav2_collision_monitor)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
@@ -26,6 +27,7 @@ include_directories(
 
 set(dependencies
   rclcpp
+  rclcpp_components
   sensor_msgs
   geometry_msgs
   tf2
@@ -45,8 +47,8 @@ add_library(${library_name} SHARED
   src/circle.cpp
   src/source_base.cpp
   src/scan.cpp
-  src/pcl2.cpp
-  src/dynamics.cpp
+  src/pointcloud.cpp
+  src/kinematics.cpp
 )
 
 add_executable(${executable_name}
@@ -64,6 +66,8 @@ target_link_libraries(${executable_name}
 ament_target_dependencies(${executable_name}
   ${dependencies}
 )
+
+rclcpp_components_register_nodes(${library_name} "nav2_collision_monitor::CollisionMonitorNode")
 
 ### Install ###
 

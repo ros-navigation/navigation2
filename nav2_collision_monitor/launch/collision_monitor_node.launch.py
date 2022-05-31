@@ -71,6 +71,7 @@ def generate_launch_description():
             executable='lifecycle_manager',
             name='lifecycle_manager',
             output='screen',
+            #prefix=['xterm -e gdb -ex run --args'],
             emulate_tty=True,  # https://github.com/ros2/launch/issues/188
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},

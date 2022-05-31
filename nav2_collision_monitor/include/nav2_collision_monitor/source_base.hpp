@@ -32,7 +32,7 @@ enum SourceType
 {
   SOURCE_BASE = 0,
   SCAN = 1,
-  PCL_2 = 2
+  POINTCLOUD = 2
 };
 
 class SourceBase
@@ -40,13 +40,15 @@ class SourceBase
 public:
 SourceBase();
 SourceBase(
-  nav2_util::LifecycleNode * node,
+  const nav2_util::LifecycleNode::WeakPtr & node,
   std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  const std::string source_topic,
+  const std::string source_name,
   const std::string base_frame_id,
   const double transform_tolerance,
   const double max_time_shift);
 virtual ~SourceBase();
+
+virtual bool init() = 0;
 
 SourceType getSourceType();
 std::string getSourceTypeStr();
@@ -54,6 +56,8 @@ std::string getSourceTypeStr();
 void getData(std::vector<Point> & data, const rclcpp::Time & curr_time, const Velocity & velocity);
 
 protected:
+bool getParameters();
+
 bool getTransform(
   const std::string to_frame,
   const std::string from_frame,
@@ -61,15 +65,17 @@ bool getTransform(
 
 void fixData(const rclcpp::Time & curr_time, const Velocity & velocity);
 
-protected:
+// ----- Variables -----
+
 // Collision Monitor node
-nav2_util::LifecycleNode * node_;
+nav2_util::LifecycleNode::WeakPtr node_;
 
 // TF buffer
 std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 
 // Basic parameters
 SourceType source_type_;
+std::string source_name_;
 std::string source_topic_;
 std::string source_frame_id_;
 std::string base_frame_id_;

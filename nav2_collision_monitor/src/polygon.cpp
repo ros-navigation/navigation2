@@ -14,27 +14,91 @@
 
 #include "nav2_collision_monitor/polygon.hpp"
 
+#include "nav2_util/node_utils.hpp"
+
 namespace nav2_collision_monitor
 {
 
 Polygon::Polygon(
-  nav2_util::LifecycleNode * node, const EmergencyModel em, const std::vector<Point> poly)
-: poly_(poly)
+  const nav2_util::LifecycleNode::WeakPtr & node,
+  const std::string polygon_name,
+  const double simulation_time_step)
+: poly_(std::vector<Point>())
 {
   node_ = node;
-  RCLCPP_INFO(node_->get_logger(), "Creating Polygon");
+
+  auto node_sptr = node_.lock();
+  if (node_sptr) {
+    RCLCPP_INFO(node_sptr->get_logger(), "Creating Polygon");
+  }
 
   polygon_type_ = POLYGON;
-  emergency_model_ = em;
+  polygon_name_ = polygon_name;
+  action_type_ = DO_NOTHING;
+
+  stop_points_ = -1;
+  slowdown_ = 0.0;
+  time_before_collision_ = -1.0;
+
+  simulation_time_step_ = simulation_time_step;
 }
 
 Polygon::~Polygon()
 {
-  RCLCPP_INFO(node_->get_logger(), "Destroying Polygon");
+  auto node_sptr = node_.lock();
+  if (node_sptr) {
+    RCLCPP_INFO(node_sptr->get_logger(), "Destroying Polygon");
+  }
+
   poly_.clear();
 }
 
-void Polygon::getPoly(std::vector<Point> & poly)
+bool Polygon::getParameters() {
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  if (!PolygonBase::getParameters()) {
+    return false;
+  }
+
+  try {
+    // Leave it not initialized: the will cause an error if it will not set
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + ".points", rclcpp::PARAMETER_DOUBLE_ARRAY);
+    std::vector<double> poly_row =
+      node->get_parameter(polygon_name_ + ".points").as_double_array();
+    // Check for format correctness
+    if (poly_row.size() <= 4 || poly_row.size() % 2 != 0) {
+      RCLCPP_ERROR(
+        node->get_logger(),
+        "Polygon \"%s\" has incorrect points description",
+        polygon_name_.c_str());
+      return false;
+    }
+
+    // Obtain polygon vertices
+    Point point;
+    bool first = true;
+    for (double val : poly_row) {
+      if (first) {
+        point.x = val;
+      } else {
+        point.y = val;
+        poly_.push_back(point);
+      }
+      first = !first;
+    }
+  } catch (const std::exception & ex) {
+    RCLCPP_ERROR(node->get_logger(), "Error while getting polygon parameters: %s", ex.what());
+    return false;
+  }
+
+  return true;
+}
+
+void Polygon::getPolygon(std::vector<Point> & poly)
 {
   poly = poly_;
 }

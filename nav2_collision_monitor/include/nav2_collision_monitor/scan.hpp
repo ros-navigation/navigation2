@@ -26,17 +26,19 @@ class Scan : public SourceBase
 {
 public:
 Scan(
-  nav2_util::LifecycleNode * node,
+  const nav2_util::LifecycleNode::WeakPtr & node,
   std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  const std::string source_topic,
+  const std::string source_name,
   const std::string base_frame_id,
   const double transform_tolerance,
   const double max_time_shift);
 virtual ~Scan();
 
-private:
-rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr data_sub_;
+virtual bool init();
+
+protected:
 void dataCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr msg);
+rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr data_sub_;
 
 };  // class Scan
 

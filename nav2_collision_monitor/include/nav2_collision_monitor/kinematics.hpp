@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COLLISION_MONITOR__DYNAMICS_HPP_
-#define NAV2_COLLISION_MONITOR__DYNAMICS_HPP_
+#ifndef NAV2_COLLISION_MONITOR__KINEMATICS_HPP_
+#define NAV2_COLLISION_MONITOR__KINEMATICS_HPP_
 
 #include "nav2_collision_monitor/types.hpp"
 
@@ -22,16 +22,16 @@ namespace nav2_collision_monitor
 
 // Interpolates the position of fixed point in robot_base frame
 // moving with towards velocity for dt time interval
-void fixPoint(const Velocity & velocity, const double dt, Point & point);
+void transformPoint(const Velocity & velocity, const double dt, Point & point);
 
 // Transforms point to current_pose frame
-void fixPoint(const Pose & curr_pose, Point & point);
+void transformPoint(const Pose & curr_pose, Point & point);
 
 // Linearly moves pose towards to velocity direction on dt time interval.
 // Velocity is being rotated on twist angle for dt time interval.
 // NOTE: dt should be relatively small to consider all movements to be linear
-void movePose(Velocity & velocity, const double dt, Pose & pose);
+void stepRobot(Velocity & velocity, const double dt, Pose & pose);
 
 }  // namespace nav2_collision_monitor
 
-#endif  // NAV2_COLLISION_MONITOR__DYNAMICS_HPP_
+#endif  // NAV2_COLLISION_MONITOR__KINEMATICS_HPP_

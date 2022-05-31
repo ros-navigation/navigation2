@@ -26,14 +26,19 @@ class Circle : public PolygonBase
 {
 
 public:
-Circle(nav2_util::LifecycleNode * node, const EmergencyModel em, const double radius);
+Circle(
+  const nav2_util::LifecycleNode::WeakPtr & node,
+  const std::string polygon_name,
+  const double simulation_time_step);
 virtual ~Circle();
 
-virtual void getPoly(std::vector<Point> & poly);
+bool getParameters();
+
+virtual void getPolygon(std::vector<Point> & poly);
 
 virtual bool isPointInside(const Point & point);
 
-private:
+protected:
 double radius_;
 };  // class Circle
 

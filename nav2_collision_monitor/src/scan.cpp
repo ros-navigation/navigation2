@@ -20,37 +20,58 @@ namespace nav2_collision_monitor
 {
 
 Scan::Scan(
-  nav2_util::LifecycleNode * node,
+  const nav2_util::LifecycleNode::WeakPtr & node,
   std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  const std::string source_topic,
+  const std::string source_name,
   const std::string base_frame_id,
   const double transform_tolerance,
   const double max_time_shift)
 {
   node_ = node;
-  RCLCPP_INFO(node_->get_logger(), "Creating Scan");
+  auto node_sptr = node_.lock();
+  if (node_sptr) {
+    RCLCPP_INFO(node_sptr->get_logger(), "Creating Scan");
+  }
 
   tf_buffer_ = tf_buffer;
 
   source_type_ = SCAN;
-  source_topic_ = source_topic;
+  source_name_ = source_name;
   base_frame_id_ = base_frame_id;
 
   transform_tolerance_ = transform_tolerance;
   max_time_shift_ = max_time_shift;
-
-  rclcpp::QoS scan_qos = rclcpp::SensorDataQoS();  // set to default
-  data_sub_ = node_->create_subscription<sensor_msgs::msg::LaserScan>(
-    source_topic_, scan_qos,
-    std::bind(&Scan::dataCallback, this, std::placeholders::_1));
 }
 
 Scan::~Scan() {
-  RCLCPP_INFO(node_->get_logger(), "Destroying Scan");
+  auto node = node_.lock();
+  if (node) {
+    RCLCPP_INFO(node->get_logger(), "Destroying Scan");
+  }
 
   tf_buffer_.reset();
 
   data_sub_.reset();
+}
+
+bool Scan::init()
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  // Laser scanner has no its own parameters
+  if (!SourceBase::getParameters()) {
+    return false;
+  }
+
+  rclcpp::QoS scan_qos = rclcpp::SensorDataQoS();  // set to default
+  data_sub_ = node->create_subscription<sensor_msgs::msg::LaserScan>(
+    source_topic_, scan_qos,
+    std::bind(&Scan::dataCallback, this, std::placeholders::_1));
+
+  return true;
 }
 
 void Scan::dataCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr msg)

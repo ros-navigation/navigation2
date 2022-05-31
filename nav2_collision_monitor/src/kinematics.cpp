@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_collision_monitor/dynamics.hpp"
+#include "nav2_collision_monitor/kinematics.hpp"
 
 #include <cmath>
 
 namespace nav2_collision_monitor
 {
 
-void fixPoint(const Velocity & velocity, const double dt, Point & point)
+void transformPoint(const Velocity & velocity, const double dt, Point & point)
 {
   // p = R*p' + vel*dt
   // p' = Rt * (p - vel*dt)
@@ -35,7 +35,7 @@ void fixPoint(const Velocity & velocity, const double dt, Point & point)
   point.y = -mul_x * sin_theta + mul_y * cos_theta;
 }
 
-void fixPoint(const Pose & curr_pose, Point & point)
+void transformPoint(const Pose & curr_pose, Point & point)
 {
   // p = R*p' + curr_pose
   // p' = Rt * (p - curr_pose)
@@ -47,7 +47,7 @@ void fixPoint(const Pose & curr_pose, Point & point)
   point.y = -mul_x * sin_theta + mul_y * cos_theta;
 }
 
-void movePose(Velocity & velocity, const double dt, Pose & pose)
+void stepRobot(Velocity & velocity, const double dt, Pose & pose)
 {
   const double theta = velocity.tw * dt;
   const double cos_theta = std::cos(theta);

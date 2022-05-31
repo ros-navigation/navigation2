@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "nav2_collision_monitor/source_base.hpp"
-#include "nav2_collision_monitor/dynamics.hpp"
+#include "nav2_collision_monitor/kinematics.hpp"
 
 #include <cmath>
 #include <exception>
@@ -21,37 +21,64 @@
 #include "tf2/convert.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
+#include "nav2_util/node_utils.hpp"
+
 namespace nav2_collision_monitor
 {
 
 SourceBase::SourceBase()
-: node_(nullptr), tf_buffer_(nullptr), source_type_(SOURCE_BASE),
-  source_topic_(""), source_frame_id_(""), base_frame_id_(""), transform_tolerance_(0.1)
+: tf_buffer_(nullptr), source_type_(SOURCE_BASE), source_name_(""),
+  source_topic_(""), source_frame_id_(""), base_frame_id_(""),
+  transform_tolerance_(0.0), max_time_shift_(0.0)
 {
 }
 
 SourceBase::SourceBase(
-  nav2_util::LifecycleNode * node,
+  const nav2_util::LifecycleNode::WeakPtr & node,
   std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  const std::string source_topic,
+  const std::string source_name,
   const std::string base_frame_id,
   const double transform_tolerance,
   const double max_time_shift)
-: node_(node), tf_buffer_(tf_buffer), source_type_(SOURCE_BASE),
-  source_topic_(source_topic), source_frame_id_(""), base_frame_id_(base_frame_id),
+: node_(node), tf_buffer_(tf_buffer), source_type_(SOURCE_BASE), source_name_(source_name),
+  source_topic_(""), source_frame_id_(""), base_frame_id_(base_frame_id),
   transform_tolerance_(transform_tolerance), max_time_shift_(max_time_shift)
 {
-  RCLCPP_INFO(node_->get_logger(), "Creating SourceBase");
+  auto node_sptr = node_.lock();
+  if (node_sptr) {
+    RCLCPP_INFO(node_sptr->get_logger(), "Creating SourceBase");
+  }
 }
 
 SourceBase::~SourceBase()
 {
-  if (node_)
-  {
-    RCLCPP_INFO(node_->get_logger(), "Destroying SourceBase");
+  auto node = node_.lock();
+  if (node) {
+    RCLCPP_INFO(node->get_logger(), "Destroying SourceBase");
   }
 
   tf_buffer_.reset();
+}
+
+bool SourceBase::getParameters()
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  try {
+    nav2_util::declare_parameter_if_not_declared(
+      node, source_name_ + ".topic",
+      rclcpp::ParameterValue("scan"));  // Set deafult topic for laser scanner
+    source_topic_ = node->get_parameter(source_name_ + ".topic").as_string();
+  } catch (const std::exception & ex) {
+    RCLCPP_ERROR(
+      node->get_logger(), "Error while getting basic source parameters: %s", ex.what());
+    return false;
+  }
+
+  return true;
 }
 
 SourceType SourceBase::getSourceType()
@@ -65,8 +92,8 @@ std::string SourceBase::getSourceTypeStr()
     return "base";
   } else if (source_type_ == SCAN) {
     return "scan";
-  } else {  // source_type_ == PCL
-    return "PCL";
+  } else {  // source_type_ == POINTCLOUD
+    return "pointcloud";
   }
 }
 
@@ -75,8 +102,13 @@ bool SourceBase::getTransform(
   const std::string from_frame,
   tf2::Transform & tf2_transform)
 {
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   if (!tf_buffer_) {
-    RCLCPP_ERROR(node_->get_logger(), "tf_buffer_ is not initialized");
+    RCLCPP_ERROR(node->get_logger(), "tf_buffer_ is not initialized");
     return false;
   }
 
@@ -95,7 +127,7 @@ bool SourceBase::getTransform(
       to_frame, from_frame, tf2::TimePointZero, tr_tol);
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(
-      node_->get_logger(),
+      node->get_logger(),
       "Failed to get \"%s\"->\"%s\" frame transform: %s",
       source_frame_id_.c_str(), base_frame_id_.c_str(), e.what());
     return false;
@@ -117,6 +149,11 @@ void SourceBase::getData(
 
 void SourceBase::fixData(const rclcpp::Time & curr_time, const Velocity & velocity)
 {
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   // Start opearting with data
   std::lock_guard<mutex_t> lock(data_mutex_);
   data_fixed_.data.clear();
@@ -129,22 +166,23 @@ void SourceBase::fixData(const rclcpp::Time & curr_time, const Velocity & veloci
     dt = (curr_time - data_.time).seconds();
   } catch (const std::exception & ex) {
     RCLCPP_WARN(
-      node_->get_logger(), "Can not get difference between current and source time: %s",
-      ex.what());
+      node->get_logger(),
+      "Can not get difference between collision monitor and %s source time: %s",
+      source_name_.c_str(), ex.what());
     dt = 0.0;
   }
-  // Warn if source and Collision Monitor node have different time stamps
+  // Warn and ignore the source data if it and Collision Monitor node have different time stamps
   if (std::fabs(dt) > max_time_shift_) {
     RCLCPP_WARN(
-      node_->get_logger(),
-      "Source and collision monitor node time stamps differ more than %f seconds. Ignoring...",
-      max_time_shift_);
-    dt = 0.0;
+      node->get_logger(),
+      "%s source and collision monitor node timestamps differ on %f seconds. Ignoring the source.",
+      source_name_.c_str(), dt);
+    return;
   }
 
   for (Point p : data_.data) {
-    // Move each point on dt * velocity
-    fixPoint(velocity, dt, p);
+    // Fix each point on dt * velocity
+    transformPoint(velocity, dt, p);
 
     // Fill data_fixed_.data array
     data_fixed_.data.push_back(p);
