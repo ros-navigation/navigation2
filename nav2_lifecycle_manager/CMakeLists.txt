@@ -15,6 +15,7 @@ find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(bondcpp REQUIRED)
+find_package(diagnostics_updater REQUIRED)
 
 nav2_package()
 
@@ -42,6 +43,7 @@ set(dependencies
   std_srvs
   tf2_geometry_msgs
   bondcpp
+  diagnostics_updater
 )
 
 ament_target_dependencies(${library_name}

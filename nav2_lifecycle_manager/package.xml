@@ -20,6 +20,7 @@
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>bondcpp</build_depend>
   <build_depend>nav2_common</build_depend>
+  <build_depend>diagnostics_updater</build_depend>
 
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>lifecycle_msgs</exec_depend>
@@ -31,6 +32,7 @@
   <exec_depend>std_srvs</exec_depend>
   <exec_depend>bondcpp</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
+  <exec_depend>diagnostics_updater</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
