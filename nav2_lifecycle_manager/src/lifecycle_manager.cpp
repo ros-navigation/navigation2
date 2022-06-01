@@ -150,13 +150,11 @@ LifecycleManager::isActiveCallback(
 void
 LifecycleManager::CreateActiveDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
-
   if (system_active_) {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Nav2 is active");
   } else {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Nav2 is inactive");
   }
-
 }
 
 void
