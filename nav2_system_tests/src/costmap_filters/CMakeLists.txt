@@ -6,6 +6,7 @@ ament_add_test(test_keepout_filter
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
     TEST_MASK=${PROJECT_SOURCE_DIR}/maps/keepout_mask.yaml
+    PARAMS_FILE=${CMAKE_CURRENT_SOURCE_DIR}/keepout_params.yaml
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
     ASTAR=False
 )
