@@ -239,9 +239,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   stop_updates_ = false;
   map_update_thread_shutdown_ = false;
   map_update_thread_ = std::make_unique<std::thread>(
-    [this]() {
-      mapUpdateLoop(map_update_frequency_);
-    });
+    std::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency_));
 
   start();
 
