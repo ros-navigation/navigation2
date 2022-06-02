@@ -362,7 +362,7 @@ bool TestNode::createSpeedFilter(const std::string & global_frame)
     rclcpp::Parameter(std::string(FILTER_NAME) + ".speed_limit_topic", SPEED_LIMIT_TOPIC));
 
   speed_filter_ = std::make_shared<nav2_costmap_2d::SpeedFilter>();
-  speed_filter_->initialize(&layers, FILTER_NAME, tf_buffer_.get(), node_, nullptr, nullptr);
+  speed_filter_->initialize(&layers, FILTER_NAME, tf_buffer_.get(), node_, nullptr);
   speed_filter_->initializeFilter(INFO_TOPIC);
 
   speed_limit_subscriber_ = std::make_shared<SpeedLimitSubscriber>(SPEED_LIMIT_TOPIC);
