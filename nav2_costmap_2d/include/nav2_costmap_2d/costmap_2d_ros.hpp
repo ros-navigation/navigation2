@@ -311,7 +311,7 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
 
-  // Dedicated callback group and executor for tf timer_interface, costmap plugins and filters
+  // Dedicated callback group and executor for tf timer_interface and message fillter
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   std::unique_ptr<nav2_util::NodeThread> executor_thread_;

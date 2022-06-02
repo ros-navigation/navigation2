@@ -63,7 +63,7 @@ namespace nav2_map_server
 {
 
 MapServer::MapServer(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("map_server", "", false, options)
+: nav2_util::LifecycleNode("map_server", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
