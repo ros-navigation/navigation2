@@ -106,8 +106,9 @@ protected:
    * @brief A callback that is called when a the action is completed, can fill in
    * action result message or indicate that this action is done.
    * @param result Action template result message to populate
+   * @param final_bt_status Resulting status of the behavior tree execution that may be referenced while populating the result.
    */
-  void goalCompleted(typename ActionT::Result::SharedPtr result) override;
+  void goalCompleted(typename ActionT::Result::SharedPtr result, nav2_behavior_tree::BtStatus final_bt_status) override;
 
   /**
    * @brief Goal pose initialization on the blackboard
