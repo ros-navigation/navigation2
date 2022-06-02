@@ -40,7 +40,7 @@ namespace nav2_planner
 {
 
 PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("planner_server", "", false, options),
+: nav2_util::LifecycleNode("planner_server", "", options),
   gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
   default_ids_{"GridBased"},
   default_types_{"nav2_navfn_planner/NavfnPlanner"},

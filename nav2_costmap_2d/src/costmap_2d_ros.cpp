@@ -65,7 +65,7 @@ Costmap2DROS::Costmap2DROS(
   const std::string & name,
   const std::string & parent_namespace,
   const std::string & local_namespace)
-: nav2_util::LifecycleNode(name, "", false,
+: nav2_util::LifecycleNode(name, "",
     // NodeOption arguments take precedence over the ones provided on the command line
     // use this to make sure the node is placed on the provided namespace
     // TODO(orduno) Pass a sub-node instead of creating a new node for better handling

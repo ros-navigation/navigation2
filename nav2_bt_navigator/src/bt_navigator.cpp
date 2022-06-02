@@ -29,7 +29,7 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("bt_navigator", "", false, options)
+: nav2_util::LifecycleNode("bt_navigator", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
