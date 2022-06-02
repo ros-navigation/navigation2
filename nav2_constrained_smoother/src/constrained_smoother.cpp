@@ -40,9 +40,9 @@ namespace nav2_constrained_smoother
 
 void ConstrainedSmoother::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-  std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
-  const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> & costmap_sub,
-  const std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> &)
+  std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>)
 {
   auto node = parent.lock();
   if (!node) {

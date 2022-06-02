@@ -36,6 +36,7 @@ void NavigateToPoseAction::on_tick()
       "NavigateToPoseAction: goal not provided");
     return;
   }
+  getInput("behavior_tree", goal_.behavior_tree);
 }
 
 }  // namespace nav2_behavior_tree

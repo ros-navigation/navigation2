@@ -84,7 +84,12 @@ def generate_launch_description():
             executable='lifecycle_manager',
             name='lifecycle_manager_filters',
             output='screen',
-            parameters=[{'node_names': ['filter_mask_server', 'costmap_filter_info_server']},
+            parameters=[{
+                            'node_names':
+                            [
+                                'filter_mask_server', 'costmap_filter_info_server', 'bt_navigator'
+                            ]
+                        },
                         {'autostart': True}]),
 
         # Nodes required for Costmap Filters configuration

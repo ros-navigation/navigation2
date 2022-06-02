@@ -75,7 +75,7 @@ void addStaticLayer(
 {
   slayer = std::make_shared<nav2_costmap_2d::StaticLayer>();
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(slayer));
-  slayer->initialize(&layers, "static", &tf, node, nullptr, nullptr /*TODO*/);
+  slayer->initialize(&layers, "static", &tf, node, nullptr);
 }
 
 void addObstacleLayer(
@@ -84,7 +84,7 @@ void addObstacleLayer(
   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> & olayer)
 {
   olayer = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
-  olayer->initialize(&layers, "obstacles", &tf, node, nullptr, nullptr /*TODO*/);
+  olayer->initialize(&layers, "obstacles", &tf, node, nullptr);
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(olayer));
 }
 
@@ -94,7 +94,7 @@ void addRangeLayer(
   std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> & rlayer)
 {
   rlayer = std::make_shared<nav2_costmap_2d::RangeSensorLayer>();
-  rlayer->initialize(&layers, "range", &tf, node, nullptr, nullptr /*TODO*/);
+  rlayer->initialize(&layers, "range", &tf, node, nullptr);
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(rlayer));
 }
 
@@ -133,7 +133,7 @@ void addInflationLayer(
   std::shared_ptr<nav2_costmap_2d::InflationLayer> & ilayer)
 {
   ilayer = std::make_shared<nav2_costmap_2d::InflationLayer>();
-  ilayer->initialize(&layers, "inflation", &tf, node, nullptr, nullptr /*TODO*/);
+  ilayer->initialize(&layers, "inflation", &tf, node, nullptr);
   std::shared_ptr<nav2_costmap_2d::Layer> ipointer(ilayer);
   layers.addPlugin(ipointer);
 }

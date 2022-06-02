@@ -40,8 +40,8 @@ namespace nav2_regulated_pure_pursuit_controller
 
 void RegulatedPurePursuitController::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-  std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
-  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
+  std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   auto node = parent.lock();
   node_ = parent;
@@ -330,7 +330,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       costAtPose(pose.pose.position.x, pose.pose.position.y), linear_vel, sign);
 
     // Apply curvature to angular velocity after constraining linear velocity
-    angular_vel = linear_vel * curvature;
+    angular_vel = sign * linear_vel * curvature;
   }
 
   // Collision checking on this velocity heading
