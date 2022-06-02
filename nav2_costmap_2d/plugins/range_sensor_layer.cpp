@@ -128,9 +128,6 @@ void RangeSensorLayer::onInitialize()
     return;
   }
 
-  auto sub_opt = rclcpp::SubscriptionOptions();
-  sub_opt.callback_group = callback_group_;
-
   // Traverse the topic names list subscribing to all of them with the same callback method
   for (auto & topic_name : topic_names) {
     if (input_sensor_type == InputSensorType::VARIABLE) {
@@ -156,7 +153,7 @@ void RangeSensorLayer::onInitialize()
       node->create_subscription<sensor_msgs::msg::Range>(
         topic_name, rclcpp::SensorDataQoS(), std::bind(
           &RangeSensorLayer::bufferIncomingRangeMsg, this,
-          std::placeholders::_1), sub_opt));
+          std::placeholders::_1)));
 
     RCLCPP_INFO(
       logger_, "RangeSensorLayer: subscribed to "
