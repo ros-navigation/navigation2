@@ -21,6 +21,7 @@
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav2_msgs/action/navigate_through_poses.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
+#include <string>
 
 namespace nav2_behavior_tree
 {
@@ -56,7 +57,7 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<geometry_msgs::msg::PoseStamped>("goals", "Destinations to plan through"),
-        BT::InputPort<geometry_msgs::msg::PoseStamped>("behavior_tree", "Behavior tree to run"),
+        BT::InputPort<std::string>("behavior_tree", "Behavior tree to run"),
       });
   }
 };
