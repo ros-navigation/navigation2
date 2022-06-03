@@ -87,8 +87,9 @@ NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 }
 
 void
-NavigateThroughPosesNavigator::goalCompleted(typename ActionT::Result::SharedPtr /*result*/,
-                                             nav2_behavior_tree::BtStatus /*final_bt_status*/)
+NavigateThroughPosesNavigator::goalCompleted(
+  typename ActionT::Result::SharedPtr /*result*/,
+  const nav2_behavior_tree::BtStatus /*final_bt_status*/)
 {
 }
 

@@ -267,8 +267,9 @@ protected:
   /**
    * @brief An intermediate completion function to mux navigators
    */
-  void onCompletion(typename ActionT::Result::SharedPtr result,
-                    nav2_behavior_tree::BtStatus final_bt_status)
+  void onCompletion(
+    typename ActionT::Result::SharedPtr result,
+    const nav2_behavior_tree::BtStatus final_bt_status)
   {
     plugin_muxer_->stopNavigating(getName());
     goalCompleted(result, final_bt_status);
@@ -296,8 +297,9 @@ protected:
    * @brief A callback that is called when a the action is completed; Can fill in
    * action result message or indicate that this action is done.
    */
-  virtual void goalCompleted(typename ActionT::Result::SharedPtr result,
-                             nav2_behavior_tree::BtStatus final_bt_status) = 0;
+  virtual void goalCompleted(
+    typename ActionT::Result::SharedPtr result,
+    const nav2_behavior_tree::BtStatus final_bt_status) = 0;
 
   /**
    * @param Method to configure resources.

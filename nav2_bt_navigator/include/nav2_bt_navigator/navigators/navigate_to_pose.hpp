@@ -109,8 +109,9 @@ protected:
    * @param final_bt_status Resulting status of the behavior tree execution that may be
    * referenced while populating the result.
    */
-  void goalCompleted(typename ActionT::Result::SharedPtr result,
-                     nav2_behavior_tree::BtStatus final_bt_status) override;
+  void goalCompleted(
+    typename ActionT::Result::SharedPtr result,
+    const nav2_behavior_tree::BtStatus final_bt_status) override;
 
   /**
    * @brief Goal pose initialization on the blackboard
