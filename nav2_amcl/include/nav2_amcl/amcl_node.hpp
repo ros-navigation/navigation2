@@ -105,6 +105,12 @@ protected:
   // respond until we're in the active state
   std::atomic<bool> active_{false};
 
+  // Dedicated callback group and executor for services and subscriptions in AmclNode,
+  // in order to isolate TF timer used in message filter.
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
+  std::unique_ptr<nav2_util::NodeThread> executor_thread_;
+
   // Pose hypothesis
   typedef struct
   {
@@ -165,7 +171,8 @@ protected:
    * @brief Initialize incoming data message subscribers and filters
    */
   void initMessageFilters();
-  std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
+  std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
+    rclcpp_lifecycle::LifecycleNode>> laser_scan_sub_;
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
   message_filters::Connection laser_scan_connection_;
 

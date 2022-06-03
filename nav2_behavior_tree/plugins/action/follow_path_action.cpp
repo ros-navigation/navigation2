@@ -35,7 +35,8 @@ void FollowPathAction::on_tick()
   getInput("goal_checker_id", goal_.goal_checker_id);
 }
 
-void FollowPathAction::on_wait_for_result()
+void FollowPathAction::on_wait_for_result(
+  std::shared_ptr<const nav2_msgs::action::FollowPath::Feedback>/*feedback*/)
 {
   // Grab the new path
   nav_msgs::msg::Path new_path;
