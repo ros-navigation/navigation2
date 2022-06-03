@@ -41,7 +41,7 @@ public:
   typedef std::function<void ()> OnLoopCallback;
   typedef std::function<void (typename ActionT::Goal::ConstSharedPtr)> OnPreemptCallback;
   typedef std::function<void (typename ActionT::Result::SharedPtr,
-    nav2_behavior_tree::BtStatus)> OnCompletionCallback;
+      nav2_behavior_tree::BtStatus)> OnCompletionCallback;
 
   /**
    * @brief A constructor for nav2_behavior_tree::BtActionServer class
