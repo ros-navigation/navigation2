@@ -216,7 +216,7 @@ void BtActionServer<ActionT>::executeCallback()
   // Give server an opportunity to populate the result message or simple give
   // an indication that the action is complete.
   auto result = std::make_shared<typename ActionT::Result>();
-  on_completion_callback_(result);
+  on_completion_callback_(result, rc);
 
   switch (rc) {
     case nav2_behavior_tree::BtStatus::SUCCEEDED:

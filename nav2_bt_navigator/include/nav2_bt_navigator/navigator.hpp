@@ -164,7 +164,7 @@ public:
       std::bind(&Navigator::onGoalReceived, this, std::placeholders::_1),
       std::bind(&Navigator::onLoop, this),
       std::bind(&Navigator::onPreempt, this, std::placeholders::_1),
-      std::bind(&Navigator::onCompletion, this, std::placeholders::_1));
+      std::bind(&Navigator::onCompletion, this, std::placeholders::_1, std::placeholders::_2));
 
     bool ok = true;
     if (!bt_action_server_->on_configure()) {
@@ -180,7 +180,7 @@ public:
   }
 
   /**
-   * @brief Actiation of the navigator's backend BT and actions
+   * @brief Activation of the navigator's backend BT and actions
    * @return bool If successful
    */
   bool on_activate()
@@ -195,7 +195,7 @@ public:
   }
 
   /**
-   * @brief Dectiation of the navigator's backend BT and actions
+   * @brief Deactivation of the navigator's backend BT and actions
    * @return bool If successful
    */
   bool on_deactivate()
@@ -265,12 +265,14 @@ protected:
   }
 
   /**
-   * @brief An intermediate compution function to mux navigators
+   * @brief An intermediate completion function to mux navigators
    */
-  void onCompletion(typename ActionT::Result::SharedPtr result)
+  void onCompletion(
+    typename ActionT::Result::SharedPtr result,
+    const nav2_behavior_tree::BtStatus final_bt_status)
   {
     plugin_muxer_->stopNavigating(getName());
-    goalCompleted(result);
+    goalCompleted(result, final_bt_status);
   }
 
   /**
@@ -292,10 +294,12 @@ protected:
   virtual void onPreempt(typename ActionT::Goal::ConstSharedPtr goal) = 0;
 
   /**
-   * @brief A callback that is called when a the action is completed, can fill in
+   * @brief A callback that is called when a the action is completed; Can fill in
    * action result message or indicate that this action is done.
    */
-  virtual void goalCompleted(typename ActionT::Result::SharedPtr result) = 0;
+  virtual void goalCompleted(
+    typename ActionT::Result::SharedPtr result,
+    const nav2_behavior_tree::BtStatus final_bt_status) = 0;
 
   /**
    * @param Method to configure resources.
@@ -313,12 +317,12 @@ protected:
   virtual bool cleanup() {return true;}
 
   /**
-   * @brief Method to active and any threads involved in execution.
+   * @brief Method to activate any threads involved in execution.
    */
   virtual bool activate() {return true;}
 
   /**
-   * @brief Method to deactive and any threads involved in execution.
+   * @brief Method to deactivate and any threads involved in execution.
    */
   virtual bool deactivate() {return true;}
 
