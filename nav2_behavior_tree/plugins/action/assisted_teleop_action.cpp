@@ -41,6 +41,11 @@ void AssistedTeleopAction::on_tick()
   }
 }
 
+BT::NodeStatus AssistedTeleopAction::on_aborted()
+{
+  return (is_recovery_ ? BT::NodeStatus::FAILURE : BT::NodeStatus::SUCCESS);
+}
+
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp_v3/bt_factory.h"

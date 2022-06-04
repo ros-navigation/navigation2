@@ -46,6 +46,8 @@ public:
    */
   void on_tick() override;
 
+  BT::NodeStatus on_aborted() override;
+
   /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
