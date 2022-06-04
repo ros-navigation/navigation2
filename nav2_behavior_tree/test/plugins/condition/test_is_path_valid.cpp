@@ -99,9 +99,9 @@ TEST_F(IsPathValidTestFixture, test_behavior)
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  // std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(500ms);
 
-  // EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
 }
 
 int main(int argc, char ** argv)
