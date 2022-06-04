@@ -28,7 +28,7 @@ AssistedTeleopAction::AssistedTeleopAction(
 {
   double time_allowance;
   getInput("time_allowance", time_allowance);
-  getInput("recovery", recovery_);
+  getInput("is_recovery", is_recovery_);
 
   // Populate the input message
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
@@ -36,7 +36,7 @@ AssistedTeleopAction::AssistedTeleopAction(
 
 void AssistedTeleopAction::on_tick()
 {
-  if (recovery_) {
+  if (is_recovery_) {
     increment_recovery_count();
   }
 }

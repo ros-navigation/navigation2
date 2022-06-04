@@ -171,7 +171,7 @@
 
     <Action ID="AssistedTeleop">
       <input_port name="time_allowance">Allowed time for spinning</input_port>
-      <input_port name="recovery">If true recovery count will be incremented</input_port>
+      <input_port name="is_recovery">If true recovery count will be incremented</input_port>
       <input_port name="server_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
