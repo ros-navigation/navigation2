@@ -44,16 +44,11 @@ void AssistedTeleop::onConfigure()
     node,
     "teleop_cmd_vel", rclcpp::ParameterValue(std::string("teleop_cmd_vel")));
 
-  nav2_util::declare_parameter_if_not_declared(
-    node,
-    "joystick_topic", rclcpp::ParameterValue(std::string("joystick_topic")));
-
   node->get_parameter("projection_time", projection_time_);
   node->get_parameter("simulation_time_step", simulation_time_step_);
 
   std::string teleop_cmd_vel;
   node->get_parameter("teleop_cmd_vel", teleop_cmd_vel);
-  node->get_parameter("joystick_topic", joystick_topic_);
 
   vel_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
     teleop_cmd_vel, rclcpp::SystemDefaultsQoS(),
@@ -61,10 +56,10 @@ void AssistedTeleop::onConfigure()
       &AssistedTeleop::teleopVelocityCallback,
       this, std::placeholders::_1));
 
-  joy_sub_ = node->create_subscription<sensor_msgs::msg::Joy>(
-    joystick_topic_, rclcpp::SystemDefaultsQoS(),
+  preempt_teleop_sub_ = node->create_subscription<std_msgs::msg::Empty>(
+    "preempt_teleop", rclcpp::SystemDefaultsQoS(),
     std::bind(
-      &AssistedTeleop::joyCallback,
+      &AssistedTeleop::preemptTeleopCallback,
       this, std::placeholders::_1));
 }
 
@@ -78,7 +73,7 @@ Status AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAction::G
 void AssistedTeleop::onActionCompletion()
 {
   teleop_twist_ = geometry_msgs::msg::Twist();
-  joy_ = sensor_msgs::msg::Joy();
+  preempt_teleop_ = false;
 }
 
 Status AssistedTeleop::onCycleUpdate()
@@ -97,15 +92,9 @@ Status AssistedTeleop::onCycleUpdate()
   }
 
   // user states that teleop was successful
-  if (joy_.buttons.size() > 0 && joy_.buttons[0] > 0) {
+  if (preempt_teleop_) {
     stopRobot();
     return Status::SUCCEEDED;
-  }
-
-  // user states that teleop failed
-  if (joy_.buttons.size() > 1 && joy_.buttons[1] > 0) {
-    stopRobot();
-    return Status::FAILED;
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
@@ -185,9 +174,9 @@ void AssistedTeleop::teleopVelocityCallback(const geometry_msgs::msg::Twist::Sha
   teleop_twist_ = *msg;
 }
 
-void AssistedTeleop::joyCallback(const sensor_msgs::msg::Joy msg)
+void AssistedTeleop::preemptTeleopCallback(const std_msgs::msg::Empty::SharedPtr)
 {
-  joy_.buttons = msg.buttons;
+  preempt_teleop_ = true;
 }
 
 }  // namespace nav2_behaviors

@@ -20,6 +20,7 @@
 #include <string>
 
 #include "geometry_msgs/msg/twist.hpp"
+#include "std_msgs/msg/empty.hpp"
 #include "nav2_behaviors/timed_behavior.hpp"
 #include "nav2_msgs/action/assisted_teleop.hpp"
 #include "sensor_msgs/msg/joy.hpp"
@@ -79,10 +80,10 @@ protected:
   void teleopVelocityCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
 
   /**
-   * @brief Callback function for joy subscriber
-   * @param msg received Twist message
+   * @brief Callback function to preempt assisted teleop
+   * @param msg empty message
    */
-  void joyCallback(const sensor_msgs::msg::Joy msg);
+  void preemptTeleopCallback(const std_msgs::msg::Empty::SharedPtr msg);
 
   AssistedTeleopAction::Feedback::SharedPtr feedback_;
 
@@ -92,11 +93,11 @@ protected:
   std::string joystick_topic_;
 
   geometry_msgs::msg::Twist teleop_twist_;
-  sensor_msgs::msg::Joy joy_;
+  bool preempt_teleop_{false};
 
   // subscribers
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr vel_sub_;
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
+  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr preempt_teleop_sub_;
 
   rclcpp::Duration command_time_allowance_{0, 0};
   rclcpp::Time end_time_;
