@@ -108,15 +108,6 @@ Status AssistedTeleop::onCycleUpdate()
     return Status::FAILED;
   }
 
-  geometry_msgs::msg::Twist cmd_vel;
-  cmd_vel = computeVelocity(teleop_twist_);
-  vel_pub_->publish(std::move(cmd_vel));
-
-  return Status::RUNNING;
-}
-
-geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Twist & twist)
-{
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
       current_pose, *tf_, global_frame_, robot_base_frame_,
@@ -126,35 +117,35 @@ geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Tw
       logger_,
       "Current robot pose is not available for " <<
         behavior_name_.c_str());
-    return geometry_msgs::msg::Twist();
+    return Status::FAILED;
   }
   geometry_msgs::msg::Pose2D projected_pose;
   projected_pose.x = current_pose.pose.position.x;
   projected_pose.y = current_pose.pose.position.y;
   projected_pose.theta = tf2::getYaw(current_pose.pose.orientation);
 
-  geometry_msgs::msg::Twist scaled_twist = twist;
+  geometry_msgs::msg::Twist scaled_twist = teleop_twist_;
   for (double time = simulation_time_step_; time < projection_time_;
     time += simulation_time_step_)
   {
-    projected_pose = projectPose(projected_pose, twist, simulation_time_step_);
+    projected_pose = projectPose(projected_pose, teleop_twist_, simulation_time_step_);
 
     if (!collision_checker_->isCollisionFree(projected_pose)) {
       if (time == simulation_time_step_) {
-        RCLCPP_WARN_STREAM_THROTTLE(
+        RCLCPP_DEBUG_STREAM_THROTTLE(
           logger_,
           steady_clock_,
-          500,
+          1000,
           behavior_name_.c_str() << " collided on first time step, setting velocity to zero");
         scaled_twist.linear.x = 0.0f;
         scaled_twist.linear.y = 0.0f;
         scaled_twist.angular.z = 0.0f;
         break;
       } else {
-        RCLCPP_WARN_STREAM_THROTTLE(
+        RCLCPP_DEBUG_STREAM_THROTTLE(
           logger_,
           steady_clock_,
-          500,
+          1000,
           behavior_name_.c_str() << " collision approaching in " << time << " seconds");
         double scale_factor = time / projection_time_;
         scaled_twist.linear.x *= scale_factor;
@@ -164,7 +155,9 @@ geometry_msgs::msg::Twist AssistedTeleop::computeVelocity(geometry_msgs::msg::Tw
       }
     }
   }
-  return scaled_twist;
+  vel_pub_->publish(std::move(scaled_twist));
+
+  return Status::RUNNING;
 }
 
 geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(

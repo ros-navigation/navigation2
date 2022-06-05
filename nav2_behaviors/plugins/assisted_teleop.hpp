@@ -73,14 +73,6 @@ protected:
     double projection_time);
 
   /**
-   * @brief compute teleop assisted velocity
-   * @param twist teleop twist message
-   *
-   * @return geometry_mgs::msg::Twist the adjusted velocity
-   */
-  geometry_msgs::msg::Twist computeVelocity(geometry_msgs::msg::Twist & twist);
-
-  /**
    * @brief Callback function for velocity subscriber
    * @param msg received Twist message
    */
