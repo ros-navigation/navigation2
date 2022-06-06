@@ -332,7 +332,7 @@ bool PlannerServer::validatePath(
 
   RCLCPP_DEBUG(
     get_logger(),
-    "Found valid path of size %lu to (%.2f, %.2f)",
+    "Found valid path of size %zu to (%.2f, %.2f)",
     path.poses.size(), goal.pose.position.x,
     goal.pose.position.y);
 
@@ -422,7 +422,7 @@ PlannerServer::computePlanThroughPoses()
   } catch (std::exception & ex) {
     RCLCPP_WARN(
       get_logger(),
-      "%s plugin failed to plan through %li points with final goal (%.2f, %.2f): \"%s\"",
+      "%s plugin failed to plan through %zu points with final goal (%.2f, %.2f): \"%s\"",
       goal->planner_id.c_str(), goal->goals.size(), goal->goals.back().pose.position.x,
       goal->goals.back().pose.position.y, ex.what());
     action_server_poses_->terminate_current();
