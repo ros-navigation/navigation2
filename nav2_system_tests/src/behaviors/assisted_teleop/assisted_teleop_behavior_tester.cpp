@@ -1,4 +1,5 @@
-// Copyright (c) 2022 Joshua Wallace
+// Copyright (c) 2020 Sarthak Mittal
+// Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,40 +31,44 @@ using namespace std::chrono;  // NOLINT
 namespace nav2_system_tests
 {
 
-BackupBehaviorTester::BackupBehaviorTester()
+AssistedTeleopBehaviorTester::AssistedTeleopBehaviorTester()
 : is_active_(false),
   initial_pose_received_(false)
 {
-  node_ = rclcpp::Node::make_shared("backup_behavior_test");
+  node_ = rclcpp::Node::make_shared("assisted_teleop_behavior_test");
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-  client_ptr_ = rclcpp_action::create_client<BackUp>(
+  client_ptr_ = rclcpp_action::create_client<AssistedTeleop>(
     node_->get_node_base_interface(),
     node_->get_node_graph_interface(),
     node_->get_node_logging_interface(),
     node_->get_node_waitables_interface(),
-    "backup");
+    "assisted_teleop");
 
   publisher_ =
     node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
 
+
+  preempt_pub_ =
+    node_->create_publisher<std_msgs::msg::Empty>("preempt_teleop", 10);
+
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&BackupBehaviorTester::amclPoseCallback, this, std::placeholders::_1));
+    std::bind(&AssistedTeleopBehaviorTester::amclPoseCallback, this, std::placeholders::_1));
 
   stamp_ = node_->now();
 }
 
-BackupBehaviorTester::~BackupBehaviorTester()
+AssistedTeleopBehaviorTester::~AssistedTeleopBehaviorTester()
 {
   if (is_active_) {
     deactivate();
   }
 }
 
-void BackupBehaviorTester::activate()
+void AssistedTeleopBehaviorTester::activate()
 {
   if (is_active_) {
     throw std::runtime_error("Trying to activate while already active");
@@ -92,11 +97,11 @@ void BackupBehaviorTester::activate()
     return;
   }
 
-  RCLCPP_INFO(this->node_->get_logger(), "Backup action server is ready");
+  RCLCPP_INFO(this->node_->get_logger(), "Assisted Teleop action server is ready");
   is_active_ = true;
 }
 
-void BackupBehaviorTester::deactivate()
+void AssistedTeleopBehaviorTester::deactivate()
 {
   if (!is_active_) {
     throw std::runtime_error("Trying to deactivate while already inactive");
@@ -104,9 +109,9 @@ void BackupBehaviorTester::deactivate()
   is_active_ = false;
 }
 
-bool BackupBehaviorTester::defaultBackupBehaviorTest(
-  const BackUp::Goal goal_msg,
-  const double tolerance)
+bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
+  const AssistedTeleop::Goal goal_msg,
+  const double)
 {
   if (!is_active_) {
     RCLCPP_ERROR(node_->get_logger(), "Not activated");
@@ -116,7 +121,7 @@ bool BackupBehaviorTester::defaultBackupBehaviorTest(
   // Sleep to let behavior server be ready for serving in multiple runs
   std::this_thread::sleep_for(5s);
 
-  RCLCPP_INFO(this->node_->get_logger(), "Sending goal");
+  RCLCPP_INFO(node_->get_logger(), "Sending goal");
 
   geometry_msgs::msg::PoseStamped initial_pose;
   if (!nav2_util::getCurrentPose(initial_pose, *tf_buffer_, "odom")) {
@@ -134,7 +139,7 @@ bool BackupBehaviorTester::defaultBackupBehaviorTest(
     return false;
   }
 
-  rclcpp_action::ClientGoalHandle<BackUp>::SharedPtr goal_handle = goal_handle_future.get();
+  rclcpp_action::ClientGoalHandle<AssistedTeleop>::SharedPtr goal_handle = goal_handle_future.get();
   if (!goal_handle) {
     RCLCPP_ERROR(node_->get_logger(), "Goal was rejected by server");
     return false;
@@ -142,6 +147,10 @@ bool BackupBehaviorTester::defaultBackupBehaviorTest(
 
   // Wait for the server to be done with the goal
   auto result_future = client_ptr_->async_get_result(goal_handle);
+
+  auto preempt_msg = std_msgs::msg::Empty();
+  preempt_pub_->publish(preempt_msg);
+
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for result");
   if (rclcpp::spin_until_future_complete(node_, result_future) !=
@@ -151,7 +160,7 @@ bool BackupBehaviorTester::defaultBackupBehaviorTest(
     return false;
   }
 
-  rclcpp_action::ClientGoalHandle<BackUp>::WrappedResult wrapped_result = result_future.get();
+  rclcpp_action::ClientGoalHandle<AssistedTeleop>::WrappedResult wrapped_result = result_future.get();
 
   switch (wrapped_result.code) {
     case rclcpp_action::ResultCode::SUCCEEDED: break;
@@ -167,28 +176,28 @@ bool BackupBehaviorTester::defaultBackupBehaviorTest(
       return false;
   }
 
-  RCLCPP_INFO(node_->get_logger(), "result received");
+  // RCLCPP_INFO(node_->get_logger(), "result received");
 
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(current_pose, *tf_buffer_, "odom")) {
-    RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
-    return false;
-  }
+  // geometry_msgs::msg::PoseStamped current_pose;
+  // if (!nav2_util::getCurrentPose(current_pose, *tf_buffer_, "odom")) {
+  //   RCLCPP_ERROR(node_->get_logger(), "Current robot pose is not available.");
+  //   return false;
+  // }
 
-  double dist = nav2_util::geometry_utils::euclidean_distance(initial_pose, current_pose);
+  // double dist = nav2_util::geometry_utils::euclidean_distance(initial_pose, current_pose);
 
-  if (fabs(dist) > fabs(goal_msg.target.x) + tolerance) {
-    RCLCPP_ERROR(
-      node_->get_logger(),
-      "Distance from goal is %lf (tolerance %lf)",
-      fabs(dist - goal_msg.target.x), tolerance);
-    return false;
-  }
+  // if (fabs(dist) > fabs(goal_msg.target.x) + tolerance) {
+  //   RCLCPP_ERROR(
+  //     node_->get_logger(),
+  //     "Distance from goal is %lf (tolerance %lf)",
+  //     fabs(dist - goal_msg.target.x), tolerance);
+  //   return false;
+  // }
 
   return true;
 }
 
-void BackupBehaviorTester::sendInitialPose()
+void AssistedTeleopBehaviorTester::sendInitialPose()
 {
   geometry_msgs::msg::PoseWithCovarianceStamped pose;
   pose.header.frame_id = "map";
@@ -211,7 +220,7 @@ void BackupBehaviorTester::sendInitialPose()
   RCLCPP_INFO(node_->get_logger(), "Sent initial pose");
 }
 
-void BackupBehaviorTester::amclPoseCallback(
+void AssistedTeleopBehaviorTester::amclPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
 {
   initial_pose_received_ = true;

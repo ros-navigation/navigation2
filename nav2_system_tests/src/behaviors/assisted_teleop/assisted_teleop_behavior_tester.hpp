@@ -1,4 +1,5 @@
-// Copyright (c) 2022 Joshua Wallace
+// Copyright (c) 2020 Samsung Research
+// Copyright (c) 2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef BEHAVIORS__BACKUP__BACKUP_BEHAVIOR_TESTER_HPP_
-#define BEHAVIORS__BACKUP__BACKUP_BEHAVIOR_TESTER_HPP_
+#ifndef BEHAVIORS__ASSISTED_TELEOP__ASSISTED_TELEOP_BEHAVIOR_TESTER_HPP_
+#define BEHAVIORS__ASSISTED_TELEOP__ASSISTED_TELEOP_BEHAVIOR_TESTER_HPP_
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -24,7 +25,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "angles/angles.h"
-#include "nav2_msgs/action/back_up.hpp"
+#include "nav2_msgs/action/assisted_teleop.hpp"
+#include "std_msgs/msg/empty.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/node_thread.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -37,18 +39,18 @@
 namespace nav2_system_tests
 {
 
-class BackupBehaviorTester
+class AssistedTeleopBehaviorTester
 {
 public:
-  using BackUp = nav2_msgs::action::BackUp;
-  using GoalHandleBackup = rclcpp_action::ClientGoalHandle<BackUp>;
+  using AssistedTeleop = nav2_msgs::action::AssistedTeleop;
+  // using GoalHandleBackup = rclcpp_action::ClientGoalHandle<BackUp>;
 
-  BackupBehaviorTester();
-  ~BackupBehaviorTester();
+  AssistedTeleopBehaviorTester();
+  ~AssistedTeleopBehaviorTester();
 
   // Runs a single test with given target yaw
-  bool defaultBackupBehaviorTest(
-    const BackUp::Goal goal_msg,
+  bool defaultAssistedTeleopTest(
+    const AssistedTeleop::Goal goal_msg,
     const double tolerance);
 
   void activate();
@@ -77,13 +79,15 @@ private:
   // Publisher to publish initial pose
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr publisher_;
 
+  rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr preempt_pub_;
+
   // Subscriber for amcl pose
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
 
-  // Action client to call Backup action
-  rclcpp_action::Client<BackUp>::SharedPtr client_ptr_;
+  // Action client to call AssistedTeleop action
+  rclcpp_action::Client<AssistedTeleop>::SharedPtr client_ptr_;
 };
 
 }  // namespace nav2_system_tests
 
-#endif  // BEHAVIORS__BACKUP__BACKUP_BEHAVIOR_TESTER_HPP_
+#endif  // BEHAVIORS__ASSISTED_TELEOP__ASSISTED_TELEOP_BEHAVIOR_TESTER_HPP_

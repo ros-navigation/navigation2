@@ -1,3 +1,5 @@
+// Copyright (c) 2020 Samsung Research
+// Copyright (c) 2020 Sarthak Mittal
 // Copyright (c) 2022 Joshua Wallace
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,7 +27,7 @@
 
 using namespace std::chrono_literals;
 
-using nav2_system_tests::BackupBehaviorTester;
+using nav2_system_tests::AssistedTeleopBehaviorTester;
 
 struct TestParameters
 {
@@ -39,60 +41,63 @@ struct TestParameters
 std::string testNameGenerator(const testing::TestParamInfo<TestParameters> &)
 {
   static int test_index = 0;
-  std::string name = "BackUpTest" + std::to_string(test_index);
+  std::string name = "AssistedTeleopTest" + std::to_string(test_index);
   ++test_index;
   return name;
 }
 
-class BackupBehaviorTestFixture
+class AssistedTeleopBehaviorTestFixture
   : public ::testing::TestWithParam<TestParameters>
 {
 public:
   static void SetUpTestCase()
   {
-    backup_behavior_tester = new BackupBehaviorTester();
-    if (!backup_behavior_tester->isActive()) {
-      backup_behavior_tester->activate();
+    assisted_teleop_behavior_tester = new AssistedTeleopBehaviorTester();
+    if (!assisted_teleop_behavior_tester->isActive()) {
+      assisted_teleop_behavior_tester->activate();
     }
   }
 
   static void TearDownTestCase()
   {
-    delete backup_behavior_tester;
-    backup_behavior_tester = nullptr;
+    delete assisted_teleop_behavior_tester;
+    assisted_teleop_behavior_tester = nullptr;
   }
 
 protected:
-  static BackupBehaviorTester * backup_behavior_tester;
+  static AssistedTeleopBehaviorTester * assisted_teleop_behavior_tester;
 };
 
-BackupBehaviorTester * BackupBehaviorTestFixture::backup_behavior_tester = nullptr;
+AssistedTeleopBehaviorTester *
+AssistedTeleopBehaviorTestFixture::assisted_teleop_behavior_tester = nullptr;
 
-TEST_P(BackupBehaviorTestFixture, testBackupBehavior)
+TEST_P(AssistedTeleopBehaviorTestFixture, testAssistedTeleopBehavior)
 {
   auto test_params = GetParam();
-  auto goal = nav2_msgs::action::BackUp::Goal();
-  goal.target.x = test_params.x;
-  goal.target.y = test_params.y;
-  goal.speed = test_params.speed;
+  auto goal = nav2_msgs::action::AssistedTeleop::Goal();
+  // goal.target.x = test_params.x;
+  // goal.target.y = test_params.y;
+  // goal.speed = test_params.speed;
   float tolerance = test_params.tolerance;
 
-  if (!backup_behavior_tester->isActive()) {
-    backup_behavior_tester->activate();
+  if (!assisted_teleop_behavior_tester->isActive()) {
+    assisted_teleop_behavior_tester->activate();
   }
 
   bool success = false;
-  success = backup_behavior_tester->defaultBackupBehaviorTest(goal, tolerance);
+  success = assisted_teleop_behavior_tester->defaultAssistedTeleopTest(goal, tolerance);
 
-  float dist_to_obstacle = 2.0f;
+  // float dist_to_obstacle = 2.0f;
 
-  if ( ((dist_to_obstacle - std::fabs(test_params.x)) < std::fabs(goal.speed)) ||
-    std::fabs(goal.target.y) > 0)
-  {
-    EXPECT_FALSE(success);
-  } else {
-    EXPECT_TRUE(success);
-  }
+  // if ( ((dist_to_obstacle - std::fabs(test_params.x)) < std::fabs(goal.speed)) ||
+  //   std::fabs(goal.target.y) > 0)
+  // {
+  //   EXPECT_FALSE(success);
+  // } else {
+  //   EXPECT_TRUE(success);
+  // }
+
+  EXPECT_TRUE(success);
 }
 
 std::vector<TestParameters> test_params = {TestParameters{-0.05, 0.0, -0.2, 0.01},
@@ -100,8 +105,8 @@ std::vector<TestParameters> test_params = {TestParameters{-0.05, 0.0, -0.2, 0.01
   TestParameters{-2.0, 0.0, -0.2, 0.1}};
 
 INSTANTIATE_TEST_SUITE_P(
-  BackupBehaviorTests,
-  BackupBehaviorTestFixture,
+  TestAssistedTeleopBehavior,
+  AssistedTeleopBehaviorTestFixture,
   ::testing::Values(
     test_params[0],
     test_params[1],

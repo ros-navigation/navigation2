@@ -43,7 +43,7 @@ void AssistedTeleopAction::on_tick()
 
 BT::NodeStatus AssistedTeleopAction::on_aborted()
 {
-  return (is_recovery_ ? BT::NodeStatus::FAILURE : BT::NodeStatus::SUCCESS);
+  return is_recovery_ ? BT::NodeStatus::FAILURE : BT::NodeStatus::SUCCESS;
 }
 
 }  // namespace nav2_behavior_tree
