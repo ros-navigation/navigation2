@@ -32,11 +32,14 @@ SpinAction::SpinAction(
   getInput("time_allowance", time_allowance);
   goal_.target_yaw = dist;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
+  getInput("is_recovery", is_recovery_);
 }
 
 void SpinAction::on_tick()
 {
-  increment_recovery_count();
+  if (is_recovery_) {
+    increment_recovery_count();
+  }
 }
 
 }  // namespace nav2_behavior_tree
