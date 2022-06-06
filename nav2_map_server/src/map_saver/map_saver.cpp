@@ -66,6 +66,10 @@ MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Make name prefix for services
   const std::string service_prefix = get_name() + std::string("/");
 
+  free_thresh_default_ = get_parameter("free_thresh_default").as_double();
+  occupied_thresh_default_ = get_parameter("occupied_thresh_default").as_double();
+  map_subscribe_transient_local_ = get_parameter("map_subscribe_transient_local").as_bool();
+
   // Create a service that saves the occupancy grid from map topic to a file
   save_map_service_ = create_service<nav2_msgs::srv::SaveMap>(
     service_prefix + save_map_service_name_,
