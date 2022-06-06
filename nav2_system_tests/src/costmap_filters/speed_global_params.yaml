@@ -39,14 +39,6 @@ amcl:
     z_short: 0.05
     scan_topic: scan
 
-amcl_map_client:
-  ros__parameters:
-    use_sim_time: True
-
-amcl_rclcpp_node:
-  ros__parameters:
-    use_sim_time: True
-
 bt_navigator:
   ros__parameters:
     use_sim_time: True
@@ -98,7 +90,11 @@ bt_navigator:
     - nav2_back_up_cancel_bt_node
     - nav2_drive_on_heading_cancel_bt_node
 
-bt_navigator_rclcpp_node:
+bt_navigator_navigate_through_poses_rclcpp_node:
+  ros__parameters:
+    use_sim_time: True
+
+bt_navigator_navigate_to_pose_rclcpp_node:
   ros__parameters:
     use_sim_time: True
 
@@ -168,10 +164,6 @@ controller_server:
       RotateToGoal.slowing_factor: 5.0
       RotateToGoal.lookahead_time: -1.0
 
-controller_server_rclcpp_node:
-  ros__parameters:
-    use_sim_time: True
-
 local_costmap:
   local_costmap:
     ros__parameters:
@@ -209,12 +201,6 @@ local_costmap:
       static_layer:
         map_subscribe_transient_local: True
       always_send_full_costmap: True
-  local_costmap_client:
-    ros__parameters:
-      use_sim_time: True
-  local_costmap_rclcpp_node:
-    ros__parameters:
-      use_sim_time: True
 
 global_costmap:
   global_costmap:
@@ -252,12 +238,6 @@ global_costmap:
         filter_info_topic: "/costmap_filter_info"
         speed_limit_topic: "/speed_limit"
       always_send_full_costmap: True
-  global_costmap_client:
-    ros__parameters:
-      use_sim_time: True
-  global_costmap_rclcpp_node:
-    ros__parameters:
-      use_sim_time: True
 
 map_server:
   ros__parameters:
@@ -282,10 +262,6 @@ planner_server:
       tolerance: 0.5
       use_astar: False
       allow_unknown: True
-
-planner_server_rclcpp_node:
-  ros__parameters:
-    use_sim_time: True
 
 smoother_server:
   ros__parameters:
