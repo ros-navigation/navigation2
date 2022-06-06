@@ -83,6 +83,7 @@ public:
     config_ = nullptr;
     node_.reset();
     action_server_.reset();
+    client_.reset();
     factory_.reset();
   }
 

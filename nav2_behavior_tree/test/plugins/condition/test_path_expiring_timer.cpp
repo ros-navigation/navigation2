@@ -43,6 +43,7 @@ public:
   {
     delete config_;
     config_ = nullptr;
+    node_.reset();
     bt_node_.reset();
   }
 
