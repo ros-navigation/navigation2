@@ -16,74 +16,78 @@
 #define NAV2_COLLISION_MONITOR__POLYGON_BASE_HPP_
 
 #include "nav2_util/lifecycle_node.hpp"
+#include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "geometry_msgs/msg/polygon.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 
 namespace nav2_collision_monitor
 {
 
-enum PolygonType
-{
-  POLYGON_BASE = 0,
-  POLYGON = 1,
-  CIRCLE = 2
-};
-
 class PolygonBase
 {
 public:
-PolygonBase();
-PolygonBase(
-  const nav2_util::LifecycleNode::WeakPtr & node,
-  const std::string polygon_name,
-  const double simulation_time_step);
-virtual ~PolygonBase();
+  PolygonBase(
+    const nav2_util::LifecycleNode::WeakPtr & node,
+    const std::string & polygon_name,
+    const std::string & base_frame_id,
+    const double simulation_time_step);
+  virtual ~PolygonBase();
 
-bool getParameters();
+  bool configure();
+  void activate();
+  void deactivate();
 
-PolygonType getPolygonType();
-void setPolygonType(const PolygonType pt);
+  ActionType getActionType();
+  int getMaxPoints();
+  double getSlowdownRatio();
+  double getTimeBeforeCollision();
 
-ActionType getActionType();
+  virtual void getPolygon(std::vector<Point> & poly) = 0;
 
-int getStopPoints();
-void setStopPoints(const int sp);
+  // Returns estimated (simulated) time before collision
+  // If there is no collision, return value will be negative.
+  double getCollisionTime(
+    const std::vector<Point> & points, const Velocity & velocity);
 
-double getSlowdown();
-void setSlowdown(const double slowdown);
+  // Returns safe velocity to keep to a collision_time before collision
+  Velocity getSafeVelocity(
+    const Velocity & velocity, const double collision_time);
 
-double getTimeBeforeCollision();
-void setTimeBeforeCollision(const double tbc);
+  virtual int getPointsInside(const std::vector<Point> & points) = 0;
 
-virtual void getPolygon(std::vector<Point> & poly) = 0;
-
-// Returns estimated (simulated) time before collision and pose where the collision will occur.
-// If there is no collision, coll_time will be negative.
-void getCollision(
-  const Point & point, const Velocity & velocity, double & coll_time);
-
-// Returns safe velocity to keep to a coll_time before collision
-Velocity getSafeVelocity(
-  const Velocity & velocity, const double coll_time);
-
-virtual bool isPointInside(const Point & point) = 0;
+  void publish();
 
 protected:
-// Collision Monitor node
-nav2_util::LifecycleNode::WeakPtr node_;
+  // @brief Supporting routine obtaining all ROS-parameters
+  // @param polygon_topic Output name of polygon publishing topic
+  // @return Always returns true. Bool return left for unification.
+  virtual bool getParameters(std::string & polygon_topic);
 
-PolygonType polygon_type_;
-std::string polygon_name_;
-ActionType action_type_;
-// Minimal number of points to enter inside polygon that causing robot to stop
-int stop_points_;
-// Robot slowdown (share of its actual speed)
-double slowdown_;
-// Time before collision in seconds
-double time_before_collision_;
-// Time step for robot movement simulation
-double simulation_time_step_;
+  // Collision Monitor node
+  nav2_util::LifecycleNode::WeakPtr node_;
+  // Store collision monitor node logger for further usage
+  rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
 
+  // Basic parameters
+  std::string polygon_name_;
+  std::string base_frame_id_;
+  ActionType action_type_;
+  // Maximum number of points to enter inside polygon to be ignored (without causing any action)
+  int max_points_;
+  // Robot slowdown (share of its actual speed)
+  double slowdown_ratio_;
+  // Time before collision in seconds
+  double time_before_collision_;
+  // Time step for robot movement simulation
+  double simulation_time_step_;
+
+  // Whether to publish this polygon
+  bool visualize_;
+  // Polygon points stored for later publisging
+  geometry_msgs::msg::Polygon polygon_;
+  // Polygon publisher for visualization purposes
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
 };  // class PolygonBase
 
 }  // namespace nav2_collision_monitor

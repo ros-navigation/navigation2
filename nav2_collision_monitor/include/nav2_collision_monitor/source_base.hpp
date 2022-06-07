@@ -21,6 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
+#include "tf2/time.h"
 #include "tf2_ros/buffer.h"
 
 #include "nav2_collision_monitor/types.hpp"
@@ -28,68 +29,60 @@
 namespace nav2_collision_monitor
 {
 
-enum SourceType
-{
-  SOURCE_BASE = 0,
-  SCAN = 1,
-  POINTCLOUD = 2
-};
-
 class SourceBase
 {
 public:
-SourceBase();
-SourceBase(
-  const nav2_util::LifecycleNode::WeakPtr & node,
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  const std::string source_name,
-  const std::string base_frame_id,
-  const double transform_tolerance,
-  const double max_time_shift);
-virtual ~SourceBase();
+  SourceBase(
+    const nav2_util::LifecycleNode::WeakPtr & node,
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const std::string & source_name,
+    const std::string & base_frame_id,
+    const tf2::Duration & transform_tolerance,
+    const tf2::Duration & data_timeout);
+  virtual ~SourceBase();
 
-virtual bool init() = 0;
+  virtual void configure() = 0;
 
-SourceType getSourceType();
-std::string getSourceTypeStr();
+  virtual void getData(
+    std::vector<Point> & data, const rclcpp::Time & curr_time) = 0;
 
-void getData(std::vector<Point> & data, const rclcpp::Time & curr_time, const Velocity & velocity);
+  void setFixedFrameId(const std::string & fixed_frame_id);
 
 protected:
-bool getParameters();
+  // @brief Supporting routine obtaining all ROS-parameters.
+  // @param source_topic Output name of source subscription topic
+  void getParameters(std::string & source_topic);
 
-bool getTransform(
-  const std::string to_frame,
-  const std::string from_frame,
-  tf2::Transform & tf2_transform);
+  bool sourceValid(const rclcpp::Time & curr_time);
 
-void fixData(const rclcpp::Time & curr_time, const Velocity & velocity);
+  bool getSourceBaseTransform(
+    const rclcpp::Time & curr_time,
+    const rclcpp::Time & source_time,
+    tf2::Transform & tf2_transform);
 
-// ----- Variables -----
+  // ----- Variables -----
 
-// Collision Monitor node
-nav2_util::LifecycleNode::WeakPtr node_;
+  // Collision Monitor node
+  nav2_util::LifecycleNode::WeakPtr node_;
+  // Store collision monitor node logger for further usage
+  rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
 
-// TF buffer
-std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  // TF buffer
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 
-// Basic parameters
-SourceType source_type_;
-std::string source_name_;
-std::string source_topic_;
-std::string source_frame_id_;
-std::string base_frame_id_;
+  // Basic parameters
+  std::string source_name_;
+  std::string source_frame_id_;
+  std::string base_frame_id_;
+  std::string fixed_frame_id_;
 
-// Data obtained from source in base_frame_id_
-Data data_;
-mutex_t data_mutex_;
-Data data_fixed_;
+  // Transform tolerance
+  tf2::Duration transform_tolerance_;
+  // Maximum allowed time shift between data and collision monitor node
+  tf2::Duration data_timeout_;
 
-// Transform tolerance
-double transform_tolerance_;
-// Maximum allowed time shift between source and collision monitor node clocks
-double max_time_shift_;
-
+  // Latest data timestamp
+  rclcpp::Time data_stamp_;
 };  // class SourceBase
 
 }  // namespace nav2_collision_monitor

@@ -25,29 +25,34 @@ namespace nav2_collision_monitor
 class PointCloud : public SourceBase
 {
 public:
-PointCloud(
-  const nav2_util::LifecycleNode::WeakPtr & node,
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  const std::string source_name,
-  const std::string base_frame_id,
-  const double transform_tolerance,
-  const double max_time_shift);
-virtual ~PointCloud();
+  PointCloud(
+    const nav2_util::LifecycleNode::WeakPtr & node,
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const std::string & source_name,
+    const std::string & base_frame_id,
+    const tf2::Duration & transform_tolerance,
+    const tf2::Duration & data_timeout);
+  virtual ~PointCloud();
 
-virtual bool init();
+  virtual void configure();
+
+  virtual void getData(std::vector<Point> & data, const rclcpp::Time & curr_time);
 
 protected:
-// @brief Getting sensor-specific ROS-parameters
-// @return True if all parameters were obtained or false in failure case
-bool getParameters();
+  // @brief Getting sensor-specific ROS-parameters
+  // Implementation for Polygon class. Calls SourceBase::getParameters() inside.
+  // @param source_topic Output name of source subscription topic
+  void getParameters(std::string & source_topic);
 
-void dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
+  void dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
 
-// Minimum and maximum height of PointCloud projected to 2D space
-double min_height_, max_height_;
+  // Minimum and maximum height of PointCloud projected to 2D space
+  double min_height_, max_height_;
 
-rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr data_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr data_sub_;
 
+  // Data obtained from source
+  sensor_msgs::msg::PointCloud2::ConstSharedPtr data_;
 };  // class PointCloud
 
 }  // namespace nav2_collision_monitor

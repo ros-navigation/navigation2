@@ -16,16 +16,12 @@
 #define NAV2_COLLISION_MONITOR__TYPES_HPP_
 
 #include <vector>
-#include <mutex>
 #include <cmath>
 
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_collision_monitor
 {
-
-// Mutex type is variable for future code flexibility
-typedef std::recursive_mutex mutex_t;
 
 // Velocity for 2D model of motion
 struct Velocity
@@ -44,22 +40,6 @@ struct Velocity
     const double first_vel = x*x + y*y;
     const double second_vel = second.x*second.x + second.y*second.y;
     return first_vel < second_vel;
-  }
-
-  inline Velocity& operator+=(const double & inc)
-  {
-    const double module = std::sqrt(x*x + y*y);
-    if (module != 0.0) {
-      const double change_ratio = (inc + module) / module;
-      x = x * change_ratio;
-      y = y * change_ratio;
-      tw = tw * change_ratio;
-    } else {
-      x = inc;
-      y = 0.0;
-    }
-
-    return *this;
   }
 
   inline Velocity operator*(const double & mul) const
@@ -81,13 +61,6 @@ struct Pose
   double x;  // x-coordinate of pose
   double y;  // y-coordinate of pose
   double theta;  // rotation angle of pose
-};
-
-// 2D point data
-struct Data
-{
-  rclcpp::Time time;
-  std::vector<Point> data;
 };
 
 enum ActionType

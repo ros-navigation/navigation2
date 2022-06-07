@@ -24,119 +24,100 @@ namespace nav2_collision_monitor
 PointCloud::PointCloud(
   const nav2_util::LifecycleNode::WeakPtr & node,
   std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  const std::string source_name,
-  const std::string base_frame_id,
-  const double transform_tolerance,
-  const double max_time_shift)
-: min_height_(0.0), max_height_(0.0)
+  const std::string & source_name,
+  const std::string & base_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const tf2::Duration & data_timeout)
+: SourceBase(node, tf_buffer, source_name, base_frame_id, transform_tolerance, data_timeout),
+  min_height_(0.0), max_height_(0.0)
 {
-  node_ = node;
-  auto node_sptr = node_.lock();
-  if (node_sptr) {
-    RCLCPP_INFO(node_sptr->get_logger(), "Creating PointCloud");
-  }
-
-  tf_buffer_ = tf_buffer;
-
-  source_type_ = POINTCLOUD;
-  source_name_ = source_name;
-  base_frame_id_ = base_frame_id;
-
-  transform_tolerance_ = transform_tolerance;
-  max_time_shift_ = max_time_shift;
+  RCLCPP_INFO(logger_, "[%s]: Creating PointCloud", source_name_.c_str());
 }
 
 PointCloud::~PointCloud() {
-  auto node = node_.lock();
-  if (node) {
-    RCLCPP_INFO(node->get_logger(), "Destroying PointCloud");
-  }
+  RCLCPP_INFO(logger_, "[%s]: Destroying PointCloud", source_name_.c_str());
 
   tf_buffer_.reset();
-
   data_sub_.reset();
 }
 
-bool PointCloud::init()
+void PointCloud::configure()
 {
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  if (!getParameters()) {
-    return false;
-  }
+  std::string source_topic;
+
+  getParameters(source_topic);
 
   rclcpp::QoS pointcloud_qos = rclcpp::SensorDataQoS();  // set to default
   data_sub_ = node->create_subscription<sensor_msgs::msg::PointCloud2>(
-    source_topic_, pointcloud_qos,
+    source_topic, pointcloud_qos,
     std::bind(&PointCloud::dataCallback, this, std::placeholders::_1));
-
-  return true;
 }
 
-bool PointCloud::getParameters()
+void PointCloud::getParameters(std::string & source_topic)
 {
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  if (!SourceBase::getParameters()) {
-    return false;
-  }
+  SourceBase::getParameters(source_topic);
 
-  try {
-    nav2_util::declare_parameter_if_not_declared(
-      node, source_name_ + ".min_height", rclcpp::ParameterValue(0.05));
-    min_height_ = node->get_parameter(source_name_ + ".min_height").as_double();
-    nav2_util::declare_parameter_if_not_declared(
-      node, source_name_ + ".max_height", rclcpp::ParameterValue(0.5));
-    max_height_ = node->get_parameter(source_name_ + ".max_height").as_double();
-  } catch (const std::exception & ex) {
-    RCLCPP_ERROR(
-      node->get_logger(), "Error while getting pointcloud parameters: %s", ex.what());
-    return false;
-  }
-
-  return true;
+  nav2_util::declare_parameter_if_not_declared(
+    node, source_name_ + ".min_height", rclcpp::ParameterValue(0.05));
+  min_height_ = node->get_parameter(source_name_ + ".min_height").as_double();
+  nav2_util::declare_parameter_if_not_declared(
+    node, source_name_ + ".max_height", rclcpp::ParameterValue(0.5));
+  max_height_ = node->get_parameter(source_name_ + ".max_height").as_double();
 }
 
 void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 {
-  std::lock_guard<mutex_t> lock(data_mutex_);
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
 
   // Obtaining source_frame_id_ from first message
   if (source_frame_id_.length() == 0) {
     source_frame_id_ = msg->header.frame_id;
   }
 
-  // Clear old data
-  data_.data.clear();
+  data_ = msg;
+  data_stamp_ = node->now();
+}
 
-  // Set data time
-  data_.time = msg->header.stamp;
-
-  tf2::Transform tf2_transform;
-  // Obtaining the transform to get data from source_frame_id_ to base_frame_id_ frame
-  if (!getTransform(base_frame_id_, source_frame_id_, tf2_transform)) {
+void PointCloud::getData(std::vector<Point> & data, const rclcpp::Time & curr_time)
+{
+  // Ignore data from the source if it is not published for a long time
+  if (!sourceValid(curr_time)) {
     return;
   }
 
-  sensor_msgs::PointCloud2ConstIterator<float> iter_x(*msg, "x");
-  sensor_msgs::PointCloud2ConstIterator<float> iter_y(*msg, "y");
-  sensor_msgs::PointCloud2ConstIterator<float> iter_z(*msg, "z");
+  // Obtaining the transform to get data from source_frame_id_ and time where it was obtained
+  // to base_frame_id_ frame and current time
+  tf2::Transform tf2_transform;
+  if (!getSourceBaseTransform(curr_time, data_stamp_, tf2_transform)) {
+    return;
+  }
 
-  // Fill data array with PointCloud points in base_frame_id_
-  for (int i = 0; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z, i++) {
+  sensor_msgs::PointCloud2ConstIterator<float> iter_x(*data_, "x");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_y(*data_, "y");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_z(*data_, "z");
+
+  // Refill data array with PointCloud points in base_frame_id_
+  for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
     // Transform point coordinates from source_frame_id_ -> to base_frame_id_
     tf2::Vector3 p_v3_s(*iter_x, *iter_y, *iter_z);
     tf2::Vector3 p_v3_b = tf2_transform * p_v3_s;
 
-    // Fill data array
+    // Refill data array
     if (p_v3_b.z() >= min_height_ && p_v3_b.z() <= max_height_) {
-      data_.data.push_back({p_v3_b.x(), p_v3_b.y()});
+      data.push_back({p_v3_b.x(), p_v3_b.y()});
     }
   }
 }

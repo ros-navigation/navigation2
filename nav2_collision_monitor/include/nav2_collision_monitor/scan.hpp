@@ -25,21 +25,26 @@ namespace nav2_collision_monitor
 class Scan : public SourceBase
 {
 public:
-Scan(
-  const nav2_util::LifecycleNode::WeakPtr & node,
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  const std::string source_name,
-  const std::string base_frame_id,
-  const double transform_tolerance,
-  const double max_time_shift);
-virtual ~Scan();
+  Scan(
+    const nav2_util::LifecycleNode::WeakPtr & node,
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const std::string & source_name,
+    const std::string & base_frame_id,
+    const tf2::Duration & transform_tolerance,
+    const tf2::Duration & data_timeout);
+  virtual ~Scan();
 
-virtual bool init();
+  virtual void configure();
+
+  virtual void getData(std::vector<Point> & data, const rclcpp::Time & curr_time);
 
 protected:
-void dataCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr msg);
-rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr data_sub_;
+  void dataCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr msg);
 
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr data_sub_;
+
+  // Data obtained from source
+  sensor_msgs::msg::LaserScan::ConstSharedPtr data_;
 };  // class Scan
 
 }  // namespace nav2_collision_monitor

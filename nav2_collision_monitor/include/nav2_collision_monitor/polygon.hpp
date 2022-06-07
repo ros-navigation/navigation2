@@ -26,20 +26,29 @@ class Polygon : public PolygonBase
 {
 
 public:
-Polygon(
-  const nav2_util::LifecycleNode::WeakPtr & node,
-  const std::string polygon_name,
-  const double simulation_time_step);
-virtual ~Polygon();
+  Polygon(
+    const nav2_util::LifecycleNode::WeakPtr & node,
+    const std::string & polygon_name,
+    const std::string & base_frame_id,
+    const double simulation_time_step);
+  virtual ~Polygon();
 
-bool getParameters();
+  // For STOP/SLOWDOWN model polygon represents safety area around the robot
+  // while for APPROACH model polygon represents robot footprint
+  virtual void getPolygon(std::vector<Point> & poly);
 
-virtual void getPolygon(std::vector<Point> & poly);
-
-virtual bool isPointInside(const Point & point);
+  virtual int getPointsInside(const std::vector<Point> & points);
 
 protected:
-std::vector<Point> poly_;
+  // @brief Supporting routine obtaining all ROS-parameters.
+  // Implementation for Polygon class. Calls PolygonBase::getParameters() inside.
+  // @param polygon_topic Output name of polygon publishing topic
+  // @return True if all parameters were obtained or false in failure case
+  virtual bool getParameters(std::string & polygon_topic);
+
+  bool isPointInside(const Point & point);
+
+  std::vector<Point> poly_;
 };  // class Polygon
 
 }  // namespace nav2_collision_monitor

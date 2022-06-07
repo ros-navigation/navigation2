@@ -14,6 +14,8 @@
 
 #include "nav2_collision_monitor/polygon.hpp"
 
+#include <exception>
+
 #include "nav2_util/node_utils.hpp"
 
 namespace nav2_collision_monitor
@@ -21,47 +23,45 @@ namespace nav2_collision_monitor
 
 Polygon::Polygon(
   const nav2_util::LifecycleNode::WeakPtr & node,
-  const std::string polygon_name,
+  const std::string & polygon_name,
+  const std::string & base_frame_id,
   const double simulation_time_step)
-: poly_(std::vector<Point>())
+: PolygonBase::PolygonBase(node, polygon_name, base_frame_id, simulation_time_step),
+  poly_(std::vector<Point>())
 {
-  node_ = node;
-
-  auto node_sptr = node_.lock();
-  if (node_sptr) {
-    RCLCPP_INFO(node_sptr->get_logger(), "Creating Polygon");
-  }
-
-  polygon_type_ = POLYGON;
-  polygon_name_ = polygon_name;
-  action_type_ = DO_NOTHING;
-
-  stop_points_ = -1;
-  slowdown_ = 0.0;
-  time_before_collision_ = -1.0;
-
-  simulation_time_step_ = simulation_time_step;
+  RCLCPP_INFO(logger_, "[%s]: Creating Polygon", polygon_name_.c_str());
 }
 
 Polygon::~Polygon()
 {
-  auto node_sptr = node_.lock();
-  if (node_sptr) {
-    RCLCPP_INFO(node_sptr->get_logger(), "Destroying Polygon");
-  }
+  RCLCPP_INFO(logger_, "[%s]: Destroying Polygon", polygon_name_.c_str());
 
   poly_.clear();
 }
 
-bool Polygon::getParameters() {
+void Polygon::getPolygon(std::vector<Point> & poly)
+{
+  poly = poly_;
+}
+
+int Polygon::getPointsInside(const std::vector<Point> & points)
+{
+  int num = 0;
+  for (const Point & point : points) {
+    if (isPointInside(point)) {
+      num++;
+    }
+  }
+  return num;
+}
+
+bool Polygon::getParameters(std::string & polygon_topic) {
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  if (!PolygonBase::getParameters()) {
-    return false;
-  }
+  PolygonBase::getParameters(polygon_topic);  // Will always return true
 
   try {
     // Leave it not initialized: the will cause an error if it will not set
@@ -72,8 +72,8 @@ bool Polygon::getParameters() {
     // Check for format correctness
     if (poly_row.size() <= 4 || poly_row.size() % 2 != 0) {
       RCLCPP_ERROR(
-        node->get_logger(),
-        "Polygon \"%s\" has incorrect points description",
+        logger_,
+        "[%s]: Polygon has incorrect points description",
         polygon_name_.c_str());
       return false;
     }
@@ -91,19 +91,17 @@ bool Polygon::getParameters() {
       first = !first;
     }
   } catch (const std::exception & ex) {
-    RCLCPP_ERROR(node->get_logger(), "Error while getting polygon parameters: %s", ex.what());
+    RCLCPP_ERROR(
+      logger_,
+      "[%s]: Error while getting polygon parameters: %s",
+      polygon_name_.c_str(), ex.what());
     return false;
   }
 
   return true;
 }
 
-void Polygon::getPolygon(std::vector<Point> & poly)
-{
-  poly = poly_;
-}
-
-bool Polygon::isPointInside(const Point & point)
+inline bool Polygon::isPointInside(const Point & point)
 {
   // Implementation of crossings algorithm for point in polygon task solving.
   // Y coordinate is fixed. Moving on X+ axis starting from given point.

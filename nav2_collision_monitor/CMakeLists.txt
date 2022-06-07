@@ -37,8 +37,8 @@ set(dependencies
   nav2_util
 )
 
-set(library_name collision_monitor)
-set(executable_name collision_monitor_node)
+set(executable_name collision_monitor)
+set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
   src/collision_monitor_node.cpp
@@ -67,7 +67,7 @@ ament_target_dependencies(${executable_name}
   ${dependencies}
 )
 
-rclcpp_components_register_nodes(${library_name} "nav2_collision_monitor::CollisionMonitorNode")
+rclcpp_components_register_nodes(${library_name} "nav2_collision_monitor::CollisionMonitor")
 
 ### Install ###
 
@@ -102,6 +102,7 @@ install(DIRECTORY params DESTINATION share/${PROJECT_NAME})
 ### Ament stuff ###
 
 ament_export_include_directories(include)
+ament_export_libraries(${library_name})
 ament_export_dependencies(${dependencies})
 
 ament_package()

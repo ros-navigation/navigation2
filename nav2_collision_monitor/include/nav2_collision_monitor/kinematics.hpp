@@ -20,17 +20,20 @@
 namespace nav2_collision_monitor
 {
 
-// Interpolates the position of fixed point in robot_base frame
-// moving with towards velocity for dt time interval
-void transformPoint(const Velocity & velocity, const double dt, Point & point);
+// @brief Do a transformation of points' coordinates from the frame coinciding with the (0,0) origin
+// to the non-existing in ROS frame, which origin is equal to pose
+// @param pose Origin of the new frame
+// @param points Array of points whose coordinates will be transformed
+void transformPoints(const Pose & pose, std::vector<Point> & points);
 
-// Transforms point to current_pose frame
-void transformPoint(const Pose & curr_pose, Point & point);
-
-// Linearly moves pose towards to velocity direction on dt time interval.
-// Velocity is being rotated on twist angle for dt time interval.
-// NOTE: dt should be relatively small to consider all movements to be linear
-void stepRobot(Velocity & velocity, const double dt, Pose & pose);
+// @brief Linearly projects pose towards to velocity direction on dt time interval.
+// Turns the velocity on twist angle for dt time interval.
+// @param dt Time step (in seconds). Should be relatively small
+// to consider all movements to be linear.
+// @param pose Pose to be projected
+// @param velocity Velocity which the pose to be moved.
+// It is also being rotated on according twist angle.
+void projectState(const double dt, Pose & pose, Velocity & velocity);
 
 }  // namespace nav2_collision_monitor
 

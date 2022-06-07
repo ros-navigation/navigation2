@@ -30,7 +30,7 @@ def generate_launch_description():
     package_dir = get_package_share_directory('nav2_collision_monitor')
 
     # Constant parameters
-    lifecycle_nodes = ['collision_monitor_node']
+    lifecycle_nodes = ['collision_monitor']
     autostart = True
 
     # Launch arguments
@@ -71,15 +71,14 @@ def generate_launch_description():
             executable='lifecycle_manager',
             name='lifecycle_manager',
             output='screen',
-            #prefix=['xterm -e gdb -ex run --args'],
             emulate_tty=True,  # https://github.com/ros2/launch/issues/188
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
                         {'node_names': lifecycle_nodes}])
 
-    start_collision_monitor_node_cmd = Node(
+    start_collision_monitor_cmd = Node(
             package='nav2_collision_monitor',
-            executable='collision_monitor_node',
+            executable='collision_monitor',
             output='screen',
             emulate_tty=True,
             parameters=[configured_params])  # https://github.com/ros2/launch/issues/188
@@ -93,6 +92,6 @@ def generate_launch_description():
 
     # Node launching commands
     ld.add_action(start_lifecycle_manager_cmd)
-    ld.add_action(start_collision_monitor_node_cmd)
+    ld.add_action(start_collision_monitor_cmd)
 
     return ld

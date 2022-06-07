@@ -1,37 +1,37 @@
-collision_monitor_node:
+collision_monitor:
   ros__parameters:
     use_sim_time: True
     base_frame_id: "base_footprint"
     odom_topic: "/odom"
-    polygon_topic: "polygons"
-    cmd_vel_in_topic: "/cmd_vel_raw"
-    cmd_vel_out_topic: "/cmd_vel"
+    cmd_vel_in_topic: "cmd_vel_raw"
+    cmd_vel_out_topic: "cmd_vel"
     transform_tolerance: 0.1
-    max_time_shift: 10.0
+    data_timeout: 5.0
     simulation_time_step: 0.02
-    release_step: 0.002
+    release_acceleration: 0.1
     polygons: ["PolygonStop"]
     PolygonStop:
       type: "polygon"
       points: [0.5, 0.5, 0.5, -0.5, -0.1, -0.5, -0.1, 0.5, 0.5, 0.5]
       action_type: "stop"
-      stop_points: 5
-    PolygonApp:
-      type: "polygon"
-      points: [0.15, 0.15, 0.15, -0.15, -0.15, -0.15, -0.15, 0.15, 0.15, 0.15]
-      action_type: "approach"
-      time_before_crash: 2.0
+      max_points: 3
+      visualize: True
+      polygon_topic: "polygon_stop"
     PolygonSlow:
       type: "polygon"
       points: [0.5, 0.5, 0.5, -0.5, -0.1, -0.5, -0.1, 0.5, 0.5, 0.5]
       action_type: "slowdown"
-      stop_points: 5
-      slowdown: 0.3
-    CircleStop:
+      max_points: 3
+      slowdown_ratio: 0.3
+      visualize: True
+      polygon_topic: "polygon_slowdown"
+    CircleApp:
       type: "circle"
-      radius: 0.5
-      action_type: "stop"
-      stop_points: 5
+      radius: 0.25
+      action_type: "approach"
+      time_before_collision: 2.0
+      visualize: True
+      polygon_topic: "circle_approach"
     observation_sources: ["scan"]
     scan:
       type: "scan"

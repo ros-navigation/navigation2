@@ -22,10 +22,9 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "geometry_msgs/msg/polygon_stamped.hpp"
-#include "geometry_msgs/msg/polygon.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
+#include "tf2/time.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 
@@ -40,19 +39,19 @@
 namespace nav2_collision_monitor
 {
 
-class CollisionMonitorNode : public nav2_util::LifecycleNode
+class CollisionMonitor : public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief Constructor for the nav2_collision_safery::CollisionMonitorNode.
+   * @brief Constructor for the nav2_collision_safery::CollisionMonitor.
    * Sets class variables, declares ROS-parameters
    */
-  CollisionMonitorNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  CollisionMonitor(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
-   * @brief Destructor for the nav2_collision_safery::CollisionMonitorNode.
+   * @brief Destructor for the nav2_collision_safery::CollisionMonitor.
    * Deletes allocated resources
    */
-  ~CollisionMonitorNode();
+  ~CollisionMonitor();
 
 protected:
   /**
@@ -62,14 +61,14 @@ protected:
    */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
-   * @brief: Activates LifecyclePublishers and main worker, creates bond connection,
+   * @brief: Activates LifecyclePublishers and main processor, creates bond connection,
    * creates polygon publisher thread
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
-   * @brief: Deactivates LifecyclePublishers and main worker,
+   * @brief: Deactivates LifecyclePublishers and main processor,
    * resets opeartion states to their defaults, stops polygon publisher thread,
    * destroys bond connection
    * @param state Lifecycle Node's state
@@ -77,7 +76,7 @@ protected:
    */
   nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
-   * @brief: Resets all subscribers/publishers/threads timers,
+   * @brief: Resets all subscribers/publishers/threads,
    * deletes allocated resources, resets velocity
    * @param state Lifecycle Node's state
    * @return Success or Failure
@@ -99,38 +98,71 @@ protected:
   // @param msg Incoming odom message
   void odomCallback(nav_msgs::msg::Odometry::ConstSharedPtr msg);
 
-  // @brief Get latest detected velocity
-  // @return Latest velocity
-  Velocity getVelocity();
   // @brief Tells whether a valid velocity was received
+  // @param curr_time Current node time for odometry verification
   // @return Velocity is valid or not
-  bool velocityValid();
-  // @brief Resets velocity to its initial non-valid state
-  void resetVelocity();
+  bool velocityValid(const rclcpp::Time & curr_time);
 
   // @brief Callback for input cmd_vel
   // @param msg Input cmd_vel message
   void cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg);
-  // @brief Gets input cmv_vel
-  // @return Input cmd_vel
-  Velocity getCmdVelIn();
 
   // @brief Publishes output cmd_vel
   // @param vel Output velocity to publish
   void publishVelocity(const Velocity & vel);
 
   // @brief Supporting routine obtaining all ROS-parameters
+  // @param odom_topic Output name of odom topic
+  // @param cmd_vel_in_topic Output name of cmd_vel_in topic
+  // @param cmd_vel_out_topic Output name of cmd_vel_out topic
   // @return True if all parameters were obtained or false in failure case
-  bool getParameters();
+  bool getParameters(
+    std::string & odom_topic,
+    std::string & cmd_vel_in_topic,
+    std::string & cmd_vel_out_topic);
 
-  // @brief Worker main routine
-  void workerMain();
-  // @brief Sets main worker to a given state
-  // @param worker_active State for worker (active or non-active)
-  void setWorkerActive(const bool worker_active);
-  // @brief Gets main worker state
-  // @return Curret state of main worker routine
-  bool getWorkerActive();
+  // @brief Main processing routine
+  void processMain();
+  // @brief Sets main processing to a given state
+  // @param process_active State for main processing routine (active or non-active)
+  void setProcessActive(const bool process_active);
+  // @brief Gets main processing state
+  // @return Curret state of main processing routine
+  bool getProcessActive();
+  // @brief Processing the polygon of STOP and SLOWDOWN action type
+  // @param polygon Polygon to process
+  // @param collision_points Array of 2D obstacle points
+  // @param velocity Desired robot velocity
+  // @param robot_action Output processed robot action
+  void processStopSlowdown(
+    const std::shared_ptr<PolygonBase> polygon,
+    const std::vector<Point> & collision_points,
+    const Velocity & velocity,
+    Action & robot_action);
+  // @brief Processing the polygon of APPROACH action type
+  // @param polygon Polygon to process
+  // @param collision_points Array of 2D obstacle points
+  // @param velocity Current robot velocity
+  // @param min_collision_time Minimum time to collision
+  // @param robot_action Output processed robot action
+  void processApproach(
+    const std::shared_ptr<PolygonBase> polygon,
+    const std::vector<Point> & collision_points,
+    const Velocity & velocity,
+    double & min_collision_time,
+    Action & robot_action);
+  // @brief Accelerate robot from APPROACH to its normal operation:
+  // this gradual speed increase is a smoothing, made to wipe out
+  // the twitching of the robot conditioned by sensors data noise.
+  // @param curr_time Current node time for velocity change calculation
+  // @param max_vel Maximum robot velocity
+  // @param robot_action Output processed robot action
+  void releaseOperation(
+     const rclcpp::Time & curr_time, const Velocity & max_vel, Action & robot_action);
+
+  // @brief Prints robot action and its speed, in case if robot is not in normal operation
+  // @param robot_action Robot action to print
+  void printAction(const Action & robot_action);
 
   // ----- Variables -----
 
@@ -139,48 +171,42 @@ protected:
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   // Polygons
-  std::vector<std::string> polygon_names_;
   std::vector<std::shared_ptr<PolygonBase>> polygons_;
-  std::string polygon_topic_;
-  geometry_msgs::msg::Polygon polygons_pub_;  // All polygons points stored for publisging
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
-  rclcpp::TimerBase::SharedPtr polygon_pub_timer_;
 
   // Data sources
-  std::vector<std::string> source_names_;
   std::vector<std::shared_ptr<SourceBase>> sources_;
 
   // Odom callback
-  std::string odom_topic_;
+  bool first_odom_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
 
   // Working with velocity
   Velocity velocity_;
-  bool velocity_valid_;
-  mutex_t velocity_mutex_;
+  // Whether the velocity was received
+  bool velocity_received_;
+  // Latest odometry timestamp
+  rclcpp::Time velocity_stamp_;
 
   // Input/output speed controls
-  std::string cmd_vel_in_topic_, cmd_vel_out_topic_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_sub_;
   Velocity cmd_vel_in_;
-  mutex_t cmd_vel_in_mutex_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
 
   // Global parameters
-  std::string base_frame_id_;
-  double max_time_shift_;
+  tf2::Duration data_timeout_;
 
   // Working with main routine
-  bool worker_active_;
-  mutex_t worker_active_mutex_;
+  bool process_active_;
 
   // Previous robot action state
-  Action ra_prev_;
+  Action robot_action_prev_;
   // Gradually release normal robot operation
   bool release_operation_;
-  // Step to increase robot speed towards to normal operation
-  double release_step_;
-};  // class CollisionMonitorNode
+  // Robot acceleration when increase the speed towards to normal operation
+  double release_acceleration_;
+  // Previous timestamp. Used for robot acceleration.
+  rclcpp::Time prev_time_;
+};  // class CollisionMonitor
 
 }  // namespace nav2_collision_monitor
 

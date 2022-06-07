@@ -16,6 +16,7 @@
 
 #include <math.h>
 #include <cmath>
+#include <exception>
 
 #include "nav2_util/node_utils.hpp"
 
@@ -24,63 +25,24 @@ namespace nav2_collision_monitor
 
 Circle::Circle(
   const nav2_util::LifecycleNode::WeakPtr & node,
-  const std::string polygon_name,
+  const std::string & polygon_name,
+  const std::string & base_frame_id,
   const double simulation_time_step)
-: radius_(0.0)
+: PolygonBase::PolygonBase(node, polygon_name, base_frame_id, simulation_time_step),
+  radius_(0.0)
 {
-  node_ = node;
-
-  auto node_sptr = node_.lock();
-  if (node_sptr) {
-    RCLCPP_INFO(node_sptr->get_logger(), "Creating Circle");
-  }
-
-  polygon_type_ = CIRCLE;
-  polygon_name_ = polygon_name;
-  action_type_ = DO_NOTHING;
-
-  stop_points_ = -1;
-  slowdown_ = 0.0;
-  time_before_collision_ = -1.0;
-
-  simulation_time_step_ = simulation_time_step;
+  RCLCPP_INFO(logger_, "[%s]: Creating Circle", polygon_name_.c_str());
 }
 
 Circle::~Circle()
 {
-  auto node_sptr = node_.lock();
-  if (node_sptr) {
-    RCLCPP_INFO(node_sptr->get_logger(), "Destroying Circle");
-  }
-}
-
-bool Circle::getParameters() {
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  if (!PolygonBase::getParameters()) {
-    return false;
-  }
-
-  try {
-    // Leave it not initialized: the will cause an error if it will not set
-    nav2_util::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".radius", rclcpp::PARAMETER_DOUBLE);
-    radius_ = node->get_parameter(polygon_name_ + ".radius").as_double();
-  } catch (const std::exception & ex) {
-    RCLCPP_ERROR(node->get_logger(), "Error while getting circle parameters: %s", ex.what());
-    return false;
-  }
-
-  return true;
+  RCLCPP_INFO(logger_, "[%s]: Destroying Circle", polygon_name_.c_str());
 }
 
 void Circle::getPolygon(std::vector<Point> & poly)
 {
   // Number of polygon points. More edges means better approximation.
-  const double polygon_edges = 20;
+  const double polygon_edges = 16;
   // Increment of angle during points position calculation
   double angle_increment = 2 * M_PI / polygon_edges;
 
@@ -100,9 +62,41 @@ void Circle::getPolygon(std::vector<Point> & poly)
   poly.push_back(p);
 }
 
-bool Circle::isPointInside(const Point & point)
+int Circle::getPointsInside(const std::vector<Point> & points)
 {
-  return point.x*point.x + point.y*point.y < radius_*radius_;
+  int num = 0;
+  for(Point point : points) {
+    if (point.x*point.x + point.y*point.y < radius_squared_) {
+      num++;
+    }
+  }
+
+  return num;
+}
+
+bool Circle::getParameters(std::string & polygon_topic) {
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  PolygonBase::getParameters(polygon_topic);  // Will always return true
+
+  try {
+    // Leave it not initialized: the will cause an error if it will not set
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + ".radius", rclcpp::PARAMETER_DOUBLE);
+    radius_ = node->get_parameter(polygon_name_ + ".radius").as_double();
+    radius_squared_ = radius_*radius_;
+  } catch (const std::exception & ex) {
+    RCLCPP_ERROR(
+      logger_,
+      "[%s]: Error while getting circle parameters: %s",
+      polygon_name_.c_str(), ex.what());
+    return false;
+  }
+
+  return true;
 }
 
 }  // namespace nav2_collision_monitor

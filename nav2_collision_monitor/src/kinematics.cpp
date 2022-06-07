@@ -19,35 +19,24 @@
 namespace nav2_collision_monitor
 {
 
-void transformPoint(const Velocity & velocity, const double dt, Point & point)
+void transformPoints(const Pose & pose, std::vector<Point> & points)
 {
-  // p = R*p' + vel*dt
-  // p' = Rt * (p - vel*dt)
-  // R = [ cos_theta sin_theta]
-  //     [-sin_theta cos_theta]
+  const double cos_theta = std::cos(pose.theta);
+  const double sin_theta = std::sin(pose.theta);
 
-  const double mul_x = point.x - velocity.x * dt;
-  const double mul_y = point.y - velocity.y * dt;
-  const double theta = velocity.tw * dt;
-  const double cos_theta = std::cos(theta);
-  const double sin_theta = std::sin(theta);
-  point.x = mul_x * cos_theta + mul_y * sin_theta;
-  point.y = -mul_x * sin_theta + mul_y * cos_theta;
+  for (Point & point : points) {
+    // p = R*p' + pose
+    // p' = Rt * (p - pose)
+    // R = [ cos_theta sin_theta]
+    //     [-sin_theta cos_theta]
+    const double mul_x = point.x - pose.x;
+    const double mul_y = point.y - pose.y;
+    point.x = mul_x * cos_theta + mul_y * sin_theta;
+    point.y = -mul_x * sin_theta + mul_y * cos_theta;
+  }
 }
 
-void transformPoint(const Pose & curr_pose, Point & point)
-{
-  // p = R*p' + curr_pose
-  // p' = Rt * (p - curr_pose)
-  const double mul_x = point.x - curr_pose.x;
-  const double mul_y = point.y - curr_pose.y;
-  const double cos_theta = std::cos(curr_pose.theta);
-  const double sin_theta = std::sin(curr_pose.theta);
-  point.x = mul_x * cos_theta + mul_y * sin_theta;
-  point.y = -mul_x * sin_theta + mul_y * cos_theta;
-}
-
-void stepRobot(Velocity & velocity, const double dt, Pose & pose)
+void projectState(const double dt, Pose & pose, Velocity & velocity)
 {
   const double theta = velocity.tw * dt;
   const double cos_theta = std::cos(theta);
