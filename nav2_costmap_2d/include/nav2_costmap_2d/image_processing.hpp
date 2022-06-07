@@ -76,20 +76,21 @@ inline Image<uint8_t> createShape(ShapeBuffer3x3 & buffer, ConnectivityType conn
 
 /**
  * @brief Perform morphological dilation
+ * @tparam Max function object
  * @param input input image
  * @param output output image
  * @param connectivity selector for selecting structuring element (Way4-> cross, Way8-> rect)
+ * @param max_function returns the greatest of the input values
  */
+template<class Max>
 inline void dilate(
   const Image<uint8_t> & input, Image<uint8_t> & output,
-  ConnectivityType connectivity)
+  ConnectivityType connectivity, Max && max_function)
 {
   using namespace imgproc_impl;
-  auto aggregate = [](std::initializer_list<uint8_t> lst) {
-      return std::max(lst);
-    };
   ShapeBuffer3x3 shape_buffer;
-  morphologyOperation(input, output, createShape(shape_buffer, connectivity), aggregate);
+  Image<uint8_t> shape = createShape(shape_buffer, connectivity);
+  morphologyOperation(input, output, shape, max_function);
 }
 
 /**
@@ -736,7 +737,7 @@ void morphologyOperation(
   auto set = [&](uint8_t & res, std::initializer_list<uint8_t> lst) {res = aggregate(lst);};
   // Update the pixel of the output image
   auto update = [&](uint8_t & res, std::initializer_list<uint8_t> lst) {
-      res = aggregate({res, aggregate(lst)});
+      res = aggregate({res, aggregate(lst), 0});
     };
 
   // Apply the second shape row

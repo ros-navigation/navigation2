@@ -163,7 +163,25 @@ DenoiseLayer::removeSinglePixels(Image<uint8_t> & image) const
   uint8_t * buf = buffer_.get<uint8_t>(image.rows() * image.columns());
   Image<uint8_t> max_neighbors_image(image.rows(), image.columns(), buf, image.columns());
 
-  dilate(image, max_neighbors_image, group_connectivity_type_);
+  // If NO_INFORMATION (=255) isn't obstacle, we can't use a simple max() to check
+  // any obstacle nearby. In this case, we interpret NO_INFORMATION as an empty space.
+  if (!no_information_is_obstacle_) {
+    auto max = [](const std::initializer_list<uint8_t> lst) {
+        std::array<uint8_t, 3> buf{{*lst.begin(), *(lst.begin() + 1), *(lst.begin() + 2)}};
+        for (auto & el: buf) {
+          if (el == 255) {
+            el = 0;
+          }
+        }
+        return *std::max_element(buf.begin(), buf.end());
+      };
+    dilate(image, max_neighbors_image, group_connectivity_type_, max);
+  } else {
+    auto max = [](const std::initializer_list<uint8_t> lst) {
+        return std::max(lst);
+      };
+    dilate(image, max_neighbors_image, group_connectivity_type_, max);
+  }
 
   max_neighbors_image.convert(
     image, [this](uint8_t maxNeighbor, uint8_t & img) {
