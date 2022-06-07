@@ -16,6 +16,7 @@
   <exec_depend>nav2_amcl</exec_depend>
   <exec_depend>nav2_behavior_tree</exec_depend>
   <exec_depend>nav2_bt_navigator</exec_depend>
+  <exec_depend>nav2_constrained_smoother</exec_depend>
   <exec_depend>nav2_controller</exec_depend>
   <exec_depend>nav2_core</exec_depend>
   <exec_depend>nav2_costmap_2d</exec_depend>
