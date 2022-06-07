@@ -37,13 +37,6 @@ SourceBase::SourceBase(
   transform_tolerance_(transform_tolerance), data_timeout_(data_timeout)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating SourceBase", source_name_.c_str());
-
-  auto node_shared = node_.lock();
-  if (!node_shared) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  data_stamp_ = {0, 0, node_shared->get_clock()->get_clock_type()};
 }
 
 SourceBase::~SourceBase()

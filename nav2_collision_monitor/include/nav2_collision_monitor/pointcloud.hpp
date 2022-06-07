@@ -15,6 +15,8 @@
 #ifndef NAV2_COLLISION_MONITOR__POINTCLOUD_HPP_
 #define NAV2_COLLISION_MONITOR__POINTCLOUD_HPP_
 
+#include <string>
+
 #include "nav2_collision_monitor/source_base.hpp"
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
@@ -22,9 +24,15 @@
 namespace nav2_collision_monitor
 {
 
+/**
+ * @brief Implementation for pointcloud source
+ */
 class PointCloud : public SourceBase
 {
 public:
+  /**
+   * @brief PointCloud constructor
+   */
   PointCloud(
     const nav2_util::LifecycleNode::WeakPtr & node,
     std::shared_ptr<tf2_ros::Buffer> tf_buffer,
@@ -32,26 +40,46 @@ public:
     const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance,
     const tf2::Duration & data_timeout);
+  /**
+   * @brief PointCloud destructor
+   */
   virtual ~PointCloud();
 
+  /**
+   * @brief Data source configuration routine. Obtains data source related ROS-parameters
+   * and creates data source subscriber.
+   */
   virtual void configure();
 
-  virtual void getData(std::vector<Point> & data, const rclcpp::Time & curr_time);
+  /**
+   * @brief Adds latest data from pointcloud source to the data array.
+   * @param curr_time Current node time for data interpolation
+   * @param data Array where the data from pointcloud to be added.
+   * Added data is converted to base_frame_id coordinate system at curr_time.
+   */
+  virtual void getData(const rclcpp::Time & curr_time, std::vector<Point> & data);
 
 protected:
-  // @brief Getting sensor-specific ROS-parameters
-  // Implementation for Polygon class. Calls SourceBase::getParameters() inside.
-  // @param source_topic Output name of source subscription topic
+  /**
+   * @brief Getting sensor-specific ROS-parameters
+   * Implementation for Polygon class. Calls SourceBase::getParameters() inside.
+   * @param source_topic Output name of source subscription topic
+   */
   void getParameters(std::string & source_topic);
 
+  /**
+   * @brief PointCloud data callback
+   * @param msg Shared pointer to PointCloud message
+   */
   void dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
 
   // Minimum and maximum height of PointCloud projected to 2D space
   double min_height_, max_height_;
 
+  /// @brief PointCloud data subscriber
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr data_sub_;
 
-  // Data obtained from source
+  /// @brief Latest data obtained from pointcloud
   sensor_msgs::msg::PointCloud2::ConstSharedPtr data_;
 };  // class PointCloud
 

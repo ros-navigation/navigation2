@@ -26,8 +26,7 @@ Polygon::Polygon(
   const std::string & polygon_name,
   const std::string & base_frame_id,
   const double simulation_time_step)
-: PolygonBase::PolygonBase(node, polygon_name, base_frame_id, simulation_time_step),
-  poly_(std::vector<Point>())
+: PolygonBase::PolygonBase(node, polygon_name, base_frame_id, simulation_time_step)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Polygon", polygon_name_.c_str());
 }

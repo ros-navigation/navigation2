@@ -29,9 +29,15 @@
 namespace nav2_collision_monitor
 {
 
+/**
+ * @brief Basic data source class
+ */
 class SourceBase
 {
 public:
+  /**
+   * @brief SourceBase constructor
+   */
   SourceBase(
     const nav2_util::LifecycleNode::WeakPtr & node,
     std::shared_ptr<tf2_ros::Buffer> tf_buffer,
@@ -39,22 +45,55 @@ public:
     const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance,
     const tf2::Duration & data_timeout);
+  /**
+   * @brief SourceBase destructor
+   */
   virtual ~SourceBase();
 
+  /**
+   * @brief Data source configuration routine.
+   * Empty virtual method intended to be used in child implementations.
+   */
   virtual void configure() = 0;
 
-  virtual void getData(
-    std::vector<Point> & data, const rclcpp::Time & curr_time) = 0;
-
+  /**
+   * @brief Sets fixed frame ID. Used in data frame interpolation
+   * @param fixed_frame_id Fixed frame ID
+   */
   void setFixedFrameId(const std::string & fixed_frame_id);
 
+  /**
+   * @brief Adds latest data from source to the data array.
+   * Empty virtual method intended to be used in child implementations.
+   * @param curr_time Current node time for data interpolation
+   * @param data Array where the data from source to be added.
+   * Added data is converted to base_frame_id coordinate system at curr_time.
+   */
+  virtual void getData(
+    const rclcpp::Time & curr_time, std::vector<Point> & data) = 0;
+
 protected:
-  // @brief Supporting routine obtaining all ROS-parameters.
-  // @param source_topic Output name of source subscription topic
+  /**
+   * @brief Supporting routine obtaining all ROS-parameters
+   * @param source_topic Output name of source subscription topic
+   */
   void getParameters(std::string & source_topic);
 
+  /**
+   * @brief Checks whether the source might be considered as valid
+   * @param curr_time Current node time for source verification
+   * @return True if data source is valid, otherwise false
+   */
   bool sourceValid(const rclcpp::Time & curr_time);
 
+  /**
+   * @brief Obtains a transform from source_frame_id at source_time ->
+   * to base_frame_id at current node time
+   * @param curr_time Current node timestamp to interpolate data to
+   * @param source_time Source timestamp to convert data from
+   * @param tf2_transform Output source->base transform
+   * @return True if got correct transform, otherwise false
+   */
   bool getSourceBaseTransform(
     const rclcpp::Time & curr_time,
     const rclcpp::Time & source_time,
@@ -62,26 +101,30 @@ protected:
 
   // ----- Variables -----
 
-  // Collision Monitor node
+  /// @brief Collision Monitor node
   nav2_util::LifecycleNode::WeakPtr node_;
-  // Store collision monitor node logger for further usage
+  /// @brief Collision monitor node logger stored for further usage
   rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
 
-  // TF buffer
+  /// @brief TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 
   // Basic parameters
+  /// @brief Name of data source
   std::string source_name_;
+  /// @brief Source frame ID
   std::string source_frame_id_;
+  /// @brief Base frame ID
   std::string base_frame_id_;
+  /// @brief Fixed frame ID. Used to get source->base time inerpolated transform.
   std::string fixed_frame_id_;
 
-  // Transform tolerance
+  /// @brief Transform tolerance
   tf2::Duration transform_tolerance_;
-  // Maximum allowed time shift between data and collision monitor node
+  /// @brief Maximum allowed time shift between data and collision monitor node
   tf2::Duration data_timeout_;
 
-  // Latest data timestamp
+  /// @brief Latest data timestamp
   rclcpp::Time data_stamp_;
 };  // class SourceBase
 

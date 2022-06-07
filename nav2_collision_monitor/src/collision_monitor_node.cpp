@@ -27,11 +27,10 @@ namespace nav2_collision_monitor
 
 CollisionMonitor::CollisionMonitor(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("collision_monitor", "", false, options),
-  first_odom_(false), velocity_({0.0, 0.0, 0.0}),
-  velocity_received_(false), velocity_stamp_{0, 0, get_clock()->get_clock_type()},
-  cmd_vel_in_({0.0, 0.0, 0.0}),
-  robot_action_prev_({DO_NOTHING, {0.0, 0.0, 0.0}}), release_operation_(false),
-  prev_time_{0, 0, get_clock()->get_clock_type()}
+  first_odom_(false), velocity_({0.0, 0.0, 0.0}), velocity_received_(false),
+  velocity_stamp_{0, 0, get_clock()->get_clock_type()}, cmd_vel_in_({0.0, 0.0, 0.0}),
+  process_active_(false), robot_action_prev_({DO_NOTHING, {0.0, 0.0, 0.0}}),
+  release_operation_(false), prev_time_{0, 0, get_clock()->get_clock_type()}
 {
   RCLCPP_INFO(get_logger(), "Creating CollisionMonitor");
 }
@@ -54,7 +53,7 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
     this->get_node_base_interface(),
     this->get_node_timers_interface());
   tf_buffer_->setCreateTimerInterface(timer_interface);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_); 
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   std::string odom_topic;
   std::string cmd_vel_in_topic;
@@ -93,12 +92,12 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
     polygon->activate();
   }
 
-  // Beacause polygons are being published when cmd_vel_in appears,
+  // Since polygons are being published when cmd_vel_in appears,
   // we need to publish polygons first time to display them at startup
   publishPolygons();
 
   // Activating main worker
-  setProcessActive(true);
+  process_active_ = true;
 
   // Creating bond connection
   createBond();
@@ -112,7 +111,7 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   // Deactivating main worker
-  setProcessActive(false);
+  process_active_ = false;
 
   // Reset opeartion states to their defaults after worker deactivating
   release_operation_ = false;
@@ -160,13 +159,6 @@ CollisionMonitor::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void CollisionMonitor::publishPolygons()
-{
-  for (std::shared_ptr<PolygonBase> polygon : polygons_) {
-    polygon->publish();
-  }
-}
-
 void CollisionMonitor::odomCallback(nav_msgs::msg::Odometry::ConstSharedPtr msg)
 {
   // Obtaining odom_frame_id_ from first message and setting it as fixed frame for data sources
@@ -208,7 +200,6 @@ bool CollisionMonitor::velocityValid(const rclcpp::Time & curr_time)
 void CollisionMonitor::cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg)
 {
   cmd_vel_in_ = {msg->linear.x, msg->linear.y, msg->angular.z};
-
   processMain();
 }
 
@@ -352,7 +343,7 @@ void CollisionMonitor::processMain()
 
   // Do nothing if main worker in non-active state
   // or if velocity is not received yet
-  if (!getProcessActive() || !velocityValid(curr_time)) {
+  if (!process_active_ || !velocityValid(curr_time)) {
     return;
   }
 
@@ -361,11 +352,8 @@ void CollisionMonitor::processMain()
 
   // Fill collision_points array from different data sources
   for (std::shared_ptr<SourceBase> source : sources_) {
-    source->getData(collision_points, curr_time);
+    source->getData(curr_time, collision_points);
   }
-
-  // ToDo: Add nearest points bounds estimation by using all polygons and current velocity
-  // and then cut-off of extra points out of calculated bounds
 
   // By default - there is no action
   Action robot_action{DO_NOTHING, {0.0, 0.0, 0.0}};
@@ -389,7 +377,7 @@ void CollisionMonitor::processMain()
 
   // In APPROACH model due to sensors noise calculated speed of robot might be instantly changed
   // causing robot to twitch. To avoid this, when releasing robot after APPROACH,
-  // its speed should be increased gradually smmothing the twitches over time until robot will
+  // its speed should be increased gradually smoothing the twitches over time until robot will
   // reach its desired normal opration.
   if (robot_action.action_type == DO_NOTHING) {
     if (robot_action_prev_.action_type == APPROACH) {
@@ -421,16 +409,6 @@ void CollisionMonitor::processMain()
   }
 
   publishPolygons();
-}
-
-void CollisionMonitor::setProcessActive(const bool process_active)
-{
-  process_active_ = process_active;
-}
-
-bool CollisionMonitor::getProcessActive()
-{
-  return process_active_;
 }
 
 void CollisionMonitor::processStopSlowdown(
@@ -466,7 +444,7 @@ void CollisionMonitor::processApproach(
     Action & robot_action)
 {
   const double collision_time = polygon->getCollisionTime(collision_points, velocity);
-  if (collision_time > 0.0 &&
+  if (collision_time >= 0.0 &&
     collision_time <= polygon->getTimeBeforeCollision() &&
     collision_time < min_collision_time)
   {
@@ -482,28 +460,31 @@ void CollisionMonitor::processApproach(
 }
 
 void CollisionMonitor::releaseOperation(
-  const rclcpp::Time & curr_time, const Velocity & max_vel, Action & robot_action)
+  const rclcpp::Time & curr_time, const Velocity & desired_vel, Action & robot_action)
 {
   Velocity release_vel = robot_action_prev_.req_vel;
-  const double vel_module =
+  // Previous robot speed
+  const double prev_vel_module =
     std::sqrt(release_vel.x * release_vel.x + release_vel.y * release_vel.y);
+  // Speed increase step: acceleration during (curr_time - prev_time_) interval
   const double vel_change = release_acceleration_ * (curr_time - prev_time_).seconds();
-  if (vel_module != 0.0) {
-    const double change_ratio = (vel_module + vel_change) / vel_module;
-    release_vel.x = release_vel.x * change_ratio;
-    release_vel.y = release_vel.y * change_ratio;
-    release_vel.tw = release_vel.tw * change_ratio;
-  } else {
-    release_vel.x = vel_change;
-    release_vel.y = 0.0;
-  }
+  // Maximum (desired) robot speed
+  const double desired_vel_module =
+    std::sqrt(desired_vel.x * desired_vel.x + desired_vel.y * desired_vel.y);
 
-  // Check that approximately increased velocity does not exceed maximum speed
-  if (release_vel < max_vel) {
+  // Calculate speed ratio as previous speed increased on acceleration
+  // during (curr_time - prev_time_) time interval towards desired velocity
+  const double change_ratio = (prev_vel_module + vel_change) / desired_vel_module;
+  release_vel.x = desired_vel.x * change_ratio;
+  release_vel.y = desired_vel.y * change_ratio;
+  release_vel.tw = desired_vel.tw * change_ratio;
+
+  // Check that approximately increased velocity does not exceed the desired speed
+  if (release_vel < desired_vel) {
     robot_action.req_vel = release_vel;
   } else {
-    robot_action.req_vel = max_vel;
-    // Robot already reached its normal speed: releasing its to usual operation
+    robot_action.req_vel = desired_vel;
+    // Robot already reached its desired speed: continuing normal operation
     release_operation_ = false;
   }
 }
@@ -529,6 +510,13 @@ void CollisionMonitor::printAction(const Action & robot_action)
         "Robot to release for (Vx, Vy, Tw) = (%f, %f, %f)",
         robot_action.req_vel.x, robot_action.req_vel.y, robot_action.req_vel.tw);
     }
+  }
+}
+
+void CollisionMonitor::publishPolygons()
+{
+  for (std::shared_ptr<PolygonBase> polygon : polygons_) {
+    polygon->publish();
   }
 }
 

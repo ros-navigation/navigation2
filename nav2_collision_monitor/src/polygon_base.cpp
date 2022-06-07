@@ -27,7 +27,7 @@ PolygonBase::PolygonBase(
   const double simulation_time_step)
 : node_(node), polygon_name_(polygon_name), base_frame_id_(base_frame_id),
   action_type_(DO_NOTHING), max_points_(-1), slowdown_ratio_(0.0), time_before_collision_(-1.0),
-  simulation_time_step_(simulation_time_step)
+  simulation_time_step_(simulation_time_step), visualize_(false)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating PolygonBase", polygon_name_.c_str());
 }

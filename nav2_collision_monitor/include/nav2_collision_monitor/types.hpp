@@ -23,7 +23,7 @@
 namespace nav2_collision_monitor
 {
 
-// Velocity for 2D model of motion
+/// @brief Velocity for 2D model of motion
 struct Velocity
 {
   double x;  // x-component of linear velocity
@@ -48,14 +48,14 @@ struct Velocity
   }
 };
 
-// 2D point
+/// @brief 2D point
 struct Point
 {
   double x;  // x-coordinate of point
   double y;  // y-coordinate of point
 };
 
-// 2D Pose
+/// @brief 2D Pose
 struct Pose
 {
   double x;  // x-coordinate of pose
@@ -63,6 +63,7 @@ struct Pose
   double theta;  // rotation angle of pose
 };
 
+/// @brief Action type for robot
 enum ActionType
 {
   DO_NOTHING = 0,  // No action
@@ -71,7 +72,7 @@ enum ActionType
   APPROACH = 3  // Keep constant time interval before collision
 };
 
-// Action for robot
+/// @brief Action for robot
 struct Action
 {
   ActionType action_type;

@@ -16,34 +16,59 @@
 #define NAV2_COLLISION_MONITOR__CIRCLE_HPP_
 
 #include <vector>
+#include <string>
 
 #include "nav2_collision_monitor/polygon_base.hpp"
 
 namespace nav2_collision_monitor
 {
 
+/**
+ * @brief Circle shape implementaiton
+ */
 class Circle : public PolygonBase
 {
 public:
+  /**
+   * @brief Circle class constructor
+   */
   Circle(
     const nav2_util::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
     const std::string & base_frame_id,
     const double simulation_time_step);
+  /**
+   * @brief Circle class destructor
+   */
   virtual ~Circle();
 
+  /**
+   * @brief Gets polygon points, approximated for circle.
+   * To be used in visualization purposes.
+   * @param poly Output polygon points (vertices)
+   */
   virtual void getPolygon(std::vector<Point> & poly);
 
+  /**
+   * @brief Gets number of points inside circle
+   * @param points Input array of points to be checked
+   * @return Number of points inside circle. If there are no points,
+   * returns zero-value
+   */
   virtual int getPointsInside(const std::vector<Point> & points);
 
 protected:
-  // @brief Supporting routine obtaining all ROS-parameters.
-  // Implementation for Circle class. Calls PolygonBase::getParameters() inside.
-  // @param polygon_topic Output name of polygon publishing topic
-  // @return True if all parameters were obtained or false in failure case
+  /**
+   * @brief Supporting routine obtaining all ROS-parameters.
+   * Implementation for Circle class. Calls PolygonBase::getParameters() inside.
+   * @param polygon_topic Output name of polygon publishing topic
+   * @return True if all parameters were obtained or false in failure case
+   */
   virtual bool getParameters(std::string & polygon_topic);
 
+  /// @brief Radius of the circle
   double radius_;
+  /// @brief (radius * radius) value. Stored for optimization.
   double radius_squared_;
 };  // class Circle
 

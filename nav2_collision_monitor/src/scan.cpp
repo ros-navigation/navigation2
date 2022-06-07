@@ -26,7 +26,8 @@ Scan::Scan(
   const std::string & base_frame_id,
   const tf2::Duration & transform_tolerance,
   const tf2::Duration & data_timeout)
-: SourceBase(node, tf_buffer, source_name, base_frame_id, transform_tolerance, data_timeout)
+: SourceBase(node, tf_buffer, source_name, base_frame_id, transform_tolerance, data_timeout),
+  data_(nullptr)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Scan", source_name_.c_str());
 }
@@ -56,21 +57,11 @@ void Scan::configure()
     std::bind(&Scan::dataCallback, this, std::placeholders::_1));
 }
 
-void Scan::dataCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr msg)
+void Scan::getData(const rclcpp::Time & curr_time, std::vector<Point> & data)
 {
-  // Obtaining source_frame_id_ from first message
-  if (source_frame_id_.length() == 0) {
-    source_frame_id_ = msg->header.frame_id;
-  }
-
-  data_ = msg;
-  data_stamp_ = msg->header.stamp;
-}
-
-void Scan::getData(std::vector<Point> & data, const rclcpp::Time & curr_time)
-{
-  // Ignore data from the source if it is not published for a long time
-  if (!sourceValid(curr_time)) {
+  // Ignore data from the source if it is not being published yet or
+  // not published for a long time
+  if (data_ == nullptr || !sourceValid(curr_time)) {
     return;
   }
 
@@ -97,6 +88,17 @@ void Scan::getData(std::vector<Point> & data, const rclcpp::Time & curr_time)
     }
     angle += data_->angle_increment;
   }
+}
+
+void Scan::dataCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr msg)
+{
+  // Obtaining source_frame_id_ from first message
+  if (source_frame_id_.length() == 0) {
+    source_frame_id_ = msg->header.frame_id;
+  }
+
+  data_ = msg;
+  data_stamp_ = msg->header.stamp;
 }
 
 }  // namespace nav2_collision_monitor

@@ -15,6 +15,8 @@
 #ifndef NAV2_COLLISION_MONITOR__SCAN_HPP_
 #define NAV2_COLLISION_MONITOR__SCAN_HPP_
 
+#include <string>
+
 #include "nav2_collision_monitor/source_base.hpp"
 
 #include "sensor_msgs/msg/laser_scan.hpp"
@@ -22,9 +24,15 @@
 namespace nav2_collision_monitor
 {
 
+/**
+ * @brief Implementation for laser scanner source
+ */
 class Scan : public SourceBase
 {
 public:
+  /**
+   * @brief Scan constructor
+   */
   Scan(
     const nav2_util::LifecycleNode::WeakPtr & node,
     std::shared_ptr<tf2_ros::Buffer> tf_buffer,
@@ -32,18 +40,36 @@ public:
     const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance,
     const tf2::Duration & data_timeout);
+  /**
+   * @brief Scan destructor
+   */
   virtual ~Scan();
 
+  /**
+   * @brief Data source configuration routine. Obtains data source related ROS-parameters
+   * and creates data source subscriber.
+   */
   virtual void configure();
 
-  virtual void getData(std::vector<Point> & data, const rclcpp::Time & curr_time);
+  /**
+   * @brief Adds latest data from laser scanner to the data array.
+   * @param curr_time Current node time for data interpolation
+   * @param data Array where the data from laser scanner to be added.
+   * Added data is converted to base_frame_id coordinate system at curr_time.
+   */
+  virtual void getData(const rclcpp::Time & curr_time, std::vector<Point> & data);
 
 protected:
+  /**
+   * @brief Laser scanner data callback
+   * @param msg Shared pointer to LaserScan message
+   */
   void dataCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr msg);
 
+  /// @brief Laser scanner data subscriber
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr data_sub_;
 
-  // Data obtained from source
+  /// @brief Latest data obtained from laser scanner
   sensor_msgs::msg::LaserScan::ConstSharedPtr data_;
 };  // class Scan
 

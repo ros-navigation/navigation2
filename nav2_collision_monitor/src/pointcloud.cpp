@@ -29,7 +29,7 @@ PointCloud::PointCloud(
   const tf2::Duration & transform_tolerance,
   const tf2::Duration & data_timeout)
 : SourceBase(node, tf_buffer, source_name, base_frame_id, transform_tolerance, data_timeout),
-  min_height_(0.0), max_height_(0.0)
+  min_height_(0.0), max_height_(0.0), data_(nullptr)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating PointCloud", source_name_.c_str());
 }
@@ -56,6 +56,38 @@ void PointCloud::configure()
   data_sub_ = node->create_subscription<sensor_msgs::msg::PointCloud2>(
     source_topic, pointcloud_qos,
     std::bind(&PointCloud::dataCallback, this, std::placeholders::_1));
+}
+
+void PointCloud::getData(const rclcpp::Time & curr_time, std::vector<Point> & data)
+{
+  // Ignore data from the source if it is not being published yet or
+  // not published for a long time
+  if (data_ == nullptr || !sourceValid(curr_time)) {
+    return;
+  }
+
+  // Obtaining the transform to get data from source_frame_id_ and time where it was obtained
+  // to base_frame_id_ frame and current time
+  tf2::Transform tf2_transform;
+  if (!getSourceBaseTransform(curr_time, data_stamp_, tf2_transform)) {
+    return;
+  }
+
+  sensor_msgs::PointCloud2ConstIterator<float> iter_x(*data_, "x");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_y(*data_, "y");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_z(*data_, "z");
+
+  // Refill data array with PointCloud points in base_frame_id_
+  for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+    // Transform point coordinates from source_frame_id_ -> to base_frame_id_
+    tf2::Vector3 p_v3_s(*iter_x, *iter_y, *iter_z);
+    tf2::Vector3 p_v3_b = tf2_transform * p_v3_s;
+
+    // Refill data array
+    if (p_v3_b.z() >= min_height_ && p_v3_b.z() <= max_height_) {
+      data.push_back({p_v3_b.x(), p_v3_b.y()});
+    }
+  }
 }
 
 void PointCloud::getParameters(std::string & source_topic)
@@ -89,37 +121,6 @@ void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 
   data_ = msg;
   data_stamp_ = node->now();
-}
-
-void PointCloud::getData(std::vector<Point> & data, const rclcpp::Time & curr_time)
-{
-  // Ignore data from the source if it is not published for a long time
-  if (!sourceValid(curr_time)) {
-    return;
-  }
-
-  // Obtaining the transform to get data from source_frame_id_ and time where it was obtained
-  // to base_frame_id_ frame and current time
-  tf2::Transform tf2_transform;
-  if (!getSourceBaseTransform(curr_time, data_stamp_, tf2_transform)) {
-    return;
-  }
-
-  sensor_msgs::PointCloud2ConstIterator<float> iter_x(*data_, "x");
-  sensor_msgs::PointCloud2ConstIterator<float> iter_y(*data_, "y");
-  sensor_msgs::PointCloud2ConstIterator<float> iter_z(*data_, "z");
-
-  // Refill data array with PointCloud points in base_frame_id_
-  for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
-    // Transform point coordinates from source_frame_id_ -> to base_frame_id_
-    tf2::Vector3 p_v3_s(*iter_x, *iter_y, *iter_z);
-    tf2::Vector3 p_v3_b = tf2_transform * p_v3_s;
-
-    // Refill data array
-    if (p_v3_b.z() >= min_height_ && p_v3_b.z() <= max_height_) {
-      data.push_back({p_v3_b.x(), p_v3_b.y()});
-    }
-  }
 }
 
 }  // namespace nav2_collision_monitor
