@@ -301,6 +301,7 @@ public:
   inline T & c() {return border_.up(up_row_ + 1);}
   inline T & d() {return border_.down(down_row_ - 1);}
   inline T & e() {return border_.down(down_row_);}
+  inline const T * anchor() const {return down_row_;}
 
   /// @brief Shifts the window to the right
   inline void next()
@@ -795,7 +796,9 @@ Label connectedComponentsImpl(
     auto img = makeSafeWindow<uint8_t>(nullptr, image.row(0), image.columns());
     auto lbl = makeSafeWindow<Label>(nullptr, labels.row(0), image.columns());
 
-    for (; &img.e() < image.row(0) + image.columns(); img.next(), lbl.next()) {
+    const uint8_t * first_line_end = image.row(0) + image.columns();
+
+    for (; img.anchor() < first_line_end; img.next(), lbl.next()) {
       PixelPass::pass(img, lbl, label_trees, is_background);
     }
   }
@@ -820,7 +823,7 @@ Label connectedComponentsImpl(
     auto img = makeUnsafeWindow(std::next(up), std::next(current));
     const uint8_t * current_line_last = current + image.columns() - 1;
 
-    for (; &img.e() < current_line_last; img.next(), label_mask.next()) {
+    for (; img.anchor() < current_line_last; img.next(), label_mask.next()) {
       PixelPass::pass(img, label_mask, label_trees, is_background);
     }
 
