@@ -171,7 +171,6 @@ geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
 
 void AssistedTeleop::teleopVelocityCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-  RCLCPP_INFO(logger_, "HIT TELEOP CALLBACK");
   teleop_twist_ = *msg;
 }
 

@@ -23,7 +23,6 @@
 #include "std_msgs/msg/empty.hpp"
 #include "nav2_behaviors/timed_behavior.hpp"
 #include "nav2_msgs/action/assisted_teleop.hpp"
-#include "sensor_msgs/msg/joy.hpp"
 
 namespace nav2_behaviors
 {

@@ -31,10 +31,8 @@ using nav2_system_tests::AssistedTeleopBehaviorTester;
 
 struct TestParameters
 {
-  float x;
-  float y;
-  float speed;
-  float tolerance;
+  float lin_vel;
+  float ang_vel;
 };
 
 
@@ -74,35 +72,22 @@ AssistedTeleopBehaviorTestFixture::assisted_teleop_behavior_tester = nullptr;
 TEST_P(AssistedTeleopBehaviorTestFixture, testAssistedTeleopBehavior)
 {
   auto test_params = GetParam();
-  auto goal = nav2_msgs::action::AssistedTeleop::Goal();
-  // goal.target.x = test_params.x;
-  // goal.target.y = test_params.y;
-  // goal.speed = test_params.speed;
-  float tolerance = test_params.tolerance;
 
   if (!assisted_teleop_behavior_tester->isActive()) {
     assisted_teleop_behavior_tester->activate();
   }
 
   bool success = false;
-  success = assisted_teleop_behavior_tester->defaultAssistedTeleopTest(goal, tolerance);
-
-  // float dist_to_obstacle = 2.0f;
-
-  // if ( ((dist_to_obstacle - std::fabs(test_params.x)) < std::fabs(goal.speed)) ||
-  //   std::fabs(goal.target.y) > 0)
-  // {
-  //   EXPECT_FALSE(success);
-  // } else {
-  //   EXPECT_TRUE(success);
-  // }
+  success = assisted_teleop_behavior_tester->defaultAssistedTeleopTest(
+    test_params.lin_vel,
+    test_params.ang_vel);
 
   EXPECT_TRUE(success);
 }
 
-std::vector<TestParameters> test_params = {TestParameters{-0.05, 0.0, -0.2, 0.01},
-  TestParameters{-0.05, 0.1, -0.2, 0.01},
-  TestParameters{-2.0, 0.0, -0.2, 0.1}};
+std::vector<TestParameters> test_params = {TestParameters{-0.1, 0.0},
+  TestParameters{0.35, 0.0},
+  TestParameters{-0.35, 0.05}};
 
 INSTANTIATE_TEST_SUITE_P(
   TestAssistedTeleopBehavior,

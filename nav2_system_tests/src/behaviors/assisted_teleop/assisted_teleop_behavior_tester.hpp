@@ -22,15 +22,18 @@
 #include <thread>
 #include <algorithm>
 
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
 #include "angles/angles.h"
-#include "nav2_msgs/action/assisted_teleop.hpp"
-#include "std_msgs/msg/empty.hpp"
-#include "nav2_util/robot_utils.hpp"
-#include "nav2_util/node_thread.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/pose2_d.hpp"
+#include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
+#include "nav2_msgs/action/assisted_teleop.hpp"
+#include "nav2_util/node_thread.hpp"
+#include "nav2_util/robot_utils.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/empty.hpp"
 
 #include "tf2/utils.h"
 #include "tf2_ros/buffer.h"
@@ -50,8 +53,8 @@ public:
 
   // Runs a single test with given target yaw
   bool defaultAssistedTeleopTest(
-    const AssistedTeleop::Goal goal_msg,
-    const double tolerance);
+    const float lin_vel,
+    const float ang_vel);
 
   void activate();
 
@@ -67,6 +70,9 @@ private:
 
   void amclPoseCallback(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr);
 
+  void filteredVelCallback(geometry_msgs::msg::Twist::SharedPtr msg);
+
+  unsigned int counter_;
   bool is_active_;
   bool initial_pose_received_;
   rclcpp::Time stamp_;
@@ -76,16 +82,22 @@ private:
 
   rclcpp::Node::SharedPtr node_;
 
-  // Publisher to publish initial pose
-  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr publisher_;
-
+  // Publishers
+  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_pub_;
   rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr preempt_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
 
-  // Subscriber for amcl pose
+  // Subscribers
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr filtered_vel_sub_;
 
   // Action client to call AssistedTeleop action
   rclcpp_action::Client<AssistedTeleop>::SharedPtr client_ptr_;
+
+  // collision checking
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+  std::unique_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
 };
 
 }  // namespace nav2_system_tests
