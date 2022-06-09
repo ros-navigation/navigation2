@@ -65,6 +65,7 @@ void AssistedTeleop::onConfigure()
 
 Status AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAction::Goal> command)
 {
+  preempt_teleop_ = false;
   command_time_allowance_ = command->time_allowance;
   end_time_ = steady_clock_.now() + command_time_allowance_;
   return Status::SUCCEEDED;
