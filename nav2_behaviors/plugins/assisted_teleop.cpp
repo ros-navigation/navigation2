@@ -176,7 +176,6 @@ void AssistedTeleop::teleopVelocityCallback(const geometry_msgs::msg::Twist::Sha
 
 void AssistedTeleop::preemptTeleopCallback(const std_msgs::msg::Empty::SharedPtr)
 {
-  RCLCPP_INFO(logger_, "HIT PREEMPT CALLBACK");
   preempt_teleop_ = true;
 }
 

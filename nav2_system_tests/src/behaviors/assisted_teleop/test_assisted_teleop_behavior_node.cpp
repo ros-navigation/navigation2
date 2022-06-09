@@ -86,16 +86,14 @@ TEST_P(AssistedTeleopBehaviorTestFixture, testAssistedTeleopBehavior)
 }
 
 std::vector<TestParameters> test_params = {TestParameters{-0.1, 0.0},
-  TestParameters{0.35, 0.0},
-  TestParameters{-0.35, 0.05}};
+  TestParameters{0.35, 0.05}};
 
 INSTANTIATE_TEST_SUITE_P(
   TestAssistedTeleopBehavior,
   AssistedTeleopBehaviorTestFixture,
   ::testing::Values(
     test_params[0],
-    test_params[1],
-    test_params[2]),
+    test_params[1]),
   testNameGenerator
 );
 

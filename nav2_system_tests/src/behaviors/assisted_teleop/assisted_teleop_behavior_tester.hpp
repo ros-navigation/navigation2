@@ -46,7 +46,6 @@ class AssistedTeleopBehaviorTester
 {
 public:
   using AssistedTeleop = nav2_msgs::action::AssistedTeleop;
-  // using GoalHandleBackup = rclcpp_action::ClientGoalHandle<BackUp>;
 
   AssistedTeleopBehaviorTester();
   ~AssistedTeleopBehaviorTester();
