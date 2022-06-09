@@ -164,6 +164,7 @@ int main(int argc, char ** argv)
   int retcode;
   try {
     auto map_saver = std::make_shared<nav2_map_server::MapSaver>();
+    map_saver->on_configure(rclcpp_lifecycle::State());
     if (map_saver->saveMapTopicToFile(map_topic, save_parameters)) {
       retcode = 0;
     } else {
