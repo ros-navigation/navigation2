@@ -142,9 +142,6 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
     return false;
   }
 
-  // Sleep to let behavior server be ready for serving in multiple runs
-  std::this_thread::sleep_for(1s);
-
   RCLCPP_INFO(node_->get_logger(), "Sending goal");
 
   auto goal_handle_future = client_ptr_->async_send_goal(nav2_msgs::action::AssistedTeleop::Goal());
