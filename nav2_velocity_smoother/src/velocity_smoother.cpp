@@ -74,7 +74,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
   node->get_parameter("max_accel", max_accels_);
   node->get_parameter("max_decel", max_decels_);
 
-  for (int i = 0; i != max_decels_.size(); i++) {
+  for (unsigned int i = 0; i != max_decels_.size(); i++) {
     if (max_decels_[i] > 0.0) {
       RCLCPP_WARN(
         get_logger(),
