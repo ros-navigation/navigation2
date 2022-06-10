@@ -79,7 +79,8 @@ void FlatWeightedArrowsArray::updateManualObject(
   float alpha,
   float min_length,
   float max_length,
-  const std::vector<nav2_rviz_plugins::OgrePoseWithWeight> & poses)
+  float height_scale,
+  std::vector<nav2_rviz_plugins::OgrePoseWithWeight> & poses)
 {
   clear();
 
@@ -89,7 +90,7 @@ void FlatWeightedArrowsArray::updateManualObject(
 
   manual_object_->begin(
     material_->getName(), Ogre::RenderOperation::OT_LINE_LIST, "rviz_rendering");
-  setManualObjectVertices(color, min_length, max_length, poses);
+  setManualObjectVertices(color, min_length, max_length, height_scale, poses);
   manual_object_->end();
 }
 
@@ -111,14 +112,18 @@ void FlatWeightedArrowsArray::setManualObjectVertices(
   const Ogre::ColourValue & color,
   float min_length,
   float max_length,
-  const std::vector<nav2_rviz_plugins::OgrePoseWithWeight> & poses)
+  float height_scale,
+  std::vector<nav2_rviz_plugins::OgrePoseWithWeight> & poses)
 {
   manual_object_->estimateVertexCount(poses.size() * 6);
 
   float scale = max_length - min_length;
   float length;
-  for (const auto & pose : poses) {
+  for (auto & pose : poses) {
     length = std::min(std::max(pose.weight * scale + min_length, min_length), max_length);
+    
+    pose.position.z = pose.weight * height_scale;
+    
     Ogre::Vector3 vertices[6];
     vertices[0] = pose.position;  // back of arrow
     vertices[1] =

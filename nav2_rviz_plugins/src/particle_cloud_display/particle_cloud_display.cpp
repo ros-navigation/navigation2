@@ -97,7 +97,7 @@ ParticleCloudDisplay::ParticleCloudDisplay(
 }
 
 ParticleCloudDisplay::ParticleCloudDisplay()
-: min_length_(0.02f), max_length_(0.3f)
+: min_length_(0.02f), max_length_(0.3f), height_scale_(5.0f)
 {
   initializeProperties();
 
@@ -108,6 +108,7 @@ ParticleCloudDisplay::ParticleCloudDisplay()
   arrow_alpha_property_->setMax(1);
   arrow_min_length_property_->setMax(max_length_);
   arrow_max_length_property_->setMin(min_length_);
+  arrow_height_scale_property_->setMin(0);
 }
 
 void ParticleCloudDisplay::initializeProperties()
@@ -130,6 +131,9 @@ void ParticleCloudDisplay::initializeProperties()
 
   arrow_max_length_property_ = new rviz_common::properties::FloatProperty(
     "Max Arrow Length", max_length_, "Maximum length of the arrows.", this, SLOT(updateGeometry()));
+
+  arrow_height_scale_property_ = new rviz_common::properties::FloatProperty(
+    "Arrow Height Scale", height_scale_, "Scaling factor for arrow height", this, SLOT(updateGeometry()));
 
   // Scales are set based on initial values
   length_scale_ = max_length_ - min_length_;
@@ -237,6 +241,7 @@ void ParticleCloudDisplay::updateArrows2d()
     arrow_alpha_property_->getFloat(),
     min_length_,
     max_length_,
+    height_scale_,
     poses_);
 }
 
@@ -262,6 +267,9 @@ void ParticleCloudDisplay::updateArrows3d()
       shaft_length * head_length_scale_,
       shaft_length * head_radius_scale_
     );
+
+    poses_[i].position.z = poses_[i].weight * height_scale_;
+
     arrows3d_[i]->setPosition(poses_[i].position);
     arrows3d_[i]->setOrientation(poses_[i].orientation * adjust_orientation);
   }
@@ -281,6 +289,9 @@ void ParticleCloudDisplay::updateAxes()
       std::max(
         poses_[i].weight * length_scale_ + min_length_,
         min_length_), max_length_);
+
+    poses_[i].position.z = poses_[i].weight * height_scale_;
+
     axes_[i]->set(shaft_length, shaft_length * shaft_radius_scale_);
     axes_[i]->setPosition(poses_[i].position);
     axes_[i]->setOrientation(poses_[i].orientation);
@@ -356,6 +367,7 @@ void ParticleCloudDisplay::updateGeometry()
 {
   min_length_ = arrow_min_length_property_->getFloat();
   max_length_ = arrow_max_length_property_->getFloat();
+  height_scale_ = arrow_height_scale_property_->getFloat();
   length_scale_ = max_length_ - min_length_;
 
   arrow_min_length_property_->setMax(max_length_);
