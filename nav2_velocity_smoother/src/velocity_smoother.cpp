@@ -74,6 +74,14 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
   node->get_parameter("max_accel", max_accels_);
   node->get_parameter("max_decel", max_decels_);
 
+  for (int i = 0; i != max_decels_.size(); i++) {
+    if (max_decels_[i] > 0.0) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Positive values set of deceleration! These should be negative to slow down!");
+    }
+  }
+
   // Get feature parameters
   declare_parameter_if_not_declared(node, "odom_topic", rclcpp::ParameterValue("odom"));
   declare_parameter_if_not_declared(node, "odom_duration", rclcpp::ParameterValue(0.1));
