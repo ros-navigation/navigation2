@@ -56,7 +56,7 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<geometry_msgs::msg::PoseStamped>("goals", "Destinations to plan through"),
-        BT::InputPort<geometry_msgs::msg::PoseStamped>("behavior_tree", "Behavior tree to run"),
+        BT::InputPort<std::string>("behavior_tree", "Behavior tree to run"),
       });
   }
 };
