@@ -90,7 +90,7 @@ float Node2D::getHeuristicCost(
 }
 
 void Node2D::initMotionModel(
-  const MotionModel & neighborhood,
+  const MotionModel & motion_model,
   unsigned int & x_size_uint,
   unsigned int & /*size_y*/,
   unsigned int & /*num_angle_quantization*/,
