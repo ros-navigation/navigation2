@@ -65,10 +65,10 @@ void SmacPlanner2D::configure(
     node, name + ".tolerance", rclcpp::ParameterValue(0.125));
   _tolerance = static_cast<float>(node->get_parameter(name + ".tolerance").as_double());
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".downsample_costmap", rclcpp::ParameterValue(true));
+    node, name + ".downsample_costmap", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".downsample_costmap", _downsample_costmap);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".downsampling_factor", rclcpp::ParameterValue(2));
+    node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
   node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cost_travel_multiplier", rclcpp::ParameterValue(1.0));
