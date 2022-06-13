@@ -42,16 +42,16 @@ void AssistedTeleop::onConfigure()
 
   nav2_util::declare_parameter_if_not_declared(
     node,
-    "teleop_cmd_vel", rclcpp::ParameterValue(std::string("teleop_cmd_vel")));
+    "cmd_vel_teleop", rclcpp::ParameterValue(std::string("cmd_vel_teleop")));
 
   node->get_parameter("projection_time", projection_time_);
   node->get_parameter("simulation_time_step", simulation_time_step_);
 
-  std::string teleop_cmd_vel;
-  node->get_parameter("teleop_cmd_vel", teleop_cmd_vel);
+  std::string cmd_vel_teleop;
+  node->get_parameter("cmd_vel_teleop", cmd_vel_teleop);
 
   vel_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
-    teleop_cmd_vel, rclcpp::SystemDefaultsQoS(),
+    cmd_vel_teleop, rclcpp::SystemDefaultsQoS(),
     std::bind(
       &AssistedTeleop::teleopVelocityCallback,
       this, std::placeholders::_1));

@@ -54,7 +54,7 @@ AssistedTeleopBehaviorTester::AssistedTeleopBehaviorTester()
     node_->create_publisher<std_msgs::msg::Empty>("preempt_teleop", 10);
 
   cmd_vel_pub_ =
-    node_->create_publisher<geometry_msgs::msg::Twist>("teleop_cmd_vel", 10);
+    node_->create_publisher<geometry_msgs::msg::Twist>("cmd_vel_teleop", 10);
 
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
