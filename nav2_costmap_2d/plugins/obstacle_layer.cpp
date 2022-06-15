@@ -319,9 +319,7 @@ ObstacleLayer::laserScanCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr message,
   const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer)
 {
-  if (!active_) {
-    return;
-  }
+  if (!active_) {return;}
 
   // project the laser into a point cloud
   sensor_msgs::msg::PointCloud2 cloud;
@@ -357,9 +355,7 @@ ObstacleLayer::laserScanValidInfCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr raw_message,
   const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer)
 {
-  if(!active_){
-    return;
-  }
+  if (!active_) {return;}
 
   // Filter positive infinities ("Inf"s) to max_range.
   float epsilon = 0.0001;  // a tenth of a millimeter
@@ -404,9 +400,7 @@ ObstacleLayer::pointCloud2Callback(
   sensor_msgs::msg::PointCloud2::ConstSharedPtr message,
   const std::shared_ptr<ObservationBuffer> & buffer)
 {
-  if (!active_) {
-    return;
-  }
+  if (!active_) {return;}
 
   // buffer the point cloud
   buffer->lock();
@@ -708,7 +702,6 @@ ObstacleLayer::activate()
   }
 
   resetBuffersLastUpdated();
-
   active_ = true;
 }
 
