@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <numeric>
 
 #include "builtin_interfaces/msg/duration.hpp"
 #include "nav2_util/costmap.hpp"
@@ -541,13 +542,15 @@ void PlannerServer::isPathValid(
     return;
   }
 
+  // Find the closest point to the robot to evaluate from
+  // TODO add orientation element like `truncate_path_local_action` BT node for looping paths
   geometry_msgs::msg::PoseStamped current_pose;
   unsigned int closest_point_index = 0;
   if (costmap_ros_->getRobotPose(current_pose)) {
     float current_distance = std::numeric_limits<float>::max();
     float closest_distance = current_distance;
     geometry_msgs::msg::Point current_point = current_pose.pose.position;
-    for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
+    for (unsigned int i = 0; i != request->path.poses.size(); ++i) {
       geometry_msgs::msg::Point path_point = request->path.poses[i].pose.position;
 
       current_distance = nav2_util::geometry_utils::euclidean_distance(
@@ -559,25 +562,62 @@ void PlannerServer::isPathValid(
         closest_distance = current_distance;
       }
     }
+  }
 
-    /**
-     * The lethal check starts at the closest point to avoid points that have already been passed
-     * and may have become occupied
-     */
-    unsigned int mx = 0;
-    unsigned int my = 0;
-    for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
-      costmap_->worldToMap(
-        request->path.poses[i].pose.position.x,
-        request->path.poses[i].pose.position.y, mx, my);
-      unsigned int cost = costmap_->getCost(mx, my);
+  // Checking path for collisions starting at the closest point to avoid those already passed
+  std::vector<unsigned int> current_costs;
+  current_costs.reserve(request->path.size() - closest_point_index - 1);
 
-      if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
-      {
-        response->is_valid = false;
-      }
+  unsigned int mx = 0;
+  unsigned int my = 0;
+  for (unsigned int i = closest_point_index; i != request->path.poses.size(); ++i) {
+    costmap_->worldToMap(
+      request->path.poses[i].pose.position.x,
+      request->path.poses[i].pose.position.y, mx, my);
+    unsigned int cost = costmap_->getCost(mx, my);
+    current_costs.push_back(cost);
+
+    if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+      cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+    {
+      response->is_valid = false;
     }
+  }
+
+  // Check using a statistical test if the cost changes are 'significant' enough
+  // to warrant replanning, due to changes in cost within the environment,
+  // when larger than the minimum sample size for the test
+  if (!request->consider_cost_change || request->path.poses.size() < 30) {
+    return;
+  }
+
+  std::vector<unsigned int> original_costs(
+    request->path.costs.begin() + closest_point_index, request->path.costs.end());
+
+  float mean_a, mean_b;
+  for (unsigned int i = 0; i != original_costs.size(); ++i) {
+    mean_a += static_cast<float>(original_costs[i]);
+    mean_b += static_cast<float>(current_costs[i]);
+  }
+  mean_a /= static_cast<float>(original_costs.size());
+  mean_b /= static_cast<float>(current_costs.size());
+
+  float var_a, var_b;
+  for (unsigned int i = 0; i != original_costs.size(); ++i) {
+    var_a += static_cast<float>(original_costs[i]) - static_cast<float>(mean_a);
+    var_b += static_cast<float>(current_costs[i]) - static_cast<float>(mean_b);
+  }
+  var_a /= static_cast<float>(original_costs.size() - 1);
+  var_b /= static_cast<float>(current_costs.size() - 1);
+
+  // Conduct a two sample Z-test, with the null hypothesis is that both path cost samples
+  // come from the same distribution (e.g. there is not a statistically significant change)
+  // Thus, the difference in population mean is 0 and the sample sizes are the same
+  float z = (mean_b - mean_a) / std::sqrt((var_b + var_a) / current_costs.size());
+  // TODO try single tail or tune strictness? Parameterize?
+  // 1.65 95% single tail; 2.55 for 99% dual, 2.33 99% single; 90% 1.65 dual, 90% 1.2 single.
+  if (z > 1.96) {  // critical z score for 95% level
+    response->is_valid = false;
   }
 }
 
