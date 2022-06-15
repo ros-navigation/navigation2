@@ -33,7 +33,7 @@ namespace nav2_lifecycle_manager
 {
 
 LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
-: Node("lifecycle_manager", options)
+: Node("lifecycle_manager", options), diagnostics_updater_(this)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -103,6 +103,8 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
       executor->add_callback_group(callback_group_, get_node_base_interface());
       service_thread_ = std::make_unique<nav2_util::NodeThread>(executor);
     });
+  diagnostics_updater_.setHardwareID("Nav2");
+  diagnostics_updater_.add("Nav2 Health", this, &LifecycleManager::CreateActiveDiagnostic);
 }
 
 LifecycleManager::~LifecycleManager()
@@ -143,6 +145,16 @@ LifecycleManager::isActiveCallback(
   std::shared_ptr<std_srvs::srv::Trigger::Response> response)
 {
   response->success = system_active_;
+}
+
+void
+LifecycleManager::CreateActiveDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat)
+{
+  if (system_active_) {
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Nav2 is active");
+  } else {
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Nav2 is inactive");
+  }
 }
 
 void

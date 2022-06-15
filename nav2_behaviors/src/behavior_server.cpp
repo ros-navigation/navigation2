@@ -23,7 +23,7 @@ namespace behavior_server
 {
 
 BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
-: LifecycleNode("behavior_server", "", false, options),
+: LifecycleNode("behavior_server", "", options),
   plugin_loader_("nav2_core", "nav2_core::Behavior"),
   default_ids_{"spin", "backup", "drive_on_heading", "wait"},
   default_types_{"nav2_behaviors/Spin",

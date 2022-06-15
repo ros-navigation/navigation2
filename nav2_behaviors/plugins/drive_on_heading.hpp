@@ -93,8 +93,6 @@ public:
   Status onCycleUpdate()
   {
     rclcpp::Duration time_remaining = end_time_ - this->steady_clock_.now();
-    RCLCPP_ERROR_STREAM(this->logger_, "Time remaining" << time_remaining.seconds());
-    RCLCPP_ERROR_STREAM(this->logger_, "Time remaining" << command_time_allowance_.seconds());
     if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
       this->stopRobot();
       RCLCPP_WARN(

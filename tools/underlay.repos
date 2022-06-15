@@ -23,7 +23,7 @@ repositories:
   #   type: git
   #   url: https://github.com/ompl/ompl.git
   #   version: main
-  ros-simulation/gazebo_ros_pkgs:
-    type: git
-    url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
-    version: ros2
+  # ros-simulation/gazebo_ros_pkgs:
+  #   type: git
+  #   url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
+  #   version: ros2
