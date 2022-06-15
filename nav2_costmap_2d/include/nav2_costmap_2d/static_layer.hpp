@@ -40,6 +40,7 @@
 
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include "map_msgs/msg/occupancy_grid_update.hpp"
 #include "message_filters/subscriber.h"

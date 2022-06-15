@@ -183,7 +183,7 @@ void TestNode::initNode(std::vector<rclcpp::Parameter> parameters)
   options.parameter_overrides(parameters);
 
   node_ = std::make_shared<nav2_util::LifecycleNode>(
-    "inflation_test_node", "", false, options);
+    "inflation_test_node", "", options);
 
   // Declare non-plugin specific costmap parameters
   node_->declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));

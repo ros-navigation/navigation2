@@ -35,16 +35,17 @@
  * Author: Alexey Merzlyakov
  *********************************************************************/
 
-#ifndef NAV2_COSTMAP_2D__SPEED_FILTER_HPP_
-#define NAV2_COSTMAP_2D__SPEED_FILTER_HPP_
+#ifndef NAV2_COSTMAP_2D__COSTMAP_FILTERS__SPEED_FILTER_HPP_
+#define NAV2_COSTMAP_2D__COSTMAP_FILTERS__SPEED_FILTER_HPP_
+
+#include <memory>
+#include <string>
 
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
 #include "nav2_msgs/msg/speed_limit.hpp"
-
-#include <memory>
 
 namespace nav2_costmap_2d
 {
@@ -144,4 +145,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__SPEED_FILTER_HPP_
+#endif  // NAV2_COSTMAP_2D__COSTMAP_FILTERS__SPEED_FILTER_HPP_

@@ -56,7 +56,6 @@ public:
    */
   std::shared_ptr<Costmap2D> getCostmap();
 
-protected:
   /**
    * @brief Convert an occ grid message into a costmap object
    */
@@ -66,6 +65,7 @@ protected:
    */
   void costmapCallback(const nav2_msgs::msg::Costmap::SharedPtr msg);
 
+protected:
   std::shared_ptr<Costmap2D> costmap_;
   nav2_msgs::msg::Costmap::SharedPtr costmap_msg_;
   std::string topic_name_;

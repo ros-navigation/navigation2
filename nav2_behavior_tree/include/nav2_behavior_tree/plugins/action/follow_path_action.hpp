@@ -16,6 +16,7 @@
 #define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__FOLLOW_PATH_ACTION_HPP_
 
 #include <string>
+#include <memory>
 
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
@@ -48,8 +49,10 @@ public:
   /**
    * @brief Function to perform some user-defined operation after a timeout
    * waiting for a result that hasn't been received yet
+   * @param feedback shared_ptr to latest feedback message
    */
-  void on_wait_for_result() override;
+  void on_wait_for_result(
+    std::shared_ptr<const nav2_msgs::action::FollowPath::Feedback> feedback) override;
 
   /**
    * @brief Creates list of BT ports

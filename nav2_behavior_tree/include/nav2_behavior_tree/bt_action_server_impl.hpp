@@ -80,7 +80,8 @@ bool BtActionServer<ActionT>::on_configure()
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args",
       "-r",
-      std::string("__node:=") + std::string(node->get_name()) + client_node_name + "_rclcpp_node",
+      std::string("__node:=") +
+      std::string(node->get_name()) + "_" + client_node_name + "_rclcpp_node",
       "--"});
 
   // Support for handling the topic-based goal pose from rviz
@@ -216,7 +217,7 @@ void BtActionServer<ActionT>::executeCallback()
   // Give server an opportunity to populate the result message or simple give
   // an indication that the action is complete.
   auto result = std::make_shared<typename ActionT::Result>();
-  on_completion_callback_(result);
+  on_completion_callback_(result, rc);
 
   switch (rc) {
     case nav2_behavior_tree::BtStatus::SUCCEEDED:

@@ -5,6 +5,7 @@ string behavior_tree
 #result definition
 std_msgs/Empty result
 ---
+#feedback definition
 geometry_msgs/PoseStamped current_pose
 builtin_interfaces/Duration navigation_time
 builtin_interfaces/Duration estimated_time_remaining

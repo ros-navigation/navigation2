@@ -60,8 +60,8 @@ public:
    */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-    std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
-    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros) override;
+    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   /**
    * @brief Cleanup controller state machine
@@ -223,6 +223,20 @@ protected:
     const double & pose_cost, double & linear_vel, double & sign);
 
   /**
+   * @brief Find the intersection a circle and a line segment.
+   * This assumes the circle is centered at the origin.
+   * If no intersection is found, a floating point error will occur.
+   * @param p1 first endpoint of line segment
+   * @param p2 second endpoint of line segment
+   * @param r radius of circle
+   * @return point of intersection
+   */
+  static geometry_msgs::msg::Point circleSegmentIntersection(
+    const geometry_msgs::msg::Point & p1,
+    const geometry_msgs::msg::Point & p2,
+    double r);
+
+  /**
    * @brief Get lookahead point
    * @param lookahead_dist Optimal lookahead distance
    * @param path Current global path
@@ -282,6 +296,7 @@ protected:
   double goal_dist_tol_;
   bool allow_reversing_;
   double max_robot_pose_search_dist_;
+  bool use_interpolation_;
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;

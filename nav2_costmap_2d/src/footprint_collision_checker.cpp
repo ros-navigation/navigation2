@@ -62,7 +62,6 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint footpr
 
   // we need to rasterize each line in the footprint
   for (unsigned int i = 0; i < footprint.size() - 1; ++i) {
-
     // get the cell coord of the second point
     if (!worldToMap(footprint[i + 1].x, footprint[i + 1].y, x1, y1)) {
       return static_cast<double>(LETHAL_OBSTACLE);

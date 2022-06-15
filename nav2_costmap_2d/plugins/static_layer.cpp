@@ -477,7 +477,6 @@ StaticLayer::dynamicParametersCallback(
         current_ = false;
       }
     }
-
   }
   result.successful = true;
   return result;

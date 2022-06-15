@@ -35,13 +35,13 @@
  * Author: Alexey Merzlyakov
  *********************************************************************/
 
-#ifndef NAV2_COSTMAP_2D__KEEPOUT_FILTER_HPP_
-#define NAV2_COSTMAP_2D__KEEPOUT_FILTER_HPP_
-
-#include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
+#ifndef NAV2_COSTMAP_2D__COSTMAP_FILTERS__KEEPOUT_FILTER_HPP_
+#define NAV2_COSTMAP_2D__COSTMAP_FILTERS__KEEPOUT_FILTER_HPP_
 
 #include <string>
 #include <memory>
+
+#include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -108,4 +108,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__KEEPOUT_FILTER_HPP_
+#endif  // NAV2_COSTMAP_2D__COSTMAP_FILTERS__KEEPOUT_FILTER_HPP_

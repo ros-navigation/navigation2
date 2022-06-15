@@ -13,7 +13,7 @@
 #   --build-arg OVERLAY_MIXINS \
 #   -f distro.Dockerfile ../
 
-ARG FROM_IMAGE=ros:rolling-ros-base-focal
+ARG FROM_IMAGE=ros:rolling
 ARG OVERLAY_WS=/opt/overlay_ws
 
 # multi-stage for caching
@@ -56,8 +56,8 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -q -y \
       ccache \
       lcov \
-      lld
-    # && rosdep update
+      lld \
+    && rosdep update
 
 # install overlay dependencies
 ARG OVERLAY_WS

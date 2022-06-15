@@ -35,8 +35,8 @@
  * Author: Alexey Merzlyakov
  *********************************************************************/
 
-#ifndef NAV2_COSTMAP_2D__FILTER_VALUES_HPP_
-#define NAV2_COSTMAP_2D__FILTER_VALUES_HPP_
+#ifndef NAV2_COSTMAP_2D__COSTMAP_FILTERS__FILTER_VALUES_HPP_
+#define NAV2_COSTMAP_2D__COSTMAP_FILTERS__FILTER_VALUES_HPP_
 
 /** Provides constants used in costmap filters */
 
@@ -59,4 +59,4 @@ static constexpr double NO_SPEED_LIMIT = 0.0;
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__FILTER_VALUES_HPP_
+#endif  // NAV2_COSTMAP_2D__COSTMAP_FILTERS__FILTER_VALUES_HPP_
