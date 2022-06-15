@@ -339,7 +339,7 @@ void WaypointFollower::followWaypointsHandler(
       if (goal_index >= poses.size()) {
         RCLCPP_INFO(
           get_logger(), "Completed all %zu waypoints requested.",
-          goal->poses.size());
+          poses.size());
         result->missed_waypoints = failed_ids_;
         action_server->succeeded_current(result);
         failed_ids_.clear();
