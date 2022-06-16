@@ -25,21 +25,16 @@ namespace nav2_collision_monitor
 
 Circle::Circle(
   const nav2_util::LifecycleNode::WeakPtr & node,
-  const std::string & polygon_name,
-  const std::string & base_frame_id,
-  const double simulation_time_step)
-: PolygonBase::PolygonBase(node, polygon_name, base_frame_id, simulation_time_step),
-  radius_(0.0)
+  const std::string & polygon_name)
+: Polygon::Polygon(node, polygon_name)
 {
-  RCLCPP_INFO(logger_, "[%s]: Creating Circle", polygon_name_.c_str());
 }
 
 Circle::~Circle()
 {
-  RCLCPP_INFO(logger_, "[%s]: Destroying Circle", polygon_name_.c_str());
 }
 
-void Circle::getPolygon(std::vector<Point> & poly)
+void Circle::getPolygon(std::vector<Point> & poly) const
 {
   // Number of polygon points. More edges means better approximation.
   const double polygon_edges = 16;
@@ -62,11 +57,11 @@ void Circle::getPolygon(std::vector<Point> & poly)
   poly.push_back(p);
 }
 
-int Circle::getPointsInside(const std::vector<Point> & points)
+int Circle::getPointsInside(const std::vector<Point> & points) const
 {
   int num = 0;
   for(Point point : points) {
-    if (point.x*point.x + point.y*point.y < radius_squared_) {
+    if (point.x * point.x + point.y * point.y < radius_squared_) {
       num++;
     }
   }
@@ -80,7 +75,9 @@ bool Circle::getParameters(std::string & polygon_topic) {
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  PolygonBase::getParameters(polygon_topic);  // Will always return true
+  if (!getBasicParameters(polygon_topic)) {
+    return false;
+  }
 
   try {
     // Leave it not initialized: the will cause an error if it will not set

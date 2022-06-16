@@ -15,11 +15,6 @@
 #ifndef NAV2_COLLISION_MONITOR__TYPES_HPP_
 #define NAV2_COLLISION_MONITOR__TYPES_HPP_
 
-#include <vector>
-#include <cmath>
-
-#include "rclcpp/rclcpp.hpp"
-
 namespace nav2_collision_monitor
 {
 
@@ -29,11 +24,6 @@ struct Velocity
   double x;  // x-component of linear velocity
   double y;  // y-component of linear velocity
   double tw;  // z-component of angular twist
-
-  inline bool operator!=(const Velocity & second) const
-  {
-      return x != second.x || y != second.y || tw != second.tw;
-  }
 
   inline bool operator<(const Velocity & second) const
   {
@@ -77,11 +67,6 @@ struct Action
 {
   ActionType action_type;
   Velocity req_vel;
-
-  inline bool operator!=(const Action & second) const
-  {
-    return action_type != second.action_type || req_vel != second.req_vel;
-  }
 };
 
 }  // namespace nav2_collision_monitor

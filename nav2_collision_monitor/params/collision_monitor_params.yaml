@@ -5,10 +5,9 @@ collision_monitor:
     odom_topic: "/odom"
     cmd_vel_in_topic: "cmd_vel_raw"
     cmd_vel_out_topic: "cmd_vel"
-    transform_tolerance: 0.1
+    transform_tolerance: 0.5
     data_timeout: 5.0
-    simulation_time_step: 0.02
-    release_acceleration: 0.1
+    # Polygons represent safety area around the robot for "stop" and "slowdown" action types
     polygons: ["PolygonStop"]
     PolygonStop:
       type: "polygon"
@@ -25,13 +24,20 @@ collision_monitor:
       slowdown_ratio: 0.3
       visualize: True
       polygon_topic: "polygon_slowdown"
-    CircleApp:
-      type: "circle"
-      radius: 0.25
+    # Approaching to obstacles with constant time before a collision
+    approach: False
+    footprint_name: "FootprintApproach"
+    footprint_topic: "/local_costmap/published_footprint"
+    time_before_collision: 2.0
+    simulation_time_step: 0.02
+    # Footprint could be "polygon" type with dynamically set footprint from footprint_topic
+    # or "circle" type with static footprint set by radius. "footprint_topic" parameter
+    # to be ignored in latest case.
+    FootprintApproach:
+      type: "polygon"
       action_type: "approach"
-      time_before_collision: 2.0
-      visualize: True
-      polygon_topic: "circle_approach"
+      max_points: 20
+      visualize: False
     observation_sources: ["scan"]
     scan:
       type: "scan"

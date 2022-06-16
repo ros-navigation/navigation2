@@ -41,7 +41,7 @@ void transformPoints(const Pose & pose, std::vector<Point> & points)
   }
 }
 
-void projectState(const double dt, Pose & pose, Velocity & velocity)
+void projectState(const double & dt, Pose & pose, Velocity & velocity)
 {
   const double theta = velocity.tw * dt;
   const double cos_theta = std::cos(theta);
@@ -59,6 +59,7 @@ void projectState(const double dt, Pose & pose, Velocity & velocity)
   // vel' = R*vel
   // where:
   //   vel - initial velocity
+  //   R - rotation matrix
   //   vel' - rotated velocity
   const double velocity_upd_x = velocity.x * cos_theta - velocity.y * sin_theta;
   const double velocity_upd_y = velocity.x * sin_theta + velocity.y * cos_theta;

@@ -15,11 +15,9 @@
 #ifndef NAV2_COLLISION_MONITOR__POINTCLOUD_HPP_
 #define NAV2_COLLISION_MONITOR__POINTCLOUD_HPP_
 
-#include <string>
-
-#include "nav2_collision_monitor/source_base.hpp"
-
 #include "sensor_msgs/msg/point_cloud2.hpp"
+
+#include "nav2_collision_monitor/source.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -27,42 +25,51 @@ namespace nav2_collision_monitor
 /**
  * @brief Implementation for pointcloud source
  */
-class PointCloud : public SourceBase
+class PointCloud : public Source
 {
 public:
   /**
    * @brief PointCloud constructor
+   * @param node Collision Monitor node pointer
+   * @param polygon_name Name of data source
    */
   PointCloud(
     const nav2_util::LifecycleNode::WeakPtr & node,
-    std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-    const std::string & source_name,
-    const std::string & base_frame_id,
-    const tf2::Duration & transform_tolerance,
-    const tf2::Duration & data_timeout);
+    const std::string & source_name);
   /**
    * @brief PointCloud destructor
    */
-  virtual ~PointCloud();
+  ~PointCloud();
 
   /**
-   * @brief Data source configuration routine. Obtains data source related ROS-parameters
-   * and creates data source subscriber.
+   * @brief Data source configuration routine. Obtains pointcloud related ROS-parameters
+   * and creates pointcloud subscriber.
    */
-  virtual void configure();
+  void configure();
 
   /**
    * @brief Adds latest data from pointcloud source to the data array.
+   * @param base_frame_id Robot base frame ID. The output data will be transformed into this frame.
    * @param curr_time Current node time for data interpolation
-   * @param data Array where the data from pointcloud to be added.
-   * Added data is converted to base_frame_id coordinate system at curr_time.
+   * @param global_frame_id Global frame ID for correct transform calculation
+   * @param transform_tolerance Transform tolerance
+   * @param data_timeout Maximum time interval in which data is considered valid
+   * @param tf_buffer Shared pointer to a TF buffer
+   * @param data Array where the data from source to be added.
+   * Added data is transformed to base_frame_id coordinate system at curr_time.
    */
-  virtual void getData(const rclcpp::Time & curr_time, std::vector<Point> & data);
+  void getData(
+    const std::string & base_frame_id,
+    const rclcpp::Time & curr_time,
+    const std::string & global_frame_id,
+    const tf2::Duration & transform_tolerance,
+    const rclcpp::Duration & data_timeout,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    std::vector<Point> & data) const;
 
 protected:
   /**
    * @brief Getting sensor-specific ROS-parameters
-   * Implementation for Polygon class. Calls SourceBase::getParameters() inside.
    * @param source_topic Output name of source subscription topic
    */
   void getParameters(std::string & source_topic);
@@ -73,11 +80,13 @@ protected:
    */
   void dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
 
-  // Minimum and maximum height of PointCloud projected to 2D space
-  double min_height_, max_height_;
+  // ----- Variables -----
 
   /// @brief PointCloud data subscriber
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr data_sub_;
+
+  // Minimum and maximum height of PointCloud projected to 2D space
+  double min_height_, max_height_;
 
   /// @brief Latest data obtained from pointcloud
   sensor_msgs::msg::PointCloud2::ConstSharedPtr data_;

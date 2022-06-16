@@ -14,6 +14,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 
 ### Header ###
 
@@ -35,6 +36,7 @@ set(dependencies
   tf2_geometry_msgs
   nav2_msgs
   nav2_util
+  nav2_costmap_2d
 )
 
 set(executable_name collision_monitor)
@@ -42,10 +44,9 @@ set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
   src/collision_monitor_node.cpp
-  src/polygon_base.cpp
   src/polygon.cpp
   src/circle.cpp
-  src/source_base.cpp
+  src/source.cpp
   src/scan.cpp
   src/pointcloud.cpp
   src/kinematics.cpp

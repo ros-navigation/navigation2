@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_collision_monitor/source_base.hpp"
-#include "nav2_collision_monitor/kinematics.hpp"
+#include "nav2_collision_monitor/source.hpp"
 
 #include <exception>
+
+#include "geometry_msgs/msg/transform_stamped.hpp"
 
 #include "tf2/convert.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -25,33 +26,18 @@
 namespace nav2_collision_monitor
 {
 
-SourceBase::SourceBase(
+Source::Source(
   const nav2_util::LifecycleNode::WeakPtr & node,
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  const std::string & source_name,
-  const std::string & base_frame_id,
-  const tf2::Duration & transform_tolerance,
-  const tf2::Duration & data_timeout)
-: node_(node), tf_buffer_(tf_buffer), source_name_(source_name),
-  source_frame_id_(""), base_frame_id_(base_frame_id), fixed_frame_id_(""),
-  transform_tolerance_(transform_tolerance), data_timeout_(data_timeout)
+  const std::string & source_name)
+: node_(node), source_name_(source_name)
 {
-  RCLCPP_INFO(logger_, "[%s]: Creating SourceBase", source_name_.c_str());
 }
 
-SourceBase::~SourceBase()
+Source::~Source()
 {
-  RCLCPP_INFO(logger_, "[%s]: Destroying SourceBase", source_name_.c_str());
-
-  tf_buffer_.reset();
 }
 
-void SourceBase::setFixedFrameId(const std::string & fixed_frame_id)
-{
-  fixed_frame_id_ = fixed_frame_id;
-}
-
-void SourceBase::getParameters(std::string & source_topic)
+void Source::getBasicParameters(std::string & source_topic)
 {
   auto node = node_.lock();
   if (!node) {
@@ -64,12 +50,15 @@ void SourceBase::getParameters(std::string & source_topic)
   source_topic = node->get_parameter(source_name_ + ".topic").as_string();
 }
 
-bool SourceBase::sourceValid(const rclcpp::Time & curr_time)
+bool Source::sourceValid(
+  const rclcpp::Time & source_time,
+  const rclcpp::Time & curr_time,
+  const rclcpp::Duration & data_timeout) const
 {
-  // Check that latest received data timestamp is earlier
-  // than current time more than data_timeout_ interval
-  const rclcpp::Duration dt = curr_time - data_stamp_;
-  if (dt > data_timeout_) {
+  // Source is considered as not valid, if latest received data timestamp is earlier
+  // than current time by data_timeout interval
+  const rclcpp::Duration dt = curr_time - source_time;
+  if (dt > data_timeout) {
     RCLCPP_WARN(
       logger_,
       "[%s]: Latest source and current collision monitor node timestamps differ on %f seconds. "
@@ -81,26 +70,31 @@ bool SourceBase::sourceValid(const rclcpp::Time & curr_time)
   return true;
 }
 
-bool SourceBase::getSourceBaseTransform(
-  const rclcpp::Time & curr_time,
+bool Source::getTransform(
+  const std::string & source_frame_id,
   const rclcpp::Time & source_time,
-  tf2::Transform & tf2_transform)
+  const std::string & target_frame_id,
+  const rclcpp::Time & target_time,
+  const std::string & global_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  tf2::Transform & tf2_transform) const
 {
   geometry_msgs::msg::TransformStamped transform;
   tf2_transform.setIdentity();  // initialize by identical transform
 
   try {
-    // Obtaining the transform to get data from source_frame_id_ to base_frame_id_ frame.
-    // This also considers the time shift between the moment when the source data was obtained and current time.
-    transform = tf_buffer_->lookupTransform(
-      base_frame_id_, curr_time,
-      source_frame_id_, source_time,
-      fixed_frame_id_, transform_tolerance_);
+    // Obtaining the transform to get data from source to target frame.
+    // This also considers the time shift between source and target.
+    transform = tf_buffer->lookupTransform(
+      target_frame_id, target_time,
+      source_frame_id, source_time,
+      global_frame_id, transform_tolerance);
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(
       logger_,
       "[%s]: Failed to get \"%s\"->\"%s\" frame transform: %s",
-      source_name_.c_str(), source_frame_id_.c_str(), base_frame_id_.c_str(), e.what());
+      source_name_.c_str(), source_frame_id.c_str(), target_frame_id.c_str(), e.what());
     return false;
   }
 

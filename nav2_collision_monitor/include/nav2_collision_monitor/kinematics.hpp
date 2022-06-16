@@ -15,6 +15,8 @@
 #ifndef NAV2_COLLISION_MONITOR__KINEMATICS_HPP_
 #define NAV2_COLLISION_MONITOR__KINEMATICS_HPP_
 
+#include <vector>
+
 #include "nav2_collision_monitor/types.hpp"
 
 namespace nav2_collision_monitor
@@ -37,7 +39,7 @@ void transformPoints(const Pose & pose, std::vector<Point> & points);
  * @param velocity Velocity at which the pose to be moved. It is also being rotated
  * on according twist angle.
  */
-void projectState(const double dt, Pose & pose, Velocity & velocity);
+void projectState(const double & dt, Pose & pose, Velocity & velocity);
 
 }  // namespace nav2_collision_monitor
 

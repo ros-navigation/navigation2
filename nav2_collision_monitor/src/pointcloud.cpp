@@ -14,7 +14,10 @@
 
 #include "nav2_collision_monitor/pointcloud.hpp"
 
+#include <functional>
+
 #include "sensor_msgs/point_cloud2_iterator.hpp"
+#include "geometry_msgs/msg/point32.hpp"
 
 #include "nav2_util/node_utils.hpp"
 
@@ -23,21 +26,12 @@ namespace nav2_collision_monitor
 
 PointCloud::PointCloud(
   const nav2_util::LifecycleNode::WeakPtr & node,
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  const std::string & source_name,
-  const std::string & base_frame_id,
-  const tf2::Duration & transform_tolerance,
-  const tf2::Duration & data_timeout)
-: SourceBase(node, tf_buffer, source_name, base_frame_id, transform_tolerance, data_timeout),
-  min_height_(0.0), max_height_(0.0), data_(nullptr)
+  const std::string & source_name)
+: Source(node, source_name), data_(nullptr)
 {
-  RCLCPP_INFO(logger_, "[%s]: Creating PointCloud", source_name_.c_str());
 }
 
 PointCloud::~PointCloud() {
-  RCLCPP_INFO(logger_, "[%s]: Destroying PointCloud", source_name_.c_str());
-
-  tf_buffer_.reset();
   data_sub_.reset();
 }
 
@@ -58,18 +52,31 @@ void PointCloud::configure()
     std::bind(&PointCloud::dataCallback, this, std::placeholders::_1));
 }
 
-void PointCloud::getData(const rclcpp::Time & curr_time, std::vector<Point> & data)
+void PointCloud::getData(
+  const std::string & base_frame_id,
+  const rclcpp::Time & curr_time,
+  const std::string & global_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const rclcpp::Duration & data_timeout,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  std::vector<Point> & data) const
 {
   // Ignore data from the source if it is not being published yet or
   // not published for a long time
-  if (data_ == nullptr || !sourceValid(curr_time)) {
+  if (data_ == nullptr) {
+    return;
+  }
+  if (!sourceValid(data_->header.stamp, curr_time, data_timeout)) {
     return;
   }
 
-  // Obtaining the transform to get data from source_frame_id_ and time where it was obtained
-  // to base_frame_id_ frame and current time
-  tf2::Transform tf2_transform;
-  if (!getSourceBaseTransform(curr_time, data_stamp_, tf2_transform)) {
+  // Obtaining the transform to get data from source frame and time where it was received
+  // to the base frame and current time
+  tf2::Transform tf_transform;
+  if (!getTransform(
+    data_->header.frame_id, data_->header.stamp, base_frame_id, curr_time, global_frame_id,
+    transform_tolerance, tf_buffer, tf_transform))
+  {
     return;
   }
 
@@ -77,11 +84,11 @@ void PointCloud::getData(const rclcpp::Time & curr_time, std::vector<Point> & da
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(*data_, "y");
   sensor_msgs::PointCloud2ConstIterator<float> iter_z(*data_, "z");
 
-  // Refill data array with PointCloud points in base_frame_id_
+  // Refill data array with PointCloud points in base frame
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
-    // Transform point coordinates from source_frame_id_ -> to base_frame_id_
+    // Transform point coordinates from source frame -> to base frame
     tf2::Vector3 p_v3_s(*iter_x, *iter_y, *iter_z);
-    tf2::Vector3 p_v3_b = tf2_transform * p_v3_s;
+    tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
     // Refill data array
     if (p_v3_b.z() >= min_height_ && p_v3_b.z() <= max_height_) {
@@ -97,7 +104,7 @@ void PointCloud::getParameters(std::string & source_topic)
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  SourceBase::getParameters(source_topic);
+  getBasicParameters(source_topic);
 
   nav2_util::declare_parameter_if_not_declared(
     node, source_name_ + ".min_height", rclcpp::ParameterValue(0.05));
@@ -109,18 +116,7 @@ void PointCloud::getParameters(std::string & source_topic)
 
 void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 {
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  // Obtaining source_frame_id_ from first message
-  if (source_frame_id_.length() == 0) {
-    source_frame_id_ = msg->header.frame_id;
-  }
-
   data_ = msg;
-  data_stamp_ = node->now();
 }
 
 }  // namespace nav2_collision_monitor

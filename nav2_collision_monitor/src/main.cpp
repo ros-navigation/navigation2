@@ -14,8 +14,9 @@
 
 #include <memory>
 
-#include "nav2_collision_monitor/collision_monitor_node.hpp"
 #include "rclcpp/rclcpp.hpp"
+
+#include "nav2_collision_monitor/collision_monitor_node.hpp"
 
 int main(int argc, char * argv[])
 {
