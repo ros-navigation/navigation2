@@ -8,6 +8,7 @@
   <license>Apache-2.0</license>
 
   <depend>tf2_ros</depend>
+  <depend>cmr_msgs</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
