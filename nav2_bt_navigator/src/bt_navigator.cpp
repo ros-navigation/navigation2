@@ -101,6 +101,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   pose_navigator_ = std::make_unique<nav2_bt_navigator::NavigateToPoseNavigator>();
   poses_navigator_ = std::make_unique<nav2_bt_navigator::NavigateThroughPosesNavigator>();
+  nodes_navigator_ = std::make_unique<nav2_bt_navigator::NavigateFleetNodesNavigator>();
 
   nav2_bt_navigator::FeedbackUtils feedback_utils;
   feedback_utils.tf = tf_;
@@ -123,6 +124,12 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     return nav2_util::CallbackReturn::FAILURE;
   }
 
+  if (!nodes_navigator_->on_configure(
+      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_, odom_smoother_))
+  {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -131,7 +138,8 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  if (!poses_navigator_->on_activate() || !pose_navigator_->on_activate()) {
+  if (!poses_navigator_->on_activate() || !pose_navigator_->on_activate()
+      || !nodes_navigator_->on_activate()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -146,7 +154,8 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  if (!poses_navigator_->on_deactivate() || !pose_navigator_->on_deactivate()) {
+  if (!poses_navigator_->on_deactivate() || !pose_navigator_->on_deactivate()
+      || !nodes_navigator_->on_deactivate()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -165,12 +174,14 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_.reset();
   tf_.reset();
 
-  if (!poses_navigator_->on_cleanup() || !pose_navigator_->on_cleanup()) {
+  if (!poses_navigator_->on_cleanup() || !pose_navigator_->on_cleanup()
+      || !nodes_navigator_->on_cleanup()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
   poses_navigator_.reset();
   pose_navigator_.reset();
+  nodes_navigator_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
   return nav2_util::CallbackReturn::SUCCESS;
