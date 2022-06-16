@@ -196,19 +196,6 @@ protected:
       return;
     }
 
-    // Log a message every second
-    {
-      auto node = node_.lock();
-      if (!node) {
-        throw std::runtime_error{"Failed to lock node"};
-      }
-
-      auto timer = node->create_wall_timer(
-        1s,
-        [&]()
-        {RCLCPP_INFO(logger_, "%s running...", behavior_name_.c_str());});
-    }
-
     auto start_time = steady_clock_.now();
 
     // Initialize the ActionT result
