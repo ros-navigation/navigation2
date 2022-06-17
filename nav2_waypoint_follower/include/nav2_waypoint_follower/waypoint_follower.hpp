@@ -58,7 +58,7 @@ enum class ActionStatus
  */
 class WaypointFollower : public nav2_util::LifecycleNode
 {
-public:
+  public:
   using ActionT = nav2_msgs::action::FollowWaypoints;
   using ClientT = nav2_msgs::action::NavigateToPose;
   using ActionServer = nav2_util::SimpleActionServer<ActionT>;
@@ -175,7 +175,6 @@ protected:
   int loop_rate_;
   bool stop_on_failure_;
   std::string global_frame_id_{"map"};
-  std::string utm_frame_id_{"utm"};
 
   /**
    * @brief Callback executed when a parameter change is detected
@@ -197,8 +196,8 @@ protected:
 
   // Our action server for GPS waypoint following
   std::unique_ptr<ActionServerGPS> gps_action_server_;
-  std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL, std::shared_ptr<nav2_util::LifecycleNode>>> from_ll_to_map_client_;
-  double transform_tolerance_;
+  std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL,
+  std::shared_ptr<nav2_util::LifecycleNode>>> from_ll_to_map_client_;
 
   // Task Execution At Waypoint Plugin
   pluginlib::ClassLoader<nav2_core::WaypointTaskExecutor>
