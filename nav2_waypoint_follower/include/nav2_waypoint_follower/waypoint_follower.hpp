@@ -156,16 +156,25 @@ protected:
   template<typename T>
   void goalResponseCallback(const T & goal);
 
-    /**
-     * @brief given some gps_poses, converts them to map frame using robot_localization's service `fromLL`.
-     *        Constructs a vector of stamped poses in map frame and returns them.
-     *
-     * @param gps_poses
-     * @return std::vector<geometry_msgs::msg::PoseStamped>
-     */
-    std::vector<geometry_msgs::msg::PoseStamped> convertGPSPosesToMapPoses(
-        const std::vector<geographic_msgs::msg::GeoPose>& gps_poses);
+  /**
+   * @brief given some gps_poses, converts them to map frame using robot_localization's service `fromLL`.
+   *        Constructs a vector of stamped poses in map frame and returns them.
+   *
+   * @param gps_poses, from the action server
+   * @return std::vector<geometry_msgs::msg::PoseStamped>
+   */
+  std::vector<geometry_msgs::msg::PoseStamped> convertGPSPosesToMapPoses(
+      const std::vector<geographic_msgs::msg::GeoPose>& gps_poses);
 
+
+  /**
+   * @brief get the latest poses on the action server goal. If they are GPS poses,
+   * convert them to the global cartesian frame using /fromLL robot localization
+   * server
+   *
+   * @param action_server, to which the goal was sent
+   * @return std::vector<geometry_msgs::msg::PoseStamped>
+   */
   template<typename T>
   std::vector<geometry_msgs::msg::PoseStamped> getLatestGoalPoses(const T & action_server);
 

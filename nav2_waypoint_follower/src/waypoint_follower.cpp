@@ -147,7 +147,6 @@ WaypointFollower::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   action_server_->deactivate();
   gps_action_server_->deactivate();
   dyn_params_handler_.reset();
-  
   // destroy bond connection
   destroyBond();
 
@@ -181,8 +180,7 @@ std::vector<geometry_msgs::msg::PoseStamped> WaypointFollower::getLatestGoalPose
   std::vector<geometry_msgs::msg::PoseStamped> poses;
 
   // compile time static check to decide which block of code to be built
-  if constexpr (std::is_same<T, std::unique_ptr<ActionServer>>::value)
-  {
+  if constexpr (std::is_same<T, std::unique_ptr<ActionServer>>::value) {
     // If normal waypoint following callback was called, we build here
     poses = action_server->get_current_goal()->poses;
   } else {
@@ -440,7 +438,7 @@ WaypointFollower::convertGPSPosesToMapPoses(
   const std::vector<geographic_msgs::msg::GeoPose> & gps_poses)
 {
   RCLCPP_INFO(this->get_logger(), "Converting GPS waypoints to %s Frame..",
-        global_frame_id_.c_str());
+    global_frame_id_.c_str());
 
   std::vector<geometry_msgs::msg::PoseStamped> poses_in_map_frame_vector;
   int waypoint_index = 0;
