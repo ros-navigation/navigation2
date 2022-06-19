@@ -18,10 +18,6 @@
 #define NAV2_UTIL__ROBOT_UTILS_HPP_
 
 #include <string>
-#include <memory>
-#include <algorithm>
-#include <mutex>
-#include <thread>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
