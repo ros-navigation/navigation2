@@ -178,6 +178,7 @@ void ParticleCloudDisplay::processMessage(const nav2_msgs::msg::ParticleCloud::C
     poses_[i].position = rviz_common::pointMsgToOgre(msg->particles[i].pose.position);
     poses_[i].orientation = rviz_common::quaternionMsgToOgre(msg->particles[i].pose.orientation);
     poses_[i].weight = static_cast<float>(msg->particles[i].weight);
+    poses_[i].position.z = poses_[i].weight * height_scale_;
   }
 
   updateDisplay();
@@ -241,7 +242,6 @@ void ParticleCloudDisplay::updateArrows2d()
     arrow_alpha_property_->getFloat(),
     min_length_,
     max_length_,
-    height_scale_,
     poses_);
 }
 
@@ -267,9 +267,6 @@ void ParticleCloudDisplay::updateArrows3d()
       shaft_length * head_length_scale_,
       shaft_length * head_radius_scale_
     );
-
-    poses_[i].position.z = poses_[i].weight * height_scale_;
-
     arrows3d_[i]->setPosition(poses_[i].position);
     arrows3d_[i]->setOrientation(poses_[i].orientation * adjust_orientation);
   }
@@ -289,9 +286,6 @@ void ParticleCloudDisplay::updateAxes()
       std::max(
         poses_[i].weight * length_scale_ + min_length_,
         min_length_), max_length_);
-
-    poses_[i].position.z = poses_[i].weight * height_scale_;
-
     axes_[i]->set(shaft_length, shaft_length * shaft_radius_scale_);
     axes_[i]->setPosition(poses_[i].position);
     axes_[i]->setOrientation(poses_[i].orientation);
@@ -367,7 +361,6 @@ void ParticleCloudDisplay::updateGeometry()
 {
   min_length_ = arrow_min_length_property_->getFloat();
   max_length_ = arrow_max_length_property_->getFloat();
-  height_scale_ = arrow_height_scale_property_->getFloat();
   length_scale_ = max_length_ - min_length_;
 
   arrow_min_length_property_->setMax(max_length_);

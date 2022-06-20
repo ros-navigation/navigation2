@@ -73,8 +73,7 @@ public:
     float alpha,
     float min_length,
     float max_length,
-    float height_scale,
-    std::vector<nav2_rviz_plugins::OgrePoseWithWeight> & poses);
+    const std::vector<nav2_rviz_plugins::OgrePoseWithWeight> & poses);
   void clear();
 
 private:
@@ -83,8 +82,7 @@ private:
     const Ogre::ColourValue & color,
     float min_length,
     float max_length,
-    float height_scale,
-    std::vector<nav2_rviz_plugins::OgrePoseWithWeight> & poses);
+    const std::vector<nav2_rviz_plugins::OgrePoseWithWeight> & poses);
 
   Ogre::SceneManager * scene_manager_;
   Ogre::ManualObject * manual_object_;
