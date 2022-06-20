@@ -43,6 +43,8 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 
+#include <eigen3/Eigen/Eigenvalues>
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
@@ -226,6 +228,15 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
   add_parameter(
     "first_map_only", rclcpp::ParameterValue(false),
     "Set this to true, when you want to load a new map published from the map_server");
+  
+  add_parameter(
+    "fuse_external_pose", rclcpp::ParameterValue(false),
+    "Fuse pose from external source"
+  )
+
+  add_parameter(
+    "k_l", rclcpp::ParameterValue(200.0f),
+    "Constant to balance importance the importance of the sensor data")
 }
 
 AmclNode::~AmclNode()
@@ -537,6 +548,45 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
     return;
   }
   handleInitialPose(*msg);
+}
+
+void
+AmclNode::gpsPoseReceived(const nav_msgs::msg::Odometry& msg)
+{
+  tf2::Quaternion q(
+      msg.pose.pose.orientation.x,
+      msg.pose.pose.orientation.y,
+      msg.pose.pose.orientation.z,
+      msg.pose.pose.orientation.w);
+  tf2::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+  double cov_matrix[9] = {msg.pose.covariance[0], msg.pose.covariance[1] ,msg.pose.covariance[5] ,msg.pose.covariance[6] ,msg.pose.covariance[7] ,msg.pose.covariance[11] ,msg.pose.covariance[30] ,msg.pose.covariance[31] ,msg.pose.covariance[35] };
+  memcpy(pf_->cov_matrix, cov_matrix, 9*sizeof(double));
+  pf_->gps_x = msg.pose.pose.position.x;
+  pf_->gps_y = msg.pose.pose.position.y;
+  pf_->gps_yaw = yaw;
+
+  Eigen::Matrix3f cov;
+  Eigen::Matrix<float, 3, 1> eigenvalues;
+  Eigen::Matrix3f eigenvalues2;
+  Eigen::Matrix3f eigen_mat;
+  cov << msg.pose.covariance[0] ,msg.pose.covariance[1] ,msg.pose.covariance[5] ,msg.pose.covariance[6] ,msg.pose.covariance[7] ,msg.pose.covariance[11] ,msg.pose.covariance[30] ,msg.pose.covariance[31] ,msg.pose.covariance[35];
+
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigensolver(cov);
+  
+  if (eigensolver.info() != Eigen::Success) 
+    abort();
+
+  eigenvalues = eigensolver.eigenvalues();
+
+  eigenvalues2 << eigenvalues(0,0), 0, 0, 0, eigenvalues(1,0), 0, 0, 0, eigenvalues(2,0);
+
+  eigen_mat = eigenvalues2 * eigensolver.eigenvectors();
+
+  double temp_mat[9] = {eigen_mat(0,0), eigen_mat(0,1), eigen_mat(0,2), eigen_mat(1,0), eigen_mat(1,1), eigen_mat(1,2), eigen_mat(2,0), eigen_mat(2,1), eigen_mat(2,2)};
+
+  memcpy(pf_->eigen_matrix, temp_mat, 9*sizeof(double));
 }
 
 void
@@ -1080,6 +1130,7 @@ AmclNode::initParameters()
   get_parameter("always_reset_initial_pose", always_reset_initial_pose_);
   get_parameter("scan_topic", scan_topic_);
   get_parameter("map_topic", map_topic_);
+  get_parameter("k_l", k_l_);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -1522,6 +1573,8 @@ AmclNode::initPubSub()
   map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
     map_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
+
+  // fidicual_pose_sub_ = create_subscription<nav_msgs::msg::Odometry>
 
   RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
 }

@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "message_filters/subscriber.h"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_amcl/motion_model/motion_model.hpp"
@@ -134,6 +135,11 @@ protected:
    * @brief Creates lookup table of free cells in map
    */
   void createFreeSpaceVector();
+  /*
+   * @brief Handle a new fiducial pose message
+   * @param msg Fiducial pose message
+   */
+  void gpsPoseReceived(const nav_msgs::msg::Odometry& msg);
   /*
    * @brief Frees allocated map related memory
    */
@@ -378,6 +384,7 @@ protected:
   double z_max_;
   double z_short_;
   double z_rand_;
+  double k_l_;
   std::string scan_topic_{"scan"};
   std::string map_topic_{"map"};
 };

@@ -30,6 +30,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 #include "nav2_amcl/pf/pf.hpp"
 #include "nav2_amcl/pf/pf_pdf.hpp"
@@ -47,7 +48,7 @@ static int pf_resample_limit(pf_t * pf, int k);
 pf_t * pf_alloc(
   int min_samples, int max_samples,
   double alpha_slow, double alpha_fast,
-  pf_init_model_fn_t random_pose_fn, void * random_pose_data)
+  pf_init_model_fn_t random_pose_fn, void * random_pose_data, double k_l)
 {
   int i, j;
   pf_t * pf;
@@ -101,9 +102,12 @@ pf_t * pf_alloc(
 
   pf->w_slow = 0.0;
   pf->w_fast = 0.0;
+  pf->k_l = k_l;
 
   pf->alpha_slow = alpha_slow;
   pf->alpha_fast = alpha_fast;
+
+  pf-k_l
 
   // set converged to 0
   pf_init_converged(pf);
@@ -289,6 +293,77 @@ void pf_update_sensor(pf_t * pf, pf_sensor_model_fn_t sensor_fn, void * sensor_d
   }
 }
 
+double get_determinant(double *cov_matrix)
+{
+  double det = cov_matrix[0] * cov_matrix[4] * cov_matrix[8] + 
+              cov_matrix[1] * cov_matrix[5] * cov_matrix[6] + 
+              cov_matrix[3] * cov_matrix[7] * cov_matrix[2] -
+              cov_matrix[2] * cov_matrix[4] * cov_matrix[6] - 
+              cov_matrix[1] * cov_matrix[3] * cov_matrix[8] - 
+              cov_matrix[0] * cov_matrix[5] * cov_matrix[7];
+
+  return det;
+}
+
+int get_inverse(double *cov_matrix, double *result)
+{
+  double det = get_determinant(cov_matrix);
+  double inv[9] = {   1 * (cov_matrix[4] * cov_matrix[8] - cov_matrix[5] * cov_matrix[7]) / det,
+                        -1 * (cov_matrix[3] * cov_matrix[8] - cov_matrix[5] * cov_matrix[6]) / det,
+                         1 * (cov_matrix[3] * cov_matrix[7] - cov_matrix[4] * cov_matrix[6]) / det,
+                        -1 * (cov_matrix[1] * cov_matrix[8] - cov_matrix[2] * cov_matrix[7]) / det,
+                         1 * (cov_matrix[0] * cov_matrix[8] - cov_matrix[2] * cov_matrix[6]) / det,
+                        -1 * (cov_matrix[0] * cov_matrix[7] - cov_matrix[1] * cov_matrix[6]) / det,
+                         1 * (cov_matrix[1] * cov_matrix[5] - cov_matrix[2] * cov_matrix[4]) / det,
+                        -1 * (cov_matrix[0] * cov_matrix[5] - cov_matrix[2] * cov_matrix[3]) / det,
+                         1 * (cov_matrix[0] * cov_matrix[4] - cov_matrix[1] * cov_matrix[3]) / det};
+
+  memcpy(result, inv, 9*sizeof(double));
+
+  return 0;
+}
+
+int mult_1_3_x_3_3(double *mat_1_3, double *mat_3_3, double *result)
+{
+  double r[3] = { mat_1_3[0] * mat_3_3[0] + mat_1_3[1] * mat_3_3[3] + mat_1_3[2] * mat_3_3[6],
+                      mat_1_3[0] * mat_3_3[1] + mat_1_3[1] * mat_3_3[4] + mat_1_3[2] * mat_3_3[7],
+                      mat_1_3[0] * mat_3_3[2] + mat_1_3[1] * mat_3_3[5] + mat_1_3[2] * mat_3_3[8]};
+
+  memcpy(result, r, 3*sizeof(double));
+
+  return 0;
+}
+
+double mult_1_3_x_3_1(double *mat_1_3, double *mat_3_1)
+{
+  double result = mat_1_3[0] * mat_3_1[0] + mat_1_3[1] * mat_3_1[1] + mat_1_3[2] * mat_3_1[2];
+  return result;
+}
+
+// Return random std mean number
+double norm_random()
+{
+  double u = (double)rand()/RAND_MAX;
+  double v = (double)rand()/RAND_MAX;
+  double x = sqrt(-2*log(u))*cos(2*3.14159*v); // Check this
+
+  return x;
+
+}
+
+int generate_random_particle(double gps_x, double gps_y, double gps_yaw, double *cov_matrix, double *pose_v)
+{
+    double pose[3] = {norm_random(), norm_random(), norm_random()};
+  
+    mult_1_3_x_3_3(pose, cov_matrix, pose);
+    pose[0] = pose[0] + gps_x;
+    pose[1] = pose[1] + gps_y;
+    pose[2] = pose[2] + gps_yaw;
+
+    memcpy(pose_v, pose, 3*sizeof(double));
+
+    return 0;
+}
 
 // Resample the distribution
 void pf_update_resample(pf_t * pf)
@@ -308,6 +383,60 @@ void pf_update_resample(pf_t * pf)
   set_a = pf->sets + pf->current_set;
   set_b = pf->sets + (pf->current_set + 1) % 2;
 
+
+  ///////////////////////////////////// NEW WEIGHT FUNCTION
+  /////
+
+
+  /// New weight
+
+
+  double total_weight = 0;
+  double total_dist_prob = 0;
+
+  for(int i = 0; i < set_a->sample_count; i++)
+  {
+    double distance = (pow(set_a->samples[i].pose.v[0]-pf->gps_x, 2)/pf->cov_matrix[0] + pow(set_a->samples[i].pose.v[1]-pf->gps_y, 2)/pf->cov_matrix[4] + pow(set_a->samples[i].pose.v[2]-pf->gps_yaw, 2)/pf->cov_matrix[8]);
+
+    double cov = (pf->cov_matrix[0] * pf->cov_matrix[4] * pf->cov_matrix[8]);
+    total_dist_prob += 1/sqrt(pow(2*M_PI, 3) * cov)*exp(-1*distance/2);
+
+    //Multivariable gausian
+    double mat[3] = {set_a->samples[i].pose.v[0]-pf->gps_x, set_a->samples[i].pose.v[1]-pf->gps_y, set_a->samples[i].pose.v[2]-pf->gps_yaw};
+    double result[3];
+    double inverse[9];
+    get_inverse(pf->cov_matrix, inverse);
+    mult_1_3_x_3_3(mat, inverse, result);
+    double temp = mult_1_3_x_3_1(result, mat);
+    double d = 1/(pow(3.14159 * 2, 1.5) * sqrt(get_determinant(pf->cov_matrix))) * exp(-0.5 * temp);
+    set_a->samples[i].weight = set_a->samples[i].weight * pf->k_l + d;
+
+
+    total_weight += set_a->samples[i].weight;
+  }
+
+  /// Handle total weight of 0
+  if(total_weight == 0)
+  {
+    for(int i=0;i<set_a->sample_count;i++)
+    {
+      set_a->samples[i].weight = 1;
+      total_weight += set_a->samples[i].weight;
+    }
+  }
+
+  /// Normalization
+  for(int i=0;i<set_a->sample_count;i++)
+  {
+    set_a->samples[i].weight = set_a->samples[i].weight / total_weight;
+  }
+
+  /////
+  /////////////////////////////////////
+
+
+
+
   // Build up cumulative probability table for resampling.
   // TODO(?): Replace this with a more efficient procedure
   // (e.g., http://www.network-theory.co.uk/docs/gslref/GeneralDiscreteDistributions.html)
@@ -324,11 +453,26 @@ void pf_update_resample(pf_t * pf)
   total = 0;
   set_b->sample_count = 0;
 
-  w_diff = 1.0 - pf->w_fast / pf->w_slow;
-  if (w_diff < 0.0) {
+
+
+
+
+/////////////////////////// CHANGED WDIFF func
+/////
+
+  total_dist_prob = total_dist_prob/set_a->sample_count;
+  w_diff = 0.01 - total_dist_prob;
+  if(w_diff < 0.0)
     w_diff = 0.0;
-  }
-  // printf("w_diff: %9.6f\n", w_diff);
+
+//ORIGINAL
+  w_diff = 1.0 - pf->w_fast / pf->w_slow;
+  if(w_diff < 0.0)
+    w_diff = 0.0;
+
+/////
+////////////////////////////////////////////////////
+
 
   // Can't (easily) combine low-variance sampler with KLD adaptive
   // sampling, so we'll take the more traditional route.
@@ -343,9 +487,17 @@ void pf_update_resample(pf_t * pf)
   while (set_b->sample_count < pf->max_samples) {
     sample_b = set_b->samples + set_b->sample_count++;
 
-    if (drand48() < w_diff) {
+    if(drand48() < w_diff)
+    {
+      // printf("******RANDOM FUNCTION*********%f - %f\n", w_diff, total_dist_prob);
+
+      // generate_random_particle(pf->gps_x, pf->gps_y, pf->gps_yaw, pf->eigen_matrix, sample_b->pose.v);
       sample_b->pose = (pf->random_pose_fn)(pf->random_pose_data);
-    } else {
+    }
+
+
+    else
+    {
       // Can't (easily) combine low-variance sampler with KLD adaptive
       // sampling, so we'll take the more traditional route.
       /*
