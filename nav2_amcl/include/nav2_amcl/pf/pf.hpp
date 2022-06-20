@@ -131,9 +131,13 @@ typedef struct _pf_t
   pf_init_model_fn_t random_pose_fn;
   void * random_pose_data;
 
-  double dist_threshold;  // distance threshold in each axis over which the pf is considered to not
-                          // be converged
-  int converged;
+  double dist_threshold; //distance threshold in each axis over which the pf is considered to not be converged
+  int converged; 
+
+  double gps_x, gps_y, gps_yaw;
+  double cov_matrix[9];
+  double eigen_matrix[9];
+  double k_l;
 } pf_t;
 
 
@@ -141,7 +145,7 @@ typedef struct _pf_t
 pf_t * pf_alloc(
   int min_samples, int max_samples,
   double alpha_slow, double alpha_fast,
-  pf_init_model_fn_t random_pose_fn, void * random_pose_data);
+  pf_init_model_fn_t random_pose_fn, void * random_pose_data, double k_l);
 
 // Free an existing filter
 void pf_free(pf_t * pf);
