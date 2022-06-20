@@ -148,8 +148,8 @@ private:
 
   float min_length_;
   float max_length_;
-  float height_scale_;
   float length_scale_;
+  float height_scale_;
   float head_radius_scale_;
   float head_length_scale_;
   float shaft_radius_scale_;
