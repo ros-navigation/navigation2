@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cmath>
 #include <chrono>
 #include <memory>
 
@@ -27,11 +26,9 @@ Wait::Wait()
 {
 }
 
-Wait::~Wait()
-{
-}
+Wait::~Wait() = default;
 
-Status Wait::onRun(const std::shared_ptr<const WaitAction::Goal> command)
+Status Wait::onRun(const std::shared_ptr<const WaitAction::Goal> &command)
 {
   wait_end_ = std::chrono::steady_clock::now() +
     rclcpp::Duration(command->time).to_chrono<std::chrono::nanoseconds>();

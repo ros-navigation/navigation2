@@ -63,18 +63,17 @@ public:
   TimedBehavior()
   : action_server_(nullptr),
     cycle_frequency_(10.0),
-    enabled_(false)
+    enabled_(false),
+    transform_tolerance_(0.0)
   {
   }
 
-  virtual ~TimedBehavior()
-  {
-  }
+  virtual ~TimedBehavior() = default;
 
   // Derived classes can override this method to catch the command and perform some checks
   // before getting into the main loop. The method will only be called
   // once and should return SUCCEEDED otherwise behavior will return FAILED.
-  virtual Status onRun(const std::shared_ptr<const typename ActionT::Goal> command) = 0;
+  virtual Status onRun(const std::shared_ptr<const typename ActionT::Goal> &command) = 0;
 
 
   // This is the method derived classes should mainly implement
