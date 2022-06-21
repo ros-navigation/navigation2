@@ -144,10 +144,12 @@ private:
 
   rviz_common::properties::FloatProperty * arrow_min_length_property_;
   rviz_common::properties::FloatProperty * arrow_max_length_property_;
+  rviz_common::properties::FloatProperty * arrow_height_scale_property_;
 
   float min_length_;
   float max_length_;
   float length_scale_;
+  float height_scale_;
   float head_radius_scale_;
   float head_length_scale_;
   float shaft_radius_scale_;

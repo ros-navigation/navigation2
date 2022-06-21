@@ -97,7 +97,7 @@ ParticleCloudDisplay::ParticleCloudDisplay(
 }
 
 ParticleCloudDisplay::ParticleCloudDisplay()
-: min_length_(0.02f), max_length_(0.3f)
+: min_length_(0.02f), max_length_(0.3f), height_scale_(5.0f)
 {
   initializeProperties();
 
@@ -108,6 +108,7 @@ ParticleCloudDisplay::ParticleCloudDisplay()
   arrow_alpha_property_->setMax(1);
   arrow_min_length_property_->setMax(max_length_);
   arrow_max_length_property_->setMin(min_length_);
+  arrow_height_scale_property_->setMin(0);
 }
 
 void ParticleCloudDisplay::initializeProperties()
@@ -130,6 +131,9 @@ void ParticleCloudDisplay::initializeProperties()
 
   arrow_max_length_property_ = new rviz_common::properties::FloatProperty(
     "Max Arrow Length", max_length_, "Maximum length of the arrows.", this, SLOT(updateGeometry()));
+
+  arrow_height_scale_property_ = new rviz_common::properties::FloatProperty(
+    "Arrow Height Scale", height_scale_, "Scaling factor for arrow height", this, SLOT(updateGeometry()));
 
   // Scales are set based on initial values
   length_scale_ = max_length_ - min_length_;
@@ -174,6 +178,7 @@ void ParticleCloudDisplay::processMessage(const nav2_msgs::msg::ParticleCloud::C
     poses_[i].position = rviz_common::pointMsgToOgre(msg->particles[i].pose.position);
     poses_[i].orientation = rviz_common::quaternionMsgToOgre(msg->particles[i].pose.orientation);
     poses_[i].weight = static_cast<float>(msg->particles[i].weight);
+    poses_[i].position.z = poses_[i].weight * height_scale_;
   }
 
   updateDisplay();
