@@ -125,8 +125,8 @@ protected:
    * @param feedback
    * @param result
    */
-  template <typename T, typename V, typename Z>
-  void followWaypointsHandler(const T& action_server, const V& feedback, const Z& result);
+  template<typename T, typename V, typename Z>
+  void followWaypointsHandler(const T & action_server, const V & feedback, const Z & result);
 
   /**
    * @brief Action server callbacks
@@ -164,7 +164,7 @@ protected:
    * @return std::vector<geometry_msgs::msg::PoseStamped>
    */
   std::vector<geometry_msgs::msg::PoseStamped> convertGPSPosesToMapPoses(
-    const std::vector<geographic_msgs::msg::GeoPose>& gps_poses);
+    const std::vector<geographic_msgs::msg::GeoPose> & gps_poses);
 
 
   /**
