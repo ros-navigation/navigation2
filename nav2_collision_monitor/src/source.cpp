@@ -28,8 +28,15 @@ namespace nav2_collision_monitor
 
 Source::Source(
   const nav2_util::LifecycleNode::WeakPtr & node,
-  const std::string & source_name)
-: node_(node), source_name_(source_name)
+  const std::string & source_name,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const std::string & base_frame_id,
+  const std::string & global_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const rclcpp::Duration & data_timeout)
+: node_(node), source_name_(source_name), tf_buffer_(tf_buffer),
+  base_frame_id_(base_frame_id), global_frame_id_(global_frame_id),
+  transform_tolerance_(transform_tolerance), data_timeout_(data_timeout)
 {
 }
 
@@ -37,7 +44,7 @@ Source::~Source()
 {
 }
 
-void Source::getBasicParameters(std::string & source_topic)
+void Source::getCommonParameters(std::string & source_topic)
 {
   auto node = node_.lock();
   if (!node) {
@@ -52,13 +59,12 @@ void Source::getBasicParameters(std::string & source_topic)
 
 bool Source::sourceValid(
   const rclcpp::Time & source_time,
-  const rclcpp::Time & curr_time,
-  const rclcpp::Duration & data_timeout) const
+  const rclcpp::Time & curr_time) const
 {
   // Source is considered as not valid, if latest received data timestamp is earlier
-  // than current time by data_timeout interval
+  // than current time by data_timeout_ interval
   const rclcpp::Duration dt = curr_time - source_time;
-  if (dt > data_timeout) {
+  if (dt > data_timeout_) {
     RCLCPP_WARN(
       logger_,
       "[%s]: Latest source and current collision monitor node timestamps differ on %f seconds. "
@@ -73,28 +79,24 @@ bool Source::sourceValid(
 bool Source::getTransform(
   const std::string & source_frame_id,
   const rclcpp::Time & source_time,
-  const std::string & target_frame_id,
-  const rclcpp::Time & target_time,
-  const std::string & global_frame_id,
-  const tf2::Duration & transform_tolerance,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const rclcpp::Time & curr_time,
   tf2::Transform & tf2_transform) const
 {
   geometry_msgs::msg::TransformStamped transform;
   tf2_transform.setIdentity();  // initialize by identical transform
 
   try {
-    // Obtaining the transform to get data from source to target frame.
-    // This also considers the time shift between source and target.
-    transform = tf_buffer->lookupTransform(
-      target_frame_id, target_time,
+    // Obtaining the transform to get data from source to base frame.
+    // This also considers the time shift between source and base.
+    transform = tf_buffer_->lookupTransform(
+      base_frame_id_, curr_time,
       source_frame_id, source_time,
-      global_frame_id, transform_tolerance);
+      global_frame_id_, transform_tolerance_);
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(
       logger_,
       "[%s]: Failed to get \"%s\"->\"%s\" frame transform: %s",
-      source_name_.c_str(), source_frame_id.c_str(), target_frame_id.c_str(), e.what());
+      source_name_.c_str(), source_frame_id.c_str(), base_frame_id_.c_str(), e.what());
     return false;
   }
 

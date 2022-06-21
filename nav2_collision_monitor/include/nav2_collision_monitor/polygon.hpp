@@ -15,15 +15,19 @@
 #ifndef NAV2_COLLISION_MONITOR__POLYGON_HPP_
 #define NAV2_COLLISION_MONITOR__POLYGON_HPP_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/polygon.hpp"
-#include "geometry_msgs/msg/point.hpp"
+
+#include "tf2/time.h"
+#include "tf2_ros/buffer.h"
 
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_costmap_2d/footprint_subscriber.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 
@@ -42,10 +46,16 @@ public:
    * @brief Polygon constructor
    * @param node Collision Monitor node pointer
    * @param polygon_name Name of polygon
+   * @param tf_buffer Shared pointer to a TF buffer
+   * @param base_frame_id Robot base frame ID
+   * @param transform_tolerance Transform tolerance
    */
   Polygon(
     const nav2_util::LifecycleNode::WeakPtr & node,
-    const std::string & polygon_name);
+    const std::string & polygon_name,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const std::string & base_frame_id,
+    const tf2::Duration & transform_tolerance);
   /**
    * @brief Polygon destructor
    */
@@ -87,17 +97,23 @@ public:
    * @return Speed slowdown ratio
    */
   double getSlowdownRatio() const;
+  /**
+   * @brief Obtains required time before collision for current polygon.
+   * Applicable for APPROACH model.
+   * @return Time before collision in seconds
+   */
+  double getTimeBeforeCollision() const;
 
   /**
    * @brief Gets polygon points
    * @param poly Output polygon points (vertices)
    */
   virtual void getPolygon(std::vector<Point> & poly) const;
+
   /**
-   * @brief Sets polygon by points
-   * @param poly Input polygon points (vertices) to set
+   * @brief Updates polygon from footprint subscriber (if any)
    */
-  void setPolygon(const std::vector<geometry_msgs::msg::Point> & poly);
+  void updatePolygon();
 
   /**
    * @brief Gets number of points inside given polygon
@@ -108,25 +124,37 @@ public:
   virtual int getPointsInside(const std::vector<Point> & points) const;
 
   /**
-   * @brief Publishes polygon message into a its own topic
-   * @param base_frame_id Robot base frame ID
+   * @brief Obtains estimated (simulated) time before a collision.
+   * Applicable for APPROACH model.
+   * @param collision_points Array of 2D obstacle points
+   * @param velocity Simulated robot velocity
+   * @return Estimated time before a collision. If there is no collision,
+   * return value will be negative.
    */
-  void publish(const std::string & base_frame_id) const;
+  double getCollisionTime(
+    const std::vector<Point> & collision_points,
+    const Velocity & velocity) const;
+
+  /**
+   * @brief Publishes polygon message into a its own topic
+   */
+  void publish() const;
 
 protected:
   /**
-   * @brief Supporting routine obtaining ROS-parameters basic for all shapes
+   * @brief Supporting routine obtaining ROS-parameters common for all shapes
    * @param polygon_topic Output name of polygon publishing topic
    * @return True if all parameters were obtained or false in failure case
    */
-  bool getBasicParameters(std::string & polygon_topic);
+  bool getCommonParameters(std::string & polygon_topic);
 
   /**
    * @brief Supporting routine obtaining polygon-specific ROS-parameters
    * @param polygon_topic Output name of polygon publishing topic
+   * @param footprint_topic Output name of footprint topic. Empty, if no footprint subscription
    * @return True if all parameters were obtained or false in failure case
    */
-  virtual bool getParameters(std::string & polygon_topic);
+  virtual bool getParameters(std::string & polygon_topic, std::string & footprint_topic);
 
   /**
    * @brief Checks if point is inside polygon
@@ -151,6 +179,20 @@ protected:
   int max_points_;
   /// @brief Robot slowdown (share of its actual speed)
   double slowdown_ratio_;
+  /// @brief Time before collision in seconds
+  double time_before_collision_;
+  /// @brief Time step for robot movement simulation
+  double simulation_time_step_;
+  /// @brief Footprint subscriber
+  std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+
+  // Global variables
+  /// @brief TF buffer
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  /// @brief Base frame ID
+  std::string base_frame_id_;
+  /// @brief Transform tolerance
+  tf2::Duration transform_tolerance_;
 
   // Visualization
   /// @brief Whether to publish the polygon

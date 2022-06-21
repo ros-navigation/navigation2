@@ -22,12 +22,22 @@ namespace nav2_collision_monitor
 
 Scan::Scan(
   const nav2_util::LifecycleNode::WeakPtr & node,
-  const std::string & source_name)
-: Source(node, source_name), data_(nullptr)
+  const std::string & source_name,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const std::string & base_frame_id,
+  const std::string & global_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const rclcpp::Duration & data_timeout)
+: Source(
+    node, source_name, tf_buffer, base_frame_id, global_frame_id,
+    transform_tolerance, data_timeout),
+  data_(nullptr)
 {
+  RCLCPP_INFO(logger_, "[%s]: Creating Scan", source_name_.c_str());
 }
 
 Scan::~Scan() {
+  RCLCPP_INFO(logger_, "[%s]: Destroying Scan", source_name_.c_str());
   data_sub_.reset();
 }
 
@@ -41,7 +51,7 @@ void Scan::configure()
   std::string source_topic;
 
   // Laser scanner has no own parameters
-  getBasicParameters(source_topic);
+  getCommonParameters(source_topic);
 
   rclcpp::QoS scan_qos = rclcpp::SensorDataQoS();  // set to default
   data_sub_ = node->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -50,12 +60,7 @@ void Scan::configure()
 }
 
 void Scan::getData(
-  const std::string & base_frame_id,
   const rclcpp::Time & curr_time,
-  const std::string & global_frame_id,
-  const tf2::Duration & transform_tolerance,
-  const rclcpp::Duration & data_timeout,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   std::vector<Point> & data) const
 {
   // Ignore data from the source if it is not being published yet or
@@ -63,16 +68,14 @@ void Scan::getData(
   if (data_ == nullptr) {
     return;
   }
-  if (!sourceValid(data_->header.stamp, curr_time, data_timeout)) {
+  if (!sourceValid(data_->header.stamp, curr_time)) {
     return;
   }
 
   // Obtaining the transform to get data from source frame and time where it was received
   // to the base frame and current time
   tf2::Transform tf_transform;
-  if (!getTransform(
-    data_->header.frame_id, data_->header.stamp, base_frame_id, curr_time, global_frame_id,
-    transform_tolerance, tf_buffer, tf_transform))
+  if (!getTransform(data_->header.frame_id, data_->header.stamp, curr_time, tf_transform))
   {
     return;
   }

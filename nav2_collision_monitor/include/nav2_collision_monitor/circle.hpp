@@ -32,10 +32,16 @@ public:
    * @brief Circle class constructor
    * @param node Collision Monitor node pointer
    * @param polygon_name Name of circle
+   * @param tf_buffer Shared pointer to a TF buffer
+   * @param base_frame_id Robot base frame ID
+   * @param transform_tolerance Transform tolerance
    */
   Circle(
     const nav2_util::LifecycleNode::WeakPtr & node,
-    const std::string & polygon_name);
+    const std::string & polygon_name,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const std::string & base_frame_id,
+    const tf2::Duration & transform_tolerance);
   /**
    * @brief Circle class destructor
    */
@@ -58,11 +64,13 @@ public:
 
 protected:
   /**
-   * @brief Supporting routine obtaining circle-specific ROS-parameters
+   * @brief Supporting routine obtaining polygon-specific ROS-parameters
    * @param polygon_topic Output name of polygon publishing topic
+   * @param footprint_topic Output name of footprint topic. For Circle returns empty string,
+   * there is no footprint subscription in this class.
    * @return True if all parameters were obtained or false in failure case
    */
-  bool getParameters(std::string & polygon_topic) override;
+  bool getParameters(std::string & polygon_topic, std::string & footprint_topic) override;
 
   // ----- Variables -----
 

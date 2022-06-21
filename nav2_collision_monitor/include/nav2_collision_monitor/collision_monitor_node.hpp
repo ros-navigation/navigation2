@@ -20,7 +20,6 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
 #include "tf2/time.h"
@@ -28,7 +27,6 @@
 #include "tf2_ros/transform_listener.h"
 
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_costmap_2d/footprint_subscriber.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
@@ -91,52 +89,52 @@ protected:
 
 protected:
   /**
-   * @brief Callback for odometry. Sets odom_frame_id_ from message.
-   * @param msg Incoming odom message
-   */
-  void odomCallback(nav_msgs::msg::Odometry::ConstSharedPtr msg);
-  /**
    * @brief Callback for input cmd_vel
    * @param msg Input cmd_vel message
    */
   void cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg);
   /**
-   * @brief Publishes output cmd_vel
-   * @param vel Output velocity to publish
+   * @brief Publishes output cmd_vel. If robot was stopped more than stop_pub_timeout_ seconds,
+   * quit to publish 0-velocity.
+   * @param robot_action Robot action to publish
    */
-  void publishVelocity(const Velocity & vel) const;
+  void publishVelocity(const Action & robot_action);
 
   /**
    * @brief Supporting routine obtaining all ROS-parameters
    * @param odom_topic Output name of odom topic
    * @param cmd_vel_in_topic Output name of cmd_vel_in topic
    * @param cmd_vel_out_topic Output name of cmd_vel_out topic
-   * @param footprint_topic Output name of footprint topic. Empty, if no footprint subscription
    * is required.
    * @return True if all parameters were obtained or false in failure case
    */
   bool getParameters(
     std::string & odom_topic,
     std::string & cmd_vel_in_topic,
-    std::string & cmd_vel_out_topic,
-    std::string & footprint_topic);
+    std::string & cmd_vel_out_topic);
   /**
    * @brief Supporting routine creating and configuring all polygons
+   * @param base_frame_id Robot base frame ID
+   * @param transform_tolerance Transform tolerance
    * @return True if all polygons were configured successfully or false in failure case
    */
-  bool configurePolygons();
-  /**
-   * @brief Supporting routine creating and configuring robot footprint polygon
-   * @param footprint_topic Output name of footprint topic. Empty, if no footprint subscription
-   * is required.
-   * @return True if footprint polygon was configured successfully or false in failure case
-   */
-  bool configureFootprint(std::string & footprint_topic);
+  bool configurePolygons(
+    const std::string & base_frame_id,
+    const tf2::Duration & transform_tolerance);
   /**
    * @brief Supporting routine creating and configuring all data sources
+   * @param base_frame_id Robot base frame ID
+   * @param odom_frame_id Odometry frame ID. Used as global frame to get
+   * source->base time inerpolated transform.
+   * @param transform_tolerance Transform tolerance
+   * @param data_timeout Maximum time interval in which data is considered valid
    * @return True if all sources were configured successfully or false in failure case
    */
-  bool configureSources();
+  bool configureSources(
+  const std::string & base_frame_id,
+  const std::string & odom_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const rclcpp::Duration & data_timeout);
 
   /**
    * @brief Main processing routine
@@ -160,27 +158,17 @@ protected:
 
   /**
    * @brief Processes APPROACH action type
+   * @param polygon Polygon to process
    * @param collision_points Array of 2D obstacle points
    * @param velocity Desired robot velocity
    * @param robot_action Output processed robot action
-   * @return True if returned action is caused by APPROACH model of robot footprint, otherwise false
+   * @return True if returned action is caused by current polygon, otherwise false
    */
   bool processApproach(
+    const std::shared_ptr<Polygon> polygon,
     const std::vector<Point> & collision_points,
     const Velocity & velocity,
     Action & robot_action) const;
-
-  /**
-   * @brief Obtains estimated (simulated) time before a collision.
-   * Applicable for APPROACH model.
-   * @param collision_points Array of 2D obstacle points
-   * @param velocity Simulated robot velocity
-   * @return Estimated time before a collision. If there is no collision,
-   * return value will be negative.
-   */
-  double getCollisionTime(
-    const std::vector<Point> & collision_points,
-    const Velocity & velocity) const;
 
   /**
    * @brief Prints robot action and polygon caused it (if it was)
@@ -211,38 +199,21 @@ protected:
   /// @brief Data sources array
   std::vector<std::shared_ptr<Source>> sources_;
 
-  /// @brief Odometry subscriber
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-
   // Input/output speed controls
   /// @beirf Input cmd_vel subscriber
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_sub_;
   /// @brief Output cmd_vel publisher
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
 
-  // Global parameters
-  /// @brief Base frame ID
-  std::string base_frame_id_;
-  /// @brief Odometry frame ID. Used as global frame to get source->base time inerpolated transform.
-  std::string odom_frame_id_;
-  /// @brief Transform tolerance
-  tf2::Duration transform_tolerance_;
-  /// @brief Maximum time interval in which data is considered valid
-  tf2::Duration data_timeout_;
-  /// @brief Whether to use APPROACH model
-  bool approach_;
-  /// @brief Footprint subscriber
-  std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
-  /// @brief Time before collision in seconds
-  double time_before_collision_;
-  /// @brief Time step for robot movement simulation
-  double simulation_time_step_;
-
   /// @brief Whether main routine is active
   bool process_active_;
 
-  /// @brief Previous robot action type
-  ActionType action_type_prev_;
+  /// @brief Previous robot action
+  Action robot_action_prev_;
+  /// @brief Latest timestamp when robot has 0-velocity
+  rclcpp::Time stop_stamp_;
+  /// @brief Timeout after which 0-velocity ceases to be published
+  rclcpp::Duration stop_pub_timeout_;
 };  // class CollisionMonitor
 
 }  // namespace nav2_collision_monitor

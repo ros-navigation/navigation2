@@ -25,13 +25,18 @@ namespace nav2_collision_monitor
 
 Circle::Circle(
   const nav2_util::LifecycleNode::WeakPtr & node,
-  const std::string & polygon_name)
-: Polygon::Polygon(node, polygon_name)
+  const std::string & polygon_name,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const std::string & base_frame_id,
+  const tf2::Duration & transform_tolerance)
+: Polygon::Polygon(node, polygon_name, tf_buffer, base_frame_id, transform_tolerance)
 {
+  RCLCPP_INFO(logger_, "[%s]: Creating Circle", polygon_name_.c_str());
 }
 
 Circle::~Circle()
 {
+  RCLCPP_INFO(logger_, "[%s]: Destroying Circle", polygon_name_.c_str());
 }
 
 void Circle::getPolygon(std::vector<Point> & poly) const
@@ -69,15 +74,18 @@ int Circle::getPointsInside(const std::vector<Point> & points) const
   return num;
 }
 
-bool Circle::getParameters(std::string & polygon_topic) {
+bool Circle::getParameters(std::string & polygon_topic, std::string & footprint_topic) {
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  if (!getBasicParameters(polygon_topic)) {
+  if (!getCommonParameters(polygon_topic)) {
     return false;
   }
+
+  // There is no footprint subscription for the Circle. Thus, set string as empty.
+  footprint_topic.clear();
 
   try {
     // Leave it not initialized: the will cause an error if it will not set

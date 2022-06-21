@@ -18,8 +18,6 @@
 #include <utility>
 #include <functional>
 
-#include "geometry_msgs/msg/point.hpp"
-
 #include "tf2_ros/create_timer_ros.h"
 
 #include "nav2_util/node_utils.hpp"
@@ -31,8 +29,8 @@ namespace nav2_collision_monitor
 
 CollisionMonitor::CollisionMonitor(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("collision_monitor", "", false, options),
-  odom_frame_id_(""), footprint_sub_(nullptr), process_active_(false),
-  action_type_prev_(DO_NOTHING)
+  process_active_(false), robot_action_prev_{DO_NOTHING, {0.0, 0.0, 0.0}},
+  stop_stamp_{0, 0, get_clock()->get_clock_type()}, stop_pub_timeout_(1.0, 0.0)
 {
 }
 
@@ -58,30 +56,17 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
   std::string odom_topic;
   std::string cmd_vel_in_topic;
   std::string cmd_vel_out_topic;
-  std::string footprint_topic;
 
   // Obtaining ROS parameters
-  if (!getParameters(odom_topic, cmd_vel_in_topic, cmd_vel_out_topic, footprint_topic)) {
+  if (!getParameters(odom_topic, cmd_vel_in_topic, cmd_vel_out_topic)) {
     return nav2_util::CallbackReturn::FAILURE;
   }
-
-  // Setting subscribers and publishers
-  rclcpp::QoS odom_qos = rclcpp::SystemDefaultsQoS();  // set to default
-  odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-    odom_topic, odom_qos,
-    std::bind(&CollisionMonitor::odomCallback, this, std::placeholders::_1));
 
   cmd_vel_in_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
     cmd_vel_in_topic, 1,
     std::bind(&CollisionMonitor::cmdVelInCallback, this, std::placeholders::_1));
   cmd_vel_out_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
     cmd_vel_out_topic, 1);
-
-  if (approach_ && footprint_topic.length() > 0) {
-    footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-      shared_from_this(), footprint_topic, *tf_buffer_,
-      base_frame_id_, tf2::durationToSec(transform_tolerance_));
-  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -94,14 +79,9 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Activating lifecycle publisher
   cmd_vel_out_pub_->on_activate();
 
-  // Activating STOP/SLOWDOWN polygons
+  // Activating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     polygon->activate();
-  }
-
-  // Activating footprint APPROACH polygon
-  if (approach_) {
-    footprint_->activate();
   }
 
   // Since polygons are being published when cmd_vel_in appears,
@@ -126,16 +106,11 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   process_active_ = false;
 
   // Reset action type to default after worker deactivating
-  action_type_prev_ = DO_NOTHING;
+  robot_action_prev_ = {DO_NOTHING, {0.0, 0.0, 0.0}};
 
   // Deactivating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     polygon->deactivate();
-  }
-
-  // Deactivating footprint polygon
-  if (approach_) {
-    footprint_->deactivate();
   }
 
   // Deactivating lifecycle publishers
@@ -152,14 +127,10 @@ CollisionMonitor::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  footprint_sub_.reset();
   cmd_vel_in_sub_.reset();
   cmd_vel_out_pub_.reset();
-  odom_sub_.reset();
-  odom_frame_id_.clear();
 
   polygons_.clear();
-  footprint_.reset();
   sources_.clear();
 
   tf_listener_.reset();
@@ -176,26 +147,30 @@ CollisionMonitor::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void CollisionMonitor::odomCallback(nav_msgs::msg::Odometry::ConstSharedPtr msg)
-{
-  // Obtaining odom_frame_id_ from first message and setting it as global frame for data sources
-  if (odom_frame_id_.length() == 0) {
-    odom_frame_id_ = msg->header.frame_id;
-  }
-}
-
 void CollisionMonitor::cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg)
 {
   process({msg->linear.x, msg->linear.y, msg->angular.z});
 }
 
-void CollisionMonitor::publishVelocity(const Velocity & vel) const
+void CollisionMonitor::publishVelocity(const Action & robot_action)
 {
+  const Velocity zero_vel{0.0, 0.0, 0.0};
+  if (robot_action.req_vel == zero_vel) {
+    if (robot_action_prev_.req_vel != zero_vel) {
+      // Robot just stopped: saving stop timestamp and continue
+      stop_stamp_ = this->now();
+    } else if (this->now() - stop_stamp_ > stop_pub_timeout_) {
+      // More than stop_pub_timeout_ passed after robot has been stopped.
+      // Cease publishing output cmd_vel.
+      return;
+    }
+  }
+
   std::unique_ptr<geometry_msgs::msg::Twist> cmd_vel_out_msg =
     std::make_unique<geometry_msgs::msg::Twist>();
-  cmd_vel_out_msg->linear.x = vel.x;
-  cmd_vel_out_msg->linear.y = vel.y;
-  cmd_vel_out_msg->angular.z = vel.tw;
+  cmd_vel_out_msg->linear.x = robot_action.req_vel.x;
+  cmd_vel_out_msg->linear.y = robot_action.req_vel.y;
+  cmd_vel_out_msg->angular.z = robot_action.req_vel.tw;
   // linear.z, angular.x and angular.y will remain 0.0
 
   cmd_vel_out_pub_->publish(std::move(cmd_vel_out_msg));
@@ -204,9 +179,12 @@ void CollisionMonitor::publishVelocity(const Velocity & vel) const
 bool CollisionMonitor::getParameters(
   std::string & odom_topic,
   std::string & cmd_vel_in_topic,
-  std::string & cmd_vel_out_topic,
-  std::string & footprint_topic)
+  std::string & cmd_vel_out_topic)
 {
+  std::string base_frame_id, odom_frame_id;
+  tf2::Duration transform_tolerance;
+  rclcpp::Duration data_timeout(2.0, 0.0);
+
   try {
     auto node = shared_from_this();
 
@@ -223,42 +201,42 @@ bool CollisionMonitor::getParameters(
 
     nav2_util::declare_parameter_if_not_declared(
       node, "base_frame_id", rclcpp::ParameterValue("base_footprint"));
-    base_frame_id_ = get_parameter("base_frame_id").as_string();
+    base_frame_id = get_parameter("base_frame_id").as_string();
+    nav2_util::declare_parameter_if_not_declared(
+      node, "odom_frame_id", rclcpp::ParameterValue("odom"));
+    odom_frame_id = get_parameter("odom_frame_id").as_string();
     nav2_util::declare_parameter_if_not_declared(
       node, "transform_tolerance", rclcpp::ParameterValue(0.1));
-    transform_tolerance_ =
+    transform_tolerance =
       tf2::durationFromSec(get_parameter("transform_tolerance").as_double());
     nav2_util::declare_parameter_if_not_declared(
       node, "data_timeout", rclcpp::ParameterValue(2.0));
-    data_timeout_ =
-      tf2::durationFromSec(get_parameter("data_timeout").as_double());
+    data_timeout =
+      rclcpp::Duration::from_seconds(get_parameter("data_timeout").as_double());
 
     nav2_util::declare_parameter_if_not_declared(
-      node, "approach", rclcpp::ParameterValue(false));
-    approach_ = get_parameter("approach").as_bool();
+      node, "stop_pub_timeout", rclcpp::ParameterValue(1.0));
+    stop_pub_timeout_ =
+      rclcpp::Duration::from_seconds(get_parameter("stop_pub_timeout").as_double());
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(get_logger(), "Error while getting parameters: %s", ex.what());
     return false;
   }
 
-  if (!configurePolygons()) {
+  if (!configurePolygons(base_frame_id, transform_tolerance)) {
     return false;
   }
 
-  if (approach_) {
-    if (!configureFootprint(footprint_topic)) {
-      return false;
-    }
-  }
-
-  if (!configureSources()) {
+  if (!configureSources(base_frame_id, odom_frame_id, transform_tolerance, data_timeout)) {
     return false;
   }
 
   return true;
 }
 
-bool CollisionMonitor::configurePolygons()
+bool CollisionMonitor::configurePolygons(
+  const std::string & base_frame_id,
+  const tf2::Duration & transform_tolerance)
 {
   try {
     auto node = shared_from_this();
@@ -273,9 +251,11 @@ bool CollisionMonitor::configurePolygons()
       const std::string polygon_type = get_parameter(polygon_name + ".type").as_string();
 
       if (polygon_type == "polygon") {
-        polygons_.push_back(std::make_shared<Polygon>(node, polygon_name));
+        polygons_.push_back(std::make_shared<Polygon>(
+          node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
       } else if (polygon_type == "circle") {
-        polygons_.push_back(std::make_shared<Circle>(node, polygon_name));
+        polygons_.push_back(std::make_shared<Circle>(
+          node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
       } else {  // Error if something else
         RCLCPP_ERROR(
           get_logger(),
@@ -288,17 +268,6 @@ bool CollisionMonitor::configurePolygons()
       if (!polygons_.back()->configure()) {
         return false;
       }
-
-      // Added polygon should be STOP or SLOWDOWN action type
-      if (polygons_.back()->getActionType() != STOP &&
-        polygons_.back()->getActionType() != SLOWDOWN)
-      {
-        RCLCPP_ERROR(
-          get_logger(),
-          "[%s]: Should be \"stop\" or \"slowdown\" action type",
-          polygon_name.c_str());
-        return false;
-      }
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(get_logger(), "Error while getting parameters: %s", ex.what());
@@ -308,69 +277,11 @@ bool CollisionMonitor::configurePolygons()
   return true;
 }
 
-bool CollisionMonitor::configureFootprint(std::string & footprint_topic)
-{
-  try {
-    auto node = shared_from_this();
-
-    nav2_util::declare_parameter_if_not_declared(
-      node, "footprint_name", rclcpp::ParameterValue("FootprintApproach"));
-    std::string footprint_name = get_parameter("footprint_name").as_string();
-
-    nav2_util::declare_parameter_if_not_declared(
-      node, "time_before_collision", rclcpp::ParameterValue(2.0));
-    time_before_collision_ = get_parameter("time_before_collision").as_double();
-    nav2_util::declare_parameter_if_not_declared(
-      node, "simulation_time_step", rclcpp::ParameterValue(0.02));
-    simulation_time_step_ = get_parameter("simulation_time_step").as_double();
-
-    nav2_util::declare_parameter_if_not_declared(
-      node, footprint_name + ".type", rclcpp::PARAMETER_STRING);
-    const std::string footprint_type = get_parameter(footprint_name + ".type").as_string();
-
-    if (footprint_type == "polygon") {
-      // Create a new footprint subscription only for polygon footprint type
-      nav2_util::declare_parameter_if_not_declared(
-        node, "footprint_topic", rclcpp::ParameterValue("footprint"));
-      footprint_topic = get_parameter("footprint_topic").as_string();
-
-      footprint_ = std::make_shared<Polygon>(node, footprint_name);
-    } else if (footprint_type == "circle") {
-      // If circle footprint type was chosen, it will be supposed to be static in a time:
-      // no footprint subscription is required
-      footprint_topic = "";
-
-      footprint_ = std::make_shared<Circle>(node, footprint_name);
-    } else {  // Error if something else
-      RCLCPP_ERROR(
-        get_logger(),
-        "[%s]: Unknown footprint type: %s",
-        footprint_name.c_str() ,footprint_type.c_str());
-      return false;
-    }
-
-    // Configure footprint polygon
-    if (!footprint_->configure()) {
-      return false;
-    }
-
-    // Footprint should be APPROACH action type
-    if (footprint_->getActionType() != APPROACH) {
-      RCLCPP_ERROR(
-        get_logger(),
-        "[%s]: Should be \"approach\" action type",
-        footprint_name.c_str());
-      return false;
-    }
-  } catch (const std::exception & ex) {
-    RCLCPP_ERROR(get_logger(), "Error while getting parameters: %s", ex.what());
-    return false;
-  }
-
-  return true;
-}
-
-bool CollisionMonitor::configureSources()
+bool CollisionMonitor::configureSources(
+  const std::string & base_frame_id,
+  const std::string & odom_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const rclcpp::Duration & data_timeout)
 {
   try {
     auto node = shared_from_this();
@@ -386,13 +297,17 @@ bool CollisionMonitor::configureSources()
       const std::string source_type = get_parameter(source_name + ".type").as_string();
 
       if (source_type == "scan") {
-        std::shared_ptr<Scan> s = std::make_shared<Scan>(node, source_name);
+        std::shared_ptr<Scan> s = std::make_shared<Scan>(
+          node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
+          transform_tolerance, data_timeout);
 
         s->configure();
 
         sources_.push_back(s);
       } else if (source_type == "pointcloud") {
-        std::shared_ptr<PointCloud> p = std::make_shared<PointCloud>(node, source_name);
+        std::shared_ptr<PointCloud> p = std::make_shared<PointCloud>(
+          node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
+          transform_tolerance, data_timeout);
 
         p->configure();
 
@@ -423,20 +338,12 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
     return;
   }
 
-  // Warn if odometry was not received yet and do nothing
-  if (odom_frame_id_.length() == 0) {
-    RCLCPP_WARN(get_logger(), "Odometry is not received yet");
-    return;
-  }
-
   // Points array collected from different data sources in a robot base frame
   std::vector<Point> collision_points;
 
   // Fill collision_points array from different data sources
   for (std::shared_ptr<Source> source : sources_) {
-    source->getData(
-      base_frame_id_, curr_time, odom_frame_id_, transform_tolerance_,
-      data_timeout_, tf_buffer_, collision_points);
+    source->getData(curr_time, collision_points);
   }
 
   // By default - there is no action
@@ -444,37 +351,38 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   // Polygon causing robot action (if any)
   std::shared_ptr<Polygon> action_polygon;
 
-  // Process STOP and SLOWDOWN polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     if (robot_action.action_type == STOP) {
       // If robot already should stop, do nothing
       break;
     }
 
-    // Process selected polygon
-    if (processStopSlowdown(polygon, collision_points, cmd_vel_in, robot_action)) {
-      action_polygon = polygon;
+    const ActionType at = polygon->getActionType();
+    if (at == STOP || at == SLOWDOWN) {
+      // Process STOP/SLOWDOWN for the selected polygon
+      if (processStopSlowdown(polygon, collision_points, cmd_vel_in, robot_action)) {
+        action_polygon = polygon;
+      }
+    } else if (at == APPROACH) {
+      // Process APPROACH for the selected polygon
+      if (processApproach(polygon, collision_points, cmd_vel_in, robot_action)) {
+        action_polygon = polygon;
+      }
     }
   }
 
-  // Process APPROACH footprint
-  if (approach_ && robot_action.action_type != STOP) {
-    if (processApproach(collision_points, cmd_vel_in, robot_action)) {
-      action_polygon = footprint_;
-    }
-  }
-
-  if (robot_action.action_type != action_type_prev_) {
+  if (robot_action.action_type != robot_action_prev_.action_type) {
     // Report changed robot behavior
     printAction(robot_action, action_polygon);
-    action_type_prev_ = robot_action.action_type;
   }
 
   // Publish requred robot velocity
-  publishVelocity(robot_action.req_vel);
+  publishVelocity(robot_action);
 
   // Publish polygons for better visualization
   publishPolygons();
+
+  robot_action_prev_ = robot_action;
 }
 
 bool CollisionMonitor::processStopSlowdown(
@@ -507,26 +415,19 @@ bool CollisionMonitor::processStopSlowdown(
 }
 
 bool CollisionMonitor::processApproach(
+  const std::shared_ptr<Polygon> polygon,
   const std::vector<Point> & collision_points,
   const Velocity & velocity,
   Action & robot_action) const
 {
-  if (footprint_sub_ != nullptr) {
-    // Get robot footprint from footprint subscriber
-    std::vector<geometry_msgs::msg::Point> footprint_vec;
-    std_msgs::msg::Header footprint_header;
-    footprint_sub_->getFootprintInRobotFrame(footprint_vec, footprint_header);
-
-    // Update footprint polygon points with latest received message
-    footprint_->setPolygon(footprint_vec);
-  }
+  polygon->updatePolygon();
 
   // Obtain time before a collision
-  const double collision_time = getCollisionTime(collision_points, velocity);
+  const double collision_time = polygon->getCollisionTime(collision_points, velocity);
   if (collision_time >= 0.0)
   {
     // If collision will occurr, reduce robot speed
-    const double change_ratio = collision_time / time_before_collision_;
+    const double change_ratio = collision_time / polygon->getTimeBeforeCollision();
     const Velocity safe_vel = velocity * change_ratio;
     // Check that currently calculated velocity is safer than
     // chosen for previous shapes one
@@ -538,36 +439,6 @@ bool CollisionMonitor::processApproach(
   }
 
   return false;
-}
-
-double CollisionMonitor::getCollisionTime(
-  const std::vector<Point> & collision_points,
-  const Velocity & velocity) const
-{
-  // Initial robot pose is {0,0} in base_footprint coordinates
-  Pose pose = {0.0, 0.0, 0.0};
-  Velocity vel = velocity;
-
-  // Array of points transformed to the frame concerned with pose on each simulation step
-  std::vector<Point> points_transformed;
-
-  // Robot movement simulation
-  for (double time = 0.0; time <= time_before_collision_; time += simulation_time_step_) {
-    // Shift the robot pose towards to the vel during simulation_time_step_ time interval
-    // NOTE: vel is changing during the simulation
-    projectState(simulation_time_step_, pose, vel);
-    // Transform collision_points to the frame concerned with current robot pose
-    points_transformed = collision_points;
-    transformPoints(pose, points_transformed);
-    // If the collision occurred on this stage, return the actual time before a collision
-    // as if robot was moved with given velocity
-    if (footprint_->getPointsInside(points_transformed) > footprint_->getMaxPoints()) {
-      return time;
-    }
-  }
-
-  // There is no collision
-  return -1.0;
 }
 
 void CollisionMonitor::printAction(
@@ -588,7 +459,7 @@ void CollisionMonitor::printAction(
     RCLCPP_INFO(
       get_logger(),
       "Robot to approach for %f seconds away from collision",
-      time_before_collision_);
+      action_polygon->getTimeBeforeCollision());
   } else {  // robot_action.action_type == DO_NOTHING
     RCLCPP_INFO(
       get_logger(),
@@ -599,11 +470,7 @@ void CollisionMonitor::printAction(
 void CollisionMonitor::publishPolygons() const
 {
   for (std::shared_ptr<Polygon> polygon : polygons_) {
-    polygon->publish(base_frame_id_);
-  }
-
-  if (approach_) {
-    footprint_->publish(base_frame_id_);
+    polygon->publish();
   }
 }
 

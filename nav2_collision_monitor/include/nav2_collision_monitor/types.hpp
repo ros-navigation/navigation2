@@ -32,6 +32,16 @@ struct Velocity
     return first_vel < second_vel;
   }
 
+  inline bool operator==(const Velocity & second) const
+  {
+    return x == second.x && y == second.y && tw == second.tw;
+  }
+
+  inline bool operator!=(const Velocity & second) const
+  {
+    return x != second.x || y != second.y || tw != second.tw;
+  }
+
   inline Velocity operator*(const double & mul) const
   {
     return {x * mul, y * mul, tw * mul};
