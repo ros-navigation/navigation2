@@ -43,7 +43,7 @@ public:
 
   ~DummyBehavior() = default;
 
-  Status onRun(const std::shared_ptr<const BehaviorAction::Goal> &goal) override
+  Status onRun(const std::shared_ptr<const BehaviorAction::Goal> goal) override
   {
     // A normal behavior would catch the command and initialize
     initialized_ = false;

@@ -73,7 +73,7 @@ public:
   // Derived classes can override this method to catch the command and perform some checks
   // before getting into the main loop. The method will only be called
   // once and should return SUCCEEDED otherwise behavior will return FAILED.
-  virtual Status onRun(const std::shared_ptr<const typename ActionT::Goal> &command) = 0;
+  virtual Status onRun(const std::shared_ptr<const typename ActionT::Goal> command) = 0;
 
 
   // This is the method derived classes should mainly implement

@@ -71,7 +71,7 @@ void Spin::onConfigure()
   node->get_parameter("rotational_acc_lim", rotational_acc_lim_);
 }
 
-Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> &command)
+Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 {
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(

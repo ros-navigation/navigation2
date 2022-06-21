@@ -45,7 +45,7 @@ public:
    * @param command Goal to execute
    * @return Status of behavior
    */
-  Status onRun(const std::shared_ptr<const SpinAction::Goal> &command) override;
+  Status onRun(const std::shared_ptr<const SpinAction::Goal> command) override;
 
   /**
    * @brief Configuration of behavior action

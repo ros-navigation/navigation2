@@ -28,7 +28,7 @@ Wait::Wait()
 
 Wait::~Wait() = default;
 
-Status Wait::onRun(const std::shared_ptr<const WaitAction::Goal> &command)
+Status Wait::onRun(const std::shared_ptr<const WaitAction::Goal> command)
 {
   wait_end_ = std::chrono::steady_clock::now() +
     rclcpp::Duration(command->time).to_chrono<std::chrono::nanoseconds>();
