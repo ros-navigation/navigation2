@@ -437,7 +437,8 @@ std::vector<geometry_msgs::msg::PoseStamped>
 WaypointFollower::convertGPSPosesToMapPoses(
   const std::vector<geographic_msgs::msg::GeoPose> & gps_poses)
 {
-  RCLCPP_INFO(this->get_logger(), "Converting GPS waypoints to %s Frame..",
+  RCLCPP_INFO(
+    this->get_logger(), "Converting GPS waypoints to %s Frame..",
     global_frame_id_.c_str());
 
   std::vector<geometry_msgs::msg::PoseStamped> poses_in_map_frame_vector;
