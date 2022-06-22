@@ -742,8 +742,8 @@ double RegulatedPurePursuitController::findVelocitySignChange(
       geometry_msgs::msg::PoseStamped pose_temp;
 
       transformPose(
-      tf_, pose.header.frame_id, global_plan_.poses[pose_id],
-      pose_temp, transform_tolerance_);
+      pose.header.frame_id, global_plan_.poses[pose_id],
+      pose_temp);
 
       auto x = pose_temp.pose.position.x - pose.pose.position.x;
       auto y = pose_temp.pose.position.y - pose.pose.position.y;
