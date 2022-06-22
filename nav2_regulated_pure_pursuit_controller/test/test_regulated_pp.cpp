@@ -171,11 +171,15 @@ TEST(RegulatedPurePursuitTest, findVelocitySignChange)
 {
   auto ctrl = std::make_shared<BasicAPIRPP>();
   geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "smb";
+  pose.header.stamp = rclcpp::Time::now();
   pose.pose.position.x = 1.0;
   pose.pose.position.y = 0.0;
 
   nav_msgs::msg::Path path;
   path.poses.resize(3);
+  path.header.frame_id = "home"
+  path.header.stamp = pose.header.stamp;
   path.poses[0].pose.position.x = 1.0;
   path.poses[0].pose.position.y = 1.0;
   path.poses[1].pose.position.x = 2.0;
