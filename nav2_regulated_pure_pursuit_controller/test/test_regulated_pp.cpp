@@ -103,9 +103,9 @@ public:
   }
 
   double findVelocitySignChangeWrapper(
-    const geometry_msgs::msg::PoseStamped & pose)
+    const nav_msgs::msg::Path & transformed_plan)
   {
-    return findVelocitySignChange(pose);
+    return findVelocitySignChange(transformed_plan);
   }
 
   nav_msgs::msg::Path transformGlobalPlanWrapper(
@@ -183,13 +183,15 @@ TEST(RegulatedPurePursuitTest, findVelocitySignChange)
   path.poses[2].pose.position.x = -1.0;
   path.poses[2].pose.position.y = -1.0;
   ctrl->setPlan(path);
-  auto rtn = ctrl->findVelocitySignChangeWrapper(pose);
+  auto transformed_plan = transformGlobalPlanWrapper(pose);
+  auto rtn = ctrl->findVelocitySignChangeWrapper(transformed_plan);
   EXPECT_EQ(rtn, sqrt(5.0));
 
   path.poses[2].pose.position.x = 3.0;
   path.poses[2].pose.position.y = 3.0;
   ctrl->setPlan(path);
-  rtn = ctrl->findVelocitySignChangeWrapper(pose);
+  auto transformed_plan = transformGlobalPlanWrapper(pose);
+  rtn = ctrl->findVelocitySignChangeWrapper(transformed_plan);
   EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
 
