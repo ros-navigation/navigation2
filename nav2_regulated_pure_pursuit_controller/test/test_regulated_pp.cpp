@@ -190,7 +190,7 @@ TEST(RegulatedPurePursuitTest, findVelocitySignChange)
   path.poses[2].pose.position.x = 3.0;
   path.poses[2].pose.position.y = 3.0;
   ctrl->setPlan(path);
-  auto transformed_plan = ctrl->transformGlobalPlanWrapper(pose);
+  transformed_plan = ctrl->transformGlobalPlanWrapper(pose);
   rtn = ctrl->findVelocitySignChangeWrapper(transformed_plan);
   EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
