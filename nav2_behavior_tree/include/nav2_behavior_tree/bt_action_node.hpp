@@ -90,7 +90,14 @@ public:
 
     // Make sure the server is actually there before continuing
     RCLCPP_DEBUG(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
-    action_client_->wait_for_action_server();
+    static constexpr std::chrono::milliseconds wait_for_server_timeout =
+      std::chrono::milliseconds(1000);
+    if (!action_client_->wait_for_action_server(wait_for_server_timeout)) {
+      RCLCPP_ERROR(
+        node_->get_logger(), "\"%s\" action server not available after waiting for %li ms",
+        action_name.c_str(), wait_for_server_timeout.count());
+      throw std::runtime_error("Action server not available");
+    }
   }
 
   /**
