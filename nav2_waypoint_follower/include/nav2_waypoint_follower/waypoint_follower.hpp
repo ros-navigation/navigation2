@@ -58,7 +58,7 @@ enum class ActionStatus
  */
 class WaypointFollower : public nav2_util::LifecycleNode
 {
-  public:
+public:
   using ActionT = nav2_msgs::action::FollowWaypoints;
   using ClientT = nav2_msgs::action::NavigateToPose;
   using ActionServer = nav2_util::SimpleActionServer<ActionT>;
