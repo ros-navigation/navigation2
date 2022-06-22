@@ -738,12 +738,10 @@ double RegulatedPurePursuitController::findVelocitySignChange(
     and determine it's distance from the robot. If there is no cusp in the path,
     then just determine the distance to the goal location. */
     if ( (oa_x * ab_x) + (oa_y * ab_y) < 0.0) {
-
+      // Converting identified cusp to the robot's frame
       geometry_msgs::msg::PoseStamped pose_temp;
 
-      transformPose(
-      pose.header.frame_id, global_plan_.poses[pose_id],
-      pose_temp);
+      transformPose(pose.header.frame_id, global_plan_.poses[pose_id], pose_temp);
 
       auto x = pose_temp.pose.position.x - pose.pose.position.x;
       auto y = pose_temp.pose.position.y - pose.pose.position.y;
