@@ -178,7 +178,7 @@ TEST(RegulatedPurePursuitTest, findVelocitySignChange)
 
   nav_msgs::msg::Path path;
   path.poses.resize(3);
-  path.header.frame_id = "home"
+  path.header.frame_id = "home";
   path.header.stamp = pose.header.stamp;
   path.poses[0].pose.position.x = 1.0;
   path.poses[0].pose.position.y = 1.0;
