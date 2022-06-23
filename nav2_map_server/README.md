@@ -99,7 +99,7 @@ The parameter for the initial map (yaml_filename) has to be set, but an empty st
 on_configure or published during on_activate. The _load_map_-service should the be used to load and publish a map. 
 
 
-## Map Saver
+#### Map Saver
 
 Like in ROS1 `map_saver` could be used as CLI-executable. It was renamed to `map_saver_cli`
 and could be invoked by following command:
