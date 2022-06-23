@@ -92,15 +92,16 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     // Shared pointer to LoadMap::Response is also should be initialized
     // in order to avoid null-pointer dereference
     std::shared_ptr<nav2_msgs::srv::LoadMap::Response> rsp =
-    std::make_shared<nav2_msgs::srv::LoadMap::Response>();
+      std::make_shared<nav2_msgs::srv::LoadMap::Response>();
 
     if (!loadMapResponseFromYaml(yaml_filename, rsp)) {
       throw std::runtime_error("Failed to load map yaml file: " + yaml_filename);
     }
   } else {
-    RCLCPP_INFO(get_logger(), 
-                "yaml-filename parameter is empty, set map through '%s'-service", 
-                load_map_service_name_.c_str());
+    RCLCPP_INFO(
+      get_logger(), 
+      "yaml-filename parameter is empty, set map through '%s'-service", 
+      load_map_service_name_.c_str());
   }
 
   // Make name prefix for services

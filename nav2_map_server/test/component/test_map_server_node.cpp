@@ -194,7 +194,6 @@ TEST_F(MapServerTestFixture, LoadMapInvalidImage)
   ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA);
 }
 
-
 /**
  * Test behaviour of server if yaml_filename is set to an empty string. 
  */
