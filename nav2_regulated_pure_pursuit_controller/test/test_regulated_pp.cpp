@@ -170,15 +170,17 @@ TEST(RegulatedPurePursuitTest, createCarrotMsg)
 TEST(RegulatedPurePursuitTest, findVelocitySignChange)
 {
   auto ctrl = std::make_shared<BasicAPIRPP>();
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPPfindVelocitySignChange");
   geometry_msgs::msg::PoseStamped pose;
   pose.header.frame_id = "smb";
-  pose.header.stamp = rclcpp::Time::now();
+  auto time = node->get_clock()->now();
+  pose.header.stamp = time;
   pose.pose.position.x = 1.0;
   pose.pose.position.y = 0.0;
 
   nav_msgs::msg::Path path;
   path.poses.resize(3);
-  path.header.frame_id = "home";
+  path.header.frame_id = "smb";
   path.header.stamp = pose.header.stamp;
   path.poses[0].pose.position.x = 1.0;
   path.poses[0].pose.position.y = 1.0;
@@ -187,15 +189,13 @@ TEST(RegulatedPurePursuitTest, findVelocitySignChange)
   path.poses[2].pose.position.x = -1.0;
   path.poses[2].pose.position.y = -1.0;
   ctrl->setPlan(path);
-  auto transformed_plan = ctrl->transformGlobalPlanWrapper(pose);
-  auto rtn = ctrl->findVelocitySignChangeWrapper(transformed_plan);
-  EXPECT_EQ(rtn, sqrt(5.0));
+  auto rtn = ctrl->findVelocitySignChangeWrapper(path);
+  EXPECT_EQ(rtn, sqrt(8.0));
 
   path.poses[2].pose.position.x = 3.0;
   path.poses[2].pose.position.y = 3.0;
   ctrl->setPlan(path);
-  transformed_plan = ctrl->transformGlobalPlanWrapper(pose);
-  rtn = ctrl->findVelocitySignChangeWrapper(transformed_plan);
+  rtn = ctrl->findVelocitySignChangeWrapper(path);
   EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
 
