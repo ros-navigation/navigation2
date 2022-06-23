@@ -99,8 +99,8 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     }
   } else {
     RCLCPP_INFO(
-      get_logger(), 
-      "yaml-filename parameter is empty, set map through '%s'-service", 
+      get_logger(),
+      "yaml-filename parameter is empty, set map through '%s'-service",
       load_map_service_name_.c_str());
   }
 

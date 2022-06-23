@@ -25,7 +25,7 @@
 #include "nav2_util/lifecycle_service_client.hpp"
 #include "nav2_msgs/srv/load_map.hpp"
 using namespace std::chrono_literals;
-using namespace rclcpp;
+using namespace rclcpp;  // NOLINT
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -195,7 +195,7 @@ TEST_F(MapServerTestFixture, LoadMapInvalidImage)
 }
 
 /**
- * Test behaviour of server if yaml_filename is set to an empty string. 
+ * Test behaviour of server if yaml_filename is set to an empty string.
  */
 TEST_F(MapServerTestFixture, NoInitialMap)
 {
@@ -219,12 +219,12 @@ TEST_F(MapServerTestFixture, NoInitialMap)
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service while not being active");
   auto load_map_req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
   auto load_map_cl = node_->create_client<nav2_msgs::srv::LoadMap>("/map_server/load_map");
-  
+
   ASSERT_TRUE(load_map_cl->wait_for_service(3s));
   auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, load_map_cl, load_map_req);
 
   ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_UNDEFINED_FAILURE);
-  
+
   // activate server and load map:
   lifecycle_client_->change_state(Transition::TRANSITION_ACTIVATE, 3s);
   RCLCPP_INFO(node_->get_logger(), "active again");
