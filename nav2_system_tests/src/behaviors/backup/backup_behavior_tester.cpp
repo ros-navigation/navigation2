@@ -106,7 +106,7 @@ void BackupBehaviorTester::deactivate()
 }
 
 bool BackupBehaviorTester::defaultBackupBehaviorTest(
-  const float target_dist,
+  const BackUp::Goal goal_msg,
   const double tolerance)
 {
   if (!is_active_) {
@@ -116,10 +116,6 @@ bool BackupBehaviorTester::defaultBackupBehaviorTest(
 
   // Sleep to let behavior server be ready for serving in multiple runs
   std::this_thread::sleep_for(5s);
-
-  auto goal_msg = BackUp::Goal();
-  goal_msg.target.x = target_dist;
-  goal_msg.speed = 0.2;
 
   RCLCPP_INFO(this->node_->get_logger(), "Sending goal");
 
@@ -182,11 +178,11 @@ bool BackupBehaviorTester::defaultBackupBehaviorTest(
 
   double dist = nav2_util::geometry_utils::euclidean_distance(initial_pose, current_pose);
 
-  if (fabs(dist) > fabs(target_dist) + tolerance) {
+  if (fabs(dist) > fabs(goal_msg.target.x) + tolerance) {
     RCLCPP_ERROR(
       node_->get_logger(),
       "Distance from goal is %lf (tolerance %lf)",
-      fabs(dist - target_dist), tolerance);
+      fabs(dist - goal_msg.target.x), tolerance);
     return false;
   }
 

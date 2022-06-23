@@ -16,7 +16,6 @@
 #include <memory>
 #include <chrono>
 #include <iostream>
-#include <future>
 #include <thread>
 
 #include "gtest/gtest.h"
@@ -42,7 +41,7 @@ public:
   : TimedBehavior<BehaviorAction>(),
     initialized_(false) {}
 
-  ~DummyBehavior() {}
+  ~DummyBehavior() = default;
 
   Status onRun(const std::shared_ptr<const BehaviorAction::Goal> goal) override
   {
@@ -96,9 +95,9 @@ class BehaviorTest : public ::testing::Test
 {
 protected:
   BehaviorTest() {SetUp();}
-  ~BehaviorTest() {}
+  ~BehaviorTest() = default;
 
-  void SetUp()
+  void SetUp() override
   {
     node_lifecycle_ =
       std::make_shared<rclcpp_lifecycle::LifecycleNode>(

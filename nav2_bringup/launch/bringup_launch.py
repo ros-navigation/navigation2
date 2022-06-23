@@ -22,8 +22,8 @@ from launch.actions import (DeclareLaunchArgument, GroupAction,
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import PushRosNamespace
 from launch_ros.actions import Node
+from launch_ros.actions import PushRosNamespace
 from nav2_common.launch import RewrittenYaml
 
 

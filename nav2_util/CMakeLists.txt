@@ -28,7 +28,6 @@ set(dependencies
     rclcpp
     lifecycle_msgs
     rclcpp_action
-    test_msgs
     rclcpp_lifecycle
     bondcpp
     bond

@@ -30,6 +30,8 @@
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
 #include "std_srvs/srv/trigger.hpp"
 #include "bondcpp/bond.hpp"
+#include "diagnostic_updater/diagnostic_updater.hpp"
+
 
 namespace nav2_lifecycle_manager
 {
@@ -178,6 +180,12 @@ protected:
    */
   void message(const std::string & msg);
 
+  // Diagnostics functions
+  /**
+   * @brief function to check if the Nav2 system is active
+   */
+  void CreateActiveDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat);
+
   // Timer thread to look at bond connections
   rclcpp::TimerBase::SharedPtr init_timer_;
   rclcpp::TimerBase::SharedPtr bond_timer_;
@@ -203,6 +211,7 @@ protected:
   bool attempt_respawn_reconnection_;
 
   bool system_active_{false};
+  diagnostic_updater::Updater diagnostics_updater_;
 
   rclcpp::Time bond_respawn_start_time_{0};
   rclcpp::Duration bond_respawn_max_duration_{10s};

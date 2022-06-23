@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation, 2019 Samsung Research America
+// Copyright (c) 2022 Joshua Wallace
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,41 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <chrono>
-#include <ctime>
-#include <memory>
-#include <utility>
-
 #include "back_up.hpp"
-#include "nav2_util/node_utils.hpp"
-
-using namespace std::chrono_literals;
 
 namespace nav2_behaviors
 {
-
-BackUp::BackUp()
-: TimedBehavior<BackUpAction>(),
-  feedback_(std::make_shared<BackUpAction::Feedback>())
-{
-}
-
-BackUp::~BackUp()
-{
-}
-
-void BackUp::onConfigure()
-{
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  nav2_util::declare_parameter_if_not_declared(
-    node,
-    "simulate_ahead_time", rclcpp::ParameterValue(2.0));
-  node->get_parameter("simulate_ahead_time", simulate_ahead_time_);
-}
 
 Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
 {
@@ -54,11 +23,12 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
     RCLCPP_INFO(
       logger_,
       "Backing up in Y and Z not supported, will only move in X.");
+    return Status::FAILED;
   }
 
-  // Silently ensure that both the speed and direction are positive.
-  command_x_ = std::fabs(command->target.x);
-  command_speed_ = std::fabs(command->speed);
+  // Silently ensure that both the speed and direction are negative.
+  command_x_ = -std::fabs(command->target.x);
+  command_speed_ = -std::fabs(command->speed);
   command_time_allowance_ = command->time_allowance;
 
   end_time_ = steady_clock_.now() + command_time_allowance_;
@@ -72,91 +42,6 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
   }
 
   return Status::SUCCEEDED;
-}
-
-Status BackUp::onCycleUpdate()
-{
-  rclcpp::Duration time_remaining = end_time_ - steady_clock_.now();
-  if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
-    stopRobot();
-    RCLCPP_WARN(
-      logger_,
-      "Exceeded time allowance before reaching the BackUp goal - Exiting BackUp");
-    return Status::FAILED;
-  }
-
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_,
-      transform_tolerance_))
-  {
-    RCLCPP_ERROR(logger_, "Current robot pose is not available.");
-    return Status::FAILED;
-  }
-
-  double diff_x = initial_pose_.pose.position.x - current_pose.pose.position.x;
-  double diff_y = initial_pose_.pose.position.y - current_pose.pose.position.y;
-  double distance = sqrt(diff_x * diff_x + diff_y * diff_y);
-
-  feedback_->distance_traveled = distance;
-  action_server_->publish_feedback(feedback_);
-
-  if (distance >= command_x_) {
-    stopRobot();
-    return Status::SUCCEEDED;
-  }
-
-  // TODO(mhpanah): cmd_vel value should be passed as a parameter
-  auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
-  cmd_vel->linear.y = 0.0;
-  cmd_vel->angular.z = 0.0;
-  cmd_vel->linear.x = -command_speed_;
-
-  geometry_msgs::msg::Pose2D pose2d;
-  pose2d.x = current_pose.pose.position.x;
-  pose2d.y = current_pose.pose.position.y;
-  pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
-
-  if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
-    stopRobot();
-    RCLCPP_WARN(logger_, "Collision Ahead - Exiting BackUp");
-    return Status::FAILED;
-  }
-
-  vel_pub_->publish(std::move(cmd_vel));
-
-  return Status::RUNNING;
-}
-
-bool BackUp::isCollisionFree(
-  const double & distance,
-  geometry_msgs::msg::Twist * cmd_vel,
-  geometry_msgs::msg::Pose2D & pose2d)
-{
-  // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments
-  int cycle_count = 0;
-  double sim_position_change;
-  const double diff_dist = abs(command_x_) - distance;
-  const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
-  geometry_msgs::msg::Pose2D init_pose = pose2d;
-  bool fetch_data = true;
-
-  while (cycle_count < max_cycle_count) {
-    sim_position_change = cmd_vel->linear.x * (cycle_count / cycle_frequency_);
-    pose2d.x = init_pose.x + sim_position_change * cos(init_pose.theta);
-    pose2d.y = init_pose.y + sim_position_change * sin(init_pose.theta);
-    cycle_count++;
-
-    if (diff_dist - abs(sim_position_change) <= 0.) {
-      break;
-    }
-
-    if (!collision_checker_->isCollisionFree(pose2d, fetch_data)) {
-      return false;
-    }
-    fetch_data = false;
-  }
-  return true;
 }
 
 }  // namespace nav2_behaviors

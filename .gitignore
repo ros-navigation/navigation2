@@ -51,3 +51,6 @@ sphinx_doc/_build
 # CLion artifacts
 .idea
 cmake-build-debug/
+
+# doxygen docs
+doc/html/
