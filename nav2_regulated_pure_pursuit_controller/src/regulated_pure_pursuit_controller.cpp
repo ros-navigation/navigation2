@@ -283,7 +283,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Check for reverse driving
   if (allow_reversing_) {
     // Cusp check
-    double dist_to_cusp = findVelocitySignChange(pose);
+    double dist_to_cusp = findVelocitySignChange(transformed_plan);
 
     // if the lookahead distance is further than the cusp, use the cusp distance instead
     if (dist_to_cusp < lookahead_dist) {
@@ -720,27 +720,29 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
 }
 
 double RegulatedPurePursuitController::findVelocitySignChange(
-  const geometry_msgs::msg::PoseStamped & pose)
+  const nav_msgs::msg::Path & transformed_plan)
 {
-  // Iterating through the global path to determine the position of the cusp
-  for (unsigned int pose_id = 1; pose_id < global_plan_.poses.size() - 1; ++pose_id) {
+  // Iterating through the transformed global path to determine the position of the cusp
+  for (unsigned int pose_id = 1; pose_id < transformed_plan.poses.size() - 1; ++pose_id) {
     // We have two vectors for the dot product OA and AB. Determining the vectors.
-    double oa_x = global_plan_.poses[pose_id].pose.position.x -
-      global_plan_.poses[pose_id - 1].pose.position.x;
-    double oa_y = global_plan_.poses[pose_id].pose.position.y -
-      global_plan_.poses[pose_id - 1].pose.position.y;
-    double ab_x = global_plan_.poses[pose_id + 1].pose.position.x -
-      global_plan_.poses[pose_id].pose.position.x;
-    double ab_y = global_plan_.poses[pose_id + 1].pose.position.y -
-      global_plan_.poses[pose_id].pose.position.y;
+    double oa_x = transformed_plan.poses[pose_id].pose.position.x -
+      transformed_plan.poses[pose_id - 1].pose.position.x;
+    double oa_y = transformed_plan.poses[pose_id].pose.position.y -
+      transformed_plan.poses[pose_id - 1].pose.position.y;
+    double ab_x = transformed_plan.poses[pose_id + 1].pose.position.x -
+      transformed_plan.poses[pose_id].pose.position.x;
+    double ab_y = transformed_plan.poses[pose_id + 1].pose.position.y -
+      transformed_plan.poses[pose_id].pose.position.y;
 
     /* Checking for the existance of cusp, in the path, using the dot product
     and determine it's distance from the robot. If there is no cusp in the path,
     then just determine the distance to the goal location. */
     if ( (oa_x * ab_x) + (oa_y * ab_y) < 0.0) {
-      auto x = global_plan_.poses[pose_id].pose.position.x - pose.pose.position.x;
-      auto y = global_plan_.poses[pose_id].pose.position.y - pose.pose.position.y;
-      return hypot(x, y);  // returning the distance if there is a cusp
+      // returning the distance if there is a cusp
+      // The transformed path is in the robots frame, so robot is at the origin
+      return hypot(
+        transformed_plan.poses[pose_id].pose.position.x,
+        transformed_plan.poses[pose_id].pose.position.y);
     }
   }
 
