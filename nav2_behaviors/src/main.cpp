@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <string>
 #include <memory>
 
 #include "nav2_behaviors/behavior_server.hpp"
