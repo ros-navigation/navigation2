@@ -40,6 +40,9 @@ struct LoadParameters
   double occupied_thresh;
   MapMode mode;
   bool negate;
+  std::string elevation_image_file_name;
+  double min_height;
+  double max_height;
 };
 
 typedef enum

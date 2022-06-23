@@ -156,6 +156,28 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
     load_parameters.negate = yaml_get_value<bool>(doc, "negate");
   }
 
+
+  auto map_elevation_image_node = doc["elevation_image"];
+  if (!map_elevation_image_node.IsDefined()) {
+    load_parameters.elevation_image_file_name = "";
+  } else {
+
+    auto image_file_name = yaml_get_value<std::string>(doc, "elevation_image");
+    if (image_file_name.empty()) {
+      throw YAML::Exception(doc["elevation_image"].Mark(), "The elevation_image tag was empty.");
+    }
+    if (elevation_image_file_name[0] != '/') {
+      // dirname takes a mutable char *, so we copy into a vector
+      std::vector<char> fname_copy(yaml_filename.begin(), yaml_filename.end());
+      fname_copy.push_back('\0');
+      elevation_image_file_name = std::string(dirname(fname_copy.data())) + '/' + elevation_image_file_name;
+    }
+    load_parameters.elevation_image_file_name = elevation_image_file_name;
+
+    load_parameters.min_height = yaml_get_value<double>(doc, "min_height");
+    load_parameters.max_height = yaml_get_value<double>(doc, "max_height");
+
+  }
   std::cout << "[DEBUG] [map_io]: resolution: " << load_parameters.resolution << std::endl;
   std::cout << "[DEBUG] [map_io]: origin[0]: " << load_parameters.origin[0] << std::endl;
   std::cout << "[DEBUG] [map_io]: origin[1]: " << load_parameters.origin[1] << std::endl;
@@ -166,6 +188,11 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   std::cout << "[DEBUG] [map_io]: mode: " << map_mode_to_string(load_parameters.mode) << std::endl;
   std::cout << "[DEBUG] [map_io]: negate: " << load_parameters.negate << std::endl;  //NOLINT
 
+  if (load_parameters.elevation_image_file_name != ""){
+    std::cout << "[DEBUG] [map_io]: elevation_file_name: " << load_parameters.elevation_image_file_name  << std::endl;
+    std::cout << "[DEBUG] [map_io]: min_height: " << load_parameters.min_height << std::endl; 
+    std::cout << "[DEBUG] [map_io]: max_height: " << load_parameters.max_height << std::endl;
+  }
   return load_parameters;
 }
 
