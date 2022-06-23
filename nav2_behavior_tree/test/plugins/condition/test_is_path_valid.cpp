@@ -67,9 +67,10 @@ public:
   {
     delete config_;
     config_ = nullptr;
+    server_.reset();
     node_.reset();
     factory_.reset();
-    server_.reset();
+    tree_.reset();
   }
 
   static std::shared_ptr<IsPathValidService> server_;

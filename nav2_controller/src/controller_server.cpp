@@ -34,7 +34,7 @@ namespace nav2_controller
 {
 
 ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("controller_server", "", false, options),
+: nav2_util::LifecycleNode("controller_server", "", options),
   progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
   default_progress_checker_id_{"progress_checker"},
   default_progress_checker_type_{"nav2_controller::SimpleProgressChecker"},
@@ -77,7 +77,7 @@ ControllerServer::~ControllerServer()
 }
 
 nav2_util::CallbackReturn
-ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
+ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   auto node = shared_from_this();
 
@@ -122,7 +122,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("speed_limit_topic", speed_limit_topic);
   get_parameter("failure_tolerance", failure_tolerance_);
 
-  costmap_ros_->on_configure(state);
+  costmap_ros_->configure();
 
   try {
     progress_checker_type_ = nav2_util::get_plugin_type_param(node, progress_checker_id_);
@@ -146,7 +146,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_INFO(
         get_logger(), "Created goal checker : %s of type %s",
         goal_checker_ids_[i].c_str(), goal_checker_types_[i].c_str());
-      goal_checker->initialize(node, goal_checker_ids_[i]);
+      goal_checker->initialize(node, goal_checker_ids_[i], costmap_ros_);
       goal_checkers_.insert({goal_checker_ids_[i], goal_checker});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
@@ -213,11 +213,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 }
 
 nav2_util::CallbackReturn
-ControllerServer::on_activate(const rclcpp_lifecycle::State & state)
+ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  costmap_ros_->on_activate(state);
+  costmap_ros_->activate();
   ControllerMap::iterator it;
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
     it->second->activate();
@@ -237,7 +237,7 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & state)
 }
 
 nav2_util::CallbackReturn
-ControllerServer::on_deactivate(const rclcpp_lifecycle::State & state)
+ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
@@ -246,7 +246,7 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & state)
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
     it->second->deactivate();
   }
-  costmap_ros_->on_deactivate(state);
+  costmap_ros_->deactivate();
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
@@ -259,7 +259,7 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & state)
 }
 
 nav2_util::CallbackReturn
-ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
+ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -271,7 +271,7 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   controllers_.clear();
 
   goal_checkers_.clear();
-  costmap_ros_->on_cleanup(state);
+  costmap_ros_->cleanup();
 
   // Release any allocated resources
   action_server_.reset();
