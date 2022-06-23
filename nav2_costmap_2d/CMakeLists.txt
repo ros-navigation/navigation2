@@ -23,6 +23,7 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(angles REQUIRED)
+find_package(grid_map_core REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
@@ -75,6 +76,7 @@ set(dependencies
   tf2_sensor_msgs
   visualization_msgs
   angles
+  grid_map_core
 )
 
 ament_target_dependencies(nav2_costmap_2d_core
