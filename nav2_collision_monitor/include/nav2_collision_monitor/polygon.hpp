@@ -197,7 +197,7 @@ protected:
   // Visualization
   /// @brief Whether to publish the polygon
   bool visualize_;
-  /// @brief Polygon points stored for later publisging
+  /// @brief Polygon points stored for later publishing
   geometry_msgs::msg::Polygon polygon_;
   /// @brief Polygon publisher for visualization purposes
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
