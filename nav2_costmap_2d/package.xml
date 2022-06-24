@@ -37,7 +37,6 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>tf2_sensor_msgs</depend>
-  <depend>image_geometry</depend>
   <depend>visualization_msgs</depend>
   <depend>angles</depend>
 
