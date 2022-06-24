@@ -12,7 +12,7 @@ collision_monitor:
     # and robot footprint for "approach" action type.
     # Footprint could be "polygon" type with dynamically set footprint from footprint_topic
     # or "circle" type with static footprint set by radius. "footprint_topic" parameter
-    # to be ignored in latest case.
+    # to be ignored in circular case.
     polygons: ["PolygonStop"]
     PolygonStop:
       type: "polygon"
