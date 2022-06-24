@@ -33,12 +33,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- * Author: Eitan Marder-Eppstein
- *         David V. Lu!!
- *         Alexey Merzlyakov
- *
- * Reference tutorial:
- * https://navigation.ros.org/tutorials/docs/writing_new_costmap2d_plugin.html
+ * Author: Pedro Gonzalez
  *********************************************************************/
 #include "nav2_costmap_2d/semantic_segmentation_layer.hpp"
 
@@ -54,9 +49,6 @@ namespace nav2_costmap_2d {
 
 SemanticSegmentationLayer::SemanticSegmentationLayer() {}
 
-// This method is called at the end of plugin initialization.
-// It contains ROS parameter(s) declaration and initialization
-// of need_recalculation_ variable.
 void SemanticSegmentationLayer::onInitialize()
 {
   current_ = true;
@@ -79,7 +71,7 @@ void SemanticSegmentationLayer::onInitialize()
   declareParameter("segmentation_topic", rclcpp::ParameterValue(""));
   declareParameter("pointcloud_topic", rclcpp::ParameterValue(""));
   declareParameter("observation_persistence", rclcpp::ParameterValue(0.0));
-  declareParameter(name_ + "." + "expected_update_rate", rclcpp::ParameterValue(0.0));
+  declareParameter("expected_update_rate", rclcpp::ParameterValue(0.0));
   declareParameter("class_types", rclcpp::ParameterValue(std::vector<std::string>({})));
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
@@ -102,6 +94,7 @@ void SemanticSegmentationLayer::onInitialize()
 
   for (auto& source : class_types_string)
   {
+    // get the cost for each class
     std::vector<std::string> classes_ids;
     uint8_t cost;
     declareParameter(source + ".classes", rclcpp::ParameterValue(std::vector<std::string>({})));
@@ -140,6 +133,7 @@ void SemanticSegmentationLayer::onInitialize()
   pointcloud_tf_sub_ = std::make_shared<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>>(
     *pointcloud_sub_, *tf_, global_frame_, 50, rclcpp_node_,
     tf2::durationFromSec(transform_tolerance));
+  // make sure all data is synced: pointclouds, transforms and segmentations
   segm_pc_sync_ =
     std::make_shared<message_filters::TimeSynchronizer<vision_msgs::msg::SemanticSegmentation,
                                                        sensor_msgs::msg::PointCloud2>>(
@@ -147,11 +141,13 @@ void SemanticSegmentationLayer::onInitialize()
   segm_pc_sync_->registerCallback(std::bind(&SemanticSegmentationLayer::syncSegmPointcloudCb, this,
                                             std::placeholders::_1, std::placeholders::_2));
 
+  // create a segmentation buffer
   segmentation_buffer_ = std::make_shared<nav2_costmap_2d::SegmentationBuffer>(
     node, pointcloud_topic, observation_keep_time, expected_update_rate, max_obstacle_distance,
     min_obstacle_distance, *tf_, global_frame_, sensor_frame,
     tf2::durationFromSec(transform_tolerance));
 
+  // only for testing purposes
   if (debug_topics_)
   {
     sgm_debug_pub_ =
@@ -163,9 +159,7 @@ void SemanticSegmentationLayer::onInitialize()
   }
 }
 
-// The method is called to ask the plugin: which area of costmap it needs to update.
-// Inside this method window bounds are re-calculated if need_recalculation_ is true
-// and updated independently on its value.
+
 void SemanticSegmentationLayer::updateBounds(double robot_x, double robot_y, double /*robot_yaw*/,
                                              double* min_x, double* min_y, double* max_x,
                                              double* max_y)
@@ -180,6 +174,7 @@ void SemanticSegmentationLayer::updateBounds(double robot_x, double robot_y, dou
     return;
   }
   std::vector<nav2_costmap_2d::Segmentation> segmentations;
+  // get the latest segmentations thread safely
   segmentation_buffer_->lock();
   segmentation_buffer_->getSegmentations(segmentations);
   segmentation_buffer_->unlock();
@@ -192,6 +187,7 @@ void SemanticSegmentationLayer::updateBounds(double robot_x, double robot_y, dou
     sensor_msgs::PointCloud2ConstIterator<float> iter_x(*segmentation.cloud_, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(*segmentation.cloud_, "y");
     sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_class(*segmentation.cloud_, "class");
+    // For now, confidence of the inference is not used to adjust cost
     // sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_confidence(*segmentation.cloud_,
     // "confidence");
     for (size_t point = 0; point < segmentation.cloud_->height * segmentation.cloud_->width;
@@ -205,19 +201,19 @@ void SemanticSegmentationLayer::updateBounds(double robot_x, double robot_y, dou
       }
       unsigned int index = getIndex(mx, my);
       uint8_t class_id = *(iter_class + point);
+      // Check if no cost was defined for the given class
       if (!class_map_.count(segmentation.class_map_[class_id]))
       {
         RCLCPP_DEBUG(logger_, "Cost for class id %i was not defined, skipping", class_id);
         continue;
       }
+      // Get the class name from the buffered segmentation and then gets its cost from the class map
       costmap_[index] = class_map_[segmentation.class_map_[class_id]];
       touch(*(iter_x + point), *(iter_y + point), min_x, min_y, max_x, max_y);
     }
   }
 }
 
-// The method is called when footprint was changed.
-// Here it just resets need_recalculation_ variable.
 void SemanticSegmentationLayer::onFootprintChanged()
 {
   RCLCPP_DEBUG(rclcpp::get_logger("nav2_costmap_2d"),
@@ -225,10 +221,6 @@ void SemanticSegmentationLayer::onFootprintChanged()
                layered_costmap_->getFootprint().size());
 }
 
-// The method is called when costmap recalculation is required.
-// It updates the costmap within its window bounds.
-// Inside this method the costmap gradient is generated and is writing directly
-// to the resulting costmap master_grid without any merging with previous layers.
 void SemanticSegmentationLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid, int min_i,
                                             int min_j, int max_i, int max_j)
 {
@@ -246,7 +238,6 @@ void SemanticSegmentationLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_g
   {
     return;
   }
-  // RCLCPP_INFO(logger_, "Updating costmap");
   switch (combination_method_)
   {
     case 0:  // Overwrite
@@ -264,6 +255,7 @@ void SemanticSegmentationLayer::syncSegmPointcloudCb(
   const std::shared_ptr<const vision_msgs::msg::SemanticSegmentation>& segmentation,
   const std::shared_ptr<const sensor_msgs::msg::PointCloud2>& pointcloud)
 {
+  // check if data has the right dimensions
   if (segmentation->width * segmentation->height != pointcloud->width * pointcloud->height)
   {
     RCLCPP_WARN(logger_,
@@ -283,11 +275,13 @@ void SemanticSegmentationLayer::syncSegmPointcloudCb(
                 segmentation->data.size(), segmentation->confidence.size(), expected_array_size);
     return;
   }
+  // check if class names and ids correspondence is contained in the message
   if (segmentation->class_map.size() == 0)
   {
     RCLCPP_WARN(logger_, "Classs map is empty. Will not buffer message");
     return;
   }
+  // Store the pointcloud and segmentation
   segmentation_buffer_->lock();
   segmentation_buffer_->bufferSegmentation(*pointcloud, *segmentation);
   segmentation_buffer_->unlock();
@@ -306,9 +300,5 @@ void SemanticSegmentationLayer::reset()
 }
 
 }  // namespace nav2_costmap_2d
-
-// This is the macro allowing a nav2_costmap_2d::SemanticSegmentationLayer class
-// to be registered in order to be dynamically loadable of base type nav2_costmap_2d::Layer.
-// Usually places in the end of cpp-file where the loadable class written.
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::SemanticSegmentationLayer, nav2_costmap_2d::Layer)

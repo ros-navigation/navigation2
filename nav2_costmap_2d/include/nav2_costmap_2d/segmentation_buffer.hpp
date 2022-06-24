@@ -32,7 +32,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- * Author: Eitan Marder-Eppstein
+ * Author: Pedro Gonzalez
  *********************************************************************/
 #ifndef NAV2_COSTMAP_2D__SEGMENTATION_BUFFER_HPP_
 #define NAV2_COSTMAP_2D__SEGMENTATION_BUFFER_HPP_
@@ -53,7 +53,8 @@
 namespace nav2_costmap_2d {
 /**
  * @class SegmentationBuffer
- * @brief Takes in point clouds from sensors, transforms them to the desired frame, and stores them
+ * @brief Takes in segmentation and alingned pointclouds, and stores transformed pointclouds with 
+ * extra fields for the class and inference confidence of each point
  */
 class SegmentationBuffer
 {
@@ -66,16 +67,10 @@ class SegmentationBuffer
    * keep the latest
    * @param  expected_update_rate How often this buffer is expected to be updated, 0 means there is
    * no limit
-   * @param  min_obstacle_height The minimum height of a hitpoint to be considered legal
-   * @param  max_obstacle_height The minimum height of a hitpoint to be considered legal
-   * @param  obstacle_max_range The range to which the sensor should be trusted for inserting
-   * obstacles
-   * @param  obstacle_min_range The range from which the sensor should be trusted for inserting
-   * obstacles
-   * @param  raytrace_max_range The range to which the sensor should be trusted for raytracing to
-   * clear out space
-   * @param  raytrace_min_range The range from which the sensor should be trusted for raytracing to
-   * clear out space
+   * @param  max_lookahead_distance The range to which the sensor should be trusted for projecting the
+   * segmentation mask
+   * @param  min_lookahead_distance The range from which the sensor should be trusted for projecting the
+   * segmentation mask
    * @param  tf2_buffer A reference to a tf2 Buffer
    * @param  global_frame The frame to transform PointClouds into
    * @param  sensor_frame The frame of the origin of the sensor, can be left blank to be read from
@@ -95,10 +90,12 @@ class SegmentationBuffer
   ~SegmentationBuffer();
 
   /**
-   * @brief  Transforms a PointCloud to the global frame and buffers it
+   * @brief  Transforms a PointCloud to the global frame, adds channels for class and confidence of 
+   * each point and buffers it
    * <b>Note: The burden is on the user to make sure the transform is available... ie they should
    * use a MessageNotifier</b>
-   * @param  cloud The cloud to be buffered
+   * @param  cloud The cloud to be buffered. It should be aligned with the segmentation
+   * @param  segmentation The segmentation mask containing the class and confidence of each pixel
    */
   void bufferSegmentation(const sensor_msgs::msg::PointCloud2& cloud,
                           const vision_msgs::msg::SemanticSegmentation& segmentation);

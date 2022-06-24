@@ -32,7 +32,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- * Author: Eitan Marder-Eppstein
+ * Author: Pedro Gonzalez
  *********************************************************************/
 #include "nav2_costmap_2d/segmentation_buffer.hpp"
 
@@ -103,8 +103,8 @@ void SegmentationBuffer::bufferSegmentation(
     tf2_buffer_.transform(cloud, global_frame_cloud, global_frame_, tf_tolerance_);
     global_frame_cloud.header.stamp = cloud.header.stamp;
 
-    // now we need to remove segmentations from the cloud that are below
-    // or above our height thresholds
+    // create a segmented pointcloud to store the original 3D data as well as the class and confidence
+    // of each point
     sensor_msgs::msg::PointCloud2& segmentation_cloud = *(segmentation_list_.front().cloud_);
     segmentation_cloud.height = global_frame_cloud.height;
     segmentation_cloud.width = global_frame_cloud.width;
@@ -117,12 +117,15 @@ void SegmentationBuffer::bufferSegmentation(
     unsigned int cloud_size = global_frame_cloud.height * global_frame_cloud.width;
     sensor_msgs::PointCloud2Modifier modifier(segmentation_cloud);
 
+    // add the class and confidence fields to the pointcloud.
     segmentation_cloud.point_step =
       addPointField(segmentation_cloud, "class", 1, sensor_msgs::msg::PointField::INT8,
                     segmentation_cloud.point_step);
     segmentation_cloud.point_step =
       addPointField(segmentation_cloud, "confidence", 1, sensor_msgs::msg::PointField::INT8,
                     segmentation_cloud.point_step);
+    
+    // update the point step and get iterators
     modifier.resize(cloud_size);
     sensor_msgs::PointCloud2Iterator<uint8_t> iter_class_obs(segmentation_cloud, "class");
     sensor_msgs::PointCloud2Iterator<uint8_t> iter_confidence_obs(segmentation_cloud, "confidence");
@@ -130,6 +133,7 @@ void SegmentationBuffer::bufferSegmentation(
     sensor_msgs::PointCloud2Iterator<float> iter_y_obs(segmentation_cloud, "y");
     sensor_msgs::PointCloud2Iterator<float> iter_z_obs(segmentation_cloud, "z");
 
+    // get iterators for the original cloud
     sensor_msgs::PointCloud2ConstIterator<float> iter_x_global(global_frame_cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y_global(global_frame_cloud, "y");
     sensor_msgs::PointCloud2ConstIterator<float> iter_z_global(global_frame_cloud, "z");
@@ -146,14 +150,18 @@ void SegmentationBuffer::bufferSegmentation(
         {
           continue;
         }
+        // calculate the distance of the point to the sensor
         double sq_dist =
           std::pow(*(iter_x_global + pixel_idx) - segmentation_list_.front().origin_.x, 2) +
           std::pow(*(iter_y_global + pixel_idx) - segmentation_list_.front().origin_.y, 2) +
           std::pow(*(iter_z_global + pixel_idx) - segmentation_list_.front().origin_.z, 2);
+
+        // Remove points that are too far or too close
         if (sq_dist >= sq_max_lookahead_distance_ || sq_dist <= sq_min_lookahead_distance_)
         {
           continue;
         }
+        // assign the values to the segmentation and the original pointcloud to each point
         *(iter_class_obs + point_count) = segmentation.data[pixel_idx];
         *(iter_confidence_obs + point_count) = segmentation.confidence[pixel_idx];
         *(iter_x_obs + point_count) = *(iter_x_global + pixel_idx);
@@ -168,7 +176,7 @@ void SegmentationBuffer::bufferSegmentation(
     segmentation_cloud.header.stamp = cloud.header.stamp;
     segmentation_cloud.header.frame_id = global_frame_cloud.header.frame_id;
 
-    // create tje class map from the classes contained on the segmentation message
+    // create the class map from the classes contained on the segmentation message
     std::map<uint16_t, std::string>& segmentation_class_map = segmentation_list_.front().class_map_;
     for (auto& semantic_class : segmentation.class_map)
     {

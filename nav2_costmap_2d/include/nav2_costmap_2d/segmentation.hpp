@@ -26,20 +26,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * Authors: Conor McGann
+ * Authors: Pedro Gonzalez
  */
 
 #ifndef NAV2_COSTMAP_2D__SEGMENTATION_HPP_
 #define NAV2_COSTMAP_2D__SEGMENTATION_HPP_
 
-#include <geometry_msgs/msg/point.hpp>
 #include <map>
+
+#include <geometry_msgs/msg/point.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
 namespace nav2_costmap_2d {
 
 /**
- * @brief Stores an segmentation in terms of a point cloud and the origin of the source
+ * @brief Stores an segmentation in terms of a point cloud containing the class and confidence 
+ * of each point, the origin of the source and a class map containing the names of each class id
+ * in the pointcloud
  * @note Tried to make members and constructor arguments const but the compiler would not accept the
  * default assignment operator for vector insertion!
  */
@@ -51,7 +54,7 @@ class Segmentation
    */
   Segmentation() : cloud_(new sensor_msgs::msg::PointCloud2()) {}
   /**
-   * @brief A destructor
+   * @brief A destructor. Deletes pointcloud pointer
    */
   virtual ~Segmentation() { delete cloud_; }
 
@@ -69,17 +72,11 @@ class Segmentation
   }
 
   /**
-   * @brief  Creates an segmentation from an origin point and a point cloud
+   * @brief  Creates an segmentation from an origin point, a point cloud and a class map
    * @param origin The origin point of the segmentation
-   * @param cloud The point cloud of the segmentation
-   * @param obstacle_max_range The range out to which an segmentation should be able to insert
+   * @param cloud The point cloud of the segmentation. It must have the class and intensity channels
+   * @param class_map The name of each class id in the segmentation. i.e: 1: "Grass", 2: "Street"
    * obstacles
-   * @param obstacle_min_range The range from which an segmentation should be able to insert
-   * obstacles
-   * @param raytrace_max_range The range out to which an segmentation should be able to clear via
-   * raytracing
-   * @param raytrace_min_range The range from which an segmentation should be able to clear via
-   * raytracing
    */
   Segmentation(geometry_msgs::msg::Point& origin, const sensor_msgs::msg::PointCloud2& cloud,
                std::map<uint16_t, std::string> class_map)
@@ -101,10 +98,6 @@ class Segmentation
   /**
    * @brief  Creates an segmentation from a point cloud
    * @param cloud The point cloud of the segmentation
-   * @param obstacle_max_range The range out to which an segmentation should be able to insert
-   * obstacles
-   * @param obstacle_min_range The range from which an segmentation should be able to insert
-   * obstacles
    */
   Segmentation(const sensor_msgs::msg::PointCloud2& cloud)
     : cloud_(new sensor_msgs::msg::PointCloud2(cloud))
@@ -113,6 +106,7 @@ class Segmentation
 
   geometry_msgs::msg::Point origin_;
   sensor_msgs::msg::PointCloud2* cloud_;
+  ///< @brief To store the correspondence of each class id with its name
   std::map<uint16_t, std::string> class_map_;
 };
 

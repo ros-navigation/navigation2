@@ -112,27 +112,42 @@ class SemanticSegmentationLayer : public CostmapLayer
   virtual bool isClearable() { return true; }
 
  private:
+ /**
+   * @brief Callback called when a poincloud and a segmentation are synced and a tf is available
+   * @param segmentation a pointer segmentation mask containing the class and confidence of each pixel
+   * @param pointcloud A pointer to the aligned pointcloud
+   */
   void syncSegmPointcloudCb(
     const std::shared_ptr<const vision_msgs::msg::SemanticSegmentation>& segmentation,
     const std::shared_ptr<const sensor_msgs::msg::PointCloud2>& pointcloud);
 
+  ///< @brief subscriber to segmentation messages
   std::shared_ptr<message_filters::Subscriber<vision_msgs::msg::SemanticSegmentation>>
     semantic_segmentation_sub_;
+  ///< @brief subscriber to aligned pointclouds
   std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> pointcloud_sub_;
+  ///< @brief subscriber to guarantee that transforms are available when pointclouds are received
+  std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>> pointcloud_tf_sub_;
+  ///< @brief subscriber to sync transforms, pointclouds and segmentations
   std::shared_ptr<message_filters::TimeSynchronizer<vision_msgs::msg::SemanticSegmentation,
                                                     sensor_msgs::msg::PointCloud2>>
     segm_pc_sync_;
-  std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>> pointcloud_tf_sub_;
 
   // debug publishers
+  ///< @brief publisher to publish segmentation messages when buffered
   std::shared_ptr<rclcpp::Publisher<vision_msgs::msg::SemanticSegmentation>> sgm_debug_pub_;
+  ///< @brief publisher to publish pointcloud messages when buffered
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> orig_pointcloud_pub_;
+  ///< @brief publisher to publish pointclouds with class and confidence channels when put in the costmap
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> proc_pointcloud_pub_;
 
+  /// @brief Used to store segmentations and aligned pointclouds
   std::shared_ptr<nav2_costmap_2d::SegmentationBuffer> segmentation_buffer_;
 
-  std::string global_frame_;
 
+  std::string global_frame_;  ///< @brief The global frame for the costmap
+
+  ///< @brief Correspondence between class names and cost. i.e: "Grass": 254, "Floor": 0
   std::map<std::string, uint8_t> class_map_;
 
   bool rolling_window_;
