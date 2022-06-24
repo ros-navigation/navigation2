@@ -29,7 +29,7 @@ collision_monitor:
       slowdown_ratio: 0.3
       visualize: True
       polygon_topic: "polygon_slowdown"
-    FootprintApp:
+    FootprintApproach:
       type: "polygon"
       action_type: "approach"
       footprint_topic: "/local_costmap/published_footprint"
