@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_waypoint_follower)
 
-# Default to C++17
-set(CMAKE_CXX_STANDARD 17)
 
 # Try for OpenCV 4.X, but settle for whatever is installed
 find_package(OpenCV 4 QUIET)

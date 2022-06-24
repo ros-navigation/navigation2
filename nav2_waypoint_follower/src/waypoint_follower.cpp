@@ -97,10 +97,6 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     "follow_gps_waypoints",
     std::bind(&WaypointFollower::followGPSWaypointsCallback, this));
 
-  // used for transfroming orientation of GPS poses to map frame
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-
   try {
     waypoint_task_executor_type_ = nav2_util::get_plugin_type_param(
       this,
@@ -258,7 +254,6 @@ void WaypointFollower::followWaypointsHandler(
       new_goal = false;
       ClientT::Goal client_goal;
       client_goal.pose = poses[goal_index];
-      client_goal.pose.header.stamp = this->now();
 
       auto send_goal_options = rclcpp_action::Client<ClientT>::SendGoalOptions();
       send_goal_options.result_callback =
@@ -329,7 +324,6 @@ void WaypointFollower::followWaypointsHandler(
     {
       // Update server state
       goal_index++;
-      poses[goal_index].header.stamp = this->now();
       new_goal = true;
       if (goal_index >= poses.size()) {
         RCLCPP_INFO(

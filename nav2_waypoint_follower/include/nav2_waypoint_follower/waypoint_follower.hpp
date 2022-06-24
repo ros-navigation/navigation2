@@ -179,7 +179,6 @@ protected:
   std::vector<geometry_msgs::msg::PoseStamped> getLatestGoalPoses(const T & action_server);
 
   // Common vars used for both GPS and cartesian point following
-  rclcpp::Node::SharedPtr client_node_;
   std::vector<int> failed_ids_;
   int loop_rate_;
   bool stop_on_failure_;
@@ -215,10 +214,6 @@ protected:
   waypoint_task_executor_;
   std::string waypoint_task_executor_id_;
   std::string waypoint_task_executor_type_;
-
-  // tf buffer to get transfroms
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 }  // namespace nav2_waypoint_follower
