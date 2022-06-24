@@ -60,8 +60,8 @@ public:
    */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-    std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
-    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros) override;
+    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   /**
    * @brief Cleanup controller state machine
@@ -112,11 +112,14 @@ public:
 
 protected:
   /**
-   * @brief Transforms global plan into same frame as pose, clips far away poses and possibly prunes passed poses
+   * @brief Transforms global plan into same frame as pose and clips poses ineligible for lookaheadPoint
+   * Points ineligible to be selected as a lookahead point if they are any of the following:
+   * - Outside the local_costmap (collision avoidance cannot be assured)
    * @param pose pose to transform
    * @return Path in new frame
    */
-  nav_msgs::msg::Path transformGlobalPlan(const geometry_msgs::msg::PoseStamped & pose);
+  nav_msgs::msg::Path transformGlobalPlan(
+    const geometry_msgs::msg::PoseStamped & pose);
 
   /**
    * @brief Transform a pose to another frame.
@@ -220,6 +223,20 @@ protected:
     const double & pose_cost, double & linear_vel, double & sign);
 
   /**
+   * @brief Find the intersection a circle and a line segment.
+   * This assumes the circle is centered at the origin.
+   * If no intersection is found, a floating point error will occur.
+   * @param p1 first endpoint of line segment
+   * @param p2 second endpoint of line segment
+   * @param r radius of circle
+   * @return point of intersection
+   */
+  static geometry_msgs::msg::Point circleSegmentIntersection(
+    const geometry_msgs::msg::Point & p1,
+    const geometry_msgs::msg::Point & p2,
+    double r);
+
+  /**
    * @brief Get lookahead point
    * @param lookahead_dist Optimal lookahead distance
    * @param path Current global path
@@ -232,7 +249,13 @@ protected:
    * @param pose Pose input to determine the cusp position
    * @return robot distance from the cusp
    */
-  double findDirectionChange(const geometry_msgs::msg::PoseStamped & pose);
+  double findVelocitySignChange(const nav_msgs::msg::Path & transformed_plan);
+
+  /**
+   * Get the greatest extent of the costmap in meters from the center.
+   * @return max of distance from center in meters to edge of costmap
+   */
+  double getCostmapMaxExtent() const;
 
   /**
    * @brief Callback executed when a parameter change is detected
@@ -272,6 +295,8 @@ protected:
   double rotate_to_heading_min_angle_;
   double goal_dist_tol_;
   bool allow_reversing_;
+  double max_robot_pose_search_dist_;
+  bool use_interpolation_;
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;

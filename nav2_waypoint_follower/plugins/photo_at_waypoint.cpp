@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <pluginlib/class_list_macros.hpp>
+#include "nav2_waypoint_follower/plugins/photo_at_waypoint.hpp"
 
 #include <string>
 #include <memory>
 
+#include "pluginlib/class_list_macros.hpp"
+
 #include "nav2_util/node_utils.hpp"
-#include "nav2_waypoint_follower/plugins/photo_at_waypoint.hpp"
 
 namespace nav2_waypoint_follower
 {

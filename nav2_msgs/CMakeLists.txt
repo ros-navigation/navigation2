@@ -33,13 +33,14 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/BackUp.action"
   "action/ComputePathToPose.action"
   "action/ComputePathThroughPoses.action"
+  "action/DriveOnHeading.action"
   "action/SmoothPath.action"
   "action/FollowPath.action"
   "action/NavigateToPose.action"
   "action/NavigateThroughPoses.action"
   "action/Wait.action"
   "action/Spin.action"
-  "action/DummyRecovery.action"
+  "action/DummyBehavior.action"
   "action/FollowWaypoints.action"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs
 )

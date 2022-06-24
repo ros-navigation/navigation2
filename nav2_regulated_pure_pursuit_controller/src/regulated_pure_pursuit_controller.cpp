@@ -40,8 +40,8 @@ namespace nav2_regulated_pure_pursuit_controller
 
 void RegulatedPurePursuitController::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-  std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
-  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
+  std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   auto node = parent.lock();
   node_ = parent;
@@ -105,6 +105,12 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_reversing", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_robot_pose_search_dist",
+    rclcpp::ParameterValue(getCostmapMaxExtent()));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".use_interpolation",
+    rclcpp::ParameterValue(true));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   base_desired_linear_vel_ = desired_linear_vel_;
@@ -147,6 +153,12 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(plugin_name_ + ".max_angular_accel", max_angular_accel_);
   node->get_parameter(plugin_name_ + ".allow_reversing", allow_reversing_);
   node->get_parameter("controller_frequency", control_frequency);
+  node->get_parameter(
+    plugin_name_ + ".max_robot_pose_search_dist",
+    max_robot_pose_search_dist_);
+  node->get_parameter(
+    plugin_name_ + ".use_interpolation",
+    use_interpolation_);
 
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
   control_duration_ = 1.0 / control_frequency;
@@ -232,7 +244,8 @@ std::unique_ptr<geometry_msgs::msg::PointStamped> RegulatedPurePursuitController
   return carrot_msg;
 }
 
-double RegulatedPurePursuitController::getLookAheadDistance(const geometry_msgs::msg::Twist & speed)
+double RegulatedPurePursuitController::getLookAheadDistance(
+  const geometry_msgs::msg::Twist & speed)
 {
   // If using velocity-scaled look ahead distances, find and clamp the dist
   // Else, use the static look ahead distance
@@ -270,11 +283,11 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Check for reverse driving
   if (allow_reversing_) {
     // Cusp check
-    double dist_to_direction_change = findDirectionChange(pose);
+    double dist_to_cusp = findVelocitySignChange(transformed_plan);
 
     // if the lookahead distance is further than the cusp, use the cusp distance instead
-    if (dist_to_direction_change < lookahead_dist) {
-      lookahead_dist = dist_to_direction_change;
+    if (dist_to_cusp < lookahead_dist) {
+      lookahead_dist = dist_to_cusp;
     }
   }
 
@@ -317,7 +330,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       costAtPose(pose.pose.position.x, pose.pose.position.y), linear_vel, sign);
 
     // Apply curvature to angular velocity after constraining linear velocity
-    angular_vel = linear_vel * curvature;
+    angular_vel = sign * linear_vel * curvature;
   }
 
   // Collision checking on this velocity heading
@@ -365,6 +378,41 @@ void RegulatedPurePursuitController::rotateToHeading(
   angular_vel = std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
 }
 
+geometry_msgs::msg::Point RegulatedPurePursuitController::circleSegmentIntersection(
+  const geometry_msgs::msg::Point & p1,
+  const geometry_msgs::msg::Point & p2,
+  double r)
+{
+  // Formula for intersection of a line with a circle centered at the origin,
+  // modified to always return the point that is on the segment between the two points.
+  // https://mathworld.wolfram.com/Circle-LineIntersection.html
+  // This works because the poses are transformed into the robot frame.
+  // This can be derived from solving the system of equations of a line and a circle
+  // which results in something that is just a reformulation of the quadratic formula.
+  // Interactive illustration in doc/circle-segment-intersection.ipynb as well as at
+  // https://www.desmos.com/calculator/td5cwbuocd
+  double x1 = p1.x;
+  double x2 = p2.x;
+  double y1 = p1.y;
+  double y2 = p2.y;
+
+  double dx = x2 - x1;
+  double dy = y2 - y1;
+  double dr2 = dx * dx + dy * dy;
+  double D = x1 * y2 - x2 * y1;
+
+  // Augmentation to only return point within segment
+  double d1 = x1 * x1 + y1 * y1;
+  double d2 = x2 * x2 + y2 * y2;
+  double dd = d2 - d1;
+
+  geometry_msgs::msg::Point p;
+  double sqrt_term = std::sqrt(r * r * dr2 - D * D);
+  p.x = (D * dy + std::copysign(1.0, dd) * dx * sqrt_term) / dr2;
+  p.y = (-D * dx + std::copysign(1.0, dd) * dy * sqrt_term) / dr2;
+  return p;
+}
+
 geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoint(
   const double & lookahead_dist,
   const nav_msgs::msg::Path & transformed_plan)
@@ -378,6 +426,21 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
   // If the no pose is not far enough, take the last pose
   if (goal_pose_it == transformed_plan.poses.end()) {
     goal_pose_it = std::prev(transformed_plan.poses.end());
+  } else if (use_interpolation_ && goal_pose_it != transformed_plan.poses.begin()) {
+    // Find the point on the line segment between the two poses
+    // that is exactly the lookahead distance away from the robot pose (the origin)
+    // This can be found with a closed form for the intersection of a segment and a circle
+    // Because of the way we did the std::find_if, prev_pose is guaranteed to be inside the circle,
+    // and goal_pose is guaranteed to be outside the circle.
+    auto prev_pose_it = std::prev(goal_pose_it);
+    auto point = circleSegmentIntersection(
+      prev_pose_it->pose.position,
+      goal_pose_it->pose.position, lookahead_dist);
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.frame_id = prev_pose_it->header.frame_id;
+    pose.header.stamp = goal_pose_it->header.stamp;
+    pose.pose.position = point;
+    return pose;
   }
 
   return *goal_pose_it;
@@ -602,23 +665,27 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   }
 
   // We'll discard points on the plan that are outside the local costmap
-  nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
-  const double max_costmap_dim = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY());
-  const double max_transform_dist = max_costmap_dim * costmap->getResolution() / 2.0;
+  double max_costmap_extent = getCostmapMaxExtent();
+
+  auto closest_pose_upper_bound =
+    nav2_util::geometry_utils::first_after_integrated_distance(
+    global_plan_.poses.begin(), global_plan_.poses.end(), max_robot_pose_search_dist_);
 
   // First find the closest pose on the path to the robot
+  // bounded by when the path turns around (if it does) so we don't get a pose from a later
+  // portion of the path
   auto transformation_begin =
     nav2_util::geometry_utils::min_by(
-    global_plan_.poses.begin(), global_plan_.poses.end(),
+    global_plan_.poses.begin(), closest_pose_upper_bound,
     [&robot_pose](const geometry_msgs::msg::PoseStamped & ps) {
       return euclidean_distance(robot_pose, ps);
     });
 
-  // Find points definitely outside of the costmap so we won't transform them.
+  // Find points up to max_transform_dist so we only transform them.
   auto transformation_end = std::find_if(
-    transformation_begin, end(global_plan_.poses),
-    [&](const auto & global_plan_pose) {
-      return euclidean_distance(robot_pose, global_plan_pose) > max_transform_dist;
+    transformation_begin, global_plan_.poses.end(),
+    [&](const auto & pose) {
+      return euclidean_distance(pose, robot_pose) > max_costmap_extent;
     });
 
   // Lambda to transform a PoseStamped from global frame to local
@@ -652,28 +719,30 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   return transformed_plan;
 }
 
-double RegulatedPurePursuitController::findDirectionChange(
-  const geometry_msgs::msg::PoseStamped & pose)
+double RegulatedPurePursuitController::findVelocitySignChange(
+  const nav_msgs::msg::Path & transformed_plan)
 {
-  // Iterating through the global path to determine the position of the cusp
-  for (unsigned int pose_id = 1; pose_id < global_plan_.poses.size() - 1; ++pose_id) {
+  // Iterating through the transformed global path to determine the position of the cusp
+  for (unsigned int pose_id = 1; pose_id < transformed_plan.poses.size() - 1; ++pose_id) {
     // We have two vectors for the dot product OA and AB. Determining the vectors.
-    double oa_x = global_plan_.poses[pose_id].pose.position.x -
-      global_plan_.poses[pose_id - 1].pose.position.x;
-    double oa_y = global_plan_.poses[pose_id].pose.position.y -
-      global_plan_.poses[pose_id - 1].pose.position.y;
-    double ab_x = global_plan_.poses[pose_id + 1].pose.position.x -
-      global_plan_.poses[pose_id].pose.position.x;
-    double ab_y = global_plan_.poses[pose_id + 1].pose.position.y -
-      global_plan_.poses[pose_id].pose.position.y;
+    double oa_x = transformed_plan.poses[pose_id].pose.position.x -
+      transformed_plan.poses[pose_id - 1].pose.position.x;
+    double oa_y = transformed_plan.poses[pose_id].pose.position.y -
+      transformed_plan.poses[pose_id - 1].pose.position.y;
+    double ab_x = transformed_plan.poses[pose_id + 1].pose.position.x -
+      transformed_plan.poses[pose_id].pose.position.x;
+    double ab_y = transformed_plan.poses[pose_id + 1].pose.position.y -
+      transformed_plan.poses[pose_id].pose.position.y;
 
     /* Checking for the existance of cusp, in the path, using the dot product
     and determine it's distance from the robot. If there is no cusp in the path,
     then just determine the distance to the goal location. */
     if ( (oa_x * ab_x) + (oa_y * ab_y) < 0.0) {
-      auto x = global_plan_.poses[pose_id].pose.position.x - pose.pose.position.x;
-      auto y = global_plan_.poses[pose_id].pose.position.y - pose.pose.position.y;
-      return hypot(x, y);  // returning the distance if there is a cusp
+      // returning the distance if there is a cusp
+      // The transformed path is in the robots frame, so robot is at the origin
+      return hypot(
+        transformed_plan.poses[pose_id].pose.position.x,
+        transformed_plan.poses[pose_id].pose.position.y);
     }
   }
 
@@ -698,6 +767,13 @@ bool RegulatedPurePursuitController::transformPose(
     RCLCPP_ERROR(logger_, "Exception in transformPose: %s", ex.what());
   }
   return false;
+}
+
+double RegulatedPurePursuitController::getCostmapMaxExtent() const
+{
+  const double max_costmap_dim_meters = std::max(
+    costmap_->getSizeInMetersX(), costmap_->getSizeInMetersX());
+  return max_costmap_dim_meters / 2.0;
 }
 
 

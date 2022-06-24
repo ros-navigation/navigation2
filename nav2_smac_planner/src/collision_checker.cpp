@@ -86,6 +86,13 @@ bool GridCollisionChecker::inCollision(
   const float & angle_bin,
   const bool & traverse_unknown)
 {
+  // Check to make sure cell is inside the map
+  if (outsideRange(costmap_->getSizeInCellsX(), x) ||
+    outsideRange(costmap_->getSizeInCellsY(), y))
+  {
+    return false;
+  }
+
   // Assumes setFootprint already set
   double wx, wy;
   costmap_->mapToWorld(static_cast<double>(x), static_cast<double>(y), wx, wy);
@@ -162,6 +169,11 @@ float GridCollisionChecker::getCost()
 {
   // Assumes inCollision called prior
   return static_cast<float>(footprint_cost_);
+}
+
+bool GridCollisionChecker::outsideRange(const unsigned int & max, const float & value)
+{
+  return value < 0.0f || value > max;
 }
 
 }  // namespace nav2_smac_planner

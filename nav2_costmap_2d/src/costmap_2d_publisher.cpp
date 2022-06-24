@@ -126,7 +126,7 @@ void Costmap2DPublisher::prepareGrid()
   grid_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
 
   grid_->header.frame_id = global_frame_;
-  grid_->header.stamp = rclcpp::Time();
+  grid_->header.stamp = clock_->now();
 
   grid_->info.resolution = grid_resolution;
 

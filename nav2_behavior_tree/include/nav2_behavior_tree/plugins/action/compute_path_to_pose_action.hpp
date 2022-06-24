@@ -63,7 +63,9 @@ public:
         BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>(
           "start", "Start pose of the path if overriding current robot pose"),
-        BT::InputPort<std::string>("planner_id", ""),
+        BT::InputPort<std::string>(
+          "planner_id", "",
+          "Mapped name to the planner plugin type to use"),
       });
   }
 };

@@ -151,8 +151,10 @@ TEST(VelocityIterator, two_checks)
 
   SimpleGoalChecker gc;
   StoppedGoalChecker sgc;
-  gc.initialize(x, "nav2_controller");
-  sgc.initialize(x, "nav2_controller");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  gc.initialize(x, "nav2_controller", costmap);
+  sgc.initialize(x, "nav2_controller", costmap);
   sameResult(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, true);
   sameResult(gc, sgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, false);
   sameResult(gc, sgc, 0, 0, 0, 0, 1, 0, 0, 0, 0, false);
@@ -170,8 +172,10 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
 
   SimpleGoalChecker gc;
   StoppedGoalChecker sgc;
-  sgc.initialize(x, "test");
-  gc.initialize(x, "test2");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  sgc.initialize(x, "test", costmap);
+  gc.initialize(x, "test2", costmap);
   geometry_msgs::msg::Pose pose_tol;
   geometry_msgs::msg::Twist vel_tol;
 

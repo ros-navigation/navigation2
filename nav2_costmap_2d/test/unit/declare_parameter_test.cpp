@@ -44,7 +44,7 @@ TEST(DeclareParameter, useValidParameter)
   tf2_ros::Buffer tf(node->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
-  layer.initialize(&layers, "test_layer", &tf, node, nullptr, nullptr);
+  layer.initialize(&layers, "test_layer", &tf, node, nullptr);
 
   layer.declareParameter("test1", rclcpp::ParameterValue("test_val1"));
   try {
@@ -63,7 +63,7 @@ TEST(DeclareParameter, useInvalidParameter)
   tf2_ros::Buffer tf(node->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
-  layer.initialize(&layers, "test_layer", &tf, node, nullptr, nullptr);
+  layer.initialize(&layers, "test_layer", &tf, node, nullptr);
 
   layer.declareParameter("test2", rclcpp::PARAMETER_STRING);
   try {

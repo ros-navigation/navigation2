@@ -249,7 +249,7 @@ bool AStarAlgorithm<NodeT>::createPath(
   NodeGetter neighborGetter =
     [&, this](const unsigned int & index, NodePtr & neighbor_rtn) -> bool
     {
-      if (index < 0 || index >= max_index) {
+      if (index >= max_index) {
         return false;
       }
 

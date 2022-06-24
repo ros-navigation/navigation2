@@ -71,7 +71,7 @@ void SmacPlanner2D::configure(
     node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
   node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".cost_travel_multiplier", rclcpp::ParameterValue(2.0));
+    node, name + ".cost_travel_multiplier", rclcpp::ParameterValue(1.0));
   node->get_parameter(name + ".cost_travel_multiplier", _search_info.cost_penalty);
 
   nav2_util::declare_parameter_if_not_declared(

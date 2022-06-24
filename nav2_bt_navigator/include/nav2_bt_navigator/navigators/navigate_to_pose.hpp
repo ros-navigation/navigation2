@@ -50,9 +50,11 @@ public:
   /**
    * @brief A configure state transition to configure navigator's state
    * @param node Weakptr to the lifecycle node
+   * @param odom_smoother Object to get current smoothed robot's speed
    */
   bool configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
+    rclcpp_lifecycle::LifecycleNode::WeakPtr node,
+    std::shared_ptr<nav2_util::OdomSmoother> odom_smoother) override;
 
   /**
    * @brief A cleanup state transition to remove memory allocated
@@ -104,8 +106,12 @@ protected:
    * @brief A callback that is called when a the action is completed, can fill in
    * action result message or indicate that this action is done.
    * @param result Action template result message to populate
+   * @param final_bt_status Resulting status of the behavior tree execution that may be
+   * referenced while populating the result.
    */
-  void goalCompleted(typename ActionT::Result::SharedPtr result) override;
+  void goalCompleted(
+    typename ActionT::Result::SharedPtr result,
+    const nav2_behavior_tree::BtStatus final_bt_status) override;
 
   /**
    * @brief Goal pose initialization on the blackboard
@@ -122,7 +128,7 @@ protected:
   std::string path_blackboard_id_;
 
   // Odometry smoother object
-  std::unique_ptr<nav2_util::OdomSmoother> odom_smoother_;
+  std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 };
 
 }  // namespace nav2_bt_navigator

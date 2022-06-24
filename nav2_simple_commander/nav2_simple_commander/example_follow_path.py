@@ -19,7 +19,7 @@ import rclpy
 
 
 """
-Basic navigation demo to follow a given path
+Basic navigation demo to follow a given path after smoothing
 """
 
 
@@ -49,11 +49,12 @@ def main():
     goal_pose.pose.position.y = -2.0
     goal_pose.pose.orientation.w = 1.0
 
-    # Sanity check a valid path exists
+    # Get the path, smooth it
     path = navigator.getPath(initial_pose, goal_pose)
+    smoothed_path = navigator.smoothPath(path)
 
     # Follow path
-    navigator.followPath(path)
+    navigator.followPath(smoothed_path)
 
     i = 0
     while not navigator.isTaskComplete():

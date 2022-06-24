@@ -20,6 +20,7 @@
 #include <vector>
 #include <mutex>
 
+#include "nav2_util/odometry_utils.hpp"
 #include "tf2_ros/buffer.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -135,13 +136,15 @@ public:
    * @param feedback_utils Some utilities useful for navigators to have
    * @param plugin_muxer The muxing object to ensure only one navigator
    * can be active at a time
+   * @param odom_smoother Object to get current smoothed robot's speed
    * @return bool If successful
    */
   bool on_configure(
     rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
     const std::vector<std::string> & plugin_lib_names,
     const FeedbackUtils & feedback_utils,
-    nav2_bt_navigator::NavigatorMuxer * plugin_muxer)
+    nav2_bt_navigator::NavigatorMuxer * plugin_muxer,
+    std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
   {
     auto node = parent_node.lock();
     logger_ = node->get_logger();
@@ -161,7 +164,7 @@ public:
       std::bind(&Navigator::onGoalReceived, this, std::placeholders::_1),
       std::bind(&Navigator::onLoop, this),
       std::bind(&Navigator::onPreempt, this, std::placeholders::_1),
-      std::bind(&Navigator::onCompletion, this, std::placeholders::_1));
+      std::bind(&Navigator::onCompletion, this, std::placeholders::_1, std::placeholders::_2));
 
     bool ok = true;
     if (!bt_action_server_->on_configure()) {
@@ -173,11 +176,11 @@ public:
     blackboard->set<bool>("initial_pose_received", false);  // NOLINT
     blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
-    return configure(parent_node) && ok;
+    return configure(parent_node, odom_smoother) && ok;
   }
 
   /**
-   * @brief Actiation of the navigator's backend BT and actions
+   * @brief Activation of the navigator's backend BT and actions
    * @return bool If successful
    */
   bool on_activate()
@@ -192,7 +195,7 @@ public:
   }
 
   /**
-   * @brief Dectiation of the navigator's backend BT and actions
+   * @brief Deactivation of the navigator's backend BT and actions
    * @return bool If successful
    */
   bool on_deactivate()
@@ -252,18 +255,24 @@ protected:
       return false;
     }
 
-    plugin_muxer_->startNavigating(getName());
+    bool goal_accepted = goalReceived(goal);
 
-    return goalReceived(goal);
+    if (goal_accepted) {
+      plugin_muxer_->startNavigating(getName());
+    }
+
+    return goal_accepted;
   }
 
   /**
-   * @brief An intermediate compution function to mux navigators
+   * @brief An intermediate completion function to mux navigators
    */
-  void onCompletion(typename ActionT::Result::SharedPtr result)
+  void onCompletion(
+    typename ActionT::Result::SharedPtr result,
+    const nav2_behavior_tree::BtStatus final_bt_status)
   {
     plugin_muxer_->stopNavigating(getName());
-    goalCompleted(result);
+    goalCompleted(result, final_bt_status);
   }
 
   /**
@@ -285,15 +294,22 @@ protected:
   virtual void onPreempt(typename ActionT::Goal::ConstSharedPtr goal) = 0;
 
   /**
-   * @brief A callback that is called when a the action is completed, can fill in
+   * @brief A callback that is called when a the action is completed; Can fill in
    * action result message or indicate that this action is done.
    */
-  virtual void goalCompleted(typename ActionT::Result::SharedPtr result) = 0;
+  virtual void goalCompleted(
+    typename ActionT::Result::SharedPtr result,
+    const nav2_behavior_tree::BtStatus final_bt_status) = 0;
 
   /**
    * @param Method to configure resources.
    */
-  virtual bool configure(rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/) {return true;}
+  virtual bool configure(
+    rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/,
+    std::shared_ptr<nav2_util::OdomSmoother>/*odom_smoother*/)
+  {
+    return true;
+  }
 
   /**
    * @brief Method to cleanup resources.
@@ -301,12 +317,12 @@ protected:
   virtual bool cleanup() {return true;}
 
   /**
-   * @brief Method to active and any threads involved in execution.
+   * @brief Method to activate any threads involved in execution.
    */
   virtual bool activate() {return true;}
 
   /**
-   * @brief Method to deactive and any threads involved in execution.
+   * @brief Method to deactivate and any threads involved in execution.
    */
   virtual bool deactivate() {return true;}
 

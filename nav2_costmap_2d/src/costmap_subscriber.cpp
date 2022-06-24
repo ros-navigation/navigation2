@@ -55,7 +55,6 @@ std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
 
 void CostmapSubscriber::toCostmap2D()
 {
-
   auto current_costmap_msg = std::atomic_load(&costmap_msg_);
 
   if (costmap_ == nullptr) {

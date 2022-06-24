@@ -29,7 +29,7 @@ namespace nav2_bt_navigator
 {
 
 BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("bt_navigator", "", false, options)
+: nav2_util::LifecycleNode("bt_navigator", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -38,9 +38,10 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_compute_path_through_poses_action_bt_node",
     "nav2_smooth_path_action_bt_node",
     "nav2_follow_path_action_bt_node",
-    "nav2_back_up_action_bt_node",
     "nav2_spin_action_bt_node",
     "nav2_wait_action_bt_node",
+    "nav2_back_up_action_bt_node",
+    "nav2_drive_on_heading_bt_node",
     "nav2_clear_costmap_service_bt_node",
     "nav2_is_stuck_condition_bt_node",
     "nav2_goal_reached_condition_bt_node",
@@ -53,12 +54,14 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_distance_controller_bt_node",
     "nav2_speed_controller_bt_node",
     "nav2_truncate_path_action_bt_node",
+    "nav2_truncate_path_local_action_bt_node",
     "nav2_goal_updater_node_bt_node",
     "nav2_recovery_node_bt_node",
     "nav2_pipeline_sequence_bt_node",
     "nav2_round_robin_node_bt_node",
     "nav2_transform_available_condition_bt_node",
     "nav2_time_expired_condition_bt_node",
+    "nav2_path_expiring_timer_condition",
     "nav2_distance_traveled_condition_bt_node",
     "nav2_single_trigger_bt_node",
     "nav2_is_battery_low_condition_bt_node",
@@ -68,7 +71,12 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_planner_selector_bt_node",
     "nav2_controller_selector_bt_node",
     "nav2_goal_checker_selector_bt_node",
-    "nav2_controller_cancel_bt_node"
+    "nav2_controller_cancel_bt_node",
+    "nav2_path_longer_on_approach_bt_node"
+    "nav2_wait_cancel_bt_node",
+    "nav2_spin_cancel_bt_node",
+    "nav2_back_up_cancel_bt_node"
+    "nav2_drive_on_heading_cancel_bt_node"
   };
 
   declare_parameter("plugin_lib_names", plugin_libs);
@@ -111,20 +119,20 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   feedback_utils.robot_frame = robot_frame_;
   feedback_utils.transform_tolerance = transform_tolerance_;
 
+  // Odometry smoother object for getting current speed
+  odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(shared_from_this(), 0.3, odom_topic_);
+
   if (!pose_navigator_->on_configure(
-      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
+      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_, odom_smoother_))
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
   if (!poses_navigator_->on_configure(
-      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
+      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_, odom_smoother_))
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
-
-  // Odometry smoother object for getting current speed
-  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(shared_from_this(), 0.3, odom_topic_);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

@@ -185,7 +185,9 @@ TEST(AStarTest, test_a_star_lattice)
   info.retrospective_penalty = 0.1;
   info.analytic_expansion_ratio = 3.5;
   info.lattice_filepath =
-    ament_index_cpp::get_package_share_directory("nav2_smac_planner") + "/default_model.json";
+    ament_index_cpp::get_package_share_directory("nav2_smac_planner") +
+    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
+    "/output.json";
   info.minimum_turning_radius = 8;  // in grid coordinates 0.4/0.05
   info.analytic_expansion_max_length = 20.0;  // in grid coordinates
   unsigned int size_theta = 16;
@@ -223,7 +225,7 @@ TEST(AStarTest, test_a_star_lattice)
 
   // check path is the right size and collision free
   EXPECT_EQ(num_it, 21);
-  EXPECT_EQ(path.size(), 47u);
+  EXPECT_EQ(path.size(), 48u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }

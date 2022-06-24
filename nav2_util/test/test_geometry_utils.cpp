@@ -22,7 +22,7 @@
 using nav2_util::geometry_utils::euclidean_distance;
 using nav2_util::geometry_utils::calculate_path_length;
 
-TEST(GeometryUtils, euclidean_distance_point)
+TEST(GeometryUtils, euclidean_distance_point_3d)
 {
   geometry_msgs::msg::Point point1;
   point1.x = 3.0;
@@ -34,10 +34,25 @@ TEST(GeometryUtils, euclidean_distance_point)
   point2.y = 2.0;
   point2.z = 3.0;
 
-  ASSERT_NEAR(euclidean_distance(point1, point2), 2.82843, 1e-5);
+  ASSERT_NEAR(euclidean_distance(point1, point2, true), 2.82843, 1e-5);
 }
 
-TEST(GeometryUtils, euclidean_distance_pose)
+TEST(GeometryUtils, euclidean_distance_point_2d)
+{
+  geometry_msgs::msg::Point point1;
+  point1.x = 3.0;
+  point1.y = 2.0;
+  point1.z = 1.0;
+
+  geometry_msgs::msg::Point point2;
+  point2.x = 1.0;
+  point2.y = 2.0;
+  point2.z = 3.0;
+
+  ASSERT_NEAR(euclidean_distance(point1, point2), 2.0, 1e-5);
+}
+
+TEST(GeometryUtils, euclidean_distance_pose_3d)
 {
   geometry_msgs::msg::Pose pose1;
   pose1.position.x = 7.0;
@@ -49,7 +64,22 @@ TEST(GeometryUtils, euclidean_distance_pose)
   pose2.position.y = 6.0;
   pose2.position.z = 2.0;
 
-  ASSERT_NEAR(euclidean_distance(pose1, pose2), 10.24695, 1e-5);
+  ASSERT_NEAR(euclidean_distance(pose1, pose2, true), 10.24695, 1e-5);
+}
+
+TEST(GeometryUtils, euclidean_distance_pose_2d)
+{
+  geometry_msgs::msg::Pose pose1;
+  pose1.position.x = 7.0;
+  pose1.position.y = 4.0;
+  pose1.position.z = 3.0;
+
+  geometry_msgs::msg::Pose pose2;
+  pose2.position.x = 17.0;
+  pose2.position.y = 6.0;
+  pose2.position.z = 2.0;
+
+  ASSERT_NEAR(euclidean_distance(pose1, pose2), 10.19804, 1e-5);
 }
 
 TEST(GeometryUtils, calculate_path_length)
