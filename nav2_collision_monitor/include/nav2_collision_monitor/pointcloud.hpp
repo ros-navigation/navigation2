@@ -36,7 +36,7 @@ public:
    * @param base_frame_id Robot base frame ID. The output data will be transformed into this frame.
    * @param global_frame_id Global frame ID for correct transform calculation
    * @param transform_tolerance Transform tolerance
-   * @param data_timeout Maximum time interval in which data is considered valid
+   * @param source_timeout Maximum time interval in which data is considered valid
    */
   PointCloud(
     const nav2_util::LifecycleNode::WeakPtr & node,
@@ -45,7 +45,7 @@ public:
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
-    const rclcpp::Duration & data_timeout);
+    const rclcpp::Duration & source_timeout);
   /**
    * @brief PointCloud destructor
    */

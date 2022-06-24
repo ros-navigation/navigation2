@@ -33,10 +33,10 @@ Source::Source(
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
-  const rclcpp::Duration & data_timeout)
+  const rclcpp::Duration & source_timeout)
 : node_(node), source_name_(source_name), tf_buffer_(tf_buffer),
   base_frame_id_(base_frame_id), global_frame_id_(global_frame_id),
-  transform_tolerance_(transform_tolerance), data_timeout_(data_timeout)
+  transform_tolerance_(transform_tolerance), source_timeout_(source_timeout)
 {
 }
 
@@ -62,9 +62,9 @@ bool Source::sourceValid(
   const rclcpp::Time & curr_time) const
 {
   // Source is considered as not valid, if latest received data timestamp is earlier
-  // than current time by data_timeout_ interval
+  // than current time by source_timeout_ interval
   const rclcpp::Duration dt = curr_time - source_time;
-  if (dt > data_timeout_) {
+  if (dt > source_timeout_) {
     RCLCPP_WARN(
       logger_,
       "[%s]: Latest source and current collision monitor node timestamps differ on %f seconds. "

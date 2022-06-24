@@ -54,9 +54,9 @@ bool Polygon::configure()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  std::string polygon_topic, footprint_topic;
+  std::string polygon_pub_topic, footprint_topic;
 
-  if (!getParameters(polygon_topic, footprint_topic)) {
+  if (!getParameters(polygon_pub_topic, footprint_topic)) {
     return false;
   }
 
@@ -80,7 +80,7 @@ bool Polygon::configure()
 
     rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
     polygon_pub_ = node->create_publisher<geometry_msgs::msg::PolygonStamped>(
-      polygon_topic, polygon_qos);
+      polygon_pub_topic, polygon_qos);
   }
 
   return true;
@@ -215,7 +215,7 @@ void Polygon::publish() const
   polygon_pub_->publish(std::move(poly_s));
 }
 
-bool Polygon::getCommonParameters(std::string & polygon_topic)
+bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
 {
   auto node = node_.lock();
   if (!node) {
@@ -267,8 +267,8 @@ bool Polygon::getCommonParameters(std::string & polygon_topic)
     if (visualize_) {
       // Get polygon topic parameter in case if it is going to be published
       nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".polygon_topic", rclcpp::ParameterValue(polygon_name_));
-      polygon_topic = node->get_parameter(polygon_name_ + ".polygon_topic").as_string();
+        node, polygon_name_ + ".polygon_pub_topic", rclcpp::ParameterValue(polygon_name_));
+      polygon_pub_topic = node->get_parameter(polygon_name_ + ".polygon_pub_topic").as_string();
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
@@ -281,14 +281,14 @@ bool Polygon::getCommonParameters(std::string & polygon_topic)
   return true;
 }
 
-bool Polygon::getParameters(std::string & polygon_topic, std::string & footprint_topic)
+bool Polygon::getParameters(std::string & polygon_pub_topic, std::string & footprint_topic)
 {
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  if (!getCommonParameters(polygon_topic)) {
+  if (!getCommonParameters(polygon_pub_topic)) {
     return false;
   }
 

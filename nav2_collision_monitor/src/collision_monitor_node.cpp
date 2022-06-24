@@ -154,9 +154,8 @@ void CollisionMonitor::cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPt
 
 void CollisionMonitor::publishVelocity(const Action & robot_action)
 {
-  const Velocity zero_vel{0.0, 0.0, 0.0};
-  if (robot_action.req_vel == zero_vel) {
-    if (robot_action_prev_.req_vel != zero_vel) {
+  if (robot_action.req_vel.isZero()) {
+    if (!robot_action_prev_.req_vel.isZero()) {
       // Robot just stopped: saving stop timestamp and continue
       stop_stamp_ = this->now();
     } else if (this->now() - stop_stamp_ > stop_pub_timeout_) {
@@ -183,7 +182,7 @@ bool CollisionMonitor::getParameters(
 {
   std::string base_frame_id, odom_frame_id;
   tf2::Duration transform_tolerance;
-  rclcpp::Duration data_timeout(2.0, 0.0);
+  rclcpp::Duration source_timeout(2.0, 0.0);
 
   try {
     auto node = shared_from_this();
@@ -210,9 +209,9 @@ bool CollisionMonitor::getParameters(
     transform_tolerance =
       tf2::durationFromSec(get_parameter("transform_tolerance").as_double());
     nav2_util::declare_parameter_if_not_declared(
-      node, "data_timeout", rclcpp::ParameterValue(2.0));
-    data_timeout =
-      rclcpp::Duration::from_seconds(get_parameter("data_timeout").as_double());
+      node, "source_timeout", rclcpp::ParameterValue(2.0));
+    source_timeout =
+      rclcpp::Duration::from_seconds(get_parameter("source_timeout").as_double());
 
     nav2_util::declare_parameter_if_not_declared(
       node, "stop_pub_timeout", rclcpp::ParameterValue(1.0));
@@ -227,7 +226,7 @@ bool CollisionMonitor::getParameters(
     return false;
   }
 
-  if (!configureSources(base_frame_id, odom_frame_id, transform_tolerance, data_timeout)) {
+  if (!configureSources(base_frame_id, odom_frame_id, transform_tolerance, source_timeout)) {
     return false;
   }
 
@@ -281,7 +280,7 @@ bool CollisionMonitor::configureSources(
   const std::string & base_frame_id,
   const std::string & odom_frame_id,
   const tf2::Duration & transform_tolerance,
-  const rclcpp::Duration & data_timeout)
+  const rclcpp::Duration & source_timeout)
 {
   try {
     auto node = shared_from_this();
@@ -299,7 +298,7 @@ bool CollisionMonitor::configureSources(
       if (source_type == "scan") {
         std::shared_ptr<Scan> s = std::make_shared<Scan>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_tolerance, data_timeout);
+          transform_tolerance, source_timeout);
 
         s->configure();
 
@@ -307,7 +306,7 @@ bool CollisionMonitor::configureSources(
       } else if (source_type == "pointcloud") {
         std::shared_ptr<PointCloud> p = std::make_shared<PointCloud>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_tolerance, data_timeout);
+          transform_tolerance, source_timeout);
 
         p->configure();
 

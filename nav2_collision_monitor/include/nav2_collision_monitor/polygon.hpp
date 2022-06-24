@@ -143,18 +143,18 @@ public:
 protected:
   /**
    * @brief Supporting routine obtaining ROS-parameters common for all shapes
-   * @param polygon_topic Output name of polygon publishing topic
+   * @param polygon_pub_topic Output name of polygon publishing topic
    * @return True if all parameters were obtained or false in failure case
    */
-  bool getCommonParameters(std::string & polygon_topic);
+  bool getCommonParameters(std::string & polygon_pub_topic);
 
   /**
    * @brief Supporting routine obtaining polygon-specific ROS-parameters
-   * @param polygon_topic Output name of polygon publishing topic
+   * @param polygon_pub_topic Output name of polygon publishing topic
    * @param footprint_topic Output name of footprint topic. Empty, if no footprint subscription
    * @return True if all parameters were obtained or false in failure case
    */
-  virtual bool getParameters(std::string & polygon_topic, std::string & footprint_topic);
+  virtual bool getParameters(std::string & polygon_pub_topic, std::string & footprint_topic);
 
   /**
    * @brief Checks if point is inside polygon

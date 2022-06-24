@@ -30,10 +30,10 @@ PointCloud::PointCloud(
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
-  const rclcpp::Duration & data_timeout)
+  const rclcpp::Duration & source_timeout)
 : Source(
     node, source_name, tf_buffer, base_frame_id, global_frame_id,
-    transform_tolerance, data_timeout),
+    transform_tolerance, source_timeout),
   data_(nullptr)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating PointCloud", source_name_.c_str());

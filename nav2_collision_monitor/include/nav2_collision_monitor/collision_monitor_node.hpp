@@ -127,14 +127,14 @@ protected:
    * @param odom_frame_id Odometry frame ID. Used as global frame to get
    * source->base time inerpolated transform.
    * @param transform_tolerance Transform tolerance
-   * @param data_timeout Maximum time interval in which data is considered valid
+   * @param source_timeout Maximum time interval in which data is considered valid
    * @return True if all sources were configured successfully or false in failure case
    */
   bool configureSources(
   const std::string & base_frame_id,
   const std::string & odom_frame_id,
   const tf2::Duration & transform_tolerance,
-  const rclcpp::Duration & data_timeout);
+  const rclcpp::Duration & source_timeout);
 
   /**
    * @brief Main processing routine
@@ -190,11 +190,8 @@ protected:
   /// @brief TF listener
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-  /// @brief STOP/SLOWDOWN polygons array
+  /// @brief Polygons array
   std::vector<std::shared_ptr<Polygon>> polygons_;
-
-  /// @brief Footprint APPROACH polygon
-  std::shared_ptr<Polygon> footprint_;
 
   /// @brief Data sources array
   std::vector<std::shared_ptr<Source>> sources_;

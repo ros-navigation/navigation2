@@ -6,7 +6,7 @@ collision_monitor:
     cmd_vel_in_topic: "cmd_vel_raw"
     cmd_vel_out_topic: "cmd_vel"
     transform_tolerance: 0.5
-    data_timeout: 5.0
+    source_timeout: 5.0
     stop_pub_timeout: 2.0
     # Polygons represent safety area around the robot for "stop" and "slowdown" action types,
     # and robot footprint for "approach" action type.
@@ -20,7 +20,7 @@ collision_monitor:
       action_type: "stop"
       max_points: 3
       visualize: True
-      polygon_topic: "polygon_stop"
+      polygon_pub_topic: "polygon_stop"
     PolygonSlow:
       type: "polygon"
       points: [0.5, 0.5, 0.5, -0.5, -0.1, -0.5, -0.1, 0.5, 0.5, 0.5]
@@ -28,14 +28,14 @@ collision_monitor:
       max_points: 3
       slowdown_ratio: 0.3
       visualize: True
-      polygon_topic: "polygon_slowdown"
+      polygon_pub_topic: "polygon_slowdown"
     FootprintApproach:
       type: "polygon"
       action_type: "approach"
       footprint_topic: "/local_costmap/published_footprint"
       time_before_collision: 2.0
       simulation_time_step: 0.02
-      max_points: 20
+      max_points: 5
       visualize: False
     observation_sources: ["scan"]
     scan:
