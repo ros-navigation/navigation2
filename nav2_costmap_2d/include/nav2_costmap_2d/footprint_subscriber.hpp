@@ -86,7 +86,6 @@ protected:
    */
   void footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg);
 
-  std::string topic_name_;
   tf2_ros::Buffer & tf_;
   std::string robot_base_frame_;
   double transform_tolerance_;

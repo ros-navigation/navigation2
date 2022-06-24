@@ -76,7 +76,7 @@ NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 
   if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
     RCLCPP_ERROR(
-      logger_, "BT file not found: %s. Navigation canceled.",
+      logger_, "Error loading XML file: %s. Navigation canceled.",
       bt_xml_filename.c_str());
     return false;
   }
