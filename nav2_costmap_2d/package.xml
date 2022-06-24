@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
-<package format ="3">
+<package format="3">
   <name>nav2_costmap_2d</name>
   <version>1.0.0</version>
   <description>
@@ -50,6 +50,6 @@
   <test_depend>nav2_lifecycle_manager</test_depend>
 
   <export>
-	  <build_type>ament_cmake</build_type>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

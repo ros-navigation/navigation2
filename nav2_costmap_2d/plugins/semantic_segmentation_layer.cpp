@@ -52,181 +52,203 @@ using nav2_costmap_2d::NO_INFORMATION;
 
 namespace nav2_costmap_2d {
 
-SemanticSegmentationLayer::SemanticSegmentationLayer()
-{
-}
+SemanticSegmentationLayer::SemanticSegmentationLayer() {}
 
 // This method is called at the end of plugin initialization.
 // It contains ROS parameter(s) declaration and initialization
 // of need_recalculation_ variable.
 void SemanticSegmentationLayer::onInitialize()
 {
-    current_ = true;
-    was_reset_ = false;
-    auto node = node_.lock();
-    if (!node)
+  current_ = true;
+  was_reset_ = false;
+  auto node = node_.lock();
+  if (!node)
+  {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+  std::string segmentation_topic, pointcloud_topic, sensor_frame;
+  std::vector<std::string> class_types_string;
+  double max_obstacle_distance, min_obstacle_distance, observation_keep_time, transform_tolerance,
+    expected_update_rate;
+
+  declareParameter("enabled", rclcpp::ParameterValue(true));
+  node->get_parameter(name_ + "." + "enabled", enabled_);
+  declareParameter("combination_method", rclcpp::ParameterValue(1));
+  node->get_parameter(name_ + "." + "combination_method", combination_method_);
+  declareParameter("publish_debug_topics", rclcpp::ParameterValue(false));
+  node->get_parameter(name_ + "." + "publish_debug_topics", debug_topics_);
+  declareParameter("max_obstacle_distance", rclcpp::ParameterValue(5.0));
+  node->get_parameter(name_ + "." + "max_obstacle_distance", max_obstacle_distance);
+  declareParameter("min_obstacle_distance", rclcpp::ParameterValue(0.3));
+  node->get_parameter(name_ + "." + "min_obstacle_distance", min_obstacle_distance);
+  declareParameter("segmentation_topic", rclcpp::ParameterValue(""));
+  node->get_parameter(name_ + "." + "segmentation_topic", segmentation_topic);
+  declareParameter("pointcloud_topic", rclcpp::ParameterValue(""));
+  node->get_parameter(name_ + "." + "pointcloud_topic", pointcloud_topic);
+  declareParameter("observation_persistence", rclcpp::ParameterValue(0.0));
+  node->get_parameter(name_ + "." + "observation_persistence", observation_keep_time);
+  declareParameter(name_ + "." + "expected_update_rate", rclcpp::ParameterValue(0.0));
+  node->get_parameter(name_ + "." + "sensor_frame", sensor_frame);
+  node->get_parameter(name_ + "." + "expected_update_rate", expected_update_rate);
+  node->get_parameter("transform_tolerance", transform_tolerance);
+
+  declareParameter("class_types", rclcpp::ParameterValue(std::vector<std::string>({})));
+  node->get_parameter(name_ + "." + "class_types", class_types_string);
+  if (class_types_string.empty())
+  {
+    RCLCPP_ERROR(logger_, "no class types defined. Segmentation plugin cannot work this way");
+    exit(-1);
+  }
+
+  for (auto& source : class_types_string)
+  {
+    std::vector<std::string> classes_ids;
+    uint8_t cost;
+    declareParameter(source + ".classes", rclcpp::ParameterValue(std::vector<std::string>({})));
+    declareParameter(source + ".cost", rclcpp::ParameterValue(0));
+    node->get_parameter(name_ + "." + source + ".classes", classes_ids);
+    if (classes_ids.empty())
     {
-        throw std::runtime_error{"Failed to lock node"};
+      RCLCPP_ERROR(logger_, "no classes defined on type %s", source.c_str());
+      continue;
     }
-    std::string segmentation_topic, camera_info_topic, pointcloud_topic;
-    bool use_pointcloud;
-    double max_lookahead_distance, observation_keep_time;
+    node->get_parameter(name_ + "." + source + ".cost", cost);
+    for (auto& class_id : classes_ids)
+    {
+      class_map_.insert(std::pair<std::string, uint8_t>(class_id, cost));
+    }
+  }
 
-    declareParameter("enabled", rclcpp::ParameterValue(true));
-    node->get_parameter(name_ + "." + "enabled", enabled_);
-    declareParameter("combination_method", rclcpp::ParameterValue(1));
-    node->get_parameter(name_ + "." + "combination_method", combination_method_);
-    declareParameter("use_pointcloud", rclcpp::ParameterValue(false));
-    node->get_parameter(name_ + "." + "use_pointcloud", use_pointcloud);
-    declareParameter("max_lookahead_distance", rclcpp::ParameterValue(3.0));
-    node->get_parameter(name_ + "." + "max_lookahead_distance", max_lookahead_distance);
-    declareParameter("segmentation_topic", rclcpp::ParameterValue(""));
-    node->get_parameter(name_ + "." + "segmentation_topic", segmentation_topic);
-    declareParameter("camera_info_topic", rclcpp::ParameterValue(""));
-    node->get_parameter(name_ + "." + "camera_info_topic", camera_info_topic);
-    declareParameter("pointcloud_topic", rclcpp::ParameterValue(""));
-    node->get_parameter(name_ + "." + "pointcloud_topic", pointcloud_topic);
-    declareParameter("observation_persistence", rclcpp::ParameterValue(0.0));
-    node->get_parameter(name_ + "." + "observation_persistence", observation_keep_time);
+  if (class_map_.empty())
+  {
+    RCLCPP_ERROR(logger_, "No classes defined. Segmentation plugin cannot work this way");
+    exit(-1);
+  }
 
-    global_frame_ = layered_costmap_->getGlobalFrameID();
-    rolling_window_ = layered_costmap_->isRolling();
+  global_frame_ = layered_costmap_->getGlobalFrameID();
+  rolling_window_ = layered_costmap_->isRolling();
 
-    matchSize();
+  matchSize();
 
-    semantic_segmentation_sub_ = node->create_subscription<vision_msgs::msg::SemanticSegmentation>(segmentation_topic, rclcpp::SensorDataQoS(), std::bind(&SemanticSegmentationLayer::segmentationCb, this, std::placeholders::_1));
+  rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_sensor_data;
 
-    ray_caster_.initialize(rclcpp_node_, camera_info_topic, pointcloud_topic, use_pointcloud, tf_, global_frame_, tf2::Duration(0), max_lookahead_distance);
+  semantic_segmentation_sub_ =
+    std::make_shared<message_filters::Subscriber<vision_msgs::msg::SemanticSegmentation>>(
+      rclcpp_node_, segmentation_topic, custom_qos_profile);
+  pointcloud_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(
+    rclcpp_node_, pointcloud_topic, custom_qos_profile);
+  pointcloud_tf_sub_ = std::make_shared<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>>(
+    *pointcloud_sub_, *tf_, global_frame_, 50, rclcpp_node_,
+    tf2::durationFromSec(transform_tolerance));
+  segm_pc_sync_ =
+    std::make_shared<message_filters::TimeSynchronizer<vision_msgs::msg::SemanticSegmentation,
+                                                       sensor_msgs::msg::PointCloud2>>(
+      *semantic_segmentation_sub_, *pointcloud_tf_sub_, 100);
+  segm_pc_sync_->registerCallback(std::bind(&SemanticSegmentationLayer::syncSegmPointcloudCb, this,
+                                            std::placeholders::_1, std::placeholders::_2));
 
-    msg_buffer_ = std::make_shared<ObjectBuffer<MessageTf>>(node, observation_keep_time);
-    
+  segmentation_buffer_ = std::make_shared<nav2_costmap_2d::SegmentationBuffer>(
+    node, pointcloud_topic, observation_keep_time, expected_update_rate, max_obstacle_distance,
+    min_obstacle_distance, *tf_, global_frame_, sensor_frame,
+    tf2::durationFromSec(transform_tolerance));
+
+  if (debug_topics_)
+  {
+    sgm_debug_pub_ =
+      node->create_publisher<vision_msgs::msg::SemanticSegmentation>("/buffered_segmentation", 1);
+    orig_pointcloud_pub_ =
+      node->create_publisher<sensor_msgs::msg::PointCloud2>("/buffered_pointcloud", 1);
+    proc_pointcloud_pub_ =
+      node->create_publisher<sensor_msgs::msg::PointCloud2>("/processed_pointcloud", 1);
+  }
 }
 
 // The method is called to ask the plugin: which area of costmap it needs to update.
 // Inside this method window bounds are re-calculated if need_recalculation_ is true
 // and updated independently on its value.
 void SemanticSegmentationLayer::updateBounds(double robot_x, double robot_y, double /*robot_yaw*/,
-                                             double* min_x, double* min_y, double* max_x, double* max_y)
+                                             double* min_x, double* min_y, double* max_x,
+                                             double* max_y)
 {
-    if (rolling_window_) {
-        updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
-    }
-    if (!enabled_) {
-        current_ = true;
-        return;
-    } 
-    std::vector<MessageTf> segmentations;
-    msg_buffer_->getObjects(segmentations);
-    int processed_msgs = 0;
-    for(auto& segmentation : segmentations){
-        int touched_cells = 0;
-        for(size_t v = 0; v < segmentation.message.height; v=v+2)
-        {
-            for(size_t u = 0; u < segmentation.message.width; u=u+2){
-                uint8_t pixel = segmentation.message.data[v*segmentation.message.width+u];
-                cv::Point2d pixel_idx;
-                pixel_idx.x = u;
-                pixel_idx.y = v;
-                geometry_msgs::msg::PointStamped world_point;
-                if(!ray_caster_.imageToGroundPlaneLookup(pixel_idx, world_point, segmentation.transform))
-                {
-                    RCLCPP_DEBUG(logger_, "Could not raycast");
-                    continue;
-                }
-                unsigned int mx, my;
-                if(!worldToMap(world_point.point.x, world_point.point.y, mx, my))
-                {
-                    RCLCPP_DEBUG(logger_, "Computing map coords failed");
-                    continue;
-                }
-                unsigned int index = getIndex(mx, my);
-                if(pixel!= 1){
-                    costmap_[index] = 100;
-                }else{
-                    costmap_[index] = 0;
-                }
-                touch(world_point.point.x, world_point.point.y, min_x, min_y, max_x, max_y);
-                touched_cells++;
-            }
-        }
-        processed_msgs++;
-    }
-    if(processed_msgs>0)
+  if (rolling_window_)
+  {
+    updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
+  }
+  if (!enabled_)
+  {
+    current_ = true;
+    return;
+  }
+  std::vector<nav2_costmap_2d::Segmentation> segmentations;
+  segmentation_buffer_->lock();
+  segmentation_buffer_->getSegmentations(segmentations);
+  segmentation_buffer_->unlock();
+  for (auto& segmentation : segmentations)
+  {
+    if (debug_topics_)
     {
-        RCLCPP_INFO(logger_, "Processed %i segmentations", processed_msgs);
+      proc_pointcloud_pub_->publish(*segmentation.cloud_);
     }
-    // vision_msgs::msg::SemanticSegmentation current_segmentation = latest_segmentation_message;
-    // int touched_cells = 0;
-    // for(size_t v = 0; v < current_segmentation.height; v=v+5)
-    // {
-    //     for(size_t u = 0; u < current_segmentation.width; u=u+5){
-    //         uint8_t pixel = current_segmentation.data[v*current_segmentation.width+u];
-    //         cv::Point2d pixel_idx;
-    //         pixel_idx.x = u;
-    //         pixel_idx.y = v;
-    //         geometry_msgs::msg::PointStamped world_point;
-    //         if(!ray_caster_.imageToGroundPlane(pixel_idx, world_point))
-    //         {
-    //             RCLCPP_DEBUG(logger_, "Could not raycast");
-    //             continue;
-    //         }
-    //         unsigned int mx, my;
-    //         if(!worldToMap(world_point.point.x, world_point.point.y, mx, my))
-    //         {
-    //             RCLCPP_DEBUG(logger_, "Computing map coords failed");
-    //             continue;
-    //         }
-    //         unsigned int index = getIndex(mx, my);
-    //         if(pixel!= 1){
-    //             costmap_[index] = 100;
-    //         }else{
-    //             costmap_[index] = 0;
-    //         }
-    //         touch(world_point.point.x, world_point.point.y, min_x, min_y, max_x, max_y);
-    //         touched_cells++;
-    //     }
-    // }
-    // RCLCPP_INFO(logger_, "touched %i cells", touched_cells);
-    
+    sensor_msgs::PointCloud2ConstIterator<float> iter_x(*segmentation.cloud_, "x");
+    sensor_msgs::PointCloud2ConstIterator<float> iter_y(*segmentation.cloud_, "y");
+    sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_class(*segmentation.cloud_, "class");
+    // sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_confidence(*segmentation.cloud_,
+    // "confidence");
+    for (size_t point = 0; point < segmentation.cloud_->height * segmentation.cloud_->width;
+         point++)
+    {
+      unsigned int mx, my;
+      if (!worldToMap(*(iter_x + point), *(iter_y + point), mx, my))
+      {
+        RCLCPP_DEBUG(logger_, "Computing map coords failed");
+        continue;
+      }
+      unsigned int index = getIndex(mx, my);
+      uint8_t class_id = *(iter_class + point);
+      if (!class_map_.count(segmentation.class_map_[class_id]))
+      {
+        RCLCPP_DEBUG(logger_, "Cost for class id %i was not defined, skipping", class_id);
+        continue;
+      }
+      costmap_[index] = class_map_[segmentation.class_map_[class_id]];
+      touch(*(iter_x + point), *(iter_y + point), min_x, min_y, max_x, max_y);
+    }
+  }
 }
 
 // The method is called when footprint was changed.
 // Here it just resets need_recalculation_ variable.
 void SemanticSegmentationLayer::onFootprintChanged()
 {
-
-    RCLCPP_DEBUG(rclcpp::get_logger("nav2_costmap_2d"),
-                 "SemanticSegmentationLayer::onFootprintChanged(): num footprint points: %lu",
-                 layered_costmap_->getFootprint().size());
+  RCLCPP_DEBUG(rclcpp::get_logger("nav2_costmap_2d"),
+               "SemanticSegmentationLayer::onFootprintChanged(): num footprint points: %lu",
+               layered_costmap_->getFootprint().size());
 }
 
 // The method is called when costmap recalculation is required.
 // It updates the costmap within its window bounds.
 // Inside this method the costmap gradient is generated and is writing directly
 // to the resulting costmap master_grid without any merging with previous layers.
-void SemanticSegmentationLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i,
-                                            int max_j)
+void SemanticSegmentationLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid, int min_i,
+                                            int min_j, int max_i, int max_j)
 {
-    if (!enabled_)
-    {
-        return;
-    }
+  if (!enabled_)
+  {
+    return;
+  }
 
-    if (!current_ && was_reset_) {
-        was_reset_ = false;
-        current_ = true;
-    }
-    // (void) max_j;
-    // (void) master_grid;
-    // (void) min_i;
-    // (void) max_i;
-    // (void) min_j;
-    if(!costmap_)
-    {
-        return;
-    }
-    // RCLCPP_INFO(logger_, "Updating costmap");
-    switch (combination_method_) {
+  if (!current_ && was_reset_)
+  {
+    was_reset_ = false;
+    current_ = true;
+  }
+  if (!costmap_)
+  {
+    return;
+  }
+  // RCLCPP_INFO(logger_, "Updating costmap");
+  switch (combination_method_)
+  {
     case 0:  // Overwrite
       updateWithOverwrite(master_grid, min_i, min_j, max_i, max_j);
       break;
@@ -235,38 +257,52 @@ void SemanticSegmentationLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_g
       break;
     default:  // Nothing
       break;
-    }
+  }
 }
 
-void SemanticSegmentationLayer::segmentationCb(vision_msgs::msg::SemanticSegmentation::SharedPtr msg)
+void SemanticSegmentationLayer::syncSegmPointcloudCb(
+  const std::shared_ptr<const vision_msgs::msg::SemanticSegmentation>& segmentation,
+  const std::shared_ptr<const sensor_msgs::msg::PointCloud2>& pointcloud)
 {
-    // latest_segmentation_message = *msg;
-    geometry_msgs::msg::TransformStamped current_transform;
-    try
-    {
-        current_transform = tf_->lookupTransform(global_frame_, msg->header.frame_id, msg->header.stamp);
-    }
-    catch (tf2::TransformException & ex) {
-        // if an exception occurs, we need to remove the empty observation from the list
-        RCLCPP_ERROR(
-        logger_,
-        "TF Exception that should never happen for sensor frame: %s, cloud frame: %s, %s",
-        msg->header.frame_id.c_str(),
-        global_frame_.c_str(), ex.what());
-        return;
-    }
-    MessageTf message_tf;
-    message_tf.message = *msg;
-    message_tf.transform = current_transform;
-    msg_buffer_->bufferObject(message_tf, msg->header.stamp);
-    RCLCPP_INFO(logger_, "msg buffered");
+  if (segmentation->width * segmentation->height != pointcloud->width * pointcloud->height)
+  {
+    RCLCPP_WARN(logger_,
+                "Pointcloud and segmentation sizes are different, will not buffer message. "
+                "segmentation->width:%u,  "
+                "segmentation->height:%u, pointcloud->width:%u, pointcloud->height:%u",
+                segmentation->width, segmentation->height, pointcloud->width, pointcloud->height);
+    return;
+  }
+  unsigned expected_array_size = segmentation->width * segmentation->height;
+  if (segmentation->data.size() < expected_array_size ||
+      segmentation->confidence.size() < expected_array_size)
+  {
+    RCLCPP_WARN(logger_,
+                "segmentation arrays have wrong sizes: data->%lu, confidence->%lu, expected->%u. "
+                "Will not buffer message",
+                segmentation->data.size(), segmentation->confidence.size(), expected_array_size);
+    return;
+  }
+  if (segmentation->class_map.size() == 0)
+  {
+    RCLCPP_WARN(logger_, "Classs map is empty. Will not buffer message");
+    return;
+  }
+  segmentation_buffer_->lock();
+  segmentation_buffer_->bufferSegmentation(*pointcloud, *segmentation);
+  segmentation_buffer_->unlock();
+  if (debug_topics_)
+  {
+    sgm_debug_pub_->publish(*segmentation);
+    orig_pointcloud_pub_->publish(*pointcloud);
+  }
 }
 
 void SemanticSegmentationLayer::reset()
 {
-    resetMaps();
-    current_ = false;
-    was_reset_ = true;
+  resetMaps();
+  current_ = false;
+  was_reset_ = true;
 }
 
 }  // namespace nav2_costmap_2d
