@@ -33,6 +33,7 @@
 #define NAV2_COSTMAP_2D__SEGMENTATION_HPP_
 
 #include <geometry_msgs/msg/point.hpp>
+#include <map>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
 namespace nav2_costmap_2d {
