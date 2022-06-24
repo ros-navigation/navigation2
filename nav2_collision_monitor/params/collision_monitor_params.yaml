@@ -9,7 +9,7 @@ collision_monitor:
     data_timeout: 5.0
     stop_pub_timeout: 2.0
     # Polygons represent safety area around the robot for "stop" and "slowdown" action types,
-    # and robot footprint for "circle" action type.
+    # and robot footprint for "approach" action type.
     # Footprint could be "polygon" type with dynamically set footprint from footprint_topic
     # or "circle" type with static footprint set by radius. "footprint_topic" parameter
     # to be ignored in latest case.
