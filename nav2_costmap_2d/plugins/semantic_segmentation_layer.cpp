@@ -72,27 +72,27 @@ void SemanticSegmentationLayer::onInitialize()
     expected_update_rate;
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
-  node->get_parameter(name_ + "." + "enabled", enabled_);
   declareParameter("combination_method", rclcpp::ParameterValue(1));
-  node->get_parameter(name_ + "." + "combination_method", combination_method_);
   declareParameter("publish_debug_topics", rclcpp::ParameterValue(false));
-  node->get_parameter(name_ + "." + "publish_debug_topics", debug_topics_);
   declareParameter("max_obstacle_distance", rclcpp::ParameterValue(5.0));
-  node->get_parameter(name_ + "." + "max_obstacle_distance", max_obstacle_distance);
   declareParameter("min_obstacle_distance", rclcpp::ParameterValue(0.3));
-  node->get_parameter(name_ + "." + "min_obstacle_distance", min_obstacle_distance);
   declareParameter("segmentation_topic", rclcpp::ParameterValue(""));
-  node->get_parameter(name_ + "." + "segmentation_topic", segmentation_topic);
   declareParameter("pointcloud_topic", rclcpp::ParameterValue(""));
-  node->get_parameter(name_ + "." + "pointcloud_topic", pointcloud_topic);
   declareParameter("observation_persistence", rclcpp::ParameterValue(0.0));
-  node->get_parameter(name_ + "." + "observation_persistence", observation_keep_time);
   declareParameter(name_ + "." + "expected_update_rate", rclcpp::ParameterValue(0.0));
+  declareParameter("class_types", rclcpp::ParameterValue(std::vector<std::string>({})));
+
+  node->get_parameter(name_ + "." + "enabled", enabled_);
+  node->get_parameter(name_ + "." + "combination_method", combination_method_);
+  node->get_parameter(name_ + "." + "publish_debug_topics", debug_topics_);
+  node->get_parameter(name_ + "." + "max_obstacle_distance", max_obstacle_distance);
+  node->get_parameter(name_ + "." + "min_obstacle_distance", min_obstacle_distance);
+  node->get_parameter(name_ + "." + "segmentation_topic", segmentation_topic);
+  node->get_parameter(name_ + "." + "pointcloud_topic", pointcloud_topic);
+  node->get_parameter(name_ + "." + "observation_persistence", observation_keep_time);
   node->get_parameter(name_ + "." + "sensor_frame", sensor_frame);
   node->get_parameter(name_ + "." + "expected_update_rate", expected_update_rate);
   node->get_parameter("transform_tolerance", transform_tolerance);
-
-  declareParameter("class_types", rclcpp::ParameterValue(std::vector<std::string>({})));
   node->get_parameter(name_ + "." + "class_types", class_types_string);
   if (class_types_string.empty())
   {

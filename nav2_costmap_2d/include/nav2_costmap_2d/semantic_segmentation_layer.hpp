@@ -116,8 +116,6 @@ class SemanticSegmentationLayer : public CostmapLayer
     const std::shared_ptr<const vision_msgs::msg::SemanticSegmentation>& segmentation,
     const std::shared_ptr<const sensor_msgs::msg::PointCloud2>& pointcloud);
 
-  // rclcpp::Subscription<vision_msgs::msg::SemanticSegmentation>::SharedPtr
-  // semantic_segmentation_sub_;
   std::shared_ptr<message_filters::Subscriber<vision_msgs::msg::SemanticSegmentation>>
     semantic_segmentation_sub_;
   std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> pointcloud_sub_;
