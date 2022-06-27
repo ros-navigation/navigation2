@@ -50,22 +50,52 @@ EXCLUDE_PACKAGES=$(
       ".*_tests" \
       ".*_rviz.*" \
   | xargs)
-INCLUDE_PACKAGES=$(
-  colcon list \
-    --names-only \
-    --packages-ignore \
-      $EXCLUDE_PACKAGES \
-  | xargs)
+
+lcov --capture --initial \
+  --directory build \
+  --output-file ${LCOVDIR}/initial_coverage.info \
+  --rc lcov_branch_coverage=0
 
 # Capture executed code data.
-fastcov --lcov \
-  -d build \
-  --exclude test/ $EXCLUDE_PACKAGES \
-  --include $INCLUDE_PACKAGES \
-  --process-gcno \
-  --validate-sources \
-  --dump-statistic \
-  --output ${LCOVDIR}/total_coverage.info
+lcov --capture \
+  --directory build \
+  --output-file ${LCOVDIR}/test_coverage.info \
+  --rc lcov_branch_coverage=0
+
+# Combine the initial zero-coverage report with the executed lines report.
+lcov \
+  --add-tracefile ${LCOVDIR}/initial_coverage.info \
+  --add-tracefile ${LCOVDIR}/test_coverage.info \
+  --output-file ${LCOVDIR}/full_coverage.info \
+  --rc lcov_branch_coverage=0
+
+# Only include files that are within this workspace.
+# (eg filter out stdio.h etc)
+lcov \
+  --extract ${LCOVDIR}/full_coverage.info \
+    "${PWD}/*" \
+  --output-file ${LCOVDIR}/workspace_coverage.info \
+  --rc lcov_branch_coverage=0
+
+# Remove files in the build subdirectory.
+# Those are generated files (like messages, services, etc)
+# And system tests, which are themselves all test artifacts
+# And rviz plugins, which are not used for real navigation
+lcov \
+  --remove ${LCOVDIR}/workspace_coverage.info \
+    "${PWD}/build/*" \
+  --remove ${LCOVDIR}/workspace_coverage.info \
+    "${PWD}/*/dwb_msgs/*" \
+  --remove ${LCOVDIR}/workspace_coverage.info \
+    "${PWD}/*/nav2_msgs/*" \
+  --remove ${LCOVDIR}/workspace_coverage.info \
+    "${PWD}/*/nav_2d_msgs/*" \
+  --remove ${LCOVDIR}/workspace_coverage.info \
+    "${PWD}/*/nav2_system_tests/*" \
+  --remove ${LCOVDIR}/workspace_coverage.info \
+    "${PWD}/*/nav2_rviz_plugins/*" \
+  --output-file ${LCOVDIR}/total_coverage.info \
+  --rc lcov_branch_coverage=0
 
 if [ $COVERAGE_REPORT_VIEW = codecovio ]; then
   curl -s https://codecov.io/bash > codecov
