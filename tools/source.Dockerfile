@@ -82,7 +82,6 @@ RUN --mount=type=cache,target=/var/cache/apt \
       ccache \
       libasio-dev \
       libtinyxml2-dev \
-      lld \
     && rosdep update
 
 ENV ROS_VERSION=2 \
@@ -106,7 +105,7 @@ FROM ros2_depender AS ros2_builder
 
 # build ros2 source
 COPY --from=cacher $ROS2_WS ./
-ARG ROS2_MIXINS="release ccache lld"
+ARG ROS2_MIXINS="release ccache"
 RUN --mount=type=cache,target=/root/.ccache \
     colcon build \
       --symlink-install \
@@ -153,7 +152,7 @@ COPY --from=ros2_builder $ROS2_WS $ROS2_WS
 
 # build underlay source
 COPY --from=cacher $UNDERLAY_WS ./
-ARG UNDERLAY_MIXINS="release ccache lld"
+ARG UNDERLAY_MIXINS="release ccache"
 RUN --mount=type=cache,target=/root/.ccache \
     . $ROS2_WS/install/setup.sh && \
     colcon build \
@@ -204,7 +203,7 @@ COPY --from=underlay_builder $UNDERLAY_WS $UNDERLAY_WS
 
 # build overlay source
 COPY --from=cacher $OVERLAY_WS ./
-ARG OVERLAY_MIXINS="release ccache lld"
+ARG OVERLAY_MIXINS="release ccache"
 RUN --mount=type=cache,target=/root/.ccache \
     . $UNDERLAY_WS/install/setup.sh && \
     colcon build \
