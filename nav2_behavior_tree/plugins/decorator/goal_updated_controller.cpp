@@ -27,8 +27,7 @@ namespace nav2_behavior_tree
 GoalUpdatedController::GoalUpdatedController(
   const std::string & name,
   const BT::NodeConfiguration & conf)
-: BT::DecoratorNode(name, conf),
-first_time_(false)
+: BT::DecoratorNode(name, conf)
 {
 }
 
@@ -37,16 +36,14 @@ BT::NodeStatus GoalUpdatedController::tick()
   if (status() == BT::NodeStatus::IDLE) {
     // Reset since we're starting a new iteration of
     // the goal updated controller (moving from IDLE to RUNNING)
-    first_time_ = true;
-    goal_was_updated_ = false;
+
+    config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", goals_);
+    config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", goal_);
+
+    goal_was_updated_ = true;
   }
 
   setStatus(BT::NodeStatus::RUNNING);
-
-  if (first_time_) {
-    config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", goals_);
-    config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", goal_);
-  }
 
   std::vector<geometry_msgs::msg::PoseStamped> current_goals;
   config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", current_goals);
@@ -62,9 +59,8 @@ BT::NodeStatus GoalUpdatedController::tick()
   // The child gets ticked the first time through and any time the goal has
   // changed or preempted. In addition, once the child begins to run, it is ticked each time
   // 'til completion
-  if (first_time_ || (child_node_->status() == BT::NodeStatus::RUNNING) || goal_was_updated_)
+  if ((child_node_->status() == BT::NodeStatus::RUNNING) || goal_was_updated_)
   {
-    first_time_ = false;
     goal_was_updated_ = false;
     const BT::NodeStatus child_state = child_node_->executeTick();
 

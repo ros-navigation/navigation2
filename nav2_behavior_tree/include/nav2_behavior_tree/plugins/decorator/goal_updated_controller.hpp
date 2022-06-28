@@ -58,7 +58,6 @@ private:
    */
   BT::NodeStatus tick() override;
 
-  bool first_time_;
   bool goal_was_updated_;
   geometry_msgs::msg::PoseStamped goal_;
   std::vector<geometry_msgs::msg::PoseStamped> goals_;
