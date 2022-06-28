@@ -17,3 +17,14 @@ ament_target_dependencies(test_goal_updater_node ${dependencies})
 ament_add_gtest(test_single_trigger_node test_single_trigger_node.cpp)
 target_link_libraries(test_single_trigger_node nav2_single_trigger_bt_node)
 ament_target_dependencies(test_single_trigger_node ${dependencies})
+<<<<<<< HEAD
+=======
+
+ament_add_gtest(test_goal_updated_controller test_goal_updated_controller.cpp)
+target_link_libraries(test_goal_updated_controller nav2_goal_updated_controller_bt_node)
+ament_target_dependencies(test_goal_updated_controller ${dependencies})
+
+ament_add_gtest(test_decorator_path_longer_on_approach test_path_longer_on_approach.cpp)
+target_link_libraries(test_decorator_path_longer_on_approach nav2_path_longer_on_approach_bt_node)
+ament_target_dependencies(test_decorator_path_longer_on_approach ${dependencies})
+>>>>>>> 28d16ab5 (Draft: Added GoalUpdatedController BT plugin node (#3044))
