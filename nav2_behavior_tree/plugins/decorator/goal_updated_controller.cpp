@@ -59,8 +59,7 @@ BT::NodeStatus GoalUpdatedController::tick()
   // The child gets ticked the first time through and any time the goal has
   // changed or preempted. In addition, once the child begins to run, it is ticked each time
   // 'til completion
-  if ((child_node_->status() == BT::NodeStatus::RUNNING) || goal_was_updated_)
-  {
+  if ((child_node_->status() == BT::NodeStatus::RUNNING) || goal_was_updated_) {
     goal_was_updated_ = false;
     const BT::NodeStatus child_state = child_node_->executeTick();
 
