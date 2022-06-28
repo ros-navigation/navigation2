@@ -151,5 +151,8 @@
       <input_port name="filter_duration">Duration (secs) for velocity smoothing filter</input_port>
     </Decorator>
 
+    <Decorator ID="GoalUpdatedController">
+    </Decorator>
+
   </TreeNodesModel>
 </root>
