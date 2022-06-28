@@ -125,6 +125,10 @@ install(FILES behavior_plugin.xml
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(DIRECTORY plugins/
+  DESTINATION share/${PROJECT_NAME}/plugins/
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
