@@ -292,8 +292,11 @@ void RangeSensorLayer::updateCostmap(
   in.header.stamp = range_message.header.stamp;
   in.header.frame_id = range_message.header.frame_id;
 
+  std::string * errstr = NULL;
   if (!tf_->canTransform(
-      in.header.frame_id, global_frame_, tf2_ros::fromMsg(in.header.stamp)))
+      in.header.frame_id, global_frame_,
+      tf2_ros::fromMsg(in.header.stamp),
+      tf2_ros::fromRclcpp(transform_tolerance_), errstr))
   {
     RCLCPP_INFO(
       logger_, "Range sensor layer can't transform from %s to %s",
