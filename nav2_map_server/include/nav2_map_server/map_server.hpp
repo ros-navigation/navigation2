@@ -138,6 +138,9 @@ protected:
 
   // The message to publish on the occupancy grid topic
   nav_msgs::msg::OccupancyGrid msg_;
+
+  // true if msg_ was initialized
+  bool map_available_;
 };
 
 }  // namespace nav2_map_server
