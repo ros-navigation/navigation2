@@ -17,3 +17,7 @@ ament_target_dependencies(test_goal_updater_node ${dependencies})
 ament_add_gtest(test_single_trigger_node test_single_trigger_node.cpp)
 target_link_libraries(test_single_trigger_node nav2_single_trigger_bt_node)
 ament_target_dependencies(test_single_trigger_node ${dependencies})
+
+ament_add_gtest(test_goal_updated_controller test_goal_updated_controller.cpp)
+target_link_libraries(test_goal_updated_controller nav2_goal_updated_controller_bt_node)
+ament_target_dependencies(test_goal_updated_controller ${dependencies})
