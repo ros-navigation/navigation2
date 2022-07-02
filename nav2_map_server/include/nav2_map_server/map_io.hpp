@@ -83,6 +83,19 @@ LOAD_MAP_STATUS loadMapFromYaml(
   nav_msgs::msg::OccupancyGrid & map);
 
 
+/**
+ * @brief Load the map YAML, image from map file and
+ * generate an OccupancyGrid
+ * @param yaml_file Name of input YAML file
+ * @param map Output loaded map
+ * @param msg_grid_map Output loaded grid_map
+ * @return status of map loaded
+ */
+LOAD_MAP_STATUS loadMapFromYaml(
+  const std::string & yaml_file,
+  nav_msgs::msg::OccupancyGrid & map,
+  grid_map_msgs::msg::GridMap & msg_grid_map);
+
 /* Map output part */
 
 struct SaveParameters
