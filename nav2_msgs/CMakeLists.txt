@@ -9,6 +9,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(action_msgs REQUIRED)
+find_package(grid_map_msgs REQUIRED)
 
 nav2_package()
 
@@ -39,7 +40,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/Spin.action"
   "action/DummyRecovery.action"
   "action/FollowWaypoints.action"
-  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs
+  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs grid_map_msgs
 )
 
 ament_export_dependencies(rosidl_default_runtime)
