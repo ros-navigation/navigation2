@@ -187,10 +187,11 @@ NavigateFleetNodesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 void
 NavigateFleetNodesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
 {
-  if (goal->poses.size() > 0) {
+  if (goal->nodes.size() > 0) {
+    const auto & position = goal->nodes.back().location.pose.pose.position;
     RCLCPP_INFO(
       logger_, "Begin navigating from current location through %li nodes to (%.2f, %.2f)",
-      goal->poses.size(), goal->poses.back().pose.position.x, goal->poses.back().pose.position.y);
+      goal->nodes.size(), position.x, position.y);
   }
 
   // Reset state for new action feedback
@@ -199,7 +200,7 @@ NavigateFleetNodesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr g
   blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard->set<Goals>(goals_blackboard_id_, goal->poses);
+  blackboard->set<Goals>(goals_blackboard_id_, nodes_to_poses(goal->nodes));
 }
 
 }  // namespace nav2_bt_navigator
