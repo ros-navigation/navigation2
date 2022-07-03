@@ -102,12 +102,23 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create a service that provides the occupancy grid
   occ_service_ = create_service<nav_msgs::srv::GetMap>(
-    service_prefix + std::string(service_name_),
+    service_prefix + std::string(occ_map_service_name_),
     std::bind(&MapServer::getMapCallback, this, _1, _2, _3));
+
+  // Create a service that provides the occupancy grid
+  grid_map_service_ = create_service<grid_map_msgs::srv::GetGridMap>(
+    service_prefix + std::string(grid_map_service_name_),
+    std::bind(&MapServer::getGridMapCallback, this, _1, _2, _3));
+
 
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   occ_pub_ = create_publisher<nav_msgs::msg::OccupancyGrid>(
     topic_name,
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
+  // Create a publisher using the QoS settings to emulate a ROS1 latched topic
+  grid_map_pub_ = create_publisher<grid_map_msgs::msg::GridMap>(
+    std::string("grid_map_") + topic_name,
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   // Create a service that loads the occupancy grid from a file
@@ -128,6 +139,11 @@ MapServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
   occ_pub_->publish(std::move(occ_grid));
 
+  // Publish the grid_map using the latched topic
+  grid_map_pub_->on_activate();
+  auto grid_map_to_pub = std::make_unique<grid_map_msgs::msg::GridMap>(msg_grid_map_);
+  grid_map_pub_->publish(std::move(grid_map_to_pub));
+
   // create bond connection
   createBond();
 
@@ -140,6 +156,7 @@ MapServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   occ_pub_->on_deactivate();
+  grid_map_pub_->on_deactivate();
 
   // destroy bond connection
   destroyBond();
@@ -154,6 +171,8 @@ MapServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   occ_pub_.reset();
   occ_service_.reset();
+  grid_map_pub_.reset();
+  grid_map_service_.reset();
   load_map_service_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -182,6 +201,22 @@ void MapServer::getMapCallback(
   response->map = msg_;
 }
 
+void MapServer::getGridMapCallback(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<grid_map_msgs::srv::GetGridMap::Request>/*request*/,
+  std::shared_ptr<grid_map_msgs::srv::GetGridMap::Response> response)
+{
+ // if not in ACTIVE state, ignore request
+  if (get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Received GetGridMap request but not in ACTIVE state, ignoring!");
+    return;
+  }
+  RCLCPP_INFO(get_logger(), "Handling GetMap request");
+  response->map = msg_grid_map_;
+}
+
 void MapServer::loadMapCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::LoadMap::Request> request,
@@ -199,6 +234,9 @@ void MapServer::loadMapCallback(
   if (loadMapResponseFromYaml(request->map_url, response)) {
     auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
     occ_pub_->publish(std::move(occ_grid));  // publish new map
+
+    auto grid_map_to_pub = std::make_unique<grid_map_msgs::msg::GridMap>(msg_grid_map_);
+    grid_map_pub_->publish(std::move(grid_map_to_pub));  // publish new map
   }
 }
 
@@ -206,7 +244,7 @@ bool MapServer::loadMapResponseFromYaml(
   const std::string & yaml_file,
   std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response)
 {
-  switch (loadMapFromYaml(yaml_file, msg_)) {
+  switch (loadMapFromYaml(yaml_file, msg_, msg_grid_map_)) {
     case MAP_DOES_NOT_EXIST:
       response->result = nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
       return false;
@@ -221,6 +259,7 @@ bool MapServer::loadMapResponseFromYaml(
       updateMsgHeader();
 
       response->map = msg_;
+      response->grid_map = msg_grid_map_;
       response->result = nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS;
   }
 
@@ -232,6 +271,9 @@ void MapServer::updateMsgHeader()
   msg_.info.map_load_time = now();
   msg_.header.frame_id = frame_id_;
   msg_.header.stamp = now();
+
+  msg_grid_map_.header.frame_id = frame_id_;
+  msg_grid_map_.header.stamp = now();
 }
 
 }  // namespace nav2_map_server
