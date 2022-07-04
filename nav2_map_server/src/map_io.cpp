@@ -304,7 +304,7 @@ void loadGridMapFromFile(
   grid_map_msgs::msg::GridMap & msg_grid_map)
 {
   Magick::InitializeMagick(nullptr);
-  // let's fill the occupancy grid and the create a layeer from this object
+  // let's fill the occupancy grid and then create a layeer from this object
   nav_msgs::msg::OccupancyGrid msg;
   grid_map::GridMap grid_map_to_fill;
   
@@ -379,7 +379,7 @@ void loadGridMapFromFile(
     " X " << msg.info.height << " map @ " << msg.info.resolution << " m/cell" << std::endl;
 
 
-  grid_map::GridMapRosConverter::fromOccupancyGrid(msg,"elevation",grid_map_to_fill);
+  grid_map::GridMapRosConverter::fromOccupancyGrid(msg, "elevation",grid_map_to_fill);
 
   msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
 }
@@ -456,13 +456,20 @@ LOAD_MAP_STATUS loadMapFromYaml(
   try {
     if(load_parameters.elevation_image_file_name != ""){
       loadGridMapFromFile(load_parameters, msg_grid_map);
+
     }
     else{
       //TO-DO: create a msg_grid_map with an empty elevation layer
     }
 
-    //TO-DO: add the occupation layer from "map" previosly filled in loadMapFromFile()
+    grid_map::GridMap grid_map_to_fill;
 
+    grid_map::GridMapRosConverter::fromMessage(msg_grid_map, grid_map_to_fill);
+
+    // convert the occupation map to a layer in the grid_map
+    grid_map::GridMapRosConverter::fromOccupancyGrid(map, "occupancy",grid_map_to_fill);
+
+    msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
   } catch (std::exception & e) {
     std::cerr <<
       "[ERROR] [map_io]: Failed to load elevation image file " << load_parameters.elevation_image_file_name <<
