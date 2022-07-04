@@ -236,7 +236,7 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
 
   add_parameter(
     "k_l", rclcpp::ParameterValue(200.0f),
-    "Constant to balance importance the importance of the sensor data")
+    "Constant to balance importance the importance of the sensor data");
 }
 
 AmclNode::~AmclNode()
@@ -402,6 +402,46 @@ AmclNode::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 bool
+AmclNode::isExtPoseActive()
+{
+  if (last_ext_pose_received_ts_.nanoseconds() == 0) {
+    RCLCPP_DEBUG(
+      get_logger(), "External pose has not been received yet");
+    return false;
+  }
+
+  rclcpp::Duration d = now() - last_ext_pose_received_ts_;
+  if (d.nanoseconds() * 1e-9 > ext_pose_check_interval_.count()) {
+    RCLCPP_WARN(
+      get_logger(), "No external pose received for %f"
+      " seconds. Swithing it to inactive state", d.nanoseconds() * 1e-9);
+      return false;
+  }
+
+  return true;
+}
+
+void
+AmclNode::checkLaserReceived()
+{
+  if (last_laser_received_ts_.nanoseconds() == 0) {
+    RCLCPP_WARN(
+      get_logger(), "Laser scan has not been received"
+      " (and thus no pose updates have been published)."
+      " Verify that data is being published on the %s topic.", scan_topic_.c_str());
+    return;
+  }
+
+  rclcpp::Duration d = now() - last_laser_received_ts_;
+  if (d.nanoseconds() * 1e-9 > laser_check_interval_.count()) {
+    RCLCPP_WARN(
+      get_logger(), "No laser scan received (and thus no pose updates have been published) for %f"
+      " seconds.  Verify that data is being published on the %s topic.",
+      d.nanoseconds() * 1e-9, scan_topic_.c_str());
+  }
+}
+
+bool
 AmclNode::checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time last_time)
 {
   rclcpp::Duration elapsed_time = now() - last_time;
@@ -551,8 +591,17 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 }
 
 void
-AmclNode::gpsPoseReceived(const nav_msgs::msg::Odometry& msg)
+AmclNode::externalPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped& msg) 
 {
+  if (msg.header.frame_id != "map"){
+    RCLCPP_WARN(get_logger(), "Received pose in %s frame, but pose in map frame is required.", msg.header.frame_id.c_str());
+    return;
+  }
+  
+  last_ext_pose_received_ts_ = now();
+
+  external_pose_t pose;
+
   tf2::Quaternion q(
       msg.pose.pose.orientation.x,
       msg.pose.pose.orientation.y,
@@ -562,10 +611,15 @@ AmclNode::gpsPoseReceived(const nav_msgs::msg::Odometry& msg)
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
   double cov_matrix[9] = {msg.pose.covariance[0], msg.pose.covariance[1] ,msg.pose.covariance[5] ,msg.pose.covariance[6] ,msg.pose.covariance[7] ,msg.pose.covariance[11] ,msg.pose.covariance[30] ,msg.pose.covariance[31] ,msg.pose.covariance[35] };
-  memcpy(pf_->cov_matrix, cov_matrix, 9*sizeof(double));
-  pf_->gps_x = msg.pose.pose.position.x;
-  pf_->gps_y = msg.pose.pose.position.y;
-  pf_->gps_yaw = yaw;
+  memcpy(pose.cov_matrix, cov_matrix, 9*sizeof(double));
+
+  auto& clk = *this->get_clock();
+  RCLCPP_INFO_THROTTLE(get_logger(), clk, 5000, "Received external pose");
+  // RCLCPP_INFO(get_logger(), "Received external pose: %f %f %f", msg.pose.pose.position.x, msg.pose.pose.position.y, yaw);
+
+  pose.x = msg.pose.pose.position.x;
+  pose.y = msg.pose.pose.position.y;
+  pose.yaw = yaw;
 
   Eigen::Matrix3f cov;
   Eigen::Matrix<float, 3, 1> eigenvalues;
@@ -582,11 +636,13 @@ AmclNode::gpsPoseReceived(const nav_msgs::msg::Odometry& msg)
 
   eigenvalues2 << eigenvalues(0,0), 0, 0, 0, eigenvalues(1,0), 0, 0, 0, eigenvalues(2,0);
 
-  eigen_mat = eigenvalues2 * eigensolver.eigenvectors();
+  eigen_mat = eigenvalues2 * eigensolver.eigenvectors(); // TODO: why do we need eigenmat
 
   double temp_mat[9] = {eigen_mat(0,0), eigen_mat(0,1), eigen_mat(0,2), eigen_mat(1,0), eigen_mat(1,1), eigen_mat(1,2), eigen_mat(2,0), eigen_mat(2,1), eigen_mat(2,2)};
 
-  memcpy(pf_->eigen_matrix, temp_mat, 9*sizeof(double));
+  memcpy(pose.eigen_matrix, temp_mat, 9*sizeof(double));
+
+  ext_pose_buffer.addMeasurement(pose);
 }
 
 void
@@ -729,6 +785,31 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 
     // Resample the particles
     if (!(++resample_count_ % resample_interval_)) {
+      
+      if(!isExtPoseActive()){
+        // if external position source is inactive, it considered invalid
+        pf_->ext_pose_is_valid = 0;
+      } else {
+        external_pose_t tmp;
+        if(ext_pose_buffer.findClosestMeasurement(last_laser_received_ts_.nanoseconds(), tmp)) {
+          pf_->ext_pose_is_valid = 1;
+
+          pf_->gps_x = tmp.x;
+          pf_->gps_y = tmp.y;
+          pf_->gps_yaw = tmp.yaw;
+
+          RCLCPP_INFO(get_logger(), "GT Pose before resampling: %f %f %f", pf_->gps_x, pf_->gps_y, pf_->gps_yaw);
+
+          memcpy(pf_->cov_matrix, tmp.cov_matrix, 9*sizeof(double));
+          memcpy(pf_->eigen_matrix, tmp.eigen_matrix, 9*sizeof(double));
+        } else {
+          RCLCPP_WARN(get_logger(), "No close measurement exists");
+        }
+      }
+
+      // TODO:
+      // overload checkElapsedTime to be able to take start time as arguement
+
       pf_update_resample(pf_);
       resampled = true;
     }
@@ -1131,7 +1212,6 @@ AmclNode::initParameters()
   get_parameter("scan_topic", scan_topic_);
   get_parameter("map_topic", map_topic_);
   get_parameter("k_l", k_l_);
-
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
 
@@ -1574,7 +1654,9 @@ AmclNode::initPubSub()
     map_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
 
-  // fidicual_pose_sub_ = create_subscription<nav_msgs::msg::Odometry>
+  external_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    "externalpose", rclcpp::SystemDefaultsQoS(),
+    std::bind(&AmclNode::externalPoseReceived, this, std::placeholders::_1));
 
   RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
 }
@@ -1625,7 +1707,7 @@ AmclNode::initParticleFilter()
   pf_ = pf_alloc(
     min_particles_, max_particles_, alpha_slow_, alpha_fast_,
     (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
-    reinterpret_cast<void *>(map_));
+    reinterpret_cast<void *>(map_), k_l_);
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 
@@ -1652,6 +1734,14 @@ AmclNode::initLaserScan()
 {
   scan_error_count_ = 0;
   last_laser_received_ts_ = rclcpp::Time(0);
+}
+
+void
+AmclNode::initExternalPose()
+{
+  last_laser_received_ts_ = rclcpp::Time(0);
+  ext_pose_check_interval_ = std::chrono::seconds{1};
+  ext_pose_active_ = false;
 }
 
 }  // namespace nav2_amcl

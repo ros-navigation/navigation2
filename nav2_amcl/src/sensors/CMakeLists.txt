@@ -3,6 +3,7 @@ add_library(sensors_lib SHARED
   laser/beam_model.cpp
   laser/likelihood_field_model.cpp
   laser/likelihood_field_model_prob.cpp
+  external_pose/external_pose.cpp
 )
 # map_update_cspace
 target_link_libraries(sensors_lib pf_lib map_lib)

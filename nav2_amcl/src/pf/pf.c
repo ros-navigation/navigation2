@@ -107,8 +107,6 @@ pf_t * pf_alloc(
   pf->alpha_slow = alpha_slow;
   pf->alpha_fast = alpha_fast;
 
-  pf-k_l
-
   // set converged to 0
   pf_init_converged(pf);
 
@@ -156,6 +154,8 @@ void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov)
   }
 
   pf->w_slow = pf->w_fast = 0.0;
+
+  pf->ext_pose_is_valid = 0;
 
   pf_pdf_gaussian_free(pdf);
 
@@ -355,12 +355,14 @@ int generate_random_particle(double gps_x, double gps_y, double gps_yaw, double 
 {
     double pose[3] = {norm_random(), norm_random(), norm_random()};
   
-    mult_1_3_x_3_3(pose, cov_matrix, pose);
+    mult_1_3_x_3_3(pose, cov_matrix, pose); // TODO: why multiply by covariance
     pose[0] = pose[0] + gps_x;
     pose[1] = pose[1] + gps_y;
     pose[2] = pose[2] + gps_yaw;
 
     memcpy(pose_v, pose, 3*sizeof(double));
+
+    fprintf(stderr, "AMCL: generating ext pose based particle: %f %f %f\n", pose[0], pose[1], pose[2]);
 
     return 0;
 }
@@ -388,53 +390,51 @@ void pf_update_resample(pf_t * pf)
   /////
 
 
-  /// New weight
-
-
-  double total_weight = 0;
   double total_dist_prob = 0;
-
-  for(int i = 0; i < set_a->sample_count; i++)
-  {
-    double distance = (pow(set_a->samples[i].pose.v[0]-pf->gps_x, 2)/pf->cov_matrix[0] + pow(set_a->samples[i].pose.v[1]-pf->gps_y, 2)/pf->cov_matrix[4] + pow(set_a->samples[i].pose.v[2]-pf->gps_yaw, 2)/pf->cov_matrix[8]);
-
-    double cov = (pf->cov_matrix[0] * pf->cov_matrix[4] * pf->cov_matrix[8]);
-    total_dist_prob += 1/sqrt(pow(2*M_PI, 3) * cov)*exp(-1*distance/2);
-
-    //Multivariable gausian
-    double mat[3] = {set_a->samples[i].pose.v[0]-pf->gps_x, set_a->samples[i].pose.v[1]-pf->gps_y, set_a->samples[i].pose.v[2]-pf->gps_yaw};
-    double result[3];
-    double inverse[9];
-    get_inverse(pf->cov_matrix, inverse);
-    mult_1_3_x_3_3(mat, inverse, result);
-    double temp = mult_1_3_x_3_1(result, mat);
-    double d = 1/(pow(3.14159 * 2, 1.5) * sqrt(get_determinant(pf->cov_matrix))) * exp(-0.5 * temp);
-    set_a->samples[i].weight = set_a->samples[i].weight * pf->k_l + d;
-
-
-    total_weight += set_a->samples[i].weight;
-  }
-
-  /// Handle total weight of 0
-  if(total_weight == 0)
-  {
-    for(int i=0;i<set_a->sample_count;i++)
+  if(pf->ext_pose_is_valid){
+    double total_weight = 0;
+    for(int i = 0; i < set_a->sample_count; i++)
     {
-      set_a->samples[i].weight = 1;
+      double distance = (pow(set_a->samples[i].pose.v[0]-pf->gps_x, 2)/pf->cov_matrix[0] + pow(set_a->samples[i].pose.v[1]-pf->gps_y, 2)/pf->cov_matrix[4] + pow(set_a->samples[i].pose.v[2]-pf->gps_yaw, 2)/pf->cov_matrix[8]);
+
+      double cov = (pf->cov_matrix[0] * pf->cov_matrix[4] * pf->cov_matrix[8]);
+      total_dist_prob += 1/sqrt(pow(2*M_PI, 3) * cov)*exp(-1*distance/2);
+
+      //Multivariable gausian
+      double mat[3] = {set_a->samples[i].pose.v[0]-pf->gps_x, set_a->samples[i].pose.v[1]-pf->gps_y, set_a->samples[i].pose.v[2]-pf->gps_yaw};
+      double result[3];
+      double inverse[9];
+      get_inverse(pf->cov_matrix, inverse);
+      mult_1_3_x_3_3(mat, inverse, result);
+      double temp = mult_1_3_x_3_1(result, mat);
+      double d = 1/(pow(3.14159 * 2, 1.5) * sqrt(get_determinant(pf->cov_matrix))) * exp(-0.5 * temp);
+      set_a->samples[i].weight = set_a->samples[i].weight * pf->k_l + d;
+
+
       total_weight += set_a->samples[i].weight;
     }
-  }
 
-  /// Normalization
-  for(int i=0;i<set_a->sample_count;i++)
-  {
-    set_a->samples[i].weight = set_a->samples[i].weight / total_weight;
+    /// Handle total weight of 0
+    if(total_weight == 0)
+    {
+      for(int i=0;i<set_a->sample_count;i++)
+      {
+        set_a->samples[i].weight = 1;
+        total_weight += set_a->samples[i].weight;
+      }
+    }
+
+    /// Normalization
+    for(int i=0;i<set_a->sample_count;i++)
+    {
+      set_a->samples[i].weight = set_a->samples[i].weight / total_weight;
+    }
+
+  
   }
 
   /////
   /////////////////////////////////////
-
-
 
 
   // Build up cumulative probability table for resampling.
@@ -454,25 +454,26 @@ void pf_update_resample(pf_t * pf)
   set_b->sample_count = 0;
 
 
+if(pf->ext_pose_is_valid){
+  ///////// CHANGED WDIFF func
 
-
-
-/////////////////////////// CHANGED WDIFF func
-/////
+  fprintf(stderr, "AMCL: w_diff - %f, k_l - %f\n", w_diff, pf->k_l);
 
   total_dist_prob = total_dist_prob/set_a->sample_count;
   w_diff = 0.01 - total_dist_prob;
   if(w_diff < 0.0)
     w_diff = 0.0;
+  
+  // fprintf(stderr, "AMCL: w_diff - %f, k_l - %f\n", w_diff, pf->k_l);
+} else {
+  // ORIGINAL
 
-//ORIGINAL
   w_diff = 1.0 - pf->w_fast / pf->w_slow;
   if(w_diff < 0.0)
     w_diff = 0.0;
+}
 
-/////
-////////////////////////////////////////////////////
-
+  
 
   // Can't (easily) combine low-variance sampler with KLD adaptive
   // sampling, so we'll take the more traditional route.
@@ -490,13 +491,14 @@ void pf_update_resample(pf_t * pf)
     if(drand48() < w_diff)
     {
       // printf("******RANDOM FUNCTION*********%f - %f\n", w_diff, total_dist_prob);
+      // fprintf(stderr, "AMCL: random \n");
 
-      // generate_random_particle(pf->gps_x, pf->gps_y, pf->gps_yaw, pf->eigen_matrix, sample_b->pose.v);
-      sample_b->pose = (pf->random_pose_fn)(pf->random_pose_data);
-    }
-
-
-    else
+      if(pf->ext_pose_is_valid){
+        generate_random_particle(pf->gps_x, pf->gps_y, pf->gps_yaw, pf->eigen_matrix, sample_b->pose.v);
+      } else {
+        sample_b->pose = (pf->random_pose_fn)(pf->random_pose_data);
+      }
+    } else
     {
       // Can't (easily) combine low-variance sampler with KLD adaptive
       // sampling, so we'll take the more traditional route.
