@@ -137,7 +137,8 @@ typedef struct _pf_t
   double gps_x, gps_y, gps_yaw;
   double cov_matrix[9];
   double eigen_matrix[9];
-  double k_l;
+  double k_l; // constant, according to paper it is used as an data source importance factor and authors found, 200 is a good value for it
+  int ext_pose_is_valid;
 } pf_t;
 
 
