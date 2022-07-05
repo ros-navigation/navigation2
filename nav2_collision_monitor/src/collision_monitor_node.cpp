@@ -29,7 +29,7 @@ namespace nav2_collision_monitor
 
 CollisionMonitor::CollisionMonitor(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("collision_monitor", "", false, options),
-  process_active_(false), robot_action_prev_{DO_NOTHING, {0.0, 0.0, 0.0}},
+  process_active_(false), robot_action_prev_{DO_NOTHING, {-1.0, -1.0, -1.0}},
   stop_stamp_{0, 0, get_clock()->get_clock_type()}, stop_pub_timeout_(1.0, 0.0)
 {
 }
@@ -53,12 +53,11 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_buffer_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-  std::string odom_topic;
   std::string cmd_vel_in_topic;
   std::string cmd_vel_out_topic;
 
   // Obtaining ROS parameters
-  if (!getParameters(odom_topic, cmd_vel_in_topic, cmd_vel_out_topic)) {
+  if (!getParameters(cmd_vel_in_topic, cmd_vel_out_topic)) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -106,7 +105,7 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   process_active_ = false;
 
   // Reset action type to default after worker deactivating
-  robot_action_prev_ = {DO_NOTHING, {0.0, 0.0, 0.0}};
+  robot_action_prev_ = {DO_NOTHING, {-1.0, -1.0, -1.0}};
 
   // Deactivating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -155,7 +154,8 @@ void CollisionMonitor::cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPt
 void CollisionMonitor::publishVelocity(const Action & robot_action)
 {
   if (robot_action.req_vel.isZero()) {
-    if (!robot_action_prev_.req_vel.isZero()) {
+    if (!robot_action_prev_.req_vel.isZero())
+    {
       // Robot just stopped: saving stop timestamp and continue
       stop_stamp_ = this->now();
     } else if (this->now() - stop_stamp_ > stop_pub_timeout_) {
@@ -176,7 +176,6 @@ void CollisionMonitor::publishVelocity(const Action & robot_action)
 }
 
 bool CollisionMonitor::getParameters(
-  std::string & odom_topic,
   std::string & cmd_vel_in_topic,
   std::string & cmd_vel_out_topic)
 {
@@ -184,43 +183,34 @@ bool CollisionMonitor::getParameters(
   tf2::Duration transform_tolerance;
   rclcpp::Duration source_timeout(2.0, 0.0);
 
-  try {
-    auto node = shared_from_this();
+  auto node = shared_from_this();
 
-    nav2_util::declare_parameter_if_not_declared(
-      node, "odom_topic", rclcpp::ParameterValue("odom"));
-    odom_topic = get_parameter("odom_topic").as_string();
+  nav2_util::declare_parameter_if_not_declared(
+    node, "cmd_vel_in_topic", rclcpp::ParameterValue("cmd_vel_raw"));
+  cmd_vel_in_topic = get_parameter("cmd_vel_in_topic").as_string();
+  nav2_util::declare_parameter_if_not_declared(
+    node, "cmd_vel_out_topic", rclcpp::ParameterValue("cmd_vel"));
+  cmd_vel_out_topic = get_parameter("cmd_vel_out_topic").as_string();
 
-    nav2_util::declare_parameter_if_not_declared(
-      node, "cmd_vel_in_topic", rclcpp::ParameterValue("cmd_vel_raw"));
-    cmd_vel_in_topic = get_parameter("cmd_vel_in_topic").as_string();
-    nav2_util::declare_parameter_if_not_declared(
-      node, "cmd_vel_out_topic", rclcpp::ParameterValue("cmd_vel"));
-    cmd_vel_out_topic = get_parameter("cmd_vel_out_topic").as_string();
+  nav2_util::declare_parameter_if_not_declared(
+    node, "base_frame_id", rclcpp::ParameterValue("base_footprint"));
+  base_frame_id = get_parameter("base_frame_id").as_string();
+  nav2_util::declare_parameter_if_not_declared(
+    node, "odom_frame_id", rclcpp::ParameterValue("odom"));
+  odom_frame_id = get_parameter("odom_frame_id").as_string();
+  nav2_util::declare_parameter_if_not_declared(
+    node, "transform_tolerance", rclcpp::ParameterValue(0.1));
+  transform_tolerance =
+    tf2::durationFromSec(get_parameter("transform_tolerance").as_double());
+  nav2_util::declare_parameter_if_not_declared(
+    node, "source_timeout", rclcpp::ParameterValue(2.0));
+  source_timeout =
+    rclcpp::Duration::from_seconds(get_parameter("source_timeout").as_double());
 
-    nav2_util::declare_parameter_if_not_declared(
-      node, "base_frame_id", rclcpp::ParameterValue("base_footprint"));
-    base_frame_id = get_parameter("base_frame_id").as_string();
-    nav2_util::declare_parameter_if_not_declared(
-      node, "odom_frame_id", rclcpp::ParameterValue("odom"));
-    odom_frame_id = get_parameter("odom_frame_id").as_string();
-    nav2_util::declare_parameter_if_not_declared(
-      node, "transform_tolerance", rclcpp::ParameterValue(0.1));
-    transform_tolerance =
-      tf2::durationFromSec(get_parameter("transform_tolerance").as_double());
-    nav2_util::declare_parameter_if_not_declared(
-      node, "source_timeout", rclcpp::ParameterValue(2.0));
-    source_timeout =
-      rclcpp::Duration::from_seconds(get_parameter("source_timeout").as_double());
-
-    nav2_util::declare_parameter_if_not_declared(
-      node, "stop_pub_timeout", rclcpp::ParameterValue(1.0));
-    stop_pub_timeout_ =
-      rclcpp::Duration::from_seconds(get_parameter("stop_pub_timeout").as_double());
-  } catch (const std::exception & ex) {
-    RCLCPP_ERROR(get_logger(), "Error while getting parameters: %s", ex.what());
-    return false;
-  }
+  nav2_util::declare_parameter_if_not_declared(
+    node, "stop_pub_timeout", rclcpp::ParameterValue(1.0));
+  stop_pub_timeout_ =
+    rclcpp::Duration::from_seconds(get_parameter("stop_pub_timeout").as_double());
 
   if (!configurePolygons(base_frame_id, transform_tolerance)) {
     return false;

@@ -102,14 +102,12 @@ protected:
 
   /**
    * @brief Supporting routine obtaining all ROS-parameters
-   * @param odom_topic Output name of odom topic
    * @param cmd_vel_in_topic Output name of cmd_vel_in topic
    * @param cmd_vel_out_topic Output name of cmd_vel_out topic
    * is required.
    * @return True if all parameters were obtained or false in failure case
    */
   bool getParameters(
-    std::string & odom_topic,
     std::string & cmd_vel_in_topic,
     std::string & cmd_vel_out_topic);
   /**

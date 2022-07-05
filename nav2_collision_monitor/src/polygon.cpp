@@ -314,7 +314,7 @@ bool Polygon::getParameters(std::string & polygon_pub_topic, std::string & footp
     std::vector<double> poly_row =
       node->get_parameter(polygon_name_ + ".points").as_double_array();
     // Check for points format correctness
-    if (poly_row.size() <= 4 || poly_row.size() % 2 != 0) {
+    if (poly_row.size() <= 8 || poly_row.size() % 2 != 0) {
       RCLCPP_ERROR(
         logger_,
         "[%s]: Polygon has incorrect points description",
