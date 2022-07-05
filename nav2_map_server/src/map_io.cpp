@@ -352,17 +352,11 @@ void loadGridMapFromFile(
 
       int8_t map_cell;
       // we suppose that the elevation uses the Scale mode
-      if (pixel.alphaQuantum() != OpaqueOpacity) {
-        map_cell = nav2_util::OCC_GRID_UNKNOWN;
-      } else if (load_parameters.occupied_thresh < occ) {
-        map_cell = nav2_util::OCC_GRID_OCCUPIED;
-      } else if (occ < load_parameters.free_thresh) {
-        map_cell = nav2_util::OCC_GRID_FREE;
-      } else {
-        map_cell = std::rint(
-          (occ - load_parameters.free_thresh) /
-          (load_parameters.occupied_thresh - load_parameters.free_thresh) * 100.0);
-      }
+      // ignore the occupied and free threshold
+      int min_height = -5.0, max_height = 5.0;
+      map_cell = std::rint(
+        occ * (max_height - min_height) + min_height);
+      
           
       msg.data[msg.info.width * (msg.info.height - y - 1) + x] = map_cell;
     }
