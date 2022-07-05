@@ -39,7 +39,8 @@ PointCloud::PointCloud(
   RCLCPP_INFO(logger_, "[%s]: Creating PointCloud", source_name_.c_str());
 }
 
-PointCloud::~PointCloud() {
+PointCloud::~PointCloud()
+{
   RCLCPP_INFO(logger_, "[%s]: Destroying PointCloud", source_name_.c_str());
   data_sub_.reset();
 }
@@ -77,8 +78,7 @@ void PointCloud::getData(
   // Obtaining the transform to get data from source frame and time where it was received
   // to the base frame and current time
   tf2::Transform tf_transform;
-  if (!getTransform(data_->header.frame_id, data_->header.stamp, curr_time, tf_transform))
-  {
+  if (!getTransform(data_->header.frame_id, data_->header.stamp, curr_time, tf_transform)) {
     return;
   }
 

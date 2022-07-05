@@ -36,7 +36,8 @@ Scan::Scan(
   RCLCPP_INFO(logger_, "[%s]: Creating Scan", source_name_.c_str());
 }
 
-Scan::~Scan() {
+Scan::~Scan()
+{
   RCLCPP_INFO(logger_, "[%s]: Destroying Scan", source_name_.c_str());
   data_sub_.reset();
 }
@@ -75,14 +76,13 @@ void Scan::getData(
   // Obtaining the transform to get data from source frame and time where it was received
   // to the base frame and current time
   tf2::Transform tf_transform;
-  if (!getTransform(data_->header.frame_id, data_->header.stamp, curr_time, tf_transform))
-  {
+  if (!getTransform(data_->header.frame_id, data_->header.stamp, curr_time, tf_transform)) {
     return;
   }
 
   // Calculate poses and refill data array
   float angle = data_->angle_min;
-  for(size_t i=0; i<data_->ranges.size(); i++) {
+  for (size_t i = 0; i < data_->ranges.size(); i++) {
     if (data_->ranges[i] >= data_->range_min && data_->ranges[i] <= data_->range_max) {
       // Transform point coordinates from source frame -> to base frame
       tf2::Vector3 p_v3_s(

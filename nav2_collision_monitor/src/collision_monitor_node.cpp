@@ -154,8 +154,7 @@ void CollisionMonitor::cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPt
 void CollisionMonitor::publishVelocity(const Action & robot_action)
 {
   if (robot_action.req_vel.isZero()) {
-    if (!robot_action_prev_.req_vel.isZero())
-    {
+    if (!robot_action_prev_.req_vel.isZero()) {
       // Robot just stopped: saving stop timestamp and continue
       stop_stamp_ = this->now();
     } else if (this->now() - stop_stamp_ > stop_pub_timeout_) {
@@ -240,16 +239,18 @@ bool CollisionMonitor::configurePolygons(
       const std::string polygon_type = get_parameter(polygon_name + ".type").as_string();
 
       if (polygon_type == "polygon") {
-        polygons_.push_back(std::make_shared<Polygon>(
-          node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
+        polygons_.push_back(
+          std::make_shared<Polygon>(
+            node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
       } else if (polygon_type == "circle") {
-        polygons_.push_back(std::make_shared<Circle>(
-          node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
+        polygons_.push_back(
+          std::make_shared<Circle>(
+            node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
       } else {  // Error if something else
         RCLCPP_ERROR(
           get_logger(),
           "[%s]: Unknown polygon type: %s",
-          polygon_name.c_str() ,polygon_type.c_str());
+          polygon_name.c_str(), polygon_type.c_str());
         return false;
       }
 
@@ -413,8 +414,7 @@ bool CollisionMonitor::processApproach(
 
   // Obtain time before a collision
   const double collision_time = polygon->getCollisionTime(collision_points, velocity);
-  if (collision_time >= 0.0)
-  {
+  if (collision_time >= 0.0) {
     // If collision will occurr, reduce robot speed
     const double change_ratio = collision_time / polygon->getTimeBeforeCollision();
     const Velocity safe_vel = velocity * change_ratio;

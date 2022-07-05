@@ -129,10 +129,10 @@ protected:
    * @return True if all sources were configured successfully or false in failure case
    */
   bool configureSources(
-  const std::string & base_frame_id,
-  const std::string & odom_frame_id,
-  const tf2::Duration & transform_tolerance,
-  const rclcpp::Duration & source_timeout);
+    const std::string & base_frame_id,
+    const std::string & odom_frame_id,
+    const tf2::Duration & transform_tolerance,
+    const rclcpp::Duration & source_timeout);
 
   /**
    * @brief Main processing routine

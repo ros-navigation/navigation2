@@ -46,7 +46,6 @@ Polygon::~Polygon()
   poly_.clear();
 }
 
-
 bool Polygon::configure()
 {
   auto node = node_.lock();

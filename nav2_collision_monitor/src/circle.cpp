@@ -65,7 +65,7 @@ void Circle::getPolygon(std::vector<Point> & poly) const
 int Circle::getPointsInside(const std::vector<Point> & points) const
 {
   int num = 0;
-  for(Point point : points) {
+  for (Point point : points) {
     if (point.x * point.x + point.y * point.y < radius_squared_) {
       num++;
     }
@@ -74,7 +74,8 @@ int Circle::getPointsInside(const std::vector<Point> & points) const
   return num;
 }
 
-bool Circle::getParameters(std::string & polygon_pub_topic, std::string & footprint_topic) {
+bool Circle::getParameters(std::string & polygon_pub_topic, std::string & footprint_topic)
+{
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
@@ -92,7 +93,7 @@ bool Circle::getParameters(std::string & polygon_pub_topic, std::string & footpr
     nav2_util::declare_parameter_if_not_declared(
       node, polygon_name_ + ".radius", rclcpp::PARAMETER_DOUBLE);
     radius_ = node->get_parameter(polygon_name_ + ".radius").as_double();
-    radius_squared_ = radius_*radius_;
+    radius_squared_ = radius_ * radius_;
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
       logger_,
