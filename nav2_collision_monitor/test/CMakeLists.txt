@@ -1,3 +1,12 @@
+# Kinematics test
+ament_add_gtest(kinematics_test kinematics_test.cpp)
+ament_target_dependencies(kinematics_test
+  ${dependencies}
+)
+target_link_libraries(kinematics_test
+  ${library_name}
+)
+
 # Data sources test
 ament_add_gtest(sources_test sources_test.cpp)
 ament_target_dependencies(sources_test
