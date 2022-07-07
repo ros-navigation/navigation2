@@ -56,10 +56,6 @@ void Circle::getPolygon(std::vector<Point> & poly) const
     p.y = radius_ * std::sin(angle);
     poly.push_back(p);
   }
-  // Last point should match the first
-  p.x = radius_;
-  p.y = 0.0;
-  poly.push_back(p);
 }
 
 int Circle::getPointsInside(const std::vector<Point> & points) const

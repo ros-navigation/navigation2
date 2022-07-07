@@ -44,7 +44,7 @@ static const char POLYGON_PUB_TOPIC[]{"polygon"};
 static const char POLYGON_NAME[]{"TestPolygon"};
 static const char CIRCLE_NAME[]{"TestCircle"};
 static const std::vector<double> SQUARE_POLYGON {
-  0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, 0.5};
+  0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5};
 static const double CIRCLE_RADIUS{0.5};
 static const int MAX_POINTS{1};
 static const double SLOWDOWN_RATIO{0.7};
@@ -347,7 +347,7 @@ TEST_F(Tester, testPolygonGetStopParameters)
   // Check that polygon set correctly
   std::vector<nav2_collision_monitor::Point> poly;
   polygon_->getPolygon(poly);
-  ASSERT_EQ(poly.size(), 5u);
+  ASSERT_EQ(poly.size(), 4u);
   EXPECT_NEAR(poly[0].x, SQUARE_POLYGON[0], EPSILON);
   EXPECT_NEAR(poly[0].y, SQUARE_POLYGON[1], EPSILON);
   EXPECT_NEAR(poly[1].x, SQUARE_POLYGON[2], EPSILON);
@@ -356,8 +356,6 @@ TEST_F(Tester, testPolygonGetStopParameters)
   EXPECT_NEAR(poly[2].y, SQUARE_POLYGON[5], EPSILON);
   EXPECT_NEAR(poly[3].x, SQUARE_POLYGON[6], EPSILON);
   EXPECT_NEAR(poly[3].y, SQUARE_POLYGON[7], EPSILON);
-  EXPECT_NEAR(poly[4].x, SQUARE_POLYGON[8], EPSILON);
-  EXPECT_NEAR(poly[4].y, SQUARE_POLYGON[9], EPSILON);
 }
 
 TEST_F(Tester, testPolygonGetSlowdownParameters)
@@ -498,7 +496,7 @@ TEST_F(Tester, testPolygonUpdate)
   std::vector<nav2_collision_monitor::Point> footprint;
   ASSERT_TRUE(waitFootprint(500ms, footprint));
 
-  ASSERT_EQ(footprint.size(), 5u);
+  ASSERT_EQ(footprint.size(), 4u);
   EXPECT_NEAR(footprint[0].x, SQUARE_POLYGON[0], EPSILON);
   EXPECT_NEAR(footprint[0].y, SQUARE_POLYGON[1], EPSILON);
   EXPECT_NEAR(footprint[1].x, SQUARE_POLYGON[2], EPSILON);
@@ -507,8 +505,6 @@ TEST_F(Tester, testPolygonUpdate)
   EXPECT_NEAR(footprint[2].y, SQUARE_POLYGON[5], EPSILON);
   EXPECT_NEAR(footprint[3].x, SQUARE_POLYGON[6], EPSILON);
   EXPECT_NEAR(footprint[3].y, SQUARE_POLYGON[7], EPSILON);
-  EXPECT_NEAR(footprint[4].x, SQUARE_POLYGON[8], EPSILON);
-  EXPECT_NEAR(footprint[4].y, SQUARE_POLYGON[9], EPSILON);
 }
 
 TEST_F(Tester, testPolygonGetPointsInside)
@@ -551,7 +547,7 @@ TEST_F(Tester, testPolygonGetCollisionTime)
   test_node_->publishFootprint();
   std::vector<nav2_collision_monitor::Point> footprint;
   ASSERT_TRUE(waitFootprint(500ms, footprint));
-  ASSERT_EQ(footprint.size(), 5u);
+  ASSERT_EQ(footprint.size(), 4u);
 
   // Forward movement check
   nav2_collision_monitor::Velocity vel{0.5, 0.0, 0.0};  // 0.5 m/s forward movement
@@ -619,7 +615,7 @@ TEST_F(Tester, testPolygonPublish)
     test_node_->waitPolygonReceived(500ms);
 
   ASSERT_NE(polygon_received, nullptr);
-  ASSERT_EQ(polygon_received->polygon.points.size(), 5u);
+  ASSERT_EQ(polygon_received->polygon.points.size(), 4u);
   EXPECT_NEAR(polygon_received->polygon.points[0].x, SQUARE_POLYGON[0], EPSILON);
   EXPECT_NEAR(polygon_received->polygon.points[0].y, SQUARE_POLYGON[1], EPSILON);
   EXPECT_NEAR(polygon_received->polygon.points[1].x, SQUARE_POLYGON[2], EPSILON);
@@ -628,8 +624,6 @@ TEST_F(Tester, testPolygonPublish)
   EXPECT_NEAR(polygon_received->polygon.points[2].y, SQUARE_POLYGON[5], EPSILON);
   EXPECT_NEAR(polygon_received->polygon.points[3].x, SQUARE_POLYGON[6], EPSILON);
   EXPECT_NEAR(polygon_received->polygon.points[3].y, SQUARE_POLYGON[7], EPSILON);
-  EXPECT_NEAR(polygon_received->polygon.points[4].x, SQUARE_POLYGON[8], EPSILON);
-  EXPECT_NEAR(polygon_received->polygon.points[4].y, SQUARE_POLYGON[9], EPSILON);
 
   polygon_->deactivate();
 }

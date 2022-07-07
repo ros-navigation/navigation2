@@ -313,7 +313,7 @@ bool Polygon::getParameters(std::string & polygon_pub_topic, std::string & footp
     std::vector<double> poly_row =
       node->get_parameter(polygon_name_ + ".points").as_double_array();
     // Check for points format correctness
-    if (poly_row.size() <= 8 || poly_row.size() % 2 != 0) {
+    if (poly_row.size() <= 6 || poly_row.size() % 2 != 0) {
       RCLCPP_ERROR(
         logger_,
         "[%s]: Polygon has incorrect points description",
@@ -353,9 +353,9 @@ inline bool Polygon::isPointInside(const Point & point) const
   int i, j;  // Polygon vertex iterators
   bool res = false;  // Final result
 
-  // In ROS polygon has the last vertex is equal to first, so it is not considered
-  j = poly_size - 2;
-  for (i = 0; i < poly_size - 1; i++) {
+  // Starting from the edge where the last point of polygon connected to the first
+  j = poly_size - 1;
+  for (i = 0; i < poly_size; i++) {
     // Checking the edge only if given point is between edge boundaries by Y coordinates
     if ((point.y < poly_[i].y) != (point.y < poly_[j].y)) {
       // Calculating intersection coordinate of X+ ray

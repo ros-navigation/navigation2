@@ -221,7 +221,7 @@ void Tester::addPolygon(
       rclcpp::Parameter(polygon_name + ".type", "polygon"));
 
     const std::vector<double> points {
-      size, size, size, -size, -size, -size, -size, size, size, size};
+      size, size, size, -size, -size, -size, -size, size};
     cm_->declare_parameter(
       polygon_name + ".points", rclcpp::ParameterValue(points));
     cm_->set_parameter(
