@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 
 #include <math.h>
+#include <chrono>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -114,9 +115,9 @@ public:
   // Configuring
   void setCommonParameters();
   void addPolygon(
-    const std::string & polygon_name, PolygonType type,
-    double size, const std::string & at);
-  void addSource(const std::string & source_name, SourceType type);
+    const std::string & polygon_name, const PolygonType type,
+    const double size, const std::string & at);
+  void addSource(const std::string & source_name, const SourceType type);
   void setVectors(
     const std::vector<std::string> & polygons,
     const std::vector<std::string> & sources);
@@ -211,8 +212,8 @@ void Tester::setCommonParameters()
 }
 
 void Tester::addPolygon(
-  const std::string & polygon_name, PolygonType type,
-  double size, const std::string & at)
+  const std::string & polygon_name, const PolygonType type,
+  const double size, const std::string & at)
 {
   if (type == POLYGON) {
     cm_->declare_parameter(
@@ -280,7 +281,7 @@ void Tester::addPolygon(
 }
 
 void Tester::addSource(
-  const std::string & source_name, SourceType type)
+  const std::string & source_name, const SourceType type)
 {
   if (type == SCAN) {
     cm_->declare_parameter(
