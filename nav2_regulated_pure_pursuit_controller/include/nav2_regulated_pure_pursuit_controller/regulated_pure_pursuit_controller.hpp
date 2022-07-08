@@ -209,11 +209,11 @@ protected:
   double costAtPose(const double & x, const double & y);
 
   double approachVelocityScalingFactor(
-    const nav_msgs::msg::Path::SharedPtr & path
+    const nav_msgs::msg::Path::SharedPtr path
   ) const;
 
   void applyApproachVelocityScaling(
-    const nav_msgs::msg::Path::SharedPtr & path
+    const nav_msgs::msg::Path::SharedPtr path
     double & linear_vel
   ) const;
 
