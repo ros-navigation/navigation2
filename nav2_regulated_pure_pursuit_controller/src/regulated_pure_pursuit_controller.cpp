@@ -79,8 +79,12 @@ void RegulatedPurePursuitController::configure(
     rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".min_approach_linear_velocity", rclcpp::ParameterValue(0.05));
+
+  double forward_costmap_extent = costmap_->getSizeInMetersX() / 2.0;
+
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".approach_velocity_scaling_dist", rclcpp::ParameterValue(1.0));
+    node, plugin_name_ + ".approach_velocity_scaling_dist",
+    rclcpp::ParameterValue(forward_costmap_extent - costmap_->getResolution()));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
     rclcpp::ParameterValue(1.0));
