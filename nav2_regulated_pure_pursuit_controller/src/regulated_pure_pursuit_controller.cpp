@@ -576,7 +576,7 @@ double RegulatedPurePursuitController::costAtPose(const double & x, const double
 }
 
 double RegulatedPurePursuitController::approachVelocityScalingFactor(
-  const nav_msgs::msg::Path::SharedPtr & path
+  const nav_msgs::msg::Path::SharedPtr path
 ) const
 {
   double remaining_distance = nav2_util::geometry_utils::calculate_path_length(path);
@@ -588,7 +588,7 @@ double RegulatedPurePursuitController::approachVelocityScalingFactor(
 }
 
 void RegulatedPurePursuitController::applyApproachVelocityScaling(
-  const nav_msgs::msg::Path::SharedPtr & path
+  const nav_msgs::msg::Path::SharedPtr path
   double & linear_vel
 ) const
 {
