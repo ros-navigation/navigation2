@@ -330,8 +330,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     rotateToHeading(linear_vel, angular_vel, angle_to_heading, speed);
   } else {
     applyConstraints(
-      lookahead_dist, curvature, speed,
-      costAtPose(pose.pose.position.x, pose.pose.position.y), linear_vel, sign);
+      curvature, speed,
+      costAtPose(pose.pose.position.x, pose.pose.position.y), transformed_plan,
+      linear_vel, sign);
 
     // Apply curvature to angular velocity after constraining linear velocity
     angular_vel = sign * linear_vel * curvature;
@@ -576,7 +577,7 @@ double RegulatedPurePursuitController::costAtPose(const double & x, const double
 }
 
 double RegulatedPurePursuitController::approachVelocityScalingFactor(
-  const nav_msgs::msg::Path::SharedPtr path
+  const nav_msgs::msg::Path & path
 ) const
 {
   double remaining_distance = nav2_util::geometry_utils::calculate_path_length(path);
@@ -588,10 +589,11 @@ double RegulatedPurePursuitController::approachVelocityScalingFactor(
 }
 
 void RegulatedPurePursuitController::applyApproachVelocityScaling(
-  const nav_msgs::msg::Path::SharedPtr path
+  const nav_msgs::msg::Path & path,
   double & linear_vel
 ) const
 {
+  double approach_vel = linear_vel;
   double velocity_scaling = approachVelocityScalingFactor(path);
   double unbounded_vel = approach_vel * velocity_scaling;
   if (unbounded_vel < min_approach_linear_velocity_) {
@@ -605,13 +607,11 @@ void RegulatedPurePursuitController::applyApproachVelocityScaling(
 }
 
 void RegulatedPurePursuitController::applyConstraints(
-  const double & lookahead_dist,
   const double & curvature, const geometry_msgs::msg::Twist & /*curr_speed*/,
   const double & pose_cost, const nav_msgs::msg::Path & path, double & linear_vel, double & sign)
 {
   double curvature_vel = linear_vel;
   double cost_vel = linear_vel;
-  double approach_vel = linear_vel;
 
   // limit the linear velocity by curvature
   const double radius = fabs(1.0 / curvature);

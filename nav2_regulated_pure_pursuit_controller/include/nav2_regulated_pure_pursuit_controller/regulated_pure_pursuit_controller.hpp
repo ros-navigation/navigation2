@@ -209,11 +209,11 @@ protected:
   double costAtPose(const double & x, const double & y);
 
   double approachVelocityScalingFactor(
-    const nav_msgs::msg::Path::SharedPtr path
+    const nav_msgs::msg::Path & path
   ) const;
 
   void applyApproachVelocityScaling(
-    const nav_msgs::msg::Path::SharedPtr path
+    const nav_msgs::msg::Path & path,
     double & linear_vel
   ) const;
 
@@ -226,9 +226,9 @@ protected:
    * @param pose_cost cost at this pose
    */
   void applyConstraints(
-    const double & lookahead_dist,
     const double & curvature, const geometry_msgs::msg::Twist & speed,
-    const double & pose_cost, double & linear_vel, double & sign);
+    const double & pose_cost, const nav_msgs::msg::Path & path,
+    double & linear_vel, double & sign);
 
   /**
    * @brief Find the intersection a circle and a line segment.
