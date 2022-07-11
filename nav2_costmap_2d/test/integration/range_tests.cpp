@@ -115,6 +115,7 @@ public:
   : node_(std::make_shared<TestLifecycleNode>("range_test_node")),
     tf_(node_->get_clock())
   {
+    tf_.setUsingDedicatedThread(true);
     // Standard non-plugin specific parameters
     node_->declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
     node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
