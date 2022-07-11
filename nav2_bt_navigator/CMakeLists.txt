@@ -65,9 +65,22 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
+add_library(nav2_navigate_to_pose_navigator SHARED src/navigators/navigate_to_pose.cpp)
+list(APPEND plugin_libs nav2_navigate_to_pose_navigator)
+
+add_library(nav2_navigate_through_poses SHARED src/navigators/navigate_through_poses.cpp)
+list(APPEND plugin_libs nav2_navigate_through_poses)
+
+foreach(plugin ${plugin_libs})
+  ament_target_dependencies(${plugin} ${dependencies})
+  target_compile_definitions(${plugin} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+  target_link_libraries(${plugin} ${library_name})
+endforeach()
+
+
 rclcpp_components_register_nodes(${library_name} "nav2_bt_navigator::BtNavigator")
 
-install(TARGETS ${library_name}
+install(TARGETS ${library_name} ${plugin_libs}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -89,6 +102,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name})
+ament_export_libraries(${library_name} ${plugin_libs})
 ament_export_dependencies(${dependencies})
 ament_package()

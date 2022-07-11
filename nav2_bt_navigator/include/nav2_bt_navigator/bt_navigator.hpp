@@ -27,6 +27,7 @@
 #include "tf2_ros/create_timer_ros.h"
 #include "nav2_bt_navigator/navigators/navigate_to_pose.hpp"
 #include "nav2_bt_navigator/navigators/navigate_through_poses.hpp"
+#include "pluginlib/class_loader.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -84,12 +85,20 @@ protected:
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
+  /**
+   * @brief Load Naigator plugins
+   * @param plugin_names bt plugin libaray names
+   * @return SUCCESS or FAILURE 
+   */
+  bool loadNavigatorPlugin(std::vector<std::string> plugin_names);
+
   // To handle all the BT related execution
   // Navigator plugin
-  
-  std::unique_ptr<nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateToPose>> pose_navigator_;
-  std::unique_ptr<nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateThroughPoses>>
-  poses_navigator_;
+  pluginlib::ClassLoader<NavigatorBase> navigator_class_loader_;
+  std::vector<pluginlib::UniquePtr<NavigatorBase>> navigators_;
+  std::vector<std::string> navigator_ids_;
+  std::vector<std::string> navigator_types_;
+
   nav2_bt_navigator::NavigatorMuxer plugin_muxer_;
 
   // Odometry smoother object

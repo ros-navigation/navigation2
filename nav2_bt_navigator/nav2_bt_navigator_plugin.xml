@@ -1,0 +1,14 @@
+<class_libraries>
+	<library path="nav2_navigate_to_pose_navigator">
+	  <class name="nav2_bt_navigator/NavigateToPoseNavigator" type="nav2_bt_navigator::NavigateToPoseNavigator" base_class_type="nav2_bt_navigator::NavigatorBase">
+	    <description></description>
+	  </class>
+	</library>
+
+  <library path="nav2_navigate_through_poses">
+	  <class name="nav2_bt_navigator/NavigateToPoseNavigator" type="nav2_bt_navigator::NavigateThroughPosesNavigator" base_class_type="nav2_bt_navigator::NavigatorBase">
+	    <description></description>
+	  </class>
+	</library>
+
+</class_libraries>

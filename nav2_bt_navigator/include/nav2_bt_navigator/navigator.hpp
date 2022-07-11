@@ -117,20 +117,22 @@ public:
 
   virtual bool on_configure(
     rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
-    const std::vector<std::string> & plugin_lib_names,
+    const std::vector<std::string> &,
     const FeedbackUtils & feedback_utils,
     nav2_bt_navigator::NavigatorMuxer * plugin_muxer,
-    std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
+    std::shared_ptr<nav2_util::OdomSmoother>)
   {
     auto node = parent_node.lock();
+    RCLCPP_INFO(node->get_logger(), "Configuring %s", getName().c_str());
+    
     logger_ = node->get_logger();
     clock_ = node->get_clock();
     feedback_utils_ = feedback_utils;
     plugin_muxer_ = plugin_muxer;
 
     // get the default behavior tree for this navigator
-    std::string default_bt_xml_filename = getDefaultBTFilepath(parent_node);
-
+    default_bt_xml_filename_ = getDefaultBTFilepath(parent_node);
+    return true;
   }
 
   /**
@@ -199,6 +201,7 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
   FeedbackUtils feedback_utils_;
   NavigatorMuxer * plugin_muxer_;
+  std::string default_bt_xml_filename_;
 };
 
 
@@ -250,10 +253,10 @@ public:
 
     // Create the Behavior Tree Action Server for this navigator
     bt_action_server_ = std::make_unique<nav2_behavior_tree::BtActionServer<ActionT>>(
-      node,
+      parent_node.lock(),
       getName(),
       plugin_lib_names,
-      default_bt_xml_filename,
+      default_bt_xml_filename_,
       std::bind(&Navigator::onGoalReceived, this, std::placeholders::_1),
       std::bind(&Navigator::onLoop, this),
       std::bind(&Navigator::onPreempt, this, std::placeholders::_1),
