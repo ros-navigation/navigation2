@@ -362,8 +362,6 @@ int generate_random_particle(double gps_x, double gps_y, double gps_yaw, double 
 
     memcpy(pose_v, pose, 3*sizeof(double));
 
-    fprintf(stderr, "AMCL: generating ext pose based particle: %f %f %f\n", pose[0], pose[1], pose[2]);
-
     return 0;
 }
 
@@ -384,11 +382,6 @@ void pf_update_resample(pf_t * pf)
 
   set_a = pf->sets + pf->current_set;
   set_b = pf->sets + (pf->current_set + 1) % 2;
-
-
-  ///////////////////////////////////// NEW WEIGHT FUNCTION
-  /////
-
 
   double total_dist_prob = 0;
   if(pf->ext_pose_is_valid){
@@ -433,9 +426,6 @@ void pf_update_resample(pf_t * pf)
   
   }
 
-  /////
-  /////////////////////////////////////
-
 
   // Build up cumulative probability table for resampling.
   // TODO(?): Replace this with a more efficient procedure
@@ -455,18 +445,15 @@ void pf_update_resample(pf_t * pf)
 
 
 if(pf->ext_pose_is_valid){
-  ///////// CHANGED WDIFF func
 
-  fprintf(stderr, "AMCL: w_diff - %f, k_l - %f\n", w_diff, pf->k_l);
+  // fprintf(stderr, "AMCL: w_diff - %f, k_l - %f\n", w_diff, pf->k_l);
 
   total_dist_prob = total_dist_prob/set_a->sample_count;
   w_diff = 0.01 - total_dist_prob;
   if(w_diff < 0.0)
     w_diff = 0.0;
   
-  // fprintf(stderr, "AMCL: w_diff - %f, k_l - %f\n", w_diff, pf->k_l);
 } else {
-  // ORIGINAL
 
   w_diff = 1.0 - pf->w_fast / pf->w_slow;
   if(w_diff < 0.0)
@@ -490,9 +477,6 @@ if(pf->ext_pose_is_valid){
 
     if(drand48() < w_diff)
     {
-      // printf("******RANDOM FUNCTION*********%f - %f\n", w_diff, total_dist_prob);
-      // fprintf(stderr, "AMCL: random \n");
-
       if(pf->ext_pose_is_valid){
         generate_random_particle(pf->gps_x, pf->gps_y, pf->gps_yaw, pf->eigen_matrix, sample_b->pose.v);
       } else {
