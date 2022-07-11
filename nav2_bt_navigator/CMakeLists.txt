@@ -51,8 +51,6 @@ set(dependencies
 
 add_library(${library_name} SHARED
   src/bt_navigator.cpp
-  src/navigators/navigate_to_pose.cpp
-  src/navigators/navigate_through_poses.cpp
 )
 
 ament_target_dependencies(${executable_name}
@@ -64,6 +62,8 @@ target_link_libraries(${executable_name} ${library_name})
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
+
+pluginlib_export_plugin_description_file(nav2_bt_navigator nav2_bt_navigator_plugin.xml)
 
 add_library(nav2_navigate_to_pose_navigator SHARED src/navigators/navigate_to_pose.cpp)
 list(APPEND plugin_libs nav2_navigate_to_pose_navigator)
@@ -95,6 +95,10 @@ install(DIRECTORY include/
 )
 
 install(DIRECTORY behavior_trees DESTINATION share/${PROJECT_NAME})
+
+install(FILES nav2_bt_navigator_plugin.xml
+  DESTINATION share/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
