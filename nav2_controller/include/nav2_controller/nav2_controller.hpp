@@ -68,7 +68,7 @@ protected:
    * @throw pluginlib::PluginlibException When failed to initialize controller
    * plugin
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  virtual nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state);
   /**
    * @brief Activates member variables
    *
@@ -77,7 +77,7 @@ protected:
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  virtual nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state);
   /**
    * @brief Deactivates member variables
    *
@@ -86,7 +86,7 @@ protected:
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  virtual nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state);
   /**
    * @brief Calls clean up states and resets member variables.
    *
@@ -95,13 +95,13 @@ protected:
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  virtual nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state);
   /**
    * @brief Called when in Shutdown state
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  virtual nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state);
 
   using Action = nav2_msgs::action::FollowPath;
   using ActionServer = nav2_util::SimpleActionServer<Action>;
@@ -133,11 +133,11 @@ protected:
    * @brief Assigns path to controller
    * @param path Path received from action server
    */
-  void setPlannerPath(const nav_msgs::msg::Path & path);
+  virtual void setPlannerPath(const nav_msgs::msg::Path & path);
   /**
    * @brief Calculates velocity and publishes to "cmd_vel" topic
    */
-  void computeAndPublishVelocity();
+  virtual void computeAndPublishVelocity();
   /**
    * @brief Calls setPlannerPath method with an updated path received from
    * action server
@@ -156,13 +156,13 @@ protected:
    * @brief Checks if goal is reached
    * @return true or false
    */
-  bool isGoalReached();
+  virtual bool isGoalReached();
   /**
    * @brief Obtain current pose of the robot
    * @param pose To store current pose of the robot
    * @return true if able to obtain current pose of the robot, else false
    */
-  bool getRobotPose(geometry_msgs::msg::PoseStamped & pose);
+  virtual bool getRobotPose(geometry_msgs::msg::PoseStamped & pose);
 
   /**
    * @brief get the thresholded velocity
@@ -195,7 +195,7 @@ protected:
 
   // Publishers and subscribers
   std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr vel_publisher_;
 
   // Progress Checker Plugin
   pluginlib::ClassLoader<nav2_core::ProgressChecker> progress_checker_loader_;
