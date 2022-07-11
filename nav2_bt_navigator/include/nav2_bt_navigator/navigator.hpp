@@ -106,12 +106,110 @@ protected:
   std::mutex mutex_;
 };
 
+class NavigatorBase
+{
+public:
+  RCLCPP_SMART_PTR_DEFINITIONS(NavigatorBase)
+  NavigatorBase()
+  {
+    plugin_muxer_ = nullptr;
+  }
+
+  virtual bool on_configure(
+    rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
+    const std::vector<std::string> & plugin_lib_names,
+    const FeedbackUtils & feedback_utils,
+    nav2_bt_navigator::NavigatorMuxer * plugin_muxer,
+    std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
+  {
+    auto node = parent_node.lock();
+    logger_ = node->get_logger();
+    clock_ = node->get_clock();
+    feedback_utils_ = feedback_utils;
+    plugin_muxer_ = plugin_muxer;
+
+    // get the default behavior tree for this navigator
+    std::string default_bt_xml_filename = getDefaultBTFilepath(parent_node);
+
+  }
+
+  /**
+   * @brief Get the action name of this navigator to expose
+   * @return string Name of action to expose
+   */
+  virtual std::string getName() = 0;
+
+  virtual std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) = 0;
+  
+  /**
+   * @brief Activation of the navigator's backend BT and actions
+   * @return bool If successful
+   */
+  virtual bool on_activate()
+  {
+    return activate();
+  }
+
+  /**
+   * @brief Deactivation of the navigator's backend BT and actions
+   * @return bool If successful
+   */
+  virtual bool on_deactivate()
+  {
+    return deactivate();
+  }
+
+  /**
+   * @brief Cleanup a navigator
+   * @return bool If successful
+   */
+  virtual bool on_cleanup()
+  {
+    return cleanup();
+  }
+
+protected:
+
+  /**
+   * @param Method to configure resources.
+   */
+  virtual bool configure(
+    rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/,
+    std::shared_ptr<nav2_util::OdomSmoother>/*odom_smoother*/)
+  {
+    return true;
+  }
+
+  /**
+   * @brief Method to cleanup resources.
+   */
+  virtual bool cleanup() {return true;}
+
+  /**
+   * @brief Method to activate any threads involved in execution.
+   */
+  virtual bool activate() {return true;}
+
+  /**
+   * @brief Method to deactivate and any threads involved in execution.
+   */
+  virtual bool deactivate() {return true;}
+
+  rclcpp::Logger logger_{rclcpp::get_logger("Navigator")};
+  rclcpp::Clock::SharedPtr clock_;
+  FeedbackUtils feedback_utils_;
+  NavigatorMuxer * plugin_muxer_;
+};
+
+
+
+
 /**
  * @class Navigator
  * @brief Navigator interface that acts as a base class for all BT-based Navigator action's plugins
  */
 template<class ActionT>
-class Navigator
+class Navigator : public NavigatorBase
 {
 public:
   using Ptr = std::shared_ptr<nav2_bt_navigator::Navigator<ActionT>>;
@@ -119,10 +217,7 @@ public:
   /**
    * @brief A Navigator constructor
    */
-  Navigator()
-  {
-    plugin_muxer_ = nullptr;
-  }
+  Navigator() : NavigatorBase() {}
 
   /**
    * @brief Virtual destructor
@@ -144,16 +239,14 @@ public:
     const std::vector<std::string> & plugin_lib_names,
     const FeedbackUtils & feedback_utils,
     nav2_bt_navigator::NavigatorMuxer * plugin_muxer,
-    std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
+    std::shared_ptr<nav2_util::OdomSmoother> odom_smoother) override
   {
-    auto node = parent_node.lock();
-    logger_ = node->get_logger();
-    clock_ = node->get_clock();
-    feedback_utils_ = feedback_utils;
-    plugin_muxer_ = plugin_muxer;
-
-    // get the default behavior tree for this navigator
-    std::string default_bt_xml_filename = getDefaultBTFilepath(parent_node);
+    NavigatorBase::on_configure(
+      parent_node,
+      plugin_lib_names,
+      feedback_utils,
+      plugin_muxer,
+      odom_smoother);
 
     // Create the Behavior Tree Action Server for this navigator
     bt_action_server_ = std::make_unique<nav2_behavior_tree::BtActionServer<ActionT>>(
@@ -183,7 +276,7 @@ public:
    * @brief Activation of the navigator's backend BT and actions
    * @return bool If successful
    */
-  bool on_activate()
+  bool on_activate() override
   {
     bool ok = true;
 
@@ -198,7 +291,7 @@ public:
    * @brief Deactivation of the navigator's backend BT and actions
    * @return bool If successful
    */
-  bool on_deactivate()
+  bool on_deactivate() override
   {
     bool ok = true;
     if (!bt_action_server_->on_deactivate()) {
@@ -212,7 +305,7 @@ public:
    * @brief Cleanup a navigator
    * @return bool If successful
    */
-  bool on_cleanup()
+  bool on_cleanup() override
   {
     bool ok = true;
     if (!bt_action_server_->on_cleanup()) {
@@ -221,16 +314,8 @@ public:
 
     bt_action_server_.reset();
 
-    return cleanup() && ok;
+    return NavigatorBase::cleanup() && ok;
   }
-
-  /**
-   * @brief Get the action name of this navigator to expose
-   * @return string Name of action to expose
-   */
-  virtual std::string getName() = 0;
-
-  virtual std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) = 0;
 
   /**
    * @brief Get the action server
@@ -301,36 +386,8 @@ protected:
     typename ActionT::Result::SharedPtr result,
     const nav2_behavior_tree::BtStatus final_bt_status) = 0;
 
-  /**
-   * @param Method to configure resources.
-   */
-  virtual bool configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/,
-    std::shared_ptr<nav2_util::OdomSmoother>/*odom_smoother*/)
-  {
-    return true;
-  }
-
-  /**
-   * @brief Method to cleanup resources.
-   */
-  virtual bool cleanup() {return true;}
-
-  /**
-   * @brief Method to activate any threads involved in execution.
-   */
-  virtual bool activate() {return true;}
-
-  /**
-   * @brief Method to deactivate and any threads involved in execution.
-   */
-  virtual bool deactivate() {return true;}
 
   std::unique_ptr<nav2_behavior_tree::BtActionServer<ActionT>> bt_action_server_;
-  rclcpp::Logger logger_{rclcpp::get_logger("Navigator")};
-  rclcpp::Clock::SharedPtr clock_;
-  FeedbackUtils feedback_utils_;
-  NavigatorMuxer * plugin_muxer_;
 };
 
 }  // namespace nav2_bt_navigator
