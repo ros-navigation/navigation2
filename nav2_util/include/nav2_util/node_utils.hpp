@@ -77,9 +77,6 @@ rclcpp::Node::SharedPtr generate_internal_node(const std::string & prefix = "");
  */
 std::string time_to_string(size_t len);
 
-rclcpp::NodeOptions
-get_node_options_default(bool allow_undeclared = true, bool declare_initial_params = true);
-
 /// Declares static ROS2 parameter and sets it to a given value if it was not already declared
 /* Declares static ROS2 parameter and sets it to a given value
  * if it was not already declared.
