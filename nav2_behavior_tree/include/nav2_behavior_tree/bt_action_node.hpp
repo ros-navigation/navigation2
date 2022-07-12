@@ -27,7 +27,7 @@
 namespace nav2_behavior_tree
 {
 
-using namespace std::chrono_literals;
+using namespace std::chrono_literals;  // NOLINT
 
 /**
  * @brief Abstract class representing an action based BT node
