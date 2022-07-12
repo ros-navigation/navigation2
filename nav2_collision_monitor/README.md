@@ -12,9 +12,9 @@ The obstacles fell into such area are forcing robot to stop, operate slowly or e
 
 The following models of safety behaviors are employed by Collision Monitor:
 
-* *Stop model*: Define a safety area surrounding the robot and a point threshold. If more that `N` obstacle points appear inside this area, stop the robot until the obstacles will disappear.
-* *Slowdown model*: Define a safety area around the robot and slow the maximum speed for a `%S` percent, if more than `N` points will appear inside the area.
-* *Approach model*: With the current robot speed, estimate the time to collision to points obtained from sensors. If the time is less than `M` seconds (0.5, 2, 5, etc...), slow the robot until it will be equal to `M` seconds. The effect here would be to keep the robot always `M` seconds from a collision and continuously scale down its speeds.
+* **Stop model**: Define a safety area surrounding the robot and a point threshold. If more that `N` obstacle points appear inside this area, stop the robot until the obstacles will disappear.
+* **Slowdown model**: Define a safety area around the robot and slow the maximum speed for a `%S` percent, if more than `N` points will appear inside the area.
+* **Approach model**: With the current robot speed, estimate the time to collision to points obtained from sensors. If the time is less than `M` seconds (0.5, 2, 5, etc...), slow the robot until it will be equal to `M` seconds. The effect here would be to keep the robot always `M` seconds from a collision and continuously scale down its speeds.
 
 The safety area around the robot can take the following shapes:
 
@@ -45,8 +45,8 @@ Detailed configuration parameters, their description and how to tune Collision M
 
 ## Metrics
 
-Designed to operate for fast moving robots and have a high level of reliability, Collision Monitor node should operate at high rates.
-Typical one frame processing time is ~4-5ms for laser scanner (360 points) and ~4-80ms for PointClouds (having 24K points).
+Designed to be used in wide variety of robots (incl. moving fast) and have a high level of reliability, Collision Monitor node should operate at fast rates.
+Typical one frame processing time is ~4-5ms for laser scanner (with 360 points) and ~4-80ms for PointClouds (having 24K points).
 The table below represents the details of operating times for different behavior models and shapes:
 
 | | Stop/Slowdown model, Polygon area | Stop/Slowdown model, Circle area | Approach model, Polygon footprint | Approach model, Circle footprint |
