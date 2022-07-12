@@ -200,7 +200,7 @@ NavigateFleetNodesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr g
   blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard->set<Goals>(goals_blackboard_id_, nodes_to_poses(goal->nodes));
+  blackboard->set<Goals>(goals_blackboard_id_, nodes_to_poses(goal->frame_id, goal->nodes));
 }
 
 }  // namespace nav2_bt_navigator

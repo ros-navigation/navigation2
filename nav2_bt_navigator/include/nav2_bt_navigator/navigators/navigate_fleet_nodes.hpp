@@ -28,11 +28,19 @@ public:
   typedef std::vector<geometry_msgs::msg::PoseStamped> Goals;
 
   // TODO delete me once bt can work with nodes directly
-  Goals nodes_to_poses(const std::vector<cmr_msgs::msg::Node> & nodes)
+  Goals nodes_to_poses(const std::string & root_frame_id, const std::vector<cmr_msgs::msg::Node> & nodes)
   {
+    auto default_frame_id = root_frame_id.empty()
+      ? "map"
+      : root_frame_id;
+
     Goals goals;
     for (const auto & node : nodes) {
-      goals.push_back(node.location.pose);
+      auto pose = node.location.pose;
+      if (pose.header.frame_id.empty()) {
+        pose.header.frame_id = default_frame_id;
+      }
+      goals.push_back(std::move(pose));
     }
     return goals;
   }
