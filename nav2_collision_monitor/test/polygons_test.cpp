@@ -46,6 +46,8 @@ static const char POLYGON_NAME[]{"TestPolygon"};
 static const char CIRCLE_NAME[]{"TestCircle"};
 static const std::vector<double> SQUARE_POLYGON {
   0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5};
+static const std::vector<double> ARBITRARY_POLYGON {
+  1.0, 1.0, 1.0, 0.0, 2.0, 0.0, 2.0, -1.0, -1.0, -1.0, -1.0, 1.0};
 static const double CIRCLE_RADIUS{0.5};
 static const int MAX_POINTS{1};
 static const double SLOWDOWN_RATIO{0.7};
@@ -523,6 +525,34 @@ TEST_F(Tester, testPolygonGetPointsInside)
 
   // Add one point inside
   points.push_back({-0.1, 0.3});
+  ASSERT_EQ(polygon_->getPointsInside(points), 1);
+}
+
+TEST_F(Tester, testPolygonGetPointsInsideEdge)
+{
+  // Test for checking edge cases in raytracing algorithm.
+  // All points are lie on the edge lines parallel to OX, where the raytracing takes place.
+  setCommonParameters(POLYGON_NAME, "stop");
+  setPolygonParameters(ARBITRARY_POLYGON);
+
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_, POLYGON_NAME,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  ASSERT_TRUE(polygon_->configure());
+
+  std::vector<nav2_collision_monitor::Point> points;
+
+  // Out of boundaries points
+  points.push_back({-2.0, -1.0});
+  points.push_back({-2.0, 0.0});
+  points.push_back({-2.0, 1.0});
+  points.push_back({3.0, -1.0});
+  points.push_back({3.0, 0.0});
+  points.push_back({3.0, 1.0});
+  ASSERT_EQ(polygon_->getPointsInside(points), 0);
+
+  // Add one point inside
+  points.push_back({0.0, 0.0});
   ASSERT_EQ(polygon_->getPointsInside(points), 1);
 }
 

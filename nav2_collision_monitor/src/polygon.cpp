@@ -349,16 +349,20 @@ inline bool Polygon::isPointInside(const Point & point) const
   // Implementation of ray crossings algorithm for point in polygon task solving.
   // Y coordinate is fixed. Moving the ray on X+ axis starting from given point.
   // Odd number of intersections with polygon boundaries means the point is inside polygon.
+  // Adaptation of Shimrat, Moshe. "Algorithm 112: position of point relative to polygon."
+  // Communications of the ACM 5.8 (1962): 434.
   const int poly_size = poly_.size();
   int i, j;  // Polygon vertex iterators
-  bool res = false;  // Final result
+  bool res = false;  // Final result, initialized with already inverted value
 
-  // Starting from the edge where the last point of polygon connected to the first
-  j = poly_size - 1;
-  for (i = 0; i < poly_size; i++) {
-    // Checking the edge only if given point is between edge boundaries by Y coordinates
-    if ((point.y < poly_[i].y) != (point.y < poly_[j].y)) {
-      // Calculating intersection coordinate of X+ ray
+  // Starting from the edge where the last point of polygon is connected to the first
+  i = poly_size - 1;
+  for (j = 0; j < poly_size; j++) {
+    // Checking the edge only if given point is between edge boundaries by Y coordinates.
+    // One of the condition should contain equality in order to exclude the edges
+    // parallel to X+ ray.
+    if ((point.y <= poly_[i].y) == (point.y > poly_[j].y)) {
+      // Calculating the intersection coordinate of X+ ray
       const double x_inter = poly_[i].x +
         (point.y - poly_[i].y) * (poly_[j].x - poly_[i].x) /
         (poly_[j].y - poly_[i].y);
@@ -367,7 +371,7 @@ inline bool Polygon::isPointInside(const Point & point) const
         res = !res;
       }
     }
-    j = i;
+    i = j;
   }
   return res;
 }
