@@ -346,11 +346,11 @@ bool Polygon::getParameters(std::string & polygon_pub_topic, std::string & footp
 
 inline bool Polygon::isPointInside(const Point & point) const
 {
+  // Adaptation of Shimrat, Moshe. "Algorithm 112: position of point relative to polygon."
+  // Communications of the ACM 5.8 (1962): 434.
   // Implementation of ray crossings algorithm for point in polygon task solving.
   // Y coordinate is fixed. Moving the ray on X+ axis starting from given point.
   // Odd number of intersections with polygon boundaries means the point is inside polygon.
-  // Adaptation of Shimrat, Moshe. "Algorithm 112: position of point relative to polygon."
-  // Communications of the ACM 5.8 (1962): 434.
   const int poly_size = poly_.size();
   int i, j;  // Polygon vertex iterators
   bool res = false;  // Final result, initialized with already inverted value
