@@ -5,7 +5,7 @@
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <PipelineSequence name="NavigateWithReplanning">
-      <GoalUpdatedController> <!-- only tick child if goal was updated-->
+      <GoalUpdatedController>
         <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
       </GoalUpdatedController>
       <FollowPath path="{path}"  controller_id="FollowPath"/>
