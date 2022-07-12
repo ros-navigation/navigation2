@@ -188,10 +188,14 @@ void
 NavigateFleetNodesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
 {
   if (goal->nodes.size() > 0) {
-    const auto & position = goal->nodes.back().location.pose.pose.position;
+    const auto & last_node_pos = goal->nodes.back().location.pose.pose.position;
     RCLCPP_INFO(
-      logger_, "Begin navigating from current location through %li nodes to (%.2f, %.2f)",
-      goal->nodes.size(), position.x, position.y);
+      logger_, "Begin navigating from current location through %li nodes to (%.4f, %.4f)",
+      goal->nodes.size(), last_node_pos.x, last_node_pos.y);
+    for (const auto & node : goal->nodes) {
+      const auto & position = node.location.pose.pose.position;
+      RCLCPP_INFO(logger_, "    * (%.4f, %.4f) %s", position.x, position.y, node.action.c_str());
+    }
   }
 
   // Reset state for new action feedback
