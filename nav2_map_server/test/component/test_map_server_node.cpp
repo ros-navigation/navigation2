@@ -26,7 +26,7 @@
 #include "nav2_msgs/srv/load_map.hpp"
 using namespace std::chrono_literals;
 using namespace rclcpp;  // NOLINT
- 
+
 #define TEST_DIR TEST_DIRECTORY
 
 using std::experimental::filesystem::path;

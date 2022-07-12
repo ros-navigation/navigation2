@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <chrono>
 
 #include "behaviortree_cpp_v3/action_node.h"
 #include "nav2_util/node_utils.hpp"
@@ -25,6 +26,8 @@
 
 namespace nav2_behavior_tree
 {
+
+using namespace std::chrono_literals;  // NOLINT
 
 /**
  * @brief Abstract class representing an action based BT node
@@ -90,13 +93,11 @@ public:
 
     // Make sure the server is actually there before continuing
     RCLCPP_DEBUG(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
-    static constexpr std::chrono::milliseconds wait_for_server_timeout =
-      std::chrono::milliseconds(1000);
-    if (!action_client_->wait_for_action_server(wait_for_server_timeout)) {
+    if (!action_client_->wait_for_action_server(1s)) {
       RCLCPP_ERROR(
-        node_->get_logger(), "\"%s\" action server not available after waiting for %li ms",
-        action_name.c_str(), wait_for_server_timeout.count());
-      throw std::runtime_error("Action server not available");
+        node_->get_logger(), "\"%s\" action server not available after waiting for 1 s",
+        action_name.c_str());
+      throw std::runtime_error(std::string("Action server %s not available", action_name.c_str()));
     }
   }
 
