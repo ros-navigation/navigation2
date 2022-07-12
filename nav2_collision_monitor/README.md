@@ -49,11 +49,10 @@ Designed to operate for fast moving robots and have a high level of reliability,
 Typical one frame processing time is ~4-5ms for laser scanner (360 points) and ~4-80ms for PointClouds (having 24K points).
 The table below represents the details of operating times for different behavior models and shapes:
 
-| LaserScan,<br>360 points | Stop/Slowdown model,<br>Polygon area | Stop/Slowdown model,<br>Circle area | Approach model,<br>Polygon footprint | Approach model,<br>Circle footprint |
-|-=------------------------|--------------------------------------|-------------------------------------|--------------------------------------|-------------------------------------|
-| Processing time, ms      | 4.09                                 | 4.08                                | 4.98                                 | 4.29                                |
-| PointCloud<br>24K points | Stop/Slowdown model,<br>Polygon area | Stop/Slowdown model,<br>Circle area | Approach model,<br>Polygon footprint | Approach model,<br>Circle footprint |
-| Processing time, ms      | 4.13                                 | 3.76                                | 77.92                                | 11.43                               |
+| | Stop/Slowdown model, Polygon area | Stop/Slowdown model, Circle area | Approach model, Polygon footprint | Approach model, Circle footprint |
+|-|-----------------------------------|----------------------------------|-----------------------------------|----------------------------------|
+| LaserScan (360 points) processing time, ms  | 4.09 | 4.08 | 4.98  | 4.29  |
+| PointCloud (24K points) processing time, ms | 4.13 | 3.76 | 77.92 | 11.43 |
 
 The following notes could be made:
 
