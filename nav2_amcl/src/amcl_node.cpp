@@ -236,7 +236,7 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
 
   add_parameter(
     "k_l", rclcpp::ParameterValue(200.0f),
-    "Constant to balance importance the importance of the sensor data");
+    "Constant to balance the importance of the external pose data");
 }
 
 AmclNode::~AmclNode()
@@ -614,8 +614,8 @@ AmclNode::externalPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamp
   memcpy(pose.cov_matrix, cov_matrix, 9*sizeof(double));
 
   auto& clk = *this->get_clock();
-  RCLCPP_INFO_THROTTLE(get_logger(), clk, 5000, "Received external pose");
-  // RCLCPP_INFO(get_logger(), "Received external pose: %f %f %f", msg.pose.pose.position.x, msg.pose.pose.position.y, yaw);
+
+  RCLCPP_DEBUG_THROTTLE(get_logger(), clk, 5000, "Received external pose");
 
   pose.x = msg.pose.pose.position.x;
   pose.y = msg.pose.pose.position.y;
@@ -636,7 +636,7 @@ AmclNode::externalPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamp
 
   eigenvalues2 << eigenvalues(0,0), 0, 0, 0, eigenvalues(1,0), 0, 0, 0, eigenvalues(2,0);
 
-  eigen_mat = eigenvalues2 * eigensolver.eigenvectors(); // TODO: why do we need eigenmat
+  eigen_mat = eigenvalues2 * eigensolver.eigenvectors();
 
   double temp_mat[9] = {eigen_mat(0,0), eigen_mat(0,1), eigen_mat(0,2), eigen_mat(1,0), eigen_mat(1,1), eigen_mat(1,2), eigen_mat(2,0), eigen_mat(2,1), eigen_mat(2,2)};
 
@@ -797,8 +797,6 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
           pf_->gps_x = tmp.x;
           pf_->gps_y = tmp.y;
           pf_->gps_yaw = tmp.yaw;
-
-          RCLCPP_INFO(get_logger(), "GT Pose before resampling: %f %f %f", pf_->gps_x, pf_->gps_y, pf_->gps_yaw);
 
           memcpy(pf_->cov_matrix, tmp.cov_matrix, 9*sizeof(double));
           memcpy(pf_->eigen_matrix, tmp.eigen_matrix, 9*sizeof(double));

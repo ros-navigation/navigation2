@@ -355,7 +355,7 @@ int generate_random_particle(double gps_x, double gps_y, double gps_yaw, double 
 {
     double pose[3] = {norm_random(), norm_random(), norm_random()};
   
-    mult_1_3_x_3_3(pose, cov_matrix, pose); // TODO: why multiply by covariance
+    mult_1_3_x_3_3(pose, cov_matrix, pose);
     pose[0] = pose[0] + gps_x;
     pose[1] = pose[1] + gps_y;
     pose[2] = pose[2] + gps_yaw;
