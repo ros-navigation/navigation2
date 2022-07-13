@@ -788,9 +788,9 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         if(ext_pose_buffer.findClosestMeasurement(last_laser_received_ts_.nanoseconds(), tmp)) {
           pf_->ext_pose_is_valid = 1;
 
-          pf_->gps_x = tmp.x;
-          pf_->gps_y = tmp.y;
-          pf_->gps_yaw = tmp.yaw;
+          pf_->ext_x = tmp.x;
+          pf_->ext_y = tmp.y;
+          pf_->ext_yaw = tmp.yaw;
 
           memcpy(pf_->cov_matrix, tmp.cov_matrix, 9*sizeof(double));
           memcpy(pf_->eigen_matrix, tmp.eigen_matrix, 9*sizeof(double));
