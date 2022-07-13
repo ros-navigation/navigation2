@@ -411,10 +411,10 @@ AmclNode::isExtPoseActive()
   }
 
   rclcpp::Duration d = now() - last_ext_pose_received_ts_;
-  if (d.nanoseconds() * 1e-9 > ext_pose_check_interval_.count()) {
+  if (d.seconds() > ext_pose_check_interval_.count()) {
     RCLCPP_WARN(
       get_logger(), "No external pose received for %f"
-      " seconds. Swithing it to inactive state", d.nanoseconds() * 1e-9);
+      " seconds. Swithing it to inactive state", d.seconds());
       return false;
   }
 
@@ -433,11 +433,11 @@ AmclNode::checkLaserReceived()
   }
 
   rclcpp::Duration d = now() - last_laser_received_ts_;
-  if (d.nanoseconds() * 1e-9 > laser_check_interval_.count()) {
+  if (d.seconds() > laser_check_interval_.count()) {
     RCLCPP_WARN(
       get_logger(), "No laser scan received (and thus no pose updates have been published) for %f"
       " seconds.  Verify that data is being published on the %s topic.",
-      d.nanoseconds() * 1e-9, scan_topic_.c_str());
+      d.seconds(), scan_topic_.c_str());
   }
 }
 
@@ -445,7 +445,7 @@ bool
 AmclNode::checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time last_time)
 {
   rclcpp::Duration elapsed_time = now() - last_time;
-  if (elapsed_time.nanoseconds() * 1e-9 > check_interval.count()) {
+  if (elapsed_time.seconds() > check_interval.count()) {
     return true;
   }
   return false;
@@ -602,14 +602,8 @@ AmclNode::externalPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamp
 
   external_pose_t pose;
 
-  tf2::Quaternion q(
-      msg.pose.pose.orientation.x,
-      msg.pose.pose.orientation.y,
-      msg.pose.pose.orientation.z,
-      msg.pose.pose.orientation.w);
-  tf2::Matrix3x3 m(q);
-  double yaw = m.getYaw(msg.pose.pose.orientation);
-  
+  double yaw = tf2::getYaw(msg.pose.pose.orientation);
+
   double cov_matrix[9] = {msg.pose.covariance[0], msg.pose.covariance[1] ,msg.pose.covariance[5] ,msg.pose.covariance[6] ,msg.pose.covariance[7] ,msg.pose.covariance[11] ,msg.pose.covariance[30] ,msg.pose.covariance[31] ,msg.pose.covariance[35] };
   memcpy(pose.cov_matrix, cov_matrix, 9*sizeof(double));
 
@@ -683,7 +677,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 
   RCLCPP_INFO(
     get_logger(), "Setting pose (%.6f): %.3f %.3f %.3f",
-    now().nanoseconds() * 1e-9,
+    now().seconds(),
     pose_new.getOrigin().x(),
     pose_new.getOrigin().y(),
     tf2::getYaw(pose_new.getRotation()));
