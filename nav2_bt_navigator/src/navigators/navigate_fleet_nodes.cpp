@@ -205,6 +205,7 @@ NavigateFleetNodesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr g
 
   // Update the goal pose on the blackboard
   blackboard->set<Goals>(goals_blackboard_id_, nodes_to_poses(goal->frame_id, goal->nodes));
+  blackboard->set<Actions>("actions", nodes_to_actions(goal->nodes));
 }
 
 }  // namespace nav2_bt_navigator

@@ -26,6 +26,7 @@ class NavigateFleetNodesNavigator
 public:
   using ActionT = cmr_msgs::action::NavigateFleetNodes;
   typedef std::vector<geometry_msgs::msg::PoseStamped> Goals;
+  typedef std::vector<std::string> Actions;
 
   // TODO delete me once bt can work with nodes directly
   Goals nodes_to_poses(const std::string & root_frame_id, const std::vector<cmr_msgs::msg::Node> & nodes)
@@ -43,6 +44,15 @@ public:
       goals.push_back(std::move(pose));
     }
     return goals;
+  }
+
+  Actions nodes_to_actions(const std::vector<cmr_msgs::msg::Node> & nodes)
+  {
+    Actions actions;
+    for (const auto & node : nodes) {
+      actions.push_back(node.action);
+    }
+    return actions;
   }
 
   /**
