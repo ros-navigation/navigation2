@@ -6,7 +6,7 @@
 namespace nav2_amcl
 {
 
-typedef struct {
+struct ExternalPoseMeasument {
     double x;
     double y;
     double yaw;
@@ -15,7 +15,7 @@ typedef struct {
     double eigen_matrix[9];
 
     double time_ns; // time the measurement was made
-} external_pose_t;
+};
 
 class ExternalPoseBuffer {
 
@@ -32,7 +32,7 @@ public:
 * @param measurement external pose measurement
 * @return
 */
-void addMeasurement(const external_pose_t measurement);
+void addMeasurement(const ExternalPoseMeasument measurement);
 
 /* 
 * @brief Find closest external pose measurement to the query time, but not further than threshold
@@ -40,7 +40,7 @@ void addMeasurement(const external_pose_t measurement);
 * @param out_measurement found closest measurement
 * @return True if closest measurement found
 */
-bool findClosestMeasurement(double query_time_ns, external_pose_t& out_measurement) const;
+bool findClosestMeasurement(double query_time_ns, ExternalPoseMeasument& out_measurement) const;
 
 private:
 
@@ -48,7 +48,7 @@ private:
 const uint32_t search_tolerance_ns_ = 0.5 * 1e9;
 
 const double max_buff_size_ = 30;
-std::vector<external_pose_t> buffer_ = {};
+std::vector<ExternalPoseMeasument> buffer_ = {};
 
 }; 
 

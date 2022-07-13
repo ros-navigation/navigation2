@@ -7,7 +7,7 @@ namespace nav2_amcl
 {
 
 void
-ExternalPoseBuffer::addMeasurement(const external_pose_t measurement)
+ExternalPoseBuffer::addMeasurement(const ExternalPoseMeasument measurement)
 {
     if(buffer_.size() >= max_buff_size_) buffer_.erase(buffer_.begin());
 
@@ -15,7 +15,7 @@ ExternalPoseBuffer::addMeasurement(const external_pose_t measurement)
 }
 
 bool
-ExternalPoseBuffer::findClosestMeasurement(double query_time_ns, external_pose_t& out_measurement) const
+ExternalPoseBuffer::findClosestMeasurement(double query_time_ns, ExternalPoseMeasument& out_measurement) const
 {
     uint32_t min_abs_diff = INT32_MAX;
     size_t min_diff_idx = 0;

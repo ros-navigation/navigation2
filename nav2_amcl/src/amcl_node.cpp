@@ -600,7 +600,7 @@ AmclNode::externalPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamp
   
   last_ext_pose_received_ts_ = now();
 
-  external_pose_t pose;
+  ExternalPoseMeasument pose;
 
   double yaw = tf2::getYaw(msg.pose.pose.orientation);
 
@@ -784,7 +784,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         // if external position source is inactive, it considered invalid
         pf_->ext_pose_is_valid = 0;
       } else {
-        external_pose_t tmp;
+        ExternalPoseMeasument tmp;
         if(ext_pose_buffer.findClosestMeasurement(last_laser_received_ts_.nanoseconds(), tmp)) {
           pf_->ext_pose_is_valid = 1;
 
