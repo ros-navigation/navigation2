@@ -351,14 +351,14 @@ double norm_random()
 
 }
 
-int generate_random_particle(double gps_x, double gps_y, double gps_yaw, double *cov_matrix, double *pose_v)
+int generate_random_particle(double x, double y, double yaw, double *cov_matrix, double *pose_v)
 {
     double pose[3] = {norm_random(), norm_random(), norm_random()};
   
     mult_1_3_x_3_3(pose, cov_matrix, pose);
-    pose[0] = pose[0] + gps_x;
-    pose[1] = pose[1] + gps_y;
-    pose[2] = pose[2] + gps_yaw;
+    pose[0] = pose[0] + x;
+    pose[1] = pose[1] + y;
+    pose[2] = pose[2] + yaw;
 
     memcpy(pose_v, pose, 3*sizeof(double));
 
@@ -388,13 +388,13 @@ void pf_update_resample(pf_t * pf)
     double total_weight = 0;
     for(int i = 0; i < set_a->sample_count; i++)
     {
-      double distance = (pow(set_a->samples[i].pose.v[0]-pf->gps_x, 2)/pf->cov_matrix[0] + pow(set_a->samples[i].pose.v[1]-pf->gps_y, 2)/pf->cov_matrix[4] + pow(set_a->samples[i].pose.v[2]-pf->gps_yaw, 2)/pf->cov_matrix[8]);
+      double distance = (pow(set_a->samples[i].pose.v[0]-pf->ext_x, 2)/pf->cov_matrix[0] + pow(set_a->samples[i].pose.v[1]-pf->ext_y, 2)/pf->cov_matrix[4] + pow(set_a->samples[i].pose.v[2]-pf->ext_yaw, 2)/pf->cov_matrix[8]);
 
       double cov = (pf->cov_matrix[0] * pf->cov_matrix[4] * pf->cov_matrix[8]);
       total_dist_prob += 1/sqrt(pow(2*M_PI, 3) * cov)*exp(-1*distance/2);
 
-      //Multivariable gausian
-      double mat[3] = {set_a->samples[i].pose.v[0]-pf->gps_x, set_a->samples[i].pose.v[1]-pf->gps_y, set_a->samples[i].pose.v[2]-pf->gps_yaw};
+      // Multivariable gausian
+      double mat[3] = {set_a->samples[i].pose.v[0]-pf->ext_x, set_a->samples[i].pose.v[1]-pf->ext_y, set_a->samples[i].pose.v[2]-pf->ext_yaw};
       double result[3];
       double inverse[9];
       get_inverse(pf->cov_matrix, inverse);
@@ -478,7 +478,7 @@ if(pf->ext_pose_is_valid){
     if(drand48() < w_diff)
     {
       if(pf->ext_pose_is_valid){
-        generate_random_particle(pf->gps_x, pf->gps_y, pf->gps_yaw, pf->eigen_matrix, sample_b->pose.v);
+        generate_random_particle(pf->ext_x, pf->ext_y, pf->ext_yaw, pf->eigen_matrix, sample_b->pose.v);
       } else {
         sample_b->pose = (pf->random_pose_fn)(pf->random_pose_data);
       }

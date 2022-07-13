@@ -134,7 +134,7 @@ typedef struct _pf_t
   double dist_threshold; //distance threshold in each axis over which the pf is considered to not be converged
   int converged; 
 
-  double gps_x, gps_y, gps_yaw;
+  double ext_x, ext_y, ext_yaw;
   double cov_matrix[9];
   double eigen_matrix[9];
   double k_l; // constant, according to paper it is used as an data source importance factor and authors found, 200 is a good value for it
