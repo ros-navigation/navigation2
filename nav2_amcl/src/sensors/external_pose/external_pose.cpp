@@ -22,7 +22,10 @@ ExternalPoseBuffer::findClosestMeasurement(double query_time_ns, external_pose_t
     for(size_t i = 0; i < buffer_.size(); i++){
         uint32_t abs_diff = std::abs(buffer_[i].time_ns - query_time_ns);
 
-        if(abs_diff < min_abs_diff) min_abs_diff = abs_diff;
+        if(abs_diff < min_abs_diff){
+            min_abs_diff = abs_diff;
+            min_diff_idx = i;
+        }
     }
 
     if(min_abs_diff < search_tolerance_ns_){
