@@ -608,8 +608,8 @@ AmclNode::externalPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamp
       msg.pose.pose.orientation.z,
       msg.pose.pose.orientation.w);
   tf2::Matrix3x3 m(q);
-  double roll, pitch, yaw;
-  m.getRPY(roll, pitch, yaw);
+  double yaw = m.getYaw(msg.pose.pose.orientation);
+  
   double cov_matrix[9] = {msg.pose.covariance[0], msg.pose.covariance[1] ,msg.pose.covariance[5] ,msg.pose.covariance[6] ,msg.pose.covariance[7] ,msg.pose.covariance[11] ,msg.pose.covariance[30] ,msg.pose.covariance[31] ,msg.pose.covariance[35] };
   memcpy(pose.cov_matrix, cov_matrix, 9*sizeof(double));
 
