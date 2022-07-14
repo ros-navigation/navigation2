@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_THROUGH_POSES_HPP_
-#define NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_THROUGH_POSES_HPP_
+#ifndef NAV2_BT_NAVIGATOR__PLUGINS__NAVIGATE_TO_POSE_HPP_
+#define NAV2_BT_NAVIGATOR__PLUGINS__NAVIGATE_TO_POSE_HPP_
 
 #include <string>
 #include <vector>
@@ -21,11 +21,11 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_bt_navigator/navigator.hpp"
-#include "nav2_msgs/action/navigate_through_poses.hpp"
-#include "nav_msgs/msg/path.hpp"
-#include "nav2_util/robot_utils.hpp"
+#include "nav2_core/navigator.hpp"
+#include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_util/odometry_utils.hpp"
 
 namespace nav2_bt_navigator
@@ -33,19 +33,18 @@ namespace nav2_bt_navigator
 
 /**
  * @class NavigateToPoseNavigator
- * @brief A navigator for navigating to a a bunch of intermediary poses
+ * @brief A navigator for navigating to a specified pose
  */
-class NavigateThroughPosesNavigator
-  : public nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateThroughPoses>
+class NavigateToPoseNavigator
+  : public nav2_core::Navigator<nav2_msgs::action::NavigateToPose>
 {
 public:
-  using ActionT = nav2_msgs::action::NavigateThroughPoses;
-  typedef std::vector<geometry_msgs::msg::PoseStamped> Goals;
+  using ActionT = nav2_msgs::action::NavigateToPose;
 
   /**
-   * @brief A constructor for NavigateThroughPosesNavigator
+   * @brief A constructor for NavigateToPoseNavigator
    */
-  NavigateThroughPosesNavigator()
+  NavigateToPoseNavigator()
   : Navigator() {}
 
   /**
@@ -58,10 +57,22 @@ public:
     std::shared_ptr<nav2_util::OdomSmoother> odom_smoother) override;
 
   /**
+   * @brief A cleanup state transition to remove memory allocated
+   */
+  bool cleanup() override;
+
+  /**
+   * @brief A subscription and callback to handle the topic-based goal published
+   * from rviz
+   * @param pose Pose received via atopic
+   */
+  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
+
+  /**
    * @brief Get action name for this navigator
    * @return string Name of action server
    */
-  std::string getName() override {return std::string("navigate_through_poses");}
+  std::string getName() {return std::string("navigate_to_pose");}
 
   /**
    * @brief Get navigator's default BT
@@ -104,11 +115,16 @@ protected:
 
   /**
    * @brief Goal pose initialization on the blackboard
+   * @param goal Action template's goal message to process
    */
-  void initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal);
+  void initializeGoalPose(ActionT::Goal::ConstSharedPtr goal);
 
   rclcpp::Time start_time_;
-  std::string goals_blackboard_id_;
+
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+  rclcpp_action::Client<ActionT>::SharedPtr self_client_;
+
+  std::string goal_blackboard_id_;
   std::string path_blackboard_id_;
 
   // Odometry smoother object
@@ -117,4 +133,4 @@ protected:
 
 }  // namespace nav2_bt_navigator
 
-#endif  // NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_THROUGH_POSES_HPP_
+#endif  // NAV2_BT_NAVIGATOR__PLUGINS__NAVIGATE_TO_POSE_HPP_

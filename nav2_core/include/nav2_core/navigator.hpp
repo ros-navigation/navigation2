@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BT_NAVIGATOR__NAVIGATOR_HPP_
-#define NAV2_BT_NAVIGATOR__NAVIGATOR_HPP_
+#ifndef NAV2_CORE__NAVIGATOR_HPP_
+#define NAV2_CORE__NAVIGATOR_HPP_
 
 #include <memory>
 #include <string>
@@ -27,7 +27,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 
-namespace nav2_bt_navigator
+namespace nav2_core
 {
 
 /**
@@ -119,7 +119,7 @@ public:
     rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
     const std::vector<std::string> &,
     const FeedbackUtils & feedback_utils,
-    nav2_bt_navigator::NavigatorMuxer * plugin_muxer,
+    nav2_core::NavigatorMuxer * plugin_muxer,
     std::shared_ptr<nav2_util::OdomSmoother>)
   {
     auto node = parent_node.lock();
@@ -215,7 +215,7 @@ template<class ActionT>
 class Navigator : public NavigatorBase
 {
 public:
-  using Ptr = std::shared_ptr<nav2_bt_navigator::Navigator<ActionT>>;
+  using Ptr = std::shared_ptr<nav2_core::Navigator<ActionT>>;
 
   /**
    * @brief A Navigator constructor
@@ -241,7 +241,7 @@ public:
     rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
     const std::vector<std::string> & plugin_lib_names,
     const FeedbackUtils & feedback_utils,
-    nav2_bt_navigator::NavigatorMuxer * plugin_muxer,
+    nav2_core::NavigatorMuxer * plugin_muxer,
     std::shared_ptr<nav2_util::OdomSmoother> odom_smoother) override
   {
     NavigatorBase::on_configure(
@@ -393,6 +393,6 @@ protected:
   std::unique_ptr<nav2_behavior_tree::BtActionServer<ActionT>> bt_action_server_;
 };
 
-}  // namespace nav2_bt_navigator
+}  // namespace nav2_core
 
-#endif  // NAV2_BT_NAVIGATOR__NAVIGATOR_HPP_
+#endif  // NAV2_CORE__NAVIGATOR_HPP_

@@ -25,7 +25,7 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
-#include "nav2_bt_navigator/navigator.hpp"
+#include "nav2_core/navigator.hpp"
 #include "pluginlib/class_loader.hpp"
 
 namespace nav2_bt_navigator
@@ -89,16 +89,16 @@ protected:
    * @param plugin_names bt plugin libaray names
    * @return SUCCESS or FAILURE 
    */
-  bool loadNavigatorPlugin(std::vector<std::string> plugin_names);
+  bool loadNavigatorPlugins(std::vector<std::string> plugin_names);
 
   // To handle all the BT related execution
   // Navigator plugin
-  pluginlib::ClassLoader<NavigatorBase> navigator_class_loader_;
-  std::vector<pluginlib::UniquePtr<NavigatorBase>> navigators_;
+  pluginlib::ClassLoader<nav2_core::NavigatorBase> navigator_class_loader_;
+  std::vector<pluginlib::UniquePtr<nav2_core::NavigatorBase>> navigators_;
   std::vector<std::string> navigator_ids_;
   std::vector<std::string> navigator_types_;
 
-  nav2_bt_navigator::NavigatorMuxer plugin_muxer_;
+  nav2_core::NavigatorMuxer plugin_muxer_;
 
   // Odometry smoother object
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;

@@ -122,7 +122,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Odometry smoother object for getting current speed
   odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(shared_from_this(), 0.3, odom_topic_);
 
-  if(!loadNavigatorPlugin(plugin_lib_names)){
+  if(!loadNavigatorPlugins(plugin_lib_names)){
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -195,11 +195,11 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 bool 
-BtNavigator::loadNavigatorPlugin(std::vector<std::string> plugin_names)
+BtNavigator::loadNavigatorPlugins(std::vector<std::string> plugin_names)
 {
   get_parameter("navigator", navigator_ids_);
 
-  nav2_bt_navigator::FeedbackUtils feedback_utils;
+  nav2_core::FeedbackUtils feedback_utils;
   feedback_utils.tf = tf_;
   feedback_utils.global_frame = global_frame_;
   feedback_utils.robot_frame = robot_frame_;

@@ -17,24 +17,24 @@
 #include <set>
 #include <memory>
 #include <limits>
-#include "nav2_bt_navigator/navigators/navigate_through_poses.hpp"
+#include "nav2_bt_navigator/plugins/navigate_to_pose.hpp"
 
 namespace nav2_bt_navigator
 {
 
 bool
-NavigateThroughPosesNavigator::configure(
+NavigateToPoseNavigator::configure(
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
 {
   start_time_ = rclcpp::Time(0);
   auto node = parent_node.lock();
 
-  if (!node->has_parameter("goals_blackboard_id")) {
-    node->declare_parameter("goals_blackboard_id", std::string("goals"));
+  if (!node->has_parameter("goal_blackboard_id")) {
+    node->declare_parameter("goal_blackboard_id", std::string("goal"));
   }
 
-  goals_blackboard_id_ = node->get_parameter("goals_blackboard_id").as_string();
+  goal_blackboard_id_ = node->get_parameter("goal_blackboard_id").as_string();
 
   if (!node->has_parameter("path_blackboard_id")) {
     node->declare_parameter("path_blackboard_id", std::string("path"));
@@ -45,32 +45,46 @@ NavigateThroughPosesNavigator::configure(
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
 
+  self_client_ = rclcpp_action::create_client<ActionT>(node, getName());
+
+  goal_sub_ = node->create_subscription<geometry_msgs::msg::PoseStamped>(
+    "goal_pose",
+    rclcpp::SystemDefaultsQoS(),
+    std::bind(&NavigateToPoseNavigator::onGoalPoseReceived, this, std::placeholders::_1));
   return true;
 }
 
 std::string
-NavigateThroughPosesNavigator::getDefaultBTFilepath(
+NavigateToPoseNavigator::getDefaultBTFilepath(
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node)
 {
   std::string default_bt_xml_filename;
   auto node = parent_node.lock();
 
-  if (!node->has_parameter("default_nav_through_poses_bt_xml")) {
+  if (!node->has_parameter("default_nav_to_pose_bt_xml")) {
     std::string pkg_share_dir =
       ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
     node->declare_parameter<std::string>(
-      "default_nav_through_poses_bt_xml",
+      "default_nav_to_pose_bt_xml",
       pkg_share_dir +
-      "/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml");
+      "/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml");
   }
 
-  node->get_parameter("default_nav_through_poses_bt_xml", default_bt_xml_filename);
+  node->get_parameter("default_nav_to_pose_bt_xml", default_bt_xml_filename);
 
   return default_bt_xml_filename;
 }
 
 bool
-NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
+NavigateToPoseNavigator::cleanup()
+{
+  goal_sub_.reset();
+  self_client_.reset();
+  return true;
+}
+
+bool
+NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 {
   auto bt_xml_filename = goal->behavior_tree;
 
@@ -81,42 +95,32 @@ NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
     return false;
   }
 
-  initializeGoalPoses(goal);
+  initializeGoalPose(goal);
 
   return true;
 }
 
 void
-NavigateThroughPosesNavigator::goalCompleted(
+NavigateToPoseNavigator::goalCompleted(
   typename ActionT::Result::SharedPtr /*result*/,
   const nav2_behavior_tree::BtStatus /*final_bt_status*/)
 {
 }
 
 void
-NavigateThroughPosesNavigator::onLoop()
+NavigateToPoseNavigator::onLoop()
 {
-  using namespace nav2_util::geometry_utils;  // NOLINT
-
   // action server feedback (pose, duration of task,
-  // number of recoveries, and distance remaining to goal, etc)
+  // number of recoveries, and distance remaining to goal)
   auto feedback_msg = std::make_shared<ActionT::Feedback>();
-
-  auto blackboard = bt_action_server_->getBlackboard();
-
-  Goals goal_poses;
-  blackboard->get<Goals>(goals_blackboard_id_, goal_poses);
-
-  if (goal_poses.size() == 0) {
-    bt_action_server_->publishFeedback(feedback_msg);
-    return;
-  }
 
   geometry_msgs::msg::PoseStamped current_pose;
   nav2_util::getCurrentPose(
     current_pose, *feedback_utils_.tf,
     feedback_utils_.global_frame, feedback_utils_.robot_frame,
     feedback_utils_.transform_tolerance);
+
+  auto blackboard = bt_action_server_->getBlackboard();
 
   try {
     // Get current path points
@@ -168,13 +172,12 @@ NavigateThroughPosesNavigator::onLoop()
   feedback_msg->number_of_recoveries = recovery_count;
   feedback_msg->current_pose = current_pose;
   feedback_msg->navigation_time = clock_->now() - start_time_;
-  feedback_msg->number_of_poses_remaining = goal_poses.size();
 
   bt_action_server_->publishFeedback(feedback_msg);
 }
 
 void
-NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
+NavigateToPoseNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 {
   RCLCPP_INFO(logger_, "Received goal preemption request");
 
@@ -185,7 +188,7 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
     // if pending goal requests the same BT as the current goal, accept the pending goal
     // if pending goal has an empty behavior_tree field, it requests the default BT file
     // accept the pending goal if the current goal is running the default BT file
-    initializeGoalPoses(bt_action_server_->acceptPendingGoal());
+    initializeGoalPose(bt_action_server_->acceptPendingGoal());
   } else {
     RCLCPP_WARN(
       logger_,
@@ -199,13 +202,11 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 }
 
 void
-NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
+NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
 {
-  if (goal->poses.size() > 0) {
-    RCLCPP_INFO(
-      logger_, "Begin navigating from current location through %zu poses to (%.2f, %.2f)",
-      goal->poses.size(), goal->poses.back().pose.position.x, goal->poses.back().pose.position.y);
-  }
+  RCLCPP_INFO(
+    logger_, "Begin navigating from current location to (%.2f, %.2f)",
+    goal->pose.pose.position.x, goal->pose.pose.position.y);
 
   // Reset state for new action feedback
   start_time_ = clock_->now();
@@ -213,10 +214,18 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard->set<Goals>(goals_blackboard_id_, goal->poses);
+  blackboard->set<geometry_msgs::msg::PoseStamped>(goal_blackboard_id_, goal->pose);
+}
+
+void
+NavigateToPoseNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
+{
+  ActionT::Goal goal;
+  goal.pose = *pose;
+  self_client_->async_send_goal(goal);
 }
 
 }  // namespace nav2_bt_navigator
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_bt_navigator::NavigateThroughPosesNavigator, nav2_bt_navigator::NavigatorBase)
+PLUGINLIB_EXPORT_CLASS(nav2_bt_navigator::NavigateToPoseNavigator, nav2_core::NavigatorBase)

@@ -65,10 +65,10 @@ ament_target_dependencies(${library_name}
 
 pluginlib_export_plugin_description_file(nav2_bt_navigator nav2_bt_navigator_plugin.xml)
 
-add_library(nav2_navigate_to_pose_navigator SHARED src/navigators/navigate_to_pose.cpp)
+add_library(nav2_navigate_to_pose_navigator SHARED plugins/navigate_to_pose.cpp)
 list(APPEND plugin_libs nav2_navigate_to_pose_navigator)
 
-add_library(nav2_navigate_through_poses SHARED src/navigators/navigate_through_poses.cpp)
+add_library(nav2_navigate_through_poses SHARED plugins/navigate_through_poses.cpp)
 list(APPEND plugin_libs nav2_navigate_through_poses)
 
 foreach(plugin ${plugin_libs})
