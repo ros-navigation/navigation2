@@ -22,7 +22,7 @@ The safety area around the robot can take the following shapes:
 * Robot footprint polygon, which is used in the approach behavior model only.
 * Circle, used in all models: for stop and slowdown models as a safety area, for approach model as a robot footprint. Circle is made for the best performance and could be used in the cases where the safety area or robot could be approximated by round shape.
 
-NOTE: Although safety behavior models are not intended to be used simultaneously (e.g. stop model should not be crossed with approach one), it is not prohibited to. Collision Monitor allows setting simultaneously multiple shapes with different behavior models. This is typically could be useful to have a small stop area and larger slowdown bounding box to warn the robot from a collision without termination of operation.
+NOTE: Although safety behavior models are not intended to be used simultaneously (e.g. stop model should not be crossed with approach one), it is not prohibited to. Collision Monitor allows setting simultaneously multiple shapes with different behavior models. This typically could be useful to have a small stop area and larger slowdown bounding box to warn the robot from a collision without termination of operation.
 
 The obstacle points are being obtained from different data sources. Collision Monitor is subscribed to:
 
@@ -33,15 +33,16 @@ The obstacle points are being obtained from different data sources. Collision Mo
 ## Design
 
 Since Collision Monitor is designed to operate as an independent safety node, Nav2 stack has no knowledge about it.
-It is laying under the stack and operating after all necessary decision were made by Nav2.
-This is achieved through re-mapped `cmd_vel` topic, going out from a Controller.
+It is laying under the stack and operating after all necessary decisions were made by Nav2.
+This is achieved through remapped `cmd_vel` topic, going out from a Controller.
 
 The following diagram is showing the high-level design of Collision Monitor module. All shapes (Polygons and Circles) are derived from base `Polygon` class, so without loss of generality we can call them as polygons. Subscribed footprint is also having the same properties as other polygons, but it is being obtained from `nav2_costmap_2d::FootprintSubscriber`.
 ![HDL.png](doc/HLD.png)
 
 ## Configuration
 
-Detailed configuration parameters, their description and how to tune Collision Monitor could be found at Nav2 [official documentation](https://navigation.ros.org/) pages.
+Detailed configuration parameters, their description and how to setup a Collision Monitor could be found at its [Configuration Guide](https://navigation.ros.org/configuration/packages/configuring-collision-monitor.html) and [Using Collision Monitor tutorial](https://navigation.ros.org/tutorials/docs/using_collision_monitor.html) pages.
+
 
 ## Metrics
 
