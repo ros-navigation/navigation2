@@ -404,13 +404,14 @@ void ControllerServer::computeControl()
 
       if (!loop_rate.sleep()) {
         real_frequency =
-            1.0e6 / std::chrono::duration_cast<std::chrono::microseconds>(
-                        std::chrono::steady_clock::now() - begin)
-                        .count();
-        RCLCPP_WARN(get_logger(),
-                    "Control loop missed its desired rate of %.4fHz. Achieved "
-                    "rate: %.4fHz",
-                    controller_frequency_, real_frequency);
+          1.0e6 / std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::steady_clock::now() - begin)
+          .count();
+        RCLCPP_WARN(
+          get_logger(),
+          "Control loop missed its desired rate of %.4fHz. Achieved "
+          "rate: %.4fHz",
+          controller_frequency_, real_frequency);
       }
     }
   } catch (nav2_core::PlannerException & e) {
