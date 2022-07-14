@@ -95,6 +95,8 @@ protected:
   // Navigator plugin
   pluginlib::ClassLoader<nav2_core::NavigatorBase> navigator_class_loader_;
   std::vector<pluginlib::UniquePtr<nav2_core::NavigatorBase>> navigators_;
+  std::vector<std::string> default_navigator_ids_;
+  std::vector<std::string> default_navigator_types_;
   std::vector<std::string> navigator_ids_;
   std::vector<std::string> navigator_types_;
 

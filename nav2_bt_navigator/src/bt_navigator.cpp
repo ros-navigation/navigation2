@@ -31,7 +31,14 @@ namespace nav2_bt_navigator
 
 BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("bt_navigator", "", options),
-  navigator_class_loader_("nav2_bt_navigator", "nav2_bt_navigator::NavigatorBase")
+  navigator_class_loader_("nav2_bt_navigator", "nav2_bt_navigator::NavigatorBase"),
+  default_navigator_ids_{
+    "navigate_to_pose",
+    "navigate_through_poses"},
+  default_navigator_types_{
+    "nav2_bt_navigator/NavigateToPoseNavigator",
+    "nav2_bt_navigator/NavigateThroughPosesNavigator"
+  }
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
@@ -80,14 +87,17 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_back_up_cancel_bt_node"
     "nav2_drive_on_heading_cancel_bt_node"
   };
-
-  const std::vector<std::string> navigators = {
-    "navigate_to_pose",
-    "navigate_through_poses"
-  };
-
-  declare_parameter("navigator", navigators);
+  
   declare_parameter("plugin_lib_names", plugin_libs);
+
+  declare_parameter("navigator", default_navigator_ids_);
+  get_parameter("navigator", navigator_ids_);
+  if (navigator_ids_ == default_navigator_ids_) {
+    for (size_t i = 0; i < default_navigator_ids_.size(); ++i) {
+      declare_parameter(default_navigator_ids_[i] + ".plugin", default_navigator_types_[i]);
+    }
+  }
+
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
@@ -122,6 +132,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Odometry smoother object for getting current speed
   odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(shared_from_this(), 0.3, odom_topic_);
 
+  navigator_types_.resize(navigator_ids_.size());
   if(!loadNavigatorPlugins(plugin_lib_names)){
     return nav2_util::CallbackReturn::FAILURE;
   }
@@ -133,7 +144,6 @@ nav2_util::CallbackReturn
 BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
-
   // activate all plugin
   for(size_t i = 0; i < navigators_.size(); i++){
     if(!navigators_[i]->on_activate()){
@@ -180,8 +190,6 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   }
 
   navigators_.clear();
-  navigator_ids_.clear();
-  navigator_types_.clear();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
   return nav2_util::CallbackReturn::SUCCESS;
@@ -205,11 +213,23 @@ BtNavigator::loadNavigatorPlugins(std::vector<std::string> plugin_names)
   feedback_utils.robot_frame = robot_frame_;
   feedback_utils.transform_tolerance = transform_tolerance_;
 
-  for(std::string navigator_id: navigator_ids_){
-    std::string navigator_type = nav2_util::get_plugin_type_param(shared_from_this(), navigator_id);
-    navigators_.push_back(navigator_class_loader_.createUniqueInstance(navigator_type));
-    navigator_types_.push_back(navigator_type);
-    if(!navigators_.back()->on_configure(weak_from_this(), plugin_names, feedback_utils, &plugin_muxer_, odom_smoother_)){
+  auto node = shared_from_this();
+
+  for (size_t i = 0; i != navigator_ids_.size(); i++) {
+    navigator_types_[i] = nav2_util::get_plugin_type_param(node, navigator_ids_[i]);
+    try {
+      RCLCPP_INFO(
+        get_logger(), "Creating navigator id %s of type %s",
+        navigator_ids_[i].c_str(), navigator_types_[i].c_str());
+      navigators_.push_back(navigator_class_loader_.createUniqueInstance(navigator_types_[i]));
+      if(!navigators_.back()->on_configure(weak_from_this(), plugin_names, feedback_utils, &plugin_muxer_, odom_smoother_)){
+        return false;
+      }
+    } catch (const pluginlib::PluginlibException & ex) {
+      RCLCPP_FATAL(
+        get_logger(), "Failed to create navigator id %s of type %s."
+        " Exception: %s", navigator_ids_[i].c_str(), navigator_types_[i].c_str(),
+        ex.what());
       return false;
     }
   }
