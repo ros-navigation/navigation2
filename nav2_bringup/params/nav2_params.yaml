@@ -96,9 +96,9 @@ bt_navigator:
     - nav2_back_up_cancel_bt_node
     - nav2_drive_on_heading_cancel_bt_node
 
-    navigator: ["navigate_to_pose",
+    navigators: ["navigate_to_pose",
      "navigate_through_poses"]
-     
+
     navigate_to_pose:
       plugin: "nav2_bt_navigator/NavigateToPoseNavigator"
     

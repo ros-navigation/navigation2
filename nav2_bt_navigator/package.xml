@@ -41,6 +41,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
-    <nav2_bt_navigator prefix="$(prefix)/nav2_bt_navigator_plugin.xml"/>
+    <nav2_core prefix="$(prefix)/nav2_bt_navigator_plugin.xml"/>
   </export>
 </package>

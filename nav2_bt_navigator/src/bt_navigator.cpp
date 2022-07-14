@@ -31,7 +31,7 @@ namespace nav2_bt_navigator
 
 BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("bt_navigator", "", options),
-  navigator_class_loader_("nav2_bt_navigator", "nav2_bt_navigator::NavigatorBase"),
+  navigator_class_loader_("nav2_core", "nav2_core::NavigatorBase"),
   default_navigator_ids_{
     "navigate_to_pose",
     "navigate_through_poses"},
@@ -90,8 +90,9 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
   
   declare_parameter("plugin_lib_names", plugin_libs);
 
-  declare_parameter("navigator", default_navigator_ids_);
-  get_parameter("navigator", navigator_ids_);
+  declare_parameter("navigators", default_navigator_ids_);
+  get_parameter("navigators", navigator_ids_);
+
   if (navigator_ids_ == default_navigator_ids_) {
     for (size_t i = 0; i < default_navigator_ids_.size(); ++i) {
       declare_parameter(default_navigator_ids_[i] + ".plugin", default_navigator_types_[i]);
@@ -205,8 +206,6 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 bool 
 BtNavigator::loadNavigatorPlugins(std::vector<std::string> plugin_names)
 {
-  get_parameter("navigator", navigator_ids_);
-
   nav2_core::FeedbackUtils feedback_utils;
   feedback_utils.tf = tf_;
   feedback_utils.global_frame = global_frame_;
