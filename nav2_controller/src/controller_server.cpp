@@ -405,7 +405,8 @@ void ControllerServer::computeControl()
       if (!loop_rate.sleep()) {
         real_frequency = 1.0e9 / (steady_clock_.now() - begin).nanoseconds();
         RCLCPP_WARN(
-          get_logger(), "Control loop missed its desired rate of %.4fHz. Achieved rate: %.4fHz", controller_frequency_,
+          get_logger(), "Control loop missed its desired rate of %.4fHz. Achieved rate: %.4fHz",
+          controller_frequency_,
           real_frequency);
       }
     }
