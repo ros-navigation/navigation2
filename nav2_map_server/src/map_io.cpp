@@ -306,7 +306,12 @@ void loadGridMapFromFile(
   Magick::InitializeMagick(nullptr);
   // let's fill the occupancy grid and then create a layeer from this object
   nav_msgs::msg::OccupancyGrid msg;
-  grid_map::GridMap grid_map_to_fill;
+  grid_map::GridMap grid_map_to_fill({"elevation", "occupancy"});
+  grid_map_to_fill.setFrameId("map");
+  // TODO(ivrolan): we need to add all these parameters in the yaml
+  grid_map_to_fill.setGeometry(
+    grid_map::Length(60.0, 60.0), 0.5,
+    grid_map::Position(0.0, 0.0));
   
 
   std::cout << "[INFO] [map_io]: Loading elevation_image_file: " <<
@@ -327,41 +332,81 @@ void loadGridMapFromFile(
   msg.data.resize(msg.info.width * msg.info.height);
 
   // Copy pixel data into the map structure
-  for (size_t y = 0; y < msg.info.height; y++) {
-    for (size_t x = 0; x < msg.info.width; x++) {
-      auto pixel = img.pixelColor(x, y);
+  // for (size_t y = 0; y < msg.info.height; y++) {
+  //   for (size_t x = 0; x < msg.info.width; x++) {
+  //     auto pixel = img.pixelColor(x, y);
 
-      std::vector<Magick::Quantum> channels = {pixel.redQuantum(), pixel.greenQuantum(),
-        pixel.blueQuantum()};
-      if (load_parameters.mode == MapMode::Trinary && img.matte()) {
-        // To preserve existing behavior, average in alpha with color channels in Trinary mode.
-        // CAREFUL. alpha is inverted from what you might expect. High = transparent, low = opaque
-        channels.push_back(MaxRGB - pixel.alphaQuantum());
-      }
-      double sum = 0;
-      for (auto c : channels) {
-        sum += c;
-      }
-      /// on a scale from 0.0 to 1.0 how bright is the pixel?
-      double shade = Magick::ColorGray::scaleQuantumToDouble(sum / channels.size());
+  //     std::vector<Magick::Quantum> channels = {pixel.redQuantum(), pixel.greenQuantum(),
+  //       pixel.blueQuantum()};
+  //     if (load_parameters.mode == MapMode::Trinary && img.matte()) {
+  //       // To preserve existing behavior, average in alpha with color channels in Trinary mode.
+  //       // CAREFUL. alpha is inverted from what you might expect. High = transparent, low = opaque
+  //       channels.push_back(MaxRGB - pixel.alphaQuantum());
+  //     }
+  //     double sum = 0;
+  //     for (auto c : channels) {
+  //       sum += c;
+  //     }
+  //     /// on a scale from 0.0 to 1.0 how bright is the pixel?
+  //     double shade = Magick::ColorGray::scaleQuantumToDouble(sum / channels.size());
 
-      // If negate is true, we consider blacker pixels free, and whiter
-      // pixels occupied. Otherwise, it's vice versa.
-      /// on a scale from 0.0 to 1.0, how occupied is the map cell (before thresholding)?
-      double occ = (load_parameters.negate ? shade : 1.0 - shade);
+  //     // If negate is true, we consider blacker pixels free, and whiter
+  //     // pixels occupied. Otherwise, it's vice versa.
+  //     /// on a scale from 0.0 to 1.0, how occupied is the map cell (before thresholding)?
+  //     double occ = (load_parameters.negate ? shade : 1.0 - shade);
 
-      int8_t map_cell;
-      // we suppose that the elevation uses the Scale mode
-      // ignore the occupied and free threshold
-      int min_height = -5.0, max_height = 5.0;
-      map_cell = std::rint(
-        occ * (max_height - min_height) + min_height);
+  //     int8_t map_cell;
+  //     // we suppose that the elevation uses the Scale mode
+  //     // ignore the occupied and free threshold
+  //     int min_height = -5.0, max_height = 5.0;
+  //     map_cell = occ * (max_height - min_height) + min_height;
       
           
-      msg.data[msg.info.width * (msg.info.height - y - 1) + x] = map_cell;
-    }
-  }
+  //     msg.data[msg.info.width * (msg.info.height - y - 1) + x] = map_cell;
+  //   }
+  // }
 
+  // supposing the iterator gives the same order as the img
+  for (grid_map::GridMapIterator grid_iterator(grid_map_to_fill); !grid_iterator.isPastEnd();
+    ++grid_iterator)
+  {
+    // get the value at the iterator
+    grid_map::Position current_pos;
+    grid_map_to_fill.getPosition(*grid_iterator, current_pos);
+    auto pixel = img.pixelColor((current_pos.y() + 30) / 0.5, (current_pos.x() + 30) / 0.5); 
+    // (current_pos.x - min_x) / resolution to get the index
+
+    std::vector<Magick::Quantum> channels = {pixel.redQuantum(), pixel.greenQuantum(),
+      pixel.blueQuantum()};
+    if (load_parameters.mode == MapMode::Trinary && img.matte()) {
+      // To preserve existing behavior, average in alpha with color channels in Trinary mode.
+      // CAREFUL. alpha is inverted from what you might expect. High = transparent, low = opaque
+      channels.push_back(MaxRGB - pixel.alphaQuantum());
+    }
+    double sum = 0;
+    for (auto c : channels) {
+      sum += c;
+    }
+    /// on a scale from 0.0 to 1.0 how bright is the pixel?
+    double shade = Magick::ColorGray::scaleQuantumToDouble(sum / channels.size());
+
+    // If negate is true, we consider blacker pixels free, and whiter
+    // pixels occupied. Otherwise, it's vice versa.
+    /// on a scale from 0.0 to 1.0, how occupied is the map cell (before thresholding)?
+    double occ = (load_parameters.negate ? shade : 1.0 - shade);
+    
+    std ::cout << "Occ is " << occ << std::endl;
+
+    double map_cell;
+    // we suppose that the elevation uses the Scale mode
+    // ignore the occupied and free threshold
+    double min_height = -10.0, max_height = 10.0;
+    map_cell = occ * (max_height - min_height) + min_height;
+
+    std::cout << "Elevation map cell value is " << map_cell << std::endl;
+
+    grid_map_to_fill.atPosition("elevation", current_pos) = map_cell;
+  }
   // Since loadMapFromFile() does not belong to any node, publishing in a system time.
   rclcpp::Clock clock(RCL_SYSTEM_TIME);
   msg.info.map_load_time = clock.now();
@@ -373,7 +418,7 @@ void loadGridMapFromFile(
     " X " << msg.info.height << " map @ " << msg.info.resolution << " m/cell" << std::endl;
 
 
-  grid_map::GridMapRosConverter::fromOccupancyGrid(msg, "elevation",grid_map_to_fill);
+  //grid_map::GridMapRosConverter::fromOccupancyGrid(msg, "elevation",grid_map_to_fill);
 
   msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
 }
