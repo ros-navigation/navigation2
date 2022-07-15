@@ -9,6 +9,7 @@
 
   <depend>tf2_ros</depend>
   <depend>cmr_msgs</depend>
+  <depend>nav_2d_utils</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>

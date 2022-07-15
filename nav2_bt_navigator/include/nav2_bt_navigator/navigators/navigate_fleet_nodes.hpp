@@ -12,6 +12,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/odometry_utils.hpp"
+#include "nav_2d_utils/conversions.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -37,10 +38,11 @@ public:
 
     Goals goals;
     for (const auto & node : nodes) {
-      auto pose = node.location.pose;
-      if (pose.header.frame_id.empty()) {
-        pose.header.frame_id = default_frame_id;
-      }
+      auto pose = nav_2d_utils::pose2DToPoseStamped(
+          node.pose,
+          node.frame_id.empty() ? default_frame_id : node.frame_id,
+          clock_->now()
+      );
       goals.push_back(std::move(pose));
     }
     return goals;
