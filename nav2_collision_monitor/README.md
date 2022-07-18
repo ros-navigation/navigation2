@@ -58,4 +58,4 @@ The table below represents the details of operating times for different behavior
 The following notes could be made:
 
  * Due to faster algorithms, circle shapes are preferred for the approach behavior models.
- * More points mean lower performance. Pointclouds could be sparsed before Collision Monitor node for the systems with lack of computational resources.
+ * More points mean lower performance. Pointclouds could be culled or filtered before the Collision Monitor to improve performance. 
