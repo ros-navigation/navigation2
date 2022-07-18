@@ -33,7 +33,7 @@ namespace nav2_bt_navigator
 
 /**
  * @class NavigateToPoseNavigator
- * @brief A navigator for navigating to a a bunch of intermediary poses
+ * @brief A navigator for navigating to a bunch of intermediary poses
  */
 class NavigateThroughPosesNavigator
   : public nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateThroughPoses>
@@ -103,8 +103,6 @@ protected:
    * @brief Goal pose initialization on the blackboard
    */
   void initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal);
-
-  
 
   rclcpp::Time start_time_;
   std::string goals_blackboard_id_;

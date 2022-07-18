@@ -123,21 +123,27 @@ public:
   
   /**
    * @brief Activation of the navigator's backend BT and actions
-   * @return bool If successful
+   * @return true If success
    */
   virtual bool activate() = 0;
-  
+
   /**
    * @brief Deactivation of the navigator's backend BT and actions
-   * @return bool If successful
+   * @return true If success
    */
   virtual bool deactivate() = 0;
 
   /**
    * @brief Cleanup a navigator
-   * @return bool If successful
+   * @return true If success
    */
   virtual bool cleanup() = 0;
+
+  /**
+   * @brief Get the action name of this navigator to expose
+   * @return string Name of action to expose
+   */
+  virtual std::string getName() = 0;
 };
 
 }  // namespace nav2_core

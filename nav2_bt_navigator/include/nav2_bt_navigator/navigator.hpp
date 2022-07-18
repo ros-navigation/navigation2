@@ -67,6 +67,9 @@ public:
     plugin_muxer_ = plugin_muxer;
     odom_smoother_ = odom_smoother;
 
+    // get the default behavior tree for this navigator
+    default_bt_xml_filename_ = getDefaultBTFilepath(parent_node);
+
     // Create the Behavior Tree Action Server for this navigator
     bt_action_server_ = std::make_unique<nav2_behavior_tree::BtActionServer<ActionT>>(
       parent_node.lock(),
@@ -82,9 +85,6 @@ public:
     if (!bt_action_server_->on_configure()) {
       ok = false;
     }
-
-    // get the default behavior tree for this navigator
-    default_bt_xml_filename_ = getDefaultBTFilepath(parent_node);
 
     BT::Blackboard::Ptr blackboard = bt_action_server_->getBlackboard();
     blackboard->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", feedback_utils.tf);  // NOLINT
@@ -124,11 +124,6 @@ public:
   }
 
 protected:
-  /**
-   * @brief Get the action name of this navigator to expose
-   * @return string Name of action to expose
-   */
-  virtual std::string getName() = 0;
 
   virtual std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) = 0;
   
@@ -191,21 +186,25 @@ protected:
     typename ActionT::Result::SharedPtr result,
     const nav2_behavior_tree::BtStatus final_bt_status) = 0;
 
+  // configuration virtual function
   virtual bool onConfigure(rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/) 
   {
     return true;
   }
 
+  // activate virtual fuction
   virtual bool onActivate()
   {
     return true;
   }
 
+  // deactivate setting virtual function
   virtual bool onDeactivate()
   {
     return true;
   }
 
+  // cleanup setting virtual fuction
   virtual bool onCleanup()
   {
     return true;

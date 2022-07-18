@@ -53,8 +53,8 @@ protected:
   /**
    * @brief Configures member variables
    *
-   * Initializes action server for "NavigationToPose"; subscription to
-   * "goal_sub"; and builds behavior tree from xml file.
+   * Initializes bt_navigator node; 
+   * and load plugins of "nav2_core::NavigationBase"
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */

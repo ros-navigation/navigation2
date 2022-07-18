@@ -123,9 +123,6 @@ protected:
 
   std::string goal_blackboard_id_;
   std::string path_blackboard_id_;
-
-  // Odometry smoother object
-  std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 };
 
 }  // namespace nav2_bt_navigator
