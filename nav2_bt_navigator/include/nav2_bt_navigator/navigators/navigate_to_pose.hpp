@@ -21,7 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_core/navigator.hpp"
+#include "nav2_bt_navigator/navigator.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -36,7 +36,7 @@ namespace nav2_bt_navigator
  * @brief A navigator for navigating to a specified pose
  */
 class NavigateToPoseNavigator
-  : public nav2_core::Navigator<nav2_msgs::action::NavigateToPose>
+  : public nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateToPose>
 {
 public:
   using ActionT = nav2_msgs::action::NavigateToPose;
@@ -47,14 +47,12 @@ public:
   NavigateToPoseNavigator()
   : Navigator() {}
 
+protected:
   /**
    * @brief A configure state transition to configure navigator's state
    * @param node Weakptr to the lifecycle node
-   * @param odom_smoother Object to get current smoothed robot's speed
    */
-  bool configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr node,
-    std::shared_ptr<nav2_util::OdomSmoother> odom_smoother) override;
+  bool onConfigure(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
 
   /**
    * @brief A cleanup state transition to remove memory allocated
@@ -81,7 +79,6 @@ public:
    */
   std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
 
-protected:
   /**
    * @brief A callback to be called when a new goal is received by the BT action server
    * Can be used to check if goal is valid and put values on

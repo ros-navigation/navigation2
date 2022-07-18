@@ -150,7 +150,7 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
   // activate all plugin
   for(size_t i = 0; i < navigators_.size(); i++){
-    if(!navigators_[i]->on_activate()){
+    if(!navigators_[i]->activate()){
       return nav2_util::CallbackReturn::FAILURE;
     }
   }
@@ -167,7 +167,7 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   for(size_t i = 0; i < navigators_.size(); i++){
-    if(!navigators_[i]->on_deactivate()){
+    if(!navigators_[i]->deactivate()){
       return nav2_util::CallbackReturn::FAILURE;
     }
   }
@@ -188,7 +188,7 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_.reset();
 
   for(size_t i = 0; i < navigators_.size(); i++){
-    if(!navigators_[i]->on_cleanup()){
+    if(!navigators_[i]->cleanup()){
       return nav2_util::CallbackReturn::FAILURE;
     }
   }
@@ -227,7 +227,7 @@ BtNavigator::loadNavigatorPlugins(std::vector<std::string> plugin_names)
         get_logger(), "Creating navigator id %s of type %s",
         navigator_ids[i].c_str(), navigator_type.c_str());
       navigators_.push_back(navigator_class_loader_.createUniqueInstance(navigator_type));
-      if(!navigators_.back()->on_configure(weak_from_this(), plugin_names, feedback_utils, &plugin_muxer_, odom_smoother_)){
+      if(!navigators_.back()->configure(weak_from_this(), plugin_names, feedback_utils, &plugin_muxer_, odom_smoother_)){
         return false;
       }
     } catch (const pluginlib::PluginlibException & ex) {

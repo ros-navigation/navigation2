@@ -25,7 +25,7 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
-#include "nav2_core/navigator.hpp"
+#include "nav2_core/navigator_base.hpp"
 #include "pluginlib/class_loader.hpp"
 
 namespace nav2_bt_navigator
