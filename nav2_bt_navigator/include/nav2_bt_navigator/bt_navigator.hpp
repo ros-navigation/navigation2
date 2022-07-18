@@ -25,7 +25,7 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
-#include "nav2_core/navigator_base.hpp"
+#include "nav2_core/navigator.hpp"
 #include "pluginlib/class_loader.hpp"
 
 namespace nav2_bt_navigator
@@ -93,8 +93,8 @@ protected:
 
   // To handle all the BT related execution
   // Navigator plugin
-  pluginlib::ClassLoader<nav2_core::NavigatorBase> navigator_class_loader_;
-  std::vector<pluginlib::UniquePtr<nav2_core::NavigatorBase>> navigators_;
+  pluginlib::ClassLoader<nav2_core::Navigator> navigator_class_loader_;
+  std::vector<pluginlib::UniquePtr<nav2_core::Navigator>> navigators_;
 
   nav2_core::NavigatorMuxer plugin_muxer_;
 

@@ -214,4 +214,4 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
 }  // namespace nav2_bt_navigator
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_bt_navigator::NavigateThroughPosesNavigator, nav2_core::NavigatorBase)
+PLUGINLIB_EXPORT_CLASS(nav2_bt_navigator::NavigateThroughPosesNavigator, nav2_core::Navigator)

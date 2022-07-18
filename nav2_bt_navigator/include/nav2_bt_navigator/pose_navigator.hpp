@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BT_NAVIGATOR__NAVIGATOR_HPP_
-#define NAV2_BT_NAVIGATOR__NAVIGATOR_HPP_
+#ifndef NAV2_BT_NAVIGATOR__POSE_NAVIGATOR_HPP_
+#define NAV2_BT_NAVIGATOR__POSE_NAVIGATOR_HPP_
 
 #include <memory>
 #include <string>
@@ -26,7 +26,7 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
-#include "nav2_core/navigator_base.hpp"
+#include "nav2_core/navigator.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -36,20 +36,20 @@ namespace nav2_bt_navigator
  * @brief Navigator interface that acts as a base class for all BT-based Navigator action's plugins
  */
 template<class ActionT>
-class Navigator : public nav2_core::NavigatorBase
+class PoseNavigator : public nav2_core::Navigator
 {
 public:
-  using Ptr = std::shared_ptr<nav2_bt_navigator::Navigator<ActionT>>;
+  using Ptr = std::shared_ptr<nav2_bt_navigator::PoseNavigator<ActionT>>;
 
   /**
    * @brief A Navigator constructor
    */
-  Navigator() : NavigatorBase() {}
+  PoseNavigator() : Navigator() {}
 
   /**
    * @brief Virtual destructor
    */
-  virtual ~Navigator() = default;
+  virtual ~PoseNavigator() = default;
 
   bool configure(
     rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
@@ -76,10 +76,10 @@ public:
       getName(),
       plugin_lib_names,
       default_bt_xml_filename_,
-      std::bind(&Navigator::onGoalReceived, this, std::placeholders::_1),
-      std::bind(&Navigator::onLoop, this),
-      std::bind(&Navigator::onPreempt, this, std::placeholders::_1),
-      std::bind(&Navigator::onCompletion, this, std::placeholders::_1, std::placeholders::_2));
+      std::bind(&PoseNavigator::onGoalReceived, this, std::placeholders::_1),
+      std::bind(&PoseNavigator::onLoop, this),
+      std::bind(&PoseNavigator::onPreempt, this, std::placeholders::_1),
+      std::bind(&PoseNavigator::onCompletion, this, std::placeholders::_1, std::placeholders::_2));
 
     bool ok = true;
     if (!bt_action_server_->on_configure()) {

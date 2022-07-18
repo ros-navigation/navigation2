@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CORE__NAVIGATOR_BASE_HPP_
-#define NAV2_CORE__NAVIGATOR_BASE_HPP_
+#ifndef NAV2_CORE__NAVIGATOR_HPP_
+#define NAV2_CORE__NAVIGATOR_HPP_
 
 #include <memory>
 #include <string>
@@ -104,15 +104,15 @@ protected:
   std::mutex mutex_;
 };
 
-class NavigatorBase
+class Navigator
 {
 public:
-  RCLCPP_SMART_PTR_DEFINITIONS(NavigatorBase)
+  RCLCPP_SMART_PTR_DEFINITIONS(Navigator)
 
   /**
    * @brief Virtual destructor
    */
-  virtual ~NavigatorBase() {}
+  virtual ~Navigator() {}
 
   virtual bool configure(
     rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
