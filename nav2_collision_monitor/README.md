@@ -13,7 +13,7 @@ The obstacles fell into such area are forcing robot to stop, operate slowly or e
 The following models of safety behaviors are employed by Collision Monitor:
 
 * **Stop model**: Define a zone and a point threshold. If more that `N` obstacle points appear inside this area, stop the robot until the obstacles will disappear.
-* **Slowdown model**: Define a safety area around the robot and slow the maximum speed for a `%S` percent, if more than `N` points will appear inside the area.
+* **Slowdown model**: Define a zone around the robot and slow the maximum speed for a `%S` percent, if more than `N` points will appear inside the area.
 * **Approach model**: With the current robot speed, estimate the time to collision to points obtained from sensors. If the time is less than `M` seconds (0.5, 2, 5, etc...), slow the robot until it will be equal to `M` seconds. The effect here would be to keep the robot always `M` seconds from a collision and continuously scale down its speeds.
 
 The safety area around the robot can take the following shapes:
