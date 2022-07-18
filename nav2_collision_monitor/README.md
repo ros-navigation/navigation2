@@ -57,5 +57,5 @@ The table below represents the details of operating times for different behavior
 
 The following notes could be made:
 
- * Due to faster algorithms, circle shapes are preferred for the approach behavior models.
+ * Due to sheer speed, circle shapes are preferred for the approach behavior models if you can approximately model your robot as circular.
  * More points mean lower performance. Pointclouds could be culled or filtered before the Collision Monitor to improve performance. 
