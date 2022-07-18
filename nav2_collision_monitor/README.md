@@ -24,7 +24,7 @@ The safety area around the robot can take the following shapes:
 
 NOTE: Although safety behavior models are not intended to be used simultaneously (e.g. stop model should not be crossed with approach one), it is not prohibited to. Collision Monitor allows setting simultaneously multiple shapes with different behavior models. This typically could be useful to have a small stop area and larger slowdown bounding box to warn the robot from a collision without termination of operation.
 
-The obstacle points are being obtained from different data sources. Collision Monitor is subscribed to:
+The data may be obtained from different data sources:
 
 * Laser scanners (`sensor_msgs::msg::LaserScan` messages)
 * PointClouds (`sensor_msgs::msg::PointCloud2` messages)
