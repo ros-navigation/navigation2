@@ -34,7 +34,7 @@ The data may be obtained from different data sources:
 
 Since Collision Monitor is designed to operate as an independent safety node, Nav2 stack has no knowledge about it.
 It is laying under the stack and operating after all necessary decisions were made by Nav2.
-This is achieved through remapped `cmd_vel` topic, going out from a Controller.
+This acts as a filter on the `cmd_vel` topic coming out of the Controller Server. If no such zone is triggered, then the Controller's `cmd_vel` is used. Else, it is scaled or set to stop as appropriate. 
 
 The following diagram is showing the high-level design of Collision Monitor module. All shapes (Polygons and Circles) are derived from base `Polygon` class, so without loss of generality we can call them as polygons. Subscribed footprint is also having the same properties as other polygons, but it is being obtained from `nav2_costmap_2d::FootprintSubscriber`.
 ![HDL.png](doc/HLD.png)
