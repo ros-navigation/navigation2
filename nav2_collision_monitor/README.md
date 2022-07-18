@@ -19,7 +19,7 @@ The following models of safety behaviors are employed by Collision Monitor:
 The safety area around the robot can take the following shapes:
 
 * Arbitrary user-defined polygon relative to the robot base frame.
-* Robot footprint polygon, which is used in the approach behavior model only.
+* Robot footprint polygon, which is used in the approach behavior model only. Will use the footprint topic to allow it to be dynamically adjusted over time.
 * Circle, used in all models: for stop and slowdown models as a safety area, for approach model as a robot footprint. Circle is made for the best performance and could be used in the cases where the safety area or robot could be approximated by round shape.
 
 NOTE: Although safety behavior models are not intended to be used simultaneously (e.g. stop model should not be crossed with approach one), it is not prohibited to. Collision Monitor allows setting simultaneously multiple shapes with different behavior models. This typically could be useful to have a small stop area and larger slowdown bounding box to warn the robot from a collision without termination of operation.
