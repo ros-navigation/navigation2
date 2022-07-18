@@ -10,6 +10,8 @@ As such, this does not provide hard real-time safety certifications, but uses th
 This is a useful and integral part of large heavy industrial robots, or robots moving with high velocities, around people or other dynamic agents (e.g. other robots) as a safety mechanism for high-response emergency stopping.
 The costmaps / trajectory planners will handle most situations, but this is to handle obstacles that virtually appear out of no where (from the robot's perspective) or approach the robot at such high speed it needs to immediately stop to prevent collision.
 
+![polygons.png](doc/polygons.png)
+
 ## Features
 
 The Collision Monitor uses polygons relative the robot's base frame origin to define "zones".
@@ -26,7 +28,7 @@ The following models of safety behaviors are employed by Collision Monitor:
 The zones around the robot can take the following shapes:
 
 * Arbitrary user-defined polygon relative to the robot base frame.
-* Circle: is made for the best performance and could be used in the cases where the safety area or robot could be approximated by round shape.
+* Circle: is made for the best performance and could be used in the cases where the zone or robot could be approximated by round shape.
 * Robot footprint polygon, which is used in the approach behavior model only. Will use the footprint topic to allow it to be dynamically adjusted over time.
 
 The data may be obtained from different data sources:

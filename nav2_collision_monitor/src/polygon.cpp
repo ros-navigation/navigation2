@@ -295,7 +295,8 @@ bool Polygon::getParameters(std::string & polygon_pub_topic, std::string & footp
     if (action_type_ == APPROACH) {
       // Obtain the footprint topic to make a footprint subscription for approach polygon
       nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".footprint_topic", rclcpp::ParameterValue("footprint"));
+        node, polygon_name_ + ".footprint_topic",
+        rclcpp::ParameterValue("local_costmap/published_footprint"));
       footprint_topic =
         node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
 

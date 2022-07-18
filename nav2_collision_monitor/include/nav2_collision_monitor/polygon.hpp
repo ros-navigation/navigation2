@@ -175,7 +175,7 @@ protected:
   std::string polygon_name_;
   /// @brief Action type for the polygon
   ActionType action_type_;
-  /// @brief Maximum number of points to enter inside polygon to be ignored (w/o causing an action)
+  /// @brief Maximum number of data readings within a zone to not trigger the action
   int max_points_;
   /// @brief Robot slowdown (share of its actual speed)
   double slowdown_ratio_;
