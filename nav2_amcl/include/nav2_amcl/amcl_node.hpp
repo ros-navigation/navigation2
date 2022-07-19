@@ -29,10 +29,13 @@
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "message_filters/subscriber.h"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_amcl/motion_model/motion_model.hpp"
 #include "nav2_amcl/sensors/laser/laser.hpp"
+#include "nav2_amcl/sensors/external_pose/external_pose.hpp"
 #include "nav2_msgs/msg/particle.hpp"
 #include "nav2_msgs/msg/particle_cloud.hpp"
 #include "nav_msgs/srv/set_map.hpp"
@@ -117,6 +120,11 @@ protected:
    */
   void createFreeSpaceVector();
   /*
+   * @brief Handle a new external pose message
+   * @param msg External pose message
+   */
+  void externalPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped& msg);
+  /*
    * @brief Frees allocated map related memory
    */
   void freeMapDependentMemory();
@@ -168,6 +176,8 @@ protected:
   void initPubSub();
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
     initial_pose_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
+    external_pose_sub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     pose_pub_;
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::ParticleCloud>::SharedPtr
@@ -241,6 +251,22 @@ protected:
   bool pf_init_;
   pf_vector_t pf_odom_pose_;
   int resample_count_{0};
+
+  // External pose fusion related
+  /*
+   * @brief Check if external pose has been received
+   */
+  bool isExtPoseActive();
+  /*
+   * @brief Initialize external pose data source
+   */
+  void initExternalPose();
+
+  ExternalPoseBuffer ext_pose_buffer;
+
+  rclcpp::Time last_ext_pose_received_ts_;
+  std::chrono::seconds ext_pose_check_interval_;
+  bool ext_pose_active_;
 
   // Laser scan related
   /*
@@ -365,6 +391,8 @@ protected:
   double z_max_;
   double z_short_;
   double z_rand_;
+  double k_l_;
+  bool fuse_external_pose_;
   std::string scan_topic_{"scan"};
   std::string map_topic_{"map"};
 };

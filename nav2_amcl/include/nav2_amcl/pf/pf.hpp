@@ -131,9 +131,14 @@ typedef struct _pf_t
   pf_init_model_fn_t random_pose_fn;
   void * random_pose_data;
 
-  double dist_threshold;  // distance threshold in each axis over which the pf is considered to not
-                          // be converged
-  int converged;
+  double dist_threshold; //distance threshold in each axis over which the pf is considered to not be converged
+  int converged; 
+
+  double ext_x, ext_y, ext_yaw;
+  double cov_matrix[9];
+  double eigen_matrix[9];
+  double k_l; // constant, according to paper it is used as an data source importance factor and authors found, 200 is a good value for it
+  int ext_pose_is_valid;
 } pf_t;
 
 
@@ -141,7 +146,7 @@ typedef struct _pf_t
 pf_t * pf_alloc(
   int min_samples, int max_samples,
   double alpha_slow, double alpha_fast,
-  pf_init_model_fn_t random_pose_fn, void * random_pose_data);
+  pf_init_model_fn_t random_pose_fn, void * random_pose_data, double k_l);
 
 // Free an existing filter
 void pf_free(pf_t * pf);
