@@ -53,13 +53,13 @@ Detailed configuration parameters, their description and how to setup a Collisio
 ## Metrics
 
 Designed to be used in wide variety of robots (incl. moving fast) and have a high level of reliability, Collision Monitor node should operate at fast rates.
-Typical one frame processing time is ~4-5ms for laser scanner (with 360 points) and ~4-80ms for PointClouds (having 24K points).
+Typical one frame processing time is ~4-5ms for laser scanner (with 360 points) and ~4-20ms for PointClouds (having 24K points).
 The table below represents the details of operating times for different behavior models and shapes:
 
 | | Stop/Slowdown model, Polygon area | Stop/Slowdown model, Circle area | Approach model, Polygon footprint | Approach model, Circle footprint |
 |-|-----------------------------------|----------------------------------|-----------------------------------|----------------------------------|
-| LaserScan (360 points) processing time, ms  | 4.09 | 4.08 | 4.98  | 4.29  |
-| PointCloud (24K points) processing time, ms | 4.13 | 3.76 | 77.92 | 11.43 |
+| LaserScan (360 points) processing time, ms  | 4.45 | 4.45 | 4.93  | 4.86  |
+| PointCloud (24K points) processing time, ms | 4.94 | 4.06 | 20.67 | 10.87 |
 
 The following notes could be made:
 

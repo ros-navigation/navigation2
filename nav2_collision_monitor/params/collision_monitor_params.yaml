@@ -34,7 +34,7 @@ collision_monitor:
       action_type: "approach"
       footprint_topic: "/local_costmap/published_footprint"
       time_before_collision: 2.0
-      simulation_time_step: 0.02
+      simulation_time_step: 0.1
       max_points: 5
       visualize: False
     observation_sources: ["scan"]

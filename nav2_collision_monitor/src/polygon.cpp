@@ -255,7 +255,7 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
       time_before_collision_ =
         node->get_parameter(polygon_name_ + ".time_before_collision").as_double();
       nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".simulation_time_step", rclcpp::ParameterValue(0.02));
+        node, polygon_name_ + ".simulation_time_step", rclcpp::ParameterValue(0.1));
       simulation_time_step_ =
         node->get_parameter(polygon_name_ + ".simulation_time_step").as_double();
     }
