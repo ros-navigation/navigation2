@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BT_NAVIGATOR__PLUGINS__NAVIGATE_THROUGH_POSES_HPP_
-#define NAV2_BT_NAVIGATOR__PLUGINS__NAVIGATE_THROUGH_POSES_HPP_
+#ifndef NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_THROUGH_POSES_HPP_
+#define NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_THROUGH_POSES_HPP_
 
 #include <string>
 #include <vector>
@@ -21,7 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_bt_navigator/pose_navigator.hpp"
+#include "nav2_bt_navigator/bt_navigator.hpp"
 #include "nav2_msgs/action/navigate_through_poses.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -36,7 +36,7 @@ namespace nav2_bt_navigator
  * @brief A navigator for navigating to a bunch of intermediary poses
  */
 class NavigateThroughPosesNavigator
-  : public nav2_bt_navigator::PoseNavigator<nav2_msgs::action::NavigateThroughPoses>
+  : public nav2_bt_navigator::BTNavigator<nav2_msgs::action::NavigateThroughPoses>
 {
 public:
   using ActionT = nav2_msgs::action::NavigateThroughPoses;
@@ -46,14 +46,7 @@ public:
    * @brief A constructor for NavigateThroughPosesNavigator
    */
   NavigateThroughPosesNavigator()
-  : PoseNavigator() {}
-
-protected:
-  /**
-   * @brief A configure state transition to configure navigator's state
-   * @param node Weakptr to the lifecycle node
-   */
-  bool onConfigure(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
+  : BTNavigator() {}
 
   /**
    * @brief Get action name for this navigator
@@ -68,6 +61,7 @@ protected:
    */
   std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
 
+protected:
   /**
    * @brief A callback to be called when a new goal is received by the BT action server
    * Can be used to check if goal is valid and put values on
@@ -104,14 +98,23 @@ protected:
    */
   void initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal);
 
+  /**
+   * @brief A configure state transition to configure navigator's state
+   * @param node Weakptr to the lifecycle node
+   */
+  bool onConfigure(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
+
+  bool onActivate() override;
+
+  bool onDeactivate() override;
+
+  bool onCleanup() override;
+
   rclcpp::Time start_time_;
   std::string goals_blackboard_id_;
   std::string path_blackboard_id_;
-
-  // Odometry smoother object
-  std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 };
 
 }  // namespace nav2_bt_navigator
 
-#endif  // NAV2_BT_NAVIGATOR__PLUGINS__NAVIGATE_THROUGH_POSES_HPP_
+#endif  // NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_THROUGH_POSES_HPP_

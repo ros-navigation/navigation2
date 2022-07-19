@@ -21,34 +21,6 @@
 
 namespace nav2_bt_navigator
 {
-
-bool
-NavigateToPoseNavigator::onConfigure(rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node)
-{
-  start_time_ = rclcpp::Time(0);
-  auto node = parent_node.lock();
-
-  if (!node->has_parameter("goal_blackboard_id")) {
-    node->declare_parameter("goal_blackboard_id", std::string("goal"));
-  }
-
-  goal_blackboard_id_ = node->get_parameter("goal_blackboard_id").as_string();
-
-  if (!node->has_parameter("path_blackboard_id")) {
-    node->declare_parameter("path_blackboard_id", std::string("path"));
-  }
-
-  path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
-
-  self_client_ = rclcpp_action::create_client<ActionT>(node, getName());
-
-  goal_sub_ = node->create_subscription<geometry_msgs::msg::PoseStamped>(
-    "goal_pose",
-    rclcpp::SystemDefaultsQoS(),
-    std::bind(&NavigateToPoseNavigator::onGoalPoseReceived, this, std::placeholders::_1));
-  return true;
-}
-
 std::string
 NavigateToPoseNavigator::getDefaultBTFilepath(
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node)
@@ -68,14 +40,6 @@ NavigateToPoseNavigator::getDefaultBTFilepath(
   node->get_parameter("default_nav_to_pose_bt_xml", default_bt_xml_filename);
 
   return default_bt_xml_filename;
-}
-
-bool
-NavigateToPoseNavigator::cleanup()
-{
-  goal_sub_.reset();
-  self_client_.reset();
-  return true;
 }
 
 bool
@@ -218,6 +182,53 @@ NavigateToPoseNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStampe
   ActionT::Goal goal;
   goal.pose = *pose;
   self_client_->async_send_goal(goal);
+}
+
+bool
+NavigateToPoseNavigator::onConfigure(rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node)
+{
+  start_time_ = rclcpp::Time(0);
+  auto node = parent_node.lock();
+
+  if (!node->has_parameter("goal_blackboard_id")) {
+    node->declare_parameter("goal_blackboard_id", std::string("goal"));
+  }
+
+  goal_blackboard_id_ = node->get_parameter("goal_blackboard_id").as_string();
+
+  if (!node->has_parameter("path_blackboard_id")) {
+    node->declare_parameter("path_blackboard_id", std::string("path"));
+  }
+
+  path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
+
+  self_client_ = rclcpp_action::create_client<ActionT>(node, getName());
+
+  goal_sub_ = node->create_subscription<geometry_msgs::msg::PoseStamped>(
+    "goal_pose",
+    rclcpp::SystemDefaultsQoS(),
+    std::bind(&NavigateToPoseNavigator::onGoalPoseReceived, this, std::placeholders::_1));
+  return true;
+}
+
+bool
+NavigateToPoseNavigator::onActivate()
+{
+  return true;
+}
+
+bool
+NavigateToPoseNavigator::onDeactivate()
+{
+  return true;
+}
+
+bool
+NavigateToPoseNavigator::onCleanup()
+{
+  goal_sub_.reset();
+  self_client_.reset();
+  return true;
 }
 
 }  // namespace nav2_bt_navigator

@@ -120,7 +120,7 @@ public:
     const FeedbackUtils & feedback_utils,
     nav2_core::NavigatorMuxer * plugin_muxer,
     std::shared_ptr<nav2_util::OdomSmoother> odom_smoother) = 0;
-  
+
   /**
    * @brief Activation of the navigator's backend BT and actions
    * @return true If success

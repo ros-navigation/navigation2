@@ -24,7 +24,7 @@ include_directories(
   include
 )
 
-set(executable_name bt_navigator)
+set(executable_name navigator_server)
 
 add_executable(${executable_name}
   src/main.cpp
@@ -50,7 +50,7 @@ set(dependencies
 )
 
 add_library(${library_name} SHARED
-  src/bt_navigator.cpp
+  src/navigator_server.cpp
 )
 
 ament_target_dependencies(${executable_name}
@@ -78,7 +78,7 @@ foreach(plugin ${plugin_libs})
 endforeach()
 
 
-rclcpp_components_register_nodes(${library_name} "nav2_bt_navigator::BtNavigator")
+rclcpp_components_register_nodes(${library_name} "nav2_bt_navigator::NavigatorServer")
 
 install(TARGETS ${library_name} ${plugin_libs}
   ARCHIVE DESTINATION lib

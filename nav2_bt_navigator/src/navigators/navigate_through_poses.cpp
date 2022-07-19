@@ -21,28 +21,6 @@
 
 namespace nav2_bt_navigator
 {
-
-bool
-NavigateThroughPosesNavigator::onConfigure(rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node)
-{
-  start_time_ = rclcpp::Time(0);
-  auto node = parent_node.lock();
-
-  if (!node->has_parameter("goals_blackboard_id")) {
-    node->declare_parameter("goals_blackboard_id", std::string("goals"));
-  }
-
-  goals_blackboard_id_ = node->get_parameter("goals_blackboard_id").as_string();
-
-  if (!node->has_parameter("path_blackboard_id")) {
-    node->declare_parameter("path_blackboard_id", std::string("path"));
-  }
-
-  path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
-
-  return true;
-}
-
 std::string
 NavigateThroughPosesNavigator::getDefaultBTFilepath(
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node)
@@ -209,6 +187,45 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
 
   // Update the goal pose on the blackboard
   blackboard->set<Goals>(goals_blackboard_id_, goal->poses);
+}
+
+bool
+NavigateThroughPosesNavigator::onConfigure(rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node)
+{
+  start_time_ = rclcpp::Time(0);
+  auto node = parent_node.lock();
+
+  if (!node->has_parameter("goals_blackboard_id")) {
+    node->declare_parameter("goals_blackboard_id", std::string("goals"));
+  }
+
+  goals_blackboard_id_ = node->get_parameter("goals_blackboard_id").as_string();
+
+  if (!node->has_parameter("path_blackboard_id")) {
+    node->declare_parameter("path_blackboard_id", std::string("path"));
+  }
+
+  path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
+
+  return true;
+}
+
+bool
+NavigateThroughPosesNavigator::onActivate()
+{
+  return true;
+}
+
+bool
+NavigateThroughPosesNavigator::onDeactivate()
+{
+  return true;
+}
+
+bool
+NavigateThroughPosesNavigator::onCleanup()
+{
+  return true;
 }
 
 }  // namespace nav2_bt_navigator

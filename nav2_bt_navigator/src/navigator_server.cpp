@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_bt_navigator/bt_navigator.hpp"
+#include "nav2_bt_navigator/navigator_server.hpp"
 
 #include <memory>
 #include <string>
@@ -29,8 +29,8 @@
 namespace nav2_bt_navigator
 {
 
-BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("bt_navigator", "", options),
+NavigatorServer::NavigatorServer(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("navigator_server", "", options),
   navigator_class_loader_("nav2_core", "nav2_core::Navigator")
 {
   RCLCPP_INFO(get_logger(), "Creating");
@@ -80,7 +80,7 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_back_up_cancel_bt_node"
     "nav2_drive_on_heading_cancel_bt_node"
   };
-  
+
   declare_parameter("plugin_lib_names", plugin_libs);
 
   // Navigator default plugin params
@@ -107,15 +107,14 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
   declare_parameter("odom_topic", std::string("odom"));
-
 }
 
-BtNavigator::~BtNavigator()
+NavigatorServer::~NavigatorServer()
 {
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
+NavigatorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -137,7 +136,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Odometry smoother object for getting current speed
   odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(shared_from_this(), 0.3, odom_topic_);
 
-  if(!loadNavigatorPlugins(plugin_lib_names)){
+  if (!loadNavigatorPlugins(plugin_lib_names)) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -145,12 +144,12 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
+NavigatorServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
   // activate all plugin
-  for(size_t i = 0; i < navigators_.size(); i++){
-    if(!navigators_[i]->activate()){
+  for (size_t i = 0; i < navigators_.size(); i++) {
+    if (!navigators_[i]->activate()) {
       return nav2_util::CallbackReturn::FAILURE;
     }
   }
@@ -162,12 +161,12 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+NavigatorServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  for(size_t i = 0; i < navigators_.size(); i++){
-    if(!navigators_[i]->deactivate()){
+  for (size_t i = 0; i < navigators_.size(); i++) {
+    if (!navigators_[i]->deactivate()) {
       return nav2_util::CallbackReturn::FAILURE;
     }
   }
@@ -179,7 +178,7 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+NavigatorServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -187,8 +186,8 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_.reset();
   tf_.reset();
 
-  for(size_t i = 0; i < navigators_.size(); i++){
-    if(!navigators_[i]->cleanup()){
+  for (size_t i = 0; i < navigators_.size(); i++) {
+    if (!navigators_[i]->cleanup()) {
       return nav2_util::CallbackReturn::FAILURE;
     }
   }
@@ -200,14 +199,14 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
+NavigatorServer::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-bool 
-BtNavigator::loadNavigatorPlugins(std::vector<std::string> plugin_names)
+bool
+NavigatorServer::loadNavigatorPlugins(std::vector<std::string> plugin_names)
 {
   std::vector<std::string> navigator_ids;
   get_parameter("navigators", navigator_ids);
@@ -227,7 +226,13 @@ BtNavigator::loadNavigatorPlugins(std::vector<std::string> plugin_names)
         get_logger(), "Creating navigator id %s of type %s",
         navigator_ids[i].c_str(), navigator_type.c_str());
       navigators_.push_back(navigator_class_loader_.createUniqueInstance(navigator_type));
-      if(!navigators_.back()->configure(weak_from_this(), plugin_names, feedback_utils, &plugin_muxer_, odom_smoother_)){
+      if (!navigators_.back()->configure(
+          weak_from_this(),
+          plugin_names,
+          feedback_utils,
+          &plugin_muxer_,
+          odom_smoother_))
+      {
         return false;
       }
     } catch (const pluginlib::PluginlibException & ex) {
@@ -249,4 +254,4 @@ BtNavigator::loadNavigatorPlugins(std::vector<std::string> plugin_names)
 // Register the component with class_loader.
 // This acts as a sort of entry point, allowing the component to be discoverable when its library
 // is being loaded into a running process.
-RCLCPP_COMPONENTS_REGISTER_NODE(nav2_bt_navigator::BtNavigator)
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_bt_navigator::NavigatorServer)

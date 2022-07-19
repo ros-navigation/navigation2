@@ -42,7 +42,7 @@ def generate_launch_description():
                        'smoother_server',
                        'planner_server',
                        'behavior_server',
-                       'bt_navigator',
+                       'navigator_server',
                        'waypoint_follower']
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
@@ -139,8 +139,8 @@ def generate_launch_description():
                 remappings=remappings),
             Node(
                 package='nav2_bt_navigator',
-                executable='bt_navigator',
-                name='bt_navigator',
+                executable='navigator_server',
+                name='navigator_server',
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
@@ -196,8 +196,8 @@ def generate_launch_description():
                 remappings=remappings),
             ComposableNode(
                 package='nav2_bt_navigator',
-                plugin='nav2_bt_navigator::BtNavigator',
-                name='bt_navigator',
+                plugin='nav2_bt_navigator::NavigatorServer',
+                name='navigator_server',
                 parameters=[configured_params],
                 remappings=remappings),
             ComposableNode(

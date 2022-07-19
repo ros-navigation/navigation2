@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BT_NAVIGATOR__PLUGINS__NAVIGATE_TO_POSE_HPP_
-#define NAV2_BT_NAVIGATOR__PLUGINS__NAVIGATE_TO_POSE_HPP_
+#ifndef NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_TO_POSE_HPP_
+#define NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_TO_POSE_HPP_
 
 #include <string>
 #include <vector>
@@ -21,7 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_bt_navigator/pose_navigator.hpp"
+#include "nav2_bt_navigator/bt_navigator.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -36,7 +36,7 @@ namespace nav2_bt_navigator
  * @brief A navigator for navigating to a specified pose
  */
 class NavigateToPoseNavigator
-  : public nav2_bt_navigator::PoseNavigator<nav2_msgs::action::NavigateToPose>
+  : public nav2_bt_navigator::BTNavigator<nav2_msgs::action::NavigateToPose>
 {
 public:
   using ActionT = nav2_msgs::action::NavigateToPose;
@@ -45,26 +45,7 @@ public:
    * @brief A constructor for NavigateToPoseNavigator
    */
   NavigateToPoseNavigator()
-  : PoseNavigator() {}
-
-protected:
-  /**
-   * @brief A configure state transition to configure navigator's state
-   * @param node Weakptr to the lifecycle node
-   */
-  bool onConfigure(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
-
-  /**
-   * @brief A cleanup state transition to remove memory allocated
-   */
-  bool cleanup() override;
-
-  /**
-   * @brief A subscription and callback to handle the topic-based goal published
-   * from rviz
-   * @param pose Pose received via atopic
-   */
-  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
+  : BTNavigator() {}
 
   /**
    * @brief Get action name for this navigator
@@ -78,6 +59,14 @@ protected:
    * @return string Filepath to default XML
    */
   std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
+
+protected:
+  /**
+   * @brief A subscription and callback to handle the topic-based goal published
+   * from rviz
+   * @param pose Pose received via atopic
+   */
+  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
 
   /**
    * @brief A callback to be called when a new goal is received by the BT action server
@@ -116,6 +105,18 @@ protected:
    */
   void initializeGoalPose(ActionT::Goal::ConstSharedPtr goal);
 
+  /**
+   * @brief A configure state transition to configure navigator's state
+   * @param node Weakptr to the lifecycle node
+   */
+  bool onConfigure(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
+
+  bool onActivate() override;
+
+  bool onDeactivate() override;
+
+  bool onCleanup() override;
+
   rclcpp::Time start_time_;
 
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
@@ -127,4 +128,4 @@ protected:
 
 }  // namespace nav2_bt_navigator
 
-#endif  // NAV2_BT_NAVIGATOR__PLUGINS__NAVIGATE_TO_POSE_HPP_
+#endif  // NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_TO_POSE_HPP_
