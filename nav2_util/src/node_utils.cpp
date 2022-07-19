@@ -89,13 +89,4 @@ rclcpp::Node::SharedPtr generate_internal_node(const std::string & prefix)
   return rclcpp::Node::make_shared("_", options);
 }
 
-rclcpp::NodeOptions
-get_node_options_default(bool allow_undeclared, bool declare_initial_params)
-{
-  rclcpp::NodeOptions options;
-  options.allow_undeclared_parameters(allow_undeclared);
-  options.automatically_declare_parameters_from_overrides(declare_initial_params);
-  return options;
-}
-
 }  // namespace nav2_util

@@ -24,6 +24,8 @@
 #include "nav2_map_server/map_server.hpp"
 #include "nav2_util/lifecycle_service_client.hpp"
 #include "nav2_msgs/srv/load_map.hpp"
+using namespace std::chrono_literals;
+using namespace rclcpp;  // NOLINT
 
 #define TEST_DIR TEST_DIRECTORY
 
@@ -190,4 +192,46 @@ TEST_F(MapServerTestFixture, LoadMapInvalidImage)
   auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
 
   ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_INVALID_MAP_DATA);
+}
+
+/**
+ * Test behaviour of server if yaml_filename is set to an empty string.
+ */
+TEST_F(MapServerTestFixture, NoInitialMap)
+{
+  // turn off node into unconfigured state
+  lifecycle_client_->change_state(Transition::TRANSITION_DEACTIVATE);
+  lifecycle_client_->change_state(Transition::TRANSITION_CLEANUP);
+
+  auto client = node_->create_client<nav_msgs::srv::GetMap>("/map_server/map");
+  auto req = std::make_shared<nav_msgs::srv::GetMap::Request>();
+
+  auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(node_, "map_server");
+  ASSERT_TRUE(parameters_client->wait_for_service(3s));
+
+  // set yaml_filename-parameter to empty string (essentially restart the node)
+  RCLCPP_INFO(node_->get_logger(), "Removing yaml_filename-parameter before restarting");
+  parameters_client->set_parameters({Parameter("yaml_filename", ParameterValue(""))});
+
+  // only configure node, to test behaviour of service while node is not active
+  lifecycle_client_->change_state(Transition::TRANSITION_CONFIGURE, 3s);
+
+  RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service while not being active");
+  auto load_map_req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
+  auto load_map_cl = node_->create_client<nav2_msgs::srv::LoadMap>("/map_server/load_map");
+
+  ASSERT_TRUE(load_map_cl->wait_for_service(3s));
+  auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, load_map_cl, load_map_req);
+
+  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_UNDEFINED_FAILURE);
+
+  // activate server and load map:
+  lifecycle_client_->change_state(Transition::TRANSITION_ACTIVATE, 3s);
+  RCLCPP_INFO(node_->get_logger(), "active again");
+
+  load_map_req->map_url = path(TEST_DIR) / path(g_valid_yaml_file);
+  auto load_res = send_request<nav2_msgs::srv::LoadMap>(node_, load_map_cl, load_map_req);
+
+  ASSERT_EQ(load_res->result, nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS);
+  verifyMapMsg(load_res->map);
 }

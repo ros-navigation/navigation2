@@ -254,5 +254,8 @@
       <input_port name="length_factor">Length multiplication factor to check if the path is significantly longer </input_port>
     </Decorator>
 
+    <Decorator ID="GoalUpdatedController">
+    </Decorator>
+
   </TreeNodesModel>
 </root>

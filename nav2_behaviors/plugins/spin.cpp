@@ -13,19 +13,13 @@
 // limitations under the License.
 
 #include <cmath>
-#include <chrono>
-#include <ctime>
 #include <thread>
 #include <algorithm>
 #include <memory>
 #include <utility>
 
 #include "spin.hpp"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
-#pragma GCC diagnostic pop
-#include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_util/node_utils.hpp"
 
@@ -37,13 +31,17 @@ namespace nav2_behaviors
 Spin::Spin()
 : TimedBehavior<SpinAction>(),
   feedback_(std::make_shared<SpinAction::Feedback>()),
-  prev_yaw_(0.0)
+  min_rotational_vel_(0.0),
+  max_rotational_vel_(0.0),
+  rotational_acc_lim_(0.0),
+  cmd_yaw_(0.0),
+  prev_yaw_(0.0),
+  relative_yaw_(0.0),
+  simulate_ahead_time_(0.0)
 {
 }
 
-Spin::~Spin()
-{
-}
+Spin::~Spin() = default;
 
 void Spin::onConfigure()
 {
@@ -128,7 +126,7 @@ Status Spin::onCycleUpdate()
   relative_yaw_ += delta_yaw;
   prev_yaw_ = current_yaw;
 
-  feedback_->angular_distance_traveled = relative_yaw_;
+  feedback_->angular_distance_traveled = static_cast<float>(relative_yaw_);
   action_server_->publish_feedback(feedback_);
 
   double remaining_yaw = abs(cmd_yaw_) - abs(relative_yaw_);
