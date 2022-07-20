@@ -36,7 +36,7 @@ namespace nav2_collision_monitor
 
 /**
  * @brief Basic polygon shape class.
- * For STOP/SLOWDOWN model it represents safety area around the robot
+ * For STOP/SLOWDOWN model it represents zone around the robot
  * while for APPROACH model it represents robot footprint.
  */
 class Polygon

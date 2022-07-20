@@ -22,7 +22,7 @@ namespace nav2_collision_monitor
 
 /**
  * @brief Circle shape implementaiton.
- * For STOP/SLOWDOWN model it represents safety area around the robot
+ * For STOP/SLOWDOWN model it represents zone around the robot
  * while for APPROACH model it represents robot footprint.
  */
 class Circle : public Polygon
