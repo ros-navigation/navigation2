@@ -148,7 +148,7 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
     load_parameters.mode = MapMode::Trinary;
   } else {
     load_parameters.mode = map_mode_from_string(map_mode_node.as<std::string>());
-  }
+  }f
 
   try {
     load_parameters.negate = yaml_get_value<int>(doc, "negate");
@@ -506,7 +506,7 @@ void tryWriteMapToFile(
     mat.getEulerYPR(yaw, pitch, roll);
     
     int file_name_index = mapdatafile.find_last_of("/\\");
-    string image_name = mapdatafile.substr(file_name_index + 1);
+    std::string image_name = mapdatafile.substr(file_name_index + 1);
 
     YAML::Emitter e;
     e << YAML::Precision(3);
