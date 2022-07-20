@@ -50,7 +50,7 @@ TEST(Node2DTest, test_node_2d)
   info.cost_penalty = 1.0;
   unsigned int size = 10;
   nav2_smac_planner::Node2D::initMotionModel(
-    nav2_smac_planner::MotionModel::MOORE, size, size, size, info);
+    nav2_smac_planner::MotionModel::TWOD, size, size, size, info);
 
   // test reset
   testA.reset();
@@ -68,7 +68,7 @@ TEST(Node2DTest, test_node_2d)
   // check heuristic cost computation
   nav2_smac_planner::Node2D::Coordinates A(0.0, 0.0);
   nav2_smac_planner::Node2D::Coordinates B(10.0, 5.0);
-  EXPECT_NEAR(testB.getHeuristicCost(A, B, nullptr), 15., 0.01);
+  EXPECT_NEAR(testB.getHeuristicCost(A, B, nullptr), 11.18, 0.02);
 
   // check operator== works on index
   unsigned char costC = '2';
@@ -106,18 +106,9 @@ TEST(Node2DTest, test_node_2d_neighbors)
   unsigned int size_y = 10u;
   unsigned int quant = 0u;
   // test neighborhood computation
-  nav2_smac_planner::Node2D::initMotionModel(
-    nav2_smac_planner::MotionModel::VON_NEUMANN, size_x,
-    size_y, quant, info);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets.size(), 4u);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[0], -1);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[1], 1);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[2], -10);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[3], 10);
-
   size_x = 100u;
   nav2_smac_planner::Node2D::initMotionModel(
-    nav2_smac_planner::MotionModel::MOORE, size_x, size_y,
+    nav2_smac_planner::MotionModel::TWOD, size_x, size_y,
     quant, info);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets.size(), 8u);
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[0], -1);
