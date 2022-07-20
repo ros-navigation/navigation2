@@ -39,7 +39,7 @@ amcl:
     z_short: 0.05
     scan_topic: scan
 
-navigator_server:
+bt_navigator:
   ros__parameters:
     use_sim_time: True
     global_frame: map

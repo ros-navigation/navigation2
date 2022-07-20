@@ -42,7 +42,7 @@ def generate_launch_description():
                        'smoother_server',
                        'planner_server',
                        'behavior_server',
-                       'navigator_server',
+                       'bt_navigator',
                        'waypoint_follower',
                        'velocity_smoother']
 
@@ -140,8 +140,8 @@ def generate_launch_description():
                 remappings=remappings),
             Node(
                 package='nav2_bt_navigator',
-                executable='navigator_server',
-                name='navigator_server',
+                executable='bt_navigator',
+                name='bt_navigator',
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
@@ -207,8 +207,8 @@ def generate_launch_description():
                 remappings=remappings),
             ComposableNode(
                 package='nav2_bt_navigator',
-                plugin='nav2_bt_navigator::NavigatorServer',
-                name='navigator_server',
+                plugin='nav2_bt_navigator::BtNavigator',
+                name='bt_navigator',
                 parameters=[configured_params],
                 remappings=remappings),
             ComposableNode(

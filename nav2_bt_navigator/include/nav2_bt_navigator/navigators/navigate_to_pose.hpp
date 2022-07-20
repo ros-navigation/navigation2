@@ -21,7 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_bt_navigator/bt_navigator.hpp"
+#include "nav2_bt_navigator/bt_action_navigator.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -36,7 +36,7 @@ namespace nav2_bt_navigator
  * @brief A navigator for navigating to a specified pose
  */
 class NavigateToPoseNavigator
-  : public nav2_bt_navigator::BTNavigator<nav2_msgs::action::NavigateToPose>
+  : public nav2_bt_navigator::BtActionNavigator<nav2_msgs::action::NavigateToPose>
 {
 public:
   using ActionT = nav2_msgs::action::NavigateToPose;
@@ -45,7 +45,7 @@ public:
    * @brief A constructor for NavigateToPoseNavigator
    */
   NavigateToPoseNavigator()
-  : BTNavigator() {}
+  : BtActionNavigator() {}
 
   /**
    * @brief Get action name for this navigator
