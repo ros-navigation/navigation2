@@ -8,7 +8,7 @@
  * modification, are permitted provided that the following conditions are met:
  *
  *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
+ *       notice, this list of conditions and the following disclaimer.151
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
@@ -148,7 +148,7 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
     load_parameters.mode = MapMode::Trinary;
   } else {
     load_parameters.mode = map_mode_from_string(map_mode_node.as<std::string>());
-  }f
+  }
 
   try {
     load_parameters.negate = yaml_get_value<int>(doc, "negate");
