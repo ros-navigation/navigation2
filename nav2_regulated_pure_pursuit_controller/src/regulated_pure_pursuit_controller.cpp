@@ -80,6 +80,9 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".min_approach_linear_velocity", rclcpp::ParameterValue(0.05));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".approach_velocity_scaling_dist",
+    rclcpp::ParameterValue(0.6));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
     rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
@@ -128,6 +131,14 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(
     plugin_name_ + ".min_approach_linear_velocity",
     min_approach_linear_velocity_);
+  node->get_parameter(
+    plugin_name_ + ".approach_velocity_scaling_dist",
+    approach_velocity_scaling_dist_);
+  if (approach_velocity_scaling_dist_ > costmap_->getSizeInMetersX() / 2.0) {
+    RCLCPP_WARN(
+      logger_, "approach_velocity_scaling_dist is larger than forward costmap extent, "
+      "leading to permanent slowdown");
+  }
   node->get_parameter(
     plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
     max_allowed_time_to_collision_up_to_carrot_);
@@ -325,9 +336,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     rotateToHeading(linear_vel, angular_vel, angle_to_heading, speed);
   } else {
     applyConstraints(
-      fabs(lookahead_dist - sqrt(carrot_dist2)),
-      lookahead_dist, curvature, speed,
-      costAtPose(pose.pose.position.x, pose.pose.position.y), linear_vel, sign);
+      curvature, speed,
+      costAtPose(pose.pose.position.x, pose.pose.position.y), transformed_plan,
+      linear_vel, sign);
 
     // Apply curvature to angular velocity after constraining linear velocity
     angular_vel = sign * linear_vel * curvature;
@@ -571,14 +582,48 @@ double RegulatedPurePursuitController::costAtPose(const double & x, const double
   return static_cast<double>(cost);
 }
 
+double RegulatedPurePursuitController::approachVelocityScalingFactor(
+  const nav_msgs::msg::Path & transformed_path
+) const
+{
+  // Waiting to apply the threshold based on integrated distance ensures we don't
+  // erroneously apply approach scaling on curvy paths that are contained in a large local costmap.
+  double remaining_distance = nav2_util::geometry_utils::calculate_path_length(transformed_path);
+  if (remaining_distance < approach_velocity_scaling_dist_) {
+    auto & last = transformed_path.poses.back();
+    // Here we will use a regular euclidean distance from the robot frame (origin)
+    // to get smooth scaling, regardless of path density.
+    double distance_to_last_pose = std::hypot(last.pose.position.x, last.pose.position.y);
+    return distance_to_last_pose / approach_velocity_scaling_dist_;
+  } else {
+    return 1.0;
+  }
+}
+
+void RegulatedPurePursuitController::applyApproachVelocityScaling(
+  const nav_msgs::msg::Path & path,
+  double & linear_vel
+) const
+{
+  double approach_vel = linear_vel;
+  double velocity_scaling = approachVelocityScalingFactor(path);
+  double unbounded_vel = approach_vel * velocity_scaling;
+  if (unbounded_vel < min_approach_linear_velocity_) {
+    approach_vel = min_approach_linear_velocity_;
+  } else {
+    approach_vel *= velocity_scaling;
+  }
+
+  // Use the lowest velocity between approach and other constraints, if all overlapping
+  linear_vel = std::min(linear_vel, approach_vel);
+}
+
 void RegulatedPurePursuitController::applyConstraints(
-  const double & dist_error, const double & lookahead_dist,
   const double & curvature, const geometry_msgs::msg::Twist & /*curr_speed*/,
-  const double & pose_cost, double & linear_vel, double & sign)
+  const double & pose_cost, const nav_msgs::msg::Path & path, double & linear_vel, double & sign)
 {
   double curvature_vel = linear_vel;
   double cost_vel = linear_vel;
-  double approach_vel = linear_vel;
 
   // limit the linear velocity by curvature
   const double radius = fabs(1.0 / curvature);
@@ -605,23 +650,7 @@ void RegulatedPurePursuitController::applyConstraints(
   linear_vel = std::min(cost_vel, curvature_vel);
   linear_vel = std::max(linear_vel, regulated_linear_scaling_min_speed_);
 
-  // if the actual lookahead distance is shorter than requested, that means we're at the
-  // end of the path. We'll scale linear velocity by error to slow to a smooth stop.
-  // This expression is eq. to (1) holding time to goal, t, constant using the theoretical
-  // lookahead distance and proposed velocity and (2) using t with the actual lookahead
-  // distance to scale the velocity (e.g. t = lookahead / velocity, v = carrot / t).
-  if (dist_error > 2.0 * costmap_->getResolution()) {
-    double velocity_scaling = 1.0 - (dist_error / lookahead_dist);
-    double unbounded_vel = approach_vel * velocity_scaling;
-    if (unbounded_vel < min_approach_linear_velocity_) {
-      approach_vel = min_approach_linear_velocity_;
-    } else {
-      approach_vel *= velocity_scaling;
-    }
-
-    // Use the lowest velocity between approach and other constraints, if all overlapping
-    linear_vel = std::min(linear_vel, approach_vel);
-  }
+  applyApproachVelocityScaling(path, linear_vel);
 
   // Limit linear velocities to be valid
   linear_vel = std::clamp(fabs(linear_vel), 0.0, desired_linear_vel_);
