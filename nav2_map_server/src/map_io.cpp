@@ -505,7 +505,7 @@ void tryWriteMapToFile(
     double yaw, pitch, roll;
     mat.getEulerYPR(yaw, pitch, roll);
     
-    int file_name_index = mapdatafile.find_last_of("/\\");
+    const int file_name_index = mapdatafile.find_last_of("/\\");
     std::string image_name = mapdatafile.substr(file_name_index + 1);
 
     YAML::Emitter e;
