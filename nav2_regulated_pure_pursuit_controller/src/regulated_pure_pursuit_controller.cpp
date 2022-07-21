@@ -583,12 +583,18 @@ double RegulatedPurePursuitController::costAtPose(const double & x, const double
 }
 
 double RegulatedPurePursuitController::approachVelocityScalingFactor(
-  const nav_msgs::msg::Path & path
+  const nav_msgs::msg::Path & transformed_path
 ) const
 {
-  double remaining_distance = nav2_util::geometry_utils::calculate_path_length(path);
+  // Waiting to apply the threshold based on integrated distance ensures we don't
+  // erroneously apply approach scaling on curvy paths that are contained in a large local costmap.
+  double remaining_distance = nav2_util::geometry_utils::calculate_path_length(transformed_path);
   if (remaining_distance < approach_velocity_scaling_dist_) {
-    return remaining_distance / approach_velocity_scaling_dist_;
+    auto & last = transformed_path.poses.back();
+    // Here we will use a regular euclidean distance from the robot frame (origin)
+    // to get smooth scaling, regardless of path density.
+    double distance_to_last_pose = std::hypot(last.pose.position.x, last.pose.position.y);
+    return distance_to_last_pose / approach_velocity_scaling_dist_;
   } else {
     return 1.0;
   }
