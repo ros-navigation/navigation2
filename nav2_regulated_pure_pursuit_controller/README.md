@@ -61,7 +61,6 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 | `transform_tolerance` | The TF transform tolerance | 
 | `use_velocity_scaled_lookahead_dist` | Whether to use the velocity scaled lookahead distances or constant `lookahead_distance` | 
 | `min_approach_linear_velocity` | The minimum velocity threshold to apply when approaching the goal | 
-| `use_approach_linear_velocity_scaling` | Whether to scale the linear velocity down on approach to the goal for a smooth stop | 
 | `approach_velocity_scaling_dist` | Integrated distance from end of transformed path at which to start applying velocity scaling. This defaults to the forward extent of the costmap minus one costmap cell length. | 
 | `max_allowed_time_to_collision_up_to_carrot` | The time to project a velocity command to check for collisions, limited to maximum distance of lookahead distance selected | 
 | `use_regulated_linear_velocity_scaling` | Whether to use the regulated features for curvature | 
