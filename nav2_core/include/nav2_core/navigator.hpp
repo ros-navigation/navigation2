@@ -107,8 +107,6 @@ protected:
 class Navigator
 {
 public:
-  RCLCPP_SMART_PTR_DEFINITIONS(Navigator)
-
   /**
    * @brief Virtual destructor
    */
