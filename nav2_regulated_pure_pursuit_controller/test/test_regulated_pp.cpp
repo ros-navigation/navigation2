@@ -468,7 +468,6 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   EXPECT_NEAR(ang_v, 0.84, 0.01);
 }
 
-// TODO(aposhian): fix this test for approach velocity scaling changes
 TEST(RegulatedPurePursuitTest, applyConstraints)
 {
   auto ctrl = std::make_shared<BasicAPIRPP>();
@@ -478,7 +477,19 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
+
+  constexpr double approach_velocity_scaling_dist = 0.6;
+  nav2_util::declare_parameter_if_not_declared(
+    node,
+    name + ".approach_velocity_scaling_dist",
+    rclcpp::ParameterValue(approach_velocity_scaling_dist));
+
   ctrl->configure(node, name, tf, costmap);
+
+  auto no_approach_path = path_utils::generate_path(
+    geometry_msgs::msg::PoseStamped(), 0.1, {
+    std::make_unique<path_utils::Straight>(approach_velocity_scaling_dist + 1.0)
+  });
 
   double curvature = 0.5;
   geometry_msgs::msg::Twist curr_speed;
@@ -489,7 +500,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   // test curvature regulation (default)
   curr_speed.linear.x = 0.25;
   ctrl->applyConstraintsWrapper(
-    curvature, curr_speed, pose_cost, nav_msgs::msg::Path(),
+    curvature, curr_speed, pose_cost, no_approach_path,
     linear_vel, sign);
   EXPECT_EQ(linear_vel, 0.25);  // min set speed
 
@@ -497,7 +508,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   curvature = 0.7407;
   curr_speed.linear.x = 0.5;
   ctrl->applyConstraintsWrapper(
-    curvature, curr_speed, pose_cost, nav_msgs::msg::Path(),
+    curvature, curr_speed, pose_cost, no_approach_path,
     linear_vel, sign);
   EXPECT_NEAR(linear_vel, 0.5, 0.01);  // lower by curvature
 
@@ -505,10 +516,23 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   curvature = 1000.0;
   curr_speed.linear.x = 0.25;
   ctrl->applyConstraintsWrapper(
-    curvature, curr_speed, pose_cost, nav_msgs::msg::Path(),
+    curvature, curr_speed, pose_cost, no_approach_path,
     linear_vel, sign);
   EXPECT_NEAR(linear_vel, 0.25, 0.01);  // min out by curvature
 
+  // Approach velocity scaling on a path with no distance left
+  auto approach_path = path_utils::generate_path(
+    geometry_msgs::msg::PoseStamped(), 0.1, {
+    std::make_unique<path_utils::Straight>(0.0)
+  });
+
+  linear_vel = 1.0;
+  curvature = 0.0;
+  curr_speed.linear.x = 0.25;
+  ctrl->applyConstraintsWrapper(
+    curvature, curr_speed, pose_cost, approach_path,
+    linear_vel, sign);
+  EXPECT_NEAR(linear_vel, 0.05, 0.01);  // min out on min approach velocity
 
   // now try with cost regulation (turn off velocity and only cost)
   // ctrl->setCostRegulationScaling();
