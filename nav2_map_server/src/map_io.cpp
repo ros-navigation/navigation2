@@ -504,11 +504,14 @@ void tryWriteMapToFile(
     tf2::Matrix3x3 mat(tf2::Quaternion(orientation.x, orientation.y, orientation.z, orientation.w));
     double yaw, pitch, roll;
     mat.getEulerYPR(yaw, pitch, roll);
+    
+    const int file_name_index = mapdatafile.find_last_of("/\\");
+    std::string image_name = mapdatafile.substr(file_name_index + 1);
 
     YAML::Emitter e;
     e << YAML::Precision(3);
     e << YAML::BeginMap;
-    e << YAML::Key << "image" << YAML::Value << mapdatafile;
+    e << YAML::Key << "image" << YAML::Value << image_name;
     e << YAML::Key << "mode" << YAML::Value << map_mode_to_string(save_parameters.mode);
     e << YAML::Key << "resolution" << YAML::Value << map.info.resolution;
     e << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq << map.info.origin.position.x <<
