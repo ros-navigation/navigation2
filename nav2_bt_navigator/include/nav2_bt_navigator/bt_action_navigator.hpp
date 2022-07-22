@@ -39,8 +39,6 @@ template<class ActionT>
 class BtActionNavigator : public nav2_core::Navigator
 {
 public:
-  using Ptr = std::shared_ptr<nav2_bt_navigator::BtActionNavigator<ActionT>>;
-
   /**
    * @brief A Navigator constructor
    */
