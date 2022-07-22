@@ -304,7 +304,7 @@ void loadGridMapFromFile(
   grid_map_msgs::msg::GridMap & msg_grid_map)
 {
   Magick::InitializeMagick(nullptr);
-  
+
   grid_map::GridMap grid_map_to_fill({"elevation", "occupancy"});
   grid_map_to_fill.setFrameId("map");
   // TODO(ivrolan): we need to add all these parameters in the yaml
@@ -356,8 +356,8 @@ void loadGridMapFromFile(
   }
 
   std::cout <<
-    "[DEBUG] [map_io]: Read map " << load_parameters.elevation_image_file_name << ": " << msg.info.width <<
-    " X " << msg.info.height << " map @ " << msg.info.resolution << " m/cell" << std::endl;
+    "[DEBUG] [map_io]: Read map " << load_parameters.elevation_image_file_name << ": " << img.size().width() <<
+    " X " << img.size().height() << " map @ " << load_parameters.resolution << " m/cell" << std::endl;
 
   msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
 }
@@ -456,16 +456,33 @@ LOAD_MAP_STATUS loadMapFromYaml(
 
       // the msg is not being saved idk why
       msg_grid_map = * grid_map::GridMapRosConverter::toMessage(empty_elevation,{"elevation"});
+      
+      
+      std::cout << "Layers of the msg: " << std::endl;
+
+      for (unsigned int i = 0; i < msg_grid_map.layers.size(); i++) {
+        std::cout << "\t - " << msg_grid_map.layers.at(i) << std::endl; 
+      }
     }
 
     grid_map::GridMap grid_map_to_fill;
+    std::cout << "Layers of the msg: " << std::endl;
 
-    std::cout << grid_map::GridMapRosConverter::fromMessage(msg_grid_map, grid_map_to_fill) << std::endl;
+      for (unsigned int i = 0; i < msg_grid_map.layers.size(); i++) {
+        std::cout << "\t - " << msg_grid_map.layers.at(i) << std::endl; 
+      }
+    
+    grid_map::GridMapRosConverter::fromMessage(msg_grid_map, grid_map_to_fill);
 
     // convert the occupation map to a layer in the grid_map
     grid_map::GridMapRosConverter::fromOccupancyGrid(map, "occupancy",grid_map_to_fill);
     
     msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
+    std::cout << "Layers of the msg: " << std::endl;
+
+      for (unsigned int i = 0; i < msg_grid_map.layers.size(); i++) {
+        std::cout << "\t - " << msg_grid_map.layers.at(i) << std::endl; 
+      }
   } catch (std::exception & e) {
     std::cerr <<
       "[ERROR] [map_io]: Failed to load elevation image file " << load_parameters.elevation_image_file_name <<
