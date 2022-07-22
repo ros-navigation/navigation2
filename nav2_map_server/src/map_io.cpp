@@ -304,8 +304,7 @@ void loadGridMapFromFile(
   grid_map_msgs::msg::GridMap & msg_grid_map)
 {
   Magick::InitializeMagick(nullptr);
-  // let's fill the occupancy grid and then create a layeer from this object
-  nav_msgs::msg::OccupancyGrid msg;
+  
   grid_map::GridMap grid_map_to_fill({"elevation", "occupancy"});
   grid_map_to_fill.setFrameId("map");
   // TODO(ivrolan): we need to add all these parameters in the yaml
@@ -350,23 +349,15 @@ void loadGridMapFromFile(
     double map_cell;
     // we suppose that the elevation uses the Scale mode
     // ignore the occupied and free threshold
-    map_cell = 
+    map_cell =
       occ * (load_parameters.max_height - load_parameters.min_height) + load_parameters.min_height;
 
     grid_map_to_fill.atPosition("elevation", current_pos) = map_cell;
   }
-  // Since loadMapFromFile() does not belong to any node, publishing in a system time.
-  rclcpp::Clock clock(RCL_SYSTEM_TIME);
-  msg.info.map_load_time = clock.now();
-  msg.header.frame_id = "map";
-  msg.header.stamp = clock.now();
 
   std::cout <<
     "[DEBUG] [map_io]: Read map " << load_parameters.elevation_image_file_name << ": " << msg.info.width <<
     " X " << msg.info.height << " map @ " << msg.info.resolution << " m/cell" << std::endl;
-
-
-  //grid_map::GridMapRosConverter::fromOccupancyGrid(msg, "elevation",grid_map_to_fill);
 
   msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
 }
