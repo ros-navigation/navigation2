@@ -166,7 +166,7 @@ public:
       auto timeout = remaining > bt_loop_duration_ ? bt_loop_duration_ : remaining;
 
       rclcpp::FutureReturnCode rc;
-      rc = callback_group_executor_.spin_until_future_complete(future_result_, server_timeout_);
+      rc = callback_group_executor_.spin_until_future_complete(future_result_, timeout);
       if (rc == rclcpp::FutureReturnCode::SUCCESS) {
         request_sent_ = false;
         BT::NodeStatus status = on_completion(future_result_.get());
