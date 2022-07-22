@@ -188,7 +188,7 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   std::cout << "[DEBUG] [map_io]: mode: " << map_mode_to_string(load_parameters.mode) << std::endl;
   std::cout << "[DEBUG] [map_io]: negate: " << load_parameters.negate << std::endl;  //NOLINT
 
-  if (load_parameters.elevation_image_file_name != ""){
+  if (load_parameters.elevation_image_file_name != "") {
     std::cout << "[DEBUG] [map_io]: elevation_file_name: " << load_parameters.elevation_image_file_name  << std::endl;
     std::cout << "[DEBUG] [map_io]: min_height: " << load_parameters.min_height << std::endl; 
     std::cout << "[DEBUG] [map_io]: max_height: " << load_parameters.max_height << std::endl;
@@ -318,54 +318,6 @@ void loadGridMapFromFile(
     load_parameters.elevation_image_file_name << std::endl;
   Magick::Image img(load_parameters.elevation_image_file_name);
 
-  // Copy the image data into the map structure
-  msg.info.width = img.size().width();
-  msg.info.height = img.size().height();
-
-  msg.info.resolution = load_parameters.resolution;
-  msg.info.origin.position.x = load_parameters.origin[0];
-  msg.info.origin.position.y = load_parameters.origin[1];
-  msg.info.origin.position.z = 0.0;
-  msg.info.origin.orientation = orientationAroundZAxis(load_parameters.origin[2]);
-
-  // Allocate space to hold the data
-  msg.data.resize(msg.info.width * msg.info.height);
-
-  // Copy pixel data into the map structure
-  // for (size_t y = 0; y < msg.info.height; y++) {
-  //   for (size_t x = 0; x < msg.info.width; x++) {
-  //     auto pixel = img.pixelColor(x, y);
-
-  //     std::vector<Magick::Quantum> channels = {pixel.redQuantum(), pixel.greenQuantum(),
-  //       pixel.blueQuantum()};
-  //     if (load_parameters.mode == MapMode::Trinary && img.matte()) {
-  //       // To preserve existing behavior, average in alpha with color channels in Trinary mode.
-  //       // CAREFUL. alpha is inverted from what you might expect. High = transparent, low = opaque
-  //       channels.push_back(MaxRGB - pixel.alphaQuantum());
-  //     }
-  //     double sum = 0;
-  //     for (auto c : channels) {
-  //       sum += c;
-  //     }
-  //     /// on a scale from 0.0 to 1.0 how bright is the pixel?
-  //     double shade = Magick::ColorGray::scaleQuantumToDouble(sum / channels.size());
-
-  //     // If negate is true, we consider blacker pixels free, and whiter
-  //     // pixels occupied. Otherwise, it's vice versa.
-  //     /// on a scale from 0.0 to 1.0, how occupied is the map cell (before thresholding)?
-  //     double occ = (load_parameters.negate ? shade : 1.0 - shade);
-
-  //     int8_t map_cell;
-  //     // we suppose that the elevation uses the Scale mode
-  //     // ignore the occupied and free threshold
-  //     int min_height = -5.0, max_height = 5.0;
-  //     map_cell = occ * (max_height - min_height) + min_height;
-      
-          
-  //     msg.data[msg.info.width * (msg.info.height - y - 1) + x] = map_cell;
-  //   }
-  // }
-
   // supposing the iterator gives the same order as the img
   for (grid_map::GridMapIterator grid_iterator(grid_map_to_fill); !grid_iterator.isPastEnd();
     ++grid_iterator)
@@ -394,16 +346,12 @@ void loadGridMapFromFile(
     // pixels occupied. Otherwise, it's vice versa.
     /// on a scale from 0.0 to 1.0, how occupied is the map cell (before thresholding)?
     double occ = (load_parameters.negate ? shade : 1.0 - shade);
-    
-    std ::cout << "Occ is " << occ << std::endl;
 
     double map_cell;
     // we suppose that the elevation uses the Scale mode
     // ignore the occupied and free threshold
-    double min_height = -10.0, max_height = 10.0;
-    map_cell = occ * (max_height - min_height) + min_height;
-
-    std::cout << "Elevation map cell value is " << map_cell << std::endl;
+    map_cell = 
+      occ * (load_parameters.max_height - load_parameters.min_height) + load_parameters.min_height;
 
     grid_map_to_fill.atPosition("elevation", current_pos) = map_cell;
   }
@@ -493,21 +441,39 @@ LOAD_MAP_STATUS loadMapFromYaml(
   }
 
   try {
-    if(load_parameters.elevation_image_file_name != ""){
+
+    grid_map::GridMap empty_elevation({"elevation"});
+
+    if (load_parameters.elevation_image_file_name != "") {
       loadGridMapFromFile(load_parameters, msg_grid_map);
 
-    }
-    else{
-      //TO-DO: create a msg_grid_map with an empty elevation layer
+    } else {
+      // create a msg_grid_map with an empty elevation layer
+      empty_elevation.setFrameId("map");
+      // TODO(ivrolan): we need to add all these parameters in the yaml
+      empty_elevation.setGeometry(
+        grid_map::Length(60.0, 60.0), 0.5,
+        grid_map::Position(0.0, 0.0));
+
+      for (grid_map::GridMapIterator it(empty_elevation); !it.isPastEnd(); ++it)
+      {
+        empty_elevation.at("elevation", *it) = 10.0;
+        // grid_map::Position current_pos;
+        // empty_elevation.getPosition(*it, current_pos);
+        // empty_elevation.atPosition("elevation", current_pos) = 0.0;
+      }
+
+      // the msg is not being saved idk why
+      msg_grid_map = * grid_map::GridMapRosConverter::toMessage(empty_elevation,{"elevation"});
     }
 
     grid_map::GridMap grid_map_to_fill;
 
-    grid_map::GridMapRosConverter::fromMessage(msg_grid_map, grid_map_to_fill);
+    std::cout << grid_map::GridMapRosConverter::fromMessage(msg_grid_map, grid_map_to_fill) << std::endl;
 
     // convert the occupation map to a layer in the grid_map
     grid_map::GridMapRosConverter::fromOccupancyGrid(map, "occupancy",grid_map_to_fill);
-
+    
     msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
   } catch (std::exception & e) {
     std::cerr <<
