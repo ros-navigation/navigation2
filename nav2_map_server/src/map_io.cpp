@@ -301,16 +301,16 @@ void loadMapFromFile(
 
 void loadGridMapFromFile(
   const LoadParameters & load_parameters,
-  grid_map_msgs::msg::GridMap & msg_grid_map)
+  grid_map::GridMap & grid_map_to_fill)
 {
   Magick::InitializeMagick(nullptr);
 
-  grid_map::GridMap grid_map_to_fill({"elevation", "occupancy"});
-  grid_map_to_fill.setFrameId("map");
-  // TODO(ivrolan): we need to add all these parameters in the yaml
-  grid_map_to_fill.setGeometry(
-    grid_map::Length(60.0, 60.0), 0.5,
-    grid_map::Position(0.0, 0.0));
+  // grid_map::GridMap grid_map_to_fill({"elevation", "occupancy"});
+  // grid_map_to_fill.setFrameId("map");
+  // // TODO(ivrolan): we need to add all these parameters in the yaml
+  // grid_map_to_fill.setGeometry(
+  //   grid_map::Length(60.0, 60.0), 0.5,
+  //   grid_map::Position(0.0, 0.0));
   
 
   std::cout << "[INFO] [map_io]: Loading elevation_image_file: " <<
@@ -359,7 +359,6 @@ void loadGridMapFromFile(
     "[DEBUG] [map_io]: Read map " << load_parameters.elevation_image_file_name << ": " << img.size().width() <<
     " X " << img.size().height() << " map @ " << load_parameters.resolution << " m/cell" << std::endl;
 
-  msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
 }
 
 LOAD_MAP_STATUS loadMapFromYaml(
@@ -433,71 +432,25 @@ LOAD_MAP_STATUS loadMapFromYaml(
 
   try {
 
-    grid_map::GridMap empty_elevation({"elevation"});
-    std::unique_ptr<grid_map_msgs::msg::GridMap> msg_grid_map_ptr;
-
-    if (load_parameters.elevation_image_file_name != "") {
-      loadGridMapFromFile(load_parameters, *msg_grid_map_ptr);
-
-    } else {
-      // create a msg_grid_map with an empty elevation layer
-      empty_elevation.setFrameId("map");
-      // TODO(ivrolan): we need to add all these parameters in the yaml
-      empty_elevation.setGeometry(
-        grid_map::Length(60.0, 60.0), 0.5,
-        grid_map::Position(0.0, 0.0));
-
-      for (grid_map::GridMapIterator it(empty_elevation); !it.isPastEnd(); ++it) {
-        empty_elevation.at("elevation", *it) = 0.01;
-      }
-
-      // the msg is not being saved idk why
-      msg_grid_map_ptr =  grid_map::GridMapRosConverter::toMessage(empty_elevation, {"elevation"});
-
-
-      // std::cout << "Layers of the msg: " << std::endl;
-
-      // for (unsigned int i = 0; i < msg_grid_map.layers.size(); i++) {
-      //   std::cout << "\t - " << msg_grid_map.layers.at(i) << std::endl;
-      // }
-
-      std::cout << "Data of elevation" << std::endl;
-
-      grid_map::GridMap grid_map_to_print;
-
-      grid_map::GridMapRosConverter::fromMessage(*msg_grid_map_ptr, grid_map_to_print);
-
-      for (grid_map::GridMapIterator it(grid_map_to_print); !it.isPastEnd(); ++it) {
-        std::cout << grid_map_to_print.at("elevation", *it) << " ";
-      }
-      std::cout << std::endl;
-    }
-
-    grid_map::GridMap grid_map_to_fill;
-    std::cout << "Layers of the msg: " << std::endl;
-
-      for (unsigned int i = 0; i < msg_grid_map_ptr->layers.size(); i++) {
-        std::cout << "\t - " << msg_grid_map_ptr->layers.at(i) << std::endl;
-      }
-
-    grid_map::GridMapRosConverter::fromMessage(*msg_grid_map_ptr, grid_map_to_fill);
+    grid_map::GridMap grid_map_to_fill({"elevation", "occupancy"});
 
     // convert the occupation map to a layer in the grid_map
     grid_map::GridMapRosConverter::fromOccupancyGrid(map, "occupancy", grid_map_to_fill);
+    // it sets the length, resolution etc to the params in the map
 
-    for (grid_map::GridMapIterator it(grid_map_to_fill); !it.isPastEnd(); ++it) {
-      std::cout << grid_map_to_fill.at("elevation", *it) << " ";
+    msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
+
+    if (load_parameters.elevation_image_file_name != "") {
+      loadGridMapFromFile(load_parameters, grid_map_to_fill);
+
+    } else {
+      // set an elevation layer of 0.0
+
+      grid_map_to_fill.add("elevation", 0.0);
     }
-    std::cout << std::endl;
 
-    msg_grid_map_ptr = grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
-    std::cout << "Layers of the msg: " << std::endl;
-
-    for (unsigned int i = 0; i < msg_grid_map_ptr->layers.size(); i++) {
-      std::cout << "\t - " << msg_grid_map_ptr->layers.at(i) << std::endl;
-    }
-
-    msg_grid_map = * msg_grid_map_ptr;
+    msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
+    
   } catch (std::exception & e) {
     std::cerr <<
       "[ERROR] [map_io]: Failed to load elevation image file " << load_parameters.elevation_image_file_name <<
