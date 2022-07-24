@@ -305,26 +305,17 @@ void loadGridMapFromFile(
 {
   Magick::InitializeMagick(nullptr);
 
-  // grid_map::GridMap grid_map_to_fill({"elevation", "occupancy"});
-  // grid_map_to_fill.setFrameId("map");
-  // // TODO(ivrolan): we need to add all these parameters in the yaml
-  // grid_map_to_fill.setGeometry(
-  //   grid_map::Length(60.0, 60.0), 0.5,
-  //   grid_map::Position(0.0, 0.0));
-  
-
   std::cout << "[INFO] [map_io]: Loading elevation_image_file: " <<
     load_parameters.elevation_image_file_name << std::endl;
   Magick::Image img(load_parameters.elevation_image_file_name);
 
   // supposing the iterator gives the same order as the img
   for (grid_map::GridMapIterator grid_iterator(grid_map_to_fill); !grid_iterator.isPastEnd();
-    ++grid_iterator)
-  {
+    ++grid_iterator) {
     // get the value at the iterator
     grid_map::Position current_pos;
     grid_map_to_fill.getPosition(*grid_iterator, current_pos);
-    auto pixel = img.pixelColor((current_pos.y() + 30) / 0.5, (current_pos.x() + 30) / 0.5); 
+    auto pixel = img.pixelColor((current_pos.y() + 30) / 0.5, (current_pos.x() + 30) / 0.5);
     // (current_pos.x - min_x) / resolution to get the index
 
     std::vector<Magick::Quantum> channels = {pixel.redQuantum(), pixel.greenQuantum(),
@@ -356,8 +347,9 @@ void loadGridMapFromFile(
   }
 
   std::cout <<
-    "[DEBUG] [map_io]: Read map " << load_parameters.elevation_image_file_name << ": " << img.size().width() <<
-    " X " << img.size().height() << " map @ " << load_parameters.resolution << " m/cell" << std::endl;
+    "[DEBUG] [map_io]: Read map " << load_parameters.elevation_image_file_name << ": " <<
+     img.size().width() << " X " << img.size().height() << " map @ " <<
+     load_parameters.resolution << " m/cell" << std::endl;
 
 }
 
@@ -431,7 +423,6 @@ LOAD_MAP_STATUS loadMapFromYaml(
   }
 
   try {
-
     grid_map::GridMap grid_map_to_fill({"elevation", "occupancy"});
 
     // convert the occupation map to a layer in the grid_map
@@ -450,10 +441,10 @@ LOAD_MAP_STATUS loadMapFromYaml(
     }
 
     msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
-    
   } catch (std::exception & e) {
     std::cerr <<
-      "[ERROR] [map_io]: Failed to load elevation image file " << load_parameters.elevation_image_file_name <<
+      "[ERROR] [map_io]: Failed to load elevation image file " <<
+       load_parameters.elevation_image_file_name <<
       " for reason: " << e.what() << std::endl;
     return INVALID_MAP_DATA;
   }
