@@ -16,6 +16,8 @@ find_package(std_srvs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(cmr_msgs REQUIRED)
+find_package(nav_2d_utils REQUIRED)
 
 nav2_package()
 
@@ -45,12 +47,15 @@ set(dependencies
   nav2_util
   nav2_core
   tf2_ros
+  cmr_msgs
+  nav_2d_utils
 )
 
 add_library(${library_name} SHARED
   src/bt_navigator.cpp
   src/navigators/navigate_to_pose.cpp
   src/navigators/navigate_through_poses.cpp
+  src/navigators/navigate_fleet_nodes.cpp
 )
 
 ament_target_dependencies(${executable_name}
