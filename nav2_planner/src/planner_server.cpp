@@ -581,6 +581,7 @@ void PlannerServer::isPathValid(
       cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
     {
       response->is_valid = false;
+      return;
     }
   }
 
@@ -594,29 +595,32 @@ void PlannerServer::isPathValid(
   std::vector<unsigned int> original_costs(
     request->path.costs.begin() + closest_point_index, request->path.costs.end());
 
-  float mean_a, mean_b;
+  float mean_orginal = 0;
+  float mean_current = 0;
   for (unsigned int i = 0; i != original_costs.size(); ++i) {
-    mean_a += static_cast<float>(original_costs[i]);
-    mean_b += static_cast<float>(current_costs[i]);
+    mean_orginal += static_cast<float>(original_costs[i]);
+    mean_current += static_cast<float>(current_costs[i]);
   }
-  mean_a /= static_cast<float>(original_costs.size());
-  mean_b /= static_cast<float>(current_costs.size());
+  mean_orginal /= static_cast<float>(original_costs.size());
+  mean_current /= static_cast<float>(current_costs.size());
 
-  float var_a, var_b;
+  float var_orginal = 0;
+  float var_current = 0;
   for (unsigned int i = 0; i != original_costs.size(); ++i) {
-    var_a += static_cast<float>(original_costs[i]) - static_cast<float>(mean_a);
-    var_b += static_cast<float>(current_costs[i]) - static_cast<float>(mean_b);
+    var_orginal += std::pow(static_cast<float>(original_costs[i]) - static_cast<float>(mean_orginal), 2);
+    var_current += std::pow(static_cast<float>(current_costs[i]) - static_cast<float>(mean_current), 2);
   }
-  var_a /= static_cast<float>(original_costs.size() - 1);
-  var_b /= static_cast<float>(current_costs.size() - 1);
+  var_orginal /= static_cast<float>(original_costs.size() - 1);
+  var_current /= static_cast<float>(current_costs.size() - 1);
 
   // Conduct a two sample Z-test, with the null hypothesis is that both path cost samples
   // come from the same distribution (e.g. there is not a statistically significant change)
   // Thus, the difference in population mean is 0 and the sample sizes are the same
-  float z = (mean_b - mean_a) / std::sqrt((var_b + var_a) / current_costs.size());
+  float z = (mean_current - mean_orginal) / std::sqrt((var_current + var_orginal) / current_costs.size());
   // TODO try single tail or tune strictness? Parameterize?
   // 1.65 95% single tail; 2.55 for 99% dual, 2.33 99% single; 90% 1.65 dual, 90% 1.2 single.
-  if (z > 1.96) {  // critical z score for 95% level
+  if (z > 2.55) {  // critical z score for 95% level
+    RCLCPP_DEBUG_STREAM(get_logger(), "Z-test triggered new global plan. The z score was: " << z << "and the threshold was" << 2.55);
     response->is_valid = false;
   }
 }
