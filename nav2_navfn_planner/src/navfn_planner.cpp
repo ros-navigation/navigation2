@@ -207,6 +207,7 @@ NavfnPlanner::makePlan(
 {
   // clear the plan, just in case
   plan.poses.clear();
+  plan.costs.clear();
 
   plan.header.stamp = clock_->now();
   plan.header.frame_id = global_frame_;
@@ -355,6 +356,7 @@ NavfnPlanner::smoothApproachToGoal(
 {
   // Replace the last pose of the computed path if it's actually further away
   // to the second to last pose than the goal pose.
+  const float cost = costmap_->getCost(goal.position.x, goal.position.y);
   if (plan.poses.size() >= 2) {
     auto second_to_last_pose = plan.poses.end()[-2];
     auto last_pose = plan.poses.back();
@@ -363,12 +365,14 @@ NavfnPlanner::smoothApproachToGoal(
       squared_distance(goal, second_to_last_pose.pose))
     {
       plan.poses.back().pose = goal;
+      plan.costs.back() = cost; 
       return;
     }
   }
   geometry_msgs::msg::PoseStamped goal_copy;
   goal_copy.pose = goal;
   plan.poses.push_back(goal_copy);
+  plan.costs.push_back(cost);
 }
 
 bool
@@ -378,6 +382,7 @@ NavfnPlanner::getPlanFromPotential(
 {
   // clear the plan, just in case
   plan.poses.clear();
+  plan.costs.clear();
 
   // Goal should be in global frame
   double wx = goal.position.x;
@@ -422,6 +427,8 @@ NavfnPlanner::getPlanFromPotential(
     double world_x, world_y;
     mapToWorld(x[i], y[i], world_x, world_y);
 
+    const float cost = costmap_->getCost(x[i], y[i]);
+
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = world_x;
     pose.pose.position.y = world_y;
@@ -431,6 +438,7 @@ NavfnPlanner::getPlanFromPotential(
     pose.pose.orientation.z = 0.0;
     pose.pose.orientation.w = 1.0;
     plan.poses.push_back(pose);
+    plan.costs.push_back(cost);
   }
 
   return !plan.poses.empty();
