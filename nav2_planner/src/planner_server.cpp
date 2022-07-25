@@ -566,7 +566,7 @@ void PlannerServer::isPathValid(
 
   // Checking path for collisions starting at the closest point to avoid those already passed
   std::vector<unsigned int> current_costs;
-  current_costs.reserve(request->path.size() - closest_point_index - 1);
+  current_costs.reserve(request->path.costs.size() - closest_point_index - 1);
 
   unsigned int mx = 0;
   unsigned int my = 0;
