@@ -46,7 +46,7 @@ NavigateFleetNodesNavigator::getDefaultBTFilepath(
     std::string pkg_share_dir =
       ament_index_cpp::get_package_share_directory("behaviour_trees");
     node->declare_parameter<std::string>(
-      "default_nav_through_waypoints_bt_xml",
+      "default_nav_fleet_nodes_bt_xml",
       pkg_share_dir +
       "/behaviour_trees_xml/vda5050.xml");
   }
