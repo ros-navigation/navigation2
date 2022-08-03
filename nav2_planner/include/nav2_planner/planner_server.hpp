@@ -235,6 +235,7 @@ protected:
   std::vector<std::string> planner_ids_;
   std::vector<std::string> planner_types_;
   double max_planner_duration_;
+  double z_score_;
   std::string planner_ids_concat_;
 
   // Clock

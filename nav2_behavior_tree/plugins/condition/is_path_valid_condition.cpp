@@ -36,10 +36,13 @@ BT::NodeStatus IsPathValidCondition::tick()
 {
   nav_msgs::msg::Path path;
   getInput("path", path);
+  bool consider_cost_change;
+  getInput("consider_cost_change", consider_cost_change);
 
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
 
   request->path = path;
+  request->consider_cost_change = consider_cost_change;
   auto result = client_->async_send_request(request);
 
   if (rclcpp::spin_until_future_complete(node_, result, server_timeout_) ==

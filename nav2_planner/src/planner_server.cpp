@@ -53,6 +53,12 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 1.0);
 
+  nav2_util::declare_parameter_if_not_declared(
+    this, "z_score", rclcpp::ParameterValue(2.55));
+
+
+  get_parameter("z_score", z_score_);
+
   get_parameter("planner_plugins", planner_ids_);
   if (planner_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
@@ -588,7 +594,7 @@ void PlannerServer::isPathValid(
   // Check using a statistical test if the cost changes are 'significant' enough
   // to warrant replanning, due to changes in cost within the environment,
   // when larger than the minimum sample size for the test
-  if (!request->consider_cost_change || request->path.poses.size() < 30) {
+  if (!request->consider_cost_change || request->path.costs.size() < 30) {
     return;
   }
 
@@ -617,10 +623,11 @@ void PlannerServer::isPathValid(
   // come from the same distribution (e.g. there is not a statistically significant change)
   // Thus, the difference in population mean is 0 and the sample sizes are the same
   float z = (mean_current - mean_orginal) / std::sqrt((var_current + var_orginal) / current_costs.size());
+  
   // TODO try single tail or tune strictness? Parameterize?
   // 1.65 95% single tail; 2.55 for 99% dual, 2.33 99% single; 90% 1.65 dual, 90% 1.2 single.
-  if (z > 2.55) {  // critical z score for 95% level
-    RCLCPP_DEBUG_STREAM(get_logger(), "Z-test triggered new global plan. The z score was: " << z << "and the threshold was" << 2.55);
+  if (z > z_score_) {  // critical z score for 95% level
+    RCLCPP_DEBUG_STREAM(get_logger(), "Z-test triggered new global plan. The z score was: " << z << "and the threshold was" << z_score_);
     response->is_valid = false;
   }
 }
