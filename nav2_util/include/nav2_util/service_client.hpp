@@ -44,10 +44,9 @@ public:
       rclcpp::CallbackGroupType::MutuallyExclusive,
       false);
     callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
-    rclcpp::QoS test(10);
     client_ = node_->create_client<ServiceT>(
       service_name,
-      test,
+      rmw_qos_profile_services_default,
       callback_group_);
   }
 

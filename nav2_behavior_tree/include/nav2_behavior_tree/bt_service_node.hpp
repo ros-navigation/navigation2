@@ -59,10 +59,9 @@ public:
 
     // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
-    rclcpp::QoS test(1);
     service_client_ = node_->create_client<ServiceT>(
       service_name_,
-      test,
+      rmw_qos_profile_services_default,
       callback_group_);
 
     // Make a request for the service without parameter

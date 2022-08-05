@@ -59,17 +59,16 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   get_parameter("attempt_respawn_reconnection", attempt_respawn_reconnection_);
 
   callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
-  rclcpp::QoS test(10);
   manager_srv_ = create_service<ManageLifecycleNodes>(
     get_name() + std::string("/manage_nodes"),
     std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3),
-    test,
+    rmw_qos_profile_services_default,
     callback_group_);
 
   is_active_srv_ = create_service<std_srvs::srv::Trigger>(
     get_name() + std::string("/is_active"),
     std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3),
-    test,
+    rmw_qos_profile_services_default,
     callback_group_);
 
   transition_state_map_[Transition::TRANSITION_CONFIGURE] = State::PRIMARY_STATE_INACTIVE;
