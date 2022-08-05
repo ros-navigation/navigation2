@@ -59,7 +59,6 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   get_parameter("attempt_respawn_reconnection", attempt_respawn_reconnection_);
 
   callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
-  rclcpp::QoS test(10);
   manager_srv_ = create_service<ManageLifecycleNodes>(
     get_name() + std::string("/manage_nodes"),
     std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3),
