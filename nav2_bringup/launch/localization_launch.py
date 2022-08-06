@@ -105,7 +105,7 @@ def generate_launch_description():
         description='log level')
 
     load_nodes = GroupAction(
-        condition=IfCondition(PythonExpression(['not ', 'False'])),
+        condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
             Node(
                 package='nav2_map_server',
@@ -140,7 +140,7 @@ def generate_launch_description():
     )
 
     load_composable_nodes = LoadComposableNodes(
-        condition=IfCondition('False'),
+        condition=IfCondition(use_composition),
         target_container=container_name,
         composable_node_descriptions=[
             ComposableNode(
