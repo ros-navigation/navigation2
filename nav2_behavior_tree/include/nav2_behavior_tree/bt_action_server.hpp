@@ -24,6 +24,7 @@
 #include "nav2_behavior_tree/ros_topic_logger.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/simple_action_server.hpp"
+#include "behaviortree_cpp_v3/loggers/bt_file_logger.h"
 
 namespace nav2_behavior_tree
 {
@@ -197,6 +198,7 @@ protected:
 
   // Behavior Tree to be executed when goal is received
   BT::Tree tree_;
+  std::unique_ptr<BT::FileLogger> logger_file_;
 
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
