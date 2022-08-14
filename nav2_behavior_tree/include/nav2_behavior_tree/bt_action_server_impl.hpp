@@ -138,6 +138,7 @@ bool BtActionServer<ActionT>::on_cleanup()
 {
   client_node_.reset();
   action_server_.reset();
+  logger_file_.reset();
   topic_logger_.reset();
   plugin_lib_names_.clear();
   current_bt_xml_filename_.clear();
