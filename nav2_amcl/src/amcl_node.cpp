@@ -556,6 +556,16 @@ AmclNode::nomotionUpdateCallback(
 }
 
 void
+AmclNode::getInitialPoseStatusCallback(
+  const std::shared_ptr<cmr_msgs::srv::GetStatus::Request>,
+  std::shared_ptr<cmr_msgs::srv::GetStatus::Response> response)
+{
+  response->status = response->STATUS_NOT_READY;
+
+  if(initial_pose_is_known_) response->status = response->STATUS_OK;
+}
+
+void
 AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
@@ -1663,6 +1673,10 @@ AmclNode::initServices()
   nomotion_update_srv_ = create_service<std_srvs::srv::Empty>(
     "request_nomotion_update",
     std::bind(&AmclNode::nomotionUpdateCallback, this, _1, _2, _3));
+
+  get_initial_pose_status_srv_ = this->create_service<cmr_msgs::srv::GetStatus>(
+    "get_initial_pose_status",
+    std::bind(&AmclNode::getInitialPoseStatusCallback, this, _1, _2));
 }
 
 void
