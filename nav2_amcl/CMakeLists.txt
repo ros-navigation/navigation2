@@ -15,6 +15,7 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(cmr_msgs REQUIRED)
 
 nav2_package()
 
@@ -60,6 +61,7 @@ set(dependencies
   tf2
   nav2_util
   nav2_msgs
+  cmr_msgs
 )
 
 ament_target_dependencies(${executable_name}

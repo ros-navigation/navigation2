@@ -44,6 +44,8 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 
+#include "cmr_msgs/srv/get_status.hpp"
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wreorder"
@@ -214,6 +216,15 @@ protected:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<std_srvs::srv::Empty::Request> request,
     std::shared_ptr<std_srvs::srv::Empty::Response> response);
+
+  // Report whether initial pose set or not
+  rclcpp::Service<cmr_msgs::srv::GetStatus>::SharedPtr get_initial_pose_status_srv_;
+  /*
+   * @brief Service callback for sending intial pose status
+   */
+  void getInitialPoseStatusCallback(
+    const std::shared_ptr<cmr_msgs::srv::GetStatus::Request>,
+    std::shared_ptr<cmr_msgs::srv::GetStatus::Response> response);
 
   // Nomotion update control. Used to temporarily let amcl update samples even when no motion occurs
   std::atomic<bool> force_update_{false};
