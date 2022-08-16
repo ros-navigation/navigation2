@@ -68,6 +68,9 @@ private Q_SLOTS:
   void onAccumulatedNTP();
   void onAccumulating();
   void onNewGoal(double x, double y, double theta, QString frame);
+  void handleGoalSaver();
+  void handleGoalLoader();
+  void loophandler();
 
 private:
   void loadLogFiles();
@@ -75,6 +78,7 @@ private:
   void timerEvent(QTimerEvent * event) override;
 
   int unique_id {0};
+  std::string loop = "1";
 
   // Call to send NavigateToPose action request for goal poses
   void startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> poses);
@@ -128,11 +132,16 @@ private:
   QPushButton * start_reset_button_{nullptr};
   QPushButton * pause_resume_button_{nullptr};
   QPushButton * navigation_mode_button_{nullptr};
+  QPushButton * save_waypoints_button_{nullptr};
+  QPushButton * load_waypoints_button_{nullptr};
 
   QLabel * navigation_status_indicator_{nullptr};
   QLabel * localization_status_indicator_{nullptr};
   QLabel * navigation_goal_status_indicator_{nullptr};
   QLabel * navigation_feedback_indicator_{nullptr};
+  QLabel * number_of_loops_{nullptr};
+
+  QLineEdit *  nr_of_loops{nullptr};
 
   QStateMachine state_machine_;
   InitialThread * initial_thread_;
