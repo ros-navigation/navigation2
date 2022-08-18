@@ -20,7 +20,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import LoadComposableNodes
+from launch_ros.actions import LoadComposableNodes, SetUseSimTime
 from launch_ros.actions import Node
 from launch_ros.descriptions import ComposableNode
 from nav2_common.launch import RewrittenYaml
@@ -57,7 +57,6 @@ def generate_launch_description():
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
-        'use_sim_time': use_sim_time,
         'autostart': autostart}
 
     configured_params = RewrittenYaml(
@@ -103,6 +102,7 @@ def generate_launch_description():
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
+            SetUseSimTime(use_sim_time),
             Node(
                 package='nav2_controller',
                 executable='controller_server',
@@ -171,14 +171,15 @@ def generate_launch_description():
                 executable='lifecycle_manager',
                 name='lifecycle_manager_navigation',
                 output='screen',
-                parameters=[{'use_sim_time': use_sim_time},
-                            {'autostart': autostart},
+                parameters=[{'autostart': autostart},
                             {'node_names': lifecycle_nodes}]),
         ]
     )
 
-    load_composable_nodes = LoadComposableNodes(
+    load_composable_nodes = GroupAction(
         condition=IfCondition(use_composition),
+        actions=[SetUseSimTime(use_sim_time),
+            LoadComposableNodes(
         target_container=container_name,
         composable_node_descriptions=[
             ComposableNode(
@@ -228,11 +229,10 @@ def generate_launch_description():
                 package='nav2_lifecycle_manager',
                 plugin='nav2_lifecycle_manager::LifecycleManager',
                 name='lifecycle_manager_navigation',
-                parameters=[{'use_sim_time': use_sim_time,
-                             'autostart': autostart,
+                parameters=[{'autostart': autostart,
                              'node_names': lifecycle_nodes}]),
         ],
-    )
+    )])
 
     # Create the launch description and populate
     ld = LaunchDescription()

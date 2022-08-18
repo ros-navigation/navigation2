@@ -52,7 +52,6 @@ def generate_launch_description():
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
-        'use_sim_time': use_sim_time,
         'yaml_filename': map_yaml_file}
 
     configured_params = RewrittenYaml(
@@ -125,8 +124,7 @@ def generate_launch_description():
                 executable='lifecycle_manager',
                 name='lifecycle_manager_localization',
                 output='screen',
-                parameters=[{'use_sim_time': use_sim_time},
-                            {'autostart': autostart},
+                parameters=[{'autostart': autostart},
                             {'node_names': lifecycle_nodes}])
         ]
     )
@@ -151,8 +149,7 @@ def generate_launch_description():
                 package='nav2_lifecycle_manager',
                 plugin='nav2_lifecycle_manager::LifecycleManager',
                 name='lifecycle_manager_localization',
-                parameters=[{'use_sim_time': use_sim_time,
-                             'autostart': autostart,
+                parameters=[{'autostart': autostart,
                              'node_names': lifecycle_nodes}]),
         ],
     )

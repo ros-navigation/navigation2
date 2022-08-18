@@ -180,8 +180,7 @@ def generate_launch_description():
         name='robot_state_publisher',
         namespace=namespace,
         output='screen',
-        parameters=[{'use_sim_time': use_sim_time,
-                     'robot_description': robot_description}],
+        parameters=[{'robot_description': robot_description}],
         remappings=remappings)
 
     start_gazebo_spawner_cmd = Node(

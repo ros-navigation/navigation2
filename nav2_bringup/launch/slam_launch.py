@@ -42,8 +42,7 @@ def generate_launch_description():
     slam_launch_file = os.path.join(slam_toolbox_dir, 'launch', 'online_sync_launch.py')
 
     # Create our own temporary YAML files that include substitutions
-    param_substitutions = {
-        'use_sim_time': use_sim_time}
+    param_substitutions = {}
 
     configured_params = RewrittenYaml(
         source_file=params_file,
@@ -90,8 +89,7 @@ def generate_launch_description():
             executable='lifecycle_manager',
             name='lifecycle_manager_slam',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time},
-                        {'autostart': autostart},
+            parameters=[{'autostart': autostart},
                         {'node_names': lifecycle_nodes}])
 
     # If the provided param file doesn't have slam_toolbox params, we must remove the 'params_file'
