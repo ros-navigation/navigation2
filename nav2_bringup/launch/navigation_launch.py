@@ -20,7 +20,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import LoadComposableNodes, SetUseSimTime
+from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
 from launch_ros.descriptions import ComposableNode
 from nav2_common.launch import RewrittenYaml
@@ -102,7 +102,7 @@ def generate_launch_description():
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
-            SetUseSimTime(use_sim_time),
+            SetParameter("use_sim_time", use_sim_time),
             Node(
                 package='nav2_controller',
                 executable='controller_server',
@@ -178,7 +178,7 @@ def generate_launch_description():
 
     load_composable_nodes = GroupAction(
         condition=IfCondition(use_composition),
-        actions=[SetUseSimTime(use_sim_time),
+        actions=[SetParameter("use_sim_time", use_sim_time),
             LoadComposableNodes(
         target_container=container_name,
         composable_node_descriptions=[
