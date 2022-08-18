@@ -81,6 +81,9 @@ private:
   std::string loop = "1";
 
   // Call to send NavigateToPose action request for goal poses
+  geometry_msgs::msg::PoseStamped convert_to_msg(
+  std::vector<double> pose,
+  std::vector<double> orientation);
   void startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> poses);
   void startNavigation(geometry_msgs::msg::PoseStamped);
   void startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> poses);

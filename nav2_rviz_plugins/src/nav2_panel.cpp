@@ -28,6 +28,7 @@
 #include "nav2_rviz_plugins/goal_common.hpp"
 #include "rviz_common/display_context.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
+#include "yaml-cpp/yaml.h"
 
 using namespace std::chrono_literals;
 
@@ -351,7 +352,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     &InitialThread::navigationActive);
   activeSignal->setTargetState(idle_);
   pre_initial_->addTransition(activeSignal);
-
   QSignalTransition * inactiveSignal = new QSignalTransition(
     initial_thread_,
     &InitialThread::navigationInactive);
@@ -401,6 +401,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   // Lay out the items in the panel
   QVBoxLayout * main_layout = new QVBoxLayout;
+  QHBoxLayout * side_layout = new QHBoxLayout;
   main_layout->addWidget(navigation_status_indicator_);
   main_layout->addWidget(localization_status_indicator_);
   main_layout->addWidget(navigation_goal_status_indicator_);
@@ -408,10 +409,13 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   main_layout->addWidget(pause_resume_button_);
   main_layout->addWidget(start_reset_button_);
   main_layout->addWidget(navigation_mode_button_);
-  main_layout->addWidget(save_waypoints_button_);
-  main_layout->addWidget(load_waypoints_button_);
-  main_layout->addWidget(number_of_loops_);
-  main_layout->addWidget(nr_of_loops);
+
+  side_layout->addWidget(save_waypoints_button_);
+  side_layout->addWidget(load_waypoints_button_);
+  side_layout->addWidget(number_of_loops_);
+  side_layout->addWidget(nr_of_loops);
+
+  main_layout->addLayout(side_layout);
 
   main_layout->setContentsMargins(10, 10, 10, 10);
   setLayout(main_layout);
@@ -448,86 +452,93 @@ Nav2Panel::~Nav2Panel()
 
 void Nav2Panel::loophandler() {
     loop = nr_of_loops->displayText().toStdString();
-    std::cout<<loop<<std::endl;
 }
 
 void Nav2Panel::handleGoalLoader() {
+  acummulated_poses_.clear();
+  
+  std::cout << "Loading Waypoints!" << std::endl;
+
   QString file = QFileDialog::getOpenFileName(this,
         tr("Open File"), "",
-        tr("json(*.json);;All Files (*)"));
+        tr("yaml(*.yaml);;All Files (*)"));
 
-  QFile f(file);
-  f.open(QIODevice::ReadOnly);
-  QByteArray bytes = f.readAll();
-
-  QJsonParseError parseError;
-  QJsonArray pose_array;
-  QJsonObject pose_obj;
-  QJsonDocument d = QJsonDocument::fromJson(bytes, &parseError);
-
-  // Check if we have any parsing error
-  if( parseError.error != QJsonParseError::NoError )
-  {
-      std::cout << "fromJson failed: " << parseError.errorString().toStdString() << std::endl;
-      return ;
+  YAML::Node available_waypoints = YAML::LoadFile(file.toStdString());
+  
+  const YAML::Node& waypoint_iter = available_waypoints["waypoints"];
+  for (YAML::const_iterator it = waypoint_iter.begin(); it != waypoint_iter.end(); ++it) {
+    auto waypoint = waypoint_iter[it->first.as<std::string>()];
+    auto pose = waypoint["pose"].as<std::vector<double>>();
+    auto orientation = waypoint["orientation"].as<std::vector<double>>();
+    acummulated_poses_.push_back(convert_to_msg(pose, orientation));
   }
-  pose_obj = d.object();
-  pose_array = pose_obj.value(QString("pose")).toArray();
+}
 
-  // Extracting the poses and setting the frame to map
-  for(int i = 0; i < pose_array.size(); i++) {
-    QJsonValue value = pose_array.at(i);
-    geometry_msgs::msg::PoseStamped temp_pose;
-    temp_pose.header.frame_id = "map";
-    temp_pose.pose.position.x =  value.toObject().value("pos_x").toDouble();
-    temp_pose.pose.position.y = value.toObject().value("pos_y").toDouble();
-    temp_pose.pose.position.z = 0.0;
-    temp_pose.pose.orientation.x = value.toObject().value("orient_x").toDouble();
-    temp_pose.pose.orientation.y = value.toObject().value("orient_y").toDouble();
-    temp_pose.pose.orientation.z = value.toObject().value("orient_z").toDouble();
-    temp_pose.pose.orientation.w = value.toObject().value("orient_w").toDouble();
-    acummulated_poses_.push_back(temp_pose);
-  }
-  updateWpNavigationMarkers();
-  f.close();
+geometry_msgs::msg::PoseStamped Nav2Panel::convert_to_msg(
+  std::vector<double> pose,
+  std::vector<double> orientation)
+{
+  auto msg = geometry_msgs::msg::PoseStamped();
+
+  msg.header.frame_id = "map";
+  msg.header.stamp = rclcpp::Clock().now();
+
+  msg.pose.position.x = pose[0];
+  msg.pose.position.y = pose[1];
+  msg.pose.position.z = pose[2];
+  
+  msg.pose.orientation.w = orientation[0];
+  msg.pose.orientation.w = orientation[1];
+  msg.pose.orientation.w = orientation[2];
+  msg.pose.orientation.w = orientation[3];
+
+  return msg;
 }
 
 void Nav2Panel::handleGoalSaver() {
 
 // Check if the waypoints are accumulated
   
-  if(acummulated_poses_.size() == 0) {
-    std::cout<< "Please select waypoints before saving"<<std::endl;
-    } else {
-    std::cout<<"Number of waypoints that is being saved are:"<<acummulated_poses_.size()<<std::endl;
-
-    // json goal;
-    QString file = QFileDialog::getSaveFileName(this,
-        tr("Save Address Book"), "",
-        tr("json(*.json);;All Files (*)"));
-
-    QJsonObject content;
-    QJsonObject id;
-    QJsonArray contentArray;
-    QFile f( file );
-    f.open( QIODevice::WriteOnly );
-    for (unsigned int i = 0; i < acummulated_poses_.size(); i++) {
-      content.insert("id", QString::fromStdString(std::to_string(i)));
-      content.insert("pos_x", acummulated_poses_[i].pose.position.x);
-      content.insert("pos_y", acummulated_poses_[i].pose.position.y);
-      content.insert("orient_x", acummulated_poses_[i].pose.orientation.x);
-      content.insert("orient_y", acummulated_poses_[i].pose.orientation.y);
-      content.insert("orient_z", acummulated_poses_[i].pose.orientation.z);
-      content.insert("orient_w", acummulated_poses_[i].pose.orientation.w);
-      contentArray.push_back(content);
-    }
-    
-    id.insert("pose", contentArray);
-        
-    QJsonDocument doc(id);
-    f.write(doc.toJson(QJsonDocument::Indented));
-    f.close();
+  if(acummulated_poses_.empty())
+  {
+    qDebug() << "No accumulated Points to Save!";
+    return;
+  } else {
+    std::cout << "Clearing Waypoints!" << std::endl;
   }
+
+  std::cout << "Saving Waypoints!" << std::endl;
+
+  YAML::Emitter out;
+  out << YAML::BeginMap;
+  out << YAML::Key << "waypoints";
+  out << YAML::BeginMap;
+
+  // save waypoints to data structure 
+  for (unsigned int i = 0; i < acummulated_poses_.size(); ++i) {
+    out << YAML::Key << "waypoint" + std::to_string(i);
+    out << YAML::BeginMap;
+    out << YAML::Key << "pose";
+    std::vector<double> pose = {acummulated_poses_[i].pose.position.x, acummulated_poses_[i].pose.position.y, acummulated_poses_[i].pose.position.z};
+    out << YAML::Value << pose;
+    out << YAML::Key << "orientation";
+    std::vector<double> orientation = {acummulated_poses_[i].pose.orientation.w, acummulated_poses_[i].pose.orientation.x, acummulated_poses_[i].pose.orientation.y, acummulated_poses_[i].pose.orientation.z};
+    out << YAML::Value << orientation;
+    out << YAML::EndMap;
+  }
+
+  QString file = QFileDialog::getSaveFileName(this,
+        tr("Open File"), "",
+        tr("yaml(*.yaml);;All Files (*)"));
+
+  if (file.toStdString().empty()) {
+    std::ofstream fout("waypoints.yaml");
+    fout << out.c_str();
+  } else {
+    std::ofstream fout(file.toStdString());
+    fout << out.c_str();
+  }
+
 }
 
 void
@@ -722,7 +733,6 @@ Nav2Panel::onCancelButtonPressed()
 void
 Nav2Panel::onAccumulatedWp()
 {
-  std::cout<<loop<<std::endl;
   std::cout << "Start waypoint" << std::endl;
   auto loop_poses = acummulated_poses_;
   for (int i = 0; i < stoi(loop) - 1; i++) {
