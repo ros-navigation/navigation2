@@ -20,7 +20,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import LoadComposableNodes
+from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
 from launch_ros.descriptions import ComposableNode
 from nav2_common.launch import RewrittenYaml
@@ -101,6 +101,7 @@ def generate_launch_description():
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
+            SetParameter("use_sim_time", use_sim_time),
             Node(
                 package='nav2_map_server',
                 executable='map_server',
@@ -129,8 +130,10 @@ def generate_launch_description():
         ]
     )
 
-    load_composable_nodes = LoadComposableNodes(
+    load_composable_nodes = GroupAction(
         condition=IfCondition(use_composition),
+        actions=[SetParameter("use_sim_time", use_sim_time),
+            LoadComposableNodes(
         target_container=container_name,
         composable_node_descriptions=[
             ComposableNode(
@@ -152,7 +155,7 @@ def generate_launch_description():
                 parameters=[{'autostart': autostart,
                              'node_names': lifecycle_nodes}]),
         ],
-    )
+    )])
 
     # Create the launch description and populate
     ld = LaunchDescription()
