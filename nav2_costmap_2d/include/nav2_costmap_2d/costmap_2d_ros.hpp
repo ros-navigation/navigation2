@@ -258,6 +258,7 @@ public:
 
 protected:
   rclcpp::Node::SharedPtr client_node_;
+  std::unique_ptr<nav2_util::NodeThread> client_thread_;
 
   // Publishers and subscribers
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr

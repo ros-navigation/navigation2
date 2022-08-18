@@ -83,6 +83,7 @@ Costmap2DROS::Costmap2DROS(
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args", "-r", std::string("__node:=") + get_name() + "_client", "--"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
+  client_thread_ = std::make_unique<nav2_util::NodeThread>(client_node_);
 
   std::vector<std::string> clearable_layers{"obstacle_layer"};
 
