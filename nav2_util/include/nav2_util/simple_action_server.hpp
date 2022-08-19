@@ -390,6 +390,18 @@ public:
     return current_handle_->get_goal();
   }
 
+  const rclcpp_action::GoalUUID get_current_goal_id() const
+  {
+    std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+    if (!is_active(current_handle_)) {
+      error_msg("A goal is not available or has reached a final state");
+      return rclcpp_action::GoalUUID();
+    }
+
+    return current_handle_->get_goal_id();
+  }
+
   /**
    * @brief Get the pending goal object
    * @return Goal Ptr to the goal that's pending

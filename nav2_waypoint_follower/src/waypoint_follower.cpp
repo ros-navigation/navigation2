@@ -286,6 +286,13 @@ void
 WaypointFollower::resultCallback(
   const rclcpp_action::ClientGoalHandle<ClientT>::WrappedResult & result)
 {
+  if (result.goal_id != future_goal_handle_.get()->get_goal_id()) {
+    RCLCPP_DEBUG(
+      get_logger(),
+      "Goal IDs do not match for the current goal handle and received result."
+      "Ignoring likely due to receiving result for an old goal.");
+  }
+
   switch (result.code) {
     case rclcpp_action::ResultCode::SUCCEEDED:
       current_goal_status_ = ActionStatus::SUCCEEDED;
