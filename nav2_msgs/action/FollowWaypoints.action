@@ -5,6 +5,7 @@ uint16 UNKNOWN=600
 uint16 TASK_EXECUTOR_FAILED=601
 
 #goal definition
+uint32 number_of_loops
 geometry_msgs/PoseStamped[] poses
 ---
 #result definition

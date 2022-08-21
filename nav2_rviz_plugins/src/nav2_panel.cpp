@@ -734,14 +734,8 @@ void
 Nav2Panel::onAccumulatedWp()
 {
   std::cout << "Start waypoint" << std::endl;
-  auto loop_poses = acummulated_poses_;
-  for (int i = 0; i < stoi(loop) - 1; i++) {
-    for (auto & pose : acummulated_poses_) {
-        loop_poses.push_back(pose);
-    }
-  }
     
-  startWaypointFollowing(loop_poses);
+  startWaypointFollowing(acummulated_poses_);
   acummulated_poses_.clear();
 }
 
@@ -842,6 +836,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 
   // Send the goal poses
   waypoint_follower_goal_.poses = poses;
+  waypoint_follower_goal_.number_of_loops = stoi(loop);
 
   RCLCPP_DEBUG(
     client_node_->get_logger(), "Sending a path of %zu waypoints:",

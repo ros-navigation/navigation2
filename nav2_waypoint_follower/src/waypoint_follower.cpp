@@ -154,6 +154,10 @@ WaypointFollower::followWaypoints()
   auto feedback = std::make_shared<ActionT::Feedback>();
   auto result = std::make_shared<ActionT::Result>();
 
+  // handling loops
+  unsigned int current_loop_no = 0;
+  auto no_of_loops = goal->number_of_loops;
+
   // Check if request is valid
   if (!action_server_ || !action_server_->is_server_active()) {
     RCLCPP_DEBUG(get_logger(), "Action server inactive. Stopping.");
@@ -272,12 +276,17 @@ WaypointFollower::followWaypoints()
       goal_index++;
       new_goal = true;
       if (goal_index >= goal->poses.size()) {
-        RCLCPP_INFO(
-          get_logger(), "Completed all %zu waypoints requested.",
-          goal->poses.size());
-        action_server_->succeeded_current(result);
-        current_goal_status_.error_code = 0;
-        return;
+        if (current_loop_no == no_of_loops) {
+          RCLCPP_INFO(
+            get_logger(), "Completed all %zu waypoints requested.",
+            goal->poses.size());
+          result->missed_waypoints = failed_ids_;
+          action_server_->succeeded_current(result);
+          failed_ids_.clear();
+          return;
+        }
+        goal_index = 0;
+        current_loop_no++;
       }
     } else {
       RCLCPP_INFO_EXPRESSION(
