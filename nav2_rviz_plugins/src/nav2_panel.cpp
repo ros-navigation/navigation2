@@ -836,6 +836,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 
   // Send the goal poses
   waypoint_follower_goal_.poses = poses;
+  waypoint_follower_goal_.goal_index = goal_index_;
   waypoint_follower_goal_.number_of_loops = stoi(loop);
 
   RCLCPP_DEBUG(

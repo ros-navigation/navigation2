@@ -174,7 +174,7 @@ WaypointFollower::followWaypoints()
   }
 
   rclcpp::WallRate r(loop_rate_);
-  uint32_t goal_index = 0;
+  uint32_t goal_index = goal->goal_index;
   bool new_goal = true;
 
   while (rclcpp::ok()) {

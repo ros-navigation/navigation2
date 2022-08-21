@@ -78,7 +78,9 @@ private:
   void timerEvent(QTimerEvent * event) override;
 
   int unique_id {0};
-  std::string loop = "1";
+  std::string loop = "0";
+  int goal_index_ = 0;
+
 
   // Call to send NavigateToPose action request for goal poses
   geometry_msgs::msg::PoseStamped convert_to_msg(
