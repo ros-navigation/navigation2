@@ -45,7 +45,7 @@ def generate_launch_description():
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key=namespace,
-        param_rewrites={}, # TODO: check if we still need it for the namespace
+        param_rewrites={},
         convert_types=True)
 
     # Declare the launch arguments
@@ -74,7 +74,7 @@ def generate_launch_description():
 
     # Nodes launching commands
 
-    start_map_server =GroupAction(
+    start_map_server = GroupAction(
         actions=[SetParameter("use_sim_time", use_sim_time), Node(
             package='nav2_map_server',
             executable='map_saver_server',
@@ -90,7 +90,6 @@ def generate_launch_description():
             parameters=[{'autostart': autostart},
                         {'node_names': lifecycle_nodes}])
         ])
-
 
     # If the provided param file doesn't have slam_toolbox params, we must remove the 'params_file'
     # LaunchConfiguration, or it will be passed automatically to slam_toolbox and will not load

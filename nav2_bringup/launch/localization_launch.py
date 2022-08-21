@@ -132,30 +132,33 @@ def generate_launch_description():
 
     load_composable_nodes = GroupAction(
         condition=IfCondition(use_composition),
-        actions=[SetParameter("use_sim_time", use_sim_time),
+        actions=[
+            SetParameter("use_sim_time", use_sim_time),
             LoadComposableNodes(
-        target_container=container_name,
-        composable_node_descriptions=[
-            ComposableNode(
-                package='nav2_map_server',
-                plugin='nav2_map_server::MapServer',
-                name='map_server',
-                parameters=[configured_params],
-                remappings=remappings),
-            ComposableNode(
-                package='nav2_amcl',
-                plugin='nav2_amcl::AmclNode',
-                name='amcl',
-                parameters=[configured_params],
-                remappings=remappings),
-            ComposableNode(
-                package='nav2_lifecycle_manager',
-                plugin='nav2_lifecycle_manager::LifecycleManager',
-                name='lifecycle_manager_localization',
-                parameters=[{'autostart': autostart,
-                             'node_names': lifecycle_nodes}]),
-        ],
-    )])
+                target_container=container_name,
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package='nav2_map_server',
+                        plugin='nav2_map_server::MapServer',
+                        name='map_server',
+                        parameters=[configured_params],
+                        remappings=remappings),
+                    ComposableNode(
+                        package='nav2_amcl',
+                        plugin='nav2_amcl::AmclNode',
+                        name='amcl',
+                        parameters=[configured_params],
+                        remappings=remappings),
+                    ComposableNode(
+                        package='nav2_lifecycle_manager',
+                        plugin='nav2_lifecycle_manager::LifecycleManager',
+                        name='lifecycle_manager_localization',
+                        parameters=[{'autostart': autostart,
+                                    'node_names': lifecycle_nodes}]),
+                ],
+            )
+            ]
+        )
 
     # Create the launch description and populate
     ld = LaunchDescription()
