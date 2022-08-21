@@ -859,6 +859,12 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
       waypoint_follower_goal_handle_.reset();
     };
 
+  send_goal_options.feedback_callback = [this](
+    WaypointFollowerGoalHandle::SharedPtr /*goal_handle*/,
+    const std::shared_ptr<const nav2_msgs::action::FollowWaypoints::Feedback> feedback) {
+      std::cout<<feedback->current_waypoint<<std::endl;
+    };
+
   auto future_goal_handle =
     waypoint_follower_action_client_->async_send_goal(waypoint_follower_goal_, send_goal_options);
   if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle, server_timeout_) !=
