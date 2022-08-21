@@ -190,6 +190,11 @@ protected:
    */
   void executeCallback();
 
+  /**
+   * \brief create the file name for the bt logger
+   */
+   std::string generateBTLogFileName();
+
   // Action name
   std::string action_name_;
 

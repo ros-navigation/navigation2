@@ -180,7 +180,6 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     return false;
   }
 
-  logger_file_ = std::make_unique<BT::FileLogger>(tree_, "bt_trace.fbl");
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
 
   current_bt_xml_filename_ = filename;
@@ -215,6 +214,8 @@ void BtActionServer<ActionT>::executeCallback()
       on_loop_callback_();
     };
 
+  logger_file_ = std::make_unique<BT::FileLogger>(tree_, generateBTLogFileName().c_str());
+
   // Execute the BT that was previously created in the configure step
   nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling, bt_loop_duration_);
 
@@ -243,6 +244,18 @@ void BtActionServer<ActionT>::executeCallback()
       action_server_->terminate_all(result);
       break;
   }
+}
+
+template<class ActionT>
+std::string BtActionServer<ActionT>::generateBTLogFileName()
+{
+  auto end = std::chrono::system_clock::now();
+  std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+  std::string time_str = std::ctime(&end_time);
+  std::replace(time_str.begin(), time_str.end(), ' ', '_');
+  time_str.erase(std::remove(time_str.begin(), time_str.end(), '\n'), time_str.end());
+  std::string file_name = "bt_trace_"+time_str+"_.fbl";
+  return file_name;
 }
 
 }  // namespace nav2_behavior_tree
