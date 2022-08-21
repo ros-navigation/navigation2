@@ -45,14 +45,14 @@ BT::NodeStatus ComputePathToPoseAction::on_success()
 
 BT::NodeStatus ComputePathToPoseAction::on_aborted()
 {
-  geometry_msgs::msg::PoseStamped empty_path;
+  nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
   return BT::NodeStatus::FAILURE;
 }
 
 BT::NodeStatus ComputePathToPoseAction::on_cancelled()
 {
-  geometry_msgs::msg::PoseStamped empty_path;
+  nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
   return BT::NodeStatus::SUCCESS;
 }
