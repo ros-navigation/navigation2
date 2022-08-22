@@ -99,9 +99,10 @@ bool XYThetaIterator::isValidSpeed(double x, double y, double theta)
   if (kinematics.getMaxSpeedXY() >= 0.0 && vmag_sq > kinematics.getMaxSpeedXY_SQ() + EPSILON) {
     return false;
   }
-  if (kinematics.getMinSpeedXY() >= 0.0 && vmag_sq + EPSILON < kinematics.getMinSpeedXY_SQ() &&
-    kinematics.getMinSpeedTheta() >= 0.0 && fabs(theta) + EPSILON < kinematics.getMinSpeedTheta())
-  {
+  if (kinematics.getMinSpeedXY() >= 0.0 && vmag_sq + EPSILON < kinematics.getMinSpeedXY_SQ()) {
+    return false;
+  }
+  if (kinematics.getMinSpeedTheta() >= 0.0 && fabs(theta) + EPSILON < kinematics.getMinSpeedTheta()) {
     return false;
   }
   if (vmag_sq == 0.0 && th_it_->getVelocity() == 0.0) {
