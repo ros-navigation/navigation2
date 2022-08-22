@@ -157,8 +157,8 @@ def generate_launch_description():
                                     'node_names': lifecycle_nodes}]),
                 ],
             )
-            ]
-        )
+        ]
+    )
 
     # Create the launch description and populate
     ld = LaunchDescription()

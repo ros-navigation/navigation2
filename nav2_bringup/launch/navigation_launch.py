@@ -60,10 +60,10 @@ def generate_launch_description():
         'autostart': autostart}
 
     configured_params = RewrittenYaml(
-            source_file=params_file,
-            root_key=namespace,
-            param_rewrites=param_substitutions,
-            convert_types=True)
+        source_file=params_file,
+        root_key=namespace,
+        param_rewrites=param_substitutions,
+        convert_types=True)
 
     stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
@@ -178,10 +178,11 @@ def generate_launch_description():
 
     load_composable_nodes = GroupAction(
         condition=IfCondition(use_composition),
-        actions=[SetParameter("use_sim_time", use_sim_time),
-                 LoadComposableNodes(
-                 target_container=container_name,
-                 composable_node_descriptions=[
+        actions=[
+            SetParameter("use_sim_time", use_sim_time),
+            LoadComposableNodes(
+                target_container=container_name,
+                composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_controller',
                         plugin='nav2_controller::ControllerServer',
@@ -231,8 +232,10 @@ def generate_launch_description():
                         name='lifecycle_manager_navigation',
                         parameters=[{'autostart': autostart,
                                     'node_names': lifecycle_nodes}]),
-                 ],
-                 )])
+                ],
+            )
+        ]
+    )
 
     # Create the launch description and populate
     ld = LaunchDescription()

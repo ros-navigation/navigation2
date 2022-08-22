@@ -116,10 +116,9 @@ def generate_launch_description():
         group = GroupAction([
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                        os.path.join(launch_dir, 'rviz_launch.py')),
+                    os.path.join(launch_dir, 'rviz_launch.py')),
                 condition=IfCondition(use_rviz),
-                launch_arguments={
-                                  'namespace': TextSubstitution(text=robot['name']),
+                launch_arguments={'namespace': TextSubstitution(text=robot['name']),
                                   'use_namespace': 'True',
                                   'rviz_config': rviz_config_file}.items()),
 
