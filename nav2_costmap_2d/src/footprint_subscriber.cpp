@@ -31,8 +31,7 @@ FootprintSubscriber::FootprintSubscriber(
   tf2_ros::Buffer & tf,
   std::string robot_base_frame,
   double transform_tolerance)
-: topic_name_(topic_name),
-  tf_(tf),
+: tf_(tf),
   robot_base_frame_(robot_base_frame),
   transform_tolerance_(transform_tolerance)
 {
@@ -48,8 +47,7 @@ FootprintSubscriber::FootprintSubscriber(
   tf2_ros::Buffer & tf,
   std::string robot_base_frame,
   double transform_tolerance)
-: topic_name_(topic_name),
-  tf_(tf),
+: tf_(tf),
   robot_base_frame_(robot_base_frame),
   transform_tolerance_(transform_tolerance)
 {

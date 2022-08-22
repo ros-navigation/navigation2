@@ -172,7 +172,13 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     std::istreambuf_iterator<char>());
 
   // Create the Behavior Tree from the XML input
-  tree_ = bt_->createTreeFromText(xml_string, blackboard_);
+  try {
+    tree_ = bt_->createTreeFromText(xml_string, blackboard_);
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(logger_, "Exception when loading BT: %s", e.what());
+    return false;
+  }
+
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
 
   current_bt_xml_filename_ = filename;

@@ -87,7 +87,7 @@ def generate_launch_description():
             parameters=[{
                             'node_names':
                             [
-                                'filter_mask_server', 'costmap_filter_info_server', 'bt_navigator'
+                                'filter_mask_server', 'costmap_filter_info_server'
                             ]
                         },
                         {'autostart': True}]),

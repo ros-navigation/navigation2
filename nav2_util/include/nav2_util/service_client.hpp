@@ -132,6 +132,15 @@ public:
     return client_->wait_for_service(timeout);
   }
 
+  /**
+  * @brief Gets the service name
+  * @return string Service name
+  */
+  std::string getServiceName()
+  {
+    return service_name_;
+  }
+
 protected:
   std::string service_name_;
   rclcpp::Node::SharedPtr node_;
