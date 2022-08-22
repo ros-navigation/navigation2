@@ -43,6 +43,20 @@ BT::NodeStatus ComputePathToPoseAction::on_success()
   return BT::NodeStatus::SUCCESS;
 }
 
+BT::NodeStatus ComputePathToPoseAction::on_aborted()
+{
+  nav_msgs::msg::Path empty_path;
+  setOutput("path", empty_path);
+  return BT::NodeStatus::FAILURE;
+}
+
+BT::NodeStatus ComputePathToPoseAction::on_cancelled()
+{
+  nav_msgs::msg::Path empty_path;
+  setOutput("path", empty_path);
+  return BT::NodeStatus::SUCCESS;
+}
+
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp_v3/bt_factory.h"
