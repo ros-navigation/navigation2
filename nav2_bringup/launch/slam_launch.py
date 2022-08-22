@@ -75,20 +75,22 @@ def generate_launch_description():
     # Nodes launching commands
 
     start_map_server = GroupAction(
-        actions=[SetParameter("use_sim_time", use_sim_time), Node(
-            package='nav2_map_server',
-            executable='map_saver_server',
-            output='screen',
-            respawn=use_respawn,
-            respawn_delay=2.0,
-            parameters=[configured_params]),
+        actions=[
+            SetParameter("use_sim_time", use_sim_time),
             Node(
-            package='nav2_lifecycle_manager',
-            executable='lifecycle_manager',
-            name='lifecycle_manager_slam',
-            output='screen',
-            parameters=[{'autostart': autostart},
-                        {'node_names': lifecycle_nodes}])
+                package='nav2_map_server',
+                executable='map_saver_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params]),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_slam',
+                output='screen',
+                parameters=[{'autostart': autostart},
+                            {'node_names': lifecycle_nodes}])
         ])
 
     # If the provided param file doesn't have slam_toolbox params, we must remove the 'params_file'
