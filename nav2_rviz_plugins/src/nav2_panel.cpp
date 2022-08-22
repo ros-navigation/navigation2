@@ -50,6 +50,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   navigation_mode_button_ = new QPushButton;
   save_waypoints_button_ = new QPushButton;
   load_waypoints_button_ = new QPushButton;
+  pause_waypoint_button_ = new QPushButton;
   navigation_status_indicator_ = new QLabel;
   localization_status_indicator_ = new QLabel;
   navigation_goal_status_indicator_ = new QLabel;
@@ -124,6 +125,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   initial_->assignProperty(load_waypoints_button_, "text", "Load waypoints");
   initial_->assignProperty(load_waypoints_button_, "enabled", false);
 
+  initial_->assignProperty(pause_waypoint_button_, "text", "Pause waypoint");
+  initial_->assignProperty(pause_waypoint_button_, "enabled", false);
+
   initial_->assignProperty(nr_of_loops, "text", "");
   initial_->assignProperty(nr_of_loops, "enabled", false);
 
@@ -147,6 +151,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   idle_->assignProperty(load_waypoints_button_, "text", "Load waypoints");
   idle_->assignProperty(load_waypoints_button_, "enabled", false);
+
+  idle_->assignProperty(pause_waypoint_button_, "text", "Pause waypoint");
+  idle_->assignProperty(pause_waypoint_button_, "enabled", false);
 
   idle_->assignProperty(nr_of_loops, "text", "");
   idle_->assignProperty(nr_of_loops, "enabled", false);
@@ -172,6 +179,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulating_->assignProperty(load_waypoints_button_, "text", "Load waypoints");
   accumulating_->assignProperty(load_waypoints_button_, "enabled", true);
 
+  accumulating_->assignProperty(pause_waypoint_button_, "text", "Pause waypoint");
+  accumulating_->assignProperty(pause_waypoint_button_, "enabled", false);
+
   accumulating_->assignProperty(nr_of_loops, "text", QString::fromStdString(loop));
   accumulating_->assignProperty(nr_of_loops, "enabled", true);
 
@@ -194,6 +204,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   accumulated_wp_->assignProperty(load_waypoints_button_, "text", "Load waypoints");
   accumulated_wp_->assignProperty(load_waypoints_button_, "enabled", false);
+
+  accumulated_wp_->assignProperty(pause_waypoint_button_, "text", "Pause waypoint");
+  accumulated_wp_->assignProperty(pause_waypoint_button_, "enabled", true);
 
   // accumulated_wp_->assignProperty(nr_of_loops, "text", QString::fromStdString(loop));
   // accumulated_wp_->assignProperty(nr_of_loops, "enabled", false);
@@ -243,6 +256,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   running_->assignProperty(load_waypoints_button_, "text", "Load waypoints");
   running_->assignProperty(load_waypoints_button_, "enabled", false);
 
+  running_->assignProperty(pause_waypoint_button_, "text", "Pause waypoint");
+  running_->assignProperty(pause_waypoint_button_, "enabled", false);
+
   running_->assignProperty(nr_of_loops, "text", "");
   running_->assignProperty(nr_of_loops, "enabled", false);
 
@@ -266,9 +282,36 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   paused_->assignProperty(load_waypoints_button_, "text", "Load waypoints");
   paused_->assignProperty(load_waypoints_button_, "enabled", false);
 
+  paused_->assignProperty(pause_waypoint_button_, "text", "Pause waypoint");
+  paused_->assignProperty(pause_waypoint_button_, "enabled", false);
+
   // State entered to resume the nav2 lifecycle nodes
   resumed_ = new QState();
   resumed_->setObjectName("resuming");
+
+  // States entered to pause and resume waypoints
+  resumed_wp_ = new QState();
+  resumed_wp_->setObjectName("running");
+  resumed_wp_->assignProperty(start_reset_button_, "text", "Cancel");
+  resumed_wp_->assignProperty(start_reset_button_, "toolTip", cancel_msg);
+
+  resumed_wp_->assignProperty(pause_resume_button_, "text", "Start Nav Through Poses");
+  resumed_wp_->assignProperty(pause_resume_button_, "enabled", false);
+
+  resumed_wp_->assignProperty(navigation_mode_button_, "text", "Start Waypoint Following");
+  resumed_wp_->assignProperty(navigation_mode_button_, "enabled", false);
+
+  resumed_wp_->assignProperty(save_waypoints_button_, "text", "Save waypoints");
+  resumed_wp_->assignProperty(save_waypoints_button_, "enabled", false);
+
+  resumed_wp_->assignProperty(load_waypoints_button_, "text", "Load waypoints");
+  resumed_wp_->assignProperty(load_waypoints_button_, "enabled", false);
+
+  resumed_wp_->assignProperty(pause_waypoint_button_, "text", "Resume waypoint");
+  resumed_wp_->assignProperty(pause_waypoint_button_, "enabled", true);
+
+  resumed_wp_->assignProperty(nr_of_loops, "text", "");
+  resumed_wp_->assignProperty(nr_of_loops, "enabled", false);
 
   QObject::connect(initial_, SIGNAL(exited()), this, SLOT(onStartup()));
   QObject::connect(canceled_, SIGNAL(exited()), this, SLOT(onCancel()));
@@ -277,6 +320,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QObject::connect(resumed_, SIGNAL(exited()), this, SLOT(onResume()));
   QObject::connect(accumulating_, SIGNAL(entered()), this, SLOT(onAccumulating()));
   QObject::connect(accumulated_wp_, SIGNAL(entered()), this, SLOT(onAccumulatedWp()));
+  QObject::connect(resumed_wp_, SIGNAL(entered()), this, SLOT(onResumedWp()));
   QObject::connect(
     accumulated_nav_through_poses_, SIGNAL(entered()), this,
     SLOT(onAccumulatedNTP()));
@@ -306,6 +350,10 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   // Pause/Resume button click transitions
   idle_->addTransition(pause_resume_button_, SIGNAL(clicked()), paused_);
   paused_->addTransition(pause_resume_button_, SIGNAL(clicked()), resumed_);
+
+  // Pause/Resume button waypoint transition
+  accumulated_wp_->addTransition(pause_waypoint_button_, SIGNAL(clicked()), resumed_wp_);
+  resumed_wp_->addTransition(pause_waypoint_button_, SIGNAL(clicked()), accumulated_wp_);
 
   // ROSAction Transitions: So when actions are updated remotely (failing, succeeding, etc)
   // the state of the application will also update. This means that if in the processing
@@ -392,6 +440,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   state_machine_.addState(accumulating_);
   state_machine_.addState(accumulated_wp_);
   state_machine_.addState(accumulated_nav_through_poses_);
+  state_machine_.addState(resumed_wp_);
 
   state_machine_.setInitialState(pre_initial_);
 
@@ -412,6 +461,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   side_layout->addWidget(save_waypoints_button_);
   side_layout->addWidget(load_waypoints_button_);
+  side_layout->addWidget(pause_waypoint_button_);
   side_layout->addWidget(number_of_loops_);
   side_layout->addWidget(nr_of_loops);
 
@@ -663,6 +713,15 @@ Nav2Panel::onCancel()
       this));
 }
 
+void Nav2Panel::onResumedWp() {
+  QFuture<void> future =
+    QtConcurrent::run(
+    std::bind(
+      &Nav2Panel::onCancelButtonPressed,
+      this));
+  acummulated_poses_ = store_poses_;
+}
+
 void
 Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
 {
@@ -736,6 +795,7 @@ Nav2Panel::onAccumulatedWp()
   std::cout << "Start waypoint" << std::endl;
     
   startWaypointFollowing(acummulated_poses_);
+  store_poses_ = acummulated_poses_;
   acummulated_poses_.clear();
 }
 
@@ -858,7 +918,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
   send_goal_options.feedback_callback = [this](
     WaypointFollowerGoalHandle::SharedPtr /*goal_handle*/,
     const std::shared_ptr<const nav2_msgs::action::FollowWaypoints::Feedback> feedback) {
-      std::cout<<feedback->current_waypoint<<std::endl;
+      goal_index_ = feedback->current_waypoint;
     };
 
   auto future_goal_handle =

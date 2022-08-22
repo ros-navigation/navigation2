@@ -64,6 +64,7 @@ private Q_SLOTS:
   void onCancel();
   void onPause();
   void onResume();
+  void onResumedWp();
   void onAccumulatedWp();
   void onAccumulatedNTP();
   void onAccumulating();
@@ -139,6 +140,7 @@ private:
   QPushButton * navigation_mode_button_{nullptr};
   QPushButton * save_waypoints_button_{nullptr};
   QPushButton * load_waypoints_button_{nullptr};
+  QPushButton * pause_waypoint_button_{nullptr};
 
   QLabel * navigation_status_indicator_{nullptr};
   QLabel * localization_status_indicator_{nullptr};
@@ -157,6 +159,8 @@ private:
   QState * reset_{nullptr};
   QState * paused_{nullptr};
   QState * resumed_{nullptr};
+  QState * paused_wp_{nullptr};
+  QState * resumed_wp_{nullptr};
   // The following states are added to allow for the state of the button to only expose reset
   // while the NavigateToPoses action is not active. While running, the user will be allowed to
   // cancel the action. The ROSActionTransition allows for the state of the action to be detected
@@ -170,6 +174,7 @@ private:
   QState * accumulated_nav_through_poses_{nullptr};
 
   std::vector<geometry_msgs::msg::PoseStamped> acummulated_poses_;
+  std::vector<geometry_msgs::msg::PoseStamped> store_poses_;
 
   // Publish the visual markers with the waypoints
   void updateWpNavigationMarkers();
