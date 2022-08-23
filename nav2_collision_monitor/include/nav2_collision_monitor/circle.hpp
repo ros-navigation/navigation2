@@ -15,6 +15,10 @@
 #ifndef NAV2_COLLISION_MONITOR__CIRCLE_HPP_
 #define NAV2_COLLISION_MONITOR__CIRCLE_HPP_
 
+#include <memory>
+#include <vector>
+#include <string>
+
 #include "nav2_collision_monitor/polygon.hpp"
 
 namespace nav2_collision_monitor
