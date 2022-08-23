@@ -547,7 +547,7 @@ bool NodeLattice::backtracePath(CoordinateVector & path)
   const float & grid_resolution = NodeLattice::motion_table.lattice_metadata.grid_resolution;
   const float pi_2 = 2.0 * M_PI;
 
-  while (current_node->parent) {
+  do {
     prim = current_node->getMotionPrimitive();
     // if motion primitive is valid, then was searched (rather than analytically expanded),
     // include dense path of subpoints making up the primitive at grid resolution
@@ -576,7 +576,7 @@ bool NodeLattice::backtracePath(CoordinateVector & path)
     }
 
     current_node = current_node->parent;
-  }
+  } while (current_node->parent);
 
   return path.size() > 0;
 }
