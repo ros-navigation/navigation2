@@ -158,8 +158,7 @@ bool Node2D::backtracePath(CoordinateVector & path)
     path.push_back(
       Node2D::getCoords(current_node->getIndex()));
     current_node = current_node->parent;
-  }
-  while (current_node->parent);
+  } while (current_node->parent);
 
   return path.size() > 0;
 }

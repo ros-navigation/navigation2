@@ -576,8 +576,7 @@ bool NodeLattice::backtracePath(CoordinateVector & path)
     }
 
     current_node = current_node->parent;
-  }
-  while (current_node->parent);
+  } while (current_node->parent);
 
   return path.size() > 0;
 }
