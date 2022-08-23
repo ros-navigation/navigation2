@@ -595,7 +595,7 @@ float NodeHybrid::getDistanceHeuristic(
       y_pos * motion_table.num_angle_quantization +
       theta_pos;
     motion_heuristic = dist_heuristic_lookup_table[index];
-  } else if (obstacle_heuristic == 0.0) {
+  } else if (obstacle_heuristic <= 0.0) {
     // If no obstacle heuristic value, must have some H to use
     // In nominal situations, this should never be called.
     static ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
