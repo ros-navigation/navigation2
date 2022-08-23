@@ -15,6 +15,10 @@
 #ifndef NAV2_COLLISION_MONITOR__SCAN_HPP_
 #define NAV2_COLLISION_MONITOR__SCAN_HPP_
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "sensor_msgs/msg/laser_scan.hpp"
 
 #include "nav2_collision_monitor/source.hpp"
