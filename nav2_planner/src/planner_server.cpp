@@ -461,26 +461,52 @@ PlannerServer::computePlan()
       return;
     }
 
-    result->path = getPlan(start, goal_pose, goal->planner_id);
+    try
+    {
+      result->path = getPlan(start, goal_pose, goal->planner_id);
 
-    if (!validatePath(action_server_pose_, goal_pose, result->path, goal->planner_id)) {
-      return;
+      if (!validatePath(action_server_pose_, goal_pose, result->path, goal->planner_id)) {
+        return;
+      }
+
+      // Publish the plan for visualization purposes
+      publishPlan(result->path);
+
+      auto cycle_duration = steady_clock_.now() - start_time;
+      result->planning_time = cycle_duration;
+
+      if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
+        RCLCPP_WARN(
+            get_logger(),
+            "Planner loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
+            1 / max_planner_duration_, 1 / cycle_duration.seconds());
+      }
+
+      action_server_pose_->succeeded_current(result);
     }
-
-    // Publish the plan for visualization purposes
-    publishPlan(result->path);
-
-    auto cycle_duration = steady_clock_.now() - start_time;
-    result->planning_time = cycle_duration;
-
-    if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
-      RCLCPP_WARN(
-        get_logger(),
-        "Planner loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
-        1 / max_planner_duration_, 1 / cycle_duration.seconds());
+    catch (nav2_core::GlobalPlannerStartOccupiedException &e)
+    {
+      result->result_code.result_code = nav2_msgs::msg::GlobalPlannerResultCode::GOAL_OCCUPIED;
+      action_server_pose_->terminate_current(result);
     }
-
-    action_server_pose_->succeeded_current(result);
+    catch (nav2_core::GlobalPlannerGoalOccupiedException &e)
+    {
+      result->result_code.result_code = nav2_msgs::msg::GlobalPlannerResultCode::GOAL_OCCUPIED;
+      result->result_code.message = e.what();
+      action_server_pose_->terminate_current(result);
+    }
+    catch (nav2_core::GlobalPlannerNoValidPathException &e)
+    {
+      result->result_code.result_code = nav2_msgs::msg::GlobalPlannerResultCode::NO_VALID_PATH;
+      result->result_code.message = e.what();
+      action_server_pose_->terminate_current(result);
+    }
+    catch (nav2_core::GlobalPlannerTimeOutException &e)
+    {
+      result->result_code.result_code = nav2_msgs::msg::GlobalPlannerResultCode::TIMEOUT;
+      result->result_code.message = e.what();
+      action_server_pose_->terminate_current(result);
+    }
   } catch (std::exception & ex) {
     RCLCPP_WARN(
       get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",

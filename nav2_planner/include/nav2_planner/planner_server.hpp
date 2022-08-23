@@ -39,6 +39,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
+#include "nav2_core/exceptions.hpp"
 
 namespace nav2_planner
 {

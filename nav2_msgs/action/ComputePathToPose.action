@@ -7,5 +7,6 @@ bool use_start # If false, use current robot pose as path start, if true, use st
 #result definition
 nav_msgs/Path path
 builtin_interfaces/Duration planning_time
+GlobalPlannerResultCode result_code
 ---
 #feedback definition

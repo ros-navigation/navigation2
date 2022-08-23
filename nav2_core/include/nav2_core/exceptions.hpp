@@ -46,9 +46,36 @@ namespace nav2_core
 class PlannerException : public std::runtime_error
 {
 public:
-  explicit PlannerException(const std::string description)
+  explicit PlannerException(const std::string &description)
   : std::runtime_error(description) {}
-  using Ptr = std::shared_ptr<PlannerException>;
+};
+
+class GlobalPlannerGoalOccupiedException: public PlannerException
+{
+public:
+  explicit GlobalPlannerGoalOccupiedException(const std::string &description)
+  : PlannerException(description) {};
+};
+
+class GlobalPlannerStartOccupiedException : public PlannerException
+{
+public:
+  explicit GlobalPlannerStartOccupiedException(const std::string &description)
+      : PlannerException(description) {};
+};
+
+class GlobalPlannerNoValidPathException : public PlannerException
+{
+public:
+  explicit GlobalPlannerNoValidPathException(const std::string &description)
+      : PlannerException(description) {};
+};
+
+class GlobalPlannerTimeOutException : public PlannerException
+{
+public:
+  explicit GlobalPlannerTimeOutException(const std::string &description)
+      : PlannerException(description) {};
 };
 
 }  // namespace nav2_core

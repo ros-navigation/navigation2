@@ -40,6 +40,7 @@ void ComputePathToPoseAction::on_tick()
 BT::NodeStatus ComputePathToPoseAction::on_success()
 {
   setOutput("path", result_.result->path);
+  setOutput("global_planner_result_code", result_.result);
   return BT::NodeStatus::SUCCESS;
 }
 
@@ -47,6 +48,10 @@ BT::NodeStatus ComputePathToPoseAction::on_aborted()
 {
   nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
+
+  nav2_msgs::msg::GlobalPlannerResultCode result_code;
+  setOutput("global_planner_result_code", result_code);
+
   return BT::NodeStatus::FAILURE;
 }
 
@@ -54,6 +59,10 @@ BT::NodeStatus ComputePathToPoseAction::on_cancelled()
 {
   nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
+
+  nav2_msgs::msg::GlobalPlannerResultCode result_code;
+  setOutput("global_planner_result_code", result_code);
+
   return BT::NodeStatus::SUCCESS;
 }
 
