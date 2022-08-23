@@ -44,13 +44,15 @@ BT::NodeStatus ComputePathThroughPosesAction::on_success()
   return BT::NodeStatus::SUCCESS;
 }
 
-BT::NodeStatus ComputePathThroughPosesAction::on_aborted() {
+BT::NodeStatus ComputePathThroughPosesAction::on_aborted()
+{
   nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
   return BT::NodeStatus::FAILURE;
 }
 
-BT::NodeStatus ComputePathThroughPosesAction::on_cancelled() {
+BT::NodeStatus ComputePathThroughPosesAction::on_cancelled()
+{
   nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
   return BT::NodeStatus::SUCCESS;
