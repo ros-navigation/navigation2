@@ -88,7 +88,8 @@ public:
   explicit Costmap2DROS(
     const std::string & name,
     const std::string & parent_namespace,
-    const std::string & local_namespace);
+    const std::string & local_namespace,
+    const bool & use_sim_time = false);
 
   /**
    * @brief A destructor
