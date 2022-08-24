@@ -49,7 +49,6 @@ BT::NodeStatus ComputePathToPoseAction::on_aborted()
   nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
   setOutput("global_planner_error_code", result_.result->error_code);
-
   return BT::NodeStatus::FAILURE;
 }
 
@@ -58,7 +57,6 @@ BT::NodeStatus ComputePathToPoseAction::on_cancelled()
   nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
   setOutput("global_planner_error_code", result_.result->error_code);
-
   return BT::NodeStatus::SUCCESS;
 }
 
