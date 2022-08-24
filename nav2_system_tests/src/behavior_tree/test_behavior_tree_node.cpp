@@ -92,7 +92,7 @@ public:
       "nav2_goal_checker_selector_bt_node",
       "nav2_controller_cancel_bt_node",
       "nav2_path_longer_on_approach_bt_node",
-      "nav2_assisted_teleop_cancel_bt_node"
+      "nav2_assisted_teleop_cancel_bt_node",
       "nav2_wait_cancel_bt_node",
       "nav2_spin_cancel_bt_node",
       "nav2_back_up_cancel_bt_node",
