@@ -58,8 +58,8 @@ using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
-Costmap2DROS::Costmap2DROS(const std::string & name)
-: Costmap2DROS(name, "/", name) {}
+Costmap2DROS::Costmap2DROS(const std::string & name, const bool & use_sim_time)
+: Costmap2DROS(name, "/", name, use_sim_time) {}
 
 Costmap2DROS::Costmap2DROS(
   const std::string & name,
