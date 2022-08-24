@@ -20,7 +20,6 @@
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav_msgs/msg/path.h"
 #include "nav2_behavior_tree/bt_action_node.hpp"
-#include "std_msgs/msg/int16.hpp"
 
 namespace nav2_behavior_tree
 {
