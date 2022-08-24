@@ -502,7 +502,8 @@ PlannerServer::computePlan() {
         get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
         goal->planner_id.c_str(), goal->goal.pose.position.x,
         goal->goal.pose.position.y, ex.what());
-    action_server_pose_->terminate_current();
+    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::UNKNOWN;
+    action_server_pose_->terminate_current(result);
   }
 }
 
