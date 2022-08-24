@@ -20,6 +20,7 @@
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav_msgs/msg/path.h"
 #include "nav2_behavior_tree/bt_action_node.hpp"
+#include "std_msgs/msg/int16.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -70,8 +71,9 @@ public:
     return providedBasicPorts(
       {
         BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
-        BT::OutputPort<nav2_msgs::msg::GlobalPlannerResultCode>("global_planner_result_code",
-          "The global planner result code"),
+        BT::OutputPort<nav2_msgs::action::ComputePathToPose::Result::_error_code_type>
+            ("global_planner_error_code",
+          "The global planner error code"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>(
           "start", "Start pose of the path if overriding current robot pose"),
