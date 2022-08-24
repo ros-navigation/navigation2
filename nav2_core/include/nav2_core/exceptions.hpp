@@ -64,10 +64,10 @@ public:
       : PlannerException(description) {};
 };
 
-class GlobalPlannerNoValidPathException : public PlannerException
+class GlobalPlannerNoValidPathFoundException : public PlannerException
 {
 public:
-  explicit GlobalPlannerNoValidPathException(const std::string &description)
+  explicit GlobalPlannerNoValidPathFoundException(const std::string &description)
       : PlannerException(description) {};
 };
 

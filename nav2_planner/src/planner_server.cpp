@@ -490,18 +490,17 @@ PlannerServer::computePlan() {
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TIMEOUT;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::GlobalPlannerNoValidPathException &ex) {
+  } catch (nav2_core::GlobalPlannerNoValidPathFoundException &ex) {
     RCLCPP_WARN(
-        get_logger(), "%s plugin failed to plan path. No Valid Path Could be found: \"%s\"",
+        get_logger(), "%s plugin failed to plan path. No Valid Path found: \"%s\"",
         goal->planner_id.c_str(),
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NO_VALID_PATH;
     action_server_pose_->terminate_current(result);
   } catch (std::exception &ex) {
     RCLCPP_WARN(
-        get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
-        goal->planner_id.c_str(), goal->goal.pose.position.x,
-        goal->goal.pose.position.y, ex.what());
+        get_logger(), "%s plugin failed to plan: \"%s\"",
+        goal->planner_id.c_str(), ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::UNKNOWN;
     action_server_pose_->terminate_current(result);
   }
