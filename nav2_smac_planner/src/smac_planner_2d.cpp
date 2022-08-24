@@ -250,28 +250,13 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   // Compute plan
   Node2D::CoordinateVector path;
   int num_iterations = 0;
-  std::string error;
-  try {
-    if (!_a_star->createPath(
-        path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution())))
-    {
-      if (num_iterations < _a_star->getMaxIterations()) {
-        error = std::string("no valid path found");
-      } else {
-        error = std::string("exceeded maximum iterations");
-      }
-    }
-  } catch (const std::runtime_error & e) {
-    error = "invalid use: ";
-    error += e.what();
-  }
 
-  if (!error.empty()) {
-    RCLCPP_WARN(
-      _logger,
-      "%s: failed to create plan, %s.",
-      _name.c_str(), error.c_str());
-    return plan;
+  if (!_a_star->createPath(path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution()))) {
+    if (num_iterations < _a_star->getMaxIterations()) {
+      throw nav2_core::GlobalPlannerNoValidPathFoundException("no valid path found");
+    } else {
+      throw nav2_core::GlobalPlannerNoValidPathFoundException("exceeded maximum iterations");
+    }
   }
 
   // Convert to world coordinates

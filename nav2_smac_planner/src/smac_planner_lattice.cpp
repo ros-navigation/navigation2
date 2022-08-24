@@ -260,6 +260,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   // Compute plan
   NodeLattice::CoordinateVector path;
   int num_iterations = 0;
+  std::string error;
 
   if (!_a_star->createPath(path, num_iterations, 0 /*no tolerance*/)) {
     if (num_iterations < _a_star->getMaxIterations()) {
