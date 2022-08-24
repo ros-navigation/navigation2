@@ -157,7 +157,7 @@ class RewrittenYaml(launch.Substitution):
             return paths
         pn = p
         if p != "":
-            pn += '.'
+            pn += joinchar
         if isinstance(d, dict):
             for k in d:
                 v = d[k]
