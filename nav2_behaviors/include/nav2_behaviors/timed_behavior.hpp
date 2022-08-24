@@ -63,13 +63,12 @@ public:
   TimedBehavior()
   : action_server_(nullptr),
     cycle_frequency_(10.0),
-    enabled_(false)
+    enabled_(false),
+    transform_tolerance_(0.0)
   {
   }
 
-  virtual ~TimedBehavior()
-  {
-  }
+  virtual ~TimedBehavior() = default;
 
   // Derived classes can override this method to catch the command and perform some checks
   // before getting into the main loop. The method will only be called
@@ -194,19 +193,6 @@ protected:
         "Initial checks failed for %s", behavior_name_.c_str());
       action_server_->terminate_current();
       return;
-    }
-
-    // Log a message every second
-    {
-      auto node = node_.lock();
-      if (!node) {
-        throw std::runtime_error{"Failed to lock node"};
-      }
-
-      auto timer = node->create_wall_timer(
-        1s,
-        [&]()
-        {RCLCPP_INFO(logger_, "%s running...", behavior_name_.c_str());});
     }
 
     auto start_time = steady_clock_.now();

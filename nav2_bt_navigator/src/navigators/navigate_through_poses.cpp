@@ -76,7 +76,7 @@ NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 
   if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
     RCLCPP_ERROR(
-      logger_, "BT file not found: %s. Navigation canceled.",
+      logger_, "Error loading XML file: %s. Navigation canceled.",
       bt_xml_filename.c_str());
     return false;
   }
@@ -203,7 +203,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
 {
   if (goal->poses.size() > 0) {
     RCLCPP_INFO(
-      logger_, "Begin navigating from current location through %li poses to (%.2f, %.2f)",
+      logger_, "Begin navigating from current location through %zu poses to (%.2f, %.2f)",
       goal->poses.size(), goal->poses.back().pose.position.x, goal->poses.back().pose.position.y);
   }
 

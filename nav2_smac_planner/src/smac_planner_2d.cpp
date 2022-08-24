@@ -91,17 +91,7 @@ void SmacPlanner2D::configure(
     node, name + ".max_planning_time", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".max_planning_time", _max_planning_time);
 
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("MOORE")));
-  node->get_parameter(name + ".motion_model_for_search", _motion_model_for_search);
-  _motion_model = fromString(_motion_model_for_search);
-  if (_motion_model == MotionModel::UNKNOWN) {
-    RCLCPP_WARN(
-      _logger,
-      "Unable to get MotionModel search type. Given '%s', "
-      "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
-      _motion_model_for_search.c_str());
-  }
+  _motion_model = MotionModel::TWOD;
 
   if (_max_on_approach_iterations <= 0) {
     RCLCPP_INFO(
@@ -154,10 +144,9 @@ void SmacPlanner2D::configure(
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlanner2D with "
     "tolerance %.2f, maximum iterations %i, "
-    "max on approach iterations %i, and %s. Using motion model: %s.",
+    "max on approach iterations %i, and %s.",
     _name.c_str(), _tolerance, _max_iterations, _max_on_approach_iterations,
-    _allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
-    toString(_motion_model).c_str());
+    _allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal");
 }
 
 void SmacPlanner2D::activate()
@@ -390,18 +379,6 @@ SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
             _logger, "On approach iteration selected as <= 0, "
             "disabling tolerance and on approach iterations.");
           _max_on_approach_iterations = std::numeric_limits<int>::max();
-        }
-      }
-    } else if (type == ParameterType::PARAMETER_STRING) {
-      if (name == _name + ".motion_model_for_search") {
-        reinit_a_star = true;
-        _motion_model = fromString(parameter.as_string());
-        if (_motion_model == MotionModel::UNKNOWN) {
-          RCLCPP_WARN(
-            _logger,
-            "Unable to get MotionModel search type. Given '%s', "
-            "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
-            _motion_model_for_search.c_str());
         }
       }
     }

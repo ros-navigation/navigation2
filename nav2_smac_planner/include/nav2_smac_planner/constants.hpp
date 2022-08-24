@@ -22,20 +22,17 @@ namespace nav2_smac_planner
 enum class MotionModel
 {
   UNKNOWN = 0,
-  VON_NEUMANN = 1,
-  MOORE = 2,
-  DUBIN = 3,
-  REEDS_SHEPP = 4,
-  STATE_LATTICE = 5,
+  TWOD = 1,
+  DUBIN = 2,
+  REEDS_SHEPP = 3,
+  STATE_LATTICE = 4,
 };
 
 inline std::string toString(const MotionModel & n)
 {
   switch (n) {
-    case MotionModel::VON_NEUMANN:
-      return "Von Neumann";
-    case MotionModel::MOORE:
-      return "Moore";
+    case MotionModel::TWOD:
+      return "2D";
     case MotionModel::DUBIN:
       return "Dubin";
     case MotionModel::REEDS_SHEPP:
@@ -49,10 +46,8 @@ inline std::string toString(const MotionModel & n)
 
 inline MotionModel fromString(const std::string & n)
 {
-  if (n == "VON_NEUMANN") {
-    return MotionModel::VON_NEUMANN;
-  } else if (n == "MOORE") {
-    return MotionModel::MOORE;
+  if (n == "2D") {
+    return MotionModel::TWOD;
   } else if (n == "DUBIN") {
     return MotionModel::DUBIN;
   } else if (n == "REEDS_SHEPP") {

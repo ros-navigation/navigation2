@@ -263,7 +263,7 @@ WaypointFollower::followWaypoints()
       new_goal = true;
       if (goal_index >= goal->poses.size()) {
         RCLCPP_INFO(
-          get_logger(), "Completed all %lu waypoints requested.",
+          get_logger(), "Completed all %zu waypoints requested.",
           goal->poses.size());
         result->missed_waypoints = failed_ids_;
         action_server_->succeeded_current(result);
@@ -286,6 +286,14 @@ void
 WaypointFollower::resultCallback(
   const rclcpp_action::ClientGoalHandle<ClientT>::WrappedResult & result)
 {
+  if (result.goal_id != future_goal_handle_.get()->get_goal_id()) {
+    RCLCPP_DEBUG(
+      get_logger(),
+      "Goal IDs do not match for the current goal handle and received result."
+      "Ignoring likely due to receiving result for an old goal.");
+    return;
+  }
+
   switch (result.code) {
     case rclcpp_action::ResultCode::SUCCEEDED:
       current_goal_status_ = ActionStatus::SUCCEEDED;

@@ -595,7 +595,7 @@ float NodeHybrid::getDistanceHeuristic(
       y_pos * motion_table.num_angle_quantization +
       theta_pos;
     motion_heuristic = dist_heuristic_lookup_table[index];
-  } else if (obstacle_heuristic == 0.0) {
+  } else if (obstacle_heuristic <= 0.0) {
     // If no obstacle heuristic value, must have some H to use
     // In nominal situations, this should never be called.
     static ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
@@ -705,12 +705,12 @@ bool NodeHybrid::backtracePath(CoordinateVector & path)
 
   NodePtr current_node = this;
 
-  while (current_node->parent) {
+  do {
     path.push_back(current_node->pose);
     // Convert angle to radians
     path.back().theta = NodeHybrid::motion_table.getAngleFromBin(path.back().theta);
     current_node = current_node->parent;
-  }
+  } while (current_node->parent);
 
   return path.size() > 0;
 }

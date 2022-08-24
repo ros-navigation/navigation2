@@ -74,11 +74,11 @@ PlannerServer::~PlannerServer()
 }
 
 nav2_util::CallbackReturn
-PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
+PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  costmap_ros_->on_configure(state);
+  costmap_ros_->configure();
   costmap_ = costmap_ros_->getCostmap();
 
   RCLCPP_DEBUG(
@@ -154,14 +154,14 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 }
 
 nav2_util::CallbackReturn
-PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
+PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
   plan_publisher_->on_activate();
   action_server_pose_->activate();
   action_server_poses_->activate();
-  costmap_ros_->on_activate(state);
+  costmap_ros_->activate();
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
@@ -187,14 +187,14 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
 }
 
 nav2_util::CallbackReturn
-PlannerServer::on_deactivate(const rclcpp_lifecycle::State & state)
+PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   action_server_pose_->deactivate();
   action_server_poses_->deactivate();
   plan_publisher_->on_deactivate();
-  costmap_ros_->on_deactivate(state);
+  costmap_ros_->deactivate();
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
@@ -210,7 +210,7 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & state)
 }
 
 nav2_util::CallbackReturn
-PlannerServer::on_cleanup(const rclcpp_lifecycle::State & state)
+PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -218,7 +218,7 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   action_server_poses_.reset();
   plan_publisher_.reset();
   tf_.reset();
-  costmap_ros_->on_cleanup(state);
+  costmap_ros_->cleanup();
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
@@ -332,7 +332,7 @@ bool PlannerServer::validatePath(
 
   RCLCPP_DEBUG(
     get_logger(),
-    "Found valid path of size %lu to (%.2f, %.2f)",
+    "Found valid path of size %zu to (%.2f, %.2f)",
     path.poses.size(), goal.pose.position.x,
     goal.pose.position.y);
 
@@ -422,7 +422,7 @@ PlannerServer::computePlanThroughPoses()
   } catch (std::exception & ex) {
     RCLCPP_WARN(
       get_logger(),
-      "%s plugin failed to plan through %li points with final goal (%.2f, %.2f): \"%s\"",
+      "%s plugin failed to plan through %zu points with final goal (%.2f, %.2f): \"%s\"",
       goal->planner_id.c_str(), goal->goals.size(), goal->goals.back().pose.position.x,
       goal->goals.back().pose.position.y, ex.what());
     action_server_poses_->terminate_current();
