@@ -79,6 +79,14 @@ ament_target_dependencies(nav2_back_up_behavior
   ${dependencies}
 )
 
+add_library(nav2_assisted_teleop_behavior SHARED
+  plugins/assisted_teleop.cpp
+)
+
+ament_target_dependencies(nav2_assisted_teleop_behavior
+  ${dependencies}
+)
+
 pluginlib_export_plugin_description_file(nav2_core behavior_plugin.xml)
 
 # Library
@@ -106,6 +114,7 @@ rclcpp_components_register_nodes(${library_name} "behavior_server::BehaviorServe
 install(TARGETS ${library_name}
                 nav2_spin_behavior
                 nav2_wait_behavior
+                nav2_assisted_teleop_behavior
                 nav2_drive_on_heading_behavior
                 nav2_back_up_behavior
   ARCHIVE DESTINATION lib
@@ -140,6 +149,7 @@ ament_export_include_directories(include)
 ament_export_libraries(${library_name}
   nav2_spin_behavior
   nav2_wait_behavior
+  nav2_assisted_teleop_behavior
   nav2_drive_on_heading_behavior
   nav2_back_up_behavior
 )
