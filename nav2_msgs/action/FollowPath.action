@@ -1,3 +1,10 @@
+# Error codes
+int16 INVALID=0
+int16 UNKNOWN=1
+int16 FAILED_TO_MAKE_PROGRESS=2
+int16 PATIENCE_EXCEEDED=3
+int16 INVALID_PATH=4
+
 #goal definition
 nav_msgs/Path path
 string controller_id
@@ -5,6 +12,7 @@ string goal_checker_id
 ---
 #result definition
 std_msgs/Empty result
+int16 error_code
 ---
 #feedback definition
 float32 distance_to_goal

@@ -31,10 +31,15 @@ public:
       : ControllerException(description) {};
 };
 
-class PatienceExceeded : public ControllerException
-{
+class PatienceExceeded : public ControllerException {
 public:
   explicit PatienceExceeded(const std::string &description)
+  : ControllerException(description) {};
+};
+
+class InvalidPath : public ControllerException {
+public:
+  explicit InvalidPath(const std::string &description)
   : ControllerException(description) {};
 };
 

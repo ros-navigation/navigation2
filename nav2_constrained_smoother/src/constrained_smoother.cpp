@@ -138,7 +138,7 @@ bool ConstrainedSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Durat
       logger_,
       "%s: failed to smooth plan, Ceres could not find a usable solution to optimize.",
       plugin_name_.c_str());
-    throw new nav2_core::PlannerException(
+    throw nav2_core::PlannerException(
             "Failed to smooth plan, Ceres could not find a usable solution.");
   }
 

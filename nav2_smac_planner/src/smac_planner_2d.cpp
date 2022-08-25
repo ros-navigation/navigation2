@@ -253,9 +253,9 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 
   if (!_a_star->createPath(path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution()))) {
     if (num_iterations < _a_star->getMaxIterations()) {
-      throw nav2_core::GlobalPlannerNoValidPathFoundException("no valid path found");
+      throw nav2_core::NoValidPathFoundException("no valid path found");
     } else {
-      throw nav2_core::GlobalPlannerNoValidPathFoundException("exceeded maximum iterations");
+      throw nav2_core::NoValidPathFoundException("exceeded maximum iterations");
     }
   }
 

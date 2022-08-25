@@ -464,7 +464,7 @@ PlannerServer::computePlan() {
     }
 
     action_server_pose_->succeeded_current(result);
-  } catch (nav2_core::GlobalPlannerStartOccupiedException &ex) {
+  } catch (nav2_core::StartOccupiedException &ex) {
     RCLCPP_WARN(
         get_logger(), "%s plugin failed to plan path. "
                       "Start Pose (%.2f, %.2f) was occupied: \"%s\"",
@@ -474,7 +474,8 @@ PlannerServer::computePlan() {
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_OCCUPIED;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::GlobalPlannerGoalOccupiedException &ex) {
+    return;
+  } catch (nav2_core::GoalOccupiedException &ex) {
     RCLCPP_WARN(
         get_logger(), "%s plugin failed to plan path. Goal Pose (%.2f, %.2f) was occupied: \"%s\"",
         goal->planner_id.c_str(),
@@ -483,26 +484,30 @@ PlannerServer::computePlan() {
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::GOAL_OCCUPIED;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::GlobalPlannerTimeOutException &ex) {
+    return;
+  } catch (nav2_core::TimeOutException &ex) {
     RCLCPP_WARN(
         get_logger(), "%s plugin failed to plan path. Timeout occurred: \"%s\"",
         goal->planner_id.c_str(),
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TIMEOUT;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::GlobalPlannerNoValidPathFoundException &ex) {
+    return;
+  } catch (nav2_core::NoValidPathFoundException &ex) {
     RCLCPP_WARN(
         get_logger(), "%s plugin failed to plan path. No Valid Path found: \"%s\"",
         goal->planner_id.c_str(),
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NO_VALID_PATH;
     action_server_pose_->terminate_current(result);
+    return;
   } catch (std::exception &ex) {
     RCLCPP_WARN(
         get_logger(), "%s plugin failed to plan: \"%s\"",
         goal->planner_id.c_str(), ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::UNKNOWN;
     action_server_pose_->terminate_current(result);
+    return;
   }
 }
 

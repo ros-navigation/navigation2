@@ -50,31 +50,31 @@ public:
   : std::runtime_error(description) {}
 };
 
-class GlobalPlannerGoalOccupiedException: public PlannerException
+class GoalOccupiedException: public PlannerException
 {
 public:
-  explicit GlobalPlannerGoalOccupiedException(const std::string &description)
+  explicit GoalOccupiedException(const std::string &description)
   : PlannerException(description) {};
 };
 
-class GlobalPlannerStartOccupiedException : public PlannerException
+class StartOccupiedException : public PlannerException
 {
 public:
-  explicit GlobalPlannerStartOccupiedException(const std::string &description)
+  explicit StartOccupiedException(const std::string &description)
       : PlannerException(description) {};
 };
 
-class GlobalPlannerNoValidPathFoundException : public PlannerException
+class NoValidPathFoundException : public PlannerException
 {
 public:
-  explicit GlobalPlannerNoValidPathFoundException(const std::string &description)
+  explicit NoValidPathFoundException(const std::string &description)
       : PlannerException(description) {};
 };
 
-class GlobalPlannerTimeOutException : public PlannerException
+class TimeOutException : public PlannerException
 {
 public:
-  explicit GlobalPlannerTimeOutException(const std::string &description)
+  explicit TimeOutException(const std::string &description)
       : PlannerException(description) {};
 };
 

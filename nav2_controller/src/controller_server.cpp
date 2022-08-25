@@ -405,10 +405,33 @@ void ControllerServer::computeControl()
           controller_frequency_);
       }
     }
+  } catch (nav2_core::FailedToMakeProgress & e) {
+    RCLCPP_ERROR(this->get_logger(), e.what());
+    publishZeroVelocity();
+    std::shared_ptr<nav2_msgs::action::FollowPath::Result> result;
+    result->error_code = nav2_msgs::action::FollowPath::Goal::FAILED_TO_MAKE_PROGRESS;
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::PatienceExceeded & e) {
+    RCLCPP_ERROR(this->get_logger(), e.what());
+    publishZeroVelocity();
+    std::shared_ptr<nav2_msgs::action::FollowPath::Result> result;
+    result->error_code = nav2_msgs::action::FollowPath::Goal::PATIENCE_EXCEEDED;
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::InvalidPath & e) {
+    RCLCPP_ERROR(this->get_logger(), e.what());
+    publishZeroVelocity();
+    std::shared_ptr<nav2_msgs::action::FollowPath::Result> result;
+    result->error_code = nav2_msgs::action::FollowPath::Goal::INVALID_PATH;
+    action_server_->terminate_current(result);
+    return;
   } catch (nav2_core::ControllerException & e) {
     RCLCPP_ERROR(this->get_logger(), e.what());
     publishZeroVelocity();
-    action_server_->terminate_current();
+    std::shared_ptr<nav2_msgs::action::FollowPath::Result> result;
+    result->error_code = nav2_msgs::action::FollowPath::Goal::UNKNOWN;
+    action_server_->terminate_current(result);
     return;
   }
 
@@ -426,7 +449,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
     get_logger(),
     "Providing path to the controller %s", current_controller_.c_str());
   if (path.poses.empty()) {
-    throw nav2_core::ControllerException("Invalid path, Path is empty.");
+    throw nav2_core::InvalidPath("Path is empty.");
   }
   controllers_[current_controller_]->setPlan(path);
 
