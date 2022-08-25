@@ -25,7 +25,7 @@
 #include "Eigen/Core"
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_core/exceptions.hpp"
+#include "nav2_core/planner_exceptions.hpp"
 
 #include "nav2_smac_planner/analytic_expansion.hpp"
 #include "nav2_smac_planner/node_2d.hpp"

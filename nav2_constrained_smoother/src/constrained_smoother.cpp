@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "nav2_constrained_smoother/constrained_smoother.hpp"
-#include "nav2_core/exceptions.hpp"
+#include "nav2_core/planner_exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
