@@ -21,7 +21,7 @@
 #include <utility>
 
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
-#include "nav2_core/exceptions.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
@@ -46,7 +46,7 @@ void RegulatedPurePursuitController::configure(
   auto node = parent.lock();
   node_ = parent;
   if (!node) {
-    throw nav2_core::PlannerException("Unable to lock node!");
+    throw nav2_core::ControllerException("Unable to lock node!");
   }
 
   costmap_ros_ = costmap_ros;
@@ -347,7 +347,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Collision checking on this velocity heading
   const double & carrot_dist = hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
   if (isCollisionImminent(pose, linear_vel, angular_vel, carrot_dist)) {
-    throw nav2_core::PlannerException("RegulatedPurePursuitController detected collision ahead!");
+    throw nav2_core::ControllerException("RegulatedPurePursuitController detected collision ahead!");
   }
 
   // populate and return message
@@ -573,7 +573,7 @@ double RegulatedPurePursuitController::costAtPose(const double & x, const double
       logger_,
       "The dimensions of the costmap is too small to fully include your robot's footprint, "
       "thusly the robot cannot proceed further");
-    throw nav2_core::PlannerException(
+    throw nav2_core::ControllerException(
             "RegulatedPurePursuitController: Dimensions of the costmap are too small "
             "to encapsulate the robot footprint at current speeds!");
   }
@@ -684,13 +684,13 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   const geometry_msgs::msg::PoseStamped & pose)
 {
   if (global_plan_.poses.empty()) {
-    throw nav2_core::PlannerException("Received plan with zero length");
+    throw nav2_core::ControllerException("Received plan with zero length");
   }
 
   // let's get the pose of the robot in the frame of the plan
   geometry_msgs::msg::PoseStamped robot_pose;
   if (!transformPose(global_plan_.header.frame_id, pose, robot_pose)) {
-    throw nav2_core::PlannerException("Unable to transform robot pose into global plan's frame");
+    throw nav2_core::ControllerException("Unable to transform robot pose into global plan's frame");
   }
 
   // We'll discard points on the plan that are outside the local costmap
@@ -743,7 +743,7 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   global_path_pub_->publish(transformed_plan);
 
   if (transformed_plan.poses.empty()) {
-    throw nav2_core::PlannerException("Resulting plan has 0 poses in it.");
+    throw nav2_core::ControllerException("Resulting plan has 0 poses in it.");
   }
 
   return transformed_plan;
