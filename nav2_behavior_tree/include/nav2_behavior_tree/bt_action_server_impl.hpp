@@ -82,6 +82,9 @@ bool BtActionServer<ActionT>::on_configure()
       "-r",
       std::string("__node:=") +
       std::string(node->get_name()) + "_" + client_node_name + "_rclcpp_node",
+      "-p",
+      "use_sim_time:=" +
+      std::string(node->get_parameter("use_sim_time").as_bool() ? "true" : "false"),
       "--"});
 
   // Support for handling the topic-based goal pose from rviz
