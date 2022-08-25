@@ -22,4 +22,10 @@
 	    <description></description>
 	  </class>
 	</library>
+
+	<library path="nav2_assisted_teleop_behavior">
+	  <class name="nav2_behaviors/AssistedTeleop" type="nav2_behaviors::AssistedTeleop" base_class_type="nav2_core::Behavior">
+	    <description></description>
+	  </class>
+	</library>
 </class_libraries>
