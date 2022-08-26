@@ -303,7 +303,7 @@ Tester::Tester()
     rclcpp::Parameter(std::string(RANGE_NAME) + ".topic", RANGE_TOPIC));
 
   test_node_->declare_parameter(
-    std::string(RANGE_NAME) + ".obstacles_angle", rclcpp::ParameterValue(M_PI / 200));
+    std::string(RANGE_NAME) + ".obstacles_angle", rclcpp::ParameterValue(M_PI / 199));
 
   range_ = std::make_shared<RangeWrapper>(
     test_node_, RANGE_NAME, tf_buffer_,
@@ -433,15 +433,20 @@ void Tester::checkPointCloud(const std::vector<nav2_collision_monitor::Point> & 
 
 void Tester::checkRange(const std::vector<nav2_collision_monitor::Point> & data)
 {
-  ASSERT_EQ(data.size(), 20u);
+  ASSERT_EQ(data.size(), 21u);
 
-  const double angle_increment = M_PI / 200;
+  const double angle_increment = M_PI / 199;
   double angle = -M_PI / (10 * 2);
-  for (int i = 0; i < 200 / 10; i++) {
+  int i;
+  for (i = 0; i < 199 / 10 + 1; i++) {
     ASSERT_NEAR(data[i].x, 1.0 * std::cos(angle) + 0.1, EPSILON);
     ASSERT_NEAR(data[i].y, 1.0 * std::sin(angle) + 0.1, EPSILON);
     angle += angle_increment;
   }
+  // Check for the latest FoW/2 point
+  angle = M_PI / (10 * 2);
+  ASSERT_NEAR(data[i].x, 1.0 * std::cos(angle) + 0.1, EPSILON);
+  ASSERT_NEAR(data[i].y, 1.0 * std::sin(angle) + 0.1, EPSILON);
 }
 
 TEST_F(Tester, testGetData)
