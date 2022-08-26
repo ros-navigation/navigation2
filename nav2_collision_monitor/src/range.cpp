@@ -77,7 +77,7 @@ void Range::getData(
 
   // Ignore data, if its range is out of scope of range sensor abilities
   if (data_->range < data_->min_range || data_->range > data_->max_range) {
-    RCLCPP_INFO(
+    RCLCPP_WARN(
       logger_,
       "[%s]: Data range %fm is out of {%f..%f} sensor span. Ignoring...",
       source_name_.c_str(), data_->range, data_->min_range, data_->max_range);
@@ -92,9 +92,10 @@ void Range::getData(
   }
 
   // Calculate poses and refill data array
+  float angle;
   for (
-    float angle = -data_->field_of_view / 2;
-    angle <= data_->field_of_view / 2;
+    angle = -data_->field_of_view / 2;
+    angle < data_->field_of_view / 2;
     angle += obstacles_angle_)
   {
     // Transform point coordinates from source frame -> to base frame
@@ -107,6 +108,19 @@ void Range::getData(
     // Refill data array
     data.push_back({p_v3_b.x(), p_v3_b.y()});
   }
+
+  // Make sure that last (field_of_view / 2) point will be in the data array
+  angle = data_->field_of_view / 2;
+
+  // Transform point coordinates from source frame -> to base frame
+  tf2::Vector3 p_v3_s(
+    data_->range * std::cos(angle),
+    data_->range * std::sin(angle),
+    0.0);
+  tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
+
+  // Refill data array
+  data.push_back({p_v3_b.x(), p_v3_b.y()});
 }
 
 void Range::getParameters(std::string & source_topic)
