@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Samsung Research Russia
+// Copyright (c) 2022 Samsung R&D Institute Russia
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -302,6 +302,14 @@ bool CollisionMonitor::configureSources(
         p->configure();
 
         sources_.push_back(p);
+      } else if (source_type == "range") {
+        std::shared_ptr<Range> r = std::make_shared<Range>(
+          node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
+          transform_tolerance, source_timeout);
+
+        r->configure();
+
+        sources_.push_back(r);
       } else {  // Error if something else
         RCLCPP_ERROR(
           get_logger(),
