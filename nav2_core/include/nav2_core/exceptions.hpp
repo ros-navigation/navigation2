@@ -50,52 +50,59 @@ public:
   : std::runtime_error(description) {}
 };
 
-class GlobalPlannerGoalOccupiedException: public PlannerException
+class GoalOccupied: public PlannerException
 {
 public:
-  explicit GlobalPlannerGoalOccupiedException(const std::string &description)
+  explicit GoalOccupied(const std::string &description)
   : PlannerException(description) {};
 };
 
-class GlobalPlannerStartOccupiedException : public PlannerException
+class StartOccupied : public PlannerException
 {
 public:
-  explicit GlobalPlannerStartOccupiedException(const std::string &description)
+  explicit StartOccupied(const std::string &description)
       : PlannerException(description) {};
 };
 
-class GlobalPlannerNoValidPathFoundException : public PlannerException
+class NoValidPathCouldBeFound : public PlannerException
 {
 public:
-  explicit GlobalPlannerNoValidPathFoundException(const std::string &description)
+  explicit NoValidPathCouldBeFound(const std::string &description)
       : PlannerException(description) {};
 };
 
-class GlobalPlannerTimeOutException : public PlannerException
+class PlannerTimedOut : public PlannerException
 {
 public:
-  explicit GlobalPlannerTimeOutException(const std::string &description)
+  explicit PlannerTimedOut(const std::string &description)
       : PlannerException(description) {};
 };
 
-class GlobalPlannerStartOutsideMapBounds : public PlannerException
+class StartOutsideMapBounds : public PlannerException
 {
 public:
-  explicit GlobalPlannerStartOutsideMapBounds(const std::string &description)
+  explicit StartOutsideMapBounds(const std::string &description)
       : PlannerException(description) {};
 };
 
-class GlobalPlannerGoalOutsideMapBounds : public PlannerException
+class GoalOutsideMapBounds : public PlannerException
 {
 public:
-  explicit GlobalPlannerGoalOutsideMapBounds(const std::string &description)
+  explicit GoalOutsideMapBounds(const std::string &description)
       : PlannerException(description) {};
 };
 
-class GlobalPlannerStartIsEqualToGoal : public PlannerException
+class StartIsEqualToGoal : public PlannerException
 {
 public:
-  explicit GlobalPlannerStartIsEqualToGoal(const std::string &description)
+  explicit StartIsEqualToGoal(const std::string &description)
+      : PlannerException(description) {};
+};
+
+class PlannerTFError : public PlannerException
+{
+public:
+  explicit PlannerTFError(const std::string &description)
       : PlannerException(description) {};
 };
 

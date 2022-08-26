@@ -464,7 +464,7 @@ PlannerServer::computePlan() {
     }
 
     action_server_pose_->succeeded_current(result);
-  } catch (nav2_core::GlobalPlannerStartOccupiedException &ex) {
+  } catch (nav2_core::StartOccupied &ex) {
     RCLCPP_WARN(
         get_logger(), "%s plugin failed to plan path. "
                       "Start Pose (%.2f, %.2f) was occupied: \"%s\"",
@@ -474,7 +474,7 @@ PlannerServer::computePlan() {
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_OCCUPIED;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::GlobalPlannerGoalOccupiedException &ex) {
+  } catch (nav2_core::GoalOccupied &ex) {
     RCLCPP_WARN(
         get_logger(), "%s plugin failed to plan path. Goal Pose (%.2f, %.2f) was occupied: \"%s\"",
         goal->planner_id.c_str(),
@@ -483,28 +483,28 @@ PlannerServer::computePlan() {
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::GOAL_OCCUPIED;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::GlobalPlannerNoValidPathFoundException &ex) {
+  } catch (nav2_core::NoValidPathCouldBeFound &ex) {
     RCLCPP_WARN(
         get_logger(), "%s plugin failed to plan path. No Valid Path found: \"%s\"",
         goal->planner_id.c_str(),
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NO_VALID_PATH;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::GlobalPlannerTimeOutException &ex) {
+  } catch (nav2_core::PlannerTimedOut &ex) {
     RCLCPP_WARN(
         get_logger(), "%s plugin failed to plan path. Timeout occurred: \"%s\"",
         goal->planner_id.c_str(),
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TIMEOUT;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::GlobalPlannerStartOutsideMapBounds &ex) {
+  } catch (nav2_core::StartOutsideMapBounds &ex) {
     RCLCPP_WARN(
         get_logger(), "%s plugin failed to plan path. Start Outside map: \"%s\"",
         goal->planner_id.c_str(),
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_OUTSIDE_MAP;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::GlobalPlannerGoalOutsideMapBounds &ex) {
+  } catch (nav2_core::GoalOutsideMapBounds &ex) {
     RCLCPP_WARN(
         get_logger(), "%s plugin failed to plan path. Goal Outside map: \"%s\"",
         goal->planner_id.c_str(),
