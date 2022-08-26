@@ -483,6 +483,13 @@ PlannerServer::computePlan() {
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::GOAL_OCCUPIED;
     action_server_pose_->terminate_current(result);
+  } catch (nav2_core::GlobalPlannerNoValidPathFoundException &ex) {
+    RCLCPP_WARN(
+        get_logger(), "%s plugin failed to plan path. No Valid Path found: \"%s\"",
+        goal->planner_id.c_str(),
+        ex.what());
+    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NO_VALID_PATH;
+    action_server_pose_->terminate_current(result);
   } catch (nav2_core::GlobalPlannerTimeOutException &ex) {
     RCLCPP_WARN(
         get_logger(), "%s plugin failed to plan path. Timeout occurred: \"%s\"",
@@ -490,12 +497,26 @@ PlannerServer::computePlan() {
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TIMEOUT;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::GlobalPlannerNoValidPathFoundException &ex) {
+  } catch (nav2_core::GlobalPlannerStartOutsideMapBounds &ex) {
     RCLCPP_WARN(
-        get_logger(), "%s plugin failed to plan path. No Valid Path found: \"%s\"",
+        get_logger(), "%s plugin failed to plan path. Start Outside map: \"%s\"",
         goal->planner_id.c_str(),
         ex.what());
-    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NO_VALID_PATH;
+    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_OUTSIDE_MAP;
+    action_server_pose_->terminate_current(result);
+  } catch (nav2_core::GlobalPlannerGoalOutsideMapBounds &ex) {
+    RCLCPP_WARN(
+        get_logger(), "%s plugin failed to plan path. Goal Outside map: \"%s\"",
+        goal->planner_id.c_str(),
+        ex.what());
+    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::GOAL_OUTSIDE_MAP;
+    action_server_pose_->terminate_current(result);
+  } catch (nav2_core::GlobalPlannerStartIsEqualToGoal &ex) {
+    RCLCPP_WARN(
+        get_logger(), "%s plugin failed to plan path. Goal Outside map: \"%s\"",
+        goal->planner_id.c_str(),
+        ex.what());
+    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_IS_EQUAL_TO_GOAL;
     action_server_pose_->terminate_current(result);
   } catch (std::exception &ex) {
     RCLCPP_WARN(

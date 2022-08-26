@@ -78,6 +78,27 @@ public:
       : PlannerException(description) {};
 };
 
+class GlobalPlannerStartOutsideMapBounds : public PlannerException
+{
+public:
+  explicit GlobalPlannerStartOutsideMapBounds(const std::string &description)
+      : PlannerException(description) {};
+};
+
+class GlobalPlannerGoalOutsideMapBounds : public PlannerException
+{
+public:
+  explicit GlobalPlannerGoalOutsideMapBounds(const std::string &description)
+      : PlannerException(description) {};
+};
+
+class GlobalPlannerStartIsEqualToGoal : public PlannerException
+{
+public:
+  explicit GlobalPlannerStartIsEqualToGoal(const std::string &description)
+      : PlannerException(description) {};
+};
+
 }  // namespace nav2_core
 
 #endif  // NAV2_CORE__EXCEPTIONS_HPP_
