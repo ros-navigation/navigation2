@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_collision_monitor/pointcloud.hpp"
+#include "nav2_collision_monitor/range.hpp"
 
+#include <math.h>
+#include <cmath>
 #include <functional>
-
-#include "sensor_msgs/point_cloud2_iterator.hpp"
 
 #include "nav2_util/node_utils.hpp"
 
 namespace nav2_collision_monitor
 {
 
-PointCloud::PointCloud(
+Range::Range(
   const nav2_util::LifecycleNode::WeakPtr & node,
   const std::string & source_name,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
@@ -36,16 +36,16 @@ PointCloud::PointCloud(
     transform_tolerance, source_timeout),
   data_(nullptr)
 {
-  RCLCPP_INFO(logger_, "[%s]: Creating PointCloud", source_name_.c_str());
+  RCLCPP_INFO(logger_, "[%s]: Creating Range", source_name_.c_str());
 }
 
-PointCloud::~PointCloud()
+Range::~Range()
 {
-  RCLCPP_INFO(logger_, "[%s]: Destroying PointCloud", source_name_.c_str());
+  RCLCPP_INFO(logger_, "[%s]: Destroying Range", source_name_.c_str());
   data_sub_.reset();
 }
 
-void PointCloud::configure()
+void Range::configure()
 {
   auto node = node_.lock();
   if (!node) {
@@ -56,22 +56,31 @@ void PointCloud::configure()
 
   getParameters(source_topic);
 
-  rclcpp::QoS pointcloud_qos = rclcpp::SensorDataQoS();  // set to default
-  data_sub_ = node->create_subscription<sensor_msgs::msg::PointCloud2>(
-    source_topic, pointcloud_qos,
-    std::bind(&PointCloud::dataCallback, this, std::placeholders::_1));
+  rclcpp::QoS range_qos = rclcpp::SensorDataQoS();  // set to default
+  data_sub_ = node->create_subscription<sensor_msgs::msg::Range>(
+    source_topic, range_qos,
+    std::bind(&Range::dataCallback, this, std::placeholders::_1));
 }
 
-void PointCloud::getData(
+void Range::getData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data) const
 {
   // Ignore data from the source if it is not being published yet or
-  // not published for a long time
+  // not being published for a long time
   if (data_ == nullptr) {
     return;
   }
   if (!sourceValid(data_->header.stamp, curr_time)) {
+    return;
+  }
+
+  // Ignore data, if its range is out of scope of range sensor abilities
+  if (data_->range < data_->min_range || data_->range > data_->max_range) {
+    RCLCPP_WARN(
+      logger_,
+      "[%s]: Data range %fm is out of {%f..%f} sensor span. Ignoring...",
+      source_name_.c_str(), data_->range, data_->min_range, data_->max_range);
     return;
   }
 
@@ -82,24 +91,39 @@ void PointCloud::getData(
     return;
   }
 
-  sensor_msgs::PointCloud2ConstIterator<float> iter_x(*data_, "x");
-  sensor_msgs::PointCloud2ConstIterator<float> iter_y(*data_, "y");
-  sensor_msgs::PointCloud2ConstIterator<float> iter_z(*data_, "z");
-
-  // Refill data array with PointCloud points in base frame
-  for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+  // Calculate poses and refill data array
+  float angle;
+  for (
+    angle = -data_->field_of_view / 2;
+    angle < data_->field_of_view / 2;
+    angle += obstacles_angle_)
+  {
     // Transform point coordinates from source frame -> to base frame
-    tf2::Vector3 p_v3_s(*iter_x, *iter_y, *iter_z);
+    tf2::Vector3 p_v3_s(
+      data_->range * std::cos(angle),
+      data_->range * std::sin(angle),
+      0.0);
     tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
     // Refill data array
-    if (p_v3_b.z() >= min_height_ && p_v3_b.z() <= max_height_) {
-      data.push_back({p_v3_b.x(), p_v3_b.y()});
-    }
+    data.push_back({p_v3_b.x(), p_v3_b.y()});
   }
+
+  // Make sure that last (field_of_view / 2) point will be in the data array
+  angle = data_->field_of_view / 2;
+
+  // Transform point coordinates from source frame -> to base frame
+  tf2::Vector3 p_v3_s(
+    data_->range * std::cos(angle),
+    data_->range * std::sin(angle),
+    0.0);
+  tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
+
+  // Refill data array
+  data.push_back({p_v3_b.x(), p_v3_b.y()});
 }
 
-void PointCloud::getParameters(std::string & source_topic)
+void Range::getParameters(std::string & source_topic)
 {
   auto node = node_.lock();
   if (!node) {
@@ -109,14 +133,11 @@ void PointCloud::getParameters(std::string & source_topic)
   getCommonParameters(source_topic);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, source_name_ + ".min_height", rclcpp::ParameterValue(0.05));
-  min_height_ = node->get_parameter(source_name_ + ".min_height").as_double();
-  nav2_util::declare_parameter_if_not_declared(
-    node, source_name_ + ".max_height", rclcpp::ParameterValue(0.5));
-  max_height_ = node->get_parameter(source_name_ + ".max_height").as_double();
+    node, source_name_ + ".obstacles_angle", rclcpp::ParameterValue(M_PI / 180));
+  obstacles_angle_ = node->get_parameter(source_name_ + ".obstacles_angle").as_double();
 }
 
-void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
+void Range::dataCallback(sensor_msgs::msg::Range::ConstSharedPtr msg)
 {
   data_ = msg;
 }

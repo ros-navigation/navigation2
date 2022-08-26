@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Samsung Research Russia
+// Copyright (c) 2022 Samsung R&D Institute Russia
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 
 #include <math.h>
+#include <cmath>
 #include <chrono>
 #include <memory>
 #include <utility>
@@ -26,6 +27,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
+#include "sensor_msgs/msg/range.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
@@ -45,6 +47,7 @@ static const char CMD_VEL_IN_TOPIC[]{"cmd_vel_in"};
 static const char CMD_VEL_OUT_TOPIC[]{"cmd_vel_out"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
+static const char RANGE_NAME[]{"Range"};
 static const int MAX_POINTS{1};
 static const double SLOWDOWN_RATIO{0.7};
 static const double TIME_BEFORE_COLLISION{1.0};
@@ -64,7 +67,8 @@ enum SourceType
 {
   SOURCE_UNKNOWN = 0,
   SCAN = 1,
-  POINTCLOUD = 2
+  POINTCLOUD = 2,
+  RANGE = 3
 };
 
 class CollisionMonitorWrapper : public nav2_collision_monitor::CollisionMonitor
@@ -93,16 +97,19 @@ public:
     ASSERT_EQ(on_configure(get_current_state()), nav2_util::CallbackReturn::FAILURE);
   }
 
-  bool isDataReceived(const rclcpp::Time & stamp)
+  bool correctDataReceived(const double expected_dist, const rclcpp::Time & stamp)
   {
     for (std::shared_ptr<nav2_collision_monitor::Source> source : sources_) {
       std::vector<nav2_collision_monitor::Point> collision_points;
       source->getData(stamp, collision_points);
-      if (collision_points.size() == 0) {
-        return false;
+      if (collision_points.size() != 0) {
+        const double dist = std::hypot(collision_points[0].x, collision_points[0].y);
+        if (std::fabs(dist - expected_dist) <= EPSILON) {
+          return true;
+        }
       }
     }
-    return true;
+    return false;
   }
 };  // CollisionMonitorWrapper
 
@@ -128,8 +135,12 @@ public:
   // Main topic/data working routines
   void publishScan(const double dist, const rclcpp::Time & stamp);
   void publishPointCloud(const double dist, const rclcpp::Time & stamp);
+  void publishRange(const double dist, const rclcpp::Time & stamp);
   void publishCmdVel(const double x, const double y, const double tw);
-  bool waitData(const std::chrono::nanoseconds & timeout, const rclcpp::Time & stamp);
+  bool waitData(
+    const double expected_dist,
+    const std::chrono::nanoseconds & timeout,
+    const rclcpp::Time & stamp);
   bool waitCmdVel(const std::chrono::nanoseconds & timeout);
 
 protected:
@@ -141,6 +152,7 @@ protected:
   // Data source publishers
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
 
   // Working with cmd_vel_in/cmd_vel_out
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_pub_;
@@ -157,6 +169,8 @@ Tester::Tester()
     SCAN_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   pointcloud_pub_ = cm_->create_publisher<sensor_msgs::msg::PointCloud2>(
     POINTCLOUD_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  range_pub_ = cm_->create_publisher<sensor_msgs::msg::Range>(
+    RANGE_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   cmd_vel_in_pub_ = cm_->create_publisher<geometry_msgs::msg::Twist>(
     CMD_VEL_IN_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
@@ -169,6 +183,7 @@ Tester::~Tester()
 {
   scan_pub_.reset();
   pointcloud_pub_.reset();
+  range_pub_.reset();
 
   cmd_vel_in_pub_.reset();
   cmd_vel_out_sub_.reset();
@@ -302,6 +317,16 @@ void Tester::addSource(
       source_name + ".max_height", rclcpp::ParameterValue(1.0));
     cm_->set_parameter(
       rclcpp::Parameter(source_name + ".max_height", 1.0));
+  } else if (type == RANGE) {
+    cm_->declare_parameter(
+      source_name + ".type", rclcpp::ParameterValue("range"));
+    cm_->set_parameter(
+      rclcpp::Parameter(source_name + ".type", "range"));
+
+    cm_->declare_parameter(
+      source_name + ".obstacles_angle", rclcpp::ParameterValue(M_PI / 200));
+    cm_->set_parameter(
+      rclcpp::Parameter(source_name + ".obstacles_angle", M_PI / 200));
   } else {  // type == SOURCE_UNKNOWN
     cm_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("unknown"));
@@ -408,6 +433,23 @@ void Tester::publishPointCloud(const double dist, const rclcpp::Time & stamp)
   pointcloud_pub_->publish(std::move(msg));
 }
 
+void Tester::publishRange(const double dist, const rclcpp::Time & stamp)
+{
+  std::unique_ptr<sensor_msgs::msg::Range> msg =
+    std::make_unique<sensor_msgs::msg::Range>();
+
+  msg->header.frame_id = SOURCE_FRAME_ID;
+  msg->header.stamp = stamp;
+
+  msg->radiation_type = 0;
+  msg->field_of_view = M_PI / 10;
+  msg->min_range = 0.1;
+  msg->max_range = dist + 0.1;
+  msg->range = dist;
+
+  range_pub_->publish(std::move(msg));
+}
+
 void Tester::publishCmdVel(const double x, const double y, const double tw)
 {
   // Reset cmd_vel_out_ before calling CollisionMonitor::process()
@@ -423,11 +465,14 @@ void Tester::publishCmdVel(const double x, const double y, const double tw)
   cmd_vel_in_pub_->publish(std::move(msg));
 }
 
-bool Tester::waitData(const std::chrono::nanoseconds & timeout, const rclcpp::Time & stamp)
+bool Tester::waitData(
+  const double expected_dist,
+  const std::chrono::nanoseconds & timeout,
+  const rclcpp::Time & stamp)
 {
   rclcpp::Time start_time = cm_->now();
   while (rclcpp::ok() && cm_->now() - start_time <= rclcpp::Duration(timeout)) {
-    if (cm_->isDataReceived(stamp)) {
+    if (cm_->correctDataReceived(expected_dist, stamp)) {
       return true;
     }
     rclcpp::spin_some(cm_->get_node_base_interface());
@@ -474,7 +519,7 @@ TEST_F(Tester, testProcessStopSlowdown)
 
   // 1. Obstacle is far away from robot
   publishScan(3.0, curr_time);
-  ASSERT_TRUE(waitData(500ms, curr_time));
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
@@ -483,7 +528,7 @@ TEST_F(Tester, testProcessStopSlowdown)
 
   // 2. Obstacle is in slowdown robot zone
   publishScan(1.5, curr_time);
-  ASSERT_TRUE(waitData(500ms, curr_time));
+  ASSERT_TRUE(waitData(1.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * SLOWDOWN_RATIO, EPSILON);
@@ -492,7 +537,7 @@ TEST_F(Tester, testProcessStopSlowdown)
 
   // 3. Obstacle is inside stop zone
   publishScan(0.5, curr_time);
-  ASSERT_TRUE(waitData(500ms, curr_time));
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
@@ -501,7 +546,7 @@ TEST_F(Tester, testProcessStopSlowdown)
 
   // 4. Restorint back normal operation
   publishScan(3.0, curr_time);
-  ASSERT_TRUE(waitData(500ms, curr_time));
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
@@ -531,7 +576,7 @@ TEST_F(Tester, testProcessApproach)
 
   // 1. Obstacle is far away from robot
   publishScan(3.0, curr_time);
-  ASSERT_TRUE(waitData(500ms, curr_time));
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.0);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
@@ -540,7 +585,7 @@ TEST_F(Tester, testProcessApproach)
 
   // 2. Approaching obstacle (0.2 m ahead from robot footprint)
   publishScan(1.2, curr_time);
-  ASSERT_TRUE(waitData(500ms, curr_time));
+  ASSERT_TRUE(waitData(1.2, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.0);
   ASSERT_TRUE(waitCmdVel(500ms));
   // change_ratio = (0.2 m / speed m/s) / TIME_BEFORE_COLLISION s
@@ -554,7 +599,7 @@ TEST_F(Tester, testProcessApproach)
 
   // 3. Obstacle is inside robot footprint
   publishScan(0.5, curr_time);
-  ASSERT_TRUE(waitData(500ms, curr_time));
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.0);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
@@ -563,7 +608,7 @@ TEST_F(Tester, testProcessApproach)
 
   // 4. Restorint back normal operation
   publishScan(3.0, curr_time);
-  ASSERT_TRUE(waitData(500ms, curr_time));
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.0);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
@@ -585,7 +630,8 @@ TEST_F(Tester, testCrossOver)
   addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
   addPolygon("Approach", CIRCLE, 1.0, "approach");
   addSource(POINTCLOUD_NAME, POINTCLOUD);
-  setVectors({"SlowDown", "Approach"}, {POINTCLOUD_NAME});
+  addSource(RANGE_NAME, RANGE);
+  setVectors({"SlowDown", "Approach"}, {POINTCLOUD_NAME, RANGE_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -596,7 +642,7 @@ TEST_F(Tester, testCrossOver)
   // 1. Obstacle is not in the slowdown zone, but less than TIME_BEFORE_COLLISION (ahead in 1.5 m).
   // Robot should approach the obstacle.
   publishPointCloud(2.5, curr_time);
-  ASSERT_TRUE(waitData(500ms, curr_time));
+  ASSERT_TRUE(waitData(std::hypot(2.5, 0.01), 500ms, curr_time));
   publishCmdVel(3.0, 0.0, 0.0);
   ASSERT_TRUE(waitCmdVel(500ms));
   // change_ratio = (1.5 m / 3.0 m/s) / TIME_BEFORE_COLLISION s
@@ -607,8 +653,8 @@ TEST_F(Tester, testCrossOver)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
 
   // 2. Obstacle is inside slowdown zone, but speed is too slow for approach
-  publishPointCloud(1.5, curr_time);
-  ASSERT_TRUE(waitData(500ms, curr_time));
+  publishRange(1.5, curr_time);
+  ASSERT_TRUE(waitData(1.5, 500ms, curr_time));
   publishCmdVel(0.1, 0.0, 0.0);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.1 * SLOWDOWN_RATIO, EPSILON);
@@ -650,7 +696,7 @@ TEST_F(Tester, testCeasePublishZeroVel)
 
   // 1. Obstacle is inside approach footprint: robot should stop
   publishScan(1.5, curr_time);
-  ASSERT_TRUE(waitData(500ms, curr_time));
+  ASSERT_TRUE(waitData(1.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
@@ -666,7 +712,7 @@ TEST_F(Tester, testCeasePublishZeroVel)
 
   // 3. Release robot to normal operation
   publishScan(3.0, curr_time);
-  ASSERT_TRUE(waitData(500ms, curr_time));
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
@@ -675,7 +721,7 @@ TEST_F(Tester, testCeasePublishZeroVel)
 
   // 4. Obstacle is inside stop zone
   publishScan(0.5, curr_time);
-  ASSERT_TRUE(waitData(500ms, curr_time));
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
