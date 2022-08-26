@@ -8,6 +8,7 @@ int16 TIMEOUT=5
 int16 START_OUTSIDE_MAP=6
 int16 GOAL_OUTSIDE_MAP=7
 int16 START_IS_EQUAL_TO_GOAL=8
+int16 TF_ERROR=9
 
 #goal definition
 geometry_msgs/PoseStamped goal

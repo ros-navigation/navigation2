@@ -511,12 +511,19 @@ PlannerServer::computePlan() {
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::GOAL_OUTSIDE_MAP;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::GlobalPlannerStartIsEqualToGoal &ex) {
+  } catch (nav2_core::StartIsEqualToGoal &ex) {
     RCLCPP_WARN(
-        get_logger(), "%s plugin failed to plan path. Goal Outside map: \"%s\"",
+        get_logger(), "%s plugin failed to plan path. Start equal to goal: \"%s\"",
         goal->planner_id.c_str(),
         ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_IS_EQUAL_TO_GOAL;
+    action_server_pose_->terminate_current(result);
+  } catch (nav2_core::PlannerTFError &ex) {
+    RCLCPP_WARN(
+        get_logger(), "%s plugin failed to plan path. Start equal to goal: \"%s\"",
+        goal->planner_id.c_str(),
+        ex.what());
+    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TF_ERROR;
     action_server_pose_->terminate_current(result);
   } catch (std::exception &ex) {
     RCLCPP_WARN(
