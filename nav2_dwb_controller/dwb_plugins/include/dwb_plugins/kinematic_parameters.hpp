@@ -37,6 +37,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -80,9 +81,13 @@ protected:
   double min_vel_y_{0};
   double max_vel_x_{0};
   double max_vel_y_{0};
+  double base_max_vel_x_{0};
+  double base_max_vel_y_{0};
   double max_vel_theta_{0};
+  double base_max_vel_theta_{0};
   double min_speed_xy_{0};
   double max_speed_xy_{0};
+  double base_max_speed_xy_{0};
   double min_speed_theta_{0};
   double acc_lim_x_{0};
   double acc_lim_y_{0};
@@ -109,15 +114,21 @@ public:
 
   inline KinematicParameters getKinematics() {return *kinematics_.load();}
 
+  void setSpeedLimit(const double & speed_limit, const bool & percentage);
+
   using Ptr = std::shared_ptr<KinematicsHandler>;
 
 protected:
   std::atomic<KinematicParameters *> kinematics_;
 
-  // Subscription for parameter change
-  rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
-  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
-  void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  /**
+   * @brief Callback executed when a paramter change is detected
+   * @param parameters list of changed parameters
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
   void update_kinematics(KinematicParameters kinematics);
   std::string plugin_name_;
 };

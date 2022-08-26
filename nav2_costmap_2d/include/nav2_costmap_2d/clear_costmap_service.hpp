@@ -31,25 +31,36 @@ namespace nav2_costmap_2d
 
 class Costmap2DROS;
 
+/**
+ * @class ClearCostmapService
+ * @brief Exposes services to clear costmap objects in inclusive/exclusive regions or completely
+ */
 class ClearCostmapService
 {
 public:
-  ClearCostmapService(nav2_util::LifecycleNode::SharedPtr node, Costmap2DROS & costmap);
+  /**
+   * @brief A constructor
+   */
+  ClearCostmapService(const nav2_util::LifecycleNode::WeakPtr & parent, Costmap2DROS & costmap);
 
+  /**
+   * @brief A constructor
+   */
   ClearCostmapService() = delete;
 
-  // Clears the region outside of a user-specified area reverting to the static map
-  void clearExceptRegion(double reset_distance = 3.0);
+  /**
+   * @brief Clears the region outside of a user-specified area reverting to the static map
+   */
+  void clearRegion(double reset_distance, bool invert);
 
-  // Clears within a window around the robot
-  void clearAroundRobot(double window_size_x, double window_size_y);
-
-  // Clears all layers
+  /**
+   * @brief Clears all layers
+   */
   void clearEntirely();
 
 private:
-  // The ROS node to use for getting parameters, creating the service and logging
-  nav2_util::LifecycleNode::SharedPtr node_;
+  // The Logger object for logging
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
 
   // The costmap to clear
   Costmap2DROS & costmap_;
@@ -60,31 +71,43 @@ private:
 
   // Server for clearing the costmap
   rclcpp::Service<nav2_msgs::srv::ClearCostmapExceptRegion>::SharedPtr clear_except_service_;
+  /**
+   * @brief Callback to clear costmap except in a given region
+   */
   void clearExceptRegionCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapExceptRegion::Request> request,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapExceptRegion::Response> response);
 
   rclcpp::Service<nav2_msgs::srv::ClearCostmapAroundRobot>::SharedPtr clear_around_service_;
+  /**
+   * @brief Callback to clear costmap in a given region
+   */
   void clearAroundRobotCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapAroundRobot::Request> request,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapAroundRobot::Response> response);
 
   rclcpp::Service<nav2_msgs::srv::ClearEntireCostmap>::SharedPtr clear_entire_service_;
+  /**
+   * @brief Callback to clear costmap
+   */
   void clearEntireCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::ClearEntireCostmap::Request> request,
     const std::shared_ptr<nav2_msgs::srv::ClearEntireCostmap::Response> response);
 
-  void clearLayerExceptRegion(
-    std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance);
+  /**
+   * @brief  Function used to clear a given costmap layer
+   */
+  void clearLayerRegion(
+    std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance,
+    bool invert);
 
-  bool isClearable(const std::string & layer_name) const;
-
+  /**
+   * @brief Get the robot's position in the costmap using the master costmap
+   */
   bool getPosition(double & x, double & y) const;
-
-  std::string getLayerName(const Layer & layer) const;
 };
 
 }  // namespace nav2_costmap_2d

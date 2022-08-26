@@ -54,11 +54,35 @@ ament_target_dependencies(${library_name}
 add_library(nav2_compute_path_to_pose_action_bt_node SHARED plugins/action/compute_path_to_pose_action.cpp)
 list(APPEND plugin_libs nav2_compute_path_to_pose_action_bt_node)
 
+add_library(nav2_compute_path_through_poses_action_bt_node SHARED plugins/action/compute_path_through_poses_action.cpp)
+list(APPEND plugin_libs nav2_compute_path_through_poses_action_bt_node)
+
+add_library(nav2_controller_cancel_bt_node SHARED plugins/action/controller_cancel_node.cpp)
+list(APPEND plugin_libs nav2_controller_cancel_bt_node)
+
+add_library(nav2_wait_cancel_bt_node SHARED plugins/action/wait_cancel_node.cpp)
+list(APPEND plugin_libs nav2_wait_cancel_bt_node)
+
+add_library(nav2_spin_cancel_bt_node SHARED plugins/action/spin_cancel_node.cpp)
+list(APPEND plugin_libs nav2_spin_cancel_bt_node)
+
+add_library(nav2_back_up_cancel_bt_node SHARED plugins/action/back_up_cancel_node.cpp)
+list(APPEND plugin_libs nav2_back_up_cancel_bt_node)
+
+add_library(nav2_drive_on_heading_cancel_bt_node SHARED plugins/action/drive_on_heading_cancel_node.cpp)
+list(APPEND plugin_libs nav2_drive_on_heading_cancel_bt_node)
+
+add_library(nav2_smooth_path_action_bt_node SHARED plugins/action/smooth_path_action.cpp)
+list(APPEND plugin_libs nav2_smooth_path_action_bt_node)
+
 add_library(nav2_follow_path_action_bt_node SHARED plugins/action/follow_path_action.cpp)
 list(APPEND plugin_libs nav2_follow_path_action_bt_node)
 
 add_library(nav2_back_up_action_bt_node SHARED plugins/action/back_up_action.cpp)
 list(APPEND plugin_libs nav2_back_up_action_bt_node)
+
+add_library(nav2_drive_on_heading_bt_node SHARED plugins/action/drive_on_heading_action.cpp)
+list(APPEND plugin_libs nav2_drive_on_heading_bt_node)
 
 add_library(nav2_spin_action_bt_node SHARED plugins/action/spin_action.cpp)
 list(APPEND plugin_libs nav2_spin_action_bt_node)
@@ -78,11 +102,20 @@ list(APPEND plugin_libs nav2_transform_available_condition_bt_node)
 add_library(nav2_goal_reached_condition_bt_node SHARED plugins/condition/goal_reached_condition.cpp)
 list(APPEND plugin_libs nav2_goal_reached_condition_bt_node)
 
+add_library(nav2_globally_updated_goal_condition_bt_node SHARED plugins/condition/globally_updated_goal_condition.cpp)
+list(APPEND plugin_libs nav2_globally_updated_goal_condition_bt_node)
+
 add_library(nav2_goal_updated_condition_bt_node SHARED plugins/condition/goal_updated_condition.cpp)
 list(APPEND plugin_libs nav2_goal_updated_condition_bt_node)
 
+add_library(nav2_is_path_valid_condition_bt_node SHARED plugins/condition/is_path_valid_condition.cpp)
+list(APPEND plugin_libs nav2_is_path_valid_condition_bt_node)
+
 add_library(nav2_time_expired_condition_bt_node SHARED plugins/condition/time_expired_condition.cpp)
 list(APPEND plugin_libs nav2_time_expired_condition_bt_node)
+
+add_library(nav2_path_expiring_timer_condition SHARED plugins/condition/path_expiring_timer_condition.cpp)
+list(APPEND plugin_libs nav2_path_expiring_timer_condition)
 
 add_library(nav2_distance_traveled_condition_bt_node SHARED plugins/condition/distance_traveled_condition.cpp)
 list(APPEND plugin_libs nav2_distance_traveled_condition_bt_node)
@@ -108,8 +141,14 @@ list(APPEND plugin_libs nav2_speed_controller_bt_node)
 add_library(nav2_truncate_path_action_bt_node SHARED plugins/action/truncate_path_action.cpp)
 list(APPEND plugin_libs nav2_truncate_path_action_bt_node)
 
+add_library(nav2_truncate_path_local_action_bt_node SHARED plugins/action/truncate_path_local_action.cpp)
+list(APPEND plugin_libs nav2_truncate_path_local_action_bt_node)
+
 add_library(nav2_goal_updater_node_bt_node SHARED plugins/decorator/goal_updater_node.cpp)
 list(APPEND plugin_libs nav2_goal_updater_node_bt_node)
+
+add_library(nav2_path_longer_on_approach_bt_node SHARED plugins/decorator/path_longer_on_approach.cpp)
+list(APPEND plugin_libs nav2_path_longer_on_approach_bt_node)
 
 add_library(nav2_recovery_node_bt_node SHARED plugins/control/recovery_node.cpp)
 list(APPEND plugin_libs nav2_recovery_node_bt_node)
@@ -117,11 +156,32 @@ list(APPEND plugin_libs nav2_recovery_node_bt_node)
 add_library(nav2_navigate_to_pose_action_bt_node SHARED plugins/action/navigate_to_pose_action.cpp)
 list(APPEND plugin_libs nav2_navigate_to_pose_action_bt_node)
 
+add_library(nav2_navigate_through_poses_action_bt_node SHARED plugins/action/navigate_through_poses_action.cpp)
+list(APPEND plugin_libs nav2_navigate_through_poses_action_bt_node)
+
+add_library(nav2_remove_passed_goals_action_bt_node SHARED plugins/action/remove_passed_goals_action.cpp)
+list(APPEND plugin_libs nav2_remove_passed_goals_action_bt_node)
+
 add_library(nav2_pipeline_sequence_bt_node SHARED plugins/control/pipeline_sequence.cpp)
 list(APPEND plugin_libs nav2_pipeline_sequence_bt_node)
 
 add_library(nav2_round_robin_node_bt_node SHARED plugins/control/round_robin_node.cpp)
 list(APPEND plugin_libs nav2_round_robin_node_bt_node)
+
+add_library(nav2_single_trigger_bt_node SHARED plugins/decorator/single_trigger_node.cpp)
+list(APPEND plugin_libs nav2_single_trigger_bt_node)
+
+add_library(nav2_planner_selector_bt_node SHARED plugins/action/planner_selector_node.cpp)
+list(APPEND plugin_libs nav2_planner_selector_bt_node)
+
+add_library(nav2_controller_selector_bt_node SHARED plugins/action/controller_selector_node.cpp)
+list(APPEND plugin_libs nav2_controller_selector_bt_node)
+
+add_library(nav2_goal_checker_selector_bt_node SHARED plugins/action/goal_checker_selector_node.cpp)
+list(APPEND plugin_libs nav2_goal_checker_selector_bt_node)
+
+add_library(nav2_goal_updated_controller_bt_node SHARED plugins/decorator/goal_updated_controller.cpp)
+list(APPEND plugin_libs nav2_goal_updated_controller_bt_node)
 
 foreach(bt_plugin ${plugin_libs})
   ament_target_dependencies(${bt_plugin} ${dependencies})

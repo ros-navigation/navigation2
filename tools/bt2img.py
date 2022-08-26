@@ -89,7 +89,7 @@ def main():
         legend.render(args.legend)
     dot.format = 'png'
     if args.save_dot:
-        print("Saving dot to " + str(args.save_dot))
+        print(f'Saving dot to {args.save_dot}')
         args.save_dot.write(dot.source)
     dot.render(args.image_out, view=args.display)
 
@@ -119,7 +119,7 @@ def find_behavior_tree(xml_tree, tree_name):
         if tree_name == tree.get('ID'):
             return tree
 
-    raise RuntimeError("No behavior tree for name " + tree_name + " found in the XML file")
+    raise RuntimeError(f'No behavior tree for name {tree_name} found in the XML file')
 
 # Generate a dot description of the root of the behavior tree.
 def convert2dot(behavior_tree):

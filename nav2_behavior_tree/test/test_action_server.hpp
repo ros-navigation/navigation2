@@ -48,6 +48,21 @@ public:
     return current_goal_;
   }
 
+  void setReturnSuccess(bool return_success)
+  {
+    return_success_ = return_success;
+  }
+
+  bool getReturnSuccess(void)
+  {
+    return return_success_;
+  }
+
+  bool isGoalCancelled()
+  {
+    return goal_cancelled_;
+  }
+
 protected:
   virtual rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID &,
@@ -60,6 +75,7 @@ protected:
   virtual rclcpp_action::CancelResponse handle_cancel(
     const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>>)
   {
+    goal_cancelled_ = true;
     return rclcpp_action::CancelResponse::ACCEPT;
   }
 
@@ -77,6 +93,8 @@ protected:
 private:
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
   std::shared_ptr<const typename ActionT::Goal> current_goal_;
+  bool return_success_ = true;
+  bool goal_cancelled_ = false;
 };
 
 #endif  // TEST_ACTION_SERVER_HPP_

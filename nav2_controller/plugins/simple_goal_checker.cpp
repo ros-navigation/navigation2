@@ -34,14 +34,20 @@
 
 #include <memory>
 #include <string>
+#include <limits>
+#include <vector>
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
+
+using rcl_interfaces::msg::ParameterType;
+using std::placeholders::_1;
 
 namespace nav2_controller
 {
@@ -56,24 +62,32 @@ SimpleGoalChecker::SimpleGoalChecker()
 }
 
 void SimpleGoalChecker::initialize(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh,
-  const std::string & plugin_name)
+  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const std::string & plugin_name,
+  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS>/*costmap_ros*/)
 {
+  plugin_name_ = plugin_name;
+  auto node = parent.lock();
+
   nav2_util::declare_parameter_if_not_declared(
-    nh,
+    node,
     plugin_name + ".xy_goal_tolerance", rclcpp::ParameterValue(0.25));
   nav2_util::declare_parameter_if_not_declared(
-    nh,
+    node,
     plugin_name + ".yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
   nav2_util::declare_parameter_if_not_declared(
-    nh,
+    node,
     plugin_name + ".stateful", rclcpp::ParameterValue(true));
 
-  nh->get_parameter(plugin_name + ".xy_goal_tolerance", xy_goal_tolerance_);
-  nh->get_parameter(plugin_name + ".yaw_goal_tolerance", yaw_goal_tolerance_);
-  nh->get_parameter(plugin_name + ".stateful", stateful_);
+  node->get_parameter(plugin_name + ".xy_goal_tolerance", xy_goal_tolerance_);
+  node->get_parameter(plugin_name + ".yaw_goal_tolerance", yaw_goal_tolerance_);
+  node->get_parameter(plugin_name + ".stateful", stateful_);
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&SimpleGoalChecker::dynamicParametersCallback, this, _1));
 }
 
 void SimpleGoalChecker::reset()
@@ -101,6 +115,54 @@ bool SimpleGoalChecker::isGoalReached(
     tf2::getYaw(query_pose.orientation),
     tf2::getYaw(goal_pose.orientation));
   return fabs(dyaw) < yaw_goal_tolerance_;
+}
+
+bool SimpleGoalChecker::getTolerances(
+  geometry_msgs::msg::Pose & pose_tolerance,
+  geometry_msgs::msg::Twist & vel_tolerance)
+{
+  double invalid_field = std::numeric_limits<double>::lowest();
+
+  pose_tolerance.position.x = xy_goal_tolerance_;
+  pose_tolerance.position.y = xy_goal_tolerance_;
+  pose_tolerance.position.z = invalid_field;
+  pose_tolerance.orientation =
+    nav2_util::geometry_utils::orientationAroundZAxis(yaw_goal_tolerance_);
+
+  vel_tolerance.linear.x = invalid_field;
+  vel_tolerance.linear.y = invalid_field;
+  vel_tolerance.linear.z = invalid_field;
+
+  vel_tolerance.angular.x = invalid_field;
+  vel_tolerance.angular.y = invalid_field;
+  vel_tolerance.angular.z = invalid_field;
+
+  return true;
+}
+
+rcl_interfaces::msg::SetParametersResult
+SimpleGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  for (auto & parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
+
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == plugin_name_ + ".xy_goal_tolerance") {
+        xy_goal_tolerance_ = parameter.as_double();
+        xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+      } else if (name == plugin_name_ + ".yaw_goal_tolerance") {
+        yaw_goal_tolerance_ = parameter.as_double();
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == plugin_name_ + ".stateful") {
+        stateful_ = parameter.as_bool();
+      }
+    }
+  }
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_controller

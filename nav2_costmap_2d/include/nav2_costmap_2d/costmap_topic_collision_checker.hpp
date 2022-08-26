@@ -29,46 +29,71 @@
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
-#include "nav2_util/robot_utils.hpp"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
-#pragma GCC diagnostic pop
 
 namespace nav2_costmap_2d
 {
-
+/**
+ * @class CostmapTopicCollisionChecker
+ * @brief Using a costmap via a ros topic, this object is used to
+ * find if robot poses are in collision with the costmap environment
+ */
 class CostmapTopicCollisionChecker
 {
 public:
+  /**
+   * @brief A constructor
+   */
   CostmapTopicCollisionChecker(
     CostmapSubscriber & costmap_sub,
     FootprintSubscriber & footprint_sub,
-    tf2_ros::Buffer & tf,
-    std::string name = "collision_checker",
-    std::string global_frame = "map",
-    std::string robot_base_frame = "base_link",
-    double transform_tolerance = 0.1);
+    std::string name = "collision_checker");
 
+  /**
+   * @brief A destructor
+   */
   ~CostmapTopicCollisionChecker() = default;
 
-  // Returns the obstacle footprint score for a particular pose
-  double scorePose(const geometry_msgs::msg::Pose2D & pose);
-  bool isCollisionFree(const geometry_msgs::msg::Pose2D & pose);
+  /**
+   * @brief Returns the obstacle footprint score for a particular pose
+   *
+   * @param pose Pose to get score at
+   * @param fetch_costmap_and_footprint Defaults to true. When checking with multiple poses at once,
+   * data should be fetched in the first check but fetching can be skipped in consequent checks for speedup
+   */
+  double scorePose(
+    const geometry_msgs::msg::Pose2D & pose,
+    bool fetch_costmap_and_footprint = true);
+
+  /**
+   * @brief Returns if a pose is collision free
+   *
+   * @param pose Pose to check collision at
+   * @param fetch_costmap_and_footprint Defaults to true. When checking with multiple poses at once,
+   * data should be fetched in the first check but fetching can be skipped in consequent checks for speedup
+   */
+  bool isCollisionFree(
+    const geometry_msgs::msg::Pose2D & pose,
+    bool fetch_costmap_and_footprint = true);
 
 protected:
-  void unorientFootprint(const Footprint & oriented_footprint, Footprint & reset_footprint);
-  Footprint getFootprint(const geometry_msgs::msg::Pose2D & pose);
+  /**
+   * @brief Get a footprint at a set pose
+   *
+   * @param pose Pose to get footprint at
+   * @param fetch_latest_footprint Defaults to true. When checking with multiple poses at once,
+   * footprint should be fetched in the first check but fetching can be skipped in consequent checks for speedup
+   */
+  Footprint getFootprint(
+    const geometry_msgs::msg::Pose2D & pose,
+    bool fetch_latest_footprint = true);
 
   // Name used for logging
   std::string name_;
-  std::string global_frame_;
-  std::string robot_base_frame_;
-  tf2_ros::Buffer & tf_;
   CostmapSubscriber & costmap_sub_;
   FootprintSubscriber & footprint_sub_;
-  double transform_tolerance_;
   FootprintCollisionChecker<std::shared_ptr<Costmap2D>> collision_checker_;
+  rclcpp::Clock::SharedPtr clock_;
+  Footprint footprint_;
 };
 
 }  // namespace nav2_costmap_2d

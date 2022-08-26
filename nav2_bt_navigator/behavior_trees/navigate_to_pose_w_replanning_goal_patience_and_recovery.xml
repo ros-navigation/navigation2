@@ -1,0 +1,47 @@
+
+<!--
+  This BT has all the functionalities of navigate_to_pose_w_replanning_and_recovery.xml,
+  with an additional feature to cancel the control closer to the goal proximity and 
+  make the robot wait for a specific time, to see if the obstacle clears out before 
+  navigating along a significantly longer path to reach the goal location.
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+      <PipelineSequence name="NavigateWithReplanning">
+        <RateController hz="1.0">
+          <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+            <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </RecoveryNode>
+        </RateController>
+        <ReactiveSequence name="MonitorAndFollowPath">
+          <PathLongerOnApproach path="{path}" prox_len="3.0" length_factor="2.0">
+            <RetryUntilSuccessful num_attempts="1">
+              <SequenceStar name="CancelingControlAndWait">
+                <CancelControl name="ControlCancel"/>
+                <Wait wait_duration="5"/>
+              </SequenceStar>
+            </RetryUntilSuccessful>
+          </PathLongerOnApproach>
+          <RecoveryNode number_of_retries="1" name="FollowPath">
+            <FollowPath path="{path}" controller_id="FollowPath"/>
+            <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+          </RecoveryNode>
+        </ReactiveSequence>
+      </PipelineSequence>
+      <ReactiveFallback name="RecoveryFallback">
+        <GoalUpdated/>
+        <RoundRobin name="RecoveryActions">
+          <Sequence name="ClearingActions">
+            <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </Sequence>
+          <Spin spin_dist="1.57"/>
+          <Wait wait_duration="5"/>
+          <BackUp backup_dist="0.30" backup_speed="0.05"/>
+        </RoundRobin>
+      </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>

@@ -32,6 +32,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': False},
                         {'autostart': False},
+                        {'bond_timeout': 0.0},
                         {'node_names': ['lifecycle_node_test']}]),
     ])
 

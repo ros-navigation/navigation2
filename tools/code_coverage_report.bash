@@ -36,58 +36,45 @@ for opt in "$@" ; do
 done
 
 set -o xtrace
-mkdir -p $LCOVDIR
+mkdir -p ${LCOVDIR}
 
-# Generate initial zero-coverage data.
-# This adds files that were otherwise not run to the report
-lcov --capture --initial \
-  --directory build \
-  --output-file ${LCOVDIR}/initial_coverage.info \
-  --rc lcov_branch_coverage=0
+# Ignore certain packages:
+# - messages, which are auto generated files
+# - system tests, which are themselves all test artifacts
+# - rviz plugins, which are not used for real navigation
+EXCLUDE_PACKAGES=$(
+  colcon list \
+    --names-only \
+    --packages-select-regex \
+      ".*_msgs" \
+      ".*_tests" \
+      ".*_rviz.*" \
+  | xargs)
+INCLUDE_PACKAGES=$(
+  colcon list \
+    --names-only \
+    --packages-ignore \
+      $EXCLUDE_PACKAGES \
+  | xargs)
 
 # Capture executed code data.
-lcov --capture \
-  --directory build \
-  --output-file ${LCOVDIR}/test_coverage.info \
-  --rc lcov_branch_coverage=0
-
-# Combine the initial zero-coverage report with the executed lines report.
-lcov \
-  --add-tracefile ${LCOVDIR}/initial_coverage.info \
-  --add-tracefile ${LCOVDIR}/test_coverage.info \
-  --output-file ${LCOVDIR}/full_coverage.info \
-  --rc lcov_branch_coverage=0
-
-# Only include files that are within this workspace.
-# (eg filter out stdio.h etc)
-lcov \
-  --extract ${LCOVDIR}/full_coverage.info \
-    "${PWD}/*" \
-  --output-file ${LCOVDIR}/workspace_coverage.info \
-  --rc lcov_branch_coverage=0
-
-# Remove files in the build subdirectory.
-# Those are generated files (like messages, services, etc)
-# And system tests, which are themselves all test artifacts
-lcov \
-  --remove ${LCOVDIR}/workspace_coverage.info \
-    "${PWD}/build/*" \
-  --remove ${LCOVDIR}/workspace_coverage.info \
-    "${PWD}/*/dwb_msgs/*" \
-  --remove ${LCOVDIR}/workspace_coverage.info \
-    "${PWD}/*/nav2_msgs/*" \
-  --remove ${LCOVDIR}/workspace_coverage.info \
-    "${PWD}/*/nav_2d_msgs/*" \
-  --remove ${LCOVDIR}/workspace_coverage.info \
-    "${PWD}/*/nav2_system_tests/*" \
-  --output-file ${LCOVDIR}/project_coverage.info \
-  --rc lcov_branch_coverage=0
+fastcov --lcov \
+  -d build \
+  --exclude test/ $EXCLUDE_PACKAGES \
+  --include $INCLUDE_PACKAGES \
+  --process-gcno \
+  --validate-sources \
+  --dump-statistic \
+  --output ${LCOVDIR}/total_coverage.info
 
 if [ $COVERAGE_REPORT_VIEW = codecovio ]; then
-  bash <(curl -s https://codecov.io/bash) \
-    -f ${LCOVDIR}/project_coverage.info \
+  curl -s https://codecov.io/bash > codecov
+  codecov_version=$(grep -o 'VERSION=\"[0-9\.]*\"' codecov | cut -d'"' -f2)
+  shasum -a 512 -c <(curl -s "https://raw.githubusercontent.com/codecov/codecov-bash/${codecov_version}/SHA512SUM" | grep -w "codecov")
+  bash codecov \
+    -f ${LCOVDIR}/total_coverage.info \
     -R src/navigation2
 elif [ $COVERAGE_REPORT_VIEW = genhtml ]; then
-  genhtml ${LCOVDIR}/project_coverage.info \
+  genhtml ${LCOVDIR}/total_coverage.info \
     --output-directory ${LCOVDIR}/html
 fi

@@ -53,6 +53,7 @@ PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::VoxelLayer, nav2_costmap_2d::Layer)
 using nav2_costmap_2d::NO_INFORMATION;
 using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::FREE_SPACE;
+using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
@@ -72,38 +73,52 @@ void VoxelLayer::onInitialize()
   declareParameter("combination_method", rclcpp::ParameterValue(1));
   declareParameter("publish_voxel_map", rclcpp::ParameterValue(false));
 
-  node_->get_parameter(name_ + "." + "enabled", enabled_);
-  node_->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
-  node_->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
-  node_->get_parameter(name_ + "." + "z_voxels", size_z_);
-  node_->get_parameter(name_ + "." + "origin_z", origin_z_);
-  node_->get_parameter(name_ + "." + "z_resolution", z_resolution_);
-  node_->get_parameter(name_ + "." + "unknown_threshold", unknown_threshold_);
-  node_->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
-  node_->get_parameter(name_ + "." + "combination_method", combination_method_);
-  node_->get_parameter(name_ + "." + "publish_voxel_map", publish_voxel_);
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  node->get_parameter(name_ + "." + "enabled", enabled_);
+  node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  node->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
+  node->get_parameter(name_ + "." + "z_voxels", size_z_);
+  node->get_parameter(name_ + "." + "origin_z", origin_z_);
+  node->get_parameter(name_ + "." + "z_resolution", z_resolution_);
+  node->get_parameter(name_ + "." + "unknown_threshold", unknown_threshold_);
+  node->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
+  node->get_parameter(name_ + "." + "combination_method", combination_method_);
+  node->get_parameter(name_ + "." + "publish_voxel_map", publish_voxel_);
 
   auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 
   if (publish_voxel_) {
-    voxel_pub_ = node_->create_publisher<nav2_msgs::msg::VoxelGrid>(
+    voxel_pub_ = node->create_publisher<nav2_msgs::msg::VoxelGrid>(
       "voxel_grid", custom_qos);
     voxel_pub_->on_activate();
   }
 
-  clearing_endpoints_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud>(
+  clearing_endpoints_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud2>(
     "clearing_endpoints", custom_qos);
+  clearing_endpoints_pub_->on_activate();
 
   unknown_threshold_ += (VOXEL_BITS - size_z_);
   matchSize();
+
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &VoxelLayer::dynamicParametersCallback,
+      this, std::placeholders::_1));
 }
 
 VoxelLayer::~VoxelLayer()
 {
+  dyn_params_handler_.reset();
 }
 
 void VoxelLayer::matchSize()
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   ObstacleLayer::matchSize();
   voxel_grid_.resize(size_x_, size_y_, size_z_);
   assert(voxel_grid_.sizeX() == size_x_ && voxel_grid_.sizeY() == size_y_);
@@ -130,6 +145,8 @@ void VoxelLayer::updateBounds(
   double robot_x, double robot_y, double robot_yaw, double * min_x,
   double * min_y, double * max_x, double * max_y)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+
   if (rolling_window_) {
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
   }
@@ -163,7 +180,8 @@ void VoxelLayer::updateBounds(
 
     const sensor_msgs::msg::PointCloud2 & cloud = *(obs.cloud_);
 
-    double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
+    double sq_obstacle_max_range = obs.obstacle_max_range_ * obs.obstacle_max_range_;
+    double sq_obstacle_min_range = obs.obstacle_min_range_ * obs.obstacle_min_range_;
 
     sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
@@ -181,7 +199,12 @@ void VoxelLayer::updateBounds(
         (*iter_z - obs.origin_.z) * (*iter_z - obs.origin_.z);
 
       // if the point is far enough away... we won't consider it
-      if (sq_dist >= sq_obstacle_range) {
+      if (sq_dist >= sq_obstacle_max_range) {
+        continue;
+      }
+
+      // If the point is too close, do not consider it
+      if (sq_dist < sq_obstacle_min_range) {
         continue;
       }
 
@@ -224,65 +247,12 @@ void VoxelLayer::updateBounds(
     grid_msg->resolutions.y = resolution_;
     grid_msg->resolutions.z = z_resolution_;
     grid_msg->header.frame_id = global_frame_;
-    grid_msg->header.stamp = node_->now();
+    grid_msg->header.stamp = clock_->now();
 
     voxel_pub_->publish(std::move(grid_msg));
   }
 
   updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
-}
-
-void VoxelLayer::clearNonLethal(
-  double wx, double wy, double w_size_x, double w_size_y,
-  bool clear_no_info)
-{
-  // get the cell coordinates of the center point of the window
-  unsigned int mx, my;
-  if (!worldToMap(wx, wy, mx, my)) {
-    return;
-  }
-
-  // compute the bounds of the window
-  double start_x = wx - w_size_x / 2;
-  double start_y = wy - w_size_y / 2;
-  double end_x = start_x + w_size_x;
-  double end_y = start_y + w_size_y;
-
-  // scale the window based on the bounds of the costmap
-  start_x = std::max(origin_x_, start_x);
-  start_y = std::max(origin_y_, start_y);
-
-  end_x = std::min(origin_x_ + getSizeInMetersX(), end_x);
-  end_y = std::min(origin_y_ + getSizeInMetersY(), end_y);
-
-  // get the map coordinates of the bounds of the window
-  unsigned int map_sx, map_sy, map_ex, map_ey;
-
-  // check for legality just in case
-  if (!worldToMap(start_x, start_y, map_sx, map_sy) || !worldToMap(end_x, end_y, map_ex, map_ey)) {
-    return;
-  }
-
-  // we know that we want to clear all non-lethal obstacles in this
-  // window to get it ready for inflation
-  unsigned int index = getIndex(map_sx, map_sy);
-  unsigned char * current = &costmap_[index];
-  for (unsigned int j = map_sy; j <= map_ey; ++j) {
-    for (unsigned int i = map_sx; i <= map_ex; ++i) {
-      // if the cell is a lethal obstacle... we'll keep it and queue it,
-      // otherwise... we'll clear it
-      if (*current != LETHAL_OBSTACLE) {
-        if (clear_no_info || *current != NO_INFORMATION) {
-          *current = FREE_SPACE;
-          voxel_grid_.clearVoxelColumn(index);
-        }
-      }
-      current++;
-      index++;
-    }
-    current += size_x_ - (map_ex - map_sx) - 1;
-    index += size_x_ - (map_ex - map_sx) - 1;
-  }
 }
 
 void VoxelLayer::raytraceFreespace(
@@ -291,11 +261,9 @@ void VoxelLayer::raytraceFreespace(
   double * max_x,
   double * max_y)
 {
-  auto clearing_endpoints_ = std::make_unique<sensor_msgs::msg::PointCloud>();
+  auto clearing_endpoints_ = std::make_unique<sensor_msgs::msg::PointCloud2>();
 
-  size_t clearing_observation_cloud_size = clearing_observation.cloud_->height *
-    clearing_observation.cloud_->width;
-  if (clearing_observation_cloud_size == 0) {
+  if (clearing_observation.cloud_->height == 0 || clearing_observation.cloud_->width == 0) {
     return;
   }
 
@@ -306,17 +274,41 @@ void VoxelLayer::raytraceFreespace(
 
   if (!worldToMap3DFloat(ox, oy, oz, sensor_x, sensor_y, sensor_z)) {
     RCLCPP_WARN(
-      node_->get_logger(),
-      "Sensor origin: (%.2f, %.2f, %.2f), out of map bounds. The costmap can't raytrace for it.",
-      ox, oy, oz);
+      logger_,
+      "Sensor origin at (%.2f, %.2f %.2f) is out of map bounds (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f). "
+      "The costmap cannot raytrace for it.",
+      ox, oy, oz,
+      ox + getSizeInMetersX(), oy + getSizeInMetersY(), oz + getSizeInMetersZ(),
+      origin_x_, origin_y_, origin_z_);
+
     return;
   }
 
-  bool publish_clearing_points = (node_->count_subscribers("clearing_endpoints") > 0);
-  if (publish_clearing_points) {
-    clearing_endpoints_->points.clear();
-    clearing_endpoints_->points.reserve(clearing_observation_cloud_size);
+  bool publish_clearing_points;
+
+  {
+    auto node = node_.lock();
+    if (!node) {
+      throw std::runtime_error{"Failed to lock node"};
+    }
+    publish_clearing_points = (node->count_subscribers("clearing_endpoints") > 0);
   }
+
+  clearing_endpoints_->data.clear();
+  clearing_endpoints_->width = clearing_observation.cloud_->width;
+  clearing_endpoints_->height = clearing_observation.cloud_->height;
+  clearing_endpoints_->is_dense = true;
+  clearing_endpoints_->is_bigendian = false;
+
+  sensor_msgs::PointCloud2Modifier modifier(*clearing_endpoints_);
+  modifier.setPointCloud2Fields(
+    3, "x", 1, sensor_msgs::msg::PointField::FLOAT32,
+    "y", 1, sensor_msgs::msg::PointField::FLOAT32,
+    "z", 1, sensor_msgs::msg::PointField::FLOAT32);
+
+  sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_x(*clearing_endpoints_, "x");
+  sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_y(*clearing_endpoints_, "y");
+  sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_z(*clearing_endpoints_, "z");
 
   // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
   double map_end_x = origin_x_ + getSizeInMetersX();
@@ -376,26 +368,31 @@ void VoxelLayer::raytraceFreespace(
 
     double point_x, point_y, point_z;
     if (worldToMap3DFloat(wpx, wpy, wpz, point_x, point_y, point_z)) {
-      unsigned int cell_raytrace_range = cellDistance(clearing_observation.raytrace_range_);
+      unsigned int cell_raytrace_max_range = cellDistance(clearing_observation.raytrace_max_range_);
+      unsigned int cell_raytrace_min_range = cellDistance(clearing_observation.raytrace_min_range_);
+
 
       // voxel_grid_.markVoxelLine(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z);
       voxel_grid_.clearVoxelLineInMap(
         sensor_x, sensor_y, sensor_z, point_x, point_y, point_z,
         costmap_,
         unknown_threshold_, mark_threshold_, FREE_SPACE, NO_INFORMATION,
-        cell_raytrace_range);
+        cell_raytrace_max_range, cell_raytrace_min_range);
 
       updateRaytraceBounds(
-        ox, oy, wpx, wpy, clearing_observation.raytrace_range_, min_x, min_y,
+        ox, oy, wpx, wpy, clearing_observation.raytrace_max_range_,
+        clearing_observation.raytrace_min_range_, min_x, min_y,
         max_x,
         max_y);
 
       if (publish_clearing_points) {
-        geometry_msgs::msg::Point32 point;
-        point.x = wpx;
-        point.y = wpy;
-        point.z = wpz;
-        clearing_endpoints_->points.push_back(point);
+        *clearing_endpoints_iter_x = wpx;
+        *clearing_endpoints_iter_y = wpy;
+        *clearing_endpoints_iter_z = wpz;
+
+        ++clearing_endpoints_iter_x;
+        ++clearing_endpoints_iter_y;
+        ++clearing_endpoints_iter_z;
       }
     }
   }
@@ -473,6 +470,67 @@ void VoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
   // make sure to clean up
   delete[] local_map;
   delete[] local_voxel_map;
+}
+
+/**
+  * @brief Callback executed when a parameter change is detected
+  * @param event ParameterEvent message
+  */
+rcl_interfaces::msg::SetParametersResult
+VoxelLayer::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  rcl_interfaces::msg::SetParametersResult result;
+  bool resize_map_needed = false;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + "." + "max_obstacle_height") {
+        max_obstacle_height_ = parameter.as_double();
+      } else if (param_name == name_ + "." + "origin_z") {
+        origin_z_ = parameter.as_double();
+        resize_map_needed = true;
+      } else if (param_name == name_ + "." + "z_resolution") {
+        z_resolution_ = parameter.as_double();
+        resize_map_needed = true;
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == name_ + "." + "enabled") {
+        enabled_ = parameter.as_bool();
+        current_ = false;
+      } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
+        footprint_clearing_enabled_ = parameter.as_bool();
+      } else if (param_name == name_ + "." + "publish_voxel_map") {
+        RCLCPP_WARN(
+          logger_, "publish voxel map is not a dynamic parameter "
+          "cannot be changed while running. Rejecting parameter update.");
+        continue;
+      }
+
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == name_ + "." + "z_voxels") {
+        size_z_ = parameter.as_int();
+        resize_map_needed = true;
+      } else if (param_name == name_ + "." + "unknown_threshold") {
+        unknown_threshold_ = parameter.as_int() + (VOXEL_BITS - size_z_);
+      } else if (param_name == name_ + "." + "mark_threshold") {
+        mark_threshold_ = parameter.as_int();
+      } else if (param_name == name_ + "." + "combination_method") {
+        combination_method_ = parameter.as_int();
+      }
+    }
+  }
+
+  if (resize_map_needed) {
+    matchSize();
+  }
+
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_costmap_2d

@@ -26,21 +26,31 @@ class RecoveryDummy : public nav2_behavior_tree::DummyNode
 public:
   BT::NodeStatus tick() override
   {
-    if (++ticks_ > num_failures_ && num_failures_ != -1) {
+    if (ticks_ == num_success_) {
       setStatus(BT::NodeStatus::SUCCESS);
+    } else if (ticks_ == num_failure_) {
+      setStatus(BT::NodeStatus::FAILURE);
     }
+    ticks_++;
     return status();
   }
 
-  void setMaxFailures(int max_failures)
+  void returnSuccessOn(int tick)
   {
-    num_failures_ = max_failures;
+    num_success_ = tick;
+    ticks_ = 0;
+  }
+
+  void returnFailureOn(int tick)
+  {
+    num_failure_ = tick;
     ticks_ = 0;
   }
 
 private:
   int ticks_{0};
-  int num_failures_{-1};
+  int num_success_{-1};
+  int num_failure_{-1};
 };
 
 class RecoveryNodeTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
@@ -92,10 +102,10 @@ TEST_F(RecoveryNodeTestFixture, test_running)
 TEST_F(RecoveryNodeTestFixture, test_failure_on_idle_child)
 {
   first_child_->changeStatus(BT::NodeStatus::IDLE);
-  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+  EXPECT_THROW(bt_node_->executeTick(), BT::LogicError);
   first_child_->changeStatus(BT::NodeStatus::FAILURE);
   second_child_->changeStatus(BT::NodeStatus::IDLE);
-  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+  EXPECT_THROW(bt_node_->executeTick(), BT::LogicError);
 }
 
 TEST_F(RecoveryNodeTestFixture, test_success_one_retry)
@@ -105,7 +115,7 @@ TEST_F(RecoveryNodeTestFixture, test_success_one_retry)
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 
   // first child fails, second child succeeds, then first child succeeds (one retry)
-  first_child_->setMaxFailures(1);
+  first_child_->returnSuccessOn(1);
   first_child_->changeStatus(BT::NodeStatus::FAILURE);
   second_child_->changeStatus(BT::NodeStatus::SUCCESS);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
@@ -125,6 +135,7 @@ TEST_F(RecoveryNodeTestFixture, test_failure_one_retry)
   EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
 
   // first child fails, second child succeeds, then first child fails (one retry)
+  first_child_->returnFailureOn(1);
   first_child_->changeStatus(BT::NodeStatus::FAILURE);
   second_child_->changeStatus(BT::NodeStatus::SUCCESS);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);

@@ -51,36 +51,37 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint footpr
   unsigned int x0, x1, y0, y1;
   double footprint_cost = 0.0;
 
+  // get the cell coord of the first point
+  if (!worldToMap(footprint[0].x, footprint[0].y, x0, y0)) {
+    return static_cast<double>(LETHAL_OBSTACLE);
+  }
+
+  // cache the start to eliminate a worldToMap call
+  unsigned int xstart = x0;
+  unsigned int ystart = y0;
+
   // we need to rasterize each line in the footprint
   for (unsigned int i = 0; i < footprint.size() - 1; ++i) {
-    // get the cell coord of the first point
-    if (!worldToMap(footprint[i].x, footprint[i].y, x0, y0)) {
-      return static_cast<double>(LETHAL_OBSTACLE);
-    }
-
     // get the cell coord of the second point
     if (!worldToMap(footprint[i + 1].x, footprint[i + 1].y, x1, y1)) {
       return static_cast<double>(LETHAL_OBSTACLE);
     }
 
     footprint_cost = std::max(lineCost(x0, x1, y0, y1), footprint_cost);
+
+    // the second point is next iteration's first point
+    x0 = x1;
+    y0 = y1;
+
+    // if in collision, no need to continue
+    if (footprint_cost == static_cast<double>(LETHAL_OBSTACLE)) {
+      return footprint_cost;
+    }
   }
 
   // we also need to connect the first point in the footprint to the last point
-  // get the cell coord of the last point
-  if (!worldToMap(footprint.back().x, footprint.back().y, x0, y0)) {
-    return static_cast<double>(LETHAL_OBSTACLE);
-  }
-
-  // get the cell coord of the first point
-  if (!worldToMap(footprint.front().x, footprint.front().y, x1, y1)) {
-    return static_cast<double>(LETHAL_OBSTACLE);
-  }
-
-  footprint_cost = std::max(lineCost(x0, x1, y0, y1), footprint_cost);
-
-  // if all line costs are legal... then we can return that the footprint is legal
-  return footprint_cost;
+  // the last iteration's x1, y1 are the last footprint point's coordinates
+  return std::max(lineCost(xstart, x1, ystart, y1), footprint_cost);
 }
 
 template<typename CostmapT>
@@ -91,6 +92,11 @@ double FootprintCollisionChecker<CostmapT>::lineCost(int x0, int x1, int y0, int
 
   for (nav2_util::LineIterator line(x0, y0, x1, y1); line.isValid(); line.advance()) {
     point_cost = pointCost(line.getX(), line.getY());   // Score the current point
+
+    // if in collision, no need to continue
+    if (point_cost == static_cast<double>(LETHAL_OBSTACLE)) {
+      return point_cost;
+    }
 
     if (line_cost < point_cost) {
       line_cost = point_cost;

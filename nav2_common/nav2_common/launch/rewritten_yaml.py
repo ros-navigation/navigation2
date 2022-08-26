@@ -117,7 +117,7 @@ class RewrittenYaml(launch.Substitution):
         for path in yaml_paths:
             if path in param_rewrites:
                 # this is an absolute path (ex. 'key.keyA.keyB.val')
-                rewrite_val = param_rewrites[path]
+                rewrite_val = self.convert(param_rewrites[path])
                 yaml_keys = path.split('.')
                 yaml = self.updateYamlPathVals(yaml, yaml_keys, rewrite_val)
 

@@ -17,93 +17,100 @@
 #include <memory>
 
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#include "tf2/utils.h"
+#pragma GCC diagnostic pop
 
 namespace nav2_costmap_2d
 {
 
 FootprintSubscriber::FootprintSubscriber(
-  nav2_util::LifecycleNode::SharedPtr node,
+  const nav2_util::LifecycleNode::WeakPtr & parent,
   const std::string & topic_name,
-  const double & footprint_timeout)
-: FootprintSubscriber(node->get_node_base_interface(),
-    node->get_node_topics_interface(),
-    node->get_node_logging_interface(),
-    node->get_node_clock_interface(),
-    topic_name, footprint_timeout)
-{}
-
-FootprintSubscriber::FootprintSubscriber(
-  rclcpp::Node::SharedPtr node,
-  const std::string & topic_name,
-  const double & footprint_timeout)
-: FootprintSubscriber(node->get_node_base_interface(),
-    node->get_node_topics_interface(),
-    node->get_node_logging_interface(),
-    node->get_node_clock_interface(),
-    topic_name, footprint_timeout)
-{}
-
-FootprintSubscriber::FootprintSubscriber(
-  const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
-  const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
-  const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
-  const rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock,
-  const std::string & topic_name,
-  const double & footprint_timeout)
-: node_base_(node_base),
-  node_topics_(node_topics),
-  node_logging_(node_logging),
-  node_clock_(node_clock),
-  topic_name_(topic_name),
-  footprint_timeout_(rclcpp::Duration::from_seconds(footprint_timeout))
+  tf2_ros::Buffer & tf,
+  std::string robot_base_frame,
+  double transform_tolerance)
+: topic_name_(topic_name),
+  tf_(tf),
+  robot_base_frame_(robot_base_frame),
+  transform_tolerance_(transform_tolerance)
 {
-  footprint_sub_ = rclcpp::create_subscription<geometry_msgs::msg::PolygonStamped>(
-    node_topics_,
+  auto node = parent.lock();
+  footprint_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
+    topic_name, rclcpp::SystemDefaultsQoS(),
+    std::bind(&FootprintSubscriber::footprint_callback, this, std::placeholders::_1));
+}
+
+FootprintSubscriber::FootprintSubscriber(
+  const rclcpp::Node::WeakPtr & parent,
+  const std::string & topic_name,
+  tf2_ros::Buffer & tf,
+  std::string robot_base_frame,
+  double transform_tolerance)
+: topic_name_(topic_name),
+  tf_(tf),
+  robot_base_frame_(robot_base_frame),
+  transform_tolerance_(transform_tolerance)
+{
+  auto node = parent.lock();
+  footprint_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
     topic_name, rclcpp::SystemDefaultsQoS(),
     std::bind(&FootprintSubscriber::footprint_callback, this, std::placeholders::_1));
 }
 
 bool
-FootprintSubscriber::getFootprint(
+FootprintSubscriber::getFootprintRaw(
   std::vector<geometry_msgs::msg::Point> & footprint,
-  rclcpp::Time & stamp,
-  rclcpp::Duration valid_footprint_timeout)
+  std_msgs::msg::Header & footprint_header)
 {
   if (!footprint_received_) {
     return false;
   }
 
+  auto current_footprint = std::atomic_load(&footprint_);
   footprint = toPointVector(
-    std::make_shared<geometry_msgs::msg::Polygon>(footprint_->polygon));
-  auto & footprint_stamp = footprint_->header.stamp;
-
-  if (stamp - footprint_stamp > valid_footprint_timeout) {
-    return false;
-  }
+    std::make_shared<geometry_msgs::msg::Polygon>(current_footprint->polygon));
+  footprint_header = current_footprint->header;
 
   return true;
 }
 
 bool
-FootprintSubscriber::getFootprint(
+FootprintSubscriber::getFootprintInRobotFrame(
   std::vector<geometry_msgs::msg::Point> & footprint,
-  rclcpp::Duration & valid_footprint_timeout)
+  std_msgs::msg::Header & footprint_header)
 {
-  rclcpp::Time t = node_clock_->get_clock()->now();
-  return getFootprint(footprint, t, valid_footprint_timeout);
-}
+  if (!getFootprintRaw(footprint, footprint_header)) {
+    return false;
+  }
 
-bool
-FootprintSubscriber::getFootprint(
-  std::vector<geometry_msgs::msg::Point> & footprint)
-{
-  return getFootprint(footprint, footprint_timeout_);
+  geometry_msgs::msg::PoseStamped current_pose;
+  if (!nav2_util::getCurrentPose(
+      current_pose, tf_, footprint_header.frame_id, robot_base_frame_,
+      transform_tolerance_, footprint_header.stamp))
+  {
+    return false;
+  }
+
+  double x = current_pose.pose.position.x;
+  double y = current_pose.pose.position.y;
+  double theta = tf2::getYaw(current_pose.pose.orientation);
+
+  std::vector<geometry_msgs::msg::Point> temp;
+  transformFootprint(-x, -y, 0, footprint, temp);
+  transformFootprint(0, 0, -theta, temp, footprint);
+
+  footprint_header.frame_id = robot_base_frame_;
+  footprint_header.stamp = current_pose.header.stamp;
+
+  return true;
 }
 
 void
 FootprintSubscriber::footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg)
 {
-  footprint_ = msg;
+  std::atomic_store(&footprint_, msg);
   if (!footprint_received_) {
     footprint_received_ = true;
   }

@@ -43,8 +43,6 @@
 #include "dwb_core/exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 
-using nav_2d_utils::loadParameterWithDeprecation;
-
 namespace dwb_plugins
 {
 

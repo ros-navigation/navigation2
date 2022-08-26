@@ -46,23 +46,28 @@ namespace dwb_critics
 
 void PreferForwardCritic::onInit()
 {
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   declare_parameter_if_not_declared(
-    nh_,
+    node,
     dwb_plugin_name_ + "." + name_ + ".penalty", rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
-    nh_,
+    node,
     dwb_plugin_name_ + "." + name_ + ".strafe_x", rclcpp::ParameterValue(0.1));
   declare_parameter_if_not_declared(
-    nh_, dwb_plugin_name_ + "." + name_ + ".strafe_theta",
+    node, dwb_plugin_name_ + "." + name_ + ".strafe_theta",
     rclcpp::ParameterValue(0.2));
   declare_parameter_if_not_declared(
-    nh_, dwb_plugin_name_ + "." + name_ + ".theta_scale",
+    node, dwb_plugin_name_ + "." + name_ + ".theta_scale",
     rclcpp::ParameterValue(10.0));
 
-  nh_->get_parameter(dwb_plugin_name_ + "." + name_ + ".penalty", penalty_);
-  nh_->get_parameter(dwb_plugin_name_ + "." + name_ + ".strafe_x", strafe_x_);
-  nh_->get_parameter(dwb_plugin_name_ + "." + name_ + ".strafe_theta", strafe_theta_);
-  nh_->get_parameter(dwb_plugin_name_ + "." + name_ + ".theta_scale", theta_scale_);
+  node->get_parameter(dwb_plugin_name_ + "." + name_ + ".penalty", penalty_);
+  node->get_parameter(dwb_plugin_name_ + "." + name_ + ".strafe_x", strafe_x_);
+  node->get_parameter(dwb_plugin_name_ + "." + name_ + ".strafe_theta", strafe_theta_);
+  node->get_parameter(dwb_plugin_name_ + "." + name_ + ".theta_scale", theta_scale_);
 }
 
 double PreferForwardCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)

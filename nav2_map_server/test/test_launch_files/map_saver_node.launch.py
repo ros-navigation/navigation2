@@ -22,7 +22,7 @@ import launch_ros.actions
 
 
 def generate_launch_description():
-    map_publisher = os.path.dirname(os.getenv('TEST_EXECUTABLE')) + '/test_map_saver_publisher'
+    map_publisher = f"{os.path.dirname(os.getenv('TEST_EXECUTABLE'))}/test_map_saver_publisher"
 
     ld = LaunchDescription()
 

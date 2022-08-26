@@ -6,7 +6,7 @@
 # docker build -t nav2:latest \
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./
-ARG FROM_IMAGE=ros:foxy-ros-base
+ARG FROM_IMAGE=ros:humble-ros-base
 
 # multi-stage for caching
 FROM $FROM_IMAGE AS cache
@@ -27,16 +27,16 @@ COPY ./ src/navigation2
 # copy manifests for caching
 WORKDIR /opt
 RUN find ./ -name "package.xml" | \
-      xargs cp --parents -t /tmp
+  xargs cp --parents -t /tmp
 
 # multi-stage for building
 FROM $FROM_IMAGE AS build
 
 # install CI dependencies
 RUN apt-get update && apt-get install -q -y \
-      ccache \
-      lcov \
-    && rm -rf /var/lib/apt/lists/*
+  ccache \
+  lcov \
+  && rm -rf /var/lib/apt/lists/*
 
 # copy underlay manifests
 ENV UNDERLAY_WS /opt/underlay_ws
@@ -45,10 +45,10 @@ WORKDIR $UNDERLAY_WS
 
 # install underlay dependencies
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
-    apt-get update && rosdep install -q -y \
-      --from-paths src \
-      --ignore-src \
-    && rm -rf /var/lib/apt/lists/*
+  apt-get update && rosdep install -q -y \
+  --from-paths src \
+  --ignore-src \
+  && rm -rf /var/lib/apt/lists/*
 
 # copy underlay source
 COPY --from=cache $UNDERLAY_WS ./
@@ -57,15 +57,15 @@ COPY --from=cache $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache"
 ARG FAIL_ON_BUILD_FAILURE=True
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
-    colcon build \
-      --symlink-install \
-      --mixin \
-        $UNDERLAY_MIXINS \
-      --event-handlers console_direct+ \
-    || touch build_failed && \
-    if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
-      exit 1; \
-    fi
+  colcon build \
+  --symlink-install \
+  --mixin \
+  $UNDERLAY_MIXINS \
+  --event-handlers console_direct+ \
+  || touch build_failed && \
+  if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
+  exit 1; \
+  fi
 
 # copy overlay manifests
 ENV OVERLAY_WS /opt/overlay_ws
@@ -73,13 +73,14 @@ COPY --from=cache /tmp/overlay_ws $OVERLAY_WS
 
 WORKDIR $OVERLAY_WS
 COPY ./minimal_repos.txt ./
+COPY ./nav2_pkgs.txt ./
 
 # install overlay dependencies
 RUN . $UNDERLAY_WS/install/setup.sh && \
-    apt-get update && rosdep install -q -y \
-      --from-paths $(awk '$0="src/navigation2/"$0' ./minimal_repos.txt) \
-      --ignore-src \
-    && rm -rf /var/lib/apt/lists/*
+  apt-get update && rosdep install -q -y \
+  --from-paths $(awk '$0="src/navigation2/"$0' ./minimal_repos.txt) \ 
+  --ignore-src \
+  && rm -rf /var/lib/apt/lists/*
 
 # copy overlay source
 COPY --from=cache $OVERLAY_WS ./
@@ -87,15 +88,15 @@ COPY --from=cache $OVERLAY_WS ./
 # build overlay source
 ARG OVERLAY_MIXINS="release ccache"
 RUN . $UNDERLAY_WS/install/setup.sh && \
-    colcon build \
-      --symlink-install \
-      --mixin \
-        $OVERLAY_MIXINS \
-      --packages-select $(cat ./minimal_repos.txt) nav_2d_msgs nav_2d_utils \
-    || touch build_failed && \
-    if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
-      exit 1; \
-    fi
+  colcon build \
+  --symlink-install \
+  --mixin \
+  $OVERLAY_MIXINS \
+  --packages-select $(cat ./nav2_pkgs.txt) $(cat ./minimal_repos.txt) \
+  || touch build_failed && \
+  if [ -f build_failed ] && [ -n "$FAIL_ON_BUILD_FAILURE" ]; then \
+  exit 1; \
+  fi
 
 # source overlay from entrypoint
 # RUN sed --in-place \
@@ -109,13 +110,11 @@ ENV OVERLAY_WS /opt/overlay_ws
 WORKDIR $OVERLAY_WS/src
 
 COPY debian/create_debians.sh $OVERLAY_WS/src/create_debians.sh
-# COPY umd_mission/docker/debian/50-my-packages.list /etc/ros/rosdep/sources.list.d/50-my-packages.list
-# COPY umd_mission/docker/debian/rosdep.yaml /rosdep.yaml
 
-RUN . /opt/ros/foxy/setup.sh \
+RUN . /opt/ros/humble/setup.sh \
   && . /opt/overlay_ws/install/setup.sh \
   && . /opt/underlay_ws/install/setup.sh \
   && ./create_debians.sh \
   && rm -rf $OVERLAY_WS $UNDERLAY_WS
 
-WORKDIR /opt/ros/foxy
+WORKDIR /opt/ros/humble

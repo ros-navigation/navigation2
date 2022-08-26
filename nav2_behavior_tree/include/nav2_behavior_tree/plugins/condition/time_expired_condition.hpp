@@ -24,18 +24,34 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * @brief A BT::ConditionNode that returns SUCCESS every time a specified
+ * time period passes and FAILURE otherwise
+ */
 class TimeExpiredCondition : public BT::ConditionNode
 {
 public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::TimeExpiredCondition
+   * @param condition_name Name for the XML tag for this node
+   * @param conf BT node configuration
+   */
   TimeExpiredCondition(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf);
 
   TimeExpiredCondition() = delete;
 
+  /**
+   * @brief The main override required by a BT action
+   * @return BT::NodeStatus Status of tick execution
+   */
   BT::NodeStatus tick() override;
 
-  // Any BT node that accepts parameters must provide a requiredNodeParameters method
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     return {

@@ -20,6 +20,7 @@ ament_target_dependencies(${library_name}
   lifecycle_msgs
   rclcpp_lifecycle
   tf2_geometry_msgs
+  bondcpp
 )
 
 add_executable(lifecycle_bringup
@@ -28,13 +29,6 @@ add_executable(lifecycle_bringup
 target_link_libraries(lifecycle_bringup ${library_name})
 
 find_package(Boost REQUIRED COMPONENTS program_options)
-
-add_executable(dump_params dump_params.cpp)
-ament_target_dependencies(dump_params rclcpp)
-
-target_include_directories(dump_params PUBLIC ${Boost_INCLUDE_DIRS})
-
-target_link_libraries(dump_params ${Boost_PROGRAM_OPTIONS_LIBRARY})
 
 install(TARGETS
   ${library_name}
@@ -45,6 +39,5 @@ install(TARGETS
 
 install(TARGETS
   lifecycle_bringup
-  dump_params
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )

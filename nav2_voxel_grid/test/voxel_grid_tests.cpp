@@ -172,6 +172,16 @@ TEST(voxel_grid, clearVoxelLineInMap) {
   vg.markVoxelInMap(0, 0, 5, 0);
   vg.clearVoxelLineInMap(0, 0, 0, 0, 0, 9, nullptr, 16, 0);
   EXPECT_EQ(vg.getVoxel(0, 0, 5), nav2_voxel_grid::FREE);
+
+  // Testing for min range for raytrace clearing
+  vg.markVoxelInMap(0, 0, 5, 0);
+  vg.markVoxelInMap(0, 0, 7, 0);
+  vg.clearVoxelLineInMap(
+    0, 0, 0, 0, 0, 9, nullptr, 16, 0, (unsigned char)'\000',
+    (unsigned char)'\377', UINT_MAX, 6);
+  EXPECT_EQ(vg.getVoxel(0, 0, 5), nav2_voxel_grid::MARKED);
+  EXPECT_EQ(vg.getVoxel(0, 0, 7), nav2_voxel_grid::FREE);
+
   delete[] map_2d;
 }
 

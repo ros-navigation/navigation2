@@ -16,5 +16,14 @@
       <description>A range-sensor (sonar, IR) based obstacle layer for costmap_2d</description>
     </class>
   </library>
+
+  <library path="filters">
+    <class type="nav2_costmap_2d::KeepoutFilter"   base_class_type="nav2_costmap_2d::Layer">
+      <description>Prevents the robot from appearing in keepout zones marked on map.</description>
+    </class>
+    <class type="nav2_costmap_2d::SpeedFilter"     base_class_type="nav2_costmap_2d::Layer">
+      <description>Restricts maximum speed of robot in speed-limit zones marked on map.</description>
+    </class>
+  </library>
 </class_libraries>
 

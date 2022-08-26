@@ -33,8 +33,6 @@ add_library(standard_traj_generator SHARED
             src/kinematic_parameters.cpp
             src/xy_theta_iterator.cpp)
 ament_target_dependencies(standard_traj_generator ${dependencies})
-# prevent pluginlib from using boost
-target_compile_definitions(standard_traj_generator PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 
 if(BUILD_TESTING)

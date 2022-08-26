@@ -1,0 +1,5 @@
+<library path="nav2_smac_planner_2d">
+  <class name="nav2_smac_planner/SmacPlanner2D" type="nav2_smac_planner::SmacPlanner2D" base_class_type="nav2_core::GlobalPlanner">
+    <description>2D A* SMAC Planner</description>
+  </class>
+</library>

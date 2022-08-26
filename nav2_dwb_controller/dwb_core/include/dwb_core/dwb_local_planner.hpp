@@ -67,14 +67,25 @@ public:
   DWBLocalPlanner();
 
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
-    std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
-    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros) override;
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   virtual ~DWBLocalPlanner() {}
 
+  /**
+   * @brief Activate lifecycle node
+   */
   void activate() override;
+
+  /**
+   * @brief Deactivate lifecycle node
+   */
   void deactivate() override;
+
+  /**
+   * @brief Cleanup lifecycle node
+   */
   void cleanup() override;
 
   /**
@@ -93,11 +104,13 @@ public:
    *
    * @param pose Current robot pose
    * @param velocity Current robot velocity
+   * @param goal_checker   Ptr to the goal checker for this task in case useful in computing commands
    * @return The best command for the robot to drive
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
-    const geometry_msgs::msg::Twist & velocity) override;
+    const geometry_msgs::msg::Twist & velocity,
+    nav2_core::GoalChecker * /*goal_checker*/) override;
 
   /**
    * @brief Score a given command. Can be used for testing.
@@ -130,6 +143,20 @@ public:
     const nav_2d_msgs::msg::Pose2DStamped & pose,
     const nav_2d_msgs::msg::Twist2D & velocity,
     std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results);
+
+  /**
+   * @brief Limits the maximum linear speed of the robot.
+   * @param speed_limit expressed in absolute value (in m/s)
+   * or in percentage from maximum robot speed.
+   * @param percentage Setting speed limit in percentage if true
+   * or in absolute values in false case.
+   */
+  void setSpeedLimit(const double & speed_limit, const bool & percentage) override
+  {
+    if (traj_generator_) {
+      traj_generator_->setSpeedLimit(speed_limit, percentage);
+    }
+  }
 
 protected:
   /**
@@ -189,9 +216,10 @@ protected:
    */
   virtual void loadCritics();
 
-  void loadBackwardsCompatibleParameters();
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Logger logger_{rclcpp::get_logger("DWBLocalPlanner")};
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
 

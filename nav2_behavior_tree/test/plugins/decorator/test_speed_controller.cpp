@@ -37,6 +37,10 @@ public:
     geometry_msgs::msg::PoseStamped goal;
     goal.header.stamp = node_->now();
     config_->blackboard->set("goal", goal);
+
+    std::vector<geometry_msgs::msg::PoseStamped> fake_poses;
+    config_->blackboard->set<std::vector<geometry_msgs::msg::PoseStamped>>("goals", fake_poses);  // NOLINT
+
     bt_node_ = std::make_shared<nav2_behavior_tree::SpeedController>("speed_controller", *config_);
     dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();
     bt_node_->setChild(dummy_node_.get());

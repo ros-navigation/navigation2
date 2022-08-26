@@ -76,6 +76,7 @@ void PlannerTester::activate()
   planner_tester_->onConfigure(state);
   publishRobotTransform();
   map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map", 1);
+  path_valid_client_ = this->create_client<nav2_msgs::srv::IsPathValid>("is_path_valid");
   rclcpp::Rate r(1);
   r.sleep();
   planner_tester_->onActivate(state);
@@ -133,7 +134,7 @@ void PlannerTester::updateRobotPosition(const geometry_msgs::msg::Point & positi
   }
   std::cout << now().nanoseconds() << std::endl;
 
-  base_transform_->header.stamp = now() + rclcpp::Duration(250000000);
+  base_transform_->header.stamp = now() + rclcpp::Duration(0.25s);
   base_transform_->transform.translation.x = position.x;
   base_transform_->transform.translation.y = position.y;
   base_transform_->transform.rotation.w = 1.0;
@@ -344,7 +345,7 @@ bool PlannerTester::defaultPlannerRandomTests(
 
   RCLCPP_INFO(
     this->get_logger(),
-    "Tested with %u tests. Planner failed on %u. Test time %u ms",
+    "Tested with %u tests. Planner failed on %u. Test time %ld ms",
     number_tests, num_fail, elapsed.count());
 
   if ((num_fail / number_tests) > acceptable_fail_ratio) {
@@ -368,7 +369,7 @@ bool PlannerTester::plannerTest(
   // Then request to compute a path
   TaskStatus status = createPlan(goal, path);
 
-  RCLCPP_DEBUG(this->get_logger(), "Path request status: %d", status);
+  RCLCPP_DEBUG(this->get_logger(), "Path request status: %d", static_cast<int8_t>(status));
 
   if (status == TaskStatus::FAILED) {
     return false;
@@ -394,6 +395,27 @@ TaskStatus PlannerTester::createPlan(
   }
 
   return TaskStatus::FAILED;
+}
+
+bool PlannerTester::isPathValid(nav_msgs::msg::Path & path)
+{
+  planner_tester_->setCostmap(costmap_.get());
+  // create a fake service request
+  auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
+  request->path = path;
+  auto result = path_valid_client_->async_send_request(request);
+
+  RCLCPP_INFO(this->get_logger(), "Waiting for service complete");
+  if (rclcpp::spin_until_future_complete(
+      this->planner_tester_, result,
+      std::chrono::milliseconds(100)) ==
+    rclcpp::FutureReturnCode::SUCCESS)
+  {
+    return result.get()->is_valid;
+  } else {
+    RCLCPP_INFO(get_logger(), "Failed to call is_path_valid service");
+    return false;
+  }
 }
 
 bool PlannerTester::isCollisionFree(const ComputePathToPoseResult & path)

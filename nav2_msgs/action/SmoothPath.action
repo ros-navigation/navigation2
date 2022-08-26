@@ -1,0 +1,12 @@
+#goal definition
+nav_msgs/Path path
+string smoother_id
+builtin_interfaces/Duration max_smoothing_duration
+bool check_for_collisions
+---
+#result definition
+nav_msgs/Path path
+builtin_interfaces/Duration smoothing_duration
+bool was_completed
+---
+#feedback definition

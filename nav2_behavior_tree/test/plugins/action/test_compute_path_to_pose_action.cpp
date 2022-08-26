@@ -41,8 +41,13 @@ protected:
   {
     const auto goal = goal_handle->get_goal();
     auto result = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
-    result->path.poses.resize(1);
-    result->path.poses[0].pose.position.x = goal->pose.pose.position.x;
+    result->path.poses.resize(2);
+    result->path.poses[1].pose.position.x = goal->goal.pose.position.x;
+    if (goal->use_start) {
+      result->path.poses[0].pose.position.x = goal->start.pose.position.x;
+    } else {
+      result->path.poses[0].pose.position.x = 0.0;
+    }
     goal_handle->succeed(result);
   }
 };
@@ -65,8 +70,10 @@ public:
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
       "server_timeout",
+      std::chrono::milliseconds(20));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("path_updated", false);
     config_->blackboard->set<bool>("initial_pose_received", false);
 
     BT::NodeBuilder builder =
@@ -129,26 +136,24 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick)
   goal.pose.position.x = 1.0;
   config_->blackboard->set("goal", goal);
 
-  // first tick should send the goal to our server
-  EXPECT_EQ(config_->blackboard->get<bool>("path_updated"), false);
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
-  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
-  EXPECT_EQ(action_server_->getCurrentGoal()->pose.pose.position.x, 1.0);
-  EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
-
   // tick until node succeeds
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
 
-  // not set to true after the first goal
-  EXPECT_EQ(config_->blackboard->get<bool>("path_updated"), false);
+  // the goal should have reached our server
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
+  EXPECT_EQ(action_server_->getCurrentGoal()->goal.pose.position.x, 1.0);
+  EXPECT_FALSE(action_server_->getCurrentGoal()->use_start);
+  EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
 
   // check if returned path is correct
   nav_msgs::msg::Path path;
   config_->blackboard->get<nav_msgs::msg::Path>("path", path);
-  EXPECT_EQ(path.poses.size(), 1u);
-  EXPECT_EQ(path.poses[0].pose.position.x, 1.0);
+  EXPECT_EQ(path.poses.size(), 2u);
+  EXPECT_EQ(path.poses[0].pose.position.x, 0.0);
+  EXPECT_EQ(path.poses[1].pose.position.x, 1.0);
 
   // halt node so another goal can be sent
   tree_->rootNode()->halt();
@@ -158,19 +163,85 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick)
   goal.pose.position.x = -2.5;
   config_->blackboard->set("goal", goal);
 
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
-  EXPECT_EQ(action_server_->getCurrentGoal()->pose.pose.position.x, -2.5);
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
+    tree_->rootNode()->executeTick();
+  }
+
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(action_server_->getCurrentGoal()->goal.pose.position.x, -2.5);
+
+  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  EXPECT_EQ(path.poses.size(), 2u);
+  EXPECT_EQ(path.poses[0].pose.position.x, 0.0);
+  EXPECT_EQ(path.poses[1].pose.position.x, -2.5);
+}
+
+TEST_F(ComputePathToPoseActionTestFixture, test_tick_use_start)
+{
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root main_tree_to_execute = "MainTree" >
+        <BehaviorTree ID="MainTree">
+            <ComputePathToPose goal="{goal}" start="{start}" path="{path}" planner_id="GridBased"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // create new start and set it on blackboard
+  geometry_msgs::msg::PoseStamped start;
+  start.header.stamp = node_->now();
+  start.pose.position.x = 2.0;
+  config_->blackboard->set("start", start);
+
+  // create new goal and set it on blackboard
+  geometry_msgs::msg::PoseStamped goal;
+  goal.header.stamp = node_->now();
+  goal.pose.position.x = 1.0;
+  config_->blackboard->set("goal", goal);
+
+  // tick until node succeeds
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
+    tree_->rootNode()->executeTick();
+  }
+
+  // the goal should have reached our server
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
+  EXPECT_EQ(action_server_->getCurrentGoal()->goal.pose.position.x, 1.0);
+  EXPECT_EQ(action_server_->getCurrentGoal()->start.pose.position.x, 2.0);
+  EXPECT_TRUE(action_server_->getCurrentGoal()->use_start);
+  EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
+
+  // check if returned path is correct
+  nav_msgs::msg::Path path;
+  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  EXPECT_EQ(path.poses.size(), 2u);
+  EXPECT_EQ(path.poses[0].pose.position.x, 2.0);
+  EXPECT_EQ(path.poses[1].pose.position.x, 1.0);
+
+  // halt node so another goal can be sent
+  tree_->rootNode()->halt();
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
+
+  // set new goal and new start
+  goal.pose.position.x = -2.5;
+  start.pose.position.x = -1.5;
+  config_->blackboard->set("goal", goal);
+  config_->blackboard->set("start", start);
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
 
-  // path is updated on new goal
-  EXPECT_EQ(config_->blackboard->get<bool>("path_updated"), true);
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(action_server_->getCurrentGoal()->goal.pose.position.x, -2.5);
 
   config_->blackboard->get<nav_msgs::msg::Path>("path", path);
-  EXPECT_EQ(path.poses.size(), 1u);
-  EXPECT_EQ(path.poses[0].pose.position.x, -2.5);
+  EXPECT_EQ(path.poses.size(), 2u);
+  EXPECT_EQ(path.poses[0].pose.position.x, -1.5);
+  EXPECT_EQ(path.poses[1].pose.position.x, -2.5);
 }
 
 int main(int argc, char ** argv)

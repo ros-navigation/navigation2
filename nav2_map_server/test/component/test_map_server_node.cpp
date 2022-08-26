@@ -13,10 +13,12 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <experimental/filesystem>
-#include <rclcpp/rclcpp.hpp>
+
 #include <string>
 #include <memory>
+#include <experimental/filesystem>  // NOLINT
+
+#include <rclcpp/rclcpp.hpp>
 
 #include "test_constants/test_constants.h"
 #include "nav2_map_server/map_server.hpp"
@@ -59,6 +61,8 @@ public:
     lifecycle_client_->change_state(Transition::TRANSITION_DEACTIVATE);
     lifecycle_client_->change_state(Transition::TRANSITION_CLEANUP);
     lifecycle_client_->change_state(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
+    lifecycle_client_.reset();
+    node_.reset();
   }
 
   template<class T>

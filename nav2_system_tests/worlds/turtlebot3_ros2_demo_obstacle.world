@@ -137,6 +137,7 @@
             </linear_acceleration>
           </imu>
           <plugin name="my_imu_plugin" filename="libgazebo_ros_imu_sensor.so">
+            <initial_orientation_as_reference>false</initial_orientation_as_reference>
             <ros>
               <!-- <namespace>/tb3</namespace> -->
               <remapping>~/out:=imu</remapping>
@@ -454,6 +455,7 @@
 
           <ros>
             <!-- <namespace>/tb3</namespace> -->
+            <remapping>/tf:=tf</remapping>
           </ros>
 
           <!-- wheels -->

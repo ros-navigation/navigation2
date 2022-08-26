@@ -69,6 +69,7 @@ BT::NodeStatus PipelineSequence::tick()
 void PipelineSequence::halt()
 {
   BT::ControlNode::halt();
+  last_child_ticked_ = 0;
 }
 
 }  // namespace nav2_behavior_tree

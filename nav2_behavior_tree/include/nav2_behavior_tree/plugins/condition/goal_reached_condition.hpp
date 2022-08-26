@@ -25,23 +25,50 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * @brief A BT::ConditionNode that returns SUCCESS when a specified goal
+ * is reached and FAILURE otherwise
+ */
 class GoalReachedCondition : public BT::ConditionNode
 {
 public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::GoalReachedCondition
+   * @param condition_name Name for the XML tag for this node
+   * @param conf BT node configuration
+   */
   GoalReachedCondition(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf);
 
   GoalReachedCondition() = delete;
 
+  /**
+   * @brief A destructor for nav2_behavior_tree::GoalReachedCondition
+   */
   ~GoalReachedCondition() override;
 
+  /**
+   * @brief The main override required by a BT action
+   * @return BT::NodeStatus Status of tick execution
+   */
   BT::NodeStatus tick() override;
 
+  /**
+   * @brief Function to read parameters and initialize class variables
+   */
   void initialize();
 
+  /**
+   * @brief Checks if the current robot pose lies within a given distance from the goal
+   * @return bool true when goal is reached, false otherwise
+   */
   bool isGoalReached();
 
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     return {
@@ -52,6 +79,9 @@ public:
   }
 
 protected:
+  /**
+   * @brief Cleanup function
+   */
   void cleanup()
   {}
 

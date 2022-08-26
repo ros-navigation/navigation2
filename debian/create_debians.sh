@@ -11,8 +11,8 @@ rosdep update &> /dev/null
 # Package list to create and install debian. 
 # Watch out the order to avoid missing dependencies while creating the debian.
 PACKAGE_LIST_UNDERLAY=(
-            BehaviorTree.CPP \
-            angles/angles
+            BehaviorTree/BehaviorTree.CPP \
+            ros/angles/angles
 )
 
 for PACKAGE in ${PACKAGE_LIST_UNDERLAY[@]}; do
@@ -21,8 +21,8 @@ for PACKAGE in ${PACKAGE_LIST_UNDERLAY[@]}; do
 
     # We have to go to the ROS package parent directory
     cd /opt/underlay_ws/src/$PACKAGE;
-    bloom-generate rosdebian --ros-distro foxy &> /dev/null
-    debian/rules "binary --parallel" &> /dev/null
+    bloom-generate rosdebian --ros-distro humble
+    debian/rules "binary --parallel --with autoreconf "
 
     cd ..
     DEB_FILE=$(find *.deb);
@@ -53,7 +53,15 @@ PACKAGE_LIST=(
             navigation2/nav2_amcl \
             navigation2/nav2_planner \
             navigation2/nav2_navfn_planner \
-            navigation2/nav2_controller
+            navigation2/nav2_dwb_controller/nav_2d_msgs \
+            navigation2/nav2_dwb_controller/nav_2d_utils \
+            navigation2/nav2_controller \
+            navigation2/nav2_dwb_controller/dwb_msgs    \
+            navigation2/nav2_dwb_controller/dwb_core    \
+            navigation2/nav2_dwb_controller/dwb_plugins    \
+            navigation2/nav2_dwb_controller/costmap_queue    \
+            navigation2/nav2_dwb_controller/dwb_critics    \
+            navigation2/nav2_dwb_controller/nav2_dwb_controller
 )
 
 for PACKAGE in ${PACKAGE_LIST[@]}; do
@@ -62,8 +70,8 @@ for PACKAGE in ${PACKAGE_LIST[@]}; do
 
     # We have to go to the ROS package parent directory
     cd $PACKAGE;
-    bloom-generate rosdebian --ros-distro foxy &> /dev/null
-    debian/rules "binary --parallel" &> /dev/null
+    bloom-generate rosdebian --ros-distro humble
+    debian/rules "binary --parallel --with autoreconf "
 
     cd ..
     DEB_FILE=$(find *.deb);

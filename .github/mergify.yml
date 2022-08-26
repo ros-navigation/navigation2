@@ -1,0 +1,73 @@
+pull_request_rules:
+  - name: backport to galactic at reviewers discretion
+    conditions:
+      - base=main
+      - "label=backport-galactic"
+    actions:
+      backport:
+        branches:
+          - galactic
+
+  - name: backport to foxy at reviewers discretion
+    conditions:
+      - base=main
+      - "label=backport-foxy"
+    actions:
+      backport:
+        branches:
+          - foxy-devel
+
+  - name: delete head branch after merge
+    conditions:
+      - merged
+    actions:
+      delete_head_branch:
+ 
+  - name: ask to resolve conflict
+    conditions:
+      - conflict
+      - author!=mergify
+    actions:
+        comment:
+          message: This pull request is in conflict. Could you fix it @{{author}}?
+
+  - name: development targets main branch
+    conditions:
+      - base!=main
+      - author!=SteveMacenski
+      - author!=mergify
+    actions:
+        comment:
+          message: |
+            @{{author}}, all pull requests must be targeted towards the `main` development branch. 
+            Once merged into `main`, it is possible to backport to @{{base}}, but it must be in `main`
+            to have these changes reflected into new distributions.
+
+  - name: Main build failures
+    conditions:
+      - base=main
+      - or:
+        - "check-failure=ci/circleci: debug_build"
+        - "check-failure=ci/circleci: release_build"
+    actions:
+        comment:
+          message: |
+            @{{author}}, your PR has failed to build. Please check CI outputs and resolve issues. 
+            You may need to rebase or pull in `main` due to API changes (or your contribution genuinely fails).
+
+  - name: Removed maintainer checklist
+    conditions:
+      - "-body~=^.*#### For Maintainers: <!-- DO NOT EDIT OR REMOVE -->.*$"
+      - author!=SteveMacenski
+      - author!=mergify
+    actions:
+        comment:
+          message: |
+            @{{author}}, please properly fill in PR template in the future. @stevemacenski, use this instead. 
+            - [ ] Check that any new parameters added are updated in navigation.ros.org
+            - [ ] Check that any significant change is added to the migration guide
+            - [ ] Check that any new features **OR** changes to existing behaviors are reflected in the tuning guide
+            - [ ] Check that any new functions have Doxygen added
+            - [ ] Check that any new features have test coverage
+            - [ ] Check that any new plugins is added to the plugins page
+            - [ ] If BT Node, Additionally: add to BT's XML index of nodes for groot, BT package's readme table, and BT library lists

@@ -54,6 +54,16 @@ target_link_libraries(range_tests_exec
   layers
 )
 
+ament_add_gtest(dyn_params_tests
+  dyn_params_tests.cpp
+)
+ament_target_dependencies(dyn_params_tests
+  ${dependencies}
+)
+target_link_libraries(dyn_params_tests
+  nav2_costmap_2d_core
+)
+
 ament_add_test(test_collision_checker
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"

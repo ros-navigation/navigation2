@@ -36,9 +36,6 @@ add_library(${PROJECT_NAME} SHARED
     src/twirling.cpp
 )
 
-# prevent pluginlib from using boost
-target_compile_definitions(${PROJECT_NAME} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 set(dependencies
   angles
   nav2_costmap_2d
@@ -74,6 +71,9 @@ if(BUILD_TESTING)
   # the following line skips the linter which checks for copyrights
   set(ament_cmake_copyright_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_gtest REQUIRED)
+
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

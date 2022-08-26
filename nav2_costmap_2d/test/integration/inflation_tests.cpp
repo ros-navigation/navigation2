@@ -46,6 +46,7 @@
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "../testing_helper.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 using geometry_msgs::msg::Point;
 using nav2_costmap_2d::CellData;
@@ -144,6 +145,12 @@ void TestNode::validatePointInflation(
           continue;
         }
 
+        if (dist == bin->first) {
+          // Adding to our current bin could cause a reallocation
+          // Which appears to cause the iterator to get messed up
+          dist += 0.001;
+        }
+
         if (cell.x_ > 0) {
           CellData data(costmap->getIndex(cell.x_ - 1, cell.y_),
             cell.x_ - 1, cell.y_, cell.src_x_, cell.src_y_);
@@ -176,7 +183,7 @@ void TestNode::initNode(std::vector<rclcpp::Parameter> parameters)
   options.parameter_overrides(parameters);
 
   node_ = std::make_shared<nav2_util::LifecycleNode>(
-    "inflation_test_node", "", false, options);
+    "inflation_test_node", "", options);
 
   // Declare non-plugin specific costmap parameters
   node_->declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
@@ -322,7 +329,7 @@ TEST_F(TestNode, testInflationAroundUnkown)
   layers.updateMap(0, 0, 0);
 
   layers.getCostmap()->setCost(4, 4, nav2_costmap_2d::NO_INFORMATION);
-  ilayer->updateCosts(*layers.getCostmap(), 0, 0, 8, 8);
+  ilayer->updateCosts(*layers.getCostmap(), 0, 0, 10, 10);
 
   validatePointInflation(4, 4, layers.getCostmap(), ilayer, inflation_radius);
 }
@@ -593,4 +600,45 @@ TEST_F(TestNode, testInflation3)
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::FREE_SPACE, false), 29u);
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 1u);
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 4u);
+}
+
+/**
+ * Test dynamic parameter setting of inflation layer
+ */
+TEST_F(TestNode, testDynParamsSet)
+{
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  costmap->set_parameter(rclcpp::Parameter("global_frame", std::string("base_link")));
+  costmap->on_configure(rclcpp_lifecycle::State());
+
+  costmap->on_activate(rclcpp_lifecycle::State());
+
+  auto parameter_client = std::make_shared<rclcpp::AsyncParametersClient>(
+    costmap->get_node_base_interface(), costmap->get_node_topics_interface(),
+    costmap->get_node_graph_interface(),
+    costmap->get_node_services_interface());
+
+  auto results = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("inflation_layer.inflation_radius", 0.0),
+    rclcpp::Parameter("inflation_layer.cost_scaling_factor", 0.0),
+    rclcpp::Parameter("inflation_layer.inflate_unknown", true),
+    rclcpp::Parameter("inflation_layer.inflate_around_unknown", true),
+    rclcpp::Parameter("inflation_layer.enabled", false)
+  });
+
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.inflation_radius").as_double(), 0.0);
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.cost_scaling_factor").as_double(), 0.0);
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.inflate_unknown").as_bool(), true);
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.inflate_around_unknown").as_bool(), true);
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.enabled").as_bool(), false);
+
+  costmap->on_deactivate(rclcpp_lifecycle::State());
+  costmap->on_cleanup(rclcpp_lifecycle::State());
+  costmap->on_shutdown(rclcpp_lifecycle::State());
 }

@@ -1,7 +1,12 @@
 # Nav2 Util
 
-The `nav2_util` package contains utilities abstracted from individual packages which may find use in other uses. Examples include the particle filter implementation from AMCL, motion models, ROS2 node utilities, and more. 
+The `nav2_util` package contains utilities abstracted from individual packages which may find use in other uses. Some examples of things you'll find here:
 
-## ROS1 Comparison
+- Geometry utilities for computing distances and values in paths
+- A Nav2 specific lifecycle node wrapper for boilerplate code and useful common utilities like `declare_parameter_if_not_declared()`
+- Simplified service clients
+- Simplified action servers
+- Transformation and robot pose helpers
 
-This package does not have a direct counter-part in Navigation. This was created to abstract out sections of the code-base from their implementations should the base algorithms/utilities find use elsewhere.
+The long-term aim is for these utilities to find more permanent homes in other packages (within and outside of Nav2) or migrate to the raw tools made available in ROS 2.
+ 

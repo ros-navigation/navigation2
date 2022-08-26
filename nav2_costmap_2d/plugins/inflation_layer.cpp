@@ -53,6 +53,7 @@ PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::InflationLayer, nav2_costmap_2d::Layer)
 using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
 using nav2_costmap_2d::NO_INFORMATION;
+using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
@@ -77,6 +78,7 @@ InflationLayer::InflationLayer()
 
 InflationLayer::~InflationLayer()
 {
+  dyn_params_handler_.reset();
   delete access_;
 }
 
@@ -89,11 +91,22 @@ InflationLayer::onInitialize()
   declareParameter("inflate_unknown", rclcpp::ParameterValue(false));
   declareParameter("inflate_around_unknown", rclcpp::ParameterValue(false));
 
-  node_->get_parameter(name_ + "." + "enabled", enabled_);
-  node_->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
-  node_->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
-  node_->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
-  node_->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
+  {
+    auto node = node_.lock();
+    if (!node) {
+      throw std::runtime_error{"Failed to lock node"};
+    }
+    node->get_parameter(name_ + "." + "enabled", enabled_);
+    node->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
+    node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
+    node->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
+    node->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
+
+    dyn_params_handler_ = node->add_on_set_parameters_callback(
+      std::bind(
+        &InflationLayer::dynamicParametersCallback,
+        this, std::placeholders::_1));
+  }
 
   current_ = true;
   seen_.clear();
@@ -107,6 +120,7 @@ InflationLayer::onInitialize()
 void
 InflationLayer::matchSize()
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   nav2_costmap_2d::Costmap2D * costmap = layered_costmap_->getCostmap();
   resolution_ = costmap->getResolution();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
@@ -119,6 +133,7 @@ InflationLayer::updateBounds(
   double /*robot_x*/, double /*robot_y*/, double /*robot_yaw*/, double * min_x,
   double * min_y, double * max_x, double * max_y)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (need_reinflation_) {
     last_min_x_ = *min_x;
     last_min_y_ = *min_y;
@@ -149,14 +164,14 @@ InflationLayer::updateBounds(
 void
 InflationLayer::onFootprintChanged()
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   inscribed_radius_ = layered_costmap_->getInscribedRadius();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   computeCaches();
   need_reinflation_ = true;
 
   RCLCPP_DEBUG(
-    rclcpp::get_logger(
-      "nav2_costmap_2d"), "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
+    logger_, "InflationLayer::onFootprintChanged(): num footprint points: %lu,"
     " inscribed_radius_ = %.3f, inflation_radius_ = %.3f",
     layered_costmap_->getFootprint().size(), inscribed_radius_, inflation_radius_);
 }
@@ -175,7 +190,7 @@ InflationLayer::updateCosts(
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)
   for (auto & dist : inflation_cells_) {
     RCLCPP_FATAL_EXPRESSION(
-      rclcpp::get_logger("nav2_costmap_2d"),
+      logger_,
       !dist.empty(), "The inflation list must be empty at the beginning of inflation");
   }
 
@@ -184,8 +199,7 @@ InflationLayer::updateCosts(
 
   if (seen_.size() != size_x * size_y) {
     RCLCPP_WARN(
-      rclcpp::get_logger(
-        "nav2_costmap_2d"), "InflationLayer::updateCosts(): seen_ vector size is wrong");
+      logger_, "InflationLayer::updateCosts(): seen_ vector size is wrong");
     seen_ = std::vector<bool>(size_x * size_y, false);
   }
 
@@ -195,6 +209,10 @@ InflationLayer::updateCosts(
   // box min_i...max_j, by the amount cell_inflation_radius_.  Cells
   // up to that distance outside the box can still influence the costs
   // stored in cells inside the box.
+  const int base_min_i = min_i;
+  const int base_min_j = min_j;
+  const int base_max_i = max_i;
+  const int base_max_j = max_j;
   min_i -= static_cast<int>(cell_inflation_radius_);
   min_j -= static_cast<int>(cell_inflation_radius_);
   max_i += static_cast<int>(cell_inflation_radius_);
@@ -247,12 +265,21 @@ InflationLayer::updateCosts(
       // assign the cost associated with the distance from an obstacle to the cell
       unsigned char cost = costLookup(mx, my, sx, sy);
       unsigned char old_cost = master_array[index];
-      if (old_cost == NO_INFORMATION &&
-        (inflate_unknown_ ? (cost > FREE_SPACE) : (cost >= INSCRIBED_INFLATED_OBSTACLE)))
+      // In order to avoid artifacts appeared out of boundary areas
+      // when some layer is going after inflation_layer,
+      // we need to apply inflation_layer only to inside of given bounds
+      if (static_cast<int>(mx) >= base_min_i &&
+        static_cast<int>(my) >= base_min_j &&
+        static_cast<int>(mx) < base_max_i &&
+        static_cast<int>(my) < base_max_j)
       {
-        master_array[index] = cost;
-      } else {
-        master_array[index] = std::max(old_cost, cost);
+        if (old_cost == NO_INFORMATION &&
+          (inflate_unknown_ ? (cost > FREE_SPACE) : (cost >= INSCRIBED_INFLATED_OBSTACLE)))
+        {
+          master_array[index] = cost;
+        } else {
+          master_array[index] = std::max(old_cost, cost);
+        }
       }
 
       // attempt to put the neighbors of the current cell onto the inflation list
@@ -275,6 +302,8 @@ InflationLayer::updateCosts(
     dist.clear();
     dist.reserve(200);
   }
+
+  current_ = true;
 }
 
 /**
@@ -386,6 +415,64 @@ InflationLayer::generateIntegerDistances()
 
   distance_matrix_ = distance_matrix;
   return level;
+}
+
+/**
+  * @brief Callback executed when a parameter change is detected
+  * @param event ParameterEvent message
+  */
+rcl_interfaces::msg::SetParametersResult
+InflationLayer::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  rcl_interfaces::msg::SetParametersResult result;
+
+  bool need_cache_recompute = false;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + "." + "inflation_radius" &&
+        inflation_radius_ != parameter.as_double())
+      {
+        inflation_radius_ = parameter.as_double();
+        need_reinflation_ = true;
+        need_cache_recompute = true;
+      } else if (param_name == name_ + "." + "cost_scaling_factor" && // NOLINT
+        cost_scaling_factor_ != parameter.as_double())
+      {
+        cost_scaling_factor_ = parameter.as_double();
+        need_reinflation_ = true;
+        need_cache_recompute = true;
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
+        enabled_ = parameter.as_bool();
+        need_reinflation_ = true;
+        current_ = false;
+      } else if (param_name == name_ + "." + "inflate_unknown" && // NOLINT
+        inflate_unknown_ != parameter.as_bool())
+      {
+        inflate_unknown_ = parameter.as_bool();
+        need_reinflation_ = true;
+      } else if (param_name == name_ + "." + "inflate_around_unknown" && // NOLINT
+        inflate_around_unknown_ != parameter.as_bool())
+      {
+        inflate_around_unknown_ = parameter.as_bool();
+        need_reinflation_ = true;
+      }
+    }
+  }
+
+  if (need_cache_recompute) {
+    matchSize();
+  }
+
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_costmap_2d

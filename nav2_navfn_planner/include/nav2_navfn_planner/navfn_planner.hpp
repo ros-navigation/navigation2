@@ -32,6 +32,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav2_navfn_planner
 {
@@ -39,58 +40,113 @@ namespace nav2_navfn_planner
   class NavfnPlanner : public nav2_core::GlobalPlanner
   {
   public:
+    /**
+     * @brief constructor
+     */
     NavfnPlanner();
+
+    /**
+     * @brief destructor
+     */
     ~NavfnPlanner();
 
-    // plugin configure
+    /**
+     * @brief Configuring plugin
+     * @param parent Lifecycle node pointer
+     * @param name Name of plugin map
+     * @param tf Shared ptr of TF2 buffer
+     * @param costmap_ros Costmap2DROS object
+     */
     void configure(
-        rclcpp_lifecycle::LifecycleNode::SharedPtr parent,
+        const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
         std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
         std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
-    // plugin cleanup
+    /**
+     * @brief Cleanup lifecycle node
+     */
     void cleanup() override;
 
-    // plugin activate
+    /**
+     * @brief Activate lifecycle node
+     */
     void activate() override;
 
-    // plugin deactivate
+    /**
+     * @brief Deactivate lifecycle node
+     */
     void deactivate() override;
 
-    // plugin create path
+
+    /**
+     * @brief Creating a plan from start and goal poses
+     * @param start Start pose
+     * @param goal Goal pose
+     * @return nav2_msgs::PathAndBoundary of the generated path
+     */
     nav2_msgs::msg::PathAndBoundary createPlan(
         const geometry_msgs::msg::PoseStamped &start,
         const nav_msgs::msg::Path &goal,
         const int &robots) override;
 
+    /**
+     * @brief Creating a plan from start and goal poses
+     * @param start Start pose
+     * @param goal Goal pose
+     * @return nav2_msgs::PathAndBoundary of the generated path
+     */
     nav2_msgs::msg::PathAndBoundary createPlan(
         const geographic_msgs::msg::GeoPoseStamped &start,
         const geographic_msgs::msg::GeoPath &goal,
         const int &robots) override;
 
   protected:
-    // Compute a plan given start and goal poses, provided in global world frame.
+    /**
+     * @brief Compute a plan given start and goal poses, provided in global world frame.
+     * @param start Start pose
+     * @param goal Goal pose
+     * @param tolerance Relaxation constraint in x and y
+     * @param plan Path to be computed
+     * @return true if can find the path
+     */
     bool makePlan(
-        const geometry_msgs::msg::Pose &start,
-        const geometry_msgs::msg::Pose &goal, double tolerance,
-        nav_msgs::msg::Path &plan);
+        const geometry_msgs::msg::Pose & start,
+        const geometry_msgs::msg::Pose & goal, double tolerance,
+        nav_msgs::msg::Path & plan);
 
-    // Compute the navigation function given a seed point in the world to start from
-    bool computePotential(const geometry_msgs::msg::Point &world_point);
+    /**
+     * @brief Compute the navigation function given a seed point in the world to start from
+     * @param world_point Point in world coordinate frame
+     * @return true if can compute
+     */
+    bool computePotential(const geometry_msgs::msg::Point & world_point);
 
-    // Compute a plan to a goal from a potential - must call computePotential first
+    /**
+     * @brief Compute a plan to a goal from a potential - must call computePotential first
+     * @param goal Goal pose
+     * @param plan Path to be computed
+     * @return true if can compute a plan path
+     */
     bool getPlanFromPotential(
-        const geometry_msgs::msg::Pose &goal,
-        nav_msgs::msg::Path &plan);
+        const geometry_msgs::msg::Pose & goal,
+        nav_msgs::msg::Path & plan);
 
-    // Remove artifacts at the end of the path - originated from planning on a discretized world
+    /**
+     * @brief Remove artifacts at the end of the path - originated from planning on a discretized world
+     * @param goal Goal pose
+     * @param plan Computed path
+     */
     void smoothApproachToGoal(
-        const geometry_msgs::msg::Pose &goal,
-        nav_msgs::msg::Path &plan);
+        const geometry_msgs::msg::Pose & goal,
+        nav_msgs::msg::Path & plan);
 
-    // Compute the potential, or navigation cost, at a given point in the world
-    // - must call computePotential first
-    double getPointPotential(const geometry_msgs::msg::Point &world_point);
+    /**
+     * @brief Compute the potential, or navigation cost, at a given point in the world
+     *        must call computePotential first
+     * @param world_point Point in world coordinate frame
+     * @return double point potential (navigation cost)
+     */
+    double getPointPotential(const geometry_msgs::msg::Point & world_point);
 
     // Check for a valid potential value at a given point in the world
     // - must call computePotential first
@@ -98,26 +154,51 @@ namespace nav2_navfn_planner
     // bool validPointPotential(const geometry_msgs::msg::Point & world_point);
     // bool validPointPotential(const geometry_msgs::msg::Point & world_point, double tolerance);
 
-    // Compute the squared distance between two points
+    /**
+     * @brief Compute the squared distance between two points
+     * @param p1 Point 1
+     * @param p2 Point 2
+     * @return double squared distance between two points
+     */
     inline double squared_distance(
-        const geometry_msgs::msg::Pose &p1,
-        const geometry_msgs::msg::Pose &p2)
+        const geometry_msgs::msg::Pose & p1,
+        const geometry_msgs::msg::Pose & p2)
     {
       double dx = p1.position.x - p2.position.x;
       double dy = p1.position.y - p2.position.y;
       return dx * dx + dy * dy;
     }
 
-    // Transform a point from world to map frame
-    bool worldToMap(double wx, double wy, unsigned int &mx, unsigned int &my);
+    /**
+     * @brief Transform a point from world to map frame
+     * @param wx double of world X coordinate
+     * @param wy double of world Y coordinate
+     * @param mx int of map X coordinate
+     * @param my int of map Y coordinate
+     * @return true if can transform
+     */
+    bool worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my);
 
-    // Transform a point from map to world frame
-    void mapToWorld(double mx, double my, double &wx, double &wy);
+    /**
+     * @brief Transform a point from map to world frame
+     * @param mx double of map X coordinate
+     * @param my double of map Y coordinate
+     * @param wx double of world X coordinate
+     * @param wy double of world Y coordinate
+     */
+    void mapToWorld(double mx, double my, double & wx, double & wy);
 
-    // Set the corresponding cell cost to be free space
+    /**
+     * @brief Set the corresponding cell cost to be free space
+     * @param mx int of map X coordinate
+     * @param my int of map Y coordinate
+     */
     void clearRobotCell(unsigned int mx, unsigned int my);
 
-    // Determine if a new planner object should be made
+    /**
+     * @brief Determine if a new planner object should be made
+     * @return true if planner object is out of date
+     */
     bool isPlannerOutOfDate();
 
     // Planner based on ROS1 NavFn algorithm
@@ -126,17 +207,20 @@ namespace nav2_navfn_planner
     // TF buffer
     std::shared_ptr<tf2_ros::Buffer> tf_;
 
-    // node ptr
-    nav2_util::LifecycleNode::SharedPtr node_;
+    // Clock
+    rclcpp::Clock::SharedPtr clock_;
+
+    // Logger
+    rclcpp::Logger logger_{rclcpp::get_logger("NavfnPlanner")};
 
     // Global Costmap
-    nav2_costmap_2d::Costmap2D *costmap_;
+    nav2_costmap_2d::Costmap2D * costmap_;
 
     // The global frame of the costmap
     std::string global_frame_, name_;
 
     // Whether or not the planner should be allowed to plan through unknown space
-    bool allow_unknown_;
+    bool allow_unknown_, use_final_approach_orientation_;
 
     // If the goal is obstructed, the tolerance specifies how many meters the planner
     // can relax the constraint in x and y before failing
@@ -145,15 +229,18 @@ namespace nav2_navfn_planner
   // Whether to use the astar planner or default dijkstras
   bool use_astar_;
 
-  // Subscription for parameter change
-  rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
-  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
+  // parent node weak ptr
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   /**
    * @brief Callback executed when a paramter change is detected
-   * @param event ParameterEvent message
+   * @param parameters list of changed parameters
    */
-  void on_parameter_event_callback(const rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 };
 
 } // namespace nav2_navfn_planner

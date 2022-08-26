@@ -22,17 +22,17 @@ In order to simply book-keeping, the global path is continuously pruned to the c
 
 Finally, the lookahead point will be given to the pure pursuit algorithm which finds the curvature of the path required to drive the robot to the lookahead point. This curvature is then applied to the velocity commands to allow the robot to drive.
 
+Note that a pure pursuit controller is that, it "purely" pursues the path without interest or concern about dynamic obstacles. Therefore, this controller should only be used when paired with a path planner that can generate a path the robot can follow. For a circular (or can be treated as circular) robot, this can really be any planner since you can leverage the particle / inflation relationship in planning. For a "large" robot for the environment or general non-circular robots, this must be something kinematically feasible, like the Smac Planner, such that the path is followable.
+
 ![Lookahead algorithm](./doc/lookahead_algorithm.png)
 
 ## Regulated Pure Pursuit Features
 
-We have created a new variation on the pure pursuit algorithm that we dubb the Regulated Pure Pursuit algorithm. We combine the features of the Adaptive Pure Pursuit algorithm with rules around linear velocity with a focus on consumer, industrial, and service robot's needs. We also implement several common-sense safety mechanisms like collision detection and ensuring that commands are kinematically feasible that are missing from all other variants of pure pursuit (for some remarkable reason).
+We have created a new variation on the pure pursuit algorithm that we dubb the Regulated Pure Pursuit algorithm. We combine the features of the Adaptive Pure Pursuit algorithm with rules around linear velocity with a focus on consumer, industrial, and service robot's needs. We also implement several common-sense safety mechanisms like collision detection.
 
 The Regulated Pure Pursuit controller implements active collision detection. We use a parameter to set the maximum allowable time before a potential collision on the current velocity command. Using the current linear and angular velocity, we project forward in time that duration and check for collisions. Intuitively, you may think that collision checking between the robot and the lookahead point seems logical. However, if you're maneuvering in tight spaces, it makes alot of sense to only search forward a given amount of time to give the system a little leeway to get itself out. In confined spaces especially, we want to make sure that we're collision checking a reasonable amount of space for the current action being taken (e.g. if moving at 0.1 m/s, it makes no sense to look 10 meters ahead to the carrot, or 100 seconds into the future). This helps look further at higher speeds / angular rotations and closer with fine, slow motions in constrained environments so it doesn't over report collisions from valid motions near obstacles. If you set the maximum allowable to a large number, it will collision check all the way, but not exceeding, the lookahead point. We visualize the collision checking arc on the `lookahead_arc` topic.
 
 The regulated pure pursuit algorithm also makes use of the common variations on the pure pursuit algorithm. We implement the adaptive pure pursuit's main contribution of having velocity-scaled lookahead point distances. This helps make the controller more stable over a larger range of potential linear velocities. There are parameters for setting the lookahead gain (or lookahead time) and thresholded values for minimum and maximum.
-
-We also implement kinematic speed limits on the linear velocities in operations and angular velocities during pure rotations. This makes sure that the output commands are smooth, safe, and kinematically feasible. This is especially important at the beginning and end of a path tracking task, where you are ramping up to speed and slowing down to the goal.
 
 The final minor improvement we make is slowing on approach to the goal. Knowing that the optimal lookahead distance is `X`, we can take the difference in `X` and the actual distance of the lookahead point found to find the lookahead point error. During operations, the variation in this error should be exceptionally small and won't be triggered. However, at the end of the path, there are no more points at a lookahead distance away from the robot, so it uses the last point on the path. So as the robot approaches a target, its error will grow and the robot's velocity will be reduced proportional to this error until a minimum threshold. This is also tracked by the kinematic speed limits to ensure drivability.
 
@@ -44,13 +44,13 @@ An unintended tertiary benefit of scaling the linear velocities by curvature is 
 
 Mixing the proximity and curvature regulated linear velocities with the time-scaled collision checker, we see a near-perfect combination allowing the regulated pure pursuit algorithm to handle high starting deviations from the path and navigate collision-free in tight spaces without overshoot. 
 
+Note: The maximum allowed time to collision is thresholded by the lookahead point, starting in Humble. This is such that collision checking isn't significantly overshooting the path, which can cause issues in constrained environments. For example, if there were a straight-line path going towards a wall that then turned left, if this parameter was set to high, then it would detect a collision past the point of actual robot intended motion. Thusly, if a robot is moving fast, selecting further out lookahead points is not only a matter of behavioral stability for Pure Pursuit, but also gives a robot further predictive collision detection capabilities. The max allowable time parameter is still in place for slow commands, as described in detail above.
+
 ## Configuration
 
 | Parameter | Description | 
 |-----|----|
 | `desired_linear_vel` | The desired maximum linear velocity to use. | 
-| `max_linear_accel` | Acceleration for linear velocity | 
-| `max_linear_decel` | Deceleration for linear velocity | 
 | `lookahead_dist` | The lookahead distance to use to find the lookahead point | 
 | `min_lookahead_dist` | The minimum lookahead distance threshold when using velocity scaled lookahead distances | 
 | `max_lookahead_dist` | The maximum lookahead distance threshold when using velocity scaled lookahead distances | 
@@ -60,7 +60,7 @@ Mixing the proximity and curvature regulated linear velocities with the time-sca
 | `use_velocity_scaled_lookahead_dist` | Whether to use the velocity scaled lookahead distances or constant `lookahead_distance` | 
 | `min_approach_linear_velocity` | The minimum velocity threshold to apply when approaching the goal | 
 | `use_approach_linear_velocity_scaling` | Whether to scale the linear velocity down on approach to the goal for a smooth stop | 
-| `max_allowed_time_to_collision` | The time to project a velocity command to check for collisions | 
+| `max_allowed_time_to_collision_up_to_carrot` | The time to project a velocity command to check for collisions, limited to maximum distance of lookahead distance selected | 
 | `use_regulated_linear_velocity_scaling` | Whether to use the regulated features for curvature | 
 | `use_cost_regulated_linear_velocity_scaling` | Whether to use the regulated features for proximity to obstacles | 
 | `cost_scaling_dist` | The minimum distance from an obstacle to trigger the scaling of linear velocity, if `use_cost_regulated_linear_velocity_scaling` is enabled. The value set should be smaller or equal to the `inflation_radius` set in the inflation layer of costmap, since inflation is used to compute the distance from obstacles | 
@@ -71,8 +71,8 @@ Mixing the proximity and curvature regulated linear velocities with the time-sca
 | `use_rotate_to_heading` | Whether to enable rotating to rough heading and goal orientation when using holonomic planners. Recommended on for all robot types except ackermann, which cannot rotate in place. | 
 | `rotate_to_heading_min_angle` | The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if `use_rotate_to_heading` is enabled. | 
 | `max_angular_accel` | Maximum allowable angular acceleration while rotating to heading, if enabled | 
-| `goal_dist_tol` | XY tolerance from goal to rotate to the goal heading, if `use_rotate_to_heading` is enabled. This should match or be smaller than the `GoalChecker`'s translational goal tolerance. | 
-
+| `max_robot_pose_search_dist` | Maximum integrated distance along the path to bound the search for the closest pose to the robot. This is set by default to the maximum costmap extent, so it shouldn't be set manually unless there are loops within the local costmap. | 
+| `use_interpolation` | Enables interpolation between poses on the path for lookahead point selection. Helps sparse paths to avoid inducing discontinuous commanded velocities. Set this to false for a potential performance boost, at the expense of smooth control. | 
 
 Example fully-described XML with default parameter values:
 
@@ -85,7 +85,7 @@ controller_server:
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
     progress_checker_plugin: "progress_checker"
-    goal_checker_plugin: "goal_checker"
+    goal_checker_plugins: "goal_checker"
     controller_plugins: ["FollowPath"]
 
     progress_checker:
@@ -100,8 +100,6 @@ controller_server:
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
       desired_linear_vel: 0.5
-      max_linear_accel: 2.5
-      max_linear_decel: 2.5
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9
@@ -111,7 +109,7 @@ controller_server:
       use_velocity_scaled_lookahead_dist: false
       min_approach_linear_velocity: 0.05
       use_approach_linear_velocity_scaling: true
-      max_allowed_time_to_collision: 1.0
+      max_allowed_time_to_collision_up_to_carrot: 1.0
       use_regulated_linear_velocity_scaling: true
       use_cost_regulated_linear_velocity_scaling: false
       regulated_linear_scaling_min_radius: 0.9
@@ -119,7 +117,8 @@ controller_server:
       use_rotate_to_heading: true
       rotate_to_heading_min_angle: 0.785
       max_angular_accel: 3.2
-      goal_dist_tol: 0.25
+      max_robot_pose_search_dist: 10.0
+      use_interpolation: false
       cost_scaling_dist: 0.3
       cost_scaling_gain: 1.0
       inflation_cost_scaling_factor: 3.0
@@ -130,7 +129,7 @@ controller_server:
 | Topic  | Type | Description | 
 |-----|----|----|
 | `lookahead_point`  | `geometry_msgs/PointStamped` | The current lookahead point on the path | 
-| `lookahead_arc`  | `nav_msgs/Path` | The drivable arc between the robot and the carrot. Arc length depends on `max_allowed_time_to_collision`, forward simulating from the robot pose at the commanded `Twist` by that time. In a collision state, the last published arc will be the points leading up to, and including, the first point in collision. | 
+| `lookahead_arc`  | `nav_msgs/Path` | The drivable arc between the robot and the carrot. Arc length depends on `max_allowed_time_to_collision_up_to_carrot`, forward simulating from the robot pose at the commanded `Twist` by that time. In a collision state, the last published arc will be the points leading up to, and including, the first point in collision. | 
 
 Note: The `lookahead_arc` is also a really great speed indicator, when "full" to carrot or max time, you know you're at full speed. If 20% less, you can tell the robot is approximately 20% below maximum speed. Think of it as the collision checking bounds but also a speed guage.
 

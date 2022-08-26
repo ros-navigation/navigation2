@@ -46,6 +46,7 @@
 #include "nav_2d_utils/conversions.hpp"
 #include "nav_2d_utils/parameters.hpp"
 #include "nav_2d_utils/tf_help.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
@@ -53,6 +54,7 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 
 using nav2_util::declare_parameter_if_not_declared;
+using nav2_util::geometry_utils::euclidean_distance;
 
 namespace dwb_core
 {
@@ -64,65 +66,73 @@ DWBLocalPlanner::DWBLocalPlanner()
 }
 
 void DWBLocalPlanner::configure(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
-  std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
-  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
+  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
-  node_ = node;
+  node_ = parent;
+  auto node = node_.lock();
+
+  logger_ = node->get_logger();
+  clock_ = node->get_clock();
   costmap_ros_ = costmap_ros;
   tf_ = tf;
   dwb_plugin_name_ = name;
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".critics");
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".default_critic_namespaces");
   declare_parameter_if_not_declared(
-    node_, dwb_plugin_name_ + ".prune_plan",
+    node, dwb_plugin_name_ + ".critics",
+    rclcpp::PARAMETER_STRING_ARRAY);
+  declare_parameter_if_not_declared(
+    node, dwb_plugin_name_ + ".default_critic_namespaces",
+    rclcpp::ParameterValue(std::vector<std::string>()));
+  declare_parameter_if_not_declared(
+    node, dwb_plugin_name_ + ".prune_plan",
     rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
-    node_, dwb_plugin_name_ + ".prune_distance",
-    rclcpp::ParameterValue(1.0));
+    node, dwb_plugin_name_ + ".prune_distance",
+    rclcpp::ParameterValue(2.0));
   declare_parameter_if_not_declared(
-    node_, dwb_plugin_name_ + ".debug_trajectory_details",
+    node, dwb_plugin_name_ + ".debug_trajectory_details",
     rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
-    node_, dwb_plugin_name_ + ".trajectory_generator_name",
+    node, dwb_plugin_name_ + ".trajectory_generator_name",
     rclcpp::ParameterValue(std::string("dwb_plugins::StandardTrajectoryGenerator")));
   declare_parameter_if_not_declared(
-    node_, dwb_plugin_name_ + ".transform_tolerance",
+    node, dwb_plugin_name_ + ".transform_tolerance",
     rclcpp::ParameterValue(0.1));
   declare_parameter_if_not_declared(
-    node_, dwb_plugin_name_ + ".shorten_transformed_plan",
+    node, dwb_plugin_name_ + ".shorten_transformed_plan",
     rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
-    node_, dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
+    node, dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
     rclcpp::ParameterValue(true));
 
   std::string traj_generator_name;
 
   double transform_tolerance;
-  node_->get_parameter(dwb_plugin_name_ + ".transform_tolerance", transform_tolerance);
+  node->get_parameter(dwb_plugin_name_ + ".transform_tolerance", transform_tolerance);
   transform_tolerance_ = rclcpp::Duration::from_seconds(transform_tolerance);
-  RCLCPP_INFO(node_->get_logger(), "Setting transform_tolerance to %f", transform_tolerance);
+  RCLCPP_INFO(logger_, "Setting transform_tolerance to %f", transform_tolerance);
 
-  node_->get_parameter(dwb_plugin_name_ + ".prune_plan", prune_plan_);
-  node_->get_parameter(dwb_plugin_name_ + ".prune_distance", prune_distance_);
-  node_->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
-  node_->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
-  node_->get_parameter(
+  node->get_parameter(dwb_plugin_name_ + ".prune_plan", prune_plan_);
+  node->get_parameter(dwb_plugin_name_ + ".prune_distance", prune_distance_);
+  node->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
+  node->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
+  node->get_parameter(
     dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
     short_circuit_trajectory_evaluation_);
   node->get_parameter(dwb_plugin_name_ + ".shorten_transformed_plan", shorten_transformed_plan_);
 
-  pub_ = std::make_unique<DWBPublisher>(node_, dwb_plugin_name_);
+  pub_ = std::make_unique<DWBPublisher>(node, dwb_plugin_name_);
   pub_->on_configure();
 
   traj_generator_ = traj_gen_loader_.createUniqueInstance(traj_generator_name);
 
-  traj_generator_->initialize(node_, dwb_plugin_name_);
+  traj_generator_->initialize(node, dwb_plugin_name_);
 
   try {
     loadCritics();
   } catch (const std::exception & e) {
-    RCLCPP_ERROR(node_->get_logger(), "Couldn't load critics! Caught exception: %s", e.what());
+    RCLCPP_ERROR(logger_, "Couldn't load critics! Caught exception: %s", e.what());
     throw;
   }
 }
@@ -168,101 +178,53 @@ DWBLocalPlanner::resolveCriticClassName(std::string base_name)
 void
 DWBLocalPlanner::loadCritics()
 {
-  node_->get_parameter(dwb_plugin_name_ + ".default_critic_namespaces", default_critic_namespaces_);
-  if (default_critic_namespaces_.size() == 0) {
-    default_critic_namespaces_.push_back("dwb_critics");
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  node->get_parameter(dwb_plugin_name_ + ".default_critic_namespaces", default_critic_namespaces_);
+  if (default_critic_namespaces_.empty()) {
+    default_critic_namespaces_.emplace_back("dwb_critics");
   }
 
   std::vector<std::string> critic_names;
-  if (!node_->get_parameter(dwb_plugin_name_ + ".critics", critic_names)) {
-    loadBackwardsCompatibleParameters();
+  if (!node->get_parameter(dwb_plugin_name_ + ".critics", critic_names)) {
+    throw std::runtime_error("No critics defined for " + dwb_plugin_name_);
   }
 
-  node_->get_parameter(dwb_plugin_name_ + ".critics", critic_names);
+  node->get_parameter(dwb_plugin_name_ + ".critics", critic_names);
   for (unsigned int i = 0; i < critic_names.size(); i++) {
     std::string critic_plugin_name = critic_names[i];
     std::string plugin_class;
 
     declare_parameter_if_not_declared(
-      node_, dwb_plugin_name_ + "." + critic_plugin_name + ".class",
+      node, dwb_plugin_name_ + "." + critic_plugin_name + ".class",
       rclcpp::ParameterValue(critic_plugin_name));
-    node_->get_parameter(dwb_plugin_name_ + "." + critic_plugin_name + ".class", plugin_class);
+    node->get_parameter(dwb_plugin_name_ + "." + critic_plugin_name + ".class", plugin_class);
 
     plugin_class = resolveCriticClassName(plugin_class);
 
     TrajectoryCritic::Ptr plugin = critic_loader_.createUniqueInstance(plugin_class);
     RCLCPP_INFO(
-      node_->get_logger(),
+      logger_,
       "Using critic \"%s\" (%s)", critic_plugin_name.c_str(), plugin_class.c_str());
     critics_.push_back(plugin);
     try {
-      plugin->initialize(node_, critic_plugin_name, dwb_plugin_name_, costmap_ros_);
+      plugin->initialize(node, critic_plugin_name, dwb_plugin_name_, costmap_ros_);
     } catch (const std::exception & e) {
-      RCLCPP_ERROR(node_->get_logger(), "Couldn't initialize critic plugin!");
+      RCLCPP_ERROR(logger_, "Couldn't initialize critic plugin!");
       throw;
     }
-    RCLCPP_INFO(node_->get_logger(), "Critic plugin initialized");
+    RCLCPP_INFO(logger_, "Critic plugin initialized");
   }
-}
-
-void
-DWBLocalPlanner::loadBackwardsCompatibleParameters()
-{
-  std::vector<std::string> critic_names;
-  RCLCPP_INFO(
-    node_->get_logger(),
-    "DWBLocalPlanner", "No critics configured! Using the default set.");
-  critic_names.push_back("RotateToGoal");       // discards trajectories that move forward when
-                                                //   already at goal
-  critic_names.push_back("Oscillation");        // discards oscillating motions (assisgns cost -1)
-  critic_names.push_back("ObstacleFootprint");  // discards trajectories that move into obstacles
-  critic_names.push_back("GoalAlign");          // prefers trajectories that make the
-                                                //   nose go towards (local) nose goal
-  critic_names.push_back("PathAlign");          // prefers trajectories that keep the
-                                                //   robot nose on nose path
-  critic_names.push_back("PathDist");           // prefers trajectories on global path
-  critic_names.push_back("GoalDist");           // prefers trajectories that go towards
-                                                //   (local) goal, based on wave propagation
-  node_->set_parameters({rclcpp::Parameter(dwb_plugin_name_ + ".critics", critic_names)});
-
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".path_distance_bias");
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".goal_distance_bias");
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".occdist_scale");
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".max_scaling_factor");
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".scaling_speed");
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".PathAlign.scale");
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".GoalAlign.scale");
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".PathDist.scale");
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".GoalDist.scale");
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".ObstacleFootprint.scale");
-  declare_parameter_if_not_declared(
-    node_,
-    dwb_plugin_name_ + ".ObstacleFootprint.max_scaling_factor");
-  declare_parameter_if_not_declared(node_, dwb_plugin_name_ + ".ObstacleFootprint.scaling_speed");
-
-  /* *INDENT-OFF* */
-  nav_2d_utils::moveParameter(node_, dwb_plugin_name_ + ".path_distance_bias",
-    dwb_plugin_name_ + ".PathAlign.scale", 32.0, false);
-  nav_2d_utils::moveParameter(node_, dwb_plugin_name_ + ".goal_distance_bias",
-    dwb_plugin_name_ + ".GoalAlign.scale", 24.0, false);
-  nav_2d_utils::moveParameter(node_, dwb_plugin_name_ + ".path_distance_bias",
-    dwb_plugin_name_ + ".PathDist.scale", 32.0);
-  nav_2d_utils::moveParameter(node_, dwb_plugin_name_ + ".goal_distance_bias",
-    dwb_plugin_name_ + ".GoalDist.scale", 24.0);
-  nav_2d_utils::moveParameter(node_, dwb_plugin_name_ + ".occdist_scale",
-    dwb_plugin_name_ + ".ObstacleFootprint.scale", 0.01);
-  nav_2d_utils::moveParameter(node_, dwb_plugin_name_ + ".max_scaling_factor",
-    dwb_plugin_name_ + ".ObstacleFootprint.max_scaling_factor", 0.2);
-  nav_2d_utils::moveParameter(node_, dwb_plugin_name_ + ".scaling_speed",
-    dwb_plugin_name_ + ".ObstacleFootprint.scaling_speed", 0.25);
-  /* *INDENT-ON* */
 }
 
 void
 DWBLocalPlanner::setPlan(const nav_msgs::msg::Path & path)
 {
   auto path2d = nav_2d_utils::pathToPath2D(path);
-  for (TrajectoryCritic::Ptr critic : critics_) {
+  for (TrajectoryCritic::Ptr & critic : critics_) {
     critic->reset();
   }
 
@@ -275,7 +237,8 @@ DWBLocalPlanner::setPlan(const nav_msgs::msg::Path & path)
 geometry_msgs::msg::TwistStamped
 DWBLocalPlanner::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
-  const geometry_msgs::msg::Twist & velocity)
+  const geometry_msgs::msg::Twist & velocity,
+  nav2_core::GoalChecker * /*goal_checker*/)
 {
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results = nullptr;
   if (pub_->shouldRecordEvaluation()) {
@@ -321,7 +284,7 @@ DWBLocalPlanner::computeVelocityCommands(
 {
   if (results) {
     results->header.frame_id = pose.header.frame_id;
-    results->header.stamp = node_->now();
+    results->header.stamp = clock_->now();
   }
 
   nav_2d_msgs::msg::Path2D transformed_plan;
@@ -332,8 +295,8 @@ DWBLocalPlanner::computeVelocityCommands(
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
-  for (TrajectoryCritic::Ptr critic : critics_) {
-    if (critic->prepare(pose.pose, velocity, goal_pose.pose, transformed_plan) == false) {
+  for (TrajectoryCritic::Ptr & critic : critics_) {
+    if (!critic->prepare(pose.pose, velocity, goal_pose.pose, transformed_plan)) {
       RCLCPP_WARN(rclcpp::get_logger("DWBLocalPlanner"), "A scoring function failed to prepare");
     }
   }
@@ -343,11 +306,11 @@ DWBLocalPlanner::computeVelocityCommands(
 
     // Return Value
     nav_2d_msgs::msg::Twist2DStamped cmd_vel;
-    cmd_vel.header.stamp = node_->now();
+    cmd_vel.header.stamp = clock_->now();
     cmd_vel.velocity = best.traj.velocity;
 
     // debrief stateful scoring functions
-    for (TrajectoryCritic::Ptr critic : critics_) {
+    for (TrajectoryCritic::Ptr & critic : critics_) {
       critic->debrief(cmd_vel.velocity);
     }
 
@@ -361,7 +324,7 @@ DWBLocalPlanner::computeVelocityCommands(
     nav_2d_msgs::msg::Twist2D empty_cmd;
     dwb_msgs::msg::Trajectory2D empty_traj;
     // debrief stateful scoring functions
-    for (TrajectoryCritic::Ptr critic : critics_) {
+    for (TrajectoryCritic::Ptr & critic : critics_) {
       critic->debrief(empty_cmd);
     }
 
@@ -450,7 +413,7 @@ DWBLocalPlanner::scoreTrajectory(
   dwb_msgs::msg::TrajectoryScore score;
   score.traj = traj;
 
-  for (TrajectoryCritic::Ptr critic : critics_) {
+  for (TrajectoryCritic::Ptr & critic : critics_) {
     dwb_msgs::msg::CriticScore cs;
     cs.name = critic->getName();
     cs.scale = critic->getScale();
@@ -473,22 +436,11 @@ DWBLocalPlanner::scoreTrajectory(
   return score;
 }
 
-double
-getSquareDistance(
-  const geometry_msgs::msg::Pose2D & pose_a,
-  const geometry_msgs::msg::Pose2D & pose_b)
-{
-  double x_diff = pose_a.x - pose_b.x;
-  double y_diff = pose_a.y - pose_b.y;
-
-  return x_diff * x_diff + y_diff * y_diff;
-}
-
 nav_2d_msgs::msg::Path2D
 DWBLocalPlanner::transformGlobalPlan(
   const nav_2d_msgs::msg::Pose2DStamped & pose)
 {
-  if (global_plan_.poses.size() == 0) {
+  if (global_plan_.poses.empty()) {
     throw nav2_core::PlannerException("Received plan with zero length");
   }
 
@@ -506,46 +458,51 @@ DWBLocalPlanner::transformGlobalPlan(
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   double dist_threshold = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY()) *
     costmap->getResolution() / 2.0;
-  double sq_dist_threshold = dist_threshold * dist_threshold;
+
 
   // If prune_plan is enabled (it is by default) then we want to restrict the
   // plan to distances within that range as well.
-  double sq_prune_dist = prune_distance_ * prune_distance_;
+  double prune_dist = prune_distance_;
 
   // Set the maximum distance we'll include points before getting to the part
   // of the path where the robot is located (the start of the plan). Basically,
   // these are the points the robot has already passed.
-  double sq_transform_start_threshold;
+  double transform_start_threshold;
   if (prune_plan_) {
-    sq_transform_start_threshold = std::min(sq_dist_threshold, sq_prune_dist);
+    transform_start_threshold = std::min(dist_threshold, prune_dist);
   } else {
-    sq_transform_start_threshold = sq_dist_threshold;
+    transform_start_threshold = dist_threshold;
   }
 
   // Set the maximum distance we'll include points after the part of the part of
   // the plan near the robot (the end of the plan). This determines the amount
   // of the plan passed on to the critics
-  double sq_transform_end_threshold;
+  double transform_end_threshold;
   if (shorten_transformed_plan_) {
-    sq_transform_end_threshold = std::min(sq_dist_threshold, sq_prune_dist);
+    transform_end_threshold = std::min(dist_threshold, prune_dist);
   } else {
-    sq_transform_end_threshold = sq_dist_threshold;
+    transform_end_threshold = dist_threshold;
   }
 
-  // Find the first pose in the plan that's less than sq_transform_start_threshold
+  // Find the first pose in the global plan that's further than prune distance
+  // from the robot using integrated distance
+  auto prune_point = nav2_util::geometry_utils::first_after_integrated_distance(
+    global_plan_.poses.begin(), global_plan_.poses.end(), prune_dist);
+
+  // Find the first pose in the plan (upto prune_point) that's less than transform_start_threshold
   // from the robot.
   auto transformation_begin = std::find_if(
-    begin(global_plan_.poses), end(global_plan_.poses),
+    begin(global_plan_.poses), prune_point,
     [&](const auto & global_plan_pose) {
-      return getSquareDistance(robot_pose.pose, global_plan_pose) < sq_transform_start_threshold;
+      return euclidean_distance(robot_pose.pose, global_plan_pose) < transform_start_threshold;
     });
 
-  // Find the first pose in the end of the plan that's further than sq_transform_end_threshold
-  // from the robot
+  // Find the first pose in the end of the plan that's further than transform_end_threshold
+  // from the robot using integrated distance
   auto transformation_end = std::find_if(
-    transformation_begin, end(global_plan_.poses),
-    [&](const auto & global_plan_pose) {
-      return getSquareDistance(robot_pose.pose, global_plan_pose) > sq_transform_end_threshold;
+    transformation_begin, global_plan_.poses.end(),
+    [&](const auto & pose) {
+      return euclidean_distance(pose, robot_pose.pose) > transform_end_threshold;
     });
 
   // Transform the near part of the global plan into the robot's frame of reference.
@@ -577,7 +534,7 @@ DWBLocalPlanner::transformGlobalPlan(
     pub_->publishGlobalPlan(global_plan_);
   }
 
-  if (transformed_plan.poses.size() == 0) {
+  if (transformed_plan.poses.empty()) {
     throw nav2_core::PlannerException("Resulting plan has 0 poses in it.");
   }
   return transformed_plan;

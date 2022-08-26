@@ -38,8 +38,9 @@ class MapServer : public nav2_util::LifecycleNode
 public:
   /**
    * @brief A constructor for nav2_map_server::MapServer
+   * @param options Additional options to control creation of the node.
    */
-  MapServer();
+  explicit MapServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   /**
    * @brief A Destructor for nav2_map_server::MapServer

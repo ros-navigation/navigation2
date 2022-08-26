@@ -50,9 +50,6 @@ def generate_launch_description():
     if (os.getenv('ASTAR') == 'True'):
         param_substitutions.update({'use_astar': 'True'})
 
-    if (os.getenv('GROOT_MONITORING') == 'True'):
-        param_substitutions.update({'enable_groot_monitoring': 'True'})
-
     param_substitutions.update(
         {'planner_server.ros__parameters.GridBased.plugin': os.getenv('PLANNER')})
     param_substitutions.update(
@@ -67,7 +64,8 @@ def generate_launch_description():
     new_yaml = configured_params.perform(context)
 
     return LaunchDescription([
-        SetEnvironmentVariable('RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1'),
+        SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+        SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
 
         # Launch gazebo server for simulation
         ExecuteProcess(
@@ -106,8 +104,9 @@ def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
     test1_action = ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
-             '-r', '-2.0', '-0.5', '0.0', '2.0'],
+        cmd=[os.path.join(os.getenv('TEST_DIR'), os.getenv('TESTER')),
+             '-r', '-2.0', '-0.5', '0.0', '2.0',
+             '-e', 'True'],
         name='tester_node',
         output='screen')
 

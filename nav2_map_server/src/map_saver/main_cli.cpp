@@ -108,10 +108,10 @@ ARGUMENTS_STATUS parse_arguments(
             save_parameters.map_file_name = *it;
             break;
           case COMMAND_FREE_THRESH:
-            save_parameters.free_thresh = atoi(it->c_str());
+            save_parameters.free_thresh = atof(it->c_str());
             break;
           case COMMAND_OCCUPIED_THRESH:
-            save_parameters.occupied_thresh = atoi(it->c_str());
+            save_parameters.occupied_thresh = atof(it->c_str());
             break;
           case COMMAND_IMAGE_FORMAT:
             save_parameters.image_format = *it;
