@@ -33,7 +33,7 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
-    <Action ID="DriveOnHeadingCancel">
+    <Action ID="CancelDriveOnHeading">
       <input_port name="service_name">Service name to cancel the drive on heading behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
@@ -56,6 +56,18 @@
     <Action ID="ClearEntireCostmap">
       <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
+    <Action ID="ClearCostmapExceptRegion">
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="reset_distance">Distance from the robot above which obstacles are cleared</input_port>
+    </Action>
+
+    <Action ID="ClearCostmapAroundRobot">
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="reset_distance">Distance from the robot under which obstacles are cleared</input_port>
     </Action>
 
     <Action ID="ComputePathToPose">
