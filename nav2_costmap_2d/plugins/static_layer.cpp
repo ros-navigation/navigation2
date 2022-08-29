@@ -161,6 +161,7 @@ StaticLayer::getParameters()
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   map_received_ = false;
+  map_received_in_update_bounds_ = false;
 
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 
@@ -333,8 +334,10 @@ StaticLayer::updateBounds(
   double * max_y)
 {
   if (!map_received_) {
+    map_received_in_update_bounds_ = false;
     return;
   }
+  map_received_in_update_bounds_ = true;
 
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
@@ -374,7 +377,7 @@ StaticLayer::updateCosts(
   if (!enabled_) {
     return;
   }
-  if (!map_received_) {
+  if (!map_received_in_update_bounds_) {
     static int count = 0;
     // throttle warning down to only 1/10 message rate
     if (++count == 10) {
