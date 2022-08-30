@@ -79,7 +79,8 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_approach_linear_velocity_scaling", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_allowed_time_to_collision", rclcpp::ParameterValue(1.0));
+    node, plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
+    rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_regulated_linear_velocity_scaling", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
@@ -124,8 +125,8 @@ void RegulatedPurePursuitController::configure(
     plugin_name_ + ".use_approach_linear_velocity_scaling",
     use_approach_vel_scaling_);
   node->get_parameter(
-    plugin_name_ + ".max_allowed_time_to_collision",
-    max_allowed_time_to_collision_);
+    plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
+    max_allowed_time_to_collision_up_to_carrot_);
   node->get_parameter(
     plugin_name_ + ".use_regulated_linear_velocity_scaling",
     use_regulated_linear_velocity_scaling_);
@@ -308,7 +309,8 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   }
 
   // Collision checking on this velocity heading
-  if (isCollisionImminent(pose, linear_vel, angular_vel)) {
+  const double & carrot_dist = hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
+  if (isCollisionImminent(pose, linear_vel, angular_vel, carrot_dist)) {
     throw nav2_core::PlannerException("RegulatedPurePursuitController detected collision ahead!");
   }
 
@@ -371,7 +373,8 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
 
 bool RegulatedPurePursuitController::isCollisionImminent(
   const geometry_msgs::msg::PoseStamped & robot_pose,
-  const double & linear_vel, const double & angular_vel)
+  const double & linear_vel, const double & angular_vel,
+  const double & carrot_dist)
 {
   // Note(stevemacenski): This may be a bit unusual, but the robot_pose is in
   // odom frame and the carrot_pose is in robot base frame.
@@ -397,18 +400,18 @@ bool RegulatedPurePursuitController::isCollisionImminent(
   curr_pose.theta = tf2::getYaw(robot_pose.pose.orientation);
 
   int i = 1;
-  while (true) {
-    // only forward simulate within time requested
-    if (i * projection_time > max_allowed_time_to_collision_) {
-      break;
-    }
-
+  while (i * projection_time < max_allowed_time_to_collision_up_to_carrot_) {
     i++;
 
     // apply velocity at curr_pose over distance
     curr_pose.x += projection_time * (linear_vel * cos(curr_pose.theta));
     curr_pose.y += projection_time * (linear_vel * sin(curr_pose.theta));
     curr_pose.theta += projection_time * angular_vel;
+
+    // check if past carrot pose, where no longer a thoughtfully valid command
+    if (hypot(curr_pose.x - robot_xy.x, curr_pose.y - robot_xy.y) > carrot_dist) {
+      break;
+    }
 
     // store it for visualization
     pose_msg.pose.position.x = curr_pose.x;

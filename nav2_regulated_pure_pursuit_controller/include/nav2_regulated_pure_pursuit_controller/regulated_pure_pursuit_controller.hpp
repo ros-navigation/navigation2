@@ -180,7 +180,8 @@ protected:
    */
   bool isCollisionImminent(
     const geometry_msgs::msg::PoseStamped &,
-    const double &, const double &);
+    const double &, const double &,
+    const double &);
 
   /**
    * @brief Whether point is in collision
@@ -246,7 +247,7 @@ protected:
   bool use_approach_vel_scaling_;
   double min_approach_linear_velocity_;
   double control_duration_;
-  double max_allowed_time_to_collision_;
+  double max_allowed_time_to_collision_up_to_carrot_;
   bool use_regulated_linear_velocity_scaling_;
   bool use_cost_regulated_linear_velocity_scaling_;
   double cost_scaling_dist_;
