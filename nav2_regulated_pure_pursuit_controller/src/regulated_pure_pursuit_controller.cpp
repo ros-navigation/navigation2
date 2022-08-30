@@ -402,6 +402,7 @@ bool RegulatedPurePursuitController::isCollisionImminent(
 
   const double projection_time = costmap_->getResolution() / fabs(linear_vel);
 
+  const geometry_msgs::msg::Point & robot_xy = robot_pose.pose.position;
   geometry_msgs::msg::Pose2D curr_pose;
   curr_pose.x = robot_pose.pose.position.x;
   curr_pose.y = robot_pose.pose.position.y;
