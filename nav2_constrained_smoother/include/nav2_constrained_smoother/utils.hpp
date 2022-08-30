@@ -86,7 +86,7 @@ inline Eigen::Matrix<T, 2, 1> tangentDir(
   bool is_cusp)
 {
   Eigen::Matrix<T, 2, 1> center = arcCenter(pt_prev, pt, pt_next, is_cusp);
-  if (ceres::IsInfinite(center[0])) {  // straight line
+  if (ceres::isinf(center[0])) {  // straight line
     Eigen::Matrix<T, 2, 1> d1 = pt - pt_prev;
     Eigen::Matrix<T, 2, 1> d2 = pt_next - pt;
 
