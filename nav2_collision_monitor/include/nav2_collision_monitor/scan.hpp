@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Samsung Research Russia
+// Copyright (c) 2022 Samsung R&D Institute Russia
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,10 @@
 
 #ifndef NAV2_COLLISION_MONITOR__SCAN_HPP_
 #define NAV2_COLLISION_MONITOR__SCAN_HPP_
+
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "sensor_msgs/msg/laser_scan.hpp"
 
@@ -31,7 +35,7 @@ public:
   /**
    * @brief Scan constructor
    * @param node Collision Monitor node pointer
-   * @param polygon_name Name of data source
+   * @param source_name Name of data source
    * @param tf_buffer Shared pointer to a TF buffer
    * @param base_frame_id Robot base frame ID. The output data will be transformed into this frame.
    * @param global_frame_id Global frame ID for correct transform calculation

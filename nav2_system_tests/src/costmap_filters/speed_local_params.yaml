@@ -1,6 +1,5 @@
 amcl:
   ros__parameters:
-    use_sim_time: True
     alpha1: 0.2
     alpha2: 0.2
     alpha3: 0.2
@@ -41,7 +40,6 @@ amcl:
 
 bt_navigator:
   ros__parameters:
-    use_sim_time: True
     global_frame: map
     robot_base_frame: base_link
     odom_topic: /odom
@@ -56,6 +54,7 @@ bt_navigator:
     - nav2_follow_path_action_bt_node
     - nav2_spin_action_bt_node
     - nav2_wait_action_bt_node
+    - nav2_assisted_teleop_action_bt_node
     - nav2_back_up_action_bt_node
     - nav2_drive_on_heading_bt_node
     - nav2_clear_costmap_service_bt_node
@@ -89,19 +88,11 @@ bt_navigator:
     - nav2_wait_cancel_bt_node
     - nav2_spin_cancel_bt_node
     - nav2_back_up_cancel_bt_node
+    - nav2_assisted_teleop_cancel_bt_node
     - nav2_drive_on_heading_cancel_bt_node
-
-bt_navigator_navigate_through_poses_rclcpp_node:
-  ros__parameters:
-    use_sim_time: True
-
-bt_navigator_navigate_to_pose_rclcpp_node:
-  ros__parameters:
-    use_sim_time: True
 
 controller_server:
   ros__parameters:
-    use_sim_time: True
     controller_frequency: 20.0
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
@@ -172,7 +163,6 @@ local_costmap:
       publish_frequency: 2.0
       global_frame: odom
       robot_base_frame: base_link
-      use_sim_time: True
       rolling_window: true
       width: 3
       height: 3
@@ -216,7 +206,6 @@ global_costmap:
       publish_frequency: 1.0
       global_frame: map
       robot_base_frame: base_link
-      use_sim_time: True
       robot_radius: 0.22
       resolution: 0.05
       track_unknown_space: true
@@ -242,12 +231,10 @@ global_costmap:
 
 map_server:
   ros__parameters:
-    use_sim_time: True
     yaml_filename: "turtlebot3_world.yaml"
 
 map_saver:
   ros__parameters:
-    use_sim_time: True
     save_map_timeout: 5.0
     free_thresh_default: 0.25
     occupied_thresh_default: 0.65
@@ -256,17 +243,12 @@ map_saver:
 planner_server:
   ros__parameters:
     expected_planner_frequency: 20.0
-    use_sim_time: True
     planner_plugins: ["GridBased"]
     GridBased:
       plugin: "nav2_navfn_planner/NavfnPlanner"
       tolerance: 0.5
       use_astar: False
       allow_unknown: True
-
-smoother_server:
-  ros__parameters:
-    use_sim_time: True
 
 behavior_server:
   ros__parameters:
@@ -285,15 +267,10 @@ behavior_server:
     global_frame: odom
     robot_base_frame: base_link
     transform_tolerance: 0.1
-    use_sim_time: true
     simulate_ahead_time: 2.0
     max_rotational_vel: 1.0
     min_rotational_vel: 0.4
     rotational_acc_lim: 3.2
-
-robot_state_publisher:
-  ros__parameters:
-    use_sim_time: True
 
 waypoint_follower:
   ros__parameters:
@@ -307,7 +284,6 @@ waypoint_follower:
 
 costmap_filter_info_server:
   ros__parameters:
-    use_sim_time: true
     type: 1
     filter_info_topic: "/costmap_filter_info"
     mask_topic: "/filter_mask"
@@ -316,7 +292,6 @@ costmap_filter_info_server:
 
 filter_mask_server:
   ros__parameters:
-    use_sim_time: true
     frame_id: "map"
     topic_name: "/filter_mask"
     yaml_filename: "speed_mask.yaml"

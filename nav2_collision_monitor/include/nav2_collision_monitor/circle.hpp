@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Samsung Research Russia
+// Copyright (c) 2022 Samsung R&D Institute Russia
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,10 @@
 
 #ifndef NAV2_COLLISION_MONITOR__CIRCLE_HPP_
 #define NAV2_COLLISION_MONITOR__CIRCLE_HPP_
+
+#include <memory>
+#include <vector>
+#include <string>
 
 #include "nav2_collision_monitor/polygon.hpp"
 

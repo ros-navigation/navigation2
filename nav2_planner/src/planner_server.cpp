@@ -61,8 +61,8 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
 
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "global_costmap", std::string{get_namespace()}, "global_costmap");
-
+    "global_costmap", std::string{get_namespace()}, "global_costmap",
+    get_parameter("use_sim_time").as_bool());
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 }
