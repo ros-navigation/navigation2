@@ -625,8 +625,7 @@ rcl_interfaces::msg::SetParametersResult
 PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters) {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   rcl_interfaces::msg::SetParametersResult result;
-
-  for (auto parameter: parameters) {
+  for (auto parameter : parameters) {
     const auto &type = parameter.get_type();
     const auto &name = parameter.get_name();
 

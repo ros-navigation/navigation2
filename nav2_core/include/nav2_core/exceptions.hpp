@@ -54,56 +54,56 @@ class GoalOccupied: public PlannerException
 {
 public:
   explicit GoalOccupied(const std::string &description)
-  : PlannerException(description) {};
+  : PlannerException(description) {}
 };
 
 class StartOccupied : public PlannerException
 {
 public:
   explicit StartOccupied(const std::string &description)
-      : PlannerException(description) {};
+      : PlannerException(description) {}
 };
 
 class NoValidPathCouldBeFound : public PlannerException
 {
 public:
   explicit NoValidPathCouldBeFound(const std::string &description)
-      : PlannerException(description) {};
+      : PlannerException(description) {}
 };
 
 class PlannerTimedOut : public PlannerException
 {
 public:
   explicit PlannerTimedOut(const std::string &description)
-      : PlannerException(description) {};
+      : PlannerException(description) {}
 };
 
 class StartOutsideMapBounds : public PlannerException
 {
 public:
   explicit StartOutsideMapBounds(const std::string &description)
-      : PlannerException(description) {};
+      : PlannerException(description) {}
 };
 
 class GoalOutsideMapBounds : public PlannerException
 {
 public:
   explicit GoalOutsideMapBounds(const std::string &description)
-      : PlannerException(description) {};
+      : PlannerException(description) {}
 };
 
 class StartIsEqualToGoal : public PlannerException
 {
 public:
   explicit StartIsEqualToGoal(const std::string &description)
-      : PlannerException(description) {};
+      : PlannerException(description) {}
 };
 
 class PlannerTFError : public PlannerException
 {
 public:
   explicit PlannerTFError(const std::string &description)
-      : PlannerException(description) {};
+      : PlannerException(description) {}
 };
 
 }  // namespace nav2_core
