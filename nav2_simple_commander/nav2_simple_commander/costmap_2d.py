@@ -25,49 +25,49 @@ class PyCostmap2D:
     """
 
     def __init__(self, occupancy_map):
-        self.size_x_ = occupancy_map.info.width
-        self.size_y_ = occupancy_map.info.height
-        self.resolution_ = occupancy_map.info.resolution
-        self.origin_x_ = occupancy_map.info.origin.position.x
-        self.origin_y_ = occupancy_map.info.origin.position.y
-        self.global_frame_id_ = occupancy_map.header.frame_id
-        self.costmap_timestamp_ = occupancy_map.header.stamp
+        self.size_x = occupancy_map.info.width
+        self.size_y = occupancy_map.info.height
+        self.resolution = occupancy_map.info.resolution
+        self.origin_x = occupancy_map.info.origin.position.x
+        self.origin_y = occupancy_map.info.origin.position.y
+        self.global_frame_id = occupancy_map.header.frame_id
+        self.costmap_timestamp = occupancy_map.header.stamp
         # Extract costmap
-        self.costmap_ = np.array(occupancy_map.data, dtype=np.int8).reshape(
-            self.size_y_, self.size_x_)
+        self.costmap = np.array(occupancy_map.data, dtype=np.int8).reshape(
+            self.size_y, self.size_x)
 
     def getSizeInCellsX(self):
         """Get map width in cells."""
-        return self.size_x_
+        return self.size_x
 
     def getSizeInCellsY(self):
         """Get map height in cells."""
-        return self.size_y_
+        return self.size_y
 
     def getSizeInMetersX(self):
         """Get x axis map size in meters."""
-        return (self.size_x_ - 1 + 0.5) * self.resolution_
+        return (self.size_x - 1 + 0.5) * self.resolution_
 
     def getSizeInMetersY(self):
         """Get y axis map size in meters."""
-        return (self.size_y_ - 1 + 0.5) * self.resolution_
+        return (self.size_y - 1 + 0.5) * self.resolution_
 
     def getOriginX(self):
         """Get the origin x axis of the map [m]."""
-        return self.origin_x_
+        return self.origin_x
 
     def getOriginY(self):
         """Get the origin y axis of the map [m]."""
-        return self.origin_y_
+        return self.origin_y
 
     def getResolution(self):
         """Get map resolution [m/cell]."""
-        return self.resolution_
+        return self.resolution
 
     def getGlobalFrameID(self):
         """Get global frame_id."""
-        return self.global_frame_id_
+        return self.global_frame_id
 
     def getCostmapTimestamp(self):
         """Get costmap timestamp."""
-        return self.costmap_timestamp_
+        return self.costmap_timestamp
