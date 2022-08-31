@@ -21,7 +21,7 @@ class PyCostmap2D:
     """
     PyCostmap2D.
 
-    Costmap API for OccupancyGrid messages coming into the Simple Commander API
+    Costmap Python3 API for OccupancyGrids to populate from published messages
     """
 
     def __init__(self, occupancy_map):
