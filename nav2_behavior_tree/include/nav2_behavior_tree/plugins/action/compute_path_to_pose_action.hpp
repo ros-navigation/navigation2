@@ -70,9 +70,8 @@ public:
     return providedBasicPorts(
       {
         BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
-        BT::OutputPort<nav2_msgs::action::ComputePathToPose::Result::_error_code_type>
-            ("global_planner_error_code",
-          "The global planner error code"),
+        BT::OutputPort<nav2_msgs::action::ComputePathToPose::Result::_error_code_type>(
+          "global_planner_error_code", "The global planner error code"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>(
           "start", "Start pose of the path if overriding current robot pose"),

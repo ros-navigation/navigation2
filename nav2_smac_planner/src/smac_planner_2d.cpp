@@ -250,9 +250,10 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   // Compute plan
   Node2D::CoordinateVector path;
   int num_iterations = 0;
-
-  if (!_a_star->createPath(path, num_iterations,
-      _tolerance / static_cast<float>(costmap->getResolution()))) {
+  if (!_a_star->createPath(
+      path, num_iterations,
+      _tolerance / static_cast<float>(costmap->getResolution())))
+  {
     if (num_iterations < _a_star->getMaxIterations()) {
       throw nav2_core::NoValidPathCouldBeFound("no valid path found");
     } else {

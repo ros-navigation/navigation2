@@ -36,14 +36,16 @@ using namespace std::chrono_literals;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
-namespace nav2_planner {
+namespace nav2_planner
+{
 
-PlannerServer::PlannerServer(const rclcpp::NodeOptions &options)
-    : nav2_util::LifecycleNode("planner_server", "", options),
-      gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
-      default_ids_{"GridBased"},
-      default_types_{"nav2_navfn_planner/NavfnPlanner"},
-      costmap_(nullptr) {
+PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("planner_server", "", options),
+  gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
+  default_ids_{"GridBased"},
+  default_types_{"nav2_navfn_planner/NavfnPlanner"},
+  costmap_(nullptr)
+{
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare this node's parameters
@@ -65,21 +67,23 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions &options)
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 }
 
-PlannerServer::~PlannerServer() {
+PlannerServer::~PlannerServer()
+{
   planners_.clear();
   costmap_thread_.reset();
 }
 
 nav2_util::CallbackReturn
-PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/) {
+PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
+{
   RCLCPP_INFO(get_logger(), "Configuring");
 
   costmap_ros_->configure();
   costmap_ = costmap_ros_->getCostmap();
 
   RCLCPP_DEBUG(
-      get_logger(), "Costmap size: %d,%d",
-      costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
+    get_logger(), "Costmap size: %d,%d",
+    costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
 
   tf_ = costmap_ros_->getTfBuffer();
 
@@ -90,18 +94,18 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/) {
   for (size_t i = 0; i != planner_ids_.size(); i++) {
     try {
       planner_types_[i] = nav2_util::get_plugin_type_param(
-          node, planner_ids_[i]);
+        node, planner_ids_[i]);
       nav2_core::GlobalPlanner::Ptr planner =
-          gp_loader_.createUniqueInstance(planner_types_[i]);
+        gp_loader_.createUniqueInstance(planner_types_[i]);
       RCLCPP_INFO(
-          get_logger(), "Created global planner plugin %s of type %s",
-          planner_ids_[i].c_str(), planner_types_[i].c_str());
+        get_logger(), "Created global planner plugin %s of type %s",
+        planner_ids_[i].c_str(), planner_types_[i].c_str());
       planner->configure(node, planner_ids_[i], tf_, costmap_ros_);
       planners_.insert({planner_ids_[i], planner});
-    } catch (const pluginlib::PluginlibException &ex) {
+    } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
-          get_logger(), "Failed to create global planner. Exception: %s",
-          ex.what());
+        get_logger(), "Failed to create global planner. Exception: %s",
+        ex.what());
       return nav2_util::CallbackReturn::FAILURE;
     }
   }
@@ -111,8 +115,8 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/) {
   }
 
   RCLCPP_INFO(
-      get_logger(),
-      "Planner Server has %s planners available.", planner_ids_concat_.c_str());
+    get_logger(),
+    "Planner Server has %s planners available.", planner_ids_concat_.c_str());
 
   double expected_planner_frequency;
   get_parameter("expected_planner_frequency", expected_planner_frequency);
@@ -120,9 +124,9 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/) {
     max_planner_duration_ = 1 / expected_planner_frequency;
   } else {
     RCLCPP_WARN(
-        get_logger(),
-        "The expected planner frequency parameter is %.4f Hz. The value should to be greater"
-        " than 0.0 to turn on duration overrrun warning messages", expected_planner_frequency);
+      get_logger(),
+      "The expected planner frequency parameter is %.4f Hz. The value should to be greater"
+      " than 0.0 to turn on duration overrrun warning messages", expected_planner_frequency);
     max_planner_duration_ = 0.0;
   }
 
@@ -131,26 +135,27 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/) {
 
   // Create the action servers for path planning to a pose and through poses
   action_server_pose_ = std::make_unique<ActionServerToPose>(
-      shared_from_this(),
-      "compute_path_to_pose",
-      std::bind(&PlannerServer::computePlan, this),
-      nullptr,
-      std::chrono::milliseconds(500),
-      true);
+    shared_from_this(),
+    "compute_path_to_pose",
+    std::bind(&PlannerServer::computePlan, this),
+    nullptr,
+    std::chrono::milliseconds(500),
+    true);
 
   action_server_poses_ = std::make_unique<ActionServerThroughPoses>(
-      shared_from_this(),
-      "compute_path_through_poses",
-      std::bind(&PlannerServer::computePlanThroughPoses, this),
-      nullptr,
-      std::chrono::milliseconds(500),
-      true);
+    shared_from_this(),
+    "compute_path_through_poses",
+    std::bind(&PlannerServer::computePlanThroughPoses, this),
+    nullptr,
+    std::chrono::milliseconds(500),
+    true);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
-PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/) {
+PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
+{
   RCLCPP_INFO(get_logger(), "Activating");
 
   plan_publisher_->on_activate();
@@ -166,14 +171,14 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/) {
   auto node = shared_from_this();
 
   is_path_valid_service_ = node->create_service<nav2_msgs::srv::IsPathValid>(
-      "is_path_valid",
-      std::bind(
-          &PlannerServer::isPathValid, this,
-          std::placeholders::_1, std::placeholders::_2));
+    "is_path_valid",
+    std::bind(
+      &PlannerServer::isPathValid, this,
+      std::placeholders::_1, std::placeholders::_2));
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
-      std::bind(&PlannerServer::dynamicParametersCallback, this, _1));
+    std::bind(&PlannerServer::dynamicParametersCallback, this, _1));
 
   // create bond connection
   createBond();
@@ -182,7 +187,8 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/) {
 }
 
 nav2_util::CallbackReturn
-PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/) {
+PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+{
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   action_server_pose_->deactivate();
@@ -204,7 +210,8 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/) {
 }
 
 nav2_util::CallbackReturn
-PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/) {
+PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+{
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
   action_server_pose_.reset();
@@ -223,14 +230,16 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/) {
 }
 
 nav2_util::CallbackReturn
-PlannerServer::on_shutdown(const rclcpp_lifecycle::State &) {
+PlannerServer::on_shutdown(const rclcpp_lifecycle::State &)
+{
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 template<typename T>
 bool PlannerServer::isServerInactive(
-    std::unique_ptr<nav2_util::SimpleActionServer<T>> &action_server) {
+  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server)
+{
   if (action_server == nullptr || !action_server->is_server_active()) {
     RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
     return true;
@@ -239,7 +248,8 @@ bool PlannerServer::isServerInactive(
   return false;
 }
 
-void PlannerServer::waitForCostmap() {
+void PlannerServer::waitForCostmap()
+{
   // Don't compute a plan until costmap is valid (after clear costmap)
   rclcpp::Rate r(100);
   while (!costmap_ros_->isCurrent()) {
@@ -249,7 +259,8 @@ void PlannerServer::waitForCostmap() {
 
 template<typename T>
 bool PlannerServer::isCancelRequested(
-    std::unique_ptr<nav2_util::SimpleActionServer<T>> &action_server) {
+  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server)
+{
   if (action_server->is_cancel_requested()) {
     RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
     action_server->terminate_all();
@@ -261,8 +272,9 @@ bool PlannerServer::isCancelRequested(
 
 template<typename T>
 void PlannerServer::getPreemptedGoalIfRequested(
-    std::unique_ptr<nav2_util::SimpleActionServer<T>> &action_server,
-    typename std::shared_ptr<const typename T::Goal> goal) {
+  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
+  typename std::shared_ptr<const typename T::Goal> goal)
+{
   if (action_server->is_preempt_requested()) {
     goal = action_server->accept_pending_goal();
   }
@@ -270,9 +282,10 @@ void PlannerServer::getPreemptedGoalIfRequested(
 
 template<typename T>
 bool PlannerServer::getStartPose(
-    std::unique_ptr<nav2_util::SimpleActionServer<T>> &action_server,
-    typename std::shared_ptr<const typename T::Goal> goal,
-    geometry_msgs::msg::PoseStamped &start) {
+  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
+  typename std::shared_ptr<const typename T::Goal> goal,
+  geometry_msgs::msg::PoseStamped & start)
+{
   if (goal->use_start) {
     start = goal->start;
   } else if (!costmap_ros_->getRobotPose(start)) {
@@ -285,13 +298,15 @@ bool PlannerServer::getStartPose(
 
 template<typename T>
 bool PlannerServer::transformPosesToGlobalFrame(
-    std::unique_ptr<nav2_util::SimpleActionServer<T>> &action_server,
-    geometry_msgs::msg::PoseStamped &curr_start,
-    geometry_msgs::msg::PoseStamped &curr_goal) {
+  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
+  geometry_msgs::msg::PoseStamped & curr_start,
+  geometry_msgs::msg::PoseStamped & curr_goal)
+{
   if (!costmap_ros_->transformPoseToGlobalFrame(curr_start, curr_start) ||
-      !costmap_ros_->transformPoseToGlobalFrame(curr_goal, curr_goal)) {
+    !costmap_ros_->transformPoseToGlobalFrame(curr_goal, curr_goal))
+  {
     RCLCPP_WARN(
-        get_logger(), "Could not transform the start or goal pose in the costmap frame");
+      get_logger(), "Could not transform the start or goal pose in the costmap frame");
     action_server->terminate_current();
     return false;
   }
@@ -301,30 +316,31 @@ bool PlannerServer::transformPosesToGlobalFrame(
 
 template<typename T>
 bool PlannerServer::validatePath(
-    std::unique_ptr<nav2_util::SimpleActionServer<T>> &action_server,
-    const geometry_msgs::msg::PoseStamped &goal,
-    const nav_msgs::msg::Path &path,
-    const std::string &planner_id) {
+  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
+  const geometry_msgs::msg::PoseStamped & goal,
+  const nav_msgs::msg::Path & path,
+  const std::string & planner_id)
+{
   if (path.poses.size() == 0) {
     RCLCPP_WARN(
-        get_logger(), "Planning algorithm %s failed to generate a valid"
-                      " path to (%.2f, %.2f)", planner_id.c_str(),
-        goal.pose.position.x, goal.pose.position.y);
+      get_logger(), "Planning algorithm %s failed to generate a valid"
+      " path to (%.2f, %.2f)", planner_id.c_str(),
+      goal.pose.position.x, goal.pose.position.y);
     action_server->terminate_current();
     return false;
   }
 
   RCLCPP_DEBUG(
-      get_logger(),
-      "Found valid path of size %zu to (%.2f, %.2f)",
-      path.poses.size(), goal.pose.position.x,
-      goal.pose.position.y);
+    get_logger(),
+    "Found valid path of size %zu to (%.2f, %.2f)",
+    path.poses.size(), goal.pose.position.x,
+    goal.pose.position.y);
 
   return true;
 }
 
-void
-PlannerServer::computePlanThroughPoses() {
+void PlannerServer::computePlanThroughPoses()
+{
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
   auto start_time = steady_clock_.now();
@@ -345,8 +361,8 @@ PlannerServer::computePlanThroughPoses() {
 
     if (goal->goals.size() == 0) {
       RCLCPP_WARN(
-          get_logger(),
-          "Compute path through poses requested a plan with no viapoint poses, returning.");
+        get_logger(),
+        "Compute path through poses requested a plan with no viapoint poses, returning.");
       action_server_poses_->terminate_current();
     }
 
@@ -383,7 +399,7 @@ PlannerServer::computePlanThroughPoses() {
 
       // Concatenate paths together
       concat_path.poses.insert(
-          concat_path.poses.end(), curr_path.poses.begin(), curr_path.poses.end());
+        concat_path.poses.end(), curr_path.poses.begin(), curr_path.poses.end());
       concat_path.header = curr_path.header;
     }
 
@@ -396,24 +412,25 @@ PlannerServer::computePlanThroughPoses() {
 
     if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
       RCLCPP_WARN(
-          get_logger(),
-          "Planner loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
-          1 / max_planner_duration_, 1 / cycle_duration.seconds());
+        get_logger(),
+        "Planner loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
+        1 / max_planner_duration_, 1 / cycle_duration.seconds());
     }
 
     action_server_poses_->succeeded_current(result);
-  } catch (std::exception &ex) {
+  } catch (std::exception & ex) {
     RCLCPP_WARN(
-        get_logger(),
-        "%s plugin failed to plan through %zu points with final goal (%.2f, %.2f): \"%s\"",
-        goal->planner_id.c_str(), goal->goals.size(), goal->goals.back().pose.position.x,
-        goal->goals.back().pose.position.y, ex.what());
+      get_logger(),
+      "%s plugin failed to plan through %zu points with final goal (%.2f, %.2f): \"%s\"",
+      goal->planner_id.c_str(), goal->goals.size(), goal->goals.back().pose.position.x,
+      goal->goals.back().pose.position.y, ex.what());
     action_server_poses_->terminate_current();
   }
 }
 
 void
-PlannerServer::computePlan() {
+PlannerServer::computePlan()
+{
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
   auto start_time = steady_clock_.now();
@@ -458,77 +475,77 @@ PlannerServer::computePlan() {
 
     if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
       RCLCPP_WARN(
-          get_logger(),
-          "Planner loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
-          1 / max_planner_duration_, 1 / cycle_duration.seconds());
+        get_logger(),
+        "Planner loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
+        1 / max_planner_duration_, 1 / cycle_duration.seconds());
     }
 
     action_server_pose_->succeeded_current(result);
-  } catch (nav2_core::StartOccupied &ex) {
+  } catch (nav2_core::StartOccupied & ex) {
     RCLCPP_WARN(
-        get_logger(), "%s plugin failed to plan path. "
-                      "Start Pose (%.2f, %.2f) was occupied: \"%s\"",
-        goal->planner_id.c_str(),
-        start.pose.position.x,
-        start.pose.position.y,
-        ex.what());
+      get_logger(), "%s plugin failed to plan path. "
+      "Start Pose (%.2f, %.2f) was occupied: \"%s\"",
+      goal->planner_id.c_str(),
+      start.pose.position.x,
+      start.pose.position.y,
+      ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_OCCUPIED;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::GoalOccupied &ex) {
+  } catch (nav2_core::GoalOccupied & ex) {
     RCLCPP_WARN(
-        get_logger(), "%s plugin failed to plan path. Goal Pose (%.2f, %.2f) was occupied: \"%s\"",
-        goal->planner_id.c_str(),
-        goal->goal.pose.position.x,
-        goal->goal.pose.position.y,
-        ex.what());
+      get_logger(), "%s plugin failed to plan path. Goal Pose (%.2f, %.2f) was occupied: \"%s\"",
+      goal->planner_id.c_str(),
+      goal->goal.pose.position.x,
+      goal->goal.pose.position.y,
+      ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::GOAL_OCCUPIED;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::NoValidPathCouldBeFound &ex) {
+  } catch (nav2_core::NoValidPathCouldBeFound & ex) {
     RCLCPP_WARN(
-        get_logger(), "%s plugin failed to plan path. No Valid Path found: \"%s\"",
-        goal->planner_id.c_str(),
-        ex.what());
+      get_logger(), "%s plugin failed to plan path. No Valid Path found: \"%s\"",
+      goal->planner_id.c_str(),
+      ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NO_VALID_PATH;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::PlannerTimedOut &ex) {
+  } catch (nav2_core::PlannerTimedOut & ex) {
     RCLCPP_WARN(
-        get_logger(), "%s plugin failed to plan path. Timeout occurred: \"%s\"",
-        goal->planner_id.c_str(),
-        ex.what());
+      get_logger(), "%s plugin failed to plan path. Timeout occurred: \"%s\"",
+      goal->planner_id.c_str(),
+      ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TIMEOUT;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::StartOutsideMapBounds &ex) {
+  } catch (nav2_core::StartOutsideMapBounds & ex) {
     RCLCPP_WARN(
-        get_logger(), "%s plugin failed to plan path. Start Outside map: \"%s\"",
-        goal->planner_id.c_str(),
-        ex.what());
+      get_logger(), "%s plugin failed to plan path. Start Outside map: \"%s\"",
+      goal->planner_id.c_str(),
+      ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_OUTSIDE_MAP;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::GoalOutsideMapBounds &ex) {
+  } catch (nav2_core::GoalOutsideMapBounds & ex) {
     RCLCPP_WARN(
-        get_logger(), "%s plugin failed to plan path. Goal Outside map: \"%s\"",
-        goal->planner_id.c_str(),
-        ex.what());
+      get_logger(), "%s plugin failed to plan path. Goal Outside map: \"%s\"",
+      goal->planner_id.c_str(),
+      ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::GOAL_OUTSIDE_MAP;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::StartIsEqualToGoal &ex) {
+  } catch (nav2_core::StartIsEqualToGoal & ex) {
     RCLCPP_WARN(
-        get_logger(), "%s plugin failed to plan path. Start equal to goal: \"%s\"",
-        goal->planner_id.c_str(),
-        ex.what());
+      get_logger(), "%s plugin failed to plan path. Start equal to goal: \"%s\"",
+      goal->planner_id.c_str(),
+      ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_IS_EQUAL_TO_GOAL;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::PlannerTFError &ex) {
+  } catch (nav2_core::PlannerTFError & ex) {
     RCLCPP_WARN(
-        get_logger(), "%s plugin failed to plan path. Start equal to goal: \"%s\"",
-        goal->planner_id.c_str(),
-        ex.what());
+      get_logger(), "%s plugin failed to plan path. Start equal to goal: \"%s\"",
+      goal->planner_id.c_str(),
+      ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TF_ERROR;
     action_server_pose_->terminate_current(result);
-  } catch (std::exception &ex) {
+  } catch (std::exception & ex) {
     RCLCPP_WARN(
-        get_logger(), "%s plugin failed to plan: \"%s\"",
-        goal->planner_id.c_str(), ex.what());
+      get_logger(), "%s plugin failed to plan: \"%s\"",
+      goal->planner_id.c_str(), ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::UNKNOWN;
     action_server_pose_->terminate_current(result);
   }
@@ -536,28 +553,29 @@ PlannerServer::computePlan() {
 
 nav_msgs::msg::Path
 PlannerServer::getPlan(
-    const geometry_msgs::msg::PoseStamped &start,
-    const geometry_msgs::msg::PoseStamped &goal,
-    const std::string &planner_id) {
+  const geometry_msgs::msg::PoseStamped & start,
+  const geometry_msgs::msg::PoseStamped & goal,
+  const std::string & planner_id)
+{
   RCLCPP_DEBUG(
-      get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
-                    "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
-      goal.pose.position.x, goal.pose.position.y);
+    get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
+    "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
+    goal.pose.position.x, goal.pose.position.y);
 
   if (planners_.find(planner_id) != planners_.end()) {
     return planners_[planner_id]->createPlan(start, goal);
   } else {
     if (planners_.size() == 1 && planner_id.empty()) {
       RCLCPP_WARN_ONCE(
-          get_logger(), "No planners specified in action call. "
-                        "Server will use only plugin %s in server."
-                        " This warning will appear once.", planner_ids_concat_.c_str());
+        get_logger(), "No planners specified in action call. "
+        "Server will use only plugin %s in server."
+        " This warning will appear once.", planner_ids_concat_.c_str());
       return planners_[planners_.begin()->first]->createPlan(start, goal);
     } else {
       RCLCPP_ERROR(
-          get_logger(), "planner %s is not a valid planner. "
-                        "Planner names are: %s", planner_id.c_str(),
-          planner_ids_concat_.c_str());
+        get_logger(), "planner %s is not a valid planner. "
+        "Planner names are: %s", planner_id.c_str(),
+        planner_ids_concat_.c_str());
     }
   }
 
@@ -565,7 +583,8 @@ PlannerServer::getPlan(
 }
 
 void
-PlannerServer::publishPlan(const nav_msgs::msg::Path &path) {
+PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
+{
   auto msg = std::make_unique<nav_msgs::msg::Path>(path);
   if (plan_publisher_->is_activated() && plan_publisher_->get_subscription_count() > 0) {
     plan_publisher_->publish(std::move(msg));
@@ -573,8 +592,9 @@ PlannerServer::publishPlan(const nav_msgs::msg::Path &path) {
 }
 
 void PlannerServer::isPathValid(
-    const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
-    std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response) {
+  const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
+  std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
+{
   response->is_valid = true;
 
   if (request->path.poses.empty()) {
@@ -592,8 +612,8 @@ void PlannerServer::isPathValid(
       geometry_msgs::msg::Point path_point = request->path.poses[i].pose.position;
 
       current_distance = nav2_util::geometry_utils::euclidean_distance(
-          current_point,
-          path_point);
+        current_point,
+        path_point);
 
       if (current_distance < closest_distance) {
         closest_point_index = i;
@@ -609,12 +629,13 @@ void PlannerServer::isPathValid(
     unsigned int my = 0;
     for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
       costmap_->worldToMap(
-          request->path.poses[i].pose.position.x,
-          request->path.poses[i].pose.position.y, mx, my);
+        request->path.poses[i].pose.position.x,
+        request->path.poses[i].pose.position.y, mx, my);
       unsigned int cost = costmap_->getCost(mx, my);
 
       if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-          cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
+        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+      {
         response->is_valid = false;
       }
     }
@@ -622,12 +643,13 @@ void PlannerServer::isPathValid(
 }
 
 rcl_interfaces::msg::SetParametersResult
-PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters) {
+PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+{
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
-    const auto &type = parameter.get_type();
-    const auto &name = parameter.get_name();
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == "expected_planner_frequency") {
@@ -635,9 +657,9 @@ PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
           max_planner_duration_ = 1 / parameter.as_double();
         } else {
           RCLCPP_WARN(
-              get_logger(),
-              "The expected planner frequency parameter is %.4f Hz. The value should to be greater"
-              " than 0.0 to turn on duration overrrun warning messages", parameter.as_double());
+            get_logger(),
+            "The expected planner frequency parameter is %.4f Hz. The value should to be greater"
+            " than 0.0 to turn on duration overrrun warning messages", parameter.as_double());
           max_planner_duration_ = 0.0;
         }
       }
