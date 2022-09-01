@@ -85,8 +85,8 @@ private:
 
   // Call to send NavigateToPose action request for goal poses
   geometry_msgs::msg::PoseStamped convert_to_msg(
-  std::vector<double> pose,
-  std::vector<double> orientation);
+    std::vector<double> pose,
+    std::vector<double> orientation);
   void startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> poses);
   void startNavigation(geometry_msgs::msg::PoseStamped);
   void startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> poses);
@@ -148,7 +148,7 @@ private:
   QLabel * navigation_feedback_indicator_{nullptr};
   QLabel * number_of_loops_{nullptr};
 
-  QLineEdit *  nr_of_loops{nullptr};
+  QLineEdit * nr_of_loops{nullptr};
 
   QStateMachine state_machine_;
   InitialThread * initial_thread_;

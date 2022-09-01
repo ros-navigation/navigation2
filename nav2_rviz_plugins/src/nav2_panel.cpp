@@ -17,7 +17,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QTextEdit> 
+#include <QTextEdit>
 
 #include <memory>
 #include <vector>
@@ -324,9 +324,20 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QObject::connect(
     accumulated_nav_through_poses_, SIGNAL(entered()), this,
     SLOT(onAccumulatedNTP()));
-  QObject::connect(save_waypoints_button_, &QPushButton::released, this, &Nav2Panel::handleGoalSaver);
-  QObject::connect(load_waypoints_button_, &QPushButton::released, this, &Nav2Panel::handleGoalLoader);
-  QObject::connect(nr_of_loops, &QLineEdit::editingFinished, this, &Nav2Panel::loophandler);
+  QObject::connect(
+    save_waypoints_button_,
+    &QPushButton::released,
+    this, &Nav2Panel::handleGoalSaver);
+  QObject::connect(
+    load_waypoints_button_,
+    &QPushButton::released,
+    this,
+    &Nav2Panel::handleGoalLoader);
+  QObject::connect(
+    nr_of_loops,
+    &QLineEdit::editingFinished,
+    this,
+    &Nav2Panel::loophandler);
 
   // Start/Reset button click transitions
   initial_->addTransition(start_reset_button_, SIGNAL(clicked()), idle_);
@@ -500,35 +511,38 @@ Nav2Panel::~Nav2Panel()
 {
 }
 
-void Nav2Panel::loophandler() {
-    loop = nr_of_loops->displayText().toStdString();
+void Nav2Panel::loophandler()
+{
+  loop = nr_of_loops->displayText().toStdString();
 
-    if (!loop.empty() && stoi(loop) > 0) {
-      pause_resume_button_->setEnabled(false);
-      } else {
-        pause_resume_button_->setEnabled(true);
-      }
+  if (!loop.empty() && stoi(loop) > 0) {
+    pause_resume_button_->setEnabled(false);
+  } else {
+    pause_resume_button_->setEnabled(true);
+  }
 }
 
-void Nav2Panel::handleGoalLoader() {
+void Nav2Panel::handleGoalLoader()
+{
   acummulated_poses_.clear();
-  
+
   std::cout << "Loading Waypoints!" << std::endl;
 
-  QString file = QFileDialog::getOpenFileName(this,
-        tr("Open File"), "",
-        tr("yaml(*.yaml);;All Files (*)"));
+  QString file = QFileDialog::getOpenFileName(
+    this,
+    tr("Open File"), "",
+    tr("yaml(*.yaml);;All Files (*)"));
 
   YAML::Node available_waypoints;
 
   try {
     available_waypoints = YAML::LoadFile(file.toStdString());
-  } catch(const std::exception& ex) {
+  } catch (const std::exception & ex) {
     std::cout << ex.what() << ", please select a valid file" << std::endl;
     return;
   }
-  
-  const YAML::Node& waypoint_iter = available_waypoints["waypoints"];
+
+  const YAML::Node & waypoint_iter = available_waypoints["waypoints"];
   for (YAML::const_iterator it = waypoint_iter.begin(); it != waypoint_iter.end(); ++it) {
     auto waypoint = waypoint_iter[it->first.as<std::string>()];
     auto pose = waypoint["pose"].as<std::vector<double>>();
@@ -549,7 +563,7 @@ geometry_msgs::msg::PoseStamped Nav2Panel::convert_to_msg(
   msg.pose.position.x = pose[0];
   msg.pose.position.y = pose[1];
   msg.pose.position.z = pose[2];
-  
+
   msg.pose.orientation.w = orientation[0];
   msg.pose.orientation.w = orientation[1];
   msg.pose.orientation.w = orientation[2];
@@ -558,13 +572,12 @@ geometry_msgs::msg::PoseStamped Nav2Panel::convert_to_msg(
   return msg;
 }
 
-void Nav2Panel::handleGoalSaver() {
-
+void Nav2Panel::handleGoalSaver()
+{
 // Check if the waypoints are accumulated
-  
-  if(acummulated_poses_.empty())
-  {
-    std::cout << "No accumulated Points to Save!"<< std::endl;
+
+  if (acummulated_poses_.empty()) {
+    std::cout << "No accumulated Points to Save!" << std::endl;
     return;
   } else {
     std::cout << "Clearing Waypoints!" << std::endl;
@@ -577,22 +590,27 @@ void Nav2Panel::handleGoalSaver() {
   out << YAML::Key << "waypoints";
   out << YAML::BeginMap;
 
-  // save waypoints to data structure 
+  // save waypoints to data structure
   for (unsigned int i = 0; i < acummulated_poses_.size(); ++i) {
     out << YAML::Key << "waypoint" + std::to_string(i);
     out << YAML::BeginMap;
     out << YAML::Key << "pose";
-    std::vector<double> pose = {acummulated_poses_[i].pose.position.x, acummulated_poses_[i].pose.position.y, acummulated_poses_[i].pose.position.z};
+    std::vector<double> pose =
+    {acummulated_poses_[i].pose.position.x, acummulated_poses_[i].pose.position.y,
+      acummulated_poses_[i].pose.position.z};
     out << YAML::Value << pose;
     out << YAML::Key << "orientation";
-    std::vector<double> orientation = {acummulated_poses_[i].pose.orientation.w, acummulated_poses_[i].pose.orientation.x, acummulated_poses_[i].pose.orientation.y, acummulated_poses_[i].pose.orientation.z};
+    std::vector<double> orientation =
+    {acummulated_poses_[i].pose.orientation.w, acummulated_poses_[i].pose.orientation.x,
+      acummulated_poses_[i].pose.orientation.y, acummulated_poses_[i].pose.orientation.z};
     out << YAML::Value << orientation;
     out << YAML::EndMap;
   }
 
-  QString file = QFileDialog::getSaveFileName(this,
-        tr("Open File"), "",
-        tr("yaml(*.yaml);;All Files (*)"));
+  QString file = QFileDialog::getSaveFileName(
+    this,
+    tr("Open File"), "",
+    tr("yaml(*.yaml);;All Files (*)"));
 
   if (file.toStdString().empty()) {
     std::ofstream fout(file.toStdString());
@@ -601,7 +619,6 @@ void Nav2Panel::handleGoalSaver() {
     std::ofstream fout(file.toStdString());
     fout << out.c_str();
   }
-
 }
 
 void
@@ -726,7 +743,8 @@ Nav2Panel::onCancel()
       this));
 }
 
-void Nav2Panel::onResumedWp() {
+void Nav2Panel::onResumedWp()
+{
   QFuture<void> future =
     QtConcurrent::run(
     std::bind(
@@ -806,7 +824,6 @@ void
 Nav2Panel::onAccumulatedWp()
 {
   std::cout << "Start waypoint" << std::endl;
-    
   startWaypointFollowing(acummulated_poses_);
   store_poses_ = acummulated_poses_;
   acummulated_poses_.clear();
