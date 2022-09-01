@@ -208,9 +208,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulated_wp_->assignProperty(pause_waypoint_button_, "text", "Pause waypoint");
   accumulated_wp_->assignProperty(pause_waypoint_button_, "enabled", true);
 
-  // accumulated_wp_->assignProperty(nr_of_loops, "text", QString::fromStdString(loop));
-  // accumulated_wp_->assignProperty(nr_of_loops, "enabled", false);
-
   accumulated_nav_through_poses_ = new QState();
   accumulated_nav_through_poses_->setObjectName("accumulated_nav_through_poses");
   accumulated_nav_through_poses_->assignProperty(start_reset_button_, "text", "Cancel");
