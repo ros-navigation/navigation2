@@ -564,7 +564,7 @@ void Nav2Panel::handleGoalSaver() {
   
   if(acummulated_poses_.empty())
   {
-    qDebug() << "No accumulated Points to Save!";
+    std::cout << "No accumulated Points to Save!"<< std::endl;
     return;
   } else {
     std::cout << "Clearing Waypoints!" << std::endl;
@@ -595,7 +595,7 @@ void Nav2Panel::handleGoalSaver() {
         tr("yaml(*.yaml);;All Files (*)"));
 
   if (file.toStdString().empty()) {
-    std::ofstream fout("waypoints.yaml");
+    std::ofstream fout(file.toStdString());
     fout << out.c_str();
   } else {
     std::ofstream fout(file.toStdString());
