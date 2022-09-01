@@ -502,6 +502,12 @@ Nav2Panel::~Nav2Panel()
 
 void Nav2Panel::loophandler() {
     loop = nr_of_loops->displayText().toStdString();
+
+    if (!loop.empty() && stoi(loop) > 0) {
+      pause_resume_button_->setEnabled(false);
+      } else {
+        pause_resume_button_->setEnabled(true);
+      }
 }
 
 void Nav2Panel::handleGoalLoader() {
