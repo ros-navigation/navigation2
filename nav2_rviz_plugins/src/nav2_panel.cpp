@@ -519,7 +519,14 @@ void Nav2Panel::handleGoalLoader() {
         tr("Open File"), "",
         tr("yaml(*.yaml);;All Files (*)"));
 
-  YAML::Node available_waypoints = YAML::LoadFile(file.toStdString());
+  YAML::Node available_waypoints;
+
+  try {
+    available_waypoints = YAML::LoadFile(file.toStdString());
+  } catch(const std::exception& ex) {
+    std::cout << ex.what() << ", please select a valid file" << std::endl;
+    return;
+  }
   
   const YAML::Node& waypoint_iter = available_waypoints["waypoints"];
   for (YAML::const_iterator it = waypoint_iter.begin(); it != waypoint_iter.end(); ++it) {
