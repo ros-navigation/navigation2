@@ -546,6 +546,9 @@ void Nav2Panel::handleGoalLoader()
     auto orientation = waypoint["orientation"].as<std::vector<double>>();
     acummulated_poses_.push_back(convert_to_msg(pose, orientation));
   }
+
+  // Publishing Waypoint Navigation marker after loading wp's
+  updateWpNavigationMarkers();
 }
 
 geometry_msgs::msg::PoseStamped Nav2Panel::convert_to_msg(
