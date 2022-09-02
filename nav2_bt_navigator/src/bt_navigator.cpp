@@ -64,6 +64,7 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_path_expiring_timer_condition",
     "nav2_distance_traveled_condition_bt_node",
     "nav2_single_trigger_bt_node",
+    "nav2_goal_updated_controller_bt_node",
     "nav2_is_battery_low_condition_bt_node",
     "nav2_navigate_through_poses_action_bt_node",
     "nav2_navigate_to_pose_action_bt_node",
@@ -72,10 +73,10 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_controller_selector_bt_node",
     "nav2_goal_checker_selector_bt_node",
     "nav2_controller_cancel_bt_node",
-    "nav2_path_longer_on_approach_bt_node"
+    "nav2_path_longer_on_approach_bt_node",
     "nav2_wait_cancel_bt_node",
     "nav2_spin_cancel_bt_node",
-    "nav2_back_up_cancel_bt_node"
+    "nav2_back_up_cancel_bt_node",
     "nav2_drive_on_heading_cancel_bt_node"
   };
 

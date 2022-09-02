@@ -78,6 +78,7 @@ bt_navigator:
     - nav2_time_expired_condition_bt_node
     - nav2_distance_traveled_condition_bt_node
     - nav2_single_trigger_bt_node
+    - nav2_goal_updated_controller_bt_node
     - nav2_is_battery_low_condition_bt_node
     - nav2_navigate_through_poses_action_bt_node
     - nav2_navigate_to_pose_action_bt_node
@@ -123,6 +124,7 @@ controller_server:
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
       debug_trajectory_details: True
+      prune_distance: 1.0
       min_vel_x: 0.0
       min_vel_y: 0.0
       max_vel_x: 0.26

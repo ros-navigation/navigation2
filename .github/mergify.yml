@@ -1,4 +1,13 @@
 pull_request_rules:
+  - name: backport to humble at reviewers discretion
+    conditions:
+      - base=main
+      - "label=backport-humble"
+    actions:
+      backport:
+        branches:
+          - humble
+
   - name: backport to galactic at reviewers discretion
     conditions:
       - base=main
