@@ -551,7 +551,7 @@ bool NodeLattice::backtracePath(CoordinateVector & path)
   // add start to path
   addNodeToPath(current_node, path);
 
-  return path.size() > 0;
+  return true;
 }
 
 void NodeLattice::addNodeToPath(
