@@ -91,9 +91,9 @@ class PyCostmap2D:
         """
         Set the cost of a cell in the costmap
             Args:
-                _cost (int): The cost to set the cell to
                 _mx (int): The x coordinate of the cell
                 _my (int): The y coordinate of the cell
+                _cost (int): The cost to set the cell to
             Returns:
                 None
         """
