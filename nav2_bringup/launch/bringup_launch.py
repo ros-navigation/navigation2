@@ -60,7 +60,7 @@ def generate_launch_description():
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key=namespace,
-        param_rewrites={param_substitutions},
+        param_rewrites=param_substitutions,
         convert_types=True)
 
     stdout_linebuf_envvar = SetEnvironmentVariable(
