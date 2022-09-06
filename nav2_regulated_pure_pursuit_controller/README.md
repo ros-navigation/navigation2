@@ -32,8 +32,6 @@ The Regulated Pure Pursuit controller implements active collision detection. We 
 
 The regulated pure pursuit algorithm also makes use of the common variations on the pure pursuit algorithm. We implement the adaptive pure pursuit's main contribution of having velocity-scaled lookahead point distances. This helps make the controller more stable over a larger range of potential linear velocities. There are parameters for setting the lookahead gain (or lookahead time) and thresholded values for minimum and maximum.
 
-We also implement kinematic speed limits on the linear velocities in operations and angular velocities during pure rotations. This makes sure that the output commands are smooth, safe, and kinematically feasible. This is especially important at the beginning and end of a path tracking task, where you are ramping up to speed and slowing down to the goal.
-
 The final minor improvement we make is slowing on approach to the goal. Knowing that the optimal lookahead distance is `X`, we can take the difference in `X` and the actual distance of the lookahead point found to find the lookahead point error. During operations, the variation in this error should be exceptionally small and won't be triggered. However, at the end of the path, there are no more points at a lookahead distance away from the robot, so it uses the last point on the path. So as the robot approaches a target, its error will grow and the robot's velocity will be reduced proportional to this error until a minimum threshold. This is also tracked by the kinematic speed limits to ensure drivability.
 
 The major improvements that this work implements is the regulations on the linear velocity based on some cost functions.  They were selected to remove long-standing bad behavior within the pure pursuit algorithm. Normal Pure Pursuit has an issue with overshoot and poor handling in particularly high curvature (or extremely rapidly changing curvature) environments. It is commonly known that this will cause the robot to overshoot from the path and potentially collide with the environment. These cost functions in the Regulated Pure Pursuit algorithm were also chosen based on common requirements and needs of mobile robots uses in service, commercial, and industrial use-cases; scaling by curvature creates intuitive behavior of slowing the robot when making sharp turns and slowing when its near a potential collision so that small variations don't clip obstacles. This is also really useful when working in partially observable environments (like turning in and out of aisles / hallways often) so that you slow before a sharp turn into an unknown dynamic environment to be more conservative in case something is in the way immediately requiring a stop.
@@ -43,6 +41,8 @@ The cost functions penalize the robot's speed based on its proximity to obstacle
 An unintended tertiary benefit of scaling the linear velocities by curvature is that a robot will natively rotate to rough path heading when using holonomic planners that don't start aligned with the robot pose orientation. As the curvature will be very high, the linear velocity drops and the angular velocity takes over to rotate to heading. While not perfect, it does dramatically reduce the need to rotate to a close path heading before following and opens up a broader range of planning techniques. Pure Pursuit controllers otherwise would be completely unable to recover from this in even modestly confined spaces. 
 
 Mixing the proximity and curvature regulated linear velocities with the time-scaled collision checker, we see a near-perfect combination allowing the regulated pure pursuit algorithm to handle high starting deviations from the path and navigate collision-free in tight spaces without overshoot. 
+
+Note: The maximum allowed time to collision is thresholded by the lookahead point, starting in Humble. This is such that collision checking isn't significantly overshooting the path, which can cause issues in constrained environments. For example, if there were a straight-line path going towards a wall that then turned left, if this parameter was set to high, then it would detect a collision past the point of actual robot intended motion. Thusly, if a robot is moving fast, selecting further out lookahead points is not only a matter of behavioral stability for Pure Pursuit, but also gives a robot further predictive collision detection capabilities. The max allowable time parameter is still in place for slow commands, as described in detail above.
 
 ## Configuration
 
@@ -59,7 +59,7 @@ Mixing the proximity and curvature regulated linear velocities with the time-sca
 | `transform_tolerance` | The TF transform tolerance | 
 | `use_velocity_scaled_lookahead_dist` | Whether to use the velocity scaled lookahead distances or constant `lookahead_distance` | 
 | `min_approach_linear_velocity` | The minimum velocity threshold to apply when approaching the goal | 
-| `use_approach_linear_velocity_scaling` | Whether to scale the linear velocity down on approach to the goal for a smooth stop | 
+| `approach_velocity_scaling_dist` | Integrated distance from end of transformed path at which to start applying velocity scaling. This defaults to the forward extent of the costmap minus one costmap cell length. | 
 | `max_allowed_time_to_collision` | The time to project a velocity command to check for collisions | 
 | `use_regulated_linear_velocity_scaling` | Whether to use the regulated features for curvature | 
 | `use_cost_regulated_linear_velocity_scaling` | Whether to use the regulated features for proximity to obstacles | 
@@ -71,6 +71,8 @@ Mixing the proximity and curvature regulated linear velocities with the time-sca
 | `use_rotate_to_heading` | Whether to enable rotating to rough heading and goal orientation when using holonomic planners. Recommended on for all robot types except ackermann, which cannot rotate in place. | 
 | `rotate_to_heading_min_angle` | The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if `use_rotate_to_heading` is enabled. | 
 | `max_angular_accel` | Maximum allowable angular acceleration while rotating to heading, if enabled | 
+| `max_robot_pose_search_dist` | Maximum integrated distance along the path to bound the search for the closest pose to the robot. This is set by default to the maximum costmap extent, so it shouldn't be set manually unless there are loops within the local costmap. |
+| `use_interpolation` | Enables interpolation between poses on the path for lookahead point selection. Helps sparse paths to avoid inducing discontinuous commanded velocities. Set this to false for a potential performance boost, at the expense of smooth control. |
 
 Example fully-described XML with default parameter values:
 
@@ -109,6 +111,7 @@ controller_server:
       use_velocity_scaled_lookahead_dist: false
       min_approach_linear_velocity: 0.05
       use_approach_linear_velocity_scaling: true
+      approach_velocity_scaling_dist: 1.0
       max_allowed_time_to_collision: 1.0
       use_regulated_linear_velocity_scaling: true
       use_cost_regulated_linear_velocity_scaling: false
@@ -117,6 +120,8 @@ controller_server:
       use_rotate_to_heading: true
       rotate_to_heading_min_angle: 0.785
       max_angular_accel: 3.2
+      max_robot_pose_search_dist: 10.0
+      use_interpolation: false
       cost_scaling_dist: 0.3
       cost_scaling_gain: 1.0
       inflation_cost_scaling_factor: 3.0

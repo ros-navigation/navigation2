@@ -110,11 +110,14 @@ public:
 
 protected:
   /**
-   * @brief Transforms global plan into same frame as pose, clips far away poses and possibly prunes passed poses
+   * @brief Transforms global plan into same frame as pose and clips poses ineligible for lookaheadPoint
+   * Points ineligible to be selected as a lookahead point if they are any of the following:
+   * - Outside the local_costmap (collision avoidance cannot be assured)
    * @param pose pose to transform
    * @return Path in new frame
    */
-  nav_msgs::msg::Path transformGlobalPlan(const geometry_msgs::msg::PoseStamped & pose);
+  nav_msgs::msg::Path transformGlobalPlan(
+    const geometry_msgs::msg::PoseStamped & pose);
 
   /**
    * @brief Transform a pose to another frame.
@@ -180,7 +183,8 @@ protected:
    */
   bool isCollisionImminent(
     const geometry_msgs::msg::PoseStamped &,
-    const double &, const double &);
+    const double &, const double &,
+    const double &);
 
   /**
    * @brief Whether point is in collision
@@ -199,19 +203,41 @@ protected:
    */
   double costAtPose(const double & x, const double & y);
 
+  double approachVelocityScalingFactor(
+    const nav_msgs::msg::Path & path
+  ) const;
+
+  void applyApproachVelocityScaling(
+    const nav_msgs::msg::Path & path,
+    double & linear_vel
+  ) const;
+
   /**
    * @brief apply regulation constraints to the system
    * @param linear_vel robot command linear velocity input
-   * @param dist_error error in the carrot distance and lookahead distance
    * @param lookahead_dist optimal lookahead distance
    * @param curvature curvature of path
    * @param speed Speed of robot
    * @param pose_cost cost at this pose
    */
   void applyConstraints(
-    const double & dist_error, const double & lookahead_dist,
     const double & curvature, const geometry_msgs::msg::Twist & speed,
-    const double & pose_cost, double & linear_vel, double & sign);
+    const double & pose_cost, const nav_msgs::msg::Path & path,
+    double & linear_vel, double & sign);
+
+    /**
+   * @brief Find the intersection a circle and a line segment.
+   * This assumes the circle is centered at the origin.
+   * If no intersection is found, a floating point error will occur.
+   * @param p1 first endpoint of line segment
+   * @param p2 second endpoint of line segment
+   * @param r radius of circle
+   * @return point of intersection
+   */
+  static geometry_msgs::msg::Point circleSegmentIntersection(
+    const geometry_msgs::msg::Point & p1,
+    const geometry_msgs::msg::Point & p2,
+    double r);
 
   /**
    * @brief Get lookahead point
@@ -226,7 +252,13 @@ protected:
    * @param pose Pose input to determine the cusp position
    * @return robot distance from the cusp
    */
-  double findDirectionChange(const geometry_msgs::msg::PoseStamped & pose);
+  double findVelocitySignChange(const nav_msgs::msg::Path & transformed_plan);
+
+  /**
+   * Get the greatest extent of the costmap in meters from the center.
+   * @return max of distance from center in meters to edge of costmap
+   */
+  double getCostmapMaxExtent() const;
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
@@ -245,8 +277,9 @@ protected:
   tf2::Duration transform_tolerance_;
   bool use_approach_vel_scaling_;
   double min_approach_linear_velocity_;
+  double approach_velocity_scaling_dist_;
   double control_duration_;
-  double max_allowed_time_to_collision_;
+  double max_allowed_time_to_collision_up_to_carrot_;
   bool use_regulated_linear_velocity_scaling_;
   bool use_cost_regulated_linear_velocity_scaling_;
   double cost_scaling_dist_;
@@ -259,6 +292,8 @@ protected:
   double rotate_to_heading_min_angle_;
   double goal_dist_tol_;
   bool allow_reversing_;
+  double max_robot_pose_search_dist_;
+  bool use_interpolation_;
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
