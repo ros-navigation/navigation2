@@ -53,14 +53,10 @@ def generate_launch_description():
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
 
-    # Create our own temporary YAML files that include substitutions
-    param_substitutions = {
-        'yaml_filename': map_yaml_file}
-
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key=namespace,
-        param_rewrites=param_substitutions,
+        param_rewrites={},
         convert_types=True)
 
     stdout_linebuf_envvar = SetEnvironmentVariable(
@@ -83,6 +79,7 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
+        default_value='',
         description='Full path to map yaml file to load')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
