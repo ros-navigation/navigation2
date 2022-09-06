@@ -42,13 +42,6 @@ def generate_launch_description():
     slam_toolbox_dir = get_package_share_directory('slam_toolbox')
     slam_launch_file = os.path.join(slam_toolbox_dir, 'launch', 'online_sync_launch.py')
 
-    # Create our own temporary YAML files that include substitutions
-    configured_params = RewrittenYaml(
-        source_file=params_file,
-        root_key=namespace,
-        param_rewrites={},
-        convert_types=True)
-
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
         'namespace',
@@ -89,7 +82,7 @@ def generate_launch_description():
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 arguments=['--ros-args', '--log-level', log_level],
-                parameters=[configured_params]),
+                parameters=[params_file]),
             Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',

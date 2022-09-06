@@ -51,16 +51,6 @@ def generate_launch_description():
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
 
-    # Create our own temporary YAML files that include substitutions
-    param_substitutions = {
-        'yaml_filename': map_yaml_file}
-
-    configured_params = RewrittenYaml(
-        source_file=params_file,
-        root_key=namespace,
-        param_rewrites=param_substitutions,
-        convert_types=True)
-
     stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
 
@@ -107,16 +97,22 @@ def generate_launch_description():
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
             SetParameter("use_sim_time", use_sim_time),
-            Node(
-                package='nav2_map_server',
-                executable='map_server',
-                name='map_server',
-                output='screen',
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings),
+            load_map_server_node=GroupAction(
+                actions=[
+                    SetParameter("yaml_filename", map_yaml_file),
+                    Node(
+                        package='nav2_map_server',
+                        executable='map_server',
+                        name='map_server',
+                        output='screen',
+                        respawn=use_respawn,
+                        respawn_delay=2.0,
+                        parameters=[params_file],
+                        arguments=['--ros-args', '--log-level', log_level],
+                        remappings=remappings),
+
+                ]
+                ),
             Node(
                 package='nav2_amcl',
                 executable='amcl',
@@ -124,7 +120,7 @@ def generate_launch_description():
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
-                parameters=[configured_params],
+                parameters=[params_file],
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings),
             Node(
@@ -145,24 +141,29 @@ def generate_launch_description():
             LoadComposableNodes(
                 target_container=container_name,
                 composable_node_descriptions=[
-                    ComposableNode(
-                        package='nav2_map_server',
-                        plugin='nav2_map_server::MapServer',
-                        name='map_server',
-                        parameters=[configured_params],
-                        remappings=remappings),
-                    ComposableNode(
-                        package='nav2_amcl',
-                        plugin='nav2_amcl::AmclNode',
-                        name='amcl',
-                        parameters=[configured_params],
-                        remappings=remappings),
-                    ComposableNode(
-                        package='nav2_lifecycle_manager',
-                        plugin='nav2_lifecycle_manager::LifecycleManager',
-                        name='lifecycle_manager_localization',
-                        parameters=[{'autostart': autostart,
-                                    'node_names': lifecycle_nodes}]),
+                    load_map_server_node=GroupAction(
+                        actions=[
+                            SetParameter("yaml_filename", map_yaml_file),
+                            ComposableNode(
+                                package='nav2_map_server',
+                                plugin='nav2_map_server::MapServer',
+                                name='map_server',
+                                parameters=[params_file],
+                                remappings=remappings),
+                                )]
+                                ),
+                ComposableNode(
+                    package='nav2_amcl',
+                    plugin='nav2_amcl::AmclNode',
+                    name='amcl',
+                    parameters=[params_file],
+                    remappings=remappings),
+                ComposableNode(
+                    package='nav2_lifecycle_manager',
+                    plugin='nav2_lifecycle_manager::LifecycleManager',
+                    name='lifecycle_manager_localization',
+                    parameters=[{'autostart': autostart,
+                                'node_names': lifecycle_nodes}]),
                 ],
             )
         ]
@@ -187,6 +188,7 @@ def generate_launch_description():
 
     # Add the actions to launch all of the localiztion nodes
     ld.add_action(load_nodes)
+    ld.add_action(load_map_server_node)
     ld.add_action(load_composable_nodes)
 
     return ld

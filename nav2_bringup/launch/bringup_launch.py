@@ -55,12 +55,12 @@ def generate_launch_description():
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
-        'yaml_filename': map_yaml_file}
+        }
 
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key=namespace,
-        param_rewrites=param_substitutions,
+        param_rewrites={param_substitutions},
         convert_types=True)
 
     stdout_linebuf_envvar = SetEnvironmentVariable(
