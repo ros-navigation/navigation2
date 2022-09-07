@@ -74,10 +74,10 @@ class PyCostmap2D:
 
     def getCostXY(self, mx: int = None, my: int = None) -> np.int8:
         """
-        Get the cost of a cell in the costmap
+        Get the cost of a cell in the costmap using map coordinate XY
             Args:
-                mx (int): x position of cell to get cost
-                my (int): y position of cell to get cost
+                mx (int): map coordinate X to get cost
+                my (int): map coordinate Y to get cost
             Returns:
                 np.int8: cost of a cell
         """
@@ -85,7 +85,7 @@ class PyCostmap2D:
 
     def getCostIdx(self, index: int) -> np.int8:
         """
-        Get the cost of a cell in the costmap
+        Get the cost of a cell in the costmap using Index
             Args:
                 index (int): index of cell to get cost
             Returns:
@@ -95,10 +95,10 @@ class PyCostmap2D:
         
     def setCost(self, mx: int, my: int, cost: np.int8) -> None:
         """
-        Set the cost of a cell in the costmap
+        Set the cost of a cell in the costmap using map coordinate XY
             Args:
-                mx (int): The x coordinate of the cell
-                my (int): The y coordinate of the cell
+                mx (int): map coordinate X to get cost
+                my (int): map coordinate Y to get cost
                 cost (int): The cost to set the cell to
             Returns:
                 None
@@ -107,14 +107,14 @@ class PyCostmap2D:
 
     def mapToWorld(self, mx: int, my: int) -> tuple[float, float]:
         """
-        Set the cost of a cell in the costmap
+        Get the world coordinate XY using map coordinate XY
             Args:
-                mx (int): The x coordinate of the cell
-                my (int): The y coordinate of the cell
+                mx (int): map coordinate X to get world coordinate
+                my (int): map coordinate Y to get world coordinate
             Returns:
                 tuple[float, float]: wx, wy
-                wx (float): The x world coordinate
-                wy (float): The y world coordinate
+                wx (float): world coordinate X
+                wy (float): world coordinate Y
         """
         wx = self.origin_x + (mx + 0.5) * self.resolution
         wy = self.origin_y + (my + 0.5) * self.resolution
@@ -122,14 +122,14 @@ class PyCostmap2D:
 
     def worldToMap(self, wx: float, wy: float) -> tuple[int, int]:
         """
-        Set the cost of a cell in the costmap
+        Get the map coordinate XY using world coordinate XY
             Args:
-                wx (int): The x world coordinate
-                wy (int): The y world coordinate
+                wx (int): world coordinate X to get map coordinate
+                wy (int): world coordinate Y to get map coordinate
             Returns:
                 tuple[int, int]: mx, my
-                mx (int): The x coordinate of the cell
-                my (int): The y coordinate of the cell
+                mx (int): map coordinate X
+                my (int): map coordinate Y
         """
         mx = int((wx - self.origin_x) // self.resolution)
         my = int((wy - self.origin_y) // self.resolution)
@@ -137,10 +137,10 @@ class PyCostmap2D:
 
     def getIndex(self, mx: int, my: int) -> int:
         """
-        Set the cost of a cell in the costmap
+        Get the index of the cell using map coordinate XY
             Args:
-                mx (int): The x coordinate of the cell
-                my (int): The y coordinate of the cell
+                mx (int): map coordinate X to get Index
+                my (int): map coordinate Y to get Index
             Returns:
                 int: The index of the cell
         """
