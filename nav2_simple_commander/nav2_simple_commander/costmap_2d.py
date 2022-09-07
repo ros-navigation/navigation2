@@ -46,11 +46,11 @@ class PyCostmap2D:
 
     def getSizeInMetersX(self):
         """Get x axis map size in meters."""
-        return (self.size_x - 1 + 0.5) * self.resolution_
+        return (self.size_x - 1 + 0.5) * self.resolution
 
     def getSizeInMetersY(self):
         """Get y axis map size in meters."""
-        return (self.size_y - 1 + 0.5) * self.resolution_
+        return (self.size_y - 1 + 0.5) * self.resolution
 
     def getOriginX(self):
         """Get the origin x axis of the map [m]."""
@@ -72,71 +72,77 @@ class PyCostmap2D:
         """Get costmap timestamp."""
         return self.costmap_timestamp
 
-    def getCost(self, _index: int = None, _mx: int = None, _my: int = None) -> np.int8:
+    def getCostXY(self, mx: int = None, my: int = None) -> np.int8:
         """
         Get the cost of a cell in the costmap
             Args:
-                _index (int): index of cell to get cost
-                _mx (int): x position of cell to get cost
-                _my (int): y position of cell to get cost
+                mx (int): x position of cell to get cost
+                my (int): y position of cell to get cost
             Returns:
                 np.int8: cost of a cell
         """
-        if _index != None:
-            return self.costmap[_index]
-        else:
-            return self.costmap[self.getIndex(_mx, _my)]
+        return self.costmap[self.getIndex(mx, my)]
 
-    def setCost(self, _mx: int, _my: int, _cost: np.int8) -> None:
+    def getCostIdx(self, index: int) -> np.int8:
+        """
+        Get the cost of a cell in the costmap
+            Args:
+                index (int): index of cell to get cost
+            Returns:
+                np.int8: cost of a cell
+        """
+        return self.costmap[index]
+        
+    def setCost(self, mx: int, my: int, cost: np.int8) -> None:
         """
         Set the cost of a cell in the costmap
             Args:
-                _mx (int): The x coordinate of the cell
-                _my (int): The y coordinate of the cell
-                _cost (int): The cost to set the cell to
+                mx (int): The x coordinate of the cell
+                my (int): The y coordinate of the cell
+                cost (int): The cost to set the cell to
             Returns:
                 None
         """
-        self.costmap[self.getIndex(_mx, _my)] = _cost
+        self.costmap[self.getIndex(mx, my)] = cost
 
-    def mapToWorld(self, _mx: int, _my: int) -> tuple[float, float]:
+    def mapToWorld(self, mx: int, my: int) -> tuple[float, float]:
         """
         Set the cost of a cell in the costmap
             Args:
-                _mx (int): The x coordinate of the cell
-                _my (int): The y coordinate of the cell
+                mx (int): The x coordinate of the cell
+                my (int): The y coordinate of the cell
             Returns:
-                tuple[float, float]: _wx, _wy
-                _wx (float): The x world coordinate
-                _wy (float): The y world coordinate
+                tuple[float, float]: wx, wy
+                wx (float): The x world coordinate
+                wy (float): The y world coordinate
         """
-        _wx = self.origin_x + (_mx + 0.5) * self.resolution
-        _wy = self.origin_y + (_my + 0.5) * self.resolution
-        return (_wx, _wy)
+        wx = self.origin_x + (mx + 0.5) * self.resolution
+        wy = self.origin_y + (my + 0.5) * self.resolution
+        return (wx, wy)
 
-    def worldToMap(self, _wx: float, _wy: float) -> tuple[int, int]:
+    def worldToMap(self, wx: float, wy: float) -> tuple[int, int]:
         """
         Set the cost of a cell in the costmap
             Args:
-                _wx (int): The x world coordinate
-                _wy (int): The y world coordinate
+                wx (int): The x world coordinate
+                wy (int): The y world coordinate
             Returns:
-                tuple[int, int]: _mx, _my
-                _mx (int): The x coordinate of the cell
-                _my (int): The y coordinate of the cell
+                tuple[int, int]: mx, my
+                mx (int): The x coordinate of the cell
+                my (int): The y coordinate of the cell
         """
-        _mx = int((_wx - self.origin_x) // self.resolution)
-        _my = int((_wy - self.origin_y) // self.resolution)
-        return (_mx, _my)
+        mx = int((wx - self.origin_x) // self.resolution)
+        my = int((wy - self.origin_y) // self.resolution)
+        return (mx, my)
 
-    def getIndex(self, _mx: int, _my: int) -> int:
+    def getIndex(self, mx: int, my: int) -> int:
         """
         Set the cost of a cell in the costmap
             Args:
-                _mx (int): The x coordinate of the cell
-                _my (int): The y coordinate of the cell
+                mx (int): The x coordinate of the cell
+                my (int): The y coordinate of the cell
             Returns:
                 int: The index of the cell
         """
-        return _my * self.size_x + _mx
+        return my * self.size_x + mx
     
