@@ -15,6 +15,8 @@
 #ifndef NAV2_COLLISION_MONITOR__TYPES_HPP_
 #define NAV2_COLLISION_MONITOR__TYPES_HPP_
 
+#include <cmath>
+
 namespace nav2_collision_monitor
 {
 
@@ -29,7 +31,15 @@ struct Velocity
   {
     const double first_vel = x * x + y * y;
     const double second_vel = second.x * second.x + second.y * second.y;
-    return first_vel < second_vel;
+    if (second_vel > 0.0) {
+      // Robot moves: comparing velocities. In Collision Monitor
+      // twists will change proportionally to linear velocities.
+      // We do not need to compare them in this case.
+      return first_vel < second_vel;
+    } else {
+      // Robot is already stays in place. We need to compare twists.
+      return std::fabs(tw) < std::fabs(second.tw);
+    }
   }
 
   inline Velocity operator*(const double & mul) const
