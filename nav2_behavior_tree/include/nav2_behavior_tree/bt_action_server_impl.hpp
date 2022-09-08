@@ -22,6 +22,7 @@
 #include <exception>
 #include <vector>
 
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
@@ -153,6 +154,10 @@ bool BtActionServer<ActionT>::on_cleanup()
 template<class ActionT>
 bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filename)
 {
+  // Clear old paths
+  nav_msgs::msg::Path empty_path;
+  blackboard_->set<nav_msgs::msg::Path>("path", empty_path);  // NOLINT
+
   // Empty filename is default for backward compatibility
   auto filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
 
@@ -221,6 +226,7 @@ void BtActionServer<ActionT>::executeCallback()
 
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.
+  RCLCPP_INFO(logger_, "HALTING EVERYTHING");
   bt_->haltAllActions(tree_.rootNode());
 
   // Give server an opportunity to populate the result message or simple give

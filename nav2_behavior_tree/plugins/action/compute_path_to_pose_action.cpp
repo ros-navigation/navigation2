@@ -58,9 +58,10 @@ BT::NodeStatus ComputePathToPoseAction::on_cancelled()
 }
 
 void ComputePathToPoseAction::halt() {
-  BtActionNode::halt();
+  std::cout << "HALTING COMPUTE PATH TO POSE" << std::endl;
   nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
+  BtActionNode::halt();
 }
 
 }  // namespace nav2_behavior_tree
