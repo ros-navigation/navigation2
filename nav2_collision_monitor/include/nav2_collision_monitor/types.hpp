@@ -29,17 +29,11 @@ struct Velocity
 
   inline bool operator<(const Velocity & second) const
   {
-    const double first_vel = x * x + y * y;
-    const double second_vel = second.x * second.x + second.y * second.y;
-    if (second_vel > 0.0) {
-      // Robot moves: comparing velocities. In Collision Monitor
-      // twists will change proportionally to linear velocities.
-      // We do not need to compare them in this case.
-      return first_vel < second_vel;
-    } else {
-      // Robot is already stays in place. We need to compare twists.
-      return std::fabs(tw) < std::fabs(second.tw);
-    }
+    const double first_vel = x * x + y * y + tw * tw;
+    const double second_vel = second.x * second.x + second.y * second.y + second.tw * second.tw;
+    // In Collision Monitor twists will change proportionally to linear velocities,
+    // so this comparison is correct in this case.
+    return first_vel < second_vel;
   }
 
   inline Velocity operator*(const double & mul) const
