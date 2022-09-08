@@ -86,6 +86,9 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
     rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".use_collision_detection",
+    rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_regulated_linear_velocity_scaling", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_cost_regulated_linear_velocity_scaling",
@@ -142,6 +145,9 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(
     plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
     max_allowed_time_to_collision_up_to_carrot_);
+  node->get_parameter(
+    plugin_name_ + ".use_collision_detection",
+    use_collision_detection_);
   node->get_parameter(
     plugin_name_ + ".use_regulated_linear_velocity_scaling",
     use_regulated_linear_velocity_scaling_);
@@ -346,7 +352,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // Collision checking on this velocity heading
   const double & carrot_dist = hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
-  if (isCollisionImminent(pose, linear_vel, angular_vel, carrot_dist)) {
+  if (use_collision_detection_ && isCollisionImminent(pose, linear_vel, angular_vel, carrot_dist)) {
     throw nav2_core::PlannerException("RegulatedPurePursuitController detected collision ahead!");
   }
 
