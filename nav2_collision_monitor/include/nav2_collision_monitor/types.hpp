@@ -15,8 +15,6 @@
 #ifndef NAV2_COLLISION_MONITOR__TYPES_HPP_
 #define NAV2_COLLISION_MONITOR__TYPES_HPP_
 
-#include <cmath>
-
 namespace nav2_collision_monitor
 {
 
