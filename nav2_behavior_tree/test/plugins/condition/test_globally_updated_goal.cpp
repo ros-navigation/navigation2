@@ -49,7 +49,7 @@ TEST_F(GloballyUpdatedGoalConditionTestFixture, test_behavior)
   config_->blackboard->set("goal", goal);
 
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
-  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 
   goal.pose.position.x = 1.0;
   config_->blackboard->set("goal", goal);
