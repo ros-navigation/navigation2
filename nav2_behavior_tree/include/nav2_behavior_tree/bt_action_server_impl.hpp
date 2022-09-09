@@ -22,7 +22,6 @@
 #include <exception>
 #include <vector>
 
-#include "nav_msgs/msg/path.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
@@ -222,7 +221,6 @@ void BtActionServer<ActionT>::executeCallback()
 
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.
-  RCLCPP_INFO(logger_, "HALTING EVERYTHING");
   bt_->haltAllActions(tree_.rootNode());
 
   // Give server an opportunity to populate the result message or simple give
