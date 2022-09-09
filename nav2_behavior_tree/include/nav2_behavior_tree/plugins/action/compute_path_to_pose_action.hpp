@@ -64,7 +64,7 @@ public:
   /**
    * \brief Override required by the a BT action. Cancel the action and set the path output
    */
-   void halt() override;
+  void halt() override;
 
   /**
    * @brief Creates list of BT ports
