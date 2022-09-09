@@ -502,50 +502,67 @@ PlannerServer::computePlan()
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::NoValidPathCouldBeFound & ex) {
     RCLCPP_WARN(
-      get_logger(), "%s plugin failed to plan path. No Valid Path found: \"%s\"",
+      get_logger(), "%s plugin failed to plan path to goal pose (%.2f, %.2f). "
+      "No Valid Path found: \"%s\"",
       goal->planner_id.c_str(),
+      goal->goal.pose.position.x,
+      goal->goal.pose.position.y,
       ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NO_VALID_PATH;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::PlannerTimedOut & ex) {
     RCLCPP_WARN(
-      get_logger(), "%s plugin failed to plan path. Timeout occurred: \"%s\"",
+      get_logger(), "%s plugin failed to plan path to goal pose (%.2f, %.2f). "
+      "Timeout occurred: \"%s\"",
       goal->planner_id.c_str(),
+      goal->goal.pose.position.x,
+      goal->goal.pose.position.y,
       ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TIMEOUT;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::StartOutsideMapBounds & ex) {
     RCLCPP_WARN(
-      get_logger(), "%s plugin failed to plan path. Start Outside map: \"%s\"",
+      get_logger(), "%s plugin failed to plan path. Start Outside map (%.2f, %.2f): \"%s\"",
       goal->planner_id.c_str(),
+      start.pose.position.x,
+      start.pose.position.y,
       ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_OUTSIDE_MAP;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::GoalOutsideMapBounds & ex) {
     RCLCPP_WARN(
-      get_logger(), "%s plugin failed to plan path. Goal Outside map: \"%s\"",
+      get_logger(), "%s plugin failed to plan path. Goal Outside map (%.2f, %.2f): \"%s\"",
       goal->planner_id.c_str(),
+      goal->goal.pose.position.x,
+      goal->goal.pose.position.y,
       ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::GOAL_OUTSIDE_MAP;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::StartIsEqualToGoal & ex) {
     RCLCPP_WARN(
-      get_logger(), "%s plugin failed to plan path. Start equal to goal: \"%s\"",
+      get_logger(), "%s plugin failed to plan path. Start equal to goal (%0.2f, %0.2f): \"%s\"",
       goal->planner_id.c_str(),
+      goal->goal.pose.position.x,
+      goal->goal.pose.position.y,
       ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_IS_EQUAL_TO_GOAL;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::PlannerTFError & ex) {
     RCLCPP_WARN(
-      get_logger(), "%s plugin failed to plan path. Start equal to goal: \"%s\"",
+      get_logger(), "%s plugin failed to plan path to (%0.2f, %0.2f). Transform error: \"%s\"",
       goal->planner_id.c_str(),
+      goal->goal.pose.position.x,
+      goal->goal.pose.position.y,
       ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TF_ERROR;
     action_server_pose_->terminate_current(result);
   } catch (std::exception & ex) {
     RCLCPP_WARN(
-      get_logger(), "%s plugin failed to plan: \"%s\"",
-      goal->planner_id.c_str(), ex.what());
+      get_logger(), "%s plugin failed to plan to (%0.2f, %0.2f): \"%s\"",
+      goal->planner_id.c_str(),
+      goal->goal.pose.position.x,
+      goal->goal.pose.position.y,
+      ex.what());
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::UNKNOWN;
     action_server_pose_->terminate_current(result);
   }

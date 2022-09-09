@@ -36,6 +36,11 @@
 namespace nav2_smac_planner
 {
 
+/**
+ * Note: All exceptions thrown are handled by the planner server and returned to the action
+ * requester
+ */
+
 class SmacPlannerHybrid : public nav2_core::GlobalPlanner
 {
 public:
