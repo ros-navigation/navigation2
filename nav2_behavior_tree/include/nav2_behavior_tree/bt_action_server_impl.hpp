@@ -154,10 +154,6 @@ bool BtActionServer<ActionT>::on_cleanup()
 template<class ActionT>
 bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filename)
 {
-  // Clear old paths
-  nav_msgs::msg::Path empty_path;
-  blackboard_->set<nav_msgs::msg::Path>("path", empty_path);  // NOLINT
-
   // Empty filename is default for backward compatibility
   auto filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
 
