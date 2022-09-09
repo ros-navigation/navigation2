@@ -29,8 +29,7 @@ struct Velocity
   {
     const double first_vel = x * x + y * y + tw * tw;
     const double second_vel = second.x * second.x + second.y * second.y + second.tw * second.tw;
-    // In Collision Monitor twists will change proportionally to linear velocities,
-    // so this comparison is correct in this case.
+    // This comparison includes rotations in place, where linear velocities are equal to zero
     return first_vel < second_vel;
   }
 
