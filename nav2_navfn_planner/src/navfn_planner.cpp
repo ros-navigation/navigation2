@@ -151,8 +151,7 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
     unsigned int mx, my;
     costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
     if (costmap_->getCost(mx, my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-      RCLCPP_WARN(logger_, "Failed to create a unique pose path because of obstacles");
-      return path;
+      throw nav2_core::StartOccupied("Failed to create a unique pose path because of obstacles");
     }
     path.header.stamp = clock_->now();
     path.header.frame_id = global_frame_;
@@ -172,9 +171,8 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
   }
 
   if (!makePlan(start.pose, goal.pose, tolerance_, path)) {
-    RCLCPP_WARN(
-      logger_, "%s: failed to create plan with "
-      "tolerance %.2f.", name_.c_str(), tolerance_);
+    throw nav2_core::NoValidPathCouldBeFound(
+        "Failed to create plan with tolerance of: " + std::to_string(tolerance_) );
   }
 
 
@@ -222,12 +220,7 @@ NavfnPlanner::makePlan(
 
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {
-    RCLCPP_WARN(
-      logger_,
-      "Cannot create a plan: the robot's start position is off the global"
-      " costmap. Planning will always fail, are you sure"
-      " the robot has been properly localized?");
-    return false;
+    throw nav2_core::StartOutsideMapBounds("Robot's start position is off the global costmap");
   }
 
   // clear the starting cell within the costmap because we know it can't be an obstacle
@@ -252,11 +245,7 @@ NavfnPlanner::makePlan(
   wy = goal.position.y;
 
   if (!worldToMap(wx, wy, mx, my)) {
-    RCLCPP_WARN(
-      logger_,
-      "The goal sent to the planner is off the global costmap."
-      " Planning will always fail to this goal.");
-    return false;
+    throw nav2_core::GoalOutsideMapBounds("Goal is off the global costmap");
   }
 
   int map_goal[2];
@@ -386,10 +375,7 @@ NavfnPlanner::getPlanFromPotential(
   // the potential has already been computed, so we won't update our copy of the costmap
   unsigned int mx, my;
   if (!worldToMap(wx, wy, mx, my)) {
-    RCLCPP_WARN(
-      logger_,
-      "The goal sent to the navfn planner is off the global costmap."
-      " Planning will always fail to this goal.");
+    throw nav2_core::GoalOutsideMapBounds("Goal is off the global costmap");
     return false;
   }
 
