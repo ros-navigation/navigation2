@@ -93,8 +93,7 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   planner_->costmap_->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal);
   if (mx_start == mx_goal && my_start == my_goal) {
     if (planner_->costmap_->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-      RCLCPP_WARN(logger_, "Failed to create a unique pose path because of obstacles");
-      return global_path;
+      throw nav2_core::StartOccupied("Failed to create a unique pose path because of obstacles");
     }
     global_path.header.stamp = clock_->now();
     global_path.header.frame_id = global_frame_;
@@ -154,13 +153,13 @@ void ThetaStarPlanner::getPlan(nav_msgs::msg::Path & global_path)
 {
   std::vector<coordsW> path;
   if (planner_->isUnsafeToPlan()) {
-    RCLCPP_ERROR(logger_, "Either of the start or goal pose are an obstacle! ");
     global_path.poses.clear();
+    throw nav2_core::PlannerException("Either of the start or goal pose are an obstacle! ");
   } else if (planner_->generatePath(path)) {
     global_path = linearInterpolation(path, planner_->costmap_->getResolution());
   } else {
-    RCLCPP_ERROR(logger_, "Could not generate path between the given poses");
     global_path.poses.clear();
+    throw nav2_core::NoValidPathCouldBeFound("Could not generate path between the given poses");
   }
   global_path.header.stamp = clock_->now();
   global_path.header.frame_id = global_frame_;
