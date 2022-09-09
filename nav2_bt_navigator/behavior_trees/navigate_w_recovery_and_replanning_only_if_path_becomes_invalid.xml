@@ -7,9 +7,9 @@
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
-      <PipelineSequence>
+      <PipelineSequence name="NavigateWithReplanning">
         <RateController hz="1.0">
-          <RecoveryNode number_of_retries="1" name="ComputePathToPoseRecovery">
+          <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <Fallback>
               <ReactiveSequence>
                 <Inverter>
