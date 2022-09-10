@@ -15,6 +15,10 @@
 #ifndef NAV2_COLLISION_MONITOR__RANGE_HPP_
 #define NAV2_COLLISION_MONITOR__RANGE_HPP_
 
+#include <memory>
+#include <vector>
+#include <string>
+
 #include "sensor_msgs/msg/range.hpp"
 
 #include "nav2_collision_monitor/source.hpp"
