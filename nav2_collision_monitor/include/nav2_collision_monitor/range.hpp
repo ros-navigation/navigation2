@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COLLISION_MONITOR__SCAN_HPP_
-#define NAV2_COLLISION_MONITOR__SCAN_HPP_
+#ifndef NAV2_COLLISION_MONITOR__RANGE_HPP_
+#define NAV2_COLLISION_MONITOR__RANGE_HPP_
 
 #include <memory>
-#include <string>
 #include <vector>
+#include <string>
 
-#include "sensor_msgs/msg/laser_scan.hpp"
+#include "sensor_msgs/msg/range.hpp"
 
 #include "nav2_collision_monitor/source.hpp"
 
@@ -27,13 +27,13 @@ namespace nav2_collision_monitor
 {
 
 /**
- * @brief Implementation for laser scanner source
+ * @brief Implementation for IR/ultrasound range sensor source
  */
-class Scan : public Source
+class Range : public Source
 {
 public:
   /**
-   * @brief Scan constructor
+   * @brief Range constructor
    * @param node Collision Monitor node pointer
    * @param source_name Name of data source
    * @param tf_buffer Shared pointer to a TF buffer
@@ -42,7 +42,7 @@ public:
    * @param transform_tolerance Transform tolerance
    * @param source_timeout Maximum time interval in which data is considered valid
    */
-  Scan(
+  Range(
     const nav2_util::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
@@ -51,18 +51,18 @@ public:
     const tf2::Duration & transform_tolerance,
     const rclcpp::Duration & source_timeout);
   /**
-   * @brief Scan destructor
+   * @brief Range destructor
    */
-  ~Scan();
+  ~Range();
 
   /**
    * @brief Data source configuration routine. Obtains ROS-parameters
-   * and creates laser scanner subscriber.
+   * and creates range sensor subscriber.
    */
   void configure();
 
   /**
-   * @brief Adds latest data from laser scanner to the data array.
+   * @brief Adds latest data from range sensor to the data array.
    * @param curr_time Current node time for data interpolation
    * @param data Array where the data from source to be added.
    * Added data is transformed to base_frame_id_ coordinate system at curr_time.
@@ -73,20 +73,29 @@ public:
 
 protected:
   /**
-   * @brief Laser scanner data callback
-   * @param msg Shared pointer to LaserScan message
+   * @brief Getting sensor-specific ROS-parameters
+   * @param source_topic Output name of source subscription topic
    */
-  void dataCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr msg);
+  void getParameters(std::string & source_topic);
+
+  /**
+   * @brief Range sensor data callback
+   * @param msg Shared pointer to Range sensor message
+   */
+  void dataCallback(sensor_msgs::msg::Range::ConstSharedPtr msg);
 
   // ----- Variables -----
 
-  /// @brief Laser scanner data subscriber
-  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr data_sub_;
+  /// @brief Range sensor data subscriber
+  rclcpp::Subscription<sensor_msgs::msg::Range>::SharedPtr data_sub_;
 
-  /// @brief Latest data obtained from laser scanner
-  sensor_msgs::msg::LaserScan::ConstSharedPtr data_;
-};  // class Scan
+  /// @brief Angle increment (in rad) between two obstacle points at the range arc
+  double obstacles_angle_;
+
+  /// @brief Latest data obtained from range sensor
+  sensor_msgs::msg::Range::ConstSharedPtr data_;
+};  // class Range
 
 }  // namespace nav2_collision_monitor
 
-#endif  // NAV2_COLLISION_MONITOR__SCAN_HPP_
+#endif  // NAV2_COLLISION_MONITOR__RANGE_HPP_

@@ -408,6 +408,12 @@ public:
    */
   bool backtracePath(CoordinateVector & path);
 
+  /**
+   * \brief add node to the path
+   * \param current_node
+   */
+  void addNodeToPath(NodePtr current_node, CoordinateVector & path);
+
   NodeLattice * parent;
   Coordinates pose;
   static LatticeMotionTable motion_table;

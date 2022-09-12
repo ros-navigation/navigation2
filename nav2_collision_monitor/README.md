@@ -35,7 +35,7 @@ The data may be obtained from different data sources:
 
 * Laser scanners (`sensor_msgs::msg::LaserScan` messages)
 * PointClouds (`sensor_msgs::msg::PointCloud2` messages)
-* IR/Sonars (`sensor_msgs::msg::Range` messages, not implemented yet)
+* IR/Sonars (`sensor_msgs::msg::Range` messages)
 
 ## Design
 
