@@ -442,7 +442,7 @@ _environments:
     UNDERLAY_MIXINS: "release ccache lld"
     CCACHE_LOGFILE: "/tmp/ccache.log"
     CCACHE_MAXSIZE: "200M"
-    MAKEFLAGS: "-j 2 -l 2 "
+    MAKEFLAGS: "-j 4 -l 4 "
     COLCON_DEFAULTS_FILE: "/tmp/defaults.yaml"
     RCUTILS_LOGGING_BUFFERED_STREAM: "0"
     RCUTILS_LOGGING_USE_STDOUT: "0"
@@ -450,6 +450,7 @@ _environments:
 
 executors:
   release_exec:
+    resource_class: large
     docker:
       - image: ghcr.io/ros-planning/navigation2:main
     working_directory: /opt/overlay_ws
