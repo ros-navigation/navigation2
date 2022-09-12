@@ -27,8 +27,9 @@ struct Velocity
 
   inline bool operator<(const Velocity & second) const
   {
-    const double first_vel = x * x + y * y;
-    const double second_vel = second.x * second.x + second.y * second.y;
+    const double first_vel = x * x + y * y + tw * tw;
+    const double second_vel = second.x * second.x + second.y * second.y + second.tw * second.tw;
+    // This comparison includes rotations in place, where linear velocities are equal to zero
     return first_vel < second_vel;
   }
 
