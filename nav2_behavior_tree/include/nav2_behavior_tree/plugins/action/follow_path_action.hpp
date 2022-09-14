@@ -54,6 +54,32 @@ public:
   void on_wait_for_result(
     std::shared_ptr<const nav2_msgs::action::FollowPath::Feedback> feedback) override;
 
+
+  /**
+   * @brief Function to perform some user-defined operation upon successful
+   * completion of the action. Could put a value on the blackboard.
+   * @return BT::NodeStatus Returns SUCCESS by default, user may override return another value
+   */
+  BT::NodeStatus on_success() override;
+
+  /**
+   * @brief Function to perform some user-defined operation whe the action is aborted.
+   * @return BT::NodeStatus Returns FAILURE by default, user may override return another value
+   */
+  BT::NodeStatus on_aborted() override;
+
+  /**
+   * @brief Function to perform some user-defined operation when the action is cancelled.
+   * @return BT::NodeStatus Returns SUCCESS by default, user may override return another value
+   */
+  BT::NodeStatus on_cancelled() override;
+
+  /**
+  * @brief The other (optional) override required by a BT action. In this case, we
+  * make sure to cancel the ROS2 action if it is still running.
+  */
+  void halt() override;
+
   /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
@@ -65,6 +91,8 @@ public:
         BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
         BT::InputPort<std::string>("controller_id", ""),
         BT::InputPort<std::string>("goal_checker_id", ""),
+        BT::InputPort<nav2_msgs::action::FollowPath::Result::_error_code_type>
+            ("follow_path_error_code", "The local planner error code"),
       });
   }
 };

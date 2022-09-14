@@ -66,6 +66,32 @@ void FollowPathAction::on_wait_for_result(
   }
 }
 
+BT::NodeStatus FollowPathAction::on_success() {
+  // Action was successful, return an empty error code
+  result_.result->error_code = nav2_msgs::action::FollowPath::Goal::NONE;
+  setOutput("follow_path_error_code", result_.result->error_code);
+  return BtActionNode::on_success();
+}
+
+BT::NodeStatus FollowPathAction::on_cancelled() {
+  // Action was cancelled, return an empty error code
+  result_.result->error_code = nav2_msgs::action::FollowPath::Goal::NONE;
+  setOutput("follow_path_error_code", result_.result->error_code);
+  return BtActionNode::on_cancelled();
+}
+
+
+BT::NodeStatus FollowPathAction::on_aborted() {
+  setOutput("follow_path_error_code", result_.result->error_code);
+  return BtActionNode::on_aborted();
+}
+
+void FollowPathAction::halt() {
+  result_.result->error_code = nav2_msgs::action::FollowPath::Goal::NONE;
+  setOutput("follow_path_error_code", result_.result->error_code);
+  BtActionNode::halt();
+}
+
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp_v3/bt_factory.h"
