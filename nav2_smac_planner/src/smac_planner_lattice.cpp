@@ -266,7 +266,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
     if (num_iterations < _a_star->getMaxIterations()) {
       throw nav2_core::NoValidPathCouldBeFound("no valid path found");
     } else {
-      throw nav2_core::NoValidPathCouldBeFound("exceeded maximum iterations");
+      throw nav2_core::PlannerTimedOut("exceeded maximum iterations");
     }
   }
 
