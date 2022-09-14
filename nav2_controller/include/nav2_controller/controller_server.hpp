@@ -23,6 +23,7 @@
 #include <mutex>
 
 #include "nav2_core/controller.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 #include "nav2_core/progress_checker.hpp"
 #include "nav2_core/goal_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"

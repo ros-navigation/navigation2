@@ -405,7 +405,7 @@ void ControllerServer::computeControl()
           controller_frequency_);
       }
     }
-  } catch (nav2_core::PlannerException & e) {
+  } catch (nav2_core::ControllerException & e) {
     RCLCPP_ERROR(this->get_logger(), e.what());
     publishZeroVelocity();
     action_server_->terminate_current();
@@ -426,7 +426,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
     get_logger(),
     "Providing path to the controller %s", current_controller_.c_str());
   if (path.poses.empty()) {
-    throw nav2_core::PlannerException("Invalid path, Path is empty.");
+    throw nav2_core::InvalidPath("Received invalid path, Path is empty.");
   }
   controllers_[current_controller_]->setPlan(path);
 
@@ -446,11 +446,11 @@ void ControllerServer::computeAndPublishVelocity()
   geometry_msgs::msg::PoseStamped pose;
 
   if (!getRobotPose(pose)) {
-    throw nav2_core::PlannerException("Failed to obtain robot pose");
+    throw nav2_core::ControllerTFException("Failed to obtain robot pose");
   }
 
   if (!progress_checker_->check(pose)) {
-    throw nav2_core::PlannerException("Failed to make progress");
+    throw nav2_core::FailedToMakeProgress("Failed to make progress");
   }
 
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
@@ -464,7 +464,7 @@ void ControllerServer::computeAndPublishVelocity()
       nav_2d_utils::twist2Dto3D(twist),
       goal_checkers_[current_goal_checker_].get());
     last_valid_cmd_time_ = now();
-  } catch (nav2_core::PlannerException & e) {
+  } catch (nav2_core::ControllerException & e) {
     if (failure_tolerance_ > 0 || failure_tolerance_ == -1.0) {
       RCLCPP_WARN(this->get_logger(), e.what());
       cmd_vel_2d.twist.angular.x = 0;
@@ -478,10 +478,10 @@ void ControllerServer::computeAndPublishVelocity()
       if ((now() - last_valid_cmd_time_).seconds() > failure_tolerance_ &&
         failure_tolerance_ != -1.0)
       {
-        throw nav2_core::PlannerException("Controller patience exceeded");
+        throw nav2_core::PatienceExceeded("Controller patience exceeded");
       }
     } else {
-      throw nav2_core::PlannerException(e.what());
+      throw nav2_core::ControllerException(e.what());
     }
   }
 

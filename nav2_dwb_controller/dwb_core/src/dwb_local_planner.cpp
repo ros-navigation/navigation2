@@ -441,7 +441,7 @@ DWBLocalPlanner::transformGlobalPlan(
   const nav_2d_msgs::msg::Pose2DStamped & pose)
 {
   if (global_plan_.poses.empty()) {
-    throw nav2_core::PlannerException("Received plan with zero length");
+    throw nav2_core::InvalidPath("Received plan with zero length");
   }
 
   // let's get the pose of the robot in the frame of the plan
@@ -450,8 +450,8 @@ DWBLocalPlanner::transformGlobalPlan(
       tf_, global_plan_.header.frame_id, pose,
       robot_pose, transform_tolerance_))
   {
-    throw dwb_core::
-          PlannerTFException("Unable to transform robot pose into global plan's frame");
+    throw nav2_core::
+          ControllerTFException("Unable to transform robot pose into global plan's frame");
   }
 
   // we'll discard points on the plan that are outside the local costmap
@@ -535,7 +535,7 @@ DWBLocalPlanner::transformGlobalPlan(
   }
 
   if (transformed_plan.poses.empty()) {
-    throw nav2_core::PlannerException("Resulting plan has 0 poses in it.");
+    throw nav2_core::InvalidPath("Resulting plan has 0 poses in it.");
   }
   return transformed_plan;
 }
