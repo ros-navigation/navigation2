@@ -4,6 +4,7 @@ int16 UNKNOWN=1
 int16 FAILED_TO_MAKE_PROGRESS=2
 int16 PATIENCE_EXCEEDED=3
 int16 INVALID_PATH=4
+int16 TF_ERROR=5
 
 #goal definition
 nav_msgs/Path path

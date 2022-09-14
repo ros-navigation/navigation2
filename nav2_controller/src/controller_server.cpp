@@ -426,6 +426,12 @@ void ControllerServer::computeControl()
     result->error_code = nav2_msgs::action::FollowPath::Goal::INVALID_PATH;
     action_server_->terminate_current(result);
     return;
+  } catch (nav2_core::ControllerTFException & e) {
+    RCLCPP_ERROR(this->get_logger(), e.what());
+    publishZeroVelocity();
+    std::shared_ptr<nav2_msgs::action::FollowPath::Result> result;
+    result->error_code = nav2_msgs::action::FollowPath::Goal::TF_ERROR;
+    action_server_->terminate_current(result);
   } catch (nav2_core::ControllerException & e) {
     RCLCPP_ERROR(this->get_logger(), e.what());
     publishZeroVelocity();
