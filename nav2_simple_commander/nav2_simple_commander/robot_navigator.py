@@ -177,13 +177,12 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def spin(self, spin_dist=1.57, time_allowance=10):
+    def spin(self, spin_dist=1.57):
         self.debug("Waiting for 'Spin' action server")
         while not self.spin_client.wait_for_server(timeout_sec=1.0):
             self.info("'Spin' action server not available, waiting...")
         goal_msg = Spin.Goal()
         goal_msg.target_yaw = spin_dist
-        goal_msg.time_allowance = Duration(sec=time_allowance)
 
         self.info(f'Spinning to angle {goal_msg.target_yaw}....')
         send_goal_future = self.spin_client.send_goal_async(goal_msg, self._feedbackCallback)
@@ -197,14 +196,13 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def backup(self, backup_dist=0.15, backup_speed=0.025, time_allowance=10):
+    def backup(self, backup_dist=0.15, backup_speed=0.025):
         self.debug("Waiting for 'Backup' action server")
         while not self.backup_client.wait_for_server(timeout_sec=1.0):
             self.info("'Backup' action server not available, waiting...")
         goal_msg = BackUp.Goal()
         goal_msg.target = Point(x=float(backup_dist))
         goal_msg.speed = backup_speed
-        goal_msg.time_allowance = Duration(sec=time_allowance)
 
         self.info(f'Backing up {goal_msg.target.x} m at {goal_msg.speed} m/s....')
         send_goal_future = self.backup_client.send_goal_async(goal_msg, self._feedbackCallback)
