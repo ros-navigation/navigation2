@@ -117,8 +117,8 @@ template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::addToGraph(
   const unsigned int & index)
 {
-  auto iter = graph_.find(index);
-  if (iter != graph_.end()) {
+  auto iter = _graph.find(index);
+  if (iter != _graph.end()) {
     return &(iter->second);
   }
 
