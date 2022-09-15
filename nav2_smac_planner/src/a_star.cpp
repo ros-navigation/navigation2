@@ -117,9 +117,12 @@ template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::addToGraph(
   const unsigned int & index)
 {
-  // Emplace will only create a new object if it doesn't already exist.
-  // If an element exists, it will return the existing object, not create a new one.
-  return &(_graph.emplace(index, NodeT(index)).first->second);
+  auto iter = graph_.find(index);
+  if (iter == graph_.end()) {
+    return &(_graph.emplace(index, NodeT(index)).first->second);
+  }
+
+  return &(iter->second);
 }
 
 template<>
