@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>nav2_fake_localization</name>
+  <version>1.1.0</version>
+  <description>A ROS node that simply forwards odometry information.</description>
+  <maintainer email="jihoon@floatic.io">Jihoon Lee</maintainer>
+  <!--
+  <author>Ioan A. Sucan</author>
+  <author>contradict@gmail.com</author>
+  -->
+
+  <license>BSD</license>
+
+  <buildtool_depend>ament_cmake_ros</buildtool_depend>
+
+  <build_depend>rclcpp</build_depend>
+  <build_depend>angles</build_depend>
+  <build_depend>tf2_geometry_msgs</build_depend>
+
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2</depend>
+  <depend>mesage_filters</depend>
+
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
