@@ -21,6 +21,8 @@ from ament_index_python.packages import get_package_share_directory
 import math
 import os
 import pickle
+import glob
+import time
 import numpy as np
 
 from random import seed
@@ -29,13 +31,33 @@ from random import uniform
 
 from transforms3d.euler import euler2quat
 
-# Note: Map origin is assumed to be (0,0)
+'''
+Replace planner server with:
 
+planner_server:
+  ros__parameters:
+    expected_planner_frequency: 20.0
+    use_sim_time: True
+    planner_plugins: ["SmacHybrid", "Smac2d", "SmacLattice", "Navfn", "ThetaStar"]
+    SmacHybrid:
+      plugin: "nav2_smac_planner/SmacPlannerHybrid"
+    Smac2d:
+      plugin: "nav2_smac_planner/SmacPlanner2D"
+    SmacLattice:
+      plugin: "nav2_smac_planner/SmacPlannerLattice"
+    Navfn:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+    ThetaStar:
+      plugin: "nav2_theta_star_planner/ThetaStarPlanner"
+
+Set global costmap settings to those desired for benchmarking.
+The global map will be automatically set in the script.
+'''
 
 def getPlannerResults(navigator, initial_pose, goal_pose, planners):
     results = []
     for planner in planners:
-        path = navigator.getPath(initial_pose, goal_pose, planner)
+        path = navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
         if path is not None:
             results.append(path)
     return results
@@ -111,12 +133,17 @@ def main():
     # Wait for navigation to fully activate
     navigator.waitUntilNav2Active()
 
+    # Set map to use, other options: 100by100_15, 100by100_10
+    map_path = os.getcwd() + '/' + glob.glob('**/100by100_20.yaml', recursive=True)[0]
+    navigator.changeMap(map_path)
+    time.sleep(2)
+
     # Get the costmap for start/goal validation
     costmap_msg = navigator.getGlobalCostmap()
     costmap = np.asarray(costmap_msg.data)
     costmap.resize(costmap_msg.metadata.size_y, costmap_msg.metadata.size_x)
 
-    planners = ['NavFn', 'Smac2d', 'SmacLattice', 'SmacHybrid']
+    planners = ['Navfn', 'ThetaStar', 'SmacHybrid', 'Smac2d',  'SmacLattice']
     max_cost = 210
     side_buffer = 100
     time_stamp = navigator.get_clock().now().to_msg()
@@ -125,7 +152,8 @@ def main():
 
     random_pairs = 100
     res = costmap_msg.metadata.resolution
-    for i in range(random_pairs):
+    i = 0
+    while len(results) != random_pairs:
         print("Cycle: ", i, "out of: ", random_pairs)
         start = getRandomStart(costmap, max_cost, side_buffer, time_stamp, res)
         goal = getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res)
@@ -134,22 +162,20 @@ def main():
         result = getPlannerResults(navigator, start, goal, planners)
         if len(result) == len(planners):
             results.append(result)
+            i = i + 1
         else:
             print("One of the planners was invalid")
 
     print("Write Results...")
-    nav2_planner_metrics_dir = get_package_share_directory('nav2_planner_metrics')
-    with open(os.path.join(nav2_planner_metrics_dir, 'results.pickle'), 'wb') as f:
+    with open(os.getcwd() + '/results.pickle', 'wb+') as f:
         pickle.dump(results, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.path.join(nav2_planner_metrics_dir, 'costmap.pickle'), 'wb') as f:
+    with open(os.getcwd() + '/costmap.pickle', 'wb+') as f:
         pickle.dump(costmap_msg, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.path.join(nav2_planner_metrics_dir, 'planners.pickle'), 'wb') as f:
+    with open(os.getcwd() + '/planners.pickle', 'wb+') as f:
         pickle.dump(planners, f, pickle.HIGHEST_PROTOCOL)
     print("Write Complete")
-
-    navigator.lifecycleShutdown()
     exit(0)
 
 
