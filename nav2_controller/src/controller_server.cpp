@@ -62,8 +62,8 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "local_costmap", std::string{get_namespace()}, "local_costmap");
-
+    "local_costmap", std::string{get_namespace()}, "local_costmap",
+    get_parameter("use_sim_time").as_bool());
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 }

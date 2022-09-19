@@ -154,13 +154,16 @@ bool Node2D::backtracePath(CoordinateVector & path)
 
   NodePtr current_node = this;
 
-  do {
+  while (current_node->parent) {
     path.push_back(
       Node2D::getCoords(current_node->getIndex()));
     current_node = current_node->parent;
-  } while (current_node->parent);
+  }
 
-  return path.size() > 0;
+  // add the start pose
+  path.push_back(Node2D::getCoords(current_node->getIndex()));
+
+  return true;
 }
 
 }  // namespace nav2_smac_planner

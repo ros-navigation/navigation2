@@ -541,44 +541,53 @@ bool NodeLattice::backtracePath(CoordinateVector & path)
     return false;
   }
 
-  Coordinates initial_pose, prim_pose;
   NodePtr current_node = this;
+
+  while (current_node->parent) {
+    addNodeToPath(current_node, path);
+    current_node = current_node->parent;
+  }
+
+  // add start to path
+  addNodeToPath(current_node, path);
+
+  return true;
+}
+
+void NodeLattice::addNodeToPath(
+  NodeLattice::NodePtr current_node,
+  NodeLattice::CoordinateVector & path)
+{
+  Coordinates initial_pose, prim_pose;
   MotionPrimitive * prim = nullptr;
   const float & grid_resolution = NodeLattice::motion_table.lattice_metadata.grid_resolution;
   const float pi_2 = 2.0 * M_PI;
+  prim = current_node->getMotionPrimitive();
+  // if motion primitive is valid, then was searched (rather than analytically expanded),
+  // include dense path of subpoints making up the primitive at grid resolution
+  if (prim) {
+    initial_pose.x = current_node->pose.x - (prim->poses.back()._x / grid_resolution);
+    initial_pose.y = current_node->pose.y - (prim->poses.back()._y / grid_resolution);
+    initial_pose.theta = NodeLattice::motion_table.getAngleFromBin(prim->start_angle);
 
-  do {
-    prim = current_node->getMotionPrimitive();
-    // if motion primitive is valid, then was searched (rather than analytically expanded),
-    // include dense path of subpoints making up the primitive at grid resolution
-    if (prim) {
-      initial_pose.x = current_node->pose.x - (prim->poses.back()._x / grid_resolution);
-      initial_pose.y = current_node->pose.y - (prim->poses.back()._y / grid_resolution);
-      initial_pose.theta = NodeLattice::motion_table.getAngleFromBin(prim->start_angle);
-
-      for (auto it = prim->poses.crbegin(); it != prim->poses.crend(); ++it) {
-        // Convert primitive pose into grid space if it should be checked
-        prim_pose.x = initial_pose.x + (it->_x / grid_resolution);
-        prim_pose.y = initial_pose.y + (it->_y / grid_resolution);
-        // If reversing, invert the angle because the robot is backing into the primitive
-        // not driving forward with it
-        if (current_node->isBackward()) {
-          prim_pose.theta = std::fmod(it->_theta + M_PI, pi_2);
-        } else {
-          prim_pose.theta = it->_theta;
-        }
-        path.push_back(prim_pose);
+    for (auto it = prim->poses.crbegin(); it != prim->poses.crend(); ++it) {
+      // Convert primitive pose into grid space if it should be checked
+      prim_pose.x = initial_pose.x + (it->_x / grid_resolution);
+      prim_pose.y = initial_pose.y + (it->_y / grid_resolution);
+      // If reversing, invert the angle because the robot is backing into the primitive
+      // not driving forward with it
+      if (current_node->isBackward()) {
+        prim_pose.theta = std::fmod(it->_theta + M_PI, pi_2);
+      } else {
+        prim_pose.theta = it->_theta;
       }
-    } else {
-      // For analytic expansion nodes where there is no valid motion primitive
-      path.push_back(current_node->pose);
-      path.back().theta = NodeLattice::motion_table.getAngleFromBin(path.back().theta);
+      path.push_back(prim_pose);
     }
-
-    current_node = current_node->parent;
-  } while (current_node->parent);
-
-  return path.size() > 0;
+  } else {
+    // For analytic expansion nodes where there is no valid motion primitive
+    path.push_back(current_node->pose);
+    path.back().theta = NodeLattice::motion_table.getAngleFromBin(path.back().theta);
+  }
 }
 
 }  // namespace nav2_smac_planner
