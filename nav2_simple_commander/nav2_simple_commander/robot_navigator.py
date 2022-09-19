@@ -296,8 +296,11 @@ class BasicNavigator(Node):
         self.info('Nav2 is ready for use!')
         return
 
-    def getPath(self, start, goal, planner_id='', use_start=False):
-        """Send a `ComputePathToPose` action request."""
+    def _getPathImpl(self, start, goal, planner_id='', use_start=False):
+        """
+        Send a `ComputePathToPose` action request.
+        Internal implementation to get the full result, not just the path.
+        """
         self.debug("Waiting for 'ComputePathToPose' action server")
         while not self.compute_path_to_pose_client.wait_for_server(timeout_sec=1.0):
             self.info("'ComputePathToPose' action server not available, waiting...")
@@ -324,7 +327,15 @@ class BasicNavigator(Node):
             self.warn(f'Getting path failed with status code: {self.status}')
             return None
 
-        return self.result_future.result().result.path
+        return self.result_future.result().result
+
+    def getPath(self, start, goal, planner_id='', use_start=False):
+        """Send a `ComputePathToPose` action request."""
+        rtn = _getPathImpl(start, goal, planner_id='', use_start=False)
+        if not rtn:
+            return None
+        else:
+            return rtn.path
 
     def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
         """Send a `ComputePathThroughPoses` action request."""
