@@ -35,9 +35,11 @@
 
 #include "nav2_fake_localization/fake_localization.hpp"
 
-namespace nav2_fake_localization {
+namespace nav2_fake_localization
+{
 FakeOdomNode::FakeOdomNode()
-    : Node("fake_localization", rclcpp::NodeOptions()) {
+: Node("fake_localization", rclcpp::NodeOptions())
+{
 
   typedef std::chrono::duration<int> seconds_type;
   seconds_type buffer_timeout(1);
@@ -47,7 +49,7 @@ FakeOdomNode::FakeOdomNode()
   // Create the timer interface before call to waitForTransform,
   // to avoid a tf2_ros::CreateTimerInterfaceException exception
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      this->get_node_base_interface(), this->get_node_timers_interface());
+    this->get_node_base_interface(), this->get_node_timers_interface());
   tf_buffer_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
@@ -74,24 +76,25 @@ FakeOdomNode::FakeOdomNode()
 
   odom_sub_.subscribe(this, "odom", rmw_qos_profile_sensor_data);
   odom_filter_ =
-      std::make_shared<tf2_ros::MessageFilter<nav_msgs::msg::Odometry>>(
-          odom_sub_, *tf_buffer_, base_frame_id_, 100,
-          this->get_node_logging_interface(), this->get_node_clock_interface(),
-          buffer_timeout);
+    std::make_shared<tf2_ros::MessageFilter<nav_msgs::msg::Odometry>>(
+    odom_sub_, *tf_buffer_, base_frame_id_, 100,
+    this->get_node_logging_interface(), this->get_node_clock_interface(),
+    buffer_timeout);
   odom_filter_->registerCallback(&FakeOdomNode::sub_odom, this);
 
   initialpose_sub_.subscribe(this, "initialpose");
   initialpose_filter_ = std::make_shared<
-      tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>>(
-      initialpose_sub_, *tf_buffer_, global_frame_id_, 1,
-      this->get_node_logging_interface(), this->get_node_clock_interface(),
-      buffer_timeout);
+    tf2_ros::MessageFilter<geometry_msgs::msg::PoseWithCovarianceStamped>>(
+    initialpose_sub_, *tf_buffer_, global_frame_id_, 1,
+    this->get_node_logging_interface(), this->get_node_clock_interface(),
+    buffer_timeout);
   initialpose_filter_->registerCallback(&FakeOdomNode::sub_initialpose, this);
 }
 
 FakeOdomNode::~FakeOdomNode() {}
 
-void FakeOdomNode::sub_odom(const nav_msgs::msg::Odometry::SharedPtr msg) {
+void FakeOdomNode::sub_odom(const nav_msgs::msg::Odometry::SharedPtr msg)
+{
   tf2::Transform txi;
   tf2::convert(msg->pose.pose, txi);
   txi = tf_offset_ * txi;
@@ -104,9 +107,10 @@ void FakeOdomNode::sub_odom(const nav_msgs::msg::Odometry::SharedPtr msg) {
     tf2::convert(txi.inverse(), txi_inv.transform);
 
     tf_buffer_->transform(txi_inv, odom_to_map, odom_frame_id_);
-  } catch (tf2::TransformException &e) {
-    RCLCPP_ERROR(get_logger(), "Failed to transform to %s from %s: %s\n",
-                 odom_frame_id_.c_str(), base_frame_id_.c_str(), e.what());
+  } catch (tf2::TransformException & e) {
+    RCLCPP_ERROR(
+      get_logger(), "Failed to transform to %s from %s: %s\n",
+      odom_frame_id_.c_str(), base_frame_id_.c_str(), e.what());
     return;
   }
 
@@ -124,24 +128,27 @@ void FakeOdomNode::sub_odom(const nav_msgs::msg::Odometry::SharedPtr msg) {
 }
 
 void FakeOdomNode::sub_initialpose(
-    const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+  const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+{
   tf2::Transform pose;
   tf2::convert(msg->pose.pose, pose);
 
   if (msg->header.frame_id != global_frame_id_) {
-    RCLCPP_WARN(get_logger(),
-                "Frame ID of \"initialpose\" (%s) is different from the global "
-                "frame %s",
-                msg->header.frame_id.c_str(), global_frame_id_.c_str());
+    RCLCPP_WARN(
+      get_logger(),
+      "Frame ID of \"initialpose\" (%s) is different from the global "
+      "frame %s",
+      msg->header.frame_id.c_str(), global_frame_id_.c_str());
   }
 
   // set offset so that current pose is set to "initialpose"
   geometry_msgs::msg::TransformStamped base_in_map;
   try {
     // just get the latest
-    base_in_map = tf_buffer_->lookupTransform(base_frame_id_, global_frame_id_,
-                                              rclcpp::Time(0));
-  } catch (tf2::TransformException &e) {
+    base_in_map = tf_buffer_->lookupTransform(
+      base_frame_id_, global_frame_id_,
+      rclcpp::Time(0));
+  } catch (tf2::TransformException & e) {
     RCLCPP_WARN(get_logger(), "Failed to lookup transform! %s", e.what());
     return;
   }
@@ -154,7 +161,8 @@ void FakeOdomNode::sub_initialpose(
 
 } // namespace nav2_fake_localization
 
-int main(int argc, char *argv[]) {
+int main(int argc, char * argv[])
+{
   rclcpp::init(argc, argv);
   auto node = std::make_shared<nav2_fake_localization::FakeOdomNode>();
   rclcpp::Rate loop(20);

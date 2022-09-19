@@ -25,7 +25,7 @@ set(DEPENDENCIES
   geometry_msgs
   nav_msgs
   message_filters
-  )
+)
 
 include_directories(
   include
