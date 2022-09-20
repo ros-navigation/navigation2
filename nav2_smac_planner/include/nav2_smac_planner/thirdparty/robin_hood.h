@@ -53,6 +53,7 @@
 #if __cplusplus >= 201703L
 #    include <string_view>
 #endif
+/* *INDENT-OFF* */
 
 // #define ROBIN_HOOD_LOG_ENABLED
 #ifdef ROBIN_HOOD_LOG_ENABLED
@@ -464,9 +465,7 @@ private:
         size_t numAllocs = MinNumAllocs;
 
         while (numAllocs * 2 <= MaxNumAllocs && tmp) {
-            /* *INDENT-OFF* */
             auto x = reinterpret_cast<T***>(tmp);  // NOLINT
-            /* *INDENT-ON* */
             tmp = *x;
             numAllocs *= 2;
         }
@@ -480,9 +479,7 @@ private:
         auto data = reinterpret_cast<T**>(ptr);
 
         // link free list
-        /* *INDENT-OFF* */
         auto x = reinterpret_cast<T***>(data);
-        /* *INDENT-ON* */
         *x = mListForFree;
         mListForFree = data;
 
@@ -2537,5 +2534,6 @@ using unordered_set = detail::Table < sizeof(Key) <= sizeof(size_t) * 6 &&
                                     MaxLoadFactor100, Key, void, Hash, KeyEqual>;
 
 }  // namespace robin_hood
+/* *INDENT-ON* */
 
 #endif  // NAV2_SMAC_PLANNER__THIRDPARTY__ROBIN_HOOD_H_
