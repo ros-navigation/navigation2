@@ -237,7 +237,7 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error('Backup request was rejected!')
+            self.error('Assisted Teleop request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
