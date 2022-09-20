@@ -226,6 +226,7 @@ protected:
     double * max_y);
 
   std::string global_frame_;  ///< @brief The global frame for the costmap
+  double min_obstacle_height_;  ///< @brief Max Obstacle Height
   double max_obstacle_height_;  ///< @brief Max Obstacle Height
 
   /// @brief Used to project laser scans into point clouds
