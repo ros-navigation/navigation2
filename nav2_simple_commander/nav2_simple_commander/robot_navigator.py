@@ -331,7 +331,7 @@ class BasicNavigator(Node):
 
     def getPath(self, start, goal, planner_id='', use_start=False):
         """Send a `ComputePathToPose` action request."""
-        rtn = _getPathImpl(start, goal, planner_id='', use_start=False)
+        rtn = self._getPathImpl(start, goal, planner_id='', use_start=False)
         if not rtn:
             return None
         else:
