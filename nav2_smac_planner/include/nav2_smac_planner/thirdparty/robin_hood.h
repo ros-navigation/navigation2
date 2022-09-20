@@ -464,7 +464,9 @@ private:
         size_t numAllocs = MinNumAllocs;
 
         while (numAllocs * 2 <= MaxNumAllocs && tmp) {
+            /* *INDENT-OFF* */
             auto x = reinterpret_cast<T***>(tmp);  // NOLINT
+            /* *INDENT-ON* */
             tmp = *x;
             numAllocs *= 2;
         }
@@ -475,11 +477,12 @@ private:
     // WARNING: Underflow if numBytes < ALIGNMENT! This is guarded in addOrFree().
     void add(void* ptr, const size_t numBytes) noexcept {
         const size_t numElements = (numBytes - ALIGNMENT) / ALIGNED_SIZE;
-
         auto data = reinterpret_cast<T**>(ptr);
 
         // link free list
+        /* *INDENT-OFF* */
         auto x = reinterpret_cast<T***>(data);
+        /* *INDENT-ON* */
         *x = mListForFree;
         mListForFree = data;
 
