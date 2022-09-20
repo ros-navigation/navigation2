@@ -23,7 +23,7 @@ from geometry_msgs.msg import Point
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
-from nav2_msgs.action import BackUp, Spin, AssistedTeleop
+from nav2_msgs.action import AssistedTeleop, BackUp, Spin
 from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose
 from nav2_msgs.action import FollowPath, FollowWaypoints, NavigateThroughPoses, NavigateToPose
 from nav2_msgs.action import SmoothPath
@@ -231,7 +231,8 @@ class BasicNavigator(Node):
         goal_msg.time_allowance = Duration(sec=time_allowance)
 
         self.info("Running 'assisted_teleop'....")
-        send_goal_future = self.assisted_teleop_client.send_goal_async(goal_msg, self._feedbackCallback)
+        send_goal_future = \
+            self.assisted_teleop_client.send_goal_async(goal_msg, self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
@@ -241,7 +242,6 @@ class BasicNavigator(Node):
 
         self.result_future = self.goal_handle.get_result_async()
         return True
-
 
     def followPath(self, path, controller_id='', goal_checker_id=''):
         """Send a `FollowPath` action request."""

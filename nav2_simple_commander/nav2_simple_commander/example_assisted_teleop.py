@@ -14,10 +14,10 @@
 # limitations under the License.
 
 from time import sleep
+
 from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
+from nav2_simple_commander.robot_navigator import BasicNavigator
 import rclpy
-from rclpy.duration import Duration
 
 """
 Basic navigation demo to go to pose.
@@ -44,6 +44,8 @@ def main():
 
     navigator.assistedTeleop(time_allowance=20)
     while not navigator.isTaskComplete():
+        # Publish twist commands to be filtered by the assisted teleop action
+        sleep(0.2)
         pass
 
     navigator.lifecycleShutdown()
