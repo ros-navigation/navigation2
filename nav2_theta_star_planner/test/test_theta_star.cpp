@@ -175,11 +175,7 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
   goal.pose.position.x = 1.0;
   goal.pose.position.y = 1.0;
 
-  try {
-    path = planner_2d->createPlan(start, goal);
-  } catch (std::exception & ex) {
-    EXPECT_STREQ("Failed to create a unique pose path because of obstacles", ex.what());
-  }
+  EXPECT_THROW(planner_2d->createPlan(start, goal), nav2_core::GoalOccupied);
 
   planner_2d->deactivate();
   planner_2d->cleanup();
