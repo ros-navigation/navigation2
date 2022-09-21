@@ -54,7 +54,7 @@ class StartOccupied : public PlannerException
 {
 public:
   explicit StartOccupied(const std::string & description)
-      : PlannerException(description) {}
+  : PlannerException(description) {}
 };
 
 class GoalOccupied : public PlannerException
@@ -68,21 +68,21 @@ class StartOutsideMapBounds : public PlannerException
 {
 public:
   explicit StartOutsideMapBounds(const std::string & description)
-      : PlannerException(description) {}
+  : PlannerException(description) {}
 };
 
 class GoalOutsideMapBounds : public PlannerException
 {
 public:
   explicit GoalOutsideMapBounds(const std::string & description)
-      : PlannerException(description) {}
+  : PlannerException(description) {}
 };
 
 class StartIsEqualToGoal : public PlannerException
 {
 public:
   explicit StartIsEqualToGoal(const std::string & description)
-      : PlannerException(description) {}
+  : PlannerException(description) {}
 };
 
 class NoValidPathCouldBeFound : public PlannerException

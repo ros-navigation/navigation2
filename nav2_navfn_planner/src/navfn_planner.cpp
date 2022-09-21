@@ -183,7 +183,7 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 
   if (!makePlan(start.pose, goal.pose, tolerance_, path)) {
     throw nav2_core::NoValidPathCouldBeFound(
-        "Failed to create plan with tolerance of: " + std::to_string(tolerance_) );
+            "Failed to create plan with tolerance of: " + std::to_string(tolerance_) );
   }
 
 

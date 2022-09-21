@@ -89,13 +89,15 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
 
   // Corner case of start and goal beeing on the same cell
   unsigned int mx_start, my_start, mx_goal, my_goal;
-  if (!planner_->costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx_start,
-                                      my_start)) {
+  if (!planner_->costmap_->worldToMap(
+      start.pose.position.x, start.pose.position.y, mx_start, my_start))
+  {
     throw nav2_core::StartOutsideMapBounds("Start outside map bounds");
   }
 
-  if (!planner_->costmap_->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal,
-                                      my_goal)) {
+  if (!planner_->costmap_->worldToMap(
+      goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal))
+  {
     throw nav2_core::GoalOutsideMapBounds("Goal outside map bounds");
   }
 
