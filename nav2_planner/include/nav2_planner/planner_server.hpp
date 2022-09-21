@@ -153,38 +153,19 @@ protected:
    */
   template<typename T>
   bool getStartPose(
-    std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
     typename std::shared_ptr<const typename T::Goal> goal,
     geometry_msgs::msg::PoseStamped & start);
 
   /**
    * @brief Transform start and goal poses into the costmap
    * global frame for path planning plugins to utilize
-   * @param action_server Action server to terminate if required
    * @param start The starting pose to transform
    * @param goal Goal pose to transform
    * @return bool If successful in transforming poses
    */
-  template<typename T>
   bool transformPosesToGlobalFrame(
-    std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
     geometry_msgs::msg::PoseStamped & curr_start,
     geometry_msgs::msg::PoseStamped & curr_goal);
-
-  /**
-   * @brief Validate that the path contains a meaningful path
-   * @param action_server Action server to terminate if required
-   * @param goal Goal Current goal
-   * @param path Current path
-   * @param planner_id The planner ID used to generate the path
-   * @return bool If path is valid
-   */
-  template<typename T>
-  bool validatePath(
-    std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
-    const geometry_msgs::msg::PoseStamped & curr_goal,
-    const nav_msgs::msg::Path & path,
-    const std::string & planner_id);
 
   // Our action server implements the ComputePathToPose action
   std::unique_ptr<ActionServerToPose> action_server_pose_;

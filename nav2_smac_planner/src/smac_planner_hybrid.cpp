@@ -273,7 +273,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   // Set starting point, in A* bin search coordinates
   unsigned int mx, my;
-  costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
+  if (!costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my)) {
+    throw nav2_core::StartOutsideMapBounds("Start outside map bounds");
+  }
+
   double orientation_bin = tf2::getYaw(start.pose.orientation) / _angle_bin_size;
   while (orientation_bin < 0.0) {
     orientation_bin += static_cast<float>(_angle_quantizations);
@@ -286,7 +289,9 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   _a_star->setStart(mx, my, orientation_bin_id);
 
   // Set goal point, in A* bin search coordinates
-  costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
+  if (!costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my)) {
+    throw nav2_core::GoalOutsideMapBounds("Goal outside map bounds");
+  }
   orientation_bin = tf2::getYaw(goal.pose.orientation) / _angle_bin_size;
   while (orientation_bin < 0.0) {
     orientation_bin += static_cast<float>(_angle_quantizations);

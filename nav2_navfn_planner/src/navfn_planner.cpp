@@ -134,6 +134,22 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point a = steady_clock::now();
 #endif
+  unsigned int mx_start, my_start, mx_goal, my_goal;
+  if (!costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start)) {
+    throw nav2_core::StartOutsideMapBounds("Start outside map bounds");
+  }
+
+  if (!costmap_->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal)) {
+    throw nav2_core::GoalOutsideMapBounds("Goal outside map bounds");
+  }
+
+  if (costmap_->getCost(mx_start, my_goal) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+    throw nav2_core::StartOccupied("Failed to create a unique pose path because of obstacles");
+  }
+
+  if (costmap_->getCost(mx_goal, my_goal) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+    throw nav2_core::GoalOccupied("Failed to create a unique pose path because of obstacles");
+  }
 
   // Update planner based on the new costmap size
   if (isPlannerOutOfDate()) {
@@ -148,11 +164,6 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
   if (start.pose.position.x == goal.pose.position.x &&
     start.pose.position.y == goal.pose.position.y)
   {
-    unsigned int mx, my;
-    costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
-    if (costmap_->getCost(mx, my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-      throw nav2_core::StartOccupied("Failed to create a unique pose path because of obstacles");
-    }
     path.header.stamp = clock_->now();
     path.header.frame_id = global_frame_;
     geometry_msgs::msg::PoseStamped pose;
@@ -219,9 +230,7 @@ NavfnPlanner::makePlan(
     start.position.x, start.position.y, goal.position.x, goal.position.y);
 
   unsigned int mx, my;
-  if (!worldToMap(wx, wy, mx, my)) {
-    throw nav2_core::StartOutsideMapBounds("Robot's start position is off the global costmap");
-  }
+  worldToMap(wx, wy, mx, my);
 
   // clear the starting cell within the costmap because we know it can't be an obstacle
   clearRobotCell(mx, my);
@@ -244,10 +253,7 @@ NavfnPlanner::makePlan(
   wx = goal.position.x;
   wy = goal.position.y;
 
-  if (!worldToMap(wx, wy, mx, my)) {
-    throw nav2_core::GoalOutsideMapBounds("Goal is off the global costmap");
-  }
-
+  worldToMap(wx, wy, mx, my);
   int map_goal[2];
   map_goal[0] = mx;
   map_goal[1] = my;
@@ -374,10 +380,7 @@ NavfnPlanner::getPlanFromPotential(
 
   // the potential has already been computed, so we won't update our copy of the costmap
   unsigned int mx, my;
-  if (!worldToMap(wx, wy, mx, my)) {
-    throw nav2_core::GoalOutsideMapBounds("Goal is off the global costmap");
-    return false;
-  }
+  worldToMap(wx, wy, mx, my);
 
   int map_goal[2];
   map_goal[0] = mx;
