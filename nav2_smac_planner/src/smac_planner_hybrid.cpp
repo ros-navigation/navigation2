@@ -319,6 +319,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   NodeHybrid::CoordinateVector path;
   int num_iterations = 0;
 
+  // Note: All exceptions thrown are handled by the planner server and returned to the action
   if (!_a_star->createPath(path, num_iterations, 0)) {
     if (num_iterations < _a_star->getMaxIterations()) {
       throw nav2_core::NoValidPathCouldBeFound("no valid path found");

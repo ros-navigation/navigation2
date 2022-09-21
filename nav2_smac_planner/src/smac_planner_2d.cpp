@@ -254,6 +254,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   // Compute plan
   Node2D::CoordinateVector path;
   int num_iterations = 0;
+  // Note: All exceptions thrown are handled by the planner server and returned to the action
   if (!_a_star->createPath(
       path, num_iterations,
       _tolerance / static_cast<float>(costmap->getResolution())))
