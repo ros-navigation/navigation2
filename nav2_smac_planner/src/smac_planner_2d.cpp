@@ -212,13 +212,17 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   // Set starting point
   unsigned int mx_start, my_start, mx_goal, my_goal;
   if (!costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start)) {
-    throw nav2_core::StartOutsideMapBounds("Start outside map bounds");
+    throw nav2_core::StartOutsideMapBounds(
+            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
+            std::to_string(start.pose.position.y) + ") was outside bounds");
   }
   _a_star->setStart(mx_start, my_start, 0);
 
   // Set goal point
   if (!costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal)) {
-    throw nav2_core::GoalOutsideMapBounds("Goal outside map bounds");
+    throw nav2_core::GoalOutsideMapBounds(
+            "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
+            std::to_string(goal.pose.position.y) + ") was outside bounds");
   }
   _a_star->setGoal(mx_goal, my_goal, 0);
 

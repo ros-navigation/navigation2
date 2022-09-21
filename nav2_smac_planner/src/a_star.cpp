@@ -204,12 +204,12 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
   if (getToleranceHeuristic() < 0.001 &&
     !_goal->isNodeValid(_traverse_unknown, _collision_checker))
   {
-    throw nav2_core::GoalOccupied("Failed to compute path, goal is occupied with no tolerance.");
+    throw nav2_core::GoalOccupied("Goal was in lethal cost");
   }
 
   // Check if starting point is valid
   if (!_start->isNodeValid(_traverse_unknown, _collision_checker)) {
-    throw nav2_core::StartOccupied("Starting point in lethal space! Cannot create feasible plan.");
+    throw nav2_core::StartOccupied("Start was in lethal cost");
   }
 
   return true;
