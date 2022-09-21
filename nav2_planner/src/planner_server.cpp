@@ -606,17 +606,18 @@ PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
   return result;
 }
 
-void PlannerServer::exceptionWarning(const geometry_msgs::msg::PoseStamped &start,
-                                     const geometry_msgs::msg::PoseStamped &goal,
-                                     const std::string &planner_id,
-                                     const std::exception &ex)
+void PlannerServer::exceptionWarning(
+  const geometry_msgs::msg::PoseStamped & start,
+  const geometry_msgs::msg::PoseStamped & goal,
+  const std::string & planner_id,
+  const std::exception & ex)
 {
   RCLCPP_WARN(
-      get_logger(), "%s plugin failed to plan from (%.2f, %.2f) to (%0.2f, %.2f): \"%s\"",
-      planner_id.c_str(),
-      start.pose.position.x, start.pose.position.y,
-      goal.pose.position.x, goal.pose.position.y,
-      ex.what());
+    get_logger(), "%s plugin failed to plan from (%.2f, %.2f) to (%0.2f, %.2f): \"%s\"",
+    planner_id.c_str(),
+    start.pose.position.x, start.pose.position.y,
+    goal.pose.position.x, goal.pose.position.y,
+    ex.what());
 }
 
 }  // namespace nav2_planner
