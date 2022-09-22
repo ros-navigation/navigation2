@@ -31,28 +31,6 @@ from random import uniform
 
 from transforms3d.euler import euler2quat
 
-'''
-Replace planner server with:
-
-planner_server:
-  ros__parameters:
-    expected_planner_frequency: 20.0
-    use_sim_time: True
-    planner_plugins: ["SmacHybrid", "Smac2d", "SmacLattice", "Navfn", "ThetaStar"]
-    SmacHybrid:
-      plugin: "nav2_smac_planner/SmacPlannerHybrid"
-    Smac2d:
-      plugin: "nav2_smac_planner/SmacPlanner2D"
-    SmacLattice:
-      plugin: "nav2_smac_planner/SmacPlannerLattice"
-    Navfn:
-      plugin: "nav2_navfn_planner/NavfnPlanner"
-    ThetaStar:
-      plugin: "nav2_theta_star_planner/ThetaStarPlanner"
-
-Set global costmap settings to those desired for benchmarking.
-The global map will be automatically set in the script.
-'''
 
 def getPlannerResults(navigator, initial_pose, goal_pose, planners):
     results = []
@@ -119,19 +97,6 @@ def main():
     rclpy.init()
 
     navigator = BasicNavigator()
-
-    # Set our experiment's initial pose
-    initial_pose = PoseStamped()
-    initial_pose.header.frame_id = 'map'
-    initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    initial_pose.pose.position.x = 1.0
-    initial_pose.pose.position.y = 1.0
-    initial_pose.pose.orientation.z = 0.0
-    initial_pose.pose.orientation.w = 1.0
-    navigator.setInitialPose(initial_pose)
-
-    # Wait for navigation to fully activate
-    navigator.waitUntilNav2Active()
 
     # Set map to use, other options: 100by100_15, 100by100_10
     map_path = os.getcwd() + '/' + glob.glob('**/100by100_20.yaml', recursive=True)[0]
