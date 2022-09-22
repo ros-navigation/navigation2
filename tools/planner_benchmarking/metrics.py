@@ -38,6 +38,8 @@ def getPlannerResults(navigator, initial_pose, goal_pose, planners):
         path = navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
         if path is not None:
             results.append(path)
+        else:
+            return results
     return results
 
 
