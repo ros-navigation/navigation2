@@ -77,6 +77,7 @@ void ObstacleLayer::onInitialize()
   // TODO(mjeronimo): these four are candidates for dynamic update
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(true));
+  declareParameter("min_obstacle_height", rclcpp::ParameterValue(0.0));
   declareParameter("max_obstacle_height", rclcpp::ParameterValue(2.0));
   declareParameter("combination_method", rclcpp::ParameterValue(1));
   declareParameter("observation_sources", rclcpp::ParameterValue(std::string("")));
@@ -88,6 +89,7 @@ void ObstacleLayer::onInitialize()
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  node->get_parameter(name_ + "." + "min_obstacle_height", min_obstacle_height_);
   node->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
   node->get_parameter(name_ + "." + "combination_method", combination_method_);
   node->get_parameter("track_unknown_space", track_unknown_space);
@@ -272,6 +274,43 @@ void ObstacleLayer::onInitialize()
   }
 }
 
+<<<<<<< HEAD
+=======
+rcl_interfaces::msg::SetParametersResult
+ObstacleLayer::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + "." + "min_obstacle_height") {
+        min_obstacle_height_ = parameter.as_double();
+      } else if (param_name == name_ + "." + "max_obstacle_height") {
+        max_obstacle_height_ = parameter.as_double();
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == name_ + "." + "enabled") {
+        enabled_ = parameter.as_bool();
+      } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
+        footprint_clearing_enabled_ = parameter.as_bool();
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == name_ + "." + "combination_method") {
+        combination_method_ = parameter.as_int();
+      }
+    }
+  }
+
+  result.successful = true;
+  return result;
+}
+
+>>>>>>> 0b4179b6 (Add a min_obstacle_height param to the nav2_costmap_2d's ObstacleLayer plugin (#3211))
 void
 ObstacleLayer::laserScanCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr message,
@@ -407,6 +446,12 @@ ObstacleLayer::updateBounds(
 
     for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
       double px = *iter_x, py = *iter_y, pz = *iter_z;
+
+      // if the obstacle is too low, we won't add it
+      if (pz < min_obstacle_height_) {
+        RCLCPP_DEBUG(logger_, "The point is too low");
+        continue;
+      }
 
       // if the obstacle is too high or too far away from the robot we won't add it
       if (pz > max_obstacle_height_) {
