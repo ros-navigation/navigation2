@@ -86,7 +86,9 @@ float Node2D::getHeuristicCost(
 {
   // Using Moore distance as it more accurately represents the distances
   // even a Van Neumann neighborhood robot can navigate.
-  return hypotf(goal_coordinates.x - node_coords.x, goal_coordinates.y - node_coords.y);
+  auto dx = goal_coordinates.x - node_coords.x;
+  auto dy = goal_coordinates.y - node_coords.y;
+  return std::sqrt(dx * dx + dy * dy);
 }
 
 void Node2D::initMotionModel(

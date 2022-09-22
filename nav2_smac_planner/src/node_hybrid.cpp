@@ -381,9 +381,9 @@ inline float distanceHeuristic2D(
   const unsigned int idx, const unsigned int size_x,
   const unsigned int target_x, const unsigned int target_y)
 {
-  return std::hypotf(
-    static_cast<int>(idx % size_x) - static_cast<int>(target_x),
-    static_cast<int>(idx / size_x) - static_cast<int>(target_y));
+  int dx = static_cast<int>(idx % size_x) - static_cast<int>(target_x);
+  int dy = static_cast<int>(idx / size_x) - static_cast<int>(target_y);
+  return std::sqrt(dx * dx + dy * dy);
 }
 
 void NodeHybrid::resetObstacleHeuristic(
