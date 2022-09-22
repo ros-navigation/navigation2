@@ -81,11 +81,17 @@ void SmacPlannerHybrid::configure(
   _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
 
   nav2_util::declare_parameter_if_not_declared(
+    node, name + ".tolerance", rclcpp::ParameterValue(0.25));
+  _tolerance = static_cast<float>(node->get_parameter(name + ".tolerance").as_double());
+  nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".allow_unknown", _allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
   node->get_parameter(name + ".max_iterations", _max_iterations);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
+  node->get_parameter(name + ".max_on_approach_iterations", _max_on_approach_iterations);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".smooth_path", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".smooth_path", smooth_path);
@@ -139,6 +145,13 @@ void SmacPlannerHybrid::configure(
       _motion_model_for_search.c_str());
   }
 
+  if (_max_on_approach_iterations <= 0) {
+    RCLCPP_INFO(
+      _logger, "On approach iteration selected as <= 0, "
+      "disabling tolerance and on approach iterations.");
+    _max_on_approach_iterations = std::numeric_limits<int>::max();
+  }
+
   if (_max_iterations <= 0) {
     RCLCPP_INFO(
       _logger, "maximum iteration selected as <= 0, "
@@ -180,7 +193,7 @@ void SmacPlannerHybrid::configure(
   _a_star->initialize(
     _allow_unknown,
     _max_iterations,
-    std::numeric_limits<int>::max(),
+    _max_on_approach_iterations,
     _max_planning_time,
     _lookup_table_dim,
     _angle_quantizations);
@@ -205,10 +218,11 @@ void SmacPlannerHybrid::configure(
 
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlannerHybrid with "
-    "maximum iterations %i, and %s. Using motion model: %s.",
-    _name.c_str(), _max_iterations,
+    "maximum iterations %i, max on approach iterations %i, and %s. Tolerance %.2f."
+    "Using motion model: %s.",
+    _name.c_str(), _max_iterations, _max_on_approach_iterations,
     _allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
-    toString(_motion_model).c_str());
+    _tolerance, toString(_motion_model).c_str());
 }
 
 void SmacPlannerHybrid::activate()
@@ -315,7 +329,9 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   int num_iterations = 0;
   std::string error;
   try {
-    if (!_a_star->createPath(path, num_iterations, 0.0)) {
+    if (!_a_star->createPath(
+        path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution())))
+    {
       if (num_iterations < _a_star->getMaxIterations()) {
         error = std::string("no valid path found");
       } else {
@@ -392,6 +408,8 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       if (name == _name + ".max_planning_time") {
         reinit_a_star = true;
         _max_planning_time = parameter.as_double();
+      } else if (name == _name + ".tolerance") {
+        _tolerance = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".lookup_table_size") {
         reinit_a_star = true;
         _lookup_table_size = parameter.as_double();
@@ -452,6 +470,15 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
             "disabling maximum iterations.");
           _max_iterations = std::numeric_limits<int>::max();
         }
+      } else if (name == _name + ".max_on_approach_iterations") {
+        reinit_a_star = true;
+        _max_on_approach_iterations = parameter.as_int();
+        if (_max_on_approach_iterations <= 0) {
+          RCLCPP_INFO(
+            _logger, "On approach iteration selected as <= 0, "
+            "disabling tolerance and on approach iterations.");
+          _max_on_approach_iterations = std::numeric_limits<int>::max();
+        }
       } else if (name == _name + ".angle_quantization_bins") {
         reinit_collision_checker = true;
         reinit_a_star = true;
@@ -504,7 +531,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       _a_star->initialize(
         _allow_unknown,
         _max_iterations,
-        std::numeric_limits<int>::max(),
+        _max_on_approach_iterations,
         _max_planning_time,
         _lookup_table_dim,
         _angle_quantizations);
