@@ -472,10 +472,6 @@ PlannerServer::computePlan()
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::GOAL_OUTSIDE_MAP;
     action_server_pose_->terminate_current(result);
-  } catch (nav2_core::StartIsEqualToGoal & ex) {
-    exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_IS_EQUAL_TO_GOAL;
-    action_server_pose_->terminate_current(result);
   } catch (nav2_core::PlannerTFError & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TF_ERROR;

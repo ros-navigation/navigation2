@@ -78,13 +78,6 @@ public:
   : PlannerException(description) {}
 };
 
-class StartIsEqualToGoal : public PlannerException
-{
-public:
-  explicit StartIsEqualToGoal(const std::string & description)
-  : PlannerException(description) {}
-};
-
 class NoValidPathCouldBeFound : public PlannerException
 {
 public:
