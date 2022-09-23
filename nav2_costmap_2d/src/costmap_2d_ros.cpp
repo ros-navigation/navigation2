@@ -71,7 +71,6 @@ Costmap2DROS::Costmap2DROS()
     "nav2_costmap_2d::InflationLayer"}
 {
   declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
-  declare_parameter("plugins", rclcpp::ParameterValue(default_plugins_));
   init();
 }
 
@@ -102,7 +101,6 @@ Costmap2DROS::Costmap2DROS(
   declare_parameter(
     "map_topic", rclcpp::ParameterValue(
       (parent_namespace_ == "/" ? "/" : parent_namespace_ + "/") + std::string("map")));
-  declare_parameter("plugins", rclcpp::ParameterValue(default_plugins_));
   init();
 }
 
@@ -122,6 +120,7 @@ void Costmap2DROS::init()
   declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
   declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
   declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
+  declare_parameter("plugins", rclcpp::ParameterValue(default_plugins_));
   declare_parameter("filters", rclcpp::ParameterValue(std::vector<std::string>()));
   declare_parameter("publish_frequency", rclcpp::ParameterValue(1.0));
   declare_parameter("resolution", rclcpp::ParameterValue(0.1));
