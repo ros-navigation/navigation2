@@ -34,7 +34,7 @@ class PyCostmap2D:
 
     def __init__(self, occupancy_map):
         """
-        Initializer for costmap2D.
+        Initialize costmap2D.
 
         Initialize instance variables with parameter occupancy_map.
             Args:
