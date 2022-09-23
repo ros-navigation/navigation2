@@ -34,13 +34,12 @@ class PyCostmap2D:
 
     def __init__(self, occupancy_map):
         """
-        Initializer for costmap2D.
+        Initialize costmap2D.
 
-        Initialize instance variables with parameter occupancy_map.
-            Args:
-                occupancy_map (OccupancyGrid): 2D OccupancyGrid Map
-            Returns:
-                None
+        Args:
+        ----
+            occupancy_map (OccupancyGrid): 2D OccupancyGrid Map
+
         """
         self.size_x = occupancy_map.info.width
         self.size_y = occupancy_map.info.height
@@ -92,11 +91,15 @@ class PyCostmap2D:
         """
         Get the cost of a cell in the costmap using map coordinate XY.
 
-            Args:
-                mx (int): map coordinate X to get cost
-                my (int): map coordinate Y to get cost
-            Returns:
-                np.uint8: cost of a cell
+        Args
+        ----
+            mx (int): map coordinate X to get cost
+            my (int): map coordinate Y to get cost
+
+        Returns
+        -------
+            np.uint8: cost of a cell
+
         """
         return self.costmap[self.getIndex(mx, my)]
 
@@ -104,10 +107,14 @@ class PyCostmap2D:
         """
         Get the cost of a cell in the costmap using Index.
 
-            Args:
-                index (int): index of cell to get cost
-            Returns:
-                np.uint8: cost of a cell
+        Args
+        ----
+            index (int): index of cell to get cost
+
+        Returns
+        -------
+            np.uint8: cost of a cell
+
         """
         return self.costmap[index]
 
@@ -115,12 +122,16 @@ class PyCostmap2D:
         """
         Set the cost of a cell in the costmap using map coordinate XY.
 
-            Args:
-                mx (int): map coordinate X to get cost
-                my (int): map coordinate Y to get cost
-                cost (np.uint8): The cost to set the cell
-            Returns:
-                None
+        Args
+        ----
+            mx (int): map coordinate X to get cost
+            my (int): map coordinate Y to get cost
+            cost (np.uint8): The cost to set the cell
+
+        Returns
+        -------
+            None
+
         """
         self.costmap[self.getIndex(mx, my)] = cost
 
@@ -128,13 +139,17 @@ class PyCostmap2D:
         """
         Get the world coordinate XY using map coordinate XY.
 
-            Args:
-                mx (int): map coordinate X to get world coordinate
-                my (int): map coordinate Y to get world coordinate
-            Returns:
-                tuple of float: wx, wy
-                wx (float) [m]: world coordinate X
-                wy (float) [m]: world coordinate Y
+        Args
+        ----
+            mx (int): map coordinate X to get world coordinate
+            my (int): map coordinate Y to get world coordinate
+
+        Returns
+        -------
+            tuple of float: wx, wy
+            wx (float) [m]: world coordinate X
+            wy (float) [m]: world coordinate Y
+
         """
         wx = self.origin_x + (mx + 0.5) * self.resolution
         wy = self.origin_y + (my + 0.5) * self.resolution
@@ -144,13 +159,17 @@ class PyCostmap2D:
         """
         Get the map coordinate XY using world coordinate XY.
 
-            Args:
-                wx (float) [m]: world coordinate X to get map coordinate
-                wy (float) [m]: world coordinate Y to get map coordinate
-            Returns:
-                tuple of int: mx, my
-                mx (int): map coordinate X
-                my (int): map coordinate Y
+        Args
+        ----
+            wx (float) [m]: world coordinate X to get map coordinate
+            wy (float) [m]: world coordinate Y to get map coordinate
+
+        Returns
+        -------
+            tuple of int: mx, my
+            mx (int): map coordinate X
+            my (int): map coordinate Y
+
         """
         mx = int((wx - self.origin_x) // self.resolution)
         my = int((wy - self.origin_y) // self.resolution)
@@ -160,10 +179,14 @@ class PyCostmap2D:
         """
         Get the index of the cell using map coordinate XY.
 
-            Args:
-                mx (int): map coordinate X to get Index
-                my (int): map coordinate Y to get Index
-            Returns:
-                int: The index of the cell
+        Args
+        ----
+            mx (int): map coordinate X to get Index
+            my (int): map coordinate Y to get Index
+
+        Returns
+        -------
+            int: The index of the cell
+
         """
         return my * self.size_x + mx
