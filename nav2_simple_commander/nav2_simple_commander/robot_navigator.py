@@ -299,6 +299,7 @@ class BasicNavigator(Node):
     def _getPathImpl(self, start, goal, planner_id='', use_start=False):
         """
         Send a `ComputePathToPose` action request.
+
         Internal implementation to get the full result, not just the path.
         """
         self.debug("Waiting for 'ComputePathToPose' action server")
