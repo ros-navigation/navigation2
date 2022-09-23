@@ -37,6 +37,7 @@ class PyCostmap2D:
         Initialize costmap2D.
 
         Args:
+        ----
             occupancy_map (OccupancyGrid): 2D OccupancyGrid Map
 
         """
@@ -91,10 +92,12 @@ class PyCostmap2D:
         Get the cost of a cell in the costmap using map coordinate XY.
 
         Args
+        ----
             mx (int): map coordinate X to get cost
             my (int): map coordinate Y to get cost
 
         Returns
+        -------
             np.uint8: cost of a cell
 
         """
@@ -105,9 +108,11 @@ class PyCostmap2D:
         Get the cost of a cell in the costmap using Index.
 
         Args
+        ----
             index (int): index of cell to get cost
 
         Returns
+        -------
             np.uint8: cost of a cell
 
         """
@@ -118,11 +123,13 @@ class PyCostmap2D:
         Set the cost of a cell in the costmap using map coordinate XY.
 
         Args
+        ----
             mx (int): map coordinate X to get cost
             my (int): map coordinate Y to get cost
             cost (np.uint8): The cost to set the cell
 
         Returns
+        -------
             None
 
         """
@@ -133,10 +140,12 @@ class PyCostmap2D:
         Get the world coordinate XY using map coordinate XY.
 
         Args
+        ----
             mx (int): map coordinate X to get world coordinate
             my (int): map coordinate Y to get world coordinate
 
         Returns
+        -------
             tuple of float: wx, wy
             wx (float) [m]: world coordinate X
             wy (float) [m]: world coordinate Y
@@ -151,10 +160,12 @@ class PyCostmap2D:
         Get the map coordinate XY using world coordinate XY.
 
         Args
+        ----
             wx (float) [m]: world coordinate X to get map coordinate
             wy (float) [m]: world coordinate Y to get map coordinate
 
         Returns
+        -------
             tuple of int: mx, my
             mx (int): map coordinate X
             my (int): map coordinate Y
@@ -169,10 +180,12 @@ class PyCostmap2D:
         Get the index of the cell using map coordinate XY.
 
         Args
+        ----
             mx (int): map coordinate X to get Index
             my (int): map coordinate Y to get Index
 
         Returns
+        -------
             int: The index of the cell
 
         """
