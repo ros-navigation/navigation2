@@ -447,6 +447,7 @@ _environments:
     RCUTILS_LOGGING_BUFFERED_STREAM: "0"
     RCUTILS_LOGGING_USE_STDOUT: "0"
     DEBIAN_FRONTEND: "noninteractive"
+    PYTHONUNBUFFERED: "1"
 
 executors:
   release_exec:
