@@ -254,6 +254,7 @@ void WaypointFollower::followWaypointsHandler(
       new_goal = false;
       ClientT::Goal client_goal;
       client_goal.pose = poses[goal_index];
+      client_goal.pose.header.stamp = this->now();
 
       auto send_goal_options = rclcpp_action::Client<ClientT>::SendGoalOptions();
       send_goal_options.result_callback =
