@@ -307,6 +307,29 @@ bool PlannerServer::transformPosesToGlobalFrame(
   return true;
 }
 
+template<typename T>
+bool PlannerServer::validatePath(
+    const geometry_msgs::msg::PoseStamped & goal,
+    const nav_msgs::msg::Path & path,
+    const std::string & planner_id)
+{
+  if (path.poses.empty()) {
+    RCLCPP_WARN(
+        get_logger(), "Planning algorithm %s failed to generate a valid"
+                      " path to (%.2f, %.2f)", planner_id.c_str(),
+        goal.pose.position.x, goal.pose.position.y);
+    throw nav2_core::PlannerException(planner_id + "generated a empty path");
+  }
+
+  RCLCPP_DEBUG(
+      get_logger(),
+      "Found valid path of size %zu to (%.2f, %.2f)",
+      path.poses.size(), goal.pose.position.x,
+      goal.pose.position.y);
+
+  return true;
+}
+
 void PlannerServer::computePlanThroughPoses()
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
@@ -360,9 +383,7 @@ void PlannerServer::computePlanThroughPoses()
       // Get plan from start -> goal
       nav_msgs::msg::Path curr_path = getPlan(curr_start, curr_goal, goal->planner_id);
 
-      if (curr_path.poses.empty()) {
-        throw nav2_core::PlannerException(goal->planner_id + "generated a empty path");
-      }
+      validatePath<ActionThroughPoses>(curr_goal, curr_path, goal->planner_id);
 
       // Concatenate paths together
       concat_path.poses.insert(
@@ -430,9 +451,7 @@ PlannerServer::computePlan()
 
     result->path = getPlan(start, goal_pose, goal->planner_id);
 
-    if (result->path.poses.empty()) {
-      throw nav2_core::PlannerException(goal->planner_id + "generated a empty path");
-    }
+    validatePath<ActionToPose>(goal_pose, result->path, goal->planner_id);
 
     // Publish the plan for visualization purposes
     publishPlan(result->path);

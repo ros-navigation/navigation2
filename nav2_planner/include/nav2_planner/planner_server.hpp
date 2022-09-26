@@ -172,6 +172,20 @@ protected:
   std::unique_ptr<ActionServerThroughPoses> action_server_poses_;
 
   /**
+   * @brief Validate that the path contains a meaningful path
+   * @param action_server Action server to terminate if required
+   * @param goal Goal Current goal
+   * @param path Current path
+   * @param planner_id The planner ID used to generate the path
+   * @return bool If path is valid
+   */
+    template<typename T>
+    bool validatePath(
+        const geometry_msgs::msg::PoseStamped & curr_goal,
+        const nav_msgs::msg::Path & path,
+        const std::string & planner_id);
+
+  /**
    * @brief The action server callback which calls planner to get the path
    * ComputePathToPose
    */
