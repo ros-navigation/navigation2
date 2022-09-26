@@ -179,11 +179,11 @@ protected:
    * @param planner_id The planner ID used to generate the path
    * @return bool If path is valid
    */
-    template<typename T>
-    bool validatePath(
-        const geometry_msgs::msg::PoseStamped & curr_goal,
-        const nav_msgs::msg::Path & path,
-        const std::string & planner_id);
+  template<typename T>
+  bool validatePath(
+    const geometry_msgs::msg::PoseStamped & curr_goal,
+    const nav_msgs::msg::Path & path,
+    const std::string & planner_id);
 
   /**
    * @brief The action server callback which calls planner to get the path

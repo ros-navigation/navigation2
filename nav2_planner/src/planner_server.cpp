@@ -309,23 +309,23 @@ bool PlannerServer::transformPosesToGlobalFrame(
 
 template<typename T>
 bool PlannerServer::validatePath(
-    const geometry_msgs::msg::PoseStamped & goal,
-    const nav_msgs::msg::Path & path,
-    const std::string & planner_id)
+  const geometry_msgs::msg::PoseStamped & goal,
+  const nav_msgs::msg::Path & path,
+  const std::string & planner_id)
 {
   if (path.poses.empty()) {
     RCLCPP_WARN(
-        get_logger(), "Planning algorithm %s failed to generate a valid"
-                      " path to (%.2f, %.2f)", planner_id.c_str(),
-        goal.pose.position.x, goal.pose.position.y);
+      get_logger(), "Planning algorithm %s failed to generate a valid"
+      " path to (%.2f, %.2f)", planner_id.c_str(),
+      goal.pose.position.x, goal.pose.position.y);
     throw nav2_core::PlannerException(planner_id + "generated a empty path");
   }
 
   RCLCPP_DEBUG(
-      get_logger(),
-      "Found valid path of size %zu to (%.2f, %.2f)",
-      path.poses.size(), goal.pose.position.x,
-      goal.pose.position.y);
+    get_logger(),
+    "Found valid path of size %zu to (%.2f, %.2f)",
+    path.poses.size(), goal.pose.position.x,
+    goal.pose.position.y);
 
   return true;
 }
