@@ -60,7 +60,7 @@ INCLUDE_PACKAGES=$(
 # Capture executed code data.
 fastcov --lcov \
   -d build \
-  --exclude test/ $EXCLUDE_PACKAGES \
+  --exclude test/ $EXCLUDE_PACKAGES thirdparty/ \
   --include $INCLUDE_PACKAGES \
   --process-gcno \
   --validate-sources \
