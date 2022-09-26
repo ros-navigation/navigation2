@@ -23,7 +23,7 @@ from geometry_msgs.msg import Point
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
-from nav2_msgs.action import BackUp, Spin
+from nav2_msgs.action import AssistedTeleop, BackUp, Spin
 from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose
 from nav2_msgs.action import FollowPath, FollowWaypoints, NavigateThroughPoses, NavigateToPose
 from nav2_msgs.action import SmoothPath
@@ -75,6 +75,7 @@ class BasicNavigator(Node):
         self.smoother_client = ActionClient(self, SmoothPath, 'smooth_path')
         self.spin_client = ActionClient(self, Spin, 'spin')
         self.backup_client = ActionClient(self, BackUp, 'backup')
+        self.assisted_teleop_client = ActionClient(self, AssistedTeleop, 'assisted_teleop')
         self.localization_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
                                                               'amcl_pose',
                                                               self._amclPoseCallback,
@@ -217,6 +218,26 @@ class BasicNavigator(Node):
 
         if not self.goal_handle.accepted:
             self.error('Backup request was rejected!')
+            return False
+
+        self.result_future = self.goal_handle.get_result_async()
+        return True
+
+    def assistedTeleop(self, time_allowance=30):
+        self.debug("Wainting for 'assisted_teleop' action server")
+        while not self.assisted_teleop_client.wait_for_server(timeout_sec=1.0):
+            self.info("'assisted_teleop' action server not available, waiting...")
+        goal_msg = AssistedTeleop.Goal()
+        goal_msg.time_allowance = Duration(sec=time_allowance)
+
+        self.info("Running 'assisted_teleop'....")
+        send_goal_future = \
+            self.assisted_teleop_client.send_goal_async(goal_msg, self._feedbackCallback)
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        self.goal_handle = send_goal_future.result()
+
+        if not self.goal_handle.accepted:
+            self.error('Assisted Teleop request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
