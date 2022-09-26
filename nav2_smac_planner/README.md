@@ -100,16 +100,15 @@ See inline description of parameters in the `SmacPlanner`. This includes comment
 planner_server:
   ros__parameters:
     planner_plugins: ["GridBased"]
-    use_sim_time: True
 
     GridBased:
-      plugin: "nav2_smac_planner/SmacPlanner"
-      tolerance: 0.5                      # tolerance for planning if unable to reach exact pose, in meters, for 2D node
+      plugin: "nav2_smac_planner/SmacPlannerHybrid"
+      tolerance: 0.5                      # tolerance for planning if unable to reach exact pose, in meters
       downsample_costmap: false           # whether or not to downsample the map
       downsampling_factor: 1              # multiplier for the resolution of the costmap layer (e.g. 2 on a 5cm costmap would be 10cm)
       allow_unknown: false                # allow traveling in unknown space
       max_iterations: 1000000             # maximum total iterations to search for before failing (in case unreachable), set to -1 to disable
-      max_on_approach_iterations: 1000    # maximum number of iterations to attempt to reach goal once in tolerance, 2D only
+      max_on_approach_iterations: 1000    # maximum number of iterations to attempt to reach goal once in tolerance
       max_planning_time: 3.5              # max time in s for planner to plan, smooth, and upsample. Will scale maximum smoothing and upsampling times based on remaining time after planning.
       motion_model_for_search: "DUBIN"    # For Hybrid Dubin, Redds-Shepp
       cost_travel_multiplier: 2.0         # For 2D: Cost multiplier to apply to search to steer away from high cost areas. Larger values will place in the center of aisles more exactly (if non-`FREE` cost potential field exists) but take slightly longer to compute. To optimize for speed, a value of 1.0 is reasonable. A reasonable tradeoff value is 2.0. A value of 0.0 effective disables steering away from obstacles and acts like a naive binary search A*.
@@ -123,7 +122,7 @@ planner_server:
       cost_penalty: 2.0                   # For Hybrid nodes: penalty to apply to higher cost areas when adding into the obstacle map dynamic programming distance expansion heuristic. This drives the robot more towards the center of passages. A value between 1.3 - 3.5 is reasonable.
       retrospective_penalty: 0.025        # For Hybrid/Lattice nodes: penalty to prefer later maneuvers before earlier along the path. Saves search time since earlier nodes are not expanded until it is necessary. Must be >= 0.0 and <= 1.0
       rotation_penalty: 5.0               # For Lattice node: Penalty to apply only to pure rotate in place commands when using minimum control sets containing rotate in place primitives. This should always be set sufficiently high to weight against this action unless strictly necessary for obstacle avoidance or there may be frequent discontinuities in the plan where it requests the robot to rotate in place to short-cut an otherwise smooth path for marginal path distance savings.
-      lookup_table_size: 20               # For Hybrid nodes: Size of the dubin/reeds-sheep distance window to cache, in meters.
+      lookup_table_size: 20.0               # For Hybrid nodes: Size of the dubin/reeds-sheep distance window to cache, in meters.
       cache_obstacle_heuristic: True      # For Hybrid nodes: Cache the obstacle map dynamic programming distance expansion heuristic between subsiquent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.  
       allow_reverse_expansion: False      # For Lattice nodes: Whether to expand state lattice graph in forward primitives or reverse as well, will double the branching factor at each step.   
       smooth_path: True                   # For Lattice/Hybrid nodes: Whether or not to smooth the path, always true for 2D nodes.

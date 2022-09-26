@@ -35,7 +35,7 @@ BT::NodeStatus GloballyUpdatedGoalCondition::tick()
     first_time = false;
     config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", goals_);
     config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", goal_);
-    return BT::NodeStatus::FAILURE;
+    return BT::NodeStatus::SUCCESS;
   }
 
   std::vector<geometry_msgs::msg::PoseStamped> current_goals;

@@ -183,8 +183,8 @@ private:
   unsigned char unknown_cost_value_;
   bool trinary_costmap_;
   bool map_received_{false};
+  bool map_received_in_update_bounds_{false};
   tf2::Duration transform_tolerance_;
-  std::atomic<bool> update_in_progress_;
   nav_msgs::msg::OccupancyGrid::SharedPtr map_buffer_;
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;

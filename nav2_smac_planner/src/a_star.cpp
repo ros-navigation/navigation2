@@ -117,8 +117,11 @@ template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::addToGraph(
   const unsigned int & index)
 {
-  // Emplace will only create a new object if it doesn't already exist.
-  // If an element exists, it will return the existing object, not create a new one.
+  auto iter = _graph.find(index);
+  if (iter != _graph.end()) {
+    return &(iter->second);
+  }
+
   return &(_graph.emplace(index, NodeT(index)).first->second);
 }
 
@@ -321,6 +324,11 @@ bool AStarAlgorithm<NodeT>::createPath(
         addNode(g_cost + getHeuristicCost(neighbor), neighbor);
       }
     }
+  }
+
+  if (_best_heuristic_node.first < getToleranceHeuristic()) {
+    // If we run out of serach options, return the path that is closest, if within tolerance.
+    return _graph.at(_best_heuristic_node.second).backtracePath(path);
   }
 
   return false;

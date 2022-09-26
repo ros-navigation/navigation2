@@ -31,6 +31,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/ManageLifecycleNodes.srv"
   "srv/LoadMap.srv"
   "srv/SaveMap.srv"
+  "action/AssistedTeleop.action"
   "action/BackUp.action"
   "action/ComputePathToPose.action"
   "action/ComputePathThroughPoses.action"

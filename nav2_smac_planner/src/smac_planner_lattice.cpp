@@ -66,11 +66,17 @@ void SmacPlannerLattice::configure(
   bool smooth_path;
 
   nav2_util::declare_parameter_if_not_declared(
+    node, name + ".tolerance", rclcpp::ParameterValue(0.25));
+  _tolerance = static_cast<float>(node->get_parameter(name + ".tolerance").as_double());
+  nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".allow_unknown", _allow_unknown);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
   node->get_parameter(name + ".max_iterations", _max_iterations);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
+  node->get_parameter(name + ".max_on_approach_iterations", _max_on_approach_iterations);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".smooth_path", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".smooth_path", smooth_path);
@@ -126,6 +132,13 @@ void SmacPlannerLattice::configure(
     _metadata.min_turning_radius / (_costmap->getResolution());
   _motion_model = MotionModel::STATE_LATTICE;
 
+  if (_max_on_approach_iterations <= 0) {
+    RCLCPP_INFO(
+      _logger, "On approach iteration selected as <= 0, "
+      "disabling tolerance and on approach iterations.");
+    _max_on_approach_iterations = std::numeric_limits<int>::max();
+  }
+
   if (_max_iterations <= 0) {
     RCLCPP_INFO(
       _logger, "maximum iteration selected as <= 0, "
@@ -167,7 +180,7 @@ void SmacPlannerLattice::configure(
   _a_star->initialize(
     _allow_unknown,
     _max_iterations,
-    std::numeric_limits<int>::max(),
+    _max_on_approach_iterations,
     _max_planning_time,
     lookup_table_dim,
     _metadata.number_of_headings);
@@ -182,11 +195,11 @@ void SmacPlannerLattice::configure(
 
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlannerLattice with "
-    "maximum iterations %i, "
-    "and %s. Using motion model: %s. State lattice file: %s.",
-    _name.c_str(), _max_iterations,
+    "maximum iterations %i, max on approach iterations %i, "
+    "and %s. Tolerance %.2f. Using motion model: %s. State lattice file: %s.",
+    _name.c_str(), _max_iterations, _max_on_approach_iterations,
     _allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
-    toString(_motion_model).c_str(), _search_info.lattice_filepath.c_str());
+    _tolerance, toString(_motion_model).c_str(), _search_info.lattice_filepath.c_str());
 }
 
 void SmacPlannerLattice::activate()
@@ -262,7 +275,9 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   int num_iterations = 0;
   std::string error;
   try {
-    if (!_a_star->createPath(path, num_iterations, 0 /*no tolerance*/)) {
+    if (!_a_star->createPath(
+        path, num_iterations, _tolerance / static_cast<float>(_costmap->getResolution())))
+    {
       if (num_iterations < _a_star->getMaxIterations()) {
         error = std::string("no valid path found");
       } else {
@@ -349,6 +364,8 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       if (name == _name + ".max_planning_time") {
         reinit_a_star = true;
         _max_planning_time = parameter.as_double();
+      } else if (name == _name + ".tolerance") {
+        _tolerance = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".lookup_table_size") {
         reinit_a_star = true;
         _lookup_table_size = parameter.as_double();
@@ -403,6 +420,15 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
           _max_iterations = std::numeric_limits<int>::max();
         }
       }
+    } else if (name == _name + ".max_on_approach_iterations") {
+      reinit_a_star = true;
+      _max_on_approach_iterations = parameter.as_int();
+      if (_max_on_approach_iterations <= 0) {
+        RCLCPP_INFO(
+          _logger, "On approach iteration selected as <= 0, "
+          "disabling tolerance and on approach iterations.");
+        _max_on_approach_iterations = std::numeric_limits<int>::max();
+      }
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == _name + ".lattice_filepath") {
         reinit_a_star = true;
@@ -453,7 +479,7 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       _a_star->initialize(
         _allow_unknown,
         _max_iterations,
-        std::numeric_limits<int>::max(),
+        _max_on_approach_iterations,
         _max_planning_time,
         lookup_table_dim,
         _metadata.number_of_headings);

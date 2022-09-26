@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Samsung Research Russia
+// Copyright (c) 2022 Samsung R&D Institute Russia
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@
 #include "nav2_collision_monitor/source.hpp"
 #include "nav2_collision_monitor/scan.hpp"
 #include "nav2_collision_monitor/pointcloud.hpp"
+#include "nav2_collision_monitor/range.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -48,7 +49,7 @@ public:
    * @brief Constructor for the nav2_collision_safery::CollisionMonitor
    * @param options Additional options to control creation of the node.
    */
-  CollisionMonitor(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit CollisionMonitor(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
    * @brief Destructor for the nav2_collision_safery::CollisionMonitor
    */

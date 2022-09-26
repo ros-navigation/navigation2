@@ -380,6 +380,7 @@ void WaypointFollower::resultCallback(
       get_logger(),
       "Goal IDs do not match for the current goal handle and received result."
       "Ignoring likely due to receiving result for an old goal.");
+    return;
   }
 
   switch (result.code) {
