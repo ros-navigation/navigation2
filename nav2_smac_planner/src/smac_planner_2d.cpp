@@ -241,8 +241,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   // Corner case of start and goal beeing on the same cell
   if (mx_start == mx_goal && my_start == my_goal) {
     if (costmap->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-      RCLCPP_WARN(_logger, "Failed to create a unique pose path because of obstacles");
-      return plan;
+      throw nav2_core::StartOccupied("Start was in lethal cost");
     }
     pose.pose = start.pose;
     // if we have a different start and goal orientation, set the unique path pose to the goal
