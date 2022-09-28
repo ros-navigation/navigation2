@@ -287,7 +287,12 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   // Set starting point, in A* bin search coordinates
   unsigned int mx, my;
-  costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
+  if (!costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my)) {
+    throw nav2_core::StartOutsideMapBounds(
+            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
+            std::to_string(start.pose.position.y) + ") was outside bounds");
+  }
+
   double orientation_bin = tf2::getYaw(start.pose.orientation) / _angle_bin_size;
   while (orientation_bin < 0.0) {
     orientation_bin += static_cast<float>(_angle_quantizations);
@@ -300,7 +305,11 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   _a_star->setStart(mx, my, orientation_bin_id);
 
   // Set goal point, in A* bin search coordinates
-  costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
+  if (!costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my)) {
+    throw nav2_core::GoalOutsideMapBounds(
+            "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
+            std::to_string(goal.pose.position.y) + ") was outside bounds");
+  }
   orientation_bin = tf2::getYaw(goal.pose.orientation) / _angle_bin_size;
   while (orientation_bin < 0.0) {
     orientation_bin += static_cast<float>(_angle_quantizations);
@@ -327,28 +336,14 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   // Compute plan
   NodeHybrid::CoordinateVector path;
   int num_iterations = 0;
-  std::string error;
-  try {
-    if (!_a_star->createPath(
-        path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution())))
-    {
-      if (num_iterations < _a_star->getMaxIterations()) {
-        error = std::string("no valid path found");
-      } else {
-        error = std::string("exceeded maximum iterations");
-      }
-    }
-  } catch (const std::runtime_error & e) {
-    error = "invalid use: ";
-    error += e.what();
-  }
 
-  if (!error.empty()) {
-    RCLCPP_WARN(
-      _logger,
-      "%s: failed to create plan, %s.",
-      _name.c_str(), error.c_str());
-    return plan;
+  // Note: All exceptions thrown are handled by the planner server and returned to the action
+  if (!_a_star->createPath(path, num_iterations, 0)) {
+    if (num_iterations < _a_star->getMaxIterations()) {
+      throw nav2_core::NoValidPathCouldBeFound("no valid path found");
+    } else {
+      throw nav2_core::PlannerTimedOut("exceeded maximum iterations");
+    }
   }
 
   // Convert to world coordinates
