@@ -21,6 +21,9 @@ It provides the ability to iterate through the points of a line.
 """
 
 
+from cmath import sqrt
+
+
 class LineIterator():
 
     def __init__(self, x0, y0, x1, y1):
@@ -43,77 +46,96 @@ class LineIterator():
         self.x_ = x0
         self.y_ = y0
 
-        self.delta_x_ = abs(self.x1_ - self.x0_)
-        self.delta_y_ = abs(self.y1_ - self.y0_)
-        self.curpixel_ = 0
-        self.xinc1_, self.xinc2_, self.yinc1_, self.yinc2_ = 0, 0, 0, 0
-        self.num_, self.den_ = 0, 0
-        self.numadd_ = 0
-
-        if (self.x1_ >= x0):
-            self.xinc1_ = 1
-            self.xinc2_ = 1
+        if x1 != x0 and y1 != y0:
+            self.valid_ = True
+            self.distance_ = abs(x1-x0)
+            self.m_ = (y1-y0)/(x1-x0)
+            self.b_ = y1 - (self.m_*x1)
+            if (self.b_ < 0):
+                self.equation_ = "y = " + str(self.m_) + "*x " + str(self.b_)
+            else:
+                self.equation_ = "y = " + str(self.m_) + "*x + " + str(self.b_)
+        elif x1 == x0 and y1 != y0:
+            self.valid_ = True
+            self.distance_ = abs(y1-y0)
+            self.equation_ = "x = " + str(x1)
+        elif y1 == y1 and x1 != x0:
+            self.valid_ = True
+            self.distance_ = abs(x1-x0)
+            self.equation_ = "y = " + str(y1)
         else:
-            self.xinc1_ = -1
-            self.xinc2_ = -1
-
-        if (y1 >= y0):
-            self.yinc1_ = 1
-            self.yinc2_ = 1
-        else:
-            self.yinc1_ = -1
-            self.yinc2_ = -1
-
-        if (self.delta_x_ >= self.delta_y_):
-            self.xinc1_ = 0
-            self.yinc2_ = 0
-            self.den_ = self.delta_x_
-            self.num_ = self.delta_x_ / 2
-            self.numadd_ = self.delta_y_
-            self.numpixels_ = self.delta_x_
-        else:
-            self.xinc2_ = 0
-            self.yinc1_ = 0
-            self.den_ = self.delta_y_
-            self.num_ = self.delta_y_ / 2
-            self.numadd_ = self.delta_x_
-            self.numpixels_ = self.delta_y_
+            self.valid_ = False
+            self.equation_ = "Invalid"
+        self.step_ = self.distance_/1000
 
     def isValid(self):
-        """Checks if the given line is valid"""
-        return self.curpixel_ <= self.numpixels_
+        """Returns True if the line is valid"""
+        return self.valid_
 
     def advance(self):
         """Advances to the next point in the line."""
-        self.num_ = self.numadd_
-        if (self.num_ >= self.den_):
-            self.num_ -= self.den_
-            self.x_ += self.xinc1_
-            self.y_ += self.yinc1_
-        self.x_ += self.xinc2_
-        self.y_ += self.yinc2_
-        self.curpixel_ += 1
+        if self.x1_ > self.x0_:
+            if self.x_ < self.x1_:
+                self.x_ = round(self.x_ + self.step_, 5)
+                self.y_ = round(self.m_ * self.x_ + self.b_, 5)
+            else:
+                self.valid_ = False
+        elif self.x1_ < self.x0_:
+            if self.x_ > self.x1_:
+                self.x_ = round(self.x_ - self.step_, 5)
+                self.y_ = round(self.m_ * self.x_ + self.b_, 5)
+            else:
+                self.valid_ = False
+        else:
+            if self.y1_ > self.y0_:
+                if self.y_ < self.y1_:
+                    self.y_ = round(self.y_ + self.step_, 5)
+                else:
+                    self.valid_ = False
+            elif self.y1_ < self.y0_:
+                if self.y_ > self.y1_:
+                    self.y_ = round(self.y_ - self.step_, 5)
+                else:
+                    self.valid_ = False
+            else:
+                self.valid_ = False
 
     def getX(self):
-        """Gets abscissa of the current point."""
+        """Returns the abscissa of the current point."""
         return self.x_
 
     def getY(self):
-        """Gets ordinate of the current point."""
+        """Returns the ordinate of the current point."""
         return self.y_
 
     def getX0(self):
-        """Gets abscissa of the initial point."""
+        """Returns the abscissa of the initial point."""
         return self.x0_
 
     def getY0(self):
-        """Gets ordinate of the initial point."""
+        """Returns the ordinate of the initial point."""
         return self.y0_
 
     def getX1(self):
-        """Gets abscissa of the final point."""
+        """Returns the abscissa of the final point."""
         return self.x1_
 
     def getY1(self):
-        """Gets ordinate of the final point."""
+        """Returns the ordinate of the final point."""
         return self.y1_
+
+    def get_line_length(self):
+        """Returns the length of the line."""
+        return sqrt(pow(self.x1_ - self.x0_, 2) + pow(self.y1_ - self.y0_, 2))
+
+    def get_line_equation(self):
+        """Returns the equation of the line as a string."""
+        return self.equation_
+
+    def get_curr_point_str(self):
+        """Returns the coordinates of the current point as string."""
+        return "X: " + str(self.x_) + "   Y: " + str(self.y_)
+
+    def get_curr_point(self):
+        """Returns the coordinates of the current point as list [X,Y]."""
+        return [self.x_, self.y_]
