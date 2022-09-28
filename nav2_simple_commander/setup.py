@@ -33,6 +33,7 @@ setup(
                 'demo_inspection = nav2_simple_commander.demo_inspection:main',
                 'demo_security = nav2_simple_commander.demo_security:main',
                 'demo_recoveries = nav2_simple_commander.demo_recoveries:main',
+                'example_assisted_teleop = nav2_simple_commander.example_assisted_teleop:main',
         ],
     },
 )
