@@ -326,6 +326,11 @@ bool AStarAlgorithm<NodeT>::createPath(
     }
   }
 
+  if (_best_heuristic_node.first < getToleranceHeuristic()) {
+    // If we run out of serach options, return the path that is closest, if within tolerance.
+    return _graph.at(_best_heuristic_node.second).backtracePath(path);
+  }
+
   return false;
 }
 

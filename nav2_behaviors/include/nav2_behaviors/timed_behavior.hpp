@@ -184,7 +184,7 @@ protected:
   // onRun and cycle functions to execute a specific behavior
   void execute()
   {
-    RCLCPP_INFO(logger_, "Attempting %s", behavior_name_.c_str());
+    RCLCPP_INFO(logger_, "Running %s", behavior_name_.c_str());
 
     if (!enabled_) {
       RCLCPP_WARN(

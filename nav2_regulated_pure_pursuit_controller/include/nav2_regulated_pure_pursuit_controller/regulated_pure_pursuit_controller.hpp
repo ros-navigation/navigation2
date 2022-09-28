@@ -292,6 +292,7 @@ protected:
   double approach_velocity_scaling_dist_;
   double control_duration_;
   double max_allowed_time_to_collision_up_to_carrot_;
+  bool use_collision_detection_;
   bool use_regulated_linear_velocity_scaling_;
   bool use_cost_regulated_linear_velocity_scaling_;
   double cost_scaling_dist_;

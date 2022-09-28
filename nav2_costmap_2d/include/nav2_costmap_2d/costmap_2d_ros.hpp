@@ -73,6 +73,11 @@ class Costmap2DROS : public nav2_util::LifecycleNode
 {
 public:
   /**
+   * @brief  Constructor for the wrapper
+   */
+  Costmap2DROS();
+
+  /**
    * @brief  Constructor for the wrapper, the node will
    * be placed in a namespace equal to the node's name
    * @param name Name of the costmap ROS node
@@ -92,6 +97,11 @@ public:
     const std::string & parent_namespace,
     const std::string & local_namespace,
     const bool & use_sim_time);
+
+  /**
+   * @brief Common initialization for constructors
+   */
+  void init();
 
   /**
    * @brief A destructor
