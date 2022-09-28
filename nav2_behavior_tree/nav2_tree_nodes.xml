@@ -33,13 +33,18 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
-    <Action ID="DriveOnHeadingCancel">
+    <Action ID="CancelDriveOnHeading">
       <input_port name="service_name">Service name to cancel the drive on heading behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="CancelSpin">
       <input_port name="service_name">Service name to cancel the spin behavior</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
+    <Action ID="CancelAssistedTeleop">
+      <input_port name="service_name">Service name to cancel the assisted teleop behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
@@ -53,6 +58,18 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
+    <Action ID="ClearCostmapExceptRegion">
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="reset_distance">Distance from the robot above which obstacles are cleared</input_port>
+    </Action>
+
+    <Action ID="ClearCostmapAroundRobot">
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="reset_distance">Distance from the robot under which obstacles are cleared</input_port>
+    </Action>
+
     <Action ID="ComputePathToPose">
       <input_port name="goal">Destination to plan to</input_port>
       <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
@@ -60,6 +77,7 @@
       <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="path">Path created by ComputePathToPose node</output_port>
+      <output_port name="compute_path_to_pose_error_code">"The compute path to pose error code"</output_port>
     </Action>
 
     <Action ID="ComputePathThroughPoses">
@@ -160,6 +178,13 @@
 
     <Action ID="Wait">
       <input_port name="wait_duration">Wait time</input_port>
+      <input_port name="server_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
+    <Action ID="AssistedTeleop">
+      <input_port name="time_allowance">Allowed time for spinning</input_port>
+      <input_port name="is_recovery">If true recovery count will be incremented</input_port>
       <input_port name="server_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>

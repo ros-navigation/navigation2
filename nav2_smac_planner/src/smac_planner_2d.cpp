@@ -211,11 +211,19 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 
   // Set starting point
   unsigned int mx_start, my_start, mx_goal, my_goal;
-  costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start);
+  if (!costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start)) {
+    throw nav2_core::StartOutsideMapBounds(
+            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
+            std::to_string(start.pose.position.y) + ") was outside bounds");
+  }
   _a_star->setStart(mx_start, my_start, 0);
 
   // Set goal point
-  costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal);
+  if (!costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal)) {
+    throw nav2_core::GoalOutsideMapBounds(
+            "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
+            std::to_string(goal.pose.position.y) + ") was outside bounds");
+  }
   _a_star->setGoal(mx_goal, my_goal, 0);
 
   // Setup message
@@ -233,8 +241,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   // Corner case of start and goal beeing on the same cell
   if (mx_start == mx_goal && my_start == my_goal) {
     if (costmap->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-      RCLCPP_WARN(_logger, "Failed to create a unique pose path because of obstacles");
-      return plan;
+      throw nav2_core::StartOccupied("Start was in lethal cost");
     }
     pose.pose = start.pose;
     // if we have a different start and goal orientation, set the unique path pose to the goal
@@ -250,12 +257,15 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   // Compute plan
   Node2D::CoordinateVector path;
   int num_iterations = 0;
-
-  if (!_a_star->createPath(path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution()))) {
+  // Note: All exceptions thrown are handled by the planner server and returned to the action
+  if (!_a_star->createPath(
+      path, num_iterations,
+      _tolerance / static_cast<float>(costmap->getResolution())))
+  {
     if (num_iterations < _a_star->getMaxIterations()) {
-      throw nav2_core::NoValidPathFoundException("no valid path found");
+      throw nav2_core::NoValidPathCouldBeFound("no valid path found");
     } else {
-      throw nav2_core::NoValidPathFoundException("exceeded maximum iterations");
+      throw nav2_core::PlannerTimedOut("exceeded maximum iterations");
     }
   }
 

@@ -95,6 +95,11 @@ public:
   {
   }
 
+  // an opportunity for a derived class to do something on action completion
+  virtual void onActionCompletion()
+  {
+  }
+
   // configure the server on lifecycle setup
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
@@ -167,6 +172,7 @@ protected:
   std::string global_frame_;
   std::string robot_base_frame_;
   double transform_tolerance_;
+  rclcpp::Duration elasped_time_{0, 0};
 
   // Clock
   rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
@@ -178,7 +184,7 @@ protected:
   // onRun and cycle functions to execute a specific behavior
   void execute()
   {
-    RCLCPP_INFO(logger_, "Attempting %s", behavior_name_.c_str());
+    RCLCPP_INFO(logger_, "Running %s", behavior_name_.c_str());
 
     if (!enabled_) {
       RCLCPP_WARN(
@@ -203,11 +209,13 @@ protected:
     rclcpp::WallRate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
+      elasped_time_ = steady_clock_.now() - start_time;
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(logger_, "Canceling %s", behavior_name_.c_str());
         stopRobot();
-        result->total_elapsed_time = steady_clock_.now() - start_time;
+        result->total_elapsed_time = elasped_time_;
         action_server_->terminate_all(result);
+        onActionCompletion();
         return;
       }
 
@@ -220,6 +228,7 @@ protected:
         stopRobot();
         result->total_elapsed_time = steady_clock_.now() - start_time;
         action_server_->terminate_current(result);
+        onActionCompletion();
         return;
       }
 
@@ -230,12 +239,14 @@ protected:
             "%s completed successfully", behavior_name_.c_str());
           result->total_elapsed_time = steady_clock_.now() - start_time;
           action_server_->succeeded_current(result);
+          onActionCompletion();
           return;
 
         case Status::FAILED:
           RCLCPP_WARN(logger_, "%s failed", behavior_name_.c_str());
           result->total_elapsed_time = steady_clock_.now() - start_time;
           action_server_->terminate_current(result);
+          onActionCompletion();
           return;
 
         case Status::RUNNING:

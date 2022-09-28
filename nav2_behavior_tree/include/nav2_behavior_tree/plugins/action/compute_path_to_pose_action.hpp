@@ -62,6 +62,11 @@ public:
   BT::NodeStatus on_cancelled() override;
 
   /**
+   * \brief Override required by the a BT action. Cancel the action and set the path output
+   */
+  void halt() override;
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -70,9 +75,8 @@ public:
     return providedBasicPorts(
       {
         BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
-        BT::OutputPort<nav2_msgs::action::ComputePathToPose::Result::_error_code_type>
-            ("global_planner_error_code",
-          "The global planner error code"),
+        BT::OutputPort<nav2_msgs::action::ComputePathToPose::Result::_error_code_type>(
+          "compute_path_to_pose_error_code", "The compute path to pose error code"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>(
           "start", "Start pose of the path if overriding current robot pose"),

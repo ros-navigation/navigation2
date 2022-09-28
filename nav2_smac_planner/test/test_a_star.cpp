@@ -72,7 +72,7 @@ TEST(AStarTest, test_a_star_2d)
   EXPECT_EQ(num_it, 2414);
 
   // check path is the right size and collision free
-  EXPECT_EQ(path.size(), 81u);
+  EXPECT_EQ(path.size(), 82u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }
@@ -104,7 +104,7 @@ TEST(AStarTest, test_a_star_2d)
   a_star_2.setStart(20, 20, 0);  // valid
   a_star_2.setGoal(50, 50, 0);  // invalid
   EXPECT_TRUE(a_star_2.createPath(path, num_it, some_tolerance));
-  EXPECT_EQ(path.size(), 20u);
+  EXPECT_EQ(path.size(), 21u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }
@@ -164,7 +164,7 @@ TEST(AStarTest, test_a_star_se2)
 
   // check path is the right size and collision free
   EXPECT_EQ(num_it, 3222);
-  EXPECT_EQ(path.size(), 62u);
+  EXPECT_EQ(path.size(), 63u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }
@@ -225,7 +225,7 @@ TEST(AStarTest, test_a_star_lattice)
 
   // check path is the right size and collision free
   EXPECT_EQ(num_it, 21);
-  EXPECT_EQ(path.size(), 48u);
+  EXPECT_EQ(path.size(), 49u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }

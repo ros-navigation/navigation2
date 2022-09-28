@@ -46,36 +46,57 @@ namespace nav2_core
 class PlannerException : public std::runtime_error
 {
 public:
-  explicit PlannerException(const std::string &description)
+  explicit PlannerException(const std::string & description)
   : std::runtime_error(description) {}
 };
 
-class GoalOccupiedException: public PlannerException
+class StartOccupied : public PlannerException
 {
 public:
-  explicit GoalOccupiedException(const std::string &description)
-  : PlannerException(description) {};
+  explicit StartOccupied(const std::string & description)
+  : PlannerException(description) {}
 };
 
-class StartOccupiedException : public PlannerException
+class GoalOccupied : public PlannerException
 {
 public:
-  explicit StartOccupiedException(const std::string &description)
-      : PlannerException(description) {};
+  explicit GoalOccupied(const std::string & description)
+  : PlannerException(description) {}
 };
 
-class NoValidPathFoundException : public PlannerException
+class StartOutsideMapBounds : public PlannerException
 {
 public:
-  explicit NoValidPathFoundException(const std::string &description)
-      : PlannerException(description) {};
+  explicit StartOutsideMapBounds(const std::string & description)
+  : PlannerException(description) {}
 };
 
-class TimeOutException : public PlannerException
+class GoalOutsideMapBounds : public PlannerException
 {
 public:
-  explicit TimeOutException(const std::string &description)
-      : PlannerException(description) {};
+  explicit GoalOutsideMapBounds(const std::string & description)
+  : PlannerException(description) {}
+};
+
+class NoValidPathCouldBeFound : public PlannerException
+{
+public:
+  explicit NoValidPathCouldBeFound(const std::string & description)
+  : PlannerException(description) {}
+};
+
+class PlannerTimedOut : public PlannerException
+{
+public:
+  explicit PlannerTimedOut(const std::string & description)
+  : PlannerException(description) {}
+};
+
+class PlannerTFError : public PlannerException
+{
+public:
+  explicit PlannerTFError(const std::string & description)
+  : PlannerException(description) {}
 };
 
 }  // namespace nav2_core
