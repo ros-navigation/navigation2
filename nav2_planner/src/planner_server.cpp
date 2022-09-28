@@ -318,7 +318,7 @@ bool PlannerServer::validatePath(
       get_logger(), "Planning algorithm %s failed to generate a valid"
       " path to (%.2f, %.2f)", planner_id.c_str(),
       goal.pose.position.x, goal.pose.position.y);
-    throw nav2_core::PlannerException(planner_id + "generated a empty path");
+    return false;
   }
 
   RCLCPP_DEBUG(
@@ -383,7 +383,9 @@ void PlannerServer::computePlanThroughPoses()
       // Get plan from start -> goal
       nav_msgs::msg::Path curr_path = getPlan(curr_start, curr_goal, goal->planner_id);
 
-      validatePath<ActionThroughPoses>(curr_goal, curr_path, goal->planner_id);
+      if (!validatePath<ActionThroughPoses>(curr_goal, curr_path, goal->planner_id)) {
+        throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + "generated a empty path");
+      }
 
       // Concatenate paths together
       concat_path.poses.insert(
@@ -451,7 +453,9 @@ PlannerServer::computePlan()
 
     result->path = getPlan(start, goal_pose, goal->planner_id);
 
-    validatePath<ActionToPose>(goal_pose, result->path, goal->planner_id);
+    if (!validatePath<ActionThroughPoses>(goal_pose, result->path, goal->planner_id)) {
+      throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + "generated a empty path");
+    }
 
     // Publish the plan for visualization purposes
     publishPlan(result->path);

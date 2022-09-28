@@ -167,10 +167,6 @@ protected:
     geometry_msgs::msg::PoseStamped & curr_start,
     geometry_msgs::msg::PoseStamped & curr_goal);
 
-  // Our action server implements the ComputePathToPose action
-  std::unique_ptr<ActionServerToPose> action_server_pose_;
-  std::unique_ptr<ActionServerThroughPoses> action_server_poses_;
-
   /**
    * @brief Validate that the path contains a meaningful path
    * @param action_server Action server to terminate if required
@@ -224,6 +220,10 @@ protected:
    */
   rcl_interfaces::msg::SetParametersResult
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+  // Our action server implements the ComputePathToPose action
+  std::unique_ptr<ActionServerToPose> action_server_pose_;
+  std::unique_ptr<ActionServerThroughPoses> action_server_poses_;
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
