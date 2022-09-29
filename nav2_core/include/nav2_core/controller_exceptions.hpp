@@ -25,6 +25,12 @@ public:
       : std::runtime_error(description) {};
 };
 
+class ControllerTFError : public ControllerException {
+public:
+  explicit ControllerTFError(const std::string &description)
+      : ControllerException(description) {};
+};
+
 class FailedToMakeProgress : public ControllerException {
 public:
   explicit FailedToMakeProgress(const std::string &description)
