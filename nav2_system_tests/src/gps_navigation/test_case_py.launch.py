@@ -20,8 +20,11 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch import LaunchService
-from launch.actions import ExecuteProcess, IncludeLaunchDescription, SetEnvironmentVariable
-from launch.launch_context import LaunchContext
+from launch.actions import (
+    ExecuteProcess,
+    IncludeLaunchDescription,
+    SetEnvironmentVariable,
+)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
@@ -30,87 +33,98 @@ from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-    world = os.getenv('TEST_WORLD')
-
-    # bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
-    #                                 'behavior_trees',
-    #                                 os.getenv('BT_NAVIGATOR_XML'))
+    world = os.getenv("TEST_WORLD")
 
     launch_dir = os.path.dirname(os.path.realpath(__file__))
-    params_file  = os.path.join(launch_dir, 'nav2_no_map_params.yaml')
+    params_file = os.path.join(launch_dir, "nav2_no_map_params.yaml")
+    bringup_dir = get_package_share_directory("nav2_bringup")
 
-    bringup_dir = get_package_share_directory('nav2_bringup')
-
-    # Replace the `use_astar` setting on the params file
     configured_params = RewrittenYaml(
-        source_file=params_file,
-        root_key='',
-        param_rewrites='',
-        convert_types=True)
+        source_file=params_file, root_key="", param_rewrites="", convert_types=True
+    )
 
-    # context = LaunchContext()
-    # new_yaml = configured_params.perform(context)
-    return LaunchDescription([
-        SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
-        SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
-
-        # Launch gazebo server for simulation
-        ExecuteProcess(
-            cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
-                 '--minimal_comms', world],
-            output='screen'),
-
-        # TODO(orduno) Launch the robot state publisher instead
-        #              using a local copy of TB3 urdf file
-        Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link']),
-
-        Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan']),
-
-        Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            output='screen',
-            arguments=['-0.32', '0', '0.068', '0', '0', '0', 'base_link', 'imu_link']),
-
-        Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            output='screen',
-            arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'gps_link']),
-
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(bringup_dir, 'launch', 'navigation_launch.py')),
-            launch_arguments={
-                              'use_sim_time': 'True',
-                              'params_file': configured_params,
-                              'autostart': 'True'}.items()),
-
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(launch_dir, 'dual_ekf_navsat.launch.py')),
-            launch_arguments={
-                              'use_sim_time': 'True',
-                              'params_file': configured_params,
-                              'autostart': 'True'}.items()),
-    ])
+    return LaunchDescription(
+        [
+            SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1"),
+            SetEnvironmentVariable("RCUTILS_LOGGING_USE_STDOUT", "1"),
+            # Launch gazebo server for simulation
+            ExecuteProcess(
+                cmd=[
+                    "gzserver",
+                    "-s",
+                    "libgazebo_ros_init.so",
+                    "--minimal_comms",
+                    world,
+                ],
+                output="screen",
+            ),
+            # TODO(orduno) Launch the robot state publisher instead
+            #              using a local copy of TB3 urdf file
+            Node(
+                package="tf2_ros",
+                executable="static_transform_publisher",
+                output="screen",
+                arguments=["0", "0", "0", "0", "0", "0", "base_footprint", "base_link"],
+            ),
+            Node(
+                package="tf2_ros",
+                executable="static_transform_publisher",
+                output="screen",
+                arguments=["0", "0", "0", "0", "0", "0", "base_link", "base_scan"],
+            ),
+            Node(
+                package="tf2_ros",
+                executable="static_transform_publisher",
+                output="screen",
+                arguments=[
+                    "-0.32",
+                    "0",
+                    "0.068",
+                    "0",
+                    "0",
+                    "0",
+                    "base_link",
+                    "imu_link",
+                ],
+            ),
+            Node(
+                package="tf2_ros",
+                executable="static_transform_publisher",
+                output="screen",
+                arguments=["0", "0", "0", "0", "0", "0", "base_link", "gps_link"],
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(bringup_dir, "launch", "navigation_launch.py")
+                ),
+                launch_arguments={
+                    "use_sim_time": "True",
+                    "params_file": configured_params,
+                    "autostart": "True",
+                }.items(),
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(launch_dir, "dual_ekf_navsat.launch.py")
+                ),
+                launch_arguments={
+                    "use_sim_time": "True",
+                    "params_file": configured_params,
+                    "autostart": "True",
+                }.items(),
+            ),
+        ]
+    )
 
 
 def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
     test1_action = ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester.py')],
-        name='tester_node',
-        output='screen')
+        cmd=[os.path.join(os.getenv("TEST_DIR"), "tester.py")],
+        name="tester_node",
+        output="screen",
+    )
 
     lts = LaunchTestService()
     lts.add_test_action(ld, test1_action)
@@ -119,5 +133,5 @@ def main(argv=sys.argv[1:]):
     return lts.run(ls)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())
