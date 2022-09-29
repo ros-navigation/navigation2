@@ -107,11 +107,6 @@ def generate_launch_description():
                 PythonLaunchDescriptionSource(
                     os.path.join(launch_dir, "dual_ekf_navsat.launch.py")
                 ),
-                launch_arguments={
-                    "use_sim_time": "True",
-                    "params_file": configured_params,
-                    "autostart": "True",
-                }.items(),
             ),
         ]
     )
