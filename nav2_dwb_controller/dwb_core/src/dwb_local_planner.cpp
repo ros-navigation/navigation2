@@ -133,8 +133,9 @@ void DWBLocalPlanner::configure(
     loadCritics();
   } catch (const std::exception & e) {
     RCLCPP_ERROR(logger_, "Couldn't load critics! Caught exception: %s", e.what());
-    throw nav2_core::ControllerException("Couldn't load critics! Caught exception: " +
-    std::string(e.what()));
+    throw nav2_core::ControllerException(
+            "Couldn't load critics! Caught exception: " +
+            std::string(e.what()));
   }
 }
 
@@ -215,8 +216,9 @@ DWBLocalPlanner::loadCritics()
       plugin->initialize(node, critic_plugin_name, dwb_plugin_name_, costmap_ros_);
     } catch (const std::exception & e) {
       RCLCPP_ERROR(logger_, "Couldn't initialize critic plugin!");
-      throw nav2_core::ControllerException("Couldn't initialize critic plugin: " + std::string(e
-      .what()));
+      throw nav2_core::ControllerException(
+              "Couldn't initialize critic plugin: " +
+              std::string(e.what()));
     }
     RCLCPP_INFO(logger_, "Critic plugin initialized");
   }
@@ -341,7 +343,9 @@ DWBLocalPlanner::computeVelocityCommands(
     pub_->publishLocalPlan(pose.header, empty_traj);
     pub_->publishCostGrid(costmap_ros_, critics_);
 
-    throw nav2_core::ControllerException("Could not find a legal trajectory: " + std::string(e.what()));
+    throw nav2_core::ControllerException(
+            "Could not find a legal trajectory: " +
+            std::string(e.what()));
   }
 }
 

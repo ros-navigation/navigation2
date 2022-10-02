@@ -42,17 +42,6 @@
 namespace dwb_core
 {
 
-///**
-// * @class PlannerTFException
-// * @brief Thrown when the planner cannot complete its operation due to TF errors
-// */
-//class ControllerTFException : public nav2_core::ControllerException
-//{
-//public:
-//  explicit ControllerTFException(const std::string &description)
-//  : nav2_core::ControllerException(description) {}
-//};
-
 /**
  * @class IllegalTrajectoryException
  * @brief Thrown when one of the critics encountered a fatal error
@@ -60,7 +49,7 @@ namespace dwb_core
 class IllegalTrajectoryException : public nav2_core::ControllerException
 {
 public:
-  IllegalTrajectoryException(const std::string & critic_name, const std::string &description)
+  IllegalTrajectoryException(const std::string & critic_name, const std::string & description)
   : nav2_core::ControllerException(description), critic_name_(critic_name) {}
   std::string getCriticName() const {return critic_name_;}
 
