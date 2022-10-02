@@ -34,7 +34,6 @@
 #ifndef DWB_CORE__EXCEPTIONS_HPP_
 #define DWB_CORE__EXCEPTIONS_HPP_
 
-#include <stdexcept>
 #include <string>
 #include <memory>
 
@@ -43,16 +42,16 @@
 namespace dwb_core
 {
 
-/**
- * @class PlannerTFException
- * @brief Thrown when the planner cannot complete its operation due to TF errors
- */
-class ControllerTFException : public nav2_core::ControllerException
-{
-public:
-  explicit ControllerTFException(const std::string &description)
-  : nav2_core::ControllerException(description) {}
-};
+///**
+// * @class PlannerTFException
+// * @brief Thrown when the planner cannot complete its operation due to TF errors
+// */
+//class ControllerTFException : public nav2_core::ControllerException
+//{
+//public:
+//  explicit ControllerTFException(const std::string &description)
+//  : nav2_core::ControllerException(description) {}
+//};
 
 /**
  * @class IllegalTrajectoryException
