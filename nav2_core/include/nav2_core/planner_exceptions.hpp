@@ -33,8 +33,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NAV2_CORE__EXCEPTIONS_HPP_
-#define NAV2_CORE__EXCEPTIONS_HPP_
+#ifndef NAV2_CORE__PLANNER_EXCEPTIONS_HPP_
+#define NAV2_CORE__PLANNER_EXCEPTIONS_HPP_
 
 #include <stdexcept>
 #include <string>
@@ -101,4 +101,4 @@ public:
 
 }  // namespace nav2_core
 
-#endif  // NAV2_CORE__EXCEPTIONS_HPP_
+#endif  // NAV2_CORE__PLANNER_EXCEPTIONS_HPP_
