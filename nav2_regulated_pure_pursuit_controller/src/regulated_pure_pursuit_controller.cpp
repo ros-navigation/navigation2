@@ -729,7 +729,9 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
       stamped_pose.header.frame_id = global_plan_.header.frame_id;
       stamped_pose.header.stamp = robot_pose.header.stamp;
       stamped_pose.pose = global_plan_pose.pose;
-      transformPose(costmap_ros_->getBaseFrameID(), stamped_pose, transformed_pose);
+      if (!transformPose(costmap_ros_->getBaseFrameID(), stamped_pose, transformed_pose)) {
+        throw nav2_core::ControllerTFError("Unable to transform plan pose into local frame");
+      }
       transformed_pose.pose.position.z = 0.0;
       return transformed_pose;
     };
